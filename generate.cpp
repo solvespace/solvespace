@@ -127,7 +127,6 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
 void SolveSpace::GenerateAll(void) {
     int i;
     int firstDirty = INT_MAX, lastVisible = 0;
-    bool markVvMeshDirty = false;
     // Start from the first dirty group, and solve until the active group,
     // since all groups after the active group are hidden.
     for(i = 0; i < group.n; i++) {
@@ -135,22 +134,9 @@ void SolveSpace::GenerateAll(void) {
         g->order = i;
         if((!g->clean) || (g->solved.how != Group::SOLVED_OKAY)) {
             firstDirty = min(firstDirty, i);
-            markVvMeshDirty = true;
         }
         if(g->h.v == SS.GW.activeGroup.v) {
             lastVisible = i;
-        }
-        if(markVvMeshDirty) {
-            if(firstDirty == i && 
-                (g->type == Group::DRAWING_3D ||
-                 g->type == Group::DRAWING_WORKPLANE))
-            {
-                // These groups don't change the mesh, so there's no need
-                // to regenerate the vertex-to-vertex mesh if they're the
-                // first dirty one.
-            } else {
-                g->vvMeshClean = false;
-            }
         }
     }
     if(firstDirty == INT_MAX || lastVisible == 0) {
@@ -213,6 +199,17 @@ void SolveSpace::GenerateAll(int first, int last) {
             g->clean = true;
         } else {
             if(i >= first && i <= last) {
+                // See if we have to do the vertex-to-vertex mesh, that
+                // we used for emphasized edges.
+                if(first == i && 
+                    (g->type == Group::DRAWING_3D ||
+                     g->type == Group::DRAWING_WORKPLANE))
+                {
+                    // Special case--if the first dirty group doesn't change
+                    // the mesh, then no need to regen edges for it.
+                } else {
+                    g->vvMeshClean = false; // so we'll regen it
+                }
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 SolveGroup(g->h);
