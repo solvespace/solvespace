@@ -359,7 +359,10 @@ void Constraint::MenuConstrain(int id) {
                     }
                     SS.constraint.RemoveTagged();
                     // And no need to do anything special, since nothing
-                    // ever depends on a constraint.
+                    // ever depends on a constraint. But do clear the
+                    // hover, in case the just-deleted constraint was
+                    // hovered.
+                    SS.GW.hover.Clear();
                 }
             } else {
                 // Symmetry with a symmetry plane specified explicitly.
