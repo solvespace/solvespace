@@ -62,6 +62,7 @@ void SolveSpace::NewFile(void) {
 const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.h.v",                'x',    &(SS.sv.g.h.v)                },
     { 'g',  "Group.type",               'd',    &(SS.sv.g.type)               },
+    { 'g',  "Group.order",              'd',    &(SS.sv.g.order)              },
     { 'g',  "Group.name",               'N',    &(SS.sv.g.name)               },
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },

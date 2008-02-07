@@ -47,6 +47,7 @@ public:
     static const int SCREEN_GROUP_SOLVE_INFO    = 2;
     static const int SCREEN_CONFIGURATION       = 3;
     static const int SCREEN_STEP_DIMENSION      = 4;
+    static const int SCREEN_MESH_VOLUME         = 5;
     typedef struct {
         int         screen;
 
@@ -56,6 +57,8 @@ public:
         bool        dimIsDistance;
         double      dimFinish;
         int         dimSteps;
+        
+        double      volume;
     } ShownState;
     ShownState shown;
 
@@ -94,6 +97,7 @@ public:
     void ShowGroupSolveInfo(void);
     void ShowConfiguration(void);
     void ShowStepDimension(void);
+    void ShowMeshVolume(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 

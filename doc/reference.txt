@@ -862,6 +862,18 @@ for new users; to learn about this program, see the video tutorials.
         this case, it may be useful to try stepping the dimension to
         its new value, instead of changing it in a single step.
 
+    <h3>Measure Volume</h3>
+
+        This feature reports the volume of the part. Depending on
+        the active units, the volume is given in cubic inches, or in
+        millilitres and cubic millimeters.
+
+        If the part contains smooth curves (e.g. circles), then the
+        mesh is not an exact representation of the geometry. This means
+        that the measured volume is only an approximation; for a mesh
+        that looks fairly smooth on-screen, expect an error around one
+        percent. To decrease this error, choose a finer chord tolerance.
+
 
 <h2>Export</h2>
 

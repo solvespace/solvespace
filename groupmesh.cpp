@@ -538,11 +538,14 @@ void Group::GenerateMesh(void) {
     }
 
 done:
-    emphEdges.Clear();
-    if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
-        SKdNode *root = SKdNode::From(&runningMesh);
-        root->SnapToMesh(&runningMesh);
-        root->MakeCertainEdgesInto(&emphEdges, true);
+    if(!vvMeshClean) {
+        emphEdges.Clear();
+        if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
+            SKdNode *root = SKdNode::From(&runningMesh);
+            root->SnapToMesh(&runningMesh);
+            root->MakeCertainEdgesInto(&emphEdges, true);
+        }
+        vvMeshClean = true;
     }
 }
 

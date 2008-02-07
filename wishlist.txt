@@ -1,8 +1,6 @@
 
 get rid of the oops() calls in the mesh codes
-smooth shading
 leak fixing
-cylindrical faces?
 
 
 long term

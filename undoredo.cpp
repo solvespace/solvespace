@@ -46,6 +46,7 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         // And then clean up all the stuff that needs to be a deep copy,
         // and zero out all the dynamic stuff that will get regenerated.
         dest.clean = false;
+        dest.vvMeshClean = false;
         ZERO(&(dest.solved));
         ZERO(&(dest.poly));
         ZERO(&(dest.polyError));

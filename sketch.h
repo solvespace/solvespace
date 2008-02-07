@@ -89,10 +89,13 @@ public:
     static const int IMPORTED                      = 5300;
     int type;
 
+    int order;
+
     hGroup      opA;
     hGroup      opB;
     bool        visible;
     bool        clean;
+    bool        vvMeshClean;
     hEntity     activeWorkplane;
     double      valA;
     double      valB;
