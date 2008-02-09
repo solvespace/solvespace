@@ -2,7 +2,21 @@
 
 SolveSpace SS;
 
+void SolveSpace::CheckLicenseFromRegistry(void) {
+    // First, let's see if we're running licensed or free
+    CnfThawString(license.line1, sizeof(license.line1), "LicenseLine1");
+    CnfThawString(license.line2, sizeof(license.line2), "LicenseLine2");
+    CnfThawString(license.users, sizeof(license.users), "LicenseUsers");
+    license.key = CnfThawDWORD(0, "LicenseKey");
+
+    license.licensed =
+        LicenseValid(license.line1, license.line2, license.users, license.key);
+}
+
 void SolveSpace::Init(char *cmdLine) {
+    CheckLicenseFromRegistry();
+
+    // Then, load the registry settings.
     int i;
     // Default list of colors for the model material
     modelColor[0] = CnfThawDWORD(RGB(150, 150, 150), "ModelColor_0");
@@ -431,14 +445,14 @@ void SolveSpace::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_STOP_TRACING: {
             char exportFile[MAX_PATH] = "";
             if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
-                FILE *f = fopen(exportFile, "w");
+                FILE *f = fopen(exportFile, "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);
                     for(i = 0; i < sc->l.n; i++) {
                         Vector p = sc->l.elem[i].p;
                         double s = SS.exportScale;
-                        fprintf(f, "%.10f, %.10f, %.10f\n",
+                        fprintf(f, "%.10f, %.10f, %.10f\r\n",
                             p.x/s, p.y/s, p.z/s);
                     }
                     fclose(f);
@@ -457,3 +471,126 @@ void SolveSpace::MenuAnalyze(int id) {
     }
 }
 
+void SolveSpace::Crc::ProcessBit(int bit) {
+    bool topWasSet = ((shiftReg & (1 << 31)) != 0);
+
+    shiftReg <<= 1;
+    if(bit) {
+        shiftReg |= 1;
+    }
+    
+    if(topWasSet) {
+        shiftReg ^= POLY;
+    }
+}
+
+void SolveSpace::Crc::ProcessByte(BYTE b) {
+    int i;
+    for(i = 0; i < 8; i++) {
+        ProcessBit(b & (1 << i));
+    }
+}
+
+void SolveSpace::Crc::ProcessString(char *s) {
+    for(; *s; s++) {
+        if(*s != '\n' && *s != '\r') {
+            ProcessByte((BYTE)*s);
+        }
+    }
+}
+
+bool SolveSpace::LicenseValid(char *line1, char *line2, char *users, DWORD key)
+{
+    BYTE magic[17] = {
+        203, 244, 134, 225,  45, 250,  70,  65, 
+        224, 189,  35,   3, 228,  51,  77, 169,
+        0
+    };
+    
+    crc.shiftReg = 0;
+    crc.ProcessString(line1);
+    crc.ProcessString(line2);
+    crc.ProcessString(users);
+    crc.ProcessString((char *)magic);
+
+    return (key == crc.shiftReg);
+}
+
+void SolveSpace::CleanEol(char *in) {
+    char *s;
+    s = strchr(in, '\r');
+    if(s) *s = '\0';
+    s = strchr(in, '\n');
+    if(s) *s = '\0';
+}
+
+void SolveSpace::LoadLicenseFile(char *filename) {
+    FILE *f = fopen(filename, "rb");
+    if(!f) {
+        Error("Couldn't open file '%s'", filename);
+        return;
+    }
+
+    char buf[100];
+    fgets(buf, sizeof(buf), f);
+    char *str = "±²³MechSketchLicense";
+    if(memcmp(buf, str, strlen(str)) != 0) {
+        fclose(f);
+        Error("This is not a license file,");
+        return;
+    }
+
+    char line1[512], line2[512], users[512];
+    fgets(line1, sizeof(line1), f);
+    CleanEol(line1);
+    fgets(line2, sizeof(line2), f);
+    CleanEol(line2);
+    fgets(users, sizeof(users), f);
+    CleanEol(users);
+
+    fgets(buf, sizeof(buf), f);
+    DWORD key = 0;
+    sscanf(buf, "%x", &key);
+
+    if(LicenseValid(line1, line2, users, key)) {
+        // Install the new key
+        CnfFreezeString(line1, "LicenseLine1");
+        CnfFreezeString(line2, "LicenseLine2");
+        CnfFreezeString(users, "LicenseUsers");
+        CnfFreezeDWORD(key, "LicenseKey");
+        Message("License key successfully installed.");
+
+        // This updates our display in the text window to show that we're
+        // licensed now.
+        CheckLicenseFromRegistry();
+        SS.later.showTW = true;
+    } else {
+        Error("License key invalid.");
+    }
+    fclose(f);
+}
+
+void SolveSpace::MenuHelp(int id) {
+    switch(id) {
+        case GraphicsWindow::MNU_WEBSITE:
+            OpenWebsite("http://www.mechsketch.com/helpmenu");
+            break;
+        
+        case GraphicsWindow::MNU_ABOUT:
+            Message("This is MechSketch version 0.1.\r\n\r\n"
+                  "For more information, see http://www.mechsketch.com/\r\n\r\n"
+                  "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
+                  "Copyright 2008 Jonathan Westhues, All Rights Reserved.");
+            break;
+
+        case GraphicsWindow::MNU_LICENSE: {
+            char licenseFile[MAX_PATH] = "";
+            if(GetOpenFile(licenseFile, LICENSE_EXT, LICENSE_PATTERN)) {
+                SS.LoadLicenseFile(licenseFile);
+            }
+            break;
+        }
+                
+        default: oops();
+    }
+}

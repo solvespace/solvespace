@@ -1304,7 +1304,7 @@ for new users; to learn about this program, see the video tutorials.
 <h2>Licensing</h2>
 
     As downloaded, MechSketch does not include a license key. This means
-    that it cannot create files with more than seven groups. Larger files
+    that it cannot create files with more than six groups. Larger files
     may be opened, but not modified. This light version of MechSketch
     is intended for evaluation, but non-commercial / personal use is
     also permitted.

@@ -117,46 +117,46 @@ havepoly:
 
     // Some software, like Adobe Illustrator, insists on a header.
     fprintf(f,
-"  999\n"
-"file created by SolveSpace\n"
-"  0\n"
-"SECTION\n"
-"  2\n"
-"HEADER\n"
-"  9\n"
-"$ACADVER\n"
-"  1\n"
-"AC1006\n"
-"  9\n"
-"$INSBASE\n"
-"  10\n"
-"0.0\n"
-"  20\n"
-"0.0\n"
-"  30\n"
-"0.0\n"
-"  9\n"
-"$EXTMIN\n"
-"  10\n"
-"0.0\n"
-"  20\n"
-"0.0\n"
-"  9\n"
-"$EXTMAX\n"
-"  10\n"
-"10000.0\n"
-"  20\n"
-"10000.0\n"
-"  0\n"
-"ENDSEC\n");
+"  999\r\n"
+"file created by SolveSpace\r\n"
+"  0\r\n"
+"SECTION\r\n"
+"  2\r\n"
+"HEADER\r\n"
+"  9\r\n"
+"$ACADVER\r\n"
+"  1\r\n"
+"AC1006\r\n"
+"  9\r\n"
+"$INSBASE\r\n"
+"  10\r\n"
+"0.0\r\n"
+"  20\r\n"
+"0.0\r\n"
+"  30\r\n"
+"0.0\r\n"
+"  9\r\n"
+"$EXTMIN\r\n"
+"  10\r\n"
+"0.0\r\n"
+"  20\r\n"
+"0.0\r\n"
+"  9\r\n"
+"$EXTMAX\r\n"
+"  10\r\n"
+"10000.0\r\n"
+"  20\r\n"
+"10000.0\r\n"
+"  0\r\n"
+"ENDSEC\r\n");
 
     // Now begin the entities, which are just line segments reproduced from
     // our piecewise linear curves.
     fprintf(f,
-"  0\n"
-"SECTION\n"
-"  2\n"
-"ENTITIES\n");
+"  0\r\n"
+"SECTION\r\n"
+"  2\r\n"
+"ENTITIES\r\n");
 
     int i, j;
     for(i = 0; i < sp->l.n; i++) {
@@ -172,22 +172,22 @@ havepoly:
             double s = SS.exportScale;
 
             fprintf(f,
-"  0\n"
-"LINE\n"
-"  8\n"     // Layer code
-"%d\n"
-"  10\n"    // xA
-"%.6f\n"
-"  20\n"    // yA
-"%.6f\n"
-"  30\n"    // zA
-"%.6f\n"
-"  11\n"    // xB
-"%.6f\n"
-"  21\n"    // yB
-"%.6f\n"
-"  31\n"    // zB
-"%.6f\n",
+"  0\r\n"
+"LINE\r\n"
+"  8\r\n"     // Layer code
+"%d\r\n"
+"  10\r\n"    // xA
+"%.6f\r\n"
+"  20\r\n"    // yA
+"%.6f\r\n"
+"  30\r\n"    // zA
+"%.6f\r\n"
+"  11\r\n"    // xB
+"%.6f\r\n"
+"  21\r\n"    // yB
+"%.6f\r\n"
+"  31\r\n"    // zB
+"%.6f\r\n",
                     0,
                     e0.x/s, e0.y/s, 0.0,
                     e1.x/s, e1.y/s, 0.0);
@@ -195,10 +195,10 @@ havepoly:
     }
 
     fprintf(f,
-"  0\n"
-"ENDSEC\n"
-"  0\n"
-"EOF\n" );
+"  0\r\n"
+"ENDSEC\r\n"
+"  0\r\n"
+"EOF\r\n" );
 
     spa.Clear();
     fclose(f);

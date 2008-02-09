@@ -7,6 +7,7 @@
 #define mFile (&SolveSpace::MenuFile)
 #define mGrp  (&Group::MenuGroup)
 #define mAna  (&SolveSpace::MenuAnalyze)
+#define mHelp (&SolveSpace::MenuHelp)
 #define S 0x100
 #define C 0x200
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
@@ -101,11 +102,11 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Stop Tracing...\tCtrl+Shift+S",      MNU_STOP_TRACING,   'S'|S|C,mAna  },
 { 1, "Step &Dimension...\tCtrl+Shift+D",    MNU_STEP_DIM,       'D'|S|C,mAna  },
 
-{ 0, "&Help",                               0,                          NULL  },
-{ 1, "&Load License...",                    0,                          NULL  },
-{ 1, NULL,                                  0,                          NULL  },
-{ 1, "&Website / Manual",                   0,                          NULL  },
-{ 1, "&About",                              0,                          NULL  },
+{ 0, "&Help",                               0,                  0,      NULL  },
+{ 1, "&Load License...",                    MNU_LICENSE,        0,      mHelp },
+{ 1, NULL,                                  0,                  0,      NULL  },
+{ 1, "&Website / Manual",                   MNU_WEBSITE,        0,      mHelp },
+{ 1, "&About",                              MNU_ABOUT,          0,      mHelp },
 { -1  },
 };
 

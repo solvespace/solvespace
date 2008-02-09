@@ -11,6 +11,7 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'r', RGB(  0,   0,   0) },
     { 'x', RGB(255,  20,  20) },
     { 'i', RGB(  0, 255, 255) },
+    { 'g', RGB(160, 160, 160) },
     { 0, 0 },
 };
 const TextWindow::Color TextWindow::bgColors[] = {

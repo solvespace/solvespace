@@ -130,6 +130,7 @@ public:
     static void ScreenColor(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
+    static void ScreenGoToWebsite(int link, DWORD v);
 
     static void ScreenStepDimSteps(int link, DWORD v);
     static void ScreenStepDimFinish(int link, DWORD v);
@@ -224,6 +225,10 @@ public:
         MNU_TRACE_PT,
         MNU_STOP_TRACING,
         MNU_STEP_DIM,
+        // Help,
+        MNU_LICENSE,
+        MNU_WEBSITE,
+        MNU_ABOUT,
     } MenuId;
     typedef void MenuHandler(int id);
     typedef struct {

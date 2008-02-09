@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <shellapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
 #include <gl/gl.h> 
@@ -55,23 +56,48 @@ void dbp(char *str, ...)
     va_end(f);
 }
 
-void Error(char *str, ...)
+
+static void DoMessageBox(char *str, va_list f, BOOL error)
 {
-    va_list f;
-    char buf[1024];
-    va_start(f, str);
+    char buf[1024*50];
     vsprintf(buf, str, f);
-    va_end(f);
 
     EnableWindow(GraphicsWnd, FALSE);
     EnableWindow(TextWnd, FALSE);
 
+    int flags;
+    if(error) {
+        flags = MB_OK | MB_ICONERROR;
+    } else {
+        flags = MB_OK | MB_ICONINFORMATION;
+    }
     HWND h = GetForegroundWindow();
-    MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);
+    MessageBox(h, buf, "SolveSpace", flags);
 
     EnableWindow(TextWnd, TRUE);
     EnableWindow(GraphicsWnd, TRUE);
     SetForegroundWindow(GraphicsWnd);
+}
+
+void Error(char *str, ...)
+{
+    va_list f;
+    va_start(f, str);
+    DoMessageBox(str, f, TRUE);
+    va_end(f);
+}
+
+void Message(char *str, ...)
+{
+    va_list f;
+    va_start(f, str);
+    DoMessageBox(str, f, FALSE);
+    va_end(f);
+}
+
+
+void OpenWebsite(char *url) {
+    ShellExecute(GraphicsWnd, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
 void ExitNow(void) {

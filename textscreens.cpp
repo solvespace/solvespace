@@ -98,6 +98,9 @@ void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
 void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
     SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
+void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
+    OpenWebsite("http://www.mechsketch.com/txtlink");
+}
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
     int i;
@@ -140,6 +143,22 @@ void TextWindow::ShowListOfGroups(void) {
         &(TextWindow::ScreenShowGroupsSpecial));
     Printf(false,  "  %Fl%Ls%fconfiguration%E",
         &(TextWindow::ScreenShowConfiguration));
+
+    // Show license info
+    Printf(false, "");
+    if(SS.license.licensed) {
+        Printf(false, "%FtLicensed to:");
+        Printf(false, "%Fg  %s", SS.license.line1);
+        if(strlen(SS.license.line2)) {
+            Printf(false, "%Fg  %s", SS.license.line2);
+        }
+        Printf(false, "%Fg  %s", SS.license.users);
+    } else {
+        Printf(false, "%Fx*** THIS SOFTWARE IS NOT LICENSED ***");
+        Printf(false, "%Fx  eval / non-commercial use only");
+        Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.mechsketch.com/%E",
+            &ScreenGoToWebsite);
+    }
 }
 
 

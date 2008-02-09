@@ -39,7 +39,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
 RES = $(OBJDIR)\resource.res
 
 
-LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib \
+LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib shell32.lib opengl32.lib glu32.lib \
        extlib\libpng.lib extlib\zlib.lib
 
 all: $(OBJDIR)/solvespace.exe
