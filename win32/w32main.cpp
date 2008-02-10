@@ -441,6 +441,12 @@ done:
             break;
         }
 
+        case WM_MOUSEWHEEL: {
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            HandleTextWindowScrollBar(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
+            break;
+        }
+
         case WM_VSCROLL:
             HandleTextWindowScrollBar(wParam, lParam);
             break;
