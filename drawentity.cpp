@@ -155,9 +155,9 @@ void Entity::BezierPwl(double ta, double tb,
     double d = max(pm1.DistanceToLine(pa, pb.Minus(pa)),
                    pm2.DistanceToLine(pa, pb.Minus(pa)));
 
-    double tol = 0.5*SS.chordTol/SS.GW.scale;
+    double tol = SS.chordTol/SS.GW.scale;
 
-    if((tb - ta) < 0.05 || d < tol) {
+    if((tb - ta) < 0.01 || d < tol) {
         LineDrawOrGetDistanceOrEdge(pa, pb);
     } else {
         double tm = (ta + tb) / 2;

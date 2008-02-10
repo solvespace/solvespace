@@ -129,7 +129,7 @@ int SolveSpace::CircleSides(double r) {
     double tol = chordTol/GW.scale;
     int n = 3 + (int)(PI/sqrt(2*tol/r));
 
-    return max(7, min(n, 40));
+    return max(7, min(n, 200));
 }
 
 char *SolveSpace::MmToString(double v) {

@@ -704,9 +704,9 @@ void TtfFont::BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2) {
 
     Vector pm = BezierEval(tm, p0, p1, p2);
 
-    double tol = 0.5*SS.chordTol/SS.GW.scale;
+    double tol = SS.chordTol/SS.GW.scale;
 
-    if((tb - ta) < 0.05 || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
+    if((tb - ta) < 0.01 || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
         Entity *e = SS.GetEntity(entity);
         e->LineDrawOrGetDistanceOrEdge(pa, pb);
     } else {

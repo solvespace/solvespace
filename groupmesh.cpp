@@ -2,22 +2,27 @@
 
 #define gs (SS.GW.gs)
 
+bool Group::AssemblePolygon(SPolygon *p, SEdge *error) {
+    SEdgeList edges; ZERO(&edges);
+    int i;
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(e->group.v != h.v) continue;
+
+        e->GenerateEdges(&edges);
+    }
+    bool ret = edges.AssemblePolygon(p, error);
+    edges.Clear();
+    return ret;
+}
+
 void Group::GeneratePolygon(void) {
     poly.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE)
     {
-        SEdgeList edges; ZERO(&edges);
-        int i;
-        for(i = 0; i < SS.entity.n; i++) {
-            Entity *e = &(SS.entity.elem[i]);
-            if(e->group.v != h.v) continue;
-
-            e->GenerateEdges(&edges);
-        }
-        SEdge error;
-        if(edges.AssemblePolygon(&poly, &error)) {
+        if(AssemblePolygon(&poly, &(polyError.notClosedAt))) {
             polyError.how = POLY_GOOD;
             poly.normal = poly.ComputeNormal();
             poly.FixContourDirections();
@@ -29,10 +34,8 @@ void Group::GeneratePolygon(void) {
             }
         } else {
             polyError.how = POLY_NOT_CLOSED;
-            polyError.notClosedAt = error;
             poly.Clear();
         }
-        edges.Clear();
     }
 }
 

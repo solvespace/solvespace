@@ -2,9 +2,8 @@
 #include <png.h>
 
 void SolveSpace::ExportDxfTo(char *filename) {
-    SPolygon *sp;
-    SPolygon spa;
-    ZERO(&spa);
+    SPolygon sp;
+    ZERO(&sp);
 
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
@@ -19,17 +18,21 @@ void SolveSpace::ExportDxfTo(char *filename) {
     Vector p, u, v, n;
     double d;
 
-    if(gs.n == 0 && !(g->poly.IsEmpty())) {
+    // Don't use the assembled polygon from the group data structure; that
+    // one gets cleared if the curves aren't all closed.
+    g->AssemblePolygon(&sp, NULL);
+
+    if(gs.n == 0 && !(sp.IsEmpty())) {
         // Easiest case--export the polygon drawn in this group
-        sp = &(g->poly);
-        p = sp->AnyPoint();
-        n = (sp->ComputeNormal()).WithMagnitude(1);
+        p = sp.AnyPoint();
+        n = (sp.ComputeNormal()).WithMagnitude(1);
         if(n.Dot(gn) < 0) n = n.ScaledBy(-1);
         u = n.Normal(0);
         v = n.Normal(1);
         d = p.Dot(n);
         goto havepoly;
     }
+    sp.Clear();
 
     if(g->runningMesh.l.n > 0 &&
        ((gs.n == 0 && g->activeWorkplane.v != Entity::FREE_IN_3D.v) ||
@@ -93,8 +96,7 @@ void SolveSpace::ExportDxfTo(char *filename) {
         SEdgeList el;
         ZERO(&el);
         root->MakeCertainEdgesInto(&el, false);
-        el.AssemblePolygon(&spa, NULL);
-        sp = &spa;
+        el.AssemblePolygon(&sp, NULL);
 
         el.Clear();
         m.Clear();
@@ -111,7 +113,7 @@ havepoly:
     FILE *f = fopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename);
-        spa.Clear();
+        sp.Clear();
         return;
     }
 
@@ -159,8 +161,8 @@ havepoly:
 "ENTITIES\r\n");
 
     int i, j;
-    for(i = 0; i < sp->l.n; i++) {
-        SContour *sc = &(sp->l.elem[i]);
+    for(i = 0; i < sp.l.n; i++) {
+        SContour *sc = &(sp.l.elem[i]);
 
         for(j = 1; j < sc->l.n; j++) {
             Vector p0 = sc->l.elem[j-1].p,
@@ -200,7 +202,7 @@ havepoly:
 "  0\r\n"
 "EOF\r\n" );
 
-    spa.Clear();
+    sp.Clear();
     fclose(f);
 }
 

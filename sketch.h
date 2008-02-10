@@ -197,6 +197,7 @@ public:
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
     // Assembling piecewise linear sections into polygons
+    bool AssemblePolygon(SPolygon *p, SEdge *error);
     void GeneratePolygon(void);
     // And the mesh stuff
     SMesh *PreviousGroupMesh(void);
