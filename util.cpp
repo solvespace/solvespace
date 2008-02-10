@@ -131,26 +131,25 @@ Quaternion Quaternion::From(Vector u, Vector v)
         q.vy = (n.x - u.z)/s;
         q.vz = (u.y - v.x)/s;
     } else {
-        double m = max(u.x, max(v.y, n.z));
-        if(m == u.x) {
+        if(u.x > v.y && u.x > n.z) {
             s = 2*sqrt(1 + u.x - v.y - n.z);
             q.w  = (v.z - n.y)/s;
             q.vx = s/4;
             q.vy = (u.y + v.x)/s;
             q.vz = (n.x + u.z)/s;
-        } else if(m == v.y) {
+        } else if(v.y > n.z) {
             s = 2*sqrt(1 - u.x + v.y - n.z);
             q.w  = (n.x - u.z)/s;
             q.vx = (u.y + v.x)/s;
             q.vy = s/4;
             q.vz = (v.z + n.y)/s;
-        } else if(m == n.z) {
+        } else {
             s = 2*sqrt(1 - u.x - v.y + n.z);
             q.w  = (u.y - v.x)/s;
             q.vx = (n.x + u.z)/s;
             q.vy = (v.z + n.y)/s;
             q.vz = s/4;
-        } else oops();
+        }
     }
 
     return q.WithMagnitude(1);
@@ -517,27 +516,27 @@ Point2d Vector::Project2d(Vector u, Vector v) {
 }
 
 double Vector::DivPivoting(Vector delta) {
-    double m = max(fabs(delta.x), max(fabs(delta.y), fabs(delta.z)));
+    double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
 
-    if(m == fabs(delta.x)) {
+    if(mx > my && mx > mz) {
         return x/delta.x;
-    } else if(m == fabs(delta.y)) {
+    } else if(my > mz) {
         return y/delta.y;
-    } else if(m == fabs(delta.z)) {
+    } else {
         return z/delta.z;
-    } else oops();
+    }
 }
 
 Vector Vector::ClosestOrtho(void) {
-    double m = max(fabs(x), max(fabs(y), fabs(z)));
+    double mx = fabs(x), my = fabs(y), mz = fabs(z);
 
-    if(m == fabs(x)) {
+    if(mx > my && mx > mz) {
         return From((x > 0) ? 1 : -1, 0, 0);
-    } else if(m == fabs(y)) {
+    } else if(my > mz) {
         return From(0, (y > 0) ? 1 : -1, 0);
-    } else if(m == fabs(z)) {
+    } else {
         return From(0, 0, (z > 0) ? 1 : -1);
-    } else oops();
+    }
 }
 
 Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,

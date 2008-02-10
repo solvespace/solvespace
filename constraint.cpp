@@ -609,12 +609,14 @@ Expr *Constraint::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     // plane, then the z component of the cross product is most important).
     // So find the strongest component of a and b, and that's the component
     // of the cross product to ignore.
-    double m = max(mx, max(my, mz));
     Expr *e0, *e1;
-         if(m == mx) { e0 = r.y; e1 = r.z; }
-    else if(m == my) { e0 = r.z; e1 = r.x; }
-    else if(m == mz) { e0 = r.x; e1 = r.y; }
-    else oops();
+    if(mx > my && mx > mz) {
+        e0 = r.y; e1 = r.z;
+    } else if(my > mz) {
+        e0 = r.z; e1 = r.x;
+    } else {
+        e0 = r.x; e1 = r.y;
+    }
 
     if(eq == 0) return e0;
     if(eq == 1) return e1;

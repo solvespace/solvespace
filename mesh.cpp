@@ -165,7 +165,7 @@ void SMesh::Simplify(int start) {
             double bDot = (ab.Cross(bc)).Dot(n);
             bDot /= min(ab.Magnitude(), bc.Magnitude());
 
-            if(bDot < 0) oops();
+            if(bDot < 0) return; // XXX, shouldn't happen
         }
 
         for(i = 0; i < convc - 2; i++) {

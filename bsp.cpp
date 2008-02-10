@@ -222,7 +222,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
             vpos[npos++] = vi;
             vneg[nneg++] = vi;
 
-            if(inters >= 2) oops();
+            if(inters >= 2) goto triangulate; // XXX shouldn't happen but does
             inter[inters++] = vi;
         }
     }
@@ -237,9 +237,11 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
             edges = edges->InsertEdge(&se, n, out);
         } else if(inters == 0 && onc == 2) {
             // We already handled this on-plane existing edge
-        } else oops();
+        } else {
+            goto triangulate;
+        }
     }
-    if(nneg < 3 || npos < 3) oops();
+    if(nneg < 3 || npos < 3) goto triangulate; // XXX
 
     InsertConvexHow(NEG, meta, vneg, nneg, instead);
     InsertConvexHow(POS, meta, vpos, npos, instead);
