@@ -366,6 +366,7 @@ public:
     Vector  lightDir[2];
     double  lightIntensity[2];
     double  chordTol;
+    int     maxSegments;
     double  cameraTangent;
     DWORD   edgeColor;
     float   exportScale;

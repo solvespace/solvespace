@@ -157,7 +157,8 @@ void Entity::BezierPwl(double ta, double tb,
 
     double tol = SS.chordTol/SS.GW.scale;
 
-    if((tb - ta) < 0.01 || d < tol) {
+    double step = 1.0/SS.maxSegments;
+    if((tb - ta) < step || d < tol) {
         LineDrawOrGetDistanceOrEdge(pa, pb);
     } else {
         double tm = (ta + tb) / 2;

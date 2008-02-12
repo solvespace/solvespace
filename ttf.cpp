@@ -706,7 +706,8 @@ void TtfFont::BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2) {
 
     double tol = SS.chordTol/SS.GW.scale;
 
-    if((tb - ta) < 0.01 || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
+    double step = 1.0/SS.maxSegments;
+    if((tb - ta) < step || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
         Entity *e = SS.GetEntity(entity);
         e->LineDrawOrGetDistanceOrEdge(pa, pb);
     } else {

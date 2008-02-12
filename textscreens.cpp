@@ -545,31 +545,37 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
-void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
-    char str[1024];
-    sprintf(str, "%.2f", SS.chordTol);
-    ShowTextEditControl(37, 3, str);
-    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
-}
-void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
-    char str[1024];
-    sprintf(str, "%.3f", 1000*SS.cameraTangent);
-    ShowTextEditControl(43, 3, str);
-    SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
-}
 void TextWindow::ScreenChangeEdgeColor(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f, %.3f, %.3f", 
         REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor));
 
-    ShowTextEditControl(49, 3, str);
+    ShowTextEditControl(37, 3, str);
     SS.TW.edit.meaning = EDIT_EDGE_COLOR;
+}
+void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f", SS.chordTol);
+    ShowTextEditControl(43, 3, str);
+    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
+}
+void TextWindow::ScreenChangeMaxSegments(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%d", SS.maxSegments);
+    ShowTextEditControl(47, 3, str);
+    SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
+}
+void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.3f", 1000*SS.cameraTangent);
+    ShowTextEditControl(53, 3, str);
+    SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    ShowTextEditControl(55, 3, str);
+    ShowTextEditControl(59, 3, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 void TextWindow::ShowConfiguration(void) {
@@ -598,23 +604,27 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
+    Printf(false, "%Ft edge color r,g,b (0,0,0 for no edges)%E");
+    Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
+        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
+        &ScreenChangeEdgeColor, 0);
+
+    Printf(false, "");
     Printf(false, "%Ft chord tolerance (in screen pixels)%E");
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
         SS.chordTol,
         &ScreenChangeChordTolerance, 0,
         SS.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
+    Printf(false, "%Ft max piecewise linear segments%E");
+    Printf(false, "%Ba    %d %Fl%Ll%f[change]%E",
+        SS.maxSegments,
+        &ScreenChangeMaxSegments);
 
     Printf(false, "");
     Printf(false, "%Ft perspective factor (0 for parallel)%E");
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
         &ScreenChangeCameraTangent, 0);
-
-    Printf(false, "");
-    Printf(false, "%Ft edge color r,g,b (0,0,0 for no edges)%E");
-    Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
-        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
-        &ScreenChangeEdgeColor, 0);
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1.0=mm, 25.4=inch)");
@@ -795,6 +805,11 @@ void TextWindow::EditControlDone(char *s) {
         }
         case EDIT_CHORD_TOLERANCE: {
             SS.chordTol = min(10, max(0.1, atof(s)));
+            SS.GenerateAll(0, INT_MAX);
+            break;
+        }
+        case EDIT_MAX_SEGMENTS: {
+            SS.maxSegments = min(1000, max(7, atoi(s)));
             SS.GenerateAll(0, INT_MAX);
             break;
         }

@@ -63,21 +63,27 @@ public:
     ShownState shown;
 
     static const int EDIT_NOTHING               = 0;
+    // For multiple groups
     static const int EDIT_TIMES_REPEATED        = 1;
     static const int EDIT_GROUP_NAME            = 2;
-    static const int EDIT_LIGHT_DIRECTION       = 3;
-    static const int EDIT_LIGHT_INTENSITY       = 4;
-    static const int EDIT_COLOR                 = 5;
-    static const int EDIT_CHORD_TOLERANCE       = 6;
-    static const int EDIT_CAMERA_TANGENT        = 7;
-    static const int EDIT_EDGE_COLOR            = 8;
-    static const int EDIT_EXPORT_SCALE          = 9;
+    // For the configuraiton screen
+    static const int EDIT_LIGHT_DIRECTION       = 10;
+    static const int EDIT_LIGHT_INTENSITY       = 11;
+    static const int EDIT_COLOR                 = 12;
+    static const int EDIT_CHORD_TOLERANCE       = 13;
+    static const int EDIT_MAX_SEGMENTS          = 14;
+    static const int EDIT_CAMERA_TANGENT        = 15;
+    static const int EDIT_EDGE_COLOR            = 16;
+    static const int EDIT_EXPORT_SCALE          = 17;
+    // For the helical sweep
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
     static const int EDIT_HELIX_DRADIUS         = 22;
-    static const int EDIT_TTF_TEXT              = 23;
-    static const int EDIT_STEP_DIM_FINISH       = 30;
-    static const int EDIT_STEP_DIM_STEPS        = 31;
+    // For TTF text
+    static const int EDIT_TTF_TEXT              = 30;
+    // For the step dimension screen
+    static const int EDIT_STEP_DIM_FINISH       = 40;
+    static const int EDIT_STEP_DIM_STEPS        = 41;
     struct {
         int         meaning;
         int         i;
@@ -145,6 +151,7 @@ public:
     static void ScreenChangeLightIntensity(int link, DWORD v);
     static void ScreenChangeColor(int link, DWORD v);
     static void ScreenChangeChordTolerance(int link, DWORD v);
+    static void ScreenChangeMaxSegments(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeEdgeColor(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);

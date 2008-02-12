@@ -39,6 +39,8 @@ void SolveSpace::Init(char *cmdLine) {
     lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
     // Chord tolerance
     chordTol = CnfThawFloat(2.0f, "ChordTolerance");
+    // Max pwl segments to generate
+    maxSegments = CnfThawDWORD(40, "MaxSegments");
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
@@ -95,6 +97,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
     // Chord tolerance
     CnfFreezeFloat((float)chordTol, "ChordTolerance");
+    // Max pwl segments to generate
+    CnfFreezeDWORD((DWORD)maxSegments, "MaxSegments");
     // Display/entry units
     CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
@@ -129,7 +133,7 @@ int SolveSpace::CircleSides(double r) {
     double tol = chordTol/GW.scale;
     int n = 3 + (int)(PI/sqrt(2*tol/r));
 
-    return max(7, min(n, 200));
+    return max(7, min(n, maxSegments));
 }
 
 char *SolveSpace::MmToString(double v) {
