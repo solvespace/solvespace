@@ -20,7 +20,7 @@ void Group::GeneratePolygon(void) {
     poly.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
-       type == ROTATE || type == TRANSLATE)
+       type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
         if(AssemblePolygon(&poly, &(polyError.notClosedAt))) {
             polyError.how = POLY_GOOD;
