@@ -46,7 +46,7 @@ sub LicenseKey {
     ProcessString($users);
     ProcessString($magic);
 
-    my $key = '±²³MechSketchLicense' . "\n";
+    my $key = '±²³SolveSpaceLicense' . "\n";
     $key .= $line1 . "\n";
     $key .= $line2 . "\n";
     $key .= $users . "\n";

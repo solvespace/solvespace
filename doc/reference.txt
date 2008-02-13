@@ -1,5 +1,5 @@
 
-This is a reference manual for MechSketch. This document is not intended
+This is a reference manual for SolveSpace. This document is not intended
 for new users; to learn about this program, see the video tutorials.
 
 <h2>General Navigation</h2>
@@ -114,7 +114,7 @@ for new users; to learn about this program, see the video tutorials.
     <h3>Show / Hide Entities</h3>
 
         As the sketch becomes more complex, it may be useful to hide
-        unnecessary information. MechSketch provides several different
+        unnecessary information. SolveSpace provides several different
         ways to do this.
 
         In the second and third line of the text window, links are
@@ -203,16 +203,16 @@ for new users; to learn about this program, see the video tutorials.
 
     <h3>Active Workplane</h3>
 
-        MechSketch represents all geometry in 3d; it's possible to draw
+        SolveSpace represents all geometry in 3d; it's possible to draw
         line segments anywhere, not just in some plane.
 
-        This freedom is not always useful, so MechSketch also makes
+        This freedom is not always useful, so SolveSpace also makes
         it possible to draw in a plane. If a workplane is active, then
         all entities that are drawn will be forced to lie that plane.
         The active workplane ("wrkpl") is indicated in the top line of
         the text window, at the right.
 
-        When MechSketch starts with a new empty file, a workplane parallel
+        When SolveSpace starts with a new empty file, a workplane parallel
         to the XY plane is active. To deactivate the workplane, and draw
         in 3d, choose Sketch -> Anywhere In 3d.
 
@@ -304,13 +304,13 @@ for new users; to learn about this program, see the video tutorials.
         is a fast way to draw closed polygons.
 
         To stop drawing line segments, press Escape, or right- or
-        center-click the mouse. MechSketch will also stop drawing new
+        center-click the mouse. SolveSpace will also stop drawing new
         line segments if an automatic constraint is inserted. (For
         example, draw a closed polygon by left-clicking repeatedly, and
         then hovering over the starting point before left-clicking the
         last time. The endpoint of the polyline will be constrained to
         lie on the starting point, and since a constraint was inserted,
-        MechSketch will stop drawing.)
+        SolveSpace will stop drawing.)
 
     <h3>Rectangle</h3>
 
@@ -423,7 +423,7 @@ for new users; to learn about this program, see the video tutorials.
         item will generate a diameter constraint if a circle is selected,
         but a length constraint if a line segment is selected. If the
         selected items do not correspond to an available constraint,
-        then MechSketch will display an error message, and a list of
+        then SolveSpace will display an error message, and a list of
         available constraints.
 
         Most constraints are available in both 3d and projected versions.
@@ -488,7 +488,7 @@ for new users; to learn about this program, see the video tutorials.
 
         <img src="/pics/ref-inconsistent.png" />
 
-        As a convenience, MechSketch calculates a list of constraints
+        As a convenience, SolveSpace calculates a list of constraints
         that could be removed to make the sketch consistent again. To
         see which constraints those are, hover the mouse over the links
         in the text window; the constraint will appear highlighted in
@@ -552,7 +552,7 @@ for new users; to learn about this program, see the video tutorials.
     <h3>Angle</h3>
 
         This constraint sets the angle between two vectors. A vector
-        is anything with a direction; in MechSketch, line segments and
+        is anything with a direction; in SolveSpace, line segments and
         normals are both vectors. (So the constraint could apply to
         two line segments, or to a line segment and a normal, or to two
         normals.) The angle constraint is available in both projected
@@ -574,7 +574,7 @@ for new users; to learn about this program, see the video tutorials.
         calculate the other three; so a sketch that specified more than
         one of those angles would be overconstrained, and fail to solve.)
 
-        When a new angle constraint is created, MechSketch chooses
+        When a new angle constraint is created, SolveSpace chooses
         arbitrarily which supplementary angle to constrain. An arc is
         drawn on the sketch, to indicate which angle was chosen. As the
         constraint label is dragged, the arc will follow.
@@ -986,7 +986,7 @@ for new users; to learn about this program, see the video tutorials.
 
     <h3>Import / Assemble</h3>
 
-        In MechSketch, there is no distinction between "part" files and
+        In SolveSpace, there is no distinction between "part" files and
         "assembly" files; it's always possible to import one file into
         another. An "assembly" is just a part file that imports one or
         more other parts.
@@ -1018,7 +1018,7 @@ for new users; to learn about this program, see the video tutorials.
         The interfering surfaces are also highlighted in the graphics
         window, in red with black stripes.
 
-        When an assembly file is loaded, MechSketch loads all of the
+        When an assembly file is loaded, SolveSpace loads all of the
         imported files as well. If the imported files are not available,
         then an error occurs. When transfering an assembly file to another
         computer, it's necessary to transfer all of the imported files
@@ -1028,7 +1028,7 @@ for new users; to learn about this program, see the video tutorials.
 
     <h3>Trace Point</h3>
 
-        MechSketch can draw a "trail" behind a point as it moves. This
+        SolveSpace can draw a "trail" behind a point as it moves. This
         is useful when designing mechanisms. The sketch shown below is
         a four-bar linkage:
 
@@ -1069,7 +1069,7 @@ for new users; to learn about this program, see the video tutorials.
         The dimension will be modified in multiple steps, and solved
         at each intermediate value. For example, consider a dimension
         that is now set to 10 degrees. The user steps this dimension to
-        30 degrees, in 10 steps. This means that MechSketch will solve
+        30 degrees, in 10 steps. This means that SolveSpace will solve
         at 12 degrees, then 14 degrees, then 16, and so on, until it
         reaches 30 degrees.
 
@@ -1142,7 +1142,7 @@ for new users; to learn about this program, see the video tutorials.
         the active workplane
 
             If a workplane is active, and nothing is selected when the
-            export command is chosen, then MechSketch will export any
+            export command is chosen, then SolveSpace will export any
             surfaces that are coplanar with the active workplane. The
             workplane's horizontal and vertical axes become the x and
             y axis in the DXF file.
@@ -1210,7 +1210,7 @@ for new users; to learn about this program, see the video tutorials.
 
     <h3>Chord Tolerance</h3>
 
-        MechSketch does not represent curved edges or surfaces exactly.
+        SolveSpace does not represent curved edges or surfaces exactly.
         Any curves are broken down into piecewise linear segments,
         and surfaces are represented as triangles.
 
@@ -1263,7 +1263,7 @@ for new users; to learn about this program, see the video tutorials.
         gives a better impression of depth. The disadvantage is that
         the perspective distorts the image, and may cause confusion.
 
-        By default, MechSketch displays a parallel projection. To display
+        By default, SolveSpace displays a parallel projection. To display
         a perspective projection, set the perspective factor to something
         other than zero. The distance from the "camera" to the model is
         equal to one thousand pixels divided by the perspective factor.
@@ -1287,7 +1287,7 @@ for new users; to learn about this program, see the video tutorials.
 
     <h3>Export Scale Factor</h3>
 
-        Internally, MechSketch represents lengths in millimeters. Before
+        Internally, SolveSpace represents lengths in millimeters. Before
         exporting geometry to an STL or DXF file, these lengths are
         divided by the export scale factor. This scale factor determines
         the units for the exported file.
@@ -1296,31 +1296,32 @@ for new users; to learn about this program, see the video tutorials.
         in millimeter units. If the scale factor is set equal to 25.4,
         then the exported files are in inch units, since 1 inch = 25.4 mm.
 
-        MechSketch works in a right-handed coordinate system. If the
+        SolveSpace works in a right-handed coordinate system. If the
         scale factor is negative, then the exported file will appear in
         a left-handed coordinate system (so that a right-handed screw
         thread will become left-handed).
 
 <h2>Licensing</h2>
 
-    As downloaded, MechSketch does not include a license key. This means
+    As downloaded, SolveSpace does not include a license key. This means
     that it cannot create files with more than six groups. Larger files
-    may be opened, but not modified. This light version of MechSketch
+    may be opened, but not modified. This light version of SolveSpace
     is intended for evaluation, but non-commercial / personal use is
     also permitted.
 
-    The licensed version of MechSketch can create files with an unlimited
+    The licensed version of SolveSpace can create files with an unlimited
     number of groups.
 
-    When a license is purchased, a license file ("mechsketch.key")
+    When a license is purchased, a license file ("solvespace.key")
     will be sent via email. To activate the license, save this file
-    somewhere on your computer. In MechSketch, choose Help -> Load
+    somewhere on your computer. In SolveSpace, choose Help -> Load
     License... A file dialog box will appear; select the license file.
 
     No license server or dongle is required, and licenses do not expire.
 
 
 
+ultra-simple
 angle bracket with gusset
 t slot table
 slotted box

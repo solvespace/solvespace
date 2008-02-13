@@ -537,7 +537,7 @@ void SolveSpace::LoadLicenseFile(char *filename) {
 
     char buf[100];
     fgets(buf, sizeof(buf), f);
-    char *str = "±²³MechSketchLicense";
+    char *str = "±²³SolveSpaceLicense";
     if(memcmp(buf, str, strlen(str)) != 0) {
         fclose(f);
         Error("This is not a license file,");
@@ -577,12 +577,12 @@ void SolveSpace::LoadLicenseFile(char *filename) {
 void SolveSpace::MenuHelp(int id) {
     switch(id) {
         case GraphicsWindow::MNU_WEBSITE:
-            OpenWebsite("http://www.mechsketch.com/helpmenu");
+            OpenWebsite("http://www.solvespace.com/helpmenu");
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is MechSketch version 0.1.\r\n\r\n"
-                  "For more information, see http://www.mechsketch.com/\r\n\r\n"
+            Message("This is SolveSpace version 0.1.\r\n\r\n"
+                  "For more information, see http://www.solvespace.com/\r\n\r\n"
                   "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
                   "Copyright 2008 Jonathan Westhues, All Rights Reserved.");
             break;

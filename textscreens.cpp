@@ -99,7 +99,7 @@ void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
     SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
 void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
-    OpenWebsite("http://www.mechsketch.com/txtlink");
+    OpenWebsite("http://www.solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
@@ -156,7 +156,7 @@ void TextWindow::ShowListOfGroups(void) {
     } else {
         Printf(false, "%Fx*** THIS SOFTWARE IS NOT LICENSED ***");
         Printf(false, "%Fx  eval / non-commercial use only");
-        Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.mechsketch.com/%E",
+        Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.solvespace.com/%E",
             &ScreenGoToWebsite);
     }
 }
