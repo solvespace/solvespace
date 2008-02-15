@@ -225,6 +225,15 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
+    SS.UndoRemember();
+
+    Group *g = SS.GetGroup(SS.TW.shown.group);
+    g->suppress = !(g->suppress);
+    SS.MarkGroupDirty(g->h);
+    SS.GenerateAll();
+    SS.GW.ClearSuper();
+}
 void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -412,8 +421,16 @@ void TextWindow::ShowGroupInfo(void) {
             Group::COMBINE_AS_ASSEMBLE,
             (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
     }
-    if(g->type == Group::IMPORTED && g->meshError.yes) {
-        Printf(false, "%Fx         the parts interfere!");
+    if(g->type == Group::IMPORTED) {
+        if(g->meshError.yes) {
+            Printf(false, "%Fx         the parts interfere!");
+        }
+        bool sup = g->suppress;
+        Printf(false, "%FtSUPPRESS%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeSuppress,
+            (sup ? "" : "yes"), (sup ? "yes" : ""),
+            &TextWindow::ScreenChangeSuppress,
+            (!sup ? "" : "no"), (!sup ? "no" : ""));
     }
 
     if(g->type == Group::EXTRUDE ||

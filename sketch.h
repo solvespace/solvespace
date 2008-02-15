@@ -94,6 +94,8 @@ public:
     hGroup      opA;
     hGroup      opB;
     bool        visible;
+    bool        suppress;
+
     bool        clean;
     bool        vvMeshClean;
     hEntity     activeWorkplane;

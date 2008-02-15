@@ -511,8 +511,9 @@ void Group::GenerateMesh(void) {
     runningMesh.Clear();
 
     // If this group contributes no new mesh, then our running mesh is the
-    // same as last time, no combining required.
-    if(thisMesh.l.n == 0) {
+    // same as last time, no combining required. Likewise if we have a mesh
+    // but it's suppressed.
+    if(thisMesh.l.n == 0 || suppress) {
         runningMesh.MakeFromCopy(PreviousGroupMesh());
         goto done;
     }
