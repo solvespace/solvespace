@@ -1321,11 +1321,28 @@ for new users; to learn about this program, see the video tutorials.
 
 
 
-ultra-simple
-angle bracket with gusset
-t slot table
-slotted box
-linkage
-inconsistent constraints
+This is the introductory tutorial. We review the basic user interface,
+and draw a simple 2d part. This covers rectangles, symmetry constraints,
+distance/length constraints, and equal length constraints.
+
+We draw a slightly more complex part, by combining multiple extrusions.
+This introduces workplanes and Boolean ops, and several new constraints.
+
+We look at constraints in more detail. This covers inconsistent
+and nonconverging sketches (two common error conditions), projected
+constraints in 3d, reference dimensions, and construction geometry.
+
+We look at step and repeat; this takes entities, and copies them multiple
+times along a line (translating) or the arc of a circle (rotating). The
+details of the step are specified using constraints.
+
+We build an assembly from multiple parts. The positions and orientations
+of the parts are enforced using constraints. We run a computed
+intersection check, to verify that the parts don't interfere.
+
+We draw linkages and other mechanisms, and simulate their operation using
+the constraint solver. The trajectory of certain points on the linkage
+is traced and exported. We also attach a linkage to a solid model,
+and animate the solid model by dragging the linkage.
 
 
