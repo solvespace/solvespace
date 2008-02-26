@@ -233,6 +233,18 @@ void Constraint::MenuConstrain(int id) {
                       "    * two circles or arcs (equal radius)\r\n");
                 return;
             }
+            if(c.type == EQUAL_ANGLE) {
+                // Infer the nearest supplementary angle from the sketch.
+                Vector a1 = SS.GetEntity(c.entityA)->VectorGetNum(),
+                       b1 = SS.GetEntity(c.entityB)->VectorGetNum(),
+                       a2 = SS.GetEntity(c.entityC)->VectorGetNum(),
+                       b2 = SS.GetEntity(c.entityD)->VectorGetNum();
+                double d1 = a1.Dot(b1), d2 = a2.Dot(b2);
+
+                if(d1*d2 < 0) {
+                    c.other = true;
+                }
+            }
             AddConstraint(&c);
             break;
 
@@ -477,13 +489,12 @@ void Constraint::MenuConstrain(int id) {
             Error("Must select a constraint with associated label.");
             return;
 
-        case GraphicsWindow::MNU_ANGLE:
+        case GraphicsWindow::MNU_ANGLE: {
             if(gs.vectors == 2 && gs.n == 2) {
                 c.type = ANGLE;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
                 c.valA = 0;
-                c.other = true;
             } else {
                 Error("Bad selection for angle constraint. This constraint "
                       "can apply to:\r\n\r\n"
@@ -492,9 +503,29 @@ void Constraint::MenuConstrain(int id) {
                       "    * two normals\r\n");
                 return;
             }
+
+            Entity *ea = SS.GetEntity(c.entityA), 
+                   *eb = SS.GetEntity(c.entityB);
+            if(ea->type == Entity::LINE_SEGMENT &&
+               eb->type == Entity::LINE_SEGMENT)
+            {
+                Vector a0 = SS.GetEntity(ea->point[0])->PointGetNum(),
+                       a1 = SS.GetEntity(ea->point[1])->PointGetNum(),
+                       b0 = SS.GetEntity(eb->point[0])->PointGetNum(),
+                       b1 = SS.GetEntity(eb->point[1])->PointGetNum();
+                if(a0.Equals(b0) || a1.Equals(b1)) {
+                    // okay, vectors should be drawn in same sense
+                } else if(a0.Equals(b1) || a1.Equals(b0)) {
+                    // vectors are in opposite sense
+                    c.other = true;
+                } else {
+                    // no shared point; not clear which intersection to draw
+                }
+            }
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
+        }
 
         case GraphicsWindow::MNU_PARALLEL:
             if(gs.vectors == 2 && gs.n == 2) {
