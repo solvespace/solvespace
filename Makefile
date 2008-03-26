@@ -1,7 +1,7 @@
 DEFINES = /D_WIN32_WINNT=0x400 /DISOLATION_AWARE_ENABLED /D_WIN32_IE=0x500 /DWIN32_LEAN_AND_MEAN /DWIN32
 CFLAGS  = /W3 /nologo -I..\common\win32 /O2 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /Zi /I.
 
-HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h
+HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h
 
 OBJDIR = obj
 
@@ -11,6 +11,7 @@ W32OBJS  = $(OBJDIR)\w32main.obj \
 
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\cmdline.obj \
+           $(OBJDIR)\graphicswin.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib

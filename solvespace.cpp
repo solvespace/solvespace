@@ -5,7 +5,9 @@ SolveSpace SS;
 void SolveSpace::Init(void) {
     TW.Init();
 
-    TW.Printf("She walks in beauty");
-    TW.Printf("like the night");
+    int i;
+    for(i = 0; i < 20; i++) {
+        TW.Printf("this is line number %d", i);
+    }
 }
 

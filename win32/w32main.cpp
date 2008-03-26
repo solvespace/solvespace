@@ -1,9 +1,13 @@
-#include "solvespace.h"
 #include <windows.h>
 #include <commctrl.h>
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "solvespace.h"
+
+#define FREEZE_SUBKEY "SolveSpace"
+#include "freeze.h"
 
 #define TEXT_HEIGHT 18
 #define TEXT_WIDTH  10
@@ -13,6 +17,9 @@ HINSTANCE Instance;
 HWND TextWnd, GraphicsWnd;
 HWND TextWndScrollBar;
 int TextWndScrollPos;
+int TextWndRows;
+
+HMENU SubMenus[100];
 
 int ClientIsSmallerBy;
 
@@ -32,15 +39,24 @@ static void PaintTextWnd(HDC hdc)
 {
     RECT rect;
     GetClientRect(TextWnd, &rect);
-    FillRect(hdc, &rect, (HBRUSH)GetStockObject(BLACK_BRUSH));
 
-    SelectObject(hdc, FixedFont);
-    SetTextColor(hdc, RGB(255, 255, 255));
-    SetBkColor(hdc, RGB(0, 0, 0));
+    // Set up the back-buffer
+    HDC backDc = CreateCompatibleDC(hdc);
+    int width = rect.right - rect.left;
+    int height = rect.bottom - rect.top;
+    HBITMAP backBitmap = CreateCompatibleBitmap(hdc, width, height);
+    SelectObject(backDc, backBitmap);
 
-    int h = rect.bottom - rect.top;
-    int rows = h / TEXT_HEIGHT;
+    HBRUSH hbr = CreateSolidBrush(SS.TW.COLOR_BG_DEFAULT);
+    FillRect(backDc, &rect, hbr);
+
+    SelectObject(backDc, FixedFont);
+    SetTextColor(backDc, SS.TW.COLOR_FG_DEFAULT);
+    SetBkColor(backDc, SS.TW.COLOR_BG_DEFAULT);
+
+    int rows = height / TEXT_HEIGHT;
     rows--;
+    TextWndRows = rows;
 
     // Let's set up the scroll bar first
     SCROLLINFO si;
@@ -62,12 +78,57 @@ static void PaintTextWnd(HDC hdc)
 
         for(c = 0; c < SS.TW.MAX_COLS; c++) {
             char v = '0' + (c % 10);
-            TextOut(hdc, 4 + c*TEXT_WIDTH, r*TEXT_HEIGHT,
+            TextOut(backDc, 4 + c*TEXT_WIDTH, (r-TextWndScrollPos)*TEXT_HEIGHT,
                                             (char *)&(SS.TW.text[rr][c]), 1);
         }
     }
 
-    TextOut(hdc, 4, rows*TEXT_HEIGHT, SS.TW.cmd, SS.TW.MAX_COLS);
+    SetTextColor(backDc, SS.TW.COLOR_FG_CMDLINE);
+    SetBkColor(backDc, SS.TW.COLOR_BG_CMDLINE);
+    TextOut(backDc, 4, rows*TEXT_HEIGHT, SS.TW.cmd, SS.TW.MAX_COLS);
+
+    HPEN cpen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+    SelectObject(backDc, cpen);
+    int y = (rows+1)*TEXT_HEIGHT - 3;
+    MoveToEx(backDc, 4+(SS.TW.cmdInsert*TEXT_WIDTH), y, NULL);
+    LineTo(backDc, 4+(SS.TW.cmdInsert*TEXT_WIDTH)+TEXT_WIDTH, y);
+
+    // And commit the back buffer
+    BitBlt(hdc, 0, 0, width, height, backDc, 0, 0, SRCCOPY);
+    DeleteObject(backBitmap);
+    DeleteObject(hbr);
+    DeleteObject(cpen);
+    DeleteDC(backDc);
+}
+
+void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
+{
+    int prevPos = TextWndScrollPos;
+    switch(LOWORD(wParam)) {
+        case SB_LINEUP:
+        case SB_PAGEUP:         TextWndScrollPos--; break;
+
+        case SB_LINEDOWN:
+        case SB_PAGEDOWN:       TextWndScrollPos++; break;
+
+        case SB_TOP:            TextWndScrollPos = 0; break;
+
+        case SB_BOTTOM:         TextWndScrollPos = SS.TW.rows; break;
+
+        case SB_THUMBTRACK:
+        case SB_THUMBPOSITION:  TextWndScrollPos = HIWORD(wParam); break;
+    }
+    TextWndScrollPos = max(0, TextWndScrollPos);
+    TextWndScrollPos = min(SS.TW.rows - TextWndRows, TextWndScrollPos);
+    if(prevPos != TextWndScrollPos) {
+        SCROLLINFO si;
+        si.cbSize = sizeof(si);
+        si.fMask = SIF_POS;
+        si.nPos = TextWndScrollPos;
+        SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
+
+        InvalidateRect(TextWnd, NULL, FALSE);
+    }
 }
 
 LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -105,12 +166,12 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             hc = (r->bottom - r->top) - ClientIsSmallerBy;
             extra = hc % TEXT_HEIGHT;
-            dbp("extra=%d", extra);
             break;
         }
 
         case WM_CHAR:
             SS.TW.KeyPressed(wParam);
+            HandleTextWindowScrollBar(SB_BOTTOM, 0);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
 
@@ -124,6 +185,11 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
         }
+
+        case WM_VSCROLL:
+            HandleTextWindowScrollBar(wParam, lParam);
+            break;
+
         default:
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
@@ -135,6 +201,13 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
     switch (msg) {
+        case WM_CHAR:
+            SS.TW.KeyPressed(wParam);
+            SetForegroundWindow(TextWnd);
+            HandleTextWindowScrollBar(SB_BOTTOM, 0);
+            InvalidateRect(TextWnd, NULL, FALSE);
+            break;
+
         case WM_CLOSE:
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -147,30 +220,76 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     return 1;
 }
 
+HMENU CreateGraphicsWindowMenus(void)
+{
+    HMENU top = CreateMenu();
+    HMENU m;
+
+    int i;
+    int subMenu = 0;
+    
+    for(i = 0; SS.GW.menu[i].level >= 0; i++) {
+        if(SS.GW.menu[i].level == 0) {
+            m = CreateMenu();
+            AppendMenu(top, MF_STRING | MF_POPUP, (UINT_PTR)m, 
+                                                        SS.GW.menu[i].label);
+
+            if(subMenu >= arraylen(SubMenus)) oops();
+            SubMenus[subMenu] = m;
+            subMenu++;
+        } else {
+            if(SS.GW.menu[i].label) {
+                AppendMenu(m, MF_STRING, SS.GW.menu[i].id, SS.GW.menu[i].label);
+            } else {
+                AppendMenu(m, MF_SEPARATOR, SS.GW.menu[i].id, "");
+            }
+        }
+    }
+
+    return top;
+}
+
 static void CreateMainWindows(void)
 {
     WNDCLASSEX wc;
 
-    // The text window, with a comand line and some textual information
-    // about the sketch.
     memset(&wc, 0, sizeof(wc));
     wc.cbSize = sizeof(wc);
+
+    // The graphics window, where the sketch is drawn and shown.
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC |
                           CS_DBLCLKS;
-    wc.lpfnWndProc      = (WNDPROC)TextWndProc;
-    wc.hInstance        = Instance;
+    wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName    = "TextWnd";
+    wc.lpszClassName    = "GraphicsWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon            = NULL;
     wc.hIconSm          = NULL;
     if(!RegisterClassEx(&wc)) oops();
 
-    TextWnd = CreateWindowEx(0, "TextWnd", "SolveSpace (Command Line)",
+    HMENU top = CreateGraphicsWindowMenus();
+    GraphicsWnd = CreateWindowEx(0, "GraphicsWnd", "SolveSpace (View Sketch)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX,
-        10, 10, 600, 300, NULL, (HMENU)NULL, Instance, NULL);
+        600, 300, 400, 400, NULL, top, Instance, NULL);
+    if(!GraphicsWnd) oops();
+
+
+    // The text window, with a comand line and some textual information
+    // about the sketch.
+    wc.lpfnWndProc      = (WNDPROC)TextWndProc;
+    wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.lpszClassName    = "TextWnd";
+    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+    if(!RegisterClassEx(&wc)) oops();
+
+    // We get the desired Alt+Tab behaviour by specifying that the text
+    // window is a child of the graphics window.
+    TextWnd = CreateWindowEx(0, 
+        "TextWnd", "SolveSpace (Command Line)",
+        WS_THICKFRAME | WS_CLIPCHILDREN,
+        10, 10, 600, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 
     TextWndScrollBar = CreateWindowEx(0, WC_SCROLLBAR, "", WS_CHILD |
@@ -179,22 +298,6 @@ static void CreateMainWindows(void)
     // Force the scrollbar to get resized to the window,
     TextWndProc(TextWnd, WM_SIZE, 0, 0);
 
-    ShowWindow(TextWnd, SW_SHOW);
-
-    // The graphics window, where the sketch is drawn and shown.
-    wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
-    wc.hInstance        = Instance;
-    wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName    = "GraphicsWnd";
-    if(!RegisterClassEx(&wc)) oops();
-
-    GraphicsWnd = CreateWindowEx(0, "GraphicsWnd", "SolveSpace (View Sketch)",
-        WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
-        WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX,
-        600, 300, 400, 400, NULL, (HMENU)NULL, Instance, NULL);
-    if(!GraphicsWnd) oops();
-
-    ShowWindow(GraphicsWnd, SW_SHOW);
 
     RECT r, rc;
     GetWindowRect(TextWnd, &r);
@@ -214,6 +317,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // the graphics
     CreateMainWindows();
 
+    ThawWindowPos(TextWnd);
+    ThawWindowPos(GraphicsWnd);
+
     // A monospaced font
     FixedFont = CreateFont(TEXT_HEIGHT-1, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -223,6 +329,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
+
+    ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
+    ShowWindow(GraphicsWnd, SW_SHOW);
    
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.
@@ -232,6 +341,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+    FreezeWindowPos(TextWnd);
+    FreezeWindowPos(GraphicsWnd);
 
     return 0;
 }

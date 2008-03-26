@@ -2,6 +2,11 @@
 #include <stdarg.h>
 
 void TextWindow::Init(void) {
+    ClearScreen();
+    ClearCommand();
+}
+
+void TextWindow::ClearScreen(void) {
     int i, j;
     for(i = 0; i < MAX_ROWS; i++) {
         for(j = 0; j < MAX_COLS; j++) {
@@ -10,7 +15,8 @@ void TextWindow::Init(void) {
             meta[i][j].link = NOT_A_LINK;
         }
     }
-    ClearCommand();
+    row0 = 0;
+    rows = 0;
 }
 
 void TextWindow::Printf(char *fmt, ...) {
@@ -35,6 +41,26 @@ void TextWindow::Printf(char *fmt, ...) {
     c = 0;
     while(*fmt) {
         if(*fmt == '%') {
+            fmt++;
+            if(*fmt == '\0') goto done;
+            switch(*fmt) {
+                case 's': {
+                    char *s = va_arg(vl, char *);
+                    memcpy(&(text[r][c]), s, strlen(s));
+                    c += strlen(s);
+                    break;
+                }
+                case 'd': {
+                    int v = va_arg(vl, int);
+                    sprintf((char *)&(text[r][c]), "%d", v);
+                    c += strlen((char *)&(text[r][c]));
+                    text[r][c] = ' ';
+                    break;
+                }
+                case '%':
+                    text[r][c++] = '%';
+                    break;
+            }
         } else {
             if(c >= MAX_COLS) goto done;
             text[r][c++] = *fmt;
@@ -54,8 +80,11 @@ void TextWindow::ClearCommand(void) {
     memcpy(cmd, "+> ", 3);
     cmdLen = 0;
     cmdInsert = 3;
-    row0 = 0;
-    rows = 0;
+}
+
+void TextWindow::ProcessCommand(char *cmd)
+{
+    Printf("command: '%s'", cmd);
 }
 
 void TextWindow::KeyPressed(int c) {
@@ -65,11 +94,15 @@ void TextWindow::KeyPressed(int c) {
     }
 
     if(c == '\n' || c == '\r') {
-        // process the command, and then
+        cmd[cmdLen+3] = '\0';
+        ProcessCommand(cmd+3);
+
         ClearCommand();
         return;
     } else if(c == 27) {
         ClearCommand();
+    } else if(c == 'l' - 'a' + 1) {
+        ClearScreen();
     } else if(c == '\b') {
         // backspace, delete from insertion point
         if(cmdInsert <= 3) return;
