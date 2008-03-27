@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <commctrl.h>
+#include <gl/gl.h> 
+#include <gl/glu.h> 
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -197,6 +199,40 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 1;
 }
 
+static HGLRC CreateGlContext(HDC hdc)
+{
+    PIXELFORMATDESCRIPTOR pfd;
+    int pixelFormat; 
+
+    memset(&pfd, 0, sizeof(pfd));
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); 
+    pfd.nVersion = 1; 
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |  
+                        PFD_DOUBLEBUFFER; 
+    pfd.dwLayerMask = PFD_MAIN_PLANE; 
+    pfd.iPixelType = PFD_TYPE_COLORINDEX; 
+    pfd.cColorBits = 8; 
+    pfd.cDepthBits = 16; 
+    pfd.cAccumBits = 0; 
+    pfd.cStencilBits = 0; 
+ 
+    pixelFormat = ChoosePixelFormat(hdc, &pfd); 
+    if(!pixelFormat) oops();
+ 
+    if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
+
+    HGLRC hgrc = wglCreateContext(hdc); 
+    wglMakeCurrent(hdc, hgrc); 
+
+    return hgrc;
+}
+
+void Invalidate(void)
+{
+    InvalidateRect(GraphicsWnd, NULL, FALSE);
+    InvalidateRect(TextWnd, NULL, FALSE);
+}
+
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
@@ -207,6 +243,64 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             HandleTextWindowScrollBar(SB_BOTTOM, 0);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
+
+        case WM_ERASEBKGND:
+            break;
+
+        case WM_SIZE:
+            InvalidateRect(GraphicsWnd, NULL, FALSE);
+            break;
+
+        case WM_PAINT: {
+            InvalidateRect(GraphicsWnd, NULL, FALSE);
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+
+            HGLRC hgrc = CreateGlContext(hdc);
+
+            RECT r;
+            GetClientRect(GraphicsWnd, &r);
+            int w = r.right - r.left;
+            int h = r.bottom - r.top;
+
+            SS.GW.Paint(w, h);
+    
+            SwapBuffers(hdc);
+
+            wglMakeCurrent(NULL, NULL);
+            wglDeleteContext(hgrc);
+
+            EndPaint(hwnd, &ps);
+            break;
+        }
+
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_MBUTTONDOWN: {
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+
+            RECT r;
+            GetClientRect(GraphicsWnd, &r);
+            x = x - (r.right - r.left)/2;
+            y = (r.bottom - r.top)/2 - y;
+
+            if(msg == WM_LBUTTONDOWN) {
+                SS.GW.MouseLeftDown(x, y);
+            } else if(msg == WM_MBUTTONDOWN) {
+                SS.GW.MouseMiddleDown(x, y);
+            } else if(msg == WM_MOUSEMOVE) {
+                SS.GW.MouseMoved(x, y,
+                    !!(wParam & MK_LBUTTON),
+                    !!(wParam & MK_MBUTTON),
+                    !!(wParam & MK_RBUTTON),
+                    !!(wParam & MK_SHIFT),
+                    !!(wParam & MK_CONTROL));
+            } else {
+                oops();
+            }
+            break;
+        }
 
         case WM_CLOSE:
         case WM_DESTROY:
@@ -260,7 +354,7 @@ static void CreateMainWindows(void)
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC |
                           CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
-    wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1); 
     wc.lpszClassName    = "GraphicsWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
@@ -271,8 +365,8 @@ static void CreateMainWindows(void)
     HMENU top = CreateGraphicsWindowMenus();
     GraphicsWnd = CreateWindowEx(0, "GraphicsWnd", "SolveSpace (View Sketch)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
-        WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX,
-        600, 300, 400, 400, NULL, top, Instance, NULL);
+        WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
+        600, 300, 200, 200, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
 
 

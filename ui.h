@@ -64,16 +64,26 @@ typedef struct {
     // coordinates of the 3d sketch points. We will use an axonometric
     // projection.
     Vector  offset;
-    double  scale;
     Vector  projRight;
     Vector  projDown;
+    double  scale;
+    struct {
+        Vector  offset;
+        Vector  projRight;
+        Vector  projDown;
+        Point2d mouse;
+    }       orig;
+
+    void Init(void);
+    void NormalizeProjectionVectors(void);
 
     // These are called by the platform-specific code.
-    void Paint(void);
+    void Paint(int w, int h);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
-                                        bool rightDown);
-    void MouseLeftClick(double x, double y);
+                                bool rightDown, bool shiftDown, bool ctrlDown);
+    void MouseLeftDown(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
+    void MouseMiddleDown(double x, double y);
     void MouseScroll(int delta);
 } GraphicsWindow;
 

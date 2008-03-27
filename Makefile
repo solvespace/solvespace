@@ -12,9 +12,10 @@ W32OBJS  = $(OBJDIR)\w32main.obj \
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\cmdline.obj \
            $(OBJDIR)\graphicswin.obj \
+           $(OBJDIR)\util.obj \
 
 
-LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib
+LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib
 
 all: $(OBJDIR)/solvespace.exe
     @cp $(OBJDIR)/solvespace.exe .

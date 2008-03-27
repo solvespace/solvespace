@@ -1,5 +1,9 @@
-#include "solvespace.h"
 #include <stdarg.h>
+#include <windows.h>
+#include <gl/gl.h>
+#include <gl/glu.h>
+
+#include "solvespace.h"
 
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
     { 0, "&File",                           0,                          NULL },
@@ -32,4 +36,100 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
     { 1, "&About\t",                        0,                          NULL },
     { -1 },
 };
+
+void GraphicsWindow::Init(void) {
+    offset.x = offset.y = offset.z = 0.9;
+    scale = 1;
+    projRight.x = 1; projRight.y = projRight.z = 0;
+    projDown.y = 1; projDown.z = projDown.x = 0;
+
+}
+
+void GraphicsWindow::NormalizeProjectionVectors(void) {
+    Vector norm = projRight.Cross(projDown);
+    projDown = norm.Cross(projRight);
+
+    projDown = projDown.ScaledBy(1/projDown.Magnitude());
+    projRight = projRight.ScaledBy(1/projRight.Magnitude());
+}
+
+void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
+            bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
+{
+    if(middleDown) {
+        double dx = (x - orig.mouse.x) / scale;
+        double dy = (y - orig.mouse.y) / scale;
+
+        if(shiftDown) {
+            offset.x = orig.offset.x + dx*projRight.x + dy*projDown.x;
+            offset.y = orig.offset.y + dx*projRight.y + dy*projDown.y;
+            offset.z = orig.offset.z + dx*projRight.z + dy*projDown.z;
+        } else if(ctrlDown) {
+            double theta = atan2(orig.mouse.y, orig.mouse.x);
+            theta -= atan2(y, x);
+
+            Vector normal = orig.projRight.Cross(orig.projDown);
+            projRight = orig.projRight.RotatedAbout(normal, theta);
+            projDown = orig.projDown.RotatedAbout(normal, theta);
+
+            NormalizeProjectionVectors();
+        } else {
+            double s = 0.3*(PI/180); // degrees per pixel
+            projRight = orig.projRight.RotatedAbout(orig.projDown, -s*dx);
+            projDown = orig.projDown.RotatedAbout(orig.projRight, s*dy);
+
+            NormalizeProjectionVectors();
+
+            orig.projRight = projRight;
+            orig.projDown = projDown;
+            orig.mouse.x = x;
+            orig.mouse.y = y;
+        }
+
+        Invalidate();
+    }
+}
+
+void GraphicsWindow::MouseMiddleDown(double x, double y) {
+    orig.offset = offset;
+    orig.projDown = projDown;
+    orig.projRight = projRight;
+    orig.mouse.x = x;
+    orig.mouse.y = y;
+}
+
+void GraphicsWindow::MouseLeftDown(double x, double y) {
+}
+
+void GraphicsWindow::Paint(int w, int h) {
+    glViewport(0, 0, w, h);
+
+    glMatrixMode(GL_PROJECTION); 
+    glLoadIdentity();
+
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity();
+
+    glScaled(scale*2.0/w, scale*2.0/h, 0);
+
+    double tx = projRight.Dot(offset);
+    double ty = projDown.Dot(offset);
+    double mat[16];
+    MakeMatrix(mat, projRight.x,    projRight.y,    projRight.z,    tx,
+                    projDown.x,     projDown.y,     projDown.z,     ty,
+                    0,              0,              0,              0,
+                    0,              0,              0,              1);
+    glMultMatrixd(mat);
+
+    glEnable(GL_DEPTH_TEST); 
+
+    glClearIndex((GLfloat)0);
+    glClearDepth(1.0); 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+
+    GLUquadricObj *quadObj; 
+    quadObj = gluNewQuadric(); 
+    gluQuadricDrawStyle(quadObj, GLU_LINE); 
+    gluSphere(quadObj, 300, 4, 4);
+}
 

@@ -4,6 +4,7 @@ SolveSpace SS;
 
 void SolveSpace::Init(void) {
     TW.Init();
+    GW.Init();
 
     int i;
     for(i = 0; i < 20; i++) {
