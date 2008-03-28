@@ -1,6 +1,16 @@
 #include "solvespace.h"
 #include <stdarg.h>
 
+const TextWindow::Color TextWindow::colors[] = {
+    { COLOR_FG_DEFAULT,         COLOR_BG_DEFAULT,   },  // 0
+    { RGB(255,  40,  40),       COLOR_BG_DEFAULT,   },  // 1
+    { RGB(255, 255,   0),       COLOR_BG_DEFAULT,   },  // 2
+    { RGB( 40, 255,  40),       COLOR_BG_DEFAULT,   },  // 3
+    { RGB(  0, 255, 255),       COLOR_BG_DEFAULT,   },  // 4
+    { RGB(140, 140, 255),       COLOR_BG_DEFAULT,   },  // 5
+    { RGB(255,   0, 255),       COLOR_BG_DEFAULT,   },  // 6
+};
+
 void TextWindow::Init(void) {
     ClearScreen();
     ClearCommand();
@@ -37,34 +47,77 @@ void TextWindow::Printf(char *fmt, ...) {
     }
 
     int color = COLOR_NORMAL;
+    int link = NOT_A_LINK;
+    DWORD data = 0;
+    LinkFunction *f = NULL;
 
     c = 0;
     while(*fmt) {
+        char buf[1024];
+
         if(*fmt == '%') {
             fmt++;
             if(*fmt == '\0') goto done;
+            strcpy(buf, "");
             switch(*fmt) {
-                case 's': {
-                    char *s = va_arg(vl, char *);
-                    memcpy(&(text[r][c]), s, strlen(s));
-                    c += strlen(s);
-                    break;
-                }
                 case 'd': {
                     int v = va_arg(vl, int);
-                    sprintf((char *)&(text[r][c]), "%d", v);
-                    c += strlen((char *)&(text[r][c]));
-                    text[r][c] = ' ';
+                    sprintf(buf, "%d", v);
                     break;
                 }
+                case 'x': {
+                    DWORD v = va_arg(vl, DWORD);
+                    sprintf(buf, "%08x", v);
+                    break;
+                }
+                case 's': {
+                    char *s = va_arg(vl, char *);
+                    memcpy(buf, s, min(sizeof(buf), strlen(s)+1));
+                    break;
+                }
+                case 'E':
+                    color = COLOR_NORMAL;
+                    link = NOT_A_LINK;
+                    data = 0;
+                    f = NULL;
+                    break;
+
+                case 'C':
+                    if(fmt[1] == '\0') goto done;
+                    fmt++;
+                    color = *fmt - '0';
+                    if(color < 0 || color >= arraylen(colors)) color = 0;
+                    break;
+
+                case 'L':
+                    if(fmt[1] == '\0') goto done;
+                    fmt++;
+                    link = *fmt;
+                    break;
+
+                case 'D':
+                    data = va_arg(vl, DWORD);
+                    break;
+                    
                 case '%':
-                    text[r][c++] = '%';
+                    strcpy(buf, "%");
                     break;
             }
         } else {
-            if(c >= MAX_COLS) goto done;
-            text[r][c++] = *fmt;
+            buf[0] = *fmt;
+            buf[1]= '\0';
         }
+
+        for(unsigned i = 0; i < strlen(buf); i++) {
+            if(c >= MAX_COLS) goto done;
+            text[r][c] = buf[i];
+            meta[r][c].color = color;
+            meta[r][c].link = link;
+            meta[r][c].data = data;
+            meta[r][c].f = f;
+            c++;
+        }
+
         fmt++;
     }
 
@@ -84,7 +137,7 @@ void TextWindow::ClearCommand(void) {
 
 void TextWindow::ProcessCommand(char *cmd)
 {
-    Printf("command: '%s'", cmd);
+    Printf("%C2command:%E '%s' done %C3(green)%E %C5%LaLink%E", cmd);
 }
 
 void TextWindow::KeyPressed(int c) {

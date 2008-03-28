@@ -2,57 +2,67 @@
 #ifndef __SKETCH_H
 #define __SKETCH_H
 
-typedef struct hRequestTag hRequest;
-typedef struct hEntityTag hEntity;
-typedef struct hPointTag hPoint;
-typedef struct hParamTag hParam;
+class hEntity;
+class hPoint;
+class hRequest;
+class hParam;
 
-typedef struct hRequestTag {
+class hRequest {
+public:
     int     v;
 
     hEntity entity(int i);
-} hRequest;
+};
 
-typedef struct {
+class Request {
+public:
     static const int REQUEST_LINE_SEGMENT                       = 0;
     static const int REQUEST_STEP_REPEAT_TRANSLATE              = 1;
     static const int REQUEST_STEP_REPEAT_TRANSLATE_SYM          = 2;
     int         type;
 
     hRequest    h;
-} Request;
+};
 
-typedef struct hEntityTag {
+class hEntity {
+public:
     int     v;
 
     hRequest request(int i);
     hPoint point(int i);
-} hEntity;
+};
 
-typedef struct {
+class Entity {
+public:
     static const int ENTITY_LINE_SEGMENT                        = 0;
     static const int ENTITY_PWL_SEGMENT                         = 1;
     int         type;
 
     hEntity     h;
-} Entity;
+};
 
-typedef struct hPointTag {
-} hPoint;
+class hPoint {
+public:
+    int     v;
+};
 
-typedef struct {
+class Point {
+public:
     
     hPoint      h;
-} Point;
+};
 
-typedef struct hParamTag {
-} hParam;
+class hParam {
+public:
+    int         v;
+};
 
-typedef struct {
+class Param {
+public:
     double      val;
 
     hParam      h;
-} Param;
+};
 
 #endif
 

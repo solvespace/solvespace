@@ -127,9 +127,17 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    GLUquadricObj *quadObj; 
-    quadObj = gluNewQuadric(); 
-    gluQuadricDrawStyle(quadObj, GLU_LINE); 
-    gluSphere(quadObj, 300, 4, 4);
+    glBegin(GL_QUADS);
+        glVertex3f(-200, -200, 0);
+        glVertex3f(-200,  200, 0);
+        glVertex3f( 200,  200, 0);
+        glVertex3f( 200, -200, 0);
+    glEnd();
+    glBegin(GL_QUADS);
+        glVertex3f(-200, -200, 200);
+        glVertex3f(-200,  200, 200);
+        glVertex3f( 200,  200, 200);
+        glVertex3f( 200, -200, 200);
+    glEnd();
 }
 

@@ -2,6 +2,17 @@
 #ifndef __SOLVESPACE_H
 #define __SOLVESPACE_H
 
+// Debugging functions
+#define oops() do { dbp("oops at line %d, file %s", __LINE__, __FILE__); \
+                                                        exit(-1); } while(0)
+#ifndef min
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#endif
+#ifndef max
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#endif
+
+void dbp(char *str, ...);
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -10,10 +21,6 @@
 #include "ui.h"
 #include "sketch.h"
 
-// Debugging functions
-#define oops() do { dbp("oops at line %d, file %s", __LINE__, __FILE__); \
-                                                        exit(-1); } while(0)
-void dbp(char *str, ...);
 void Invalidate(void);
 
 
@@ -26,7 +33,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 
 
-typedef struct {
+class SolveSpace {
+public:
     TextWindow                  TW;
     GraphicsWindow              GW;
 
@@ -36,7 +44,7 @@ typedef struct {
     IdList<Param,hParam>        param;
 
     void Init(void);
-} SolveSpace;
+};
 
 extern SolveSpace SS;
 

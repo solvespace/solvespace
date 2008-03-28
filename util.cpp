@@ -24,8 +24,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 }
 
 
-Vector Vector::Cross(Vector b)
-{
+Vector Vector::Cross(Vector b) {
     Vector r;
 
     r.x = -(z*b.y) + (y*b.z);
@@ -35,13 +34,11 @@ Vector Vector::Cross(Vector b)
     return r;
 }
 
-double Vector::Dot(Vector b)
-{
+double Vector::Dot(Vector b) {
     return (x*b.x + y*b.y + z*b.z);
 }
 
-Vector Vector::RotatedAbout(Vector axis, double theta)
-{
+Vector Vector::RotatedAbout(Vector axis, double theta) {
     double c = cos(theta);
     double s = sin(theta);
 
@@ -62,13 +59,11 @@ Vector Vector::RotatedAbout(Vector axis, double theta)
     return r;
 }
 
-double Vector::Magnitude(void)
-{
+double Vector::Magnitude(void) {
     return sqrt(x*x + y*y + z*z);
 }
 
-Vector Vector::ScaledBy(double v)
-{
+Vector Vector::ScaledBy(double v) {
     Vector r;
 
     r.x = x * v;
@@ -77,4 +72,3 @@ Vector Vector::ScaledBy(double v)
 
     return r;
 }
-

@@ -2,9 +2,10 @@
 #ifndef __UI_H
 #define __UI_H
 
-typedef struct {
-    static const int MAX_COLS = 200;
-    static const int MAX_ROWS = 500;
+class TextWindow {
+public:
+    static const int MAX_COLS = 150;
+    static const int MAX_ROWS = 300;
 
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
@@ -13,6 +14,12 @@ typedef struct {
     static const int COLOR_FG_DEFAULT       = RGB(255, 255, 255);
     static const int COLOR_BG_CMDLINE       = RGB(  0,  20,  80);
     static const int COLOR_FG_CMDLINE       = RGB(255, 255, 255);
+
+    typedef struct {
+        int     fg;
+        int     bg;
+    } Color;
+    static const Color colors[];
 
     // The line with the user-typed command, that is currently being edited.
     char    cmd[MAX_COLS];
@@ -27,10 +34,12 @@ typedef struct {
     static const int COLOR_NORMAL   = 0;
 
     BYTE    text[MAX_ROWS][MAX_COLS];
+    typedef void LinkFunction(int link, DWORD v);
     struct {
-        int     color;
-        int     link;
-        DWORD   data;
+        int             color;
+        int             link;
+        DWORD           data;
+        LinkFunction   *f;
     }       meta[MAX_ROWS][MAX_COLS];
 
     int row0, rows;
@@ -46,9 +55,10 @@ typedef struct {
     // These are called by the platform-specific code.
     void KeyPressed(int c);
     bool IsHyperlink(int width, int height);
-} TextWindow;
+};
 
-typedef struct {
+class GraphicsWindow {
+public:
     // This table describes the top-level menus in the graphics winodw.
     typedef void MenuHandler(int id);
     typedef struct {
@@ -85,7 +95,7 @@ typedef struct {
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleDown(double x, double y);
     void MouseScroll(int delta);
-} GraphicsWindow;
+};
 
 
 #endif

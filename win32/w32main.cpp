@@ -25,7 +25,7 @@ HMENU SubMenus[100];
 
 int ClientIsSmallerBy;
 
-HFONT FixedFont;
+HFONT FixedFont, LinkFont;
 
 void dbp(char *str, ...)
 {
@@ -80,6 +80,15 @@ static void PaintTextWnd(HDC hdc)
 
         for(c = 0; c < SS.TW.MAX_COLS; c++) {
             char v = '0' + (c % 10);
+            int color = SS.TW.meta[rr][c].color;
+            SetTextColor(backDc, SS.TW.colors[color].fg);
+            SetBkColor(backDc, SS.TW.colors[color].bg);
+
+            if(SS.TW.meta[rr][c].link) {
+                SelectObject(backDc, LinkFont);
+            } else {
+                SelectObject(backDc, FixedFont);
+            }
             TextOut(backDc, 4 + c*TEXT_WIDTH, (r-TextWndScrollPos)*TEXT_HEIGHT,
                                             (char *)&(SS.TW.text[rr][c]), 1);
         }
@@ -107,11 +116,11 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
 {
     int prevPos = TextWndScrollPos;
     switch(LOWORD(wParam)) {
-        case SB_LINEUP:
-        case SB_PAGEUP:         TextWndScrollPos--; break;
+        case SB_LINEUP:         TextWndScrollPos--; break;
+        case SB_PAGEUP:         TextWndScrollPos -= 4; break;
 
-        case SB_LINEDOWN:
-        case SB_PAGEDOWN:       TextWndScrollPos++; break;
+        case SB_LINEDOWN:       TextWndScrollPos++; break;
+        case SB_PAGEDOWN:       TextWndScrollPos += 4; break;
 
         case SB_TOP:            TextWndScrollPos = 0; break;
 
@@ -168,6 +177,30 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             hc = (r->bottom - r->top) - ClientIsSmallerBy;
             extra = hc % TEXT_HEIGHT;
+            break;
+        }
+
+        case WM_LBUTTONDOWN:
+        case WM_MOUSEMOVE: {
+            int x = LOWORD(lParam);
+            int y = HIWORD(lParam);
+
+            // Find the corresponding character in the text buffer
+            int r = (y / TEXT_HEIGHT);
+            int c = (x / TEXT_WIDTH);
+            if(msg == WM_MOUSEMOVE && r >= TextWndRows) {
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                break;
+            }
+            r += TextWndScrollPos;
+
+            if(msg == WM_MOUSEMOVE) {
+                if(SS.TW.meta[r][c].link) {
+                    SetCursor(LoadCursor(NULL, IDC_HAND));
+                } else {
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
+                }
+            }
             break;
         }
 
@@ -230,7 +263,6 @@ static HGLRC CreateGlContext(HDC hdc)
 void Invalidate(void)
 {
     InvalidateRect(GraphicsWnd, NULL, FALSE);
-    InvalidateRect(TextWnd, NULL, FALSE);
 }
 
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -375,7 +407,7 @@ static void CreateMainWindows(void)
     wc.lpfnWndProc      = (WNDPROC)TextWndProc;
     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName    = "TextWnd";
-    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+    wc.hCursor          = NULL;
     if(!RegisterClassEx(&wc)) oops();
 
     // We get the desired Alt+Tab behaviour by specifying that the text
@@ -418,8 +450,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     FixedFont = CreateFont(TEXT_HEIGHT-1, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
+    LinkFont = CreateFont(TEXT_HEIGHT-1, TEXT_WIDTH, 0, 0, FW_REGULAR, TRUE,
+        TRUE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
     if(!FixedFont)
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
+    if(!LinkFont)
+        LinkFont = (HFONT)GetStockObject(SYSTEM_FONT);
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
