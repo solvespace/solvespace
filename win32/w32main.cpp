@@ -16,12 +16,16 @@
 
 HINSTANCE Instance;
 
-HWND TextWnd, GraphicsWnd;
+HWND TextWnd;
 HWND TextWndScrollBar;
 int TextWndScrollPos;
 int TextWndRows;
 
+HWND GraphicsWnd;
 HMENU SubMenus[100];
+struct {
+    int x, y;
+} LastMousePos;
 
 int ClientIsSmallerBy;
 
@@ -203,7 +207,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             break;
         }
-
+        
         case WM_CHAR:
             SS.TW.KeyPressed(wParam);
             HandleTextWindowScrollBar(SB_BOTTOM, 0);
@@ -317,6 +321,9 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             x = x - (r.right - r.left)/2;
             y = (r.bottom - r.top)/2 - y;
 
+            LastMousePos.x = x;
+            LastMousePos.y = y;
+
             if(msg == WM_LBUTTONDOWN) {
                 SS.GW.MouseLeftDown(x, y);
             } else if(msg == WM_MBUTTONDOWN) {
@@ -331,6 +338,11 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             } else {
                 oops();
             }
+            break;
+        }
+        case WM_MOUSEWHEEL: {
+            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
+            SS.GW.MouseScroll(LastMousePos.x, LastMousePos.y, delta);
             break;
         }
 

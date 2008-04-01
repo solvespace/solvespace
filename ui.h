@@ -62,14 +62,15 @@ public:
     // This table describes the top-level menus in the graphics winodw.
     typedef void MenuHandler(int id);
     typedef struct {
-        int         level;          // 0 == on menu bar, 1 == one level down, ...
+        int         level;          // 0 == on menu bar, 1 == one level down
         char       *label;          // or NULL for a separator
         int         id;             // unique ID
         MenuHandler *fn;
     } MenuEntry;
     static const MenuEntry menu[];
 
-
+    // The width and height (in pixels) of the window.
+    double width, height;
     // These parameters define the map from 2d screen coordinates to the
     // coordinates of the 3d sketch points. We will use an axonometric
     // projection.
@@ -94,7 +95,7 @@ public:
     void MouseLeftDown(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleDown(double x, double y);
-    void MouseScroll(int delta);
+    void MouseScroll(double x, double y, int delta);
 };
 
 

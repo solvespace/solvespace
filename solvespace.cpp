@@ -15,8 +15,15 @@ void SolveSpace::Init(void) {
     point.Clear();
     param.Clear();
 
+    // The sketch starts with three requests, for three datum planes.
+    Request n;
+    n.type = Request::FOR_PLANE;
+    req.AddById(&n, Request::HREQUEST_DATUM_PLANE_XY);
+    req.AddById(&n, Request::HREQUEST_DATUM_PLANE_YZ);
+    req.AddById(&n, Request::HREQUEST_DATUM_PLANE_ZX);
+
     int i;
-    for(i = 0; i < 20; i++) {
+    for(i = 0; i < 10; i++) {
         TW.Printf("this is line number %d", i);
     }
 }

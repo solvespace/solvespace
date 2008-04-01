@@ -9,13 +9,19 @@ class Vector {
 public:
     double x, y, z;
 
+    Vector Plus(Vector b);
+    Vector Minus(Vector b);
+    Vector Negated(void);
     Vector Cross(Vector b);
-    double Vector::Dot(Vector b);
+    double Dot(Vector b);
+    Vector Normal(int which);
     Vector RotatedAbout(Vector axis, double theta);
     double Magnitude(void);
     Vector ScaledBy(double v);
 
 };
+void glVertex3v(Vector u);
+
 
 class Point2d {
 public:

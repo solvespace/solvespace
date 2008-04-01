@@ -1,7 +1,4 @@
 #include <stdarg.h>
-#include <windows.h>
-#include <gl/gl.h>
-#include <gl/glu.h>
 
 #include "solvespace.h"
 
@@ -101,7 +98,31 @@ void GraphicsWindow::MouseMiddleDown(double x, double y) {
 void GraphicsWindow::MouseLeftDown(double x, double y) {
 }
 
+void GraphicsWindow::MouseScroll(double x, double y, int delta) {
+    double offsetRight = offset.Dot(projRight);
+    double offsetDown = offset.Dot(projDown);
+
+    double righti = x/scale - offsetRight;
+    double downi = y/scale - offsetDown;
+
+    if(delta > 0) {
+        scale *= 1.3;
+    } else {
+        scale /= 1.3;
+    }
+
+    double rightf = x/scale - offsetRight;
+    double downf = y/scale - offsetDown;
+
+    offset = offset.Plus(projRight.ScaledBy(rightf - righti));
+    offset = offset.Plus(projDown.ScaledBy(downf - downi));
+
+    Invalidate();
+}
+
 void GraphicsWindow::Paint(int w, int h) {
+    width = w; height = h;
+
     glViewport(0, 0, w, h);
 
     glMatrixMode(GL_PROJECTION); 
@@ -127,17 +148,7 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    glBegin(GL_QUADS);
-        glVertex3f(-200, -200, 0);
-        glVertex3f(-200,  200, 0);
-        glVertex3f( 200,  200, 0);
-        glVertex3f( 200, -200, 0);
-    glEnd();
-    glBegin(GL_QUADS);
-        glVertex3f(-200, -200, 200);
-        glVertex3f(-200,  200, 200);
-        glVertex3f( 200,  200, 200);
-        glVertex3f( 200, -200, 200);
-    glEnd();
+    Entity e;
+    e.Draw();
 }
 

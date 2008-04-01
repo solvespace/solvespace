@@ -17,6 +17,10 @@ void dbp(char *str, ...);
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <windows.h> // required for GL stuff
+#include <gl/gl.h>
+#include <gl/glu.h>
+
 #include "dsc.h"
 #include "ui.h"
 #include "sketch.h"

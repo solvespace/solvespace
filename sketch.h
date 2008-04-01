@@ -6,6 +6,7 @@ class hEntity;
 class hPoint;
 class hRequest;
 class hParam;
+class hGroup;
 
 class hRequest {
 public:
@@ -16,9 +17,11 @@ public:
 
 class Request {
 public:
-    static const int REQUEST_LINE_SEGMENT                       = 0;
-    static const int REQUEST_STEP_REPEAT_TRANSLATE              = 1;
-    static const int REQUEST_STEP_REPEAT_TRANSLATE_SYM          = 2;
+    static const hRequest   HREQUEST_DATUM_PLANE_XY,
+                            HREQUEST_DATUM_PLANE_YZ,
+                            HREQUEST_DATUM_PLANE_ZX;
+
+    static const int FOR_PLANE                  = 0;
     int         type;
 
     hRequest    h;
@@ -34,11 +37,12 @@ public:
 
 class Entity {
 public:
-    static const int ENTITY_LINE_SEGMENT                        = 0;
-    static const int ENTITY_PWL_SEGMENT                         = 1;
+    static const int ENTITY_PLANE                               = 0;
     int         type;
 
     hEntity     h;
+
+    void Draw(void);
 };
 
 class hPoint {

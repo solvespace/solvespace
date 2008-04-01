@@ -23,6 +23,35 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
+Vector Vector::Plus(Vector b) {
+    Vector r;
+
+    r.x = x + b.x;
+    r.y = y + b.y;
+    r.z = z + b.z;
+
+    return r;
+}
+
+Vector Vector::Minus(Vector b) {
+    Vector r;
+
+    r.x = x - b.x;
+    r.y = y - b.y;
+    r.z = z - b.z;
+
+    return r;
+}
+
+Vector Vector::Negated(void) {
+    Vector r;
+
+    r.x = -x;
+    r.y = -y;
+    r.z = -z;
+
+    return r;
+}
 
 Vector Vector::Cross(Vector b) {
     Vector r;
@@ -36,6 +65,42 @@ Vector Vector::Cross(Vector b) {
 
 double Vector::Dot(Vector b) {
     return (x*b.x + y*b.y + z*b.z);
+}
+
+Vector Vector::Normal(int which) {
+    Vector n;
+
+    // Arbitrarily choose one vector that's normal to us, pivoting
+    // appropriately.
+    double xa = fabs(x), ya = fabs(y), za = fabs(z);
+    double minc = min(min(xa, ya), za);
+    if(minc == xa) {
+        n.x = 0;
+        n.y = z;
+        n.z = -y;
+    } else if(minc == ya) {
+        n.y = 0;
+        n.z = x;
+        n.x = -z;
+    } else if(minc == za) {
+        n.z = 0;
+        n.x = y;
+        n.y = -x;
+    } else {
+        oops();
+    }
+
+    if(which == 0) {
+        // That's the vector we return.
+    } else if(which == 1) {
+        n = this->Cross(n);
+    } else {
+        oops();
+    }
+
+    n = n.ScaledBy(1/n.Magnitude());
+
+    return n;
 }
 
 Vector Vector::RotatedAbout(Vector axis, double theta) {
@@ -71,4 +136,9 @@ Vector Vector::ScaledBy(double v) {
     r.z = z * v;
 
     return r;
+}
+
+void glVertex3v(Vector u)
+{
+    glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }

@@ -13,6 +13,8 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\cmdline.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\util.obj \
+           $(OBJDIR)\entity.obj \
+           $(OBJDIR)\sketch.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib
