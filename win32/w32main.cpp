@@ -210,7 +210,6 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         
         case WM_CHAR:
             SS.TW.KeyPressed(wParam);
-            HandleTextWindowScrollBar(SB_BOTTOM, 0);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
 
@@ -276,7 +275,6 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_CHAR:
             SS.TW.KeyPressed(wParam);
             SetForegroundWindow(TextWnd);
-            HandleTextWindowScrollBar(SB_BOTTOM, 0);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
 

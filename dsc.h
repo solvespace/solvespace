@@ -2,6 +2,7 @@
 #ifndef __DSC_H
 #define __DSC_H
 
+typedef unsigned __int64 QWORD;
 typedef unsigned long DWORD;
 typedef unsigned char BYTE;
 
@@ -41,17 +42,25 @@ public:
     int         elems;
     int         elemsAllocated;
 
-    void AddAndAssignId(T *v) {
+    H AddAndAssignId(T *v) {
+        H ht;
+        ht.v = 0;
+        return AddAndAssignId(v, ht);
+    }
+
+    H AddAndAssignId(T *v, H ht) {
         int i;
-        int id = 0;
+        QWORD id = 0;
 
         for(i = 0; i < elems; i++) {
-            id = max(id, elem[i].h.v);
+            id = max(id, (elem[i].h.v & 0xfff));
         }
 
         H h;
-        h.v = id + 1;
+        h.v = (id + 1) | ht.v;
         AddById(v, h);
+
+        return h;
     }
 
     void AddById(T *v, H h) {
@@ -65,6 +74,24 @@ public:
         elem[elems].h = h;
         elem[elems].tag = 0;
         elems++;
+    }
+    
+    T *FindById(H h) {
+        int i;
+        for(i = 0; i < elems; i++) {
+            if(elem[i].h.v == h.v) {
+                return &(elem[i].v);
+            }
+        }
+        dbp("failed to look up item %16lx, searched %d items", h.v);
+        oops();
+    }
+
+    void ClearTags(void) {
+        int i;
+        for(i = 0; i < elems; i++) {
+            elem[i].tag = 0;
+        }
     }
 
     void RemoveTagged(void) {
@@ -81,7 +108,7 @@ public:
             }
         }
         elems = dest;
-        // and elemsAllocated is untouched
+        // and elemsAllocated is untouched, because we didn't resize
     }
 
     void Clear(void) {
@@ -89,6 +116,16 @@ public:
         if(elem) free(elem);
     }
 
+};
+
+class NameStr {
+public:
+    char str[20];
+
+    inline void strcpy(char *in) {
+        memcpy(str, in, min(strlen(in)+1, sizeof(str)));
+        str[sizeof(str)-1] = '\0';
+    }
 };
 
 #endif

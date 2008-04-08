@@ -24,6 +24,7 @@ void dbp(char *str, ...);
 #include "dsc.h"
 #include "ui.h"
 #include "sketch.h"
+#include "expr.h"
 
 void Invalidate(void);
 
@@ -42,12 +43,16 @@ public:
     TextWindow                  TW;
     GraphicsWindow              GW;
 
-    IdList<Request,hRequest>    req;
+    IdList<Group,hGroup>        group;
+    IdList<Request,hRequest>    request;
     IdList<Entity,hEntity>      entity;
     IdList<Point,hPoint>        point;
     IdList<Param,hParam>        param;
 
+    hGroup                      activeGroup;
+
     void Init(void);
+    void Solve(void);
 };
 
 extern SolveSpace SS;

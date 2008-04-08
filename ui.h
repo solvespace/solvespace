@@ -55,6 +55,11 @@ public:
     // These are called by the platform-specific code.
     void KeyPressed(int c);
     bool IsHyperlink(int width, int height);
+
+    // These are self-contained screens, that show some information about
+    // the sketch.
+    void ShowGroupList(void);
+    void ShowRequestList(void);
 };
 
 class GraphicsWindow {

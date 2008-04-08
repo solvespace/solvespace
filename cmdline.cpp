@@ -169,3 +169,36 @@ void TextWindow::KeyPressed(int c) {
     }
 }
 
+void TextWindow::ShowGroupList(void) {
+    ClearScreen();
+    Printf("*** ALL GROUPS IN SKETCH");
+    Printf("");
+
+    int i;
+    for(i = 0; i < SS.group.elems; i++) {
+        Group *g = &(SS.group.elem[i].v);
+        if(g->name.str[0]) {
+            Printf(" %s", g->name.str);
+        } else {
+            Printf(" unnamed");
+        }
+    }
+}
+
+void TextWindow::ShowRequestList(void) {
+    ClearScreen();
+    Printf("*** REQUESTS");
+    Printf("");
+
+    int i;
+    for(i = 0; i < SS.request.elems; i++) {
+        Request *r = &(SS.request.elem[i].v);
+
+        if(r->name.str[0]) {
+            Printf(" %s", r->name.str);
+        } else {
+            Printf(" unnamed");
+        }
+    }
+}
+
