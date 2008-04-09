@@ -42,7 +42,7 @@ public:
         LinkFunction   *f;
     }       meta[MAX_ROWS][MAX_COLS];
 
-    int row0, rows;
+    int rows;
    
     void Init(void);
     void Printf(char *fmt, ...);

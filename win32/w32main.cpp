@@ -64,6 +64,9 @@ static void PaintTextWnd(HDC hdc)
     rows--;
     TextWndRows = rows;
 
+    TextWndScrollPos = min(TextWndScrollPos, SS.TW.rows - rows);
+    TextWndScrollPos = max(TextWndScrollPos, 0);
+
     // Let's set up the scroll bar first
     SCROLLINFO si;
     memset(&si, 0, sizeof(si));
@@ -79,22 +82,20 @@ static void PaintTextWnd(HDC hdc)
     for(r = TextWndScrollPos; r < (TextWndScrollPos+rows); r++) {
         if(r < 0) continue;
         if(r >= SS.TW.MAX_ROWS) continue;
-        int rr = (r + SS.TW.row0);
-        while(rr >= SS.TW.MAX_ROWS) rr -= SS.TW.MAX_ROWS;
 
         for(c = 0; c < SS.TW.MAX_COLS; c++) {
             char v = '0' + (c % 10);
-            int color = SS.TW.meta[rr][c].color;
+            int color = SS.TW.meta[r][c].color;
             SetTextColor(backDc, SS.TW.colors[color].fg);
             SetBkColor(backDc, SS.TW.colors[color].bg);
 
-            if(SS.TW.meta[rr][c].link) {
+            if(SS.TW.meta[r][c].link) {
                 SelectObject(backDc, LinkFont);
             } else {
                 SelectObject(backDc, FixedFont);
             }
             TextOut(backDc, 4 + c*TEXT_WIDTH, (r-TextWndScrollPos)*TEXT_HEIGHT,
-                                            (char *)&(SS.TW.text[rr][c]), 1);
+                                            (char *)&(SS.TW.text[r][c]), 1);
         }
     }
 

@@ -25,7 +25,6 @@ void TextWindow::ClearScreen(void) {
             meta[i][j].link = NOT_A_LINK;
         }
     }
-    row0 = 0;
     rows = 0;
 }
 
@@ -33,14 +32,12 @@ void TextWindow::Printf(char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
 
+    if(rows >= MAX_ROWS) return;
+
     int r, c;
-    if(rows < MAX_ROWS) {
-        r = rows;
-        rows++;
-    } else {
-        r = row0;
-        row0++;
-    }
+    r = rows;
+    rows++;
+
     for(c = 0; c < MAX_COLS; c++) {
         text[r][c] = ' ';
         meta[r][c].link = NOT_A_LINK;
