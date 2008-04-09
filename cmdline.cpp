@@ -176,7 +176,7 @@ void TextWindow::ShowGroupList(void) {
 
     int i;
     for(i = 0; i < SS.group.elems; i++) {
-        Group *g = &(SS.group.elem[i].v);
+        Group *g = &(SS.group.elem[i].t);
         if(g->name.str[0]) {
             Printf(" %s", g->name.str);
         } else {
@@ -192,7 +192,7 @@ void TextWindow::ShowRequestList(void) {
 
     int i;
     for(i = 0; i < SS.request.elems; i++) {
-        Request *r = &(SS.request.elem[i].v);
+        Request *r = &(SS.request.elem[i].t);
 
         if(r->name.str[0]) {
             Printf(" %s", r->name.str);

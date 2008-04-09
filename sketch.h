@@ -3,74 +3,44 @@
 #define __SKETCH_H
 
 class hEntity;
-class Entity;
 class hPoint;
 class hRequest;
 class hParam;
 class hGroup;
 
+class Entity;
+
+// All of the hWhatever handles are a 32-bit ID, that is used to represent
+// some data structure in the sketch.
 class hGroup {
 public:
-    // bits 11: 0   -- group index
-    QWORD v;
+    // bits 10: 0   -- group index
+    DWORD v;
 };
-
 class hRequest {
 public:
-    // bits 11: 0   -- request index
-    QWORD   v;
-
-    hEntity entity(hGroup g, int i);
+    // bits 10: 0   -- request index
+    DWORD   v;
 };
-
+class hEntity {
+public:
+    // bits 10: 0   -- entity index
+    //      21:11   -- request index
+    DWORD   v;
+};
 class hParam {
 public:
     // bits  7: 0   -- param index
-    //      10: 8   -- type (0 for 3d point, 7 for from entity)
-    //      15:11   -- point index, or zero if from entity
-    //      31:16   -- entity index
-    //      43:32   -- request index
-    //      55:44   -- group index
-    QWORD       v;
-
-    inline hGroup group(void) { hGroup r; r.v = (v >> 44); return r; }
+    //      18: 8   -- entity index
+    //      29:19   -- request index
+    DWORD       v;
 };
-
 class hPoint {
+    // bits  7: 0   -- point index
+    //      18: 8   -- entity index
+    //      29:19   -- request index
 public:
-    // bits  2: 0   -- type (0 for 3d point)
-    //       7: 3   -- point index
-    //      23: 8   -- entity index
-    //      35:24   -- request index
-    //      47:36   -- group index
-    QWORD   v;
-
-    inline hParam param(int i) {
-        hParam r;
-        r.v = (v << 8) | i;
-        return r;
-    }
-};
-
-class hEntity {
-public:
-    // bits 15: 0   -- entity index
-    //      27:16   -- request index
-    //      39:17   -- group index
-    QWORD   v;
-
-    inline hGroup group(void)
-        { hGroup r; r.v = (v >> 28); return r; }
-    inline hRequest request(void)
-        { hRequest r; r.v = (v >> 16) & 0xfff; return r; }
-    inline hPoint point3(int i)
-        { hPoint r; r.v = (v << 8) | (i << 3) | 0; return r; }
-
-    inline hParam param(int i) {
-        hParam r;
-        r.v = (((v << 8) | 7) << 8) | i;
-        return r;
-    }
+    DWORD   v;
 };
 
 // A set of requests. Every request must have an associated group. A group
@@ -81,7 +51,9 @@ class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
 
-    hEntity     csys;
+    hGroup      h;
+
+    hEntity     csys;   // or Entity::NO_CSYS, if it's not locked in a 2d csys
     NameStr     name;
 };
 
@@ -89,11 +61,13 @@ public:
 // line, or a 
 class Request {
 public:
+    // Some predefined requests, that are present in every sketch.
     static const hRequest   HREQUEST_REFERENCE_XY;
     static const hRequest   HREQUEST_REFERENCE_YZ;
     static const hRequest   HREQUEST_REFERENCE_ZX;
 
-    static const int TWO_D_CSYS             = 0;
+    // Types of requests
+    static const int CSYS_2D                = 0;
     static const int LINE_SEGMENT           = 1;
 
     int         type;
@@ -101,51 +75,71 @@ public:
     hRequest    h;
 
     hGroup      group;
-    hEntity     csys;
 
     NameStr     name;
 
-    void GenerateEntities(IdList<Entity,hEntity> *l, IdList<Group,hGroup> *gl);
-};
+    inline hEntity entity(int i)
+        { hEntity r; r.v = ((this->h.v) << 11) | i; return r; }
 
-class Param {
-public:
-    double      val;
-
-    hParam      h;
-};
-
-class Point {
-public:
-    hPoint      h;
-
-    hEntity     csys;
-
-    void GenerateParams(IdList<Param,hParam> *l);
+    void AddParam(Entity *e, int index);
+    void Generate(void);
 };
 
 class Entity {
 public:
-    static const hEntity    NONE;
+    static const hEntity    NO_CSYS;
 
-    static const int TWO_D_CSYS             = 100;
+    static const int CSYS_2D                = 100;
     static const int LINE_SEGMENT           = 101;
     int         type;
 
     hEntity     h;
-    hEntity     csys;
+
+    Expr        *expr[16];
+
+    inline hParam param(int i)
+        { hParam r; r.v = ((this->h.v) << 8) | i; return r; }
+    inline hPoint point(int i)
+        { hPoint r; r.v = ((this->h.v) << 8) | i; return r; }
 
     void Draw(void);
-    void GeneratePointsAndParams(IdList<Point,hPoint> *pt, 
-                                 IdList<Param,hParam> *pa);
 };
 
-// Must be defined later, once hEntity has been defined.
-inline hEntity hRequest::entity(hGroup g, int i) {
-    hEntity r;
-    r.v = (g.v << 28) | (v << 16) | i;
-    return r;
-}
+class Param {
+public:
+    hParam      h;
+    double      val;
+    bool        known;
 
+    void ForceTo(double v);
+};
+
+class Point {
+public:
+    // The point ID is equal to the initial param ID.
+    hPoint      h;
+
+    int type;
+    static const int IN_FREE_SPACE  = 0;    // three params, x y z
+    static const int IN_2D_CSYS     = 1;    // two params, u v, plus csys
+    static const int BY_EXPR        = 2;    // three Expr *, could be anything
+
+    hEntity     csys;
+
+    inline hEntity entity(void)
+        { hEntity r; r.v = (h.v >> 8); return r; }
+    inline hParam param(int i)
+        { hParam r; r.v = h.v + i; return r; }
+
+    // The point, in base coordinates. This may be a single parameter, or
+    // it may be a more complex expression if our point is locked in a 
+    // 2d csys.
+    Expr *x(void);
+    Expr *y(void);
+    Expr *z(void);
+
+    void ForceTo(Vector v);
+    void GetInto(Vector *v);
+};
 
 #endif

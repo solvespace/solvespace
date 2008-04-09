@@ -21,6 +21,7 @@ void dbp(char *str, ...);
 #include <gl/gl.h>
 #include <gl/glu.h>
 
+class Expr;
 #include "dsc.h"
 #include "ui.h"
 #include "sketch.h"

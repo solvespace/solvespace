@@ -23,6 +23,28 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
+Vector Vector::MakeFrom(double x, double y, double z) {
+    Vector v;
+    v.x = x; v.y = y; v.z = z;
+    return v;
+}
+
+Vector Vector::RotationU(double a, double b, double c, double d) {
+    Vector v;
+    v.x = a*a + b*b - c*c - d*d;
+    v.y = 2*b*c - 2*a*d;
+    v.z = 2*a*c + 2*b*d;
+    return v;
+}
+
+Vector Vector::RotationV(double a, double b, double c, double d) {
+    Vector v;
+    v.x = 2*a*d + 2*b*c;
+    v.y = a*a - b*b + c*c - d*d;
+    v.z = 2*c*d - 2*a*b;
+    return v;
+}
+
 Vector Vector::Plus(Vector b) {
     Vector r;
 

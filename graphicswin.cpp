@@ -148,7 +148,9 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    Entity e;
-    e.Draw();
+    int i;
+    for(i = 0; i < SS.entity.elems; i++) {
+        SS.entity.elem[i].t.Draw();
+    }
 }
 

@@ -19,11 +19,12 @@ void SolveSpace::Init(void) {
     // Our initial group, that contains the references.
     Group g;
     memset(&g, 0, sizeof(g));
-    g.csys = Entity::NONE;
+    g.csys = Entity::NO_CSYS;
     g.name.strcpy("__references");
-    group.AddById(&g, Group::HGROUP_REFERENCES);
+    g.h = Group::HGROUP_REFERENCES;
+    group.Add(&g);
 
-    g.csys = Entity::NONE;
+    g.csys = Entity::NO_CSYS;
     g.name.strcpy("");
     group.AddAndAssignId(&g);
     
@@ -32,20 +33,24 @@ void SolveSpace::Init(void) {
     // planes; these are our references, present in every sketch.
     Request r;
     memset(&r, 0, sizeof(r));
-    r.type = Request::TWO_D_CSYS;
+    r.type = Request::CSYS_2D;
     r.group = Group::HGROUP_REFERENCES;
 
     r.name.strcpy("__xy_plane");
-    request.AddById(&r, Request::HREQUEST_REFERENCE_XY);
+    r.h = Request::HREQUEST_REFERENCE_XY;
+    request.Add(&r);
+
     r.name.strcpy("__yz_plane");
-    request.AddById(&r, Request::HREQUEST_REFERENCE_YZ);
+    r.h = Request::HREQUEST_REFERENCE_YZ;
+    request.Add(&r);
+
     r.name.strcpy("__zx_plane");
-    request.AddById(&r, Request::HREQUEST_REFERENCE_ZX);
+    r.h = Request::HREQUEST_REFERENCE_ZX;
+    request.Add(&r);
 
     TW.ShowGroupList();
     TW.ShowRequestList();
 
-    TW.ClearScreen();
     Solve();
 }
 
@@ -54,21 +59,31 @@ void SolveSpace::Solve(void) {
 
     entity.Clear();
     for(i = 0; i < request.elems; i++) {
-        request.elem[i].v.GenerateEntities(&entity, &group);
+        request.elem[i].t.Generate();
     }
 
-    point.Clear();
-    param.Clear();
-    for(i = 0; i < entity.elems; i++) {
-        entity.elem[i].v.GeneratePointsAndParams(&point, &param);
+    // Force the values of the paramters that define the three reference
+    // coordinate systems.
+    static const struct {
+        hRequest hr;
+        double a, b, c, d;
+    } Quat[] = {
+        { Request::HREQUEST_REFERENCE_XY, 1,    0,    0,    0, },
+        { Request::HREQUEST_REFERENCE_YZ, 0.5,  0.5,  0.5,  0.5, },
+        { Request::HREQUEST_REFERENCE_ZX, 0.5, -0.5, -0.5, -0.5, },
+    };
+    for(i = 0; i < 3; i++) {
+        hEntity he;
+        he = request.FindById(Quat[i].hr)->entity(0);
+        Entity *e = entity.FindById(he);
+        // The origin for our coordinate system, always zero
+        Vector v = Vector::MakeFrom(0, 0, 0);
+        point.FindById(e->point(16))->ForceTo(v);
+        // The quaternion that defines the rotation, from the table.
+        param.FindById(e->param(0))->ForceTo(Quat[i].a);
+        param.FindById(e->param(1))->ForceTo(Quat[i].b);
+        param.FindById(e->param(2))->ForceTo(Quat[i].c);
+        param.FindById(e->param(3))->ForceTo(Quat[i].d);
     }
-    for(i = 0; i < point.elems; i++) {
-        point.elem[i].v.GenerateParams(&param);
-    }
-
-    TW.Printf("entities=%d", entity.elems);
-    TW.Printf("points=%d", point.elems);
-    TW.Printf("params=%d", param.elems);
-
 }
 
