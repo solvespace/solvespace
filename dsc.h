@@ -27,8 +27,6 @@ public:
     static Vector RotationU(double a, double b, double c, double d);
     static Vector RotationV(double a, double b, double c, double d);
 };
-void glVertex3v(Vector u);
-
 
 class Point2d {
 public:

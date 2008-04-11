@@ -27,8 +27,14 @@ class Expr;
 #include "sketch.h"
 #include "expr.h"
 
+// From the platform-specific code.
 void Invalidate(void);
 
+// Utility functions that are provided in the platform-independent code.
+void glxVertex3v(Vector u);
+void glxWriteText(char *str);
+void glxTranslatev(Vector u);
+void glxOntoCsys(Vector u, Vector v);
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))

@@ -97,11 +97,14 @@ public:
 
     Expr        *expr[16];
 
+    inline hRequest request(void)
+        { hRequest r; r.v = (this->h.v >> 11); return r; }
     inline hParam param(int i)
         { hParam r; r.v = ((this->h.v) << 8) | i; return r; }
     inline hPoint point(int i)
         { hPoint r; r.v = ((this->h.v) << 8) | i; return r; }
 
+    void LineDrawHitTest(Vector a, Vector b);
     void Draw(void);
 };
 

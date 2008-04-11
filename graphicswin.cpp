@@ -76,12 +76,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             projDown = orig.projDown.RotatedAbout(orig.projRight, s*dy);
 
             NormalizeProjectionVectors();
-
-            orig.projRight = projRight;
-            orig.projDown = projDown;
-            orig.mouse.x = x;
-            orig.mouse.y = y;
         }
+
+        orig.projRight = projRight;
+        orig.projDown = projDown;
+        orig.offset = offset;
+        orig.mouse.x = x;
+        orig.mouse.y = y;
 
         Invalidate();
     }
@@ -142,7 +143,11 @@ void GraphicsWindow::Paint(int w, int h) {
                     0,              0,              0,              1);
     glMultMatrixd(mat);
 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glEnable(GL_LINE_SMOOTH);
     glEnable(GL_DEPTH_TEST); 
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 
     glClearIndex((GLfloat)0);
     glClearDepth(1.0); 

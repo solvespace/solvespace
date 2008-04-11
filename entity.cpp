@@ -1,5 +1,12 @@
 #include "solvespace.h"
 
+void Entity::LineDrawHitTest(Vector a, Vector b) {
+    glBegin(GL_LINE_STRIP);
+        glxVertex3v(a);
+        glxVertex3v(b);
+    glEnd();
+}
+
 void Entity::Draw(void) {
     switch(type) {
         case CSYS_2D: {
@@ -17,15 +24,27 @@ void Entity::Draw(void) {
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4;
 
-            u = u.ScaledBy(s);
-            v = v.ScaledBy(s);
+            Vector pp = (p.Plus(u)).Plus(v);
+            Vector pm = (p.Plus(u)).Minus(v);
+            Vector mm = (p.Minus(u)).Minus(v);
+            Vector mp = (p.Minus(u)).Plus(v);
+            pp = pp.ScaledBy(s);
+            pm = pm.ScaledBy(s);
+            mm = mm.ScaledBy(s);
+            mp = mp.ScaledBy(s);
 
-            Vector r;
-            glBegin(GL_LINE_LOOP);
-                r = p; r = r.Minus(v); r = r.Minus(u); glVertex3v(r);
-                r = p; r = r.Plus(v);  r = r.Minus(u); glVertex3v(r);
-                r = p; r = r.Plus(v);  r = r.Plus(u);  glVertex3v(r);
-                r = p; r = r.Minus(v); r = r.Plus(u);  glVertex3v(r);
+            LineDrawHitTest(pp, pm);
+            LineDrawHitTest(pm, mm);
+            LineDrawHitTest(mm, mp);
+            LineDrawHitTest(mp, pp);
+
+            Request *r = SS.request.FindById(this->request());
+            glPushMatrix();
+                glxTranslatev(mm);
+                glxOntoCsys(u, v);
+                glxWriteText(r->name.str);
+            glPopMatrix();
+
             glEnd();
             break;
         }

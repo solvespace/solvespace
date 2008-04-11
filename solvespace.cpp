@@ -36,15 +36,15 @@ void SolveSpace::Init(void) {
     r.type = Request::CSYS_2D;
     r.group = Group::HGROUP_REFERENCES;
 
-    r.name.strcpy("__xy_plane");
+    r.name.strcpy("#xy-plane");
     r.h = Request::HREQUEST_REFERENCE_XY;
     request.Add(&r);
 
-    r.name.strcpy("__yz_plane");
+    r.name.strcpy("#yz-plane");
     r.h = Request::HREQUEST_REFERENCE_YZ;
     request.Add(&r);
 
-    r.name.strcpy("__zx_plane");
+    r.name.strcpy("#zx-plane");
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 
@@ -69,8 +69,8 @@ void SolveSpace::Solve(void) {
         double a, b, c, d;
     } Quat[] = {
         { Request::HREQUEST_REFERENCE_XY, 1,    0,    0,    0, },
-        { Request::HREQUEST_REFERENCE_YZ, 0.5,  0.5,  0.5,  0.5, },
-        { Request::HREQUEST_REFERENCE_ZX, 0.5, -0.5, -0.5, -0.5, },
+        { Request::HREQUEST_REFERENCE_YZ, 0.5, -0.5, -0.5, -0.5, },
+        { Request::HREQUEST_REFERENCE_ZX, 0.5,  0.5,  0.5,  0.5, },
     };
     for(i = 0; i < 3; i++) {
         hEntity he;

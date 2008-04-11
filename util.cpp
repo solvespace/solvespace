@@ -160,7 +160,4 @@ Vector Vector::ScaledBy(double v) {
     return r;
 }
 
-void glVertex3v(Vector u)
-{
-    glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
-}
+
