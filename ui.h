@@ -20,6 +20,10 @@ public:
         int     bg;
     } Color;
     static const Color colors[];
+    static const int COLOR_DEFAULT          = 0;
+    static const int COLOR_MEANS_HIDDEN     = 1;
+    static const int COLOR_MEANS_SHOWN      = 2;
+    static const int COLOR_MEANS_MIXED      = 3;
 
     // The line with the user-typed command, that is currently being edited.
     char    cmd[MAX_COLS];
@@ -56,6 +60,9 @@ public:
     void KeyPressed(int c);
     bool IsHyperlink(int width, int height);
 
+    void Show(void);
+
+    void ShowHeader(void);
     // These are self-contained screens, that show some information about
     // the sketch.
     void ShowGroupList(void);
@@ -92,6 +99,15 @@ public:
 
     void Init(void);
     void NormalizeProjectionVectors(void);
+    
+    // This sets what gets displayed.
+    bool    show2dCsyss;
+    bool    showAxes;
+    bool    showPoints;
+    bool    showAllGroups;
+    bool    showConstraints;
+    static void ToggleBool(int link, DWORD v);
+    static void ToggleAnyDatumShown(int link, DWORD v);
 
     // These are called by the platform-specific code.
     void Paint(int w, int h);

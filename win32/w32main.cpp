@@ -11,7 +11,8 @@
 #define FREEZE_SUBKEY "SolveSpace"
 #include "freeze.h"
 
-#define TEXT_HEIGHT 18
+#define MIN_COLS    42
+#define TEXT_HEIGHT 19
 #define TEXT_WIDTH  10
 
 HINSTANCE Instance;
@@ -94,14 +95,15 @@ static void PaintTextWnd(HDC hdc)
             } else {
                 SelectObject(backDc, FixedFont);
             }
-            TextOut(backDc, 4 + c*TEXT_WIDTH, (r-TextWndScrollPos)*TEXT_HEIGHT,
-                                            (char *)&(SS.TW.text[r][c]), 1);
+            TextOut(backDc, 4 + c*TEXT_WIDTH,
+                (r-TextWndScrollPos)*TEXT_HEIGHT + 1,
+                (char *)&(SS.TW.text[r][c]), 1);
         }
     }
 
     SetTextColor(backDc, SS.TW.COLOR_FG_CMDLINE);
     SetBkColor(backDc, SS.TW.COLOR_BG_CMDLINE);
-    TextOut(backDc, 4, rows*TEXT_HEIGHT, SS.TW.cmd, SS.TW.MAX_COLS);
+    TextOut(backDc, 4, rows*TEXT_HEIGHT+1, SS.TW.cmd, SS.TW.MAX_COLS);
 
     HPEN cpen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
     SelectObject(backDc, cpen);
@@ -180,8 +182,22 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     r->top += extra;
                     break;
             }
-            hc = (r->bottom - r->top) - ClientIsSmallerBy;
-            extra = hc % TEXT_HEIGHT;
+            int tooNarrow = (MIN_COLS*TEXT_WIDTH) - (r->right - r->left);
+            if(tooNarrow >= 0) {
+                switch(wParam) {
+                    case WMSZ_RIGHT:
+                    case WMSZ_BOTTOMRIGHT:
+                    case WMSZ_TOPRIGHT:
+                        r->right += tooNarrow;
+                        break;
+
+                    case WMSZ_LEFT:
+                    case WMSZ_BOTTOMLEFT:
+                    case WMSZ_TOPLEFT:
+                        r->left -= tooNarrow;
+                        break;
+                }
+            }
             break;
         }
 
@@ -204,6 +220,13 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     SetCursor(LoadCursor(NULL, IDC_HAND));
                 } else {
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
+                }
+            } else {
+                if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].f) {
+                    (SS.TW.meta[r][c].f)(
+                        SS.TW.meta[r][c].link,
+                        SS.TW.meta[r][c].data
+                    );
                 }
             }
             break;
@@ -264,9 +287,13 @@ static HGLRC CreateGlContext(HDC hdc)
     return hgrc;
 }
 
-void Invalidate(void)
+void InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, FALSE);
+}
+void InvalidateText(void)
+{
+    InvalidateRect(TextWnd, NULL, FALSE);
 }
 
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -415,6 +442,7 @@ static void CreateMainWindows(void)
 
     // The text window, with a comand line and some textual information
     // about the sketch.
+    wc.style           &= ~CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)TextWndProc;
     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName    = "TextWnd";
@@ -458,10 +486,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ThawWindowPos(GraphicsWnd);
 
     // A monospaced font
-    FixedFont = CreateFont(TEXT_HEIGHT-1, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
+    FixedFont = CreateFont(TEXT_HEIGHT-2, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
-    LinkFont = CreateFont(TEXT_HEIGHT-1, TEXT_WIDTH, 0, 0, FW_REGULAR, TRUE,
+    LinkFont = CreateFont(TEXT_HEIGHT-2, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         TRUE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
     if(!FixedFont)

@@ -10,6 +10,8 @@ void Entity::LineDrawHitTest(Vector a, Vector b) {
 void Entity::Draw(void) {
     switch(type) {
         case CSYS_2D: {
+            if(!SS.GW.show2dCsyss) break;
+
             Vector p;
             double a, b, c, d;
 

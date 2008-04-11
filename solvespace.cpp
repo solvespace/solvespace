@@ -20,7 +20,7 @@ void SolveSpace::Init(void) {
     Group g;
     memset(&g, 0, sizeof(g));
     g.csys = Entity::NO_CSYS;
-    g.name.strcpy("__references");
+    g.name.strcpy("#references");
     g.h = Group::HGROUP_REFERENCES;
     group.Add(&g);
 
@@ -36,21 +36,19 @@ void SolveSpace::Init(void) {
     r.type = Request::CSYS_2D;
     r.group = Group::HGROUP_REFERENCES;
 
-    r.name.strcpy("#xy-plane");
+    r.name.strcpy("#XY-csys");
     r.h = Request::HREQUEST_REFERENCE_XY;
     request.Add(&r);
 
-    r.name.strcpy("#yz-plane");
+    r.name.strcpy("#YZ-csys");
     r.h = Request::HREQUEST_REFERENCE_YZ;
     request.Add(&r);
 
-    r.name.strcpy("#zx-plane");
+    r.name.strcpy("#ZX-csys");
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 
-    TW.ShowGroupList();
-    TW.ShowRequestList();
-
+    TW.Show();
     Solve();
 }
 

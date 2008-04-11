@@ -40,6 +40,11 @@ void GraphicsWindow::Init(void) {
     projRight.x = 1; projRight.y = projRight.z = 0;
     projDown.y = 1; projDown.z = projDown.x = 0;
 
+    show2dCsyss = true;
+    showAxes = true;
+    showPoints = true;
+    showAllGroups = true;
+    showConstraints = true;
 }
 
 void GraphicsWindow::NormalizeProjectionVectors(void) {
@@ -84,7 +89,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         orig.mouse.x = x;
         orig.mouse.y = y;
 
-        Invalidate();
+        InvalidateGraphics();
     }
 }
 
@@ -118,7 +123,25 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     offset = offset.Plus(projRight.ScaledBy(rightf - righti));
     offset = offset.Plus(projDown.ScaledBy(downf - downi));
 
-    Invalidate();
+    InvalidateGraphics();
+}
+
+void GraphicsWindow::ToggleBool(int link, DWORD v) {
+    bool *vb = (bool *)v;
+    *vb = !*vb;
+
+    InvalidateGraphics();
+    SS.TW.Show();
+}
+
+void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
+    bool t = !(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints);
+    SS.GW.show2dCsyss = t;
+    SS.GW.showAxes = t;
+    SS.GW.showPoints = t;
+
+    InvalidateGraphics();
+    SS.TW.Show();
 }
 
 void GraphicsWindow::Paint(int w, int h) {
@@ -152,6 +175,8 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearIndex((GLfloat)0);
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+
+    glColor3f(1, 1, 1);
 
     int i;
     for(i = 0; i < SS.entity.elems; i++) {

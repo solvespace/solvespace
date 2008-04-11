@@ -3,12 +3,13 @@
 
 const TextWindow::Color TextWindow::colors[] = {
     { COLOR_FG_DEFAULT,         COLOR_BG_DEFAULT,   },  // 0
-    { RGB(255,  40,  40),       COLOR_BG_DEFAULT,   },  // 1
-    { RGB(255, 255,   0),       COLOR_BG_DEFAULT,   },  // 2
-    { RGB( 40, 255,  40),       COLOR_BG_DEFAULT,   },  // 3
-    { RGB(  0, 255, 255),       COLOR_BG_DEFAULT,   },  // 4
-    { RGB(140, 140, 255),       COLOR_BG_DEFAULT,   },  // 5
-    { RGB(255,   0, 255),       COLOR_BG_DEFAULT,   },  // 6
+    { RGB(170,   0,   0),       COLOR_BG_DEFAULT,   },  // 1
+    { RGB( 40, 255,  40),       COLOR_BG_DEFAULT,   },  // 2
+    { RGB(200, 200,   0),       COLOR_BG_DEFAULT,   },  // 3
+    { RGB(255, 200,  40),       COLOR_BG_DEFAULT,   },  // 4
+    { RGB(255,  40,  40),       COLOR_BG_DEFAULT,   },  // 5
+    { RGB(  0, 255, 255),       COLOR_BG_DEFAULT,   },  // 6
+    { RGB(255,   0, 255),       COLOR_BG_DEFAULT,   },  // 7
 };
 
 void TextWindow::Init(void) {
@@ -82,7 +83,11 @@ void TextWindow::Printf(char *fmt, ...) {
                 case 'C':
                     if(fmt[1] == '\0') goto done;
                     fmt++;
-                    color = *fmt - '0';
+                    if(*fmt == 'p') {
+                        color = va_arg(vl, int);
+                    } else {
+                        color = *fmt - '0';
+                    }
                     if(color < 0 || color >= arraylen(colors)) color = 0;
                     break;
 
@@ -90,6 +95,10 @@ void TextWindow::Printf(char *fmt, ...) {
                     if(fmt[1] == '\0') goto done;
                     fmt++;
                     link = *fmt;
+                    break;
+
+                case 'f':
+                    f = va_arg(vl, LinkFunction *);
                     break;
 
                 case 'D':
@@ -166,35 +175,72 @@ void TextWindow::KeyPressed(int c) {
     }
 }
 
-void TextWindow::ShowGroupList(void) {
-    ClearScreen();
-    Printf("*** ALL GROUPS IN SKETCH");
-    Printf("");
+void TextWindow::Show(void) {
+    ShowRequestList();
 
+    InvalidateText();
+}
+
+void TextWindow::ShowHeader(void) {
+    ClearScreen();
+
+    int datumColor;
+    if(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints) {
+        datumColor = COLOR_MEANS_SHOWN;
+    } else if(!(SS.GW.show2dCsyss || SS.GW.showAxes || SS.GW.showPoints)) {
+        datumColor = COLOR_MEANS_HIDDEN;
+    } else {
+        datumColor = COLOR_MEANS_MIXED;
+    }
+
+#define hs(b) ((b) ? COLOR_MEANS_SHOWN : COLOR_MEANS_HIDDEN)
+    Printf("show: "
+           "%Cp%Ll%D%f2d-csys%E  "
+           "%Cp%Ll%D%faxes%E  "
+           "%Cp%Ll%D%fpoints%E  "
+           "%Cp%Ll%fany-datum%E",
+        hs(SS.GW.show2dCsyss), (DWORD)&(SS.GW.show2dCsyss), &(SS.GW.ToggleBool),
+        hs(SS.GW.showAxes),    (DWORD)&(SS.GW.showAxes),    &(SS.GW.ToggleBool),
+        hs(SS.GW.showPoints),  (DWORD)&(SS.GW.showPoints),  &(SS.GW.ToggleBool),
+        datumColor, &(SS.GW.ToggleAnyDatumShown)
+    );
+    Printf("      "
+           "%Cp%Ll%D%fall-groups%E  "
+           "%Cp%Ll%D%fconstraints%E",
+        hs(SS.GW.showAllGroups),   (DWORD)(&SS.GW.showAllGroups),
+            &(SS.GW.ToggleBool),
+        hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints),
+            &(SS.GW.ToggleBool)
+    );
+}
+
+void TextWindow::ShowGroupList(void) {
+    ShowHeader();
+
+    Printf("%C4[[all groups in sketch]]%E");
     int i;
     for(i = 0; i < SS.group.elems; i++) {
         Group *g = &(SS.group.elem[i].t);
         if(g->name.str[0]) {
-            Printf(" %s", g->name.str);
+            Printf("  %s", g->name.str);
         } else {
-            Printf(" unnamed");
+            Printf("  unnamed");
         }
     }
 }
 
 void TextWindow::ShowRequestList(void) {
-    ClearScreen();
-    Printf("*** REQUESTS");
-    Printf("");
+    ShowHeader();
 
+    Printf("%C4[[all requests in sketch]]%E");
     int i;
     for(i = 0; i < SS.request.elems; i++) {
         Request *r = &(SS.request.elem[i].t);
 
         if(r->name.str[0]) {
-            Printf(" %s", r->name.str);
+            Printf("  %s", r->name.str);
         } else {
-            Printf(" unnamed");
+            Printf("  unnamed");
         }
     }
 }

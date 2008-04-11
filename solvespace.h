@@ -28,7 +28,8 @@ class Expr;
 #include "expr.h"
 
 // From the platform-specific code.
-void Invalidate(void);
+void InvalidateGraphics(void);
+void InvalidateText(void);
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
