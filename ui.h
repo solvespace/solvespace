@@ -69,17 +69,27 @@ public:
 
 class GraphicsWindow {
 public:
+    void Init(void);
+
     // This table describes the top-level menus in the graphics winodw.
-    typedef void MenuHandler(int id);
+    typedef enum {
+        MNU_ZOOM_IN = 100,
+        MNU_ZOOM_OUT,
+        MNU_ZOOM_TO_FIT,
+        MNU_ORIENT_ONTO,
+        MNU_UNSELECT_ALL,
+    } MenuId;
+    typedef void MenuHandler(MenuId id);
     typedef struct {
         int         level;          // 0 == on menu bar, 1 == one level down
         char       *label;          // or NULL for a separator
         int         id;             // unique ID
+        int         accel;          // keyboard accelerator
         MenuHandler *fn;
     } MenuEntry;
     static const MenuEntry menu[];
-
-    void Init(void);
+    static void MenuView(MenuId id);
+    static void MenuEdit(MenuId id);
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -88,12 +98,12 @@ public:
     // projection.
     Vector  offset;
     Vector  projRight;
-    Vector  projDown;
+    Vector  projUp;
     double  scale;
     struct {
         Vector  offset;
         Vector  projRight;
-        Vector  projDown;
+        Vector  projUp;
         Point2d mouse;
     }       orig;
 
@@ -116,6 +126,16 @@ public:
     static const int MAX_SELECTED = 32;
     Selection selection[MAX_SELECTED];
     void HitTestMakeSelection(Point2d mp, Selection *dest);
+    void ClearSelection(void);
+    struct {
+        hPoint      point[MAX_SELECTED];
+        hEntity     entity[MAX_SELECTED];
+        int         points;
+        int         entities;
+        int         csyss;
+        int         n;
+    } gs;
+    void GroupSelection(void);
 
     // This sets what gets displayed.
     bool    show2dCsyss;

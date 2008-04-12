@@ -36,16 +36,15 @@ void Entity::DrawOrGetDistance(void) {
             if(!SS.GW.show2dCsyss) break;
 
             Vector p;
-            double a, b, c, d;
-
             p = SS.point.FindById(point(16))->GetCoords();
-            a = SS.param.FindById(param(0))->val;
-            b = SS.param.FindById(param(1))->val;
-            c = SS.param.FindById(param(2))->val;
-            d = SS.param.FindById(param(3))->val;
 
-            Vector u = Vector::RotationU(a, b, c, d);
-            Vector v = Vector::RotationV(a, b, c, d);
+            double q[4];
+            for(int i = 0; i < 4; i++) {
+                q[i] = SS.param.FindById(param(i))->val;
+            }
+
+            Vector u = Vector::RotationU(q[0], q[1], q[2], q[3]);
+            Vector v = Vector::RotationV(q[0], q[1], q[2], q[3]);
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4;
 
@@ -77,3 +76,4 @@ void Entity::DrawOrGetDistance(void) {
             oops();
     }
 }
+

@@ -42,6 +42,17 @@ void dbp(char *str, ...)
     OutputDebugString("\n");
 }
 
+void Error(char *str, ...)
+{
+    va_list f;
+    char buf[1024];
+    va_start(f, str);
+    vsprintf(buf, str, f);
+
+    HWND h = GetForegroundWindow();
+    MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);
+}
+
 static void PaintTextWnd(HDC hdc)
 {
     RECT rect;
@@ -241,6 +252,37 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 1;
 }
 
+static BOOL ProcessKeyDown(WPARAM wParam)
+{
+    int c;
+    switch(wParam) {
+        case VK_OEM_PLUS:       c = '+';    break;
+        case VK_OEM_MINUS:      c = '-';    break;
+        case VK_ESCAPE:         c = 27;     break;
+        case VK_OEM_4:          c = '[';    break;
+        case VK_OEM_6:          c = ']';    break;
+        case VK_OEM_5:          c = '\\';   break;
+        case VK_SPACE:          c = ' ';    break;
+        case VK_DELETE:         c = 127;    break;
+
+        default:
+            c = wParam;
+            break;
+    }
+    if(GetAsyncKeyState(VK_CONTROL) & 0x8000) c |= 0x100;
+    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)   c |= 0x200;
+
+    for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
+        if(c == SS.GW.menu[i].accel) {
+            (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)SS.GW.menu[i].id);
+            break;
+        }
+    }
+
+    // No accelerator; process the key as normal.
+    return FALSE;
+}
+
 static HGLRC CreateGlContext(HDC hdc)
 {
     PIXELFORMATDESCRIPTOR pfd;
@@ -345,6 +387,16 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_MOUSEWHEEL: {
             int delta = GET_WHEEL_DELTA_WPARAM(wParam);
             SS.GW.MouseScroll(LastMousePos.x, LastMousePos.y, delta);
+            break;
+        }
+        case WM_COMMAND: {
+            int id = LOWORD(wParam);
+            for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
+                if(id == SS.GW.menu[i].id) {
+                    (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)id);
+                    break;
+                }
+            }
             break;
         }
 
@@ -485,6 +537,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     MSG msg;
     DWORD ret;
     while(ret = GetMessage(&msg, NULL, 0, 0)) {
+        if(msg.message == WM_KEYDOWN) {
+            if(ProcessKeyDown(msg.wParam)) continue;
+        }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }

@@ -126,7 +126,7 @@ void Point::Draw(void) {
 
     double s = 4;
     Vector r = SS.GW.projRight.ScaledBy(4/SS.GW.scale);
-    Vector d = SS.GW.projDown.ScaledBy(4/SS.GW.scale);
+    Vector d = SS.GW.projUp.ScaledBy(4/SS.GW.scale);
 
     glBegin(GL_QUADS);
         glxVertex3v(v.Plus (r).Plus (d));

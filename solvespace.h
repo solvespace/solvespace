@@ -13,6 +13,7 @@
 #endif
 
 void dbp(char *str, ...);
+void Error(char *str, ...);
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
