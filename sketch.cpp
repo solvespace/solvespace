@@ -17,14 +17,17 @@ char *Group::DescriptionString(void) {
     return ret;
 }
 
-void Request::AddParam(Entity *e, int index) {
+void Request::AddParam(IdList<Param,hParam> *param, Entity *e, int index) {
     Param pa;
     memset(&pa, 0, sizeof(pa));
     pa.h = e->param(index);
-    SS.param.Add(&pa);
+    param->Add(&pa);
 }
 
-void Request::Generate(void) {
+void Request::Generate(IdList<Entity,hEntity> *entity,
+                       IdList<Point,hPoint> *point,
+                       IdList<Param,hParam> *param)
+{
     int points = 0;
     int params = 0;
     int type = 0;
@@ -36,16 +39,19 @@ void Request::Generate(void) {
     memset(&e, 0, sizeof(e));
     e.h = this->entity(0);
 
+    bool shown = true;
     switch(type) {
         case Request::CSYS_2D:
-            type = Entity::CSYS_2D;          points = 1; params = 4; goto c;
+            type = Entity::CSYS_2D;          points = 1; params = 4;
+            if(!SS.GW.show2dCsyss) shown = false;
+            goto c;
         case Request::LINE_SEGMENT:
             type = Entity::LINE_SEGMENT;     points = 2; params = 0; goto c;
 c: {
             // Common routines, for all the requests that generate a single
             // entity that's defined by a simple combination of pts and params.
             for(i = 0; i < params; i++) {
-                AddParam(&e, i);
+                AddParam(param, &e, i);
             }
             for(i = 0; i < points; i++) {
                 Point pt;
@@ -54,21 +60,23 @@ c: {
                 if(g->csys.v == Entity::NO_CSYS.v) {
                     pt.type = Point::IN_FREE_SPACE;
                     // params for x y z
-                    AddParam(&e, 16 + 3*i + 0);
-                    AddParam(&e, 16 + 3*i + 1);
-                    AddParam(&e, 16 + 3*i + 2);
+                    AddParam(param, &e, 16 + 3*i + 0);
+                    AddParam(param, &e, 16 + 3*i + 1);
+                    AddParam(param, &e, 16 + 3*i + 2);
                 } else {
                     pt.type = Point::IN_2D_CSYS;
                     pt.csys = g->csys;
                     // params for u v
-                    AddParam(&e, 16 + 3*i + 0);
-                    AddParam(&e, 16 + 3*i + 1);
+                    AddParam(param, &e, 16 + 3*i + 0);
+                    AddParam(param, &e, 16 + 3*i + 1);
                 }
-                SS.point.Add(&pt);
+                pt.visible = shown;
+                point->Add(&pt);
             }
     
             e.type = type;
-            SS.entity.Add(&e);
+            e.visible = shown;
+            entity->Add(&e);
             break;
         }
 
@@ -122,6 +130,8 @@ Vector Point::GetCoords(void) {
 }
 
 void Point::Draw(void) {
+    if(!visible) return;
+
     Vector v = GetCoords();
 
     double s = 4;
@@ -137,6 +147,8 @@ void Point::Draw(void) {
 }
 
 double Point::GetDistance(Point2d mp) {
+    if(!visible) return 1e12;
+
     Vector v = GetCoords();
     Point2d pp = SS.GW.ProjectPoint(v);
 

@@ -60,6 +60,9 @@ public:
 
     hGroup                      activeGroup;
 
+    void GenerateForUserInterface(void);
+    void ForceReferences(void);
+
     void Init(void);
     void Solve(void);
 };

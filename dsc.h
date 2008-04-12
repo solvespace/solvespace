@@ -84,7 +84,7 @@ public:
                 return &(elem[i].t);
             }
         }
-        dbp("failed to look up item %16lx, searched %d items", h.v);
+        dbp("failed to look up item %16lx, searched %d items", h.v, elems);
         oops();
     }
 
@@ -115,6 +115,7 @@ public:
     void Clear(void) {
         elemsAllocated = elems = 0;
         if(elem) free(elem);
+        elem = NULL;
     }
 
 };

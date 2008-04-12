@@ -2,13 +2,15 @@
 #ifndef __SKETCH_H
 #define __SKETCH_H
 
-class hEntity;
-class hPoint;
-class hRequest;
-class hParam;
 class hGroup;
+class hRequest;
+class hEntity;
+class hParam;
+class hPoint;
 
 class Entity;
+class Param;
+class Point;
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
@@ -83,8 +85,10 @@ public:
     inline hEntity entity(int i)
         { hEntity r; r.v = ((this->h.v) << 11) | i; return r; }
 
-    void AddParam(Entity *e, int index);
-    void Generate(void);
+    void AddParam(IdList<Param,hParam> *param, Entity *e, int index);
+    void Generate(IdList<Entity,hEntity> *entity,
+                  IdList<Point,hPoint> *point,
+                  IdList<Param,hParam> *param);
 
     char *DescriptionString(void);
 };
@@ -98,6 +102,8 @@ public:
     int         type;
 
     hEntity     h;
+
+    bool        visible;
 
     Expr        *expr[16];
 
@@ -139,6 +145,7 @@ public:
     static const int BY_EXPR        = 2;    // three Expr *, could be anything
 
     hEntity     csys;
+    bool        visible;
 
     inline hEntity entity(void)
         { hEntity r; r.v = (h.v >> 8); return r; }

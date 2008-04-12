@@ -302,6 +302,7 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     bool *vb = (bool *)v;
     *vb = !*vb;
 
+    SS.GenerateForUserInterface();
     InvalidateGraphics();
     SS.TW.Show();
 }
@@ -312,6 +313,7 @@ void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
     SS.GW.showAxes = t;
     SS.GW.showPoints = t;
 
+    SS.GenerateForUserInterface();
     InvalidateGraphics();
     SS.TW.Show();
 }

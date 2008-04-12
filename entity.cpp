@@ -31,10 +31,9 @@ double Entity::GetDistance(Point2d mp) {
 }
 
 void Entity::DrawOrGetDistance(void) {
+    if(!visible) return;
     switch(type) {
         case CSYS_2D: {
-            if(!SS.GW.show2dCsyss) break;
-
             Vector p;
             p = SS.point.FindById(point(16))->GetCoords();
 

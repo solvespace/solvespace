@@ -49,17 +49,23 @@ void SolveSpace::Init(void) {
     request.Add(&r);
 
     TW.Show();
-    Solve();
+    GenerateForUserInterface();
 }
 
-void SolveSpace::Solve(void) {
+void SolveSpace::GenerateForUserInterface(void) {
     int i;
 
     entity.Clear();
+    param.Clear();
+    point.Clear();
     for(i = 0; i < request.elems; i++) {
-        request.elem[i].t.Generate();
+        request.elem[i].t.Generate(&entity, &point, &param);
     }
 
+    ForceReferences();
+}
+
+void SolveSpace::ForceReferences(void) {
     // Force the values of the paramters that define the three reference
     // coordinate systems.
     static const struct {
@@ -70,7 +76,7 @@ void SolveSpace::Solve(void) {
         { Request::HREQUEST_REFERENCE_YZ, 0.5, -0.5, -0.5, -0.5, },
         { Request::HREQUEST_REFERENCE_ZX, 0.5,  0.5,  0.5,  0.5, },
     };
-    for(i = 0; i < 3; i++) {
+    for(int i = 0; i < 3; i++) {
         hEntity he;
         he = request.FindById(Quat[i].hr)->entity(0);
         Entity *e = entity.FindById(he);
@@ -83,5 +89,8 @@ void SolveSpace::Solve(void) {
         param.FindById(e->param(2))->ForceTo(Quat[i].c);
         param.FindById(e->param(3))->ForceTo(Quat[i].d);
     }
+}
+
+void SolveSpace::Solve(void) {
 }
 
