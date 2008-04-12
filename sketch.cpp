@@ -7,6 +7,16 @@ const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
+char *Group::DescriptionString(void) {
+    static char ret[100];
+    if(name.str[0]) {
+        sprintf(ret, "g%03x-%s", h.v, name.str);
+    } else {
+        sprintf(ret, "g%03x-(unnamed)", h.v);
+    }
+    return ret;
+}
+
 void Request::AddParam(Entity *e, int index) {
     Param pa;
     memset(&pa, 0, sizeof(pa));
@@ -67,6 +77,16 @@ c: {
     }
 }
 
+char *Request::DescriptionString(void) {
+    static char ret[100];
+    if(name.str[0]) {
+        sprintf(ret, "r%03x-%s", h.v, name.str);
+    } else {
+        sprintf(ret, "r%03x-(unnamed)", h.v);
+    }
+    return ret;
+}
+
 void Param::ForceTo(double v) {
     val = v;
     known = true;
@@ -85,16 +105,41 @@ void Point::ForceTo(Vector v) {
     }
 }
 
-void Point::GetInto(Vector *v) {
+Vector Point::GetCoords(void) {
+    Vector v;
     switch(type) {
         case IN_FREE_SPACE:
-            v->x = SS.param.FindById(param(0))->val;
-            v->y = SS.param.FindById(param(1))->val;
-            v->z = SS.param.FindById(param(2))->val;
+            v.x = SS.param.FindById(param(0))->val;
+            v.y = SS.param.FindById(param(1))->val;
+            v.z = SS.param.FindById(param(2))->val;
             break;
 
         default:
             oops();
     }
+
+    return v;
+}
+
+void Point::Draw(void) {
+    Vector v = GetCoords();
+
+    double s = 4;
+    Vector r = SS.GW.projRight.ScaledBy(4/SS.GW.scale);
+    Vector d = SS.GW.projDown.ScaledBy(4/SS.GW.scale);
+
+    glBegin(GL_QUADS);
+        glxVertex3v(v.Plus (r).Plus (d));
+        glxVertex3v(v.Plus (r).Minus(d));
+        glxVertex3v(v.Minus(r).Minus(d));
+        glxVertex3v(v.Minus(r).Plus (d));
+    glEnd();
+}
+
+double Point::GetDistance(Point2d mp) {
+    Vector v = GetCoords();
+    Point2d pp = SS.GW.ProjectPoint(v);
+
+    return pp.DistanceTo(mp);
 }
 

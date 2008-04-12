@@ -160,4 +160,49 @@ Vector Vector::ScaledBy(double v) {
     return r;
 }
 
+Point2d Point2d::Plus(Point2d b) {
+    Point2d r;
+    r.x = x + b.x;
+    r.y = y + b.y;
+    return r;
+}
+
+Point2d Point2d::Minus(Point2d b) {
+    Point2d r;
+    r.x = x - b.x;
+    r.y = y - b.y;
+    return r;
+}
+
+Point2d Point2d::ScaledBy(double s) {
+    Point2d r;
+    r.x = x*s;
+    r.y = y*s;
+    return r;
+}
+
+double Point2d::DistanceTo(Point2d p) {
+    double dx = x - p.x;
+    double dy = y - p.y;
+    return sqrt(dx*dx + dy*dy);
+}
+
+double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
+    double m = dp.x*dp.x + dp.y*dp.y;
+    if(m < 0.05) return 1e12;
+   
+    // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
+    double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;
+
+    if((t < 0 || t > 1) && segment) {
+        // The closest point is one of the endpoints; determine which.
+        double d0 = DistanceTo(p0);
+        double d1 = DistanceTo(p0.Plus(dp));
+
+        return min(d1, d0);
+    } else {
+        Point2d closest = p0.Plus(dp.ScaledBy(t));
+        return DistanceTo(closest);
+    }
+}
 

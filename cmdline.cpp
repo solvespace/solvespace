@@ -1,20 +1,27 @@
 #include "solvespace.h"
 #include <stdarg.h>
 
+#define COLOR_BG_HEADER     RGB(50, 20, 50)
 const TextWindow::Color TextWindow::colors[] = {
-    { COLOR_FG_DEFAULT,         COLOR_BG_DEFAULT,   },  // 0
-    { RGB(170,   0,   0),       COLOR_BG_DEFAULT,   },  // 1
-    { RGB( 40, 255,  40),       COLOR_BG_DEFAULT,   },  // 2
-    { RGB(200, 200,   0),       COLOR_BG_DEFAULT,   },  // 3
-    { RGB(255, 200,  40),       COLOR_BG_DEFAULT,   },  // 4
-    { RGB(255,  40,  40),       COLOR_BG_DEFAULT,   },  // 5
-    { RGB(  0, 255, 255),       COLOR_BG_DEFAULT,   },  // 6
-    { RGB(255,   0, 255),       COLOR_BG_DEFAULT,   },  // 7
+    { RGB(255, 255, 255),       COLOR_BG_DEFAULT,   },  // 0
+
+    { RGB(170,   0,   0),       COLOR_BG_HEADER,    },  // 1    hidden label
+    { RGB( 40, 255,  40),       COLOR_BG_HEADER,    },  // 2    shown label
+    { RGB(200, 200,   0),       COLOR_BG_HEADER,    },  // 3    mixed label
+    { RGB(255, 200,  40),       COLOR_BG_HEADER,    },  // 4    header text
+    { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 5
+    { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 6
+    { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 7
+
+    { RGB(255, 255, 255),       COLOR_BG_DEFAULT,   },  // 8    title
+    { RGB(100, 100, 255),       COLOR_BG_DEFAULT,   },  // 9    link
 };
 
 void TextWindow::Init(void) {
+    memset(this, 0, sizeof(*this));
+    shown = &(showns[shownIndex]);
+
     ClearScreen();
-    ClearCommand();
 }
 
 void TextWindow::ClearScreen(void) {
@@ -22,7 +29,7 @@ void TextWindow::ClearScreen(void) {
     for(i = 0; i < MAX_ROWS; i++) {
         for(j = 0; j < MAX_COLS; j++) {
             text[i][j] = ' ';
-            meta[i][j].color = COLOR_NORMAL;
+            meta[i][j].color = COLOR_DEFAULT;
             meta[i][j].link = NOT_A_LINK;
         }
     }
@@ -44,7 +51,7 @@ void TextWindow::Printf(char *fmt, ...) {
         meta[r][c].link = NOT_A_LINK;
     }
 
-    int color = COLOR_NORMAL;
+    int color = COLOR_DEFAULT;
     int link = NOT_A_LINK;
     DWORD data = 0;
     LinkFunction *f = NULL;
@@ -74,7 +81,7 @@ void TextWindow::Printf(char *fmt, ...) {
                     break;
                 }
                 case 'E':
-                    color = COLOR_NORMAL;
+                    color = COLOR_DEFAULT;
                     link = NOT_A_LINK;
                     data = 0;
                     f = NULL;
@@ -126,63 +133,68 @@ void TextWindow::Printf(char *fmt, ...) {
 
         fmt++;
     }
+    while(c < MAX_COLS) {
+        meta[r][c].color = color;
+        c++;
+    }
 
 done:
     va_end(vl);
 }
 
-void TextWindow::ClearCommand(void) {
-    int j;
-    for(j = 0; j < MAX_COLS; j++) {
-        cmd[j] = ' ';
-    }
-    memcpy(cmd, "+> ", 3);
-    cmdLen = 0;
-    cmdInsert = 3;
-}
-
-void TextWindow::ProcessCommand(char *cmd)
-{
-    Printf("%C2command:%E '%s' done %C3(green)%E %C5%LaLink%E", cmd);
-}
-
-void TextWindow::KeyPressed(int c) {
-    if(cmdLen >= MAX_COLS - 10) {
-        ClearCommand();
-        return;
-    }
-
-    if(c == '\n' || c == '\r') {
-        cmd[cmdLen+3] = '\0';
-        ProcessCommand(cmd+3);
-
-        ClearCommand();
-        return;
-    } else if(c == 27) {
-        ClearCommand();
-    } else if(c == 'l' - 'a' + 1) {
-        ClearScreen();
-    } else if(c == '\b') {
-        // backspace, delete from insertion point
-        if(cmdInsert <= 3) return;
-        memmove(cmd+cmdInsert-1, cmd+cmdInsert, MAX_COLS-cmdInsert);
-        cmdLen--;
-        cmdInsert--;
-    } else {
-        cmd[cmdInsert] = c;
-        cmdInsert++;
-        cmdLen++;
-    }
-}
-
 void TextWindow::Show(void) {
-    ShowRequestList();
+    ShowHeader();
+    switch(shown->screen) {
+        default:
+            shown->screen = SCREEN_GROUP_LIST;
+            // fall through
+        case SCREEN_GROUP_LIST:
+            ShowGroupList();
+            break;
 
+        case SCREEN_REQUEST_LIST:
+            ShowRequestList();
+            break;
+    }
     InvalidateText();
 }
 
+void TextWindow::OneScreenForward(void) {
+    SS.TW.shownIndex++;
+    if(SS.TW.shownIndex >= HISTORY_LEN) SS.TW.shownIndex = 0;
+    SS.TW.shown = &(SS.TW.showns[SS.TW.shownIndex]);
+    history++;
+}
+
+void TextWindow::ScreenNavigaton(int link, DWORD v) {
+    switch(link) {
+        default:
+        case 'h':
+            SS.TW.OneScreenForward();
+            SS.TW.shown->screen = SCREEN_GROUP_LIST;
+            break;
+
+        case 'b':
+            if(SS.TW.history > 0) {
+                SS.TW.shownIndex--;
+                if(SS.TW.shownIndex < 0) SS.TW.shownIndex = (HISTORY_LEN-1);
+                SS.TW.shown = &(SS.TW.showns[SS.TW.shownIndex]);
+                SS.TW.history--;
+            }
+            break;
+
+        case 'f':
+            SS.TW.OneScreenForward();
+            break;
+    }
+    SS.TW.Show();
+}
 void TextWindow::ShowHeader(void) {
     ClearScreen();
+
+    Printf(" %Lb%f<<%E   %Lh%fhome%E",
+        (DWORD)(&TextWindow::ScreenNavigaton),
+        (DWORD)(&TextWindow::ScreenNavigaton));
 
     int datumColor;
     if(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints) {
@@ -194,19 +206,19 @@ void TextWindow::ShowHeader(void) {
     }
 
 #define hs(b) ((b) ? COLOR_MEANS_SHOWN : COLOR_MEANS_HIDDEN)
-    Printf("show: "
-           "%Cp%Ll%D%f2d-csys%E  "
-           "%Cp%Ll%D%faxes%E  "
-           "%Cp%Ll%D%fpoints%E  "
-           "%Cp%Ll%fany-datum%E",
+    Printf("%C4show: "
+           "%Cp%Ll%D%f2d-csys%E%C4  "
+           "%Cp%Ll%D%faxes%E%C4  "
+           "%Cp%Ll%D%fpoints%E%C4  "
+           "%Cp%Ll%fany-datum%E%C4",
         hs(SS.GW.show2dCsyss), (DWORD)&(SS.GW.show2dCsyss), &(SS.GW.ToggleBool),
         hs(SS.GW.showAxes),    (DWORD)&(SS.GW.showAxes),    &(SS.GW.ToggleBool),
         hs(SS.GW.showPoints),  (DWORD)&(SS.GW.showPoints),  &(SS.GW.ToggleBool),
         datumColor, &(SS.GW.ToggleAnyDatumShown)
     );
-    Printf("      "
-           "%Cp%Ll%D%fall-groups%E  "
-           "%Cp%Ll%D%fconstraints%E",
+    Printf("%C4      "
+           "%Cp%Ll%D%fall-groups%E%C4  "
+           "%Cp%Ll%D%fconstraints%E%C4",
         hs(SS.GW.showAllGroups),   (DWORD)(&SS.GW.showAllGroups),
             &(SS.GW.ToggleBool),
         hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints),
@@ -215,32 +227,46 @@ void TextWindow::ShowHeader(void) {
 }
 
 void TextWindow::ShowGroupList(void) {
-    ShowHeader();
-
-    Printf("%C4[[all groups in sketch]]%E");
+    Printf("%C8[[click group to view requests]]%E");
     int i;
-    for(i = 0; i < SS.group.elems; i++) {
-        Group *g = &(SS.group.elem[i].t);
-        if(g->name.str[0]) {
-            Printf("  %s", g->name.str);
+    for(i = 0; i <= SS.group.elems; i++) {
+        DWORD v;
+        char *s;
+        if(i == SS.group.elems) {
+            s = "all requests from all groups";
+            v = 0;
         } else {
-            Printf("  unnamed");
+            Group *g = &(SS.group.elem[i].t);
+            s = g->DescriptionString();
+            v = g->h.v;
         }
+        Printf("  %C9%Ll%D%f%s%E", v, (DWORD)(&TextWindow::ScreenSelectGroup), s);
     }
+}
+void TextWindow::ScreenSelectGroup(int link, DWORD v) {
+    SS.TW.OneScreenForward();
+
+    SS.TW.shown->screen = SCREEN_REQUEST_LIST;
+    SS.TW.shown->group.v = v;
+
+    SS.TW.Show();
 }
 
 void TextWindow::ShowRequestList(void) {
-    ShowHeader();
+    if(shown->group.v == 0) {
+        Printf("%C8[[requests in all groups]]%E");
+    } else {
+        Group *g = SS.group.FindById(shown->group);
+        Printf("%C8[[requests in group %s]]%E", g->DescriptionString());
+    }
 
-    Printf("%C4[[all requests in sketch]]%E");
     int i;
     for(i = 0; i < SS.request.elems; i++) {
         Request *r = &(SS.request.elem[i].t);
 
-        if(r->name.str[0]) {
-            Printf("  %s", r->name.str);
-        } else {
-            Printf("  unnamed");
+        if(r->group.v == shown->group.v || shown->group.v == 0) {
+            char *s = r->DescriptionString();
+            Printf("  %s", s);
         }
     }
 }

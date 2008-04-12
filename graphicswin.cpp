@@ -35,7 +35,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 };
 
 void GraphicsWindow::Init(void) {
-    offset.x = offset.y = offset.z = 0.9;
+    memset(this, 0, sizeof(*this));
+
+    offset.x = offset.y = offset.z = 0;
     scale = 1;
     projRight.x = 1; projRight.y = projRight.z = 0;
     projDown.y = 1; projDown.z = projDown.x = 0;
@@ -55,10 +57,23 @@ void GraphicsWindow::NormalizeProjectionVectors(void) {
     projRight = projRight.ScaledBy(1/projRight.Magnitude());
 }
 
+Point2d GraphicsWindow::ProjectPoint(Vector p) {
+    p = p.Plus(offset);
+
+    Point2d r;
+    r.x = p.Dot(projRight) * scale;
+    r.y = p.Dot(projDown) * scale;
+    return r;
+}
+
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
 {
+    Point2d mp = { x, y };
+
     if(middleDown) {
+        hover.Clear();
+
         double dx = (x - orig.mouse.x) / scale;
         double dy = (y - orig.mouse.y) / scale;
 
@@ -90,6 +105,57 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         orig.mouse.y = y;
 
         InvalidateGraphics();
+    } else {
+        // No mouse buttons are pressed. We just need to do our usual hit
+        // testing, to see if anything ought to be hovered.
+        Selection s;
+        HitTestMakeSelection(mp, &s);
+        if(!s.Equals(&hover)) {
+            hover = s;
+            InvalidateGraphics();
+        }
+    }
+}
+
+bool GraphicsWindow::Selection::Equals(Selection *b) {
+    if(point.v !=  b->point.v)  return false;
+    if(entity.v != b->entity.v) return false;
+    return true;
+}
+bool GraphicsWindow::Selection::IsEmpty(void) {
+    if(point.v)  return false;
+    if(entity.v) return false;
+    return true;
+}
+void GraphicsWindow::Selection::Clear(void) {
+    point.v = entity.v = 0;
+}
+void GraphicsWindow::Selection::Draw(void) {
+    if(point.v)  SS.point. FindById(point )->Draw();
+    if(entity.v) SS.entity.FindById(entity)->Draw();
+}
+
+void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
+    int i;
+    double d, dmin = 1e12;
+
+    dest->point.v = 0;
+    dest->entity.v = 0;
+
+    for(i = 0; i < SS.entity.elems; i++) {
+        d = SS.entity.elem[i].t.GetDistance(mp);
+        if(d < 10 && d < dmin) {
+            dest->point.v = 0;
+            dest->entity = SS.entity.elem[i].t.h;
+        }
+    }
+
+    for(i = 0; i < SS.point.elems; i++) {
+        d = SS.point.elem[i].t.GetDistance(mp);
+        if(d < 10 && d < dmin) {
+            dest->entity.v = 0;
+            dest->point = SS.point.elem[i].t.h;
+        }
     }
 }
 
@@ -102,6 +168,27 @@ void GraphicsWindow::MouseMiddleDown(double x, double y) {
 }
 
 void GraphicsWindow::MouseLeftDown(double x, double y) {
+    // Make sure the hover is up to date.
+    MouseMoved(x, y, false, false, false, false, false);
+
+    if(!hover.IsEmpty()) {
+        int i;
+        for(i = 0; i < MAX_SELECTED; i++) {
+            if(selection[i].Equals(&hover)) {
+                selection[i].Clear();
+                goto done;
+            }
+        }
+        for(i = 0; i < MAX_SELECTED; i++) {
+            if(selection[i].IsEmpty()) {
+                selection[i] = hover;
+                goto done;
+            }
+        }
+        // I guess we ran out of slots, oh well.
+done:
+        InvalidateGraphics();
+    }
 }
 
 void GraphicsWindow::MouseScroll(double x, double y, int delta) {
@@ -176,11 +263,29 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    glColor3f(1, 1, 1);
 
     int i;
+
+    // First, draw the entire scene.
+    glColor3f(1, 1, 1);
     for(i = 0; i < SS.entity.elems; i++) {
         SS.entity.elem[i].t.Draw();
+    }
+    glColor3f(0, 0.8f, 0);
+    for(i = 0; i < SS.point.elems; i++) {
+        SS.point.elem[i].t.Draw();
+    }
+
+    // Then redraw whatever the mouse is hovering over, highlighted. Have
+    // to disable the depth test, so that we can overdraw.
+    glDisable(GL_DEPTH_TEST); 
+    glColor3f(1, 1, 0);
+    hover.Draw();
+
+    // And finally draw the selection, same mechanism.
+    glColor3f(1, 0, 0);
+    for(i = 0; i < MAX_SELECTED; i++) {
+        selection[i].Draw();
     }
 }
 

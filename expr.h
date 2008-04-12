@@ -12,16 +12,21 @@ public:
     // if we know that the param table won't move around)
     static const int PARAM_PTR      =  1;
 
-    static const int CONSTANT       = 10;
-    static const int PLUS           = 21;
-    static const int MINUS          = 22;
-    static const int TIMES          = 23;
-    static const int DIV            = 24;
-    static const int NEGATE         = 25;
-    static const int SQRT           = 26;
-    static const int SQUARE         = 27;
-    static const int SIN            = 28;
-    static const int COS            = 29;
+    // These are used only for user-entered expressions.
+    static const int POINT          = 10;
+    static const int ENTITY         = 11;
+
+    static const int CONSTANT       = 20;
+
+    static const int PLUS           = 100;
+    static const int MINUS          = 101;
+    static const int TIMES          = 102;
+    static const int DIV            = 103;
+    static const int NEGATE         = 104;
+    static const int SQRT           = 105;
+    static const int SQUARE         = 106;
+    static const int SIN            = 107;
+    static const int COS            = 108;
 
     int op;
     Expr    *a;
@@ -29,6 +34,8 @@ public:
     union {
         hParam  parh;
         double *parp;
+        hPoint  point;
+        hEntity entity;
         double  v;
     }       x;
 };

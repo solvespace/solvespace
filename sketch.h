@@ -55,6 +55,8 @@ public:
 
     hEntity     csys;   // or Entity::NO_CSYS, if it's not locked in a 2d csys
     NameStr     name;
+
+    char *DescriptionString(void);
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -83,6 +85,8 @@ public:
 
     void AddParam(Entity *e, int index);
     void Generate(void);
+
+    char *DescriptionString(void);
 };
 
 class Entity {
@@ -104,8 +108,15 @@ public:
     inline hPoint point(int i)
         { hPoint r; r.v = ((this->h.v) << 8) | i; return r; }
 
-    void LineDrawHitTest(Vector a, Vector b);
+    struct {
+        bool    drawing;
+        Point2d mp;
+        double  dmin;
+    } dogd; // state for drawing or getting distance (for hit testing)
+    void LineDrawOrGetDistance(Vector a, Vector b);
+    void DrawOrGetDistance(void);
     void Draw(void);
+    double GetDistance(Point2d mp);
 };
 
 class Param {
@@ -137,12 +148,13 @@ public:
     // The point, in base coordinates. This may be a single parameter, or
     // it may be a more complex expression if our point is locked in a 
     // 2d csys.
-    Expr *x(void);
-    Expr *y(void);
-    Expr *z(void);
+    void GetExprs(Expr **x, Expr **y, Expr **z);
+    Vector GetCoords(void);
 
     void ForceTo(Vector v);
-    void GetInto(Vector *v);
+
+    void Draw(void);
+    double GetDistance(Point2d mp);
 };
 
 #endif

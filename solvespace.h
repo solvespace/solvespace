@@ -23,8 +23,8 @@ void dbp(char *str, ...);
 
 class Expr;
 #include "dsc.h"
-#include "ui.h"
 #include "sketch.h"
+#include "ui.h"
 #include "expr.h"
 
 // From the platform-specific code.

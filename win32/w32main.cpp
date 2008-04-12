@@ -58,11 +58,9 @@ static void PaintTextWnd(HDC hdc)
     FillRect(backDc, &rect, hbr);
 
     SelectObject(backDc, FixedFont);
-    SetTextColor(backDc, SS.TW.COLOR_FG_DEFAULT);
     SetBkColor(backDc, SS.TW.COLOR_BG_DEFAULT);
 
     int rows = height / TEXT_HEIGHT;
-    rows--;
     TextWndRows = rows;
 
     TextWndScrollPos = min(TextWndScrollPos, SS.TW.rows - rows);
@@ -101,21 +99,10 @@ static void PaintTextWnd(HDC hdc)
         }
     }
 
-    SetTextColor(backDc, SS.TW.COLOR_FG_CMDLINE);
-    SetBkColor(backDc, SS.TW.COLOR_BG_CMDLINE);
-    TextOut(backDc, 4, rows*TEXT_HEIGHT+1, SS.TW.cmd, SS.TW.MAX_COLS);
-
-    HPEN cpen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
-    SelectObject(backDc, cpen);
-    int y = (rows+1)*TEXT_HEIGHT - 3;
-    MoveToEx(backDc, 4+(SS.TW.cmdInsert*TEXT_WIDTH), y, NULL);
-    LineTo(backDc, 4+(SS.TW.cmdInsert*TEXT_WIDTH)+TEXT_WIDTH, y);
-
     // And commit the back buffer
     BitBlt(hdc, 0, 0, width, height, backDc, 0, 0, SRCCOPY);
     DeleteObject(backBitmap);
     DeleteObject(hbr);
-    DeleteObject(cpen);
     DeleteDC(backDc);
 }
 
@@ -232,18 +219,13 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
         
-        case WM_CHAR:
-            SS.TW.KeyPressed(wParam);
-            InvalidateRect(TextWnd, NULL, FALSE);
-            break;
-
         case WM_SIZE: {
             RECT r;
             GetWindowRect(TextWndScrollBar, &r);
             int sw = r.right - r.left;
             GetClientRect(hwnd, &r);
             MoveWindow(TextWndScrollBar, r.right - sw, r.top, sw,
-                (r.bottom - r.top) - TEXT_HEIGHT, TRUE);
+                (r.bottom - r.top), TRUE);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
         }
@@ -300,12 +282,6 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
     switch (msg) {
-        case WM_CHAR:
-            SS.TW.KeyPressed(wParam);
-            SetForegroundWindow(TextWnd);
-            InvalidateRect(TextWnd, NULL, FALSE);
-            break;
-
         case WM_ERASEBKGND:
             break;
 
@@ -433,7 +409,8 @@ static void CreateMainWindows(void)
     if(!RegisterClassEx(&wc)) oops();
 
     HMENU top = CreateGraphicsWindowMenus();
-    GraphicsWnd = CreateWindowEx(0, "GraphicsWnd", "SolveSpace (View Sketch)",
+    GraphicsWnd = CreateWindowEx(0, "GraphicsWnd",
+        "SolveSpace (Graphics Window)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
         600, 300, 200, 200, NULL, top, Instance, NULL);
@@ -452,7 +429,7 @@ static void CreateMainWindows(void)
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
     TextWnd = CreateWindowEx(0, 
-        "TextWnd", "SolveSpace (Command Line)",
+        "TextWnd", "SolveSpace (Text Window)",
         WS_THICKFRAME | WS_CLIPCHILDREN,
         10, 10, 600, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();

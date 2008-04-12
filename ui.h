@@ -11,9 +11,6 @@ public:
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #endif
     static const int COLOR_BG_DEFAULT       = RGB( 15,  15,   0);
-    static const int COLOR_FG_DEFAULT       = RGB(255, 255, 255);
-    static const int COLOR_BG_CMDLINE       = RGB(  0,  20,  80);
-    static const int COLOR_FG_CMDLINE       = RGB(255, 255, 255);
 
     typedef struct {
         int     fg;
@@ -25,17 +22,10 @@ public:
     static const int COLOR_MEANS_SHOWN      = 2;
     static const int COLOR_MEANS_MIXED      = 3;
 
-    // The line with the user-typed command, that is currently being edited.
-    char    cmd[MAX_COLS];
-    int     cmdInsert;
-    int     cmdLen;
-
     // The rest of the window, text displayed in response to typed commands;
     // some of this might do something if you click on it.
 
     static const int NOT_A_LINK = 0;
-
-    static const int COLOR_NORMAL   = 0;
 
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
@@ -52,21 +42,29 @@ public:
     void Printf(char *fmt, ...);
     void ClearScreen(void);
     
-    void ClearCommand(void);
-
-    void ProcessCommand(char *cmd);
-
-    // These are called by the platform-specific code.
-    void KeyPressed(int c);
-    bool IsHyperlink(int width, int height);
-
     void Show(void);
+
+    // State for the screen that we are showing in the text window.
+    static const int SCREEN_GROUP_LIST      = 0;
+    static const int SCREEN_REQUEST_LIST    = 1;
+    typedef struct {
+        int     screen;
+        hGroup  group;
+    } ShownState;
+    static const int HISTORY_LEN = 16;
+    ShownState showns[HISTORY_LEN];
+    int shownIndex;
+    int history;
+    ShownState *shown;
 
     void ShowHeader(void);
     // These are self-contained screens, that show some information about
     // the sketch.
     void ShowGroupList(void);
     void ShowRequestList(void);
+    void OneScreenForward(void);
+    static void ScreenSelectGroup(int link, DWORD v);
+    static void ScreenNavigaton(int link, DWORD v);
 };
 
 class GraphicsWindow {
@@ -80,6 +78,8 @@ public:
         MenuHandler *fn;
     } MenuEntry;
     static const MenuEntry menu[];
+
+    void Init(void);
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -97,9 +97,26 @@ public:
         Point2d mouse;
     }       orig;
 
-    void Init(void);
     void NormalizeProjectionVectors(void);
+    Point2d ProjectPoint(Vector p);
     
+    // The current selection.
+    class Selection {
+    public:
+        hPoint      point;
+        hEntity     entity;
+
+        void Draw(void);
+
+        void Clear(void);
+        bool IsEmpty(void);
+        bool Equals(Selection *b);
+    };
+    Selection hover;
+    static const int MAX_SELECTED = 32;
+    Selection selection[MAX_SELECTED];
+    void HitTestMakeSelection(Point2d mp, Selection *dest);
+
     // This sets what gets displayed.
     bool    show2dCsyss;
     bool    showAxes;
