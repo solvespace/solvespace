@@ -143,18 +143,28 @@ done:
 }
 
 void TextWindow::Show(void) {
-    ShowHeader();
-    switch(shown->screen) {
-        default:
-            shown->screen = SCREEN_GROUP_LIST;
-            // fall through
-        case SCREEN_GROUP_LIST:
-            ShowGroupList();
-            break;
+    if(!(SS.GW.pendingOperation)) SS.GW.pendingDescription = NULL;
 
-        case SCREEN_REQUEST_LIST:
-            ShowRequestList();
-            break;
+    ShowHeader();
+
+    if(SS.GW.pendingDescription) {
+        // A pending operation (that must be completed with the mouse in
+        // the graphics window) will preempt our usual display.
+        Printf("");
+        Printf("%s", SS.GW.pendingDescription);
+    } else {
+        switch(shown->screen) {
+            default:
+                shown->screen = SCREEN_GROUP_LIST;
+                // fall through
+            case SCREEN_GROUP_LIST:
+                ShowGroupList();
+                break;
+
+            case SCREEN_REQUEST_LIST:
+                ShowRequestList();
+                break;
+        }
     }
     InvalidateText();
 }
@@ -192,9 +202,17 @@ void TextWindow::ScreenNavigaton(int link, DWORD v) {
 void TextWindow::ShowHeader(void) {
     ClearScreen();
 
-    Printf(" %Lb%f<<%E   %Lh%fhome%E",
-        (DWORD)(&TextWindow::ScreenNavigaton),
-        (DWORD)(&TextWindow::ScreenNavigaton));
+    SS.GW.EnsureValidActiveGroup();
+
+    if(SS.GW.pendingDescription) {
+        Printf("");
+    } else {
+        // Navigation buttons
+        Printf(" %Lb%f<<%E   %Lh%fhome%E   group:%s",
+            (DWORD)(&TextWindow::ScreenNavigaton),
+            (DWORD)(&TextWindow::ScreenNavigaton),
+            SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
+    }
 
     int datumColor;
     if(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints) {

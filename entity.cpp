@@ -31,7 +31,6 @@ double Entity::GetDistance(Point2d mp) {
 }
 
 void Entity::DrawOrGetDistance(void) {
-    if(!visible) return;
     switch(type) {
         case CSYS_2D: {
             Vector p;
@@ -45,16 +44,15 @@ void Entity::DrawOrGetDistance(void) {
             Vector u = Vector::RotationU(q[0], q[1], q[2], q[3]);
             Vector v = Vector::RotationV(q[0], q[1], q[2], q[3]);
 
-            double s = (min(SS.GW.width, SS.GW.height))*0.4;
+            double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
 
-            Vector pp = p.Plus (u).Plus (v);
-            Vector pm = p.Plus (u).Minus(v);
-            Vector mm = p.Minus(u).Minus(v);
-            Vector mp = p.Minus(u).Plus (v);
-            pp = pp.ScaledBy(s);
-            pm = pm.ScaledBy(s);
-            mm = mm.ScaledBy(s);
-            mp = mp.ScaledBy(s);
+            Vector us = u.ScaledBy(s);
+            Vector vs = v.ScaledBy(s);
+
+            Vector pp = p.Plus (us).Plus (vs);
+            Vector pm = p.Plus (us).Minus(vs);
+            Vector mm = p.Minus(us).Minus(vs);
+            Vector mp = p.Minus(us).Plus (vs);
 
             LineDrawOrGetDistance(pp, pm);
             LineDrawOrGetDistance(pm, mm);
@@ -71,6 +69,17 @@ void Entity::DrawOrGetDistance(void) {
             }
             break;
         }
+        case DATUM_POINT:
+            // All display is handled by the generated point.
+            break;
+
+        case LINE_SEGMENT: {
+            Vector a = SS.point.FindById(point(16))->GetCoords();
+            Vector b = SS.point.FindById(point(16+3))->GetCoords();
+            LineDrawOrGetDistance(a, b);
+            break;
+        }
+
         default:
             oops();
     }

@@ -60,7 +60,7 @@ public:
 
     hGroup                      activeGroup;
 
-    void GenerateForUserInterface(void);
+    void GenerateAll(void);
     void ForceReferences(void);
 
     void Init(void);

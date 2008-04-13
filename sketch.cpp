@@ -10,9 +10,9 @@ const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 char *Group::DescriptionString(void) {
     static char ret[100];
     if(name.str[0]) {
-        sprintf(ret, "g%03x-%s", h.v, name.str);
+        sprintf(ret, "g%04x-%s", h.v, name.str);
     } else {
-        sprintf(ret, "g%03x-(unnamed)", h.v);
+        sprintf(ret, "g%04x-(unnamed)", h.v);
     }
     return ret;
 }
@@ -30,7 +30,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 {
     int points = 0;
     int params = 0;
-    int type = 0;
+    int et = 0;
     int i;
 
     Group *g = SS.group.FindById(group);
@@ -42,11 +42,13 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     bool shown = true;
     switch(type) {
         case Request::CSYS_2D:
-            type = Entity::CSYS_2D;          points = 1; params = 4;
-            if(!SS.GW.show2dCsyss) shown = false;
-            goto c;
+            et = Entity::CSYS_2D;          points = 1; params = 4; goto c;
+
+        case Request::DATUM_POINT:
+            et = Entity::DATUM_POINT;      points = 1; params = 0; goto c;
+
         case Request::LINE_SEGMENT:
-            type = Entity::LINE_SEGMENT;     points = 2; params = 0; goto c;
+            et = Entity::LINE_SEGMENT;     points = 2; params = 0; goto c;
 c: {
             // Common routines, for all the requests that generate a single
             // entity that's defined by a simple combination of pts and params.
@@ -70,12 +72,10 @@ c: {
                     AddParam(param, &e, 16 + 3*i + 0);
                     AddParam(param, &e, 16 + 3*i + 1);
                 }
-                pt.visible = shown;
                 point->Add(&pt);
             }
     
-            e.type = type;
-            e.visible = shown;
+            e.type = et;
             entity->Add(&e);
             break;
         }
@@ -130,8 +130,6 @@ Vector Point::GetCoords(void) {
 }
 
 void Point::Draw(void) {
-    if(!visible) return;
-
     Vector v = GetCoords();
 
     double s = 4;
@@ -147,8 +145,6 @@ void Point::Draw(void) {
 }
 
 double Point::GetDistance(Point2d mp) {
-    if(!visible) return 1e12;
-
     Vector v = GetCoords();
     Point2d pp = SS.GW.ProjectPoint(v);
 

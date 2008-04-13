@@ -78,14 +78,22 @@ public:
     }
     
     T *FindById(H h) {
+        T *t = FindByIdNoOops(h);
+        if(!t) {
+            dbp("failed to look up item %16lx, searched %d items", h.v, elems);
+            oops();
+        }
+        return t;
+    }
+
+    T *FindByIdNoOops(H h) {
         int i;
         for(i = 0; i < elems; i++) {
             if(elem[i].t.h.v == h.v) {
                 return &(elem[i].t);
             }
         }
-        dbp("failed to look up item %16lx, searched %d items", h.v, elems);
-        oops();
+        return NULL;
     }
 
     void ClearTags(void) {
@@ -110,6 +118,12 @@ public:
         }
         elems = dest;
         // and elemsAllocated is untouched, because we didn't resize
+    }
+
+    void MoveSelfInto(IdList<T,H> *l) {
+        memcpy(l, this, sizeof(*this));
+        elemsAllocated = elems = 0;
+        elem = NULL;
     }
 
     void Clear(void) {

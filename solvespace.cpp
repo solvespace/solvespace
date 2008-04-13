@@ -7,9 +7,6 @@ template IdList<Point,hPoint>;
 SolveSpace SS;
 
 void SolveSpace::Init(void) {
-    TW.Init();
-    GW.Init();
-
     request.Clear();
     entity.Clear();
     point.Clear();
@@ -48,18 +45,30 @@ void SolveSpace::Init(void) {
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 
+    TW.Init();
+    GW.Init();
+
     TW.Show();
-    GenerateForUserInterface();
+    GenerateAll();
 }
 
-void SolveSpace::GenerateForUserInterface(void) {
+void SolveSpace::GenerateAll(void) {
     int i;
 
+    IdList<Param,hParam> prev;
+    param.MoveSelfInto(&prev);
+
     entity.Clear();
-    param.Clear();
     point.Clear();
     for(i = 0; i < request.elems; i++) {
         request.elem[i].t.Generate(&entity, &point, &param);
+    }
+
+    for(i = 0; i < param.elems; i++) {
+        Param *p = prev.FindByIdNoOops(param.elem[i].t.h);
+        if(p) {
+            param.elem[i].t.val = p->val;
+        }
     }
 
     ForceReferences();

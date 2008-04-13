@@ -21,28 +21,36 @@ public:
 };
 class hRequest {
 public:
-    // bits 10: 0   -- request index
+    // bits 14: 0   -- request index (the high bits may be used as an import ID)
     DWORD   v;
+
+    inline hEntity entity(int i);
 };
 class hEntity {
 public:
-    // bits 10: 0   -- entity index
-    //      21:11   -- request index
+    // bits  9: 0   -- entity index
+    //      24:10   -- request index
     DWORD   v;
+
+    inline hRequest request(void);
+    inline hParam param(int i);
+    inline hPoint point(int i);
 };
 class hParam {
 public:
-    // bits  7: 0   -- param index
-    //      18: 8   -- entity index
-    //      29:19   -- request index
+    // bits  6: 0   -- param index
+    //      16: 7   -- entity index
+    //      31:17   -- request index
     DWORD       v;
 };
 class hPoint {
-    // bits  7: 0   -- point index
-    //      18: 8   -- entity index
-    //      29:19   -- request index
+    // bits  6: 0   -- point index
+    //      16: 7   -- entity index
+    //      31:17   -- request index
 public:
     DWORD   v;
+
+    inline bool isFromReferences(void);
 };
 
 // A set of requests. Every request must have an associated group. A group
@@ -71,8 +79,9 @@ public:
     static const hRequest   HREQUEST_REFERENCE_ZX;
 
     // Types of requests
-    static const int CSYS_2D                = 0;
-    static const int LINE_SEGMENT           = 1;
+    static const int CSYS_2D                =  0;
+    static const int DATUM_POINT            =  1;
+    static const int LINE_SEGMENT           = 10;
 
     int         type;
 
@@ -83,7 +92,7 @@ public:
     NameStr     name;
 
     inline hEntity entity(int i)
-        { hEntity r; r.v = ((this->h.v) << 11) | i; return r; }
+        { hEntity r; r.v = ((this->h.v) << 10) | i; return r; }
 
     void AddParam(IdList<Param,hParam> *param, Entity *e, int index);
     void Generate(IdList<Entity,hEntity> *entity,
@@ -97,22 +106,21 @@ class Entity {
 public:
     static const hEntity    NO_CSYS;
 
-    static const int CSYS_2D                = 100;
-    static const int LINE_SEGMENT           = 101;
+    static const int CSYS_2D                = 1000;
+    static const int DATUM_POINT            = 1001;
+    static const int LINE_SEGMENT           = 1010;
     int         type;
 
     hEntity     h;
 
-    bool        visible;
-
     Expr        *expr[16];
 
     inline hRequest request(void)
-        { hRequest r; r.v = (this->h.v >> 11); return r; }
+        { hRequest r; r.v = (this->h.v >> 10); return r; }
     inline hParam param(int i)
-        { hParam r; r.v = ((this->h.v) << 8) | i; return r; }
+        { hParam r; r.v = ((this->h.v) << 7) | i; return r; }
     inline hPoint point(int i)
-        { hPoint r; r.v = ((this->h.v) << 8) | i; return r; }
+        { hPoint r; r.v = ((this->h.v) << 7) | i; return r; }
 
     struct {
         bool    drawing;
@@ -145,10 +153,9 @@ public:
     static const int BY_EXPR        = 2;    // three Expr *, could be anything
 
     hEntity     csys;
-    bool        visible;
 
     inline hEntity entity(void)
-        { hEntity r; r.v = (h.v >> 8); return r; }
+        { hEntity r; r.v = (h.v >> 7); return r; }
     inline hParam param(int i)
         { hParam r; r.v = h.v + i; return r; }
 
@@ -163,5 +170,24 @@ public:
     void Draw(void);
     double GetDistance(Point2d mp);
 };
+
+
+inline hEntity hRequest::entity(int i)
+    { hEntity r; r.v = (v << 10) | i; return r; }
+
+inline hRequest hEntity::request(void)
+    { hRequest r; r.v = (v >> 10); return r; }
+inline hParam hEntity::param(int i)
+    { hParam r; r.v = (v << 7) | i; return r; }
+inline hPoint hEntity::point(int i)
+    { hPoint r; r.v = (v << 7) | i; return r; }
+
+inline bool hPoint::isFromReferences(void) {
+    DWORD d = v >> 17;
+    if(d == Request::HREQUEST_REFERENCE_XY.v) return true;
+    if(d == Request::HREQUEST_REFERENCE_YZ.v) return true;
+    if(d == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    return false;
+}
 
 #endif

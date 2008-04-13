@@ -41,7 +41,7 @@ public:
     void Init(void);
     void Printf(char *fmt, ...);
     void ClearScreen(void);
-    
+   
     void Show(void);
 
     // State for the screen that we are showing in the text window.
@@ -73,11 +73,15 @@ public:
 
     // This table describes the top-level menus in the graphics winodw.
     typedef enum {
+        // View
         MNU_ZOOM_IN = 100,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
         MNU_ORIENT_ONTO,
         MNU_UNSELECT_ALL,
+        // Request
+        MNU_DATUM_POINT,
+        MNU_LINE_SEGMENT,
     } MenuId;
     typedef void MenuHandler(MenuId id);
     typedef struct {
@@ -90,6 +94,7 @@ public:
     static const MenuEntry menu[];
     static void MenuView(MenuId id);
     static void MenuEdit(MenuId id);
+    static void MenuRequest(MenuId id);
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -109,6 +114,18 @@ public:
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
+
+    hGroup  activeGroup;
+    void EnsureValidActiveGroup();
+
+    // Operations that must be completed by doing something with the mouse
+    // are noted here.
+    static const int    PENDING_OPERATION_DRAGGING_POINT = 0x0f000000;
+    hPoint  pendingPoint;
+    int     pendingOperation;
+    char   *pendingDescription;
+    hRequest AddRequest(int type);
+
     
     // The current selection.
     class Selection {
@@ -145,6 +162,8 @@ public:
     bool    showConstraints;
     static void ToggleBool(int link, DWORD v);
     static void ToggleAnyDatumShown(int link, DWORD v);
+
+    void UpdateDraggedPoint(hPoint hp, double mx, double my);
 
     // These are called by the platform-specific code.
     void Paint(int w, int h);
