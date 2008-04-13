@@ -21,7 +21,7 @@ void SolveSpace::Init(void) {
     g.h = Group::HGROUP_REFERENCES;
     group.Add(&g);
 
-    g.csys = Entity::NO_CSYS;
+    g.csys.v = Request::HREQUEST_REFERENCE_XY.v << 10;
     g.name.strcpy("");
     group.AddAndAssignId(&g);
     

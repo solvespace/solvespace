@@ -53,6 +53,27 @@ void Error(char *str, ...)
     MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);
 }
 
+//-----------------------------------------------------------------------------
+// A separate heap, on which we allocate expressions. Maybe a bit faster,
+// since no fragmentation issues whatsoever, and it also makes it possible
+// to be sloppy with our memory management, and just free everything at once
+// at the end.
+//-----------------------------------------------------------------------------
+static HANDLE Heap;
+Expr *AllocExpr(void)
+{
+    Expr *v = (Expr *)HeapAlloc(Heap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, 
+                                                                 sizeof(Expr));
+    if(!v) oops();
+    memset(v, 0, sizeof(*v));
+    return v;
+}
+void FreeAllExprs(void)
+{
+    if(Heap) HeapDestroy(Heap);
+    Heap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
+}
+
 static void PaintTextWnd(HDC hdc)
 {
     RECT rect;
@@ -104,9 +125,18 @@ static void PaintTextWnd(HDC hdc)
             } else {
                 SelectObject(backDc, FixedFont);
             }
-            TextOut(backDc, 4 + c*TEXT_WIDTH,
-                (r-TextWndScrollPos)*TEXT_HEIGHT + 1,
-                (char *)&(SS.TW.text[r][c]), 1);
+
+            int x = 4 + c*TEXT_WIDTH;
+            int y = (r-TextWndScrollPos)*TEXT_HEIGHT + 1 + (r >= 3 ? 9 : 0);
+
+            HBRUSH b = CreateSolidBrush(SS.TW.colors[color].bg);
+            RECT a;
+            a.left = x; a.right = x+TEXT_WIDTH;
+            a.top = y; a.bottom = y+TEXT_HEIGHT;
+            FillRect(backDc, &a, b);
+            DeleteObject(b);
+
+            TextOut(backDc, x, y, (char *)&(SS.TW.text[r][c]), 1);
         }
     }
 
@@ -166,6 +196,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_SIZING: {
             RECT *r = (RECT *)lParam;
             int hc = (r->bottom - r->top) - ClientIsSmallerBy;
+            hc += TEXT_HEIGHT/2;
             int extra = hc % TEXT_HEIGHT;
             switch(wParam) {
                 case WMSZ_BOTTOM:
@@ -525,6 +556,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
     if(!LinkFont)
         LinkFont = (HFONT)GetStockObject(SYSTEM_FONT);
+
+    // Create the heap that we use to store Exprs.
+    FreeAllExprs();
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();

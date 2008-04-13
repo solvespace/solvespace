@@ -16,6 +16,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\entity.obj \
            $(OBJDIR)\sketch.obj \
            $(OBJDIR)\glhelper.obj \
+           $(OBJDIR)\expr.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib

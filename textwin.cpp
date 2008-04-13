@@ -208,7 +208,7 @@ void TextWindow::ShowHeader(void) {
         Printf("");
     } else {
         // Navigation buttons
-        Printf(" %Lb%f<<%E   %Lh%fhome%E   group:%s",
+        Printf(" %Lb%f<<%E   %Lh%fhome%E   %C4 group:%s",
             (DWORD)(&TextWindow::ScreenNavigaton),
             (DWORD)(&TextWindow::ScreenNavigaton),
             SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
@@ -245,7 +245,7 @@ void TextWindow::ShowHeader(void) {
 }
 
 void TextWindow::ShowGroupList(void) {
-    Printf("%C8[[click group to view requests]]%E");
+    Printf("%C8[[all groups in sketch follow]]%E");
     int i;
     for(i = 0; i <= SS.group.elems; i++) {
         DWORD v;
@@ -275,6 +275,17 @@ void TextWindow::ShowRequestList(void) {
         Printf("%C8[[requests in all groups]]%E");
     } else {
         Group *g = SS.group.FindById(shown->group);
+        if(SS.GW.activeGroup.v == shown->group.v) {
+            Printf("%C8[[this is the active group]]");
+        } else {
+            Printf("%C8[[not active; %Llactivate this group%E%C8]]");
+        }
+        if(g->csys.v == Entity::NO_CSYS.v) {
+            Printf("[[points may go anywhere in 3d]]");
+        } else {
+            Printf("[[locked into plane %s]]",
+                SS.request.FindById(g->csys.request())->DescriptionString());
+        }
         Printf("%C8[[requests in group %s]]%E", g->DescriptionString());
     }
 

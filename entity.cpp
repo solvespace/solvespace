@@ -1,5 +1,15 @@
 #include "solvespace.h"
 
+void Entity::Get2dCsysBasisVectors(Vector *u, Vector *v) {
+    double q[4];
+    for(int i = 0; i < 4; i++) {
+        q[i] = SS.param.FindById(param(i))->val;
+    }
+
+    *u = Vector::RotationU(q[0], q[1], q[2], q[3]);
+    *v = Vector::RotationV(q[0], q[1], q[2], q[3]);
+}
+
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         glBegin(GL_LINE_STRIP);
@@ -36,13 +46,8 @@ void Entity::DrawOrGetDistance(void) {
             Vector p;
             p = SS.point.FindById(point(16))->GetCoords();
 
-            double q[4];
-            for(int i = 0; i < 4; i++) {
-                q[i] = SS.param.FindById(param(i))->val;
-            }
-
-            Vector u = Vector::RotationU(q[0], q[1], q[2], q[3]);
-            Vector v = Vector::RotationV(q[0], q[1], q[2], q[3]);
+            Vector u, v;
+            Get2dCsysBasisVectors(&u, &v);
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
 

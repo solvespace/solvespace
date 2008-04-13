@@ -125,12 +125,7 @@ void GraphicsWindow::MenuView(MenuId id) {
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
                 Entity *e = SS.entity.FindById(SS.GW.gs.entity[0]);
-                double q[4];
-                for(int i = 0; i < 4; i++) {
-                    q[i] = SS.param.FindById(e->param(i))->val;
-                }
-                SS.GW.projRight = Vector::RotationU(q[0], q[1], q[2], q[3]);
-                SS.GW.projUp = Vector::RotationV(q[0], q[1], q[2], q[3]);
+                e->Get2dCsysBasisVectors( &(SS.GW.projRight), &(SS.GW.projUp));
                 SS.GW.offset = SS.point.FindById(e->point(16))->GetCoords();
                 SS.GW.ClearSelection();
                 InvalidateGraphics();
@@ -376,6 +371,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.point.FindById(hr.entity(0).point(16))->ForceTo(v);
             pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
             pendingPoint = hr.entity(0).point(16+3);
+            pendingDescription = "click to place next point of line";
             SS.point.FindById(pendingPoint)->ForceTo(v);
             break;
 

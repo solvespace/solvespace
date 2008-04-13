@@ -100,13 +100,22 @@ void Param::ForceTo(double v) {
     known = true;
 }
 
-void Point::ForceTo(Vector v) {
+void Point::ForceTo(Vector p) {
     switch(type) {
         case IN_FREE_SPACE:
-            SS.param.FindById(param(0))->ForceTo(v.x);
-            SS.param.FindById(param(1))->ForceTo(v.y);
-            SS.param.FindById(param(2))->ForceTo(v.z);
+            SS.GetParam(param(0))->ForceTo(p.x);
+            SS.GetParam(param(1))->ForceTo(p.y);
+            SS.GetParam(param(2))->ForceTo(p.z);
             break;
+
+        case IN_2D_CSYS: {
+            Entity *c = SS.GetEntity(csys);
+            Vector u, v;
+            c->Get2dCsysBasisVectors(&u, &v);
+            SS.GetParam(param(0))->ForceTo(p.Dot(u));
+            SS.GetParam(param(1))->ForceTo(p.Dot(v));
+            break;
+        }
 
         default:
             oops();
@@ -114,19 +123,28 @@ void Point::ForceTo(Vector v) {
 }
 
 Vector Point::GetCoords(void) {
-    Vector v;
+    Vector p;
     switch(type) {
         case IN_FREE_SPACE:
-            v.x = SS.param.FindById(param(0))->val;
-            v.y = SS.param.FindById(param(1))->val;
-            v.z = SS.param.FindById(param(2))->val;
+            p.x = SS.GetParam(param(0))->val;
+            p.y = SS.GetParam(param(1))->val;
+            p.z = SS.GetParam(param(2))->val;
             break;
+
+        case IN_2D_CSYS: {
+            Entity *c = SS.GetEntity(csys);
+            Vector u, v;
+            c->Get2dCsysBasisVectors(&u, &v);
+            p =        u.ScaledBy(SS.GetParam(param(0))->val);
+            p = p.Plus(v.ScaledBy(SS.GetParam(param(1))->val));
+            break;
+        }
 
         default:
             oops();
     }
 
-    return v;
+    return p;
 }
 
 void Point::Draw(void) {

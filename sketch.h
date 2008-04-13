@@ -122,6 +122,8 @@ public:
     inline hPoint point(int i)
         { hPoint r; r.v = ((this->h.v) << 7) | i; return r; }
 
+    void Get2dCsysBasisVectors(Vector *u, Vector *v);
+
     struct {
         bool    drawing;
         Point2d mp;

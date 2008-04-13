@@ -12,8 +12,13 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+class Expr;
+
 void dbp(char *str, ...);
 void Error(char *str, ...);
+Expr *AllocExpr(void);
+void FreeAllExprs(void);
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -22,7 +27,6 @@ void Error(char *str, ...);
 #include <gl/gl.h>
 #include <gl/glu.h>
 
-class Expr;
 #include "dsc.h"
 #include "sketch.h"
 #include "ui.h"
@@ -57,6 +61,9 @@ public:
     IdList<Entity,hEntity>      entity;
     IdList<Point,hPoint>        point;
     IdList<Param,hParam>        param;
+
+    inline Entity *GetEntity(hEntity h) { return entity.FindById(h); }
+    inline Param  *GetParam (hParam  h) { return param. FindById(h); }
 
     hGroup                      activeGroup;
 

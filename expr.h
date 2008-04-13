@@ -32,12 +32,33 @@ public:
     Expr    *a;
     Expr    *b;
     union {
+        double  v;
         hParam  parh;
-        double *parp;
+        Param  *parp;
         hPoint  point;
         hEntity entity;
-        double  v;
     }       x;
+
+    static Expr *FromParam(hParam p);
+    static Expr *FromConstant(double v);
+
+    Expr *AnyOp(int op, Expr *b);
+    inline Expr *Plus (Expr *b) { return AnyOp(PLUS,  b); }
+    inline Expr *Minus(Expr *b) { return AnyOp(MINUS, b); }
+    inline Expr *Times(Expr *b) { return AnyOp(TIMES, b); }
+    inline Expr *Div  (Expr *b) { return AnyOp(DIV,   b); }
+
+    inline Expr *Negate(void) { return AnyOp(NEGATE, NULL); }
+    inline Expr *Sqrt  (void) { return AnyOp(SQRT,   NULL); }
+    inline Expr *Square(void) { return AnyOp(SQUARE, NULL); }
+    inline Expr *Sin   (void) { return AnyOp(SIN,    NULL); }
+    inline Expr *Cos   (void) { return AnyOp(COS,    NULL); }
+
+    Expr *PartialWrt(hParam p);
+    double Eval(void);
+
+    void ParamsToPointers(void);
+    void Print(void);
 };
 
 #endif
