@@ -78,12 +78,17 @@ public:
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
         MNU_ORIENT_ONTO,
+        MNU_LOCK_VIEW,
         MNU_UNSELECT_ALL,
+        // Edit
+        MNU_DELETE,
         // Request
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
+        // Constrain
+        MNU_DISTANCE_DIA,
     } MenuId;
-    typedef void MenuHandler(MenuId id);
+    typedef void MenuHandler(int id);
     typedef struct {
         int         level;          // 0 == on menu bar, 1 == one level down
         char       *label;          // or NULL for a separator
@@ -92,9 +97,9 @@ public:
         MenuHandler *fn;
     } MenuEntry;
     static const MenuEntry menu[];
-    static void MenuView(MenuId id);
-    static void MenuEdit(MenuId id);
-    static void MenuRequest(MenuId id);
+    static void MenuView(int id);
+    static void MenuEdit(int id);
+    static void MenuRequest(int id);
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -111,6 +116,7 @@ public:
         Vector  projUp;
         Point2d mouse;
     }       orig;
+    bool    viewLocked;
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
@@ -132,6 +138,7 @@ public:
     public:
         hPoint      point;
         hEntity     entity;
+        hConstraint constraint;
 
         void Draw(void);
 
@@ -150,6 +157,7 @@ public:
         int         points;
         int         entities;
         int         csyss;
+        int         lineSegments;
         int         n;
     } gs;
     void GroupSelection(void);
@@ -163,7 +171,8 @@ public:
     static void ToggleBool(int link, DWORD v);
     static void ToggleAnyDatumShown(int link, DWORD v);
 
-    void UpdateDraggedPoint(hPoint hp, double mx, double my);
+    void UpdateDraggedPoint(Vector *pos, double mx, double my);
+    void UpdateDraggedHPoint(hPoint hp, double mx, double my);
 
     // These are called by the platform-specific code.
     void Paint(int w, int h);

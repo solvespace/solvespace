@@ -12,13 +12,6 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
-class Expr;
-
-void dbp(char *str, ...);
-void Error(char *str, ...);
-Expr *AllocExpr(void);
-void FreeAllExprs(void);
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -27,14 +20,23 @@ void FreeAllExprs(void);
 #include <gl/gl.h>
 #include <gl/glu.h>
 
+class Expr;
+
+// From the platform-specific code.
+void CheckMenuById(int id, BOOL checked);
+void InvalidateGraphics(void);
+void InvalidateText(void);
+void dbp(char *str, ...);
+void Error(char *str, ...);
+Expr *AllocExpr(void);
+void FreeAllExprs(void);
+
+
 #include "dsc.h"
 #include "sketch.h"
 #include "ui.h"
 #include "expr.h"
 
-// From the platform-specific code.
-void InvalidateGraphics(void);
-void InvalidateText(void);
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
@@ -56,14 +58,22 @@ public:
     TextWindow                  TW;
     GraphicsWindow              GW;
 
-    IdList<Group,hGroup>        group;
-    IdList<Request,hRequest>    request;
-    IdList<Entity,hEntity>      entity;
-    IdList<Point,hPoint>        point;
-    IdList<Param,hParam>        param;
+    // These lists define the sketch, and are edited by the user.
+    IdList<Group,hGroup>            group;
+    IdList<Request,hRequest>        request;
+    IdList<Constraint,hConstraint>  constraint;
 
-    inline Entity *GetEntity(hEntity h) { return entity.FindById(h); }
-    inline Param  *GetParam (hParam  h) { return param. FindById(h); }
+    // These lists are generated automatically when we solve the sketch.
+    IdList<Entity,hEntity>          entity;
+    IdList<Point,hPoint>            point;
+    IdList<Param,hParam>            param;
+
+    inline Constraint *GetConstraint(hConstraint h)
+        { return constraint.FindById(h); }
+    inline Request *GetRequest(hRequest h) { return request.FindById(h); }
+    inline Entity  *GetEntity (hEntity  h) { return entity. FindById(h); }
+    inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
+    inline Point   *GetPoint  (hPoint   h) { return point.  FindById(h); }
 
     hGroup                      activeGroup;
 

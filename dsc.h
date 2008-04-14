@@ -19,6 +19,7 @@ public:
     Vector Normal(int which);
     Vector RotatedAbout(Vector axis, double theta);
     double Magnitude(void);
+    Vector WithMagnitude(double s);
     Vector ScaledBy(double s);
 
     // Call a rotation matrix [ u' v' n' ]'; this returns the first and
@@ -100,6 +101,15 @@ public:
         int i;
         for(i = 0; i < elems; i++) {
             elem[i].tag = 0;
+        }
+    }
+
+    void Tag(H h, int tag) {
+        int i;
+        for(i = 0; i < elems; i++) {
+            if(elem[i].t.h.v == h.v) {
+                elem[i].tag = tag;
+            }
         }
     }
 

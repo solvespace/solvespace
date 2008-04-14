@@ -1,17 +1,15 @@
 #include "solvespace.h"
 
-template IdList<Request,hRequest>;
-template IdList<Entity,hEntity>;
-template IdList<Point,hPoint>;
-
 SolveSpace SS;
 
 void SolveSpace::Init(void) {
+    constraint.Clear();
     request.Clear();
+    group.Clear();
+
     entity.Clear();
     point.Clear();
     param.Clear();
-    group.Clear();
 
     // Our initial group, that contains the references.
     Group g;

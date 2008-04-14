@@ -39,7 +39,6 @@ void dbp(char *str, ...)
     va_start(f, str);
     vsprintf(buf, str, f);
     OutputDebugString(buf);
-    OutputDebugString("\n");
 }
 
 void Error(char *str, ...)
@@ -300,8 +299,8 @@ static BOOL ProcessKeyDown(WPARAM wParam)
             c = wParam;
             break;
     }
-    if(GetAsyncKeyState(VK_CONTROL) & 0x8000) c |= 0x100;
-    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)   c |= 0x200;
+    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)   c |= 0x100;
+    if(GetAsyncKeyState(VK_CONTROL) & 0x8000) c |= 0x200;
 
     for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
         if(c == SS.GW.menu[i].accel) {
@@ -441,6 +440,26 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     }
 
     return 1;
+}
+
+void CheckMenuById(int id, BOOL checked)
+{
+    int i;
+    int subMenu = -1;
+
+    for(i = 0; SS.GW.menu[i].level >= 0; i++) {
+        if(SS.GW.menu[i].level == 0) subMenu++;
+        
+        if(SS.GW.menu[i].id == id) {
+            if(subMenu < 0) oops();
+            if(subMenu >= (sizeof(SubMenus)/sizeof(SubMenus[0]))) oops();
+
+            CheckMenuItem(SubMenus[subMenu], id,
+                        checked ? MF_CHECKED : MF_UNCHECKED);
+            return;
+        }
+    }
+    oops();
 }
 
 HMENU CreateGraphicsWindowMenus(void)

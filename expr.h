@@ -58,7 +58,10 @@ public:
     double Eval(void);
 
     void ParamsToPointers(void);
-    void Print(void);
+
+    void App(char *str, ...);
+    char *Print(void);
+    void PrintW(void); // worker
 };
 
 #endif

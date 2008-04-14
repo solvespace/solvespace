@@ -12,6 +12,9 @@ class Entity;
 class Param;
 class Point;
 
+class hEquation;
+class Equation;
+
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
 class hGroup {
@@ -79,9 +82,9 @@ public:
     static const hRequest   HREQUEST_REFERENCE_ZX;
 
     // Types of requests
-    static const int CSYS_2D                =  0;
-    static const int DATUM_POINT            =  1;
-    static const int LINE_SEGMENT           = 10;
+    static const int CSYS_2D                = 10;
+    static const int DATUM_POINT            = 11;
+    static const int LINE_SEGMENT           = 20;
 
     int         type;
 
@@ -171,6 +174,69 @@ public:
 
     void Draw(void);
     double GetDistance(Point2d mp);
+};
+
+class hConstraint {
+public:
+    DWORD   v;
+};
+
+class Constraint {
+public:
+    static const int USER_EQUATION      = 10;
+    static const int POINTS_COINCIDENT  = 20;
+    static const int PT_PT_DISTANCE     = 30;
+    static const int PT_LINE_DISTANCE   = 31;
+
+    static const int HORIZONTAL         = 40;
+    static const int VERTICAL           = 41;
+
+    hConstraint h;
+    int         type;
+    hGroup      group;
+
+    // These are the parameters for the constraint.
+    Expr        *exprA;
+    Expr        *exprB;
+    hPoint      ptA;
+    hPoint      ptB;
+    hPoint      ptC;
+    hEntity     entityA;
+    hEntity     entityB;
+
+    // These define how the constraint is drawn on-screen.
+    struct {
+        hEntity     csys;
+        Vector      offset;
+        Vector      u, v;
+    } disp;
+
+    static hConstraint AddConstraint(Constraint *c);
+    static void MenuConstrain(int id);
+    
+    struct {
+        bool    drawing;
+        Point2d mp;
+        double  dmin;
+    } dogd; // state for drawing or getting distance (for hit testing)
+    double GetDistance(Point2d mp);
+    void Draw(void);
+    void DrawOrGetDistance(void);
+
+    bool HasLabel(void);
+
+    void Generate(IdList<Equation,hEquation> *l);
+};
+
+class hEquation {
+public:
+    DWORD v;
+};
+
+class Equation {
+public:
+    hEquation   h;
+    Expr        *e;
 };
 
 

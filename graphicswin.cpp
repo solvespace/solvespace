@@ -5,6 +5,7 @@
 #define mView (&GraphicsWindow::MenuView)
 #define mEdit (&GraphicsWindow::MenuEdit)
 #define mReq  (&GraphicsWindow::MenuRequest)
+#define mCon  (&Constraint::MenuConstrain)
 #define S 0x100
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                          NULL  },
@@ -19,6 +20,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Undo\tCtrl+Z",                       0,                          NULL  },
 { 1, "&Redo\tCtrl+Y",                       0,                          NULL  },
 { 1,  NULL,                                 0,                          NULL  },
+{ 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
+{ 1,  NULL,                                 0,                          NULL  },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 
 { 0, "&View",                               0,                          NULL  },
@@ -27,7 +30,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "&Onto Plane / Coordinate System\tO",  MNU_ORIENT_ONTO,    'O',    mView },
-{ 1, "&Lock Orientation\tL",                0,                  'L',    mView },
+{ 1, "&Lock Orientation\tL",                MNU_LOCK_VIEW,      'L',    mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Dimensions in &Inches",               0,                          NULL  },
 { 1, "Dimensions in &Millimeters",          0,                          NULL  },
@@ -54,7 +57,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "To&ggle Construction\tG",             0,                  'G',    NULL  },
 
 { 0, "&Constrain",                          0,                          NULL  },
-{ 1, "&Distance / Diameter\tShift+D",       0,                  'D'|S,  NULL  },
+{ 1, "&Distance / Diameter\tShift+D",       MNU_DISTANCE_DIA,   'D'|S,  mCon  },
 { 1, "A&ngle\tShift+N",                     0,                  'N'|S,  NULL  },
 { 1, "Other S&upplementary Angle\tShift+U", 0,                  'U'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
@@ -108,7 +111,7 @@ Point2d GraphicsWindow::ProjectPoint(Vector p) {
     return r;
 }
 
-void GraphicsWindow::MenuView(MenuId id) {
+void GraphicsWindow::MenuView(int id) {
     switch(id) {
         case MNU_ZOOM_IN:
             SS.GW.scale *= 1.2;
@@ -119,6 +122,11 @@ void GraphicsWindow::MenuView(MenuId id) {
             break;
 
         case MNU_ZOOM_TO_FIT:
+            break;
+
+        case MNU_LOCK_VIEW:
+            SS.GW.viewLocked = !SS.GW.viewLocked;
+            CheckMenuById(MNU_LOCK_VIEW, SS.GW.viewLocked);
             break;
 
         case MNU_ORIENT_ONTO:
@@ -155,7 +163,7 @@ void GraphicsWindow::EnsureValidActiveGroup(void) {
     activeGroup = SS.group.elem[i].t.h;
 }
 
-void GraphicsWindow::MenuEdit(MenuId id) {
+void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
             SS.GW.ClearSelection();
@@ -164,11 +172,38 @@ void GraphicsWindow::MenuEdit(MenuId id) {
             SS.TW.Show();
             break;
 
+        case MNU_DELETE: {
+            int i;
+            SS.request.ClearTags();
+            for(i = 0; i < MAX_SELECTED; i++) {
+                Selection *s = &(SS.GW.selection[i]);
+                hRequest r;
+                r.v = 0;
+                if(s->point.v) {
+                    Point *pt = SS.GetPoint(s->point);
+                    Entity *e = SS.GetEntity(pt->entity());
+                    if(e->type == Entity::DATUM_POINT) {
+                        r = e->request();
+                    }
+                } else if(s->entity.v) {
+                    Entity *e = SS.GetEntity(s->entity);
+                    r = e->request();
+                }
+                if(r.v) SS.request.Tag(r, 1);
+            }
+            SS.request.RemoveTagged();
+
+            SS.GenerateAll();
+            SS.GW.ClearSelection();
+            SS.GW.hover.Clear();
+            break;
+        }
+
         default: oops();
     }
 }
 
-void GraphicsWindow::MenuRequest(MenuId id) {
+void GraphicsWindow::MenuRequest(int id) {
     char *s;
     switch(id) {
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
@@ -183,12 +218,16 @@ c:
     }
 }
 
-void GraphicsWindow::UpdateDraggedPoint(hPoint hp, double mx, double my) {
+void GraphicsWindow::UpdateDraggedHPoint(hPoint hp, double mx, double my) {
     Point *p = SS.point.FindById(hp);
     Vector pos = p->GetCoords();
-    pos = pos.Plus(projRight.ScaledBy((mx - orig.mouse.x)/scale));
-    pos = pos.Plus(projUp.ScaledBy((my - orig.mouse.y)/scale));
+    UpdateDraggedPoint(&pos, mx, my);
     p->ForceTo(pos);
+}
+
+void GraphicsWindow::UpdateDraggedPoint(Vector *pos, double mx, double my) {
+    *pos = pos->Plus(projRight.ScaledBy((mx - orig.mouse.x)/scale));
+    *pos = pos->Plus(projUp.ScaledBy((my - orig.mouse.y)/scale));
 
     orig.mouse.x = mx;
     orig.mouse.y = my;
@@ -206,11 +245,12 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         double dx = (x - orig.mouse.x) / scale;
         double dy = (y - orig.mouse.y) / scale;
 
-        if(shiftDown) {
+        // When the view is locked, permit only translation (pan).
+        if(shiftDown || viewLocked) {
             offset.x = orig.offset.x + dx*projRight.x + dy*projUp.x;
             offset.y = orig.offset.y + dx*projRight.y + dy*projUp.y;
             offset.z = orig.offset.z + dx*projRight.z + dy*projUp.z;
-        } else if(ctrlDown) {
+        } else if(ctrlDown && !viewLocked) {
             double theta = atan2(orig.mouse.y, orig.mouse.x);
             theta -= atan2(y, x);
 
@@ -219,7 +259,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             projUp = orig.projUp.RotatedAbout(normal, theta);
 
             NormalizeProjectionVectors();
-        } else {
+        } else if(!viewLocked) {
             double s = 0.3*(PI/180); // degrees per pixel
             projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
             projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
@@ -235,14 +275,21 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         InvalidateGraphics();
     } else if(leftDown) {
-        // We are left-dragging. This is often used to drag points.
+        // We are left-dragging. This is often used to drag points, or
+        // constraint labels.
         if(hover.point.v && !hover.point.isFromReferences()) {
             ClearSelection();
-            UpdateDraggedPoint(hover.point, x, y);
+            UpdateDraggedHPoint(hover.point, x, y);
+        } else if(hover.constraint.v && 
+                        SS.GetConstraint(hover.constraint)->HasLabel())
+        {
+            ClearSelection();
+            Constraint *c = SS.constraint.FindById(hover.constraint);
+            UpdateDraggedPoint(&(c->disp.offset), x, y);
         }
     } else {
         if(pendingOperation == PENDING_OPERATION_DRAGGING_POINT) {
-            UpdateDraggedPoint(pendingPoint, x, y);
+            UpdateDraggedHPoint(pendingPoint, x, y);
         } else {
             // Do our usual hit testing, for the selection.
             Selection s;
@@ -256,35 +303,37 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 }
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
-    if(point.v !=  b->point.v)  return false;
-    if(entity.v != b->entity.v) return false;
+    if(point.v      !=  b->point.v)     return false;
+    if(entity.v     != b->entity.v)     return false;
+    if(constraint.v != b->constraint.v) return false;
     return true;
 }
 bool GraphicsWindow::Selection::IsEmpty(void) {
-    if(point.v)  return false;
-    if(entity.v) return false;
+    if(point.v)         return false;
+    if(entity.v)        return false;
+    if(constraint.v)    return false;
     return true;
 }
 void GraphicsWindow::Selection::Clear(void) {
-    point.v = entity.v = 0;
+    point.v = entity.v = constraint.v = 0;
 }
 void GraphicsWindow::Selection::Draw(void) {
-    if(point.v)  SS.point. FindById(point )->Draw();
-    if(entity.v) SS.entity.FindById(entity)->Draw();
+    if(point.v)      SS.point.     FindById(point     )->Draw();
+    if(entity.v)     SS.entity.    FindById(entity    )->Draw();
+    if(constraint.v) SS.constraint.FindById(constraint)->Draw();
 }
 
 void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     int i;
     double d, dmin = 1e12;
 
-    dest->point.v = 0;
-    dest->entity.v = 0;
+    memset(dest, 0, sizeof(*dest));
 
     // Do the points
     for(i = 0; i < SS.entity.elems; i++) {
         d = SS.entity.elem[i].t.GetDistance(mp);
         if(d < 10 && d < dmin) {
-            dest->point.v = 0;
+            memset(dest, 0, sizeof(*dest));
             dest->entity = SS.entity.elem[i].t.h;
         }
     }
@@ -293,8 +342,17 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     for(i = 0; i < SS.point.elems; i++) {
         d = SS.point.elem[i].t.GetDistance(mp);
         if(d < 10 && d < dmin) {
-            dest->entity.v = 0;
+            memset(dest, 0, sizeof(*dest));
             dest->point = SS.point.elem[i].t.h;
+        }
+    }
+
+    // Constraints
+    for(i = 0; i < SS.constraint.elems; i++) {
+        d = SS.constraint.elem[i].t.GetDistance(mp);
+        if(d < 10 && d < dmin) {
+            memset(dest, 0, sizeof(*dest));
+            dest->constraint = SS.constraint.elem[i].t.h;
         }
     }
 }
@@ -308,7 +366,7 @@ void GraphicsWindow::ClearSelection(void) {
 
 void GraphicsWindow::GroupSelection(void) {
     gs.points = gs.entities = 0;
-    gs.csyss = 0;
+    gs.csyss = gs.lineSegments = 0;
     gs.n = 0;
     int i;
     for(i = 0; i < MAX_SELECTED; i++) {
@@ -322,8 +380,9 @@ void GraphicsWindow::GroupSelection(void) {
             (gs.n)++;
 
             Entity *e = SS.entity.FindById(s->entity);
-            if(e->type == Entity::CSYS_2D) {
-                (gs.csyss)++;
+            switch(e->type) {
+                case Entity::CSYS_2D:       (gs.csyss)++; break;
+                case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
             }
         }
     }
@@ -495,6 +554,10 @@ void GraphicsWindow::Paint(int w, int h) {
     glColor3f(0, 0.8f, 0);
     for(i = 0; i < SS.point.elems; i++) {
         SS.point.elem[i].t.Draw();
+    }
+    glColor3f(1.0f, 0, 1.0f);
+    for(i = 0; i < SS.constraint.elems; i++) {
+        SS.constraint.elem[i].t.Draw();
     }
 
     // Then redraw whatever the mouse is hovering over, highlighted. Have

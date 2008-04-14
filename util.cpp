@@ -120,7 +120,7 @@ Vector Vector::Normal(int which) {
         oops();
     }
 
-    n = n.ScaledBy(1/n.Magnitude());
+    n = n.WithMagnitude(1);
 
     return n;
 }
@@ -158,6 +158,15 @@ Vector Vector::ScaledBy(double v) {
     r.z = z * v;
 
     return r;
+}
+
+Vector Vector::WithMagnitude(double v) {
+    double m = Magnitude();
+    if(m < 0.001) {
+        return MakeFrom(v, 0, 0);
+    } else {
+        return ScaledBy(v/Magnitude());
+    }
 }
 
 Point2d Point2d::Plus(Point2d b) {
