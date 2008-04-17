@@ -205,7 +205,8 @@ void TextWindow::ShowHeader(void) {
     SS.GW.EnsureValidActiveGroup();
 
     if(SS.GW.pendingDescription) {
-        Printf("");
+        Printf("             %C4 group:%s",
+            SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
     } else {
         // Navigation buttons
         Printf(" %Lb%f<<%E   %Lh%fhome%E   %C4 group:%s",

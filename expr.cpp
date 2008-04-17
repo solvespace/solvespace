@@ -93,16 +93,24 @@ char *Expr::Print(void) {
 }
 
 void Expr::PrintW(void) {
+    char c;
     switch(op) {
-        case PARAM:     App("(param %08x)", x.parh.v); break;
-        case PARAM_PTR: App("(paramp %08x)", x.parp->h.v); break;
+        case PARAM:     App("param(%08x)", x.parh.v); break;
+        case PARAM_PTR: App("param(p%08x)", x.parp->h.v); break;
 
-        case CONSTANT:  App("%.3f", x.v);
+        case CONSTANT:  App("%.3f", x.v); break;
 
-        case PLUS:      App("(+ "); a->PrintW(); b->PrintW(); App(")"); break;
-        case MINUS:     App("(- "); a->PrintW(); b->PrintW(); App(")"); break;
-        case TIMES:     App("(* "); a->PrintW(); b->PrintW(); App(")"); break;
-        case DIV:       App("(/ "); a->PrintW(); b->PrintW(); App(")"); break;
+        case PLUS:      c = '+'; goto p;
+        case MINUS:     c = '-'; goto p;
+        case TIMES:     c = '*'; goto p;
+        case DIV:       c = '/'; goto p;
+p:
+            App("(");
+            a->PrintW();
+            App(" %c ", c);
+            b->PrintW();
+            App(")");
+            break;
 
         case NEGATE:    App("(- "); a->PrintW(); App(")"); break;
         case SQRT:      App("(sqrt "); a->PrintW(); App(")"); break;
@@ -112,5 +120,211 @@ void Expr::PrintW(void) {
 
         default: oops();
     }
+}
+
+#define MAX_UNPARSED 1024
+static Expr *Unparsed[MAX_UNPARSED];
+static int UnparsedCnt, UnparsedP;
+
+static Expr *Operands[MAX_UNPARSED];
+static int OperandsP;
+
+static Expr *Operators[MAX_UNPARSED];
+static int OperatorsP;
+
+void Expr::PushOperator(Expr *e) {
+    if(OperatorsP >= MAX_UNPARSED) throw "operator stack full!";
+    Operators[OperatorsP++] = e;
+}
+Expr *Expr::TopOperator(void) {
+    if(OperatorsP <= 0) throw "operator stack empty (get top)";
+    return Operators[OperatorsP-1];
+}
+Expr *Expr::PopOperator(void) {
+    if(OperatorsP <= 0) throw "operator stack empty (pop)";
+    return Operators[--OperatorsP];
+}
+void Expr::PushOperand(Expr *e) {
+    if(OperandsP >= MAX_UNPARSED) throw "operand stack full";
+    Operands[OperandsP++] = e;
+}
+Expr *Expr::PopOperand(void) {
+    if(OperandsP <= 0) throw "operand stack empty";
+    return Operands[--OperandsP];
+}
+Expr *Expr::Next(void) {
+    if(UnparsedP >= UnparsedCnt) return NULL;
+    return Unparsed[UnparsedP];
+}
+void Expr::Consume(void) {
+    if(UnparsedP >= UnparsedCnt) throw "no token to consume";
+    UnparsedP++;
+}
+
+int Expr::Precedence(Expr *e) {
+    if(e->op == ALL_RESOLVED) return -1; // never want to reduce this marker
+    if(e->op != BINARY_OP && e->op != UNARY_OP) oops();
+
+    switch(e->x.c) {
+        case 's':
+        case 'n':   return 30;
+
+        case '*':
+        case '/':   return 20;
+
+        case '+':
+        case '-':   return 10;
+
+        default: oops();
+    }
+}
+
+void Expr::Reduce(void) {
+    Expr *a, *b;
+
+    Expr *op = PopOperator();
+    Expr *n;
+    int o;
+    switch(op->x.c) {
+        case '+': o = PLUS;  goto c;
+        case '-': o = MINUS; goto c;
+        case '*': o = TIMES; goto c;
+        case '/': o = DIV;   goto c;
+c:
+            b = PopOperand();
+            a = PopOperand();
+            n = a->AnyOp(o, b);
+            break;
+
+        case 'n': n = PopOperand()->Negate(); break;
+        case 's': n = PopOperand()->Sqrt(); break;
+
+        default: oops();
+    }
+    PushOperand(n);
+}
+
+void Expr::ReduceAndPush(Expr *n) {
+    while(Precedence(n) <= Precedence(TopOperator())) {
+        Reduce();
+    }
+    PushOperator(n);
+}
+
+void Expr::Parse(void) {
+    Expr *e = AllocExpr();
+    e->op = ALL_RESOLVED;
+    PushOperator(e);
+
+    for(;;) {
+        Expr *n = Next();
+        if(!n) throw "end of expression unexpected";
+        
+        if(n->op == CONSTANT) {
+            PushOperand(n);
+            Consume();
+        } else if(n->op == PAREN && n->x.c == '(') {
+            Consume();
+            Parse();
+            n = Next();
+            if(n->op != PAREN || n->x.c != ')') throw "expected: )";
+            Consume();
+        } else if(n->op == UNARY_OP) {
+            PushOperator(n);
+            Consume();
+            continue;
+        } else if(n->op == BINARY_OP && n->x.c == '-') {
+            // The minus sign is special, because it might be binary or
+            // unary, depending on context.
+            n->op = UNARY_OP;
+            n->x.c = 'n';
+            PushOperator(n);
+            Consume();
+            continue;
+        } else {
+            throw "expected expression";
+        }
+
+        n = Next();
+        if(n && n->op == BINARY_OP) {
+            ReduceAndPush(n);
+            Consume();
+        } else {
+            break;
+        }
+    }
+
+    while(TopOperator()->op != ALL_RESOLVED) {
+        Reduce();
+    }
+    PopOperator(); // discard the ALL_RESOLVED marker
+}
+
+void Expr::Lex(char *in) {
+    while(*in) {
+        if(UnparsedCnt >= MAX_UNPARSED) throw "too long";
+
+        char c = *in;
+        if(isdigit(c) || c == '.') {
+            // A number literal
+            char number[70];
+            int len = 0;
+            while((isdigit(*in) || *in == '.') && len < 30) {
+                number[len++] = *in;
+                in++;
+            }
+            number[len++] = '\0';
+            Expr *e = AllocExpr();
+            e->op = CONSTANT;
+            e->x.v = atof(number);
+            Unparsed[UnparsedCnt++] = e;
+        } else if(isalpha(c) || c == '_') {
+            char name[70];
+            int len = 0;
+            while(isforname(*in) && len < 30) {
+                name[len++] = *in;
+                in++;
+            }
+            name[len++] = '\0';
+
+            Expr *e = AllocExpr();
+            if(strcmp(name, "sqrt")==0) {
+                e->op = UNARY_OP;
+                e->x.c = 's';
+            } else {
+                throw "unknown name";
+            }
+            Unparsed[UnparsedCnt++] = e;
+        } else if(strchr("+-*/()", c)) {
+            Expr *e = AllocExpr();
+            e->op = (c == '(' || c == ')') ? PAREN : BINARY_OP;
+            e->x.c = c;
+            Unparsed[UnparsedCnt++] = e;
+            in++;
+        } else if(isspace(c)) {
+            // Ignore whitespace
+            in++;
+        } else {
+            // This is a lex error.
+            throw "unexpected characters";
+        }
+    }
+}
+
+Expr *Expr::FromString(char *in) {
+    UnparsedCnt = 0;
+    OperandsP = 0;
+    OperatorsP = 0;
+
+    Expr *r;
+    try {
+        Lex(in);
+        Parse();
+        r = PopOperand();
+    } catch (char *e) {
+        dbp("exception: parse/lex error: %s", e);
+        return NULL;
+    }
+    return r;
 }
 

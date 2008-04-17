@@ -12,7 +12,10 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+#define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
+
 #include <stdlib.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>

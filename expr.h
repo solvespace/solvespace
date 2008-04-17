@@ -28,6 +28,16 @@ public:
     static const int SIN            = 107;
     static const int COS            = 108;
 
+    // Special helpers for when we're parsing an expression from text.
+    // Initially, literals (like a constant number) appear in the same
+    // format as they will in the finished expression, but the operators
+    // are different until the parser fixes things up (and builds the
+    // tree from the flat list that the lexer outputs).
+    static const int ALL_RESOLVED   = 1000;
+    static const int PAREN          = 1001;
+    static const int BINARY_OP      = 1002;
+    static const int UNARY_OP       = 1003;
+
     int op;
     Expr    *a;
     Expr    *b;
@@ -37,6 +47,9 @@ public:
         Param  *parp;
         hPoint  point;
         hEntity entity;
+
+        // For use while parsing
+        char    c;
     }       x;
 
     static Expr *FromParam(hParam p);
@@ -62,6 +75,28 @@ public:
     void App(char *str, ...);
     char *Print(void);
     void PrintW(void); // worker
+
+    // Make a copy of an expression that won't get blown away when we
+    // do a FreeAllExprs()
+    Expr *Keep(void);
+
+    static Expr *FromString(char *in);
+    static void  Lex(char *in);
+    static Expr *Next(void);
+    static void  Consume(void);
+
+    static void PushOperator(Expr *e);
+    static Expr *PopOperator(void);
+    static Expr *TopOperator(void);
+    static void PushOperand(Expr *e);
+    static Expr *PopOperand(void);
+
+    static void Reduce(void);
+    static void ReduceAndPush(Expr *e);
+    static int Precedence(Expr *e);
+
+    static int Precedence(int op);
+    static void Parse(void);
 };
 
 #endif
