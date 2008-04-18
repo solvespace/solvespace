@@ -261,7 +261,7 @@ void TextWindow::ShowAllGroups(void) {
             s = "all requests from all groups";
             v = 0;
         } else {
-            Group *g = &(SS.group.elem[i].t);
+            Group *g = &(SS.group.elem[i]);
             s = g->DescriptionString();
             v = g->h.v;
         }
@@ -294,7 +294,7 @@ void TextWindow::ShowRequestsInGroup(void) {
 
     int i;
     for(i = 0; i < SS.request.elems; i++) {
-        Request *r = &(SS.request.elem[i].t);
+        Request *r = &(SS.request.elem[i]);
 
         if(r->group.v == shown->group.v || shown->group.v == 0) {
             char *s = r->DescriptionString();

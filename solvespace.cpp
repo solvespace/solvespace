@@ -59,13 +59,13 @@ void SolveSpace::GenerateAll(void) {
     entity.Clear();
     point.Clear();
     for(i = 0; i < request.elems; i++) {
-        request.elem[i].t.Generate(&entity, &point, &param);
+        request.elem[i].Generate(&entity, &point, &param);
     }
 
     for(i = 0; i < param.elems; i++) {
-        Param *p = prev.FindByIdNoOops(param.elem[i].t.h);
+        Param *p = prev.FindByIdNoOops(param.elem[i].h);
         if(p) {
-            param.elem[i].t.val = p->val;
+            param.elem[i].val = p->val;
         }
     }
 

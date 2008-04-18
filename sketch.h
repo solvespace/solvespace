@@ -61,6 +61,7 @@ class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
 
+    int         tag;
     hGroup      h;
 
     NameStr     name;
@@ -77,6 +78,7 @@ public:
     static const hRequest   HREQUEST_REFERENCE_YZ;
     static const hRequest   HREQUEST_REFERENCE_ZX;
 
+    int         tag;
     hRequest    h;
 
     // Types of requests
@@ -112,6 +114,7 @@ public:
     static const int LINE_SEGMENT           = 1010;
     int         type;
 
+    int         tag;
     hEntity     h;
 
     Expr        *expr[16];
@@ -140,7 +143,9 @@ public:
 
 class Param {
 public:
+    int         tag;
     hParam      h;
+
     double      val;
     bool        known;
 
@@ -149,6 +154,7 @@ public:
 
 class Point {
 public:
+    int         tag;
     // The point ID is equal to the initial param ID.
     hPoint      h;
 
@@ -176,6 +182,26 @@ public:
     double GetDistance(Point2d mp);
 };
 
+inline hEntity hRequest::entity(int i)
+    { hEntity r; r.v = (v << 10) | i; return r; }
+
+inline hRequest hEntity::request(void)
+    { hRequest r; r.v = (v >> 10); return r; }
+inline hParam hEntity::param(int i)
+    { hParam r; r.v = (v << 7) | i; return r; }
+inline hPoint hEntity::point(int i)
+    { hPoint r; r.v = (v << 7) | i; return r; }
+
+inline bool hPoint::isFromReferences(void) {
+    DWORD d = v >> 17;
+    if(d == Request::HREQUEST_REFERENCE_XY.v) return true;
+    if(d == Request::HREQUEST_REFERENCE_YZ.v) return true;
+    if(d == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    return false;
+}
+
+
+
 class hConstraint {
 public:
     DWORD   v;
@@ -191,7 +217,9 @@ public:
     static const int HORIZONTAL         = 40;
     static const int VERTICAL           = 41;
 
+    int         tag;
     hConstraint h;
+
     int         type;
     hGroup      group;
 
@@ -235,27 +263,11 @@ public:
 
 class Equation {
 public:
+    int         tag;
     hEquation   h;
+
     Expr        *e;
 };
 
-
-inline hEntity hRequest::entity(int i)
-    { hEntity r; r.v = (v << 10) | i; return r; }
-
-inline hRequest hEntity::request(void)
-    { hRequest r; r.v = (v >> 10); return r; }
-inline hParam hEntity::param(int i)
-    { hParam r; r.v = (v << 7) | i; return r; }
-inline hPoint hEntity::point(int i)
-    { hPoint r; r.v = (v << 7) | i; return r; }
-
-inline bool hPoint::isFromReferences(void) {
-    DWORD d = v >> 17;
-    if(d == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(d == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(d == Request::HREQUEST_REFERENCE_ZX.v) return true;
-    return false;
-}
 
 #endif

@@ -43,21 +43,16 @@ public:
 template <class T, class H>
 class IdList {
 public:
-    typedef struct {
-        T       t;
-        int     tag;
-    } Elem;
-
-    Elem       *elem;
-    int         elems;
-    int         elemsAllocated;
+    T     *elem;
+    int   elems;
+    int   elemsAllocated;
 
     H AddAndAssignId(T *t) {
         int i;
         DWORD id = 0;
 
         for(i = 0; i < elems; i++) {
-            id = max(id, elem[i].t.h.v);
+            id = max(id, elem[i].h.v);
         }
 
         t->h.v = (id + 1);
@@ -69,12 +64,11 @@ public:
     void Add(T *t) {
         if(elems >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (Elem *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
+            elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
             if(!elem) oops();
         }
 
-        elem[elems].t = *t;
-        elem[elems].tag = 0;
+        elem[elems] = *t;
         elems++;
     }
     
@@ -90,8 +84,8 @@ public:
     T *FindByIdNoOops(H h) {
         int i;
         for(i = 0; i < elems; i++) {
-            if(elem[i].t.h.v == h.v) {
-                return &(elem[i].t);
+            if(elem[i].h.v == h.v) {
+                return &(elem[i]);
             }
         }
         return NULL;
@@ -107,7 +101,7 @@ public:
     void Tag(H h, int tag) {
         int i;
         for(i = 0; i < elems; i++) {
-            if(elem[i].t.h.v == h.v) {
+            if(elem[i].h.v == h.v) {
                 elem[i].tag = tag;
             }
         }

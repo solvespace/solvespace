@@ -157,12 +157,12 @@ void GraphicsWindow::EnsureValidActives(void) {
     if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
         int i;
         for(i = 0; i < SS.group.elems; i++) {
-            if(SS.group.elem[i].t.h.v != Group::HGROUP_REFERENCES.v) {
+            if(SS.group.elem[i].h.v != Group::HGROUP_REFERENCES.v) {
                 break;
             }
         }
         if(i >= SS.group.elems) oops();
-        activeGroup = SS.group.elem[i].t.h;
+        activeGroup = SS.group.elem[i].h;
         change = true;
     }
 
@@ -363,28 +363,28 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
 
     // Do the points
     for(i = 0; i < SS.entity.elems; i++) {
-        d = SS.entity.elem[i].t.GetDistance(mp);
+        d = SS.entity.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
-            dest->entity = SS.entity.elem[i].t.h;
+            dest->entity = SS.entity.elem[i].h;
         }
     }
 
     // Entities
     for(i = 0; i < SS.point.elems; i++) {
-        d = SS.point.elem[i].t.GetDistance(mp);
+        d = SS.point.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
-            dest->point = SS.point.elem[i].t.h;
+            dest->point = SS.point.elem[i].h;
         }
     }
 
     // Constraints
     for(i = 0; i < SS.constraint.elems; i++) {
-        d = SS.constraint.elem[i].t.GetDistance(mp);
+        d = SS.constraint.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
-            dest->constraint = SS.constraint.elem[i].t.h;
+            dest->constraint = SS.constraint.elem[i].h;
         }
     }
 }
@@ -582,15 +582,15 @@ void GraphicsWindow::Paint(int w, int h) {
     // First, draw the entire scene.
     glColor3f(1, 1, 1);
     for(i = 0; i < SS.entity.elems; i++) {
-        SS.entity.elem[i].t.Draw();
+        SS.entity.elem[i].Draw();
     }
     glColor3f(0, 0.8f, 0);
     for(i = 0; i < SS.point.elems; i++) {
-        SS.point.elem[i].t.Draw();
+        SS.point.elem[i].Draw();
     }
     glColor3f(1.0f, 0, 1.0f);
     for(i = 0; i < SS.constraint.elems; i++) {
-        SS.constraint.elem[i].t.Draw();
+        SS.constraint.elem[i].Draw();
     }
 
     // Then redraw whatever the mouse is hovering over, highlighted. Have
