@@ -14,6 +14,8 @@
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
+typedef signed long SDWORD;
+
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -26,12 +28,21 @@
 class Expr;
 
 // From the platform-specific code.
+int SaveFileYesNoCancel(void);
+BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
+BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
+
 void CheckMenuById(int id, BOOL checked);
 void EnableMenuById(int id, BOOL checked);
+
 void InvalidateGraphics(void);
 void InvalidateText(void);
+SDWORD GetMilliseconds(void);
+void PaintGraphics(void);
+
 void dbp(char *str, ...);
 void Error(char *str, ...);
+
 Expr *AllocExpr(void);
 void FreeAllExprs(void);
 void *MemRealloc(void *p, int n);
@@ -82,13 +93,19 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Point   *GetPoint  (hPoint   h) { return point.  FindById(h); }
 
-    hGroup                      activeGroup;
+    hGroup      activeGroup;
+
+    FILE        *fh;
 
     void GenerateAll(void);
     void ForceReferences(void);
 
     void Init(void);
     void Solve(void);
+
+    static void MenuFile(int id);
+    bool SaveToFile(char *filename);
+    bool LoadFromFile(char *filename);
 };
 
 extern SolveSpace SS;

@@ -254,10 +254,10 @@ void TextWindow::ShowHeader(void) {
 void TextWindow::ShowAllGroups(void) {
     Printf("%C8[[all groups in sketch follow]]%E");
     int i;
-    for(i = 0; i <= SS.group.elems; i++) {
+    for(i = 0; i <= SS.group.n; i++) {
         DWORD v;
         char *s;
-        if(i == SS.group.elems) {
+        if(i == SS.group.n) {
             s = "all requests from all groups";
             v = 0;
         } else {
@@ -293,7 +293,7 @@ void TextWindow::ShowRequestsInGroup(void) {
     }
 
     int i;
-    for(i = 0; i < SS.request.elems; i++) {
+    for(i = 0; i < SS.request.n; i++) {
         Request *r = &(SS.request.elem[i]);
 
         if(r->group.v == shown->group.v || shown->group.v == 0) {

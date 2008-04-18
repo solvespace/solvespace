@@ -23,27 +23,85 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
+Quaternion Quaternion::MakeFrom(double a, double b, double c, double d) {
+    Quaternion q;
+    q.a = a;
+    q.b = b;
+    q.c = c;
+    q.d = d;
+    return q;
+}
+
+Quaternion Quaternion::MakeFrom(Vector u, Vector v)
+{
+    Vector n = u.Cross(v);
+
+    Quaternion q;
+    q.a = 0.5*sqrt(1 + u.x + v.y + n.z);
+    q.b = (1/(4*(q.a)))*(v.z - n.y);
+    q.c = (1/(4*(q.a)))*(n.x - u.z);
+    q.d = (1/(4*(q.a)))*(u.y - v.x);
+    return q;
+}
+
+Quaternion Quaternion::Plus(Quaternion y) {
+    Quaternion q;
+    q.a = a + y.a;
+    q.b = b + y.b;
+    q.c = c + y.c;
+    q.d = d + y.d;
+    return q;
+}
+
+Quaternion Quaternion::Minus(Quaternion y) {
+    Quaternion q;
+    q.a = a - y.a;
+    q.b = b - y.b;
+    q.c = c - y.c;
+    q.d = d - y.d;
+    return q;
+}
+
+Quaternion Quaternion::ScaledBy(double s) {
+    Quaternion q;
+    q.a = a*s;
+    q.b = b*s;
+    q.c = c*s;
+    q.d = d*s;
+    return q;
+}
+
+double Quaternion::Magnitude(void) {
+    return sqrt(a*a + b*b + c*c + d*d);
+}
+
+Quaternion Quaternion::WithMagnitude(double s) {
+    return ScaledBy(s/Magnitude());
+}
+
+Vector Quaternion::RotationU(void) {
+    Vector v;
+    v.x = a*a + b*b - c*c - d*d;
+    v.y = 2*a*d + 2*b*c;
+    v.z = 2*b*d - 2*a*c;
+    return v;
+}
+
+Vector Quaternion::RotationV(void) {
+    Vector v;
+    v.x = 2*b*c - 2*a*d;
+    v.y = a*a - b*b + c*c - d*d;
+    v.z = 2*a*b + 2*c*d;
+    return v;
+}
+
+
 Vector Vector::MakeFrom(double x, double y, double z) {
     Vector v;
     v.x = x; v.y = y; v.z = z;
     return v;
 }
 
-Vector Vector::RotationU(double a, double b, double c, double d) {
-    Vector v;
-    v.x = a*a + b*b - c*c - d*d;
-    v.y = 2*b*c - 2*a*d;
-    v.z = 2*a*c + 2*b*d;
-    return v;
-}
-
-Vector Vector::RotationV(double a, double b, double c, double d) {
-    Vector v;
-    v.x = 2*a*d + 2*b*c;
-    v.y = a*a - b*b + c*c - d*d;
-    v.z = 2*c*d - 2*a*b;
-    return v;
-}
 
 Vector Vector::Plus(Vector b) {
     Vector r;

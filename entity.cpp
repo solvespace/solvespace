@@ -10,9 +10,10 @@ void Entity::Get2dCsysBasisVectors(Vector *u, Vector *v) {
     for(int i = 0; i < 4; i++) {
         q[i] = SS.param.FindById(param(i))->val;
     }
+    Quaternion quat = Quaternion::MakeFrom(q[0], q[1], q[2], q[3]);
 
-    *u = Vector::RotationU(q[0], q[1], q[2], q[3]);
-    *v = Vector::RotationV(q[0], q[1], q[2], q[3]);
+    *u = quat.RotationU();
+    *v = quat.RotationV();
 }
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {

@@ -130,6 +130,8 @@ void Expr::App(char *s, ...) {
     vsprintf(StringBuffer+strlen(StringBuffer), s, f);
 }
 char *Expr::Print(void) {
+    if(!this) return "0";
+
     StringBuffer[0] = '\0';
     PrintW();
     return StringBuffer;
@@ -356,6 +358,7 @@ void Expr::Lex(char *in) {
 
 Expr *Expr::FromString(char *in) {
     UnparsedCnt = 0;
+    UnparsedP = 0;
     OperandsP = 0;
     OperatorsP = 0;
 

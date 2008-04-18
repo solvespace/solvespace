@@ -74,8 +74,14 @@ public:
 
     // This table describes the top-level menus in the graphics winodw.
     typedef enum {
+        // File
+        MNU_NEW = 100,
+        MNU_OPEN,
+        MNU_SAVE,
+        MNU_SAVE_AS,
+        MNU_EXIT,
         // View
-        MNU_ZOOM_IN = 100,
+        MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
         MNU_ORIENT_ONTO,

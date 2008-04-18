@@ -58,11 +58,11 @@ void SolveSpace::GenerateAll(void) {
 
     entity.Clear();
     point.Clear();
-    for(i = 0; i < request.elems; i++) {
+    for(i = 0; i < request.n; i++) {
         request.elem[i].Generate(&entity, &point, &param);
     }
 
-    for(i = 0; i < param.elems; i++) {
+    for(i = 0; i < param.n; i++) {
         Param *p = prev.FindByIdNoOops(param.elem[i].h);
         if(p) {
             param.elem[i].val = p->val;
@@ -80,8 +80,8 @@ void SolveSpace::ForceReferences(void) {
         double a, b, c, d;
     } Quat[] = {
         { Request::HREQUEST_REFERENCE_XY, 1,    0,    0,    0, },
-        { Request::HREQUEST_REFERENCE_YZ, 0.5, -0.5, -0.5, -0.5, },
-        { Request::HREQUEST_REFERENCE_ZX, 0.5,  0.5,  0.5,  0.5, },
+        { Request::HREQUEST_REFERENCE_YZ, 0.5,  0.5,  0.5,  0.5, },
+        { Request::HREQUEST_REFERENCE_ZX, 0.5, -0.5, -0.5, -0.5, },
     };
     for(int i = 0; i < 3; i++) {
         hEntity he;
@@ -101,3 +101,21 @@ void SolveSpace::ForceReferences(void) {
 void SolveSpace::Solve(void) {
 }
 
+void SolveSpace::MenuFile(int id) {
+    switch(id) {
+        case GraphicsWindow::MNU_NEW:
+        case GraphicsWindow::MNU_OPEN:
+
+        case GraphicsWindow::MNU_SAVE:
+            SS.SaveToFile("t.slv");
+            break;
+
+        case GraphicsWindow::MNU_SAVE_AS:
+            break;
+
+        case GraphicsWindow::MNU_EXIT:
+            break;
+
+        default: oops();
+    }
+}

@@ -82,9 +82,9 @@ public:
     hRequest    h;
 
     // Types of requests
-    static const int CSYS_2D                = 10;
-    static const int DATUM_POINT            = 11;
-    static const int LINE_SEGMENT           = 20;
+    static const int CSYS_2D                = 100;
+    static const int DATUM_POINT            = 101;
+    static const int LINE_SEGMENT           = 200;
 
     int         type;
 
@@ -107,17 +107,15 @@ public:
 
 class Entity {
 public:
+    int         tag;
+    hEntity     h;
+
     static const hEntity    NO_CSYS;
 
     static const int CSYS_2D                = 1000;
     static const int DATUM_POINT            = 1001;
     static const int LINE_SEGMENT           = 1010;
     int         type;
-
-    int         tag;
-    hEntity     h;
-
-    Expr        *expr[16];
 
     inline hRequest request(void)
         { hRequest r; r.v = (this->h.v >> 10); return r; }
@@ -161,7 +159,6 @@ public:
     int type;
     static const int IN_FREE_SPACE  = 0;    // three params, x y z
     static const int IN_2D_CSYS     = 1;    // two params, u v, plus csys
-    static const int BY_EXPR        = 2;    // three Expr *, could be anything
 
     hEntity     csys;
 
@@ -234,9 +231,7 @@ public:
 
     // These define how the constraint is drawn on-screen.
     struct {
-        hEntity     csys;
         Vector      offset;
-        Vector      u, v;
     } disp;
 
     static hConstraint AddConstraint(Constraint *c);

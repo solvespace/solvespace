@@ -19,6 +19,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\expr.obj \
            $(OBJDIR)\constraint.obj \
            $(OBJDIR)\drawconstraint.obj \
+           $(OBJDIR)\file.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib

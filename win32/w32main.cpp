@@ -1,5 +1,6 @@
 #include <windows.h>
 #include <commctrl.h>
+#include <commdlg.h>
 #include <gl/gl.h> 
 #include <gl/glu.h> 
 #include <stdarg.h>
@@ -349,6 +350,32 @@ void InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, FALSE);
 }
+static void PaintGraphicsWithHdc(HDC hdc)
+{
+    HGLRC hgrc = CreateGlContext(hdc);
+
+    RECT r;
+    GetClientRect(GraphicsWnd, &r);
+    int w = r.right - r.left;
+    int h = r.bottom - r.top;
+
+    SS.GW.Paint(w, h);
+
+    SwapBuffers(hdc);
+
+    wglMakeCurrent(NULL, NULL);
+    wglDeleteContext(hgrc);
+}
+void PaintGraphics(void)
+{
+    HDC hdc = GetDC(GraphicsWnd);
+    PaintGraphicsWithHdc(hdc);
+}
+SDWORD GetMilliseconds(void)
+{
+    return (SDWORD)GetTickCount();
+}
+
 void InvalidateText(void)
 {
     InvalidateRect(TextWnd, NULL, FALSE);
@@ -370,19 +397,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
 
-            HGLRC hgrc = CreateGlContext(hdc);
-
-            RECT r;
-            GetClientRect(GraphicsWnd, &r);
-            int w = r.right - r.left;
-            int h = r.bottom - r.top;
-
-            SS.GW.Paint(w, h);
-    
-            SwapBuffers(hdc);
-
-            wglMakeCurrent(NULL, NULL);
-            wglDeleteContext(hgrc);
+            PaintGraphicsWithHdc(hdc);
 
             EndPaint(hwnd, &ps);
             break;
@@ -445,6 +460,58 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
     return 1;
 }
+
+//-----------------------------------------------------------------------------
+// Common dialog routines, to open or save a file.
+//-----------------------------------------------------------------------------
+BOOL GetOpenFile(char *file, char *defExtension, char *selPattern)
+{
+    OPENFILENAME ofn;
+
+    memset(&ofn, 0, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hInstance = Instance;
+    ofn.hwndOwner = GraphicsWnd;
+    ofn.lpstrFilter = selPattern;
+    ofn.lpstrDefExt = defExtension;
+    ofn.lpstrFile = file;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
+
+    EnableWindow(GraphicsWnd, FALSE);
+    BOOL r = GetOpenFileName(&ofn);
+    EnableWindow(GraphicsWnd, TRUE);
+    SetForegroundWindow(GraphicsWnd);
+    return r;
+}
+BOOL GetSaveFile(char *file, char *defExtension, char *selPattern)
+{
+    OPENFILENAME ofn;
+
+    memset(&ofn, 0, sizeof(ofn));
+    ofn.lStructSize = sizeof(ofn);
+    ofn.hInstance = Instance;
+    ofn.hwndOwner = GraphicsWnd;
+    ofn.lpstrFilter = selPattern;
+    ofn.lpstrDefExt = defExtension;
+    ofn.lpstrFile = file;
+    ofn.nMaxFile = MAX_PATH;
+    ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
+
+    EnableWindow(GraphicsWnd, FALSE);
+    BOOL r = GetSaveFileName(&ofn);
+    EnableWindow(GraphicsWnd, TRUE);
+    SetForegroundWindow(GraphicsWnd);
+    return r;
+}
+int SaveFileYesNoCancel(void)
+{
+    return MessageBox(GraphicsWnd, 
+        "The program has changed since it was last saved.\r\n\r\n"
+        "Do you want to save the changes?", "SolveSpace",
+        MB_YESNOCANCEL | MB_ICONWARNING);
+}
+
 
 static void MenuById(int id, BOOL yes, BOOL check)
 {

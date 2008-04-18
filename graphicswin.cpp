@@ -6,15 +6,17 @@
 #define mEdit (&GraphicsWindow::MenuEdit)
 #define mReq  (&GraphicsWindow::MenuRequest)
 #define mCon  (&Constraint::MenuConstrain)
+#define mFile (&SolveSpace::MenuFile)
 #define S 0x100
+#define C 0x200
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                          NULL  },
-{ 1, "&New\tCtrl+N",                        0,                          NULL  },
-{ 1, "&Open...\tCtrl+O",                    0,                          NULL  },
-{ 1, "&Save\tCtrl+S",                       0,                          NULL  },
-{ 1, "Save &As...",                         0,                          NULL  },
-{ 1,  NULL,                                 0,                          NULL  },
-{ 1, "E&xit",                               0,                          NULL  },
+{ 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
+{ 1, "&Open...\tCtrl+O",                    MNU_OPEN,           'O'|C,  mFile },
+{ 1, "&Save\tCtrl+S",                       MNU_SAVE,           'S'|C,  mFile },
+{ 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
+{ 1,  NULL,                                 0,                  0,      NULL  },
+{ 1, "E&xit",                               MNU_EXIT,           0,      mFile },
 
 { 0, "&Edit",                               0,                          NULL  },
 { 1, "&Undo\tCtrl+Z",                       0,                          NULL  },
@@ -37,7 +39,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Request",                            0,                          NULL  },
 { 1, "Dra&w in 2d Coordinate System\tW",    MNU_SEL_CSYS,       'W',    mReq  },
-{ 1, "Draw Anywhere in 3d\tF",              MNU_NO_CSYS,        'Q',    mReq  },
+{ 1, "Draw Anywhere in 3d\tQ",              MNU_NO_CSYS,        'Q',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
 { 1, "Datum A&xis\tX",                      0,                  'X',    mReq  },
@@ -132,18 +134,63 @@ void GraphicsWindow::MenuView(int id) {
             CheckMenuById(MNU_LOCK_VIEW, SS.GW.viewLocked);
             break;
 
-        case MNU_ORIENT_ONTO:
+        case MNU_ORIENT_ONTO: {
             SS.GW.GroupSelection();
+            Entity *e = NULL;
             if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
-                Entity *e = SS.entity.FindById(SS.GW.gs.entity[0]);
-                e->Get2dCsysBasisVectors( &(SS.GW.projRight), &(SS.GW.projUp));
-                SS.GW.offset = SS.point.FindById(e->point(16))->GetCoords();
+                e = SS.entity.FindById(SS.GW.gs.entity[0]);
+            } else if(SS.GW.activeCsys.v != Entity::NO_CSYS.v) {
+                e = SS.entity.FindById(SS.GW.activeCsys);
+            }
+            if(e) {
+                // A quaternion with our original rotation
+                Quaternion quat0 = Quaternion::MakeFrom(
+                    SS.GW.projRight, SS.GW.projUp);
+                // And with our final rotation
+                Vector pr, pu;
+                e->Get2dCsysBasisVectors(&pr, &pu);
+                Quaternion quatf = Quaternion::MakeFrom(pr, pu);
+                // Make sure we take the shorter of the two possible paths.
+                double mp = (quatf.Minus(quat0)).Magnitude();
+                double mm = (quatf.Plus(quat0)).Magnitude();
+                if(mp > mm) {
+                    quatf = quatf.ScaledBy(-1);
+                    mp = mm;
+                }
+
+                // And also get the offsets.
+                Vector offset0 = SS.GW.offset;
+                Vector offsetf = SS.point.FindById(e->point(16))->GetCoords();
+
+                // Animate transition, unless it's a tiny move.
+                SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
+                SDWORD tn, t0 = GetMilliseconds();
+                double s = 0;
+                do {
+                    SS.GW.offset =
+                        (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
+                    Quaternion quat =
+                        (quat0.ScaledBy(1 - s)).Plus(quatf.ScaledBy(s));
+                    quat = quat.WithMagnitude(1);
+                    SS.GW.projRight = quat.RotationU();
+                    SS.GW.projUp    = quat.RotationV();
+                    PaintGraphics();
+
+                    tn = GetMilliseconds();
+                    s = (tn - t0)/((double)dt);
+                } while((tn - t0) < dt);
+                SS.GW.projRight = pr;
+                SS.GW.projUp = pu;
+                SS.GW.offset = offsetf;
+
+                SS.GW.hover.Clear();
                 SS.GW.ClearSelection();
                 InvalidateGraphics();
             } else {
                 Error("Select plane or coordinate system before orienting.");
             }
             break;
+        }
 
         default: oops();
     }
@@ -156,12 +203,12 @@ void GraphicsWindow::EnsureValidActives(void) {
     Group *g = SS.group.FindByIdNoOops(activeGroup);
     if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
         int i;
-        for(i = 0; i < SS.group.elems; i++) {
+        for(i = 0; i < SS.group.n; i++) {
             if(SS.group.elem[i].h.v != Group::HGROUP_REFERENCES.v) {
                 break;
             }
         }
-        if(i >= SS.group.elems) oops();
+        if(i >= SS.group.n) oops();
         activeGroup = SS.group.elem[i].h;
         change = true;
     }
@@ -174,6 +221,8 @@ void GraphicsWindow::EnsureValidActives(void) {
         change = true;
     }
     if(change) SS.TW.Show();
+
+    EnableMenuById(MNU_NO_CSYS, (activeCsys.v != Entity::NO_CSYS.v));
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -362,7 +411,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     memset(dest, 0, sizeof(*dest));
 
     // Do the points
-    for(i = 0; i < SS.entity.elems; i++) {
+    for(i = 0; i < SS.entity.n; i++) {
         d = SS.entity.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
@@ -371,7 +420,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     }
 
     // Entities
-    for(i = 0; i < SS.point.elems; i++) {
+    for(i = 0; i < SS.point.n; i++) {
         d = SS.point.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
@@ -380,7 +429,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     }
 
     // Constraints
-    for(i = 0; i < SS.constraint.elems; i++) {
+    for(i = 0; i < SS.constraint.n; i++) {
         d = SS.constraint.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
@@ -581,15 +630,15 @@ void GraphicsWindow::Paint(int w, int h) {
 
     // First, draw the entire scene.
     glColor3f(1, 1, 1);
-    for(i = 0; i < SS.entity.elems; i++) {
+    for(i = 0; i < SS.entity.n; i++) {
         SS.entity.elem[i].Draw();
     }
     glColor3f(0, 0.8f, 0);
-    for(i = 0; i < SS.point.elems; i++) {
+    for(i = 0; i < SS.point.n; i++) {
         SS.point.elem[i].Draw();
     }
     glColor3f(1.0f, 0, 1.0f);
-    for(i = 0; i < SS.constraint.elems; i++) {
+    for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
     }
 
