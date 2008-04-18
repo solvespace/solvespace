@@ -28,6 +28,8 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
             c.disp.offset = Vector::MakeFrom(50, 50, 50);
+            c.exprA = Expr::FromString("1+3+2")->DeepCopyKeep();
+            FreeAllExprs();
             AddConstraint(&c);
             break;
 

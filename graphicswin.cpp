@@ -36,6 +36,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",          0,                          NULL  },
 
 { 0, "&Request",                            0,                          NULL  },
+{ 1, "Dra&w in 2d Coordinate System\tW",    MNU_SEL_CSYS,       'W',    mReq  },
+{ 1, "Draw Anywhere in 3d\tF",              MNU_NO_CSYS,        'Q',    mReq  },
+{ 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
 { 1, "Datum A&xis\tX",                      0,                  'X',    mReq  },
 { 1, "Datum Pla&ne\tN",                     0,                  'N',    mReq  },
@@ -85,7 +88,7 @@ void GraphicsWindow::Init(void) {
     projRight.x = 1; projRight.y = projRight.z = 0;
     projUp.y = 1; projUp.z = projUp.x = 0;
 
-    EnsureValidActiveGroup();
+    EnsureValidActives();
 
     show2dCsyss = true;
     showAxes = true;
@@ -147,20 +150,30 @@ void GraphicsWindow::MenuView(int id) {
     InvalidateGraphics();
 }
 
-void GraphicsWindow::EnsureValidActiveGroup(void) {
+void GraphicsWindow::EnsureValidActives(void) {
+    bool change = false;
+    // The active group must exist, and not be the references.
     Group *g = SS.group.FindByIdNoOops(activeGroup);
-    if(g && g->h.v != Group::HGROUP_REFERENCES.v) {
-        return;
+    if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
+        int i;
+        for(i = 0; i < SS.group.elems; i++) {
+            if(SS.group.elem[i].t.h.v != Group::HGROUP_REFERENCES.v) {
+                break;
+            }
+        }
+        if(i >= SS.group.elems) oops();
+        activeGroup = SS.group.elem[i].t.h;
+        change = true;
     }
 
-    int i;
-    for(i = 0; i < SS.group.elems; i++) {
-        if(SS.group.elem[i].t.h.v != Group::HGROUP_REFERENCES.v) {
-            break;
-        }
+    // The active coordinate system must also exist.
+    if(activeCsys.v != Entity::NO_CSYS.v && 
+                       !SS.entity.FindByIdNoOops(activeCsys))
+    {
+        activeCsys = Entity::NO_CSYS;
+        change = true;
     }
-    if(i >= SS.group.elems) oops();
-    activeGroup = SS.group.elem[i].t.h;
+    if(change) SS.TW.Show();
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -206,6 +219,25 @@ void GraphicsWindow::MenuEdit(int id) {
 void GraphicsWindow::MenuRequest(int id) {
     char *s;
     switch(id) {
+        case MNU_SEL_CSYS:
+            SS.GW.GroupSelection();
+            if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
+                SS.GW.activeCsys = SS.GW.gs.entity[0];
+                SS.GW.ClearSelection();
+            } else {
+                Error("Select 2d coordinate system (e.g., the XY plane) "
+                      "before locking on.");
+            }
+            SS.GW.EnsureValidActives();
+            SS.TW.Show();
+            break;
+
+        case MNU_NO_CSYS:
+            SS.GW.activeCsys = Entity::NO_CSYS;
+            SS.GW.EnsureValidActives();
+            SS.TW.Show();
+            break;
+            
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
 c:
@@ -400,6 +432,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     Request r;
     memset(&r, 0, sizeof(r));
     r.group = activeGroup;
+    r.csys = activeCsys;
     r.type = type;
     SS.request.AddAndAssignId(&r);
     SS.GenerateAll();

@@ -22,6 +22,49 @@ Expr *Expr::AnyOp(int newOp, Expr *b) {
     return r;
 }
 
+int Expr::Children(void) {
+    switch(op) {
+        case PARAM:
+        case PARAM_PTR:
+        case CONSTANT:
+            return 0;
+
+        case PLUS:
+        case MINUS:
+        case TIMES:
+        case DIV:
+            return 2;
+
+        case NEGATE:
+        case SQRT:
+        case SQUARE:
+        case SIN:
+        case COS:
+            return 1;
+
+        default: oops();
+    }
+}
+
+Expr *Expr::DeepCopy(void) {
+    Expr *n = AllocExpr();
+    *n = *this;
+    int c = n->Children();
+    if(c > 0) n->a = a->DeepCopy();
+    if(c > 1) n->b = b->DeepCopy();
+    return n;
+}
+
+Expr *Expr::DeepCopyKeep(void) {
+    Expr *n = (Expr *)MemAlloc(sizeof(Expr));
+    *n = *this;
+    n->a = n->b = NULL;
+    int c = n->Children();
+    if(c > 0) n->a = a->DeepCopyKeep();
+    if(c > 1) n->b = b->DeepCopyKeep();
+    return n;
+}
+
 double Expr::Eval(void) {
     switch(op) {
         case PARAM:         return SS.GetParam(x.parh)->val;

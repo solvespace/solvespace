@@ -56,17 +56,13 @@ public:
     inline bool isFromReferences(void);
 };
 
-// A set of requests. Every request must have an associated group. A group
-// may have an associated 2-d coordinate system, in which cases lines or
-// curves that belong to the group are automatically constrained into that
-// plane; otherwise they are free in 3-space.
+// A set of requests. Every request must have an associated group.
 class Group {
 public:
     static const hGroup     HGROUP_REFERENCES;
 
     hGroup      h;
 
-    hEntity     csys;   // or Entity::NO_CSYS, if it's not locked in a 2d csys
     NameStr     name;
 
     char *DescriptionString(void);
@@ -81,6 +77,8 @@ public:
     static const hRequest   HREQUEST_REFERENCE_YZ;
     static const hRequest   HREQUEST_REFERENCE_ZX;
 
+    hRequest    h;
+
     // Types of requests
     static const int CSYS_2D                = 10;
     static const int DATUM_POINT            = 11;
@@ -88,7 +86,7 @@ public:
 
     int         type;
 
-    hRequest    h;
+    hEntity     csys; // or Entity::NO_CSYS
 
     hGroup      group;
 
@@ -124,6 +122,8 @@ public:
         { hParam r; r.v = ((this->h.v) << 7) | i; return r; }
     inline hPoint point(int i)
         { hPoint r; r.v = ((this->h.v) << 7) | i; return r; }
+
+    char *DescriptionString(void);
 
     void Get2dCsysBasisVectors(Vector *u, Vector *v);
 

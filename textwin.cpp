@@ -8,8 +8,8 @@ const TextWindow::Color TextWindow::colors[] = {
     { RGB(170,   0,   0),       COLOR_BG_HEADER,    },  // 1    hidden label
     { RGB( 40, 255,  40),       COLOR_BG_HEADER,    },  // 2    shown label
     { RGB(200, 200,   0),       COLOR_BG_HEADER,    },  // 3    mixed label
-    { RGB(255, 200,  40),       COLOR_BG_HEADER,    },  // 4    header text
-    { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 5
+    { RGB(255, 200,  40),       COLOR_BG_HEADER,    },  // 4    yellow text
+    { RGB(255, 255, 255),       COLOR_BG_HEADER,    },  // 5    white text
     { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 6
     { RGB(  0,   0,   0),       COLOR_BG_DEFAULT,   },  // 7
 
@@ -155,14 +155,14 @@ void TextWindow::Show(void) {
     } else {
         switch(shown->screen) {
             default:
-                shown->screen = SCREEN_GROUP_LIST;
+                shown->screen = SCREEN_ALL_GROUPS;
                 // fall through
-            case SCREEN_GROUP_LIST:
-                ShowGroupList();
+            case SCREEN_ALL_GROUPS:
+                ShowAllGroups();
                 break;
 
-            case SCREEN_REQUEST_LIST:
-                ShowRequestList();
+            case SCREEN_REQUESTS_IN_GROUP:
+                ShowRequestsInGroup();
                 break;
         }
     }
@@ -181,7 +181,7 @@ void TextWindow::ScreenNavigaton(int link, DWORD v) {
         default:
         case 'h':
             SS.TW.OneScreenForward();
-            SS.TW.shown->screen = SCREEN_GROUP_LIST;
+            SS.TW.shown->screen = SCREEN_ALL_GROUPS;
             break;
 
         case 'b':
@@ -202,17 +202,23 @@ void TextWindow::ScreenNavigaton(int link, DWORD v) {
 void TextWindow::ShowHeader(void) {
     ClearScreen();
 
-    SS.GW.EnsureValidActiveGroup();
+    SS.GW.EnsureValidActives();
 
     if(SS.GW.pendingDescription) {
         Printf("             %C4 group:%s",
             SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
     } else {
         // Navigation buttons
-        Printf(" %Lb%f<<%E   %Lh%fhome%E   %C4 group:%s",
+        char *cd;
+        if(SS.GW.activeCsys.v == Entity::NO_CSYS.v) {
+            cd = "free in 3d";
+        } else {
+            cd = SS.GetEntity(SS.GW.activeCsys)->DescriptionString();
+        }
+        Printf(" %Lb%f<<%E   %Lh%fhome%E   %C4 csys:%C5 %s",
             (DWORD)(&TextWindow::ScreenNavigaton),
             (DWORD)(&TextWindow::ScreenNavigaton),
-            SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
+            cd);
     }
 
     int datumColor;
@@ -245,7 +251,7 @@ void TextWindow::ShowHeader(void) {
     );
 }
 
-void TextWindow::ShowGroupList(void) {
+void TextWindow::ShowAllGroups(void) {
     Printf("%C8[[all groups in sketch follow]]%E");
     int i;
     for(i = 0; i <= SS.group.elems; i++) {
@@ -265,27 +271,23 @@ void TextWindow::ShowGroupList(void) {
 void TextWindow::ScreenSelectGroup(int link, DWORD v) {
     SS.TW.OneScreenForward();
 
-    SS.TW.shown->screen = SCREEN_REQUEST_LIST;
+    SS.TW.shown->screen = SCREEN_REQUESTS_IN_GROUP;
     SS.TW.shown->group.v = v;
 
     SS.TW.Show();
 }
 
-void TextWindow::ShowRequestList(void) {
+void TextWindow::ShowRequestsInGroup(void) {
     if(shown->group.v == 0) {
         Printf("%C8[[requests in all groups]]%E");
     } else {
         Group *g = SS.group.FindById(shown->group);
         if(SS.GW.activeGroup.v == shown->group.v) {
             Printf("%C8[[this is the active group]]");
+        } else if(shown->group.v == Group::HGROUP_REFERENCES.v) {
+            Printf("%C8[[this group contains the references]]");
         } else {
-            Printf("%C8[[not active; %Llactivate this group%E%C8]]");
-        }
-        if(g->csys.v == Entity::NO_CSYS.v) {
-            Printf("[[points may go anywhere in 3d]]");
-        } else {
-            Printf("[[locked into plane %s]]",
-                SS.request.FindById(g->csys.request())->DescriptionString());
+            Printf("%C8[[not active; %C9%Llactivate this group%E%C8]]");
         }
         Printf("%C8[[requests in group %s]]%E", g->DescriptionString());
     }
@@ -300,4 +302,5 @@ void TextWindow::ShowRequestList(void) {
         }
     }
 }
+
 

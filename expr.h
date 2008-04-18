@@ -78,7 +78,11 @@ public:
 
     // Make a copy of an expression that won't get blown away when we
     // do a FreeAllExprs()
-    Expr *Keep(void);
+    Expr *DeepCopyKeep(void);
+    // or a copy that will
+    Expr *DeepCopy(void);
+    // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
+    int Children(void);
 
     static Expr *FromString(char *in);
     static void  Lex(char *in);

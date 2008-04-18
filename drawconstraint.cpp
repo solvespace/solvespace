@@ -41,7 +41,7 @@ void Constraint::DrawOrGetDistance(void) {
                 glPushMatrix();
                     glxTranslatev(ref);
                     glxOntoCsys(gr, gu);
-                    glxWriteText("ABCDEFG");
+                    glxWriteText(exprA->Print());
                 glPopMatrix();
             } else {
                 Point2d o = SS.GW.ProjectPoint(ref);

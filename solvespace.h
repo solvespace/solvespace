@@ -27,12 +27,16 @@ class Expr;
 
 // From the platform-specific code.
 void CheckMenuById(int id, BOOL checked);
+void EnableMenuById(int id, BOOL checked);
 void InvalidateGraphics(void);
 void InvalidateText(void);
 void dbp(char *str, ...);
 void Error(char *str, ...);
 Expr *AllocExpr(void);
 void FreeAllExprs(void);
+void *MemRealloc(void *p, int n);
+void *MemAlloc(int n);
+void MemFree(void *p);
 
 
 #include "dsc.h"

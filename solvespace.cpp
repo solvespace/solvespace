@@ -14,12 +14,11 @@ void SolveSpace::Init(void) {
     // Our initial group, that contains the references.
     Group g;
     memset(&g, 0, sizeof(g));
-    g.csys = Entity::NO_CSYS;
     g.name.strcpy("#references");
     g.h = Group::HGROUP_REFERENCES;
     group.Add(&g);
 
-    g.csys.v = Request::HREQUEST_REFERENCE_XY.v << 10;
+    // And an empty group, for the first stuff the user draws.
     g.name.strcpy("");
     group.AddAndAssignId(&g);
     
@@ -30,6 +29,7 @@ void SolveSpace::Init(void) {
     memset(&r, 0, sizeof(r));
     r.type = Request::CSYS_2D;
     r.group = Group::HGROUP_REFERENCES;
+    r.csys = Entity::NO_CSYS;
 
     r.name.strcpy("#XY-csys");
     r.h = Request::HREQUEST_REFERENCE_XY;

@@ -58,8 +58,9 @@ c: {
             for(i = 0; i < points; i++) {
                 Point pt;
                 memset(&pt, 0, sizeof(pt));
+                pt.csys = csys;
                 pt.h = e.point(16 + 3*i);
-                if(g->csys.v == Entity::NO_CSYS.v) {
+                if(csys.v == Entity::NO_CSYS.v) {
                     pt.type = Point::IN_FREE_SPACE;
                     // params for x y z
                     AddParam(param, &e, 16 + 3*i + 0);
@@ -67,7 +68,6 @@ c: {
                     AddParam(param, &e, 16 + 3*i + 2);
                 } else {
                     pt.type = Point::IN_2D_CSYS;
-                    pt.csys = g->csys;
                     // params for u v
                     AddParam(param, &e, 16 + 3*i + 0);
                     AddParam(param, &e, 16 + 3*i + 1);

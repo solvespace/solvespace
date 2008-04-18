@@ -73,6 +73,10 @@ void FreeAllExprs(void)
     Heap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
 }
 
+void *MemRealloc(void *p, int n) { return realloc(p, n); }
+void *MemAlloc(int n) { return malloc(n); }
+void MemFree(void *p) { free(p); }
+
 static void PaintTextWnd(HDC hdc)
 {
     RECT rect;
@@ -442,7 +446,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
     return 1;
 }
 
-void CheckMenuById(int id, BOOL checked)
+static void MenuById(int id, BOOL yes, BOOL check)
 {
     int i;
     int subMenu = -1;
@@ -454,12 +458,25 @@ void CheckMenuById(int id, BOOL checked)
             if(subMenu < 0) oops();
             if(subMenu >= (sizeof(SubMenus)/sizeof(SubMenus[0]))) oops();
 
-            CheckMenuItem(SubMenus[subMenu], id,
-                        checked ? MF_CHECKED : MF_UNCHECKED);
+            if(check) {
+                CheckMenuItem(SubMenus[subMenu], id,
+                            yes ? MF_CHECKED : MF_UNCHECKED);
+            } else {
+                EnableMenuItem(SubMenus[subMenu], id,
+                            yes ? MF_ENABLED : MF_GRAYED);
+            }
             return;
         }
     }
     oops();
+}
+void CheckMenuById(int id, BOOL checked)
+{
+    MenuById(id, checked, TRUE);
+}
+void EnableMenuById(int id, BOOL enabled)
+{
+    MenuById(id, enabled, FALSE);
 }
 
 HMENU CreateGraphicsWindowMenus(void)

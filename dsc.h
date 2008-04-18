@@ -69,7 +69,7 @@ public:
     void Add(T *t) {
         if(elems >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (Elem *)realloc(elem, elemsAllocated*sizeof(elem[0]));
+            elem = (Elem *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
             if(!elem) oops();
         }
 

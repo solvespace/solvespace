@@ -1,5 +1,10 @@
 #include "solvespace.h"
 
+char *Entity::DescriptionString(void) {
+    Request *r = SS.GetRequest(request());
+    return r->DescriptionString();
+}
+
 void Entity::Get2dCsysBasisVectors(Vector *u, Vector *v) {
     double q[4];
     for(int i = 0; i < 4; i++) {

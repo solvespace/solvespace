@@ -45,8 +45,8 @@ public:
     void Show(void);
 
     // State for the screen that we are showing in the text window.
-    static const int SCREEN_GROUP_LIST      = 0;
-    static const int SCREEN_REQUEST_LIST    = 1;
+    static const int SCREEN_ALL_GROUPS          = 0;
+    static const int SCREEN_REQUESTS_IN_GROUP   = 1;
     typedef struct {
         int     screen;
         hGroup  group;
@@ -60,8 +60,9 @@ public:
     void ShowHeader(void);
     // These are self-contained screens, that show some information about
     // the sketch.
-    void ShowGroupList(void);
-    void ShowRequestList(void);
+    void ShowAllGroups(void);
+    void ShowRequestsInGroup(void);
+
     void OneScreenForward(void);
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenNavigaton(int link, DWORD v);
@@ -83,6 +84,8 @@ public:
         // Edit
         MNU_DELETE,
         // Request
+        MNU_SEL_CSYS,
+        MNU_NO_CSYS,
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
         // Constrain
@@ -122,7 +125,8 @@ public:
     Point2d ProjectPoint(Vector p);
 
     hGroup  activeGroup;
-    void EnsureValidActiveGroup();
+    hEntity activeCsys;
+    void EnsureValidActives();
 
     // Operations that must be completed by doing something with the mouse
     // are noted here.
