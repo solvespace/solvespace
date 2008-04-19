@@ -85,7 +85,7 @@ void SolveSpace::ForceReferences(void) {
         hRequest hr = Quat[i].hr;
         // The origin for our coordinate system, always zero
         Vector v = Vector::MakeFrom(0, 0, 0);
-        GetEntity(hr.entity(1))->ForcePointTo(v);
+        GetEntity(hr.entity(1))->PointForceTo(v);
         // The quaternion that defines the rotation, from the table.
         GetParam(hr.param(0))->ForceTo(Quat[i].a);
         GetParam(hr.param(1))->ForceTo(Quat[i].b);

@@ -19,8 +19,8 @@ void Constraint::DrawOrGetDistance(void) {
     glxColor(1, 0.3, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
-            Vector ap = SS.GetEntity(ptA)->GetPointCoords();
-            Vector bp = SS.GetEntity(ptB)->GetPointCoords();
+            Vector ap = SS.GetEntity(ptA)->PointGetCoords();
+            Vector bp = SS.GetEntity(ptB)->PointGetCoords();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
 

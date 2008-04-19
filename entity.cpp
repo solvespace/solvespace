@@ -5,7 +5,7 @@ char *Entity::DescriptionString(void) {
     return r->DescriptionString();
 }
 
-void Entity::Get2dCsysBasisVectors(Vector *u, Vector *v) {
+void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
     double q[4];
     for(int i = 0; i < 4; i++) {
         q[i] = SS.GetParam(param.h[i])->val;
@@ -26,7 +26,7 @@ bool Entity::IsPoint(void) {
     }
 }
 
-bool Entity::IsFromReferences(void) {
+bool Entity::PointIsFromReferences(void) {
     hRequest hr = h.request();
     if(hr.v == Request::HREQUEST_REFERENCE_XY.v) return true;
     if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) return true;
@@ -34,7 +34,7 @@ bool Entity::IsFromReferences(void) {
     return false;
 }
 
-void Entity::ForcePointTo(Vector p) {
+void Entity::PointForceTo(Vector p) {
     switch(type) {
         case POINT_IN_3D:
             SS.GetParam(param.h[0])->ForceTo(p.x);
@@ -45,7 +45,7 @@ void Entity::ForcePointTo(Vector p) {
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(csys);
             Vector u, v;
-            c->Get2dCsysBasisVectors(&u, &v);
+            c->Csys2dGetBasisVectors(&u, &v);
             SS.GetParam(param.h[0])->ForceTo(p.Dot(u));
             SS.GetParam(param.h[1])->ForceTo(p.Dot(v));
             break;
@@ -54,7 +54,7 @@ void Entity::ForcePointTo(Vector p) {
     }
 }
 
-Vector Entity::GetPointCoords(void) {
+Vector Entity::PointGetCoords(void) {
     Vector p;
     switch(type) {
         case POINT_IN_3D:
@@ -66,7 +66,7 @@ Vector Entity::GetPointCoords(void) {
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(csys);
             Vector u, v;
-            c->Get2dCsysBasisVectors(&u, &v);
+            c->Csys2dGetBasisVectors(&u, &v);
             p =        u.ScaledBy(SS.GetParam(param.h[0])->val);
             p = p.Plus(v.ScaledBy(SS.GetParam(param.h[1])->val));
             break;
@@ -115,7 +115,7 @@ void Entity::DrawOrGetDistance(void) {
             Entity *isfor = SS.GetEntity(h.request().entity(0));
             if(!SS.GW.show2dCsyss && isfor->type == Entity::CSYS_2D) break;
 
-            Vector v = GetPointCoords();
+            Vector v = PointGetCoords();
 
             if(dogd.drawing) {
                 double s = 4;
@@ -140,10 +140,10 @@ void Entity::DrawOrGetDistance(void) {
             if(!SS.GW.show2dCsyss) break;
 
             Vector p;
-            p = SS.GetEntity(assoc[0])->GetPointCoords();
+            p = SS.GetEntity(assoc[0])->PointGetCoords();
 
             Vector u, v;
-            Get2dCsysBasisVectors(&u, &v);
+            Csys2dGetBasisVectors(&u, &v);
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
 
@@ -172,8 +172,8 @@ void Entity::DrawOrGetDistance(void) {
         }
 
         case LINE_SEGMENT: {
-            Vector a = SS.GetEntity(assoc[0])->GetPointCoords();
-            Vector b = SS.GetEntity(assoc[1])->GetPointCoords();
+            Vector a = SS.GetEntity(assoc[0])->PointGetCoords();
+            Vector b = SS.GetEntity(assoc[1])->PointGetCoords();
             LineDrawOrGetDistance(a, b);
             break;
         }

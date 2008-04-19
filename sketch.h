@@ -115,14 +115,14 @@ public:
     hEntity     csys;   // or Entity::NO_CSYS
 
     // Applies only for a CSYS_2D type
-    void Get2dCsysBasisVectors(Vector *u, Vector *v);
+    void Csys2dGetBasisVectors(Vector *u, Vector *v);
 
     bool IsPoint(void);
     // Applies for any of the point types
-    void GetPointExprs(Expr **x, Expr **y, Expr **z);
-    Vector GetPointCoords(void);
-    void ForcePointTo(Vector v);
-    bool IsFromReferences(void);
+    void PointGetExprs(Expr **x, Expr **y, Expr **z);
+    Vector PointGetCoords(void);
+    void PointForceTo(Vector v);
+    bool PointIsFromReferences(void);
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.

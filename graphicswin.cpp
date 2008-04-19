@@ -148,7 +148,7 @@ void GraphicsWindow::MenuView(int id) {
                     SS.GW.projRight, SS.GW.projUp);
                 // And with our final rotation
                 Vector pr, pu;
-                e->Get2dCsysBasisVectors(&pr, &pu);
+                e->Csys2dGetBasisVectors(&pr, &pu);
                 Quaternion quatf = Quaternion::MakeFrom(pr, pu);
                 // Make sure we take the shorter of the two possible paths.
                 double mp = (quatf.Minus(quat0)).Magnitude();
@@ -160,7 +160,7 @@ void GraphicsWindow::MenuView(int id) {
 
                 // And also get the offsets.
                 Vector offset0 = SS.GW.offset;
-                Vector offsetf = SS.GetEntity(e->assoc[0])->GetPointCoords();
+                Vector offsetf = SS.GetEntity(e->assoc[0])->PointGetCoords();
 
                 // Animate transition, unless it's a tiny move.
                 SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
@@ -294,9 +294,9 @@ c:
 
 void GraphicsWindow::UpdateDraggedEntity(hEntity hp, double mx, double my) {
     Entity *p = SS.GetEntity(hp);
-    Vector pos = p->GetPointCoords();
+    Vector pos = p->PointGetCoords();
     UpdateDraggedPoint(&pos, mx, my);
-    p->ForcePointTo(pos);
+    p->PointForceTo(pos);
 }
 
 void GraphicsWindow::UpdateDraggedPoint(Vector *pos, double mx, double my) {
@@ -353,7 +353,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         // constraint labels.
         if(hover.entity.v && 
            SS.GetEntity(hover.entity)->IsPoint() && 
-           !SS.GetEntity(hover.entity)->IsFromReferences())
+           !SS.GetEntity(hover.entity)->PointIsFromReferences())
         {
             ClearSelection();
             UpdateDraggedEntity(hover.entity, x, y);
@@ -488,17 +488,17 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     switch(pendingOperation) {
         case MNU_DATUM_POINT:
             hr = AddRequest(Request::DATUM_POINT);
-            SS.GetEntity(hr.entity(0))->ForcePointTo(v);
+            SS.GetEntity(hr.entity(0))->PointForceTo(v);
             pendingOperation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
             hr = AddRequest(Request::LINE_SEGMENT);
-            SS.GetEntity(hr.entity(1))->ForcePointTo(v);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
             pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
             pendingPoint = hr.entity(2);
             pendingDescription = "click to place next point of line";
-            SS.GetEntity(pendingPoint)->ForcePointTo(v);
+            SS.GetEntity(pendingPoint)->PointForceTo(v);
             break;
 
         case PENDING_OPERATION_DRAGGING_POINT:
