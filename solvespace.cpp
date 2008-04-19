@@ -8,7 +8,6 @@ void SolveSpace::Init(void) {
     group.Clear();
 
     entity.Clear();
-    point.Clear();
     param.Clear();
 
     // Our initial group, that contains the references.
@@ -57,9 +56,8 @@ void SolveSpace::GenerateAll(void) {
     param.MoveSelfInto(&prev);
 
     entity.Clear();
-    point.Clear();
     for(i = 0; i < request.n; i++) {
-        request.elem[i].Generate(&entity, &point, &param);
+        request.elem[i].Generate(&entity, &param);
     }
 
     for(i = 0; i < param.n; i++) {
@@ -84,17 +82,15 @@ void SolveSpace::ForceReferences(void) {
         { Request::HREQUEST_REFERENCE_ZX, 0.5, -0.5, -0.5, -0.5, },
     };
     for(int i = 0; i < 3; i++) {
-        hEntity he;
-        he = request.FindById(Quat[i].hr)->entity(0);
-        Entity *e = entity.FindById(he);
+        hRequest hr = Quat[i].hr;
         // The origin for our coordinate system, always zero
         Vector v = Vector::MakeFrom(0, 0, 0);
-        point.FindById(e->point(16))->ForceTo(v);
+        GetEntity(hr.entity(1))->ForcePointTo(v);
         // The quaternion that defines the rotation, from the table.
-        param.FindById(e->param(0))->ForceTo(Quat[i].a);
-        param.FindById(e->param(1))->ForceTo(Quat[i].b);
-        param.FindById(e->param(2))->ForceTo(Quat[i].c);
-        param.FindById(e->param(3))->ForceTo(Quat[i].d);
+        GetParam(hr.param(0))->ForceTo(Quat[i].a);
+        GetParam(hr.param(1))->ForceTo(Quat[i].b);
+        GetParam(hr.param(2))->ForceTo(Quat[i].c);
+        GetParam(hr.param(3))->ForceTo(Quat[i].d);
     }
 }
 

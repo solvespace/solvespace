@@ -61,6 +61,9 @@ void glxVertex3v(Vector u);
 void glxWriteText(char *str);
 void glxTranslatev(Vector u);
 void glxOntoCsys(Vector u, Vector v);
+void glxLockColorTo(double r, double g, double b);
+void glxUnlockColor(void);
+void glxColor(double r, double g, double b);
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
@@ -83,7 +86,6 @@ public:
 
     // These lists are generated automatically when we solve the sketch.
     IdList<Entity,hEntity>          entity;
-    IdList<Point,hPoint>            point;
     IdList<Param,hParam>            param;
 
     inline Constraint *GetConstraint(hConstraint h)
@@ -91,7 +93,6 @@ public:
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Entity  *GetEntity (hEntity  h) { return entity. FindById(h); }
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
-    inline Point   *GetPoint  (hPoint   h) { return point.  FindById(h); }
 
     hGroup      activeGroup;
 

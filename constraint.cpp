@@ -21,15 +21,15 @@ void Constraint::MenuConstrain(int id) {
                 c.ptB = gs.point[1];
             } else if(gs.lineSegments == 1 && gs.n == 1) {
                 c.type = PT_PT_DISTANCE;
-                c.ptA = gs.entity[0].point(16);
-                c.ptB = gs.entity[0].point(16+3);
+                Entity *e = SS.GetEntity(gs.entity[0]);
+                c.ptA = e->assoc[0];
+                c.ptB = e->assoc[1];
             } else {
                 Error("Bad selection for distance / diameter constraint.");
                 return;
             }
             c.disp.offset = Vector::MakeFrom(50, 50, 50);
             c.exprA = Expr::FromString("1+3+2")->DeepCopyKeep();
-            FreeAllExprs();
             AddConstraint(&c);
             break;
 

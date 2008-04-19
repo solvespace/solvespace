@@ -45,7 +45,6 @@ public:
         double  v;
         hParam  parh;
         Param  *parp;
-        hPoint  point;
         hEntity entity;
 
         // For use while parsing

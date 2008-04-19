@@ -137,7 +137,7 @@ public:
     // Operations that must be completed by doing something with the mouse
     // are noted here.
     static const int    PENDING_OPERATION_DRAGGING_POINT = 0x0f000000;
-    hPoint  pendingPoint;
+    hEntity pendingPoint;
     int     pendingOperation;
     char   *pendingDescription;
     hRequest AddRequest(int type);
@@ -146,7 +146,6 @@ public:
     // The current selection.
     class Selection {
     public:
-        hPoint      point;
         hEntity     entity;
         hConstraint constraint;
 
@@ -162,7 +161,7 @@ public:
     void HitTestMakeSelection(Point2d mp, Selection *dest);
     void ClearSelection(void);
     struct {
-        hPoint      point[MAX_SELECTED];
+        hEntity     point[MAX_SELECTED];
         hEntity     entity[MAX_SELECTED];
         int         points;
         int         entities;
@@ -182,7 +181,7 @@ public:
     static void ToggleAnyDatumShown(int link, DWORD v);
 
     void UpdateDraggedPoint(Vector *pos, double mx, double my);
-    void UpdateDraggedHPoint(hPoint hp, double mx, double my);
+    void UpdateDraggedEntity(hEntity hp, double mx, double my);
 
     // These are called by the platform-specific code.
     void Paint(int w, int h);

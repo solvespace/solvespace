@@ -3,6 +3,8 @@
 // A public-domain Hershey vector font ("Simplex").
 #include "font.table"
 
+static bool ColorLocked;
+
 void glxWriteText(char *str)
 {
     double scale = 0.7/SS.GW.scale;
@@ -53,4 +55,23 @@ void glxOntoCsys(Vector u, Vector v)
                         u.z, v.z, n.z, 0,
                         0,   0,   0,   1);
     glMultMatrixd(mat);
+}
+
+void glxLockColorTo(double r, double g, double b)
+{
+    ColorLocked = false;    
+    glxColor(r, g, b);
+    ColorLocked = true;
+}
+
+void glxUnlockColor(void)
+{
+    ColorLocked = false;    
+}
+
+void glxColor(double r, double g, double b)
+{
+    if(!ColorLocked) {
+        glColor3f((GLfloat)r, (GLfloat)g, (GLfloat)b);
+    }
 }

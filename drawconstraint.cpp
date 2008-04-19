@@ -16,10 +16,11 @@ void Constraint::DrawOrGetDistance(void) {
     Vector gu = SS.GW.projUp;
     Vector gn = gr.Cross(gu);
 
+    glxColor(1, 0.3, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
-            Vector ap = SS.GetPoint(ptA)->GetCoords();
-            Vector bp = SS.GetPoint(ptB)->GetCoords();
+            Vector ap = SS.GetEntity(ptA)->GetPointCoords();
+            Vector bp = SS.GetEntity(ptB)->GetPointCoords();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
 

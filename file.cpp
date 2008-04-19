@@ -41,14 +41,6 @@ bool SolveSpace::SaveToFile(char *filename) {
         fprintf(fh, "AddEntity\n\n");
     }
 
-    for(i = 0; i < point.n; i++) {
-        Point *p = &(point.elem[i]);
-        fprintf(fh, "Point.h.v=%08x\n", p->h.v);
-        fprintf(fh, "Point.type=%d\n", p->type);
-        fprintf(fh, "Point.csys.v=%08x\n", p->csys.v);
-        fprintf(fh, "AddPoint\n\n");
-    }
-
     for(i = 0; i < constraint.n; i++) {
         Constraint *c = &(constraint.elem[i]);
         fprintf(fh, "Constraint.h.v=%08x\n", c->h.v);

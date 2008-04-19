@@ -6,11 +6,9 @@ class hGroup;
 class hRequest;
 class hEntity;
 class hParam;
-class hPoint;
 
 class Entity;
 class Param;
-class Point;
 
 class hEquation;
 class Equation;
@@ -19,41 +17,32 @@ class Equation;
 // some data structure in the sketch.
 class hGroup {
 public:
-    // bits 10: 0   -- group index
+    // bits 15: 0   -- group index
     DWORD v;
 };
 class hRequest {
 public:
-    // bits 14: 0   -- request index (the high bits may be used as an import ID)
+    // bits 15: 0   -- request index
     DWORD   v;
 
     inline hEntity entity(int i);
+    inline hParam param(int i);
 };
 class hEntity {
 public:
-    // bits  9: 0   -- entity index
-    //      24:10   -- request index
+    // bits 15: 0   -- entity index
+    //      31:16   -- request index
     DWORD   v;
 
     inline hRequest request(void);
-    inline hParam param(int i);
-    inline hPoint point(int i);
 };
 class hParam {
 public:
-    // bits  6: 0   -- param index
-    //      16: 7   -- entity index
-    //      31:17   -- request index
+    // bits 15: 0   -- param index
+    //      31:16   -- request index
     DWORD       v;
-};
-class hPoint {
-    // bits  6: 0   -- point index
-    //      16: 7   -- entity index
-    //      31:17   -- request index
-public:
-    DWORD   v;
 
-    inline bool isFromReferences(void);
+    inline hRequest request(void);
 };
 
 // A set of requests. Every request must have an associated group.
@@ -94,13 +83,8 @@ public:
 
     NameStr     name;
 
-    inline hEntity entity(int i)
-        { hEntity r; r.v = ((this->h.v) << 10) | i; return r; }
-
-    void AddParam(IdList<Param,hParam> *param, Entity *e, int index);
-    void Generate(IdList<Entity,hEntity> *entity,
-                  IdList<Point,hPoint> *point,
-                  IdList<Param,hParam> *param);
+    hParam AddParam(IdList<Param,hParam> *param, hParam hp);
+    void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
 
     char *DescriptionString(void);
 };
@@ -113,30 +97,46 @@ public:
     static const hEntity    NO_CSYS;
 
     static const int CSYS_2D                = 1000;
-    static const int DATUM_POINT            = 1001;
-    static const int LINE_SEGMENT           = 1010;
+    static const int POINT_IN_3D            = 2000;
+    static const int POINT_IN_2D            = 2001;
+    static const int LINE_SEGMENT           = 3000;
     int         type;
 
-    inline hRequest request(void)
-        { hRequest r; r.v = (this->h.v >> 10); return r; }
-    inline hParam param(int i)
-        { hParam r; r.v = ((this->h.v) << 7) | i; return r; }
-    inline hPoint point(int i)
-        { hPoint r; r.v = ((this->h.v) << 7) | i; return r; }
+    bool        symbolic;
+    // The params are usually handles to the symbolic variables, but may
+    // also be constants
+    union {
+        hParam      h[16];
+        double      v[16];
+    }           param;
+    // Associated entities, e.g. the endpoints for a line segment
+    hEntity     assoc[16];
 
-    char *DescriptionString(void);
+    hEntity     csys;   // or Entity::NO_CSYS
 
+    // Applies only for a CSYS_2D type
     void Get2dCsysBasisVectors(Vector *u, Vector *v);
 
+    bool IsPoint(void);
+    // Applies for any of the point types
+    void GetPointExprs(Expr **x, Expr **y, Expr **z);
+    Vector GetPointCoords(void);
+    void ForcePointTo(Vector v);
+    bool IsFromReferences(void);
+
+    // Routines to draw and hit-test the representation of the entity
+    // on-screen.
     struct {
         bool    drawing;
         Point2d mp;
         double  dmin;
-    } dogd; // state for drawing or getting distance (for hit testing)
+    } dogd;
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(void);
     void Draw(void);
     double GetDistance(Point2d mp);
+
+    char *DescriptionString(void);
 };
 
 class Param {
@@ -150,53 +150,17 @@ public:
     void ForceTo(double v);
 };
 
-class Point {
-public:
-    int         tag;
-    // The point ID is equal to the initial param ID.
-    hPoint      h;
-
-    int type;
-    static const int IN_FREE_SPACE  = 0;    // three params, x y z
-    static const int IN_2D_CSYS     = 1;    // two params, u v, plus csys
-
-    hEntity     csys;
-
-    inline hEntity entity(void)
-        { hEntity r; r.v = (h.v >> 7); return r; }
-    inline hParam param(int i)
-        { hParam r; r.v = h.v + i; return r; }
-
-    // The point, in base coordinates. This may be a single parameter, or
-    // it may be a more complex expression if our point is locked in a 
-    // 2d csys.
-    void GetExprs(Expr **x, Expr **y, Expr **z);
-    Vector GetCoords(void);
-
-    void ForceTo(Vector v);
-
-    void Draw(void);
-    double GetDistance(Point2d mp);
-};
 
 inline hEntity hRequest::entity(int i)
-    { hEntity r; r.v = (v << 10) | i; return r; }
+    { hEntity r; r.v = (v << 16) | i; return r; }
+inline hParam hRequest::param(int i)
+    { hParam r; r.v = (v << 16) | i; return r; }
 
 inline hRequest hEntity::request(void)
-    { hRequest r; r.v = (v >> 10); return r; }
-inline hParam hEntity::param(int i)
-    { hParam r; r.v = (v << 7) | i; return r; }
-inline hPoint hEntity::point(int i)
-    { hPoint r; r.v = (v << 7) | i; return r; }
+    { hRequest r; r.v = (v >> 16); return r; }
 
-inline bool hPoint::isFromReferences(void) {
-    DWORD d = v >> 17;
-    if(d == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(d == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(d == Request::HREQUEST_REFERENCE_ZX.v) return true;
-    return false;
-}
-
+inline hRequest hParam::request(void)
+    { hRequest r; r.v = (v >> 16); return r; }
 
 
 class hConstraint {
@@ -223,9 +187,9 @@ public:
     // These are the parameters for the constraint.
     Expr        *exprA;
     Expr        *exprB;
-    hPoint      ptA;
-    hPoint      ptB;
-    hPoint      ptC;
+    hEntity     ptA;
+    hEntity     ptB;
+    hEntity     ptC;
     hEntity     entityA;
     hEntity     entityB;
 

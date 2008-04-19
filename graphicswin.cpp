@@ -138,9 +138,9 @@ void GraphicsWindow::MenuView(int id) {
             SS.GW.GroupSelection();
             Entity *e = NULL;
             if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
-                e = SS.entity.FindById(SS.GW.gs.entity[0]);
+                e = SS.GetEntity(SS.GW.gs.entity[0]);
             } else if(SS.GW.activeCsys.v != Entity::NO_CSYS.v) {
-                e = SS.entity.FindById(SS.GW.activeCsys);
+                e = SS.GetEntity(SS.GW.activeCsys);
             }
             if(e) {
                 // A quaternion with our original rotation
@@ -160,7 +160,7 @@ void GraphicsWindow::MenuView(int id) {
 
                 // And also get the offsets.
                 Vector offset0 = SS.GW.offset;
-                Vector offsetf = SS.point.FindById(e->point(16))->GetCoords();
+                Vector offsetf = SS.GetEntity(e->assoc[0])->GetPointCoords();
 
                 // Animate transition, unless it's a tiny move.
                 SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
@@ -241,15 +241,8 @@ void GraphicsWindow::MenuEdit(int id) {
                 Selection *s = &(SS.GW.selection[i]);
                 hRequest r;
                 r.v = 0;
-                if(s->point.v) {
-                    Point *pt = SS.GetPoint(s->point);
-                    Entity *e = SS.GetEntity(pt->entity());
-                    if(e->type == Entity::DATUM_POINT) {
-                        r = e->request();
-                    }
-                } else if(s->entity.v) {
-                    Entity *e = SS.GetEntity(s->entity);
-                    r = e->request();
+                if(s->entity.v) {
+                    r = s->entity.request();
                 }
                 if(r.v) SS.request.Tag(r, 1);
             }
@@ -299,11 +292,11 @@ c:
     }
 }
 
-void GraphicsWindow::UpdateDraggedHPoint(hPoint hp, double mx, double my) {
-    Point *p = SS.point.FindById(hp);
-    Vector pos = p->GetCoords();
+void GraphicsWindow::UpdateDraggedEntity(hEntity hp, double mx, double my) {
+    Entity *p = SS.GetEntity(hp);
+    Vector pos = p->GetPointCoords();
     UpdateDraggedPoint(&pos, mx, my);
-    p->ForceTo(pos);
+    p->ForcePointTo(pos);
 }
 
 void GraphicsWindow::UpdateDraggedPoint(Vector *pos, double mx, double my) {
@@ -358,9 +351,12 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     } else if(leftDown) {
         // We are left-dragging. This is often used to drag points, or
         // constraint labels.
-        if(hover.point.v && !hover.point.isFromReferences()) {
+        if(hover.entity.v && 
+           SS.GetEntity(hover.entity)->IsPoint() && 
+           !SS.GetEntity(hover.entity)->IsFromReferences())
+        {
             ClearSelection();
-            UpdateDraggedHPoint(hover.point, x, y);
+            UpdateDraggedEntity(hover.entity, x, y);
         } else if(hover.constraint.v && 
                         SS.GetConstraint(hover.constraint)->HasLabel())
         {
@@ -370,7 +366,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
     } else {
         if(pendingOperation == PENDING_OPERATION_DRAGGING_POINT) {
-            UpdateDraggedHPoint(pendingPoint, x, y);
+            UpdateDraggedEntity(pendingPoint, x, y);
         } else {
             // Do our usual hit testing, for the selection.
             Selection s;
@@ -384,24 +380,21 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 }
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
-    if(point.v      !=  b->point.v)     return false;
     if(entity.v     != b->entity.v)     return false;
     if(constraint.v != b->constraint.v) return false;
     return true;
 }
 bool GraphicsWindow::Selection::IsEmpty(void) {
-    if(point.v)         return false;
     if(entity.v)        return false;
     if(constraint.v)    return false;
     return true;
 }
 void GraphicsWindow::Selection::Clear(void) {
-    point.v = entity.v = constraint.v = 0;
+    entity.v = constraint.v = 0;
 }
 void GraphicsWindow::Selection::Draw(void) {
-    if(point.v)      SS.point.     FindById(point     )->Draw();
-    if(entity.v)     SS.entity.    FindById(entity    )->Draw();
-    if(constraint.v) SS.constraint.FindById(constraint)->Draw();
+    if(entity.v)     SS.GetEntity    (entity    )->Draw();
+    if(constraint.v) SS.GetConstraint(constraint)->Draw();
 }
 
 void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
@@ -410,21 +403,13 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
 
     memset(dest, 0, sizeof(*dest));
 
-    // Do the points
+    // Do the entities
     for(i = 0; i < SS.entity.n; i++) {
         d = SS.entity.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
             dest->entity = SS.entity.elem[i].h;
-        }
-    }
-
-    // Entities
-    for(i = 0; i < SS.point.n; i++) {
-        d = SS.point.elem[i].GetDistance(mp);
-        if(d < 10 && d < dmin) {
-            memset(dest, 0, sizeof(*dest));
-            dest->point = SS.point.elem[i].h;
+            dmin = d;
         }
     }
 
@@ -434,6 +419,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
         if(d < 10 && d < dmin) {
             memset(dest, 0, sizeof(*dest));
             dest->constraint = SS.constraint.elem[i].h;
+            dmin = d;
         }
     }
 }
@@ -452,10 +438,6 @@ void GraphicsWindow::GroupSelection(void) {
     int i;
     for(i = 0; i < MAX_SELECTED; i++) {
         Selection *s = &(selection[i]);
-        if(s->point.v) {
-            gs.point[(gs.points)++] = s->point;
-            (gs.n)++;
-        }
         if(s->entity.v) {
             gs.entity[(gs.entities)++] = s->entity;
             (gs.n)++;
@@ -464,6 +446,9 @@ void GraphicsWindow::GroupSelection(void) {
             switch(e->type) {
                 case Entity::CSYS_2D:       (gs.csyss)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
+            }
+            if(e->IsPoint()) {
+                gs.point[(gs.points)++] = s->entity;
             }
         }
     }
@@ -503,20 +488,21 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     switch(pendingOperation) {
         case MNU_DATUM_POINT:
             hr = AddRequest(Request::DATUM_POINT);
-            SS.point.FindById(hr.entity(0).point(16))->ForceTo(v);
+            SS.GetEntity(hr.entity(0))->ForcePointTo(v);
             pendingOperation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
             hr = AddRequest(Request::LINE_SEGMENT);
-            SS.point.FindById(hr.entity(0).point(16))->ForceTo(v);
+            SS.GetEntity(hr.entity(1))->ForcePointTo(v);
             pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
-            pendingPoint = hr.entity(0).point(16+3);
+            pendingPoint = hr.entity(2);
             pendingDescription = "click to place next point of line";
-            SS.point.FindById(pendingPoint)->ForceTo(v);
+            SS.GetEntity(pendingPoint)->ForcePointTo(v);
             break;
 
         case PENDING_OPERATION_DRAGGING_POINT:
+            // The MouseMoved event has already dragged it under the cursor.
             pendingOperation = 0;
             break;
 
@@ -629,15 +615,10 @@ void GraphicsWindow::Paint(int w, int h) {
     int i;
 
     // First, draw the entire scene.
-    glColor3f(1, 1, 1);
+    glxUnlockColor();
     for(i = 0; i < SS.entity.n; i++) {
         SS.entity.elem[i].Draw();
     }
-    glColor3f(0, 0.8f, 0);
-    for(i = 0; i < SS.point.n; i++) {
-        SS.point.elem[i].Draw();
-    }
-    glColor3f(1.0f, 0, 1.0f);
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
     }
@@ -645,11 +626,11 @@ void GraphicsWindow::Paint(int w, int h) {
     // Then redraw whatever the mouse is hovering over, highlighted. Have
     // to disable the depth test, so that we can overdraw.
     glDisable(GL_DEPTH_TEST); 
-    glColor3f(1, 1, 0);
+    glxLockColorTo(1, 1, 0);
     hover.Draw();
 
     // And finally draw the selection, same mechanism.
-    glColor3f(1, 0, 0);
+    glxLockColorTo(1, 0, 0);
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
     }

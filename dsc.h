@@ -91,7 +91,7 @@ public:
     T *FindById(H h) {
         T *t = FindByIdNoOops(h);
         if(!t) {
-            dbp("failed to look up item %16lx, searched %d items", h.v, n);
+            dbp("failed to look up item %08x, searched %d items", h.v, n);
             oops();
         }
         return t;
