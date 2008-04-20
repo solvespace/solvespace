@@ -75,7 +75,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "S&ymmetric\tShift+Y",                 0,                  'Y'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
-
+{ 1, NULL,                                  0,                          NULL  },
+{ 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },
 { 1, "&About\t",                            0,                          NULL  },

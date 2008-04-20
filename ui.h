@@ -96,6 +96,7 @@ public:
         MNU_LINE_SEGMENT,
         // Constrain
         MNU_DISTANCE_DIA,
+        MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
     typedef struct {

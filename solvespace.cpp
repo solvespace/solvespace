@@ -67,6 +67,7 @@ void SolveSpace::GenerateAll(void) {
         }
     }
 
+    prev.Clear();
     ForceReferences();
 }
 
@@ -94,7 +95,82 @@ void SolveSpace::ForceReferences(void) {
     }
 }
 
+bool SolveSpace::SolveGroup(hGroup hg) {
+    int i;
+    if(hg.v == Group::HGROUP_REFERENCES.v) {
+        // Special case; mark everything in the references known.
+        for(i = 0; i < param.n; i++) {
+            Param *p = &(param.elem[i]);
+            Request *r = GetRequest(p->h.request());
+            if(r->group.v == hg.v) p->known = true;
+        }
+        return true;
+    }
+
+    // Clear out the system to be solved.
+    sys.entity.Clear();
+    sys.param.Clear();
+    sys.eq.Clear();
+    // And generate all the params for requests in this group
+    for(i = 0; i < request.n; i++) {
+        Request *r = &(request.elem[i]);
+        if(r->group.v != hg.v) continue;
+
+        r->Generate(&(sys.entity), &(sys.param));
+    }
+    // Set the initial guesses for all the params
+    for(i = 0; i < sys.param.n; i++) {
+        Param *p = &(sys.param.elem[i]);
+        p->known = false;
+        p->val = GetParam(p->h)->val;
+    }
+    // And generate all the equations from constraints in this group
+    for(i = 0; i < constraint.n; i++) {
+        Constraint *c = &(constraint.elem[i]);
+        if(c->group.v != hg.v) continue;
+
+        c->Generate(&(sys.eq));
+    }
+
+    return sys.Solve();
+}
+
+bool SolveSpace::SolveWorker(void) {
+    bool allSolved = true;
+
+    int i;
+    for(i = 0; i < group.n; i++) {
+        Group *g = &(group.elem[i]);
+        if(g->solved) continue;
+
+        allSolved = false;
+        dbp("try solve group %s", g->DescriptionString());
+        if(SolveGroup(g->h)) {
+            g->solved = true;
+            // So this one worked; let's see if we can go any further.
+            if(SolveWorker()) {
+                // So everything worked; we're done.
+                return true;
+            } else {
+                // Didn't work, so undo this choice and give up
+                g->solved = false;
+            }
+        }
+    }
+
+    // If we got here, then either everything failed, so we're stuck, or
+    // everything was already solved, so we're done.
+    return allSolved;
+}
+
 void SolveSpace::Solve(void) {
+    int i;
+    for(i = 0; i < group.n; i++) {
+        group.elem[i].solved = false;
+    }
+    SolveWorker();
+
+    InvalidateGraphics();
 }
 
 void SolveSpace::MenuFile(int id) {

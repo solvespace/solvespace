@@ -16,6 +16,33 @@ void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
     *v = quat.RotationV();
 }
 
+void Entity::Csys2dGetBasisExprs(Expr **u, Expr **v) {
+    Expr *a = Expr::FromParam(param.h[0]);
+    Expr *b = Expr::FromParam(param.h[1]);
+    Expr *c = Expr::FromParam(param.h[2]);
+    Expr *d = Expr::FromParam(param.h[3]);
+
+    Expr *two = Expr::FromConstant(2);
+
+    u[0] = a->Square();
+    u[0] = (u[0])->Plus(b->Square());
+    u[0] = (u[0])->Minus(c->Square());
+    u[0] = (u[0])->Minus(d->Square());
+    u[1] = two->Times(a->Times(d));
+    u[1] = (u[1])->Plus(two->Times(b->Times(c)));
+    u[2] = two->Times(b->Times(d));
+    u[2] = (u[2])->Minus(two->Times(a->Times(c)));
+
+    v[0] = two->Times(b->Times(c));
+    v[0] = (v[0])->Minus(two->Times(a->Times(d)));
+    v[1] = a->Square();
+    v[1] = (v[1])->Minus(b->Square());
+    v[1] = (v[1])->Plus(c->Square());
+    v[1] = (v[1])->Minus(d->Square());
+    v[2] = two->Times(a->Times(b));
+    v[2] = (v[2])->Plus(two->Times(c->Times(d)));
+}
+
 bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
@@ -74,6 +101,33 @@ Vector Entity::PointGetCoords(void) {
         default: oops();
     }
     return p;
+}
+
+void Entity::PointGetExprs(Expr **x, Expr **y, Expr **z) {
+    switch(type) {
+        case POINT_IN_3D:
+            *x = Expr::FromParam(param.h[0]);
+            *y = Expr::FromParam(param.h[1]);
+            *z = Expr::FromParam(param.h[2]);
+            break;
+
+        case POINT_IN_2D: {
+            Entity *c = SS.GetEntity(csys);
+            Expr *u[3], *v[3];
+            c->Csys2dGetBasisExprs(u, v);
+
+            *x =            Expr::FromParam(param.h[0])->Times(u[0]);
+            *x = (*x)->Plus(Expr::FromParam(param.h[1])->Times(v[0]));
+
+            *y =            Expr::FromParam(param.h[0])->Times(u[1]);
+            *y = (*y)->Plus(Expr::FromParam(param.h[1])->Times(v[1]));
+
+            *z =            Expr::FromParam(param.h[0])->Times(u[2]);
+            *z = (*z)->Plus(Expr::FromParam(param.h[1])->Times(v[2]));
+            break;
+        }
+        default: oops();
+    }
 }
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {

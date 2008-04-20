@@ -73,6 +73,49 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
 
+class System {
+public:
+#define MAX_UNKNOWNS    200
+
+    IdList<Entity,hEntity>          entity;
+    IdList<Param,hParam>            param;
+    IdList<Equation,hEquation>      eq;
+
+    // In general, the tag indicates the subsys that a variable/equation
+    // has been assigned to; these are exceptions.
+    static const int ASSUMED          = 10000;
+    static const int SUBSTITUTED      = 10001;
+
+    // The Jacobian matrix
+    struct {
+        hEquation    eq[MAX_UNKNOWNS];
+        struct {
+            Expr        *sym[MAX_UNKNOWNS];
+            double       num[MAX_UNKNOWNS];
+        }            B;
+
+        hParam       param[MAX_UNKNOWNS];
+        bool         bound[MAX_UNKNOWNS];
+
+        Expr        *sym[MAX_UNKNOWNS][MAX_UNKNOWNS];
+        double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
+
+        double       X[MAX_UNKNOWNS];
+    
+        int m, n;
+    } J;
+
+    bool Tol(double v);
+    void GaussJordan(void);
+    bool SolveLinearSystem(void);
+
+    void WriteJacobian(int eqTag, int paramTag);
+    void EvalJacobian(void);
+
+    bool NewtonSolve(int tag);
+    bool Solve(void);
+};
+
 
 class SolveSpace {
 public:
@@ -93,6 +136,7 @@ public:
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Entity  *GetEntity (hEntity  h) { return entity. FindById(h); }
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
+    inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
 
     hGroup      activeGroup;
 
@@ -102,11 +146,17 @@ public:
     void ForceReferences(void);
 
     void Init(void);
+
+    bool SolveGroup(hGroup hg);
+    bool SolveWorker(void);
     void Solve(void);
 
     static void MenuFile(int id);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
+
+    // The system to be solved.
+    System  sys;
 };
 
 extern SolveSpace SS;

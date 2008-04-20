@@ -53,13 +53,29 @@ public:
     int         tag;
     hGroup      h;
 
+    int         solveOrder;
+    bool        solved;
+
     NameStr     name;
 
     char *DescriptionString(void);
 };
 
+
+class EntityId {
+    DWORD v;        // entity ID, starting from 0
+};
+class EntityMap {
+    int         tag;
+
+    EntityId    h;
+    hEntity     input;
+    int         copyNumber;
+    // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
+};
+
 // A user request for some primitive or derived operation; for example a
-// line, or a 
+// line, or a step and repeat.
 class Request {
 public:
     // Some predefined requests, that are present in every sketch.
@@ -82,6 +98,13 @@ public:
     hGroup      group;
 
     NameStr     name;
+
+    // When a request generates entities from entities, and the source
+    // entities may have come from multiple requests, it's necessary to
+    // remap the entity ID so that it's still unique. We do this with a
+    // mapping list.
+    IdList<EntityId,EntityMap> remap;
+    hEntity Remap(hEntity in, int copyNumber);
 
     hParam AddParam(IdList<Param,hParam> *param, hParam hp);
     void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
@@ -116,6 +139,7 @@ public:
 
     // Applies only for a CSYS_2D type
     void Csys2dGetBasisVectors(Vector *u, Vector *v);
+    void Csys2dGetBasisExprs(Expr **u, Expr **v);
 
     bool IsPoint(void);
     // Applies for any of the point types
@@ -166,6 +190,8 @@ inline hRequest hParam::request(void)
 class hConstraint {
 public:
     DWORD   v;
+
+    hEquation equation(int i);
 };
 
 class Constraint {
@@ -213,6 +239,9 @@ public:
     bool HasLabel(void);
 
     void Generate(IdList<Equation,hEquation> *l);
+    // Some helpers when generating symbolic constraint equations
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
+    static Expr *Distance(hEntity pa, hEntity pb);
 };
 
 class hEquation {
@@ -227,6 +256,9 @@ public:
 
     Expr        *e;
 };
+
+inline hEquation hConstraint::equation(int i)
+    { hEquation r; r.v = (v << 16) | i; return r; }
 
 
 #endif
