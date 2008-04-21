@@ -6,6 +6,8 @@ class Expr;
 
 class Expr {
 public:
+    DWORD marker;
+
     // A parameter, by the hParam handle
     static const int PARAM          =  0;
     // A parameter, by a pointer straight in to the param table (faster,
@@ -76,8 +78,9 @@ public:
     void PrintW(void); // worker
 
     // Make a copy of an expression that won't get blown away when we
-    // do a FreeAllExprs()
+    // do a FreeAllExprs(), or free it later.
     Expr *DeepCopyKeep(void);
+    static void FreeKeep(Expr **f);
     // or a copy that will
     Expr *DeepCopy(void);
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)

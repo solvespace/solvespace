@@ -35,6 +35,10 @@ BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void CheckMenuById(int id, BOOL checked);
 void EnableMenuById(int id, BOOL checked);
 
+void ShowGraphicsEditControl(int x, int y, char *s);
+void HideGraphicsEditControl(void);
+BOOL GraphicsEditControlIsVisible(void);
+
 void InvalidateGraphics(void);
 void InvalidateText(void);
 SDWORD GetMilliseconds(void);

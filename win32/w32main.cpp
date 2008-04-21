@@ -24,6 +24,7 @@ int TextWndScrollPos;
 int TextWndRows;
 
 HWND GraphicsWnd;
+HWND GraphicsEditControl;
 HMENU SubMenus[100];
 struct {
     int x, y;
@@ -291,6 +292,18 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 static BOOL ProcessKeyDown(WPARAM wParam)
 {
+    if(GraphicsEditControlIsVisible() && wParam != VK_ESCAPE) {
+        if(wParam == VK_RETURN) {
+            char s[1024];
+            memset(s, 0, sizeof(s));
+            SendMessage(GraphicsEditControl, WM_GETTEXT, 900, (LPARAM)s);
+            SS.GW.EditControlDone(s);
+            return TRUE;
+        } else {
+            return FALSE;
+        }
+    }
+
     int c;
     switch(wParam) {
         case VK_OEM_PLUS:       c = '+';    break;
@@ -383,6 +396,32 @@ void InvalidateText(void)
     InvalidateRect(TextWnd, NULL, FALSE);
 }
 
+void ShowGraphicsEditControl(int x, int y, char *s)
+{
+    RECT r;
+    GetClientRect(GraphicsWnd, &r);
+    x = x + (r.right - r.left)/2;
+    y = (r.bottom - r.top)/2 - y;
+
+    // (x, y) are the bottom left, but the edit control is placed by its
+    // top left corner
+    y -= 21;
+
+    MoveWindow(GraphicsEditControl, x, y, 120, 21, TRUE);
+    ShowWindow(GraphicsEditControl, SW_SHOW);
+    SendMessage(GraphicsEditControl, WM_SETTEXT, 0, (LPARAM)s);
+    SendMessage(GraphicsEditControl, EM_SETSEL, 0, strlen(s));
+    SetFocus(GraphicsEditControl);
+}
+void HideGraphicsEditControl(void)
+{
+    ShowWindow(GraphicsEditControl, SW_HIDE);
+}
+BOOL GraphicsEditControlIsVisible(void)
+{
+    return IsWindowVisible(GraphicsEditControl);
+}
+
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
@@ -407,6 +446,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_MOUSEMOVE:
         case WM_LBUTTONDOWN:
+        case WM_LBUTTONDBLCLK:
         case WM_MBUTTONDOWN: {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
@@ -421,6 +461,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
             if(msg == WM_LBUTTONDOWN) {
                 SS.GW.MouseLeftDown(x, y);
+            } else if(msg == WM_LBUTTONDBLCLK) {
+                SS.GW.MouseLeftDoubleClick(x, y);
             } else if(msg == WM_MBUTTONDOWN) {
                 SS.GW.MouseMiddleDown(x, y);
             } else if(msg == WM_MOUSEMOVE) {
@@ -441,11 +483,13 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             break;
         }
         case WM_COMMAND: {
-            int id = LOWORD(wParam);
-            for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
-                if(id == SS.GW.menu[i].id) {
-                    (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)id);
-                    break;
+            if(HIWORD(wParam) == 0) {
+                int id = LOWORD(wParam);
+                for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
+                    if(id == SS.GW.menu[i].id) {
+                        (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)id);
+                        break;
+                    }
                 }
             }
             break;
@@ -604,6 +648,11 @@ static void CreateMainWindows(void)
         600, 300, 200, 200, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
 
+    GraphicsEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
+        WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
+        50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
+    SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
+
 
     // The text window, with a comand line and some textual information
     // about the sketch.
@@ -643,12 +692,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 {
     Instance = hInstance;
 
-    // Create the root windows: one for control, with text, and one for
-    // the graphics
-    CreateMainWindows();
-
-    ThawWindowPos(TextWnd);
-    ThawWindowPos(GraphicsWnd);
+    InitCommonControls();
 
     // A monospaced font
     FixedFont = CreateFont(TEXT_HEIGHT-2, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
@@ -661,6 +705,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
     if(!LinkFont)
         LinkFont = (HFONT)GetStockObject(SYSTEM_FONT);
+
+    // Create the root windows: one for control, with text, and one for
+    // the graphics
+    CreateMainWindows();
+
+    ThawWindowPos(TextWnd);
+    ThawWindowPos(GraphicsWnd);
 
     // Create the heap that we use to store Exprs.
     FreeAllExprs();

@@ -229,6 +229,7 @@ void GraphicsWindow::EnsureValidActives(void) {
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
+            HideGraphicsEditControl();
             SS.GW.ClearSelection();
             SS.GW.pendingOperation = 0;
             SS.GW.pendingDescription = NULL;
@@ -316,6 +317,8 @@ void GraphicsWindow::UpdateDraggedPoint(Vector *pos, double mx, double my) {
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
 {
+    if(GraphicsEditControlIsVisible()) return;
+
     Point2d mp = { x, y };
 
     if(middleDown) {
@@ -460,6 +463,8 @@ void GraphicsWindow::GroupSelection(void) {
 }
 
 void GraphicsWindow::MouseMiddleDown(double x, double y) {
+    if(GraphicsEditControlIsVisible()) return;
+
     orig.offset = offset;
     orig.projUp = projUp;
     orig.projRight = projRight;
@@ -479,6 +484,8 @@ hRequest GraphicsWindow::AddRequest(int type) {
 }
 
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
+    if(GraphicsEditControlIsVisible()) return;
+
     // Make sure the hover is up to date.
     MouseMoved(mx, my, false, false, false, false, false);
     orig.mouse.x = mx;
@@ -540,6 +547,31 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
     SS.TW.Show();
     InvalidateGraphics();
+}
+
+void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
+    if(GraphicsEditControlIsVisible()) return;
+
+    if(hover.constraint.v) {
+        ClearSelection();
+        Constraint *c = SS.GetConstraint(hover.constraint);
+        Vector p3 = c->GetLabelPos();
+        Point2d p2 = ProjectPoint(p3);
+        ShowGraphicsEditControl((int)p2.x, (int)p2.y, c->exprA->Print());
+        constraintBeingEdited = hover.constraint;
+    }
+}
+
+void GraphicsWindow::EditControlDone(char *s) {
+    Expr *e = Expr::FromString(s);
+    if(e) {
+        Constraint *c = SS.GetConstraint(constraintBeingEdited);
+        Expr::FreeKeep(&(c->exprA));
+        c->exprA = e->DeepCopyKeep();
+        HideGraphicsEditControl();
+    } else {
+        Error("Not a valid number or expression: '%s'", s);
+    }
 }
 
 void GraphicsWindow::MouseScroll(double x, double y, int delta) {

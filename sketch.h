@@ -246,9 +246,11 @@ public:
         double  dmin;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
+    void DrawOrGetDistance(Vector *labelPos);
+
     double GetDistance(Point2d mp);
+    Vector GetLabelPos(void);
     void Draw(void);
-    void DrawOrGetDistance(void);
 
     bool HasLabel(void);
 

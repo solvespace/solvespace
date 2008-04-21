@@ -144,6 +144,8 @@ public:
     char   *pendingDescription;
     hRequest AddRequest(int type);
 
+    // The constraint that is being edited with the on-screen textbox.
+    hConstraint constraintBeingEdited;
     
     // The current selection.
     class Selection {
@@ -194,6 +196,7 @@ public:
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleDown(double x, double y);
     void MouseScroll(double x, double y, int delta);
+    void EditControlDone(char *s);
 };
 
 

@@ -25,7 +25,7 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     }
 }
 
-void Constraint::DrawOrGetDistance(void) {
+void Constraint::DrawOrGetDistance(Vector *labelPos) {
     if(!SS.GW.showConstraints) return;
 
     // Unit vectors that describe our current view of the scene.
@@ -40,6 +40,7 @@ void Constraint::DrawOrGetDistance(void) {
             Vector bp = SS.GetEntity(ptB)->PointGetCoords();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
+            if(labelPos) *labelPos = ref;
 
             Vector ab   = ap.Minus(bp);
             Vector ar   = ap.Minus(ref);
@@ -103,7 +104,7 @@ void Constraint::DrawOrGetDistance(void) {
 
 void Constraint::Draw(void) {
     dogd.drawing = true;
-    DrawOrGetDistance();
+    DrawOrGetDistance(NULL);
 }
 
 double Constraint::GetDistance(Point2d mp) {
@@ -111,8 +112,18 @@ double Constraint::GetDistance(Point2d mp) {
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
-    DrawOrGetDistance();
+    DrawOrGetDistance(NULL);
     
     return dogd.dmin;
+}
+
+Vector Constraint::GetLabelPos(void) {
+    dogd.drawing = false;
+    dogd.mp.x = 0; dogd.mp.y = 0;
+    dogd.dmin = 1e12;
+
+    Vector p;
+    DrawOrGetDistance(&p);
+    return p;
 }
 
