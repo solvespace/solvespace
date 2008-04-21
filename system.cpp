@@ -17,10 +17,12 @@ void System::WriteJacobian(int eqTag, int paramTag) {
         Equation *e = &(eq.elem[a]);
         if(e->tag != eqTag) continue;
 
-        mat.eq[i] = eq.elem[i].h;
-        mat.B.sym[i] = eq.elem[i].e;
+        mat.eq[i] = e->h;
+        mat.B.sym[i] = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
         for(j = 0; j < mat.n; j++) {
-            mat.A.sym[i][j] = e->e->PartialWrt(mat.param[j]);
+            Expr *pd = e->e->PartialWrt(mat.param[j]);
+            mat.A.sym[i][j] = 
+                pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
         }
         i++;
     }
@@ -165,14 +167,13 @@ bool System::NewtonSolve(int tag) {
     int iter = 0;
     bool converged = false;
     int i;
+
+    // Evaluate the functions at our operating point.
+    for(i = 0; i < mat.m; i++) {
+        mat.B.num[i] = (mat.B.sym[i])->Eval();
+    }
     do {
-        // Evaluate the functions numerically
-        for(i = 0; i < mat.m; i++) {
-            mat.B.num[i] = (mat.B.sym[i])->Eval();
-            dbp("mat.B.num[%d] = %.3f", i, mat.B.num[i]);
-            dbp("mat.B.sym[%d] = %s", i, (mat.B.sym[i])->Print());
-        }
-        // And likewise for the Jacobian
+        // And evaluate the Jacobian at our initial operating point.
         EvalJacobian();
 
         if(!SolveLinearSystem()) break;
@@ -184,12 +185,13 @@ bool System::NewtonSolve(int tag) {
             dbp("modifying param %08x, now %.3f", mat.param[i],
                 param.FindById(mat.param[i])->val);
             (param.FindById(mat.param[i]))->val -= mat.X[i];
-            // XXX do this properly
-            SS.GetParam(mat.param[i])->val =
-                (param.FindById(mat.param[i]))->val;
         }
 
-        // XXX re-evaluate functions before checking convergence
+        // Re-evalute the functions, since the params have just changed.
+        for(i = 0; i < mat.m; i++) {
+            mat.B.num[i] = (mat.B.sym[i])->Eval();
+        }
+        // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
             if(!Tol(mat.B.num[i])) {
@@ -199,7 +201,7 @@ bool System::NewtonSolve(int tag) {
         }
     } while(iter++ < 50 && !converged);
 
-    if(converged) {
+    if(converged) { 
         return true;
     } else {
         return false;
@@ -238,7 +240,18 @@ bool System::Solve(void) {
         param.FindById(mat.param[j])->tag = ASSUMED;
     }
 
-    NewtonSolve(0);
+    bool ok = NewtonSolve(0);
+
+    if(ok) {
+        // System solved correctly, so write the new values back in to the
+        // main parameter table.
+        for(i = 0; i < param.n; i++) {
+            Param *p = &(param.elem[i]);
+            Param *pp = SS.GetParam(p->h);
+            pp->val = p->val;
+            pp->known = true;
+        }
+    }
 
     return true;
 }

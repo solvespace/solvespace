@@ -69,7 +69,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Horizontal\tShift+H",                0,                  'H'|S,  NULL  },
 { 1, "&Vertical\tShift+V",                  0,                  'V'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Coincident / &On Curve\tShift+O",     0,                  'O'|S,  NULL  },
+{ 1, "&On Point / Curve / Plane\tShift+O",  MNU_ON_ENTITY,      'O'|S,  mCon  },
 { 1, "E&qual Length / Radius\tShift+Q",     0,                  'Q'|S,  NULL  },
 { 1, "At &Midpoint\tShift+M",               0,                  'M'|S,  NULL  },
 { 1, "S&ymmetric\tShift+Y",                 0,                  'Y'|S,  NULL  },
@@ -238,16 +238,20 @@ void GraphicsWindow::MenuEdit(int id) {
         case MNU_DELETE: {
             int i;
             SS.request.ClearTags();
+            SS.constraint.ClearTags();
             for(i = 0; i < MAX_SELECTED; i++) {
                 Selection *s = &(SS.GW.selection[i]);
-                hRequest r;
-                r.v = 0;
+                hRequest r; r.v = 0;
                 if(s->entity.v) {
                     r = s->entity.request();
                 }
-                if(r.v) SS.request.Tag(r, 1);
+                if(r.v && !r.IsFromReferences()) SS.request.Tag(r, 1);
+                if(s->constraint.v) {
+                    SS.constraint.Tag(s->constraint, 1);
+                }
             }
             SS.request.RemoveTagged();
+            SS.constraint.RemoveTagged();
 
             SS.GenerateAll();
             SS.GW.ClearSelection();
@@ -433,24 +437,24 @@ void GraphicsWindow::ClearSelection(void) {
 }
 
 void GraphicsWindow::GroupSelection(void) {
-    gs.points = gs.entities = 0;
-    gs.csyss = gs.lineSegments = 0;
-    gs.n = 0;
+    memset(&gs, 0, sizeof(gs));
     int i;
     for(i = 0; i < MAX_SELECTED; i++) {
         Selection *s = &(selection[i]);
         if(s->entity.v) {
-            gs.entity[(gs.entities)++] = s->entity;
             (gs.n)++;
 
             Entity *e = SS.entity.FindById(s->entity);
+            if(e->IsPoint()) {
+                gs.point[(gs.points)++] = s->entity;
+            } else {
+                gs.entity[(gs.entities)++] = s->entity;
+            }
             switch(e->type) {
                 case Entity::CSYS_2D:       (gs.csyss)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
             }
-            if(e->IsPoint()) {
-                gs.point[(gs.points)++] = s->entity;
-            }
+            if(e->HasPlane()) (gs.planes)++;
         }
     }
 }
@@ -620,12 +624,15 @@ void GraphicsWindow::Paint(int w, int h) {
     for(i = 0; i < SS.entity.n; i++) {
         SS.entity.elem[i].Draw();
     }
+
+    // Want the constraints to get drawn in front, so disable depth test.
+    glDisable(GL_DEPTH_TEST); 
+    // Draw the constraints
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
     }
 
-    // Then redraw whatever the mouse is hovering over, highlighted. Have
-    // to disable the depth test, so that we can overdraw.
+    // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST); 
     glxLockColorTo(1, 1, 0);
     hover.Draw();

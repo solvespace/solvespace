@@ -96,6 +96,7 @@ public:
         MNU_LINE_SEGMENT,
         // Constrain
         MNU_DISTANCE_DIA,
+        MNU_ON_ENTITY,
         MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
@@ -167,6 +168,7 @@ public:
         int         points;
         int         entities;
         int         csyss;
+        int         planes;
         int         lineSegments;
         int         n;
     } gs;

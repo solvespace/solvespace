@@ -27,6 +27,8 @@ public:
 
     inline hEntity entity(int i);
     inline hParam param(int i);
+
+    inline bool IsFromReferences(void);
 };
 class hEntity {
 public:
@@ -147,6 +149,12 @@ public:
     Vector PointGetCoords(void);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
+    bool PointIsKnown(void);
+
+    // Applies for anything that comes with a plane
+    bool HasPlane(void);
+    // The plane is points P such that P dot (xn, yn, zn) - d = 0
+    void PlaneGetExprs(Expr **xn, Expr **yn, Expr **zn, Expr **d);
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.
@@ -170,11 +178,15 @@ public:
 
     double      val;
     bool        known;
-
-    void ForceTo(double v);
 };
 
 
+inline bool hRequest::IsFromReferences(void) {
+    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
+    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
+    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    return false;
+}
 inline hEntity hRequest::entity(int i)
     { hEntity r; r.v = (v << 16) | i; return r; }
 inline hParam hRequest::param(int i)
@@ -200,6 +212,7 @@ public:
     static const int POINTS_COINCIDENT  = 20;
     static const int PT_PT_DISTANCE     = 30;
     static const int PT_LINE_DISTANCE   = 31;
+    static const int PT_IN_PLANE        = 40;
 
     static const int HORIZONTAL         = 40;
     static const int VERTICAL           = 41;
@@ -232,6 +245,7 @@ public:
         Point2d mp;
         double  dmin;
     } dogd; // state for drawing or getting distance (for hit testing)
+    void LineDrawOrGetDistance(Vector a, Vector b);
     double GetDistance(Point2d mp);
     void Draw(void);
     void DrawOrGetDistance(void);

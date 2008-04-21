@@ -33,6 +33,22 @@ void Constraint::MenuConstrain(int id) {
             AddConstraint(&c);
             break;
 
+        case GraphicsWindow::MNU_ON_ENTITY:
+            if(gs.points == 2 && gs.n == 2) {
+                c.type = POINTS_COINCIDENT;
+                c.ptA = gs.point[0];
+                c.ptB = gs.point[1];
+            } else if(gs.points == 1 && gs.planes == 1 && gs.n == 2) {
+                c.type = PT_IN_PLANE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.entity[0];
+            } else {
+                Error("Bad selection for on point / curve / plane constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
         case GraphicsWindow::MNU_SOLVE_NOW:
             SS.Solve();
             return;
@@ -87,6 +103,28 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case PT_PT_DISTANCE:
             AddEq(l, Distance(ptA, ptB)->Minus(exprA), 0);
             break;
+
+        case POINTS_COINCIDENT: {
+            Expr *ax, *ay, *az;
+            Expr *bx, *by, *bz;
+            SS.GetEntity(ptA)->PointGetExprs(&ax, &ay, &az);
+            SS.GetEntity(ptB)->PointGetExprs(&bx, &by, &bz);
+            AddEq(l, ax->Minus(bx), 0);
+            AddEq(l, ay->Minus(by), 1);
+            AddEq(l, az->Minus(bz), 2);
+            break;
+        }
+
+        case PT_IN_PLANE: {
+            Expr *px, *py, *pz;
+            Expr *nx, *ny, *nz, *d;
+            SS.GetEntity(ptA)->PointGetExprs(&px, &py, &pz);
+            SS.GetEntity(entityA)->PlaneGetExprs(&nx, &ny, &nz, &d);
+            AddEq(l,
+                ((px->Times(nx))->Plus((py->Times(ny)->Plus(pz->Times(nz)))))
+                    ->Minus(d), 0);
+            break;
+        }
 
         default: oops();
     }

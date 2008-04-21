@@ -151,7 +151,7 @@ public:
     void Init(void);
 
     bool SolveGroup(hGroup hg);
-    bool SolveWorker(void);
+    bool SolveWorker(int order);
     void Solve(void);
 
     static void MenuFile(int id);

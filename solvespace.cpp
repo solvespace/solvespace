@@ -88,10 +88,10 @@ void SolveSpace::ForceReferences(void) {
         Vector v = Vector::MakeFrom(0, 0, 0);
         GetEntity(hr.entity(1))->PointForceTo(v);
         // The quaternion that defines the rotation, from the table.
-        GetParam(hr.param(0))->ForceTo(Quat[i].a);
-        GetParam(hr.param(1))->ForceTo(Quat[i].b);
-        GetParam(hr.param(2))->ForceTo(Quat[i].c);
-        GetParam(hr.param(3))->ForceTo(Quat[i].d);
+        GetParam(hr.param(0))->val = Quat[i].a;
+        GetParam(hr.param(1))->val = Quat[i].b;
+        GetParam(hr.param(2))->val = Quat[i].c;
+        GetParam(hr.param(3))->val = Quat[i].d;
     }
 }
 
@@ -132,10 +132,12 @@ bool SolveSpace::SolveGroup(hGroup hg) {
         c->Generate(&(sys.eq));
     }
 
-    return sys.Solve();
+    bool r = sys.Solve();
+    FreeAllExprs();
+    return r;
 }
 
-bool SolveSpace::SolveWorker(void) {
+bool SolveSpace::SolveWorker(int order) {
     bool allSolved = true;
 
     int i;
@@ -145,17 +147,25 @@ bool SolveSpace::SolveWorker(void) {
 
         allSolved = false;
         dbp("try solve group %s", g->DescriptionString());
+
+        // Save the parameter table; a failed solve attempt will mess that
+        // up a little bit.
+        IdList<Param,hParam> savedParam;
+        param.DeepCopyInto(&savedParam);
+
         if(SolveGroup(g->h)) {
             g->solved = true;
+            g->solveOrder = order;
             // So this one worked; let's see if we can go any further.
-            if(SolveWorker()) {
+            if(SolveWorker(order+1)) {
                 // So everything worked; we're done.
                 return true;
-            } else {
-                // Didn't work, so undo this choice and give up
-                g->solved = false;
             }
         }
+        // Didn't work, so undo this choice and give up
+        g->solved = false;
+        param.Clear();
+        savedParam.MoveSelfInto(&param);
     }
 
     // If we got here, then either everything failed, so we're stuck, or
@@ -168,7 +178,7 @@ void SolveSpace::Solve(void) {
     for(i = 0; i < group.n; i++) {
         group.elem[i].solved = false;
     }
-    SolveWorker();
+    SolveWorker(0);
 
     InvalidateGraphics();
 }

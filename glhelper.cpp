@@ -7,7 +7,7 @@ static bool ColorLocked;
 
 void glxWriteText(char *str)
 {
-    double scale = 0.7/SS.GW.scale;
+    double scale = 0.5/SS.GW.scale;
     int xo = 5;
     int yo = 5;
     

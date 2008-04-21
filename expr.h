@@ -83,6 +83,12 @@ public:
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
     int Children(void);
 
+    // Make a copy, with the parameters (usually referenced by hParam)
+    // resolved to pointers to the actual value. This speeds things up
+    // considerably.
+    Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
+        IdList<Param,hParam> *thenTry);
+
     static Expr *FromString(char *in);
     static void  Lex(char *in);
     static Expr *Next(void);

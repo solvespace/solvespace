@@ -36,10 +36,11 @@ HFONT FixedFont, LinkFont;
 void dbp(char *str, ...)
 {
     va_list f;
-    char buf[1024];
+    static char buf[1024*50];
     va_start(f, str);
     vsprintf(buf, str, f);
     OutputDebugString(buf);
+    va_end(f);
 }
 
 void Error(char *str, ...)
@@ -48,6 +49,7 @@ void Error(char *str, ...)
     char buf[1024];
     va_start(f, str);
     vsprintf(buf, str, f);
+    va_end(f);
 
     HWND h = GetForegroundWindow();
     MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);

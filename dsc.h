@@ -146,6 +146,13 @@ public:
         elem = NULL;
     }
 
+    void DeepCopyInto(IdList<T,H> *l) {
+        l->elem = (T *)MemAlloc(elemsAllocated * sizeof(elem[0]));
+        memcpy(l->elem, elem, elemsAllocated * sizeof(elem[0]));
+        l->elemsAllocated = elemsAllocated;
+        l->n = n;
+    }
+
     void Clear(void) {
         elemsAllocated = n = 0;
         if(elem) free(elem);

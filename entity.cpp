@@ -43,6 +43,43 @@ void Entity::Csys2dGetBasisExprs(Expr **u, Expr **v) {
     v[2] = (v[2])->Plus(two->Times(c->Times(d)));
 }
 
+bool Entity::HasPlane(void) {
+    switch(type) {
+        case CSYS_2D:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void Entity::PlaneGetExprs(Expr **x, Expr **y, Expr **z, Expr **dn) {
+    Expr *a = Expr::FromParam(param.h[0]);
+    Expr *b = Expr::FromParam(param.h[1]);
+    Expr *c = Expr::FromParam(param.h[2]);
+    Expr *d = Expr::FromParam(param.h[3]);
+
+    Expr *two = Expr::FromConstant(2);
+
+    // Convert the quaternion to our plane's normal vector.
+    *x =             two->Times(a->Times(c));
+    *x = (*x)->Plus (two->Times(b->Times(d)));
+    *y =             two->Times(c->Times(d));
+    *y = (*y)->Minus(two->Times(a->Times(b)));
+    *z =             a->Square();
+    *z = (*z)->Minus(b->Square());
+    *z = (*z)->Minus(c->Square());
+    *z = (*z)->Plus (d->Square());
+
+    Expr *x0, *y0, *z0;
+    SS.GetEntity(assoc[0])->PointGetExprs(&x0, &y0, &z0);
+    // The plane is n dot (p - p0) = 0, or
+    //              n dot p - n dot p0 = 0
+    // so dn = n dot p0
+    *dn =             x0->Times(*x);
+    *dn = (*dn)->Plus(y0->Times(*y));
+    *dn = (*dn)->Plus(z0->Times(*z));
+}
+
 bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
@@ -53,28 +90,37 @@ bool Entity::IsPoint(void) {
     }
 }
 
+bool Entity::PointIsKnown(void) {
+    switch(type) {
+        case POINT_IN_3D:
+            return SS.GetParam(param.h[0])->known &&
+                   SS.GetParam(param.h[1])->known &&
+                   SS.GetParam(param.h[2])->known;
+        case POINT_IN_2D:
+            return SS.GetParam(param.h[0])->known &&
+                   SS.GetParam(param.h[1])->known;
+        default: oops();
+    }
+}
+
 bool Entity::PointIsFromReferences(void) {
-    hRequest hr = h.request();
-    if(hr.v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) return true;
-    return false;
+    return h.request().IsFromReferences();
 }
 
 void Entity::PointForceTo(Vector p) {
     switch(type) {
         case POINT_IN_3D:
-            SS.GetParam(param.h[0])->ForceTo(p.x);
-            SS.GetParam(param.h[1])->ForceTo(p.y);
-            SS.GetParam(param.h[2])->ForceTo(p.z);
+            SS.GetParam(param.h[0])->val = p.x;
+            SS.GetParam(param.h[1])->val = p.y;
+            SS.GetParam(param.h[2])->val = p.z;
             break;
 
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(csys);
             Vector u, v;
             c->Csys2dGetBasisVectors(&u, &v);
-            SS.GetParam(param.h[0])->ForceTo(p.Dot(u));
-            SS.GetParam(param.h[1])->ForceTo(p.Dot(v));
+            SS.GetParam(param.h[0])->val = p.Dot(u);
+            SS.GetParam(param.h[1])->val = p.Dot(v);
             break;
         }
         default: oops();
@@ -166,6 +212,8 @@ void Entity::DrawOrGetDistance(void) {
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D: {
+            if(!SS.GW.showPoints) break;
+
             Entity *isfor = SS.GetEntity(h.request().entity(0));
             if(!SS.GW.show2dCsyss && isfor->type == Entity::CSYS_2D) break;
 

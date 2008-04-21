@@ -99,9 +99,3 @@ char *Request::DescriptionString(void) {
     return ret;
 }
 
-void Param::ForceTo(double v) {
-    val = v;
-    known = true;
-}
-
-

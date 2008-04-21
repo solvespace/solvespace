@@ -65,6 +65,27 @@ Expr *Expr::DeepCopyKeep(void) {
     return n;
 }
 
+Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
+    IdList<Param,hParam> *thenTry)
+{
+    Expr *n = AllocExpr();
+    if(op == PARAM) {
+        // A param that is referenced by its hParam gets rewritten to go
+        // straight in to the parameter table with a pointer.
+        n->op = PARAM_PTR;
+        Param *p = firstTry->FindByIdNoOops(x.parh);
+        if(!p) p = thenTry->FindById(x.parh);
+        n->x.parp = p;
+        return n;
+    }
+
+    *n = *this;
+    int c = n->Children();
+    if(c > 0) n->a = a->DeepCopyWithParamsAsPointers(firstTry, thenTry);
+    if(c > 1) n->b = b->DeepCopyWithParamsAsPointers(firstTry, thenTry);
+    return n;
+}
+
 double Expr::Eval(void) {
     switch(op) {
         case PARAM:         return SS.GetParam(x.parh)->val;
