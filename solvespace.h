@@ -86,24 +86,27 @@ public:
     static const int ASSUMED          = 10000;
     static const int SUBSTITUTED      = 10001;
 
-    // The Jacobian matrix
+    // The system Jacobian matrix
     struct {
-        hEquation    eq[MAX_UNKNOWNS];
+        // The corresponding equation for each row
+        hEquation   eq[MAX_UNKNOWNS];
+
+        // The corresponding parameter for each column
+        hParam      param[MAX_UNKNOWNS];
+        bool        bound[MAX_UNKNOWNS];
+
+        // We're solving AX = B
+        int m, n;
+        struct {
+            Expr        *sym[MAX_UNKNOWNS][MAX_UNKNOWNS];
+            double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
+        }           A;
+        double      X[MAX_UNKNOWNS];
         struct {
             Expr        *sym[MAX_UNKNOWNS];
             double       num[MAX_UNKNOWNS];
-        }            B;
-
-        hParam       param[MAX_UNKNOWNS];
-        bool         bound[MAX_UNKNOWNS];
-
-        Expr        *sym[MAX_UNKNOWNS][MAX_UNKNOWNS];
-        double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
-
-        double       X[MAX_UNKNOWNS];
-    
-        int m, n;
-    } J;
+        }           B;
+    } mat;
 
     bool Tol(double v);
     void GaussJordan(void);
