@@ -70,7 +70,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Vertical\tShift+V",                  0,                  'V'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&On Point / Curve / Plane\tShift+O",  MNU_ON_ENTITY,      'O'|S,  mCon  },
-{ 1, "E&qual Length / Radius\tShift+Q",     0,                  'Q'|S,  NULL  },
+{ 1, "E&qual Length / Radius\tShift+Q",     MNU_EQUAL,          'Q'|S,  mCon  },
 { 1, "At &Midpoint\tShift+M",               0,                  'M'|S,  NULL  },
 { 1, "S&ymmetric\tShift+Y",                 0,                  'Y'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },

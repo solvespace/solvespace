@@ -248,6 +248,20 @@ Point2d Point2d::ScaledBy(double s) {
     return r;
 }
 
+double Point2d::Magnitude(void) {
+    return sqrt(x*x + y*y);
+}
+
+Point2d Point2d::WithMagnitude(double v) {
+    double m = Magnitude();
+    if(m < 0.001) {
+        Point2d r = { v, 0 };
+        return r;
+    } else {
+        return ScaledBy(v/Magnitude());
+    }
+}
+
 double Point2d::DistanceTo(Point2d p) {
     double dx = x - p.x;
     double dy = y - p.y;

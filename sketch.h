@@ -213,9 +213,10 @@ public:
     static const int PT_PT_DISTANCE     = 30;
     static const int PT_LINE_DISTANCE   = 31;
     static const int PT_IN_PLANE        = 40;
+    static const int EQUAL_LENGTH_LINES = 50;
 
-    static const int HORIZONTAL         = 40;
-    static const int VERTICAL           = 41;
+    static const int HORIZONTAL         = 80;
+    static const int VERTICAL           = 81;
 
     int         tag;
     hConstraint h;

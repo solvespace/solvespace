@@ -54,6 +54,8 @@ public:
     Point2d ScaledBy(double s);
     double DistanceTo(Point2d p);
     double DistanceToLine(Point2d p0, Point2d dp, bool segment);
+    double Magnitude(void);
+    Point2d WithMagnitude(double v);
 };
 
 template <class T, class H>

@@ -96,6 +96,7 @@ public:
         MNU_LINE_SEGMENT,
         // Constrain
         MNU_DISTANCE_DIA,
+        MNU_EQUAL,
         MNU_ON_ENTITY,
         MNU_SOLVE_NOW,
     } MenuId;

@@ -98,6 +98,20 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case EQUAL_LENGTH_LINES: {
+            for(int i = 0; i < 2; i++) {
+                Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
+                Vector a = SS.GetEntity(e->assoc[0])->PointGetCoords();
+                Vector b = SS.GetEntity(e->assoc[1])->PointGetCoords();
+                Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
+                Vector ab = a.Minus(b);
+                Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
+                
+                LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
+            }
+            break;
+        }
+
         default: oops();
     }
 }

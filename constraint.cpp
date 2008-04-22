@@ -49,6 +49,18 @@ void Constraint::MenuConstrain(int id) {
             AddConstraint(&c);
             break;
 
+        case GraphicsWindow::MNU_EQUAL:
+            if(gs.lineSegments == 2 && gs.n == 2) {
+                c.type = EQUAL_LENGTH_LINES;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            } else {
+                Error("Bad selection for equal length / radius constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
         case GraphicsWindow::MNU_SOLVE_NOW:
             SS.Solve();
             return;
@@ -103,6 +115,14 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case PT_PT_DISTANCE:
             AddEq(l, Distance(ptA, ptB)->Minus(exprA), 0);
             break;
+
+        case EQUAL_LENGTH_LINES: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            AddEq(l, Distance(a->assoc[0], a->assoc[1])->Minus(
+                     Distance(b->assoc[0], b->assoc[1])), 0);
+            break;
+        }
 
         case POINTS_COINCIDENT: {
             Expr *ax, *ay, *az;
