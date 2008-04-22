@@ -111,4 +111,17 @@ public:
     static void Parse(void);
 };
 
+class ExprVector {
+public:
+    Expr *x, *y, *z;
+
+    static ExprVector FromExprs(Expr *x, Expr *y, Expr *z);
+
+    ExprVector Plus(ExprVector b);
+    ExprVector Minus(ExprVector b);
+    Expr *Dot(ExprVector b);
+    ExprVector ScaledBy(Expr *s);
+    Expr *Magnitude(void);
+};
+
 #endif

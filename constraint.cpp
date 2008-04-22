@@ -92,16 +92,14 @@ Expr *Constraint::Distance(hEntity hpa, hEntity hpb) {
 
         return ((du->Square())->Plus(dv->Square()))->Sqrt();
     }
-    Expr *ax, *ay, *az;
-    Expr *bx, *by, *bz;
-    pa->PointGetExprs(&ax, &ay, &az);
-    pb->PointGetExprs(&bx, &by, &bz);
 
-    Expr *dx2 = (ax->Minus(bx))->Square();
-    Expr *dy2 = (ay->Minus(by))->Square();
-    Expr *dz2 = (az->Minus(bz))->Square();
+    // The usual case, just write it in terms of the coordinates
+    ExprVector ea, eb, eab;
+    ea = pa->PointGetExprs();
+    eb = pb->PointGetExprs();
+    eab = ea.Minus(eb);
 
-    return (dx2->Plus(dy2->Plus(dz2)))->Sqrt();
+    return eab.Magnitude();
 }
 
 void Constraint::ModifyToSatisfy(void) {
@@ -144,24 +142,49 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         }
 
         case POINTS_COINCIDENT: {
-            Expr *ax, *ay, *az;
-            Expr *bx, *by, *bz;
-            SS.GetEntity(ptA)->PointGetExprs(&ax, &ay, &az);
-            SS.GetEntity(ptB)->PointGetExprs(&bx, &by, &bz);
-            AddEq(l, ax->Minus(bx), 0);
-            AddEq(l, ay->Minus(by), 1);
-            AddEq(l, az->Minus(bz), 2);
+            Entity *a = SS.GetEntity(ptA);
+            Entity *b = SS.GetEntity(ptB);
+            if(!a->IsPointIn3d() && b->IsPointIn3d()) {
+                Entity *t = a;
+                a = b; b = t;
+            }
+            if(a->IsPointIn3d() && b->IsPointIn3d()) {
+                // Easy case: both points have 3 DOF, so write three eqs.
+                ExprVector ea, eb, eab;
+                ea = a->PointGetExprs();
+                eb = b->PointGetExprs();
+                eab = ea.Minus(eb);
+                AddEq(l, eab.x, 0);
+                AddEq(l, eab.y, 1);
+                AddEq(l, eab.z, 2);
+            } else if(a->IsPointIn3d() && !b->IsPointIn3d()) {
+                // One point has 2 DOF, one has 3; write two eqs, on the
+                // projection of the 3 DOF point into the 2 DOF point plane.
+                ExprVector p3;
+                p3 = a->PointGetExprs();
+                Entity *csy = SS.GetEntity(b->csys);
+                ExprVector u, v;
+                csy->Csys2dGetBasisExprs(&u, &v);
+                AddEq(l, Expr::FromParam(b->param.h[0])->Minus(p3.Dot(u)), 0);
+                AddEq(l, Expr::FromParam(b->param.h[1])->Minus(p3.Dot(v)), 1);
+            } else if(a->csys.v == b->csys.v) {
+                // Both in same csys, nice.
+                AddEq(l, Expr::FromParam(a->param.h[0])->Minus(
+                         Expr::FromParam(b->param.h[0])), 0);
+                AddEq(l, Expr::FromParam(a->param.h[1])->Minus(
+                         Expr::FromParam(b->param.h[1])), 1);
+            } else {
+                oops();
+            }
             break;
         }
 
         case PT_IN_PLANE: {
-            Expr *px, *py, *pz;
-            Expr *nx, *ny, *nz, *d;
-            SS.GetEntity(ptA)->PointGetExprs(&px, &py, &pz);
-            SS.GetEntity(entityA)->PlaneGetExprs(&nx, &ny, &nz, &d);
-            AddEq(l,
-                ((px->Times(nx))->Plus((py->Times(ny)->Plus(pz->Times(nz)))))
-                    ->Minus(d), 0);
+            ExprVector p, n;
+            Expr *d;
+            p = SS.GetEntity(ptA)->PointGetExprs();
+            SS.GetEntity(entityA)->PlaneGetExprs(&n, &d);
+            AddEq(l, (p.Dot(n))->Minus(d), 0);
             break;
         }
 

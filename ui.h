@@ -65,7 +65,7 @@ public:
 
     void OneScreenForward(void);
     static void ScreenSelectGroup(int link, DWORD v);
-    static void ScreenNavigaton(int link, DWORD v);
+    static void ScreenNavigation(int link, DWORD v);
 };
 
 class GraphicsWindow {
@@ -87,6 +87,8 @@ public:
         MNU_ORIENT_ONTO,
         MNU_LOCK_VIEW,
         MNU_UNSELECT_ALL,
+        MNU_UNITS_INCHES,
+        MNU_UNITS_MM,
         // Edit
         MNU_DELETE,
         // Request
@@ -133,6 +135,12 @@ public:
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
+
+    typedef enum {
+        UNIT_MM = 0,
+        UNIT_INCHES,
+    } Unit;
+    Unit    viewUnits;
 
     hGroup  activeGroup;
     hEntity activeCsys;

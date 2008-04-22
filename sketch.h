@@ -96,10 +96,9 @@ public:
     int         type;
 
     hEntity     csys; // or Entity::NO_CSYS
-
     hGroup      group;
-
     NameStr     name;
+    bool        construction;
 
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
@@ -141,12 +140,13 @@ public:
 
     // Applies only for a CSYS_2D type
     void Csys2dGetBasisVectors(Vector *u, Vector *v);
-    void Csys2dGetBasisExprs(Expr **u, Expr **v);
+    void Csys2dGetBasisExprs(ExprVector *u, ExprVector *v);
 
     bool IsPoint(void);
+    bool IsPointIn3d(void);
     // Applies for any of the point types
-    void PointGetExprs(Expr **x, Expr **y, Expr **z);
     Vector PointGetCoords(void);
+    ExprVector PointGetExprs(void);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
     bool PointIsKnown(void);
@@ -154,7 +154,7 @@ public:
     // Applies for anything that comes with a plane
     bool HasPlane(void);
     // The plane is points P such that P dot (xn, yn, zn) - d = 0
-    void PlaneGetExprs(Expr **xn, Expr **yn, Expr **zn, Expr **d);
+    void PlaneGetExprs(ExprVector *n, Expr **d);
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.

@@ -16,7 +16,7 @@ void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
     *v = quat.RotationV();
 }
 
-void Entity::Csys2dGetBasisExprs(Expr **u, Expr **v) {
+void Entity::Csys2dGetBasisExprs(ExprVector *u, ExprVector *v) {
     Expr *a = Expr::FromParam(param.h[0]);
     Expr *b = Expr::FromParam(param.h[1]);
     Expr *c = Expr::FromParam(param.h[2]);
@@ -24,23 +24,27 @@ void Entity::Csys2dGetBasisExprs(Expr **u, Expr **v) {
 
     Expr *two = Expr::FromConstant(2);
 
-    u[0] = a->Square();
-    u[0] = (u[0])->Plus(b->Square());
-    u[0] = (u[0])->Minus(c->Square());
-    u[0] = (u[0])->Minus(d->Square());
-    u[1] = two->Times(a->Times(d));
-    u[1] = (u[1])->Plus(two->Times(b->Times(c)));
-    u[2] = two->Times(b->Times(d));
-    u[2] = (u[2])->Minus(two->Times(a->Times(c)));
+    u->x = a->Square();
+    u->x = (u->x)->Plus(b->Square());
+    u->x = (u->x)->Minus(c->Square());
+    u->x = (u->x)->Minus(d->Square());
 
-    v[0] = two->Times(b->Times(c));
-    v[0] = (v[0])->Minus(two->Times(a->Times(d)));
-    v[1] = a->Square();
-    v[1] = (v[1])->Minus(b->Square());
-    v[1] = (v[1])->Plus(c->Square());
-    v[1] = (v[1])->Minus(d->Square());
-    v[2] = two->Times(a->Times(b));
-    v[2] = (v[2])->Plus(two->Times(c->Times(d)));
+    u->y = two->Times(a->Times(d));
+    u->y = (u->y)->Plus(two->Times(b->Times(c)));
+
+    u->z = two->Times(b->Times(d));
+    u->z = (u->z)->Minus(two->Times(a->Times(c)));
+
+    v->x = two->Times(b->Times(c));
+    v->x = (v->x)->Minus(two->Times(a->Times(d)));
+
+    v->y = a->Square();
+    v->y = (v->y)->Minus(b->Square());
+    v->y = (v->y)->Plus(c->Square());
+    v->y = (v->y)->Minus(d->Square());
+
+    v->z = two->Times(a->Times(b));
+    v->z = (v->z)->Plus(two->Times(c->Times(d)));
 }
 
 bool Entity::HasPlane(void) {
@@ -52,38 +56,48 @@ bool Entity::HasPlane(void) {
     }
 }
 
-void Entity::PlaneGetExprs(Expr **x, Expr **y, Expr **z, Expr **dn) {
-    Expr *a = Expr::FromParam(param.h[0]);
-    Expr *b = Expr::FromParam(param.h[1]);
-    Expr *c = Expr::FromParam(param.h[2]);
-    Expr *d = Expr::FromParam(param.h[3]);
+void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
+    if(type == CSYS_2D) {
+        Expr *a = Expr::FromParam(param.h[0]);
+        Expr *b = Expr::FromParam(param.h[1]);
+        Expr *c = Expr::FromParam(param.h[2]);
+        Expr *d = Expr::FromParam(param.h[3]);
 
-    Expr *two = Expr::FromConstant(2);
+        Expr *two = Expr::FromConstant(2);
 
-    // Convert the quaternion to our plane's normal vector.
-    *x =             two->Times(a->Times(c));
-    *x = (*x)->Plus (two->Times(b->Times(d)));
-    *y =             two->Times(c->Times(d));
-    *y = (*y)->Minus(two->Times(a->Times(b)));
-    *z =             a->Square();
-    *z = (*z)->Minus(b->Square());
-    *z = (*z)->Minus(c->Square());
-    *z = (*z)->Plus (d->Square());
+        // Convert the quaternion to our plane's normal vector.
+        n->x =               two->Times(a->Times(c));
+        n->x = (n->x)->Plus (two->Times(b->Times(d)));
+        n->y =               two->Times(c->Times(d));
+        n->y = (n->y)->Minus(two->Times(a->Times(b)));
+        n->z =               a->Square();
+        n->z = (n->z)->Minus(b->Square());
+        n->z = (n->z)->Minus(c->Square());
+        n->z = (n->z)->Plus (d->Square());
 
-    Expr *x0, *y0, *z0;
-    SS.GetEntity(assoc[0])->PointGetExprs(&x0, &y0, &z0);
-    // The plane is n dot (p - p0) = 0, or
-    //              n dot p - n dot p0 = 0
-    // so dn = n dot p0
-    *dn =             x0->Times(*x);
-    *dn = (*dn)->Plus(y0->Times(*y));
-    *dn = (*dn)->Plus(z0->Times(*z));
+        ExprVector p0 = SS.GetEntity(assoc[0])->PointGetExprs();
+        // The plane is n dot (p - p0) = 0, or
+        //              n dot p - n dot p0 = 0
+        // so dn = n dot p0
+        *dn = p0.Dot(*n);
+    } else {
+        oops();
+    }
 }
 
 bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool Entity::IsPointIn3d(void) {
+    switch(type) {
+        case POINT_IN_3D:
             return true;
         default:
             return false;
@@ -149,31 +163,27 @@ Vector Entity::PointGetCoords(void) {
     return p;
 }
 
-void Entity::PointGetExprs(Expr **x, Expr **y, Expr **z) {
+ExprVector Entity::PointGetExprs(void) {
+    ExprVector r;
     switch(type) {
         case POINT_IN_3D:
-            *x = Expr::FromParam(param.h[0]);
-            *y = Expr::FromParam(param.h[1]);
-            *z = Expr::FromParam(param.h[2]);
+            r.x = Expr::FromParam(param.h[0]);
+            r.y = Expr::FromParam(param.h[1]);
+            r.z = Expr::FromParam(param.h[2]);
             break;
 
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(csys);
-            Expr *u[3], *v[3];
-            c->Csys2dGetBasisExprs(u, v);
+            ExprVector u, v;
+            c->Csys2dGetBasisExprs(&u, &v);
 
-            *x =            Expr::FromParam(param.h[0])->Times(u[0]);
-            *x = (*x)->Plus(Expr::FromParam(param.h[1])->Times(v[0]));
-
-            *y =            Expr::FromParam(param.h[0])->Times(u[1]);
-            *y = (*y)->Plus(Expr::FromParam(param.h[1])->Times(v[1]));
-
-            *z =            Expr::FromParam(param.h[0])->Times(u[2]);
-            *z = (*z)->Plus(Expr::FromParam(param.h[1])->Times(v[2]));
+            r =        u.ScaledBy(Expr::FromParam(param.h[0]));
+            r = r.Plus(v.ScaledBy(Expr::FromParam(param.h[1])));
             break;
         }
         default: oops();
     }
+    return r;
 }
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
@@ -226,17 +236,15 @@ void Entity::DrawOrGetDistance(int order) {
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
                 glxColor(0, 0.8, 0);
-                glDisable(GL_LINE_SMOOTH);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
                     glxVertex3v(v.Plus (r).Minus(d));
                     glxVertex3v(v.Minus(r).Minus(d));
                     glxVertex3v(v.Minus(r).Plus (d));
                 glEnd();
-                glEnable(GL_LINE_SMOOTH);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
-                dogd.dmin = pp.DistanceTo(dogd.mp) - 7;
+                dogd.dmin = pp.DistanceTo(dogd.mp) - 5;
             }
             break;
         }

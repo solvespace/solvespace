@@ -26,6 +26,7 @@ typedef signed long SDWORD;
 #include <gl/glu.h>
 
 class Expr;
+class ExprVector;
 
 // From the platform-specific code.
 int SaveFileYesNoCancel(void);

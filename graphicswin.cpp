@@ -34,8 +34,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Onto Plane / Coordinate System\tO",  MNU_ORIENT_ONTO,    'O',    mView },
 { 1, "&Lock Orientation\tL",                MNU_LOCK_VIEW,      'L',    mView },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "Dimensions in &Inches",               0,                          NULL  },
-{ 1, "Dimensions in &Millimeters",          0,                          NULL  },
+{ 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
+{ 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
 { 0, "&Group",                              0,                  0,      NULL  },
 { 1, "New &Drawing Group",                  0,                  0,      NULL  },
@@ -139,7 +139,7 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_LOCK_VIEW:
             SS.GW.viewLocked = !SS.GW.viewLocked;
-            CheckMenuById(MNU_LOCK_VIEW, SS.GW.viewLocked);
+            SS.GW.EnsureValidActives();
             break;
 
         case MNU_ORIENT_ONTO: {
@@ -200,6 +200,16 @@ void GraphicsWindow::MenuView(int id) {
             break;
         }
 
+        case MNU_UNITS_MM:
+            SS.GW.viewUnits = UNIT_MM;
+            SS.GW.EnsureValidActives();
+            break;
+
+        case MNU_UNITS_INCHES:
+            SS.GW.viewUnits = UNIT_INCHES;
+            SS.GW.EnsureValidActives();
+            break;
+
         default: oops();
     }
     InvalidateGraphics();
@@ -233,6 +243,18 @@ void GraphicsWindow::EnsureValidActives(void) {
     bool in3d = (activeCsys.v == Entity::NO_CSYS.v);
     CheckMenuById(MNU_NO_CSYS, in3d);
     CheckMenuById(MNU_SEL_CSYS, !in3d);
+
+    // And update the checked state for various menus
+    CheckMenuById(MNU_LOCK_VIEW, viewLocked);
+    switch(viewUnits) {
+        case UNIT_MM:
+        case UNIT_INCHES:
+            break;
+        default:
+            viewUnits = UNIT_MM;
+    }
+    CheckMenuById(MNU_UNITS_MM, viewUnits == UNIT_MM);
+    CheckMenuById(MNU_UNITS_INCHES, viewUnits == UNIT_INCHES);
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -242,6 +264,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.ClearSelection();
             SS.GW.pendingOperation = 0;
             SS.GW.pendingDescription = NULL;
+            SS.TW.ScreenNavigation('h', 0);
             SS.TW.Show();
             break;
 

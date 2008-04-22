@@ -1,5 +1,52 @@
 #include "solvespace.h"
 
+ExprVector ExprVector::FromExprs(Expr *x, Expr *y, Expr *z) {
+    ExprVector r = { x, y, z};
+    return r;
+}
+
+ExprVector ExprVector::Minus(ExprVector b) {
+    ExprVector r;
+    r.x = x->Minus(b.x);
+    r.y = y->Minus(b.y);
+    r.z = z->Minus(b.z);
+    return r;
+}
+
+ExprVector ExprVector::Plus(ExprVector b) {
+    ExprVector r;
+    r.x = x->Plus(b.x);
+    r.y = y->Plus(b.y);
+    r.z = z->Plus(b.z);
+    return r;
+}
+
+Expr *ExprVector::Dot(ExprVector b) {
+    Expr *r;
+    r =         x->Times(b.x);
+    r = r->Plus(y->Times(b.y));
+    r = r->Plus(z->Times(b.z));
+    return r;
+}
+
+ExprVector ExprVector::ScaledBy(Expr *s) {
+    ExprVector r;
+    r.x = x->Times(s);
+    r.y = y->Times(s);
+    r.z = z->Times(s);
+    return r;
+}
+
+Expr *ExprVector::Magnitude(void) {
+    Expr *r;
+    r =         x->Square();
+    r = r->Plus(y->Square());
+    r = r->Plus(z->Square());
+    return r->Sqrt();
+}
+
+
+
 Expr *Expr::FromParam(hParam p) {
     Expr *r = AllocExpr();
     r->op = PARAM;

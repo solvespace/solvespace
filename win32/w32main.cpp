@@ -405,9 +405,9 @@ void ShowGraphicsEditControl(int x, int y, char *s)
 
     // (x, y) are the bottom left, but the edit control is placed by its
     // top left corner
-    y -= 21;
+    y -= 20;
 
-    MoveWindow(GraphicsEditControl, x, y, 120, 21, TRUE);
+    MoveWindow(GraphicsEditControl, x, y, 220, 21, TRUE);
     ShowWindow(GraphicsEditControl, SW_SHOW);
     SendMessage(GraphicsEditControl, WM_SETTEXT, 0, (LPARAM)s);
     SendMessage(GraphicsEditControl, EM_SETSEL, 0, strlen(s));

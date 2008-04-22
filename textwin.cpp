@@ -176,7 +176,7 @@ void TextWindow::OneScreenForward(void) {
     history++;
 }
 
-void TextWindow::ScreenNavigaton(int link, DWORD v) {
+void TextWindow::ScreenNavigation(int link, DWORD v) {
     switch(link) {
         default:
         case 'h':
@@ -216,8 +216,8 @@ void TextWindow::ShowHeader(void) {
             cd = SS.GetEntity(SS.GW.activeCsys)->DescriptionString();
         }
         Printf(" %Lb%f<<%E   %Lh%fhome%E   %C4 csys:%C5 %s",
-            (DWORD)(&TextWindow::ScreenNavigaton),
-            (DWORD)(&TextWindow::ScreenNavigaton),
+            (DWORD)(&TextWindow::ScreenNavigation),
+            (DWORD)(&TextWindow::ScreenNavigation),
             cd);
     }
 
