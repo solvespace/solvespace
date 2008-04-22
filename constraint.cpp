@@ -29,7 +29,8 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
             c.disp.offset = Vector::MakeFrom(50, 50, 50);
-            c.exprA = Expr::FromString("300")->DeepCopyKeep();
+            c.exprA = Expr::FromString("0")->DeepCopyKeep();
+            c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
 
@@ -101,6 +102,24 @@ Expr *Constraint::Distance(hEntity hpa, hEntity hpb) {
     Expr *dz2 = (az->Minus(bz))->Square();
 
     return (dx2->Plus(dy2->Plus(dz2)))->Sqrt();
+}
+
+void Constraint::ModifyToSatisfy(void) {
+    IdList<Equation,hEquation> l;
+    // An uninit IdList could lead us to free some random address, bad.
+    memset(&l, 0, sizeof(l));
+
+    Generate(&l);
+    if(l.n != 1) oops();
+
+    // These equations are written in the form f(...) - d = 0, where
+    // d is the value of the exprA.
+    double v = (l.elem[0].e)->Eval();
+    double nd = exprA->Eval() + v;
+    Expr::FreeKeep(&exprA);
+    exprA = Expr::FromConstant(nd)->DeepCopyKeep();
+
+    l.Clear();
 }
 
 void Constraint::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {

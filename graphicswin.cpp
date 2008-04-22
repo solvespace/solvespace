@@ -37,6 +37,17 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Inches",               0,                          NULL  },
 { 1, "Dimensions in &Millimeters",          0,                          NULL  },
 
+{ 0, "&Group",                              0,                  0,      NULL  },
+{ 1, "New &Drawing Group",                  0,                  0,      NULL  },
+{ 1, NULL,                                  0,                          NULL  },
+{ 1, "New Step and Repeat &Translating",    0,                  0,      NULL  },
+{ 1, "New Step and Repeat &Rotating",       0,                  0,      NULL  },
+{ 1, NULL,                                  0,                  0,      NULL  },
+{ 1, "New Extrusion",                       0,                  0,      NULL  },
+{ 1, NULL,                                  0,                  0,      NULL  },
+{ 1, "New Boolean Difference",              0,                  0,      NULL  },
+{ 1, "New Boolean Union",                   0,                  0,      NULL  },
+
 { 0, "&Request",                            0,                          NULL  },
 { 1, "Dra&w in 2d Coordinate System\tW",    MNU_SEL_CSYS,       'W',    mReq  },
 { 1, "Draw Anywhere in 3d\tQ",              MNU_NO_CSYS,        'Q',    mReq  },
@@ -47,14 +58,10 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "2d Coordinate S&ystem\tY",            0,                  'Y',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Line &Segment\tS",                    MNU_LINE_SEGMENT,   'S',    mReq  },
+{ 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
 { 1, "&Circle\tC",                          0,                  'C',    mReq  },
 { 1, "&Arc of a Circle\tA",                 0,                  'A',    mReq  },
 { 1, "&Cubic Segment\t3",                   0,                  '3',    mReq  },
-{ 1, NULL,                                  0,                          NULL  },
-{ 1, "Boolean &Union\tU",                   0,                  'U',    mReq  },
-{ 1, "Boolean &Difference\tD",              0,                  'D',    mReq  },
-{ 1, "Step and Repeat &Translate\tT",       0,                  'T',    mReq  },
-{ 1, "Step and Repeat &Rotate\tR",          0,                  'R',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
 { 1, "&Import From File...\tI",             0,                  'I',    mReq  },
@@ -223,7 +230,9 @@ void GraphicsWindow::EnsureValidActives(void) {
     }
     if(change) SS.TW.Show();
 
-    EnableMenuById(MNU_NO_CSYS, (activeCsys.v != Entity::NO_CSYS.v));
+    bool in3d = (activeCsys.v == Entity::NO_CSYS.v);
+    CheckMenuById(MNU_NO_CSYS, in3d);
+    CheckMenuById(MNU_SEL_CSYS, !in3d);
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -359,21 +368,41 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     } else if(leftDown) {
         // We are left-dragging. This is often used to drag points, or
         // constraint labels.
-        if(hover.entity.v && 
-           SS.GetEntity(hover.entity)->IsPoint() && 
-           !SS.GetEntity(hover.entity)->PointIsFromReferences())
+        double dm = orig.mouse.DistanceTo(mp);
+        // Don't start a drag until we've moved some threshold distance from
+        // the mouse-down point, to avoid accidental drags.
+        double dmt = 3;
+        if(pendingOperation == 0) {
+            if(hover.entity.v && 
+               SS.GetEntity(hover.entity)->IsPoint() && 
+               !SS.GetEntity(hover.entity)->PointIsFromReferences())
+            {
+                if(dm > dmt) {
+                    // Start dragging this point.
+                    ClearSelection();
+                    pendingPoint = hover.entity;
+                    pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
+                }
+            } else if(hover.constraint.v && 
+                            SS.GetConstraint(hover.constraint)->HasLabel())
+            {
+                if(dm > dmt) {
+                    ClearSelection();
+                    pendingConstraint = hover.constraint;
+                    pendingOperation = PENDING_OPERATION_DRAGGING_CONSTRAINT;
+                }
+            }
+        } else if(pendingOperation == PENDING_OPERATION_DRAGGING_POINT ||
+                  pendingOperation == PENDING_OPERATION_DRAGGING_NEW_POINT)
         {
-            ClearSelection();
-            UpdateDraggedEntity(hover.entity, x, y);
-        } else if(hover.constraint.v && 
-                        SS.GetConstraint(hover.constraint)->HasLabel())
-        {
-            ClearSelection();
-            Constraint *c = SS.constraint.FindById(hover.constraint);
+            UpdateDraggedEntity(pendingPoint, x, y);
+        } else if(pendingOperation == PENDING_OPERATION_DRAGGING_CONSTRAINT) {
+            Constraint *c = SS.constraint.FindById(pendingConstraint);
             UpdateDraggedPoint(&(c->disp.offset), x, y);
         }
     } else {
-        if(pendingOperation == PENDING_OPERATION_DRAGGING_POINT) {
+        // No buttons pressed.
+        if(pendingOperation == PENDING_OPERATION_DRAGGING_NEW_POINT) {
             UpdateDraggedEntity(pendingPoint, x, y);
         } else {
             // Do our usual hit testing, for the selection.
@@ -401,7 +430,7 @@ void GraphicsWindow::Selection::Clear(void) {
     entity.v = constraint.v = 0;
 }
 void GraphicsWindow::Selection::Draw(void) {
-    if(entity.v)     SS.GetEntity    (entity    )->Draw();
+    if(entity.v)     SS.GetEntity    (entity    )->Draw(-1);
     if(constraint.v) SS.GetConstraint(constraint)->Draw();
 }
 
@@ -499,21 +528,27 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     hRequest hr;
     switch(pendingOperation) {
         case MNU_DATUM_POINT:
+            ClearSelection(); hover.Clear();
+
             hr = AddRequest(Request::DATUM_POINT);
             SS.GetEntity(hr.entity(0))->PointForceTo(v);
+
             pendingOperation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
+            ClearSelection(); hover.Clear();
+
             hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
-            pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
+
+            pendingOperation = PENDING_OPERATION_DRAGGING_NEW_POINT;
             pendingPoint = hr.entity(2);
             pendingDescription = "click to place next point of line";
             SS.GetEntity(pendingPoint)->PointForceTo(v);
             break;
 
-        case PENDING_OPERATION_DRAGGING_POINT:
+        case PENDING_OPERATION_DRAGGING_NEW_POINT:
             // The MouseMoved event has already dragged it under the cursor.
             pendingOperation = 0;
             break;
@@ -547,6 +582,20 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
     SS.TW.Show();
     InvalidateGraphics();
+}
+
+void GraphicsWindow::MouseLeftUp(double mx, double my) {
+    switch(pendingOperation) {
+        case PENDING_OPERATION_DRAGGING_POINT:
+        case PENDING_OPERATION_DRAGGING_CONSTRAINT:
+            pendingOperation = 0;
+            pendingPoint.v = 0;
+            pendingConstraint.v = 0;
+            break;
+
+        default:
+            break;  // do nothing
+    }
 }
 
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
@@ -649,16 +698,22 @@ void GraphicsWindow::Paint(int w, int h) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
 
-    int i;
+    int i, a;
 
-    // First, draw the entire scene.
+    // First, draw the entire scene. We don't necessarily want to draw
+    // things with normal z-buffering behaviour; e.g. we always want to
+    // draw a line segment in front of a reference. So we have three draw
+    // levels, and only the first gets normal depth testing.
     glxUnlockColor();
-    for(i = 0; i < SS.entity.n; i++) {
-        SS.entity.elem[i].Draw();
+    for(a = 0; a <= 2; a++) {
+        // Three levels: 0 least prominent (e.g. a reference csys), 1 is
+        // middle (e.g. line segment), 2 is always in front (e.g. point).
+        if(a == 1) glDisable(GL_DEPTH_TEST);
+        for(i = 0; i < SS.entity.n; i++) {
+            SS.entity.elem[i].Draw(a);
+        }
     }
 
-    // Want the constraints to get drawn in front, so disable depth test.
-    glDisable(GL_DEPTH_TEST); 
     // Draw the constraints
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();

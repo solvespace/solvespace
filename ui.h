@@ -94,6 +94,7 @@ public:
         MNU_NO_CSYS,
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
+        MNU_RECTANGLE,
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_EQUAL,
@@ -139,10 +140,13 @@ public:
 
     // Operations that must be completed by doing something with the mouse
     // are noted here.
-    static const int    PENDING_OPERATION_DRAGGING_POINT = 0x0f000000;
-    hEntity pendingPoint;
-    int     pendingOperation;
-    char   *pendingDescription;
+    static const int    PENDING_OPERATION_DRAGGING_POINT      = 0x0f000000;
+    static const int    PENDING_OPERATION_DRAGGING_NEW_POINT  = 0x0f000001;
+    static const int    PENDING_OPERATION_DRAGGING_CONSTRAINT = 0x0f000002;
+    hEntity     pendingPoint;
+    hConstraint pendingConstraint;
+    int         pendingOperation;
+    char       *pendingDescription;
     hRequest AddRequest(int type);
 
     // The constraint that is being edited with the on-screen textbox.
@@ -194,6 +198,7 @@ public:
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
                                 bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);
+    void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleDown(double x, double y);
     void MouseScroll(double x, double y, int delta);

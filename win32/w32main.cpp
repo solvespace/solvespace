@@ -13,8 +13,8 @@
 #include "freeze.h"
 
 #define MIN_COLS    42
-#define TEXT_HEIGHT 19
-#define TEXT_WIDTH  10
+#define TEXT_HEIGHT 18
+#define TEXT_WIDTH  9
 
 HINSTANCE Instance;
 
@@ -446,6 +446,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_MOUSEMOVE:
         case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
         case WM_LBUTTONDBLCLK:
         case WM_MBUTTONDOWN: {
             int x = LOWORD(lParam);
@@ -461,6 +462,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
             if(msg == WM_LBUTTONDOWN) {
                 SS.GW.MouseLeftDown(x, y);
+            } else if(msg == WM_LBUTTONUP) {
+                SS.GW.MouseLeftUp(x, y);
             } else if(msg == WM_LBUTTONDBLCLK) {
                 SS.GW.MouseLeftDoubleClick(x, y);
             } else if(msg == WM_MBUTTONDOWN) {

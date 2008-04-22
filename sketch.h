@@ -164,8 +164,8 @@ public:
         double  dmin;
     } dogd;
     void LineDrawOrGetDistance(Vector a, Vector b);
-    void DrawOrGetDistance(void);
-    void Draw(void);
+    void DrawOrGetDistance(int order);
+    void Draw(int order);
     double GetDistance(Point2d mp);
 
     char *DescriptionString(void);
@@ -257,6 +257,7 @@ public:
 
     void Generate(IdList<Equation,hEquation> *l);
     // Some helpers when generating symbolic constraint equations
+    void ModifyToSatisfy(void);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     static Expr *Distance(hEntity pa, hEntity pb);
 };

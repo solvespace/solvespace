@@ -67,27 +67,40 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         case POINTS_COINCIDENT: {
-            // It's impossible to select this constraint on the drawing;
-            // have to do it from the text window.
-            if(!dogd.drawing) break;
-            double s = 2;
-            Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
-            Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
-            for(int i = 0; i < 2; i++) {
-                Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->PointGetCoords();
-                glxColor(0.4, 0, 0.4);
-                glBegin(GL_QUADS);
-                    glxVertex3v(p.Plus (r).Plus (d));
-                    glxVertex3v(p.Plus (r).Minus(d));
-                    glxVertex3v(p.Minus(r).Minus(d));
-                    glxVertex3v(p.Minus(r).Plus (d));
-                glEnd();
+            if(!dogd.drawing) {
+                for(int i = 0; i < 2; i++) {
+                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->
+                                                            PointGetCoords();
+                    Point2d pp = SS.GW.ProjectPoint(p);
+                    // The point is selected within a radius of 7, from the
+                    // same center; so if the point is visible, then this
+                    // constraint cannot be selected. But that's okay.
+                    dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 3);
+                }
+                break;
+            }
+
+            for(int a = 0; a < 2; a++) {
+                Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
+                Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
+                for(int i = 0; i < 2; i++) {
+                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->
+                                                            PointGetCoords();
+                    glxColor(0.4, 0, 0.4);
+                    glBegin(GL_QUADS);
+                        glxVertex3v(p.Plus (r).Plus (d));
+                        glxVertex3v(p.Plus (r).Minus(d));
+                        glxVertex3v(p.Minus(r).Minus(d));
+                        glxVertex3v(p.Minus(r).Plus (d));
+                    glEnd();
+                }
+
             }
             break;
         }
 
         case PT_IN_PLANE: {
-            double s = 6;
+            double s = 5;
             Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
             Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
             Vector p = SS.GetEntity(ptA)->PointGetCoords();

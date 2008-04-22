@@ -191,9 +191,9 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     }
 }
 
-void Entity::Draw(void) {
+void Entity::Draw(int order) {
     dogd.drawing = true;
-    DrawOrGetDistance();
+    DrawOrGetDistance(order);
 }
 
 double Entity::GetDistance(Point2d mp) {
@@ -201,17 +201,18 @@ double Entity::GetDistance(Point2d mp) {
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
-    DrawOrGetDistance();
+    DrawOrGetDistance(-1);
     
     return dogd.dmin;
 }
 
-void Entity::DrawOrGetDistance(void) {  
+void Entity::DrawOrGetDistance(int order) {  
     glxColor(1, 1, 1);
 
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D: {
+            if(order >= 0 && order != 2) break;
             if(!SS.GW.showPoints) break;
 
             Entity *isfor = SS.GetEntity(h.request().entity(0));
@@ -220,25 +221,28 @@ void Entity::DrawOrGetDistance(void) {
             Vector v = PointGetCoords();
 
             if(dogd.drawing) {
-                double s = 4;
+                double s = 3;
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
                 glxColor(0, 0.8, 0);
+                glDisable(GL_LINE_SMOOTH);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
                     glxVertex3v(v.Plus (r).Minus(d));
                     glxVertex3v(v.Minus(r).Minus(d));
                     glxVertex3v(v.Minus(r).Plus (d));
                 glEnd();
+                glEnable(GL_LINE_SMOOTH);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
-                dogd.dmin = pp.DistanceTo(dogd.mp) - 8;
+                dogd.dmin = pp.DistanceTo(dogd.mp) - 7;
             }
             break;
         }
 
         case CSYS_2D: {
+            if(order >= 0 && order != 0) break;
             if(!SS.GW.show2dCsyss) break;
 
             Vector p;
@@ -274,6 +278,7 @@ void Entity::DrawOrGetDistance(void) {
         }
 
         case LINE_SEGMENT: {
+            if(order >= 0 && order != 1) break;
             Vector a = SS.GetEntity(assoc[0])->PointGetCoords();
             Vector b = SS.GetEntity(assoc[1])->PointGetCoords();
             LineDrawOrGetDistance(a, b);
