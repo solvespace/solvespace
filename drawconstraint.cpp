@@ -146,13 +146,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             } else {
                 Vector a = SS.GetEntity(ptA)->PointGetCoords();
                 Vector b = SS.GetEntity(ptB)->PointGetCoords();
+
                 Entity *csy = SS.GetEntity(SS.GetEntity(ptA)->csys);
-                Vector cn = csy->Csys2dGetNormalVector();
+                Vector cu, cv, cn;
+                csy->Csys2dGetBasisVectors(&cu, &cv);
+                cn = csy->Csys2dGetNormalVector();
 
                 int i;
                 for(i = 0; i < 2; i++) {
                     Vector o = (i == 0) ? a : b;
-                    Vector d = (i == 0) ? a.Minus(b) : b.Minus(a);
+                    Vector oo = (i == 0) ? a.Minus(b) : b.Minus(a);
+                    Vector d = (type == HORIZONTAL) ? cu : cv;
+                    if(oo.Dot(d) < 0) d = d.ScaledBy(-1);
+
                     Vector dp = cn.Cross(d);
                     d = d.WithMagnitude(14/SS.GW.scale);
                     Vector c = o.Minus(d);
