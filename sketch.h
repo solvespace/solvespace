@@ -58,9 +58,13 @@ public:
     int         solveOrder;
     bool        solved;
 
+    bool        visible;
+
     NameStr     name;
 
     char *DescriptionString(void);
+
+    SPolygon GetPolygon(void);
 };
 
 
@@ -140,7 +144,9 @@ public:
 
     // Applies only for a CSYS_2D type
     void Csys2dGetBasisVectors(Vector *u, Vector *v);
+    Vector Csys2dGetNormalVector(void);
     void Csys2dGetBasisExprs(ExprVector *u, ExprVector *v);
+    ExprVector Csys2dGetOffsetExprs(void);
 
     bool IsPoint(void);
     bool IsPointIn3d(void);
@@ -260,6 +266,8 @@ public:
     void ModifyToSatisfy(void);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     static Expr *Distance(hEntity pa, hEntity pb);
+
+    static void ConstrainCoincident(hEntity ptA, hEntity ptB);
 };
 
 class hEquation {

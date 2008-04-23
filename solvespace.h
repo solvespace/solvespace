@@ -56,6 +56,7 @@ void MemFree(void *p);
 
 
 #include "dsc.h"
+#include "polygon.h"
 #include "sketch.h"
 #include "ui.h"
 #include "expr.h"

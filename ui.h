@@ -101,6 +101,8 @@ public:
         MNU_DISTANCE_DIA,
         MNU_EQUAL,
         MNU_ON_ENTITY,
+        MNU_HORIZONTAL,
+        MNU_VERTICAL,
         MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
@@ -148,9 +150,10 @@ public:
 
     // Operations that must be completed by doing something with the mouse
     // are noted here.
-    static const int    PENDING_OPERATION_DRAGGING_POINT      = 0x0f000000;
-    static const int    PENDING_OPERATION_DRAGGING_NEW_POINT  = 0x0f000001;
-    static const int    PENDING_OPERATION_DRAGGING_CONSTRAINT = 0x0f000002;
+    static const int    DRAGGING_POINT           = 0x0f000000;
+    static const int    DRAGGING_NEW_POINT       = 0x0f000001;
+    static const int    DRAGGING_NEW_LINE_POINT  = 0x0f000002;
+    static const int    DRAGGING_CONSTRAINT      = 0x0f000003;
     hEntity     pendingPoint;
     hConstraint pendingConstraint;
     int         pendingOperation;
@@ -175,7 +178,7 @@ public:
     Selection hover;
     static const int MAX_SELECTED = 32;
     Selection selection[MAX_SELECTED];
-    void HitTestMakeSelection(Point2d mp, Selection *dest);
+    void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
     struct {
         hEntity     point[MAX_SELECTED];

@@ -5,6 +5,16 @@ hConstraint Constraint::AddConstraint(Constraint *c) {
     return c->h;
 }
 
+void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
+    Constraint c;
+    memset(&c, 0, sizeof(c));
+    c.group = SS.GW.activeGroup;
+    c.type = Constraint::POINTS_COINCIDENT;
+    c.ptA = ptA;
+    c.ptB = ptB;
+    SS.constraint.AddAndAssignId(&c);
+}
+
 void Constraint::MenuConstrain(int id) {
     Constraint c;
     memset(&c, 0, sizeof(c));
@@ -61,6 +71,48 @@ void Constraint::MenuConstrain(int id) {
             }
             AddConstraint(&c);
             break;
+
+        case GraphicsWindow::MNU_VERTICAL:
+        case GraphicsWindow::MNU_HORIZONTAL: {
+            hEntity ha, hb;
+            if(gs.lineSegments == 1 && gs.n == 1) {
+                c.entityA = gs.entity[0];
+                Entity *e = SS.GetEntity(c.entityA);
+                ha = e->assoc[0];
+                hb = e->assoc[1];
+            } else if(gs.points == 2 && gs.n == 2) {
+                ha = c.ptA = gs.point[0];
+                hb = c.ptB = gs.point[1];
+            } else {
+                Error("Bad selection for horizontal / vertical constraint.");
+                return;
+            }
+            Entity *ea = SS.GetEntity(ha);
+            Entity *eb = SS.GetEntity(hb);
+            if(ea->csys.v == Entity::NO_CSYS.v &&
+               eb->csys.v == Entity::NO_CSYS.v)
+            {
+                Error("Horizontal/vertical constraint applies only to "
+                      "entities drawn in a 2d coordinate system.");
+                return;
+            }
+            if(eb->csys.v == SS.GW.activeCsys.v) {
+                // We are constraining two points in two different csyss; so
+                // we have two choices for the definitons of the coordinate
+                // directions. ptA's gets chosen, so make sure that's the
+                // active csys.
+                hEntity t = c.ptA;
+                c.ptA = c.ptB;
+                c.ptB = t;
+            }
+            if(id == GraphicsWindow::MNU_HORIZONTAL) {
+                c.type = HORIZONTAL;
+            } else {
+                c.type = VERTICAL;
+            }
+            AddConstraint(&c);
+            break;
+        }
 
         case GraphicsWindow::MNU_SOLVE_NOW:
             SS.Solve();
@@ -157,24 +209,27 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 AddEq(l, eab.x, 0);
                 AddEq(l, eab.y, 1);
                 AddEq(l, eab.z, 2);
-            } else if(a->IsPointIn3d() && !b->IsPointIn3d()) {
-                // One point has 2 DOF, one has 3; write two eqs, on the
-                // projection of the 3 DOF point into the 2 DOF point plane.
-                ExprVector p3;
-                p3 = a->PointGetExprs();
-                Entity *csy = SS.GetEntity(b->csys);
-                ExprVector u, v;
-                csy->Csys2dGetBasisExprs(&u, &v);
-                AddEq(l, Expr::FromParam(b->param.h[0])->Minus(p3.Dot(u)), 0);
-                AddEq(l, Expr::FromParam(b->param.h[1])->Minus(p3.Dot(v)), 1);
-            } else if(a->csys.v == b->csys.v) {
+            } else if(!(a->IsPointIn3d() || b->IsPointIn3d()) && 
+                       (a->csys.v == b->csys.v))
+            {
                 // Both in same csys, nice.
                 AddEq(l, Expr::FromParam(a->param.h[0])->Minus(
                          Expr::FromParam(b->param.h[0])), 0);
                 AddEq(l, Expr::FromParam(a->param.h[1])->Minus(
                          Expr::FromParam(b->param.h[1])), 1);
             } else {
-                oops();
+                // Either two 2 DOF points in different planes, or one
+                // 3 DOF point and one 2 DOF point. Either way, write two
+                // equations on the projection of a into b's plane.
+                ExprVector p3;
+                p3 = a->PointGetExprs();
+                Entity *csy = SS.GetEntity(b->csys);
+                ExprVector offset = csy->Csys2dGetOffsetExprs();
+                p3 = p3.Minus(offset);
+                ExprVector u, v;
+                csy->Csys2dGetBasisExprs(&u, &v);
+                AddEq(l, Expr::FromParam(b->param.h[0])->Minus(p3.Dot(u)), 0);
+                AddEq(l, Expr::FromParam(b->param.h[1])->Minus(p3.Dot(v)), 1);
             }
             break;
         }
@@ -185,6 +240,41 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             p = SS.GetEntity(ptA)->PointGetExprs();
             SS.GetEntity(entityA)->PlaneGetExprs(&n, &d);
             AddEq(l, (p.Dot(n))->Minus(d), 0);
+            break;
+        }
+
+        case HORIZONTAL:
+        case VERTICAL: {
+            hEntity ha, hb;
+            if(entityA.v) {
+                Entity *e = SS.GetEntity(entityA);
+                ha = e->assoc[0];
+                hb = e->assoc[1];
+            } else {
+                ha = ptA;
+                hb = ptB;
+            }
+            Entity *a = SS.GetEntity(ha);
+            Entity *b = SS.GetEntity(hb);
+            if(a->csys.v == Entity::NO_CSYS.v) {
+                Entity *t = a;
+                a = b;
+                b = t;
+            }
+            
+            if(a->csys.v == b->csys.v) {
+                int i = (type == HORIZONTAL) ? 1 : 0;
+                AddEq(l, Expr::FromParam(a->param.h[i])->Minus(
+                         Expr::FromParam(b->param.h[i])), 0);
+            } else {
+                Entity *csy = SS.GetEntity(a->csys);
+                ExprVector u, v;
+                csy->Csys2dGetBasisExprs(&u, &v);
+                ExprVector norm = (type == HORIZONTAL) ? v : u;
+                ExprVector pa = a->PointGetExprs();
+                ExprVector pb = b->PointGetExprs();
+                AddEq(l, (pa.Minus(pb)).Dot(norm), 0);
+            }
             break;
         }
 

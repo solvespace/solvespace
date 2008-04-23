@@ -73,8 +73,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "A&ngle\tShift+N",                     0,                  'N'|S,  NULL  },
 { 1, "Other S&upplementary Angle\tShift+U", 0,                  'U'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "&Horizontal\tShift+H",                0,                  'H'|S,  NULL  },
-{ 1, "&Vertical\tShift+V",                  0,                  'V'|S,  NULL  },
+{ 1, "&Horizontal\tShift+H",                MNU_HORIZONTAL,     'H'|S,  mCon  },
+{ 1, "&Vertical\tShift+V",                  MNU_VERTICAL,       'V'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&On Point / Curve / Plane\tShift+O",  MNU_ON_ENTITY,      'O'|S,  mCon  },
 { 1, "E&qual Length / Radius\tShift+Q",     MNU_EQUAL,          'Q'|S,  mCon  },
@@ -264,6 +264,8 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.ClearSelection();
             SS.GW.pendingOperation = 0;
             SS.GW.pendingDescription = NULL;
+            SS.GW.pendingPoint.v = 0;
+            SS.GW.pendingConstraint.v = 0;
             SS.TW.ScreenNavigation('h', 0);
             SS.TW.Show();
             break;
@@ -360,7 +362,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         double dy = (y - orig.mouse.y) / scale;
 
         // When the view is locked, permit only translation (pan).
-        if(shiftDown || viewLocked) {
+        if(!(shiftDown || ctrlDown) || viewLocked) {
             offset.x = orig.offset.x + dx*projRight.x + dy*projUp.x;
             offset.y = orig.offset.y + dx*projRight.y + dy*projUp.y;
             offset.z = orig.offset.z + dx*projRight.z + dy*projUp.z;
@@ -404,7 +406,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     // Start dragging this point.
                     ClearSelection();
                     pendingPoint = hover.entity;
-                    pendingOperation = PENDING_OPERATION_DRAGGING_POINT;
+                    pendingOperation = DRAGGING_POINT;
                 }
             } else if(hover.constraint.v && 
                             SS.GetConstraint(hover.constraint)->HasLabel())
@@ -412,29 +414,28 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 if(dm > dmt) {
                     ClearSelection();
                     pendingConstraint = hover.constraint;
-                    pendingOperation = PENDING_OPERATION_DRAGGING_CONSTRAINT;
+                    pendingOperation = DRAGGING_CONSTRAINT;
                 }
             }
-        } else if(pendingOperation == PENDING_OPERATION_DRAGGING_POINT ||
-                  pendingOperation == PENDING_OPERATION_DRAGGING_NEW_POINT)
+        } else if(pendingOperation == DRAGGING_POINT ||
+                  pendingOperation == DRAGGING_NEW_POINT ||
+                  pendingOperation == DRAGGING_NEW_LINE_POINT)
         {
             UpdateDraggedEntity(pendingPoint, x, y);
-        } else if(pendingOperation == PENDING_OPERATION_DRAGGING_CONSTRAINT) {
+        } else if(pendingOperation == DRAGGING_CONSTRAINT) {
             Constraint *c = SS.constraint.FindById(pendingConstraint);
             UpdateDraggedPoint(&(c->disp.offset), x, y);
         }
     } else {
         // No buttons pressed.
-        if(pendingOperation == PENDING_OPERATION_DRAGGING_NEW_POINT) {
+        if(pendingOperation == DRAGGING_NEW_POINT ||
+           pendingOperation == DRAGGING_NEW_LINE_POINT)
+        {
             UpdateDraggedEntity(pendingPoint, x, y);
+            HitTestMakeSelection(mp);
         } else {
             // Do our usual hit testing, for the selection.
-            Selection s;
-            HitTestMakeSelection(mp, &s);
-            if(!s.Equals(&hover)) {
-                hover = s;
-                InvalidateGraphics();
-            }
+            HitTestMakeSelection(mp);
         }
     }
 }
@@ -457,18 +458,22 @@ void GraphicsWindow::Selection::Draw(void) {
     if(constraint.v) SS.GetConstraint(constraint)->Draw();
 }
 
-void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
+void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     int i;
     double d, dmin = 1e12;
-
-    memset(dest, 0, sizeof(*dest));
+    Selection s;
+    memset(&s, 0, sizeof(s));
 
     // Do the entities
     for(i = 0; i < SS.entity.n; i++) {
-        d = SS.entity.elem[i].GetDistance(mp);
+        Entity *e = &(SS.entity.elem[i]);
+        // Don't hover whatever's being dragged.
+        if(e->h.request().v == pendingPoint.request().v) continue;
+
+        d = e->GetDistance(mp);
         if(d < 10 && d < dmin) {
-            memset(dest, 0, sizeof(*dest));
-            dest->entity = SS.entity.elem[i].h;
+            memset(&s, 0, sizeof(s));
+            s.entity = e->h;
             dmin = d;
         }
     }
@@ -477,10 +482,15 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp, Selection *dest) {
     for(i = 0; i < SS.constraint.n; i++) {
         d = SS.constraint.elem[i].GetDistance(mp);
         if(d < 10 && d < dmin) {
-            memset(dest, 0, sizeof(*dest));
-            dest->constraint = SS.constraint.elem[i].h;
+            memset(&s, 0, sizeof(s));
+            s.constraint = SS.constraint.elem[i].h;
             dmin = d;
         }
+    }
+
+    if(!s.Equals(&hover)) {
+        hover = s;
+        InvalidateGraphics();
     }
 }
 
@@ -565,16 +575,40 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
 
-            pendingOperation = PENDING_OPERATION_DRAGGING_NEW_POINT;
+            pendingOperation = DRAGGING_NEW_LINE_POINT;
             pendingPoint = hr.entity(2);
             pendingDescription = "click to place next point of line";
             SS.GetEntity(pendingPoint)->PointForceTo(v);
             break;
 
-        case PENDING_OPERATION_DRAGGING_NEW_POINT:
+        case DRAGGING_NEW_POINT:
             // The MouseMoved event has already dragged it under the cursor.
             pendingOperation = 0;
+            pendingPoint.v = 0;
             break;
+
+        case DRAGGING_NEW_LINE_POINT: {
+            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
+                Constraint::ConstrainCoincident(pendingPoint, hover.entity);
+                pendingOperation = 0;
+                pendingPoint.v = 0;
+                break;
+            }
+            // Create a new line segment, so that we continue drawing.
+            hRequest hr = AddRequest(Request::LINE_SEGMENT);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+
+            // Constrain the line segments to share an endpoint
+            Constraint::ConstrainCoincident(pendingPoint, hr.entity(1));
+
+            // And drag an endpoint of the new line segment
+            pendingOperation = DRAGGING_NEW_LINE_POINT;
+            pendingPoint = hr.entity(2);
+            pendingDescription = "click to place next point of next line";
+            SS.GetEntity(pendingPoint)->PointForceTo(v);
+
+            break;
+        }
 
         case 0:
         default: {
@@ -609,8 +643,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
     switch(pendingOperation) {
-        case PENDING_OPERATION_DRAGGING_POINT:
-        case PENDING_OPERATION_DRAGGING_CONSTRAINT:
+        case DRAGGING_POINT:
+        case DRAGGING_CONSTRAINT:
             pendingOperation = 0;
             pendingPoint.v = 0;
             pendingConstraint.v = 0;

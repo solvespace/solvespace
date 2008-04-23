@@ -33,7 +33,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     Vector gu = SS.GW.projUp;
     Vector gn = gr.Cross(gu);
 
-    glxColor(1, 0.3, 1);
+    glxColor(1, 0.2, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
             Vector ap = SS.GetEntity(ptA)->PointGetCoords();
@@ -124,6 +124,55 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
             break;
         }
+
+        case HORIZONTAL:
+        case VERTICAL:
+            if(entityA.v) {
+                Entity *e = SS.GetEntity(entityA);
+                Vector a = SS.GetEntity(e->assoc[0])->PointGetCoords();
+                Vector b = SS.GetEntity(e->assoc[1])->PointGetCoords();
+                Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
+
+                if(dogd.drawing) {
+                    glPushMatrix();
+                        glxTranslatev(m);
+                        glxOntoCsys(gr, gu);
+                        glxWriteText(type == HORIZONTAL ? "H" : "V");
+                    glPopMatrix();
+                } else {
+                    Point2d ref = SS.GW.ProjectPoint(m);
+                    dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
+                }
+            } else {
+                Vector a = SS.GetEntity(ptA)->PointGetCoords();
+                Vector b = SS.GetEntity(ptB)->PointGetCoords();
+                Entity *csy = SS.GetEntity(SS.GetEntity(ptA)->csys);
+                Vector cn = csy->Csys2dGetNormalVector();
+
+                int i;
+                for(i = 0; i < 2; i++) {
+                    Vector o = (i == 0) ? a : b;
+                    Vector d = (i == 0) ? a.Minus(b) : b.Minus(a);
+                    Vector dp = cn.Cross(d);
+                    d = d.WithMagnitude(14/SS.GW.scale);
+                    Vector c = o.Minus(d);
+                    LineDrawOrGetDistance(o, c);
+                    d = d.WithMagnitude(3/SS.GW.scale);
+                    dp = dp.WithMagnitude(2/SS.GW.scale);
+                    if(dogd.drawing) {
+                        glBegin(GL_QUADS);
+                            glxVertex3v((c.Plus(d)).Plus(dp));
+                            glxVertex3v((c.Minus(d)).Plus(dp));
+                            glxVertex3v((c.Minus(d)).Minus(dp));
+                            glxVertex3v((c.Plus(d)).Minus(dp));
+                        glEnd();
+                    } else {
+                        Point2d ref = SS.GW.ProjectPoint(c);
+                        dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-6);
+                    }
+                }
+            }
+            break;
 
         default: oops();
     }

@@ -16,6 +16,12 @@ void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
     *v = quat.RotationV();
 }
 
+Vector Entity::Csys2dGetNormalVector(void) {
+    Vector u, v;
+    Csys2dGetBasisVectors(&u, &v);
+    return u.Cross(v);
+}
+
 void Entity::Csys2dGetBasisExprs(ExprVector *u, ExprVector *v) {
     Expr *a = Expr::FromParam(param.h[0]);
     Expr *b = Expr::FromParam(param.h[1]);
@@ -45,6 +51,10 @@ void Entity::Csys2dGetBasisExprs(ExprVector *u, ExprVector *v) {
 
     v->z = two->Times(a->Times(b));
     v->z = (v->z)->Plus(two->Times(c->Times(d)));
+}
+
+ExprVector Entity::Csys2dGetOffsetExprs(void) {
+    return SS.GetEntity(assoc[0])->PointGetExprs();
 }
 
 bool Entity::HasPlane(void) {
