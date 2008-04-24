@@ -1,61 +1,149 @@
 #include "solvespace.h"
 
+void SolveSpace::NewFile(void) {
+    constraint.Clear();
+    request.Clear();
+    group.Clear();
+
+    entity.Clear();
+    param.Clear();
+
+    // Our initial group, that contains the references.
+    Group g;
+    memset(&g, 0, sizeof(g));
+    g.name.strcpy("#references");
+    g.h = Group::HGROUP_REFERENCES;
+    group.Add(&g);
+
+    // And an empty group, for the first stuff the user draws.
+    g.name.strcpy("");
+    group.AddAndAssignId(&g);
+    
+
+    // Let's create three two-d coordinate systems, for the coordinate
+    // planes; these are our references, present in every sketch.
+    Request r;
+    memset(&r, 0, sizeof(r));
+    r.type = Request::CSYS_2D;
+    r.group = Group::HGROUP_REFERENCES;
+    r.csys = Entity::NO_CSYS;
+
+    r.name.strcpy("#XY-csys");
+    r.h = Request::HREQUEST_REFERENCE_XY;
+    request.Add(&r);
+
+    r.name.strcpy("#YZ-csys");
+    r.h = Request::HREQUEST_REFERENCE_YZ;
+    request.Add(&r);
+
+    r.name.strcpy("#ZX-csys");
+    r.h = Request::HREQUEST_REFERENCE_ZX;
+    request.Add(&r);
+}
+
+
+const SolveSpace::SaveTable SolveSpace::SAVED[] = {
+    { 'g',  "Group.h.v",                'x',        &(SS.sv.g.h.v)          },
+    { 'g',  "Group.type",               'd',        &(SS.sv.g.type)         },
+    { 'g',  "Group.name",               'N',        &(SS.sv.g.name)         },
+    { 'g',  "Group.solveOrder",         'd',        &(SS.sv.g.solveOrder)   },
+    { 'g',  "Group.visible",            'b',        &(SS.sv.g.visible)      },
+
+    { 'p',  "Param.h.v.",               'x',        &(SS.sv.p.h.v)          },
+    { 'p',  "Param.val",                'f',        &(SS.sv.p.val)          },
+
+    { 'r',  "Request.h.v",              'x',        &(SS.sv.r.h.v)          },
+    { 'r',  "Request.type",             'd',        &(SS.sv.r.type)         },
+    { 'r',  "Request.csys.v",           'x',        &(SS.sv.r.csys.v)       },
+    { 'r',  "Request.group.v",          'x',        &(SS.sv.r.group.v)      },
+    { 'r',  "Request.name",             'N',        &(SS.sv.r.name)         },
+    { 'r',  "Request.construction",     'b',        &(SS.sv.r.construction) },
+
+    { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)          },
+    { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)         },
+    { 'e',  "Entity.param.h[0].v",      'x',        &(SS.sv.e.param.h[0].v) },
+    { 'e',  "Entity.param.h[1].v",      'x',        &(SS.sv.e.param.h[1].v) },
+    { 'e',  "Entity.param.h[2].v",      'x',        &(SS.sv.e.param.h[2].v) },
+    { 'e',  "Entity.param.h[3].v",      'x',        &(SS.sv.e.param.h[3].v) },
+    { 'e',  "Entity.assoc[0].v",        'x',        &(SS.sv.e.assoc[0].v)   },
+    { 'e',  "Entity.assoc[1].v",        'x',        &(SS.sv.e.assoc[1].v)   },
+    { 'e',  "Entity.assoc[2].v",        'x',        &(SS.sv.e.assoc[2].v)   },
+    { 'e',  "Entity.assoc[3].v",        'x',        &(SS.sv.e.assoc[3].v)   },
+    { 'e',  "Entity.csys.v",            'x',        &(SS.sv.e.csys.v)       },
+
+    { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)          },
+    { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)         },
+    { 'c',  "Constraint.group.v",       'x',        &(SS.sv.c.group.v)      },
+    { 'c',  "Constraint.exprA",         'E',        &(SS.sv.c.exprA)        },
+    { 'c',  "Constraint.exprB",         'E',        &(SS.sv.c.exprB)        },
+    { 'c',  "Constraint.ptA.v",         'x',        &(SS.sv.c.ptA.v)        },
+    { 'c',  "Constraint.ptB.v",         'x',        &(SS.sv.c.ptB.v)        },
+    { 'c',  "Constraint.ptC.v",         'x',        &(SS.sv.c.ptC.v)        },
+    { 'c',  "Constraint.entityA.v",     'x',        &(SS.sv.c.entityA.v)    },
+    { 'c',  "Constraint.entityB.v",     'x',        &(SS.sv.c.entityB.v)    },
+    { 'c',  "Constraint.disp.offset.x", 'f',        &(SS.sv.c.disp.offset.x)},
+    { 'c',  "Constraint.disp.offset.y", 'f',        &(SS.sv.c.disp.offset.y)},
+    { 'c',  "Constraint.disp.offset.z", 'f',        &(SS.sv.c.disp.offset.z)},
+
+    { 0, NULL, NULL, NULL },
+};
+
+void SolveSpace::SaveUsingTable(int type) {
+    int i;
+    for(i = 0; SAVED[i].type != 0; i++) {
+        if(SAVED[i].type != type) continue;
+        fprintf(fh, "%s=", SAVED[i].desc);
+        void *p = SAVED[i].ptr;
+        switch(SAVED[i].fmt) {
+            case 'd': fprintf(fh, "%d", *((int *)p)); break;
+            case 'b': fprintf(fh, "%d", *((bool *)p) ? 1 : 0); break;
+            case 'x': fprintf(fh, "%08x", *((DWORD *)p)); break;
+            case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
+            case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
+            case 'E': fprintf(fh, "%s", (*((Expr **)p))->Print()); break;
+            default: oops();
+        }
+        fprintf(fh, "\n");
+    }
+}
+
 bool SolveSpace::SaveToFile(char *filename) {
     fh = fopen(filename, "w");
     if(!fh) {   
-        Error("Couldn't write to file '%s'", fh);
+        Error("Couldn't write to file '%s'", filename);
         return false;
     }
 
-    fprintf(fh, "!!SolveSpaceREVa\n\n\n");
+    fprintf(fh, "ñ÷åò±²³´SolveSpaceREVa\n\n\n");
 
     int i;
     for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
-        fprintf(fh, "Group.h.v=%08x\n", g->h.v);
-        fprintf(fh, "Group.name=%s\n", g->name.str);
+        sv.g = group.elem[i];
+        SaveUsingTable('g');
         fprintf(fh, "AddGroup\n\n");
     }
 
     for(i = 0; i < param.n; i++) {
-        Param *p = &(param.elem[i]);
-        fprintf(fh, "Param.h.v=%08x\n", p->h.v);
-        fprintf(fh, "Param.val=%.20f\n", p->val);
+        sv.p = param.elem[i];
+        SaveUsingTable('p');
         fprintf(fh, "AddParam\n\n");
     }
 
     for(i = 0; i < request.n; i++) {
-        Request *r = &(request.elem[i]);
-        fprintf(fh, "Request.h.v=%08x\n", r->h.v);
-        fprintf(fh, "Request.type=%d\n", r->type);
-        fprintf(fh, "Request.csys.v=%08x\n", r->csys.v);
-        fprintf(fh, "Request.group.v=%08x\n", r->group.v);
-        fprintf(fh, "Request.name=%s\n", r->name.str);
+        sv.r = request.elem[i];
+        SaveUsingTable('r');
         fprintf(fh, "AddRequest\n\n");
     }
 
     for(i = 0; i < entity.n; i++) {
-        Entity *e = &(entity.elem[i]);
-        fprintf(fh, "Entity.h.v=%08x\n", e->h.v);
-        fprintf(fh, "Entity.type=%d\n", e->type);
+        sv.e = entity.elem[i];
+        SaveUsingTable('e');
         fprintf(fh, "AddEntity\n\n");
     }
 
     for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
-        fprintf(fh, "Constraint.h.v=%08x\n", c->h.v);
-        fprintf(fh, "Constraint.type=%d\n", c->type);
-        fprintf(fh, "Constraint.group.v=%08x\n", c->group);
-        fprintf(fh, "Constraint.exprA=%s\n", c->exprA->Print());
-        fprintf(fh, "Constraint.exprB=%s\n", c->exprB->Print());
-        fprintf(fh, "Constraint.ptA.v=%08x\n", c->ptA.v);
-        fprintf(fh, "Constraint.ptB.v=%08x\n", c->ptB.v);
-        fprintf(fh, "Constraint.ptC.v=%08x\n", c->ptC.v);
-        fprintf(fh, "Constraint.entityA.v=%08x\n", c->entityA.v);
-        fprintf(fh, "Constraint.entityB.v=%08x\n", c->entityB.v);
-        fprintf(fh, "Constraint.disp.offset.x=%.20f\n", c->disp.offset.x);
-        fprintf(fh, "Constraint.disp.offset.y=%.20f\n", c->disp.offset.y);
-        fprintf(fh, "Constraint.disp.offset.z=%.20f\n", c->disp.offset.z);
+        sv.c = constraint.elem[i];
+        SaveUsingTable('c');
         fprintf(fh, "AddConstraint\n\n");
     }
 
@@ -67,9 +155,72 @@ bool SolveSpace::SaveToFile(char *filename) {
 bool SolveSpace::LoadFromFile(char *filename) {
     fh = fopen(filename, "r");
     if(!fh) {   
-        Error("Couldn't read from file '%s'", fh);
+        Error("Couldn't read from file '%s'", filename);
         return false;
     }
+
+    constraint.Clear();
+    request.Clear();
+    group.Clear();
+
+    entity.Clear();
+    param.Clear();
+
+    char line[1024];
+    while(fgets(line, sizeof(line), fh)) {
+        char *s = strchr(line, '\n');
+        if(s) *s = '\0';
+
+        if(*line == '\0') continue;
+       
+        char *e = strchr(line, '=');
+        if(e) {
+            *e = '\0';
+            char *key = line, *val = e+1;
+            int i;
+            for(i = 0; SAVED[i].type != 0; i++) {
+                if(strcmp(SAVED[i].desc, key)==0) {
+                    void *p = SAVED[i].ptr;
+                    switch(SAVED[i].fmt) {
+                        case 'd': *((int *)p) = atoi(val); break;
+                        case 'b': *((bool *)p) = (atoi(val) != 0); break;
+                        case 'x': sscanf(val, "%x", (DWORD *)p); break;
+                        case 'f': *((double *)p) = atof(val); break;
+                        case 'N': ((NameStr *)p)->strcpy(val); break;
+                        case 'E':
+                            Expr *e;
+                            e  = Expr::FromString(val);
+                            if(!e) e = Expr::FromConstant(0);
+                            *((Expr **)p) = e->DeepCopyKeep();
+                            break;
+
+                        default: oops();
+                    }
+                    break;
+                }
+            }
+            if(SAVED[i].type == 0) oops();
+
+        } else if(strcmp(line, "AddGroup")==0) {
+            SS.group.Add(&(sv.g));
+        } else if(strcmp(line, "AddParam")==0) {
+            // params are regenerated, but we want to preload the values
+            // for initial guesses
+            SS.param.Add(&(sv.p));
+        } else if(strcmp(line, "AddEntity")==0) {
+            // entities are regenerated
+        } else if(strcmp(line, "AddRequest")==0) {
+            SS.request.Add(&(sv.r));
+        } else if(strcmp(line, "AddConstraint")==0) {
+            SS.constraint.Add(&(sv.c));
+        } else if(strcmp(line, "ñ÷åò±²³´SolveSpaceREVa")==0) {
+            // do nothing, version string
+        } else {
+            oops();
+        }
+    }
+
+    fclose(fh);
 
     return true;
 }

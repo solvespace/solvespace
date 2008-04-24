@@ -720,7 +720,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     FreeAllExprs();
 
     // Call in to the platform-independent code, and let them do their init
-    SS.Init();
+    SS.Init(lpCmdLine);
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);

@@ -55,6 +55,11 @@ public:
     int         tag;
     hGroup      h;
 
+    static const int DRAWING_GROUP                 = 5000;
+    static const int STEP_AND_REPEAT_TRANSLATING   = 5010;
+    static const int STEP_AND_REPEAT_ROTATING      = 5020;
+    int type;
+
     int         solveOrder;
     bool        solved;
 

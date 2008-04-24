@@ -154,13 +154,31 @@ public:
     void GenerateAll(void);
     void ForceReferences(void);
 
-    void Init(void);
+    void Init(char *cmdLine);
 
     bool SolveGroup(hGroup hg);
     bool SolveWorker(int order);
     void Solve(void);
 
+    char saveFile[MAX_PATH];
+    bool unsaved;
+    typedef struct {
+        char     type;
+        char    *desc;
+        char     fmt;
+        void    *ptr;
+    } SaveTable;
+    static const SaveTable SAVED[];
+    void SaveUsingTable(int type);
+    struct {
+        Group        g;
+        Request      r;
+        Entity       e;
+        Param        p;
+        Constraint   c;
+    } sv;
     static void MenuFile(int id);
+    void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
 

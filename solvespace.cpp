@@ -2,45 +2,12 @@
 
 SolveSpace SS;
 
-void SolveSpace::Init(void) {
-    constraint.Clear();
-    request.Clear();
-    group.Clear();
-
-    entity.Clear();
-    param.Clear();
-
-    // Our initial group, that contains the references.
-    Group g;
-    memset(&g, 0, sizeof(g));
-    g.name.strcpy("#references");
-    g.h = Group::HGROUP_REFERENCES;
-    group.Add(&g);
-
-    // And an empty group, for the first stuff the user draws.
-    g.name.strcpy("");
-    group.AddAndAssignId(&g);
-    
-
-    // Let's create three two-d coordinate systems, for the coordinate
-    // planes; these are our references, present in every sketch.
-    Request r;
-    memset(&r, 0, sizeof(r));
-    r.type = Request::CSYS_2D;
-    r.group = Group::HGROUP_REFERENCES;
-    r.csys = Entity::NO_CSYS;
-
-    r.name.strcpy("#XY-csys");
-    r.h = Request::HREQUEST_REFERENCE_XY;
-    request.Add(&r);
-
-    r.name.strcpy("#YZ-csys");
-    r.h = Request::HREQUEST_REFERENCE_YZ;
-    request.Add(&r);
-
-    r.name.strcpy("#ZX-csys");
-    r.h = Request::HREQUEST_REFERENCE_ZX;
-    request.Add(&r);
+void SolveSpace::Init(char *cmdLine) {
+    if(strlen(cmdLine) == 0) {
+        NewFile();
+    } else {
+        LoadFromFile(cmdLine);
+    }
 
     TW.Init();
     GW.Init();
@@ -69,6 +36,7 @@ void SolveSpace::GenerateAll(void) {
 
     prev.Clear();
     ForceReferences();
+    InvalidateGraphics();
 }
 
 void SolveSpace::ForceReferences(void) {
@@ -186,10 +154,15 @@ void SolveSpace::Solve(void) {
 void SolveSpace::MenuFile(int id) {
     switch(id) {
         case GraphicsWindow::MNU_NEW:
+            SS.NewFile();
+            SS.GenerateAll();
+            break;
+
         case GraphicsWindow::MNU_OPEN:
+            break;
 
         case GraphicsWindow::MNU_SAVE:
-            SS.SaveToFile("t.slv");
+            SS.SaveToFile("t.slvs");
             break;
 
         case GraphicsWindow::MNU_SAVE_AS:
