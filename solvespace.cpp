@@ -12,8 +12,9 @@ void SolveSpace::Init(char *cmdLine) {
     TW.Init();
     GW.Init();
 
-    TW.Show();
     GenerateAll();
+
+    TW.Show();
 }
 
 void SolveSpace::GenerateAll(void) {
@@ -158,6 +159,7 @@ void SolveSpace::MenuFile(int id) {
             SS.GenerateAll();
             SS.GW.Init();
             SS.TW.Init();
+            SS.TW.Show();
             break;
 
         case GraphicsWindow::MNU_OPEN:

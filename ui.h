@@ -13,14 +13,11 @@ public:
     static const int COLOR_BG_DEFAULT       = RGB( 15,  15,   0);
 
     typedef struct {
+        char    c;
         int     fg;
         int     bg;
     } Color;
     static const Color colors[];
-    static const int COLOR_DEFAULT          = 0;
-    static const int COLOR_MEANS_HIDDEN     = 1;
-    static const int COLOR_MEANS_SHOWN      = 2;
-    static const int COLOR_MEANS_MIXED      = 3;
 
     // The rest of the window, text displayed in response to typed commands;
     // some of this might do something if you click on it.
@@ -45,11 +42,14 @@ public:
     void Show(void);
 
     // State for the screen that we are showing in the text window.
-    static const int SCREEN_ALL_GROUPS          = 0;
-    static const int SCREEN_REQUESTS_IN_GROUP   = 1;
+    static const int SCREEN_LIST_OF_GROUPS      = 0;
+    static const int SCREEN_GROUP_INFO          = 1;
+    static const int SCREEN_REQUEST_INFO        = 2;
+    static const int SCREEN_ENTIY_INFO          = 3;
     typedef struct {
-        int     screen;
-        hGroup  group;
+        int         screen;
+        hGroup      group;
+        hRequest    request;
     } ShownState;
     static const int HISTORY_LEN = 16;
     ShownState showns[HISTORY_LEN];
@@ -60,11 +60,14 @@ public:
     void ShowHeader(void);
     // These are self-contained screens, that show some information about
     // the sketch.
-    void ShowAllGroups(void);
-    void ShowRequestsInGroup(void);
+    void ShowListOfGroups(void);
+    void ShowGroupInfo(void);
+    void ShowRequestInfo(void);
+    void ShowEntityInfo(void);
 
     void OneScreenForward(void);
     static void ScreenSelectGroup(int link, DWORD v);
+    static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenNavigation(int link, DWORD v);
 };
 
@@ -84,8 +87,6 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
-        MNU_ORIENT_ONTO,
-        MNU_LOCK_VIEW,
         MNU_UNSELECT_ALL,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
@@ -133,10 +134,10 @@ public:
         Vector  projUp;
         Point2d mouse;
     }       orig;
-    bool    viewLocked;
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
+    void AnimateOnto(Quaternion quatf, Vector offsetf);
 
     typedef enum {
         UNIT_MM = 0,

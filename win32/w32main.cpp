@@ -16,12 +16,18 @@
 #define TEXT_HEIGHT 18
 #define TEXT_WIDTH  9
 
+// There's a half-line offset between the header and the rest of the window
+#define OFFSET_LINE 3
+#define OFFSET_HEIGHT 9
+
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
 int TextWndScrollPos;
 int TextWndRows;
+COLORREF BgColor[256];
+COLORREF FgColor[256];
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
@@ -83,6 +89,15 @@ void MemFree(void *p) { free(p); }
 
 static void PaintTextWnd(HDC hdc)
 {
+    // Generate the color table.
+    int i;
+    for(i = 0; SS.TW.colors[i].c != 0; i++) {
+        int c = SS.TW.colors[i].c;
+        if(c < 0 || c > 255) oops();
+        BgColor[c] = SS.TW.colors[i].bg;
+        FgColor[c] = SS.TW.colors[i].fg;
+    }
+
     RECT rect;
     GetClientRect(TextWnd, &rect);
 
@@ -122,10 +137,9 @@ static void PaintTextWnd(HDC hdc)
         if(r >= SS.TW.MAX_ROWS) continue;
 
         for(c = 0; c < SS.TW.MAX_COLS; c++) {
-            char v = '0' + (c % 10);
             int color = SS.TW.meta[r][c].color;
-            SetTextColor(backDc, SS.TW.colors[color].fg);
-            SetBkColor(backDc, SS.TW.colors[color].bg);
+            SetTextColor(backDc, FgColor[color]);
+            SetBkColor(backDc, BgColor[color]);
 
             if(SS.TW.meta[r][c].link) {
                 SelectObject(backDc, LinkFont);
@@ -134,9 +148,10 @@ static void PaintTextWnd(HDC hdc)
             }
 
             int x = 4 + c*TEXT_WIDTH;
-            int y = (r-TextWndScrollPos)*TEXT_HEIGHT + 1 + (r >= 3 ? 9 : 0);
+            int y = (r-TextWndScrollPos)*TEXT_HEIGHT + 1 + 
+                (r >= OFFSET_LINE ? OFFSET_HEIGHT : 0);
 
-            HBRUSH b = CreateSolidBrush(SS.TW.colors[color].bg);
+            HBRUSH b = CreateSolidBrush(BgColor[color]);
             RECT a;
             a.left = x; a.right = x+TEXT_WIDTH;
             a.top = y; a.bottom = y+TEXT_HEIGHT;
@@ -241,6 +256,10 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_MOUSEMOVE: {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
+
+            if(y >= TEXT_HEIGHT*OFFSET_LINE) {
+                y -= OFFSET_HEIGHT;
+            }
 
             // Find the corresponding character in the text buffer
             int r = (y / TEXT_HEIGHT);

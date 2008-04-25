@@ -31,16 +31,22 @@ void Group::Draw(void) {
     memset(&poly, 0, sizeof(poly));
     SEdge error;
     if(edges.AssemblePolygon(&poly, &error)) {
-        glxColor4d(0, 0, 1, 0.15);
+        glxColor4d(0, 0, 1, 0.1);
         glxFillPolygon(&poly);
     } else {
-        glxColor4d(1, 0, 0, 0.3);
+        glxColor4d(1, 0, 0, 0.2);
         glLineWidth(10);
         glBegin(GL_LINES);
             glxVertex3v(error.a);
             glxVertex3v(error.b);
         glEnd();
         glLineWidth(1);
+        glxColor3d(1, 0, 0);
+        glPushMatrix();
+            glxTranslatev(error.b);
+            glxOntoCsys(SS.GW.projRight, SS.GW.projUp);
+            glxWriteText("not closed contour!");
+        glPopMatrix();
     }
     poly.Clear();
 }

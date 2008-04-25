@@ -31,9 +31,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "&Onto Plane / Coordinate System\tO",  MNU_ORIENT_ONTO,    'O',    mView },
-{ 1, "&Lock Orientation\tL",                MNU_LOCK_VIEW,      'L',    mView },
-{ 1,  NULL,                                 0,                          NULL  },
 { 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
@@ -100,6 +97,10 @@ void GraphicsWindow::Init(void) {
 
     EnsureValidActives();
 
+    // Start locked on to the XY plane.
+    hRequest r = Request::HREQUEST_REFERENCE_XY;
+    activeCsys = r.entity(0);
+
     show2dCsyss = true;
     showAxes = true;
     showPoints = true;
@@ -124,6 +125,42 @@ Point2d GraphicsWindow::ProjectPoint(Vector p) {
     return r;
 }
 
+void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
+    // Get our initial orientation and translation.
+    Quaternion quat0 = Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp);
+    Vector offset0 = SS.GW.offset;
+
+    // Make sure we take the shorter of the two possible paths.
+    double mp = (quatf.Minus(quat0)).Magnitude();
+    double mm = (quatf.Plus(quat0)).Magnitude();
+    if(mp > mm) {
+        quatf = quatf.ScaledBy(-1);
+        mp = mm;
+    }
+
+    // Animate transition, unless it's a tiny move.
+    SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
+    SDWORD tn, t0 = GetMilliseconds();
+    double s = 0;
+    do {
+        offset = (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
+        Quaternion quat = (quat0.ScaledBy(1 - s)).Plus(quatf.ScaledBy(s));
+        quat = quat.WithMagnitude(1);
+
+        projRight = quat.RotationU();
+        projUp    = quat.RotationV();
+        PaintGraphics();
+
+        tn = GetMilliseconds();
+        s = (tn - t0)/((double)dt);
+    } while((tn - t0) < dt);
+
+    projRight = quatf.RotationU();
+    projUp = quatf.RotationV();
+    offset = offsetf;
+    InvalidateGraphics();
+}
+
 void GraphicsWindow::MenuView(int id) {
     switch(id) {
         case MNU_ZOOM_IN:
@@ -136,69 +173,6 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_ZOOM_TO_FIT:
             break;
-
-        case MNU_LOCK_VIEW:
-            SS.GW.viewLocked = !SS.GW.viewLocked;
-            SS.GW.EnsureValidActives();
-            break;
-
-        case MNU_ORIENT_ONTO: {
-            SS.GW.GroupSelection();
-            Entity *e = NULL;
-            if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
-                e = SS.GetEntity(SS.GW.gs.entity[0]);
-            } else if(SS.GW.activeCsys.v != Entity::NO_CSYS.v) {
-                e = SS.GetEntity(SS.GW.activeCsys);
-            }
-            if(e) {
-                // A quaternion with our original rotation
-                Quaternion quat0 = Quaternion::MakeFrom(
-                    SS.GW.projRight, SS.GW.projUp);
-                // And with our final rotation
-                Vector pr, pu;
-                e->Csys2dGetBasisVectors(&pr, &pu);
-                Quaternion quatf = Quaternion::MakeFrom(pr, pu);
-                // Make sure we take the shorter of the two possible paths.
-                double mp = (quatf.Minus(quat0)).Magnitude();
-                double mm = (quatf.Plus(quat0)).Magnitude();
-                if(mp > mm) {
-                    quatf = quatf.ScaledBy(-1);
-                    mp = mm;
-                }
-
-                // And also get the offsets.
-                Vector offset0 = SS.GW.offset;
-                Vector offsetf = SS.GetEntity(e->assoc[0])->PointGetCoords();
-
-                // Animate transition, unless it's a tiny move.
-                SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
-                SDWORD tn, t0 = GetMilliseconds();
-                double s = 0;
-                do {
-                    SS.GW.offset =
-                        (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
-                    Quaternion quat =
-                        (quat0.ScaledBy(1 - s)).Plus(quatf.ScaledBy(s));
-                    quat = quat.WithMagnitude(1);
-                    SS.GW.projRight = quat.RotationU();
-                    SS.GW.projUp    = quat.RotationV();
-                    PaintGraphics();
-
-                    tn = GetMilliseconds();
-                    s = (tn - t0)/((double)dt);
-                } while((tn - t0) < dt);
-                SS.GW.projRight = pr;
-                SS.GW.projUp = pu;
-                SS.GW.offset = offsetf;
-
-                SS.GW.hover.Clear();
-                SS.GW.ClearSelection();
-                InvalidateGraphics();
-            } else {
-                Error("Select plane or coordinate system before orienting.");
-            }
-            break;
-        }
 
         case MNU_UNITS_MM:
             SS.GW.viewUnits = UNIT_MM;
@@ -245,7 +219,6 @@ void GraphicsWindow::EnsureValidActives(void) {
     CheckMenuById(MNU_SEL_CSYS, !in3d);
 
     // And update the checked state for various menus
-    CheckMenuById(MNU_LOCK_VIEW, viewLocked);
     switch(viewUnits) {
         case UNIT_MM:
         case UNIT_INCHES:
@@ -315,19 +288,30 @@ void GraphicsWindow::MenuEdit(int id) {
 void GraphicsWindow::MenuRequest(int id) {
     char *s;
     switch(id) {
-        case MNU_SEL_CSYS:
+        case MNU_SEL_CSYS: {
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
                 SS.GW.activeCsys = SS.GW.gs.entity[0];
                 SS.GW.ClearSelection();
-            } else {
+            }
+
+            if(SS.GW.activeCsys.v == Entity::NO_CSYS.v) {
                 Error("Select 2d coordinate system (e.g., the XY plane) "
                       "before locking on.");
+                break;
             }
+            // Align the view with the selected csys
+            Entity *e = SS.GetEntity(SS.GW.activeCsys);
+            Vector pr, pu;
+            e->Csys2dGetBasisVectors(&pr, &pu);
+            Quaternion quatf = Quaternion::MakeFrom(pr, pu);
+            Vector offsetf = SS.GetEntity(e->assoc[0])->PointGetCoords();
+            SS.GW.AnimateOnto(quatf, offsetf);
+
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
-
+        }
         case MNU_NO_CSYS:
             SS.GW.activeCsys = Entity::NO_CSYS;
             SS.GW.EnsureValidActives();
@@ -376,11 +360,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         double dy = (y - orig.mouse.y) / scale;
 
         // When the view is locked, permit only translation (pan).
-        if(!(shiftDown || ctrlDown) || viewLocked) {
+        if(!(shiftDown || ctrlDown)) {
             offset.x = orig.offset.x + dx*projRight.x + dy*projUp.x;
             offset.y = orig.offset.y + dx*projRight.y + dy*projUp.y;
             offset.z = orig.offset.z + dx*projRight.z + dy*projUp.z;
-        } else if(ctrlDown && !viewLocked) {
+        } else if(ctrlDown) {
             double theta = atan2(orig.mouse.y, orig.mouse.x);
             theta -= atan2(y, x);
 
@@ -389,7 +373,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             projUp = orig.projUp.RotatedAbout(normal, theta);
 
             NormalizeProjectionVectors();
-        } else if(!viewLocked) {
+        } else {
             double s = 0.3*(PI/180); // degrees per pixel
             projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
             projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
