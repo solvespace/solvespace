@@ -321,6 +321,26 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case CUBIC: {
+            Vector p0 = SS.GetEntity(assoc[0])->PointGetCoords();
+            Vector p1 = SS.GetEntity(assoc[1])->PointGetCoords();
+            Vector p2 = SS.GetEntity(assoc[2])->PointGetCoords();
+            Vector p3 = SS.GetEntity(assoc[3])->PointGetCoords();
+            int i, n = 20;
+            Vector prev = p0;
+            for(i = 1; i <= n; i++) {
+                double t = ((double)i)/n;
+                Vector p =
+                    (p0.ScaledBy((1 - t)*(1 - t)*(1 - t))).Plus(
+                    (p1.ScaledBy(3*t*(1 - t)*(1 - t))).Plus(
+                    (p2.ScaledBy(3*t*t*(1 - t))).Plus(
+                    (p3.ScaledBy(t*t*t)))));
+                LineDrawOrGetDistanceOrEdge(prev, p);
+                prev = p;
+            }
+            break;
+        }
+
         default:
             oops();
     }

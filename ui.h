@@ -98,6 +98,7 @@ public:
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
         MNU_RECTANGLE,
+        MNU_CUBIC,
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_EQUAL,
@@ -151,10 +152,11 @@ public:
 
     // Operations that must be completed by doing something with the mouse
     // are noted here.
-    static const int    DRAGGING_POINT           = 0x0f000000;
-    static const int    DRAGGING_NEW_POINT       = 0x0f000001;
-    static const int    DRAGGING_NEW_LINE_POINT  = 0x0f000002;
-    static const int    DRAGGING_CONSTRAINT      = 0x0f000003;
+    static const int    DRAGGING_POINT              = 0x0f000000;
+    static const int    DRAGGING_NEW_POINT          = 0x0f000001;
+    static const int    DRAGGING_NEW_LINE_POINT     = 0x0f000002;
+    static const int    DRAGGING_NEW_CUBIC_POINT    = 0x0f000003;
+    static const int    DRAGGING_CONSTRAINT         = 0x0f000004;
     hEntity     pendingPoint;
     hConstraint pendingConstraint;
     int         pendingOperation;

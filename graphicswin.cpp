@@ -58,7 +58,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
 { 1, "&Circle\tC",                          0,                  'C',    mReq  },
 { 1, "&Arc of a Circle\tA",                 0,                  'A',    mReq  },
-{ 1, "&Cubic Segment\t3",                   0,                  '3',    mReq  },
+{ 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
 { 1, "&Import From File...\tI",             0,                  'I',    mReq  },
@@ -320,6 +320,7 @@ void GraphicsWindow::MenuRequest(int id) {
             
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
+        case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
 c:
             SS.GW.pendingOperation = id;
             SS.GW.pendingDescription = s;
@@ -388,53 +389,55 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         orig.mouse.y = y;
 
         InvalidateGraphics();
-    } else if(leftDown) {
-        // We are left-dragging. This is often used to drag points, or
-        // constraint labels.
-        double dm = orig.mouse.DistanceTo(mp);
-        // Don't start a drag until we've moved some threshold distance from
-        // the mouse-down point, to avoid accidental drags.
-        double dmt = 3;
-        if(pendingOperation == 0) {
-            if(hover.entity.v && 
-               SS.GetEntity(hover.entity)->IsPoint() && 
-               !SS.GetEntity(hover.entity)->PointIsFromReferences())
-            {
-                if(dm > dmt) {
-                    // Start dragging this point.
-                    ClearSelection();
-                    pendingPoint = hover.entity;
-                    pendingOperation = DRAGGING_POINT;
-                }
-            } else if(hover.constraint.v && 
-                            SS.GetConstraint(hover.constraint)->HasLabel())
-            {
-                if(dm > dmt) {
-                    ClearSelection();
-                    pendingConstraint = hover.constraint;
-                    pendingOperation = DRAGGING_CONSTRAINT;
-                }
-            }
-        } else if(pendingOperation == DRAGGING_POINT ||
-                  pendingOperation == DRAGGING_NEW_POINT ||
-                  pendingOperation == DRAGGING_NEW_LINE_POINT)
+        return;
+    }
+   
+    // Enforce a bit of static friction before we start dragging.
+    double dm = orig.mouse.DistanceTo(mp);
+    if(leftDown && dm > 3 && pendingOperation == 0) {
+        if(hover.entity.v && 
+           SS.GetEntity(hover.entity)->IsPoint() && 
+           !SS.GetEntity(hover.entity)->PointIsFromReferences())
         {
-            UpdateDraggedEntity(pendingPoint, x, y);
-        } else if(pendingOperation == DRAGGING_CONSTRAINT) {
-            Constraint *c = SS.constraint.FindById(pendingConstraint);
-            UpdateDraggedPoint(&(c->disp.offset), x, y);
-        }
-    } else {
-        // No buttons pressed.
-        if(pendingOperation == DRAGGING_NEW_POINT ||
-           pendingOperation == DRAGGING_NEW_LINE_POINT)
+            // Start dragging this point.
+            ClearSelection();
+            pendingPoint = hover.entity;
+            pendingOperation = DRAGGING_POINT;
+        } else if(hover.constraint.v && 
+                        SS.GetConstraint(hover.constraint)->HasLabel())
         {
-            UpdateDraggedEntity(pendingPoint, x, y);
-            HitTestMakeSelection(mp);
-        } else {
-            // Do our usual hit testing, for the selection.
-            HitTestMakeSelection(mp);
+            ClearSelection();
+            pendingConstraint = hover.constraint;
+            pendingOperation = DRAGGING_CONSTRAINT;
         }
+    } else if(leftDown && pendingOperation == DRAGGING_CONSTRAINT) {
+        Constraint *c = SS.constraint.FindById(pendingConstraint);
+        UpdateDraggedPoint(&(c->disp.offset), x, y);
+    } else if(leftDown && pendingOperation == DRAGGING_POINT) {
+        UpdateDraggedEntity(pendingPoint, x, y);
+        HitTestMakeSelection(mp);
+    }
+
+    // No buttons pressed.
+    if(pendingOperation == DRAGGING_NEW_POINT ||
+       pendingOperation == DRAGGING_NEW_LINE_POINT)
+    {
+        UpdateDraggedEntity(pendingPoint, x, y);
+        HitTestMakeSelection(mp);
+    } else if(pendingOperation == DRAGGING_NEW_CUBIC_POINT) {
+        UpdateDraggedEntity(pendingPoint, x, y);
+        HitTestMakeSelection(mp);
+
+        hRequest hr = pendingPoint.request();
+        Vector p0 = SS.GetEntity(hr.entity(1))->PointGetCoords();
+        Vector p3 = SS.GetEntity(hr.entity(4))->PointGetCoords();
+        Vector p1 = p0.ScaledBy(2.0/3).Plus(p3.ScaledBy(1.0/3));
+        SS.GetEntity(hr.entity(2))->PointForceTo(p1);
+        Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
+        SS.GetEntity(hr.entity(3))->PointForceTo(p2);
+    } else if(!leftDown) {
+        // Do our usual hit testing, for the selection.
+        HitTestMakeSelection(mp);
     }
 }
 
@@ -556,6 +559,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     v = v.Plus(projRight.ScaledBy(mx/scale));
     v = v.Plus(projUp.ScaledBy(my/scale));
 
+#define MAYBE_PLACE(p) \
+    if(hover.entity.v && SS.GetEntity((p))->IsPoint()) { \
+        Constraint::ConstrainCoincident(hover.entity, (p)); \
+    }
     hRequest hr;
     switch(pendingOperation) {
         case MNU_DATUM_POINT:
@@ -570,9 +577,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_LINE_SEGMENT:
             hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
-            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
-                Constraint::ConstrainCoincident(hover.entity, hr.entity(1));
-            }
+            MAYBE_PLACE(hr.entity(1));
 
             ClearSelection(); hover.Clear();
 
@@ -582,8 +587,31 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(pendingPoint)->PointForceTo(v);
             break;
 
+        case MNU_CUBIC:
+            hr = AddRequest(Request::CUBIC);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(2))->PointForceTo(v);
+            SS.GetEntity(hr.entity(3))->PointForceTo(v);
+            SS.GetEntity(hr.entity(4))->PointForceTo(v);
+            MAYBE_PLACE(hr.entity(1));
+
+            ClearSelection(); hover.Clear();
+
+            pendingOperation = DRAGGING_NEW_CUBIC_POINT;
+            pendingPoint = hr.entity(4);
+            pendingDescription = "click to place next point of cubic";
+            break;
+
         case DRAGGING_NEW_POINT:
             // The MouseMoved event has already dragged it under the cursor.
+            pendingOperation = 0;
+            pendingPoint.v = 0;
+            break;
+
+        case DRAGGING_NEW_CUBIC_POINT:
+            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
+                Constraint::ConstrainCoincident(pendingPoint, hover.entity);
+            }
             pendingOperation = 0;
             pendingPoint.v = 0;
             break;
@@ -614,6 +642,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case 0:
         default: {
             pendingOperation = 0;
+            pendingPoint.v = 0;
+            pendingConstraint.v = 0;
+            pendingDescription = NULL;
 
             if(hover.IsEmpty()) break;
 

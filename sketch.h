@@ -106,6 +106,7 @@ public:
     static const int CSYS_2D                = 100;
     static const int DATUM_POINT            = 101;
     static const int LINE_SEGMENT           = 200;
+    static const int CUBIC                  = 300;
 
     int         type;
 
@@ -138,6 +139,7 @@ public:
     static const int POINT_IN_3D            = 2000;
     static const int POINT_IN_2D            = 2001;
     static const int LINE_SEGMENT           = 3000;
+    static const int CUBIC                  = 4000;
     int         type;
 
     bool        symbolic;

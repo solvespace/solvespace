@@ -80,6 +80,9 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
         case Request::LINE_SEGMENT:
             et = Entity::LINE_SEGMENT;     points = 2; params = 0; goto c;
+
+        case Request::CUBIC:
+            et = Entity::CUBIC;            points = 4; params = 0; goto c;
 c: {
             // Generate the entity that's specific to this request.
             e.type = et;
