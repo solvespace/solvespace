@@ -21,6 +21,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\drawconstraint.obj \
            $(OBJDIR)\file.obj \
            $(OBJDIR)\system.obj \
+           $(OBJDIR)\polygon.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib

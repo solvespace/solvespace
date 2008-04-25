@@ -156,6 +156,8 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_NEW:
             SS.NewFile();
             SS.GenerateAll();
+            SS.GW.Init();
+            SS.TW.Init();
             break;
 
         case GraphicsWindow::MNU_OPEN:

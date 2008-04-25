@@ -60,7 +60,7 @@ void glxOntoCsys(Vector u, Vector v)
 void glxLockColorTo(double r, double g, double b)
 {
     ColorLocked = false;    
-    glxColor(r, g, b);
+    glxColor3d(r, g, b);
     ColorLocked = true;
 }
 
@@ -69,9 +69,45 @@ void glxUnlockColor(void)
     ColorLocked = false;    
 }
 
-void glxColor(double r, double g, double b)
+void glxColor3d(double r, double g, double b)
 {
-    if(!ColorLocked) {
-        glColor3f((GLfloat)r, (GLfloat)g, (GLfloat)b);
-    }
+    if(!ColorLocked) glColor3d(r, g, b);
 }
+
+void glxColor4d(double r, double g, double b, double a)
+{
+    if(!ColorLocked) glColor4d(r, g, b, a);
+}
+
+static void __stdcall Vertex(Vector *p) {
+    glxVertex3v(*p);
+}
+void glxFillPolygon(SPolygon *p)
+{
+    int i, j;
+
+    GLUtesselator *gt = gluNewTess();
+    typedef void __stdcall cf(void);
+    gluTessCallback(gt, GLU_TESS_BEGIN, (cf *)glBegin);
+    gluTessCallback(gt, GLU_TESS_END, (cf *)glEnd);
+    gluTessCallback(gt, GLU_TESS_VERTEX, (cf *)Vertex);
+    gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
+
+    gluTessBeginPolygon(gt, NULL);
+    for(i = 0; i < p->l.n; i++) {
+        SContour *sc = &(p->l.elem[i]);
+        gluTessBeginContour(gt);
+        for(j = 0; j < (sc->l.n-1); j++) {
+            SPoint *sp = &(sc->l.elem[j]);
+            double ap[3];
+            ap[0] = sp->p.x;
+            ap[1] = sp->p.y;
+            ap[2] = sp->p.z;
+            gluTessVertex(gt, ap, &(sp->p));
+        }
+        gluTessEndContour(gt);
+    }
+    gluTessEndPolygon(gt);
+    gluDeleteTess(gt);
+}
+

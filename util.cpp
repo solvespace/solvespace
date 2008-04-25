@@ -102,6 +102,13 @@ Vector Vector::MakeFrom(double x, double y, double z) {
     return v;
 }
 
+bool Vector::Equals(Vector v) {
+    double tol = 0.1;
+    if(fabs(x - v.x) > tol) return false;
+    if(fabs(y - v.y) > tol) return false;
+    if(fabs(z - v.z) > tol) return false;
+    return true;
+}
 
 Vector Vector::Plus(Vector b) {
     Vector r;

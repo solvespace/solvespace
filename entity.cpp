@@ -211,13 +211,31 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     }
 }
 
+void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
+    LineDrawOrGetDistance(a, b);
+    if(dogd.edges) {
+        SEdge edge;
+        edge.a = a; edge.b = b;
+        dogd.edges->l.Add(&edge);
+    }
+}
+
 void Entity::Draw(int order) {
     dogd.drawing = true;
+    dogd.edges = NULL;
     DrawOrGetDistance(order);
+}
+
+void Entity::GenerateEdges(SEdgeList *el) {
+    dogd.drawing = false;
+    dogd.edges = el;
+    DrawOrGetDistance(-1);
+    dogd.edges = NULL;
 }
 
 double Entity::GetDistance(Point2d mp) {
     dogd.drawing = false;
+    dogd.edges = NULL;
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
@@ -227,7 +245,7 @@ double Entity::GetDistance(Point2d mp) {
 }
 
 void Entity::DrawOrGetDistance(int order) {  
-    glxColor(1, 1, 1);
+    glxColor3d(1, 1, 1);
 
     switch(type) {
         case POINT_IN_3D:
@@ -245,7 +263,7 @@ void Entity::DrawOrGetDistance(int order) {
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
-                glxColor(0, 0.8, 0);
+                glxColor3d(0, 0.8, 0);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
                     glxVertex3v(v.Plus (r).Minus(d));
@@ -279,7 +297,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector mm = p.Minus(us).Minus(vs);
             Vector mp = p.Minus(us).Plus (vs);
 
-            glxColor(0, 0.4, 0.4);
+            glxColor3d(0, 0.4, 0.4);
             LineDrawOrGetDistance(pp, pm);
             LineDrawOrGetDistance(pm, mm);
             LineDrawOrGetDistance(mm, mp);
@@ -299,7 +317,7 @@ void Entity::DrawOrGetDistance(int order) {
             if(order >= 0 && order != 1) break;
             Vector a = SS.GetEntity(assoc[0])->PointGetCoords();
             Vector b = SS.GetEntity(assoc[1])->PointGetCoords();
-            LineDrawOrGetDistance(a, b);
+            LineDrawOrGetDistanceOrEdge(a, b);
             break;
         }
 

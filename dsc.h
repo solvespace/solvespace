@@ -33,6 +33,7 @@ public:
     
     static Vector MakeFrom(double x, double y, double z);
 
+    bool Equals(Vector v);
     Vector Plus(Vector b);
     Vector Minus(Vector b);
     Vector Negated(void);

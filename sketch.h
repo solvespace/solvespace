@@ -65,9 +65,14 @@ public:
 
     bool        visible;
 
+    SEdgeList   edges;
+    SPolygon    poly;
+
     NameStr     name;
 
     char *DescriptionString(void);
+
+    void Draw(void);
 
     SPolygon GetPolygon(void);
 };
@@ -170,14 +175,18 @@ public:
     // Routines to draw and hit-test the representation of the entity
     // on-screen.
     struct {
-        bool    drawing;
-        Point2d mp;
-        double  dmin;
-    } dogd;
+        bool        drawing;
+        Point2d     mp;
+        double      dmin;
+        SEdgeList   *edges;
+    } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
+    void LineDrawOrGetDistanceOrEdge(Vector a, Vector b);
     void DrawOrGetDistance(int order);
+
     void Draw(int order);
     double GetDistance(Point2d mp);
+    void GenerateEdges(SEdgeList *el);
 
     char *DescriptionString(void);
 };
@@ -253,9 +262,9 @@ public:
     static void MenuConstrain(int id);
     
     struct {
-        bool    drawing;
-        Point2d mp;
-        double  dmin;
+        bool        drawing;
+        Point2d     mp;
+        double      dmin;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);

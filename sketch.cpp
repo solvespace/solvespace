@@ -17,6 +17,34 @@ char *Group::DescriptionString(void) {
     return ret;
 }
 
+void Group::Draw(void) {
+    edges.l.Clear();
+    int i;
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        hRequest hr = e->h.request();
+        if(SS.GetRequest(hr)->group.v != h.v) continue;
+
+        e->GenerateEdges(&edges);
+    }
+    SPolygon poly;
+    memset(&poly, 0, sizeof(poly));
+    SEdge error;
+    if(edges.AssemblePolygon(&poly, &error)) {
+        glxColor4d(0, 0, 1, 0.15);
+        glxFillPolygon(&poly);
+    } else {
+        glxColor4d(1, 0, 0, 0.3);
+        glLineWidth(10);
+        glBegin(GL_LINES);
+            glxVertex3v(error.a);
+            glxVertex3v(error.b);
+        glEnd();
+        glLineWidth(1);
+    }
+    poly.Clear();
+}
+
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
     Param pa;
     memset(&pa, 0, sizeof(pa));

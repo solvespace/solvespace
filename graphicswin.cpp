@@ -280,7 +280,21 @@ void GraphicsWindow::MenuEdit(int id) {
                 if(s->entity.v) {
                     r = s->entity.request();
                 }
-                if(r.v && !r.IsFromReferences()) SS.request.Tag(r, 1);
+                if(r.v && !r.IsFromReferences()) {
+                    SS.request.Tag(r, 1);
+                    int j;
+                    for(j = 0; j < SS.constraint.n; j++) {
+                        Constraint *c = &(SS.constraint.elem[j]);
+                        if(((c->ptA).request().v == r.v) ||
+                           ((c->ptB).request().v == r.v) ||
+                           ((c->ptC).request().v == r.v) ||
+                           ((c->entityA).request().v == r.v) ||
+                           ((c->entityB).request().v == r.v))
+                        {
+                            SS.constraint.Tag(c->h, 1);
+                        }
+                    }
+                }
                 if(s->constraint.v) {
                     SS.constraint.Tag(s->constraint, 1);
                 }
@@ -561,19 +575,22 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     hRequest hr;
     switch(pendingOperation) {
         case MNU_DATUM_POINT:
-            ClearSelection(); hover.Clear();
-
             hr = AddRequest(Request::DATUM_POINT);
             SS.GetEntity(hr.entity(0))->PointForceTo(v);
+
+            ClearSelection(); hover.Clear();
 
             pendingOperation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
-            ClearSelection(); hover.Clear();
-
             hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
+                Constraint::ConstrainCoincident(hover.entity, hr.entity(1));
+            }
+
+            ClearSelection(); hover.Clear();
 
             pendingOperation = DRAGGING_NEW_LINE_POINT;
             pendingPoint = hr.entity(2);
@@ -774,6 +791,11 @@ void GraphicsWindow::Paint(int w, int h) {
     // Draw the constraints
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
+    }
+
+    // Draw the groups; this fills the polygons, if requested.
+    for(i = 0; i < SS.group.n; i++) {
+        SS.group.elem[i].Draw();
     }
 
     // Then redraw whatever the mouse is hovering over, highlighted.

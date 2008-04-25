@@ -33,7 +33,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     Vector gu = SS.GW.projUp;
     Vector gn = gr.Cross(gu);
 
-    glxColor(1, 0.2, 1);
+    glxColor3d(1, 0.2, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
             Vector ap = SS.GetEntity(ptA)->PointGetCoords();
@@ -86,7 +86,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 for(int i = 0; i < 2; i++) {
                     Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->
                                                             PointGetCoords();
-                    glxColor(0.4, 0, 0.4);
+                    glxColor3d(0.4, 0, 0.4);
                     glBegin(GL_QUADS);
                         glxVertex3v(p.Plus (r).Plus (d));
                         glxVertex3v(p.Plus (r).Minus(d));

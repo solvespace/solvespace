@@ -64,12 +64,14 @@ void MemFree(void *p);
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
+void glxFillPolygon(SPolygon *p);
 void glxWriteText(char *str);
 void glxTranslatev(Vector u);
 void glxOntoCsys(Vector u, Vector v);
 void glxLockColorTo(double r, double g, double b);
 void glxUnlockColor(void);
-void glxColor(double r, double g, double b);
+void glxColor3d(double r, double g, double b);
+void glxColor4d(double r, double g, double b, double a);
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
