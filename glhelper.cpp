@@ -82,6 +82,16 @@ void glxColor4d(double r, double g, double b, double a)
 static void __stdcall Vertex(Vector *p) {
     glxVertex3v(*p);
 }
+static void __stdcall Combine(double coords[3], void *vertexData[4],
+                                float weight[4], void **outData)
+{
+    Vector *n = (Vector *)AllocTemporary(sizeof(Vector));
+    n->x = coords[0];
+    n->y = coords[1];
+    n->z = coords[2];
+
+    *outData = n;
+}
 void glxFillPolygon(SPolygon *p)
 {
     int i, j;
@@ -91,6 +101,7 @@ void glxFillPolygon(SPolygon *p)
     gluTessCallback(gt, GLU_TESS_BEGIN, (cf *)glBegin);
     gluTessCallback(gt, GLU_TESS_END, (cf *)glEnd);
     gluTessCallback(gt, GLU_TESS_VERTEX, (cf *)Vertex);
+    gluTessCallback(gt, GLU_TESS_COMBINE, (cf *)Combine);
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
     gluTessBeginPolygon(gt, NULL);

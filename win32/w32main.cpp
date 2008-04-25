@@ -69,15 +69,14 @@ void Error(char *str, ...)
 // at the end.
 //-----------------------------------------------------------------------------
 static HANDLE Heap;
-Expr *AllocExpr(void)
+void *AllocTemporary(int n)
 {
-    Expr *v = (Expr *)HeapAlloc(Heap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, 
-                                                                 sizeof(Expr));
+    Expr *v = (Expr *)HeapAlloc(Heap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
     if(!v) oops();
-    memset(v, 0, sizeof(*v));
+    memset(v, 0, n);
     return v;
 }
-void FreeAllExprs(void)
+void FreeAllTemporary(void)
 {
     if(Heap) HeapDestroy(Heap);
     Heap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
@@ -735,8 +734,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ThawWindowPos(TextWnd);
     ThawWindowPos(GraphicsWnd);
 
-    // Create the heap that we use to store Exprs.
-    FreeAllExprs();
+    // Create the heap that we use to store Exprs and other temp stuff.
+    FreeAllTemporary();
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init(lpCmdLine);

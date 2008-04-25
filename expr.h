@@ -53,6 +53,9 @@ public:
         char    c;
     }       x;
 
+    static inline Expr *AllocExpr(void)
+        { return (Expr *)AllocTemporary(sizeof(Expr)); }
+
     static Expr *FromParam(hParam p);
     static Expr *FromConstant(double v);
 

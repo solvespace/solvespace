@@ -102,7 +102,7 @@ bool SolveSpace::SolveGroup(hGroup hg) {
     }
 
     bool r = sys.Solve();
-    FreeAllExprs();
+    FreeAllTemporary();
     return r;
 }
 

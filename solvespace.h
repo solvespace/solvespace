@@ -48,8 +48,8 @@ void PaintGraphics(void);
 void dbp(char *str, ...);
 void Error(char *str, ...);
 
-Expr *AllocExpr(void);
-void FreeAllExprs(void);
+void *AllocTemporary(int n);
+void FreeAllTemporary(void);
 void *MemRealloc(void *p, int n);
 void *MemAlloc(int n);
 void MemFree(void *p);
