@@ -1,6 +1,6 @@
 #include "solvespace.h"
 
-const hEntity  Entity::NO_CSYS = { 0 };
+const hEntity  Entity::FREE_IN_3D = { 0 };
 
 const hGroup Group::HGROUP_REFERENCES = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
@@ -44,7 +44,7 @@ void Group::Draw(void) {
         glxColor3d(1, 0, 0);
         glPushMatrix();
             glxTranslatev(error.b);
-            glxOntoCsys(SS.GW.projRight, SS.GW.projUp);
+            glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
             glxWriteText("not closed contour!");
         glPopMatrix();
     }
@@ -72,8 +72,8 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     Entity e;
     memset(&e, 0, sizeof(e));
     switch(type) {
-        case Request::CSYS_2D:
-            et = Entity::CSYS_2D;          points = 1; params = 4; goto c;
+        case Request::WORKPLANE:
+            et = Entity::WORKPLANE;        points = 1; params = 4; goto c;
 
         case Request::DATUM_POINT:
             et = 0;                        points = 1; params = 0; goto c;
@@ -92,29 +92,29 @@ c: {
             for(i = 0; i < points; i++) {
                 Entity p;
                 memset(&p, 0, sizeof(p));
-                p.csys = csys;
+                p.workplane = workplane;
                 // points start from entity 1, except for datum point case
                 p.h = h.entity(i+(et ? 1 : 0));
                 p.symbolic = true;
-                if(csys.v == Entity::NO_CSYS.v) {
+                if(workplane.v == Entity::FREE_IN_3D.v) {
                     p.type = Entity::POINT_IN_3D;
                     // params for x y z
-                    p.param.h[0] = AddParam(param, h.param(16 + 3*i + 0));
-                    p.param.h[1] = AddParam(param, h.param(16 + 3*i + 1));
-                    p.param.h[2] = AddParam(param, h.param(16 + 3*i + 2));
+                    p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
+                    p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
+                    p.param[2] = AddParam(param, h.param(16 + 3*i + 2));
                 } else {
                     p.type = Entity::POINT_IN_2D;
                     // params for u v
-                    p.param.h[0] = AddParam(param, h.param(16 + 3*i + 0));
-                    p.param.h[1] = AddParam(param, h.param(16 + 3*i + 1));
+                    p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
+                    p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
                 }
                 entity->Add(&p);
-                e.assoc[i] = p.h;
+                e.point[i] = p.h;
             }
             // And generate any params not associated with the point that
             // we happen to need.
             for(i = 0; i < params; i++) {
-                e.param.h[i] = AddParam(param, h.param(i));
+                e.param[i] = AddParam(param, h.param(i));
             }
 
             if(et) entity->Add(&e);

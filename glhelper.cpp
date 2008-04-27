@@ -46,7 +46,7 @@ void glxTranslatev(Vector u)
     glTranslated((GLdouble)u.x, (GLdouble)u.y, (GLdouble)u.z);
 }
 
-void glxOntoCsys(Vector u, Vector v)
+void glxOntoWorkplane(Vector u, Vector v)
 {
     double mat[16];
     Vector n = u.Cross(v);

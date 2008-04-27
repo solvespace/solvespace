@@ -46,8 +46,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "New Boolean Union",                   0,                  0,      NULL  },
 
 { 0, "&Request",                            0,                          NULL  },
-{ 1, "Dra&w in 2d Coordinate System\tW",    MNU_SEL_CSYS,       'W',    mReq  },
-{ 1, "Draw Anywhere in 3d\tQ",              MNU_NO_CSYS,        'Q',    mReq  },
+{ 1, "Draw in &Workplane\tW",               MNU_SEL_WORKPLANE,  'W',    mReq  },
+{ 1, "Draw Anywhere in 3d\tQ",              MNU_FREE_IN_3D,     'Q',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
 { 1, "Datum A&xis\tX",                      0,                  'X',    mReq  },
@@ -99,9 +99,9 @@ void GraphicsWindow::Init(void) {
 
     // Start locked on to the XY plane.
     hRequest r = Request::HREQUEST_REFERENCE_XY;
-    activeCsys = r.entity(0);
+    activeWorkplane = r.entity(0);
 
-    show2dCsyss = true;
+    showWorkplanes = true;
     showAxes = true;
     showPoints = true;
     showAllGroups = true;
@@ -206,17 +206,17 @@ void GraphicsWindow::EnsureValidActives(void) {
     }
 
     // The active coordinate system must also exist.
-    if(activeCsys.v != Entity::NO_CSYS.v && 
-                       !SS.entity.FindByIdNoOops(activeCsys))
+    if(activeWorkplane.v != Entity::FREE_IN_3D.v && 
+                       !SS.entity.FindByIdNoOops(activeWorkplane))
     {
-        activeCsys = Entity::NO_CSYS;
+        activeWorkplane = Entity::FREE_IN_3D;
         change = true;
     }
     if(change) SS.TW.Show();
 
-    bool in3d = (activeCsys.v == Entity::NO_CSYS.v);
-    CheckMenuById(MNU_NO_CSYS, in3d);
-    CheckMenuById(MNU_SEL_CSYS, !in3d);
+    bool in3d = (activeWorkplane.v == Entity::FREE_IN_3D.v);
+    CheckMenuById(MNU_FREE_IN_3D, in3d);
+    CheckMenuById(MNU_SEL_WORKPLANE, !in3d);
 
     // And update the checked state for various menus
     switch(viewUnits) {
@@ -288,32 +288,32 @@ void GraphicsWindow::MenuEdit(int id) {
 void GraphicsWindow::MenuRequest(int id) {
     char *s;
     switch(id) {
-        case MNU_SEL_CSYS: {
+        case MNU_SEL_WORKPLANE: {
             SS.GW.GroupSelection();
-            if(SS.GW.gs.n == 1 && SS.GW.gs.csyss == 1) {
-                SS.GW.activeCsys = SS.GW.gs.entity[0];
+            if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
+                SS.GW.activeWorkplane = SS.GW.gs.entity[0];
                 SS.GW.ClearSelection();
             }
 
-            if(SS.GW.activeCsys.v == Entity::NO_CSYS.v) {
-                Error("Select 2d coordinate system (e.g., the XY plane) "
+            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+                Error("Select workplane (e.g., the XY plane) "
                       "before locking on.");
                 break;
             }
-            // Align the view with the selected csys
-            Entity *e = SS.GetEntity(SS.GW.activeCsys);
+            // Align the view with the selected workplane
+            Entity *e = SS.GetEntity(SS.GW.activeWorkplane);
             Vector pr, pu;
-            e->Csys2dGetBasisVectors(&pr, &pu);
+            e->WorkplaneGetBasisVectors(&pr, &pu);
             Quaternion quatf = Quaternion::MakeFrom(pr, pu);
-            Vector offsetf = SS.GetEntity(e->assoc[0])->PointGetCoords();
+            Vector offsetf = SS.GetEntity(e->point[0])->PointGetCoords();
             SS.GW.AnimateOnto(quatf, offsetf);
 
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
         }
-        case MNU_NO_CSYS:
-            SS.GW.activeCsys = Entity::NO_CSYS;
+        case MNU_FREE_IN_3D:
+            SS.GW.activeWorkplane = Entity::FREE_IN_3D;
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -517,7 +517,7 @@ void GraphicsWindow::GroupSelection(void) {
                 gs.entity[(gs.entities)++] = s->entity;
             }
             switch(e->type) {
-                case Entity::CSYS_2D:       (gs.csyss)++; break;
+                case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
             }
             if(e->HasPlane()) (gs.planes)++;
@@ -539,7 +539,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     Request r;
     memset(&r, 0, sizeof(r));
     r.group = activeGroup;
-    r.csys = activeCsys;
+    r.workplane = activeWorkplane;
     r.type = type;
     SS.request.AddAndAssignId(&r);
     SS.GenerateAll();
@@ -744,8 +744,8 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
 }
 
 void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
-    bool t = !(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints);
-    SS.GW.show2dCsyss = t;
+    bool t = !(SS.GW.showWorkplanes && SS.GW.showAxes && SS.GW.showPoints);
+    SS.GW.showWorkplanes = t;
     SS.GW.showAxes = t;
     SS.GW.showPoints = t;
 
@@ -795,7 +795,7 @@ void GraphicsWindow::Paint(int w, int h) {
     // levels, and only the first gets normal depth testing.
     glxUnlockColor();
     for(a = 0; a <= 2; a++) {
-        // Three levels: 0 least prominent (e.g. a reference csys), 1 is
+        // Three levels: 0 least prominent (e.g. a reference workplane), 1 is
         // middle (e.g. line segment), 2 is always in front (e.g. point).
         if(a == 1) glDisable(GL_DEPTH_TEST);
         for(i = 0; i < SS.entity.n; i++) {

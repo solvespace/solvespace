@@ -55,7 +55,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             if(dogd.drawing) {
                 glPushMatrix();
                     glxTranslatev(ref);
-                    glxOntoCsys(gr, gu);
+                    glxOntoWorkplane(gr, gu);
                     glxWriteText(exprA->Print());
                 glPopMatrix();
             } else {
@@ -114,8 +114,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case EQUAL_LENGTH_LINES: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
-                Vector a = SS.GetEntity(e->assoc[0])->PointGetCoords();
-                Vector b = SS.GetEntity(e->assoc[1])->PointGetCoords();
+                Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
+                Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
                 Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
                 Vector ab = a.Minus(b);
                 Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
@@ -129,14 +129,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case VERTICAL:
             if(entityA.v) {
                 Entity *e = SS.GetEntity(entityA);
-                Vector a = SS.GetEntity(e->assoc[0])->PointGetCoords();
-                Vector b = SS.GetEntity(e->assoc[1])->PointGetCoords();
+                Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
+                Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
 
                 if(dogd.drawing) {
                     glPushMatrix();
                         glxTranslatev(m);
-                        glxOntoCsys(gr, gu);
+                        glxOntoWorkplane(gr, gu);
                         glxWriteText(type == HORIZONTAL ? "H" : "V");
                     glPopMatrix();
                 } else {
@@ -147,10 +147,10 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector a = SS.GetEntity(ptA)->PointGetCoords();
                 Vector b = SS.GetEntity(ptB)->PointGetCoords();
 
-                Entity *csy = SS.GetEntity(SS.GetEntity(ptA)->csys);
+                Entity *w = SS.GetEntity(SS.GetEntity(ptA)->workplane);
                 Vector cu, cv, cn;
-                csy->Csys2dGetBasisVectors(&cu, &cv);
-                cn = csy->Csys2dGetNormalVector();
+                w->WorkplaneGetBasisVectors(&cu, &cv);
+                cn = w->WorkplaneGetNormalVector();
 
                 int i;
                 for(i = 0; i < 2; i++) {

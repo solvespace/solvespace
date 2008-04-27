@@ -5,10 +5,10 @@ char *Entity::DescriptionString(void) {
     return r->DescriptionString();
 }
 
-void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
+void Entity::WorkplaneGetBasisVectors(Vector *u, Vector *v) {
     double q[4];
     for(int i = 0; i < 4; i++) {
-        q[i] = SS.GetParam(param.h[i])->val;
+        q[i] = SS.GetParam(param[i])->val;
     }
     Quaternion quat = Quaternion::MakeFrom(q[0], q[1], q[2], q[3]);
 
@@ -16,17 +16,17 @@ void Entity::Csys2dGetBasisVectors(Vector *u, Vector *v) {
     *v = quat.RotationV();
 }
 
-Vector Entity::Csys2dGetNormalVector(void) {
+Vector Entity::WorkplaneGetNormalVector(void) {
     Vector u, v;
-    Csys2dGetBasisVectors(&u, &v);
+    WorkplaneGetBasisVectors(&u, &v);
     return u.Cross(v);
 }
 
-void Entity::Csys2dGetBasisExprs(ExprVector *u, ExprVector *v) {
-    Expr *a = Expr::FromParam(param.h[0]);
-    Expr *b = Expr::FromParam(param.h[1]);
-    Expr *c = Expr::FromParam(param.h[2]);
-    Expr *d = Expr::FromParam(param.h[3]);
+void Entity::WorkplaneGetBasisExprs(ExprVector *u, ExprVector *v) {
+    Expr *a = Expr::FromParam(param[0]);
+    Expr *b = Expr::FromParam(param[1]);
+    Expr *c = Expr::FromParam(param[2]);
+    Expr *d = Expr::FromParam(param[3]);
 
     Expr *two = Expr::FromConstant(2);
 
@@ -53,13 +53,13 @@ void Entity::Csys2dGetBasisExprs(ExprVector *u, ExprVector *v) {
     v->z = (v->z)->Plus(two->Times(c->Times(d)));
 }
 
-ExprVector Entity::Csys2dGetOffsetExprs(void) {
-    return SS.GetEntity(assoc[0])->PointGetExprs();
+ExprVector Entity::WorkplaneGetOffsetExprs(void) {
+    return SS.GetEntity(point[0])->PointGetExprs();
 }
 
 bool Entity::HasPlane(void) {
     switch(type) {
-        case CSYS_2D:
+        case WORKPLANE:
             return true;
         default:
             return false;
@@ -67,11 +67,11 @@ bool Entity::HasPlane(void) {
 }
 
 void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
-    if(type == CSYS_2D) {
-        Expr *a = Expr::FromParam(param.h[0]);
-        Expr *b = Expr::FromParam(param.h[1]);
-        Expr *c = Expr::FromParam(param.h[2]);
-        Expr *d = Expr::FromParam(param.h[3]);
+    if(type == WORKPLANE) {
+        Expr *a = Expr::FromParam(param[0]);
+        Expr *b = Expr::FromParam(param[1]);
+        Expr *c = Expr::FromParam(param[2]);
+        Expr *d = Expr::FromParam(param[3]);
 
         Expr *two = Expr::FromConstant(2);
 
@@ -85,7 +85,7 @@ void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
         n->z = (n->z)->Minus(c->Square());
         n->z = (n->z)->Plus (d->Square());
 
-        ExprVector p0 = SS.GetEntity(assoc[0])->PointGetExprs();
+        ExprVector p0 = SS.GetEntity(point[0])->PointGetExprs();
         // The plane is n dot (p - p0) = 0, or
         //              n dot p - n dot p0 = 0
         // so dn = n dot p0
@@ -117,12 +117,12 @@ bool Entity::IsPointIn3d(void) {
 bool Entity::PointIsKnown(void) {
     switch(type) {
         case POINT_IN_3D:
-            return SS.GetParam(param.h[0])->known &&
-                   SS.GetParam(param.h[1])->known &&
-                   SS.GetParam(param.h[2])->known;
+            return SS.GetParam(param[0])->known &&
+                   SS.GetParam(param[1])->known &&
+                   SS.GetParam(param[2])->known;
         case POINT_IN_2D:
-            return SS.GetParam(param.h[0])->known &&
-                   SS.GetParam(param.h[1])->known;
+            return SS.GetParam(param[0])->known &&
+                   SS.GetParam(param[1])->known;
         default: oops();
     }
 }
@@ -134,17 +134,17 @@ bool Entity::PointIsFromReferences(void) {
 void Entity::PointForceTo(Vector p) {
     switch(type) {
         case POINT_IN_3D:
-            SS.GetParam(param.h[0])->val = p.x;
-            SS.GetParam(param.h[1])->val = p.y;
-            SS.GetParam(param.h[2])->val = p.z;
+            SS.GetParam(param[0])->val = p.x;
+            SS.GetParam(param[1])->val = p.y;
+            SS.GetParam(param[2])->val = p.z;
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SS.GetEntity(csys);
+            Entity *c = SS.GetEntity(workplane);
             Vector u, v;
-            c->Csys2dGetBasisVectors(&u, &v);
-            SS.GetParam(param.h[0])->val = p.Dot(u);
-            SS.GetParam(param.h[1])->val = p.Dot(v);
+            c->WorkplaneGetBasisVectors(&u, &v);
+            SS.GetParam(param[0])->val = p.Dot(u);
+            SS.GetParam(param[1])->val = p.Dot(v);
             break;
         }
         default: oops();
@@ -155,17 +155,17 @@ Vector Entity::PointGetCoords(void) {
     Vector p;
     switch(type) {
         case POINT_IN_3D:
-            p.x = SS.GetParam(param.h[0])->val;
-            p.y = SS.GetParam(param.h[1])->val;
-            p.z = SS.GetParam(param.h[2])->val;
+            p.x = SS.GetParam(param[0])->val;
+            p.y = SS.GetParam(param[1])->val;
+            p.z = SS.GetParam(param[2])->val;
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SS.GetEntity(csys);
+            Entity *c = SS.GetEntity(workplane);
             Vector u, v;
-            c->Csys2dGetBasisVectors(&u, &v);
-            p =        u.ScaledBy(SS.GetParam(param.h[0])->val);
-            p = p.Plus(v.ScaledBy(SS.GetParam(param.h[1])->val));
+            c->WorkplaneGetBasisVectors(&u, &v);
+            p =        u.ScaledBy(SS.GetParam(param[0])->val);
+            p = p.Plus(v.ScaledBy(SS.GetParam(param[1])->val));
             break;
         }
         default: oops();
@@ -177,18 +177,18 @@ ExprVector Entity::PointGetExprs(void) {
     ExprVector r;
     switch(type) {
         case POINT_IN_3D:
-            r.x = Expr::FromParam(param.h[0]);
-            r.y = Expr::FromParam(param.h[1]);
-            r.z = Expr::FromParam(param.h[2]);
+            r.x = Expr::FromParam(param[0]);
+            r.y = Expr::FromParam(param[1]);
+            r.z = Expr::FromParam(param[2]);
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SS.GetEntity(csys);
+            Entity *c = SS.GetEntity(workplane);
             ExprVector u, v;
-            c->Csys2dGetBasisExprs(&u, &v);
+            c->WorkplaneGetBasisExprs(&u, &v);
 
-            r =        u.ScaledBy(Expr::FromParam(param.h[0]));
-            r = r.Plus(v.ScaledBy(Expr::FromParam(param.h[1])));
+            r =        u.ScaledBy(Expr::FromParam(param[0]));
+            r = r.Plus(v.ScaledBy(Expr::FromParam(param[1])));
             break;
         }
         default: oops();
@@ -254,7 +254,7 @@ void Entity::DrawOrGetDistance(int order) {
             if(!SS.GW.showPoints) break;
 
             Entity *isfor = SS.GetEntity(h.request().entity(0));
-            if(!SS.GW.show2dCsyss && isfor->type == Entity::CSYS_2D) break;
+            if(!SS.GW.showWorkplanes && isfor->type == Entity::WORKPLANE) break;
 
             Vector v = PointGetCoords();
 
@@ -277,15 +277,15 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
-        case CSYS_2D: {
+        case WORKPLANE: {
             if(order >= 0 && order != 0) break;
-            if(!SS.GW.show2dCsyss) break;
+            if(!SS.GW.showWorkplanes) break;
 
             Vector p;
-            p = SS.GetEntity(assoc[0])->PointGetCoords();
+            p = SS.GetEntity(point[0])->PointGetCoords();
 
             Vector u, v;
-            Csys2dGetBasisVectors(&u, &v);
+            WorkplaneGetBasisVectors(&u, &v);
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
 
@@ -306,7 +306,7 @@ void Entity::DrawOrGetDistance(int order) {
             if(dogd.drawing) {
                 glPushMatrix();
                     glxTranslatev(mm);
-                    glxOntoCsys(u, v);
+                    glxOntoWorkplane(u, v);
                     glxWriteText(DescriptionString());
                 glPopMatrix();
             }
@@ -315,17 +315,17 @@ void Entity::DrawOrGetDistance(int order) {
 
         case LINE_SEGMENT: {
             if(order >= 0 && order != 1) break;
-            Vector a = SS.GetEntity(assoc[0])->PointGetCoords();
-            Vector b = SS.GetEntity(assoc[1])->PointGetCoords();
+            Vector a = SS.GetEntity(point[0])->PointGetCoords();
+            Vector b = SS.GetEntity(point[1])->PointGetCoords();
             LineDrawOrGetDistanceOrEdge(a, b);
             break;
         }
 
         case CUBIC: {
-            Vector p0 = SS.GetEntity(assoc[0])->PointGetCoords();
-            Vector p1 = SS.GetEntity(assoc[1])->PointGetCoords();
-            Vector p2 = SS.GetEntity(assoc[2])->PointGetCoords();
-            Vector p3 = SS.GetEntity(assoc[3])->PointGetCoords();
+            Vector p0 = SS.GetEntity(point[0])->PointGetCoords();
+            Vector p1 = SS.GetEntity(point[1])->PointGetCoords();
+            Vector p2 = SS.GetEntity(point[2])->PointGetCoords();
+            Vector p3 = SS.GetEntity(point[3])->PointGetCoords();
             int i, n = 20;
             Vector prev = p0;
             for(i = 1; i <= n; i++) {

@@ -93,8 +93,8 @@ public:
         // Edit
         MNU_DELETE,
         // Request
-        MNU_SEL_CSYS,
-        MNU_NO_CSYS,
+        MNU_SEL_WORKPLANE,
+        MNU_FREE_IN_3D,
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
         MNU_RECTANGLE,
@@ -147,7 +147,7 @@ public:
     Unit    viewUnits;
 
     hGroup  activeGroup;
-    hEntity activeCsys;
+    hEntity activeWorkplane;
     void EnsureValidActives();
 
     // Operations that must be completed by doing something with the mouse
@@ -188,7 +188,7 @@ public:
         hEntity     entity[MAX_SELECTED];
         int         points;
         int         entities;
-        int         csyss;
+        int         workplanes;
         int         planes;
         int         lineSegments;
         int         n;
@@ -196,7 +196,7 @@ public:
     void GroupSelection(void);
 
     // This sets what gets displayed.
-    bool    show2dCsyss;
+    bool    showWorkplanes;
     bool    showAxes;
     bool    showPoints;
     bool    showAllGroups;

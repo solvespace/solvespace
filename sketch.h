@@ -47,6 +47,19 @@ public:
     inline hRequest request(void);
 };
 
+
+class EntityId {
+    DWORD v;        // entity ID, starting from 0
+};
+class EntityMap {
+    int         tag;
+
+    EntityId    h;
+    hEntity     input;
+    int         copyNumber;
+    // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
+};
+
 // A set of requests. Every request must have an associated group.
 class Group {
 public:
@@ -69,25 +82,18 @@ public:
     SPolygon    poly;
 
     NameStr     name;
-
     char *DescriptionString(void);
+
+    // When a request generates entities from entities, and the source
+    // entities may have come from multiple requests, it's necessary to
+    // remap the entity ID so that it's still unique. We do this with a
+    // mapping list.
+    IdList<EntityId,EntityMap> remap;
+    hEntity Remap(hEntity in, int copyNumber);
 
     void Draw(void);
 
     SPolygon GetPolygon(void);
-};
-
-
-class EntityId {
-    DWORD v;        // entity ID, starting from 0
-};
-class EntityMap {
-    int         tag;
-
-    EntityId    h;
-    hEntity     input;
-    int         copyNumber;
-    // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -103,25 +109,19 @@ public:
     hRequest    h;
 
     // Types of requests
-    static const int CSYS_2D                = 100;
+    static const int WORKPLANE              = 100;
     static const int DATUM_POINT            = 101;
     static const int LINE_SEGMENT           = 200;
     static const int CUBIC                  = 300;
 
     int         type;
 
-    hEntity     csys; // or Entity::NO_CSYS
+    hEntity     workplane; // or Entity::FREE_IN_3D
     hGroup      group;
+
     NameStr     name;
     bool        construction;
-
-    // When a request generates entities from entities, and the source
-    // entities may have come from multiple requests, it's necessary to
-    // remap the entity ID so that it's still unique. We do this with a
-    // mapping list.
-    IdList<EntityId,EntityMap> remap;
-    hEntity Remap(hEntity in, int copyNumber);
-
+    
     hParam AddParam(IdList<Param,hParam> *param, hParam hp);
     void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
 
@@ -133,32 +133,36 @@ public:
     int         tag;
     hEntity     h;
 
-    static const hEntity    NO_CSYS;
+    static const hEntity    FREE_IN_3D;
 
-    static const int CSYS_2D                = 1000;
-    static const int POINT_IN_3D            = 2000;
-    static const int POINT_IN_2D            = 2001;
-    static const int LINE_SEGMENT           = 3000;
-    static const int CUBIC                  = 4000;
+    static const int WORKPLANE              =  1000;
+    static const int POINT_IN_3D            =  2000;
+    static const int POINT_IN_2D            =  2001;
+    static const int POINT_OFFSET           =  2010;
+    static const int DIRECTION_QUATERNION   =  3000;
+    static const int DIRECTION_OFFSET       =  3010;
+    static const int LINE_SEGMENT           = 10000;
+    static const int CUBIC                  = 11000;
+
+    static const int EDGE_LIST              = 90000;
+    static const int FACE_LIST              = 91000;
     int         type;
 
     bool        symbolic;
-    // The params are usually handles to the symbolic variables, but may
-    // also be constants
-    union {
-        hParam      h[16];
-        double      v[16];
-    }           param;
-    // Associated entities, e.g. the endpoints for a line segment
-    hEntity     assoc[16];
 
-    hEntity     csys;   // or Entity::NO_CSYS
+    // When it comes time to draw an entity, we look here to get the
+    // defining variables.
+    hParam      param[4];
+    hEntity     point[4];
+    hEntity     direction;
 
-    // Applies only for a CSYS_2D type
-    void Csys2dGetBasisVectors(Vector *u, Vector *v);
-    Vector Csys2dGetNormalVector(void);
-    void Csys2dGetBasisExprs(ExprVector *u, ExprVector *v);
-    ExprVector Csys2dGetOffsetExprs(void);
+    hEntity     workplane;   // or Entity::FREE_IN_3D
+
+    // Applies only for a WORKPLANE type
+    void WorkplaneGetBasisVectors(Vector *u, Vector *v);
+    Vector WorkplaneGetNormalVector(void);
+    void WorkplaneGetBasisExprs(ExprVector *u, ExprVector *v);
+    ExprVector WorkplaneGetOffsetExprs(void);
 
     bool IsPoint(void);
     bool IsPointIn3d(void);
@@ -244,7 +248,9 @@ public:
     hConstraint h;
 
     int         type;
+
     hGroup      group;
+    hEntity     workplane;
 
     // These are the parameters for the constraint.
     Expr        *exprA;

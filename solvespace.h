@@ -67,7 +67,7 @@ void glxVertex3v(Vector u);
 void glxFillPolygon(SPolygon *p);
 void glxWriteText(char *str);
 void glxTranslatev(Vector u);
-void glxOntoCsys(Vector u, Vector v);
+void glxOntoWorkplane(Vector u, Vector v);
 void glxLockColorTo(double r, double g, double b);
 void glxUnlockColor(void);
 void glxColor3d(double r, double g, double b);

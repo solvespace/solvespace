@@ -205,21 +205,21 @@ void TextWindow::ShowHeader(void) {
     } else {
         // Navigation buttons
         char *cd;
-        if(SS.GW.activeCsys.v == Entity::NO_CSYS.v) {
+        if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
             cd = "free in 3d";
         } else {
-            cd = SS.GetEntity(SS.GW.activeCsys)->DescriptionString();
+            cd = SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
         }
-        Printf(" %Lb%f<<%E   %Lh%fhome%E   %CT csys:%CD %s",
+        Printf(" %Lb%f<<%E   %Lh%fhome%E   %CT workplane:%CD %s",
             (DWORD)(&TextWindow::ScreenNavigation),
             (DWORD)(&TextWindow::ScreenNavigation),
             cd);
     }
 
     int datumColor;
-    if(SS.GW.show2dCsyss && SS.GW.showAxes && SS.GW.showPoints) {
+    if(SS.GW.showWorkplanes && SS.GW.showAxes && SS.GW.showPoints) {
         datumColor = 'S'; // shown
-    } else if(!(SS.GW.show2dCsyss || SS.GW.showAxes || SS.GW.showPoints)) {
+    } else if(!(SS.GW.showWorkplanes || SS.GW.showAxes || SS.GW.showPoints)) {
         datumColor = 'H'; // hidden
     } else {
         datumColor = 'M'; // mixed
@@ -227,13 +227,13 @@ void TextWindow::ShowHeader(void) {
 
 #define hs(b) ((b) ? 'S' : 'H')
     Printf("%CTshow: "
-           "%Cp%Ll%D%f2d-csys%E%CT  "
+           "%Cp%Ll%D%fworkplane%E%CT  "
            "%Cp%Ll%D%faxes%E%CT  "
            "%Cp%Ll%D%fpoints%E%CT  "
            "%Cp%Ll%fany-datum%E%CT",
-        hs(SS.GW.show2dCsyss), (DWORD)&(SS.GW.show2dCsyss), &(SS.GW.ToggleBool),
-        hs(SS.GW.showAxes),    (DWORD)&(SS.GW.showAxes),    &(SS.GW.ToggleBool),
-        hs(SS.GW.showPoints),  (DWORD)&(SS.GW.showPoints),  &(SS.GW.ToggleBool),
+  hs(SS.GW.showWorkplanes), (DWORD)&(SS.GW.showWorkplanes), &(SS.GW.ToggleBool),
+  hs(SS.GW.showAxes),       (DWORD)&(SS.GW.showAxes),       &(SS.GW.ToggleBool),
+  hs(SS.GW.showPoints),     (DWORD)&(SS.GW.showPoints),     &(SS.GW.ToggleBool),
         datumColor, &(SS.GW.ToggleAnyDatumShown)
     );
     Printf("%CT      "
@@ -302,7 +302,7 @@ void TextWindow::ShowRequestInfo(void) {
 
     char *s;
     switch(r->type) {
-        case Request::CSYS_2D:       s = "2d coordinate system";     break;
+        case Request::WORKPLANE:     s = "workplane";                break;
         case Request::DATUM_POINT:   s = "datum point";              break;
         case Request::LINE_SEGMENT:  s = "line segment";             break;
         default: oops();

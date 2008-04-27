@@ -24,19 +24,19 @@ void SolveSpace::NewFile(void) {
     // planes; these are our references, present in every sketch.
     Request r;
     memset(&r, 0, sizeof(r));
-    r.type = Request::CSYS_2D;
+    r.type = Request::WORKPLANE;
     r.group = Group::HGROUP_REFERENCES;
-    r.csys = Entity::NO_CSYS;
+    r.workplane = Entity::FREE_IN_3D;
 
-    r.name.strcpy("#XY-csys");
+    r.name.strcpy("#XY");
     r.h = Request::HREQUEST_REFERENCE_XY;
     request.Add(&r);
 
-    r.name.strcpy("#YZ-csys");
+    r.name.strcpy("#YZ");
     r.h = Request::HREQUEST_REFERENCE_YZ;
     request.Add(&r);
 
-    r.name.strcpy("#ZX-csys");
+    r.name.strcpy("#ZX");
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 }
@@ -54,22 +54,23 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
 
     { 'r',  "Request.h.v",              'x',        &(SS.sv.r.h.v)          },
     { 'r',  "Request.type",             'd',        &(SS.sv.r.type)         },
-    { 'r',  "Request.csys.v",           'x',        &(SS.sv.r.csys.v)       },
+    { 'r',  "Request.workplane.v",      'x',        &(SS.sv.r.workplane.v)  },
     { 'r',  "Request.group.v",          'x',        &(SS.sv.r.group.v)      },
     { 'r',  "Request.name",             'N',        &(SS.sv.r.name)         },
     { 'r',  "Request.construction",     'b',        &(SS.sv.r.construction) },
 
     { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)          },
     { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)         },
-    { 'e',  "Entity.param.h[0].v",      'x',        &(SS.sv.e.param.h[0].v) },
-    { 'e',  "Entity.param.h[1].v",      'x',        &(SS.sv.e.param.h[1].v) },
-    { 'e',  "Entity.param.h[2].v",      'x',        &(SS.sv.e.param.h[2].v) },
-    { 'e',  "Entity.param.h[3].v",      'x',        &(SS.sv.e.param.h[3].v) },
-    { 'e',  "Entity.assoc[0].v",        'x',        &(SS.sv.e.assoc[0].v)   },
-    { 'e',  "Entity.assoc[1].v",        'x',        &(SS.sv.e.assoc[1].v)   },
-    { 'e',  "Entity.assoc[2].v",        'x',        &(SS.sv.e.assoc[2].v)   },
-    { 'e',  "Entity.assoc[3].v",        'x',        &(SS.sv.e.assoc[3].v)   },
-    { 'e',  "Entity.csys.v",            'x',        &(SS.sv.e.csys.v)       },
+    { 'e',  "Entity.param[0].v",        'x',        &(SS.sv.e.param[0].v)   },
+    { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)   },
+    { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)   },
+    { 'e',  "Entity.param[3].v",        'x',        &(SS.sv.e.param[3].v)   },
+    { 'e',  "Entity.point[0].v",        'x',        &(SS.sv.e.point[0].v)   },
+    { 'e',  "Entity.point[1].v",        'x',        &(SS.sv.e.point[1].v)   },
+    { 'e',  "Entity.point[2].v",        'x',        &(SS.sv.e.point[2].v)   },
+    { 'e',  "Entity.point[3].v",        'x',        &(SS.sv.e.point[3].v)   },
+    { 'e',  "Entity.direction.v",       'x',        &(SS.sv.e.direction.v)  },
+    { 'e',  "Entity.workplane.v",       'x',        &(SS.sv.e.workplane.v)  },
 
     { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)          },
     { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)         },

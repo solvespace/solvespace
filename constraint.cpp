@@ -32,8 +32,8 @@ void Constraint::MenuConstrain(int id) {
             } else if(gs.lineSegments == 1 && gs.n == 1) {
                 c.type = PT_PT_DISTANCE;
                 Entity *e = SS.GetEntity(gs.entity[0]);
-                c.ptA = e->assoc[0];
-                c.ptB = e->assoc[1];
+                c.ptA = e->point[0];
+                c.ptB = e->point[1];
             } else {
                 Error("Bad selection for distance / diameter constraint.");
                 return;
@@ -78,8 +78,8 @@ void Constraint::MenuConstrain(int id) {
             if(gs.lineSegments == 1 && gs.n == 1) {
                 c.entityA = gs.entity[0];
                 Entity *e = SS.GetEntity(c.entityA);
-                ha = e->assoc[0];
-                hb = e->assoc[1];
+                ha = e->point[0];
+                hb = e->point[1];
             } else if(gs.points == 2 && gs.n == 2) {
                 ha = c.ptA = gs.point[0];
                 hb = c.ptB = gs.point[1];
@@ -89,18 +89,18 @@ void Constraint::MenuConstrain(int id) {
             }
             Entity *ea = SS.GetEntity(ha);
             Entity *eb = SS.GetEntity(hb);
-            if(ea->csys.v == Entity::NO_CSYS.v &&
-               eb->csys.v == Entity::NO_CSYS.v)
+            if(ea->workplane.v == Entity::FREE_IN_3D.v &&
+               eb->workplane.v == Entity::FREE_IN_3D.v)
             {
                 Error("Horizontal/vertical constraint applies only to "
                       "entities drawn in a 2d coordinate system.");
                 return;
             }
-            if(eb->csys.v == SS.GW.activeCsys.v) {
-                // We are constraining two points in two different csyss; so
+            if(eb->workplane.v == SS.GW.activeWorkplane.v) {
+                // We are constraining two points in two different wrkpls; so
                 // we have two choices for the definitons of the coordinate
                 // directions. ptA's gets chosen, so make sure that's the
-                // active csys.
+                // active workplane.
                 hEntity t = c.ptA;
                 c.ptA = c.ptB;
                 c.ptB = t;
@@ -133,14 +133,14 @@ Expr *Constraint::Distance(hEntity hpa, hEntity hpb) {
 
     if(pa->type == Entity::POINT_IN_2D &&
        pb->type == Entity::POINT_IN_2D &&
-       pa->csys.v == pb->csys.v)
+       pa->workplane.v == pb->workplane.v)
     {
-        // A nice case; they are both in the same 2d csys, so I can write
+        // A nice case; they are both in the same workplane, so I can write
         // the equation in terms of the basis vectors in that csys.
-        Expr *du = Expr::FromParam(pa->param.h[0])->Minus(
-                   Expr::FromParam(pb->param.h[0]));
-        Expr *dv = Expr::FromParam(pa->param.h[1])->Minus(
-                   Expr::FromParam(pb->param.h[1]));
+        Expr *du = Expr::FromParam(pa->param[0])->Minus(
+                   Expr::FromParam(pb->param[0]));
+        Expr *dv = Expr::FromParam(pa->param[1])->Minus(
+                   Expr::FromParam(pb->param[1]));
 
         return ((du->Square())->Plus(dv->Square()))->Sqrt();
     }
@@ -188,8 +188,8 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case EQUAL_LENGTH_LINES: {
             Entity *a = SS.GetEntity(entityA);
             Entity *b = SS.GetEntity(entityB);
-            AddEq(l, Distance(a->assoc[0], a->assoc[1])->Minus(
-                     Distance(b->assoc[0], b->assoc[1])), 0);
+            AddEq(l, Distance(a->point[0], a->point[1])->Minus(
+                     Distance(b->point[0], b->point[1])), 0);
             break;
         }
 
@@ -210,26 +210,26 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 AddEq(l, eab.y, 1);
                 AddEq(l, eab.z, 2);
             } else if(!(a->IsPointIn3d() || b->IsPointIn3d()) && 
-                       (a->csys.v == b->csys.v))
+                       (a->workplane.v == b->workplane.v))
             {
-                // Both in same csys, nice.
-                AddEq(l, Expr::FromParam(a->param.h[0])->Minus(
-                         Expr::FromParam(b->param.h[0])), 0);
-                AddEq(l, Expr::FromParam(a->param.h[1])->Minus(
-                         Expr::FromParam(b->param.h[1])), 1);
+                // Both in same workplane, nice.
+                AddEq(l, Expr::FromParam(a->param[0])->Minus(
+                         Expr::FromParam(b->param[0])), 0);
+                AddEq(l, Expr::FromParam(a->param[1])->Minus(
+                         Expr::FromParam(b->param[1])), 1);
             } else {
                 // Either two 2 DOF points in different planes, or one
                 // 3 DOF point and one 2 DOF point. Either way, write two
                 // equations on the projection of a into b's plane.
                 ExprVector p3;
                 p3 = a->PointGetExprs();
-                Entity *csy = SS.GetEntity(b->csys);
-                ExprVector offset = csy->Csys2dGetOffsetExprs();
+                Entity *w = SS.GetEntity(b->workplane);
+                ExprVector offset = w->WorkplaneGetOffsetExprs();
                 p3 = p3.Minus(offset);
                 ExprVector u, v;
-                csy->Csys2dGetBasisExprs(&u, &v);
-                AddEq(l, Expr::FromParam(b->param.h[0])->Minus(p3.Dot(u)), 0);
-                AddEq(l, Expr::FromParam(b->param.h[1])->Minus(p3.Dot(v)), 1);
+                w->WorkplaneGetBasisExprs(&u, &v);
+                AddEq(l, Expr::FromParam(b->param[0])->Minus(p3.Dot(u)), 0);
+                AddEq(l, Expr::FromParam(b->param[1])->Minus(p3.Dot(v)), 1);
             }
             break;
         }
@@ -248,28 +248,28 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             hEntity ha, hb;
             if(entityA.v) {
                 Entity *e = SS.GetEntity(entityA);
-                ha = e->assoc[0];
-                hb = e->assoc[1];
+                ha = e->point[0];
+                hb = e->point[1];
             } else {
                 ha = ptA;
                 hb = ptB;
             }
             Entity *a = SS.GetEntity(ha);
             Entity *b = SS.GetEntity(hb);
-            if(a->csys.v == Entity::NO_CSYS.v) {
+            if(a->workplane.v == Entity::FREE_IN_3D.v) {
                 Entity *t = a;
                 a = b;
                 b = t;
             }
             
-            if(a->csys.v == b->csys.v) {
+            if(a->workplane.v == b->workplane.v) {
                 int i = (type == HORIZONTAL) ? 1 : 0;
-                AddEq(l, Expr::FromParam(a->param.h[i])->Minus(
-                         Expr::FromParam(b->param.h[i])), 0);
+                AddEq(l, Expr::FromParam(a->param[i])->Minus(
+                         Expr::FromParam(b->param[i])), 0);
             } else {
-                Entity *csy = SS.GetEntity(a->csys);
+                Entity *w = SS.GetEntity(a->workplane);
                 ExprVector u, v;
-                csy->Csys2dGetBasisExprs(&u, &v);
+                w->WorkplaneGetBasisExprs(&u, &v);
                 ExprVector norm = (type == HORIZONTAL) ? v : u;
                 ExprVector pa = a->PointGetExprs();
                 ExprVector pb = b->PointGetExprs();
