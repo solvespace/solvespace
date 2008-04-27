@@ -108,7 +108,6 @@ static void PaintTextWnd(HDC hdc)
 
     RECT rect;
     GetClientRect(TextWnd, &rect);
-
     // Set up the back-buffer
     HDC backDc = CreateCompatibleDC(hdc);
     int width = rect.right - rect.left;
@@ -206,6 +205,9 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
 LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
+        case WM_ERASEBKGND:
+            break;
+
         case WM_CLOSE:
         case WM_DESTROY:
             PostQuitMessage(0);
@@ -698,8 +700,7 @@ static void CreateMainWindows(void)
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
     TextWnd = CreateWindowEx(0, 
-        "TextWnd", "SolveSpace (Text Window)",
-        WS_THICKFRAME | WS_CLIPCHILDREN,
+        "TextWnd", "SolveSpace (Text Window)", WS_THICKFRAME | WS_CLIPCHILDREN,
         10, 10, 600, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 

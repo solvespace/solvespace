@@ -207,23 +207,24 @@ bool System::NewtonSolve(int tag) {
 
 bool System::Solve(void) {
     int i, j;
+/*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
         dbp("  %s = 0", eq.elem[i].e->Print());
     }
-    dbp("%d parameters", param.n);
+    dbp("%d parameters", param.n); */
 
     param.ClearTags();
     eq.ClearTags();
     
     WriteJacobian(0, 0);
     EvalJacobian();
-
+/*
     for(i = 0; i < mat.m; i++) {
         for(j = 0; j < mat.n; j++) {
             dbp("A[%d][%d] = %.3f", i, j, mat.A.num[i][j]);
         }
-    }
+    } */
 
     GaussJordan();
 
