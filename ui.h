@@ -4,8 +4,8 @@
 
 class TextWindow {
 public:
-    static const int MAX_COLS = 150;
-    static const int MAX_ROWS = 300;
+    static const int MAX_COLS = 100;
+    static const int MAX_ROWS = 200;
 
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
@@ -87,11 +87,12 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
-        MNU_UNSELECT_ALL,
+        MNU_SHOW_TEXT_WND,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
         // Edit
         MNU_DELETE,
+        MNU_UNSELECT_ALL,
         // Request
         MNU_SEL_WORKPLANE,
         MNU_FREE_IN_3D,
@@ -105,6 +106,7 @@ public:
         MNU_ON_ENTITY,
         MNU_HORIZONTAL,
         MNU_VERTICAL,
+        MNU_SOLVE_AUTO,
         MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
@@ -201,8 +203,13 @@ public:
     bool    showPoints;
     bool    showAllGroups;
     bool    showConstraints;
+    bool    showTextWindow;
     static void ToggleBool(int link, DWORD v);
     static void ToggleAnyDatumShown(int link, DWORD v);
+
+    static const int DONT_SOLVE = 0;
+    static const int SOLVE_ALWAYS = 1;
+    int     solving;
 
     void UpdateDraggedPoint(Vector *pos, double mx, double my);
     void UpdateDraggedEntity(hEntity hp, double mx, double my);

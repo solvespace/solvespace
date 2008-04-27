@@ -332,6 +332,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_OEM_5:          c = '\\';   break;
         case VK_SPACE:          c = ' ';    break;
         case VK_DELETE:         c = 127;    break;
+        case VK_TAB:            c = '\t';   break;
 
         default:
             c = wParam;
@@ -349,6 +350,11 @@ static BOOL ProcessKeyDown(WPARAM wParam)
 
     // No accelerator; process the key as normal.
     return FALSE;
+}
+
+void ShowTextWindow(BOOL visible)
+{
+    ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
 static HGLRC CreateGlContext(HDC hdc)

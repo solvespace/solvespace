@@ -40,10 +40,11 @@ void ShowGraphicsEditControl(int x, int y, char *s);
 void HideGraphicsEditControl(void);
 BOOL GraphicsEditControlIsVisible(void);
 
-void InvalidateGraphics(void);
+void ShowTextWindow(BOOL visible);
 void InvalidateText(void);
-SDWORD GetMilliseconds(void);
+void InvalidateGraphics(void);
 void PaintGraphics(void);
+SDWORD GetMilliseconds(void);
 
 void dbp(char *str, ...);
 void Error(char *str, ...);

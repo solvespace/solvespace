@@ -196,6 +196,43 @@ ExprVector Entity::PointGetExprs(void) {
     return r;
 }
 
+void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
+    if(type == POINT_IN_2D && workplane.v == wrkpl.v) {
+        // They want our coordinates in the form that we've written them,
+        // very nice.
+        *u = Expr::FromParam(param[0]);
+        *v = Expr::FromParam(param[1]);
+    } else {
+        // Get the offset and basis vectors for this weird exotic csys.
+        Entity *w = SS.GetEntity(wrkpl);
+        ExprVector wp = w->WorkplaneGetOffsetExprs();
+        ExprVector wu, wv;
+        w->WorkplaneGetBasisExprs(&wu, &wv);
+
+        // Get our coordinates in three-space, and project them into that
+        // coordinate system.
+        ExprVector ev = PointGetExprs();
+        ev = ev.Minus(wp);
+        *u = ev.Dot(wu);
+        *v = ev.Dot(wv);
+    }
+}
+
+bool Entity::PointIsLocked(void) {
+    // A point is locked if none of its coordinates get assumed.
+    if(type == POINT_IN_3D) {
+        if(SS.GetParam(param[0])->assumed) return false;
+        if(SS.GetParam(param[1])->assumed) return false;
+        if(SS.GetParam(param[2])->assumed) return false;
+    } else if(type == POINT_IN_2D) {
+        if(SS.GetParam(param[0])->assumed) return false;
+        if(SS.GetParam(param[1])->assumed) return false;
+    } else {
+        oops();
+    }
+    return true;
+}
+
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         glBegin(GL_LINE_STRIP);
@@ -272,7 +309,9 @@ void Entity::DrawOrGetDistance(int order) {
                 glEnd();
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
-                dogd.dmin = pp.DistanceTo(dogd.mp) - 5;
+                // Make a free point slightly easier to select, so that with
+                // coincident points, we select the free one.
+                dogd.dmin = pp.DistanceTo(dogd.mp) - (PointIsLocked() ? 3 : 4);
             }
             break;
         }

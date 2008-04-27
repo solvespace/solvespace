@@ -31,6 +31,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
 { 1,  NULL,                                 0,                          NULL  },
+{ 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
+{ 1,  NULL,                                 0,                          NULL  },
 { 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
@@ -80,6 +82,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
+{ 1, "Sol&ve Automatically\tShift+Tab",     MNU_SOLVE_AUTO,     '\t'|S, mCon  },
 { 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },
@@ -106,6 +109,11 @@ void GraphicsWindow::Init(void) {
     showPoints = true;
     showAllGroups = true;
     showConstraints = true;
+
+    solving = SOLVE_ALWAYS;
+
+    showTextWindow = true;
+    ShowTextWindow(showTextWindow);
 }
 
 void GraphicsWindow::NormalizeProjectionVectors(void) {
@@ -174,6 +182,11 @@ void GraphicsWindow::MenuView(int id) {
         case MNU_ZOOM_TO_FIT:
             break;
 
+        case MNU_SHOW_TEXT_WND:
+            SS.GW.showTextWindow = !SS.GW.showTextWindow;
+            SS.GW.EnsureValidActives();
+            break;
+
         case MNU_UNITS_MM:
             SS.GW.viewUnits = UNIT_MM;
             SS.GW.EnsureValidActives();
@@ -228,6 +241,11 @@ void GraphicsWindow::EnsureValidActives(void) {
     }
     CheckMenuById(MNU_UNITS_MM, viewUnits == UNIT_MM);
     CheckMenuById(MNU_UNITS_INCHES, viewUnits == UNIT_INCHES);
+
+    ShowTextWindow(SS.GW.showTextWindow);
+    CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
+
+    CheckMenuById(MNU_SOLVE_AUTO, (SS.GW.solving == SOLVE_ALWAYS));
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -415,7 +433,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         UpdateDraggedPoint(&(c->disp.offset), x, y);
     } else if(leftDown && pendingOperation == DRAGGING_POINT) {
         UpdateDraggedEntity(pendingPoint, x, y);
-        HitTestMakeSelection(mp);
+        if(solving == SOLVE_ALWAYS) {
+            SS.Solve();
+        }
     }
 
     // No buttons pressed.
@@ -543,6 +563,9 @@ hRequest GraphicsWindow::AddRequest(int type) {
     r.type = type;
     SS.request.AddAndAssignId(&r);
     SS.GenerateAll();
+
+    if(solving == SOLVE_ALWAYS) SS.Solve();
+
     return r.h;
 }
 
@@ -707,6 +730,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
         HideGraphicsEditControl();
+        if(SS.GW.solving == SOLVE_ALWAYS) SS.Solve();
     } else {
         Error("Not a valid number or expression: '%s'", s);
     }

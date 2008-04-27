@@ -75,6 +75,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)          },
     { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)         },
     { 'c',  "Constraint.group.v",       'x',        &(SS.sv.c.group.v)      },
+    { 'c',  "Constraint.workplane.v",   'x',        &(SS.sv.c.workplane.v)  },
     { 'c',  "Constraint.exprA",         'E',        &(SS.sv.c.exprA)        },
     { 'c',  "Constraint.exprB",         'E',        &(SS.sv.c.exprB)        },
     { 'c',  "Constraint.ptA.v",         'x',        &(SS.sv.c.ptA.v)        },

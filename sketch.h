@@ -167,8 +167,10 @@ public:
     bool IsPoint(void);
     bool IsPointIn3d(void);
     // Applies for any of the point types
+    bool PointIsLocked(void);
     Vector PointGetCoords(void);
     ExprVector PointGetExprs(void);
+    void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
     bool PointIsKnown(void);
@@ -204,6 +206,7 @@ public:
 
     double      val;
     bool        known;
+    bool        assumed;
 };
 
 
@@ -287,7 +290,7 @@ public:
     // Some helpers when generating symbolic constraint equations
     void ModifyToSatisfy(void);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    static Expr *Distance(hEntity pa, hEntity pb);
+    static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
 };

@@ -181,9 +181,6 @@ bool System::NewtonSolve(int tag) {
         // Take the Newton step; 
         //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
         for(i = 0; i < mat.m; i++) {
-            dbp("mat.X[%d] = %.3f", i, mat.X[i]);
-            dbp("modifying param %08x, now %.3f", mat.param[i],
-                param.FindById(mat.param[i])->val);
             (param.FindById(mat.param[i]))->val -= mat.X[i];
         }
 
@@ -210,10 +207,10 @@ bool System::NewtonSolve(int tag) {
 
 bool System::Solve(void) {
     int i, j;
-    dbp("%d equations", eq.n);
+/*    dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
         dbp("  %s = 0", eq.elem[i].e->Print());
-    }
+    } */
 
     param.ClearTags();
     eq.ClearTags();
@@ -221,23 +218,30 @@ bool System::Solve(void) {
     WriteJacobian(0, 0);
     EvalJacobian();
 
+/*
     for(i = 0; i < mat.m; i++) {
         for(j = 0; j < mat.n; j++) {
             dbp("A[%d][%d] = %.3f", i, j, mat.A.num[i][j]);
         }
-    }
+    } */
 
     GaussJordan();
 
-    dbp("bound states:");
+/*    dbp("bound states:");
     for(j = 0; j < mat.n; j++) {
         dbp("  param %08x: %d", mat.param[j], mat.bound[j]);
-    }
+    } */
 
     // Fix any still-free variables wherever they are now.
     for(j = 0; j < mat.n; j++) {
         if(mat.bound[j]) continue;
-        param.FindById(mat.param[j])->tag = ASSUMED;
+        Param *p = param.FindByIdNoOops(mat.param[j]);
+        if(!p) {
+            // This is parameter does not occur in this group, so it's
+            // not available to assume.
+            continue;
+        }
+        p->tag = ASSUMED;
     }
 
     bool ok = NewtonSolve(0);
@@ -250,6 +254,9 @@ bool System::Solve(void) {
             Param *pp = SS.GetParam(p->h);
             pp->val = p->val;
             pp->known = true;
+            // The main param table keeps track of what was assumed, to
+            // choose which point to drag so that it actually moves.
+            pp->assumed = (p->tag == ASSUMED);
         }
     }
 

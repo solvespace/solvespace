@@ -20,6 +20,7 @@ void SolveSpace::Init(char *cmdLine) {
 void SolveSpace::GenerateAll(void) {
     int i;
 
+    // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev;
     param.MoveSelfInto(&prev);
 
@@ -28,10 +29,12 @@ void SolveSpace::GenerateAll(void) {
         request.elem[i].Generate(&entity, &param);
     }
 
+    // Restore the numerical guesses.
     for(i = 0; i < param.n; i++) {
         Param *p = prev.FindByIdNoOops(param.elem[i].h);
         if(p) {
             param.elem[i].val = p->val;
+            param.elem[i].assumed = p->assumed;
         }
     }
 
