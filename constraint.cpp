@@ -1,9 +1,15 @@
 #include "solvespace.h"
 
+char *Constraint::DescriptionString(void) {
+    static char ret[1024];
+    sprintf(ret, "c%04x", h.v);
+    return ret;
+}
+
 hConstraint Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
-    if(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS) SS.Solve();
+    SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
     return c->h;
 }
 
@@ -110,7 +116,7 @@ void Constraint::MenuConstrain(int id) {
         }
 
         case GraphicsWindow::MNU_SOLVE_NOW:
-            SS.Solve();
+            SS.GenerateAll(true);
             return;
 
         case GraphicsWindow::MNU_SOLVE_AUTO:

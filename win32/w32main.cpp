@@ -12,7 +12,7 @@
 #define FREEZE_SUBKEY "SolveSpace"
 #include "freeze.h"
 
-#define MIN_COLS    42
+#define MIN_COLS    45
 #define TEXT_HEIGHT 18
 #define TEXT_WIDTH  9
 
@@ -26,8 +26,6 @@ HWND TextWnd;
 HWND TextWndScrollBar;
 int TextWndScrollPos;
 int TextWndRows;
-COLORREF BgColor[256];
-COLORREF FgColor[256];
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
@@ -88,13 +86,24 @@ void MemFree(void *p) { free(p); }
 
 static void PaintTextWnd(HDC hdc)
 {
-    // Generate the color table.
     int i;
-    for(i = 0; SS.TW.colors[i].c != 0; i++) {
-        int c = SS.TW.colors[i].c;
-        if(c < 0 || c > 255) oops();
-        BgColor[c] = SS.TW.colors[i].bg;
-        FgColor[c] = SS.TW.colors[i].fg;
+
+    static BOOL MadeBrushes = FALSE;
+    static COLORREF BgColor[256];
+    static COLORREF FgColor[256];
+    static HBRUSH   BgBrush[256];
+    static HBRUSH   FillBrush;
+    if(!MadeBrushes) {
+        // Generate the color table.
+        for(i = 0; SS.TW.colors[i].c != 0; i++) {
+            int c = SS.TW.colors[i].c;
+            if(c < 0 || c > 255) oops();
+            BgColor[c] = SS.TW.colors[i].bg;
+            FgColor[c] = SS.TW.colors[i].fg;
+            BgBrush[c] = CreateSolidBrush(BgColor[c]);
+        }
+        FillBrush = CreateSolidBrush(SS.TW.COLOR_BG_DEFAULT);
+        MadeBrushes = TRUE;
     }
 
     RECT rect;
@@ -107,8 +116,7 @@ static void PaintTextWnd(HDC hdc)
     HBITMAP backBitmap = CreateCompatibleBitmap(hdc, width, height);
     SelectObject(backDc, backBitmap);
 
-    HBRUSH hbr = CreateSolidBrush(SS.TW.COLOR_BG_DEFAULT);
-    FillRect(backDc, &rect, hbr);
+    FillRect(backDc, &rect, FillBrush);
 
     SelectObject(backDc, FixedFont);
     SetBkColor(backDc, SS.TW.COLOR_BG_DEFAULT);
@@ -135,7 +143,7 @@ static void PaintTextWnd(HDC hdc)
         if(r < 0) continue;
         if(r >= SS.TW.MAX_ROWS) continue;
 
-        for(c = 0; c < SS.TW.MAX_COLS; c++) {
+        for(c = 0; c < min((width/TEXT_WIDTH)+1, SS.TW.MAX_COLS); c++) {
             int color = SS.TW.meta[r][c].color;
             SetTextColor(backDc, FgColor[color]);
             SetBkColor(backDc, BgColor[color]);
@@ -150,12 +158,10 @@ static void PaintTextWnd(HDC hdc)
             int y = (r-TextWndScrollPos)*TEXT_HEIGHT + 1 + 
                 (r >= OFFSET_LINE ? OFFSET_HEIGHT : 0);
 
-            HBRUSH b = CreateSolidBrush(BgColor[color]);
             RECT a;
             a.left = x; a.right = x+TEXT_WIDTH;
             a.top = y; a.bottom = y+TEXT_HEIGHT;
-            FillRect(backDc, &a, b);
-            DeleteObject(b);
+            FillRect(backDc, &a, BgBrush[color]);
 
             TextOut(backDc, x, y, (char *)&(SS.TW.text[r][c]), 1);
         }
@@ -164,7 +170,6 @@ static void PaintTextWnd(HDC hdc)
     // And commit the back buffer
     BitBlt(hdc, 0, 0, width, height, backDc, 0, 0, SRCCOPY);
     DeleteObject(backBitmap);
-    DeleteObject(hbr);
     DeleteDC(backDc);
 }
 

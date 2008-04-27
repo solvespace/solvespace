@@ -12,34 +12,57 @@ void SolveSpace::Init(char *cmdLine) {
     TW.Init();
     GW.Init();
 
-    GenerateAll();
+    GenerateAll(false);
 
     TW.Show();
 }
 
-void SolveSpace::GenerateAll(void) {
-    int i;
+void SolveSpace::GenerateAll(bool andSolve) {
+    int i, j;
 
     // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev;
     param.MoveSelfInto(&prev);
-
     entity.Clear();
-    for(i = 0; i < request.n; i++) {
-        request.elem[i].Generate(&entity, &param);
+
+    for(i = 0; i < group.n; i++) {
+        group.elem[i].solved = false;
     }
 
-    // Restore the numerical guesses.
-    for(i = 0; i < param.n; i++) {
-        Param *p = prev.FindByIdNoOops(param.elem[i].h);
-        if(p) {
-            param.elem[i].val = p->val;
-            param.elem[i].assumed = p->assumed;
+    // For now, solve the groups in given order; should discover the
+    // correct order later.
+    for(i = 0; i < group.n; i++) {
+        Group *g = &(group.elem[i]);
+
+        for(j = 0; j < request.n; j++) {
+            Request *r = &(request.elem[j]);
+            if(r->group.v != g->h.v) continue;
+
+            r->Generate(&entity, &param);
+        }
+
+        g->Generate(&entity, &param);
+
+        // Use the previous values for params that we've seen before, as
+        // initial guesses for the solver.
+        for(j = 0; j < param.n; j++) {
+            Param *newp = &(param.elem[j]);
+            if(newp->known) continue;
+
+            Param *prevp = prev.FindByIdNoOops(newp->h);
+            if(prevp) newp->val = prevp->val;
+        }
+
+        if(g->h.v == Group::HGROUP_REFERENCES.v) {
+            ForceReferences();
+            group.elem[0].solved = true;
+        } else {
+            // Solve this group.
+            if(andSolve) SolveGroup(g->h);
         }
     }
 
     prev.Clear();
-    ForceReferences();
     InvalidateGraphics();
 }
 
@@ -58,27 +81,22 @@ void SolveSpace::ForceReferences(void) {
         hRequest hr = Quat[i].hr;
         // The origin for our coordinate system, always zero
         Vector v = Vector::MakeFrom(0, 0, 0);
-        GetEntity(hr.entity(1))->PointForceTo(v);
+        Entity *origin = GetEntity(hr.entity(1));
+        origin->PointForceTo(v);
+        GetParam(origin->param[0])->known = true;
+        GetParam(origin->param[1])->known = true;
+        GetParam(origin->param[2])->known = true;
         // The quaternion that defines the rotation, from the table.
-        GetParam(hr.param(0))->val = Quat[i].a;
-        GetParam(hr.param(1))->val = Quat[i].b;
-        GetParam(hr.param(2))->val = Quat[i].c;
-        GetParam(hr.param(3))->val = Quat[i].d;
+        Param *p;
+        p = GetParam(hr.param(0)); p->val = Quat[i].a; p->known = true;
+        p = GetParam(hr.param(1)); p->val = Quat[i].b; p->known = true;
+        p = GetParam(hr.param(2)); p->val = Quat[i].c; p->known = true;
+        p = GetParam(hr.param(3)); p->val = Quat[i].d; p->known = true;
     }
 }
 
 bool SolveSpace::SolveGroup(hGroup hg) {
     int i;
-    if(hg.v == Group::HGROUP_REFERENCES.v) {
-        // Special case; mark everything in the references known.
-        for(i = 0; i < param.n; i++) {
-            Param *p = &(param.elem[i]);
-            Request *r = GetRequest(p->h.request());
-            if(r->group.v == hg.v) p->known = true;
-        }
-        return true;
-    }
-
     // Clear out the system to be solved.
     sys.entity.Clear();
     sys.param.Clear();
@@ -90,6 +108,9 @@ bool SolveSpace::SolveGroup(hGroup hg) {
 
         r->Generate(&(sys.entity), &(sys.param));
     }
+    // And for the group itself
+    Group *g = SS.GetGroup(hg);
+    g->Generate(&(sys.entity), &(sys.param));
     // Set the initial guesses for all the params
     for(i = 0; i < sys.param.n; i++) {
         Param *p = &(sys.param.elem[i]);
@@ -109,57 +130,11 @@ bool SolveSpace::SolveGroup(hGroup hg) {
     return r;
 }
 
-bool SolveSpace::SolveWorker(int order) {
-    bool allSolved = true;
-
-    int i;
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
-        if(g->solved) continue;
-
-        allSolved = false;
-        dbp("try solve group %s", g->DescriptionString());
-
-        // Save the parameter table; a failed solve attempt will mess that
-        // up a little bit.
-        IdList<Param,hParam> savedParam;
-        param.DeepCopyInto(&savedParam);
-
-        if(SolveGroup(g->h)) {
-            g->solved = true;
-            g->solveOrder = order;
-            // So this one worked; let's see if we can go any further.
-            if(SolveWorker(order+1)) {
-                // So everything worked; we're done.
-                return true;
-            }
-        }
-        // Didn't work, so undo this choice and give up
-        g->solved = false;
-        param.Clear();
-        savedParam.MoveSelfInto(&param);
-    }
-
-    // If we got here, then either everything failed, so we're stuck, or
-    // everything was already solved, so we're done.
-    return allSolved;
-}
-
-void SolveSpace::Solve(void) {
-    int i;
-    for(i = 0; i < group.n; i++) {
-        group.elem[i].solved = false;
-    }
-    SolveWorker(0);
-
-    InvalidateGraphics();
-}
-
 void SolveSpace::MenuFile(int id) {
     switch(id) {
         case GraphicsWindow::MNU_NEW:
             SS.NewFile();
-            SS.GenerateAll();
+            SS.GenerateAll(false);
             SS.GW.Init();
             SS.TW.Init();
             SS.TW.Show();

@@ -19,6 +19,9 @@ class hGroup {
 public:
     // bits 15: 0   -- group index
     DWORD v;
+
+    inline hEntity entity(int i);
+    inline hParam param(int i);
 };
 class hRequest {
 public:
@@ -36,6 +39,7 @@ public:
     //      31:16   -- request index
     DWORD   v;
 
+    inline bool isFromRequest(void);
     inline hRequest request(void);
 };
 class hParam {
@@ -49,9 +53,11 @@ public:
 
 
 class EntityId {
+public:
     DWORD v;        // entity ID, starting from 0
 };
 class EntityMap {
+public:
     int         tag;
 
     EntityId    h;
@@ -68,14 +74,15 @@ public:
     int         tag;
     hGroup      h;
 
-    static const int DRAWING_GROUP                 = 5000;
-    static const int STEP_AND_REPEAT_TRANSLATING   = 5010;
-    static const int STEP_AND_REPEAT_ROTATING      = 5020;
+    static const int DRAWING                       = 5000;
+    static const int EXTRUDE                       = 5010;
     int type;
 
     int         solveOrder;
     bool        solved;
 
+    hGroup      opA;
+    hGroup      opB;
     bool        visible;
 
     SEdgeList   edges;
@@ -84,16 +91,21 @@ public:
     NameStr     name;
     char *DescriptionString(void);
 
+    static void AddParam(IdList<Param,hParam> *param, hParam hp, double v);
+    void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
     // mapping list.
-    IdList<EntityId,EntityMap> remap;
+    IdList<EntityMap,EntityId> remap;
     hEntity Remap(hEntity in, int copyNumber);
+    void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz);
 
     void Draw(void);
 
     SPolygon GetPolygon(void);
+
+    static void MenuGroup(int id);
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -122,7 +134,7 @@ public:
     NameStr     name;
     bool        construction;
     
-    hParam AddParam(IdList<Param,hParam> *param, hParam hp);
+    static hParam AddParam(IdList<Param,hParam> *param, hParam hp);
     void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
 
     char *DescriptionString(void);
@@ -138,9 +150,7 @@ public:
     static const int WORKPLANE              =  1000;
     static const int POINT_IN_3D            =  2000;
     static const int POINT_IN_2D            =  2001;
-    static const int POINT_OFFSET           =  2010;
-    static const int DIRECTION_QUATERNION   =  3000;
-    static const int DIRECTION_OFFSET       =  3010;
+    static const int POINT_XFRMD            =  2010;
     static const int LINE_SEGMENT           = 10000;
     static const int CUBIC                  = 11000;
 
@@ -148,15 +158,18 @@ public:
     static const int FACE_LIST              = 91000;
     int         type;
 
-    bool        symbolic;
-
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
     hParam      param[4];
     hEntity     point[4];
     hEntity     direction;
 
+    hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
+
+    // For entities that are derived by a transformation, the number of
+    // times to apply the transformation.
+    int timesApplied;
 
     // Applies only for a WORKPLANE type
     void WorkplaneGetBasisVectors(Vector *u, Vector *v);
@@ -165,7 +178,6 @@ public:
     ExprVector WorkplaneGetOffsetExprs(void);
 
     bool IsPoint(void);
-    bool IsPointIn3d(void);
     // Applies for any of the point types
     bool PointIsLocked(void);
     Vector PointGetCoords(void);
@@ -173,7 +185,6 @@ public:
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
-    bool PointIsKnown(void);
 
     // Applies for anything that comes with a plane
     bool HasPlane(void);
@@ -210,6 +221,11 @@ public:
 };
 
 
+inline hEntity hGroup::entity(int i)
+    { hEntity r; r.v = 0x80000000 | (v << 16) | i; return r; }
+inline hParam hGroup::param(int i)
+    { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
+
 inline bool hRequest::IsFromReferences(void) {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
     if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
@@ -221,6 +237,8 @@ inline hEntity hRequest::entity(int i)
 inline hParam hRequest::param(int i)
     { hParam r; r.v = (v << 16) | i; return r; }
 
+inline bool hEntity::isFromRequest(void)
+    { if(v & 0x80000000) return false; else return true; }
 inline hRequest hEntity::request(void)
     { hRequest r; r.v = (v >> 16); return r; }
 
@@ -268,6 +286,8 @@ public:
     struct {
         Vector      offset;
     } disp;
+
+    char *DescriptionString(void);
 
     static hConstraint AddConstraint(Constraint *c);
     static void MenuConstrain(int id);

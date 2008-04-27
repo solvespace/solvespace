@@ -46,10 +46,12 @@ public:
     static const int SCREEN_GROUP_INFO          = 1;
     static const int SCREEN_REQUEST_INFO        = 2;
     static const int SCREEN_ENTIY_INFO          = 3;
+    static const int SCREEN_CONSTRAINT_INFO     = 4;
     typedef struct {
         int         screen;
         hGroup      group;
         hRequest    request;
+        hConstraint constraint;
     } ShownState;
     static const int HISTORY_LEN = 16;
     ShownState showns[HISTORY_LEN];
@@ -64,10 +66,13 @@ public:
     void ShowGroupInfo(void);
     void ShowRequestInfo(void);
     void ShowEntityInfo(void);
+    void ShowConstraintInfo(void);
 
     void OneScreenForward(void);
     static void ScreenSelectGroup(int link, DWORD v);
+    static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenSelectRequest(int link, DWORD v);
+    static void ScreenSelectConstraint(int link, DWORD v);
     static void ScreenNavigation(int link, DWORD v);
 };
 
@@ -100,6 +105,9 @@ public:
         MNU_LINE_SEGMENT,
         MNU_RECTANGLE,
         MNU_CUBIC,
+        // Group
+        MNU_GROUP_DRAWING,
+        MNU_GROUP_EXTRUDE,
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_EQUAL,

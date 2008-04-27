@@ -4,7 +4,7 @@
 
 // Debugging functions
 #define oops() do { dbp("oops at line %d, file %s", __LINE__, __FILE__); \
-                                                        exit(-1); } while(0)
+                    if(0) *(char *)0 = 1; exit(-1); } while(0)
 #ifndef min
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
@@ -154,14 +154,7 @@ public:
 
     FILE        *fh;
 
-    void GenerateAll(void);
-    void ForceReferences(void);
-
     void Init(char *cmdLine);
-
-    bool SolveGroup(hGroup hg);
-    bool SolveWorker(int order);
-    void Solve(void);
 
     char saveFile[MAX_PATH];
     bool unsaved;
@@ -184,6 +177,11 @@ public:
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
+
+
+    void GenerateAll(bool andSolve);
+    bool SolveGroup(hGroup hg);
+    void ForceReferences(void);
 
     // The system to be solved.
     System  sys;

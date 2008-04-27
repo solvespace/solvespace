@@ -156,9 +156,10 @@ void TextWindow::Show(void) {
             default:
                 shown->screen = SCREEN_LIST_OF_GROUPS;
                 // fall through
-            case SCREEN_LIST_OF_GROUPS: ShowListOfGroups();     break;
-            case SCREEN_GROUP_INFO:     ShowGroupInfo();        break;
-            case SCREEN_REQUEST_INFO:   ShowRequestInfo();      break;
+            case SCREEN_LIST_OF_GROUPS:     ShowListOfGroups();     break;
+            case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
+            case SCREEN_REQUEST_INFO:       ShowRequestInfo();      break;
+            case SCREEN_CONSTRAINT_INFO:    ShowConstraintInfo();   break;
         }
     }
     InvalidateText();
@@ -211,8 +212,8 @@ void TextWindow::ShowHeader(void) {
             cd = SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
         }
         Printf(" %Lb%f<<%E   %Lh%fhome%E   %CT workplane:%CD %s",
-            (DWORD)(&TextWindow::ScreenNavigation),
-            (DWORD)(&TextWindow::ScreenNavigation),
+            (&TextWindow::ScreenNavigation),
+            (&TextWindow::ScreenNavigation),
             cd);
     }
 
@@ -227,7 +228,7 @@ void TextWindow::ShowHeader(void) {
 
 #define hs(b) ((b) ? 'S' : 'H')
     Printf("%CTshow: "
-           "%Cp%Ll%D%fworkplane%E%CT  "
+           "%Cp%Ll%D%fworkplanes%E%CT  "
            "%Cp%Ll%D%faxes%E%CT  "
            "%Cp%Ll%D%fpoints%E%CT  "
            "%Cp%Ll%fany-datum%E%CT",
@@ -239,24 +240,11 @@ void TextWindow::ShowHeader(void) {
     Printf("%CT      "
            "%Cp%Ll%D%fall-groups%E%CT  "
            "%Cp%Ll%D%fconstraints%E%CT",
-        hs(SS.GW.showAllGroups),   (DWORD)(&SS.GW.showAllGroups),
-            &(SS.GW.ToggleBool),
-        hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints),
-            &(SS.GW.ToggleBool)
+hs(SS.GW.showAllGroups),   (DWORD)(&SS.GW.showAllGroups),   &(SS.GW.ToggleBool),
+hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool)
     );
 }
 
-void TextWindow::ShowListOfGroups(void) {
-    Printf("%Cd[[all groups in sketch follow]]%E");
-    int i;
-    for(i = 0; i < SS.group.n; i++) {
-        char *s;
-        Group *g = &(SS.group.elem[i]);
-        s = g->DescriptionString();
-        Printf("  %Cl%Ll%D%f%s%E",
-            g->h.v, (DWORD)(&TextWindow::ScreenSelectGroup), s);
-    }
-}
 void TextWindow::ScreenSelectGroup(int link, DWORD v) {
     SS.TW.OneScreenForward();
 
@@ -265,7 +253,31 @@ void TextWindow::ScreenSelectGroup(int link, DWORD v) {
 
     SS.TW.Show();
 }
+void TextWindow::ShowListOfGroups(void) {
+    Printf("%Cd[[all groups in sketch follow]]%E");
+    int i;
+    for(i = 0; i < SS.group.n; i++) {
+        char *s;
+        Group *g = &(SS.group.elem[i]);
+        s = g->DescriptionString();
+        Printf("  %Cl%Ll%D%f%s%E",
+            g->h.v, (&TextWindow::ScreenSelectGroup), s);
+    }
+}
 
+
+void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
+    SS.TW.OneScreenForward();
+
+    SS.TW.shown->screen = SCREEN_CONSTRAINT_INFO;
+    SS.TW.shown->constraint.v = v;
+
+    SS.TW.Show();
+}
+void TextWindow::ScreenActivateGroup(int link, DWORD v) {
+    SS.GW.activeGroup.v = v;
+    SS.TW.Show();
+}
 void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.TW.OneScreenForward();
 
@@ -276,14 +288,16 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
+    Printf("%Cd[[group %s]]", g->DescriptionString());
     if(SS.GW.activeGroup.v == shown->group.v) {
         Printf("%Cd[[this is the active group]]");
     } else if(shown->group.v == Group::HGROUP_REFERENCES.v) {
         Printf("%Cd[[this group contains the references]]");
     } else {
-        Printf("%Cd[[not active; %Cl%Llactivate this group%E%Cd]]");
+        Printf("%Cd[[not active; %Cl%Ll%D%factivate group%E%Cd]]",
+            g->h.v, (&TextWindow::ScreenActivateGroup));
     }
-    Printf("%Cd[[requests in group %s]]%E", g->DescriptionString());
+    Printf("%Cd[[requests in group]]%E");
 
     int i;
     for(i = 0; i < SS.request.n; i++) {
@@ -292,7 +306,20 @@ void TextWindow::ShowGroupInfo(void) {
         if(r->group.v == shown->group.v) {
             char *s = r->DescriptionString();
             Printf("  %Cl%Ll%D%f%s%E",
-                r->h.v, (DWORD)(&TextWindow::ScreenSelectRequest), s);
+                r->h.v, (&TextWindow::ScreenSelectRequest), s);
+        }
+    }
+    if(SS.request.n == 0) Printf("  (none)");
+
+    Printf("");
+    Printf("[[constraints in group]]");
+    for(i = 0; i < SS.constraint.n; i++) {
+        Constraint *c = &(SS.constraint.elem[i]);
+
+        if(c->group.v == shown->group.v) {
+            char *s = c->DescriptionString();
+            Printf("  %Cl%Ll%D%f%s%E",
+                c->h.v, (&TextWindow::ScreenSelectConstraint), s);
         }
     }
 }
@@ -308,6 +335,12 @@ void TextWindow::ShowRequestInfo(void) {
         default: oops();
     }
     Printf("%Cd[[request for %s]]%E", s);
+}
+
+void TextWindow::ShowConstraintInfo(void) {
+    Constraint *c = SS.GetConstraint(shown->constraint);
+
+    Printf("[[constraint]]");
 }
 
 

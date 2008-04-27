@@ -7,6 +7,7 @@
 #define mReq  (&GraphicsWindow::MenuRequest)
 #define mCon  (&Constraint::MenuConstrain)
 #define mFile (&SolveSpace::MenuFile)
+#define mGrp  (&Group::MenuGroup)
 #define S 0x100
 #define C 0x200
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
@@ -37,12 +38,12 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
 { 0, "&Group",                              0,                  0,      NULL  },
-{ 1, "New &Drawing Group",                  0,                  0,      NULL  },
+{ 1, "New &Drawing Group\tShift+Ctrl+D",    MNU_GROUP_DRAWING,  'D'|S|C,mGrp  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "New Step and Repeat &Translating",    0,                  0,      NULL  },
 { 1, "New Step and Repeat &Rotating",       0,                  0,      NULL  },
 { 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "New Extrusion",                       0,                  0,      NULL  },
+{ 1, "New Extrusion\tShift+Ctrl+X",         MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "New Boolean Difference",              0,                  0,      NULL  },
 { 1, "New Boolean Union",                   0,                  0,      NULL  },
@@ -268,7 +269,7 @@ void GraphicsWindow::MenuEdit(int id) {
             for(i = 0; i < MAX_SELECTED; i++) {
                 Selection *s = &(SS.GW.selection[i]);
                 hRequest r; r.v = 0;
-                if(s->entity.v) {
+                if(s->entity.v && s->entity.isFromRequest()) {
                     r = s->entity.request();
                 }
                 if(r.v && !r.IsFromReferences()) {
@@ -293,7 +294,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.request.RemoveTagged();
             SS.constraint.RemoveTagged();
 
-            SS.GenerateAll();
+            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
             SS.GW.ClearSelection();
             SS.GW.hover.Clear();
             break;
@@ -433,9 +434,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         UpdateDraggedPoint(&(c->disp.offset), x, y);
     } else if(leftDown && pendingOperation == DRAGGING_POINT) {
         UpdateDraggedEntity(pendingPoint, x, y);
-        if(solving == SOLVE_ALWAYS) {
-            SS.Solve();
-        }
+        SS.GenerateAll(solving == SOLVE_ALWAYS);
     }
 
     // No buttons pressed.
@@ -562,9 +561,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     r.workplane = activeWorkplane;
     r.type = type;
     SS.request.AddAndAssignId(&r);
-    SS.GenerateAll();
-
-    if(solving == SOLVE_ALWAYS) SS.Solve();
+    SS.GenerateAll(solving == SOLVE_ALWAYS);
 
     return r.h;
 }
@@ -730,7 +727,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
         HideGraphicsEditControl();
-        if(SS.GW.solving == SOLVE_ALWAYS) SS.Solve();
+        SS.GenerateAll(solving == SOLVE_ALWAYS);
     } else {
         Error("Not a valid number or expression: '%s'", s);
     }
@@ -762,7 +759,7 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     bool *vb = (bool *)v;
     *vb = !*vb;
 
-    SS.GenerateAll();
+    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
     InvalidateGraphics();
     SS.TW.Show();
 }
@@ -773,7 +770,7 @@ void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
     SS.GW.showAxes = t;
     SS.GW.showPoints = t;
 
-    SS.GenerateAll();
+    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
     InvalidateGraphics();
     SS.TW.Show();
 }

@@ -131,11 +131,17 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
     Expr *n = AllocExpr();
     if(op == PARAM) {
         // A param that is referenced by its hParam gets rewritten to go
-        // straight in to the parameter table with a pointer.
-        n->op = PARAM_PTR;
+        // straight in to the parameter table with a pointer, or simply
+        // into a constant if it's already known.
         Param *p = firstTry->FindByIdNoOops(x.parh);
         if(!p) p = thenTry->FindById(x.parh);
-        n->x.parp = p;
+        if(p->known) {
+            n->op = CONSTANT;
+            n->x.v = p->val;
+        } else {
+            n->op = PARAM_PTR;
+            n->x.parp = p;
+        }
         return n;
     }
 

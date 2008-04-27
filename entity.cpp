@@ -98,32 +98,19 @@ void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
 bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
+            // A point by (x, y, z) in our base coordinate system. These
+            // variables are given by param[0:2].
         case POINT_IN_2D:
+            // A point by (u, v) in a workplane. These variables are given
+            // by param[0:1], and the workplane is given in workplane.
+        case POINT_XFRMD:
+            // A point by a translation of another point. The original
+            // point is given by point[0], and the three offsets in
+            // param[0:2].
             return true;
+
         default:
             return false;
-    }
-}
-
-bool Entity::IsPointIn3d(void) {
-    switch(type) {
-        case POINT_IN_3D:
-            return true;
-        default:
-            return false;
-    }
-}
-
-bool Entity::PointIsKnown(void) {
-    switch(type) {
-        case POINT_IN_3D:
-            return SS.GetParam(param[0])->known &&
-                   SS.GetParam(param[1])->known &&
-                   SS.GetParam(param[2])->known;
-        case POINT_IN_2D:
-            return SS.GetParam(param[0])->known &&
-                   SS.GetParam(param[1])->known;
-        default: oops();
     }
 }
 
@@ -147,6 +134,16 @@ void Entity::PointForceTo(Vector p) {
             SS.GetParam(param[1])->val = p.Dot(v);
             break;
         }
+
+        case POINT_XFRMD: {
+            Vector orig = SS.GetEntity(point[0])->PointGetCoords();
+            Vector trans = p.Minus(orig);
+            SS.GetParam(param[0])->val = trans.x;
+            SS.GetParam(param[1])->val = trans.y;
+            SS.GetParam(param[2])->val = trans.z;
+            break;
+        }
+
         default: oops();
     }
 }
@@ -166,6 +163,14 @@ Vector Entity::PointGetCoords(void) {
             c->WorkplaneGetBasisVectors(&u, &v);
             p =        u.ScaledBy(SS.GetParam(param[0])->val);
             p = p.Plus(v.ScaledBy(SS.GetParam(param[1])->val));
+            break;
+        }
+
+        case POINT_XFRMD: {
+            p = SS.GetEntity(point[0])->PointGetCoords();
+            p.x += SS.GetParam(param[0])->val;
+            p.y += SS.GetParam(param[1])->val;
+            p.z += SS.GetParam(param[2])->val;
             break;
         }
         default: oops();
@@ -189,6 +194,15 @@ ExprVector Entity::PointGetExprs(void) {
 
             r =        u.ScaledBy(Expr::FromParam(param[0]));
             r = r.Plus(v.ScaledBy(Expr::FromParam(param[1])));
+            break;
+        }
+        case POINT_XFRMD: {
+            ExprVector orig = SS.GetEntity(point[0])->PointGetExprs();
+            ExprVector trans;
+            trans.x = Expr::FromParam(param[0]);
+            trans.y = Expr::FromParam(param[1]);
+            trans.z = Expr::FromParam(param[2]);
+            r = orig.Plus(trans);
             break;
         }
         default: oops();
@@ -227,6 +241,10 @@ bool Entity::PointIsLocked(void) {
     } else if(type == POINT_IN_2D) {
         if(SS.GetParam(param[0])->assumed) return false;
         if(SS.GetParam(param[1])->assumed) return false;
+    } else if(type == POINT_XFRMD) {
+        if(SS.GetParam(param[0])->assumed) return false;
+        if(SS.GetParam(param[1])->assumed) return false;
+        if(SS.GetParam(param[2])->assumed) return false;
     } else {
         oops();
     }
@@ -285,13 +303,18 @@ void Entity::DrawOrGetDistance(int order) {
     glxColor3d(1, 1, 1);
 
     switch(type) {
+        case POINT_XFRMD:
         case POINT_IN_3D:
         case POINT_IN_2D: {
             if(order >= 0 && order != 2) break;
             if(!SS.GW.showPoints) break;
 
-            Entity *isfor = SS.GetEntity(h.request().entity(0));
-            if(!SS.GW.showWorkplanes && isfor->type == Entity::WORKPLANE) break;
+            if(h.isFromRequest()) {
+                Entity *isfor = SS.GetEntity(h.request().entity(0));
+                if(!SS.GW.showWorkplanes && isfor->type == Entity::WORKPLANE) {
+                    break;
+                }
+            }
 
             Vector v = PointGetCoords();
 

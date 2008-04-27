@@ -12,11 +12,12 @@ void SolveSpace::NewFile(void) {
     Group g;
     memset(&g, 0, sizeof(g));
     g.name.strcpy("#references");
+    g.type = Group::DRAWING;
     g.h = Group::HGROUP_REFERENCES;
     group.Add(&g);
 
     // And an empty group, for the first stuff the user draws.
-    g.name.strcpy("");
+    g.name.strcpy("drawing");
     group.AddAndAssignId(&g);
     
 

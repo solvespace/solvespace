@@ -7,6 +7,41 @@ const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
+void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
+    Param pa;
+    memset(&pa, 0, sizeof(pa));
+    pa.h = hp;
+    pa.val = v;
+
+    param->Add(&pa);
+}
+
+void Group::MenuGroup(int id) {
+    Group g;
+    memset(&g, 0, sizeof(g));
+    g.visible = true;
+
+    switch(id) {
+        case GraphicsWindow::MNU_GROUP_DRAWING:
+            g.type = DRAWING;
+            g.name.strcpy("drawing");
+            break;
+
+        case GraphicsWindow::MNU_GROUP_EXTRUDE:
+            g.type = EXTRUDE;
+            g.opA.v = 2;
+            g.name.strcpy("extrude");
+            break;
+
+        default: oops();
+    }
+
+    SS.group.AddAndAssignId(&g);
+    SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
+    SS.GW.activeGroup = g.h;
+    SS.TW.Show();
+}
+
 char *Group::DescriptionString(void) {
     static char ret[100];
     if(name.str[0]) {
@@ -17,13 +52,94 @@ char *Group::DescriptionString(void) {
     return ret;
 }
 
+void Group::Generate(IdList<Entity,hEntity> *entity,
+                     IdList<Param,hParam> *param)
+{
+    int i;
+    switch(type) {
+        case DRAWING:
+            return;
+
+        case EXTRUDE:
+            AddParam(param, h.param(0), 50);
+            AddParam(param, h.param(1), 50);
+            AddParam(param, h.param(2), 50);
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v) continue;
+
+                CopyEntity(e->h, 0, h.param(0), h.param(1), h.param(2));
+            }
+            break;
+
+        default: oops();
+    }
+}
+
+hEntity Group::Remap(hEntity in, int copyNumber) {
+    int i;
+    for(i = 0; i < remap.n; i++) {
+        EntityMap *em = &(remap.elem[i]);
+        if(em->input.v == in.v && em->copyNumber == copyNumber) {
+            // We already have a mapping for this entity.
+            return h.entity(em->h.v);
+        }
+    }
+    // We don't have a mapping yet, so create one.
+    EntityMap em;
+    em.input = in;
+    em.copyNumber = copyNumber;
+    remap.AddAndAssignId(&em);
+    return h.entity(em.h.v);
+}
+
+void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz) {
+    Entity *ep = SS.GetEntity(in);
+    
+    Entity en;
+    memset(&en, 0, sizeof(en));
+    en.type = ep->type;
+    en.h = Remap(ep->h, a);
+    en.group = h;
+
+    switch(ep->type) {
+        case Entity::WORKPLANE:
+            // Don't copy these.
+            return;
+
+        case Entity::LINE_SEGMENT:  
+            en.point[0] = Remap(ep->point[0], a);
+            en.point[1] = Remap(ep->point[1], a);
+            break;
+
+        case Entity::CUBIC:
+            en.point[0] = Remap(ep->point[0], a);
+            en.point[1] = Remap(ep->point[1], a);
+            en.point[2] = Remap(ep->point[2], a);
+            en.point[3] = Remap(ep->point[3], a);
+            break;
+
+        case Entity::POINT_IN_3D:
+        case Entity::POINT_IN_2D:
+            en.type = Entity::POINT_XFRMD;
+            en.point[0] = ep->h;
+            en.param[0] = dx;
+            en.param[1] = dy;
+            en.param[2] = dz;
+            break;
+
+        default:
+            oops();
+    }
+    SS.entity.Add(&en);
+}
+
 void Group::Draw(void) {
     edges.l.Clear();
     int i;
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
-        hRequest hr = e->h.request();
-        if(SS.GetRequest(hr)->group.v != h.v) continue;
+        if(e->group.v != h.v) continue;
 
         e->GenerateEdges(&edges);
     }
@@ -86,6 +202,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 c: {
             // Generate the entity that's specific to this request.
             e.type = et;
+            e.group = group;
             e.h = h.entity(0);
 
             // And generate entities for the points
@@ -95,7 +212,8 @@ c: {
                 p.workplane = workplane;
                 // points start from entity 1, except for datum point case
                 p.h = h.entity(i+(et ? 1 : 0));
-                p.symbolic = true;
+                p.group = group;
+
                 if(workplane.v == Entity::FREE_IN_3D.v) {
                     p.type = Entity::POINT_IN_3D;
                     // params for x y z
