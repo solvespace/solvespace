@@ -166,6 +166,7 @@ public:
     } SaveTable;
     static const SaveTable SAVED[];
     void SaveUsingTable(int type);
+    void LoadUsingTable(char *key, char *val);
     struct {
         Group        g;
         Request      r;

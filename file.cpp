@@ -47,8 +47,11 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.h.v",                'x',        &(SS.sv.g.h.v)          },
     { 'g',  "Group.type",               'd',        &(SS.sv.g.type)         },
     { 'g',  "Group.name",               'N',        &(SS.sv.g.name)         },
+    { 'g',  "Group.opA.v",              'x',        &(SS.sv.g.opA.v)        },
+    { 'g',  "Group.opB.v",              'x',        &(SS.sv.g.opB.v)        },
     { 'g',  "Group.solveOrder",         'd',        &(SS.sv.g.solveOrder)   },
     { 'g',  "Group.visible",            'b',        &(SS.sv.g.visible)      },
+    { 'g',  "Group.remap",              'M',        &(SS.sv.g.remap)        },
 
     { 'p',  "Param.h.v.",               'x',        &(SS.sv.p.h.v)          },
     { 'p',  "Param.val",                'f',        &(SS.sv.p.val)          },
@@ -62,6 +65,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
 
     { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)          },
     { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)         },
+    { 'e',  "Entity.group.v",           'x',        &(SS.sv.e.group.v)      },
     { 'e',  "Entity.param[0].v",        'x',        &(SS.sv.e.param[0].v)   },
     { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)   },
     { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)   },
@@ -104,6 +108,20 @@ void SolveSpace::SaveUsingTable(int type) {
             case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
             case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
             case 'E': fprintf(fh, "%s", (*((Expr **)p))->Print()); break;
+
+            case 'M': {
+                int j;
+                fprintf(fh, "{\n");
+                IdList<EntityMap,EntityId> *m = (IdList<EntityMap,EntityId> *)p;
+                for(j = 0; j < m->n; j++) {
+                    EntityMap *em = &(m->elem[j]);
+                    fprintf(fh, "    %d %08x %d\n", 
+                            em->h.v, em->input.v, em->copyNumber);
+                }
+                fprintf(fh, "}");
+                break;
+            }
+
             default: oops();
         }
         fprintf(fh, "\n");
@@ -155,6 +173,51 @@ bool SolveSpace::SaveToFile(char *filename) {
     return true;
 }
 
+void SolveSpace::LoadUsingTable(char *key, char *val) {
+    int i;
+    for(i = 0; SAVED[i].type != 0; i++) {
+        if(strcmp(SAVED[i].desc, key)==0) {
+            void *p = SAVED[i].ptr;
+            switch(SAVED[i].fmt) {
+                case 'd': *((int *)p) = atoi(val); break;
+                case 'b': *((bool *)p) = (atoi(val) != 0); break;
+                case 'x': sscanf(val, "%x", (DWORD *)p); break;
+                case 'f': *((double *)p) = atof(val); break;
+                case 'N': ((NameStr *)p)->strcpy(val); break;
+                case 'E':
+                    Expr *e;
+                    e  = Expr::FromString(val);
+                    if(!e) e = Expr::FromConstant(0);
+                    *((Expr **)p) = e->DeepCopyKeep();
+                    break;
+
+                case 'M': {
+                    IdList<EntityMap,EntityId> *m =
+                                (IdList<EntityMap,EntityId> *)p;
+                    m->Clear();
+                    for(;;) {
+                        EntityMap em;
+                        char line2[1024];
+                        fgets(line2, sizeof(line2), fh);
+                        if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
+                                                     &(em.copyNumber)) == 3)
+                        {
+                            m->Add(&em);
+                        } else {
+                            break;
+                        }
+                    }
+                    break;
+                }
+
+                default: oops();
+            }
+            break;
+        }
+    }
+    if(SAVED[i].type == 0) oops();
+}
+
 bool SolveSpace::LoadFromFile(char *filename) {
     fh = fopen(filename, "r");
     if(!fh) {   
@@ -180,30 +243,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
         if(e) {
             *e = '\0';
             char *key = line, *val = e+1;
-            int i;
-            for(i = 0; SAVED[i].type != 0; i++) {
-                if(strcmp(SAVED[i].desc, key)==0) {
-                    void *p = SAVED[i].ptr;
-                    switch(SAVED[i].fmt) {
-                        case 'd': *((int *)p) = atoi(val); break;
-                        case 'b': *((bool *)p) = (atoi(val) != 0); break;
-                        case 'x': sscanf(val, "%x", (DWORD *)p); break;
-                        case 'f': *((double *)p) = atof(val); break;
-                        case 'N': ((NameStr *)p)->strcpy(val); break;
-                        case 'E':
-                            Expr *e;
-                            e  = Expr::FromString(val);
-                            if(!e) e = Expr::FromConstant(0);
-                            *((Expr **)p) = e->DeepCopyKeep();
-                            break;
-
-                        default: oops();
-                    }
-                    break;
-                }
-            }
-            if(SAVED[i].type == 0) oops();
-
+            LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             SS.group.Add(&(sv.g));
         } else if(strcmp(line, "AddParam")==0) {
