@@ -32,10 +32,11 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     // able to be selected.
     if(!(g->visible)) return;
 
-    // Unit vectors that describe our current view of the scene.
-    Vector gr = SS.GW.projRight;
-    Vector gu = SS.GW.projUp;
-    Vector gn = gr.Cross(gu);
+    // Unit vectors that describe our current view of the scene. One pixel
+    // long, not one actual unit.
+    Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);
+    Vector gu = SS.GW.projUp.ScaledBy(1/SS.GW.scale);
+    Vector gn = (gr.Cross(gu)).WithMagnitude(1/SS.GW.scale);
 
     glxColor3d(1, 0.2, 1);
     switch(type) {
@@ -103,17 +104,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case PT_ON_LINE:
         case PT_IN_PLANE: {
-            double s = 5;
-            Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
-            Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
+            double s = 7;
             Vector p = SS.GetEntity(ptA)->PointGetCoords();
+            Vector r = gr.WithMagnitude(s);
+            Vector d = gu.WithMagnitude(s);
             LineDrawOrGetDistance(p.Plus (r).Plus (d), p.Plus (r).Minus(d));
             LineDrawOrGetDistance(p.Plus (r).Minus(d), p.Minus(r).Minus(d));
             LineDrawOrGetDistance(p.Minus(r).Minus(d), p.Minus(r).Plus (d));
             LineDrawOrGetDistance(p.Minus(r).Plus (d), p.Plus (r).Plus (d));
             break;
         }
+
 
         case EQUAL_LENGTH_LINES: {
             for(int i = 0; i < 2; i++) {

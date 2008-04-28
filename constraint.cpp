@@ -68,6 +68,10 @@ void Constraint::MenuConstrain(int id) {
                 c.type = PT_IN_PLANE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+            } else if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
+                c.type = PT_ON_LINE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.entity[0];
             } else {
                 Error("Bad selection for on point / curve / plane constraint.");
                 return;
@@ -133,6 +137,42 @@ void Constraint::MenuConstrain(int id) {
 
     SS.GW.ClearSelection();
     InvalidateGraphics();
+}
+
+Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
+    Entity *ln = SS.GetEntity(hln);
+    Entity *a = SS.GetEntity(ln->point[0]);
+    Entity *b = SS.GetEntity(ln->point[1]);
+
+    Entity *p = SS.GetEntity(hpt);
+
+    if(wrkpl.v == Entity::FREE_IN_3D.v) {
+        ExprVector ep = p->PointGetExprs();
+
+        ExprVector ea = a->PointGetExprs();
+        ExprVector eb = b->PointGetExprs();
+        ExprVector eab = ea.Minus(eb);
+        Expr *m = eab.Magnitude();
+
+        return ((eab.Cross(ea.Minus(ep))).Magnitude())->Div(m);
+    } else {
+        Expr *ua, *va, *ub, *vb;
+        a->PointGetExprsInWorkplane(wrkpl, &ua, &va);
+        b->PointGetExprsInWorkplane(wrkpl, &ub, &vb);
+
+        Expr *du = ua->Minus(ub);
+        Expr *dv = va->Minus(vb);
+
+        Expr *u, *v;
+        p->PointGetExprsInWorkplane(wrkpl, &u, &v);
+
+        Expr *m = ((du->Square())->Plus(dv->Square()))->Sqrt();
+
+        Expr *proj = (dv->Times(ua->Minus(u)))->Minus(
+                     (du->Times(va->Minus(v))));
+
+        return proj->Div(m);
+    }
 }
 
 Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
@@ -230,6 +270,30 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             AddEq(l, (p.Dot(n))->Minus(d), 0);
             break;
         }
+
+        case PT_ON_LINE:
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                Entity *ln = SS.GetEntity(entityA);
+                Entity *a = SS.GetEntity(ln->point[0]);
+                Entity *b = SS.GetEntity(ln->point[1]);
+                Entity *p = SS.GetEntity(ptA);
+
+                ExprVector ep = p->PointGetExprs();
+                ExprVector ea = a->PointGetExprs();
+                ExprVector eb = b->PointGetExprs();
+                ExprVector eab = ea.Minus(eb);
+                ExprVector r = eab.Cross(ea.Minus(ep));
+
+                // When the constraint is satisfied, our vector r is zero;
+                // but that's three numbers, and the constraint hits only
+                // two degrees of freedom. This seems to be an acceptable
+                // choice of equations, though it's arbitrary.
+                AddEq(l, (r.x)->Square()->Plus((r.y)->Square()), 0);
+                AddEq(l, (r.y)->Square()->Plus((r.z)->Square()), 1);
+            } else {
+                AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
+            }
+            break;
 
         case HORIZONTAL:
         case VERTICAL: {

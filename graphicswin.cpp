@@ -432,8 +432,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         Constraint *c = SS.constraint.FindById(pendingConstraint);
         UpdateDraggedPoint(&(c->disp.offset), x, y);
     } else if(leftDown && pendingOperation == DRAGGING_POINT) {
-        UpdateDraggedEntity(pendingPoint, x, y);
-        SS.GenerateAll(solving == SOLVE_ALWAYS);
+        if(havePainted) {
+            UpdateDraggedEntity(pendingPoint, x, y);
+            SS.GenerateAll(solving == SOLVE_ALWAYS);
+            havePainted = false;
+        }
     }
 
     // No buttons pressed.
@@ -775,6 +778,7 @@ void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
 }
 
 void GraphicsWindow::Paint(int w, int h) {
+    havePainted = true;
     width = w; height = h;
 
     glViewport(0, 0, w, h);

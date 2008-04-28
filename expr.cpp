@@ -29,6 +29,14 @@ Expr *ExprVector::Dot(ExprVector b) {
     return r;
 }
 
+ExprVector ExprVector::Cross(ExprVector b) {
+    ExprVector r;
+    r.x = (y->Times(b.z))->Minus(z->Times(b.y));
+    r.y = (z->Times(b.x))->Minus(x->Times(b.z));
+    r.z = (x->Times(b.y))->Minus(y->Times(b.x));
+    return r;
+}
+
 ExprVector ExprVector::ScaledBy(Expr *s) {
     ExprVector r;
     r.x = x->Times(s);

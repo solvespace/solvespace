@@ -123,6 +123,7 @@ public:
     ExprVector Plus(ExprVector b);
     ExprVector Minus(ExprVector b);
     Expr *Dot(ExprVector b);
+    ExprVector Cross(ExprVector b);
     ExprVector ScaledBy(Expr *s);
     Expr *Magnitude(void);
 };

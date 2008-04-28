@@ -39,7 +39,7 @@ void System::EvalJacobian(void) {
 }
 
 bool System::Tol(double v) {
-    return (fabs(v) < 0.01);
+    return (fabs(v) < 0.001);
 }
 
 void System::GaussJordan(void) {
@@ -207,10 +207,11 @@ bool System::NewtonSolve(int tag) {
 
 bool System::Solve(void) {
     int i, j;
+
 /*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
-        dbp("  %s = 0", eq.elem[i].e->Print());
+        dbp("  %.3f = %s = 0", eq.elem[i].e->Eval(), eq.elem[i].e->Print());
     }
     dbp("%d parameters", param.n); */
 

@@ -48,6 +48,9 @@ void glxTranslatev(Vector u)
 
 void glxOntoWorkplane(Vector u, Vector v)
 {
+    u = u.WithMagnitude(1);
+    v = v.WithMagnitude(1);
+
     double mat[16];
     Vector n = u.Cross(v);
     MakeMatrix(mat,     u.x, v.x, n.x, 0,

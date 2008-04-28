@@ -13,8 +13,8 @@ const TextWindow::Color TextWindow::fgColors[] = {
 };
 const TextWindow::Color TextWindow::bgColors[] = {
     { 'd', RGB(  0,   0,   0) },
-    { 't', RGB( 30,  10,  30) },
-    { 'a', RGB( 25,  25,  25) },
+    { 't', RGB( 40,  20,  40) },
+    { 'a', RGB( 20,  20,  20) },
     { 'r', RGB(255, 255, 255) },
     { 0, 0 },
 };
@@ -181,19 +181,20 @@ void TextWindow::Show(void) {
     InvalidateText();
 }
 
-void TextWindow::OneScreenForward(void) {
+void TextWindow::OneScreenForwardTo(int screen) {
     SS.TW.shownIndex++;
     if(SS.TW.shownIndex >= HISTORY_LEN) SS.TW.shownIndex = 0;
     SS.TW.shown = &(SS.TW.showns[SS.TW.shownIndex]);
     history++;
+
+    if(screen >= 0) shown->screen = screen;
 }
 
 void TextWindow::ScreenNavigation(int link, DWORD v) {
     switch(link) {
         default:
         case 'h':
-            SS.TW.OneScreenForward();
-            SS.TW.shown->screen = SCREEN_LIST_OF_GROUPS;
+            SS.TW.OneScreenForwardTo(SCREEN_LIST_OF_GROUPS);
             break;
 
         case 'b':
@@ -206,7 +207,7 @@ void TextWindow::ScreenNavigation(int link, DWORD v) {
             break;
 
         case 'f':
-            SS.TW.OneScreenForward();
+            SS.TW.OneScreenForwardTo(-1);
             break;
     }
     SS.TW.Show();
@@ -262,9 +263,7 @@ hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool)
 }
 
 void TextWindow::ScreenSelectGroup(int link, DWORD v) {
-    SS.TW.OneScreenForward();
-
-    SS.TW.shown->screen = SCREEN_GROUP_INFO;
+    SS.TW.OneScreenForwardTo(SCREEN_GROUP_INFO);
     SS.TW.shown->group.v = v;
 
     SS.TW.Show();
@@ -317,17 +316,13 @@ void TextWindow::ShowListOfGroups(void) {
 
 
 void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
-    SS.TW.OneScreenForward();
-
-    SS.TW.shown->screen = SCREEN_CONSTRAINT_INFO;
+    SS.TW.OneScreenForwardTo(SCREEN_CONSTRAINT_INFO);
     SS.TW.shown->constraint.v = v;
 
     SS.TW.Show();
 }
 void TextWindow::ScreenSelectRequest(int link, DWORD v) {
-    SS.TW.OneScreenForward();
-
-    SS.TW.shown->screen = SCREEN_REQUEST_INFO;
+    SS.TW.OneScreenForwardTo(SCREEN_REQUEST_INFO);
     SS.TW.shown->request.v = v;
 
     SS.TW.Show();

@@ -65,7 +65,7 @@ public:
     void ShowEntityInfo(void);
     void ShowConstraintInfo(void);
 
-    void OneScreenForward(void);
+    void OneScreenForwardTo(int screen);
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenToggleGroupShown(int link, DWORD v);
@@ -144,6 +144,11 @@ public:
         Vector  projUp;
         Point2d mouse;
     }       orig;
+
+    // When the user is dragging a point, don't solve multiple times without
+    // allowing a paint in between. The extra solves are wasted if they're
+    // not displayed.
+    bool    havePainted;
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
