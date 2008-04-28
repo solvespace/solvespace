@@ -10,33 +10,30 @@ public:
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #endif
-    static const int COLOR_BG_DEFAULT       = RGB( 15,  15,   0);
-
     typedef struct {
         char    c;
-        int     fg;
-        int     bg;
+        int     color;
     } Color;
-    static const Color colors[];
+    static const Color fgColors[];
+    static const Color bgColors[];
 
-    // The rest of the window, text displayed in response to typed commands;
-    // some of this might do something if you click on it.
-
-    static const int NOT_A_LINK = 0;
 
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
+    static const int NOT_A_LINK = 0;
     struct {
-        int             color;
+        char            fg;
+        char            bg;
         int             link;
         DWORD           data;
         LinkFunction   *f;
     }       meta[MAX_ROWS][MAX_COLS];
+    int top[MAX_ROWS]; // in half-line units, or -1 for unused
 
     int rows;
    
     void Init(void);
-    void Printf(char *fmt, ...);
+    void Printf(bool half, char *fmt, ...);
     void ClearScreen(void);
    
     void Show(void);
@@ -71,6 +68,8 @@ public:
     void OneScreenForward(void);
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
+    static void ScreenToggleGroupShown(int link, DWORD v);
+
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
     static void ScreenNavigation(int link, DWORD v);

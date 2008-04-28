@@ -27,6 +27,10 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
 
 void Constraint::DrawOrGetDistance(Vector *labelPos) {
     if(!SS.GW.showConstraints) return;
+    Group *g = SS.GetGroup(group);
+    // If the group is hidden, then the constraints are hidden and not
+    // able to be selected.
+    if(!(g->visible)) return;
 
     // Unit vectors that describe our current view of the scene.
     Vector gr = SS.GW.projRight;

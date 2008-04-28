@@ -13,19 +13,15 @@
 #include "freeze.h"
 
 #define MIN_COLS    45
-#define TEXT_HEIGHT 18
+#define TEXT_HEIGHT 20
 #define TEXT_WIDTH  9
-
-// There's a half-line offset between the header and the rest of the window
-#define OFFSET_LINE 3
-#define OFFSET_HEIGHT 9
 
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
-int TextWndScrollPos;
-int TextWndRows;
+int TextWndScrollPos; // The scrollbar position, in half-row units
+int TextWndHalfRows;  // The height of our window, in half-row units
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
@@ -95,14 +91,18 @@ static void PaintTextWnd(HDC hdc)
     static HBRUSH   FillBrush;
     if(!MadeBrushes) {
         // Generate the color table.
-        for(i = 0; SS.TW.colors[i].c != 0; i++) {
-            int c = SS.TW.colors[i].c;
+        for(i = 0; SS.TW.fgColors[i].c != 0; i++) {
+            int c = SS.TW.fgColors[i].c;
             if(c < 0 || c > 255) oops();
-            BgColor[c] = SS.TW.colors[i].bg;
-            FgColor[c] = SS.TW.colors[i].fg;
+            FgColor[c] = SS.TW.fgColors[i].color;
+        }
+        for(i = 0; SS.TW.bgColors[i].c != 0; i++) {
+            int c = SS.TW.bgColors[i].c;
+            if(c < 0 || c > 255) oops();
+            BgColor[c] = SS.TW.bgColors[i].color;
             BgBrush[c] = CreateSolidBrush(BgColor[c]);
         }
-        FillBrush = CreateSolidBrush(SS.TW.COLOR_BG_DEFAULT);
+        FillBrush = CreateSolidBrush(RGB(0, 0, 0));
         MadeBrushes = TRUE;
     }
 
@@ -118,12 +118,13 @@ static void PaintTextWnd(HDC hdc)
     FillRect(backDc, &rect, FillBrush);
 
     SelectObject(backDc, FixedFont);
-    SetBkColor(backDc, SS.TW.COLOR_BG_DEFAULT);
+    SetBkColor(backDc, RGB(0, 0, 0));
 
-    int rows = height / TEXT_HEIGHT;
-    TextWndRows = rows;
+    int halfRows = height / (TEXT_HEIGHT/2);
+    TextWndHalfRows = halfRows;
 
-    TextWndScrollPos = min(TextWndScrollPos, SS.TW.rows - rows);
+    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    TextWndScrollPos = min(TextWndScrollPos, bottom - halfRows);
     TextWndScrollPos = max(TextWndScrollPos, 0);
 
     // Let's set up the scroll bar first
@@ -132,20 +133,22 @@ static void PaintTextWnd(HDC hdc)
     si.cbSize = sizeof(si);
     si.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
     si.nMin = 0;
-    si.nMax = SS.TW.rows - 1;
+    si.nMax = SS.TW.top[SS.TW.rows - 1] + 1;
     si.nPos = TextWndScrollPos;
-    si.nPage = rows;
+    si.nPage = halfRows;
     SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
 
     int r, c;
-    for(r = TextWndScrollPos; r < (TextWndScrollPos+rows); r++) {
-        if(r < 0) continue;
-        if(r >= SS.TW.MAX_ROWS) continue;
+    for(r = 0; r < SS.TW.rows; r++) {
+        int top = SS.TW.top[r];
+        if(top < (TextWndScrollPos-1)) continue;
+        if(top > TextWndScrollPos+halfRows) break;
 
         for(c = 0; c < min((width/TEXT_WIDTH)+1, SS.TW.MAX_COLS); c++) {
-            int color = SS.TW.meta[r][c].color;
-            SetTextColor(backDc, FgColor[color]);
-            SetBkColor(backDc, BgColor[color]);
+            int fg = SS.TW.meta[r][c].fg;
+            int bg = SS.TW.meta[r][c].bg;
+            SetTextColor(backDc, FgColor[fg]);
+            SetBkColor(backDc, BgColor[bg]);
 
             if(SS.TW.meta[r][c].link) {
                 SelectObject(backDc, LinkFont);
@@ -154,15 +157,14 @@ static void PaintTextWnd(HDC hdc)
             }
 
             int x = 4 + c*TEXT_WIDTH;
-            int y = (r-TextWndScrollPos)*TEXT_HEIGHT + 1 + 
-                (r >= OFFSET_LINE ? OFFSET_HEIGHT : 0);
+            int y = (top-TextWndScrollPos)*(TEXT_HEIGHT/2);
 
             RECT a;
             a.left = x; a.right = x+TEXT_WIDTH;
             a.top = y; a.bottom = y+TEXT_HEIGHT;
-            FillRect(backDc, &a, BgBrush[color]);
+            FillRect(backDc, &a, BgBrush[bg]);
 
-            TextOut(backDc, x, y, (char *)&(SS.TW.text[r][c]), 1);
+            TextOut(backDc, x, y+2, (char *)&(SS.TW.text[r][c]), 1);
         }
     }
 
@@ -189,8 +191,9 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
         case SB_THUMBTRACK:
         case SB_THUMBPOSITION:  TextWndScrollPos = HIWORD(wParam); break;
     }
-    TextWndScrollPos = max(0, TextWndScrollPos);
-    TextWndScrollPos = min(SS.TW.rows - TextWndRows, TextWndScrollPos);
+    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    TextWndScrollPos = min(TextWndScrollPos, bottom - TextWndHalfRows);
+    TextWndScrollPos = max(TextWndScrollPos, 0);
     if(prevPos != TextWndScrollPos) {
         SCROLLINFO si;
         si.cbSize = sizeof(si);
@@ -224,8 +227,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_SIZING: {
             RECT *r = (RECT *)lParam;
             int hc = (r->bottom - r->top) - ClientIsSmallerBy;
-            hc += TEXT_HEIGHT/2;
-            int extra = hc % TEXT_HEIGHT;
+            int extra = hc % (TEXT_HEIGHT/2);
             switch(wParam) {
                 case WMSZ_BOTTOM:
                 case WMSZ_BOTTOMLEFT:
@@ -263,18 +265,20 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
 
-            if(y >= TEXT_HEIGHT*OFFSET_LINE) {
-                y -= OFFSET_HEIGHT;
-            }
-
             // Find the corresponding character in the text buffer
-            int r = (y / TEXT_HEIGHT);
             int c = (x / TEXT_WIDTH);
-            if(msg == WM_MOUSEMOVE && r >= TextWndRows) {
+            int hh = (TEXT_HEIGHT)/2;
+            y += TextWndScrollPos*hh;
+            int r;
+            for(r = 0; r < SS.TW.rows; r++) {
+                if(y >= SS.TW.top[r]*hh && y <= (SS.TW.top[r]+2)*hh) {
+                    break;
+                }
+            }
+            if(r >= SS.TW.rows) {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
                 break;
             }
-            r += TextWndScrollPos;
 
             if(msg == WM_MOUSEMOVE) {
                 if(SS.TW.meta[r][c].link) {
@@ -728,10 +732,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InitCommonControls();
 
     // A monospaced font
-    FixedFont = CreateFont(TEXT_HEIGHT-2, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
+    FixedFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
-    LinkFont = CreateFont(TEXT_HEIGHT-2, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
+    LinkFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         TRUE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
     if(!FixedFont)

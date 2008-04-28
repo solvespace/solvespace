@@ -2,7 +2,7 @@
 
 char *Constraint::DescriptionString(void) {
     static char ret[1024];
-    sprintf(ret, "c%04x", h.v);
+    sprintf(ret, "c%03x", h.v);
     return ret;
 }
 

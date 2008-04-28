@@ -300,6 +300,11 @@ double Entity::GetDistance(Point2d mp) {
 }
 
 void Entity::DrawOrGetDistance(int order) {  
+    Group *g = SS.GetGroup(group);
+    // If an entity is invisible, then it doesn't get shown, and it doesn't
+    // contribute a distance for the selection, but it still generates edges.
+    if(!(g->visible) && !dogd.edges) return;
+
     glxColor3d(1, 1, 1);
 
     switch(type) {

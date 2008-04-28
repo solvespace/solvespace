@@ -226,7 +226,6 @@ void GraphicsWindow::EnsureValidActives(void) {
         activeWorkplane = Entity::FREE_IN_3D;
         change = true;
     }
-    if(change) SS.TW.Show();
 
     bool in3d = (activeWorkplane.v == Entity::FREE_IN_3D.v);
     CheckMenuById(MNU_FREE_IN_3D, in3d);

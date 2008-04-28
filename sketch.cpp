@@ -45,9 +45,9 @@ void Group::MenuGroup(int id) {
 char *Group::DescriptionString(void) {
     static char ret[100];
     if(name.str[0]) {
-        sprintf(ret, "g%04x-%s", h.v, name.str);
+        sprintf(ret, "g%03x-%s", h.v, name.str);
     } else {
-        sprintf(ret, "g%04x-(unnamed)", h.v);
+        sprintf(ret, "g%03x-(unnamed)", h.v);
     }
     return ret;
 }
@@ -135,6 +135,8 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz) {
 }
 
 void Group::Draw(void) {
+    if(!visible) return;
+
     edges.l.Clear();
     int i;
     for(i = 0; i < SS.entity.n; i++) {
