@@ -73,6 +73,9 @@ public:
 
     Expr *PartialWrt(hParam p);
     double Eval(void);
+    DWORD ParamsUsed(void);
+    static bool Tol(double a, double b);
+    Expr *FoldConstants(void);
 
     void ParamsToPointers(void);
 

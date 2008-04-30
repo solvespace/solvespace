@@ -186,7 +186,7 @@ Expr *Expr::PartialWrt(hParam p) {
     Expr *da, *db;
 
     switch(op) {
-        case PARAM_PTR: oops();
+        case PARAM_PTR: return FromConstant(p.v == x.parp->h.v ? 1 : 0);
         case PARAM:     return FromConstant(p.v == x.parh.v ? 1 : 0);
 
         case CONSTANT:  return FromConstant(0);
@@ -216,6 +216,86 @@ Expr *Expr::PartialWrt(hParam p) {
 
         default: oops();
     }
+}
+
+DWORD Expr::ParamsUsed(void) {
+    DWORD r = 0;
+    if(op == PARAM)     r |= (1 << (x.parh.v % 31));
+    if(op == PARAM_PTR) r |= (1 << (x.parp->h.v % 31));
+
+    int c = Children();
+    if(c >= 1)          r |= a->ParamsUsed();
+    if(c >= 2)          r |= b->ParamsUsed();
+    return r;
+}
+
+bool Expr::Tol(double a, double b) {
+    return fabs(a - b) < 0.001;
+}
+Expr *Expr::FoldConstants(void) {
+    Expr *n = AllocExpr();
+    *n = *this;
+
+    int c = Children();
+    if(c >= 1) n->a = a->FoldConstants();
+    if(c >= 2) n->b = b->FoldConstants();
+
+    switch(op) {
+        case PARAM_PTR:
+        case PARAM:
+        case CONSTANT:
+            break;
+
+        case MINUS:
+        case TIMES:
+        case DIV:
+        case PLUS:
+            // If both ops are known, then we can evaluate immediately
+            if(n->a->op == CONSTANT && n->b->op == CONSTANT) {
+                double nv = n->Eval();
+                n->op = CONSTANT;
+                n->x.v = nv;
+                break;
+            }
+            // x + 0 = 0 + x = x
+            if(op == PLUS && n->b->op == CONSTANT && Tol(n->b->x.v, 0)) {
+                *n = *(n->a); break;
+            }
+            if(op == PLUS && n->a->op == CONSTANT && Tol(n->a->x.v, 0)) {
+                *n = *(n->b); break;
+            }
+            // 1*x = x*1 = x
+            if(op == TIMES && n->b->op == CONSTANT && Tol(n->b->x.v, 1)) {
+                *n = *(n->a); break;
+            }
+            if(op == TIMES && n->a->op == CONSTANT && Tol(n->a->x.v, 1)) {
+                *n = *(n->b); break;
+            }
+            // 0*x = x*0 = 0
+            if(op == TIMES && n->b->op == CONSTANT && Tol(n->b->x.v, 0)) {
+                n->op = CONSTANT; n->x.v = 0; break;
+            }
+            if(op == TIMES && n->a->op == CONSTANT && Tol(n->a->x.v, 0)) {
+                n->op = CONSTANT; n->x.v = 0; break;
+            }
+
+            break;
+
+        case SQRT:
+        case SQUARE:
+        case NEGATE:
+        case SIN:
+        case COS:
+            if(n->a->op == CONSTANT) {
+                double nv = n->Eval();
+                n->op = CONSTANT;
+                n->x.v = nv;
+            }
+            break;
+
+        default: oops();
+    }
+    return n;
 }
 
 static char StringBuffer[4096];

@@ -18,12 +18,22 @@ void System::WriteJacobian(int eqTag, int paramTag) {
         if(e->tag != eqTag) continue;
 
         mat.eq[i] = e->h;
-        mat.B.sym[i] = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
+        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
+        f = f->FoldConstants();
+
+        // Hash table (31 bits) to accelerate generation of zero partials.
+        DWORD scoreboard = f->ParamsUsed();
         for(j = 0; j < mat.n; j++) {
-            Expr *pd = e->e->PartialWrt(mat.param[j]);
-            mat.A.sym[i][j] = 
-                pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
+            Expr *pd;
+            if(scoreboard & (1 << (mat.param[j].v % 31))) { 
+                pd = f->PartialWrt(mat.param[j]);
+                pd = pd->FoldConstants();
+            } else {
+                pd = Expr::FromConstant(0);
+            }
+            mat.A.sym[i][j] = pd;
         }
+        mat.B.sym[i] = f;
         i++;
     }
     mat.m = i;
@@ -207,7 +217,7 @@ bool System::NewtonSolve(int tag) {
 
 bool System::Solve(void) {
     int i, j;
-
+    
 /*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
@@ -220,7 +230,12 @@ bool System::Solve(void) {
     
     WriteJacobian(0, 0);
     EvalJacobian();
-/*
+
+/*    dbp("write/eval jacboian=%d", GetMilliseconds() - in);
+    for(i = 0; i < mat.m; i++) {
+        dbp("function %d: %s", i, mat.B.sym[i]->Print());
+    }
+    dbp("m=%d", mat.m);
     for(i = 0; i < mat.m; i++) {
         for(j = 0; j < mat.n; j++) {
             dbp("A[%d][%d] = %.3f", i, j, mat.A.num[i][j]);
@@ -245,7 +260,7 @@ bool System::Solve(void) {
         }
         p->tag = ASSUMED;
     }
-
+    
     bool ok = NewtonSolve(0);
 
     if(ok) {

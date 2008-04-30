@@ -11,6 +11,7 @@ void SolveSpace::NewFile(void) {
     // Our initial group, that contains the references.
     Group g;
     memset(&g, 0, sizeof(g));
+    g.visible = true;
     g.name.strcpy("#references");
     g.type = Group::DRAWING;
     g.h = Group::HGROUP_REFERENCES;
