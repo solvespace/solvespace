@@ -117,7 +117,6 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
-
         case EQUAL_LENGTH_LINES: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
@@ -132,19 +131,50 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case SYMMETRIC: {
+            Vector a = SS.GetEntity(ptA)->PointGetCoords();
+            Vector b = SS.GetEntity(ptB)->PointGetCoords();
+            Vector n = SS.GetEntity(entityA)->WorkplaneGetNormalVector();
+            for(int i = 0; i < 2; i++) {
+                Vector tail = (i == 0) ? a : b;
+                Vector d = (i == 0) ? b : a;
+                d = d.Minus(tail);
+                // Project the direction in which the arrow is drawn normal
+                // to the symmetry plane; for projected symmetry constraints,
+                // they might not be in the same direction, even when the
+                // constraint is fully solved.
+                d = n.ScaledBy(d.Dot(n));
+                d = d.WithMagnitude(20/SS.GW.scale);
+                Vector tip = tail.Plus(d);
+
+                LineDrawOrGetDistance(tail, tip);
+                d = d.WithMagnitude(9/SS.GW.scale);
+                LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn,  0.6)));
+                LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn, -0.6)));
+            }
+            break;
+        }
+
+        case AT_MIDPOINT:
         case HORIZONTAL:
         case VERTICAL:
             if(entityA.v) {
+                // For "at midpoint", this branch is always taken.
                 Entity *e = SS.GetEntity(entityA);
                 Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
                 Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
+                Vector offset = (a.Minus(b)).Cross(gn);
+                offset = offset.WithMagnitude(13/SS.GW.scale);
 
                 if(dogd.drawing) {
                     glPushMatrix();
-                        glxTranslatev(m);
+                        glxTranslatev(m.Plus(offset));
                         glxOntoWorkplane(gr, gu);
-                        glxWriteText(type == HORIZONTAL ? "H" : "V");
+                        glxWriteTextRefCenter(
+                            (type == HORIZONTAL)  ? "H" : (
+                            (type == VERTICAL)    ? "V" : (
+                            (type == AT_MIDPOINT) ? "M" : NULL)));
                     glPopMatrix();
                 } else {
                     Point2d ref = SS.GW.ProjectPoint(m);

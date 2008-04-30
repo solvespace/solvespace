@@ -67,6 +67,7 @@ void MemFree(void *p);
 void glxVertex3v(Vector u);
 void glxFillPolygon(SPolygon *p);
 void glxWriteText(char *str);
+void glxWriteTextRefCenter(char *str);
 void glxTranslatev(Vector u);
 void glxOntoWorkplane(Vector u, Vector v);
 void glxLockColorTo(double r, double g, double b);

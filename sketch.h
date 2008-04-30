@@ -262,6 +262,8 @@ public:
     static const int PT_IN_PLANE        = 40;
     static const int PT_ON_LINE         = 41;
     static const int EQUAL_LENGTH_LINES = 50;
+    static const int SYMMETRIC          = 60;
+    static const int AT_MIDPOINT        = 70;
 
     static const int HORIZONTAL         = 80;
     static const int VERTICAL           = 81;
@@ -313,6 +315,8 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
     static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
+    static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
+    static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
 };

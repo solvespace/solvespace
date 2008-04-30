@@ -91,6 +91,38 @@ void Constraint::MenuConstrain(int id) {
             AddConstraint(&c);
             break;
 
+        case GraphicsWindow::MNU_AT_MIDPOINT:
+            if(gs.lineSegments == 1 && gs.points == 1 && gs.n == 2) {
+                c.type = AT_MIDPOINT;
+                c.entityA = gs.entity[0];
+                c.ptA = gs.point[0];
+            } else {
+                Error("Bad selection for at midpoint constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_SYMMETRIC:
+            if(gs.points == 2 && gs.planes == 1 && gs.n == 3) {
+                c.type = SYMMETRIC;
+                c.entityA = gs.entity[0];
+                c.ptA = gs.point[0];
+                c.ptB = gs.point[1];
+            } else if(gs.lineSegments == 1 && gs.planes == 1 && gs.n == 2) {
+                c.type = SYMMETRIC;
+                int i = SS.GetEntity(gs.entity[0])->HasPlane() ? 1 : 0;
+                Entity *line = SS.GetEntity(gs.entity[i]);
+                c.entityA = gs.entity[1-i];
+                c.ptA = line->point[0];
+                c.ptB = line->point[1];
+            } else {
+                Error("Bad selection for symmetric constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
         case GraphicsWindow::MNU_VERTICAL:
         case GraphicsWindow::MNU_HORIZONTAL: {
             hEntity ha, hb;
@@ -139,6 +171,30 @@ void Constraint::MenuConstrain(int id) {
     InvalidateGraphics();
 }
 
+Expr *Constraint::VectorsParallel(int eq, ExprVector a, ExprVector b) {
+    ExprVector r = a.Cross(b);
+    // Hairy ball theorem screws me here. There's no clean solution that I
+    // know, so let's pivot on the initial numerical guess.
+    double mx = fabs((a.x)->Eval()) + fabs((b.x)->Eval());
+    double my = fabs((a.y)->Eval()) + fabs((b.y)->Eval());
+    double mz = fabs((a.z)->Eval()) + fabs((b.z)->Eval());
+    // The basis vector in which the vectors have the LEAST energy is the
+    // one that we should look at most (e.g. if both vectors lie in the xy
+    // plane, then the z component of the cross product is most important).
+    // So find the strongest component of a and b, and that's the component
+    // of the cross product to ignore.
+    double m = max(mx, max(my, mz));
+    Expr *e0, *e1;
+         if(m == mx) { e0 = r.y; e1 = r.z; }
+    else if(m == my) { e0 = r.z; e1 = r.x; }
+    else if(m == mz) { e0 = r.x; e1 = r.y; }
+    else oops();
+
+    if(eq == 0) return e0;
+    if(eq == 1) return e1;
+    oops();
+}
+
 Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
     Entity *ln = SS.GetEntity(hln);
     Entity *a = SS.GetEntity(ln->point[0]);
@@ -173,6 +229,13 @@ Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
 
         return proj->Div(m);
     }
+}
+
+Expr *Constraint::PointPlaneDistance(ExprVector p, hEntity hpl) {
+    ExprVector n;
+    Expr *d;
+    SS.GetEntity(hpl)->PlaneGetExprs(&n, &d);
+    return (p.Dot(n))->Minus(d);
 }
 
 Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
@@ -261,15 +324,11 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             break;
         }
 
-        case PT_IN_PLANE: {
+        case PT_IN_PLANE:
             // This one works the same, whether projected or not.
-            ExprVector p, n;
-            Expr *d;
-            p = SS.GetEntity(ptA)->PointGetExprs();
-            SS.GetEntity(entityA)->PlaneGetExprs(&n, &d);
-            AddEq(l, (p.Dot(n))->Minus(d), 0);
+            AddEq(l, PointPlaneDistance(
+                        SS.GetEntity(ptA)->PointGetExprs(), entityA), 0);
             break;
-        }
 
         case PT_ON_LINE:
             if(workplane.v == Entity::FREE_IN_3D.v) {
@@ -282,16 +341,93 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 ExprVector ea = a->PointGetExprs();
                 ExprVector eb = b->PointGetExprs();
                 ExprVector eab = ea.Minus(eb);
-                ExprVector r = eab.Cross(ea.Minus(ep));
+                ExprVector eap = ea.Minus(ep);
 
-                // When the constraint is satisfied, our vector r is zero;
-                // but that's three numbers, and the constraint hits only
-                // two degrees of freedom. This seems to be an acceptable
-                // choice of equations, though it's arbitrary.
-                AddEq(l, (r.x)->Square()->Plus((r.y)->Square()), 0);
-                AddEq(l, (r.y)->Square()->Plus((r.z)->Square()), 1);
+                AddEq(l, VectorsParallel(0, eab, eap), 0);
+                AddEq(l, VectorsParallel(1, eab, eap), 1);
             } else {
                 AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
+            }
+            break;
+
+        case AT_MIDPOINT:
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                Entity *ln = SS.GetEntity(entityA);
+                ExprVector a = SS.GetEntity(ln->point[0])->PointGetExprs();
+                ExprVector b = SS.GetEntity(ln->point[1])->PointGetExprs();
+                ExprVector m = (a.Plus(b)).ScaledBy(Expr::FromConstant(0.5));
+
+                ExprVector p = SS.GetEntity(ptA)->PointGetExprs();
+                AddEq(l, (m.x)->Minus(p.x), 0);
+                AddEq(l, (m.y)->Minus(p.y), 1);
+                AddEq(l, (m.z)->Minus(p.z), 2);
+            } else {
+                Entity *ln = SS.GetEntity(entityA);
+                Entity *a = SS.GetEntity(ln->point[0]);
+                Entity *b = SS.GetEntity(ln->point[1]);
+                
+                Expr *au, *av, *bu, *bv;
+                a->PointGetExprsInWorkplane(workplane, &au, &av);
+                b->PointGetExprsInWorkplane(workplane, &bu, &bv);
+                Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
+                Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
+
+                Entity *p = SS.GetEntity(ptA);
+                Expr *pu, *pv;
+                p->PointGetExprsInWorkplane(workplane, &pu, &pv);
+                AddEq(l, pu->Minus(mu), 0);
+                AddEq(l, pv->Minus(mv), 1);
+            }
+            break;
+
+        case SYMMETRIC:
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                Entity *plane = SS.GetEntity(entityA);
+                Entity *ea = SS.GetEntity(ptA);
+                Entity *eb = SS.GetEntity(ptB);
+                ExprVector a = ea->PointGetExprs();
+                ExprVector b = eb->PointGetExprs();
+
+                // The midpoint of the line connecting the symmetric points
+                // lies on the plane of the symmetry.
+                ExprVector m = (a.Plus(b)).ScaledBy(Expr::FromConstant(0.5));
+                AddEq(l, PointPlaneDistance(m, plane->h), 0);
+
+                // And projected into the plane of symmetry, the points are
+                // coincident.
+                Expr *au, *av, *bu, *bv;
+                ea->PointGetExprsInWorkplane(plane->h, &au, &av);
+                eb->PointGetExprsInWorkplane(plane->h, &bu, &bv);
+                AddEq(l, au->Minus(bu), 0);
+                AddEq(l, av->Minus(bv), 1);
+            } else {
+                Entity *plane = SS.GetEntity(entityA);
+                Entity *a = SS.GetEntity(ptA);
+                Entity *b = SS.GetEntity(ptB);
+
+                Expr *au, *av, *bu, *bv;
+                a->PointGetExprsInWorkplane(workplane, &au, &av);
+                b->PointGetExprsInWorkplane(workplane, &bu, &bv);
+                Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
+                Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
+
+                ExprVector u, v, o;
+                Entity *w = SS.GetEntity(workplane);
+                w->WorkplaneGetBasisExprs(&u, &v);
+                o = w->WorkplaneGetOffsetExprs();
+                ExprVector m = (u.ScaledBy(mu)).Plus(v.ScaledBy(mv)).Plus(o);
+                AddEq(l, PointPlaneDistance(m ,plane->h), 0);
+
+                // Construct a vector within the workplane that is normal
+                // to the symmetry pane's normal (i.e., that lies in the
+                // plane of symmetry). The line connecting the points is
+                // perpendicular to that constructed vector.
+                ExprVector pa = a->PointGetExprs();
+                ExprVector pb = b->PointGetExprs();
+                ExprVector n;
+                Expr *d;
+                plane->PlaneGetExprs(&n, &d);
+                AddEq(l, (n.Cross(u.Cross(v))).Dot(pa.Minus(pb)), 1);
             }
             break;
 

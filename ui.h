@@ -111,6 +111,8 @@ public:
         MNU_DISTANCE_DIA,
         MNU_EQUAL,
         MNU_ON_ENTITY,
+        MNU_SYMMETRIC,
+        MNU_AT_MIDPOINT,
         MNU_HORIZONTAL,
         MNU_VERTICAL,
         MNU_SOLVE_AUTO,

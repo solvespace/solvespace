@@ -211,6 +211,7 @@ bool System::NewtonSolve(int tag) {
     if(converged) { 
         return true;
     } else {
+        dbp("no convergence");
         return false;
     }
 }
