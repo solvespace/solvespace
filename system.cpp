@@ -87,19 +87,23 @@ void System::SortBySensitivity(void) {
         mat.permutation[j] = j;
     }
     if(SS.GW.pendingPoint.v) {
-        Entity *p = SS.GetEntity(SS.GW.pendingPoint);
-        switch(p->type) {
-            case Entity::POINT_IN_3D:
-                MarkAsDragged(p->param[0]);
-                MarkAsDragged(p->param[1]);
-                MarkAsDragged(p->param[2]);
-                break;
-            case Entity::POINT_IN_2D:
-                MarkAsDragged(p->param[0]);
-                MarkAsDragged(p->param[1]);
-                break;
-            default: oops();
-       }
+        Entity *p = SS.entity.FindByIdNoOops(SS.GW.pendingPoint);
+        // If we're solving an earlier group, then the pending point might
+        // not exist in the entity tables yet.
+        if(p) {
+            switch(p->type) {
+                case Entity::POINT_XFRMD:
+                case Entity::POINT_IN_3D:
+                    MarkAsDragged(p->param[0]);
+                    MarkAsDragged(p->param[1]);
+                    MarkAsDragged(p->param[2]);
+                    break;
+                case Entity::POINT_IN_2D:
+                    MarkAsDragged(p->param[0]);
+                    MarkAsDragged(p->param[1]);
+                    break;
+           }
+        }
     }
 
     qsort(mat.permutation, mat.n, sizeof(mat.permutation[0]), BySensitivity);
