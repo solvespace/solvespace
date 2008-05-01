@@ -48,6 +48,91 @@ void System::EvalJacobian(void) {
     }
 }
 
+void System::MarkAsDragged(hParam p) {
+    int j;
+    for(j = 0; j < mat.n; j++) {
+        if(mat.param[j].v == p.v) {
+            mat.dragged[j] = true;
+        }
+    }
+}
+
+static int BySensitivity(const void *va, const void *vb) {
+    const int *a = (const int *)va, *b = (const int *)vb;
+    
+    if(SS.sys.mat.dragged[*a] && !SS.sys.mat.dragged[*b]) return  1;
+    if(SS.sys.mat.dragged[*b] && !SS.sys.mat.dragged[*a]) return -1;
+
+    double as = SS.sys.mat.sens[*a];
+    double bs = SS.sys.mat.sens[*b];
+
+    if(as < bs) return  1;
+    if(as > bs) return -1;
+    return 0;
+}
+void System::SortBySensitivity(void) {
+    // For each unknown, sum up the sensitivities in that column of the
+    // Jacobian
+    int i, j;
+    for(j = 0; j < mat.n; j++) {
+        double s = 0;
+        int i;
+        for(i = 0; i < mat.m; i++) {
+            s += fabs(mat.A.num[i][j]);
+        }
+        mat.sens[j] = s;
+    }
+    for(j = 0; j < mat.n; j++) {
+        mat.dragged[j] = false;
+        mat.permutation[j] = j;
+    }
+    if(SS.GW.pendingPoint.v) {
+        Entity *p = SS.GetEntity(SS.GW.pendingPoint);
+        switch(p->type) {
+            case Entity::POINT_IN_3D:
+                MarkAsDragged(p->param[0]);
+                MarkAsDragged(p->param[1]);
+                MarkAsDragged(p->param[2]);
+                break;
+            case Entity::POINT_IN_2D:
+                MarkAsDragged(p->param[0]);
+                MarkAsDragged(p->param[1]);
+                break;
+            default: oops();
+       }
+    }
+
+    qsort(mat.permutation, mat.n, sizeof(mat.permutation[0]), BySensitivity);
+
+    int origPos[MAX_UNKNOWNS];
+    int entryWithOrigPos[MAX_UNKNOWNS];
+    for(j = 0; j < mat.n; j++) {
+        origPos[j] = j;
+        entryWithOrigPos[j] = j;
+    }
+
+#define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
+    for(j = 0; j < mat.n; j++) {
+        int dest = j; // we are writing to position j
+        // And the source is whichever position ahead of us can be swapped
+        // in to make the permutation vectors line up.
+        int src = entryWithOrigPos[mat.permutation[j]];
+
+        for(i = 0; i < mat.m; i++) {
+            SWAP(double, mat.A.num[i][src], mat.A.num[i][dest]);
+            SWAP(Expr *, mat.A.sym[i][src], mat.A.sym[i][dest]);
+        }
+        SWAP(hParam, mat.param[src], mat.param[dest]);
+
+        SWAP(int, origPos[src], origPos[dest]);
+        if(mat.permutation[dest] != origPos[dest]) oops();
+
+        // Update the table; only necessary to do this for src, since dest
+        // is already done.
+        entryWithOrigPos[origPos[src]] = src;
+    }
+}
+
 bool System::Tol(double v) {
     return (fabs(v) < 0.001);
 }
@@ -232,6 +317,8 @@ bool System::Solve(void) {
     WriteJacobian(0, 0);
     EvalJacobian();
 
+    SortBySensitivity();
+
 /*    dbp("write/eval jacboian=%d", GetMilliseconds() - in);
     for(i = 0; i < mat.m; i++) {
         dbp("function %d: %s", i, mat.B.sym[i]->Print());
@@ -251,7 +338,7 @@ bool System::Solve(void) {
     } */
 
     // Fix any still-free variables wherever they are now.
-    for(j = 0; j < mat.n; j++) {
+    for(j = mat.n-1; j >= 0; --j) {
         if(mat.bound[j]) continue;
         Param *p = param.FindByIdNoOops(mat.param[j]);
         if(!p) {

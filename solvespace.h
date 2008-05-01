@@ -103,6 +103,9 @@ public:
 
         // The corresponding parameter for each column
         hParam      param[MAX_UNKNOWNS];
+        // The desired permutation, when we are sorting by sensitivity.
+        int         permutation[MAX_UNKNOWNS];
+
         bool        bound[MAX_UNKNOWNS];
 
         // We're solving AX = B
@@ -111,7 +114,15 @@ public:
             Expr        *sym[MAX_UNKNOWNS][MAX_UNKNOWNS];
             double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
         }           A;
+
+        // Extra information about each unknown: whether it's being dragged
+        // or not (in which case it should get assumed preferentially), and
+        // the sensitivity used to decide the order in which things get
+        // assumed.
+        bool        dragged[MAX_UNKNOWNS];
+        double      sens[MAX_UNKNOWNS];
         double      X[MAX_UNKNOWNS];
+
         struct {
             Expr        *sym[MAX_UNKNOWNS];
             double       num[MAX_UNKNOWNS];
@@ -124,6 +135,9 @@ public:
 
     void WriteJacobian(int eqTag, int paramTag);
     void EvalJacobian(void);
+
+    void SortBySensitivity(void);
+    void MarkAsDragged(hParam p);
 
     bool NewtonSolve(int tag);
     bool Solve(void);

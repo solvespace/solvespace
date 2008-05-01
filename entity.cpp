@@ -232,25 +232,6 @@ void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
     }
 }
 
-bool Entity::PointIsLocked(void) {
-    // A point is locked if none of its coordinates get assumed.
-    if(type == POINT_IN_3D) {
-        if(SS.GetParam(param[0])->assumed) return false;
-        if(SS.GetParam(param[1])->assumed) return false;
-        if(SS.GetParam(param[2])->assumed) return false;
-    } else if(type == POINT_IN_2D) {
-        if(SS.GetParam(param[0])->assumed) return false;
-        if(SS.GetParam(param[1])->assumed) return false;
-    } else if(type == POINT_XFRMD) {
-        if(SS.GetParam(param[0])->assumed) return false;
-        if(SS.GetParam(param[1])->assumed) return false;
-        if(SS.GetParam(param[2])->assumed) return false;
-    } else {
-        oops();
-    }
-    return true;
-}
-
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         glBegin(GL_LINE_STRIP);
@@ -339,7 +320,7 @@ void Entity::DrawOrGetDistance(int order) {
                 Point2d pp = SS.GW.ProjectPoint(v);
                 // Make a free point slightly easier to select, so that with
                 // coincident points, we select the free one.
-                dogd.dmin = pp.DistanceTo(dogd.mp) - (PointIsLocked() ? 3 : 4);
+                dogd.dmin = pp.DistanceTo(dogd.mp) - 4;
             }
             break;
         }

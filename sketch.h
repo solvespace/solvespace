@@ -179,7 +179,6 @@ public:
 
     bool IsPoint(void);
     // Applies for any of the point types
-    bool PointIsLocked(void);
     Vector PointGetCoords(void);
     ExprVector PointGetExprs(void);
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
