@@ -166,6 +166,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
                 Vector offset = (a.Minus(b)).Cross(gn);
                 offset = offset.WithMagnitude(13/SS.GW.scale);
+                // Draw midpoint constraint on other side of line, so that
+                // a line can be midpoint and horizontal at same time.
+                if(type == AT_MIDPOINT) offset = offset.ScaledBy(-1);
 
                 if(dogd.drawing) {
                     glPushMatrix();
@@ -177,7 +180,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                             (type == AT_MIDPOINT) ? "M" : NULL)));
                     glPopMatrix();
                 } else {
-                    Point2d ref = SS.GW.ProjectPoint(m);
+                    Point2d ref = SS.GW.ProjectPoint(m.Plus(offset));
                     dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
                 }
             } else {

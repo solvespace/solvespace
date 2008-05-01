@@ -96,6 +96,11 @@ void Constraint::MenuConstrain(int id) {
                 c.type = AT_MIDPOINT;
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
+            } else if(gs.lineSegments == 1 && gs.planes == 1 && gs.n == 2) {
+                c.type = AT_MIDPOINT;
+                int i = SS.GetEntity(gs.entity[0])->HasPlane() ? 1 : 0;
+                c.entityA = gs.entity[i];
+                c.entityB = gs.entity[1-i];
             } else {
                 Error("Bad selection for at midpoint constraint.");
                 return;
@@ -265,6 +270,15 @@ Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
     }
 }
 
+ExprVector Constraint::PointInThreeSpace(hEntity workplane, Expr *u, Expr *v) {
+    ExprVector ub, vb, ob;
+    Entity *w = SS.GetEntity(workplane);
+    w->WorkplaneGetBasisExprs(&ub, &vb);
+    ob = w->WorkplaneGetOffsetExprs();
+
+    return (ub.ScaledBy(u)).Plus(vb.ScaledBy(v)).Plus(ob);
+}
+
 void Constraint::ModifyToSatisfy(void) {
     IdList<Equation,hEquation> l;
     // An uninit IdList could lead us to free some random address, bad.
@@ -357,10 +371,14 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 ExprVector b = SS.GetEntity(ln->point[1])->PointGetExprs();
                 ExprVector m = (a.Plus(b)).ScaledBy(Expr::FromConstant(0.5));
 
-                ExprVector p = SS.GetEntity(ptA)->PointGetExprs();
-                AddEq(l, (m.x)->Minus(p.x), 0);
-                AddEq(l, (m.y)->Minus(p.y), 1);
-                AddEq(l, (m.z)->Minus(p.z), 2);
+                if(ptA.v) {
+                    ExprVector p = SS.GetEntity(ptA)->PointGetExprs();
+                    AddEq(l, (m.x)->Minus(p.x), 0);
+                    AddEq(l, (m.y)->Minus(p.y), 1);
+                    AddEq(l, (m.z)->Minus(p.z), 2);
+                } else {
+                    AddEq(l, PointPlaneDistance(m, entityB), 0);
+                }
             } else {
                 Entity *ln = SS.GetEntity(entityA);
                 Entity *a = SS.GetEntity(ln->point[0]);
@@ -372,11 +390,16 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
                 Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
 
-                Entity *p = SS.GetEntity(ptA);
-                Expr *pu, *pv;
-                p->PointGetExprsInWorkplane(workplane, &pu, &pv);
-                AddEq(l, pu->Minus(mu), 0);
-                AddEq(l, pv->Minus(mv), 1);
+                if(ptA.v) {
+                    Entity *p = SS.GetEntity(ptA);
+                    Expr *pu, *pv;
+                    p->PointGetExprsInWorkplane(workplane, &pu, &pv);
+                    AddEq(l, pu->Minus(mu), 0);
+                    AddEq(l, pv->Minus(mv), 1);
+                } else {
+                    ExprVector m = PointInThreeSpace(workplane, mu, mv);
+                    AddEq(l, PointPlaneDistance(m, entityB), 0);
+                }
             }
             break;
 
@@ -411,17 +434,17 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
                 Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
 
-                ExprVector u, v, o;
-                Entity *w = SS.GetEntity(workplane);
-                w->WorkplaneGetBasisExprs(&u, &v);
-                o = w->WorkplaneGetOffsetExprs();
-                ExprVector m = (u.ScaledBy(mu)).Plus(v.ScaledBy(mv)).Plus(o);
-                AddEq(l, PointPlaneDistance(m ,plane->h), 0);
+                ExprVector m = PointInThreeSpace(workplane, mu, mv);
+                AddEq(l, PointPlaneDistance(m, plane->h), 0);
 
                 // Construct a vector within the workplane that is normal
                 // to the symmetry pane's normal (i.e., that lies in the
                 // plane of symmetry). The line connecting the points is
                 // perpendicular to that constructed vector.
+                ExprVector u, v;
+                Entity *w = SS.GetEntity(workplane);
+                w->WorkplaneGetBasisExprs(&u, &v);
+
                 ExprVector pa = a->PointGetExprs();
                 ExprVector pb = b->PointGetExprs();
                 ExprVector n;

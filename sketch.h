@@ -316,6 +316,7 @@ public:
     static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
     static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
+    static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
 };
