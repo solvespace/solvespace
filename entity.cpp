@@ -234,9 +234,14 @@ void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
+        // This fudge guarantees that the line will get drawn in front of
+        // anything else at the "same" depth in the z-buffer, so that it
+        // goes in front of the shaded stuff.
+        Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
+        n = n.WithMagnitude(1.2/SS.GW.scale);
         glBegin(GL_LINE_STRIP);
-            glxVertex3v(a);
-            glxVertex3v(b);
+            glxVertex3v(a.Plus(n));
+            glxVertex3v(b.Plus(n));
         glEnd();
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);

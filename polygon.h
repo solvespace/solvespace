@@ -55,14 +55,19 @@ public:
 class SContour {
 public:
     SList<SPoint>   l;
+
+    void MakeEdgesInto(SEdgeList *el);
+    Vector Normal(void);
 };
 
 class SPolygon {
 public:
     SList<SContour> l;
 
+    Vector Normal(void);
     void AddEmptyContour(void);
     void AddPoint(Vector p);
+    void MakeEdgesInto(SEdgeList *el);
     void Clear(void);
 };
 

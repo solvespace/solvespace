@@ -60,6 +60,8 @@ void SolveSpace::GenerateAll(bool andSolve) {
             // Solve this group.
             if(andSolve) SolveGroup(g->h);
         }
+
+        g->MakePolygons();
     }
 
     prev.Clear();

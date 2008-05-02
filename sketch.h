@@ -85,8 +85,12 @@ public:
     hGroup      opB;
     bool        visible;
 
-    SEdgeList   edges;
-    SPolygon    poly;
+    SEdgeList       edges;
+    SList<SPolygon> faces;
+    struct {
+        SEdge           notClosedAt;
+        bool            yes;
+    }               polyError;
 
     NameStr     name;
     char *DescriptionString(void);
@@ -101,6 +105,7 @@ public:
     hEntity Remap(hEntity in, int copyNumber);
     void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz);
 
+    void MakePolygons(void);
     void Draw(void);
 
     SPolygon GetPolygon(void);

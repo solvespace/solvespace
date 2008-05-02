@@ -217,17 +217,14 @@ void TextWindow::ShowHeader(void) {
 
     SS.GW.EnsureValidActives();
 
+    char *cd = (SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) ?
+               "free in 3d" :
+               SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
+
+    // Navigation buttons
     if(SS.GW.pendingDescription) {
-        Printf(false, "             %Bt%Ft group:%s",
-            SS.group.FindById(SS.GW.activeGroup)->DescriptionString());
+        Printf(false, "             %Bt%Ft workplane:%Fd %s", cd);
     } else {
-        // Navigation buttons
-        char *cd;
-        if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
-            cd = "free in 3d";
-        } else {
-            cd = SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
-        }
         Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft workplane:%Fd %s",
                     (&TextWindow::ScreenNavigation),
                     (&TextWindow::ScreenNavigation),
@@ -255,10 +252,12 @@ void TextWindow::ShowHeader(void) {
         datumColor, &(SS.GW.ToggleAnyDatumShown)
     );
     Printf(false, "%Bt%Ft      "
-           "%Fp%Ll%D%fall-groups%E "
-           "%Fp%Ll%D%fconstraints%E",
-hs(SS.GW.showAllGroups),   (DWORD)(&SS.GW.showAllGroups),   &(SS.GW.ToggleBool),
-hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool)
+           "%Fp%Ll%D%fconstraints%E "
+           "%Fp%Ll%D%fsolids%E "
+           "%Fp%Ll%D%fhidden-lines%E",
+hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool),
+hs(SS.GW.showSolids),      (DWORD)(&SS.GW.showSolids),      &(SS.GW.ToggleBool),
+hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
     );
 }
 

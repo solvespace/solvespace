@@ -76,3 +76,45 @@ void SPolygon::AddPoint(Vector p) {
     (l.elem[l.n-1]).l.Add(&sp);
 }
 
+void SPolygon::MakeEdgesInto(SEdgeList *el) {
+    int i;
+    for(i = 0; i < l.n; i++) {
+        (l.elem[i]).MakeEdgesInto(el);
+    }
+}
+
+Vector SPolygon::Normal(void) {
+    if(l.n < 1) return Vector::MakeFrom(0, 0, 0);
+    return (l.elem[0]).Normal();
+}
+
+void SContour::MakeEdgesInto(SEdgeList *el) {
+    int i;
+    for(i = 0; i < (l.n-1); i++) {
+        SEdge e;
+        e.a = l.elem[i].p;
+        e.b = l.elem[i+1].p;
+        el->l.Add(&e);
+    }
+}
+
+Vector SContour::Normal(void) {
+    if(l.n < 3) return Vector::MakeFrom(0, 0, 0);
+
+    Vector u = (l.elem[0].p).Minus(l.elem[1].p);
+
+    Vector v;
+    double dot = 2;
+    // Find the edge in the contour that's closest to perpendicular to the 
+    // first edge, since that will give best numerical stability.
+    for(int i = 1; i < (l.n-1); i++) {
+        Vector vt = (l.elem[i].p).Minus(l.elem[i+1].p);
+        double dott = fabs(vt.Dot(u)/(u.Magnitude()*vt.Magnitude()));
+        if(dott < dot) {
+            dot = dott;
+            v = vt;
+        }
+    }
+    return (u.Cross(v)).WithMagnitude(1);
+}
+

@@ -134,39 +134,98 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz) {
     SS.entity.Add(&en);
 }
 
+void Group::MakePolygons(void) {
+    faces.Clear();
+    if(type == DRAWING) {
+        edges.l.Clear();
+        int i;
+        for(i = 0; i < SS.entity.n; i++) {
+            Entity *e = &(SS.entity.elem[i]);
+            if(e->group.v != h.v) continue;
+
+            e->GenerateEdges(&edges);
+        }
+        SPolygon poly;
+        memset(&poly, 0, sizeof(poly));
+        SEdge error;
+        if(edges.AssemblePolygon(&poly, &error)) {
+            polyError.yes = false;
+            faces.Add(&poly);
+        } else {
+            polyError.yes = true;
+            polyError.notClosedAt = error;
+            poly.Clear();
+        }
+    } else if(type == EXTRUDE) {
+        Vector translate;
+        translate.x = SS.GetParam(h.param(0))->val;
+        translate.y = SS.GetParam(h.param(1))->val;
+        translate.z = SS.GetParam(h.param(2))->val;
+
+        edges.l.Clear();
+        Group *src = SS.GetGroup(opA);
+        if(src->faces.n != 1) return;
+
+        (src->faces.elem[0]).MakeEdgesInto(&edges);
+
+        SPolygon poly;
+        SEdge error;
+
+        // The bottom
+        memset(&poly, 0, sizeof(poly));
+        if(!edges.AssemblePolygon(&poly, &error)) oops();
+        faces.Add(&poly);
+
+        // The sides
+        int i;
+        for(i = 0; i < edges.l.n; i++) {
+            SEdge *edge = &(edges.l.elem[i]);
+            memset(&poly, 0, sizeof(poly));
+            poly.AddEmptyContour();
+            poly.AddPoint(edge->a);
+            poly.AddPoint(edge->b);
+            poly.AddPoint((edge->b).Plus(translate));
+            poly.AddPoint((edge->a).Plus(translate));
+            poly.AddPoint(edge->a);
+            faces.Add(&poly);
+            edge->a = (edge->a).Plus(translate);
+            edge->b = (edge->b).Plus(translate);
+        }
+
+        // The top
+        memset(&poly, 0, sizeof(poly));
+        if(!edges.AssemblePolygon(&poly, &error)) oops();
+        faces.Add(&poly);
+    }
+}
+
 void Group::Draw(void) {
     if(!visible) return;
 
-    edges.l.Clear();
-    int i;
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
-        if(e->group.v != h.v) continue;
-
-        e->GenerateEdges(&edges);
-    }
-    SPolygon poly;
-    memset(&poly, 0, sizeof(poly));
-    SEdge error;
-    if(edges.AssemblePolygon(&poly, &error)) {
-        glxColor4d(0, 0, 1, 0.1);
-        glxFillPolygon(&poly);
-    } else {
+    if(polyError.yes) {
         glxColor4d(1, 0, 0, 0.2);
         glLineWidth(10);
         glBegin(GL_LINES);
-            glxVertex3v(error.a);
-            glxVertex3v(error.b);
+            glxVertex3v(polyError.notClosedAt.a);
+            glxVertex3v(polyError.notClosedAt.b);
         glEnd();
         glLineWidth(1);
         glxColor3d(1, 0, 0);
         glPushMatrix();
-            glxTranslatev(error.b);
+            glxTranslatev(polyError.notClosedAt.b);
             glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
             glxWriteText("not closed contour!");
         glPopMatrix();
+    } else {
+        int i;
+        glEnable(GL_LIGHTING);
+        GLfloat vec[] = { 0, 0, 0.5, 1.0 };
+        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec);
+        for(i = 0; i < faces.n; i++) {
+            glxFillPolygon(&(faces.elem[i]));
+        }
+        glDisable(GL_LIGHTING);
     }
-    poly.Clear();
 }
 
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {

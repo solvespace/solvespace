@@ -133,6 +133,9 @@ void glxFillPolygon(SPolygon *p)
     gluTessCallback(gt, GLU_TESS_COMBINE, (cf *)Combine);
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
+    Vector normal = p->Normal();
+    glNormal3d(normal.x, normal.y, normal.z);
+
     gluTessBeginPolygon(gt, NULL);
     for(i = 0; i < p->l.n; i++) {
         SContour *sc = &(p->l.elem[i]);

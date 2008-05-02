@@ -108,8 +108,10 @@ void GraphicsWindow::Init(void) {
     showWorkplanes = true;
     showAxes = true;
     showPoints = true;
-    showAllGroups = true;
     showConstraints = true;
+    showSolids = true;
+    showHdnLines = false;
+    showSolids = true;
 
     solving = SOLVE_ALWAYS;
 
@@ -443,6 +445,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     if(pendingOperation == DRAGGING_NEW_POINT ||
        pendingOperation == DRAGGING_NEW_LINE_POINT)
     {
+        SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
         UpdateDraggedEntity(pendingPoint, x, y);
         HitTestMakeSelection(mp);
     } else if(pendingOperation == DRAGGING_NEW_CUBIC_POINT) {
@@ -690,6 +693,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
     }
+    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
 
     SS.TW.Show();
     InvalidateGraphics();
@@ -777,6 +781,15 @@ void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
     SS.TW.Show();
 }
 
+Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {
+    Vector n = projRight.Cross(projUp);
+    Vector r = offset.ScaledBy(-1);
+    r = r.Plus(projRight.ScaledBy(right));
+    r = r.Plus(projUp.ScaledBy(up));
+    r = r.Plus(n.ScaledBy(fwd));
+    return r;
+}
+
 void GraphicsWindow::Paint(int w, int h) {
     havePainted = true;
     width = w; height = h;
@@ -786,55 +799,71 @@ void GraphicsWindow::Paint(int w, int h) {
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
 
-    glMatrixMode(GL_MODELVIEW); 
-    glLoadIdentity();
-
-    glScaled(scale*2.0/w, scale*2.0/h, 0);
+    glScaled(scale*2.0/w, scale*2.0/h, scale*2.0/w);
 
     double tx = projRight.Dot(offset);
     double ty = projUp.Dot(offset);
+    Vector n = projUp.Cross(projRight);
+    double tz = n.Dot(offset);
     double mat[16];
     MakeMatrix(mat, projRight.x,    projRight.y,    projRight.z,    tx,
                     projUp.x,       projUp.y,       projUp.z,       ty,
-                    0,              0,              0,              0,
+                    n.x,            n.y,            n.z,            tz,
                     0,              0,              0,              1);
     glMultMatrixd(mat);
+
+    glMatrixMode(GL_MODELVIEW); 
+    glLoadIdentity();
+
+    glShadeModel(GL_SMOOTH);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
     glEnable(GL_LINE_SMOOTH);
     glEnable(GL_DEPTH_TEST); 
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_NORMALIZE);
 
-    glClearIndex((GLfloat)0);
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
+    Vector light = VectorFromProjs(-0.49*w/scale, 0.49*h/scale, 0);
+    GLfloat lightPos[4] =
+        { (GLfloat)light.x, (GLfloat)light.y, (GLfloat)light.z, 0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    glEnable(GL_LIGHT0);
+
+    glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    GLfloat ambient[4] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
+
+    glxUnlockColor();
 
     int i, a;
+    // Draw the groups; this fills the polygons, if requested.
+    if(showSolids) {
+        for(i = 0; i < SS.group.n; i++) {
+            SS.group.elem[i].Draw();
+        }
+    }
 
     // First, draw the entire scene. We don't necessarily want to draw
     // things with normal z-buffering behaviour; e.g. we always want to
     // draw a line segment in front of a reference. So we have three draw
     // levels, and only the first gets normal depth testing.
-    glxUnlockColor();
     for(a = 0; a <= 2; a++) {
         // Three levels: 0 least prominent (e.g. a reference workplane), 1 is
         // middle (e.g. line segment), 2 is always in front (e.g. point).
-        if(a == 1) glDisable(GL_DEPTH_TEST);
+        if(a >= 1 && showHdnLines) glDisable(GL_DEPTH_TEST);
         for(i = 0; i < SS.entity.n; i++) {
             SS.entity.elem[i].Draw(a);
         }
     }
 
+    glDisable(GL_DEPTH_TEST);
     // Draw the constraints
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
-    }
-
-    // Draw the groups; this fills the polygons, if requested.
-    for(i = 0; i < SS.group.n; i++) {
-        SS.group.elem[i].Draw();
     }
 
     // Then redraw whatever the mouse is hovering over, highlighted.

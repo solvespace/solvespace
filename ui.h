@@ -155,6 +155,7 @@ public:
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
     void AnimateOnto(Quaternion quatf, Vector offsetf);
+    Vector VectorFromProjs(double right, double up, double forward);
 
     typedef enum {
         UNIT_MM = 0,
@@ -215,9 +216,10 @@ public:
     bool    showWorkplanes;
     bool    showAxes;
     bool    showPoints;
-    bool    showAllGroups;
     bool    showConstraints;
     bool    showTextWindow;
+    bool    showSolids;
+    bool    showHdnLines;
     static void ToggleBool(int link, DWORD v);
     static void ToggleAnyDatumShown(int link, DWORD v);
 
