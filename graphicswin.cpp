@@ -31,6 +31,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
+{ 1, "Onto Othe&r Side\tCtrl+O",            MNU_OTHER_SIDE,     'R'|C,  mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1,  NULL,                                 0,                          NULL  },
@@ -184,6 +185,15 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_ZOOM_TO_FIT:
             break;
+
+        case MNU_OTHER_SIDE: {
+            Quaternion quatf = Quaternion::MakeFrom(
+                SS.GW.projRight.ScaledBy(-1), SS.GW.projUp.ScaledBy(1));
+            Vector ru = quatf.RotationU();
+            Vector rv = quatf.RotationV();
+            SS.GW.AnimateOnto(quatf, SS.GW.offset);
+            break;
+        }
 
         case MNU_SHOW_TEXT_WND:
             SS.GW.showTextWindow = !SS.GW.showTextWindow;

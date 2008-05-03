@@ -238,7 +238,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
         // anything else at the "same" depth in the z-buffer, so that it
         // goes in front of the shaded stuff.
         Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
-        n = n.WithMagnitude(1.2/SS.GW.scale);
+        n = n.WithMagnitude(3/SS.GW.scale);
         glBegin(GL_LINE_STRIP);
             glxVertex3v(a.Plus(n));
             glxVertex3v(b.Plus(n));

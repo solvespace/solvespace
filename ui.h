@@ -91,6 +91,7 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
+        MNU_OTHER_SIDE,
         MNU_SHOW_TEXT_WND,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,

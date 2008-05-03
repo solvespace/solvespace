@@ -159,12 +159,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case HORIZONTAL:
         case VERTICAL:
             if(entityA.v) {
+                Vector r, u, n;
+                if(workplane.v == Entity::FREE_IN_3D.v) {
+                    r = gr; u = gu; n = gn;
+                } else {
+                    SS.GetEntity(workplane)->WorkplaneGetBasisVectors(&r, &u);
+                    n = r.Cross(u);
+                }
                 // For "at midpoint", this branch is always taken.
                 Entity *e = SS.GetEntity(entityA);
                 Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
                 Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
-                Vector offset = (a.Minus(b)).Cross(gn);
+                Vector offset = (a.Minus(b)).Cross(n);
                 offset = offset.WithMagnitude(13/SS.GW.scale);
                 // Draw midpoint constraint on other side of line, so that
                 // a line can be midpoint and horizontal at same time.
@@ -173,7 +180,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 if(dogd.drawing) {
                     glPushMatrix();
                         glxTranslatev(m.Plus(offset));
-                        glxOntoWorkplane(gr, gu);
+                        glxOntoWorkplane(r, u);
                         glxWriteTextRefCenter(
                             (type == HORIZONTAL)  ? "H" : (
                             (type == VERTICAL)    ? "V" : (

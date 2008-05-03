@@ -37,11 +37,37 @@ Quaternion Quaternion::MakeFrom(Vector u, Vector v)
     Vector n = u.Cross(v);
 
     Quaternion q;
-    q.a = 0.5*sqrt(1 + u.x + v.y + n.z);
-    q.b = (1/(4*(q.a)))*(v.z - n.y);
-    q.c = (1/(4*(q.a)))*(n.x - u.z);
-    q.d = (1/(4*(q.a)))*(u.y - v.x);
-    return q;
+    double s, tr = 1 + u.x + v.y + n.z;
+    if(tr > 1e-4) {
+        s = 2*sqrt(tr);
+        q.a = s/4;
+        q.b = (v.z - n.y)/s;
+        q.c = (n.x - u.z)/s;
+        q.d = (u.y - v.x)/s;
+    } else {
+        double m = max(u.x, max(v.y, n.z));
+        if(m == u.x) {
+            s = 2*sqrt(1 + u.x - v.y - n.z);
+            q.a = (v.z - n.y)/s;
+            q.b = s/4;
+            q.c = (u.y + v.x)/s;
+            q.d = (n.x + u.z)/s;
+        } else if(m == v.y) {
+            s = 2*sqrt(1 - u.x + v.y - n.z);
+            q.a = (n.x - u.z)/s;
+            q.b = (u.y + v.x)/s;
+            q.c = s/4;
+            q.d = (v.z + n.y)/s;
+        } else if(m == n.z) {
+            s = 2*sqrt(1 - u.x - v.y + n.z);
+            q.a = (u.y - v.x)/s;
+            q.b = (n.x + u.z)/s;
+            q.c = (v.z + n.y)/s;
+            q.d = s/4;
+        } else oops();
+    }
+
+    return q.WithMagnitude(1);
 }
 
 Quaternion Quaternion::Plus(Quaternion y) {
@@ -193,6 +219,8 @@ Vector Vector::Normal(int which) {
 Vector Vector::RotatedAbout(Vector axis, double theta) {
     double c = cos(theta);
     double s = sin(theta);
+
+    axis = axis.WithMagnitude(1);
 
     Vector r;
 
