@@ -54,7 +54,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Draw Anywhere in 3d\tQ",              MNU_FREE_IN_3D,     'Q',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
-{ 1, "&Workplane (Coordinate S&ystem)\tY",  0,                  'Y',    mReq  },
+{ 1, "&Workplane (Coordinate S&ystem)\tY",  MNU_WORKPLANE,      'Y',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Line &Segment\tS",                    MNU_LINE_SEGMENT,   'S',    mReq  },
 { 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
@@ -137,8 +137,8 @@ Point2d GraphicsWindow::ProjectPoint(Vector p) {
 
 void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // Get our initial orientation and translation.
-    Quaternion quat0 = Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp);
-    Vector offset0 = SS.GW.offset;
+    Quaternion quat0 = Quaternion::MakeFrom(projRight, projUp);
+    Vector offset0 = offset;
 
     // Make sure we take the shorter of the two possible paths.
     double mp = (quatf.Minus(quat0)).Magnitude();
@@ -147,9 +147,10 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
         quatf = quatf.ScaledBy(-1);
         mp = mm;
     }
+    double mo = (offset0.Minus(offsetf)).Magnitude()/scale;
 
     // Animate transition, unless it's a tiny move.
-    SDWORD dt = (mp < 0.01) ? (-20) : (SDWORD)(100 + 1000*mp);
+    SDWORD dt = (mp < 0.01 && mo < 10) ? (-20) : (SDWORD)(100 + 1000*mp);
     SDWORD tn, t0 = GetMilliseconds();
     double s = 0;
     do {
@@ -327,12 +328,9 @@ void GraphicsWindow::MenuRequest(int id) {
             }
             // Align the view with the selected workplane
             Entity *e = SS.GetEntity(SS.GW.activeWorkplane);
-            Vector pr, pu;
-            e->WorkplaneGetBasisVectors(&pr, &pu);
-            Quaternion quatf = Quaternion::MakeFrom(pr, pu);
-            Vector offsetf = SS.GetEntity(e->point[0])->PointGetNum();
+            Quaternion quatf = e->Normal()->NormalGetNum();
+            Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
             SS.GW.AnimateOnto(quatf, offsetf);
-
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -347,6 +345,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
         case MNU_CIRCLE: s = "click center of circle"; goto c;
+        case MNU_WORKPLANE: s = "click origin of workplane"; goto c;
 c:
             SS.GW.pending.operation = id;
             SS.GW.pending.description = s;
@@ -519,8 +518,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 u = u.RotatedAbout(normal, -theta);
                 v = v.RotatedAbout(normal, -theta);
             } else {
-                double dx = (x - orig.mouse.x);
-                double dy = (y - orig.mouse.y);
+                double dx = -(x - orig.mouse.x);
+                double dy = -(y - orig.mouse.y);
                 double s = 0.3*(PI/180); // degrees per pixel
                 u = u.RotatedAbout(orig.projUp, -s*dx);
                 u = u.RotatedAbout(orig.projRight, s*dy);
@@ -621,7 +620,6 @@ void GraphicsWindow::GroupSelection(void) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
             }
-            if(e->HasPlane()) (gs.planes)++;
         }
     }
 }
@@ -718,6 +716,17 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = DRAGGING_NEW_CUBIC_POINT;
             pending.point = hr.entity(4);
             pending.description = "click to place next point of cubic";
+            break;
+
+        case MNU_WORKPLANE:
+            hr = AddRequest(Request::WORKPLANE);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(16))->NormalForceTo( 
+                Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
+            MAYBE_PLACE(hr.entity(1));
+
+            ClearSelection(); hover.Clear();
+            ClearPending();
             break;
 
         case DRAGGING_RADIUS:

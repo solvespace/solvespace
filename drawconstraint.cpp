@@ -132,7 +132,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case SYMMETRIC: {
             Vector a = SS.GetEntity(ptA)->PointGetNum();
             Vector b = SS.GetEntity(ptB)->PointGetNum();
-            Vector n = SS.GetEntity(entityA)->WorkplaneGetNormalVector();
+            Vector n = SS.GetEntity(entityA)->Normal()->NormalN();
             for(int i = 0; i < 2; i++) {
                 Vector tail = (i == 0) ? a : b;
                 Vector d = (i == 0) ? b : a;
@@ -161,7 +161,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 if(workplane.v == Entity::FREE_IN_3D.v) {
                     r = gr; u = gu; n = gn;
                 } else {
-                    SS.GetEntity(workplane)->WorkplaneGetBasisVectors(&r, &u);
+                    r = SS.GetEntity(workplane)->Normal()->NormalU();
+                    u = SS.GetEntity(workplane)->Normal()->NormalV();
                     n = r.Cross(u);
                 }
                 // For "at midpoint", this branch is always taken.
@@ -193,9 +194,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector b = SS.GetEntity(ptB)->PointGetNum();
 
                 Entity *w = SS.GetEntity(SS.GetEntity(ptA)->workplane);
-                Vector cu, cv, cn;
-                w->WorkplaneGetBasisVectors(&cu, &cv);
-                cn = w->WorkplaneGetNormalVector();
+                Vector cu = w->Normal()->NormalU();
+                Vector cv = w->Normal()->NormalV();
+                Vector cn = w->Normal()->NormalN();
 
                 int i;
                 for(i = 0; i < 2; i++) {

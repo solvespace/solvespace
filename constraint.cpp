@@ -64,7 +64,7 @@ void Constraint::MenuConstrain(int id) {
                 c.type = POINTS_COINCIDENT;
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
-            } else if(gs.points == 1 && gs.planes == 1 && gs.n == 2) {
+            } else if(gs.points == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = PT_IN_PLANE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
@@ -96,9 +96,9 @@ void Constraint::MenuConstrain(int id) {
                 c.type = AT_MIDPOINT;
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
-            } else if(gs.lineSegments == 1 && gs.planes == 1 && gs.n == 2) {
+            } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = AT_MIDPOINT;
-                int i = SS.GetEntity(gs.entity[0])->HasPlane() ? 1 : 0;
+                int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 c.entityA = gs.entity[i];
                 c.entityB = gs.entity[1-i];
             } else {
@@ -109,14 +109,14 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_SYMMETRIC:
-            if(gs.points == 2 && gs.planes == 1 && gs.n == 3) {
+            if(gs.points == 2 && gs.workplanes == 1 && gs.n == 3) {
                 c.type = SYMMETRIC;
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
-            } else if(gs.lineSegments == 1 && gs.planes == 1 && gs.n == 2) {
+            } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = SYMMETRIC;
-                int i = SS.GetEntity(gs.entity[0])->HasPlane() ? 1 : 0;
+                int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 Entity *line = SS.GetEntity(gs.entity[i]);
                 c.entityA = gs.entity[1-i];
                 c.ptA = line->point[0];
@@ -239,7 +239,7 @@ Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
 Expr *Constraint::PointPlaneDistance(ExprVector p, hEntity hpl) {
     ExprVector n;
     Expr *d;
-    SS.GetEntity(hpl)->PlaneGetExprs(&n, &d);
+    SS.GetEntity(hpl)->WorkplaneGetPlaneExprs(&n, &d);
     return (p.Dot(n))->Minus(d);
 }
 
@@ -271,10 +271,11 @@ Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
 }
 
 ExprVector Constraint::PointInThreeSpace(hEntity workplane, Expr *u, Expr *v) {
-    ExprVector ub, vb, ob;
     Entity *w = SS.GetEntity(workplane);
-    w->WorkplaneGetBasisExprs(&ub, &vb);
-    ob = w->WorkplaneGetOffsetExprs();
+
+    ExprVector ub = w->Normal()->NormalExprsU();
+    ExprVector vb = w->Normal()->NormalExprsV();
+    ExprVector ob = w->WorkplaneGetOffsetExprs();
 
     return (ub.ScaledBy(u)).Plus(vb.ScaledBy(v)).Plus(ob);
 }
@@ -441,15 +442,15 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 // to the symmetry pane's normal (i.e., that lies in the
                 // plane of symmetry). The line connecting the points is
                 // perpendicular to that constructed vector.
-                ExprVector u, v;
                 Entity *w = SS.GetEntity(workplane);
-                w->WorkplaneGetBasisExprs(&u, &v);
+                ExprVector u = w->Normal()->NormalExprsU();
+                ExprVector v = w->Normal()->NormalExprsV();
 
                 ExprVector pa = a->PointGetExprs();
                 ExprVector pb = b->PointGetExprs();
                 ExprVector n;
                 Expr *d;
-                plane->PlaneGetExprs(&n, &d);
+                plane->WorkplaneGetPlaneExprs(&n, &d);
                 AddEq(l, (n.Cross(u.Cross(v))).Dot(pa.Minus(pb)), 1);
             }
             break;

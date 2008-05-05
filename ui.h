@@ -102,6 +102,7 @@ public:
         MNU_SEL_WORKPLANE,
         MNU_FREE_IN_3D,
         MNU_DATUM_POINT,
+        MNU_WORKPLANE,
         MNU_LINE_SEGMENT,
         MNU_CIRCLE,
         MNU_RECTANGLE,
@@ -219,7 +220,6 @@ public:
         int         points;
         int         entities;
         int         workplanes;
-        int         planes;
         int         lineSegments;
         int         n;
     } gs;

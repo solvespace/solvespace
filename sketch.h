@@ -159,7 +159,7 @@ public:
     static const int POINT_XFRMD            =  2010;
 
     static const int NORMAL_IN_3D           =  3000;
-    static const int NORMAL_COPY            =  3001;
+    static const int NORMAL_IN_2D           =  3001;
     // This is a normal that lies in a plane; so if the defining workplane
     // has basis vectors uw, vw, nw, then
     // n = (cos theta)*uw + (sin theta)*vw
@@ -192,11 +192,12 @@ public:
     // times to apply the transformation.
     int timesApplied;
 
-    // Applies only for a WORKPLANE type
-    void WorkplaneGetBasisVectors(Vector *u, Vector *v);
-    Vector WorkplaneGetNormalVector(void);
-    void WorkplaneGetBasisExprs(ExprVector *u, ExprVector *v);
+    bool IsWorkplane(void);
+    // The plane is points P such that P dot (xn, yn, zn) - d = 0
+    void WorkplaneGetPlaneExprs(ExprVector *n, Expr **d);
     ExprVector WorkplaneGetOffsetExprs(void);
+    Vector WorkplaneGetOffset(void);
+    Entity *Normal(void);
 
     bool IsPoint(void);
     // Applies for any of the point types
@@ -212,10 +213,12 @@ public:
     ExprQuaternion NormalGetExprs(void);
     void NormalForceTo(Quaternion q);
 
-    // Applies for anything that comes with a plane
-    bool HasPlane(void);
-    // The plane is points P such that P dot (xn, yn, zn) - d = 0
-    void PlaneGetExprs(ExprVector *n, Expr **d);
+    Vector NormalU(void);
+    Vector NormalV(void);
+    Vector NormalN(void);
+    ExprVector NormalExprsU(void);
+    ExprVector NormalExprsV(void);
+    ExprVector NormalExprsN(void);
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.

@@ -5,44 +5,21 @@ char *Entity::DescriptionString(void) {
     return r->DescriptionString();
 }
 
-void Entity::WorkplaneGetBasisVectors(Vector *u, Vector *v) {
-    Quaternion quat = SS.GetEntity(normal)->NormalGetNum();
-
-    *u = quat.RotationU();
-    *v = quat.RotationV();
-}
-
-Vector Entity::WorkplaneGetNormalVector(void) {
-    Vector u, v;
-    WorkplaneGetBasisVectors(&u, &v);
-    return u.Cross(v);
-}
-
-void Entity::WorkplaneGetBasisExprs(ExprVector *u, ExprVector *v) {
-    ExprQuaternion q = SS.GetEntity(normal)->NormalGetExprs();
-
-    *u = q.RotationU();
-    *v = q.RotationV();
+bool Entity::IsWorkplane(void) {
+    return (type == WORKPLANE);
 }
 
 ExprVector Entity::WorkplaneGetOffsetExprs(void) {
     return SS.GetEntity(point[0])->PointGetExprs();
 }
 
-bool Entity::HasPlane(void) {
-    switch(type) {
-        case WORKPLANE:
-            return true;
-        default:
-            return false;
-    }
+Vector Entity::WorkplaneGetOffset(void) {
+    return SS.GetEntity(point[0])->PointGetNum();
 }
 
-void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
+void Entity::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
     if(type == WORKPLANE) {
-        ExprQuaternion q = (SS.GetEntity(normal))->NormalGetExprs();
-        // Convert the quaternion to our plane's normal vector.
-        *n = q.RotationN();
+        *n = Normal()->NormalExprsN();
 
         ExprVector p0 = SS.GetEntity(point[0])->PointGetExprs();
         // The plane is n dot (p - p0) = 0, or
@@ -52,6 +29,10 @@ void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
     } else {
         oops();
     }
+}
+
+Entity *Entity::Normal(void) {
+    return SS.GetEntity(normal);
 }
 
 bool Entity::IsPoint(void) {
@@ -117,6 +98,26 @@ void Entity::NormalForceTo(Quaternion q) {
     }
 }
 
+Vector Entity::NormalU(void) {
+    return NormalGetNum().RotationU();
+}
+Vector Entity::NormalV(void) {
+    return NormalGetNum().RotationV();
+}
+Vector Entity::NormalN(void) {
+    return NormalGetNum().RotationN();
+}
+
+ExprVector Entity::NormalExprsU(void) {
+    return NormalGetExprs().RotationU();
+}
+ExprVector Entity::NormalExprsV(void) {
+    return NormalGetExprs().RotationV();
+}
+ExprVector Entity::NormalExprsN(void) {
+    return NormalGetExprs().RotationN();
+}
+
 ExprQuaternion Entity::NormalGetExprs(void) {
     ExprQuaternion q;
     switch(type) {
@@ -159,10 +160,9 @@ void Entity::PointForceTo(Vector p) {
 
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(workplane);
-            Vector u, v;
-            c->WorkplaneGetBasisVectors(&u, &v);
-            SS.GetParam(param[0])->val = p.Dot(u);
-            SS.GetParam(param[1])->val = p.Dot(v);
+            p = p.Minus(c->WorkplaneGetOffset());
+            SS.GetParam(param[0])->val = p.Dot(c->Normal()->NormalU());
+            SS.GetParam(param[1])->val = p.Dot(c->Normal()->NormalV());
             break;
         }
 
@@ -189,10 +189,11 @@ Vector Entity::PointGetNum(void) {
 
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(workplane);
-            Vector u, v;
-            c->WorkplaneGetBasisVectors(&u, &v);
+            Vector u = c->Normal()->NormalU();
+            Vector v = c->Normal()->NormalV();
             p =        u.ScaledBy(SS.GetParam(param[0])->val);
             p = p.Plus(v.ScaledBy(SS.GetParam(param[1])->val));
+            p = p.Plus(c->WorkplaneGetOffset());
             break;
         }
 
@@ -219,10 +220,10 @@ ExprVector Entity::PointGetExprs(void) {
 
         case POINT_IN_2D: {
             Entity *c = SS.GetEntity(workplane);
-            ExprVector u, v;
-            c->WorkplaneGetBasisExprs(&u, &v);
-
-            r =        u.ScaledBy(Expr::FromParam(param[0]));
+            ExprVector u = c->Normal()->NormalExprsU();
+            ExprVector v = c->Normal()->NormalExprsV();
+            r = c->WorkplaneGetOffsetExprs();
+            r = r.Plus(u.ScaledBy(Expr::FromParam(param[0])));
             r = r.Plus(v.ScaledBy(Expr::FromParam(param[1])));
             break;
         }
@@ -253,8 +254,8 @@ void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
         // Get the offset and basis vectors for this weird exotic csys.
         Entity *w = SS.GetEntity(wrkpl);
         ExprVector wp = w->WorkplaneGetOffsetExprs();
-        ExprVector wu, wv;
-        w->WorkplaneGetBasisExprs(&wu, &wv);
+        ExprVector wu = w->Normal()->NormalExprsU();
+        ExprVector wv = w->Normal()->NormalExprsV();
 
         // Get our coordinates in three-space, and project them into that
         // coordinate system.
@@ -404,8 +405,8 @@ void Entity::DrawOrGetDistance(int order) {
             Vector p;
             p = SS.GetEntity(point[0])->PointGetNum();
 
-            Vector u, v;
-            WorkplaneGetBasisVectors(&u, &v);
+            Vector u = Normal()->NormalU();
+            Vector v = Normal()->NormalV();
 
             double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
 
