@@ -40,22 +40,9 @@ bool Entity::HasPlane(void) {
 
 void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
     if(type == WORKPLANE) {
-        Expr *a = Expr::FromParam(param[0]);
-        Expr *b = Expr::FromParam(param[1]);
-        Expr *c = Expr::FromParam(param[2]);
-        Expr *d = Expr::FromParam(param[3]);
-
-        Expr *two = Expr::FromConstant(2);
-
+        ExprQuaternion q = (SS.GetEntity(normal))->NormalGetExprs();
         // Convert the quaternion to our plane's normal vector.
-        n->x =               two->Times(a->Times(c));
-        n->x = (n->x)->Plus (two->Times(b->Times(d)));
-        n->y =               two->Times(c->Times(d));
-        n->y = (n->y)->Minus(two->Times(a->Times(b)));
-        n->z =               a->Square();
-        n->z = (n->z)->Minus(b->Square());
-        n->z = (n->z)->Minus(c->Square());
-        n->z = (n->z)->Plus (d->Square());
+        *n = q.RotationN();
 
         ExprVector p0 = SS.GetEntity(point[0])->PointGetExprs();
         // The plane is n dot (p - p0) = 0, or
@@ -489,7 +476,7 @@ void Entity::DrawOrGetDistance(int order) {
 
             int i, c = 20;
             Vector prev = u.ScaledBy(r).Plus(center);
-            for(i = 0; i <= c; i++) {
+            for(i = 1; i <= c; i++) {
                 double phi = (2*PI*i)/c;
                 Vector p = (u.ScaledBy(r*cos(phi))).Plus(
                             v.ScaledBy(r*sin(phi)));

@@ -159,7 +159,13 @@ public:
     static const int POINT_XFRMD            =  2010;
 
     static const int NORMAL_IN_3D           =  3000;
-    static const int NORMAL_IN_2D           =  3001;
+    static const int NORMAL_COPY            =  3001;
+    // This is a normal that lies in a plane; so if the defining workplane
+    // has basis vectors uw, vw, nw, then
+    // n = (cos theta)*uw + (sin theta)*vw
+    // u = (sin theta)*uw - (cos theta)*vw
+    // v = nw
+    static const int NORMAL_IN_PLANE        =  3002;
     static const int NORMAL_XFRMD           =  3010;
 
     static const int WORKPLANE              = 10000;

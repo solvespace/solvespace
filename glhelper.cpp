@@ -133,8 +133,9 @@ void glxFillPolygon(SPolygon *p)
     gluTessCallback(gt, GLU_TESS_COMBINE, (cf *)Combine);
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
-    Vector normal = p->Normal();
+    Vector normal = p->normal;
     glNormal3d(normal.x, normal.y, normal.z);
+    gluTessNormal(gt, normal.x, normal.y, normal.z);
 
     gluTessBeginPolygon(gt, NULL);
     for(i = 0; i < p->l.n; i++) {
@@ -152,5 +153,36 @@ void glxFillPolygon(SPolygon *p)
     }
     gluTessEndPolygon(gt);
     gluDeleteTess(gt);
+}
+
+void glxMarkPolygonNormal(SPolygon *p) {
+    Vector tail = Vector::MakeFrom(0, 0, 0);
+    int i, j, cnt = 0;
+    // Choose some reasonable center point.
+    for(i = 0; i < p->l.n; i++) {
+        SContour *sc = &(p->l.elem[i]);
+        for(j = 0; j < (sc->l.n-1); j++) {
+            SPoint *sp = &(sc->l.elem[j]);
+            tail = tail.Plus(sp->p);
+            cnt++;
+        }
+    }
+    if(cnt == 0) return;
+    tail = tail.ScaledBy(1.0/cnt);
+
+    Vector gn = SS.GW.projRight.Cross(SS.GW.projUp);
+    Vector tip = tail.Plus((p->normal).WithMagnitude(40/SS.GW.scale));
+    Vector arrow = (p->normal).WithMagnitude(15/SS.GW.scale);
+
+    glColor3d(1, 1, 0);
+    glBegin(GL_LINES);
+        glxVertex3v(tail);
+        glxVertex3v(tip);
+        glxVertex3v(tip);
+        glxVertex3v(tip.Minus(arrow.RotatedAbout(gn, 0.6)));
+        glxVertex3v(tip);
+        glxVertex3v(tip.Minus(arrow.RotatedAbout(gn, -0.6)));
+    glEnd();
+    glEnable(GL_LIGHTING);
 }
 

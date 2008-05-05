@@ -67,6 +67,7 @@ void MemFree(void *p);
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
 void glxFillPolygon(SPolygon *p);
+void glxMarkPolygonNormal(SPolygon *p);
 void glxWriteText(char *str);
 void glxWriteTextRefCenter(char *str);
 void glxTranslatev(Vector u);

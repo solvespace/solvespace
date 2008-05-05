@@ -175,6 +175,7 @@ void Group::MakePolygons(void) {
         SEdge error;
         if(edges.AssemblePolygon(&poly, &error)) {
             polyError.yes = false;
+            poly.normal = poly.ComputeNormal();
             faces.Add(&poly);
         } else {
             polyError.yes = true;
@@ -199,7 +200,18 @@ void Group::MakePolygons(void) {
         // The bottom
         memset(&poly, 0, sizeof(poly));
         if(!edges.AssemblePolygon(&poly, &error)) oops();
+        Vector n = poly.ComputeNormal();
+        if(translate.Dot(n) > 0) {
+            n = n.ScaledBy(-1);
+        }
+        poly.normal = n;
+        poly.FixContourDirections();
+        poly.FixContourDirections();
         faces.Add(&poly);
+
+        // Regenerate the edges, with the contour directions fixed up.
+        edges.l.Clear();
+        poly.MakeEdgesInto(&edges);
 
         // The sides
         int i;
@@ -212,7 +224,9 @@ void Group::MakePolygons(void) {
             poly.AddPoint((edge->b).Plus(translate));
             poly.AddPoint((edge->a).Plus(translate));
             poly.AddPoint(edge->a);
+            poly.normal = ((edge->a).Minus(edge->b).Cross(n)).WithMagnitude(1);
             faces.Add(&poly);
+
             edge->a = (edge->a).Plus(translate);
             edge->b = (edge->b).Plus(translate);
         }
@@ -220,6 +234,7 @@ void Group::MakePolygons(void) {
         // The top
         memset(&poly, 0, sizeof(poly));
         if(!edges.AssemblePolygon(&poly, &error)) oops();
+        poly.normal = n.ScaledBy(-1);
         faces.Add(&poly);
     }
 }
@@ -248,6 +263,15 @@ void Group::Draw(void) {
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec);
         for(i = 0; i < faces.n; i++) {
             glxFillPolygon(&(faces.elem[i]));
+#if 0
+            // Debug stuff to show normals to the faces on-screen
+            glDisable(GL_LIGHTING);
+            glDisable(GL_DEPTH_TEST);
+            glxMarkPolygonNormal(&(faces.elem[i]));
+            glEnable(GL_LIGHTING);
+            glEnable(GL_DEPTH_TEST);
+#endif
+
         }
         glDisable(GL_LIGHTING);
     }

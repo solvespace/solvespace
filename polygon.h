@@ -57,17 +57,22 @@ public:
     SList<SPoint>   l;
 
     void MakeEdgesInto(SEdgeList *el);
-    Vector Normal(void);
+    void Reverse(void);
+    Vector ComputeNormal(void);
+    bool IsClockwiseProjdToNormal(Vector n);
+    bool ContainsPointProjdToNormal(Vector n, Vector p);
 };
 
 class SPolygon {
 public:
     SList<SContour> l;
+    Vector          normal;
 
-    Vector Normal(void);
+    Vector ComputeNormal(void);
     void AddEmptyContour(void);
     void AddPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
+    void FixContourDirections(void);
     void Clear(void);
 };
 

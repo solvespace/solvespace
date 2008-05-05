@@ -139,6 +139,7 @@ public:
 
     ExprVector RotationU(void);
     ExprVector RotationV(void);
+    ExprVector RotationN(void);
 };
 
 #endif

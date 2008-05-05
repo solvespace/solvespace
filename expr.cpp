@@ -99,6 +99,24 @@ ExprVector ExprQuaternion::RotationV(void) {
     return v;
 }
 
+ExprVector ExprQuaternion::RotationN(void) {
+    ExprVector n;
+    Expr *two = Expr::FromConstant(2);
+
+    n.x =              two->Times( w->Times(vy));
+    n.x = (n.x)->Plus (two->Times(vx->Times(vz)));
+
+    n.y =              two->Times(vy->Times(vz));
+    n.y = (n.y)->Minus(two->Times( w->Times(vx)));
+
+    n.z =               w->Square();
+    n.z = (n.z)->Minus(vx->Square());
+    n.z = (n.z)->Minus(vy->Square());
+    n.z = (n.z)->Plus (vz->Square());
+
+    return n;
+}
+
 Expr *Expr::FromParam(hParam p) {
     Expr *r = AllocExpr();
     r->op = PARAM;
