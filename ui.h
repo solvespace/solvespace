@@ -103,6 +103,7 @@ public:
         MNU_FREE_IN_3D,
         MNU_DATUM_POINT,
         MNU_LINE_SEGMENT,
+        MNU_CIRCLE,
         MNU_RECTANGLE,
         MNU_CUBIC,
         // Group
@@ -169,20 +170,31 @@ public:
     void EnsureValidActives();
 
     // Operations that must be completed by doing something with the mouse
-    // are noted here.
+    // are noted here. These occupy the same space as the menu ids.
+    static const int    FIRST_PENDING               = 0x0f000000;
     static const int    DRAGGING_POINT              = 0x0f000000;
     static const int    DRAGGING_NEW_POINT          = 0x0f000001;
     static const int    DRAGGING_NEW_LINE_POINT     = 0x0f000002;
     static const int    DRAGGING_NEW_CUBIC_POINT    = 0x0f000003;
     static const int    DRAGGING_CONSTRAINT         = 0x0f000004;
-    hEntity     pendingPoint;
-    hConstraint pendingConstraint;
-    int         pendingOperation;
-    char       *pendingDescription;
-    hRequest AddRequest(int type);
+    static const int    DRAGGING_RADIUS             = 0x0f000005;
+    static const int    DRAGGING_NORMAL             = 0x0f000006;
+    static const int    DRAGGING_NEW_RADIUS         = 0x0f000007;
+    struct {
+        int         operation;
 
+        hEntity     point;
+        hEntity     circle;
+        hEntity     normal;
+        hConstraint constraint;
+
+        char        *description;
+    } pending;
+    void ClearPending(void);
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
+
+    hRequest AddRequest(int type);
     
     // The current selection.
     class Selection {
@@ -215,7 +227,7 @@ public:
 
     // This sets what gets displayed.
     bool    showWorkplanes;
-    bool    showAxes;
+    bool    showNormals;
     bool    showPoints;
     bool    showConstraints;
     bool    showTextWindow;
@@ -228,8 +240,8 @@ public:
     static const int SOLVE_ALWAYS = 1;
     int     solving;
 
-    void UpdateDraggedPoint(Vector *pos, double mx, double my);
-    void UpdateDraggedEntity(hEntity hp, double mx, double my);
+    void UpdateDraggedNum(Vector *pos, double mx, double my);
+    void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
     // These are called by the platform-specific code.
     void Paint(int w, int h);

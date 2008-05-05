@@ -86,8 +86,8 @@ void System::SortBySensitivity(void) {
         mat.dragged[j] = false;
         mat.permutation[j] = j;
     }
-    if(SS.GW.pendingPoint.v) {
-        Entity *p = SS.entity.FindByIdNoOops(SS.GW.pendingPoint);
+    if(SS.GW.pending.point.v) {
+        Entity *p = SS.entity.FindByIdNoOops(SS.GW.pending.point);
         // If we're solving an earlier group, then the pending point might
         // not exist in the entity tables yet.
         if(p) {

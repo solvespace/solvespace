@@ -49,8 +49,8 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
             Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
-            Vector a = SS.GetEntity(c.ptA)->PointGetCoords();
-            Vector b = SS.GetEntity(c.ptB)->PointGetCoords();
+            Vector a = SS.GetEntity(c.ptA)->PointGetNum();
+            Vector b = SS.GetEntity(c.ptB)->PointGetNum();
 
             c.disp.offset = n.Cross(a.Minus(b)).WithMagnitude(50);
             c.exprA = Expr::FromString("0")->DeepCopyKeep();

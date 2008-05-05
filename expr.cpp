@@ -53,7 +53,51 @@ Expr *ExprVector::Magnitude(void) {
     return r->Sqrt();
 }
 
+ExprQuaternion ExprQuaternion::FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz)
+{
+    ExprQuaternion q;
+    q.w = w;
+    q.vx = vx;
+    q.vy = vy;
+    q.vz = vz;
+    return q;
+}
 
+ExprVector ExprQuaternion::RotationU(void) {
+    ExprVector u;
+    Expr *two = Expr::FromConstant(2);
+
+    u.x = w->Square();
+    u.x = (u.x)->Plus(vx->Square());
+    u.x = (u.x)->Minus(vy->Square());
+    u.x = (u.x)->Minus(vz->Square());
+
+    u.y = two->Times(w->Times(vz));
+    u.y = (u.y)->Plus(two->Times(vx->Times(vy)));
+
+    u.z = two->Times(vx->Times(vz));
+    u.z = (u.z)->Minus(two->Times(w->Times(vy)));
+
+    return u;
+}
+
+ExprVector ExprQuaternion::RotationV(void) {
+    ExprVector v;
+    Expr *two = Expr::FromConstant(2);
+
+    v.x = two->Times(vx->Times(vy));
+    v.x = (v.x)->Minus(two->Times(w->Times(vz)));
+
+    v.y = w->Square();
+    v.y = (v.y)->Minus(vx->Square());
+    v.y = (v.y)->Plus(vy->Square());
+    v.y = (v.y)->Minus(vz->Square());
+
+    v.z = two->Times(w->Times(vx));
+    v.z = (v.z)->Plus(two->Times(vy->Times(vz)));
+
+    return v;
+}
 
 Expr *Expr::FromParam(hParam p) {
     Expr *r = AllocExpr();

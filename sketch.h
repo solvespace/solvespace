@@ -103,7 +103,8 @@ public:
     // mapping list.
     IdList<EntityMap,EntityId> remap;
     hEntity Remap(hEntity in, int copyNumber);
-    void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz);
+    void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
+                    bool isExtrusion);
 
     void MakePolygons(void);
     void Draw(void);
@@ -130,6 +131,7 @@ public:
     static const int DATUM_POINT            = 101;
     static const int LINE_SEGMENT           = 200;
     static const int CUBIC                  = 300;
+    static const int CIRCLE                 = 400;
 
     int         type;
 
@@ -152,22 +154,30 @@ public:
 
     static const hEntity    FREE_IN_3D;
 
-    static const int WORKPLANE              =  1000;
     static const int POINT_IN_3D            =  2000;
     static const int POINT_IN_2D            =  2001;
     static const int POINT_XFRMD            =  2010;
-    static const int LINE_SEGMENT           = 10000;
-    static const int CUBIC                  = 11000;
 
-    static const int EDGE_LIST              = 90000;
-    static const int FACE_LIST              = 91000;
+    static const int NORMAL_IN_3D           =  3000;
+    static const int NORMAL_IN_2D           =  3001;
+    static const int NORMAL_XFRMD           =  3010;
+
+    static const int WORKPLANE              = 10000;
+    static const int LINE_SEGMENT           = 11000;
+    static const int CUBIC                  = 12000;
+    static const int CIRCLE                 = 13000;
+
     int         type;
 
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
     hParam      param[4];
     hEntity     point[4];
-    hEntity     direction;
+    hEntity     normal;
+
+    // Derived points are a symbolic offset from a constant base.
+    Vector      numPoint;
+    Quaternion  numNormal;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
@@ -184,11 +194,17 @@ public:
 
     bool IsPoint(void);
     // Applies for any of the point types
-    Vector PointGetCoords(void);
+    Vector PointGetNum(void);
     ExprVector PointGetExprs(void);
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
+
+    bool IsNormal(void);
+    // Applies for any of the normal types
+    Quaternion NormalGetNum(void);
+    ExprQuaternion NormalGetExprs(void);
+    void NormalForceTo(Quaternion q);
 
     // Applies for anything that comes with a plane
     bool HasPlane(void);

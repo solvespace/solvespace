@@ -6,11 +6,7 @@ char *Entity::DescriptionString(void) {
 }
 
 void Entity::WorkplaneGetBasisVectors(Vector *u, Vector *v) {
-    double q[4];
-    for(int i = 0; i < 4; i++) {
-        q[i] = SS.GetParam(param[i])->val;
-    }
-    Quaternion quat = Quaternion::MakeFrom(q[0], q[1], q[2], q[3]);
+    Quaternion quat = SS.GetEntity(normal)->NormalGetNum();
 
     *u = quat.RotationU();
     *v = quat.RotationV();
@@ -23,34 +19,10 @@ Vector Entity::WorkplaneGetNormalVector(void) {
 }
 
 void Entity::WorkplaneGetBasisExprs(ExprVector *u, ExprVector *v) {
-    Expr *a = Expr::FromParam(param[0]);
-    Expr *b = Expr::FromParam(param[1]);
-    Expr *c = Expr::FromParam(param[2]);
-    Expr *d = Expr::FromParam(param[3]);
+    ExprQuaternion q = SS.GetEntity(normal)->NormalGetExprs();
 
-    Expr *two = Expr::FromConstant(2);
-
-    u->x = a->Square();
-    u->x = (u->x)->Plus(b->Square());
-    u->x = (u->x)->Minus(c->Square());
-    u->x = (u->x)->Minus(d->Square());
-
-    u->y = two->Times(a->Times(d));
-    u->y = (u->y)->Plus(two->Times(b->Times(c)));
-
-    u->z = two->Times(b->Times(d));
-    u->z = (u->z)->Minus(two->Times(a->Times(c)));
-
-    v->x = two->Times(b->Times(c));
-    v->x = (v->x)->Minus(two->Times(a->Times(d)));
-
-    v->y = a->Square();
-    v->y = (v->y)->Minus(b->Square());
-    v->y = (v->y)->Plus(c->Square());
-    v->y = (v->y)->Minus(d->Square());
-
-    v->z = two->Times(a->Times(b));
-    v->z = (v->z)->Plus(two->Times(c->Times(d)));
+    *u = q.RotationU();
+    *v = q.RotationV();
 }
 
 ExprVector Entity::WorkplaneGetOffsetExprs(void) {
@@ -98,20 +70,92 @@ void Entity::PlaneGetExprs(ExprVector *n, Expr **dn) {
 bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
-            // A point by (x, y, z) in our base coordinate system. These
-            // variables are given by param[0:2].
         case POINT_IN_2D:
-            // A point by (u, v) in a workplane. These variables are given
-            // by param[0:1], and the workplane is given in workplane.
-        case POINT_XFRMD:
-            // A point by a translation of another point. The original
-            // point is given by point[0], and the three offsets in
-            // param[0:2].
-            return true;
+        case POINT_XFRMD: return true;
 
-        default:
-            return false;
+        default:          return false;
     }
+}
+
+bool Entity::IsNormal(void) {
+    switch(type) {
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD: return true;
+
+        default:           return false;
+    }
+}
+
+Quaternion Entity::NormalGetNum(void) {
+    Quaternion q;
+    switch(type) {
+        case NORMAL_IN_3D:
+            q.w  = SS.GetParam(param[0])->val;
+            q.vx = SS.GetParam(param[1])->val;
+            q.vy = SS.GetParam(param[2])->val;
+            q.vz = SS.GetParam(param[3])->val;
+            break;
+
+        case NORMAL_IN_2D: {
+            Entity *wrkpl = SS.GetEntity(workplane);
+            Entity *norm = SS.GetEntity(wrkpl->normal);
+            q = norm->NormalGetNum();
+            break;
+        }
+        case NORMAL_XFRMD:
+            q = numNormal;
+            break;
+
+        default: oops();
+    }
+    return q;
+}
+
+void Entity::NormalForceTo(Quaternion q) {
+    switch(type) {
+        case NORMAL_IN_3D:
+            SS.GetParam(param[0])->val = q.w;
+            SS.GetParam(param[1])->val = q.vx;
+            SS.GetParam(param[2])->val = q.vy;
+            SS.GetParam(param[3])->val = q.vz;
+            break;
+
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD:
+            // There's absolutely nothing to do; these are locked.
+            break;
+
+        default: oops();
+    }
+}
+
+ExprQuaternion Entity::NormalGetExprs(void) {
+    ExprQuaternion q;
+    switch(type) {
+        case NORMAL_IN_3D:
+            q.w  = Expr::FromParam(param[0]);
+            q.vx = Expr::FromParam(param[1]);
+            q.vy = Expr::FromParam(param[2]);
+            q.vz = Expr::FromParam(param[3]);
+            break;
+
+        case NORMAL_IN_2D: {
+            Entity *wrkpl = SS.GetEntity(workplane);
+            Entity *norm = SS.GetEntity(wrkpl->normal);
+            q = norm->NormalGetExprs();
+            break;
+        }
+        case NORMAL_XFRMD:
+            q.w  = Expr::FromConstant(numNormal.w);
+            q.vx = Expr::FromConstant(numNormal.vx);
+            q.vy = Expr::FromConstant(numNormal.vy);
+            q.vz = Expr::FromConstant(numNormal.vz);
+            break;
+
+        default: oops();
+    }
+    return q;
 }
 
 bool Entity::PointIsFromReferences(void) {
@@ -136,8 +180,7 @@ void Entity::PointForceTo(Vector p) {
         }
 
         case POINT_XFRMD: {
-            Vector orig = SS.GetEntity(point[0])->PointGetCoords();
-            Vector trans = p.Minus(orig);
+            Vector trans = p.Minus(numPoint);
             SS.GetParam(param[0])->val = trans.x;
             SS.GetParam(param[1])->val = trans.y;
             SS.GetParam(param[2])->val = trans.z;
@@ -148,7 +191,7 @@ void Entity::PointForceTo(Vector p) {
     }
 }
 
-Vector Entity::PointGetCoords(void) {
+Vector Entity::PointGetNum(void) {
     Vector p;
     switch(type) {
         case POINT_IN_3D:
@@ -167,7 +210,7 @@ Vector Entity::PointGetCoords(void) {
         }
 
         case POINT_XFRMD: {
-            p = SS.GetEntity(point[0])->PointGetCoords();
+            p = numPoint; 
             p.x += SS.GetParam(param[0])->val;
             p.y += SS.GetParam(param[1])->val;
             p.z += SS.GetParam(param[2])->val;
@@ -197,7 +240,10 @@ ExprVector Entity::PointGetExprs(void) {
             break;
         }
         case POINT_XFRMD: {
-            ExprVector orig = SS.GetEntity(point[0])->PointGetExprs();
+            ExprVector orig = {
+                Expr::FromConstant(numPoint.x),
+                Expr::FromConstant(numPoint.y),
+                Expr::FromConstant(numPoint.z) };
             ExprVector trans;
             trans.x = Expr::FromParam(param[0]);
             trans.y = Expr::FromParam(param[1]);
@@ -307,12 +353,16 @@ void Entity::DrawOrGetDistance(int order) {
                 }
             }
 
-            Vector v = PointGetCoords();
+            Vector v = PointGetNum();
 
             if(dogd.drawing) {
                 double s = 3;
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
+
+                // The usual fudge, to make this appear in front.
+                Vector gn = SS.GW.projRight.Cross(SS.GW.projUp);
+                v = v.Plus(gn.ScaledBy(4/SS.GW.scale));
 
                 glxColor3d(0, 0.8, 0);
                 glBegin(GL_QUADS);
@@ -330,12 +380,42 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD: {    
+            if(order >= 0 && order != 2) break;
+            if(!SS.GW.showNormals) break;
+
+            hRequest hr = h.request();
+            double f = 0.5;
+            if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                glxColor3d(0, 0, f);
+            } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                glxColor3d(f, 0, 0);
+            } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                glxColor3d(0, f, 0);
+            } else {
+                glxColor3d(0, 0.4, 0.4);
+            }
+            Quaternion q = NormalGetNum();
+            Vector tail = SS.GetEntity(point[0])->PointGetNum();
+            Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
+            Vector tip = tail.Plus(v);
+            LineDrawOrGetDistance(tail, tip);
+
+            v = v.WithMagnitude(12);
+            Vector axis = q.RotationV();
+            LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis,  0.6)));
+            LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis, -0.6)));
+            break;
+        }
+
         case WORKPLANE: {
             if(order >= 0 && order != 0) break;
             if(!SS.GW.showWorkplanes) break;
 
             Vector p;
-            p = SS.GetEntity(point[0])->PointGetCoords();
+            p = SS.GetEntity(point[0])->PointGetNum();
 
             Vector u, v;
             WorkplaneGetBasisVectors(&u, &v);
@@ -350,7 +430,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector mm = p.Minus(us).Minus(vs);
             Vector mp = p.Minus(us).Plus (vs);
 
-            glxColor3d(0, 0.4, 0.4);
+            glxColor3d(0, 0.3, 0.3);
             LineDrawOrGetDistance(pp, pm);
             LineDrawOrGetDistance(pm, mm);
             LineDrawOrGetDistance(mm, mp);
@@ -362,23 +442,28 @@ void Entity::DrawOrGetDistance(int order) {
                     glxOntoWorkplane(u, v);
                     glxWriteText(DescriptionString());
                 glPopMatrix();
+            } else {
+                // If a line lies in a plane, then select the line, not
+                // the plane.
+                dogd.dmin += 3;
             }
             break;
         }
 
         case LINE_SEGMENT: {
             if(order >= 0 && order != 1) break;
-            Vector a = SS.GetEntity(point[0])->PointGetCoords();
-            Vector b = SS.GetEntity(point[1])->PointGetCoords();
+            Vector a = SS.GetEntity(point[0])->PointGetNum();
+            Vector b = SS.GetEntity(point[1])->PointGetNum();
             LineDrawOrGetDistanceOrEdge(a, b);
             break;
         }
 
         case CUBIC: {
-            Vector p0 = SS.GetEntity(point[0])->PointGetCoords();
-            Vector p1 = SS.GetEntity(point[1])->PointGetCoords();
-            Vector p2 = SS.GetEntity(point[2])->PointGetCoords();
-            Vector p3 = SS.GetEntity(point[3])->PointGetCoords();
+            if(order >= 0 && order != 1) break;
+            Vector p0 = SS.GetEntity(point[0])->PointGetNum();
+            Vector p1 = SS.GetEntity(point[1])->PointGetNum();
+            Vector p2 = SS.GetEntity(point[2])->PointGetNum();
+            Vector p3 = SS.GetEntity(point[3])->PointGetNum();
             int i, n = 20;
             Vector prev = p0;
             for(i = 1; i <= n; i++) {
@@ -388,6 +473,27 @@ void Entity::DrawOrGetDistance(int order) {
                     (p1.ScaledBy(3*t*(1 - t)*(1 - t))).Plus(
                     (p2.ScaledBy(3*t*t*(1 - t))).Plus(
                     (p3.ScaledBy(t*t*t)))));
+                LineDrawOrGetDistanceOrEdge(prev, p);
+                prev = p;
+            }
+            break;
+        }
+
+        case CIRCLE: {
+            if(order >= 0 && order != 1) break;
+
+            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
+            double r = SS.GetParam(param[0])->val;
+            Vector center = SS.GetEntity(point[0])->PointGetNum();
+            Vector u = q.RotationU(), v = q.RotationV();
+
+            int i, c = 20;
+            Vector prev = u.ScaledBy(r).Plus(center);
+            for(i = 0; i <= c; i++) {
+                double phi = (2*PI*i)/c;
+                Vector p = (u.ScaledBy(r*cos(phi))).Plus(
+                            v.ScaledBy(r*sin(phi)));
+                p = p.Plus(center);
                 LineDrawOrGetDistanceOrEdge(prev, p);
                 prev = p;
             }

@@ -68,7 +68,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                CopyEntity(e->h, 0, h.param(0), h.param(1), h.param(2));
+                CopyEntity(e->h, 0, h.param(0), h.param(1), h.param(2), true);
             }
             break;
 
@@ -93,7 +93,9 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     return h.entity(em.h.v);
 }
 
-void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz) {
+void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
+                       bool isExtrusion)
+{
     Entity *ep = SS.GetEntity(in);
     
     Entity en;
@@ -119,13 +121,36 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz) {
             en.point[3] = Remap(ep->point[3], a);
             break;
 
+        case Entity::CIRCLE:
+            en.point[0] = Remap(ep->point[0], a);
+            en.normal   = Remap(ep->normal, a);
+            en.param[0] = ep->param[0]; // XXX make numerical somehow later
+            break;
+
         case Entity::POINT_IN_3D:
         case Entity::POINT_IN_2D:
             en.type = Entity::POINT_XFRMD;
-            en.point[0] = ep->h;
             en.param[0] = dx;
             en.param[1] = dy;
             en.param[2] = dz;
+            en.numPoint = ep->PointGetNum();
+
+            if(isExtrusion) {
+                if(a != 0) oops();
+                SS.entity.Add(&en);
+                en.point[0] = ep->h;
+                en.point[1] = en.h;
+                en.h = Remap(ep->h, 1);
+                en.type = Entity::LINE_SEGMENT;
+                // And then this line segment gets added
+            }
+            break;
+
+        case Entity::NORMAL_IN_3D:
+        case Entity::NORMAL_IN_2D:
+            en.type = Entity::NORMAL_XFRMD;
+            en.numNormal = ep->NormalGetNum();
+            en.point[0] = Remap(ep->point[0], a);
             break;
 
         default:
@@ -242,67 +267,104 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     int points = 0;
     int params = 0;
     int et = 0;
+    bool hasNormal = false;
     int i;
-
-    Group *g = SS.group.FindById(group);
 
     Entity e;
     memset(&e, 0, sizeof(e));
     switch(type) {
         case Request::WORKPLANE:
-            et = Entity::WORKPLANE;        points = 1; params = 4; goto c;
+            et = Entity::WORKPLANE;
+            points = 1;
+            hasNormal = true;
+            break;
 
         case Request::DATUM_POINT:
-            et = 0;                        points = 1; params = 0; goto c;
+            et = 0;
+            points = 1;
+            break;
 
         case Request::LINE_SEGMENT:
-            et = Entity::LINE_SEGMENT;     points = 2; params = 0; goto c;
+            et = Entity::LINE_SEGMENT;
+            points = 2;
+            break;
+
+        case Request::CIRCLE:
+            et = Entity::CIRCLE;
+            points = 1;
+            params = 1;
+            hasNormal = true;
+            break;
 
         case Request::CUBIC:
-            et = Entity::CUBIC;            points = 4; params = 0; goto c;
-c: {
-            // Generate the entity that's specific to this request.
-            e.type = et;
-            e.group = group;
-            e.h = h.entity(0);
-
-            // And generate entities for the points
-            for(i = 0; i < points; i++) {
-                Entity p;
-                memset(&p, 0, sizeof(p));
-                p.workplane = workplane;
-                // points start from entity 1, except for datum point case
-                p.h = h.entity(i+(et ? 1 : 0));
-                p.group = group;
-
-                if(workplane.v == Entity::FREE_IN_3D.v) {
-                    p.type = Entity::POINT_IN_3D;
-                    // params for x y z
-                    p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
-                    p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
-                    p.param[2] = AddParam(param, h.param(16 + 3*i + 2));
-                } else {
-                    p.type = Entity::POINT_IN_2D;
-                    // params for u v
-                    p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
-                    p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
-                }
-                entity->Add(&p);
-                e.point[i] = p.h;
-            }
-            // And generate any params not associated with the point that
-            // we happen to need.
-            for(i = 0; i < params; i++) {
-                e.param[i] = AddParam(param, h.param(i));
-            }
-
-            if(et) entity->Add(&e);
+            et = Entity::CUBIC;
+            points = 4; 
             break;
-        }
 
-        default:
-            oops();
+        default: oops();
     }
+
+    // Generate the entity that's specific to this request.
+    e.type = et;
+    e.group = group;
+    e.workplane = workplane;
+    e.h = h.entity(0);
+
+    // And generate entities for the points
+    for(i = 0; i < points; i++) {
+        Entity p;
+        memset(&p, 0, sizeof(p));
+        p.workplane = workplane;
+        // points start from entity 1, except for datum point case
+        p.h = h.entity(i+(et ? 1 : 0));
+        p.group = group;
+
+        if(workplane.v == Entity::FREE_IN_3D.v) {
+            p.type = Entity::POINT_IN_3D;
+            // params for x y z
+            p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
+            p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
+            p.param[2] = AddParam(param, h.param(16 + 3*i + 2));
+        } else {
+            p.type = Entity::POINT_IN_2D;
+            // params for u v
+            p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
+            p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
+        }
+        entity->Add(&p);
+        e.point[i] = p.h;
+    }
+    if(hasNormal) {
+        Entity n;
+        memset(&n, 0, sizeof(n));
+        n.workplane = workplane;
+        n.h = h.entity(16);
+        n.group = group;
+        if(workplane.v == Entity::FREE_IN_3D.v) {
+            n.type = Entity::NORMAL_IN_3D;
+            n.param[0] = AddParam(param, h.param(32+0));
+            n.param[1] = AddParam(param, h.param(32+1));
+            n.param[2] = AddParam(param, h.param(32+2));
+            n.param[3] = AddParam(param, h.param(32+3));
+        } else {
+            n.type = Entity::NORMAL_IN_2D;
+            // and this is just a copy of the workplane quaternion,
+            // so no params required
+        }
+        if(points < 1) oops();
+        // The point determines where the normal gets displayed on-screen;
+        // it's entirely cosmetic.
+        n.point[0] = e.point[0];
+        entity->Add(&n);
+        e.normal = n.h;
+    }
+    // And generate any params not associated with the point that
+    // we happen to need.
+    for(i = 0; i < params; i++) {
+        e.param[i] = AddParam(param, h.param(i));
+    }
+
+    if(et) entity->Add(&e);
 }
 
 char *Request::DescriptionString(void) {

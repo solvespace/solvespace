@@ -131,4 +131,15 @@ public:
     Expr *Magnitude(void);
 };
 
+class ExprQuaternion {
+public:
+    Expr *w, *vx, *vy, *vz;
+
+    static ExprQuaternion FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz);
+
+    ExprVector RotationU(void);
+    ExprVector RotationV(void);
+};
+
 #endif
+

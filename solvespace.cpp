@@ -72,28 +72,29 @@ void SolveSpace::ForceReferences(void) {
     // Force the values of the paramters that define the three reference
     // coordinate systems.
     static const struct {
-        hRequest hr;
-        double a, b, c, d;
+        hRequest    hr;
+        Quaternion  q;
     } Quat[] = {
-        { Request::HREQUEST_REFERENCE_XY, 1,    0,    0,    0, },
-        { Request::HREQUEST_REFERENCE_YZ, 0.5,  0.5,  0.5,  0.5, },
-        { Request::HREQUEST_REFERENCE_ZX, 0.5, -0.5, -0.5, -0.5, },
+        { Request::HREQUEST_REFERENCE_XY, { 1,    0,    0,    0,   } },
+        { Request::HREQUEST_REFERENCE_YZ, { 0.5,  0.5,  0.5,  0.5, } },
+        { Request::HREQUEST_REFERENCE_ZX, { 0.5, -0.5, -0.5, -0.5, } },
     };
     for(int i = 0; i < 3; i++) {
         hRequest hr = Quat[i].hr;
+        Entity *wrkpl = GetEntity(hr.entity(0));
         // The origin for our coordinate system, always zero
-        Vector v = Vector::MakeFrom(0, 0, 0);
-        Entity *origin = GetEntity(hr.entity(1));
-        origin->PointForceTo(v);
+        Entity *origin = GetEntity(wrkpl->point[0]);
+        origin->PointForceTo(Vector::MakeFrom(0, 0, 0));
         GetParam(origin->param[0])->known = true;
         GetParam(origin->param[1])->known = true;
         GetParam(origin->param[2])->known = true;
         // The quaternion that defines the rotation, from the table.
-        Param *p;
-        p = GetParam(hr.param(0)); p->val = Quat[i].a; p->known = true;
-        p = GetParam(hr.param(1)); p->val = Quat[i].b; p->known = true;
-        p = GetParam(hr.param(2)); p->val = Quat[i].c; p->known = true;
-        p = GetParam(hr.param(3)); p->val = Quat[i].d; p->known = true;
+        Entity *normal = GetEntity(wrkpl->normal); 
+        normal->NormalForceTo(Quat[i].q);
+        GetParam(normal->param[0])->known = true;
+        GetParam(normal->param[1])->known = true;
+        GetParam(normal->param[2])->known = true;
+        GetParam(normal->param[3])->known = true;
     }
 }
 

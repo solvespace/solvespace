@@ -27,6 +27,7 @@ typedef signed long SDWORD;
 
 class Expr;
 class ExprVector;
+class ExprQuaternion;
 
 // From the platform-specific code.
 int SaveFileYesNoCancel(void);

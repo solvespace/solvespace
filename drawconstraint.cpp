@@ -41,8 +41,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     glxColor3d(1, 0.2, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
-            Vector ap = SS.GetEntity(ptA)->PointGetCoords();
-            Vector bp = SS.GetEntity(ptB)->PointGetCoords();
+            Vector ap = SS.GetEntity(ptA)->PointGetNum();
+            Vector bp = SS.GetEntity(ptB)->PointGetNum();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
             if(labelPos) *labelPos = ref;
@@ -74,8 +74,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case POINTS_COINCIDENT: {
             if(!dogd.drawing) {
                 for(int i = 0; i < 2; i++) {
-                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->
-                                                            PointGetCoords();
+                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
                     Point2d pp = SS.GW.ProjectPoint(p);
                     // The point is selected within a radius of 7, from the
                     // same center; so if the point is visible, then this
@@ -89,8 +88,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
                 for(int i = 0; i < 2; i++) {
-                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)->
-                                                            PointGetCoords();
+                    Vector p = SS.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
                     glxColor3d(0.4, 0, 0.4);
                     glBegin(GL_QUADS);
                         glxVertex3v(p.Plus (r).Plus (d));
@@ -107,7 +105,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case PT_ON_LINE:
         case PT_IN_PLANE: {
             double s = 7;
-            Vector p = SS.GetEntity(ptA)->PointGetCoords();
+            Vector p = SS.GetEntity(ptA)->PointGetNum();
             Vector r = gr.WithMagnitude(s);
             Vector d = gu.WithMagnitude(s);
             LineDrawOrGetDistance(p.Plus (r).Plus (d), p.Plus (r).Minus(d));
@@ -120,8 +118,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case EQUAL_LENGTH_LINES: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
-                Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
-                Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
+                Vector a = SS.GetEntity(e->point[0])->PointGetNum();
+                Vector b = SS.GetEntity(e->point[1])->PointGetNum();
                 Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
                 Vector ab = a.Minus(b);
                 Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
@@ -132,8 +130,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         case SYMMETRIC: {
-            Vector a = SS.GetEntity(ptA)->PointGetCoords();
-            Vector b = SS.GetEntity(ptB)->PointGetCoords();
+            Vector a = SS.GetEntity(ptA)->PointGetNum();
+            Vector b = SS.GetEntity(ptB)->PointGetNum();
             Vector n = SS.GetEntity(entityA)->WorkplaneGetNormalVector();
             for(int i = 0; i < 2; i++) {
                 Vector tail = (i == 0) ? a : b;
@@ -168,8 +166,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 }
                 // For "at midpoint", this branch is always taken.
                 Entity *e = SS.GetEntity(entityA);
-                Vector a = SS.GetEntity(e->point[0])->PointGetCoords();
-                Vector b = SS.GetEntity(e->point[1])->PointGetCoords();
+                Vector a = SS.GetEntity(e->point[0])->PointGetNum();
+                Vector b = SS.GetEntity(e->point[1])->PointGetNum();
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
                 Vector offset = (a.Minus(b)).Cross(n);
                 offset = offset.WithMagnitude(13/SS.GW.scale);
@@ -191,8 +189,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                     dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
                 }
             } else {
-                Vector a = SS.GetEntity(ptA)->PointGetCoords();
-                Vector b = SS.GetEntity(ptB)->PointGetCoords();
+                Vector a = SS.GetEntity(ptA)->PointGetNum();
+                Vector b = SS.GetEntity(ptB)->PointGetNum();
 
                 Entity *w = SS.GetEntity(SS.GetEntity(ptA)->workplane);
                 Vector cu, cv, cn;

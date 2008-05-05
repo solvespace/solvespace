@@ -23,12 +23,12 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
-Quaternion Quaternion::MakeFrom(double a, double b, double c, double d) {
+Quaternion Quaternion::MakeFrom(double w, double vx, double vy, double vz) {
     Quaternion q;
-    q.a = a;
-    q.b = b;
-    q.c = c;
-    q.d = d;
+    q.w  = w;
+    q.vx = vx;
+    q.vy = vy;
+    q.vz = vz;
     return q;
 }
 
@@ -40,65 +40,65 @@ Quaternion Quaternion::MakeFrom(Vector u, Vector v)
     double s, tr = 1 + u.x + v.y + n.z;
     if(tr > 1e-4) {
         s = 2*sqrt(tr);
-        q.a = s/4;
-        q.b = (v.z - n.y)/s;
-        q.c = (n.x - u.z)/s;
-        q.d = (u.y - v.x)/s;
+        q.w  = s/4;
+        q.vx = (v.z - n.y)/s;
+        q.vy = (n.x - u.z)/s;
+        q.vz = (u.y - v.x)/s;
     } else {
         double m = max(u.x, max(v.y, n.z));
         if(m == u.x) {
             s = 2*sqrt(1 + u.x - v.y - n.z);
-            q.a = (v.z - n.y)/s;
-            q.b = s/4;
-            q.c = (u.y + v.x)/s;
-            q.d = (n.x + u.z)/s;
+            q.w  = (v.z - n.y)/s;
+            q.vx = s/4;
+            q.vy = (u.y + v.x)/s;
+            q.vz = (n.x + u.z)/s;
         } else if(m == v.y) {
             s = 2*sqrt(1 - u.x + v.y - n.z);
-            q.a = (n.x - u.z)/s;
-            q.b = (u.y + v.x)/s;
-            q.c = s/4;
-            q.d = (v.z + n.y)/s;
+            q.w  = (n.x - u.z)/s;
+            q.vx = (u.y + v.x)/s;
+            q.vy = s/4;
+            q.vz = (v.z + n.y)/s;
         } else if(m == n.z) {
             s = 2*sqrt(1 - u.x - v.y + n.z);
-            q.a = (u.y - v.x)/s;
-            q.b = (n.x + u.z)/s;
-            q.c = (v.z + n.y)/s;
-            q.d = s/4;
+            q.w  = (u.y - v.x)/s;
+            q.vx = (n.x + u.z)/s;
+            q.vy = (v.z + n.y)/s;
+            q.vz = s/4;
         } else oops();
     }
 
     return q.WithMagnitude(1);
 }
 
-Quaternion Quaternion::Plus(Quaternion y) {
+Quaternion Quaternion::Plus(Quaternion b) {
     Quaternion q;
-    q.a = a + y.a;
-    q.b = b + y.b;
-    q.c = c + y.c;
-    q.d = d + y.d;
+    q.w  = w  + b.w;
+    q.vx = vx + b.vx;
+    q.vy = vy + b.vy;
+    q.vz = vz + b.vz;
     return q;
 }
 
-Quaternion Quaternion::Minus(Quaternion y) {
+Quaternion Quaternion::Minus(Quaternion b) {
     Quaternion q;
-    q.a = a - y.a;
-    q.b = b - y.b;
-    q.c = c - y.c;
-    q.d = d - y.d;
+    q.w  = w  - b.w;
+    q.vx = vx - b.vx;
+    q.vy = vy - b.vy;
+    q.vz = vz - b.vz;
     return q;
 }
 
 Quaternion Quaternion::ScaledBy(double s) {
     Quaternion q;
-    q.a = a*s;
-    q.b = b*s;
-    q.c = c*s;
-    q.d = d*s;
+    q.w  = w*s;
+    q.vx = vx*s;
+    q.vy = vy*s;
+    q.vz = vz*s;
     return q;
 }
 
 double Quaternion::Magnitude(void) {
-    return sqrt(a*a + b*b + c*c + d*d);
+    return sqrt(w*w + vx*vx + vy*vy + vz*vz);
 }
 
 Quaternion Quaternion::WithMagnitude(double s) {
@@ -107,18 +107,22 @@ Quaternion Quaternion::WithMagnitude(double s) {
 
 Vector Quaternion::RotationU(void) {
     Vector v;
-    v.x = a*a + b*b - c*c - d*d;
-    v.y = 2*a*d + 2*b*c;
-    v.z = 2*b*d - 2*a*c;
+    v.x = w*w + vx*vx - vy*vy - vz*vz;
+    v.y = 2*w *vz + 2*vx*vy;
+    v.z = 2*vx*vz - 2*w *vy;
     return v;
 }
 
 Vector Quaternion::RotationV(void) {
     Vector v;
-    v.x = 2*b*c - 2*a*d;
-    v.y = a*a - b*b + c*c - d*d;
-    v.z = 2*a*b + 2*c*d;
+    v.x = 2*vx*vy - 2*w*vz;
+    v.y = w*w - vx*vx + vy*vy - vz*vz;
+    v.z = 2*w*vx + 2*vy*vz;
     return v;
+}
+
+Vector Quaternion::RotationN(void) {
+    return RotationU().Cross(RotationV());
 }
 
 
@@ -199,17 +203,13 @@ Vector Vector::Normal(int which) {
         n.z = 0;
         n.x = y;
         n.y = -x;
-    } else {
-        oops();
-    }
+    } else oops();
 
     if(which == 0) {
         // That's the vector we return.
     } else if(which == 1) {
         n = this->Cross(n);
-    } else {
-        oops();
-    }
+    } else oops();
 
     n = n.WithMagnitude(1);
 

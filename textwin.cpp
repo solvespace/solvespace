@@ -158,15 +158,15 @@ done:
 }
 
 void TextWindow::Show(void) {
-    if(!(SS.GW.pendingOperation)) SS.GW.pendingDescription = NULL;
+    if(!(SS.GW.pending.operation)) SS.GW.ClearPending();
 
     ShowHeader();
 
-    if(SS.GW.pendingDescription) {
+    if(SS.GW.pending.description) {
         // A pending operation (that must be completed with the mouse in
         // the graphics window) will preempt our usual display.
         Printf(false, "");
-        Printf(false, "%s", SS.GW.pendingDescription);
+        Printf(false, "%s", SS.GW.pending.description);
     } else {
         switch(shown->screen) {
             default:
@@ -222,7 +222,7 @@ void TextWindow::ShowHeader(void) {
                SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
 
     // Navigation buttons
-    if(SS.GW.pendingDescription) {
+    if(SS.GW.pending.description) {
         Printf(false, "             %Bt%Ft workplane:%Fd %s", cd);
     } else {
         Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft workplane:%Fd %s",
@@ -232,9 +232,9 @@ void TextWindow::ShowHeader(void) {
     }
 
     int datumColor;
-    if(SS.GW.showWorkplanes && SS.GW.showAxes && SS.GW.showPoints) {
+    if(SS.GW.showWorkplanes && SS.GW.showNormals && SS.GW.showPoints) {
         datumColor = 's'; // shown
-    } else if(!(SS.GW.showWorkplanes || SS.GW.showAxes || SS.GW.showPoints)) {
+    } else if(!(SS.GW.showWorkplanes || SS.GW.showNormals || SS.GW.showPoints)){
         datumColor = 'h'; // hidden
     } else {
         datumColor = 'm'; // mixed
@@ -243,11 +243,11 @@ void TextWindow::ShowHeader(void) {
 #define hs(b) ((b) ? 's' : 'h')
     Printf(false, "%Bt%Ftshow: "
            "%Fp%Ll%D%fworkplanes%E "
-           "%Fp%Ll%D%fvectors%E "
+           "%Fp%Ll%D%fnormals%E "
            "%Fp%Ll%D%fpoints%E "
            "%Fp%Ll%fany-datum%E",
   hs(SS.GW.showWorkplanes), (DWORD)&(SS.GW.showWorkplanes), &(SS.GW.ToggleBool),
-  hs(SS.GW.showAxes),       (DWORD)&(SS.GW.showAxes),       &(SS.GW.ToggleBool),
+  hs(SS.GW.showNormals),    (DWORD)&(SS.GW.showNormals),    &(SS.GW.ToggleBool),
   hs(SS.GW.showPoints),     (DWORD)&(SS.GW.showPoints),     &(SS.GW.ToggleBool),
         datumColor, &(SS.GW.ToggleAnyDatumShown)
     );

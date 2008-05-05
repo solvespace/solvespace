@@ -54,13 +54,11 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Draw Anywhere in 3d\tQ",              MNU_FREE_IN_3D,     'Q',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
-{ 1, "Datum A&xis\tX",                      0,                  'X',    mReq  },
-{ 1, "Datum Pla&ne\tN",                     0,                  'N',    mReq  },
-{ 1, "2d Coordinate S&ystem\tY",            0,                  'Y',    mReq  },
+{ 1, "&Workplane (Coordinate S&ystem)\tY",  0,                  'Y',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Line &Segment\tS",                    MNU_LINE_SEGMENT,   'S',    mReq  },
 { 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
-{ 1, "&Circle\tC",                          0,                  'C',    mReq  },
+{ 1, "&Circle\tC",                          MNU_CIRCLE,         'C',    mReq  },
 { 1, "&Arc of a Circle\tA",                 0,                  'A',    mReq  },
 { 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
@@ -107,7 +105,7 @@ void GraphicsWindow::Init(void) {
     activeWorkplane = r.entity(0);
 
     showWorkplanes = true;
-    showAxes = true;
+    showNormals = true;
     showPoints = true;
     showConstraints = true;
     showSolids = true;
@@ -265,10 +263,7 @@ void GraphicsWindow::MenuEdit(int id) {
         case MNU_UNSELECT_ALL:
             HideGraphicsEditControl();
             SS.GW.ClearSelection();
-            SS.GW.pendingOperation = 0;
-            SS.GW.pendingDescription = NULL;
-            SS.GW.pendingPoint.v = 0;
-            SS.GW.pendingConstraint.v = 0;
+            SS.GW.ClearPending();
             SS.TW.ScreenNavigation('h', 0);
             SS.TW.Show();
             break;
@@ -335,7 +330,7 @@ void GraphicsWindow::MenuRequest(int id) {
             Vector pr, pu;
             e->WorkplaneGetBasisVectors(&pr, &pu);
             Quaternion quatf = Quaternion::MakeFrom(pr, pu);
-            Vector offsetf = SS.GetEntity(e->point[0])->PointGetCoords();
+            Vector offsetf = SS.GetEntity(e->point[0])->PointGetNum();
             SS.GW.AnimateOnto(quatf, offsetf);
 
             SS.GW.EnsureValidActives();
@@ -351,9 +346,10 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
+        case MNU_CIRCLE: s = "click center of circle"; goto c;
 c:
-            SS.GW.pendingOperation = id;
-            SS.GW.pendingDescription = s;
+            SS.GW.pending.operation = id;
+            SS.GW.pending.description = s;
             SS.TW.Show();
             break;
 
@@ -361,14 +357,14 @@ c:
     }
 }
 
-void GraphicsWindow::UpdateDraggedEntity(hEntity hp, double mx, double my) {
+void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
     Entity *p = SS.GetEntity(hp);
-    Vector pos = p->PointGetCoords();
-    UpdateDraggedPoint(&pos, mx, my);
+    Vector pos = p->PointGetNum();
+    UpdateDraggedNum(&pos, mx, my);
     p->PointForceTo(pos);
 }
 
-void GraphicsWindow::UpdateDraggedPoint(Vector *pos, double mx, double my) {
+void GraphicsWindow::UpdateDraggedNum(Vector *pos, double mx, double my) {
     *pos = pos->Plus(projRight.ScaledBy((mx - orig.mouse.x)/scale));
     *pos = pos->Plus(projUp.ScaledBy((my - orig.mouse.y)/scale));
 
@@ -384,6 +380,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
     Point2d mp = { x, y };
 
+    // If the middle button is down, then mouse movement is used to pan and
+    // rotate our view. This wins over everything else.
     if(middleDown) {
         hover.Clear();
 
@@ -405,7 +403,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
             NormalizeProjectionVectors();
         } else {
-            double s = 0.3*(PI/180); // degrees per pixel
+            double s = 0.3*(PI/180)*scale; // degrees per pixel
             projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
             projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
 
@@ -421,58 +419,123 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         InvalidateGraphics();
         return;
     }
-   
-    // Enforce a bit of static friction before we start dragging.
-    double dm = orig.mouse.DistanceTo(mp);
-    if(leftDown && dm > 3 && pendingOperation == 0) {
-        if(hover.entity.v && 
-           SS.GetEntity(hover.entity)->IsPoint() && 
-           !SS.GetEntity(hover.entity)->PointIsFromReferences())
-        {
-            // Start dragging this point.
-            ClearSelection();
-            pendingPoint = hover.entity;
-            pendingOperation = DRAGGING_POINT;
-        } else if(hover.constraint.v && 
-                        SS.GetConstraint(hover.constraint)->HasLabel())
-        {
-            ClearSelection();
-            pendingConstraint = hover.constraint;
-            pendingOperation = DRAGGING_CONSTRAINT;
+ 
+    if(pending.operation == 0) {
+        double dm = orig.mouse.DistanceTo(mp);
+        // If we're currently not doing anything, then see if we should
+        // start dragging something.
+        if(leftDown && dm > 3) {
+            if(hover.entity.v) {
+                Entity *e = SS.GetEntity(hover.entity);
+                if(e->IsPoint()) {
+                    // Start dragging this point.
+                    ClearSelection();
+                    pending.point = hover.entity;
+                    pending.operation = DRAGGING_POINT;
+                } else if(e->type == Entity::CIRCLE) {
+                    // Drag the radius.
+                    ClearSelection();
+                    pending.circle = hover.entity;
+                    pending.operation = DRAGGING_RADIUS;
+                } else if(e->IsNormal()) {
+                    ClearSelection();
+                    pending.normal = hover.entity;
+                    pending.operation = DRAGGING_NORMAL;
+                }
+            } else if(hover.constraint.v && 
+                            SS.GetConstraint(hover.constraint)->HasLabel())
+            {
+                ClearSelection();
+                pending.constraint = hover.constraint;
+                pending.operation = DRAGGING_CONSTRAINT;
+            }
+        } else {
+            // Otherwise, just hit test and give up
+            HitTestMakeSelection(mp);
         }
-    } else if(leftDown && pendingOperation == DRAGGING_CONSTRAINT) {
-        Constraint *c = SS.constraint.FindById(pendingConstraint);
-        UpdateDraggedPoint(&(c->disp.offset), x, y);
-    } else if(leftDown && pendingOperation == DRAGGING_POINT) {
-        if(havePainted) {
-            UpdateDraggedEntity(pendingPoint, x, y);
-            SS.GenerateAll(solving == SOLVE_ALWAYS);
-            havePainted = false;
-        }
+        return;
     }
 
-    // No buttons pressed.
-    if(pendingOperation == DRAGGING_NEW_POINT ||
-       pendingOperation == DRAGGING_NEW_LINE_POINT)
-    {
-        SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
-        UpdateDraggedEntity(pendingPoint, x, y);
+    // If the user has started an operation from the menu, but not
+    // completed it, then just do the selection.
+    if(pending.operation < FIRST_PENDING) {
         HitTestMakeSelection(mp);
-    } else if(pendingOperation == DRAGGING_NEW_CUBIC_POINT) {
-        UpdateDraggedEntity(pendingPoint, x, y);
-        HitTestMakeSelection(mp);
-
-        hRequest hr = pendingPoint.request();
-        Vector p0 = SS.GetEntity(hr.entity(1))->PointGetCoords();
-        Vector p3 = SS.GetEntity(hr.entity(4))->PointGetCoords();
-        Vector p1 = p0.ScaledBy(2.0/3).Plus(p3.ScaledBy(1.0/3));
-        SS.GetEntity(hr.entity(2))->PointForceTo(p1);
-        Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
-        SS.GetEntity(hr.entity(3))->PointForceTo(p2);
-    } else if(!leftDown) {
-        // Do our usual hit testing, for the selection.
-        HitTestMakeSelection(mp);
+        return;
     }
+
+    // We're currently dragging something; so do that. But if we haven't
+    // painted since the last time we solved, do nothing, because there's
+    // no sense solving a frame and not displaying it.
+    if(!havePainted) return;
+    switch(pending.operation) {
+        case DRAGGING_CONSTRAINT: {
+            Constraint *c = SS.constraint.FindById(pending.constraint);
+            UpdateDraggedNum(&(c->disp.offset), x, y);
+            break;
+        }
+        case DRAGGING_NEW_LINE_POINT:
+            HitTestMakeSelection(mp);
+            // and fall through
+        case DRAGGING_NEW_POINT:
+        case DRAGGING_POINT:
+            UpdateDraggedPoint(pending.point, x, y);
+            break;
+
+        case DRAGGING_NEW_CUBIC_POINT: {
+            UpdateDraggedPoint(pending.point, x, y);
+            HitTestMakeSelection(mp);
+
+            hRequest hr = pending.point.request();
+            Vector p0 = SS.GetEntity(hr.entity(1))->PointGetNum();
+            Vector p3 = SS.GetEntity(hr.entity(4))->PointGetNum();
+            Vector p1 = p0.ScaledBy(2.0/3).Plus(p3.ScaledBy(1.0/3));
+            SS.GetEntity(hr.entity(2))->PointForceTo(p1);
+            Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
+            SS.GetEntity(hr.entity(3))->PointForceTo(p2);
+            break;
+        }
+        case DRAGGING_NEW_RADIUS:
+        case DRAGGING_RADIUS: {
+            Entity *circle = SS.GetEntity(pending.circle);
+            Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
+            Point2d c2 = ProjectPoint(center);
+            SS.GetParam(circle->param[0])->val = c2.DistanceTo(mp)*scale;
+            break;
+        }
+
+        case DRAGGING_NORMAL: {
+            Entity *normal = SS.GetEntity(pending.normal);
+            Vector p = SS.GetEntity(normal->point[0])->PointGetNum();
+            Point2d p2 = ProjectPoint(p);
+
+            Quaternion q = normal->NormalGetNum();
+            Vector u = q.RotationU(), v = q.RotationV();
+
+            if(ctrlDown) {
+                double theta = atan2(orig.mouse.y-p2.y, orig.mouse.x-p2.x);
+                theta -= atan2(y-p2.y, x-p2.x);
+
+                Vector normal = orig.projRight.Cross(orig.projUp);
+                u = u.RotatedAbout(normal, -theta);
+                v = v.RotatedAbout(normal, -theta);
+            } else {
+                double dx = (x - orig.mouse.x);
+                double dy = (y - orig.mouse.y);
+                double s = 0.3*(PI/180); // degrees per pixel
+                u = u.RotatedAbout(orig.projUp, -s*dx);
+                u = u.RotatedAbout(orig.projRight, s*dy);
+                v = v.RotatedAbout(orig.projUp, -s*dx);
+                v = v.RotatedAbout(orig.projRight, s*dy);
+            }
+            orig.mouse = mp;
+            normal->NormalForceTo(Quaternion::MakeFrom(u, v));
+            break;
+        }
+
+        default: oops();
+    }
+    SS.GenerateAll(solving == SOLVE_ALWAYS);
+    havePainted = false;
 }
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
@@ -493,6 +556,10 @@ void GraphicsWindow::Selection::Draw(void) {
     if(constraint.v) SS.GetConstraint(constraint)->Draw();
 }
 
+void GraphicsWindow::ClearPending(void) {
+    memset(&pending, 0, sizeof(pending));
+}
+
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     int i;
     double d, dmin = 1e12;
@@ -503,7 +570,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         // Don't hover whatever's being dragged.
-        if(e->h.request().v == pendingPoint.request().v) continue;
+        if(e->h.request().v == pending.point.request().v) continue;
 
         d = e->GetDistance(mp);
         if(d < 10 && d < dmin) {
@@ -599,14 +666,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         Constraint::ConstrainCoincident(hover.entity, (p)); \
     }
     hRequest hr;
-    switch(pendingOperation) {
+    switch(pending.operation) {
         case MNU_DATUM_POINT:
             hr = AddRequest(Request::DATUM_POINT);
             SS.GetEntity(hr.entity(0))->PointForceTo(v);
 
             ClearSelection(); hover.Clear();
 
-            pendingOperation = 0;
+            pending.operation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
@@ -616,10 +683,26 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             ClearSelection(); hover.Clear();
 
-            pendingOperation = DRAGGING_NEW_LINE_POINT;
-            pendingPoint = hr.entity(2);
-            pendingDescription = "click to place next point of line";
-            SS.GetEntity(pendingPoint)->PointForceTo(v);
+            pending.operation = DRAGGING_NEW_LINE_POINT;
+            pending.point = hr.entity(2);
+            pending.description = "click to place next point of line";
+            SS.GetEntity(pending.point)->PointForceTo(v);
+            break;
+
+        case MNU_CIRCLE:
+            hr = AddRequest(Request::CIRCLE);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(16))->NormalForceTo(
+                Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
+            MAYBE_PLACE(hr.entity(1));
+
+            ClearSelection(); hover.Clear();
+
+            ClearPending();
+            pending.operation = DRAGGING_NEW_RADIUS;
+            pending.circle = hr.entity(0);
+            pending.description = "click to set radius";
+            SS.GetParam(hr.param(0))->val = 0;
             break;
 
         case MNU_CUBIC:
@@ -632,30 +715,28 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             ClearSelection(); hover.Clear();
 
-            pendingOperation = DRAGGING_NEW_CUBIC_POINT;
-            pendingPoint = hr.entity(4);
-            pendingDescription = "click to place next point of cubic";
+            pending.operation = DRAGGING_NEW_CUBIC_POINT;
+            pending.point = hr.entity(4);
+            pending.description = "click to place next point of cubic";
             break;
 
+        case DRAGGING_RADIUS:
         case DRAGGING_NEW_POINT:
-            // The MouseMoved event has already dragged it under the cursor.
-            pendingOperation = 0;
-            pendingPoint.v = 0;
+            // The MouseMoved event has already dragged it as desired.
+            ClearPending();
             break;
 
         case DRAGGING_NEW_CUBIC_POINT:
             if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
-                Constraint::ConstrainCoincident(pendingPoint, hover.entity);
+                Constraint::ConstrainCoincident(pending.point, hover.entity);
             }
-            pendingOperation = 0;
-            pendingPoint.v = 0;
+            ClearPending();
             break;
 
         case DRAGGING_NEW_LINE_POINT: {
             if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
-                Constraint::ConstrainCoincident(pendingPoint, hover.entity);
-                pendingOperation = 0;
-                pendingPoint.v = 0;
+                Constraint::ConstrainCoincident(pending.point, hover.entity);
+                ClearPending();
                 break;
             }
             // Create a new line segment, so that we continue drawing.
@@ -663,23 +744,20 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
 
             // Constrain the line segments to share an endpoint
-            Constraint::ConstrainCoincident(pendingPoint, hr.entity(1));
+            Constraint::ConstrainCoincident(pending.point, hr.entity(1));
 
             // And drag an endpoint of the new line segment
-            pendingOperation = DRAGGING_NEW_LINE_POINT;
-            pendingPoint = hr.entity(2);
-            pendingDescription = "click to place next point of next line";
-            SS.GetEntity(pendingPoint)->PointForceTo(v);
+            pending.operation = DRAGGING_NEW_LINE_POINT;
+            pending.point = hr.entity(2);
+            pending.description = "click to place next point of next line";
+            SS.GetEntity(pending.point)->PointForceTo(v);
 
             break;
         }
 
         case 0:
         default: {
-            pendingOperation = 0;
-            pendingPoint.v = 0;
-            pendingConstraint.v = 0;
-            pendingDescription = NULL;
+            ClearPending();
 
             if(hover.IsEmpty()) break;
 
@@ -710,12 +788,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 }
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
-    switch(pendingOperation) {
+    switch(pending.operation) {
         case DRAGGING_POINT:
         case DRAGGING_CONSTRAINT:
-            pendingOperation = 0;
-            pendingPoint.v = 0;
-            pendingConstraint.v = 0;
+        case DRAGGING_NORMAL:
+        case DRAGGING_RADIUS:
+            ClearPending();
             break;
 
         default:
@@ -781,9 +859,9 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
 }
 
 void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
-    bool t = !(SS.GW.showWorkplanes && SS.GW.showAxes && SS.GW.showPoints);
+    bool t = !(SS.GW.showWorkplanes && SS.GW.showNormals && SS.GW.showPoints);
     SS.GW.showWorkplanes = t;
-    SS.GW.showAxes = t;
+    SS.GW.showNormals = t;
     SS.GW.showPoints = t;
 
     SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
@@ -809,7 +887,7 @@ void GraphicsWindow::Paint(int w, int h) {
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
 
-    glScaled(scale*2.0/w, scale*2.0/h, scale*2.0/w);
+    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/50000);
 
     double tx = projRight.Dot(offset);
     double ty = projUp.Dot(offset);
