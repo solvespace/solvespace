@@ -55,15 +55,17 @@ char *Group::DescriptionString(void) {
 void Group::Generate(IdList<Entity,hEntity> *entity,
                      IdList<Param,hParam> *param)
 {
+    Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
+    gn = gn.WithMagnitude(200/SS.GW.scale);
     int i;
     switch(type) {
         case DRAWING:
             return;
 
         case EXTRUDE:
-            AddParam(param, h.param(0), 50);
-            AddParam(param, h.param(1), 50);
-            AddParam(param, h.param(2), 50);
+            AddParam(param, h.param(0), gn.x);
+            AddParam(param, h.param(1), gn.y);
+            AddParam(param, h.param(2), gn.z);
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
@@ -138,8 +140,12 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             if(isExtrusion) {
                 if(a != 0) oops();
                 SS.entity.Add(&en);
+
+                hEntity np = en.h;
+                memset(&en, 0, sizeof(en));
                 en.point[0] = ep->h;
-                en.point[1] = en.h;
+                en.point[1] = np;
+                en.group = h;
                 en.h = Remap(ep->h, 1);
                 en.type = Entity::LINE_SEGMENT;
                 // And then this line segment gets added
@@ -160,6 +166,10 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
 }
 
 void Group::MakePolygons(void) {
+    int i;
+    for(i = 0; i < faces.n; i++) {
+        (faces.elem[i]).Clear();
+    }
     faces.Clear();
     if(type == DRAWING) {
         edges.l.Clear();
@@ -332,6 +342,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     e.type = et;
     e.group = group;
     e.workplane = workplane;
+    e.construction = construction;
     e.h = h.entity(0);
 
     // And generate entities for the points

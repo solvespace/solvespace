@@ -288,7 +288,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
 
 void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
     LineDrawOrGetDistance(a, b);
-    if(dogd.edges) {
+    if(dogd.edges && !construction) {
         SEdge edge;
         edge.a = a; edge.b = b;
         dogd.edges->l.Add(&edge);
@@ -325,7 +325,13 @@ void Entity::DrawOrGetDistance(int order) {
     // contribute a distance for the selection, but it still generates edges.
     if(!(g->visible) && !dogd.edges) return;
 
-    glxColor3d(1, 1, 1);
+    if(group.v != SS.GW.activeGroup.v) {
+        glxColor3d(0.5, 0.3, 0.0);
+    } else if(construction) {
+        glxColor3d(0.1, 0.7, 0.1);
+    } else {
+        glxColor3d(1, 1, 1);
+    }
 
     switch(type) {
         case POINT_XFRMD:

@@ -62,23 +62,48 @@ void Error(char *str, ...)
 // to be sloppy with our memory management, and just free everything at once
 // at the end.
 //-----------------------------------------------------------------------------
-static HANDLE Heap;
+static HANDLE Temp;
 void *AllocTemporary(int n)
 {
-    Expr *v = (Expr *)HeapAlloc(Heap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
+    void *v = HeapAlloc(Temp, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
     if(!v) oops();
-    memset(v, 0, n);
     return v;
 }
 void FreeAllTemporary(void)
 {
-    if(Heap) HeapDestroy(Heap);
-    Heap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
+    if(Temp) HeapDestroy(Temp);
+    Temp = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
+    // This is a good place to validate, because it gets called fairly
+    // often.
+    vl();
 }
 
-void *MemRealloc(void *p, int n) { return realloc(p, n); }
-void *MemAlloc(int n) { return malloc(n); }
-void MemFree(void *p) { free(p); }
+static HANDLE Perm;
+void *MemRealloc(void *p, int n) {
+    if(!p) {
+        return MemAlloc(n);
+    }
+
+    p = HeapReAlloc(Perm, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, p, n);
+    vl();
+    if(!p) oops();
+    return p;
+}
+void *MemAlloc(int n) {
+    void *p = HeapAlloc(Perm, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
+    vl();
+    if(!p) oops();
+    return p;
+}
+void MemFree(void *p) {
+    HeapFree(Perm, HEAP_NO_SERIALIZE, p);
+    vl();
+}
+
+void vl(void) {
+    if(!HeapValidate(Temp, HEAP_NO_SERIALIZE, NULL)) oops();
+    if(!HeapValidate(Perm, HEAP_NO_SERIALIZE, NULL)) oops();
+}
 
 static void PaintTextWnd(HDC hdc)
 {
@@ -750,6 +775,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ThawWindowPos(TextWnd);
     ThawWindowPos(GraphicsWnd);
 
+    // Create the heap used for long-lived stuff (that gets freed piecewise).
+    Perm = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
     // Create the heap that we use to store Exprs and other temp stuff.
     FreeAllTemporary();
 

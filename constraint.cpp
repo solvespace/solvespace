@@ -18,9 +18,20 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
     memset(&c, 0, sizeof(c));
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.activeWorkplane;
-    c.type = Constraint::POINTS_COINCIDENT;
+    c.type = POINTS_COINCIDENT;
     c.ptA = ptA;
     c.ptB = ptB;
+    AddConstraint(&c);
+}
+
+void Constraint::ConstrainHorizVert(bool horiz, hEntity ls) {
+    Constraint c;
+    memset(&c, 0, sizeof(c));
+    c.group = SS.GW.activeGroup;
+    c.workplane = SS.GW.activeWorkplane;
+    if(c.workplane.v == Entity::FREE_IN_3D.v) oops();
+    c.type = (horiz ? HORIZONTAL : VERTICAL);
+    c.entityA = ls;
     AddConstraint(&c);
 }
 

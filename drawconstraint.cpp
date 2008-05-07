@@ -31,6 +31,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     // If the group is hidden, then the constraints are hidden and not
     // able to be selected.
     if(!(g->visible)) return;
+    // And likewise if the group is not the active group.
+    if(g->h.v != SS.GW.activeGroup.v) return;
 
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.

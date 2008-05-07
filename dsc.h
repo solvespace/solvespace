@@ -159,7 +159,7 @@ public:
 
     void Clear(void) {
         elemsAllocated = n = 0;
-        if(elem) free(elem);
+        if(elem) MemFree(elem);
         elem = NULL;
     }
 

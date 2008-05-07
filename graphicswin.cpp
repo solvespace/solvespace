@@ -65,7 +65,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
 { 1, "&Import From File...\tI",             0,                  'I',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "To&ggle Construction\tG",             0,                  'G',    NULL  },
+{ 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
 
 { 0, "&Constrain",                          0,                          NULL  },
 { 1, "&Distance / Diameter\tShift+D",       MNU_DISTANCE_DIA,   'D'|S,  mCon  },
@@ -346,11 +346,26 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
         case MNU_CIRCLE: s = "click center of circle"; goto c;
         case MNU_WORKPLANE: s = "click origin of workplane"; goto c;
+        case MNU_RECTANGLE: s = "click one corner of rectangular"; goto c;
 c:
             SS.GW.pending.operation = id;
             SS.GW.pending.description = s;
             SS.TW.Show();
             break;
+
+        case MNU_CONSTRUCTION: {
+            SS.GW.GroupSelection();
+            int i;
+            for(i = 0; i < SS.GW.gs.entities; i++) {
+                hEntity he = SS.GW.gs.entity[i];
+                if(!he.isFromRequest()) continue;
+                Request *r = SS.GetRequest(he.request());
+                r->construction = !(r->construction);
+            }
+            SS.GW.ClearSelection();
+            SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
+            break;
+        }
 
         default: oops();
     }
@@ -687,6 +702,27 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(pending.point)->PointForceTo(v);
             break;
 
+        case MNU_RECTANGLE: {
+            hRequest lns[4];
+            int i;
+            for(i = 0; i < 4; i++) {
+                lns[i] = AddRequest(Request::LINE_SEGMENT);
+            }
+            for(i = 0; i < 4; i++) {
+                Constraint::ConstrainCoincident(
+                    lns[i].entity(1), lns[(i+1)%4].entity(2));
+                SS.GetEntity(lns[i].entity(1))->PointForceTo(v);
+                SS.GetEntity(lns[i].entity(2))->PointForceTo(v);
+            }
+            for(i = 0; i < 4; i++) {
+                Constraint::ConstrainHorizVert((i % 2)==0, lns[i].entity(0));
+            }
+
+            pending.operation = DRAGGING_NEW_POINT;
+            pending.point = lns[1].entity(2);
+            pending.description = "click to place other corner of rectangle";
+            break;
+        }
         case MNU_CIRCLE:
             hr = AddRequest(Request::CIRCLE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);

@@ -188,9 +188,14 @@ public:
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
 
+    bool        construction;
+
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
     int timesApplied;
+
+    bool HasDirection(void);
+    ExprVector GetDirection(void);
 
     bool IsWorkplane(void);
     // The plane is points P such that P dot (xn, yn, zn) - d = 0
@@ -349,6 +354,7 @@ public:
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
+    static void ConstrainHorizVert(bool horiz, hEntity lineSegment);
 };
 
 class hEquation {

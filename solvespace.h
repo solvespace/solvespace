@@ -55,6 +55,7 @@ void FreeAllTemporary(void);
 void *MemRealloc(void *p, int n);
 void *MemAlloc(int n);
 void MemFree(void *p);
+void vl(void); // debug function to validate
 
 
 #include "dsc.h"

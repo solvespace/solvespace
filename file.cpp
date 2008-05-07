@@ -67,6 +67,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)          },
     { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)         },
     { 'e',  "Entity.group.v",           'x',        &(SS.sv.e.group.v)      },
+    { 'e',  "Entity.construction",      'b',        &(SS.sv.e.construction) },
     { 'e',  "Entity.param[0].v",        'x',        &(SS.sv.e.param[0].v)   },
     { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)   },
     { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)   },

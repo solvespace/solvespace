@@ -107,6 +107,7 @@ public:
         MNU_CIRCLE,
         MNU_RECTANGLE,
         MNU_CUBIC,
+        MNU_CONSTRUCTION,
         // Group
         MNU_GROUP_DRAWING,
         MNU_GROUP_EXTRUDE,
