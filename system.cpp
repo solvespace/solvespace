@@ -48,20 +48,85 @@ void System::EvalJacobian(void) {
     }
 }
 
-void System::MarkAsDragged(hParam p) {
-    int j;
-    for(j = 0; j < mat.n; j++) {
-        if(mat.param[j].v == p.v) {
-            mat.dragged[j] = true;
+bool System::IsDragged(hParam p) {
+    if(SS.GW.pending.point.v) {
+        // The pending point could be one in a group that has not yet
+        // been processed, in which case the lookup will fail; but
+        // that's not an error.
+        Entity *pt = SS.entity.FindByIdNoOops(SS.GW.pending.point);
+        if(pt) {
+            switch(pt->type) {
+                case Entity::POINT_IN_3D:
+                    if(p.v == (pt->param[0]).v) return true;
+                    if(p.v == (pt->param[1]).v) return true;
+                    if(p.v == (pt->param[2]).v) return true;
+                    break;
+
+                case Entity::POINT_IN_2D:
+                case Entity::POINT_XFRMD:
+                    if(p.v == (pt->param[0]).v) return true;
+                    if(p.v == (pt->param[1]).v) return true;
+                    break;
+            }
+        }
+    }
+    return false;
+}
+
+void System::SolveBySubstitution(void) {
+    int i;
+    for(i = 0; i < eq.n; i++) {
+        Equation *teq = &(eq.elem[i]);
+        Expr *tex = teq->e;
+
+        if(tex->op    == Expr::MINUS &&
+           tex->a->op == Expr::PARAM &&
+           tex->b->op == Expr::PARAM)
+        {
+            hParam a = (tex->a)->x.parh;
+            hParam b = (tex->b)->x.parh;
+            if(!(param.FindByIdNoOops(a) && param.FindByIdNoOops(b))) {
+                // Don't substitute unless they're both solver params;
+                // otherwise it's an equation that can be solved immediately,
+                // or an error to flag later.
+                continue;
+            }
+
+            if(IsDragged(a)) {
+                // A is being dragged, so A should stay, and B should go
+                hParam t = a;
+                a = b;
+                b = t;
+            }
+
+            int j;
+            for(j = 0; j < eq.n; j++) {
+                Equation *req = &(eq.elem[j]);
+                (req->e)->Substitute(a, b); // A becomes B, B unchanged
+            }
+            for(j = 0; j < param.n; j++) {
+                Param *rp = &(param.elem[j]);
+                if(rp->substd.v == a.v) {
+                    rp->substd = b;
+                }
+            }
+            Param *ptr = param.FindById(a);
+            ptr->tag = VAR_SUBSTITUTED;
+            ptr->substd = b;
+
+            teq->tag = EQ_SUBSTITUTED;
         }
     }
 }
 
 static int BySensitivity(const void *va, const void *vb) {
     const int *a = (const int *)va, *b = (const int *)vb;
+
+    hParam pa = SS.sys.mat.param[*a];
+    hParam pb = SS.sys.mat.param[*b];
     
-    if(SS.sys.mat.dragged[*a] && !SS.sys.mat.dragged[*b]) return  1;
-    if(SS.sys.mat.dragged[*b] && !SS.sys.mat.dragged[*a]) return -1;
+    if(System::IsDragged(pa) && !System::IsDragged(pb)) return  1;
+    if(System::IsDragged(pb) && !System::IsDragged(pa)) return -1;
 
     double as = SS.sys.mat.sens[*a];
     double bs = SS.sys.mat.sens[*b];
@@ -83,27 +148,7 @@ void System::SortBySensitivity(void) {
         mat.sens[j] = s;
     }
     for(j = 0; j < mat.n; j++) {
-        mat.dragged[j] = false;
         mat.permutation[j] = j;
-    }
-    if(SS.GW.pending.point.v) {
-        Entity *p = SS.entity.FindByIdNoOops(SS.GW.pending.point);
-        // If we're solving an earlier group, then the pending point might
-        // not exist in the entity tables yet.
-        if(p) {
-            switch(p->type) {
-                case Entity::POINT_XFRMD:
-                case Entity::POINT_IN_3D:
-                    MarkAsDragged(p->param[0]);
-                    MarkAsDragged(p->param[1]);
-                    MarkAsDragged(p->param[2]);
-                    break;
-                case Entity::POINT_IN_2D:
-                    MarkAsDragged(p->param[0]);
-                    MarkAsDragged(p->param[1]);
-                    break;
-           }
-        }
     }
 
     qsort(mat.permutation, mat.n, sizeof(mat.permutation[0]), BySensitivity);
@@ -318,7 +363,10 @@ bool System::Solve(void) {
     param.ClearTags();
     eq.ClearTags();
     
+    SolveBySubstitution();
+
     WriteJacobian(0, 0);
+
     EvalJacobian();
 
     SortBySensitivity();
@@ -350,7 +398,7 @@ bool System::Solve(void) {
             // not available to assume.
             continue;
         }
-        p->tag = ASSUMED;
+        p->tag = VAR_ASSUMED;
     }
     
     bool ok = NewtonSolve(0);
@@ -360,12 +408,18 @@ bool System::Solve(void) {
         // main parameter table.
         for(i = 0; i < param.n; i++) {
             Param *p = &(param.elem[i]);
+            double val;
+            if(p->tag == VAR_SUBSTITUTED) {
+                val = param.FindById(p->substd)->val;
+            } else {
+                val = p->val;
+            }
+
             Param *pp = SS.GetParam(p->h);
-            pp->val = p->val;
+            pp->val = val;
             pp->known = true;
-            // The main param table keeps track of what was assumed, to
-            // choose which point to drag so that it actually moves.
-            pp->assumed = (p->tag == ASSUMED);
+            // The main param table keeps track of what was assumed.
+            pp->assumed = (p->tag == VAR_ASSUMED);
         }
     }
 

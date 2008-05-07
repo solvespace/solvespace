@@ -252,6 +252,9 @@ public:
     double      val;
     bool        known;
     bool        assumed;
+
+    // Used only in the solver
+    hParam      substd;
 };
 
 

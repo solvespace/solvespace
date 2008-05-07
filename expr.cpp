@@ -360,6 +360,19 @@ Expr *Expr::FoldConstants(void) {
     return n;
 }
 
+void Expr::Substitute(hParam oldh, hParam newh) {
+    if(op == PARAM_PTR) oops();
+
+    if(op == PARAM && x.parh.v == oldh.v) {
+        x.parh = newh;
+    }
+    int c = Children();
+    if(c >= 1) a->Substitute(oldh, newh);
+    if(c >= 2) b->Substitute(oldh, newh);
+}
+
+
+
 static char StringBuffer[4096];
 void Expr::App(char *s, ...) {
     va_list f;

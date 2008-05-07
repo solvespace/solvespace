@@ -95,9 +95,11 @@ public:
     IdList<Equation,hEquation>      eq;
 
     // In general, the tag indicates the subsys that a variable/equation
-    // has been assigned to; these are exceptions.
-    static const int ASSUMED          = 10000;
-    static const int SUBSTITUTED      = 10001;
+    // has been assigned to; these are exceptions for variables:
+    static const int VAR_ASSUMED          = 10000;
+    static const int VAR_SUBSTITUTED      = 10001;
+    // and for equations:
+    static const int EQ_SUBSTITUTED       = 20000;
 
     // The system Jacobian matrix
     struct {
@@ -122,7 +124,6 @@ public:
         // or not (in which case it should get assumed preferentially), and
         // the sensitivity used to decide the order in which things get
         // assumed.
-        bool        dragged[MAX_UNKNOWNS];
         double      sens[MAX_UNKNOWNS];
         double      X[MAX_UNKNOWNS];
 
@@ -140,7 +141,9 @@ public:
     void EvalJacobian(void);
 
     void SortBySensitivity(void);
-    void MarkAsDragged(hParam p);
+    void SolveBySubstitution(void);
+
+    static bool IsDragged(hParam p);
 
     bool NewtonSolve(int tag);
     bool Solve(void);

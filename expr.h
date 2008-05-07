@@ -76,6 +76,7 @@ public:
     DWORD ParamsUsed(void);
     static bool Tol(double a, double b);
     Expr *FoldConstants(void);
+    void Substitute(hParam oldh, hParam newh);
 
     void ParamsToPointers(void);
 
