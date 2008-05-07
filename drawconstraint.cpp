@@ -3,6 +3,7 @@
 bool Constraint::HasLabel(void) {
     switch(type) {
         case PT_PT_DISTANCE:
+        case DIAMETER:
             return true;
 
         default:
@@ -22,6 +23,35 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
 
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
         dogd.dmin = min(dogd.dmin, d);
+    }
+}
+
+double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
+    double ex = rx*cos(theta);
+    double ey = ry*sin(theta);
+    double v = sqrt(ex*ex + ey*ey);
+
+    return v;
+}
+
+void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
+    char *s = exprA->Print();
+    if(labelPos) {
+        // labelPos is from the top left corner (for the text box used to
+        // edit things), but ref is from the center.
+        *labelPos = ref.Minus(gr.WithMagnitude(glxStrWidth(s)/2)).Minus(
+                             gu.WithMagnitude(glxStrHeight()/2));
+    }
+
+    if(dogd.drawing) {
+        glPushMatrix();
+            glxTranslatev(ref);
+            glxOntoWorkplane(gr, gu);
+            glxWriteTextRefCenter(s);
+        glPopMatrix();
+    } else {
+        Point2d o = SS.GW.ProjectPoint(ref);
+        dogd.dmin = min(dogd.dmin, o.DistanceTo(dogd.mp) - 10);
     }
 }
 
@@ -47,7 +77,6 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector bp = SS.GetEntity(ptB)->PointGetNum();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
-            if(labelPos) *labelPos = ref;
 
             Vector ab   = ap.Minus(bp);
             Vector ar   = ap.Minus(ref);
@@ -59,17 +88,26 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             LineDrawOrGetDistance(ap, ap.Plus(out));
             LineDrawOrGetDistance(bp, bp.Plus(out));
 
-            if(dogd.drawing) {
-                glPushMatrix();
-                    glxTranslatev(ref);
-                    glxOntoWorkplane(gr, gu);
-                    glxWriteText(exprA->Print());
-                glPopMatrix();
-            } else {
-                Point2d o = SS.GW.ProjectPoint(ref);
-                dogd.dmin = min(dogd.dmin, o.DistanceTo(dogd.mp) - 10);
-            }
+            DoLabel(ref, labelPos, gr, gu);
+            break;
+        }
 
+        case DIAMETER: {
+            Entity *circle = SS.GetEntity(entityA);
+            Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
+            double r = SS.GetEntity(circle->distance)->DistanceGetNum();
+            Vector ref = center.Plus(disp.offset);
+
+            double theta = atan2(disp.offset.Dot(gu), disp.offset.Dot(gr));
+            double adj = EllipticalInterpolation(
+                glxStrWidth(exprA->Print())/2, glxStrHeight()/2, theta);
+
+            Vector mark = ref.Minus(center);
+            mark = mark.WithMagnitude(mark.Magnitude()-r);
+            LineDrawOrGetDistance(ref.Minus(mark.WithMagnitude(adj)),
+                                  ref.Minus(mark));
+
+            DoLabel(ref, labelPos, gr, gu);
             break;
         }
 
@@ -106,7 +144,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
         case PT_ON_LINE:
         case PT_IN_PLANE: {
-            double s = 7;
+            double s = 7/SS.GW.scale;
             Vector p = SS.GetEntity(ptA)->PointGetNum();
             Vector r = gr.WithMagnitude(s);
             Vector d = gu.WithMagnitude(s);

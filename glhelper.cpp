@@ -6,7 +6,7 @@
 static bool ColorLocked;
 
 #define FONT_SCALE (0.5)
-static int StrWidth(char *str) {
+double glxStrWidth(char *str) {
     int w = 0;
     for(; *str; str++) {
         int c = *str;
@@ -15,14 +15,17 @@ static int StrWidth(char *str) {
 
         w += Font[c].width;
     }
-    return w;
+    return w*FONT_SCALE/SS.GW.scale;
+}
+double glxStrHeight(void) {
+    // The characters have height ~21, as they appear in the table.
+    return 21.0*FONT_SCALE/SS.GW.scale;
 }
 void glxWriteTextRefCenter(char *str)
 {
     double scale = FONT_SCALE/SS.GW.scale;
-    // The characters have height ~21, as they appear in the table.
-    double fh = (21.0)*scale;
-    double fw = StrWidth(str)*scale;
+    double fh = glxStrHeight();
+    double fw = glxStrWidth(str);
     glPushMatrix();
         glTranslated(-fw/2, -fh/2, 0);
         // Undo the (+5, +5) offset that glxWriteText applies.

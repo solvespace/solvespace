@@ -222,6 +222,7 @@ public:
         int         entities;
         int         workplanes;
         int         lineSegments;
+        int         circlesOrArcs;
         int         n;
     } gs;
     void GroupSelection(void);

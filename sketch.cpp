@@ -126,7 +126,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
         case Entity::CIRCLE:
             en.point[0] = Remap(ep->point[0], a);
             en.normal   = Remap(ep->normal, a);
-            en.param[0] = ep->param[0]; // XXX make numerical somehow later
+            en.distance = Remap(ep->distance, a);
             break;
 
         case Entity::POINT_IN_3D:
@@ -157,6 +157,11 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             en.type = Entity::NORMAL_XFRMD;
             en.numNormal = ep->NormalGetNum();
             en.point[0] = Remap(ep->point[0], a);
+            break;
+
+        case Entity::DISTANCE:
+            en.type = Entity::DISTANCE_XFRMD;
+            en.numDistance = ep->DistanceGetNum();
             break;
 
         default:
@@ -302,6 +307,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     int params = 0;
     int et = 0;
     bool hasNormal = false;
+    bool hasDistance = false;
     int i;
 
     Entity e;
@@ -328,6 +334,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             points = 1;
             params = 1;
             hasNormal = true;
+            hasDistance = true;
             break;
 
         case Request::CUBIC:
@@ -373,7 +380,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         Entity n;
         memset(&n, 0, sizeof(n));
         n.workplane = workplane;
-        n.h = h.entity(16);
+        n.h = h.entity(32);
         n.group = group;
         if(workplane.v == Entity::FREE_IN_3D.v) {
             n.type = Entity::NORMAL_IN_3D;
@@ -392,6 +399,17 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         n.point[0] = e.point[0];
         entity->Add(&n);
         e.normal = n.h;
+    }
+    if(hasDistance) {
+        Entity d;
+        memset(&d, 0, sizeof(d));
+        d.workplane = workplane;
+        d.h = h.entity(64);
+        d.group = group;
+        d.type = Entity::DISTANCE;
+        d.param[0] = AddParam(param, h.param(64));
+        entity->Add(&d);
+        e.distance = d.h;
     }
     // And generate any params not associated with the point that
     // we happen to need.

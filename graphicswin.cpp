@@ -513,7 +513,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             Entity *circle = SS.GetEntity(pending.circle);
             Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
             Point2d c2 = ProjectPoint(center);
-            SS.GetParam(circle->param[0])->val = c2.DistanceTo(mp)*scale;
+            double r = c2.DistanceTo(mp)*scale;
+            SS.GetEntity(circle->distance)->DistanceForceTo(r);
             break;
         }
 
@@ -634,6 +635,7 @@ void GraphicsWindow::GroupSelection(void) {
             switch(e->type) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
+                case Entity::CIRCLE:        (gs.circlesOrArcs)++; break;
             }
         }
     }
@@ -726,7 +728,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_CIRCLE:
             hr = AddRequest(Request::CIRCLE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
-            SS.GetEntity(hr.entity(16))->NormalForceTo(
+            SS.GetEntity(hr.entity(32))->NormalForceTo(
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
             MAYBE_PLACE(hr.entity(1));
 
@@ -757,7 +759,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_WORKPLANE:
             hr = AddRequest(Request::WORKPLANE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
-            SS.GetEntity(hr.entity(16))->NormalForceTo( 
+            SS.GetEntity(hr.entity(32))->NormalForceTo( 
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
             MAYBE_PLACE(hr.entity(1));
 

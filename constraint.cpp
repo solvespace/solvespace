@@ -55,15 +55,22 @@ void Constraint::MenuConstrain(int id) {
                 Entity *e = SS.GetEntity(gs.entity[0]);
                 c.ptA = e->point[0];
                 c.ptB = e->point[1];
+            } else if(gs.circlesOrArcs == 1 && gs.n == 1) {
+                c.type = DIAMETER;
+                c.entityA = gs.entity[0];
             } else {
                 Error("Bad selection for distance / diameter constraint.");
                 return;
             }
-            Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
-            Vector a = SS.GetEntity(c.ptA)->PointGetNum();
-            Vector b = SS.GetEntity(c.ptB)->PointGetNum();
+            if(c.type == PT_PT_DISTANCE) {
+                Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
+                Vector a = SS.GetEntity(c.ptA)->PointGetNum();
+                Vector b = SS.GetEntity(c.ptB)->PointGetNum();
+                c.disp.offset = n.Cross(a.Minus(b)).WithMagnitude(50);
+            } else {
+                c.disp.offset = Vector::MakeFrom(0, 0, 0);
+            }
 
-            c.disp.offset = n.Cross(a.Minus(b)).WithMagnitude(50);
             c.exprA = Expr::FromString("0")->DeepCopyKeep();
             c.ModifyToSatisfy();
             AddConstraint(&c);
@@ -327,6 +334,13 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             AddEq(l, Distance(workplane, a->point[0], a->point[1])->Minus(
                      Distance(workplane, b->point[0], b->point[1])), 0);
+            break;
+        }
+
+        case DIAMETER: {
+            Entity *circle = SS.GetEntity(entityA);
+            Expr *r = (SS.GetEntity(circle->distance))->DistanceGetExpr();
+            AddEq(l, (r->Times(Expr::FromConstant(2)))->Minus(exprA), 0);
             break;
         }
 

@@ -77,6 +77,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.point[2].v",        'x',        &(SS.sv.e.point[2].v)   },
     { 'e',  "Entity.point[3].v",        'x',        &(SS.sv.e.point[3].v)   },
     { 'e',  "Entity.normal.v",          'x',        &(SS.sv.e.normal.v)     },
+    { 'e',  "Entity.distance.v",        'x',        &(SS.sv.e.distance.v)   },
     { 'e',  "Entity.workplane.v",       'x',        &(SS.sv.e.workplane.v)  },
     { 'e',  "Entity.numPoint.x",        'f',        &(SS.sv.e.numPoint.x)   },
     { 'e',  "Entity.numPoint.y",        'f',        &(SS.sv.e.numPoint.y)   },

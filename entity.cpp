@@ -31,6 +31,28 @@ void Entity::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
     }
 }
 
+double Entity::DistanceGetNum(void) {
+    if(type == DISTANCE) {
+        return SS.GetParam(param[0])->val;
+    } else if(type == DISTANCE_XFRMD) {
+        return numDistance;
+    } else oops();
+}
+Expr *Entity::DistanceGetExpr(void) {
+    if(type == DISTANCE) {
+        return Expr::FromParam(param[0]);
+    } else if(type == DISTANCE_XFRMD) {
+        return Expr::FromConstant(numDistance);
+    } else oops();
+}
+void Entity::DistanceForceTo(double v) {
+    if(type == DISTANCE) {
+        (SS.GetParam(param[0]))->val = v;
+    } else if(type == DISTANCE_XFRMD) {
+        // do nothing, it's locked
+    } else oops();
+}
+
 Entity *Entity::Normal(void) {
     return SS.GetEntity(normal);
 }
@@ -404,6 +426,11 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case DISTANCE:
+        case DISTANCE_XFRMD:
+            // These are used only as data structures, nothing to display.
+            break;
+
         case WORKPLANE: {
             if(order >= 0 && order != 0) break;
             if(!SS.GW.showWorkplanes) break;
@@ -477,7 +504,7 @@ void Entity::DrawOrGetDistance(int order) {
             if(order >= 0 && order != 1) break;
 
             Quaternion q = SS.GetEntity(normal)->NormalGetNum();
-            double r = SS.GetParam(param[0])->val;
+            double r = SS.GetEntity(distance)->DistanceGetNum();
             Vector center = SS.GetEntity(point[0])->PointGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
 

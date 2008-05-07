@@ -71,6 +71,8 @@ void glxFillPolygon(SPolygon *p);
 void glxMarkPolygonNormal(SPolygon *p);
 void glxWriteText(char *str);
 void glxWriteTextRefCenter(char *str);
+double glxStrWidth(char *str);
+double glxStrHeight(void);
 void glxTranslatev(Vector u);
 void glxOntoWorkplane(Vector u, Vector v);
 void glxLockColorTo(double r, double g, double b);

@@ -168,6 +168,9 @@ public:
     static const int NORMAL_IN_PLANE        =  3002;
     static const int NORMAL_XFRMD           =  3010;
 
+    static const int DISTANCE               =  4000;
+    static const int DISTANCE_XFRMD         =  4001;
+
     static const int WORKPLANE              = 10000;
     static const int LINE_SEGMENT           = 11000;
     static const int CUBIC                  = 12000;
@@ -177,13 +180,17 @@ public:
 
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
-    hParam      param[4];
     hEntity     point[4];
     hEntity     normal;
+    hEntity     distance;
+    // The only types that have their own params are points, normals,
+    // and directions.
+    hParam      param[4];
 
-    // Derived points are a symbolic offset from a constant base.
+    // Transformed points/normals/distances have their numerical value.
     Vector      numPoint;
     Quaternion  numNormal;
+    double      numDistance;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
@@ -196,6 +203,11 @@ public:
 
     bool HasDirection(void);
     ExprVector GetDirection(void);
+
+    // For distances
+    double DistanceGetNum(void);
+    Expr *DistanceGetExpr(void);
+    void DistanceForceTo(double v);
 
     bool IsWorkplane(void);
     // The plane is points P such that P dot (xn, yn, zn) - d = 0
@@ -301,9 +313,9 @@ public:
     static const int EQUAL_LENGTH_LINES = 50;
     static const int SYMMETRIC          = 60;
     static const int AT_MIDPOINT        = 70;
-
     static const int HORIZONTAL         = 80;
     static const int VERTICAL           = 81;
+    static const int DIAMETER           = 90;
 
     int         tag;
     hConstraint h;
@@ -339,6 +351,8 @@ public:
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);
+    double EllipticalInterpolation(double rx, double ry, double theta);
+    void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos(void);
