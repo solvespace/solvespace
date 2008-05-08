@@ -262,6 +262,19 @@ Vector Vector::WithMagnitude(double v) {
     }
 }
 
+Vector Vector::ProjectInto(hEntity wrkpl) {
+    Entity *w = SS.GetEntity(wrkpl);
+    Vector u = w->Normal()->NormalU();
+    Vector v = w->Normal()->NormalV();
+    Vector p0 = w->WorkplaneGetOffset();
+
+    Vector f = this->Minus(p0);
+    double up = f.Dot(u);
+    double vp = f.Dot(v);
+
+    return p0.Plus((u.ScaledBy(up)).Plus(v.ScaledBy(vp)));
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;
@@ -321,4 +334,5 @@ double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
         return DistanceTo(closest);
     }
 }
+
 

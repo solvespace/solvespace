@@ -127,6 +127,13 @@ bool SolveSpace::SolveGroup(hGroup hg) {
 
         c->Generate(&(sys.eq));
     }
+    // And the equations from entities
+    for(i = 0; i < entity.n; i++) {
+        Entity *e = &(entity.elem[i]);
+        if(e->group.v != hg.v) continue;
+
+        e->GenerateEquations(&(sys.eq));
+    }
 
     bool r = sys.Solve();
     FreeAllTemporary();

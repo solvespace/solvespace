@@ -86,6 +86,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.numNormal.vx",      'f',        &(SS.sv.e.numNormal.vx) },
     { 'e',  "Entity.numNormal.vy",      'f',        &(SS.sv.e.numNormal.vy) },
     { 'e',  "Entity.numNormal.vz",      'f',        &(SS.sv.e.numNormal.vz) },
+    { 'e',  "Entity.numDistance",       'f',        &(SS.sv.e.numDistance)  },
 
     { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)          },
     { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)         },

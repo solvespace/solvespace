@@ -117,6 +117,13 @@ ExprVector ExprQuaternion::RotationN(void) {
     return n;
 }
 
+Expr *ExprQuaternion::Magnitude(void) {
+    return ((w ->Square())->Plus(
+            (vx->Square())->Plus(
+            (vy->Square())->Plus(
+            (vz->Square())))))->Sqrt();
+}
+
 Expr *Expr::FromParam(hParam p) {
     Expr *r = AllocExpr();
     r->op = PARAM;

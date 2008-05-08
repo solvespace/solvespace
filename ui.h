@@ -196,6 +196,7 @@ public:
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
+    bool ConstrainPointByHovered(hEntity pt);
     hRequest AddRequest(int type);
     
     // The current selection.

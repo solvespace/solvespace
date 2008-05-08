@@ -6,6 +6,8 @@ typedef unsigned long DWORD;
 typedef unsigned char BYTE;
 
 class Vector;
+class Point2d;
+class hEntity;
 
 class Quaternion {
 public:
@@ -45,6 +47,7 @@ public:
     double Magnitude(void);
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);
+    Vector ProjectInto(hEntity wrkpl);
 };
 
 class Point2d {

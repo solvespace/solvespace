@@ -658,9 +658,41 @@ hRequest GraphicsWindow::AddRequest(int type) {
     r.workplane = activeWorkplane;
     r.type = type;
     SS.request.AddAndAssignId(&r);
-    SS.GenerateAll(solving == SOLVE_ALWAYS);
+
+    // We must regenerate the parameters, so that the code that tries to
+    // place this request's entities where the mouse is can do so. But
+    // we mustn't try to solve until reasonable values have been supplied
+    // for these new parameters, or else we'll get a numerical blowup.
+    SS.GenerateAll(false);
 
     return r.h;
+}
+
+bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
+    if(!hover.entity.v) return false;
+
+    Entity *e = SS.GetEntity(hover.entity);
+    if(e->IsPoint()) {
+        Constraint::ConstrainCoincident(e->h, pt);
+        return true;
+    }
+    if(e->IsWorkplane()) {
+        Constraint::Constrain(Constraint::PT_IN_PLANE,
+            pt, Entity::NO_ENTITY, e->h);
+        return true;
+    }
+    if(e->IsCircle()) {
+        Constraint::Constrain(Constraint::PT_ON_CIRCLE, 
+            pt, Entity::NO_ENTITY, e->h);
+        return true;
+    }
+    if(e->type == Entity::LINE_SEGMENT) {
+        Constraint::Constrain(Constraint::PT_ON_LINE,
+            pt, Entity::NO_ENTITY, e->h);
+        return true;
+    }
+
+    return false;
 }
 
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
@@ -676,10 +708,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     v = v.Plus(projRight.ScaledBy(mx/scale));
     v = v.Plus(projUp.ScaledBy(my/scale));
 
-#define MAYBE_PLACE(p) \
-    if(hover.entity.v && SS.GetEntity((p))->IsPoint()) { \
-        Constraint::ConstrainCoincident(hover.entity, (p)); \
-    }
     hRequest hr;
     switch(pending.operation) {
         case MNU_DATUM_POINT:
@@ -694,7 +722,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_LINE_SEGMENT:
             hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
-            MAYBE_PLACE(hr.entity(1));
+            ConstrainPointByHovered(hr.entity(1));
 
             ClearSelection(); hover.Clear();
 
@@ -717,7 +745,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 SS.GetEntity(lns[i].entity(2))->PointForceTo(v);
             }
             for(i = 0; i < 4; i++) {
-                Constraint::ConstrainHorizVert((i % 2)==0, lns[i].entity(0));
+                Constraint::Constrain(
+                    (i % 2) ? Constraint::HORIZONTAL : Constraint::VERTICAL,
+                    Entity::NO_ENTITY, Entity::NO_ENTITY,  
+                    lns[i].entity(0));
             }
 
             pending.operation = DRAGGING_NEW_POINT;
@@ -730,7 +761,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             SS.GetEntity(hr.entity(32))->NormalForceTo(
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
-            MAYBE_PLACE(hr.entity(1));
+            ConstrainPointByHovered(hr.entity(1));
 
             ClearSelection(); hover.Clear();
 
@@ -747,7 +778,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(2))->PointForceTo(v);
             SS.GetEntity(hr.entity(3))->PointForceTo(v);
             SS.GetEntity(hr.entity(4))->PointForceTo(v);
-            MAYBE_PLACE(hr.entity(1));
+            ConstrainPointByHovered(hr.entity(1));
 
             ClearSelection(); hover.Clear();
 
@@ -761,7 +792,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             SS.GetEntity(hr.entity(32))->NormalForceTo( 
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
-            MAYBE_PLACE(hr.entity(1));
+            ConstrainPointByHovered(hr.entity(1));
 
             ClearSelection(); hover.Clear();
             ClearPending();
@@ -774,15 +805,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case DRAGGING_NEW_CUBIC_POINT:
-            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
-                Constraint::ConstrainCoincident(pending.point, hover.entity);
-            }
+            ConstrainPointByHovered(pending.point);
             ClearPending();
             break;
 
         case DRAGGING_NEW_LINE_POINT: {
-            if(hover.entity.v && SS.GetEntity(hover.entity)->IsPoint()) {
-                Constraint::ConstrainCoincident(pending.point, hover.entity);
+            if(ConstrainPointByHovered(pending.point)) {
                 ClearPending();
                 break;
             }

@@ -13,26 +13,21 @@ hConstraint Constraint::AddConstraint(Constraint *c) {
     return c->h;
 }
 
-void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
+void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
+{
     Constraint c;
     memset(&c, 0, sizeof(c));
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.activeWorkplane;
-    c.type = POINTS_COINCIDENT;
+    c.type = type;
     c.ptA = ptA;
     c.ptB = ptB;
+    c.entityA = entityA;
     AddConstraint(&c);
 }
 
-void Constraint::ConstrainHorizVert(bool horiz, hEntity ls) {
-    Constraint c;
-    memset(&c, 0, sizeof(c));
-    c.group = SS.GW.activeGroup;
-    c.workplane = SS.GW.activeWorkplane;
-    if(c.workplane.v == Entity::FREE_IN_3D.v) oops();
-    c.type = (horiz ? HORIZONTAL : VERTICAL);
-    c.entityA = ls;
-    AddConstraint(&c);
+void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
+    Constrain(POINTS_COINCIDENT, ptA, ptB, Entity::NO_ENTITY);
 }
 
 void Constraint::MenuConstrain(int id) {
@@ -55,6 +50,14 @@ void Constraint::MenuConstrain(int id) {
                 Entity *e = SS.GetEntity(gs.entity[0]);
                 c.ptA = e->point[0];
                 c.ptB = e->point[1];
+            } else if(gs.workplanes == 1 && gs.points == 1 && gs.n == 2) {
+                c.type = PT_PLANE_DISTANCE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.entity[0];
+            } else if(gs.lineSegments == 1 && gs.points == 1 && gs.n == 2) {
+                c.type = PT_LINE_DISTANCE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.entity[0];
             } else if(gs.circlesOrArcs == 1 && gs.n == 1) {
                 c.type = DIAMETER;
                 c.entityA = gs.entity[0];
@@ -88,6 +91,10 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.entity[0];
             } else if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
                 c.type = PT_ON_LINE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.entity[0];
+            } else if(gs.points == 1 && gs.circlesOrArcs == 1 && gs.n == 2) {
+                c.type = PT_ON_CIRCLE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
             } else {
@@ -329,6 +336,17 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exprA), 0);
             break;
 
+        case PT_LINE_DISTANCE:
+            AddEq(l,
+                PointLineDistance(workplane, ptA, entityA)->Minus(exprA), 0);
+            break;
+
+        case PT_PLANE_DISTANCE: {
+            ExprVector pt = SS.GetEntity(ptA)->PointGetExprs();
+            AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exprA), 0);
+            break;
+        }
+
         case EQUAL_LENGTH_LINES: {
             Entity *a = SS.GetEntity(entityA);
             Entity *b = SS.GetEntity(entityB);
@@ -389,6 +407,14 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
             }
             break;
+
+        case PT_ON_CIRCLE: {
+            Entity *circle = SS.GetEntity(entityA);
+            hEntity center = circle->point[0];
+            Expr *radius = SS.GetEntity(circle->distance)->DistanceGetExpr();
+            AddEq(l, Distance(workplane, ptA, center)->Minus(radius), 0);
+            break;
+        }
 
         case AT_MIDPOINT:
             if(workplane.v == Entity::FREE_IN_3D.v) {

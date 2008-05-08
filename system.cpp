@@ -70,6 +70,17 @@ bool System::IsDragged(hParam p) {
             }
         }
     }
+    if(SS.GW.pending.circle.v) {
+        Entity *circ = SS.entity.FindByIdNoOops(SS.GW.pending.circle);
+        if(circ) {
+            Entity *dist = SS.GetEntity(circ->distance);
+            switch(dist->type) {
+                case Entity::DISTANCE:
+                    if(p.v == (dist->param[0].v)) return true;
+                    break;
+            }
+        }
+    }
     return false;
 }
 
@@ -358,7 +369,10 @@ bool System::Solve(void) {
     for(i = 0; i < eq.n; i++) {
         dbp("  %.3f = %s = 0", eq.elem[i].e->Eval(), eq.elem[i].e->Print());
     }
-    dbp("%d parameters", param.n); */
+    dbp("%d parameters", param.n);
+    for(i = 0; i < param.n; i++) {
+        dbp("   param %08x at %.3f", param.elem[i].h.v, param.elem[i].val);
+    } */
 
     param.ClearTags();
     eq.ClearTags();

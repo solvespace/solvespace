@@ -5,6 +5,10 @@ char *Entity::DescriptionString(void) {
     return r->DescriptionString();
 }
 
+bool Entity::IsCircle(void) {
+    return (type == CIRCLE);
+}
+
 bool Entity::IsWorkplane(void) {
     return (type == WORKPLANE);
 }
@@ -525,4 +529,24 @@ void Entity::DrawOrGetDistance(int order) {
             oops();
     }
 }
+
+void Entity::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
+    Equation eq;
+    eq.e = expr;
+    eq.h = h.equation(index);
+    l->Add(&eq);
+}
+
+void Entity::GenerateEquations(IdList<Equation,hEquation> *l) {
+    switch(type) {
+        case NORMAL_IN_3D: {
+            ExprQuaternion q = NormalGetExprs();
+            AddEq(l, (q.Magnitude())->Minus(Expr::FromConstant(1)), 0);
+            break;
+        }
+        default:;
+            // Most entities do not generate equations.
+    }
+}
+
 

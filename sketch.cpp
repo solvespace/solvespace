@@ -1,6 +1,7 @@
 #include "solvespace.h"
 
 const hEntity  Entity::FREE_IN_3D = { 0 };
+const hEntity  Entity::NO_ENTITY = { 0 };
 
 const hGroup Group::HGROUP_REFERENCES = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };

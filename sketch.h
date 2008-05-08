@@ -41,6 +41,7 @@ public:
 
     inline bool isFromRequest(void);
     inline hRequest request(void);
+    inline hEquation equation(int i);
 };
 class hParam {
 public:
@@ -153,6 +154,7 @@ public:
     hEntity     h;
 
     static const hEntity    FREE_IN_3D;
+    static const hEntity    NO_ENTITY;
 
     static const int POINT_IN_3D            =  2000;
     static const int POINT_IN_2D            =  2001;
@@ -200,6 +202,8 @@ public:
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
     int timesApplied;
+
+    bool IsCircle(void);
 
     bool HasDirection(void);
     ExprVector GetDirection(void);
@@ -253,6 +257,9 @@ public:
     double GetDistance(Point2d mp);
     void GenerateEdges(SEdgeList *el);
 
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
+    void GenerateEquations(IdList<Equation,hEquation> *l);
+
     char *DescriptionString(void);
 };
 
@@ -270,31 +277,6 @@ public:
 };
 
 
-inline hEntity hGroup::entity(int i)
-    { hEntity r; r.v = 0x80000000 | (v << 16) | i; return r; }
-inline hParam hGroup::param(int i)
-    { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
-
-inline bool hRequest::IsFromReferences(void) {
-    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
-    return false;
-}
-inline hEntity hRequest::entity(int i)
-    { hEntity r; r.v = (v << 16) | i; return r; }
-inline hParam hRequest::param(int i)
-    { hParam r; r.v = (v << 16) | i; return r; }
-
-inline bool hEntity::isFromRequest(void)
-    { if(v & 0x80000000) return false; else return true; }
-inline hRequest hEntity::request(void)
-    { hRequest r; r.v = (v >> 16); return r; }
-
-inline hRequest hParam::request(void)
-    { hRequest r; r.v = (v >> 16); return r; }
-
-
 class hConstraint {
 public:
     DWORD   v;
@@ -304,18 +286,20 @@ public:
 
 class Constraint {
 public:
-    static const int USER_EQUATION      = 10;
-    static const int POINTS_COINCIDENT  = 20;
-    static const int PT_PT_DISTANCE     = 30;
-    static const int PT_LINE_DISTANCE   = 31;
-    static const int PT_IN_PLANE        = 40;
-    static const int PT_ON_LINE         = 41;
-    static const int EQUAL_LENGTH_LINES = 50;
-    static const int SYMMETRIC          = 60;
-    static const int AT_MIDPOINT        = 70;
-    static const int HORIZONTAL         = 80;
-    static const int VERTICAL           = 81;
-    static const int DIAMETER           = 90;
+    static const int USER_EQUATION      =  10;
+    static const int POINTS_COINCIDENT  =  20;
+    static const int PT_PT_DISTANCE     =  30;
+    static const int PT_LINE_DISTANCE   =  31;
+    static const int PT_PLANE_DISTANCE  =  32;
+    static const int PT_IN_PLANE        =  40;
+    static const int PT_ON_LINE         =  41;
+    static const int EQUAL_LENGTH_LINES =  50;
+    static const int SYMMETRIC          =  60;
+    static const int AT_MIDPOINT        =  70;
+    static const int HORIZONTAL         =  80;
+    static const int VERTICAL           =  81;
+    static const int DIAMETER           =  90;
+    static const int PT_ON_CIRCLE       = 100;
 
     int         tag;
     hConstraint h;
@@ -353,6 +337,7 @@ public:
     void DrawOrGetDistance(Vector *labelPos);
     double EllipticalInterpolation(double rx, double ry, double theta);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
+    void DoProjectedPoint(Vector *p);
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos(void);
@@ -371,7 +356,7 @@ public:
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
-    static void ConstrainHorizVert(bool horiz, hEntity lineSegment);
+    static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
 };
 
 class hEquation {
@@ -386,6 +371,34 @@ public:
 
     Expr        *e;
 };
+
+
+inline hEntity hGroup::entity(int i)
+    { hEntity r; r.v = 0x80000000 | (v << 16) | i; return r; }
+inline hParam hGroup::param(int i)
+    { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
+
+inline bool hRequest::IsFromReferences(void) {
+    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
+    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
+    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    return false;
+}
+inline hEntity hRequest::entity(int i)
+    { hEntity r; r.v = (v << 16) | i; return r; }
+inline hParam hRequest::param(int i)
+    { hParam r; r.v = (v << 16) | i; return r; }
+
+inline bool hEntity::isFromRequest(void)
+    { if(v & 0x80000000) return false; else return true; }
+inline hRequest hEntity::request(void)
+    { hRequest r; r.v = (v >> 16); return r; }
+inline hEquation hEntity::equation(int i)
+    { if(i != 0) oops(); hEquation r; r.v = v | 0x80000000; return r; }
+
+inline hRequest hParam::request(void)
+    { hRequest r; r.v = (v >> 16); return r; }
+
 
 inline hEquation hConstraint::equation(int i)
     { hEquation r; r.v = (v << 16) | i; return r; }

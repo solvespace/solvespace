@@ -2,6 +2,8 @@
 
 bool Constraint::HasLabel(void) {
     switch(type) {
+        case PT_LINE_DISTANCE:
+        case PT_PLANE_DISTANCE:
         case PT_PT_DISTANCE:
         case DIAMETER:
             return true;
@@ -55,6 +57,15 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     }
 }
 
+void Constraint::DoProjectedPoint(Vector *r) {
+    Vector p = r->ProjectInto(workplane);
+    glLineStipple(4, 0x5555);
+    glEnable(GL_LINE_STIPPLE);
+    LineDrawOrGetDistance(p, *r);
+    glDisable(GL_LINE_STIPPLE);
+    *r = p;
+}
+
 void Constraint::DrawOrGetDistance(Vector *labelPos) {
     if(!SS.GW.showConstraints) return;
     Group *g = SS.GetGroup(group);
@@ -76,6 +87,11 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector ap = SS.GetEntity(ptA)->PointGetNum();
             Vector bp = SS.GetEntity(ptB)->PointGetNum();
 
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                DoProjectedPoint(&ap);
+                DoProjectedPoint(&bp);
+            }
+
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
 
             Vector ab   = ap.Minus(bp);
@@ -88,6 +104,52 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             LineDrawOrGetDistance(ap, ap.Plus(out));
             LineDrawOrGetDistance(bp, bp.Plus(out));
 
+            DoLabel(ref, labelPos, gr, gu);
+            break;
+        }
+
+        case PT_PLANE_DISTANCE: {
+            Vector pt = SS.GetEntity(ptA)->PointGetNum();
+            Entity *plane = SS.GetEntity(entityA);
+            Vector n = plane->Normal()->NormalN();
+            Vector p = plane->WorkplaneGetOffset();
+            double d = (p.Minus(pt)).Dot(n);
+
+            Vector closest = pt.Plus(n.WithMagnitude(d));
+            LineDrawOrGetDistance(pt, closest);
+
+            Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
+            DoLabel(ref, labelPos, gr, gu);
+            break;
+        }
+
+        case PT_LINE_DISTANCE: {
+            Vector pt = SS.GetEntity(ptA)->PointGetNum();
+            Entity *line = SS.GetEntity(entityA);
+            Vector lA = SS.GetEntity(line->point[0])->PointGetNum();
+            Vector lB = SS.GetEntity(line->point[1])->PointGetNum();
+
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                lA = lA.ProjectInto(workplane);
+                lB = lB.ProjectInto(workplane);
+                DoProjectedPoint(&pt);
+            }
+
+            Vector lAB = (lA.Minus(lB)).WithMagnitude(1);
+            Vector closest;
+            // lA, lB, and pt define a plane; the min distance is in
+            // that plane, so calculate its normal
+            Vector pn = (pt.Minus(lA)).Cross(lAB);
+            // The minimum distance line is in that plane, perpendicular
+            // to the line
+            Vector n = pn.Cross(lAB);
+
+            // Calculate the actual distance
+            double d = (lAB.Cross(lA.Minus(pt))).Magnitude();
+            closest = pt.Plus(n.WithMagnitude(d));
+            
+            LineDrawOrGetDistance(pt, closest);
+            Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
             DoLabel(ref, labelPos, gr, gu);
             break;
         }
@@ -142,6 +204,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case PT_ON_CIRCLE:
         case PT_ON_LINE:
         case PT_IN_PLANE: {
             double s = 7/SS.GW.scale;
