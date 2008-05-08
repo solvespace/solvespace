@@ -275,6 +275,18 @@ Vector Vector::ProjectInto(hEntity wrkpl) {
     return p0.Plus((u.ScaledBy(up)).Plus(v.ScaledBy(vp)));
 }
 
+double Vector::DivPivoting(Vector delta) {
+    double m = max(fabs(delta.x), max(fabs(delta.y), fabs(delta.z)));
+
+    if(m == fabs(delta.x)) {
+        return x/delta.x;
+    } else if(m == fabs(delta.y)) {
+        return y/delta.y;
+    } else if(m == fabs(delta.z)) {
+        return z/delta.z;
+    } else oops();
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;

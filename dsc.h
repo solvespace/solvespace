@@ -48,6 +48,7 @@ public:
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);
     Vector ProjectInto(hEntity wrkpl);
+    double DivPivoting(Vector delta);
 };
 
 class Point2d {

@@ -151,6 +151,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             LineDrawOrGetDistance(pt, closest);
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
             DoLabel(ref, labelPos, gr, gu);
+
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                // Draw the projection marker from the closest point on the
+                // projected line to the projected point on the real line.
+                lAB = (lA.Minus(lB));
+                double t = (lA.Minus(closest)).DivPivoting(lAB);
+
+                Vector lA = SS.GetEntity(line->point[0])->PointGetNum();
+                Vector lB = SS.GetEntity(line->point[1])->PointGetNum();
+
+                Vector c2 = (lA.ScaledBy(1-t)).Plus(lB.ScaledBy(t));
+                DoProjectedPoint(&c2);
+            }
             break;
         }
 
