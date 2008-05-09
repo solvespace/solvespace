@@ -130,6 +130,8 @@ public:
     ExprVector Cross(ExprVector b);
     ExprVector ScaledBy(Expr *s);
     Expr *Magnitude(void);
+
+    Vector Eval(void);
 };
 
 class ExprQuaternion {

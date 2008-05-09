@@ -53,6 +53,14 @@ Expr *ExprVector::Magnitude(void) {
     return r->Sqrt();
 }
 
+Vector ExprVector::Eval(void) {
+    Vector r;
+    r.x = x->Eval();
+    r.y = y->Eval();
+    r.z = z->Eval();
+    return r;
+}
+
 ExprQuaternion ExprQuaternion::FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz)
 {
     ExprQuaternion q;

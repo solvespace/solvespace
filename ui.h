@@ -119,6 +119,8 @@ public:
         MNU_AT_MIDPOINT,
         MNU_HORIZONTAL,
         MNU_VERTICAL,
+        MNU_PARALLEL,
+        MNU_ORIENTED_SAME,
         MNU_SOLVE_AUTO,
         MNU_SOLVE_NOW,
     } MenuId;
@@ -219,11 +221,15 @@ public:
     struct {
         hEntity     point[MAX_SELECTED];
         hEntity     entity[MAX_SELECTED];
+        hEntity     anyNormal[MAX_SELECTED];
+        hEntity     vector[MAX_SELECTED];
         int         points;
         int         entities;
         int         workplanes;
         int         lineSegments;
         int         circlesOrArcs;
+        int         anyNormals;
+        int         vectors;
         int         n;
     } gs;
     void GroupSelection(void);

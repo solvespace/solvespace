@@ -181,6 +181,30 @@ void Constraint::MenuConstrain(int id) {
             break;
         }
 
+        case GraphicsWindow::MNU_ORIENTED_SAME:
+            if(gs.anyNormals == 2 && gs.n == 2) {
+                c.type = SAME_ORIENTATION;
+                c.entityA = gs.anyNormal[0];
+                c.entityB = gs.anyNormal[1];
+            } else {
+                Error("Bad selection for same orientation constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_PARALLEL:
+            if(gs.vectors == 2 && gs.n == 2) {
+                c.type = PARALLEL;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+            } else {
+                Error("Bad selection for parallel constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
         case GraphicsWindow::MNU_SOLVE_NOW:
             SS.GenerateAll(true);
             return;
@@ -525,6 +549,37 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             b->PointGetExprsInWorkplane(workplane, &bu, &bv);
 
             AddEq(l, (type == HORIZONTAL) ? av->Minus(bv) : au->Minus(bu), 0);
+            break;
+        }
+
+        case SAME_ORIENTATION: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            ExprVector au = a->NormalExprsU(),
+                       av = a->NormalExprsV(),
+                       an = a->NormalExprsN();
+            ExprVector bu = b->NormalExprsU(),
+                       bv = b->NormalExprsV(),
+                       bn = b->NormalExprsN();
+            
+            AddEq(l, VectorsParallel(0, an, bn), 0);
+            AddEq(l, VectorsParallel(1, an, bn), 1);
+            AddEq(l, au.Dot(bv), 2);
+            break;
+        }
+
+        case PARALLEL: {
+            ExprVector a = SS.GetEntity(entityA)->VectorGetExprs();
+            ExprVector b = SS.GetEntity(entityB)->VectorGetExprs();
+
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                AddEq(l, VectorsParallel(0, a, b), 0);
+                AddEq(l, VectorsParallel(1, a, b), 1);
+            } else {
+                Entity *w = SS.GetEntity(workplane);
+                ExprVector wn = w->Normal()->NormalExprsN();
+                AddEq(l, (a.Cross(b)).Dot(wn), 0);
+            }
             break;
         }
 

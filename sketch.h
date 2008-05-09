@@ -205,8 +205,9 @@ public:
 
     bool IsCircle(void);
 
-    bool HasDirection(void);
-    ExprVector GetDirection(void);
+    bool HasVector(void);
+    ExprVector VectorGetExprs(void);
+    Vector VectorGetRefPoint(void);
 
     // For distances
     double DistanceGetNum(void);
@@ -300,6 +301,8 @@ public:
     static const int VERTICAL           =  81;
     static const int DIAMETER           =  90;
     static const int PT_ON_CIRCLE       = 100;
+    static const int SAME_ORIENTATION   = 110;
+    static const int PARALLEL           = 120;
 
     int         tag;
     hConstraint h;

@@ -231,6 +231,35 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case SAME_ORIENTATION: {
+            for(int i = 0; i < 2; i++) {
+                Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
+                Quaternion q = e->NormalGetNum();
+                Vector n = q.RotationN().WithMagnitude(25/SS.GW.scale);
+                Vector u = q.RotationU().WithMagnitude(6/SS.GW.scale);
+                Vector p = SS.GetEntity(e->point[0])->PointGetNum();
+                p = p.Plus(n.WithMagnitude(10/SS.GW.scale));
+
+                LineDrawOrGetDistance(p.Plus(u), p.Minus(u).Plus(n));
+                LineDrawOrGetDistance(p.Minus(u), p.Plus(u).Plus(n));
+            }
+            break;
+        }
+
+        case PARALLEL: {
+            for(int i = 0; i < 2; i++) {
+                Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
+                Vector n = e->VectorGetExprs().Eval();
+                n = n.WithMagnitude(25/SS.GW.scale);
+                Vector u = (gn.Cross(n)).WithMagnitude(4/SS.GW.scale);
+                Vector p = e->VectorGetRefPoint();
+
+                LineDrawOrGetDistance(p.Plus(u), p.Plus(u).Plus(n));
+                LineDrawOrGetDistance(p.Minus(u), p.Minus(u).Plus(n));
+            }
+            break;
+        }
+
         case EQUAL_LENGTH_LINES: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);

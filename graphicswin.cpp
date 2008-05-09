@@ -79,6 +79,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "E&qual Length / Radius\tShift+Q",     MNU_EQUAL,          'Q'|S,  mCon  },
 { 1, "At &Midpoint\tShift+M",               MNU_AT_MIDPOINT,    'M'|S,  mCon  },
 { 1, "S&ymmetric\tShift+Y",                 MNU_SYMMETRIC,      'Y'|S,  mCon  },
+{ 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
+{ 1, "Same O&rientation\tShift+R",          MNU_ORIENTED_SAME,  'R'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
@@ -627,11 +629,27 @@ void GraphicsWindow::GroupSelection(void) {
             (gs.n)++;
 
             Entity *e = SS.entity.FindById(s->entity);
+            // A list of points, and a list of all entities that aren't points.
             if(e->IsPoint()) {
                 gs.point[(gs.points)++] = s->entity;
             } else {
                 gs.entity[(gs.entities)++] = s->entity;
             }
+
+            // And an auxiliary list of normals, including normals from
+            // workplanes.
+            if(e->IsNormal()) {
+                gs.anyNormal[(gs.anyNormals)++] = s->entity;
+            } else if(e->IsWorkplane()) {
+                gs.anyNormal[(gs.anyNormals)++] = e->Normal()->h;
+            }
+
+            // And of vectors (i.e., stuff with a direction to constrain)
+            if(e->HasVector()) {
+                gs.vector[(gs.vectors)++] = s->entity;
+            }
+
+            // And some aux counts too
             switch(e->type) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;

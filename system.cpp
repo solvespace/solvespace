@@ -81,6 +81,20 @@ bool System::IsDragged(hParam p) {
             }
         }
     }
+    if(SS.GW.pending.normal.v) {
+        Entity *norm = SS.entity.FindByIdNoOops(SS.GW.pending.normal);
+        if(norm) {
+            switch(norm->type) {
+                case Entity::NORMAL_IN_3D:
+                    if(p.v == (norm->param[0].v)) return true;
+                    if(p.v == (norm->param[1].v)) return true;
+                    if(p.v == (norm->param[2].v)) return true;
+                    if(p.v == (norm->param[3].v)) return true;
+                    break;
+                // other types are locked, so not draggable
+            }
+        }
+    }
     return false;
 }
 

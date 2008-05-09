@@ -5,6 +5,49 @@ char *Entity::DescriptionString(void) {
     return r->DescriptionString();
 }
 
+bool Entity::HasVector(void) {
+    switch(type) {
+        case LINE_SEGMENT:
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+ExprVector Entity::VectorGetExprs(void) {
+    switch(type) {
+        case LINE_SEGMENT:
+            return (SS.GetEntity(point[0])->PointGetExprs()).Minus(
+                    SS.GetEntity(point[1])->PointGetExprs());
+
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD:
+            return NormalExprsN();
+
+        default: oops();
+    }
+}
+
+Vector Entity::VectorGetRefPoint(void) {
+    switch(type) {
+        case LINE_SEGMENT:
+            return ((SS.GetEntity(point[0])->PointGetNum()).Plus(
+                     SS.GetEntity(point[1])->PointGetNum())).ScaledBy(0.5);
+
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_XFRMD:
+            return SS.GetEntity(point[0])->PointGetNum();
+
+        default: oops();
+    }
+}
+
 bool Entity::IsCircle(void) {
     return (type == CIRCLE);
 }
@@ -456,10 +499,13 @@ void Entity::DrawOrGetDistance(int order) {
             Vector mp = p.Minus(us).Plus (vs);
 
             glxColor3d(0, 0.3, 0.3);
+            glEnable(GL_LINE_STIPPLE);
+            glLineStipple(3, 0x1111);
             LineDrawOrGetDistance(pp, pm);
             LineDrawOrGetDistance(pm, mm);
             LineDrawOrGetDistance(mm, mp);
             LineDrawOrGetDistance(mp, pp);
+            glDisable(GL_LINE_STIPPLE);
 
             if(dogd.drawing) {
                 glPushMatrix();
