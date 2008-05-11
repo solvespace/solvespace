@@ -109,7 +109,8 @@ public:
         MNU_CUBIC,
         MNU_CONSTRUCTION,
         // Group
-        MNU_GROUP_DRAWING,
+        MNU_GROUP_3D,
+        MNU_GROUP_WRKPL,
         MNU_GROUP_EXTRUDE,
         // Constrain
         MNU_DISTANCE_DIA,

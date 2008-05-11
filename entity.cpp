@@ -558,7 +558,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector center = SS.GetEntity(point[0])->PointGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
 
-            int i, c = 20;
+            int i, c = 40;
             Vector prev = u.ScaledBy(r).Plus(center);
             for(i = 1; i <= c; i++) {
                 double phi = (2*PI*i)/c;

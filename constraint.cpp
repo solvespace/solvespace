@@ -564,7 +564,15 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             
             AddEq(l, VectorsParallel(0, an, bn), 0);
             AddEq(l, VectorsParallel(1, an, bn), 1);
-            AddEq(l, au.Dot(bv), 2);
+            Expr *d1 = au.Dot(bv);
+            Expr *d2 = au.Dot(bu);
+            // Allow either orientation for the coordinate system, depending
+            // on how it was drawn.
+            if(fabs(d1->Eval()) < fabs(d2->Eval())) {
+                AddEq(l, d1, 2);
+            } else {
+                AddEq(l, d2, 2);
+            }
             break;
         }
 

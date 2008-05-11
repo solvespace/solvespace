@@ -23,7 +23,7 @@ void Group::MenuGroup(int id) {
     g.visible = true;
 
     switch(id) {
-        case GraphicsWindow::MNU_GROUP_DRAWING:
+        case GraphicsWindow::MNU_GROUP_3D:
             g.type = DRAWING;
             g.name.strcpy("drawing");
             break;

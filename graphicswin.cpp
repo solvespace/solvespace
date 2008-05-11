@@ -39,7 +39,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
 { 0, "&Group",                              0,                  0,      NULL  },
-{ 1, "New &Drawing Group\tShift+Ctrl+D",    MNU_GROUP_DRAWING,  'D'|S|C,mGrp  },
+{ 1, "New &Drawing in 3d\tShift+Ctrl+D",    MNU_GROUP_3D,      'D'|S|C, mGrp  },
+{ 1, "New Drawing in Workplane\tShift+Ctrl+W",MNU_GROUP_WRKPL, 'W'|S|C, mGrp  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "New Step and Repeat &Translating",    0,                  0,      NULL  },
 { 1, "New Step and Repeat &Rotating",       0,                  0,      NULL  },

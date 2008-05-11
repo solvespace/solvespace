@@ -43,6 +43,7 @@ class SEdgeList {
 public:
     SList<SEdge>    l;
 
+    void InsertEdgeBreaking(SEdge *e);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
 };
 
