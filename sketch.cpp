@@ -2,6 +2,8 @@
 
 const hEntity  Entity::FREE_IN_3D = { 0 };
 const hEntity  Entity::NO_ENTITY = { 0 };
+const hParam   Param::NO_PARAM = { 0 };
+#define NO_PARAM (Param::NO_PARAM)
 
 const hGroup Group::HGROUP_REFERENCES = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
@@ -25,13 +27,19 @@ void Group::MenuGroup(int id) {
     switch(id) {
         case GraphicsWindow::MNU_GROUP_3D:
             g.type = DRAWING;
-            g.name.strcpy("drawing");
+            g.name.strcpy("draw-in-3d");
             break;
 
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
-            g.opA.v = 2;
+            g.opA = SS.GW.activeGroup;
             g.name.strcpy("extrude");
+            break;
+
+        case GraphicsWindow::MNU_GROUP_ROT:
+            g.type = ROTATE;
+            g.opA = SS.GW.activeGroup;
+            g.name.strcpy("rotate");
             break;
 
         default: oops();
@@ -71,11 +79,51 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                CopyEntity(e->h, 0, h.param(0), h.param(1), h.param(2), true);
+                CopyEntity(e->h, 0,
+                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    true, true);
+            }
+            break;
+
+        case ROTATE:
+            // The translation vector
+            AddParam(param, h.param(0), 100);
+            AddParam(param, h.param(1), 100);
+            AddParam(param, h.param(2), 100);
+            // The rotation quaternion
+            AddParam(param, h.param(3), 1);
+            AddParam(param, h.param(4), 0);
+            AddParam(param, h.param(5), 0);
+            AddParam(param, h.param(6), 0);
+
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v) continue;
+
+                CopyEntity(e->h, 0,
+                    h.param(0), h.param(1), h.param(2),
+                    h.param(3), h.param(4), h.param(5), h.param(6),
+                    false, false);
             }
             break;
 
         default: oops();
+    }
+}
+
+void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
+    if(type == ROTATE) {
+        // Normalize the quaternion
+        ExprQuaternion q = {
+            Expr::FromParam(h.param(3)),
+            Expr::FromParam(h.param(4)),
+            Expr::FromParam(h.param(5)),
+            Expr::FromParam(h.param(6)) };
+        Equation eq;
+        eq.e = (q.Magnitude())->Minus(Expr::FromConstant(1));
+        eq.h = h.equation(0);
+        l->Add(&eq);
     }
 }
 
@@ -97,7 +145,8 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
 }
 
 void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
-                       bool isExtrusion)
+                       hParam qw, hParam qvx, hParam qvy, hParam qvz,
+                       bool transOnly, bool isExtrusion)
 {
     Entity *ep = SS.GetEntity(in);
     
@@ -130,13 +179,27 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             en.distance = Remap(ep->distance, a);
             break;
 
+        case Entity::POINT_N_TRANS:
+        case Entity::POINT_N_ROT_TRANS:
         case Entity::POINT_IN_3D:
         case Entity::POINT_IN_2D:
-            en.type = Entity::POINT_XFRMD;
-            en.param[0] = dx;
-            en.param[1] = dy;
-            en.param[2] = dz;
-            en.numPoint = ep->PointGetNum();
+            if(transOnly) {
+                en.type = Entity::POINT_N_TRANS;
+                en.param[0] = dx;
+                en.param[1] = dy;
+                en.param[2] = dz;
+                en.numPoint = ep->PointGetNum();
+            } else {
+                en.type = Entity::POINT_N_ROT_TRANS;
+                en.param[0] = dx;
+                en.param[1] = dy;
+                en.param[2] = dz;
+                en.param[3] = qw;
+                en.param[4] = qvx;
+                en.param[5] = qvy;
+                en.param[6] = qvz;
+                en.numPoint = ep->PointGetNum();
+            }
 
             if(isExtrusion) {
                 if(a != 0) oops();
@@ -153,15 +216,27 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             }
             break;
 
+        case Entity::NORMAL_N_COPY:
+        case Entity::NORMAL_N_ROT:
         case Entity::NORMAL_IN_3D:
         case Entity::NORMAL_IN_2D:
-            en.type = Entity::NORMAL_XFRMD;
-            en.numNormal = ep->NormalGetNum();
+            if(transOnly) {
+                en.type = Entity::NORMAL_N_COPY;
+                en.numNormal = ep->NormalGetNum();
+            } else {
+                en.type = Entity::NORMAL_N_ROT;
+                en.numNormal = ep->NormalGetNum();
+                en.param[0] = qw;
+                en.param[1] = qvx;
+                en.param[2] = qvy;
+                en.param[3] = qvz;
+            }
             en.point[0] = Remap(ep->point[0], a);
             break;
 
+        case Entity::DISTANCE_N_COPY:
         case Entity::DISTANCE:
-            en.type = Entity::DISTANCE_XFRMD;
+            en.type = Entity::DISTANCE_N_COPY;
             en.numDistance = ep->DistanceGetNum();
             break;
 

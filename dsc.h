@@ -28,6 +28,9 @@ public:
     Vector RotationU(void);
     Vector RotationV(void);
     Vector RotationN(void);
+    Vector Rotate(Vector p);
+
+    Quaternion Times(Quaternion b);
 };
 
 class Vector {

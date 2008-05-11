@@ -72,6 +72,9 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)   },
     { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)   },
     { 'e',  "Entity.param[3].v",        'x',        &(SS.sv.e.param[3].v)   },
+    { 'e',  "Entity.param[4].v",        'x',        &(SS.sv.e.param[4].v)   },
+    { 'e',  "Entity.param[5].v",        'x',        &(SS.sv.e.param[5].v)   },
+    { 'e',  "Entity.param[6].v",        'x',        &(SS.sv.e.param[6].v)   },
     { 'e',  "Entity.point[0].v",        'x',        &(SS.sv.e.point[0].v)   },
     { 'e',  "Entity.point[1].v",        'x',        &(SS.sv.e.point[1].v)   },
     { 'e',  "Entity.point[2].v",        'x',        &(SS.sv.e.point[2].v)   },
@@ -205,7 +208,11 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                 case 'M': {
                     IdList<EntityMap,EntityId> *m =
                                 (IdList<EntityMap,EntityId> *)p;
-                    m->Clear();
+                    // Don't clear this list! When the group gets added, it
+                    // makes a shallow copy, so that would result in us
+                    // freeing memory that we want to keep around. Just
+                    // zero it out so that new memory is allocated.
+                    memset(m, 0, sizeof(*m));
                     for(;;) {
                         EntityMap em;
                         char line2[1024];

@@ -22,6 +22,7 @@ public:
 
     inline hEntity entity(int i);
     inline hParam param(int i);
+    inline hEquation equation(int i);
 };
 class hRequest {
 public:
@@ -77,6 +78,8 @@ public:
 
     static const int DRAWING                       = 5000;
     static const int EXTRUDE                       = 5010;
+    static const int ROTATE                        = 5020;
+    static const int TRANSLATE                     = 5030;
     int type;
 
     int         solveOrder;
@@ -105,7 +108,10 @@ public:
     IdList<EntityMap,EntityId> remap;
     hEntity Remap(hEntity in, int copyNumber);
     void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
-                    bool isExtrusion);
+                    hParam qw, hParam qvx, hParam qvy, hParam qvz,
+                    bool transOnly, bool isExtrusion);
+
+    void GenerateEquations(IdList<Equation,hEquation> *l);
 
     void MakePolygons(void);
     void Draw(void);
@@ -158,7 +164,8 @@ public:
 
     static const int POINT_IN_3D            =  2000;
     static const int POINT_IN_2D            =  2001;
-    static const int POINT_XFRMD            =  2010;
+    static const int POINT_N_TRANS          =  2010;
+    static const int POINT_N_ROT_TRANS      =  2011;
 
     static const int NORMAL_IN_3D           =  3000;
     static const int NORMAL_IN_2D           =  3001;
@@ -168,10 +175,11 @@ public:
     // u = (sin theta)*uw - (cos theta)*vw
     // v = nw
     static const int NORMAL_IN_PLANE        =  3002;
-    static const int NORMAL_XFRMD           =  3010;
+    static const int NORMAL_N_COPY          =  3010;
+    static const int NORMAL_N_ROT           =  3011;
 
     static const int DISTANCE               =  4000;
-    static const int DISTANCE_XFRMD         =  4001;
+    static const int DISTANCE_N_COPY        =  4001;
 
     static const int WORKPLANE              = 10000;
     static const int LINE_SEGMENT           = 11000;
@@ -187,7 +195,7 @@ public:
     hEntity     distance;
     // The only types that have their own params are points, normals,
     // and directions.
-    hParam      param[4];
+    hParam      param[7];
 
     // Transformed points/normals/distances have their numerical value.
     Vector      numPoint;
@@ -228,6 +236,9 @@ public:
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
     bool PointIsFromReferences(void);
+    // These apply only the POINT_N_ROT_TRANS, which has an assoc rotation
+    Quaternion PointGetQuaternion(void);
+    void PointForceQuaternionTo(Quaternion q);
 
     bool IsNormal(void);
     // Applies for any of the normal types
@@ -275,6 +286,8 @@ public:
 
     // Used only in the solver
     hParam      substd;
+
+    static const hParam NO_PARAM;
 };
 
 
@@ -282,7 +295,7 @@ class hConstraint {
 public:
     DWORD   v;
 
-    hEquation equation(int i);
+    inline hEquation equation(int i);
 };
 
 class Constraint {
@@ -380,6 +393,8 @@ inline hEntity hGroup::entity(int i)
     { hEntity r; r.v = 0x80000000 | (v << 16) | i; return r; }
 inline hParam hGroup::param(int i)
     { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
+inline hEquation hGroup::equation(int i)
+    { if(i != 0) oops(); hEquation r; r.v = v | 0x80000000; return r; }
 
 inline bool hRequest::IsFromReferences(void) {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
@@ -397,7 +412,7 @@ inline bool hEntity::isFromRequest(void)
 inline hRequest hEntity::request(void)
     { hRequest r; r.v = (v >> 16); return r; }
 inline hEquation hEntity::equation(int i)
-    { if(i != 0) oops(); hEquation r; r.v = v | 0x80000000; return r; }
+    { if(i != 0) oops(); hEquation r; r.v = v | 0x40000000; return r; }
 
 inline hRequest hParam::request(void)
     { hRequest r; r.v = (v >> 16); return r; }

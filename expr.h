@@ -144,6 +144,9 @@ public:
     ExprVector RotationV(void);
     ExprVector RotationN(void);
 
+    ExprVector Rotate(ExprVector p);
+    ExprQuaternion Times(ExprQuaternion b);
+
     Expr *Magnitude(void);
 };
 

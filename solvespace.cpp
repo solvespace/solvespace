@@ -134,6 +134,8 @@ bool SolveSpace::SolveGroup(hGroup hg) {
 
         e->GenerateEquations(&(sys.eq));
     }
+    // And from the groups themselves
+    g->GenerateEquations(&(sys.eq));
 
     bool r = sys.Solve();
     FreeAllTemporary();

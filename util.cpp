@@ -125,6 +125,29 @@ Vector Quaternion::RotationN(void) {
     return RotationU().Cross(RotationV());
 }
 
+Vector Quaternion::Rotate(Vector p) {
+    // Express the point in the new basis
+    return (RotationU().ScaledBy(p.x)).Plus(
+            RotationV().ScaledBy(p.y)).Plus(
+            RotationN().ScaledBy(p.z));
+}
+
+Quaternion Quaternion::Times(Quaternion b) {
+    double sa = w, sb = b.w;
+    Vector va = { vx, vy, vz };
+    Vector vb = { b.vx, b.vy, b.vz };
+
+    Quaternion r;
+    r.w = sa*sb - va.Dot(vb);
+    Vector vr = vb.ScaledBy(sa).Plus(
+                va.ScaledBy(sb).Plus(
+                va.Cross(vb)));
+    r.vx = vr.x;
+    r.vy = vr.y;
+    r.vz = vr.z;
+    return r;
+}
+
 
 Vector Vector::MakeFrom(double x, double y, double z) {
     Vector v;

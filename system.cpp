@@ -56,6 +56,7 @@ bool System::IsDragged(hParam p) {
         Entity *pt = SS.entity.FindByIdNoOops(SS.GW.pending.point);
         if(pt) {
             switch(pt->type) {
+                case Entity::POINT_N_TRANS:
                 case Entity::POINT_IN_3D:
                     if(p.v == (pt->param[0]).v) return true;
                     if(p.v == (pt->param[1]).v) return true;
@@ -63,7 +64,6 @@ bool System::IsDragged(hParam p) {
                     break;
 
                 case Entity::POINT_IN_2D:
-                case Entity::POINT_XFRMD:
                     if(p.v == (pt->param[0]).v) return true;
                     if(p.v == (pt->param[1]).v) return true;
                     break;
@@ -399,7 +399,7 @@ bool System::Solve(void) {
 
     SortBySensitivity();
 
-/*    dbp("write/eval jacboian=%d", GetMilliseconds() - in);
+/*
     for(i = 0; i < mat.m; i++) {
         dbp("function %d: %s", i, mat.B.sym[i]->Print());
     }

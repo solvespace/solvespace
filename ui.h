@@ -112,6 +112,8 @@ public:
         MNU_GROUP_3D,
         MNU_GROUP_WRKPL,
         MNU_GROUP_EXTRUDE,
+        MNU_GROUP_ROT,
+        MNU_GROUP_TRANS,
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_EQUAL,

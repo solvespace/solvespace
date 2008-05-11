@@ -10,7 +10,8 @@ bool Entity::HasVector(void) {
         case LINE_SEGMENT:
         case NORMAL_IN_3D:
         case NORMAL_IN_2D:
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
             return true;
 
         default:
@@ -26,7 +27,8 @@ ExprVector Entity::VectorGetExprs(void) {
 
         case NORMAL_IN_3D:
         case NORMAL_IN_2D:
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
             return NormalExprsN();
 
         default: oops();
@@ -41,7 +43,8 @@ Vector Entity::VectorGetRefPoint(void) {
 
         case NORMAL_IN_3D:
         case NORMAL_IN_2D:
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
             return SS.GetEntity(point[0])->PointGetNum();
 
         default: oops();
@@ -81,21 +84,21 @@ void Entity::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
 double Entity::DistanceGetNum(void) {
     if(type == DISTANCE) {
         return SS.GetParam(param[0])->val;
-    } else if(type == DISTANCE_XFRMD) {
+    } else if(type == DISTANCE_N_COPY) {
         return numDistance;
     } else oops();
 }
 Expr *Entity::DistanceGetExpr(void) {
     if(type == DISTANCE) {
         return Expr::FromParam(param[0]);
-    } else if(type == DISTANCE_XFRMD) {
+    } else if(type == DISTANCE_N_COPY) {
         return Expr::FromConstant(numDistance);
     } else oops();
 }
 void Entity::DistanceForceTo(double v) {
     if(type == DISTANCE) {
         (SS.GetParam(param[0]))->val = v;
-    } else if(type == DISTANCE_XFRMD) {
+    } else if(type == DISTANCE_N_COPY) {
         // do nothing, it's locked
     } else oops();
 }
@@ -108,9 +111,12 @@ bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D:
-        case POINT_XFRMD: return true;
+        case POINT_N_TRANS:
+        case POINT_N_ROT_TRANS:
+            return true;
 
-        default:          return false;
+        default:
+            return false;
     }
 }
 
@@ -118,7 +124,9 @@ bool Entity::IsNormal(void) {
     switch(type) {
         case NORMAL_IN_3D:
         case NORMAL_IN_2D:
-        case NORMAL_XFRMD: return true;
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
+            return true;
 
         default:           return false;
     }
@@ -140,8 +148,16 @@ Quaternion Entity::NormalGetNum(void) {
             q = norm->NormalGetNum();
             break;
         }
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
             q = numNormal;
+            break;
+
+        case NORMAL_N_ROT:
+            q.w  = SS.GetParam(param[0])->val;
+            q.vx = SS.GetParam(param[1])->val;
+            q.vy = SS.GetParam(param[2])->val;
+            q.vz = SS.GetParam(param[3])->val;
+            q = q.Times(numNormal);
             break;
 
         default: oops();
@@ -159,8 +175,11 @@ void Entity::NormalForceTo(Quaternion q) {
             break;
 
         case NORMAL_IN_2D:
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
             // There's absolutely nothing to do; these are locked.
+            break;
+
+        case NORMAL_N_ROT:
             break;
 
         default: oops();
@@ -203,12 +222,28 @@ ExprQuaternion Entity::NormalGetExprs(void) {
             q = norm->NormalGetExprs();
             break;
         }
-        case NORMAL_XFRMD:
+        case NORMAL_N_COPY:
             q.w  = Expr::FromConstant(numNormal.w);
             q.vx = Expr::FromConstant(numNormal.vx);
             q.vy = Expr::FromConstant(numNormal.vy);
             q.vz = Expr::FromConstant(numNormal.vz);
             break;
+
+        case NORMAL_N_ROT: {
+            ExprQuaternion orig;
+            orig.w  = Expr::FromConstant(numNormal.w);
+            orig.vx = Expr::FromConstant(numNormal.vx);
+            orig.vy = Expr::FromConstant(numNormal.vy);
+            orig.vz = Expr::FromConstant(numNormal.vz);
+
+            q.w  = Expr::FromParam(param[0]);
+            q.vx = Expr::FromParam(param[1]);
+            q.vy = Expr::FromParam(param[2]);
+            q.vz = Expr::FromParam(param[3]);
+
+            q = q.Times(orig);
+            break;
+        }
 
         default: oops();
     }
@@ -235,8 +270,19 @@ void Entity::PointForceTo(Vector p) {
             break;
         }
 
-        case POINT_XFRMD: {
+        case POINT_N_TRANS: {
             Vector trans = p.Minus(numPoint);
+            SS.GetParam(param[0])->val = trans.x;
+            SS.GetParam(param[1])->val = trans.y;
+            SS.GetParam(param[2])->val = trans.z;
+            break;
+        }
+
+        case POINT_N_ROT_TRANS: {
+            // Force only the translation; leave the rotation unchanged. But
+            // remember that we're working with respect to the rotated
+            // point.
+            Vector trans = p.Minus(PointGetQuaternion().Rotate(numPoint));
             SS.GetParam(param[0])->val = trans.x;
             SS.GetParam(param[1])->val = trans.y;
             SS.GetParam(param[2])->val = trans.z;
@@ -266,11 +312,22 @@ Vector Entity::PointGetNum(void) {
             break;
         }
 
-        case POINT_XFRMD: {
+        case POINT_N_TRANS: {
             p = numPoint; 
             p.x += SS.GetParam(param[0])->val;
             p.y += SS.GetParam(param[1])->val;
             p.z += SS.GetParam(param[2])->val;
+            break;
+        }
+
+        case POINT_N_ROT_TRANS: {
+            Vector offset = Vector::MakeFrom(
+                SS.GetParam(param[0])->val,
+                SS.GetParam(param[1])->val,
+                SS.GetParam(param[2])->val);
+            Quaternion q = PointGetQuaternion();
+            p = q.Rotate(numPoint);
+            p = p.Plus(offset);
             break;
         }
         default: oops();
@@ -296,7 +353,7 @@ ExprVector Entity::PointGetExprs(void) {
             r = r.Plus(v.ScaledBy(Expr::FromParam(param[1])));
             break;
         }
-        case POINT_XFRMD: {
+        case POINT_N_TRANS: {
             ExprVector orig = {
                 Expr::FromConstant(numPoint.x),
                 Expr::FromConstant(numPoint.y),
@@ -305,6 +362,24 @@ ExprVector Entity::PointGetExprs(void) {
             trans.x = Expr::FromParam(param[0]);
             trans.y = Expr::FromParam(param[1]);
             trans.z = Expr::FromParam(param[2]);
+            r = orig.Plus(trans);
+            break;
+        }
+        case POINT_N_ROT_TRANS: {
+            ExprVector orig = {
+                Expr::FromConstant(numPoint.x),
+                Expr::FromConstant(numPoint.y),
+                Expr::FromConstant(numPoint.z) };
+            ExprVector trans = {
+                Expr::FromParam(param[0]),
+                Expr::FromParam(param[1]),
+                Expr::FromParam(param[2]) };
+            ExprQuaternion q = { 
+                Expr::FromParam(param[3]),
+                Expr::FromParam(param[4]),
+                Expr::FromParam(param[5]),
+                Expr::FromParam(param[6]) };
+            orig = q.Rotate(orig);
             r = orig.Plus(trans);
             break;
         }
@@ -333,6 +408,26 @@ void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
         *u = ev.Dot(wu);
         *v = ev.Dot(wv);
     }
+}
+
+void Entity::PointForceQuaternionTo(Quaternion q) {
+    if(type != POINT_N_ROT_TRANS) oops();
+
+    SS.GetParam(param[3])->val = q.w;
+    SS.GetParam(param[4])->val = q.vx;
+    SS.GetParam(param[5])->val = q.vy;
+    SS.GetParam(param[6])->val = q.vz;
+}
+
+Quaternion Entity::PointGetQuaternion(void) {
+    if(type != POINT_N_ROT_TRANS) oops();
+
+    Quaternion q;
+    q.w  = SS.GetParam(param[3])->val;
+    q.vx = SS.GetParam(param[4])->val;
+    q.vy = SS.GetParam(param[5])->val;
+    q.vz = SS.GetParam(param[6])->val;
+    return q;
 }
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
@@ -403,7 +498,8 @@ void Entity::DrawOrGetDistance(int order) {
     }
 
     switch(type) {
-        case POINT_XFRMD:
+        case POINT_N_TRANS:
+        case POINT_N_ROT_TRANS:
         case POINT_IN_3D:
         case POINT_IN_2D: {
             if(order >= 0 && order != 2) break;
@@ -443,9 +539,10 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
         case NORMAL_IN_3D:
-        case NORMAL_IN_2D:
-        case NORMAL_XFRMD: {    
+        case NORMAL_IN_2D: {
             if(order >= 0 && order != 2) break;
             if(!SS.GW.showNormals) break;
 
@@ -474,7 +571,7 @@ void Entity::DrawOrGetDistance(int order) {
         }
 
         case DISTANCE:
-        case DISTANCE_XFRMD:
+        case DISTANCE_N_COPY:
             // These are used only as data structures, nothing to display.
             break;
 

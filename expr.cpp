@@ -125,12 +125,36 @@ ExprVector ExprQuaternion::RotationN(void) {
     return n;
 }
 
+ExprVector ExprQuaternion::Rotate(ExprVector p) {
+    // Express the point in the new basis
+    return (RotationU().ScaledBy(p.x)).Plus(
+            RotationV().ScaledBy(p.y)).Plus(
+            RotationN().ScaledBy(p.z));
+}
+
+ExprQuaternion ExprQuaternion::Times(ExprQuaternion b) {
+    Expr *sa = w, *sb = b.w;
+    ExprVector va = { vx, vy, vz };
+    ExprVector vb = { b.vx, b.vy, b.vz };
+
+    ExprQuaternion r;
+    r.w = (sa->Times(sb))->Minus(va.Dot(vb));
+    ExprVector vr = vb.ScaledBy(sa).Plus(
+                    va.ScaledBy(sb).Plus(
+                    va.Cross(vb)));
+    r.vx = vr.x;
+    r.vy = vr.y;
+    r.vz = vr.z;
+    return r;
+}
+
 Expr *ExprQuaternion::Magnitude(void) {
     return ((w ->Square())->Plus(
             (vx->Square())->Plus(
             (vy->Square())->Plus(
             (vz->Square())))))->Sqrt();
 }
+
 
 Expr *Expr::FromParam(hParam p) {
     Expr *r = AllocExpr();

@@ -42,8 +42,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "New &Drawing in 3d\tShift+Ctrl+D",    MNU_GROUP_3D,      'D'|S|C, mGrp  },
 { 1, "New Drawing in Workplane\tShift+Ctrl+W",MNU_GROUP_WRKPL, 'W'|S|C, mGrp  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "New Step and Repeat &Translating",    0,                  0,      NULL  },
-{ 1, "New Step and Repeat &Rotating",       0,                  0,      NULL  },
+{ 1, "New Step &Translating\tShift+Ctrl+R", MNU_GROUP_TRANS,    'T'|S|C,mGrp  },
+{ 1, "New Step &Rotating\tShift+Ctrl+T",    MNU_GROUP_ROT,      'R'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "New Extrusion\tShift+Ctrl+X",         MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
@@ -494,10 +494,53 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
             // and fall through
         case DRAGGING_NEW_POINT:
-        case DRAGGING_POINT:
-            UpdateDraggedPoint(pending.point, x, y);
-            break;
+        case DRAGGING_POINT: {
+            Entity *p = SS.GetEntity(pending.point);
+            if((p->type == Entity::POINT_N_ROT_TRANS) &&
+               (shiftDown || ctrlDown))
+            {
+                // These points also come with a rotation, which the user can
+                // edit by pressing shift or control.
+                Quaternion q = p->PointGetQuaternion();
+                Vector p3 = p->PointGetNum();
+                Point2d p2 = ProjectPoint(p3);
 
+                Vector u = q.RotationU(), v = q.RotationV();
+                if(ctrlDown) {
+                    double d = mp.DistanceTo(p2);
+                    if(d < 25) {
+                        // Don't start dragging the position about the normal
+                        // until we're a little ways out, to get a reasonable
+                        // reference pos
+                        orig.mouse = mp;
+                        break;
+                    }
+                    double theta = atan2(orig.mouse.y-p2.y, orig.mouse.x-p2.x);
+                    theta -= atan2(y-p2.y, x-p2.x);
+
+                    Vector gn = projRight.Cross(projUp);
+                    u = u.RotatedAbout(gn, -theta);
+                    v = v.RotatedAbout(gn, -theta);
+                } else {
+                    double dx = -(x - orig.mouse.x);
+                    double dy = -(y - orig.mouse.y);
+                    double s = 0.3*(PI/180); // degrees per pixel
+                    u = u.RotatedAbout(orig.projUp, -s*dx);
+                    u = u.RotatedAbout(orig.projRight, s*dy);
+                    v = v.RotatedAbout(orig.projUp, -s*dx);
+                    v = v.RotatedAbout(orig.projRight, s*dy);
+                }
+                q = Quaternion::MakeFrom(u, v);
+                p->PointForceQuaternionTo(q);
+                // Let's rotate about the selected point; so fix up the
+                // translation so that that point didn't move.
+                p->PointForceTo(p3);
+                orig.mouse = mp;
+            } else {
+                UpdateDraggedPoint(pending.point, x, y);
+            }
+            break;
+        }
         case DRAGGING_NEW_CUBIC_POINT: {
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
