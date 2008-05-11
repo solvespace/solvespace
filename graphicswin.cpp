@@ -78,6 +78,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&On Point / Curve / Plane\tShift+O",  MNU_ON_ENTITY,      'O'|S,  mCon  },
 { 1, "E&qual Length / Radius\tShift+Q",     MNU_EQUAL,          'Q'|S,  mCon  },
+{ 1, "Length Ra&tio\tShift+T",              MNU_RATIO,          'T'|S,  mCon  },
 { 1, "At &Midpoint\tShift+M",               MNU_AT_MIDPOINT,    'M'|S,  mCon  },
 { 1, "S&ymmetric\tShift+Y",                 MNU_SYMMETRIC,      'Y'|S,  mCon  },
 { 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
@@ -97,7 +98,7 @@ void GraphicsWindow::Init(void) {
     memset(this, 0, sizeof(*this));
 
     offset.x = offset.y = offset.z = 0;
-    scale = 1;
+    scale = 5;
     projRight.x = 1; projRight.y = projRight.z = 0;
     projUp.y = 1; projUp.z = projUp.x = 0;
 
@@ -150,10 +151,11 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
         quatf = quatf.ScaledBy(-1);
         mp = mm;
     }
-    double mo = (offset0.Minus(offsetf)).Magnitude()/scale;
+    double mo = (offset0.Minus(offsetf)).Magnitude()*scale;
 
     // Animate transition, unless it's a tiny move.
-    SDWORD dt = (mp < 0.01 && mo < 10) ? (-20) : (SDWORD)(100 + 1000*mp);
+    SDWORD dt = (mp < 0.01 && mo < 10) ? (-20) :
+                    (SDWORD)(100 + 1000*mp + 0.4*mo);
     SDWORD tn, t0 = GetMilliseconds();
     double s = 0;
     do {
@@ -559,7 +561,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             Entity *circle = SS.GetEntity(pending.circle);
             Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
             Point2d c2 = ProjectPoint(center);
-            double r = c2.DistanceTo(mp)*scale;
+            double r = c2.DistanceTo(mp)/scale;
             SS.GetEntity(circle->distance)->DistanceForceTo(r);
             break;
         }

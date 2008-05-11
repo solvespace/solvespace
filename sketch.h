@@ -42,6 +42,7 @@ public:
 
     inline bool isFromRequest(void);
     inline hRequest request(void);
+    inline hGroup group(void);
     inline hEquation equation(int i);
 };
 class hParam {
@@ -76,18 +77,31 @@ public:
     int         tag;
     hGroup      h;
 
-    static const int DRAWING                       = 5000;
+    static const int DRAWING_3D                    = 5000;
+    static const int DRAWING_WORKPLANE             = 5001;
     static const int EXTRUDE                       = 5010;
     static const int ROTATE                        = 5020;
     static const int TRANSLATE                     = 5030;
     int type;
 
-    int         solveOrder;
     bool        solved;
 
     hGroup      opA;
     hGroup      opB;
     bool        visible;
+
+    static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
+    static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
+    struct {
+        int         type;
+        Quaternion  q;
+        hEntity     origin;
+        hEntity     entityB;
+        hEntity     entityC;
+        bool        swapUV;
+        bool        negateU;
+        bool        negateV;
+    } wrkpl;
 
     SEdgeList       edges;
     SList<SPolygon> faces;
@@ -166,6 +180,7 @@ public:
     static const int POINT_IN_2D            =  2001;
     static const int POINT_N_TRANS          =  2010;
     static const int POINT_N_ROT_TRANS      =  2011;
+    static const int POINT_N_COPY           =  2012;
 
     static const int NORMAL_IN_3D           =  3000;
     static const int NORMAL_IN_2D           =  3001;
@@ -215,6 +230,7 @@ public:
 
     bool HasVector(void);
     ExprVector VectorGetExprs(void);
+    Vector VectorGetNum(void);
     Vector VectorGetRefPoint(void);
 
     // For distances
@@ -308,6 +324,7 @@ public:
     static const int PT_IN_PLANE        =  40;
     static const int PT_ON_LINE         =  41;
     static const int EQUAL_LENGTH_LINES =  50;
+    static const int LENGTH_RATIO       =  51;
     static const int SYMMETRIC          =  60;
     static const int AT_MIDPOINT        =  70;
     static const int HORIZONTAL         =  80;
@@ -411,6 +428,8 @@ inline bool hEntity::isFromRequest(void)
     { if(v & 0x80000000) return false; else return true; }
 inline hRequest hEntity::request(void)
     { hRequest r; r.v = (v >> 16); return r; }
+inline hGroup hEntity::group(void)
+    { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
 inline hEquation hEntity::equation(int i)
     { if(i != 0) oops(); hEquation r; r.v = v | 0x40000000; return r; }
 

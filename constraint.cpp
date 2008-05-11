@@ -69,7 +69,8 @@ void Constraint::MenuConstrain(int id) {
                 Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
                 Vector a = SS.GetEntity(c.ptA)->PointGetNum();
                 Vector b = SS.GetEntity(c.ptB)->PointGetNum();
-                c.disp.offset = n.Cross(a.Minus(b)).WithMagnitude(50);
+                c.disp.offset = n.Cross(a.Minus(b));
+                c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
             } else {
                 c.disp.offset = Vector::MakeFrom(0, 0, 0);
             }
@@ -113,6 +114,21 @@ void Constraint::MenuConstrain(int id) {
                 Error("Bad selection for equal length / radius constraint.");
                 return;
             }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_RATIO:
+            if(gs.lineSegments == 2 && gs.n == 2) {
+                c.type = LENGTH_RATIO;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            } else {
+                Error("Bad selection for length ratio constraint.");
+                return;
+            }
+
+            c.exprA = Expr::FromString("0")->DeepCopyKeep();
+            c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
 
@@ -376,6 +392,15 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             AddEq(l, Distance(workplane, a->point[0], a->point[1])->Minus(
                      Distance(workplane, b->point[0], b->point[1])), 0);
+            break;
+        }
+
+        case LENGTH_RATIO: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            Expr *la = Distance(workplane, a->point[0], a->point[1]);
+            Expr *lb = Distance(workplane, b->point[0], b->point[1]);
+            AddEq(l, (la->Div(lb))->Minus(exprA), 0);
             break;
         }
 

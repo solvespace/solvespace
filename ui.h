@@ -117,6 +117,7 @@ public:
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_EQUAL,
+        MNU_RATIO,
         MNU_ON_ENTITY,
         MNU_SYMMETRIC,
         MNU_AT_MIDPOINT,

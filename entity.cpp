@@ -1,8 +1,13 @@
 #include "solvespace.h"
 
 char *Entity::DescriptionString(void) {
-    Request *r = SS.GetRequest(h.request());
-    return r->DescriptionString();
+    if(h.isFromRequest()) {
+        Request *r = SS.GetRequest(h.request());
+        return r->DescriptionString();
+    } else {
+        Group *g = SS.GetGroup(h.group());
+        return g->DescriptionString();
+    }
 }
 
 bool Entity::HasVector(void) {
@@ -30,6 +35,22 @@ ExprVector Entity::VectorGetExprs(void) {
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
             return NormalExprsN();
+
+        default: oops();
+    }
+}
+
+Vector Entity::VectorGetNum(void) {
+    switch(type) {
+        case LINE_SEGMENT:
+            return (SS.GetEntity(point[0])->PointGetNum()).Minus(
+                    SS.GetEntity(point[1])->PointGetNum());
+
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
+            return NormalN();
 
         default: oops();
     }
@@ -111,6 +132,7 @@ bool Entity::IsPoint(void) {
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D:
+        case POINT_N_COPY:
         case POINT_N_TRANS:
         case POINT_N_ROT_TRANS:
             return true;
@@ -289,6 +311,10 @@ void Entity::PointForceTo(Vector p) {
             break;
         }
 
+        case POINT_N_COPY:
+            // Nothing to do; it's a static copy
+            break;
+
         default: oops();
     }
 }
@@ -330,6 +356,11 @@ Vector Entity::PointGetNum(void) {
             p = p.Plus(offset);
             break;
         }
+
+        case POINT_N_COPY:
+            p = numPoint;
+            break;
+
         default: oops();
     }
     return p;
@@ -383,6 +414,12 @@ ExprVector Entity::PointGetExprs(void) {
             r = orig.Plus(trans);
             break;
         }
+        case POINT_N_COPY:
+            r.x = Expr::FromConstant(numPoint.x);
+            r.y = Expr::FromConstant(numPoint.y);
+            r.z = Expr::FromConstant(numPoint.z);
+            break;
+
         default: oops();
     }
     return r;
@@ -498,6 +535,7 @@ void Entity::DrawOrGetDistance(int order) {
     }
 
     switch(type) {
+        case POINT_N_COPY:
         case POINT_N_TRANS:
         case POINT_N_ROT_TRANS:
         case POINT_IN_3D:
@@ -563,7 +601,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector tip = tail.Plus(v);
             LineDrawOrGetDistance(tail, tip);
 
-            v = v.WithMagnitude(12);
+            v = v.WithMagnitude(12/SS.GW.scale);
             Vector axis = q.RotationV();
             LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis,  0.6)));
             LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis, -0.6)));

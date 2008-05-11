@@ -185,7 +185,6 @@ void System::SortBySensitivity(void) {
         entryWithOrigPos[j] = j;
     }
 
-#define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
     for(j = 0; j < mat.n; j++) {
         int dest = j; // we are writing to position j
         // And the source is whichever position ahead of us can be swapped
@@ -208,7 +207,7 @@ void System::SortBySensitivity(void) {
 }
 
 bool System::Tol(double v) {
-    return (fabs(v) < 0.001);
+    return (fabs(v) < 0.01);
 }
 
 void System::GaussJordan(void) {
@@ -291,7 +290,10 @@ bool System::SolveLinearSystem(void) {
                 max = fabs(mat.A.num[ip][i]);
             }
         }
-        if(fabs(max) < 1e-12) return false;
+        // Don't give up on a singular matrix unless it's really bad; the
+        // assumption code is responsible for identifying that condition,
+        // so we're not responsible for reporting that error.
+        if(fabs(max) < 1e-20) return false;
 
         // Swap row imax with row i
         for(jp = 0; jp < mat.n; jp++) {
@@ -317,7 +319,7 @@ bool System::SolveLinearSystem(void) {
     // We've put the matrix in upper triangular form, so at this point we
     // can solve by back-substitution.
     for(i = mat.m - 1; i >= 0; i--) {
-        if(fabs(mat.A.num[i][i]) < 1e-10) return false;
+        if(fabs(mat.A.num[i][i]) < 1e-20) return false;
 
         temp = mat.B.num[i];
         for(j = mat.n - 1; j > i; j--) {
@@ -360,7 +362,7 @@ bool System::NewtonSolve(int tag) {
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
-            if(!Tol(mat.B.num[i])) {
+            if(fabs(mat.B.num[i]) > 1e-10) {
                 converged = false;
                 break;
             }

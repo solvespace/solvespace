@@ -13,7 +13,7 @@ void SolveSpace::NewFile(void) {
     memset(&g, 0, sizeof(g));
     g.visible = true;
     g.name.strcpy("#references");
-    g.type = Group::DRAWING;
+    g.type = Group::DRAWING_3D;
     g.h = Group::HGROUP_REFERENCES;
     group.Add(&g);
 
@@ -45,66 +45,76 @@ void SolveSpace::NewFile(void) {
 
 
 const SolveSpace::SaveTable SolveSpace::SAVED[] = {
-    { 'g',  "Group.h.v",                'x',        &(SS.sv.g.h.v)          },
-    { 'g',  "Group.type",               'd',        &(SS.sv.g.type)         },
-    { 'g',  "Group.name",               'N',        &(SS.sv.g.name)         },
-    { 'g',  "Group.opA.v",              'x',        &(SS.sv.g.opA.v)        },
-    { 'g',  "Group.opB.v",              'x',        &(SS.sv.g.opB.v)        },
-    { 'g',  "Group.solveOrder",         'd',        &(SS.sv.g.solveOrder)   },
-    { 'g',  "Group.visible",            'b',        &(SS.sv.g.visible)      },
-    { 'g',  "Group.remap",              'M',        &(SS.sv.g.remap)        },
+    { 'g',  "Group.h.v",                'x',        &(SS.sv.g.h.v)            },
+    { 'g',  "Group.type",               'd',        &(SS.sv.g.type)           },
+    { 'g',  "Group.name",               'N',        &(SS.sv.g.name)           },
+    { 'g',  "Group.opA.v",              'x',        &(SS.sv.g.opA.v)          },
+    { 'g',  "Group.opB.v",              'x',        &(SS.sv.g.opB.v)          },
+    { 'g',  "Group.wrkpl.type",         'd',        &(SS.sv.g.wrkpl.type)     },
+    { 'g',  "Group.wrkpl.q.w",          'f',        &(SS.sv.g.wrkpl.q.w)      },
+    { 'g',  "Group.wrkpl.q.vx",         'f',        &(SS.sv.g.wrkpl.q.vx)     },
+    { 'g',  "Group.wrkpl.q.vy",         'f',        &(SS.sv.g.wrkpl.q.vy)     },
+    { 'g',  "Group.wrkpl.q.vz",         'f',        &(SS.sv.g.wrkpl.q.vz)     },
+    { 'g',  "Group.wrkpl.origin.v",     'x',        &(SS.sv.g.wrkpl.origin.v) },
+    { 'g',  "Group.wrkpl.entityB.v",    'x',        &(SS.sv.g.wrkpl.entityB.v)},
+    { 'g',  "Group.wrkpl.entityC.v",    'x',        &(SS.sv.g.wrkpl.entityC.v)},
+    { 'g',  "Group.wrkpl.swapUV",       'b',        &(SS.sv.g.wrkpl.swapUV)   },
+    { 'g',  "Group.wrkpl.negateU",      'b',        &(SS.sv.g.wrkpl.negateU)  },
+    { 'g',  "Group.wrkpl.negateV",      'b',        &(SS.sv.g.wrkpl.negateV)  },
+    { 'g',  "Group.visible",            'b',        &(SS.sv.g.visible)        },
+    { 'g',  "Group.remap",              'M',        &(SS.sv.g.remap)          },
 
-    { 'p',  "Param.h.v.",               'x',        &(SS.sv.p.h.v)          },
-    { 'p',  "Param.val",                'f',        &(SS.sv.p.val)          },
+    { 'p',  "Param.h.v.",               'x',        &(SS.sv.p.h.v)            },
+    { 'p',  "Param.val",                'f',        &(SS.sv.p.val)            },
 
-    { 'r',  "Request.h.v",              'x',        &(SS.sv.r.h.v)          },
-    { 'r',  "Request.type",             'd',        &(SS.sv.r.type)         },
-    { 'r',  "Request.workplane.v",      'x',        &(SS.sv.r.workplane.v)  },
-    { 'r',  "Request.group.v",          'x',        &(SS.sv.r.group.v)      },
-    { 'r',  "Request.name",             'N',        &(SS.sv.r.name)         },
-    { 'r',  "Request.construction",     'b',        &(SS.sv.r.construction) },
+    { 'r',  "Request.h.v",              'x',        &(SS.sv.r.h.v)            },
+    { 'r',  "Request.type",             'd',        &(SS.sv.r.type)           },
+    { 'r',  "Request.workplane.v",      'x',        &(SS.sv.r.workplane.v)    },
+    { 'r',  "Request.group.v",          'x',        &(SS.sv.r.group.v)        },
+    { 'r',  "Request.name",             'N',        &(SS.sv.r.name)           },
+    { 'r',  "Request.construction",     'b',        &(SS.sv.r.construction)   },
 
-    { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)          },
-    { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)         },
-    { 'e',  "Entity.group.v",           'x',        &(SS.sv.e.group.v)      },
-    { 'e',  "Entity.construction",      'b',        &(SS.sv.e.construction) },
-    { 'e',  "Entity.param[0].v",        'x',        &(SS.sv.e.param[0].v)   },
-    { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)   },
-    { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)   },
-    { 'e',  "Entity.param[3].v",        'x',        &(SS.sv.e.param[3].v)   },
-    { 'e',  "Entity.param[4].v",        'x',        &(SS.sv.e.param[4].v)   },
-    { 'e',  "Entity.param[5].v",        'x',        &(SS.sv.e.param[5].v)   },
-    { 'e',  "Entity.param[6].v",        'x',        &(SS.sv.e.param[6].v)   },
-    { 'e',  "Entity.point[0].v",        'x',        &(SS.sv.e.point[0].v)   },
-    { 'e',  "Entity.point[1].v",        'x',        &(SS.sv.e.point[1].v)   },
-    { 'e',  "Entity.point[2].v",        'x',        &(SS.sv.e.point[2].v)   },
-    { 'e',  "Entity.point[3].v",        'x',        &(SS.sv.e.point[3].v)   },
-    { 'e',  "Entity.normal.v",          'x',        &(SS.sv.e.normal.v)     },
-    { 'e',  "Entity.distance.v",        'x',        &(SS.sv.e.distance.v)   },
-    { 'e',  "Entity.workplane.v",       'x',        &(SS.sv.e.workplane.v)  },
-    { 'e',  "Entity.numPoint.x",        'f',        &(SS.sv.e.numPoint.x)   },
-    { 'e',  "Entity.numPoint.y",        'f',        &(SS.sv.e.numPoint.y)   },
-    { 'e',  "Entity.numPoint.z",        'f',        &(SS.sv.e.numPoint.z)   },
-    { 'e',  "Entity.numNormal.w",       'f',        &(SS.sv.e.numNormal.w)  },
-    { 'e',  "Entity.numNormal.vx",      'f',        &(SS.sv.e.numNormal.vx) },
-    { 'e',  "Entity.numNormal.vy",      'f',        &(SS.sv.e.numNormal.vy) },
-    { 'e',  "Entity.numNormal.vz",      'f',        &(SS.sv.e.numNormal.vz) },
-    { 'e',  "Entity.numDistance",       'f',        &(SS.sv.e.numDistance)  },
+    { 'e',  "Entity.h.v",               'x',        &(SS.sv.e.h.v)            },
+    { 'e',  "Entity.type",              'd',        &(SS.sv.e.type)           },
+    { 'e',  "Entity.group.v",           'x',        &(SS.sv.e.group.v)        },
+    { 'e',  "Entity.construction",      'b',        &(SS.sv.e.construction)   },
+    { 'e',  "Entity.param[0].v",        'x',        &(SS.sv.e.param[0].v)     },
+    { 'e',  "Entity.param[1].v",        'x',        &(SS.sv.e.param[1].v)     },
+    { 'e',  "Entity.param[2].v",        'x',        &(SS.sv.e.param[2].v)     },
+    { 'e',  "Entity.param[3].v",        'x',        &(SS.sv.e.param[3].v)     },
+    { 'e',  "Entity.param[4].v",        'x',        &(SS.sv.e.param[4].v)     },
+    { 'e',  "Entity.param[5].v",        'x',        &(SS.sv.e.param[5].v)     },
+    { 'e',  "Entity.param[6].v",        'x',        &(SS.sv.e.param[6].v)     },
+    { 'e',  "Entity.point[0].v",        'x',        &(SS.sv.e.point[0].v)     },
+    { 'e',  "Entity.point[1].v",        'x',        &(SS.sv.e.point[1].v)     },
+    { 'e',  "Entity.point[2].v",        'x',        &(SS.sv.e.point[2].v)     },
+    { 'e',  "Entity.point[3].v",        'x',        &(SS.sv.e.point[3].v)     },
+    { 'e',  "Entity.normal.v",          'x',        &(SS.sv.e.normal.v)       },
+    { 'e',  "Entity.distance.v",        'x',        &(SS.sv.e.distance.v)     },
+    { 'e',  "Entity.workplane.v",       'x',        &(SS.sv.e.workplane.v)    },
+    { 'e',  "Entity.numPoint.x",        'f',        &(SS.sv.e.numPoint.x)     },
+    { 'e',  "Entity.numPoint.y",        'f',        &(SS.sv.e.numPoint.y)     },
+    { 'e',  "Entity.numPoint.z",        'f',        &(SS.sv.e.numPoint.z)     },
+    { 'e',  "Entity.numNormal.w",       'f',        &(SS.sv.e.numNormal.w)    },
+    { 'e',  "Entity.numNormal.vx",      'f',        &(SS.sv.e.numNormal.vx)   },
+    { 'e',  "Entity.numNormal.vy",      'f',        &(SS.sv.e.numNormal.vy)   },
+    { 'e',  "Entity.numNormal.vz",      'f',        &(SS.sv.e.numNormal.vz)   },
+    { 'e',  "Entity.numDistance",       'f',        &(SS.sv.e.numDistance)    },
 
-    { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)          },
-    { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)         },
-    { 'c',  "Constraint.group.v",       'x',        &(SS.sv.c.group.v)      },
-    { 'c',  "Constraint.workplane.v",   'x',        &(SS.sv.c.workplane.v)  },
-    { 'c',  "Constraint.exprA",         'E',        &(SS.sv.c.exprA)        },
-    { 'c',  "Constraint.exprB",         'E',        &(SS.sv.c.exprB)        },
-    { 'c',  "Constraint.ptA.v",         'x',        &(SS.sv.c.ptA.v)        },
-    { 'c',  "Constraint.ptB.v",         'x',        &(SS.sv.c.ptB.v)        },
-    { 'c',  "Constraint.ptC.v",         'x',        &(SS.sv.c.ptC.v)        },
-    { 'c',  "Constraint.entityA.v",     'x',        &(SS.sv.c.entityA.v)    },
-    { 'c',  "Constraint.entityB.v",     'x',        &(SS.sv.c.entityB.v)    },
-    { 'c',  "Constraint.disp.offset.x", 'f',        &(SS.sv.c.disp.offset.x)},
-    { 'c',  "Constraint.disp.offset.y", 'f',        &(SS.sv.c.disp.offset.y)},
-    { 'c',  "Constraint.disp.offset.z", 'f',        &(SS.sv.c.disp.offset.z)},
+    { 'c',  "Constraint.h.v",           'x',        &(SS.sv.c.h.v)            },
+    { 'c',  "Constraint.type",          'd',        &(SS.sv.c.type)           },
+    { 'c',  "Constraint.group.v",       'x',        &(SS.sv.c.group.v)        },
+    { 'c',  "Constraint.workplane.v",   'x',        &(SS.sv.c.workplane.v)    },
+    { 'c',  "Constraint.exprA",         'E',        &(SS.sv.c.exprA)          },
+    { 'c',  "Constraint.exprB",         'E',        &(SS.sv.c.exprB)          },
+    { 'c',  "Constraint.ptA.v",         'x',        &(SS.sv.c.ptA.v)          },
+    { 'c',  "Constraint.ptB.v",         'x',        &(SS.sv.c.ptB.v)          },
+    { 'c',  "Constraint.ptC.v",         'x',        &(SS.sv.c.ptC.v)          },
+    { 'c',  "Constraint.entityA.v",     'x',        &(SS.sv.c.entityA.v)      },
+    { 'c',  "Constraint.entityB.v",     'x',        &(SS.sv.c.entityB.v)      },
+    { 'c',  "Constraint.disp.offset.x", 'f',        &(SS.sv.c.disp.offset.x)  },
+    { 'c',  "Constraint.disp.offset.y", 'f',        &(SS.sv.c.disp.offset.y)  },
+    { 'c',  "Constraint.disp.offset.z", 'f',        &(SS.sv.c.disp.offset.z)  },
 
     { 0, NULL, NULL, NULL },
 };
@@ -264,16 +274,20 @@ bool SolveSpace::LoadFromFile(char *filename) {
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             SS.group.Add(&(sv.g));
+            memset(&(sv.g), 0, sizeof(sv.g));
         } else if(strcmp(line, "AddParam")==0) {
             // params are regenerated, but we want to preload the values
             // for initial guesses
             SS.param.Add(&(sv.p));
+            memset(&(sv.p), 0, sizeof(sv.p));
         } else if(strcmp(line, "AddEntity")==0) {
             // entities are regenerated
         } else if(strcmp(line, "AddRequest")==0) {
             SS.request.Add(&(sv.r));
+            memset(&(sv.r), 0, sizeof(sv.r));
         } else if(strcmp(line, "AddConstraint")==0) {
             SS.constraint.Add(&(sv.c));
+            memset(&(sv.c), 0, sizeof(sv.c));
         } else if(strcmp(line, "ñ÷åò±²³´SolveSpaceREVa")==0) {
             // do nothing, version string
         } else {

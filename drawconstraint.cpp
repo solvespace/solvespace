@@ -6,6 +6,7 @@ bool Constraint::HasLabel(void) {
         case PT_PLANE_DISTANCE:
         case PT_PT_DISTANCE:
         case DIAMETER:
+        case LENGTH_RATIO:
             return true;
 
         default:
@@ -249,7 +250,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case PARALLEL: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
-                Vector n = e->VectorGetExprs().Eval();
+                Vector n = e->VectorGetNum();
                 n = n.WithMagnitude(25/SS.GW.scale);
                 Vector u = (gn.Cross(n)).WithMagnitude(4/SS.GW.scale);
                 Vector p = e->VectorGetRefPoint();
@@ -260,16 +261,22 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case LENGTH_RATIO:
         case EQUAL_LENGTH_LINES: {
+            Vector a, b;
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
-                Vector a = SS.GetEntity(e->point[0])->PointGetNum();
-                Vector b = SS.GetEntity(e->point[1])->PointGetNum();
+                a = SS.GetEntity(e->point[0])->PointGetNum();
+                b = SS.GetEntity(e->point[1])->PointGetNum();
                 Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
                 Vector ab = a.Minus(b);
                 Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
                 
                 LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
+            }
+            if(type == LENGTH_RATIO) {
+                Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
+                DoLabel(ref, labelPos, gr, gu);
             }
             break;
         }

@@ -12,6 +12,8 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+#define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
+
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
 typedef signed long SDWORD;

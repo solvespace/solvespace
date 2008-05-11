@@ -310,6 +310,18 @@ double Vector::DivPivoting(Vector delta) {
     } else oops();
 }
 
+Vector Vector::ClosestOrtho(void) {
+    double m = max(fabs(x), max(fabs(y), fabs(z)));
+
+    if(m == fabs(x)) {
+        return MakeFrom((x > 0) ? 1 : -1, 0, 0);
+    } else if(m == fabs(y)) {
+        return MakeFrom(0, (y > 0) ? 1 : -1, 0);
+    } else if(m == fabs(z)) {
+        return MakeFrom(0, 0, (z > 0) ? 1 : -1);
+    } else oops();
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;

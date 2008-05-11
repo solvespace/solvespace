@@ -24,10 +24,51 @@ void Group::MenuGroup(int id) {
     memset(&g, 0, sizeof(g));
     g.visible = true;
 
+    SS.GW.GroupSelection();
+#define gs (SS.GW.gs)
+
     switch(id) {
         case GraphicsWindow::MNU_GROUP_3D:
-            g.type = DRAWING;
+            g.type = DRAWING_3D;
             g.name.strcpy("draw-in-3d");
+            break;
+
+        case GraphicsWindow::MNU_GROUP_WRKPL:
+            g.type = DRAWING_WORKPLANE;
+            g.name.strcpy("draw-in-plane");
+            if(gs.points == 1 && gs.n == 1) {
+                g.wrkpl.type = WORKPLANE_BY_POINT_ORTHO;
+
+                Vector u = SS.GW.projRight, v = SS.GW.projUp;
+                u = u.ClosestOrtho();
+                v = v.Minus(u.ScaledBy(v.Dot(u)));
+                v = v.ClosestOrtho();
+
+                g.wrkpl.q = Quaternion::MakeFrom(u, v);
+                g.wrkpl.origin = gs.point[0];
+            } else if(gs.points == 1 && gs.lineSegments == 2 && gs.n == 3) {
+                g.wrkpl.type = WORKPLANE_BY_LINE_SEGMENTS;
+
+                g.wrkpl.origin = gs.point[0];
+                g.wrkpl.entityB = gs.entity[0];
+                g.wrkpl.entityC = gs.entity[1];
+
+                Vector ut = SS.GetEntity(g.wrkpl.entityB)->VectorGetNum();
+                Vector vt = SS.GetEntity(g.wrkpl.entityC)->VectorGetNum();
+                ut = ut.WithMagnitude(1);
+                vt = vt.WithMagnitude(1);
+
+                if(fabs(SS.GW.projUp.Dot(vt)) < fabs(SS.GW.projUp.Dot(ut))) {
+                    SWAP(Vector, ut, vt);
+                    g.wrkpl.swapUV = true;
+                }
+                if(SS.GW.projRight.Dot(ut) < 0) g.wrkpl.negateU = true;
+                if(SS.GW.projUp.   Dot(vt) < 0) g.wrkpl.negateV = true;
+            } else {
+                Error("Bad selection for new drawing in workplane.");
+                return;
+            }
+            SS.GW.ClearSelection();
             break;
 
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
@@ -48,6 +89,13 @@ void Group::MenuGroup(int id) {
     SS.group.AddAndAssignId(&g);
     SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
     SS.GW.activeGroup = g.h;
+    if(g.type == DRAWING_WORKPLANE) {
+        SS.GW.activeWorkplane = g.h.entity(0);
+        Entity *e = SS.GetEntity(SS.GW.activeWorkplane);
+        Quaternion quatf = e->Normal()->NormalGetNum();
+        Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
+        SS.GW.AnimateOnto(quatf, offsetf);
+    }
     SS.TW.Show();
 }
 
@@ -68,8 +116,54 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
     gn = gn.WithMagnitude(200/SS.GW.scale);
     int i;
     switch(type) {
-        case DRAWING:
-            return;
+        case DRAWING_3D:
+            break;
+
+        case DRAWING_WORKPLANE: {
+            Quaternion q;
+            if(wrkpl.type == WORKPLANE_BY_LINE_SEGMENTS) {
+                Vector u = SS.GetEntity(wrkpl.entityB)->VectorGetNum();
+                Vector v = SS.GetEntity(wrkpl.entityC)->VectorGetNum();
+                u = u.WithMagnitude(1);
+                Vector n = u.Cross(v);
+                v = (n.Cross(u)).WithMagnitude(1);
+
+                if(wrkpl.swapUV) SWAP(Vector, u, v);
+                if(wrkpl.negateU) u = u.ScaledBy(-1);
+                if(wrkpl.negateV) v = v.ScaledBy(-1);
+                q = Quaternion::MakeFrom(u, v);
+            } else if(wrkpl.type == WORKPLANE_BY_POINT_ORTHO) {
+                // Already given, numerically.
+                q = wrkpl.q;
+            } else oops();
+
+            Entity normal;
+            memset(&normal, 0, sizeof(normal));
+            normal.type = Entity::NORMAL_N_COPY;
+            normal.numNormal = q;
+            normal.point[0] = h.entity(2);
+            normal.group = h;
+            normal.h = h.entity(1);
+            entity->Add(&normal);
+
+            Entity point;
+            memset(&point, 0, sizeof(point));
+            point.type = Entity::POINT_N_COPY;
+            point.numPoint = SS.GetEntity(wrkpl.origin)->PointGetNum();
+            point.group = h;
+            point.h = h.entity(2);
+            entity->Add(&point);
+
+            Entity wp;
+            memset(&wp, 0, sizeof(wp));
+            wp.type = Entity::WORKPLANE;
+            wp.normal = normal.h;
+            wp.point[0] = point.h;
+            wp.group = h;
+            wp.h = h.entity(0);
+            entity->Add(&wp);
+            break;
+        }
 
         case EXTRUDE:
             AddParam(param, h.param(0), gn.x);
@@ -179,6 +273,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             en.distance = Remap(ep->distance, a);
             break;
 
+        case Entity::POINT_N_COPY:
         case Entity::POINT_N_TRANS:
         case Entity::POINT_N_ROT_TRANS:
         case Entity::POINT_IN_3D:
@@ -204,6 +299,9 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             if(isExtrusion) {
                 if(a != 0) oops();
                 SS.entity.Add(&en);
+
+                // Any operation on these lists may break existing pointers!
+                ep = SS.GetEntity(in);
 
                 hEntity np = en.h;
                 memset(&en, 0, sizeof(en));
@@ -252,7 +350,7 @@ void Group::MakePolygons(void) {
         (faces.elem[i]).Clear();
     }
     faces.Clear();
-    if(type == DRAWING) {
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
         edges.l.Clear();
         int i;
         for(i = 0; i < SS.entity.n; i++) {
@@ -350,7 +448,7 @@ void Group::Draw(void) {
     } else {
         int i;
         glEnable(GL_LIGHTING);
-        GLfloat vec[] = { 0, 0, 0.5, 1.0 };
+        GLfloat vec[] = { 0.3f, 0.3f, 0.3f, 1.0 };
         glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec);
         for(i = 0; i < faces.n; i++) {
             glxFillPolygon(&(faces.elem[i]));
