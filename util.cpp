@@ -298,6 +298,13 @@ Vector Vector::ProjectInto(hEntity wrkpl) {
     return p0.Plus((u.ScaledBy(up)).Plus(v.ScaledBy(vp)));
 }
 
+Point2d Vector::Project2d(Vector u, Vector v) {
+    Point2d p;
+    p.x = this->Dot(u);
+    p.y = this->Dot(v);
+    return p;
+}
+
 double Vector::DivPivoting(Vector delta) {
     double m = max(fabs(delta.x), max(fabs(delta.y), fabs(delta.z)));
 

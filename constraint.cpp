@@ -110,6 +110,10 @@ void Constraint::MenuConstrain(int id) {
                 c.type = EQUAL_LENGTH_LINES;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            } else if(gs.circlesOrArcs == 2 && gs.n == 2) {
+                c.type = EQUAL_RADIUS;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
             } else {
                 Error("Bad selection for equal length / radius constraint.");
                 return;
@@ -406,8 +410,16 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
 
         case DIAMETER: {
             Entity *circle = SS.GetEntity(entityA);
-            Expr *r = (SS.GetEntity(circle->distance))->DistanceGetExpr();
+            Expr *r = circle->CircleGetRadiusExpr();
             AddEq(l, (r->Times(Expr::FromConstant(2)))->Minus(exprA), 0);
+            break;
+        }
+
+        case EQUAL_RADIUS: {
+            Entity *c1 = SS.GetEntity(entityA);
+            Entity *c2 = SS.GetEntity(entityB);
+            AddEq(l, (c1->CircleGetRadiusExpr())->Minus(
+                      c2->CircleGetRadiusExpr()), 0);
             break;
         }
 

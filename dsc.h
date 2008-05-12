@@ -53,6 +53,7 @@ public:
     Vector ProjectInto(hEntity wrkpl);
     double DivPivoting(Vector delta);
     Vector ClosestOrtho(void);
+    Point2d Project2d(Vector u, Vector v);
 };
 
 class Point2d {

@@ -273,6 +273,13 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
             en.distance = Remap(ep->distance, a);
             break;
 
+        case Entity::ARC_OF_CIRCLE:
+            en.point[0] = Remap(ep->point[0], a);
+            en.point[1] = Remap(ep->point[1], a);
+            en.point[2] = Remap(ep->point[2], a);
+            en.normal   = Remap(ep->normal, a);
+            break;
+
         case Entity::POINT_N_COPY:
         case Entity::POINT_N_TRANS:
         case Entity::POINT_N_ROT_TRANS:
@@ -509,6 +516,12 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             params = 1;
             hasNormal = true;
             hasDistance = true;
+            break;
+
+        case Request::ARC_OF_CIRCLE:
+            et = Entity::ARC_OF_CIRCLE;
+            points = 3;
+            hasNormal = true;
             break;
 
         case Request::CUBIC:

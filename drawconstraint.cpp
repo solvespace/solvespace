@@ -171,7 +171,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case DIAMETER: {
             Entity *circle = SS.GetEntity(entityA);
             Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
-            double r = SS.GetEntity(circle->distance)->DistanceGetNum();
+            double r = circle->CircleGetRadiusNum();
             Vector ref = center.Plus(disp.offset);
 
             double theta = atan2(disp.offset.Dot(gu), disp.offset.Dot(gr));
@@ -257,6 +257,32 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 LineDrawOrGetDistance(p.Plus(u), p.Plus(u).Plus(n));
                 LineDrawOrGetDistance(p.Minus(u), p.Minus(u).Plus(n));
+            }
+            break;
+        }
+
+        case EQUAL_RADIUS: {
+            for(int i = 0; i < 2; i++) {
+                Entity *circ = SS.GetEntity(i == 0 ? entityA : entityB);
+                Vector center = SS.GetEntity(circ->point[0])->PointGetNum();
+                double r = circ->CircleGetRadiusNum();
+                Quaternion q = circ->Normal()->NormalGetNum();
+                Vector u = q.RotationU(), v = q.RotationV();
+
+                double theta;
+                if(circ->type == Entity::CIRCLE) {
+                    theta = PI/2;
+                } else if(circ->type == Entity::ARC_OF_CIRCLE) {
+                    double thetaa, thetab, dtheta;
+                    circ->ArcGetAngles(&thetaa, &thetab, &dtheta);
+                    theta = thetaa + dtheta/2;
+                } else oops();
+
+                Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
+                d = d.ScaledBy(r);
+                Vector p = center.Plus(d);
+                Vector tick = d.WithMagnitude(10/SS.GW.scale);
+                LineDrawOrGetDistance(p.Plus(tick), p.Minus(tick));
             }
             break;
         }

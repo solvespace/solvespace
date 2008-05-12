@@ -105,6 +105,7 @@ public:
         MNU_WORKPLANE,
         MNU_LINE_SEGMENT,
         MNU_CIRCLE,
+        MNU_ARC,
         MNU_RECTANGLE,
         MNU_CUBIC,
         MNU_CONSTRUCTION,
@@ -184,10 +185,11 @@ public:
     static const int    DRAGGING_NEW_POINT          = 0x0f000001;
     static const int    DRAGGING_NEW_LINE_POINT     = 0x0f000002;
     static const int    DRAGGING_NEW_CUBIC_POINT    = 0x0f000003;
-    static const int    DRAGGING_CONSTRAINT         = 0x0f000004;
-    static const int    DRAGGING_RADIUS             = 0x0f000005;
-    static const int    DRAGGING_NORMAL             = 0x0f000006;
-    static const int    DRAGGING_NEW_RADIUS         = 0x0f000007;
+    static const int    DRAGGING_NEW_ARC_POINT      = 0x0f000004;
+    static const int    DRAGGING_CONSTRAINT         = 0x0f000005;
+    static const int    DRAGGING_RADIUS             = 0x0f000006;
+    static const int    DRAGGING_NORMAL             = 0x0f000007;
+    static const int    DRAGGING_NEW_RADIUS         = 0x0f000008;
     struct {
         int         operation;
 

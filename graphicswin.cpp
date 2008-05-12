@@ -60,7 +60,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Line &Segment\tS",                    MNU_LINE_SEGMENT,   'S',    mReq  },
 { 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
 { 1, "&Circle\tC",                          MNU_CIRCLE,         'C',    mReq  },
-{ 1, "&Arc of a Circle\tA",                 0,                  'A',    mReq  },
+{ 1, "&Arc of a Circle\tA",                 MNU_ARC,            'A',    mReq  },
 { 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
@@ -350,6 +350,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
         case MNU_CIRCLE: s = "click center of circle"; goto c;
+        case MNU_ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
         case MNU_WORKPLANE: s = "click origin of workplane"; goto c;
         case MNU_RECTANGLE: s = "click one corner of rectangular"; goto c;
 c:
@@ -540,6 +541,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 orig.mouse = mp;
             } else {
                 UpdateDraggedPoint(pending.point, x, y);
+                HitTestMakeSelection(mp);
             }
             break;
         }
@@ -554,6 +556,18 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SS.GetEntity(hr.entity(2))->PointForceTo(p1);
             Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
             SS.GetEntity(hr.entity(3))->PointForceTo(p2);
+            break;
+        }
+        case DRAGGING_NEW_ARC_POINT: {
+            UpdateDraggedPoint(pending.point, x, y);
+            HitTestMakeSelection(mp);
+
+            hRequest hr = pending.point.request();
+            Vector ona = SS.GetEntity(hr.entity(2))->PointGetNum();
+            Vector onb = SS.GetEntity(hr.entity(3))->PointGetNum();
+            Vector center = (ona.Plus(onb)).ScaledBy(0.5);
+
+            SS.GetEntity(hr.entity(1))->PointForceTo(center);
             break;
         }
         case DRAGGING_NEW_RADIUS:
@@ -699,6 +713,8 @@ void GraphicsWindow::GroupSelection(void) {
             switch(e->type) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
+
+                case Entity::ARC_OF_CIRCLE:
                 case Entity::CIRCLE:        (gs.circlesOrArcs)++; break;
             }
         }
@@ -814,6 +830,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     Entity::NO_ENTITY, Entity::NO_ENTITY,  
                     lns[i].entity(0));
             }
+            ConstrainPointByHovered(lns[2].entity(1));
 
             pending.operation = DRAGGING_NEW_POINT;
             pending.point = lns[1].entity(2);
@@ -834,6 +851,26 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.circle = hr.entity(0);
             pending.description = "click to set radius";
             SS.GetParam(hr.param(0))->val = 0;
+            break;
+
+        case MNU_ARC:
+            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+                Error("Can't draw arc in 3d; select a workplane first.");
+                ClearPending();
+                break;
+            }
+            hr = AddRequest(Request::ARC_OF_CIRCLE);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(2))->PointForceTo(v);
+            SS.GetEntity(hr.entity(3))->PointForceTo(v);
+            ConstrainPointByHovered(hr.entity(2));
+
+            ClearSelection(); hover.Clear();
+
+            ClearPending();
+            pending.operation = DRAGGING_NEW_ARC_POINT;
+            pending.point = hr.entity(3);
+            pending.description = "click to place point";
             break;
 
         case MNU_CUBIC:
@@ -868,6 +905,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             ClearPending();
             break;
 
+        case DRAGGING_NEW_ARC_POINT:
         case DRAGGING_NEW_CUBIC_POINT:
             ConstrainPointByHovered(pending.point);
             ClearPending();

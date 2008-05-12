@@ -344,7 +344,7 @@ bool System::NewtonSolve(int tag) {
 }
 
 bool System::Solve(void) {
-    int i, j;
+    int i, j = 0;
     
 /*
     dbp("%d equations", eq.n);

@@ -153,6 +153,7 @@ public:
     static const int LINE_SEGMENT           = 200;
     static const int CUBIC                  = 300;
     static const int CIRCLE                 = 400;
+    static const int ARC_OF_CIRCLE          = 500;
 
     int         type;
 
@@ -200,6 +201,7 @@ public:
     static const int LINE_SEGMENT           = 11000;
     static const int CUBIC                  = 12000;
     static const int CIRCLE                 = 13000;
+    static const int ARC_OF_CIRCLE          = 14000;
 
     int         type;
 
@@ -227,6 +229,9 @@ public:
     int timesApplied;
 
     bool IsCircle(void);
+    Expr *CircleGetRadiusExpr(void);
+    double CircleGetRadiusNum(void);
+    void ArcGetAngles(double *thetaa, double *thetab, double *dtheta);
 
     bool HasVector(void);
     ExprVector VectorGetExprs(void);
@@ -333,6 +338,7 @@ public:
     static const int PT_ON_CIRCLE       = 100;
     static const int SAME_ORIENTATION   = 110;
     static const int PARALLEL           = 120;
+    static const int EQUAL_RADIUS       = 130;
 
     int         tag;
     hConstraint h;

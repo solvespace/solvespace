@@ -76,6 +76,45 @@ bool Entity::IsCircle(void) {
     return (type == CIRCLE);
 }
 
+Expr *Entity::CircleGetRadiusExpr(void) {
+    if(type == CIRCLE) {
+        return SS.GetEntity(distance)->DistanceGetExpr();
+    } else if(type == ARC_OF_CIRCLE) {
+        return Constraint::Distance(workplane, point[0], point[1]);
+    } else oops();
+}
+
+double Entity::CircleGetRadiusNum(void) {
+    if(type == CIRCLE) {
+        return SS.GetEntity(distance)->DistanceGetNum();
+    } else if(type == ARC_OF_CIRCLE) {
+        Vector c  = SS.GetEntity(point[0])->PointGetNum();
+        Vector pa = SS.GetEntity(point[1])->PointGetNum();
+        return (pa.Minus(c)).Magnitude();
+    } else oops();
+}
+
+void Entity::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) {
+    if(type != ARC_OF_CIRCLE) oops();
+
+    Quaternion q = Normal()->NormalGetNum();
+    Vector u = q.RotationU(), v = q.RotationV();
+
+    Vector c  = SS.GetEntity(point[0])->PointGetNum();
+    Vector pa = SS.GetEntity(point[1])->PointGetNum();
+    Vector pb = SS.GetEntity(point[2])->PointGetNum();
+
+    Point2d c2  = c.Project2d(u, v);
+    Point2d pa2 = (pa.Project2d(u, v)).Minus(c2);
+    Point2d pb2 = (pb.Project2d(u, v)).Minus(c2);
+
+    *thetaa = atan2(pa2.y, pa2.x);
+    *thetab = atan2(pb2.y, pb2.x);
+    *dtheta = *thetab - *thetaa;
+    while(*dtheta < 0) *dtheta += 2*PI;
+    while(*dtheta > (2*PI)) *dtheta -= 2*PI;
+}
+
 bool Entity::IsWorkplane(void) {
     return (type == WORKPLANE);
 }
@@ -685,6 +724,33 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case ARC_OF_CIRCLE: {
+            if(order >= 0 && order != 1) break;
+            Vector c  = SS.GetEntity(point[0])->PointGetNum();
+            Vector pa = SS.GetEntity(point[1])->PointGetNum();
+            Vector pb = SS.GetEntity(point[2])->PointGetNum();
+            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
+            Vector u = q.RotationU(), v = q.RotationV();
+
+            double ra = (pa.Minus(c)).Magnitude();
+            double rb = (pb.Minus(c)).Magnitude();
+
+            double thetaa, thetab, dtheta;
+            ArcGetAngles(&thetaa, &thetab, &dtheta);
+
+            int i, n = (int)((40*dtheta)/(2*PI));
+            Vector prev = pa;
+            for(i = 1; i <= n; i++) {
+                double theta = thetaa + (dtheta*i)/n;
+                double r = ra + ((rb - ra)*i)/n;
+                Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
+                Vector p = c.Plus(d.ScaledBy(r));
+                LineDrawOrGetDistanceOrEdge(prev, p);
+                prev = p;
+            }
+            break;
+        }
+
         case CIRCLE: {
             if(order >= 0 && order != 1) break;
 
@@ -723,6 +789,17 @@ void Entity::GenerateEquations(IdList<Equation,hEquation> *l) {
         case NORMAL_IN_3D: {
             ExprQuaternion q = NormalGetExprs();
             AddEq(l, (q.Magnitude())->Minus(Expr::FromConstant(1)), 0);
+            break;
+        }
+        case ARC_OF_CIRCLE: {
+            // If this is a copied entity, with its point already fixed
+            // with respect to each other, then we don't want to generate
+            // the distance constraint!
+            if(SS.GetEntity(point[0])->type == POINT_IN_2D) {
+                Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
+                Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
+                AddEq(l, ra->Minus(rb), 0);
+            }
             break;
         }
         default:;
