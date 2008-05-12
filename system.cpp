@@ -28,6 +28,7 @@ void System::WriteJacobian(int eqTag, int paramTag) {
             if(scoreboard & (1 << (mat.param[j].v % 31))) { 
                 pd = f->PartialWrt(mat.param[j]);
                 pd = pd->FoldConstants();
+                pd = pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
             } else {
                 pd = Expr::FromConstant(0);
             }
@@ -144,73 +145,11 @@ void System::SolveBySubstitution(void) {
     }
 }
 
-static int BySensitivity(const void *va, const void *vb) {
-    const int *a = (const int *)va, *b = (const int *)vb;
-
-    hParam pa = SS.sys.mat.param[*a];
-    hParam pb = SS.sys.mat.param[*b];
-    
-    if(System::IsDragged(pa) && !System::IsDragged(pb)) return  1;
-    if(System::IsDragged(pb) && !System::IsDragged(pa)) return -1;
-
-    double as = SS.sys.mat.sens[*a];
-    double bs = SS.sys.mat.sens[*b];
-
-    if(as < bs) return  1;
-    if(as > bs) return -1;
-    return 0;
-}
-void System::SortBySensitivity(void) {
-    // For each unknown, sum up the sensitivities in that column of the
-    // Jacobian
-    int i, j;
-    for(j = 0; j < mat.n; j++) {
-        double s = 0;
-        int i;
-        for(i = 0; i < mat.m; i++) {
-            s += fabs(mat.A.num[i][j]);
-        }
-        mat.sens[j] = s;
-    }
-    for(j = 0; j < mat.n; j++) {
-        mat.permutation[j] = j;
-    }
-
-    qsort(mat.permutation, mat.n, sizeof(mat.permutation[0]), BySensitivity);
-
-    int origPos[MAX_UNKNOWNS];
-    int entryWithOrigPos[MAX_UNKNOWNS];
-    for(j = 0; j < mat.n; j++) {
-        origPos[j] = j;
-        entryWithOrigPos[j] = j;
-    }
-
-    for(j = 0; j < mat.n; j++) {
-        int dest = j; // we are writing to position j
-        // And the source is whichever position ahead of us can be swapped
-        // in to make the permutation vectors line up.
-        int src = entryWithOrigPos[mat.permutation[j]];
-
-        for(i = 0; i < mat.m; i++) {
-            SWAP(double, mat.A.num[i][src], mat.A.num[i][dest]);
-            SWAP(Expr *, mat.A.sym[i][src], mat.A.sym[i][dest]);
-        }
-        SWAP(hParam, mat.param[src], mat.param[dest]);
-
-        SWAP(int, origPos[src], origPos[dest]);
-        if(mat.permutation[dest] != origPos[dest]) oops();
-
-        // Update the table; only necessary to do this for src, since dest
-        // is already done.
-        entryWithOrigPos[origPos[src]] = src;
-    }
-}
-
 bool System::Tol(double v) {
     return (fabs(v) < 0.01);
 }
 
-void System::GaussJordan(void) {
+int System::GaussJordan(void) {
     int i, j;
 
     for(j = 0; j < mat.n; j++) {
@@ -219,6 +158,7 @@ void System::GaussJordan(void) {
 
     // Now eliminate.
     i = 0;
+    int rank = 0;
     for(j = 0; j < mat.n; j++) {
         // First, seek a pivot in our column.
         int ip, imax;
@@ -263,6 +203,7 @@ void System::GaussJordan(void) {
 
             // And mark this as a bound variable.
             mat.bound[j] = true;
+            rank++;
 
             // Move on to the next row, since we just used this one to
             // eliminate from column j.
@@ -270,24 +211,26 @@ void System::GaussJordan(void) {
             if(i >= mat.m) break;
         }
     }
+    return rank;
 }
 
-bool System::SolveLinearSystem(void) {
-    if(mat.m != mat.n) oops();
+bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
+                               double B[], int n)
+{
     // Gaussian elimination, with partial pivoting. It's an error if the
     // matrix is singular, because that means two constraints are
     // equivalent.
     int i, j, ip, jp, imax;
     double max, temp;
 
-    for(i = 0; i < mat.m; i++) {
+    for(i = 0; i < n; i++) {
         // We are trying eliminate the term in column i, for rows i+1 and
         // greater. First, find a pivot (between rows i and N-1).
         max = 0;
-        for(ip = i; ip < mat.m; ip++) {
-            if(fabs(mat.A.num[ip][i]) > max) {
+        for(ip = i; ip < n; ip++) {
+            if(fabs(A[ip][i]) > max) {
                 imax = ip;
-                max = fabs(mat.A.num[ip][i]);
+                max = fabs(A[ip][i]);
             }
         }
         // Don't give up on a singular matrix unless it's really bad; the
@@ -296,44 +239,67 @@ bool System::SolveLinearSystem(void) {
         if(fabs(max) < 1e-20) return false;
 
         // Swap row imax with row i
-        for(jp = 0; jp < mat.n; jp++) {
-            temp = mat.A.num[i][jp];
-            mat.A.num[i][jp] = mat.A.num[imax][jp];
-            mat.A.num[imax][jp] = temp;
+        for(jp = 0; jp < n; jp++) {
+            SWAP(double, A[i][jp], A[imax][jp]);
         }
-        temp = mat.B.num[i];
-        mat.B.num[i] = mat.B.num[imax];
-        mat.B.num[imax] = temp;
+        SWAP(double, B[i], B[imax]);
 
         // For rows i+1 and greater, eliminate the term in column i.
-        for(ip = i+1; ip < mat.m; ip++) {
-            temp = mat.A.num[ip][i]/mat.A.num[i][i];
+        for(ip = i+1; ip < n; ip++) {
+            temp = A[ip][i]/A[i][i];
 
-            for(jp = 0; jp < mat.n; jp++) {
-                mat.A.num[ip][jp] -= temp*(mat.A.num[i][jp]);
+            for(jp = 0; jp < n; jp++) {
+                A[ip][jp] -= temp*(A[i][jp]);
             }
-            mat.B.num[ip] -= temp*mat.B.num[i];
+            B[ip] -= temp*B[i];
         }
     }
 
     // We've put the matrix in upper triangular form, so at this point we
     // can solve by back-substitution.
-    for(i = mat.m - 1; i >= 0; i--) {
-        if(fabs(mat.A.num[i][i]) < 1e-20) return false;
+    for(i = n - 1; i >= 0; i--) {
+        if(fabs(A[i][i]) < 1e-20) return false;
 
-        temp = mat.B.num[i];
-        for(j = mat.n - 1; j > i; j--) {
-            temp -= mat.X[j]*mat.A.num[i][j];
+        temp = B[i];
+        for(j = n - 1; j > i; j--) {
+            temp -= X[j]*A[i][j];
         }
-        mat.X[i] = temp / mat.A.num[i][i];
+        X[i] = temp / A[i][i];
     }
 
     return true;
 }
 
+bool System::SolveLeastSquares(void) {
+    int r, c, i;
+
+    // Write A*A'
+    for(r = 0; r < mat.m; r++) {
+        for(c = 0; c < mat.m; c++) {  // yes, AAt is square
+            double sum = 0;
+            for(i = 0; i < mat.n; i++) {
+                sum += mat.A.num[r][i]*mat.A.num[c][i];
+            }
+            mat.AAt[r][c] = sum;
+        }
+    }
+
+    if(!SolveLinearSystem(mat.Z, mat.AAt, mat.B.num, mat.m)) return false;
+
+    // And multiply that by A' to get our solution.
+    for(c = 0; c < mat.n; c++) {
+        double sum = 0;
+        for(i = 0; i < mat.m; i++) {
+            sum += mat.A.num[i][c]*mat.Z[i];
+        }
+        mat.X[c] = sum;
+    }
+    return true;
+}
+
 bool System::NewtonSolve(int tag) {
     WriteJacobian(tag, tag);
-    if(mat.m != mat.n) oops();
+    if(mat.m > mat.n) oops();
 
     int iter = 0;
     bool converged = false;
@@ -347,11 +313,11 @@ bool System::NewtonSolve(int tag) {
         // And evaluate the Jacobian at our initial operating point.
         EvalJacobian();
 
-        if(!SolveLinearSystem()) break;
+        if(!SolveLeastSquares()) break;
 
         // Take the Newton step; 
         //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
-        for(i = 0; i < mat.m; i++) {
+        for(i = 0; i < mat.n; i++) {
             (param.FindById(mat.param[i]))->val -= mat.X[i];
         }
 
@@ -399,8 +365,6 @@ bool System::Solve(void) {
 
     EvalJacobian();
 
-    SortBySensitivity();
-
 /*
     for(i = 0; i < mat.m; i++) {
         dbp("function %d: %s", i, mat.B.sym[i]->Print());
@@ -408,29 +372,17 @@ bool System::Solve(void) {
     dbp("m=%d", mat.m);
     for(i = 0; i < mat.m; i++) {
         for(j = 0; j < mat.n; j++) {
-            dbp("A[%d][%d] = %.3f", i, j, mat.A.num[i][j]);
+            dbp("A(%d,%d) = %.10f;", i+1, j+1, mat.A.num[i][j]);
         }
     } */
 
-    GaussJordan();
+    int rank = GaussJordan();
 
 /*    dbp("bound states:");
     for(j = 0; j < mat.n; j++) {
         dbp("  param %08x: %d", mat.param[j], mat.bound[j]);
     } */
 
-    // Fix any still-free variables wherever they are now.
-    for(j = mat.n-1; j >= 0; --j) {
-        if(mat.bound[j]) continue;
-        Param *p = param.FindByIdNoOops(mat.param[j]);
-        if(!p) {
-            // This is parameter does not occur in this group, so it's
-            // not available to assume.
-            continue;
-        }
-        p->tag = VAR_ASSUMED;
-    }
-    
     bool ok = NewtonSolve(0);
 
     if(ok) {

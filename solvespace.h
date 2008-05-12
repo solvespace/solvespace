@@ -112,8 +112,6 @@ public:
 
         // The corresponding parameter for each column
         hParam      param[MAX_UNKNOWNS];
-        // The desired permutation, when we are sorting by sensitivity.
-        int         permutation[MAX_UNKNOWNS];
 
         bool        bound[MAX_UNKNOWNS];
 
@@ -124,11 +122,10 @@ public:
             double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
         }           A;
 
-        // Extra information about each unknown: whether it's being dragged
-        // or not (in which case it should get assumed preferentially), and
-        // the sensitivity used to decide the order in which things get
-        // assumed.
-        double      sens[MAX_UNKNOWNS];
+        // Some helpers for the least squares solve
+        double AAt[MAX_UNKNOWNS][MAX_UNKNOWNS];
+        double Z[MAX_UNKNOWNS];
+
         double      X[MAX_UNKNOWNS];
 
         struct {
@@ -138,13 +135,14 @@ public:
     } mat;
 
     bool Tol(double v);
-    void GaussJordan(void);
-    bool SolveLinearSystem(void);
+    int GaussJordan(void);
+    static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
+                                  double B[], int N);
+    bool SolveLeastSquares(void);
 
     void WriteJacobian(int eqTag, int paramTag);
     void EvalJacobian(void);
 
-    void SortBySensitivity(void);
     void SolveBySubstitution(void);
 
     static bool IsDragged(hParam p);
