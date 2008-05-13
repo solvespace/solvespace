@@ -508,15 +508,16 @@ Quaternion Entity::PointGetQuaternion(void) {
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        // This fudge guarantees that the line will get drawn in front of
-        // anything else at the "same" depth in the z-buffer, so that it
-        // goes in front of the shaded stuff.
-        Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
-        n = n.WithMagnitude(3/SS.GW.scale);
-        glBegin(GL_LINE_STRIP);
-            glxVertex3v(a.Plus(n));
-            glxVertex3v(b.Plus(n));
+        glPolygonOffset(-5, -5);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // Have to draw this as a polygon in order to make the offset work.
+        glBegin(GL_TRIANGLES);
+            glxVertex3v(a);
+            glxVertex3v(b);
+            glxVertex3v(b);
         glEnd();
+        glPolygonOffset(0, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
@@ -596,17 +597,15 @@ void Entity::DrawOrGetDistance(int order) {
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
-                // The usual fudge, to make this appear in front.
-                Vector gn = SS.GW.projRight.Cross(SS.GW.projUp);
-                v = v.Plus(gn.ScaledBy(4/SS.GW.scale));
-
                 glxColor3d(0, 0.8, 0);
+                glPolygonOffset(-10, -10);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
                     glxVertex3v(v.Plus (r).Minus(d));
                     glxVertex3v(v.Minus(r).Minus(d));
                     glxVertex3v(v.Minus(r).Plus (d));
                 glEnd();
+                glPolygonOffset(0, 0);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
                 // Make a free point slightly easier to select, so that with
