@@ -273,6 +273,20 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
 bool System::SolveLeastSquares(void) {
     int r, c, i;
 
+    // Scale the columns; this scale weights the parameters for the least
+    // squares solve, so that we can encourage the solver to make bigger
+    // changes in some parameters, and smaller in others.
+    for(c = 0; c < mat.n; c++) {
+        if(IsDragged(mat.param[c])) {
+            mat.scale[c] = 1/5.0;
+        } else {
+            mat.scale[c] = 1;
+        }
+        for(r = 0; r < mat.m; r++) {
+            mat.A.num[r][c] *= mat.scale[c];
+        }
+    }
+
     // Write A*A'
     for(r = 0; r < mat.m; r++) {
         for(c = 0; c < mat.m; c++) {  // yes, AAt is square
@@ -292,7 +306,7 @@ bool System::SolveLeastSquares(void) {
         for(i = 0; i < mat.m; i++) {
             sum += mat.A.num[i][c]*mat.Z[i];
         }
-        mat.X[c] = sum;
+        mat.X[c] = sum * mat.scale[c];
     }
     return true;
 }

@@ -122,6 +122,8 @@ public:
             double       num[MAX_UNKNOWNS][MAX_UNKNOWNS];
         }           A;
 
+        double      scale[MAX_UNKNOWNS];
+
         // Some helpers for the least squares solve
         double AAt[MAX_UNKNOWNS][MAX_UNKNOWNS];
         double Z[MAX_UNKNOWNS];
