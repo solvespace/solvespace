@@ -331,6 +331,8 @@ public:
     static const int EQUAL_LENGTH_LINES =  50;
     static const int LENGTH_RATIO       =  51;
     static const int SYMMETRIC          =  60;
+    static const int SYMMETRIC_HORIZ    =  61;
+    static const int SYMMETRIC_VERT     =  62;
     static const int AT_MIDPOINT        =  70;
     static const int HORIZONTAL         =  80;
     static const int VERTICAL           =  81;

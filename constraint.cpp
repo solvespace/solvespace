@@ -154,13 +154,17 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_SYMMETRIC:
-            if(gs.points == 2 && gs.workplanes == 1 && gs.n == 3) {
-                c.type = SYMMETRIC;
+            if(gs.points == 2 &&
+                                ((gs.workplanes == 1 && gs.n == 3) ||
+                                 (gs.n == 2)))
+            {
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
-            } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
-                c.type = SYMMETRIC;
+            } else if(gs.lineSegments == 1 && 
+                                ((gs.workplanes == 1 && gs.n == 2) ||
+                                 (gs.n == 1)))
+            {
                 int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 Entity *line = SS.GetEntity(gs.entity[i]);
                 c.entityA = gs.entity[1-i];
@@ -169,6 +173,26 @@ void Constraint::MenuConstrain(int id) {
             } else {
                 Error("Bad selection for symmetric constraint.");
                 return;
+            }
+            if(c.entityA.v == Entity::NO_ENTITY.v) {
+                if(c.workplane.v == Entity::FREE_IN_3D.v) {
+                    Error("Must be locked in to workplane when constraining "
+                          "symmetric without an explicit symmetry plane.");
+                    return;
+                }
+                Vector pa = SS.GetEntity(c.ptA)->PointGetNum();
+                Vector pb = SS.GetEntity(c.ptB)->PointGetNum();
+                Vector dp = pa.Minus(pb);
+                Entity *norm = SS.GetEntity(c.workplane)->Normal();;
+                Vector u = norm->NormalU(), v = norm->NormalV();
+                if(fabs(dp.Dot(u)) > fabs(dp.Dot(v))) {
+                    c.type = SYMMETRIC_HORIZ;
+                } else {
+                    c.type = SYMMETRIC_VERT;
+                }
+            } else {
+                // Symmetry with a symmetry plane specified explicitly.
+                c.type = SYMMETRIC;
             }
             AddConstraint(&c);
             break;
@@ -566,6 +590,25 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 AddEq(l, (n.Cross(u.Cross(v))).Dot(pa.Minus(pb)), 1);
             }
             break;
+
+        case SYMMETRIC_HORIZ:
+        case SYMMETRIC_VERT: {
+            Entity *a = SS.GetEntity(ptA);
+            Entity *b = SS.GetEntity(ptB);
+
+            Expr *au, *av, *bu, *bv;
+            a->PointGetExprsInWorkplane(workplane, &au, &av);
+            b->PointGetExprsInWorkplane(workplane, &bu, &bv);
+
+            if(type == SYMMETRIC_HORIZ) {
+                AddEq(l, av->Minus(bv), 0);
+                AddEq(l, au->Plus(bu), 0);
+            } else {
+                AddEq(l, au->Minus(bu), 0);
+                AddEq(l, av->Plus(bv), 0);
+            }
+            break;
+        }
 
         case HORIZONTAL:
         case VERTICAL: {
