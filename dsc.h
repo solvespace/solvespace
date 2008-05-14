@@ -30,6 +30,8 @@ public:
     Vector RotationN(void);
     Vector Rotate(Vector p);
 
+    Quaternion ToThe(double p);
+    Quaternion Inverse(void);
     Quaternion Times(Quaternion b);
 };
 

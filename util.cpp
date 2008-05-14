@@ -132,6 +132,28 @@ Vector Quaternion::Rotate(Vector p) {
             RotationN().ScaledBy(p.z));
 }
 
+Quaternion Quaternion::Inverse(void) {
+    Quaternion r;
+    r.w = w;
+    r.vx = -vx;
+    r.vy = -vy;
+    r.vz = -vz;
+    return r.WithMagnitude(1); // not that the normalize should be reqd
+}
+
+Quaternion Quaternion::ToThe(double p) {
+    Quaternion r;
+    Vector axis = Vector::MakeFrom(vx, vy, vz);
+    double theta = acos(w); // okay, since magnitude is 1, so -1 <= w <= 1
+    theta *= p;
+    r.w = cos(theta);
+    axis = axis.WithMagnitude(sin(theta));
+    r.vx = axis.x;
+    r.vy = axis.y;
+    r.vz = axis.z;
+    return r;
+}
+
 Quaternion Quaternion::Times(Quaternion b) {
     double sa = w, sb = b.w;
     Vector va = { vx, vy, vz };

@@ -158,9 +158,10 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
                     (SDWORD)(100 + 1000*mp + 0.4*mo);
     SDWORD tn, t0 = GetMilliseconds();
     double s = 0;
+    Quaternion dq = quatf.Times(quat0.Inverse());
     do {
         offset = (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
-        Quaternion quat = (quat0.ScaledBy(1 - s)).Plus(quatf.ScaledBy(s));
+        Quaternion quat = (dq.ToThe(s)).Times(quat0);
         quat = quat.WithMagnitude(1);
 
         projRight = quat.RotationU();
