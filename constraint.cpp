@@ -496,7 +496,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case PT_ON_CIRCLE: {
             Entity *circle = SS.GetEntity(entityA);
             hEntity center = circle->point[0];
-            Expr *radius = SS.GetEntity(circle->distance)->DistanceGetExpr();
+            Expr *radius = circle->CircleGetRadiusExpr();
             AddEq(l, Distance(workplane, ptA, center)->Minus(radius), 0);
             break;
         }

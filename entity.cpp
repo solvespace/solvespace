@@ -73,7 +73,7 @@ Vector Entity::VectorGetRefPoint(void) {
 }
 
 bool Entity::IsCircle(void) {
-    return (type == CIRCLE);
+    return (type == CIRCLE) || (type == ARC_OF_CIRCLE);
 }
 
 Expr *Entity::CircleGetRadiusExpr(void) {

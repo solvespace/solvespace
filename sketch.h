@@ -419,7 +419,7 @@ inline hEntity hGroup::entity(int i)
 inline hParam hGroup::param(int i)
     { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
 inline hEquation hGroup::equation(int i)
-    { if(i != 0) oops(); hEquation r; r.v = v | 0x80000000; return r; }
+    { hEquation r; r.v = (v << 16) | 0x80000000 | i; return r; }
 
 inline bool hRequest::IsFromReferences(void) {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;

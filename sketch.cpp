@@ -74,6 +74,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
+            g.wrkpl.entityB = SS.GW.activeWorkplane;
             g.name.strcpy("extrude");
             break;
 
@@ -207,6 +208,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 }
 
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
+    Equation eq;
     if(type == ROTATE) {
         // Normalize the quaternion
         ExprQuaternion q = {
@@ -214,10 +216,25 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             Expr::FromParam(h.param(4)),
             Expr::FromParam(h.param(5)),
             Expr::FromParam(h.param(6)) };
-        Equation eq;
         eq.e = (q.Magnitude())->Minus(Expr::FromConstant(1));
         eq.h = h.equation(0);
         l->Add(&eq);
+    } else if(type == EXTRUDE) {
+        if(wrkpl.entityB.v != Entity::FREE_IN_3D.v) {
+            Entity *w = SS.GetEntity(wrkpl.entityB);
+            ExprVector u = w->Normal()->NormalExprsU();
+            ExprVector v = w->Normal()->NormalExprsV();
+            ExprVector extruden = {
+                Expr::FromParam(h.param(0)),
+                Expr::FromParam(h.param(1)),
+                Expr::FromParam(h.param(2)) };
+            eq.e = u.Dot(extruden);
+            eq.h = h.equation(0);
+            l->Add(&eq);
+            eq.e = v.Dot(extruden);
+            eq.h = h.equation(1);
+            l->Add(&eq);
+        }
     }
 }
 
