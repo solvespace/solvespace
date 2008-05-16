@@ -508,16 +508,13 @@ Quaternion Entity::PointGetQuaternion(void) {
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        glPolygonOffset(-5, -5);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // Have to draw this as a polygon in order to make the offset work.
-        glBegin(GL_TRIANGLES);
-            glxVertex3v(a);
-            glxVertex3v(b);
-            glxVertex3v(b);
+        // glPolygonOffset works only on polys, not lines, so do it myself
+        Vector adj = SS.GW.projRight.Cross(SS.GW.projUp);
+        adj = adj.ScaledBy(5/SS.GW.scale);
+        glBegin(GL_LINES);
+            glxVertex3v(a.Plus(adj));
+            glxVertex3v(b.Plus(adj));
         glEnd();
-        glPolygonOffset(0, 0);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);

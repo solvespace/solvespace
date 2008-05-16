@@ -1065,7 +1065,7 @@ void GraphicsWindow::Paint(int w, int h) {
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
 
-    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/50000);
+    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/10000);
 
     double tx = projRight.Dot(offset);
     double ty = projUp.Dot(offset);

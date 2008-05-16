@@ -24,6 +24,7 @@ int TextWndScrollPos; // The scrollbar position, in half-row units
 int TextWndHalfRows;  // The height of our window, in half-row units
 
 HWND GraphicsWnd;
+HGLRC GraphicsHpgl;
 HWND GraphicsEditControl;
 HMENU SubMenus[100];
 struct {
@@ -393,8 +394,10 @@ void ShowTextWindow(BOOL visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
-static HGLRC CreateGlContext(HDC hdc)
-{
+static void CreateGlContext(void)
+{   
+    HDC hdc = GetDC(GraphicsWnd);
+
     PIXELFORMATDESCRIPTOR pfd;
     int pixelFormat; 
 
@@ -405,7 +408,7 @@ static HGLRC CreateGlContext(HDC hdc)
                         PFD_DOUBLEBUFFER; 
     pfd.dwLayerMask = PFD_MAIN_PLANE; 
     pfd.iPixelType = PFD_TYPE_RGBA; 
-    pfd.cColorBits = 8; 
+    pfd.cColorBits = 16; 
     pfd.cDepthBits = 16; 
     pfd.cAccumBits = 0; 
     pfd.cStencilBits = 0; 
@@ -415,37 +418,25 @@ static HGLRC CreateGlContext(HDC hdc)
  
     if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
 
-    HGLRC hgrc = wglCreateContext(hdc); 
-    wglMakeCurrent(hdc, hgrc); 
-
-    return hgrc;
+    GraphicsHpgl = wglCreateContext(hdc); 
+    wglMakeCurrent(hdc, GraphicsHpgl); 
 }
 
 void InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, FALSE);
 }
-static void PaintGraphicsWithHdc(HDC hdc)
+void PaintGraphics(void)
 {
-    HGLRC hgrc = CreateGlContext(hdc);
-
     RECT r;
     GetClientRect(GraphicsWnd, &r);
     int w = r.right - r.left;
     int h = r.bottom - r.top;
 
     SS.GW.Paint(w, h);
-
-    SwapBuffers(hdc);
-
-    wglMakeCurrent(NULL, NULL);
-    wglDeleteContext(hgrc);
+    SwapBuffers(GetDC(GraphicsWnd));
 }
-void PaintGraphics(void)
-{
-    HDC hdc = GetDC(GraphicsWnd);
-    PaintGraphicsWithHdc(hdc);
-}
+
 SDWORD GetMilliseconds(void)
 {
     return (SDWORD)GetTickCount();
@@ -494,12 +485,9 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             break;
 
         case WM_PAINT: {
-            InvalidateRect(GraphicsWnd, NULL, FALSE);
+            PaintGraphics();
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-
-            PaintGraphicsWithHdc(hdc);
-
             EndPaint(hwnd, &ps);
             break;
         }
@@ -710,6 +698,8 @@ static void CreateMainWindows(void)
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
         600, 300, 200, 200, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
+
+    CreateGlContext();
 
     GraphicsEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
