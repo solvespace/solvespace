@@ -215,8 +215,6 @@ void TextWindow::ScreenNavigation(int link, DWORD v) {
 void TextWindow::ShowHeader(void) {
     ClearScreen();
 
-    SS.GW.EnsureValidActives();
-
     char *cd = (SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) ?
                "free in 3d" :
                SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();

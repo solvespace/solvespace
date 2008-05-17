@@ -137,7 +137,10 @@ Vector SContour::ComputeNormal(void) {
 }
 
 bool SContour::IsClockwiseProjdToNormal(Vector n) {
-    if(n.Magnitude() < 0.01) oops();
+    // Degenerate things might happen as we draw; doesn't really matter
+    // what we do then.
+    if(n.Magnitude() < 0.01) return true;
+
     // An arbitrary 2d coordinate system that has n as its normal
     Vector u = n.Normal(0);
     Vector v = n.Normal(1);

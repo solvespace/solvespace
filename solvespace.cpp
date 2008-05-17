@@ -17,8 +17,115 @@ void SolveSpace::Init(char *cmdLine) {
     TW.Show();
 }
 
+bool SolveSpace::PruneOrphans(void) {
+    int i;
+    for(i = 0; i < request.n; i++) {
+        Request *r = &(request.elem[i]);
+        if(GroupExists(r->group)) continue;
+
+        (deleted.requests)++;
+        request.RemoveById(r->h);
+        return true;
+    }
+
+    for(i = 0; i < constraint.n; i++) {
+        Constraint *c = &(constraint.elem[i]);
+        if(GroupExists(c->group)) continue;
+
+        (deleted.constraints)++;
+        constraint.RemoveById(c->h);
+        return true;
+    }
+    return false;
+}
+
+bool SolveSpace::GroupsInOrder(hGroup before, hGroup after) {
+    if(before.v == 0) return true;
+    if(after.v  == 0) return true;
+
+    int beforep = -1, afterp = -1;
+    int i;
+    for(i = 0; i < group.n; i++) {
+        Group *g = &(group.elem[i]);
+        if(g->h.v == before.v) beforep = i;
+        if(g->h.v == after.v)  afterp  = i;
+    }
+    if(beforep < 0 || afterp < 0) return false;
+    if(beforep >= afterp) return false;
+    return true;
+}
+
+bool SolveSpace::GroupExists(hGroup hg) {
+    // A nonexistent group is not acceptable
+    return group.FindByIdNoOops(hg) ? true : false;
+}
+bool SolveSpace::EntityExists(hEntity he) {
+    // A nonexstient entity is acceptable, though, usually just means it
+    // doesn't apply.
+    if(he.v == Entity::NO_ENTITY.v) return true;
+    return entity.FindByIdNoOops(he) ? true : false;
+}
+
+bool SolveSpace::PruneGroups(hGroup hg) {
+    Group *g = GetGroup(hg);
+    if(GroupsInOrder(g->opA, hg) &&
+       GroupsInOrder(g->opB, hg) &&
+       EntityExists(g->wrkpl.origin) &&
+       EntityExists(g->wrkpl.entityB) &&
+       EntityExists(g->wrkpl.entityC))
+    {
+        return false;
+    }
+    (deleted.groups)++;
+    group.RemoveById(g->h);
+    return true;
+}
+
+bool SolveSpace::PruneRequests(hGroup hg) {
+    int i;
+    for(i = 0; i < entity.n; i++) {
+        Entity *e = &(entity.elem[i]);
+        if(e->group.v != hg.v) continue;
+
+        if(EntityExists(e->workplane)) continue;
+
+        if(!e->h.isFromRequest()) oops();
+
+        (deleted.requests)++;
+        request.RemoveById(e->h.request());
+        return true;
+    }
+    return false;
+}
+
+bool SolveSpace::PruneConstraints(hGroup hg) {
+    int i;
+    for(i = 0; i < constraint.n; i++) {
+        Constraint *c = &(constraint.elem[i]);
+        if(c->group.v != hg.v) continue;
+
+        if(EntityExists(c->workplane) &&
+           EntityExists(c->ptA) &&
+           EntityExists(c->ptB) &&
+           EntityExists(c->ptC) &&
+           EntityExists(c->entityA) &&
+           EntityExists(c->entityB))
+        {
+            continue;
+        }
+
+        (deleted.constraints)++;
+        constraint.RemoveById(c->h);
+        return true;
+    }
+    return false;
+}
+
 void SolveSpace::GenerateAll(bool andSolve) {
     int i, j;
+
+    while(PruneOrphans())
+        ;
 
     // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev;
@@ -34,14 +141,24 @@ void SolveSpace::GenerateAll(bool andSolve) {
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
 
+        // The group may depend on entities or other groups, to define its
+        // workplane geometry or for its operands. Those must already exist
+        // in a previous group, so check them before generating.
+        if(PruneGroups(g->h))
+            goto pruned;
+
         for(j = 0; j < request.n; j++) {
             Request *r = &(request.elem[j]);
             if(r->group.v != g->h.v) continue;
 
             r->Generate(&entity, &param);
         }
-
         g->Generate(&entity, &param);
+
+        // The requests and constraints depend on stuff in this or the
+        // previous group, so check them after generating.
+        if(PruneRequests(g->h) || PruneConstraints(g->h))
+            goto pruned;
 
         // Use the previous values for params that we've seen before, as
         // initial guesses for the solver.
@@ -66,6 +183,33 @@ void SolveSpace::GenerateAll(bool andSolve) {
 
     prev.Clear();
     InvalidateGraphics();
+
+    if(deleted.requests > 0 || deleted.constraints > 0 || deleted.groups > 0) {
+        // Don't display any errors until we've regenerated fully. The
+        // sketch is not necessarily in a consistent state until we've
+        // pruned any orphaned etc. objects, and the message loop for the
+        // messagebox could allow us to repaint and crash. But now we must
+        // be fine.
+        Error("Additional sketch elements were deleted, because they depend "
+              "on the element that was just deleted explicitly. These "
+              "include: \r\n"
+              "     %d request%s\r\n"
+              "     %d constraint%s\r\n"
+              "     %d group%s\r\n\r\n"
+              "Choose Edit -> Undo to undelete all elements.",
+                deleted.requests, deleted.requests == 1 ? "" : "s",
+                deleted.constraints, deleted.constraints == 1 ? "" : "s",
+                deleted.groups, deleted.groups == 1 ? "" : "s");
+        memset(&deleted, 0, sizeof(deleted));
+    }
+    return;
+
+pruned:
+    // Restore the numerical guesses
+    param.Clear();
+    prev.MoveSelfInto(&param);
+    // Try again
+    GenerateAll(andSolve);
 }
 
 void SolveSpace::ForceReferences(void) {

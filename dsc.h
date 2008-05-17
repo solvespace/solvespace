@@ -154,6 +154,11 @@ public:
         n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
+    void RemoveById(H h) {
+        ClearTags();
+        FindById(h)->tag = 1;
+        RemoveTagged();
+    }
 
     void MoveSelfInto(IdList<T,H> *l) {
         memcpy(l, this, sizeof(*this));

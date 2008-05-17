@@ -204,6 +204,18 @@ public:
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
 
+    struct {
+        int     requests;
+        int     groups;
+        int     constraints;
+    } deleted;
+    bool GroupExists(hGroup hg);
+    bool PruneOrphans(void);
+    bool EntityExists(hEntity he);
+    bool GroupsInOrder(hGroup before, hGroup after);
+    bool PruneGroups(hGroup hg);
+    bool PruneRequests(hGroup hg);
+    bool PruneConstraints(hGroup hg);
 
     void GenerateAll(bool andSolve);
     bool SolveGroup(hGroup hg);

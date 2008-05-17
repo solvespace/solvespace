@@ -263,6 +263,8 @@ void GraphicsWindow::EnsureValidActives(void) {
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
     CheckMenuById(MNU_SOLVE_AUTO, (SS.GW.solving == SOLVE_ALWAYS));
+
+    if(change) SS.TW.Show();
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -287,18 +289,6 @@ void GraphicsWindow::MenuEdit(int id) {
                 }
                 if(r.v && !r.IsFromReferences()) {
                     SS.request.Tag(r, 1);
-                    int j;
-                    for(j = 0; j < SS.constraint.n; j++) {
-                        Constraint *c = &(SS.constraint.elem[j]);
-                        if(((c->ptA).request().v == r.v) ||
-                           ((c->ptB).request().v == r.v) ||
-                           ((c->ptC).request().v == r.v) ||
-                           ((c->entityA).request().v == r.v) ||
-                           ((c->entityB).request().v == r.v))
-                        {
-                            SS.constraint.Tag(c->h, 1);
-                        }
-                    }
                 }
                 if(s->constraint.v) {
                     SS.constraint.Tag(s->constraint, 1);
@@ -307,9 +297,14 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.request.RemoveTagged();
             SS.constraint.RemoveTagged();
 
-            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+            // Forget any mention of the just-deleted entity
             SS.GW.ClearSelection();
             SS.GW.hover.Clear();
+            // And regenerate to get rid of what it generates, plus anything
+            // that references it (since the regen code checks for that).
+            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+            SS.GW.EnsureValidActives();
+            SS.TW.Show();
             break;
         }
 
@@ -814,6 +809,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case MNU_RECTANGLE: {
+            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+                Error("Can't draw rectangle in 3d; select a workplane first.");
+                 break;
+            }
             hRequest lns[4];
             int i;
             for(i = 0; i < 4; i++) {
