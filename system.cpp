@@ -313,7 +313,7 @@ bool System::SolveLeastSquares(void) {
 
 bool System::NewtonSolve(int tag) {
     WriteJacobian(tag, tag);
-    if(mat.m > mat.n) oops();
+    if(mat.m > mat.n) return false;
 
     int iter = 0;
     bool converged = false;

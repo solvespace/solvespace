@@ -75,7 +75,7 @@ void Group::MenuGroup(int id) {
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.wrkpl.entityB = SS.GW.activeWorkplane;
-            g.subtype = EXTRUDE_TWO_SIDED;
+            g.subtype = EXTRUDE_ONE_SIDED;
             g.name.strcpy("extrude");
             break;
 

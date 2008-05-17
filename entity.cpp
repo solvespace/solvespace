@@ -649,6 +649,7 @@ void Entity::DrawOrGetDistance(int order) {
                     tail = SS.GW.projRight.ScaledBy(w/s).Plus(
                            SS.GW.projUp.   ScaledBy(h/s)).Plus(
                            gn.ScaledBy(-4*w/s)).Minus(SS.GW.offset);
+                    glLineWidth(2);
                 }
 
                 Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
@@ -660,6 +661,7 @@ void Entity::DrawOrGetDistance(int order) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
+            glLineWidth(1);
             break;
         }
 
