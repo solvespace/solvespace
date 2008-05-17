@@ -344,6 +344,7 @@ void TextWindow::ScreenChangeExtrudeSides(int link, DWORD v) {
         g->subtype = Group::EXTRUDE_ONE_SIDED;
     }
     SS.GW.GeneratePerSolving();
+    SS.GW.ClearSuper();
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);

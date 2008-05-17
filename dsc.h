@@ -53,6 +53,7 @@ public:
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);
     Vector ProjectInto(hEntity wrkpl);
+    Vector ProjectVectorInto(hEntity wrkpl);
     double DivPivoting(Vector delta);
     Vector ClosestOrtho(void);
     Point2d Project2d(Vector u, Vector v);

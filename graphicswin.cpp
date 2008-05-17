@@ -70,8 +70,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Constrain",                          0,                          NULL  },
 { 1, "&Distance / Diameter\tShift+D",       MNU_DISTANCE_DIA,   'D'|S,  mCon  },
-{ 1, "A&ngle\tShift+N",                     0,                  'N'|S,  NULL  },
-{ 1, "Other S&upplementary Angle\tShift+U", 0,                  'U'|S,  NULL  },
+{ 1, "A&ngle\tShift+N",                     MNU_ANGLE,          'N'|S,  mCon  },
+{ 1, "Other S&upplementary Angle\tShift+U", MNU_OTHER_ANGLE,    'U'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&Horizontal\tShift+H",                MNU_HORIZONTAL,     'H'|S,  mCon  },
 { 1, "&Vertical\tShift+V",                  MNU_VERTICAL,       'V'|S,  mCon  },
@@ -302,8 +302,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.constraint.RemoveTagged();
 
             // Forget any mention of the just-deleted entity
-            SS.GW.ClearSelection();
-            SS.GW.hover.Clear();
+            SS.GW.ClearSuper();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
             SS.GW.GeneratePerSolving();
@@ -633,6 +632,13 @@ void GraphicsWindow::Selection::Draw(void) {
     if(constraint.v) SS.GetConstraint(constraint)->Draw();
 }
 
+void GraphicsWindow::ClearSuper(void) {
+    ClearPending();
+    ClearSelection();
+    hover.Clear();
+    EnsureValidActives();
+}
+
 void GraphicsWindow::ClearPending(void) {
     memset(&pending, 0, sizeof(pending));
 }
@@ -680,6 +686,22 @@ void GraphicsWindow::ClearSelection(void) {
     InvalidateGraphics();
 }
 
+void GraphicsWindow::ClearNonexistentSelectionItems(void) {
+    bool change = false;
+    for(int i = 0; i < MAX_SELECTED; i++) {
+        Selection *s = &(selection[i]);
+        if(s->constraint.v && !(SS.constraint.FindByIdNoOops(s->constraint))) {
+            s->constraint.v = 0;
+            change = true;
+        }
+        if(s->entity.v && !(SS.entity.FindByIdNoOops(s->entity))) {
+            s->entity.v = 0;
+            change = true;
+        }
+    }
+    if(change) InvalidateGraphics();
+}
+
 void GraphicsWindow::GroupSelection(void) {
     memset(&gs, 0, sizeof(gs));
     int i;
@@ -717,6 +739,9 @@ void GraphicsWindow::GroupSelection(void) {
                 case Entity::ARC_OF_CIRCLE:
                 case Entity::CIRCLE:        (gs.circlesOrArcs)++; break;
             }
+        }
+        if(s->constraint.v) {
+            gs.constraint[(gs.constraints)++] = s->constraint;
         }
     }
 }
@@ -794,7 +819,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             hr = AddRequest(Request::DATUM_POINT);
             SS.GetEntity(hr.entity(0))->PointForceTo(v);
 
-            ClearSelection(); hover.Clear();
+            ClearSuper();
 
             pending.operation = 0;
             break;
@@ -804,7 +829,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(1));
 
-            ClearSelection(); hover.Clear();
+            ClearSuper();
 
             pending.operation = DRAGGING_NEW_LINE_POINT;
             pending.point = hr.entity(2);
@@ -848,9 +873,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
             ConstrainPointByHovered(hr.entity(1));
 
-            ClearSelection(); hover.Clear();
+            ClearSuper();
 
-            ClearPending();
             pending.operation = DRAGGING_NEW_RADIUS;
             pending.circle = hr.entity(0);
             pending.description = "click to set radius";
@@ -869,9 +893,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(3))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(2));
 
-            ClearSelection(); hover.Clear();
+            ClearSuper();
 
-            ClearPending();
             pending.operation = DRAGGING_NEW_ARC_POINT;
             pending.point = hr.entity(3);
             pending.description = "click to place point";
@@ -885,7 +908,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetEntity(hr.entity(4))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(1));
 
-            ClearSelection(); hover.Clear();
+            ClearSuper();
 
             pending.operation = DRAGGING_NEW_CUBIC_POINT;
             pending.point = hr.entity(4);
@@ -899,8 +922,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
             ConstrainPointByHovered(hr.entity(1));
 
-            ClearSelection(); hover.Clear();
-            ClearPending();
+            ClearSuper();
             break;
 
         case DRAGGING_RADIUS:
@@ -986,12 +1008,13 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
 
     if(hover.constraint.v) {
-        ClearSelection();
         Constraint *c = SS.GetConstraint(hover.constraint);
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
         ShowGraphicsEditControl((int)p2.x, (int)p2.y, c->exprA->Print());
         constraintBeingEdited = hover.constraint;
+
+        ClearSuper();
     }
 }
 

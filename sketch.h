@@ -343,7 +343,8 @@ public:
     static const int DIAMETER           =  90;
     static const int PT_ON_CIRCLE       = 100;
     static const int SAME_ORIENTATION   = 110;
-    static const int PARALLEL           = 120;
+    static const int ANGLE              = 120;
+    static const int PARALLEL           = 121;
     static const int EQUAL_RADIUS       = 130;
 
     int         tag;
@@ -362,6 +363,7 @@ public:
     hEntity     ptC;
     hEntity     entityA;
     hEntity     entityB;
+    bool        otherAngle;
 
     // These define how the constraint is drawn on-screen.
     struct {

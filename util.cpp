@@ -307,17 +307,24 @@ Vector Vector::WithMagnitude(double v) {
     }
 }
 
-Vector Vector::ProjectInto(hEntity wrkpl) {
+Vector Vector::ProjectVectorInto(hEntity wrkpl) {
     Entity *w = SS.GetEntity(wrkpl);
     Vector u = w->Normal()->NormalU();
     Vector v = w->Normal()->NormalV();
+
+    double up = this->Dot(u);
+    double vp = this->Dot(v);
+
+    return (u.ScaledBy(up)).Plus(v.ScaledBy(vp));
+}
+
+Vector Vector::ProjectInto(hEntity wrkpl) {
+    Entity *w = SS.GetEntity(wrkpl);
     Vector p0 = w->WorkplaneGetOffset();
 
     Vector f = this->Minus(p0);
-    double up = f.Dot(u);
-    double vp = f.Dot(v);
 
-    return p0.Plus((u.ScaledBy(up)).Plus(v.ScaledBy(vp)));
+    return p0.Plus(f.ProjectVectorInto(wrkpl));
 }
 
 Point2d Vector::Project2d(Vector u, Vector v) {

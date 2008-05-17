@@ -7,6 +7,7 @@ bool Constraint::HasLabel(void) {
         case PT_PT_DISTANCE:
         case DIAMETER:
         case LENGTH_RATIO:
+        case ANGLE:
             return true;
 
         default:
@@ -244,6 +245,83 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 LineDrawOrGetDistance(p.Plus(u), p.Minus(u).Plus(n));
                 LineDrawOrGetDistance(p.Minus(u), p.Plus(u).Plus(n));
             }
+            break;
+        }
+
+        case ANGLE: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            
+            Vector a0 = a->VectorGetRefPoint();
+            Vector b0 = b->VectorGetRefPoint();
+            Vector da = a->VectorGetNum();
+            Vector db = b->VectorGetNum();
+            if(otherAngle) da = da.ScaledBy(-1);
+
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                a0 = a0.ProjectInto(workplane);
+                b0 = b0.ProjectInto(workplane);
+                da = da.ProjectVectorInto(workplane);
+                db = db.ProjectVectorInto(workplane);
+            }
+
+            // Make an orthogonal coordinate system from those directions
+            Vector dn = da.Cross(db); // normal to both
+            Vector dna = dn.Cross(da); // normal to da
+            Vector dnb = dn.Cross(db); // normal to db
+            // At the intersection of the lines
+            //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
+            // So dot this equation against dna and dnb to get two equations
+            // to solve for da and db
+            double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
+            double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+
+            Vector pi = a0.Plus(da.ScaledBy(pa));
+            Vector ref;
+            if(pi.Equals(b0.Plus(db.ScaledBy(pb)))) {
+                ref = pi.Plus(disp.offset);
+                // We draw in a coordinate system centered at pi, with
+                // basis vectors da and dna.
+                da = da.WithMagnitude(1); dna = dna.WithMagnitude(1);
+                Vector rm = ref.Minus(pi);
+                double rda = rm.Dot(da), rdna = rm.Dot(dna);
+                double r = sqrt(rda*rda + rdna*rdna);
+                double c = (da.Dot(db))/(da.Magnitude()*db.Magnitude());
+                double thetaf = acos(c);
+
+                Vector m = da.ScaledBy(cos(thetaf/2)).Plus(
+                           dna.ScaledBy(sin(thetaf/2)));
+                if(m.Dot(rm) < 0) {
+                    da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
+                }
+
+                Vector prev = da.ScaledBy(r).Plus(pi);
+                int i, n = 30;
+                for(i = 0; i <= n; i++) {
+                    double theta = (i*thetaf)/n;
+                    Vector p = da. ScaledBy(r*cos(theta)).Plus(
+                               dna.ScaledBy(r*sin(theta))).Plus(pi);
+                    LineDrawOrGetDistance(prev, p);
+                    prev = p;
+                }
+
+                double tl = atan2(rm.Dot(gu), rm.Dot(gr));
+                double adj = EllipticalInterpolation(
+                    glxStrWidth(exprA->Print())/2, glxStrHeight()/2, tl);
+                ref = ref.Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
+            } else {
+                // The lines are skew; no wonderful way to illustrate that.
+                ref = a->VectorGetRefPoint().Plus(b->VectorGetRefPoint());
+                ref = ref.ScaledBy(0.5).Plus(disp.offset);
+                glPushMatrix();
+                    gu = gu.WithMagnitude(1);
+                    glxTranslatev(ref.Plus(gu.ScaledBy(-1.5*glxStrHeight())));
+                    glxOntoWorkplane(gr, gu);
+                    glxWriteTextRefCenter("angle between skew lines");
+                glPopMatrix();
+            }
+            
+            DoLabel(ref, labelPos, gr, gu);
             break;
         }
 

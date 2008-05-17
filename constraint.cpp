@@ -237,6 +237,33 @@ void Constraint::MenuConstrain(int id) {
             AddConstraint(&c);
             break;
 
+        case GraphicsWindow::MNU_OTHER_ANGLE:
+            if(gs.constraints == 1 && gs.n == 0) {
+                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                if(c->type == ANGLE) {
+                    c->otherAngle = !(c->otherAngle);
+                    c->ModifyToSatisfy();
+                    break;
+                }
+            }
+            Error("Must select an angle constraint.");
+            break;
+
+        case GraphicsWindow::MNU_ANGLE:
+            if(gs.vectors == 2 && gs.n == 2) {
+                c.type = ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.exprA = Expr::FromConstant(0)->DeepCopyKeep();
+                c.otherAngle = true;
+            } else {
+                Error("Bad selection for angle constraint.");
+                return;
+            }
+            c.ModifyToSatisfy();
+            AddConstraint(&c);
+            break;
+
         case GraphicsWindow::MNU_PARALLEL:
             if(gs.vectors == 2 && gs.n == 2) {
                 c.type = PARALLEL;
@@ -374,21 +401,37 @@ ExprVector Constraint::PointInThreeSpace(hEntity workplane, Expr *u, Expr *v) {
 }
 
 void Constraint::ModifyToSatisfy(void) {
-    IdList<Equation,hEquation> l;
-    // An uninit IdList could lead us to free some random address, bad.
-    memset(&l, 0, sizeof(l));
+    if(type == ANGLE) {
+        Vector a = SS.GetEntity(entityA)->VectorGetNum();
+        Vector b = SS.GetEntity(entityB)->VectorGetNum();
+        if(otherAngle) a = a.ScaledBy(-1);
+        if(workplane.v != Entity::FREE_IN_3D.v) {
+            a = a.ProjectVectorInto(workplane);
+            b = b.ProjectVectorInto(workplane);
+        }
+        double c = (a.Dot(b))/(a.Magnitude() * b.Magnitude());
+        double theta = acos(c)*180/PI;
+        Expr::FreeKeep(&exprA);
+        exprA = Expr::FromConstant(theta)->DeepCopyKeep();
+    } else {
+        // We'll fix these ones up by looking at their symbolic equation;
+        // that means no extra work.
+        IdList<Equation,hEquation> l;
+        // An uninit IdList could lead us to free some random address, bad.
+        memset(&l, 0, sizeof(l));
 
-    Generate(&l);
-    if(l.n != 1) oops();
+        Generate(&l);
+        if(l.n != 1) oops();
 
-    // These equations are written in the form f(...) - d = 0, where
-    // d is the value of the exprA.
-    double v = (l.elem[0].e)->Eval();
-    double nd = exprA->Eval() + v;
-    Expr::FreeKeep(&exprA);
-    exprA = Expr::FromConstant(nd)->DeepCopyKeep();
+        // These equations are written in the form f(...) - d = 0, where
+        // d is the value of the exprA.
+        double v = (l.elem[0].e)->Eval();
+        double nd = exprA->Eval() + v;
+        Expr::FreeKeep(&exprA);
+        exprA = Expr::FromConstant(nd)->DeepCopyKeep();
 
-    l.Clear();
+        l.Clear();
+    }
 }
 
 void Constraint::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
@@ -399,19 +442,22 @@ void Constraint::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
 }
 
 void Constraint::Generate(IdList<Equation,hEquation> *l) {
+    Expr *exA = NULL;
+    if(exprA) exA = exprA->DeepCopy();
+
     switch(type) {
         case PT_PT_DISTANCE:
-            AddEq(l, Distance(workplane, ptA, ptB)->Minus(exprA), 0);
+            AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
             break;
 
         case PT_LINE_DISTANCE:
             AddEq(l,
-                PointLineDistance(workplane, ptA, entityA)->Minus(exprA), 0);
+                PointLineDistance(workplane, ptA, entityA)->Minus(exA), 0);
             break;
 
         case PT_PLANE_DISTANCE: {
             ExprVector pt = SS.GetEntity(ptA)->PointGetExprs();
-            AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exprA), 0);
+            AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exA), 0);
             break;
         }
 
@@ -428,14 +474,14 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             Expr *la = Distance(workplane, a->point[0], a->point[1]);
             Expr *lb = Distance(workplane, b->point[0], b->point[1]);
-            AddEq(l, (la->Div(lb))->Minus(exprA), 0);
+            AddEq(l, (la->Div(lb))->Minus(exA), 0);
             break;
         }
 
         case DIAMETER: {
             Entity *circle = SS.GetEntity(entityA);
             Expr *r = circle->CircleGetRadiusExpr();
-            AddEq(l, (r->Times(Expr::FromConstant(2)))->Minus(exprA), 0);
+            AddEq(l, (r->Times(Expr::FromConstant(2)))->Minus(exA), 0);
             break;
         }
 
@@ -653,6 +699,34 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             } else {
                 AddEq(l, d2, 2);
             }
+            break;
+        }
+
+        case ANGLE: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            ExprVector ae = a->VectorGetExprs();
+            ExprVector be = b->VectorGetExprs();
+            if(otherAngle) ae = ae.ScaledBy(Expr::FromConstant(-1));
+            Expr *c;
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
+                c = (ae.Dot(be))->Div(mags);
+            } else {
+                Entity *w = SS.GetEntity(workplane);
+                ExprVector u = w->Normal()->NormalExprsU();
+                ExprVector v = w->Normal()->NormalExprsV();
+                Expr *ua = u.Dot(ae);
+                Expr *va = v.Dot(ae);
+                Expr *ub = u.Dot(be);
+                Expr *vb = v.Dot(be);
+                Expr *maga = (ua->Square()->Plus(va->Square()))->Sqrt();
+                Expr *magb = (ub->Square()->Plus(vb->Square()))->Sqrt();
+                Expr *dot = (ua->Times(ub))->Plus(va->Times(vb));
+                c = dot->Div(maga->Times(magb));
+            }
+            Expr *rads = exA->Times(Expr::FromConstant(PI/180));
+            AddEq(l, c->Minus(rads->Cos()), 0);
             break;
         }
 

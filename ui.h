@@ -120,6 +120,8 @@ public:
         MNU_GROUP_TRANS,
         // Constrain
         MNU_DISTANCE_DIA,
+        MNU_ANGLE,
+        MNU_OTHER_ANGLE,
         MNU_EQUAL,
         MNU_RATIO,
         MNU_ON_ENTITY,
@@ -227,11 +229,13 @@ public:
     Selection selection[MAX_SELECTED];
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
+    void ClearNonexistentSelectionItems(void);
     struct {
         hEntity     point[MAX_SELECTED];
         hEntity     entity[MAX_SELECTED];
         hEntity     anyNormal[MAX_SELECTED];
         hEntity     vector[MAX_SELECTED];
+        hConstraint constraint[MAX_SELECTED];
         int         points;
         int         entities;
         int         workplanes;
@@ -239,9 +243,12 @@ public:
         int         circlesOrArcs;
         int         anyNormals;
         int         vectors;
+        int         constraints;
         int         n;
     } gs;
     void GroupSelection(void);
+
+    void ClearSuper(void);
 
     // This sets what gets displayed.
     bool    showWorkplanes;

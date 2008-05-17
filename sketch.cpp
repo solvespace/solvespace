@@ -497,7 +497,9 @@ void Group::Draw(void) {
         int i;
         glEnable(GL_LIGHTING);
         GLfloat vec[] = { 0.3f, 0.3f, 0.3f, 1.0 };
-        glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec);
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vec);
+        GLfloat vec2[] = { 1.0f, 0.3f, 0.3f, 1.0 };
+        glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, vec2);
         for(i = 0; i < faces.n; i++) {
             glxFillPolygon(&(faces.elem[i]));
 #if 0

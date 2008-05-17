@@ -112,6 +112,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.ptC.v",         'x',        &(SS.sv.c.ptC.v)          },
     { 'c',  "Constraint.entityA.v",     'x',        &(SS.sv.c.entityA.v)      },
     { 'c',  "Constraint.entityB.v",     'x',        &(SS.sv.c.entityB.v)      },
+    { 'c',  "Constraint.otherAngle",    'b',        &(SS.sv.c.otherAngle)     },
     { 'c',  "Constraint.disp.offset.x", 'f',        &(SS.sv.c.disp.offset.x)  },
     { 'c',  "Constraint.disp.offset.y", 'f',        &(SS.sv.c.disp.offset.y)  },
     { 'c',  "Constraint.disp.offset.z", 'f',        &(SS.sv.c.disp.offset.z)  },

@@ -184,6 +184,10 @@ void SolveSpace::GenerateAll(bool andSolve) {
     prev.Clear();
     InvalidateGraphics();
 
+    // Remove nonexistent selection items, for same reason we waited till
+    // the end to put up a dialog box.
+    GW.ClearNonexistentSelectionItems();
+
     if(deleted.requests > 0 || deleted.constraints > 0 || deleted.groups > 0) {
         // Don't display any errors until we've regenerated fully. The
         // sketch is not necessarily in a consistent state until we've
