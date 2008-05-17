@@ -6,11 +6,10 @@ char *Constraint::DescriptionString(void) {
     return ret;
 }
 
-hConstraint Constraint::AddConstraint(Constraint *c) {
+void Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
     SS.GW.GeneratePerSolving();
-    return c->h;
 }
 
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)

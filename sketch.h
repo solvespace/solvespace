@@ -372,7 +372,7 @@ public:
 
     char *DescriptionString(void);
 
-    static hConstraint AddConstraint(Constraint *c);
+    static void AddConstraint(Constraint *c);
     static void MenuConstrain(int id);
     
     struct {

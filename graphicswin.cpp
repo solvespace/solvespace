@@ -237,11 +237,20 @@ void GraphicsWindow::EnsureValidActives(void) {
     }
 
     // The active coordinate system must also exist.
-    if(activeWorkplane.v != Entity::FREE_IN_3D.v && 
-                       !SS.entity.FindByIdNoOops(activeWorkplane))
-    {
-        activeWorkplane = Entity::FREE_IN_3D;
-        change = true;
+    if(activeWorkplane.v != Entity::FREE_IN_3D.v) {
+        Entity *e = SS.entity.FindByIdNoOops(activeWorkplane);
+        if(e) {
+            hGroup hgw = e->group;
+            if(hgw.v != activeGroup.v && SS.GroupsInOrder(activeGroup, hgw)) {
+                // The active workplane is in a group that comes after the
+                // active group; so any request or constraint will fail.
+                activeWorkplane = Entity::FREE_IN_3D;
+                change = true;
+            }
+        } else {
+            activeWorkplane = Entity::FREE_IN_3D;
+            change = true;
+        }
     }
 
     bool in3d = (activeWorkplane.v == Entity::FREE_IN_3D.v);
@@ -322,7 +331,6 @@ void GraphicsWindow::MenuRequest(int id) {
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
                 SS.GW.activeWorkplane = SS.GW.gs.entity[0];
-                SS.GW.ClearSelection();
             }
 
             if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
@@ -335,7 +343,7 @@ void GraphicsWindow::MenuRequest(int id) {
             Quaternion quatf = e->Normal()->NormalGetNum();
             Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
             SS.GW.AnimateOnto(quatf, offsetf);
-            SS.GW.EnsureValidActives();
+            SS.GW.ClearSuper();
             SS.TW.Show();
             break;
         }

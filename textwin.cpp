@@ -292,6 +292,7 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
         // workplane too.
         SS.GW.activeWorkplane = g->h.entity(0);
     }
+    SS.GW.ClearSuper();
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactive  show  group-name%E");
