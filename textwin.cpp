@@ -210,7 +210,6 @@ void TextWindow::ScreenNavigation(int link, DWORD v) {
             SS.TW.OneScreenForwardTo(-1);
             break;
     }
-    SS.TW.Show();
 }
 void TextWindow::ShowHeader(void) {
     ClearScreen();
@@ -262,25 +261,37 @@ hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
 void TextWindow::ScreenSelectGroup(int link, DWORD v) {
     SS.TW.OneScreenForwardTo(SCREEN_GROUP_INFO);
     SS.TW.shown->group.v = v;
-
-    SS.TW.Show();
 }
 void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     hGroup hg = { v };
     Group *g = SS.GetGroup(hg);
     g->visible = !(g->visible);
+}
+void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
+    int i;
+    bool before = true;
+    for(i = 0; i < SS.group.n; i++) {
+        Group *g = &(SS.group.elem[i]);
 
-    InvalidateGraphics();
-    SS.TW.Show();
+        if(g->h.v == SS.GW.activeGroup.v) {
+            before = false;
+        } else if(before && link == 's') {
+            g->visible = true;
+        } else if(!before && link == 'h') {
+            g->visible = false;
+        }
+    }
 }
 void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     hGroup hg = { v };
     Group *g = SS.GetGroup(hg);
     g->visible = true;
     SS.GW.activeGroup.v = v;
-
-    InvalidateGraphics();
-    SS.TW.Show();
+    if(g->type == Group::DRAWING_WORKPLANE) {
+        // If we're activating an in-workplane drawing, then activate that
+        // workplane too.
+        SS.GW.activeWorkplane = g->h.entity(0);
+    }
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactive  show  group-name%E");
@@ -309,20 +320,30 @@ void TextWindow::ShowListOfGroups(void) {
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s);
     }
+
+    Printf(true,  "  %Fl%Ls%fshow all groups before active%E",
+        &(TextWindow::ScreenShowGroupsSpecial));
+    Printf(false, "  %Fl%Lh%fhide all groups after active%E",
+        &(TextWindow::ScreenShowGroupsSpecial));
 }
 
 
 void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
     SS.TW.OneScreenForwardTo(SCREEN_CONSTRAINT_INFO);
     SS.TW.shown->constraint.v = v;
-
-    SS.TW.Show();
 }
 void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.TW.OneScreenForwardTo(SCREEN_REQUEST_INFO);
     SS.TW.shown->request.v = v;
-
-    SS.TW.Show();
+}
+void TextWindow::ScreenChangeExtrudeSides(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    if(g->subtype == Group::EXTRUDE_ONE_SIDED) {
+        g->subtype = Group::EXTRUDE_TWO_SIDED;
+    } else {
+        g->subtype = Group::EXTRUDE_ONE_SIDED;
+    }
+    SS.GW.GeneratePerSolving();
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
@@ -334,7 +355,18 @@ void TextWindow::ShowGroupInfo(void) {
     } else {
         s = "";
     }
-    Printf(true, "%Ft%sgroup %E%s", s, g->DescriptionString());
+    Printf(true, "%Ft%sGROUP   %E%s", s, g->DescriptionString());
+
+    if(g->type == Group::EXTRUDE) {
+        bool one = (g->subtype == Group::EXTRUDE_ONE_SIDED);
+        Printf(true, "%FtEXTRUDE%E one-sided: %Fh%f%Ll%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeExtrudeSides,
+            (one ? "" : "no"), (one ? "yes" : ""));
+        Printf(false, "        two-sided: %Fh%f%Ll%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeExtrudeSides,
+            (!one ? "" : "no"), (!one ? "yes" : ""));
+    }
+
     Printf(true, "%Ftrequests in group");
 
     int i, a = 0;

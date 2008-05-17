@@ -92,8 +92,11 @@ public:
 
     static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
     static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
+    static const int EXTRUDE_ONE_SIDED          = 7000;
+    static const int EXTRUDE_TWO_SIDED          = 7001;
+    int subtype;
+
     struct {
-        int         type;
         Quaternion  q;
         hEntity     origin;
         hEntity     entityB;
@@ -121,9 +124,10 @@ public:
     // mapping list.
     IdList<EntityMap,EntityId> remap;
     hEntity Remap(hEntity in, int copyNumber);
+    void MakeExtrusionLines(hEntity in, int ai, int af);
     void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                    bool transOnly, bool isExtrusion);
+                    bool transOnly);
 
     void GenerateEquations(IdList<Equation,hEquation> *l);
 

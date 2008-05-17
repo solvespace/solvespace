@@ -69,9 +69,12 @@ public:
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenToggleGroupShown(int link, DWORD v);
+    static void ScreenShowGroupsSpecial(int link, DWORD v);
 
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
+    static void ScreenChangeExtrudeSides(int link, DWORD v);
+
     static void ScreenNavigation(int link, DWORD v);
 };
 
@@ -254,6 +257,7 @@ public:
     static const int DONT_SOLVE = 0;
     static const int SOLVE_ALWAYS = 1;
     int     solving;
+    void GeneratePerSolving(void);
 
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);

@@ -332,7 +332,7 @@ void Entity::PointForceTo(Vector p) {
         }
 
         case POINT_N_TRANS: {
-            Vector trans = p.Minus(numPoint);
+            Vector trans = (p.Minus(numPoint)).ScaledBy(1.0/timesApplied);
             SS.GetParam(param[0])->val = trans.x;
             SS.GetParam(param[1])->val = trans.y;
             SS.GetParam(param[2])->val = trans.z;
@@ -379,9 +379,9 @@ Vector Entity::PointGetNum(void) {
 
         case POINT_N_TRANS: {
             p = numPoint; 
-            p.x += SS.GetParam(param[0])->val;
-            p.y += SS.GetParam(param[1])->val;
-            p.z += SS.GetParam(param[2])->val;
+            p.x += timesApplied * SS.GetParam(param[0])->val;
+            p.y += timesApplied * SS.GetParam(param[1])->val;
+            p.z += timesApplied * SS.GetParam(param[2])->val;
             break;
         }
 
@@ -432,7 +432,7 @@ ExprVector Entity::PointGetExprs(void) {
             trans.x = Expr::FromParam(param[0]);
             trans.y = Expr::FromParam(param[1]);
             trans.z = Expr::FromParam(param[2]);
-            r = orig.Plus(trans);
+            r = orig.Plus(trans.ScaledBy(Expr::FromConstant(timesApplied)));
             break;
         }
         case POINT_N_ROT_TRANS: {
@@ -619,27 +619,47 @@ void Entity::DrawOrGetDistance(int order) {
             if(order >= 0 && order != 2) break;
             if(!SS.GW.showNormals) break;
 
-            hRequest hr = h.request();
-            double f = 0.5;
-            if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                glxColor3d(0, 0, f);
-            } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                glxColor3d(f, 0, 0);
-            } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                glxColor3d(0, f, 0);
-            } else {
-                glxColor3d(0, 0.4, 0.4);
-            }
-            Quaternion q = NormalGetNum();
-            Vector tail = SS.GetEntity(point[0])->PointGetNum();
-            Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
-            Vector tip = tail.Plus(v);
-            LineDrawOrGetDistance(tail, tip);
+            int i;
+            for(i = 0; i < 2; i++) {
+                hRequest hr = h.request();
+                double f = (i == 0 ? 0.4 : 1);
+                if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                    glxColor3d(0, 0, f);
+                } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                    glxColor3d(f, 0, 0);
+                } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                    glxColor3d(0, f, 0);
+                } else {
+                    glxColor3d(0, 0.4, 0.4);
+                    if(i > 0) break;
+                }
 
-            v = v.WithMagnitude(12/SS.GW.scale);
-            Vector axis = q.RotationV();
-            LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis,  0.6)));
-            LineDrawOrGetDistance(tip, tip.Minus(v.RotatedAbout(axis, -0.6)));
+                Quaternion q = NormalGetNum();
+                Vector tail;
+                if(i == 0) {
+                    tail = SS.GetEntity(point[0])->PointGetNum();
+                } else {
+                    // Draw an extra copy of the x, y, and z axes, that's
+                    // always in the corner of the view and at the front.
+                    // So those are always available, perhaps useful.
+                    double s = SS.GW.scale;
+                    double h = 60 - SS.GW.height/2;
+                    double w = 60 - SS.GW.width/2;
+                    Vector gn = SS.GW.projRight.Cross(SS.GW.projUp);
+                    tail = SS.GW.projRight.ScaledBy(w/s).Plus(
+                           SS.GW.projUp.   ScaledBy(h/s)).Plus(
+                           gn.ScaledBy(-4*w/s)).Minus(SS.GW.offset);
+                }
+
+                Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
+                Vector tip = tail.Plus(v);
+                LineDrawOrGetDistance(tail, tip);
+
+                v = v.WithMagnitude(12/SS.GW.scale);
+                Vector axis = q.RotationV();
+                LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
+                LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
+            }
             break;
         }
 
@@ -651,6 +671,12 @@ void Entity::DrawOrGetDistance(int order) {
         case WORKPLANE: {
             if(order >= 0 && order != 0) break;
             if(!SS.GW.showWorkplanes) break;
+
+            if((!h.isFromRequest()) && (h.group().v != SS.GW.activeGroup.v)) {
+                // Workplanes that are automatically created by an in-wrkpl
+                // drawing group appear only when that group is active.
+                break;
+            }
 
             Vector p;
             p = SS.GetEntity(point[0])->PointGetNum();

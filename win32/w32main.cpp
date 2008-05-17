@@ -318,6 +318,8 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                         SS.TW.meta[r][c].link,
                         SS.TW.meta[r][c].data
                     );
+                    SS.TW.Show();
+                    InvalidateGraphics();
                 }
             }
             break;

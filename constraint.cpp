@@ -9,7 +9,7 @@ char *Constraint::DescriptionString(void) {
 hConstraint Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
-    SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
+    SS.GW.GeneratePerSolving();
     return c->h;
 }
 

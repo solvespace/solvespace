@@ -267,6 +267,10 @@ void GraphicsWindow::EnsureValidActives(void) {
     if(change) SS.TW.Show();
 }
 
+void GraphicsWindow::GeneratePerSolving(void) {
+    SS.GenerateAll(solving == SOLVE_ALWAYS);
+}
+
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
@@ -302,7 +306,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.hover.Clear();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
-            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+            SS.GW.GeneratePerSolving();
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -365,7 +369,7 @@ c:
                 r->construction = !(r->construction);
             }
             SS.GW.ClearSelection();
-            SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
+            SS.GW.GeneratePerSolving();
             break;
         }
 
@@ -607,7 +611,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         default: oops();
     }
-    SS.GenerateAll(solving == SOLVE_ALWAYS);
+    SS.GW.GeneratePerSolving();
     havePainted = false;
 }
 
@@ -958,7 +962,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
     }
-    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+    SS.GW.GeneratePerSolving();
 
     SS.TW.Show();
     InvalidateGraphics();
@@ -998,7 +1002,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
         HideGraphicsEditControl();
-        SS.GenerateAll(solving == SOLVE_ALWAYS);
+        SS.GW.GeneratePerSolving();
     } else {
         Error("Not a valid number or expression: '%s'", s);
     }
@@ -1030,7 +1034,7 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     bool *vb = (bool *)v;
     *vb = !*vb;
 
-    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+    SS.GW.GeneratePerSolving();
     InvalidateGraphics();
     SS.TW.Show();
 }
@@ -1041,7 +1045,7 @@ void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
     SS.GW.showNormals = t;
     SS.GW.showPoints = t;
 
-    SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS);
+    SS.GW.GeneratePerSolving();
     InvalidateGraphics();
     SS.TW.Show();
 }
@@ -1090,6 +1094,9 @@ void GraphicsWindow::Paint(int w, int h) {
     glEnable(GL_DEPTH_TEST); 
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_NORMALIZE);
+   
+    // At the same depth, we want later lines drawn over earlier.
+    glDepthFunc(GL_LEQUAL);
 
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 

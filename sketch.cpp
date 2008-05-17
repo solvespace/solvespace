@@ -37,7 +37,7 @@ void Group::MenuGroup(int id) {
             g.type = DRAWING_WORKPLANE;
             g.name.strcpy("draw-in-plane");
             if(gs.points == 1 && gs.n == 1) {
-                g.wrkpl.type = WORKPLANE_BY_POINT_ORTHO;
+                g.subtype = WORKPLANE_BY_POINT_ORTHO;
 
                 Vector u = SS.GW.projRight, v = SS.GW.projUp;
                 u = u.ClosestOrtho();
@@ -47,7 +47,7 @@ void Group::MenuGroup(int id) {
                 g.wrkpl.q = Quaternion::MakeFrom(u, v);
                 g.wrkpl.origin = gs.point[0];
             } else if(gs.points == 1 && gs.lineSegments == 2 && gs.n == 3) {
-                g.wrkpl.type = WORKPLANE_BY_LINE_SEGMENTS;
+                g.subtype = WORKPLANE_BY_LINE_SEGMENTS;
 
                 g.wrkpl.origin = gs.point[0];
                 g.wrkpl.entityB = gs.entity[0];
@@ -75,6 +75,7 @@ void Group::MenuGroup(int id) {
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.wrkpl.entityB = SS.GW.activeWorkplane;
+            g.subtype = EXTRUDE_TWO_SIDED;
             g.name.strcpy("extrude");
             break;
 
@@ -122,7 +123,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
         case DRAWING_WORKPLANE: {
             Quaternion q;
-            if(wrkpl.type == WORKPLANE_BY_LINE_SEGMENTS) {
+            if(subtype == WORKPLANE_BY_LINE_SEGMENTS) {
                 Vector u = SS.GetEntity(wrkpl.entityB)->VectorGetNum();
                 Vector v = SS.GetEntity(wrkpl.entityC)->VectorGetNum();
                 u = u.WithMagnitude(1);
@@ -133,7 +134,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(wrkpl.negateU) u = u.ScaledBy(-1);
                 if(wrkpl.negateV) v = v.ScaledBy(-1);
                 q = Quaternion::MakeFrom(u, v);
-            } else if(wrkpl.type == WORKPLANE_BY_POINT_ORTHO) {
+            } else if(subtype == WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
                 q = wrkpl.q;
             } else oops();
@@ -170,14 +171,28 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(0), gn.x);
             AddParam(param, h.param(1), gn.y);
             AddParam(param, h.param(2), gn.z);
+            int ai, af;
+            if(subtype == EXTRUDE_ONE_SIDED) {
+                ai = 0; af = 1;
+            } else if(subtype == EXTRUDE_TWO_SIDED) {
+                ai = -1; af = 1;
+            } else oops();
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                CopyEntity(e->h, 0,
+                hEntity he = e->h; e = NULL;
+                // As soon as I call CopyEntity, e may become invalid! That
+                // adds entities, which may cause a realloc.
+                CopyEntity(he, ai,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, true);
+                    true);
+                CopyEntity(he, af,
+                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    true);
+                MakeExtrusionLines(he, ai, af);
             }
             break;
 
@@ -199,7 +214,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 CopyEntity(e->h, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
-                    false, false);
+                    false);
             }
             break;
 
@@ -255,9 +270,24 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     return h.entity(em.h.v);
 }
 
+void Group::MakeExtrusionLines(hEntity in, int ai, int af) {
+    Entity *ep = SS.GetEntity(in);
+    if(!(ep->IsPoint())) return;
+
+    Entity en;
+    memset(&en, 0, sizeof(en));
+    en.point[0] = Remap(ep->h, ai);
+    en.point[1] = Remap(ep->h, af);
+    en.group = h;
+    en.h = Remap(ep->h, 10);
+    en.type = Entity::LINE_SEGMENT;
+    // And then this line segment gets added
+    SS.entity.Add(&en);
+}
+
 void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                       bool transOnly, bool isExtrusion)
+                       bool transOnly)
 {
     Entity *ep = SS.GetEntity(in);
     
@@ -307,7 +337,6 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                 en.param[0] = dx;
                 en.param[1] = dy;
                 en.param[2] = dz;
-                en.numPoint = ep->PointGetNum();
             } else {
                 en.type = Entity::POINT_N_ROT_TRANS;
                 en.param[0] = dx;
@@ -317,25 +346,9 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                 en.param[4] = qvx;
                 en.param[5] = qvy;
                 en.param[6] = qvz;
-                en.numPoint = ep->PointGetNum();
             }
-
-            if(isExtrusion) {
-                if(a != 0) oops();
-                SS.entity.Add(&en);
-
-                // Any operation on these lists may break existing pointers!
-                ep = SS.GetEntity(in);
-
-                hEntity np = en.h;
-                memset(&en, 0, sizeof(en));
-                en.point[0] = ep->h;
-                en.point[1] = np;
-                en.group = h;
-                en.h = Remap(ep->h, 1);
-                en.type = Entity::LINE_SEGMENT;
-                // And then this line segment gets added
-            }
+            en.numPoint = ep->PointGetNum();
+            en.timesApplied = a;
             break;
 
         case Entity::NORMAL_N_COPY:
@@ -344,16 +357,16 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
         case Entity::NORMAL_IN_2D:
             if(transOnly) {
                 en.type = Entity::NORMAL_N_COPY;
-                en.numNormal = ep->NormalGetNum();
             } else {
                 en.type = Entity::NORMAL_N_ROT;
-                en.numNormal = ep->NormalGetNum();
                 en.param[0] = qw;
                 en.param[1] = qvx;
                 en.param[2] = qvy;
                 en.param[3] = qvz;
             }
+            en.numNormal = ep->NormalGetNum();
             en.point[0] = Remap(ep->point[0], a);
+            en.timesApplied = a;
             break;
 
         case Entity::DISTANCE_N_COPY:
@@ -400,12 +413,24 @@ void Group::MakePolygons(void) {
         translate.x = SS.GetParam(h.param(0))->val;
         translate.y = SS.GetParam(h.param(1))->val;
         translate.z = SS.GetParam(h.param(2))->val;
+        Vector t0, dt;
+        if(subtype == EXTRUDE_ONE_SIDED) {
+            t0 = Vector::MakeFrom(0, 0, 0); dt = translate;
+        } else {
+            t0 = translate.ScaledBy(-1); dt = translate.ScaledBy(2);
+        }
 
+        // Get the source polygon to extrude, and break it down to edges
         edges.l.Clear();
         Group *src = SS.GetGroup(opA);
         if(src->faces.n != 1) return;
 
         (src->faces.elem[0]).MakeEdgesInto(&edges);
+        for(i = 0; i < edges.l.n; i++) {
+            SEdge *edge = &(edges.l.elem[i]);
+            edge->a = (edge->a).Plus(t0);
+            edge->b = (edge->b).Plus(t0);
+        }
 
         SPolygon poly;
         SEdge error;
@@ -418,7 +443,6 @@ void Group::MakePolygons(void) {
             n = n.ScaledBy(-1);
         }
         poly.normal = n;
-        poly.FixContourDirections();
         poly.FixContourDirections();
         faces.Add(&poly);
 
@@ -434,14 +458,14 @@ void Group::MakePolygons(void) {
             poly.AddEmptyContour();
             poly.AddPoint(edge->a);
             poly.AddPoint(edge->b);
-            poly.AddPoint((edge->b).Plus(translate));
-            poly.AddPoint((edge->a).Plus(translate));
+            poly.AddPoint((edge->b).Plus(dt));
+            poly.AddPoint((edge->a).Plus(dt));
             poly.AddPoint(edge->a);
             poly.normal = ((edge->a).Minus(edge->b).Cross(n)).WithMagnitude(1);
             faces.Add(&poly);
 
-            edge->a = (edge->a).Plus(translate);
-            edge->b = (edge->b).Plus(translate);
+            edge->a = (edge->a).Plus(dt);
+            edge->b = (edge->b).Plus(dt);
         }
 
         // The top
