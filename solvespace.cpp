@@ -205,6 +205,10 @@ void SolveSpace::GenerateAll(bool andSolve) {
                 deleted.constraints, deleted.constraints == 1 ? "" : "s",
                 deleted.groups, deleted.groups == 1 ? "" : "s");
         memset(&deleted, 0, sizeof(deleted));
+        // All sorts of interesting things could have happened; for example,
+        // the active group or active workplane could have been deleted. So
+        // clear all that out.
+        GW.ClearSuper();
     }
     return;
 
