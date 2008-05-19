@@ -528,6 +528,7 @@ void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
     LineDrawOrGetDistance(a, b);
     if(dogd.edges && !construction) {
         SEdge edge;
+        edge.tag = 0;
         edge.a = a; edge.b = b;
         dogd.edges->l.Add(&edge);
     }
@@ -762,7 +763,7 @@ void Entity::DrawOrGetDistance(int order) {
             double thetaa, thetab, dtheta;
             ArcGetAngles(&thetaa, &thetab, &dtheta);
 
-            int i, n = (int)((40*dtheta)/(2*PI));
+            int i, n = (int)((20*dtheta)/(2*PI));
             Vector prev = pa;
             for(i = 1; i <= n; i++) {
                 double theta = thetaa + (dtheta*i)/n;
@@ -783,7 +784,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector center = SS.GetEntity(point[0])->PointGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
 
-            int i, c = 40;
+            int i, c = 20;
             Vector prev = u.ScaledBy(r).Plus(center);
             for(i = 1; i <= c; i++) {
                 double phi = (2*PI*i)/c;

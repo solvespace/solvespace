@@ -178,7 +178,7 @@ Vector Vector::MakeFrom(double x, double y, double z) {
 }
 
 bool Vector::Equals(Vector v) {
-    double tol = 0.1;
+    double tol = 0.00001;
     if(fabs(x - v.x) > tol) return false;
     if(fabs(y - v.y) > tol) return false;
     if(fabs(z - v.z) > tol) return false;
@@ -356,6 +356,17 @@ Vector Vector::ClosestOrtho(void) {
     } else if(m == fabs(z)) {
         return MakeFrom(0, 0, (z > 0) ? 1 : -1);
     } else oops();
+}
+
+Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
+                                      Vector n2, double d2)
+{
+    double det = (n1.Dot(n1))*(n2.Dot(n2)) - 
+                 (n1.Dot(n2))*(n1.Dot(n2));
+    double c1 = (d1*n2.Dot(n2) - d2*n1.Dot(n2))/det;
+    double c2 = (d2*n1.Dot(n1) - d1*n1.Dot(n2))/det;
+    
+    return (n1.ScaledBy(c1)).Plus(n2.ScaledBy(c2));
 }
 
 Point2d Point2d::Plus(Point2d b) {

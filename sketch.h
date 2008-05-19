@@ -106,8 +106,8 @@ public:
         bool        negateV;
     } wrkpl;
 
-    SEdgeList       edges;
-    SList<SPolygon> faces;
+    SPolygon        polyg;
+    SPolyhedron     polyh;
     struct {
         SEdge           notClosedAt;
         bool            yes;

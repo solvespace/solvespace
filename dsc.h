@@ -40,6 +40,8 @@ public:
     double x, y, z;
     
     static Vector MakeFrom(double x, double y, double z);
+    static Vector AtIntersectionOfPlanes(Vector n1, double d1,
+                                         Vector n2, double d2);
 
     bool Equals(Vector v);
     Vector Plus(Vector b);

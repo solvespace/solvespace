@@ -13,6 +13,7 @@
 #endif
 
 #define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
+#define ZERO(v) memset((v), 0, sizeof(*(v)))
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
@@ -70,6 +71,8 @@ void vl(void); // debug function to validate
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
 void glxFillPolygon(SPolygon *p);
+void glxDebugPolygon(SPolygon *p);
+void glxDebugEdgeList(SEdgeList *l);
 void glxMarkPolygonNormal(SPolygon *p);
 void glxWriteText(char *str);
 void glxWriteTextRefCenter(char *str);

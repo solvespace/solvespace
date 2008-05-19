@@ -158,7 +158,60 @@ void glxFillPolygon(SPolygon *p)
     gluDeleteTess(gt);
 }
 
-void glxMarkPolygonNormal(SPolygon *p) {
+void glxDebugPolygon(SPolygon *p)
+{
+    int i, j;
+    glLineWidth(2);
+    glPointSize(7);
+    glDisable(GL_DEPTH_TEST);
+    for(i = 0; i < p->l.n; i++) {
+        SContour *sc = &(p->l.elem[i]);
+        for(j = 0; j < (sc->l.n-1); j++) {
+            Vector a = (sc->l.elem[j]).p;
+            Vector b = (sc->l.elem[j+1]).p;
+
+            glxLockColorTo(0, 0, 1);
+            Vector d = (a.Minus(b)).WithMagnitude(-0);
+            glBegin(GL_LINES);
+                glxVertex3v(a.Plus(d));
+                glxVertex3v(b.Minus(d));
+            glEnd();
+            glxLockColorTo(1, 0, 0);
+            glBegin(GL_POINTS);
+                glxVertex3v(a.Plus(d));
+                glxVertex3v(b.Minus(d));
+            glEnd();
+        }
+    }
+}
+
+void glxDebugEdgeList(SEdgeList *el)
+{
+    int i;
+    glLineWidth(2);
+    glPointSize(7);
+    glDisable(GL_DEPTH_TEST);
+    for(i = 0; i < el->l.n; i++) {
+        SEdge *se = &(el->l.elem[i]);
+        if(se->tag) continue;
+        Vector a = se->a, b = se->b;
+
+        glxLockColorTo(0, 1, 0);
+        Vector d = (a.Minus(b)).WithMagnitude(-0);
+        glBegin(GL_LINES);
+            glxVertex3v(a.Plus(d));
+            glxVertex3v(b.Minus(d));
+        glEnd();
+        glxLockColorTo(0, 0, 1);
+        glBegin(GL_POINTS);
+            glxVertex3v(a.Plus(d));
+            glxVertex3v(b.Minus(d));
+        glEnd();
+    }
+}
+
+void glxMarkPolygonNormal(SPolygon *p)
+{
     Vector tail = Vector::MakeFrom(0, 0, 0);
     int i, j, cnt = 0;
     // Choose some reasonable center point.
