@@ -1183,32 +1183,7 @@ void GraphicsWindow::Paint(int w, int h) {
 
     if(SS.group.n >= 5) {
         if(1) {
-            SPolyhedron p; ZERO(&p);
-
-            (SS.group.elem[2].polyh).Boolean(&p, 0, 
-                &(SS.group.elem[4].polyh));
-
-            glEnable(GL_LIGHTING);
-            GLfloat vec[] = { 0.3f, 0.3f, 0.3f, 1.0 };
-            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vec);
-            GLfloat vec2[] = { 1.0f, 0.3f, 0.3f, 1.0 };
-            glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, vec2);
-            glEnable(GL_LIGHTING);
-            glEnable(GL_DEPTH_TEST);
-            for(i = 0; i < p.l.n; i++) {
-                glxFillPolygon(&(p.l.elem[i]));
-            }
-            glDisable(GL_LIGHTING);
-            glDisable(GL_DEPTH_TEST);
-
-            p.Clear();
-        } else {
-            SPolygon p; ZERO(&p);
-
-            (SS.group.elem[1].polyg).Boolean(&p, SEdgeList::INTERSECT, 
-                &(SS.group.elem[2].polyg));
-            glxDebugPolygon(&p);
-            p.Clear();
+            //XXX
         }
     }
 }

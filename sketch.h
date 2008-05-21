@@ -106,12 +106,12 @@ public:
         bool        negateV;
     } wrkpl;
 
-    SPolygon        polyg;
-    SPolyhedron     polyh;
+    SPolygon        poly;
     struct {
         SEdge           notClosedAt;
         bool            yes;
     }               polyError;
+    SMesh           mesh;
 
     NameStr     name;
     char *DescriptionString(void);

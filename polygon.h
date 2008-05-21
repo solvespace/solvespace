@@ -3,7 +3,6 @@
 #define __POLYGON_H
 
 class SPolygon;
-class SPolyhedron;
 
 template <class T>
 class SList {
@@ -83,22 +82,36 @@ public:
     void MakeEdgesInto(SEdgeList *el);
     void FixContourDirections(void);
     void Clear(void);
-
-    bool Boolean(SPolygon *dest, int op, SPolygon *b);
-
-    void CopyBreaking(SPolyhedron *dest, SPolyhedron *against, int how);
-    void IntersectAgainstPlane(SEdgeList *dest, Vector p0, Vector n);
 };
 
-class SPolyhedron {
+class STriangle {
 public:
-    SList<SPolygon> l;
+    Vector a, b, c;
+};
 
-    void AddFace(SPolygon *p);
-    void Clear(void);
+class SBsp2 {
+    SEdge       edge;
+};
 
-    void IntersectAgainstPlane(SEdgeList *dest, Vector p0, Vector n);
-    bool Boolean(SPolyhedron *dest, int op, SPolyhedron *b);
+class SBsp1d {
+    SEdge       edge;
+};
+
+class SBsp3 {
+public:
+    STriangle   tri;
+    SBsp3       *pos;
+    SBsp3       *neg;
+
+    SBsp3       *more;
+
+    SBsp2       *edges;
+};
+
+
+class SMesh {
+public:
+    SList<STriangle>    l;
 };
 
 #endif

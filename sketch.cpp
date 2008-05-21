@@ -383,8 +383,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
 
 void Group::MakePolygons(void) {
     int i;
-    polyh.Clear();
-    polyg.Clear();
+    poly.Clear();
 
     SEdgeList edges;
     ZERO(&edges);
@@ -398,13 +397,13 @@ void Group::MakePolygons(void) {
             e->GenerateEdges(&edges);
         }
         SEdge error;
-        if(edges.AssemblePolygon(&polyg, &error)) {
+        if(edges.AssemblePolygon(&poly, &error)) {
             polyError.yes = false;
-            polyg.normal = polyg.ComputeNormal();
+            poly.normal = poly.ComputeNormal();
         } else {
             polyError.yes = true;
             polyError.notClosedAt = error;
-            polyg.Clear();
+            poly.Clear();
         }
     } else if(type == EXTRUDE) {
         Vector translate;
@@ -422,7 +421,7 @@ void Group::MakePolygons(void) {
         edges.l.Clear();
         Group *src = SS.GetGroup(opA);
 
-        (src->polyg).MakeEdgesInto(&edges);
+        (src->poly).MakeEdgesInto(&edges);
         for(i = 0; i < edges.l.n; i++) {
             SEdge *edge = &(edges.l.elem[i]);
             edge->a = (edge->a).Plus(t0);
@@ -439,7 +438,6 @@ void Group::MakePolygons(void) {
         }
         np.normal = n;
         np.FixContourDirections();
-        polyh.AddFace(&np);
 
         // Regenerate the edges, with the contour directions fixed up.
         edges.l.Clear();
@@ -457,7 +455,6 @@ void Group::MakePolygons(void) {
             np.AddPoint((edge->a).Plus(dt));
             np.AddPoint(edge->a);
             np.normal = ((edge->a).Minus(edge->b).Cross(n)).WithMagnitude(1);
-            polyh.AddFace(&np);
 
             edge->a = (edge->a).Plus(dt);
             edge->b = (edge->b).Plus(dt);
@@ -467,7 +464,6 @@ void Group::MakePolygons(void) {
         memset(&np, 0, sizeof(np));
         if(!edges.AssemblePolygon(&np, NULL)) oops();
         np.normal = n.ScaledBy(-1);
-        polyh.AddFace(&np);
     }
     edges.l.Clear();
 }
@@ -492,27 +488,11 @@ void Group::Draw(void) {
     } else {
         int i;
         glEnable(GL_LIGHTING);
-        GLfloat vec[] = { 0.3f, 0.3f, 0.3f, 1.0 };
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vec);
-        GLfloat vec2[] = { 1.0f, 0.3f, 0.3f, 1.0 };
-        glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, vec2);
-        for(i = 0; i < polyh.l.n; i++) {
-            glxFillPolygon(&(polyh.l.elem[i]));
-#if 0
-            // Debug stuff to show normals to the faces on-screen
-            glDisable(GL_LIGHTING);
-            glDisable(GL_DEPTH_TEST);
-            glxMarkPolygonNormal(&(polyh.l.elem[i]));
-            glEnable(GL_LIGHTING);
-            glEnable(GL_DEPTH_TEST);
-#endif
-        }
-
-        GLfloat vec3[] = { 0.3f, 1.0f, 0.3f, 0.5 };
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vec3);
-        GLfloat vec4[] = { 1.0f, 0.3f, 0.3f, 0.5 };
-        glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, vec4);
-        glxFillPolygon(&polyg);
+        GLfloat mpf[] = { 0.3f, 1.0f, 0.3f, 0.5 };
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+        GLfloat mpb[] = { 1.0f, 0.3f, 0.3f, 0.5 };
+        glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
+        glxFillPolygon(&poly);
 
         glDisable(GL_LIGHTING);
     }
