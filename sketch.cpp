@@ -418,7 +418,7 @@ void Group::MakePolygons(void) {
         }
 
         // Get the source polygon to extrude, and break it down to edges
-        edges.l.Clear();
+        edges.Clear();
         Group *src = SS.GetGroup(opA);
 
         (src->poly).MakeEdgesInto(&edges);
@@ -440,7 +440,7 @@ void Group::MakePolygons(void) {
         np.FixContourDirections();
 
         // Regenerate the edges, with the contour directions fixed up.
-        edges.l.Clear();
+        edges.Clear();
         np.MakeEdgesInto(&edges);
 
         // The sides
@@ -465,7 +465,7 @@ void Group::MakePolygons(void) {
         if(!edges.AssemblePolygon(&np, NULL)) oops();
         np.normal = n.ScaledBy(-1);
     }
-    edges.l.Clear();
+    edges.Clear();
 }
 
 void Group::Draw(void) {

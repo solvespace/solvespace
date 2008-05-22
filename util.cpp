@@ -178,10 +178,9 @@ Vector Vector::MakeFrom(double x, double y, double z) {
 }
 
 bool Vector::Equals(Vector v) {
-    double tol = 0.00001;
-    if(fabs(x - v.x) > tol) return false;
-    if(fabs(y - v.y) > tol) return false;
-    if(fabs(z - v.z) > tol) return false;
+    if(fabs(x - v.x) > LENGTH_EPS) return false;
+    if(fabs(y - v.y) > LENGTH_EPS) return false;
+    if(fabs(z - v.z) > LENGTH_EPS) return false;
     return true;
 }
 

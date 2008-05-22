@@ -527,10 +527,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
 void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
     LineDrawOrGetDistance(a, b);
     if(dogd.edges && !construction) {
-        SEdge edge;
-        edge.tag = 0;
-        edge.a = a; edge.b = b;
-        dogd.edges->l.Add(&edge);
+        dogd.edges->AddEdge(a, b);
     }
 }
 

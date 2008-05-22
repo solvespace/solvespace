@@ -3,6 +3,7 @@
 #define __POLYGON_H
 
 class SPolygon;
+class SMesh;
 
 template <class T>
 class SList {
@@ -43,12 +44,9 @@ class SEdgeList {
 public:
     SList<SEdge>    l;
 
+    void Clear(void);
+    void AddEdge(Vector a, Vector b);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
-    void CopyBreaking(SEdgeList *dest);
-    static const int UNION = 0, DIFF = 1, INTERSECT = 2;
-    bool BooleanOp(int op, bool inA, bool inB);
-    void CullForBoolean(int op, SPolygon *a, SPolygon *b);
-    void CullDuplicates(void);
 };
 
 class SPoint {
@@ -66,8 +64,6 @@ public:
     Vector ComputeNormal(void);
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
-    void IntersectAgainstPlane(double *inter, int *inters,
-                               Vector u, Vector v, double vp);
 };
 
 class SPolygon {
@@ -81,20 +77,24 @@ public:
     bool ContainsPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
     void FixContourDirections(void);
+    void TriangulateInto(SMesh *m);
     void Clear(void);
 };
 
 class STriangle {
 public:
-    Vector a, b, c;
+    int     tag;
+    Vector  a, b, c;
 };
 
 class SBsp2 {
+public:
     SEdge       edge;
-};
 
-class SBsp1d {
-    SEdge       edge;
+    SBsp2       *pos;
+    SBsp2       *neg;
+
+    SBsp2       *more;
 };
 
 class SBsp3 {
@@ -112,6 +112,9 @@ public:
 class SMesh {
 public:
     SList<STriangle>    l;
+
+    void Clear(void);
+    void AddTriangle(Vector a, Vector b, Vector c);
 };
 
 #endif

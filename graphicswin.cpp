@@ -1181,10 +1181,11 @@ void GraphicsWindow::Paint(int w, int h) {
         selection[i].Draw();
     }
 
-    if(SS.group.n >= 5) {
-        if(1) {
-            //XXX
-        }
+    if(SS.group.n >= 2) {
+        SMesh m; ZERO(&m);
+        (SS.group.elem[1].poly).TriangulateInto(&m);
+        glxDebugMesh(&m);
+        m.Clear();
     }
 }
 

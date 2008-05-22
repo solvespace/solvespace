@@ -1,5 +1,16 @@
 #include "solvespace.h"
 
+void SEdgeList::Clear(void) {
+    l.Clear();
+}
+
+void SEdgeList::AddEdge(Vector a, Vector b) {
+    SEdge e; ZERO(&e);
+    e.a = a;
+    e.b = b;
+    l.Add(&e);
+}
+
 bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
     dest->Clear();
 
@@ -49,79 +60,6 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
             }
 
         } while(!last.Equals(first));
-    }
-}
-
-void SPolygon::Clear(void) {
-    int i;
-    for(i = 0; i < l.n; i++) {
-        (l.elem[i]).l.Clear();
-    }
-    l.Clear();
-}
-
-void SPolygon::AddEmptyContour(void) {
-    SContour c;
-    memset(&c, 0, sizeof(c));
-    l.Add(&c);
-}
-
-void SPolygon::AddPoint(Vector p) {
-    if(l.n < 1) oops();
-
-    SPoint sp;
-    sp.tag = 0;
-    sp.p = p;
-
-    // Add to the last contour in the list
-    (l.elem[l.n-1]).l.Add(&sp);
-}
-
-void SPolygon::MakeEdgesInto(SEdgeList *el) {
-    int i;
-    for(i = 0; i < l.n; i++) {
-        (l.elem[i]).MakeEdgesInto(el);
-    }
-}
-
-Vector SPolygon::ComputeNormal(void) {
-    if(l.n < 1) return Vector::MakeFrom(0, 0, 0);
-    return (l.elem[0]).ComputeNormal();
-}
-
-bool SPolygon::ContainsPoint(Vector p) {
-    bool inside = false;
-    int i;
-    for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l.elem[i]);
-        if(sc->ContainsPointProjdToNormal(normal, p)) {
-            inside = !inside;
-        }
-    }
-    return inside;
-}
-
-void SPolygon::FixContourDirections(void) {
-    // Outside curve looks counterclockwise, projected against our normal.
-    int i, j;
-    for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l.elem[i]);
-        if(sc->l.n < 1) continue;
-        Vector pt = (sc->l.elem[0]).p;
-
-        bool outer = true;
-        for(j = 0; j < l.n; j++) {
-            if(i == j) continue;
-            SContour *sct = &(l.elem[j]);
-            if(sct->ContainsPointProjdToNormal(normal, pt)) {
-                outer = !outer;
-            }
-        }
-   
-        bool clockwise = sc->IsClockwiseProjdToNormal(normal);
-        if(clockwise && outer || (!clockwise && !outer)) {
-            sc->Reverse();
-        }
     }
 }
 
@@ -206,5 +144,126 @@ void SContour::Reverse(void) {
         l.elem[i2] = l.elem[i];
         l.elem[i] = t;
     }
+}
+
+
+void SPolygon::Clear(void) {
+    int i;
+    for(i = 0; i < l.n; i++) {
+        (l.elem[i]).l.Clear();
+    }
+    l.Clear();
+}
+
+void SPolygon::AddEmptyContour(void) {
+    SContour c;
+    memset(&c, 0, sizeof(c));
+    l.Add(&c);
+}
+
+void SPolygon::AddPoint(Vector p) {
+    if(l.n < 1) oops();
+
+    SPoint sp;
+    sp.tag = 0;
+    sp.p = p;
+
+    // Add to the last contour in the list
+    (l.elem[l.n-1]).l.Add(&sp);
+}
+
+void SPolygon::MakeEdgesInto(SEdgeList *el) {
+    int i;
+    for(i = 0; i < l.n; i++) {
+        (l.elem[i]).MakeEdgesInto(el);
+    }
+}
+
+Vector SPolygon::ComputeNormal(void) {
+    if(l.n < 1) return Vector::MakeFrom(0, 0, 0);
+    return (l.elem[0]).ComputeNormal();
+}
+
+bool SPolygon::ContainsPoint(Vector p) {
+    bool inside = false;
+    int i;
+    for(i = 0; i < l.n; i++) {
+        SContour *sc = &(l.elem[i]);
+        if(sc->ContainsPointProjdToNormal(normal, p)) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+
+void SPolygon::FixContourDirections(void) {
+    // Outside curve looks counterclockwise, projected against our normal.
+    int i, j;
+    for(i = 0; i < l.n; i++) {
+        SContour *sc = &(l.elem[i]);
+        if(sc->l.n < 1) continue;
+        Vector pt = (sc->l.elem[0]).p;
+
+        bool outer = true;
+        for(j = 0; j < l.n; j++) {
+            if(i == j) continue;
+            SContour *sct = &(l.elem[j]);
+            if(sct->ContainsPointProjdToNormal(normal, pt)) {
+                outer = !outer;
+            }
+        }
+   
+        bool clockwise = sc->IsClockwiseProjdToNormal(normal);
+        if(clockwise && outer || (!clockwise && !outer)) {
+            sc->Reverse();
+        }
+    }
+}
+
+static int TriMode, TriVertexCount;
+static Vector Tri1, TriNMinus1, TriNMinus2;
+static SMesh *TriMesh;
+static void GLX_CALLBACK TriBegin(int mode) 
+{
+    TriMode = mode;
+    TriVertexCount = 0;
+}
+static void GLX_CALLBACK TriEnd(void)
+{
+}
+static void GLX_CALLBACK TriVertex(Vector *triN)
+{
+    if(TriVertexCount == 0) {
+        Tri1 = *triN;
+    }
+    if(TriMode == GL_TRIANGLES) {
+        if((TriVertexCount % 3) == 2) {
+            TriMesh->AddTriangle(TriNMinus2, TriNMinus1, *triN);
+        }
+    } else if(TriMode == GL_TRIANGLE_FAN) {
+        if(TriVertexCount >= 2) {
+            TriMesh->AddTriangle(Tri1, TriNMinus1, *triN);
+        }
+    } else if(TriMode == GL_TRIANGLE_STRIP) {
+        if(TriVertexCount >= 2) {
+            TriMesh->AddTriangle(TriNMinus2, TriNMinus1, *triN);
+        }
+    } else oops();
+            
+    TriNMinus2 = TriNMinus1;
+    TriNMinus1 = *triN;
+    TriVertexCount++;
+}
+void SPolygon::TriangulateInto(SMesh *m) {
+    TriMesh = m;
+
+    GLUtesselator *gt = gluNewTess();
+    gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)TriBegin);
+    gluTessCallback(gt, GLU_TESS_END, (glxCallbackFptr *)TriEnd);
+    gluTessCallback(gt, GLU_TESS_VERTEX, (glxCallbackFptr *)TriVertex);
+
+    glxTesselatePolygon(gt, this);
+
+    gluDeleteTess(gt);
 }
 

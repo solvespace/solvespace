@@ -22,6 +22,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\file.obj \
            $(OBJDIR)\system.obj \
            $(OBJDIR)\polygon.obj \
+           $(OBJDIR)\mesh.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib

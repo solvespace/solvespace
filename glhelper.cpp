@@ -111,11 +111,24 @@ void glxColor4d(double r, double g, double b, double a)
     if(!ColorLocked) glColor4d(r, g, b, a);
 }
 
-static void __stdcall Vertex(Vector *p) {
+static void GLX_CALLBACK Vertex(Vector *p) {
     glxVertex3v(*p);
 }
-static void __stdcall Combine(double coords[3], void *vertexData[4],
-                                float weight[4], void **outData)
+
+void glxFillPolygon(SPolygon *p)
+{
+    GLUtesselator *gt = gluNewTess();
+    gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)glBegin);
+    gluTessCallback(gt, GLU_TESS_END, (glxCallbackFptr *)glEnd);
+    gluTessCallback(gt, GLU_TESS_VERTEX, (glxCallbackFptr *)Vertex);
+
+    glxTesselatePolygon(gt, p);
+
+    gluDeleteTess(gt);
+}
+
+static void GLX_CALLBACK Combine(double coords[3], void *vertexData[4],
+                                 float weight[4], void **outData)
 {
     Vector *n = (Vector *)AllocTemporary(sizeof(Vector));
     n->x = coords[0];
@@ -124,16 +137,11 @@ static void __stdcall Combine(double coords[3], void *vertexData[4],
 
     *outData = n;
 }
-void glxFillPolygon(SPolygon *p)
+void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p)
 {
     int i, j;
 
-    GLUtesselator *gt = gluNewTess();
-    typedef void __stdcall cf(void);
-    gluTessCallback(gt, GLU_TESS_BEGIN, (cf *)glBegin);
-    gluTessCallback(gt, GLU_TESS_END, (cf *)glEnd);
-    gluTessCallback(gt, GLU_TESS_VERTEX, (cf *)Vertex);
-    gluTessCallback(gt, GLU_TESS_COMBINE, (cf *)Combine);
+    gluTessCallback(gt, GLU_TESS_COMBINE, (glxCallbackFptr *)Combine);
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
     Vector normal = p->normal;
@@ -155,7 +163,6 @@ void glxFillPolygon(SPolygon *p)
         gluTessEndContour(gt);
     }
     gluTessEndPolygon(gt);
-    gluDeleteTess(gt);
 }
 
 void glxDebugPolygon(SPolygon *p)
@@ -196,7 +203,7 @@ void glxDebugEdgeList(SEdgeList *el)
         if(se->tag) continue;
         Vector a = se->a, b = se->b;
 
-        glxLockColorTo(0, 1, 0);
+        glxLockColorTo(0, 1, 1);
         Vector d = (a.Minus(b)).WithMagnitude(-0);
         glBegin(GL_LINES);
             glxVertex3v(a.Plus(d));
@@ -206,6 +213,32 @@ void glxDebugEdgeList(SEdgeList *el)
         glBegin(GL_POINTS);
             glxVertex3v(a.Plus(d));
             glxVertex3v(b.Minus(d));
+        glEnd();
+    }
+}
+
+void glxDebugMesh(SMesh *m)
+{
+    int i;
+    glLineWidth(2);
+    glPointSize(7);
+    glDisable(GL_DEPTH_TEST);
+    glxUnlockColor();
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *t = &(m->l.elem[i]);
+        if(t->tag) continue;
+
+        glxColor4d(0, 1, 0, 0.3);
+        glBegin(GL_LINE_LOOP);
+            glxVertex3v(t->a);
+            glxVertex3v(t->b);
+            glxVertex3v(t->c);
+        glEnd();
+        glxColor4d(0, 0, 1, 0.4);
+        glBegin(GL_POINTS);
+            glxVertex3v(t->a);
+            glxVertex3v(t->b);
+            glxVertex3v(t->c);
         glEnd();
     }
 }
