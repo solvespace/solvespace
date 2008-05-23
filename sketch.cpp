@@ -384,6 +384,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
 void Group::MakePolygons(void) {
     int i;
     poly.Clear();
+    mesh.Clear();
 
     SEdgeList edges;
     ZERO(&edges);
@@ -400,76 +401,87 @@ void Group::MakePolygons(void) {
         if(edges.AssemblePolygon(&poly, &error)) {
             polyError.yes = false;
             poly.normal = poly.ComputeNormal();
+            poly.FixContourDirections();
         } else {
             polyError.yes = true;
             polyError.notClosedAt = error;
             poly.Clear();
         }
     } else if(type == EXTRUDE) {
-        Vector translate;
-        translate.x = SS.GetParam(h.param(0))->val;
-        translate.y = SS.GetParam(h.param(1))->val;
-        translate.z = SS.GetParam(h.param(2))->val;
-        Vector t0, dt;
+        int i;
+        Group *src = SS.GetGroup(opA);
+        Vector translate = Vector::MakeFrom(
+            SS.GetParam(h.param(0))->val,
+            SS.GetParam(h.param(1))->val,
+            SS.GetParam(h.param(2))->val
+        );
+        Vector tbot, ttop;
         if(subtype == EXTRUDE_ONE_SIDED) {
-            t0 = Vector::MakeFrom(0, 0, 0); dt = translate;
+            tbot = Vector::MakeFrom(0, 0, 0); ttop = translate;
         } else {
-            t0 = translate.ScaledBy(-1); dt = translate.ScaledBy(2);
+            tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
+        bool flipBottom = translate.Dot(src->poly.normal) > 0;
 
+        // Get a triangulation of the source poly; this is not a closed mesh.
+        SMesh srcm; ZERO(&srcm);
+        (src->poly).TriangulateInto(&srcm);
+
+        SMesh outm; ZERO(&outm);
+        // Do the bottom; that has normal pointing opposite from translate
+        for(i = 0; i < srcm.l.n; i++) {
+            STriangle *st = &(srcm.l.elem[i]);
+            Vector at = (st->a).Plus(tbot), 
+                   bt = (st->b).Plus(tbot),
+                   ct = (st->c).Plus(tbot);
+            if(flipBottom) {
+                mesh.AddTriangle(ct, bt, at);
+            } else {
+                mesh.AddTriangle(at, bt, ct);
+            }
+        }
+        // And the top; that has the normal pointing the same dir as translate
+        for(i = 0; i < srcm.l.n; i++) {
+            STriangle *st = &(srcm.l.elem[i]);
+            Vector at = (st->a).Plus(ttop), 
+                   bt = (st->b).Plus(ttop),
+                   ct = (st->c).Plus(ttop);
+            if(flipBottom) {
+                mesh.AddTriangle(at, bt, ct);
+            } else {
+                mesh.AddTriangle(ct, bt, at);
+            }
+        }
+        srcm.Clear();
         // Get the source polygon to extrude, and break it down to edges
         edges.Clear();
-        Group *src = SS.GetGroup(opA);
-
         (src->poly).MakeEdgesInto(&edges);
+
+        // The sides; these are quads, represented as two triangles.
         for(i = 0; i < edges.l.n; i++) {
             SEdge *edge = &(edges.l.elem[i]);
-            edge->a = (edge->a).Plus(t0);
-            edge->b = (edge->b).Plus(t0);
+            Vector abot = (edge->a).Plus(tbot), bbot = (edge->b).Plus(tbot);
+            Vector atop = (edge->a).Plus(ttop), btop = (edge->b).Plus(ttop);
+            if(flipBottom) {
+                mesh.AddTriangle(bbot, abot, atop);
+                mesh.AddTriangle(bbot, atop, btop);
+            } else {
+                mesh.AddTriangle(abot, bbot, atop);
+                mesh.AddTriangle(bbot, btop, atop);
+            }
         }
-
-        SPolygon np;
-        memset(&np, 0, sizeof(np));
-        // The bottom
-        if(!edges.AssemblePolygon(&np, NULL)) oops();
-        Vector n = np.ComputeNormal();
-        if(translate.Dot(n) > 0) {
-            n = n.ScaledBy(-1);
-        }
-        np.normal = n;
-        np.FixContourDirections();
-
-        // Regenerate the edges, with the contour directions fixed up.
-        edges.Clear();
-        np.MakeEdgesInto(&edges);
-
-        // The sides
-        int i;
-        for(i = 0; i < edges.l.n; i++) {
-            SEdge *edge = &(edges.l.elem[i]);
-            memset(&np, 0, sizeof(np));
-            np.AddEmptyContour();
-            np.AddPoint(edge->a);
-            np.AddPoint(edge->b);
-            np.AddPoint((edge->b).Plus(dt));
-            np.AddPoint((edge->a).Plus(dt));
-            np.AddPoint(edge->a);
-            np.normal = ((edge->a).Minus(edge->b).Cross(n)).WithMagnitude(1);
-
-            edge->a = (edge->a).Plus(dt);
-            edge->b = (edge->b).Plus(dt);
-        }
-
-        // The top
-        memset(&np, 0, sizeof(np));
-        if(!edges.AssemblePolygon(&np, NULL)) oops();
-        np.normal = n.ScaledBy(-1);
     }
     edges.Clear();
 }
 
 void Group::Draw(void) {
     if(!visible) return;
+
+
+    GLfloat mpf[] = { 0.4f, 0.4f, 0.4f, 1.0 };
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+    GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0 };
+    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
 
     if(polyError.yes) {
         glxColor4d(1, 0, 0, 0.2);
@@ -486,16 +498,13 @@ void Group::Draw(void) {
             glxWriteText("not closed contour!");
         glPopMatrix();
     } else {
-        int i;
-        glEnable(GL_LIGHTING);
-        GLfloat mpf[] = { 0.3f, 1.0f, 0.3f, 0.5 };
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
-        GLfloat mpb[] = { 1.0f, 0.3f, 0.3f, 0.5 };
-        glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
-        glxFillPolygon(&poly);
-
-        glDisable(GL_LIGHTING);
+//        glxFillPolygon(&poly);
     }
+    glEnable(GL_LIGHTING);
+//    glxFillMesh(&mesh);
+    glDisable(GL_LIGHTING);
+
+//    glxDebugMesh(&mesh);
 }
 
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {

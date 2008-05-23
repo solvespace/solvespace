@@ -1,5 +1,10 @@
 #include "solvespace.h"
 
+Vector STriangle::Normal(void) {
+    Vector ab = b.Minus(a), bc = c.Minus(b);
+    return ab.Cross(bc);
+}
+
 void SEdgeList::Clear(void) {
     l.Clear();
 }
@@ -222,6 +227,7 @@ void SPolygon::FixContourDirections(void) {
 
 static int TriMode, TriVertexCount;
 static Vector Tri1, TriNMinus1, TriNMinus2;
+static Vector TriNormal;
 static SMesh *TriMesh;
 static void GLX_CALLBACK TriBegin(int mode) 
 {
@@ -238,15 +244,15 @@ static void GLX_CALLBACK TriVertex(Vector *triN)
     }
     if(TriMode == GL_TRIANGLES) {
         if((TriVertexCount % 3) == 2) {
-            TriMesh->AddTriangle(TriNMinus2, TriNMinus1, *triN);
+            TriMesh->AddTriangle(TriNormal, TriNMinus2, TriNMinus1, *triN);
         }
     } else if(TriMode == GL_TRIANGLE_FAN) {
         if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(Tri1, TriNMinus1, *triN);
+            TriMesh->AddTriangle(TriNormal, Tri1, TriNMinus1, *triN);
         }
     } else if(TriMode == GL_TRIANGLE_STRIP) {
         if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(TriNMinus2, TriNMinus1, *triN);
+            TriMesh->AddTriangle(TriNormal, TriNMinus2, TriNMinus1, *triN);
         }
     } else oops();
             
@@ -256,6 +262,7 @@ static void GLX_CALLBACK TriVertex(Vector *triN)
 }
 void SPolygon::TriangulateInto(SMesh *m) {
     TriMesh = m;
+    TriNormal = normal;
 
     GLUtesselator *gt = gluNewTess();
     gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)TriBegin);

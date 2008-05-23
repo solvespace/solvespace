@@ -113,7 +113,7 @@ void GraphicsWindow::Init(void) {
     showPoints = true;
     showConstraints = true;
     showHdnLines = false;
-    showSolids = false;
+    showSolids = true;
 
     solving = SOLVE_ALWAYS;
 
@@ -1181,11 +1181,31 @@ void GraphicsWindow::Paint(int w, int h) {
         selection[i].Draw();
     }
 
-    if(SS.group.n >= 2) {
-        SMesh m; ZERO(&m);
-        (SS.group.elem[1].poly).TriangulateInto(&m);
-        glxDebugMesh(&m);
-        m.Clear();
+    if(SS.group.n >= 5) {
+        SMesh *ma = &(SS.group.elem[2].mesh);
+        SMesh *mb = &(SS.group.elem[4].mesh);
+
+        SBsp3 *pa = SBsp3::FromMesh(ma);
+        SBsp3 *pb = SBsp3::FromMesh(mb);
+
+        SMesh br; ZERO(&br);
+        for(i = 0; i < mb->l.n; i++) {
+            pa->Insert(&(mb->l.elem[i]), &br, true, false);
+        }
+        for(i = 0; i < ma->l.n; i++) {
+            pb->Insert(&(ma->l.elem[i]), &br, false, false);
+        }
+
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_LIGHTING);
+        glxFillMesh(&br);
+        glDisable(GL_LIGHTING);
+        glxLockColorTo(0, 1, 0);
+        glEnable(GL_DEPTH_TEST);
+        glxDebugMesh(&br);
+
+        br.Clear();
+        FreeAllTemporary();
     }
 }
 

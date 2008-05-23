@@ -111,6 +111,22 @@ void glxColor4d(double r, double g, double b, double a)
     if(!ColorLocked) glColor4d(r, g, b, a);
 }
 
+void glxFillMesh(SMesh *m)
+{
+    glEnable(GL_NORMALIZE);
+    glBegin(GL_TRIANGLES);
+    for(int i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
+        Vector n = tr->Normal();
+        glNormal3d(n.x, n.y, n.z);
+
+        glxVertex3v(tr->a);
+        glxVertex3v(tr->b);
+        glxVertex3v(tr->c);
+    }
+    glEnd();
+}
+
 static void GLX_CALLBACK Vertex(Vector *p) {
     glxVertex3v(*p);
 }
@@ -220,26 +236,22 @@ void glxDebugEdgeList(SEdgeList *el)
 void glxDebugMesh(SMesh *m)
 {
     int i;
-    glLineWidth(2);
+    glLineWidth(1);
     glPointSize(7);
-    glDisable(GL_DEPTH_TEST);
     glxUnlockColor();
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);
         if(t->tag) continue;
 
-        glxColor4d(0, 1, 0, 0.3);
-        glBegin(GL_LINE_LOOP);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glxColor4d(0, 1, 0, 1.0);
+        glBegin(GL_TRIANGLES);
             glxVertex3v(t->a);
             glxVertex3v(t->b);
             glxVertex3v(t->c);
         glEnd();
-        glxColor4d(0, 0, 1, 0.4);
-        glBegin(GL_POINTS);
-            glxVertex3v(t->a);
-            glxVertex3v(t->b);
-            glxVertex3v(t->c);
-        glEnd();
+        glPolygonOffset(0, 0);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 }
 

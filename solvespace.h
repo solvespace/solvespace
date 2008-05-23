@@ -77,6 +77,7 @@ void glxVertex3v(Vector u);
 typedef void GLX_CALLBACK glxCallbackFptr(void);
 void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void glxFillPolygon(SPolygon *p);
+void glxFillMesh(SMesh *m);
 void glxDebugPolygon(SPolygon *p);
 void glxDebugEdgeList(SEdgeList *l);
 void glxDebugMesh(SMesh *m);

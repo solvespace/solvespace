@@ -85,6 +85,8 @@ class STriangle {
 public:
     int     tag;
     Vector  a, b, c;
+
+    Vector Normal(void);
 };
 
 class SBsp2 {
@@ -95,10 +97,16 @@ public:
     SBsp2       *neg;
 
     SBsp2       *more;
+
+    void Insert(SEdge *se);
+    static SBsp2 *Alloc(void);
 };
 
 class SBsp3 {
 public:
+    Vector      n;
+    double      d;
+
     STriangle   tri;
     SBsp3       *pos;
     SBsp3       *neg;
@@ -106,6 +114,18 @@ public:
     SBsp3       *more;
 
     SBsp2       *edges;
+
+    static SBsp3 *Alloc(void);
+    static SBsp3 *FromMesh(SMesh *m);
+
+    Vector IntersectionWith(Vector a, Vector b);
+
+    static const int POS = 100, NEG = 101, COPLANAR = 200;
+    void InsertHow(int how, STriangle *str, SMesh *instead, bool flip,bool cpl);
+
+    SBsp3 *Insert(STriangle *str, SMesh *instead, bool flip, bool cpl);
+
+    void DebugDraw(void);
 };
 
 
@@ -115,6 +135,7 @@ public:
 
     void Clear(void);
     void AddTriangle(Vector a, Vector b, Vector c);
+    void AddTriangle(Vector n, Vector a, Vector b, Vector c);
 };
 
 #endif
