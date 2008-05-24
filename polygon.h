@@ -4,6 +4,7 @@
 
 class SPolygon;
 class SMesh;
+class SBsp3;
 
 template <class T>
 class SList {
@@ -87,10 +88,15 @@ public:
     Vector  a, b, c;
 
     Vector Normal(void);
+    bool ContainsPoint(Vector p);
 };
 
 class SBsp2 {
 public:
+    Vector      np;     // normal to the plane
+
+    Vector      no;     // outer normal to the edge
+    double      d;
     SEdge       edge;
 
     SBsp2       *pos;
@@ -98,8 +104,16 @@ public:
 
     SBsp2       *more;
 
-    void Insert(SEdge *se);
+    static const int POS = 100, NEG = 101, COPLANAR = 200;
+    void InsertTriangleHow(int how, STriangle *tr,
+                           SMesh *m, SBsp3 *bsp3, bool flip, bool cpl);
+    void InsertTriangle(STriangle *tr,
+                        SMesh *m, SBsp3 *bsp3, bool flip, bool cpl);
+    Vector IntersectionWith(Vector a, Vector b);
+    SBsp2 *InsertEdge(SEdge *nedge, Vector nnp, Vector out);
     static SBsp2 *Alloc(void);
+
+    void DebugDraw(Vector n, double d);
 };
 
 class SBsp3 {
@@ -124,6 +138,8 @@ public:
     void InsertHow(int how, STriangle *str, SMesh *instead, bool flip,bool cpl);
 
     SBsp3 *Insert(STriangle *str, SMesh *instead, bool flip, bool cpl);
+
+    void InsertInPlane(bool pos2, STriangle *tr, SMesh *m, bool flip, bool cpl);
 
     void DebugDraw(void);
 };

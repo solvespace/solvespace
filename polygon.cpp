@@ -5,6 +5,23 @@ Vector STriangle::Normal(void) {
     return ab.Cross(bc);
 }
 
+bool STriangle::ContainsPoint(Vector p) {
+    Vector ab = b.Minus(a), bc = c.Minus(b), ca = a.Minus(c);
+    Vector n = ab.Cross(bc);
+    n = n.WithMagnitude(1);
+
+    Vector no_ab = n.Cross(ab);
+    if(no_ab.Dot(p) < no_ab.Dot(a) - LENGTH_EPS) return false;
+
+    Vector no_bc = n.Cross(bc);
+    if(no_bc.Dot(p) < no_bc.Dot(b) - LENGTH_EPS) return false;
+
+    Vector no_ca = n.Cross(ca);
+    if(no_ca.Dot(p) < no_ca.Dot(c) - LENGTH_EPS) return false;
+
+    return true;
+}
+
 void SEdgeList::Clear(void) {
     l.Clear();
 }
