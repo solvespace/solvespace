@@ -746,6 +746,7 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+#define CIRCLE_SIDES(r) (7 + (int)(10*((sqrt(r))*SS.GW.scale)/20))
         case ARC_OF_CIRCLE: {
             if(order >= 0 && order != 1) break;
             Vector c  = SS.GetEntity(point[0])->PointGetNum();
@@ -760,7 +761,7 @@ void Entity::DrawOrGetDistance(int order) {
             double thetaa, thetab, dtheta;
             ArcGetAngles(&thetaa, &thetab, &dtheta);
 
-            int i, n = (int)((20*dtheta)/(2*PI));
+            int i, n = 3 + (int)(CIRCLE_SIDES(ra)*dtheta/(2*PI));
             Vector prev = pa;
             for(i = 1; i <= n; i++) {
                 double theta = thetaa + (dtheta*i)/n;
@@ -781,7 +782,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector center = SS.GetEntity(point[0])->PointGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
 
-            int i, c = 20;
+            int i, c = CIRCLE_SIDES(r); 
             Vector prev = u.ScaledBy(r).Plus(center);
             for(i = 1; i <= c; i++) {
                 double phi = (2*PI*i)/c;

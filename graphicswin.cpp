@@ -1203,7 +1203,7 @@ void GraphicsWindow::Paint(int w, int h) {
         glDisable(GL_LIGHTING);
         glxLockColorTo(0, 1, 0);
         glEnable(GL_DEPTH_TEST);
-//        glxDebugMesh(&br); 
+        glxDebugMesh(&br); 
 
         br.Clear();
         FreeAllTemporary();

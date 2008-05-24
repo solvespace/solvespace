@@ -7,6 +7,10 @@ void SMesh::Clear(void) {
 void SMesh::AddTriangle(Vector n, Vector a, Vector b, Vector c) {
     Vector ab = b.Minus(a), bc = c.Minus(b);
     Vector np = ab.Cross(bc);
+    if(np.Magnitude() < 1e-10) {
+        // ugh; gl sometimes tesselates to collinear triangles
+        return;
+    }
     if(np.Dot(n) > 0) {
         AddTriangle(a, b, c);
     } else {
