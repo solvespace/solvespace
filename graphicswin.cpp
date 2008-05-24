@@ -1189,12 +1189,11 @@ void GraphicsWindow::Paint(int w, int h) {
         SBsp3 *pb = SBsp3::FromMesh(mb);
 
         SMesh br; ZERO(&br);
-        for(i = 0; i < mb->l.n; i++) {
-            pa->Insert(&(mb->l.elem[i]), &br, true, false);
-        }
-        for(i = 0; i < ma->l.n; i++) {
-            pb->Insert(&(ma->l.elem[i]), &br, false, false);
-        }
+        br.flipNormal = true; br.keepCoplanar = false;
+        br.AddAgainstBsp(mb, pa);
+        br.flipNormal = false; br.keepCoplanar = false;
+        br.AddAgainstBsp(ma, pb);
+
         dbp("triangles in = %d %d out = %d", ma->l.n, mb->l.n, br.l.n);
 
         glEnable(GL_DEPTH_TEST);

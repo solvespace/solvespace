@@ -33,6 +33,23 @@ public:
         elem = NULL;
         n = elemsAllocated = 0;
     }
+
+    void RemoveTagged(void) {
+        int src, dest;
+        dest = 0;
+        for(src = 0; src < n; src++) {
+            if(elem[src].tag) {
+                // this item should be deleted
+            } else {
+                if(src != dest) {
+                    elem[dest] = elem[src];
+                }
+                dest++;
+            }
+        }
+        n = dest;
+        // and elemsAllocated is untouched, because we didn't resize
+    }
 };
 
 class SEdge {
@@ -105,10 +122,8 @@ public:
     SBsp2       *more;
 
     static const int POS = 100, NEG = 101, COPLANAR = 200;
-    void InsertTriangleHow(int how, STriangle *tr,
-                           SMesh *m, SBsp3 *bsp3, bool flip, bool cpl);
-    void InsertTriangle(STriangle *tr,
-                        SMesh *m, SBsp3 *bsp3, bool flip, bool cpl);
+    void InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
+    void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
     Vector IntersectionWith(Vector a, Vector b);
     SBsp2 *InsertEdge(SEdge *nedge, Vector nnp, Vector out);
     static SBsp2 *Alloc(void);
@@ -130,18 +145,18 @@ public:
     SBsp2       *edges;
 
     static SBsp3 *Alloc(void);
-    static double SplitFactor(int npos, int nneg, int nsplit);
-    static SBsp3 *ChoosePartition(SMesh *m);
-    SBsp3 *InsertExtraSplit(Vector nn, double dd);
     static SBsp3 *FromMesh(SMesh *m);
 
     Vector IntersectionWith(Vector a, Vector b);
 
     static const int POS = 100, NEG = 101, COPLANAR = 200;
-    void InsertHow(int how, STriangle *str, SMesh *instead, bool flip,bool cpl);
-    SBsp3 *Insert(STriangle *str, SMesh *instead, bool flip, bool cpl);
+    void InsertHow(int how, STriangle *str, SMesh *instead);
+    SBsp3 *Insert(STriangle *str, SMesh *instead);
 
-    void InsertInPlane(bool pos2, STriangle *tr, SMesh *m, bool flip, bool cpl);
+    void InsertConvexHow(int how, Vector *vertex, int n, SMesh *instead);
+    SBsp3 *InsertConvex(Vector *vertex, int n, SMesh *instead);
+
+    void InsertInPlane(bool pos2, STriangle *tr, SMesh *m);
 
     void DebugDraw(void);
 };
@@ -151,12 +166,18 @@ class SMesh {
 public:
     SList<STriangle>    l;
 
+    bool    flipNormal;
+    bool    keepCoplanar;
+    bool    atLeastOneDiscarded;
+
     void Clear(void);
     void AddTriangle(STriangle *st);
     void AddTriangle(Vector a, Vector b, Vector c);
     void AddTriangle(Vector n, Vector a, Vector b, Vector c);
     void DoBounding(Vector v, Vector *vmax, Vector *vmin);
     void GetBounding(Vector *vmax, Vector *vmin);
+
+    void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
 };
 
 #endif
