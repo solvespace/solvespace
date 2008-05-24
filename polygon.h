@@ -130,13 +130,15 @@ public:
     SBsp2       *edges;
 
     static SBsp3 *Alloc(void);
+    static double SplitFactor(int npos, int nneg, int nsplit);
+    static SBsp3 *ChoosePartition(SMesh *m);
+    SBsp3 *InsertExtraSplit(Vector nn, double dd);
     static SBsp3 *FromMesh(SMesh *m);
 
     Vector IntersectionWith(Vector a, Vector b);
 
     static const int POS = 100, NEG = 101, COPLANAR = 200;
     void InsertHow(int how, STriangle *str, SMesh *instead, bool flip,bool cpl);
-
     SBsp3 *Insert(STriangle *str, SMesh *instead, bool flip, bool cpl);
 
     void InsertInPlane(bool pos2, STriangle *tr, SMesh *m, bool flip, bool cpl);
@@ -150,8 +152,11 @@ public:
     SList<STriangle>    l;
 
     void Clear(void);
+    void AddTriangle(STriangle *st);
     void AddTriangle(Vector a, Vector b, Vector c);
     void AddTriangle(Vector n, Vector a, Vector b, Vector c);
+    void DoBounding(Vector v, Vector *vmax, Vector *vmin);
+    void GetBounding(Vector *vmax, Vector *vmin);
 };
 
 #endif

@@ -1195,6 +1195,7 @@ void GraphicsWindow::Paint(int w, int h) {
         for(i = 0; i < ma->l.n; i++) {
             pb->Insert(&(ma->l.elem[i]), &br, false, false);
         }
+        dbp("triangles in = %d %d out = %d", ma->l.n, mb->l.n, br.l.n);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_LIGHTING);
@@ -1202,7 +1203,7 @@ void GraphicsWindow::Paint(int w, int h) {
         glDisable(GL_LIGHTING);
         glxLockColorTo(0, 1, 0);
         glEnable(GL_DEPTH_TEST);
-        glxDebugMesh(&br); 
+//        glxDebugMesh(&br); 
 
         br.Clear();
         FreeAllTemporary();

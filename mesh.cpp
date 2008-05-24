@@ -13,25 +13,155 @@ void SMesh::AddTriangle(Vector n, Vector a, Vector b, Vector c) {
         AddTriangle(c, b, a);
     }
 }
-
 void SMesh::AddTriangle(Vector a, Vector b, Vector c) {
     STriangle t; ZERO(&t);
     t.a = a;
     t.b = b;
     t.c = c;
-    l.Add(&t);
+    AddTriangle(&t);
+}
+void SMesh::AddTriangle(STriangle *st) {
+    l.Add(st);
+}
+
+void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) {
+    vmax->x = max(vmax->x, v.x);
+    vmax->y = max(vmax->y, v.y);
+    vmax->z = max(vmax->z, v.z);
+
+    vmin->x = min(vmin->x, v.x);
+    vmin->y = min(vmin->y, v.y);
+    vmin->z = min(vmin->z, v.z);
+}
+void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
+    int i;
+    *vmin = Vector::MakeFrom( 1e12,  1e12,  1e12);
+    *vmax = Vector::MakeFrom(-1e12, -1e12, -1e12);
+    for(i = 0; i < l.n; i++) {
+        STriangle *st = &(l.elem[i]);
+        DoBounding(st->a, vmax, vmin);
+        DoBounding(st->b, vmax, vmin);
+        DoBounding(st->c, vmax, vmin);
+    }
 }
 
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
 SBsp3 *SBsp3::Alloc(void) { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 
-SBsp3 *SBsp3::FromMesh(SMesh *m) {
-    int i;
-    SBsp3 *ret = NULL;
+double SBsp3::SplitFactor(int npos, int nneg, int nsplit) {
+    double r, ntot = npos + nneg + nsplit;
+    // A larger split factor is more desirable; best possible is 0.5
+    r  = (min(npos, nneg)) / ntot;
+    r *= pow((npos + nneg) / ntot, 3);
+    return r;
+}
+
+SBsp3 *SBsp3::ChoosePartition(SMesh *m) {
+    if(m->l.n < 20) return NULL;
+
+    Vector vmax, vmin;
+    m->GetBounding(&vmax, &vmin);
+    double x = (vmax.x + vmin.x)/2;
+    double y = (vmax.y + vmin.y)/2;
+    double z = (vmax.z + vmin.z)/2;
+
+    int px = 0, nx = 0, sx = 0;
+    int py = 0, ny = 0, sy = 0;
+    int pz = 0, nz = 0, sz = 0;
+
+    int i, j;
     for(i = 0; i < m->l.n; i++) {
-        ret = ret->Insert(&(m->l.elem[i]), NULL, false, false);
+        STriangle *tr = &(m->l.elem[i]);
+        int vx = 0, vy = 0, vz = 0;
+        for(j = 0; j < 3; j++) {
+            Vector a = (j == 0) ? tr->a : ((j == 1) ? tr->b : tr->c);
+            if(a.x < x) vx++;
+            if(a.y < y) vy++;
+            if(a.z < z) vz++;
+        }
+        if(vx == 3) { px++; } else if(vx == 0) { nx++; } else { sx++; }
+        if(vy == 3) { py++; } else if(vy == 0) { ny++; } else { sy++; }
+        if(vz == 3) { pz++; } else if(vz == 0) { nz++; } else { sz++; }
     }
-    return ret;
+    double fx = SplitFactor(px, nx, sx);
+    double fy = SplitFactor(py, ny, sy);
+    double fz = SplitFactor(pz, nz, sz);
+    double fmax = max(fx, max(fy, fz));
+
+    Vector nn;
+    double dd;
+    if(fmax == fx) {
+        nn = Vector::MakeFrom(1, 0, 0);
+        dd = x;
+    } else if(fmax == fy) {
+        nn = Vector::MakeFrom(0, 1, 0);
+        dd = y;
+    } else if(fmax == fz) {
+        nn = Vector::MakeFrom(0, 0, 1);
+        dd = z;
+    } else oops();
+
+    SBsp3 *r = Alloc();
+    r->n = nn;
+    r->d = dd;
+
+    SMesh mpos, mneg;
+    ZERO(&mpos); ZERO(&mneg);
+
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
+        double da = (tr->a).Dot(nn);
+        double db = (tr->b).Dot(nn);
+        double dc = (tr->c).Dot(nn);
+        if(da > dd && db > dd && dc > dd) {
+            mpos.AddTriangle(tr);
+        }
+        if(da < dd && db < dd && dc < dd) {
+            mneg.AddTriangle(tr);
+        }
+    }
+    if(mpos.l.n >= m->l.n || mneg.l.n >= m->l.n) {
+        // We show no signs of terminating; bad.
+        oops();
+    }
+    r->pos = ChoosePartition(&mpos);
+    r->neg = ChoosePartition(&mneg);
+
+    mpos.Clear(); mneg.Clear();
+
+    return r;
+}
+
+SBsp3 *SBsp3::FromMesh(SMesh *m) {
+    SBsp3 *bsp3 = ChoosePartition(m);
+    Vector vmax, vmin;
+    m->GetBounding(&vmax, &vmin);
+    Vector adj = { 1, 1, 1 };
+    vmax = vmax.Plus(adj); vmin = vmin.Minus(adj);
+
+    int i;
+    for(i = 0; i < m->l.n; i++) {
+        bsp3 = bsp3->Insert(&(m->l.elem[i]), NULL, false, false);
+    }
+
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom( 1,  0,  0), vmax.x);
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom( 0,  1,  0), vmax.y);
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom( 0,  0,  1), vmax.z);
+
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom(-1,  0,  0), -vmin.x);
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom( 0, -1,  0), -vmin.y);
+    bsp3 = bsp3->InsertExtraSplit(Vector::MakeFrom( 0,  0, -1), -vmin.z);
+
+    return bsp3;
+}
+
+SBsp3 *SBsp3::InsertExtraSplit(Vector nn, double dd) {
+    SBsp3 *r = Alloc();
+    r->n = nn;
+    r->d = dd;
+    r->neg = this;
+    r->pos = NULL;
+    return r;
 }
 
 Vector SBsp3::IntersectionWith(Vector a, Vector b) {
@@ -114,7 +244,7 @@ alt:
         } else {
             // I suppose this actually is allowed to happen, if the coplanar
             // face is the leaf, and all of its neighbors are earlier in tree?
-            InsertInPlane(true, tr, instead, flip, cpl);
+            InsertInPlane(false, tr, instead, flip, cpl);
         }
     }
 }
