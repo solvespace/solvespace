@@ -104,10 +104,10 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
         }
         ll = ll->more;
     }
-    
-    if(m->flipNormal && !pos2 && (!onFace || !sameNormal)) {
+
+    if(m->flipNormal && ((!pos2 && !onFace) || (onFace && !sameNormal))) {
         m->AddTriangle(tr->c, tr->b, tr->a);
-    } else if(!(m->flipNormal) && (pos2 || 
+    } else if(!(m->flipNormal) && ((pos2 && !onFace) || 
                                    (onFace && sameNormal && m->keepCoplanar)))
     {
         m->AddTriangle(tr->a, tr->b, tr->c);
@@ -153,6 +153,7 @@ alt:
         } else {
             // I suppose this actually is allowed to happen, if the coplanar
             // face is the leaf, and all of its neighbors are earlier in tree?
+            dbp("insert in plane");
             InsertInPlane(false, tr, instead);
         }
     } else {

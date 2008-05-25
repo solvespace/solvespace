@@ -1189,9 +1189,12 @@ void GraphicsWindow::Paint(int w, int h) {
         SBsp3 *pb = SBsp3::FromMesh(mb);
 
         SMesh br; ZERO(&br);
-        br.flipNormal = true; br.keepCoplanar = false;
+        br.flipNormal = true;
+        br.keepCoplanar = false;
         br.AddAgainstBsp(mb, pa);
-        br.flipNormal = false; br.keepCoplanar = false;
+
+        br.flipNormal = false;
+        br.keepCoplanar = false;
         br.AddAgainstBsp(ma, pb);
 
         dbp("triangles in = %d %d out = %d", ma->l.n, mb->l.n, br.l.n);
