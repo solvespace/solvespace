@@ -381,15 +381,27 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
     SS.entity.Add(&en);
 }
 
-void Group::MakePolygons(void) {
+SMesh *Group::PreviousGroupMesh(void) {
     int i;
+    for(i = 0; i < SS.group.n; i++) {
+        Group *g = &(SS.group.elem[i]);
+        if(g->h.v == h.v) break;
+    }
+    if(i == 0 || i >= SS.group.n) oops();
+    return &(SS.group.elem[i-1].mesh);
+}
+
+void Group::MakePolygons(void) {
     poly.Clear();
-    mesh.Clear();
 
     SEdgeList edges;
     ZERO(&edges);
+    SMesh outm;
+    ZERO(&outm);
 
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE ||
+       type == ROTATE || type == TRANSLATE)
+    {
         int i;
         for(i = 0; i < SS.entity.n; i++) {
             Entity *e = &(SS.entity.elem[i]);
@@ -427,7 +439,6 @@ void Group::MakePolygons(void) {
         SMesh srcm; ZERO(&srcm);
         (src->poly).TriangulateInto(&srcm);
 
-        SMesh outm; ZERO(&outm);
         // Do the bottom; that has normal pointing opposite from translate
         for(i = 0; i < srcm.l.n; i++) {
             STriangle *st = &(srcm.l.elem[i]);
@@ -435,9 +446,9 @@ void Group::MakePolygons(void) {
                    bt = (st->b).Plus(tbot),
                    ct = (st->c).Plus(tbot);
             if(flipBottom) {
-                mesh.AddTriangle(ct, bt, at);
+                outm.AddTriangle(ct, bt, at);
             } else {
-                mesh.AddTriangle(at, bt, ct);
+                outm.AddTriangle(at, bt, ct);
             }
         }
         // And the top; that has the normal pointing the same dir as translate
@@ -447,9 +458,9 @@ void Group::MakePolygons(void) {
                    bt = (st->b).Plus(ttop),
                    ct = (st->c).Plus(ttop);
             if(flipBottom) {
-                mesh.AddTriangle(at, bt, ct);
+                outm.AddTriangle(at, bt, ct);
             } else {
-                mesh.AddTriangle(ct, bt, at);
+                outm.AddTriangle(ct, bt, at);
             }
         }
         srcm.Clear();
@@ -463,25 +474,49 @@ void Group::MakePolygons(void) {
             Vector abot = (edge->a).Plus(tbot), bbot = (edge->b).Plus(tbot);
             Vector atop = (edge->a).Plus(ttop), btop = (edge->b).Plus(ttop);
             if(flipBottom) {
-                mesh.AddTriangle(bbot, abot, atop);
-                mesh.AddTriangle(bbot, atop, btop);
+                outm.AddTriangle(bbot, abot, atop);
+                outm.AddTriangle(bbot, atop, btop);
             } else {
-                mesh.AddTriangle(abot, bbot, atop);
-                mesh.AddTriangle(bbot, btop, atop);
+                outm.AddTriangle(abot, bbot, atop);
+                outm.AddTriangle(bbot, btop, atop);
             }
         }
     }
     edges.Clear();
+
+    // So our group's mesh appears in outm. Combine this with the previous
+    // group's mesh, using the requested operation.
+    mesh.Clear();
+    SMesh *a = PreviousGroupMesh();
+    if(meshCombine == COMBINE_AS_UNION) {
+        mesh.MakeFromUnion(a, &outm);
+    } else {
+        mesh.MakeFromDifference(a, &outm);
+    }
+    outm.Clear();
 }
 
 void Group::Draw(void) {
-    if(!visible) return;
+    // Show this even if the group is not visible. It's already possible
+    // to show or hide just this with the "show solids" flag.
 
-
-    GLfloat mpf[] = { 0.4f, 0.4f, 0.4f, 1.0 };
-    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
+        GLfloat mpf[] = { 0.1f, 0.1f, 0.1f, 1.0 };
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+    } else {
+        GLfloat mpf[] = { 0.3f, 0.3f, 0.3f, 1.0 };
+        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+    }
+    // The back faces are drawn in red; should never seem them, since we
+    // draw closed shells, so that's a debugging aid.
     GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0 };
     glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
+
+    glEnable(GL_LIGHTING);
+    glxFillMesh(&mesh);
+    glDisable(GL_LIGHTING);
+
+//    glxDebugMesh(&mesh);
 
     if(polyError.yes) {
         glxColor4d(1, 0, 0, 0.2);
@@ -498,13 +533,11 @@ void Group::Draw(void) {
             glxWriteText("not closed contour!");
         glPopMatrix();
     } else {
-//        glxFillPolygon(&poly);
+        glxColor4d(0, 1.0, 1.0, 0.1);
+        glPolygonOffset(-1, -1);
+        glxFillPolygon(&poly);
+        glPolygonOffset(0, 0);
     }
-    glEnable(GL_LIGHTING);
-//    glxFillMesh(&mesh);
-    glDisable(GL_LIGHTING);
-
-//    glxDebugMesh(&mesh);
 }
 
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {

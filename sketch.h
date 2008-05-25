@@ -84,8 +84,6 @@ public:
     static const int TRANSLATE                     = 5030;
     int type;
 
-    bool        solved;
-
     hGroup      opA;
     hGroup      opB;
     bool        visible;
@@ -113,6 +111,10 @@ public:
     }               polyError;
     SMesh           mesh;
 
+    static const int COMBINE_AS_UNION           = 0;
+    static const int COMBINE_AS_DIFFERENCE      = 1;
+    int meshCombine;
+
     NameStr     name;
     char *DescriptionString(void);
 
@@ -131,6 +133,7 @@ public:
 
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
+    SMesh *PreviousGroupMesh(void);
     void MakePolygons(void);
     void Draw(void);
 

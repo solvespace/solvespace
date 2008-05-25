@@ -51,6 +51,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.opA.v",              'x',        &(SS.sv.g.opA.v)          },
     { 'g',  "Group.opB.v",              'x',        &(SS.sv.g.opB.v)          },
     { 'g',  "Group.subtype",            'd',        &(SS.sv.g.subtype)        },
+    { 'g',  "Group.meshCombine",        'd',        &(SS.sv.g.meshCombine)    },
     { 'g',  "Group.wrkpl.q.w",          'f',        &(SS.sv.g.wrkpl.q.w)      },
     { 'g',  "Group.wrkpl.q.vx",         'f',        &(SS.sv.g.wrkpl.q.vx)     },
     { 'g',  "Group.wrkpl.q.vy",         'f',        &(SS.sv.g.wrkpl.q.vy)     },

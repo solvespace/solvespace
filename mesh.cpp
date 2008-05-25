@@ -51,6 +51,7 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 
 void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
     int i;
+
     for(i = 0; i < srcm->l.n; i++) {
         STriangle *st = &(srcm->l.elem[i]);
         int pn = l.n;
@@ -66,6 +67,32 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
             continue;
         }
     }
+}
+
+void SMesh::MakeFromUnion(SMesh *a, SMesh *b) {
+    SBsp3 *bspa = SBsp3::FromMesh(a);
+    SBsp3 *bspb = SBsp3::FromMesh(b);
+
+    flipNormal = false;
+    keepCoplanar = false;
+    AddAgainstBsp(b, bspa);
+
+    flipNormal = false;
+    keepCoplanar = true;
+    AddAgainstBsp(a, bspb);
+}
+
+void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
+    SBsp3 *bspa = SBsp3::FromMesh(a);
+    SBsp3 *bspb = SBsp3::FromMesh(b);
+
+    flipNormal = true;
+    keepCoplanar = false;
+    AddAgainstBsp(b, bspa);
+
+    flipNormal = false;
+    keepCoplanar = false;
+    AddAgainstBsp(a, bspb);
 }
 
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
@@ -153,7 +180,6 @@ alt:
         } else {
             // I suppose this actually is allowed to happen, if the coplanar
             // face is the leaf, and all of its neighbors are earlier in tree?
-            dbp("insert in plane");
             InsertInPlane(false, tr, instead);
         }
     } else {

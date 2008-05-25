@@ -276,7 +276,7 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_SOLVE_NOW:
-            SS.GenerateAll(true);
+            SS.GenerateAll(true, 0, 10000);
             return;
 
         case GraphicsWindow::MNU_SOLVE_AUTO:

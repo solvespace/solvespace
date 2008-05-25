@@ -9,10 +9,10 @@ void SolveSpace::Init(char *cmdLine) {
         LoadFromFile(cmdLine);
     }
 
+    GenerateAll(false, 0, INT_MAX);
+
     TW.Init();
     GW.Init();
-
-    GenerateAll(false);
 
     TW.Show();
 }
@@ -122,6 +122,21 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
 }
 
 void SolveSpace::GenerateAll(bool andSolve) {
+    int i;
+    int firstShown = INT_MAX, lastShown = 0;
+    // The references don't count, so start from group 1
+    for(i = 1; i < group.n; i++) {
+        if(group.elem[i].visible) {
+            firstShown = min(firstShown, i);
+            lastShown  = max(lastShown,  i);
+        }
+    }
+    // Even if nothing is shown, we have to keep going; the entities get
+    // generated for hidden groups, even though they're not solved.
+    GenerateAll(andSolve, firstShown, lastShown);
+}
+
+void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
     int i, j;
 
     while(PruneOrphans())
@@ -132,12 +147,6 @@ void SolveSpace::GenerateAll(bool andSolve) {
     param.MoveSelfInto(&prev);
     entity.Clear();
 
-    for(i = 0; i < group.n; i++) {
-        group.elem[i].solved = false;
-    }
-
-    // For now, solve the groups in given order; should discover the
-    // correct order later.
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
 
@@ -172,13 +181,24 @@ void SolveSpace::GenerateAll(bool andSolve) {
 
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
             ForceReferences();
-            group.elem[0].solved = true;
         } else {
-            // Solve this group.
-            if(andSolve) SolveGroup(g->h);
-        }
+            if(i >= first && i <= last) {
+                // The group falls inside the range, so really solve it,
+                // and then regenerate the mesh based on the solved stuff.
+                if(andSolve) SolveGroup(g->h);
+                g->MakePolygons();
+            } else {
+                // The group falls outside the range, so just assume that
+                // it's good wherever we left it. The mesh is unchanged,
+                // and the parameters must be marked as known.
+                for(j = 0; j < param.n; j++) {
+                    Param *newp = &(param.elem[j]);
 
-        g->MakePolygons();
+                    Param *prevp = prev.FindByIdNoOops(newp->h);
+                    if(prevp) newp->known = true;
+                }
+            }
+        }
     }
 
     prev.Clear();
@@ -217,7 +237,7 @@ pruned:
     param.Clear();
     prev.MoveSelfInto(&param);
     // Try again
-    GenerateAll(andSolve);
+    GenerateAll(andSolve, first, last);
 }
 
 void SolveSpace::ForceReferences(void) {
@@ -299,8 +319,8 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_NEW:
             SS.NewFile();
             SS.GenerateAll(false);
-            SS.GW.Init();
             SS.TW.Init();
+            SS.GW.Init();
             SS.TW.Show();
             break;
 

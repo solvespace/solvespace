@@ -266,6 +266,9 @@ void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     hGroup hg = { v };
     Group *g = SS.GetGroup(hg);
     g->visible = !(g->visible);
+    // If a group was just shown, then it might not have been generated
+    // previously, so regenerate.
+    SS.GW.GeneratePerSolving();
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
     int i;
@@ -341,9 +344,19 @@ void TextWindow::ScreenChangeExtrudeSides(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
     if(g->subtype == Group::EXTRUDE_ONE_SIDED) {
         g->subtype = Group::EXTRUDE_TWO_SIDED;
-    } else {
+    } else if(g->subtype == Group::EXTRUDE_TWO_SIDED) {
         g->subtype = Group::EXTRUDE_ONE_SIDED;
-    }
+    } else oops();
+    SS.GW.GeneratePerSolving();
+    SS.GW.ClearSuper();
+}
+void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    if(g->meshCombine == Group::COMBINE_AS_DIFFERENCE) {
+        g->meshCombine = Group::COMBINE_AS_UNION;
+    } else if(g->meshCombine == Group::COMBINE_AS_UNION) {
+        g->meshCombine = Group::COMBINE_AS_DIFFERENCE;
+    } else oops();
     SS.GW.GeneratePerSolving();
     SS.GW.ClearSuper();
 }
@@ -361,12 +374,18 @@ void TextWindow::ShowGroupInfo(void) {
 
     if(g->type == Group::EXTRUDE) {
         bool one = (g->subtype == Group::EXTRUDE_ONE_SIDED);
-        Printf(true, "%FtEXTRUDE%E one-sided: %Fh%f%Ll%s%E%Fs%s%E",
+        Printf(true, "%FtEXTRUDE%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
             &TextWindow::ScreenChangeExtrudeSides,
-            (one ? "" : "no"), (one ? "yes" : ""));
-        Printf(false, "        two-sided: %Fh%f%Ll%s%E%Fs%s%E",
+            (one ? "" : "one side"), (one ? "one-side" : ""),
             &TextWindow::ScreenChangeExtrudeSides,
-            (!one ? "" : "no"), (!one ? "yes" : ""));
+            (!one ? "" : "two sides"), (!one ? "two sides" : ""));
+
+        bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
+        Printf(false, "%FtCOMBINE%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeMeshCombine,
+            (!diff ? "" : "as union"), (!diff ? "as union" : ""),
+            &TextWindow::ScreenChangeMeshCombine,
+            (diff ? "" : "as difference"), (diff ? "as difference" : ""));
     }
 
     Printf(true, "%Ftrequests in group");

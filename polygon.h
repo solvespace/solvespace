@@ -178,6 +178,8 @@ public:
     void GetBounding(Vector *vmax, Vector *vmin);
 
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
+    void MakeFromUnion(SMesh *a, SMesh *b);
+    void MakeFromDifference(SMesh *a, SMesh *b);
 };
 
 #endif

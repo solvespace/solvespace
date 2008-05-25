@@ -102,11 +102,18 @@ void GraphicsWindow::Init(void) {
     projRight.x = 1; projRight.y = projRight.z = 0;
     projUp.y = 1; projUp.z = projUp.x = 0;
 
-    EnsureValidActives();
-
     // Start locked on to the XY plane.
     hRequest r = Request::HREQUEST_REFERENCE_XY;
     activeWorkplane = r.entity(0);
+
+    // And with the latest visible group active
+    int i;
+    for(i = 0; i < SS.group.n; i++) {
+        Group *g = &(SS.group.elem[i]);
+        if(g->visible) activeGroup = g->h;
+    }
+
+    EnsureValidActives();
 
     showWorkplanes = true;
     showNormals = true;
@@ -1144,11 +1151,10 @@ void GraphicsWindow::Paint(int w, int h) {
     glxUnlockColor();
 
     int i, a;
-    // Draw the groups; this fills the polygons, if requested.
+    // Draw the groups; this fills the polygons in a drawing group, and
+    // draws the solid mesh.
     if(showSolids) {
-        for(i = 0; i < SS.group.n; i++) {
-            SS.group.elem[i].Draw();
-        }
+        (SS.GetGroup(activeGroup))->Draw();
     }
 
     // First, draw the entire scene. We don't necessarily want to draw
@@ -1179,36 +1185,6 @@ void GraphicsWindow::Paint(int w, int h) {
     glxLockColorTo(1, 0, 0);
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
-    }
-
-    if(SS.group.n >= 5) {
-        SMesh *ma = &(SS.group.elem[2].mesh);
-        SMesh *mb = &(SS.group.elem[4].mesh);
-
-        SBsp3 *pa = SBsp3::FromMesh(ma);
-        SBsp3 *pb = SBsp3::FromMesh(mb);
-
-        SMesh br; ZERO(&br);
-        br.flipNormal = true;
-        br.keepCoplanar = false;
-        br.AddAgainstBsp(mb, pa);
-
-        br.flipNormal = false;
-        br.keepCoplanar = false;
-        br.AddAgainstBsp(ma, pb);
-
-        dbp("triangles in = %d %d out = %d", ma->l.n, mb->l.n, br.l.n);
-
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_LIGHTING);
-        glxFillMesh(&br);
-        glDisable(GL_LIGHTING);
-        glxLockColorTo(0, 1, 0);
-        glEnable(GL_DEPTH_TEST);
-        glxDebugMesh(&br); 
-
-        br.Clear();
-        FreeAllTemporary();
     }
 }
 

@@ -74,6 +74,7 @@ public:
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
     static void ScreenChangeExtrudeSides(int link, DWORD v);
+    static void ScreenChangeMeshCombine(int link, DWORD v);
 
     static void ScreenNavigation(int link, DWORD v);
 };

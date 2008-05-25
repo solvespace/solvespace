@@ -229,6 +229,7 @@ public:
     bool PruneConstraints(hGroup hg);
 
     void GenerateAll(bool andSolve);
+    void GenerateAll(bool andSolve, int first, int last);
     bool SolveGroup(hGroup hg);
     void ForceReferences(void);
 
