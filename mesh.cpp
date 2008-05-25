@@ -320,7 +320,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     if(!this) {
         // Brand new node; so allocate for it, and fill us in.
         SBsp3 *r = Alloc();
-        r->n = tr->Normal();
+        r->n = (tr->Normal()).WithMagnitude(1);
         r->d = (tr->a).Dot(r->n);
         r->tri = *tr;
         return r;
@@ -501,7 +501,7 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
         // Brand new node; so allocate for it, and fill us in.
         SBsp2 *r = Alloc();
         r->np = nnp;
-        r->no = (r->np).Cross((nedge->b).Minus(nedge->a));
+        r->no = ((r->np).Cross((nedge->b).Minus(nedge->a))).WithMagnitude(1);
         if(out.Dot(r->no) < 0) {
             r->no = (r->no).ScaledBy(-1);
         }
@@ -536,7 +536,7 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
         SBsp2 *m = Alloc();
 
         m->np = nnp;
-        m->no = (m->np).Cross((nedge->b).Minus(nedge->a));
+        m->no = ((m->np).Cross((nedge->b).Minus(nedge->a))).WithMagnitude(1);
         if(out.Dot(m->no) < 0) {
             m->no = (m->no).ScaledBy(-1);
         }

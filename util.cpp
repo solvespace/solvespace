@@ -299,7 +299,7 @@ Vector Vector::ScaledBy(double v) {
 
 Vector Vector::WithMagnitude(double v) {
     double m = Magnitude();
-    if(m < 0.001) {
+    if(m < LENGTH_EPS) {
         return MakeFrom(v, 0, 0);
     } else {
         return ScaledBy(v/Magnitude());

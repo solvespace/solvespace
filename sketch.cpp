@@ -296,6 +296,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
     en.type = ep->type;
     en.h = Remap(ep->h, a);
     en.group = h;
+    en.construction = ep->construction;
 
     switch(ep->type) {
         case Entity::WORKPLANE:

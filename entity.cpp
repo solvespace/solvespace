@@ -746,7 +746,7 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
-#define CIRCLE_SIDES(r) (7 + (int)(10*((sqrt(r))*SS.GW.scale)/20))
+#define CIRCLE_SIDES(r) (7 + (int)(sqrt(r*SS.GW.scale)))
         case ARC_OF_CIRCLE: {
             if(order >= 0 && order != 1) break;
             Vector c  = SS.GetEntity(point[0])->PointGetNum();
