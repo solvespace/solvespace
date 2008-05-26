@@ -49,6 +49,110 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
     }
 }
 
+void SMesh::Simplify(int start) {
+#define MAX_TRIANGLES 500
+    if(l.n - start > MAX_TRIANGLES) return;
+
+    STriangle tout[MAX_TRIANGLES];
+    int toutc = 0;
+
+    Vector n, conv[MAX_TRIANGLES*3];
+    int convc = 0;
+
+    int start0 = start;
+
+    int i, j;
+    for(i = start; i < l.n; i++) {
+        l.elem[i].tag = 0;
+    }
+
+    for(;;) {
+        convc = 0;
+        for(i = start; i < l.n; i++) {
+            STriangle *tr = &(l.elem[i]);
+            if(tr->tag) continue;
+
+            tr->tag = 1;
+            n = (tr->Normal()).WithMagnitude(1);
+            conv[convc++] = tr->a;
+            conv[convc++] = tr->b;
+            conv[convc++] = tr->c;
+
+            start = i+1;
+            break;
+        }
+        if(i >= l.n) break;
+
+        bool didAdd;
+        do {
+            didAdd = false;
+
+            for(j = 0; j < convc; j++) {
+                Vector a = conv[WRAP((j-1), convc)],
+                       b = conv[j], 
+                       d = conv[WRAP((j+1), convc)],
+                       e = conv[WRAP((j+2), convc)];
+
+                Vector c;
+                for(i = start; i < l.n; i++) {
+                    STriangle *tr = &(l.elem[i]);
+                    if(tr->tag) continue;
+
+                    if((tr->a).Equals(d) && (tr->b).Equals(b)) {
+                        c = tr->c;
+                    } else if((tr->b).Equals(d) && (tr->c).Equals(b)) {
+                        c = tr->a;
+                    } else if((tr->c).Equals(d) && (tr->a).Equals(b)) {
+                        c = tr->b;
+                    } else {
+                        continue;
+                    }
+                    // The vertex at C must be convex; but the others must
+                    // be tested
+                    Vector ab = b.Minus(a);
+                    Vector bc = c.Minus(b);
+                    Vector cd = d.Minus(c);
+                    Vector de = e.Minus(d);
+
+                    double bDot = (ab.Cross(bc)).Dot(n);
+                    double dDot = (cd.Cross(de)).Dot(n);
+
+                    bDot /= min(ab.Magnitude(), bc.Magnitude());
+                    dDot /= min(cd.Magnitude(), de.Magnitude());
+
+                    if(fabs(bDot) < LENGTH_EPS) {
+                        conv[j] = c;
+                    } else if(fabs(dDot) < LENGTH_EPS) {
+                        conv[WRAP((j+1), convc)] = c;
+                    } else if(bDot > 0 && dDot > 0) {
+                        // conv[j] is unchanged, conv[j+1] goes to [j+2]
+                        memmove(conv+j+2, conv+j+1,
+                                            (convc - j - 1)*sizeof(conv[0]));
+                        conv[j+1] = c;
+                        convc++;
+                    } else {
+                        continue;
+                    }
+
+                    didAdd = true;
+                    tr->tag = 1;
+                    break;
+                }
+            }
+        } while(didAdd);
+
+        for(i = 0; i < convc - 2; i++) {
+            STriangle tr = { 0, conv[0], conv[i+1], conv[i+2] };
+            tout[toutc++] = tr;
+        }
+    }
+
+    l.n = start0;
+    for(i = 0; i < toutc; i++) {
+        AddTriangle(&(tout[i]));
+    }
+}
+
 void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
     int i;
 
@@ -64,7 +168,9 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
             } else {
                 AddTriangle(st->a, st->b, st->c);
             }
-            continue;
+        }
+        if(l.n - pn > 4) {
+            Simplify(pn);
         }
     }
 }
@@ -83,6 +189,7 @@ void SMesh::MakeFromUnion(SMesh *a, SMesh *b) {
 }
 
 void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
+    SDWORD in = GetMilliseconds();
     SBsp3 *bspa = SBsp3::FromMesh(a);
     SBsp3 *bspb = SBsp3::FromMesh(b);
 
@@ -93,6 +200,8 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     flipNormal = false;
     keepCoplanar = false;
     AddAgainstBsp(a, bspb);
+    dbp("dt = %d", GetMilliseconds() - in);
+    dbp("tris = %d", l.n);
 }
 
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
@@ -217,11 +326,14 @@ SBsp3 *SBsp3::InsertConvex(Vector *vertex, int cnt, SMesh *instead) {
     Vector e12 = (vertex[2]).Minus(vertex[1]);
     Vector out = e01.Cross(e12);
 
+#define MAX_VERTICES 50
+    if(cnt+1 >= MAX_VERTICES) goto triangulate;
+
     int i;
     Vector on[2];
-    bool *isPos = (bool *)AllocTemporary(cnt*sizeof(bool));
-    bool *isNeg = (bool *)AllocTemporary(cnt*sizeof(bool));
-    bool *isOn  = (bool *)AllocTemporary(cnt*sizeof(bool));
+    bool isPos[MAX_VERTICES];
+    bool isNeg[MAX_VERTICES];
+    bool isOn[MAX_VERTICES];
     int posc = 0, negc = 0, onc = 0;
     for(i = 0; i < cnt; i++) {
         double dt = n.Dot(vertex[i]);
@@ -258,15 +370,15 @@ SBsp3 *SBsp3::InsertConvex(Vector *vertex, int cnt, SMesh *instead) {
         return this;
     }
 
-    Vector *vpos = (Vector *)AllocTemporary((cnt+1)*sizeof(Vector));
-    Vector *vneg = (Vector *)AllocTemporary((cnt+1)*sizeof(Vector));
+    Vector vpos[MAX_VERTICES];
+    Vector vneg[MAX_VERTICES];
     int npos = 0, nneg = 0;
 
     Vector inter[2];
     int inters = 0;
 
     for(i = 0; i < cnt; i++) {
-        int ip = (i + 1) % cnt;
+        int ip = WRAP((i + 1), cnt);
 
         if(isPos[i]) {
             vpos[npos++] = vertex[i];

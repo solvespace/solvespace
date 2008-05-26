@@ -505,7 +505,7 @@ void Group::Draw(void) {
         GLfloat mpf[] = { 0.1f, 0.1f, 0.1f, 1.0 };
         glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
     } else {
-        GLfloat mpf[] = { 0.3f, 0.3f, 0.3f, 1.0 };
+        GLfloat mpf[] = { 0.4f, 0.4f, 0.4f, 1.0 };
         glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
     }
     // The back faces are drawn in red; should never seem them, since we

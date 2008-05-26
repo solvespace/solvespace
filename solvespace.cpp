@@ -15,6 +15,7 @@ void SolveSpace::Init(char *cmdLine) {
     GW.Init();
 
     TW.Show();
+    GenerateAll(false, 0, INT_MAX);
 }
 
 bool SolveSpace::PruneOrphans(void) {

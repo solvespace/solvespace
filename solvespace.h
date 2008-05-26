@@ -12,11 +12,17 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+inline int WRAP(int v, int n) {
+    while(v >= n) v -= n;
+    while(v < 0) v += n;
+    return v;
+}
+
 #define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 
-#define LENGTH_EPS  (0.0001)
+#define LENGTH_EPS  (0.0000001)
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 

@@ -177,6 +177,8 @@ public:
     void DoBounding(Vector v, Vector *vmax, Vector *vmin);
     void GetBounding(Vector *vmax, Vector *vmin);
 
+    void Simplify(int start);
+
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnion(SMesh *a, SMesh *b);
     void MakeFromDifference(SMesh *a, SMesh *b);
