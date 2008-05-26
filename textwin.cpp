@@ -5,15 +5,16 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'd', RGB(255, 255, 255) },
     { 'l', RGB(100, 100, 255) },
     { 't', RGB(255, 200,   0) },
-    { 'h', RGB(170,   0,   0) },
+    { 'h', RGB( 90,  90,  90) },
     { 's', RGB( 40, 255,  40) },
     { 'm', RGB(200, 200,   0) },
     { 'r', RGB(  0,   0,   0) },
+    { 'x', RGB(255,  20,  20) },
     { 0, 0 },
 };
 const TextWindow::Color TextWindow::bgColors[] = {
     { 'd', RGB(  0,   0,   0) },
-    { 't', RGB( 40,  20,  40) },
+    { 't', RGB( 34,  15,  15) },
     { 'a', RGB( 20,  20,  20) },
     { 'r', RGB(255, 255, 255) },
     { 0, 0 },
@@ -59,7 +60,7 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
     int fg = 'd', bg = 'd';
     int link = NOT_A_LINK;
     DWORD data = 0;
-    LinkFunction *f = NULL;
+    LinkFunction *f = NULL, *h = NULL;
 
     c = 0;
     while(*fmt) {
@@ -91,6 +92,7 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                     link = NOT_A_LINK;
                     data = 0;
                     f = NULL;
+                    h = NULL;
                     break;
 
                 case 'F':
@@ -121,6 +123,10 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                     f = va_arg(vl, LinkFunction *);
                     break;
 
+                case 'h':
+                    h = va_arg(vl, LinkFunction *);
+                    break;
+
                 case 'D':
                     data = va_arg(vl, DWORD);
                     break;
@@ -142,6 +148,7 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
             meta[r][c].link = link;
             meta[r][c].data = data;
             meta[r][c].f = f;
+            meta[r][c].h = h;
             c++;
         }
 
@@ -160,6 +167,9 @@ done:
 void TextWindow::Show(void) {
     if(!(SS.GW.pending.operation)) SS.GW.ClearPending();
 
+    SS.GW.GroupSelection();
+#define gs (SS.GW.gs)
+
     ShowHeader();
 
     if(SS.GW.pending.description) {
@@ -174,8 +184,7 @@ void TextWindow::Show(void) {
                 // fall through
             case SCREEN_LIST_OF_GROUPS:     ShowListOfGroups();     break;
             case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
-            case SCREEN_REQUEST_INFO:       ShowRequestInfo();      break;
-            case SCREEN_CONSTRAINT_INFO:    ShowConstraintInfo();   break;
+            case SCREEN_GROUP_SOLVE_INFO:   ShowGroupSolveInfo();   break;
         }
     }
     InvalidateText();
@@ -297,18 +306,32 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     }
     SS.GW.ClearSuper();
 }
+void TextWindow::ReportHowGroupSolved(hGroup hg) {
+    SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.shown->group.v = hg.v;
+    SS.TW.Show();
+}
+void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
+    if(SS.GW.activeGroup.v != v) {
+        ScreenActivateGroup(link, v);
+    }
+    SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.shown->group.v = v;
+}
 void TextWindow::ShowListOfGroups(void) {
-    Printf(true, "%Ftactive  show  group-name%E");
+    Printf(true, "%Ftactv  show  ok  group-name%E");
     int i;
     for(i = 0; i < SS.group.n; i++) {
         Group *g = &(SS.group.elem[i]);
         char *s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
+        bool ok = (g->solved.how == Group::SOLVED_OKAY);
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
-        Printf(false, "%Bp%Fd  "
-               "%Fp%D%f%s%Ll%s%E%s   "
+        Printf(false, "%Bp%Fd "
+               "%Fp%D%f%s%Ll%s%E%s  "
                "%Fp%D%f%Ll%s%E%s   "
+               "%Fp%D%f%s%Ll%s%E  "
                "%Fl%Ll%D%f%s",
             // Alternate between light and dark backgrounds, for readability
             (i & 1) ? 'd' : 'a',
@@ -321,6 +344,10 @@ void TextWindow::ShowListOfGroups(void) {
             shown ? 's' : 'h', g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 shown ? "yes" : "no",
                 shown ? "" : " ",
+            // Link to the errors, if a problem occured while solving
+            ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
+                ok ? "ok" : "",
+                ok ? "" : "NO",
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s);
     }
@@ -332,13 +359,25 @@ void TextWindow::ShowListOfGroups(void) {
 }
 
 
+void TextWindow::ScreenHoverConstraint(int link, DWORD v) {
+    SS.GW.hover.Clear();
+    SS.GW.hover.constraint.v = v;
+    SS.GW.hover.emphasized = true;
+}
+void TextWindow::ScreenHoverRequest(int link, DWORD v) {
+    SS.GW.hover.Clear();
+    hRequest hr = { v };
+    SS.GW.hover.entity = hr.entity(0);
+    SS.GW.hover.emphasized = true;
+}
 void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
-    SS.TW.OneScreenForwardTo(SCREEN_CONSTRAINT_INFO);
-    SS.TW.shown->constraint.v = v;
+    SS.GW.ClearSelection();
+    SS.GW.selection[0].constraint.v = v;
 }
 void TextWindow::ScreenSelectRequest(int link, DWORD v) {
-    SS.TW.OneScreenForwardTo(SCREEN_REQUEST_INFO);
-    SS.TW.shown->request.v = v;
+    hRequest hr = { v };
+    SS.GW.ClearSelection();
+    SS.GW.selection[0].entity = hr.entity(0);
 }
 void TextWindow::ScreenChangeExtrudeSides(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
@@ -396,9 +435,10 @@ void TextWindow::ShowGroupInfo(void) {
 
         if(r->group.v == shown->group.v) {
             char *s = r->DescriptionString();
-            Printf(false, "%Bp   %Fl%Ll%D%f%s%E",
+            Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                 (a & 1) ? 'd' : 'a',
-                r->h.v, (&TextWindow::ScreenSelectRequest), s);
+                r->h.v, (&TextWindow::ScreenSelectRequest),
+                &(TextWindow::ScreenHoverRequest), s);
             a++;
         }
     }
@@ -411,13 +451,44 @@ void TextWindow::ShowGroupInfo(void) {
 
         if(c->group.v == shown->group.v) {
             char *s = c->DescriptionString();
-            Printf(false, "%Bp   %Fl%Ll%D%f%s%E",
+            Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                 (a & 1) ? 'd' : 'a',
-                c->h.v, (&TextWindow::ScreenSelectConstraint), s);
+                c->h.v, (&TextWindow::ScreenSelectConstraint),
+                (&TextWindow::ScreenHoverConstraint), s);
             a++;
         }
     }
     if(a == 0) Printf(false, "%Ba   (none)");
+}
+
+void TextWindow::ShowGroupSolveInfo(void) {
+    Group *g = SS.group.FindById(shown->group);
+    Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
+
+    switch(g->solved.how) {
+        case Group::SOLVED_OKAY:
+            Printf(true, "   %Fsgroup solved okay%E");
+            break;
+
+        case Group::DIDNT_CONVERGE:
+            Printf(true, "   %FxSOLVE FAILED!%Fd no convergence");
+            break;
+
+        case Group::SINGULAR_JACOBIAN: {
+            Printf(true, "%FxSOLVE FAILED!%Fd inconsistent system");
+            Printf(true, "remove any one of these to fix it");
+            for(int i = 0; i < g->solved.remove.n; i++) {
+                hConstraint hc = g->solved.remove.elem[i];
+                Constraint *c = SS.GetConstraint(hc);
+                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
+                    (i & 1) ? 'd' : 'a',
+                    c->h.v, (&TextWindow::ScreenSelectConstraint),
+                    (&TextWindow::ScreenHoverConstraint),
+                    c->DescriptionString());
+            }
+            break;
+        }
+    }
 }
 
 void TextWindow::ShowRequestInfo(void) {

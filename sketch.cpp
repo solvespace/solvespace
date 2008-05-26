@@ -98,6 +98,7 @@ void Group::MenuGroup(int id) {
         Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
         SS.GW.AnimateOnto(quatf, offsetf);
     }
+    TextWindow::ScreenSelectGroup(0, g.h.v);
     SS.TW.Show();
 }
 
@@ -517,7 +518,7 @@ void Group::Draw(void) {
     glxFillMesh(&mesh);
     glDisable(GL_LIGHTING);
 
-//    glxDebugMesh(&mesh);
+    glxDebugMesh(&mesh);
 
     if(polyError.yes) {
         glxColor4d(1, 0, 0, 0.2);
@@ -534,7 +535,7 @@ void Group::Draw(void) {
             glxWriteText("not closed contour!");
         glPopMatrix();
     } else {
-        glxColor4d(0, 1.0, 1.0, 0.1);
+        glxColor4d(0, 1.0, 1.0, 0.05);
         glPolygonOffset(-1, -1);
         glxFillPolygon(&poly);
         glPolygonOffset(0, 0);

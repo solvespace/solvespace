@@ -288,6 +288,9 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
+            GraphicsWindow::Selection ps = SS.GW.hover;
+            SS.GW.hover.Clear();
+
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
 
@@ -303,24 +306,29 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             }
             if(r >= SS.TW.rows) {
                 SetCursor(LoadCursor(NULL, IDC_ARROW));
-                break;
+                goto done;
             }
 
+#define META (SS.TW.meta[r][c])
             if(msg == WM_MOUSEMOVE) {
-                if(SS.TW.meta[r][c].link) {
+                if(META.link) {
                     SetCursor(LoadCursor(NULL, IDC_HAND));
+                    if(META.h) {
+                        (META.h)(META.link, META.data);
+                    }
                 } else {
                     SetCursor(LoadCursor(NULL, IDC_ARROW));
                 }
             } else {
-                if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].f) {
-                    (SS.TW.meta[r][c].f)(
-                        SS.TW.meta[r][c].link,
-                        SS.TW.meta[r][c].data
-                    );
+                if(META.link && META.f) {
+                    (META.f)(META.link, META.data);
                     SS.TW.Show();
                     InvalidateGraphics();
                 }
+            }
+done:
+            if(!ps.Equals(&(SS.GW.hover))) {
+                InvalidateGraphics();
             }
             break;
         }
@@ -359,6 +367,12 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         } else {
             return FALSE;
         }
+    }
+
+    if(wParam == VK_BACK && !GraphicsEditControlIsVisible()) {
+        TextWindow::ScreenNavigation('b', 0);
+        SS.TW.Show();
+        return TRUE;
     }
 
     int c;

@@ -162,12 +162,14 @@ public:
     void WriteJacobian(int eqTag, int paramTag);
     void EvalJacobian(void);
 
+    void WriteEquationsExceptFor(hConstraint hc, hGroup hg);
+    void FindWhichToRemoveToFixJacobian(Group *g);
     void SolveBySubstitution(void);
 
     static bool IsDragged(hParam p);
 
     bool NewtonSolve(int tag);
-    bool Solve(void);
+    void Solve(Group *g);
 };
 
 
@@ -236,7 +238,7 @@ public:
 
     void GenerateAll(bool andSolve);
     void GenerateAll(bool andSolve, int first, int last);
-    bool SolveGroup(hGroup hg);
+    void SolveGroup(hGroup hg);
     void ForceReferences(void);
 
     // The system to be solved.

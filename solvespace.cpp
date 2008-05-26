@@ -14,8 +14,8 @@ void SolveSpace::Init(char *cmdLine) {
     TW.Init();
     GW.Init();
 
+    GenerateAll(true, 0, INT_MAX);
     TW.Show();
-    GenerateAll(false, 0, INT_MAX);
 }
 
 bool SolveSpace::PruneOrphans(void) {
@@ -127,7 +127,8 @@ void SolveSpace::GenerateAll(bool andSolve) {
     int firstShown = INT_MAX, lastShown = 0;
     // The references don't count, so start from group 1
     for(i = 1; i < group.n; i++) {
-        if(group.elem[i].visible) {
+        Group *g = &(group.elem[i]);
+        if(g->visible || (g->solved.how != Group::SOLVED_OKAY)) {
             firstShown = min(firstShown, i);
             lastShown  = max(lastShown,  i);
         }
@@ -182,6 +183,7 @@ void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
 
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
             ForceReferences();
+            g->solved.how = Group::SOLVED_OKAY;
         } else {
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
@@ -271,7 +273,7 @@ void SolveSpace::ForceReferences(void) {
     }
 }
 
-bool SolveSpace::SolveGroup(hGroup hg) {
+void SolveSpace::SolveGroup(hGroup hg) {
     int i;
     // Clear out the system to be solved.
     sys.entity.Clear();
@@ -293,26 +295,9 @@ bool SolveSpace::SolveGroup(hGroup hg) {
         p->known = false;
         p->val = GetParam(p->h)->val;
     }
-    // And generate all the equations from constraints in this group
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
-        if(c->group.v != hg.v) continue;
 
-        c->Generate(&(sys.eq));
-    }
-    // And the equations from entities
-    for(i = 0; i < entity.n; i++) {
-        Entity *e = &(entity.elem[i]);
-        if(e->group.v != hg.v) continue;
-
-        e->GenerateEquations(&(sys.eq));
-    }
-    // And from the groups themselves
-    g->GenerateEquations(&(sys.eq));
-
-    bool r = sys.Solve();
+    sys.Solve(g);
     FreeAllTemporary();
-    return r;
 }
 
 void SolveSpace::MenuFile(int id) {

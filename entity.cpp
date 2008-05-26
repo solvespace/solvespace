@@ -522,6 +522,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
         dogd.dmin = min(dogd.dmin, d);
     }
+    dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
 void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
@@ -553,6 +554,16 @@ double Entity::GetDistance(Point2d mp) {
     DrawOrGetDistance(-1);
     
     return dogd.dmin;
+}
+
+Vector Entity::GetReferencePos(void) {
+    dogd.drawing = false;
+    dogd.edges = NULL;
+
+    dogd.refp = SS.GW.offset.ScaledBy(-1);
+    DrawOrGetDistance(-1);
+
+    return dogd.refp;
 }
 
 void Entity::DrawOrGetDistance(int order) {  
@@ -615,7 +626,6 @@ void Entity::DrawOrGetDistance(int order) {
         case NORMAL_IN_3D:
         case NORMAL_IN_2D: {
             if(order >= 0 && order != 2) break;
-            if(!SS.GW.showNormals) break;
 
             int i;
             for(i = 0; i < 2; i++) {
@@ -630,6 +640,7 @@ void Entity::DrawOrGetDistance(int order) {
                 } else {
                     glxColor3d(0, 0.4, 0.4);
                     if(i > 0) break;
+                    if(!SS.GW.showNormals) break;
                 }
 
                 Quaternion q = NormalGetNum();

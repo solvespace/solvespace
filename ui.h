@@ -27,6 +27,7 @@ public:
         int             link;
         DWORD           data;
         LinkFunction   *f;
+        LinkFunction   *h;
     }       meta[MAX_ROWS][MAX_COLS];
     int top[MAX_ROWS]; // in half-line units, or -1 for unused
 
@@ -41,9 +42,7 @@ public:
     // State for the screen that we are showing in the text window.
     static const int SCREEN_LIST_OF_GROUPS      = 0;
     static const int SCREEN_GROUP_INFO          = 1;
-    static const int SCREEN_REQUEST_INFO        = 2;
-    static const int SCREEN_ENTIY_INFO          = 3;
-    static const int SCREEN_CONSTRAINT_INFO     = 4;
+    static const int SCREEN_GROUP_SOLVE_INFO    = 2;
     typedef struct {
         int         screen;
         hGroup      group;
@@ -56,6 +55,8 @@ public:
     int history;
     ShownState *shown;
 
+    static void ReportHowGroupSolved(hGroup hg);
+
     void ShowHeader(void);
     // These are self-contained screens, that show some information about
     // the sketch.
@@ -64,15 +65,20 @@ public:
     void ShowRequestInfo(void);
     void ShowEntityInfo(void);
     void ShowConstraintInfo(void);
+    void ShowGroupSolveInfo(void);
 
     void OneScreenForwardTo(int screen);
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenToggleGroupShown(int link, DWORD v);
+    static void ScreenHowGroupSolved(int link, DWORD v);
     static void ScreenShowGroupsSpecial(int link, DWORD v);
 
+    static void ScreenHoverConstraint(int link, DWORD v);
+    static void ScreenHoverRequest(int link, DWORD v);
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
+
     static void ScreenChangeExtrudeSides(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
 
@@ -218,6 +224,8 @@ public:
     public:
         hEntity     entity;
         hConstraint constraint;
+        
+        bool        emphasized;
 
         void Draw(void);
 

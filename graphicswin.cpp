@@ -320,7 +320,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.ClearSuper();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
-            SS.GW.GeneratePerSolving();
+            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS, 0, INT_MAX);
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -624,7 +624,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         default: oops();
     }
-    SS.GW.GeneratePerSolving();
+    if(pending.operation != 0 && pending.operation != DRAGGING_CONSTRAINT) {
+        SS.GW.GeneratePerSolving();
+    }
     havePainted = false;
 }
 
@@ -640,10 +642,34 @@ bool GraphicsWindow::Selection::IsEmpty(void) {
 }
 void GraphicsWindow::Selection::Clear(void) {
     entity.v = constraint.v = 0;
+    emphasized = false;
 }
 void GraphicsWindow::Selection::Draw(void) {
-    if(entity.v)     SS.GetEntity    (entity    )->Draw(-1);
-    if(constraint.v) SS.GetConstraint(constraint)->Draw();
+    Vector refp;
+    if(entity.v) {
+        Entity *e = SS.GetEntity(entity);
+        e->Draw(-1);
+        if(emphasized) refp = e->GetReferencePos();
+    }
+    if(constraint.v) {
+        Constraint *c = SS.GetConstraint(constraint);
+        c->Draw();
+        if(emphasized) refp = c->GetReferencePos();
+    }
+    if(emphasized && (constraint.v || entity.v)) {
+        double s = 0.501/SS.GW.scale;
+        Vector topLeft =       SS.GW.projRight.ScaledBy(-SS.GW.width*s);
+        topLeft = topLeft.Plus(SS.GW.projUp.ScaledBy(SS.GW.height*s));
+        topLeft = topLeft.Minus(SS.GW.offset);
+
+        glLineWidth(40);
+        glColor4d(1.0, 1.0, 0, 0.2);
+        glBegin(GL_LINES);
+            glxVertex3v(topLeft);
+            glxVertex3v(refp);
+        glEnd();
+        glLineWidth(1);
+    }
 }
 
 void GraphicsWindow::ClearSuper(void) {
@@ -998,7 +1024,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
     }
-    SS.GW.GeneratePerSolving();
+    if(pending.operation != 0 && pending.operation != DRAGGING_CONSTRAINT) {
+        SS.GW.GeneratePerSolving();
+    }
 
     SS.TW.Show();
     InvalidateGraphics();

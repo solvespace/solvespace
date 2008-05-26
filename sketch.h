@@ -10,6 +10,7 @@ class hParam;
 class Entity;
 class Param;
 
+class hConstraint;
 class hEquation;
 class Equation;
 
@@ -87,6 +88,14 @@ public:
     hGroup      opA;
     hGroup      opB;
     bool        visible;
+
+    static const int SOLVED_OKAY          = 0;
+    static const int DIDNT_CONVERGE       = 10;
+    static const int SINGULAR_JACOBIAN    = 11;
+    struct {
+        int                 how;
+        SList<hConstraint>  remove;
+    } solved;
 
     static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
     static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
@@ -288,6 +297,7 @@ public:
         Point2d     mp;
         double      dmin;
         SEdgeList   *edges;
+        Vector      refp;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
     void LineDrawOrGetDistanceOrEdge(Vector a, Vector b);
@@ -296,6 +306,7 @@ public:
     void Draw(int order);
     double GetDistance(Point2d mp);
     void GenerateEdges(SEdgeList *el);
+    Vector GetReferencePos(void);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
@@ -328,6 +339,8 @@ public:
 
 class Constraint {
 public:
+    static const hConstraint NO_CONSTRAINT;
+
     static const int USER_EQUATION      =  10;
     static const int POINTS_COINCIDENT  =  20;
     static const int PT_PT_DISTANCE     =  30;
@@ -382,6 +395,7 @@ public:
         bool        drawing;
         Point2d     mp;
         double      dmin;
+        Vector      refp;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);
@@ -391,6 +405,7 @@ public:
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos(void);
+    Vector GetReferencePos(void);
     void Draw(void);
 
     bool HasLabel(void);

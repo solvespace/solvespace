@@ -28,6 +28,7 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
         dogd.dmin = min(dogd.dmin, d);
     }
+    dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
 double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
@@ -56,6 +57,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     } else {
         Point2d o = SS.GW.ProjectPoint(ref);
         dogd.dmin = min(dogd.dmin, o.DistanceTo(dogd.mp) - 10);
+        dogd.refp = ref;
     }
 }
 
@@ -197,6 +199,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                     // same center; so if the point is visible, then this
                     // constraint cannot be selected. But that's okay.
                     dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 3);
+                    dogd.refp = p;
                 }
                 break;
             }
@@ -449,7 +452,8 @@ s:
                             (type == AT_MIDPOINT) ? "M" : NULL)));
                     glPopMatrix();
                 } else {
-                    Point2d ref = SS.GW.ProjectPoint(m.Plus(offset));
+                    dogd.refp = m.Plus(offset);
+                    Point2d ref = SS.GW.ProjectPoint(dogd.refp);
                     dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
                 }
             } else {
@@ -516,5 +520,14 @@ Vector Constraint::GetLabelPos(void) {
     Vector p;
     DrawOrGetDistance(&p);
     return p;
+}
+
+Vector Constraint::GetReferencePos(void) {
+    dogd.drawing = false;
+
+    dogd.refp = SS.GW.offset.ScaledBy(-1);
+    DrawOrGetDistance(NULL);
+
+    return dogd.refp;
 }
 

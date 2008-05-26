@@ -349,17 +349,60 @@ bool System::NewtonSolve(int tag) {
         }
     } while(iter++ < 50 && !converged);
 
-    if(converged) { 
-        return true;
-    } else {
-        dbp("no convergence");
-        return false;
+    return converged;
+}
+
+void System::WriteEquationsExceptFor(hConstraint hc, hGroup hg) {
+    int i;
+    // Generate all the equations from constraints in this group
+    for(i = 0; i < SS.constraint.n; i++) {
+        Constraint *c = &(SS.constraint.elem[i]);
+        if(c->group.v != hg.v) continue;
+        if(c->h.v == hc.v) continue;
+
+        c->Generate(&eq);
+    }
+    // And the equations from entities
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(e->group.v != hg.v) continue;
+
+        e->GenerateEquations(&eq);
+    }
+    // And from the groups themselves
+    (SS.GetGroup(hg))->GenerateEquations(&eq);
+}
+
+void System::FindWhichToRemoveToFixJacobian(Group *g) {
+    int i;
+    (g->solved.remove).Clear();
+
+    for(i = 0; i < SS.constraint.n; i++) {
+        Constraint *c = &(SS.constraint.elem[i]);
+        if(c->group.v != g->h.v) continue;
+
+        param.ClearTags();
+        eq.Clear();
+        WriteEquationsExceptFor(c->h, g->h);
+        eq.ClearTags();
+
+        WriteJacobian(0, 0);
+        EvalJacobian();
+
+        int rank = GaussJordan();
+        if(rank == mat.m) {
+            // We fixed it by removing this constraint
+            (g->solved.remove).Add(&(c->h));
+        }
     }
 }
 
-bool System::Solve(void) {
+void System::Solve(Group *g) {
+    g->solved.remove.Clear();
+
+    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g->h);
+
     int i, j = 0;
-    
 /*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
@@ -391,6 +434,12 @@ bool System::Solve(void) {
     } */
 
     int rank = GaussJordan();
+    if(rank != mat.m) {
+        FindWhichToRemoveToFixJacobian(g);
+        g->solved.how = Group::SINGULAR_JACOBIAN;
+        TextWindow::ReportHowGroupSolved(g->h);
+        return;
+    }
 
 /*    dbp("bound states:");
     for(j = 0; j < mat.n; j++) {
@@ -417,8 +466,13 @@ bool System::Solve(void) {
             // The main param table keeps track of what was assumed.
             pp->assumed = (p->tag == VAR_ASSUMED);
         }
+        if(g->solved.how != Group::SOLVED_OKAY) {
+            g->solved.how = Group::SOLVED_OKAY;
+            TextWindow::ReportHowGroupSolved(g->h);
+        }
+    } else {
+        g->solved.how = Group::DIDNT_CONVERGE;
+        TextWindow::ReportHowGroupSolved(g->h);
     }
-
-    return true;
 }
 
