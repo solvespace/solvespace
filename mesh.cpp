@@ -120,9 +120,9 @@ void SMesh::Simplify(int start) {
                     bDot /= min(ab.Magnitude(), bc.Magnitude());
                     dDot /= min(cd.Magnitude(), de.Magnitude());
 
-                    if(fabs(bDot) < LENGTH_EPS) {
+                    if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
                         conv[j] = c;
-                    } else if(fabs(dDot) < LENGTH_EPS) {
+                    } else if(fabs(dDot) < LENGTH_EPS && bDot > 0) {
                         conv[WRAP((j+1), convc)] = c;
                     } else if(bDot > 0 && dDot > 0) {
                         // conv[j] is unchanged, conv[j+1] goes to [j+2]
