@@ -51,7 +51,7 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 
 void SMesh::Simplify(int start) {
 #define MAX_TRIANGLES 500
-    if(l.n - start > MAX_TRIANGLES) return;
+    if(l.n - start > MAX_TRIANGLES) oops();
 
     STriangle tout[MAX_TRIANGLES];
     int toutc = 0;
@@ -63,10 +63,16 @@ void SMesh::Simplify(int start) {
 
     int i, j;
     for(i = start; i < l.n; i++) {
-        l.elem[i].tag = 0;
+        STriangle *tr = &(l.elem[i]);
+        if((tr->Normal()).Magnitude() < LENGTH_EPS*LENGTH_EPS) {
+            tr->tag = 1;
+        } else {
+            tr->tag = 0;
+        }
     }
 
     for(;;) {
+        bool didAdd;
         convc = 0;
         for(i = start; i < l.n; i++) {
             STriangle *tr = &(l.elem[i]);
@@ -83,7 +89,6 @@ void SMesh::Simplify(int start) {
         }
         if(i >= l.n) break;
 
-        bool didAdd;
         do {
             didAdd = false;
 
@@ -119,7 +124,7 @@ void SMesh::Simplify(int start) {
 
                     bDot /= min(ab.Magnitude(), bc.Magnitude());
                     dDot /= min(cd.Magnitude(), de.Magnitude());
-
+                    
                     if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
                         conv[j] = c;
                     } else if(fabs(dDot) < LENGTH_EPS && bDot > 0) {
@@ -141,9 +146,25 @@ void SMesh::Simplify(int start) {
             }
         } while(didAdd);
 
+        // I need to debug why this is required; sometimes the above code
+        // still generates a convex polygon
+        for(i = 0; i < convc; i++) {
+            Vector a = conv[WRAP((i-1), convc)],
+                   b = conv[i], 
+                   c = conv[WRAP((i+1), convc)];
+            Vector ab = b.Minus(a);
+            Vector bc = c.Minus(b);
+            double bDot = (ab.Cross(bc)).Dot(n);
+            bDot /= min(ab.Magnitude(), bc.Magnitude());
+
+            if(bDot < 0) return;
+        }
+
         for(i = 0; i < convc - 2; i++) {
             STriangle tr = { 0, conv[0], conv[i+1], conv[i+2] };
-            tout[toutc++] = tr;
+            if((tr.Normal()).Magnitude() > LENGTH_EPS*LENGTH_EPS) {
+                tout[toutc++] = tr;
+            }
         }
     }
 
@@ -169,7 +190,7 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
                 AddTriangle(st->a, st->b, st->c);
             }
         }
-        if(l.n - pn > 4) {
+        if(l.n - pn > 1) {
             Simplify(pn);
         }
     }
@@ -210,9 +231,25 @@ SBsp3 *SBsp3::Alloc(void) { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 SBsp3 *SBsp3::FromMesh(SMesh *m) {
     SBsp3 *bsp3 = NULL;
     int i;
+
+    SMesh mc; ZERO(&mc);
     for(i = 0; i < m->l.n; i++) {
-        bsp3 = bsp3->Insert(&(m->l.elem[i]), NULL);
+        mc.AddTriangle(&(m->l.elem[i]));
     }
+
+    srand(0); // Let's be deterministic, at least!
+    int n = mc.l.n;
+    while(n > 1) {
+        int k = rand() % n;
+        n--;
+        SWAP(STriangle, mc.l.elem[k], mc.l.elem[n]);
+    }
+
+    for(i = 0; i < mc.l.n; i++) {
+        bsp3 = bsp3->Insert(&(mc.l.elem[i]), NULL);
+    }
+
+    mc.Clear();
     return bsp3;
 }
 
@@ -230,13 +267,21 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
 
     bool onFace = false;
     bool sameNormal;
+    double maxNormalMag = -1;
+
+    Vector lln, trn = tr->Normal();
 
     SBsp3 *ll = this;
     while(ll) {
         if((ll->tri).ContainsPoint(tc)) {
             onFace = true;
-            sameNormal = (tr->Normal()).Dot((ll->tri).Normal()) > 0;
-            break;
+            // If the mesh contains almost-zero-area triangles, and we're
+            // just on the edge of one of those, then don't trust its normal.
+            lln = (ll->tri).Normal();
+            if(lln.Magnitude() > maxNormalMag) {
+                sameNormal = trn.Dot(lln) > 0;
+                maxNormalMag = lln.Magnitude();
+            }
         }
         ll = ll->more;
     }
