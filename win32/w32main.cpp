@@ -764,7 +764,7 @@ static void CreateMainWindows(void)
         "SolveSpace (Graphics Window)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
-        600, 300, 200, 200, NULL, top, Instance, NULL);
+        50, 50, 900, 600, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
 
     CreateGlContext();
@@ -788,7 +788,7 @@ static void CreateMainWindows(void)
     // window is a child of the graphics window.
     TextWnd = CreateWindowEx(0, 
         "TextWnd", "SolveSpace (Text Window)", WS_THICKFRAME | WS_CLIPCHILDREN,
-        10, 10, 600, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
+        650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 
     TextWndScrollBar = CreateWindowEx(0, WC_SCROLLBAR, "", WS_CHILD |
