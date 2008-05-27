@@ -475,6 +475,11 @@ triangulate:
 
 SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     if(!this) {
+        if(instead && !(instead->flipNormal)) {
+            instead->AddTriangle(tr->a, tr->b, tr->c);
+            return NULL;
+        }
+
         // Brand new node; so allocate for it, and fill us in.
         SBsp3 *r = Alloc();
         r->n = (tr->Normal()).WithMagnitude(1);
