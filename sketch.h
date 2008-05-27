@@ -89,6 +89,7 @@ public:
     hGroup      opB;
     bool        visible;
     hEntity     activeWorkplane;
+    Expr        *exprA;
 
     static const int SOLVED_OKAY          = 0;
     static const int DIDNT_CONVERGE       = 10;
@@ -100,8 +101,8 @@ public:
 
     static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
     static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
-    static const int EXTRUDE_ONE_SIDED          = 7000;
-    static const int EXTRUDE_TWO_SIDED          = 7001;
+    static const int ONE_SIDED                  = 7000;
+    static const int TWO_SIDED                  = 7001;
     int subtype;
 
     struct {

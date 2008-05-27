@@ -460,7 +460,7 @@ s:
                 Vector a = SS.GetEntity(ptA)->PointGetNum();
                 Vector b = SS.GetEntity(ptB)->PointGetNum();
 
-                Entity *w = SS.GetEntity(SS.GetEntity(ptA)->workplane);
+                Entity *w = SS.GetEntity(workplane);
                 Vector cu = w->Normal()->NormalU();
                 Vector cv = w->Normal()->NormalV();
                 Vector cn = w->Normal()->NormalN();

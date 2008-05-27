@@ -15,11 +15,18 @@
 #define MIN_COLS    45
 #define TEXT_HEIGHT 20
 #define TEXT_WIDTH  9
+#define TEXT_LEFT_MARGIN 4
+
+// For the edit controls
+#define EDIT_WIDTH  220
+#define EDIT_HEIGHT 21
 
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
+HWND TextEditControl;
+int TextEditControlCol, TextEditControlHalfRow;
 int TextWndScrollPos; // The scrollbar position, in half-row units
 int TextWndHalfRows;  // The height of our window, in half-row units
 
@@ -182,7 +189,7 @@ static void PaintTextWnd(HDC hdc)
                 SelectObject(backDc, FixedFont);
             }
 
-            int x = 4 + c*TEXT_WIDTH;
+            int x = TEXT_LEFT_MARGIN + c*TEXT_WIDTH;
             int y = (top-TextWndScrollPos)*(TEXT_HEIGHT/2);
 
             RECT a;
@@ -227,6 +234,11 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
         si.nPos = TextWndScrollPos;
         SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
 
+        if(TextEditControlIsVisible()) {
+            int x = TEXT_LEFT_MARGIN + TEXT_WIDTH*TextEditControlCol;
+            int y = (TextEditControlHalfRow - TextWndScrollPos)*(TEXT_HEIGHT/2);
+            MoveWindow(TextEditControl, x, y, EDIT_WIDTH, EDIT_HEIGHT, TRUE);
+        }
         InvalidateRect(TextWnd, NULL, FALSE);
     }
 }
@@ -288,6 +300,10 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
+            if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
+                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                break;
+            }
             GraphicsWindow::Selection ps = SS.GW.hover;
             SS.GW.hover.Clear();
 
@@ -340,6 +356,9 @@ done:
             GetClientRect(hwnd, &r);
             MoveWindow(TextWndScrollBar, r.right - sw, r.top, sw,
                 (r.bottom - r.top), TRUE);
+            // If the window is growing, then the scrollbar position may
+            // be moving, so it's as if we're dragging the scrollbar.
+            HandleTextWindowScrollBar(0, 0);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
         }
@@ -364,6 +383,16 @@ static BOOL ProcessKeyDown(WPARAM wParam)
             SendMessage(GraphicsEditControl, WM_GETTEXT, 900, (LPARAM)s);
             SS.GW.EditControlDone(s);
             return TRUE;
+        } else {
+            return FALSE;
+        }
+    }
+    if(TextEditControlIsVisible() && wParam != VK_ESCAPE) {
+        if(wParam == VK_RETURN) {
+            char s[1024];
+            memset(s, 0, sizeof(s));
+            SendMessage(TextEditControl, WM_GETTEXT, 900, (LPARAM)s);
+            SS.TW.EditControlDone(s);
         } else {
             return FALSE;
         }
@@ -463,8 +492,35 @@ void InvalidateText(void)
     InvalidateRect(TextWnd, NULL, FALSE);
 }
 
+static void ShowEditControl(HWND h, int x, int y, char *s) {
+    MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, TRUE);
+    ShowWindow(h, SW_SHOW);
+    SendMessage(h, WM_SETTEXT, 0, (LPARAM)s);
+    SendMessage(h, EM_SETSEL, 0, strlen(s));
+    SetFocus(h);
+}
+void ShowTextEditControl(int hr, int c, char *s)
+{
+    if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) return;
+
+    int x = TEXT_LEFT_MARGIN + TEXT_WIDTH*c;
+    int y = (hr - TextWndScrollPos)*(TEXT_HEIGHT/2);
+    TextEditControlCol = c;
+    TextEditControlHalfRow = hr;
+    ShowEditControl(TextEditControl, x, y, s);
+}
+void HideTextEditControl(void)
+{
+    ShowWindow(TextEditControl, SW_HIDE);
+}
+BOOL TextEditControlIsVisible(void)
+{
+    return IsWindowVisible(TextEditControl);
+}
 void ShowGraphicsEditControl(int x, int y, char *s)
 {
+    if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) return;
+
     RECT r;
     GetClientRect(GraphicsWnd, &r);
     x = x + (r.right - r.left)/2;
@@ -474,11 +530,7 @@ void ShowGraphicsEditControl(int x, int y, char *s)
     // top left corner
     y -= 20;
 
-    MoveWindow(GraphicsEditControl, x, y, 220, 21, TRUE);
-    ShowWindow(GraphicsEditControl, SW_SHOW);
-    SendMessage(GraphicsEditControl, WM_SETTEXT, 0, (LPARAM)s);
-    SendMessage(GraphicsEditControl, EM_SETSEL, 0, strlen(s));
-    SetFocus(GraphicsEditControl);
+    ShowEditControl(GraphicsEditControl, x, y, s);
 }
 void HideGraphicsEditControl(void)
 {
@@ -744,6 +796,11 @@ static void CreateMainWindows(void)
         200, 100, 100, 100, TextWnd, NULL, Instance, NULL);
     // Force the scrollbar to get resized to the window,
     TextWndProc(TextWnd, WM_SIZE, 0, 0);
+
+    TextEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
+        WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
+        50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
+    SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
 
 
     RECT r, rc;

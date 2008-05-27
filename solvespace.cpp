@@ -232,6 +232,8 @@ void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
         // the active group or active workplane could have been deleted. So
         // clear all that out.
         GW.ClearSuper();
+        HideGraphicsEditControl();
+        HideTextEditControl();
     }
     return;
 

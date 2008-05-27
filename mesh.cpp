@@ -50,7 +50,7 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 }
 
 void SMesh::Simplify(int start) {
-#define MAX_TRIANGLES 500
+#define MAX_TRIANGLES 2000
     if(l.n - start > MAX_TRIANGLES) oops();
 
     STriangle tout[MAX_TRIANGLES];

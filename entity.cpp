@@ -332,6 +332,7 @@ void Entity::PointForceTo(Vector p) {
         }
 
         case POINT_N_TRANS: {
+            if(timesApplied == 0) break;
             Vector trans = (p.Minus(numPoint)).ScaledBy(1.0/timesApplied);
             SS.GetParam(param[0])->val = trans.x;
             SS.GetParam(param[1])->val = trans.y;

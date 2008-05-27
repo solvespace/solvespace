@@ -374,12 +374,12 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.GW.ClearSelection();
     SS.GW.selection[0].entity = hr.entity(0);
 }
-void TextWindow::ScreenChangeExtrudeSides(int link, DWORD v) {
+void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
-    if(g->subtype == Group::EXTRUDE_ONE_SIDED) {
-        g->subtype = Group::EXTRUDE_TWO_SIDED;
-    } else if(g->subtype == Group::EXTRUDE_TWO_SIDED) {
-        g->subtype = Group::EXTRUDE_ONE_SIDED;
+    if(g->subtype == Group::ONE_SIDED) {
+        g->subtype = Group::TWO_SIDED;
+    } else if(g->subtype == Group::TWO_SIDED) {
+        g->subtype = Group::ONE_SIDED;
     } else oops();
     SS.GW.GeneratePerSolving();
     SS.GW.ClearSuper();
@@ -394,9 +394,15 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GW.GeneratePerSolving();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeExprA(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    ShowTextEditControl(13, 10, g->exprA->Print());
+    SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
+    SS.TW.edit.group.v = v;
+}
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
-    char *s;
+    char *s, *s2;
     if(SS.GW.activeGroup.v == shown->group.v) {
         s = "active ";
     } else if(shown->group.v == Group::HGROUP_REFERENCES.v) {
@@ -407,13 +413,33 @@ void TextWindow::ShowGroupInfo(void) {
     Printf(true, "%Ft%sGROUP   %E%s", s, g->DescriptionString());
 
     if(g->type == Group::EXTRUDE) {
-        bool one = (g->subtype == Group::EXTRUDE_ONE_SIDED);
-        Printf(true, "%FtEXTRUDE%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-            &TextWindow::ScreenChangeExtrudeSides,
-            (one ? "" : "one side"), (one ? "one-side" : ""),
-            &TextWindow::ScreenChangeExtrudeSides,
+        s = "EXTRUDE";
+    } else if(g->type == Group::TRANSLATE) {
+        s = "TRANSLATE";
+        s2 ="REPEAT   ";
+    } else if(g->type == Group::ROTATE) {
+        s = "ROTATE";
+        s2 ="REPEAT ";
+    }
+
+    if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
+       g->type == Group::TRANSLATE)
+    {
+        bool one = (g->subtype == Group::ONE_SIDED);
+        Printf(true, "%Ft%s%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E", s,
+            &TextWindow::ScreenChangeOneOrTwoSides,
+            (one ? "" : "one side"), (one ? "one side" : ""),
+            &TextWindow::ScreenChangeOneOrTwoSides,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
 
+    }
+    if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
+        int times = (int)(g->exprA->Eval());
+        Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f(change)%E",
+            s2, times, times == 1 ? "" : "s",
+            g->h, &TextWindow::ScreenChangeExprA);
+    }
+    if(g->type == Group::EXTRUDE) {
         bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
         Printf(false, "%FtCOMBINE%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
             &TextWindow::ScreenChangeMeshCombine,
@@ -505,4 +531,23 @@ void TextWindow::ShowConstraintInfo(void) {
     Printf(false, "[[constraint]]");
 }
 
+void TextWindow::EditControlDone(char *s) {
+    HideTextEditControl();
+    switch(edit.meaning) {
+        case EDIT_TIMES_REPEATED: {
+            Expr *e = Expr::FromString(s);
+            if(e) {
+                Group *g = SS.GetGroup(edit.group);
+                Expr::FreeKeep(&(g->exprA));
+                g->exprA = e->DeepCopyKeep();
+                SS.GW.GeneratePerSolving();
+                SS.TW.Show();
+            } else {
+                Error("Not a valid number or expression: '%s'", s);
+            }
+            break;
+        }
+    }
+    edit.meaning = EDIT_NOTHING;
+}
 

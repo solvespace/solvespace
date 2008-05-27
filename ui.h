@@ -55,6 +55,13 @@ public:
     int history;
     ShownState *shown;
 
+    static const int EDIT_NOTHING               = 0;
+    static const int EDIT_TIMES_REPEATED        = 1;
+    struct {
+        int     meaning;
+        hGroup  group;
+    } edit;
+
     static void ReportHowGroupSolved(hGroup hg);
 
     void ShowHeader(void);
@@ -68,6 +75,8 @@ public:
     void ShowGroupSolveInfo(void);
 
     void OneScreenForwardTo(int screen);
+
+    // All of these are callbacks from the GUI code.
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenToggleGroupShown(int link, DWORD v);
@@ -79,10 +88,13 @@ public:
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
 
-    static void ScreenChangeExtrudeSides(int link, DWORD v);
+    static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
+    static void ScreenChangeExprA(int link, DWORD v);
 
     static void ScreenNavigation(int link, DWORD v);
+
+    void EditControlDone(char *s);
 };
 
 class GraphicsWindow {

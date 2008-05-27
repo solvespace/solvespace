@@ -75,14 +75,24 @@ void Group::MenuGroup(int id) {
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.wrkpl.entityB = SS.GW.ActiveWorkplane();
-            g.subtype = EXTRUDE_ONE_SIDED;
+            g.subtype = ONE_SIDED;
             g.name.strcpy("extrude");
             break;
 
         case GraphicsWindow::MNU_GROUP_ROT:
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
+            g.exprA = Expr::FromConstant(7)->DeepCopyKeep();
+            g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
+            break;
+
+        case GraphicsWindow::MNU_GROUP_TRANS:
+            g.type = TRANSLATE;
+            g.opA = SS.GW.activeGroup;
+            g.exprA = Expr::FromConstant(7)->DeepCopyKeep();
+            g.subtype = ONE_SIDED;
+            g.name.strcpy("translate");
             break;
 
         default: oops();
@@ -113,8 +123,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                      IdList<Param,hParam> *param)
 {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
+    Vector gp = SS.GW.projRight.Plus(SS.GW.projUp);
     gn = gn.WithMagnitude(200/SS.GW.scale);
-    int i;
+    gp = gp.WithMagnitude(200/SS.GW.scale);
+    int a, i;
     switch(type) {
         case DRAWING_3D:
             break;
@@ -170,9 +182,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gn.y);
             AddParam(param, h.param(2), gn.z);
             int ai, af;
-            if(subtype == EXTRUDE_ONE_SIDED) {
-                ai = 0; af = 1;
-            } else if(subtype == EXTRUDE_TWO_SIDED) {
+            if(subtype == ONE_SIDED) {
+                ai = 0; af = 2;
+            } else if(subtype == TWO_SIDED) {
                 ai = -1; af = 1;
             } else oops();
             for(i = 0; i < entity->n; i++) {
@@ -194,11 +206,31 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             }
             break;
 
+        case TRANSLATE: {
+            // The translation vector
+            AddParam(param, h.param(0), gp.x);
+            AddParam(param, h.param(1), gp.y);
+            AddParam(param, h.param(2), gp.z);
+
+            int n = (int)(exprA->Eval());
+            for(a = 0; a < n; a++) {
+                for(i = 0; i < entity->n; i++) {
+                    Entity *e = &(entity->elem[i]);
+                    if(e->group.v != opA.v) continue;
+
+                    CopyEntity(e->h, a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
+                        h.param(0), h.param(1), h.param(2),
+                        NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                        true);
+                }
+            }
+            break;
+        }
         case ROTATE:
             // The translation vector
-            AddParam(param, h.param(0), 100);
-            AddParam(param, h.param(1), 100);
-            AddParam(param, h.param(2), 100);
+            AddParam(param, h.param(0), gp.x);
+            AddParam(param, h.param(1), gp.y);
+            AddParam(param, h.param(2), gp.z);
             // The rotation quaternion
             AddParam(param, h.param(3), 1);
             AddParam(param, h.param(4), 0);
@@ -427,8 +459,8 @@ void Group::MakePolygons(void) {
             SS.GetParam(h.param(2))->val
         );
         Vector tbot, ttop;
-        if(subtype == EXTRUDE_ONE_SIDED) {
-            tbot = Vector::MakeFrom(0, 0, 0); ttop = translate;
+        if(subtype == ONE_SIDED) {
+            tbot = Vector::MakeFrom(0, 0, 0); ttop = translate.ScaledBy(2);
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }

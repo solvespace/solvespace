@@ -292,6 +292,7 @@ void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
             HideGraphicsEditControl();
+            HideTextEditControl();
             SS.GW.ClearSelection();
             SS.GW.ClearPending();
             SS.TW.ScreenNavigation('h', 0);
@@ -320,6 +321,8 @@ void GraphicsWindow::MenuEdit(int id) {
 
             // Forget any mention of the just-deleted entity
             SS.GW.ClearSuper();
+            HideGraphicsEditControl();
+            HideTextEditControl();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
             SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS, 0, INT_MAX);
