@@ -695,32 +695,42 @@ void Entity::DrawOrGetDistance(int order) {
             Vector u = Normal()->NormalU();
             Vector v = Normal()->NormalV();
 
-            double s = (min(SS.GW.width, SS.GW.height))*0.4/SS.GW.scale;
+            double s = (min(SS.GW.width, SS.GW.height))*0.45/SS.GW.scale;
 
             Vector us = u.ScaledBy(s);
             Vector vs = v.ScaledBy(s);
 
             Vector pp = p.Plus (us).Plus (vs);
             Vector pm = p.Plus (us).Minus(vs);
-            Vector mm = p.Minus(us).Minus(vs);
+            Vector mm = p.Minus(us).Minus(vs), mm2 = mm;
             Vector mp = p.Minus(us).Plus (vs);
 
             glxColor3d(0, 0.3, 0.3);
             glEnable(GL_LINE_STIPPLE);
             glLineStipple(3, 0x1111);
+            if(!h.isFromRequest()) {
+                mm = mm.Plus(v.ScaledBy(60/SS.GW.scale));
+                mm2 = mm2.Plus(u.ScaledBy(60/SS.GW.scale));
+                LineDrawOrGetDistance(mm2, mm);
+            }
             LineDrawOrGetDistance(pp, pm);
-            LineDrawOrGetDistance(pm, mm);
+            LineDrawOrGetDistance(pm, mm2);
             LineDrawOrGetDistance(mm, mp);
             LineDrawOrGetDistance(mp, pp);
             glDisable(GL_LINE_STIPPLE);
 
+            char *str = DescriptionString()+5;
             if(dogd.drawing) {
                 glPushMatrix();
-                    glxTranslatev(mm);
+                    glxTranslatev(mm2);
                     glxOntoWorkplane(u, v);
-                    glxWriteText(DescriptionString());
+                    glxWriteText(str);
                 glPopMatrix();
             } else {
+                Vector pos = mm2.Plus(u.ScaledBy(glxStrWidth(str)/2)).Plus(
+                                      v.ScaledBy(glxStrHeight()/2));
+                Point2d pp = SS.GW.ProjectPoint(pos);
+                dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);
                 // If a line lies in a plane, then select the line, not
                 // the plane.
                 dogd.dmin += 3;

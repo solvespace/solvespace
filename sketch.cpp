@@ -74,7 +74,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
-            g.wrkpl.entityB = SS.GW.activeWorkplane;
+            g.wrkpl.entityB = SS.GW.ActiveWorkplane();
             g.subtype = EXTRUDE_ONE_SIDED;
             g.name.strcpy("extrude");
             break;
@@ -92,12 +92,9 @@ void Group::MenuGroup(int id) {
     SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
     SS.GW.activeGroup = g.h;
     if(g.type == DRAWING_WORKPLANE) {
-        SS.GW.activeWorkplane = g.h.entity(0);
-        Entity *e = SS.GetEntity(SS.GW.activeWorkplane);
-        Quaternion quatf = e->Normal()->NormalGetNum();
-        Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
-        SS.GW.AnimateOnto(quatf, offsetf);
+        SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
     }
+    SS.GW.AnimateOntoWorkplane();
     TextWindow::ScreenSelectGroup(0, g.h.v);
     SS.TW.Show();
 }

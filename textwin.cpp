@@ -223,15 +223,15 @@ void TextWindow::ScreenNavigation(int link, DWORD v) {
 void TextWindow::ShowHeader(void) {
     ClearScreen();
 
-    char *cd = (SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) ?
-               "free in 3d" :
-               SS.GetEntity(SS.GW.activeWorkplane)->DescriptionString();
+    char *cd = SS.GW.LockedInWorkplane() ?
+                   SS.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString() :
+                   "free in 3d";
 
     // Navigation buttons
     if(SS.GW.pending.description) {
-        Printf(false, "             %Bt%Ft workplane:%Fd %s", cd);
+        Printf(false, "             %Bt%Ft wrkpl:%Fd %s", cd);
     } else {
-        Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft workplane:%Fd %s",
+        Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft wrkpl:%Fd %s",
                     (&TextWindow::ScreenNavigation),
                     (&TextWindow::ScreenNavigation),
                     cd);
@@ -299,11 +299,6 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     Group *g = SS.GetGroup(hg);
     g->visible = true;
     SS.GW.activeGroup.v = v;
-    if(g->type == Group::DRAWING_WORKPLANE) {
-        // If we're activating an in-workplane drawing, then activate that
-        // workplane too.
-        SS.GW.activeWorkplane = g->h.entity(0);
-    }
     SS.GW.ClearSuper();
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {

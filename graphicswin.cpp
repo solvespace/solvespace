@@ -31,7 +31,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
-{ 1, "Onto Othe&r Side\tCtrl+O",            MNU_OTHER_SIDE,     'R'|C,  mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1,  NULL,                                 0,                          NULL  },
@@ -102,15 +101,11 @@ void GraphicsWindow::Init(void) {
     projRight.x = 1; projRight.y = projRight.z = 0;
     projUp.y = 1; projUp.z = projUp.x = 0;
 
-    // Start locked on to the XY plane.
-    hRequest r = Request::HREQUEST_REFERENCE_XY;
-    activeWorkplane = r.entity(0);
-
     // And with the latest visible group active
     int i;
     for(i = 0; i < SS.group.n; i++) {
         Group *g = &(SS.group.elem[i]);
-        if(g->visible) activeGroup = g->h;
+        if(i == 0 || g->visible) activeGroup = g->h;
     }
 
     EnsureValidActives();
@@ -145,7 +140,13 @@ Point2d GraphicsWindow::ProjectPoint(Vector p) {
     return r;
 }
 
-void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
+void GraphicsWindow::AnimateOntoWorkplane(void) {   
+    if(!LockedInWorkplane()) return;
+
+    Entity *w = SS.GetEntity(ActiveWorkplane());
+    Quaternion quatf = w->Normal()->NormalGetNum();
+    Vector offsetf = (SS.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
+
     // Get our initial orientation and translation.
     Quaternion quat0 = Quaternion::MakeFrom(projRight, projUp);
     Vector offset0 = offset;
@@ -197,15 +198,6 @@ void GraphicsWindow::MenuView(int id) {
         case MNU_ZOOM_TO_FIT:
             break;
 
-        case MNU_OTHER_SIDE: {
-            Quaternion quatf = Quaternion::MakeFrom(
-                SS.GW.projRight.ScaledBy(-1), SS.GW.projUp.ScaledBy(1));
-            Vector ru = quatf.RotationU();
-            Vector rv = quatf.RotationV();
-            SS.GW.AnimateOnto(quatf, SS.GW.offset);
-            break;
-        }
-
         case MNU_SHOW_TEXT_WND:
             SS.GW.showTextWindow = !SS.GW.showTextWindow;
             SS.GW.EnsureValidActives();
@@ -243,25 +235,25 @@ void GraphicsWindow::EnsureValidActives(void) {
     }
 
     // The active coordinate system must also exist.
-    if(activeWorkplane.v != Entity::FREE_IN_3D.v) {
-        Entity *e = SS.entity.FindByIdNoOops(activeWorkplane);
+    if(LockedInWorkplane()) {
+        Entity *e = SS.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
             if(hgw.v != activeGroup.v && SS.GroupsInOrder(activeGroup, hgw)) {
                 // The active workplane is in a group that comes after the
                 // active group; so any request or constraint will fail.
-                activeWorkplane = Entity::FREE_IN_3D;
+                SetWorkplaneFreeIn3d();
                 change = true;
             }
         } else {
-            activeWorkplane = Entity::FREE_IN_3D;
+            SetWorkplaneFreeIn3d();
             change = true;
         }
     }
 
-    bool in3d = (activeWorkplane.v == Entity::FREE_IN_3D.v);
-    CheckMenuById(MNU_FREE_IN_3D, in3d);
-    CheckMenuById(MNU_SEL_WORKPLANE, !in3d);
+    bool locked = LockedInWorkplane();
+    CheckMenuById(MNU_FREE_IN_3D, !locked);
+    CheckMenuById(MNU_SEL_WORKPLANE, locked);
 
     // And update the checked state for various menus
     switch(viewUnits) {
@@ -280,6 +272,16 @@ void GraphicsWindow::EnsureValidActives(void) {
     CheckMenuById(MNU_SOLVE_AUTO, (SS.GW.solving == SOLVE_ALWAYS));
 
     if(change) SS.TW.Show();
+}
+
+void GraphicsWindow::SetWorkplaneFreeIn3d(void) {
+    SS.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
+}
+hEntity GraphicsWindow::ActiveWorkplane(void) {
+    return SS.GetGroup(activeGroup)->activeWorkplane;
+}
+bool GraphicsWindow::LockedInWorkplane(void) {
+    return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
 }
 
 void GraphicsWindow::GeneratePerSolving(void) {
@@ -336,25 +338,23 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_SEL_WORKPLANE: {
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
-                SS.GW.activeWorkplane = SS.GW.gs.entity[0];
+                SS.GetGroup(SS.GW.activeGroup)->activeWorkplane =
+                    SS.GW.gs.entity[0];
             }
 
-            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+            if(!SS.GW.LockedInWorkplane()) {
                 Error("Select workplane (e.g., the XY plane) "
                       "before locking on.");
                 break;
             }
             // Align the view with the selected workplane
-            Entity *e = SS.GetEntity(SS.GW.activeWorkplane);
-            Quaternion quatf = e->Normal()->NormalGetNum();
-            Vector offsetf = (e->WorkplaneGetOffset()).ScaledBy(-1);
-            SS.GW.AnimateOnto(quatf, offsetf);
+            SS.GW.AnimateOntoWorkplane();
             SS.GW.ClearSuper();
             SS.TW.Show();
             break;
         }
         case MNU_FREE_IN_3D:
-            SS.GW.activeWorkplane = Entity::FREE_IN_3D;
+            SS.GW.SetWorkplaneFreeIn3d();
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -800,7 +800,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     Request r;
     memset(&r, 0, sizeof(r));
     r.group = activeGroup;
-    r.workplane = activeWorkplane;
+    r.workplane = ActiveWorkplane();
     r.type = type;
     SS.request.AddAndAssignId(&r);
 
@@ -878,7 +878,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case MNU_RECTANGLE: {
-            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+            if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw rectangle in 3d; select a workplane first.");
                  break;
             }
@@ -922,7 +922,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case MNU_ARC:
-            if(SS.GW.activeWorkplane.v == Entity::FREE_IN_3D.v) {
+            if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw arc in 3d; select a workplane first.");
                 ClearPending();
                 break;

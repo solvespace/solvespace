@@ -101,7 +101,6 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
-        MNU_OTHER_SIDE,
         MNU_SHOW_TEXT_WND,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
@@ -177,7 +176,7 @@ public:
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
-    void AnimateOnto(Quaternion quatf, Vector offsetf);
+    void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(double right, double up, double forward);
 
     typedef enum {
@@ -187,8 +186,10 @@ public:
     Unit    viewUnits;
 
     hGroup  activeGroup;
-    hEntity activeWorkplane;
-    void EnsureValidActives();
+    void EnsureValidActives(void);
+    bool LockedInWorkplane(void);
+    void SetWorkplaneFreeIn3d(void);
+    hEntity ActiveWorkplane(void);
 
     // Operations that must be completed by doing something with the mouse
     // are noted here. These occupy the same space as the menu ids.

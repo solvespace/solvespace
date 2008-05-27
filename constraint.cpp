@@ -19,7 +19,7 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
     Constraint c;
     memset(&c, 0, sizeof(c));
     c.group = SS.GW.activeGroup;
-    c.workplane = SS.GW.activeWorkplane;
+    c.workplane = SS.GW.ActiveWorkplane();
     c.type = type;
     c.ptA = ptA;
     c.ptB = ptB;
@@ -35,7 +35,7 @@ void Constraint::MenuConstrain(int id) {
     Constraint c;
     memset(&c, 0, sizeof(c));
     c.group = SS.GW.activeGroup;
-    c.workplane = SS.GW.activeWorkplane;
+    c.workplane = SS.GW.ActiveWorkplane();
 
     SS.GW.GroupSelection();
 #define gs (SS.GW.gs)

@@ -88,6 +88,7 @@ public:
     hGroup      opA;
     hGroup      opB;
     bool        visible;
+    hEntity     activeWorkplane;
 
     static const int SOLVED_OKAY          = 0;
     static const int DIDNT_CONVERGE       = 10;
