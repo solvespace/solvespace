@@ -82,7 +82,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_ROT:
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::FromConstant(7)->DeepCopyKeep();
+            g.exprA = Expr::FromConstant(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
             break;
@@ -90,7 +90,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_TRANS:
             g.type = TRANSLATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::FromConstant(7)->DeepCopyKeep();
+            g.exprA = Expr::FromConstant(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
             g.name.strcpy("translate");
             break;

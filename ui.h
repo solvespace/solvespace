@@ -57,6 +57,7 @@ public:
 
     static const int EDIT_NOTHING               = 0;
     static const int EDIT_TIMES_REPEATED        = 1;
+    static const int EDIT_GROUP_NAME            = 2;
     struct {
         int     meaning;
         hGroup  group;
@@ -90,7 +91,10 @@ public:
 
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
+
+    // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);
+    static void ScreenChangeGroupName(int link, DWORD v);
 
     static void ScreenNavigation(int link, DWORD v);
 

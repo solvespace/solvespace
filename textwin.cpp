@@ -400,17 +400,21 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
+void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    ShowTextEditControl(7, 13, g->DescriptionString()+5);
+    SS.TW.edit.meaning = EDIT_GROUP_NAME;
+    SS.TW.edit.group.v = v;
+}
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
     char *s, *s2;
-    if(SS.GW.activeGroup.v == shown->group.v) {
-        s = "active ";
-    } else if(shown->group.v == Group::HGROUP_REFERENCES.v) {
-        s = "special ";
-    } else {
-        s = "";
-    }
-    Printf(true, "%Ft%sGROUP   %E%s", s, g->DescriptionString());
+
+    s = (shown->group.v == Group::HGROUP_REFERENCES.v) ? "" : "(rename)";
+
+    Printf(true, "%FtGROUP   %E%s %Fl%Ll%D%f%s%E",
+        g->DescriptionString(),
+        g->h.v, &TextWindow::ScreenChangeGroupName, s);
 
     if(g->type == Group::EXTRUDE) {
         s = "EXTRUDE";
@@ -431,13 +435,12 @@ void TextWindow::ShowGroupInfo(void) {
             (one ? "" : "one side"), (one ? "one side" : ""),
             &TextWindow::ScreenChangeOneOrTwoSides,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
-
     }
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
         int times = (int)(g->exprA->Eval());
         Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f(change)%E",
             s2, times, times == 1 ? "" : "s",
-            g->h, &TextWindow::ScreenChangeExprA);
+            g->h.v, &TextWindow::ScreenChangeExprA);
     }
     if(g->type == Group::EXTRUDE) {
         bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
@@ -532,7 +535,6 @@ void TextWindow::ShowConstraintInfo(void) {
 }
 
 void TextWindow::EditControlDone(char *s) {
-    HideTextEditControl();
     switch(edit.meaning) {
         case EDIT_TIMES_REPEATED: {
             Expr *e = Expr::FromString(s);
@@ -547,7 +549,25 @@ void TextWindow::EditControlDone(char *s) {
             }
             break;
         }
+        case EDIT_GROUP_NAME: {
+            char *t;
+            bool invalid = false;
+            for(t = s; *t; t++) {
+                if(!(isalnum(*t) || *t == '-' || *t == '_')) {
+                    invalid = true;
+                }
+            }
+            if(invalid || !*s) {
+                Error("Invalid characters. Allowed are: A-Z a-z 0-9 _ -");
+            } else {
+                Group *g = SS.GetGroup(edit.group);
+                g->name.strcpy(s);
+            }
+            SS.TW.Show();
+            break;
+        }
     }
+    HideTextEditControl();
     edit.meaning = EDIT_NOTHING;
 }
 

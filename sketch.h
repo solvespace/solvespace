@@ -83,6 +83,7 @@ public:
     static const int EXTRUDE                       = 5010;
     static const int ROTATE                        = 5020;
     static const int TRANSLATE                     = 5030;
+    static const int IMPORTED                      = 6000;
     int type;
 
     hGroup      opA;
@@ -200,6 +201,7 @@ public:
     static const int POINT_N_TRANS          =  2010;
     static const int POINT_N_ROT_TRANS      =  2011;
     static const int POINT_N_COPY           =  2012;
+    static const int POINT_N_ROT_AA         =  2013;
 
     static const int NORMAL_IN_3D           =  3000;
     static const int NORMAL_IN_2D           =  3001;
@@ -211,6 +213,7 @@ public:
     static const int NORMAL_IN_PLANE        =  3002;
     static const int NORMAL_N_COPY          =  3010;
     static const int NORMAL_N_ROT           =  3011;
+    static const int NORMAL_N_ROT_AA        =  3012;
 
     static const int DISTANCE               =  4000;
     static const int DISTANCE_N_COPY        =  4001;

@@ -161,7 +161,6 @@ public:
     void DebugDraw(void);
 };
 
-
 class SMesh {
 public:
     SList<STriangle>    l;
@@ -182,6 +181,40 @@ public:
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnion(SMesh *a, SMesh *b);
     void MakeFromDifference(SMesh *a, SMesh *b);
+};
+
+// A linked list of triangles
+class STriangleLl {
+public:
+    int             tag;
+    STriangle       tri;
+
+    STriangleLl     *next;
+};
+
+// A linked list of linked lists of triangles; extra layer of encapsulation
+// required because the same triangle might appear in both branches of the
+// tree, if it spans the split plane, and we will need to be able to split
+// the triangle into multiple pieces as we remove T intersections.
+class STriangleLl2 {
+public:
+    STriangleLl     *trl;
+
+    STriangleLl2    *next;
+};
+
+class SAxisAligned {
+public:
+    static const int BY_X = 1;
+    static const int BY_Y = 2;
+    static const int BY_Z = 3;
+    int which;
+    double c;
+
+    SAxisAligned    *gt;
+    SAxisAligned    *lt;
+
+    STriangleLl2    *tris;
 };
 
 #endif
