@@ -475,8 +475,12 @@ triangulate:
 
 SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     if(!this) {
-        if(instead && !(instead->flipNormal)) {
-            instead->AddTriangle(tr->a, tr->b, tr->c);
+        if(instead) {
+            if(instead->flipNormal) {
+                instead->atLeastOneDiscarded = true;
+            } else {
+                instead->AddTriangle(tr->a, tr->b, tr->c);
+            }
             return NULL;
         }
 
