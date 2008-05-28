@@ -544,11 +544,12 @@ void Group::Draw(void) {
     glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
 
     glEnable(GL_LIGHTING);
-    glxFillMesh(&mesh);
+    if(SS.GW.showShaded) glxFillMesh(&mesh);
     glDisable(GL_LIGHTING);
 
-    glxDebugMesh(&mesh);
+    if(SS.GW.showMesh) glxDebugMesh(&mesh);
 
+    if(!SS.GW.showShaded) return;
     if(polyError.yes) {
         glxColor4d(1, 0, 0, 0.2);
         glLineWidth(10);

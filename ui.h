@@ -285,10 +285,10 @@ public:
     bool    showPoints;
     bool    showConstraints;
     bool    showTextWindow;
-    bool    showSolids;
+    bool    showShaded;
+    bool    showMesh;
     bool    showHdnLines;
     static void ToggleBool(int link, DWORD v);
-    static void ToggleAnyDatumShown(int link, DWORD v);
 
     static const int DONT_SOLVE = 0;
     static const int SOLVE_ALWAYS = 1;

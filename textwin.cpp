@@ -237,32 +237,23 @@ void TextWindow::ShowHeader(void) {
                     cd);
     }
 
-    int datumColor;
-    if(SS.GW.showWorkplanes && SS.GW.showNormals && SS.GW.showPoints) {
-        datumColor = 's'; // shown
-    } else if(!(SS.GW.showWorkplanes || SS.GW.showNormals || SS.GW.showPoints)){
-        datumColor = 'h'; // hidden
-    } else {
-        datumColor = 'm'; // mixed
-    }
-
 #define hs(b) ((b) ? 's' : 'h')
     Printf(false, "%Bt%Ftshow: "
-           "%Fp%Ll%D%fworkplanes%E "
+           "%Fp%Ll%D%fwrkpls%E "
            "%Fp%Ll%D%fnormals%E "
            "%Fp%Ll%D%fpoints%E "
-           "%Fp%Ll%fany-datum%E",
+           "%Fp%Ll%D%fconstraints%E ",
   hs(SS.GW.showWorkplanes), (DWORD)&(SS.GW.showWorkplanes), &(SS.GW.ToggleBool),
   hs(SS.GW.showNormals),    (DWORD)&(SS.GW.showNormals),    &(SS.GW.ToggleBool),
   hs(SS.GW.showPoints),     (DWORD)&(SS.GW.showPoints),     &(SS.GW.ToggleBool),
-        datumColor, &(SS.GW.ToggleAnyDatumShown)
+hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool) 
     );
     Printf(false, "%Bt%Ft      "
-           "%Fp%Ll%D%fconstraints%E "
-           "%Fp%Ll%D%fsolids%E "
+           "%Fp%Ll%D%fshaded%E "
+           "%Fp%Ll%D%fmesh%E "
            "%Fp%Ll%D%fhidden-lines%E",
-hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool),
-hs(SS.GW.showSolids),      (DWORD)(&SS.GW.showSolids),      &(SS.GW.ToggleBool),
+hs(SS.GW.showShaded),      (DWORD)(&SS.GW.showShaded),      &(SS.GW.ToggleBool),
+hs(SS.GW.showMesh),        (DWORD)(&SS.GW.showMesh),        &(SS.GW.ToggleBool),
 hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
     );
 }

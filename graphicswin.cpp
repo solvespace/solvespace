@@ -116,7 +116,8 @@ void GraphicsWindow::Init(void) {
     showPoints = true;
     showConstraints = true;
     showHdnLines = false;
-    showSolids = true;
+    showShaded = true;
+    showMesh = true;
 
     solving = SOLVE_ALWAYS;
 
@@ -1108,17 +1109,6 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     SS.TW.Show();
 }
 
-void GraphicsWindow::ToggleAnyDatumShown(int link, DWORD v) {
-    bool t = !(SS.GW.showWorkplanes && SS.GW.showNormals && SS.GW.showPoints);
-    SS.GW.showWorkplanes = t;
-    SS.GW.showNormals = t;
-    SS.GW.showPoints = t;
-
-    SS.GW.GeneratePerSolving();
-    InvalidateGraphics();
-    SS.TW.Show();
-}
-
 Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {
     Vector n = projRight.Cross(projUp);
     Vector r = offset.ScaledBy(-1);
@@ -1185,9 +1175,7 @@ void GraphicsWindow::Paint(int w, int h) {
     int i, a;
     // Draw the groups; this fills the polygons in a drawing group, and
     // draws the solid mesh.
-    if(showSolids) {
-        (SS.GetGroup(activeGroup))->Draw();
-    }
+    (SS.GetGroup(activeGroup))->Draw();
 
     // First, draw the entire scene. We don't necessarily want to draw
     // things with normal z-buffering behaviour; e.g. we always want to
