@@ -6,9 +6,17 @@ void SolveSpace::Init(char *cmdLine) {
     if(strlen(cmdLine) == 0) {
         NewFile();
     } else {
-        LoadFromFile(cmdLine);
+        if(LoadFromFile(cmdLine)) {
+            strcpy(saveFile, cmdLine);
+        } else {
+            NewFile();
+        }
     }
 
+    AfterNewFile();
+}
+
+void SolveSpace::AfterNewFile(void) {
     GenerateAll(false, 0, INT_MAX);
 
     TW.Init();
@@ -302,25 +310,85 @@ void SolveSpace::SolveGroup(hGroup hg) {
     FreeAllTemporary();
 }
 
+void SolveSpace::RemoveFromRecentList(char *file) {
+    int src, dest;
+    dest = 0;
+    for(src = 0; src < MAX_RECENT; src++) {
+        if(strcmp(file, RecentFile[src]) != 0) {
+            if(src != dest) strcpy(RecentFile[dest], RecentFile[src]);
+            dest++;
+        }
+    }
+    while(dest < MAX_RECENT) strcpy(RecentFile[dest++], "");
+    RefreshRecentMenus();
+}
+void SolveSpace::AddToRecentList(char *file) {
+    RemoveFromRecentList(file);
+
+    int src;
+    for(src = MAX_RECENT - 2; src >= 0; src--) {
+        strcpy(RecentFile[src+1], RecentFile[src]);
+    }
+    strcpy(RecentFile[0], file);
+    RefreshRecentMenus();
+}
+
 void SolveSpace::MenuFile(int id) {
+    char *slvsPattern =
+        "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0";
+    char *slvsExt = "slvs";
+
+    if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
+        char newFile[MAX_PATH];
+        strcpy(newFile, RecentFile[id-RECENT_OPEN]);
+        RemoveFromRecentList(newFile);
+        if(SS.LoadFromFile(newFile)) {
+            strcpy(SS.saveFile, newFile);
+            AddToRecentList(newFile);
+        } else {
+            strcpy(SS.saveFile, "");
+            SS.NewFile();
+        }
+        SS.AfterNewFile();
+        return;
+    }
+
     switch(id) {
         case GraphicsWindow::MNU_NEW:
+            strcpy(SS.saveFile, "");
             SS.NewFile();
-            SS.GenerateAll(false);
-            SS.TW.Init();
-            SS.GW.Init();
-            SS.TW.Show();
+            SS.AfterNewFile();
             break;
 
-        case GraphicsWindow::MNU_OPEN:
+        case GraphicsWindow::MNU_OPEN: {
+            char newFile[MAX_PATH] = "";
+            if(GetOpenFile(newFile, slvsExt, slvsPattern)) {
+                if(SS.LoadFromFile(newFile)) {
+                    strcpy(SS.saveFile, newFile);
+                    AddToRecentList(newFile);
+                } else {
+                    strcpy(SS.saveFile, "");
+                    SS.NewFile();
+                }
+                SS.AfterNewFile();
+            }
             break;
+        }
 
         case GraphicsWindow::MNU_SAVE:
-            SS.SaveToFile("t.slvs");
-            break;
+        case GraphicsWindow::MNU_SAVE_AS: {
+            char newFile[MAX_PATH];
+            strcpy(newFile, SS.saveFile);
+            if(id == GraphicsWindow::MNU_SAVE_AS || strlen(newFile)==0) {
+                if(!GetSaveFile(newFile, slvsExt, slvsPattern)) break;
+            }
 
-        case GraphicsWindow::MNU_SAVE_AS:
+            if(SS.SaveToFile(newFile)) {
+                AddToRecentList(newFile);
+                strcpy(SS.saveFile, newFile);
+            }
             break;
+        }
 
         case GraphicsWindow::MNU_EXIT:
             break;

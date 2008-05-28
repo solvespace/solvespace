@@ -42,6 +42,12 @@ class ExprVector;
 class ExprQuaternion;
 
 // From the platform-specific code.
+#define MAX_RECENT 8
+#define RECENT_OPEN     (0xf000)
+#define RECENT_IMPORT   (0xf100)
+extern char RecentFile[MAX_RECENT][MAX_PATH];
+void RefreshRecentMenus(void);
+
 int SaveFileYesNoCancel(void);
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
@@ -202,6 +208,9 @@ public:
     FILE        *fh;
 
     void Init(char *cmdLine);
+    void AfterNewFile(void);
+    static void RemoveFromRecentList(char *file);
+    static void AddToRecentList(char *file);
 
     char saveFile[MAX_PATH];
     bool unsaved;

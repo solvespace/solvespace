@@ -33,10 +33,13 @@ int TextWndHalfRows;  // The height of our window, in half-row units
 HWND GraphicsWnd;
 HGLRC GraphicsHpgl;
 HWND GraphicsEditControl;
-HMENU SubMenus[100];
 struct {
     int x, y;
 } LastMousePos;
+
+char RecentFile[MAX_RECENT][MAX_PATH];
+HMENU SubMenus[100];
+HMENU RecentOpenMenu, RecentImportMenu;
 
 int ClientIsSmallerBy;
 
@@ -604,12 +607,22 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_COMMAND: {
             if(HIWORD(wParam) == 0) {
                 int id = LOWORD(wParam);
-                for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
+                if((id >= RECENT_OPEN && id < (RECENT_OPEN + MAX_RECENT))) {
+                    SolveSpace::MenuFile(id);
+                    break;
+                }
+                if((id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT))) {
+                    Group::MenuGroup(id);
+                    break;
+                }
+                int i;
+                for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                     if(id == SS.GW.menu[i].id) {
                         (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)id);
                         break;
                     }
                 }
+                if(SS.GW.menu[i].level < 0) oops();
             }
             break;
         }
@@ -710,6 +723,25 @@ void EnableMenuById(int id, BOOL enabled)
 {
     MenuById(id, enabled, FALSE);
 }
+static void DoRecent(HMENU m, int base)
+{
+    while(DeleteMenu(m, 0, MF_BYPOSITION))
+        ;
+    int i, c = 0;
+    for(i = 0; i < MAX_RECENT; i++) {
+        char *s = RecentFile[i];
+        if(*s) {
+            AppendMenu(m, MF_STRING, base+i, s);
+            c++;
+        }
+    }
+    if(c == 0) AppendMenu(m, MF_STRING | MF_GRAYED, 0, "(no recent files)");
+}
+void RefreshRecentMenus(void)
+{
+    DoRecent(RecentOpenMenu,   RECENT_OPEN);
+    DoRecent(RecentImportMenu, RECENT_IMPORT);
+}
 
 HMENU CreateGraphicsWindowMenus(void)
 {
@@ -728,14 +760,23 @@ HMENU CreateGraphicsWindowMenus(void)
             if(subMenu >= arraylen(SubMenus)) oops();
             SubMenus[subMenu] = m;
             subMenu++;
-        } else {
+        } else if(SS.GW.menu[i].level == 1) {
             if(SS.GW.menu[i].label) {
                 AppendMenu(m, MF_STRING, SS.GW.menu[i].id, SS.GW.menu[i].label);
             } else {
                 AppendMenu(m, MF_SEPARATOR, SS.GW.menu[i].id, "");
             }
-        }
+        } else if(SS.GW.menu[i].level == 10) {
+            RecentOpenMenu = CreateMenu();
+            AppendMenu(m, MF_STRING | MF_POPUP,
+                (UINT_PTR)RecentOpenMenu, SS.GW.menu[i].label);
+        } else if(SS.GW.menu[i].level == 11) {
+            RecentImportMenu = CreateMenu();
+            AppendMenu(m, MF_STRING | MF_POPUP,
+                (UINT_PTR)RecentImportMenu, SS.GW.menu[i].label);
+        } else oops();
     }
+    RefreshRecentMenus();
 
     return top;
 }
@@ -819,6 +860,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     InitCommonControls();
 
+    int i;
+    for(i = 0; i < MAX_RECENT; i++) {
+        char name[100];
+        sprintf(name, "RecentFile_%d", i);
+        ThawStringF(RecentFile[i], MAX_PATH, FREEZE_SUBKEY, name);
+    }
+
     // A monospaced font
     FixedFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -860,8 +908,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
+
+    // Write everything back to the registry
     FreezeWindowPos(TextWnd);
     FreezeWindowPos(GraphicsWnd);
+    for(i = 0; i < MAX_RECENT; i++) {
+        char name[100];
+        sprintf(name, "RecentFile_%d", i);
+        FreezeStringF(RecentFile[i], FREEZE_SUBKEY, name);
+    }
 
     return 0;
 }

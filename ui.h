@@ -110,6 +110,7 @@ public:
         // File
         MNU_NEW = 100,
         MNU_OPEN,
+        MNU_OPEN_RECENT,
         MNU_SAVE,
         MNU_SAVE_AS,
         MNU_EXIT,
@@ -140,6 +141,8 @@ public:
         MNU_GROUP_EXTRUDE,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
+        MNU_GROUP_IMPORT,
+        MNU_GROUP_RECENT,
         // Constrain
         MNU_DISTANCE_DIA,
         MNU_ANGLE,
