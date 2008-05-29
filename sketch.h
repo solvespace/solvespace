@@ -87,7 +87,6 @@ public:
     int type;
 
     hGroup      opA;
-    hGroup      opB;
     bool        visible;
     hEntity     activeWorkplane;
     Expr        *exprA;
@@ -127,7 +126,15 @@ public:
     static const int COMBINE_AS_DIFFERENCE      = 1;
     int meshCombine;
 
+    IdList<EntityMap,EntityId> remap;
+
+    char                       impFile[MAX_PATH];
+    SMesh                      impMesh;
+    EntityList                 impEntity;
+
     NameStr     name;
+
+
     char *DescriptionString(void);
 
     static void AddParam(IdList<Param,hParam> *param, hParam hp, double v);
@@ -136,10 +143,9 @@ public:
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
     // mapping list.
-    IdList<EntityMap,EntityId> remap;
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(hEntity in, int ai, int af);
-    void CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
+    void CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
                     bool transOnly);
 
@@ -235,10 +241,17 @@ public:
     // and directions.
     hParam      param[7];
 
-    // Transformed points/normals/distances have their numerical value.
+    // Transformed points/normals/distances have their numerical base
     Vector      numPoint;
     Quaternion  numNormal;
     double      numDistance;
+
+    // All points/normals/distances have their numerical value; this is
+    // a convenience, to simplify the import/assembly code, so that the
+    // part is entirely described by the entities.
+    Vector      actPoint;
+    Quaternion  actNormal;
+    double      actDistance;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
@@ -315,6 +328,8 @@ public:
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
+
+    void CalculateNumerical(void);
 
     char *DescriptionString(void);
 };

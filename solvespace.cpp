@@ -3,9 +3,10 @@
 SolveSpace SS;
 
 void SolveSpace::Init(char *cmdLine) {
-    if(strlen(cmdLine) == 0) {
-        NewFile();
-    } else {
+    NewFile();
+    AfterNewFile();
+
+    if(strlen(cmdLine) != 0) {
         if(LoadFromFile(cmdLine)) {
             strcpy(saveFile, cmdLine);
         } else {
@@ -17,6 +18,7 @@ void SolveSpace::Init(char *cmdLine) {
 }
 
 void SolveSpace::AfterNewFile(void) {
+    ReloadAllImported();
     GenerateAll(false, 0, INT_MAX);
 
     TW.Init();
@@ -78,7 +80,6 @@ bool SolveSpace::EntityExists(hEntity he) {
 bool SolveSpace::PruneGroups(hGroup hg) {
     Group *g = GetGroup(hg);
     if(GroupsInOrder(g->opA, hg) &&
-       GroupsInOrder(g->opB, hg) &&
        EntityExists(g->wrkpl.origin) &&
        EntityExists(g->wrkpl.entityB) &&
        EntityExists(g->wrkpl.entityC))
@@ -334,9 +335,6 @@ void SolveSpace::AddToRecentList(char *file) {
 }
 
 void SolveSpace::MenuFile(int id) {
-    char *slvsPattern =
-        "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0";
-    char *slvsExt = "slvs";
 
     if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
         char newFile[MAX_PATH];
@@ -362,7 +360,7 @@ void SolveSpace::MenuFile(int id) {
 
         case GraphicsWindow::MNU_OPEN: {
             char newFile[MAX_PATH] = "";
-            if(GetOpenFile(newFile, slvsExt, slvsPattern)) {
+            if(GetOpenFile(newFile, SLVS_EXT, SLVS_PATTERN)) {
                 if(SS.LoadFromFile(newFile)) {
                     strcpy(SS.saveFile, newFile);
                     AddToRecentList(newFile);
@@ -380,7 +378,7 @@ void SolveSpace::MenuFile(int id) {
             char newFile[MAX_PATH];
             strcpy(newFile, SS.saveFile);
             if(id == GraphicsWindow::MNU_SAVE_AS || strlen(newFile)==0) {
-                if(!GetSaveFile(newFile, slvsExt, slvsPattern)) break;
+                if(!GetSaveFile(newFile, SLVS_EXT, SLVS_PATTERN)) break;
             }
 
             if(SS.SaveToFile(newFile)) {

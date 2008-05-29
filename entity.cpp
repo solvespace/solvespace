@@ -240,8 +240,15 @@ void Entity::NormalForceTo(Quaternion q) {
             // There's absolutely nothing to do; these are locked.
             break;
 
-        case NORMAL_N_ROT:
+        case NORMAL_N_ROT: {
+            Quaternion qp = q.Times(numNormal.Inverse());
+            
+            SS.GetParam(param[0])->val = qp.w;
+            SS.GetParam(param[1])->val = qp.vx;
+            SS.GetParam(param[2])->val = qp.vy;
+            SS.GetParam(param[3])->val = qp.vz;
             break;
+        }
 
         default: oops();
     }
@@ -852,4 +859,11 @@ void Entity::GenerateEquations(IdList<Equation,hEquation> *l) {
     }
 }
 
+void Entity::CalculateNumerical(void) {
+    if(IsPoint()) actPoint = PointGetNum();
+    if(IsNormal()) actNormal = NormalGetNum();
+    if(type == DISTANCE || type == DISTANCE_N_COPY) {
+        actDistance = DistanceGetNum();
+    }
+}
 

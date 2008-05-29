@@ -24,6 +24,11 @@ void Group::MenuGroup(int id) {
     memset(&g, 0, sizeof(g));
     g.visible = true;
 
+    if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
+        strcpy(g.impFile, RecentFile[id-RECENT_IMPORT]);
+        id = GraphicsWindow::MNU_GROUP_IMPORT;
+    }
+
     SS.GW.GroupSelection();
 #define gs (SS.GW.gs)
 
@@ -95,10 +100,23 @@ void Group::MenuGroup(int id) {
             g.name.strcpy("translate");
             break;
 
+        case GraphicsWindow::MNU_GROUP_IMPORT: {
+            g.type = IMPORTED;
+            g.opA = SS.GW.activeGroup;
+            if(strlen(g.impFile) == 0) {
+                if(!GetOpenFile(g.impFile, SLVS_EXT, SLVS_PATTERN)) return;
+            }
+            g.name.strcpy("import");
+            break;
+        }
+
         default: oops();
     }
 
     SS.group.AddAndAssignId(&g);
+    if(g.type == IMPORTED) {
+        SS.ReloadAllImported();
+    }
     SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
     SS.GW.activeGroup = g.h;
     if(g.type == DRAWING_WORKPLANE) {
@@ -191,14 +209,15 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
+                e->CalculateNumerical();
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(he, ai,
+                CopyEntity(SS.GetEntity(he), ai,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true);
-                CopyEntity(he, af,
+                CopyEntity(SS.GetEntity(he), af,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true);
@@ -218,7 +237,8 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
 
-                    CopyEntity(e->h, a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
+                    e->CalculateNumerical();
+                    CopyEntity(e, a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
                         h.param(0), h.param(1), h.param(2),
                         NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                         true);
@@ -241,7 +261,29 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                CopyEntity(e->h, 0,
+                e->CalculateNumerical();
+                CopyEntity(e, 0,
+                    h.param(0), h.param(1), h.param(2),
+                    h.param(3), h.param(4), h.param(5), h.param(6),
+                    false);
+            }
+            break;
+
+        case IMPORTED:
+            // The translation vector
+            AddParam(param, h.param(0), gp.x);
+            AddParam(param, h.param(1), gp.y);
+            AddParam(param, h.param(2), gp.z);
+            // The rotation quaternion
+            AddParam(param, h.param(3), 1);
+            AddParam(param, h.param(4), 0);
+            AddParam(param, h.param(5), 0);
+            AddParam(param, h.param(6), 0);
+            
+            for(i = 0; i < impEntity.n; i++) {
+                Entity *ie = &(impEntity.elem[i]);
+
+                CopyEntity(ie, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
                     false);
@@ -254,7 +296,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     Equation eq;
-    if(type == ROTATE) {
+    if(type == ROTATE || type == IMPORTED) {
         // Normalize the quaternion
         ExprQuaternion q = {
             Expr::FromParam(h.param(3)),
@@ -266,6 +308,8 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         l->Add(&eq);
     } else if(type == EXTRUDE) {
         if(wrkpl.entityB.v != Entity::FREE_IN_3D.v) {
+            // The extrusion path is locked along a line, normal to the
+            // specified workplane.
             Entity *w = SS.GetEntity(wrkpl.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
@@ -315,12 +359,10 @@ void Group::MakeExtrusionLines(hEntity in, int ai, int af) {
     SS.entity.Add(&en);
 }
 
-void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
+void Group::CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz,
                        bool transOnly)
 {
-    Entity *ep = SS.GetEntity(in);
-    
     Entity en;
     memset(&en, 0, sizeof(en));
     en.type = ep->type;
@@ -378,7 +420,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                 en.param[5] = qvy;
                 en.param[6] = qvz;
             }
-            en.numPoint = ep->PointGetNum();
+            en.numPoint = ep->actPoint;
             en.timesApplied = a;
             break;
 
@@ -395,7 +437,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
                 en.param[2] = qvy;
                 en.param[3] = qvz;
             }
-            en.numNormal = ep->NormalGetNum();
+            en.numNormal = ep->actNormal;
             en.point[0] = Remap(ep->point[0], a);
             en.timesApplied = a;
             break;
@@ -403,7 +445,7 @@ void Group::CopyEntity(hEntity in, int a, hParam dx, hParam dy, hParam dz,
         case Entity::DISTANCE_N_COPY:
         case Entity::DISTANCE:
             en.type = Entity::DISTANCE_N_COPY;
-            en.numDistance = ep->DistanceGetNum();
+            en.numDistance = ep->actDistance;
             break;
 
         default:
@@ -511,6 +553,26 @@ void Group::MakePolygons(void) {
                 outm.AddTriangle(abot, bbot, atop);
                 outm.AddTriangle(bbot, btop, atop);
             }
+        }
+    } else if(type == IMPORTED) {
+        // Triangles are just copied over, with the appropriate transformation
+        // applied.
+        Vector offset = {
+            SS.GetParam(h.param(0))->val,
+            SS.GetParam(h.param(1))->val,
+            SS.GetParam(h.param(2))->val };
+        Quaternion q = {
+            SS.GetParam(h.param(3))->val,
+            SS.GetParam(h.param(4))->val,
+            SS.GetParam(h.param(5))->val,
+            SS.GetParam(h.param(6))->val };
+
+        for(int i = 0; i < impMesh.l.n; i++) {
+            STriangle st = impMesh.l.elem[i];
+            st.a = q.Rotate(st.a).Plus(offset);
+            st.b = q.Rotate(st.b).Plus(offset);
+            st.c = q.Rotate(st.c).Plus(offset);
+            outm.AddTriangle(&st);
         }
     }
     edges.Clear();

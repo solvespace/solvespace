@@ -1,5 +1,7 @@
 #include "solvespace.h"
 
+#define VERSION_STRING "±²³SolveSpaceREVa"
+
 void SolveSpace::NewFile(void) {
     constraint.Clear();
     request.Clear();
@@ -54,7 +56,6 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.name",               'N',    &(SS.sv.g.name)               },
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
-    { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
     { 'g',  "Group.exprA",              'E',    &(SS.sv.g.exprA)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
@@ -70,6 +71,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.wrkpl.negateV",      'b',    &(SS.sv.g.wrkpl.negateV)      },
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
+    { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -107,6 +109,15 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.numNormal.vy",      'f',    &(SS.sv.e.numNormal.vy)       },
     { 'e',  "Entity.numNormal.vz",      'f',    &(SS.sv.e.numNormal.vz)       },
     { 'e',  "Entity.numDistance",       'f',    &(SS.sv.e.numDistance)        },
+    { 'e',  "Entity.actPoint.x",        'f',    &(SS.sv.e.actPoint.x)         },
+    { 'e',  "Entity.actPoint.y",        'f',    &(SS.sv.e.actPoint.y)         },
+    { 'e',  "Entity.actPoint.z",        'f',    &(SS.sv.e.actPoint.z)         },
+    { 'e',  "Entity.actNormal.w",       'f',    &(SS.sv.e.actNormal.w)        },
+    { 'e',  "Entity.actNormal.vx",      'f',    &(SS.sv.e.actNormal.vx)       },
+    { 'e',  "Entity.actNormal.vy",      'f',    &(SS.sv.e.actNormal.vy)       },
+    { 'e',  "Entity.actNormal.vz",      'f',    &(SS.sv.e.actNormal.vz)       },
+    { 'e',  "Entity.actDistance",       'f',    &(SS.sv.e.actDistance)        },
+
 
     { 'c',  "Constraint.h.v",           'x',    &(SS.sv.c.h.v)                },
     { 'c',  "Constraint.type",          'd',    &(SS.sv.c.type)               },
@@ -131,14 +142,22 @@ void SolveSpace::SaveUsingTable(int type) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(SAVED[i].type != type) continue;
-        fprintf(fh, "%s=", SAVED[i].desc);
+
+        int fmt = SAVED[i].fmt;
         void *p = SAVED[i].ptr;
-        switch(SAVED[i].fmt) {
+        // Any items that aren't specified are assumed to be zero
+        if(fmt == 'd' && *((int *)p)    == 0)   continue;
+        if(fmt == 'x' && *((DWORD *)p)  == 0)   continue;
+        if(fmt == 'f' && *((double *)p) == 0.0) continue;
+
+        fprintf(fh, "%s=", SAVED[i].desc);
+        switch(fmt) {
             case 'd': fprintf(fh, "%d", *((int *)p)); break;
             case 'b': fprintf(fh, "%d", *((bool *)p) ? 1 : 0); break;
             case 'x': fprintf(fh, "%08x", *((DWORD *)p)); break;
             case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
             case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
+            case 'P': fprintf(fh, "%s", (char *)p); break;
             case 'E': fprintf(fh, "%s", (*((Expr **)p))->Print()); break;
 
             case 'M': {
@@ -167,7 +186,7 @@ bool SolveSpace::SaveToFile(char *filename) {
         return false;
     }
 
-    fprintf(fh, "ñ÷åò±²³´SolveSpaceREVa\n\n\n");
+    fprintf(fh, "%s\n\n\n", VERSION_STRING);
 
     int i;
     for(i = 0; i < group.n; i++) {
@@ -189,6 +208,7 @@ bool SolveSpace::SaveToFile(char *filename) {
     }
 
     for(i = 0; i < entity.n; i++) {
+        (entity.elem[i]).CalculateNumerical();
         sv.e = entity.elem[i];
         SaveUsingTable('e');
         fprintf(fh, "AddEntity\n\n");
@@ -198,6 +218,14 @@ bool SolveSpace::SaveToFile(char *filename) {
         sv.c = constraint.elem[i];
         SaveUsingTable('c');
         fprintf(fh, "AddConstraint\n\n");
+    }
+
+    SMesh *m = &(group.elem[group.n-1].mesh);
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
+        fprintf(fh, "Triangle "
+                    "%.3f %.3f %.3f  %.3f %.3f %.3f  %.3f %.3f %.3f\n",
+            CO(tr->a), CO(tr->b), CO(tr->c));
     }
 
     fclose(fh);
@@ -221,6 +249,10 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                     e  = Expr::FromString(val);
                     if(!e) e = Expr::FromConstant(0);
                     *((Expr **)p) = e->DeepCopyKeep();
+                    break;
+
+                case 'P':
+                    if(strlen(val)+1 < MAX_PATH) strcpy((char *)p, val);
                     break;
 
                 case 'M': {
@@ -264,9 +296,9 @@ bool SolveSpace::LoadFromFile(char *filename) {
     constraint.Clear();
     request.Clear();
     group.Clear();
-
     entity.Clear();
     param.Clear();
+    memset(&sv, 0, sizeof(sv));
 
     char line[1024];
     while(fgets(line, sizeof(line), fh)) {
@@ -296,8 +328,10 @@ bool SolveSpace::LoadFromFile(char *filename) {
         } else if(strcmp(line, "AddConstraint")==0) {
             SS.constraint.Add(&(sv.c));
             memset(&(sv.c), 0, sizeof(sv.c));
-        } else if(strcmp(line, "ñ÷åò±²³´SolveSpaceREVa")==0) {
+        } else if(strcmp(line, VERSION_STRING)==0) {
             // do nothing, version string
+        } else if(memcmp(line, "Triangle", 8)==0) {
+            // likewise ignore the triangles; we generate those
         } else {
             oops();
         }
@@ -306,5 +340,70 @@ bool SolveSpace::LoadFromFile(char *filename) {
     fclose(fh);
 
     return true;
+}
+
+bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
+    fh = fopen(file, "r");
+    if(!fh) return false;
+
+    le->Clear();
+    memset(&sv, 0, sizeof(sv));
+
+    char line[1024];
+    while(fgets(line, sizeof(line), fh)) {
+        char *s = strchr(line, '\n');
+        if(s) *s = '\0';
+
+        if(*line == '\0') continue;
+       
+        char *e = strchr(line, '=');
+        if(e) {
+            *e = '\0';
+            char *key = line, *val = e+1;
+            LoadUsingTable(key, val);
+        } else if(strcmp(line, "AddGroup")==0) {
+
+        } else if(strcmp(line, "AddParam")==0) {
+
+        } else if(strcmp(line, "AddEntity")==0) {
+            le->Add(&(sv.e));
+            memset(&(sv.e), 0, sizeof(sv.e));
+        } else if(strcmp(line, "AddRequest")==0) {
+
+        } else if(strcmp(line, "AddConstraint")==0) {
+
+        } else if(strcmp(line, VERSION_STRING)==0) {
+
+        } else if(memcmp(line, "Triangle", 8)==0) {
+            STriangle tr; ZERO(&tr);
+            if(sscanf(line, "Triangle %lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
+                &(tr.a.x), &(tr.a.y), &(tr.a.z), 
+                &(tr.b.x), &(tr.b.y), &(tr.b.z), 
+                &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 9)
+            {
+                oops();
+            }
+            m->AddTriangle(&tr);
+        } else {
+            oops();
+        }
+    }
+
+    fclose(fh);
+    return true;
+}
+
+void SolveSpace::ReloadAllImported(void) {
+    int i;
+    for(i = 0; i < group.n; i++) {
+        Group *g = &(group.elem[i]);
+        if(g->type != Group::IMPORTED) continue;
+
+        g->impEntity.Clear();
+        g->impMesh.Clear();
+        if(!LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh))) {
+            oops();
+        }
+    }
 }
 

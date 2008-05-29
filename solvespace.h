@@ -41,6 +41,7 @@ class Expr;
 class ExprVector;
 class ExprQuaternion;
 
+
 // From the platform-specific code.
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
@@ -49,6 +50,8 @@ extern char RecentFile[MAX_RECENT][MAX_PATH];
 void RefreshRecentMenus(void);
 
 int SaveFileYesNoCancel(void);
+#define SLVS_PATTERN "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0"
+#define SLVS_EXT "slvs"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 
@@ -81,6 +84,11 @@ void vl(void); // debug function to validate
 
 #include "dsc.h"
 #include "polygon.h"
+
+class Entity;
+class hEntity;
+typedef IdList<Entity,hEntity> EntityList;
+
 #include "sketch.h"
 #include "ui.h"
 #include "expr.h"
@@ -234,6 +242,8 @@ public:
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
+    bool LoadEntitiesFromFile(char *filename, EntityList *le, SMesh *m);
+    void ReloadAllImported(void);
 
     struct {
         int     requests;

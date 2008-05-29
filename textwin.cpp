@@ -407,6 +407,10 @@ void TextWindow::ShowGroupInfo(void) {
         g->DescriptionString(),
         g->h.v, &TextWindow::ScreenChangeGroupName, s);
 
+    if(g->type == Group::IMPORTED) {
+        Printf(true, "%FtIMPORT  %E '%s'", g->impFile);
+    }
+
     if(g->type == Group::EXTRUDE) {
         s = "EXTRUDE";
     } else if(g->type == Group::TRANSLATE) {
