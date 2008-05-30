@@ -72,6 +72,10 @@ void PaintGraphics(void);
 SDWORD GetMilliseconds(void);
 
 void dbp(char *str, ...);
+#define DBPTRI(tri) \
+    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
+        CO((tri).a), CO((tri).b), CO((tri).c))
+
 void Error(char *str, ...);
 
 void *AllocTemporary(int n);

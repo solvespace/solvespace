@@ -79,7 +79,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
-            g.color = RGB(150, 150, 150);
+            g.color = RGB(100, 100, 100);
             g.wrkpl.entityB = SS.GW.ActiveWorkplane();
             g.subtype = ONE_SIDED;
             g.name.strcpy("extrude");

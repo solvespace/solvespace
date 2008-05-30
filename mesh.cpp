@@ -69,7 +69,7 @@ void SMesh::Simplify(int start) {
     for(i = start; i < l.n; i++) {
         STriangle *tr = &(l.elem[i]);
         if((tr->Normal()).Magnitude() < LENGTH_EPS*LENGTH_EPS) {
-            tr->tag = 1;
+            tr->tag = 0;
         } else {
             tr->tag = 0;
         }
@@ -128,8 +128,14 @@ void SMesh::Simplify(int start) {
 
                     bDot /= min(ab.Magnitude(), bc.Magnitude());
                     dDot /= min(cd.Magnitude(), de.Magnitude());
-                    
-                    if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
+                   
+                    if(fabs(bDot) < LENGTH_EPS && fabs(dDot) < LENGTH_EPS) {
+                        conv[WRAP((j+1), convc)] = c;
+                        // and remove the vertex at j, which is a dup
+                        memmove(conv+j, conv+j+1, 
+                                          (convc - j - 1)*sizeof(conv[0]));
+                        convc--;
+                    } else if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
                         conv[j] = c;
                     } else if(fabs(dDot) < LENGTH_EPS && bDot > 0) {
                         conv[WRAP((j+1), convc)] = c;
@@ -161,7 +167,7 @@ void SMesh::Simplify(int start) {
             double bDot = (ab.Cross(bc)).Dot(n);
             bDot /= min(ab.Magnitude(), bc.Magnitude());
 
-            if(bDot < 0) return;
+            if(bDot < 0) oops();
         }
 
         for(i = 0; i < convc - 2; i++) {

@@ -29,7 +29,7 @@ void TextWindow::Init(void) {
     modelColor[1] = RGB(100, 100, 100);
     modelColor[2] = RGB( 30,  30,  30);
     modelColor[3] = RGB(150,   0,   0);
-    modelColor[4] = RGB(  0, 150,   0);
+    modelColor[4] = RGB(  0, 100,   0);
     modelColor[5] = RGB(  0,  80,  80);
     modelColor[6] = RGB(  0,   0, 150);
     modelColor[7] = RGB( 80,   0,  80);
