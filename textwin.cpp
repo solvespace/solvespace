@@ -24,6 +24,16 @@ void TextWindow::Init(void) {
     memset(this, 0, sizeof(*this));
     shown = &(showns[shownIndex]);
 
+    // Default list of colors for the model material
+    modelColor[0] = RGB(150, 150, 150);
+    modelColor[1] = RGB(100, 100, 100);
+    modelColor[2] = RGB( 30,  30,  30);
+    modelColor[3] = RGB(150,   0,   0);
+    modelColor[4] = RGB(  0, 150,   0);
+    modelColor[5] = RGB(  0,  80,  80);
+    modelColor[6] = RGB(  0,   0, 150);
+    modelColor[7] = RGB( 80,   0,  80);
+
     ClearScreen();
 }
 
@@ -104,7 +114,9 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                     } else {
                         color = fmt[1];
                     }
-                    if(color < 0 || color > 255) color = 0;
+                    if((color < 0 || color > 255) && !(color & 0x80000000)) {
+                        color = 0;
+                    }
                     if(*fmt == 'F') {
                         fg = color;
                     } else {
@@ -385,6 +397,13 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GW.GeneratePerSolving();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenColor(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    if(v < 0 || v >= MODEL_COLORS) return;
+    g->color = SS.TW.modelColor[v];
+    SS.GW.GeneratePerSolving();
+    SS.GW.ClearSuper();
+}
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
     ShowTextEditControl(13, 10, g->exprA->Print());
@@ -444,6 +463,19 @@ void TextWindow::ShowGroupInfo(void) {
             (!diff ? "" : "as union"), (!diff ? "as union" : ""),
             &TextWindow::ScreenChangeMeshCombine,
             (diff ? "" : "as difference"), (diff ? "as difference" : ""));
+    }
+
+    if(g->type == Group::EXTRUDE) {
+#define TWOX(v) v v
+        Printf(true, "%FtMCOLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
+            0x80000000 | modelColor[0], 0, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[1], 1, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[2], 2, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[3], 3, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[4], 4, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[5], 5, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[6], 6, &TextWindow::ScreenColor,
+            0x80000000 | modelColor[7], 7, &TextWindow::ScreenColor);
     }
 
     Printf(true, "%Ftrequests in group");

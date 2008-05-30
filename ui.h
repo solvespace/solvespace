@@ -17,13 +17,15 @@ public:
     static const Color fgColors[];
     static const Color bgColors[];
 
+    static const int MODEL_COLORS = 8;
+    int     modelColor[MODEL_COLORS];
 
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
     static const int NOT_A_LINK = 0;
     struct {
         char            fg;
-        char            bg;
+        int             bg;
         int             link;
         DWORD           data;
         LinkFunction   *f;
@@ -91,6 +93,7 @@ public:
 
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
+    static void ScreenColor(int link, DWORD v);
 
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);

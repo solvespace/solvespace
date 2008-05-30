@@ -57,6 +57,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
     { 'g',  "Group.exprA",              'E',    &(SS.sv.g.exprA)              },
+    { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
     { 'g',  "Group.wrkpl.q.w",          'f',    &(SS.sv.g.wrkpl.q.w)          },
@@ -223,8 +224,9 @@ bool SolveSpace::SaveToFile(char *filename) {
     SMesh *m = &(group.elem[group.n-1].mesh);
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
-        fprintf(fh, "Triangle "
+        fprintf(fh, "Triangle %08x %08x  "
                     "%.3f %.3f %.3f  %.3f %.3f %.3f  %.3f %.3f %.3f\n",
+            tr->meta.face, tr->meta.color,
             CO(tr->a), CO(tr->b), CO(tr->c));
     }
 
@@ -376,10 +378,12 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
 
         } else if(memcmp(line, "Triangle", 8)==0) {
             STriangle tr; ZERO(&tr);
-            if(sscanf(line, "Triangle %lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
+            if(sscanf(line, "Triangle %x %x  "
+                             "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
+                &(tr.meta.face), &(tr.meta.color),
                 &(tr.a.x), &(tr.a.y), &(tr.a.z), 
                 &(tr.b.x), &(tr.b.y), &(tr.b.z), 
-                &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 9)
+                &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11)
             {
                 oops();
             }

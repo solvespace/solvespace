@@ -11,14 +11,16 @@ void SMesh::AddTriangle(Vector n, Vector a, Vector b, Vector c) {
         // ugh; gl sometimes tesselates to collinear triangles
         return;
     }
+    STriMeta meta; ZERO(&meta);
     if(np.Dot(n) > 0) {
-        AddTriangle(a, b, c);
+        AddTriangle(meta, a, b, c);
     } else {
-        AddTriangle(c, b, a);
+        AddTriangle(meta, c, b, a);
     }
 }
-void SMesh::AddTriangle(Vector a, Vector b, Vector c) {
+void SMesh::AddTriangle(STriMeta meta, Vector a, Vector b, Vector c) {
     STriangle t; ZERO(&t);
+    t.meta = meta;
     t.a = a;
     t.b = b;
     t.c = c;
@@ -52,6 +54,8 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 void SMesh::Simplify(int start) {
 #define MAX_TRIANGLES 2000
     if(l.n - start > MAX_TRIANGLES) oops();
+
+    STriMeta meta = l.elem[start].meta;
 
     STriangle tout[MAX_TRIANGLES];
     int toutc = 0;
@@ -161,7 +165,7 @@ void SMesh::Simplify(int start) {
         }
 
         for(i = 0; i < convc - 2; i++) {
-            STriangle tr = { 0, conv[0], conv[i+1], conv[i+2] };
+            STriangle tr = STriangle::From(meta, conv[0], conv[i+1], conv[i+2]);
             if((tr.Normal()).Magnitude() > LENGTH_EPS*LENGTH_EPS) {
                 tout[toutc++] = tr;
             }
@@ -185,9 +189,9 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
         if(!atLeastOneDiscarded && (l.n != (pn+1))) {
             l.n = pn;
             if(flipNormal) {
-                AddTriangle(st->c, st->b, st->a);
+                AddTriangle(st->meta, st->c, st->b, st->a);
             } else {
-                AddTriangle(st->a, st->b, st->c);
+                AddTriangle(st->meta, st->a, st->b, st->c);
             }
         }
         if(l.n - pn > 1) {
@@ -287,11 +291,11 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
     }
 
     if(m->flipNormal && ((!pos2 && !onFace) || (onFace && !sameNormal))) {
-        m->AddTriangle(tr->c, tr->b, tr->a);
+        m->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
     } else if(!(m->flipNormal) && ((pos2 && !onFace) || 
                                    (onFace && sameNormal && m->keepCoplanar)))
     {
-        m->AddTriangle(tr->a, tr->b, tr->c);
+        m->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
     } else {
         m->atLeastOneDiscarded = true;
     }
@@ -325,9 +329,9 @@ void SBsp3::InsertHow(int how, STriangle *tr, SMesh *instead) {
 
 alt:
     if(how == POS && !(instead->flipNormal)) {
-        instead->AddTriangle(tr->a, tr->b, tr->c);
+        instead->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
     } else if(how == NEG && instead->flipNormal) {
-        instead->AddTriangle(tr->c, tr->b, tr->a);
+        instead->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
     } else if(how == COPLANAR) {
         if(edges) {
             edges->InsertTriangle(tr, instead, this);
@@ -341,18 +345,20 @@ alt:
     }
 }
 
-void SBsp3::InsertConvexHow(int how, Vector *vertex, int n, SMesh *instead) {
+void SBsp3::InsertConvexHow(int how, STriMeta meta, Vector *vertex, int n,
+                            SMesh *instead)
+{
     switch(how) {
         case POS:
             if(pos) {
-                pos = pos->InsertConvex(vertex, n, instead);
+                pos = pos->InsertConvex(meta, vertex, n, instead);
                 return;
             }
             break;
 
         case NEG:
             if(neg) {
-                neg = neg->InsertConvex(vertex, n, instead);
+                neg = neg->InsertConvex(meta, vertex, n, instead);
                 return;
             }
             break;
@@ -361,12 +367,15 @@ void SBsp3::InsertConvexHow(int how, Vector *vertex, int n, SMesh *instead) {
     }
     int i;
     for(i = 0; i < n - 2; i++) {
-        STriangle tr = { 0, vertex[0], vertex[i+1], vertex[i+2] };
+        STriangle tr = STriangle::From(meta,
+                                       vertex[0], vertex[i+1], vertex[i+2]);
         InsertHow(how, &tr, instead);
     }
 }
 
-SBsp3 *SBsp3::InsertConvex(Vector *vertex, int cnt, SMesh *instead) {
+SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
+                           SMesh *instead)
+{
     Vector e01 = (vertex[1]).Minus(vertex[0]);
     Vector e12 = (vertex[2]).Minus(vertex[1]);
     Vector out = e01.Cross(e12);
@@ -407,11 +416,11 @@ SBsp3 *SBsp3::InsertConvex(Vector *vertex, int cnt, SMesh *instead) {
     }
 
     if(posc == 0) {
-        InsertConvexHow(NEG, vertex, cnt, instead);
+        InsertConvexHow(NEG, meta, vertex, cnt, instead);
         return this;
     }
     if(negc == 0) {
-        InsertConvexHow(POS, vertex, cnt, instead);
+        InsertConvexHow(POS, meta, vertex, cnt, instead);
         return this;
     }
 
@@ -459,15 +468,16 @@ SBsp3 *SBsp3::InsertConvex(Vector *vertex, int cnt, SMesh *instead) {
     }
     if(nneg < 3 || npos < 3) oops();
 
-    InsertConvexHow(NEG, vneg, nneg, instead);
-    InsertConvexHow(POS, vpos, npos, instead);
+    InsertConvexHow(NEG, meta, vneg, nneg, instead);
+    InsertConvexHow(POS, meta, vpos, npos, instead);
     return this;
 
 triangulate:
     // We don't handle the special case for this; do it as triangles
     SBsp3 *r = this;
     for(i = 0; i < cnt - 2; i++) {
-        STriangle tr = { 0, vertex[0], vertex[i+1], vertex[i+2] };
+        STriangle tr = STriangle::From(meta,
+                                       vertex[0], vertex[i+1], vertex[i+2]);
         r = r->Insert(&tr, instead);
     }
     return r;
@@ -479,7 +489,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
             if(instead->flipNormal) {
                 instead->atLeastOneDiscarded = true;
             } else {
-                instead->AddTriangle(tr->a, tr->b, tr->c);
+                instead->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
             }
             return NULL;
         }
@@ -551,8 +561,8 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
         } else oops();
 
         Vector bPc = IntersectionWith(b, c);
-        STriangle btri = { 0, a, b, bPc };
-        STriangle ctri = { 0, c, a, bPc };
+        STriangle btri = STriangle::From(tr->meta, a, b, bPc);
+        STriangle ctri = STriangle::From(tr->meta, c, a, bPc);
 
         if(bpos) {
             InsertHow(POS, &btri, instead);
@@ -587,17 +597,14 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     Vector aPb = IntersectionWith(a, b);
     Vector cPa = IntersectionWith(c, a);
 
-    STriangle alone = { 0, a,   aPb, cPa };
-
+    STriangle alone = STriangle::From(tr->meta, a, aPb, cPa);
     Vector quad[4] = { aPb, b, c, cPa };
-    STriangle quad1 = { 0, aPb, b,   c   };
-    STriangle quad2 = { 0, aPb, c,   cPa };
 
     if(posc == 2 && negc == 1) {
-        InsertConvexHow(POS, quad, 4, instead);
+        InsertConvexHow(POS, tr->meta, quad, 4, instead);
         InsertHow(NEG, &alone, instead);
     } else {
-        InsertConvexHow(NEG, quad, 4, instead);
+        InsertConvexHow(NEG, tr->meta, quad, 4, instead);
         InsertHow(POS, &alone, instead);
     }
     if(!instead) {
@@ -799,8 +806,8 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
         } else oops();
 
         Vector bPc = IntersectionWith(b, c);
-        STriangle btri = { 0, a, b, bPc };
-        STriangle ctri = { 0, c, a, bPc };
+        STriangle btri = STriangle::From(tr->meta, a, b, bPc);
+        STriangle ctri = STriangle::From(tr->meta, c, a, bPc);
 
         if(bpos) {
             InsertTriangleHow(POS, &btri, m, bsp3);
@@ -830,9 +837,9 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
     Vector aPb = IntersectionWith(a, b);
     Vector cPa = IntersectionWith(c, a);
 
-    STriangle alone = { 0, a,   aPb, cPa };
-    STriangle quad1 = { 0, aPb, b,   c   };
-    STriangle quad2 = { 0, aPb, c,   cPa };
+    STriangle alone = STriangle::From(tr->meta, a,   aPb, cPa);
+    STriangle quad1 = STriangle::From(tr->meta, aPb, b,   c  );
+    STriangle quad2 = STriangle::From(tr->meta, aPb, c,   cPa);
 
     if(posc == 2 && negc == 1) {
         InsertTriangleHow(POS, &quad1, m, bsp3);

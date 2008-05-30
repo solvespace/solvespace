@@ -90,6 +90,7 @@ public:
     bool        visible;
     hEntity     activeWorkplane;
     Expr        *exprA;
+    DWORD       color;
 
     static const int SOLVED_OKAY          = 0;
     static const int DIDNT_CONVERGE       = 10;

@@ -111,14 +111,26 @@ void glxColor4d(double r, double g, double b, double a)
     if(!ColorLocked) glColor4d(r, g, b, a);
 }
 
-void glxFillMesh(SMesh *m)
+void glxFillMesh(bool useModelColor, SMesh *m)
 {
     glEnable(GL_NORMALIZE);
+    int prevColor = -1;
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
         Vector n = tr->Normal();
         glNormal3d(n.x, n.y, n.z);
+
+        int color = tr->meta.color;
+        if(useModelColor && color != prevColor) {
+            GLfloat mpf[] = { ((color >>  0) & 0xff) / 255.0f,
+                              ((color >>  8) & 0xff) / 255.0f,
+                              ((color >> 16) & 0xff) / 255.0f, 1.0 };
+            glEnd();
+            glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+            prevColor = color;
+            glBegin(GL_TRIANGLES);
+        }
 
         glxVertex3v(tr->a);
         glxVertex3v(tr->b);

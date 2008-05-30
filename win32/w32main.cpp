@@ -183,10 +183,19 @@ static void PaintTextWnd(HDC hdc)
         for(c = 0; c < min((width/TEXT_WIDTH)+1, SS.TW.MAX_COLS); c++) {
             int fg = SS.TW.meta[r][c].fg;
             int bg = SS.TW.meta[r][c].bg;
-            SetTextColor(backDc, FgColor[fg]);
-            SetBkColor(backDc, BgColor[bg]);
 
-            if(SS.TW.meta[r][c].link) {
+            SetTextColor(backDc, FgColor[fg]);
+
+            HBRUSH bgb;
+            if(bg & 0x80000000) {
+                bgb = (HBRUSH)GetStockObject(BLACK_BRUSH);
+                SetBkColor(backDc, bg & 0xffffff);
+            } else {
+                bgb = BgBrush[bg];
+                SetBkColor(backDc, BgColor[bg]);
+            }
+
+            if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].link != 'n') {
                 SelectObject(backDc, LinkFont);
             } else {
                 SelectObject(backDc, FixedFont);
@@ -198,7 +207,7 @@ static void PaintTextWnd(HDC hdc)
             RECT a;
             a.left = x; a.right = x+TEXT_WIDTH;
             a.top = y; a.bottom = y+TEXT_HEIGHT;
-            FillRect(backDc, &a, BgBrush[bg]);
+            FillRect(backDc, &a, bgb);
 
             TextOut(backDc, x, y+2, (char *)&(SS.TW.text[r][c]), 1);
         }

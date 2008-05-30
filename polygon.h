@@ -99,11 +99,17 @@ public:
     void Clear(void);
 };
 
+typedef struct {
+    DWORD   face;
+    int     color;
+} STriMeta;
 class STriangle {
 public:
-    int     tag;
-    Vector  a, b, c;
+    int         tag;
+    STriMeta    meta;
+    Vector      a, b, c;
 
+    static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal(void);
     bool ContainsPoint(Vector p);
 };
@@ -153,8 +159,9 @@ public:
     void InsertHow(int how, STriangle *str, SMesh *instead);
     SBsp3 *Insert(STriangle *str, SMesh *instead);
 
-    void InsertConvexHow(int how, Vector *vertex, int n, SMesh *instead);
-    SBsp3 *InsertConvex(Vector *vertex, int n, SMesh *instead);
+    void InsertConvexHow(int how, STriMeta meta, Vector *vertex, int n,
+                                SMesh *instead);
+    SBsp3 *InsertConvex(STriMeta meta, Vector *vertex, int n, SMesh *instead);
 
     void InsertInPlane(bool pos2, STriangle *tr, SMesh *m);
 
@@ -171,7 +178,7 @@ public:
 
     void Clear(void);
     void AddTriangle(STriangle *st);
-    void AddTriangle(Vector a, Vector b, Vector c);
+    void AddTriangle(STriMeta meta, Vector a, Vector b, Vector c);
     void AddTriangle(Vector n, Vector a, Vector b, Vector c);
     void DoBounding(Vector v, Vector *vmax, Vector *vmin);
     void GetBounding(Vector *vmax, Vector *vmin);
@@ -203,7 +210,7 @@ public:
     STriangleLl2    *next;
 };
 
-class SAxisAligned {
+class SKdTree {
 public:
     static const int BY_X = 1;
     static const int BY_Y = 2;
@@ -211,10 +218,10 @@ public:
     int which;
     double c;
 
-    SAxisAligned    *gt;
-    SAxisAligned    *lt;
+    SKdTree      *gt;
+    SKdTree      *lt;
 
-    STriangleLl2    *tris;
+    STriangleLl2 *tris;
 };
 
 #endif

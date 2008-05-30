@@ -22,6 +22,11 @@ bool STriangle::ContainsPoint(Vector p) {
     return true;
 }
 
+STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
+    STriangle tr = { 0, meta, a, b, c };
+    return tr;
+}
+
 void SEdgeList::Clear(void) {
     l.Clear();
 }

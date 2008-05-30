@@ -79,6 +79,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
+            g.color = RGB(150, 150, 150);
             g.wrkpl.entityB = SS.GW.ActiveWorkplane();
             g.subtype = ONE_SIDED;
             g.name.strcpy("extrude");
@@ -512,6 +513,8 @@ void Group::MakePolygons(void) {
         SMesh srcm; ZERO(&srcm);
         (src->poly).TriangulateInto(&srcm);
 
+        STriMeta meta = { 0, color };
+
         // Do the bottom; that has normal pointing opposite from translate
         for(i = 0; i < srcm.l.n; i++) {
             STriangle *st = &(srcm.l.elem[i]);
@@ -519,9 +522,9 @@ void Group::MakePolygons(void) {
                    bt = (st->b).Plus(tbot),
                    ct = (st->c).Plus(tbot);
             if(flipBottom) {
-                outm.AddTriangle(ct, bt, at);
+                outm.AddTriangle(meta, ct, bt, at);
             } else {
-                outm.AddTriangle(at, bt, ct);
+                outm.AddTriangle(meta, at, bt, ct);
             }
         }
         // And the top; that has the normal pointing the same dir as translate
@@ -531,9 +534,9 @@ void Group::MakePolygons(void) {
                    bt = (st->b).Plus(ttop),
                    ct = (st->c).Plus(ttop);
             if(flipBottom) {
-                outm.AddTriangle(at, bt, ct);
+                outm.AddTriangle(meta, at, bt, ct);
             } else {
-                outm.AddTriangle(ct, bt, at);
+                outm.AddTriangle(meta, ct, bt, at);
             }
         }
         srcm.Clear();
@@ -547,11 +550,11 @@ void Group::MakePolygons(void) {
             Vector abot = (edge->a).Plus(tbot), bbot = (edge->b).Plus(tbot);
             Vector atop = (edge->a).Plus(ttop), btop = (edge->b).Plus(ttop);
             if(flipBottom) {
-                outm.AddTriangle(bbot, abot, atop);
-                outm.AddTriangle(bbot, atop, btop);
+                outm.AddTriangle(meta, bbot, abot, atop);
+                outm.AddTriangle(meta, bbot, atop, btop);
             } else {
-                outm.AddTriangle(abot, bbot, atop);
-                outm.AddTriangle(bbot, btop, atop);
+                outm.AddTriangle(meta, abot, bbot, atop);
+                outm.AddTriangle(meta, bbot, btop, atop);
             }
         }
     } else if(type == IMPORTED) {
@@ -593,12 +596,13 @@ void Group::Draw(void) {
     // Show this even if the group is not visible. It's already possible
     // to show or hide just this with the "show solids" flag.
 
+    bool useModelColor;
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
         GLfloat mpf[] = { 0.1f, 0.1f, 0.1f, 1.0 };
         glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+        useModelColor = false;
     } else {
-        GLfloat mpf[] = { 0.4f, 0.4f, 0.4f, 1.0 };
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
+        useModelColor = true;
     }
     // The back faces are drawn in red; should never seem them, since we
     // draw closed shells, so that's a debugging aid.
@@ -606,7 +610,7 @@ void Group::Draw(void) {
     glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
 
     glEnable(GL_LIGHTING);
-    if(SS.GW.showShaded) glxFillMesh(&mesh);
+    if(SS.GW.showShaded) glxFillMesh(useModelColor, &mesh);
     glDisable(GL_LIGHTING);
 
     if(SS.GW.showMesh) glxDebugMesh(&mesh);
