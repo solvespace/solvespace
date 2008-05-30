@@ -56,6 +56,8 @@ class SEdge {
 public:
     int    tag;
     Vector a, b;
+
+    static SEdge From(Vector a, Vector b);
 };
 
 class SEdgeList {

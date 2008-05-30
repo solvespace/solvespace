@@ -416,7 +416,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
 
     if(onc == 2) {
         if(!instead) {
-            SEdge se = { 0, on[0], on[1] };
+            SEdge se = SEdge::From(on[0], on[1]);
             edges = edges->InsertEdge(&se, n, out);
         }
     }
@@ -463,10 +463,10 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
 
     if(!instead) {
         if(inters == 2) {
-            SEdge se = { 0, inter[0], inter[1] };
+            SEdge se = SEdge::From(inter[0], inter[1]);
             edges = edges->InsertEdge(&se, n, out);
         } else if(inters == 1 && onc == 1) {
-            SEdge se = { 0, inter[0], on[0] };
+            SEdge se = SEdge::From(inter[0], on[0]);
             edges = edges->InsertEdge(&se, n, out);
         } else if(inters == 0 && onc == 2) {
             // We already handled this on-plane existing edge
@@ -542,7 +542,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
             else if(!isOn[2]) { a = tr->a; b = tr->b; }
             else oops();
             if(!instead) {
-                SEdge se = { 0, a, b };
+                SEdge se = SEdge::From(a, b);
                 edges = edges->InsertEdge(&se, n, tr->Normal());
             }
         }
@@ -579,7 +579,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
         }
 
         if(!instead) {
-            SEdge se = { 0, a, bPc };
+            SEdge se = SEdge::From(a, bPc);
             edges = edges->InsertEdge(&se, n, tr->Normal());
         }
 
@@ -614,7 +614,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
         InsertHow(POS, &alone, instead);
     }
     if(!instead) {
-        SEdge se = { 0, aPb, cPa };
+        SEdge se = SEdge::From(aPb, cPa);
         edges = edges->InsertEdge(&se, n, alone.Normal());
     }
 
@@ -729,8 +729,8 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
     if((isPos[0] && isNeg[1]) || (isNeg[0] && isPos[1])) {
         Vector aPb = IntersectionWith(nedge->a, nedge->b);
 
-        SEdge ea = { 0, nedge->a, aPb };
-        SEdge eb = { 0, aPb, nedge->b };
+        SEdge ea = SEdge::From(nedge->a, aPb);
+        SEdge eb = SEdge::From(aPb, nedge->b);
 
         if(isPos[0]) {
             pos = pos->InsertEdge(&ea, nnp, out);

@@ -27,6 +27,11 @@ STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
     return tr;
 }
 
+SEdge SEdge::From(Vector a, Vector b) {
+    SEdge se = { 0, a, b };
+    return se;
+}
+
 void SEdgeList::Clear(void) {
     l.Clear();
 }
