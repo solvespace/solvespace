@@ -146,7 +146,7 @@ void System::SolveBySubstitution(void) {
 }
 
 bool System::Tol(double v) {
-    return (fabs(v) < 0.01);
+    return (fabs(v) < 0.0001);
 }
 
 int System::GaussJordan(void) {

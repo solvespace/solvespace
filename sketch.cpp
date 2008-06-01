@@ -540,7 +540,9 @@ void Group::MakePolygons(void) {
     SMesh outm;
     ZERO(&outm);
 
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
+       type == ROTATE || type == TRANSLATE)
+    {
         int i;
         for(i = 0; i < SS.entity.n; i++) {
             Entity *e = &(SS.entity.elem[i]);

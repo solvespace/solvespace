@@ -496,7 +496,11 @@ void PaintGraphics(void)
 
 SDWORD GetMilliseconds(void)
 {
-    return (SDWORD)GetTickCount();
+    LARGE_INTEGER t, f;
+    QueryPerformanceCounter(&t);
+    QueryPerformanceFrequency(&f);
+    LONGLONG d = t.QuadPart/(f.QuadPart/1000);
+    return (SDWORD)d;
 }
 
 void InvalidateText(void)
