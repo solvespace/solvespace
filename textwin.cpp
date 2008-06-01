@@ -702,7 +702,7 @@ void TextWindow::ShowConstraintInfo(void) {
 void TextWindow::EditControlDone(char *s) {
     switch(edit.meaning) {
         case EDIT_TIMES_REPEATED: {
-            Expr *e = Expr::FromString(s);
+            Expr *e = Expr::From(s);
             if(e) {
                 Group *g = SS.GetGroup(edit.group);
                 Expr::FreeKeep(&(g->exprA));

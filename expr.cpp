@@ -1,23 +1,23 @@
 #include "solvespace.h"
 
-ExprVector ExprVector::FromExprs(Expr *x, Expr *y, Expr *z) {
+ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};
     return r;
 }
 
-ExprVector ExprVector::FromNum(Vector vn) {
+ExprVector ExprVector::From(Vector vn) {
     ExprVector ve;
-    ve.x = Expr::FromConstant(vn.x);
-    ve.y = Expr::FromConstant(vn.y);
-    ve.z = Expr::FromConstant(vn.z);
+    ve.x = Expr::From(vn.x);
+    ve.y = Expr::From(vn.y);
+    ve.z = Expr::From(vn.z);
     return ve;
 }
 
-ExprVector ExprVector::FromParams(hParam x, hParam y, hParam z) {
+ExprVector ExprVector::From(hParam x, hParam y, hParam z) {
     ExprVector ve;
-    ve.x = Expr::FromParam(x);
-    ve.y = Expr::FromParam(y);
-    ve.z = Expr::FromParam(z);
+    ve.x = Expr::From(x);
+    ve.y = Expr::From(y);
+    ve.z = Expr::From(z);
     return ve;
 }
 
@@ -77,7 +77,7 @@ Vector ExprVector::Eval(void) {
     return r;
 }
 
-ExprQuaternion ExprQuaternion::FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz)
+ExprQuaternion ExprQuaternion::From(Expr *w, Expr *vx, Expr *vy, Expr *vz)
 {
     ExprQuaternion q;
     q.w = w;
@@ -87,18 +87,18 @@ ExprQuaternion ExprQuaternion::FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz)
     return q;
 }
 
-ExprQuaternion ExprQuaternion::FromNum(Quaternion qn) {
+ExprQuaternion ExprQuaternion::From(Quaternion qn) {
     ExprQuaternion qe;
-    qe.w = Expr::FromConstant(qn.w);
-    qe.vx = Expr::FromConstant(qn.vx);
-    qe.vy = Expr::FromConstant(qn.vy);
-    qe.vz = Expr::FromConstant(qn.vz);
+    qe.w = Expr::From(qn.w);
+    qe.vx = Expr::From(qn.vx);
+    qe.vy = Expr::From(qn.vy);
+    qe.vz = Expr::From(qn.vz);
     return qe;
 }
 
 ExprVector ExprQuaternion::RotationU(void) {
     ExprVector u;
-    Expr *two = Expr::FromConstant(2);
+    Expr *two = Expr::From(2);
 
     u.x = w->Square();
     u.x = (u.x)->Plus(vx->Square());
@@ -116,7 +116,7 @@ ExprVector ExprQuaternion::RotationU(void) {
 
 ExprVector ExprQuaternion::RotationV(void) {
     ExprVector v;
-    Expr *two = Expr::FromConstant(2);
+    Expr *two = Expr::From(2);
 
     v.x = two->Times(vx->Times(vy));
     v.x = (v.x)->Minus(two->Times(w->Times(vz)));
@@ -134,7 +134,7 @@ ExprVector ExprQuaternion::RotationV(void) {
 
 ExprVector ExprQuaternion::RotationN(void) {
     ExprVector n;
-    Expr *two = Expr::FromConstant(2);
+    Expr *two = Expr::From(2);
 
     n.x =              two->Times( w->Times(vy));
     n.x = (n.x)->Plus (two->Times(vx->Times(vz)));
@@ -181,14 +181,14 @@ Expr *ExprQuaternion::Magnitude(void) {
 }
 
 
-Expr *Expr::FromParam(hParam p) {
+Expr *Expr::From(hParam p) {
     Expr *r = AllocExpr();
     r->op = PARAM;
     r->x.parh = p;
     return r;
 }
 
-Expr *Expr::FromConstant(double v) {
+Expr *Expr::From(double v) {
     Expr *r = AllocExpr();
     r->op = CONSTANT;
     r->x.v = v;
@@ -312,10 +312,10 @@ Expr *Expr::PartialWrt(hParam p) {
     Expr *da, *db;
 
     switch(op) {
-        case PARAM_PTR: return FromConstant(p.v == x.parp->h.v ? 1 : 0);
-        case PARAM:     return FromConstant(p.v == x.parh.v ? 1 : 0);
+        case PARAM_PTR: return From(p.v == x.parp->h.v ? 1 : 0);
+        case PARAM:     return From(p.v == x.parh.v ? 1 : 0);
 
-        case CONSTANT:  return FromConstant(0);
+        case CONSTANT:  return From(0.0);
 
         case PLUS:      return (a->PartialWrt(p))->Plus(b->PartialWrt(p));
         case MINUS:     return (a->PartialWrt(p))->Minus(b->PartialWrt(p));
@@ -331,10 +331,10 @@ Expr *Expr::PartialWrt(hParam p) {
             return ((da->Times(b))->Minus(a->Times(db)))->Div(b->Square());
 
         case SQRT:
-            return (FromConstant(0.5)->Div(a->Sqrt()))->Times(a->PartialWrt(p));
+            return (From(0.5)->Div(a->Sqrt()))->Times(a->PartialWrt(p));
 
         case SQUARE:
-            return (FromConstant(2.0)->Times(a))->Times(a->PartialWrt(p));
+            return (From(2.0)->Times(a))->Times(a->PartialWrt(p));
 
         case NEGATE:    return (a->PartialWrt(p))->Negate();
         case SIN:       return (a->Cos())->Times(a->PartialWrt(p));
@@ -670,7 +670,7 @@ void Expr::Lex(char *in) {
     }
 }
 
-Expr *Expr::FromString(char *in) {
+Expr *Expr::From(char *in) {
     UnparsedCnt = 0;
     UnparsedP = 0;
     OperandsP = 0;

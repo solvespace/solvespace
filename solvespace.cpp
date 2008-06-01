@@ -272,7 +272,7 @@ void SolveSpace::ForceReferences(void) {
         Entity *wrkpl = GetEntity(hr.entity(0));
         // The origin for our coordinate system, always zero
         Entity *origin = GetEntity(wrkpl->point[0]);
-        origin->PointForceTo(Vector::MakeFrom(0, 0, 0));
+        origin->PointForceTo(Vector::From(0, 0, 0));
         GetParam(origin->param[0])->known = true;
         GetParam(origin->param[1])->known = true;
         GetParam(origin->param[2])->known = true;

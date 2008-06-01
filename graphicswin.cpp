@@ -150,7 +150,7 @@ void GraphicsWindow::AnimateOntoWorkplane(void) {
     Vector offsetf = (SS.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
 
     // Get our initial orientation and translation.
-    Quaternion quat0 = Quaternion::MakeFrom(projRight, projUp);
+    Quaternion quat0 = Quaternion::From(projRight, projUp);
     Vector offset0 = offset;
 
     // Make sure we take the shorter of the two possible paths.
@@ -577,7 +577,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     v = v.RotatedAbout(orig.projUp, -s*dx);
                     v = v.RotatedAbout(orig.projRight, s*dy);
                 }
-                q = Quaternion::MakeFrom(u, v);
+                q = Quaternion::From(u, v);
                 p->PointForceQuaternionTo(q);
                 // Let's rotate about the selected point; so fix up the
                 // translation so that that point didn't move.
@@ -649,7 +649,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 v = v.RotatedAbout(orig.projRight, s*dy);
             }
             orig.mouse = mp;
-            normal->NormalForceTo(Quaternion::MakeFrom(u, v));
+            normal->NormalForceTo(Quaternion::From(u, v));
             break;
         }
 
@@ -944,7 +944,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             hr = AddRequest(Request::CIRCLE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             SS.GetEntity(hr.entity(32))->NormalForceTo(
-                Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
+                Quaternion::From(SS.GW.projRight, SS.GW.projUp));
             ConstrainPointByHovered(hr.entity(1));
 
             ClearSuper();
@@ -993,7 +993,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             hr = AddRequest(Request::WORKPLANE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             SS.GetEntity(hr.entity(32))->NormalForceTo( 
-                Quaternion::MakeFrom(SS.GW.projRight, SS.GW.projUp));
+                Quaternion::From(SS.GW.projRight, SS.GW.projUp));
             ConstrainPointByHovered(hr.entity(1));
 
             ClearSuper();
@@ -1095,7 +1095,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 }
 
 void GraphicsWindow::EditControlDone(char *s) {
-    Expr *e = Expr::FromString(s);
+    Expr *e = Expr::From(s);
     if(e) {
         Constraint *c = SS.GetConstraint(constraintBeingEdited);
         Expr::FreeKeep(&(c->exprA));

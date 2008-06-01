@@ -23,7 +23,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
-Quaternion Quaternion::MakeFrom(double w, double vx, double vy, double vz) {
+Quaternion Quaternion::From(double w, double vx, double vy, double vz) {
     Quaternion q;
     q.w  = w;
     q.vx = vx;
@@ -32,7 +32,7 @@ Quaternion Quaternion::MakeFrom(double w, double vx, double vy, double vz) {
     return q;
 }
 
-Quaternion Quaternion::MakeFrom(Vector u, Vector v)
+Quaternion Quaternion::From(Vector u, Vector v)
 {
     Vector n = u.Cross(v);
 
@@ -143,7 +143,7 @@ Quaternion Quaternion::Inverse(void) {
 
 Quaternion Quaternion::ToThe(double p) {
     Quaternion r;
-    Vector axis = Vector::MakeFrom(vx, vy, vz);
+    Vector axis = Vector::From(vx, vy, vz);
     double theta = acos(w); // okay, since magnitude is 1, so -1 <= w <= 1
     theta *= p;
     r.w = cos(theta);
@@ -171,13 +171,13 @@ Quaternion Quaternion::Times(Quaternion b) {
 }
 
 
-Vector Vector::MakeFrom(double x, double y, double z) {
+Vector Vector::From(double x, double y, double z) {
     Vector v;
     v.x = x; v.y = y; v.z = z;
     return v;
 }
 
-Vector Vector::MakeFrom(hParam x, hParam y, hParam z) {
+Vector Vector::From(hParam x, hParam y, hParam z) {
     Vector v;
     v.x = SS.GetParam(x)->val;
     v.y = SS.GetParam(y)->val;
@@ -308,7 +308,7 @@ Vector Vector::ScaledBy(double v) {
 Vector Vector::WithMagnitude(double v) {
     double m = Magnitude();
     if(m == 0) {
-        return MakeFrom(v, 0, 0);
+        return From(v, 0, 0);
     } else {
         return ScaledBy(v/m);
     }
@@ -357,11 +357,11 @@ Vector Vector::ClosestOrtho(void) {
     double m = max(fabs(x), max(fabs(y), fabs(z)));
 
     if(m == fabs(x)) {
-        return MakeFrom((x > 0) ? 1 : -1, 0, 0);
+        return From((x > 0) ? 1 : -1, 0, 0);
     } else if(m == fabs(y)) {
-        return MakeFrom(0, (y > 0) ? 1 : -1, 0);
+        return From(0, (y > 0) ? 1 : -1, 0);
     } else if(m == fabs(z)) {
-        return MakeFrom(0, 0, (z > 0) ? 1 : -1);
+        return From(0, 0, (z > 0) ? 1 : -1);
     } else oops();
 }
 

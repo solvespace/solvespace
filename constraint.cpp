@@ -100,10 +100,10 @@ void Constraint::MenuConstrain(int id) {
                 c.disp.offset = n.Cross(a.Minus(b));
                 c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
             } else {
-                c.disp.offset = Vector::MakeFrom(0, 0, 0);
+                c.disp.offset = Vector::From(0, 0, 0);
             }
 
-            c.exprA = Expr::FromString("0")->DeepCopyKeep();
+            c.exprA = Expr::From("0")->DeepCopyKeep();
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
@@ -159,7 +159,7 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
 
-            c.exprA = Expr::FromString("0")->DeepCopyKeep();
+            c.exprA = Expr::From("0")->DeepCopyKeep();
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
@@ -282,7 +282,7 @@ void Constraint::MenuConstrain(int id) {
                 c.type = ANGLE;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
-                c.exprA = Expr::FromConstant(0)->DeepCopyKeep();
+                c.exprA = Expr::From(0.0)->DeepCopyKeep();
                 c.otherAngle = true;
             } else {
                 Error("Bad selection for angle constraint.");
@@ -440,7 +440,7 @@ void Constraint::ModifyToSatisfy(void) {
         double c = (a.Dot(b))/(a.Magnitude() * b.Magnitude());
         double theta = acos(c)*180/PI;
         Expr::FreeKeep(&exprA);
-        exprA = Expr::FromConstant(theta)->DeepCopyKeep();
+        exprA = Expr::From(theta)->DeepCopyKeep();
     } else {
         // We'll fix these ones up by looking at their symbolic equation;
         // that means no extra work.
@@ -456,7 +456,7 @@ void Constraint::ModifyToSatisfy(void) {
         double v = (l.elem[0].e)->Eval();
         double nd = exprA->Eval() + v;
         Expr::FreeKeep(&exprA);
-        exprA = Expr::FromConstant(nd)->DeepCopyKeep();
+        exprA = Expr::From(nd)->DeepCopyKeep();
 
         l.Clear();
     }
@@ -509,7 +509,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case DIAMETER: {
             Entity *circle = SS.GetEntity(entityA);
             Expr *r = circle->CircleGetRadiusExpr();
-            AddEq(l, (r->Times(Expr::FromConstant(2)))->Minus(exA), 0);
+            AddEq(l, (r->Times(Expr::From(2)))->Minus(exA), 0);
             break;
         }
 
@@ -580,7 +580,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Entity *ln = SS.GetEntity(entityA);
                 ExprVector a = SS.GetEntity(ln->point[0])->PointGetExprs();
                 ExprVector b = SS.GetEntity(ln->point[1])->PointGetExprs();
-                ExprVector m = (a.Plus(b)).ScaledBy(Expr::FromConstant(0.5));
+                ExprVector m = (a.Plus(b)).ScaledBy(Expr::From(0.5));
 
                 if(ptA.v) {
                     ExprVector p = SS.GetEntity(ptA)->PointGetExprs();
@@ -598,8 +598,8 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *au, *av, *bu, *bv;
                 a->PointGetExprsInWorkplane(workplane, &au, &av);
                 b->PointGetExprsInWorkplane(workplane, &bu, &bv);
-                Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
-                Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
+                Expr *mu = Expr::From(0.5)->Times(au->Plus(bu));
+                Expr *mv = Expr::From(0.5)->Times(av->Plus(bv));
 
                 if(ptA.v) {
                     Entity *p = SS.GetEntity(ptA);
@@ -624,7 +624,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
 
                 // The midpoint of the line connecting the symmetric points
                 // lies on the plane of the symmetry.
-                ExprVector m = (a.Plus(b)).ScaledBy(Expr::FromConstant(0.5));
+                ExprVector m = (a.Plus(b)).ScaledBy(Expr::From(0.5));
                 AddEq(l, PointPlaneDistance(m, plane->h), 0);
 
                 // And projected into the plane of symmetry, the points are
@@ -642,8 +642,8 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *au, *av, *bu, *bv;
                 a->PointGetExprsInWorkplane(workplane, &au, &av);
                 b->PointGetExprsInWorkplane(workplane, &bu, &bv);
-                Expr *mu = Expr::FromConstant(0.5)->Times(au->Plus(bu));
-                Expr *mv = Expr::FromConstant(0.5)->Times(av->Plus(bv));
+                Expr *mu = Expr::From(0.5)->Times(au->Plus(bu));
+                Expr *mv = Expr::From(0.5)->Times(av->Plus(bv));
 
                 ExprVector m = PointInThreeSpace(workplane, mu, mv);
                 AddEq(l, PointPlaneDistance(m, plane->h), 0);
@@ -735,7 +735,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             ExprVector ae = a->VectorGetExprs();
             ExprVector be = b->VectorGetExprs();
-            if(otherAngle) ae = ae.ScaledBy(Expr::FromConstant(-1));
+            if(otherAngle) ae = ae.ScaledBy(Expr::From(-1));
             Expr *c;
             if(workplane.v == Entity::FREE_IN_3D.v) {
                 Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
@@ -753,7 +753,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *dot = (ua->Times(ub))->Plus(va->Times(vb));
                 c = dot->Div(maga->Times(magb));
             }
-            Expr *rads = exA->Times(Expr::FromConstant(PI/180));
+            Expr *rads = exA->Times(Expr::From(PI/180));
             AddEq(l, c->Minus(rads->Cos()), 0);
             break;
         }

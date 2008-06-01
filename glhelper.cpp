@@ -269,7 +269,7 @@ void glxDebugMesh(SMesh *m)
 
 void glxMarkPolygonNormal(SPolygon *p)
 {
-    Vector tail = Vector::MakeFrom(0, 0, 0);
+    Vector tail = Vector::From(0, 0, 0);
     int i, j, cnt = 0;
     // Choose some reasonable center point.
     for(i = 0; i < p->l.n; i++) {

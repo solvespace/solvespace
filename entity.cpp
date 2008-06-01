@@ -154,9 +154,9 @@ double Entity::DistanceGetNum(void) {
 }
 Expr *Entity::DistanceGetExpr(void) {
     if(type == DISTANCE) {
-        return Expr::FromParam(param[0]);
+        return Expr::From(param[0]);
     } else if(type == DISTANCE_N_COPY) {
-        return Expr::FromConstant(numDistance);
+        return Expr::From(numDistance);
     } else oops();
 }
 void Entity::DistanceForceTo(double v) {
@@ -298,10 +298,10 @@ ExprQuaternion Entity::NormalGetExprs(void) {
     ExprQuaternion q;
     switch(type) {
         case NORMAL_IN_3D:
-            q.w  = Expr::FromParam(param[0]);
-            q.vx = Expr::FromParam(param[1]);
-            q.vy = Expr::FromParam(param[2]);
-            q.vz = Expr::FromParam(param[3]);
+            q.w  = Expr::From(param[0]);
+            q.vx = Expr::From(param[1]);
+            q.vy = Expr::From(param[2]);
+            q.vz = Expr::From(param[3]);
             break;
 
         case NORMAL_IN_2D: {
@@ -311,34 +311,31 @@ ExprQuaternion Entity::NormalGetExprs(void) {
             break;
         }
         case NORMAL_N_COPY:
-            q.w  = Expr::FromConstant(numNormal.w);
-            q.vx = Expr::FromConstant(numNormal.vx);
-            q.vy = Expr::FromConstant(numNormal.vy);
-            q.vz = Expr::FromConstant(numNormal.vz);
+            q = ExprQuaternion::From(numNormal);
             break;
 
         case NORMAL_N_ROT: {
-            ExprQuaternion orig = ExprQuaternion::FromNum(numNormal);
+            ExprQuaternion orig = ExprQuaternion::From(numNormal);
 
-            q.w  = Expr::FromParam(param[0]);
-            q.vx = Expr::FromParam(param[1]);
-            q.vy = Expr::FromParam(param[2]);
-            q.vz = Expr::FromParam(param[3]);
+            q.w  = Expr::From(param[0]);
+            q.vx = Expr::From(param[1]);
+            q.vy = Expr::From(param[2]);
+            q.vz = Expr::From(param[3]);
 
             q = q.Times(orig);
             break;
         }
 
         case NORMAL_N_ROT_AA: {
-            ExprQuaternion orig = ExprQuaternion::FromNum(numNormal);
+            ExprQuaternion orig = ExprQuaternion::From(numNormal);
 
-            Expr *theta = Expr::FromConstant(timesApplied)->Times(
-                          Expr::FromParam(param[0]));
+            Expr *theta = Expr::From(timesApplied)->Times(
+                          Expr::From(param[0]));
             Expr *c = theta->Cos(), *s = theta->Sin();
             q.w = c;
-            q.vx = s->Times(Expr::FromParam(param[1]));
-            q.vy = s->Times(Expr::FromParam(param[2]));
-            q.vz = s->Times(Expr::FromParam(param[3]));
+            q.vx = s->Times(Expr::From(param[1]));
+            q.vy = s->Times(Expr::From(param[2]));
+            q.vz = s->Times(Expr::From(param[3]));
 
             q = q.Times(orig);
             break;
@@ -391,8 +388,8 @@ void Entity::PointForceTo(Vector p) {
 
         case POINT_N_ROT_AA: {
             // Force only the angle; the axis and center of rotation stay
-            Vector offset = Vector::MakeFrom(param[0], param[1], param[2]);
-            Vector normal = Vector::MakeFrom(param[4], param[5], param[6]);
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector normal = Vector::From(param[4], param[5], param[6]);
             Vector u = normal.Normal(0), v = normal.Normal(1);
             Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
             double thetap = atan2(v.Dot(po), u.Dot(po));
@@ -444,7 +441,7 @@ Vector Entity::PointGetNum(void) {
         }
 
         case POINT_N_ROT_TRANS: {
-            Vector offset = Vector::MakeFrom(
+            Vector offset = Vector::From(
                 SS.GetParam(param[0])->val,
                 SS.GetParam(param[1])->val,
                 SS.GetParam(param[2])->val);
@@ -455,7 +452,7 @@ Vector Entity::PointGetNum(void) {
         }
 
         case POINT_N_ROT_AA: {
-            Vector offset = Vector::MakeFrom(
+            Vector offset = Vector::From(
                 SS.GetParam(param[0])->val,
                 SS.GetParam(param[1])->val,
                 SS.GetParam(param[2])->val);
@@ -479,9 +476,9 @@ ExprVector Entity::PointGetExprs(void) {
     ExprVector r;
     switch(type) {
         case POINT_IN_3D:
-            r.x = Expr::FromParam(param[0]);
-            r.y = Expr::FromParam(param[1]);
-            r.z = Expr::FromParam(param[2]);
+            r.x = Expr::From(param[0]);
+            r.y = Expr::From(param[1]);
+            r.z = Expr::From(param[2]);
             break;
 
         case POINT_IN_2D: {
@@ -489,56 +486,53 @@ ExprVector Entity::PointGetExprs(void) {
             ExprVector u = c->Normal()->NormalExprsU();
             ExprVector v = c->Normal()->NormalExprsV();
             r = c->WorkplaneGetOffsetExprs();
-            r = r.Plus(u.ScaledBy(Expr::FromParam(param[0])));
-            r = r.Plus(v.ScaledBy(Expr::FromParam(param[1])));
+            r = r.Plus(u.ScaledBy(Expr::From(param[0])));
+            r = r.Plus(v.ScaledBy(Expr::From(param[1])));
             break;
         }
         case POINT_N_TRANS: {
             ExprVector orig = {
-                Expr::FromConstant(numPoint.x),
-                Expr::FromConstant(numPoint.y),
-                Expr::FromConstant(numPoint.z) };
+                Expr::From(numPoint.x),
+                Expr::From(numPoint.y),
+                Expr::From(numPoint.z) };
             ExprVector trans;
-            trans.x = Expr::FromParam(param[0]);
-            trans.y = Expr::FromParam(param[1]);
-            trans.z = Expr::FromParam(param[2]);
-            r = orig.Plus(trans.ScaledBy(Expr::FromConstant(timesApplied)));
+            trans.x = Expr::From(param[0]);
+            trans.y = Expr::From(param[1]);
+            trans.z = Expr::From(param[2]);
+            r = orig.Plus(trans.ScaledBy(Expr::From(timesApplied)));
             break;
         }
         case POINT_N_ROT_TRANS: {
-            ExprVector orig = ExprVector::FromNum(numPoint);
+            ExprVector orig = ExprVector::From(numPoint);
             ExprVector trans =
-                ExprVector::FromParams(param[0], param[1], param[2]);
+                ExprVector::From(param[0], param[1], param[2]);
             ExprQuaternion q = { 
-                Expr::FromParam(param[3]),
-                Expr::FromParam(param[4]),
-                Expr::FromParam(param[5]),
-                Expr::FromParam(param[6]) };
+                Expr::From(param[3]),
+                Expr::From(param[4]),
+                Expr::From(param[5]),
+                Expr::From(param[6]) };
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
             break;
         }
         case POINT_N_ROT_AA: {
-            ExprVector orig = ExprVector::FromNum(numPoint);
-            ExprVector trans =
-                ExprVector::FromParams(param[0], param[1], param[2]);
-            Expr *theta = Expr::FromConstant(timesApplied)->Times(
-                          Expr::FromParam(param[3]));
+            ExprVector orig = ExprVector::From(numPoint);
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+            Expr *theta = Expr::From(timesApplied)->Times(
+                          Expr::From(param[3]));
             Expr *c = theta->Cos(), *s = theta->Sin();
             ExprQuaternion q = { 
                 c,
-                s->Times(Expr::FromParam(param[4])),
-                s->Times(Expr::FromParam(param[5])),
-                s->Times(Expr::FromParam(param[6])) };
+                s->Times(Expr::From(param[4])),
+                s->Times(Expr::From(param[5])),
+                s->Times(Expr::From(param[6])) };
             orig = orig.Minus(trans);
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
             break;
         }
         case POINT_N_COPY:
-            r.x = Expr::FromConstant(numPoint.x);
-            r.y = Expr::FromConstant(numPoint.y);
-            r.z = Expr::FromConstant(numPoint.z);
+            r = ExprVector::From(numPoint);
             break;
 
         default: oops();
@@ -550,8 +544,8 @@ void Entity::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
     if(type == POINT_IN_2D && workplane.v == wrkpl.v) {
         // They want our coordinates in the form that we've written them,
         // very nice.
-        *u = Expr::FromParam(param[0]);
-        *v = Expr::FromParam(param[1]);
+        *u = Expr::From(param[0]);
+        *v = Expr::From(param[1]);
     } else {
         // Get the offset and basis vectors for this weird exotic csys.
         Entity *w = SS.GetEntity(wrkpl);
@@ -931,7 +925,7 @@ void Entity::GenerateEquations(IdList<Equation,hEquation> *l) {
     switch(type) {
         case NORMAL_IN_3D: {
             ExprQuaternion q = NormalGetExprs();
-            AddEq(l, (q.Magnitude())->Minus(Expr::FromConstant(1)), 0);
+            AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
             break;
         }
         case ARC_OF_CIRCLE: {

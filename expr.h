@@ -56,8 +56,8 @@ public:
     static inline Expr *AllocExpr(void)
         { return (Expr *)AllocTemporary(sizeof(Expr)); }
 
-    static Expr *FromParam(hParam p);
-    static Expr *FromConstant(double v);
+    static Expr *From(hParam p);
+    static Expr *From(double v);
 
     Expr *AnyOp(int op, Expr *b);
     inline Expr *Plus (Expr *b) { return AnyOp(PLUS,  b); }
@@ -99,7 +99,7 @@ public:
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
         IdList<Param,hParam> *thenTry);
 
-    static Expr *FromString(char *in);
+    static Expr *From(char *in);
     static void  Lex(char *in);
     static Expr *Next(void);
     static void  Consume(void);
@@ -122,9 +122,9 @@ class ExprVector {
 public:
     Expr *x, *y, *z;
 
-    static ExprVector FromExprs(Expr *x, Expr *y, Expr *z);
-    static ExprVector FromNum(Vector vn);
-    static ExprVector FromParams(hParam x, hParam y, hParam z);
+    static ExprVector From(Expr *x, Expr *y, Expr *z);
+    static ExprVector From(Vector vn);
+    static ExprVector From(hParam x, hParam y, hParam z);
 
     ExprVector Plus(ExprVector b);
     ExprVector Minus(ExprVector b);
@@ -140,8 +140,8 @@ class ExprQuaternion {
 public:
     Expr *w, *vx, *vy, *vz;
 
-    static ExprQuaternion FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz);
-    static ExprQuaternion FromNum(Quaternion qn);
+    static ExprQuaternion From(Expr *w, Expr *vx, Expr *vy, Expr *vz);
+    static ExprQuaternion From(Quaternion qn);
 
     ExprVector RotationU(void);
     ExprVector RotationV(void);

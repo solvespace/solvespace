@@ -107,7 +107,7 @@ void SContour::MakeEdgesInto(SEdgeList *el) {
 }
 
 Vector SContour::ComputeNormal(void) {
-    Vector n = Vector::MakeFrom(0, 0, 0);
+    Vector n = Vector::From(0, 0, 0);
 
     for(int i = 0; i < l.n - 2; i++) {
         Vector u = (l.elem[i+1].p).Minus(l.elem[i+0].p).WithMagnitude(1);
@@ -212,7 +212,7 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) {
 }
 
 Vector SPolygon::ComputeNormal(void) {
-    if(l.n < 1) return Vector::MakeFrom(0, 0, 0);
+    if(l.n < 1) return Vector::From(0, 0, 0);
     return (l.elem[0]).ComputeNormal();
 }
 

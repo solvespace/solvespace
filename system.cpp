@@ -30,7 +30,7 @@ void System::WriteJacobian(int eqTag, int paramTag) {
                 pd = pd->FoldConstants();
                 pd = pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
             } else {
-                pd = Expr::FromConstant(0);
+                pd = Expr::From(0.0);
             }
             mat.A.sym[i][j] = pd;
         }

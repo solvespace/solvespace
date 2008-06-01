@@ -41,8 +41,8 @@ void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) {
 }
 void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
     int i;
-    *vmin = Vector::MakeFrom( 1e12,  1e12,  1e12);
-    *vmax = Vector::MakeFrom(-1e12, -1e12, -1e12);
+    *vmin = Vector::From( 1e12,  1e12,  1e12);
+    *vmax = Vector::From(-1e12, -1e12, -1e12);
     for(i = 0; i < l.n; i++) {
         STriangle *st = &(l.elem[i]);
         DoBounding(st->a, vmax, vmin);

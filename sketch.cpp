@@ -49,7 +49,7 @@ void Group::MenuGroup(int id) {
                 v = v.Minus(u.ScaledBy(v.Dot(u)));
                 v = v.ClosestOrtho();
 
-                g.predef.q = Quaternion::MakeFrom(u, v);
+                g.predef.q = Quaternion::From(u, v);
                 g.predef.origin = gs.point[0];
             } else if(gs.points == 1 && gs.lineSegments == 2 && gs.n == 3) {
                 g.subtype = WORKPLANE_BY_LINE_SEGMENTS;
@@ -100,10 +100,10 @@ void Group::MenuGroup(int id) {
                 return;
             }
             n = n.WithMagnitude(1);
-            g.predef.q = Quaternion::MakeFrom(0, n.x, n.y, n.z);
+            g.predef.q = Quaternion::From(0, n.x, n.y, n.z);
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::FromConstant(3)->DeepCopyKeep();
+            g.exprA = Expr::From(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
             SS.GW.ClearSelection();
@@ -113,7 +113,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_TRANS:
             g.type = TRANSLATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::FromConstant(3)->DeepCopyKeep();
+            g.exprA = Expr::From(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
             g.name.strcpy("translate");
             break;
@@ -180,7 +180,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 if(predef.swapUV) SWAP(Vector, u, v);
                 if(predef.negateU) u = u.ScaledBy(-1);
                 if(predef.negateV) v = v.ScaledBy(-1);
-                q = Quaternion::MakeFrom(u, v);
+                q = Quaternion::From(u, v);
             } else if(subtype == WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
                 q = predef.q;
@@ -333,15 +333,15 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     if(type == IMPORTED) {
         // Normalize the quaternion
         ExprQuaternion q = {
-            Expr::FromParam(h.param(3)),
-            Expr::FromParam(h.param(4)),
-            Expr::FromParam(h.param(5)),
-            Expr::FromParam(h.param(6)) };
-        AddEq(l, (q.Magnitude())->Minus(Expr::FromConstant(1)), 0);
+            Expr::From(h.param(3)),
+            Expr::From(h.param(4)),
+            Expr::From(h.param(5)),
+            Expr::From(h.param(6)) };
+        AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
     } else if(type == ROTATE) {
         // The axis and center of rotation are specified numerically
-#define EC(x) (Expr::FromConstant(x))
-#define EP(x) (Expr::FromParam(h.param(x)))
+#define EC(x) (Expr::From(x))
+#define EP(x) (Expr::From(h.param(x)))
         AddEq(l, (EC(predef.p.x))->Minus(EP(0)), 0);
         AddEq(l, (EC(predef.p.y))->Minus(EP(1)), 1);
         AddEq(l, (EC(predef.p.z))->Minus(EP(2)), 2);
@@ -357,9 +357,9 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
             ExprVector extruden = {
-                Expr::FromParam(h.param(0)),
-                Expr::FromParam(h.param(1)),
-                Expr::FromParam(h.param(2)) };
+                Expr::From(h.param(0)),
+                Expr::From(h.param(1)),
+                Expr::From(h.param(2)) };
 
             AddEq(l, u.Dot(extruden), 0);
             AddEq(l, v.Dot(extruden), 1);
@@ -561,14 +561,14 @@ void Group::MakePolygons(void) {
     } else if(type == EXTRUDE) {
         int i;
         Group *src = SS.GetGroup(opA);
-        Vector translate = Vector::MakeFrom(
+        Vector translate = Vector::From(
             SS.GetParam(h.param(0))->val,
             SS.GetParam(h.param(1))->val,
             SS.GetParam(h.param(2))->val
         );
         Vector tbot, ttop;
         if(subtype == ONE_SIDED) {
-            tbot = Vector::MakeFrom(0, 0, 0); ttop = translate.ScaledBy(2);
+            tbot = Vector::From(0, 0, 0); ttop = translate.ScaledBy(2);
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }

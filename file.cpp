@@ -42,7 +42,7 @@ void SolveSpace::NewFile(void) {
     // And an empty group, for the first stuff the user draws.
     g.type = Group::DRAWING_WORKPLANE;
     g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
-    g.predef.q = Quaternion::MakeFrom(1, 0, 0, 0);
+    g.predef.q = Quaternion::From(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
     g.predef.origin = hr.entity(1);
     g.name.strcpy("draw-in-plane");
@@ -251,8 +251,8 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                 case 'N': ((NameStr *)p)->strcpy(val); break;
                 case 'E':
                     Expr *e;
-                    e  = Expr::FromString(val);
-                    if(!e) e = Expr::FromConstant(0);
+                    e  = Expr::From(val);
+                    if(!e) e = Expr::From(0.0);
                     *((Expr **)p) = e->DeepCopyKeep();
                     break;
 

@@ -15,8 +15,8 @@ public:
     // a + (vx)*i + (vy)*j + (vz)*k
     double w, vx, vy, vz;
 
-    static Quaternion MakeFrom(double w, double vx, double vy, double vz);
-    static Quaternion MakeFrom(Vector u, Vector v);
+    static Quaternion From(double w, double vx, double vy, double vz);
+    static Quaternion From(Vector u, Vector v);
 
     Quaternion Plus(Quaternion b);
     Quaternion Minus(Quaternion b);
@@ -40,8 +40,8 @@ class Vector {
 public:
     double x, y, z;
     
-    static Vector MakeFrom(double x, double y, double z);
-    static Vector MakeFrom(hParam x, hParam y, hParam z);
+    static Vector From(double x, double y, double z);
+    static Vector From(hParam x, hParam y, hParam z);
     static Vector AtIntersectionOfPlanes(Vector n1, double d1,
                                          Vector n2, double d2);
 
