@@ -77,6 +77,15 @@ Vector ExprVector::Eval(void) {
     return r;
 }
 
+ExprQuaternion ExprQuaternion::From(hParam w, hParam vx, hParam vy, hParam vz) {
+    ExprQuaternion q;
+    q.w  = Expr::From(w);
+    q.vx = Expr::From(vx);
+    q.vy = Expr::From(vy);
+    q.vz = Expr::From(vz);
+    return q;
+}
+
 ExprQuaternion ExprQuaternion::From(Expr *w, Expr *vx, Expr *vy, Expr *vz)
 {
     ExprQuaternion q;

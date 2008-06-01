@@ -298,10 +298,7 @@ ExprQuaternion Entity::NormalGetExprs(void) {
     ExprQuaternion q;
     switch(type) {
         case NORMAL_IN_3D:
-            q.w  = Expr::From(param[0]);
-            q.vx = Expr::From(param[1]);
-            q.vy = Expr::From(param[2]);
-            q.vz = Expr::From(param[3]);
+            q = ExprQuaternion::From(param[0], param[1], param[2], param[3]);
             break;
 
         case NORMAL_IN_2D: {
@@ -316,11 +313,7 @@ ExprQuaternion Entity::NormalGetExprs(void) {
 
         case NORMAL_N_ROT: {
             ExprQuaternion orig = ExprQuaternion::From(numNormal);
-
-            q.w  = Expr::From(param[0]);
-            q.vx = Expr::From(param[1]);
-            q.vy = Expr::From(param[2]);
-            q.vz = Expr::From(param[3]);
+            q = ExprQuaternion::From(param[0], param[1], param[2], param[3]);
 
             q = q.Times(orig);
             break;
@@ -491,26 +484,16 @@ ExprVector Entity::PointGetExprs(void) {
             break;
         }
         case POINT_N_TRANS: {
-            ExprVector orig = {
-                Expr::From(numPoint.x),
-                Expr::From(numPoint.y),
-                Expr::From(numPoint.z) };
-            ExprVector trans;
-            trans.x = Expr::From(param[0]);
-            trans.y = Expr::From(param[1]);
-            trans.z = Expr::From(param[2]);
+            ExprVector orig = ExprVector::From(numPoint);
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
             r = orig.Plus(trans.ScaledBy(Expr::From(timesApplied)));
             break;
         }
         case POINT_N_ROT_TRANS: {
             ExprVector orig = ExprVector::From(numPoint);
-            ExprVector trans =
-                ExprVector::From(param[0], param[1], param[2]);
-            ExprQuaternion q = { 
-                Expr::From(param[3]),
-                Expr::From(param[4]),
-                Expr::From(param[5]),
-                Expr::From(param[6]) };
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+            ExprQuaternion q =
+                ExprQuaternion::From(param[3], param[4], param[5], param[6]);
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
             break;

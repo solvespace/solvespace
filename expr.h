@@ -142,6 +142,7 @@ public:
 
     static ExprQuaternion From(Expr *w, Expr *vx, Expr *vy, Expr *vz);
     static ExprQuaternion From(Quaternion qn);
+    static ExprQuaternion From(hParam w, hParam vx, hParam vy, hParam vz);
 
     ExprVector RotationU(void);
     ExprVector RotationV(void);
