@@ -117,7 +117,7 @@ void GraphicsWindow::Init(void) {
     showConstraints = true;
     showHdnLines = false;
     showShaded = true;
-    showMesh = true;
+    showMesh = false;
 
     solving = SOLVE_ALWAYS;
 
@@ -313,6 +313,10 @@ void GraphicsWindow::GeneratePerSolving(void) {
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
+            SS.GW.GroupSelection();
+            if(SS.GW.gs.n == 0 && SS.GW.pending.operation == 0) {
+                SS.TW.ClearSuper();
+            }
             SS.GW.ClearSuper();
             HideTextEditControl();
             break;
@@ -850,11 +854,6 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
         Constraint::ConstrainCoincident(e->h, pt);
         return true;
     }
-    if(e->IsWorkplane()) {
-        Constraint::Constrain(Constraint::PT_IN_PLANE,
-            pt, Entity::NO_ENTITY, e->h);
-        return true;
-    }
     if(e->IsCircle()) {
         Constraint::Constrain(Constraint::PT_ON_CIRCLE, 
             pt, Entity::NO_ENTITY, e->h);
@@ -1079,13 +1078,13 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
 
     if(hover.constraint.v) {
-        Constraint *c = SS.GetConstraint(hover.constraint);
+        constraintBeingEdited = hover.constraint;
+        ClearSuper();
+
+        Constraint *c = SS.GetConstraint(constraintBeingEdited);
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
         ShowGraphicsEditControl((int)p2.x, (int)p2.y, c->exprA->Print());
-        constraintBeingEdited = hover.constraint;
-
-        ClearSuper();
     }
 }
 
@@ -1151,7 +1150,7 @@ void GraphicsWindow::Paint(int w, int h) {
     glMatrixMode(GL_PROJECTION); 
     glLoadIdentity();
 
-    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/100000);
+    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/30000);
 
     double tx = projRight.Dot(offset);
     double ty = projUp.Dot(offset);

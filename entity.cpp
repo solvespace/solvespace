@@ -580,6 +580,8 @@ void Entity::DrawOrGetDistance(int order) {
     // contribute a distance for the selection, but it still generates edges.
     if(!(g->visible) && !dogd.edges) return;
 
+    glLineWidth(1.5);
+
     if(group.v != SS.GW.activeGroup.v) {
         glxColor3d(0.5, 0.3, 0.0);
     } else if(construction) {
@@ -607,7 +609,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector v = PointGetNum();
 
             if(dogd.drawing) {
-                double s = 3;
+                double s = 3.5;
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
@@ -655,6 +657,7 @@ void Entity::DrawOrGetDistance(int order) {
                 Vector tail;
                 if(i == 0) {
                     tail = SS.GetEntity(point[0])->PointGetNum();
+                    glLineWidth(1);
                 } else {
                     // Draw an extra copy of the x, y, and z axes, that's
                     // always in the corner of the view and at the front.
@@ -713,6 +716,7 @@ void Entity::DrawOrGetDistance(int order) {
             Vector mm = p.Minus(us).Minus(vs), mm2 = mm;
             Vector mp = p.Minus(us).Plus (vs);
 
+            glLineWidth(1);
             glxColor3d(0, 0.3, 0.3);
             glEnable(GL_LINE_STIPPLE);
             glLineStipple(3, 0x1111);
@@ -827,6 +831,8 @@ void Entity::DrawOrGetDistance(int order) {
         default:
             oops();
     }
+
+    glLineWidth(1);
 }
 
 void Entity::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
