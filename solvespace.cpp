@@ -221,6 +221,14 @@ void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
     GW.ClearNonexistentSelectionItems();
 
     if(deleted.requests > 0 || deleted.constraints > 0 || deleted.groups > 0) {
+        // All sorts of interesting things could have happened; for example,
+        // the active group or active workplane could have been deleted. So
+        // clear all that out.
+        if(deleted.groups > 0) {
+            SS.TW.ClearSuper();
+        }
+        TW.Show();
+        GW.ClearSuper();
         // Don't display any errors until we've regenerated fully. The
         // sketch is not necessarily in a consistent state until we've
         // pruned any orphaned etc. objects, and the message loop for the
@@ -237,12 +245,6 @@ void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
                 deleted.constraints, deleted.constraints == 1 ? "" : "s",
                 deleted.groups, deleted.groups == 1 ? "" : "s");
         memset(&deleted, 0, sizeof(deleted));
-        // All sorts of interesting things could have happened; for example,
-        // the active group or active workplane could have been deleted. So
-        // clear all that out.
-        GW.ClearSuper();
-        HideGraphicsEditControl();
-        HideTextEditControl();
     }
     return;
 

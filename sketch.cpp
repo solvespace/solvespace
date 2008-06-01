@@ -465,6 +465,24 @@ SMesh *Group::PreviousGroupMesh(void) {
     return &(SS.group.elem[i-1].mesh);
 }
 
+void Group::TagEdgesFromLineSegments(SEdgeList *el) {
+    int i, j;
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(e->group.v != opA.v) continue;
+        if(e->type != Entity::LINE_SEGMENT) continue;
+
+        Vector p0 = SS.GetEntity(e->point[0])->PointGetNum();
+        Vector p1 = SS.GetEntity(e->point[1])->PointGetNum();
+        
+        for(j = 0; j < el->l.n; j++) {
+            SEdge *se = &(el->l.elem[j]);
+            if((p0.Equals(se->a) && p1.Equals(se->b))) se->tag = 1;
+            if((p0.Equals(se->b) && p1.Equals(se->a))) se->tag = 1;
+        }
+    }
+}
+
 void Group::MakePolygons(void) {
     poly.Clear();
 
@@ -544,6 +562,8 @@ void Group::MakePolygons(void) {
         edges.Clear();
         (src->poly).MakeEdgesInto(&edges);
 
+        edges.l.ClearTags();
+        TagEdgesFromLineSegments(&edges);
         // The sides; these are quads, represented as two triangles.
         for(i = 0; i < edges.l.n; i++) {
             SEdge *edge = &(edges.l.elem[i]);

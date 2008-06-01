@@ -67,7 +67,9 @@ public:
 
     static void ReportHowGroupSolved(hGroup hg);
 
-    void ShowHeader(void);
+    void ClearSuper(void);
+
+    void ShowHeader(bool withNav);
     // These are self-contained screens, that show some information about
     // the sketch.
     void ShowListOfGroups(void);
@@ -76,6 +78,8 @@ public:
     void ShowEntityInfo(void);
     void ShowConstraintInfo(void);
     void ShowGroupSolveInfo(void);
+    // Special screen, based on selection
+    void DescribeSelection(void);
 
     void OneScreenForwardTo(int screen);
 
@@ -206,6 +210,8 @@ public:
         UNIT_INCHES,
     } Unit;
     Unit    viewUnits;
+    char *ToString(double v);
+    double FromString(char *str);
 
     hGroup  activeGroup;
     void EnsureValidActives(void);
@@ -267,10 +273,12 @@ public:
         hEntity     entity[MAX_SELECTED];
         hEntity     anyNormal[MAX_SELECTED];
         hEntity     vector[MAX_SELECTED];
+        hEntity     face[MAX_SELECTED];
         hConstraint constraint[MAX_SELECTED];
         int         points;
         int         entities;
         int         workplanes;
+        int         faces;
         int         lineSegments;
         int         circlesOrArcs;
         int         anyNormals;

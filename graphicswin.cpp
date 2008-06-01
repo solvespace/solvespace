@@ -220,6 +220,21 @@ void GraphicsWindow::MenuView(int id) {
     InvalidateGraphics();
 }
 
+char *GraphicsWindow::ToString(double v) {
+    static int WhichBuf;
+    static char Bufs[8][128];
+
+    WhichBuf++;
+    if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
+
+    char *s = Bufs[WhichBuf];
+    sprintf(s, "%.3f", v);
+    return s;
+}
+double GraphicsWindow::FromString(char *s) {
+    return atof(s);
+}
+
 void GraphicsWindow::EnsureValidActives(void) {
     bool change = false;
     // The active group must exist, and not be the references.
@@ -280,7 +295,12 @@ void GraphicsWindow::SetWorkplaneFreeIn3d(void) {
     SS.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
 }
 hEntity GraphicsWindow::ActiveWorkplane(void) {
-    return SS.GetGroup(activeGroup)->activeWorkplane;
+    Group *g = SS.group.FindByIdNoOops(activeGroup);
+    if(g) {
+        return g->activeWorkplane;
+    } else {
+        return Entity::FREE_IN_3D;
+    }
 }
 bool GraphicsWindow::LockedInWorkplane(void) {
     return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
@@ -293,12 +313,8 @@ void GraphicsWindow::GeneratePerSolving(void) {
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
-            HideGraphicsEditControl();
+            SS.GW.ClearSuper();
             HideTextEditControl();
-            SS.GW.ClearSelection();
-            SS.GW.ClearPending();
-            SS.TW.ScreenNavigation('h', 0);
-            SS.TW.Show();
             break;
 
         case MNU_DELETE: {
@@ -321,10 +337,12 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.request.RemoveTagged();
             SS.constraint.RemoveTagged();
 
-            // Forget any mention of the just-deleted entity
-            SS.GW.ClearSuper();
+            // An edit might be in progress for the just-deleted item. So
+            // now it's not.
             HideGraphicsEditControl();
             HideTextEditControl();
+            // And clear out the selection, which could contain that item.
+            SS.GW.ClearSuper();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
             SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS, 0, INT_MAX);
@@ -488,8 +506,12 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 pending.operation = DRAGGING_CONSTRAINT;
             }
         } else {
-            // Otherwise, just hit test and give up
-            HitTestMakeSelection(mp);
+            // Otherwise, just hit test and give up; but don't hit test
+            // if the mouse is down, because then the user could hover
+            // a point, mouse down (thus selecting it), and drag, in an
+            // effort to drag the point, but instead hover a different
+            // entity before we move far enough to start the drag.
+            if(!leftDown) HitTestMakeSelection(mp);
         }
         return;
     }
@@ -678,6 +700,7 @@ void GraphicsWindow::Selection::Draw(void) {
 }
 
 void GraphicsWindow::ClearSuper(void) {
+    HideGraphicsEditControl();
     ClearPending();
     ClearSelection();
     hover.Clear();
@@ -728,6 +751,7 @@ void GraphicsWindow::ClearSelection(void) {
     for(int i = 0; i < MAX_SELECTED; i++) {
         selection[i].Clear();
     }
+    SS.TW.Show();
     InvalidateGraphics();
 }
 

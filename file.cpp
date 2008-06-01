@@ -224,6 +224,9 @@ bool SolveSpace::SaveToFile(char *filename) {
     SMesh *m = &(group.elem[group.n-1].mesh);
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
+/*
+        double mag = tr->Normal().Magnitude();
+        dbp("triangle: mag=%.5f", mag); */
         fprintf(fh, "Triangle %08x %08x  "
                     "%.3f %.3f %.3f  %.3f %.3f %.3f  %.3f %.3f %.3f\n",
             tr->meta.face, tr->meta.color,

@@ -146,6 +146,7 @@ public:
     // mapping list.
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(hEntity in, int ai, int af);
+    void TagEdgesFromLineSegments(SEdgeList *sle);
     void CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
                     bool transOnly);
@@ -224,6 +225,11 @@ public:
 
     static const int DISTANCE               =  4000;
     static const int DISTANCE_N_COPY        =  4001;
+
+    static const int FACE_N_COPY            =  5000;
+    static const int FACE_N_TRANS           =  5001;
+    static const int FACE_N_XPROD           =  5002;
+
 
     static const int WORKPLANE              = 10000;
     static const int LINE_SEGMENT           = 11000;
@@ -369,6 +375,7 @@ public:
     static const int PT_PLANE_DISTANCE  =  32;
     static const int PT_IN_PLANE        =  40;
     static const int PT_ON_LINE         =  41;
+    static const int PT_ON_FACE         =  42;
     static const int EQUAL_LENGTH_LINES =  50;
     static const int LENGTH_RATIO       =  51;
     static const int SYMMETRIC          =  60;

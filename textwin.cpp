@@ -10,6 +10,7 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'm', RGB(200, 200,   0) },
     { 'r', RGB(  0,   0,   0) },
     { 'x', RGB(255,  20,  20) },
+    { 'i', RGB(  0, 255, 255) },
     { 0, 0 },
 };
 const TextWindow::Color TextWindow::bgColors[] = {
@@ -21,8 +22,15 @@ const TextWindow::Color TextWindow::bgColors[] = {
 };
 
 void TextWindow::Init(void) {
+    ClearSuper();
+}
+
+void TextWindow::ClearSuper(void) {
+    HideTextEditControl();
     memset(this, 0, sizeof(*this));
     shown = &(showns[shownIndex]);
+    ClearScreen();
+    Show();
 
     // Default list of colors for the model material
     modelColor[0] = RGB(150, 150, 150);
@@ -33,8 +41,6 @@ void TextWindow::Init(void) {
     modelColor[5] = RGB(  0,  80,  80);
     modelColor[6] = RGB(  0,   0, 150);
     modelColor[7] = RGB( 80,   0,  80);
-
-    ClearScreen();
 }
 
 void TextWindow::ClearScreen(void) {
@@ -91,9 +97,19 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                     sprintf(buf, "%08x", v);
                     break;
                 }
+                case '3': {
+                    double v = va_arg(vl, double);
+                    sprintf(buf, "%s%.3f", v < 0 ? "" : " ", v);
+                    break;
+                }
                 case 's': {
                     char *s = va_arg(vl, char *);
                     memcpy(buf, s, min(sizeof(buf), strlen(s)+1));
+                    break;
+                }
+                case 'c': {
+                    char v = va_arg(vl, char);
+                    sprintf(buf, "%c", v);
                     break;
                 }
                 case 'E':
@@ -176,20 +192,23 @@ done:
     va_end(vl);
 }
 
+#define gs (SS.GW.gs)
 void TextWindow::Show(void) {
     if(!(SS.GW.pending.operation)) SS.GW.ClearPending();
 
     SS.GW.GroupSelection();
-#define gs (SS.GW.gs)
-
-    ShowHeader();
 
     if(SS.GW.pending.description) {
         // A pending operation (that must be completed with the mouse in
         // the graphics window) will preempt our usual display.
+        ShowHeader(false);
         Printf(false, "");
         Printf(false, "%s", SS.GW.pending.description);
+    } else if(gs.n > 0) {
+        ShowHeader(false);
+        DescribeSelection();
     } else {
+        ShowHeader(true);
         switch(shown->screen) {
             default:
                 shown->screen = SCREEN_LIST_OF_GROUPS;
@@ -200,6 +219,122 @@ void TextWindow::Show(void) {
         }
     }
     InvalidateText();
+}
+
+void TextWindow::DescribeSelection(void) {
+    Entity *e;
+    Vector p;
+    int i;
+    Printf(false, "");
+
+    if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
+        e = SS.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
+
+#define COP  SS.GW.ToString(p.x), SS.GW.ToString(p.y), SS.GW.ToString(p.z)
+#define PT_AS_STR "(%Fi%s%E, %Fi%s%E, %Fi%s%E)"
+#define PT_AS_NUM "(%Fi%3%E, %Fi%3%E, %Fi%3%E)"
+        switch(e->type) {
+            case Entity::POINT_IN_3D:
+            case Entity::POINT_IN_2D:
+            case Entity::POINT_N_TRANS:
+            case Entity::POINT_N_ROT_TRANS:
+            case Entity::POINT_N_COPY:
+            case Entity::POINT_N_ROT_AA:
+                p = e->PointGetNum();
+                Printf(false, "%FtPOINT%E at " PT_AS_STR, COP);
+                break;
+
+            case Entity::NORMAL_IN_3D:
+            case Entity::NORMAL_IN_2D:
+            case Entity::NORMAL_N_COPY:
+            case Entity::NORMAL_N_ROT:
+            case Entity::NORMAL_N_ROT_AA: {
+                Quaternion q = e->NormalGetNum();
+                p = q.RotationN();
+                Printf(false, "%FtNORMAL / COORDINATE SYSTEM%E");
+                Printf(true, "  basis n = " PT_AS_NUM, CO(p));
+                p = q.RotationU();
+                Printf(false, "        u = " PT_AS_NUM, CO(p));
+                p = q.RotationV();
+                Printf(false, "        v = " PT_AS_NUM, CO(p));
+                break;
+            }
+            case Entity::WORKPLANE: {
+                p = SS.GetEntity(e->point[0])->PointGetNum();
+                Printf(false, "%FtWORKPLANE%E");
+                Printf(true, "   origin = " PT_AS_STR, COP);
+                Quaternion q = e->Normal()->NormalGetNum();
+                p = q.RotationN();
+                Printf(true, "   normal = " PT_AS_NUM, CO(p));
+                break;
+            }
+            case Entity::LINE_SEGMENT: {
+                Vector p0 = SS.GetEntity(e->point[0])->PointGetNum();
+                p = p0;
+                Printf(false, "%FtLINE SEGMENT%E");
+                Printf(true, "   thru " PT_AS_STR, COP);
+                Vector p1 = SS.GetEntity(e->point[1])->PointGetNum();
+                p = p1;
+                Printf(false, "        " PT_AS_STR, COP);
+                Printf(true,  "   len = %Fi%s%E",
+                    SS.GW.ToString((p1.Minus(p0).Magnitude())));
+                break;
+            }
+            case Entity::CUBIC:
+                p = SS.GetEntity(e->point[0])->PointGetNum();
+                Printf(false, "%FtCUBIC BEZIER CURVE%E");
+                for(i = 0; i <= 3; i++) {
+                    p = SS.GetEntity(e->point[i])->PointGetNum();
+                    Printf((i==0), "   p%c = " PT_AS_STR, '0'+i, COP);
+                }
+                break;
+            case Entity::ARC_OF_CIRCLE: {
+                Printf(false, "%FtARC OF A CIRCLE%E");
+                p = SS.GetEntity(e->point[0])->PointGetNum();
+                Printf(true, "     center = " PT_AS_STR, COP);
+                p = SS.GetEntity(e->point[1])->PointGetNum();
+                Printf(true,"  endpoints = " PT_AS_STR, COP);
+                p = SS.GetEntity(e->point[2])->PointGetNum();
+                Printf(false,"              " PT_AS_STR, COP);
+                double r = e->CircleGetRadiusNum();
+                Printf(true, "   diameter =  %Fi%s", SS.GW.ToString(r*2));
+                Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
+                break;
+            }
+            case Entity::CIRCLE: {
+                Printf(false, "%FtCIRCLE%E");
+                p = SS.GetEntity(e->point[0])->PointGetNum();
+                Printf(true, "     center = " PT_AS_STR, COP);
+                double r = e->CircleGetRadiusNum();
+                Printf(true, "   diameter =  %Fi%s", SS.GW.ToString(r*2));
+                Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
+                break;
+            }
+            default:
+                Printf(true, "%Ft?? ENTITY%E");
+                break;
+        }
+
+        Group *g = SS.GetGroup(e->group);
+        Printf(false, "");
+        Printf(false, "%FtIN GROUP%E      %s", g->DescriptionString());
+        if(e->workplane.v == Entity::FREE_IN_3D.v) {
+            Printf(false, "%FtNO WORKPLANE (FREE IN 3D)%E"); 
+        } else {
+            Entity *w = SS.GetEntity(e->workplane);
+            Printf(false, "%FtIN WORKPLANE%E  %s", w->DescriptionString());
+        }
+    } else if(gs.n == 2 && gs.points == 2) {
+        Printf(false, "%FtTWO POINTS");
+        Vector p0 = SS.GetEntity(gs.point[0])->PointGetNum(); p = p0;
+        Printf(true, "   at " PT_AS_STR, COP);
+        Vector p1 = SS.GetEntity(gs.point[1])->PointGetNum(); p = p1;
+        Printf(false, "      " PT_AS_STR, COP);
+        double d = (p1.Minus(p0)).Magnitude();
+        Printf(true, "  d = %Fi%s", SS.GW.ToString(d));
+    } else {
+        Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
+    }
 }
 
 void TextWindow::OneScreenForwardTo(int screen) {
@@ -232,7 +367,7 @@ void TextWindow::ScreenNavigation(int link, DWORD v) {
             break;
     }
 }
-void TextWindow::ShowHeader(void) {
+void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
 
     char *cd = SS.GW.LockedInWorkplane() ?
@@ -240,13 +375,13 @@ void TextWindow::ShowHeader(void) {
                    "free in 3d";
 
     // Navigation buttons
-    if(SS.GW.pending.description) {
-        Printf(false, "             %Bt%Ft wrkpl:%Fd %s", cd);
-    } else {
+    if(withNav) {
         Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft wrkpl:%Fd %s",
                     (&TextWindow::ScreenNavigation),
                     (&TextWindow::ScreenNavigation),
                     cd);
+    } else {
+        Printf(false, "             %Bt%Ft wrkpl:%Fd %s", cd);
     }
 
 #define hs(b) ((b) ? 's' : 'h')
@@ -305,6 +440,7 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {
+    SS.GW.ClearSuper();
     SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
     SS.TW.shown->group.v = hg.v;
     SS.TW.Show();
@@ -530,7 +666,9 @@ void TextWindow::ShowGroupSolveInfo(void) {
             Printf(true, "remove any one of these to fix it");
             for(int i = 0; i < g->solved.remove.n; i++) {
                 hConstraint hc = g->solved.remove.elem[i];
-                Constraint *c = SS.GetConstraint(hc);
+                Constraint *c = SS.constraint.FindByIdNoOops(hc);
+                if(!c) continue;
+
                 Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                     (i & 1) ? 'd' : 'a',
                     c->h.v, (&TextWindow::ScreenSelectConstraint),

@@ -4,7 +4,34 @@ const hConstraint Constraint::NO_CONSTRAINT = { 0 };
 
 char *Constraint::DescriptionString(void) {
     static char ret[1024];
-    sprintf(ret, "c%03x", h.v);
+
+    char *s;
+    switch(type) {
+        case POINTS_COINCIDENT: s = "pts-coincident"; break;
+        case PT_PT_DISTANCE:    s = "pt-pt-distance"; break;
+        case PT_LINE_DISTANCE:  s = "pt-line-distance"; break;
+        case PT_PLANE_DISTANCE: s = "pt-plane-distance"; break;
+        case PT_IN_PLANE:       s = "pt-in-plane"; break;
+        case PT_ON_LINE:        s = "pt-on-line"; break;
+        case PT_ON_FACE:        s = "pt-on-face"; break;
+        case EQUAL_LENGTH_LINES:s = "eq-length"; break;
+        case LENGTH_RATIO:      s = "length-ratio"; break;
+        case SYMMETRIC:         s = "symmetric"; break;
+        case SYMMETRIC_HORIZ:   s = "symmetric-h"; break;
+        case SYMMETRIC_VERT:    s = "symmetric-v"; break;
+        case AT_MIDPOINT:       s = "at-midpoint"; break;
+        case HORIZONTAL:        s = "horizontal"; break;
+        case VERTICAL:          s = "vertical"; break;
+        case DIAMETER:          s = "diameter"; break;
+        case PT_ON_CIRCLE:      s = "pt-on-circle"; break;
+        case SAME_ORIENTATION:  s = "same-orientation"; break;
+        case ANGLE:             s = "angle"; break;
+        case PARALLEL:          s = "parallel"; break;
+        case EQUAL_RADIUS:      s = "eq-radius"; break;
+        default:                s = "???"; break;
+    }
+
+    sprintf(ret, "c%03x-%s", h.v, s);
     return ret;
 }
 
