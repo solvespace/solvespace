@@ -177,6 +177,14 @@ Vector Vector::MakeFrom(double x, double y, double z) {
     return v;
 }
 
+Vector Vector::MakeFrom(hParam x, hParam y, hParam z) {
+    Vector v;
+    v.x = SS.GetParam(x)->val;
+    v.y = SS.GetParam(y)->val;
+    v.z = SS.GetParam(z)->val;
+    return v;
+}
+
 bool Vector::Equals(Vector v) {
     if(fabs(x - v.x) > LENGTH_EPS) return false;
     if(fabs(y - v.y) > LENGTH_EPS) return false;

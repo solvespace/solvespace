@@ -80,9 +80,9 @@ bool SolveSpace::EntityExists(hEntity he) {
 bool SolveSpace::PruneGroups(hGroup hg) {
     Group *g = GetGroup(hg);
     if(GroupsInOrder(g->opA, hg) &&
-       EntityExists(g->wrkpl.origin) &&
-       EntityExists(g->wrkpl.entityB) &&
-       EntityExists(g->wrkpl.entityC))
+       EntityExists(g->predef.origin) &&
+       EntityExists(g->predef.entityB) &&
+       EntityExists(g->predef.entityC))
     {
         return false;
     }

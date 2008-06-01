@@ -8,6 +8,7 @@ typedef unsigned char BYTE;
 class Vector;
 class Point2d;
 class hEntity;
+class hParam;
 
 class Quaternion {
 public:
@@ -40,6 +41,7 @@ public:
     double x, y, z;
     
     static Vector MakeFrom(double x, double y, double z);
+    static Vector MakeFrom(hParam x, hParam y, hParam z);
     static Vector AtIntersectionOfPlanes(Vector n1, double d1,
                                          Vector n2, double d2);
 

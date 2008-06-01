@@ -123,6 +123,8 @@ public:
     Expr *x, *y, *z;
 
     static ExprVector FromExprs(Expr *x, Expr *y, Expr *z);
+    static ExprVector FromNum(Vector vn);
+    static ExprVector FromParams(hParam x, hParam y, hParam z);
 
     ExprVector Plus(ExprVector b);
     ExprVector Minus(ExprVector b);
@@ -139,6 +141,7 @@ public:
     Expr *w, *vx, *vy, *vz;
 
     static ExprQuaternion FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz);
+    static ExprQuaternion FromNum(Quaternion qn);
 
     ExprVector RotationU(void);
     ExprVector RotationV(void);

@@ -42,9 +42,9 @@ void SolveSpace::NewFile(void) {
     // And an empty group, for the first stuff the user draws.
     g.type = Group::DRAWING_WORKPLANE;
     g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
-    g.wrkpl.q = Quaternion::MakeFrom(1, 0, 0, 0);
+    g.predef.q = Quaternion::MakeFrom(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
-    g.wrkpl.origin = hr.entity(1);
+    g.predef.origin = hr.entity(1);
     g.name.strcpy("draw-in-plane");
     group.AddAndAssignId(&g);
     SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
@@ -60,16 +60,16 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
-    { 'g',  "Group.wrkpl.q.w",          'f',    &(SS.sv.g.wrkpl.q.w)          },
-    { 'g',  "Group.wrkpl.q.vx",         'f',    &(SS.sv.g.wrkpl.q.vx)         },
-    { 'g',  "Group.wrkpl.q.vy",         'f',    &(SS.sv.g.wrkpl.q.vy)         },
-    { 'g',  "Group.wrkpl.q.vz",         'f',    &(SS.sv.g.wrkpl.q.vz)         },
-    { 'g',  "Group.wrkpl.origin.v",     'x',    &(SS.sv.g.wrkpl.origin.v)     },
-    { 'g',  "Group.wrkpl.entityB.v",    'x',    &(SS.sv.g.wrkpl.entityB.v)    },
-    { 'g',  "Group.wrkpl.entityC.v",    'x',    &(SS.sv.g.wrkpl.entityC.v)    },
-    { 'g',  "Group.wrkpl.swapUV",       'b',    &(SS.sv.g.wrkpl.swapUV)       },
-    { 'g',  "Group.wrkpl.negateU",      'b',    &(SS.sv.g.wrkpl.negateU)      },
-    { 'g',  "Group.wrkpl.negateV",      'b',    &(SS.sv.g.wrkpl.negateV)      },
+    { 'g',  "Group.predef.q.w",         'f',    &(SS.sv.g.predef.q.w)         },
+    { 'g',  "Group.predef.q.vx",        'f',    &(SS.sv.g.predef.q.vx)        },
+    { 'g',  "Group.predef.q.vy",        'f',    &(SS.sv.g.predef.q.vy)        },
+    { 'g',  "Group.predef.q.vz",        'f',    &(SS.sv.g.predef.q.vz)        },
+    { 'g',  "Group.predef.origin.v",    'x',    &(SS.sv.g.predef.origin.v)    },
+    { 'g',  "Group.predef.entityB.v",   'x',    &(SS.sv.g.predef.entityB.v)   },
+    { 'g',  "Group.predef.entityC.v",   'x',    &(SS.sv.g.predef.entityC.v)   },
+    { 'g',  "Group.predef.swapUV",      'b',    &(SS.sv.g.predef.swapUV)      },
+    { 'g',  "Group.predef.negateU",     'b',    &(SS.sv.g.predef.negateU)     },
+    { 'g',  "Group.predef.negateV",     'b',    &(SS.sv.g.predef.negateV)     },
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },

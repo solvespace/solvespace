@@ -49,26 +49,26 @@ void Group::MenuGroup(int id) {
                 v = v.Minus(u.ScaledBy(v.Dot(u)));
                 v = v.ClosestOrtho();
 
-                g.wrkpl.q = Quaternion::MakeFrom(u, v);
-                g.wrkpl.origin = gs.point[0];
+                g.predef.q = Quaternion::MakeFrom(u, v);
+                g.predef.origin = gs.point[0];
             } else if(gs.points == 1 && gs.lineSegments == 2 && gs.n == 3) {
                 g.subtype = WORKPLANE_BY_LINE_SEGMENTS;
 
-                g.wrkpl.origin = gs.point[0];
-                g.wrkpl.entityB = gs.entity[0];
-                g.wrkpl.entityC = gs.entity[1];
+                g.predef.origin = gs.point[0];
+                g.predef.entityB = gs.entity[0];
+                g.predef.entityC = gs.entity[1];
 
-                Vector ut = SS.GetEntity(g.wrkpl.entityB)->VectorGetNum();
-                Vector vt = SS.GetEntity(g.wrkpl.entityC)->VectorGetNum();
+                Vector ut = SS.GetEntity(g.predef.entityB)->VectorGetNum();
+                Vector vt = SS.GetEntity(g.predef.entityC)->VectorGetNum();
                 ut = ut.WithMagnitude(1);
                 vt = vt.WithMagnitude(1);
 
                 if(fabs(SS.GW.projUp.Dot(vt)) < fabs(SS.GW.projUp.Dot(ut))) {
                     SWAP(Vector, ut, vt);
-                    g.wrkpl.swapUV = true;
+                    g.predef.swapUV = true;
                 }
-                if(SS.GW.projRight.Dot(ut) < 0) g.wrkpl.negateU = true;
-                if(SS.GW.projUp.   Dot(vt) < 0) g.wrkpl.negateV = true;
+                if(SS.GW.projRight.Dot(ut) < 0) g.predef.negateU = true;
+                if(SS.GW.projUp.   Dot(vt) < 0) g.predef.negateV = true;
             } else {
                 Error("Bad selection for new drawing in workplane.");
                 return;
@@ -80,18 +80,35 @@ void Group::MenuGroup(int id) {
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.color = RGB(100, 100, 100);
-            g.wrkpl.entityB = SS.GW.ActiveWorkplane();
+            g.predef.entityB = SS.GW.ActiveWorkplane();
             g.subtype = ONE_SIDED;
             g.name.strcpy("extrude");
             break;
 
-        case GraphicsWindow::MNU_GROUP_ROT:
+        case GraphicsWindow::MNU_GROUP_ROT: {
+            Vector n;
+            if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
+                g.predef.p = (SS.GetEntity(gs.point[0]))->PointGetNum();
+                Entity *w = SS.GetEntity(SS.GW.ActiveWorkplane());
+                n = (w->Normal()->NormalN());
+                g.activeWorkplane = w->h;
+            } else if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
+                g.predef.p = (SS.GetEntity(gs.point[0]))->PointGetNum();
+                n = SS.GetEntity(gs.vector[0])->VectorGetNum();
+            } else {
+                Error("Bad selection for new rotation.");
+                return;
+            }
+            n = n.WithMagnitude(1);
+            g.predef.q = Quaternion::MakeFrom(0, n.x, n.y, n.z);
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
             g.exprA = Expr::FromConstant(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
+            SS.GW.ClearSelection();
             break;
+        }
 
         case GraphicsWindow::MNU_GROUP_TRANS:
             g.type = TRANSLATE;
@@ -143,6 +160,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     Vector gp = SS.GW.projRight.Plus(SS.GW.projUp);
+    Vector gc = (SS.GW.offset).ScaledBy(-1);
     gn = gn.WithMagnitude(200/SS.GW.scale);
     gp = gp.WithMagnitude(200/SS.GW.scale);
     int a, i;
@@ -153,19 +171,19 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         case DRAWING_WORKPLANE: {
             Quaternion q;
             if(subtype == WORKPLANE_BY_LINE_SEGMENTS) {
-                Vector u = SS.GetEntity(wrkpl.entityB)->VectorGetNum();
-                Vector v = SS.GetEntity(wrkpl.entityC)->VectorGetNum();
+                Vector u = SS.GetEntity(predef.entityB)->VectorGetNum();
+                Vector v = SS.GetEntity(predef.entityC)->VectorGetNum();
                 u = u.WithMagnitude(1);
                 Vector n = u.Cross(v);
                 v = (n.Cross(u)).WithMagnitude(1);
 
-                if(wrkpl.swapUV) SWAP(Vector, u, v);
-                if(wrkpl.negateU) u = u.ScaledBy(-1);
-                if(wrkpl.negateV) v = v.ScaledBy(-1);
+                if(predef.swapUV) SWAP(Vector, u, v);
+                if(predef.negateU) u = u.ScaledBy(-1);
+                if(predef.negateV) v = v.ScaledBy(-1);
                 q = Quaternion::MakeFrom(u, v);
             } else if(subtype == WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
-                q = wrkpl.q;
+                q = predef.q;
             } else oops();
 
             Entity normal;
@@ -180,7 +198,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             Entity point;
             memset(&point, 0, sizeof(point));
             point.type = Entity::POINT_N_COPY;
-            point.numPoint = SS.GetEntity(wrkpl.origin)->PointGetNum();
+            point.numPoint = SS.GetEntity(predef.origin)->PointGetNum();
             point.group = h;
             point.h = h.entity(2);
             entity->Add(&point);
@@ -214,15 +232,15 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(SS.GetEntity(he), ai,
+                CopyEntity(SS.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true);
-                CopyEntity(SS.GetEntity(he), af,
+                    true, false);
+                CopyEntity(SS.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true);
-                MakeExtrusionLines(he, ai, af);
+                    true, false);
+                MakeExtrusionLines(he);
             }
             break;
 
@@ -239,37 +257,44 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     if(e->group.v != opA.v) continue;
 
                     e->CalculateNumerical();
-                    CopyEntity(e, a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
+                    CopyEntity(e,
+                        a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
+                        (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                        true);
+                        true, false);
                 }
             }
             break;
         }
-        case ROTATE:
-            // The translation vector
-            AddParam(param, h.param(0), gp.x);
-            AddParam(param, h.param(1), gp.y);
-            AddParam(param, h.param(2), gp.z);
+        case ROTATE: {
+            // The center of rotation
+            AddParam(param, h.param(0), gc.x);
+            AddParam(param, h.param(1), gc.y);
+            AddParam(param, h.param(2), gc.z);
             // The rotation quaternion
-            AddParam(param, h.param(3), 1);
-            AddParam(param, h.param(4), 0);
-            AddParam(param, h.param(5), 0);
-            AddParam(param, h.param(6), 0);
+            AddParam(param, h.param(3), 15*PI/180);
+            AddParam(param, h.param(4), gn.x);
+            AddParam(param, h.param(5), gn.y);
+            AddParam(param, h.param(6), gn.z);
 
-            for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
-                if(e->group.v != opA.v) continue;
+            int n = (int)(exprA->Eval());
+            for(a = 0; a < n; a++) {
+                for(i = 0; i < entity->n; i++) {
+                    Entity *e = &(entity->elem[i]);
+                    if(e->group.v != opA.v) continue;
 
-                e->CalculateNumerical();
-                CopyEntity(e, 0,
-                    h.param(0), h.param(1), h.param(2),
-                    h.param(3), h.param(4), h.param(5), h.param(6),
-                    false);
+                    e->CalculateNumerical();
+                    CopyEntity(e,
+                        a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
+                        (a == (n - 1)) ? REMAP_LAST : a,
+                        h.param(0), h.param(1), h.param(2),
+                        h.param(3), h.param(4), h.param(5), h.param(6),
+                        false, true);
+                }
             }
             break;
-
+        }
         case IMPORTED:
             // The translation vector
             AddParam(param, h.param(0), gp.x);
@@ -284,10 +309,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             for(i = 0; i < impEntity.n; i++) {
                 Entity *ie = &(impEntity.elem[i]);
 
-                CopyEntity(ie, 0,
+                CopyEntity(ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
-                    false);
+                    false, false);
             }
             break;
 
@@ -295,35 +320,49 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
     }
 }
 
+void Group::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
+    Equation eq;
+    eq.e = expr;
+    eq.h = h.equation(index);
+    l->Add(&eq);
+}
+
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     Equation eq;
-    if(type == ROTATE || type == IMPORTED) {
+    ZERO(&eq);
+    if(type == IMPORTED) {
         // Normalize the quaternion
         ExprQuaternion q = {
             Expr::FromParam(h.param(3)),
             Expr::FromParam(h.param(4)),
             Expr::FromParam(h.param(5)),
             Expr::FromParam(h.param(6)) };
-        eq.e = (q.Magnitude())->Minus(Expr::FromConstant(1));
-        eq.h = h.equation(0);
-        l->Add(&eq);
+        AddEq(l, (q.Magnitude())->Minus(Expr::FromConstant(1)), 0);
+    } else if(type == ROTATE) {
+        // The axis and center of rotation are specified numerically
+#define EC(x) (Expr::FromConstant(x))
+#define EP(x) (Expr::FromParam(h.param(x)))
+        AddEq(l, (EC(predef.p.x))->Minus(EP(0)), 0);
+        AddEq(l, (EC(predef.p.y))->Minus(EP(1)), 1);
+        AddEq(l, (EC(predef.p.z))->Minus(EP(2)), 2);
+        // param 3 is the angle, which is free
+        AddEq(l, (EC(predef.q.vx))->Minus(EP(4)), 3);
+        AddEq(l, (EC(predef.q.vy))->Minus(EP(5)), 4);
+        AddEq(l, (EC(predef.q.vz))->Minus(EP(6)), 5);
     } else if(type == EXTRUDE) {
-        if(wrkpl.entityB.v != Entity::FREE_IN_3D.v) {
+        if(predef.entityB.v != Entity::FREE_IN_3D.v) {
             // The extrusion path is locked along a line, normal to the
             // specified workplane.
-            Entity *w = SS.GetEntity(wrkpl.entityB);
+            Entity *w = SS.GetEntity(predef.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
             ExprVector extruden = {
                 Expr::FromParam(h.param(0)),
                 Expr::FromParam(h.param(1)),
                 Expr::FromParam(h.param(2)) };
-            eq.e = u.Dot(extruden);
-            eq.h = h.equation(0);
-            l->Add(&eq);
-            eq.e = v.Dot(extruden);
-            eq.h = h.equation(1);
-            l->Add(&eq);
+
+            AddEq(l, u.Dot(extruden), 0);
+            AddEq(l, v.Dot(extruden), 1);
         }
     }
 }
@@ -345,14 +384,14 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     return h.entity(em.h.v);
 }
 
-void Group::MakeExtrusionLines(hEntity in, int ai, int af) {
+void Group::MakeExtrusionLines(hEntity in) {
     Entity *ep = SS.GetEntity(in);
     if(!(ep->IsPoint())) return;
 
     Entity en;
     memset(&en, 0, sizeof(en));
-    en.point[0] = Remap(ep->h, ai);
-    en.point[1] = Remap(ep->h, af);
+    en.point[0] = Remap(ep->h, REMAP_TOP);
+    en.point[1] = Remap(ep->h, REMAP_BOTTOM);
     en.group = h;
     en.h = Remap(ep->h, 10);
     en.type = Entity::LINE_SEGMENT;
@@ -360,14 +399,16 @@ void Group::MakeExtrusionLines(hEntity in, int ai, int af) {
     SS.entity.Add(&en);
 }
 
-void Group::CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
+void Group::CopyEntity(Entity *ep, int timesApplied, int remap,
+                       hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                       bool transOnly)
+                       bool asTrans, bool asAxisAngle)
 {
     Entity en;
     memset(&en, 0, sizeof(en));
     en.type = ep->type;
-    en.h = Remap(ep->h, a);
+    en.h = Remap(ep->h, remap);
+    en.timesApplied = timesApplied;
     en.group = h;
     en.construction = ep->construction;
 
@@ -377,42 +418,47 @@ void Group::CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
             return;
 
         case Entity::LINE_SEGMENT:  
-            en.point[0] = Remap(ep->point[0], a);
-            en.point[1] = Remap(ep->point[1], a);
+            en.point[0] = Remap(ep->point[0], remap);
+            en.point[1] = Remap(ep->point[1], remap);
             break;
 
         case Entity::CUBIC:
-            en.point[0] = Remap(ep->point[0], a);
-            en.point[1] = Remap(ep->point[1], a);
-            en.point[2] = Remap(ep->point[2], a);
-            en.point[3] = Remap(ep->point[3], a);
+            en.point[0] = Remap(ep->point[0], remap);
+            en.point[1] = Remap(ep->point[1], remap);
+            en.point[2] = Remap(ep->point[2], remap);
+            en.point[3] = Remap(ep->point[3], remap);
             break;
 
         case Entity::CIRCLE:
-            en.point[0] = Remap(ep->point[0], a);
-            en.normal   = Remap(ep->normal, a);
-            en.distance = Remap(ep->distance, a);
+            en.point[0] = Remap(ep->point[0], remap);
+            en.normal   = Remap(ep->normal, remap);
+            en.distance = Remap(ep->distance, remap);
             break;
 
         case Entity::ARC_OF_CIRCLE:
-            en.point[0] = Remap(ep->point[0], a);
-            en.point[1] = Remap(ep->point[1], a);
-            en.point[2] = Remap(ep->point[2], a);
-            en.normal   = Remap(ep->normal, a);
+            en.point[0] = Remap(ep->point[0], remap);
+            en.point[1] = Remap(ep->point[1], remap);
+            en.point[2] = Remap(ep->point[2], remap);
+            en.normal   = Remap(ep->normal, remap);
             break;
 
         case Entity::POINT_N_COPY:
         case Entity::POINT_N_TRANS:
         case Entity::POINT_N_ROT_TRANS:
+        case Entity::POINT_N_ROT_AA:
         case Entity::POINT_IN_3D:
         case Entity::POINT_IN_2D:
-            if(transOnly) {
+            if(asTrans) {
                 en.type = Entity::POINT_N_TRANS;
                 en.param[0] = dx;
                 en.param[1] = dy;
                 en.param[2] = dz;
             } else {
-                en.type = Entity::POINT_N_ROT_TRANS;
+                if(asAxisAngle) {
+                    en.type = Entity::POINT_N_ROT_AA;
+                } else {
+                    en.type = Entity::POINT_N_ROT_TRANS;
+                }
                 en.param[0] = dx;
                 en.param[1] = dy;
                 en.param[2] = dz;
@@ -422,25 +468,28 @@ void Group::CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
                 en.param[6] = qvz;
             }
             en.numPoint = ep->actPoint;
-            en.timesApplied = a;
             break;
 
         case Entity::NORMAL_N_COPY:
         case Entity::NORMAL_N_ROT:
+        case Entity::NORMAL_N_ROT_AA:
         case Entity::NORMAL_IN_3D:
         case Entity::NORMAL_IN_2D:
-            if(transOnly) {
+            if(asTrans) {
                 en.type = Entity::NORMAL_N_COPY;
             } else {
-                en.type = Entity::NORMAL_N_ROT;
+                if(asAxisAngle) {
+                    en.type = Entity::NORMAL_N_ROT_AA;
+                } else {
+                    en.type = Entity::NORMAL_N_ROT;
+                }
                 en.param[0] = qw;
                 en.param[1] = qvx;
                 en.param[2] = qvy;
                 en.param[3] = qvz;
             }
             en.numNormal = ep->actNormal;
-            en.point[0] = Remap(ep->point[0], a);
-            en.timesApplied = a;
+            en.point[0] = Remap(ep->point[0], remap);
             break;
 
         case Entity::DISTANCE_N_COPY:
@@ -491,9 +540,7 @@ void Group::MakePolygons(void) {
     SMesh outm;
     ZERO(&outm);
 
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE ||
-       type == ROTATE || type == TRANSLATE)
-    {
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
         int i;
         for(i = 0; i < SS.entity.n; i++) {
             Entity *e = &(SS.entity.elem[i]);
@@ -617,7 +664,7 @@ void Group::Draw(void) {
     // to show or hide just this with the "show solids" flag.
 
     bool useModelColor;
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
+    if(type != EXTRUDE && type != IMPORTED) {
         GLfloat mpf[] = { 0.1f, 0.1f, 0.1f, 1.0 };
         glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
         useModelColor = false;
@@ -651,7 +698,7 @@ void Group::Draw(void) {
             glxWriteText("not closed contour!");
         glPopMatrix();
     } else {
-        glxColor4d(0, 1.0, 1.0, 0.05);
+        glxColor4d(0, 0.1, 0.1, 0.5);
         glPolygonOffset(-1, -1);
         glxFillPolygon(&poly);
         glPolygonOffset(0, 0);

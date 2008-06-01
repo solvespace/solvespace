@@ -108,13 +108,14 @@ public:
 
     struct {
         Quaternion  q;
+        Vector      p;
         hEntity     origin;
         hEntity     entityB;
         hEntity     entityC;
         bool        swapUV;
         bool        negateU;
         bool        negateV;
-    } wrkpl;
+    } predef;
 
     SPolygon        poly;
     struct {
@@ -144,13 +145,18 @@ public:
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
     // mapping list.
+    static const int REMAP_LAST         = 1000;
+    static const int REMAP_TOP          = 1001;
+    static const int REMAP_BOTTOM       = 1002;
     hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(hEntity in, int ai, int af);
+    void MakeExtrusionLines(hEntity in);
     void TagEdgesFromLineSegments(SEdgeList *sle);
-    void CopyEntity(Entity *ep, int a, hParam dx, hParam dy, hParam dz,
+    void CopyEntity(Entity *ep, int timesApplied, int remap,
+                    hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                    bool transOnly);
+                    bool asTrans, bool asAxisAngle);
 
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
     SMesh *PreviousGroupMesh(void);

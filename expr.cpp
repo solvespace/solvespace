@@ -5,6 +5,22 @@ ExprVector ExprVector::FromExprs(Expr *x, Expr *y, Expr *z) {
     return r;
 }
 
+ExprVector ExprVector::FromNum(Vector vn) {
+    ExprVector ve;
+    ve.x = Expr::FromConstant(vn.x);
+    ve.y = Expr::FromConstant(vn.y);
+    ve.z = Expr::FromConstant(vn.z);
+    return ve;
+}
+
+ExprVector ExprVector::FromParams(hParam x, hParam y, hParam z) {
+    ExprVector ve;
+    ve.x = Expr::FromParam(x);
+    ve.y = Expr::FromParam(y);
+    ve.z = Expr::FromParam(z);
+    return ve;
+}
+
 ExprVector ExprVector::Minus(ExprVector b) {
     ExprVector r;
     r.x = x->Minus(b.x);
@@ -69,6 +85,15 @@ ExprQuaternion ExprQuaternion::FromExprs(Expr *w, Expr *vx, Expr *vy, Expr *vz)
     q.vy = vy;
     q.vz = vz;
     return q;
+}
+
+ExprQuaternion ExprQuaternion::FromNum(Quaternion qn) {
+    ExprQuaternion qe;
+    qe.w = Expr::FromConstant(qn.w);
+    qe.vx = Expr::FromConstant(qn.vx);
+    qe.vy = Expr::FromConstant(qn.vy);
+    qe.vz = Expr::FromConstant(qn.vz);
+    return qe;
 }
 
 ExprVector ExprQuaternion::RotationU(void) {

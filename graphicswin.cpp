@@ -833,6 +833,12 @@ hRequest GraphicsWindow::AddRequest(int type) {
     Request r;
     memset(&r, 0, sizeof(r));
     r.group = activeGroup;
+    Group *g = SS.GetGroup(activeGroup);
+    if(g->type == Group::DRAWING_3D || g->type == Group::DRAWING_WORKPLANE) {
+        r.construction = false;
+    } else {
+        r.construction = true;
+    }
     r.workplane = ActiveWorkplane();
     r.type = type;
     SS.request.AddAndAssignId(&r);

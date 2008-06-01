@@ -17,6 +17,7 @@ bool Entity::HasVector(void) {
         case NORMAL_IN_2D:
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
             return true;
 
         default:
@@ -34,6 +35,7 @@ ExprVector Entity::VectorGetExprs(void) {
         case NORMAL_IN_2D:
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
             return NormalExprsN();
 
         default: oops();
@@ -50,6 +52,7 @@ Vector Entity::VectorGetNum(void) {
         case NORMAL_IN_2D:
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
             return NormalN();
 
         default: oops();
@@ -66,6 +69,7 @@ Vector Entity::VectorGetRefPoint(void) {
         case NORMAL_IN_2D:
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
             return SS.GetEntity(point[0])->PointGetNum();
 
         default: oops();
@@ -174,6 +178,7 @@ bool Entity::IsPoint(void) {
         case POINT_N_COPY:
         case POINT_N_TRANS:
         case POINT_N_ROT_TRANS:
+        case POINT_N_ROT_AA:
             return true;
 
         default:
@@ -187,6 +192,7 @@ bool Entity::IsNormal(void) {
         case NORMAL_IN_2D:
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
             return true;
 
         default:           return false;
@@ -221,6 +227,17 @@ Quaternion Entity::NormalGetNum(void) {
             q = q.Times(numNormal);
             break;
 
+        case NORMAL_N_ROT_AA: {
+            double theta = timesApplied*SS.GetParam(param[0])->val;
+            double s = sin(theta), c = cos(theta);
+            q.w = c;
+            q.vx = s*SS.GetParam(param[1])->val;
+            q.vy = s*SS.GetParam(param[2])->val;
+            q.vz = s*SS.GetParam(param[3])->val;
+            q = q.Times(numNormal);
+            break;
+        }
+
         default: oops();
     }
     return q;
@@ -239,7 +256,6 @@ void Entity::NormalForceTo(Quaternion q) {
         case NORMAL_N_COPY:
             // There's absolutely nothing to do; these are locked.
             break;
-
         case NORMAL_N_ROT: {
             Quaternion qp = q.Times(numNormal.Inverse());
             
@@ -249,6 +265,10 @@ void Entity::NormalForceTo(Quaternion q) {
             SS.GetParam(param[3])->val = qp.vz;
             break;
         }
+
+        case NORMAL_N_ROT_AA:
+            // Not sure if I'll bother implementing this one
+            break;
 
         default: oops();
     }
@@ -298,16 +318,27 @@ ExprQuaternion Entity::NormalGetExprs(void) {
             break;
 
         case NORMAL_N_ROT: {
-            ExprQuaternion orig;
-            orig.w  = Expr::FromConstant(numNormal.w);
-            orig.vx = Expr::FromConstant(numNormal.vx);
-            orig.vy = Expr::FromConstant(numNormal.vy);
-            orig.vz = Expr::FromConstant(numNormal.vz);
+            ExprQuaternion orig = ExprQuaternion::FromNum(numNormal);
 
             q.w  = Expr::FromParam(param[0]);
             q.vx = Expr::FromParam(param[1]);
             q.vy = Expr::FromParam(param[2]);
             q.vz = Expr::FromParam(param[3]);
+
+            q = q.Times(orig);
+            break;
+        }
+
+        case NORMAL_N_ROT_AA: {
+            ExprQuaternion orig = ExprQuaternion::FromNum(numNormal);
+
+            Expr *theta = Expr::FromConstant(timesApplied)->Times(
+                          Expr::FromParam(param[0]));
+            Expr *c = theta->Cos(), *s = theta->Sin();
+            q.w = c;
+            q.vx = s->Times(Expr::FromParam(param[1]));
+            q.vy = s->Times(Expr::FromParam(param[2]));
+            q.vz = s->Times(Expr::FromParam(param[3]));
 
             q = q.Times(orig);
             break;
@@ -358,6 +389,25 @@ void Entity::PointForceTo(Vector p) {
             break;
         }
 
+        case POINT_N_ROT_AA: {
+            // Force only the angle; the axis and center of rotation stay
+            Vector offset = Vector::MakeFrom(param[0], param[1], param[2]);
+            Vector normal = Vector::MakeFrom(param[4], param[5], param[6]);
+            Vector u = normal.Normal(0), v = normal.Normal(1);
+            Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
+            double thetap = atan2(v.Dot(po), u.Dot(po));
+            double thetan = atan2(v.Dot(numo), u.Dot(numo));
+            double thetaf = (thetap - thetan);
+            double thetai = (SS.GetParam(param[3])->val)*timesApplied*2;
+            double dtheta = thetaf - thetai;
+            // Take the smallest possible change in the actual step angle,
+            // in order to avoid jumps when you cross from +pi to -pi
+            while(dtheta < -PI) dtheta += 2*PI;
+            while(dtheta > PI) dtheta -= 2*PI;
+            SS.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            break;
+        }
+
         case POINT_N_COPY:
             // Nothing to do; it's a static copy
             break;
@@ -404,6 +454,18 @@ Vector Entity::PointGetNum(void) {
             break;
         }
 
+        case POINT_N_ROT_AA: {
+            Vector offset = Vector::MakeFrom(
+                SS.GetParam(param[0])->val,
+                SS.GetParam(param[1])->val,
+                SS.GetParam(param[2])->val);
+            Quaternion q = PointGetQuaternion();
+            p = numPoint.Minus(offset);
+            p = q.Rotate(p);
+            p = p.Plus(offset);
+            break;
+        }
+
         case POINT_N_COPY:
             p = numPoint;
             break;
@@ -444,19 +506,31 @@ ExprVector Entity::PointGetExprs(void) {
             break;
         }
         case POINT_N_ROT_TRANS: {
-            ExprVector orig = {
-                Expr::FromConstant(numPoint.x),
-                Expr::FromConstant(numPoint.y),
-                Expr::FromConstant(numPoint.z) };
-            ExprVector trans = {
-                Expr::FromParam(param[0]),
-                Expr::FromParam(param[1]),
-                Expr::FromParam(param[2]) };
+            ExprVector orig = ExprVector::FromNum(numPoint);
+            ExprVector trans =
+                ExprVector::FromParams(param[0], param[1], param[2]);
             ExprQuaternion q = { 
                 Expr::FromParam(param[3]),
                 Expr::FromParam(param[4]),
                 Expr::FromParam(param[5]),
                 Expr::FromParam(param[6]) };
+            orig = q.Rotate(orig);
+            r = orig.Plus(trans);
+            break;
+        }
+        case POINT_N_ROT_AA: {
+            ExprVector orig = ExprVector::FromNum(numPoint);
+            ExprVector trans =
+                ExprVector::FromParams(param[0], param[1], param[2]);
+            Expr *theta = Expr::FromConstant(timesApplied)->Times(
+                          Expr::FromParam(param[3]));
+            Expr *c = theta->Cos(), *s = theta->Sin();
+            ExprQuaternion q = { 
+                c,
+                s->Times(Expr::FromParam(param[4])),
+                s->Times(Expr::FromParam(param[5])),
+                s->Times(Expr::FromParam(param[6])) };
+            orig = orig.Minus(trans);
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
             break;
@@ -504,13 +578,22 @@ void Entity::PointForceQuaternionTo(Quaternion q) {
 }
 
 Quaternion Entity::PointGetQuaternion(void) {
-    if(type != POINT_N_ROT_TRANS) oops();
-
     Quaternion q;
-    q.w  = SS.GetParam(param[3])->val;
-    q.vx = SS.GetParam(param[4])->val;
-    q.vy = SS.GetParam(param[5])->val;
-    q.vz = SS.GetParam(param[6])->val;
+
+    if(type == POINT_N_ROT_AA) {
+        double theta = timesApplied*SS.GetParam(param[3])->val;
+        double s = sin(theta), c = cos(theta);
+        q.w = c;
+        q.vx = s*SS.GetParam(param[4])->val;
+        q.vy = s*SS.GetParam(param[5])->val;
+        q.vz = s*SS.GetParam(param[6])->val;
+    } else if(type == POINT_N_ROT_TRANS) {
+        q.w  = SS.GetParam(param[3])->val;
+        q.vx = SS.GetParam(param[4])->val;
+        q.vy = SS.GetParam(param[5])->val;
+        q.vz = SS.GetParam(param[6])->val;
+    } else oops();
+
     return q;
 }
 
@@ -594,6 +677,7 @@ void Entity::DrawOrGetDistance(int order) {
         case POINT_N_COPY:
         case POINT_N_TRANS:
         case POINT_N_ROT_TRANS:
+        case POINT_N_ROT_AA:
         case POINT_IN_3D:
         case POINT_IN_2D: {
             if(order >= 0 && order != 2) break;
@@ -633,6 +717,7 @@ void Entity::DrawOrGetDistance(int order) {
 
         case NORMAL_N_COPY:
         case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
         case NORMAL_IN_3D:
         case NORMAL_IN_2D: {
             if(order >= 0 && order != 2) break;
