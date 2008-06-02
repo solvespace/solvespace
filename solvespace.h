@@ -243,6 +243,7 @@ public:
         Constraint   c;
     } sv;
     static void MenuFile(int id);
+    hGroup CreateDefaultDrawingGroup(void);
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
@@ -250,6 +251,7 @@ public:
     void ReloadAllImported(void);
 
     void MarkGroupDirty(hGroup hg);
+    void MarkGroupDirtyByEntity(hEntity he);
 
     struct {
         int     requests;

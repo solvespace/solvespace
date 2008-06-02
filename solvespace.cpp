@@ -28,6 +28,26 @@ void SolveSpace::AfterNewFile(void) {
     TW.Show();
 }
 
+void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {
+    Entity *e = SS.GetEntity(he);
+    MarkGroupDirty(e->group);
+}
+
+void SolveSpace::MarkGroupDirty(hGroup hg) {
+    int i;
+    bool go = false;
+    for(i = 0; i < group.n; i++) {
+        Group *g = &(group.elem[i]);
+        if(g->h.v == hg.v) {
+            go = true;
+        }
+        if(go) {
+            g->clean = false;
+        }
+    }
+    unsaved = true;
+}
+
 bool SolveSpace::PruneOrphans(void) {
     int i;
     for(i = 0; i < request.n; i++) {
@@ -133,18 +153,24 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
 
 void SolveSpace::GenerateAll(void) {
     int i;
-    int firstShown = INT_MAX, lastShown = 0;
-    // The references don't count, so start from group 1
-    for(i = 1; i < group.n; i++) {
+    int firstDirty = INT_MAX, lastVisible = 0;
+    // Start from the first dirty group, and solve until the active group,
+    // since all groups after the active group are hidden.
+    for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
-        if(g->visible || (g->solved.how != Group::SOLVED_OKAY)) {
-            firstShown = min(firstShown, i);
-            lastShown  = max(lastShown,  i);
+        if((!g->clean) || (g->solved.how != Group::SOLVED_OKAY)) {
+            firstDirty = min(firstDirty, i);
+        }
+        if(g->h.v == SS.GW.activeGroup.v) {
+            lastVisible = i;
         }
     }
-    // Even if nothing is shown, we have to keep going; the entities get
-    // generated for hidden groups, even though they're not solved.
-    GenerateAll(firstShown, lastShown);
+    if(firstDirty == INT_MAX || lastVisible == 0) {
+        // All clean; so just regenerate the entities, and don't solve anything.
+        GenerateAll(-1, -1);
+    } else {
+        GenerateAll(firstDirty, lastVisible);
+    }
 }
 
 void SolveSpace::GenerateAll(int first, int last) {
@@ -193,6 +219,7 @@ void SolveSpace::GenerateAll(int first, int last) {
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
             ForceReferences();
             g->solved.how = Group::SOLVED_OKAY;
+            g->clean = true;
         } else {
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
@@ -200,6 +227,7 @@ void SolveSpace::GenerateAll(int first, int last) {
                 SolveGroup(g->h);
                 g->GeneratePolygon();
                 g->GenerateMesh();
+                g->clean = true;
             } else {
                 // The group falls outside the range, so just assume that
                 // it's good wherever we left it. The mesh is unchanged,

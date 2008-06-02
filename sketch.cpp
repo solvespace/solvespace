@@ -23,7 +23,7 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
 
 void Group::MenuGroup(int id) {
     Group g;
-    memset(&g, 0, sizeof(g));
+    ZERO(&g);
     g.visible = true;
 
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
@@ -163,6 +163,8 @@ void Group::Activate(void) {
     } else {
         SS.GW.showFaces = false;
     }
+    SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
+    SS.GenerateAll();
     SS.TW.Show();
 }
 

@@ -89,6 +89,7 @@ public:
     static void ScreenToggleGroupShown(int link, DWORD v);
     static void ScreenHowGroupSolved(int link, DWORD v);
     static void ScreenShowGroupsSpecial(int link, DWORD v);
+    static void ScreenDeleteGroup(int link, DWORD v);
 
     static void ScreenHoverConstraint(int link, DWORD v);
     static void ScreenHoverRequest(int link, DWORD v);

@@ -535,6 +535,7 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     } else if(g->subtype == Group::TWO_SIDED) {
         g->subtype = Group::ONE_SIDED;
     } else oops();
+    SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
@@ -545,6 +546,7 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     } else if(g->meshCombine == Group::COMBINE_AS_UNION) {
         g->meshCombine = Group::COMBINE_AS_DIFFERENCE;
     } else oops();
+    SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
@@ -552,6 +554,7 @@ void TextWindow::ScreenColor(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
     if(v < 0 || v >= MODEL_COLORS) return;
     g->color = SS.TW.modelColor[v];
+    SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
@@ -567,15 +570,32 @@ void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
+void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
+    hGroup hg = SS.TW.shown->group;
+    if(hg.v == SS.GW.activeGroup.v) {
+        Error("This group is currently active; activate a different group "
+              "before proceeding.");
+        return;
+    }
+    SS.group.RemoveById(SS.TW.shown->group);
+    // This is a major change, so let's re-solve everything.
+    SS.TW.ClearSuper();
+    SS.GW.ClearSuper();
+    SS.GenerateAll(0, INT_MAX);
+}
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
     char *s, *s2;
 
-    s = (shown->group.v == Group::HGROUP_REFERENCES.v) ? "" : "(rename)";
-
-    Printf(true, "%FtGROUP   %E%s %Fl%Ll%D%f%s%E",
-        g->DescriptionString(),
-        g->h.v, &TextWindow::ScreenChangeGroupName, s);
+    if(shown->group.v == Group::HGROUP_REFERENCES.v) {
+        Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
+    } else {
+        Printf(true, "%FtGROUP   %E%s "
+                     "(%Fl%Ll%D%frename%E / %Fl%Ll%D%fdel%E)",
+            g->DescriptionString(),
+            g->h.v, &TextWindow::ScreenChangeGroupName,
+            g->h.v, &TextWindow::ScreenDeleteGroup);
+    }
 
     if(g->type == Group::IMPORTED) {
         Printf(true, "%FtIMPORT  %E '%s'", g->impFile);
@@ -722,6 +742,8 @@ void TextWindow::EditControlDone(char *s) {
                 Group *g = SS.GetGroup(edit.group);
                 Expr::FreeKeep(&(g->exprA));
                 g->exprA = e->DeepCopyKeep();
+
+                SS.MarkGroupDirty(g->h);
                 SS.GenerateAll();
                 SS.TW.Show();
             } else {

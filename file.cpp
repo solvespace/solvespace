@@ -2,6 +2,23 @@
 
 #define VERSION_STRING "±²³SolveSpaceREVa"
 
+hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
+    Group g;
+    ZERO(&g);
+
+    // And an empty group, for the first stuff the user draws.
+    g.visible = true;
+    g.type = Group::DRAWING_WORKPLANE;
+    g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
+    g.predef.q = Quaternion::From(1, 0, 0, 0);
+    hRequest hr = Request::HREQUEST_REFERENCE_XY;
+    g.predef.origin = hr.entity(1);
+    g.name.strcpy("draw-in-plane");
+    group.AddAndAssignId(&g);
+    SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
+    return g.h;
+}
+
 void SolveSpace::NewFile(void) {
     constraint.Clear();
     request.Clear();
@@ -22,7 +39,7 @@ void SolveSpace::NewFile(void) {
     // Let's create three two-d coordinate systems, for the coordinate
     // planes; these are our references, present in every sketch.
     Request r;
-    memset(&r, 0, sizeof(r));
+    ZERO(&r);
     r.type = Request::WORKPLANE;
     r.group = Group::HGROUP_REFERENCES;
     r.workplane = Entity::FREE_IN_3D;
@@ -36,15 +53,7 @@ void SolveSpace::NewFile(void) {
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 
-    // And an empty group, for the first stuff the user draws.
-    g.type = Group::DRAWING_WORKPLANE;
-    g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
-    g.predef.q = Quaternion::From(1, 0, 0, 0);
-    hRequest hr = Request::HREQUEST_REFERENCE_XY;
-    g.predef.origin = hr.entity(1);
-    g.name.strcpy("draw-in-plane");
-    group.AddAndAssignId(&g);
-    SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
+    CreateDefaultDrawingGroup();
 }
 
 const SolveSpace::SaveTable SolveSpace::SAVED[] = {

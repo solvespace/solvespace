@@ -245,8 +245,17 @@ void GraphicsWindow::EnsureValidActives(void) {
                 break;
             }
         }
-        if(i >= SS.group.n) oops();
-        activeGroup = SS.group.elem[i].h;
+        if(i >= SS.group.n) {
+            // This can happen if the user deletes all the groups in the
+            // sketch. It's difficult to prevent that, because the last
+            // group might have been deleted automatically, because it failed
+            // a dependency. There needs to be something, so create a plane
+            // drawing group and activate that. They should never be able
+            // to delete the references, though.
+            activeGroup = SS.CreateDefaultDrawingGroup();
+        } else {
+            activeGroup = SS.group.elem[i].h;
+        }
         SS.GetGroup(activeGroup)->Activate();
         change = true;
     }
@@ -309,7 +318,9 @@ void GraphicsWindow::MenuEdit(int id) {
         case MNU_UNSELECT_ALL:
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 0 && SS.GW.pending.operation == 0) {
-                SS.TW.ClearSuper();
+                if(!TextEditControlIsVisible()) {
+                    SS.TW.ClearSuper();
+                }
             }
             SS.GW.ClearSuper();
             HideTextEditControl();
@@ -401,6 +412,7 @@ c:
                 if(!he.isFromRequest()) continue;
                 Request *r = SS.GetRequest(he.request());
                 r->construction = !(r->construction);
+                SS.MarkGroupDirty(r->group);
             }
             SS.GW.ClearSelection();
             SS.GenerateAll();
@@ -581,6 +593,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 UpdateDraggedPoint(pending.point, x, y);
                 HitTestMakeSelection(mp);
             }
+            SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
         case DRAGGING_NEW_CUBIC_POINT: {
@@ -594,6 +607,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SS.GetEntity(hr.entity(2))->PointForceTo(p1);
             Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
             SS.GetEntity(hr.entity(3))->PointForceTo(p2);
+
+            SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
         case DRAGGING_NEW_ARC_POINT: {
@@ -606,6 +621,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             Vector center = (ona.Plus(onb)).ScaledBy(0.5);
 
             SS.GetEntity(hr.entity(1))->PointForceTo(center);
+
+            SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
         case DRAGGING_NEW_RADIUS:
@@ -615,6 +632,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             Point2d c2 = ProjectPoint(center);
             double r = c2.DistanceTo(mp)/scale;
             SS.GetEntity(circle->distance)->DistanceForceTo(r);
+
+            SS.MarkGroupDirtyByEntity(pending.circle);
             break;
         }
 
@@ -644,6 +663,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             }
             orig.mouse = mp;
             normal->NormalForceTo(Quaternion::From(u, v));
+
+            SS.MarkGroupDirtyByEntity(pending.normal);
             break;
         }
 
@@ -856,7 +877,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
     SS.GenerateAll(-1, -1);
-
+    SS.MarkGroupDirty(r.group);
     return r.h;
 }
 
@@ -1118,7 +1139,9 @@ void GraphicsWindow::EditControlDone(char *s) {
         Constraint *c = SS.GetConstraint(constraintBeingEdited);
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
+
         HideGraphicsEditControl();
+        SS.MarkGroupDirty(c->group);
         SS.GenerateAll();
     } else {
         Error("Not a valid number or expression: '%s'", s);

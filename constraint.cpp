@@ -38,6 +38,7 @@ char *Constraint::DescriptionString(void) {
 void Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
+    SS.MarkGroupDirty(c->group);
     SS.GenerateAll();
 }
 
