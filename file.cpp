@@ -27,15 +27,12 @@ void SolveSpace::NewFile(void) {
     r.group = Group::HGROUP_REFERENCES;
     r.workplane = Entity::FREE_IN_3D;
 
-    r.name.strcpy("#XY");
     r.h = Request::HREQUEST_REFERENCE_XY;
     request.Add(&r);
 
-    r.name.strcpy("#YZ");
     r.h = Request::HREQUEST_REFERENCE_YZ;
     request.Add(&r);
 
-    r.name.strcpy("#ZX");
     r.h = Request::HREQUEST_REFERENCE_ZX;
     request.Add(&r);
 
@@ -81,7 +78,6 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'r',  "Request.type",             'd',    &(SS.sv.r.type)               },
     { 'r',  "Request.workplane.v",      'x',    &(SS.sv.r.workplane.v)        },
     { 'r',  "Request.group.v",          'x',    &(SS.sv.r.group.v)            },
-    { 'r',  "Request.name",             'N',    &(SS.sv.r.name)               },
     { 'r',  "Request.construction",     'b',    &(SS.sv.r.construction)       },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },

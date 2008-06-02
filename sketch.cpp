@@ -945,12 +945,26 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 }
 
 char *Request::DescriptionString(void) {
-    static char ret[100];
-    if(name.str[0]) {
-        sprintf(ret, "r%03x-%s", h.v, name.str);
+    char *s;
+    if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
+        s = "#XY";
+    } else if(h.v == Request::HREQUEST_REFERENCE_YZ.v) {
+        s = "#YZ";
+    } else if(h.v == Request::HREQUEST_REFERENCE_ZX.v) {
+        s = "#ZX";
     } else {
-        sprintf(ret, "r%03x-(unnamed)", h.v);
+        switch(type) {
+            case WORKPLANE:         s = "workplane"; break;
+            case DATUM_POINT:       s = "datum-point"; break;
+            case LINE_SEGMENT:      s = "line-segment"; break;
+            case CUBIC:             s = "cubic-bezier"; break;
+            case CIRCLE:            s = "circle"; break;
+            case ARC_OF_CIRCLE:     s = "arc-of-circle"; break;
+            default:                s = "???"; break;
+        }
     }
+    static char ret[100];
+    sprintf(ret, "r%03x-%s", h.v, s);
     return ret;
 }
 

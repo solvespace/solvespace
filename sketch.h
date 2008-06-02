@@ -199,7 +199,6 @@ public:
     hEntity     workplane; // or Entity::FREE_IN_3D
     hGroup      group;
 
-    NameStr     name;
     bool        construction;
     
     static hParam AddParam(IdList<Param,hParam> *param, hParam hp);
