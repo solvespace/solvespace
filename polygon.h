@@ -114,6 +114,7 @@ public:
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal(void);
     bool ContainsPoint(Vector p);
+    bool ContainsPointProjd(Vector n, Vector p);
 };
 
 class SBsp2 {
@@ -190,6 +191,8 @@ public:
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnion(SMesh *a, SMesh *b);
     void MakeFromDifference(SMesh *a, SMesh *b);
+
+    DWORD FirstIntersectionWith(Point2d mp);
 };
 
 // A linked list of triangles

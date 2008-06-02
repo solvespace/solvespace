@@ -574,6 +574,69 @@ Quaternion Entity::PointGetQuaternion(void) {
     return q;
 }
 
+bool Entity::IsFace(void) {
+    switch(type) {
+        case FACE_NORMAL_PT:
+        case FACE_XPROD:
+        case FACE_N_ROT_TRANS:
+            return true;
+        default:
+            return false;
+    }
+}
+
+ExprVector Entity::FaceGetNormalExprs(void) {
+    ExprVector r;
+    if(type == FACE_NORMAL_PT) {
+        r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+    } else if(type == FACE_XPROD) {
+        ExprVector vc = ExprVector::From(param[0], param[1], param[2]);
+        ExprVector vn = ExprVector::From(numVector);
+        r = vc.Cross(vn);
+    } else if(type == FACE_N_ROT_TRANS) {
+        // The numerical normal vector gets the rotation
+        r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        ExprQuaternion q =
+            ExprQuaternion::From(param[3], param[4], param[5], param[6]);
+        r = q.Rotate(r);
+    } else oops();
+    return r;
+}
+
+Vector Entity::FaceGetNormalNum(void) {
+    Vector r;
+    if(type == FACE_NORMAL_PT) {
+        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+    } else if(type == FACE_XPROD) {
+        Vector vc = Vector::From(param[0], param[1], param[2]);
+        r = vc.Cross(numVector);
+    } else if(type == FACE_N_ROT_TRANS) {
+        // The numerical normal vector gets the rotation
+        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
+        r = q.Rotate(r);
+    } else oops();
+    return r;
+}
+
+ExprVector Entity::FaceGetPointExprs(void) {
+    ExprVector r;
+    if(type == FACE_NORMAL_PT) {
+        r = SS.GetEntity(point[0])->PointGetExprs();
+    } else if(type == FACE_XPROD) {
+        r = ExprVector::From(numPoint);
+    } else if(type == FACE_N_ROT_TRANS) {
+        // The numerical point gets the rotation and translation.
+        ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+        ExprQuaternion q =
+            ExprQuaternion::From(param[3], param[4], param[5], param[6]);
+        r = ExprVector::From(numPoint);
+        r = q.Rotate(r);
+        r = r.Plus(trans);
+    } else oops();
+    return r;
+}
+
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         // glPolygonOffset works only on polys, not lines, so do it myself
@@ -890,6 +953,12 @@ void Entity::DrawOrGetDistance(int order) {
             break;
         }
 
+        case FACE_NORMAL_PT:
+        case FACE_XPROD:
+        case FACE_N_ROT_TRANS:
+            // Do nothing; these are drawn with the triangle mesh
+            break;
+
         default:
             oops();
     }
@@ -932,6 +1001,12 @@ void Entity::CalculateNumerical(void) {
     if(IsNormal()) actNormal = NormalGetNum();
     if(type == DISTANCE || type == DISTANCE_N_COPY) {
         actDistance = DistanceGetNum();
+    }
+    if(IsFace()) {
+        ExprVector p = FaceGetPointExprs();
+        ExprVector n = FaceGetNormalExprs();
+        numPoint  = Vector::From(       p.x->Eval(), p.y->Eval(), p.z->Eval());
+        numNormal = Quaternion::From(0, n.x->Eval(), n.y->Eval(), n.z->Eval());
     }
 }
 

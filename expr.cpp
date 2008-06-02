@@ -21,6 +21,14 @@ ExprVector ExprVector::From(hParam x, hParam y, hParam z) {
     return ve;
 }
 
+ExprVector ExprVector::From(double x, double y, double z) {
+    ExprVector ve;
+    ve.x = Expr::From(x);
+    ve.y = Expr::From(y);
+    ve.z = Expr::From(z);
+    return ve;
+}
+
 ExprVector ExprVector::Minus(ExprVector b) {
     ExprVector r;
     r.x = x->Minus(b.x);
@@ -232,6 +240,15 @@ int Expr::Children(void) {
         case COS:
             return 1;
 
+        default: oops();
+    }
+}
+
+int Expr::Nodes(void) {
+    switch(Children()) {
+        case 0: return 1;
+        case 1: return 1 + a->Nodes();
+        case 2: return 1 + a->Nodes() + b->Nodes();
         default: oops();
     }
 }

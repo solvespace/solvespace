@@ -126,6 +126,10 @@ void Constraint::MenuConstrain(int id) {
                 c.type = PT_ON_CIRCLE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+            } else if(gs.points == 1 && gs.faces == 1 && gs.n == 2) {
+                c.type = PT_ON_FACE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.face[0];
             } else {
                 Error("Bad selection for on point / curve / plane constraint.");
                 return;
@@ -546,6 +550,16 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
             AddEq(l, PointPlaneDistance(
                         SS.GetEntity(ptA)->PointGetExprs(), entityA), 0);
             break;
+
+        case PT_ON_FACE: {
+            // a plane, n dot (p - p0) = 0
+            ExprVector p = SS.GetEntity(ptA)->PointGetExprs();
+            Entity *f = SS.GetEntity(entityA);
+            ExprVector p0 = f->FaceGetPointExprs();
+            ExprVector n = f->FaceGetNormalExprs();
+            AddEq(l, (p.Minus(p0)).Dot(n), 0);
+            break;
+        }
 
         case PT_ON_LINE:
             if(workplane.v == Entity::FREE_IN_3D.v) {

@@ -224,11 +224,25 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
         case PT_ON_CIRCLE:
         case PT_ON_LINE:
+        case PT_ON_FACE:
         case PT_IN_PLANE: {
-            double s = 7/SS.GW.scale;
+            double s = 8/SS.GW.scale;
             Vector p = SS.GetEntity(ptA)->PointGetNum();
-            Vector r = gr.WithMagnitude(s);
-            Vector d = gu.WithMagnitude(s);
+            Vector r, d;
+            if(type == PT_ON_FACE) {
+                Vector n = SS.GetEntity(entityA)->FaceGetNormalNum();
+                r = n.Normal(0);
+                d = n.Normal(1);
+            } else if(type == PT_IN_PLANE) {
+                Entity *n = SS.GetEntity(entityA)->Normal();
+                r = n->NormalU();
+                d = n->NormalV();
+            } else {
+                r = gr;
+                d = gu;
+                s *= (6.0/8); // draw these a little smaller
+            }
+            r = r.WithMagnitude(s); d = d.WithMagnitude(s);
             LineDrawOrGetDistance(p.Plus (r).Plus (d), p.Plus (r).Minus(d));
             LineDrawOrGetDistance(p.Plus (r).Minus(d), p.Minus(r).Minus(d));
             LineDrawOrGetDistance(p.Minus(r).Minus(d), p.Minus(r).Plus (d));

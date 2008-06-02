@@ -6,9 +6,12 @@ Vector STriangle::Normal(void) {
 }
 
 bool STriangle::ContainsPoint(Vector p) {
+    Vector n = Normal();
+    return ContainsPointProjd(n.WithMagnitude(1), p);
+}
+
+bool STriangle::ContainsPointProjd(Vector n, Vector p) {
     Vector ab = b.Minus(a), bc = c.Minus(b), ca = a.Minus(c);
-    Vector n = ab.Cross(bc);
-    n = n.WithMagnitude(1);
 
     Vector no_ab = n.Cross(ab);
     if(no_ab.Dot(p) < no_ab.Dot(a) - LENGTH_EPS) return false;

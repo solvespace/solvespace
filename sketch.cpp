@@ -10,6 +10,8 @@ const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
+#define gs (SS.GW.gs)
+
 void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
     Param pa;
     memset(&pa, 0, sizeof(pa));
@@ -30,7 +32,6 @@ void Group::MenuGroup(int id) {
     }
 
     SS.GW.GroupSelection();
-#define gs (SS.GW.gs)
 
     switch(id) {
         case GraphicsWindow::MNU_GROUP_3D:
@@ -214,7 +215,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             break;
         }
 
-        case EXTRUDE:
+        case EXTRUDE: {
             AddParam(param, h.param(0), gn.x);
             AddParam(param, h.param(1), gn.y);
             AddParam(param, h.param(2), gn.z);
@@ -224,9 +225,15 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             } else if(subtype == TWO_SIDED) {
                 ai = -1; af = 1;
             } else oops();
+
+            // Get some arbitrary point in the sketch, that will be used
+            // as a reference when defining top and bottom faces.
+            hEntity pt = { 0 };
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
+
+                if(e->IsPoint()) pt = e->h;
 
                 e->CalculateNumerical();
                 hEntity he = e->h; e = NULL;
@@ -242,7 +249,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     true, false);
                 MakeExtrusionLines(he);
             }
+            // Remapped versions of that arbitrary point will be used to
+            // provide points on the plane faces.
+            MakeExtrusionTopBottomFaces(pt);
             break;
+        }
 
         case TRANSLATE: {
             // The translation vector
@@ -386,16 +397,54 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
 
 void Group::MakeExtrusionLines(hEntity in) {
     Entity *ep = SS.GetEntity(in);
-    if(!(ep->IsPoint())) return;
 
     Entity en;
-    memset(&en, 0, sizeof(en));
-    en.point[0] = Remap(ep->h, REMAP_TOP);
-    en.point[1] = Remap(ep->h, REMAP_BOTTOM);
+    ZERO(&en);
+    if(ep->IsPoint()) {
+        // A point gets extruded to form a line segment
+        en.point[0] = Remap(ep->h, REMAP_TOP);
+        en.point[1] = Remap(ep->h, REMAP_BOTTOM);
+        en.group = h;
+        en.h = Remap(ep->h, REMAP_PT_TO_LINE);
+        en.type = Entity::LINE_SEGMENT;
+        SS.entity.Add(&en);
+    } else if(ep->type == Entity::LINE_SEGMENT) {
+        // A line gets extruded to form a plane face; an endpoint of the
+        // original line is a point in the plane, and the line is in the plane.
+        Vector a = SS.GetEntity(ep->point[0])->PointGetNum();
+        Vector b = SS.GetEntity(ep->point[1])->PointGetNum();
+        Vector ab = b.Minus(a);
+
+        en.param[0] = h.param(0);
+        en.param[1] = h.param(1);
+        en.param[2] = h.param(2);
+        en.numPoint = a;
+        en.numVector = ab;
+
+        en.group = h;
+        en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
+        en.type = Entity::FACE_XPROD;
+        SS.entity.Add(&en);
+    }
+}
+
+void Group::MakeExtrusionTopBottomFaces(hEntity pt) {
+    if(pt.v == 0) return;
+    Group *src = SS.GetGroup(opA);
+    Vector n = src->poly.normal;
+
+    Entity en;
+    ZERO(&en);
+    en.type = Entity::FACE_NORMAL_PT;
     en.group = h;
-    en.h = Remap(ep->h, 10);
-    en.type = Entity::LINE_SEGMENT;
-    // And then this line segment gets added
+
+    en.numNormal = Quaternion::From(0, n.x, n.y, n.z);
+    en.point[0] = Remap(pt, REMAP_TOP);
+    en.h = Remap(Entity::NO_ENTITY, REMAP_TOP);
+    SS.entity.Add(&en);
+
+    en.point[0] = Remap(pt, REMAP_BOTTOM);
+    en.h = Remap(Entity::NO_ENTITY, REMAP_BOTTOM);
     SS.entity.Add(&en);
 }
 
@@ -498,6 +547,23 @@ void Group::CopyEntity(Entity *ep, int timesApplied, int remap,
             en.numDistance = ep->actDistance;
             break;
 
+        case Entity::FACE_NORMAL_PT:
+        case Entity::FACE_XPROD:
+        case Entity::FACE_N_ROT_TRANS:
+            if(asTrans || asAxisAngle) return;
+
+            en.type = Entity::FACE_N_ROT_TRANS;
+            en.param[0] = dx;
+            en.param[1] = dy;
+            en.param[2] = dz;
+            en.param[3] = qw;
+            en.param[4] = qvx;
+            en.param[5] = qvy;
+            en.param[6] = qvz;
+            en.numPoint = ep->numPoint;
+            en.numNormal = ep->numNormal;
+            break;
+
         default:
             oops();
     }
@@ -526,8 +592,8 @@ void Group::TagEdgesFromLineSegments(SEdgeList *el) {
         
         for(j = 0; j < el->l.n; j++) {
             SEdge *se = &(el->l.elem[j]);
-            if((p0.Equals(se->a) && p1.Equals(se->b))) se->tag = 1;
-            if((p0.Equals(se->b) && p1.Equals(se->a))) se->tag = 1;
+            if((p0.Equals(se->a) && p1.Equals(se->b))) se->tag = e->h.v;
+            if((p0.Equals(se->b) && p1.Equals(se->a))) se->tag = e->h.v;
         }
     }
 }
@@ -583,6 +649,7 @@ void Group::MakePolygons(void) {
         STriMeta meta = { 0, color };
 
         // Do the bottom; that has normal pointing opposite from translate
+        meta.face = Remap(Entity::NO_ENTITY, REMAP_BOTTOM).v;
         for(i = 0; i < srcm.l.n; i++) {
             STriangle *st = &(srcm.l.elem[i]);
             Vector at = (st->a).Plus(tbot), 
@@ -595,6 +662,7 @@ void Group::MakePolygons(void) {
             }
         }
         // And the top; that has the normal pointing the same dir as translate
+        meta.face = Remap(Entity::NO_ENTITY, REMAP_TOP).v;
         for(i = 0; i < srcm.l.n; i++) {
             STriangle *st = &(srcm.l.elem[i]);
             Vector at = (st->a).Plus(ttop), 
@@ -618,6 +686,15 @@ void Group::MakePolygons(void) {
             SEdge *edge = &(edges.l.elem[i]);
             Vector abot = (edge->a).Plus(tbot), bbot = (edge->b).Plus(tbot);
             Vector atop = (edge->a).Plus(ttop), btop = (edge->b).Plus(ttop);
+            // We tagged the edges that came from line segments; their
+            // triangles should be associated with that plane face.
+            if(edge->tag) {
+                hEntity hl = { edge->tag };
+                hEntity hf = Remap(hl, REMAP_LINE_TO_FACE);
+                meta.face = hf.v;
+            } else {
+                meta.face = 0;
+            }
             if(flipBottom) {
                 outm.AddTriangle(meta, bbot, abot, atop);
                 outm.AddTriangle(meta, bbot, atop, btop);
@@ -641,6 +718,11 @@ void Group::MakePolygons(void) {
 
         for(int i = 0; i < impMesh.l.n; i++) {
             STriangle st = impMesh.l.elem[i];
+
+            if(st.meta.face != 0) {
+                hEntity he = { st.meta.face };
+                st.meta.face = Remap(he, 0).v;
+            }
             st.a = q.Rotate(st.a).Plus(offset);
             st.b = q.Rotate(st.b).Plus(offset);
             st.c = q.Rotate(st.c).Plus(offset);
@@ -665,21 +747,30 @@ void Group::Draw(void) {
     // Show this even if the group is not visible. It's already possible
     // to show or hide just this with the "show solids" flag.
 
-    bool useModelColor;
+    int specColor;
     if(type != EXTRUDE && type != IMPORTED) {
-        GLfloat mpf[] = { 0.1f, 0.1f, 0.1f, 1.0 };
-        glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
-        useModelColor = false;
+        specColor = RGB(25, 25, 25); // force the color to something dim
     } else {
-        useModelColor = true;
+        specColor = -1; // use the model color
     }
     // The back faces are drawn in red; should never seem them, since we
     // draw closed shells, so that's a debugging aid.
     GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0 };
     glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
 
+    // When we fill the mesh, we need to know which triangles are selected
+    // or hovered, in order to draw them differently.
+    DWORD mh = 0, ms1 = 0, ms2 = 0;
+    hEntity he = SS.GW.hover.entity;
+    if(he.v != 0 && SS.GetEntity(he)->IsFace()) {
+        mh = he.v;
+    }
+    SS.GW.GroupSelection();
+    if(gs.faces > 0) ms1 = gs.face[0].v;
+    if(gs.faces > 1) ms2 = gs.face[1].v;
+
     glEnable(GL_LIGHTING);
-    if(SS.GW.showShaded) glxFillMesh(useModelColor, &mesh);
+    if(SS.GW.showShaded) glxFillMesh(specColor, &mesh, mh, ms1, ms2);
     glDisable(GL_LIGHTING);
 
     if(SS.GW.showMesh) glxDebugMesh(&mesh);

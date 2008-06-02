@@ -92,6 +92,8 @@ public:
     Expr *DeepCopy(void);
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
     int Children(void);
+    // total number of nodes in the tree
+    int Nodes(void);
 
     // Make a copy, with the parameters (usually referenced by hParam)
     // resolved to pointers to the actual value. This speeds things up
@@ -125,6 +127,7 @@ public:
     static ExprVector From(Expr *x, Expr *y, Expr *z);
     static ExprVector From(Vector vn);
     static ExprVector From(hParam x, hParam y, hParam z);
+    static ExprVector From(double x, double y, double z);
 
     ExprVector Plus(ExprVector b);
     ExprVector Minus(ExprVector b);

@@ -745,6 +745,15 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
     }
 
+    // Faces, from the triangle mesh; these are lowest priority
+    if(s.constraint.v == 0 && s.entity.v == 0 && (showMesh || showShaded)) {
+        SMesh *m = &((SS.GetGroup(activeGroup))->mesh);
+        DWORD v = m->FirstIntersectionWith(mp);
+        if(v) {
+            s.entity.v = v;
+        }
+    }
+
     if(!s.Equals(&hover)) {
         hover = s;
         InvalidateGraphics();
@@ -802,6 +811,11 @@ void GraphicsWindow::GroupSelection(void) {
             // And of vectors (i.e., stuff with a direction to constrain)
             if(e->HasVector()) {
                 gs.vector[(gs.vectors)++] = s->entity;
+            }
+
+            // Faces (which are special, associated/drawn with triangles)
+            if(e->IsFace()) {
+                gs.face[(gs.faces)++] = s->entity;
             }
 
             // And some aux counts too

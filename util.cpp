@@ -32,6 +32,15 @@ Quaternion Quaternion::From(double w, double vx, double vy, double vz) {
     return q;
 }
 
+Quaternion Quaternion::From(hParam w, hParam vx, hParam vy, hParam vz) {
+    Quaternion q;
+    q.w  = SS.GetParam(w )->val;
+    q.vx = SS.GetParam(vx)->val;
+    q.vy = SS.GetParam(vy)->val;
+    q.vz = SS.GetParam(vz)->val;
+    return q;
+}
+
 Quaternion Quaternion::From(Vector u, Vector v)
 {
     Vector n = u.Cross(v);

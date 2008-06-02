@@ -235,6 +235,35 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     dbp("tris = %d", l.n);
 }
 
+DWORD SMesh::FirstIntersectionWith(Point2d mp) {
+    Vector gu = SS.GW.projRight, gv = SS.GW.projUp;
+    Vector gn = (gu.Cross(gv)).WithMagnitude(1);
+
+    Vector p0 = gu.ScaledBy(mp.x/SS.GW.scale).Plus(
+                gv.ScaledBy(mp.y/SS.GW.scale));
+    p0 = p0.Minus(SS.GW.offset);
+
+    double maxT = -1e12;
+    DWORD face = 0;
+
+    int i;
+    for(i = 0; i < l.n; i++) {
+        STriangle *tr = &(l.elem[i]);
+        Vector n = tr->Normal();
+        if(n.Dot(gn) < LENGTH_EPS) continue; // back-facing or on edge
+
+        if(tr->ContainsPointProjd(gn, p0)) {
+            // Let our line have the form r(t) = p0 + gn*t
+            double t = (n.Dot((tr->a).Minus(p0)))/(n.Dot(gn));
+            if(t > maxT) {
+                maxT = t;
+                face = tr->meta.face;
+            }
+        }
+    }
+    return face;
+}
+
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
 SBsp3 *SBsp3::Alloc(void) { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 

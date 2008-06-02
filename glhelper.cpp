@@ -111,7 +111,7 @@ void glxColor4d(double r, double g, double b, double a)
     if(!ColorLocked) glColor4d(r, g, b, a);
 }
 
-void glxFillMesh(bool useModelColor, SMesh *m)
+void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
 {
     glEnable(GL_NORMALIZE);
     int prevColor = -1;
@@ -121,8 +121,19 @@ void glxFillMesh(bool useModelColor, SMesh *m)
         Vector n = tr->Normal();
         glNormal3d(n.x, n.y, n.z);
 
-        int color = tr->meta.color;
-        if(useModelColor && color != prevColor) {
+        int color;
+        if((s1 != 0 && tr->meta.face == s1) || 
+           (s2 != 0 && tr->meta.face == s2))
+        {
+            color = RGB(200, 0, 0);
+        } else if(h != 0 && tr->meta.face == h) {
+            color = RGB(200, 200, 0);
+        } else if(specColor < 0) {
+            color = tr->meta.color;
+        } else {
+            color = specColor;
+        }
+        if(color != prevColor) {
             GLfloat mpf[] = { ((color >>  0) & 0xff) / 255.0f,
                               ((color >>  8) & 0xff) / 255.0f,
                               ((color >> 16) & 0xff) / 255.0f, 1.0 };

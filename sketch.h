@@ -148,8 +148,11 @@ public:
     static const int REMAP_LAST         = 1000;
     static const int REMAP_TOP          = 1001;
     static const int REMAP_BOTTOM       = 1002;
+    static const int REMAP_PT_TO_LINE   = 1003;
+    static const int REMAP_LINE_TO_FACE = 1004;
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(hEntity in);
+    void MakeExtrusionTopBottomFaces(hEntity pt);
     void TagEdgesFromLineSegments(SEdgeList *sle);
     void CopyEntity(Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
@@ -232,9 +235,9 @@ public:
     static const int DISTANCE               =  4000;
     static const int DISTANCE_N_COPY        =  4001;
 
-    static const int FACE_N_COPY            =  5000;
-    static const int FACE_N_TRANS           =  5001;
-    static const int FACE_N_XPROD           =  5002;
+    static const int FACE_NORMAL_PT         =  5000;
+    static const int FACE_XPROD             =  5001;
+    static const int FACE_N_ROT_TRANS       =  5002;
 
 
     static const int WORKPLANE              = 10000;
@@ -258,6 +261,8 @@ public:
     Vector      numPoint;
     Quaternion  numNormal;
     double      numDistance;
+    // and a bit more state that the faces need
+    Vector      numVector;
 
     // All points/normals/distances have their numerical value; this is
     // a convenience, to simplify the import/assembly code, so that the
@@ -296,6 +301,11 @@ public:
     ExprVector WorkplaneGetOffsetExprs(void);
     Vector WorkplaneGetOffset(void);
     Entity *Normal(void);
+
+    bool IsFace(void);
+    ExprVector FaceGetNormalExprs(void);
+    Vector FaceGetNormalNum(void);
+    ExprVector FaceGetPointExprs(void);
 
     bool IsPoint(void);
     // Applies for any of the point types
