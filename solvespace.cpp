@@ -19,12 +19,12 @@ void SolveSpace::Init(char *cmdLine) {
 
 void SolveSpace::AfterNewFile(void) {
     ReloadAllImported();
-    GenerateAll(false, 0, INT_MAX);
+    GenerateAll(-1, -1);
 
     TW.Init();
     GW.Init();
 
-    GenerateAll(true, 0, INT_MAX);
+    GenerateAll(0, INT_MAX);
     TW.Show();
 }
 
@@ -131,7 +131,7 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
     return false;
 }
 
-void SolveSpace::GenerateAll(bool andSolve) {
+void SolveSpace::GenerateAll(void) {
     int i;
     int firstShown = INT_MAX, lastShown = 0;
     // The references don't count, so start from group 1
@@ -144,10 +144,10 @@ void SolveSpace::GenerateAll(bool andSolve) {
     }
     // Even if nothing is shown, we have to keep going; the entities get
     // generated for hidden groups, even though they're not solved.
-    GenerateAll(andSolve, firstShown, lastShown);
+    GenerateAll(firstShown, lastShown);
 }
 
-void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
+void SolveSpace::GenerateAll(int first, int last) {
     int i, j;
 
     while(PruneOrphans())
@@ -197,8 +197,9 @@ void SolveSpace::GenerateAll(bool andSolve, int first, int last) {
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
-                if(andSolve) SolveGroup(g->h);
-                g->MakePolygons();
+                SolveGroup(g->h);
+                g->GeneratePolygon();
+                g->GenerateMesh();
             } else {
                 // The group falls outside the range, so just assume that
                 // it's good wherever we left it. The mesh is unchanged,
@@ -253,7 +254,7 @@ pruned:
     param.Clear();
     prev.MoveSelfInto(&param);
     // Try again
-    GenerateAll(andSolve, first, last);
+    GenerateAll(first, last);
 }
 
 void SolveSpace::ForceReferences(void) {

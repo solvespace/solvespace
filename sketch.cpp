@@ -136,7 +136,7 @@ void Group::MenuGroup(int id) {
     if(g.type == IMPORTED) {
         SS.ReloadAllImported();
     }
-    SS.GenerateAll(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS);
+    SS.GenerateAll();
     SS.GW.activeGroup = g.h;
     if(g.type == DRAWING_WORKPLANE) {
         SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
@@ -580,16 +580,6 @@ void Group::CopyEntity(Entity *ep, int timesApplied, int remap,
     SS.entity.Add(&en);
 }
 
-SMesh *Group::PreviousGroupMesh(void) {
-    int i;
-    for(i = 0; i < SS.group.n; i++) {
-        Group *g = &(SS.group.elem[i]);
-        if(g->h.v == h.v) break;
-    }
-    if(i == 0 || i >= SS.group.n) oops();
-    return &(SS.group.elem[i-1].mesh);
-}
-
 void Group::TagEdgesFromLineSegments(SEdgeList *el) {
     int i, j;
     for(i = 0; i < SS.entity.n; i++) {
@@ -608,17 +598,13 @@ void Group::TagEdgesFromLineSegments(SEdgeList *el) {
     }
 }
 
-void Group::MakePolygons(void) {
+void Group::GeneratePolygon(void) {
     poly.Clear();
-
-    SEdgeList edges;
-    ZERO(&edges);
-    SMesh outm;
-    ZERO(&outm);
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE)
     {
+        SEdgeList edges; ZERO(&edges);
         int i;
         for(i = 0; i < SS.entity.n; i++) {
             Entity *e = &(SS.entity.elem[i]);
@@ -636,14 +622,19 @@ void Group::MakePolygons(void) {
             polyError.notClosedAt = error;
             poly.Clear();
         }
-    } else if(type == EXTRUDE) {
+    }
+}
+
+void Group::GenerateMesh(void) {
+    SMesh outm;
+    ZERO(&outm);
+    if(type == EXTRUDE) {
+        SEdgeList edges;
+        ZERO(&edges);
         int i;
         Group *src = SS.GetGroup(opA);
-        Vector translate = Vector::From(
-            SS.GetParam(h.param(0))->val,
-            SS.GetParam(h.param(1))->val,
-            SS.GetParam(h.param(2))->val
-        );
+        Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
+
         Vector tbot, ttop;
         if(subtype == ONE_SIDED) {
             tbot = Vector::From(0, 0, 0); ttop = translate.ScaledBy(2);
@@ -713,6 +704,7 @@ void Group::MakePolygons(void) {
                 outm.AddTriangle(meta, bbot, btop, atop);
             }
         }
+        edges.Clear();
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.
@@ -739,7 +731,6 @@ void Group::MakePolygons(void) {
             outm.AddTriangle(&st);
         }
     }
-    edges.Clear();
 
     // So our group's mesh appears in outm. Combine this with the previous
     // group's mesh, using the requested operation.
@@ -752,6 +743,17 @@ void Group::MakePolygons(void) {
     }
     outm.Clear();
 }
+
+SMesh *Group::PreviousGroupMesh(void) {
+    int i;
+    for(i = 0; i < SS.group.n; i++) {
+        Group *g = &(SS.group.elem[i]);
+        if(g->h.v == h.v) break;
+    }
+    if(i == 0 || i >= SS.group.n) oops();
+    return &(SS.group.elem[i-1].mesh);
+}
+
 
 void Group::Draw(void) {
     // Show this even if the group is not visible. It's already possible

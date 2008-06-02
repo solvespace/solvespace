@@ -165,7 +165,6 @@ public:
         MNU_VERTICAL,
         MNU_PARALLEL,
         MNU_ORIENTED_SAME,
-        MNU_SOLVE_AUTO,
         MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
@@ -303,11 +302,6 @@ public:
     bool    showMesh;
     bool    showHdnLines;
     static void ToggleBool(int link, DWORD v);
-
-    static const int DONT_SOLVE = 0;
-    static const int SOLVE_ALWAYS = 1;
-    int     solving;
-    void GeneratePerSolving(void);
 
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);

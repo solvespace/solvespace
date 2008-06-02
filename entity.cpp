@@ -676,11 +676,34 @@ Vector Entity::GetReferencePos(void) {
     return dogd.refp;
 }
 
+bool Entity::IsVisible(void) {
+    Group *g = SS.GetGroup(group);
+
+    if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
+        // The reference normals are always shown
+        return true;
+    }
+    if(!g->visible) return false;
+    if(SS.GroupsInOrder(SS.GW.activeGroup, group)) return false;
+
+    if(IsPoint() && !SS.GW.showPoints) return false;
+    if(IsWorkplane() && !SS.GW.showWorkplanes) return false;
+    if(IsNormal() && !SS.GW.showNormals) return false;
+
+    if(IsWorkplane() && !h.isFromRequest()) {
+        // The group-associated workplanes are hidden outside their group.
+        if(g->h.v != SS.GW.activeGroup.v) return false;
+    }
+    return true;
+}
+
 void Entity::DrawOrGetDistance(int order) {  
     Group *g = SS.GetGroup(group);
     // If an entity is invisible, then it doesn't get shown, and it doesn't
     // contribute a distance for the selection, but it still generates edges.
-    if(!(g->visible) && !dogd.edges) return;
+    if(!dogd.edges) {
+        if(!IsVisible()) return;
+    }
 
     glLineWidth(1.5);
 
@@ -700,14 +723,6 @@ void Entity::DrawOrGetDistance(int order) {
         case POINT_IN_3D:
         case POINT_IN_2D: {
             if(order >= 0 && order != 2) break;
-            if(!SS.GW.showPoints) break;
-
-            if(h.isFromRequest()) {
-                Entity *isfor = SS.GetEntity(h.request().entity(0));
-                if(!SS.GW.showWorkplanes && isfor->type == Entity::WORKPLANE) {
-                    break;
-                }
-            }
 
             Vector v = PointGetNum();
 
@@ -754,7 +769,6 @@ void Entity::DrawOrGetDistance(int order) {
                 } else {
                     glxColor3d(0, 0.4, 0.4);
                     if(i > 0) break;
-                    if(!SS.GW.showNormals) break;
                 }
 
                 Quaternion q = NormalGetNum();
@@ -796,13 +810,6 @@ void Entity::DrawOrGetDistance(int order) {
 
         case WORKPLANE: {
             if(order >= 0 && order != 0) break;
-            if(!SS.GW.showWorkplanes) break;
-
-            if((!h.isFromRequest()) && (h.group().v != SS.GW.activeGroup.v)) {
-                // Workplanes that are automatically created by an in-wrkpl
-                // drawing group appear only when that group is active.
-                break;
-            }
 
             Vector p;
             p = SS.GetEntity(point[0])->PointGetNum();
@@ -987,5 +994,6 @@ void Entity::CalculateNumerical(void) {
         numPoint  = Vector::From(       p.x->Eval(), p.y->Eval(), p.z->Eval());
         numNormal = Quaternion::From(0, n.x->Eval(), n.y->Eval(), n.z->Eval());
     }
+    visible = IsVisible();
 }
 

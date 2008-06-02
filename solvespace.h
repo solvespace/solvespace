@@ -249,6 +249,8 @@ public:
     bool LoadEntitiesFromFile(char *filename, EntityList *le, SMesh *m);
     void ReloadAllImported(void);
 
+    void MarkGroupDirty(hGroup hg);
+
     struct {
         int     requests;
         int     groups;
@@ -262,8 +264,8 @@ public:
     bool PruneRequests(hGroup hg);
     bool PruneConstraints(hGroup hg);
 
-    void GenerateAll(bool andSolve);
-    void GenerateAll(bool andSolve, int first, int last);
+    void GenerateAll(void);
+    void GenerateAll(int first, int last);
     void SolveGroup(hGroup hg);
     void ForceReferences(void);
 

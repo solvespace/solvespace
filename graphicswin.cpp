@@ -86,7 +86,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Sol&ve Automatically\tShift+Tab",     MNU_SOLVE_AUTO,     '\t'|S, mCon  },
 { 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },
@@ -120,8 +119,6 @@ void GraphicsWindow::Init(void) {
     showHdnLines = false;
     showShaded = true;
     showMesh = false;
-
-    solving = SOLVE_ALWAYS;
 
     showTextWindow = true;
     ShowTextWindow(showTextWindow);
@@ -289,8 +286,6 @@ void GraphicsWindow::EnsureValidActives(void) {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
-    CheckMenuById(MNU_SOLVE_AUTO, (SS.GW.solving == SOLVE_ALWAYS));
-
     if(change) SS.TW.Show();
 }
 
@@ -307,10 +302,6 @@ hEntity GraphicsWindow::ActiveWorkplane(void) {
 }
 bool GraphicsWindow::LockedInWorkplane(void) {
     return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
-}
-
-void GraphicsWindow::GeneratePerSolving(void) {
-    SS.GenerateAll(solving == SOLVE_ALWAYS);
 }
 
 void GraphicsWindow::MenuEdit(int id) {
@@ -352,7 +343,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.ClearSuper();
             // And regenerate to get rid of what it generates, plus anything
             // that references it (since the regen code checks for that).
-            SS.GenerateAll(SS.GW.solving == SOLVE_ALWAYS, 0, INT_MAX);
+            SS.GenerateAll(0, INT_MAX);
             SS.GW.EnsureValidActives();
             SS.TW.Show();
             break;
@@ -412,7 +403,7 @@ c:
                 r->construction = !(r->construction);
             }
             SS.GW.ClearSelection();
-            SS.GW.GeneratePerSolving();
+            SS.GenerateAll();
             break;
         }
 
@@ -659,7 +650,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         default: oops();
     }
     if(pending.operation != 0 && pending.operation != DRAGGING_CONSTRAINT) {
-        SS.GW.GeneratePerSolving();
+        SS.GenerateAll();
     }
     havePainted = false;
 }
@@ -864,7 +855,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
     // place this request's entities where the mouse is can do so. But
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
-    SS.GenerateAll(false);
+    SS.GenerateAll(-1, -1);
 
     return r.h;
 }
@@ -1036,6 +1027,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             // Create a new line segment, so that we continue drawing.
             hRequest hr = AddRequest(Request::LINE_SEGMENT);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(2))->PointForceTo(v);
 
             // Constrain the line segments to share an endpoint
             Constraint::ConstrainCoincident(pending.point, hr.entity(1));
@@ -1044,7 +1036,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = DRAGGING_NEW_LINE_POINT;
             pending.point = hr.entity(2);
             pending.description = "click to place next point of next line";
-            SS.GetEntity(pending.point)->PointForceTo(v);
 
             break;
         }
@@ -1088,9 +1079,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
     }
-    if(pending.operation != 0 && pending.operation != DRAGGING_CONSTRAINT) {
-        SS.GW.GeneratePerSolving();
-    }
 
     SS.TW.Show();
     InvalidateGraphics();
@@ -1131,7 +1119,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
         HideGraphicsEditControl();
-        SS.GW.GeneratePerSolving();
+        SS.GenerateAll();
     } else {
         Error("Not a valid number or expression: '%s'", s);
     }
@@ -1167,7 +1155,7 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     // so not meaningful to show them and hide the shaded.
     if(!SS.GW.showShaded) SS.GW.showFaces = false;
 
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
     InvalidateGraphics();
     SS.TW.Show();
 }

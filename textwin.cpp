@@ -429,7 +429,7 @@ void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     g->visible = !(g->visible);
     // If a group was just shown, then it might not have been generated
     // previously, so regenerate.
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
     int i;
@@ -535,7 +535,7 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     } else if(g->subtype == Group::TWO_SIDED) {
         g->subtype = Group::ONE_SIDED;
     } else oops();
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
@@ -545,14 +545,14 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     } else if(g->meshCombine == Group::COMBINE_AS_UNION) {
         g->meshCombine = Group::COMBINE_AS_DIFFERENCE;
     } else oops();
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenColor(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
     if(v < 0 || v >= MODEL_COLORS) return;
     g->color = SS.TW.modelColor[v];
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
@@ -722,7 +722,7 @@ void TextWindow::EditControlDone(char *s) {
                 Group *g = SS.GetGroup(edit.group);
                 Expr::FreeKeep(&(g->exprA));
                 g->exprA = e->DeepCopyKeep();
-                SS.GW.GeneratePerSolving();
+                SS.GenerateAll();
                 SS.TW.Show();
             } else {
                 Error("Not a valid number or expression: '%s'", s);

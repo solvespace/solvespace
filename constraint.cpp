@@ -38,7 +38,7 @@ char *Constraint::DescriptionString(void) {
 void Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
-    SS.GW.GeneratePerSolving();
+    SS.GenerateAll();
 }
 
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
@@ -309,17 +309,8 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_SOLVE_NOW:
-            SS.GenerateAll(true, 0, 10000);
+            SS.GenerateAll(0, INT_MAX);
             return;
-
-        case GraphicsWindow::MNU_SOLVE_AUTO:
-            if(SS.GW.solving == GraphicsWindow::SOLVE_ALWAYS) {
-                SS.GW.solving = GraphicsWindow::DONT_SOLVE;
-            } else {
-                SS.GW.solving = GraphicsWindow::SOLVE_ALWAYS;
-            }
-            SS.GW.EnsureValidActives();
-            break;
 
         default: oops();
     }

@@ -88,6 +88,7 @@ public:
 
     hGroup      opA;
     bool        visible;
+    bool        clean;
     hEntity     activeWorkplane;
     Expr        *exprA;
     DWORD       color;
@@ -164,7 +165,8 @@ public:
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
     SMesh *PreviousGroupMesh(void);
-    void MakePolygons(void);
+    void GeneratePolygon(void);
+    void GenerateMesh(void);
     void Draw(void);
 
     SPolygon GetPolygon(void);
@@ -264,6 +266,8 @@ public:
     double      numDistance;
     // and a bit more state that the faces need
     Vector      numVector;
+    // and the shown state also gets saved here, for later import
+    bool        visible;
 
     // All points/normals/distances have their numerical value; this is
     // a convenience, to simplify the import/assembly code, so that the
@@ -280,6 +284,8 @@ public:
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
     int timesApplied;
+
+    bool IsVisible(void);
 
     bool IsCircle(void);
     Expr *CircleGetRadiusExpr(void);
