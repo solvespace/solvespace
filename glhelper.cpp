@@ -111,6 +111,53 @@ void glxColor4d(double r, double g, double b, double a)
     if(!ColorLocked) glColor4d(r, g, b, a);
 }
 
+static void Stipple(BOOL forSel)
+{
+    static BOOL Init;
+    const int BYTES = (32*32)/8;
+    static GLubyte HoverMask[BYTES];
+    static GLubyte SelMask[BYTES];
+    if(!Init) {
+        int x, y;
+        for(x = 0; x < 32; x++) {
+            for(y = 0; y < 32; y++) {
+                int i = y*4 + x/8, b = x % 8;
+                int ym = y % 4, xm = x % 4;
+                for(int k = 0; k < 2; k++) {
+                    if(xm >= 1 && xm <= 2 && ym >= 1 && ym <= 2) {
+                        (k == 0 ? SelMask : HoverMask)[i] |= (0x80 >> b);
+                    }
+                    ym = (ym + 2) % 4; xm = (xm + 2) % 4;
+                }
+            }
+        }
+        Init = TRUE;
+    }
+
+    glEnable(GL_POLYGON_STIPPLE);
+    if(forSel) {
+        glPolygonStipple(SelMask);
+    } else {
+        glPolygonStipple(HoverMask);
+    }
+}
+
+static void StippleTriangle(STriangle *tr, BOOL s, double r, double g, double b)
+{
+    glEnd();
+    glDisable(GL_LIGHTING);
+    glColor3d(r, g, b);
+    Stipple(s);
+    glBegin(GL_TRIANGLES);
+        glxVertex3v(tr->a);
+        glxVertex3v(tr->b);
+        glxVertex3v(tr->c);
+    glEnd();
+    glEnable(GL_LIGHTING);
+    glDisable(GL_POLYGON_STIPPLE);
+    glBegin(GL_TRIANGLES);
+}
+
 void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
 {
     glEnable(GL_NORMALIZE);
@@ -122,13 +169,7 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
         glNormal3d(n.x, n.y, n.z);
 
         int color;
-        if((s1 != 0 && tr->meta.face == s1) || 
-           (s2 != 0 && tr->meta.face == s2))
-        {
-            color = RGB(200, 0, 0);
-        } else if(h != 0 && tr->meta.face == h) {
-            color = RGB(200, 200, 0);
-        } else if(specColor < 0) {
+        if(specColor < 0) {
             color = tr->meta.color;
         } else {
             color = specColor;
@@ -146,6 +187,15 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
         glxVertex3v(tr->a);
         glxVertex3v(tr->b);
         glxVertex3v(tr->c);
+
+        if((s1 != 0 && tr->meta.face == s1) || 
+           (s2 != 0 && tr->meta.face == s2))
+        {
+            StippleTriangle(tr, TRUE, 1, 0, 0);
+        }
+        if(h != 0 && tr->meta.face == h) {
+            StippleTriangle(tr, FALSE, 1, 1, 0);
+        }
     }
     glEnd();
 }

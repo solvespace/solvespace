@@ -221,6 +221,10 @@ void TextWindow::Show(void) {
     InvalidateText();
 }
 
+void TextWindow::ScreenUnselectAll(int link, DWORD v) {
+    GraphicsWindow::MenuEdit(GraphicsWindow::MNU_UNSELECT_ALL);
+}
+
 void TextWindow::DescribeSelection(void) {
     Entity *e;
     Vector p;
@@ -310,6 +314,12 @@ void TextWindow::DescribeSelection(void) {
                 Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
                 break;
             }
+            case Entity::FACE_NORMAL_PT:
+            case Entity::FACE_XPROD:
+            case Entity::FACE_N_ROT_TRANS:
+                Printf(false, "%FtPLANE FACE%E");
+                break;
+
             default:
                 Printf(true, "%Ft?? ENTITY%E");
                 break;
@@ -335,6 +345,8 @@ void TextWindow::DescribeSelection(void) {
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
     }
+
+    Printf(true, "%Fl%f%Ll(unselect all)%E", &TextWindow::ScreenUnselectAll);
 }
 
 void TextWindow::OneScreenForwardTo(int screen) {
@@ -397,9 +409,11 @@ hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool)
     );
     Printf(false, "%Bt%Ft      "
            "%Fp%Ll%D%fshaded%E "
+           "%Fp%Ll%D%ffaces%E "
            "%Fp%Ll%D%fmesh%E "
            "%Fp%Ll%D%fhidden-lines%E",
 hs(SS.GW.showShaded),      (DWORD)(&SS.GW.showShaded),      &(SS.GW.ToggleBool),
+hs(SS.GW.showFaces),       (DWORD)(&SS.GW.showFaces),       &(SS.GW.ToggleBool),
 hs(SS.GW.showMesh),        (DWORD)(&SS.GW.showMesh),        &(SS.GW.ToggleBool),
 hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
     );
@@ -437,6 +451,7 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     Group *g = SS.GetGroup(hg);
     g->visible = true;
     SS.GW.activeGroup.v = v;
+    SS.GetGroup(SS.GW.activeGroup)->Activate();
     SS.GW.ClearSuper();
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {

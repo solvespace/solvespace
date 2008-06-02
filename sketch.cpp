@@ -141,6 +141,7 @@ void Group::MenuGroup(int id) {
     if(g.type == DRAWING_WORKPLANE) {
         SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
     }
+    SS.GetGroup(g.h)->Activate();
     SS.GW.AnimateOntoWorkplane();
     TextWindow::ScreenSelectGroup(0, g.h.v);
     SS.TW.Show();
@@ -154,6 +155,15 @@ char *Group::DescriptionString(void) {
         sprintf(ret, "g%03x-(unnamed)", h.v);
     }
     return ret;
+}
+
+void Group::Activate(void) {
+    if(type == EXTRUDE || type == IMPORTED) {
+        SS.GW.showFaces = true;
+    } else {
+        SS.GW.showFaces = false;
+    }
+    SS.TW.Show();
 }
 
 void Group::Generate(IdList<Entity,hEntity> *entity,

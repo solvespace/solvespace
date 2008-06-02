@@ -99,11 +99,13 @@ public:
     static void ScreenChangeMeshCombine(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 
+    static void ScreenUnselectAll(int link, DWORD v);
+
+    static void ScreenNavigation(int link, DWORD v);
+
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);
     static void ScreenChangeGroupName(int link, DWORD v);
-
-    static void ScreenNavigation(int link, DWORD v);
 
     void EditControlDone(char *s);
 };
@@ -297,6 +299,7 @@ public:
     bool    showConstraints;
     bool    showTextWindow;
     bool    showShaded;
+    bool    showFaces;
     bool    showMesh;
     bool    showHdnLines;
     static void ToggleBool(int link, DWORD v);

@@ -102,12 +102,14 @@ void GraphicsWindow::Init(void) {
     projRight.x = 1; projRight.y = projRight.z = 0;
     projUp.y = 1; projUp.z = projUp.x = 0;
 
-    // And with the latest visible group active
+    // And with the latest visible group active, or failing that the first
+    // group after the references
     int i;
     for(i = 0; i < SS.group.n; i++) {
         Group *g = &(SS.group.elem[i]);
-        if(i == 0 || g->visible) activeGroup = g->h;
+        if(i == 1 || g->visible) activeGroup = g->h;
     }
+    SS.GetGroup(activeGroup)->Activate();
 
     EnsureValidActives();
 
@@ -248,6 +250,7 @@ void GraphicsWindow::EnsureValidActives(void) {
         }
         if(i >= SS.group.n) oops();
         activeGroup = SS.group.elem[i].h;
+        SS.GetGroup(activeGroup)->Activate();
         change = true;
     }
 
@@ -746,7 +749,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     }
 
     // Faces, from the triangle mesh; these are lowest priority
-    if(s.constraint.v == 0 && s.entity.v == 0 && (showMesh || showShaded)) {
+    if(s.constraint.v == 0 && s.entity.v == 0 && showShaded && showFaces) {
         SMesh *m = &((SS.GetGroup(activeGroup))->mesh);
         DWORD v = m->FirstIntersectionWith(mp);
         if(v) {
@@ -1063,6 +1066,19 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
             if(i != MAX_SELECTED) break;
 
+            if(hover.entity.v != 0 && SS.GetEntity(hover.entity)->IsFace()) {
+                // In the interest of speed for the triangle drawing code,
+                // only two faces may be selected at a time.
+                int c = 0;
+                for(i = 0; i < MAX_SELECTED; i++) {
+                    hEntity he = selection[i].entity;
+                    if(he.v != 0 && SS.GetEntity(he)->IsFace()) {
+                        c++;
+                        if(c >= 2) selection[i].Clear();
+                    }
+                }
+            }
+
             for(i = 0; i < MAX_SELECTED; i++) {
                 if(selection[i].IsEmpty()) {
                     selection[i] = hover;
@@ -1146,6 +1162,10 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
 void GraphicsWindow::ToggleBool(int link, DWORD v) {
     bool *vb = (bool *)v;
     *vb = !*vb;
+
+    // The faces are shown as special stippling on the shaded triangle mesh,
+    // so not meaningful to show them and hide the shaded.
+    if(!SS.GW.showShaded) SS.GW.showFaces = false;
 
     SS.GW.GeneratePerSolving();
     InvalidateGraphics();

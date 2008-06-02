@@ -137,6 +137,7 @@ public:
     NameStr     name;
 
 
+    void Activate(void);
     char *DescriptionString(void);
 
     static void AddParam(IdList<Param,hParam> *param, hParam hp, double v);
