@@ -203,10 +203,7 @@ Quaternion Entity::NormalGetNum(void) {
     Quaternion q;
     switch(type) {
         case NORMAL_IN_3D:
-            q.w  = SS.GetParam(param[0])->val;
-            q.vx = SS.GetParam(param[1])->val;
-            q.vy = SS.GetParam(param[2])->val;
-            q.vz = SS.GetParam(param[3])->val;
+            q = Quaternion::From(param[0], param[1], param[2], param[3]);
             break;
 
         case NORMAL_IN_2D: {
@@ -220,10 +217,7 @@ Quaternion Entity::NormalGetNum(void) {
             break;
 
         case NORMAL_N_ROT:
-            q.w  = SS.GetParam(param[0])->val;
-            q.vx = SS.GetParam(param[1])->val;
-            q.vy = SS.GetParam(param[2])->val;
-            q.vz = SS.GetParam(param[3])->val;
+            q = Quaternion::From(param[0], param[1], param[2], param[3]);
             q = q.Times(numNormal);
             break;
 
@@ -410,9 +404,7 @@ Vector Entity::PointGetNum(void) {
     Vector p;
     switch(type) {
         case POINT_IN_3D:
-            p.x = SS.GetParam(param[0])->val;
-            p.y = SS.GetParam(param[1])->val;
-            p.z = SS.GetParam(param[2])->val;
+            p = Vector::From(param[0], param[1], param[2]);
             break;
 
         case POINT_IN_2D: {
@@ -426,18 +418,13 @@ Vector Entity::PointGetNum(void) {
         }
 
         case POINT_N_TRANS: {
-            p = numPoint; 
-            p.x += timesApplied * SS.GetParam(param[0])->val;
-            p.y += timesApplied * SS.GetParam(param[1])->val;
-            p.z += timesApplied * SS.GetParam(param[2])->val;
+            Vector trans = Vector::From(param[0], param[1], param[2]);
+            p = numPoint.Plus(trans.ScaledBy(timesApplied));
             break;
         }
 
         case POINT_N_ROT_TRANS: {
-            Vector offset = Vector::From(
-                SS.GetParam(param[0])->val,
-                SS.GetParam(param[1])->val,
-                SS.GetParam(param[2])->val);
+            Vector offset = Vector::From(param[0], param[1], param[2]);
             Quaternion q = PointGetQuaternion();
             p = q.Rotate(numPoint);
             p = p.Plus(offset);
@@ -445,10 +432,7 @@ Vector Entity::PointGetNum(void) {
         }
 
         case POINT_N_ROT_AA: {
-            Vector offset = Vector::From(
-                SS.GetParam(param[0])->val,
-                SS.GetParam(param[1])->val,
-                SS.GetParam(param[2])->val);
+            Vector offset = Vector::From(param[0], param[1], param[2]);
             Quaternion q = PointGetQuaternion();
             p = numPoint.Minus(offset);
             p = q.Rotate(p);
@@ -469,9 +453,7 @@ ExprVector Entity::PointGetExprs(void) {
     ExprVector r;
     switch(type) {
         case POINT_IN_3D:
-            r.x = Expr::From(param[0]);
-            r.y = Expr::From(param[1]);
-            r.z = Expr::From(param[2]);
+            r = ExprVector::From(param[0], param[1], param[2]);
             break;
 
         case POINT_IN_2D: {
@@ -565,10 +547,7 @@ Quaternion Entity::PointGetQuaternion(void) {
         q.vy = s*SS.GetParam(param[5])->val;
         q.vz = s*SS.GetParam(param[6])->val;
     } else if(type == POINT_N_ROT_TRANS) {
-        q.w  = SS.GetParam(param[3])->val;
-        q.vx = SS.GetParam(param[4])->val;
-        q.vy = SS.GetParam(param[5])->val;
-        q.vz = SS.GetParam(param[6])->val;
+        q = Quaternion::From(param[3], param[4], param[5], param[6]);
     } else oops();
 
     return q;
