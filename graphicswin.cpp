@@ -649,17 +649,17 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 double theta = atan2(orig.mouse.y-p2.y, orig.mouse.x-p2.x);
                 theta -= atan2(y-p2.y, x-p2.x);
 
-                Vector normal = orig.projRight.Cross(orig.projUp);
+                Vector normal = projRight.Cross(projUp);
                 u = u.RotatedAbout(normal, -theta);
                 v = v.RotatedAbout(normal, -theta);
             } else {
                 double dx = -(x - orig.mouse.x);
                 double dy = -(y - orig.mouse.y);
                 double s = 0.3*(PI/180); // degrees per pixel
-                u = u.RotatedAbout(orig.projUp, -s*dx);
-                u = u.RotatedAbout(orig.projRight, s*dy);
-                v = v.RotatedAbout(orig.projUp, -s*dx);
-                v = v.RotatedAbout(orig.projRight, s*dy);
+                u = u.RotatedAbout(projUp, -s*dx);
+                u = u.RotatedAbout(projRight, s*dy);
+                v = v.RotatedAbout(projUp, -s*dx);
+                v = v.RotatedAbout(projRight, s*dy);
             }
             orig.mouse = mp;
             normal->NormalForceTo(Quaternion::From(u, v));

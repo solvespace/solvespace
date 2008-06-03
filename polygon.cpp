@@ -7,6 +7,10 @@ Vector STriangle::Normal(void) {
 
 bool STriangle::ContainsPoint(Vector p) {
     Vector n = Normal();
+    if(n.Magnitude() < LENGTH_EPS*LENGTH_EPS) {
+        // shouldn't happen; zero-area triangle
+        return false;
+    }
     return ContainsPointProjd(n.WithMagnitude(1), p);
 }
 

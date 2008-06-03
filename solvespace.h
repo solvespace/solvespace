@@ -79,6 +79,7 @@ void dbp(char *str, ...);
         CO((tri).a), CO((tri).b), CO((tri).c))
 
 void Error(char *str, ...);
+void ExitNow(void);
 
 void *AllocTemporary(int n);
 void FreeAllTemporary(void);

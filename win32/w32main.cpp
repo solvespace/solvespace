@@ -67,6 +67,10 @@ void Error(char *str, ...)
     MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);
 }
 
+void ExitNow(void) {
+    PostQuitMessage(0);
+}
+
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible

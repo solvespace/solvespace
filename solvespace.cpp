@@ -459,7 +459,7 @@ void SolveSpace::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXIT:
             if(!SS.OkayToStartNewFile()) break;
-            exit(0);
+            ExitNow();
             break;
 
         default: oops();
