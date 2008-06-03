@@ -263,7 +263,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_CLOSE:
         case WM_DESTROY:
-            PostQuitMessage(0);
+            SolveSpace::MenuFile(GraphicsWindow::MNU_EXIT);
             break;
 
         case WM_PAINT: {
@@ -642,7 +642,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_CLOSE:
         case WM_DESTROY:
-            PostQuitMessage(0);
+            SolveSpace::MenuFile(GraphicsWindow::MNU_EXIT);
             return 1;
 
         default:
@@ -916,10 +916,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     DWORD ret;
     while(ret = GetMessage(&msg, NULL, 0, 0)) {
         if(msg.message == WM_KEYDOWN) {
-            if(ProcessKeyDown(msg.wParam)) continue;
+            if(ProcessKeyDown(msg.wParam)) goto done;
+        }
+        if(msg.message == WM_SYSKEYDOWN && msg.hwnd == TextWnd) {
+            // If the user presses the Alt key when the text window has focus,
+            // then that should probably go to the graphics window instead.
+            SetForegroundWindow(GraphicsWnd);
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+done:
+        SS.DoLater();
     }
 
     // Write everything back to the registry

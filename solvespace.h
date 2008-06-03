@@ -12,6 +12,8 @@
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
+#define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
+
 inline int WRAP(int v, int n) {
     while(v >= n) v -= n;
     while(v < 0) v += n;
@@ -215,8 +217,6 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
 
-    hGroup      activeGroup;
-
     FILE        *fh;
 
     void Init(char *cmdLine);
@@ -243,6 +243,8 @@ public:
         Constraint   c;
     } sv;
     static void MenuFile(int id);
+    bool GetFilenameAndSave(bool saveAs);
+    bool OkayToStartNewFile(void);
     hGroup CreateDefaultDrawingGroup(void);
     void NewFile(void);
     bool SaveToFile(char *filename);
@@ -273,6 +275,12 @@ public:
 
     // The system to be solved.
     System  sys;
+
+    struct {
+        bool    showTW;
+        bool    generateAll;
+    } later;
+    void DoLater(void);
 };
 
 extern SolveSpace SS;

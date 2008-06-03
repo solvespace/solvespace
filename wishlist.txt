@@ -1,0 +1,17 @@
+
+STL check for meshes, and T intersection removal
+STL export
+better triangle combining (Simplify()) for meshes
+solids of revolution
+investigate slowdown with large number of entities
+DXF export
+compress file format (binary?)
+partitioned subsystems in the solver
+arbitrary color specification
+union/difference/interference check option for imports
+undo/redo
+TTF font text
+display with proper formatting/units
+more measurements
+
+

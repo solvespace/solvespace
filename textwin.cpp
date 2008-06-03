@@ -458,7 +458,7 @@ void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.GW.ClearSuper();
     SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
     SS.TW.shown->group.v = hg.v;
-    SS.TW.Show();
+    SS.later.showTW = true;
 }
 void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
     if(SS.GW.activeGroup.v != v) {
@@ -470,6 +470,7 @@ void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
     int i;
+    bool afterActive = false;
     for(i = 0; i < SS.group.n; i++) {
         Group *g = &(SS.group.elem[i]);
         char *s = g->DescriptionString();
@@ -479,7 +480,7 @@ void TextWindow::ShowListOfGroups(void) {
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
                "%Fp%D%f%s%Ll%s%E%s  "
-               "%Fp%D%f%Ll%s%E%s   "
+               "%Fp%D%f%Ll%s%E%Fh%s%E   "
                "%Fp%D%f%s%Ll%s%E  "
                "%Fl%Ll%D%f%s",
             // Alternate between light and dark backgrounds, for readability
@@ -491,14 +492,16 @@ void TextWindow::ShowListOfGroups(void) {
                 active ? "" : " ",
             // Link that hides or shows the group
             shown ? 's' : 'h', g->h.v, (&TextWindow::ScreenToggleGroupShown),
-                shown ? "yes" : "no",
-                shown ? "" : " ",
+                afterActive ? "" :    (shown ? "yes" : "no"),
+                afterActive ? " - " : (shown ? "" : " "),
             // Link to the errors, if a problem occured while solving
             ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
                 ok ? "ok" : "",
                 ok ? "" : "NO",
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s);
+
+        if(active) afterActive = true;
     }
 
     Printf(true,  "  %Fl%Ls%fshow all groups before active%E",
@@ -509,8 +512,16 @@ void TextWindow::ShowListOfGroups(void) {
 
 
 void TextWindow::ScreenHoverConstraint(int link, DWORD v) {
+    if(!SS.GW.showConstraints) return;
+
+    hConstraint hc = { v };
+    Constraint *c = SS.GetConstraint(hc);
+    if(c->group.v != SS.GW.activeGroup.v) {
+        // Only constraints in the active group are visible
+        return;
+    }
     SS.GW.hover.Clear();
-    SS.GW.hover.constraint.v = v;
+    SS.GW.hover.constraint = hc;
     SS.GW.hover.emphasized = true;
 }
 void TextWindow::ScreenHoverRequest(int link, DWORD v) {
@@ -541,11 +552,7 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
 }
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
-    if(g->meshCombine == Group::COMBINE_AS_DIFFERENCE) {
-        g->meshCombine = Group::COMBINE_AS_UNION;
-    } else if(g->meshCombine == Group::COMBINE_AS_UNION) {
-        g->meshCombine = Group::COMBINE_AS_DIFFERENCE;
-    } else oops();
+    g->meshCombine = v;
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
@@ -566,7 +573,7 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
 }
 void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
-    ShowTextEditControl(7, 13, g->DescriptionString()+5);
+    ShowTextEditControl(7, 14, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
@@ -588,9 +595,9 @@ void TextWindow::ShowGroupInfo(void) {
     char *s, *s2;
 
     if(shown->group.v == Group::HGROUP_REFERENCES.v) {
-        Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
+        Printf(true, "%FtGROUP    %E%s", g->DescriptionString());
     } else {
-        Printf(true, "%FtGROUP   %E%s "
+        Printf(true, "%FtGROUP    %E%s "
                      "(%Fl%Ll%D%frename%E / %Fl%Ll%D%fdel%E)",
             g->DescriptionString(),
             g->h.v, &TextWindow::ScreenChangeGroupName,
@@ -598,17 +605,17 @@ void TextWindow::ShowGroupInfo(void) {
     }
 
     if(g->type == Group::IMPORTED) {
-        Printf(true, "%FtIMPORT  %E '%s'", g->impFile);
+        Printf(true, "%FtIMPORT%E  '%s'", g->impFile);
     }
 
     if(g->type == Group::EXTRUDE) {
-        s = "EXTRUDE";
+        s = "EXTRUDE ";
     } else if(g->type == Group::TRANSLATE) {
         s = "TRANSLATE";
         s2 ="REPEAT   ";
     } else if(g->type == Group::ROTATE) {
         s = "ROTATE";
-        s2 ="REPEAT ";
+        s2 ="REPEAT";
     }
 
     if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
@@ -621,24 +628,38 @@ void TextWindow::ShowGroupInfo(void) {
             &TextWindow::ScreenChangeOneOrTwoSides,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
     }
+
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
         int times = (int)(g->exprA->Eval());
         Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f(change)%E",
             s2, times, times == 1 ? "" : "s",
             g->h.v, &TextWindow::ScreenChangeExprA);
     }
-    if(g->type == Group::EXTRUDE) {
+
+    if(g->type == Group::EXTRUDE || g->type == Group::IMPORTED) {
+        bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
         bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
-        Printf(false, "%FtCOMBINE%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);
+        bool asa  = (g->type == Group::IMPORTED);
+
+        Printf(false,
+            "%FtMERGE AS%E %Fh%f%D%Ll%s%E%Fs%s%E / %Fh%f%D%Ll%s%E%Fs%s%E %s "
+            "%Fh%f%D%Ll%s%E%Fs%s%E",
             &TextWindow::ScreenChangeMeshCombine,
-            (!diff ? "" : "as union"), (!diff ? "as union" : ""),
+            Group::COMBINE_AS_UNION,
+            (un ? "" : "union"), (un ? "union" : ""),
             &TextWindow::ScreenChangeMeshCombine,
-            (diff ? "" : "as difference"), (diff ? "as difference" : ""));
+            Group::COMBINE_AS_DIFFERENCE,
+            (diff ? "" : "difference"), (diff ? "difference" : ""),
+            asa ? "/" : "",
+            &TextWindow::ScreenChangeMeshCombine,
+            Group::COMBINE_AS_ASSEMBLE,
+            (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
     }
 
     if(g->type == Group::EXTRUDE) {
 #define TWOX(v) v v
-        Printf(true, "%FtMCOLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
+        Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
             0x80000000 | modelColor[0], 0, &TextWindow::ScreenColor,
             0x80000000 | modelColor[1], 1, &TextWindow::ScreenColor,
             0x80000000 | modelColor[2], 2, &TextWindow::ScreenColor,
@@ -744,8 +765,8 @@ void TextWindow::EditControlDone(char *s) {
                 g->exprA = e->DeepCopyKeep();
 
                 SS.MarkGroupDirty(g->h);
-                SS.GenerateAll();
-                SS.TW.Show();
+                SS.later.generateAll = true;
+                SS.later.showTW = true;
             } else {
                 Error("Not a valid number or expression: '%s'", s);
             }
@@ -765,7 +786,8 @@ void TextWindow::EditControlDone(char *s) {
                 Group *g = SS.GetGroup(edit.group);
                 g->name.strcpy(s);
             }
-            SS.TW.Show();
+            SS.later.showTW = true;
+            SS.unsaved = true;
             break;
         }
     }

@@ -332,7 +332,12 @@ bool System::NewtonSolve(int tag) {
         // Take the Newton step; 
         //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
         for(i = 0; i < mat.n; i++) {
-            (param.FindById(mat.param[i]))->val -= mat.X[i];
+            Param *p = param.FindById(mat.param[i]);
+            p->val -= mat.X[i];
+            if(isnan(p->val)) {
+                // Very bad, and clearly not convergent
+                return false;
+            }
         }
 
         // Re-evalute the functions, since the params have just changed.
@@ -342,6 +347,9 @@ bool System::NewtonSolve(int tag) {
         // Check for convergence
         converged = true;
         for(i = 0; i < mat.m; i++) {
+            if(isnan(mat.B.num[i])) {
+                return false;
+            }
             if(fabs(mat.B.num[i]) > 1e-10) {
                 converged = false;
                 break;
@@ -459,7 +467,6 @@ void System::Solve(Group *g) {
             } else {
                 val = p->val;
             }
-
             Param *pp = SS.GetParam(p->h);
             pp->val = val;
             pp->known = true;

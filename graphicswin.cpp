@@ -295,7 +295,7 @@ void GraphicsWindow::EnsureValidActives(void) {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
-    if(change) SS.TW.Show();
+    if(change) SS.later.showTW = true;
 }
 
 void GraphicsWindow::SetWorkplaneFreeIn3d(void) {
@@ -356,7 +356,7 @@ void GraphicsWindow::MenuEdit(int id) {
             // that references it (since the regen code checks for that).
             SS.GenerateAll(0, INT_MAX);
             SS.GW.EnsureValidActives();
-            SS.TW.Show();
+            SS.later.showTW = true;
             break;
         }
 
@@ -382,13 +382,13 @@ void GraphicsWindow::MenuRequest(int id) {
             // Align the view with the selected workplane
             SS.GW.AnimateOntoWorkplane();
             SS.GW.ClearSuper();
-            SS.TW.Show();
+            SS.later.showTW = true;
             break;
         }
         case MNU_FREE_IN_3D:
             SS.GW.SetWorkplaneFreeIn3d();
             SS.GW.EnsureValidActives();
-            SS.TW.Show();
+            SS.later.showTW = true;
             break;
             
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
@@ -401,7 +401,7 @@ void GraphicsWindow::MenuRequest(int id) {
 c:
             SS.GW.pending.operation = id;
             SS.GW.pending.description = s;
-            SS.TW.Show();
+            SS.later.showTW = true;
             break;
 
         case MNU_CONSTRUCTION: {
@@ -578,10 +578,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
                     double s = 0.3*(PI/180); // degrees per pixel
-                    u = u.RotatedAbout(orig.projUp, -s*dx);
-                    u = u.RotatedAbout(orig.projRight, s*dy);
-                    v = v.RotatedAbout(orig.projUp, -s*dx);
-                    v = v.RotatedAbout(orig.projRight, s*dy);
+                    u = u.RotatedAbout(projUp, -s*dx);
+                    u = u.RotatedAbout(projRight, s*dy);
+                    v = v.RotatedAbout(projUp, -s*dx);
+                    v = v.RotatedAbout(projRight, s*dy);
                 }
                 q = Quaternion::From(u, v);
                 p->PointForceQuaternionTo(q);
@@ -779,7 +779,7 @@ void GraphicsWindow::ClearSelection(void) {
     for(int i = 0; i < MAX_SELECTED; i++) {
         selection[i].Clear();
     }
-    SS.TW.Show();
+    SS.later.showTW = true;
     InvalidateGraphics();
 }
 
@@ -1101,7 +1101,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
     }
 
-    SS.TW.Show();
+    SS.later.showTW = true;
     InvalidateGraphics();
 }
 
@@ -1180,7 +1180,7 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
 
     SS.GenerateAll();
     InvalidateGraphics();
-    SS.TW.Show();
+    SS.later.showTW = true;
 }
 
 Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {

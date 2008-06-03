@@ -144,7 +144,7 @@ void Group::MenuGroup(int id) {
     SS.GetGroup(g.h)->Activate();
     SS.GW.AnimateOntoWorkplane();
     TextWindow::ScreenSelectGroup(0, g.h.v);
-    SS.TW.Show();
+    SS.later.showTW = true;
 }
 
 char *Group::DescriptionString(void) {
@@ -164,8 +164,8 @@ void Group::Activate(void) {
         SS.GW.showFaces = false;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
-    SS.GenerateAll();
-    SS.TW.Show();
+    SS.later.generateAll = true;
+    SS.later.showTW = true;
 }
 
 void Group::Generate(IdList<Entity,hEntity> *entity,
@@ -740,8 +740,10 @@ void Group::GenerateMesh(void) {
     SMesh *a = PreviousGroupMesh();
     if(meshCombine == COMBINE_AS_UNION) {
         mesh.MakeFromUnion(a, &outm);
-    } else {
+    } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         mesh.MakeFromDifference(a, &outm);
+    } else {
+
     }
     outm.Clear();
 }

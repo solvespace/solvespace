@@ -17,6 +17,12 @@ void SolveSpace::Init(char *cmdLine) {
     AfterNewFile();
 }
 
+void SolveSpace::DoLater(void) {
+    if(later.generateAll) GenerateAll();
+    if(later.showTW) TW.Show();
+    ZERO(&later);
+}
+
 void SolveSpace::AfterNewFile(void) {
     ReloadAllImported();
     GenerateAll(-1, -1);
@@ -24,8 +30,9 @@ void SolveSpace::AfterNewFile(void) {
     TW.Init();
     GW.Init();
 
+    unsaved = false;
     GenerateAll(0, INT_MAX);
-    TW.Show();
+    later.showTW = true;
 }
 
 void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {
@@ -256,7 +263,7 @@ void SolveSpace::GenerateAll(int first, int last) {
         if(deleted.groups > 0) {
             SS.TW.ClearSuper();
         }
-        TW.Show();
+        later.showTW = true;
         GW.ClearSuper();
         // Don't display any errors until we've regenerated fully. The
         // sketch is not necessarily in a consistent state until we've
@@ -365,6 +372,40 @@ void SolveSpace::AddToRecentList(char *file) {
     RefreshRecentMenus();
 }
 
+bool SolveSpace::GetFilenameAndSave(bool saveAs) {
+    char newFile[MAX_PATH];
+    strcpy(newFile, saveFile);
+    if(saveAs || strlen(newFile)==0) {
+        if(!GetSaveFile(newFile, SLVS_EXT, SLVS_PATTERN)) return false;
+    }
+
+    if(SaveToFile(newFile)) {
+        AddToRecentList(newFile);
+        strcpy(saveFile, newFile);
+        unsaved = false;
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SolveSpace::OkayToStartNewFile(void) {
+    if(!unsaved) return true;
+
+    switch(SaveFileYesNoCancel()) {
+        case IDYES:
+            return GetFilenameAndSave(false);
+
+        case IDNO:
+            return true;
+
+        case IDCANCEL:
+            return false;
+        
+        default: oops();
+    }
+}
+
 void SolveSpace::MenuFile(int id) {
 
     if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
@@ -384,12 +425,16 @@ void SolveSpace::MenuFile(int id) {
 
     switch(id) {
         case GraphicsWindow::MNU_NEW:
+            if(!SS.OkayToStartNewFile()) break;
+
             strcpy(SS.saveFile, "");
             SS.NewFile();
             SS.AfterNewFile();
             break;
 
         case GraphicsWindow::MNU_OPEN: {
+            if(!SS.OkayToStartNewFile()) break;
+
             char newFile[MAX_PATH] = "";
             if(GetOpenFile(newFile, SLVS_EXT, SLVS_PATTERN)) {
                 if(SS.LoadFromFile(newFile)) {
@@ -405,21 +450,16 @@ void SolveSpace::MenuFile(int id) {
         }
 
         case GraphicsWindow::MNU_SAVE:
-        case GraphicsWindow::MNU_SAVE_AS: {
-            char newFile[MAX_PATH];
-            strcpy(newFile, SS.saveFile);
-            if(id == GraphicsWindow::MNU_SAVE_AS || strlen(newFile)==0) {
-                if(!GetSaveFile(newFile, SLVS_EXT, SLVS_PATTERN)) break;
-            }
-
-            if(SS.SaveToFile(newFile)) {
-                AddToRecentList(newFile);
-                strcpy(SS.saveFile, newFile);
-            }
+            SS.GetFilenameAndSave(false);
             break;
-        }
+
+        case GraphicsWindow::MNU_SAVE_AS:
+            SS.GetFilenameAndSave(true);
+            break;
 
         case GraphicsWindow::MNU_EXIT:
+            if(!SS.OkayToStartNewFile()) break;
+            exit(0);
             break;
 
         default: oops();

@@ -39,7 +39,7 @@ void Constraint::AddConstraint(Constraint *c) {
     SS.constraint.AddAndAssignId(c);
 
     SS.MarkGroupDirty(c->group);
-    SS.GenerateAll();
+    SS.later.generateAll = true;
 }
 
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
@@ -323,10 +323,13 @@ void Constraint::MenuConstrain(int id) {
 Expr *Constraint::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     ExprVector r = a.Cross(b);
     // Hairy ball theorem screws me here. There's no clean solution that I
-    // know, so let's pivot on the initial numerical guess.
-    double mx = fabs((a.x)->Eval()) + fabs((b.x)->Eval());
-    double my = fabs((a.y)->Eval()) + fabs((b.y)->Eval());
-    double mz = fabs((a.z)->Eval()) + fabs((b.z)->Eval());
+    // know, so let's pivot on the initial numerical guess. Our caller
+    // has ensured that if one of our input vectors is already known (e.g.
+    // it's from a previous group), then that one's in a; so that one's
+    // not going to move, and we should pivot on that one.
+    double mx = fabs((a.x)->Eval());
+    double my = fabs((a.y)->Eval());
+    double mz = fabs((a.z)->Eval());
     // The basis vector in which the vectors have the LEAST energy is the
     // one that we should look at most (e.g. if both vectors lie in the xy
     // plane, then the z component of the cross product is most important).
@@ -566,8 +569,13 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 ExprVector eab = ea.Minus(eb);
                 ExprVector eap = ea.Minus(ep);
 
-                AddEq(l, VectorsParallel(0, eab, eap), 0);
-                AddEq(l, VectorsParallel(1, eab, eap), 1);
+                if(p->group.v == group.v) {
+                    AddEq(l, VectorsParallel(0, eab, eap), 0);
+                    AddEq(l, VectorsParallel(1, eab, eap), 1);
+                } else {
+                    AddEq(l, VectorsParallel(0, eap, eab), 0);
+                    AddEq(l, VectorsParallel(1, eap, eab), 1);
+                }
             } else {
                 AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
             }
@@ -715,6 +723,10 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case SAME_ORIENTATION: {
             Entity *a = SS.GetEntity(entityA);
             Entity *b = SS.GetEntity(entityB);
+            if(b->group.v != group.v) {
+                SWAP(Entity *, a, b);
+            }
+
             ExprVector au = a->NormalExprsU(),
                        av = a->NormalExprsV(),
                        an = a->NormalExprsN();
@@ -765,8 +777,12 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         }
 
         case PARALLEL: {
-            ExprVector a = SS.GetEntity(entityA)->VectorGetExprs();
-            ExprVector b = SS.GetEntity(entityB)->VectorGetExprs();
+            Entity *ea = SS.GetEntity(entityA), *eb = SS.GetEntity(entityB);
+            if(eb->group.v != group.v) {
+                SWAP(Entity *, ea, eb);
+            }
+            ExprVector a = ea->VectorGetExprs();
+            ExprVector b = eb->VectorGetExprs();
 
             if(workplane.v == Entity::FREE_IN_3D.v) {
                 AddEq(l, VectorsParallel(0, a, b), 0);
