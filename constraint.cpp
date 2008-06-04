@@ -36,6 +36,11 @@ char *Constraint::DescriptionString(void) {
 }
 
 void Constraint::AddConstraint(Constraint *c) {
+    AddConstraint(c, true);
+}
+void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
+    if(rememberForUndo) SS.UndoRemember();
+
     SS.constraint.AddAndAssignId(c);
 
     SS.MarkGroupDirty(c->group);
@@ -52,7 +57,7 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
     c.ptA = ptA;
     c.ptB = ptB;
     c.entityA = entityA;
-    AddConstraint(&c);
+    AddConstraint(&c, false);
 }
 
 void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
@@ -310,6 +315,7 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_SOLVE_NOW:
+            SS.ReloadAllImported();
             SS.GenerateAll(0, INT_MAX);
             return;
 

@@ -21,8 +21,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "E&xit",                               MNU_EXIT,           0,      mFile },
 
 { 0, "&Edit",                               0,                          NULL  },
-{ 1, "&Undo\tCtrl+Z",                       0,                          NULL  },
-{ 1, "&Redo\tCtrl+Y",                       0,                          NULL  },
+{ 1, "&Undo\tCtrl+Z",                       MNU_UNDO,           'Z'|C,  mEdit },
+{ 1, "&Redo\tCtrl+Y",                       MNU_REDO,           'Y'|C,  mEdit },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
@@ -277,11 +277,13 @@ void GraphicsWindow::EnsureValidActives(void) {
         }
     }
 
+    // And update the checked state for various menus
     bool locked = LockedInWorkplane();
     CheckMenuById(MNU_FREE_IN_3D, !locked);
     CheckMenuById(MNU_SEL_WORKPLANE, locked);
 
-    // And update the checked state for various menus
+    SS.UndoEnableMenus();
+
     switch(viewUnits) {
         case UNIT_MM:
         case UNIT_INCHES:
@@ -359,6 +361,14 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.later.showTW = true;
             break;
         }
+
+        case MNU_UNDO:
+            SS.UndoUndo();
+            break;
+        
+        case MNU_REDO:
+            SS.UndoRedo();
+            break;
 
         default: oops();
     }
@@ -514,6 +524,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 ClearSelection();
                 pending.constraint = hover.constraint;
                 pending.operation = DRAGGING_CONSTRAINT;
+            }
+            if(pending.operation != 0) {
+                // We just started a drag, so remember for the undo before
+                // the drag changes anything.
+                SS.UndoRemember();
             }
         } else {
             // Otherwise, just hit test and give up; but don't hit test
@@ -859,6 +874,11 @@ void GraphicsWindow::MouseMiddleDown(double x, double y) {
 }
 
 hRequest GraphicsWindow::AddRequest(int type) {
+    return AddRequest(type, true);
+}
+hRequest GraphicsWindow::AddRequest(int type, bool rememberForUndo) {
+    if(rememberForUndo) SS.UndoRemember();
+
     Request r;
     memset(&r, 0, sizeof(r));
     r.group = activeGroup;
@@ -921,6 +941,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_DATUM_POINT:
             hr = AddRequest(Request::DATUM_POINT);
             SS.GetEntity(hr.entity(0))->PointForceTo(v);
+            ConstrainPointByHovered(hr.entity(0));
 
             ClearSuper();
 
@@ -947,8 +968,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
             hRequest lns[4];
             int i;
+            SS.UndoRemember();
             for(i = 0; i < 4; i++) {
-                lns[i] = AddRequest(Request::LINE_SEGMENT);
+                lns[i] = AddRequest(Request::LINE_SEGMENT, false);
             }
             for(i = 0; i < 4; i++) {
                 Constraint::ConstrainCoincident(
@@ -1136,6 +1158,8 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 void GraphicsWindow::EditControlDone(char *s) {
     Expr *e = Expr::From(s);
     if(e) {
+        SS.UndoRemember();
+
         Constraint *c = SS.GetConstraint(constraintBeingEdited);
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
@@ -1193,6 +1217,8 @@ Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {
 }
 
 void GraphicsWindow::Paint(int w, int h) {
+    SDWORD in = GetMilliseconds();
+
     havePainted = true;
     width = w; height = h;
 
@@ -1250,6 +1276,7 @@ void GraphicsWindow::Paint(int w, int h) {
     // Draw the groups; this fills the polygons in a drawing group, and
     // draws the solid mesh.
     (SS.GetGroup(activeGroup))->Draw();
+    dbp("done group: %d ms", GetMilliseconds() - in);
 
     // First, draw the entire scene. We don't necessarily want to draw
     // things with normal z-buffering behaviour; e.g. we always want to
@@ -1263,6 +1290,7 @@ void GraphicsWindow::Paint(int w, int h) {
             SS.entity.elem[i].Draw(a);
         }
     }
+    dbp("done entity: %d ms", GetMilliseconds() - in);
 
     glDisable(GL_DEPTH_TEST);
     // Draw the constraints
@@ -1280,5 +1308,9 @@ void GraphicsWindow::Paint(int w, int h) {
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
     }
+
+    dbp("till end: %d ms", GetMilliseconds() - in);
+    dbp("entity.n: %d", SS.entity.n);
+    dbp("param.n: %d", SS.param.n);
 }
 

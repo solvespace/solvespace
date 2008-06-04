@@ -132,6 +132,8 @@ public:
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
         // Edit
+        MNU_UNDO,
+        MNU_REDO,
         MNU_DELETE,
         MNU_UNSELECT_ALL,
         // Request
@@ -248,6 +250,7 @@ public:
     hConstraint constraintBeingEdited;
 
     bool ConstrainPointByHovered(hEntity pt);
+    hRequest AddRequest(int type, bool rememberForUndo);
     hRequest AddRequest(int type);
     
     // The current selection.

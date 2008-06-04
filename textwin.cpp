@@ -540,6 +540,8 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.GW.selection[0].entity = hr.entity(0);
 }
 void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
+    SS.UndoRemember();
+
     Group *g = SS.GetGroup(SS.TW.shown->group);
     if(g->subtype == Group::ONE_SIDED) {
         g->subtype = Group::TWO_SIDED;
@@ -551,6 +553,8 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
+    SS.UndoRemember();
+
     Group *g = SS.GetGroup(SS.TW.shown->group);
     g->meshCombine = v;
     SS.MarkGroupDirty(g->h);
@@ -558,6 +562,8 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenColor(int link, DWORD v) {
+    SS.UndoRemember();
+
     Group *g = SS.GetGroup(SS.TW.shown->group);
     if(v < 0 || v >= MODEL_COLORS) return;
     g->color = SS.TW.modelColor[v];
@@ -578,6 +584,8 @@ void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
+    SS.UndoRemember();
+
     hGroup hg = SS.TW.shown->group;
     if(hg.v == SS.GW.activeGroup.v) {
         Error("This group is currently active; activate a different group "
@@ -763,6 +771,8 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_TIMES_REPEATED: {
             Expr *e = Expr::From(s);
             if(e) {
+                SS.UndoRemember();
+
                 Group *g = SS.GetGroup(edit.group);
                 Expr::FreeKeep(&(g->exprA));
                 g->exprA = e->DeepCopyKeep();
@@ -786,6 +796,8 @@ void TextWindow::EditControlDone(char *s) {
             if(invalid || !*s) {
                 Error("Invalid characters. Allowed are: A-Z a-z 0-9 _ -");
             } else {
+                SS.UndoRemember();
+
                 Group *g = SS.GetGroup(edit.group);
                 g->name.strcpy(s);
             }

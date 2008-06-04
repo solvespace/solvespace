@@ -131,7 +131,7 @@ void Group::MenuGroup(int id) {
 
         default: oops();
     }
-
+    SS.UndoRemember();
     SS.group.AddAndAssignId(&g);
     if(g.type == IMPORTED) {
         SS.ReloadAllImported();
@@ -624,6 +624,7 @@ void Group::GeneratePolygon(void) {
             polyError.notClosedAt = error;
             poly.Clear();
         }
+        edges.Clear();
     }
 }
 

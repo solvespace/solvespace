@@ -141,8 +141,7 @@ public:
 
     // In general, the tag indicates the subsys that a variable/equation
     // has been assigned to; these are exceptions for variables:
-    static const int VAR_ASSUMED          = 10000;
-    static const int VAR_SUBSTITUTED      = 10001;
+    static const int VAR_SUBSTITUTED      = 10000;
     // and for equations:
     static const int EQ_SUBSTITUTED       = 20000;
 
@@ -218,13 +217,38 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
 
-    FILE        *fh;
+    // The state for undo/redo
+    typedef struct {
+        IdList<Group,hGroup>            group;
+        IdList<Request,hRequest>        request;
+        IdList<Constraint,hConstraint>  constraint;
+        IdList<Param,hParam>            param;
+        hGroup                          activeGroup;
+    } UndoState;
+    static const int MAX_UNDO = 16;
+    typedef struct {
+        UndoState   d[MAX_UNDO];
+        int         cnt;
+        int         write;
+    } UndoStack;
+    UndoStack   undo;
+    UndoStack   redo;
+    void UndoEnableMenus(void);
+    void UndoRemember(void);
+    void UndoUndo(void);
+    void UndoRedo(void);
+    void PushFromCurrentOnto(UndoStack *uk);
+    void PopOntoCurrentFrom(UndoStack *uk);
+    void UndoClearState(UndoState *ut);
+    void UndoClearStack(UndoStack *uk);
 
+    // File load/save routines, including the additional files that get
+    // loaded when we have import groups.
+    FILE        *fh;
     void Init(char *cmdLine);
     void AfterNewFile(void);
     static void RemoveFromRecentList(char *file);
     static void AddToRecentList(char *file);
-
     char saveFile[MAX_PATH];
     bool unsaved;
     typedef struct {
@@ -256,6 +280,8 @@ public:
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);
 
+    // Consistency checking on the sketch: stuff with missing dependencies
+    // will get deleted automatically.
     struct {
         int     requests;
         int     groups;

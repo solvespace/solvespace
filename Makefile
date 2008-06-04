@@ -20,6 +20,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\constraint.obj \
            $(OBJDIR)\drawconstraint.obj \
            $(OBJDIR)\file.obj \
+           $(OBJDIR)\undoredo.obj \
            $(OBJDIR)\system.obj \
            $(OBJDIR)\polygon.obj \
            $(OBJDIR)\mesh.obj \

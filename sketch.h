@@ -375,7 +375,6 @@ public:
 
     double      val;
     bool        known;
-    bool        assumed;
 
     // Used only in the solver
     hParam      substd;
@@ -428,7 +427,6 @@ public:
 
     // These are the parameters for the constraint.
     Expr        *exprA;
-    Expr        *exprB;
     hEntity     ptA;
     hEntity     ptB;
     hEntity     ptC;
@@ -443,6 +441,7 @@ public:
 
     char *DescriptionString(void);
 
+    static void AddConstraint(Constraint *c, bool rememberForUndo);
     static void AddConstraint(Constraint *c);
     static void MenuConstrain(int id);
     

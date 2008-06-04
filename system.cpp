@@ -470,8 +470,6 @@ void System::Solve(Group *g) {
             Param *pp = SS.GetParam(p->h);
             pp->val = val;
             pp->known = true;
-            // The main param table keeps track of what was assumed.
-            pp->assumed = (p->tag == VAR_ASSUMED);
         }
         if(g->solved.how != Group::SOLVED_OKAY) {
             g->solved.how = Group::SOLVED_OKAY;

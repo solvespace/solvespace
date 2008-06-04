@@ -20,6 +20,9 @@ hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
 }
 
 void SolveSpace::NewFile(void) {
+    UndoClearStack(&redo);
+    UndoClearStack(&undo);
+
     constraint.Clear();
     request.Clear();
     group.Clear();
@@ -131,7 +134,6 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.group.v",       'x',    &(SS.sv.c.group.v)            },
     { 'c',  "Constraint.workplane.v",   'x',    &(SS.sv.c.workplane.v)        },
     { 'c',  "Constraint.exprA",         'E',    &(SS.sv.c.exprA)              },
-    { 'c',  "Constraint.exprB",         'E',    &(SS.sv.c.exprB)              },
     { 'c',  "Constraint.ptA.v",         'x',    &(SS.sv.c.ptA.v)              },
     { 'c',  "Constraint.ptB.v",         'x',    &(SS.sv.c.ptB.v)              },
     { 'c',  "Constraint.ptC.v",         'x',    &(SS.sv.c.ptC.v)              },
@@ -373,7 +375,10 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
             char *key = line, *val = e+1;
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
-
+            // Don't leak memory; these get allocated whether we want them
+            // or not.
+            if(sv.g.exprA) Expr::FreeKeep(&(sv.g.exprA));
+            sv.g.remap.Clear();
         } else if(strcmp(line, "AddParam")==0) {
 
         } else if(strcmp(line, "AddEntity")==0) {
@@ -382,7 +387,7 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
         } else if(strcmp(line, "AddRequest")==0) {
 
         } else if(strcmp(line, "AddConstraint")==0) {
-
+            if(sv.c.exprA) Expr::FreeKeep(&(sv.c.exprA));
         } else if(strcmp(line, VERSION_STRING)==0) {
 
         } else if(memcmp(line, "Triangle", 8)==0) {
