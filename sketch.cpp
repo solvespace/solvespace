@@ -737,13 +737,22 @@ void Group::GenerateMesh(void) {
     // So our group's mesh appears in outm. Combine this with the previous
     // group's mesh, using the requested operation.
     mesh.Clear();
+    bool prevMeshError = meshError.yes;
+    meshError.yes = false;
+    meshError.interferesAt.Clear();
     SMesh *a = PreviousGroupMesh();
     if(meshCombine == COMBINE_AS_UNION) {
         mesh.MakeFromUnion(a, &outm);
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         mesh.MakeFromDifference(a, &outm);
     } else {
-
+        if(!mesh.MakeFromInterferenceCheck(a, &outm, &(meshError.interferesAt)))
+            meshError.yes = true;
+        // And the list of failed triangles appears in meshError.interferesAt
+    }
+    if(prevMeshError != meshError.yes) {
+        // The error is reported in the text window for the group.
+        SS.later.showTW = true;
     }
     outm.Clear();
 }
@@ -788,6 +797,23 @@ void Group::Draw(void) {
     glEnable(GL_LIGHTING);
     if(SS.GW.showShaded) glxFillMesh(specColor, &mesh, mh, ms1, ms2);
     glDisable(GL_LIGHTING);
+
+    if(meshError.yes) {
+        // Draw the error triangles in bright red stripes, with no Z buffering
+        GLubyte mask[32*32/8];
+        memset(mask, 0xf0, sizeof(mask));
+        glPolygonStipple(mask);
+
+        int specColor = 0;
+        glDisable(GL_DEPTH_TEST);
+        glColor3d(0, 0, 0);
+        glxFillMesh(0, &meshError.interferesAt, 0, 0, 0);
+        glEnable(GL_POLYGON_STIPPLE);
+        glColor3d(1, 0, 0);
+        glxFillMesh(0, &meshError.interferesAt, 0, 0, 0);
+        glEnable(GL_DEPTH_TEST);
+        glDisable(GL_POLYGON_STIPPLE);
+    }
 
     if(SS.GW.showMesh) glxDebugMesh(&mesh);
 

@@ -656,6 +656,9 @@ void TextWindow::ShowGroupInfo(void) {
             Group::COMBINE_AS_ASSEMBLE,
             (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
     }
+    if(g->type == Group::IMPORTED && g->meshError.yes) {
+        Printf(false, "%Fx         the parts interfere!");
+    }
 
     if(g->type == Group::EXTRUDE) {
 #define TWOX(v) v v

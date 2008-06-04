@@ -191,6 +191,7 @@ public:
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
     void MakeFromUnion(SMesh *a, SMesh *b);
     void MakeFromDifference(SMesh *a, SMesh *b);
+    bool MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *errorAt);
 
     DWORD FirstIntersectionWith(Point2d mp);
 };

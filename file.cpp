@@ -234,7 +234,7 @@ bool SolveSpace::SaveToFile(char *filename) {
         double mag = tr->Normal().Magnitude();
         dbp("triangle: mag=%.5f", mag); */
         fprintf(fh, "Triangle %08x %08x  "
-                    "%.3f %.3f %.3f  %.3f %.3f %.3f  %.3f %.3f %.3f\n",
+                "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color,
             CO(tr->a), CO(tr->b), CO(tr->c));
     }

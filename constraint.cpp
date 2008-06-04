@@ -567,14 +567,21 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 ExprVector ea = a->PointGetExprs();
                 ExprVector eb = b->PointGetExprs();
                 ExprVector eab = ea.Minus(eb);
+
+                // Construct a vector from the point to either endpoint of
+                // the line segment, and choose the longer of these.
                 ExprVector eap = ea.Minus(ep);
+                ExprVector ebp = eb.Minus(ep);
+                ExprVector elp = 
+                    (ebp.Magnitude()->Eval() > eap.Magnitude()->Eval()) ?
+                        ebp : eap;
 
                 if(p->group.v == group.v) {
-                    AddEq(l, VectorsParallel(0, eab, eap), 0);
-                    AddEq(l, VectorsParallel(1, eab, eap), 1);
+                    AddEq(l, VectorsParallel(0, eab, elp), 0);
+                    AddEq(l, VectorsParallel(1, eab, elp), 1);
                 } else {
-                    AddEq(l, VectorsParallel(0, eap, eab), 0);
-                    AddEq(l, VectorsParallel(1, eap, eab), 1);
+                    AddEq(l, VectorsParallel(0, elp, eab), 0);
+                    AddEq(l, VectorsParallel(1, elp, eab), 1);
                 }
             } else {
                 AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);

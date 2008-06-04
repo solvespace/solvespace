@@ -124,6 +124,10 @@ public:
         bool            yes;
     }               polyError;
     SMesh           mesh;
+    struct {
+        SMesh           interferesAt;
+        bool            yes;
+    }               meshError;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;

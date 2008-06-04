@@ -225,7 +225,7 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     SBsp3 *bspb = SBsp3::FromMesh(b);
 
     flipNormal = true;
-    keepCoplanar = false;
+    keepCoplanar = true;
     AddAgainstBsp(b, bspa);
 
     flipNormal = false;
@@ -233,6 +233,31 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     AddAgainstBsp(a, bspb);
     dbp("dt = %d", GetMilliseconds() - in);
     dbp("tris = %d", l.n);
+}
+
+bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {
+    SBsp3 *bspa = SBsp3::FromMesh(srca);
+    SBsp3 *bspb = SBsp3::FromMesh(srcb);
+
+    error->Clear();
+    error->flipNormal = true;
+    error->keepCoplanar = false;
+
+    error->AddAgainstBsp(srcb, bspa);
+    error->AddAgainstBsp(srca, bspb);
+    // Now we have a list of all the triangles (or fragments thereof) from
+    // A that lie inside B, or vice versa. That's the interference, and
+    // we report it so that it can be flagged.
+    
+    // But as far as the actual model, we just copy everything over.
+    int i;
+    for(i = 0; i < srca->l.n; i++) {
+        AddTriangle(&(srca->l.elem[i]));
+    }
+    for(i = 0; i < srcb->l.n; i++) {
+        AddTriangle(&(srcb->l.elem[i]));
+    }
+    return (error->l.n == 0);
 }
 
 DWORD SMesh::FirstIntersectionWith(Point2d mp) {
@@ -325,7 +350,9 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
         ll = ll->more;
     }
 
-    if(m->flipNormal && ((!pos2 && !onFace) || (onFace && !sameNormal))) {
+    if(m->flipNormal && ((!pos2 && !onFace) ||
+                                   (onFace && !sameNormal && m->keepCoplanar)))
+    {
         m->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
     } else if(!(m->flipNormal) && ((pos2 && !onFace) || 
                                    (onFace && sameNormal && m->keepCoplanar)))
