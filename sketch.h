@@ -80,10 +80,11 @@ public:
 
     static const int DRAWING_3D                    = 5000;
     static const int DRAWING_WORKPLANE             = 5001;
-    static const int EXTRUDE                       = 5010;
-    static const int ROTATE                        = 5020;
-    static const int TRANSLATE                     = 5030;
-    static const int IMPORTED                      = 6000;
+    static const int EXTRUDE                       = 5100;
+    static const int LATHE                         = 5101;
+    static const int ROTATE                        = 5200;
+    static const int TRANSLATE                     = 5201;
+    static const int IMPORTED                      = 5300;
     int type;
 
     hGroup      opA;

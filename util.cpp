@@ -281,6 +281,12 @@ Vector Vector::Normal(int which) {
     return n;
 }
 
+Vector Vector::RotatedAbout(Vector orig, Vector axis, double theta) {
+    Vector r = this->Minus(orig);
+    r = r.RotatedAbout(axis, theta);
+    return r.Plus(orig);
+}
+
 Vector Vector::RotatedAbout(Vector axis, double theta) {
     double c = cos(theta);
     double s = sin(theta);
@@ -302,6 +308,11 @@ Vector Vector::RotatedAbout(Vector axis, double theta) {
             (z)*(c + (1 - c)*(axis.z)*(axis.z));
 
     return r;
+}
+
+double Vector::DistanceToLine(Vector p0, Vector dp) {
+    double m = dp.Magnitude();
+    return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
 double Vector::Magnitude(void) {

@@ -53,7 +53,9 @@ public:
     Vector Cross(Vector b);
     double Dot(Vector b);
     Vector Normal(int which);
+    Vector RotatedAbout(Vector orig, Vector axis, double theta);
     Vector RotatedAbout(Vector axis, double theta);
+    double DistanceToLine(Vector p0, Vector dp);
     double Magnitude(void);
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);

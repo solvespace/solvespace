@@ -640,6 +640,9 @@ void TextWindow::ShowGroupInfo(void) {
             &TextWindow::ScreenChangeOneOrTwoSides,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
     }
+    if(g->type == Group::LATHE) {
+        Printf(true, "%FtLATHE");
+    }
 
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
         int times = (int)(g->exprA->Eval());
@@ -648,7 +651,10 @@ void TextWindow::ShowGroupInfo(void) {
             g->h.v, &TextWindow::ScreenChangeExprA);
     }
 
-    if(g->type == Group::EXTRUDE || g->type == Group::IMPORTED) {
+    if(g->type == Group::EXTRUDE ||
+       g->type == Group::LATHE ||
+       g->type == Group::IMPORTED)
+    {
         bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
         bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
         bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);

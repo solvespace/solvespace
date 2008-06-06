@@ -41,6 +41,7 @@ clean:
 
 $(OBJDIR)/solvespace.exe: $(SSOBJS) $(W32OBJS) $(FREEZE)
     @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(W32OBJS) $(FREEZE) $(LIBS)
+    editbin /nologo /STACK:8388608 $(OBJDIR)/solvespace.exe
     @echo solvespace.exe
 
 $(SSOBJS): $(@B).cpp $(HEADERS)

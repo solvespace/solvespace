@@ -110,6 +110,51 @@ void Group::GenerateMesh(void) {
             }
         }
         edges.Clear();
+    } else if(type == LATHE) {
+        SEdgeList edges;
+        ZERO(&edges);
+        int a, i;
+
+        Group *src = SS.GetGroup(opA);
+        (src->poly).MakeEdgesInto(&edges);
+
+        STriMeta meta = { 0, color };
+        Vector orig = SS.GetEntity(predef.origin)->PointGetNum();
+        Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
+        axis = axis.WithMagnitude(1);
+
+        int n = 20;
+        for(a = 0; a <= n; a++) {
+            double thetai = (2*PI*WRAP(a-1, n))/n, thetaf = (2*PI*a)/n;
+            for(i = 0; i < edges.l.n; i++) {
+                SEdge *edge = &(edges.l.elem[i]);
+
+                double da = (edge->a).DistanceToLine(orig, axis);
+                double db = (edge->b).DistanceToLine(orig, axis);
+
+                Vector ai = (edge->a).RotatedAbout(orig, axis, thetai);
+                Vector bi = (edge->b).RotatedAbout(orig, axis, thetai);
+                Vector af = (edge->a).RotatedAbout(orig, axis, thetaf);
+                Vector bf = (edge->b).RotatedAbout(orig, axis, thetaf);
+
+                Vector ab = (edge->b).Minus(edge->a);
+                Vector out = ((src->poly).normal).Cross(ab);
+                out = out.RotatedAbout(axis, thetai);
+
+                STriangle quad1 = STriangle::From(meta, ai, bi, af),
+                          quad2 = STriangle::From(meta, af, bi, bf);
+                Vector n1 = quad1.Normal(), n2 = quad2.Normal();
+                Vector n = (n1.Magnitude() > n2.Magnitude()) ? n1 : n2;
+                if(n.Dot(out) < 0) {
+                    quad1.FlipNormal();
+                    quad2.FlipNormal();
+                }
+                // If one of the endpoints lies on the axis of rotation,
+                // then the quad is just a single triangle
+                if(da >= LENGTH_EPS) outm.AddTriangle(&quad1);
+                if(db >= LENGTH_EPS) outm.AddTriangle(&quad2);
+            }
+        }
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.
@@ -175,7 +220,7 @@ void Group::Draw(void) {
     // to show or hide just this with the "show solids" flag.
 
     int specColor;
-    if(type != EXTRUDE && type != IMPORTED) {
+    if(type != EXTRUDE && type != IMPORTED && type != LATHE) {
         specColor = RGB(25, 25, 25); // force the color to something dim
     } else {
         specColor = -1; // use the model color

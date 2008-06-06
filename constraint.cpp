@@ -673,8 +673,8 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
                 Expr *au, *av, *bu, *bv;
                 ea->PointGetExprsInWorkplane(plane->h, &au, &av);
                 eb->PointGetExprsInWorkplane(plane->h, &bu, &bv);
-                AddEq(l, au->Minus(bu), 0);
-                AddEq(l, av->Minus(bv), 1);
+                AddEq(l, au->Minus(bu), 1);
+                AddEq(l, av->Minus(bv), 2);
             } else {
                 Entity *plane = SS.GetEntity(entityA);
                 Entity *a = SS.GetEntity(ptA);
@@ -717,10 +717,10 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
 
             if(type == SYMMETRIC_HORIZ) {
                 AddEq(l, av->Minus(bv), 0);
-                AddEq(l, au->Plus(bu), 0);
+                AddEq(l, au->Plus(bu), 1);
             } else {
                 AddEq(l, au->Minus(bu), 0);
-                AddEq(l, av->Plus(bv), 0);
+                AddEq(l, av->Plus(bv), 1);
             }
             break;
         }

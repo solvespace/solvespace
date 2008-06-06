@@ -81,6 +81,24 @@ void Group::MenuGroup(int id) {
             g.name.strcpy("extrude");
             break;
 
+        case GraphicsWindow::MNU_GROUP_LATHE:
+            if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
+                g.predef.origin = gs.point[0];
+                g.predef.entityB = gs.vector[0];
+            } else if(gs.lineSegments == 1 && gs.n == 1) {
+                g.predef.origin = SS.GetEntity(gs.entity[0])->point[0];
+                g.predef.entityB = gs.entity[0];
+                // since a line segment is a vector
+            } else {
+                Error("Bad selection for new lathe group.");
+                return;
+            }
+            g.type = LATHE;
+            g.opA = SS.GW.activeGroup;
+            g.color = RGB(100, 100, 100);
+            g.name.strcpy("lathe");
+            break;
+
         case GraphicsWindow::MNU_GROUP_ROT: {
             Vector n;
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
@@ -128,17 +146,20 @@ void Group::MenuGroup(int id) {
     }
     SS.UndoRemember();
     SS.group.AddAndAssignId(&g);
-    if(g.type == IMPORTED) {
+    Group *gg = SS.GetGroup(g.h);
+
+    if(gg->type == IMPORTED) {
         SS.ReloadAllImported();
     }
+    gg->clean = false;
+    SS.GW.activeGroup = gg->h;
     SS.GenerateAll();
-    SS.GW.activeGroup = g.h;
-    if(g.type == DRAWING_WORKPLANE) {
-        SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
+    if(gg->type == DRAWING_WORKPLANE) {
+        gg->activeWorkplane = gg->h.entity(0);
     }
-    SS.GetGroup(g.h)->Activate();
+    gg->Activate();
     SS.GW.AnimateOntoWorkplane();
-    TextWindow::ScreenSelectGroup(0, g.h.v);
+    TextWindow::ScreenSelectGroup(0, gg->h.v);
     SS.later.showTW = true;
 }
 
@@ -259,6 +280,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // Remapped versions of that arbitrary point will be used to
             // provide points on the plane faces.
             MakeExtrusionTopBottomFaces(entity, pt);
+            break;
+        }
+
+        case LATHE: {
             break;
         }
 

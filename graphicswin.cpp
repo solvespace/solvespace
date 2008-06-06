@@ -38,16 +38,17 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
-{ 0, "&New Feature",                        0,                  0,      NULL  },
+{ 0, "&New Group",                          0,                  0,      NULL  },
 { 1, "&Drawing in 3d\tShift+Ctrl+D",        MNU_GROUP_3D,      'D'|S|C, mGrp  },
 { 1, "Drawing in Workplane\tShift+Ctrl+W",  MNU_GROUP_WRKPL,   'W'|S|C, mGrp  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Step &Translating\tShift+Ctrl+R",     MNU_GROUP_TRANS,    'T'|S|C,mGrp  },
 { 1, "Step &Rotating\tShift+Ctrl+T",        MNU_GROUP_ROT,      'R'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Extrusion\tShift+Ctrl+X",             MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
+{ 1, "Extrude\tShift+Ctrl+X",               MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
+{ 1, "Lathe\tShift+Ctrl+L",                 MNU_GROUP_LATHE,    'L'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Import...\tShift+Ctrl+I",             MNU_GROUP_IMPORT,   'I'|S|C,mGrp  },
+{ 1, "Import / Assemble...\tShift+Ctrl+I",  MNU_GROUP_IMPORT,   'I'|S|C,mGrp  },
 {11, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
 
 { 0, "&Request",                            0,                          NULL  },
@@ -379,9 +380,14 @@ void GraphicsWindow::MenuRequest(int id) {
     switch(id) {
         case MNU_SEL_WORKPLANE: {
             SS.GW.GroupSelection();
+            Group *g = SS.GetGroup(SS.GW.activeGroup);
+
             if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
-                SS.GetGroup(SS.GW.activeGroup)->activeWorkplane =
-                    SS.GW.gs.entity[0];
+                // A user-selected workplane
+                g->activeWorkplane = SS.GW.gs.entity[0];
+            } else if(g->type == Group::DRAWING_WORKPLANE) {
+                // The group's default workplane
+                g->activeWorkplane = g->h.entity(0);
             }
 
             if(!SS.GW.LockedInWorkplane()) {
