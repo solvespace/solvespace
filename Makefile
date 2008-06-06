@@ -14,10 +14,14 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\util.obj \
            $(OBJDIR)\entity.obj \
-           $(OBJDIR)\sketch.obj \
+           $(OBJDIR)\drawentity.obj \
+           $(OBJDIR)\group.obj \
+           $(OBJDIR)\groupmesh.obj \
+           $(OBJDIR)\request.obj \
            $(OBJDIR)\glhelper.obj \
            $(OBJDIR)\expr.obj \
            $(OBJDIR)\constraint.obj \
+           $(OBJDIR)\draw.obj \
            $(OBJDIR)\drawconstraint.obj \
            $(OBJDIR)\file.obj \
            $(OBJDIR)\undoredo.obj \
