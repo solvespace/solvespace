@@ -1,5 +1,4 @@
 
-point face distance constraint
 
 STL check for meshes, and T intersection removal
 STL export

@@ -145,6 +145,7 @@ void Entity::DrawOrGetDistance(void) {
         case POINT_IN_3D:
         case POINT_IN_2D: {
             Vector v = PointGetNum();
+            dogd.refp = v;
 
             if(dogd.drawing) {
                 double s = 3.5;

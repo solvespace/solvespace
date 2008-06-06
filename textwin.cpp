@@ -318,6 +318,10 @@ void TextWindow::DescribeSelection(void) {
             case Entity::FACE_XPROD:
             case Entity::FACE_N_ROT_TRANS:
                 Printf(false, "%FtPLANE FACE%E");
+                p = e->FaceGetPointNum();
+                Printf(true, "   through = " PT_AS_STR, COP);
+                p = e->FaceGetNormalNum();
+                Printf(false, "    normal = " PT_AS_STR, COP);
                 break;
 
             default:
