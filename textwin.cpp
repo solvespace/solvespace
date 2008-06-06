@@ -678,7 +678,7 @@ void TextWindow::ShowGroupInfo(void) {
         Printf(false, "%Fx         the parts interfere!");
     }
 
-    if(g->type == Group::EXTRUDE) {
+    if(g->type == Group::EXTRUDE || g->type == Group::LATHE) {
 #define TWOX(v) v v
         Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
             0x80000000 | modelColor[0], 0, &TextWindow::ScreenColor,
