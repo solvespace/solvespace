@@ -251,19 +251,19 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(SS.GetEntity(he), ai, REMAP_BOTTOM,
+                CopyEntity(entity, SS.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true, false);
-                CopyEntity(SS.GetEntity(he), af, REMAP_TOP,
+                CopyEntity(entity, SS.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true, false);
-                MakeExtrusionLines(he);
+                MakeExtrusionLines(entity, he);
             }
             // Remapped versions of that arbitrary point will be used to
             // provide points on the plane faces.
-            MakeExtrusionTopBottomFaces(pt);
+            MakeExtrusionTopBottomFaces(entity, pt);
             break;
         }
 
@@ -280,7 +280,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     if(e->group.v != opA.v) continue;
 
                     e->CalculateNumerical();
-                    CopyEntity(e,
+                    CopyEntity(entity, e,
                         a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
@@ -308,7 +308,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     if(e->group.v != opA.v) continue;
 
                     e->CalculateNumerical();
-                    CopyEntity(e,
+                    CopyEntity(entity, e,
                         a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
@@ -332,7 +332,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             for(i = 0; i < impEntity.n; i++) {
                 Entity *ie = &(impEntity.elem[i]);
 
-                CopyEntity(ie, 0, 0,
+                CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
                     false, false);
@@ -407,7 +407,7 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     return h.entity(em.h.v);
 }
 
-void Group::MakeExtrusionLines(hEntity in) {
+void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
     Entity *ep = SS.GetEntity(in);
 
     Entity en;
@@ -419,7 +419,7 @@ void Group::MakeExtrusionLines(hEntity in) {
         en.group = h;
         en.h = Remap(ep->h, REMAP_PT_TO_LINE);
         en.type = Entity::LINE_SEGMENT;
-        SS.entity.Add(&en);
+        el->Add(&en);
     } else if(ep->type == Entity::LINE_SEGMENT) {
         // A line gets extruded to form a plane face; an endpoint of the
         // original line is a point in the plane, and the line is in the plane.
@@ -436,11 +436,12 @@ void Group::MakeExtrusionLines(hEntity in) {
         en.group = h;
         en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
         en.type = Entity::FACE_XPROD;
-        SS.entity.Add(&en);
+        el->Add(&en);
     }
 }
 
-void Group::MakeExtrusionTopBottomFaces(hEntity pt) {
+void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
+{
     if(pt.v == 0) return;
     Group *src = SS.GetGroup(opA);
     Vector n = src->poly.normal;
@@ -453,14 +454,15 @@ void Group::MakeExtrusionTopBottomFaces(hEntity pt) {
     en.numNormal = Quaternion::From(0, n.x, n.y, n.z);
     en.point[0] = Remap(pt, REMAP_TOP);
     en.h = Remap(Entity::NO_ENTITY, REMAP_TOP);
-    SS.entity.Add(&en);
+    el->Add(&en);
 
     en.point[0] = Remap(pt, REMAP_BOTTOM);
     en.h = Remap(Entity::NO_ENTITY, REMAP_BOTTOM);
-    SS.entity.Add(&en);
+    el->Add(&en);
 }
 
-void Group::CopyEntity(Entity *ep, int timesApplied, int remap,
+void Group::CopyEntity(IdList<Entity,hEntity> *el,
+                       Entity *ep, int timesApplied, int remap,
                        hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz,
                        bool asTrans, bool asAxisAngle)
@@ -579,7 +581,7 @@ void Group::CopyEntity(Entity *ep, int timesApplied, int remap,
         default:
             oops();
     }
-    SS.entity.Add(&en);
+    el->Add(&en);
 }
 
 void Group::TagEdgesFromLineSegments(SEdgeList *el) {

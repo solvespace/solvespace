@@ -131,7 +131,11 @@ Vector Quaternion::RotationV(void) {
 }
 
 Vector Quaternion::RotationN(void) {
-    return RotationU().Cross(RotationV());
+    Vector v;
+    v.x = 2*w*vy + 2*vx*vz;
+    v.y = 2*vy*vz - 2*w*vx;
+    v.z = w*w - vx*vx - vy*vy + vz*vz;
+    return v;
 }
 
 Vector Quaternion::Rotate(Vector p) {

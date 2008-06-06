@@ -642,16 +642,55 @@ void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
     }
 }
 
-void Entity::Draw(int order) {
+void Entity::DrawAll(void) {
+    // This handles points and line segments as a special case, because I
+    // seem to be able to get a huge speedup that way, by consolidating
+    // stuff to gl.
+    int i;
+    if(SS.GW.showPoints) {
+        double s = 3.5/SS.GW.scale;
+        Vector r = SS.GW.projRight.ScaledBy(s);
+        Vector d = SS.GW.projUp.ScaledBy(s);
+        glxColor3d(0, 0.8, 0);
+        glPolygonOffset(-10, -10);
+        glBegin(GL_QUADS);
+        for(i = 0; i < SS.entity.n; i++) {
+            Entity *e = &(SS.entity.elem[i]);
+            if(!e->IsPoint()) continue;
+            if(!(SS.GetGroup(e->group)->visible)) continue;
+
+            Vector v = e->PointGetNum();
+            glxVertex3v(v.Plus (r).Plus (d));
+            glxVertex3v(v.Plus (r).Minus(d));
+            glxVertex3v(v.Minus(r).Minus(d));
+            glxVertex3v(v.Minus(r).Plus (d));
+        }
+        glEnd();
+        glPolygonOffset(0, 0);
+    }
+
+    glLineWidth(1.5);
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(e->IsPoint())
+        {
+            continue; // already handled
+        }
+        e->Draw();
+    }
+    glLineWidth(1);
+}
+
+void Entity::Draw(void) {
     dogd.drawing = true;
     dogd.edges = NULL;
-    DrawOrGetDistance(order);
+    DrawOrGetDistance();
 }
 
 void Entity::GenerateEdges(SEdgeList *el) {
     dogd.drawing = false;
     dogd.edges = el;
-    DrawOrGetDistance(-1);
+    DrawOrGetDistance();
     dogd.edges = NULL;
 }
 
@@ -661,7 +700,7 @@ double Entity::GetDistance(Point2d mp) {
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
-    DrawOrGetDistance(-1);
+    DrawOrGetDistance();
     
     return dogd.dmin;
 }
@@ -671,7 +710,7 @@ Vector Entity::GetReferencePos(void) {
     dogd.edges = NULL;
 
     dogd.refp = SS.GW.offset.ScaledBy(-1);
-    DrawOrGetDistance(-1);
+    DrawOrGetDistance();
 
     return dogd.refp;
 }
@@ -697,15 +736,14 @@ bool Entity::IsVisible(void) {
     return true;
 }
 
-void Entity::DrawOrGetDistance(int order) {  
-    Group *g = SS.GetGroup(group);
+void Entity::DrawOrGetDistance(void) {  
     // If an entity is invisible, then it doesn't get shown, and it doesn't
     // contribute a distance for the selection, but it still generates edges.
     if(!dogd.edges) {
         if(!IsVisible()) return;
     }
 
-    glLineWidth(1.5);
+    Group *g = SS.GetGroup(group);
 
     if(group.v != SS.GW.activeGroup.v) {
         glxColor3d(0.5, 0.3, 0.0);
@@ -722,8 +760,6 @@ void Entity::DrawOrGetDistance(int order) {
         case POINT_N_ROT_AA:
         case POINT_IN_3D:
         case POINT_IN_2D: {
-            if(order >= 0 && order != 2) break;
-
             Vector v = PointGetNum();
 
             if(dogd.drawing) {
@@ -754,8 +790,6 @@ void Entity::DrawOrGetDistance(int order) {
         case NORMAL_N_ROT_AA:
         case NORMAL_IN_3D:
         case NORMAL_IN_2D: {
-            if(order >= 0 && order != 2) break;
-
             int i;
             for(i = 0; i < 2; i++) {
                 hRequest hr = h.request();
@@ -799,7 +833,7 @@ void Entity::DrawOrGetDistance(int order) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
-            glLineWidth(1);
+            glLineWidth(1.5);
             break;
         }
 
@@ -809,8 +843,6 @@ void Entity::DrawOrGetDistance(int order) {
             break;
 
         case WORKPLANE: {
-            if(order >= 0 && order != 0) break;
-
             Vector p;
             p = SS.GetEntity(point[0])->PointGetNum();
 
@@ -841,6 +873,7 @@ void Entity::DrawOrGetDistance(int order) {
             LineDrawOrGetDistance(mm, mp);
             LineDrawOrGetDistance(mp, pp);
             glDisable(GL_LINE_STIPPLE);
+            glLineWidth(1.5);
 
             char *str = DescriptionString()+5;
             if(dogd.drawing) {
@@ -862,7 +895,6 @@ void Entity::DrawOrGetDistance(int order) {
         }
 
         case LINE_SEGMENT: {
-            if(order >= 0 && order != 1) break;
             Vector a = SS.GetEntity(point[0])->PointGetNum();
             Vector b = SS.GetEntity(point[1])->PointGetNum();
             LineDrawOrGetDistanceOrEdge(a, b);
@@ -870,7 +902,6 @@ void Entity::DrawOrGetDistance(int order) {
         }
 
         case CUBIC: {
-            if(order >= 0 && order != 1) break;
             Vector p0 = SS.GetEntity(point[0])->PointGetNum();
             Vector p1 = SS.GetEntity(point[1])->PointGetNum();
             Vector p2 = SS.GetEntity(point[2])->PointGetNum();
@@ -892,7 +923,6 @@ void Entity::DrawOrGetDistance(int order) {
 
 #define CIRCLE_SIDES(r) (7 + (int)(sqrt(r*SS.GW.scale)))
         case ARC_OF_CIRCLE: {
-            if(order >= 0 && order != 1) break;
             Vector c  = SS.GetEntity(point[0])->PointGetNum();
             Vector pa = SS.GetEntity(point[1])->PointGetNum();
             Vector pb = SS.GetEntity(point[2])->PointGetNum();
@@ -919,8 +949,6 @@ void Entity::DrawOrGetDistance(int order) {
         }
 
         case CIRCLE: {
-            if(order >= 0 && order != 1) break;
-
             Quaternion q = SS.GetEntity(normal)->NormalGetNum();
             double r = SS.GetEntity(distance)->DistanceGetNum();
             Vector center = SS.GetEntity(point[0])->PointGetNum();
@@ -948,8 +976,6 @@ void Entity::DrawOrGetDistance(int order) {
         default:
             oops();
     }
-
-    glLineWidth(1);
 }
 
 void Entity::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {

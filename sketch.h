@@ -158,10 +158,11 @@ public:
     static const int REMAP_PT_TO_LINE   = 1003;
     static const int REMAP_LINE_TO_FACE = 1004;
     hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(hEntity in);
-    void MakeExtrusionTopBottomFaces(hEntity pt);
+    void MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in);
+    void MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt);
     void TagEdgesFromLineSegments(SEdgeList *sle);
-    void CopyEntity(Entity *ep, int timesApplied, int remap,
+    void CopyEntity(IdList<Entity,hEntity> *el,
+                    Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
                     bool asTrans, bool asAxisAngle);
@@ -353,9 +354,10 @@ public:
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
     void LineDrawOrGetDistanceOrEdge(Vector a, Vector b);
-    void DrawOrGetDistance(int order);
+    void DrawOrGetDistance(void);
 
-    void Draw(int order);
+    static void DrawAll(void);
+    void Draw(void);
     double GetDistance(Point2d mp);
     void GenerateEdges(SEdgeList *el);
     Vector GetReferencePos(void);

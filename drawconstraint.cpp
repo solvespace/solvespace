@@ -513,6 +513,7 @@ s:
 
 void Constraint::Draw(void) {
     dogd.drawing = true;
+    glLineWidth(1);
     DrawOrGetDistance(NULL);
 }
 

@@ -278,7 +278,9 @@ bool System::SolveLeastSquares(void) {
     // changes in some parameters, and smaller in others.
     for(c = 0; c < mat.n; c++) {
         if(IsDragged(mat.param[c])) {
-            mat.scale[c] = 1/5.0;
+            // It's least squares, so this parameter doesn't need to be all
+            // that big to get a large effect.
+            mat.scale[c] = 1/20.0;
         } else {
             mat.scale[c] = 1;
         }

@@ -102,10 +102,19 @@ public:
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
             elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
-            if(!elem) oops();
         }
 
-        elem[n] = *t;
+        int i = 0;
+        if(n == 0 || elem[n-1].h.v < t->h.v) {
+            i = n;
+        } else {
+            while(i < n && elem[i].h.v < t->h.v) {
+                i++;
+            }
+        }
+        if(i < n && elem[i].h.v == t->h.v) oops();
+        memmove(elem+i+1, elem+i, (n-i)*sizeof(elem[0]));
+        elem[i] = *t;
         n++;
     }
     
@@ -119,10 +128,16 @@ public:
     }
 
     T *FindByIdNoOops(H h) {
-        int i;
-        for(i = 0; i < n; i++) {
-            if(elem[i].h.v == h.v) {
-                return &(elem[i]);
+        int first = 0, last = n-1;
+        while(first <= last) {
+            int mid = (first + last)/2;
+            H hm = elem[mid].h;
+            if(hm.v > h.v) {
+                last = mid-1; // and first stays the same
+            } else if(hm.v < h.v) {
+                first = mid+1; // and last stays the same
+            } else {
+                return &(elem[mid]);
             }
         }
         return NULL;

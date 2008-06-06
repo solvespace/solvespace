@@ -708,9 +708,11 @@ void GraphicsWindow::Selection::Clear(void) {
 void GraphicsWindow::Selection::Draw(void) {
     Vector refp;
     if(entity.v) {
+        glLineWidth(1.5);
         Entity *e = SS.GetEntity(entity);
-        e->Draw(-1);
+        e->Draw();
         if(emphasized) refp = e->GetReferencePos();
+        glLineWidth(1);
     }
     if(constraint.v) {
         Constraint *c = SS.GetConstraint(constraint);
@@ -749,7 +751,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     int i;
     double d, dmin = 1e12;
     Selection s;
-    memset(&s, 0, sizeof(s));
+    ZERO(&s);
 
     // Do the entities
     for(i = 0; i < SS.entity.n; i++) {
@@ -1217,8 +1219,6 @@ Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {
 }
 
 void GraphicsWindow::Paint(int w, int h) {
-    SDWORD in = GetMilliseconds();
-
     havePainted = true;
     width = w; height = h;
 
@@ -1272,25 +1272,14 @@ void GraphicsWindow::Paint(int w, int h) {
 
     glxUnlockColor();
 
-    int i, a;
+    int i;
     // Draw the groups; this fills the polygons in a drawing group, and
     // draws the solid mesh.
     (SS.GetGroup(activeGroup))->Draw();
-    dbp("done group: %d ms", GetMilliseconds() - in);
 
-    // First, draw the entire scene. We don't necessarily want to draw
-    // things with normal z-buffering behaviour; e.g. we always want to
-    // draw a line segment in front of a reference. So we have three draw
-    // levels, and only the first gets normal depth testing.
-    for(a = 0; a <= 2; a++) {
-        // Three levels: 0 least prominent (e.g. a reference workplane), 1 is
-        // middle (e.g. line segment), 2 is always in front (e.g. point).
-        if(a >= 1 && showHdnLines) glDisable(GL_DEPTH_TEST);
-        for(i = 0; i < SS.entity.n; i++) {
-            SS.entity.elem[i].Draw(a);
-        }
-    }
-    dbp("done entity: %d ms", GetMilliseconds() - in);
+    // Now draw the entities
+    if(showHdnLines) glDisable(GL_DEPTH_TEST);
+    Entity::DrawAll();
 
     glDisable(GL_DEPTH_TEST);
     // Draw the constraints
@@ -1308,9 +1297,5 @@ void GraphicsWindow::Paint(int w, int h) {
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
     }
-
-    dbp("till end: %d ms", GetMilliseconds() - in);
-    dbp("entity.n: %d", SS.entity.n);
-    dbp("param.n: %d", SS.param.n);
 }
 
