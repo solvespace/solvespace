@@ -11,6 +11,7 @@ char *Constraint::DescriptionString(void) {
         case PT_PT_DISTANCE:    s = "pt-pt-distance"; break;
         case PT_LINE_DISTANCE:  s = "pt-line-distance"; break;
         case PT_PLANE_DISTANCE: s = "pt-plane-distance"; break;
+        case PT_FACE_DISTANCE:  s = "pt-face-distance"; break;
         case PT_IN_PLANE:       s = "pt-in-plane"; break;
         case PT_ON_LINE:        s = "pt-on-line"; break;
         case PT_ON_FACE:        s = "pt-on-face"; break;
@@ -92,6 +93,10 @@ void Constraint::MenuConstrain(int id) {
                 c.type = PT_LINE_DISTANCE;
                 c.ptA = gs.point[0];
                 c.entityA = gs.entity[0];
+            } else if(gs.faces == 1 && gs.points == 1 && gs.n == 2) {
+                c.type = PT_FACE_DISTANCE;
+                c.ptA = gs.point[0];
+                c.entityA = gs.face[0];
             } else if(gs.circlesOrArcs == 1 && gs.n == 1) {
                 c.type = DIAMETER;
                 c.entityA = gs.entity[0];
@@ -491,6 +496,15 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
         case PT_PLANE_DISTANCE: {
             ExprVector pt = SS.GetEntity(ptA)->PointGetExprs();
             AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exA), 0);
+            break;
+        }
+
+        case PT_FACE_DISTANCE: {
+            ExprVector pt = SS.GetEntity(ptA)->PointGetExprs();
+            Entity *f = SS.GetEntity(entityA);
+            ExprVector p0 = f->FaceGetPointExprs();
+            ExprVector n = f->FaceGetNormalExprs();
+            AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exprA), 0);
             break;
         }
 

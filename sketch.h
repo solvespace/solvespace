@@ -318,6 +318,7 @@ public:
     ExprVector FaceGetNormalExprs(void);
     Vector FaceGetNormalNum(void);
     ExprVector FaceGetPointExprs(void);
+    Vector FaceGetPointNum(void);
 
     bool IsPoint(void);
     // Applies for any of the point types
@@ -399,11 +400,12 @@ public:
     static const int USER_EQUATION      =  10;
     static const int POINTS_COINCIDENT  =  20;
     static const int PT_PT_DISTANCE     =  30;
-    static const int PT_LINE_DISTANCE   =  31;
-    static const int PT_PLANE_DISTANCE  =  32;
-    static const int PT_IN_PLANE        =  40;
-    static const int PT_ON_LINE         =  41;
-    static const int PT_ON_FACE         =  42;
+    static const int PT_PLANE_DISTANCE  =  31;
+    static const int PT_LINE_DISTANCE   =  32;
+    static const int PT_FACE_DISTANCE   =  33;
+    static const int PT_IN_PLANE        =  41;
+    static const int PT_ON_LINE         =  42;
+    static const int PT_ON_FACE         =  43;
     static const int EQUAL_LENGTH_LINES =  50;
     static const int LENGTH_RATIO       =  51;
     static const int SYMMETRIC          =  60;

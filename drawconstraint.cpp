@@ -4,6 +4,7 @@ bool Constraint::HasLabel(void) {
     switch(type) {
         case PT_LINE_DISTANCE:
         case PT_PLANE_DISTANCE:
+        case PT_FACE_DISTANCE:
         case PT_PT_DISTANCE:
         case DIAMETER:
         case LENGTH_RATIO:
@@ -112,11 +113,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case PT_FACE_DISTANCE:
         case PT_PLANE_DISTANCE: {
             Vector pt = SS.GetEntity(ptA)->PointGetNum();
-            Entity *plane = SS.GetEntity(entityA);
-            Vector n = plane->Normal()->NormalN();
-            Vector p = plane->WorkplaneGetOffset();
+            Entity *enta = SS.GetEntity(entityA);
+            Vector n, p;
+            if(type == PT_PLANE_DISTANCE) {
+                n = enta->Normal()->NormalN();
+                p = enta->WorkplaneGetOffset();
+            } else {
+                n = enta->FaceGetNormalNum();
+                p = enta->FaceGetPointNum();
+            }
+
             double d = (p.Minus(pt)).Dot(n);
 
             Vector closest = pt.Plus(n.WithMagnitude(d));

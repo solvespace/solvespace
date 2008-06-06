@@ -69,6 +69,11 @@ ExprVector ExprVector::ScaledBy(Expr *s) {
     return r;
 }
 
+ExprVector ExprVector::WithMagnitude(Expr *s) {
+    Expr *m = Magnitude();
+    return ScaledBy(s->Div(m));
+}
+
 Expr *ExprVector::Magnitude(void) {
     Expr *r;
     r =         x->Square();

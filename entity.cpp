@@ -570,13 +570,17 @@ bool Entity::IsFace(void) {
 ExprVector Entity::FaceGetNormalExprs(void) {
     ExprVector r;
     if(type == FACE_NORMAL_PT) {
-        r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        Vector v = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = ExprVector::From(v.WithMagnitude(1));
     } else if(type == FACE_XPROD) {
         ExprVector vc = ExprVector::From(param[0], param[1], param[2]);
         ExprVector vn = ExprVector::From(numVector);
         r = vc.Cross(vn);
+        r = r.WithMagnitude(Expr::From(1.0));
     } else if(type == FACE_N_ROT_TRANS) {
-        // The numerical normal vector gets the rotation
+        // The numerical normal vector gets the rotation; the numerical
+        // normal has magnitude one, and the rotation doesn't change that,
+        // so there's no need to fix it up.
         r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         ExprQuaternion q =
             ExprQuaternion::From(param[3], param[4], param[5], param[6]);
@@ -598,7 +602,7 @@ Vector Entity::FaceGetNormalNum(void) {
         Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
         r = q.Rotate(r);
     } else oops();
-    return r;
+    return r.WithMagnitude(1);
 }
 
 ExprVector Entity::FaceGetPointExprs(void) {
@@ -614,6 +618,22 @@ ExprVector Entity::FaceGetPointExprs(void) {
             ExprQuaternion::From(param[3], param[4], param[5], param[6]);
         r = ExprVector::From(numPoint);
         r = q.Rotate(r);
+        r = r.Plus(trans);
+    } else oops();
+    return r;
+}
+
+Vector Entity::FaceGetPointNum(void) {
+    Vector r;
+    if(type == FACE_NORMAL_PT) {
+        r = SS.GetEntity(point[0])->PointGetNum();
+    } else if(type == FACE_XPROD) {
+        r = numPoint;
+    } else if(type == FACE_N_ROT_TRANS) {
+        // The numerical point gets the rotation and translation.
+        Vector trans = Vector::From(param[0], param[1], param[2]);
+        Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
+        r = q.Rotate(numPoint);
         r = r.Plus(trans);
     } else oops();
     return r;
@@ -656,10 +676,9 @@ void Entity::CalculateNumerical(void) {
         actDistance = DistanceGetNum();
     }
     if(IsFace()) {
-        ExprVector p = FaceGetPointExprs();
-        ExprVector n = FaceGetNormalExprs();
-        numPoint  = Vector::From(       p.x->Eval(), p.y->Eval(), p.z->Eval());
-        numNormal = Quaternion::From(0, n.x->Eval(), n.y->Eval(), n.z->Eval());
+        numPoint  = FaceGetPointNum();
+        Vector n = FaceGetNormalNum();
+        numNormal = Quaternion::From(0, n.x, n.y, n.z);
     }
     visible = IsVisible();
 }

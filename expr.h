@@ -134,6 +134,7 @@ public:
     Expr *Dot(ExprVector b);
     ExprVector Cross(ExprVector b);
     ExprVector ScaledBy(Expr *s);
+    ExprVector WithMagnitude(Expr *s);
     Expr *Magnitude(void);
 
     Vector Eval(void);
