@@ -42,6 +42,7 @@ void Entity::DrawAll(void) {
             Entity *e = &(SS.entity.elem[i]);
             if(!e->IsPoint()) continue;
             if(!(SS.GetGroup(e->group)->visible)) continue;
+            if(SS.GroupsInOrder(SS.GW.activeGroup, e->group)) continue;
 
             Vector v = e->PointGetNum();
             glxVertex3v(v.Plus (r).Plus (d));

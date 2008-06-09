@@ -810,12 +810,26 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    Vector light = VectorFromProjs(-0.49*w/scale, 0.49*h/scale, 0);
-    GLfloat lightPos[4] =
-        { (GLfloat)light.x, (GLfloat)light.y, (GLfloat)light.z, 0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+    // Let's use two lights
     glEnable(GL_LIGHT0);
+    GLfloat li0[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    glLightfv(GL_LIGHT0, GL_DIFFUSE, li0);
+    glLightfv(GL_LIGHT0, GL_SPECULAR, li0);
+    glEnable(GL_LIGHT1);
+    GLfloat li1[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, li1);
+    glLightfv(GL_LIGHT1, GL_SPECULAR, li1);
 
+    Vector lp;
+    lp = VectorFromProjs(-0.49*w/scale, 0.49*h/scale, 0);
+    GLfloat lp0[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, lp0);
+    lp = VectorFromProjs(0.49*w/scale, 0.10*h/scale, 0);
+    GLfloat lp1[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
+    glLightfv(GL_LIGHT1, GL_POSITION, lp1);
+
+    // For debugging, draw the backs of the triangles in red, so that we
+    // notice when a shell is open
     glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
     GLfloat ambient[4] = { 0.4f, 0.4f, 0.4f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);

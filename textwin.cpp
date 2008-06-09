@@ -757,25 +757,6 @@ void TextWindow::ShowGroupSolveInfo(void) {
     }
 }
 
-void TextWindow::ShowRequestInfo(void) {
-    Request *r = SS.GetRequest(shown->request);
-
-    char *s;
-    switch(r->type) {
-        case Request::WORKPLANE:     s = "workplane";                break;
-        case Request::DATUM_POINT:   s = "datum point";              break;
-        case Request::LINE_SEGMENT:  s = "line segment";             break;
-        default: oops();
-    }
-    Printf(false, "[[request for %s]]", s);
-}
-
-void TextWindow::ShowConstraintInfo(void) {
-    Constraint *c = SS.GetConstraint(shown->constraint);
-
-    Printf(false, "[[constraint]]");
-}
-
 void TextWindow::EditControlDone(char *s) {
     switch(edit.meaning) {
         case EDIT_TIMES_REPEATED: {

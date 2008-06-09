@@ -7,6 +7,8 @@ DXF export
 compress file format (binary?)
 partitioned subsystems in the solver
 arbitrary color specification
+specify tolerance for meshing
+specify light positions (all on one configuration screen)
 TTF font text
 display with proper formatting/units
 more measurements

@@ -439,6 +439,8 @@ public:
     hEntity     entityB;
     bool        otherAngle;
 
+    bool        reference; // a ref dimension, that generates no eqs
+
     // These define how the constraint is drawn on-screen.
     struct {
         Vector      offset;

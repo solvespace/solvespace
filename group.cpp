@@ -97,6 +97,7 @@ void Group::MenuGroup(int id) {
             g.opA = SS.GW.activeGroup;
             g.color = RGB(100, 100, 100);
             g.name.strcpy("lathe");
+            SS.GW.ClearSelection();
             break;
 
         case GraphicsWindow::MNU_GROUP_ROT: {

@@ -48,8 +48,6 @@ public:
     typedef struct {
         int         screen;
         hGroup      group;
-        hRequest    request;
-        hConstraint constraint;
     } ShownState;
     static const int HISTORY_LEN = 16;
     ShownState showns[HISTORY_LEN];
@@ -74,9 +72,6 @@ public:
     // the sketch.
     void ShowListOfGroups(void);
     void ShowGroupInfo(void);
-    void ShowRequestInfo(void);
-    void ShowEntityInfo(void);
-    void ShowConstraintInfo(void);
     void ShowGroupSolveInfo(void);
     // Special screen, based on selection
     void DescribeSelection(void);
