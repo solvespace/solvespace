@@ -769,6 +769,7 @@ Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
 }
 
 void GraphicsWindow::Paint(int w, int h) {
+    int i;
     havePainted = true;
     width = w; height = h;
 
@@ -807,6 +808,23 @@ void GraphicsWindow::Paint(int w, int h) {
     // At the same depth, we want later lines drawn over earlier.
     glDepthFunc(GL_LEQUAL);
 
+    bool allOk = true;
+    for(i = 0; i < SS.group.n; i++) {
+        if(SS.group.elem[i].solved.how != Group::SOLVED_OKAY) {
+            allOk = false;
+        }
+    }
+    if(allOk) {
+        glClearColor(0, 0, 0, 1.0f);
+    } else {
+        // Draw a red background whenever we're having solve problems.
+        glClearColor(0.4f, 0, 0, 1.0f);
+        if(!showTextWindow) {
+            showTextWindow = true;
+            ShowTextWindow(TRUE);
+        }
+    }
+
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
@@ -840,7 +858,6 @@ void GraphicsWindow::Paint(int w, int h) {
 
     glxUnlockColor();
 
-    int i;
     // Draw the groups; this fills the polygons in a drawing group, and
     // draws the solid mesh.
     (SS.GetGroup(activeGroup))->Draw();
