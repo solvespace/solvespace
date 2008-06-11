@@ -123,7 +123,17 @@ void Group::GenerateMesh(void) {
         Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
 
-        int n = 20;
+        // Calculate the max radius, to determine fineness of mesh
+        double r, rmax = 0;
+        for(i = 0; i < edges.l.n; i++) {
+            SEdge *edge = &(edges.l.elem[i]);
+            r = (edge->a).DistanceToLine(orig, axis);
+            rmax = max(r, rmax);
+            r = (edge->b).DistanceToLine(orig, axis);
+            rmax = max(r, rmax);
+        }
+
+        int n = SS.CircleSides(rmax);
         for(a = 0; a <= n; a++) {
             double thetai = (2*PI*WRAP(a-1, n))/n, thetaf = (2*PI*a)/n;
             for(i = 0; i < edges.l.n; i++) {
@@ -139,18 +149,23 @@ void Group::GenerateMesh(void) {
 
                 Vector ab = (edge->b).Minus(edge->a);
                 Vector out = ((src->poly).normal).Cross(ab);
+                // This is a vector, not a point, so no origin for rotation
                 out = out.RotatedAbout(axis, thetai);
 
+                // The line sweeps out a quad, so two triangles
                 STriangle quad1 = STriangle::From(meta, ai, bi, af),
                           quad2 = STriangle::From(meta, af, bi, bf);
+
+                // Could be only one of the triangles has area; be sure
+                // to use that one for normal checking, then.
                 Vector n1 = quad1.Normal(), n2 = quad2.Normal();
                 Vector n = (n1.Magnitude() > n2.Magnitude()) ? n1 : n2;
                 if(n.Dot(out) < 0) {
                     quad1.FlipNormal();
                     quad2.FlipNormal();
                 }
-                // If one of the endpoints lies on the axis of rotation,
-                // then the quad is just a single triangle
+                // One or both of the endpoints might lie on the axis of
+                // rotation, in which case its triangle is zero-area.
                 if(da >= LENGTH_EPS) outm.AddTriangle(&quad1);
                 if(db >= LENGTH_EPS) outm.AddTriangle(&quad2);
             }

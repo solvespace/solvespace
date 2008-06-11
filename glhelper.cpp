@@ -175,9 +175,7 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
             color = specColor;
         }
         if(color != prevColor) {
-            GLfloat mpf[] = { ((color >>  0) & 0xff) / 255.0f,
-                              ((color >>  8) & 0xff) / 255.0f,
-                              ((color >> 16) & 0xff) / 255.0f, 1.0 };
+            GLfloat mpf[] = { REDf(color), GREENf(color), BLUEf(color), 1.0 };
             glEnd();
             glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
             prevColor = color;

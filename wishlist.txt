@@ -1,17 +1,15 @@
 
-
 STL check for meshes, and T intersection removal
 STL export
 better triangle combining (Simplify()) for meshes
 DXF export
 compress file format (binary?)
 partitioned subsystems in the solver
-arbitrary color specification
-specify tolerance for meshing
-specify light positions (all on one configuration screen)
 TTF font text
 display with proper formatting/units
 more measurements
-reference dimensions (just to look at, no equations)
-some kind of rounding
+some kind of rounding / chamfer
+auto-constrain translate in then-active workplane
+remove back button in browser?
+
 

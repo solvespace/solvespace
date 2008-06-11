@@ -72,6 +72,23 @@ void ExitNow(void) {
 }
 
 //-----------------------------------------------------------------------------
+// Helpers so that we can read/write registry keys from the platform-
+// independent code.
+//-----------------------------------------------------------------------------
+void CnfFreezeString(char *str, char *name)
+    { FreezeStringF(str, FREEZE_SUBKEY, name); }
+
+void CnfFreezeDWORD(DWORD v, char *name)
+    { FreezeDWORDF(v, FREEZE_SUBKEY, name); }
+
+void CnfThawString(char *str, int maxLen, char *name)
+    { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
+
+DWORD CnfThawDWORD(DWORD v, char *name)
+    { return ThawDWORDF(v, FREEZE_SUBKEY, name); }
+
+
+//-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible
 // to be sloppy with our memory management, and just free everything at once
@@ -877,13 +894,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     InitCommonControls();
 
-    int i;
-    for(i = 0; i < MAX_RECENT; i++) {
-        char name[100];
-        sprintf(name, "RecentFile_%d", i);
-        ThawStringF(RecentFile[i], MAX_PATH, FREEZE_SUBKEY, name);
-    }
-
     // A monospaced font
     FixedFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -936,11 +946,5 @@ done:
     // Write everything back to the registry
     FreezeWindowPos(TextWnd);
     FreezeWindowPos(GraphicsWnd);
-    for(i = 0; i < MAX_RECENT; i++) {
-        char name[100];
-        sprintf(name, "RecentFile_%d", i);
-        FreezeStringF(RecentFile[i], FREEZE_SUBKEY, name);
-    }
-
     return 0;
 }

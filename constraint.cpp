@@ -233,6 +233,22 @@ void Constraint::MenuConstrain(int id) {
                 } else {
                     c.type = SYMMETRIC_VERT;
                 }
+                if(gs.lineSegments == 1) {
+                    // If this line segment is already constrained horiz or
+                    // vert, then auto-remove that redundant constraint.
+                    SS.constraint.ClearTags();
+                    for(int i = 0; i < SS.constraint.n; i++) {
+                        Constraint *ct = &(SS.constraint.elem[i]);
+                        if(ct->type != HORIZONTAL && ct->type != VERTICAL) {
+                            continue;
+                        }
+                        if(ct->entityA.v != (gs.entity[0]).v) continue;
+                        ct->tag = 1;
+                    }
+                    SS.constraint.RemoveTagged();
+                    // And no need to do anything special, since nothing
+                    // ever depends on a constraint.
+                }
             } else {
                 // Symmetry with a symmetry plane specified explicitly.
                 c.type = SYMMETRIC;
@@ -290,7 +306,20 @@ void Constraint::MenuConstrain(int id) {
                 }
             }
             Error("Must select an angle constraint.");
-            break;
+            return;
+
+        case GraphicsWindow::MNU_REFERENCE:
+            if(gs.constraints == 1 && gs.n == 0) {
+                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                if(c->HasLabel()) {
+                    (c->reference) = !(c->reference);
+                    SS.GetGroup(c->group)->clean = false;
+                    SS.GenerateAll();
+                    break;
+                }
+            }
+            Error("Must select a constraint with associated label.");
+            return;
 
         case GraphicsWindow::MNU_ANGLE:
             if(gs.vectors == 2 && gs.n == 2) {
@@ -456,9 +485,9 @@ void Constraint::ModifyToSatisfy(void) {
         // that means no extra work.
         IdList<Equation,hEquation> l;
         // An uninit IdList could lead us to free some random address, bad.
-        memset(&l, 0, sizeof(l));
-
-        Generate(&l);
+        ZERO(&l);
+        // Generate the equations even if this is a reference dimension
+        GenerateReal(&l);
         if(l.n != 1) oops();
 
         // These equations are written in the form f(...) - d = 0, where
@@ -480,6 +509,11 @@ void Constraint::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
 }
 
 void Constraint::Generate(IdList<Equation,hEquation> *l) {
+    if(!reference) {
+        GenerateReal(l);
+    }
+}
+void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
     Expr *exA = NULL;
     if(exprA) exA = exprA->DeepCopy();
 

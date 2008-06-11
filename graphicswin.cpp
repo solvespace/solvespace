@@ -65,7 +65,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
-{ 1, "&Import From File...\tI",             0,                  'I',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
 
@@ -73,6 +72,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Distance / Diameter\tShift+D",       MNU_DISTANCE_DIA,   'D'|S,  mCon  },
 { 1, "A&ngle\tShift+N",                     MNU_ANGLE,          'N'|S,  mCon  },
 { 1, "Other S&upplementary Angle\tShift+U", MNU_OTHER_ANGLE,    'U'|S,  mCon  },
+{ 1, "Toggle &Reference Dim\tShift+R",      MNU_REFERENCE,      'R'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&Horizontal\tShift+H",                MNU_HORIZONTAL,     'H'|S,  mCon  },
 { 1, "&Vertical\tShift+V",                  MNU_VERTICAL,       'V'|S,  mCon  },
@@ -83,7 +83,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "At &Midpoint\tShift+M",               MNU_AT_MIDPOINT,    'M'|S,  mCon  },
 { 1, "S&ymmetric\tShift+Y",                 MNU_SYMMETRIC,      'Y'|S,  mCon  },
 { 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
-{ 1, "Same O&rientation\tShift+R",          MNU_ORIENTED_SAME,  'R'|S,  mCon  },
+{ 1, "Same Orient&ation\tShift+A",          MNU_ORIENTED_SAME,  'A'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
 { 1, NULL,                                  0,                          NULL  },
@@ -187,6 +187,59 @@ void GraphicsWindow::AnimateOntoWorkplane(void) {
     InvalidateGraphics();
 }
 
+void GraphicsWindow::HandlePointForZoomToFit(Vector p,
+                                             Point2d *pmax, Point2d *pmin)
+{
+    Point2d p2 = ProjectPoint(p);
+    pmax->x = max(pmax->x, p2.x);
+    pmax->y = max(pmax->y, p2.y);
+    pmin->x = min(pmin->x, p2.x);
+    pmin->y = min(pmin->y, p2.y);
+}
+void GraphicsWindow::ZoomToFit(void) {
+    int i, j;
+    Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
+
+    HandlePointForZoomToFit(Vector::From(0, 0, 0), &pmax, &pmin);
+
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(!e->IsPoint()) continue;
+        if(!e->IsVisible()) continue;
+        HandlePointForZoomToFit(e->PointGetNum(), &pmax, &pmin);
+    }
+    Group *g = SS.GetGroup(activeGroup);
+    for(i = 0; i < g->mesh.l.n; i++) {
+        STriangle *tr = &(g->mesh.l.elem[i]);
+        HandlePointForZoomToFit(tr->a, &pmax, &pmin);
+        HandlePointForZoomToFit(tr->b, &pmax, &pmin);
+        HandlePointForZoomToFit(tr->c, &pmax, &pmin);
+    }
+    for(i = 0; i < g->poly.l.n; i++) {
+        SContour *sc = &(g->poly.l.elem[i]);
+        for(j = 0; j < sc->l.n; j++) {
+            HandlePointForZoomToFit(sc->l.elem[j].p, &pmax, &pmin);
+        }
+    }
+
+    pmax = pmax.ScaledBy(1/scale);
+    pmin = pmin.ScaledBy(1/scale);
+    double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
+    double dx = pmax.x - pmin.x, dy = pmax.y - pmin.y;
+
+    offset = offset.Plus(projRight.ScaledBy(-xm)).Plus(
+                         projUp.   ScaledBy(-ym));
+   
+    if(dx == 0 && dy == 0) {
+        scale = 5;
+    } else {
+        double scalex = 1e12, scaley = 1e12;
+        if(dx != 0) scalex = 0.9*width /dx;
+        if(dy != 0) scaley = 0.9*height/dy;
+        scale = min(100, min(scalex, scaley));
+    }
+}
+
 void GraphicsWindow::MenuView(int id) {
     switch(id) {
         case MNU_ZOOM_IN:
@@ -198,6 +251,7 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_ZOOM_TO_FIT:
+            SS.GW.ZoomToFit();
             break;
 
         case MNU_SHOW_TEXT_WND:

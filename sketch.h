@@ -461,6 +461,7 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);
     double EllipticalInterpolation(double rx, double ry, double theta);
+    char *Label(void);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void DoProjectedPoint(Vector *p);
 
@@ -472,6 +473,7 @@ public:
     bool HasLabel(void);
 
     void Generate(IdList<Equation,hEquation> *l);
+    void GenerateReal(IdList<Equation,hEquation> *l);
     // Some helpers when generating symbolic constraint equations
     void ModifyToSatisfy(void);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);

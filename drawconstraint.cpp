@@ -40,8 +40,24 @@ double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
     return v;
 }
 
+char *Constraint::Label(void) {
+    static char Ret[1024];
+    if(type == ANGLE) {
+        sprintf(Ret, "%.2f", exprA->Eval());
+    } else if(type == LENGTH_RATIO) {
+        sprintf(Ret, "%.3f:1", exprA->Eval());
+    } else {
+        // exprA has units of distance
+        strcpy(Ret, SS.GW.ToString(exprA->Eval()));
+    }
+    if(reference) {
+        strcat(Ret, " REF");
+    }
+    return Ret;
+}
+
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
-    char *s = exprA->Print();
+    char *s = Label();
     if(labelPos) {
         // labelPos is from the top left corner (for the text box used to
         // edit things), but ref is from the center.
@@ -188,7 +204,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             double theta = atan2(disp.offset.Dot(gu), disp.offset.Dot(gr));
             double adj = EllipticalInterpolation(
-                glxStrWidth(exprA->Print())/2, glxStrHeight()/2, theta);
+                glxStrWidth(Label())/2, glxStrHeight()/2, theta);
 
             Vector mark = ref.Minus(center);
             mark = mark.WithMagnitude(mark.Magnitude()-r);
@@ -333,7 +349,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 double tl = atan2(rm.Dot(gu), rm.Dot(gr));
                 double adj = EllipticalInterpolation(
-                    glxStrWidth(exprA->Print())/2, glxStrHeight()/2, tl);
+                    glxStrWidth(Label())/2, glxStrHeight()/2, tl);
                 ref = ref.Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
             } else {
                 // The lines are skew; no wonderful way to illustrate that.

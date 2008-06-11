@@ -80,6 +80,10 @@ void dbp(char *str, ...);
 
 void Error(char *str, ...);
 void ExitNow(void);
+void CnfFreezeString(char *str, char *name);
+void CnfFreezeDWORD(DWORD v, char *name);
+void CnfThawString(char *str, int maxLen, char *name);
+DWORD CnfThawDWORD(DWORD v, char *name);
 
 void *AllocTemporary(int n);
 void FreeAllTemporary(void);
@@ -242,10 +246,21 @@ public:
     void UndoClearState(UndoState *ut);
     void UndoClearStack(UndoStack *uk);
 
+    // Little bits of extra configuration state
+    static const int MODEL_COLORS = 8;
+    int     modelColor[MODEL_COLORS];
+    Vector  lightPos[2];
+    double  lightIntensity[2];
+    double  meshTol;
+
+    void Init(char *cmdLine);
+    void Exit(void);
+
+    int CircleSides(double r);
+
     // File load/save routines, including the additional files that get
     // loaded when we have import groups.
     FILE        *fh;
-    void Init(char *cmdLine);
     void AfterNewFile(void);
     static void RemoveFromRecentList(char *file);
     static void AddToRecentList(char *file);

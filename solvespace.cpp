@@ -3,9 +3,41 @@
 SolveSpace SS;
 
 void SolveSpace::Init(char *cmdLine) {
+    int i;
+    // Default list of colors for the model material
+    modelColor[0] = CnfThawDWORD(RGB(150, 150, 150), "ModelColor_0");
+    modelColor[1] = CnfThawDWORD(RGB(100, 100, 100), "ModelColor_1");
+    modelColor[2] = CnfThawDWORD(RGB( 30,  30,  30), "ModelColor_2");
+    modelColor[3] = CnfThawDWORD(RGB(150,   0,   0), "ModelColor_3");
+    modelColor[4] = CnfThawDWORD(RGB(  0, 100,   0), "ModelColor_4");
+    modelColor[5] = CnfThawDWORD(RGB(  0,  80,  80), "ModelColor_5");
+    modelColor[6] = CnfThawDWORD(RGB(  0,   0, 130), "ModelColor_6");
+    modelColor[7] = CnfThawDWORD(RGB( 80,   0,  80), "ModelColor_7");
+    // Light intensities
+    lightIntensity[0] = ((int)CnfThawDWORD( 700, "LightIntensity_0"))/1000.0;
+    lightIntensity[1] = ((int)CnfThawDWORD( 400, "LightIntensity_1"))/1000.0;
+    // Light positions
+    lightPos[0].x = ((int)CnfThawDWORD(-500, "LightPos_0_Right"     ))/1000.0;
+    lightPos[0].y = ((int)CnfThawDWORD( 500, "LightPos_0_Up"        ))/1000.0;
+    lightPos[0].z = ((int)CnfThawDWORD(   0, "LightPos_0_Forward"   ))/1000.0;
+    lightPos[1].x = ((int)CnfThawDWORD( 500, "LightPos_1_Right"     ))/1000.0;
+    lightPos[1].y = ((int)CnfThawDWORD(   0, "LightPos_1_Up"        ))/1000.0;
+    lightPos[1].z = ((int)CnfThawDWORD(   0, "LightPos_1_Forward"   ))/1000.0;
+    // Mesh tolerance
+    meshTol = ((int)CnfThawDWORD(1000, "MeshTolerance"))/1000.0;
+    // Recent files menus
+    for(i = 0; i < MAX_RECENT; i++) {
+        char name[100];
+        sprintf(name, "RecentFile_%d", i);
+        strcpy(RecentFile[i], "");
+        CnfThawString(RecentFile[i], MAX_PATH, name);
+    }
+    RefreshRecentMenus();
+
+    // Start with either an empty file, or the file specified on the
+    // command line.
     NewFile();
     AfterNewFile();
-
     if(strlen(cmdLine) != 0) {
         if(LoadFromFile(cmdLine)) {
             strcpy(saveFile, cmdLine);
@@ -13,14 +45,47 @@ void SolveSpace::Init(char *cmdLine) {
             NewFile();
         }
     }
-
     AfterNewFile();
+}
+
+void SolveSpace::Exit(void) {
+    int i;
+    char name[100];
+    // Recent files
+    for(i = 0; i < MAX_RECENT; i++) {
+        sprintf(name, "RecentFile_%d", i);
+        CnfFreezeString(RecentFile[i], name);
+    }
+    // Model colors
+    for(i = 0; i < MODEL_COLORS; i++) {
+        sprintf(name, "ModelColor_%d", i);
+        CnfFreezeDWORD(modelColor[i], name);
+    }
+    // Light intensities
+    CnfFreezeDWORD((int)(lightIntensity[0]*1000), "LightIntensity_0");
+    CnfFreezeDWORD((int)(lightIntensity[1]*1000), "LightIntensity_1");
+    // Light positions
+    CnfFreezeDWORD((int)(lightPos[0].x*1000), "LightPos_0_Right");
+    CnfFreezeDWORD((int)(lightPos[0].y*1000), "LightPos_0_Up");
+    CnfFreezeDWORD((int)(lightPos[0].z*1000), "LightPos_0_Forward");
+    CnfFreezeDWORD((int)(lightPos[1].x*1000), "LightPos_1_Right");
+    CnfFreezeDWORD((int)(lightPos[1].y*1000), "LightPos_1_Up");
+    CnfFreezeDWORD((int)(lightPos[1].z*1000), "LightPos_1_Forward");
+    // Mesh tolerance
+    CnfFreezeDWORD((int)(meshTol*1000), "MeshTolerance");
+
+    ExitNow();
 }
 
 void SolveSpace::DoLater(void) {
     if(later.generateAll) GenerateAll();
     if(later.showTW) TW.Show();
     ZERO(&later);
+}
+
+int SolveSpace::CircleSides(double r) {
+    int s = 7 + (int)(sqrt(r*SS.GW.scale/meshTol));
+    return min(s, 40);
 }
 
 void SolveSpace::AfterNewFile(void) {
@@ -249,6 +314,14 @@ void SolveSpace::GenerateAll(int first, int last) {
         }
     }
 
+    // And update any reference dimensions with their new values
+    for(i = 0; i < constraint.n; i++) {
+        Constraint *c = &(constraint.elem[i]);
+        if(c->reference) {
+            c->ModifyToSatisfy();
+        }
+    }
+
     prev.Clear();
     InvalidateGraphics();
 
@@ -459,7 +532,7 @@ void SolveSpace::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXIT:
             if(!SS.OkayToStartNewFile()) break;
-            ExitNow();
+            SS.Exit();
             break;
 
         default: oops();

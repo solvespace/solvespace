@@ -4,7 +4,9 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         // glPolygonOffset works only on polys, not lines, so do it myself
         Vector adj = SS.GW.projRight.Cross(SS.GW.projUp);
-        adj = adj.ScaledBy(5/SS.GW.scale);
+        // Draw lines from active group in front of those from previous
+        int delta = (group.v == SS.GW.activeGroup.v) ? 10 : 5;
+        adj = adj.ScaledBy(delta/SS.GW.scale);
         glBegin(GL_LINES);
             glxVertex3v(a.Plus(adj));
             glxVertex3v(b.Plus(adj));
@@ -14,6 +16,8 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
         Point2d bp = SS.GW.ProjectPoint(b);
 
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
+        // A little bit easier to select in the active group
+        if(group.v == SS.GW.activeGroup.v) d -= 1;
         dogd.dmin = min(dogd.dmin, d);
     }
     dogd.refp = (a.Plus(b)).ScaledBy(0.5);
@@ -164,9 +168,7 @@ void Entity::DrawOrGetDistance(void) {
                 glPolygonOffset(0, 0);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
-                // Make a free point slightly easier to select, so that with
-                // coincident points, we select the free one.
-                dogd.dmin = pp.DistanceTo(dogd.mp) - 4;
+                dogd.dmin = pp.DistanceTo(dogd.mp) - 6;
             }
             break;
         }
@@ -292,7 +294,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector p1 = SS.GetEntity(point[1])->PointGetNum();
             Vector p2 = SS.GetEntity(point[2])->PointGetNum();
             Vector p3 = SS.GetEntity(point[3])->PointGetNum();
-            int i, n = 20;
+            int i, n = (int)(15/sqrt(SS.meshTol));
             Vector prev = p0;
             for(i = 1; i <= n; i++) {
                 double t = ((double)i)/n;
@@ -307,7 +309,6 @@ void Entity::DrawOrGetDistance(void) {
             break;
         }
 
-#define CIRCLE_SIDES(r) (7 + (int)(sqrt(r*SS.GW.scale)))
         case ARC_OF_CIRCLE: {
             Vector c  = SS.GetEntity(point[0])->PointGetNum();
             Vector pa = SS.GetEntity(point[1])->PointGetNum();
@@ -321,7 +322,7 @@ void Entity::DrawOrGetDistance(void) {
             double thetaa, thetab, dtheta;
             ArcGetAngles(&thetaa, &thetab, &dtheta);
 
-            int i, n = 3 + (int)(CIRCLE_SIDES(ra)*dtheta/(2*PI));
+            int i, n = 3 + (int)(SS.CircleSides(ra)*dtheta/(2*PI));
             Vector prev = pa;
             for(i = 1; i <= n; i++) {
                 double theta = thetaa + (dtheta*i)/n;
@@ -340,7 +341,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector center = SS.GetEntity(point[0])->PointGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
 
-            int i, c = CIRCLE_SIDES(r); 
+            int i, c = SS.CircleSides(r); 
             Vector prev = u.ScaledBy(r).Plus(center);
             for(i = 1; i <= c; i++) {
                 double phi = (2*PI*i)/c;

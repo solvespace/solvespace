@@ -10,15 +10,15 @@ public:
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #endif
+#define REDf(v)     ((((v) >>  0) & 0xff) / 255.0f)
+#define GREENf(v)   ((((v) >>  8) & 0xff) / 255.0f)
+#define BLUEf(v)    ((((v) >> 16) & 0xff) / 255.0f)
     typedef struct {
         char    c;
         int     color;
     } Color;
     static const Color fgColors[];
     static const Color bgColors[];
-
-    static const int MODEL_COLORS = 8;
-    int     modelColor[MODEL_COLORS];
 
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
@@ -45,6 +45,7 @@ public:
     static const int SCREEN_LIST_OF_GROUPS      = 0;
     static const int SCREEN_GROUP_INFO          = 1;
     static const int SCREEN_GROUP_SOLVE_INFO    = 2;
+    static const int SCREEN_CONFIGURATION       = 3;
     typedef struct {
         int         screen;
         hGroup      group;
@@ -58,8 +59,13 @@ public:
     static const int EDIT_NOTHING               = 0;
     static const int EDIT_TIMES_REPEATED        = 1;
     static const int EDIT_GROUP_NAME            = 2;
+    static const int EDIT_LIGHT_POSITION        = 3;
+    static const int EDIT_LIGHT_INTENSITY       = 4;
+    static const int EDIT_COLOR                 = 5;
+    static const int EDIT_MESH_TOLERANCE        = 6;
     struct {
         int     meaning;
+        int     i;
         hGroup  group;
     } edit;
 
@@ -73,6 +79,7 @@ public:
     void ShowListOfGroups(void);
     void ShowGroupInfo(void);
     void ShowGroupSolveInfo(void);
+    void ShowConfiguration(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 
@@ -90,18 +97,23 @@ public:
     static void ScreenHoverRequest(int link, DWORD v);
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
+    static void ScreenUnselectAll(int link, DWORD v);
 
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 
-    static void ScreenUnselectAll(int link, DWORD v);
+    static void ScreenShowConfiguration(int link, DWORD v);
 
     static void ScreenNavigation(int link, DWORD v);
 
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);
     static void ScreenChangeGroupName(int link, DWORD v);
+    static void ScreenChangeLightPosition(int link, DWORD v);
+    static void ScreenChangeLightIntensity(int link, DWORD v);
+    static void ScreenChangeColor(int link, DWORD v);
+    static void ScreenChangeMeshTolerance(int link, DWORD v);
 
     void EditControlDone(char *s);
 };
@@ -155,6 +167,7 @@ public:
         MNU_DISTANCE_DIA,
         MNU_ANGLE,
         MNU_OTHER_ANGLE,
+        MNU_REFERENCE,
         MNU_EQUAL,
         MNU_RATIO,
         MNU_ON_ENTITY,
@@ -203,7 +216,9 @@ public:
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
     void AnimateOntoWorkplane(void);
-    Vector VectorFromProjs(double right, double up, double forward);
+    Vector VectorFromProjs(Vector rightUpForward);
+    void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin);
+    void ZoomToFit(void);
 
     typedef enum {
         UNIT_MM = 0,

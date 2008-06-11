@@ -220,7 +220,6 @@ void SMesh::MakeFromUnion(SMesh *a, SMesh *b) {
 }
 
 void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
-    SDWORD in = GetMilliseconds();
     SBsp3 *bspa = SBsp3::FromMesh(a);
     SBsp3 *bspb = SBsp3::FromMesh(b);
 
@@ -231,8 +230,6 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     flipNormal = false;
     keepCoplanar = false;
     AddAgainstBsp(a, bspb);
-    dbp("dt = %d", GetMilliseconds() - in);
-    dbp("tris = %d", l.n);
 }
 
 bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {

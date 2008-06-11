@@ -31,16 +31,6 @@ void TextWindow::ClearSuper(void) {
     shown = &(showns[shownIndex]);
     ClearScreen();
     Show();
-
-    // Default list of colors for the model material
-    modelColor[0] = RGB(150, 150, 150);
-    modelColor[1] = RGB(100, 100, 100);
-    modelColor[2] = RGB( 30,  30,  30);
-    modelColor[3] = RGB(150,   0,   0);
-    modelColor[4] = RGB(  0, 100,   0);
-    modelColor[5] = RGB(  0,  80,  80);
-    modelColor[6] = RGB(  0,   0, 130);
-    modelColor[7] = RGB( 80,   0,  80);
 }
 
 void TextWindow::ClearScreen(void) {
@@ -95,6 +85,16 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                 case 'x': {
                     DWORD v = va_arg(vl, DWORD);
                     sprintf(buf, "%08x", v);
+                    break;
+                }
+                case '@': {
+                    double v = va_arg(vl, double);
+                    sprintf(buf, "%.2f", v);
+                    break;
+                }
+                case '2': {
+                    double v = va_arg(vl, double);
+                    sprintf(buf, "%s%.2f", v < 0 ? "" : " ", v);
                     break;
                 }
                 case '3': {
@@ -201,10 +201,12 @@ void TextWindow::Show(void) {
     if(SS.GW.pending.description) {
         // A pending operation (that must be completed with the mouse in
         // the graphics window) will preempt our usual display.
+        HideTextEditControl();
         ShowHeader(false);
         Printf(false, "");
         Printf(false, "%s", SS.GW.pending.description);
     } else if(gs.n > 0) {
+        HideTextEditControl();
         ShowHeader(false);
         DescribeSelection();
     } else {
@@ -216,6 +218,7 @@ void TextWindow::Show(void) {
             case SCREEN_LIST_OF_GROUPS:     ShowListOfGroups();     break;
             case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
             case SCREEN_GROUP_SOLVE_INFO:   ShowGroupSolveInfo();   break;
+            case SCREEN_CONFIGURATION:      ShowConfiguration();    break;
         }
     }
     InvalidateText();
@@ -437,15 +440,12 @@ void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
     int i;
-    bool before = true;
     for(i = 0; i < SS.group.n; i++) {
         Group *g = &(SS.group.elem[i]);
 
-        if(g->h.v == SS.GW.activeGroup.v) {
-            before = false;
-        } else if(before && link == 's') {
+        if(link == 's') {
             g->visible = true;
-        } else if(!before && link == 'h') {
+        } else {
             g->visible = false;
         }
     }
@@ -470,6 +470,9 @@ void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
     }
     SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
     SS.TW.shown->group.v = v;
+}
+void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
+    SS.TW.OneScreenForwardTo(SCREEN_CONFIGURATION);
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
@@ -508,10 +511,11 @@ void TextWindow::ShowListOfGroups(void) {
         if(active) afterActive = true;
     }
 
-    Printf(true,  "  %Fl%Ls%fshow all groups before active%E",
+    Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
+        &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial));
-    Printf(false, "  %Fl%Lh%fhide all groups after active%E",
-        &(TextWindow::ScreenShowGroupsSpecial));
+    Printf(false,  "  %Fl%Ls%fconfiguration%E",
+        &(TextWindow::ScreenShowConfiguration));
 }
 
 
@@ -569,8 +573,8 @@ void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
     Group *g = SS.GetGroup(SS.TW.shown->group);
-    if(v < 0 || v >= MODEL_COLORS) return;
-    g->color = SS.TW.modelColor[v];
+    if(v < 0 || v >= SS.MODEL_COLORS) return;
+    g->color = SS.modelColor[v];
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
@@ -610,7 +614,7 @@ void TextWindow::ShowGroupInfo(void) {
         Printf(true, "%FtGROUP    %E%s", g->DescriptionString());
     } else {
         Printf(true, "%FtGROUP    %E%s "
-                     "(%Fl%Ll%D%frename%E / %Fl%Ll%D%fdel%E)",
+                     "[%Fl%Ll%D%frename%E/%Fl%Ll%D%fdel%E]",
             g->DescriptionString(),
             g->h.v, &TextWindow::ScreenChangeGroupName,
             g->h.v, &TextWindow::ScreenDeleteGroup);
@@ -646,7 +650,7 @@ void TextWindow::ShowGroupInfo(void) {
 
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
         int times = (int)(g->exprA->Eval());
-        Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f(change)%E",
+        Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f[change]%E",
             s2, times, times == 1 ? "" : "s",
             g->h.v, &TextWindow::ScreenChangeExprA);
     }
@@ -681,14 +685,14 @@ void TextWindow::ShowGroupInfo(void) {
     if(g->type == Group::EXTRUDE || g->type == Group::LATHE) {
 #define TWOX(v) v v
         Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
-            0x80000000 | modelColor[0], 0, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[1], 1, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[2], 2, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[3], 3, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[4], 4, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[5], 5, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[6], 6, &TextWindow::ScreenColor,
-            0x80000000 | modelColor[7], 7, &TextWindow::ScreenColor);
+            0x80000000 | SS.modelColor[0], 0, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[1], 1, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[2], 2, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[3], 3, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[4], 4, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[5], 5, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[6], 6, &TextWindow::ScreenColor,
+            0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
     }
 
     Printf(true, "%Ftrequests in group");
@@ -727,13 +731,15 @@ void TextWindow::ShowGroupInfo(void) {
 
 void TextWindow::ShowGroupSolveInfo(void) {
     Group *g = SS.group.FindById(shown->group);
+    if(g->solved.how == Group::SOLVED_OKAY) {
+        // Go back to the default group info screen
+        shown->screen = SCREEN_GROUP_INFO;
+        Show();
+        return;
+    }
+
     Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
-
     switch(g->solved.how) {
-        case Group::SOLVED_OKAY:
-            Printf(true, "   %Fsgroup solved okay%E");
-            break;
-
         case Group::DIDNT_CONVERGE:
             Printf(true, "   %FxSOLVE FAILED!%Fd no convergence");
             break;
@@ -757,6 +763,69 @@ void TextWindow::ShowGroupSolveInfo(void) {
     }
 }
 
+void TextWindow::ScreenChangeLightPosition(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightPos[v]));
+    ShowTextEditControl(29+2*v, 8, str);
+    SS.TW.edit.meaning = EDIT_LIGHT_POSITION;
+    SS.TW.edit.i = v;
+}
+void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f", SS.lightIntensity[v]);
+    ShowTextEditControl(29+2*v, 30, str);
+    SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
+    SS.TW.edit.i = v;
+}
+void TextWindow::ScreenChangeColor(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f, %.2f, %.2f",
+        REDf(SS.modelColor[v]),
+        GREENf(SS.modelColor[v]),
+        BLUEf(SS.modelColor[v]));
+    ShowTextEditControl(9+2*v, 12, str);
+    SS.TW.edit.meaning = EDIT_COLOR;
+    SS.TW.edit.i = v;
+}
+void TextWindow::ScreenChangeMeshTolerance(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f", SS.meshTol);
+    ShowTextEditControl(37, 3, str);
+    SS.TW.edit.meaning = EDIT_MESH_TOLERANCE;
+}
+void TextWindow::ShowConfiguration(void) {
+    int i;
+    Printf(true, "%Ft material   color-(r, g, b)");
+    
+    for(i = 0; i < SS.MODEL_COLORS; i++) {
+        Printf(false, "%Bp   #%d:  %Bp  %Bp  (%@, %@, %@) %f%D%Ll%Fl[change]%E",
+            (i & 1) ? 'd' : 'a',
+            i, 0x80000000 | SS.modelColor[i],
+            (i & 1) ? 'd' : 'a',
+            REDf(SS.modelColor[i]),
+            GREENf(SS.modelColor[i]),
+            BLUEf(SS.modelColor[i]),
+            &ScreenChangeColor, i);
+    }
+    
+    Printf(false, "");
+    Printf(false, "%Ft light position                intensity");
+    for(i = 0; i < 2; i++) {
+        Printf(false, "%Bp   #%d  (%2,%2,%2)%Fl%D%f%Ll[c]%E "
+                      "%2 %Fl%D%f%Ll[c]%E",
+            (i & 1) ? 'd' : 'a', i,
+            CO(SS.lightPos[i]), i, &ScreenChangeLightPosition,
+            SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
+    }
+
+    Printf(false, "");
+    Printf(false, "%Ft mesh tolerance (smaller is finer)%E");
+    Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
+        SS.meshTol,
+        &ScreenChangeMeshTolerance, 0,
+        SS.group.elem[SS.group.n-1].mesh.l.n);
+}
+
 void TextWindow::EditControlDone(char *s) {
     switch(edit.meaning) {
         case EDIT_TIMES_REPEATED: {
@@ -770,7 +839,6 @@ void TextWindow::EditControlDone(char *s) {
 
                 SS.MarkGroupDirty(g->h);
                 SS.later.generateAll = true;
-                SS.later.showTW = true;
             } else {
                 Error("Not a valid number or expression: '%s'", s);
             }
@@ -792,11 +860,39 @@ void TextWindow::EditControlDone(char *s) {
                 Group *g = SS.GetGroup(edit.group);
                 g->name.strcpy(s);
             }
-            SS.later.showTW = true;
             SS.unsaved = true;
             break;
         }
+        case EDIT_LIGHT_INTENSITY:
+            SS.lightIntensity[edit.i] = min(1, max(0, atof(s)));
+            InvalidateGraphics();
+            break;
+        case EDIT_LIGHT_POSITION: {
+            double x, y, z;
+            if(sscanf(s, "%lf, %lf, %lf", &x, &y, &z)==3) {
+                SS.lightPos[edit.i] = Vector::From(x, y, z);
+            } else {
+                Error("Bad format: specify coordinates as x, y, z");
+            }
+            InvalidateGraphics();
+            break;
+        }
+        case EDIT_COLOR: {
+            double r, g, b;
+            if(sscanf(s, "%lf, %lf, %lf", &r, &g, &b)==3) {
+                SS.modelColor[edit.i] = RGB(r*255, g*255, b*255);
+            } else {
+                Error("Bad format: specify color as r, g, b");
+            }
+            break;
+        }
+        case EDIT_MESH_TOLERANCE: {
+            SS.meshTol = min(10, max(0.1, atof(s)));
+            SS.GenerateAll(0, INT_MAX);
+            break;
+        }
     }
+    SS.later.showTW = true;
     HideTextEditControl();
     edit.meaning = EDIT_NOTHING;
 }

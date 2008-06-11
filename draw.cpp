@@ -759,12 +759,12 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     }
 }
 
-Vector GraphicsWindow::VectorFromProjs(double right, double up, double fwd) {
+Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
     Vector n = projRight.Cross(projUp);
-    Vector r = offset.ScaledBy(-1);
-    r = r.Plus(projRight.ScaledBy(right));
-    r = r.Plus(projUp.ScaledBy(up));
-    r = r.Plus(n.ScaledBy(fwd));
+
+    Vector r = (projRight.ScaledBy(rightUpForward.x));
+    r =  r.Plus(projUp.ScaledBy(rightUpForward.y));
+    r =  r.Plus(n.ScaledBy(rightUpForward.z));
     return r;
 }
 
@@ -810,21 +810,25 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
-    // Let's use two lights
+    // Let's use two lights, at the user-specified locations
+    GLfloat f;
     glEnable(GL_LIGHT0);
-    GLfloat li0[] = { 0.8f, 0.8f, 0.8f, 1.0f };
+    f = (GLfloat)SS.lightIntensity[0];
+    GLfloat li0[] = { f, f, f, 1.0f };
     glLightfv(GL_LIGHT0, GL_DIFFUSE, li0);
     glLightfv(GL_LIGHT0, GL_SPECULAR, li0);
+
     glEnable(GL_LIGHT1);
-    GLfloat li1[] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    f = (GLfloat)SS.lightIntensity[1];
+    GLfloat li1[] = { f, f, f, 1.0f };
     glLightfv(GL_LIGHT1, GL_DIFFUSE, li1);
     glLightfv(GL_LIGHT1, GL_SPECULAR, li1);
 
     Vector lp;
-    lp = VectorFromProjs(-0.49*w/scale, 0.49*h/scale, 0);
+    lp = VectorFromProjs(SS.lightPos[0]);
     GLfloat lp0[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
     glLightfv(GL_LIGHT0, GL_POSITION, lp0);
-    lp = VectorFromProjs(0.49*w/scale, 0.10*h/scale, 0);
+    lp = VectorFromProjs(SS.lightPos[1]);
     GLfloat lp1[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
     glLightfv(GL_LIGHT1, GL_POSITION, lp1);
 
