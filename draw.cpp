@@ -824,13 +824,13 @@ void GraphicsWindow::Paint(int w, int h) {
     glLightfv(GL_LIGHT1, GL_DIFFUSE, li1);
     glLightfv(GL_LIGHT1, GL_SPECULAR, li1);
 
-    Vector lp;
-    lp = VectorFromProjs(SS.lightPos[0]);
-    GLfloat lp0[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, lp0);
-    lp = VectorFromProjs(SS.lightPos[1]);
-    GLfloat lp1[4] = { (GLfloat)lp.x, (GLfloat)lp.y, (GLfloat)lp.z, 0 };
-    glLightfv(GL_LIGHT1, GL_POSITION, lp1);
+    Vector ld;
+    ld = VectorFromProjs(SS.lightDir[0]);
+    GLfloat ld0[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
+    glLightfv(GL_LIGHT0, GL_POSITION, ld0);
+    ld = VectorFromProjs(SS.lightDir[1]);
+    GLfloat ld1[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
+    glLightfv(GL_LIGHT1, GL_POSITION, ld1);
 
     // For debugging, draw the backs of the triangles in red, so that we
     // notice when a shell is open

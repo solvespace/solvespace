@@ -763,11 +763,11 @@ void TextWindow::ShowGroupSolveInfo(void) {
     }
 }
 
-void TextWindow::ScreenChangeLightPosition(int link, DWORD v) {
+void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
     char str[1024];
-    sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightPos[v]));
+    sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightDir[v]));
     ShowTextEditControl(29+2*v, 8, str);
-    SS.TW.edit.meaning = EDIT_LIGHT_POSITION;
+    SS.TW.edit.meaning = EDIT_LIGHT_DIRECTION;
     SS.TW.edit.i = v;
 }
 void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
@@ -809,12 +809,12 @@ void TextWindow::ShowConfiguration(void) {
     }
     
     Printf(false, "");
-    Printf(false, "%Ft light position                intensity");
+    Printf(false, "%Ft light direction               intensity");
     for(i = 0; i < 2; i++) {
         Printf(false, "%Bp   #%d  (%2,%2,%2)%Fl%D%f%Ll[c]%E "
                       "%2 %Fl%D%f%Ll[c]%E",
             (i & 1) ? 'd' : 'a', i,
-            CO(SS.lightPos[i]), i, &ScreenChangeLightPosition,
+            CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
             SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
     }
 
@@ -867,10 +867,10 @@ void TextWindow::EditControlDone(char *s) {
             SS.lightIntensity[edit.i] = min(1, max(0, atof(s)));
             InvalidateGraphics();
             break;
-        case EDIT_LIGHT_POSITION: {
+        case EDIT_LIGHT_DIRECTION: {
             double x, y, z;
             if(sscanf(s, "%lf, %lf, %lf", &x, &y, &z)==3) {
-                SS.lightPos[edit.i] = Vector::From(x, y, z);
+                SS.lightDir[edit.i] = Vector::From(x, y, z);
             } else {
                 Error("Bad format: specify coordinates as x, y, z");
             }

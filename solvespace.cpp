@@ -17,12 +17,12 @@ void SolveSpace::Init(char *cmdLine) {
     lightIntensity[0] = ((int)CnfThawDWORD( 700, "LightIntensity_0"))/1000.0;
     lightIntensity[1] = ((int)CnfThawDWORD( 400, "LightIntensity_1"))/1000.0;
     // Light positions
-    lightPos[0].x = ((int)CnfThawDWORD(-500, "LightPos_0_Right"     ))/1000.0;
-    lightPos[0].y = ((int)CnfThawDWORD( 500, "LightPos_0_Up"        ))/1000.0;
-    lightPos[0].z = ((int)CnfThawDWORD(   0, "LightPos_0_Forward"   ))/1000.0;
-    lightPos[1].x = ((int)CnfThawDWORD( 500, "LightPos_1_Right"     ))/1000.0;
-    lightPos[1].y = ((int)CnfThawDWORD(   0, "LightPos_1_Up"        ))/1000.0;
-    lightPos[1].z = ((int)CnfThawDWORD(   0, "LightPos_1_Forward"   ))/1000.0;
+    lightDir[0].x = ((int)CnfThawDWORD(-500, "LightDir_0_Right"     ))/1000.0;
+    lightDir[0].y = ((int)CnfThawDWORD( 500, "LightDir_0_Up"        ))/1000.0;
+    lightDir[0].z = ((int)CnfThawDWORD(   0, "LightDir_0_Forward"   ))/1000.0;
+    lightDir[1].x = ((int)CnfThawDWORD( 500, "LightDir_1_Right"     ))/1000.0;
+    lightDir[1].y = ((int)CnfThawDWORD(   0, "LightDir_1_Up"        ))/1000.0;
+    lightDir[1].z = ((int)CnfThawDWORD(   0, "LightDir_1_Forward"   ))/1000.0;
     // Mesh tolerance
     meshTol = ((int)CnfThawDWORD(1000, "MeshTolerance"))/1000.0;
     // Recent files menus
@@ -64,13 +64,13 @@ void SolveSpace::Exit(void) {
     // Light intensities
     CnfFreezeDWORD((int)(lightIntensity[0]*1000), "LightIntensity_0");
     CnfFreezeDWORD((int)(lightIntensity[1]*1000), "LightIntensity_1");
-    // Light positions
-    CnfFreezeDWORD((int)(lightPos[0].x*1000), "LightPos_0_Right");
-    CnfFreezeDWORD((int)(lightPos[0].y*1000), "LightPos_0_Up");
-    CnfFreezeDWORD((int)(lightPos[0].z*1000), "LightPos_0_Forward");
-    CnfFreezeDWORD((int)(lightPos[1].x*1000), "LightPos_1_Right");
-    CnfFreezeDWORD((int)(lightPos[1].y*1000), "LightPos_1_Up");
-    CnfFreezeDWORD((int)(lightPos[1].z*1000), "LightPos_1_Forward");
+    // Light directions
+    CnfFreezeDWORD((int)(lightDir[0].x*1000), "LightDir_0_Right");
+    CnfFreezeDWORD((int)(lightDir[0].y*1000), "LightDir_0_Up");
+    CnfFreezeDWORD((int)(lightDir[0].z*1000), "LightDir_0_Forward");
+    CnfFreezeDWORD((int)(lightDir[1].x*1000), "LightDir_1_Right");
+    CnfFreezeDWORD((int)(lightDir[1].y*1000), "LightDir_1_Up");
+    CnfFreezeDWORD((int)(lightDir[1].z*1000), "LightDir_1_Forward");
     // Mesh tolerance
     CnfFreezeDWORD((int)(meshTol*1000), "MeshTolerance");
 

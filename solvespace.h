@@ -249,7 +249,7 @@ public:
     // Little bits of extra configuration state
     static const int MODEL_COLORS = 8;
     int     modelColor[MODEL_COLORS];
-    Vector  lightPos[2];
+    Vector  lightDir[2];
     double  lightIntensity[2];
     double  meshTol;
 

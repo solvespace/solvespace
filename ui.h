@@ -59,7 +59,7 @@ public:
     static const int EDIT_NOTHING               = 0;
     static const int EDIT_TIMES_REPEATED        = 1;
     static const int EDIT_GROUP_NAME            = 2;
-    static const int EDIT_LIGHT_POSITION        = 3;
+    static const int EDIT_LIGHT_DIRECTION       = 3;
     static const int EDIT_LIGHT_INTENSITY       = 4;
     static const int EDIT_COLOR                 = 5;
     static const int EDIT_MESH_TOLERANCE        = 6;
@@ -110,7 +110,7 @@ public:
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);
     static void ScreenChangeGroupName(int link, DWORD v);
-    static void ScreenChangeLightPosition(int link, DWORD v);
+    static void ScreenChangeLightDirection(int link, DWORD v);
     static void ScreenChangeLightIntensity(int link, DWORD v);
     static void ScreenChangeColor(int link, DWORD v);
     static void ScreenChangeMeshTolerance(int link, DWORD v);
