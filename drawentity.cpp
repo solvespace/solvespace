@@ -114,7 +114,8 @@ bool Entity::IsVisible(void) {
     if(!g->visible) return false;
     if(SS.GroupsInOrder(SS.GW.activeGroup, group)) return false;
 
-    if(IsPoint() && !SS.GW.showPoints) return false;
+    // Don't check if points are hidden; this gets called only for
+    // selected or hovered points, and those should always be shown.
     if(IsWorkplane() && !SS.GW.showWorkplanes) return false;
     if(IsNormal() && !SS.GW.showNormals) return false;
 

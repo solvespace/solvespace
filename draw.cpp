@@ -555,20 +555,29 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
-        ShowGraphicsEditControl((int)p2.x, (int)p2.y, c->exprA->Print());
+        char *s = (c->type == Constraint::COMMENT) ? c->comment.str :
+                                                     c->exprA->Print();
+        ShowGraphicsEditControl((int)p2.x, (int)p2.y, s);
     }
 }
 
 void GraphicsWindow::EditControlDone(char *s) {
+    HideGraphicsEditControl();
+    Constraint *c = SS.GetConstraint(constraintBeingEdited);
+
+    if(c->type == Constraint::COMMENT) {
+        SS.UndoRemember();
+        c->comment.strcpy(s);
+        return;
+    }
+
     Expr *e = Expr::From(s);
     if(e) {
         SS.UndoRemember();
 
-        Constraint *c = SS.GetConstraint(constraintBeingEdited);
         Expr::FreeKeep(&(c->exprA));
         c->exprA = e->DeepCopyKeep();
 
-        HideGraphicsEditControl();
         SS.MarkGroupDirty(c->group);
         SS.GenerateAll();
     } else {

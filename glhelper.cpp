@@ -5,7 +5,7 @@
 
 static bool ColorLocked;
 
-#define FONT_SCALE (0.5)
+#define FONT_SCALE (0.55)
 double glxStrWidth(char *str) {
     int w = 0;
     for(; *str; str++) {

@@ -96,14 +96,15 @@ void SolveSpace::AfterNewFile(void) {
     GW.Init();
 
     unsaved = false;
-    GenerateAll(0, INT_MAX);
-    later.showTW = true;
 
     int w, h;
     GetGraphicsWindowSize(&w, &h);
     GW.width = w;
     GW.height = h;
     GW.ZoomToFit();
+
+    GenerateAll(0, INT_MAX);
+    later.showTW = true;
 }
 
 void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {

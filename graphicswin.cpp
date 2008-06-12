@@ -81,6 +81,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
 { 1, "Same Orient&ation\tShift+A",          MNU_ORIENTED_SAME,  'A'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
+{ 1, "Comment\tShift+C",                    MNU_COMMENT,        'C'|S,  mCon  },
+{ 1, NULL,                                  0,                          NULL  },
 { 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },

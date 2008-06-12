@@ -9,6 +9,7 @@ bool Constraint::HasLabel(void) {
         case DIAMETER:
         case LENGTH_RATIO:
         case ANGLE:
+        case COMMENT:
             return true;
 
         default:
@@ -46,6 +47,8 @@ char *Constraint::Label(void) {
         sprintf(Ret, "%.2f", exprA->Eval());
     } else if(type == LENGTH_RATIO) {
         sprintf(Ret, "%.3f:1", exprA->Eval());
+    } else if(type == COMMENT) {
+        strcpy(Ret, comment.str);
     } else {
         // exprA has units of distance
         strcpy(Ret, SS.GW.ToString(exprA->Eval()));
@@ -58,11 +61,12 @@ char *Constraint::Label(void) {
 
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     char *s = Label();
+    double swidth = glxStrWidth(s), sheight = glxStrHeight();
     if(labelPos) {
         // labelPos is from the top left corner (for the text box used to
         // edit things), but ref is from the center.
-        *labelPos = ref.Minus(gr.WithMagnitude(glxStrWidth(s)/2)).Minus(
-                             gu.WithMagnitude(glxStrHeight()/2));
+        *labelPos = ref.Minus(gr.WithMagnitude(swidth/2)).Minus(
+                              gu.WithMagnitude(sheight/2));
     }
 
     if(dogd.drawing) {
@@ -72,8 +76,12 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
             glxWriteTextRefCenter(s);
         glPopMatrix();
     } else {
-        Point2d o = SS.GW.ProjectPoint(ref);
-        dogd.dmin = min(dogd.dmin, o.DistanceTo(dogd.mp) - 10);
+        double l = swidth/2 - sheight/2;
+        Point2d a = SS.GW.ProjectPoint(ref.Minus(gr.WithMagnitude(l)));
+        Point2d b = SS.GW.ProjectPoint(ref.Plus (gr.WithMagnitude(l)));
+        double d = dogd.mp.DistanceToLine(a, b.Minus(a), true);
+
+        dogd.dmin = min(dogd.dmin, d - 3);
         dogd.refp = ref;
     }
 }
@@ -530,6 +538,10 @@ s:
                     }
                 }
             }
+            break;
+
+        case COMMENT:
+            DoLabel(disp.offset, labelPos, gr, gu);
             break;
 
         default: oops();

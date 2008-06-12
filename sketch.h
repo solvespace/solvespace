@@ -430,6 +430,8 @@ public:
     static const int PARALLEL           = 121;
     static const int EQUAL_RADIUS       = 130;
 
+    static const int COMMENT            = 1000;
+
     int         tag;
     hConstraint h;
 
@@ -448,6 +450,8 @@ public:
     bool        otherAngle;
 
     bool        reference; // a ref dimension, that generates no eqs
+
+    NameStr     comment; // since comments are represented as constraints
 
     // These define how the constraint is drawn on-screen.
     struct {

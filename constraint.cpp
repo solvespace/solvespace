@@ -29,6 +29,7 @@ char *Constraint::DescriptionString(void) {
         case ANGLE:             s = "angle"; break;
         case PARALLEL:          s = "parallel"; break;
         case EQUAL_RADIUS:      s = "eq-radius"; break;
+        case COMMENT:           s = "comment"; break;
         default:                s = "???"; break;
     }
 
@@ -311,7 +312,7 @@ void Constraint::MenuConstrain(int id) {
         case GraphicsWindow::MNU_REFERENCE:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SS.GetConstraint(gs.constraint[0]);
-                if(c->HasLabel()) {
+                if(c->HasLabel() && c->type != COMMENT) {
                     (c->reference) = !(c->reference);
                     SS.GetGroup(c->group)->clean = false;
                     SS.GenerateAll();
@@ -345,6 +346,13 @@ void Constraint::MenuConstrain(int id) {
                 Error("Bad selection for parallel constraint.");
                 return;
             }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_COMMENT:
+            c.type = COMMENT;
+            c.comment.strcpy("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+            c.disp.offset = SS.GW.offset;
             AddConstraint(&c);
             break;
 
@@ -855,6 +863,9 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             }
             break;
         }
+
+        case COMMENT:
+            break;
 
         default: oops();
     }

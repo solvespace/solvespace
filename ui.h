@@ -178,6 +178,7 @@ public:
         MNU_VERTICAL,
         MNU_PARALLEL,
         MNU_ORIENTED_SAME,
+        MNU_COMMENT,
         MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);

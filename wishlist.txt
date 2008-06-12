@@ -8,6 +8,12 @@ display with proper formatting/units
 some kind of rounding / chamfer
 remove back button in browser?
 clean up user-created workplanes
-incremental regen of entities?
 graphic export
+relative paths for import
+auto-generate circles and faces when lathing
+
+
+long term
+-----
+incremental regen of entities?
 

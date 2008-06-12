@@ -212,7 +212,7 @@ public:
 
 class NameStr {
 public:
-    char str[20];
+    char str[64];
 
     inline void strcpy(char *in) {
         memcpy(str, in, min(strlen(in)+1, sizeof(str)));
