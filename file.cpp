@@ -68,6 +68,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.exprA",              'E',    &(SS.sv.g.exprA)              },
     { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
+    { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
     { 'g',  "Group.predef.q.w",         'f',    &(SS.sv.g.predef.q.w)         },
     { 'g',  "Group.predef.q.vx",        'f',    &(SS.sv.g.predef.q.vx)        },
@@ -94,7 +95,6 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
-    { 'e',  "Entity.visible",           'b',    &(SS.sv.e.visible)            },
     { 'e',  "Entity.group.v",           'x',    &(SS.sv.e.group.v)            },
     { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
     { 'e',  "Entity.param[0].v",        'x',    &(SS.sv.e.param[0].v)         },
@@ -127,6 +127,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.actNormal.vy",      'f',    &(SS.sv.e.actNormal.vy)       },
     { 'e',  "Entity.actNormal.vz",      'f',    &(SS.sv.e.actNormal.vz)       },
     { 'e',  "Entity.actDistance",       'f',    &(SS.sv.e.actDistance)        },
+    { 'e',  "Entity.actVisible",        'b',    &(SS.sv.e.actVisible),        },
 
 
     { 'c',  "Constraint.h.v",           'x',    &(SS.sv.c.h.v)                },

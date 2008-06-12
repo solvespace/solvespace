@@ -560,6 +560,15 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
+    SS.UndoRemember();
+
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    (g->skipFirst) = !(g->skipFirst);
+    SS.MarkGroupDirty(g->h);
+    SS.GenerateAll();
+    SS.GW.ClearSuper();
+}
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -581,7 +590,11 @@ void TextWindow::ScreenColor(int link, DWORD v) {
 }
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     Group *g = SS.GetGroup(SS.TW.shown->group);
-    ShowTextEditControl(13, 10, g->exprA->Print());
+
+    // There's an extra line for the skipFirst parameter in one-sided groups.
+    int r = (g->subtype == Group::ONE_SIDED) ? 15 : 13;
+
+    ShowTextEditControl(r, 9, g->exprA->Print());
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
@@ -608,7 +621,7 @@ void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SS.group.FindById(shown->group);
-    char *s, *s2;
+    char *s, *s2, *s3;
 
     if(shown->group.v == Group::HGROUP_REFERENCES.v) {
         Printf(true, "%FtGROUP    %E%s", g->DescriptionString());
@@ -628,10 +641,12 @@ void TextWindow::ShowGroupInfo(void) {
         s = "EXTRUDE ";
     } else if(g->type == Group::TRANSLATE) {
         s = "TRANSLATE";
-        s2 ="REPEAT   ";
+        s2 ="REPEAT  ";
+        s3 ="START   ";
     } else if(g->type == Group::ROTATE) {
-        s = "ROTATE";
-        s2 ="REPEAT";
+        s = "ROTATE  ";
+        s2 ="REPEAT  ";
+        s3 ="START   ";
     }
 
     if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
@@ -649,8 +664,22 @@ void TextWindow::ShowGroupInfo(void) {
     }
 
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
+        bool space;
+        if(g->subtype == Group::ONE_SIDED) {
+            bool skip = g->skipFirst;
+            Printf(true, "%Ft%s%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+                s3,
+                &ScreenChangeSkipFirst,
+                (!skip ? "" : "with original"), (!skip ? "with original" : ""),
+                &ScreenChangeSkipFirst,
+                (skip ? "":"with copy #1"), (skip ? "with copy #1":""));
+            space = false;
+        } else {
+            space = true;
+        }
+
         int times = (int)(g->exprA->Eval());
-        Printf(true, "%Ft%s%E %d time%s %Fl%Ll%D%f[change]%E",
+        Printf(space, "%Ft%s%E %d time%s %Fl%Ll%D%f[change]%E",
             s2, times, times == 1 ? "" : "s",
             g->h.v, &TextWindow::ScreenChangeExprA);
     }
@@ -695,7 +724,14 @@ void TextWindow::ShowGroupInfo(void) {
             0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
     }
 
-    Printf(true, "%Ftrequests in group");
+    // Leave more space if the group has configuration stuff above the req/
+    // constraint list (as all but the drawing groups do).
+    if(g->type == Group::DRAWING_3D || g->type == Group::DRAWING_WORKPLANE) {
+        Printf(true, "%Ftrequests in group");
+    } else {
+        Printf(false, "");
+        Printf(false, "%Ftrequests in group");
+    }
 
     int i, a = 0;
     for(i = 0; i < SS.request.n; i++) {

@@ -130,6 +130,8 @@ void Group::MenuGroup(int id) {
             g.opA = SS.GW.activeGroup;
             g.exprA = Expr::From(3)->DeepCopyKeep();
             g.subtype = ONE_SIDED;
+            g.predef.entityB = SS.GW.ActiveWorkplane();
+            g.activeWorkplane = SS.GW.ActiveWorkplane();
             g.name.strcpy("translate");
             break;
 
@@ -294,8 +296,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gp.y);
             AddParam(param, h.param(2), gp.z);
 
-            int n = (int)(exprA->Eval());
-            for(a = 0; a < n; a++) {
+            int n = (int)(exprA->Eval()), a0 = 0;
+            if(subtype == ONE_SIDED && skipFirst) {
+                a0++; n++;
+            }
+
+            for(a = a0; a < n; a++) {
                 for(i = 0; i < entity->n; i++) {
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
@@ -322,8 +328,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), gn.y);
             AddParam(param, h.param(6), gn.z);
 
-            int n = (int)(exprA->Eval());
-            for(a = 0; a < n; a++) {
+            int n = (int)(exprA->Eval()), a0 = 0;
+            if(subtype == ONE_SIDED && skipFirst) {
+                a0++; n++;
+            }
+
+            for(a = a0; a < n; a++) {
                 for(i = 0; i < entity->n; i++) {
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
@@ -352,7 +362,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             
             for(i = 0; i < impEntity.n; i++) {
                 Entity *ie = &(impEntity.elem[i]);
-
                 CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
@@ -408,19 +417,39 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             AddEq(l, u.Dot(extruden), 0);
             AddEq(l, v.Dot(extruden), 1);
         }
+    } else if(type == TRANSLATE) {
+        if(predef.entityB.v != Entity::FREE_IN_3D.v) {
+            Entity *w = SS.GetEntity(predef.entityB);
+            ExprVector n = w->Normal()->NormalExprsN();
+            ExprVector trans;
+            trans = ExprVector::From(h.param(0), h.param(1), h.param(2));
+
+            // The translation vector is parallel to the workplane
+            AddEq(l, trans.Dot(n), 0);
+        }
     }
 }
 
 hEntity Group::Remap(hEntity in, int copyNumber) {
-    int i;
+    // A hash table is used to accelerate the search
+    int hash = ((unsigned)(in.v*61 + copyNumber)) % REMAP_PRIME;
+    int i = remapCache[hash];
+    if(i >= 0 && i < remap.n) {
+        EntityMap *em = &(remap.elem[i]);
+        if(em->input.v == in.v && em->copyNumber == copyNumber) {
+            return h.entity(em->h.v);
+        }
+    }
+    // but if we don't find it in the hash table, then linear search
     for(i = 0; i < remap.n; i++) {
         EntityMap *em = &(remap.elem[i]);
         if(em->input.v == in.v && em->copyNumber == copyNumber) {
             // We already have a mapping for this entity.
+            remapCache[hash] = i;
             return h.entity(em->h.v);
         }
     }
-    // We don't have a mapping yet, so create one.
+    // And if we still don't find it, then create a new entry.
     EntityMap em;
     em.input = in;
     em.copyNumber = copyNumber;

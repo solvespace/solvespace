@@ -18,11 +18,17 @@ void Group::GeneratePolygon(void) {
         }
         SEdge error;
         if(edges.AssemblePolygon(&poly, &error)) {
-            polyError.yes = false;
+            polyError.how = POLY_GOOD;
             poly.normal = poly.ComputeNormal();
             poly.FixContourDirections();
+
+            if(!poly.AllPointsInPlane(&(polyError.notCoplanarAt))) {
+                // The edges aren't all coplanar; so not a good polygon
+                polyError.how = POLY_NOT_COPLANAR;
+                poly.Clear();
+            }
         } else {
-            polyError.yes = true;
+            polyError.how = POLY_NOT_CLOSED;
             polyError.notClosedAt = error;
             poly.Clear();
         }
@@ -279,8 +285,10 @@ void Group::Draw(void) {
 
     if(SS.GW.showMesh) glxDebugMesh(&mesh);
 
+    // And finally show the polygons too
     if(!SS.GW.showShaded) return;
-    if(polyError.yes) {
+    if(polyError.how == POLY_NOT_CLOSED) {
+        glDisable(GL_DEPTH_TEST);
         glxColor4d(1, 0, 0, 0.2);
         glLineWidth(10);
         glBegin(GL_LINES);
@@ -294,6 +302,16 @@ void Group::Draw(void) {
             glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
             glxWriteText("not closed contour!");
         glPopMatrix();
+        glEnable(GL_DEPTH_TEST);
+    } else if(polyError.how == POLY_NOT_COPLANAR) {
+        glDisable(GL_DEPTH_TEST);
+        glxColor3d(1, 0, 0);
+        glPushMatrix();
+            glxTranslatev(polyError.notCoplanarAt);
+            glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
+            glxWriteText("points not all coplanar!");
+        glPopMatrix();
+        glEnable(GL_DEPTH_TEST);
     } else {
         glxColor4d(0, 0.1, 0.1, 0.5);
         glPolygonOffset(-1, -1);

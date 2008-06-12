@@ -100,6 +100,7 @@ public:
     static void ScreenUnselectAll(int link, DWORD v);
 
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
+    static void ScreenChangeSkipFirst(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 

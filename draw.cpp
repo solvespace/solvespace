@@ -548,6 +548,11 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         ClearSuper();
 
         Constraint *c = SS.GetConstraint(constraintBeingEdited);
+        if(c->reference) {
+            // Not meaningful to edit a reference dimension
+            return;
+        }
+
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
         ShowGraphicsEditControl((int)p2.x, (int)p2.y, c->exprA->Print());

@@ -84,6 +84,7 @@ public:
     Vector ComputeNormal(void);
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
+    bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
 };
 
 class SPolygon {
@@ -99,6 +100,7 @@ public:
     void FixContourDirections(void);
     void TriangulateInto(SMesh *m);
     void Clear(void);
+    bool AllPointsInPlane(Vector *notCoplanarAt);
 };
 
 typedef struct {

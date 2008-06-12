@@ -179,6 +179,18 @@ bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) {
     return inside;
 }
 
+bool SContour::AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt) {
+    for(int i = 0; i < l.n; i++) {
+        Vector p = l.elem[i].p;
+        double dd = n.Dot(p) - d;
+        if(fabs(dd) > 10*LENGTH_EPS) {
+            *notCoplanarAt = p;
+            return false;
+        }
+    }
+    return true;
+}
+
 void SContour::Reverse(void) {
     int i;
     for(i = 0; i < (l.n / 2); i++) {
@@ -261,6 +273,20 @@ void SPolygon::FixContourDirections(void) {
             sc->Reverse();
         }
     }
+}
+
+bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
+    if(l.n == 0 || l.elem[0].l.n == 0) return true;
+
+    Vector p0 = l.elem[0].l.elem[0].p;
+    double d = normal.Dot(p0);
+
+    for(int i = 0; i < l.n; i++) {
+        if(!(l.elem[i]).AllPointsInPlane(normal, d, notCoplanarAt)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 static int TriMode, TriVertexCount;

@@ -680,6 +680,6 @@ void Entity::CalculateNumerical(void) {
         Vector n = FaceGetNormalNum();
         numNormal = Quaternion::From(0, n.x, n.y, n.z);
     }
-    visible = IsVisible();
+    actVisible = IsVisible();
 }
 

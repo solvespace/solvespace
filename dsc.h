@@ -106,20 +106,26 @@ public:
             elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
         }
 
-        int i = 0;
-        if(n == 0 || elem[n-1].h.v < t->h.v) {
-            i = n;
-        } else {
-            while(i < n && elem[i].h.v < t->h.v) {
-                i++;
+        int first = 0, last = n;
+        // We know that we must insert within the closed interval [first,last]
+        while(first != last) {
+            int mid = (first + last)/2;
+            H hm = elem[mid].h;
+            if(hm.v > t->h.v) {
+                last = mid;
+            } else if(hm.v < t->h.v) {
+                first = mid + 1;
+            } else {
+                oops();
             }
         }
-        if(i < n && elem[i].h.v == t->h.v) oops();
+        int i = first;
+
         memmove(elem+i+1, elem+i, (n-i)*sizeof(elem[0]));
         elem[i] = *t;
         n++;
     }
-    
+
     T *FindById(H h) {
         T *t = FindByIdNoOops(h);
         if(!t) {

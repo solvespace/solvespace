@@ -108,6 +108,8 @@ public:
     static const int TWO_SIDED                  = 7001;
     int subtype;
 
+    bool skipFirst; // for step and repeat ops
+
     struct {
         Quaternion  q;
         Vector      p;
@@ -120,10 +122,15 @@ public:
     } predef;
 
     SPolygon        poly;
+    static const int POLY_GOOD          = 0;
+    static const int POLY_NOT_CLOSED    = 1;
+    static const int POLY_NOT_COPLANAR  = 2;
     struct {
+        int             how;
         SEdge           notClosedAt;
-        bool            yes;
+        Vector          notCoplanarAt;
     }               polyError;
+
     SMesh           mesh;
     struct {
         SMesh           interferesAt;
@@ -136,6 +143,8 @@ public:
     int meshCombine;
 
     IdList<EntityMap,EntityId> remap;
+    static const int REMAP_PRIME = 19477;
+    int remapCache[REMAP_PRIME];
 
     char                       impFile[MAX_PATH];
     SMesh                      impMesh;
@@ -272,8 +281,6 @@ public:
     double      numDistance;
     // and a bit more state that the faces need
     Vector      numVector;
-    // and the shown state also gets saved here, for later import
-    bool        visible;
 
     // All points/normals/distances have their numerical value; this is
     // a convenience, to simplify the import/assembly code, so that the
@@ -281,6 +288,8 @@ public:
     Vector      actPoint;
     Quaternion  actNormal;
     double      actDistance;
+    // and the shown state also gets saved here, for later import
+    bool        actVisible;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
