@@ -237,7 +237,8 @@ void TextWindow::DescribeSelection(void) {
     if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
         e = SS.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
 
-#define COP  SS.GW.ToString(p.x), SS.GW.ToString(p.y), SS.GW.ToString(p.z)
+#define COSTR(p) \
+    SS.GW.ToString((p).x), SS.GW.ToString((p).y), SS.GW.ToString((p).z)
 #define PT_AS_STR "(%Fi%s%E, %Fi%s%E, %Fi%s%E)"
 #define PT_AS_NUM "(%Fi%3%E, %Fi%3%E, %Fi%3%E)"
         switch(e->type) {
@@ -248,7 +249,7 @@ void TextWindow::DescribeSelection(void) {
             case Entity::POINT_N_COPY:
             case Entity::POINT_N_ROT_AA:
                 p = e->PointGetNum();
-                Printf(false, "%FtPOINT%E at " PT_AS_STR, COP);
+                Printf(false, "%FtPOINT%E at " PT_AS_STR, COSTR(p));
                 break;
 
             case Entity::NORMAL_IN_3D:
@@ -259,7 +260,7 @@ void TextWindow::DescribeSelection(void) {
                 Quaternion q = e->NormalGetNum();
                 p = q.RotationN();
                 Printf(false, "%FtNORMAL / COORDINATE SYSTEM%E");
-                Printf(true, "  basis n = " PT_AS_NUM, CO(p));
+                Printf(true,  "  basis n = " PT_AS_NUM, CO(p));
                 p = q.RotationU();
                 Printf(false, "        u = " PT_AS_NUM, CO(p));
                 p = q.RotationV();
@@ -269,7 +270,7 @@ void TextWindow::DescribeSelection(void) {
             case Entity::WORKPLANE: {
                 p = SS.GetEntity(e->point[0])->PointGetNum();
                 Printf(false, "%FtWORKPLANE%E");
-                Printf(true, "   origin = " PT_AS_STR, COP);
+                Printf(true, "   origin = " PT_AS_STR, COSTR(p));
                 Quaternion q = e->Normal()->NormalGetNum();
                 p = q.RotationN();
                 Printf(true, "   normal = " PT_AS_NUM, CO(p));
@@ -279,30 +280,30 @@ void TextWindow::DescribeSelection(void) {
                 Vector p0 = SS.GetEntity(e->point[0])->PointGetNum();
                 p = p0;
                 Printf(false, "%FtLINE SEGMENT%E");
-                Printf(true, "   thru " PT_AS_STR, COP);
+                Printf(true,  "   thru " PT_AS_STR, COSTR(p));
                 Vector p1 = SS.GetEntity(e->point[1])->PointGetNum();
                 p = p1;
-                Printf(false, "        " PT_AS_STR, COP);
+                Printf(false, "        " PT_AS_STR, COSTR(p));
                 Printf(true,  "   len = %Fi%s%E",
                     SS.GW.ToString((p1.Minus(p0).Magnitude())));
                 break;
             }
             case Entity::CUBIC:
-                p = SS.GetEntity(e->point[0])->PointGetNum();
                 Printf(false, "%FtCUBIC BEZIER CURVE%E");
                 for(i = 0; i <= 3; i++) {
                     p = SS.GetEntity(e->point[i])->PointGetNum();
-                    Printf((i==0), "   p%c = " PT_AS_STR, '0'+i, COP);
+                    Printf((i==0), "   p%c = " PT_AS_STR, '0'+i, COSTR(p));
                 }
                 break;
+
             case Entity::ARC_OF_CIRCLE: {
                 Printf(false, "%FtARC OF A CIRCLE%E");
                 p = SS.GetEntity(e->point[0])->PointGetNum();
-                Printf(true, "     center = " PT_AS_STR, COP);
+                Printf(true,  "     center = " PT_AS_STR, COSTR(p));
                 p = SS.GetEntity(e->point[1])->PointGetNum();
-                Printf(true,"  endpoints = " PT_AS_STR, COP);
+                Printf(true,  "  endpoints = " PT_AS_STR, COSTR(p));
                 p = SS.GetEntity(e->point[2])->PointGetNum();
-                Printf(false,"              " PT_AS_STR, COP);
+                Printf(false, "              " PT_AS_STR, COSTR(p));
                 double r = e->CircleGetRadiusNum();
                 Printf(true, "   diameter =  %Fi%s", SS.GW.ToString(r*2));
                 Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
@@ -311,9 +312,9 @@ void TextWindow::DescribeSelection(void) {
             case Entity::CIRCLE: {
                 Printf(false, "%FtCIRCLE%E");
                 p = SS.GetEntity(e->point[0])->PointGetNum();
-                Printf(true, "     center = " PT_AS_STR, COP);
+                Printf(true,  "     center = " PT_AS_STR, COSTR(p));
                 double r = e->CircleGetRadiusNum();
-                Printf(true, "   diameter =  %Fi%s", SS.GW.ToString(r*2));
+                Printf(true,  "   diameter =  %Fi%s", SS.GW.ToString(r*2));
                 Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
                 break;
             }
@@ -321,10 +322,10 @@ void TextWindow::DescribeSelection(void) {
             case Entity::FACE_XPROD:
             case Entity::FACE_N_ROT_TRANS:
                 Printf(false, "%FtPLANE FACE%E");
-                p = e->FaceGetPointNum();
-                Printf(true, "   through = " PT_AS_STR, COP);
                 p = e->FaceGetNormalNum();
-                Printf(false, "    normal = " PT_AS_STR, COP);
+                Printf(true,  "   normal = " PT_AS_NUM, CO(p));
+                p = e->FaceGetPointNum();
+                Printf(false, "     thru = " PT_AS_STR, COSTR(p));
                 break;
 
             default:
@@ -343,12 +344,33 @@ void TextWindow::DescribeSelection(void) {
         }
     } else if(gs.n == 2 && gs.points == 2) {
         Printf(false, "%FtTWO POINTS");
-        Vector p0 = SS.GetEntity(gs.point[0])->PointGetNum(); p = p0;
-        Printf(true, "   at " PT_AS_STR, COP);
-        Vector p1 = SS.GetEntity(gs.point[1])->PointGetNum(); p = p1;
-        Printf(false, "      " PT_AS_STR, COP);
+        Vector p0 = SS.GetEntity(gs.point[0])->PointGetNum();
+        Printf(true,  "   at " PT_AS_STR, COSTR(p0));
+        Vector p1 = SS.GetEntity(gs.point[1])->PointGetNum();
+        Printf(false, "      " PT_AS_STR, COSTR(p1));
         double d = (p1.Minus(p0)).Magnitude();
         Printf(true, "  d = %Fi%s", SS.GW.ToString(d));
+    } else if(gs.n == 2 && gs.faces == 1 && gs.points == 1) {
+        Printf(false, "%FtA POINT AND A PLANE FACE");
+        Vector pt = SS.GetEntity(gs.point[0])->PointGetNum();
+        Printf(true,  "        point = " PT_AS_STR, COSTR(pt));
+        Vector n = SS.GetEntity(gs.face[0])->FaceGetNormalNum();
+        Printf(true,  " plane normal = " PT_AS_NUM, CO(n));
+        Vector pl = SS.GetEntity(gs.face[0])->FaceGetPointNum();
+        Printf(false, "   plane thru = " PT_AS_STR, COSTR(pl));
+        double dd = n.Dot(pl) - n.Dot(pt);
+        Printf(true,  "     distance = %Fi%s", SS.GW.ToString(dd));
+    } else if(gs.n == 3 && gs.points == 2 && gs.vectors == 1) {
+        Printf(false, "%FtTWO POINTS AND A VECTOR");
+        Vector p0 = SS.GetEntity(gs.point[0])->PointGetNum();
+        Printf(true,  "  pointA = " PT_AS_STR, COSTR(p0));
+        Vector p1 = SS.GetEntity(gs.point[1])->PointGetNum();
+        Printf(false, "  pointB = " PT_AS_STR, COSTR(p1));
+        Vector v  = SS.GetEntity(gs.vector[0])->VectorGetNum();
+        v = v.WithMagnitude(1);
+        Printf(true,  "  vector = " PT_AS_NUM, CO(v));
+        double d = (p1.Minus(p0)).Dot(v);
+        Printf(true,  "  proj_d = %Fi%s", SS.GW.ToString(d));
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
     }

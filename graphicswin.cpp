@@ -1,5 +1,3 @@
-#include <stdarg.h>
-
 #include "solvespace.h"
 
 #define mView (&GraphicsWindow::MenuView)
@@ -64,8 +62,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Arc of a Circle\tA",                 MNU_ARC,            'A',    mReq  },
 { 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Sym&bolic Variable\tB",               0,                  'B',    mReq  },
-{ 1, NULL,                                  0,                          NULL  },
 { 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
 
 { 0, "&Constrain",                          0,                          NULL  },
@@ -85,8 +81,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
 { 1, "Same Orient&ation\tShift+A",          MNU_ORIENTED_SAME,  'A'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Sym&bolic Equation\tShift+B",         0,                  'B'|S,  NULL  },
-{ 1, NULL,                                  0,                          NULL  },
 { 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },
@@ -97,10 +91,10 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 void GraphicsWindow::Init(void) {
     memset(this, 0, sizeof(*this));
 
-    offset.x = offset.y = offset.z = 0;
     scale = 5;
-    projRight.x = 1; projRight.y = projRight.z = 0;
-    projUp.y = 1; projUp.z = projUp.x = 0;
+    offset    = Vector::From(0, 0, 0);
+    projRight = Vector::From(1, 0, 0);
+    projUp    = Vector::From(0, 1, 0);
 
     // And with the latest visible group active, or failing that the first
     // group after the references
@@ -238,6 +232,7 @@ void GraphicsWindow::ZoomToFit(void) {
         if(dy != 0) scaley = 0.9*height/dy;
         scale = min(100, min(scalex, scaley));
     }
+    scale = max(0.001, scale);
 }
 
 void GraphicsWindow::MenuView(int id) {

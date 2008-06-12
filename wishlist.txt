@@ -5,9 +5,9 @@ DXF export
 partitioned subsystems in the solver
 TTF font text
 display with proper formatting/units
-more measurements
 some kind of rounding / chamfer
 remove back button in browser?
 clean up user-created workplanes
 incremental regen of entities?
+graphic export
 

@@ -407,7 +407,6 @@ class Constraint {
 public:
     static const hConstraint NO_CONSTRAINT;
 
-    static const int USER_EQUATION      =  10;
     static const int POINTS_COINCIDENT  =  20;
     static const int PT_PT_DISTANCE     =  30;
     static const int PT_PLANE_DISTANCE  =  31;

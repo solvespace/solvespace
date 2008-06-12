@@ -504,12 +504,17 @@ void InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, FALSE);
 }
-void PaintGraphics(void)
+void GetGraphicsWindowSize(int *w, int *h)
 {
     RECT r;
     GetClientRect(GraphicsWnd, &r);
-    int w = r.right - r.left;
-    int h = r.bottom - r.top;
+    *w = r.right - r.left;
+    *h = r.bottom - r.top;
+}
+void PaintGraphics(void)
+{
+    int w, h;
+    GetGraphicsWindowSize(&w, &h);
 
     SS.GW.Paint(w, h);
     SwapBuffers(GetDC(GraphicsWnd));

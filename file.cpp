@@ -308,6 +308,9 @@ bool SolveSpace::LoadFromFile(char *filename) {
         return false;
     }
 
+    UndoClearStack(&redo);
+    UndoClearStack(&undo);
+
     constraint.Clear();
     request.Clear();
     group.Clear();

@@ -71,6 +71,7 @@ void ShowTextWindow(BOOL visible);
 void InvalidateText(void);
 void InvalidateGraphics(void);
 void PaintGraphics(void);
+void GetGraphicsWindowSize(int *w, int *h);
 SDWORD GetMilliseconds(void);
 
 void dbp(char *str, ...);
