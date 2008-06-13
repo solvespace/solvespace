@@ -107,8 +107,6 @@ void GraphicsWindow::Init(void) {
     }
     SS.GetGroup(activeGroup)->Activate();
 
-    EnsureValidActives();
-
     showWorkplanes = true;
     showNormals = true;
     showPoints = true;
@@ -119,6 +117,9 @@ void GraphicsWindow::Init(void) {
 
     showTextWindow = true;
     ShowTextWindow(showTextWindow);
+
+    // Do this last, so that all the menus get updated correctly.
+    EnsureValidActives();
 }
 
 void GraphicsWindow::NormalizeProjectionVectors(void) {

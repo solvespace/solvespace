@@ -95,15 +95,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
-    { 'e',  "Entity.group.v",           'x',    &(SS.sv.e.group.v)            },
     { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
-    { 'e',  "Entity.param[0].v",        'x',    &(SS.sv.e.param[0].v)         },
-    { 'e',  "Entity.param[1].v",        'x',    &(SS.sv.e.param[1].v)         },
-    { 'e',  "Entity.param[2].v",        'x',    &(SS.sv.e.param[2].v)         },
-    { 'e',  "Entity.param[3].v",        'x',    &(SS.sv.e.param[3].v)         },
-    { 'e',  "Entity.param[4].v",        'x',    &(SS.sv.e.param[4].v)         },
-    { 'e',  "Entity.param[5].v",        'x',    &(SS.sv.e.param[5].v)         },
-    { 'e',  "Entity.param[6].v",        'x',    &(SS.sv.e.param[6].v)         },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
     { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
     { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },
@@ -111,14 +103,6 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'e',  "Entity.normal.v",          'x',    &(SS.sv.e.normal.v)           },
     { 'e',  "Entity.distance.v",        'x',    &(SS.sv.e.distance.v)         },
     { 'e',  "Entity.workplane.v",       'x',    &(SS.sv.e.workplane.v)        },
-    { 'e',  "Entity.numPoint.x",        'f',    &(SS.sv.e.numPoint.x)         },
-    { 'e',  "Entity.numPoint.y",        'f',    &(SS.sv.e.numPoint.y)         },
-    { 'e',  "Entity.numPoint.z",        'f',    &(SS.sv.e.numPoint.z)         },
-    { 'e',  "Entity.numNormal.w",       'f',    &(SS.sv.e.numNormal.w)        },
-    { 'e',  "Entity.numNormal.vx",      'f',    &(SS.sv.e.numNormal.vx)       },
-    { 'e',  "Entity.numNormal.vy",      'f',    &(SS.sv.e.numNormal.vy)       },
-    { 'e',  "Entity.numNormal.vz",      'f',    &(SS.sv.e.numNormal.vz)       },
-    { 'e',  "Entity.numDistance",       'f',    &(SS.sv.e.numDistance)        },
     { 'e',  "Entity.actPoint.x",        'f',    &(SS.sv.e.actPoint.x)         },
     { 'e',  "Entity.actPoint.y",        'f',    &(SS.sv.e.actPoint.y)         },
     { 'e',  "Entity.actPoint.z",        'f',    &(SS.sv.e.actPoint.z)         },
@@ -192,6 +176,10 @@ void SolveSpace::SaveUsingTable(int type) {
 }
 
 bool SolveSpace::SaveToFile(char *filename) {
+    // Make sure all the entities are regenerated up to date, since they
+    // will be exported.
+    SS.GenerateAll(0, INT_MAX);
+
     fh = fopen(filename, "w");
     if(!fh) {   
         Error("Couldn't write to file '%s'", filename);
@@ -220,7 +208,7 @@ bool SolveSpace::SaveToFile(char *filename) {
     }
 
     for(i = 0; i < entity.n; i++) {
-        (entity.elem[i]).CalculateNumerical();
+        (entity.elem[i]).CalculateNumerical(true);
         sv.e = entity.elem[i];
         SaveUsingTable('e');
         fprintf(fh, "AddEntity\n\n");

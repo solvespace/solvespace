@@ -47,6 +47,7 @@ void Entity::DrawAll(void) {
             if(!e->IsPoint()) continue;
             if(!(SS.GetGroup(e->group)->visible)) continue;
             if(SS.GroupsInOrder(SS.GW.activeGroup, e->group)) continue;
+            if(e->forceHidden) continue;
 
             Vector v = e->PointGetNum();
             glxVertex3v(v.Plus (r).Plus (d));
@@ -123,6 +124,9 @@ bool Entity::IsVisible(void) {
         // The group-associated workplanes are hidden outside their group.
         if(g->h.v != SS.GW.activeGroup.v) return false;
     }
+
+    if(forceHidden) return false;
+
     return true;
 }
 

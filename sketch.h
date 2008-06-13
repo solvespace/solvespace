@@ -279,8 +279,10 @@ public:
     Vector      numPoint;
     Quaternion  numNormal;
     double      numDistance;
-    // and a bit more state that the faces need
-    Vector      numVector;
+
+    // An imported entity that was hidden in the source file ends up hidden
+    // here too.
+    bool        forceHidden;
 
     // All points/normals/distances have their numerical value; this is
     // a convenience, to simplify the import/assembly code, so that the
@@ -376,7 +378,7 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
-    void CalculateNumerical(void);
+    void CalculateNumerical(bool forExport);
 
     char *DescriptionString(void);
 };

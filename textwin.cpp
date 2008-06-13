@@ -221,6 +221,7 @@ void TextWindow::Show(void) {
             case SCREEN_CONFIGURATION:      ShowConfiguration();    break;
         }
     }
+    Printf(false, "");
     InvalidateText();
 }
 
@@ -371,6 +372,29 @@ void TextWindow::DescribeSelection(void) {
         Printf(true,  "  vector = " PT_AS_NUM, CO(v));
         double d = (p1.Minus(p0)).Dot(v);
         Printf(true,  "  proj_d = %Fi%s", SS.GW.ToString(d));
+    } else if(gs.n == 2 && gs.faces == 2) {
+        Printf(false, "%FtTWO PLANE FACES");
+
+        Vector n0 = SS.GetEntity(gs.face[0])->FaceGetNormalNum();
+        Printf(true,  " planeA normal = " PT_AS_NUM, CO(n0));
+        Vector p0 = SS.GetEntity(gs.face[0])->FaceGetPointNum();
+        Printf(false, "   planeA thru = " PT_AS_STR, COSTR(p0));
+
+        Vector n1 = SS.GetEntity(gs.face[1])->FaceGetNormalNum();
+        Printf(true,  " planeB normal = " PT_AS_NUM, CO(n1));
+        Vector p1 = SS.GetEntity(gs.face[1])->FaceGetPointNum();
+        Printf(false, "   planeB thru = " PT_AS_STR, COSTR(p1));
+
+        double theta = acos(n0.Dot(n1));
+        Printf(true,  "         angle = %Fi%2%E degrees", theta*180/PI);
+        while(theta < PI/2) theta += PI;
+        while(theta > PI/2) theta -= PI; 
+        Printf(false, "      or angle = %Fi%2%E (mod 180)", theta*180/PI);
+
+        if(fabs(theta) < 0.01) {
+            double d = (p1.Minus(p0)).Dot(n0);
+            Printf(true,  "      distance = %Fi%s", SS.GW.ToString(d));
+        }
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
     }

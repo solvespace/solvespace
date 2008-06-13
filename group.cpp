@@ -266,7 +266,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 if(e->IsPoint()) pt = e->h;
 
-                e->CalculateNumerical();
+                e->CalculateNumerical(false);
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
@@ -306,7 +306,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
 
-                    e->CalculateNumerical();
+                    e->CalculateNumerical(false);
                     CopyEntity(entity, e,
                         a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
@@ -338,7 +338,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
 
-                    e->CalculateNumerical();
+                    e->CalculateNumerical(false);
                     CopyEntity(entity, e,
                         a*2 - (subtype == ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
@@ -481,7 +481,7 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
         en.param[1] = h.param(1);
         en.param[2] = h.param(2);
         en.numPoint = a;
-        en.numVector = ab;
+        en.numNormal = Quaternion::From(0, ab.x, ab.y, ab.z);
 
         en.group = h;
         en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
@@ -624,13 +624,15 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             en.param[4] = qvx;
             en.param[5] = qvy;
             en.param[6] = qvz;
-            en.numPoint = ep->numPoint;
-            en.numNormal = ep->numNormal;
+            en.numPoint = ep->actPoint;
+            en.numNormal = ep->actNormal;
             break;
 
         default:
             oops();
     }
+    en.forceHidden = !ep->actVisible;
+
     el->Add(&en);
 }
 

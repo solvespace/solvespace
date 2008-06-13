@@ -2,15 +2,17 @@
 STL check for meshes, and T intersection removal
 STL export
 DXF export
-partitioned subsystems in the solver
 TTF font text
-display with proper formatting/units
 some kind of rounding / chamfer
 remove back button in browser?
 clean up user-created workplanes
 graphic export
 relative paths for import
 auto-generate circles and faces when lathing
+
+partitioned subsystems in the solver
+display with proper formatting/units
+sweep tool
 
 
 long term

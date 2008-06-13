@@ -574,7 +574,8 @@ ExprVector Entity::FaceGetNormalExprs(void) {
         r = ExprVector::From(v.WithMagnitude(1));
     } else if(type == FACE_XPROD) {
         ExprVector vc = ExprVector::From(param[0], param[1], param[2]);
-        ExprVector vn = ExprVector::From(numVector);
+        ExprVector vn =
+            ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         r = vc.Cross(vn);
         r = r.WithMagnitude(Expr::From(1.0));
     } else if(type == FACE_N_ROT_TRANS) {
@@ -595,7 +596,8 @@ Vector Entity::FaceGetNormalNum(void) {
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
     } else if(type == FACE_XPROD) {
         Vector vc = Vector::From(param[0], param[1], param[2]);
-        r = vc.Cross(numVector);
+        Vector vn = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        r = vc.Cross(vn);
     } else if(type == FACE_N_ROT_TRANS) {
         // The numerical normal vector gets the rotation
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
@@ -669,17 +671,23 @@ void Entity::GenerateEquations(IdList<Equation,hEquation> *l) {
     }
 }
 
-void Entity::CalculateNumerical(void) {
+void Entity::CalculateNumerical(bool forExport) {
     if(IsPoint()) actPoint = PointGetNum();
     if(IsNormal()) actNormal = NormalGetNum();
     if(type == DISTANCE || type == DISTANCE_N_COPY) {
         actDistance = DistanceGetNum();
     }
     if(IsFace()) {
-        numPoint  = FaceGetPointNum();
+        actPoint  = FaceGetPointNum();
         Vector n = FaceGetNormalNum();
-        numNormal = Quaternion::From(0, n.x, n.y, n.z);
+        actNormal = Quaternion::From(0, n.x, n.y, n.z);
     }
-    actVisible = IsVisible();
+    if(forExport) {
+        // Visibility in copied import entities follows source file
+        actVisible = IsVisible();
+    } else {
+        // Copied entities within a file are always visible
+        actVisible = true;
+    }
 }
 
