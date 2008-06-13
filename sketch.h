@@ -112,7 +112,6 @@ public:
 
     struct {
         Quaternion  q;
-        Vector      p;
         hEntity     origin;
         hEntity     entityB;
         hEntity     entityC;

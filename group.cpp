@@ -101,21 +101,18 @@ void Group::MenuGroup(int id) {
             break;
 
         case GraphicsWindow::MNU_GROUP_ROT: {
-            Vector n;
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
-                g.predef.p = (SS.GetEntity(gs.point[0]))->PointGetNum();
+                g.predef.origin = gs.point[0];
                 Entity *w = SS.GetEntity(SS.GW.ActiveWorkplane());
-                n = (w->Normal()->NormalN());
+                g.predef.entityB = w->Normal()->h;
                 g.activeWorkplane = w->h;
             } else if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
-                g.predef.p = (SS.GetEntity(gs.point[0]))->PointGetNum();
-                n = SS.GetEntity(gs.vector[0])->VectorGetNum();
+                g.predef.origin = gs.point[0];
+                g.predef.entityB = gs.vector[0];
             } else {
                 Error("Bad selection for new rotation.");
                 return;
             }
-            n = n.WithMagnitude(1);
-            g.predef.q = Quaternion::From(0, n.x, n.y, n.z);
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
             g.exprA = Expr::From(3)->DeepCopyKeep();
@@ -395,13 +392,16 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
-        AddEq(l, (EC(predef.p.x))->Minus(EP(0)), 0);
-        AddEq(l, (EC(predef.p.y))->Minus(EP(1)), 1);
-        AddEq(l, (EC(predef.p.z))->Minus(EP(2)), 2);
+        ExprVector orig = SS.GetEntity(predef.origin)->PointGetExprs();
+        AddEq(l, (orig.x)->Minus(EP(0)), 0);
+        AddEq(l, (orig.y)->Minus(EP(1)), 1);
+        AddEq(l, (orig.z)->Minus(EP(2)), 2);
         // param 3 is the angle, which is free
-        AddEq(l, (EC(predef.q.vx))->Minus(EP(4)), 3);
-        AddEq(l, (EC(predef.q.vy))->Minus(EP(5)), 4);
-        AddEq(l, (EC(predef.q.vz))->Minus(EP(6)), 5);
+        Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
+        axis = axis.WithMagnitude(1);
+        AddEq(l, (EC(axis.x))->Minus(EP(4)), 3);
+        AddEq(l, (EC(axis.y))->Minus(EP(5)), 4);
+        AddEq(l, (EC(axis.z))->Minus(EP(6)), 5);
     } else if(type == EXTRUDE) {
         if(predef.entityB.v != Entity::FREE_IN_3D.v) {
             // The extrusion path is locked along a line, normal to the
