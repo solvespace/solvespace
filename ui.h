@@ -222,14 +222,6 @@ public:
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin);
     void ZoomToFit(void);
 
-    typedef enum {
-        UNIT_MM = 0,
-        UNIT_INCHES,
-    } Unit;
-    Unit    viewUnits;
-    char *ToString(double v);
-    double FromString(char *str);
-
     hGroup  activeGroup;
     void EnsureValidActives(void);
     bool LockedInWorkplane(void);

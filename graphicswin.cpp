@@ -107,7 +107,7 @@ void GraphicsWindow::Init(void) {
     }
     SS.GetGroup(activeGroup)->Activate();
 
-    showWorkplanes = true;
+    showWorkplanes = false;
     showNormals = true;
     showPoints = true;
     showConstraints = true;
@@ -258,33 +258,18 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_UNITS_MM:
-            SS.GW.viewUnits = UNIT_MM;
+            SS.viewUnits = SolveSpace::UNIT_MM;
             SS.GW.EnsureValidActives();
             break;
 
         case MNU_UNITS_INCHES:
-            SS.GW.viewUnits = UNIT_INCHES;
+            SS.viewUnits = SolveSpace::UNIT_INCHES;
             SS.GW.EnsureValidActives();
             break;
 
         default: oops();
     }
     InvalidateGraphics();
-}
-
-char *GraphicsWindow::ToString(double v) {
-    static int WhichBuf;
-    static char Bufs[8][128];
-
-    WhichBuf++;
-    if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
-
-    char *s = Bufs[WhichBuf];
-    sprintf(s, "%.3f", v);
-    return s;
-}
-double GraphicsWindow::FromString(char *s) {
-    return atof(s);
 }
 
 void GraphicsWindow::EnsureValidActives(void) {
@@ -337,15 +322,15 @@ void GraphicsWindow::EnsureValidActives(void) {
 
     SS.UndoEnableMenus();
 
-    switch(viewUnits) {
-        case UNIT_MM:
-        case UNIT_INCHES:
+    switch(SS.viewUnits) {
+        case SolveSpace::UNIT_MM:
+        case SolveSpace::UNIT_INCHES:
             break;
         default:
-            viewUnits = UNIT_MM;
+            SS.viewUnits = SolveSpace::UNIT_MM;
     }
-    CheckMenuById(MNU_UNITS_MM, viewUnits == UNIT_MM);
-    CheckMenuById(MNU_UNITS_INCHES, viewUnits == UNIT_INCHES);
+    CheckMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpace::UNIT_MM);
+    CheckMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpace::UNIT_INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);

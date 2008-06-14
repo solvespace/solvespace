@@ -51,7 +51,7 @@ char *Constraint::Label(void) {
         strcpy(Ret, comment.str);
     } else {
         // valA has units of distance
-        strcpy(Ret, SS.GW.ToString(valA));
+        strcpy(Ret, SS.MmToString(fabs(valA)));
     }
     if(reference) {
         strcat(Ret, " REF");

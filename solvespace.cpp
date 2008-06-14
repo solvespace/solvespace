@@ -25,6 +25,8 @@ void SolveSpace::Init(char *cmdLine) {
     lightDir[1].z = ((int)CnfThawDWORD(   0, "LightDir_1_Forward"   ))/1000.0;
     // Mesh tolerance
     meshTol = ((int)CnfThawDWORD(1000, "MeshTolerance"))/1000.0;
+    // View units
+    viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -73,7 +75,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD((int)(lightDir[1].z*1000), "LightDir_1_Forward");
     // Mesh tolerance
     CnfFreezeDWORD((int)(meshTol*1000), "MeshTolerance");
-
+    // Display/entry units
+    CnfFreezeDWORD((int)viewUnits, "ViewUnits");
     ExitNow();
 }
 
@@ -87,6 +90,30 @@ int SolveSpace::CircleSides(double r) {
     int s = 7 + (int)(sqrt(r*SS.GW.scale/meshTol));
     return min(s, 40);
 }
+
+char *SolveSpace::MmToString(double v) {
+    static int WhichBuf;
+    static char Bufs[8][128];
+
+    WhichBuf++;
+    if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
+
+    char *s = Bufs[WhichBuf];
+    if(viewUnits == UNIT_INCHES) {
+        sprintf(s, "%.3f", v/25.4);
+    } else {
+        sprintf(s, "%.2f", v);
+    }
+    return s;
+}
+double SolveSpace::ExprToMm(Expr *e) {
+    if(viewUnits == UNIT_INCHES) {
+        return (e->Eval())*25.4;
+    } else {
+        return e->Eval();
+    }
+}
+
 
 void SolveSpace::AfterNewFile(void) {
     ReloadAllImported();

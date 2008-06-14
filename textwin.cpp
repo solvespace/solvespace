@@ -239,7 +239,7 @@ void TextWindow::DescribeSelection(void) {
         e = SS.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
 
 #define COSTR(p) \
-    SS.GW.ToString((p).x), SS.GW.ToString((p).y), SS.GW.ToString((p).z)
+    SS.MmToString((p).x), SS.MmToString((p).y), SS.MmToString((p).z)
 #define PT_AS_STR "(%Fi%s%E, %Fi%s%E, %Fi%s%E)"
 #define PT_AS_NUM "(%Fi%3%E, %Fi%3%E, %Fi%3%E)"
         switch(e->type) {
@@ -286,7 +286,7 @@ void TextWindow::DescribeSelection(void) {
                 p = p1;
                 Printf(false, "        " PT_AS_STR, COSTR(p));
                 Printf(true,  "   len = %Fi%s%E",
-                    SS.GW.ToString((p1.Minus(p0).Magnitude())));
+                    SS.MmToString((p1.Minus(p0).Magnitude())));
                 break;
             }
             case Entity::CUBIC:
@@ -306,8 +306,8 @@ void TextWindow::DescribeSelection(void) {
                 p = SS.GetEntity(e->point[2])->PointGetNum();
                 Printf(false, "              " PT_AS_STR, COSTR(p));
                 double r = e->CircleGetRadiusNum();
-                Printf(true, "   diameter =  %Fi%s", SS.GW.ToString(r*2));
-                Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
+                Printf(true, "   diameter =  %Fi%s", SS.MmToString(r*2));
+                Printf(false, "     radius =  %Fi%s", SS.MmToString(r));
                 break;
             }
             case Entity::CIRCLE: {
@@ -315,8 +315,8 @@ void TextWindow::DescribeSelection(void) {
                 p = SS.GetEntity(e->point[0])->PointGetNum();
                 Printf(true,  "     center = " PT_AS_STR, COSTR(p));
                 double r = e->CircleGetRadiusNum();
-                Printf(true,  "   diameter =  %Fi%s", SS.GW.ToString(r*2));
-                Printf(false, "     radius =  %Fi%s", SS.GW.ToString(r));
+                Printf(true,  "   diameter =  %Fi%s", SS.MmToString(r*2));
+                Printf(false, "     radius =  %Fi%s", SS.MmToString(r));
                 break;
             }
             case Entity::FACE_NORMAL_PT:
@@ -350,7 +350,7 @@ void TextWindow::DescribeSelection(void) {
         Vector p1 = SS.GetEntity(gs.point[1])->PointGetNum();
         Printf(false, "      " PT_AS_STR, COSTR(p1));
         double d = (p1.Minus(p0)).Magnitude();
-        Printf(true, "  d = %Fi%s", SS.GW.ToString(d));
+        Printf(true, "  d = %Fi%s", SS.MmToString(d));
     } else if(gs.n == 2 && gs.faces == 1 && gs.points == 1) {
         Printf(false, "%FtA POINT AND A PLANE FACE");
         Vector pt = SS.GetEntity(gs.point[0])->PointGetNum();
@@ -360,7 +360,7 @@ void TextWindow::DescribeSelection(void) {
         Vector pl = SS.GetEntity(gs.face[0])->FaceGetPointNum();
         Printf(false, "   plane thru = " PT_AS_STR, COSTR(pl));
         double dd = n.Dot(pl) - n.Dot(pt);
-        Printf(true,  "     distance = %Fi%s", SS.GW.ToString(dd));
+        Printf(true,  "     distance = %Fi%s", SS.MmToString(dd));
     } else if(gs.n == 3 && gs.points == 2 && gs.vectors == 1) {
         Printf(false, "%FtTWO POINTS AND A VECTOR");
         Vector p0 = SS.GetEntity(gs.point[0])->PointGetNum();
@@ -371,7 +371,7 @@ void TextWindow::DescribeSelection(void) {
         v = v.WithMagnitude(1);
         Printf(true,  "  vector = " PT_AS_NUM, CO(v));
         double d = (p1.Minus(p0)).Dot(v);
-        Printf(true,  "  proj_d = %Fi%s", SS.GW.ToString(d));
+        Printf(true,  "  proj_d = %Fi%s", SS.MmToString(d));
     } else if(gs.n == 2 && gs.faces == 2) {
         Printf(false, "%FtTWO PLANE FACES");
 
@@ -393,7 +393,7 @@ void TextWindow::DescribeSelection(void) {
 
         if(fabs(theta) < 0.01) {
             double d = (p1.Minus(p0)).Dot(n0);
-            Printf(true,  "      distance = %Fi%s", SS.GW.ToString(d));
+            Printf(true,  "      distance = %Fi%s", SS.MmToString(d));
         }
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");

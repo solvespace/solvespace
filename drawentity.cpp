@@ -117,12 +117,16 @@ bool Entity::IsVisible(void) {
 
     // Don't check if points are hidden; this gets called only for
     // selected or hovered points, and those should always be shown.
-    if(IsWorkplane() && !SS.GW.showWorkplanes) return false;
     if(IsNormal() && !SS.GW.showNormals) return false;
 
-    if(IsWorkplane() && !h.isFromRequest()) {
-        // The group-associated workplanes are hidden outside their group.
-        if(g->h.v != SS.GW.activeGroup.v) return false;
+    if(!SS.GW.showWorkplanes) {
+        if(IsWorkplane() && !h.isFromRequest()) {
+            if(g->h.v != SS.GW.activeGroup.v) {
+                // The group-associated workplanes are hidden outside
+                // their group.
+                return false;
+            }
+        }
     }
 
     if(forceHidden) return false;

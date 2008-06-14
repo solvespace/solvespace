@@ -555,8 +555,22 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
-        char *s = (c->type == Constraint::COMMENT) ? c->comment.str :
-                                                     ToString(c->valA);
+
+        char s[1024];
+        switch(c->type) {
+            case Constraint::COMMENT:
+                strcpy(s, c->comment.str);
+                break;
+
+            case Constraint::ANGLE:
+            case Constraint::LENGTH_RATIO:
+                sprintf(s, "%.3f", c->valA);
+                break;
+
+            default:
+                strcpy(s, SS.MmToString(fabs(c->valA)));
+                break;
+        }
         ShowGraphicsEditControl((int)p2.x, (int)p2.y-4, s);
     }
 }
@@ -575,8 +589,33 @@ void GraphicsWindow::EditControlDone(char *s) {
     if(e) {
         SS.UndoRemember();
 
-        c->valA = e->Eval();
+        switch(c->type) {
+            case Constraint::PT_LINE_DISTANCE:
+            case Constraint::PT_FACE_DISTANCE:
+            case Constraint::PT_PLANE_DISTANCE: {
+                // The sign is not displayed to the user, but this is a signed
+                // distance internally. To flip the sign, the user enters a
+                // negative distance.
+                bool wasNeg = (c->valA < 0);
+                if(wasNeg) {
+                    c->valA = -SS.ExprToMm(e);
+                } else {
+                    c->valA = SS.ExprToMm(e);
+                }
+                break;
+            }
+            case Constraint::ANGLE:
+            case Constraint::LENGTH_RATIO:
+                // These don't get the units conversion for distance, and
+                // they're always positive
+                c->valA = fabs(e->Eval());
+                break;
 
+            default:
+                // These are always positive, and they get the units conversion.
+                c->valA = fabs(SS.ExprToMm(e));
+                break;
+        }
         SS.MarkGroupDirty(c->group);
         SS.GenerateAll();
     } else {

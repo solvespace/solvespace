@@ -253,11 +253,18 @@ public:
     Vector  lightDir[2];
     double  lightIntensity[2];
     double  meshTol;
+    int CircleSides(double r);
+    typedef enum {
+        UNIT_MM = 0,
+        UNIT_INCHES,
+    } Unit;
+    Unit    viewUnits;
+    char *MmToString(double v);
+    double ExprToMm(Expr *e);
 
+    // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);
     void Exit(void);
-
-    int CircleSides(double r);
 
     // File load/save routines, including the additional files that get
     // loaded when we have import groups.

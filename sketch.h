@@ -239,12 +239,6 @@ public:
 
     static const int NORMAL_IN_3D           =  3000;
     static const int NORMAL_IN_2D           =  3001;
-    // This is a normal that lies in a plane; so if the defining workplane
-    // has basis vectors uw, vw, nw, then
-    // n = (cos theta)*uw + (sin theta)*vw
-    // u = (sin theta)*uw - (cos theta)*vw
-    // v = nw
-    static const int NORMAL_IN_PLANE        =  3002;
     static const int NORMAL_N_COPY          =  3010;
     static const int NORMAL_N_ROT           =  3011;
     static const int NORMAL_N_ROT_AA        =  3012;
