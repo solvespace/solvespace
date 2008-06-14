@@ -16,6 +16,8 @@ char *Constraint::DescriptionString(void) {
         case PT_ON_LINE:        s = "pt-on-line"; break;
         case PT_ON_FACE:        s = "pt-on-face"; break;
         case EQUAL_LENGTH_LINES:s = "eq-length"; break;
+        case EQ_LEN_PT_LINE_D:  s = "eq-length-and-pt-ln-dist"; break;
+        case EQ_PT_LN_DISTANCES:s = "eq-pt-line-distances"; break;
         case LENGTH_RATIO:      s = "length-ratio"; break;
         case SYMMETRIC:         s = "symmetric"; break;
         case SYMMETRIC_HORIZ:   s = "symmetric-h"; break;
@@ -154,6 +156,25 @@ void Constraint::MenuConstrain(int id) {
                 c.type = EQUAL_LENGTH_LINES;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            } else if(gs.lineSegments == 2 && gs.points == 2 && gs.n == 4) {
+                c.type = EQ_PT_LN_DISTANCES;
+                c.entityA = gs.entity[0];
+                c.ptA = gs.point[0];
+                c.entityB = gs.entity[1];
+                c.ptB = gs.point[1];
+            } else if(gs.lineSegments == 1 && gs.points == 2 && gs.n == 3) {
+                // The same line segment for the distances, but different
+                // points.
+                c.type = EQ_PT_LN_DISTANCES;
+                c.entityA = gs.entity[0];
+                c.ptA = gs.point[0];
+                c.entityB = gs.entity[0];
+                c.ptB = gs.point[1];
+            } else if(gs.lineSegments == 2 && gs.points == 1 && gs.n == 3) {
+                c.type = EQ_LEN_PT_LINE_D;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+                c.ptA = gs.point[0];
             } else if(gs.circlesOrArcs == 2 && gs.n == 2) {
                 c.type = EQUAL_RADIUS;
                 c.entityA = gs.entity[0];
@@ -549,6 +570,22 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             AddEq(l, Distance(workplane, a->point[0], a->point[1])->Minus(
                      Distance(workplane, b->point[0], b->point[1])), 0);
+            break;
+        }
+
+        // These work on distance squared, since the pt-line distances are
+        // signed, and we want the absolute value.
+        case EQ_LEN_PT_LINE_D: {
+            Entity *forLen = SS.GetEntity(entityA);
+            Expr *d1 = Distance(workplane, forLen->point[0], forLen->point[1]);
+            Expr *d2 = PointLineDistance(workplane, ptA, entityB);
+            AddEq(l, (d1->Square())->Minus(d2->Square()), 0);
+            break;
+        }
+        case EQ_PT_LN_DISTANCES: {
+            Expr *d1 = PointLineDistance(workplane, ptA, entityA);
+            Expr *d2 = PointLineDistance(workplane, ptB, entityB);
+            AddEq(l, (d1->Square())->Minus(d2->Square()), 0);
             break;
         }
 

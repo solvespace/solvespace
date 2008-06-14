@@ -56,6 +56,7 @@ public:
     Vector RotatedAbout(Vector orig, Vector axis, double theta);
     Vector RotatedAbout(Vector axis, double theta);
     double DistanceToLine(Vector p0, Vector dp);
+    Vector ClosestPointOnLine(Vector p0, Vector dp);
     double Magnitude(void);
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);

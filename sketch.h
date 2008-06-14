@@ -412,6 +412,8 @@ public:
     static const int PT_ON_FACE         =  43;
     static const int EQUAL_LENGTH_LINES =  50;
     static const int LENGTH_RATIO       =  51;
+    static const int EQ_LEN_PT_LINE_D   =  52;
+    static const int EQ_PT_LN_DISTANCES =  53;
     static const int SYMMETRIC          =  60;
     static const int SYMMETRIC_HORIZ    =  61;
     static const int SYMMETRIC_VERT     =  62;
@@ -471,6 +473,7 @@ public:
     char *Label(void);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void DoProjectedPoint(Vector *p);
+    void DoEqualLenTicks(Vector a, Vector b, Vector gn);
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos(void);

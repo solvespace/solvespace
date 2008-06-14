@@ -315,6 +315,20 @@ double Vector::DistanceToLine(Vector p0, Vector dp) {
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
+Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
+    dp = dp.WithMagnitude(1);
+    // this, p0, and (p0+dp) define a plane; the min distance is in
+    // that plane, so calculate its normal
+    Vector pn = (this->Minus(p0)).Cross(dp);
+    // The minimum distance line is in that plane, perpendicular
+    // to the line
+    Vector n = pn.Cross(dp);
+
+    // Calculate the actual distance
+    double d = (dp.Cross(p0.Minus(*this))).Magnitude();
+    return this->Plus(n.WithMagnitude(d));
+}
+
 double Vector::Magnitude(void) {
     return sqrt(x*x + y*y + z*z);
 }

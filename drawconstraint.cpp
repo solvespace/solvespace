@@ -95,6 +95,14 @@ void Constraint::DoProjectedPoint(Vector *r) {
     *r = p;
 }
 
+void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
+    Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
+    Vector ab = a.Minus(b);
+    Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
+    
+    LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
+}
+
 void Constraint::DrawOrGetDistance(Vector *labelPos) {
     if(!SS.GW.showConstraints) return;
     Group *g = SS.GetGroup(group);
@@ -172,19 +180,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 DoProjectedPoint(&pt);
             }
 
-            Vector lAB = (lA.Minus(lB)).WithMagnitude(1);
-            Vector closest;
-            // lA, lB, and pt define a plane; the min distance is in
-            // that plane, so calculate its normal
-            Vector pn = (pt.Minus(lA)).Cross(lAB);
-            // The minimum distance line is in that plane, perpendicular
-            // to the line
-            Vector n = pn.Cross(lAB);
+            // Find the closest point on the line
+            Vector closest = pt.ClosestPointOnLine(lA, (lA.Minus(lB)));
 
-            // Calculate the actual distance
-            double d = (lAB.Cross(lA.Minus(pt))).Magnitude();
-            closest = pt.Plus(n.WithMagnitude(d));
-            
             LineDrawOrGetDistance(pt, closest);
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
             DoLabel(ref, labelPos, gr, gu);
@@ -192,7 +190,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             if(workplane.v != Entity::FREE_IN_3D.v) {
                 // Draw the projection marker from the closest point on the
                 // projected line to the projected point on the real line.
-                lAB = (lA.Minus(lB));
+                Vector lAB = (lA.Minus(lB));
                 double t = (lA.Minus(closest)).DivPivoting(lAB);
 
                 Vector lA = SS.GetEntity(line->point[0])->PointGetNum();
@@ -422,15 +420,65 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
                 a = SS.GetEntity(e->point[0])->PointGetNum();
                 b = SS.GetEntity(e->point[1])->PointGetNum();
-                Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
-                Vector ab = a.Minus(b);
-                Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
-                
-                LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
+
+                if(workplane.v != Entity::FREE_IN_3D.v) {
+                    DoProjectedPoint(&a);
+                    DoProjectedPoint(&b);
+                }
+
+                DoEqualLenTicks(a, b, gn);
             }
             if(type == LENGTH_RATIO) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
                 DoLabel(ref, labelPos, gr, gu);
+            }
+            break;
+        }
+
+        case EQ_LEN_PT_LINE_D: {
+            Entity *forLen = SS.GetEntity(entityA);
+            Vector a = SS.GetEntity(forLen->point[0])->PointGetNum(),
+                   b = SS.GetEntity(forLen->point[1])->PointGetNum();
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                DoProjectedPoint(&a);
+                DoProjectedPoint(&b);
+            }
+            DoEqualLenTicks(a, b, gn);
+
+            Entity *ln = SS.GetEntity(entityB);
+            Vector la = SS.GetEntity(ln->point[0])->PointGetNum(),
+                   lb = SS.GetEntity(ln->point[1])->PointGetNum();
+            Vector pt = SS.GetEntity(ptA)->PointGetNum();
+            if(workplane.v != Entity::FREE_IN_3D.v) {
+                DoProjectedPoint(&pt);
+                la = la.ProjectInto(workplane);
+                lb = lb.ProjectInto(workplane);
+            }
+
+            Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
+            LineDrawOrGetDistance(pt, closest);
+            DoEqualLenTicks(pt, closest, gn);
+            break;
+        }
+
+        case EQ_PT_LN_DISTANCES: {
+            for(int i = 0; i < 2; i++) {
+                Entity *ln = SS.GetEntity(i == 0 ? entityA : entityB);
+                Vector la = SS.GetEntity(ln->point[0])->PointGetNum(),
+                       lb = SS.GetEntity(ln->point[1])->PointGetNum();
+                Entity *pte = SS.GetEntity(i == 0 ? ptA : ptB);
+                Vector pt = pte->PointGetNum();
+
+                if(workplane.v != Entity::FREE_IN_3D.v) {
+                    DoProjectedPoint(&pt);
+                    la = la.ProjectInto(workplane);
+                    lb = lb.ProjectInto(workplane);
+                }
+
+                Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
+
+                LineDrawOrGetDistance(pt, closest);
+                DoEqualLenTicks(pt, closest, gn);
             }
             break;
         }
