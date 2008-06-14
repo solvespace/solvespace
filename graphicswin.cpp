@@ -98,13 +98,8 @@ void GraphicsWindow::Init(void) {
     projRight = Vector::From(1, 0, 0);
     projUp    = Vector::From(0, 1, 0);
 
-    // And with the latest visible group active, or failing that the first
-    // group after the references
-    int i;
-    for(i = 0; i < SS.group.n; i++) {
-        Group *g = &(SS.group.elem[i]);
-        if(i == 1 || g->visible) activeGroup = g->h;
-    }
+    // And with the last group active
+    activeGroup = SS.group.elem[SS.group.n-1].h;
     SS.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;
@@ -259,11 +254,13 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_UNITS_MM:
             SS.viewUnits = SolveSpace::UNIT_MM;
+            SS.later.showTW = true;
             SS.GW.EnsureValidActives();
             break;
 
         case MNU_UNITS_INCHES:
             SS.viewUnits = SolveSpace::UNIT_INCHES;
+            SS.later.showTW = true;
             SS.GW.EnsureValidActives();
             break;
 

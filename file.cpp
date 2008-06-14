@@ -179,7 +179,7 @@ bool SolveSpace::SaveToFile(char *filename) {
     // will be exported.
     SS.GenerateAll(0, INT_MAX);
 
-    fh = fopen(filename, "w");
+    fh = fopen(filename, "wb");
     if(!fh) {   
         Error("Couldn't write to file '%s'", filename);
         return false;
@@ -281,7 +281,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
 }
 
 bool SolveSpace::LoadFromFile(char *filename) {
-    fh = fopen(filename, "r");
+    fh = fopen(filename, "rb");
     if(!fh) {   
         Error("Couldn't read from file '%s'", filename);
         return false;
@@ -340,7 +340,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
 }
 
 bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
-    fh = fopen(file, "r");
+    fh = fopen(file, "rb");
     if(!fh) return false;
 
     le->Clear();
@@ -403,7 +403,7 @@ void SolveSpace::ReloadAllImported(void) {
         g->impEntity.Clear();
         g->impMesh.Clear();
         if(!LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh))) {
-            oops();
+            Error("Failed to load imported file '%s'", g->impFile);
         }
     }
 }

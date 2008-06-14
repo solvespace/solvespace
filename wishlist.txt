@@ -5,13 +5,11 @@ DXF export
 TTF font text
 some kind of rounding / chamfer
 remove back button in browser?
-clean up user-created workplanes
 graphic export
 relative paths for import
 auto-generate circles and faces when lathing
 
 partitioned subsystems in the solver
-display with proper formatting/units
 sweep tool
 
 
