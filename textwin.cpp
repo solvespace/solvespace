@@ -640,7 +640,9 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     // There's an extra line for the skipFirst parameter in one-sided groups.
     int r = (g->subtype == Group::ONE_SIDED) ? 15 : 13;
 
-    ShowTextEditControl(r, 9, g->exprA->Print());
+    char str[1024];
+    sprintf(str, "%d", (int)g->valA);
+    ShowTextEditControl(r, 9, str);
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
@@ -724,7 +726,7 @@ void TextWindow::ShowGroupInfo(void) {
             space = true;
         }
 
-        int times = (int)(g->exprA->Eval());
+        int times = (int)(g->valA);
         Printf(space, "%Ft%s%E %d time%s %Fl%Ll%D%f[change]%E",
             s2, times, times == 1 ? "" : "s",
             g->h.v, &TextWindow::ScreenChangeExprA);
@@ -916,8 +918,7 @@ void TextWindow::EditControlDone(char *s) {
                 SS.UndoRemember();
 
                 Group *g = SS.GetGroup(edit.group);
-                Expr::FreeKeep(&(g->exprA));
-                g->exprA = e->DeepCopyKeep();
+                g->valA = e->Eval();
 
                 SS.MarkGroupDirty(g->h);
                 SS.later.generateAll = true;

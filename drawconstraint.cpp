@@ -44,14 +44,14 @@ double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
 char *Constraint::Label(void) {
     static char Ret[1024];
     if(type == ANGLE) {
-        sprintf(Ret, "%.2f", exprA->Eval());
+        sprintf(Ret, "%.2f", valA);
     } else if(type == LENGTH_RATIO) {
-        sprintf(Ret, "%.3f:1", exprA->Eval());
+        sprintf(Ret, "%.3f:1", valA);
     } else if(type == COMMENT) {
         strcpy(Ret, comment.str);
     } else {
-        // exprA has units of distance
-        strcpy(Ret, SS.GW.ToString(exprA->Eval()));
+        // valA has units of distance
+        strcpy(Ret, SS.GW.ToString(valA));
     }
     if(reference) {
         strcat(Ret, " REF");

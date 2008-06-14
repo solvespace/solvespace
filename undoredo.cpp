@@ -45,7 +45,6 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         // And then clean up all the stuff that needs to be a deep copy,
         // and zero out all the dynamic stuff that will get regenerated.
         dest.clean = false;
-        if(src->exprA) dest.exprA = src->exprA->DeepCopyKeep();
         ZERO(&(dest.solved));
         ZERO(&(dest.poly));
         ZERO(&(dest.polyError));
@@ -65,7 +64,6 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
     for(i = 0; i < constraint.n; i++) {
         Constraint *src = &(constraint.elem[i]);
         Constraint dest = *src;
-        if(src->exprA) dest.exprA = src->exprA->DeepCopyKeep();
         ZERO(&(dest.dogd));
         ut->constraint.Add(&dest);
     }
@@ -88,17 +86,12 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     // Free everything in the main copy of the program before replacing it
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
-        if(g->exprA) Expr::FreeKeep(&(g->exprA));
         g->poly.Clear();
         g->mesh.Clear();
         g->meshError.interferesAt.Clear();
         g->remap.Clear();
         g->impMesh.Clear();
         g->impEntity.Clear();
-    }
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
-        if(c->exprA) Expr::FreeKeep(&(c->exprA));
     }
     group.Clear();
     request.Clear();
@@ -138,15 +131,10 @@ void SolveSpace::UndoClearState(UndoState *ut) {
     for(i = 0; i < ut->group.n; i++) {
         Group *g = &(ut->group.elem[i]);
 
-        if(g->exprA) Expr::FreeKeep(&(g->exprA));
         g->remap.Clear();
     }
     ut->group.Clear();
     ut->request.Clear();
-    for(i = 0; i < ut->constraint.n; i++) {
-        Constraint *c = &(ut->constraint.elem[i]);
-        if(c->exprA) Expr::FreeKeep(&(c->exprA));
-    }
     ut->constraint.Clear();
     ut->param.Clear();
     ZERO(ut);

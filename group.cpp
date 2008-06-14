@@ -115,7 +115,7 @@ void Group::MenuGroup(int id) {
             }
             g.type = ROTATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::From(3)->DeepCopyKeep();
+            g.valA = 3;
             g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
             SS.GW.ClearSelection();
@@ -125,7 +125,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_TRANS:
             g.type = TRANSLATE;
             g.opA = SS.GW.activeGroup;
-            g.exprA = Expr::From(3)->DeepCopyKeep();
+            g.valA = 3;
             g.subtype = ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.activeWorkplane = SS.GW.ActiveWorkplane();
@@ -293,7 +293,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gp.y);
             AddParam(param, h.param(2), gp.z);
 
-            int n = (int)(exprA->Eval()), a0 = 0;
+            int n = (int)valA, a0 = 0;
             if(subtype == ONE_SIDED && skipFirst) {
                 a0++; n++;
             }
@@ -325,7 +325,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), gn.y);
             AddParam(param, h.param(6), gn.z);
 
-            int n = (int)(exprA->Eval()), a0 = 0;
+            int n = (int)valA, a0 = 0;
             if(subtype == ONE_SIDED && skipFirst) {
                 a0++; n++;
             }

@@ -115,7 +115,7 @@ void Constraint::MenuConstrain(int id) {
                 c.disp.offset = Vector::From(0, 0, 0);
             }
 
-            c.exprA = Expr::From("0")->DeepCopyKeep();
+            c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
@@ -175,7 +175,7 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
 
-            c.exprA = Expr::From("0")->DeepCopyKeep();
+            c.valA = 0;
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
@@ -327,7 +327,7 @@ void Constraint::MenuConstrain(int id) {
                 c.type = ANGLE;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
-                c.exprA = Expr::From(0.0)->DeepCopyKeep();
+                c.valA = 0;
                 c.otherAngle = true;
             } else {
                 Error("Bad selection for angle constraint.");
@@ -352,7 +352,7 @@ void Constraint::MenuConstrain(int id) {
         case GraphicsWindow::MNU_COMMENT:
             c.type = COMMENT;
             c.comment.strcpy("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
-            c.disp.offset = SS.GW.offset;
+            c.disp.offset = SS.GW.offset.ScaledBy(-1);
             AddConstraint(&c);
             break;
 
@@ -485,9 +485,7 @@ void Constraint::ModifyToSatisfy(void) {
             b = b.ProjectVectorInto(workplane);
         }
         double c = (a.Dot(b))/(a.Magnitude() * b.Magnitude());
-        double theta = acos(c)*180/PI;
-        Expr::FreeKeep(&exprA);
-        exprA = Expr::From(theta)->DeepCopyKeep();
+        valA = acos(c)*180/PI;
     } else {
         // We'll fix these ones up by looking at their symbolic equation;
         // that means no extra work.
@@ -499,11 +497,8 @@ void Constraint::ModifyToSatisfy(void) {
         if(l.n != 1) oops();
 
         // These equations are written in the form f(...) - d = 0, where
-        // d is the value of the exprA.
-        double v = (l.elem[0].e)->Eval();
-        double nd = exprA->Eval() + v;
-        Expr::FreeKeep(&exprA);
-        exprA = Expr::From(nd)->DeepCopyKeep();
+        // d is the value of the valA.
+        valA += (l.elem[0].e)->Eval();
 
         l.Clear();
     }
@@ -522,8 +517,7 @@ void Constraint::Generate(IdList<Equation,hEquation> *l) {
     }
 }
 void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
-    Expr *exA = NULL;
-    if(exprA) exA = exprA->DeepCopy();
+    Expr *exA = Expr::From(valA);
 
     switch(type) {
         case PT_PT_DISTANCE:
@@ -546,7 +540,7 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             Entity *f = SS.GetEntity(entityA);
             ExprVector p0 = f->FaceGetPointExprs();
             ExprVector n = f->FaceGetNormalExprs();
-            AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exprA), 0);
+            AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exA), 0);
             break;
         }
 

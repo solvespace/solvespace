@@ -268,28 +268,6 @@ Expr *Expr::DeepCopy(void) {
     return n;
 }
 
-Expr *Expr::DeepCopyKeep(void) {
-    Expr *n = (Expr *)MemAlloc(sizeof(Expr));
-    *n = *this;
-    n->marker = 0xbad2feed;
-    n->a = n->b = NULL;
-    int c = n->Children();
-    if(c > 0) n->a = a->DeepCopyKeep();
-    if(c > 1) n->b = b->DeepCopyKeep();
-    return n;
-}
-
-void Expr::FreeKeep(Expr **e) {
-    if(!(*e)) oops();
-
-    int c = (*e)->Children();
-    if(c > 0) FreeKeep(&((*e)->a));
-    if(c > 1) FreeKeep(&((*e)->b));
-    if((*e)->marker != 0xbad2feed) oops();
-    MemFree(*e);
-    *e = NULL;
-}
-
 Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
     IdList<Param,hParam> *thenTry)
 {

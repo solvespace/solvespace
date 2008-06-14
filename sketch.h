@@ -91,7 +91,7 @@ public:
     bool        visible;
     bool        clean;
     hEntity     activeWorkplane;
-    Expr        *exprA;
+    double      valA;
     DWORD       color;
 
     static const int SOLVED_OKAY          = 0;
@@ -442,7 +442,7 @@ public:
     hEntity     workplane;
 
     // These are the parameters for the constraint.
-    Expr        *exprA;
+    double      valA;
     hEntity     ptA;
     hEntity     ptB;
     hEntity     ptC;

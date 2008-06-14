@@ -65,7 +65,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.name",               'N',    &(SS.sv.g.name)               },
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
-    { 'g',  "Group.exprA",              'E',    &(SS.sv.g.exprA)              },
+    { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
     { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
@@ -118,7 +118,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.type",          'd',    &(SS.sv.c.type)               },
     { 'c',  "Constraint.group.v",       'x',    &(SS.sv.c.group.v)            },
     { 'c',  "Constraint.workplane.v",   'x',    &(SS.sv.c.workplane.v)        },
-    { 'c',  "Constraint.exprA",         'E',    &(SS.sv.c.exprA)              },
+    { 'c',  "Constraint.valA",          'f',    &(SS.sv.c.valA)               },
     { 'c',  "Constraint.ptA.v",         'x',    &(SS.sv.c.ptA.v)              },
     { 'c',  "Constraint.ptB.v",         'x',    &(SS.sv.c.ptB.v)              },
     { 'c',  "Constraint.ptC.v",         'x',    &(SS.sv.c.ptC.v)              },
@@ -154,7 +154,6 @@ void SolveSpace::SaveUsingTable(int type) {
             case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
             case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
             case 'P': fprintf(fh, "%s", (char *)p); break;
-            case 'E': fprintf(fh, "%s", (*((Expr **)p))->Print()); break;
 
             case 'M': {
                 int j;
@@ -223,9 +222,6 @@ bool SolveSpace::SaveToFile(char *filename) {
     SMesh *m = &(group.elem[group.n-1].mesh);
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
-/*
-        double mag = tr->Normal().Magnitude();
-        dbp("triangle: mag=%.5f", mag); */
         fprintf(fh, "Triangle %08x %08x  "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color,
@@ -248,12 +244,6 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                 case 'x': sscanf(val, "%x", (DWORD *)p); break;
                 case 'f': *((double *)p) = atof(val); break;
                 case 'N': ((NameStr *)p)->strcpy(val); break;
-                case 'E':
-                    Expr *e;
-                    e  = Expr::From(val);
-                    if(!e) e = Expr::From(0.0);
-                    *((Expr **)p) = e->DeepCopyKeep();
-                    break;
 
                 case 'P':
                     if(strlen(val)+1 < MAX_PATH) strcpy((char *)p, val);
@@ -371,7 +361,6 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
         } else if(strcmp(line, "AddGroup")==0) {
             // Don't leak memory; these get allocated whether we want them
             // or not.
-            if(sv.g.exprA) Expr::FreeKeep(&(sv.g.exprA));
             sv.g.remap.Clear();
         } else if(strcmp(line, "AddParam")==0) {
 
@@ -381,7 +370,7 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
         } else if(strcmp(line, "AddRequest")==0) {
 
         } else if(strcmp(line, "AddConstraint")==0) {
-            if(sv.c.exprA) Expr::FreeKeep(&(sv.c.exprA));
+
         } else if(strcmp(line, VERSION_STRING)==0) {
 
         } else if(memcmp(line, "Triangle", 8)==0) {
