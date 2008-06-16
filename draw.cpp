@@ -405,14 +405,17 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SS.GetParam(hr.param(0))->val = 0;
             break;
 
-        case MNU_ARC:
+        case MNU_ARC: {
             if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw arc in 3d; select a workplane first.");
                 ClearPending();
                 break;
             }
             hr = AddRequest(Request::ARC_OF_CIRCLE);
-            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            // This fudge factor stops us from immediately failing to solve
+            // because of the arc's implicit (equal radius) tangent.
+            Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
+            SS.GetEntity(hr.entity(1))->PointForceTo(v.Minus(adj));
             SS.GetEntity(hr.entity(2))->PointForceTo(v);
             SS.GetEntity(hr.entity(3))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(2));
@@ -423,7 +426,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.point = hr.entity(3);
             pending.description = "click to place point";
             break;
-
+        }
         case MNU_CUBIC:
             hr = AddRequest(Request::CUBIC);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);

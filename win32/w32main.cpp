@@ -923,8 +923,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // Create the heap that we use to store Exprs and other temp stuff.
     FreeAllTemporary();
 
+    // A filename may have been specified on the command line; if so, then
+    // strip any quotation marks, and make it absolute.
+    char file[MAX_PATH] = "";
+    if(strlen(lpCmdLine)+1 < MAX_PATH) {
+        char *s = lpCmdLine;
+        while(*s == ' ' || *s == '"') s++;
+        strcpy(file, s);
+        s = strrchr(file, '"');
+        if(s) *s = '\0';
+    }
+    char absoluteFile[MAX_PATH] = "";
+    if(*file != '\0') {
+        GetFullPathName(file, sizeof(absoluteFile), absoluteFile, NULL);
+    }
+    
     // Call in to the platform-independent code, and let them do their init
-    SS.Init(lpCmdLine);
+    SS.Init(absoluteFile);
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);

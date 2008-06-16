@@ -221,9 +221,9 @@ public:
 
 class SKdTree {
 public:
-    static const int BY_X = 1;
-    static const int BY_Y = 2;
-    static const int BY_Z = 3;
+    static const int BY_X = 0;
+    static const int BY_Y = 1;
+    static const int BY_Z = 2;
     int which;
     double c;
 
