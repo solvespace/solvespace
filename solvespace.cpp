@@ -27,6 +27,8 @@ void SolveSpace::Init(char *cmdLine) {
     meshTol = ((int)CnfThawDWORD(1000, "MeshTolerance"))/1000.0;
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
+    // Camera tangent (determines perspective)
+    cameraTangent = ((int)CnfThawDWORD(0, "CameraTangent"))/1e6;
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -77,6 +79,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD((int)(meshTol*1000), "MeshTolerance");
     // Display/entry units
     CnfFreezeDWORD((int)viewUnits, "ViewUnits");
+    // Camera tangent (determines perspective)
+    CnfFreezeDWORD((int)(cameraTangent*1e6), "CameraTangent");
     ExitNow();
 }
 

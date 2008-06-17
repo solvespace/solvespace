@@ -314,9 +314,9 @@ void Group::Draw(void) {
         glEnable(GL_DEPTH_TEST);
     } else {
         glxColor4d(0, 0.1, 0.1, 0.5);
-        glPolygonOffset(-1, -1);
+        glxDepthRangeOffset(1);
         glxFillPolygon(&poly);
-        glPolygonOffset(0, 0);
+        glxDepthRangeOffset(0);
     }
 }
 

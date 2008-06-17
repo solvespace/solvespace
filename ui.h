@@ -63,6 +63,7 @@ public:
     static const int EDIT_LIGHT_INTENSITY       = 4;
     static const int EDIT_COLOR                 = 5;
     static const int EDIT_MESH_TOLERANCE        = 6;
+    static const int EDIT_CAMERA_TANGENT        = 7;
     struct {
         int     meaning;
         int     i;
@@ -115,6 +116,7 @@ public:
     static void ScreenChangeLightIntensity(int link, DWORD v);
     static void ScreenChangeColor(int link, DWORD v);
     static void ScreenChangeMeshTolerance(int link, DWORD v);
+    static void ScreenChangeCameraTangent(int link, DWORD v);
 
     void EditControlDone(char *s);
 };
@@ -217,9 +219,13 @@ public:
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
+    Vector ProjectPoint3(Vector p);
+    Vector ProjectPoint4(Vector p, double *w);
     void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(Vector rightUpForward);
-    void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin);
+    void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
+                                           double *wmin, bool div);
+    void LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin, bool div);
     void ZoomToFit(void);
 
     hGroup  activeGroup;

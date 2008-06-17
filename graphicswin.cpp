@@ -125,12 +125,38 @@ void GraphicsWindow::NormalizeProjectionVectors(void) {
     projRight = projRight.ScaledBy(1/projRight.Magnitude());
 }
 
+//-----------------------------------------------------------------------------
+// Project a point in model space to screen space, exactly as gl would; return
+// units are pixels.
+//-----------------------------------------------------------------------------
 Point2d GraphicsWindow::ProjectPoint(Vector p) {
+    Vector p3 = ProjectPoint3(p);
+    Point2d p2 = { p3.x, p3.y };
+    return p2;
+}
+//-----------------------------------------------------------------------------
+// Project a point in model space to screen space, exactly as gl would; return
+// units are pixels. The z coordinate is also returned, also in pixels.
+//-----------------------------------------------------------------------------
+Vector GraphicsWindow::ProjectPoint3(Vector p) {
+    double w;
+    Vector r = ProjectPoint4(p, &w);
+    return r.ScaledBy(scale/w);
+}
+//-----------------------------------------------------------------------------
+// Project a point in model space halfway into screen space. The scale is
+// not applied, and the perspective divide isn't applied; instead the w
+// coordinate is returned separately.
+//-----------------------------------------------------------------------------
+Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
     p = p.Plus(offset);
 
-    Point2d r;
-    r.x = p.Dot(projRight) * scale;
-    r.y = p.Dot(projUp) * scale;
+    Vector r;
+    r.x = p.Dot(projRight);
+    r.y = p.Dot(projUp);
+    r.z = p.Dot(projUp.Cross(projRight));
+
+    *w = 1 + r.z*SS.cameraTangent*scale;
     return r;
 }
 
@@ -180,57 +206,86 @@ void GraphicsWindow::AnimateOntoWorkplane(void) {
 }
 
 void GraphicsWindow::HandlePointForZoomToFit(Vector p,
-                                             Point2d *pmax, Point2d *pmin)
+                        Point2d *pmax, Point2d *pmin, double *wmin, bool div)
 {
-    Point2d p2 = ProjectPoint(p);
-    pmax->x = max(pmax->x, p2.x);
-    pmax->y = max(pmax->y, p2.y);
-    pmin->x = min(pmin->x, p2.x);
-    pmin->y = min(pmin->y, p2.y);
+    double w;
+    Vector pp = ProjectPoint4(p, &w);
+    if(div) {
+        pp = pp.ScaledBy(1.0/w);
+    }
+
+    pmax->x = max(pmax->x, pp.x);
+    pmax->y = max(pmax->y, pp.y);
+    pmin->x = min(pmin->x, pp.x);
+    pmin->y = min(pmin->y, pp.y);
+    *wmin = min(*wmin, w);
 }
-void GraphicsWindow::ZoomToFit(void) {
+void GraphicsWindow::LoopOverPoints(
+                        Point2d *pmax, Point2d *pmin, double *wmin, bool div)
+{
+    HandlePointForZoomToFit(Vector::From(0, 0, 0), pmax, pmin, wmin, div);
+
     int i, j;
-    Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
-
-    HandlePointForZoomToFit(Vector::From(0, 0, 0), &pmax, &pmin);
-
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         if(!e->IsPoint()) continue;
         if(!e->IsVisible()) continue;
-        HandlePointForZoomToFit(e->PointGetNum(), &pmax, &pmin);
+        HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
     }
     Group *g = SS.GetGroup(activeGroup);
     for(i = 0; i < g->mesh.l.n; i++) {
         STriangle *tr = &(g->mesh.l.elem[i]);
-        HandlePointForZoomToFit(tr->a, &pmax, &pmin);
-        HandlePointForZoomToFit(tr->b, &pmax, &pmin);
-        HandlePointForZoomToFit(tr->c, &pmax, &pmin);
+        HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, div);
+        HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, div);
+        HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, div);
     }
     for(i = 0; i < g->poly.l.n; i++) {
         SContour *sc = &(g->poly.l.elem[i]);
         for(j = 0; j < sc->l.n; j++) {
-            HandlePointForZoomToFit(sc->l.elem[j].p, &pmax, &pmin);
+            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, div);
         }
     }
+}
+void GraphicsWindow::ZoomToFit(void) {
+    // On the first run, ignore perspective.
+    Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
+    double wmin = 1;
+    LoopOverPoints(&pmax, &pmin, &wmin, false);
 
-    pmax = pmax.ScaledBy(1/scale);
-    pmin = pmin.ScaledBy(1/scale);
     double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
     double dx = pmax.x - pmin.x, dy = pmax.y - pmin.y;
 
     offset = offset.Plus(projRight.ScaledBy(-xm)).Plus(
                          projUp.   ScaledBy(-ym));
-   
+  
+    // And based on this, we calculate the scale and offset
     if(dx == 0 && dy == 0) {
         scale = 5;
     } else {
         double scalex = 1e12, scaley = 1e12;
         if(dx != 0) scalex = 0.9*width /dx;
         if(dy != 0) scaley = 0.9*height/dy;
-        scale = min(100, min(scalex, scaley));
+        scale = min(scalex, scaley);
+
+        scale = min(100, scale);
+        scale = max(0.001, scale);
     }
-    scale = max(0.001, scale);
+
+    // Then do another run, considering the perspective.
+    pmax.x = -1e12; pmax.y = -1e12;
+    pmin.x =  1e12; pmin.y =  1e12;
+    wmin = 1;
+    LoopOverPoints(&pmax, &pmin, &wmin, true);
+
+    // Adjust the scale so that no points are behind the camera
+    if(wmin < 0.1) {
+        double k = SS.cameraTangent;
+        // w = 1+k*scale*z
+        double zmin = (wmin - 1)/(k*scale);
+        // 0.1 = 1 + k*scale*zmin
+        // (0.1 - 1)/(k*zmin) = scale
+        scale = min(scale, (0.1 - 1)/(k*zmin));
+    }
 }
 
 void GraphicsWindow::MenuView(int id) {

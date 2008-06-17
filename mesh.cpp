@@ -258,28 +258,29 @@ bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {
 }
 
 DWORD SMesh::FirstIntersectionWith(Point2d mp) {
-    Vector gu = SS.GW.projRight, gv = SS.GW.projUp;
-    Vector gn = (gu.Cross(gv)).WithMagnitude(1);
-
-    Vector p0 = gu.ScaledBy(mp.x/SS.GW.scale).Plus(
-                gv.ScaledBy(mp.y/SS.GW.scale));
-    p0 = p0.Minus(SS.GW.offset);
+    Vector p0 = Vector::From(mp.x, mp.y, 0);
+    Vector gn = Vector::From(0, 0, 1);
 
     double maxT = -1e12;
     DWORD face = 0;
 
     int i;
     for(i = 0; i < l.n; i++) {
-        STriangle *tr = &(l.elem[i]);
-        Vector n = tr->Normal();
+        STriangle tr = l.elem[i];
+        tr.a = SS.GW.ProjectPoint3(tr.a);
+        tr.b = SS.GW.ProjectPoint3(tr.b);
+        tr.c = SS.GW.ProjectPoint3(tr.c);
+
+        Vector n = tr.Normal();
+
         if(n.Dot(gn) < LENGTH_EPS) continue; // back-facing or on edge
 
-        if(tr->ContainsPointProjd(gn, p0)) {
+        if(tr.ContainsPointProjd(gn, p0)) {
             // Let our line have the form r(t) = p0 + gn*t
-            double t = (n.Dot((tr->a).Minus(p0)))/(n.Dot(gn));
+            double t = -(n.Dot((tr.a).Minus(p0)))/(n.Dot(gn));
             if(t > maxT) {
                 maxT = t;
-                face = tr->meta.face;
+                face = tr.meta.face;
             }
         }
     }
@@ -691,7 +692,7 @@ void SBsp3::DebugDraw(void) {
 
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glPolygonOffset(-1, 0);
+    glxDepthRangeOffset(2);
     glBegin(GL_TRIANGLES);
         glxVertex3v(tri.a);
         glxVertex3v(tri.b);
@@ -701,14 +702,14 @@ void SBsp3::DebugDraw(void) {
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     glPointSize(10);
-    glPolygonOffset(-1, 0);
+    glxDepthRangeOffset(2);
     glBegin(GL_TRIANGLES);
         glxVertex3v(tri.a);
         glxVertex3v(tri.b);
         glxVertex3v(tri.c);
     glEnd(); 
 
-    glPolygonOffset(0, 0);
+    glxDepthRangeOffset(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     more->DebugDraw();

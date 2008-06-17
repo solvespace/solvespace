@@ -4,6 +4,7 @@
 #include "font.table"
 
 static bool ColorLocked;
+static bool DepthOffsetLocked;
 
 #define FONT_SCALE (0.55)
 double glxStrWidth(char *str) {
@@ -309,6 +310,7 @@ void glxDebugMesh(SMesh *m)
     int i;
     glLineWidth(1);
     glPointSize(7);
+    glxDepthRangeOffset(1);
     glxUnlockColor();
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);
@@ -321,9 +323,9 @@ void glxDebugMesh(SMesh *m)
             glxVertex3v(t->b);
             glxVertex3v(t->c);
         glEnd();
-        glPolygonOffset(0, 0);
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
+    glxDepthRangeOffset(0);
 }
 
 void glxMarkPolygonNormal(SPolygon *p)
@@ -356,5 +358,24 @@ void glxMarkPolygonNormal(SPolygon *p)
         glxVertex3v(tip.Minus(arrow.RotatedAbout(gn, -0.6)));
     glEnd();
     glEnable(GL_LIGHTING);
+}
+
+void glxDepthRangeOffset(int units) {
+    if(!DepthOffsetLocked) {
+        // The size of this step depends on the resolution of the Z buffer; for
+        // a 16-bit buffer, this should be fine.
+        double d = units/60000.0;
+        glDepthRange(0.1-d, 1-d);
+    }
+}
+
+void glxDepthRangeLockToFront(bool yes) {
+    if(yes) {
+        DepthOffsetLocked = true;
+        glDepthRange(0, 0);
+    } else {
+        DepthOffsetLocked = false;
+        glxDepthRangeOffset(0);
+    }
 }
 

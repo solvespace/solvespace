@@ -877,6 +877,12 @@ void TextWindow::ScreenChangeMeshTolerance(int link, DWORD v) {
     ShowTextEditControl(37, 3, str);
     SS.TW.edit.meaning = EDIT_MESH_TOLERANCE;
 }
+void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.3f", 1000*SS.cameraTangent);
+    ShowTextEditControl(43, 3, str);
+    SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
+}
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -908,6 +914,12 @@ void TextWindow::ShowConfiguration(void) {
         SS.meshTol,
         &ScreenChangeMeshTolerance, 0,
         SS.group.elem[SS.group.n-1].mesh.l.n);
+
+    Printf(false, "");
+    Printf(false, "%Ft perspective factor (0 for isometric)%E");
+    Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
+        SS.cameraTangent*1000,
+        &ScreenChangeCameraTangent, 0);
 }
 
 void TextWindow::EditControlDone(char *s) {
@@ -972,6 +984,11 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_MESH_TOLERANCE: {
             SS.meshTol = min(10, max(0.1, atof(s)));
             SS.GenerateAll(0, INT_MAX);
+            break;
+        }
+        case EDIT_CAMERA_TANGENT: {
+            SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
+            InvalidateGraphics();
             break;
         }
     }

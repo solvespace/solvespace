@@ -2,15 +2,13 @@
 
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        // glPolygonOffset works only on polys, not lines, so do it myself
-        Vector adj = SS.GW.projRight.Cross(SS.GW.projUp);
         // Draw lines from active group in front of those from previous
-        int delta = (group.v == SS.GW.activeGroup.v) ? 10 : 5;
-        adj = adj.ScaledBy(delta/SS.GW.scale);
+        glxDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 2);
         glBegin(GL_LINES);
-            glxVertex3v(a.Plus(adj));
-            glxVertex3v(b.Plus(adj));
+            glxVertex3v(a);
+            glxVertex3v(b);
         glEnd();
+        glxDepthRangeOffset(0);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
@@ -40,7 +38,7 @@ void Entity::DrawAll(void) {
         Vector r = SS.GW.projRight.ScaledBy(s);
         Vector d = SS.GW.projUp.ScaledBy(s);
         glxColor3d(0, 0.8, 0);
-        glPolygonOffset(-10, -10);
+        glxDepthRangeOffset(6);
         glBegin(GL_QUADS);
         for(i = 0; i < SS.entity.n; i++) {
             Entity *e = &(SS.entity.elem[i]);
@@ -56,7 +54,7 @@ void Entity::DrawAll(void) {
             glxVertex3v(v.Minus(r).Plus (d));
         }
         glEnd();
-        glPolygonOffset(0, 0);
+        glxDepthRangeOffset(0);
     }
 
     glLineWidth(1.5);
@@ -167,14 +165,14 @@ void Entity::DrawOrGetDistance(void) {
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
                 glxColor3d(0, 0.8, 0);
-                glPolygonOffset(-10, -10);
+                glxDepthRangeOffset(6);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
                     glxVertex3v(v.Plus (r).Minus(d));
                     glxVertex3v(v.Minus(r).Minus(d));
                     glxVertex3v(v.Minus(r).Plus (d));
                 glEnd();
-                glPolygonOffset(0, 0);
+                glxDepthRangeOffset(0);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
                 dogd.dmin = pp.DistanceTo(dogd.mp) - 6;
@@ -214,10 +212,9 @@ void Entity::DrawOrGetDistance(void) {
                     double s = SS.GW.scale;
                     double h = 60 - SS.GW.height/2;
                     double w = 60 - SS.GW.width/2;
-                    Vector gn = SS.GW.projRight.Cross(SS.GW.projUp);
                     tail = SS.GW.projRight.ScaledBy(w/s).Plus(
-                           SS.GW.projUp.   ScaledBy(h/s)).Plus(
-                           gn.ScaledBy(-4*w/s)).Minus(SS.GW.offset);
+                           SS.GW.projUp.   ScaledBy(h/s)).Minus(SS.GW.offset);
+                    glxDepthRangeLockToFront(true);
                     glLineWidth(2);
                 }
 
@@ -230,6 +227,7 @@ void Entity::DrawOrGetDistance(void) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
+            glxDepthRangeLockToFront(false);
             glLineWidth(1.5);
             break;
         }

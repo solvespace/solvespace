@@ -127,6 +127,8 @@ void glxLockColorTo(double r, double g, double b);
 void glxUnlockColor(void);
 void glxColor3d(double r, double g, double b);
 void glxColor4d(double r, double g, double b, double a);
+void glxDepthRangeOffset(int units);
+void glxDepthRangeLockToFront(bool yes);
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
@@ -253,6 +255,7 @@ public:
     Vector  lightDir[2];
     double  lightIntensity[2];
     double  meshTol;
+    double  cameraTangent;
     int CircleSides(double r);
     typedef enum {
         UNIT_MM = 0,

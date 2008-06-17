@@ -835,14 +835,25 @@ void GraphicsWindow::Paint(int w, int h) {
 
     glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/30000);
 
-    double tx = projRight.Dot(offset);
-    double ty = projUp.Dot(offset);
-    Vector n = projUp.Cross(projRight);
-    double tz = n.Dot(offset);
     double mat[16];
-    MakeMatrix(mat, projRight.x,    projRight.y,    projRight.z,    tx,
-                    projUp.x,       projUp.y,       projUp.z,       ty,
-                    n.x,            n.y,            n.z,            tz,
+    // Last thing before display is to apply the perspective
+    double clp = SS.cameraTangent*scale;
+    MakeMatrix(mat, 1,              0,              0,              0,
+                    0,              1,              0,              0,
+                    0,              0,              1,              0,
+                    0,              0,              clp,            1);
+    glMultMatrixd(mat);
+    // Before that, we apply the rotation
+    Vector n = projUp.Cross(projRight);
+    MakeMatrix(mat, projRight.x,    projRight.y,    projRight.z,    0,
+                    projUp.x,       projUp.y,       projUp.z,       0,
+                    n.x,            n.y,            n.z,            0,
+                    0,              0,              0,              1);
+    glMultMatrixd(mat);
+    // And before that, the translation
+    MakeMatrix(mat, 1,              0,              0,              offset.x,
+                    0,              1,              0,              offset.y,
+                    0,              0,              1,              offset.z,
                     0,              0,              0,              1);
     glMultMatrixd(mat);
 
