@@ -306,7 +306,7 @@ void Constraint::MenuConstrain(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_ORIENTED_SAME:
+        case GraphicsWindow::MNU_ORIENTED_SAME: {
             if(gs.anyNormals == 2 && gs.n == 2) {
                 c.type = SAME_ORIENTATION;
                 c.entityA = gs.anyNormal[0];
@@ -315,8 +315,36 @@ void Constraint::MenuConstrain(int id) {
                 Error("Bad selection for same orientation constraint.");
                 return;
             }
-            AddConstraint(&c);
+            SS.UndoRemember();
+
+            Entity *nfree = SS.GetEntity(c.entityA);
+            Entity *nref  = SS.GetEntity(c.entityB);
+            if(nref->group.v == SS.GW.activeGroup.v) {
+                SWAP(Entity *, nref, nfree);
+            }
+            if(nfree->group.v == SS.GW.activeGroup.v &&
+               nref ->group.v != SS.GW.activeGroup.v)
+            {
+                // nfree is free, and nref is locked (since it came from a
+                // previous group); so let's force nfree aligned to nref,
+                // and make convergence easy
+                Vector ru = nref ->NormalU(), rv = nref ->NormalV();
+                Vector fu = nfree->NormalU(), fv = nfree->NormalV();
+
+                if(fabs(fu.Dot(ru)) < fabs(fu.Dot(rv))) {
+                    // There might be an odd*90 degree rotation about the
+                    // normal vector; allow that, since the numerical
+                    // constraint does
+                    SWAP(Vector, ru, rv);
+                } 
+                fu = fu.Dot(ru) > 0 ? ru : ru.ScaledBy(-1);
+                fv = fv.Dot(rv) > 0 ? rv : rv.ScaledBy(-1);
+
+                nfree->NormalForceTo(Quaternion::From(fu, fv));
+            }
+            AddConstraint(&c, false);
             break;
+        }
 
         case GraphicsWindow::MNU_OTHER_ANGLE:
             if(gs.constraints == 1 && gs.n == 0) {

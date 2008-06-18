@@ -775,7 +775,8 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     Selection s;
     ZERO(&s);
 
-    // Do the entities
+    // Always do the entities; we might be dragging something that should
+    // be auto-constrained, and we need the hover for that.
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         // Don't hover whatever's being dragged.
@@ -789,22 +790,25 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
     }
 
-    // Constraints
-    for(i = 0; i < SS.constraint.n; i++) {
-        d = SS.constraint.elem[i].GetDistance(mp);
-        if(d < 10 && d < dmin) {
-            memset(&s, 0, sizeof(s));
-            s.constraint = SS.constraint.elem[i].h;
-            dmin = d;
+    // The constraints and faces happen only when nothing's in progress.
+    if(pending.operation == 0) {
+        // Constraints
+        for(i = 0; i < SS.constraint.n; i++) {
+            d = SS.constraint.elem[i].GetDistance(mp);
+            if(d < 10 && d < dmin) {
+                memset(&s, 0, sizeof(s));
+                s.constraint = SS.constraint.elem[i].h;
+                dmin = d;
+            }
         }
-    }
 
-    // Faces, from the triangle mesh; these are lowest priority
-    if(s.constraint.v == 0 && s.entity.v == 0 && showShaded && showFaces) {
-        SMesh *m = &((SS.GetGroup(activeGroup))->mesh);
-        DWORD v = m->FirstIntersectionWith(mp);
-        if(v) {
-            s.entity.v = v;
+        // Faces, from the triangle mesh; these are lowest priority
+        if(s.constraint.v == 0 && s.entity.v == 0 && showShaded && showFaces) {
+            SMesh *m = &((SS.GetGroup(activeGroup))->mesh);
+            DWORD v = m->FirstIntersectionWith(mp);
+            if(v) {
+                s.entity.v = v;
+            }
         }
     }
 
