@@ -54,6 +54,8 @@ void RefreshRecentMenus(void);
 int SaveFileYesNoCancel(void);
 #define SLVS_PATTERN "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0"
 #define SLVS_EXT "slvs"
+#define PNG_PATTERN "PNG (*.png)\0*.png\0All Files (*)\0*\0\0"
+#define PNG_EXT "png"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 
@@ -302,6 +304,8 @@ public:
     bool LoadFromFile(char *filename);
     bool LoadEntitiesFromFile(char *filename, EntityList *le, SMesh *m);
     void ReloadAllImported(void);
+    // And the PNG export too
+    void ExportAsPngTo(char *file);
 
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);

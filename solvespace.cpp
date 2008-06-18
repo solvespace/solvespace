@@ -1,4 +1,5 @@
 #include "solvespace.h"
+#include <png.h>
 
 SolveSpace SS;
 
@@ -460,6 +461,54 @@ void SolveSpace::SolveGroup(hGroup hg) {
     FreeAllTemporary();
 }
 
+void SolveSpace::ExportAsPngTo(char *filename) {
+    int w = (int)SS.GW.width, h = (int)SS.GW.height;
+    // No guarantee that the back buffer contains anything valid right now,
+    // so repaint the scene.
+    SS.GW.Paint(w, h);
+    
+    FILE *f = fopen(filename, "wb");
+    if(!f) goto err;
+
+    png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+        NULL, NULL, NULL);
+    if(!png_ptr) goto err;
+
+    png_info *info_ptr = png_create_info_struct(png_ptr);
+    if(!png_ptr) goto err;
+
+    if(setjmp(png_jmpbuf(png_ptr))) goto err;
+
+    png_init_io(png_ptr, f);
+
+    png_set_IHDR(png_ptr, info_ptr, w, h,
+        8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_DEFAULT,PNG_FILTER_TYPE_DEFAULT);
+    
+    png_write_info(png_ptr, info_ptr);
+
+    // Get the pixel data from the framebuffer
+    BYTE *pixels = (BYTE *)AllocTemporary(3*w*h);
+    BYTE **rowptrs = (BYTE **)AllocTemporary(h*sizeof(BYTE *));
+    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+
+    int y;
+    for(y = 0; y < h; y++) {
+        // gl puts the origin at lower left, but png puts it top left
+        rowptrs[y] = pixels + ((h - 1) - y)*(3*w);
+    }
+    png_write_image(png_ptr, rowptrs);
+
+    png_write_end(png_ptr, info_ptr);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    return;
+
+err:    
+    Error("Error writing PNG file '%s'", filename);
+    if(f) fclose(f);
+    return;
+}
+
 void SolveSpace::RemoveFromRecentList(char *file) {
     int src, dest;
     dest = 0;
@@ -567,6 +616,13 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_SAVE_AS:
             SS.GetFilenameAndSave(true);
             break;
+
+        case GraphicsWindow::MNU_EXPORT_PNG: {
+            char exportFile[MAX_PATH] = "";
+            if(!GetSaveFile(exportFile, PNG_EXT, PNG_PATTERN)) break;
+            SS.ExportAsPngTo(exportFile); 
+            break;
+        }
 
         case GraphicsWindow::MNU_EXIT:
             if(!SS.OkayToStartNewFile()) break;

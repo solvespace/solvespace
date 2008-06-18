@@ -16,6 +16,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Save\tCtrl+S",                       MNU_SAVE,           'S'|C,  mFile },
 { 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
+{ 1, "&Export Image...",                    MNU_EXPORT_PNG,     0,      mFile },
+{ 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "E&xit",                               MNU_EXIT,           0,      mFile },
 
 { 0, "&Edit",                               0,                          NULL  },

@@ -133,6 +133,7 @@ public:
         MNU_OPEN_RECENT,
         MNU_SAVE,
         MNU_SAVE_AS,
+        MNU_EXPORT_PNG,
         MNU_EXIT,
         // View
         MNU_ZOOM_IN,

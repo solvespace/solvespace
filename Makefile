@@ -1,5 +1,5 @@
 DEFINES = /D_WIN32_WINNT=0x500 /DISOLATION_AWARE_ENABLED /D_WIN32_IE=0x500 /DWIN32_LEAN_AND_MEAN /DWIN32
-CFLAGS  = /W3 /nologo -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /Zi /I. /EHs
+CFLAGS  = /W3 /nologo -Iextlib -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs
 
 HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h
 
@@ -30,7 +30,8 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\mesh.obj \
 
 
-LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib
+LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib \
+       extlib\libpng.lib extlib\zlib.lib
 
 all: $(OBJDIR)/solvespace.exe
     @cp $(OBJDIR)/solvespace.exe .
