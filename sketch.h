@@ -189,6 +189,7 @@ public:
     void GetTrajectory(hGroup hg, SContour *traj, SPolygon *section);
     void AddQuadWithNormal(STriMeta meta, Vector out,
                                     Vector a, Vector b, Vector c, Vector d);
+    void GenerateMeshForStepAndRepeat(void);
     void GenerateMeshForSweep(void);
     void GenerateMesh(void);
     void Draw(void);
@@ -258,6 +259,8 @@ public:
     static const int FACE_NORMAL_PT         =  5000;
     static const int FACE_XPROD             =  5001;
     static const int FACE_N_ROT_TRANS       =  5002;
+    static const int FACE_N_TRANS           =  5003;
+    static const int FACE_N_ROT_AA          =  5004;
 
 
     static const int WORKPLANE              = 10000;
@@ -304,6 +307,8 @@ public:
     // times to apply the transformation.
     int timesApplied;
 
+    Quaternion GetAxisAngleQuaternion(int param0);
+    ExprQuaternion GetAxisAngleQuaternionExprs(int param0);
     bool IsVisible(void);
 
     bool IsCircle(void);

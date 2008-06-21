@@ -225,12 +225,7 @@ Quaternion Entity::NormalGetNum(void) {
             break;
 
         case NORMAL_N_ROT_AA: {
-            double theta = timesApplied*SS.GetParam(param[0])->val;
-            double s = sin(theta), c = cos(theta);
-            q.w = c;
-            q.vx = s*SS.GetParam(param[1])->val;
-            q.vy = s*SS.GetParam(param[2])->val;
-            q.vz = s*SS.GetParam(param[3])->val;
+            q = GetAxisAngleQuaternion(0);
             q = q.Times(numNormal);
             break;
         }
@@ -318,15 +313,7 @@ ExprQuaternion Entity::NormalGetExprs(void) {
 
         case NORMAL_N_ROT_AA: {
             ExprQuaternion orig = ExprQuaternion::From(numNormal);
-
-            Expr *theta = Expr::From(timesApplied)->Times(
-                          Expr::From(param[0]));
-            Expr *c = theta->Cos(), *s = theta->Sin();
-            q.w = c;
-            q.vx = s->Times(Expr::From(param[1]));
-            q.vy = s->Times(Expr::From(param[2]));
-            q.vz = s->Times(Expr::From(param[3]));
-
+            q = GetAxisAngleQuaternionExprs(0);
             q = q.Times(orig);
             break;
         }
@@ -486,14 +473,7 @@ ExprVector Entity::PointGetExprs(void) {
         case POINT_N_ROT_AA: {
             ExprVector orig = ExprVector::From(numPoint);
             ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
-            Expr *theta = Expr::From(timesApplied)->Times(
-                          Expr::From(param[3]));
-            Expr *c = theta->Cos(), *s = theta->Sin();
-            ExprQuaternion q = { 
-                c,
-                s->Times(Expr::From(param[4])),
-                s->Times(Expr::From(param[5])),
-                s->Times(Expr::From(param[6])) };
+            ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
             orig = orig.Minus(trans);
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
@@ -539,16 +519,35 @@ void Entity::PointForceQuaternionTo(Quaternion q) {
     SS.GetParam(param[6])->val = q.vz;
 }
 
+Quaternion Entity::GetAxisAngleQuaternion(int param0) {
+    Quaternion q;
+    double theta = timesApplied*SS.GetParam(param[param0+0])->val;
+    double s = sin(theta), c = cos(theta);
+    q.w = c;
+    q.vx = s*SS.GetParam(param[param0+1])->val;
+    q.vy = s*SS.GetParam(param[param0+2])->val;
+    q.vz = s*SS.GetParam(param[param0+3])->val;
+    return q;
+}
+
+ExprQuaternion Entity::GetAxisAngleQuaternionExprs(int param0) {
+    ExprQuaternion q;
+
+    Expr *theta = Expr::From(timesApplied)->Times(
+                  Expr::From(param[param0+0]));
+    Expr *c = theta->Cos(), *s = theta->Sin();
+    q.w = c;
+    q.vx = s->Times(Expr::From(param[param0+1]));
+    q.vy = s->Times(Expr::From(param[param0+2]));
+    q.vz = s->Times(Expr::From(param[param0+3]));
+    return q;
+}
+
 Quaternion Entity::PointGetQuaternion(void) {
     Quaternion q;
 
     if(type == POINT_N_ROT_AA) {
-        double theta = timesApplied*SS.GetParam(param[3])->val;
-        double s = sin(theta), c = cos(theta);
-        q.w = c;
-        q.vx = s*SS.GetParam(param[4])->val;
-        q.vy = s*SS.GetParam(param[5])->val;
-        q.vz = s*SS.GetParam(param[6])->val;
+        q = GetAxisAngleQuaternion(3);
     } else if(type == POINT_N_ROT_TRANS) {
         q = Quaternion::From(param[3], param[4], param[5], param[6]);
     } else oops();
@@ -561,6 +560,8 @@ bool Entity::IsFace(void) {
         case FACE_NORMAL_PT:
         case FACE_XPROD:
         case FACE_N_ROT_TRANS:
+        case FACE_N_TRANS:
+        case FACE_N_ROT_AA:
             return true;
         default:
             return false;
@@ -586,6 +587,12 @@ ExprVector Entity::FaceGetNormalExprs(void) {
         ExprQuaternion q =
             ExprQuaternion::From(param[3], param[4], param[5], param[6]);
         r = q.Rotate(r);
+    } else if(type == FACE_N_TRANS) {
+        r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+    } else if(type == FACE_N_ROT_AA) {
+        r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
+        r = q.Rotate(r);
     } else oops();
     return r;
 }
@@ -602,6 +609,12 @@ Vector Entity::FaceGetNormalNum(void) {
         // The numerical normal vector gets the rotation
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
+        r = q.Rotate(r);
+    } else if(type == FACE_N_TRANS) {
+        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+    } else if(type == FACE_N_ROT_AA) {
+        r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
+        Quaternion q = GetAxisAngleQuaternion(3);
         r = q.Rotate(r);
     } else oops();
     return r.WithMagnitude(1);
@@ -621,6 +634,17 @@ ExprVector Entity::FaceGetPointExprs(void) {
         r = ExprVector::From(numPoint);
         r = q.Rotate(r);
         r = r.Plus(trans);
+    } else if(type == FACE_N_TRANS) {
+        ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+        r = ExprVector::From(numPoint);
+        r = r.Plus(trans.ScaledBy(Expr::From(timesApplied)));
+    } else if(type == FACE_N_ROT_AA) {
+        ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+        ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
+        r = ExprVector::From(numPoint);
+        r = r.Minus(trans);
+        r = q.Rotate(r);
+        r = r.Plus(trans);
     } else oops();
     return r;
 }
@@ -636,6 +660,15 @@ Vector Entity::FaceGetPointNum(void) {
         Vector trans = Vector::From(param[0], param[1], param[2]);
         Quaternion q = Quaternion::From(param[3], param[4], param[5], param[6]);
         r = q.Rotate(numPoint);
+        r = r.Plus(trans);
+    } else if(type == FACE_N_TRANS) {
+        Vector trans = Vector::From(param[0], param[1], param[2]);
+        r = numPoint.Plus(trans.ScaledBy(timesApplied));
+    } else if(type == FACE_N_ROT_AA) {
+        Vector trans = Vector::From(param[0], param[1], param[2]);
+        Quaternion q = GetAxisAngleQuaternion(3);
+        r = numPoint.Minus(trans);
+        r = q.Rotate(r);
         r = r.Plus(trans);
     } else oops();
     return r;

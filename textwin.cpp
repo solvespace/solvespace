@@ -322,6 +322,8 @@ void TextWindow::DescribeSelection(void) {
             case Entity::FACE_NORMAL_PT:
             case Entity::FACE_XPROD:
             case Entity::FACE_N_ROT_TRANS:
+            case Entity::FACE_N_ROT_AA:
+            case Entity::FACE_N_TRANS:
                 Printf(false, "%FtPLANE FACE%E");
                 p = e->FaceGetNormalNum();
                 Printf(true,  "   normal = " PT_AS_NUM, CO(p));

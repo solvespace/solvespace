@@ -256,6 +256,13 @@ bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {
     return (error->l.n == 0);
 }
 
+void SMesh::MakeFromCopy(SMesh *a) {
+    int i;
+    for(i = 0; i < a->l.n; i++) {
+        AddTriangle(&(a->l.elem[i]));
+    }
+}
+
 DWORD SMesh::FirstIntersectionWith(Point2d mp) {
     Vector p0 = Vector::From(mp.x, mp.y, 0);
     Vector gn = Vector::From(0, 0, 1);

@@ -126,6 +126,77 @@ void Group::AddQuadWithNormal(STriMeta meta, Vector out,
     if(n2.Magnitude() > LENGTH_EPS) thisMesh.AddTriangle(&quad2);
 }
 
+void Group::GenerateMeshForStepAndRepeat(void) {
+    Group *src = SS.GetGroup(opA);
+    SMesh *srcm = &(src->thisMesh); // the mesh to step and repeat
+
+    if(srcm->l.n == 0) {
+        runningMesh.Clear();
+        runningMesh.MakeFromCopy(PreviousGroupMesh());
+        return;
+    }
+
+    SMesh origm;
+    ZERO(&origm);
+    origm.MakeFromCopy(src->PreviousGroupMesh());
+
+    int n = (int)valA, a0 = 0;
+    if(subtype == ONE_SIDED && skipFirst) {
+        a0++; n++;
+    }
+    int a;
+    for(a = a0; a < n; a++) {
+        int ap = a*2 - (subtype == ONE_SIDED ? 0 : (n-1));
+        int remap = (a == (n - 1)) ? REMAP_LAST : a;
+
+        thisMesh.Clear();
+        if(type == TRANSLATE) {
+            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
+            trans = trans.ScaledBy(ap);
+            for(int i = 0; i < srcm->l.n; i++) {
+                STriangle tr = srcm->l.elem[i];
+                tr.a = (tr.a).Plus(trans);
+                tr.b = (tr.b).Plus(trans);
+                tr.c = (tr.c).Plus(trans);
+                if(tr.meta.face != 0) {
+                    hEntity he = { tr.meta.face };
+                    tr.meta.face = Remap(he, remap).v;
+                }
+                thisMesh.AddTriangle(&tr);
+            }
+        } else {
+            Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
+            double theta = ap * SS.GetParam(h.param(3))->val;
+            double c = cos(theta), s = sin(theta);
+            Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
+            Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
+
+            for(int i = 0; i < srcm->l.n; i++) {
+                STriangle tr = srcm->l.elem[i];
+                tr.a = (q.Rotate((tr.a).Minus(trans))).Plus(trans);
+                tr.b = (q.Rotate((tr.b).Minus(trans))).Plus(trans);
+                tr.c = (q.Rotate((tr.c).Minus(trans))).Plus(trans);
+                if(tr.meta.face != 0) {
+                    hEntity he = { tr.meta.face };
+                    tr.meta.face = Remap(he, remap).v;
+                }
+                thisMesh.AddTriangle(&tr);
+            }
+        }
+
+        runningMesh.Clear();
+        if(src->meshCombine == COMBINE_AS_DIFFERENCE) {
+            runningMesh.MakeFromDifference(&origm, &thisMesh);
+        } else {
+            runningMesh.MakeFromUnion(&origm, &thisMesh);
+        }
+        origm.Clear();
+        origm.MakeFromCopy(&runningMesh);
+    }
+    origm.Clear();
+    thisMesh.Clear();
+}
+
 void Group::GenerateMeshForSweep(void) {
     STriMeta meta = { 0, color };
     SEdgeList edges;
@@ -238,6 +309,11 @@ void Group::GenerateMeshForSweep(void) {
 void Group::GenerateMesh(void) {
     thisMesh.Clear();
     STriMeta meta = { 0, color };
+
+    if(type == TRANSLATE || type == ROTATE) {
+        GenerateMeshForStepAndRepeat();
+        return;
+    }
 
     if(type == EXTRUDE) {
         SEdgeList edges;
@@ -384,9 +460,17 @@ void Group::GenerateMesh(void) {
         }
     }
 
+    runningMesh.Clear();
+
+    // If this group contributes no new mesh, then our running mesh is the
+    // same as last time, no combining required.
+    if(thisMesh.l.n == 0) {
+        runningMesh.MakeFromCopy(PreviousGroupMesh());
+        return;
+    }
+
     // So our group's mesh appears in thisMesh. Combine this with the previous
     // group's mesh, using the requested operation.
-    runningMesh.Clear();
     bool prevMeshError = meshError.yes;
     meshError.yes = false;
     meshError.interferesAt.Clear();
@@ -424,7 +508,7 @@ void Group::Draw(void) {
     // to show or hide just this with the "show solids" flag.
 
     int specColor;
-    if(type != EXTRUDE && type != IMPORTED && type != LATHE && type != SWEEP) {
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
         specColor = RGB(25, 25, 25); // force the color to something dim
     } else {
         specColor = -1; // use the model color

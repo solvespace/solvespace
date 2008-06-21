@@ -364,6 +364,8 @@ void Entity::DrawOrGetDistance(void) {
         case FACE_NORMAL_PT:
         case FACE_XPROD:
         case FACE_N_ROT_TRANS:
+        case FACE_N_TRANS:
+        case FACE_N_ROT_AA:
             // Do nothing; these are drawn with the triangle mesh
             break;
 

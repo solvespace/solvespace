@@ -204,6 +204,7 @@ public:
     void MakeFromUnion(SMesh *a, SMesh *b);
     void MakeFromDifference(SMesh *a, SMesh *b);
     bool MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *errorAt);
+    void MakeFromCopy(SMesh *a);
 
     DWORD FirstIntersectionWith(Point2d mp);
 };

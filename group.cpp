@@ -642,16 +642,27 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::FACE_NORMAL_PT:
         case Entity::FACE_XPROD:
         case Entity::FACE_N_ROT_TRANS:
-            if(asTrans || asAxisAngle) return;
-
-            en.type = Entity::FACE_N_ROT_TRANS;
-            en.param[0] = dx;
-            en.param[1] = dy;
-            en.param[2] = dz;
-            en.param[3] = qw;
-            en.param[4] = qvx;
-            en.param[5] = qvy;
-            en.param[6] = qvz;
+        case Entity::FACE_N_TRANS:
+        case Entity::FACE_N_ROT_AA:
+            if(asTrans) {
+                en.type = Entity::FACE_N_TRANS;
+                en.param[0] = dx;
+                en.param[1] = dy;
+                en.param[2] = dz;
+            } else {
+                if(asAxisAngle) {
+                    en.type = Entity::FACE_N_ROT_AA;
+                } else {
+                    en.type = Entity::FACE_N_ROT_TRANS;
+                }
+                en.param[0] = dx;
+                en.param[1] = dy;
+                en.param[2] = dz;
+                en.param[3] = qw;
+                en.param[4] = qvx;
+                en.param[5] = qvy;
+                en.param[6] = qvz;
+            }
             en.numPoint = ep->actPoint;
             en.numNormal = ep->actNormal;
             break;
