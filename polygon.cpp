@@ -54,6 +54,46 @@ void SEdgeList::AddEdge(Vector a, Vector b) {
     l.Add(&e);
 }
 
+bool SEdgeList::AssembleContour(Vector first, Vector last, 
+                                    SContour *dest, SEdge *errorAt)
+{
+    int i;
+
+    dest->AddPoint(first);
+    dest->AddPoint(last);
+
+    do {
+        for(i = 0; i < l.n; i++) {
+            SEdge *se = &(l.elem[i]);
+            if(se->tag) continue;
+
+            if(se->a.Equals(last)) {
+                dest->AddPoint(se->b);
+                last = se->b;
+                se->tag = 1;
+                break;
+            }
+            if(se->b.Equals(last)) {
+                dest->AddPoint(se->a);
+                last = se->a;
+                se->tag = 1;
+                break;
+            }
+        }
+        if(i >= l.n) {
+            // Couldn't assemble a closed contour; mark where.
+            if(errorAt) {
+                errorAt->a = first;
+                errorAt->b = last;
+            }
+            return false;
+        }
+
+    } while(!last.Equals(first));
+
+    return true;
+}
+
 bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
     dest->Clear();
 
@@ -72,38 +112,20 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
             return true;
         }
 
+        // Create a new empty contour in our polygon, and finish assembling
+        // into that contour.
         dest->AddEmptyContour();
-        dest->AddPoint(first);
-        dest->AddPoint(last);
-        do {
-            for(i = 0; i < l.n; i++) {
-                SEdge *se = &(l.elem[i]);
-                if(se->tag) continue;
-
-                if(se->a.Equals(last)) {
-                    dest->AddPoint(se->b);
-                    last = se->b;
-                    se->tag = 1;
-                    break;
-                }
-                if(se->b.Equals(last)) {
-                    dest->AddPoint(se->a);
-                    last = se->a;
-                    se->tag = 1;
-                    break;
-                }
-            }
-            if(i >= l.n) {
-                // Couldn't assemble a closed contour; mark where.
-                if(errorAt) {
-                    errorAt->a = first;
-                    errorAt->b = last;
-                }
-                return false;
-            }
-
-        } while(!last.Equals(first));
+        if(!AssembleContour(first, last, &(dest->l.elem[dest->l.n-1]), errorAt))
+            return false;
     }
+}
+
+void SContour::AddPoint(Vector p) {
+    SPoint sp;
+    sp.tag = 0;
+    sp.p = p;
+
+    l.Add(&sp);
 }
 
 void SContour::MakeEdgesInto(SEdgeList *el) {
@@ -216,17 +238,6 @@ void SPolygon::AddEmptyContour(void) {
     l.Add(&c);
 }
 
-void SPolygon::AddPoint(Vector p) {
-    if(l.n < 1) oops();
-
-    SPoint sp;
-    sp.tag = 0;
-    sp.p = p;
-
-    // Add to the last contour in the list
-    (l.elem[l.n-1]).l.Add(&sp);
-}
-
 void SPolygon::MakeEdgesInto(SEdgeList *el) {
     int i;
     for(i = 0; i < l.n; i++) {
@@ -240,15 +251,19 @@ Vector SPolygon::ComputeNormal(void) {
 }
 
 bool SPolygon::ContainsPoint(Vector p) {
-    bool inside = false;
+    return (WindingNumberForPoint(p) % 2) == 1;
+}
+
+int SPolygon::WindingNumberForPoint(Vector p) {
+    int winding = 0;
     int i;
     for(i = 0; i < l.n; i++) {
         SContour *sc = &(l.elem[i]);
         if(sc->ContainsPointProjdToNormal(normal, p)) {
-            inside = !inside;
+            winding++;
         }
     }
-    return inside;
+    return winding;
 }
 
 void SPolygon::FixContourDirections(void) {
@@ -275,10 +290,20 @@ void SPolygon::FixContourDirections(void) {
     }
 }
 
-bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
+bool SPolygon::IsEmpty(void) {
     if(l.n == 0 || l.elem[0].l.n == 0) return true;
+    return false;
+}
 
-    Vector p0 = l.elem[0].l.elem[0].p;
+Vector SPolygon::AnyPoint(void) {
+    if(IsEmpty()) oops();
+    return l.elem[0].l.elem[0].p;
+}
+
+bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
+    if(IsEmpty()) return true;
+
+    Vector p0 = AnyPoint();
     double d = normal.Dot(p0);
 
     for(int i = 0; i < l.n; i++) {
@@ -293,6 +318,7 @@ static int TriMode, TriVertexCount;
 static Vector Tri1, TriNMinus1, TriNMinus2;
 static Vector TriNormal;
 static SMesh *TriMesh;
+static STriMeta TriMeta;
 static void GLX_CALLBACK TriBegin(int mode) 
 {
     TriMode = mode;
@@ -308,15 +334,18 @@ static void GLX_CALLBACK TriVertex(Vector *triN)
     }
     if(TriMode == GL_TRIANGLES) {
         if((TriVertexCount % 3) == 2) {
-            TriMesh->AddTriangle(TriNormal, TriNMinus2, TriNMinus1, *triN);
+            TriMesh->AddTriangle(
+                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
         }
     } else if(TriMode == GL_TRIANGLE_FAN) {
         if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(TriNormal, Tri1, TriNMinus1, *triN);
+            TriMesh->AddTriangle(
+                TriMeta, TriNormal, Tri1, TriNMinus1, *triN);
         }
     } else if(TriMode == GL_TRIANGLE_STRIP) {
         if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(TriNormal, TriNMinus2, TriNMinus1, *triN);
+            TriMesh->AddTriangle(
+                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
         }
     } else oops();
             
@@ -325,8 +354,14 @@ static void GLX_CALLBACK TriVertex(Vector *triN)
     TriVertexCount++;
 }
 void SPolygon::TriangulateInto(SMesh *m) {
+    STriMeta meta;
+    ZERO(&meta);
+    TriangulateInto(m, meta);
+}
+void SPolygon::TriangulateInto(SMesh *m, STriMeta meta) {
     TriMesh = m;
     TriNormal = normal;
+    TriMeta = meta;
 
     GLUtesselator *gt = gluNewTess();
     gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)TriBegin);

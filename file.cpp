@@ -65,6 +65,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.name",               'N',    &(SS.sv.g.name)               },
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
+    { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
     { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
     { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
@@ -219,7 +220,7 @@ bool SolveSpace::SaveToFile(char *filename) {
         fprintf(fh, "AddConstraint\n\n");
     }
 
-    SMesh *m = &(group.elem[group.n-1].mesh);
+    SMesh *m = &(group.elem[group.n-1].runningMesh);
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
         fprintf(fh, "Triangle %08x %08x  "

@@ -82,12 +82,14 @@ public:
     static const int DRAWING_WORKPLANE             = 5001;
     static const int EXTRUDE                       = 5100;
     static const int LATHE                         = 5101;
+    static const int SWEEP                         = 5102;
     static const int ROTATE                        = 5200;
     static const int TRANSLATE                     = 5201;
     static const int IMPORTED                      = 5300;
     int type;
 
     hGroup      opA;
+    hGroup      opB;
     bool        visible;
     bool        clean;
     hEntity     activeWorkplane;
@@ -130,7 +132,8 @@ public:
         Vector          notCoplanarAt;
     }               polyError;
 
-    SMesh           mesh;
+    SMesh           thisMesh;
+    SMesh           runningMesh;
     struct {
         SMesh           interferesAt;
         bool            yes;
@@ -179,8 +182,14 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
-    SMesh *PreviousGroupMesh(void);
+    // Assembling piecewise linear sections into polygons
     void GeneratePolygon(void);
+    // And the mesh stuff
+    SMesh *PreviousGroupMesh(void);
+    void GetTrajectory(hGroup hg, SContour *traj, SPolygon *section);
+    void AddQuadWithNormal(STriMeta meta, Vector out,
+                                    Vector a, Vector b, Vector c, Vector d);
+    void GenerateMeshForSweep(void);
     void GenerateMesh(void);
     void Draw(void);
 

@@ -163,6 +163,7 @@ public:
         MNU_GROUP_WRKPL,
         MNU_GROUP_EXTRUDE,
         MNU_GROUP_LATHE,
+        MNU_GROUP_SWEEP,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
         MNU_GROUP_IMPORT,

@@ -55,6 +55,8 @@ public:
     Vector Normal(int which);
     Vector RotatedAbout(Vector orig, Vector axis, double theta);
     Vector RotatedAbout(Vector axis, double theta);
+    Vector DotInToCsys(Vector u, Vector v, Vector n);
+    Vector ScaleOutOfCsys(Vector u, Vector v, Vector n);
     double DistanceToLine(Vector p0, Vector dp);
     Vector ClosestPointOnLine(Vector p0, Vector dp);
     double Magnitude(void);

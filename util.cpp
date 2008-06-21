@@ -310,6 +310,22 @@ Vector Vector::RotatedAbout(Vector axis, double theta) {
     return r;
 }
 
+Vector Vector::DotInToCsys(Vector u, Vector v, Vector n) {
+    Vector r = {
+        this->Dot(u),
+        this->Dot(v),
+        this->Dot(n)
+    };
+    return r;
+}
+
+Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) {
+    Vector r = u.ScaledBy(x).Plus(
+               v.ScaledBy(y).Plus(
+               n.ScaledBy(z)));
+    return r;
+}
+
 double Vector::DistanceToLine(Vector p0, Vector dp) {
     double m = dp.Magnitude();
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;

@@ -7,9 +7,9 @@ some kind of rounding / chamfer
 remove back button in browser?
 relative paths for import
 auto-generate circles and faces when lathing
+copy the section geometry to other end when sweeping
 
 partitioned subsystems in the solver
-sweep tool
 
 
 long term

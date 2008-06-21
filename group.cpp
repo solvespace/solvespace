@@ -100,6 +100,30 @@ void Group::MenuGroup(int id) {
             SS.GW.ClearSelection();
             break;
 
+        case GraphicsWindow::MNU_GROUP_SWEEP: {
+            g.type = SWEEP;
+            // Get the group one before the active group; that's our
+            // trajectory
+            int i;
+            for(i = 1; i < SS.group.n - 1; i++) {
+                Group *gnext = &(SS.group.elem[i+1]);
+                if(gnext->h.v == SS.GW.activeGroup.v) {
+                    g.opA = SS.group.elem[i].h;
+                    break;
+                }
+            }
+            if(i >= SS.group.n - 1) {
+                Error("At least one sketch before the active sketch must "
+                      "exist; that specifies the sweep trajectory.");
+                return;
+            }
+            // The active group is our section
+            g.opB = SS.GW.activeGroup;
+            g.color = RGB(100, 100, 100);
+            g.name.strcpy("sweep");
+            break;
+        }
+
         case GraphicsWindow::MNU_GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
@@ -284,6 +308,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case LATHE: {
+            break;
+        }
+
+        case SWEEP: {
             break;
         }
 

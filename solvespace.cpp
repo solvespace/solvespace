@@ -133,10 +133,15 @@ void SolveSpace::AfterNewFile(void) {
     GetGraphicsWindowSize(&w, &h);
     GW.width = w;
     GW.height = h;
+
+    // The triangles haven't been generated yet, but zoom to fit the entities
+    // roughly in the window, since that sets the mesh tolerance.
     GW.ZoomToFit();
 
     GenerateAll(0, INT_MAX);
     later.showTW = true;
+    // Then zoom to fit again, to fit the triangles
+    GW.ZoomToFit();
 }
 
 void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {
@@ -480,6 +485,11 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     if(setjmp(png_jmpbuf(png_ptr))) goto err;
 
     png_init_io(png_ptr, f);
+
+    // glReadPixels wants to align things on 4-boundaries, and there's 3
+    // bytes per pixel. As long as the row width is divisible by 4, all
+    // works out.
+    w &= ~3; h &= ~3;
 
     png_set_IHDR(png_ptr, info_ptr, w, h,
         8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,

@@ -1,5 +1,7 @@
 DEFINES = /D_WIN32_WINNT=0x500 /DISOLATION_AWARE_ENABLED /D_WIN32_IE=0x500 /DWIN32_LEAN_AND_MEAN /DWIN32
-CFLAGS  = /W3 /nologo -Iextlib -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs
+# Use the multi-threaded static libc because libpng and zlib do; not sure if anything bad
+# happens if those mix, but don't want to risk it.
+CFLAGS  = /W3 /nologo -MT -Iextlib -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs
 
 HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h
 

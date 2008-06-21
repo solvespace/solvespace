@@ -804,7 +804,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
 
         // Faces, from the triangle mesh; these are lowest priority
         if(s.constraint.v == 0 && s.entity.v == 0 && showShaded && showFaces) {
-            SMesh *m = &((SS.GetGroup(activeGroup))->mesh);
+            SMesh *m = &((SS.GetGroup(activeGroup))->runningMesh);
             DWORD v = m->FirstIntersectionWith(mp);
             if(v) {
                 s.entity.v = v;

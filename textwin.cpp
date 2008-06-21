@@ -734,6 +734,7 @@ void TextWindow::ShowGroupInfo(void) {
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
+       g->type == Group::SWEEP ||
        g->type == Group::IMPORTED)
     {
         bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
@@ -759,7 +760,10 @@ void TextWindow::ShowGroupInfo(void) {
         Printf(false, "%Fx         the parts interfere!");
     }
 
-    if(g->type == Group::EXTRUDE || g->type == Group::LATHE) {
+    if(g->type == Group::EXTRUDE ||
+       g->type == Group::LATHE ||
+       g->type == Group::SWEEP)
+    {
 #define TWOX(v) v v
         Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
             0x80000000 | SS.modelColor[0], 0, &TextWindow::ScreenColor,
@@ -913,7 +917,7 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
         SS.meshTol,
         &ScreenChangeMeshTolerance, 0,
-        SS.group.elem[SS.group.n-1].mesh.l.n);
+        SS.group.elem[SS.group.n-1].runningMesh.l.n);
 
     Printf(false, "");
     Printf(false, "%Ft perspective factor (0 for isometric)%E");

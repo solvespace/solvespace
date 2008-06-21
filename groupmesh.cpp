@@ -36,9 +36,209 @@ void Group::GeneratePolygon(void) {
     }
 }
 
+void Group::GetTrajectory(hGroup hg, SContour *traj, SPolygon *section) {
+    if(section->IsEmpty()) return;
+
+    SEdgeList edges; ZERO(&edges);
+    int i, j;
+    for(i = 0; i < SS.entity.n; i++) {
+        Entity *e = &(SS.entity.elem[i]);
+        if(e->group.v != hg.v) continue;
+        e->GenerateEdges(&edges);
+    }
+
+    Vector pn = (section->normal).WithMagnitude(1);
+    double pd = pn.Dot(section->AnyPoint());
+
+    // Find the start of the trajectory
+    Vector first, last;
+    for(i = 0; i < edges.l.n; i++) {
+        SEdge *se = &(edges.l.elem[i]);
+
+        bool startA = true, startB = true;
+        for(j = 0; j < edges.l.n; j++) {
+            if(i == j) continue;
+            SEdge *set = &(edges.l.elem[j]);
+            if((set->a).Equals(se->a)) startA = false;
+            if((set->b).Equals(se->a)) startA = false;
+            if((set->a).Equals(se->b)) startB = false;
+            if((set->b).Equals(se->b)) startB = false;
+        }
+        if(startA || startB) {
+            // It's possible for both to be true, if only one segment exists
+            if(startA) {
+                first = se->a;
+                last = se->b;
+            } else {
+                first = se->b;
+                last = se->a;
+            }
+            se->tag = 1;
+            break;
+        }
+    }
+    if(i >= edges.l.n) goto cleanup;
+    edges.AssembleContour(first, last, traj, NULL);
+    if(traj->l.n < 1) goto cleanup;
+
+    // Starting and ending points of the trajectory
+    Vector ps, pf;
+    ps = traj->l.elem[0].p;
+    pf = traj->l.elem[traj->l.n - 1].p;
+    // Distances of those points to the section plane
+    double ds = fabs(pn.Dot(ps) - pd), df = fabs(pn.Dot(pf) - pd);
+    if(ds < LENGTH_EPS && df < LENGTH_EPS) {
+        if(section->WindingNumberForPoint(pf) > 0) {
+            // Both the start and finish lie on the section plane; let the
+            // start be the one that's somewhere within the section. Use
+            // winding > 0, not odd/even, since it's natural e.g. to sweep
+            // a ring to make a pipe, and draw the trajectory through the
+            // center of the ring.
+            traj->Reverse();
+        }
+    } else if(ds > df) {
+        // The starting point is the endpoint that's closer to the plane
+        traj->Reverse();
+    }
+
+cleanup:
+    edges.Clear();
+}
+
+void Group::AddQuadWithNormal(STriMeta meta, Vector out,
+                                Vector a, Vector b, Vector c, Vector d)
+{
+    // The quad becomes two triangles
+    STriangle quad1 = STriangle::From(meta, a, b, c),
+              quad2 = STriangle::From(meta, c, d, a);
+
+    // Could be only one of the triangles has area; be sure
+    // to use that one for normal checking, then.
+    Vector n1 = quad1.Normal(), n2 = quad2.Normal();
+    Vector n = (n1.Magnitude() > n2.Magnitude()) ? n1 : n2;
+    if(n.Dot(out) < 0) {
+        quad1.FlipNormal();
+        quad2.FlipNormal();
+    }
+    // One or both of the endpoints might lie on the axis of
+    // rotation, in which case its triangle is zero-area.
+    if(n1.Magnitude() > LENGTH_EPS) thisMesh.AddTriangle(&quad1);
+    if(n2.Magnitude() > LENGTH_EPS) thisMesh.AddTriangle(&quad2);
+}
+
+void Group::GenerateMeshForSweep(void) {
+    STriMeta meta = { 0, color };
+    SEdgeList edges;
+    ZERO(&edges);
+    int a, i;
+
+    // The closed section that will be swept along the curve
+    Group *section = SS.GetGroup(opB);
+    (section->poly).MakeEdgesInto(&edges);
+
+    // The trajectory along which the section will be swept
+    SContour traj;
+    ZERO(&traj);
+    GetTrajectory(opA, &traj, &(section->poly));
+
+    if(traj.l.n <= 0) {
+        edges.Clear();
+        return; // no trajectory, nothing to do
+    }
+
+    // Initial offset/orientation determined by first pwl in trajectory
+    Vector origRef    =  traj.l.elem[0].p;
+    Vector origNormal = (traj.l.elem[1].p).Minus(origRef);
+    origNormal = origNormal.WithMagnitude(1);
+    Vector oldRef = origRef, oldNormal = origNormal;
+    Vector oldU = oldNormal.Normal(0), oldV = oldNormal.Normal(1);
+
+    // The endcap at the start of the curve
+    SPolygon cap;
+    ZERO(&cap);
+    edges.l.ClearTags();
+    edges.AssemblePolygon(&cap, NULL);
+    cap.normal = cap.ComputeNormal();
+    if(oldNormal.Dot(cap.normal) > 0) {
+        cap.normal = (cap.normal).ScaledBy(-1);
+    }
+    cap.TriangulateInto(&thisMesh, meta);
+    cap.Clear();
+
+    // Rewrite the source polygon so that the trajectory is along the
+    // z axis, and the poly lies in the xy plane
+    for(i = 0; i < edges.l.n; i++) {
+        SEdge *e = &(edges.l.elem[i]);
+        e->a = ((e->a).Minus(oldRef)).DotInToCsys(oldU, oldV, oldNormal);
+        e->b = ((e->b).Minus(oldRef)).DotInToCsys(oldU, oldV, oldNormal);
+    }
+    Vector polyn =
+        (section->poly.normal).DotInToCsys(oldU, oldV, oldNormal);
+
+    for(a = 1; a < traj.l.n; a++) {
+        Vector thisRef = traj.l.elem[a].p;
+        Vector thisNormal, useNormal;
+        if(a == traj.l.n - 1) {
+            thisNormal = oldNormal;
+            useNormal = oldNormal;
+        } else {
+            thisNormal = (traj.l.elem[a+1].p).Minus(thisRef);
+            useNormal = (thisNormal.Plus(oldNormal)).ScaledBy(0.5);
+        }
+
+        // Choose a new coordinate system, normal to the trajectory and
+        // with the minimum possible twist about the normal.
+        useNormal = useNormal.WithMagnitude(1);
+        Vector useV = (useNormal.Cross(oldU)).WithMagnitude(1);
+        Vector useU = (useV.Cross(useNormal)).WithMagnitude(1);
+
+        Quaternion qi = Quaternion::From(oldU, oldV);
+        Quaternion qf = Quaternion::From(useU, useV);
+
+        for(i = 0; i < edges.l.n; i++) {
+            SEdge *edge = &(edges.l.elem[i]);
+            Vector ai, bi, af, bf;
+            ai = qi.Rotate(edge->a).Plus(oldRef);
+            bi = qi.Rotate(edge->b).Plus(oldRef);
+
+            af = qf.Rotate(edge->a).Plus(thisRef);
+            bf = qf.Rotate(edge->b).Plus(thisRef);
+
+            Vector ab = (edge->b).Minus(edge->a);
+            Vector out = polyn.Cross(ab);
+            out = qf.Rotate(out);
+
+            AddQuadWithNormal(meta, out, ai, bi, bf, af);
+        }
+        oldRef = thisRef;
+        oldNormal = thisNormal;
+        oldU = useU;
+        oldV = useV;
+    }
+
+    Quaternion q = Quaternion::From(oldU, oldV);
+    for(i = 0; i < edges.l.n; i++) {
+        SEdge *edge = &(edges.l.elem[i]);
+        (edge->a) = q.Rotate(edge->a).Plus(oldRef);
+        (edge->b) = q.Rotate(edge->b).Plus(oldRef);
+    }
+    edges.l.ClearTags();
+    edges.AssemblePolygon(&cap, NULL);
+    cap.normal = cap.ComputeNormal();
+    if(oldNormal.Dot(cap.normal) < 0) {
+        cap.normal = (cap.normal).ScaledBy(-1);
+    }
+    cap.TriangulateInto(&thisMesh, meta);
+    cap.Clear();
+
+    traj.l.Clear();
+    edges.Clear();
+}
+
 void Group::GenerateMesh(void) {
-    SMesh outm;
-    ZERO(&outm);
+    thisMesh.Clear();
+    STriMeta meta = { 0, color };
+
     if(type == EXTRUDE) {
         SEdgeList edges;
         ZERO(&edges);
@@ -58,8 +258,6 @@ void Group::GenerateMesh(void) {
         SMesh srcm; ZERO(&srcm);
         (src->poly).TriangulateInto(&srcm);
 
-        STriMeta meta = { 0, color };
-
         // Do the bottom; that has normal pointing opposite from translate
         meta.face = Remap(Entity::NO_ENTITY, REMAP_BOTTOM).v;
         for(i = 0; i < srcm.l.n; i++) {
@@ -68,9 +266,9 @@ void Group::GenerateMesh(void) {
                    bt = (st->b).Plus(tbot),
                    ct = (st->c).Plus(tbot);
             if(flipBottom) {
-                outm.AddTriangle(meta, ct, bt, at);
+                thisMesh.AddTriangle(meta, ct, bt, at);
             } else {
-                outm.AddTriangle(meta, at, bt, ct);
+                thisMesh.AddTriangle(meta, at, bt, ct);
             }
         }
         // And the top; that has the normal pointing the same dir as translate
@@ -81,9 +279,9 @@ void Group::GenerateMesh(void) {
                    bt = (st->b).Plus(ttop),
                    ct = (st->c).Plus(ttop);
             if(flipBottom) {
-                outm.AddTriangle(meta, at, bt, ct);
+                thisMesh.AddTriangle(meta, at, bt, ct);
             } else {
-                outm.AddTriangle(meta, ct, bt, at);
+                thisMesh.AddTriangle(meta, ct, bt, at);
             }
         }
         srcm.Clear();
@@ -108,11 +306,11 @@ void Group::GenerateMesh(void) {
                 meta.face = 0;
             }
             if(flipBottom) {
-                outm.AddTriangle(meta, bbot, abot, atop);
-                outm.AddTriangle(meta, bbot, atop, btop);
+                thisMesh.AddTriangle(meta, bbot, abot, atop);
+                thisMesh.AddTriangle(meta, bbot, atop, btop);
             } else {
-                outm.AddTriangle(meta, abot, bbot, atop);
-                outm.AddTriangle(meta, bbot, btop, atop);
+                thisMesh.AddTriangle(meta, abot, bbot, atop);
+                thisMesh.AddTriangle(meta, bbot, btop, atop);
             }
         }
         edges.Clear();
@@ -124,7 +322,6 @@ void Group::GenerateMesh(void) {
         Group *src = SS.GetGroup(opA);
         (src->poly).MakeEdgesInto(&edges);
 
-        STriMeta meta = { 0, color };
         Vector orig = SS.GetEntity(predef.origin)->PointGetNum();
         Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
@@ -140,13 +337,10 @@ void Group::GenerateMesh(void) {
         }
 
         int n = SS.CircleSides(rmax);
-        for(a = 0; a <= n; a++) {
+        for(a = 0; a < n; a++) {
             double thetai = (2*PI*WRAP(a-1, n))/n, thetaf = (2*PI*a)/n;
             for(i = 0; i < edges.l.n; i++) {
                 SEdge *edge = &(edges.l.elem[i]);
-
-                double da = (edge->a).DistanceToLine(orig, axis);
-                double db = (edge->b).DistanceToLine(orig, axis);
 
                 Vector ai = (edge->a).RotatedAbout(orig, axis, thetai);
                 Vector bi = (edge->b).RotatedAbout(orig, axis, thetai);
@@ -158,24 +352,11 @@ void Group::GenerateMesh(void) {
                 // This is a vector, not a point, so no origin for rotation
                 out = out.RotatedAbout(axis, thetai);
 
-                // The line sweeps out a quad, so two triangles
-                STriangle quad1 = STriangle::From(meta, ai, bi, af),
-                          quad2 = STriangle::From(meta, af, bi, bf);
-
-                // Could be only one of the triangles has area; be sure
-                // to use that one for normal checking, then.
-                Vector n1 = quad1.Normal(), n2 = quad2.Normal();
-                Vector n = (n1.Magnitude() > n2.Magnitude()) ? n1 : n2;
-                if(n.Dot(out) < 0) {
-                    quad1.FlipNormal();
-                    quad2.FlipNormal();
-                }
-                // One or both of the endpoints might lie on the axis of
-                // rotation, in which case its triangle is zero-area.
-                if(da >= LENGTH_EPS) outm.AddTriangle(&quad1);
-                if(db >= LENGTH_EPS) outm.AddTriangle(&quad2);
+                AddQuadWithNormal(meta, out, ai, bi, bf, af);
             }
         }
+    } else if(type == SWEEP) {
+        GenerateMeshForSweep();
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.
@@ -199,31 +380,33 @@ void Group::GenerateMesh(void) {
             st.a = q.Rotate(st.a).Plus(offset);
             st.b = q.Rotate(st.b).Plus(offset);
             st.c = q.Rotate(st.c).Plus(offset);
-            outm.AddTriangle(&st);
+            thisMesh.AddTriangle(&st);
         }
     }
 
-    // So our group's mesh appears in outm. Combine this with the previous
+    // So our group's mesh appears in thisMesh. Combine this with the previous
     // group's mesh, using the requested operation.
-    mesh.Clear();
+    runningMesh.Clear();
     bool prevMeshError = meshError.yes;
     meshError.yes = false;
     meshError.interferesAt.Clear();
     SMesh *a = PreviousGroupMesh();
     if(meshCombine == COMBINE_AS_UNION) {
-        mesh.MakeFromUnion(a, &outm);
+        runningMesh.MakeFromUnion(a, &thisMesh);
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
-        mesh.MakeFromDifference(a, &outm);
+        runningMesh.MakeFromDifference(a, &thisMesh);
     } else {
-        if(!mesh.MakeFromInterferenceCheck(a, &outm, &(meshError.interferesAt)))
+        if(!runningMesh.MakeFromInterferenceCheck(a, &thisMesh,
+                                                &(meshError.interferesAt)))
+        {
             meshError.yes = true;
-        // And the list of failed triangles appears in meshError.interferesAt
+            // And the list of failed triangles goes in meshError.interferesAt
+        }
     }
     if(prevMeshError != meshError.yes) {
         // The error is reported in the text window for the group.
         SS.later.showTW = true;
     }
-    outm.Clear();
 }
 
 SMesh *Group::PreviousGroupMesh(void) {
@@ -233,7 +416,7 @@ SMesh *Group::PreviousGroupMesh(void) {
         if(g->h.v == h.v) break;
     }
     if(i == 0 || i >= SS.group.n) oops();
-    return &(SS.group.elem[i-1].mesh);
+    return &(SS.group.elem[i-1].runningMesh);
 }
 
 void Group::Draw(void) {
@@ -241,7 +424,7 @@ void Group::Draw(void) {
     // to show or hide just this with the "show solids" flag.
 
     int specColor;
-    if(type != EXTRUDE && type != IMPORTED && type != LATHE) {
+    if(type != EXTRUDE && type != IMPORTED && type != LATHE && type != SWEEP) {
         specColor = RGB(25, 25, 25); // force the color to something dim
     } else {
         specColor = -1; // use the model color
@@ -263,7 +446,7 @@ void Group::Draw(void) {
     if(gs.faces > 1) ms2 = gs.face[1].v;
 
     glEnable(GL_LIGHTING);
-    if(SS.GW.showShaded) glxFillMesh(specColor, &mesh, mh, ms1, ms2);
+    if(SS.GW.showShaded) glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
     glDisable(GL_LIGHTING);
 
     if(meshError.yes) {
@@ -283,7 +466,7 @@ void Group::Draw(void) {
         glDisable(GL_POLYGON_STIPPLE);
     }
 
-    if(SS.GW.showMesh) glxDebugMesh(&mesh);
+    if(SS.GW.showMesh) glxDebugMesh(&runningMesh);
 
     // And finally show the polygons too
     if(!SS.GW.showShaded) return;

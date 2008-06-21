@@ -48,7 +48,8 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         ZERO(&(dest.solved));
         ZERO(&(dest.poly));
         ZERO(&(dest.polyError));
-        ZERO(&(dest.mesh));
+        ZERO(&(dest.thisMesh));
+        ZERO(&(dest.runningMesh));
         ZERO(&(dest.meshError));
 
         ZERO(&(dest.remap));
@@ -87,7 +88,8 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
         g->poly.Clear();
-        g->mesh.Clear();
+        g->thisMesh.Clear();
+        g->runningMesh.Clear();
         g->meshError.interferesAt.Clear();
         g->remap.Clear();
         g->impMesh.Clear();

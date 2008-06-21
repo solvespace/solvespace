@@ -3,6 +3,7 @@
 #define __POLYGON_H
 
 class SPolygon;
+class SContour;
 class SMesh;
 class SBsp3;
 
@@ -67,6 +68,8 @@ public:
     void Clear(void);
     void AddEdge(Vector a, Vector b);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
+    bool AssembleContour(Vector first, Vector last, SContour *dest,
+                                                        SEdge *errorAt);
 };
 
 class SPoint {
@@ -79,6 +82,7 @@ class SContour {
 public:
     SList<SPoint>   l;
 
+    void AddPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
     void Reverse(void);
     Vector ComputeNormal(void);
@@ -87,6 +91,11 @@ public:
     bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
 };
 
+typedef struct {
+    DWORD   face;
+    int     color;
+} STriMeta;
+
 class SPolygon {
 public:
     SList<SContour> l;
@@ -94,19 +103,18 @@ public:
 
     Vector ComputeNormal(void);
     void AddEmptyContour(void);
-    void AddPoint(Vector p);
+    int WindingNumberForPoint(Vector p);
     bool ContainsPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
     void FixContourDirections(void);
     void TriangulateInto(SMesh *m);
+    void TriangulateInto(SMesh *m, STriMeta meta);
     void Clear(void);
     bool AllPointsInPlane(Vector *notCoplanarAt);
+    bool IsEmpty(void);
+    Vector AnyPoint(void);
 };
 
-typedef struct {
-    DWORD   face;
-    int     color;
-} STriMeta;
 class STriangle {
 public:
     int         tag;
@@ -116,6 +124,7 @@ public:
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal(void);
     void FlipNormal(void);
+    int WindingNumberForPoint(Vector p);
     bool ContainsPoint(Vector p);
     bool ContainsPointProjd(Vector n, Vector p);
 };
@@ -185,7 +194,7 @@ public:
     void Clear(void);
     void AddTriangle(STriangle *st);
     void AddTriangle(STriMeta meta, Vector a, Vector b, Vector c);
-    void AddTriangle(Vector n, Vector a, Vector b, Vector c);
+    void AddTriangle(STriMeta meta, Vector n, Vector a, Vector b, Vector c);
     void DoBounding(Vector v, Vector *vmax, Vector *vmin);
     void GetBounding(Vector *vmax, Vector *vmin);
 

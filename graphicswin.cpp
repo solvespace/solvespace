@@ -39,14 +39,15 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
 { 0, "&New Group",                          0,                  0,      NULL  },
-{ 1, "&Drawing in 3d\tShift+Ctrl+D",        MNU_GROUP_3D,      'D'|S|C, mGrp  },
-{ 1, "Drawing in Workplane\tShift+Ctrl+W",  MNU_GROUP_WRKPL,   'W'|S|C, mGrp  },
+{ 1, "&Drawing in 3d\tShift+Ctrl+D",        MNU_GROUP_3D,       'D'|S|C,mGrp  },
+{ 1, "Drawing in Workplane\tShift+Ctrl+W",  MNU_GROUP_WRKPL,    'W'|S|C,mGrp  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Step &Translating\tShift+Ctrl+R",     MNU_GROUP_TRANS,    'T'|S|C,mGrp  },
 { 1, "Step &Rotating\tShift+Ctrl+T",        MNU_GROUP_ROT,      'R'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Extrude\tShift+Ctrl+X",               MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
-{ 1, "Lathe\tShift+Ctrl+L",                 MNU_GROUP_LATHE,    'L'|S|C,mGrp  },
+{ 1, "E&xtrude\tShift+Ctrl+X",              MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
+{ 1, "&Lathe\tShift+Ctrl+L",                MNU_GROUP_LATHE,    'L'|S|C,mGrp  },
+{ 1, "&Sweep\tShift+Ctrl+S",                MNU_GROUP_SWEEP,    'S'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "Import / Assemble...\tShift+Ctrl+I",  MNU_GROUP_IMPORT,   'I'|S|C,mGrp  },
 {11, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
@@ -235,8 +236,8 @@ void GraphicsWindow::LoopOverPoints(
         HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
     }
     Group *g = SS.GetGroup(activeGroup);
-    for(i = 0; i < g->mesh.l.n; i++) {
-        STriangle *tr = &(g->mesh.l.elem[i]);
+    for(i = 0; i < g->runningMesh.l.n; i++) {
+        STriangle *tr = &(g->runningMesh.l.elem[i]);
         HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, div);
         HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, div);
         HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, div);
