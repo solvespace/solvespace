@@ -1,0 +1,59 @@
+
+The user enters requests. A request might be a line segment, or a plane,
+or to step and repeat a group of entities, or anything else. Each
+request has a groupid associated with it; a group will contain one or
+more requests. The request will generate entities, and possibly equations.
+
+Special requests would include an include, which gives us a concept of
+hierarchy. An include pulls in all the entities from another SolveSpace
+part, and fixes them up to a rotation and translation; so that introduces
+six free variables. This means that the part is rigidly constrained,
+but that it still must be placed, and that entities within the included
+part are available to constrain against.
+
+An entity is some geometric thing in the sketch. This might be a
+line segment, or a datum point, or something else. Some requests
+correspond to a single entity, in a straightforward way. Other requests
+generate multiple entities, in some relationship (that is constrained
+automatically, through the generated equations) to other parts of the
+sketch. Each entity has a groupid, which is inherited from the request
+that generated it.
+
+One important entity is a pwl. That's a piecewise linear segment. Its
+endpoints are fixed, so it generates no parameters.
+
+The entity is described in terms of paramgroups. A paramgroup corresponds
+to one or more solver parameters, grouped in such a way as to have
+geometric meaning. For example, a point would correspond to three params,
+x, y, and z.
+
+The paramgroups break down in to params. These are the unknowns in the
+solver equations.
+
+The user enters constraints. Each constraint has groupid. The constraints
+generate equations too.
+
+
+
+
+The items that generate unknowns are:
+
+    POINT:
+
+        three unknowns, (x, y, z)
+
+
+Entities are:
+
+    DATUM POINT:
+
+        one point
+
+    DATUM PLANE:
+
+        one point; the plane is through that point, and normal to the
+        vector from that point to the origin
+
+    LINE SEGMENT:
+
+        two endpoints
