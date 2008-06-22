@@ -710,10 +710,21 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             break;
 
         case PT_ON_CIRCLE: {
+            // This actually constrains the point to lie on the cylinder.
             Entity *circle = SS.GetEntity(entityA);
-            hEntity center = circle->point[0];
-            Expr *radius = circle->CircleGetRadiusExpr();
-            AddEq(l, Distance(workplane, ptA, center)->Minus(radius), 0);
+            ExprVector center = SS.GetEntity(circle->point[0])->PointGetExprs();
+            ExprVector pt     = SS.GetEntity(ptA)->PointGetExprs();
+            Entity *normal = SS.GetEntity(circle->normal);
+            ExprVector u = normal->NormalExprsU(),
+                       v = normal->NormalExprsV();
+            
+            Expr *du = (center.Minus(pt)).Dot(u),
+                 *dv = (center.Minus(pt)).Dot(v);
+
+            Expr *r = circle->CircleGetRadiusExpr();
+
+            AddEq(l,
+                ((du->Square())->Plus(dv->Square()))->Minus(r->Square()), 0);
             break;
         }
 
