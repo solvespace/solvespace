@@ -312,20 +312,20 @@ void glxDebugMesh(SMesh *m)
     glPointSize(7);
     glxDepthRangeOffset(1);
     glxUnlockColor();
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glxColor4d(0, 1, 0, 1.0);
+    glBegin(GL_TRIANGLES);
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);
         if(t->tag) continue;
 
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glxColor4d(0, 1, 0, 1.0);
-        glBegin(GL_TRIANGLES);
-            glxVertex3v(t->a);
-            glxVertex3v(t->b);
-            glxVertex3v(t->c);
-        glEnd();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glxVertex3v(t->a);
+        glxVertex3v(t->b);
+        glxVertex3v(t->c);
     }
+    glEnd();
     glxDepthRangeOffset(0);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
 void glxMarkPolygonNormal(SPolygon *p)
