@@ -757,9 +757,9 @@ void TextWindow::ShowGroupInfo(void) {
                 (!rh ? "" : "left-hand"), (!rh ? "left-hand" : ""));
         Printf(false, "%FtTHROUGH%E  %@ turns %Fl%Lt%D%f[change]%E",
             g->valA, g->h.v, &ScreenChangeHelixParameter);
-        Printf(false, "%FtPITCH%E    %s per turn %Fl%Lp%D%f[change]%E",
+        Printf(false, "%FtPITCH%E    %s axially per turn %Fl%Lp%D%f[change]%E",
             SS.MmToString(g->valB), g->h.v, &ScreenChangeHelixParameter);
-        Printf(false, "%FtdRADIUS%E  %s per turn %Fl%Lr%D%f[change]%E",
+        Printf(false, "%FtdRADIUS%E  %s radially per turn %Fl%Lr%D%f[change]%E",
             SS.MmToString(g->valC), g->h.v, &ScreenChangeHelixParameter);
     }
     
