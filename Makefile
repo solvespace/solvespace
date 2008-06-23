@@ -13,6 +13,7 @@ W32OBJS  = $(OBJDIR)\w32main.obj \
 
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\textwin.obj \
+           $(OBJDIR)\textscreens.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\util.obj \
            $(OBJDIR)\entity.obj \
@@ -30,6 +31,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\system.obj \
            $(OBJDIR)\polygon.obj \
            $(OBJDIR)\mesh.obj \
+           $(OBJDIR)\bsp.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib \
