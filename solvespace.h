@@ -101,7 +101,10 @@ void vl(void); // debug function to validate
 
 class Entity;
 class hEntity;
+class Param;
+class hParam;
 typedef IdList<Entity,hEntity> EntityList;
+typedef IdList<Param,hParam> ParamList;
 
 #include "sketch.h"
 #include "ui.h"
@@ -144,8 +147,8 @@ class System {
 public:
 #define MAX_UNKNOWNS    200
 
-    IdList<Entity,hEntity>          entity;
-    IdList<Param,hParam>            param;
+    EntityList                      entity;
+    ParamList                       param;
     IdList<Equation,hEquation>      eq;
 
     // In general, the tag indicates the subsys that a variable/equation

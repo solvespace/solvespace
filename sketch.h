@@ -83,6 +83,7 @@ public:
     static const int EXTRUDE                       = 5100;
     static const int LATHE                         = 5101;
     static const int SWEEP                         = 5102;
+    static const int HELICAL_SWEEP                 = 5103;
     static const int ROTATE                        = 5200;
     static const int TRANSLATE                     = 5201;
     static const int IMPORTED                      = 5300;
@@ -94,6 +95,8 @@ public:
     bool        clean;
     hEntity     activeWorkplane;
     double      valA;
+    double      valB;
+    double      valC;
     DWORD       color;
 
     static const int SOLVED_OKAY          = 0;
@@ -104,10 +107,15 @@ public:
         SList<hConstraint>  remove;
     } solved;
 
+    // For drawings in 2d
     static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
     static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
+    // For extrudes, translates, and rotates
     static const int ONE_SIDED                  = 7000;
     static const int TWO_SIDED                  = 7001;
+    // For helical sweeps
+    static const int RIGHT_HANDED               = 8000;
+    static const int LEFT_HANDED                = 8001;
     int subtype;
 
     bool skipFirst; // for step and repeat ops
@@ -158,8 +166,8 @@ public:
     void Activate(void);
     char *DescriptionString(void);
 
-    static void AddParam(IdList<Param,hParam> *param, hParam hp, double v);
-    void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
+    static void AddParam(ParamList *param, hParam hp, double v);
+    void Generate(EntityList *entity, ParamList *param);
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
@@ -170,10 +178,10 @@ public:
     static const int REMAP_PT_TO_LINE   = 1003;
     static const int REMAP_LINE_TO_FACE = 1004;
     hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in);
-    void MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt);
+    void MakeExtrusionLines(EntityList *el, hEntity in);
+    void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void TagEdgesFromLineSegments(SEdgeList *sle);
-    void CopyEntity(IdList<Entity,hEntity> *el,
+    void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
@@ -190,7 +198,8 @@ public:
     void AddQuadWithNormal(STriMeta meta, Vector out,
                                     Vector a, Vector b, Vector c, Vector d);
     void GenerateMeshForStepAndRepeat(void);
-    void GenerateMeshForSweep(void);
+    void GenerateMeshForSweep(bool helical,
+                                Vector axisp, Vector axis, Vector onHelix);
     void GenerateMesh(void);
     void Draw(void);
 
@@ -226,8 +235,8 @@ public:
 
     bool        construction;
     
-    static hParam AddParam(IdList<Param,hParam> *param, hParam hp);
-    void Generate(IdList<Entity,hEntity> *entity, IdList<Param,hParam> *param);
+    static hParam AddParam(ParamList *param, hParam hp);
+    void Generate(EntityList *entity, ParamList *param);
 
     char *DescriptionString(void);
 };

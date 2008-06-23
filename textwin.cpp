@@ -626,6 +626,39 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
+    SS.UndoRemember();
+
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    if(g->subtype == Group::RIGHT_HANDED) {
+        g->subtype = Group::LEFT_HANDED;
+    } else {
+        g->subtype = Group::RIGHT_HANDED;
+    }
+    SS.MarkGroupDirty(g->h);
+    SS.GenerateAll();
+    SS.GW.ClearSuper();
+}
+void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
+    Group *g = SS.GetGroup(SS.TW.shown->group);
+    char str[1024];
+    int r;
+    if(link == 't') {
+        sprintf(str, "%.3f", g->valA);
+        SS.TW.edit.meaning = EDIT_HELIX_TURNS;
+        r = 12;
+    } else if(link == 'p') {
+        strcpy(str, SS.MmToString(g->valB));
+        SS.TW.edit.meaning = EDIT_HELIX_PITCH;
+        r = 14;
+    } else if(link == 'r') {
+        strcpy(str, SS.MmToString(g->valC));
+        SS.TW.edit.meaning = EDIT_HELIX_DRADIUS;
+        r = 16;
+    } else oops();
+    SS.TW.edit.group.v = v;
+    ShowTextEditControl(r, 9, str);
+}
 void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -683,10 +716,6 @@ void TextWindow::ShowGroupInfo(void) {
             g->h.v, &TextWindow::ScreenDeleteGroup);
     }
 
-    if(g->type == Group::IMPORTED) {
-        Printf(true, "%FtIMPORT%E  '%s'", g->impFile);
-    }
-
     if(g->type == Group::EXTRUDE) {
         s = "EXTRUDE ";
     } else if(g->type == Group::TRANSLATE) {
@@ -708,11 +737,32 @@ void TextWindow::ShowGroupInfo(void) {
             (one ? "" : "one side"), (one ? "one side" : ""),
             &TextWindow::ScreenChangeOneOrTwoSides,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
-    }
+    } 
+    
     if(g->type == Group::LATHE) {
         Printf(true, "%FtLATHE");
     }
-
+    
+    if(g->type == Group::SWEEP) {
+        Printf(true, "%FtSWEEP");
+    }
+    
+    if(g->type == Group::HELICAL_SWEEP) {
+        bool rh = (g->subtype == Group::RIGHT_HANDED);
+        Printf(true,
+            "%FtHELICAL%E  %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+                &ScreenChangeRightLeftHanded,
+                (rh ? "" : "right-hand"), (rh ? "right-hand" : ""),
+                &ScreenChangeRightLeftHanded,
+                (!rh ? "" : "left-hand"), (!rh ? "left-hand" : ""));
+        Printf(false, "%FtTHROUGH%E  %@ turns %Fl%Lt%D%f[change]%E",
+            g->valA, g->h.v, &ScreenChangeHelixParameter);
+        Printf(false, "%FtPITCH%E    %s per turn %Fl%Lp%D%f[change]%E",
+            SS.MmToString(g->valB), g->h.v, &ScreenChangeHelixParameter);
+        Printf(false, "%FtdRADIUS%E  %s per turn %Fl%Lr%D%f[change]%E",
+            SS.MmToString(g->valC), g->h.v, &ScreenChangeHelixParameter);
+    }
+    
     if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
         bool space;
         if(g->subtype == Group::ONE_SIDED) {
@@ -733,10 +783,15 @@ void TextWindow::ShowGroupInfo(void) {
             s2, times, times == 1 ? "" : "s",
             g->h.v, &TextWindow::ScreenChangeExprA);
     }
+    
+    if(g->type == Group::IMPORTED) {
+        Printf(true, "%FtIMPORT%E  '%s'", g->impFile);
+    }
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
        g->type == Group::SWEEP ||
+       g->type == Group::HELICAL_SWEEP ||
        g->type == Group::IMPORTED)
     {
         bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
@@ -744,7 +799,7 @@ void TextWindow::ShowGroupInfo(void) {
         bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);
         bool asa  = (g->type == Group::IMPORTED);
 
-        Printf(false,
+        Printf((g->type == Group::HELICAL_SWEEP),
             "%FtMERGE AS%E %Fh%f%D%Ll%s%E%Fs%s%E / %Fh%f%D%Ll%s%E%Fs%s%E %s "
             "%Fh%f%D%Ll%s%E%Fs%s%E",
             &TextWindow::ScreenChangeMeshCombine,
@@ -764,7 +819,8 @@ void TextWindow::ShowGroupInfo(void) {
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
-       g->type == Group::SWEEP)
+       g->type == Group::SWEEP ||
+       g->type == Group::HELICAL_SWEEP)
     {
 #define TWOX(v) v v
         Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
@@ -995,6 +1051,27 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_CAMERA_TANGENT: {
             SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
             InvalidateGraphics();
+            break;
+        }
+        case EDIT_HELIX_TURNS:
+        case EDIT_HELIX_PITCH:
+        case EDIT_HELIX_DRADIUS: {
+            SS.UndoRemember();
+            Group *g = SS.GetGroup(edit.group);
+            Expr *e = Expr::From(s);
+            if(!e) {
+                Error("Not a valid number or expression: '%s'", s);
+                break;
+            }
+            if(edit.meaning == EDIT_HELIX_TURNS) {
+                g->valA = min(30, fabs(e->Eval()));
+            } else if(edit.meaning == EDIT_HELIX_PITCH) {
+                g->valB = SS.ExprToMm(e);
+            } else {
+                g->valC = SS.ExprToMm(e);
+            }
+            SS.MarkGroupDirty(g->h);
+            SS.later.generateAll = true;
             break;
         }
     }

@@ -20,6 +20,7 @@ void Group::MenuGroup(int id) {
     Group g;
     ZERO(&g);
     g.visible = true;
+    g.color = RGB(100, 100, 100);
 
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
         strcpy(g.impFile, RecentFile[id-RECENT_IMPORT]);
@@ -75,7 +76,6 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
-            g.color = RGB(100, 100, 100);
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.subtype = ONE_SIDED;
             g.name.strcpy("extrude");
@@ -95,7 +95,6 @@ void Group::MenuGroup(int id) {
             }
             g.type = LATHE;
             g.opA = SS.GW.activeGroup;
-            g.color = RGB(100, 100, 100);
             g.name.strcpy("lathe");
             SS.GW.ClearSelection();
             break;
@@ -119,8 +118,35 @@ void Group::MenuGroup(int id) {
             }
             // The active group is our section
             g.opB = SS.GW.activeGroup;
-            g.color = RGB(100, 100, 100);
             g.name.strcpy("sweep");
+            break;
+        }
+
+        case GraphicsWindow::MNU_GROUP_HELICAL: {
+            if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
+                Vector pt = SS.GetEntity(gs.point[0])->PointGetNum();
+                Entity *ln = SS.GetEntity(gs.entity[0]);
+                Vector lpa = SS.GetEntity(ln->point[0])->PointGetNum();
+                Vector lpb = SS.GetEntity(ln->point[1])->PointGetNum();
+                double d = pt.DistanceToLine(lpa, lpb.Minus(lpa));
+                if(d < LENGTH_EPS) {
+                    Error("Point on helix can't lie on helix's axis!");
+                    return;
+                }
+                g.predef.origin = gs.point[0];
+                g.predef.entityB = gs.entity[0];
+            } else {
+                Error("Bad selection for helical sweep.");
+                return;
+            }
+            g.type = HELICAL_SWEEP;
+            g.subtype = RIGHT_HANDED;
+            g.valA = 3; // turns;
+            g.valB = 300/SS.GW.scale; // pitch along axis
+            g.valC = 0; // pitch in radius
+            g.opA = SS.GW.activeGroup;
+            g.name.strcpy("helical-sweep");
+            SS.GW.ClearSelection();
             break;
         }
 
@@ -312,6 +338,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case SWEEP: {
+            break;
+        }
+
+        case HELICAL_SWEEP: {
             break;
         }
 

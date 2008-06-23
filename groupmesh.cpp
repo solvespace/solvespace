@@ -38,9 +38,10 @@ void Group::GeneratePolygon(void) {
 
 void Group::GetTrajectory(hGroup hg, SContour *traj, SPolygon *section) {
     if(section->IsEmpty()) return;
-
+   
     SEdgeList edges; ZERO(&edges);
     int i, j;
+
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         if(e->group.v != hg.v) continue;
@@ -100,7 +101,6 @@ void Group::GetTrajectory(hGroup hg, SContour *traj, SPolygon *section) {
         // The starting point is the endpoint that's closer to the plane
         traj->Reverse();
     }
-
 cleanup:
     edges.Clear();
 }
@@ -197,20 +197,41 @@ void Group::GenerateMeshForStepAndRepeat(void) {
     thisMesh.Clear();
 }
 
-void Group::GenerateMeshForSweep(void) {
+void Group::GenerateMeshForSweep(bool helical,
+                                    Vector axisp, Vector axis, Vector onHelix)
+{
     STriMeta meta = { 0, color };
-    SEdgeList edges;
-    ZERO(&edges);
     int a, i;
 
     // The closed section that will be swept along the curve
-    Group *section = SS.GetGroup(opB);
+    Group *section = SS.GetGroup(helical ? opA : opB);
+    SEdgeList edges;
+    ZERO(&edges);
     (section->poly).MakeEdgesInto(&edges);
 
     // The trajectory along which the section will be swept
     SContour traj;
     ZERO(&traj);
-    GetTrajectory(opA, &traj, &(section->poly));
+    if(helical) {
+        double r0 = onHelix.DistanceToLine(axisp, axis);
+        int n = (int)(SS.CircleSides(r0)*valA) + 4;
+        Vector origin = onHelix.ClosestPointOnLine(axisp, axis);
+        Vector u = (onHelix.Minus(origin)).WithMagnitude(1);
+        Vector v = (axis.Cross(u)).WithMagnitude(1);
+        for(i = 0; i <= n; i++) {
+            double turns = (i*valA)/n;
+            double theta = turns*2*PI;
+            double r = r0 + turns*valC;
+            if(subtype == LEFT_HANDED) theta = -theta;
+            Vector p = origin.Plus(
+                            u.ScaledBy(r*cos(theta)).Plus(
+                            v.ScaledBy(r*sin(theta)).Plus(
+                            axis.WithMagnitude(turns*valB))));
+            traj.AddPoint(p);
+        }
+    } else {
+        GetTrajectory(opA, &traj, &(section->poly));
+    }
 
     if(traj.l.n <= 0) {
         edges.Clear();
@@ -222,7 +243,17 @@ void Group::GenerateMeshForSweep(void) {
     Vector origNormal = (traj.l.elem[1].p).Minus(origRef);
     origNormal = origNormal.WithMagnitude(1);
     Vector oldRef = origRef, oldNormal = origNormal;
-    Vector oldU = oldNormal.Normal(0), oldV = oldNormal.Normal(1);
+
+    Vector oldU, oldV;
+    if(helical) {
+        oldU = axis.WithMagnitude(1);
+        oldV = (oldNormal.Cross(oldU)).WithMagnitude(1);
+        // numerical fixup, since pwl segment isn't exactly tangent...
+        oldU = (oldV.Cross(oldNormal)).WithMagnitude(1);
+    } else {
+        oldU = oldNormal.Normal(0);
+        oldV = oldNormal.Normal(1);
+    }
 
     // The endcap at the start of the curve
     SPolygon cap;
@@ -257,11 +288,18 @@ void Group::GenerateMeshForSweep(void) {
             useNormal = (thisNormal.Plus(oldNormal)).ScaledBy(0.5);
         }
 
-        // Choose a new coordinate system, normal to the trajectory and
-        // with the minimum possible twist about the normal.
+        Vector useV, useU;
         useNormal = useNormal.WithMagnitude(1);
-        Vector useV = (useNormal.Cross(oldU)).WithMagnitude(1);
-        Vector useU = (useV.Cross(useNormal)).WithMagnitude(1);
+        if(helical) {
+            // The axis of rotation is always a basis vector
+            useU = axis.WithMagnitude(1);
+            useV = (useNormal.Cross(useU)).WithMagnitude(1);
+        } else {
+            // Choose a new coordinate system, normal to the trajectory and
+            // with the minimum possible twist about the normal.
+            useV = (useNormal.Cross(oldU)).WithMagnitude(1);
+            useU = (useV.Cross(useNormal)).WithMagnitude(1);
+        }
 
         Quaternion qi = Quaternion::From(oldU, oldV);
         Quaternion qf = Quaternion::From(useU, useV);
@@ -432,7 +470,14 @@ void Group::GenerateMesh(void) {
             }
         }
     } else if(type == SWEEP) {
-        GenerateMeshForSweep();
+        Vector zp = Vector::From(0, 0, 0);
+        GenerateMeshForSweep(false, zp, zp, zp);
+    } else if(type == HELICAL_SWEEP) {
+        Entity *ln = SS.GetEntity(predef.entityB);
+        Vector lna = SS.GetEntity(ln->point[0])->PointGetNum(),
+               lnb = SS.GetEntity(ln->point[1])->PointGetNum();
+        Vector onh = SS.GetEntity(predef.origin)->PointGetNum();
+        GenerateMeshForSweep(true, lna, lnb.Minus(lna), onh);
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.

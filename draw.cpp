@@ -363,7 +363,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case MNU_RECTANGLE: {
             if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw rectangle in 3d; select a workplane first.");
-                 break;
+                ClearSuper();
+                break;
             }
             hRequest lns[4];
             int i;

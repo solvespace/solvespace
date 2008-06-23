@@ -64,6 +64,9 @@ public:
     static const int EDIT_COLOR                 = 5;
     static const int EDIT_MESH_TOLERANCE        = 6;
     static const int EDIT_CAMERA_TANGENT        = 7;
+    static const int EDIT_HELIX_TURNS           = 8;
+    static const int EDIT_HELIX_PITCH           = 9;
+    static const int EDIT_HELIX_DRADIUS         = 10;
     struct {
         int     meaning;
         int     i;
@@ -103,6 +106,8 @@ public:
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeSkipFirst(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
+    static void ScreenChangeRightLeftHanded(int link, DWORD v);
+    static void ScreenChangeHelixParameter(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
@@ -164,6 +169,7 @@ public:
         MNU_GROUP_EXTRUDE,
         MNU_GROUP_LATHE,
         MNU_GROUP_SWEEP,
+        MNU_GROUP_HELICAL,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
         MNU_GROUP_IMPORT,

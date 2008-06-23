@@ -48,6 +48,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "E&xtrude\tShift+Ctrl+X",              MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
 { 1, "&Lathe\tShift+Ctrl+L",                MNU_GROUP_LATHE,    'L'|S|C,mGrp  },
 { 1, "&Sweep\tShift+Ctrl+S",                MNU_GROUP_SWEEP,    'S'|S|C,mGrp  },
+{ 1, "&Helical Sweep\tShift+Ctrl+H",        MNU_GROUP_HELICAL,  'H'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "Import / Assemble...\tShift+Ctrl+I",  MNU_GROUP_IMPORT,   'I'|S|C,mGrp  },
 {11, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
