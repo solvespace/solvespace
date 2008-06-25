@@ -157,6 +157,7 @@ public:
     int remapCache[REMAP_PRIME];
 
     char                       impFile[MAX_PATH];
+    char                       impFileRel[MAX_PATH];
     SMesh                      impMesh;
     EntityList                 impEntity;
 

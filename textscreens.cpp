@@ -383,7 +383,7 @@ void TextWindow::ShowGroupInfo(void) {
     }
     
     if(g->type == Group::IMPORTED) {
-        Printf(true, "%FtIMPORT%E  '%s'", g->impFile);
+        Printf(true, "%FtIMPORT%E  '%s'", g->impFileRel);
     }
 
     if(g->type == Group::EXTRUDE ||

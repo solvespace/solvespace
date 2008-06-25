@@ -1,5 +1,75 @@
 #include "solvespace.h"
 
+void MakePathRelative(char *basep, char *pathp)
+{
+    int i;
+    char *p;
+    char base[MAX_PATH], path[MAX_PATH], out[MAX_PATH];
+
+    // Convert everything to lowercase
+    p = basep;
+    for(i = 0; *p; p++) {
+        base[i++] = tolower(*p);
+    }
+    base[i++] = '\0';
+    p = pathp;
+    for(i = 0; *p; p++) {
+        path[i++] = tolower(*p);
+    }
+    path[i++] = '\0';
+
+    // Find the length of the common prefix
+    int com;
+    for(com = 0; base[com] && path[com]; com++) {
+        if(base[com] != path[com]) break;
+    }
+    if(!(base[com] && path[com])) return; // weird, prefix is entire string
+    if(com == 0) return; // maybe on different drive letters?
+
+    int sections = 0;
+    int secLen = 0, secStart = 0;
+    for(i = com; base[i]; i++) {
+        if(base[i] == '/' || base[i] == '\\') {
+            if(secLen == 2 && memcmp(base+secStart, "..", 2)==0) return;
+            if(secLen == 1 && memcmp(base+secStart, ".", 1)==0) return;
+
+            sections++;
+            secLen = 0;
+            secStart = i+1;
+        } else {
+            secLen++;
+        }
+    }
+
+    // For every directory in the prefix of the base, we must go down a
+    // directory in the relative path name
+    strcpy(out, "");
+    for(i = 0; i < sections; i++) {
+        strcat(out, "../");
+    }
+    strcat(out, path+com);
+
+    strcpy(pathp, out);
+}
+
+void MakePathAbsolute(char *basep, char *pathp) {
+    char out[MAX_PATH];
+    strcpy(out, basep);
+
+    // Chop off the filename
+    int i;
+    for(i = strlen(out) - 1; i >= 0; i--) {
+        if(out[i] == '\\' || out[i] == '/') break;
+    }
+    if(i < 0) return; // base is not an absolute path, or something?
+    out[i+1] = '\0';
+
+    strcat(out, pathp);
+    GetAbsoluteFilename(out);
+
+    strcpy(pathp, out);
+}
+
 void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,

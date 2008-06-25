@@ -5,7 +5,6 @@ DXF export
 TTF font text
 some kind of rounding / chamfer
 remove back button in browser?
-relative paths for import
 auto-generate circles and faces when lathing
 copy the section geometry to other end when sweeping
 cylindrical faces

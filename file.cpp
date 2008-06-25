@@ -86,6 +86,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },
+    { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.impFileRel)         },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -284,6 +285,8 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
 }
 
 bool SolveSpace::LoadFromFile(char *filename) {
+    allConsistent = false;
+
     fh = fopen(filename, "rb");
     if(!fh) {   
         Error("Couldn't read from file '%s'", filename);
@@ -398,6 +401,8 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
 }
 
 void SolveSpace::ReloadAllImported(void) {
+    allConsistent = false;
+
     int i;
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
@@ -405,7 +410,37 @@ void SolveSpace::ReloadAllImported(void) {
 
         g->impEntity.Clear();
         g->impMesh.Clear();
-        if(!LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh))) {
+
+        FILE *test = fopen(g->impFile, "rb");
+        if(test) {
+            fclose(test); // okay, exists
+        } else {
+            // It doesn't exist. Perhaps the entire tree has moved, and we
+            // can use the relative filename to get us back.
+            if(SS.saveFile[0]) {
+                char fromRel[MAX_PATH];
+                strcpy(fromRel, g->impFileRel);
+                MakePathAbsolute(SS.saveFile, fromRel);
+                test = fopen(fromRel, "rb");
+                if(test) {
+                    fclose(test);
+                    // It worked, this is our new absolute path
+                    strcpy(g->impFile, fromRel);
+                }
+            }
+        }
+
+        if(LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh))) {
+            if(SS.saveFile[0]) {
+                // Record the imported file's name relative to our filename;
+                // if the entire tree moves, then everything will still work
+                strcpy(g->impFileRel, g->impFile);
+                MakePathRelative(SS.saveFile, g->impFileRel);
+            } else {
+                // We're not yet saved, so can't make it absolute
+                strcpy(g->impFileRel, g->impFile);
+            }
+        } else {
             Error("Failed to load imported file '%s'", g->impFile);
         }
     }

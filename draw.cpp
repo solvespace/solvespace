@@ -900,6 +900,12 @@ void GraphicsWindow::Paint(int w, int h) {
     glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
 
+    // Nasty case when we're reloading the imported files; could be that
+    // we get an error, so a dialog pops up, and a message loop starts, and
+    // we have to get called to paint ourselves. If the sketch is screwed
+    // up, then we could trigger an oops trying to draw.
+    if(!SS.allConsistent) return;
+
     // Let's use two lights, at the user-specified locations
     GLfloat f;
     glEnable(GL_LIGHT0);

@@ -63,8 +63,15 @@ void Error(char *str, ...)
     vsprintf(buf, str, f);
     va_end(f);
 
+    EnableWindow(GraphicsWnd, FALSE);
+    EnableWindow(TextWnd, FALSE);
+
     HWND h = GetForegroundWindow();
     MessageBox(h, buf, "SolveSpace Error", MB_OK | MB_ICONERROR);
+
+    EnableWindow(TextWnd, TRUE);
+    EnableWindow(GraphicsWnd, TRUE);
+    SetForegroundWindow(GraphicsWnd);
 }
 
 void ExitNow(void) {
@@ -696,9 +703,14 @@ BOOL GetOpenFile(char *file, char *defExtension, char *selPattern)
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     EnableWindow(GraphicsWnd, FALSE);
+    EnableWindow(TextWnd, FALSE);
+
     BOOL r = GetOpenFileName(&ofn);
+
+    EnableWindow(TextWnd, TRUE);
     EnableWindow(GraphicsWnd, TRUE);
     SetForegroundWindow(GraphicsWnd);
+
     return r;
 }
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern)
@@ -716,19 +728,38 @@ BOOL GetSaveFile(char *file, char *defExtension, char *selPattern)
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 
     EnableWindow(GraphicsWnd, FALSE);
+    EnableWindow(TextWnd, FALSE);
+
     BOOL r = GetSaveFileName(&ofn);
+
+    EnableWindow(TextWnd, TRUE);
     EnableWindow(GraphicsWnd, TRUE);
     SetForegroundWindow(GraphicsWnd);
+
     return r;
 }
 int SaveFileYesNoCancel(void)
 {
-    return MessageBox(GraphicsWnd, 
+    EnableWindow(GraphicsWnd, FALSE);
+    EnableWindow(TextWnd, FALSE);
+
+    int r = MessageBox(GraphicsWnd, 
         "The program has changed since it was last saved.\r\n\r\n"
         "Do you want to save the changes?", "SolveSpace",
         MB_YESNOCANCEL | MB_ICONWARNING);
-}
 
+    EnableWindow(TextWnd, TRUE);
+    EnableWindow(GraphicsWnd, TRUE);
+    SetForegroundWindow(GraphicsWnd);
+
+    return r;
+}
+void GetAbsoluteFilename(char *file)
+{
+    char absoluteFile[MAX_PATH];
+    GetFullPathName(file, sizeof(absoluteFile), absoluteFile, NULL);
+    strcpy(file, absoluteFile);
+}
 
 static void MenuById(int id, BOOL yes, BOOL check)
 {
@@ -933,13 +964,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         s = strrchr(file, '"');
         if(s) *s = '\0';
     }
-    char absoluteFile[MAX_PATH] = "";
     if(*file != '\0') {
-        GetFullPathName(file, sizeof(absoluteFile), absoluteFile, NULL);
+        GetAbsoluteFilename(file);
     }
     
     // Call in to the platform-independent code, and let them do their init
-    SS.Init(absoluteFile);
+    SS.Init(file);
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);

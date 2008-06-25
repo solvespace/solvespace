@@ -58,6 +58,7 @@ int SaveFileYesNoCancel(void);
 #define PNG_EXT "png"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
+void GetAbsoluteFilename(char *file);
 
 void CheckMenuById(int id, BOOL checked);
 void EnableMenuById(int id, BOOL checked);
@@ -142,6 +143,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
+void MakePathRelative(char *base, char *path);
+void MakePathAbsolute(char *base, char *path);
 
 class System {
 public:
@@ -335,6 +338,11 @@ public:
 
     // The system to be solved.
     System  sys;
+
+    // Everything has been pruned, so we know there's no dangling references
+    // to entities that don't exist. Before that, we mustn't try to display
+    // the sketch!
+    bool allConsistent;
 
     struct {
         bool    showTW;

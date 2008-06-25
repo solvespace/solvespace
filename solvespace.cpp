@@ -399,6 +399,8 @@ void SolveSpace::GenerateAll(int first, int last) {
                 deleted.groups, deleted.groups == 1 ? "" : "s");
         memset(&deleted, 0, sizeof(deleted));
     }
+
+    allConsistent = true;
     return;
 
 pruned:
