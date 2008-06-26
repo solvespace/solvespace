@@ -500,6 +500,21 @@ Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
     return (n1.ScaledBy(c1)).Plus(n2.ScaledBy(c2));
 }
 
+bool Vector::LinesIntersect(Vector a0, Vector da, Vector b0, Vector db,
+                            double *ta, double *tb)
+{
+    Vector dn = da.Cross(db); // normal to both
+    if(dn.Magnitude() < 1e-10) return false;
+
+    Vector dna = dn.Cross(da); // normal to dp
+    Vector dnb = dn.Cross(db); // normal to dg
+
+    *tb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
+    *ta = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+
+    return true;
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;

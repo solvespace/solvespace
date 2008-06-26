@@ -78,23 +78,26 @@ public:
     Vector  p;
 };
 
+typedef struct {
+    DWORD   face;
+    int     color;
+} STriMeta;
+
 class SContour {
 public:
+    int             tag;
     SList<SPoint>   l;
 
     void AddPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
+    bool VertexIsEar(int v, Vector normal);
+    void TriangulateInto(SMesh *m, STriMeta meta, Vector normal);
     void Reverse(void);
     Vector ComputeNormal(void);
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
     bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
 };
-
-typedef struct {
-    DWORD   face;
-    int     color;
-} STriMeta;
 
 class SPolygon {
 public:
@@ -112,6 +115,9 @@ public:
     void Clear(void);
     bool AllPointsInPlane(Vector *notCoplanarAt);
     bool IsEmpty(void);
+    bool IntersectsPolygon(Vector a, Vector b);
+    bool VisibleVertices(SContour *outer, SContour *inner,
+                         SEdgeList *extras, int *vo, int *vi);
     Vector AnyPoint(void);
 };
 

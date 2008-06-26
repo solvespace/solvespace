@@ -314,62 +314,246 @@ bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
     return true;
 }
 
-static int TriMode, TriVertexCount;
-static Vector Tri1, TriNMinus1, TriNMinus2;
-static Vector TriNormal;
-static SMesh *TriMesh;
-static STriMeta TriMeta;
-static void GLX_CALLBACK TriBegin(int mode) 
-{
-    TriMode = mode;
-    TriVertexCount = 0;
-}
-static void GLX_CALLBACK TriEnd(void)
-{
-}
-static void GLX_CALLBACK TriVertex(Vector *triN)
-{
-    if(TriVertexCount == 0) {
-        Tri1 = *triN;
+bool SPolygon::IntersectsPolygon(Vector ga, Vector gb) {
+    int i, j;
+    for(i = 0; i < l.n; i++) {
+        SContour *sc = &(l.elem[i]);
+        for(j = 0; j < sc->l.n; j++) {
+            Vector pa = sc->l.elem[j].p,
+                   pb = sc->l.elem[WRAP(j+1, (sc->l.n - 1))].p;
+            // So do the lines from (ga to gb) and (pa to pb) intersect?
+            Vector dp = pb.Minus(pa),    dg = gb.Minus(ga);
+            double tp, tg;
+            if(!Vector::LinesIntersect(pa, dp, ga, dg, &tp, &tg)) {
+                continue;
+            }
+
+            // So check if the line segments intersect
+            double lp = dp.Magnitude(),  lg = dg.Magnitude();
+            tp *= lp;
+            tg *= lg;
+
+            if(tg > LENGTH_EPS && tg < (lg - LENGTH_EPS) &&
+               tp > LENGTH_EPS && tp < (lp - LENGTH_EPS))
+            {
+                return true;
+            }
+        }
     }
-    if(TriMode == GL_TRIANGLES) {
-        if((TriVertexCount % 3) == 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
-        }
-    } else if(TriMode == GL_TRIANGLE_FAN) {
-        if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, Tri1, TriNMinus1, *triN);
-        }
-    } else if(TriMode == GL_TRIANGLE_STRIP) {
-        if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
-        }
-    } else oops();
-            
-    TriNMinus2 = TriNMinus1;
-    TriNMinus1 = *triN;
-    TriVertexCount++;
+    return false;
 }
+
+bool SPolygon::VisibleVertices(SContour *outer, SContour *inner,
+                               SEdgeList *extras, int *vo, int *vi)
+{
+    int i, j, k;
+
+    double lmin = 1e12;
+    for(i = 0; i < outer->l.n; i++) {
+        Vector op = outer->l.elem[i].p;
+
+        for(j = 0; j < inner->l.n; j++) {
+            Vector ip = inner->l.elem[j].p;
+
+            if(IntersectsPolygon(op, ip)) goto dontuse;
+
+            for(k = 0; k < extras->l.n; k++) {
+                SEdge *se = &(extras->l.elem[k]);
+
+                if(ip.Equals(se->a) || ip.Equals(se->b) ||
+                   op.Equals(se->a) || op.Equals(se->b))
+                {
+                    goto dontuse;
+                }
+                
+                Vector dt = ip.Minus(op), de = (se->b).Minus(se->a);
+                double te, tt;
+                if(!Vector::LinesIntersect(op, dt, se->a, de, &tt, &te))
+                    continue;
+
+                double le = de.Magnitude(), lt = dt.Magnitude();
+                tt *= lt;
+                te *= le;
+                if(tt > LENGTH_EPS && tt < (lt - LENGTH_EPS) &&
+                   te > LENGTH_EPS && te < (le - LENGTH_EPS))
+                {
+                    goto dontuse;
+                }
+            }
+
+            if((op.Minus(ip)).Magnitude() < lmin) {
+                lmin = (op.Minus(ip)).Magnitude();
+                *vo = i;
+                *vi = j;
+            }
+dontuse:;
+        }
+    }
+    if(lmin < 1e12) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SContour::VertexIsEar(int v, Vector normal) {
+    int   va = WRAP(v-1, l.n), vb = WRAP(v  , l.n), vc = WRAP(v+1, l.n);
+    Vector a = l.elem[va].p,    b = l.elem[vb].p,    c = l.elem[vc].p;
+
+    STriMeta meta;
+    ZERO(&meta);
+    STriangle tr = STriangle::From(meta, a, b, c);
+    if(normal.Dot(tr.Normal()) > 0) return false;
+    
+    int i;
+    for(i = 0; i < l.n; i++) {
+        if(i == va) continue;
+        if(i == vb) continue;
+        if(i == vc) continue;
+
+        Vector p = l.elem[i].p;
+        if(p.Equals(tr.a)) continue;
+        if(p.Equals(tr.b)) continue;
+        if(p.Equals(tr.c)) continue;
+
+        if(tr.ContainsPoint(p)) return false;
+    }
+    return true;
+}
+
+void SContour::TriangulateInto(SMesh *m, STriMeta meta, Vector normal) {
+    int i;
+
+    bool odd = false;
+    while(l.n >= 3) {
+        int start, end, incr;
+        if(odd) {
+            start = 0; end = l.n; incr = 1;
+        } else {
+            start = l.n - 1; end = -1; incr = -1;
+        }
+        for(i = start; i != end; i += incr) {
+            if(VertexIsEar(i, normal)) {
+                break;
+            }
+        }
+        if(i == end) {
+            dbp("couldn't find ear!");
+            return;
+        }
+
+        Vector a = l.elem[WRAP(i-1, l.n)].p,
+               b = l.elem[WRAP(i  , l.n)].p,
+               c = l.elem[WRAP(i+1, l.n)].p;
+        m->AddTriangle(meta, c, b, a);
+        l.ClearTags();
+        l.elem[i].tag = 1;
+        l.RemoveTagged();
+
+        odd = !odd;
+    }
+
+    l.Clear();
+}
+
 void SPolygon::TriangulateInto(SMesh *m) {
     STriMeta meta;
     ZERO(&meta);
     TriangulateInto(m, meta);
 }
 void SPolygon::TriangulateInto(SMesh *m, STriMeta meta) {
-    TriMesh = m;
-    TriNormal = normal;
-    TriMeta = meta;
+    FixContourDirections();
 
-    GLUtesselator *gt = gluNewTess();
-    gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)TriBegin);
-    gluTessCallback(gt, GLU_TESS_END, (glxCallbackFptr *)TriEnd);
-    gluTessCallback(gt, GLU_TESS_VERTEX, (glxCallbackFptr *)TriVertex);
+    int i, j, k;
+    bool *used = (bool *)AllocTemporary(l.n*sizeof(bool));
+    int *winding = (int *)AllocTemporary(l.n*sizeof(int));
+    bool **contained = (bool **)AllocTemporary(l.n*sizeof(bool *));
+    for(i = 0; i < l.n; i++) {
+        contained[i] = (bool *)AllocTemporary(l.n*sizeof(bool));
 
-    glxTesselatePolygon(gt, this);
+        SContour *sci = &(l.elem[i]);
+        if(sci->l.n < 1) continue;
+        for(j = 0; j < l.n; j++) {
+            SContour *scj = &(l.elem[j]);
+            if(scj->l.n < 1) continue;
+            if(i == j) {
+                contained[i][j] = true;
+                continue;
+            }
+            
+            if(scj->ContainsPointProjdToNormal(normal, sci->l.elem[0].p)) {
+                (winding[i])++;
+                contained[i][j] = true;
+            }
+        }
+    }
 
-    gluDeleteTess(gt);
+    for(;;) {
+        for(i = 0; i < l.n; i++) {
+            if(winding[i] == 0) break;
+        }
+        if(i >= l.n) {
+            // No outer contours left, so we're done
+            break;
+        }
+
+        SContour *outer = &(l.elem[i]);
+        SContour merged;
+        ZERO(&merged);
+
+        SEdgeList extras;
+        ZERO(&extras);
+
+        for(j = 0; j < outer->l.n - 1; j++) {
+            merged.AddPoint(outer->l.elem[j].p);
+        }
+        // If this polygon has holes, then we must merge them in.
+        for(;;) {
+            for(j = 0; j < l.n; j++) {
+                if(used[j]) continue;
+                if(winding[j] != winding[i] + 1) continue;
+                if(!contained[j][i]) continue;
+
+                SContour *inner = &(l.elem[j]);
+
+                int vinner, vouter;
+                if(VisibleVertices(&merged, inner, &extras, &vouter, &vinner)) {
+                    used[j] = true;
+
+                    SEdge se = 
+                        { 0, merged.l.elem[vouter].p, inner->l.elem[vinner].p };
+                    extras.l.Add(&se);
+                    
+                    SContour alt;
+                    ZERO(&alt);
+                    for(k = 0; k <= vouter; k++) {
+                        alt.AddPoint(merged.l.elem[k].p);
+                    }
+                    for(k = 0; k <= inner->l.n - 1; k++) {
+                        int v = WRAP(k + vinner, inner->l.n - 1);
+                        alt.AddPoint(inner->l.elem[v].p);
+                    }
+                    for(k = vouter; k < merged.l.n; k++) {
+                        alt.AddPoint(merged.l.elem[k].p);
+                    }
+                    merged.l.Clear();
+                    merged = alt;
+                    break;
+                }
+            }
+            if(j >= l.n) {
+                break;
+            }
+        }
+
+        merged.TriangulateInto(m, meta, normal);
+        merged.l.Clear();
+        extras.Clear();
+
+        for(j = 0; j < l.n; j++) {
+            if(contained[j][i]) winding[j] -= 2;
+        }
+        used[i] = true;
+    }
 }
 
