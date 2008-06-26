@@ -1,12 +1,12 @@
 #include "solvespace.h"
 
-void System::WriteJacobian(int eqTag, int paramTag) {
+void System::WriteJacobian(int tag) {
     int a, i, j;
 
     j = 0;
     for(a = 0; a < param.n; a++) {
         Param *p = &(param.elem[a]);
-        if(p->tag != paramTag) continue;
+        if(p->tag != tag) continue;
         mat.param[j] = p->h;
         j++;
     }
@@ -15,7 +15,7 @@ void System::WriteJacobian(int eqTag, int paramTag) {
     i = 0;
     for(a = 0; a < eq.n; a++) {
         Equation *e = &(eq.elem[a]);
-        if(e->tag != eqTag) continue;
+        if(e->tag != tag) continue;
 
         mat.eq[i] = e->h;
         Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
@@ -152,10 +152,6 @@ bool System::Tol(double v) {
 int System::GaussJordan(void) {
     int i, j;
 
-    for(j = 0; j < mat.n; j++) {
-        mat.bound[j] = false;
-    }
-
     // Now eliminate.
     i = 0;
     int rank = 0;
@@ -201,8 +197,7 @@ int System::GaussJordan(void) {
                 mat.A.num[is][j] = 0;
             }
 
-            // And mark this as a bound variable.
-            mat.bound[j] = true;
+            // And this is a bound variable, so rank goes up by one.
             rank++;
 
             // Move on to the next row, since we just used this one to
@@ -314,7 +309,7 @@ bool System::SolveLeastSquares(void) {
 }
 
 bool System::NewtonSolve(int tag) {
-    WriteJacobian(tag, tag);
+    WriteJacobian(tag);
     if(mat.m > mat.n) return false;
 
     int iter = 0;
@@ -396,7 +391,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
         WriteEquationsExceptFor(c->h, g->h);
         eq.ClearTags();
 
-        WriteJacobian(0, 0);
+        WriteJacobian(0);
         EvalJacobian();
 
         int rank = GaussJordan();
@@ -423,25 +418,42 @@ void System::Solve(Group *g) {
         dbp("   param %08x at %.3f", param.elem[i].h.v, param.elem[i].val);
     } */
 
+    // All params and equations are assigned to group zero.
     param.ClearTags();
     eq.ClearTags();
     
     SolveBySubstitution();
 
-    WriteJacobian(0, 0);
+    // Before solving the big system, see if we can find any equations that
+    // are soluble alone. This can be a huge speedup. We don't know whether
+    // the system is consistent yet, but if it isn't then we'll catch that
+    // later.
+    int alone = 1;
+    for(i = 0; i < eq.n; i++) {
+        Equation *e = &(eq.elem[i]);
+        if(e->tag != 0) continue;
+
+        hParam hp = e->e->ReferencedParams(&param);
+        if(hp.v == Expr::NO_PARAMS.v) continue;
+        if(hp.v == Expr::MULTIPLE_PARAMS.v) continue;
+
+        Param *p = param.FindById(hp);
+        if(p->tag != 0) continue; // let rank test catch inconsistency
+
+        e->tag = alone;
+        p->tag = alone;
+        if(!NewtonSolve(alone)) {
+            // Failed to converge, bail out early
+            goto didnt_converge;
+        }
+        alone++;
+    }
+
+    // Now write the Jacobian for what's left, and do a rank test; that
+    // tells us if the system is inconsistently constrained.
+    WriteJacobian(0);
 
     EvalJacobian();
-
-/*
-    for(i = 0; i < mat.m; i++) {
-        dbp("function %d: %s", i, mat.B.sym[i]->Print());
-    }
-    dbp("m=%d", mat.m);
-    for(i = 0; i < mat.m; i++) {
-        for(j = 0; j < mat.n; j++) {
-            dbp("A(%d,%d) = %.10f;", i+1, j+1, mat.A.num[i][j]);
-        }
-    } */
 
     int rank = GaussJordan();
     if(rank != mat.m) {
@@ -451,35 +463,33 @@ void System::Solve(Group *g) {
         return;
     }
 
-/*    dbp("bound states:");
-    for(j = 0; j < mat.n; j++) {
-        dbp("  param %08x: %d", mat.param[j], mat.bound[j]);
-    } */
+    // And do the leftovers as one big system
+    if(!NewtonSolve(0)) {
+        goto didnt_converge;
+    }
 
-    bool ok = NewtonSolve(0);
-
-    if(ok) {
-        // System solved correctly, so write the new values back in to the
-        // main parameter table.
-        for(i = 0; i < param.n; i++) {
-            Param *p = &(param.elem[i]);
-            double val;
-            if(p->tag == VAR_SUBSTITUTED) {
-                val = param.FindById(p->substd)->val;
-            } else {
-                val = p->val;
-            }
-            Param *pp = SS.GetParam(p->h);
-            pp->val = val;
-            pp->known = true;
+    // System solved correctly, so write the new values back in to the
+    // main parameter table.
+    for(i = 0; i < param.n; i++) {
+        Param *p = &(param.elem[i]);
+        double val;
+        if(p->tag == VAR_SUBSTITUTED) {
+            val = param.FindById(p->substd)->val;
+        } else {
+            val = p->val;
         }
-        if(g->solved.how != Group::SOLVED_OKAY) {
-            g->solved.how = Group::SOLVED_OKAY;
-            TextWindow::ReportHowGroupSolved(g->h);
-        }
-    } else {
-        g->solved.how = Group::DIDNT_CONVERGE;
+        Param *pp = SS.GetParam(p->h);
+        pp->val = val;
+        pp->known = true;
+    }
+    if(g->solved.how != Group::SOLVED_OKAY) {
+        g->solved.how = Group::SOLVED_OKAY;
         TextWindow::ReportHowGroupSolved(g->h);
     }
+    return;
+
+didnt_converge:
+    g->solved.how = Group::DIDNT_CONVERGE;
+    TextWindow::ReportHowGroupSolved(g->h);
 }
 

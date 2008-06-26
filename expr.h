@@ -78,6 +78,9 @@ public:
     Expr *FoldConstants(void);
     void Substitute(hParam oldh, hParam newh);
 
+    static const hParam NO_PARAMS, MULTIPLE_PARAMS;
+    hParam ReferencedParams(ParamList *pl);
+
     void ParamsToPointers(void);
 
     void App(char *str, ...);

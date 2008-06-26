@@ -444,7 +444,48 @@ void Expr::Substitute(hParam oldh, hParam newh) {
     if(c >= 2) b->Substitute(oldh, newh);
 }
 
+//-----------------------------------------------------------------------------
+// If the expression references only one parameter that appears in pl, then
+// return that parameter. If no param is referenced, then return NO_PARAMS.
+// If multiple params are referenced, then return MULTIPLE_PARAMS.
+//-----------------------------------------------------------------------------
+const hParam Expr::NO_PARAMS       = { 0 };
+const hParam Expr::MULTIPLE_PARAMS = { 1 };
+hParam Expr::ReferencedParams(ParamList *pl) {
+    if(op == PARAM) {
+        if(pl->FindByIdNoOops(x.parh)) {
+            return x.parh;
+        } else {
+            return NO_PARAMS;
+        }
+    }
+    if(op == PARAM_PTR) oops();
 
+    int c = Children();
+    if(c == 0) {
+        return NO_PARAMS;
+    } else if(c == 1) {
+        return a->ReferencedParams(pl);
+    } else if(c == 2) {
+        hParam pa, pb;
+        pa = a->ReferencedParams(pl);
+        pb = b->ReferencedParams(pl);
+        if(pa.v == NO_PARAMS.v) {
+            return pb;
+        } else if(pb.v == NO_PARAMS.v) {
+            return pa;
+        } else if(pa.v == pb.v) {
+            return pa; // either, doesn't matter
+        } else {
+            return MULTIPLE_PARAMS;
+        }
+    } else oops();
+}
+
+
+//-----------------------------------------------------------------------------
+// Routines to pretty-print an expression. Mostly for debugging.
+//-----------------------------------------------------------------------------
 
 static char StringBuffer[4096];
 void Expr::App(char *s, ...) {
@@ -489,6 +530,14 @@ p:
         default: oops();
     }
 }
+
+
+//-----------------------------------------------------------------------------
+// A parser; convert a string to an expression. Infix notation, with the
+// usual shift/reduce approach. I had great hopes for user-entered eq
+// constraints, but those don't seem very useful, so right now this is just
+// to provide calculator type functionality wherever numbers are entered.
+//-----------------------------------------------------------------------------
 
 #define MAX_UNPARSED 1024
 static Expr *Unparsed[MAX_UNPARSED];

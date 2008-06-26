@@ -9,10 +9,9 @@ auto-generate circles and faces when lathing
 copy the section geometry to other end when sweeping
 cylindrical faces
 
-partitioned subsystems in the solver
-
 
 long term
 -----
 incremental regen of entities?
+my own plane poly triangulation code
 

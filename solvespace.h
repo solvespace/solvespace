@@ -168,8 +168,6 @@ public:
         // The corresponding parameter for each column
         hParam      param[MAX_UNKNOWNS];
 
-        bool        bound[MAX_UNKNOWNS];
-
         // We're solving AX = B
         int m, n;
         struct {
@@ -197,7 +195,7 @@ public:
                                   double B[], int N);
     bool SolveLeastSquares(void);
 
-    void WriteJacobian(int eqTag, int paramTag);
+    void WriteJacobian(int tag);
     void EvalJacobian(void);
 
     void WriteEquationsExceptFor(hConstraint hc, hGroup hg);
