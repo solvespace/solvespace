@@ -45,8 +45,6 @@ public:
     static Vector From(hParam x, hParam y, hParam z);
     static Vector AtIntersectionOfPlanes(Vector n1, double d1,
                                          Vector n2, double d2);
-    static bool LinesIntersect(Vector a0, Vector da, Vector b0, Vector db,
-                               double *ta, double *tb);
 
     bool Equals(Vector v);
     Vector Plus(Vector b);
