@@ -12,7 +12,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                          NULL  },
 { 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
 { 1, "&Open...\tCtrl+O",                    MNU_OPEN,           'O'|C,  mFile },
-{10, "&Open Recent",                        MNU_OPEN_RECENT,    0,      mFile },
+{10, "Open &Recent",                        MNU_OPEN_RECENT,    0,      mFile },
 { 1, "&Save\tCtrl+S",                       MNU_SAVE,           'S'|C,  mFile },
 { 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
@@ -27,6 +27,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
+{ 1, "Re&generate All\tSpace",              MNU_REGEN_ALL,      ' ',    mEdit },
 
 { 0, "&View",                               0,                          NULL  },
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
@@ -42,8 +43,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Drawing in 3d\tShift+Ctrl+D",        MNU_GROUP_3D,       'D'|S|C,mGrp  },
 { 1, "Drawing in Workplane\tShift+Ctrl+W",  MNU_GROUP_WRKPL,    'W'|S|C,mGrp  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Step &Translating\tShift+Ctrl+R",     MNU_GROUP_TRANS,    'T'|S|C,mGrp  },
-{ 1, "Step &Rotating\tShift+Ctrl+T",        MNU_GROUP_ROT,      'R'|S|C,mGrp  },
+{ 1, "Step &Translating\tShift+Ctrl+T",     MNU_GROUP_TRANS,    'T'|S|C,mGrp  },
+{ 1, "Step &Rotating\tShift+Ctrl+R",        MNU_GROUP_ROT,      'R'|S|C,mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "E&xtrude\tShift+Ctrl+X",              MNU_GROUP_EXTRUDE,  'X'|S|C,mGrp  },
 { 1, "&Lathe\tShift+Ctrl+L",                MNU_GROUP_LATHE,    'L'|S|C,mGrp  },
@@ -88,8 +89,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Same Orient&ation\tShift+A",          MNU_ORIENTED_SAME,  'A'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Comment\tShift+C",                    MNU_COMMENT,        'C'|S,  mCon  },
-{ 1, NULL,                                  0,                          NULL  },
-{ 1, "Solve Once Now\tSpace",               MNU_SOLVE_NOW,      ' ',    mCon  },
 
 { 0, "&Help",                               0,                          NULL  },
 { 1, "&About\t",                            0,                          NULL  },
@@ -466,6 +465,11 @@ void GraphicsWindow::MenuEdit(int id) {
         
         case MNU_REDO:
             SS.UndoRedo();
+            break;
+
+        case MNU_REGEN_ALL:
+            SS.ReloadAllImported();
+            SS.GenerateAll(0, INT_MAX);
             break;
 
         default: oops();

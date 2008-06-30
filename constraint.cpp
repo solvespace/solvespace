@@ -405,11 +405,6 @@ void Constraint::MenuConstrain(int id) {
             AddConstraint(&c);
             break;
 
-        case GraphicsWindow::MNU_SOLVE_NOW:
-            SS.ReloadAllImported();
-            SS.GenerateAll(0, INT_MAX);
-            return;
-
         default: oops();
     }
 

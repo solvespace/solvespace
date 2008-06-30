@@ -159,6 +159,7 @@ public:
         MNU_REDO,
         MNU_DELETE,
         MNU_UNSELECT_ALL,
+        MNU_REGEN_ALL,
         // Request
         MNU_SEL_WORKPLANE,
         MNU_FREE_IN_3D,
@@ -197,7 +198,6 @@ public:
         MNU_PARALLEL,
         MNU_ORIENTED_SAME,
         MNU_COMMENT,
-        MNU_SOLVE_NOW,
     } MenuId;
     typedef void MenuHandler(int id);
     typedef struct {

@@ -213,20 +213,9 @@ public:
 class STriangleLl {
 public:
     int             tag;
-    STriangle       tri;
+    STriangle       *tri;
 
     STriangleLl     *next;
-};
-
-// A linked list of linked lists of triangles; extra layer of encapsulation
-// required because the same triangle might appear in both branches of the
-// tree, if it spans the split plane, and we will need to be able to split
-// the triangle into multiple pieces as we remove T intersections.
-class STriangleLl2 {
-public:
-    STriangleLl     *trl;
-
-    STriangleLl2    *next;
 };
 
 class SKdTree {
@@ -240,7 +229,7 @@ public:
     SKdTree      *gt;
     SKdTree      *lt;
 
-    STriangleLl2 *tris;
+    STriangleLl  *tris;
 };
 
 #endif
