@@ -132,7 +132,7 @@ bool Entity::IsVisible(void) {
     return true;
 }
 
-void Entity::DrawOrGetDistance(void) {  
+void Entity::DrawOrGetDistance(void) {
     // If an entity is invisible, then it doesn't get shown, and it doesn't
     // contribute a distance for the selection, but it still generates edges.
     if(!dogd.edges) {
@@ -358,6 +358,17 @@ void Entity::DrawOrGetDistance(void) {
                 LineDrawOrGetDistanceOrEdge(prev, p);
                 prev = p;
             }
+            break;
+        }
+
+        case TTF_TEXT: {
+            Vector topLeft = SS.GetEntity(point[0])->PointGetNum();
+            Vector botLeft = SS.GetEntity(point[1])->PointGetNum();
+            Vector n = Normal()->NormalN();
+            Vector v = topLeft.Minus(botLeft);
+            Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
+
+            SS.fonts.PlotString(font.str, str.str, 0, h, botLeft, u, v);
             break;
         }
 

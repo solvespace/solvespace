@@ -96,10 +96,14 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'r',  "Request.workplane.v",      'x',    &(SS.sv.r.workplane.v)        },
     { 'r',  "Request.group.v",          'x',    &(SS.sv.r.group.v)            },
     { 'r',  "Request.construction",     'b',    &(SS.sv.r.construction)       },
+    { 'r',  "Request.str",              'N',    &(SS.sv.r.str)                },
+    { 'r',  "Request.font",             'N',    &(SS.sv.r.font)               },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
     { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
+    { 'e',  "Entity.str",               'N',    &(SS.sv.e.str)                },
+    { 'e',  "Entity.font",              'N',    &(SS.sv.e.font)               },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
     { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
     { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },
@@ -149,6 +153,7 @@ void SolveSpace::SaveUsingTable(int type) {
         if(fmt == 'd' && *((int *)p)    == 0)   continue;
         if(fmt == 'x' && *((DWORD *)p)  == 0)   continue;
         if(fmt == 'f' && *((double *)p) == 0.0) continue;
+        if(fmt == 'N' && strlen(((NameStr *)p)->str) == 0) continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {

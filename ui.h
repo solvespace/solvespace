@@ -5,7 +5,7 @@
 class TextWindow {
 public:
     static const int MAX_COLS = 100;
-    static const int MAX_ROWS = 200;
+    static const int MAX_ROWS = 2000;
 
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
@@ -67,10 +67,12 @@ public:
     static const int EDIT_HELIX_TURNS           = 8;
     static const int EDIT_HELIX_PITCH           = 9;
     static const int EDIT_HELIX_DRADIUS         = 10;
+    static const int EDIT_TTF_TEXT              = 11;
     struct {
-        int     meaning;
-        int     i;
-        hGroup  group;
+        int         meaning;
+        int         i;
+        hGroup      group;
+        hRequest    request;
     } edit;
 
     static void ReportHowGroupSolved(hGroup hg);
@@ -89,7 +91,13 @@ public:
 
     void OneScreenForwardTo(int screen);
 
-    // All of these are callbacks from the GUI code.
+    // All of these are callbacks from the GUI code; first from when
+    // we're describing an entity
+    static void ScreenEditTtfText(int link, DWORD v);
+    static void ScreenSetTtfFont(int link, DWORD v);
+    static void ScreenUnselectAll(int link, DWORD v);
+
+    // and the rest from the stuff in textscreens.cpp
     static void ScreenSelectGroup(int link, DWORD v);
     static void ScreenActivateGroup(int link, DWORD v);
     static void ScreenToggleGroupShown(int link, DWORD v);
@@ -101,7 +109,6 @@ public:
     static void ScreenHoverRequest(int link, DWORD v);
     static void ScreenSelectRequest(int link, DWORD v);
     static void ScreenSelectConstraint(int link, DWORD v);
-    static void ScreenUnselectAll(int link, DWORD v);
 
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeSkipFirst(int link, DWORD v);
@@ -162,6 +169,7 @@ public:
         MNU_ARC,
         MNU_RECTANGLE,
         MNU_CUBIC,
+        MNU_TTF_TEXT,
         MNU_CONSTRUCTION,
         // Group
         MNU_GROUP_3D,

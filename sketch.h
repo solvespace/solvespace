@@ -228,6 +228,7 @@ public:
     static const int CUBIC                  = 300;
     static const int CIRCLE                 = 400;
     static const int ARC_OF_CIRCLE          = 500;
+    static const int TTF_TEXT               = 600;
 
     int         type;
 
@@ -235,6 +236,8 @@ public:
     hGroup      group;
 
     bool        construction;
+    NameStr     str;
+    NameStr     font;
     
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
@@ -278,6 +281,7 @@ public:
     static const int CUBIC                  = 12000;
     static const int CIRCLE                 = 13000;
     static const int ARC_OF_CIRCLE          = 14000;
+    static const int TTF_TEXT               = 15000;
 
     int         type;
 
@@ -312,6 +316,8 @@ public:
     hEntity     workplane;   // or Entity::FREE_IN_3D
 
     bool        construction;
+    NameStr     str;
+    NameStr     font;
 
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.

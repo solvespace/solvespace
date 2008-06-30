@@ -206,10 +206,11 @@ void TextWindow::Show(void) {
         Printf(false, "");
         Printf(false, "%s", SS.GW.pending.description);
     } else if(gs.n > 0) {
-        HideTextEditControl();
+        if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(false);
         DescribeSelection();
     } else {
+        if(edit.meaning == EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(true);
         switch(shown->screen) {
             default:
@@ -227,6 +228,36 @@ void TextWindow::Show(void) {
 
 void TextWindow::ScreenUnselectAll(int link, DWORD v) {
     GraphicsWindow::MenuEdit(GraphicsWindow::MNU_UNSELECT_ALL);
+}
+
+void TextWindow::ScreenEditTtfText(int link, DWORD v) {
+    hRequest hr = { v };
+    Request *r = SS.GetRequest(hr);
+
+    ShowTextEditControl(13, 10, r->str.str);
+    SS.TW.edit.meaning = EDIT_TTF_TEXT;
+    SS.TW.edit.request = hr;
+}
+
+void TextWindow::ScreenSetTtfFont(int link, DWORD v) {
+    int i = (int)v;
+    if(i < 0) return;
+    if(i >= SS.fonts.l.n) return;
+
+    SS.GW.GroupSelection();
+    if(gs.entities != 1 || gs.n != 1) return;
+
+    Entity *e = SS.entity.FindByIdNoOops(gs.entity[0]);
+    if(!e || e->type != Entity::TTF_TEXT || !e->h.isFromRequest()) return;
+
+    Request *r = SS.request.FindByIdNoOops(e->h.request());
+    if(!r) return;
+   
+    SS.UndoRemember();
+    r->font.strcpy(SS.fonts.l.elem[i].FontFileBaseName());
+    SS.MarkGroupDirty(r->group);
+    SS.later.generateAll = true;
+    SS.later.showTW = true;
 }
 
 void TextWindow::DescribeSelection(void) {
@@ -331,6 +362,35 @@ void TextWindow::DescribeSelection(void) {
                 Printf(false, "     thru = " PT_AS_STR, COSTR(p));
                 break;
 
+            case Entity::TTF_TEXT: {
+                Printf(false, "%FtTRUETYPE FONT TEXT%E");
+                Printf(true, "  font = '%Fi%s%E'", e->font.str);
+                if(e->h.isFromRequest()) {
+                    Printf(false, "  text = '%Fi%s%E' %Fl%Ll%f%D[change]%E",
+                        e->str.str, &ScreenEditTtfText, e->h.request());
+                    Printf(true, "  select new font");
+                    SS.fonts.LoadAll();
+                    int i;
+                    for(i = 0; i < SS.fonts.l.n; i++) {
+                        TtfFont *tf = &(SS.fonts.l.elem[i]);
+                        if(strcmp(e->font.str, tf->FontFileBaseName())==0) {
+                            Printf(false, "%Bp    %s",
+                                (i & 1) ? 'd' : 'a',
+                                tf->name.str);
+                        } else {
+                            Printf(false, "%Bp    %f%D%Fl%Ll%s%E%Bp",
+                                (i & 1) ? 'd' : 'a',
+                                &ScreenSetTtfFont, i,
+                                tf->name.str,
+                                (i & 1) ? 'd' : 'a');
+                        }
+                    }
+                } else {
+                    Printf(false, "  text = '%Fi%s%E'", e->str.str);
+                }
+                break;
+            }
+
             default:
                 Printf(true, "%Ft?? ENTITY%E");
                 break;
@@ -340,7 +400,7 @@ void TextWindow::DescribeSelection(void) {
         Printf(false, "");
         Printf(false, "%FtIN GROUP%E      %s", g->DescriptionString());
         if(e->workplane.v == Entity::FREE_IN_3D.v) {
-            Printf(false, "%FtNO WORKPLANE (FREE IN 3D)%E"); 
+            Printf(false, "%FtNOT LOCKED IN WORKPLANE%E"); 
         } else {
             Entity *w = SS.GetEntity(e->workplane);
             Printf(false, "%FtIN WORKPLANE%E  %s", w->DescriptionString());

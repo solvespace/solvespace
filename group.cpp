@@ -70,7 +70,6 @@ void Group::MenuGroup(int id) {
                 Error("Bad selection for new drawing in workplane.");
                 return;
             }
-            SS.GW.ClearSelection();
             break;
 
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
@@ -96,7 +95,6 @@ void Group::MenuGroup(int id) {
             g.type = LATHE;
             g.opA = SS.GW.activeGroup;
             g.name.strcpy("lathe");
-            SS.GW.ClearSelection();
             break;
 
         case GraphicsWindow::MNU_GROUP_SWEEP: {
@@ -146,7 +144,6 @@ void Group::MenuGroup(int id) {
             g.valC = 0; // pitch in radius
             g.opA = SS.GW.activeGroup;
             g.name.strcpy("helical-sweep");
-            SS.GW.ClearSelection();
             break;
         }
 
@@ -168,7 +165,6 @@ void Group::MenuGroup(int id) {
             g.valA = 3;
             g.subtype = ONE_SIDED;
             g.name.strcpy("rotate");
-            SS.GW.ClearSelection();
             break;
         }
 
@@ -194,7 +190,9 @@ void Group::MenuGroup(int id) {
 
         default: oops();
     }
+    SS.GW.ClearSelection();
     SS.UndoRemember();
+
     SS.group.AddAndAssignId(&g);
     Group *gg = SS.GetGroup(g.h);
 
@@ -205,6 +203,8 @@ void Group::MenuGroup(int id) {
     SS.GW.activeGroup = gg->h;
     SS.GenerateAll();
     if(gg->type == DRAWING_WORKPLANE) {
+        // Can't set the active workplane for this one until after we've
+        // regenerated, because the workplane doesn't exist until then.
         gg->activeWorkplane = gg->h.entity(0);
     }
     gg->Activate();
@@ -611,6 +611,14 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             en.point[1] = Remap(ep->point[1], remap);
             en.point[2] = Remap(ep->point[2], remap);
             en.normal   = Remap(ep->normal, remap);
+            break;
+
+        case Entity::TTF_TEXT:
+            en.point[0] = Remap(ep->point[0], remap);
+            en.point[1] = Remap(ep->point[1], remap);
+            en.normal   = Remap(ep->normal, remap);
+            en.str.strcpy(ep->str.str);
+            en.font.strcpy(ep->font.str);
             break;
 
         case Entity::POINT_N_COPY:

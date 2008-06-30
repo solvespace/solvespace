@@ -53,6 +53,12 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             points = 4; 
             break;
 
+        case Request::TTF_TEXT:
+            et = Entity::TTF_TEXT;
+            points = 2;
+            hasNormal = true;
+            break;
+
         default: oops();
     }
 
@@ -61,6 +67,8 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     e.group = group;
     e.workplane = workplane;
     e.construction = construction;
+    e.str.strcpy(str.str);
+    e.font.strcpy(font.str);
     e.h = h.entity(0);
 
     // And generate entities for the points
@@ -147,6 +155,7 @@ char *Request::DescriptionString(void) {
             case CUBIC:             s = "cubic-bezier"; break;
             case CIRCLE:            s = "circle"; break;
             case ARC_OF_CIRCLE:     s = "arc-of-circle"; break;
+            case TTF_TEXT:          s = "ttf-text"; break;
             default:                s = "???"; break;
         }
     }

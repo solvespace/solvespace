@@ -1,6 +1,7 @@
 #include "solvespace.h"
 
 void SolveSpace::UndoRemember(void) {
+    unsaved = true;
     PushFromCurrentOnto(&undo);
     UndoClearStack(&redo);
     UndoEnableMenus();

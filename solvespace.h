@@ -29,6 +29,7 @@ inline int WRAP(int v, int n) {
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
 typedef signed long SDWORD;
+typedef signed short SWORD;
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -44,6 +45,7 @@ class ExprVector;
 class ExprQuaternion;
 
 
+//================
 // From the platform-specific code.
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
@@ -59,6 +61,7 @@ int SaveFileYesNoCancel(void);
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
+void LoadAllFontFiles(void);
 
 void CheckMenuById(int id, BOOL checked);
 void EnableMenuById(int id, BOOL checked);
@@ -94,7 +97,10 @@ void FreeAllTemporary(void);
 void *MemRealloc(void *p, int n);
 void *MemAlloc(int n);
 void MemFree(void *p);
-void vl(void); // debug function to validate
+void vl(void); // debug function to validate heaps
+
+// End of platform-specific functions
+//================
 
 
 #include "dsc.h"
@@ -208,6 +214,86 @@ public:
     void Solve(Group *g);
 };
 
+class TtfFont {
+public:
+    typedef struct {
+        bool        onCurve;
+        bool        lastInContour;
+        SWORD       x;
+        SWORD       y;       
+    } FontPoint;
+
+    typedef struct {
+        FontPoint   *pt;
+        int         pts;
+
+        int         xMax;
+        int         xMin;
+        int         leftSideBearing;
+        int         advanceWidth;
+    } Glyph;
+
+    typedef struct {
+        int x, y;
+    } IntPoint;
+
+    char    fontFile[MAX_PATH];
+    NameStr name;
+    bool    loaded;
+
+    // The font itself, plus the mapping from ASCII codes to glyphs
+    int     useGlyph[256];
+    Glyph   *glyph;
+    int     glyphs;
+
+    int     maxPoints;
+    int     scale;
+
+    // The filehandle, while loading
+    FILE   *fh;
+    // Some state while rendering a character to curves
+    static const int NOTHING   = 0;
+    static const int ON_CURVE  = 1;
+    static const int OFF_CURVE = 2;
+    int         lastWas;
+    IntPoint    lastOnCurve;
+    IntPoint    lastOffCurve;
+
+    // And the state that the caller must specify, determines where we
+    // render to and how
+    hEntity     entity;
+    Vector      origin, u, v;
+
+    int Getc(void);
+    int GetBYTE(void);
+    int GetWORD(void);
+    int GetDWORD(void);
+
+    void LoadGlyph(int index);
+    bool LoadFontFromFile(bool nameOnly);
+    char *FontFileBaseName(void);
+   
+    void Flush(void);
+    void Handle(int *dx, int x, int y, bool onCurve);
+    void PlotCharacter(int *dx, int c, double spacing);
+    void PlotString(char *str, double spacing,
+                    hEntity he, Vector origin, Vector u, Vector v);
+
+    Vector TransformIntPoint(int x, int y);
+    void LineSegment(int x0, int y0, int x1, int y1);
+    void Bezier(int x0, int y0, int x1, int y1, int x2, int y2);
+};
+
+class TtfFontList {
+public:
+    bool                loaded;
+    SList<TtfFont>      l;
+
+    void LoadAll(void);
+
+    void PlotString(char *font, char *str, double spacing,
+                    hEntity he, Vector origin, Vector u, Vector v);
+};
 
 class SolveSpace {
 public:
@@ -336,6 +422,9 @@ public:
 
     // The system to be solved.
     System  sys;
+
+    // All the TrueType fonts in memory
+    TtfFontList fonts;
 
     // Everything has been pruned, so we know there's no dangling references
     // to entities that don't exist. Before that, we mustn't try to display

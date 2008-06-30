@@ -2,12 +2,12 @@
 STL check for meshes, and T intersection removal
 STL export
 DXF export
-TTF font text
 some kind of rounding / chamfer
 remove back button in browser?
 auto-generate circles and faces when lathing
 copy the section geometry to other end when sweeping
 cylindrical faces
+draw explicit edges
 
 
 long term

@@ -684,7 +684,18 @@ void TextWindow::EditControlDone(char *s) {
             SS.later.generateAll = true;
             break;
         }
+        case EDIT_TTF_TEXT: {
+            SS.UndoRemember();
+            Request *r = SS.request.FindByIdNoOops(edit.request);
+            if(r) {
+                r->str.strcpy(s);
+                SS.MarkGroupDirty(r->group);
+                SS.later.generateAll = true;
+            }
+            break;
+        }
     }
+    InvalidateGraphics();
     SS.later.showTW = true;
     HideTextEditControl();
     edit.meaning = EDIT_NOTHING;

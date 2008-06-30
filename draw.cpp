@@ -324,6 +324,7 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
+    HideTextEditControl();
 
     // Make sure the hover is up to date.
     MouseMoved(mx, my, false, false, false, false, false);
@@ -453,6 +454,26 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             ClearSuper();
             break;
 
+        case MNU_TTF_TEXT: {
+            if(!SS.GW.LockedInWorkplane()) {
+                Error("Can't draw text in 3d; select a workplane first.");
+                ClearSuper();
+                break;
+            }
+            hr = AddRequest(Request::TTF_TEXT);
+            Request *r = SS.GetRequest(hr);
+            r->str.strcpy("Abc");
+            r->font.strcpy("arial.ttf");
+
+            SS.GetEntity(hr.entity(1))->PointForceTo(v);
+            SS.GetEntity(hr.entity(2))->PointForceTo(v);
+
+            pending.operation = DRAGGING_NEW_POINT;
+            pending.point = hr.entity(2);
+            pending.description = "click to place bottom left of text";
+            break;
+        }
+
         case DRAGGING_RADIUS:
         case DRAGGING_NEW_POINT:
             // The MouseMoved event has already dragged it as desired.
@@ -546,6 +567,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
 
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
+    HideTextEditControl();
 
     if(hover.constraint.v) {
         constraintBeingEdited = hover.constraint;

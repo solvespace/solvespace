@@ -66,6 +66,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Arc of a Circle\tA",                 MNU_ARC,            'A',    mReq  },
 { 1, "&Cubic Segment\t3",                   MNU_CUBIC,          '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
+{ 1, "&Text in TrueType Font\tT",           MNU_TTF_TEXT,       'T',    mReq  },
+{ 1, NULL,                                  0,                          NULL  },
 { 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
 
 { 0, "&Constrain",                          0,                          NULL  },
@@ -423,6 +425,8 @@ void GraphicsWindow::MenuEdit(int id) {
             break;
 
         case MNU_DELETE: {
+            SS.UndoRemember();
+
             int i;
             SS.request.ClearTags();
             SS.constraint.ClearTags();
@@ -507,6 +511,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
         case MNU_WORKPLANE: s = "click origin of workplane"; goto c;
         case MNU_RECTANGLE: s = "click one corner of rectangular"; goto c;
+        case MNU_TTF_TEXT: s = "click top left of text"; goto c;
 c:
             SS.GW.pending.operation = id;
             SS.GW.pending.description = s;

@@ -754,11 +754,37 @@ int SaveFileYesNoCancel(void)
 
     return r;
 }
+
 void GetAbsoluteFilename(char *file)
 {
     char absoluteFile[MAX_PATH];
     GetFullPathName(file, sizeof(absoluteFile), absoluteFile, NULL);
     strcpy(file, absoluteFile);
+}
+
+void LoadAllFontFiles(void)
+{
+    WIN32_FIND_DATA wfd;
+    char dir[MAX_PATH];
+    GetWindowsDirectory(dir, MAX_PATH - 30);
+    strcat(dir, "\\fonts\\*.ttf");
+
+    HANDLE h = FindFirstFile(dir, &wfd);
+
+    while(h != INVALID_HANDLE_VALUE) {
+        TtfFont tf;
+        ZERO(&tf);
+
+        char fullPath[MAX_PATH];
+        GetWindowsDirectory(fullPath, MAX_PATH - (30 + strlen(wfd.cFileName)));
+        strcat(fullPath, "\\fonts\\");
+        strcat(fullPath, wfd.cFileName);
+
+        strcpy(tf.fontFile, fullPath);
+        SS.fonts.l.Add(&tf);
+
+        if(!FindNextFile(h, &wfd)) break;
+    }
 }
 
 static void MenuById(int id, BOOL yes, BOOL check)
