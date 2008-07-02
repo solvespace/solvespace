@@ -195,8 +195,8 @@ public:
         }           B;
     } mat;
 
-    bool Tol(double v);
-    int GaussJordan(void);
+    static const double RANK_MAG_TOLERANCE;
+    int CalculateRank(void);
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);
     bool SolveLeastSquares(void);

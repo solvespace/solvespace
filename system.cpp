@@ -1,5 +1,7 @@
 #include "solvespace.h"
 
+const double System::RANK_MAG_TOLERANCE = 1e-4;
+
 void System::WriteJacobian(int tag) {
     int a, i, j;
 
@@ -145,67 +147,46 @@ void System::SolveBySubstitution(void) {
     }
 }
 
-bool System::Tol(double v) {
-    return (fabs(v) < 0.0001);
-}
+//-----------------------------------------------------------------------------
+// Calculate the rank of the Jacobian matrix, by Gram-Schimdt orthogonalization
+// in place. A row (~equation) is considered to be all zeros if its magnitude
+// is less than the tolerance RANK_MAG_TOLERANCE.
+//-----------------------------------------------------------------------------
+int System::CalculateRank(void) {
+    // Actually work with magnitudes squared, not the magnitudes
+    double rowMag[MAX_UNKNOWNS];
+    ZERO(&rowMag);
+    double tol = RANK_MAG_TOLERANCE*RANK_MAG_TOLERANCE;
 
-int System::GaussJordan(void) {
-    int i, j;
-
-    // Now eliminate.
-    i = 0;
+    int i, iprev, j;
     int rank = 0;
-    for(j = 0; j < mat.n; j++) {
-        // First, seek a pivot in our column.
-        int ip, imax;
-        double max = 0;
-        for(ip = i; ip < mat.m; ip++) {
-            double v = fabs(mat.A.num[ip][j]);
-            if(v > max) {
-                imax = ip;
-                max = v;
+
+    for(i = 0; i < mat.m; i++) {
+        // Subtract off this row's component in the direction of any
+        // previous rows
+        for(iprev = 0; iprev < i; iprev++) {
+            if(rowMag[iprev] <= tol) continue; // ignore zero rows
+
+            double dot = 0;
+            for(j = 0; j < mat.n; j++) {
+                dot += (mat.A.num[iprev][j]) * (mat.A.num[i][j]);
+            }
+            for(j = 0; j < mat.n; j++) {
+                mat.A.num[i][j] -= (dot/rowMag[iprev])*mat.A.num[iprev][j];
             }
         }
-        if(!Tol(max)) {
-            // There's a usable pivot in this column. Swap it in:
-            int js;
-            for(js = j; js < mat.n; js++) {
-                double temp;
-                temp = mat.A.num[imax][js];
-                mat.A.num[imax][js] = mat.A.num[i][js];
-                mat.A.num[i][js] = temp;
-            }
-
-            // Get a 1 as the leading entry in the row we're working on.
-            double v = mat.A.num[i][j];
-            for(js = 0; js < mat.n; js++) {
-                mat.A.num[i][js] /= v;
-            }
-
-            // Eliminate this column from rows except this one.
-            int is;
-            for(is = 0; is < mat.m; is++) {
-                if(is == i) continue;
-
-                // We're trying to drive A[is][j] to zero. We know
-                // that A[i][j] is 1, so we want to subtract off
-                // A[is][j] times our present row.
-                double v = mat.A.num[is][j];
-                for(js = 0; js < mat.n; js++) {
-                    mat.A.num[is][js] -= v*mat.A.num[i][js];
-                }
-                mat.A.num[is][j] = 0;
-            }
-
-            // And this is a bound variable, so rank goes up by one.
+        // Our row is now normal to all previous rows; calculate the
+        // magnitude of what's left
+        double mag = 0;
+        for(j = 0; j < mat.n; j++) {
+            mag += (mat.A.num[i][j]) * (mat.A.num[i][j]);
+        }
+        if(mag > tol) {
             rank++;
-
-            // Move on to the next row, since we just used this one to
-            // eliminate from column j.
-            i++;
-            if(i >= mat.m) break;
         }
+        rowMag[i] = mag;
     }
+
     return rank;
 }
 
@@ -394,7 +375,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
         WriteJacobian(0);
         EvalJacobian();
 
-        int rank = GaussJordan();
+        int rank = CalculateRank();
         if(rank == mat.m) {
             // We fixed it by removing this constraint
             (g->solved.remove).Add(&(c->h));
@@ -455,7 +436,7 @@ void System::Solve(Group *g) {
 
     EvalJacobian();
 
-    int rank = GaussJordan();
+    int rank = CalculateRank();
     if(rank != mat.m) {
         FindWhichToRemoveToFixJacobian(g);
         g->solved.how = Group::SINGULAR_JACOBIAN;
