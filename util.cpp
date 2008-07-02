@@ -225,6 +225,13 @@ Quaternion Quaternion::Inverse(void) {
 }
 
 Quaternion Quaternion::ToThe(double p) {
+    // Avoid division by zero, or arccos of something not in its domain
+    if(w >= (1 - 1e-6)) {
+        return From(1, 0, 0, 0);
+    } else if(w <= (-1 + 1e-6)) {
+        return From(-1, 0, 0, 0);
+    }
+
     Quaternion r;
     Vector axis = Vector::From(vx, vy, vz);
     double theta = acos(w); // okay, since magnitude is 1, so -1 <= w <= 1
