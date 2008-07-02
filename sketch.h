@@ -456,6 +456,7 @@ public:
     static const int SAME_ORIENTATION   = 110;
     static const int ANGLE              = 120;
     static const int PARALLEL           = 121;
+    static const int PERPENDICULAR      = 122;
     static const int EQUAL_RADIUS       = 130;
 
     static const int COMMENT            = 1000;

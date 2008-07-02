@@ -373,6 +373,43 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case PERPENDICULAR: {
+            Vector u, v;
+            Vector rn, ru;
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                rn = gn;
+                ru = gu;
+            } else {
+                Entity *normal = SS.GetEntity(workplane)->Normal();
+                rn = normal->NormalN();
+                ru = normal->NormalV(); // ru meaning r_up, not u/v
+            }
+
+            for(int i = 0; i < 2; i++) {
+                Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);
+
+                if(i == 0) {
+                    // Calculate orientation of perpendicular sign only
+                    // once, so that it's the same both times it's drawn
+                    u = e->VectorGetNum();
+                    u = u.WithMagnitude(16/SS.GW.scale);
+                    v = (rn.Cross(u)).WithMagnitude(16/SS.GW.scale);
+                    if(fabs(u.Dot(ru)) < fabs(v.Dot(ru))) {
+                        SWAP(Vector, u, v);
+                    }
+                    if(u.Dot(ru) < 0) u = u.ScaledBy(-1);
+                }
+
+                Vector p = e->VectorGetRefPoint();
+                Vector s = p.Plus(u).Plus(v);
+                LineDrawOrGetDistance(s, s.Plus(v));
+
+                Vector m = s.Plus(v.ScaledBy(0.5));
+                LineDrawOrGetDistance(m, m.Plus(u));
+            }
+            break;
+        }
+
         case PARALLEL: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SS.GetEntity(i == 0 ? entityA : entityB);

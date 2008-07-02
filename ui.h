@@ -196,6 +196,7 @@ public:
         MNU_HORIZONTAL,
         MNU_VERTICAL,
         MNU_PARALLEL,
+        MNU_PERPENDICULAR,
         MNU_ORIENTED_SAME,
         MNU_COMMENT,
     } MenuId;

@@ -86,6 +86,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "At &Midpoint\tShift+M",               MNU_AT_MIDPOINT,    'M'|S,  mCon  },
 { 1, "S&ymmetric\tShift+Y",                 MNU_SYMMETRIC,      'Y'|S,  mCon  },
 { 1, "Para&llel\tShift+L",                  MNU_PARALLEL,       'L'|S,  mCon  },
+{ 1, "&Perpendicular\tShift+P",             MNU_PERPENDICULAR,  'P'|S,  mCon  },
 { 1, "Same Orient&ation\tShift+A",          MNU_ORIENTED_SAME,  'A'|S,  mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Comment\tShift+C",                    MNU_COMMENT,        'C'|S,  mCon  },

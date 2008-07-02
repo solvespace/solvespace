@@ -31,6 +31,7 @@ char *Constraint::DescriptionString(void) {
         case SAME_ORIENTATION:  s = "same-orientation"; break;
         case ANGLE:             s = "angle"; break;
         case PARALLEL:          s = "parallel"; break;
+        case PERPENDICULAR:     s = "perpendicular"; break;
         case EQUAL_RADIUS:      s = "eq-radius"; break;
         case COMMENT:           s = "comment"; break;
         default:                s = "???"; break;
@@ -420,6 +421,18 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.vector[1];
             } else {
                 Error("Bad selection for parallel constraint.");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_PERPENDICULAR:
+            if(gs.vectors == 2 && gs.n == 2) {
+                c.type = PERPENDICULAR;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+            } else {
+                Error("Bad selection for perpendicular constraint.");
                 return;
             }
             AddConstraint(&c);
@@ -942,6 +955,7 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             break;
         }
 
+        case PERPENDICULAR:
         case ANGLE: {
             Entity *a = SS.GetEntity(entityA);
             Entity *b = SS.GetEntity(entityB);
@@ -965,8 +979,16 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
                 Expr *dot = (ua->Times(ub))->Plus(va->Times(vb));
                 c = dot->Div(maga->Times(magb));
             }
-            Expr *rads = exA->Times(Expr::From(PI/180));
-            AddEq(l, c->Minus(rads->Cos()), 0);
+            if(type == ANGLE) {
+                // The direction cosine is equal to the cosine of the
+                // specified angle
+                Expr *rads = exA->Times(Expr::From(PI/180));
+                AddEq(l, c->Minus(rads->Cos()), 0);
+            } else {
+                // The dot product (and therefore the direction cosine)
+                // is equal to zero, perpendicular.
+                AddEq(l, c, 0);
+            }
             break;
         }
 
