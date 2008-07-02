@@ -124,6 +124,7 @@ public:
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal(void);
     void FlipNormal(void);
+    double MinAltitude(void);
     int WindingNumberForPoint(Vector p);
     bool ContainsPoint(Vector p);
     bool ContainsPointProjd(Vector n, Vector p);

@@ -5,9 +5,17 @@ Vector STriangle::Normal(void) {
     return ab.Cross(bc);
 }
 
+double STriangle::MinAltitude(void) {
+    double altA = a.DistanceToLine(b, c.Minus(b)),
+           altB = b.DistanceToLine(c, a.Minus(c)),
+           altC = c.DistanceToLine(a, b.Minus(a));
+
+    return min(altA, min(altB, altC));
+}
+
 bool STriangle::ContainsPoint(Vector p) {
     Vector n = Normal();
-    if(n.Magnitude() < LENGTH_EPS*LENGTH_EPS) {
+    if(MinAltitude() < LENGTH_EPS) {
         // shouldn't happen; zero-area triangle
         return false;
     }

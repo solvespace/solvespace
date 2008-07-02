@@ -24,7 +24,7 @@ inline int WRAP(int v, int n) {
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 
-#define LENGTH_EPS  (0.0000001)
+#define LENGTH_EPS  (1e-7)
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 

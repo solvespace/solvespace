@@ -67,8 +67,8 @@ void SMesh::Simplify(int start) {
     int i, j;
     for(i = start; i < l.n; i++) {
         STriangle *tr = &(l.elem[i]);
-        if((tr->Normal()).Magnitude() < LENGTH_EPS*LENGTH_EPS) {
-            tr->tag = 0;
+        if(tr->MinAltitude() < LENGTH_EPS) {
+            tr->tag = 1;
         } else {
             tr->tag = 0;
         }
@@ -171,7 +171,7 @@ void SMesh::Simplify(int start) {
 
         for(i = 0; i < convc - 2; i++) {
             STriangle tr = STriangle::From(meta, conv[0], conv[i+1], conv[i+2]);
-            if((tr.Normal()).Magnitude() > LENGTH_EPS*LENGTH_EPS) {
+            if(tr.MinAltitude() > LENGTH_EPS) {
                 tout[toutc++] = tr;
             }
         }

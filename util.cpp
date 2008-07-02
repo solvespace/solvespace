@@ -269,10 +269,7 @@ Vector Vector::From(hParam x, hParam y, hParam z) {
 }
 
 bool Vector::Equals(Vector v) {
-    if(fabs(x - v.x) > LENGTH_EPS) return false;
-    if(fabs(y - v.y) > LENGTH_EPS) return false;
-    if(fabs(z - v.z) > LENGTH_EPS) return false;
-    return true;
+    return (this->Minus(v)).Magnitude() < LENGTH_EPS;
 }
 
 Vector Vector::Plus(Vector b) {
