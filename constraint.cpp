@@ -22,6 +22,7 @@ char *Constraint::DescriptionString(void) {
         case SYMMETRIC:         s = "symmetric"; break;
         case SYMMETRIC_HORIZ:   s = "symmetric-h"; break;
         case SYMMETRIC_VERT:    s = "symmetric-v"; break;
+        case SYMMETRIC_LINE:    s = "symmetric-line"; break;
         case AT_MIDPOINT:       s = "at-midpoint"; break;
         case HORIZONTAL:        s = "horizontal"; break;
         case VERTICAL:          s = "vertical"; break;
@@ -70,7 +71,7 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
 
 void Constraint::MenuConstrain(int id) {
     Constraint c;
-    memset(&c, 0, sizeof(c));
+    ZERO(&c);
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
 
@@ -235,11 +236,37 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.entity[1-i];
                 c.ptA = line->point[0];
                 c.ptB = line->point[1];
+            } else if(SS.GW.LockedInWorkplane()
+                        && gs.lineSegments == 2 && gs.n == 2)
+            {
+                Entity *l0 = SS.GetEntity(gs.entity[0]),
+                       *l1 = SS.GetEntity(gs.entity[1]);
+
+                if((l1->group.v != SS.GW.activeGroup.v) ||
+                   (l1->construction && !(l0->construction)))
+                {
+                    SWAP(Entity *, l0, l1);
+                }
+                c.ptA = l1->point[0];
+                c.ptB = l1->point[1];
+                c.entityA = l0->h;
+                c.type = SYMMETRIC_LINE;
+            } else if(SS.GW.LockedInWorkplane()
+                        && gs.lineSegments == 1 && gs.points == 2 && gs.n == 3)
+            {
+                c.ptA = gs.point[0];
+                c.ptB = gs.point[1];
+                c.entityA = gs.entity[0];
+                c.type = SYMMETRIC_LINE;
             } else {
                 Error("Bad selection for symmetric constraint.");
                 return;
             }
-            if(c.entityA.v == Entity::NO_ENTITY.v) {
+            if(c.type != 0) {
+                // Already done, symmetry about a line segment in a workplane
+            } else if(c.entityA.v == Entity::NO_ENTITY.v) {
+                // Horizontal / vertical symmetry, implicit symmetry plane
+                // normal to the workplane
                 if(c.workplane.v == Entity::FREE_IN_3D.v) {
                     Error("Must be locked in to workplane when constraining "
                           "symmetric without an explicit symmetry plane.");
@@ -829,6 +856,39 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
                 AddEq(l, au->Minus(bu), 0);
                 AddEq(l, av->Plus(bv), 1);
             }
+            break;
+        }
+
+        case SYMMETRIC_LINE: {
+            Entity *pa = SS.GetEntity(ptA);
+            Entity *pb = SS.GetEntity(ptB);
+
+            Expr *pau, *pav, *pbu, *pbv;
+            pa->PointGetExprsInWorkplane(workplane, &pau, &pav);
+            pb->PointGetExprsInWorkplane(workplane, &pbu, &pbv);
+
+            Entity *ln = SS.GetEntity(entityA);
+            Entity *la = SS.GetEntity(ln->point[0]);
+            Entity *lb = SS.GetEntity(ln->point[1]);
+            Expr *lau, *lav, *lbu, *lbv;
+            la->PointGetExprsInWorkplane(workplane, &lau, &lav);
+            lb->PointGetExprsInWorkplane(workplane, &lbu, &lbv);
+
+            Expr *dpu = pbu->Minus(pau), *dpv = pbv->Minus(pav);
+            Expr *dlu = lbu->Minus(lau), *dlv = lbv->Minus(lav);
+
+            // The line through the points is perpendicular to the line
+            // of symmetry.
+            AddEq(l, (dlu->Times(dpu))->Plus(dlv->Times(dpv)), 0);
+
+            // And the signed distances of the points to the line are
+            // equal in magnitude and opposite in sign, so sum to zero
+            Expr *dista = (dlv->Times(lau->Minus(pau)))->Minus(
+                          (dlu->Times(lav->Minus(pav))));
+            Expr *distb = (dlv->Times(lau->Minus(pbu)))->Minus(
+                          (dlu->Times(lav->Minus(pbv))));
+            AddEq(l, dista->Plus(distb), 1);
+
             break;
         }
 

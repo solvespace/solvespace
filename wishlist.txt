@@ -8,7 +8,7 @@ auto-generate circles and faces when lathing
 copy the section geometry to other end when sweeping
 cylindrical faces
 draw explicit edges
-symmetric about line segment
+perpendicular constraint
 
 
 long term

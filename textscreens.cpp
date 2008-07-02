@@ -463,10 +463,11 @@ void TextWindow::ShowGroupInfo(void) {
 
         if(c->group.v == shown->group.v) {
             char *s = c->DescriptionString();
-            Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
+            Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
                 (a & 1) ? 'd' : 'a',
                 c->h.v, (&TextWindow::ScreenSelectConstraint),
-                (&TextWindow::ScreenHoverConstraint), s);
+                (&TextWindow::ScreenHoverConstraint), s,
+                c->reference ? "(ref)" : "");
             a++;
         }
     }

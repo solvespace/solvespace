@@ -447,6 +447,7 @@ public:
     static const int SYMMETRIC          =  60;
     static const int SYMMETRIC_HORIZ    =  61;
     static const int SYMMETRIC_VERT     =  62;
+    static const int SYMMETRIC_LINE     =  63;
     static const int AT_MIDPOINT        =  70;
     static const int HORIZONTAL         =  80;
     static const int VERTICAL           =  81;

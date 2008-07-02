@@ -491,9 +491,21 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             n = SS.GetEntity(workplane)->Normal()->NormalU(); goto s;
         case SYMMETRIC_VERT:
             n = SS.GetEntity(workplane)->Normal()->NormalV(); goto s;
+        case SYMMETRIC_LINE: {
+            Entity *ln = SS.GetEntity(entityA);
+            Vector la = SS.GetEntity(ln->point[0])->PointGetNum(),
+                   lb = SS.GetEntity(ln->point[1])->PointGetNum();
+            la = la.ProjectInto(workplane);
+            lb = lb.ProjectInto(workplane);
+            n = lb.Minus(la);
+            Vector nw = SS.GetEntity(workplane)->Normal()->NormalN();
+            n = n.RotatedAbout(nw, PI/2);
+            goto s;
+        }
 s:
             Vector a = SS.GetEntity(ptA)->PointGetNum();
             Vector b = SS.GetEntity(ptB)->PointGetNum();
+
             for(int i = 0; i < 2; i++) {
                 Vector tail = (i == 0) ? a : b;
                 Vector d = (i == 0) ? b : a;
