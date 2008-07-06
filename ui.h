@@ -64,10 +64,11 @@ public:
     static const int EDIT_COLOR                 = 5;
     static const int EDIT_MESH_TOLERANCE        = 6;
     static const int EDIT_CAMERA_TANGENT        = 7;
-    static const int EDIT_HELIX_TURNS           = 8;
-    static const int EDIT_HELIX_PITCH           = 9;
-    static const int EDIT_HELIX_DRADIUS         = 10;
-    static const int EDIT_TTF_TEXT              = 11;
+    static const int EDIT_EDGE_COLOR            = 8;
+    static const int EDIT_HELIX_TURNS           = 20;
+    static const int EDIT_HELIX_PITCH           = 21;
+    static const int EDIT_HELIX_DRADIUS         = 22;
+    static const int EDIT_TTF_TEXT              = 23;
     struct {
         int         meaning;
         int         i;
@@ -129,6 +130,7 @@ public:
     static void ScreenChangeColor(int link, DWORD v);
     static void ScreenChangeMeshTolerance(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
+    static void ScreenChangeEdgeColor(int link, DWORD v);
 
     void EditControlDone(char *s);
 };
@@ -345,7 +347,7 @@ public:
     void MouseLeftDown(double x, double y);
     void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
-    void MouseMiddleDown(double x, double y);
+    void MouseMiddleOrRightDown(double x, double y);
     void MouseScroll(double x, double y, int delta);
     void EditControlDone(char *s);
 };

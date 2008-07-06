@@ -126,7 +126,7 @@ void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void glxFillPolygon(SPolygon *p);
 void glxFillMesh(int color, SMesh *m, DWORD h, DWORD s1, DWORD s2);
 void glxDebugPolygon(SPolygon *p);
-void glxDebugEdgeList(SEdgeList *l);
+void glxDrawEdges(SEdgeList *l);
 void glxDebugMesh(SMesh *m);
 void glxMarkPolygonNormal(SPolygon *p);
 void glxWriteText(char *str);
@@ -348,6 +348,8 @@ public:
     double  lightIntensity[2];
     double  meshTol;
     double  cameraTangent;
+    DWORD   edgeColor;
+
     int CircleSides(double r);
     typedef enum {
         UNIT_MM = 0,

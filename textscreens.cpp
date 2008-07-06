@@ -553,6 +553,14 @@ void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
     ShowTextEditControl(43, 3, str);
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
+void TextWindow::ScreenChangeEdgeColor(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.3f, %.3f, %.3f", 
+        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor));
+
+    ShowTextEditControl(49, 3, str);
+    SS.TW.edit.meaning = EDIT_EDGE_COLOR;
+}
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -583,13 +591,19 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
         SS.meshTol,
         &ScreenChangeMeshTolerance, 0,
-        SS.group.elem[SS.group.n-1].runningMesh.l.n);
+        SS.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
 
     Printf(false, "");
     Printf(false, "%Ft perspective factor (0 for isometric)%E");
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
         &ScreenChangeCameraTangent, 0);
+
+    Printf(false, "");
+    Printf(false, "%Ft edge color r,g,b (0,0,0 for no edges)%E");
+    Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
+        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
+        &ScreenChangeEdgeColor, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -662,6 +676,16 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_CAMERA_TANGENT: {
             SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
             InvalidateGraphics();
+            break;
+        }
+        case EDIT_EDGE_COLOR: {
+            double r, g, b;
+            if(sscanf(s, "%lf, %lf, %lf", &r, &g, &b)==3) {
+                SS.edgeColor = RGB(r*255, g*255, b*255);
+            } else {
+                Error("Bad format: specify color as r, g, b");
+            }
+            SS.GenerateAll(0, INT_MAX);
             break;
         }
         case EDIT_HELIX_TURNS:

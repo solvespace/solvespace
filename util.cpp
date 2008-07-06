@@ -275,8 +275,28 @@ Vector Vector::From(hParam x, hParam y, hParam z) {
     return v;
 }
 
+double Vector::Element(int i) {
+    switch(i) {
+        case 0: return x;
+        case 1: return y;
+        case 2: return z;
+        default: oops();
+    }
+}
+
 bool Vector::Equals(Vector v) {
-    return (this->Minus(v)).Magnitude() < LENGTH_EPS;
+    // Quick axis-aligned tests before going further
+    double dx = v.x - x; if(dx < -LENGTH_EPS || dx > LENGTH_EPS) return false;
+    double dy = v.y - y; if(dy < -LENGTH_EPS || dy > LENGTH_EPS) return false;
+    double dz = v.z - z; if(dz < -LENGTH_EPS || dz > LENGTH_EPS) return false;
+
+    return (this->Minus(v)).MagSquared() < LENGTH_EPS*LENGTH_EPS;
+}
+
+bool Vector::EqualsExactly(Vector v) {
+    return (x == v.x) &&
+           (y == v.y) &&
+           (z == v.z);
 }
 
 Vector Vector::Plus(Vector b) {
@@ -405,6 +425,20 @@ double Vector::DistanceToLine(Vector p0, Vector dp) {
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
+bool Vector::OnLineSegment(Vector a, Vector b) {
+    Vector d = b.Minus(a);
+
+    double m = d.MagSquared();
+    double distsq = ((this->Minus(a)).Cross(d)).MagSquared() / m;
+
+    if(distsq >= LENGTH_EPS*LENGTH_EPS) return false;
+
+    double t = (this->Minus(a)).DivPivoting(d);
+    // On-endpoint must be tested for separately.
+    if(t < 0 || t > 1) return false;
+    return true;
+}
+
 Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
     dp = dp.WithMagnitude(1);
     // this, p0, and (p0+dp) define a plane; the min distance is in
@@ -417,6 +451,10 @@ Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
     // Calculate the actual distance
     double d = (dp.Cross(p0.Minus(*this))).Magnitude();
     return this->Plus(n.WithMagnitude(d));
+}
+
+double Vector::MagSquared(void) {
+    return x*x + y*y + z*z;
 }
 
 double Vector::Magnitude(void) {

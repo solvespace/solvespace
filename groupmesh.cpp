@@ -350,7 +350,7 @@ void Group::GenerateMesh(void) {
 
     if(type == TRANSLATE || type == ROTATE) {
         GenerateMeshForStepAndRepeat();
-        return;
+        goto done;
     }
 
     if(type == EXTRUDE) {
@@ -511,7 +511,7 @@ void Group::GenerateMesh(void) {
     // same as last time, no combining required.
     if(thisMesh.l.n == 0) {
         runningMesh.MakeFromCopy(PreviousGroupMesh());
-        return;
+        goto done;
     }
 
     // So our group's mesh appears in thisMesh. Combine this with the previous
@@ -535,6 +535,14 @@ void Group::GenerateMesh(void) {
     if(prevMeshError != meshError.yes) {
         // The error is reported in the text window for the group.
         SS.later.showTW = true;
+    }
+
+done:
+    emphEdges.Clear();
+    if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
+        SKdNode *root = SKdNode::From(&runningMesh);
+        root->SnapToMesh(&runningMesh);
+        root->MakeEdgesToEmphasizeInto(&emphEdges);
     }
 }
 
@@ -574,9 +582,13 @@ void Group::Draw(void) {
     if(gs.faces > 0) ms1 = gs.face[0].v;
     if(gs.faces > 1) ms2 = gs.face[1].v;
 
-    glEnable(GL_LIGHTING);
-    if(SS.GW.showShaded) glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
-    glDisable(GL_LIGHTING);
+    if(SS.GW.showShaded) {
+        glEnable(GL_LIGHTING);
+        glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
+        glDisable(GL_LIGHTING);
+
+        glxDrawEdges(&emphEdges);
+    }
 
     if(meshError.yes) {
         // Draw the error triangles in bright red stripes, with no Z buffering

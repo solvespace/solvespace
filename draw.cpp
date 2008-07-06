@@ -20,6 +20,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
 {
     if(GraphicsEditControlIsVisible()) return;
+    if(rightDown) {
+        middleDown = true;
+        shiftDown = true;
+    }
 
     Point2d mp = { x, y };
 
@@ -262,7 +266,7 @@ void GraphicsWindow::ClearPending(void) {
     memset(&pending, 0, sizeof(pending));
 }
 
-void GraphicsWindow::MouseMiddleDown(double x, double y) {
+void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     if(GraphicsEditControlIsVisible()) return;
 
     orig.offset = offset;

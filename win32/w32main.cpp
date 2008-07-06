@@ -124,19 +124,16 @@ void *MemRealloc(void *p, int n) {
     }
 
     p = HeapReAlloc(Perm, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, p, n);
-    vl();
     if(!p) oops();
     return p;
 }
 void *MemAlloc(int n) {
     void *p = HeapAlloc(Perm, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
-    vl();
     if(!p) oops();
     return p;
 }
 void MemFree(void *p) {
     HeapFree(Perm, HEAP_NO_SERIALIZE, p);
-    vl();
 }
 
 void vl(void) {
@@ -613,6 +610,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
         case WM_LBUTTONDBLCLK:
+        case WM_RBUTTONDOWN:
         case WM_MBUTTONDOWN: {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
@@ -631,8 +629,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 SS.GW.MouseLeftUp(x, y);
             } else if(msg == WM_LBUTTONDBLCLK) {
                 SS.GW.MouseLeftDoubleClick(x, y);
-            } else if(msg == WM_MBUTTONDOWN) {
-                SS.GW.MouseMiddleDown(x, y);
+            } else if(msg == WM_MBUTTONDOWN || msg == WM_RBUTTONDOWN) {
+                SS.GW.MouseMiddleOrRightDown(x, y);
             } else if(msg == WM_MOUSEMOVE) {
                 SS.GW.MouseMoved(x, y,
                     !!(wParam & MK_LBUTTON),

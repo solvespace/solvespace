@@ -46,7 +46,9 @@ public:
     static Vector AtIntersectionOfPlanes(Vector n1, double d1,
                                          Vector n2, double d2);
 
+    double Element(int i);
     bool Equals(Vector v);
+    bool EqualsExactly(Vector v);
     Vector Plus(Vector b);
     Vector Minus(Vector b);
     Vector Negated(void);
@@ -58,8 +60,10 @@ public:
     Vector DotInToCsys(Vector u, Vector v, Vector n);
     Vector ScaleOutOfCsys(Vector u, Vector v, Vector n);
     double DistanceToLine(Vector p0, Vector dp);
+    bool OnLineSegment(Vector a, Vector b);
     Vector ClosestPointOnLine(Vector p0, Vector dp);
     double Magnitude(void);
+    double MagSquared(void);
     Vector WithMagnitude(double s);
     Vector ScaledBy(double s);
     Vector ProjectInto(hEntity wrkpl);

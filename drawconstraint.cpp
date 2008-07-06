@@ -77,6 +77,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         glPopMatrix();
     } else {
         double l = swidth/2 - sheight/2;
+        l = max(l, 5/SS.GW.scale);
         Point2d a = SS.GW.ProjectPoint(ref.Minus(gr.WithMagnitude(l)));
         Point2d b = SS.GW.ProjectPoint(ref.Plus (gr.WithMagnitude(l)));
         double d = dogd.mp.DistanceToLine(a, b.Minus(a), true);

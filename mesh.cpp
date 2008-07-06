@@ -293,3 +293,338 @@ DWORD SMesh::FirstIntersectionWith(Point2d mp) {
     return face;
 }
 
+#define KDTREE_EPS (20*LENGTH_EPS) // nice and sloppy
+
+STriangleLl *STriangleLl::Alloc(void) 
+    { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
+SKdNode *SKdNode::Alloc(void) 
+    { return (SKdNode *)AllocTemporary(sizeof(SKdNode)); }
+
+SKdNode *SKdNode::From(SMesh *m) {
+    int i;
+    STriangle *tra = (STriangle *)AllocTemporary((m->l.n) * sizeof(*tra));
+
+    for(i = 0; i < m->l.n; i++) {
+        tra[i] = m->l.elem[i];
+    }
+
+    srand(0);
+    int n = m->l.n;
+    while(n > 1) {
+        int k = rand() % n;
+        n--;
+        SWAP(STriangle, tra[k], tra[n]);
+    }
+
+    STriangleLl *tll = NULL;
+    for(i = 0; i < m->l.n; i++) {
+        STriangleLl *tn = STriangleLl::Alloc();
+        tn->tri = &(tra[i]);
+        tn->next = tll;
+        tll = tn;
+    }
+
+    return SKdNode::From(tll, 0);
+}
+
+SKdNode *SKdNode::From(STriangleLl *tll, int which) {
+    SKdNode *ret = Alloc();
+
+    if(!tll) goto leaf;
+
+    int i;
+    int gtc[3] = { 0, 0, 0 }, ltc[3] = { 0, 0, 0 }, allc = 0;
+    double badness[3];
+    double split[3];
+    for(i = 0; i < 3; i++) {
+        int tcnt = 0;
+        STriangleLl *ll;
+        for(ll = tll; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
+            split[i] += (ll->tri->a).Element(i);
+            split[i] += (ll->tri->b).Element(i);
+            split[i] += (ll->tri->c).Element(i);
+            tcnt++;
+        }
+        split[i] /= (tcnt*3);
+
+        for(ll = tll; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
+            
+            double a = (tr->a).Element(i),
+                   b = (tr->b).Element(i),
+                   c = (tr->c).Element(i);
+            
+            if(a < split[i] + KDTREE_EPS ||
+               b < split[i] + KDTREE_EPS ||
+               c < split[i] + KDTREE_EPS)
+            {
+                ltc[i]++;
+            }
+            if(a > split[i] - KDTREE_EPS ||
+               b > split[i] - KDTREE_EPS ||
+               c > split[i] - KDTREE_EPS)
+            {
+                gtc[i]++;
+            }
+            if(i == 0) allc++;
+        }
+        badness[i] = pow((double)ltc[i], 4) + pow((double)gtc[i], 4);
+    }
+    if(badness[0] < badness[1] && badness[0] < badness[2]) {
+        which = 0;
+    } else if(badness[1] < badness[2]) {
+        which = 1;
+    } else {
+        which = 2;
+    }
+
+    if(allc < 10) goto leaf;
+    if(allc == gtc[which] || allc == ltc[which]) goto leaf;
+
+    STriangleLl *ll;
+    STriangleLl *lgt = NULL, *llt = NULL;
+    for(ll = tll; ll; ll = ll->next) {
+        STriangle *tr = ll->tri;
+        
+        double a = (tr->a).Element(which),
+               b = (tr->b).Element(which),
+               c = (tr->c).Element(which);
+        
+        if(a < split[which] + KDTREE_EPS ||
+           b < split[which] + KDTREE_EPS ||
+           c < split[which] + KDTREE_EPS)
+        {
+            STriangleLl *n = STriangleLl::Alloc();
+            *n = *ll;
+            n->next = llt;
+            llt = n;
+        }
+        if(a > split[which] - KDTREE_EPS ||
+           b > split[which] - KDTREE_EPS ||
+           c > split[which] - KDTREE_EPS)
+        {
+            STriangleLl *n = STriangleLl::Alloc();
+            *n = *ll;
+            n->next = lgt;
+            lgt = n;
+        }
+    }
+
+    ret->which = which;
+    ret->c = split[which];
+    ret->gt = SKdNode::From(lgt, (which + 1) % 3);
+    ret->lt = SKdNode::From(llt, (which + 1) % 3);
+    return ret;
+
+leaf:
+//    dbp("leaf: allc=%d gtc=%d ltc=%d which=%d", allc, gtc[which], ltc[which], which);
+    ret->tris = tll;
+    return ret;
+}
+
+void SKdNode::ClearTags(void) {
+    if(gt && lt) {
+        gt->ClearTags();
+        lt->ClearTags();
+    } else {
+        STriangleLl *ll;
+        for(ll = tris; ll; ll = ll->next) {
+            ll->tri->tag = 0;
+        }
+    }
+}
+
+void SKdNode::AddTriangle(STriangle *tr) {
+    if(gt && lt) {
+        double ta = (tr->a).Element(which),
+               tb = (tr->b).Element(which),
+               tc = (tr->c).Element(which);
+        if(ta < c + KDTREE_EPS ||
+           tb < c + KDTREE_EPS ||
+           tc < c + KDTREE_EPS)
+        {
+            lt->AddTriangle(tr);
+        }
+        if(ta > c - KDTREE_EPS ||
+           tb > c - KDTREE_EPS ||
+           tc > c - KDTREE_EPS)
+        {
+            gt->AddTriangle(tr);
+        }
+    } else {
+        STriangleLl *tn = STriangleLl::Alloc();
+        tn->tri = tr;
+        tn->next = tris;
+        tris = tn;
+    }
+}
+
+void SKdNode::MakeMeshInto(SMesh *m) {
+    if(gt) gt->MakeMeshInto(m);
+    if(lt) lt->MakeMeshInto(m);
+
+    STriangleLl *ll;
+    for(ll = tris; ll; ll = ll->next) {
+        if(ll->tri->tag) continue;
+
+        m->AddTriangle(ll->tri);
+        ll->tri->tag = 1;
+    }
+}
+
+void SKdNode::SnapToVertex(Vector v, SMesh *extras) {
+    if(gt && lt) {
+        double vc = v.Element(which);
+        if(vc < c + KDTREE_EPS) {
+            lt->SnapToVertex(v, extras);
+        }
+        if(vc > c - KDTREE_EPS) {
+            gt->SnapToVertex(v, extras);
+        }
+        // Nothing bad happens if the triangle to be split appears in both
+        // branches; the first call will split the triangle, so that the
+        // second call will do nothing, because the modified triangle will
+        // already contain v
+    } else {
+        STriangleLl *ll;
+        for(ll = tris; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
+
+            // Do a cheap bbox test first
+            int k;
+            bool mightHit = true;
+
+            for(k = 0; k < 3; k++) {
+                if((tr->a).Element(k) < v.Element(k) - KDTREE_EPS &&
+                   (tr->b).Element(k) < v.Element(k) - KDTREE_EPS &&
+                   (tr->c).Element(k) < v.Element(k) - KDTREE_EPS)
+                {
+                    mightHit = false;
+                    break;
+                }
+                if((tr->a).Element(k) > v.Element(k) + KDTREE_EPS &&
+                   (tr->b).Element(k) > v.Element(k) + KDTREE_EPS &&
+                   (tr->c).Element(k) > v.Element(k) + KDTREE_EPS)
+                {
+                    mightHit = false;
+                    break;
+                }
+            }
+            if(!mightHit) continue;
+
+            if(tr->a.Equals(v)) { tr->a = v; continue; }
+            if(tr->b.Equals(v)) { tr->b = v; continue; }
+            if(tr->c.Equals(v)) { tr->c = v; continue; }
+
+            if(v.OnLineSegment(tr->a, tr->b)) {
+                STriangle nt = STriangle::From(tr->meta, tr->a, v, tr->c);
+                extras->AddTriangle(&nt);
+                tr->a = v;
+                continue;
+            }
+            if(v.OnLineSegment(tr->b, tr->c)) {
+                STriangle nt = STriangle::From(tr->meta, tr->b, v, tr->a);
+                extras->AddTriangle(&nt);
+                tr->b = v;
+                continue;
+            }
+            if(v.OnLineSegment(tr->c, tr->a)) {
+                STriangle nt = STriangle::From(tr->meta, tr->c, v, tr->b);
+                extras->AddTriangle(&nt);
+                tr->c = v;
+                continue;
+            }
+        }
+    }
+}
+
+void SKdNode::SnapToMesh(SMesh *m) {
+    int i, j, k;
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
+        for(j = 0; j < 3; j++) {
+            Vector v = ((j == 0) ? tr->a : 
+                       ((j == 1) ? tr->b :
+                                   tr->c));
+
+            SMesh extra;
+            ZERO(&extra);
+            SnapToVertex(v, &extra);
+
+            for(k = 0; k < extra.l.n; k++) {
+                STriangle *tra = (STriangle *)AllocTemporary(sizeof(*tra));
+                *tra = extra.l.elem[k];
+                AddTriangle(tra);
+            }
+            extra.Clear();
+        }
+    }
+}
+
+void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
+                            STriMeta m, int cnt)
+{
+    if(gt && lt) {
+        double ac = a.Element(which),
+               bc = b.Element(which);
+        if(ac < c + KDTREE_EPS ||
+           bc < c + KDTREE_EPS)
+        {
+            lt->FindEdgeOn(a, b, n, nOther, m, cnt);
+        }
+        if(ac > c - KDTREE_EPS ||
+           bc > c - KDTREE_EPS)
+        {
+            gt->FindEdgeOn(a, b, n, nOther, m, cnt);
+        }
+    } else {
+        STriangleLl *ll;
+        for(ll = tris; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
+
+            if(tr->tag == cnt) continue;
+            
+            if((a.EqualsExactly(tr->b) && b.EqualsExactly(tr->a)) ||
+               (a.EqualsExactly(tr->c) && b.EqualsExactly(tr->b)) ||
+               (a.EqualsExactly(tr->a) && b.EqualsExactly(tr->c)))
+            {
+                (*n)++;
+                if(tr->meta.face != m.face) (*nOther)++;
+            }
+
+            tr->tag = cnt;
+        }
+    }
+}
+
+void SKdNode::MakeEdgesToEmphasizeInto(SEdgeList *sel) {
+    SMesh m;
+    ZERO(&m);
+    ClearTags();
+    MakeMeshInto(&m);
+
+    int cnt = 1234;
+    int i, j;
+    for(i = 0; i < m.l.n; i++) {
+        STriangle *tr = &(m.l.elem[i]);
+
+        for(j = 0; j < 3; j++) {
+            Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
+            Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
+
+            int n = 0, nOther = 0;
+            FindEdgeOn(a, b, &n, &nOther, tr->meta, cnt++);
+            if(n != 1) {
+                dbp("hanging edge: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
+                    n, CO(a), CO(b));
+            }
+            if(nOther > 0) {
+                sel->AddEdge(a, b);
+            }
+        }
+    }
+
+    m.Clear();
+}
+

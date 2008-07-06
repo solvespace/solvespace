@@ -217,9 +217,11 @@ public:
     STriangle       *tri;
 
     STriangleLl     *next;
+
+    static STriangleLl *Alloc(void);
 };
 
-class SKdTree {
+class SKdNode {
 public:
     static const int BY_X = 0;
     static const int BY_Y = 1;
@@ -227,10 +229,25 @@ public:
     int which;
     double c;
 
-    SKdTree      *gt;
-    SKdTree      *lt;
+    SKdNode      *gt;
+    SKdNode      *lt;
 
     STriangleLl  *tris;
+
+    static SKdNode *Alloc(void);
+    static SKdNode *From(SMesh *m);
+    static SKdNode *From(STriangleLl *tll, int which);
+
+    void AddTriangle(STriangle *tr);
+    void MakeMeshInto(SMesh *m);
+    void ClearTags(void);
+    
+    void FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
+                        STriMeta m, int cnt);
+    void MakeEdgesToEmphasizeInto(SEdgeList *sel);
+
+    void SnapToMesh(SMesh *m);
+    void SnapToVertex(Vector v, SMesh *extras);
 };
 
 #endif

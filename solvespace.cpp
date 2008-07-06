@@ -30,6 +30,8 @@ void SolveSpace::Init(char *cmdLine) {
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
     cameraTangent = ((int)CnfThawDWORD(0, "CameraTangent"))/1e6;
+    // Color for edges (drawn as lines for emphasis)
+    edgeColor = CnfThawDWORD(RGB(0, 0, 0), "EdgeColor");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -82,6 +84,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD((int)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
     CnfFreezeDWORD((int)(cameraTangent*1e6), "CameraTangent");
+    // Color for edges (drawn as lines for emphasis)
+    CnfFreezeDWORD(edgeColor, "EdgeColor");
     ExitNow();
 }
 
@@ -399,7 +403,8 @@ void SolveSpace::GenerateAll(int first, int last) {
                 deleted.groups, deleted.groups == 1 ? "" : "s");
         memset(&deleted, 0, sizeof(deleted));
     }
-
+    
+    FreeAllTemporary();
     allConsistent = true;
     return;
 

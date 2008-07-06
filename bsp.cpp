@@ -3,6 +3,22 @@
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
 SBsp3 *SBsp3::Alloc(void) { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 
+static int ByArea(const void *av, const void *bv) {
+    STriangle *a = (STriangle *)av;
+    STriangle *b = (STriangle *)bv;
+
+    double fa = a->Normal().Magnitude();
+    double fb = b->Normal().Magnitude();
+
+    if(fa > fb) {
+        return -1;
+    } else if(fa < fb) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 SBsp3 *SBsp3::FromMesh(SMesh *m) {
     SBsp3 *bsp3 = NULL;
     int i;
@@ -12,13 +28,10 @@ SBsp3 *SBsp3::FromMesh(SMesh *m) {
         mc.AddTriangle(&(m->l.elem[i]));
     }
 
-    srand(0); // Let's be deterministic, at least!
-    int n = mc.l.n;
-    while(n > 1) {
-        int k = rand() % n;
-        n--;
-        SWAP(STriangle, mc.l.elem[k], mc.l.elem[n]);
-    }
+    // The larger-area triangles have more trustworthy normals. By inserting
+    // those first, we hope to improve the numerical accuracy of our
+    // split planes.
+    qsort(mc.l.elem, mc.l.n, sizeof(mc.l.elem[0]), ByArea);
 
     for(i = 0; i < mc.l.n; i++) {
         bsp3 = bsp3->Insert(&(mc.l.elem[i]), NULL);

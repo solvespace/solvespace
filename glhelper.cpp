@@ -280,29 +280,20 @@ void glxDebugPolygon(SPolygon *p)
     }
 }
 
-void glxDebugEdgeList(SEdgeList *el)
+void glxDrawEdges(SEdgeList *el)
 {
     int i;
-    glLineWidth(2);
-    glPointSize(7);
-    glDisable(GL_DEPTH_TEST);
+    glLineWidth(1);
+    glxDepthRangeOffset(2);
+    glxColor3d(REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor));
+
+    glBegin(GL_LINES);
     for(i = 0; i < el->l.n; i++) {
         SEdge *se = &(el->l.elem[i]);
-        if(se->tag) continue;
-        Vector a = se->a, b = se->b;
-
-        glxLockColorTo(0, 1, 1);
-        Vector d = (a.Minus(b)).WithMagnitude(-0);
-        glBegin(GL_LINES);
-            glxVertex3v(a.Plus(d));
-            glxVertex3v(b.Minus(d));
-        glEnd();
-        glxLockColorTo(0, 0, 1);
-        glBegin(GL_POINTS);
-            glxVertex3v(a.Plus(d));
-            glxVertex3v(b.Minus(d));
-        glEnd();
+        glxVertex3v(se->a);
+        glxVertex3v(se->b);
     }
+    glEnd();
 }
 
 void glxDebugMesh(SMesh *m)

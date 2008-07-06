@@ -146,6 +146,7 @@ public:
         SMesh           interferesAt;
         bool            yes;
     }               meshError;
+    SEdgeList       emphEdges;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;
