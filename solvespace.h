@@ -58,6 +58,8 @@ int SaveFileYesNoCancel(void);
 #define SLVS_EXT "slvs"
 #define PNG_PATTERN "PNG (*.png)\0*.png\0All Files (*)\0*\0\0"
 #define PNG_EXT "png"
+#define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
+#define STL_EXT "stl"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
@@ -396,8 +398,9 @@ public:
     bool LoadFromFile(char *filename);
     bool LoadEntitiesFromFile(char *filename, EntityList *le, SMesh *m);
     void ReloadAllImported(void);
-    // And the PNG export too
+    // And the various export options
     void ExportAsPngTo(char *file);
+    void ExportMeshTo(char *file);
 
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);

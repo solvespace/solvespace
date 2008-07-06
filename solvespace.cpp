@@ -473,6 +473,57 @@ void SolveSpace::SolveGroup(hGroup hg) {
     FreeAllTemporary();
 }
 
+void SolveSpace::ExportMeshTo(char *filename) {
+    SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
+    if(m->l.n == 0) {
+        Error("Active group mesh is empty; nothing to export.");
+        return;
+    }
+    SKdNode *root = SKdNode::From(m);
+    root->SnapToMesh(m);
+    SMesh vvm;
+    ZERO(&vvm);
+    root->MakeMeshInto(&vvm);
+
+    FILE *f = fopen(filename, "wb");
+    if(!f) {
+        Error("Couldn't write to '%s'", filename);
+        vvm.Clear();
+        return;
+    }
+    char str[80];
+    memset(str, 0, sizeof(str));
+    strcpy(str, "STL exported mesh");
+    fwrite(str, 1, 80, f);
+
+    DWORD n = vvm.l.n;
+    fwrite(&n, 4, 1, f);
+
+    int i;
+    for(i = 0; i < vvm.l.n; i++) {
+        STriangle *tr = &(vvm.l.elem[i]);
+        Vector n = tr->Normal().WithMagnitude(1);
+        float w;
+        w = (float)n.x;     fwrite(&w, 4, 1, f);
+        w = (float)n.y;     fwrite(&w, 4, 1, f);
+        w = (float)n.z;     fwrite(&w, 4, 1, f);
+        w = (float)tr->a.x; fwrite(&w, 4, 1, f);
+        w = (float)tr->a.y; fwrite(&w, 4, 1, f);
+        w = (float)tr->a.z; fwrite(&w, 4, 1, f);
+        w = (float)tr->b.x; fwrite(&w, 4, 1, f);
+        w = (float)tr->b.y; fwrite(&w, 4, 1, f);
+        w = (float)tr->b.z; fwrite(&w, 4, 1, f);
+        w = (float)tr->c.x; fwrite(&w, 4, 1, f);
+        w = (float)tr->c.y; fwrite(&w, 4, 1, f);
+        w = (float)tr->c.z; fwrite(&w, 4, 1, f);
+        fputc(0, f);
+        fputc(0, f);
+    }
+
+    vvm.Clear();
+    fclose(f);
+}
+
 void SolveSpace::ExportAsPngTo(char *filename) {
     int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,
@@ -638,6 +689,13 @@ void SolveSpace::MenuFile(int id) {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, PNG_EXT, PNG_PATTERN)) break;
             SS.ExportAsPngTo(exportFile); 
+            break;
+        }
+
+        case GraphicsWindow::MNU_EXPORT_MESH: {
+            char exportFile[MAX_PATH] = "";
+            if(!GetSaveFile(exportFile, STL_EXT, STL_PATTERN)) break;
+            SS.ExportMeshTo(exportFile); 
             break;
         }
 
