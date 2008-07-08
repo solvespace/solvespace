@@ -561,6 +561,13 @@ void TextWindow::ScreenChangeEdgeColor(int link, DWORD v) {
     ShowTextEditControl(49, 3, str);
     SS.TW.edit.meaning = EDIT_EDGE_COLOR;
 }
+void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.3f", (double)SS.exportScale);
+
+    ShowTextEditControl(55, 3, str);
+    SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
+}
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -594,7 +601,7 @@ void TextWindow::ShowConfiguration(void) {
         SS.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
 
     Printf(false, "");
-    Printf(false, "%Ft perspective factor (0 for isometric)%E");
+    Printf(false, "%Ft perspective factor (0 for parallel)%E");
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
         &ScreenChangeCameraTangent, 0);
@@ -604,6 +611,12 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
         REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
         &ScreenChangeEdgeColor, 0);
+
+    Printf(false, "");
+    Printf(false, "%Ft export scale factor (1.0=mm, 25.4=inch)");
+    Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
+        (double)SS.exportScale,
+        &ScreenChangeExportScale, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -686,6 +699,20 @@ void TextWindow::EditControlDone(char *s) {
                 Error("Bad format: specify color as r, g, b");
             }
             SS.GenerateAll(0, INT_MAX);
+            break;
+        }
+        case EDIT_EXPORT_SCALE: {
+            Expr *e = Expr::From(s);
+            if(e) {
+                double ev = e->Eval();
+                if(fabs(ev) < 0.001 || isnan(ev)) {
+                    Error("Export scale must not be zero!");
+                } else {
+                    SS.exportScale = (float)ev;
+                }
+            } else {
+                Error("Not a valid number or expression: '%s'", s);
+            }
             break;
         }
         case EDIT_HELIX_TURNS:

@@ -65,6 +65,7 @@ public:
     static const int EDIT_MESH_TOLERANCE        = 6;
     static const int EDIT_CAMERA_TANGENT        = 7;
     static const int EDIT_EDGE_COLOR            = 8;
+    static const int EDIT_EXPORT_SCALE          = 9;
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
     static const int EDIT_HELIX_DRADIUS         = 22;
@@ -131,6 +132,7 @@ public:
     static void ScreenChangeMeshTolerance(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeEdgeColor(int link, DWORD v);
+    static void ScreenChangeExportScale(int link, DWORD v);
 
     void EditControlDone(char *s);
 };

@@ -93,8 +93,10 @@ void Error(char *str, ...);
 void ExitNow(void);
 void CnfFreezeString(char *str, char *name);
 void CnfFreezeDWORD(DWORD v, char *name);
+void CnfFreezeFloat(float v, char *name);
 void CnfThawString(char *str, int maxLen, char *name);
 DWORD CnfThawDWORD(DWORD v, char *name);
+float CnfThawFloat(float v, char *name);
 
 void *AllocTemporary(int n);
 void FreeAllTemporary(void);
@@ -353,6 +355,7 @@ public:
     double  meshTol;
     double  cameraTangent;
     DWORD   edgeColor;
+    float   exportScale;
 
     int CircleSides(double r);
     typedef enum {

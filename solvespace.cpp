@@ -15,23 +15,25 @@ void SolveSpace::Init(char *cmdLine) {
     modelColor[6] = CnfThawDWORD(RGB(  0,   0, 130), "ModelColor_6");
     modelColor[7] = CnfThawDWORD(RGB( 80,   0,  80), "ModelColor_7");
     // Light intensities
-    lightIntensity[0] = ((int)CnfThawDWORD( 700, "LightIntensity_0"))/1000.0;
-    lightIntensity[1] = ((int)CnfThawDWORD( 400, "LightIntensity_1"))/1000.0;
+    lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
+    lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
     // Light positions
-    lightDir[0].x = ((int)CnfThawDWORD(-500, "LightDir_0_Right"     ))/1000.0;
-    lightDir[0].y = ((int)CnfThawDWORD( 500, "LightDir_0_Up"        ))/1000.0;
-    lightDir[0].z = ((int)CnfThawDWORD(   0, "LightDir_0_Forward"   ))/1000.0;
-    lightDir[1].x = ((int)CnfThawDWORD( 500, "LightDir_1_Right"     ))/1000.0;
-    lightDir[1].y = ((int)CnfThawDWORD(   0, "LightDir_1_Up"        ))/1000.0;
-    lightDir[1].z = ((int)CnfThawDWORD(   0, "LightDir_1_Forward"   ))/1000.0;
+    lightDir[0].x = CnfThawFloat(-1.0f, "LightDir_0_Right"     );
+    lightDir[0].y = CnfThawFloat( 1.0f, "LightDir_0_Up"        );
+    lightDir[0].z = CnfThawFloat( 0.0f, "LightDir_0_Forward"   );
+    lightDir[1].x = CnfThawFloat( 1.0f, "LightDir_1_Right"     );
+    lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
+    lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
     // Mesh tolerance
-    meshTol = ((int)CnfThawDWORD(1000, "MeshTolerance"))/1000.0;
+    meshTol = CnfThawFloat(1.0f, "MeshTolerance");
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
-    cameraTangent = ((int)CnfThawDWORD(0, "CameraTangent"))/1e6;
+    cameraTangent = CnfThawFloat(0.0f, "CameraTangent");
     // Color for edges (drawn as lines for emphasis)
     edgeColor = CnfThawDWORD(RGB(0, 0, 0), "EdgeColor");
+    // Export scale factor
+    exportScale = CnfThawFloat(1.0f, "ExportScale");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -69,23 +71,26 @@ void SolveSpace::Exit(void) {
         CnfFreezeDWORD(modelColor[i], name);
     }
     // Light intensities
-    CnfFreezeDWORD((int)(lightIntensity[0]*1000), "LightIntensity_0");
-    CnfFreezeDWORD((int)(lightIntensity[1]*1000), "LightIntensity_1");
+    CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
+    CnfFreezeFloat((float)lightIntensity[1], "LightIntensity_1");
     // Light directions
-    CnfFreezeDWORD((int)(lightDir[0].x*1000), "LightDir_0_Right");
-    CnfFreezeDWORD((int)(lightDir[0].y*1000), "LightDir_0_Up");
-    CnfFreezeDWORD((int)(lightDir[0].z*1000), "LightDir_0_Forward");
-    CnfFreezeDWORD((int)(lightDir[1].x*1000), "LightDir_1_Right");
-    CnfFreezeDWORD((int)(lightDir[1].y*1000), "LightDir_1_Up");
-    CnfFreezeDWORD((int)(lightDir[1].z*1000), "LightDir_1_Forward");
+    CnfFreezeFloat((float)lightDir[0].x, "LightDir_0_Right");
+    CnfFreezeFloat((float)lightDir[0].y, "LightDir_0_Up");
+    CnfFreezeFloat((float)lightDir[0].z, "LightDir_0_Forward");
+    CnfFreezeFloat((float)lightDir[1].x, "LightDir_1_Right");
+    CnfFreezeFloat((float)lightDir[1].y, "LightDir_1_Up");
+    CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
     // Mesh tolerance
-    CnfFreezeDWORD((int)(meshTol*1000), "MeshTolerance");
+    CnfFreezeFloat((float)meshTol, "MeshTolerance");
     // Display/entry units
-    CnfFreezeDWORD((int)viewUnits, "ViewUnits");
+    CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
-    CnfFreezeDWORD((int)(cameraTangent*1e6), "CameraTangent");
+    CnfFreezeFloat((float)cameraTangent, "CameraTangent");
     // Color for edges (drawn as lines for emphasis)
     CnfFreezeDWORD(edgeColor, "EdgeColor");
+    // Export scale (a float, stored as a DWORD)
+    CnfFreezeFloat(exportScale, "ExportScale");
+
     ExitNow();
 }
 
@@ -641,6 +646,8 @@ havepoly:
             Point2d e0 = p0.Project2d(u, v),
                     e1 = p1.Project2d(u, v);
 
+            double s = SS.exportScale;
+
             fprintf(f,
 "  0\n"
 "LINE\n"
@@ -659,8 +666,8 @@ havepoly:
 "  31\n"    // zB
 "%.6f\n",
                     0,
-                    e0.x, e0.y, 0.0,
-                    e1.x, e1.y, 0.0);
+                    e0.x/s, e0.y/s, 0.0,
+                    e1.x/s, e1.y/s, 0.0);
         }
     }
 
@@ -700,23 +707,24 @@ void SolveSpace::ExportMeshTo(char *filename) {
     DWORD n = vvm.l.n;
     fwrite(&n, 4, 1, f);
 
+    double s = SS.exportScale;
     int i;
     for(i = 0; i < vvm.l.n; i++) {
         STriangle *tr = &(vvm.l.elem[i]);
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
-        w = (float)n.x;     fwrite(&w, 4, 1, f);
-        w = (float)n.y;     fwrite(&w, 4, 1, f);
-        w = (float)n.z;     fwrite(&w, 4, 1, f);
-        w = (float)tr->a.x; fwrite(&w, 4, 1, f);
-        w = (float)tr->a.y; fwrite(&w, 4, 1, f);
-        w = (float)tr->a.z; fwrite(&w, 4, 1, f);
-        w = (float)tr->b.x; fwrite(&w, 4, 1, f);
-        w = (float)tr->b.y; fwrite(&w, 4, 1, f);
-        w = (float)tr->b.z; fwrite(&w, 4, 1, f);
-        w = (float)tr->c.x; fwrite(&w, 4, 1, f);
-        w = (float)tr->c.y; fwrite(&w, 4, 1, f);
-        w = (float)tr->c.z; fwrite(&w, 4, 1, f);
+        w = (float)n.x;           fwrite(&w, 4, 1, f);
+        w = (float)n.y;           fwrite(&w, 4, 1, f);
+        w = (float)n.z;           fwrite(&w, 4, 1, f);
+        w = (float)((tr->a.x)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->a.y)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->a.z)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->b.x)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->b.y)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->b.z)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->c.x)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->c.y)/s); fwrite(&w, 4, 1, f);
+        w = (float)((tr->c.z)/s); fwrite(&w, 4, 1, f);
         fputc(0, f);
         fputc(0, f);
     }

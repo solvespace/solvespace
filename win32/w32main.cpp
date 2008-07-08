@@ -88,11 +88,19 @@ void CnfFreezeString(char *str, char *name)
 void CnfFreezeDWORD(DWORD v, char *name)
     { FreezeDWORDF(v, FREEZE_SUBKEY, name); }
 
+void CnfFreezeFloat(float v, char *name)
+    { FreezeDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); }
+
 void CnfThawString(char *str, int maxLen, char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
 
 DWORD CnfThawDWORD(DWORD v, char *name)
     { return ThawDWORDF(v, FREEZE_SUBKEY, name); }
+
+float CnfThawFloat(float v, char *name) {
+    DWORD d = ThawDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); 
+    return *((float *)&d);
+}
 
 
 //-----------------------------------------------------------------------------
