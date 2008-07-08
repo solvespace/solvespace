@@ -33,6 +33,8 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\mesh.obj \
            $(OBJDIR)\bsp.obj \
            $(OBJDIR)\ttf.obj \
+           $(OBJDIR)\generate.obj \
+           $(OBJDIR)\export.obj \
 
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib \
