@@ -542,7 +542,7 @@ done:
     if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
         SKdNode *root = SKdNode::From(&runningMesh);
         root->SnapToMesh(&runningMesh);
-        root->MakeEdgesToEmphasizeInto(&emphEdges);
+        root->MakeCertainEdgesInto(&emphEdges, true);
     }
 }
 

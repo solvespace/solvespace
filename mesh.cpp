@@ -598,7 +598,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
     }
 }
 
-void SKdNode::MakeEdgesToEmphasizeInto(SEdgeList *sel) {
+void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, bool emphasized) {
     SMesh m;
     ZERO(&m);
     ClearTags();
@@ -616,11 +616,15 @@ void SKdNode::MakeEdgesToEmphasizeInto(SEdgeList *sel) {
             int n = 0, nOther = 0;
             FindEdgeOn(a, b, &n, &nOther, tr->meta, cnt++);
             if(n != 1) {
-                dbp("hanging edge: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
-                    n, CO(a), CO(b));
+                if(!emphasized) {
+                    sel->AddEdge(a, b);
+                } else {
+                    dbp("hanging: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
+                        n, CO(a), CO(b));
+                }
             }
             if(nOther > 0) {
-                sel->AddEdge(a, b);
+                if(emphasized) sel->AddEdge(a, b);
             }
         }
     }

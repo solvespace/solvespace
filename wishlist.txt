@@ -1,6 +1,5 @@
 
-STL export
-DXF export
+adaptive pwl for polynomial curves
 some kind of rounding / chamfer
 remove back button in browser?
 auto-generate circles and faces when lathing

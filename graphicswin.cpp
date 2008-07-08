@@ -17,6 +17,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "Export &Image...",                    MNU_EXPORT_PNG,     0,      mFile },
+{ 1, "Export &DXF...",                      MNU_EXPORT_DXF,     0,      mFile },
 { 1, "Export &Mesh...",                     MNU_EXPORT_MESH,    0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "E&xit",                               MNU_EXIT,           0,      mFile },
@@ -516,7 +517,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_CIRCLE: s = "click center of circle"; goto c;
         case MNU_ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
         case MNU_WORKPLANE: s = "click origin of workplane"; goto c;
-        case MNU_RECTANGLE: s = "click one corner of rectangular"; goto c;
+        case MNU_RECTANGLE: s = "click one corner of rectangle"; goto c;
         case MNU_TTF_TEXT: s = "click top left of text"; goto c;
 c:
             SS.GW.pending.operation = id;

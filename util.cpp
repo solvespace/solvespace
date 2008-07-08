@@ -349,20 +349,22 @@ Vector Vector::Normal(int which) {
     // Arbitrarily choose one vector that's normal to us, pivoting
     // appropriately.
     double xa = fabs(x), ya = fabs(y), za = fabs(z);
-    double minc = min(min(xa, ya), za);
-    if(minc == xa) {
+    if(this->Equals(Vector::From(0, 0, 1))) {
+        // Make DXFs exported in the XY plane work nicely...
+        n = Vector::From(1, 0, 0);
+    } else if(xa < ya && xa < za) {
         n.x = 0;
         n.y = z;
         n.z = -y;
-    } else if(minc == ya) {
+    } else if(ya < za) {
+        n.x = -z;
         n.y = 0;
         n.z = x;
-        n.x = -z;
-    } else if(minc == za) {
-        n.z = 0;
+    } else {
         n.x = y;
         n.y = -x;
-    } else oops();
+        n.z = 0;
+    }
 
     if(which == 0) {
         // That's the vector we return.

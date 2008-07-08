@@ -149,6 +149,7 @@ public:
         MNU_SAVE_AS,
         MNU_EXPORT_PNG,
         MNU_EXPORT_MESH,
+        MNU_EXPORT_DXF,
         MNU_EXIT,
         // View
         MNU_ZOOM_IN,

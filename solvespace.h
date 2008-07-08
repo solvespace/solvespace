@@ -60,6 +60,8 @@ int SaveFileYesNoCancel(void);
 #define PNG_EXT "png"
 #define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
 #define STL_EXT "stl"
+#define DXF_PATTERN "DXF File (*.dxf)\0*.dxf\0All Files (*)\0*\0\0"
+#define DXF_EXT "dxf"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
@@ -400,6 +402,7 @@ public:
     void ReloadAllImported(void);
     // And the various export options
     void ExportAsPngTo(char *file);
+    void ExportDxfTo(char *file);
     void ExportMeshTo(char *file);
 
     void MarkGroupDirty(hGroup hg);

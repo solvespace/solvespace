@@ -244,7 +244,7 @@ public:
     
     void FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
                         STriMeta m, int cnt);
-    void MakeEdgesToEmphasizeInto(SEdgeList *sel);
+    void MakeCertainEdgesInto(SEdgeList *sel, bool emphasized);
 
     void SnapToMesh(SMesh *m);
     void SnapToVertex(Vector v, SMesh *extras);
