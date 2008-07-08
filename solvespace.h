@@ -89,8 +89,10 @@ void dbp(char *str, ...);
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
+void SetWindowTitle(char *str);
 void Error(char *str, ...);
 void ExitNow(void);
+
 void CnfFreezeString(char *str, char *name);
 void CnfFreezeDWORD(DWORD v, char *name);
 void CnfFreezeFloat(float v, char *name);
@@ -398,6 +400,7 @@ public:
     bool GetFilenameAndSave(bool saveAs);
     bool OkayToStartNewFile(void);
     hGroup CreateDefaultDrawingGroup(void);
+    void UpdateWindowTitle(void);
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);

@@ -150,6 +150,8 @@ void SolveSpace::AfterNewFile(void) {
     later.showTW = true;
     // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit();
+
+    UpdateWindowTitle();
 }
 
 void SolveSpace::RemoveFromRecentList(char *file) {
@@ -206,6 +208,16 @@ bool SolveSpace::OkayToStartNewFile(void) {
             return false;
         
         default: oops();
+    }
+}
+
+void SolveSpace::UpdateWindowTitle(void) {
+    if(strlen(saveFile) == 0) {
+        SetWindowTitle("SolveSpace - (not yet saved)");
+    } else {
+        char buf[MAX_PATH+100];
+        sprintf(buf, "SolveSpace - %s", saveFile);
+        SetWindowTitle(buf);
     }
 }
 
@@ -287,4 +299,6 @@ void SolveSpace::MenuFile(int id) {
 
         default: oops();
     }
+
+    SS.UpdateWindowTitle();
 }

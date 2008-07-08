@@ -102,6 +102,10 @@ float CnfThawFloat(float v, char *name) {
     return *((float *)&d);
 }
 
+void SetWindowTitle(char *str) {
+    SetWindowText(GraphicsWnd, str);
+}
+
 
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
