@@ -629,8 +629,29 @@ void TextWindow::EditControlDone(char *s) {
             if(e) {
                 SS.UndoRemember();
 
+                double ev = e->Eval();
+                if((int)ev < 1) {
+                    Error("Can't repeat fewer than 1 time.");
+                    break;
+                }
+
                 Group *g = SS.GetGroup(edit.group);
-                g->valA = e->Eval();
+                g->valA = ev;
+
+                if(g->type == Group::ROTATE) {
+                    int i, c = 0;
+                    for(i = 0; i < SS.constraint.n; i++) {
+                        if(SS.constraint.elem[i].group.v == g->h.v) c++;
+                    }
+                    // If the group does not contain any constraints, then
+                    // set the numerical guess to space the copies uniformly
+                    // over one rotation. Don't touch the guess if we're
+                    // already constrained, because that would break
+                    // convergence.
+                    if(c == 0) {
+                        SS.GetParam(g->h.param(3))->val = PI/(2*ev);
+                    }
+                }
 
                 SS.MarkGroupDirty(g->h);
                 SS.later.generateAll = true;

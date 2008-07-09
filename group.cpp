@@ -378,7 +378,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(1), gc.y);
             AddParam(param, h.param(2), gc.z);
             // The rotation quaternion
-            AddParam(param, h.param(3), 15*PI/180);
+            AddParam(param, h.param(3), 30*PI/180);
             AddParam(param, h.param(4), gn.x);
             AddParam(param, h.param(5), gn.y);
             AddParam(param, h.param(6), gn.z);
