@@ -502,8 +502,8 @@ static void CreateGlContext(void)
                         PFD_DOUBLEBUFFER; 
     pfd.dwLayerMask = PFD_MAIN_PLANE; 
     pfd.iPixelType = PFD_TYPE_RGBA; 
-    pfd.cColorBits = 16; 
-    pfd.cDepthBits = 16; 
+    pfd.cColorBits = 32; 
+    pfd.cDepthBits = 24; 
     pfd.cAccumBits = 0; 
     pfd.cStencilBits = 0; 
  
