@@ -448,7 +448,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
     }
 
     if(wParam == VK_BACK && !GraphicsEditControlIsVisible()) {
-        TextWindow::ScreenNavigation('b', 0);
+        TextWindow::ScreenHome(0, 0);
         SS.TW.Show();
         return TRUE;
     }

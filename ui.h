@@ -50,11 +50,7 @@ public:
         int         screen;
         hGroup      group;
     } ShownState;
-    static const int HISTORY_LEN = 16;
-    ShownState showns[HISTORY_LEN];
-    int shownIndex;
-    int history;
-    ShownState *shown;
+    ShownState shown;
 
     static const int EDIT_NOTHING               = 0;
     static const int EDIT_TIMES_REPEATED        = 1;
@@ -91,7 +87,7 @@ public:
     // Special screen, based on selection
     void DescribeSelection(void);
 
-    void OneScreenForwardTo(int screen);
+    void GoToScreen(int screen);
 
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
@@ -121,7 +117,7 @@ public:
 
     static void ScreenShowConfiguration(int link, DWORD v);
 
-    static void ScreenNavigation(int link, DWORD v);
+    static void ScreenHome(int link, DWORD v);
 
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);

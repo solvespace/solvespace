@@ -1,28 +1,11 @@
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------
-// A navigation bar that always appears at the top of the window.
+// A navigation bar that always appears at the top of the window, with a
+// link to bring us back home.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenNavigation(int link, DWORD v) {
-    switch(link) {
-        default:
-        case 'h':
-            SS.TW.OneScreenForwardTo(SCREEN_LIST_OF_GROUPS);
-            break;
-
-        case 'b':
-            if(SS.TW.history > 0) {
-                SS.TW.shownIndex--;
-                if(SS.TW.shownIndex < 0) SS.TW.shownIndex = (HISTORY_LEN-1);
-                SS.TW.shown = &(SS.TW.showns[SS.TW.shownIndex]);
-                SS.TW.history--;
-            }
-            break;
-
-        case 'f':
-            SS.TW.OneScreenForwardTo(-1);
-            break;
-    }
+void TextWindow::ScreenHome(int link, DWORD v) {
+    SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
 }
 void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
@@ -33,12 +16,11 @@ void TextWindow::ShowHeader(bool withNav) {
 
     // Navigation buttons
     if(withNav) {
-        Printf(false, " %Lb%f<<%E   %Lh%fhome%E   %Bt%Ft wrkpl:%Fd %s",
-                    (&TextWindow::ScreenNavigation),
-                    (&TextWindow::ScreenNavigation),
+        Printf(false, " %Fl%Lh%fhome%E %Bt%Ft wrkpl:%Fd %s",
+                    (&TextWindow::ScreenHome),
                     cd);
     } else {
-        Printf(false, "             %Bt%Ft wrkpl:%Fd %s", cd);
+        Printf(false, "      %Bt%Ft wrkpl:%Fd %s", cd);
     }
 
 #define hs(b) ((b) ? 's' : 'h')
@@ -69,8 +51,8 @@ hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
 // to hide or show them, and to view them in detail. This is our home page.
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenSelectGroup(int link, DWORD v) {
-    SS.TW.OneScreenForwardTo(SCREEN_GROUP_INFO);
-    SS.TW.shown->group.v = v;
+    SS.TW.GoToScreen(SCREEN_GROUP_INFO);
+    SS.TW.shown.group.v = v;
 }
 void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     hGroup hg = { v };
@@ -102,19 +84,19 @@ void TextWindow::ScreenActivateGroup(int link, DWORD v) {
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.GW.ClearSuper();
-    SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
-    SS.TW.shown->group.v = hg.v;
+    SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.shown.group.v = hg.v;
     SS.later.showTW = true;
 }
 void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
     if(SS.GW.activeGroup.v != v) {
         ScreenActivateGroup(link, v);
     }
-    SS.TW.OneScreenForwardTo(SCREEN_GROUP_SOLVE_INFO);
-    SS.TW.shown->group.v = v;
+    SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.shown.group.v = v;
 }
 void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
-    SS.TW.OneScreenForwardTo(SCREEN_CONFIGURATION);
+    SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
@@ -196,7 +178,7 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
 void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     if(g->subtype == Group::ONE_SIDED) {
         g->subtype = Group::TWO_SIDED;
     } else if(g->subtype == Group::TWO_SIDED) {
@@ -209,7 +191,7 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
 void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     (g->skipFirst) = !(g->skipFirst);
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
@@ -218,7 +200,7 @@ void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     g->meshCombine = v;
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
@@ -227,7 +209,7 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
 void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     if(g->subtype == Group::RIGHT_HANDED) {
         g->subtype = Group::LEFT_HANDED;
     } else {
@@ -238,7 +220,7 @@ void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     char str[1024];
     int r;
     if(link == 't') {
@@ -260,7 +242,7 @@ void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
 void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     if(v < 0 || v >= SS.MODEL_COLORS) return;
     g->color = SS.modelColor[v];
     SS.MarkGroupDirty(g->h);
@@ -268,7 +250,7 @@ void TextWindow::ScreenColor(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
 
     // There's an extra line for the skipFirst parameter in one-sided groups.
     int r = (g->subtype == Group::ONE_SIDED) ? 15 : 13;
@@ -280,7 +262,7 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown->group);
+    Group *g = SS.GetGroup(SS.TW.shown.group);
     ShowTextEditControl(7, 14, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
@@ -288,23 +270,23 @@ void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
 void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
     SS.UndoRemember();
 
-    hGroup hg = SS.TW.shown->group;
+    hGroup hg = SS.TW.shown.group;
     if(hg.v == SS.GW.activeGroup.v) {
         Error("This group is currently active; activate a different group "
               "before proceeding.");
         return;
     }
-    SS.group.RemoveById(SS.TW.shown->group);
+    SS.group.RemoveById(SS.TW.shown.group);
     // This is a major change, so let's re-solve everything.
     SS.TW.ClearSuper();
     SS.GW.ClearSuper();
     SS.GenerateAll(0, INT_MAX);
 }
 void TextWindow::ShowGroupInfo(void) {
-    Group *g = SS.group.FindById(shown->group);
+    Group *g = SS.group.FindById(shown.group);
     char *s, *s2, *s3;
 
-    if(shown->group.v == Group::HGROUP_REFERENCES.v) {
+    if(shown.group.v == Group::HGROUP_REFERENCES.v) {
         Printf(true, "%FtGROUP    %E%s", g->DescriptionString());
     } else {
         Printf(true, "%FtGROUP    %E%s "
@@ -445,7 +427,7 @@ void TextWindow::ShowGroupInfo(void) {
     for(i = 0; i < SS.request.n; i++) {
         Request *r = &(SS.request.elem[i]);
 
-        if(r->group.v == shown->group.v) {
+        if(r->group.v == shown.group.v) {
             char *s = r->DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                 (a & 1) ? 'd' : 'a',
@@ -461,7 +443,7 @@ void TextWindow::ShowGroupInfo(void) {
     for(i = 0; i < SS.constraint.n; i++) {
         Constraint *c = &(SS.constraint.elem[i]);
 
-        if(c->group.v == shown->group.v) {
+        if(c->group.v == shown.group.v) {
             char *s = c->DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
                 (a & 1) ? 'd' : 'a',
@@ -480,10 +462,10 @@ void TextWindow::ShowGroupInfo(void) {
 // constraints that could be removed to fix it.
 //-----------------------------------------------------------------------------
 void TextWindow::ShowGroupSolveInfo(void) {
-    Group *g = SS.group.FindById(shown->group);
+    Group *g = SS.group.FindById(shown.group);
     if(g->solved.how == Group::SOLVED_OKAY) {
         // Go back to the default group info screen
-        shown->screen = SCREEN_GROUP_INFO;
+        shown.screen = SCREEN_GROUP_INFO;
         Show();
         return;
     }

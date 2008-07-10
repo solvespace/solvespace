@@ -28,7 +28,6 @@ void TextWindow::Init(void) {
 void TextWindow::ClearSuper(void) {
     HideTextEditControl();
     memset(this, 0, sizeof(*this));
-    shown = &(showns[shownIndex]);
     ClearScreen();
     Show();
 }
@@ -212,9 +211,9 @@ void TextWindow::Show(void) {
     } else {
         if(edit.meaning == EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(true);
-        switch(shown->screen) {
+        switch(shown.screen) {
             default:
-                shown->screen = SCREEN_LIST_OF_GROUPS;
+                shown.screen = SCREEN_LIST_OF_GROUPS;
                 // fall through
             case SCREEN_LIST_OF_GROUPS:     ShowListOfGroups();     break;
             case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
@@ -464,12 +463,7 @@ void TextWindow::DescribeSelection(void) {
     Printf(true, "%Fl%f%Ll(unselect all)%E", &TextWindow::ScreenUnselectAll);
 }
 
-void TextWindow::OneScreenForwardTo(int screen) {
-    SS.TW.shownIndex++;
-    if(SS.TW.shownIndex >= HISTORY_LEN) SS.TW.shownIndex = 0;
-    SS.TW.shown = &(SS.TW.showns[SS.TW.shownIndex]);
-    history++;
-
-    if(screen >= 0) shown->screen = screen;
+void TextWindow::GoToScreen(int screen) {
+    shown.screen = screen;
 }
 

@@ -237,6 +237,8 @@ void SolveSpace::UpdateWindowTitle(void) {
 
 void SolveSpace::MenuFile(int id) {
     if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
+        if(!SS.OkayToStartNewFile()) return;
+
         char newFile[MAX_PATH];
         strcpy(newFile, RecentFile[id-RECENT_OPEN]);
         RemoveFromRecentList(newFile);
