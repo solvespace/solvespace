@@ -493,6 +493,9 @@ void TextWindow::ShowGroupSolveInfo(void) {
             break;
         }
     }
+
+    Printf(true,  "It may be possible to fix the problem ");
+    Printf(false, "by selecting Edit -> Undo.");
 }
 
 //-----------------------------------------------------------------------------
