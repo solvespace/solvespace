@@ -440,9 +440,14 @@ void System::Solve(Group *g) {
     if(rank != mat.m) {
         FindWhichToRemoveToFixJacobian(g);
         g->solved.how = Group::SINGULAR_JACOBIAN;
+        g->solved.dof = 0;
         TextWindow::ReportHowGroupSolved(g->h);
         return;
     }
+    // This is not the full Jacobian, but any substitutions or single-eq
+    // solves removed one equation and one unknown, therefore no effect
+    // on the number of DOF.
+    g->solved.dof = mat.n - mat.m;
 
     // And do the leftovers as one big system
     if(!NewtonSolve(0)) {

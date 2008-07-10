@@ -476,6 +476,7 @@ void GraphicsWindow::MenuEdit(int id) {
         case MNU_REGEN_ALL:
             SS.ReloadAllImported();
             SS.GenerateAll(0, INT_MAX);
+            SS.later.showTW = true;
             break;
 
         default: oops();

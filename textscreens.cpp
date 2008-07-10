@@ -439,7 +439,7 @@ void TextWindow::ShowGroupInfo(void) {
     if(a == 0) Printf(false, "%Ba   (none)");
 
     a = 0;
-    Printf(true, "%Ftconstraints in group");
+    Printf(true, "%Ftconstraints in group (%d DOF)", g->solved.dof);
     for(i = 0; i < SS.constraint.n; i++) {
         Constraint *c = &(SS.constraint.elem[i]);
 

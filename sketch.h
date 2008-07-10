@@ -104,6 +104,7 @@ public:
     static const int SINGULAR_JACOBIAN    = 11;
     struct {
         int                 how;
+        int                 dof;
         SList<hConstraint>  remove;
     } solved;
 
