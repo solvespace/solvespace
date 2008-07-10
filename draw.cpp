@@ -22,7 +22,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     if(GraphicsEditControlIsVisible()) return;
     if(rightDown) {
         middleDown = true;
-        shiftDown = true;
+        shiftDown = !shiftDown;
     }
 
     Point2d mp = { x, y };

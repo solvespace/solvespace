@@ -3,7 +3,7 @@
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         // Draw lines from active group in front of those from previous
-        glxDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 2);
+        glxDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
         glBegin(GL_LINES);
             glxVertex3v(a);
             glxVertex3v(b);
@@ -131,6 +131,41 @@ bool Entity::IsVisible(void) {
 
     return true;
 }
+
+Vector Entity::BezierEval(double t, Vector p0, Vector p1, Vector p2, Vector p3)
+{
+    return (p0.ScaledBy((1 - t)*(1 - t)*(1 - t))).Plus(
+           (p1.ScaledBy(3*t*(1 - t)*(1 - t))).Plus(
+           (p2.ScaledBy(3*t*t*(1 - t))).Plus(
+           (p3.ScaledBy(t*t*t)))));
+}
+
+void Entity::BezierPwl(double ta, double tb,
+                       Vector p0, Vector p1, Vector p2, Vector p3)
+{
+    Vector pa = BezierEval(ta, p0, p1, p2, p3);
+    Vector pb = BezierEval(tb, p0, p1, p2, p3);
+
+    double tm1 = (2*ta + tb) / 3;
+    double tm2 = (ta + 2*tb) / 3;
+
+    Vector pm1 = BezierEval(tm1, p0, p1, p2, p3);
+    Vector pm2 = BezierEval(tm2, p0, p1, p2, p3);
+
+    double d = max(pm1.DistanceToLine(pa, pb.Minus(pa)),
+                   pm2.DistanceToLine(pa, pb.Minus(pa)));
+
+    double tol = 0.5*SS.chordTol/SS.GW.scale;
+
+    if((tb - ta) < 0.05 || d < tol) {
+        LineDrawOrGetDistanceOrEdge(pa, pb);
+    } else {
+        double tm = (ta + tb) / 2;
+        BezierPwl(ta, tm, p0, p1, p2, p3);
+        BezierPwl(tm, tb, p0, p1, p2, p3);
+    }
+}
+
 
 void Entity::DrawOrGetDistance(void) {
     // If an entity is invisible, then it doesn't get shown, and it doesn't
@@ -301,18 +336,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector p1 = SS.GetEntity(point[1])->PointGetNum();
             Vector p2 = SS.GetEntity(point[2])->PointGetNum();
             Vector p3 = SS.GetEntity(point[3])->PointGetNum();
-            int i, n = (int)(15/sqrt(SS.meshTol));
-            Vector prev = p0;
-            for(i = 1; i <= n; i++) {
-                double t = ((double)i)/n;
-                Vector p =
-                    (p0.ScaledBy((1 - t)*(1 - t)*(1 - t))).Plus(
-                    (p1.ScaledBy(3*t*(1 - t)*(1 - t))).Plus(
-                    (p2.ScaledBy(3*t*t*(1 - t))).Plus(
-                    (p3.ScaledBy(t*t*t)))));
-                LineDrawOrGetDistanceOrEdge(prev, p);
-                prev = p;
-            }
+            BezierPwl(0, 1, p0, p1, p2, p3);
             break;
         }
 

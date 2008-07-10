@@ -290,6 +290,8 @@ public:
     Vector TransformIntPoint(int x, int y);
     void LineSegment(int x0, int y0, int x1, int y1);
     void Bezier(int x0, int y0, int x1, int y1, int x2, int y2);
+    void BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2);
+    Vector BezierEval(double t, Vector p0, Vector p1, Vector p2);
 };
 
 class TtfFontList {
@@ -354,7 +356,7 @@ public:
     int     modelColor[MODEL_COLORS];
     Vector  lightDir[2];
     double  lightIntensity[2];
-    double  meshTol;
+    double  chordTol;
     double  cameraTangent;
     DWORD   edgeColor;
     float   exportScale;

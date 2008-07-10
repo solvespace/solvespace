@@ -690,23 +690,36 @@ void TtfFont::LineSegment(int x0, int y0, int x1, int y1) {
                                    TransformIntPoint(x1, y1));
 }
 
-void TtfFont::Bezier(int x0, int y0, int x1, int y1, int x2, int y2) {
-    Entity *e = SS.GetEntity(entity);
+Vector TtfFont::BezierEval(double t, Vector p0, Vector p1, Vector p2) {
+    return (p0.ScaledBy((1 - t)*(1 - t))).Plus(
+           (p1.ScaledBy(2*t*(1 - t))).Plus(
+           (p2.ScaledBy(t*t))));
+}
 
+void TtfFont::BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2) {
+    Vector pa = BezierEval(ta, p0, p1, p2);
+    Vector pb = BezierEval(tb, p0, p1, p2);
+
+    double tm = (ta + tb) / 2;
+
+    Vector pm = BezierEval(tm, p0, p1, p2);
+
+    double tol = 0.5*SS.chordTol/SS.GW.scale;
+
+    if((tb - ta) < 0.05 || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
+        Entity *e = SS.GetEntity(entity);
+        e->LineDrawOrGetDistanceOrEdge(pa, pb);
+    } else {
+        BezierPwl(ta, tm, p0, p1, p2);
+        BezierPwl(tm, tb, p0, p1, p2);
+    }
+}
+
+void TtfFont::Bezier(int x0, int y0, int x1, int y1, int x2, int y2) {
     Vector p0 = TransformIntPoint(x0, y0),
            p1 = TransformIntPoint(x1, y1),
            p2 = TransformIntPoint(x2, y2);
 
-    int i, n = max(2, (int)(4/sqrt(SS.meshTol)));
-    Vector prev = p0;
-    for(i = 1; i <= n; i++) {
-        double t = ((double)i)/n;
-        Vector p =
-            (p0.ScaledBy((1 - t)*(1 - t))).Plus(
-            (p1.ScaledBy(2*t*(1 - t))).Plus(
-            (p2.ScaledBy(t*t))));
-        e->LineDrawOrGetDistanceOrEdge(prev, p);
-        prev = p;
-    }
+    BezierPwl(0, 1, p0, p1, p2);
 }
 

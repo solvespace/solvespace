@@ -541,11 +541,11 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
-void TextWindow::ScreenChangeMeshTolerance(int link, DWORD v) {
+void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
     char str[1024];
-    sprintf(str, "%.2f", SS.meshTol);
+    sprintf(str, "%.2f", SS.chordTol);
     ShowTextEditControl(37, 3, str);
-    SS.TW.edit.meaning = EDIT_MESH_TOLERANCE;
+    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
     char str[1024];
@@ -594,10 +594,10 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft mesh tolerance (smaller is finer)%E");
+    Printf(false, "%Ft chord tolerance (in screen pixels)%E");
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
-        SS.meshTol,
-        &ScreenChangeMeshTolerance, 0,
+        SS.chordTol,
+        &ScreenChangeChordTolerance, 0,
         SS.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
 
     Printf(false, "");
@@ -702,8 +702,8 @@ void TextWindow::EditControlDone(char *s) {
             }
             break;
         }
-        case EDIT_MESH_TOLERANCE: {
-            SS.meshTol = min(10, max(0.1, atof(s)));
+        case EDIT_CHORD_TOLERANCE: {
+            SS.chordTol = min(10, max(0.1, atof(s)));
             SS.GenerateAll(0, INT_MAX);
             break;
         }

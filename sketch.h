@@ -393,6 +393,10 @@ public:
     void LineDrawOrGetDistanceOrEdge(Vector a, Vector b);
     void DrawOrGetDistance(void);
 
+    void BezierPwl(double ta, double tb,
+                   Vector p0, Vector p1, Vector p2, Vector p3);
+    Vector BezierEval(double t, Vector p0, Vector p1, Vector p2, Vector p3);
+
     static void DrawAll(void);
     void Draw(void);
     double GetDistance(Point2d mp);

@@ -244,15 +244,17 @@ bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {
     // Now we have a list of all the triangles (or fragments thereof) from
     // A that lie inside B, or vice versa. That's the interference, and
     // we report it so that it can be flagged.
+
+    // For the actual output, take the union.
+    flipNormal = false;
+    keepCoplanar = false;
+    AddAgainstBsp(srcb, bspa);
+
+    flipNormal = false;
+    keepCoplanar = true;
+    AddAgainstBsp(srca, bspb);
     
-    // But as far as the actual model, we just copy everything over.
-    int i;
-    for(i = 0; i < srca->l.n; i++) {
-        AddTriangle(&(srca->l.elem[i]));
-    }
-    for(i = 0; i < srcb->l.n; i++) {
-        AddTriangle(&(srcb->l.elem[i]));
-    }
+    // And we're successful if the intersection was empty.
     return (error->l.n == 0);
 }
 

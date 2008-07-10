@@ -62,7 +62,7 @@ public:
     static const int EDIT_LIGHT_DIRECTION       = 3;
     static const int EDIT_LIGHT_INTENSITY       = 4;
     static const int EDIT_COLOR                 = 5;
-    static const int EDIT_MESH_TOLERANCE        = 6;
+    static const int EDIT_CHORD_TOLERANCE       = 6;
     static const int EDIT_CAMERA_TANGENT        = 7;
     static const int EDIT_EDGE_COLOR            = 8;
     static const int EDIT_EXPORT_SCALE          = 9;
@@ -129,7 +129,7 @@ public:
     static void ScreenChangeLightDirection(int link, DWORD v);
     static void ScreenChangeLightIntensity(int link, DWORD v);
     static void ScreenChangeColor(int link, DWORD v);
-    static void ScreenChangeMeshTolerance(int link, DWORD v);
+    static void ScreenChangeChordTolerance(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeEdgeColor(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);

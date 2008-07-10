@@ -23,8 +23,8 @@ void SolveSpace::Init(char *cmdLine) {
     lightDir[1].x = CnfThawFloat( 1.0f, "LightDir_1_Right"     );
     lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
     lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
-    // Mesh tolerance
-    meshTol = CnfThawFloat(1.0f, "MeshTolerance");
+    // Chord tolerance
+    chordTol = CnfThawFloat(2.0f, "ChordTolerance");
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
@@ -79,8 +79,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat((float)lightDir[1].x, "LightDir_1_Right");
     CnfFreezeFloat((float)lightDir[1].y, "LightDir_1_Up");
     CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
-    // Mesh tolerance
-    CnfFreezeFloat((float)meshTol, "MeshTolerance");
+    // Chord tolerance
+    CnfFreezeFloat((float)chordTol, "ChordTolerance");
     // Display/entry units
     CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
@@ -100,8 +100,22 @@ void SolveSpace::DoLater(void) {
 }
 
 int SolveSpace::CircleSides(double r) {
-    int s = 7 + (int)(sqrt(r*SS.GW.scale/meshTol));
-    return min(s, 40);
+    // Let the pwl segment be symmetric about the x axis; then the curve
+    // goes out to r, and if there's n segments, then the endpoints are
+    // at +/- (2pi/n)/2 = +/- pi/n. So the chord goes to x = r cos pi/n,
+    // from x = r, so it's
+    //   tol = r - r cos pi/n
+    //   tol = r(1 - cos pi/n)
+    //   tol ~ r(1 - (1 - (pi/n)^2/2))  (Taylor expansion)
+    //   tol = r((pi/n)^2/2)
+    //   2*tol/r = (pi/n)^2
+    //   sqrt(2*tol/r) = pi/n
+    //   n = pi/sqrt(2*tol/r);
+    
+    double tol = chordTol/GW.scale;
+    int n = 3 + (int)(PI/sqrt(2*tol/r));
+
+    return max(7, min(n, 40));
 }
 
 char *SolveSpace::MmToString(double v) {
