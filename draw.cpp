@@ -269,6 +269,13 @@ void GraphicsWindow::ClearPending(void) {
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     if(GraphicsEditControlIsVisible()) return;
 
+    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
+        // Special case; use a middle or right click to stop drawing lines,
+        // since a left click would draw another one. This is quicker and
+        // more intuitive than hitting escape.
+        ClearPending();
+    }
+
     orig.offset = offset;
     orig.projUp = projUp;
     orig.projRight = projRight;

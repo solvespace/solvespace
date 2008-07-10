@@ -458,6 +458,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_OEM_PLUS:       c = '+';    break;
         case VK_OEM_MINUS:      c = '-';    break;
         case VK_ESCAPE:         c = 27;     break;
+        case VK_OEM_1:          c = ';';    break;
         case VK_OEM_4:          c = '[';    break;
         case VK_OEM_6:          c = ']';    break;
         case VK_OEM_5:          c = '\\';   break;
