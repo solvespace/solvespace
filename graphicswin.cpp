@@ -42,8 +42,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
 
 { 0, "&New Group",                          0,                  0,      NULL  },
-{ 1, "&Drawing in 3d\tShift+D",             MNU_GROUP_3D,       'D'|S,  mGrp  },
-{ 1, "Drawing in Workplane\tShift+W",       MNU_GROUP_WRKPL,    'W'|S,  mGrp  },
+{ 1, "Sketch In &3d\tShift+3",              MNU_GROUP_3D,       '3'|S,  mGrp  },
+{ 1, "Sketch In New &Workplane\tShift+W",   MNU_GROUP_WRKPL,    'W'|S,  mGrp  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Step &Translating\tShift+T",          MNU_GROUP_TRANS,    'T'|S,  mGrp  },
 { 1, "Step &Rotating\tShift+R",             MNU_GROUP_ROT,      'R'|S,  mGrp  },
@@ -96,7 +96,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&Help",                               0,                          NULL  },
 { 1, "&Load License...",                    0,                          NULL  },
 { 1, NULL,                                  0,                          NULL  },
-{ 1, "Open &Website",                       0,                          NULL  },
+{ 1, "&Website / Manual",                   0,                          NULL  },
 { 1, "&About",                              0,                          NULL  },
 { -1  },
 };

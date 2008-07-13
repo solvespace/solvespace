@@ -612,30 +612,37 @@ void Group::Draw(void) {
     // And finally show the polygons too
     if(!SS.GW.showShaded) return;
     if(polyError.how == POLY_NOT_CLOSED) {
-        glDisable(GL_DEPTH_TEST);
-        glxColor4d(1, 0, 0, 0.2);
-        glLineWidth(10);
-        glBegin(GL_LINES);
-            glxVertex3v(polyError.notClosedAt.a);
-            glxVertex3v(polyError.notClosedAt.b);
-        glEnd();
-        glLineWidth(1);
-        glxColor3d(1, 0, 0);
-        glPushMatrix();
-            glxTranslatev(polyError.notClosedAt.b);
-            glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
-            glxWriteText("not closed contour!");
-        glPopMatrix();
-        glEnable(GL_DEPTH_TEST);
+        // Report this error only in sketch-in-workplane groups; otherwise
+        // it's just a nuisance.
+        if(type == DRAWING_WORKPLANE) {
+            glDisable(GL_DEPTH_TEST);
+            glxColor4d(1, 0, 0, 0.2);
+            glLineWidth(10);
+            glBegin(GL_LINES);
+                glxVertex3v(polyError.notClosedAt.a);
+                glxVertex3v(polyError.notClosedAt.b);
+            glEnd();
+            glLineWidth(1);
+            glxColor3d(1, 0, 0);
+            glPushMatrix();
+                glxTranslatev(polyError.notClosedAt.b);
+                glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
+                glxWriteText("not closed contour!");
+            glPopMatrix();
+            glEnable(GL_DEPTH_TEST);
+        }
     } else if(polyError.how == POLY_NOT_COPLANAR) {
-        glDisable(GL_DEPTH_TEST);
-        glxColor3d(1, 0, 0);
-        glPushMatrix();
-            glxTranslatev(polyError.notCoplanarAt);
-            glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
-            glxWriteText("points not all coplanar!");
-        glPopMatrix();
-        glEnable(GL_DEPTH_TEST);
+        // And this one too
+        if(type == DRAWING_WORKPLANE) {
+            glDisable(GL_DEPTH_TEST);
+            glxColor3d(1, 0, 0);
+            glPushMatrix();
+                glxTranslatev(polyError.notCoplanarAt);
+                glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
+                glxWriteText("points not all coplanar!");
+            glPopMatrix();
+            glEnable(GL_DEPTH_TEST);
+        }
     } else {
         glxColor4d(0, 0.1, 0.1, 0.5);
         glxDepthRangeOffset(1);

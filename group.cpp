@@ -32,12 +32,12 @@ void Group::MenuGroup(int id) {
     switch(id) {
         case GraphicsWindow::MNU_GROUP_3D:
             g.type = DRAWING_3D;
-            g.name.strcpy("draw-in-3d");
+            g.name.strcpy("sketch-in-3d");
             break;
 
         case GraphicsWindow::MNU_GROUP_WRKPL:
             g.type = DRAWING_WORKPLANE;
-            g.name.strcpy("draw-in-plane");
+            g.name.strcpy("sketch-in-plane");
             if(gs.points == 1 && gs.n == 1) {
                 g.subtype = WORKPLANE_BY_POINT_ORTHO;
 

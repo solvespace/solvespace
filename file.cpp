@@ -13,7 +13,7 @@ hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
     g.predef.q = Quaternion::From(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
     g.predef.origin = hr.entity(1);
-    g.name.strcpy("draw-in-plane");
+    g.name.strcpy("sketch-in-plane");
     group.AddAndAssignId(&g);
     SS.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
     return g.h;

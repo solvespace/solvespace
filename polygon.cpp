@@ -105,6 +105,7 @@ bool SEdgeList::AssembleContour(Vector first, Vector last,
 bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
     dest->Clear();
 
+    bool allClosed = true;
     for(;;) {
         Vector first, last;
         int i;
@@ -117,14 +118,15 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
             }
         }
         if(i >= l.n) {
-            return true;
+            return allClosed;
         }
 
         // Create a new empty contour in our polygon, and finish assembling
         // into that contour.
         dest->AddEmptyContour();
         if(!AssembleContour(first, last, &(dest->l.elem[dest->l.n-1]), errorAt))
-            return false;
+            allClosed = false;
+        // But continue assembling, even if some of the contours are open
     }
 }
 
