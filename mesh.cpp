@@ -619,7 +619,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, bool emphasized) {
             FindEdgeOn(a, b, &n, &nOther, tr->meta, cnt++);
             if(n != 1) {
                 if(!emphasized) {
-                    sel->AddEdge(a, b);
+                    if(n == 0) sel->AddEdge(a, b);
                 } else {
                     dbp("hanging: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
                         n, CO(a), CO(b));

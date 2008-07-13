@@ -791,8 +791,13 @@ void GraphicsWindow::GroupSelection(void) {
             switch(e->type) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
+                case Entity::CUBIC:         (gs.cubics)++; break;
 
                 case Entity::ARC_OF_CIRCLE:
+                    (gs.circlesOrArcs)++;
+                    (gs.arcs)++;
+                    break;
+
                 case Entity::CIRCLE:        (gs.circlesOrArcs)++; break;
             }
         }

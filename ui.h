@@ -316,6 +316,8 @@ public:
         int         faces;
         int         lineSegments;
         int         circlesOrArcs;
+        int         arcs;
+        int         cubics;
         int         anyNormals;
         int         vectors;
         int         constraints;

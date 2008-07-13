@@ -31,6 +31,8 @@ char *Constraint::DescriptionString(void) {
         case SAME_ORIENTATION:  s = "same-orientation"; break;
         case ANGLE:             s = "angle"; break;
         case PARALLEL:          s = "parallel"; break;
+        case ARC_LINE_TANGENT:  s = "arc-line-tangent"; break;
+        case CUBIC_LINE_TANGENT:s = "cubic-line-tangent"; break;
         case PERPENDICULAR:     s = "perpendicular"; break;
         case EQUAL_RADIUS:      s = "eq-radius"; break;
         case COMMENT:           s = "comment"; break;
@@ -378,7 +380,7 @@ void Constraint::MenuConstrain(int id) {
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SS.GetConstraint(gs.constraint[0]);
                 if(c->type == ANGLE) {
-                    c->otherAngle = !(c->otherAngle);
+                    c->other = !(c->other);
                     c->ModifyToSatisfy();
                     break;
                 }
@@ -405,7 +407,7 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
                 c.valA = 0;
-                c.otherAngle = true;
+                c.other = true;
             } else {
                 Error("Bad selection for angle constraint.");
                 return;
@@ -419,8 +421,56 @@ void Constraint::MenuConstrain(int id) {
                 c.type = PARALLEL;
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
+            } else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
+                Entity *line = SS.GetEntity(gs.entity[0]);
+                Entity *arc  = SS.GetEntity(gs.entity[1]);
+                if(line->type == Entity::ARC_OF_CIRCLE) {
+                    SWAP(Entity *, line, arc);
+                }
+                Vector l0 = SS.GetEntity(line->point[0])->PointGetNum(),
+                       l1 = SS.GetEntity(line->point[1])->PointGetNum();
+                Vector a1 = SS.GetEntity(arc->point[1])->PointGetNum(),
+                       a2 = SS.GetEntity(arc->point[2])->PointGetNum();
+
+                if(l0.Equals(a1) || l1.Equals(a1)) {
+                    c.other = false;
+                } else if(l0.Equals(a2) || l1.Equals(a2)) {
+                    c.other = true;
+                } else {
+                    Error("The tangent arc and line segment must share an "
+                          "endpoint. Constrain them with Constrain -> "
+                          "On Point before constraining tangent.");
+                    return;
+                }
+                c.type = ARC_LINE_TANGENT;
+                c.entityA = arc->h;
+                c.entityB = line->h;
+            } else if(gs.lineSegments == 1 && gs.cubics == 1 && gs.n == 2) {
+                Entity *line  = SS.GetEntity(gs.entity[0]);
+                Entity *cubic = SS.GetEntity(gs.entity[1]);
+                if(line->type == Entity::CUBIC) {
+                    SWAP(Entity *, line, cubic);
+                }
+                Vector l0 = SS.GetEntity(line->point[0])->PointGetNum(),
+                       l1 = SS.GetEntity(line->point[1])->PointGetNum();
+                Vector a0 = SS.GetEntity(cubic->point[0])->PointGetNum(),
+                       a3 = SS.GetEntity(cubic->point[3])->PointGetNum();
+
+                if(l0.Equals(a0) || l1.Equals(a0)) {
+                    c.other = false;
+                } else if(l0.Equals(a3) || l1.Equals(a3)) {
+                    c.other = true;
+                } else {
+                    Error("The tangent cubic and line segment must share an "
+                          "endpoint. Constrain them with Constrain -> "
+                          "On Point before constraining tangent.");
+                    return;
+                }
+                c.type = CUBIC_LINE_TANGENT;
+                c.entityA = cubic->h;
+                c.entityB = line->h;
             } else {
-                Error("Bad selection for parallel constraint.");
+                Error("Bad selection for parallel / tangent constraint.");
                 return;
             }
             AddConstraint(&c);
@@ -563,7 +613,7 @@ void Constraint::ModifyToSatisfy(void) {
     if(type == ANGLE) {
         Vector a = SS.GetEntity(entityA)->VectorGetNum();
         Vector b = SS.GetEntity(entityB)->VectorGetNum();
-        if(otherAngle) a = a.ScaledBy(-1);
+        if(other) a = a.ScaledBy(-1);
         if(workplane.v != Entity::FREE_IN_3D.v) {
             a = a.ProjectVectorInto(workplane);
             b = b.ProjectVectorInto(workplane);
@@ -961,7 +1011,7 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             Entity *b = SS.GetEntity(entityB);
             ExprVector ae = a->VectorGetExprs();
             ExprVector be = b->VectorGetExprs();
-            if(otherAngle) ae = ae.ScaledBy(Expr::From(-1));
+            if(other) ae = ae.ScaledBy(Expr::From(-1));
             Expr *c;
             if(workplane.v == Entity::FREE_IN_3D.v) {
                 Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
@@ -988,6 +1038,45 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
                 // The dot product (and therefore the direction cosine)
                 // is equal to zero, perpendicular.
                 AddEq(l, c, 0);
+            }
+            break;
+        }
+
+        case ARC_LINE_TANGENT: {
+            Entity *arc  = SS.GetEntity(entityA);
+            Entity *line = SS.GetEntity(entityB);
+
+            ExprVector ac = SS.GetEntity(arc->point[0])->PointGetExprs();
+            ExprVector ap = 
+                SS.GetEntity(arc->point[other ? 2 : 1])->PointGetExprs();
+
+            ExprVector ld = line->VectorGetExprs();
+
+            // The line is perpendicular to the radius
+            AddEq(l, ld.Dot(ac.Minus(ap)), 0);
+            break;
+        }
+
+        case CUBIC_LINE_TANGENT: {
+            Entity *cubic = SS.GetEntity(entityA);
+            Entity *line  = SS.GetEntity(entityB);
+            
+            ExprVector endpoint =
+                SS.GetEntity(cubic->point[other ? 3 : 0])->PointGetExprs();
+            ExprVector ctrlpoint = 
+                SS.GetEntity(cubic->point[other ? 2 : 1])->PointGetExprs();
+            
+            ExprVector a = endpoint.Minus(ctrlpoint);
+
+            ExprVector b = line->VectorGetExprs();
+
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                AddEq(l, VectorsParallel(0, a, b), 0);
+                AddEq(l, VectorsParallel(1, a, b), 1);
+            } else {
+                Entity *w = SS.GetEntity(workplane);
+                ExprVector wn = w->Normal()->NormalExprsN();
+                AddEq(l, (a.Cross(b)).Dot(wn), 0);
             }
             break;
         }

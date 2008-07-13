@@ -305,7 +305,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector b0 = b->VectorGetRefPoint();
             Vector da = a->VectorGetNum();
             Vector db = b->VectorGetNum();
-            if(otherAngle) da = da.ScaledBy(-1);
+            if(other) da = da.ScaledBy(-1);
 
             if(workplane.v != Entity::FREE_IN_3D.v) {
                 a0 = a0.ProjectInto(workplane);
@@ -407,6 +407,55 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 Vector m = s.Plus(v.ScaledBy(0.5));
                 LineDrawOrGetDistance(m, m.Plus(u));
+            }
+            break;
+        }
+
+        case CUBIC_LINE_TANGENT:
+        case ARC_LINE_TANGENT: {
+            Vector textAt, u, v;
+
+            if(type == ARC_LINE_TANGENT) {
+                Entity *arc = SS.GetEntity(entityA);
+                Entity *norm = SS.GetEntity(arc->normal);
+                Vector c = SS.GetEntity(arc->point[0])->PointGetNum();
+                Vector p = 
+                    SS.GetEntity(arc->point[other ? 2 : 1])->PointGetNum();
+                Vector r = p.Minus(c);
+                textAt = p.Plus(r.WithMagnitude(14/SS.GW.scale));
+                u = norm->NormalU();
+                v = norm->NormalV();
+            } else {
+                Vector n;
+                if(workplane.v == Entity::FREE_IN_3D.v) {
+                    u = gr;
+                    v = gu;
+                    n = gn;
+                } else {
+                    Entity *wn = SS.GetEntity(workplane)->Normal();
+                    u = wn->NormalU();
+                    v = wn->NormalV();
+                    n = wn->NormalN();
+                }
+
+                Entity *cubic = SS.GetEntity(entityA);
+                Vector p =
+                    SS.GetEntity(cubic->point[other ? 3 : 0])->PointGetNum();
+                Vector dir = SS.GetEntity(entityB)->VectorGetNum();
+                Vector out = n.Cross(dir);
+                textAt = p.Plus(out.WithMagnitude(14/SS.GW.scale));
+            }
+
+            if(dogd.drawing) {
+                glPushMatrix();
+                    glxTranslatev(textAt);
+                    glxOntoWorkplane(u, v);
+                    glxWriteTextRefCenter("T");
+                glPopMatrix();
+            } else {
+                dogd.refp = textAt;
+                Point2d ref = SS.GW.ProjectPoint(dogd.refp);
+                dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
             }
             break;
         }
