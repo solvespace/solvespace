@@ -101,6 +101,7 @@ DWORD CnfThawDWORD(DWORD v, char *name);
 float CnfThawFloat(float v, char *name);
 
 void *AllocTemporary(int n);
+void FreeTemporary(void *p);
 void FreeAllTemporary(void);
 void *MemRealloc(void *p, int n);
 void *MemAlloc(int n);

@@ -120,6 +120,9 @@ void *AllocTemporary(int n)
     if(!v) oops();
     return v;
 }
+void FreeTemporary(void *p) {
+    HeapFree(Temp, HEAP_NO_SERIALIZE, p);
+}
 void FreeAllTemporary(void)
 {
     if(Temp) HeapDestroy(Temp);

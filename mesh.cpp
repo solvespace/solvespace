@@ -51,15 +51,14 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 }
 
 void SMesh::Simplify(int start) {
-#define MAX_TRIANGLES 2000
-    if(l.n - start > MAX_TRIANGLES) oops();
+    int maxTriangles = (l.n - start) + 10;
 
     STriMeta meta = l.elem[start].meta;
 
-    STriangle tout[MAX_TRIANGLES];
+    STriangle *tout = (STriangle *)AllocTemporary(maxTriangles*sizeof(*tout));
     int toutc = 0;
 
-    Vector n, conv[MAX_TRIANGLES*3];
+    Vector n, *conv = (Vector *)AllocTemporary(maxTriangles*3*sizeof(*conv));
     int convc = 0;
 
     int start0 = start;
@@ -181,6 +180,8 @@ void SMesh::Simplify(int start) {
     for(i = 0; i < toutc; i++) {
         AddTriangle(&(tout[i]));
     }
+    FreeTemporary(tout);
+    FreeTemporary(conv);
 }
 
 void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
