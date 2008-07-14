@@ -204,6 +204,8 @@ void TextWindow::Show(void) {
         ShowHeader(false);
         Printf(false, "");
         Printf(false, "%s", SS.GW.pending.description);
+        Printf(true, "%Fl%f%Ll(cancel operation)%E",
+            &TextWindow::ScreenUnselectAll);
     } else if(gs.n > 0) {
         if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(false);
