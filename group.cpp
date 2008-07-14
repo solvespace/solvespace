@@ -67,7 +67,12 @@ void Group::MenuGroup(int id) {
                 if(SS.GW.projRight.Dot(ut) < 0) g.predef.negateU = true;
                 if(SS.GW.projUp.   Dot(vt) < 0) g.predef.negateV = true;
             } else {
-                Error("Bad selection for new drawing in workplane.");
+                Error("Bad selection for new sketch in workplane. This "
+                      "group can be created with:\r\n\r\n"
+                      "    * a point (orthogonal to coordinate axes, "
+                             "through the point)\r\n"
+                      "    * a point and two line segments (parallel to the "
+                             "lines, through the point)\r\n");
                 return;
             }
             break;
@@ -89,7 +94,12 @@ void Group::MenuGroup(int id) {
                 g.predef.entityB = gs.entity[0];
                 // since a line segment is a vector
             } else {
-                Error("Bad selection for new lathe group.");
+                Error("Bad selection for new lathe group. This group can "
+                      "be created with:\r\n\r\n"
+                      "    * a point and a line segment or normal "
+                               "(revolved about an axis parallel to line / "
+                               "normal, through point)\r\n"
+                      "    * a line segment (revolved about line segment)\r\n");
                 return;
             }
             g.type = LATHE;
@@ -134,7 +144,10 @@ void Group::MenuGroup(int id) {
                 g.predef.origin = gs.point[0];
                 g.predef.entityB = gs.entity[0];
             } else {
-                Error("Bad selection for helical sweep.");
+                Error("Bad selection for helical sweep. This group can "
+                      "be created with:\r\n\r\n"
+                      "    * a line segment and a point (line segment "
+                              "is axis of helix, point lies on helix)\r\n");
                 return;
             }
             g.type = HELICAL_SWEEP;
@@ -157,7 +170,13 @@ void Group::MenuGroup(int id) {
                 g.predef.origin = gs.point[0];
                 g.predef.entityB = gs.vector[0];
             } else {
-                Error("Bad selection for new rotation.");
+                Error("Bad selection for new rotation. This group can "
+                      "be created with:\r\n\r\n"
+                      "    * a point, while locked in workplane (rotate "
+                            "in plane, about that point)\r\n"
+                      "    * a point and a line or a normal (rotate about "
+                            "an axis through the point, and parallel to "
+                            "line / normal)\r\n");
                 return;
             }
             g.type = ROTATE;
