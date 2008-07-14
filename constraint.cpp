@@ -55,7 +55,9 @@ void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     SS.later.generateAll = true;
 }
 
-void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
+void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
+                                     hEntity entityA, hEntity entityB,
+                                     bool other)
 {
     Constraint c;
     memset(&c, 0, sizeof(c));
@@ -65,11 +67,16 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA)
     c.ptA = ptA;
     c.ptB = ptB;
     c.entityA = entityA;
+    c.entityB = entityB;
+    c.other = other;
     AddConstraint(&c, false);
 }
-
+void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA){
+    Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false);
+}
 void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
-    Constrain(POINTS_COINCIDENT, ptA, ptB, Entity::NO_ENTITY);
+    Constrain(POINTS_COINCIDENT, ptA, ptB,
+        Entity::NO_ENTITY, Entity::NO_ENTITY, false);
 }
 
 void Constraint::MenuConstrain(int id) {

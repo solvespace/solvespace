@@ -1,6 +1,5 @@
 
 get rid of the oops() calls in the mesh codes
-some kind of rounding / chamfer
 auto-generate circles and faces when lathing
 copy the section geometry to other end when sweeping
 cylindrical faces

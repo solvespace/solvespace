@@ -535,6 +535,9 @@ public:
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
     static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
+    static void Constrain(int type, hEntity ptA, hEntity ptB,
+                                    hEntity entityA, hEntity entityB,
+                                    bool other);
 };
 
 class hEquation {
