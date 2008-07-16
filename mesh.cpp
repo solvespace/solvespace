@@ -594,7 +594,9 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
             {
                 (*n)++;
                 if(tr->meta.face != m.face) {
-                    if(tr->meta.face != 0 && m.face != 0) {
+                    if(tr->meta.color == m.color &&
+                       tr->meta.face != 0 && m.face != 0)
+                    {
                         hEntity hf0 = { tr->meta.face },
                                 hf1 = { m.face };
                         Entity *f0 = SS.GetEntity(hf0),
