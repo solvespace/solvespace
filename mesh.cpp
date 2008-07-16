@@ -593,7 +593,28 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
                (a.EqualsExactly(tr->a) && b.EqualsExactly(tr->c)))
             {
                 (*n)++;
-                if(tr->meta.face != m.face) (*nOther)++;
+                if(tr->meta.face != m.face) {
+                    if(tr->meta.face != 0 && m.face != 0) {
+                        hEntity hf0 = { tr->meta.face },
+                                hf1 = { m.face };
+                        Entity *f0 = SS.GetEntity(hf0),
+                               *f1 = SS.GetEntity(hf1);
+
+                        Vector n0 = f0->FaceGetNormalNum().WithMagnitude(1),
+                               n1 = f1->FaceGetNormalNum().WithMagnitude(1);
+
+                        if(n0.Equals(n1) || n0.Equals(n1.ScaledBy(-1))) {
+                            // faces are coincident, skip
+                            // (If the planes are parallel, and the edge
+                            // lies in both planes, then they're also
+                            // coincident.)
+                        } else {
+                            (*nOther)++;
+                        }
+                    } else {
+                        (*nOther)++;
+                    }
+                }
             }
 
             tr->tag = cnt;

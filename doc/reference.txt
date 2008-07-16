@@ -1,0 +1,553 @@
+
+<h2>General Navigation</h2>
+
+    <h3>Model View</h3>
+
+        To pan the view, center-drag with the mouse. (The center button
+        is typically actuated by pressing on the scroll wheel.)
+
+        To rotate the view, right-drag with the mouse. This will rotate
+        the part about a horizontal or vertical axis. To rotate the part
+        within the plane of the screen, Ctrl+right-drag with the mouse.
+
+        To zoom in or out, rotate the scroll wheel. It is also possible
+        to zoom in or out by using the View menu, or the associated
+        keyboard shortcuts (+ and -).
+
+        It is also possible to pan by Shift+right-dragging, or to rotate
+        by Shift+center-dragging. This makes MechSketch usable on certain
+        laptop keyboards that don't provide a center mouse button.
+
+        If a workplane is active, then choose Sketch -> In Workplane (or
+        press W) to align the view to the workplane. After doing this,
+        the plane of the screen is coincident with the workplane.
+
+    <h3>Dimension Entry and Units</h3>
+
+        Dimensions may be displayed in either millimeters or inches.
+        Millimeter dimensions are always displayed with two digits
+        after the decimal point (45.23), and inch dimensions are always
+        displayed with three (1.781).
+
+        Choose View -> Dimensions in ... to change the current display
+        units. This does not change the model; if the user changes from
+        inches to millimeters, then a dimension that was entered as 1.0
+        is now displayed as 25.40.
+
+        All dimensions are entered in the current display units. In most
+        places where a dimension is expected, it's possible to enter an
+        arithmetic expression ("4*20 + 7") instead of a single number.
+
+    <h3>Show / Hide Entities</h3>
+
+        As the sketch becomes more complex, it may be useful to hide
+        unnecessary information. MechSketch provides several different
+        controls for this.
+
+        In the second and third line of the text window, links are
+        provided to hide and show different types of entity. These are:
+
+               wrkpls  -- When a new "Sketch In New Workplane" group is
+                          created, an associated workplane is created
+                          automatically. If wrkpls is hidden, then that
+                          workplane is visible only when its associated
+                          group is active. If wrkpls is shown, then the
+                          workplane is always visible.
+
+               normals -- By default, normals are drawn as blue-grey arrows,
+                          in the direction of the normal. These normals may
+                          be hovered and selected with the mouse, for
+                          example in order to constrain them. This link
+                          may be used to hide them.
+
+               points  -- By default, points are drawn as green squares.
+                          These points may be hovered and selected with the
+                          mouse, for example in order to constrain them.
+                          This link may be used to hide them. If points are
+                          hidden, then they will still appear when the mouse
+                          hovers over them, and may still be selected.
+
+            constraints - When a constraint is created, a graphical
+                          representation of that constraint is displayed
+                          in purple. The constraints in a group are
+                          visible only when that group is active. To hide
+                          them even then, use this link.
+
+               shaded --  The 3d part is displayed as an opaque solid,
+                          with lighting effects to give the impression of
+                          depth. This link may be used to disable that
+                          view.
+
+               faces  --  Some surfaces on the 3d model may be selected.
+                          For example, the user can select a plane face
+                          of the part, and constrain a point to lie on
+                          that plane. If faces are shown, then the faces
+                          will appear highlighted when the mouse hovers
+                          over them. The user can click the mouse to
+                          select the face, as they would for any other
+                          entity.
+
+                          As a convenience, faces are automatically
+                          hidden when a new sketch group is created,
+                          and automatically shown when a new extrusion is
+                          created. If this behavior is not what's desired,
+                          then the faces can be shown or hidden manually
+                          with this link.
+
+                 mesh --  The 3d model of the part consists of many
+                          triangles; for example, a flat polygon with
+                          n sides is broken down into n - 2 triangles.
+                          Use this link to show the triangles on the
+                          model. In general, this is useful only for
+                          debugging, or to see how fine the mesh is
+                          before exporting it.
+
+           hidden-lines - With the part in a given orientation, some of
+                          the lines in the part will be invisible,
+                          because an opaque solid is between the line and
+                          the "camera". To show those lines anyways, as
+                          if the part were transparent, use this link.
+                          This may be useful when creating a sketch that
+                          lies within the volume of the part.
+
+        In addition to the above options, it is possible to hide and show
+        entire groups. If a group is hidden, then all of the entities
+        (line segments, circles, arcs, points, etc.) from that group
+        are hidden.
+
+        To hide a group, go to the home screen in the text window, by
+        pressing Esc or choosing the link at the top left. A list of
+        groups is displayed, along with their visibility. If a group is
+        visible, then the "show" column contains the word "yes" in green.
+        Click the "yes"; it now appears as a greyed "no", and the group
+        is hidden.
+
+        The show / hide status of groups is saved in the part file. If
+        a part is imported into an assembly, then entities that were
+        visible in the part file will be visible in the assembly, and
+        entities that were hidden will be hidden.
+
+    <h3>Active Workplane</h3>
+
+        MechSketch represents all geometry in 3d; it's possible to draw
+        line segments anywhere, not just in some plane.
+
+        This freedom is not always useful, so MechSketch also makes it
+        possible to draw in a plane. If a workplane is active, then all
+        entities that are drawn will be constrained to lie that plane.
+
+        When MechSketch starts with a new empty file, a workplane parallel
+        to the XY plane is active.
+
+    <h3>Active Group</h3>
+
+        Any groups that go after the active group will be hidden
+
+
+
+<h2>Sketch Entities</h2>
+
+    <h3>Datum Point</h3>
+
+    <h3>Workplane</h3>
+
+    <h3>Line Segment</h3>
+
+    <h3>Rectangle</h3>
+
+        A rectangle consists of two vertical line segments, and two
+        horizontal line segments, arranged to form a closed curve.
+        Initially, the rectangle is specified with the mouse by two
+        diagonally opposite corners. The line segments (and points)
+        in the rectangle may be constrained in the same way as ordinary
+        line segments.
+
+        It would be possible to draw the same figure by hand, by drawing
+        four line segments and inserting the appropriate constraints. The
+        rectangle command is a faster way to draw the exact same thing.
+
+        A workplane must be active when the rectangle is drawn, since
+        the workplane defines the meaning of "horizontal" and "vertical".
+
+    <h3>Circle</h3>
+
+    <h3>Arc of a Circle</h3>
+
+        Tangent arcs may be created automatically. To do so, first select
+        a point where two line segments join. Then choose Sketch ->
+        Arc of a Circle; the arc will be created, and automatically
+        constrained tangent to the two line segments.
+
+        The initial line segments will become construction lines, and
+        two new lines will be created, that join up to the arc.
+
+        The arc's diameter may then be constrained in the usual way, with
+        Distance / Diameter or Equal Length / Radius constraints. This
+        is a simple way to round a sharp corner.
+
+    <h3>Bezier Cubic Segment</h3>
+
+    <h3>Text in a TrueType Font</h3>
+
+
+<h2>Constraints</h2>
+    
+    <h3>General</h3>
+
+    <h3>Reference Dimensions</h3>
+
+        By default, the dimension drives the geometry. If a line segment
+        is constrained to have a length of 20.00 mm, then the line
+        segment is modified until that length is accurate.
+
+        A reference dimension is the reverse: the geometry drives the
+        dimension. If a line segment has a reference dimension on its
+        length, then it's still possibly to freely change that length,
+        and the dimension displays whatever that length happens to be. A
+        reference dimension does not constrain the geometry.
+
+        To change a dimension into a reference dimension, choose
+        Constrain -> Toggle Reference Dimension. A reference dimension
+        is drawn with "REF" appended to the displayed length or angle.
+        Double-clicking a reference dimension does nothing; the dimension
+        is specified by the geometry, not the user.
+
+    <h3>Angle</h3>
+
+        When two lines intersect, four angles are formed. The
+        opposite angles are equal; to change which opposite angle is
+        displayed, drag the label, and the arc will follow. If the wrong
+        supplementary angle is displayed, then select the constraint
+        and choose Constrain -> Other Supplementary Angle.
+
+    <h3>Comment</h3>
+
+        A comment is a single line of text that appears on the drawing.
+        When the comment is created, it appears in the center of the
+        screen. To move the comment, drag it with the mouse. To change
+        the text, double-click it.
+
+        The comment has no effect on the geometry; it is only a
+        human-readable note.
+
+
+<h2>Groups</h2>
+
+    <h3>General</h3>
+
+        All groups have a name. When the group is created, a default name
+        (e.g., "g008-extrude") is assigned. The user may change this name;
+        to do so, go to the group's page in the text window, and choose
+        [rename].
+
+        Groups that create a solid (e.g. extrudes or sweeps) have a "MERGE
+        AS" option, which is displayed in the page in the text window.
+        The group can be merged as union, which adds material to the
+        model, or as difference, which cuts material away.
+
+        The group's page in the text window also includes a list of all
+        requests, and of all constraints. To identify a constraint or a
+        request, hover the mouse over its name; it will appear highlighted
+        in the graphics window. To select it, click on the link in the
+        text window. This is equivalent to hovering over and clicking
+        the actual object in the graphics window.
+
+
+    <h3>Sketch in 3d</h3>
+
+    <h3>Sketch in New Workplane</h3>
+
+        A point and two line segments
+
+            The new workplane has its origin at the specified point. The
+            workplane is parallel to the two lines. If the point and
+            two are two edges on a plane face of the part, and a vertex
+            on that plane face, then the resulting workplane will be
+            coincident with that face (i.e., the user will be drawing
+            on that face).
+
+        A point
+
+            The new workplane has its origin at the specified point. The
+            workplane is orthogonal to the base coordinate system; for
+            example, its horizontal and vertical axes might lie in the
+            +y and -z directions, or +x and -z, or any other combination.
+
+            The orientation of the workplane is inferred from the
+            position of the view when the workplane is created; the
+            view is snapped to the nearest orthographic view, and the
+            workplane is aligned to that.
+
+            If a part consists mostly of ninety degree angles, then this
+            is a quick way to create workplanes.
+
+    <h3>Step Translating</h3>
+
+    <h3>Step Rotating</h3>
+
+    <h3>Extrude</h3>
+
+        If a workplane is active when the group is created, then the
+        extrude path is automatically constrained to be normal to that
+        workplane. This means, for example, that a rectangle is extruded
+        to form a rectangular prism. The extrusion has one degree of
+        freedom, so a single distance constraint will fully constrain it.
+        This is usually the desired behaviour.
+
+        If no workplane is active when the group is created, then the
+        extrude path may be in any direction. This means that a rectangle
+        could be extruded to form a parallelepiped. The extrusion has
+        three degrees of freedom. This is not typically useful.
+
+    <h3>Lathe</h3>
+
+    <h3>Sweep</h3>
+
+    <h3>Helical Sweep</h3>
+
+    <h3>Import / Assemble</h3>
+
+        In MechSketch, there is no distinction between "part" files and
+        "assembly" files; it's always possible to import one file into
+        another. An "assembly" is just a part file that imports one or
+        more other parts.
+
+        The imported file is not editable within the assembly. It is
+        imported exactly as it appears in the source file, but with an
+        arbitrary position and orientation. This means that the imported
+        part has six degrees of freedom.
+
+        To move (translate) the part, click any point on the imported
+        part and drag it. To rotate the part, click any point and Shift+
+        or Ctrl+drag it. The position and orientation of the part may be
+        fixed with constraints, in the same way that any other geometry
+        is constrained.
+
+        The Same Orientation constraint is particularly useful when
+        importing parts. This one constraint completely determines the
+        imported part's rotation. (Select a normal on the imported part,
+        select some other normal to constrain it against, and choose
+        Constrain -> Same Orientation).
+
+        Import groups have a special "MERGE AS" option: in addition
+        to the usual "union" and "difference", they have "assemble".
+        The "assemble" option is identical to "union", except that
+        it displays a warning if the components intersect with each
+        other. This is useful when checking to see if the assembled parts
+        interfere. If the parts interfere, then a warning is displayed
+        underneath the "MERGE AS" line in the group's text window page.
+        The interfering surfaces are also highlighted in the graphics
+        window, in red with black stripes.
+
+        When an assembly file is loaded, MechSketch loads all of the
+        imported files as well. If the imported files are not available,
+        then an error occurs. When transfering an assembly file to another
+        computer, it's necessary to transfer all of the imported files
+        as well.
+
+
+<h2>Export</h2>
+
+    <h3>Bitmap Image</h3>
+
+        This option will export a bitmap image of whatever is displayed
+        on-screen. It is equivalent to taking a screenshot. This option
+        is useful for producing human-readable drawings.
+
+        Choose File -> Export Image. The file is exported as a PNG,
+        which most graphics software can open.
+
+    <h3>2d Vector (DXF)</h3>
+
+        This option will generate a 2d vector file that represents a
+        specified plane in the part. Most 2d CAM software, including the
+        software that ships with laser or waterjet cutters, will accept
+        a DXF file.
+
+        Before exporting a DXF, it is necessary to specify which plane of
+        the part should be exported. This may be specified by:
+
+        a face:
+
+            Any surfaces coplanar with that plane face will appear in the
+            file. The faces must be shown before they can be selected;
+            click the link in the third line of the text window.
+
+        a point, and two lines or vectors:
+
+            The export plane is through the point, and parallel to
+            the two lines or vectors. If the two lines or vectors are
+            perpendicular, then they will become the x and y axis in the
+            DXF file. Whichever line is more horizontal in the current
+            view becomes the x axis, and the other one becomes the y.
+
+            This means that it's possible to rotate the exported DXF
+            through ninety degrees by rotating the view through ninety
+            degrees (in the plane of that face). Similarly, by rotating
+            the part around to look at the face from behind instead of
+            in front, the exported DXF is mirrored.
+
+        the active workplane
+
+            If a workplane is active, and nothing is selected when the
+            export command is chosen, then MechSketch will export any
+            surfaces that are coplanar with the active workplane. The
+            workplane's horizontal and vertical axes become the x and
+            y axis in the DXF file.
+
+        The units of the DXF file are determined by the export scale
+        factor, which may be specified in the configuration screen.
+
+    <h3>3d Mesh (STL)</h3>
+
+        This option will generate a 3d triangle mesh that represents
+        the entire part. Most 3d CAM software, including the software
+        for most 3d printers, will accept an STL file.
+
+        The mesh from the active group will be exported; this is the
+        same mesh that is displayed on screen. The coordinate system
+        for the STL file is the same coordinate system in which the part
+        is drawn. To use a different coordinate system (e.g., to rotate
+        or translate the part), create an assembly with the part in the
+        desired position, and then export an STL file of the assembly.
+
+        The units of the STL file are determined by the export scale
+        factor, which may be specified in the configuration screen.
+
+<h2>Configuration</h2>
+
+    <h3>Material Colors</h3>
+
+        In the text window screen for certain groups (extrude, lathe,
+        sweep), a palette of eight colors is displayed. This palette
+        allows the user to choose the color of any surfaces generated
+        by that group.
+
+        These eight colors are specified here, by their components.
+        The components go from 0 to 1.0. The color "0, 0, 0" is black,
+        and "1, 1, 1" is white. The components are specified in the order
+        "red, green, blue".
+
+        A change to the palette colors does not change the color of any
+        existing surfaces in the sketch, even if the color of an existing
+        surface no longer appears in the palette.
+
+    <h3>Light Directions</h3>
+
+        The 3d part is displayed with simulated lighting, to produce
+        the impression of depth. The directions and intensities of these
+        lights may be modified according to user preference.
+
+        The lights do not have a position; they have only a direction,
+        as if they were coming from very far away. This direction is
+        specified in 3 components, "right, top, front". The light with
+        direction "1, 0, 0" is coming from the right of the screen.
+        The light with direction "-1, 0, 0" is coming from the left of
+        the screen. The light with direction "0, 0, 1" is coming from
+        in front of the screen.
+
+        The intensity must lie between 0 and 1. A light with intensity
+        0 has no effect, and 1 is full brightness.
+
+        Two lights are available. If only one is desired, then the second
+        may be disabled by setting its intensity to zero. When the part
+        is rotated or translated, the lights do not move.
+
+    <h3>Chord Tolerance</h3>
+
+        MechSketch does not represent curved edges or surfaces exactly.
+        Any curves are broken down into piecewise linear segments,
+        and surfaces are represented as triangles.
+
+        This introduces some error. The chord tolerance determines how
+        much error is introduced; it is the maximum distance between
+        the exact curve and the line segments that approximate it. If
+        the chord tolerance is decreased, then more line segments will
+        be generated, to produce a better approximation.
+
+        The chord tolerance is specified in units of screen pixels. This
+        means that when the user zooms in on the model, a better
+        approximation is produced.
+
+        The same tolerance is used for the mesh that's displayed on
+        screen, and for the mesh that is used to export to a file. It
+        may be helpful to use a large chord tolerance (2-5 pixels) while
+        drawing, for fast response, and then temporarily specify a small
+        chord tolerance (~0.5 pixels) before exporting an STL or DXF file.
+
+    <h3>Perspective Factor</h3>
+
+        To display a 3d part on-screen, it must be projected into 2d. One
+        common choice is a parallel projection. In a parallel projection,
+        any two lines that are parallel in real life are also parallel
+        in the drawing. A parallel projection is also known as an
+        axonometric projection. Isometric and orthographic views are
+        examples of parallel projections.
+
+        Another way to transform the image into 2d is with a perspective
+        projection. In a perspective projection, objects closer to the
+        "camera" appear larger than objects that are farther away. This
+        means that some lines that are parallel in real life will not be
+        parallel in the drawing; they will converge at a vanishing point.
+
+        A perspective projection will often look more realistic, and
+        gives a better impression of depth. The disadvantage is that
+        the perspective distorts the image, and may cause confusion.
+
+        By default, MechSketch displays a parallel projection. To display
+        a perspective projection, set the perspective factor to something
+        other than zero. The distance from the "camera" to the model is
+        equal to one thousand pixels divided by the perspective factor.
+
+    <h3>Edge Color</h3>
+
+        The surfaces of the 3d part are shaded according to the specified
+        lighting. Different faces will catch the light at slightly
+        different angles, and will therefore appear slightly brighter
+        or darker. This permits the viewer to distinguish the boundary
+        between the faces.
+
+        Depending on the lighting, this may not provided very much
+        constrast. To make the edges of the part more visible, it's
+        possible to emphasize them with a solid-color line.
+
+        If the edge color is specified as "0,0,0", then no emphasized
+        edges will be drawn. If any other color is specified, then the
+        edges will be drawn in that color. The edge color is specified
+        in the same format as for the material color.
+
+    <h3>Export Scale Factor</h3>
+
+        Internally, MechSketch represents lengths in millimeters. Before
+        exporting geometry to an STL or DXF file, these lengths are
+        divided by the export scale factor. This scale factor determines
+        the units for the exported file.
+
+        If the scale factor is set equal to 1, then exported files are
+        in millimeter units. If the scale factor is set equal to 25.4,
+        then the exported files are in inch units, since 1 inch = 25.4 mm.
+
+        MechSketch works in a right-handed coordinate system. If the
+        scale factor is negative, then the exported file will appear in
+        a left-handed coordinate system (so that a right-handed screw
+        thread will become left-handed).
+
+<h2>Licensing</h2>
+
+    As downloaded, MechSketch does not include a license file. This means
+    that it cannot create files with more than seven groups. Larger files
+    may be opened, but not modified. This light version of MechSketch
+    is intended for evaluation, but non-commercial / personal use is
+    also permitted.
+
+    The licensed version of MechSketch can create files with an unlimited
+    number of groups.
+
+    When a license is purchased, a license file ("mechsketch.license")
+    will be sent via email. To activate the license, save this file
+    somewhere on your computer. In MechSketch, choose Help -> Load
+    License... A file dialog box will appear; select the license file.
+
+    No license server or dongle is required, and licenses do not expire.
+
+
