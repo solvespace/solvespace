@@ -26,6 +26,13 @@ void MakePathRelative(char *basep, char *pathp)
     if(!(base[com] && path[com])) return; // weird, prefix is entire string
     if(com == 0) return; // maybe on different drive letters?
 
+    // Align the common prefix to the nearest slash; otherwise would break
+    // on subdirectories or filenames that shared a prefix.
+    while(com >= 1 && base[com-1] != '/' && base[com-1] != '\\') {
+        com--;
+    }
+    if(com == 0) return;
+
     int sections = 0;
     int secLen = 0, secStart = 0;
     for(i = com; base[i]; i++) {
