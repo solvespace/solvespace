@@ -37,9 +37,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         // When the view is locked, permit only translation (pan).
         if(!(shiftDown || ctrlDown)) {
-            offset.x = orig.offset.x + dx*projRight.x + dy*projUp.x;
-            offset.y = orig.offset.y + dx*projRight.y + dy*projUp.y;
-            offset.z = orig.offset.z + dx*projRight.z + dy*projUp.z;
+            double s = 0.3*(PI/180)*scale; // degrees per pixel
+            projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
+            projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
+
+            NormalizeProjectionVectors();
         } else if(ctrlDown) {
             double theta = atan2(orig.mouse.y, orig.mouse.x);
             theta -= atan2(y, x);
@@ -50,11 +52,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
             NormalizeProjectionVectors();
         } else {
-            double s = 0.3*(PI/180)*scale; // degrees per pixel
-            projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
-            projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
-
-            NormalizeProjectionVectors();
+            offset.x = orig.offset.x + dx*projRight.x + dy*projUp.x;
+            offset.y = orig.offset.y + dx*projRight.y + dy*projUp.y;
+            offset.z = orig.offset.z + dx*projRight.z + dy*projUp.z;
         }
 
         orig.projRight = projRight;

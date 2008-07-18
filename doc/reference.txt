@@ -1,26 +1,48 @@
 
+This is a reference manual for MechSketch. This document is not intended
+for new users; to learn about this program, see the video tutorials.
+
 <h2>General Navigation</h2>
 
-    <h3>Model View</h3>
+    Two windows appear on the screen: a larger window that contains
+    graphics, and a smaller window that contains text. The graphics
+    window is used to draw the geometry, and to view the 3d model. The
+    text window provides information about the model, and may also be
+    used to modify settings and numerical parameters.
 
-        To pan the view, center-drag with the mouse. (The center button
-        is typically actuated by pressing on the scroll wheel.)
+    <h3>Graphics Window and Model View</h3>
 
-        To rotate the view, right-drag with the mouse. This will rotate
-        the part about a horizontal or vertical axis. To rotate the part
-        within the plane of the screen, Ctrl+right-drag with the mouse.
+        To pan the view, right-drag with the mouse.
 
-        To zoom in or out, rotate the scroll wheel. It is also possible
-        to zoom in or out by using the View menu, or the associated
-        keyboard shortcuts (+ and -).
+        To rotate the view, center-drag with the mouse. This turns the
+        part over, so that the surfaces that used to be hidden (because
+        they were facing backwards, away from the viewer) become visible.
 
-        It is also possible to pan by Shift+right-dragging, or to rotate
-        by Shift+center-dragging. This makes MechSketch usable on certain
-        laptop keyboards that don't provide a center mouse button.
+        To rotate the view within the plane of the monitor,
+        Ctrl+center-drag with the mouse.
+
+        It is also possible to pan by Shift+center-dragging, or to rotate
+        by Shift+right-dragging.
+
+        To zoom in or out, rotate the scroll wheel. It is also possible to
+        zoom by using the View menu, or the associated keyboard shortcuts
+        (+ and -).
+
+        To zoom to the extent of the part, choose View -> Zoom To
+        Fit. This adjusts the zoom level so that the part fits exactly
+        on the screen, and then pans to center the part. The rotation
+        of the part is not affected.
 
         If a workplane is active, then choose Sketch -> In Workplane (or
         press W) to align the view to the workplane. After doing this,
         the plane of the screen is coincident with the workplane.
+
+        The x, y, and z coordinate axes are always drawn at the bottom
+        left of the graphics window, in red, green, and blue. These axes
+        are live. They can be highlighted and selected with the mouse, in
+        the same way as any other normals. (This means that the coordinate
+        axes are always conveniently available on-screen, which is useful
+        e.g. when constraining a line parallel to the x-axis.)
 
     <h3>Dimension Entry and Units</h3>
 
@@ -38,14 +60,41 @@
         places where a dimension is expected, it's possible to enter an
         arithmetic expression ("4*20 + 7") instead of a single number.
 
+    <h3>Text Window</h3>
+
+        The text window appears as a floating palette window. It may
+        be shown or hidden by pressing Tab, or by choosing View ->
+        Show Text Window.
+
+        The text window works like a web browser. Any underlined text
+        is a link. To activate a link, click it with the mouse. The links
+        may be used to navigate to other pages in the text window. For
+        example, the "home" screen is a list of groups in the sketch:
+
+        <img src="/pics/ref-text-window.png" />
+
+        To navigate to a group's page, click on that group's name (e.g.,
+        "g002-sketch-in-plane". The links may also taken actions in the
+        sketch. For example, in the above screenshot, all of the groups
+        are shown. To hide a group, click on the word "yes" in the
+        "show" column.
+
+        As a convenience, the text window will sometimes automatically
+        navigate to a page that is likely to be relevant. For example,
+        when a new group is created, the text window displays that new
+        group's page. It's always possible to navigate to a different
+        page, by clicking the "home" link at the top left corner (or
+        pressing Esc), and following the links from there.
+
+
     <h3>Show / Hide Entities</h3>
 
         As the sketch becomes more complex, it may be useful to hide
         unnecessary information. MechSketch provides several different
-        controls for this.
+        ways to do this.
 
         In the second and third line of the text window, links are
-        provided to hide and show different types of entity. These are:
+        provided to hide and show different things. These are:
 
                wrkpls  -- When a new "Sketch In New Workplane" group is
                           created, an associated workplane is created
@@ -75,7 +124,7 @@
 
                shaded --  The 3d part is displayed as an opaque solid,
                           with lighting effects to give the impression of
-                          depth. This link may be used to disable that
+                          depth. This link may be used to hide that
                           view.
 
                faces  --  Some surfaces on the 3d model may be selected.
@@ -104,11 +153,11 @@
 
            hidden-lines - With the part in a given orientation, some of
                           the lines in the part will be invisible,
-                          because an opaque solid is between the line and
-                          the "camera". To show those lines anyways, as
-                          if the part were transparent, use this link.
-                          This may be useful when creating a sketch that
-                          lies within the volume of the part.
+                          because they are buried inside the solid part.
+                          To show those lines anyways, as if the part
+                          were transparent, use this link. This may be
+                          useful when drawing a sketch that lies within
+                          the volume of the part.
 
         In addition to the above options, it is possible to hide and show
         entire groups. If a group is hidden, then all of the entities
@@ -132,26 +181,112 @@
         MechSketch represents all geometry in 3d; it's possible to draw
         line segments anywhere, not just in some plane.
 
-        This freedom is not always useful, so MechSketch also makes it
-        possible to draw in a plane. If a workplane is active, then all
-        entities that are drawn will be constrained to lie that plane.
+        This freedom is not always useful, so MechSketch also makes
+        it possible to draw in a plane. If a workplane is active, then
+        all entities that are drawn will be forced to lie that plane.
+        The active workplane ("wrkpl") is indicated in the top line of
+        the text window, at the right.
 
         When MechSketch starts with a new empty file, a workplane parallel
-        to the XY plane is active.
+        to the XY plane is active. To deactivate the workplane, and draw
+        in 3d, choose Sketch -> Anywhere In 3d.
+
+        To activate a workplane, select it, and then choose Sketch ->
+        In Workplane. When a workplane is activated, the view is aligned
+        onto that workplane. (The workplane remains active until the
+        user chooses Sketch -> Anywhere In 3d, or a different workplane
+        is activated. If the user rotates the view, so that the view
+        is no longer aligned onto the workplane, then the workplane
+        remains active.)
+
+        In a "Sketch in New Workplane" group, the group's associated
+        workplane may be activated by choosing Sketch -> In Workplane;
+        there is no need to select it first.
 
     <h3>Active Group</h3>
 
-        Any groups that go after the active group will be hidden
+        When a new line, circle, or other curve is created, it will be
+        created in the active group.
 
+        Geometry from the active group is drawn in white; geometry from
+        earlier groups is drawn in brown. Later groups are hidden.
+
+        In the text window's home screen (press Escape, or choose the
+        link in the top left corner), the active group's line in the
+        list of groups has "yes" in the "actv" column. All other groups
+        (except g001-#references, which cannot be activated) have "no"
+        in that column. To activate an inactive group, click on the "no".
 
 
 <h2>Sketch Entities</h2>
 
+    <h3>Construction Geometry</h3>
+
+        In normal operation, the user draws line and curves in a
+        sketch. Those curves describe the geometry to be manufactured;
+        ultimately, the endmill or the laser or some other tool will
+        cut along those curves.
+
+        In some cases, it is useful to draw a line that should not appear
+        on the final part. For example, the user may wish to draw a center
+        line for a symmetric part; but that center line only exists as
+        a guide, and should not actually get exported with the CAM data.
+        Or the user may wish to draw the axis of revolution for a lathe
+        group. These lines are called construction lines.
+
+        To mark an entity as construction-only, choose Sketch -> Toggle
+        Construction. A construction entity will behave just like any
+        other entity, except that it is drawn in green, and does not
+        contribute to the geometry for export (or for extrusion or
+        lathing or sweeping).
+
     <h3>Datum Point</h3>
+
+        This entity is defined by a single point.
+
+        If a workplane is active when the datum point is created,
+        then that datum point will always lie in the workplane. If no
+        workplane is active, then the datum point will be free in 3d.
+        (This is the same behaviour as for all points, including e.g. the
+        endpoints of a line segment.)
+
+        Datum points are typically used as construction geometry. The user
+        might place datum points in order to simplify the dimensioning
+        of line segments or other entities.
 
     <h3>Workplane</h3>
 
+        This entity is specified by a point and a normal. The point
+        defines its origin, and the normal defines its orientation.
+
+        A workplane makes it possible to draw a section in 2d. If a
+        workplane is active, then any entities that are drawn must lie
+        in that workplane.
+
+        It's almost never necessary to create workplanes explicitly.
+        Instead, create a new Sketch in New Workplane group.
+
     <h3>Line Segment</h3>
+
+        This entity is specified by its two endpoints. If a workplane is
+        active, then the two endpoints will always lie in that workplane.
+
+        To create the line segment, choose Sketch -> Line Segment, and
+        then left-click one endpoint of the line. Then release the mouse
+        button; the other endpoint is now being dragged.
+
+        To create another line segment, that shares an endpoint with
+        the line segment that was just created, left-click again. This
+        is a fast way to draw closed polygons.
+
+        To stop drawing line segments, press Escape, or right- or
+        center-click the mouse. MechSketch will also stop drawing new
+        line segments if an automatic constraint is inserted. (For
+        example, draw a closed polygon by left-clicking continuously, and
+        then hovering over the starting point before left-clicking the
+        last time. The endpoint of the polyline will be constrained to
+        lie on the starting point, and since a constraint was inserted,
+        MechSketch will stop drawing.)
 
     <h3>Rectangle</h3>
 
@@ -171,7 +306,39 @@
 
     <h3>Circle</h3>
 
+        This entity is specified by its center point, by its diameter,
+        and by its normal.
+
+        To create the circle, choose Sketch -> Circle, and then left-click
+        the center. Then release the mouse button; the diameter of
+        the circle is now being dragged. Left-click again to place
+        the diameter.
+
+        If a workplane is active, then the center point must lie in
+        that workplane, and the circle's normal is parallel to the
+        workplane's normal (which means that the circle lies in the
+        plane of the workplane).
+
+        If no workplane is active, then the center point is free in space,
+        and the normal may be dragged (or constrained) to determine the
+        circle's orientation.
+
     <h3>Arc of a Circle</h3>
+
+        This entity is specified by its center point, the two endpoints,
+        and its normal.
+
+        To create the arc, choose Sketch -> Arc of a Circle, and then
+        left-click one of its endpoints. Then release the mouse button;
+        the other endpoint is now being dragged. The center is also being
+        dragged, in such a way as to form an exact semi-circle.
+
+        Left-click again to place the other endpoint, and then drag the
+        center to the desired position. The arc is drawn counter-clockwise
+        from the first point to the second.
+
+        The arc must be drawn in a workplane; it cannot be drawn in
+        free space.
 
         Tangent arcs may be created automatically. To do so, first select
         a point where two line segments join. Then choose Sketch ->
@@ -187,12 +354,60 @@
 
     <h3>Bezier Cubic Segment</h3>
 
+        This entity is specified by its four Bezier points: two endpoints,
+        and two (in general, off-curve) control points.
+
+        To create the Bezier cubic, choose Sketch -> Bezier Cubic
+        Segment. Then left-click one endpoint of the cubic segment.
+        Release the mouse button; the other endpoint of the cubic segment
+        is now being dragged.
+
+        The two control points are intially placed on the straight line
+        between the endpoints; this means that the cubic originally
+        appears as a straight line. Drag the control points to produce
+        the desired curve.
+
     <h3>Text in a TrueType Font</h3>
 
+        This entity is defined by two points, at the top left and bottom
+        left of the text. The distance between the points determines the
+        height of the text; the angle of the line between them determines
+        the orientation of the text, and their position determines the
+        text's position.
+
+        To create the text, choose Sketch -> Text in TrueType Font. Then
+        left-click the top left point of the text. The bottom right point
+        of the text is now being dragged; left-click again to place it.
+
+        To change the font, select the text entity. A list of installed
+        fonts appears in the text window; click the font name to select
+        it. To change the displayed text, select the text entity and
+        click the [change] link in the text window.
+        
 
 <h2>Constraints</h2>
     
     <h3>General</h3>
+
+        To create a constraint, first select the geometry to be
+        constrained. For example, when constraining the distance between
+        two points, first select those two points. Then choose the
+        appropriate constraint from the Constrain menu.
+
+        Depending on what is selected, the same menu item may generate
+        different constraints. For example, the Distance / Diameter menu
+        item will generate a diameter constraint if a circle is selected,
+        but a length constraint if a line segment is selected. If the
+        selected items do not correspond to an available constraint,
+        then MechSketch will display an error message, and a list of
+        available constraints.
+
+        Constraints are drawn in purple on the sketch. If a constraint
+        has a label associated with it (e.g. a distance or an angle),
+        then that label may be repositioned by dragging it with the
+        mouse. To modify the dimension, double-click the label; a text
+        box will appear on the screen, where the new dimension can be
+        entered. Then press enter.
 
     <h3>Reference Dimensions</h3>
 
@@ -202,23 +417,133 @@
 
         A reference dimension is the reverse: the geometry drives the
         dimension. If a line segment has a reference dimension on its
-        length, then it's still possibly to freely change that length,
+        length, then it's still possible to freely change that length,
         and the dimension displays whatever that length happens to be. A
         reference dimension does not constrain the geometry.
 
-        To change a dimension into a reference dimension, choose
-        Constrain -> Toggle Reference Dimension. A reference dimension
-        is drawn with "REF" appended to the displayed length or angle.
-        Double-clicking a reference dimension does nothing; the dimension
-        is specified by the geometry, not the user.
+        To change a dimension into a reference dimension, choose Constrain
+        -> Toggle Reference Dimension. A reference dimension is drawn with
+        "REF" appended to the displayed length or angle.  Double-clicking
+        a reference dimension does nothing; the dimension is specified
+        by the geometry, not the user, so it is not meaningful to type
+        in a new value for the reference dimension.
+
+    <h3>Distance / Diameter</h3>
+
+        This constraint sets the diameter of an arc or a circle, or the
+        length of a line segment, or the distance between a point and
+        some other entity.
 
     <h3>Angle</h3>
+        
+        When two lines intersect, four angles are formed. These angles
+        form two equal pairs. For example, the pictured lines interesect
+        at 30 degrees and 150 degrees. These two angles (30 and 150) are
+        known as supplementary angles, and they always sum to 180 degrees.
 
-        When two lines intersect, four angles are formed. The
-        opposite angles are equal; to change which opposite angle is
-        displayed, drag the label, and the arc will follow. If the wrong
-        supplementary angle is displayed, then select the constraint
-        and choose Constrain -> Other Supplementary Angle.
+        <img src="/pics/tut-line-cross-angles.png" />
+
+        (Notice that in the sketch, three of the angle constraints are
+        reference dimensions. Given any one of the angles, we could
+        calculate the other three; so a sketch that specified more than
+        one of those angles would be overconstrained, and fail to solve.)
+
+        When a new angle constraint is created, MechSketch chooses
+        arbitrarily which supplementary angle to constrain. An arc is
+        drawn on the sketch, to indicate which angle was chosen. As the
+        constraint label is dragged, the arc will follow.
+
+        If the wrong supplementary angle is constrained, then select the
+        constraint and choose Constrain -> Other Supplementary Angle. A
+        constraint of 30 degrees on one supplementary angle is exactly
+        equivalent to a constraint of 150 degrees on the other.
+
+    <h3>Horizontal / Vertical</h3>
+
+        This constraint forces a line segment to be horizontal or
+        vertical. It may also be applied to two points, in which case
+        it applies to the line segment connecting those points.
+
+        A workplane must be active, because the meaning of "horizontal"
+        or "vertical" is defined by the workplane.
+
+        It's good to use horizontal and vertical constraints whenever
+        possible. These constraints are very simple to solve, and will
+        not lead to convergence problems. Whenever possible, define
+        the workplanes so that lines are horizontal and vertical within
+        those workplanes.
+
+    <h3>On Point / Curve / Plane</h3>
+
+    <h3>Equal Length / Radius</h3>
+
+    <h3>Length Ratio</h3>
+
+    <h3>At Midpoint</h3>
+
+    <h3>Symmetric</h3>
+
+        This constraint forces two points to be symmetric about some
+        plane. Conceptually, this means that if we placed a mirror at
+        the symmetry plane, and looked at the reflection of point A,
+        then it would appear to lie on top of point B.
+
+        The symmetry plane may be specified explicitly, by selecting a
+        workplane. Or, the symmetry plane may be specified as a line in
+        a workplane; the symmetry plane is then through that line, and
+        normal to the workplane. Or, the symmetry plane may be omitted;
+        in that case, it is inferred to be either parallel to the active
+        workplane's vertical axis or its horizontal axis. The horizontal
+        or vertical axis is chosen, depending which is closer to the
+        configuration in which the points were initially drawn.
+
+    <h3>Parallel / Tangent</h3>
+
+        In 2d (i.e., when a workplane is active), a zero-degree angle
+        constraint is equivalent to a parallel constraint. In 3d, it
+        is not.
+
+        Given a unit vector A, and some angle theta, there are in general
+        infinitely many unit vectors that make an angle theta with A. (For
+        example, if we are given the vector (1, 0, 0), then (0, 1, 0),
+        (0, 0, 1), and many other unit vectors all make a ninety-degree
+        angle with A.) But this is not true for theta = 0; in that case,
+        there are only two, A and -A.
+
+        This means that while a normal 3d angle constraint will restrict
+        only one degree of freedom, a 3d parallel constraint restricts
+        two degrees of freedom.
+
+    <h3>Same Orientation</h3>
+
+        A normal has a direction; it is drawn as an arrow in that
+        direction. The direction of that arrow could be specified by
+        two angles. The normal specifies those two angles, plus one
+        additional angle that corresponds to the twist about that arrow.
+
+        (Technically, a normal represents a rotation matrix from one
+        coordinate system to another. It is represented internally as
+        a unit quaternion.)
+
+        For example, the picture below shows two workplanes, whose
+        normals are constrained to be parallel:
+
+        <img src="/pics/tut-parallel-normals.png" />
+
+        Because the normals are parallel, the planes are parallel. But one
+        plane is twisted with respect to the other, so the planes are not
+        identical. The line on the left is constrained to be horizontal
+        in the leftmost plane, and the line on the right is constrained
+        to be horizontal in the rightmost. These lines are not parallel,
+        even though the normals of the workplanes are parallel.
+
+        If we replace the "parallel" constraint with a "same orientation"
+        constraint, then the two workplanes become identical, and the
+        two horizontal lines become parallel.
+
+        This is a useful constraint when building an assemblies; a single
+        "same orientation" constraint will fix all three of the imported
+        part's rotational degrees of freedom.
 
     <h3>Comment</h3>
 
@@ -235,6 +560,11 @@
 
     <h3>General</h3>
 
+        To view a list of groups, go to the home page of the text window.
+        This is accessible from the link at the top left of the text
+        window, or by pressing Esc. To view a group's page, click on
+        its name in the list.
+
         All groups have a name. When the group is created, a default name
         (e.g., "g008-extrude") is assigned. The user may change this name;
         to do so, go to the group's page in the text window, and choose
@@ -245,6 +575,10 @@
         The group can be merged as union, which adds material to the
         model, or as difference, which cuts material away.
 
+        These groups also have a color, which determines the color of
+        the surfaces they produce. To change the color, click on one of
+        the swatches in the group's page in the text window.
+
         The group's page in the text window also includes a list of all
         requests, and of all constraints. To identify a constraint or a
         request, hover the mouse over its name; it will appear highlighted
@@ -252,10 +586,17 @@
         text window. This is equivalent to hovering over and clicking
         the actual object in the graphics window.
 
-
     <h3>Sketch in 3d</h3>
 
+        This creates a new empty group, in which the user may draw lines,
+        circles, arcs, and other curves.
+
     <h3>Sketch in New Workplane</h3>
+
+        This creates a new empty group, similar to a new "Sketch in 3d".
+        The difference is that a "Sketch in New Workplane" also creates
+        a workplane. The workplane is created based on the entities that
+        are selected when the sketch is created.
 
         A point and two line segments
 
@@ -271,7 +612,7 @@
             The new workplane has its origin at the specified point. The
             workplane is orthogonal to the base coordinate system; for
             example, its horizontal and vertical axes might lie in the
-            +y and -z directions, or +x and -z, or any other combination.
+            +y and -z directions, or +x and +z, or any other combination.
 
             The orientation of the workplane is inferred from the
             position of the view when the workplane is created; the
@@ -281,11 +622,101 @@
             If a part consists mostly of ninety degree angles, then this
             is a quick way to create workplanes.
 
+        The new group's associated workplane is automatically set to be
+        the active workplane.
+
     <h3>Step Translating</h3>
+
+        This group takes geometry in the active group, and copies it
+        multiple times along a straight line.
+
+        If a workplane is active when the step translating group is
+        created, then the translation vector must lie parallel to that
+        workplane. Otherwise, the translation vector may go anywhere in
+        free space.
+
+        The number of copies to create is specified by the user. To
+        change this value, click the [change] link in the group's page
+        in the text window.
+
+        The copies may be translated on one side, or on two sides. If
+        the copies are translated on one side, then the original will
+        appear to the left of (or above, below, etc.) all the copies. If
+        the copies are translated on two sides, then the original will
+        appear in the center of the copies.
+
+        The copies may be translated starting from the original,
+        or starting from copy #1. If the translation starts from the
+        original, then the translation will contain the original. (So a
+        1-element step will always produce the input geometry exactly.)
+        If the translation starts from copy #1, then the original is
+        not included in the output. (So a 1-element step makes a single
+        copy of the input geometry, and allows the user to translate it
+        anywhere in space.)
+
+        If the active group is a sketch (sketch in 3d, sketch in new
+        workplane), the the sketch is stepped and repeated. In that case
+        the user would typically draw a section, step and repeat that
+        section, and then extrude the step and repeat.
+
+        If the active group is a solid (extrude, sweep, lathe), then
+        the solid is stepped and repeated. In this case, the user would
+        draw a section, extrude the section, and then step and repeat
+        the extrusion.
+
+        In some cases, these two possibilities (extrude the step, vs.
+        step the extrusion) are equivalent. If the translation vector
+        isn't parallel to the section plane, then only the second option
+        will work.
 
     <h3>Step Rotating</h3>
 
+        This group takes the geometry in the active group, and copies
+        it mutiple times along a circle.
+
+        Before creating the group, the user must select its axis of
+        rotation. One way to do this is to select a point, plus either
+        a line segment or a normal; the axis of rotation goes through
+        the point, and is parallel to the line segment or normal.
+
+        If a workplane is active, then it's also possible to select just
+        a point; in that case, the axis of rotation goes through that
+        point, and is normal to the workplane.
+
+        By default, three copies are created. If a different number is
+        typed in (to the group's page in the text window, as for Step
+        Translating), then the copies will be spaced evenly along a
+        complete circle.
+
+        To place the copies along less than (or more than) a complete
+        circle, drag a point on one of the copies with the mouse; all
+        of the rest will follow, as the step rotation angle is modified.
+        Constraints (for example an angle constraint, or a point-on-lie
+        constraint) may be used to specify the angle of rotation exactly.
+
+        THe step and repeat options (one side / two sides, with original /
+        with copy #1) are the same as for step translating groups.
+
     <h3>Extrude</h3>
+
+        Before creating a new extrusion, the active group should contain
+        a sketch that consists entirely of closed curves. The extrude
+        group takes that flat sketch, and extrudes it to form a solid.
+
+        The sketch may be extruded on one side, or on two sides. If the
+        sketch is extruded on one side, then the new solid is either
+        entirely above or entirely below the original sketch. (Drag a
+        point on the new surface to determine the extrude direction,
+        and also to determine the extrude depth. Once the extrusion
+        depth looks approximately correct, it may be specified exactly
+        by using constraints. For example, select a line on the side of
+        the extrusion, and constrain its length.)
+
+        If the sketch is extruded on two sides, then the original sketch
+        lies at the exact midpoint of the new solid. This means that
+        the solid is symmetric about the original sketch plane. Later
+        dimensioning often becomes simpler when the part has symmetry,
+        so it's useful to extrude on two sides whenever possible.
 
         If a workplane is active when the group is created, then the
         extrude path is automatically constrained to be normal to that
@@ -299,11 +730,36 @@
         could be extruded to form a parallelepiped. The extrusion has
         three degrees of freedom. This is not typically useful.
 
+        By default, no workplane is active in a new extrude group. This
+        means that constraints will apply in 3d; for example, a length
+        constraint is a constraint on the actual length, and not on the
+        length projected into some plane. This is typically the desired
+        behaviour, but it's possible to activate a workplane in the usual
+        way (by selecting it, then choosing Sketch -> In Workplane).
+
     <h3>Lathe</h3>
+
+        Before creating a new lathe group, the active group should contain
+        a sketch that consists entirely of closed curves. The lathe group
+        takes that flat sketch, and sweeps it around a specified axis,
+        to form a solid of revolution.
+
+        To create a lathe group, first select a line segment. Then choose
+        New Group -> Lathe. The line segment is the axis of revolution.
+
+        The section must not intersect itself as it is swept along the
+        curve. If the section crosses the axis of rotation, then it is
+        certain to intersect itself and fail.
 
     <h3>Sweep</h3>
 
     <h3>Helical Sweep</h3>
+
+        This group sweeps a section along a helix. It might be used to
+        draw a screw thread, or a coil spring.
+
+        To create a helical sweep, first draw the section to be swept
+        along the helix.
 
     <h3>Import / Assemble</h3>
 
