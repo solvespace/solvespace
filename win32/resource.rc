@@ -1,0 +1,6 @@
+
+// we need a manifest if we want visual styles; put in numbers since somethings a bit screwy
+// with my SDK install (I don't think I've got *.rh right)
+1 24 "manifest.xml"
+
+4000 ICON "../icon.ico"

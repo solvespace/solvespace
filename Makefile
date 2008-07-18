@@ -36,6 +36,8 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\generate.obj \
            $(OBJDIR)\export.obj \
 
+RES = $(OBJDIR)\resource.res
+
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib opengl32.lib glu32.lib \
        extlib\libpng.lib extlib\zlib.lib
@@ -47,8 +49,8 @@ all: $(OBJDIR)/solvespace.exe
 clean:
 	rm -f obj/*
 
-$(OBJDIR)/solvespace.exe: $(SSOBJS) $(W32OBJS) $(FREEZE)
-    @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(W32OBJS) $(FREEZE) $(LIBS)
+$(OBJDIR)/solvespace.exe: $(SSOBJS) $(W32OBJS) $(FREEZE) $(RES)
+    @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(W32OBJS) $(FREEZE) $(RES) $(LIBS)
     editbin /nologo /STACK:8388608 $(OBJDIR)/solvespace.exe
     @echo solvespace.exe
 
@@ -60,3 +62,8 @@ $(W32OBJS): win32/$(@B).cpp $(HEADERS)
 
 $(FREEZE): ..\common\win32\$(@B).cpp $(HEADERS)
     @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj ..\common\win32\$(@B).cpp
+
+$(RES): win32/$(@B).rc icon.ico
+	rc win32/$(@B).rc
+	mv win32/$(@B).res $(OBJDIR)/$(@B).res
+

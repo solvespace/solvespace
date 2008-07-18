@@ -915,8 +915,10 @@ static void CreateMainWindows(void)
     wc.lpszClassName    = "GraphicsWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon            = NULL;
-    wc.hIconSm          = NULL;
+    wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+                            IMAGE_ICON, 32, 32, 0);
+    wc.hIconSm          = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+                            IMAGE_ICON, 16, 16, 0);
     if(!RegisterClassEx(&wc)) oops();
 
     HMENU top = CreateGraphicsWindowMenus();
