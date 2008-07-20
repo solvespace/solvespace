@@ -918,13 +918,7 @@ void GraphicsWindow::Paint(int w, int h) {
     // At the same depth, we want later lines drawn over earlier.
     glDepthFunc(GL_LEQUAL);
 
-    bool allOk = true;
-    for(i = 0; i < SS.group.n; i++) {
-        if(SS.group.elem[i].solved.how != Group::SOLVED_OKAY) {
-            allOk = false;
-        }
-    }
-    if(allOk) {
+    if(SS.AllGroupsOkay()) {
         glClearColor(0, 0, 0, 1.0f);
     } else {
         // Draw a red background whenever we're having solve problems.
@@ -974,7 +968,7 @@ void GraphicsWindow::Paint(int w, int h) {
 
     glxUnlockColor();
 
-    // Draw the groups; this fills the polygons in a drawing group, and
+    // Draw the active group; this fills the polygons in a drawing group, and
     // draws the solid mesh.
     (SS.GetGroup(activeGroup))->Draw();
 
@@ -987,6 +981,16 @@ void GraphicsWindow::Paint(int w, int h) {
     for(i = 0; i < SS.constraint.n; i++) {
         SS.constraint.elem[i].Draw();
     }
+
+    // Draw the traced path, if one exists
+    glLineWidth(1);
+    glColor3d(0, 1, 1);
+    SContour *sc = &(SS.traced.path);
+    glBegin(GL_LINE_STRIP);
+    for(i = 0; i < sc->l.n; i++) {
+        glxVertex3v(sc->l.elem[i].p);
+    }
+    glEnd();
 
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST); 

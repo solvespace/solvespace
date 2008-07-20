@@ -148,6 +148,9 @@ void SolveSpace::GenerateAll(void) {
 void SolveSpace::GenerateAll(int first, int last) {
     int i, j;
 
+    // Remove any requests or constraints that refer to a nonexistent
+    // group; can check those immediately, since we know what the list
+    // of groups should be.
     while(PruneOrphans())
         ;
 
@@ -220,6 +223,16 @@ void SolveSpace::GenerateAll(int first, int last) {
         if(c->reference) {
             c->ModifyToSatisfy();
         }
+    }
+
+    // Make sure the point that we're tracing exists.
+    if(traced.point.v && !entity.FindByIdNoOops(traced.point)) {
+        traced.point = Entity::NO_ENTITY;
+    }
+    // And if we're tracing a point, add its new value to the path
+    if(traced.point.v) {
+        Entity *pt = GetEntity(traced.point);
+        traced.path.AddPoint(pt->PointGetNum());
     }
 
     prev.Clear();
@@ -323,5 +336,16 @@ void SolveSpace::SolveGroup(hGroup hg) {
 
     sys.Solve(g);
     FreeAllTemporary();
+}
+
+bool SolveSpace::AllGroupsOkay(void) {
+    int i;
+    bool allOk = true;
+    for(i = 0; i < group.n; i++) {
+        if(group.elem[i].solved.how != Group::SOLVED_OKAY) {
+            allOk = false;
+        }
+    }
+    return allOk;
 }
 

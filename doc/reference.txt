@@ -801,6 +801,67 @@ for new users; to learn about this program, see the video tutorials.
         computer, it's necessary to transfer all of the imported files
         as well.
 
+<h2>Analysis</h2>
+
+    <h3>Trace Point</h3>
+
+        MechSketch can draw a "trail" behind a point as it moves. This
+        is useful when designing mechanisms. The sketch shown below is
+        a four-bar linkage:
+
+        <img src="/pics/ref-point-traced.png" />
+
+        As the linkage is worked, the midpoint of the top link moves
+        along the cyan curve. This image was produced by drawing the
+        linkage, tracing that midpoint, and then dragging the linkage
+        through its full range of motion with the mouse.
+
+        To start tracing, select a point, and choose Analyze -> Trace
+        Point. When the point moves, a cyan trail will be drawn behind it.
+
+        To stop tracing, choose Analyze -> Stop Tracing. A dialog
+        will appear, with the option to save the trace as a CSV
+        (comma-separated value) file. To save the trace, enter a
+        filename. To abandon the trace, choose Cancel or hit Esc.
+
+        The trace is saved as a text file, with one point per line. Each
+        point appears in the format x, y, z, separated by commas. Many
+        programs, including spreadsheets like Excel, can read this format.
+        The units for the coordinates are determined by the export
+        scale factor. (If the export scale factor is 1, then they are
+        millimeters, and if it's 25.4, then they're inches.)
+
+        If the mechanism is worked by dragging it with the mouse, then
+        the points in the trace will be unevenly spaced, because the
+        motion of the mouse is irregular. A plot of x vs. y (like the
+        cyan trace above) is not affected, but a plot of x or y vs. t
+        is useless, because the "speed" along the curve is not constant.
+
+        To avoid this problem, move the point by stepping a dimension,
+        rather than by dragging with the mouse. Select the dimension to
+        be stepped; this can be any distance or angle. Choose Analyze ->
+        Step Dimension. Enter the new final value for that dimension,
+        and the number of steps; then click "step dimension now".
+
+        The dimension will be modified in multiple steps, and solved
+        at each intermediate value. For example, consider a dimension
+        that is now set to 10 degrees. The user steps this dimension to
+        30 degrees, in 10 steps. This means that MechSketch will solve
+        at 12 degrees, then 14 degrees, then 16, and so on, until it
+        reaches 30 degrees.
+
+        The position of the traced point will be recorded at each
+        intermediate value. When the trace is exported, it represents
+        the position of that point, as the dimensioned link rotates with
+        constant angular speed.
+
+        The step dimension feature can also improve convergence. In some
+        difficult cases, the solver will fail to find a solution when a
+        dimension is changed. If the specified constraints have multiple
+        solutions, then the solver may also find an undesired solution. In
+        this case, it may be useful to try stepping the dimension to
+        its new value, instead of changing it in a single step.
+
 
 <h2>Export</h2>
 

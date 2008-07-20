@@ -140,9 +140,20 @@ double SolveSpace::ExprToMm(Expr *e) {
         return e->Eval();
     }
 }
+double SolveSpace::StringToMm(char *str) {
+    if(viewUnits == UNIT_INCHES) {
+        return atof(str)*25.4;
+    } else {
+        return atof(str);
+    }
+}
 
 
 void SolveSpace::AfterNewFile(void) {
+    // Clear out the traced point, which is no longer valid
+    traced.point = Entity::NO_ENTITY;
+    traced.path.l.Clear();
+
     ReloadAllImported();
     GenerateAll(-1, -1);
 
@@ -318,3 +329,73 @@ void SolveSpace::MenuFile(int id) {
 
     SS.UpdateWindowTitle();
 }
+
+void SolveSpace::MenuAnalyze(int id) {
+    SS.GW.GroupSelection();
+#define gs (SS.GW.gs)
+
+    switch(id) {
+        case GraphicsWindow::MNU_STEP_DIM:
+            if(gs.constraints == 1 && gs.n == 0) {
+                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                if(c->HasLabel() && !c->reference) {
+                    SS.TW.shown.dimFinish = c->valA;
+                    SS.TW.shown.dimSteps = 10;
+                    SS.TW.shown.dimIsDistance =
+                        (c->type != Constraint::ANGLE) &&
+                        (c->type != Constraint::LENGTH_RATIO);
+                    SS.TW.shown.constraint = c->h;
+                    SS.TW.shown.screen = TextWindow::SCREEN_STEP_DIMENSION;
+
+                    SS.later.showTW = true;
+                    SS.GW.ClearSelection();
+                } else {
+                    Error("Constraint must have a label, and must not be "
+                          "a reference dimension.");
+                }
+            } else {
+                Error("Bad selection for step dimension; select a constraint.");
+            }
+            break;
+
+        case GraphicsWindow::MNU_VOLUME:
+            break;
+
+        case GraphicsWindow::MNU_TRACE_PT:
+            if(gs.points == 1 && gs.n == 1) {
+                SS.traced.point = gs.point[0];
+                SS.GW.ClearSelection();
+            } else {
+                Error("Bad selection for trace; select a single point.");
+            }
+            break;
+            
+        case GraphicsWindow::MNU_STOP_TRACING: {
+            char exportFile[MAX_PATH] = "";
+            if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
+                FILE *f = fopen(exportFile, "w");
+                if(f) {
+                    int i;
+                    SContour *sc = &(SS.traced.path);
+                    for(i = 0; i < sc->l.n; i++) {
+                        Vector p = sc->l.elem[i].p;
+                        double s = SS.exportScale;
+                        fprintf(f, "%.10f, %.10f, %.10f\n",
+                            p.x/s, p.y/s, p.z/s);
+                    }
+                    fclose(f);
+                } else {
+                    Error("Couldn't write to '%s'", exportFile);
+                }
+            }
+            // Clear the trace, and stop tracing
+            SS.traced.point = Entity::NO_ENTITY;
+            SS.traced.path.l.Clear();
+            InvalidateGraphics();
+            break;
+        }
+
+        default: oops();
+    }
+}
+

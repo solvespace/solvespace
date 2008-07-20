@@ -62,6 +62,8 @@ int SaveFileYesNoCancel(void);
 #define STL_EXT "stl"
 #define DXF_PATTERN "DXF File (*.dxf)\0*.dxf\0All Files (*)\0*\0\0"
 #define DXF_EXT "dxf"
+#define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
+#define CSV_EXT "csv"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
@@ -370,6 +372,7 @@ public:
     Unit    viewUnits;
     char *MmToString(double v);
     double ExprToMm(Expr *e);
+    double StringToMm(char *s);
 
     // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);
@@ -414,6 +417,12 @@ public:
     void ExportDxfTo(char *file);
     void ExportMeshTo(char *file);
 
+    static void MenuAnalyze(int id);
+    struct {
+        SContour    path;
+        hEntity     point;
+    } traced;
+
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);
 
@@ -436,6 +445,8 @@ public:
     void GenerateAll(int first, int last);
     void SolveGroup(hGroup hg);
     void ForceReferences(void);
+
+    bool AllGroupsOkay(void);
 
     // The system to be solved.
     System  sys;

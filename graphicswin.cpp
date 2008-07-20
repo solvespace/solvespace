@@ -6,6 +6,7 @@
 #define mCon  (&Constraint::MenuConstrain)
 #define mFile (&SolveSpace::MenuFile)
 #define mGrp  (&Group::MenuGroup)
+#define mAna  (&SolveSpace::MenuAnalyze)
 #define S 0x100
 #define C 0x200
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
@@ -92,6 +93,13 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Same Orient&ation\tX",                MNU_ORIENTED_SAME,  'X',    mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Comment\t;",                          MNU_COMMENT,        ';',    mCon  },
+
+{ 0, "&Analyze",                            0,                          NULL  },
+{ 1, "Measure &Volume",                     MNU_VOLUME,         0,      mAna  },
+{ 1, NULL,                                  0,                          NULL  },
+{ 1, "&Trace Point\tCtrl+Shift+T",          MNU_TRACE_PT,       'T'|S|C,mAna  },
+{ 1, "&Stop Tracing...\tCtrl+Shift+S",      MNU_STOP_TRACING,   'S'|S|C,mAna  },
+{ 1, "Step &Dimension...\tCtrl+Shift+D",    MNU_STEP_DIM,       'D'|S|C,mAna  },
 
 { 0, "&Help",                               0,                          NULL  },
 { 1, "&Load License...",                    0,                          NULL  },

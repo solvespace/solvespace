@@ -605,6 +605,76 @@ void TextWindow::ShowConfiguration(void) {
 }
 
 //-----------------------------------------------------------------------------
+// When we're stepping a dimension. User specifies the finish value, and
+// how many steps to take in between current and finish, re-solving each
+// time.
+//-----------------------------------------------------------------------------
+void TextWindow::ScreenStepDimFinish(int link, DWORD v) {
+    SS.TW.edit.meaning = EDIT_STEP_DIM_FINISH;
+    char s[1024];
+    if(SS.TW.shown.dimIsDistance) {
+        strcpy(s, SS.MmToString(SS.TW.shown.dimFinish));
+    } else {
+        sprintf(s, "%.3f", SS.TW.shown.dimFinish);
+    }
+    ShowTextEditControl(12, 11, s);
+}
+void TextWindow::ScreenStepDimSteps(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%d", SS.TW.shown.dimSteps);
+    SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
+    ShowTextEditControl(14, 11, str);
+}
+void TextWindow::ScreenStepDimGo(int link, DWORD v) {
+    hConstraint hc = SS.TW.shown.constraint;
+    Constraint *c = SS.constraint.FindByIdNoOops(hc);
+    if(c) {
+        SS.UndoRemember();
+        double start = c->valA, finish = SS.TW.shown.dimFinish;
+        int i, n = SS.TW.shown.dimSteps;
+        for(i = 1; i <= n; i++) {
+            c = SS.GetConstraint(hc);
+            c->valA = start + ((finish - start)*i)/n;
+            SS.MarkGroupDirty(c->group);
+            SS.GenerateAll();
+            if(!SS.AllGroupsOkay()) {
+                // Failed to solve, so quit
+                break;
+            }
+            PaintGraphics();
+        }
+    }
+    InvalidateGraphics();
+    SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
+}
+void TextWindow::ShowStepDimension(void) {
+    Constraint *c = SS.constraint.FindByIdNoOops(shown.constraint);
+    if(!c) {
+        shown.screen = SCREEN_LIST_OF_GROUPS;
+        Show();
+        return;
+    }
+
+    Printf(true, "%FtSTEP DIMENSION%E %s", c->DescriptionString());
+
+    if(shown.dimIsDistance) {
+        Printf(true,  "%Ba  %FtSTART%E    %s", SS.MmToString(c->valA));
+        Printf(false, "%Bd  %FtFINISH%E   %s %Fl%Ll%f[change]%E",
+            SS.MmToString(shown.dimFinish), &ScreenStepDimFinish);
+    } else {
+        Printf(true,  "%Ba  %FtSTART%E    %@", c->valA);
+        Printf(false, "%Bd  %FtFINISH%E   %@ %Fl%Ll%f[change]%E",
+            shown.dimFinish, &ScreenStepDimFinish);
+    }
+    Printf(false, "%Ba  %FtSTEPS%E    %d %Fl%Ll%f%D[change]%E",
+        shown.dimSteps, &ScreenStepDimSteps);
+
+    Printf(true, " %Fl%Ll%fstep dimension now%E", &ScreenStepDimGo);
+
+    Printf(true, "(or %Fl%Ll%fcancel operation%E)", &ScreenHome);
+}
+
+//-----------------------------------------------------------------------------
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
 void TextWindow::EditControlDone(char *s) {
@@ -752,6 +822,18 @@ void TextWindow::EditControlDone(char *s) {
             }
             break;
         }
+
+        case EDIT_STEP_DIM_FINISH:
+            if(shown.dimIsDistance) {
+                shown.dimFinish = SS.StringToMm(s);
+            } else {
+                shown.dimFinish = atof(s);
+            }
+            break;
+
+        case EDIT_STEP_DIM_STEPS:
+            shown.dimSteps = min(300, max(1, atoi(s)));
+            break;
     }
     InvalidateGraphics();
     SS.later.showTW = true;

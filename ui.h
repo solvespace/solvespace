@@ -46,9 +46,16 @@ public:
     static const int SCREEN_GROUP_INFO          = 1;
     static const int SCREEN_GROUP_SOLVE_INFO    = 2;
     static const int SCREEN_CONFIGURATION       = 3;
+    static const int SCREEN_STEP_DIMENSION      = 4;
     typedef struct {
         int         screen;
+
         hGroup      group;
+
+        hConstraint constraint;
+        bool        dimIsDistance;
+        double      dimFinish;
+        int         dimSteps;
     } ShownState;
     ShownState shown;
 
@@ -66,6 +73,8 @@ public:
     static const int EDIT_HELIX_PITCH           = 21;
     static const int EDIT_HELIX_DRADIUS         = 22;
     static const int EDIT_TTF_TEXT              = 23;
+    static const int EDIT_STEP_DIM_FINISH       = 30;
+    static const int EDIT_STEP_DIM_STEPS        = 31;
     struct {
         int         meaning;
         int         i;
@@ -84,6 +93,7 @@ public:
     void ShowGroupInfo(void);
     void ShowGroupSolveInfo(void);
     void ShowConfiguration(void);
+    void ShowStepDimension(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 
@@ -116,6 +126,10 @@ public:
     static void ScreenColor(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
+
+    static void ScreenStepDimSteps(int link, DWORD v);
+    static void ScreenStepDimFinish(int link, DWORD v);
+    static void ScreenStepDimGo(int link, DWORD v);
 
     static void ScreenHome(int link, DWORD v);
 
@@ -201,6 +215,11 @@ public:
         MNU_PERPENDICULAR,
         MNU_ORIENTED_SAME,
         MNU_COMMENT,
+        // Analyze
+        MNU_VOLUME,
+        MNU_TRACE_PT,
+        MNU_STOP_TRACING,
+        MNU_STEP_DIM,
     } MenuId;
     typedef void MenuHandler(int id);
     typedef struct {

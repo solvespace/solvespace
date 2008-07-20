@@ -1,6 +1,5 @@
 
 get rid of the oops() calls in the mesh codes
-trace point feature
 smooth shading
 leak fixing
 cylindrical faces?

@@ -221,6 +221,7 @@ void TextWindow::Show(void) {
             case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
             case SCREEN_GROUP_SOLVE_INFO:   ShowGroupSolveInfo();   break;
             case SCREEN_CONFIGURATION:      ShowConfiguration();    break;
+            case SCREEN_STEP_DIMENSION:     ShowStepDimension();    break;
         }
     }
     Printf(false, "");
