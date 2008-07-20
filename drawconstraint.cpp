@@ -104,6 +104,75 @@ void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
     LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
 }
 
+void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
+                                   Vector offset, Vector *ref)
+{
+    Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);
+    Vector gu = SS.GW.projUp.ScaledBy(1/SS.GW.scale);
+
+    if(workplane.v != Entity::FREE_IN_3D.v) {
+        a0 = a0.ProjectInto(workplane);
+        b0 = b0.ProjectInto(workplane);
+        da = da.ProjectVectorInto(workplane);
+        db = db.ProjectVectorInto(workplane);
+    }
+
+    // Make an orthogonal coordinate system from those directions
+    Vector dn = da.Cross(db); // normal to both
+    Vector dna = dn.Cross(da); // normal to da
+    Vector dnb = dn.Cross(db); // normal to db
+    // At the intersection of the lines
+    //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
+    // So dot this equation against dna and dnb to get two equations
+    // to solve for da and db
+    double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
+    double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+
+    Vector pi = a0.Plus(da.ScaledBy(pa));
+    if(pi.Equals(b0.Plus(db.ScaledBy(pb)))) {
+        *ref = pi.Plus(offset);
+        // We draw in a coordinate system centered at pi, with
+        // basis vectors da and dna.
+        da = da.WithMagnitude(1); dna = dna.WithMagnitude(1);
+        Vector rm = (*ref).Minus(pi);
+        double rda = rm.Dot(da), rdna = rm.Dot(dna);
+        double r = sqrt(rda*rda + rdna*rdna);
+        double c = (da.Dot(db))/(da.Magnitude()*db.Magnitude());
+        double thetaf = acos(c);
+
+        Vector m = da.ScaledBy(cos(thetaf/2)).Plus(
+                   dna.ScaledBy(sin(thetaf/2)));
+        if(m.Dot(rm) < 0) {
+            da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
+        }
+
+        Vector prev = da.ScaledBy(r).Plus(pi);
+        int i, n = 30;
+        for(i = 0; i <= n; i++) {
+            double theta = (i*thetaf)/n;
+            Vector p = da. ScaledBy(r*cos(theta)).Plus(
+                       dna.ScaledBy(r*sin(theta))).Plus(pi);
+            LineDrawOrGetDistance(prev, p);
+            prev = p;
+        }
+
+        double tl = atan2(rm.Dot(gu), rm.Dot(gr));
+        double adj = EllipticalInterpolation(
+            glxStrWidth(Label())/2, glxStrHeight()/2, tl);
+        *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
+    } else {
+        // The lines are skew; no wonderful way to illustrate that.
+        *ref = a0.Plus(b0);
+        *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
+        glPushMatrix();
+            gu = gu.WithMagnitude(1);
+            glxTranslatev((*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight())));
+            glxOntoWorkplane(gr, gu);
+            glxWriteTextRefCenter("angle between skew lines");
+        glPopMatrix();
+    }
+}
+
 void Constraint::DrawOrGetDistance(Vector *labelPos) {
     if(!SS.GW.showConstraints) return;
     Group *g = SS.GetGroup(group);
@@ -297,6 +366,32 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case EQUAL_ANGLE: {
+            Vector ref;
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            Entity *c = SS.GetEntity(entityC);
+            Entity *d = SS.GetEntity(entityD);
+
+            Vector a0 = a->VectorGetRefPoint();
+            Vector b0 = b->VectorGetRefPoint();
+            Vector c0 = c->VectorGetRefPoint();
+            Vector d0 = d->VectorGetRefPoint();
+            Vector da = a->VectorGetNum();
+            Vector db = b->VectorGetNum();
+            Vector dc = c->VectorGetNum();
+            Vector dd = d->VectorGetNum();
+
+            if(other) da = da.ScaledBy(-1);
+
+            DoArcForAngle(a0, da, b0, db, 
+                da.WithMagnitude(40/SS.GW.scale), &ref);
+            DoArcForAngle(c0, dc, d0, dd, 
+                dc.WithMagnitude(40/SS.GW.scale), &ref);
+
+            break;
+        }
+
         case ANGLE: {
             Entity *a = SS.GetEntity(entityA);
             Entity *b = SS.GetEntity(entityB);
@@ -307,69 +402,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector db = b->VectorGetNum();
             if(other) da = da.ScaledBy(-1);
 
-            if(workplane.v != Entity::FREE_IN_3D.v) {
-                a0 = a0.ProjectInto(workplane);
-                b0 = b0.ProjectInto(workplane);
-                da = da.ProjectVectorInto(workplane);
-                db = db.ProjectVectorInto(workplane);
-            }
-
-            // Make an orthogonal coordinate system from those directions
-            Vector dn = da.Cross(db); // normal to both
-            Vector dna = dn.Cross(da); // normal to da
-            Vector dnb = dn.Cross(db); // normal to db
-            // At the intersection of the lines
-            //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
-            // So dot this equation against dna and dnb to get two equations
-            // to solve for da and db
-            double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
-            double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
-
-            Vector pi = a0.Plus(da.ScaledBy(pa));
             Vector ref;
-            if(pi.Equals(b0.Plus(db.ScaledBy(pb)))) {
-                ref = pi.Plus(disp.offset);
-                // We draw in a coordinate system centered at pi, with
-                // basis vectors da and dna.
-                da = da.WithMagnitude(1); dna = dna.WithMagnitude(1);
-                Vector rm = ref.Minus(pi);
-                double rda = rm.Dot(da), rdna = rm.Dot(dna);
-                double r = sqrt(rda*rda + rdna*rdna);
-                double c = (da.Dot(db))/(da.Magnitude()*db.Magnitude());
-                double thetaf = acos(c);
-
-                Vector m = da.ScaledBy(cos(thetaf/2)).Plus(
-                           dna.ScaledBy(sin(thetaf/2)));
-                if(m.Dot(rm) < 0) {
-                    da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
-                }
-
-                Vector prev = da.ScaledBy(r).Plus(pi);
-                int i, n = 30;
-                for(i = 0; i <= n; i++) {
-                    double theta = (i*thetaf)/n;
-                    Vector p = da. ScaledBy(r*cos(theta)).Plus(
-                               dna.ScaledBy(r*sin(theta))).Plus(pi);
-                    LineDrawOrGetDistance(prev, p);
-                    prev = p;
-                }
-
-                double tl = atan2(rm.Dot(gu), rm.Dot(gr));
-                double adj = EllipticalInterpolation(
-                    glxStrWidth(Label())/2, glxStrHeight()/2, tl);
-                ref = ref.Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
-            } else {
-                // The lines are skew; no wonderful way to illustrate that.
-                ref = a->VectorGetRefPoint().Plus(b->VectorGetRefPoint());
-                ref = ref.ScaledBy(0.5).Plus(disp.offset);
-                glPushMatrix();
-                    gu = gu.WithMagnitude(1);
-                    glxTranslatev(ref.Plus(gu.ScaledBy(-1.5*glxStrHeight())));
-                    glxOntoWorkplane(gr, gu);
-                    glxWriteTextRefCenter("angle between skew lines");
-                glPopMatrix();
-            }
-            
+            DoArcForAngle(a0, da, b0, db, disp.offset, &ref);
             DoLabel(ref, labelPos, gr, gu);
             break;
         }

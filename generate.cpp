@@ -109,9 +109,10 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
         if(EntityExists(c->workplane) &&
            EntityExists(c->ptA) &&
            EntityExists(c->ptB) &&
-           EntityExists(c->ptC) &&
            EntityExists(c->entityA) &&
-           EntityExists(c->entityB))
+           EntityExists(c->entityB) &&
+           EntityExists(c->entityC) &&
+           EntityExists(c->entityD))
         {
             continue;
         }

@@ -35,6 +35,7 @@ char *Constraint::DescriptionString(void) {
         case CUBIC_LINE_TANGENT:s = "cubic-line-tangent"; break;
         case PERPENDICULAR:     s = "perpendicular"; break;
         case EQUAL_RADIUS:      s = "eq-radius"; break;
+        case EQUAL_ANGLE:       s = "eq-angle"; break;
         case COMMENT:           s = "comment"; break;
         default:                s = "???"; break;
     }
@@ -199,6 +200,18 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
                 c.ptA = gs.point[0];
+            } else if(gs.vectors == 4 && gs.n == 4) {
+                c.type = EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[2];
+                c.entityD = gs.vector[3];
+            } else if(gs.vectors == 3 && gs.n == 3) {
+                c.type = EQUAL_ANGLE;
+                c.entityA = gs.vector[0];
+                c.entityB = gs.vector[1];
+                c.entityC = gs.vector[1];
+                c.entityD = gs.vector[2];
             } else if(gs.circlesOrArcs == 2 && gs.n == 2) {
                 c.type = EQUAL_RADIUS;
                 c.entityA = gs.entity[0];
@@ -213,6 +226,10 @@ void Constraint::MenuConstrain(int id) {
                               "(equal point-line distances)\r\n"
                       "    * a line segment, and a point and line segment "
                               "(point-line distance equals length)\r\n"
+                      "    * four line segments or normals "
+                              "(equal angle between A,B and C,D)\r\n"
+                      "    * three line segments or normals "
+                              "(equal angle between A,B and B,C)\r\n"
                       "    * two circles or arcs (equal radius)\r\n");
                 return;
             }
@@ -428,8 +445,16 @@ void Constraint::MenuConstrain(int id) {
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SS.GetConstraint(gs.constraint[0]);
                 if(c->type == ANGLE) {
+                    SS.UndoRemember();
                     c->other = !(c->other);
                     c->ModifyToSatisfy();
+                    break;
+                }
+                if(c->type == EQUAL_ANGLE) {
+                    SS.UndoRemember();
+                    c->other = !(c->other);
+                    SS.MarkGroupDirty(c->group);
+                    SS.later.generateAll = true;
                     break;
                 }
             }
@@ -660,6 +685,29 @@ Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
         Expr *dv = av->Minus(bv);
 
         return ((du->Square())->Plus(dv->Square()))->Sqrt();
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Return the cosine of the angle between two vectors. If a workplane is
+// specified, then it's the cosine of their projections into that workplane.
+//-----------------------------------------------------------------------------
+Expr *Constraint::DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be) {
+    if(wrkpl.v == Entity::FREE_IN_3D.v) {
+        Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
+        return (ae.Dot(be))->Div(mags);
+    } else {
+        Entity *w = SS.GetEntity(wrkpl);
+        ExprVector u = w->Normal()->NormalExprsU();
+        ExprVector v = w->Normal()->NormalExprsV();
+        Expr *ua = u.Dot(ae);
+        Expr *va = v.Dot(ae);
+        Expr *ub = u.Dot(be);
+        Expr *vb = v.Dot(be);
+        Expr *maga = (ua->Square()->Plus(va->Square()))->Sqrt();
+        Expr *magb = (ub->Square()->Plus(vb->Square()))->Sqrt();
+        Expr *dot = (ua->Times(ub))->Plus(va->Times(vb));
+        return dot->Div(maga->Times(magb));
     }
 }
 
@@ -1076,23 +1124,8 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             ExprVector ae = a->VectorGetExprs();
             ExprVector be = b->VectorGetExprs();
             if(other) ae = ae.ScaledBy(Expr::From(-1));
-            Expr *c;
-            if(workplane.v == Entity::FREE_IN_3D.v) {
-                Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
-                c = (ae.Dot(be))->Div(mags);
-            } else {
-                Entity *w = SS.GetEntity(workplane);
-                ExprVector u = w->Normal()->NormalExprsU();
-                ExprVector v = w->Normal()->NormalExprsV();
-                Expr *ua = u.Dot(ae);
-                Expr *va = v.Dot(ae);
-                Expr *ub = u.Dot(be);
-                Expr *vb = v.Dot(be);
-                Expr *maga = (ua->Square()->Plus(va->Square()))->Sqrt();
-                Expr *magb = (ub->Square()->Plus(vb->Square()))->Sqrt();
-                Expr *dot = (ua->Times(ub))->Plus(va->Times(vb));
-                c = dot->Div(maga->Times(magb));
-            }
+            Expr *c = DirectionCosine(workplane, ae, be);
+
             if(type == ANGLE) {
                 // The direction cosine is equal to the cosine of the
                 // specified angle
@@ -1103,6 +1136,25 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
                 // is equal to zero, perpendicular.
                 AddEq(l, c, 0);
             }
+            break;
+        }
+
+        case EQUAL_ANGLE: {
+            Entity *a = SS.GetEntity(entityA);
+            Entity *b = SS.GetEntity(entityB);
+            Entity *c = SS.GetEntity(entityC);
+            Entity *d = SS.GetEntity(entityD);
+            ExprVector ae = a->VectorGetExprs();
+            ExprVector be = b->VectorGetExprs();
+            ExprVector ce = c->VectorGetExprs();
+            ExprVector de = d->VectorGetExprs();
+
+            if(other) ae = ae.ScaledBy(Expr::From(-1));
+
+            Expr *cab = DirectionCosine(workplane, ae, be);
+            Expr *ccd = DirectionCosine(workplane, ce, de);
+
+            AddEq(l, cab->Minus(ccd), 0);
             break;
         }
 

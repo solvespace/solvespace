@@ -450,6 +450,7 @@ public:
     static const int LENGTH_RATIO       =  51;
     static const int EQ_LEN_PT_LINE_D   =  52;
     static const int EQ_PT_LN_DISTANCES =  53;
+    static const int EQUAL_ANGLE        =  54;
     static const int SYMMETRIC          =  60;
     static const int SYMMETRIC_HORIZ    =  61;
     static const int SYMMETRIC_VERT     =  62;
@@ -481,9 +482,10 @@ public:
     double      valA;
     hEntity     ptA;
     hEntity     ptB;
-    hEntity     ptC;
     hEntity     entityA;
     hEntity     entityB;
+    hEntity     entityC;
+    hEntity     entityD;
     bool        other;
 
     bool        reference; // a ref dimension, that generates no eqs
@@ -511,6 +513,8 @@ public:
     void DrawOrGetDistance(Vector *labelPos);
     double EllipticalInterpolation(double rx, double ry, double theta);
     char *Label(void);
+    void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
+                        Vector offset, Vector *ref);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void DoProjectedPoint(Vector *p);
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);
@@ -527,6 +531,7 @@ public:
     // Some helpers when generating symbolic constraint equations
     void ModifyToSatisfy(void);
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
+    static Expr *DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be);
     static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
     static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
