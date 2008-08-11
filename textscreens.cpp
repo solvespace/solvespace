@@ -595,6 +595,10 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     ShowTextEditControl(59, 3, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
+void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
+    SS.drawBackFaces = !SS.drawBackFaces;
+    InvalidateGraphics();
+}
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -648,6 +652,14 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
+
+    Printf(false, "");
+    Printf(false, "%Ft draw back faces: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeBackFaces,
+        (SS.drawBackFaces ? "" : "yes"), (SS.drawBackFaces ? "yes" : ""),
+        &ScreenChangeBackFaces,
+        (!SS.drawBackFaces ? "" : "no"), (!SS.drawBackFaces ? "no" : ""));
 }
 
 //-----------------------------------------------------------------------------

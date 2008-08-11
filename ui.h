@@ -139,6 +139,8 @@ public:
     static void ScreenShowConfiguration(int link, DWORD v);
     static void ScreenGoToWebsite(int link, DWORD v);
 
+    static void ScreenChangeBackFaces(int link, DWORD v);
+
     static void ScreenStepDimSteps(int link, DWORD v);
     static void ScreenStepDimFinish(int link, DWORD v);
     static void ScreenStepDimGo(int link, DWORD v);

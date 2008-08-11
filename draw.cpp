@@ -960,9 +960,14 @@ void GraphicsWindow::Paint(int w, int h) {
     GLfloat ld1[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
     glLightfv(GL_LIGHT1, GL_POSITION, ld1);
 
-    // For debugging, draw the backs of the triangles in red, so that we
-    // notice when a shell is open
-    glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    if(SS.drawBackFaces) {
+        // For debugging, draw the backs of the triangles in red, so that we
+        // notice when a shell is open
+        glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    } else {
+        glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
+    }
+
     GLfloat ambient[4] = { 0.4f, 0.4f, 0.4f, 1.0f };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 
