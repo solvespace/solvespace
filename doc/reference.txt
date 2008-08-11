@@ -1208,7 +1208,7 @@ for new users; to learn about this program, see the video tutorials.
         may be disabled by setting its intensity to zero. When the part
         is rotated or translated, the lights do not move.
 
-    <h3>Chord Tolerance</h3>
+    <h3>Chord Tolerance, and Max Segments</h3>
 
         SolveSpace does not represent curved edges or surfaces exactly.
         Any curves are broken down into piecewise linear segments,
@@ -1229,6 +1229,11 @@ for new users; to learn about this program, see the video tutorials.
         may be helpful to use a large chord tolerance (2-5 pixels) while
         drawing, for fast response, and then temporarily specify a small
         chord tolerance (~0.5 pixels) before exporting an STL or DXF file.
+
+        The fineness of the mesh is also limited by the specified maximum
+        number of piecewise linear segments. A single curve will never
+        be broken down into more than that number of line segments,
+        no matter how fine the chord tolerance.
 
     <h3>Perspective Factor</h3>
 
@@ -1301,6 +1306,18 @@ for new users; to learn about this program, see the video tutorials.
         a left-handed coordinate system (so that a right-handed screw
         thread will become left-handed).
 
+    <h3>Draw Back Face</h3>
+
+        SolveSpace always works with solid shells. This means that in
+        normal operation, only the outside of a surface should be visible.
+        This setting should therefore have no effect.
+
+        If a self-intersecting shell is drawn, then inside surfaces may
+        be exposed. Even if the shell is watertight, a few stray pixels
+        from an inside surface may "show through", depending on how the
+        graphics card renders triangles. This setting determines whether
+        those surfaces are discarded, or drawn highlighted in red.
+
 <h2>Licensing</h2>
 
     As downloaded, SolveSpace does not include a license key. This means
@@ -1319,6 +1336,28 @@ for new users; to learn about this program, see the video tutorials.
 
     No license server or dongle is required, and licenses do not expire.
 
+
+<h2>Bugs</h2>
+
+    Boolean operations are performed on triangle meshes, and not on
+    exact curved surfaces. This often results in poor mesh quality. An
+    equally good mesh might have been achieved with fewer triangles,
+    if the curves were piecewise-linear approximated differently. Or
+    the mesh may contain long skinny triangles.
+
+    This means that the exported STL files do not contain a high
+    quality mesh. This is generally not a problem, but could be in
+    some applications.
+
+    Another consequence is that the program runs slower as the number
+    of triangles increases. To obtain a coarser mesh, increase the chord
+    tolerance in the configuration screen.
+
+    To improve speed and mesh quality, draw the part using fewer Boolean
+    operations. For example, a plate with a hole might be modeled
+    by extruding the plate, and then cutting the hole with a second
+    extrusion. Instead, make a single sketch with both the outline of
+    the plate and the hole, and extrude only once.
 
 
 This is the introductory tutorial. We review the basic user interface,
