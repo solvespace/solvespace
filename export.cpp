@@ -110,6 +110,28 @@ void SolveSpace::ExportDxfTo(char *filename) {
 
 havepoly:
 
+    int i, j;
+    // Project into the export plane; so when we're done, z doesn't matter,
+    // and x and y are what goes in the DXF.
+    for(i = 0; i < sp.l.n; i++) {
+        SContour *sc = &(sp.l.elem[i]);
+        for(j = 0; j < sc->l.n; j++) {
+            Vector *p = &(sc->l.elem[j].p);
+            *p = p->DotInToCsys(u, v, n);
+        }
+    }
+
+    // If cutter radius compensation is requested, then perform it now.
+    if(fabs(SS.exportOffset) > LENGTH_EPS) {
+        SPolygon compd;
+        ZERO(&compd);
+        sp.normal = Vector::From(0, 0, -1);
+        sp.FixContourDirections();
+        sp.OffsetInto(&compd, SS.exportOffset);
+        sp.Clear();
+        sp = compd;
+    }
+
     FILE *f = fopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename);
@@ -160,16 +182,12 @@ havepoly:
 "  2\r\n"
 "ENTITIES\r\n");
 
-    int i, j;
     for(i = 0; i < sp.l.n; i++) {
         SContour *sc = &(sp.l.elem[i]);
 
         for(j = 1; j < sc->l.n; j++) {
             Vector p0 = sc->l.elem[j-1].p,
                    p1 = sc->l.elem[j].p;
-
-            Point2d e0 = p0.Project2d(u, v),
-                    e1 = p1.Project2d(u, v);
 
             double s = SS.exportScale;
 
@@ -191,8 +209,8 @@ havepoly:
 "  31\r\n"    // zB
 "%.6f\r\n",
                     0,
-                    e0.x/s, e0.y/s, 0.0,
-                    e1.x/s, e1.y/s, 0.0);
+                    p0.x/s, p0.y/s, 0.0,
+                    p1.x/s, p1.y/s, 0.0);
         }
     }
 

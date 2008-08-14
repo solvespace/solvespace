@@ -595,6 +595,13 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     ShowTextEditControl(59, 3, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
+void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
+    char str[1024];
+    sprintf(str, "%.2f", (double)SS.exportOffset);
+
+    ShowTextEditControl(63, 3, str);
+    SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
+}
 void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     InvalidateGraphics();
@@ -652,6 +659,10 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
+    Printf(false, "%Ft cutter radius offset (always in mm) ");
+    Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E",
+        (double)SS.exportOffset,
+        &ScreenChangeExportOffset, 0);
 
     Printf(false, "");
     Printf(false, "%Ft draw back faces: "
@@ -865,6 +876,20 @@ void TextWindow::EditControlDone(char *s) {
                     Error("Export scale must not be zero!");
                 } else {
                     SS.exportScale = (float)ev;
+                }
+            } else {
+                Error("Not a valid number or expression: '%s'", s);
+            }
+            break;
+        }
+        case EDIT_EXPORT_OFFSET: {
+            Expr *e = Expr::From(s);
+            if(e) {
+                double ev = e->Eval();
+                if(isnan(ev) || ev < 0) {
+                    Error("Cutter radius offset must not be negative!");
+                } else {
+                    SS.exportOffset = (float)ev;
                 }
             } else {
                 Error("Not a valid number or expression: '%s'", s);

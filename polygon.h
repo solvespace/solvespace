@@ -89,6 +89,7 @@ public:
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
     bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
+    void OffsetInto(SContour *dest, double r);
 };
 
 typedef struct {
@@ -113,6 +114,7 @@ public:
     bool AllPointsInPlane(Vector *notCoplanarAt);
     bool IsEmpty(void);
     Vector AnyPoint(void);
+    void OffsetInto(SPolygon *dest, double r);
 };
 
 class STriangle {

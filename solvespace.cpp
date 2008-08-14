@@ -49,6 +49,8 @@ void SolveSpace::Init(char *cmdLine) {
     edgeColor = CnfThawDWORD(RGB(0, 0, 0), "EdgeColor");
     // Export scale factor
     exportScale = CnfThawFloat(1.0f, "ExportScale");
+    // Export offset (cutter radius comp)
+    exportOffset = CnfThawFloat(0.0f, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
     // Recent files menus
@@ -109,6 +111,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD(edgeColor, "EdgeColor");
     // Export scale (a float, stored as a DWORD)
     CnfFreezeFloat(exportScale, "ExportScale");
+    // Export offset (cutter radius comp)
+    CnfFreezeFloat(exportOffset, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
 

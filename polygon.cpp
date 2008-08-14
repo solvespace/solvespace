@@ -383,3 +383,143 @@ void SPolygon::TriangulateInto(SMesh *m, STriMeta meta) {
     gluDeleteTess(gt);
 }
 
+//-----------------------------------------------------------------------------
+// Low-quality routines to cutter radius compensate a polygon. Assumes the
+// polygon is in the xy plane, and the contours all go in the right direction
+// with respect to normal (0, 0, -1).
+//-----------------------------------------------------------------------------
+void SPolygon::OffsetInto(SPolygon *dest, double r) {
+    int i;
+    dest->Clear();
+    for(i = 0; i < l.n; i++) {
+        SContour *sc = &(l.elem[i]);
+        dest->AddEmptyContour();
+        sc->OffsetInto(&(dest->l.elem[dest->l.n-1]), r);
+    }
+}
+//-----------------------------------------------------------------------------
+// Calculate the intersection point of two lines. Returns true for success,
+// false if they're parallel.
+//-----------------------------------------------------------------------------
+static bool IntersectionOfLines(double x0A, double y0A, double dxA, double dyA,
+                                double x0B, double y0B, double dxB, double dyB,
+                                double *xi, double *yi)
+{
+    double A[2][2];
+    double b[2];
+
+    // The line is given to us in the form:
+    //    (x(t), y(t)) = (x0, y0) + t*(dx, dy)
+    // so first rewrite it as
+    //    (x - x0, y - y0) dot (dy, -dx) = 0
+    //    x*dy - x0*dy - y*dx + y0*dx = 0
+    //    x*dy - y*dx = (x0*dy - y0*dx)
+
+    // So write the matrix, pre-pivoted.
+    if(fabs(dyA) > fabs(dyB)) {
+        A[0][0] = dyA;  A[0][1] = -dxA;  b[0] = x0A*dyA - y0A*dxA;
+        A[1][0] = dyB;  A[1][1] = -dxB;  b[1] = x0B*dyB - y0B*dxB;
+    } else {
+        A[1][0] = dyA;  A[1][1] = -dxA;  b[1] = x0A*dyA - y0A*dxA;
+        A[0][0] = dyB;  A[0][1] = -dxB;  b[0] = x0B*dyB - y0B*dxB;
+    }
+
+    // Check the determinant; if it's zero then no solution.
+    if(fabs(A[0][0]*A[1][1] - A[0][1]*A[1][0]) < LENGTH_EPS) {
+        return false;
+    }
+    
+    // Solve
+    double v = A[1][0] / A[0][0];
+    A[1][0] -= A[0][0]*v;
+    A[1][1] -= A[0][1]*v;
+    b[1] -= b[0]*v;
+
+    // Back-substitute.
+    *yi = b[1] / A[1][1];
+    *xi = (b[0] - A[0][1]*(*yi)) / A[0][0];
+
+    return true;
+}
+void SContour::OffsetInto(SContour *dest, double r) {
+    int i;
+
+    for(i = 0; i < l.n; i++) {
+        Vector a, b, c;
+        Vector dp, dn;
+        double thetan, thetap;
+
+        a = l.elem[WRAP(i-1, (l.n-1))].p;
+        b = l.elem[WRAP(i,   (l.n-1))].p;
+        c = l.elem[WRAP(i+1, (l.n-1))].p;
+
+        dp = a.Minus(b);
+        thetap = atan2(dp.y, dp.x);
+
+        dn = b.Minus(c);
+        thetan = atan2(dn.y, dn.x);
+
+        // A short line segment in a badly-generated polygon might look
+        // okay but screw up our sense of direction.
+        if(dp.Magnitude() < LENGTH_EPS || dn.Magnitude() < LENGTH_EPS) {
+            continue;
+        }
+
+        if(thetan > thetap && (thetan - thetap) > PI) {
+            thetap += 2*PI;
+        }
+        if(thetan < thetap && (thetap - thetan) > PI) {
+            thetan += 2*PI;
+        }
+    
+        if(fabs(thetan - thetap) < (1*PI)/180) {
+            Vector p = { b.x - r*sin(thetap), b.y + r*cos(thetap) };
+            dest->AddPoint(p);
+        } else if(thetan < thetap) {
+            // This is an inside corner. We have two edges, Ep and En. Move
+            // out from their intersection by radius, normal to En, and
+            // then draw a line parallel to En. Move out from their
+            // intersection by radius, normal to Ep, and then draw a second
+            // line parallel to Ep. The point that we want to generate is
+            // the intersection of these two lines--it removes as much
+            // material as we can without removing any that we shouldn't.
+            double px0, py0, pdx, pdy;
+            double nx0, ny0, ndx, ndy;
+            double x, y;
+
+            px0 = b.x - r*sin(thetap);
+            py0 = b.y + r*cos(thetap);
+            pdx = cos(thetap);
+            pdy = sin(thetap);
+
+            nx0 = b.x - r*sin(thetan);
+            ny0 = b.y + r*cos(thetan);
+            ndx = cos(thetan);
+            ndy = sin(thetan);
+
+            IntersectionOfLines(px0, py0, pdx, pdy, 
+                                nx0, ny0, ndx, ndy,
+                                &x, &y);
+
+            dest->AddPoint(Vector::From(x, y, 0));
+        } else {
+            if(fabs(thetap - thetan) < (6*PI)/180) {
+                Vector pp = { b.x - r*sin(thetap),
+                              b.y + r*cos(thetap), 0 };
+                dest->AddPoint(pp);
+
+                Vector pn = { b.x - r*sin(thetan),
+                              b.y + r*cos(thetan), 0 };
+                dest->AddPoint(pn);
+            } else {
+                double theta;
+                for(theta = thetap; theta <= thetan; theta += (6*PI)/180) {
+                    Vector p = { b.x - r*sin(theta),
+                                 b.y + r*cos(theta), 0 };
+                    dest->AddPoint(p);
+                }
+            }
+        }
+    }
+}
+

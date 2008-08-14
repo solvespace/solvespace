@@ -370,6 +370,7 @@ public:
     double  cameraTangent;
     DWORD   edgeColor;
     float   exportScale;
+    float   exportOffset;
     int     drawBackFaces;
 
     int CircleSides(double r);

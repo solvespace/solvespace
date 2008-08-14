@@ -75,6 +75,7 @@ public:
     static const int EDIT_CAMERA_TANGENT        = 15;
     static const int EDIT_EDGE_COLOR            = 16;
     static const int EDIT_EXPORT_SCALE          = 17;
+    static const int EDIT_EXPORT_OFFSET         = 18;
     // For the helical sweep
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
@@ -158,6 +159,7 @@ public:
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeEdgeColor(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
+    static void ScreenChangeExportOffset(int link, DWORD v);
 
     void EditControlDone(char *s);
 };
