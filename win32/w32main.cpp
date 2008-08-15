@@ -321,6 +321,34 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
     }
 }
 
+void MouseWheel(int delta) {
+    POINT pt;
+    GetCursorPos(&pt);
+    HWND hw = WindowFromPoint(pt);
+    
+    // Make the mousewheel work according to which window the mouse is
+    // over, not according to which window is active.
+    bool inTextWindow;
+    if(hw == TextWnd) {
+        inTextWindow = true;
+    } else if(hw == GraphicsWnd) {
+        inTextWindow = false;
+    } else if(GetForegroundWindow() == TextWnd) {
+        inTextWindow = true;
+    } else {
+        inTextWindow = false;
+    }
+
+    if(inTextWindow) {
+        int i;
+        for(i = 0; i < abs(delta/40); i++) {
+            HandleTextWindowScrollBar(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
+        }
+    } else {
+        SS.GW.MouseScroll(LastMousePos.x, LastMousePos.y, delta);
+    }
+}
+
 LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
@@ -441,11 +469,9 @@ done:
             break;
         }
 
-        case WM_MOUSEWHEEL: {
-            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            HandleTextWindowScrollBar(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
+        case WM_MOUSEWHEEL:
+            MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
             break;
-        }
 
         case WM_VSCROLL:
             HandleTextWindowScrollBar(wParam, lParam);
@@ -700,11 +726,10 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             }
             break;
         }
-        case WM_MOUSEWHEEL: {
-            int delta = GET_WHEEL_DELTA_WPARAM(wParam);
-            SS.GW.MouseScroll(LastMousePos.x, LastMousePos.y, delta);
+        case WM_MOUSEWHEEL:
+            MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
             break;
-        }
+
         case WM_COMMAND: {
             if(HIWORD(wParam) == 0) {
                 int id = LOWORD(wParam);
