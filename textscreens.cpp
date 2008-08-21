@@ -154,7 +154,7 @@ void TextWindow::ShowListOfGroups(void) {
         }
         Printf(false, "%Fg  %s", SS.license.users);
     } else {
-        Printf(false, "%Fx*** THIS SOFTWARE IS NOT LICENSED ***");
+        Printf(false, "%Fx*** NO LICENSE FILE IS PRESENT ***");
         Printf(false, "%Fx  eval / non-commercial use only");
         Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.solvespace.com/%E",
             &ScreenGoToWebsite);
