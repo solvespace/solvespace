@@ -589,7 +589,7 @@ void SolveSpace::MenuHelp(int id) {
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is SolveSpace version 0.1.\r\n\r\n"
+            Message("This is SolveSpace version 1.3.\r\n\r\n"
                   "For more information, see http://www.solvespace.com/\r\n\r\n"
                   "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
                   "Copyright 2008 Jonathan Westhues, All Rights Reserved.");
