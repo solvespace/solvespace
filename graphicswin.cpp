@@ -118,6 +118,11 @@ void GraphicsWindow::Init(void) {
     projRight = Vector::From(1, 0, 0);
     projUp    = Vector::From(0, 1, 0);
 
+    // Make sure those are valid; could get a mouse move without a mouse
+    // down if someone depresses the button, then drags into our window.
+    orig.projRight = projRight;
+    orig.projUp = projUp;
+
     // And with the last group active
     activeGroup = SS.group.elem[SS.group.n-1].h;
     SS.GetGroup(activeGroup)->Activate();
