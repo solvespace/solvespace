@@ -509,25 +509,26 @@ void TextWindow::ShowGroupSolveInfo(void) {
     Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
     switch(g->solved.how) {
         case Group::DIDNT_CONVERGE:
-            Printf(true, "   %FxSOLVE FAILED!%Fd no convergence");
+            Printf(true, "%FxSOLVE FAILED!%Fd no convergence");
+            Printf(true, "the following constraints are unsatisfied");
             break;
 
-        case Group::SINGULAR_JACOBIAN: {
+        case Group::SINGULAR_JACOBIAN:
             Printf(true, "%FxSOLVE FAILED!%Fd inconsistent system");
             Printf(true, "remove any one of these to fix it");
-            for(int i = 0; i < g->solved.remove.n; i++) {
-                hConstraint hc = g->solved.remove.elem[i];
-                Constraint *c = SS.constraint.FindByIdNoOops(hc);
-                if(!c) continue;
-
-                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
-                    (i & 1) ? 'd' : 'a',
-                    c->h.v, (&TextWindow::ScreenSelectConstraint),
-                    (&TextWindow::ScreenHoverConstraint),
-                    c->DescriptionString());
-            }
             break;
-        }
+    }
+
+    for(int i = 0; i < g->solved.remove.n; i++) {
+        hConstraint hc = g->solved.remove.elem[i];
+        Constraint *c = SS.constraint.FindByIdNoOops(hc);
+        if(!c) continue;
+
+        Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
+            (i & 1) ? 'd' : 'a',
+            c->h.v, (&TextWindow::ScreenSelectConstraint),
+            (&TextWindow::ScreenHoverConstraint),
+            c->DescriptionString());
     }
 
     Printf(true,  "It may be possible to fix the problem ");

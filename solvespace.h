@@ -212,7 +212,7 @@ public:
         }           B;
     } mat;
 
-    static const double RANK_MAG_TOLERANCE;
+    static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
     int CalculateRank(void);
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);

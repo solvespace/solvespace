@@ -554,6 +554,9 @@ public:
 class hEquation {
 public:
     DWORD v;
+
+    inline bool isFromConstraint(void);
+    inline hConstraint constraint(void);
 };
 
 class Equation {
@@ -598,6 +601,11 @@ inline hRequest hParam::request(void)
 
 inline hEquation hConstraint::equation(int i)
     { hEquation r; r.v = (v << 16) | i; return r; }
+
+inline bool hEquation::isFromConstraint(void)
+    { if(v & 0xc0000000) return false; else return true; }
+inline hConstraint hEquation::constraint(void)
+    { hConstraint r; r.v = (v >> 16); return r; }
 
 
 #endif

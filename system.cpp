@@ -1,6 +1,7 @@
 #include "solvespace.h"
 
 const double System::RANK_MAG_TOLERANCE = 1e-4;
+const double System::CONVERGE_TOLERANCE = 1e-10;
 
 void System::WriteJacobian(int tag) {
     int a, i, j;
@@ -328,7 +329,7 @@ bool System::NewtonSolve(int tag) {
             if(isnan(mat.B.num[i])) {
                 return false;
             }
-            if(fabs(mat.B.num[i]) > 1e-10) {
+            if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
                 converged = false;
                 break;
             }
@@ -360,25 +361,39 @@ void System::WriteEquationsExceptFor(hConstraint hc, hGroup hg) {
 }
 
 void System::FindWhichToRemoveToFixJacobian(Group *g) {
-    int i;
+    int a, i;
     (g->solved.remove).Clear();
 
-    for(i = 0; i < SS.constraint.n; i++) {
-        Constraint *c = &(SS.constraint.elem[i]);
-        if(c->group.v != g->h.v) continue;
+    for(a = 0; a < 2; a++) {
+        for(i = 0; i < SS.constraint.n; i++) {
+            Constraint *c = &(SS.constraint.elem[i]);
+            if(c->group.v != g->h.v) continue;
+            if((c->type == Constraint::POINTS_COINCIDENT && a == 0) ||
+               (c->type != Constraint::POINTS_COINCIDENT && a == 1))
+            {
+                // Do the constraints in two passes: first everything but
+                // the point-coincident constraints, then only those
+                // constraints (so they appear last in the list).
+                continue;
+            }
 
-        param.ClearTags();
-        eq.Clear();
-        WriteEquationsExceptFor(c->h, g->h);
-        eq.ClearTags();
+            param.ClearTags();
+            eq.Clear();
+            WriteEquationsExceptFor(c->h, g->h);
+            eq.ClearTags();
 
-        WriteJacobian(0);
-        EvalJacobian();
+            // It's a major speedup to solve the easy ones by substitution here,
+            // and that doesn't break anything.
+            SolveBySubstitution();
 
-        int rank = CalculateRank();
-        if(rank == mat.m) {
-            // We fixed it by removing this constraint
-            (g->solved.remove).Add(&(c->h));
+            WriteJacobian(0);
+            EvalJacobian();
+
+            int rank = CalculateRank();
+            if(rank == mat.m) {
+                // We fixed it by removing this constraint
+                (g->solved.remove).Add(&(c->h));
+            }
         }
     }
 }
@@ -476,6 +491,25 @@ void System::Solve(Group *g) {
 
 didnt_converge:
     g->solved.how = Group::DIDNT_CONVERGE;
+    (g->solved.remove).Clear();
+    SS.constraint.ClearTags();
+    for(i = 0; i < eq.n; i++) {
+        if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
+            // This constraint is unsatisfied.
+            if(!mat.eq[i].isFromConstraint()) continue;
+
+            hConstraint hc = mat.eq[i].constraint();
+            Constraint *c = SS.constraint.FindByIdNoOops(hc);
+            if(!c) continue;
+            // Don't double-show constraints that generated multiple
+            // unsatisfied equations
+            if(!c->tag) {
+                (g->solved.remove).Add(&(c->h));
+                c->tag = 1;
+            }
+        }
+    }
+
     TextWindow::ReportHowGroupSolved(g->h);
 }
 
