@@ -508,6 +508,8 @@ public:
     static void AddConstraint(Constraint *c, bool rememberForUndo);
     static void AddConstraint(Constraint *c);
     static void MenuConstrain(int id);
+
+    static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
     
     struct {
         bool        drawing;

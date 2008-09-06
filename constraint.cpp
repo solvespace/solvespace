@@ -44,6 +44,29 @@ char *Constraint::DescriptionString(void) {
     return ret;
 }
 
+//-----------------------------------------------------------------------------
+// Delete all constraints with the specified type, entityA, ptA. We use this
+// when auto-removing constraints that would become redundant.
+//-----------------------------------------------------------------------------
+void Constraint::DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA)
+{
+    SS.constraint.ClearTags();
+    for(int i = 0; i < SS.constraint.n; i++) {
+        Constraint *ct = &(SS.constraint.elem[i]);
+        if(ct->type != type) continue;
+
+        if(ct->entityA.v != entityA.v) continue;
+        if(ct->ptA.v != ptA.v) continue;
+        ct->tag = 1;
+    }
+    SS.constraint.RemoveTagged();
+    // And no need to do anything special, since nothing
+    // ever depends on a constraint. But do clear the
+    // hover, in case the just-deleted constraint was
+    // hovered.
+    SS.GW.hover.Clear();
+}
+
 void Constraint::AddConstraint(Constraint *c) {
     AddConstraint(c, true);
 }
@@ -270,6 +293,10 @@ void Constraint::MenuConstrain(int id) {
                 c.type = AT_MIDPOINT;
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
+
+                // If a point is at-midpoint, then no reason to also constrain
+                // it on-line; so auto-remove that.
+                DeleteAllConstraintsFor(PT_ON_LINE, c.entityA, c.ptA);
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = AT_MIDPOINT;
                 int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
@@ -360,21 +387,11 @@ void Constraint::MenuConstrain(int id) {
                 if(gs.lineSegments == 1) {
                     // If this line segment is already constrained horiz or
                     // vert, then auto-remove that redundant constraint.
-                    SS.constraint.ClearTags();
-                    for(int i = 0; i < SS.constraint.n; i++) {
-                        Constraint *ct = &(SS.constraint.elem[i]);
-                        if(ct->type != HORIZONTAL && ct->type != VERTICAL) {
-                            continue;
-                        }
-                        if(ct->entityA.v != (gs.entity[0]).v) continue;
-                        ct->tag = 1;
-                    }
-                    SS.constraint.RemoveTagged();
-                    // And no need to do anything special, since nothing
-                    // ever depends on a constraint. But do clear the
-                    // hover, in case the just-deleted constraint was
-                    // hovered.
-                    SS.GW.hover.Clear();
+                    DeleteAllConstraintsFor(HORIZONTAL, (gs.entity[0]),
+                        Entity::NO_ENTITY);
+                    DeleteAllConstraintsFor(VERTICAL, (gs.entity[0]),
+                        Entity::NO_ENTITY);
+
                 }
             } else {
                 // Symmetry with a symmetry plane specified explicitly.
