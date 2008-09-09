@@ -290,13 +290,13 @@ double Vector::Element(int i) {
     }
 }
 
-bool Vector::Equals(Vector v) {
+bool Vector::Equals(Vector v, double tol) {
     // Quick axis-aligned tests before going further
-    double dx = v.x - x; if(dx < -LENGTH_EPS || dx > LENGTH_EPS) return false;
-    double dy = v.y - y; if(dy < -LENGTH_EPS || dy > LENGTH_EPS) return false;
-    double dz = v.z - z; if(dz < -LENGTH_EPS || dz > LENGTH_EPS) return false;
+    double dx = v.x - x; if(dx < -tol || dx > tol) return false;
+    double dy = v.y - y; if(dy < -tol || dy > tol) return false;
+    double dz = v.z - z; if(dz < -tol || dz > tol) return false;
 
-    return (this->Minus(v)).MagSquared() < LENGTH_EPS*LENGTH_EPS;
+    return (this->Minus(v)).MagSquared() < tol*tol;
 }
 
 bool Vector::EqualsExactly(Vector v) {

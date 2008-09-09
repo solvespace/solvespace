@@ -47,7 +47,7 @@ public:
                                          Vector n2, double d2);
 
     double Element(int i);
-    bool Equals(Vector v);
+    bool Equals(Vector v, double tol=LENGTH_EPS);
     bool EqualsExactly(Vector v);
     Vector Plus(Vector b);
     Vector Minus(Vector b);

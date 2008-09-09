@@ -588,9 +588,9 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
 
             if(tr->tag == cnt) continue;
             
-            if((a.EqualsExactly(tr->b) && b.EqualsExactly(tr->a)) ||
-               (a.EqualsExactly(tr->c) && b.EqualsExactly(tr->b)) ||
-               (a.EqualsExactly(tr->a) && b.EqualsExactly(tr->c)))
+            if((a.Equals(tr->b, KDTREE_EPS) && b.Equals(tr->a, KDTREE_EPS)) ||
+               (a.Equals(tr->c, KDTREE_EPS) && b.Equals(tr->b, KDTREE_EPS)) ||
+               (a.Equals(tr->a, KDTREE_EPS) && b.Equals(tr->c, KDTREE_EPS)))
             {
                 (*n)++;
                 if(tr->meta.face != m.face) {
@@ -643,7 +643,9 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, bool emphasized) {
             FindEdgeOn(a, b, &n, &nOther, tr->meta, cnt++);
             if(n != 1) {
                 if(!emphasized) {
-                    if(n == 0) sel->AddEdge(a, b);
+                    if(n == 0 && (a.Minus(b).Magnitude()) > KDTREE_EPS) {
+                        sel->AddEdge(a, b);
+                    }
                 } else {
 //                    dbp("hanging: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
 //                        n, CO(a), CO(b));
