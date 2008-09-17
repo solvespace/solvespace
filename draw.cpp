@@ -924,10 +924,8 @@ void GraphicsWindow::Paint(int w, int h) {
     } else {
         // Draw a red background whenever we're having solve problems.
         glClearColor(0.4f, 0, 0, 1.0f);
-        if(!showTextWindow) {
-            showTextWindow = true;
-            ShowTextWindow(TRUE);
-        }
+        // And show the text window, which has info to debug it
+        ForceTextWindowShown();
     }
 
     glClearDepth(1.0); 

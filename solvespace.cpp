@@ -373,6 +373,10 @@ void SolveSpace::MenuAnalyze(int id) {
                     SS.TW.shown.constraint = c->h;
                     SS.TW.shown.screen = TextWindow::SCREEN_STEP_DIMENSION;
 
+                    // The step params are specified in the text window,
+                    // so force that to be shown.
+                    SS.GW.ForceTextWindowShown();
+
                     SS.later.showTW = true;
                     SS.GW.ClearSelection();
                 } else {

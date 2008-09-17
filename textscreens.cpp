@@ -929,13 +929,19 @@ void TextWindow::EditControlDone(char *s) {
             break;
         }
 
-        case EDIT_STEP_DIM_FINISH:
+        case EDIT_STEP_DIM_FINISH: {
+            Expr *e = Expr::From(s);
+            if(!e) {
+                Error("Not a valid number or expression: '%s'", s);
+                break;
+            }
             if(shown.dimIsDistance) {
-                shown.dimFinish = SS.StringToMm(s);
+                shown.dimFinish = SS.ExprToMm(e);
             } else {
-                shown.dimFinish = atof(s);
+                shown.dimFinish = e->Eval();
             }
             break;
+        }
 
         case EDIT_STEP_DIM_STEPS:
             shown.dimSteps = min(300, max(1, atoi(s)));

@@ -430,6 +430,14 @@ bool GraphicsWindow::LockedInWorkplane(void) {
     return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
 }
 
+void GraphicsWindow::ForceTextWindowShown(void) {
+    if(!showTextWindow) {
+        showTextWindow = true;
+        CheckMenuById(MNU_SHOW_TEXT_WND, true);
+        ShowTextWindow(TRUE);
+    }
+}
+
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:

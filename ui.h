@@ -292,6 +292,7 @@ public:
     bool LockedInWorkplane(void);
     void SetWorkplaneFreeIn3d(void);
     hEntity ActiveWorkplane(void);
+    void ForceTextWindowShown(void);
 
     // Operations that must be completed by doing something with the mouse
     // are noted here. These occupy the same space as the menu ids.
