@@ -10,6 +10,7 @@
 #define mHelp (&SolveSpace::MenuHelp)
 #define S 0x100
 #define C 0x200
+#define F(k) (0xf0+(k))
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                          NULL  },
 { 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
@@ -37,6 +38,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
+{ 1,  NULL,                                 0,                          NULL  },
+{ 1, "Nearest &Ortho View\tF1",             MNU_NEAREST_ORTHO,  F(1),   mView },
+{ 1, "Nearest &Iso View\tF2",               MNU_NEAREST_ISO,    F(2),   mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1,  NULL,                                 0,                          NULL  },
@@ -185,13 +189,17 @@ Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
     return r;
 }
 
-void GraphicsWindow::AnimateOntoWorkplane(void) {   
+void GraphicsWindow::AnimateOntoWorkplane(void) {
     if(!LockedInWorkplane()) return;
 
     Entity *w = SS.GetEntity(ActiveWorkplane());
     Quaternion quatf = w->Normal()->NormalGetNum();
     Vector offsetf = (SS.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
 
+    AnimateOnto(quatf, offsetf);
+}
+
+void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // Get our initial orientation and translation.
     Quaternion quat0 = Quaternion::From(projRight, projUp);
     Vector offset0 = offset;
@@ -326,6 +334,61 @@ void GraphicsWindow::MenuView(int id) {
         case MNU_ZOOM_TO_FIT:
             SS.GW.ZoomToFit();
             break;
+
+        case MNU_NEAREST_ORTHO:
+        case MNU_NEAREST_ISO: {
+            static const Vector ortho[3] = {
+                Vector::From(1, 0, 0),
+                Vector::From(0, 1, 0),
+                Vector::From(0, 0, 1)
+            };
+            double sqrt2 = sqrt(2.0), sqrt6 = sqrt(6.0);
+            Quaternion quat0 = Quaternion::From(SS.GW.projRight, SS.GW.projUp);
+            Quaternion quatf = quat0;
+            double dmin = 1e10;
+
+            // There are 24 possible views; 3*2*2*2
+            int i, j, negi, negj;
+            for(i = 0; i < 3; i++) {
+                for(j = 0; j < 3; j++) {
+                    if(i == j) continue;
+                    for(negi = 0; negi < 2; negi++) {
+                        for(negj = 0; negj < 2; negj++) {
+                            Vector ou = ortho[i], ov = ortho[j];
+                            if(negi) ou = ou.ScaledBy(-1);
+                            if(negj) ov = ov.ScaledBy(-1);
+                            Vector on = ou.Cross(ov);
+
+                            Vector u, v;
+                            if(id == MNU_NEAREST_ORTHO) {
+                                u = ou;
+                                v = ov;
+                            } else {
+                                u =
+                                    ou.ScaledBy(1/sqrt2).Plus(
+                                    on.ScaledBy(-1/sqrt2));
+                                v =
+                                    ou.ScaledBy(-1/sqrt6).Plus(
+                                    ov.ScaledBy(2/sqrt6).Plus(
+                                    on.ScaledBy(-1/sqrt6)));
+                            }
+
+                            Quaternion quatt = Quaternion::From(u, v);
+                            double d = min(
+                                (quatt.Minus(quat0)).Magnitude(),
+                                (quatt.Plus(quat0)).Magnitude());
+                            if(d < dmin) {
+                                dmin = d;
+                                quatf = quatt;
+                            }
+                        }
+                    }
+                }
+            }
+
+            SS.GW.AnimateOnto(quatf, SS.GW.offset);
+            break;
+        }
 
         case MNU_SHOW_TEXT_WND:
             SS.GW.showTextWindow = !SS.GW.showTextWindow;

@@ -527,6 +527,19 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_DELETE:         c = 127;    break;
         case VK_TAB:            c = '\t';   break;
 
+        case VK_F1:
+        case VK_F2:
+        case VK_F3:
+        case VK_F4:
+        case VK_F5:
+        case VK_F6:
+        case VK_F7:
+        case VK_F8:
+        case VK_F9:
+        case VK_F10:
+        case VK_F11:
+        case VK_F12:            c = (wParam - VK_F1) + 0xf1; break;
+
         // These overlap with some character codes that I'm using, so
         // don't let them trigger by accident.
         case VK_F16:

@@ -184,6 +184,8 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
+        MNU_NEAREST_ORTHO,
+        MNU_NEAREST_ISO,
         MNU_SHOW_TEXT_WND,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
@@ -280,6 +282,7 @@ public:
     Point2d ProjectPoint(Vector p);
     Vector ProjectPoint3(Vector p);
     Vector ProjectPoint4(Vector p, double *w);
+    void AnimateOnto(Quaternion quatf, Vector offsetf);
     void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
