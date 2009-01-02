@@ -43,6 +43,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Nearest &Iso View\tF2",               MNU_NEAREST_ISO,    F(2),   mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
+{ 1, "Show &Toolbar",                       MNU_SHOW_TOOLBAR,   0,      mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
 { 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
@@ -395,6 +396,12 @@ void GraphicsWindow::MenuView(int id) {
             SS.GW.EnsureValidActives();
             break;
 
+        case MNU_SHOW_TOOLBAR:
+            SS.showToolbar = !SS.showToolbar;
+            SS.GW.EnsureValidActives();
+            PaintGraphics();
+            break;
+
         case MNU_UNITS_MM:
             SS.viewUnits = SolveSpace::UNIT_MM;
             SS.later.showTW = true;
@@ -474,6 +481,8 @@ void GraphicsWindow::EnsureValidActives(void) {
 
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
+
+    CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
 
     if(change) SS.later.showTW = true;
 }

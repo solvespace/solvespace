@@ -25,6 +25,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         shiftDown = !shiftDown;
     }
 
+    if(SS.showToolbar) {
+        if(ToolbarMouseMoved((int)x, (int)y)) {
+            hover.Clear();
+            return;
+        }
+    }
+
     Point2d mp = { x, y };
 
     // If the middle button is down, then mouse movement is used to pan and
@@ -336,6 +343,10 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
     HideTextEditControl();
+
+    if(SS.showToolbar) {
+        if(ToolbarMouseDown((int)mx, (int)my)) return;
+    }
 
     // Make sure the hover is up to date.
     MouseMoved(mx, my, false, false, false, false, false);
@@ -682,6 +693,14 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     InvalidateGraphics();
 }
 
+void GraphicsWindow::MouseLeave(void) {
+    // Un-hover everything when the mouse leaves our window.
+    hover.Clear();
+    toolbarTooltipped = 0;
+    toolbarHovered = 0;
+    PaintGraphics();
+}
+
 bool GraphicsWindow::Selection::Equals(Selection *b) {
     if(entity.v     != b->entity.v)     return false;
     if(constraint.v != b->constraint.v) return false;
@@ -1005,6 +1024,11 @@ void GraphicsWindow::Paint(int w, int h) {
     glxLockColorTo(1, 0, 0);
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
+    }
+
+    // And finally the toolbar.
+    if(SS.showToolbar) {
+        ToolbarDraw();
     }
 }
 

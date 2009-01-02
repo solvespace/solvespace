@@ -22,6 +22,9 @@
 #define EDIT_WIDTH  220
 #define EDIT_HEIGHT 21
 
+// The list representing glyph with ASCII code zero, for bitmap fonts
+#define BITMAP_GLYPH_BASE 1000
+
 HINSTANCE Instance;
 
 HWND TextWnd;
@@ -95,6 +98,27 @@ void Message(char *str, ...)
     va_end(f);
 }
 
+void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
+{
+    SS.GW.TimerCallback();
+}
+void SetTimerFor(int milliseconds)
+{
+    SetTimer(GraphicsWnd, 1, milliseconds, TimerCallback);
+}
+
+void DrawWithBitmapFont(char *str)
+{
+    // These lists were created in CreateGlContext
+    glListBase(BITMAP_GLYPH_BASE); 
+    glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);
+}
+void GetBitmapFontExtent(char *str, int *w, int *h)
+{
+    // Easy since that's a fixed-width font for now.
+    *h = TEXT_HEIGHT;
+    *w = TEXT_WIDTH*strlen(str);
+}
 
 void OpenWebsite(char *url) {
     ShellExecute(GraphicsWnd, "open", url, NULL, NULL, SW_SHOWNORMAL);
@@ -598,6 +622,10 @@ static void CreateGlContext(void)
 
     GraphicsHpgl = wglCreateContext(hdc); 
     wglMakeCurrent(hdc, GraphicsHpgl); 
+
+    // Create a bitmap font in a display list, for DrawWithBitmapFont().
+    SelectObject(hdc, FixedFont);
+    wglUseFontBitmaps(hdc, 0, 255, BITMAP_GLYPH_BASE); 
 }
 
 void InvalidateGraphics(void)
@@ -702,6 +730,10 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             break;
         }
 
+        case WM_MOUSELEAVE:
+            SS.GW.MouseLeave();
+            break;
+
         case WM_MOUSEMOVE:
         case WM_LBUTTONDOWN:
         case WM_LBUTTONUP:
@@ -711,6 +743,15 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
 
+            // We need this in order to get the WM_MOUSELEAVE
+            TRACKMOUSEEVENT tme;
+            ZERO(&tme);
+            tme.cbSize = sizeof(tme);
+            tme.dwFlags = TME_LEAVE;
+            tme.hwndTrack = GraphicsWnd;
+            TrackMouseEvent(&tme);
+
+            // Convert to xy (vs. ij) style coordinates, with (0, 0) at center
             RECT r;
             GetClientRect(GraphicsWnd, &r);
             x = x - (r.right - r.left)/2;

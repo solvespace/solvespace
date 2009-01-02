@@ -53,6 +53,8 @@ void SolveSpace::Init(char *cmdLine) {
     exportOffset = CnfThawFloat(0.0f, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
+    // Show toolbar in the graphics window
+    showToolbar = CnfThawDWORD(1, "ShowToolbar");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -115,6 +117,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportOffset, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
+    // Show toolbar in the graphics window
+    CnfFreezeDWORD(showToolbar, "ShowToolbar");
 
     ExitNow();
 }

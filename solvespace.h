@@ -99,7 +99,11 @@ void dbp(char *str, ...);
 void SetWindowTitle(char *str);
 void Message(char *str, ...);
 void Error(char *str, ...);
+void SetTimerFor(int milliseconds);
 void ExitNow(void);
+
+void DrawWithBitmapFont(char *str);
+void GetBitmapFontExtent(char *str, int *w, int *h);
 
 void CnfFreezeString(char *str, char *name);
 void CnfFreezeDWORD(DWORD v, char *name);
@@ -372,6 +376,7 @@ public:
     float   exportScale;
     float   exportOffset;
     int     drawBackFaces;
+    int     showToolbar;
 
     int CircleSides(double r);
     typedef enum {

@@ -187,6 +187,7 @@ public:
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,
         MNU_SHOW_TEXT_WND,
+        MNU_SHOW_TOOLBAR,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
         // Edit
@@ -371,6 +372,16 @@ public:
 
     void ClearSuper(void);
 
+    // The toolbar, in toolbar.cpp
+    bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menu);
+    void ToolbarDraw(void);
+    bool ToolbarMouseMoved(int x, int y);
+    bool ToolbarMouseDown(int x, int y);
+    static void TimerCallback(void);
+    int toolbarHovered;
+    int toolbarTooltipped;
+    int toolbarMouseX, toolbarMouseY;
+
     // This sets what gets displayed.
     bool    showWorkplanes;
     bool    showNormals;
@@ -395,6 +406,7 @@ public:
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
     void MouseScroll(double x, double y, int delta);
+    void MouseLeave(void);
     void EditControlDone(char *s);
 };
 

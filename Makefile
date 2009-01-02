@@ -25,6 +25,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\expr.obj \
            $(OBJDIR)\constraint.obj \
            $(OBJDIR)\draw.obj \
+           $(OBJDIR)\toolbar.obj \
            $(OBJDIR)\drawconstraint.obj \
            $(OBJDIR)\file.obj \
            $(OBJDIR)\undoredo.obj \
@@ -66,4 +67,9 @@ $(FREEZE): ..\common\win32\$(@B).cpp $(HEADERS)
 $(RES): win32/$(@B).rc icon.ico
 	rc win32/$(@B).rc
 	mv win32/$(@B).res $(OBJDIR)/$(@B).res
+
+toolbar.cpp: $(OBJDIR)/icons.h
+    
+$(OBJDIR)/icons.h: icons/* png2c.pl
+    perl png2c.pl > $(OBJDIR)/icons.h
 
