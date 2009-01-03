@@ -25,6 +25,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\glhelper.obj \
            $(OBJDIR)\expr.obj \
            $(OBJDIR)\constraint.obj \
+           $(OBJDIR)\constrainteq.obj \
            $(OBJDIR)\draw.obj \
            $(OBJDIR)\toolbar.obj \
            $(OBJDIR)\drawconstraint.obj \
