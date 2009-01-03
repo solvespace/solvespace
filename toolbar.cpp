@@ -25,11 +25,16 @@ static const struct {
     { Icon_perpendicular,   GraphicsWindow::MNU_PERPENDICULAR,  "Constrain to be perpendicular"                     },
     { Icon_pointonx,        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / point"   },
     { Icon_symmetric,       GraphicsWindow::MNU_SYMMETRIC,      "Constrain symmetric"                               },
+    { Icon_equal,           GraphicsWindow::MNU_EQUAL,          "Constrain equal length / radius / angle"           },
+    { Icon_same_orientation,GraphicsWindow::MNU_ORIENTED_SAME,  "Constrain normals in same orientation"             },
+    { Icon_other_supp,      GraphicsWindow::MNU_OTHER_ANGLE,    "Other supplementary angle"                         },
     { Icon_ref,             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension"                        },
     { SPACER  },
 
     { Icon_extrude,         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch"                 },
     { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
+    { Icon_step_rotate,     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating"                },
+    { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
     { Icon_sketch_in_3d,    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d"                                   },
     { Icon_assemble,        GraphicsWindow::MNU_GROUP_IMPORT,   "New group importing / assembling file"             },
     { SPACER  },
@@ -94,7 +99,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     int x = 17, y = (int)(height - 52);
 
     int fudge = 8;
-    int h = 32*12 + 3*16 + fudge;
+    int h = 32*14 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =
