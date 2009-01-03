@@ -207,6 +207,7 @@ public:
         MNU_RECTANGLE,
         MNU_CUBIC,
         MNU_TTF_TEXT,
+        MNU_SPLIT_CURVES,
         MNU_CONSTRUCTION,
         // Group
         MNU_GROUP_3D,
@@ -325,8 +326,15 @@ public:
     hConstraint constraintBeingEdited;
 
     bool ConstrainPointByHovered(hEntity pt);
+    void DeleteTaggedRequests(void);
     hRequest AddRequest(int type, bool rememberForUndo);
     hRequest AddRequest(int type);
+
+    void MakeTangentArc(void);
+    void SplitLinesOrCurves(void);
+    void SplitLine(hEntity he, Vector pinter);
+    void SplitCircle(hEntity he, Vector pinter);
+    void ReplacePointInConstraints(hEntity oldpt, hEntity newpt);
     
     // The current selection.
     class Selection {

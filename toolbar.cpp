@@ -14,7 +14,7 @@ static const struct {
     { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier section"                       },
     { Icon_point,           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point"                                },
     { Icon_construction,    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction"                               },
-    { Icon_trim,            GraphicsWindow::MNU_CONSTRUCTION,   "Split lines / curves where they intersect"         },
+    { Icon_trim,            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect"         },
     { SPACER  },
 
     { Icon_length,          GraphicsWindow::MNU_DISTANCE_DIA,   "Constrain distance / diameter / length"            },
@@ -23,7 +23,7 @@ static const struct {
     { Icon_vert,            GraphicsWindow::MNU_VERTICAL,       "Constrain to be vertical"                          },
     { Icon_parallel,        GraphicsWindow::MNU_PARALLEL,       "Constrain to be parallel or tangent"               },
     { Icon_perpendicular,   GraphicsWindow::MNU_PERPENDICULAR,  "Constrain to be perpendicular"                     },
-    { Icon_pointonx,        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / face"    },
+    { Icon_pointonx,        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / point"   },
     { Icon_symmetric,       GraphicsWindow::MNU_SYMMETRIC,      "Constrain symmetric"                               },
     { Icon_ref,             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension"                        },
     { SPACER  },

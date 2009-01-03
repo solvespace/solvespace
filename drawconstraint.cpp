@@ -117,23 +117,18 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         db = db.ProjectVectorInto(workplane);
     }
 
-    // Make an orthogonal coordinate system from those directions
-    Vector dn = da.Cross(db); // normal to both
-    Vector dna = dn.Cross(da); // normal to da
-    Vector dnb = dn.Cross(db); // normal to db
-    // At the intersection of the lines
-    //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
-    // So dot this equation against dna and dnb to get two equations
-    // to solve for da and db
-    double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
-    double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+    bool skew;
+    Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da), 
+                                              b0, b0.Plus(db), &skew);
 
-    Vector pi = a0.Plus(da.ScaledBy(pa));
-    if(pi.Equals(b0.Plus(db.ScaledBy(pb)))) {
+    if(!skew) {
         *ref = pi.Plus(offset);
-        // We draw in a coordinate system centered at pi, with
-        // basis vectors da and dna.
+        // We draw in a coordinate system centered at the intersection point.
+        // One basis vector is da, and the other is normal to da and in
+        // the plane that contains our lines (so normal to its normal).
+        Vector dna = (da.Cross(db)).Cross(da);
         da = da.WithMagnitude(1); dna = dna.WithMagnitude(1);
+
         Vector rm = (*ref).Minus(pi);
         double rda = rm.Dot(da), rdna = rm.Dot(dna);
         double r = sqrt(rda*rda + rdna*rdna);

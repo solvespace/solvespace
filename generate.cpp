@@ -36,6 +36,8 @@ bool SolveSpace::PruneOrphans(void) {
         if(GroupExists(c->group)) continue;
 
         (deleted.constraints)++;
+        (deleted.nonTrivialConstraints)++;
+
         constraint.RemoveById(c->h);
         return true;
     }
@@ -118,6 +120,13 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
         }
 
         (deleted.constraints)++;
+        if(c->type != Constraint::POINTS_COINCIDENT &&
+           c->type != Constraint::HORIZONTAL &&
+           c->type != Constraint::VERTICAL)
+        {
+            (deleted.nonTrivialConstraints)++;
+        }
+
         constraint.RemoveById(c->h);
         return true;
     }
@@ -264,21 +273,29 @@ void SolveSpace::GenerateAll(int first, int last) {
         }
         later.showTW = true;
         GW.ClearSuper();
-        // Don't display any errors until we've regenerated fully. The
-        // sketch is not necessarily in a consistent state until we've
-        // pruned any orphaned etc. objects, and the message loop for the
-        // messagebox could allow us to repaint and crash. But now we must
-        // be fine.
-        Error("Additional sketch elements were deleted, because they depend "
-              "on the element that was just deleted explicitly. These "
-              "include: \r\n"
-              "     %d request%s\r\n"
-              "     %d constraint%s\r\n"
-              "     %d group%s\r\n\r\n"
-              "Choose Edit -> Undo to undelete all elements.",
-                deleted.requests, deleted.requests == 1 ? "" : "s",
-                deleted.constraints, deleted.constraints == 1 ? "" : "s",
-                deleted.groups, deleted.groups == 1 ? "" : "s");
+
+        // People get annoyed if I complain whenever they delete any request,
+        // and I otherwise will, since those always come with pt-coincident
+        // constraints.
+        if(deleted.requests > 0 || deleted.nonTrivialConstraints > 0 ||
+           deleted.groups > 0)
+        {
+            // Don't display any errors until we've regenerated fully. The
+            // sketch is not necessarily in a consistent state until we've
+            // pruned any orphaned etc. objects, and the message loop for the
+            // messagebox could allow us to repaint and crash. But now we must
+            // be fine.
+            Error("Additional sketch elements were deleted, because they "
+                  "depend on the element that was just deleted explicitly. "
+                  "These include: \r\n"
+                  "     %d request%s\r\n"
+                  "     %d constraint%s\r\n"
+                  "     %d group%s\r\n\r\n"
+                  "Choose Edit -> Undo to undelete all elements.",
+                    deleted.requests, deleted.requests == 1 ? "" : "s",
+                    deleted.constraints, deleted.constraints == 1 ? "" : "s",
+                    deleted.groups, deleted.groups == 1 ? "" : "s");
+        }
         memset(&deleted, 0, sizeof(deleted));
     }
     

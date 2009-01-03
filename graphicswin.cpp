@@ -79,6 +79,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Text in TrueType Font\tT",           MNU_TTF_TEXT,       'T',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
+{ 1, "Split Curves at &Intersection\tI",    MNU_SPLIT_CURVES,   'I',    mReq  },
 
 { 0, "&Constrain",                          0,                          NULL  },
 { 1, "&Distance / Diameter\tD",             MNU_DISTANCE_DIA,   'D',    mCon  },
@@ -510,6 +511,22 @@ void GraphicsWindow::ForceTextWindowShown(void) {
     }
 }
 
+void GraphicsWindow::DeleteTaggedRequests(void) {
+    SS.request.RemoveTagged();
+
+    // An edit might be in progress for the just-deleted item. So
+    // now it's not.
+    HideGraphicsEditControl();
+    HideTextEditControl();
+    // And clear out the selection, which could contain that item.
+    ClearSuper();
+    // And regenerate to get rid of what it generates, plus anything
+    // that references it (since the regen code checks for that).
+    SS.GenerateAll(0, INT_MAX);
+    EnsureValidActives();
+    SS.later.showTW = true;
+}
+
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
@@ -542,20 +559,9 @@ void GraphicsWindow::MenuEdit(int id) {
                     SS.constraint.Tag(s->constraint, 1);
                 }
             }
-            SS.request.RemoveTagged();
-            SS.constraint.RemoveTagged();
 
-            // An edit might be in progress for the just-deleted item. So
-            // now it's not.
-            HideGraphicsEditControl();
-            HideTextEditControl();
-            // And clear out the selection, which could contain that item.
-            SS.GW.ClearSuper();
-            // And regenerate to get rid of what it generates, plus anything
-            // that references it (since the regen code checks for that).
-            SS.GenerateAll(0, INT_MAX);
-            SS.GW.EnsureValidActives();
-            SS.later.showTW = true;
+            SS.constraint.RemoveTagged();
+            SS.GW.DeleteTaggedRequests();
             break;
         }
 
@@ -612,138 +618,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_ARC: {
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
-                if(!SS.GW.LockedInWorkplane()) {
-                    Error("Must be sketching in workplane to create tangent "
-                          "arc.");
-                    break;
-                }
-
-                // Find two line segments that join at the specified point,
-                // and blend them with a tangent arc. First, find the
-                // requests that generate the line segments.
-                Vector pshared = SS.GetEntity(SS.GW.gs.point[0])->PointGetNum();
-                SS.GW.ClearSelection();
-
-                int i, c = 0;
-                Entity *line[2];
-                Request *lineReq[2];
-                bool point1[2];
-                for(i = 0; i < SS.request.n; i++) {
-                    Request *r = &(SS.request.elem[i]);
-                    if(r->group.v != SS.GW.activeGroup.v) continue;
-                    if(r->type != Request::LINE_SEGMENT) continue;
-                    if(r->construction) continue;
-
-                    Entity *e = SS.GetEntity(r->h.entity(0));
-                    Vector p0 = SS.GetEntity(e->point[0])->PointGetNum(),
-                           p1 = SS.GetEntity(e->point[1])->PointGetNum();
-                    
-                    if(p0.Equals(pshared) || p1.Equals(pshared)) {
-                        if(c < 2) {
-                            line[c] = e;
-                            lineReq[c] = r;
-                            point1[c] = (p1.Equals(pshared));
-                        }
-                        c++;
-                    }
-                }
-                if(c != 2) {
-                    Error("To create a tangent arc, select a point where "
-                          "two non-construction line segments join.");
-                    break;
-                }
-
-                SS.UndoRemember();
-
-                Entity *wrkpl = SS.GetEntity(SS.GW.ActiveWorkplane());
-                Vector wn = wrkpl->Normal()->NormalN();
-
-                hEntity hshared = (line[0])->point[point1[0] ? 1 : 0],
-                        hother0 = (line[0])->point[point1[0] ? 0 : 1],
-                        hother1 = (line[1])->point[point1[1] ? 0 : 1];
-
-                Vector pother0 = SS.GetEntity(hother0)->PointGetNum(),
-                       pother1 = SS.GetEntity(hother1)->PointGetNum();
-
-                Vector v0shared = pshared.Minus(pother0),
-                       v1shared = pshared.Minus(pother1);
-
-                hEntity srcline0 = (line[0])->h,
-                        srcline1 = (line[1])->h;
-
-                (lineReq[0])->construction = true;
-                (lineReq[1])->construction = true;
-
-                // And thereafter we mustn't touch the entity or req ptrs,
-                // because the new requests/entities we add might force a
-                // realloc.
-                memset(line, 0, sizeof(line));
-                memset(lineReq, 0, sizeof(lineReq));
-
-                // The sign of vv determines whether shortest distance is
-                // clockwise or anti-clockwise.
-                Vector v = (wn.Cross(v0shared)).WithMagnitude(1);
-                double vv = v1shared.Dot(v);
-
-                double dot = (v0shared.WithMagnitude(1)).Dot(
-                              v1shared.WithMagnitude(1));
-                double theta = acos(dot);
-                double r = 200/SS.GW.scale;
-                // Set the radius so that no more than one third of the 
-                // line segment disappears.
-                r = min(r, v0shared.Magnitude()*tan(theta/2)/3);
-                r = min(r, v1shared.Magnitude()*tan(theta/2)/3);
-                double el = r/tan(theta/2);
-
-                hRequest rln0 = SS.GW.AddRequest(Request::LINE_SEGMENT, false),
-                         rln1 = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
-                hRequest rarc = SS.GW.AddRequest(Request::ARC_OF_CIRCLE, false);
-
-                Entity *ln0 = SS.GetEntity(rln0.entity(0)),
-                       *ln1 = SS.GetEntity(rln1.entity(0));
-                Entity *arc = SS.GetEntity(rarc.entity(0));
-
-                SS.GetEntity(ln0->point[0])->PointForceTo(pother0);
-                Constraint::ConstrainCoincident(ln0->point[0], hother0);
-                SS.GetEntity(ln1->point[0])->PointForceTo(pother1);
-                Constraint::ConstrainCoincident(ln1->point[0], hother1);
-
-                Vector arc0 = pshared.Minus(v0shared.WithMagnitude(el));
-                Vector arc1 = pshared.Minus(v1shared.WithMagnitude(el));
-
-                SS.GetEntity(ln0->point[1])->PointForceTo(arc0);
-                SS.GetEntity(ln1->point[1])->PointForceTo(arc1);
-
-                Constraint::Constrain(Constraint::PT_ON_LINE,
-                    ln0->point[1], Entity::NO_ENTITY, srcline0);
-                Constraint::Constrain(Constraint::PT_ON_LINE,
-                    ln1->point[1], Entity::NO_ENTITY, srcline1);
-
-                Vector center = arc0;
-                int a, b;
-                if(vv < 0) {
-                    a = 1; b = 2;
-                    center = center.Minus(v0shared.Cross(wn).WithMagnitude(r));
-                } else {
-                    a = 2; b = 1;
-                    center = center.Plus(v0shared.Cross(wn).WithMagnitude(r));
-                }
-
-                SS.GetEntity(arc->point[0])->PointForceTo(center);
-                SS.GetEntity(arc->point[a])->PointForceTo(arc0);
-                SS.GetEntity(arc->point[b])->PointForceTo(arc1);
-
-                Constraint::ConstrainCoincident(arc->point[a], ln0->point[1]);
-                Constraint::ConstrainCoincident(arc->point[b], ln1->point[1]);
-
-                Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
-                    Entity::NO_ENTITY, Entity::NO_ENTITY,
-                    arc->h, ln0->h, (a==2));
-                Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
-                    Entity::NO_ENTITY, Entity::NO_ENTITY,
-                    arc->h, ln1->h, (b==2));
-
-                SS.later.generateAll = true;
+                SS.GW.MakeTangentArc();
             } else {
                 s = "click point on arc (draws anti-clockwise)";
                 goto c;
@@ -777,6 +652,10 @@ c:
             SS.GenerateAll();
             break;
         }
+
+        case MNU_SPLIT_CURVES:
+            SS.GW.SplitLinesOrCurves();
+            break;
 
         default: oops();
     }

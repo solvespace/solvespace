@@ -550,6 +550,39 @@ Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
     return (n1.ScaledBy(c1)).Plus(n2.ScaledBy(c2));
 }
 
+Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
+                                     Vector b0, Vector b1,
+                                     bool *skew)
+{
+    Vector da = a1.Minus(a0), db = b1.Minus(b0);
+
+    // Make an orthogonal coordinate system from those directions
+    Vector dn = da.Cross(db); // normal to both
+    Vector dna = dn.Cross(da); // normal to da
+    Vector dnb = dn.Cross(db); // normal to db
+
+    // At the intersection of the lines
+    //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
+    // So dot this equation against dna and dnb to get two equations
+    // to solve for da and db
+    double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
+    double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+
+    // And from either of those, we get the intersection point.
+    Vector pi = a0.Plus(da.ScaledBy(pa));
+
+    if(skew) {
+        // Check if the intersection points on each line are actually
+        // coincident...
+        if(pi.Equals(b0.Plus(db.ScaledBy(pb)))) {
+            *skew = false;
+        } else {
+            *skew = true;
+        }
+    }
+    return pi;
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;

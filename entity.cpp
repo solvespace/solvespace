@@ -118,7 +118,9 @@ void Entity::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) {
     *thetaa = atan2(pa2.y, pa2.x);
     *thetab = atan2(pb2.y, pb2.x);
     *dtheta = *thetab - *thetaa;
-    while(*dtheta < 0) *dtheta += 2*PI;
+    // If the endpoints are coincident, call it a full arc, not a zero arc;
+    // useful concept to have when splitting
+    while(*dtheta < 1e-6) *dtheta += 2*PI;
     while(*dtheta > (2*PI)) *dtheta -= 2*PI;
 }
 

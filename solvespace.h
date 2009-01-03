@@ -15,8 +15,16 @@
 #define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 
 inline int WRAP(int v, int n) {
+    // Clamp it to the range [0, n)
     while(v >= n) v -= n;
     while(v < 0) v += n;
+    return v;
+}
+
+inline double WRAP_NOT_0(double v, double n) {
+    // Clamp it to the range (0, n]
+    while(v > n) v -= n;
+    while(v <= 0) v += n;
     return v;
 }
 
@@ -447,6 +455,7 @@ public:
         int     requests;
         int     groups;
         int     constraints;
+        int     nonTrivialConstraints;
     } deleted;
     bool GroupExists(hGroup hg);
     bool PruneOrphans(void);
