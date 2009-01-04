@@ -467,6 +467,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case MNU_WORKPLANE:
+            if(LockedInWorkplane()) {
+                Error("Sketching in a workplane already; sketch in 3d before "
+                      "creating new workplane.");
+                ClearSuper();
+                break;
+            }
             hr = AddRequest(Request::WORKPLANE);
             SS.GetEntity(hr.entity(1))->PointForceTo(v);
             SS.GetEntity(hr.entity(32))->NormalForceTo( 
