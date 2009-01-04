@@ -100,6 +100,8 @@ void Message(char *str, ...)
 
 void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
 {
+    // The timer is periodic, so needs to be killed explicitly.
+    KillTimer(GraphicsWnd, 1);
     SS.GW.TimerCallback();
 }
 void SetTimerFor(int milliseconds)
