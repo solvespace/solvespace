@@ -453,6 +453,12 @@ void SolveSpace::MenuAnalyze(int id) {
             break;
         }
 
+        case GraphicsWindow::MNU_SHOW_DOF:
+            // This works like a normal solve, except that it calculates
+            // which variables are free/bound at the same time.
+            SS.GenerateAll(0, INT_MAX, true);
+            break;
+
         case GraphicsWindow::MNU_TRACE_PT:
             if(gs.points == 1 && gs.n == 1) {
                 SS.traced.point = gs.point[0];

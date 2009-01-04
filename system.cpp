@@ -398,7 +398,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
     }
 }
 
-void System::Solve(Group *g) {
+void System::Solve(Group *g, bool andFindFree) {
     g->solved.remove.Clear();
 
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g->h);
@@ -469,6 +469,27 @@ void System::Solve(Group *g) {
         goto didnt_converge;
     }
 
+    // If requested, find all the free (unbound) variables. This might be
+    // more than the number of degrees of freedom. Don't always do this,
+    // because the display would get annoying and it's slow.
+    for(i = 0; i < param.n; i++) {
+        Param *p = &(param.elem[i]);
+        p->free = false;
+
+        if(andFindFree) {
+            if(p->tag == 0) {
+                p->tag = VAR_DOF_TEST;
+                WriteJacobian(0);
+                EvalJacobian();
+                rank = CalculateRank();
+                if(rank == mat.m) {
+                    p->free = true;
+                }
+                p->tag = 0;
+            }
+        }
+    }
+
     // System solved correctly, so write the new values back in to the
     // main parameter table.
     for(i = 0; i < param.n; i++) {
@@ -482,6 +503,7 @@ void System::Solve(Group *g) {
         Param *pp = SS.GetParam(p->h);
         pp->val = val;
         pp->known = true;
+        pp->free = p->free;
     }
     if(g->solved.how != Group::SOLVED_OKAY) {
         g->solved.how = Group::SOLVED_OKAY;

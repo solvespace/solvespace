@@ -425,6 +425,7 @@ public:
 
     double      val;
     bool        known;
+    bool        free;
 
     // Used only in the solver
     hParam      substd;

@@ -238,6 +238,7 @@ public:
         MNU_COMMENT,
         // Analyze
         MNU_VOLUME,
+        MNU_SHOW_DOF,
         MNU_TRACE_PT,
         MNU_STOP_TRACING,
         MNU_STEP_DIM,

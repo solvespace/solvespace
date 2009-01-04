@@ -156,7 +156,7 @@ void SolveSpace::GenerateAll(void) {
     }
 }
 
-void SolveSpace::GenerateAll(int first, int last) {
+void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
     int i, j;
 
     // Remove any requests or constraints that refer to a nonexistent
@@ -221,7 +221,7 @@ void SolveSpace::GenerateAll(int first, int last) {
                 }
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
-                SolveGroup(g->h);
+                SolveGroup(g->h, andFindFree);
                 g->GeneratePolygon();
                 g->GenerateMesh();
                 g->clean = true;
@@ -341,7 +341,7 @@ void SolveSpace::ForceReferences(void) {
     }
 }
 
-void SolveSpace::SolveGroup(hGroup hg) {
+void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
     int i;
     // Clear out the system to be solved.
     sys.entity.Clear();
@@ -364,7 +364,7 @@ void SolveSpace::SolveGroup(hGroup hg) {
         p->val = GetParam(p->h)->val;
     }
 
-    sys.Solve(g);
+    sys.Solve(g, andFindFree);
     FreeAllTemporary();
 }
 

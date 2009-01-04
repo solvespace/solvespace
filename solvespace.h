@@ -192,6 +192,7 @@ public:
     // In general, the tag indicates the subsys that a variable/equation
     // has been assigned to; these are exceptions for variables:
     static const int VAR_SUBSTITUTED      = 10000;
+    static const int VAR_DOF_TEST         = 10001;
     // and for equations:
     static const int EQ_SUBSTITUTED       = 20000;
 
@@ -240,7 +241,7 @@ public:
     static bool IsDragged(hParam p);
 
     bool NewtonSolve(int tag);
-    void Solve(Group *g);
+    void Solve(Group *g, bool andFindFree);
 };
 
 class TtfFont {
@@ -466,8 +467,8 @@ public:
     bool PruneConstraints(hGroup hg);
 
     void GenerateAll(void);
-    void GenerateAll(int first, int last);
-    void SolveGroup(hGroup hg);
+    void GenerateAll(int first, int last, bool andFindFree=false);
+    void SolveGroup(hGroup hg, bool andFindFree);
     void ForceReferences(void);
 
     bool AllGroupsOkay(void);

@@ -48,6 +48,31 @@ void Entity::DrawAll(void) {
             if(e->forceHidden) continue;
 
             Vector v = e->PointGetNum();
+
+            bool free = false;
+            if(e->type == POINT_IN_3D) {
+                Param *px = SS.GetParam(e->param[0]),
+                      *py = SS.GetParam(e->param[1]),
+                      *pz = SS.GetParam(e->param[2]);
+
+                free = (px->free) || (py->free) || (pz->free);
+            } else if(e->type == POINT_IN_2D) {
+                Param *pu = SS.GetParam(e->param[0]),
+                      *pv = SS.GetParam(e->param[1]);
+
+                free = (pu->free) || (pv->free);
+            }
+            if(free) {
+                Vector re = r.ScaledBy(2.5), de = d.ScaledBy(2.5);
+
+                glxColor3d(0, 1.0, 1.0);
+                glxVertex3v(v.Plus (re).Plus (de));
+                glxVertex3v(v.Plus (re).Minus(de));
+                glxVertex3v(v.Minus(re).Minus(de));
+                glxVertex3v(v.Minus(re).Plus (de));
+                glxColor3d(0, 0.8, 0);
+            }
+
             glxVertex3v(v.Plus (r).Plus (d));
             glxVertex3v(v.Plus (r).Minus(d));
             glxVertex3v(v.Minus(r).Minus(d));
