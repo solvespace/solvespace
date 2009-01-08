@@ -243,6 +243,8 @@ int Expr::Children(void) {
         case SQUARE:
         case SIN:
         case COS:
+        case ASIN:
+        case ACOS:
             return 1;
 
         default: oops();
@@ -312,6 +314,8 @@ double Expr::Eval(void) {
         case SQUARE:        { double r = a->Eval(); return r*r; }
         case SIN:           return sin(a->Eval());
         case COS:           return cos(a->Eval());
+        case ACOS:          return acos(a->Eval());
+        case ASIN:          return asin(a->Eval());
 
         default: oops();
     }
@@ -348,6 +352,13 @@ Expr *Expr::PartialWrt(hParam p) {
         case NEGATE:    return (a->PartialWrt(p))->Negate();
         case SIN:       return (a->Cos())->Times(a->PartialWrt(p));
         case COS:       return ((a->Sin())->Times(a->PartialWrt(p)))->Negate();
+
+        case ASIN:
+            return (From(1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
+                        ->Times(a->PartialWrt(p));
+        case ACOS:
+            return (From(-1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
+                        ->Times(a->PartialWrt(p));
 
         default: oops();
     }
@@ -421,6 +432,8 @@ Expr *Expr::FoldConstants(void) {
         case NEGATE:
         case SIN:
         case COS:
+        case ASIN:
+        case ACOS:
             if(n->a->op == CONSTANT) {
                 double nv = n->Eval();
                 n->op = CONSTANT;
@@ -526,6 +539,8 @@ p:
         case SQUARE:    App("(square "); a->PrintW(); App(")"); break;
         case SIN:       App("(sin "); a->PrintW(); App(")"); break;
         case COS:       App("(cos "); a->PrintW(); App(")"); break;
+        case ASIN:      App("(asin "); a->PrintW(); App(")"); break;
+        case ACOS:      App("(acos "); a->PrintW(); App(")"); break;
 
         default: oops();
     }

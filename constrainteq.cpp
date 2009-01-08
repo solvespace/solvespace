@@ -249,6 +249,49 @@ void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
             break;
         }
 
+        case EQUAL_LINE_ARC_LEN: {
+            Entity *line = SS.GetEntity(entityA),
+                   *arc  = SS.GetEntity(entityB);
+
+            // Get the line length
+            ExprVector l0 = SS.GetEntity(line->point[0])->PointGetExprs(),
+                       l1 = SS.GetEntity(line->point[1])->PointGetExprs();
+            Expr *ll = (l1.Minus(l0)).Magnitude();
+
+            // And get the arc radius, and the cosine of its angle
+            Entity *ao = SS.GetEntity(arc->point[0]),
+                   *as = SS.GetEntity(arc->point[1]),
+                   *af = SS.GetEntity(arc->point[2]);
+
+            ExprVector aos = (as->PointGetExprs()).Minus(ao->PointGetExprs()),
+                       aof = (af->PointGetExprs()).Minus(ao->PointGetExprs());
+            Expr *r = aof.Magnitude();
+
+            ExprVector n = arc->Normal()->NormalExprsN();
+            ExprVector u = aos.WithMagnitude(Expr::From(1.0));
+            ExprVector v = n.Cross(u);
+            // so in our new csys, we start at (1, 0, 0)
+            Expr *costheta = aof.Dot(u)->Div(r);
+            Expr *sintheta = aof.Dot(v)->Div(r);
+
+            double thetas, thetaf, dtheta;
+            arc->ArcGetAngles(&thetas, &thetaf, &dtheta);
+            Expr *theta;
+            if(dtheta < 3*PI/4) {
+                theta = costheta->ACos();
+            } else if(dtheta < 5*PI/4) {
+                // As the angle crosses pi, cos theta is not invertible;
+                // so use the sine to stop blowing up
+                theta = Expr::From(PI)->Minus(sintheta->ASin());
+            } else {
+                theta = (Expr::From(2*PI))->Minus(costheta->ACos());
+            }
+
+            // And write the equation; r*theta = L
+            AddEq(l, (r->Times(theta))->Minus(ll), 0);
+            break;
+        }
+
         case POINTS_COINCIDENT: {
             Entity *a = SS.GetEntity(ptA);
             Entity *b = SS.GetEntity(ptB);

@@ -104,6 +104,30 @@ void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
     LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
 }
 
+void Constraint::DoEqualRadiusTicks(hEntity he) {
+    Entity *circ = SS.GetEntity(he);
+
+    Vector center = SS.GetEntity(circ->point[0])->PointGetNum();
+    double r = circ->CircleGetRadiusNum();
+    Quaternion q = circ->Normal()->NormalGetNum();
+    Vector u = q.RotationU(), v = q.RotationV();
+
+    double theta;
+    if(circ->type == Entity::CIRCLE) {
+        theta = PI/2;
+    } else if(circ->type == Entity::ARC_OF_CIRCLE) {
+        double thetaa, thetab, dtheta;
+        circ->ArcGetAngles(&thetaa, &thetab, &dtheta);
+        theta = thetaa + dtheta/2;
+    } else oops();
+
+    Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
+    d = d.ScaledBy(r);
+    Vector p = center.Plus(d);
+    Vector tick = d.WithMagnitude(10/SS.GW.scale);
+    LineDrawOrGetDistance(p.Plus(tick), p.Minus(tick));
+}
+
 void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                                    Vector offset, Vector *ref)
 {
@@ -505,27 +529,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
         case EQUAL_RADIUS: {
             for(int i = 0; i < 2; i++) {
-                Entity *circ = SS.GetEntity(i == 0 ? entityA : entityB);
-                Vector center = SS.GetEntity(circ->point[0])->PointGetNum();
-                double r = circ->CircleGetRadiusNum();
-                Quaternion q = circ->Normal()->NormalGetNum();
-                Vector u = q.RotationU(), v = q.RotationV();
-
-                double theta;
-                if(circ->type == Entity::CIRCLE) {
-                    theta = PI/2;
-                } else if(circ->type == Entity::ARC_OF_CIRCLE) {
-                    double thetaa, thetab, dtheta;
-                    circ->ArcGetAngles(&thetaa, &thetab, &dtheta);
-                    theta = thetaa + dtheta/2;
-                } else oops();
-
-                Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
-                d = d.ScaledBy(r);
-                Vector p = center.Plus(d);
-                Vector tick = d.WithMagnitude(10/SS.GW.scale);
-                LineDrawOrGetDistance(p.Plus(tick), p.Minus(tick));
+                DoEqualRadiusTicks(i == 0 ? entityA : entityB);
             }
+            break;
+        }
+
+        case EQUAL_LINE_ARC_LEN: {
+            Entity *line = SS.GetEntity(entityA);
+            DoEqualLenTicks(
+                SS.GetEntity(line->point[0])->PointGetNum(),
+                SS.GetEntity(line->point[1])->PointGetNum(),
+                gn);
+
+            DoEqualRadiusTicks(entityB);
             break;
         }
 

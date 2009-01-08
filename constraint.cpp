@@ -36,6 +36,7 @@ char *Constraint::DescriptionString(void) {
         case PERPENDICULAR:     s = "perpendicular"; break;
         case EQUAL_RADIUS:      s = "eq-radius"; break;
         case EQUAL_ANGLE:       s = "eq-angle"; break;
+        case EQUAL_LINE_ARC_LEN:s = "eq-line-len-arc-len"; break;
         case COMMENT:           s = "comment"; break;
         default:                s = "???"; break;
     }
@@ -239,6 +240,15 @@ void Constraint::MenuConstrain(int id) {
                 c.type = EQUAL_RADIUS;
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
+            } else if(gs.arcs == 1 && gs.lineSegments == 1 && gs.n == 2) {
+                c.type = EQUAL_LINE_ARC_LEN;
+                if(SS.GetEntity(gs.entity[0])->type == Entity::ARC_OF_CIRCLE) {
+                    c.entityA = gs.entity[1];
+                    c.entityB = gs.entity[0];
+                } else {
+                    c.entityA = gs.entity[0];
+                    c.entityB = gs.entity[1];
+                }
             } else {
                 Error("Bad selection for equal length / radius constraint. "
                       "This constraint can apply to:\r\n\r\n"
@@ -253,7 +263,9 @@ void Constraint::MenuConstrain(int id) {
                               "(equal angle between A,B and C,D)\r\n"
                       "    * three line segments or normals "
                               "(equal angle between A,B and B,C)\r\n"
-                      "    * two circles or arcs (equal radius)\r\n");
+                      "    * two circles or arcs (equal radius)\r\n"
+                      "    * a line segment and an arc "
+                              "(line segment length equals arc length)\r\n");
                 return;
             }
             if(c.type == EQUAL_ANGLE) {

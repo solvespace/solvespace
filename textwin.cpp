@@ -343,6 +343,9 @@ void TextWindow::DescribeSelection(void) {
                 double r = e->CircleGetRadiusNum();
                 Printf(true, "   diameter =  %Fi%s", SS.MmToString(r*2));
                 Printf(false, "     radius =  %Fi%s", SS.MmToString(r));
+                double thetas, thetaf, dtheta;
+                e->ArcGetAngles(&thetas, &thetaf, &dtheta);
+                Printf(false, "    arc len =  %Fi%s", SS.MmToString(dtheta*r));
                 break;
             }
             case Entity::CIRCLE: {

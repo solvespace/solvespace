@@ -29,6 +29,8 @@ public:
     static const int SQUARE         = 106;
     static const int SIN            = 107;
     static const int COS            = 108;
+    static const int ASIN           = 109;
+    static const int ACOS           = 110;
 
     // Special helpers for when we're parsing an expression from text.
     // Initially, literals (like a constant number) appear in the same
@@ -70,6 +72,8 @@ public:
     inline Expr *Square(void) { return AnyOp(SQUARE, NULL); }
     inline Expr *Sin   (void) { return AnyOp(SIN,    NULL); }
     inline Expr *Cos   (void) { return AnyOp(COS,    NULL); }
+    inline Expr *ASin  (void) { return AnyOp(ASIN,   NULL); }
+    inline Expr *ACos  (void) { return AnyOp(ACOS,   NULL); }
 
     Expr *PartialWrt(hParam p);
     double Eval(void);

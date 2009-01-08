@@ -516,7 +516,7 @@ didnt_converge:
     (g->solved.remove).Clear();
     SS.constraint.ClearTags();
     for(i = 0; i < eq.n; i++) {
-        if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
+        if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
             // This constraint is unsatisfied.
             if(!mat.eq[i].isFromConstraint()) continue;
 
