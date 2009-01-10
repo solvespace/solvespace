@@ -315,6 +315,10 @@ bool SolveSpace::LoadFromFile(char *filename) {
     while(fgets(line, sizeof(line), fh)) {
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
+        // We should never get files with \r characters in them, but mailers
+        // will sometimes mangle attachments.
+        s = strchr(line, '\r');
+        if(s) *s = '\0';
 
         if(*line == '\0') continue;
        
@@ -363,6 +367,10 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
     char line[1024];
     while(fgets(line, sizeof(line), fh)) {
         char *s = strchr(line, '\n');
+        if(s) *s = '\0';
+        // We should never get files with \r characters in them, but mailers
+        // will sometimes mangle attachments.
+        s = strchr(line, '\r');
         if(s) *s = '\0';
 
         if(*line == '\0') continue;
