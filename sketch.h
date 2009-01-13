@@ -110,7 +110,7 @@ public:
     struct {
         int                 how;
         int                 dof;
-        SList<hConstraint>  remove;
+        List<hConstraint>   remove;
     } solved;
 
     // For drawings in 2d

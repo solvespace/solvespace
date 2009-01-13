@@ -89,6 +89,56 @@ public:
     Point2d WithMagnitude(double v);
 };
 
+// A simple list
+template <class T>
+class List {
+public:
+    T   *elem;
+    int  n;
+    int  elemsAllocated;
+
+    void Add(T *t) {
+        if(n >= elemsAllocated) {
+            elemsAllocated = (elemsAllocated + 32)*2;
+            elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
+        }
+        elem[n++] = *t;
+    }
+
+    void ClearTags(void) {
+        int i;
+        for(i = 0; i < n; i++) {
+            elem[i].tag = 0;
+        }
+    }
+
+    void Clear(void) {
+        if(elem) MemFree(elem);
+        elem = NULL;
+        n = elemsAllocated = 0;
+    }
+
+    void RemoveTagged(void) {
+        int src, dest;
+        dest = 0;
+        for(src = 0; src < n; src++) {
+            if(elem[src].tag) {
+                // this item should be deleted
+            } else {
+                if(src != dest) {
+                    elem[dest] = elem[src];
+                }
+                dest++;
+            }
+        }
+        n = dest;
+        // and elemsAllocated is untouched, because we didn't resize
+    }
+};
+
+// A list, where each element has an integer identifier. The list is kept
+// sorted by that identifier, and items can be looked up in log n time by
+// id.
 template <class T, class H>
 class IdList {
 public:

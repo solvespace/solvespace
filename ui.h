@@ -186,6 +186,7 @@ public:
         MNU_ZOOM_TO_FIT,
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,
+        MNU_CENTER_VIEW,
         MNU_SHOW_TEXT_WND,
         MNU_SHOW_TOOLBAR,
         MNU_UNITS_INCHES,

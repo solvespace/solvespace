@@ -7,52 +7,6 @@ class SContour;
 class SMesh;
 class SBsp3;
 
-template <class T>
-class SList {
-public:
-    T   *elem;
-    int  n;
-    int  elemsAllocated;
-
-    void Add(T *t) {
-        if(n >= elemsAllocated) {
-            elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
-        }
-        elem[n++] = *t;
-    }
-
-    void ClearTags(void) {
-        int i;
-        for(i = 0; i < n; i++) {
-            elem[i].tag = 0;
-        }
-    }
-
-    void Clear(void) {
-        if(elem) MemFree(elem);
-        elem = NULL;
-        n = elemsAllocated = 0;
-    }
-
-    void RemoveTagged(void) {
-        int src, dest;
-        dest = 0;
-        for(src = 0; src < n; src++) {
-            if(elem[src].tag) {
-                // this item should be deleted
-            } else {
-                if(src != dest) {
-                    elem[dest] = elem[src];
-                }
-                dest++;
-            }
-        }
-        n = dest;
-        // and elemsAllocated is untouched, because we didn't resize
-    }
-};
-
 class SEdge {
 public:
     int    tag;
@@ -63,7 +17,7 @@ public:
 
 class SEdgeList {
 public:
-    SList<SEdge>    l;
+    List<SEdge>     l;
 
     void Clear(void);
     void AddEdge(Vector a, Vector b);
@@ -80,7 +34,7 @@ public:
 
 class SContour {
 public:
-    SList<SPoint>   l;
+    List<SPoint>    l;
 
     void AddPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
@@ -99,7 +53,7 @@ typedef struct {
 
 class SPolygon {
 public:
-    SList<SContour> l;
+    List<SContour>  l;
     Vector          normal;
 
     Vector ComputeNormal(void);
@@ -188,7 +142,7 @@ public:
 
 class SMesh {
 public:
-    SList<STriangle>    l;
+    List<STriangle>     l;
 
     bool    flipNormal;
     bool    keepCoplanar;

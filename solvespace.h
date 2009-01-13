@@ -319,7 +319,7 @@ public:
 class TtfFontList {
 public:
     bool                loaded;
-    SList<TtfFont>      l;
+    List<TtfFont>       l;
 
     void LoadAll(void);
 

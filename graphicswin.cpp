@@ -39,8 +39,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "Nearest &Ortho View\tF1",             MNU_NEAREST_ORTHO,  F(1),   mView },
-{ 1, "Nearest &Isometric View\tF2",         MNU_NEAREST_ISO,    F(2),   mView },
+{ 1, "Nearest &Ortho View\tF2",             MNU_NEAREST_ORTHO,  F(2),   mView },
+{ 1, "Nearest &Isometric View\tF3",         MNU_NEAREST_ISO,    F(3),   mView },
+{ 1, "&Center View At Point\tF4",           MNU_CENTER_VIEW,    F(4),   mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1, "Show &Toolbar",                       MNU_SHOW_TOOLBAR,   0,      mView },
@@ -393,6 +394,21 @@ void GraphicsWindow::MenuView(int id) {
             SS.GW.AnimateOnto(quatf, SS.GW.offset);
             break;
         }
+
+        case MNU_CENTER_VIEW:
+            SS.GW.GroupSelection();
+            if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
+                Quaternion quat0;
+                // Offset is the selected point, quaternion is same as before
+                Vector pt = SS.GetEntity(SS.GW.gs.point[0])->PointGetNum();
+                quat0 = Quaternion::From(SS.GW.projRight, SS.GW.projUp);
+                SS.GW.AnimateOnto(quat0, pt.ScaledBy(-1));
+                SS.GW.ClearSelection();
+            } else {
+                Error("Select a point; this point will become the center "
+                      "of the view on screen.");
+            }
+            break;
 
         case MNU_SHOW_TEXT_WND:
             SS.GW.showTextWindow = !SS.GW.showTextWindow;
