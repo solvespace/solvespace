@@ -660,7 +660,7 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
-    Printf(false, "%Ft cutter radius offset (always in mm) ");
+    Printf(false, "%Ft cutter radius offset (in export units) ");
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E",
         (double)SS.exportOffset,
         &ScreenChangeExportOffset, 0);

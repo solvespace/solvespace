@@ -327,6 +327,26 @@ public:
                     hEntity he, Vector origin, Vector u, Vector v);
 };
 
+class VectorFileWriter {
+public:
+    FILE *f;
+    
+    static bool StringEndsIn(char *str, char *ending);
+    static VectorFileWriter *ForFile(char *file);
+
+    virtual void SetLineWidth(double mm) = 0;
+    virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
+    virtual void StartFile(void) = 0;
+    virtual void FinishAndCloseFile(void) = 0;
+};
+class DxfFileWriter : public VectorFileWriter {
+public:
+    void SetLineWidth(double mm);
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
+
 class SolveSpace {
 public:
     TextWindow                  TW;
@@ -438,8 +458,12 @@ public:
     void ReloadAllImported(void);
     // And the various export options
     void ExportAsPngTo(char *file);
-    void ExportDxfTo(char *file);
     void ExportMeshTo(char *file);
+    void ExportViewTo(char *file);
+    void ExportSectionTo(char *file);
+    void ExportPolygon(SPolygon *sp, 
+                       Vector u, Vector v, Vector n, Vector origin,
+                       VectorFileWriter *out);
 
     static void MenuAnalyze(int id);
     struct {
