@@ -393,21 +393,17 @@ public:
         bool        drawing;
         Point2d     mp;
         double      dmin;
-        SEdgeList   *edges;
         Vector      refp;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b);
-    void LineDrawOrGetDistanceOrEdge(Vector a, Vector b);
     void DrawOrGetDistance(void);
 
-    void BezierPwl(double ta, double tb,
-                   Vector p0, Vector p1, Vector p2, Vector p3);
-    Vector BezierEval(double t, Vector p0, Vector p1, Vector p2, Vector p3);
+    void GeneratePolyCurves(SPolyCurveList *spcl);
+    void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 
     static void DrawAll(void);
     void Draw(void);
     double GetDistance(Point2d mp);
-    void GenerateEdges(SEdgeList *el);
     Vector GetReferencePos(void);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);

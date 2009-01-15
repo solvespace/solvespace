@@ -3,7 +3,7 @@ DEFINES = /D_WIN32_WINNT=0x500 /DISOLATION_AWARE_ENABLED /D_WIN32_IE=0x500 /DWIN
 # happens if those mix, but don't want to risk it.
 CFLAGS  = /W3 /nologo -MT -Iextlib -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs
 
-HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h
+HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h srf\surface.h
 
 OBJDIR = obj
 
@@ -39,6 +39,9 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\generate.obj \
            $(OBJDIR)\export.obj \
 
+SRFOBJS =  $(OBJDIR)\ratpoly.obj \
+
+
 RES = $(OBJDIR)\resource.res
 
 
@@ -52,13 +55,16 @@ all: $(OBJDIR)/solvespace.exe
 clean:
 	rm -f obj/*
 
-$(OBJDIR)/solvespace.exe: $(SSOBJS) $(W32OBJS) $(FREEZE) $(RES)
-    @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(W32OBJS) $(FREEZE) $(RES) $(LIBS)
+$(OBJDIR)/solvespace.exe: $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(FREEZE) $(RES)
+    @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(FREEZE) $(RES) $(LIBS)
     editbin /nologo /STACK:8388608 $(OBJDIR)/solvespace.exe
     @echo solvespace.exe
 
 $(SSOBJS): $(@B).cpp $(HEADERS)
     @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj $(@B).cpp
+
+$(SRFOBJS): srf\$(@B).cpp $(HEADERS)
+    @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj srf\$(@B).cpp
 
 $(W32OBJS): win32/$(@B).cpp $(HEADERS)
     @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj win32/$(@B).cpp

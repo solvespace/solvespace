@@ -20,7 +20,8 @@ void TtfFontList::LoadAll(void) {
 }
 
 void TtfFontList::PlotString(char *font, char *str, double spacing,
-                             hEntity he, Vector origin, Vector u, Vector v)
+                             SPolyCurveList *spcl,
+                             Vector origin, Vector u, Vector v)
 {
     LoadAll();
 
@@ -29,15 +30,17 @@ void TtfFontList::PlotString(char *font, char *str, double spacing,
         TtfFont *tf = &(l.elem[i]);
         if(strcmp(tf->FontFileBaseName(), font)==0) {
             tf->LoadFontFromFile(false);
-            tf->PlotString(str, spacing, he, origin, u, v);
+            tf->PlotString(str, spacing, spcl, origin, u, v);
             return;
         }
     }
 
     // Couldn't find the font; so draw a big X for an error marker.
-    Entity *e = SS.GetEntity(he);
-    e->LineDrawOrGetDistanceOrEdge(origin, origin.Plus(u).Plus(v));
-    e->LineDrawOrGetDistanceOrEdge(origin.Plus(v), origin.Plus(u));
+    SPolyCurve spc;
+    spc = SPolyCurve::From(origin, origin.Plus(u).Plus(v));
+    spcl->l.Add(&spc);
+    spc = SPolyCurve::From(origin.Plus(v), origin.Plus(u));
+    spcl->l.Add(&spc);
 }
 
 
@@ -654,9 +657,10 @@ void TtfFont::PlotCharacter(int *dx, int c, double spacing) {
 }
 
 void TtfFont::PlotString(char *str, double spacing,
-                         hEntity he, Vector porigin, Vector pu, Vector pv)
+                         SPolyCurveList *spcl,
+                         Vector porigin, Vector pu, Vector pv)
 {
-    entity = he;
+    polyCurves = spcl;
     u = pu;
     v = pv;
     origin = porigin;
@@ -685,42 +689,15 @@ Vector TtfFont::TransformIntPoint(int x, int y) {
 }
 
 void TtfFont::LineSegment(int x0, int y0, int x1, int y1) {
-    Entity *e = SS.GetEntity(entity);
-    e->LineDrawOrGetDistanceOrEdge(TransformIntPoint(x0, y0),
-                                   TransformIntPoint(x1, y1));
-}
-
-Vector TtfFont::BezierEval(double t, Vector p0, Vector p1, Vector p2) {
-    return (p0.ScaledBy((1 - t)*(1 - t))).Plus(
-           (p1.ScaledBy(2*t*(1 - t))).Plus(
-           (p2.ScaledBy(t*t))));
-}
-
-void TtfFont::BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2) {
-    Vector pa = BezierEval(ta, p0, p1, p2);
-    Vector pb = BezierEval(tb, p0, p1, p2);
-
-    double tm = (ta + tb) / 2;
-
-    Vector pm = BezierEval(tm, p0, p1, p2);
-
-    double tol = SS.chordTol/SS.GW.scale;
-
-    double step = 1.0/SS.maxSegments;
-    if((tb - ta) < step || pm.DistanceToLine(pa, pb.Minus(pa)) < tol) {
-        Entity *e = SS.GetEntity(entity);
-        e->LineDrawOrGetDistanceOrEdge(pa, pb);
-    } else {
-        BezierPwl(ta, tm, p0, p1, p2);
-        BezierPwl(tm, tb, p0, p1, p2);
-    }
+    SPolyCurve spc = SPolyCurve::From(TransformIntPoint(x0, y0),
+                                      TransformIntPoint(x1, y1));
+    polyCurves->l.Add(&spc);
 }
 
 void TtfFont::Bezier(int x0, int y0, int x1, int y1, int x2, int y2) {
-    Vector p0 = TransformIntPoint(x0, y0),
-           p1 = TransformIntPoint(x1, y1),
-           p2 = TransformIntPoint(x2, y2);
-
-    BezierPwl(0, 1, p0, p1, p2);
+    SPolyCurve spc = SPolyCurve::From(TransformIntPoint(x0, y0),
+                                      TransformIntPoint(x1, y1),
+                                      TransformIntPoint(x2, y2));
+    polyCurves->l.Add(&spc);
 }
 

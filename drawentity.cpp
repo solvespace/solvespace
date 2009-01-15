@@ -21,13 +21,6 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
-void Entity::LineDrawOrGetDistanceOrEdge(Vector a, Vector b) {
-    LineDrawOrGetDistance(a, b);
-    if(dogd.edges && !construction) {
-        dogd.edges->AddEdge(a, b);
-    }
-}
-
 void Entity::DrawAll(void) {
     // This handles points and line segments as a special case, because I
     // seem to be able to get a huge speedup that way, by consolidating
@@ -96,20 +89,34 @@ void Entity::DrawAll(void) {
 
 void Entity::Draw(void) {
     dogd.drawing = true;
-    dogd.edges = NULL;
     DrawOrGetDistance();
 }
 
-void Entity::GenerateEdges(SEdgeList *el) {
-    dogd.drawing = false;
-    dogd.edges = el;
-    DrawOrGetDistance();
-    dogd.edges = NULL;
+void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
+    if(construction && !includingConstruction) return;
+
+    SPolyCurveList spcl;
+    ZERO(&spcl);
+    GeneratePolyCurves(&spcl);
+
+    int i, j;
+    for(i = 0; i < spcl.l.n; i++) {
+        SPolyCurve *spc = &(spcl.l.elem[i]);
+
+        List<Vector> lv;
+        ZERO(&lv);
+        spc->MakePwlInto(&lv);
+        for(j = 1; j < lv.n; j++) {
+            el->AddEdge(lv.elem[j-1], lv.elem[j]);
+        }
+        lv.Clear();
+    }
+
+    spcl.Clear();
 }
 
 double Entity::GetDistance(Point2d mp) {
     dogd.drawing = false;
-    dogd.edges = NULL;
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
@@ -120,7 +127,6 @@ double Entity::GetDistance(Point2d mp) {
 
 Vector Entity::GetReferencePos(void) {
     dogd.drawing = false;
-    dogd.edges = NULL;
 
     dogd.refp = SS.GW.offset.ScaledBy(-1);
     DrawOrGetDistance();
@@ -157,48 +163,102 @@ bool Entity::IsVisible(void) {
     return true;
 }
 
-Vector Entity::BezierEval(double t, Vector p0, Vector p1, Vector p2, Vector p3)
-{
-    return (p0.ScaledBy((1 - t)*(1 - t)*(1 - t))).Plus(
-           (p1.ScaledBy(3*t*(1 - t)*(1 - t))).Plus(
-           (p2.ScaledBy(3*t*t*(1 - t))).Plus(
-           (p3.ScaledBy(t*t*t)))));
-}
+void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
+    SPolyCurve spc;
 
-void Entity::BezierPwl(double ta, double tb,
-                       Vector p0, Vector p1, Vector p2, Vector p3)
-{
-    Vector pa = BezierEval(ta, p0, p1, p2, p3);
-    Vector pb = BezierEval(tb, p0, p1, p2, p3);
+    switch(type) {
+        case LINE_SEGMENT: {
+            Vector a = SS.GetEntity(point[0])->PointGetNum();
+            Vector b = SS.GetEntity(point[1])->PointGetNum();
+            spc = SPolyCurve::From(a, b);
+            spcl->l.Add(&spc);
+            break;
+        }
+        case CUBIC: {
+            Vector p0 = SS.GetEntity(point[0])->PointGetNum();
+            Vector p1 = SS.GetEntity(point[1])->PointGetNum();
+            Vector p2 = SS.GetEntity(point[2])->PointGetNum();
+            Vector p3 = SS.GetEntity(point[3])->PointGetNum();
+            spc = SPolyCurve::From(p0, p1, p2, p3);
+            spcl->l.Add(&spc);
+            break;
+        }
 
-    double tm1 = (2*ta + tb) / 3;
-    double tm2 = (ta + 2*tb) / 3;
+        case CIRCLE:
+        case ARC_OF_CIRCLE: {
+            Vector center = SS.GetEntity(point[0])->PointGetNum();
+            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
+            Vector u = q.RotationU(), v = q.RotationV();
+            double r = CircleGetRadiusNum();
+            double thetaa, thetab, dtheta;
 
-    Vector pm1 = BezierEval(tm1, p0, p1, p2, p3);
-    Vector pm2 = BezierEval(tm2, p0, p1, p2, p3);
+            if(type == CIRCLE) {
+                thetaa = 0;
+                thetab = 2*PI;
+                dtheta = 2*PI;
+            } else {
+                ArcGetAngles(&thetaa, &thetab, &dtheta);
+            }
+            int i, n;
+            if(dtheta > 3*PI/2) {
+                n = 4;
+            } else if(dtheta > PI) {
+                n = 3;
+            } else if(dtheta > PI/2) {
+                n = 2;
+            } else {
+                n = 1;
+            }
+            dtheta /= n;
 
-    double d = max(pm1.DistanceToLine(pa, pb.Minus(pa)),
-                   pm2.DistanceToLine(pa, pb.Minus(pa)));
+            for(i = 0; i < n; i++) {
+                double s, c;
 
-    double tol = SS.chordTol/SS.GW.scale;
+                c = cos(thetaa);
+                s = sin(thetaa);
+                // The start point of the curve, and the tangent vector at
+                // that start point.
+                Vector p0 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
+                       t0 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
 
-    double step = 1.0/SS.maxSegments;
-    if((tb - ta) < step || d < tol) {
-        LineDrawOrGetDistanceOrEdge(pa, pb);
-    } else {
-        double tm = (ta + tb) / 2;
-        BezierPwl(ta, tm, p0, p1, p2, p3);
-        BezierPwl(tm, tb, p0, p1, p2, p3);
+                thetaa += dtheta;
+
+                c = cos(thetaa);
+                s = sin(thetaa);
+                Vector p2 = center.Plus(u.ScaledBy( r*c)).Plus(v.ScaledBy(r*s)),
+                       t2 =             u.ScaledBy(-r*s). Plus(v.ScaledBy(r*c));
+
+                // The control point must lie on both tangents.
+                Vector p1 = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
+                                                          p2, p2.Plus(t2),
+                                                          NULL);
+
+                SPolyCurve spc = SPolyCurve::From(p0, p1, p2);
+                spc.weight[1] = cos(dtheta/2);
+                spcl->l.Add(&spc);
+            }
+            break;
+        }
+            
+        case TTF_TEXT: {
+            Vector topLeft = SS.GetEntity(point[0])->PointGetNum();
+            Vector botLeft = SS.GetEntity(point[1])->PointGetNum();
+            Vector n = Normal()->NormalN();
+            Vector v = topLeft.Minus(botLeft);
+            Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
+
+            SS.fonts.PlotString(font.str, str.str, 0, spcl, botLeft, u, v);
+            break;
+        }
+
+        default:
+            // Not a problem, points and normals and such don't generate curves
+            break;
     }
 }
-
 
 void Entity::DrawOrGetDistance(void) {
-    // If an entity is invisible, then it doesn't get shown, and it doesn't
-    // contribute a distance for the selection, but it still generates edges.
-    if(!dogd.edges) {
-        if(!IsVisible()) return;
-    }
+    if(!IsVisible()) return;
 
     Group *g = SS.GetGroup(group);
 
@@ -350,77 +410,13 @@ void Entity::DrawOrGetDistance(void) {
             break;
         }
 
-        case LINE_SEGMENT: {
-            Vector a = SS.GetEntity(point[0])->PointGetNum();
-            Vector b = SS.GetEntity(point[1])->PointGetNum();
-            LineDrawOrGetDistanceOrEdge(a, b);
+        case LINE_SEGMENT:
+        case CIRCLE:
+        case ARC_OF_CIRCLE:
+        case CUBIC:
+        case TTF_TEXT:
+            // Nothing but the curve(s).
             break;
-        }
-
-        case CUBIC: {
-            Vector p0 = SS.GetEntity(point[0])->PointGetNum();
-            Vector p1 = SS.GetEntity(point[1])->PointGetNum();
-            Vector p2 = SS.GetEntity(point[2])->PointGetNum();
-            Vector p3 = SS.GetEntity(point[3])->PointGetNum();
-            BezierPwl(0, 1, p0, p1, p2, p3);
-            break;
-        }
-
-        case ARC_OF_CIRCLE: {
-            Vector c  = SS.GetEntity(point[0])->PointGetNum();
-            Vector pa = SS.GetEntity(point[1])->PointGetNum();
-            Vector pb = SS.GetEntity(point[2])->PointGetNum();
-            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
-            Vector u = q.RotationU(), v = q.RotationV();
-
-            double ra = (pa.Minus(c)).Magnitude();
-            double rb = (pb.Minus(c)).Magnitude();
-
-            double thetaa, thetab, dtheta;
-            ArcGetAngles(&thetaa, &thetab, &dtheta);
-
-            int i, n = 3 + (int)(SS.CircleSides(ra)*dtheta/(2*PI));
-            Vector prev = pa;
-            for(i = 1; i <= n; i++) {
-                double theta = thetaa + (dtheta*i)/n;
-                double r = ra + ((rb - ra)*i)/n;
-                Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
-                Vector p = c.Plus(d.ScaledBy(r));
-                LineDrawOrGetDistanceOrEdge(prev, p);
-                prev = p;
-            }
-            break;
-        }
-
-        case CIRCLE: {
-            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
-            double r = SS.GetEntity(distance)->DistanceGetNum();
-            Vector center = SS.GetEntity(point[0])->PointGetNum();
-            Vector u = q.RotationU(), v = q.RotationV();
-
-            int i, c = SS.CircleSides(r); 
-            Vector prev = u.ScaledBy(r).Plus(center);
-            for(i = 1; i <= c; i++) {
-                double phi = (2*PI*i)/c;
-                Vector p = (u.ScaledBy(r*cos(phi))).Plus(
-                            v.ScaledBy(r*sin(phi)));
-                p = p.Plus(center);
-                LineDrawOrGetDistanceOrEdge(prev, p);
-                prev = p;
-            }
-            break;
-        }
-
-        case TTF_TEXT: {
-            Vector topLeft = SS.GetEntity(point[0])->PointGetNum();
-            Vector botLeft = SS.GetEntity(point[1])->PointGetNum();
-            Vector n = Normal()->NormalN();
-            Vector v = topLeft.Minus(botLeft);
-            Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
-
-            SS.fonts.PlotString(font.str, str.str, 0, h, botLeft, u, v);
-            break;
-        }
 
         case FACE_NORMAL_PT:
         case FACE_XPROD:
@@ -433,5 +429,17 @@ void Entity::DrawOrGetDistance(void) {
         default:
             oops();
     }
+
+    // And draw the curves; generate the rational polynomial curves for
+    // everything, then piecewise linearize them, and display those.
+    SEdgeList sel;
+    ZERO(&sel);
+    GenerateEdges(&sel, true);
+    int i;
+    for(i = 0; i < sel.l.n; i++) {
+        SEdge *se = &(sel.l.elem[i]);
+        LineDrawOrGetDistance(se->a, se->b);
+    }
+    sel.Clear();
 }
 

@@ -2,8 +2,18 @@
 #ifndef __SURFACE_H
 #define __SURFACE_H
 
-class hSCurve;
-class hSSurface;
+// Utility function
+double Bernstein(int k, int deg, double t);
+
+class hSSurface {
+public:
+    DWORD v;
+};
+
+class hSCurve {
+public:
+    DWORD v;
+};
 
 // Stuff for rational polynomial curves, of degree one to three. These are
 // our inputs.
@@ -14,29 +24,30 @@ public:
     double          weight[4];
 
     Vector EvalAt(double t);
-    void GeneratePwlInto(SEdgeList *el);
+    Vector Start(void);
+    Vector Finish(void);
+    void MakePwlInto(List<Vector> *l);
+    void MakePwlWorker(List<Vector> *l, double ta, double tb);
 
     static SPolyCurve From(Vector p0, Vector p1, Vector p2, Vector p3);
+    static SPolyCurve From(Vector p0, Vector p1, Vector p2);
     static SPolyCurve From(Vector p0, Vector p1);
 };
 
 class SPolyCurveList {
 public:
     List<SPolyCurve>    l;
+
+    void Clear(void);
 };
 
 
 // Stuff for the surface trim curves: piecewise linear
-class hSCurve {
-public:
-    DWORD v;
-};
-
 class SCurve {
 public:
     hSCurve         h;
 
-    SList<Vector>   pts;
+    List<Vector>   pts;
     hSSurface       srfA;
     hSSurface       srfB;
 };
@@ -53,11 +64,6 @@ public:
     Vector      out;
 };
 
-class hSSurface {
-public:
-    DWORD v;
-};
-
 class SSurface {
 public:
     hSSurface       h;
@@ -66,7 +72,7 @@ public:
     Vector          ctrl[4][4];
     double          weight[4][4];
 
-    SList<STrimBy>  trim;
+    List<STrimBy>   trim;
 };
 
 class SShell {

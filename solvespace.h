@@ -134,6 +134,7 @@ void vl(void); // debug function to validate heaps
 
 #include "dsc.h"
 #include "polygon.h"
+#include "srf/surface.h"
 
 class Entity;
 class hEntity;
@@ -291,8 +292,8 @@ public:
 
     // And the state that the caller must specify, determines where we
     // render to and how
-    hEntity     entity;
-    Vector      origin, u, v;
+    SPolyCurveList  *polyCurves;
+    Vector          origin, u, v;
 
     int Getc(void);
     int GetBYTE(void);
@@ -307,7 +308,7 @@ public:
     void Handle(int *dx, int x, int y, bool onCurve);
     void PlotCharacter(int *dx, int c, double spacing);
     void PlotString(char *str, double spacing,
-                    hEntity he, Vector origin, Vector u, Vector v);
+                    SPolyCurveList *spcl, Vector origin, Vector u, Vector v);
 
     Vector TransformIntPoint(int x, int y);
     void LineSegment(int x0, int y0, int x1, int y1);
@@ -324,7 +325,7 @@ public:
     void LoadAll(void);
 
     void PlotString(char *font, char *str, double spacing,
-                    hEntity he, Vector origin, Vector u, Vector v);
+                    SPolyCurveList *spcl, Vector origin, Vector u, Vector v);
 };
 
 class VectorFileWriter {
