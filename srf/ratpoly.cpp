@@ -123,7 +123,104 @@ void SPolyCurve::MakePwlWorker(List<Vector> *l, double ta, double tb) {
     }
 }
 
+void SPolyCurve::Reverse(void) {
+    int i;
+    for(i = 0; i < (deg+1)/2; i++) {
+        SWAP(Vector, ctrl[i], ctrl[deg-i]);
+        SWAP(double, weight[i], weight[deg-i]);
+    }
+}
+
 void SPolyCurveList::Clear(void) {
     l.Clear();
 }
+
+SPolyCurveLoop SPolyCurveLoop::FromCurves(SPolyCurveList *spcl, bool *notClosed)
+{
+    SPolyCurveLoop loop;
+    ZERO(&loop);
+
+    if(spcl->l.n < 1) return loop;
+    spcl->l.ClearTags();
+  
+    SPolyCurve *first = &(spcl->l.elem[0]);
+    first->tag = 1;
+    loop.l.Add(first);
+    Vector start = first->Start();
+    Vector hanging = first->Finish();
+
+    spcl->l.RemoveTagged();
+
+    while(spcl->l.n > 0 && !hanging.Equals(start)) {
+        int i;
+        for(i = 0; i < spcl->l.n; i++) {
+            SPolyCurve *test = &(spcl->l.elem[i]);
+
+            if((test->Finish()).Equals(hanging)) {
+                test->Reverse();
+            }
+            if((test->Start()).Equals(hanging)) {
+                test->tag = 1;
+                loop.l.Add(test);
+                hanging = test->Finish();
+                spcl->l.RemoveTagged();
+                break;
+            }
+        }
+        if(i >= spcl->l.n) {
+            // Didn't find the next curve in the loop
+            *notClosed = true;
+            return loop;
+        }
+    }
+    if(hanging.Equals(start)) {
+        *notClosed = false;
+    } else {
+        *notClosed = true;
+    }
+
+    return loop;
+}
+
+SSurface SSurface::FromExtrusionOf(SPolyCurve *spc, Vector t0, Vector t1) {
+    SSurface ret;
+    ZERO(&ret);
+
+    ret.degm = spc->deg;
+    ret.degn = 1;
+
+    int i;
+    for(i = 0; i <= ret.degm; i++) {
+        ret.ctrl[i][0] = (spc->ctrl[i]).Plus(t0);
+        ret.weight[i][0] = spc->weight[i];
+
+        ret.ctrl[i][1] = (spc->ctrl[i]).Plus(t1);
+        ret.weight[i][1] = spc->weight[i];
+    }
+
+    return ret;
+}
+
+SShell SShell::FromExtrusionOf(SPolyCurveList *spcl, Vector t0, Vector t1) {
+    SShell ret;
+    ZERO(&ret);
+
+    // Find the plane that contains our input section.
+
+    // Group the input curves into loops; this will reverse some of the
+    // curves if necessary for consistent (but not necessarily correct yet)
+    // direction.
+
+    // Generate a polygon from the curves, and use this to test how many
+    // times each loop is enclosed. Then set the direction (cw/ccw) to
+    // be correct for outlines/holes, so that we generate correct normals.
+
+    // Now generate all the surfaces, top/bottom planes plus extrusions.
+   
+    // And now all the curves, trimming the top and bottom and their extrusion
+
+    // And the lines, trimming adjacent extrusion surfaces.
+    return ret;
+}
+
 

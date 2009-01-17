@@ -19,6 +19,7 @@ public:
 // our inputs.
 class SPolyCurve {
 public:
+    int             tag;
     int             deg;
     Vector          ctrl[4];
     double          weight[4];
@@ -28,6 +29,8 @@ public:
     Vector Finish(void);
     void MakePwlInto(List<Vector> *l);
     void MakePwlWorker(List<Vector> *l, double ta, double tb);
+
+    void Reverse(void);
 
     static SPolyCurve From(Vector p0, Vector p1, Vector p2, Vector p3);
     static SPolyCurve From(Vector p0, Vector p1, Vector p2);
@@ -41,13 +44,23 @@ public:
     void Clear(void);
 };
 
+class SPolyCurveLoop {
+public:
+    List<SPolyCurve>    l;
+
+    bool IsClockwiseProjdToNormal(Vector n);
+
+    static SPolyCurveLoop FromCurves(SPolyCurveList *spcl, bool *notClosed);
+};
+
 
 // Stuff for the surface trim curves: piecewise linear
 class SCurve {
 public:
     hSCurve         h;
 
-    List<Vector>   pts;
+    SPolyCurve      exact; // or deg = 0 if we don't know the exact form
+    List<Vector>    pts;
     hSSurface       srfA;
     hSSurface       srfB;
 };
@@ -71,14 +84,23 @@ public:
     int             degm, degn;
     Vector          ctrl[4][4];
     double          weight[4][4];
+    Vector          out00;          // outer normal at ctrl[0][0]
 
     List<STrimBy>   trim;
+
+    static SSurface FromExtrusionOf(SPolyCurve *spc, Vector t0, Vector t1);
+
+    void TriangulateInto(SMesh *sm);
 };
 
 class SShell {
 public:
     IdList<SCurve,hSCurve>      curve;
     IdList<SSurface,hSSurface>  surface;
+
+    static SShell FromExtrusionOf(SPolyCurveList *spcl, Vector t0, Vector t1);
+
+    static SShell FromUnionOf(SShell *a, SShell *b);
 };
 
 #endif

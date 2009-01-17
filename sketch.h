@@ -207,8 +207,6 @@ public:
     void AddQuadWithNormal(STriMeta meta, Vector out,
                                     Vector a, Vector b, Vector c, Vector d);
     void GenerateMeshForStepAndRepeat(void);
-    void GenerateMeshForSweep(bool helical,
-                                Vector axisp, Vector axis, Vector onHelix);
     void GenerateMesh(void);
     void Draw(void);
 
