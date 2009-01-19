@@ -34,6 +34,7 @@ public:
 
 class SContour {
 public:
+    int             tag;
     List<SPoint>    l;
 
     void AddPoint(Vector p);

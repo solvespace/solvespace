@@ -49,6 +49,7 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         dest.vvMeshClean = false;
         ZERO(&(dest.solved));
         ZERO(&(dest.poly));
+        ZERO(&(dest.curveLoops));
         ZERO(&(dest.polyError));
         ZERO(&(dest.thisMesh));
         ZERO(&(dest.runningMesh));
@@ -91,6 +92,7 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     for(i = 0; i < group.n; i++) {
         Group *g = &(group.elem[i]);
         g->poly.Clear();
+        g->curveLoops.Clear();
         g->thisMesh.Clear();
         g->runningMesh.Clear();
         g->meshError.interferesAt.Clear();

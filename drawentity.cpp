@@ -192,6 +192,12 @@ void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
             double r = CircleGetRadiusNum();
             double thetaa, thetab, dtheta;
 
+            if(r < LENGTH_EPS) {
+                // If a circle or an arc gets dragged through zero radius,
+                // then we just don't generate anything.
+                break;
+            }
+
             if(type == CIRCLE) {
                 thetaa = 0;
                 thetab = 2*PI;

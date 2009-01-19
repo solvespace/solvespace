@@ -181,7 +181,6 @@ bool SContour::IsClockwiseProjdToNormal(Vector n) {
 
         area += ((v0 + v1)/2)*(u1 - u0);
     }
-
     return (area < 0);
 }
 
@@ -224,13 +223,7 @@ bool SContour::AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt) {
 }
 
 void SContour::Reverse(void) {
-    int i;
-    for(i = 0; i < (l.n / 2); i++) {
-        int i2 = (l.n - 1) - i;
-        SPoint t = l.elem[i2];
-        l.elem[i2] = l.elem[i];
-        l.elem[i] = t;
-    }
+    l.Reverse();
 }
 
 
@@ -277,6 +270,9 @@ int SPolygon::WindingNumberForPoint(Vector p) {
 }
 
 void SPolygon::FixContourDirections(void) {
+    // At output, the contour's tag will be 1 if we reversed it, else 0.
+    l.ClearTags();
+
     // Outside curve looks counterclockwise, projected against our normal.
     int i, j;
     for(i = 0; i < l.n; i++) {
@@ -296,6 +292,7 @@ void SPolygon::FixContourDirections(void) {
         bool clockwise = sc->IsClockwiseProjdToNormal(normal);
         if(clockwise && outer || (!clockwise && !outer)) {
             sc->Reverse();
+            sc->tag = 1;
         }
     }
 }

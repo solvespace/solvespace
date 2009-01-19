@@ -2,110 +2,48 @@
 
 #define gs (SS.GW.gs)
 
-bool Group::AssemblePolygon(SPolygon *p, SEdge *error) {
-    SEdgeList edges; ZERO(&edges);
+bool Group::AssembleLoops(void) {
+    SPolyCurveList spcl;
+    ZERO(&spcl);
+
     int i;
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         if(e->group.v != h.v) continue;
+        if(e->construction) continue;
 
-        e->GenerateEdges(&edges);
+        e->GeneratePolyCurves(&spcl);
     }
-    bool ret = edges.AssemblePolygon(p, error);
-    edges.Clear();
-    return ret;
+
+    bool allClosed;
+    curveLoops = SPolyCurveLoops::From(&spcl, &poly,
+                                       &allClosed, &(polyError.notClosedAt));
+    spcl.Clear();
+    return allClosed;
 }
 
-void Group::GeneratePolygon(void) {
+void Group::GenerateLoops(void) {
     poly.Clear();
+    curveLoops.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
-        if(AssemblePolygon(&poly, &(polyError.notClosedAt))) {
+        if(AssembleLoops()) {
             polyError.how = POLY_GOOD;
-            poly.normal = poly.ComputeNormal();
-            poly.FixContourDirections();
 
             if(!poly.AllPointsInPlane(&(polyError.notCoplanarAt))) {
                 // The edges aren't all coplanar; so not a good polygon
                 polyError.how = POLY_NOT_COPLANAR;
                 poly.Clear();
+                curveLoops.Clear();
             }
         } else {
             polyError.how = POLY_NOT_CLOSED;
             poly.Clear();
+            curveLoops.Clear();
         }
     }
-}
-
-void Group::GetTrajectory(hGroup hg, SContour *traj, SPolygon *section) {
-    if(section->IsEmpty()) return;
-   
-    SEdgeList edges; ZERO(&edges);
-    int i, j;
-
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
-        if(e->group.v != hg.v) continue;
-        e->GenerateEdges(&edges);
-    }
-
-    Vector pn = (section->normal).WithMagnitude(1);
-    double pd = pn.Dot(section->AnyPoint());
-
-    // Find the start of the trajectory
-    Vector first, last;
-    for(i = 0; i < edges.l.n; i++) {
-        SEdge *se = &(edges.l.elem[i]);
-
-        bool startA = true, startB = true;
-        for(j = 0; j < edges.l.n; j++) {
-            if(i == j) continue;
-            SEdge *set = &(edges.l.elem[j]);
-            if((set->a).Equals(se->a)) startA = false;
-            if((set->b).Equals(se->a)) startA = false;
-            if((set->a).Equals(se->b)) startB = false;
-            if((set->b).Equals(se->b)) startB = false;
-        }
-        if(startA || startB) {
-            // It's possible for both to be true, if only one segment exists
-            if(startA) {
-                first = se->a;
-                last = se->b;
-            } else {
-                first = se->b;
-                last = se->a;
-            }
-            se->tag = 1;
-            break;
-        }
-    }
-    if(i >= edges.l.n) goto cleanup;
-    edges.AssembleContour(first, last, traj, NULL);
-    if(traj->l.n < 1) goto cleanup;
-
-    // Starting and ending points of the trajectory
-    Vector ps, pf;
-    ps = traj->l.elem[0].p;
-    pf = traj->l.elem[traj->l.n - 1].p;
-    // Distances of those points to the section plane
-    double ds = fabs(pn.Dot(ps) - pd), df = fabs(pn.Dot(pf) - pd);
-    if(ds < LENGTH_EPS && df < LENGTH_EPS) {
-        if(section->WindingNumberForPoint(pf) > 0) {
-            // Both the start and finish lie on the section plane; let the
-            // start be the one that's somewhere within the section. Use
-            // winding > 0, not odd/even, since it's natural e.g. to sweep
-            // a ring to make a pipe, and draw the trajectory through the
-            // center of the ring.
-            traj->Reverse();
-        }
-    } else if(ds > df) {
-        // The starting point is the endpoint that's closer to the plane
-        traj->Reverse();
-    }
-cleanup:
-    edges.Clear();
 }
 
 void Group::AddQuadWithNormal(STriMeta meta, Vector out,

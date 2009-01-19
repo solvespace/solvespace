@@ -222,7 +222,7 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 SolveGroup(g->h, andFindFree);
-                g->GeneratePolygon();
+                g->GenerateLoops();
                 g->GenerateMesh();
                 g->clean = true;
             } else {

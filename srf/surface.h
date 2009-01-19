@@ -2,8 +2,9 @@
 #ifndef __SURFACE_H
 #define __SURFACE_H
 
-// Utility function
+// Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
 double Bernstein(int k, int deg, double t);
+double BernsteinDerivative(int k, int deg, double t);
 
 class hSSurface {
 public:
@@ -24,7 +25,7 @@ public:
     Vector          ctrl[4];
     double          weight[4];
 
-    Vector EvalAt(double t);
+    Vector PointAt(double t);
     Vector Start(void);
     Vector Finish(void);
     void MakePwlInto(List<Vector> *l);
@@ -48,11 +49,24 @@ class SPolyCurveLoop {
 public:
     List<SPolyCurve>    l;
 
-    bool IsClockwiseProjdToNormal(Vector n);
+    inline void Clear(void) { l.Clear(); }
+    void Reverse(void);
+    void MakePwlInto(SContour *sc);
 
-    static SPolyCurveLoop FromCurves(SPolyCurveList *spcl, bool *notClosed);
+    static SPolyCurveLoop FromCurves(SPolyCurveList *spcl,
+                                     bool *allClosed, SEdge *errorAt);
 };
 
+class SPolyCurveLoops {
+public:
+    List<SPolyCurveLoop> l;
+    Vector normal;
+
+    static SPolyCurveLoops From(SPolyCurveList *spcl, SPolygon *poly,
+                                bool *allClosed, SEdge *errorAt);
+
+    void Clear(void);
+};
 
 // Stuff for the surface trim curves: piecewise linear
 class SCurve {
@@ -84,11 +98,16 @@ public:
     int             degm, degn;
     Vector          ctrl[4][4];
     double          weight[4][4];
-    Vector          out00;          // outer normal at ctrl[0][0]
 
     List<STrimBy>   trim;
 
     static SSurface FromExtrusionOf(SPolyCurve *spc, Vector t0, Vector t1);
+
+    void ClosestPointTo(Vector p, double *u, double *v);
+    Vector PointAt(double u, double v);
+    Vector TangentWrtUAt(double u, double v);
+    Vector TangentWrtVAt(double u, double v);
+    Vector NormalAt(double u, double v);
 
     void TriangulateInto(SMesh *sm);
 };

@@ -134,6 +134,13 @@ public:
         n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
+
+    void Reverse(void) {
+        int i;
+        for(i = 0; i < (n/2); i++) {
+            SWAP(T, elem[i], elem[(n-1)-i]);
+        }
+    }
 };
 
 // A list, where each element has an integer identifier. The list is kept

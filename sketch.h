@@ -136,7 +136,8 @@ public:
         bool        negateV;
     } predef;
 
-    SPolygon        poly;
+    SPolygon                poly;
+    SPolyCurveLoops         curveLoops;
     static const int POLY_GOOD          = 0;
     static const int POLY_NOT_CLOSED    = 1;
     static const int POLY_NOT_COPLANAR  = 2;
@@ -198,12 +199,12 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
-    // Assembling piecewise linear sections into polygons
-    bool AssemblePolygon(SPolygon *p, SEdge *error);
-    void GeneratePolygon(void);
+    // Assembling the curves into loops, and into a piecewise linear polygon
+    // at the same time.
+    bool AssembleLoops(void);
+    void GenerateLoops(void);
     // And the mesh stuff
     SMesh *PreviousGroupMesh(void);
-    void GetTrajectory(hGroup hg, SContour *traj, SPolygon *section);
     void AddQuadWithNormal(STriMeta meta, Vector out,
                                     Vector a, Vector b, Vector c, Vector d);
     void GenerateMeshForStepAndRepeat(void);
