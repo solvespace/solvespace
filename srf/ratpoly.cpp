@@ -36,8 +36,8 @@ double Bernstein(int k, int deg, double t)
     oops();
 }
 
-SPolyCurve SPolyCurve::From(Vector p0, Vector p1) {
-    SPolyCurve ret;
+SBezier SBezier::From(Vector p0, Vector p1) {
+    SBezier ret;
     ZERO(&ret);
     ret.deg = 1;
     ret.weight[0] = ret.weight[1] = 1;
@@ -46,8 +46,8 @@ SPolyCurve SPolyCurve::From(Vector p0, Vector p1) {
     return ret;
 }
 
-SPolyCurve SPolyCurve::From(Vector p0, Vector p1, Vector p2) {
-    SPolyCurve ret;
+SBezier SBezier::From(Vector p0, Vector p1, Vector p2) {
+    SBezier ret;
     ZERO(&ret);
     ret.deg = 2;
     ret.weight[0] = ret.weight[1] = ret.weight[2] = 1;
@@ -57,8 +57,8 @@ SPolyCurve SPolyCurve::From(Vector p0, Vector p1, Vector p2) {
     return ret;
 }
 
-SPolyCurve SPolyCurve::From(Vector p0, Vector p1, Vector p2, Vector p3) {
-    SPolyCurve ret;
+SBezier SBezier::From(Vector p0, Vector p1, Vector p2, Vector p3) {
+    SBezier ret;
     ZERO(&ret);
     ret.deg = 3;
     ret.weight[0] = ret.weight[1] = ret.weight[2] = ret.weight[3] = 1;
@@ -69,15 +69,15 @@ SPolyCurve SPolyCurve::From(Vector p0, Vector p1, Vector p2, Vector p3) {
     return ret;
 }
 
-Vector SPolyCurve::Start(void) {
+Vector SBezier::Start(void) {
     return ctrl[0];
 }
 
-Vector SPolyCurve::Finish(void) {
+Vector SBezier::Finish(void) {
     return ctrl[deg];
 }
 
-Vector SPolyCurve::PointAt(double t) {
+Vector SBezier::PointAt(double t) {
     Vector pt = Vector::From(0, 0, 0);
     double d = 0;
 
@@ -91,12 +91,12 @@ Vector SPolyCurve::PointAt(double t) {
     return pt;
 }
 
-void SPolyCurve::MakePwlInto(List<Vector> *l) {
+void SBezier::MakePwlInto(List<Vector> *l) {
     l->Add(&(ctrl[0]));
     MakePwlWorker(l, 0.0, 1.0);
 }
 
-void SPolyCurve::MakePwlWorker(List<Vector> *l, double ta, double tb) {
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb) {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
 
@@ -123,7 +123,7 @@ void SPolyCurve::MakePwlWorker(List<Vector> *l, double ta, double tb) {
     }
 }
 
-void SPolyCurve::Reverse(void) {
+void SBezier::Reverse(void) {
     int i;
     for(i = 0; i < (deg+1)/2; i++) {
         SWAP(Vector, ctrl[i], ctrl[deg-i]);
@@ -131,32 +131,32 @@ void SPolyCurve::Reverse(void) {
     }
 }
 
-void SPolyCurveList::Clear(void) {
+void SBezierList::Clear(void) {
     l.Clear();
 }
 
-SPolyCurveLoop SPolyCurveLoop::FromCurves(SPolyCurveList *spcl,
-                                          bool *allClosed, SEdge *errorAt)
+SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
+                                    bool *allClosed, SEdge *errorAt)
 {
-    SPolyCurveLoop loop;
+    SBezierLoop loop;
     ZERO(&loop);
 
-    if(spcl->l.n < 1) return loop;
-    spcl->l.ClearTags();
+    if(sbl->l.n < 1) return loop;
+    sbl->l.ClearTags();
   
-    SPolyCurve *first = &(spcl->l.elem[0]);
+    SBezier *first = &(sbl->l.elem[0]);
     first->tag = 1;
     loop.l.Add(first);
     Vector start = first->Start();
     Vector hanging = first->Finish();
 
-    spcl->l.RemoveTagged();
+    sbl->l.RemoveTagged();
 
-    while(spcl->l.n > 0 && !hanging.Equals(start)) {
+    while(sbl->l.n > 0 && !hanging.Equals(start)) {
         int i;
         bool foundNext = false;
-        for(i = 0; i < spcl->l.n; i++) {
-            SPolyCurve *test = &(spcl->l.elem[i]);
+        for(i = 0; i < sbl->l.n; i++) {
+            SBezier *test = &(sbl->l.elem[i]);
 
             if((test->Finish()).Equals(hanging)) {
                 test->Reverse();
@@ -166,7 +166,7 @@ SPolyCurveLoop SPolyCurveLoop::FromCurves(SPolyCurveList *spcl,
                 test->tag = 1;
                 loop.l.Add(test);
                 hanging = test->Finish();
-                spcl->l.RemoveTagged();
+                sbl->l.RemoveTagged();
                 foundNext = true;
                 break;
             }
@@ -192,18 +192,18 @@ SPolyCurveLoop SPolyCurveLoop::FromCurves(SPolyCurveList *spcl,
     return loop;
 }
 
-void SPolyCurveLoop::Reverse(void) {
+void SBezierLoop::Reverse(void) {
     l.Reverse();
 }
 
-void SPolyCurveLoop::MakePwlInto(SContour *sc) {
+void SBezierLoop::MakePwlInto(SContour *sc) {
     List<Vector> lv;
     ZERO(&lv);
 
     int i, j;
     for(i = 0; i < l.n; i++) {
-        SPolyCurve *spc = &(l.elem[i]);
-        spc->MakePwlInto(&lv);
+        SBezier *sb = &(l.elem[i]);
+        sb->MakePwlInto(&lv);
         
         // Each curve's piecewise linearization includes its endpoints,
         // which we don't want to duplicate (creating zero-len edges).
@@ -216,17 +216,17 @@ void SPolyCurveLoop::MakePwlInto(SContour *sc) {
     sc->l.elem[sc->l.n - 1] = sc->l.elem[0];
 }
 
-SPolyCurveLoops SPolyCurveLoops::From(SPolyCurveList *spcl, SPolygon *poly,
-                                      bool *allClosed, SEdge *errorAt)
+SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
+                                    bool *allClosed, SEdge *errorAt)
 {
     int i;
-    SPolyCurveLoops ret;
+    SBezierLoopSet ret;
     ZERO(&ret);
 
-    while(spcl->l.n > 0) {
+    while(sbl->l.n > 0) {
         bool thisClosed;
-        SPolyCurveLoop loop;
-        loop = SPolyCurveLoop::FromCurves(spcl, &thisClosed, errorAt);
+        SBezierLoop loop;
+        loop = SBezierLoop::FromCurves(sbl, &thisClosed, errorAt);
         if(!thisClosed) {
             ret.Clear();
             *allClosed = false;
@@ -254,7 +254,7 @@ SPolyCurveLoops SPolyCurveLoops::From(SPolyCurveList *spcl, SPolygon *poly,
     return ret;
 }
 
-void SPolyCurveLoops::Clear(void) {
+void SBezierLoopSet::Clear(void) {
     int i;
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).Clear();
@@ -262,26 +262,26 @@ void SPolyCurveLoops::Clear(void) {
     l.Clear();
 }
 
-SSurface SSurface::FromExtrusionOf(SPolyCurve *spc, Vector t0, Vector t1) {
+SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     SSurface ret;
     ZERO(&ret);
 
-    ret.degm = spc->deg;
+    ret.degm = sb->deg;
     ret.degn = 1;
 
     int i;
     for(i = 0; i <= ret.degm; i++) {
-        ret.ctrl[i][0] = (spc->ctrl[i]).Plus(t0);
-        ret.weight[i][0] = spc->weight[i];
+        ret.ctrl[i][0] = (sb->ctrl[i]).Plus(t0);
+        ret.weight[i][0] = sb->weight[i];
 
-        ret.ctrl[i][1] = (spc->ctrl[i]).Plus(t1);
-        ret.weight[i][1] = spc->weight[i];
+        ret.ctrl[i][1] = (sb->ctrl[i]).Plus(t1);
+        ret.weight[i][1] = sb->weight[i];
     }
 
     return ret;
 }
 
-SShell SShell::FromExtrusionOf(SPolyCurveList *spcl, Vector t0, Vector t1) {
+SShell SShell::FromExtrusionOf(SBezierList *sbl, Vector t0, Vector t1) {
     SShell ret;
     ZERO(&ret);
 

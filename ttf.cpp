@@ -20,7 +20,7 @@ void TtfFontList::LoadAll(void) {
 }
 
 void TtfFontList::PlotString(char *font, char *str, double spacing,
-                             SPolyCurveList *spcl,
+                             SBezierList *sbl,
                              Vector origin, Vector u, Vector v)
 {
     LoadAll();
@@ -30,17 +30,17 @@ void TtfFontList::PlotString(char *font, char *str, double spacing,
         TtfFont *tf = &(l.elem[i]);
         if(strcmp(tf->FontFileBaseName(), font)==0) {
             tf->LoadFontFromFile(false);
-            tf->PlotString(str, spacing, spcl, origin, u, v);
+            tf->PlotString(str, spacing, sbl, origin, u, v);
             return;
         }
     }
 
     // Couldn't find the font; so draw a big X for an error marker.
-    SPolyCurve spc;
-    spc = SPolyCurve::From(origin, origin.Plus(u).Plus(v));
-    spcl->l.Add(&spc);
-    spc = SPolyCurve::From(origin.Plus(v), origin.Plus(u));
-    spcl->l.Add(&spc);
+    SBezier sb;
+    sb = SBezier::From(origin, origin.Plus(u).Plus(v));
+    sbl->l.Add(&sb);
+    sb = SBezier::From(origin.Plus(v), origin.Plus(u));
+    sbl->l.Add(&sb);
 }
 
 
@@ -657,10 +657,10 @@ void TtfFont::PlotCharacter(int *dx, int c, double spacing) {
 }
 
 void TtfFont::PlotString(char *str, double spacing,
-                         SPolyCurveList *spcl,
+                         SBezierList *sbl,
                          Vector porigin, Vector pu, Vector pv)
 {
-    polyCurves = spcl;
+    beziers = sbl;
     u = pu;
     v = pv;
     origin = porigin;
@@ -689,15 +689,15 @@ Vector TtfFont::TransformIntPoint(int x, int y) {
 }
 
 void TtfFont::LineSegment(int x0, int y0, int x1, int y1) {
-    SPolyCurve spc = SPolyCurve::From(TransformIntPoint(x0, y0),
-                                      TransformIntPoint(x1, y1));
-    polyCurves->l.Add(&spc);
+    SBezier sb = SBezier::From(TransformIntPoint(x0, y0),
+                               TransformIntPoint(x1, y1));
+    beziers->l.Add(&sb);
 }
 
 void TtfFont::Bezier(int x0, int y0, int x1, int y1, int x2, int y2) {
-    SPolyCurve spc = SPolyCurve::From(TransformIntPoint(x0, y0),
-                                      TransformIntPoint(x1, y1),
-                                      TransformIntPoint(x2, y2));
-    polyCurves->l.Add(&spc);
+    SBezier sb = SBezier::From(TransformIntPoint(x0, y0),
+                               TransformIntPoint(x1, y1),
+                               TransformIntPoint(x2, y2));
+    beziers->l.Add(&sb);
 }
 

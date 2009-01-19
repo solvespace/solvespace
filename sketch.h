@@ -137,7 +137,7 @@ public:
     } predef;
 
     SPolygon                poly;
-    SPolyCurveLoops         curveLoops;
+    SBezierLoopSet          bezierLoopSet;
     static const int POLY_GOOD          = 0;
     static const int POLY_NOT_CLOSED    = 1;
     static const int POLY_NOT_COPLANAR  = 2;
@@ -397,7 +397,7 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(void);
 
-    void GeneratePolyCurves(SPolyCurveList *spcl);
+    void GenerateBezierCurves(SBezierList *sbl);
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 
     static void DrawAll(void);

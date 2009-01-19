@@ -292,8 +292,8 @@ public:
 
     // And the state that the caller must specify, determines where we
     // render to and how
-    SPolyCurveList  *polyCurves;
-    Vector          origin, u, v;
+    SBezierList *beziers;
+    Vector      origin, u, v;
 
     int Getc(void);
     int GetBYTE(void);
@@ -308,7 +308,7 @@ public:
     void Handle(int *dx, int x, int y, bool onCurve);
     void PlotCharacter(int *dx, int c, double spacing);
     void PlotString(char *str, double spacing,
-                    SPolyCurveList *spcl, Vector origin, Vector u, Vector v);
+                    SBezierList *sbl, Vector origin, Vector u, Vector v);
 
     Vector TransformIntPoint(int x, int y);
     void LineSegment(int x0, int y0, int x1, int y1);
@@ -325,7 +325,7 @@ public:
     void LoadAll(void);
 
     void PlotString(char *font, char *str, double spacing,
-                    SPolyCurveList *spcl, Vector origin, Vector u, Vector v);
+                    SBezierList *sbl, Vector origin, Vector u, Vector v);
 };
 
 class VectorFileWriter {

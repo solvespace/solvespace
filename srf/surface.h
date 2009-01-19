@@ -18,7 +18,7 @@ public:
 
 // Stuff for rational polynomial curves, of degree one to three. These are
 // our inputs.
-class SPolyCurve {
+class SBezier {
 public:
     int             tag;
     int             deg;
@@ -33,37 +33,37 @@ public:
 
     void Reverse(void);
 
-    static SPolyCurve From(Vector p0, Vector p1, Vector p2, Vector p3);
-    static SPolyCurve From(Vector p0, Vector p1, Vector p2);
-    static SPolyCurve From(Vector p0, Vector p1);
+    static SBezier From(Vector p0, Vector p1, Vector p2, Vector p3);
+    static SBezier From(Vector p0, Vector p1, Vector p2);
+    static SBezier From(Vector p0, Vector p1);
 };
 
-class SPolyCurveList {
+class SBezierList {
 public:
-    List<SPolyCurve>    l;
+    List<SBezier>   l;
 
     void Clear(void);
 };
 
-class SPolyCurveLoop {
+class SBezierLoop {
 public:
-    List<SPolyCurve>    l;
+    List<SBezier>   l;
 
     inline void Clear(void) { l.Clear(); }
     void Reverse(void);
     void MakePwlInto(SContour *sc);
 
-    static SPolyCurveLoop FromCurves(SPolyCurveList *spcl,
-                                     bool *allClosed, SEdge *errorAt);
+    static SBezierLoop FromCurves(SBezierList *spcl,
+                                  bool *allClosed, SEdge *errorAt);
 };
 
-class SPolyCurveLoops {
+class SBezierLoopSet {
 public:
-    List<SPolyCurveLoop> l;
+    List<SBezierLoop> l;
     Vector normal;
 
-    static SPolyCurveLoops From(SPolyCurveList *spcl, SPolygon *poly,
-                                bool *allClosed, SEdge *errorAt);
+    static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
+                          bool *allClosed, SEdge *errorAt);
 
     void Clear(void);
 };
@@ -73,7 +73,7 @@ class SCurve {
 public:
     hSCurve         h;
 
-    SPolyCurve      exact; // or deg = 0 if we don't know the exact form
+    SBezier         exact; // or deg = 0 if we don't know the exact form
     List<Vector>    pts;
     hSSurface       srfA;
     hSSurface       srfB;
@@ -101,7 +101,7 @@ public:
 
     List<STrimBy>   trim;
 
-    static SSurface FromExtrusionOf(SPolyCurve *spc, Vector t0, Vector t1);
+    static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -117,7 +117,7 @@ public:
     IdList<SCurve,hSCurve>      curve;
     IdList<SSurface,hSSurface>  surface;
 
-    static SShell FromExtrusionOf(SPolyCurveList *spcl, Vector t0, Vector t1);
+    static SShell FromExtrusionOf(SBezierList *spcl, Vector t0, Vector t1);
 
     static SShell FromUnionOf(SShell *a, SShell *b);
 };

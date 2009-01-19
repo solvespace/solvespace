@@ -95,24 +95,24 @@ void Entity::Draw(void) {
 void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
     if(construction && !includingConstruction) return;
 
-    SPolyCurveList spcl;
-    ZERO(&spcl);
-    GeneratePolyCurves(&spcl);
+    SBezierList sbl;
+    ZERO(&sbl);
+    GenerateBezierCurves(&sbl);
 
     int i, j;
-    for(i = 0; i < spcl.l.n; i++) {
-        SPolyCurve *spc = &(spcl.l.elem[i]);
+    for(i = 0; i < sbl.l.n; i++) {
+        SBezier *sb = &(sbl.l.elem[i]);
 
         List<Vector> lv;
         ZERO(&lv);
-        spc->MakePwlInto(&lv);
+        sb->MakePwlInto(&lv);
         for(j = 1; j < lv.n; j++) {
             el->AddEdge(lv.elem[j-1], lv.elem[j]);
         }
         lv.Clear();
     }
 
-    spcl.Clear();
+    sbl.Clear();
 }
 
 double Entity::GetDistance(Point2d mp) {
@@ -163,15 +163,15 @@ bool Entity::IsVisible(void) {
     return true;
 }
 
-void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
-    SPolyCurve spc;
+void Entity::GenerateBezierCurves(SBezierList  *sbl) {
+    SBezier sb;
 
     switch(type) {
         case LINE_SEGMENT: {
             Vector a = SS.GetEntity(point[0])->PointGetNum();
             Vector b = SS.GetEntity(point[1])->PointGetNum();
-            spc = SPolyCurve::From(a, b);
-            spcl->l.Add(&spc);
+            sb = SBezier::From(a, b);
+            sbl->l.Add(&sb);
             break;
         }
         case CUBIC: {
@@ -179,8 +179,8 @@ void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
             Vector p1 = SS.GetEntity(point[1])->PointGetNum();
             Vector p2 = SS.GetEntity(point[2])->PointGetNum();
             Vector p3 = SS.GetEntity(point[3])->PointGetNum();
-            spc = SPolyCurve::From(p0, p1, p2, p3);
-            spcl->l.Add(&spc);
+            sb = SBezier::From(p0, p1, p2, p3);
+            sbl->l.Add(&sb);
             break;
         }
 
@@ -239,9 +239,9 @@ void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
                                                           p2, p2.Plus(t2),
                                                           NULL);
 
-                SPolyCurve spc = SPolyCurve::From(p0, p1, p2);
-                spc.weight[1] = cos(dtheta/2);
-                spcl->l.Add(&spc);
+                SBezier sb = SBezier::From(p0, p1, p2);
+                sb.weight[1] = cos(dtheta/2);
+                sbl->l.Add(&sb);
             }
             break;
         }
@@ -253,7 +253,7 @@ void Entity::GeneratePolyCurves(SPolyCurveList *spcl) {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font.str, str.str, 0, spcl, botLeft, u, v);
+            SS.fonts.PlotString(font.str, str.str, 0, sbl, botLeft, u, v);
             break;
         }
 

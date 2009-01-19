@@ -3,8 +3,8 @@
 #define gs (SS.GW.gs)
 
 bool Group::AssembleLoops(void) {
-    SPolyCurveList spcl;
-    ZERO(&spcl);
+    SBezierList sbl;
+    ZERO(&sbl);
 
     int i;
     for(i = 0; i < SS.entity.n; i++) {
@@ -12,19 +12,19 @@ bool Group::AssembleLoops(void) {
         if(e->group.v != h.v) continue;
         if(e->construction) continue;
 
-        e->GeneratePolyCurves(&spcl);
+        e->GenerateBezierCurves(&sbl);
     }
 
     bool allClosed;
-    curveLoops = SPolyCurveLoops::From(&spcl, &poly,
-                                       &allClosed, &(polyError.notClosedAt));
-    spcl.Clear();
+    bezierLoopSet = SBezierLoopSet::From(&sbl, &poly,
+                                         &allClosed, &(polyError.notClosedAt));
+    sbl.Clear();
     return allClosed;
 }
 
 void Group::GenerateLoops(void) {
     poly.Clear();
-    curveLoops.Clear();
+    bezierLoopSet.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
@@ -36,12 +36,12 @@ void Group::GenerateLoops(void) {
                 // The edges aren't all coplanar; so not a good polygon
                 polyError.how = POLY_NOT_COPLANAR;
                 poly.Clear();
-                curveLoops.Clear();
+                bezierLoopSet.Clear();
             }
         } else {
             polyError.how = POLY_NOT_CLOSED;
             poly.Clear();
-            curveLoops.Clear();
+            bezierLoopSet.Clear();
         }
     }
 }
