@@ -166,8 +166,6 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
-        Vector n = tr->Normal();
-        glNormal3d(n.x, n.y, n.z);
 
         int color;
         if(specColor < 0) {
@@ -183,9 +181,24 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
             glBegin(GL_TRIANGLES);
         }
 
-        glxVertex3v(tr->a);
-        glxVertex3v(tr->b);
-        glxVertex3v(tr->c);
+        if(tr->an.EqualsExactly(Vector::From(0, 0, 0))) {
+            // Compute the normal from the vertices
+            Vector n = tr->Normal();
+            glNormal3d(n.x, n.y, n.z);
+            glxVertex3v(tr->a);
+            glxVertex3v(tr->b);
+            glxVertex3v(tr->c);
+        } else {
+            // Use the exact normals that are specified
+            glNormal3d((tr->an).x, (tr->an).y, (tr->an).z);
+            glxVertex3v(tr->a);
+
+            glNormal3d((tr->bn).x, (tr->bn).y, (tr->bn).z);
+            glxVertex3v(tr->b);
+
+            glNormal3d((tr->cn).x, (tr->cn).y, (tr->cn).z);
+            glxVertex3v(tr->c);
+        }
 
         if((s1 != 0 && tr->meta.face == s1) || 
            (s2 != 0 && tr->meta.face == s2))

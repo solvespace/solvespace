@@ -399,6 +399,10 @@ void SolveSpace::MenuAnalyze(int id) {
             }
             break;
 
+        case GraphicsWindow::MNU_NAKED_EDGES: {
+            break;
+        }
+
         case GraphicsWindow::MNU_VOLUME: {
             SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
            

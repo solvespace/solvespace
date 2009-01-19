@@ -39,10 +39,16 @@ bool STriangle::ContainsPointProjd(Vector n, Vector p) {
 
 void STriangle::FlipNormal(void) {
     SWAP(Vector, a, b);
+    SWAP(Vector, an, bn);
 }
 
 STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
-    STriangle tr = { 0, meta, a, b, c };
+    STriangle tr;
+    ZERO(&tr);
+    tr.meta = meta;
+    tr.a = a;
+    tr.b = b;
+    tr.c = c;
     return tr;
 }
 

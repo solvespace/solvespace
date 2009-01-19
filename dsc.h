@@ -105,6 +105,15 @@ public:
         elem[n++] = *t;
     }
 
+    T *First(void) {
+        return (n == 0) ? NULL : &(elem[0]);
+    }
+    T *NextAfter(T *prev) {
+        if(!prev) return NULL;
+        if(prev - elem == (n - 1)) return NULL;
+        return prev + 1;
+    }
+
     void ClearTags(void) {
         int i;
         for(i = 0; i < n; i++) {
@@ -216,6 +225,15 @@ public:
             }
         }
         return NULL;
+    }
+
+    T *First(void) {
+        return (n == 0) ? NULL : &(elem[0]);
+    }
+    T *NextAfter(T *prev) {
+        if(!prev) return NULL;
+        if(prev - elem == (n - 1)) return NULL;
+        return prev + 1;
     }
 
     void ClearTags(void) {

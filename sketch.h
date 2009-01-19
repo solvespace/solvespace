@@ -154,6 +154,8 @@ public:
         bool            yes;
     }               meshError;
     SEdgeList       emphEdges;
+    SShell          thisShell;
+    SShell          runningShell;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;

@@ -140,6 +140,7 @@ void Group::GenerateMeshForStepAndRepeat(void) {
 
 void Group::GenerateMesh(void) {
     thisMesh.Clear();
+    thisShell.Clear();
     STriMeta meta = { 0, color };
 
     if(type == TRANSLATE || type == ROTATE) {
@@ -160,6 +161,10 @@ void Group::GenerateMesh(void) {
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
+        
+        thisShell = SShell::FromExtrusionOf(&(src->bezierLoopSet), tbot, ttop);
+        thisShell.TriangulateInto(&thisMesh);
+/*
         bool flipBottom = translate.Dot(src->poly.normal) > 0;
 
         // Get a triangulation of the source poly; this is not a closed mesh.
@@ -221,7 +226,7 @@ void Group::GenerateMesh(void) {
                 thisMesh.AddTriangle(meta, bbot, btop, atop);
             }
         }
-        edges.Clear();
+        edges.Clear(); */
     } else if(type == LATHE) {
         SEdgeList edges;
         ZERO(&edges);
@@ -291,6 +296,7 @@ void Group::GenerateMesh(void) {
     }
 
     runningMesh.Clear();
+    runningShell.Clear();
 
     // If this group contributes no new mesh, then our running mesh is the
     // same as last time, no combining required. Likewise if we have a mesh
@@ -308,6 +314,8 @@ void Group::GenerateMesh(void) {
     SMesh *a = PreviousGroupMesh();
     if(meshCombine == COMBINE_AS_UNION) {
         runningMesh.MakeFromUnion(a, &thisMesh);
+        runningMesh = thisMesh;
+        ZERO(&thisMesh);
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         runningMesh.MakeFromDifference(a, &thisMesh);
     } else {

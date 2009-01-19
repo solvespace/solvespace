@@ -40,6 +40,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\export.obj \
 
 SRFOBJS =  $(OBJDIR)\ratpoly.obj \
+           $(OBJDIR)\triangulate.obj \
 
 
 RES = $(OBJDIR)\resource.res
@@ -55,7 +56,7 @@ all: $(OBJDIR)/solvespace.exe
 clean:
 	rm -f obj/*
 
-$(OBJDIR)/solvespace.exe: $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(FREEZE) $(RES)
+$(OBJDIR)/solvespace.exe: $(SRFOBJS) $(SSOBJS) $(W32OBJS) $(FREEZE) $(RES)
     @$(CC) $(DEFINES) $(CFLAGS) -Fe$(OBJDIR)/solvespace.exe $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(FREEZE) $(RES) $(LIBS)
     editbin /nologo /STACK:8388608 $(OBJDIR)/solvespace.exe
     @echo solvespace.exe

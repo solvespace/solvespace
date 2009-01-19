@@ -77,6 +77,7 @@ public:
     int         tag;
     STriMeta    meta;
     Vector      a, b, c;
+    Vector      an, bn, cn;
 
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal(void);

@@ -240,6 +240,7 @@ public:
         MNU_COMMENT,
         // Analyze
         MNU_VOLUME,
+        MNU_NAKED_EDGES,
         MNU_SHOW_DOF,
         MNU_TRACE_PT,
         MNU_STOP_TRACING,
