@@ -539,6 +539,22 @@ Vector Vector::ClosestOrtho(void) {
     }
 }
 
+void Vector::MakeMaxMin(Vector *maxv, Vector *minv) {
+    maxv->x = max(maxv->x, x);
+    maxv->y = max(maxv->y, y);
+    maxv->z = max(maxv->z, z);
+
+    minv->x = min(minv->x, x);
+    minv->y = min(minv->y, y);
+    minv->z = min(minv->z, z);
+}
+
+bool Vector::OutsideAndNotOn(Vector maxv, Vector minv) {
+    return (x > maxv.x + LENGTH_EPS) || (x < minv.x - LENGTH_EPS) ||
+           (y > maxv.y + LENGTH_EPS) || (y < minv.y - LENGTH_EPS) ||
+           (z > maxv.z + LENGTH_EPS) || (z < minv.z - LENGTH_EPS);
+}
+
 Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
                                       Vector n2, double d2)
 {
@@ -552,7 +568,8 @@ Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
 
 Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
                                      Vector b0, Vector b1,
-                                     bool *skew)
+                                     bool *skew,
+                                     double *parama, double *paramb)
 {
     Vector da = a1.Minus(a0), db = b1.Minus(b0);
 
@@ -567,6 +584,8 @@ Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
     // to solve for da and db
     double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
     double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+    if(parama) *parama = pa;
+    if(paramb) *paramb = pb;
 
     // And from either of those, we get the intersection point.
     Vector pi = a0.Plus(da.ScaledBy(pa));

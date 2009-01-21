@@ -136,6 +136,66 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
     }
 }
 
+//-----------------------------------------------------------------------------
+// Test if the specified edge crosses any of the edges in our list. Two edges
+// are not considered to cross if they share an endpoint (within LENGTH_EPS),
+// but they are considered to cross if they are coincident and overlapping.
+//-----------------------------------------------------------------------------
+bool SEdgeList::AnyEdgeCrosses(Vector a, Vector b) {
+    Vector d = b.Minus(a);
+    double t_eps = LENGTH_EPS/d.Magnitude();
+
+    SEdge *se;
+    for(se = l.First(); se; se = l.NextAfter(se)) {
+
+        Vector dse = (se->b).Minus(se->a);
+        double tse_eps = LENGTH_EPS/dse.Magnitude();
+
+        if(a.Equals(se->a) && b.Equals(se->b)) return true;
+        if(b.Equals(se->a) && a.Equals(se->b)) return true;
+
+        double dist_a = (se->a).DistanceToLine(a, d),
+               dist_b = (se->b).DistanceToLine(a, d);
+
+        if(fabs(dist_a - dist_b) < LENGTH_EPS) {
+            // The edges are parallel.
+            if(fabs(dist_a) > LENGTH_EPS) {
+                // and not coincident, so can't be interesecting
+                continue;
+            }
+            // The edges are coincident. Make sure that neither endpoint lies
+            // on the other
+            double t;
+            t = ((se->a).Minus(a)).DivPivoting(d);
+            if(t > t_eps && t < (1 - t_eps)) return true;
+            t = ((se->b).Minus(a)).DivPivoting(d);
+            if(t > t_eps && t < (1 - t_eps)) return true;
+            t = a.Minus(se->a).DivPivoting(dse);
+            if(t > tse_eps && t < (1 - tse_eps)) return true;
+            t = b.Minus(se->a).DivPivoting(dse);
+            if(t > tse_eps && t < (1 - tse_eps)) return true;
+            // So coincident but disjoint, okay.
+            continue;
+        }
+
+        // Lines are not parallel, so look for an intersection.
+        double t, tse; 
+        bool skew;
+        Vector pi = Vector::AtIntersectionOfLines(a, b,
+                                                  se->a, se->b,
+                                                  &skew,
+                                                  &t, &tse);
+        if(skew) continue;
+
+        if(t   >   t_eps && t <   (1 -   t_eps) &&
+           tse > tse_eps && tse < (1 - tse_eps))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void SContour::AddPoint(Vector p) {
     SPoint sp;
     sp.tag = 0;
@@ -152,6 +212,13 @@ void SContour::MakeEdgesInto(SEdgeList *el) {
         e.a = l.elem[i].p;
         e.b = l.elem[i+1].p;
         el->l.Add(&e);
+    }
+}
+
+void SContour::CopyInto(SContour *dest) {
+    SPoint *sp;
+    for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
+        dest->AddPoint(sp->p);
     }
 }
 
@@ -286,12 +353,14 @@ void SPolygon::FixContourDirections(void) {
         if(sc->l.n < 1) continue;
         Vector pt = (sc->l.elem[0]).p;
 
+        sc->timesEnclosed = 0;
         bool outer = true;
         for(j = 0; j < l.n; j++) {
             if(i == j) continue;
             SContour *sct = &(l.elem[j]);
             if(sct->ContainsPointProjdToNormal(normal, pt)) {
                 outer = !outer;
+                (sc->timesEnclosed)++;
             }
         }
    

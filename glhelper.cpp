@@ -181,7 +181,7 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
             glBegin(GL_TRIANGLES);
         }
 
-        if(tr->an.EqualsExactly(Vector::From(0, 0, 0))) {
+        if(1 || tr->an.EqualsExactly(Vector::From(0, 0, 0))) {
             // Compute the normal from the vertices
             Vector n = tr->Normal();
             glNormal3d(n.x, n.y, n.z);

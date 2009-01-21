@@ -482,11 +482,12 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     }
 
     int i, start = sm->l.n;
+    poly.UvTriangulateInto(sm);
+
     STriMeta meta = { 0, 0x888888 };
-    poly.normal = Vector::From(0, 0, 1);
-    poly.TriangulateInto(sm, meta);
     for(i = start; i < sm->l.n; i++) {
         STriangle *st = &(sm->l.elem[i]);
+        st->meta = meta;
         st->an = NormalAt(st->a.x, st->a.y);
         st->bn = NormalAt(st->b.x, st->b.y);
         st->cn = NormalAt(st->c.x, st->c.y);
@@ -562,8 +563,8 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             (ret.surface.FindById(hs1))->trim.Add(&stb1);
 
             // The translated curves also trim the surface of extrusion.
-            (ret.surface.FindById(hsext))->trim.Add(&stb0);
-            (ret.surface.FindById(hsext))->trim.Add(&stb1);
+//            (ret.surface.FindById(hsext))->trim.Add(&stb0);
+//            (ret.surface.FindById(hsext))->trim.Add(&stb1);
 
             // And form the trim line
             Vector pt = sb->Finish();
@@ -586,8 +587,8 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
 
             TrimLine *tlp = &(trimLines.elem[WRAP(i-1, trimLines.n)]);
 
-            ss->trim.Add(&(tl->trim));
-            ss->trim.Add(&(tlp->trim));
+//            ss->trim.Add(&(tl->trim));
+//            ss->trim.Add(&(tlp->trim));
         }
         trimLines.Clear();
     }

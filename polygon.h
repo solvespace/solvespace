@@ -24,17 +24,25 @@ public:
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                                                         SEdge *errorAt);
+    bool AnyEdgeCrosses(Vector a, Vector b);
 };
 
 class SPoint {
 public:
     int     tag;
+
+    static const int UNKNOWN = 0;
+    static const int NOT_EAR = 1;
+    static const int EAR     = 2;
+    int     ear;
+
     Vector  p;
 };
 
 class SContour {
 public:
     int             tag;
+    int             timesEnclosed;
     List<SPoint>    l;
 
     void AddPoint(Vector p);
@@ -45,6 +53,12 @@ public:
     bool ContainsPointProjdToNormal(Vector n, Vector p);
     bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
     void OffsetInto(SContour *dest, double r);
+    void CopyInto(SContour *dest);
+
+    bool IsEar(int bp);
+    bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
+    void ClipEarInto(SMesh *m, int bp);
+    void UvTriangulateInto(SMesh *m);
 };
 
 typedef struct {
@@ -70,6 +84,7 @@ public:
     bool IsEmpty(void);
     Vector AnyPoint(void);
     void OffsetInto(SPolygon *dest, double r);
+    void UvTriangulateInto(SMesh *m);
 };
 
 class STriangle {

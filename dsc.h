@@ -47,7 +47,8 @@ public:
                                          Vector n2, double d2);
     static Vector AtIntersectionOfLines(Vector a0, Vector a1,
                                         Vector b0, Vector b1,
-                                        bool *skew);
+                                        bool *skew,
+                                        double *pa=NULL, double *pb=NULL);
 
     double Element(int i);
     bool Equals(Vector v, double tol=LENGTH_EPS);
@@ -73,6 +74,8 @@ public:
     Vector ProjectVectorInto(hEntity wrkpl);
     double DivPivoting(Vector delta);
     Vector ClosestOrtho(void);
+    void MakeMaxMin(Vector *maxv, Vector *minv);
+    bool OutsideAndNotOn(Vector maxv, Vector minv);
     Point2d Project2d(Vector u, Vector v);
 };
 
