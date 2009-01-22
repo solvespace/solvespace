@@ -43,6 +43,7 @@ class SContour {
 public:
     int             tag;
     int             timesEnclosed;
+    Vector          xminPt;
     List<SPoint>    l;
 
     void AddPoint(Vector p);
@@ -54,6 +55,7 @@ public:
     bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
     void OffsetInto(SContour *dest, double r);
     void CopyInto(SContour *dest);
+    void FindPointWithMinX(void);
 
     bool IsEar(int bp);
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);

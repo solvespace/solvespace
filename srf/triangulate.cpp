@@ -3,6 +3,8 @@
 void SPolygon::UvTriangulateInto(SMesh *m) {
     if(l.n <= 0) return;
 
+    SDWORD in = GetMilliseconds();
+
     normal = Vector::From(0, 0, 1);
 
     while(l.n > 0) {
@@ -45,34 +47,36 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
             if(top->ContainsPointProjdToNormal(normal, sc->l.elem[0].p)) {
                 sc->tag = 2;
                 sc->MakeEdgesInto(&el);
+                sc->FindPointWithMinX();
             }
         }
 
-        bool holesExist, mergedHole;
-        do {
-            holesExist = false;
-            mergedHole = false;
+        dbp("finished finding holes: %d ms", GetMilliseconds() - in);
+        for(;;) {
+            double xmin = 1e10;
+            SContour *scmin = NULL;
 
             for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
                 if(sc->tag != 2) continue;
 
-                holesExist = true;
-                if(merged.BridgeToContour(sc, &el, &vl)) {
-                    // Merged it in, so we're done with it.
-                    sc->tag = 3;
-                    mergedHole = true;
-                } else {
-                    // Looks like we can't merge it yet, but that can happen;
-                    // we may have to merge the holes in a specific order.
+                if(sc->xminPt.x < xmin) {
+                    xmin = sc->xminPt.x;
+                    scmin = sc;
                 }
             }
-            if(holesExist && !mergedHole) {
-                dbp("holes exist, yet couldn't merge one");
+            if(!scmin) break;
+
+            if(!merged.BridgeToContour(scmin, &el, &vl)) {
+                dbp("couldn't merge our hole");
                 return;
             }
-        } while(holesExist);
+            dbp("   bridged to contour: %d ms", GetMilliseconds() - in);
+            scmin->tag = 3;
+        }
+        dbp("finished merging holes: %d ms", GetMilliseconds() - in);
 
         merged.UvTriangulateInto(m);
+        dbp("finished ear clippping: %d ms", GetMilliseconds() - in);
         merged.l.Clear();
         el.Clear();
         vl.Clear();
@@ -84,10 +88,35 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
 bool SContour::BridgeToContour(SContour *sc, 
                                SEdgeList *avoidEdges, List<Vector> *avoidPts)
 {
+    int i, j;
+
+    // Start looking for a bridge on our new hole near its leftmost (min x)
+    // point.
+    int sco = 0;
+    for(i = 0; i < (sc->l.n - 1); i++) {
+        if((sc->l.elem[i].p).EqualsExactly(sc->xminPt)) {
+            sco = i;
+        }
+    }
+
+    // And start looking on our merged contour at whichever point is nearest
+    // to the leftmost point of the new segment.
+    int thiso = 0;
+    double dmin = 1e10;
+    for(i = 0; i < l.n; i++) {
+        Vector p = l.elem[i].p;
+        double d = (p.Minus(sc->xminPt)).MagSquared();
+        if(d < dmin) {
+            dmin = d;
+            thiso = i;
+        }
+    }
+
     int thisp, scp;
    
     Vector a, b, *f;
-    for(thisp = 0; thisp < l.n; thisp++) {
+    for(i = 0; i < l.n; i++) {
+        thisp = WRAP(i+thiso, l.n);
         a = l.elem[thisp].p;
 
         for(f = avoidPts->First(); f; f = avoidPts->NextAfter(f)) {
@@ -95,7 +124,8 @@ bool SContour::BridgeToContour(SContour *sc,
         }
         if(f) continue;
 
-        for(scp = 0; scp < (sc->l.n - 1); scp++) {
+        for(j = 0; j < (sc->l.n - 1); j++) {
+            scp = WRAP(j+sco, (sc->l.n - 1));
             b = sc->l.elem[scp].p;
 
             for(f = avoidPts->First(); f; f = avoidPts->NextAfter(f)) {
@@ -116,7 +146,6 @@ bool SContour::BridgeToContour(SContour *sc,
 haveEdge:
     SContour merged;
     ZERO(&merged);
-    int i, j;
     for(i = 0; i < l.n; i++) {
         merged.AddPoint(l.elem[i].p);
         if(i == thisp) {
@@ -187,7 +216,7 @@ bool SContour::IsEar(int bp) {
 void SContour::ClipEarInto(SMesh *m, int bp) {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
-
+    
     STriangle tr;
     ZERO(&tr);
     tr.a = l.elem[ap].p;
@@ -207,26 +236,36 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
 
 void SContour::UvTriangulateInto(SMesh *m) {
     int i;
+    // First, calculate the ear-ness of all the points
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).ear = IsEar(i) ? SPoint::EAR : SPoint::NOT_EAR;
     }
 
+    bool toggle = false;
     while(l.n > 3) {
+        // Some points may have changed ear-ness, so recalculate
         for(i = 0; i < l.n; i++) {
             if(l.elem[i].ear == SPoint::UNKNOWN) {
                 (l.elem[i]).ear = IsEar(i) ? SPoint::EAR : SPoint::NOT_EAR;
             }
         }
+
+        // And find a candidate ear; alternate the starting position so
+        // we generate strip-like triangulations instead of fan-like
+        int ear = -1;
+        toggle = !toggle;
+        int offset = toggle ? -1 : 0;
         for(i = 0; i < l.n; i++) {
-            if(l.elem[i].ear == SPoint::EAR) {
+            ear = WRAP(i+offset, l.n);
+            if(l.elem[ear].ear == SPoint::EAR) {
                 break;
             }
         }
-        if(i >= l.n) {
+        if(ear < 0) {
             dbp("couldn't find an ear! fail");
             return;
         }
-        ClipEarInto(m, i);
+        ClipEarInto(m, ear);
     }
 
     ClipEarInto(m, 0); // add the last triangle

@@ -187,9 +187,19 @@ bool SEdgeList::AnyEdgeCrosses(Vector a, Vector b) {
                                                   &t, &tse);
         if(skew) continue;
 
-        if(t   >   t_eps && t <   (1 -   t_eps) &&
-           tse > tse_eps && tse < (1 - tse_eps))
-        {
+        bool inOrEdge0 = (t   >   -t_eps) && (t <   (1 +   t_eps));
+        bool inOrEdge1 = (tse > -tse_eps) && (tse < (1 + tse_eps));
+
+        if(inOrEdge0 && inOrEdge1) {
+            if((se->a).Equals(a) || (se->b).Equals(a) ||
+               (se->a).Equals(b) || (se->b).Equals(b))
+            {
+                // Not an intersection if we share an endpoint with an edge
+                continue;
+            }
+            // But it's an intersection if a vertex of one edge lies on the
+            // inside of the other (or if they cross away from either's
+            // vertex).
             return true;
         }
     }
@@ -219,6 +229,16 @@ void SContour::CopyInto(SContour *dest) {
     SPoint *sp;
     for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
         dest->AddPoint(sp->p);
+    }
+}
+
+void SContour::FindPointWithMinX(void) {
+    SPoint *sp;
+    xminPt = Vector::From(1e10, 1e10, 1e10);
+    for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
+        if(sp->p.x < xminPt.x) {
+            xminPt = sp->p;
+        }
     }
 }
 

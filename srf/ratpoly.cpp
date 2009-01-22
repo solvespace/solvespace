@@ -499,7 +499,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
             st->FlipNormal();
         }
     }
-    
+
     el.Clear();
     poly.Clear();
 }
@@ -559,7 +559,7 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             STrimBy stb1 = STrimBy::EntireCurve(&ret, hc1);
 
             // The translated curves trim the flat top and bottom surfaces.
-            (ret.surface.FindById(hs0))->trim.Add(&stb0);
+//            (ret.surface.FindById(hs0))->trim.Add(&stb0);
             (ret.surface.FindById(hs1))->trim.Add(&stb1);
 
             // The translated curves also trim the surface of extrusion.
