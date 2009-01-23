@@ -133,7 +133,7 @@ bool SContour::BridgeToContour(SContour *sc,
             }
             if(f) continue;
 
-            if(avoidEdges->AnyEdgeCrosses(a, b)) {
+            if(avoidEdges->AnyEdgeCrossings(a, b) > 0) {
                 // doesn't work, bridge crosses an existing edge
             } else {
                 goto haveEdge;

@@ -140,22 +140,29 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
 // Test if the specified edge crosses any of the edges in our list. Two edges
 // are not considered to cross if they share an endpoint (within LENGTH_EPS),
 // but they are considered to cross if they are coincident and overlapping.
+// If pi is not NULL, then a crossing is returned in that.
 //-----------------------------------------------------------------------------
-bool SEdgeList::AnyEdgeCrosses(Vector a, Vector b) {
+int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, Vector *ppi) {
     Vector d = b.Minus(a);
     double t_eps = LENGTH_EPS/d.Magnitude();
 
+    int cnt = 0;
     SEdge *se;
     for(se = l.First(); se; se = l.NextAfter(se)) {
+        double dist_a, dist_b;
+        double t, tse; 
+        bool skew;
+        Vector pi;
+        bool inOrEdge0, inOrEdge1;
 
         Vector dse = (se->b).Minus(se->a);
         double tse_eps = LENGTH_EPS/dse.Magnitude();
 
-        if(a.Equals(se->a) && b.Equals(se->b)) return true;
-        if(b.Equals(se->a) && a.Equals(se->b)) return true;
+        if(a.Equals(se->a) && b.Equals(se->b)) goto intersects;
+        if(b.Equals(se->a) && a.Equals(se->b)) goto intersects;
 
-        double dist_a = (se->a).DistanceToLine(a, d),
-               dist_b = (se->b).DistanceToLine(a, d);
+        dist_a = (se->a).DistanceToLine(a, d),
+        dist_b = (se->b).DistanceToLine(a, d);
 
         if(fabs(dist_a - dist_b) < LENGTH_EPS) {
             // The edges are parallel.
@@ -167,28 +174,25 @@ bool SEdgeList::AnyEdgeCrosses(Vector a, Vector b) {
             // on the other
             double t;
             t = ((se->a).Minus(a)).DivPivoting(d);
-            if(t > t_eps && t < (1 - t_eps)) return true;
+            if(t > t_eps && t < (1 - t_eps)) goto intersects;
             t = ((se->b).Minus(a)).DivPivoting(d);
-            if(t > t_eps && t < (1 - t_eps)) return true;
+            if(t > t_eps && t < (1 - t_eps)) goto intersects;
             t = a.Minus(se->a).DivPivoting(dse);
-            if(t > tse_eps && t < (1 - tse_eps)) return true;
+            if(t > tse_eps && t < (1 - tse_eps)) goto intersects;
             t = b.Minus(se->a).DivPivoting(dse);
-            if(t > tse_eps && t < (1 - tse_eps)) return true;
+            if(t > tse_eps && t < (1 - tse_eps)) goto intersects;
             // So coincident but disjoint, okay.
             continue;
         }
 
         // Lines are not parallel, so look for an intersection.
-        double t, tse; 
-        bool skew;
-        Vector pi = Vector::AtIntersectionOfLines(a, b,
-                                                  se->a, se->b,
-                                                  &skew,
-                                                  &t, &tse);
+        pi = Vector::AtIntersectionOfLines(a, b, se->a, se->b,
+                                           &skew,
+                                           &t, &tse);
         if(skew) continue;
 
-        bool inOrEdge0 = (t   >   -t_eps) && (t <   (1 +   t_eps));
-        bool inOrEdge1 = (tse > -tse_eps) && (tse < (1 + tse_eps));
+        inOrEdge0 = (t   >   -t_eps) && (t <   (1 +   t_eps));
+        inOrEdge1 = (tse > -tse_eps) && (tse < (1 + tse_eps));
 
         if(inOrEdge0 && inOrEdge1) {
             if((se->a).Equals(a) || (se->b).Equals(a) ||
@@ -200,10 +204,16 @@ bool SEdgeList::AnyEdgeCrosses(Vector a, Vector b) {
             // But it's an intersection if a vertex of one edge lies on the
             // inside of the other (or if they cross away from either's
             // vertex).
-            return true;
+            if(ppi) *ppi = pi;
+            goto intersects;
         }
+        continue;
+
+intersects:
+        cnt++;
+        // and continue with the loop
     }
-    return false;
+    return cnt;
 }
 
 void SContour::AddPoint(Vector p) {
@@ -414,6 +424,19 @@ bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
         }
     }
     return true;
+}
+
+bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
+    SEdgeList el;
+    ZERO(&el);
+    MakeEdgesInto(&el);
+
+    SEdge *se;
+    for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
+        int inters = el.AnyEdgeCrossings(se->a, se->b, intersectsAt);
+        if(inters != 1) return true;
+    }
+    return false;
 }
 
 static int TriMode, TriVertexCount;

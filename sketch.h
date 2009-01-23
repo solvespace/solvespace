@@ -138,24 +138,24 @@ public:
 
     SPolygon                poly;
     SBezierLoopSet          bezierLoopSet;
-    static const int POLY_GOOD          = 0;
-    static const int POLY_NOT_CLOSED    = 1;
-    static const int POLY_NOT_COPLANAR  = 2;
+    static const int POLY_GOOD              = 0;
+    static const int POLY_NOT_CLOSED        = 1;
+    static const int POLY_NOT_COPLANAR      = 2;
+    static const int POLY_SELF_INTERSECTING = 3;
     struct {
         int             how;
         SEdge           notClosedAt;
-        Vector          notCoplanarAt;
+        Vector          errorPointAt;
     }               polyError;
 
-    SMesh           thisMesh;
+    SShell          thisShell;
+    SShell          runningShell;
     SMesh           runningMesh;
     struct {
         SMesh           interferesAt;
         bool            yes;
     }               meshError;
     SEdgeList       emphEdges;
-    SShell          thisShell;
-    SShell          runningShell;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;
@@ -206,11 +206,9 @@ public:
     bool AssembleLoops(void);
     void GenerateLoops(void);
     // And the mesh stuff
-    SMesh *PreviousGroupMesh(void);
-    void AddQuadWithNormal(STriMeta meta, Vector out,
-                                    Vector a, Vector b, Vector c, Vector d);
-    void GenerateMeshForStepAndRepeat(void);
-    void GenerateMesh(void);
+    SShell *PreviousGroupShell(void);
+    void GenerateShellForStepAndRepeat(void);
+    void GenerateShellAndMesh(void);
     void Draw(void);
 
     SPolygon GetPolygon(void);

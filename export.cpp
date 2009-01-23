@@ -86,7 +86,6 @@ void SolveSpace::ExportSectionTo(char *filename) {
 
     // Select the naked edges in our resulting open mesh.
     SKdNode *root = SKdNode::From(&m);
-    root->SnapToMesh(&m);
     SEdgeList el;
     ZERO(&el);
     root->MakeCertainEdgesInto(&el, false);
@@ -294,16 +293,10 @@ void SolveSpace::ExportMeshTo(char *filename) {
         Error("Active group mesh is empty; nothing to export.");
         return;
     }
-    SKdNode *root = SKdNode::From(m);
-    root->SnapToMesh(m);
-    SMesh vvm;
-    ZERO(&vvm);
-    root->MakeMeshInto(&vvm);
 
     FILE *f = fopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename);
-        vvm.Clear();
         return;
     }
     char str[80];
@@ -311,13 +304,13 @@ void SolveSpace::ExportMeshTo(char *filename) {
     strcpy(str, "STL exported mesh");
     fwrite(str, 1, 80, f);
 
-    DWORD n = vvm.l.n;
+    DWORD n = m->l.n;
     fwrite(&n, 4, 1, f);
 
     double s = SS.exportScale;
     int i;
-    for(i = 0; i < vvm.l.n; i++) {
-        STriangle *tr = &(vvm.l.elem[i]);
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
         w = (float)n.x;           fwrite(&w, 4, 1, f);
@@ -336,7 +329,6 @@ void SolveSpace::ExportMeshTo(char *filename) {
         fputc(0, f);
     }
 
-    vvm.Clear();
     fclose(f);
 }
 

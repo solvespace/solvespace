@@ -24,7 +24,7 @@ public:
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                                                         SEdge *errorAt);
-    bool AnyEdgeCrosses(Vector a, Vector b);
+    int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
 };
 
 class SPoint {
@@ -83,6 +83,7 @@ public:
     void TriangulateInto(SMesh *m, STriMeta meta);
     void Clear(void);
     bool AllPointsInPlane(Vector *notCoplanarAt);
+    bool SelfIntersecting(Vector *intersectsAt);
     bool IsEmpty(void);
     Vector AnyPoint(void);
     void OffsetInto(SPolygon *dest, double r);
@@ -220,9 +221,6 @@ public:
     void FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
                         STriMeta m, int cnt);
     void MakeCertainEdgesInto(SEdgeList *sel, bool emphasized);
-
-    void SnapToMesh(SMesh *m);
-    void SnapToVertex(Vector v, SMesh *extras);
 };
 
 #endif

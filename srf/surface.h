@@ -36,6 +36,8 @@ public:
 
     void Reverse(void);
 
+    SBezier TransformedBy(Vector t, Quaternion q);
+
     static SBezier From(Vector p0, Vector p1, Vector p2, Vector p3);
     static SBezier From(Vector p0, Vector p1, Vector p2);
     static SBezier From(Vector p0, Vector p1);
@@ -82,6 +84,9 @@ public:
 
     List<Vector>    pts;
 
+    static SCurve SCurve::FromTransformationOf(SCurve *a,
+                                               Vector t, Quaternion q);
+
     void Clear(void);
 };
 
@@ -112,6 +117,8 @@ public:
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromPlane(Vector pt, Vector n);
+    static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
+                                         bool includingTrims);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -119,6 +126,7 @@ public:
     Vector NormalAt(double u, double v);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
+    void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
 
     void Clear(void);
 };
@@ -128,11 +136,14 @@ public:
     IdList<SCurve,hSCurve>      curve;
     IdList<SSurface,hSSurface>  surface;
 
-    static SShell FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1);
-
-    static SShell FromUnionOf(SShell *a, SShell *b);
+    void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1);
+    void MakeFromUnionOf(SShell *a, SShell *b);
+    void MakeFromDifferenceOf(SShell *a, SShell *b);
+    void MakeFromCopyOf(SShell *a);
+    void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);
 
     void TriangulateInto(SMesh *sm);
+    void MakeEdgesInto(SEdgeList *sel);
     void Clear(void);
 };
 

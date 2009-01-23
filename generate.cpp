@@ -208,22 +208,11 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
             g->clean = true;
         } else {
             if(i >= first && i <= last) {
-                // See if we have to do the vertex-to-vertex mesh, that
-                // we used for emphasized edges.
-                if(first == i && 
-                    (g->type == Group::DRAWING_3D ||
-                     g->type == Group::DRAWING_WORKPLANE))
-                {
-                    // Special case--if the first dirty group doesn't change
-                    // the mesh, then no need to regen edges for it.
-                } else {
-                    g->vvMeshClean = false; // so we'll regen it
-                }
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 SolveGroup(g->h, andFindFree);
                 g->GenerateLoops();
-                g->GenerateMesh();
+                g->GenerateShellAndMesh();
                 g->clean = true;
             } else {
                 // The group falls outside the range, so just assume that

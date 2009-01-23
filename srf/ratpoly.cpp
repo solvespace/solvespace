@@ -147,6 +147,14 @@ void SBezier::Reverse(void) {
     }
 }
 
+SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
+    SBezier ret = *this;
+    int i;
+    for(i = 0; i <= deg; i++) {
+        ret.ctrl[i] = (q.Rotate(ret.ctrl[i])).Plus(t);
+    }
+    return ret;
+}
 
 void SBezierList::Clear(void) {
     l.Clear();
@@ -292,6 +300,22 @@ void SBezierLoopSet::Clear(void) {
     l.Clear();
 }
 
+SCurve SCurve::FromTransformationOf(SCurve *a, Vector t, Quaternion q) {
+    SCurve ret;
+    ZERO(&ret);
+
+    ret.h = a->h;
+    ret.isExact = a->isExact;
+    ret.exact = (a->exact).TransformedBy(t, q);
+    
+    Vector *p;
+    for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
+        Vector pp = (q.Rotate(*p)).Plus(t);
+        ret.pts.Add(&pp);
+    }
+    return ret;
+}
+
 void SCurve::Clear(void) {
     pts.Clear();
 }
@@ -343,6 +367,37 @@ SSurface SSurface::FromPlane(Vector pt, Vector n) {
     ret.ctrl[1][0] = pt.Plus(v);
     ret.ctrl[1][1] = pt.Plus(v).Plus(u);
     
+    return ret;
+}
+
+SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q,
+                                        bool includingTrims)
+{
+    SSurface ret;
+    ZERO(&ret);
+
+    ret.h = a->h;
+
+    ret.degm = a->degm;
+    ret.degn = a->degn;
+    int i, j;
+    for(i = 0; i <= 3; i++) {
+        for(j = 0; j <= 3; j++) {
+            ret.ctrl[i][j] = (q.Rotate(a->ctrl[i][j])).Plus(t);
+            ret.weight[i][j] = a->weight[i][j];
+        }
+    }
+
+    if(includingTrims) {
+        STrimBy *stb;
+        for(stb = a->trim.First(); stb; stb = a->trim.NextAfter(stb)) {
+            STrimBy n = *stb;
+            n.start  = (q.Rotate(n.start)) .Plus(t);
+            n.finish = (q.Rotate(n.finish)).Plus(t);
+            ret.trim.Add(&n);
+        }
+    }
+
     return ret;
 }
 
@@ -449,32 +504,42 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
     }
 }
 
-void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
-    SEdgeList el;
-    ZERO(&el);
-
+void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
         SCurve *sc = shell->curve.FindById(stb->curve);
 
-        Vector prevuv, ptuv;
+        Vector prev, prevuv, ptuv;
         bool inCurve = false;
         Vector *pt;
         double u = 0, v = 0;
         for(pt = sc->pts.First(); pt; pt = sc->pts.NextAfter(pt)) {
-            ClosestPointTo(*pt, &u, &v);
-            ptuv = Vector::From(u, v, 0);
-
-            if(inCurve) {
-                el.AddEdge(prevuv, ptuv);
+            if(asUv) {
+                ClosestPointTo(*pt, &u, &v);
+                ptuv = Vector::From(u, v, 0);
+                if(inCurve) {
+                    sel->AddEdge(prevuv, ptuv);
+                }
+                prevuv = ptuv;
+            } else {
+                if(inCurve) {
+                    sel->AddEdge(prev, *pt);
+                }
+                prev = *pt;
             }
-            prevuv = ptuv;
 
             if(pt->EqualsExactly(stb->start)) inCurve = true;
             if(pt->EqualsExactly(stb->finish)) inCurve = false;
         }
     }
-    
+}
+
+void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
+    SEdgeList el;
+    ZERO(&el);
+
+    MakeEdgesInto(shell, &el, true);
+
     SPolygon poly;
     ZERO(&poly);
     if(!el.AssemblePolygon(&poly, NULL)) {
@@ -508,9 +573,8 @@ void SSurface::Clear(void) {
     trim.Clear();
 }
 
-SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
-    SShell ret;
-    ZERO(&ret);
+void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
+    ZERO(this);
 
     // Make the extrusion direction consistent with respect to the normal
     // of the sketch we're extruding.
@@ -523,8 +587,8 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
     SSurface s0, s1;
     s0 = SSurface::FromPlane(sbls->point.Plus(t0), sbls->normal.ScaledBy(-1));
     s1 = SSurface::FromPlane(sbls->point.Plus(t1), sbls->normal.ScaledBy( 1));
-    hSSurface hs0 = ret.surface.AddAndAssignId(&s0),
-              hs1 = ret.surface.AddAndAssignId(&s1);
+    hSSurface hs0 = surface.AddAndAssignId(&s0),
+              hs1 = surface.AddAndAssignId(&s1);
     
     // Now go through the input curves. For each one, generate its surface
     // of extrusion, its two translated trim curves, and one trim line. We
@@ -544,27 +608,27 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             // Generate the surface of extrusion of this curve, and add
             // it to the list
             SSurface ss = SSurface::FromExtrusionOf(sb, t0, t1);
-            hSSurface hsext = ret.surface.AddAndAssignId(&ss);
+            hSSurface hsext = surface.AddAndAssignId(&ss);
 
             // Translate the curve by t0 and t1 to produce two trim curves
             SCurve sc;
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t0);
-            hSCurve hc0 = ret.curve.AddAndAssignId(&sc);
-            STrimBy stb0 = STrimBy::EntireCurve(&ret, hc0);
+            hSCurve hc0 = curve.AddAndAssignId(&sc);
+            STrimBy stb0 = STrimBy::EntireCurve(this, hc0);
 
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t1);
-            hSCurve hc1 = ret.curve.AddAndAssignId(&sc);
-            STrimBy stb1 = STrimBy::EntireCurve(&ret, hc1);
+            hSCurve hc1 = curve.AddAndAssignId(&sc);
+            STrimBy stb1 = STrimBy::EntireCurve(this, hc1);
 
             // The translated curves trim the flat top and bottom surfaces.
-//            (ret.surface.FindById(hs0))->trim.Add(&stb0);
-            (ret.surface.FindById(hs1))->trim.Add(&stb1);
+            (surface.FindById(hs0))->trim.Add(&stb0);
+            (surface.FindById(hs1))->trim.Add(&stb1);
 
             // The translated curves also trim the surface of extrusion.
-//            (ret.surface.FindById(hsext))->trim.Add(&stb0);
-//            (ret.surface.FindById(hsext))->trim.Add(&stb1);
+            (surface.FindById(hsext))->trim.Add(&stb0);
+            (surface.FindById(hsext))->trim.Add(&stb1);
 
             // And form the trim line
             Vector pt = sb->Finish();
@@ -572,10 +636,10 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             ZERO(&sc);
             sc.pts.Add(&p0);
             sc.pts.Add(&p1);
-            hSCurve hl = ret.curve.AddAndAssignId(&sc);
+            hSCurve hl = curve.AddAndAssignId(&sc);
             // save this for later
             TrimLine tl;
-            tl.trim = STrimBy::EntireCurve(&ret, hl);
+            tl.trim = STrimBy::EntireCurve(this, hl);
             tl.hs = hsext;
             trimLines.Add(&tl);
         }
@@ -583,17 +647,45 @@ SShell SShell::FromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
         int i;
         for(i = 0; i < trimLines.n; i++) {
             TrimLine *tl = &(trimLines.elem[i]);
-            SSurface *ss = ret.surface.FindById(tl->hs);
+            SSurface *ss = surface.FindById(tl->hs);
 
             TrimLine *tlp = &(trimLines.elem[WRAP(i-1, trimLines.n)]);
 
-//            ss->trim.Add(&(tl->trim));
-//            ss->trim.Add(&(tlp->trim));
+            ss->trim.Add(&(tl->trim));
+            ss->trim.Add(&(tlp->trim));
         }
         trimLines.Clear();
     }
+}
 
-    return ret;
+void SShell::MakeFromCopyOf(SShell *a) {
+    Vector t = Vector::From(0, 0, 0);
+    Quaternion q = Quaternion::From(1, 0, 0, 0);
+
+    MakeFromTransformationOf(a, t, q);
+}
+
+void SShell::MakeFromTransformationOf(SShell *a, Vector t, Quaternion q) {
+    SSurface *s;
+    for(s = a->surface.First(); s; s = a->surface.NextAfter(s)) {
+        SSurface n;
+        n = SSurface::FromTransformationOf(s, t, q, true);
+        surface.Add(&n); // keeping the old ID
+    }
+
+    SCurve *c;
+    for(c = a->curve.First(); c; c = a->curve.NextAfter(c)) {
+        SCurve n;
+        n = SCurve::FromTransformationOf(c, t, q);
+        curve.Add(&n); // keeping the old ID
+    }
+}
+
+void SShell::MakeEdgesInto(SEdgeList *sel) {
+    SSurface *s;
+    for(s = surface.First(); s; s = surface.NextAfter(s)) {
+        s->MakeEdgesInto(this, sel, false);
+    }
 }
 
 void SShell::TriangulateInto(SMesh *sm) {
