@@ -234,6 +234,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             th += 2;
             
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
+            glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);
             glBegin(GL_QUADS);
                 glVertex2d(ox, oy);
