@@ -34,6 +34,7 @@ public:
     void MakePwlInto(List<Vector> *l, Vector offset);
     void MakePwlWorker(List<Vector> *l, double ta, double tb, Vector offset);
 
+    void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Reverse(void);
 
     SBezier TransformedBy(Vector t, Quaternion q);
@@ -57,6 +58,7 @@ public:
     inline void Clear(void) { l.Clear(); }
     void Reverse(void);
     void MakePwlInto(SContour *sc);
+    void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
 
     static SBezierLoop FromCurves(SBezierList *spcl,
                                   bool *allClosed, SEdge *errorAt);
@@ -71,6 +73,7 @@ public:
     static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
                           bool *allClosed, SEdge *errorAt);
 
+    void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Clear(void);
 };
 
@@ -79,13 +82,15 @@ class SCurve {
 public:
     hSCurve         h;
 
+    hSCurve         newH; // when merging with booleans
+
     bool            isExact;
     SBezier         exact;
 
     List<Vector>    pts;
 
-    static SCurve SCurve::FromTransformationOf(SCurve *a,
-                                               Vector t, Quaternion q);
+    static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
+    SCurve MakeCopySplitAgainst(SShell *against);
 
     void Clear(void);
 };
@@ -122,9 +127,13 @@ public:
     List<STrimBy>   trim;
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
-    static SSurface FromPlane(Vector pt, Vector n);
+    static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
                                          bool includingTrims);
+
+    SSurface MakeCopyTrimAgainst(SShell *against, SShell *shell,
+                                 int type, bool opA);
+    void TrimFromEdgeList(SEdgeList *el);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -144,8 +153,17 @@ public:
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              int color);
+
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
+    static const int AS_UNION      = 10;
+    static const int AS_DIFFERENCE = 11;
+    static const int AS_INTERSECT  = 12;
+    void MakeFromBoolean(SShell *a, SShell *b, int type);
+    void CopyCurvesSplitAgainst(SShell *against, SShell *into);
+    void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
+    void MakeEdgeListUseNewCurveIds(SEdgeList *el);
+
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);
 

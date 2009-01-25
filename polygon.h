@@ -10,6 +10,7 @@ class SBsp3;
 class SEdge {
 public:
     int    tag;
+    int    auxA, auxB;
     Vector a, b;
 
     static SEdge From(Vector a, Vector b);
@@ -20,7 +21,7 @@ public:
     List<SEdge>     l;
 
     void Clear(void);
-    void AddEdge(Vector a, Vector b);
+    void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false);
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                             SEdge *errorAt, bool keepDir);

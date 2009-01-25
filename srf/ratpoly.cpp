@@ -147,6 +147,17 @@ void SBezier::Reverse(void) {
     }
 }
 
+void SBezier::GetBoundingProjd(Vector u, Vector orig,
+                               double *umin, double *umax)
+{
+    int i;
+    for(i = 0; i <= deg; i++) {
+        double ut = ((ctrl[i]).Minus(orig)).Dot(u);
+        if(ut < *umin) *umin = ut;
+        if(ut > *umax) *umax = ut;
+    }
+}
+
 SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
     SBezier ret = *this;
     int i;
@@ -228,6 +239,15 @@ void SBezierLoop::Reverse(void) {
     }
 }
 
+void SBezierLoop::GetBoundingProjd(Vector u, Vector orig,
+                                   double *umin, double *umax)
+{
+    SBezier *sb;
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        sb->GetBoundingProjd(u, orig, umin, umax);
+    }
+}
+
 void SBezierLoop::MakePwlInto(SContour *sc) {
     List<Vector> lv;
     ZERO(&lv);
@@ -290,6 +310,15 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
 
     *allClosed = true;
     return ret;
+}
+
+void SBezierLoopSet::GetBoundingProjd(Vector u, Vector orig,
+                                      double *umin, double *umax)
+{
+    SBezierLoop *sbl;
+    for(sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
+        sbl->GetBoundingProjd(u, orig, umin, umax);
+    }
 }
 
 void SBezierLoopSet::Clear(void) {
@@ -358,14 +387,12 @@ SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     return ret;
 }
 
-SSurface SSurface::FromPlane(Vector pt, Vector n) {
+SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     SSurface ret;
     ZERO(&ret);
 
     ret.degm = 1;
     ret.degn = 1;
-
-    Vector u = n.Normal(0), v = n.Normal(1);
 
     ret.weight[0][0] = ret.weight[0][1] = 1; 
     ret.weight[1][0] = ret.weight[1][1] = 1;
@@ -520,9 +547,9 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
         SCurve *sc = shell->curve.FindById(stb->curve);
 
         Vector prev, prevuv, ptuv;
-        bool inCurve = false;
+        bool inCurve = false, empty = true;
         double u = 0, v = 0;
-    
+   
         int i, first, last, increment;
         if(stb->backwards) {
             first = sc->pts.n - 1;
@@ -539,18 +566,23 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
                 ClosestPointTo(*pt, &u, &v);
                 ptuv = Vector::From(u, v, 0);
                 if(inCurve) {
-                    sel->AddEdge(prevuv, ptuv);
+                    sel->AddEdge(prevuv, ptuv, sc->h.v, stb->backwards);
+                    empty = false;
                 }
                 prevuv = ptuv;
             } else {
                 if(inCurve) {
-                    sel->AddEdge(prev, *pt);
+                    sel->AddEdge(prev, *pt, sc->h.v, stb->backwards);
+                    empty = false;
                 }
                 prev = *pt;
             }
 
-            if(pt->EqualsExactly(stb->start)) inCurve = true;
-            if(pt->EqualsExactly(stb->finish)) inCurve = false;
+            if(pt->Equals(stb->start)) inCurve = true;
+            if(pt->Equals(stb->finish)) inCurve = false;
+        }
+        if(inCurve || empty) {
+            dbp("trim was empty or unterminated");
         }
     }
 }
@@ -604,12 +636,27 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
         SWAP(Vector, t0, t1);
     }
 
-    // First, generate the top and bottom surfaces of the extrusion; just
-    // planes.
+    // Define a coordinate system to contain the original sketch, and get
+    // a bounding box in that csys
+    Vector n = sbls->normal.ScaledBy(-1);
+    Vector u = n.Normal(0), v = n.Normal(1);
+    Vector orig = sbls->point;
+    double umax = 1e-10, umin = 1e10;
+    sbls->GetBoundingProjd(u, orig, &umin, &umax);
+    double vmax = 1e-10, vmin = 1e10;
+    sbls->GetBoundingProjd(v, orig, &vmin, &vmax);
+    // and now fix things up so that all u and v lie between 0 and 1
+    orig = orig.Plus(u.ScaledBy(umin));
+    orig = orig.Plus(v.ScaledBy(vmin));
+    u = u.ScaledBy(umax - umin);
+    v = v.ScaledBy(vmax - vmin);
+
+    // So we can now generate the top and bottom surfaces of the extrusion,
+    // planes within a translated (and maybe mirrored) version of that csys.
     SSurface s0, s1;
-    s0 = SSurface::FromPlane(sbls->point.Plus(t0), sbls->normal.ScaledBy(-1));
+    s0 = SSurface::FromPlane(orig.Plus(t0), u, v);
     s0.color = color;
-    s1 = SSurface::FromPlane(sbls->point.Plus(t1), sbls->normal.ScaledBy( 1));
+    s1 = SSurface::FromPlane(orig.Plus(t1).Plus(u), u.ScaledBy(-1), v);
     s1.color = color;
     hSSurface hs0 = surface.AddAndAssignId(&s0),
               hs1 = surface.AddAndAssignId(&s1);

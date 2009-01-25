@@ -53,7 +53,7 @@ STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
 }
 
 SEdge SEdge::From(Vector a, Vector b) {
-    SEdge se = { 0, a, b };
+    SEdge se = { 0, 0, 0, a, b };
     return se;
 }
 
@@ -61,10 +61,12 @@ void SEdgeList::Clear(void) {
     l.Clear();
 }
 
-void SEdgeList::AddEdge(Vector a, Vector b) {
+void SEdgeList::AddEdge(Vector a, Vector b, int auxA, int auxB) {
     SEdge e; ZERO(&e);
     e.a = a;
     e.b = b;
+    e.auxA = auxA;
+    e.auxB = auxB;
     l.Add(&e);
 }
 

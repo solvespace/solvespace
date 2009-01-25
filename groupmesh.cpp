@@ -177,7 +177,7 @@ done:
     runningShell.TriangulateInto(&runningMesh);
     emphEdges.Clear();
     if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
-        thisShell.MakeEdgesInto(&emphEdges);
+        runningShell.MakeEdgesInto(&emphEdges);
     }
 }
 
