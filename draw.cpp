@@ -1021,6 +1021,17 @@ void GraphicsWindow::Paint(int w, int h) {
     }
     glEnd();
 
+    // And the naked edges, if the user did Analyze -> Show Naked Edges.
+    glLineWidth(7);
+    glEnable(GL_LINE_STIPPLE);
+    glLineStipple(4, 0x5555);
+    glColor3d(1, 0, 0);
+    glxDrawEdges(&(SS.nakedEdges));
+    glLineStipple(4, 0xaaaa);
+    glColor3d(0, 0, 0);
+    glxDrawEdges(&(SS.nakedEdges));
+    glDisable(GL_LINE_STIPPLE);
+
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST); 
     glxLockColorTo(1, 1, 0);

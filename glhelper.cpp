@@ -295,14 +295,9 @@ void glxDebugPolygon(SPolygon *p)
 
 void glxDrawEdges(SEdgeList *el)
 {
-    int i;
-    glLineWidth(1);
-    glxDepthRangeOffset(2);
-    glxColor3d(REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor));
-
+    SEdge *se;
     glBegin(GL_LINES);
-    for(i = 0; i < el->l.n; i++) {
-        SEdge *se = &(el->l.elem[i]);
+    for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
         glxVertex3v(se->a);
         glxVertex3v(se->b);
     }

@@ -598,7 +598,9 @@ int Expr::Precedence(Expr *e) {
     if(e->op != BINARY_OP && e->op != UNARY_OP) oops();
 
     switch(e->x.c) {
+        case 'q':
         case 's':
+        case 'c':
         case 'n':   return 30;
 
         case '*':
@@ -629,7 +631,9 @@ c:
             break;
 
         case 'n': n = PopOperand()->Negate(); break;
-        case 's': n = PopOperand()->Sqrt(); break;
+        case 'q': n = PopOperand()->Sqrt(); break;
+        case 's': n = (PopOperand()->Times(Expr::From(PI/180)))->Sin(); break;
+        case 'c': n = (PopOperand()->Times(Expr::From(PI/180)))->Cos(); break;
 
         default: oops();
     }
@@ -721,6 +725,12 @@ void Expr::Lex(char *in) {
 
             Expr *e = AllocExpr();
             if(strcmp(name, "sqrt")==0) {
+                e->op = UNARY_OP;
+                e->x.c = 'q';
+            } else if(strcmp(name, "cos")==0) {
+                e->op = UNARY_OP;
+                e->x.c = 'c';
+            } else if(strcmp(name, "sin")==0) {
                 e->op = UNARY_OP;
                 e->x.c = 's';
             } else {

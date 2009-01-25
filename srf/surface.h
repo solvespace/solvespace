@@ -97,17 +97,23 @@ public:
 class STrimBy {
 public:
     hSCurve     curve;
+    bool        backwards;
+    // If a trim runs backwards, then start and finish still correspond to
+    // the actual start and finish, but they appear in reverse order in
+    // the referenced curve.
     Vector      start;
     Vector      finish;
-    Vector      out;
 
-    static STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc);
+    static STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool bkwds);
 };
 
 // A rational polynomial surface in Bezier form.
 class SSurface {
 public:
     hSSurface       h;
+
+    int             color;
+    DWORD           face;
 
     int             degm, degn;
     Vector          ctrl[4][4];
@@ -136,7 +142,8 @@ public:
     IdList<SCurve,hSCurve>      curve;
     IdList<SSurface,hSSurface>  surface;
 
-    void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1);
+    void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
+                             int color);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
     void MakeFromCopyOf(SShell *a);

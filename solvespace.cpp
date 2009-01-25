@@ -183,6 +183,8 @@ void SolveSpace::AfterNewFile(void) {
     // Clear out the traced point, which is no longer valid
     traced.point = Entity::NO_ENTITY;
     traced.path.l.Clear();
+    // and the naked edges
+    nakedEdges.Clear();
 
     ReloadAllImported();
     GenerateAll(-1, -1);
@@ -400,6 +402,20 @@ void SolveSpace::MenuAnalyze(int id) {
             break;
 
         case GraphicsWindow::MNU_NAKED_EDGES: {
+            SS.nakedEdges.Clear();
+
+            SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
+            SKdNode *root = SKdNode::From(m);
+            root->MakeNakedEdgesInto(&(SS.nakedEdges));
+            InvalidateGraphics();
+
+            if(SS.nakedEdges.l.n == 0) {
+                Error("Zero naked edges; the model is watertight. "
+                      "An exported STL file will be valid.");
+            } else {
+                Error("Found %d naked edges, now highlighted.",
+                    SS.nakedEdges.l.n);
+            }
             break;
         }
 

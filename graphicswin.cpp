@@ -558,6 +558,7 @@ void GraphicsWindow::MenuEdit(int id) {
             }
             SS.GW.ClearSuper();
             HideTextEditControl();
+            SS.nakedEdges.Clear();
             break;
 
         case MNU_DELETE: {

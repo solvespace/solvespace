@@ -471,6 +471,7 @@ public:
         SContour    path;
         hEntity     point;
     } traced;
+    SEdgeList nakedEdges;
 
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);

@@ -51,7 +51,7 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
             }
         }
 
-        dbp("finished finding holes: %d ms", GetMilliseconds() - in);
+//        dbp("finished finding holes: %d ms", GetMilliseconds() - in);
         for(;;) {
             double xmin = 1e10;
             SContour *scmin = NULL;
@@ -70,13 +70,13 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
                 dbp("couldn't merge our hole");
                 return;
             }
-            dbp("   bridged to contour: %d ms", GetMilliseconds() - in);
+//            dbp("   bridged to contour: %d ms", GetMilliseconds() - in);
             scmin->tag = 3;
         }
-        dbp("finished merging holes: %d ms", GetMilliseconds() - in);
+//        dbp("finished merging holes: %d ms", GetMilliseconds() - in);
 
         merged.UvTriangulateInto(m);
-        dbp("finished ear clippping: %d ms", GetMilliseconds() - in);
+//        dbp("finished ear clippping: %d ms", GetMilliseconds() - in);
         merged.l.Clear();
         el.Clear();
         vl.Clear();

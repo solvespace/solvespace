@@ -476,21 +476,19 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
-void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
-                            STriMeta m, int cnt)
-{
+void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt) {
     if(gt && lt) {
         double ac = a.Element(which),
                bc = b.Element(which);
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, n, nOther, m, cnt);
+            lt->FindEdgeOn(a, b, n, cnt);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, n, nOther, m, cnt);
+            gt->FindEdgeOn(a, b, n, cnt);
         }
     } else {
         STriangleLl *ll;
@@ -499,43 +497,20 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
 
             if(tr->tag == cnt) continue;
             
-            if((a.Equals(tr->b, KDTREE_EPS) && b.Equals(tr->a, KDTREE_EPS)) ||
-               (a.Equals(tr->c, KDTREE_EPS) && b.Equals(tr->b, KDTREE_EPS)) ||
-               (a.Equals(tr->a, KDTREE_EPS) && b.Equals(tr->c, KDTREE_EPS)))
+            if((a.Equals(tr->b) && b.Equals(tr->a)) ||
+               (a.Equals(tr->c) && b.Equals(tr->b)) ||
+               (a.Equals(tr->a) && b.Equals(tr->c)))
             {
                 (*n)++;
-                if(tr->meta.face != m.face) {
-                    if(tr->meta.color == m.color &&
-                       tr->meta.face != 0 && m.face != 0)
-                    {
-                        hEntity hf0 = { tr->meta.face },
-                                hf1 = { m.face };
-                        Entity *f0 = SS.GetEntity(hf0),
-                               *f1 = SS.GetEntity(hf1);
-
-                        Vector n0 = f0->FaceGetNormalNum().WithMagnitude(1),
-                               n1 = f1->FaceGetNormalNum().WithMagnitude(1);
-
-                        if(n0.Equals(n1) || n0.Equals(n1.ScaledBy(-1))) {
-                            // faces are coincident, skip
-                            // (If the planes are parallel, and the edge
-                            // lies in both planes, then they're also
-                            // coincident.)
-                        } else {
-                            (*nOther)++;
-                        }
-                    } else {
-                        (*nOther)++;
-                    }
-                }
             }
-
+            // Ensure that we don't count this triangle twice if it appears
+            // in two buckets of the kd tree.
             tr->tag = cnt;
         }
     }
 }
 
-void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, bool emphasized) {
+void SKdNode::MakeNakedEdgesInto(SEdgeList *sel) {
     SMesh m;
     ZERO(&m);
     ClearTags();
@@ -551,20 +526,11 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, bool emphasized) {
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
             int n = 0, nOther = 0;
-            FindEdgeOn(a, b, &n, &nOther, tr->meta, cnt++);
+            FindEdgeOn(a, b, &n, cnt);
             if(n != 1) {
-                if(!emphasized) {
-                    if(n == 0 && (a.Minus(b).Magnitude()) > KDTREE_EPS) {
-                        sel->AddEdge(a, b);
-                    }
-                } else {
-//                    dbp("hanging: n=%d (%.3f %.3f %.3f)  (%.3f %.3f %.3f)", 
-//                        n, CO(a), CO(b));
-                }
+                sel->AddEdge(a, b);
             }
-            if(nOther > 0) {
-                if(emphasized) sel->AddEdge(a, b);
-            }
+            cnt++;
         }
     }
 

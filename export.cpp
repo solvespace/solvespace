@@ -88,7 +88,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
     SKdNode *root = SKdNode::From(&m);
     SEdgeList el;
     ZERO(&el);
-    root->MakeCertainEdgesInto(&el, false);
+    root->MakeNakedEdgesInto(&el);
     // Assemble those edges into a polygon, and clear the edge list
     el.AssemblePolygon(&sp, NULL);
     el.Clear();

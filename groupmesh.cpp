@@ -87,7 +87,6 @@ void Group::GenerateShellForStepAndRepeat(void) {
 
 void Group::GenerateShellAndMesh(void) {
     thisShell.Clear();
-    STriMeta meta = { 0, color };
 
     if(type == TRANSLATE || type == ROTATE) {
         GenerateShellForStepAndRepeat();
@@ -105,7 +104,7 @@ void Group::GenerateShellAndMesh(void) {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
         
-        thisShell.MakeFromExtrusionOf(&(src->bezierLoopSet), tbot, ttop);
+        thisShell.MakeFromExtrusionOf(&(src->bezierLoopSet), tbot, ttop, color);
     } else if(type == LATHE) {
         Group *src = SS.GetGroup(opA);
 
@@ -223,6 +222,11 @@ void Group::Draw(void) {
         glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
         glDisable(GL_LIGHTING);
 
+        glLineWidth(1);
+        glxDepthRangeOffset(2);
+        glxColor3d(REDf  (SS.edgeColor),
+                   GREENf(SS.edgeColor), 
+                   BLUEf (SS.edgeColor));
         glxDrawEdges(&emphEdges);
     }
 

@@ -320,13 +320,21 @@ void SCurve::Clear(void) {
     pts.Clear();
 }
 
-STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc) {
+STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
     STrimBy stb;
     ZERO(&stb);
     stb.curve = hsc;
     SCurve *sc = shell->curve.FindById(hsc);
-    stb.start = sc->pts.elem[0];
-    stb.finish = sc->pts.elem[sc->pts.n - 1];
+
+    if(backwards) {
+        stb.finish = sc->pts.elem[0];
+        stb.start = sc->pts.elem[sc->pts.n - 1];
+        stb.backwards = true;
+    } else {
+        stb.start = sc->pts.elem[0];
+        stb.finish = sc->pts.elem[sc->pts.n - 1];
+        stb.backwards = false;
+    }
 
     return stb;
 }
@@ -377,6 +385,8 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q,
     ZERO(&ret);
 
     ret.h = a->h;
+    ret.color = a->color;
+    ret.face = a->face;
 
     ret.degm = a->degm;
     ret.degn = a->degn;
@@ -511,9 +521,20 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
 
         Vector prev, prevuv, ptuv;
         bool inCurve = false;
-        Vector *pt;
         double u = 0, v = 0;
-        for(pt = sc->pts.First(); pt; pt = sc->pts.NextAfter(pt)) {
+    
+        int i, first, last, increment;
+        if(stb->backwards) {
+            first = sc->pts.n - 1;
+            last = 0;
+            increment = -1;
+        } else {
+            first = 0;
+            last = sc->pts.n - 1;
+            increment = 1;
+        }
+        for(i = first; i != (last + increment); i += increment) {
+            Vector *pt = &(sc->pts.elem[i]);
             if(asUv) {
                 ClosestPointTo(*pt, &u, &v);
                 ptuv = Vector::From(u, v, 0);
@@ -542,14 +563,14 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 
     SPolygon poly;
     ZERO(&poly);
-    if(!el.AssemblePolygon(&poly, NULL)) {
+    if(!el.AssemblePolygon(&poly, NULL, true)) {
         dbp("failed to assemble polygon to trim nurbs surface in uv space");
     }
 
     int i, start = sm->l.n;
     poly.UvTriangulateInto(sm);
 
-    STriMeta meta = { 0, 0x888888 };
+    STriMeta meta = { face, color };
     for(i = start; i < sm->l.n; i++) {
         STriangle *st = &(sm->l.elem[i]);
         st->meta = meta;
@@ -559,10 +580,9 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
         st->a = PointAt(st->a.x, st->a.y);
         st->b = PointAt(st->b.x, st->b.y);
         st->c = PointAt(st->c.x, st->c.y);
-        if((st->Normal()).Dot(st->an) < 0) {
-            // Have to get the vertices in the right order
-            st->FlipNormal();
-        }
+        // Works out that my chosen contour direction is inconsistent with
+        // the triangle direction, sigh.
+        st->FlipNormal();
     }
 
     el.Clear();
@@ -573,7 +593,9 @@ void SSurface::Clear(void) {
     trim.Clear();
 }
 
-void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
+void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
+                                 int color)
+{
     ZERO(this);
 
     // Make the extrusion direction consistent with respect to the normal
@@ -586,7 +608,9 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
     // planes.
     SSurface s0, s1;
     s0 = SSurface::FromPlane(sbls->point.Plus(t0), sbls->normal.ScaledBy(-1));
+    s0.color = color;
     s1 = SSurface::FromPlane(sbls->point.Plus(t1), sbls->normal.ScaledBy( 1));
+    s1.color = color;
     hSSurface hs0 = surface.AddAndAssignId(&s0),
               hs1 = surface.AddAndAssignId(&s1);
     
@@ -598,7 +622,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
         SBezier *sb;
 
         typedef struct {
-            STrimBy     trim;
+            hSCurve     hc;
             hSSurface   hs;
         } TrimLine;
         List<TrimLine> trimLines;
@@ -608,6 +632,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             // Generate the surface of extrusion of this curve, and add
             // it to the list
             SSurface ss = SSurface::FromExtrusionOf(sb, t0, t1);
+            ss.color = color;
             hSSurface hsext = surface.AddAndAssignId(&ss);
 
             // Translate the curve by t0 and t1 to produce two trim curves
@@ -615,19 +640,21 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t0);
             hSCurve hc0 = curve.AddAndAssignId(&sc);
-            STrimBy stb0 = STrimBy::EntireCurve(this, hc0);
+            STrimBy stb0 = STrimBy::EntireCurve(this, hc0, false);
 
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t1);
             hSCurve hc1 = curve.AddAndAssignId(&sc);
-            STrimBy stb1 = STrimBy::EntireCurve(this, hc1);
+            STrimBy stb1 = STrimBy::EntireCurve(this, hc1, true);
 
             // The translated curves trim the flat top and bottom surfaces.
             (surface.FindById(hs0))->trim.Add(&stb0);
             (surface.FindById(hs1))->trim.Add(&stb1);
 
             // The translated curves also trim the surface of extrusion.
+            stb0 = STrimBy::EntireCurve(this, hc0, true);
             (surface.FindById(hsext))->trim.Add(&stb0);
+            stb1 = STrimBy::EntireCurve(this, hc1, false);
             (surface.FindById(hsext))->trim.Add(&stb1);
 
             // And form the trim line
@@ -639,7 +666,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
             hSCurve hl = curve.AddAndAssignId(&sc);
             // save this for later
             TrimLine tl;
-            tl.trim = STrimBy::EntireCurve(this, hl);
+            tl.hc = hl;
             tl.hs = hsext;
             trimLines.Add(&tl);
         }
@@ -651,8 +678,11 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1) {
 
             TrimLine *tlp = &(trimLines.elem[WRAP(i-1, trimLines.n)]);
 
-            ss->trim.Add(&(tl->trim));
-            ss->trim.Add(&(tlp->trim));
+            STrimBy stb;
+            stb = STrimBy::EntireCurve(this, tl->hc, true);
+            ss->trim.Add(&stb);
+            stb = STrimBy::EntireCurve(this, tlp->hc, false);
+            ss->trim.Add(&stb);
         }
         trimLines.Clear();
     }

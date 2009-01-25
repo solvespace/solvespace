@@ -21,9 +21,9 @@ public:
 
     void Clear(void);
     void AddEdge(Vector a, Vector b);
-    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt);
+    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false);
     bool AssembleContour(Vector first, Vector last, SContour *dest,
-                                                        SEdge *errorAt);
+                            SEdge *errorAt, bool keepDir);
     int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
 };
 
@@ -218,9 +218,8 @@ public:
     void MakeMeshInto(SMesh *m);
     void ClearTags(void);
     
-    void FindEdgeOn(Vector a, Vector b, int *n, int *nOther,
-                        STriMeta m, int cnt);
-    void MakeCertainEdgesInto(SEdgeList *sel, bool emphasized);
+    void FindEdgeOn(Vector a, Vector b, int *n, int cnt);
+    void MakeNakedEdgesInto(SEdgeList *sel);
 };
 
 #endif

@@ -68,8 +68,8 @@ void SEdgeList::AddEdge(Vector a, Vector b) {
     l.Add(&e);
 }
 
-bool SEdgeList::AssembleContour(Vector first, Vector last, 
-                                    SContour *dest, SEdge *errorAt)
+bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
+                                SEdge *errorAt, bool keepDir)
 {
     int i;
 
@@ -87,7 +87,8 @@ bool SEdgeList::AssembleContour(Vector first, Vector last,
                 se->tag = 1;
                 break;
             }
-            if(se->b.Equals(last)) {
+            // Don't allow backwards edges if keepDir is true.
+            if(!keepDir && se->b.Equals(last)) {
                 dest->AddPoint(se->a);
                 last = se->a;
                 se->tag = 1;
@@ -108,7 +109,7 @@ bool SEdgeList::AssembleContour(Vector first, Vector last,
     return true;
 }
 
-bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
+bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
     dest->Clear();
 
     bool allClosed = true;
@@ -130,8 +131,11 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt) {
         // Create a new empty contour in our polygon, and finish assembling
         // into that contour.
         dest->AddEmptyContour();
-        if(!AssembleContour(first, last, &(dest->l.elem[dest->l.n-1]), errorAt))
+        if(!AssembleContour(first, last, &(dest->l.elem[dest->l.n-1]),
+                errorAt, keepDir))
+        {
             allClosed = false;
+        }
         // But continue assembling, even if some of the contours are open
     }
 }
