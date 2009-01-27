@@ -518,7 +518,11 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
     Vector p0;
     for(i = 0; i < 50; i++) {
         p0 = PointAt(*u, *v);
-        if(p0.Equals(p)) {
+        // Converge it to better than LENGTH_EPS; we want two points, each
+        // independently projected into uv and back, to end up equal with
+        // the LENGTH_EPS. Best case that requires LENGTH_EPS/2, but more
+        // is better and convergence should be fast by now.
+        if(p0.Equals(p, LENGTH_EPS/100)) {
             return;
         }
 

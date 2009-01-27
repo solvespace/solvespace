@@ -162,18 +162,7 @@ void SolveSpace::ExportPolygon(SPolygon *sp,
 
     // Now begin the entities, which are just line segments reproduced from
     // our piecewise linear curves.
-    out->StartFile();
-    for(i = 0; i < sp->l.n; i++) {
-        SContour *sc = &(sp->l.elem[i]);
-
-        for(j = 1; j < sc->l.n; j++) {
-            Vector p0 = sc->l.elem[j-1].p,
-                   p1 = sc->l.elem[j].p;
-
-            out->LineSegment(p0.x, p0.y, p1.x, p1.y);
-        }
-    }
-    out->FinishAndCloseFile();
+    out->OutputPolygon(sp);
 }
 
 bool VectorFileWriter::StringEndsIn(char *str, char *ending) {
@@ -194,8 +183,18 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     if(StringEndsIn(filename, ".dxf")) {
         static DxfFileWriter DxfWriter;
         ret = &DxfWriter;
+    } else if(StringEndsIn(filename, ".ps") || StringEndsIn(filename, ".eps")) {
+        static EpsFileWriter EpsWriter;
+        ret = &EpsWriter;
+    } else if(StringEndsIn(filename, ".svg")) {
+        static SvgFileWriter SvgWriter;
+        ret = &SvgWriter;
+    } else if(StringEndsIn(filename, ".plt")||StringEndsIn(filename, ".hpgl")) {
+        static HpglFileWriter HpglWriter;
+        ret = &HpglWriter;
     } else {
-        Error("Can't identify output file type from file extension.");
+        Error("Can't identify output file type from file extension of "
+        "filename '%s'; try .dxf, .svg, .plt, .hpgl, .eps, or .ps.", filename);
         return NULL;
     }
 
@@ -208,6 +207,36 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     return ret;
 }
 
+void VectorFileWriter::OutputPolygon(SPolygon *sp) {
+    int i, j;
+
+    // First calculate the bounding box.
+    ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+    ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
+    for(i = 0; i < sp->l.n; i++) {
+        SContour *sc = &(sp->l.elem[i]);
+        for(j = 0; j < sc->l.n; j++) {
+            (sc->l.elem[j].p).MakeMaxMin(&ptMax, &ptMin);
+        }
+    }
+
+    StartFile();
+    for(i = 0; i < sp->l.n; i++) {
+        SContour *sc = &(sp->l.elem[i]);
+
+        for(j = 1; j < sc->l.n; j++) {
+            Vector p0 = sc->l.elem[j-1].p,
+                   p1 = sc->l.elem[j].p;
+
+            LineSegment(p0.x, p0.y, p1.x, p1.y);
+        }
+    }
+    FinishAndCloseFile();
+}
+
+//-----------------------------------------------------------------------------
+// Routines for DXF export
+//-----------------------------------------------------------------------------
 void DxfFileWriter::StartFile(void) {
     // Some software, like Adobe Illustrator, insists on a header.
     fprintf(f,
@@ -252,9 +281,6 @@ void DxfFileWriter::StartFile(void) {
 "ENTITIES\r\n");
 }
 
-void DxfFileWriter::SetLineWidth(double mm) {
-}
-
 void DxfFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
     fprintf(f,
 "  0\r\n"
@@ -287,6 +313,109 @@ void DxfFileWriter::FinishAndCloseFile(void) {
     fclose(f);
 }
 
+//-----------------------------------------------------------------------------
+// Routines for EPS output
+//-----------------------------------------------------------------------------
+double EpsFileWriter::MmToPoints(double mm) {
+    // 72 points in an inch
+    return (mm/25.4)*72;
+}
+
+void EpsFileWriter::StartFile(void) {
+    fprintf(f,
+"%%!PS-Adobe-2.0\r\n"
+"%%%%Creator: SolveSpace\r\n"
+"%%%%Title: title\r\n"
+"%%%%Pages: 0\r\n"
+"%%%%PageOrder: Ascend\r\n"
+"%%%%BoundingBox: 0 0 %d %d\r\n"
+"%%%%HiResBoundingBox: 0 0 %.3f %.3f\r\n"
+"%%%%EndComments\r\n"
+"\r\n"
+"gsave\r\n"
+"\r\n",
+            (int)ceil(MmToPoints(ptMax.x - ptMin.x)),
+            (int)ceil(MmToPoints(ptMax.y - ptMin.y)),
+            MmToPoints(ptMax.x - ptMin.x),
+            MmToPoints(ptMax.y - ptMin.y));
+}
+
+void EpsFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    fprintf(f,
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    1 setlinewidth\r\n"
+"    0 setgray\r\n"
+"stroke\r\n",
+            MmToPoints(x0 - ptMin.x), MmToPoints(y0 - ptMin.y),
+            MmToPoints(x1 - ptMin.x), MmToPoints(y1 - ptMin.y));
+}
+
+void EpsFileWriter::FinishAndCloseFile(void) {
+    fprintf(f,
+"\r\n"
+"grestore\r\n"
+"\r\n");
+    fclose(f);
+}
+
+//-----------------------------------------------------------------------------
+// Routines for SVG output
+//-----------------------------------------------------------------------------
+void SvgFileWriter::StartFile(void) {
+    fprintf(f,
+"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
+    "\"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\r\n"
+"<svg xmlns=\"http://www.w3.org/2000/svg\"  "
+    "xmlns:xlink=\"http://www.w3.org/1999/xlink\" "
+    "width='%.3fmm' height='%.3fmm' "
+    "viewBox=\"0 0 %.3f %.3f\">\r\n"
+"\r\n"
+"<title>Exported SVG</title>\r\n"
+"\r\n",
+        ptMax.x - ptMin.x, ptMax.y - ptMin.y,
+        ptMax.x - ptMin.x, ptMax.y - ptMin.y);
+}
+
+void SvgFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    fprintf(f,
+"<polyline points='%.3f %.3f, %.3f %.3f' "
+    "stroke-width='1' stroke='black' style='fill: none;' />\r\n",
+            (x0 - ptMin.x), (y0 - ptMin.y),
+            (x1 - ptMin.x), (y1 - ptMin.y));
+}
+
+void SvgFileWriter::FinishAndCloseFile(void) {
+    fprintf(f, "\r\n</svg>\r\n");
+    fclose(f);
+}
+
+//-----------------------------------------------------------------------------
+// Routines for HPGL output
+//-----------------------------------------------------------------------------
+double HpglFileWriter::MmToHpglUnits(double mm) {
+    return mm*40;
+}
+
+void HpglFileWriter::StartFile(void) {
+    fprintf(f, "IN;\r\n");
+    fprintf(f, "SP1;\r\n");
+}
+
+void HpglFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    fprintf(f, "PU%d,%d;\r\n", (int)MmToHpglUnits(x0), (int)MmToHpglUnits(y0));
+    fprintf(f, "PD%d,%d;\r\n", (int)MmToHpglUnits(x1), (int)MmToHpglUnits(y1));
+}
+
+void HpglFileWriter::FinishAndCloseFile(void) {
+    fclose(f);
+}
+
+//-----------------------------------------------------------------------------
+// Export the mesh as an STL file; it should always be vertex-to-vertex and
+// not self-intersecting, so not much to do.
+//-----------------------------------------------------------------------------
 void SolveSpace::ExportMeshTo(char *filename) {
     SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
     if(m->l.n == 0) {
@@ -332,6 +461,10 @@ void SolveSpace::ExportMeshTo(char *filename) {
     fclose(f);
 }
 
+//-----------------------------------------------------------------------------
+// Export a view of the model as an image; we just take a screenshot, by
+// rendering the view in the usual way and then copying the pixels.
+//-----------------------------------------------------------------------------
 void SolveSpace::ExportAsPngTo(char *filename) {
     int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,

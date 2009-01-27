@@ -339,14 +339,14 @@ void SolveSpace::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             char exportFile[MAX_PATH] = "";
-            if(!GetSaveFile(exportFile, DXF_EXT, DXF_PATTERN)) break;
+            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
             SS.ExportViewTo(exportFile); 
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
             char exportFile[MAX_PATH] = "";
-            if(!GetSaveFile(exportFile, DXF_EXT, DXF_PATTERN)) break;
+            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
             SS.ExportSectionTo(exportFile); 
             break;
         }

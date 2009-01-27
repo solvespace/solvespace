@@ -32,7 +32,9 @@ inline double WRAP_NOT_0(double v, double n) {
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 
-#define LENGTH_EPS  (1e-7)
+#define LENGTH_EPS      (1e-7)
+#define VERY_POSITIVE   (1e10)
+#define VERY_NEGATIVE   (-1e10)
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
@@ -68,8 +70,12 @@ int SaveFileYesNoCancel(void);
 #define PNG_EXT "png"
 #define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
 #define STL_EXT "stl"
-#define DXF_PATTERN "DXF File (*.dxf)\0*.dxf\0All Files (*)\0*\0\0"
-#define DXF_EXT "dxf"
+#define VEC_PATTERN "DXF File (*.dxf)\0*.dxf\0" \
+                    "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
+                    "Scalable Vector Graphics (*.svg)\0*.svg\0" \
+                    "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
+                    "All Files (*)\0*\0\0"
+#define VEC_EXT "dxf"
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
 #define LICENSE_PATTERN \
@@ -331,18 +337,39 @@ public:
 class VectorFileWriter {
 public:
     FILE *f;
+    Vector ptMin, ptMax;
     
     static bool StringEndsIn(char *str, char *ending);
     static VectorFileWriter *ForFile(char *file);
 
-    virtual void SetLineWidth(double mm) = 0;
+    void OutputPolygon(SPolygon *sp);
+
     virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void SetLineWidth(double mm);
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
+class EpsFileWriter : public VectorFileWriter {
+public:
+    static double MmToPoints(double mm);
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
+class SvgFileWriter : public VectorFileWriter {
+public:
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
+class HpglFileWriter : public VectorFileWriter {
+public:
+    static double MmToHpglUnits(double mm);
     void LineSegment(double x0, double y0, double x1, double y1);
     void StartFile(void);
     void FinishAndCloseFile(void);
