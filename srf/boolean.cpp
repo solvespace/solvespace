@@ -10,11 +10,9 @@ void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
 
 SCurve SCurve::MakeCopySplitAgainst(SShell *against) {
     SCurve ret;
-    ZERO(&ret);
+    ret = *this;
+    ZERO(&(ret.pts));
 
-    ret.isExact = isExact;
-    ret.exact = exact;
-    
     Vector *p;
     for(p = pts.First(); p; p = pts.NextAfter(p)) {
         ret.pts.Add(p);
@@ -127,6 +125,29 @@ void SShell::CopySurfacesTrimAgainst(SShell *against, SShell *into,
     }
 }
 
+void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
+    SSurface *sa;
+    for(sa = agnst->surface.First(); sa; sa = agnst->surface.NextAfter(sa)) {
+        SSurface *sb;
+        for(sb = surface.First(); sb; sb = surface.NextAfter(sb)) {
+            // Intersect every surface from our shell against every surface
+            // from agnst; this will add zero or more curves to the curve
+            // list for into.
+            sa->IntersectAgainst(sb, into);
+        }
+    }
+}
+
+void SShell::CleanupAfterBoolean(void) {
+    SSurface *ss;
+    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
+        (ss->orig).Clear();
+        (ss->inside).Clear();
+        (ss->onSameNormal).Clear();
+        (ss->onFlipNormal).Clear();
+    }
+}
+
 void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     // Copy over all the original curves, splitting them so that a
     // piecwise linear segment never crosses a surface from the other
@@ -136,9 +157,14 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
 
     // Generate the intersection curves for each surface in A against all
     // the surfaces in B
+    a->MakeIntersectionCurvesAgainst(b, this);
 
     // Then trim and copy the surfaces
     a->CopySurfacesTrimAgainst(b, this, type, true);
     b->CopySurfacesTrimAgainst(a, this, type, false);
+
+    // And clean up the piecewise linear things we made as a calculation aid
+    a->CleanupAfterBoolean();
+    b->CleanupAfterBoolean();
 }
 

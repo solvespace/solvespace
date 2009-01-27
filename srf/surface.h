@@ -82,12 +82,16 @@ class SCurve {
 public:
     hSCurve         h;
 
-    hSCurve         newH; // when merging with booleans
+    hSCurve         newH;       // when merging with booleans
+    bool            interCurve; // it's a newly-calculated intersection
 
     bool            isExact;
     SBezier         exact;
 
     List<Vector>    pts;
+
+    hSSurface       surfA;
+    hSSurface       surfB;
 
     static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
     SCurve MakeCopySplitAgainst(SShell *against);
@@ -126,6 +130,12 @@ public:
 
     List<STrimBy>   trim;
 
+    // The trims broken down into piecewise linear segments.
+    SEdgeList       orig;
+    SEdgeList       inside;
+    SEdgeList       onSameNormal;
+    SEdgeList       onFlipNormal;
+
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
@@ -134,11 +144,13 @@ public:
     SSurface MakeCopyTrimAgainst(SShell *against, SShell *shell,
                                  int type, bool opA);
     void TrimFromEdgeList(SEdgeList *el);
+    void IntersectAgainst(SSurface *b, SShell *into);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
     void TangentsAt(double u, double v, Vector *tu, Vector *tv);
     Vector NormalAt(double u, double v);
+    void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
@@ -162,7 +174,9 @@ public:
     void MakeFromBoolean(SShell *a, SShell *b, int type);
     void CopyCurvesSplitAgainst(SShell *against, SShell *into);
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
+    void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeEdgeListUseNewCurveIds(SEdgeList *el);
+    void CleanupAfterBoolean(void);
 
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);

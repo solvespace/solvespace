@@ -42,6 +42,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
 SRFOBJS =  $(OBJDIR)\ratpoly.obj \
            $(OBJDIR)\triangulate.obj \
            $(OBJDIR)\boolean.obj \
+           $(OBJDIR)\surfinter.obj \
 
 
 RES = $(OBJDIR)\resource.res

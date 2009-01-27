@@ -545,6 +545,18 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
     }
 }
 
+void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
+    *ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
+    *ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+
+    int i, j;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            (ctrl[i][j]).MakeMaxMin(ptMax, ptMin);
+        }
+    }
+}
+
 void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
@@ -700,13 +712,19 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
 
             // The translated curves trim the flat top and bottom surfaces.
             (surface.FindById(hs0))->trim.Add(&stb0);
+            (curve.FindById(hc0))->surfA = hs0;
+
             (surface.FindById(hs1))->trim.Add(&stb1);
+            (curve.FindById(hc1))->surfA = hs1;
 
             // The translated curves also trim the surface of extrusion.
             stb0 = STrimBy::EntireCurve(this, hc0, true);
             (surface.FindById(hsext))->trim.Add(&stb0);
+            (curve.FindById(hc0))->surfB = hsext;
+
             stb1 = STrimBy::EntireCurve(this, hc1, false);
             (surface.FindById(hsext))->trim.Add(&stb1);
+            (curve.FindById(hc1))->surfB = hsext;
 
             // And form the trim line
             Vector pt = sb->Finish();
@@ -734,6 +752,9 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
             ss->trim.Add(&stb);
             stb = STrimBy::EntireCurve(this, tlp->hc, false);
             ss->trim.Add(&stb);
+
+            (curve.FindById(tl->hc))->surfA = ss->h;
+            (curve.FindById(tlp->hc))->surfB = ss->h;
         }
         trimLines.Clear();
     }

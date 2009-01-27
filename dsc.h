@@ -75,6 +75,8 @@ public:
     double DivPivoting(Vector delta);
     Vector ClosestOrtho(void);
     void MakeMaxMin(Vector *maxv, Vector *minv);
+    static bool BoundingBoxesDisjoint(Vector amax, Vector amin,
+                                      Vector bmax, Vector bmin);
     bool OutsideAndNotOn(Vector maxv, Vector minv);
     Point2d Project2d(Vector u, Vector v);
 };

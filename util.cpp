@@ -555,6 +555,17 @@ bool Vector::OutsideAndNotOn(Vector maxv, Vector minv) {
            (z > maxv.z + LENGTH_EPS) || (z < minv.z - LENGTH_EPS);
 }
 
+bool Vector::BoundingBoxesDisjoint(Vector amax, Vector amin,
+                                   Vector bmax, Vector bmin)
+{
+    int i;
+    for(i = 0; i < 3; i++) {
+        if(amax.Element(i) < bmin.Element(i) - LENGTH_EPS) return true;
+        if(amin.Element(i) > bmax.Element(i) + LENGTH_EPS) return true;
+    }
+    return false;
+}
+
 Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
                                       Vector n2, double d2)
 {
