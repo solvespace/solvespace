@@ -535,7 +535,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
         Vector dp = p.Minus(p0);
         double du = dp.Dot(tu), dv = dp.Dot(tv);
         *u += du / (tu.MagSquared());
-        *v += dv / (tu.MagSquared());
+        *v += dv / (tv.MagSquared());
     }
     dbp("didn't converge");
     dbp("have %.3f %.3f %.3f", CO(p0));
