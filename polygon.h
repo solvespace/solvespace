@@ -219,8 +219,8 @@ public:
     void MakeMeshInto(SMesh *m);
     void ClearTags(void);
     
-    void FindEdgeOn(Vector a, Vector b, int *n, int cnt);
-    void MakeNakedEdgesInto(SEdgeList *sel);
+    void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter);
+    void MakeNakedEdgesInto(SEdgeList *sel, bool *inter=NULL, bool *leaky=NULL);
 };
 
 #endif

@@ -406,15 +406,23 @@ void SolveSpace::MenuAnalyze(int id) {
 
             SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
             SKdNode *root = SKdNode::From(m);
-            root->MakeNakedEdgesInto(&(SS.nakedEdges));
+            bool inters, leaks;
+            root->MakeNakedEdgesInto(&(SS.nakedEdges), &inters, &leaks);
             InvalidateGraphics();
 
+            char *intersMsg = inters ?
+                "The mesh is self-intersecting (NOT okay, invalid)." :
+                "The mesh is not self-intersecting (okay, valid).";
+            char *leaksMsg = leaks ?
+                "The mesh has naked edges (NOT okay, invalid)." :
+                "The mesh is watertight (okay, valid).";
+
             if(SS.nakedEdges.l.n == 0) {
-                Error("Zero naked edges; the model is watertight. "
-                      "An exported STL file will be valid.");
+                Message("%s\r\n\r\n%s\r\n\r\nZero problematic edges, good.",
+                    intersMsg, leaksMsg);
             } else {
-                Error("Found %d naked edges, now highlighted.",
-                    SS.nakedEdges.l.n);
+                Error("%s\r\n\r\n%s\r\n\r\n%d problematic edges, bad.",
+                    intersMsg, leaksMsg, SS.nakedEdges.l.n);
             }
             break;
         }

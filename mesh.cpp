@@ -476,19 +476,19 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
-void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt) {
+void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter) {
     if(gt && lt) {
         double ac = a.Element(which),
                bc = b.Element(which);
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, n, cnt);
+            lt->FindEdgeOn(a, b, n, cnt, inter);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, n, cnt);
+            gt->FindEdgeOn(a, b, n, cnt, inter);
         }
     } else {
         STriangleLl *ll;
@@ -497,12 +497,37 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt) {
 
             if(tr->tag == cnt) continue;
             
+            // Test if this triangle matches up with the given edge
             if((a.Equals(tr->b) && b.Equals(tr->a)) ||
                (a.Equals(tr->c) && b.Equals(tr->b)) ||
                (a.Equals(tr->a) && b.Equals(tr->c)))
             {
                 (*n)++;
+            } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
+                       (a.Equals(tr->b) && b.Equals(tr->c)) ||
+                       (a.Equals(tr->c) && b.Equals(tr->a))))
+            {
+                // It's an edge of this triangle, okay.
+            } else {
+                // Check for self-intersection
+                Vector n = (tr->Normal()).WithMagnitude(1);
+                double d = (tr->a).Dot(n);
+                double pa = a.Dot(n) - d, pb = b.Dot(n) - d;
+                // It's an intersection if neither point lies in-plane,
+                // and the edge crosses the plane (should handle in-plane
+                // intersections separately but don't yet).
+                if((pa < -LENGTH_EPS || pa > LENGTH_EPS) &&
+                   (pb < -LENGTH_EPS || pb > LENGTH_EPS) &&
+                   (pa*pb < 0))
+                {
+                    // The edge crosses the plane of the triangle; now see if
+                    // it crosses inside the triangle.
+                    if(tr->ContainsPointProjd(b.Minus(a), a)) {
+                        *inter = true;
+                    }
+                }
             }
+
             // Ensure that we don't count this triangle twice if it appears
             // in two buckets of the kd tree.
             tr->tag = cnt;
@@ -510,7 +535,10 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt) {
     }
 }
 
-void SKdNode::MakeNakedEdgesInto(SEdgeList *sel) {
+void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool *inter, bool *leaky) {
+    if(inter) *inter = false;
+    if(leaky) *leaky = false;
+
     SMesh m;
     ZERO(&m);
     ClearTags();
@@ -526,10 +554,17 @@ void SKdNode::MakeNakedEdgesInto(SEdgeList *sel) {
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
             int n = 0, nOther = 0;
-            FindEdgeOn(a, b, &n, cnt);
+            bool thisIntersects = false;
+            FindEdgeOn(a, b, &n, cnt, &thisIntersects);
             if(n != 1) {
                 sel->AddEdge(a, b);
+                if(leaky) *leaky = true;
             }
+            if(thisIntersects) {
+                sel->AddEdge(a, b);
+                if(inter) *inter = true;
+            }
+
             cnt++;
         }
     }
