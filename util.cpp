@@ -515,6 +515,13 @@ Point2d Vector::Project2d(Vector u, Vector v) {
     return p;
 }
 
+Point2d Vector::ProjectXy(void) {
+    Point2d p;
+    p.x = x;
+    p.y = y;
+    return p;
+}
+
 double Vector::DivPivoting(Vector delta) {
     double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
 
@@ -654,6 +661,10 @@ double Point2d::DistanceTo(Point2d p) {
     return sqrt(dx*dx + dy*dy);
 }
 
+double Point2d::Dot(Point2d p) {
+    return x*p.x + y*p.y;
+}
+
 double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
     double m = dp.x*dp.x + dp.y*dp.y;
     if(m < 0.05) return 1e12;
@@ -673,4 +684,10 @@ double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
     }
 }
 
+Point2d Point2d::Normal(void) {
+    Point2d ret;
+    ret.x = y;
+    ret.y = -x;
+    return ret;
+}
 

@@ -1,6 +1,8 @@
 #include "solvespace.h"
 
-void SSurface::IntersectAgainst(SSurface *b, SShell *into) {
+void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
+                                SShell *into)
+{
     Vector amax, amin, bmax, bmin;
     GetAxisAlignedBounding(&amax, &amin);
     b->GetAxisAlignedBounding(&bmax, &bmin);
@@ -37,20 +39,51 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *into) {
         ZERO(&sc);
         sc.surfA = h;
         sc.surfB = b->h;
-        v = inter.Minus(d.WithMagnitude(2*maxl));
+        v = inter.Minus(d.WithMagnitude(5*maxl));
         sc.pts.Add(&v);
-        v = inter.Plus(d.WithMagnitude(2*maxl));
+        v = inter.Plus(d.WithMagnitude(5*maxl));
         sc.pts.Add(&v);
-        sc.interCurve = true;
-       
+
         // Now split the line where it intersects our existing surfaces
-        SCurve split = sc.MakeCopySplitAgainst(into);
+        SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB);
         sc.Clear();
 
+        split.interCurve = true;
         into->curve.AddAndAssignId(&split);
     }
 
     // need to implement general numerical surface intersection for tough
     // cases, just giving up for now
+}
+
+void SSurface::AllPointsIntersecting(Vector a, Vector b, List<Vector> *l) {
+    if(degm == 1 && degn == 1) {
+        // line-plane intersection
+        Vector p = ctrl[0][0];
+        Vector n = NormalAt(0, 0).WithMagnitude(1);
+        double d = n.Dot(p);
+        if((n.Dot(a) - d < -LENGTH_EPS && n.Dot(b) - d > LENGTH_EPS) ||
+           (n.Dot(b) - d < -LENGTH_EPS && n.Dot(a) - d > LENGTH_EPS))
+        {
+            // It crosses the plane, one point of intersection
+            // (a + t*(b - a)) dot n = d
+            // (a dot n) + t*((b - a) dot n) = d
+            // t = (d - (a dot n))/((b - a) dot n)
+            double t = (d - a.Dot(n)) / ((b.Minus(a)).Dot(n));
+            Vector pi = a.Plus((b.Minus(a)).ScaledBy(t));
+            Point2d puv, dummy = { 0, 0 };
+            ClosestPointTo(pi, &(puv.x), &(puv.y));
+            if(bsp->ClassifyPoint(puv, dummy) != SBspUv::OUTSIDE) {
+                l->Add(&pi);
+            }
+        }
+    }
+}
+
+void SShell::AllPointsIntersecting(Vector a, Vector b, List<Vector> *il) {
+    SSurface *ss;
+    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
+        ss->AllPointsIntersecting(a, b, il);
+    }
 }
 

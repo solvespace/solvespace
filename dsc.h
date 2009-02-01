@@ -79,6 +79,7 @@ public:
                                       Vector bmax, Vector bmin);
     bool OutsideAndNotOn(Vector maxv, Vector minv);
     Point2d Project2d(Vector u, Vector v);
+    Point2d ProjectXy(void);
 };
 
 class Point2d {
@@ -88,10 +89,12 @@ public:
     Point2d Plus(Point2d b);
     Point2d Minus(Point2d b);
     Point2d ScaledBy(double s);
+    double Dot(Point2d p);
     double DistanceTo(Point2d p);
     double DistanceToLine(Point2d p0, Point2d dp, bool segment);
     double Magnitude(void);
     Point2d WithMagnitude(double v);
+    Point2d Normal(void);
 };
 
 // A simple list

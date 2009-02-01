@@ -6,6 +6,35 @@
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
 
+// Utility data structure, a two-dimensional BSP to accelerate polygon
+// operations.
+class SBspUv {
+public:
+    Point2d  a, b;
+
+    SBspUv  *pos;
+    SBspUv  *neg;
+
+    SBspUv  *more;
+
+    static const int INSIDE            = 100;
+    static const int OUTSIDE           = 200;
+    static const int EDGE_PARALLEL     = 300;
+    static const int EDGE_ANTIPARALLEL = 400;
+    static const int EDGE_OTHER        = 500;
+
+    static SBspUv *Alloc(void);
+    static SBspUv *From(SEdgeList *el);
+
+    Point2d IntersectionWith(Point2d a, Point2d b);
+    SBspUv *InsertEdge(Point2d a, Point2d b);
+    int ClassifyPoint(Point2d p, Point2d eb);
+    int ClassifyEdge(Point2d ea, Point2d eb);
+};
+
+// Now the data structures to represent a shell of trimmed rational polynomial
+// surfaces.
+
 class SShell;
 
 class hSSurface {
@@ -94,7 +123,7 @@ public:
     hSSurface       surfB;
 
     static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
-    SCurve MakeCopySplitAgainst(SShell *against);
+    SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB);
 
     void Clear(void);
 };
@@ -130,21 +159,20 @@ public:
 
     List<STrimBy>   trim;
 
-    // The trims broken down into piecewise linear segments.
-    SEdgeList       orig;
-    SEdgeList       inside;
-    SEdgeList       onSameNormal;
-    SEdgeList       onFlipNormal;
+    // For testing whether a point (u, v) on the surface lies inside the trim
+    SBspUv          *bsp;
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
                                          bool includingTrims);
 
-    SSurface MakeCopyTrimAgainst(SShell *against, SShell *shell,
+    SSurface MakeCopyTrimAgainst(SShell *against, SShell *parent, SShell *into,
                                  int type, bool opA);
     void TrimFromEdgeList(SEdgeList *el);
-    void IntersectAgainst(SSurface *b, SShell *into);
+    void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
+                          SShell *into);
+    void AllPointsIntersecting(Vector a, Vector b, List<Vector> *l);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -154,6 +182,7 @@ public:
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
+    void MakeClassifyingBsp(SShell *shell);
 
     void Clear(void);
 };
@@ -172,10 +201,11 @@ public:
     static const int AS_DIFFERENCE = 11;
     static const int AS_INTERSECT  = 12;
     void MakeFromBoolean(SShell *a, SShell *b, int type);
-    void CopyCurvesSplitAgainst(SShell *against, SShell *into);
+    void CopyCurvesSplitAgainst(SShell *agnstA, SShell *agnstB, SShell *into);
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
-    void MakeEdgeListUseNewCurveIds(SEdgeList *el);
+    void MakeClassifyingBsps(void);
+    void AllPointsIntersecting(Vector a, Vector b, List<Vector> *il);
     void CleanupAfterBoolean(void);
 
     void MakeFromCopyOf(SShell *a);
