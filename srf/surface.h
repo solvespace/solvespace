@@ -145,6 +145,14 @@ public:
     static STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool bkwds);
 };
 
+// An intersection point between a line and a surface
+class SInter {
+public:
+    Vector      p;
+    double      dot;    // between line and surface's normal
+    hSSurface   surface;
+};
+
 // A rational polynomial surface in Bezier form.
 class SSurface {
 public:
@@ -172,7 +180,7 @@ public:
     void TrimFromEdgeList(SEdgeList *el);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                           SShell *into);
-    void AllPointsIntersecting(Vector a, Vector b, List<Vector> *l);
+    void AllPointsIntersecting(Vector a, Vector b, List<SInter> *l);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -205,8 +213,14 @@ public:
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(void);
-    void AllPointsIntersecting(Vector a, Vector b, List<Vector> *il);
+    void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il);
     void CleanupAfterBoolean(void);
+
+    static const int INSIDE            = 100;
+    static const int OUTSIDE           = 200;
+    static const int ON_SURFACE        = 300;
+    int ClassifyPoint(Vector p);
+
 
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);

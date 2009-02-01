@@ -13,11 +13,11 @@ void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
 static Vector LineStart, LineDirection;
 static int ByTAlongLine(const void *av, const void *bv)
 {
-    Vector *a = (Vector *)av,
-           *b = (Vector *)bv;
+    SInter *a = (SInter *)av,
+           *b = (SInter *)bv;
     
-    double ta = (a->Minus(LineStart)).DivPivoting(LineDirection),
-           tb = (b->Minus(LineStart)).DivPivoting(LineDirection);
+    double ta = (a->p.Minus(LineStart)).DivPivoting(LineDirection),
+           tb = (b->p.Minus(LineStart)).DivPivoting(LineDirection);
 
     return (ta > tb) ? 1 : -1;
 }
@@ -34,7 +34,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB) {
     p = pts.NextAfter(p);
 
     for(; p; p = pts.NextAfter(p)) {
-        List<Vector> il;
+        List<SInter> il;
         ZERO(&il);
 
         // Find all the intersections with the two passed shells
@@ -48,12 +48,13 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB) {
             LineDirection = p->Minus(prev);
             qsort(il.elem, il.n, sizeof(il.elem[0]), ByTAlongLine);
 
-            Vector *pi;
+            SInter *pi;
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
-                ret.pts.Add(pi);
+                ret.pts.Add(&(pi->p));
             }
         }
 
+        il.Clear();
         ret.pts.Add(p);
         prev = *p;
     }
@@ -197,31 +198,23 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     SEdgeList final;
     ZERO(&final);
 
-    if(I == 2) dbp("INTERBSP: %d", inter.l.n);
     SBspUv *interbsp = SBspUv::From(&inter);
-    if(I == 2) dbp("INTEROVER");
-
 
     SEdge *se;
-    N = 0;
     for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
-        int c = interbsp->ClassifyEdge(se->a.ProjectXy(), se->b.ProjectXy());
+        Vector ea = PointAt(se->a.x, se->a.y),
+               eb = PointAt(se->b.x, se->b.y);
+        int c = agnst->ClassifyPoint(ea.Plus(eb).ScaledBy(0.5));
 
-        if(I == 2) dbp("edge from %.3f %.3f %.3f to %.3f %.3f %.3f",
-            CO(PointAt(se->a.x, se->a.y)), CO(PointAt(se->b.x, se->b.y)));
-
-        if(c == SBspUv::OUTSIDE) {
-            if(I == 2) dbp("   keep");
+        if(c == SShell::OUTSIDE) {
             final.AddEdge(se->a, se->b, se->auxA, se->auxB);
-        } else {
-            if(I == 2) dbp("    don't keep, %d", c);
         }
-        N++;
     }
 
     for(se = inter.l.First(); se; se = inter.l.NextAfter(se)) {
+        int c = bsp->ClassifyEdge(se->a.ProjectXy(), se->b.ProjectXy());
 
-        if(I == 2) {
+        if(I == 4) {
             Vector mid = (se->a).Plus(se->b).ScaledBy(0.5);
             Vector arrow = (se->b).Minus(se->a);
             SWAP(double, arrow.x, arrow.y);
@@ -229,13 +222,14 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
             arrow = arrow.WithMagnitude(0.03);
             arrow = arrow.Plus(mid);
 
-            SS.nakedEdges.AddEdge(PointAt(se->a.x, se->a.y),
-                                  PointAt(se->b.x, se->b.y));
-            SS.nakedEdges.AddEdge(PointAt(mid.x, mid.y),
-                                  PointAt(arrow.x, arrow.y));
+            if(c == SBspUv::INSIDE) {
+                SS.nakedEdges.AddEdge(PointAt(se->a.x, se->a.y),
+                                      PointAt(se->b.x, se->b.y));
+                SS.nakedEdges.AddEdge(PointAt(mid.x, mid.y),
+                                      PointAt(arrow.x, arrow.y));
+            }
         }
 
-        int c = bsp->ClassifyEdge(se->a.ProjectXy(), se->b.ProjectXy());
         if(c == SBspUv::INSIDE) {
             final.AddEdge(se->b, se->a, se->auxA, !se->auxB);
         }
@@ -303,7 +297,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
-        I = -1;
+        I = 0;
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     }
@@ -369,10 +363,6 @@ SBspUv *SBspUv::From(SEdgeList *el) {
 }
 
 SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb) {
-    if(I == 2) {
-        dbp("insert edge %.3f %.3f to %.3f %.3f", ea.x, ea.y, eb.x, eb.y);
-    }
-
     if(!this) {
         SBspUv *ret = Alloc();
         ret->a = ea;
@@ -434,12 +424,7 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
 
     double dp = p.Dot(n) - d;
 
-    if(I == 2 && N == 5) {
-        dbp("point %.3f %.3f has d=%.3f", p.x, p.y, dp);
-    }
-
     if(fabs(dp) < LENGTH_EPS) {
-        if(I == 2 && N == 5) dbp("   on line");
         SBspUv *f = this;
         while(f) {
             Point2d ba = (f->b).Minus(f->a);
@@ -457,12 +442,15 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
             f = f->more;
         }
         // Pick arbitrarily which side to send it down, doesn't matter
-        return neg ? neg->ClassifyPoint(p, eb) : OUTSIDE;
+        int c1 =  neg ? neg->ClassifyPoint(p, eb) : OUTSIDE;
+        int c2 =  pos ? pos->ClassifyPoint(p, eb) : INSIDE;
+        if(c1 != c2) {
+            dbp("MISMATCH: %d %d %08x %08x", c1, c2, neg, pos);
+        }
+        return c1;
     } else if(dp > 0) {
-        if(I == 2 && N == 5) dbp("   pos");
         return pos ? pos->ClassifyPoint(p, eb) : INSIDE;
     } else {
-        if(I == 2 && N == 5) dbp("   neg");
         return neg ? neg->ClassifyPoint(p, eb) : OUTSIDE;
     }
 }

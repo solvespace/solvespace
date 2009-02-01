@@ -667,7 +667,7 @@ double Point2d::Dot(Point2d p) {
 
 double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
     double m = dp.x*dp.x + dp.y*dp.y;
-    if(m < 0.05) return 1e12;
+    if(m < LENGTH_EPS*LENGTH_EPS) return VERY_POSITIVE;
    
     // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
     double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;

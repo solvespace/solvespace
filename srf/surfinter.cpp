@@ -56,7 +56,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
     // cases, just giving up for now
 }
 
-void SSurface::AllPointsIntersecting(Vector a, Vector b, List<Vector> *l) {
+void SSurface::AllPointsIntersecting(Vector a, Vector b, List<SInter> *l) {
     if(degm == 1 && degn == 1) {
         // line-plane intersection
         Vector p = ctrl[0][0];
@@ -74,16 +74,51 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b, List<Vector> *l) {
             Point2d puv, dummy = { 0, 0 };
             ClosestPointTo(pi, &(puv.x), &(puv.y));
             if(bsp->ClassifyPoint(puv, dummy) != SBspUv::OUTSIDE) {
-                l->Add(&pi);
+                SInter si;
+                si.p = pi;
+                si.dot = NormalAt(puv.x, puv.y).Dot(b.Minus(a));
+                si.surface = h;
+                l->Add(&si);
             }
         }
     }
 }
 
-void SShell::AllPointsIntersecting(Vector a, Vector b, List<Vector> *il) {
+void SShell::AllPointsIntersecting(Vector a, Vector b, List<SInter> *il) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         ss->AllPointsIntersecting(a, b, il);
     }
+}
+
+int SShell::ClassifyPoint(Vector p) {
+    List<SInter> l;
+    ZERO(&l);
+
+    Vector d = Vector::From(1e5, 0, 0); // direction is arbitrary
+    // but it does need to be a one-sided ray
+    AllPointsIntersecting(p, p.Plus(d), &l);
+    
+    double dmin = VERY_POSITIVE;
+    int ret = OUTSIDE; // no intersections means it's outside
+
+    SInter *si;
+    for(si = l.First(); si; si = l.NextAfter(si)) {
+        double d = ((si->p).Minus(p)).Magnitude();
+
+        if(d < dmin) {
+            dmin = d;
+            if(d < LENGTH_EPS) {
+                ret = ON_SURFACE;
+            } else if(si->dot > 0) {
+                ret = INSIDE;
+            } else {
+                ret = OUTSIDE;
+            }
+        }
+    }
+
+    l.Clear();
+    return ret;
 }
 
