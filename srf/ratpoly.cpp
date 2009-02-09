@@ -498,18 +498,23 @@ Vector SSurface::NormalAt(double u, double v) {
 
 void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
     int i, j;
-    double minDist = 1e10;
-    double res = 7.0;
-    for(i = 0; i < (int)res; i++) {
-        for(j = 0; j <= (int)res; j++) {
-            double tryu = (i/res), tryv = (j/res);
-            
-            Vector tryp = PointAt(tryu, tryv);
-            double d = (tryp.Minus(p)).Magnitude();
-            if(d < minDist) {
-                *u = tryu;
-                *v = tryv;
-                minDist = d;
+
+    if(degm == 1 && degn == 1) {
+        *u = *v = 0; // a plane, perfect no matter what the initial guess
+    } else {
+        double minDist = 1e10;
+        double res = 7.0;
+        for(i = 0; i < (int)res; i++) {
+            for(j = 0; j <= (int)res; j++) {
+                double tryu = (i/res), tryv = (j/res);
+                
+                Vector tryp = PointAt(tryu, tryv);
+                double d = (tryp.Minus(p)).Magnitude();
+                if(d < minDist) {
+                    *u = tryu;
+                    *v = tryv;
+                    minDist = d;
+                }
             }
         }
     }
@@ -522,7 +527,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
         // independently projected into uv and back, to end up equal with
         // the LENGTH_EPS. Best case that requires LENGTH_EPS/2, but more
         // is better and convergence should be fast by now.
-        if(p0.Equals(p, LENGTH_EPS/1e3)) {
+        if(p0.Equals(p, LENGTH_EPS/1e2)) {
             return;
         }
 
@@ -540,6 +545,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
     dbp("didn't converge");
     dbp("have %.3f %.3f %.3f", CO(p0));
     dbp("want %.3f %.3f %.3f", CO(p));
+    dbp("distance = %g", (p.Minus(p0)).Magnitude());
     if(isnan(*u) || isnan(*v)) {
         *u = *v = 0;
     }

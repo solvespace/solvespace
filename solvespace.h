@@ -20,7 +20,6 @@ inline int WRAP(int v, int n) {
     while(v < 0) v += n;
     return v;
 }
-
 inline double WRAP_NOT_0(double v, double n) {
     // Clamp it to the range (0, n]
     while(v > n) v -= n;
@@ -49,6 +48,10 @@ typedef signed short SWORD;
 #include <windows.h> // required for GL stuff
 #include <gl/gl.h>
 #include <gl/glu.h>
+
+inline double Random(double vmax) {
+    return (vmax*rand()) / RAND_MAX;
+}
 
 class Expr;
 class ExprVector;

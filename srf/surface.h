@@ -149,8 +149,9 @@ public:
 class SInter {
 public:
     Vector      p;
-    double      dot;    // between line and surface's normal
     hSSurface   surface;
+    Vector      surfNormal; // of the intersecting surface, at pinter
+    bool        onEdge;     // pinter is on edge of trim poly
 };
 
 // A rational polynomial surface in Bezier form.
@@ -187,6 +188,8 @@ public:
     void TangentsAt(double u, double v, Vector *tu, Vector *tv);
     Vector NormalAt(double u, double v);
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin);
+    bool CoincidentWithPlane(Vector n, double d);
+    bool CoincidentWith(SSurface *ss, bool sameNormal);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
@@ -214,12 +217,15 @@ public:
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(void);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il);
+    void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
+                                 SEdgeList *el);
     void CleanupAfterBoolean(void);
 
     static const int INSIDE            = 100;
     static const int OUTSIDE           = 200;
-    static const int ON_SURFACE        = 300;
-    int ClassifyPoint(Vector p);
+    static const int ON_PARALLEL       = 300;
+    static const int ON_ANTIPARALLEL   = 400;
+    int ClassifyPoint(Vector p, Vector out);
 
 
     void MakeFromCopyOf(SShell *a);

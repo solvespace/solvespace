@@ -47,10 +47,16 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB) {
             LineStart = prev;
             LineDirection = p->Minus(prev);
             qsort(il.elem, il.n, sizeof(il.elem[0]), ByTAlongLine);
-
+    
+            Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
             SInter *pi;
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
-                ret.pts.Add(&(pi->p));
+                // On-edge intersection will generate same split point for
+                // both surfaces, so don't create zero-length edge.
+                if(!prev.Equals(pi->p)) {
+                    ret.pts.Add(&(pi->p));
+                }
+                prev = pi->p;
             }
         }
 
@@ -150,6 +156,17 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     ret.MakeEdgesInto(into, &orig, true);
     ret.trim.Clear();
 
+    // Find any surfaces from the other shell that are coincident with ours,
+    // and get the intersection polygons, grouping surfaces with the same
+    // and with opposite normal separately.
+    SEdgeList sameNormal, oppositeNormal;
+    ZERO(&sameNormal);
+    ZERO(&oppositeNormal);
+    agnst->MakeCoincidentEdgesInto(this, true, &sameNormal);
+    agnst->MakeCoincidentEdgesInto(this, false, &oppositeNormal);
+    // and build the trees for quick in-polygon testing
+    SBspUv *sameBsp = SBspUv::From(&sameNormal);
+    SBspUv *oppositeBsp = SBspUv::From(&oppositeNormal);
 
     // And now intersect the other shell against us
     SEdgeList inter;
@@ -176,7 +193,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
                 ss->ClosestPointTo(b, &(buv.x), &(buv.y));
 
                 int c = ss->bsp->ClassifyEdge(auv, buv);
-                if(c == SBspUv::INSIDE) {
+                if(c != SBspUv::OUTSIDE) {
                     Vector ta = Vector::From(0, 0, 0);
                     Vector tb = Vector::From(0, 0, 0);
                     ClosestPointTo(a, &(ta.x), &(ta.y));
@@ -198,23 +215,78 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     SEdgeList final;
     ZERO(&final);
 
-    SBspUv *interbsp = SBspUv::From(&inter);
-
     SEdge *se;
     for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
-        Vector ea = PointAt(se->a.x, se->a.y),
-               eb = PointAt(se->b.x, se->b.y);
-        int c = agnst->ClassifyPoint(ea.Plus(eb).ScaledBy(0.5));
+        Point2d auv = (se->a).ProjectXy(),
+                buv = (se->b).ProjectXy();
 
-        if(c == SShell::OUTSIDE) {
+        int c_same = sameBsp->ClassifyEdge(auv, buv);
+        int c_opp = oppositeBsp->ClassifyEdge(auv, buv);
+
+        // Get the midpoint of this edge
+        Point2d am = (auv.Plus(buv)).ScaledBy(0.5);
+        Vector pt = PointAt(am.x, am.y);
+        // and the outer normal from the trim polygon (within the surface)
+        Vector n = NormalAt(am.x, am.y);
+        Vector ea = PointAt(auv.x, auv.y),
+               eb = PointAt(buv.x, buv.y);
+        Vector ptout = n.Cross((eb.Minus(ea)));
+
+        int c_shell = agnst->ClassifyPoint(pt, ptout);
+
+        bool keep;
+        if(c_opp != SBspUv::OUTSIDE) {  
+            // Edge lies on coincident (opposite normals) surface of agnst
+            keep = (c_opp == SBspUv::OUTSIDE             ) ||
+                   (c_opp == SBspUv::EDGE_ANTIPARALLEL   );
+
+        } else if(c_same != SBspUv::OUTSIDE) {
+            // Edge lies on coincident (same normals) surface of agnst
+            if(opA) {
+                keep = true;
+            } else {
+                keep = false;
+            }
+
+        } else {    
+            // Edge does not lie on a coincident surface
+            keep = (c_shell == SShell::OUTSIDE          ) || 
+                   (c_shell == SShell::ON_ANTIPARALLEL  );
+        }
+
+        if(keep) {
             final.AddEdge(se->a, se->b, se->auxA, se->auxB);
         }
     }
 
     for(se = inter.l.First(); se; se = inter.l.NextAfter(se)) {
-        int c = bsp->ClassifyEdge(se->a.ProjectXy(), se->b.ProjectXy());
+        Point2d auv = (se->a).ProjectXy(),
+                buv = (se->b).ProjectXy();
 
-        if(I == 4) {
+        int c_this = bsp->ClassifyEdge(auv, buv);
+        int c_same = sameBsp->ClassifyEdge(auv, buv);
+        int c_opp = oppositeBsp->ClassifyEdge(auv, buv);
+
+        bool keep;
+        if(c_opp != SBspUv::OUTSIDE) {
+            keep = (c_this == SBspUv::INSIDE);
+        } else if(c_same != SBspUv::OUTSIDE) {
+            if(opA) {
+                keep = false;
+             } else {
+                keep = (c_this == SBspUv::INSIDE);
+            }
+        } else {
+            keep = (c_this == SBspUv::INSIDE);
+        }
+
+        if(keep) {
+            final.AddEdge(se->b, se->a, se->auxA, !se->auxB);
+        }
+    }
+
+    for(se = final.l.First(); se; se = final.l.NextAfter(se)) {
+        if(I == 0) {
             Vector mid = (se->a).Plus(se->b).ScaledBy(0.5);
             Vector arrow = (se->b).Minus(se->a);
             SWAP(double, arrow.x, arrow.y);
@@ -222,24 +294,17 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
             arrow = arrow.WithMagnitude(0.03);
             arrow = arrow.Plus(mid);
 
-            if(c == SBspUv::INSIDE) {
-                SS.nakedEdges.AddEdge(PointAt(se->a.x, se->a.y),
-                                      PointAt(se->b.x, se->b.y));
-                SS.nakedEdges.AddEdge(PointAt(mid.x, mid.y),
-                                      PointAt(arrow.x, arrow.y));
-            }
+            SS.nakedEdges.AddEdge(PointAt(se->a.x, se->a.y),
+                                  PointAt(se->b.x, se->b.y));
+            SS.nakedEdges.AddEdge(PointAt(mid.x, mid.y),
+                                  PointAt(arrow.x, arrow.y));
         }
-
-        if(c == SBspUv::INSIDE) {
-            final.AddEdge(se->b, se->a, se->auxA, !se->auxB);
-        }
-    }
-
-    for(se = final.l.First(); se; se = final.l.NextAfter(se)) {
     }
 
     ret.TrimFromEdgeList(&final);
 
+    sameNormal.Clear();
+    oppositeNormal.Clear();
     final.Clear();
     inter.Clear();
     orig.Clear();
