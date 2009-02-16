@@ -195,6 +195,7 @@ public:
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
     void MakeClassifyingBsp(SShell *shell);
 
+    void Reverse(void);
     void Clear(void);
 };
 

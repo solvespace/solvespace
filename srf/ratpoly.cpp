@@ -617,30 +617,51 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 
     SPolygon poly;
     ZERO(&poly);
-    if(!el.AssemblePolygon(&poly, NULL, true)) {
+    if(el.AssemblePolygon(&poly, NULL, true)) {
+        int i, start = sm->l.n;
+        poly.UvTriangulateInto(sm);
+
+        STriMeta meta = { face, color };
+        for(i = start; i < sm->l.n; i++) {
+            STriangle *st = &(sm->l.elem[i]);
+            st->meta = meta;
+            st->an = NormalAt(st->a.x, st->a.y);
+            st->bn = NormalAt(st->b.x, st->b.y);
+            st->cn = NormalAt(st->c.x, st->c.y);
+            st->a = PointAt(st->a.x, st->a.y);
+            st->b = PointAt(st->b.x, st->b.y);
+            st->c = PointAt(st->c.x, st->c.y);
+            // Works out that my chosen contour direction is inconsistent with
+            // the triangle direction, sigh.
+            st->FlipNormal();
+        }
+    } else {
         dbp("failed to assemble polygon to trim nurbs surface in uv space");
-    }
-
-    int i, start = sm->l.n;
-    poly.UvTriangulateInto(sm);
-
-    STriMeta meta = { face, color };
-    for(i = start; i < sm->l.n; i++) {
-        STriangle *st = &(sm->l.elem[i]);
-        st->meta = meta;
-        st->an = NormalAt(st->a.x, st->a.y);
-        st->bn = NormalAt(st->b.x, st->b.y);
-        st->cn = NormalAt(st->c.x, st->c.y);
-        st->a = PointAt(st->a.x, st->a.y);
-        st->b = PointAt(st->b.x, st->b.y);
-        st->c = PointAt(st->c.x, st->c.y);
-        // Works out that my chosen contour direction is inconsistent with
-        // the triangle direction, sigh.
-        st->FlipNormal();
     }
 
     el.Clear();
     poly.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// Reverse the parametrisation of one of our dimensions, which flips the
+// normal. We therefore must reverse all our trim curves too. The uv
+// coordinates change, but trim curves are stored as xyz so nothing happens
+//-----------------------------------------------------------------------------
+void SSurface::Reverse(void) {
+    int i, j;
+    for(i = 0; i < (degm+1)/2; i++) {
+        for(j = 0; j <= degn; j++) {
+            SWAP(Vector, ctrl[i][j], ctrl[degm-i][j]);
+            SWAP(double, weight[i][j], weight[degm-i][j]);
+        }
+    }
+
+    STrimBy *stb;
+    for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
+        stb->backwards = !stb->backwards;
+        SWAP(Vector, stb->start, stb->finish);
+    }
 }
 
 void SSurface::Clear(void) {
