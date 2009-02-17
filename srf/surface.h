@@ -224,8 +224,12 @@ public:
 
     static const int INSIDE            = 100;
     static const int OUTSIDE           = 200;
-    static const int ON_PARALLEL       = 300;
-    static const int ON_ANTIPARALLEL   = 400;
+    static const int SURF_PARALLEL     = 300;
+    static const int SURF_ANTIPARALLEL = 400;
+    static const int EDGE_PARALLEL     = 500;
+    static const int EDGE_ANTIPARALLEL = 600;
+    static const int EDGE_TANGENT      = 700;
+
     int ClassifyPoint(Vector p, Vector out);
 
 

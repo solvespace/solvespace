@@ -193,10 +193,10 @@ static int TagByClassifiedEdge(int bspclass, int reg)
             return 0;
 
         case SBspUv::EDGE_PARALLEL:
-            return INSIDE(reg, OUTDIR);
+            return INSIDE(reg, INDIR);
 
         case SBspUv::EDGE_ANTIPARALLEL:
-            return INSIDE(reg, INDIR);
+            return INSIDE(reg, OUTDIR);
 
         default: oops();
     }
@@ -212,6 +212,23 @@ void DBPEDGE(int tag) {
         (tag & INSIDE(COINCIDENT_SAME, OUTDIR)) ? "coinc-same" : "",
         (tag & INSIDE(COINCIDENT_OPPOSITE, OUTDIR)) ? "coinc-opp" : "",
         (tag & INSIDE(ORIG, OUTDIR)) ? "orig" : "");
+}
+
+void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
+    SEdge *se;
+    for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+        Vector mid = (se->a).Plus(se->b).ScaledBy(0.5);
+        Vector arrow = (se->b).Minus(se->a);
+        SWAP(double, arrow.x, arrow.y);
+        arrow.x *= -1;
+        arrow = arrow.WithMagnitude(0.03);
+        arrow = arrow.Plus(mid);
+
+        SS.nakedEdges.AddEdge(surf->PointAt(se->a.x, se->a.y),
+                              surf->PointAt(se->b.x, se->b.y));
+        SS.nakedEdges.AddEdge(surf->PointAt(mid.x, mid.y),
+                              surf->PointAt(arrow.x, arrow.y));
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -243,11 +260,14 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         ret.Reverse();
     }
 
-    // Build up our original trim polygon
+    // Build up our original trim polygon; remember the coordinates could
+    // be changed if we just flipped the surface normal.
     SEdgeList orig;
     ZERO(&orig);
     ret.MakeEdgesInto(into, &orig, true);
     ret.trim.Clear();
+    // which means that we can't necessarily use the old BSP...
+    SBspUv *origBsp = SBspUv::From(&orig);
 
     // Find any surfaces from the other shell that are coincident with ours,
     // and get the intersection polygons, grouping surfaces with the same
@@ -295,7 +315,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
                     Vector tn = ret.NormalAt(ta.x, ta.y);
                     Vector sn = ss->NormalAt(auv.x, auv.y);
 
-                    bool bkwds = false;
+                    // We are subtracting the portion of our surface that
+                    // lies in the shell, so the in-plane edge normal should
+                    // point opposite to the surface normal.
+                    bool bkwds = true;
                     if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
                     if(type == SShell::AS_DIFFERENCE && !opA) bkwds = !bkwds;
                     if(bkwds) {
@@ -339,10 +362,16 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
             tag |= INSIDE(SHELL, INDIR) | INSIDE(SHELL, OUTDIR);
         } else if(c_shell == SShell::OUTSIDE) {
             tag |= 0;
-        } else if(c_shell == SShell::ON_PARALLEL) {
+        } else if(c_shell == SShell::SURF_PARALLEL) {
             tag |= INSIDE(SHELL, INDIR);
-        } else if(c_shell == SShell::ON_ANTIPARALLEL) {
+        } else if(c_shell == SShell::SURF_ANTIPARALLEL) {
             tag |= INSIDE(SHELL, OUTDIR);
+        } else if(c_shell == SShell::EDGE_PARALLEL) {
+            tag |= INSIDE(SHELL, INDIR);
+        } else if(c_shell == SShell::EDGE_ANTIPARALLEL) {
+            tag |= INSIDE(SHELL, OUTDIR);
+        } else if(c_shell == SShell::EDGE_TANGENT) {
+            continue;
         }
 
         if(KeepEdge(type, opA, tag)) {
@@ -354,7 +383,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         Point2d auv = (se->a).ProjectXy(),
                 buv = (se->b).ProjectXy();
 
-        int c_this = bsp->ClassifyEdge(auv, buv);
+        int c_this = origBsp->ClassifyEdge(auv, buv);
         int c_same = sameBsp->ClassifyEdge(auv, buv);
         int c_opp = oppositeBsp->ClassifyEdge(auv, buv);
 
@@ -370,15 +399,12 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
             tag |= INSIDE(SHELL, OUTDIR);
         }
 
-        if(I == 0) DBPEDGE(tag);
-
         if(KeepEdge(type, opA, tag)) {
-            final.AddEdge(se->b, se->a, se->auxA, !se->auxB);
+            final.AddEdge(se->a, se->b, se->auxA, se->auxB);
         }
     }
 
-    // If our surface intersects an edge, then it will intersect two surfaces
-    // from the shell at that edge, so we'll get a duplicate. Cull those.
+    // Cull extraneous edges; duplicates or anti-parallel pairs
     final.l.ClearTags();
     int i, j;
     for(i = 0; i < final.l.n; i++) {
@@ -386,25 +412,21 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         for(j = i+1; j < final.l.n; j++) {
             SEdge *set = &(final.l.elem[j]);
             if((set->a).Equals(se->a) && (set->b).Equals(se->b)) {
+                // Two parallel edges exist; so keep only the first one. This
+                // can happen if our surface intersects the shell at an edge,
+                // so that we get two copies of the intersection edge.
+                set->tag = 1;
+            }
+            if((set->a).Equals(se->b) && (set->b).Equals(se->a)) {
+                // Two anti-parallel edges exist; so keep neither.
+                se->tag = 1;
                 set->tag = 1;
             }
         }
-
-        if(I == 0) {
-            Vector mid = (se->a).Plus(se->b).ScaledBy(0.5);
-            Vector arrow = (se->b).Minus(se->a);
-            SWAP(double, arrow.x, arrow.y);
-            arrow.x *= -1;
-            arrow = arrow.WithMagnitude(0.03);
-            arrow = arrow.Plus(mid);
-
-            SS.nakedEdges.AddEdge(ret.PointAt(se->a.x, se->a.y),
-                                  ret.PointAt(se->b.x, se->b.y));
-            SS.nakedEdges.AddEdge(ret.PointAt(mid.x, mid.y),
-                                  ret.PointAt(arrow.x, arrow.y));
-        }
     }
     final.l.RemoveTagged();
+
+//    if(I == 1) DEBUGEDGELIST(&final, &ret);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final);
@@ -468,8 +490,8 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
-        I = 0;
         a->CopySurfacesTrimAgainst(b, this, type, true);
+        I = 0;
         b->CopySurfacesTrimAgainst(a, this, type, false);
     }
 

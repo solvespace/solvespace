@@ -110,7 +110,9 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
 
     srand(0);
 
-    int ret, cnt = 0;
+    int ret, cnt = 0, edge_inters;
+    double edge_dotp[2];
+
     for(;;) {
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
@@ -122,6 +124,7 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         double dmin = VERY_POSITIVE;
         ret = OUTSIDE; // no intersections means it's outside
         bool onEdge = false;
+        edge_inters = 0;
 
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
@@ -133,18 +136,24 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
 
             double d = ((si->p).Minus(p)).Magnitude();
 
+            // Handle edge-on-edge
+            if(d < LENGTH_EPS && si->onEdge && edge_inters < 2) {
+                edge_dotp[edge_inters] = (si->surfNormal).Dot(pout);
+                edge_inters++;
+            }
+
             if(d < dmin) {
                 dmin = d;
                 if(d < LENGTH_EPS) {
-                    // Lies on the surface
+                    // Edge-on-face (unless edge-on-edge above supercedes)
                     if((si->surfNormal).Dot(pout) > 0) {
-                        ret = ON_PARALLEL;
+                        ret = SURF_PARALLEL;
                     } else {
-                        ret = ON_ANTIPARALLEL;
+                        ret = SURF_ANTIPARALLEL;
                     }
                 } else {
-                    // Does not lie on this surface; inside or out, depending
-                    // on the normal
+                    // Edge does not lie on surface; either strictly inside
+                    // or strictly outside
                     if((si->surfNormal).Dot(ray) > 0) {
                         ret = INSIDE;
                     } else {
@@ -157,15 +166,28 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         l.Clear();
 
         // If the point being tested lies exactly on an edge of the shell,
-        // then our ray always lies on edge, and that's okay.
-        if(ret == ON_PARALLEL || ret == ON_ANTIPARALLEL || !onEdge) break;
-        if(cnt++ > 10) {
+        // then our ray always lies on edge, and that's okay. Otherwise
+        // try again in a different random direction.
+        if((edge_inters == 2) || !onEdge) break;
+        if(cnt++ > 20) {
             dbp("can't find a ray that doesn't hit on edge!");
             break;
         }
     }
 
-    return ret;
+    if(edge_inters == 2) {
+        double tol = 1e-3;
+
+        if(edge_dotp[0] > -tol && edge_dotp[1] > -tol) {
+            return EDGE_PARALLEL;
+        } else if(edge_dotp[0] < tol && edge_dotp[1] < tol) {
+            return EDGE_ANTIPARALLEL;
+        } else {
+            return EDGE_TANGENT;
+        }
+    } else {
+        return ret;
+    }
 }
 
 //-----------------------------------------------------------------------------
