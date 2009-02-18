@@ -386,8 +386,11 @@ void SPolygon::FixContourDirections(void) {
     int i, j;
     for(i = 0; i < l.n; i++) {
         SContour *sc = &(l.elem[i]);
-        if(sc->l.n < 1) continue;
-        Vector pt = (sc->l.elem[0]).p;
+        if(sc->l.n < 2) continue;
+        // The contours may not intersect, but they may share vertices; so
+        // testing a vertex for point-in-polygon may fail, but the midpoint
+        // of an edge is okay.
+        Vector pt = (((sc->l.elem[0]).p).Plus(sc->l.elem[1].p)).ScaledBy(0.5);
 
         sc->timesEnclosed = 0;
         bool outer = true;

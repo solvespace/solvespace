@@ -42,9 +42,14 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
         SContour *sc;
         for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
             if(sc->timesEnclosed != 1) continue;
-            if(sc->l.n < 1) continue;
+            if(sc->l.n < 2) continue;
 
-            if(top->ContainsPointProjdToNormal(normal, sc->l.elem[0].p)) {
+            // Test the midpoint of an edge. Our polygon may not be self-
+            // intersecting, but two countours may share a vertex; so a
+            // vertex could be on the edge of another polygon, in which
+            // case ContainsPointProjdToNormal returns indeterminate.
+            Vector tp = ((sc->l.elem[0].p).Plus(sc->l.elem[1].p)).ScaledBy(0.5);
+            if(top->ContainsPointProjdToNormal(normal, tp)) {
                 sc->tag = 2;
                 sc->MakeEdgesInto(&el);
                 sc->FindPointWithMinX();
@@ -180,6 +185,12 @@ bool SContour::IsEar(int bp) {
     tr.b = l.elem[bp].p;
     tr.c = l.elem[cp].p;
 
+    if((tr.a).Equals(tr.c)) {
+        // This is two coincident and anti-parallel edges. Zero-area, so
+        // won't generate a real triangle, but we certainly can clip it.
+        return true;
+    }
+
     Vector n = Vector::From(0, 0, -1);
     if((tr.Normal()).Dot(n) < LENGTH_EPS) {
         // This vertex is reflex, or between two collinear edges; either way,
@@ -222,7 +233,12 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
     tr.a = l.elem[ap].p;
     tr.b = l.elem[bp].p;
     tr.c = l.elem[cp].p;
-    m->AddTriangle(&tr);
+    if(tr.Normal().MagSquared() < LENGTH_EPS*LENGTH_EPS) {
+        // A vertex with more than two edges will cause us to generate
+        // zero-area triangles, which must be culled.
+    } else {
+        m->AddTriangle(&tr);
+    }
 
     // By deleting the point at bp, we may change the ear-ness of the points
     // on either side.
@@ -236,7 +252,17 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
 
 void SContour::UvTriangulateInto(SMesh *m) {
     int i;
-    // First, calculate the ear-ness of all the points
+
+    // Clean the original contour by removing any zero-length edges.
+    l.ClearTags();
+    for(i = 1; i < l.n; i++) {
+       if((l.elem[i].p).Equals(l.elem[i-1].p)) {
+            l.elem[i].tag = 1;
+        }
+    }
+    l.RemoveTagged();
+
+    // Now calculate the ear-ness of each vertex
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).ear = IsEar(i) ? SPoint::EAR : SPoint::NOT_EAR;
     }

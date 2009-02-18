@@ -426,7 +426,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     }
     final.l.RemoveTagged();
 
-//    if(I == 1) DEBUGEDGELIST(&final, &ret);
+//    if(I == 10) DEBUGEDGELIST(&final, &ret);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final);
@@ -485,13 +485,13 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     a->MakeIntersectionCurvesAgainst(b, this);
     
     I = 100;
-    if(b->surface.n == 0 || a->surface.n == 0) {
+    if(b->surface.n == 0 || a->surface.n == 0 || a->surface.n == 6) {
         // Then trim and copy the surfaces
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
-        a->CopySurfacesTrimAgainst(b, this, type, true);
         I = 0;
+        a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     }
 
