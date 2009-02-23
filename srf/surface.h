@@ -181,7 +181,10 @@ public:
     void TrimFromEdgeList(SEdgeList *el);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                           SShell *into);
-    void AllPointsIntersecting(Vector a, Vector b, List<SInter> *l);
+    void AddExactIntersectionCurve(SBezier *sb, hSSurface hsb,
+                          SShell *agnstA, SShell *agnstB, SShell *into);
+    void AllPointsIntersecting(Vector a, Vector b,
+                                    List<SInter> *l, bool seg, bool trimmed);
 
     void ClosestPointTo(Vector p, double *u, double *v);
     Vector PointAt(double u, double v);
@@ -190,6 +193,7 @@ public:
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin);
     bool CoincidentWithPlane(Vector n, double d);
     bool CoincidentWith(SSurface *ss, bool sameNormal);
+    bool IsExtrusion(SBezier *of, Vector *along);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
@@ -217,7 +221,8 @@ public:
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(void);
-    void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il);
+    void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
+                                bool seg, bool trimmed);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                  SEdgeList *el);
     void CleanupAfterBoolean(void);

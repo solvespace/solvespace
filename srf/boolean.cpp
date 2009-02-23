@@ -38,8 +38,8 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB) {
         ZERO(&il);
 
         // Find all the intersections with the two passed shells
-        if(agnstA) agnstA->AllPointsIntersecting(prev, *p, &il);
-        if(agnstB) agnstB->AllPointsIntersecting(prev, *p, &il);
+        if(agnstA) agnstA->AllPointsIntersecting(prev, *p, &il, true, true);
+        if(agnstB) agnstB->AllPointsIntersecting(prev, *p, &il, true, true);
 
         // If any intersections exist, sort them in order along the
         // line and add them to the curve.
@@ -426,7 +426,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     }
     final.l.RemoveTagged();
 
-//    if(I == 10) DEBUGEDGELIST(&final, &ret);
+//    if(I == 0) DEBUGEDGELIST(&final, &ret);
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final);
@@ -485,13 +485,13 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     a->MakeIntersectionCurvesAgainst(b, this);
     
     I = 100;
-    if(b->surface.n == 0 || a->surface.n == 0 || a->surface.n == 6) {
+    if(b->surface.n == 0 || a->surface.n == 0) {
         // Then trim and copy the surfaces
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
-        I = 0;
         a->CopySurfacesTrimAgainst(b, this, type, true);
+        I = -1;
         b->CopySurfacesTrimAgainst(a, this, type, false);
     }
 

@@ -49,6 +49,9 @@ public:
                                         Vector b0, Vector b1,
                                         bool *skew,
                                         double *pa=NULL, double *pb=NULL);
+    static Vector AtIntersectionOfPlaneAndLine(Vector n, double d,
+                                               Vector p0, Vector p1,
+                                               bool *parallel);
 
     double Element(int i);
     bool Equals(Vector v, double tol=LENGTH_EPS);
@@ -93,8 +96,10 @@ public:
     double DistanceTo(Point2d p);
     double DistanceToLine(Point2d p0, Point2d dp, bool segment);
     double Magnitude(void);
+    double MagSquared(void);
     Point2d WithMagnitude(double v);
     Point2d Normal(void);
+    bool Equals(Point2d v, double tol=LENGTH_EPS);
 };
 
 // A simple list

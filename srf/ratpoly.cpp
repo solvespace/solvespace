@@ -387,6 +387,33 @@ SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     return ret;
 }
 
+bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
+    int i;
+
+    if(degn != 1) return false;
+
+    Vector along = (ctrl[0][1]).Minus(ctrl[0][0]);
+    for(i = 0; i <= degm; i++) {
+        if((fabs(weight[i][1] - weight[i][0]) < LENGTH_EPS) &&
+           ((ctrl[i][1]).Minus(ctrl[i][0])).Equals(along))
+        {
+            continue;
+        }
+        return false;
+    }
+
+    // yes, we are a surface of extrusion; copy the original curve and return
+    if(of) {
+        for(i = 0; i <= degm; i++) {
+            of->weight[i] = weight[i][0];
+            of->ctrl[i] = ctrl[i][0];
+        }
+        of->deg = degm;
+        *alongp = along;
+    }
+    return true;
+}
+
 SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     SSurface ret;
     ZERO(&ret);

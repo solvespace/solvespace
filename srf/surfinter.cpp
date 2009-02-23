@@ -1,5 +1,28 @@
 #include "solvespace.h"
 
+void SSurface::AddExactIntersectionCurve(SBezier *sb, hSSurface hsb,
+                            SShell *agnstA, SShell *agnstB, SShell *into)
+{
+    SCurve sc;
+    ZERO(&sc);
+    sc.surfA = h;
+    sc.surfB = hsb;
+    sb->MakePwlInto(&(sc.pts));
+
+    Vector *prev = NULL, *v;
+    for(v = sc.pts.First(); v; v = sc.pts.NextAfter(v)) {
+      if(prev) SS.nakedEdges.AddEdge(*prev, *v);
+        prev = v;
+    }
+
+    // Now split the line where it intersects our existing surfaces
+    SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB);
+    sc.Clear();
+
+    split.interCurve = true;
+    into->curve.AddAndAssignId(&split);
+}
+
 void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                                 SShell *into)
 {
@@ -12,86 +35,174 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         return;
     }
 
-    if(degm == 1 && degn == 1 && b->degm == 1 && b->degn == 1) {
-        // Plane-plane intersection, easy; result is a line
-        Vector pta = ctrl[0][0], ptb = b->ctrl[0][0];
-        Vector na = NormalAt(0, 0), nb = b->NormalAt(0, 0);
-        na = na.WithMagnitude(1);
-        nb = nb.WithMagnitude(1);
-
-        Vector d = (na.Cross(nb));
-
-        if(d.Magnitude() < LENGTH_EPS) {
-            // parallel planes, no intersection
-            return;
+    if((degm == 1 && degn == 1 && b->IsExtrusion(NULL, NULL)) ||
+       (b->degm == 1 && b->degn == 1 && this->IsExtrusion(NULL, NULL)))
+    {
+        // The intersection between a plane and a surface of extrusion
+        SSurface *splane, *sext;
+        if(degm == 1 && degn == 1) {
+            splane = this;
+            sext = b;
+        } else {
+            splane = b;
+            sext = this;
         }
 
-        Vector inter = Vector::AtIntersectionOfPlanes(na, na.Dot(pta),
-                                                      nb, nb.Dot(ptb));
+        Vector n = splane->NormalAt(0, 0).WithMagnitude(1), along;
+        double d = n.Dot(splane->PointAt(0, 0));
+        SBezier bezier;
+        (void)sext->IsExtrusion(&bezier, &along);
 
-        // The intersection curve can't be longer than the longest curve
-        // that lies in both planes, which is the diagonal of the shorter;
-        // so just pick one, and then give some slop, not critical.
-        double maxl = ((ctrl[0][0]).Minus(ctrl[1][1])).Magnitude();
+        if(fabs(n.Dot(along)) < LENGTH_EPS) {
+            // Direction of extrusion is parallel to plane; so intersection
+            // is zero or more lines. Build a line within the plane, and
+            // normal to the direction of extrusion, and intersect that line
+            // against the surface; each intersection point corresponds to
+            // a line.
+            Vector pm, alu, p0, dp;
+            // a point halfway along the extrusion
+            pm = ((sext->ctrl[0][0]).Plus(sext->ctrl[0][1])).ScaledBy(0.5);
+            alu = along.WithMagnitude(1);
+            dp = (n.Cross(along)).WithMagnitude(1);
+            // n, alu, and dp form an orthogonal csys; set n component to
+            // place it on the plane, alu component to lie halfway along
+            // extrusion, and dp component doesn't matter so zero
+            p0 = n.ScaledBy(d).Plus(alu.ScaledBy(pm.Dot(alu)));
 
-        Vector v;
-        SCurve sc;
-        ZERO(&sc);
-        sc.surfA = h;
-        sc.surfB = b->h;
-        v = inter.Minus(d.WithMagnitude(5*maxl));
-        sc.pts.Add(&v);
-        v = inter.Plus(d.WithMagnitude(5*maxl));
-        sc.pts.Add(&v);
+            List<SInter> inters;
+            ZERO(&inters);
+            sext->AllPointsIntersecting(p0, p0.Plus(dp), &inters, false, false);
+    
+            SInter *si;
+            for(si = inters.First(); si; si = inters.NextAfter(si)) {
+                Vector al = along.ScaledBy(0.5);
+                SBezier bezier;
+                bezier = SBezier::From((si->p).Minus(al), (si->p).Plus(al));
 
-        // Now split the line where it intersects our existing surfaces
-        SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB);
-        sc.Clear();
+                AddExactIntersectionCurve(&bezier, b->h, agnstA, agnstB, into);
+            }
 
-        split.interCurve = true;
-        into->curve.AddAndAssignId(&split);
+            inters.Clear();
+        } else {
+            // Direction of extrusion is not parallel to plane; so
+            // intersection is projection of extruded curve into our plane
+
+            int i;
+            for(i = 0; i <= bezier.deg; i++) {
+                Vector p0 = bezier.ctrl[i],
+                       p1 = p0.Plus(along);
+
+                bezier.ctrl[i] =
+                    Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, NULL);
+            }
+
+            AddExactIntersectionCurve(&bezier, b->h, agnstA, agnstB, into);
+        }
     }
 
     // need to implement general numerical surface intersection for tough
     // cases, just giving up for now
 }
 
-void SSurface::AllPointsIntersecting(Vector a, Vector b, List<SInter> *l) {
-    if(degm == 1 && degn == 1) {
-        // line-plane intersection
-        Vector p = ctrl[0][0];
-        Vector n = NormalAt(0, 0).WithMagnitude(1);
-        double d = n.Dot(p);
-        if((n.Dot(a) - d < -LENGTH_EPS && n.Dot(b) - d > LENGTH_EPS) ||
-           (n.Dot(b) - d < -LENGTH_EPS && n.Dot(a) - d > LENGTH_EPS))
-        {
-            // It crosses the plane, one point of intersection
-            // (a + t*(b - a)) dot n = d
-            // (a dot n) + t*((b - a) dot n) = d
-            // t = (d - (a dot n))/((b - a) dot n)
-            double t = (d - a.Dot(n)) / ((b.Minus(a)).Dot(n));
-            Vector pi = a.Plus((b.Minus(a)).ScaledBy(t));
+//-----------------------------------------------------------------------------
+// Find all points where a line through a and b intersects our surface, and
+// add them to the list. If seg is true then report only intersections that
+// lie within the finite line segment (not including the endpoints); otherwise
+// we work along the infinite line.
+//-----------------------------------------------------------------------------
+void SSurface::AllPointsIntersecting(Vector a, Vector b,
+                                     List<SInter> *l, bool seg, bool trimmed)
+{
+    Vector ba = b.Minus(a);
+    double bam = ba.Magnitude();
 
-            Point2d puv, dummy = { 0, 0 };
-            ClosestPointTo(pi, &(puv.x), &(puv.y));
-            int c = bsp->ClassifyPoint(puv, dummy);
+    typedef struct {
+        int     tag;
+        Point2d p;
+    } Inter;
+    List<Inter> inters;
+    ZERO(&inters);
 
-            if(c != SBspUv::OUTSIDE) {
-                SInter si;
-                si.p = pi;
-                si.surfNormal = NormalAt(puv.x, puv.y);
-                si.surface = h;
-                si.onEdge = (c != SBspUv::INSIDE);
-                l->Add(&si);
+    // First, get all the intersections between the infinite ray and the
+    // untrimmed surface.
+    int i, j;
+    for(i = 0; i < degm; i++) {
+        for(j = 0; j < degn; j++) {
+            // Intersect the ray with each face in the control polyhedron
+            Vector p00 = ctrl[i][j],
+                   p01 = ctrl[i][j+1],
+                   p10 = ctrl[i+1][j];
+
+            Vector u = p01.Minus(p00), v = p10.Minus(p00);
+
+            Vector n = (u.Cross(v)).WithMagnitude(1);
+            double d = n.Dot(p00);
+
+            bool parallel;
+            Vector pi =
+                Vector::AtIntersectionOfPlaneAndLine(n, d, a, b, &parallel);
+            if(parallel) continue;
+
+            double ui = (pi.Minus(p00)).Dot(u) / u.MagSquared(),
+                   vi = (pi.Minus(p00)).Dot(v) / v.MagSquared();
+
+            double tol = 1e-2;
+            if(ui < -tol || ui > 1 + tol || vi < -tol || vi > 1 + tol) {
+                continue;
+            }
+
+            Inter inter;
+            ClosestPointTo(pi, &inter.p.x, &inter.p.y);
+            inters.Add(&inter);
+        }
+    }
+
+    // Remove duplicate intersection points
+    inters.ClearTags();
+    for(i = 0; i < inters.n; i++) {
+        for(j = i + 1; j < inters.n; j++) {
+            if(inters.elem[i].p.Equals(inters.elem[j].p)) {
+                inters.elem[j].tag = 1;
             }
         }
     }
+    inters.RemoveTagged();
+
+    for(i = 0; i < inters.n; i++) {
+        Point2d puv = inters.elem[i].p;
+
+        // Make sure the point lies within the finite line segment
+        Vector pxyz = PointAt(puv.x, puv.y);
+        double t = (pxyz.Minus(a)).DivPivoting(ba);
+        if(seg && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
+            continue;
+        }
+       
+        // And that it lies inside our trim region
+        Point2d dummy = { 0, 0 };
+        int c = bsp->ClassifyPoint(puv, dummy);
+        if(trimmed && c == SBspUv::OUTSIDE) {
+            continue;
+        }
+
+        // It does, so generate the intersection
+        SInter si;
+        si.p = pxyz;
+        si.surfNormal = NormalAt(puv.x, puv.y);
+        si.surface = h;
+        si.onEdge = (c != SBspUv::INSIDE);
+        l->Add(&si);
+    }
+
+    inters.Clear();
 }
 
-void SShell::AllPointsIntersecting(Vector a, Vector b, List<SInter> *il) {
+void SShell::AllPointsIntersecting(Vector a, Vector b,
+                                   List<SInter> *il, bool seg, bool trimmed)
+{
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->AllPointsIntersecting(a, b, il);
+        ss->AllPointsIntersecting(a, b, il, seg, trimmed);
     }
 }
 
@@ -118,8 +229,7 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         // the point lies on a surface, but use only one side for in/out
         // testing)
         Vector ray = Vector::From(Random(1), Random(1), Random(1));
-        ray = ray.WithMagnitude(1e4);
-        AllPointsIntersecting(p.Minus(ray), p.Plus(ray), &l);
+        AllPointsIntersecting(p.Minus(ray), p.Plus(ray), &l, false, true);
         
         double dmin = VERY_POSITIVE;
         ret = OUTSIDE; // no intersections means it's outside

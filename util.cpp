@@ -620,6 +620,26 @@ Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
     return pi;
 }
 
+Vector Vector::AtIntersectionOfPlaneAndLine(Vector n, double d,
+                                            Vector p0, Vector p1,
+                                            bool *parallel)
+{
+    Vector dp = p1.Minus(p0);
+
+    if(fabs(n.Dot(dp)) < LENGTH_EPS) {
+        if(parallel) *parallel = true;
+        return Vector::From(0, 0, 0);
+    }
+
+    if(parallel) *parallel = false;
+
+    // n dot (p0 + t*dp) = d
+    // (n dot p0) + t * (n dot dp) = d
+    double t = (d - n.Dot(p0)) / (n.Dot(dp));
+
+    return p0.Plus(dp.ScaledBy(t));
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;
@@ -639,6 +659,10 @@ Point2d Point2d::ScaledBy(double s) {
     r.x = x*s;
     r.y = y*s;
     return r;
+}
+
+double Point2d::MagSquared(void) {
+    return x*x + y*y;
 }
 
 double Point2d::Magnitude(void) {
@@ -689,5 +713,12 @@ Point2d Point2d::Normal(void) {
     ret.x = y;
     ret.y = -x;
     return ret;
+}
+
+bool Point2d::Equals(Point2d v, double tol) {
+    double dx = v.x - x; if(dx < -tol || dx > tol) return false;
+    double dy = v.y - y; if(dy < -tol || dy > tol) return false;
+
+    return (this->Minus(v)).MagSquared() < tol*tol;
 }
 
