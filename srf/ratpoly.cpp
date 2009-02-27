@@ -1,6 +1,12 @@
 #include "../solvespace.h"
 
-double Bernstein(int k, int deg, double t)
+// Converge it to better than LENGTH_EPS; we want two points, each
+// independently projected into uv and back, to end up equal with the
+// LENGTH_EPS. Best case that requires LENGTH_EPS/2, but more is better
+// and convergence should be fast by now.
+#define RATPOLY_EPS (LENGTH_EPS/(1e1))
+
+static double Bernstein(int k, int deg, double t)
 {
     if(k > deg || k < 0) return 0;
 
@@ -523,13 +529,13 @@ Vector SSurface::NormalAt(double u, double v) {
     return tu.Cross(tv);
 }
 
-void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
+void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     int i, j;
 
     if(degm == 1 && degn == 1) {
         *u = *v = 0; // a plane, perfect no matter what the initial guess
     } else {
-        double minDist = 1e10;
+        double minDist = VERY_POSITIVE;
         double res = 7.0;
         for(i = 0; i < (int)res; i++) {
             for(j = 0; j <= (int)res; j++) {
@@ -548,14 +554,12 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
 
     // Initial guess is in u, v
     Vector p0;
-    for(i = 0; i < 50; i++) {
+    for(i = 0; i < (converge ? 15 : 3); i++) {
         p0 = PointAt(*u, *v);
-        // Converge it to better than LENGTH_EPS; we want two points, each
-        // independently projected into uv and back, to end up equal with
-        // the LENGTH_EPS. Best case that requires LENGTH_EPS/2, but more
-        // is better and convergence should be fast by now.
-        if(p0.Equals(p, LENGTH_EPS/1e2)) {
-            return;
+        if(converge) {
+            if(p0.Equals(p, RATPOLY_EPS)) {
+                return;
+            }
         }
 
         Vector tu, tv;
@@ -569,13 +573,94 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v) {
         *u += du / (tu.MagSquared());
         *v += dv / (tv.MagSquared());
     }
-    dbp("didn't converge");
-    dbp("have %.3f %.3f %.3f", CO(p0));
-    dbp("want %.3f %.3f %.3f", CO(p));
-    dbp("distance = %g", (p.Minus(p0)).Magnitude());
+
+    if(converge) {
+        dbp("didn't converge");
+        dbp("have %.3f %.3f %.3f", CO(p0));
+        dbp("want %.3f %.3f %.3f", CO(p));
+        dbp("distance = %g", (p.Minus(p0)).Magnitude());
+    }
+
     if(isnan(*u) || isnan(*v)) {
         *u = *v = 0;
     }
+}
+
+bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
+{
+    int i;
+    for(i = 0; i < 15; i++) {
+        Vector pi, p, tu, tv;
+        p = PointAt(*u, *v);
+        TangentsAt(*u, *v, &tu, &tv);
+        
+        Vector n = (tu.Cross(tv)).WithMagnitude(1);
+        double d = p.Dot(n);
+
+        bool parallel;
+        pi = Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, &parallel);
+        if(parallel) break;
+
+        // Check for convergence
+        if(pi.Equals(p, RATPOLY_EPS)) return true;
+
+        // Adjust our guess and iterate
+        Vector dp = pi.Minus(p);
+        double du = dp.Dot(tu), dv = dp.Dot(tv);
+        *u += du / (tu.MagSquared());
+        *v += dv / (tv.MagSquared());
+    }
+//    dbp("didn't converge (surface intersecting line)");
+    return false;
+}
+
+void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2,
+                                                double *up, double *vp)
+{
+    double u[3] = { *up, 0, 0 }, v[3] = { *vp, 0, 0 };
+    SSurface *srf[3] = { this, s1, s2 };
+
+    // Get initial guesses for (u, v) in the other surfaces
+    Vector p = PointAt(*u, *v);
+    (srf[1])->ClosestPointTo(p, &(u[1]), &(v[1]), false);
+    (srf[2])->ClosestPointTo(p, &(u[2]), &(v[2]), false);
+
+    int i, j;
+    for(i = 0; i < 15; i++) {
+        // Approximate each surface by a plane
+        Vector p[3], tu[3], tv[3], n[3];
+        double d[3];
+        for(j = 0; j < 3; j++) {
+            p[j] = (srf[j])->PointAt(u[j], v[j]);
+            (srf[j])->TangentsAt(u[j], v[j], &(tu[j]), &(tv[j]));
+            n[j] = ((tu[j]).Cross(tv[j])).WithMagnitude(1);
+            d[j] = (n[j]).Dot(p[j]);
+        }
+
+        // If a = b and b = c, then does a = c? No, it doesn't.
+        if((p[0]).Equals(p[1], RATPOLY_EPS) && 
+           (p[1]).Equals(p[2], RATPOLY_EPS) &&
+           (p[2]).Equals(p[0], RATPOLY_EPS))
+        {
+            *up = u[0];
+            *vp = v[0];
+            return;
+        }
+
+        bool parallel;
+        Vector pi = Vector::AtIntersectionOfPlanes(n[0], d[0],
+                                                   n[1], d[1],
+                                                   n[2], d[2], &parallel);
+        if(parallel) break;
+
+        for(j = 0; j < 3; j++) {
+            Vector dp = pi.Minus(p[j]);
+            double du = dp.Dot(tu[j]), dv = dp.Dot(tv[j]);
+            u[j] += du / (tu[j]).MagSquared();
+            v[j] += dv / (tv[j]).MagSquared();
+        }
+    }
+    dbp("didn't converge (three surfaces intersecting)");
 }
 
 void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
@@ -756,29 +841,28 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
             SCurve sc;
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t0);
+            sc.surfA = hs0;
+            sc.surfB = hsext;
             hSCurve hc0 = curve.AddAndAssignId(&sc);
-            STrimBy stb0 = STrimBy::EntireCurve(this, hc0, false);
 
             ZERO(&sc);
             sb->MakePwlInto(&(sc.pts), t1);
+            sc.surfA = hs1;
+            sc.surfB = hsext;
             hSCurve hc1 = curve.AddAndAssignId(&sc);
-            STrimBy stb1 = STrimBy::EntireCurve(this, hc1, true);
 
+            STrimBy stb0, stb1;
             // The translated curves trim the flat top and bottom surfaces.
+            stb0 = STrimBy::EntireCurve(this, hc0, false);
+            stb1 = STrimBy::EntireCurve(this, hc1, true);
             (surface.FindById(hs0))->trim.Add(&stb0);
-            (curve.FindById(hc0))->surfA = hs0;
-
             (surface.FindById(hs1))->trim.Add(&stb1);
-            (curve.FindById(hc1))->surfA = hs1;
 
             // The translated curves also trim the surface of extrusion.
             stb0 = STrimBy::EntireCurve(this, hc0, true);
-            (surface.FindById(hsext))->trim.Add(&stb0);
-            (curve.FindById(hc0))->surfB = hsext;
-
             stb1 = STrimBy::EntireCurve(this, hc1, false);
+            (surface.FindById(hsext))->trim.Add(&stb0);
             (surface.FindById(hsext))->trim.Add(&stb1);
-            (curve.FindById(hc1))->surfB = hsext;
 
             // And form the trim line
             Vector pt = sb->Finish();

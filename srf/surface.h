@@ -6,6 +6,8 @@
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
 
+class SSurface;
+
 // Utility data structure, a two-dimensional BSP to accelerate polygon
 // operations.
 class SBspUv {
@@ -111,8 +113,14 @@ class SCurve {
 public:
     hSCurve         h;
 
-    hSCurve         newH;       // when merging with booleans
-    bool            interCurve; // it's a newly-calculated intersection
+    // In a Boolean, C = A op B. The curves in A and B get copied into C, and
+    // therefore must get new hSCurves assigned. For the curves in A and B,
+    // we use newH to record their new handle in C.
+    hSCurve         newH;
+    static const int FROM_A             = 100;
+    static const int FROM_B             = 200;
+    static const int FROM_INTERSECTION  = 300;
+    int             source;
 
     bool            isExact;
     SBezier         exact;
@@ -123,7 +131,8 @@ public:
     hSSurface       surfB;
 
     static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
-    SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB);
+    SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
+                                SSurface *srfA, SSurface *srfB);
 
     void Clear(void);
 };
@@ -148,8 +157,10 @@ public:
 // An intersection point between a line and a surface
 class SInter {
 public:
+    int         tag;
     Vector      p;
-    hSSurface   surface;
+    SSurface    *srf;
+    hSSurface   hsrf;
     Vector      surfNormal; // of the intersecting surface, at pinter
     bool        onEdge;     // pinter is on edge of trim poly
 };
@@ -181,12 +192,14 @@ public:
     void TrimFromEdgeList(SEdgeList *el);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                           SShell *into);
-    void AddExactIntersectionCurve(SBezier *sb, hSSurface hsb,
+    void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                           SShell *agnstA, SShell *agnstB, SShell *into);
     void AllPointsIntersecting(Vector a, Vector b,
                                     List<SInter> *l, bool seg, bool trimmed);
 
-    void ClosestPointTo(Vector p, double *u, double *v);
+    void ClosestPointTo(Vector p, double *u, double *v, bool converge=true);
+    bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v);
+    void PointOnSurfaces(SSurface *s1, SSurface *s2, double *u, double *v);
     Vector PointAt(double u, double v);
     void TangentsAt(double u, double v, Vector *tu, Vector *tv);
     Vector NormalAt(double u, double v);
@@ -217,7 +230,7 @@ public:
     static const int AS_DIFFERENCE = 11;
     static const int AS_INTERSECT  = 12;
     void MakeFromBoolean(SShell *a, SShell *b, int type);
-    void CopyCurvesSplitAgainst(SShell *agnstA, SShell *agnstB, SShell *into);
+    void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(void);

@@ -52,6 +52,10 @@ public:
     static Vector AtIntersectionOfPlaneAndLine(Vector n, double d,
                                                Vector p0, Vector p1,
                                                bool *parallel);
+    static Vector AtIntersectionOfPlanes(Vector na, double da,
+                                         Vector nb, double db,
+                                         Vector nc, double dc,
+                                         bool *parallel);
 
     double Element(int i);
     bool Equals(Vector v, double tol=LENGTH_EPS);

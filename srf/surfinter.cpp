@@ -1,25 +1,28 @@
 #include "solvespace.h"
 
-void SSurface::AddExactIntersectionCurve(SBezier *sb, hSSurface hsb,
+extern int FLAG;
+
+void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                             SShell *agnstA, SShell *agnstB, SShell *into)
 {
     SCurve sc;
     ZERO(&sc);
     sc.surfA = h;
-    sc.surfB = hsb;
+    sc.surfB = srfB->h;
     sb->MakePwlInto(&(sc.pts));
 
+/*
     Vector *prev = NULL, *v;
     for(v = sc.pts.First(); v; v = sc.pts.NextAfter(v)) {
       if(prev) SS.nakedEdges.AddEdge(*prev, *v);
         prev = v;
-    }
+    } */
 
     // Now split the line where it intersects our existing surfaces
-    SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB);
+    SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
     sc.Clear();
 
-    split.interCurve = true;
+    split.source = SCurve::FROM_INTERSECTION;
     into->curve.AddAndAssignId(&split);
 }
 
@@ -79,7 +82,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 SBezier bezier;
                 bezier = SBezier::From((si->p).Minus(al), (si->p).Plus(al));
 
-                AddExactIntersectionCurve(&bezier, b->h, agnstA, agnstB, into);
+                AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
             }
 
             inters.Clear();
@@ -96,7 +99,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     Vector::AtIntersectionOfPlaneAndLine(n, d, p0, p1, NULL);
             }
 
-            AddExactIntersectionCurve(&bezier, b->h, agnstA, agnstB, into);
+            AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
     }
 
@@ -152,8 +155,14 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
             }
 
             Inter inter;
-            ClosestPointTo(pi, &inter.p.x, &inter.p.y);
-            inters.Add(&inter);
+            ClosestPointTo(pi, &inter.p.x, &inter.p.y, false);
+            if(PointIntersectingLine(a, b, &inter.p.x, &inter.p.y)) {
+                inters.Add(&inter);
+            } else {
+                // No convergence; but this might not be an error, since
+                // the line can intersect the convex hull more times than
+                // it intersects the surface itself.
+            }
         }
     }
 
@@ -189,7 +198,8 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         SInter si;
         si.p = pxyz;
         si.surfNormal = NormalAt(puv.x, puv.y);
-        si.surface = h;
+        si.hsrf = h;
+        si.srf = this;
         si.onEdge = (c != SBspUv::INSIDE);
         l->Add(&si);
     }
@@ -236,6 +246,11 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         bool onEdge = false;
         edge_inters = 0;
 
+        if(FLAG) {
+            dbp("inters=%d cnt=%d", l.n, cnt);
+            SS.nakedEdges.AddEdge(p, p.Plus(ray.WithMagnitude(50)));
+        }
+
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
             double t = ((si->p).Minus(p)).DivPivoting(ray);
@@ -243,6 +258,8 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
                 // wrong side, doesn't count
                 continue;
             }
+
+            if(FLAG) SS.nakedEdges.AddEdge(p, si->p);
 
             double d = ((si->p).Minus(p)).Magnitude();
 

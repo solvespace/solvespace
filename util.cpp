@@ -640,6 +640,48 @@ Vector Vector::AtIntersectionOfPlaneAndLine(Vector n, double d,
     return p0.Plus(dp.ScaledBy(t));
 }
 
+static double det2(double a1, double b1,
+                   double a2, double b2)
+{
+    return (a1*b2) - (b1*a2);
+}
+static double det3(double a1, double b1, double c1,
+                   double a2, double b2, double c2,
+                   double a3, double b3, double c3)
+{
+    return a1*det2(b2, c2, b3, c3) -
+           b1*det2(a2, c2, a3, c3) +
+           c1*det2(a2, b2, a3, b3);
+}
+Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
+                                      Vector nb, double db,
+                                      Vector nc, double dc,
+                                      bool *parallel)
+{
+    double det  = det3(na.x, na.y, na.z,
+                       nb.x, nb.y, nb.z,
+                       nc.x, nc.y, nc.z);
+    if(fabs(det) < 1e-10) { // arbitrary tolerance, not so good
+        *parallel = true;
+        return Vector::From(0, 0, 0);
+    }
+    *parallel = false;
+
+    double detx = det3(da,   na.y, na.z,
+                       db,   nb.y, nb.z,
+                       dc,   nc.y, nc.z);
+
+    double dety = det3(na.x, da,   na.z,
+                       nb.x, db,   nb.z,
+                       nc.x, dc,   nc.z);
+
+    double detz = det3(na.x, na.y, da,
+                       nb.x, nb.y, db,
+                       nc.x, nc.y, dc  );
+
+    return Vector::From(detx/det, dety/det, detz/det);
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;
