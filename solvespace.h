@@ -141,6 +141,7 @@ void vl(void); // debug function to validate heaps
 //================
 
 
+class SSurface;
 #include "dsc.h"
 #include "polygon.h"
 #include "srf/surface.h"

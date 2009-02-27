@@ -61,7 +61,7 @@ public:
     bool IsEar(int bp);
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
     void ClipEarInto(SMesh *m, int bp);
-    void UvTriangulateInto(SMesh *m);
+    void UvTriangulateInto(SMesh *m, SSurface *srf);
 };
 
 typedef struct {
@@ -88,7 +88,7 @@ public:
     bool IsEmpty(void);
     Vector AnyPoint(void);
     void OffsetInto(SPolygon *dest, double r);
-    void UvTriangulateInto(SMesh *m);
+    void UvTriangulateInto(SMesh *m, SSurface *srf);
 };
 
 class STriangle {

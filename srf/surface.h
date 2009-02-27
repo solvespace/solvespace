@@ -211,6 +211,7 @@ public:
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
     void MakeClassifyingBsp(SShell *shell);
+    double ChordToleranceForEdge(Vector a, Vector b);
 
     void Reverse(void);
     void Clear(void);

@@ -1,6 +1,6 @@
 #include "../solvespace.h"
 
-void SPolygon::UvTriangulateInto(SMesh *m) {
+void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
     if(l.n <= 0) return;
 
     SDWORD in = GetMilliseconds();
@@ -80,7 +80,7 @@ void SPolygon::UvTriangulateInto(SMesh *m) {
         }
 //        dbp("finished merging holes: %d ms", GetMilliseconds() - in);
 
-        merged.UvTriangulateInto(m);
+        merged.UvTriangulateInto(m, srf);
 //        dbp("finished ear clippping: %d ms", GetMilliseconds() - in);
         merged.l.Clear();
         el.Clear();
@@ -250,7 +250,7 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
     l.RemoveTagged();
 }
 
-void SContour::UvTriangulateInto(SMesh *m) {
+void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
     int i;
 
     // Clean the original contour by removing any zero-length edges.
@@ -276,24 +276,57 @@ void SContour::UvTriangulateInto(SMesh *m) {
             }
         }
 
-        // And find a candidate ear; alternate the starting position so
-        // we generate strip-like triangulations instead of fan-like
-        int ear = -1;
+        int bestEar = -1;
+        double bestChordTol = VERY_POSITIVE;
+        // Alternate the starting position so we generate strip-like
+        // triangulations instead of fan-like
         toggle = !toggle;
         int offset = toggle ? -1 : 0;
         for(i = 0; i < l.n; i++) {
-            ear = WRAP(i+offset, l.n);
+            int ear = WRAP(i+offset, l.n);
             if(l.elem[ear].ear == SPoint::EAR) {
-                break;
+                if(!srf) {
+                    bestEar = ear;
+                    break;
+                }
+                // If we are triangulating a curved surface, then try to
+                // clip ears that have a small chord tolerance from the
+                // surface.
+                Vector prev = l.elem[WRAP((i+offset-1), l.n)].p,
+                       next = l.elem[WRAP((i+offset+1), l.n)].p;
+                double tol = srf->ChordToleranceForEdge(prev, next);
+                if(tol < bestChordTol - LENGTH_EPS) {
+                    bestEar = ear;
+                    bestChordTol = tol;
+                }
+                if(bestChordTol < 0.1*(SS.chordTol / SS.GW.scale)) {
+                    break;
+                }
             }
         }
-        if(ear < 0) {
+        if(bestEar < 0) {
             dbp("couldn't find an ear! fail");
             return;
         }
-        ClipEarInto(m, ear);
+        ClipEarInto(m, bestEar);
     }
 
     ClipEarInto(m, 0); // add the last triangle
 }
+
+double SSurface::ChordToleranceForEdge(Vector a, Vector b) {
+    Vector as = PointAt(a.x, a.y), bs = PointAt(b.x, b.y);
+
+    double worst = VERY_NEGATIVE;
+    int i;
+    for(i = 1; i <= 3; i++) {
+        Vector p  = a. Plus((b. Minus(a )).ScaledBy(i/4.0)),
+               ps = as.Plus((bs.Minus(as)).ScaledBy(i/4.0));
+
+        Vector pps = PointAt(p.x, p.y);
+        worst = max(worst, (pps.Minus(ps)).MagSquared());
+    }
+    return sqrt(worst);
+}
+
 

@@ -731,7 +731,9 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     ZERO(&poly);
     if(el.AssemblePolygon(&poly, NULL, true)) {
         int i, start = sm->l.n;
-        poly.UvTriangulateInto(sm);
+        // Curved surfaces are triangulated in such a way as to minimize
+        // deviation between edges and surface; but doesn't matter for planes.
+        poly.UvTriangulateInto(sm, (degm == 1 && degn == 1) ? NULL : this);
 
         STriMeta meta = { face, color };
         for(i = start; i < sm->l.n; i++) {
