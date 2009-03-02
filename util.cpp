@@ -713,11 +713,12 @@ double Point2d::Magnitude(void) {
 
 Point2d Point2d::WithMagnitude(double v) {
     double m = Magnitude();
-    if(m < 0.001) {
+    if(m < 1e-20) {
+        dbp("!!! WithMagnitude() of zero vector");
         Point2d r = { v, 0 };
         return r;
     } else {
-        return ScaledBy(v/Magnitude());
+        return ScaledBy(v/m);
     }
 }
 
