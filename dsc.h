@@ -84,6 +84,8 @@ public:
     void MakeMaxMin(Vector *maxv, Vector *minv);
     static bool BoundingBoxesDisjoint(Vector amax, Vector amin,
                                       Vector bmax, Vector bmin);
+    static bool BoundingBoxIntersectsLine(Vector amax, Vector amin,
+                                          Vector p0, Vector p1, bool segment);
     bool OutsideAndNotOn(Vector maxv, Vector minv);
     Point2d Project2d(Vector u, Vector v);
     Point2d ProjectXy(void);

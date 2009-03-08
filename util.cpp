@@ -573,6 +573,40 @@ bool Vector::BoundingBoxesDisjoint(Vector amax, Vector amin,
     return false;
 }
 
+bool Vector::BoundingBoxIntersectsLine(Vector amax, Vector amin,
+                                       Vector p0, Vector p1, bool segment)
+{
+    Vector dp = p1.Minus(p0);
+    double lp = dp.Magnitude();
+    dp = dp.ScaledBy(1.0/lp);
+
+    int i, a;
+    for(i = 0; i < 3; i++) {
+        int j = WRAP(i+1, 3), k = WRAP(i+2, 3);
+        if(lp*fabs(dp.Element(i)) < LENGTH_EPS) continue; // parallel to plane
+
+        for(a = 0; a < 2; a++) {
+            double d = (a == 0) ? amax.Element(i) : amin.Element(i);
+            // n dot (p0 + t*dp) = d
+            // (n dot p0) + t * (n dot dp) = d
+            double t = (d - p0.Element(i)) / dp.Element(i);
+            Vector p = p0.Plus(dp.ScaledBy(t));
+
+            if(segment && (t < -LENGTH_EPS || t > (lp+LENGTH_EPS))) continue;
+
+            if(p.Element(j) > amax.Element(j) + LENGTH_EPS) continue;
+            if(p.Element(k) > amax.Element(k) + LENGTH_EPS) continue;
+
+            if(p.Element(j) < amin.Element(j) - LENGTH_EPS) continue;
+            if(p.Element(k) < amin.Element(k) - LENGTH_EPS) continue;
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
 Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
                                       Vector n2, double d2)
 {

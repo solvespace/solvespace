@@ -4,7 +4,7 @@
 // independently projected into uv and back, to end up equal with the
 // LENGTH_EPS. Best case that requires LENGTH_EPS/2, but more is better
 // and convergence should be fast by now.
-#define RATPOLY_EPS (LENGTH_EPS/(1e1))
+#define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
 static double Bernstein(int k, int deg, double t)
 {
@@ -131,10 +131,8 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, Vector off) {
     double d = max(pm1.DistanceToLine(pa, pb.Minus(pa)),
                    pm2.DistanceToLine(pa, pb.Minus(pa)));
 
-    double tol = SS.chordTol/SS.GW.scale;
-
     double step = 1.0/SS.maxSegments;
-    if((tb - ta) < step || d < tol) {
+    if((tb - ta) < step || d < SS.ChordTolMm()) {
         // A previous call has already added the beginning of our interval.
         pb = pb.Plus(off);
         l->Add(&pb);
@@ -536,7 +534,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
         *u = *v = 0; // a plane, perfect no matter what the initial guess
     } else {
         double minDist = VERY_POSITIVE;
-        double res = 7.0;
+        double res = (max(degm, degn) == 2) ? 7.0 : 20.0;
         for(i = 0; i < (int)res; i++) {
             for(j = 0; j <= (int)res; j++) {
                 double tryu = (i/res), tryv = (j/res);

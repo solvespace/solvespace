@@ -11,16 +11,22 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     sc.surfB = srfB->h;
     sb->MakePwlInto(&(sc.pts));
 
-/*
-    Vector *prev = NULL, *v;
-    for(v = sc.pts.First(); v; v = sc.pts.NextAfter(v)) {
-      if(prev) SS.nakedEdges.AddEdge(*prev, *v);
-        prev = v;
-    } */
-
     // Now split the line where it intersects our existing surfaces
     SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
     sc.Clear();
+   
+/*
+    if(sb->deg == 1) {
+        dbp(" ");
+        Vector *prev = NULL, *v;
+        dbp("split.pts.n =%d", split.pts.n);
+        for(v = split.pts.First(); v; v = split.pts.NextAfter(v)) {
+            if(prev) {
+                SS.nakedEdges.AddEdge(*prev, *v);
+            }
+            prev = v;
+        }
+    } */
 
     split.source = SCurve::FROM_INTERSECTION;
     into->curve.AddAndAssignId(&split);
@@ -88,7 +94,10 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             inters.Clear();
         } else {
             // Direction of extrusion is not parallel to plane; so
-            // intersection is projection of extruded curve into our plane
+            // intersection is projection of extruded curve into our plane.
+            // If both curves are planes, then we could do it either way;
+            // so choose the one that generates the shorter curve.
+            // XXX TODO
 
             int i;
             for(i = 0; i <= bezier.deg; i++) {
@@ -107,6 +116,177 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
     // cases, just giving up for now
 }
 
+void SSurface::WeightControlPoints(void) {
+    int i, j;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            ctrl[i][j] = (ctrl[i][j]).ScaledBy(weight[i][j]);
+        }
+    }
+}
+void SSurface::UnWeightControlPoints(void) {
+    int i, j;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            ctrl[i][j] = (ctrl[i][j]).ScaledBy(1.0/weight[i][j]);
+        }
+    }
+}
+void SSurface::CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij) {
+    if(row) {
+        int j;
+        for(j = 0; j <= degn; j++) {
+            ctrl  [this_ij][j] = src->ctrl  [src_ij][j];
+            weight[this_ij][j] = src->weight[src_ij][j];
+        }
+    } else {
+        int i;
+        for(i = 0; i <= degm; i++) {
+            ctrl  [i][this_ij] = src->ctrl  [i][src_ij];
+            weight[i][this_ij] = src->weight[i][src_ij];
+        }
+    }
+}
+void SSurface::BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
+                                                    SSurface *b, int b_ij)
+{
+    if(row) {
+        int j;
+        for(j = 0; j <= degn; j++) {
+            Vector c = (a->ctrl  [a_ij][j]).Plus(b->ctrl  [b_ij][j]);
+            double w = (a->weight[a_ij][j]   +   b->weight[b_ij][j]);
+            ctrl  [this_ij][j] = c.ScaledBy(0.5);
+            weight[this_ij][j] = w / 2;
+        }
+    } else {
+        int i;
+        for(i = 0; i <= degm; i++) {
+            Vector c = (a->ctrl  [i][a_ij]).Plus(b->ctrl  [i][b_ij]);
+            double w = (a->weight[i][a_ij]   +   b->weight[i][b_ij]);
+            ctrl  [i][this_ij] = c.ScaledBy(0.5);
+            weight[i][this_ij] = w / 2;
+        }
+    }
+}
+void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
+    sa->degm = sb->degm = degm;
+    sa->degn = sb->degn = degn;
+
+    // by de Casteljau's algorithm in a projective space; so we must work
+    // on points (w*x, w*y, w*z, w)
+    WeightControlPoints();
+
+    switch(byU ? degm : degn) {
+        case 1:
+            sa->CopyRowOrCol (byU, 0, this, 0);
+            sb->CopyRowOrCol (byU, 1, this, 1);
+
+            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
+            sb->BlendRowOrCol(byU, 0, this, 0, this, 1);
+            break;
+
+        case 2:
+            sa->CopyRowOrCol (byU, 0, this, 0);
+            sb->CopyRowOrCol (byU, 2, this, 2);
+
+            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
+            sb->BlendRowOrCol(byU, 1, this, 1, this, 2);
+
+            sa->BlendRowOrCol(byU, 2, sa,   1, sb,   1);
+            sb->BlendRowOrCol(byU, 0, sa,   1, sb,   1);
+            break;
+
+        case 3: {
+            SSurface st;
+            st.degm = degm; st.degn = degn;
+
+            sa->CopyRowOrCol (byU, 0, this, 0);
+            sb->CopyRowOrCol (byU, 3, this, 3);
+
+            sa->BlendRowOrCol(byU, 1, this, 0, this, 1);
+            sb->BlendRowOrCol(byU, 2, this, 2, this, 3);
+            st. BlendRowOrCol(byU, 0, this, 1, this, 2); // scratch var
+
+            sa->BlendRowOrCol(byU, 2, sa,   1, &st,  0);
+            sb->BlendRowOrCol(byU, 1, sb,   2, &st,  0);
+
+            sa->BlendRowOrCol(byU, 3, sa,   2, sb,   1);
+            sb->BlendRowOrCol(byU, 0, sa,   2, sb,   1);
+            break;
+        }
+
+        default: oops();
+    }
+
+    sa->UnWeightControlPoints();
+    sb->UnWeightControlPoints();
+    UnWeightControlPoints();
+}
+
+//-----------------------------------------------------------------------------
+// Find all points where the indicated finite (if segment) or infinite (if not
+// segment) line intersects our surface. Report them in uv space in the list.
+// We first do a bounding box check; if the line doesn't intersect, then we're
+// done. If it does, then we check how small our surface is. If it's big,
+// then we subdivide into quarters and recurse. If it's small, then we refine
+// by Newton's method and record the point.
+//-----------------------------------------------------------------------------
+void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
+                                              int *cnt, int *level,
+                                              List<Inter> *l, bool segment,
+                                              SSurface *sorig)
+{
+    // Test if the line intersects our axis-aligned bounding box; if no, then
+    // no possibility of an intersection
+    Vector amax, amin;
+    GetAxisAlignedBounding(&amax, &amin);
+    if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, segment)) {
+        // The line segment could fail to intersect the bbox, but lie entirely
+        // within it and intersect the surface.
+        if(a.OutsideAndNotOn(amax, amin) && b.OutsideAndNotOn(amax, amin)) {
+            return;
+        }
+    } 
+   
+    if(*cnt > 2000) {
+        dbp("!!! too many subdivisions (level=%d)!", *level);
+        return;
+    }
+    (*cnt)++;
+
+    // If we might intersect, and the surface is small, then switch to Newton
+    // iterations.
+    double h = max(amax.x - amin.x,
+               max(amax.y - amin.y,
+                   amax.z - amin.z));
+    if(fabs(h) < SS.ChordTolMm()) {
+        Vector p = (amax.Plus(amin)).ScaledBy(0.5);
+        Inter inter;
+        sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), false);
+        if(sorig->PointIntersectingLine(a, b, &(inter.p.x), &(inter.p.y))) {
+            Vector p = sorig->PointAt(inter.p.x, inter.p.y);
+            // Debug check, verify that the point lies in both surfaces
+            // (which it ought to, since the surfaces should be coincident)
+            double u, v;
+            ClosestPointTo(p, &u, &v);
+            l->Add(&inter);
+        } else {
+            // Might not converge if line is almost tangent to surface...
+        }
+        return;
+    }
+
+    // But the surface is big, so split it, alternating by u and v
+    SSurface surf0, surf1;
+    SplitInHalf((*level & 1) == 0, &surf0, &surf1);
+
+    int nextLevel = (*level) + 1;
+    (*level) = nextLevel;
+    surf0.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, segment, sorig);
+    (*level) = nextLevel;
+    surf1.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, segment, sorig);
+}
+
 //-----------------------------------------------------------------------------
 // Find all points where a line through a and b intersects our surface, and
 // add them to the list. If seg is true then report only intersections that
@@ -119,55 +299,17 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     Vector ba = b.Minus(a);
     double bam = ba.Magnitude();
 
-    typedef struct {
-        int     tag;
-        Point2d p;
-    } Inter;
     List<Inter> inters;
     ZERO(&inters);
 
     // First, get all the intersections between the infinite ray and the
     // untrimmed surface.
-    int i, j;
-    for(i = 0; i < degm; i++) {
-        for(j = 0; j < degn; j++) {
-            // Intersect the ray with each face in the control polyhedron
-            Vector p00 = ctrl[i][j],
-                   p01 = ctrl[i][j+1],
-                   p10 = ctrl[i+1][j];
-
-            Vector u = p01.Minus(p00), v = p10.Minus(p00);
-
-            Vector n = (u.Cross(v)).WithMagnitude(1);
-            double d = n.Dot(p00);
-
-            bool parallel;
-            Vector pi =
-                Vector::AtIntersectionOfPlaneAndLine(n, d, a, b, &parallel);
-            if(parallel) continue;
-
-            double ui = (pi.Minus(p00)).Dot(u) / u.MagSquared(),
-                   vi = (pi.Minus(p00)).Dot(v) / v.MagSquared();
-
-            double tol = 1e-2;
-            if(ui < -tol || ui > 1 + tol || vi < -tol || vi > 1 + tol) {
-                continue;
-            }
-
-            Inter inter;
-            ClosestPointTo(pi, &inter.p.x, &inter.p.y, false);
-            if(PointIntersectingLine(a, b, &inter.p.x, &inter.p.y)) {
-                inters.Add(&inter);
-            } else {
-                // No convergence; but this might not be an error, since
-                // the line can intersect the convex hull more times than
-                // it intersects the surface itself.
-            }
-        }
-    }
+    int cnt = 0, level = 0;
+    AllPointsIntersectingUntrimmed(a, b, &cnt, &level, &inters, seg, this);
 
     // Remove duplicate intersection points
     inters.ClearTags();
+    int i, j;
     for(i = 0; i < inters.n; i++) {
         for(j = i + 1; j < inters.n; j++) {
             if(inters.elem[i].p.Equals(inters.elem[j].p)) {
@@ -246,11 +388,6 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         bool onEdge = false;
         edge_inters = 0;
 
-        if(FLAG) {
-            dbp("inters=%d cnt=%d", l.n, cnt);
-            SS.nakedEdges.AddEdge(p, p.Plus(ray.WithMagnitude(50)));
-        }
-
         SInter *si;
         for(si = l.First(); si; si = l.NextAfter(si)) {
             double t = ((si->p).Minus(p)).DivPivoting(ray);
@@ -258,8 +395,6 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
                 // wrong side, doesn't count
                 continue;
             }
-
-            if(FLAG) SS.nakedEdges.AddEdge(p, si->p);
 
             double d = ((si->p).Minus(p)).Magnitude();
 

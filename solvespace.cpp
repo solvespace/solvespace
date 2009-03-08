@@ -177,6 +177,9 @@ double SolveSpace::StringToMm(char *str) {
         return atof(str);
     }
 }
+double SolveSpace::ChordTolMm(void) {
+    return SS.chordTol / SS.GW.scale;
+}
 
 
 void SolveSpace::AfterNewFile(void) {

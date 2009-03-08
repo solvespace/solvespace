@@ -194,8 +194,22 @@ public:
                           SShell *into);
     void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                           SShell *agnstA, SShell *agnstB, SShell *into);
+    typedef struct {
+        int     tag;
+        Point2d p;
+    } Inter;
+    void WeightControlPoints(void);
+    void UnWeightControlPoints(void);
+    void CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij);
+    void BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
+                                              SSurface *b, int b_ij);
+    void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
                                     List<SInter> *l, bool seg, bool trimmed);
+    void AllPointsIntersectingUntrimmed(Vector a, Vector b,
+                                            int *cnt, int *level,
+                                            List<Inter> *l, bool segment,
+                                            SSurface *sorig);
 
     void ClosestPointTo(Vector p, double *u, double *v, bool converge=true);
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v);

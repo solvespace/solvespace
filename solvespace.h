@@ -31,7 +31,7 @@ inline double WRAP_NOT_0(double v, double n) {
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 
-#define LENGTH_EPS      (1e-7)
+#define LENGTH_EPS      (1e-6)
 #define VERY_POSITIVE   (1e10)
 #define VERY_NEGATIVE   (-1e10)
 
@@ -448,6 +448,7 @@ public:
     char *MmToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(char *s);
+    double ChordTolMm(void);
 
     // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);

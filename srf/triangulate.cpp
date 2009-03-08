@@ -299,7 +299,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
                     bestEar = ear;
                     bestChordTol = tol;
                 }
-                if(bestChordTol < 0.1*(SS.chordTol / SS.GW.scale)) {
+                if(bestChordTol < 0.1*SS.ChordTolMm()) {
                     break;
                 }
             }
