@@ -490,7 +490,7 @@ done:
                 (r.bottom - r.top), TRUE);
             // If the window is growing, then the scrollbar position may
             // be moving, so it's as if we're dragging the scrollbar.
-            HandleTextWindowScrollBar(0, 0);
+            HandleTextWindowScrollBar(-1, -1);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
         }
