@@ -15,8 +15,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
     sc.Clear();
    
-/*
-    if(sb->deg == 1) {
+    if(0 && sb->deg == 1) {
         dbp(" ");
         Vector *prev = NULL, *v;
         dbp("split.pts.n =%d", split.pts.n);
@@ -26,7 +25,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
             }
             prev = v;
         }
-    } */
+    }
 
     split.source = SCurve::FROM_INTERSECTION;
     into->curve.AddAndAssignId(&split);
@@ -44,8 +43,68 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         return;
     }
 
-    if((degm == 1 && degn == 1 && b->IsExtrusion(NULL, NULL)) ||
-       (b->degm == 1 && b->degn == 1 && this->IsExtrusion(NULL, NULL)))
+    if(degm == 1 && degn == 1 && b->degm == 1 && b->degn == 1) {
+        // Line-line intersection; it's a plane or nothing.
+        Vector na = NormalAt(0, 0).WithMagnitude(1),
+               nb = b->NormalAt(0, 0).WithMagnitude(1);
+        double da = na.Dot(PointAt(0, 0)),
+               db = nb.Dot(b->PointAt(0, 0));
+
+        Vector dl = na.Cross(nb);
+        if(dl.Magnitude() < LENGTH_EPS) return; // parallel planes
+        dl = dl.WithMagnitude(1);
+        Vector p = Vector::AtIntersectionOfPlanes(na, da, nb, db);
+
+        // Trim it to the region 0 <= {u,v} <= 1 for each plane; not strictly
+        // necessary, since line will be split and excess edges culled, but
+        // this improves speed and robustness.
+        int i;
+        double tmax = VERY_POSITIVE, tmin = VERY_NEGATIVE;
+        for(i = 0; i < 2; i++) {
+            SSurface *s = (i == 0) ? this : b;
+            Vector tu, tv;
+            s->TangentsAt(0, 0, &tu, &tv);
+
+            double up, vp, ud, vd;
+            s->ClosestPointTo(p, &up, &vp);
+            ud = (dl.Dot(tu)) / tu.MagSquared();
+            vd = (dl.Dot(tv)) / tv.MagSquared();
+
+            // so u = up + t*ud
+            //    v = vp + t*vd
+            if(ud > LENGTH_EPS) {
+                tmin = max(tmin, -up/ud);
+                tmax = min(tmax, (1 - up)/ud);
+            } else if(ud < -LENGTH_EPS) {
+                tmax = min(tmax, -up/ud);
+                tmin = max(tmin, (1 - up)/ud);
+            } else {
+                if(up < -LENGTH_EPS || up > 1 + LENGTH_EPS) {
+                    // u is constant, and outside [0, 1]
+                    tmax = VERY_NEGATIVE;
+                }
+            }
+            if(vd > LENGTH_EPS) {
+                tmin = max(tmin, -vp/vd);
+                tmax = min(tmax, (1 - vp)/vd);
+            } else if(vd < -LENGTH_EPS) {
+                tmax = min(tmax, -vp/vd);
+                tmin = max(tmin, (1 - vp)/vd);
+            } else {
+                if(vp < -LENGTH_EPS || vp > 1 + LENGTH_EPS) {
+                    // v is constant, and outside [0, 1]
+                    tmax = VERY_NEGATIVE;
+                }
+            }
+        }
+
+        if(tmax > tmin) {
+            SBezier bezier = SBezier::From(p.Plus(dl.ScaledBy(tmin)),
+                                           p.Plus(dl.ScaledBy(tmax)));
+            AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+        }
+    } else if((degm == 1 && degn == 1 && b->IsExtrusion(NULL, NULL)) ||
+              (b->degm == 1 && b->degn == 1 && this->IsExtrusion(NULL, NULL)))
     {
         // The intersection between a plane and a surface of extrusion
         SSurface *splane, *sext;
@@ -95,10 +154,6 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         } else {
             // Direction of extrusion is not parallel to plane; so
             // intersection is projection of extruded curve into our plane.
-            // If both curves are planes, then we could do it either way;
-            // so choose the one that generates the shorter curve.
-            // XXX TODO
-
             int i;
             for(i = 0; i <= bezier.deg; i++) {
                 Vector p0 = bezier.ctrl[i],
@@ -114,6 +169,64 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
     // need to implement general numerical surface intersection for tough
     // cases, just giving up for now
+}
+
+
+double SSurface::DepartureFromCoplanar(void) {
+    int i, j;
+    int ia, ja, ib, jb, ic, jc;
+    double best;
+
+    // Grab three points to define a plane; first choose (0, 0) arbitrarily.
+    ia = ja = 0;
+    // Then the point farthest from pt a.
+    best = VERY_NEGATIVE;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            if(i == ia && j == ja) continue;
+
+            double dist = (ctrl[i][j]).Minus(ctrl[ia][ja]).Magnitude();
+            if(dist > best) {
+                best = dist;
+                ib = i;
+                jb = j;
+            }
+        }
+    }
+    // Then biggest magnitude of ab cross ac.
+    best = VERY_NEGATIVE;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            if(i == ia && j == ja) continue;
+            if(i == ib && j == jb) continue;
+
+            double mag =
+                ((ctrl[ia][ja].Minus(ctrl[ib][jb]))).Cross(
+                 (ctrl[ia][ja].Minus(ctrl[i ][j ]))).Magnitude();
+            if(mag > best) {
+                best = mag;
+                ic = i;
+                jc = j;
+            }
+        }
+    }
+
+    Vector n = ((ctrl[ia][ja].Minus(ctrl[ib][jb]))).Cross(
+                (ctrl[ia][ja].Minus(ctrl[ic][jc])));
+    n = n.WithMagnitude(1);
+    double d = (ctrl[ia][ja]).Dot(n);
+
+    // Finally, calculate the deviation from each point to the plane.
+    double farthest = VERY_NEGATIVE;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            double dist = fabs(n.Dot(ctrl[i][j]) - d);
+            if(dist > farthest) {
+                farthest = dist;
+            }
+        }
+    }
+    return farthest;
 }
 
 void SSurface::WeightControlPoints(void) {
@@ -250,16 +363,14 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
    
     if(*cnt > 2000) {
         dbp("!!! too many subdivisions (level=%d)!", *level);
+        dbp("degm = %d degn = %d", degm, degn);
         return;
     }
     (*cnt)++;
 
     // If we might intersect, and the surface is small, then switch to Newton
     // iterations.
-    double h = max(amax.x - amin.x,
-               max(amax.y - amin.y,
-                   amax.z - amin.z));
-    if(fabs(h) < SS.ChordTolMm()) {
+    if(DepartureFromCoplanar() < 0.2*SS.ChordTolMm()) {
         Vector p = (amax.Plus(amin)).ScaledBy(0.5);
         Inter inter;
         sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), false);
@@ -302,10 +413,32 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     List<Inter> inters;
     ZERO(&inters);
 
-    // First, get all the intersections between the infinite ray and the
-    // untrimmed surface.
-    int cnt = 0, level = 0;
-    AllPointsIntersectingUntrimmed(a, b, &cnt, &level, &inters, seg, this);
+    // All the intersections between the line and the surface; either special
+    // cases that we can quickly solve in closed form, or general numerical.
+    Vector center, axis;
+    double radius, dtheta;
+    if(degm == 1 && degn == 1) {
+        // Against a plane, easy.
+        Vector n = NormalAt(0, 0).WithMagnitude(1);
+        double d = n.Dot(PointAt(0, 0));
+        // Trim to line segment now if requested, don't generate points that
+        // would just get discarded later.
+        if(!seg ||
+           (n.Dot(a) > d + LENGTH_EPS && n.Dot(b) < d - LENGTH_EPS) ||
+           (n.Dot(b) > d + LENGTH_EPS && n.Dot(a) < d - LENGTH_EPS))
+        {
+            Vector p = Vector::AtIntersectionOfPlaneAndLine(n, d, a, b, NULL);
+            Inter inter;
+            ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
+            inters.Add(&inter);
+        }
+    } else if(IsCylinder(&center, &axis, &radius, &dtheta) && 0) {
+        // XXX, cylinder is easy in closed form
+    } else {
+        // General numerical solution by subdivision, fallback
+        int cnt = 0, level = 0;
+        AllPointsIntersectingUntrimmed(a, b, &cnt, &level, &inters, seg, this);
+    }
 
     // Remove duplicate intersection points
     inters.ClearTags();

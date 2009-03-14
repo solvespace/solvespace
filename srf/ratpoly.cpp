@@ -50,7 +50,42 @@ static double Bernstein(int k, int deg, double t)
 
 double BernsteinDerivative(int k, int deg, double t)
 {
-    return deg*(Bernstein(k-1, deg-1, t) - Bernstein(k, deg-1, t));
+    switch(deg) {
+        case 0:
+            return 0;
+            break;
+
+        case 1:
+            if(k == 0) {
+                return -1;
+            } else if(k = 1) {
+                return 1;
+            }
+            break;
+
+        case 2:
+            if(k == 0) {
+                return -2 + 2*t;
+            } else if(k == 1) {
+                return 2 - 4*t;
+            } else if(k == 2) {
+                return 2*t;
+            }
+            break;
+
+        case 3:
+            if(k == 0) {
+                return -3 + 6*t - 3*t*t;
+            } else if(k == 1) {
+                return 3 - 12*t + 9*t*t;
+            } else if(k == 2) {
+                return 6*t - 9*t*t;
+            } else if(k == 3) {
+                return 3*t*t;
+            }
+            break;
+    }
+    oops();
 }
 
 SBezier SBezier::From(Vector p0, Vector p1) {
@@ -415,6 +450,41 @@ bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
         of->deg = degm;
         *alongp = along;
     }
+    return true;
+}
+
+bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
+                             double *dtheta)
+{
+    SBezier sb;
+    if(!IsExtrusion(&sb, axis)) return false;
+    if(sb.deg != 2) return false;
+
+    Vector t0 = (sb.ctrl[0]).Minus(sb.ctrl[1]),
+           t2 = (sb.ctrl[2]).Minus(sb.ctrl[1]),
+           r0 = axis->Cross(t0),
+           r2 = axis->Cross(t2);
+
+    *center = Vector::AtIntersectionOfLines(sb.ctrl[0], (sb.ctrl[0]).Plus(r0),
+                                            sb.ctrl[2], (sb.ctrl[2]).Plus(r2),
+                                            NULL, NULL, NULL);
+
+    double rd0 = center->Minus(sb.ctrl[0]).Magnitude(),
+           rd2 = center->Minus(sb.ctrl[2]).Magnitude();
+    if(fabs(rd0 - rd2) > LENGTH_EPS) return false;
+
+    Vector u = r0.WithMagnitude(1),
+           v = (axis->Cross(u)).WithMagnitude(1);
+    Point2d c2  = center->Project2d(u, v),
+            pa2 = (sb.ctrl[0]).Project2d(u, v).Minus(c2),
+            pb2 = (sb.ctrl[2]).Project2d(u, v).Minus(c2);
+    
+    double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
+           thetab = atan2(pb2.y, pb2.x);
+    *dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
+
+    if(fabs(sb.weight[1] - cos(*dtheta/2)) > LENGTH_EPS) return false;
+
     return true;
 }
 

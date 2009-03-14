@@ -672,6 +672,11 @@ void TextWindow::ShowConfiguration(void) {
         (SS.drawBackFaces ? "" : "yes"), (SS.drawBackFaces ? "yes" : ""),
         &ScreenChangeBackFaces,
         (!SS.drawBackFaces ? "" : "no"), (!SS.drawBackFaces ? "no" : ""));
+    
+    Printf(false, "");
+    Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));
+    Printf(false, " %Ft   renderer %E%s", glGetString(GL_RENDERER));
+    Printf(false, " %Ft   version  %E%s", glGetString(GL_VERSION));
 }
 
 //-----------------------------------------------------------------------------

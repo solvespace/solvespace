@@ -95,6 +95,8 @@ class Point2d {
 public:
     double x, y;
 
+    static Point2d From(double x, double y);
+
     Point2d Plus(Point2d b);
     Point2d Minus(Point2d b);
     Point2d ScaledBy(double s);

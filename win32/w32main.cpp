@@ -54,9 +54,10 @@ void dbp(char *str, ...)
     va_list f;
     static char buf[1024*50];
     va_start(f, str);
-    vsprintf(buf, str, f);
-    OutputDebugString(buf);
+    _vsnprintf(buf, sizeof(buf), str, f);
     va_end(f);
+
+    OutputDebugString(buf);
 }
 
 
@@ -603,7 +604,7 @@ static void CreateGlContext(void)
     HDC hdc = GetDC(GraphicsWnd);
 
     PIXELFORMATDESCRIPTOR pfd;
-    int pixelFormat; 
+    int pixelFormat;
 
     memset(&pfd, 0, sizeof(pfd));
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); 
@@ -623,7 +624,7 @@ static void CreateGlContext(void)
     if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
 
     GraphicsHpgl = wglCreateContext(hdc); 
-    wglMakeCurrent(hdc, GraphicsHpgl); 
+    wglMakeCurrent(hdc, GraphicsHpgl);
 
     // Create a bitmap font in a display list, for DrawWithBitmapFont().
     SelectObject(hdc, FixedFont);

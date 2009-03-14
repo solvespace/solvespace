@@ -716,6 +716,12 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
     return Vector::From(detx/det, dety/det, detz/det);
 }
 
+Point2d Point2d::From(double x, double y) {
+    Point2d r;
+    r.x = x; r.y = y;
+    return r;
+}
+
 Point2d Point2d::Plus(Point2d b) {
     Point2d r;
     r.x = x + b.x;

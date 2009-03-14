@@ -73,7 +73,6 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
                 double t = (pi->p.Minus(LineStart)).DivPivoting(LineDirection);
-                dbp("t=%.3f", t);
                 // On-edge intersection will generate same split point for
                 // both surfaces, so don't create zero-length edge.
                 if(!prev.Equals(pi->p)) {

@@ -203,6 +203,7 @@ public:
     void CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij);
     void BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
                                               SSurface *b, int b_ij);
+    double DepartureFromCoplanar(void);
     void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
                                     List<SInter> *l, bool seg, bool trimmed);
@@ -221,6 +222,7 @@ public:
     bool CoincidentWithPlane(Vector n, double d);
     bool CoincidentWith(SSurface *ss, bool sameNormal);
     bool IsExtrusion(SBezier *of, Vector *along);
+    bool IsCylinder(Vector *center, Vector *axis, double *r, double *dtheta);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);

@@ -1,10 +1,10 @@
 
 marching algorithm for surface intersection
 surfaces of revolution (lathed)
-fix surface-line intersection
-cylinder-line and plane-line special cases
+cylinder-line special cases
 exact boundaries when near pwl trim
 step and repeat rotate/translate
+tangent intersections
 short pwl edge avoidance
 faces
 take consistent pwl with coincident faces
