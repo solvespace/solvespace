@@ -144,15 +144,10 @@ Vector SBezier::PointAt(double t) {
 }
 
 void SBezier::MakePwlInto(List<Vector> *l) {
-    MakePwlInto(l, Vector::From(0, 0, 0));
+    l->Add(&(ctrl[0]));
+    MakePwlWorker(l, 0.0, 1.0);
 }
-void SBezier::MakePwlInto(List<Vector> *l, Vector offset) {
-    Vector p = (ctrl[0]).Plus(offset);
-    l->Add(&p);
-
-    MakePwlWorker(l, 0.0, 1.0, offset);
-}
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, Vector off) {
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb) {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
 
@@ -169,12 +164,11 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, Vector off) {
     double step = 1.0/SS.maxSegments;
     if((tb - ta) < step || d < SS.ChordTolMm()) {
         // A previous call has already added the beginning of our interval.
-        pb = pb.Plus(off);
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm, off);
-        MakePwlWorker(l, tm, tb, off);
+        MakePwlWorker(l, ta, tm);
+        MakePwlWorker(l, tm, tb);
     }
 }
 
@@ -204,6 +198,18 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
         ret.ctrl[i] = (q.Rotate(ret.ctrl[i])).Plus(t);
     }
     return ret;
+}
+
+bool SBezier::Equals(SBezier *b) {
+    // We just test of identical degree and control points, even though two
+    // curves could still be coincident (even sharing endpoints).
+    if(deg != b->deg) return false;
+    int i;
+    for(i = 0; i <= deg; i++) {
+        if(!(ctrl[i]).Equals(b->ctrl[i])) return false;
+        if(fabs(weight[i] - b->weight[i]) > LENGTH_EPS) return false;
+    }
+    return true;
 }
 
 void SBezierList::Clear(void) {
@@ -375,6 +381,8 @@ SCurve SCurve::FromTransformationOf(SCurve *a, Vector t, Quaternion q) {
     ret.h = a->h;
     ret.isExact = a->isExact;
     ret.exact = (a->exact).TransformedBy(t, q);
+    ret.surfA = a->surfA;
+    ret.surfB = a->surfB;
     
     Vector *p;
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
@@ -454,7 +462,7 @@ bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
 }
 
 bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
-                             double *dtheta)
+                             Vector *start, Vector *finish)
 {
     SBezier sb;
     if(!IsExtrusion(&sb, axis)) return false;
@@ -480,10 +488,13 @@ bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
             pb2 = (sb.ctrl[2]).Project2d(u, v).Minus(c2);
     
     double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
-           thetab = atan2(pb2.y, pb2.x);
-    *dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
+           thetab = atan2(pb2.y, pb2.x),
+           dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
 
-    if(fabs(sb.weight[1] - cos(*dtheta/2)) > LENGTH_EPS) return false;
+    if(fabs(sb.weight[1] - cos(dtheta/2)) > LENGTH_EPS) return false;
+
+    *start  = (sb.ctrl[0]).Minus(*center);
+    *finish = (sb.ctrl[2]).Minus(*center);
 
     return true;
 }
@@ -743,10 +754,19 @@ void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
     }
 }
 
-void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
+void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
+                             SShell *useCurvesFrom) {
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
         SCurve *sc = shell->curve.FindById(stb->curve);
+
+        // We have the option to use the curves from another shell; this
+        // is relevant when generating the coincident edges while doing the
+        // Booleans, since the curves from the output shell will be split
+        // against any intersecting surfaces (and the originals aren't).
+        if(useCurvesFrom) {
+            sc = useCurvesFrom->curve.FindById(sc->newH);
+        }
 
         Vector prev, prevuv, ptuv;
         bool inCurve = false, empty = true;
@@ -783,9 +803,8 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv) {
             if(pt->Equals(stb->start)) inCurve = true;
             if(pt->Equals(stb->finish)) inCurve = false;
         }
-        if(inCurve || empty) {
-            dbp("trim was empty or unterminated");
-        }
+        if(inCurve) dbp("trim was unterminated");
+        if(empty)   dbp("trim was empty");
     }
 }
 
@@ -910,13 +929,17 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
             // Translate the curve by t0 and t1 to produce two trim curves
             SCurve sc;
             ZERO(&sc);
-            sb->MakePwlInto(&(sc.pts), t0);
+            sc.isExact = true;
+            sc.exact = sb->TransformedBy(t0, Quaternion::IDENTITY);
+            (sc.exact).MakePwlInto(&(sc.pts));
             sc.surfA = hs0;
             sc.surfB = hsext;
             hSCurve hc0 = curve.AddAndAssignId(&sc);
 
             ZERO(&sc);
-            sb->MakePwlInto(&(sc.pts), t1);
+            sc.isExact = true;
+            sc.exact = sb->TransformedBy(t1, Quaternion::IDENTITY);
+            (sc.exact).MakePwlInto(&(sc.pts));
             sc.surfA = hs1;
             sc.surfB = hsext;
             hSCurve hc1 = curve.AddAndAssignId(&sc);
@@ -936,10 +959,10 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
 
             // And form the trim line
             Vector pt = sb->Finish();
-            Vector p0 = pt.Plus(t0), p1 = pt.Plus(t1);
             ZERO(&sc);
-            sc.pts.Add(&p0);
-            sc.pts.Add(&p1);
+            sc.isExact = true;
+            sc.exact = SBezier::From(pt.Plus(t0), pt.Plus(t1));
+            (sc.exact).MakePwlInto(&(sc.pts));
             hSCurve hl = curve.AddAndAssignId(&sc);
             // save this for later
             TrimLine tl;
@@ -969,10 +992,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
 }
 
 void SShell::MakeFromCopyOf(SShell *a) {
-    Vector t = Vector::From(0, 0, 0);
-    Quaternion q = Quaternion::From(1, 0, 0, 0);
-
-    MakeFromTransformationOf(a, t, q);
+    MakeFromTransformationOf(a, Vector::From(0, 0, 0), Quaternion::IDENTITY);
 }
 
 void SShell::MakeFromTransformationOf(SShell *a, Vector t, Quaternion q) {

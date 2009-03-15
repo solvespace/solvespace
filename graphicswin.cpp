@@ -307,8 +307,8 @@ void GraphicsWindow::ZoomToFit(void) {
         if(dy != 0) scaley = 0.9*height/dy;
         scale = min(scalex, scaley);
 
-        scale = min(100, scale);
-        scale = max(0.001, scale);
+        scale = min(300, scale);
+        scale = max(0.003, scale);
     }
 
     // Then do another run, considering the perspective.

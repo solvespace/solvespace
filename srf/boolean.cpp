@@ -302,8 +302,12 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     SEdgeList sameNormal, oppositeNormal;
     ZERO(&sameNormal);
     ZERO(&oppositeNormal);
-    agnst->MakeCoincidentEdgesInto(&ret, true, &sameNormal);
-    agnst->MakeCoincidentEdgesInto(&ret, false, &oppositeNormal);
+    agnst->MakeCoincidentEdgesInto(&ret, true, &sameNormal, into);
+    agnst->MakeCoincidentEdgesInto(&ret, false, &oppositeNormal, into);
+    // and cull parallel or anti-parallel pairs, which may occur if multiple
+    // surfaces are coincident with ours
+    sameNormal.CullExtraneousEdges();
+    oppositeNormal.CullExtraneousEdges();
     // and build the trees for quick in-polygon testing
     SBspUv *sameBsp = SBspUv::From(&sameNormal);
     SBspUv *oppositeBsp = SBspUv::From(&oppositeNormal);
@@ -318,9 +322,9 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
             if(sc->source != SCurve::FROM_INTERSECTION) continue;
             if(opA) {
-                if(sc->surfB.v != h.v || sc->surfA.v != ss->h.v) continue;
-            } else {
                 if(sc->surfA.v != h.v || sc->surfB.v != ss->h.v) continue;
+            } else {
+                if(sc->surfB.v != h.v || sc->surfA.v != ss->h.v) continue;
             }
            
             int i;
@@ -400,14 +404,9 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         } else if(c_shell == SShell::EDGE_TANGENT) {
             continue;
         }
-    
+
         if(KeepEdge(type, opA, tag)) {
             final.AddEdge(se->a, se->b, se->auxA, se->auxB);
-        } else {
-            if(I == 1) {
-                dbp("orig vs. shell: %d (l=%g)",
-                    c_shell, ((se->b).Minus(se->a)).Magnitude());
-            }
         }
     }
 
@@ -436,32 +435,22 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         }
     }
 
-    // Cull extraneous edges; duplicates or anti-parallel pairs
-    final.l.ClearTags();
-    int i, j;
-    for(i = 0; i < final.l.n; i++) {
-        se = &(final.l.elem[i]);
-        for(j = i+1; j < final.l.n; j++) {
-            SEdge *set = &(final.l.elem[j]);
-            if((set->a).Equals(se->a) && (set->b).Equals(se->b)) {
-                // Two parallel edges exist; so keep only the first one. This
-                // can happen if our surface intersects the shell at an edge,
-                // so that we get two copies of the intersection edge.
-                set->tag = 1;
-            }
-            if((set->a).Equals(se->b) && (set->b).Equals(se->a)) {
-                // Two anti-parallel edges exist; so keep neither.
-                se->tag = 1;
-                set->tag = 1;
-            }
-        }
-    }
-    final.l.RemoveTagged();
-
-//    if(I == 0) DEBUGEDGELIST(&final, &ret);
+    // Cull extraneous edges; duplicates or anti-parallel pairs. In particular,
+    // we can get duplicate edges if our surface intersects the other shell
+    // at an edge, so that both surfaces intersect coincident (and both
+    // generate an intersection edge).
+    final.CullExtraneousEdges();
 
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final);
+
+    SPolygon poly;
+    ZERO(&poly);
+    final.l.ClearTags();
+    if(!final.AssemblePolygon(&poly, NULL, true)) {
+        DEBUGEDGELIST(&inter, &ret);
+    }
+    poly.Clear();
 
     sameNormal.Clear();
     oppositeNormal.Clear();
@@ -478,20 +467,20 @@ void SShell::CopySurfacesTrimAgainst(SShell *against, SShell *into,
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         SSurface ssn;
         ssn = ss->MakeCopyTrimAgainst(against, this, into, type, opA);
-        into->surface.AddAndAssignId(&ssn);
+        ss->newH = into->surface.AddAndAssignId(&ssn);
         I++;
     }
 }
 
 void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
     SSurface *sa;
-    for(sa = agnst->surface.First(); sa; sa = agnst->surface.NextAfter(sa)) {
+    for(sa = surface.First(); sa; sa = surface.NextAfter(sa)) {
         SSurface *sb;
-        for(sb = surface.First(); sb; sb = surface.NextAfter(sb)) {
+        for(sb = agnst->surface.First(); sb; sb = agnst->surface.NextAfter(sb)){
             // Intersect every surface from our shell against every surface
             // from agnst; this will add zero or more curves to the curve
             // list for into.
-            sa->IntersectAgainst(sb, agnst, this, into);
+            sa->IntersectAgainst(sb, this, agnst, into);
         }
         FLAG++;
     }
@@ -517,15 +506,32 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     // the surfaces in B (which is all of the intersection curves).
     a->MakeIntersectionCurvesAgainst(b, this);
     
-    I = 100;
     if(b->surface.n == 0 || a->surface.n == 0) {
         // Then trim and copy the surfaces
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
-        I = 0;
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
+    }
+
+    // Now that we've copied the surfaces, we know their new hSurfaces, so
+    // rewrite the curves to refer to the surfaces by their handles in the
+    // result.
+    SCurve *sc;
+    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
+        if(sc->source == SCurve::FROM_A) {
+            sc->surfA = a->surface.FindById(sc->surfA)->newH;
+            sc->surfB = a->surface.FindById(sc->surfB)->newH;
+        } else if(sc->source == SCurve::FROM_B) {
+            sc->surfA = b->surface.FindById(sc->surfA)->newH;
+            sc->surfB = b->surface.FindById(sc->surfB)->newH;
+        } else if(sc->source == SCurve::FROM_INTERSECTION) {
+            sc->surfA = a->surface.FindById(sc->surfA)->newH;
+            sc->surfB = b->surface.FindById(sc->surfB)->newH;
+        } else {
+            oops();
+        }
     }
 
     // And clean up the piecewise linear things we made as a calculation aid
@@ -682,6 +688,13 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
 }
 
 int SBspUv::ClassifyEdge(Point2d ea, Point2d eb) {
-    return ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb);
+    int ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb);
+    if(ret == EDGE_OTHER) {
+        // Perhaps the edge is tangent at its midpoint (and we screwed up
+        // somewhere earlier and failed to split it); try a different
+        // point on the edge.
+        ret = ClassifyPoint(ea.Plus((eb.Minus(ea)).ScaledBy(0.294)), eb);
+    }
+    return ret;
 }
 

@@ -55,6 +55,12 @@ void Group::GenerateShellForStepAndRepeat(void) {
     Group *src = SS.GetGroup(opA);
     SShell *srcs = &(src->thisShell); // the shell to step and repeat
 
+    SShell workA, workB;
+    ZERO(&workA);
+    ZERO(&workB);
+    SShell *soFar = &workA, *scratch = &workB;
+    soFar->MakeFromCopyOf(src->PreviousGroupShell());
+
     int n = (int)valA, a0 = 0;
     if(subtype == ONE_SIDED && skipFirst) {
         a0++; n++;
@@ -64,25 +70,37 @@ void Group::GenerateShellForStepAndRepeat(void) {
         int ap = a*2 - (subtype == ONE_SIDED ? 0 : (n-1));
         int remap = (a == (n - 1)) ? REMAP_LAST : a;
 
+        SShell transd;
+        ZERO(&transd);
         if(type == TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
-
+            Quaternion q = Quaternion::From(1, 0, 0, 0);
+            transd.MakeFromTransformationOf(srcs, trans, q);
         } else {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             double theta = ap * SS.GetParam(h.param(3))->val;
             double c = cos(theta), s = sin(theta);
             Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
-
+            // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
+            transd.MakeFromTransformationOf(srcs,
+                trans.Minus(q.Rotate(trans)), q);
         }
 
         if(src->meshCombine == COMBINE_AS_DIFFERENCE) {
-
+            scratch->MakeFromDifferenceOf(soFar, &transd);
         } else {
-
+            scratch->MakeFromUnionOf(soFar, &transd);
         }
+        SWAP(SShell *, scratch, soFar);
+
+        scratch->Clear();
+        transd.Clear();
     }
+
+    runningShell.Clear();
+    runningShell = *soFar;
 }
 
 void Group::GenerateShellAndMesh(void) {
@@ -105,6 +123,55 @@ void Group::GenerateShellAndMesh(void) {
         }
         
         thisShell.MakeFromExtrusionOf(&(src->bezierLoopSet), tbot, ttop, color);
+        Vector onOrig = src->bezierLoopSet.point;
+        // And for any plane faces, annotate the model with the entity for
+        // that face, so that the user can select them with the mouse.
+        int i;
+        for(i = 0; i < thisShell.surface.n; i++) {
+            SSurface *ss = &(thisShell.surface.elem[i]);
+            hEntity face = Entity::NO_ENTITY;
+
+            Vector p = ss->PointAt(0, 0),
+                   n = ss->NormalAt(0, 0).WithMagnitude(1);
+            double d = n.Dot(p);
+
+            if(i == 0 || i == 1) {
+                // These are the top and bottom of the shell.
+                if(fabs((onOrig.Plus(ttop)).Dot(n) - d) < LENGTH_EPS) {
+                    face = Remap(Entity::NO_ENTITY, REMAP_TOP);
+                    ss->face = face.v;
+                }
+                if(fabs((onOrig.Plus(tbot)).Dot(n) - d) < LENGTH_EPS) {
+                    face = Remap(Entity::NO_ENTITY, REMAP_BOTTOM);
+                    ss->face = face.v;
+                }
+                continue;
+            }
+
+            // So these are the sides
+            if(ss->degm != 1 || ss->degn != 1) continue;
+
+            Entity *e;
+            for(e = SS.entity.First(); e; e = SS.entity.NextAfter(e)) {
+                if(e->group.v != opA.v) continue;
+                if(e->type != Entity::LINE_SEGMENT) continue;
+
+                Vector a = SS.GetEntity(e->point[0])->PointGetNum(),
+                       b = SS.GetEntity(e->point[1])->PointGetNum();
+                a = a.Plus(ttop);
+                b = b.Plus(ttop);
+                // Could get taken backwards, so check all cases.
+                if((a.Equals(ss->ctrl[0][0]) && b.Equals(ss->ctrl[1][0])) ||
+                   (b.Equals(ss->ctrl[0][0]) && a.Equals(ss->ctrl[1][0])) ||
+                   (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
+                   (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
+                {
+                    face = Remap(e->h, REMAP_LINE_TO_FACE);
+                    ss->face = face.v;
+                    break;
+                }
+            }
+        }
     } else if(type == LATHE) {
         Group *src = SS.GetGroup(opA);
 
@@ -138,7 +205,6 @@ void Group::GenerateShellAndMesh(void) {
         }
     }
 
-    runningMesh.Clear();
     runningShell.Clear();
 
     // If this group contributes no new mesh, then our running mesh is the
@@ -174,6 +240,7 @@ void Group::GenerateShellAndMesh(void) {
     }
 
 done:
+    runningMesh.Clear();
     runningShell.TriangulateInto(&runningMesh);
     emphEdges.Clear();
     if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {

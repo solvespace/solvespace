@@ -15,6 +15,8 @@ public:
     // a + (vx)*i + (vy)*j + (vz)*k
     double w, vx, vy, vz;
 
+    static const Quaternion IDENTITY;
+
     static Quaternion From(double w, double vx, double vy, double vz);
     static Quaternion From(hParam w, hParam vx, hParam vy, hParam vz);
     static Quaternion From(Vector u, Vector v);
@@ -54,8 +56,7 @@ public:
                                                bool *parallel);
     static Vector AtIntersectionOfPlanes(Vector na, double da,
                                          Vector nb, double db,
-                                         Vector nc, double dc,
-                                         bool *parallel);
+                                         Vector nc, double dc, bool *parallel);
 
     double Element(int i);
     bool Equals(Vector v, double tol=LENGTH_EPS);

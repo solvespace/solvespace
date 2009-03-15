@@ -3,17 +3,16 @@ marching algorithm for surface intersection
 surfaces of revolution (lathed)
 cylinder-line special cases
 exact boundaries when near pwl trim
-step and repeat rotate/translate
 tangent intersections
 short pwl edge avoidance
-faces
-take consistent pwl with coincident faces
 exact curve export (at least for dxf)
 hidden line removal from mesh
 line styles (color, thickness)
+assembly
 
 -----
 loop detection
 incremental regen of entities?
+IGES and STEP export
 
 

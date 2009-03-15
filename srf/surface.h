@@ -61,9 +61,9 @@ public:
     Vector PointAt(double t);
     Vector Start(void);
     Vector Finish(void);
+    bool Equals(SBezier *b);
     void MakePwlInto(List<Vector> *l);
-    void MakePwlInto(List<Vector> *l, Vector offset);
-    void MakePwlWorker(List<Vector> *l, double ta, double tb, Vector offset);
+    void MakePwlWorker(List<Vector> *l, double ta, double tb);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Reverse(void);
@@ -170,6 +170,10 @@ class SSurface {
 public:
     hSSurface       h;
 
+    // Same as newH for the curves; record what a surface gets renamed to
+    // when I copy things over.
+    hSSurface       newH;
+
     int             color;
     DWORD           face;
 
@@ -222,10 +226,12 @@ public:
     bool CoincidentWithPlane(Vector n, double d);
     bool CoincidentWith(SSurface *ss, bool sameNormal);
     bool IsExtrusion(SBezier *of, Vector *along);
-    bool IsCylinder(Vector *center, Vector *axis, double *r, double *dtheta);
+    bool IsCylinder(Vector *center, Vector *axis, double *r,
+            Vector *start, Vector *finish);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
-    void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv);
+    void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
+            SShell *useCurvesFrom=NULL);
     void MakeClassifyingBsp(SShell *shell);
     double ChordToleranceForEdge(Vector a, Vector b);
 
@@ -254,7 +260,7 @@ public:
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
                                 bool seg, bool trimmed);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
-                                 SEdgeList *el);
+                                 SEdgeList *el, SShell *useCurvesFrom);
     void CleanupAfterBoolean(void);
 
     static const int INSIDE            = 100;

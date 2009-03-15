@@ -222,6 +222,31 @@ intersects:
     return cnt;
 }
 
+//-----------------------------------------------------------------------------
+// Remove unnecessary edges: if two are anti-parallel then remove both, and if
+// two are parallel then remove one.
+//-----------------------------------------------------------------------------
+void SEdgeList::CullExtraneousEdges(void) {
+    l.ClearTags();
+    int i, j;
+    for(i = 0; i < l.n; i++) {
+        SEdge *se = &(l.elem[i]);
+        for(j = i+1; j < l.n; j++) {
+            SEdge *set = &(l.elem[j]);
+            if((set->a).Equals(se->a) && (set->b).Equals(se->b)) {
+                // Two parallel edges exist; so keep only the first one.
+                set->tag = 1;
+            }
+            if((set->a).Equals(se->b) && (set->b).Equals(se->a)) {
+                // Two anti-parallel edges exist; so keep neither.
+                se->tag = 1;
+                set->tag = 1;
+            }
+        }
+    }
+    l.RemoveTagged();
+}
+
 void SContour::AddPoint(Vector p) {
     SPoint sp;
     sp.tag = 0;

@@ -100,6 +100,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
     mat[15] = a44;
 }
 
+const Quaternion Quaternion::IDENTITY = { 1, 0, 0, 0 };
+
 Quaternion Quaternion::From(double w, double vx, double vy, double vz) {
     Quaternion q;
     q.w  = w;

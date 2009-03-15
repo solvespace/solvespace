@@ -7,13 +7,47 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
 {
     SCurve sc;
     ZERO(&sc);
+    // Important to keep the order of (surfA, surfB) consistent; when we later
+    // rewrite the identifiers, we rewrite surfA from A and surfB from B.
     sc.surfA = h;
     sc.surfB = srfB->h;
-    sb->MakePwlInto(&(sc.pts));
+    sc.exact = *sb;
+    sc.isExact = true;
 
-    // Now split the line where it intersects our existing surfaces
-    SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
-    sc.Clear();
+    // Now we have to piecewise linearize the curve. If there's already an
+    // identical curve in the shell, then follow that pwl exactly, otherwise
+    // calculate from scratch.
+    SCurve split, *existing = NULL, *se;
+    SBezier sbrev = *sb;
+    sbrev.Reverse();
+    bool backwards = false;
+    for(se = into->curve.First(); se; se = into->curve.NextAfter(se)) {
+        if(se->isExact) {
+            if(sb->Equals(&(se->exact))) {
+                existing = se;
+                break;
+            }
+            if(sbrev.Equals(&(se->exact))) {
+                existing = se;
+                backwards = true;
+                break;
+            }
+        }
+    }
+    if(existing) {
+        Vector *v;
+        for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
+            sc.pts.Add(v);
+        }
+        if(backwards) sc.pts.Reverse();
+        split = sc;
+        ZERO(&sc);
+    } else {
+        sb->MakePwlInto(&(sc.pts));
+        // and split the line where it intersects our existing surfaces
+        split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
+        sc.Clear();
+    }
    
     if(0 && sb->deg == 1) {
         dbp(" ");
@@ -26,6 +60,8 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
             prev = v;
         }
     }
+    // Nothing should be generating zero-len edges.
+    if((sb->Start()).Equals(sb->Finish())) oops();
 
     split.source = SCurve::FROM_INTERSECTION;
     into->curve.AddAndAssignId(&split);
@@ -98,7 +134,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             }
         }
 
-        if(tmax > tmin) {
+        if(tmax > tmin + LENGTH_EPS) {
             SBezier bezier = SBezier::From(p.Plus(dl.ScaledBy(tmin)),
                                            p.Plus(dl.ScaledBy(tmax)));
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
@@ -415,8 +451,8 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
     // All the intersections between the line and the surface; either special
     // cases that we can quickly solve in closed form, or general numerical.
-    Vector center, axis;
-    double radius, dtheta;
+    Vector center, axis, start, finish;
+    double radius;
     if(degm == 1 && degn == 1) {
         // Against a plane, easy.
         Vector n = NormalAt(0, 0).WithMagnitude(1);
@@ -432,7 +468,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
             ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
             inters.Add(&inter);
         }
-    } else if(IsCylinder(&center, &axis, &radius, &dtheta) && 0) {
+    } else if(IsCylinder(&center, &axis, &radius, &start, &finish) && 0) {
         // XXX, cylinder is easy in closed form
     } else {
         // General numerical solution by subdivision, fallback
@@ -564,8 +600,9 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         // then our ray always lies on edge, and that's okay. Otherwise
         // try again in a different random direction.
         if((edge_inters == 2) || !onEdge) break;
-        if(cnt++ > 20) {
+        if(cnt++ > 5) {
             dbp("can't find a ray that doesn't hit on edge!");
+            dbp("on edge = %d, edge_inters = %d", onEdge, edge_inters);
             break;
         }
     }
@@ -626,12 +663,12 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) {
 // the prototype surface.
 //-----------------------------------------------------------------------------
 void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
-                                     SEdgeList *el)
+                                     SEdgeList *el, SShell *useCurvesFrom)
 {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         if(proto->CoincidentWith(ss, sameNormal)) {
-            ss->MakeEdgesInto(this, el, false);
+            ss->MakeEdgesInto(this, el, false, useCurvesFrom);
         }
     }
 

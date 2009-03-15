@@ -26,6 +26,7 @@ public:
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                             SEdge *errorAt, bool keepDir);
     int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
+    void CullExtraneousEdges(void);
 };
 
 class SPoint {
