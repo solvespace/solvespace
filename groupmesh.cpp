@@ -88,6 +88,16 @@ void Group::GenerateShellForStepAndRepeat(void) {
                 trans.Minus(q.Rotate(trans)), q);
         }
 
+        // We need to rewrite any plane face entities to the transformed ones.
+        SSurface *ss;
+        for(ss = transd.surface.First(); ss; ss = transd.surface.NextAfter(ss)){
+            hEntity face = { ss->face };
+            if(face.v == Entity::NO_ENTITY.v) continue;
+
+            face = Remap(face, remap);
+            ss->face = face.v;
+        }
+
         if(src->meshCombine == COMBINE_AS_DIFFERENCE) {
             scratch->MakeFromDifferenceOf(soFar, &transd);
         } else {
