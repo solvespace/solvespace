@@ -88,6 +88,8 @@ public:
     static bool BoundingBoxIntersectsLine(Vector amax, Vector amin,
                                           Vector p0, Vector p1, bool segment);
     bool OutsideAndNotOn(Vector maxv, Vector minv);
+    Vector InPerspective(Vector u, Vector v, Vector n, 
+                         Vector origin, double cameraTan);
     Point2d Project2d(Vector u, Vector v);
     Point2d ProjectXy(void);
 };

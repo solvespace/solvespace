@@ -390,6 +390,30 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     return this;
 }
 
+void SBsp3::GenerateInPaintOrder(SMesh *m) {
+    if(!this) return;
+
+    // Doesn't matter which branch we take if the normal has zero z
+    // component, so don't need a separate case for that.
+    if(n.z < 0) {
+        pos->GenerateInPaintOrder(m);
+    } else {
+        neg->GenerateInPaintOrder(m);
+    }
+
+    SBsp3 *flip = this;
+    while(flip) {
+        m->AddTriangle(&(flip->tri));
+        flip = flip->more;
+    }
+
+    if(n.z < 0) {
+        neg->GenerateInPaintOrder(m);
+    } else {
+        pos->GenerateInPaintOrder(m);
+    }
+}
+
 void SBsp3::DebugDraw(void) {
     if(!this) return;
 

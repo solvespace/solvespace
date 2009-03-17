@@ -992,7 +992,9 @@ void GraphicsWindow::Paint(int w, int h) {
         glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
     }
 
-    GLfloat ambient[4] = { 0.4f, 0.4f, 0.4f, 1.0f };
+    GLfloat ambient[4] = { (float)SS.ambientIntensity,
+                           (float)SS.ambientIntensity,
+                           (float)SS.ambientIntensity, 1 };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 
     glxUnlockColor();

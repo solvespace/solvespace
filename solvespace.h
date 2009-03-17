@@ -346,15 +346,17 @@ public:
     static bool StringEndsIn(char *str, char *ending);
     static VectorFileWriter *ForFile(char *file);
 
-    void OutputPolygon(SPolygon *sp);
+    void Output(SEdgeList *sel, SMesh *sm);
 
     virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
+    virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
     void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -362,12 +364,14 @@ class EpsFileWriter : public VectorFileWriter {
 public:
     static double MmToPoints(double mm);
     void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
     void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -375,6 +379,7 @@ class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
     void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -430,6 +435,7 @@ public:
     int     modelColor[MODEL_COLORS];
     Vector  lightDir[2];
     double  lightIntensity[2];
+    double  ambientIntensity;
     double  chordTol;
     int     maxSegments;
     double  cameraTangent;
@@ -494,9 +500,10 @@ public:
     void ExportMeshTo(char *file);
     void ExportViewTo(char *file);
     void ExportSectionTo(char *file);
-    void ExportPolygon(SPolygon *sp, 
-                       Vector u, Vector v, Vector n, Vector origin,
-                       VectorFileWriter *out);
+    void ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
+                            Vector u, Vector v, Vector n, Vector origin,
+                                double cameraTan,
+                            VectorFileWriter *out);
 
     static void MenuAnalyze(int id);
     struct {

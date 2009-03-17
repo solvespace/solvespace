@@ -10,9 +10,13 @@ public:
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
 #endif
-#define REDf(v)     ((((v) >>  0) & 0xff) / 255.0f)
-#define GREENf(v)   ((((v) >>  8) & 0xff) / 255.0f)
-#define BLUEf(v)    ((((v) >> 16) & 0xff) / 255.0f)
+#define RGBf(r, g, b) RGB((int)(255*(r)), (int)(255*(g)), (int)(255*(b)))
+#define RED(v)      (((v) >>  0) & 0xff)
+#define GREEN(v)    (((v) >>  8) & 0xff)
+#define BLUE(v)     (((v) >> 16) & 0xff)
+#define REDf(v)     (RED  (v) / 255.0f)
+#define GREENf(v)   (GREEN(v) / 255.0f)
+#define BLUEf(v)    (BLUE (v) / 255.0f)
     typedef struct {
         char    c;
         int     color;

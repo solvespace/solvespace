@@ -535,6 +535,140 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter) {
     }
 }
 
+void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
+    SEdgeList seln;
+    ZERO(&seln);
+
+    Vector tn = tr->Normal().WithMagnitude(1);
+    double td = tn.Dot(tr->a);
+
+    // Consider front-facing triangles only
+    if(tn.z > LENGTH_EPS) {
+        // If the edge crosses our triangle's plane, then split into above
+        // and below parts.
+        SEdge *se;
+        for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            double da = (se->a).Dot(tn) - td,
+                   db = (se->b).Dot(tn) - td;
+            if((da < -LENGTH_EPS && db > LENGTH_EPS) ||
+               (db < -LENGTH_EPS && da > LENGTH_EPS))
+            {
+                Vector m = Vector::AtIntersectionOfPlaneAndLine(
+                                        tn, td,
+                                        se->a, se->b, NULL);
+                seln.AddEdge(m, se->b);
+                se->b = m;
+            }
+        }
+        for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
+            sel->AddEdge(se->a, se->b);
+        }
+        seln.Clear();
+
+        for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            Vector pt = ((se->a).Plus(se->b)).ScaledBy(0.5);
+            double dt = pt.Dot(tn) - td;
+            if(pt.Dot(tn) - td > -LENGTH_EPS) {
+                // Edge is in front of or on our plane (remember, tn.z > 0)
+                // so it is exempt from further splitting
+                se->auxA = 1;
+            } else {
+                // Edge is behind our plane, needs further splitting
+                se->auxA = 0;
+            }
+        }
+
+        // Considering only the (x, y) coordinates, split the edge against our
+        // triangle.
+        Point2d a = (tr->a).ProjectXy(),
+                b = (tr->b).ProjectXy(),
+                c = (tr->c).ProjectXy();
+
+        Point2d n[3] = { (b.Minus(a)).Normal().WithMagnitude(1),
+                         (c.Minus(b)).Normal().WithMagnitude(1),
+                         (a.Minus(c)).Normal().WithMagnitude(1)  };
+
+        double d[3] = { n[0].Dot(b),
+                        n[1].Dot(c),
+                        n[2].Dot(a)  };
+
+        // Split all of the edges where they intersect the triangle edges
+        int i;
+        for(i = 0; i < 3; i++) {
+            for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+                if(se->auxA) continue;
+
+                Point2d ap = (se->a).ProjectXy(),
+                        bp = (se->b).ProjectXy();
+                double da = n[i].Dot(ap) - d[i],
+                       db = n[i].Dot(bp) - d[i];
+                if((da < -LENGTH_EPS && db > LENGTH_EPS) ||
+                   (db < -LENGTH_EPS && da > LENGTH_EPS))
+                {
+                    double dab = (db - da);
+                    Vector spl = ((se->a).ScaledBy( db/dab)).Plus(
+                                  (se->b).ScaledBy(-da/dab));
+                    seln.AddEdge(spl, se->b);
+                    se->b = spl;
+                }
+            }
+            for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
+                sel->AddEdge(se->a, se->b, 0);
+            }
+            seln.Clear();
+        }
+       
+        for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            if(se->auxA) {
+                // Lies above or on the triangle plane, so triangle doesn't
+                // occlude it.
+                se->tag = 0;
+            } else {
+                // Test the segment to see if it lies outside the triangle
+                // (i.e., outside wrt at least one edge), and keep it only
+                // then.
+                Point2d pt = ((se->a).Plus(se->b).ScaledBy(0.5)).ProjectXy();
+                se->tag = 1;
+                for(i = 0; i < 3; i++) {
+                    if(n[i].Dot(pt) - d[i] > -LENGTH_EPS) se->tag = 0;
+                }
+            }
+        }
+        sel->l.RemoveTagged();
+    }
+}
+
+void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
+    if(gt && lt) {
+        double ac = (orig.a).Element(which),
+               bc = (orig.b).Element(which);
+        // We can ignore triangles that are separated in x or y, but triangles
+        // that are separated in z may still contribute
+        if(ac < c + KDTREE_EPS ||
+           bc < c + KDTREE_EPS ||
+           which == 2)
+        {
+            lt->OcclusionTestLine(orig, sel, cnt);
+        }
+        if(ac > c - KDTREE_EPS ||
+           bc > c - KDTREE_EPS ||
+           which == 2)
+        {
+            gt->OcclusionTestLine(orig, sel, cnt);
+        }
+    } else {
+        STriangleLl *ll;
+        for(ll = tris; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
+
+            if(tr->tag == cnt) continue;
+
+            SplitLinesAgainstTriangle(sel, tr);
+            tr->tag = cnt;
+        }
+    }
+}
+
 void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool *inter, bool *leaky) {
     if(inter) *inter = false;
     if(leaky) *leaky = false;

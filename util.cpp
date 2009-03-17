@@ -430,6 +430,19 @@ Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) {
     return r;
 }
 
+Vector Vector::InPerspective(Vector u, Vector v, Vector n, 
+                             Vector origin, double cameraTan)
+{
+    Vector r = this->Minus(origin);
+    r = r.DotInToCsys(u, v, n);
+    // yes, minus; we are assuming a csys where u cross v equals n, backwards
+    // from the display stuff
+    double w = (1 - r.z*cameraTan);
+    r = r.ScaledBy(1/w);
+
+    return r;
+}
+
 double Vector::DistanceToLine(Vector p0, Vector dp) {
     double m = dp.Magnitude();
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;

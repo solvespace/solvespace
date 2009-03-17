@@ -2,9 +2,6 @@
 #include <png.h>
 
 void SolveSpace::ExportSectionTo(char *filename) {
-    SPolygon sp;
-    ZERO(&sp);
-
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
 
@@ -89,17 +86,17 @@ void SolveSpace::ExportSectionTo(char *filename) {
     SEdgeList el;
     ZERO(&el);
     root->MakeNakedEdgesInto(&el);
-    // Assemble those edges into a polygon, and clear the edge list
-    el.AssemblePolygon(&sp, NULL);
-    el.Clear();
     m.Clear();
 
-    // And write the polygon.
+    // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
-        ExportPolygon(&sp, u, v, n, origin, out);
+        // parallel projection (no perspective), and no mesh
+        ExportLinesAndMesh(&el, NULL,
+                           u, v, n, origin, 0,
+                           out);
     }
-    sp.Clear();
+    el.Clear();
 }
 
 void SolveSpace::ExportViewTo(char *filename) {
@@ -113,9 +110,10 @@ void SolveSpace::ExportViewTo(char *filename) {
         e->GenerateEdges(&edges);
     }
     
-    SPolygon sp;
-    ZERO(&sp);
-    edges.AssemblePolygon(&sp, NULL);
+    SMesh *sm = NULL;
+    if(SS.GW.showShaded) {
+        sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
+    }
 
     Vector u = SS.GW.projRight,
            v = SS.GW.projUp,
@@ -124,45 +122,124 @@ void SolveSpace::ExportViewTo(char *filename) {
 
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
-        ExportPolygon(&sp, u, v, n, origin, out);
+        ExportLinesAndMesh(&edges, sm, 
+                           u, v, n, origin, SS.cameraTangent*SS.GW.scale,
+                           out);
     }
     edges.Clear();
-    sp.Clear();
 }
 
-void SolveSpace::ExportPolygon(SPolygon *sp,
-                               Vector u, Vector v, Vector n, Vector origin,
-                               VectorFileWriter *out)
+void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
+                                    Vector u, Vector v, Vector n,
+                                        Vector origin, double cameraTan,
+                                    VectorFileWriter *out)
 {
-    int i, j;
+    double s = 1.0 / SS.exportScale;
+
     // Project into the export plane; so when we're done, z doesn't matter,
     // and x and y are what goes in the DXF.
-    for(i = 0; i < sp->l.n; i++) {
-        SContour *sc = &(sp->l.elem[i]);
-        for(j = 0; j < sc->l.n; j++) {
-            Vector *p = &(sc->l.elem[j].p);
-            *p = p->Minus(origin);
-            *p = p->DotInToCsys(u, v, n);
-            // and apply the export scale factor
-            double s = SS.exportScale;
-            *p = p->ScaledBy(1.0/s);
+    SEdge *e;
+    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+        // project into the specified csys, and apply export scale
+        (e->a) = e->a.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+        (e->b) = e->b.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+    }
+
+    // If cutter radius compensation is requested, then perform it now
+    if(fabs(SS.exportOffset) > LENGTH_EPS) {
+        // assemble those edges into a polygon, and clear the edge list
+        SPolygon sp;
+        ZERO(&sp);
+        sel->AssemblePolygon(&sp, NULL);
+        sel->Clear();
+
+        SPolygon compd;
+        ZERO(&compd);
+        sp.normal = Vector::From(0, 0, -1);
+        sp.FixContourDirections();
+        sp.OffsetInto(&compd, SS.exportOffset);
+        sp.Clear();
+
+        compd.MakeEdgesInto(sel);
+        compd.Clear();
+    }
+
+    // Now the triangle mesh; project, then build a BSP to perform
+    // occlusion testing and generated the shaded surfaces.
+    SMesh smp;
+    ZERO(&smp);
+    if(sm) {
+        Vector l0 = (SS.lightDir[0]).WithMagnitude(1),
+               l1 = (SS.lightDir[1]).WithMagnitude(1);
+        STriangle *tr;
+        for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+            STriangle tt = *tr;
+            tt.a = (tt.a).InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+            tt.b = (tt.b).InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+            tt.c = (tt.c).InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+
+            // And calculate lighting for the triangle
+            Vector n = tt.Normal().WithMagnitude(1);
+            double lighting = SS.ambientIntensity +
+                                  max(0, (SS.lightIntensity[0])*(n.Dot(l0))) +
+                                  max(0, (SS.lightIntensity[1])*(n.Dot(l1)));
+            double r = min(1, REDf  (tt.meta.color)*lighting),
+                   g = min(1, GREENf(tt.meta.color)*lighting),
+                   b = min(1, BLUEf (tt.meta.color)*lighting);
+            tt.meta.color = RGBf(r, g, b);
+            smp.AddTriangle(&tt);
         }
     }
 
-    // If cutter radius compensation is requested, then perform it now.
-    if(fabs(SS.exportOffset) > LENGTH_EPS) {
-        SPolygon compd;
-        ZERO(&compd);
-        sp->normal = Vector::From(0, 0, -1);
-        sp->FixContourDirections();
-        sp->OffsetInto(&compd, SS.exportOffset);
-        sp->Clear();
-        *sp = compd;
+    // Use the BSP routines to generate the split triangles in paint order.
+    SBsp3 *bsp = SBsp3::FromMesh(&smp);
+    SMesh sms;
+    ZERO(&sms);
+    bsp->GenerateInPaintOrder(&sms);
+    // And cull the back-facing triangles
+    STriangle *tr;
+    sms.l.ClearTags();
+    for(tr = sms.l.First(); tr; tr = sms.l.NextAfter(tr)) {
+        Vector n = tr->Normal();
+        if(n.z < 0) {
+            tr->tag = 1;
+        }
+    }
+    sms.l.RemoveTagged();
+
+    // And now we perform hidden line removal if requested
+    SEdgeList hlrd;
+    ZERO(&hlrd);
+    if(sm && !SS.GW.showHdnLines) {
+        SKdNode *root = SKdNode::From(&smp);
+        root->ClearTags();
+        int cnt = 1234;
+
+        SEdge *se;
+        for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            SEdgeList out;
+            ZERO(&out);
+            // Split the original edge against the mesh
+            out.AddEdge(se->a, se->b);
+            root->OcclusionTestLine(*se, &out, cnt);
+            cnt++;
+            // And add the results to our output
+            SEdge *sen;
+            for(sen = out.l.First(); sen; sen = out.l.NextAfter(sen)) {
+                hlrd.AddEdge(sen->a, sen->b);
+            }
+            out.Clear();
+        }
+
+        sel = &hlrd;
     }
 
-    // Now begin the entities, which are just line segments reproduced from
-    // our piecewise linear curves.
-    out->OutputPolygon(sp);
+    // Now write the lines and triangles to the output file
+    out->Output(sel, &sms);
+
+    smp.Clear();
+    sms.Clear();
+    hlrd.Clear();
 }
 
 bool VectorFileWriter::StringEndsIn(char *str, char *ending) {
@@ -207,28 +284,36 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     return ret;
 }
 
-void VectorFileWriter::OutputPolygon(SPolygon *sp) {
-    int i, j;
+void VectorFileWriter::Output(SEdgeList *sel, SMesh *sm) {
+    STriangle *tr;
+    SEdge *e;
 
     // First calculate the bounding box.
     ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
     ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
-    for(i = 0; i < sp->l.n; i++) {
-        SContour *sc = &(sp->l.elem[i]);
-        for(j = 0; j < sc->l.n; j++) {
-            (sc->l.elem[j].p).MakeMaxMin(&ptMax, &ptMin);
+    if(sel) {
+        for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+            (e->a).MakeMaxMin(&ptMax, &ptMin);
+            (e->b).MakeMaxMin(&ptMax, &ptMin);
+        }
+    }
+    if(sm) {
+        for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+            (tr->a).MakeMaxMin(&ptMax, &ptMin);
+            (tr->b).MakeMaxMin(&ptMax, &ptMin);
+            (tr->c).MakeMaxMin(&ptMax, &ptMin);
         }
     }
 
     StartFile();
-    for(i = 0; i < sp->l.n; i++) {
-        SContour *sc = &(sp->l.elem[i]);
-
-        for(j = 1; j < sc->l.n; j++) {
-            Vector p0 = sc->l.elem[j-1].p,
-                   p1 = sc->l.elem[j].p;
-
-            LineSegment(p0.x, p0.y, p1.x, p1.y);
+    if(sm) {
+        for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+            Triangle(tr);
+        }
+    }
+    if(sel) {
+        for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+            LineSegment(e->a.x, e->a.y, e->b.x, e->b.y);
         }
     }
     FinishAndCloseFile();
@@ -303,6 +388,8 @@ void DxfFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
                     x0, y0, 0.0,
                     x1, y1, 0.0);
 }
+void DxfFileWriter::Triangle(STriangle *tr) {
+}
 
 void DxfFileWriter::FinishAndCloseFile(void) {
     fprintf(f,
@@ -351,6 +438,37 @@ void EpsFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
             MmToPoints(x0 - ptMin.x), MmToPoints(y0 - ptMin.y),
             MmToPoints(x1 - ptMin.x), MmToPoints(y1 - ptMin.y));
 }
+void EpsFileWriter::Triangle(STriangle *tr) {
+    fprintf(f,
+"%.3f %.3f %.3f setrgbcolor\r\n"
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    closepath\r\n"
+"fill\r\n",
+            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            MmToPoints(tr->a.x - ptMin.x), MmToPoints(tr->a.y - ptMin.y),
+            MmToPoints(tr->b.x - ptMin.x), MmToPoints(tr->b.y - ptMin.y),
+            MmToPoints(tr->c.x - ptMin.x), MmToPoints(tr->c.y - ptMin.y));
+
+    // same issue with cracks, stroke it to avoid them
+    double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
+    fprintf(f,
+"%.3f %.3f %.3f setrgbcolor\r\n"
+"%.3f setlinewidth\r\n"
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    %.3f %.3f lineto\r\n"
+"    closepath\r\n"
+"stroke\r\n",
+            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            MmToPoints(sw),
+            MmToPoints(tr->a.x - ptMin.x), MmToPoints(tr->a.y - ptMin.y),
+            MmToPoints(tr->b.x - ptMin.x), MmToPoints(tr->b.y - ptMin.y),
+            MmToPoints(tr->c.x - ptMin.x), MmToPoints(tr->c.y - ptMin.y));
+}
 
 void EpsFileWriter::FinishAndCloseFile(void) {
     fprintf(f,
@@ -379,11 +497,28 @@ void SvgFileWriter::StartFile(void) {
 }
 
 void SvgFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    // SVG uses a coordinate system with the origin at top left, +y down
     fprintf(f,
-"<polyline points='%.3f %.3f, %.3f %.3f' "
+"<polyline points='%.3f,%.3f %.3f,%.3f' "
     "stroke-width='1' stroke='black' style='fill: none;' />\r\n",
-            (x0 - ptMin.x), (y0 - ptMin.y),
-            (x1 - ptMin.x), (y1 - ptMin.y));
+            (x0 - ptMin.x), (ptMax.y - y0),
+            (x1 - ptMin.x), (ptMax.y - y1));
+}
+void SvgFileWriter::Triangle(STriangle *tr) {
+    // crispEdges turns of anti-aliasing, which tends to cause hairline
+    // cracks between triangles; but there still is some cracking, so
+    // specify a stroke width too, hope for around a pixel
+    double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
+    fprintf(f,
+"<polygon points='%.3f,%.3f %.3f,%.3f %.3f,%.3f' "
+    "stroke='#%02x%02x%02x' stroke-width='%.3f' "
+    "style='fill:#%02x%02x%02x' shape-rendering='crispEdges'/>\r\n",
+            (tr->a.x - ptMin.x), (ptMax.y - tr->a.y),
+            (tr->b.x - ptMin.x), (ptMax.y - tr->b.y),
+            (tr->c.x - ptMin.x), (ptMax.y - tr->c.y),
+            RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color),
+            sw,
+            RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color));
 }
 
 void SvgFileWriter::FinishAndCloseFile(void) {
@@ -406,6 +541,9 @@ void HpglFileWriter::StartFile(void) {
 void HpglFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
     fprintf(f, "PU%d,%d;\r\n", (int)MmToHpglUnits(x0), (int)MmToHpglUnits(y0));
     fprintf(f, "PD%d,%d;\r\n", (int)MmToHpglUnits(x1), (int)MmToHpglUnits(y1));
+}
+void HpglFileWriter::Triangle(STriangle *tr) {
+    // HPGL does not support filled triangles
 }
 
 void HpglFileWriter::FinishAndCloseFile(void) {

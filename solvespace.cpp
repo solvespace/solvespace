@@ -30,6 +30,7 @@ void SolveSpace::Init(char *cmdLine) {
     // Light intensities
     lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
     lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
+    ambientIntensity = 0.3; // no setting for that yet
     // Light positions
     lightDir[0].x = CnfThawFloat(-1.0f, "LightDir_0_Right"     );
     lightDir[0].y = CnfThawFloat( 1.0f, "LightDir_0_Up"        );

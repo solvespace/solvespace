@@ -159,6 +159,8 @@ public:
 
     void InsertInPlane(bool pos2, STriangle *tr, SMesh *m);
 
+    void GenerateInPaintOrder(SMesh *m);
+
     void DebugDraw(void);
 };
 
@@ -222,6 +224,9 @@ public:
     
     void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter);
     void MakeNakedEdgesInto(SEdgeList *sel, bool *inter=NULL, bool *leaky=NULL);
+
+    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);
+    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr);
 };
 
 #endif
