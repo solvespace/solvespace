@@ -222,8 +222,10 @@ public:
     void MakeMeshInto(SMesh *m);
     void ClearTags(void);
     
-    void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter);
+    void FindEdgeOn(Vector a, Vector b, int *n, int cnt,
+                        bool *inter, bool *fwd);
     void MakeNakedEdgesInto(SEdgeList *sel, bool *inter=NULL, bool *leaky=NULL);
+    void MakeTurningEdgesInto(SEdgeList *sel);
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);
     void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr);

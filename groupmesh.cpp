@@ -253,9 +253,7 @@ done:
     runningMesh.Clear();
     runningShell.TriangulateInto(&runningMesh);
     emphEdges.Clear();
-    if(h.v == SS.GW.activeGroup.v && SS.edgeColor != 0) {
-        runningShell.MakeEdgesInto(&emphEdges);
-    }
+    runningShell.MakeEdgesInto(&emphEdges);
 }
 
 SShell *Group::PreviousGroupShell(void) {
@@ -298,7 +296,8 @@ void Group::Draw(void) {
         glEnable(GL_LIGHTING);
         glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
         glDisable(GL_LIGHTING);
-
+    }
+    if(SS.GW.showEdges) {
         glLineWidth(1);
         glxDepthRangeOffset(2);
         glxColor3d(REDf  (SS.edgeColor),

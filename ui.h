@@ -145,6 +145,8 @@ public:
     static void ScreenGoToWebsite(int link, DWORD v);
 
     static void ScreenChangeBackFaces(int link, DWORD v);
+    static void ScreenChangeExactCurves(int link, DWORD v);
+    static void ScreenChangeShadedTriangles(int link, DWORD v);
 
     static void ScreenStepDimSteps(int link, DWORD v);
     static void ScreenStepDimFinish(int link, DWORD v);
@@ -405,6 +407,7 @@ public:
     bool    showConstraints;
     bool    showTextWindow;
     bool    showShaded;
+    bool    showEdges;
     bool    showFaces;
     bool    showMesh;
     bool    showHdnLines;

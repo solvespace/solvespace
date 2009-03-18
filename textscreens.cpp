@@ -36,12 +36,14 @@ hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool)
     );
     Printf(false, "%Bt%Ft      "
            "%Fp%Ll%D%fshaded%E "
-           "%Fp%Ll%D%ffaces%E "
+           "%Fp%Ll%D%fedges%E "
            "%Fp%Ll%D%fmesh%E "
-           "%Fp%Ll%D%fhidden-lines%E",
+           "%Fp%Ll%D%ffaces%E "
+           "%Fp%Ll%D%fhidden-lns%E",
 hs(SS.GW.showShaded),      (DWORD)(&SS.GW.showShaded),      &(SS.GW.ToggleBool),
-hs(SS.GW.showFaces),       (DWORD)(&SS.GW.showFaces),       &(SS.GW.ToggleBool),
+hs(SS.GW.showEdges),       (DWORD)(&SS.GW.showEdges),       &(SS.GW.ToggleBool),
 hs(SS.GW.showMesh),        (DWORD)(&SS.GW.showMesh),        &(SS.GW.ToggleBool),
+hs(SS.GW.showFaces),       (DWORD)(&SS.GW.showFaces),       &(SS.GW.ToggleBool),
 hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
     );
 }
@@ -607,6 +609,14 @@ void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     InvalidateGraphics();
 }
+void TextWindow::ScreenChangeShadedTriangles(int link, DWORD v) {
+    SS.exportShadedTriangles = !SS.exportShadedTriangles;
+    InvalidateGraphics();
+}
+void TextWindow::ScreenChangeExactCurves(int link, DWORD v) {
+    SS.exportExactCurves = !SS.exportExactCurves;
+    InvalidateGraphics();
+}
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -633,7 +643,7 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft edge color r,g,b (0,0,0 for no edges)%E");
+    Printf(false, "%Ft edge color r,g,b%E");
     Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
         REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
         &ScreenChangeEdgeColor, 0);
@@ -664,6 +674,24 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E",
         (double)SS.exportOffset,
         &ScreenChangeExportOffset, 0);
+
+    Printf(false, "");
+    Printf(false, "%Ft export shaded 2d triangles: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeShadedTriangles,
+        (SS.exportShadedTriangles ? "" : "yes"),
+        (SS.exportShadedTriangles ? "yes" : ""),
+        &ScreenChangeShadedTriangles,
+        (!SS.exportShadedTriangles ? "" : "no"),
+        (!SS.exportShadedTriangles ? "no" : ""));
+    Printf(false, "%Ft export exact curves in DXF: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeExactCurves,
+        (SS.exportExactCurves ? "" : "yes"),
+        (SS.exportExactCurves ? "yes" : ""),
+        &ScreenChangeExactCurves,
+        (!SS.exportExactCurves ? "" : "no"),
+        (!SS.exportExactCurves ? "no" : ""));
 
     Printf(false, "");
     Printf(false, "%Ft draw back faces: "

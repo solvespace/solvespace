@@ -54,6 +54,10 @@ void SolveSpace::Init(char *cmdLine) {
     exportOffset = CnfThawFloat(0.0f, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
+    // Export shaded triangles in a 2d view
+    exportShadedTriangles = CnfThawDWORD(1, "ExportShadedTriangles");
+    // Export exact curves (instead of pwl) when possible
+    exportExactCurves = CnfThawDWORD(0, "ExportExactCurves");
     // Show toolbar in the graphics window
     showToolbar = CnfThawDWORD(1, "ShowToolbar");
     // Recent files menus
@@ -118,6 +122,10 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportOffset, "ExportOffset");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
+    // Export shaded triangles in a 2d view
+    CnfFreezeDWORD(exportShadedTriangles, "ExportShadedTriangles");
+    // Export exact curves (instead of pwl) when possible
+    CnfFreezeDWORD(exportExactCurves, "ExportExactCurves");
     // Show toolbar in the graphics window
     CnfFreezeDWORD(showToolbar, "ShowToolbar");
 

@@ -444,6 +444,8 @@ public:
     float   exportOffset;
     int     drawBackFaces;
     int     showToolbar;
+    int     exportShadedTriangles;
+    int     exportExactCurves;
 
     int CircleSides(double r);
     typedef enum {

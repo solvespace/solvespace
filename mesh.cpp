@@ -476,19 +476,21 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
-void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter) {
+void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
+                            bool *inter, bool *fwd)
+{
     if(gt && lt) {
         double ac = a.Element(which),
                bc = b.Element(which);
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, n, cnt, inter);
+            lt->FindEdgeOn(a, b, n, cnt, inter, fwd);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, n, cnt, inter);
+            gt->FindEdgeOn(a, b, n, cnt, inter, fwd);
         }
     } else {
         STriangleLl *ll;
@@ -503,6 +505,12 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool *inter) {
                (a.Equals(tr->a) && b.Equals(tr->c)))
             {
                 (*n)++;
+                // Record whether this triangle is front- or back-facing.
+                if(tr->Normal().z > LENGTH_EPS) {
+                    *fwd = true;
+                } else {
+                    *fwd = false;
+                }
             } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
                        (a.Equals(tr->b) && b.Equals(tr->c)) ||
                        (a.Equals(tr->c) && b.Equals(tr->a))))
@@ -688,8 +696,8 @@ void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool *inter, bool *leaky) {
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
             int n = 0, nOther = 0;
-            bool thisIntersects = false;
-            FindEdgeOn(a, b, &n, cnt, &thisIntersects);
+            bool thisIntersects = false, fwd;
+            FindEdgeOn(a, b, &n, cnt, &thisIntersects, &fwd);
             if(n != 1) {
                 sel->AddEdge(a, b);
                 if(leaky) *leaky = true;
@@ -697,6 +705,38 @@ void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool *inter, bool *leaky) {
             if(thisIntersects) {
                 sel->AddEdge(a, b);
                 if(inter) *inter = true;
+            }
+
+            cnt++;
+        }
+    }
+
+    m.Clear();
+}
+
+void SKdNode::MakeTurningEdgesInto(SEdgeList *sel) {
+    SMesh m;
+    ZERO(&m);
+    ClearTags();
+    MakeMeshInto(&m);
+
+    int cnt = 1234;
+    int i, j;
+    for(i = 0; i < m.l.n; i++) {
+        STriangle *tr = &(m.l.elem[i]);
+        if(tr->Normal().z > LENGTH_EPS) continue;
+        // So this is a back-facing triangle
+
+        for(j = 0; j < 3; j++) {
+            Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
+            Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
+
+            int n = 0;
+            bool inter, fwd;
+            FindEdgeOn(a, b, &n, cnt, &inter, &fwd);
+            if(n == 1) {
+                // and its neighbour is front-facing, so generate the edge.
+                if(fwd) sel->AddEdge(a, b);
             }
 
             cnt++;

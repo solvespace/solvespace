@@ -115,6 +115,14 @@ void SolveSpace::ExportViewTo(char *filename) {
         sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
     }
 
+    if(SS.GW.showEdges) {
+        SEdgeList *emph = &((SS.GetGroup(SS.GW.activeGroup))->emphEdges);
+        SEdge *se;
+        for(se = emph->l.First(); se; se = emph->l.NextAfter(se)) {
+            edges.AddEdge(se->a, se->b);
+        }
+    }
+
     Vector u = SS.GW.projRight,
            v = SS.GW.projUp,
            n = u.Cross(v),
@@ -212,6 +220,13 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
     ZERO(&hlrd);
     if(sm && !SS.GW.showHdnLines) {
         SKdNode *root = SKdNode::From(&smp);
+
+        // Generate the edges where a curved surface turns from front-facing
+        // to back-facing.
+        if(SS.GW.showEdges) {
+            root->MakeTurningEdgesInto(sel);
+        }
+
         root->ClearTags();
         int cnt = 1234;
 
@@ -306,7 +321,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SMesh *sm) {
     }
 
     StartFile();
-    if(sm) {
+    if(sm && SS.exportShadedTriangles) {
         for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
             Triangle(tr);
         }

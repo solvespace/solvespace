@@ -144,6 +144,7 @@ void GraphicsWindow::Init(void) {
     showConstraints = true;
     showHdnLines = false;
     showShaded = true;
+    showEdges = true;
     showMesh = false;
 
     showTextWindow = true;
