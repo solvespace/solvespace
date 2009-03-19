@@ -758,6 +758,14 @@ Point2d Point2d::ScaledBy(double s) {
     return r;
 }
 
+double Point2d::DivPivoting(Point2d delta) {
+    if(fabs(delta.x) > fabs(delta.y)) {
+        return x/delta.x;
+    } else {
+        return y/delta.y;
+    }
+}
+
 double Point2d::MagSquared(void) {
     return x*x + y*y;
 }

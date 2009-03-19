@@ -198,6 +198,7 @@ public:
                           SShell *into);
     void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                           SShell *agnstA, SShell *agnstB, SShell *into);
+
     typedef struct {
         int     tag;
         Point2d p;
@@ -210,7 +211,8 @@ public:
     double DepartureFromCoplanar(void);
     void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
-                                    List<SInter> *l, bool seg, bool trimmed);
+                                    List<SInter> *l,
+                                    bool seg, bool trimmed, bool inclTangent);
     void AllPointsIntersectingUntrimmed(Vector a, Vector b,
                                             int *cnt, int *level,
                                             List<Inter> *l, bool segment,
@@ -222,6 +224,7 @@ public:
     Vector PointAt(double u, double v);
     void TangentsAt(double u, double v, Vector *tu, Vector *tv);
     Vector NormalAt(double u, double v);
+    bool LineEntirelyOutsideBbox(Vector a, Vector b, bool segment);
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin);
     bool CoincidentWithPlane(Vector n, double d);
     bool CoincidentWith(SSurface *ss, bool sameNormal);
@@ -258,20 +261,20 @@ public:
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(void);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
-                                bool seg, bool trimmed);
+                                bool seg, bool trimmed, bool inclTangent);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                  SEdgeList *el, SShell *useCurvesFrom);
     void CleanupAfterBoolean(void);
 
-    static const int INSIDE            = 100;
-    static const int OUTSIDE           = 200;
-    static const int SURF_PARALLEL     = 300;
-    static const int SURF_ANTIPARALLEL = 400;
-    static const int EDGE_PARALLEL     = 500;
-    static const int EDGE_ANTIPARALLEL = 600;
-    static const int EDGE_TANGENT      = 700;
+    static const int INSIDE                 = 100;
+    static const int OUTSIDE                = 200;
+    static const int SURF_PARALLEL          = 300;
+    static const int SURF_ANTIPARALLEL      = 400;
+    static const int EDGE_PARALLEL          = 500;
+    static const int EDGE_ANTIPARALLEL      = 600;
+    static const int EDGE_TANGENT           = 700;
 
-    int ClassifyPoint(Vector p, Vector out);
+    int ClassifyPoint(Vector p, Vector edge_n, Vector surf_n);
 
 
     void MakeFromCopyOf(SShell *a);

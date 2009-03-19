@@ -175,7 +175,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             List<SInter> inters;
             ZERO(&inters);
-            sext->AllPointsIntersecting(p0, p0.Plus(dp), &inters, false, false);
+            sext->AllPointsIntersecting(
+                p0, p0.Plus(dp), &inters, false, false, true);
     
             SInter *si;
             for(si = inters.First(); si; si = inters.NextAfter(si)) {
@@ -387,16 +388,8 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 {
     // Test if the line intersects our axis-aligned bounding box; if no, then
     // no possibility of an intersection
-    Vector amax, amin;
-    GetAxisAlignedBounding(&amax, &amin);
-    if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, segment)) {
-        // The line segment could fail to intersect the bbox, but lie entirely
-        // within it and intersect the surface.
-        if(a.OutsideAndNotOn(amax, amin) && b.OutsideAndNotOn(amax, amin)) {
-            return;
-        }
-    } 
-   
+    if(LineEntirelyOutsideBbox(a, b, segment)) return;
+ 
     if(*cnt > 2000) {
         dbp("!!! too many subdivisions (level=%d)!", *level);
         dbp("degm = %d degn = %d", degm, degn);
@@ -407,7 +400,10 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
     // If we might intersect, and the surface is small, then switch to Newton
     // iterations.
     if(DepartureFromCoplanar() < 0.2*SS.ChordTolMm()) {
-        Vector p = (amax.Plus(amin)).ScaledBy(0.5);
+        Vector p = (ctrl[0   ][0   ]).Plus(
+                    ctrl[0   ][degn]).Plus(
+                    ctrl[degm][0   ]).Plus(
+                    ctrl[degm][degn]).ScaledBy(0.25);
         Inter inter;
         sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), false);
         if(sorig->PointIntersectingLine(a, b, &(inter.p.x), &(inter.p.y))) {
@@ -438,11 +434,16 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 // Find all points where a line through a and b intersects our surface, and
 // add them to the list. If seg is true then report only intersections that
 // lie within the finite line segment (not including the endpoints); otherwise
-// we work along the infinite line.
+// we work along the infinite line. And we report either just intersections
+// inside the trim curve, or any intersection with u, v in [0, 1]. And we
+// either disregard or report tangent points.
 //-----------------------------------------------------------------------------
 void SSurface::AllPointsIntersecting(Vector a, Vector b,
-                                     List<SInter> *l, bool seg, bool trimmed)
+                                     List<SInter> *l,
+                                     bool seg, bool trimmed, bool inclTangent)
 {
+    if(LineEntirelyOutsideBbox(a, b, seg)) return;
+
     Vector ba = b.Minus(a);
     double bam = ba.Magnitude();
 
@@ -468,8 +469,62 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
             ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
             inters.Add(&inter);
         }
-    } else if(IsCylinder(&center, &axis, &radius, &start, &finish) && 0) {
-        // XXX, cylinder is easy in closed form
+    } else if(IsCylinder(&center, &axis, &radius, &start, &finish)) {
+        // This one can be solved in closed form too.
+        Vector ab = b.Minus(a);
+        if(axis.Cross(ab).Magnitude() < LENGTH_EPS) {
+            // edge is parallel to axis of cylinder, no intersection points
+            return;
+        }
+        // A coordinate system centered at the center of the circle, with
+        // the edge under test horizontal
+        Vector u, v, n = axis.WithMagnitude(1);
+        u = (ab.Minus(n.ScaledBy(ab.Dot(n)))).WithMagnitude(1);
+        v = n.Cross(u);
+        Point2d ap = (a.Minus(center)).DotInToCsys(u, v, n).ProjectXy(),
+                bp = (b.Minus(center)).DotInToCsys(u, v, n).ProjectXy(),
+                sp = (start. Minus(center)).DotInToCsys(u, v, n).ProjectXy(),
+                fp = (finish.Minus(center)).DotInToCsys(u, v, n).ProjectXy();
+
+        double thetas = atan2(sp.y, sp.x), thetaf = atan2(fp.y, fp.x);
+
+        Point2d ip[2];
+        int ip_n = 0;
+        if(fabs(fabs(ap.y) - radius) < LENGTH_EPS) {
+            // tangent
+            if(inclTangent) {
+                ip[0] = Point2d::From(0, ap.y);
+                ip_n = 1;
+            }
+        } else if(fabs(ap.y) < radius) {
+            // two intersections
+            double xint = sqrt(radius*radius - ap.y*ap.y);
+            ip[0] = Point2d::From(-xint, ap.y);
+            ip[1] = Point2d::From( xint, ap.y);
+            ip_n = 2;
+        }
+        int i;
+        for(i = 0; i < ip_n; i++) {
+            double t = (ip[i].Minus(ap)).DivPivoting(bp.Minus(ap));
+            // This is a point on the circle; but is it on the arc?
+            Point2d pp = ap.Plus((bp.Minus(ap)).ScaledBy(t));
+            double theta = atan2(pp.y, pp.x);
+            double dp = WRAP_SYMMETRIC(theta  - thetas, 2*PI),
+                   df = WRAP_SYMMETRIC(thetaf - thetas, 2*PI);
+            double tol = LENGTH_EPS/radius;
+
+            if((df > 0 && ((dp < -tol) || (dp > df + tol))) ||
+               (df < 0 && ((dp >  tol) || (dp < df - tol))))
+            {
+                continue;
+            }
+
+            Vector p = a.Plus((b.Minus(a)).ScaledBy(t));
+
+            Inter inter;
+            ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
+            inters.Add(&inter);
+        }
     } else {
         // General numerical solution by subdivision, fallback
         int cnt = 0, level = 0;
@@ -519,24 +574,25 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 }
 
 void SShell::AllPointsIntersecting(Vector a, Vector b,
-                                   List<SInter> *il, bool seg, bool trimmed)
+                                   List<SInter> *il,
+                                   bool seg, bool trimmed, bool inclTangent)
 {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->AllPointsIntersecting(a, b, il, seg, trimmed);
+        ss->AllPointsIntersecting(a, b, il, seg, trimmed, inclTangent);
     }
 }
 
 //-----------------------------------------------------------------------------
-// Does the given point lie on our shell? It might be inside or outside, or
-// it might be on the surface with pout parallel or anti-parallel to the
-// intersecting surface's normal.
+// Does the given point lie on our shell? There are many cases; inside and
+// outside are obvious, but then there's all the edge-on-edge and edge-on-face
+// possibilities.
 //
 // To calculate, we intersect a ray through p with our shell, and classify
 // using the closest intersection point. If the ray hits a surface on edge,
 // then just reattempt in a different random direction.
 //-----------------------------------------------------------------------------
-int SShell::ClassifyPoint(Vector p, Vector pout) {
+int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
     List<SInter> l;
     ZERO(&l);
 
@@ -550,7 +606,8 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
         // the point lies on a surface, but use only one side for in/out
         // testing)
         Vector ray = Vector::From(Random(1), Random(1), Random(1));
-        AllPointsIntersecting(p.Minus(ray), p.Plus(ray), &l, false, true);
+        AllPointsIntersecting(
+            p.Minus(ray), p.Plus(ray), &l, false, true, false);
         
         double dmin = VERY_POSITIVE;
         ret = OUTSIDE; // no intersections means it's outside
@@ -569,7 +626,7 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
 
             // Handle edge-on-edge
             if(d < LENGTH_EPS && si->onEdge && edge_inters < 2) {
-                edge_dotp[edge_inters] = (si->surfNormal).Dot(pout);
+                edge_dotp[edge_inters] = (si->surfNormal).Dot(edge_n);
                 edge_inters++;
             }
 
@@ -577,7 +634,10 @@ int SShell::ClassifyPoint(Vector p, Vector pout) {
                 dmin = d;
                 if(d < LENGTH_EPS) {
                     // Edge-on-face (unless edge-on-edge above supercedes)
-                    if((si->surfNormal).Dot(pout) > 0) {
+                    double dot = (si->surfNormal).Dot(edge_n);
+                    if(fabs(dot) < LENGTH_EPS && 0) {
+                        // TODO revamp this
+                    } else if(dot > 0) {
                         ret = SURF_PARALLEL;
                     } else {
                         ret = SURF_ANTIPARALLEL;

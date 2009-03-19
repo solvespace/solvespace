@@ -103,6 +103,7 @@ public:
     Point2d Plus(Point2d b);
     Point2d Minus(Point2d b);
     Point2d ScaledBy(double s);
+    double DivPivoting(Point2d delta);
     double Dot(Point2d p);
     double DistanceTo(Point2d p);
     double DistanceToLine(Point2d p0, Point2d dp, bool segment);

@@ -26,6 +26,12 @@ inline double WRAP_NOT_0(double v, double n) {
     while(v <= 0) v += n;
     return v;
 }
+inline double WRAP_SYMMETRIC(double v, double n) {
+    // Clamp it to the range (-n/2, n/2]
+    while(v >   n/2) v -= n;
+    while(v <= -n/2) v += n;
+    return v;
+}
 
 #define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
 #define ZERO(v) memset((v), 0, sizeof(*(v)))

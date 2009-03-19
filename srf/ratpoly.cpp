@@ -479,7 +479,10 @@ bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
 
     double rd0 = center->Minus(sb.ctrl[0]).Magnitude(),
            rd2 = center->Minus(sb.ctrl[2]).Magnitude();
-    if(fabs(rd0 - rd2) > LENGTH_EPS) return false;
+    if(fabs(rd0 - rd2) > LENGTH_EPS) {
+        return false;
+    }
+    *r = rd0;
 
     Vector u = r0.WithMagnitude(1),
            v = (axis->Cross(u)).WithMagnitude(1);
@@ -490,11 +493,18 @@ bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
     double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
            thetab = atan2(pb2.y, pb2.x),
            dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
+    if(dtheta > PI) {
+        // Not possible with a second order Bezier arc; so we must have
+        // the points backwards.
+        dtheta = 2*PI - dtheta;
+    }
 
-    if(fabs(sb.weight[1] - cos(dtheta/2)) > LENGTH_EPS) return false;
+    if(fabs(sb.weight[1] - cos(dtheta/2)) > LENGTH_EPS) {
+        return false;
+    }
 
-    *start  = (sb.ctrl[0]).Minus(*center);
-    *finish = (sb.ctrl[2]).Minus(*center);
+    *start  = sb.ctrl[0];
+    *finish = sb.ctrl[2];
 
     return true;
 }
@@ -752,6 +762,19 @@ void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
             (ctrl[i][j]).MakeMaxMin(ptMax, ptMin);
         }
     }
+}
+
+bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) {
+    Vector amax, amin;
+    GetAxisAlignedBounding(&amax, &amin);
+    if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, segment)) {
+        // The line segment could fail to intersect the bbox, but lie entirely
+        // within it and intersect the surface.
+        if(a.OutsideAndNotOn(amax, amin) && b.OutsideAndNotOn(amax, amin)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
