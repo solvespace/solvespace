@@ -53,8 +53,7 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         ZERO(&(dest.runningMesh));
         ZERO(&(dest.thisShell));
         ZERO(&(dest.runningShell));
-        ZERO(&(dest.meshError));
-        ZERO(&(dest.emphEdges));
+        ZERO(&(dest.runningEdges));
 
         ZERO(&(dest.remap));
         src->remap.DeepCopyInto(&(dest.remap));
@@ -96,8 +95,7 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
         g->runningMesh.Clear();
         g->thisShell.Clear();
         g->runningShell.Clear();
-        g->meshError.interferesAt.Clear();
-        g->emphEdges.Clear();
+        g->runningEdges.Clear();
         g->remap.Clear();
         g->impMesh.Clear();
         g->impEntity.Clear();

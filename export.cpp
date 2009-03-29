@@ -116,9 +116,9 @@ void SolveSpace::ExportViewTo(char *filename) {
     }
 
     if(SS.GW.showEdges) {
-        SEdgeList *emph = &((SS.GetGroup(SS.GW.activeGroup))->emphEdges);
+        SEdgeList *selr = &((SS.GetGroup(SS.GW.activeGroup))->runningEdges);
         SEdge *se;
-        for(se = emph->l.First(); se; se = emph->l.NextAfter(se)) {
+        for(se = selr->l.First(); se; se = selr->l.NextAfter(se)) {
             edges.AddEdge(se->a, se->b);
         }
     }

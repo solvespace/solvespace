@@ -424,9 +424,6 @@ void TextWindow::ShowGroupInfo(void) {
             (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
     }
     if(g->type == Group::IMPORTED) {
-        if(g->meshError.yes) {
-            Printf(false, "%Fx         the parts interfere!");
-        }
         bool sup = g->suppress;
         Printf(false, "%FtSUPPRESS%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
             &TextWindow::ScreenChangeSuppress,

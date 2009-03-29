@@ -105,6 +105,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Analyze",                            0,                          NULL  },
 { 1, "Measure &Volume\tCtrl+Shift+V",       MNU_VOLUME,         'V'|S|C,mAna  },
+{ 1, "Show &Interfering Parts\tCtrl+Shift+I", MNU_INTERFERENCE, 'I'|S|C,mAna  },
 { 1, "Show &Naked Edges\tCtrl+Shift+N",     MNU_NAKED_EDGES,    'N'|S|C,mAna  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Show Degrees of &Freedom\tCtrl+Shift+F", MNU_SHOW_DOF,    'F'|S|C,mAna  },

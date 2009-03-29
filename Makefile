@@ -40,6 +40,8 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\export.obj \
 
 SRFOBJS =  $(OBJDIR)\ratpoly.obj \
+           $(OBJDIR)\curve.obj \
+           $(OBJDIR)\surface.obj \
            $(OBJDIR)\triangulate.obj \
            $(OBJDIR)\boolean.obj \
            $(OBJDIR)\surfinter.obj \
@@ -53,7 +55,7 @@ LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib shell32.lib opengl32.lib g
 
 all: $(OBJDIR)/solvespace.exe
     @cp $(OBJDIR)/solvespace.exe .
-    solvespace tttt.slvs
+    solvespace t7.slvs
 
 clean:
 	rm -f obj/*

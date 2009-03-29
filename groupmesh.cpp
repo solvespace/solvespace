@@ -227,33 +227,20 @@ void Group::GenerateShellAndMesh(void) {
 
     // So our group's mesh appears in thisMesh. Combine this with the previous
     // group's mesh, using the requested operation.
-    bool prevMeshError = meshError.yes;
-
-    meshError.yes = false;
-    meshError.interferesAt.Clear();
-
     SShell *a = PreviousGroupShell();
     if(meshCombine == COMBINE_AS_UNION) {
         runningShell.MakeFromUnionOf(a, &thisShell);
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         runningShell.MakeFromDifferenceOf(a, &thisShell);
     } else {
-        if(0) //&(meshError.interferesAt)
-        {
-            meshError.yes = true;
-            // And the list of failed triangles goes in meshError.interferesAt
-        }
-    }
-    if(prevMeshError != meshError.yes) {
-        // The error is reported in the text window for the group.
-        SS.later.showTW = true;
+        // TODO, assembly
     }
 
 done:
     runningMesh.Clear();
     runningShell.TriangulateInto(&runningMesh);
-    emphEdges.Clear();
-    runningShell.MakeEdgesInto(&emphEdges);
+    runningEdges.Clear();
+    runningShell.MakeEdgesInto(&runningEdges);
 }
 
 SShell *Group::PreviousGroupShell(void) {
@@ -303,24 +290,7 @@ void Group::Draw(void) {
         glxColor3d(REDf  (SS.edgeColor),
                    GREENf(SS.edgeColor), 
                    BLUEf (SS.edgeColor));
-        glxDrawEdges(&emphEdges);
-    }
-
-    if(meshError.yes) {
-        // Draw the error triangles in bright red stripes, with no Z buffering
-        GLubyte mask[32*32/8];
-        memset(mask, 0xf0, sizeof(mask));
-        glPolygonStipple(mask);
-
-        int specColor = 0;
-        glDisable(GL_DEPTH_TEST);
-        glColor3d(0, 0, 0);
-        glxFillMesh(0, &meshError.interferesAt, 0, 0, 0);
-        glEnable(GL_POLYGON_STIPPLE);
-        glColor3d(1, 0, 0);
-        glxFillMesh(0, &meshError.interferesAt, 0, 0, 0);
-        glEnable(GL_DEPTH_TEST);
-        glDisable(GL_POLYGON_STIPPLE);
+        glxDrawEdges(&runningEdges);
     }
 
     if(SS.GW.showMesh) glxDebugMesh(&runningMesh);

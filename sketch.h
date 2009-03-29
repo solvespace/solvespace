@@ -150,12 +150,9 @@ public:
 
     SShell          thisShell;
     SShell          runningShell;
+
     SMesh           runningMesh;
-    struct {
-        SMesh           interferesAt;
-        bool            yes;
-    }               meshError;
-    SEdgeList       emphEdges;
+    SEdgeList       runningEdges;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;

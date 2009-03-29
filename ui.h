@@ -246,6 +246,7 @@ public:
         MNU_COMMENT,
         // Analyze
         MNU_VOLUME,
+        MNU_INTERFERENCE,
         MNU_NAKED_EDGES,
         MNU_SHOW_DOF,
         MNU_TRACE_PT,

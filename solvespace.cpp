@@ -500,6 +500,9 @@ void SolveSpace::MenuAnalyze(int id) {
             break;
         }
 
+        case GraphicsWindow::MNU_INTERFERENCE:
+            break;
+
         case GraphicsWindow::MNU_SHOW_DOF:
             // This works like a normal solve, except that it calculates
             // which variables are free/bound at the same time.
