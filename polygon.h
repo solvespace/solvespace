@@ -27,6 +27,7 @@ public:
                             SEdge *errorAt, bool keepDir);
     int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
     void CullExtraneousEdges(void);
+    void MergeCollinearSegments(Vector a, Vector b);
 };
 
 class SPoint {

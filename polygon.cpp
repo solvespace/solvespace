@@ -247,6 +247,41 @@ void SEdgeList::CullExtraneousEdges(void) {
     l.RemoveTagged();
 }
 
+//-----------------------------------------------------------------------------
+// We have an edge list that contains only collinear edges, maybe with more
+// splits than necessary. Merge any collinear segments that join.
+//-----------------------------------------------------------------------------
+static Vector LineStart, LineDirection;
+static int ByTAlongLine(const void *av, const void *bv)
+{
+    SEdge *a = (SEdge *)av,
+          *b = (SEdge *)bv;
+    
+    double ta = (a->a.Minus(LineStart)).DivPivoting(LineDirection),
+           tb = (b->a.Minus(LineStart)).DivPivoting(LineDirection);
+
+    return (ta > tb) ? 1 : -1;
+}
+void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
+    LineStart = a;
+    LineDirection = b.Minus(a);
+    qsort(l.elem, l.n, sizeof(l.elem[0]), ByTAlongLine);
+
+    l.ClearTags();
+    int i;
+    for(i = 1; i < l.n; i++) {
+        SEdge *prev = &(l.elem[i-1]),
+              *now  = &(l.elem[i]);
+
+        if((prev->b).Equals(now->a)) {
+            // The previous segment joins up to us; so merge it into us.
+            prev->tag = 1;
+            now->a = prev->a;
+        }
+    }
+    l.RemoveTagged();
+}
+
 void SContour::AddPoint(Vector p) {
     SPoint sp;
     sp.tag = 0;

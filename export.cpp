@@ -237,6 +237,8 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
             // Split the original edge against the mesh
             out.AddEdge(se->a, se->b);
             root->OcclusionTestLine(*se, &out, cnt);
+            // the occlusion test splits unnecessarily; so fix those
+            out.MergeCollinearSegments(se->a, se->b);
             cnt++;
             // And add the results to our output
             SEdge *sen;
