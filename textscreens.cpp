@@ -610,8 +610,8 @@ void TextWindow::ScreenChangeShadedTriangles(int link, DWORD v) {
     SS.exportShadedTriangles = !SS.exportShadedTriangles;
     InvalidateGraphics();
 }
-void TextWindow::ScreenChangeExactCurves(int link, DWORD v) {
-    SS.exportExactCurves = !SS.exportExactCurves;
+void TextWindow::ScreenChangePwlCurves(int link, DWORD v) {
+    SS.exportPwlCurves = !SS.exportPwlCurves;
     InvalidateGraphics();
 }
 void TextWindow::ShowConfiguration(void) {
@@ -681,14 +681,14 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeShadedTriangles,
         (!SS.exportShadedTriangles ? "" : "no"),
         (!SS.exportShadedTriangles ? "no" : ""));
-    Printf(false, "%Ft export exact curves in DXF: "
+    Printf(false, "%Ft curves as piecewise linear: "
                   "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-        &ScreenChangeExactCurves,
-        (SS.exportExactCurves ? "" : "yes"),
-        (SS.exportExactCurves ? "yes" : ""),
-        &ScreenChangeExactCurves,
-        (!SS.exportExactCurves ? "" : "no"),
-        (!SS.exportExactCurves ? "no" : ""));
+        &ScreenChangePwlCurves,
+        (SS.exportPwlCurves ? "" : "yes"),
+        (SS.exportPwlCurves ? "yes" : ""),
+        &ScreenChangePwlCurves,
+        (!SS.exportPwlCurves ? "" : "no"),
+        (!SS.exportPwlCurves ? "no" : ""));
 
     Printf(false, "");
     Printf(false, "%Ft draw back faces: "

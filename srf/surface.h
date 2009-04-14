@@ -50,7 +50,8 @@ public:
 };
 
 // Stuff for rational polynomial curves, of degree one to three. These are
-// our inputs.
+// our inputs, and are also calculated for certain exact surface-surface
+// intersections.
 class SBezier {
 public:
     int             tag;
@@ -59,6 +60,10 @@ public:
     double          weight[4];
 
     Vector PointAt(double t);
+    Vector TangentAt(double t);
+    void ClosestPointTo(Vector p, double *t);
+    void SplitAt(double t, SBezier *bef, SBezier *aft);
+
     Vector Start(void);
     Vector Finish(void);
     bool Equals(SBezier *b);
@@ -69,10 +74,15 @@ public:
     void Reverse(void);
 
     SBezier TransformedBy(Vector t, Quaternion q);
+    SBezier InPerspective(Vector u, Vector v, Vector n,
+                          Vector origin, double cameraTan);
 
     static SBezier From(Vector p0, Vector p1, Vector p2, Vector p3);
     static SBezier From(Vector p0, Vector p1, Vector p2);
     static SBezier From(Vector p0, Vector p1);
+    static SBezier From(Vector4 p0, Vector4 p1, Vector4 p2, Vector4 p3);
+    static SBezier From(Vector4 p0, Vector4 p1, Vector4 p2);
+    static SBezier From(Vector4 p0, Vector4 p1);
 };
 
 class SBezierList {
@@ -233,8 +243,10 @@ public:
             Vector *start, Vector *finish);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
+    void MakeTrimEdgesInto(SEdgeList *sel, bool asUv, SCurve *sc, STrimBy *stb);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
             SShell *useCurvesFrom=NULL);
+    void MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl);
     void MakeClassifyingBsp(SShell *shell);
     double ChordToleranceForEdge(Vector a, Vector b);
 
@@ -282,6 +294,8 @@ public:
 
     void TriangulateInto(SMesh *sm);
     void MakeEdgesInto(SEdgeList *sel);
+    void MakeSectionEdgesInto(Vector n, double d,
+                                SEdgeList *sel, SBezierList *sbl);
     void Clear(void);
 };
 

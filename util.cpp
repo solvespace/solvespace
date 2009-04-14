@@ -537,6 +537,10 @@ Point2d Vector::ProjectXy(void) {
     return p;
 }
 
+Vector4 Vector::Project4d(void) {
+    return Vector4::From(1, x, y, z);
+}
+
 double Vector::DivPivoting(Vector delta) {
     double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
 
@@ -729,6 +733,39 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
                        nc.x, nc.y, dc  );
 
     return Vector::From(detx/det, dety/det, detz/det);
+}
+
+Vector4 Vector4::From(double w, double x, double y, double z) {
+    Vector4 ret;
+    ret.w = w;
+    ret.x = x;
+    ret.y = y;
+    ret.z = z;
+    return ret;
+}
+
+Vector4 Vector4::From(double w, Vector v) {
+    return Vector4::From(w, w*v.x, w*v.y, w*v.z);
+}
+
+Vector4 Vector4::Blend(Vector4 a, Vector4 b, double t) {
+    return (a.ScaledBy(1 - t)).Plus(b.ScaledBy(t));
+}
+
+Vector4 Vector4::Plus(Vector4 b) {
+    return Vector4::From(w + b.w, x + b.x, y + b.y, z + b.z);
+}
+
+Vector4 Vector4::Minus(Vector4 b) {
+    return Vector4::From(w - b.w, x - b.x, y - b.y, z - b.z);
+}
+
+Vector4 Vector4::ScaledBy(double s) {
+    return Vector4::From(w*s, x*s, y*s, z*s);
+}
+
+Vector Vector4::PerspectiveProject(void) {
+    return Vector::From(x / w, y / w, z / w);
 }
 
 Point2d Point2d::From(double x, double y) {

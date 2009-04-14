@@ -270,9 +270,25 @@ void GraphicsWindow::LoopOverPoints(
     int i, j;
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
-        if(!e->IsPoint()) continue;
         if(!e->IsVisible()) continue;
-        HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
+        if(e->IsPoint()) {
+            HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
+        } else if(e->type == Entity::CIRCLE) {
+            // Lots of entities can extend outside the bbox of their points,
+            // but circles are particularly bad. We want to get things halfway
+            // reasonable without the mesh, because a zoom to fit is used to
+            // set the zoom level to set the chord tol.
+            double r = e->CircleGetRadiusNum();
+            Vector c = SS.GetEntity(e->point[0])->PointGetNum();
+            Quaternion q = SS.GetEntity(e->normal)->NormalGetNum();
+            for(j = 0; j < 4; j++) {
+                Vector p = (j == 0) ? (c.Plus(q.RotationU().ScaledBy( r))) :
+                           (j == 1) ? (c.Plus(q.RotationU().ScaledBy(-r))) :
+                           (j == 2) ? (c.Plus(q.RotationV().ScaledBy( r))) :
+                                      (c.Plus(q.RotationV().ScaledBy(-r)));
+                HandlePointForZoomToFit(p, pmax, pmin, wmin, div);
+            }
+        }
     }
     Group *g = SS.GetGroup(activeGroup);
     for(i = 0; i < g->runningMesh.l.n; i++) {

@@ -56,8 +56,8 @@ void SolveSpace::Init(char *cmdLine) {
     drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
     // Export shaded triangles in a 2d view
     exportShadedTriangles = CnfThawDWORD(1, "ExportShadedTriangles");
-    // Export exact curves (instead of pwl) when possible
-    exportExactCurves = CnfThawDWORD(0, "ExportExactCurves");
+    // Export pwl curves (instead of exact) always
+    exportPwlCurves = CnfThawDWORD(0, "ExportPwlCurves");
     // Show toolbar in the graphics window
     showToolbar = CnfThawDWORD(1, "ShowToolbar");
     // Recent files menus
@@ -124,8 +124,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
     // Export shaded triangles in a 2d view
     CnfFreezeDWORD(exportShadedTriangles, "ExportShadedTriangles");
-    // Export exact curves (instead of pwl) when possible
-    CnfFreezeDWORD(exportExactCurves, "ExportExactCurves");
+    // Export pwl curves (instead of exact) always
+    CnfFreezeDWORD(exportPwlCurves, "ExportPwlCurves");
     // Show toolbar in the graphics window
     CnfFreezeDWORD(showToolbar, "ShowToolbar");
 

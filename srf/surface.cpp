@@ -174,6 +174,58 @@ bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) {
     return false;
 }
 
+//-----------------------------------------------------------------------------
+// Generate the piecewise linear approximation of the trim stb, which applies
+// to the curve sc.
+//-----------------------------------------------------------------------------
+void SSurface::MakeTrimEdgesInto(SEdgeList *sel, bool asUv,
+                                 SCurve *sc, STrimBy *stb)
+{
+    Vector prev, prevuv, ptuv;
+    bool inCurve = false, empty = true;
+    double u = 0, v = 0;
+
+    int i, first, last, increment;
+    if(stb->backwards) {
+        first = sc->pts.n - 1;
+        last = 0;
+        increment = -1;
+    } else {
+        first = 0;
+        last = sc->pts.n - 1;
+        increment = 1;
+    }
+    for(i = first; i != (last + increment); i += increment) {
+        Vector *pt = &(sc->pts.elem[i]);
+        if(asUv) {
+            ClosestPointTo(*pt, &u, &v);
+            ptuv = Vector::From(u, v, 0);
+            if(inCurve) {
+                sel->AddEdge(prevuv, ptuv, sc->h.v, stb->backwards);
+                empty = false;
+            }
+            prevuv = ptuv;
+        } else {
+            if(inCurve) {
+                sel->AddEdge(prev, *pt, sc->h.v, stb->backwards);
+                empty = false;
+            }
+            prev = *pt;
+        }
+
+        if(pt->Equals(stb->start)) inCurve = true;
+        if(pt->Equals(stb->finish)) inCurve = false;
+    }
+    if(inCurve) dbp("trim was unterminated");
+    if(empty)   dbp("trim was empty");
+}
+
+//-----------------------------------------------------------------------------
+// Generate all of our trim curves, in piecewise linear form. We can do
+// so in either uv or xyz coordinates. And if requested, then we can use
+// the split curves from useCurvesFrom instead of the curves in our own
+// shell.
+//-----------------------------------------------------------------------------
 void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
                              SShell *useCurvesFrom)
 {
@@ -189,43 +241,45 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
             sc = useCurvesFrom->curve.FindById(sc->newH);
         }
 
-        Vector prev, prevuv, ptuv;
-        bool inCurve = false, empty = true;
-        double u = 0, v = 0;
-   
-        int i, first, last, increment;
-        if(stb->backwards) {
-            first = sc->pts.n - 1;
-            last = 0;
-            increment = -1;
-        } else {
-            first = 0;
-            last = sc->pts.n - 1;
-            increment = 1;
-        }
-        for(i = first; i != (last + increment); i += increment) {
-            Vector *pt = &(sc->pts.elem[i]);
-            if(asUv) {
-                ClosestPointTo(*pt, &u, &v);
-                ptuv = Vector::From(u, v, 0);
-                if(inCurve) {
-                    sel->AddEdge(prevuv, ptuv, sc->h.v, stb->backwards);
-                    empty = false;
-                }
-                prevuv = ptuv;
-            } else {
-                if(inCurve) {
-                    sel->AddEdge(prev, *pt, sc->h.v, stb->backwards);
-                    empty = false;
-                }
-                prev = *pt;
-            }
+        MakeTrimEdgesInto(sel, asUv, sc, stb);
+    }
+}
 
-            if(pt->Equals(stb->start)) inCurve = true;
-            if(pt->Equals(stb->finish)) inCurve = false;
+//-----------------------------------------------------------------------------
+// Report our trim curves. If a trim curve is exact and sbl is not null, then
+// add its exact form to sbl. Otherwise, add its piecewise linearization to
+// sel.
+//-----------------------------------------------------------------------------
+void SSurface::MakeSectionEdgesInto(SShell *shell,
+                                    SEdgeList *sel, SBezierList *sbl)
+{
+    STrimBy *stb;
+    for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
+        SCurve *sc = shell->curve.FindById(stb->curve);
+        SBezier *sb = &(sc->exact);
+
+        if(sbl && sc->isExact && sb->deg != 1) {
+            double ts, tf;
+            if(stb->backwards) {
+                sb->ClosestPointTo(stb->start,  &tf);
+                sb->ClosestPointTo(stb->finish, &ts);
+            } else {
+                sb->ClosestPointTo(stb->start,  &ts);
+                sb->ClosestPointTo(stb->finish, &tf);
+            }
+            SBezier junk_bef, keep_aft;
+            sb->SplitAt(ts, &junk_bef, &keep_aft);
+            // In the kept piece, the range that used to go from ts to 1
+            // now goes from 0 to 1; so rescale tf appropriately.
+            tf = (tf - ts)/(1 - ts);
+
+            SBezier keep_bef, junk_aft;
+            keep_aft.SplitAt(tf, &keep_bef, &junk_aft);
+
+            sbl->l.Add(&keep_bef);
+        } else {
+            MakeTrimEdgesInto(sel, false, sc, stb);
         }
-        if(inCurve) dbp("trim was unterminated");
-        if(empty)   dbp("trim was empty");
     }
 }
 
@@ -436,6 +490,17 @@ void SShell::MakeEdgesInto(SEdgeList *sel) {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {
         s->MakeEdgesInto(this, sel, false);
+    }
+}
+
+void SShell::MakeSectionEdgesInto(Vector n, double d,
+                                 SEdgeList *sel, SBezierList *sbl)
+{
+    SSurface *s;
+    for(s = surface.First(); s; s = surface.NextAfter(s)) {
+        if(s->CoincidentWithPlane(n, d)) {
+            s->MakeSectionEdgesInto(this, sel, sbl);
+        }
     }
 }
 

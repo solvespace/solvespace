@@ -329,8 +329,6 @@ public:
     Vector TransformIntPoint(int x, int y);
     void LineSegment(int x0, int y0, int x1, int y1);
     void Bezier(int x0, int y0, int x1, int y1, int x2, int y2);
-    void BezierPwl(double ta, double tb, Vector p0, Vector p1, Vector p2);
-    Vector BezierEval(double t, Vector p0, Vector p1, Vector p2);
 };
 
 class TtfFontList {
@@ -352,8 +350,10 @@ public:
     static bool StringEndsIn(char *str, char *ending);
     static VectorFileWriter *ForFile(char *file);
 
-    void Output(SEdgeList *sel, SMesh *sm);
+    void Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm);
+    void BezierAsPwl(SBezier *sb);
 
+    virtual void Bezier(SBezier *sb) = 0;
     virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
@@ -363,6 +363,7 @@ class DxfFileWriter : public VectorFileWriter {
 public:
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -371,6 +372,7 @@ public:
     static double MmToPoints(double mm);
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -378,6 +380,7 @@ class SvgFileWriter : public VectorFileWriter {
 public:
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -386,6 +389,7 @@ public:
     static double MmToHpglUnits(double mm);
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -451,7 +455,7 @@ public:
     int     drawBackFaces;
     int     showToolbar;
     int     exportShadedTriangles;
-    int     exportExactCurves;
+    int     exportPwlCurves;
 
     int CircleSides(double r);
     typedef enum {
@@ -508,7 +512,7 @@ public:
     void ExportMeshTo(char *file);
     void ExportViewTo(char *file);
     void ExportSectionTo(char *file);
-    void ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
+    void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
                             Vector u, Vector v, Vector n, Vector origin,
                                 double cameraTan,
                             VectorFileWriter *out);

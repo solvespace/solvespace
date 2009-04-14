@@ -6,6 +6,7 @@ typedef unsigned long DWORD;
 typedef unsigned char BYTE;
 
 class Vector;
+class Vector4;
 class Point2d;
 class hEntity;
 class hParam;
@@ -92,6 +93,21 @@ public:
                          Vector origin, double cameraTan);
     Point2d Project2d(Vector u, Vector v);
     Point2d ProjectXy(void);
+    Vector4 Project4d(void);
+};
+
+class Vector4 {
+public:
+    double w, x, y, z;
+    
+    static Vector4 From(double w, double x, double y, double z);
+    static Vector4 From(double w, Vector v3);
+    static Vector4 Blend(Vector4 a, Vector4 b, double t);
+
+    Vector4 Plus(Vector4 b);
+    Vector4 Minus(Vector4 b);
+    Vector4 ScaledBy(double s);
+    Vector PerspectiveProject(void);
 };
 
 class Point2d {

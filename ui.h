@@ -145,7 +145,7 @@ public:
     static void ScreenGoToWebsite(int link, DWORD v);
 
     static void ScreenChangeBackFaces(int link, DWORD v);
-    static void ScreenChangeExactCurves(int link, DWORD v);
+    static void ScreenChangePwlCurves(int link, DWORD v);
     static void ScreenChangeShadedTriangles(int link, DWORD v);
 
     static void ScreenStepDimSteps(int link, DWORD v);

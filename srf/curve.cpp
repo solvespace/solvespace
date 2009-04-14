@@ -4,37 +4,61 @@
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 
-SBezier SBezier::From(Vector p0, Vector p1) {
+SBezier SBezier::From(Vector4 p0, Vector4 p1) {
     SBezier ret;
     ZERO(&ret);
     ret.deg = 1;
-    ret.weight[0] = ret.weight[1] = 1;
-    ret.ctrl[0] = p0;
-    ret.ctrl[1] = p1;
+    ret.weight[0] = p0.w;
+    ret.ctrl  [0] = p0.PerspectiveProject();
+    ret.weight[1] = p1.w;
+    ret.ctrl  [1] = p1.PerspectiveProject();
     return ret;
 }
 
-SBezier SBezier::From(Vector p0, Vector p1, Vector p2) {
+SBezier SBezier::From(Vector4 p0, Vector4 p1, Vector4 p2) {
     SBezier ret;
     ZERO(&ret);
     ret.deg = 2;
-    ret.weight[0] = ret.weight[1] = ret.weight[2] = 1;
-    ret.ctrl[0] = p0;
-    ret.ctrl[1] = p1;
-    ret.ctrl[2] = p2;
+    ret.weight[0] = p0.w;
+    ret.ctrl  [0] = p0.PerspectiveProject();
+    ret.weight[1] = p1.w;
+    ret.ctrl  [1] = p1.PerspectiveProject();
+    ret.weight[2] = p2.w;
+    ret.ctrl  [2] = p2.PerspectiveProject();
     return ret;
 }
 
-SBezier SBezier::From(Vector p0, Vector p1, Vector p2, Vector p3) {
+SBezier SBezier::From(Vector4 p0, Vector4 p1, Vector4 p2, Vector4 p3) {
     SBezier ret;
     ZERO(&ret);
     ret.deg = 3;
-    ret.weight[0] = ret.weight[1] = ret.weight[2] = ret.weight[3] = 1;
-    ret.ctrl[0] = p0;
-    ret.ctrl[1] = p1;
-    ret.ctrl[2] = p2;
-    ret.ctrl[3] = p3;
+    ret.weight[0] = p0.w;
+    ret.ctrl  [0] = p0.PerspectiveProject();
+    ret.weight[1] = p1.w;
+    ret.ctrl  [1] = p1.PerspectiveProject();
+    ret.weight[2] = p2.w;
+    ret.ctrl  [2] = p2.PerspectiveProject();
+    ret.weight[3] = p3.w;
+    ret.ctrl  [3] = p3.PerspectiveProject();
     return ret;
+}
+
+SBezier SBezier::From(Vector p0, Vector p1) {
+    return SBezier::From(p0.Project4d(),
+                         p1.Project4d());
+}
+
+SBezier SBezier::From(Vector p0, Vector p1, Vector p2) {
+    return SBezier::From(p0.Project4d(),
+                         p1.Project4d(),
+                         p2.Project4d());
+}
+
+SBezier SBezier::From(Vector p0, Vector p1, Vector p2, Vector p3) {
+    return SBezier::From(p0.Project4d(),
+                         p1.Project4d(),
+                         p2.Project4d(),
+                         p3.Project4d());
 }
 
 Vector SBezier::Start(void) {
@@ -69,6 +93,34 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
     int i;
     for(i = 0; i <= deg; i++) {
         ret.ctrl[i] = (q.Rotate(ret.ctrl[i])).Plus(t);
+    }
+    return ret;
+}
+
+//-----------------------------------------------------------------------------
+// Apply a perspective transformation to a rational Bezier curve, calculating
+// the new weights as required.
+//-----------------------------------------------------------------------------
+SBezier SBezier::InPerspective(Vector u, Vector v, Vector n,
+                               Vector origin, double cameraTan)
+{
+    Quaternion q = Quaternion::From(u, v);
+    q = q.Inverse();
+    // we want Q*(p - o) = Q*p - Q*o
+    SBezier ret = this->TransformedBy(q.Rotate(origin).ScaledBy(-1), q);
+    int i;
+    for(i = 0; i <= deg; i++) {
+        Vector4 ct = Vector4::From(ret.weight[i], ret.ctrl[i]);
+        // so the desired curve, before perspective, is
+        //    (x/w, y/w, z/w)
+        // and after perspective is
+        //    ((x/w)/(1 - (z/w)*cameraTan, ...
+        //  = (x/(w - z*cameraTan), ...
+        // so we want to let w' = w - z*cameraTan
+        ct.w = ct.w - ct.z*cameraTan;
+
+        ret.ctrl[i] = ct.PerspectiveProject();
+        ret.weight[i] = ct.w;
     }
     return ret;
 }

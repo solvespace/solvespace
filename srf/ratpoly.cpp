@@ -107,6 +107,98 @@ Vector SBezier::PointAt(double t) {
     return pt;
 }
 
+Vector SBezier::TangentAt(double t) {
+    Vector pt = Vector::From(0, 0, 0), pt_p = Vector::From(0, 0, 0);
+    double d = 0, d_p = 0;
+
+    int i;
+    for(i = 0; i <= deg; i++) {
+        double B  = Bernstein(i, deg, t),
+               Bp = BernsteinDerivative(i, deg, t);
+
+        pt = pt.Plus(ctrl[i].ScaledBy(B*weight[i]));
+        d += weight[i]*B;
+
+        pt_p = pt_p.Plus(ctrl[i].ScaledBy(Bp*weight[i]));
+        d_p += weight[i]*Bp;
+    }
+
+    // quotient rule; f(t) = n(t)/d(t), so f' = (n'*d - n*d')/(d^2)
+    Vector ret;
+    ret = (pt_p.ScaledBy(d)).Minus(pt.ScaledBy(d_p));
+    ret = ret.ScaledBy(1.0/(d*d));
+    return ret;
+}
+
+void SBezier::ClosestPointTo(Vector p, double *t) {
+    int i;
+    double minDist = VERY_POSITIVE;
+    *t = 0;
+    double res = (deg <= 2) ? 7.0 : 20.0;
+    for(i = 0; i < (int)res; i++) {
+        double tryt = (i/res);
+        
+        Vector tryp = PointAt(tryt);
+        double d = (tryp.Minus(p)).Magnitude();
+        if(d < minDist) {
+            *t = tryt;
+            minDist = d;
+        }
+    }
+
+    Vector p0;
+    for(i = 0; i < 15; i++) {
+        p0 = PointAt(*t);
+        if(p0.Equals(p, RATPOLY_EPS)) {
+            return;
+        }
+
+        Vector dp = TangentAt(*t);
+        Vector pc = p.ClosestPointOnLine(p0, dp);
+        *t += (pc.Minus(p0)).DivPivoting(dp);
+    }
+    dbp("didn't converge (closest point on bezier curve)");
+}
+
+void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
+    Vector4 ct[4];
+    int i;
+    for(i = 0; i <= deg; i++) {
+        ct[i] = Vector4::From(weight[i], ctrl[i]);
+    }
+
+    switch(deg) {
+        case 1: {
+            Vector4 cts = Vector4::Blend(ct[0], ct[1], t);
+            *bef = SBezier::From(ct[0], cts);
+            *aft = SBezier::From(cts, ct[1]);
+            break;
+        }
+        case 2: {
+            Vector4 ct01 = Vector4::Blend(ct[0], ct[1], t),
+                    ct12 = Vector4::Blend(ct[1], ct[2], t),
+                    cts  = Vector4::Blend(ct01,  ct12,  t);
+
+            *bef = SBezier::From(ct[0], ct01, cts);
+            *aft = SBezier::From(cts, ct12, ct[2]);
+            break;
+        }
+        case 3: {
+            Vector4 ct01    = Vector4::Blend(ct[0], ct[1], t),
+                    ct12    = Vector4::Blend(ct[1], ct[2], t),
+                    ct23    = Vector4::Blend(ct[2], ct[3], t),
+                    ct01_12 = Vector4::Blend(ct01,  ct12,  t),
+                    ct12_23 = Vector4::Blend(ct12,  ct23,  t),
+                    cts     = Vector4::Blend(ct01_12, ct12_23, t);
+
+            *bef = SBezier::From(ct[0], ct01, ct01_12, cts);
+            *aft = SBezier::From(cts, ct12_23, ct23, ct[3]);
+            break;
+        }
+        default: oops();
+    }
+}
+
 void SBezier::MakePwlInto(List<Vector> *l) {
     l->Add(&(ctrl[0]));
     MakePwlWorker(l, 0.0, 1.0);
@@ -180,7 +272,7 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) {
             den_v += weight[i][j]*Bi*Bjp;
         }
     }
-    // Quotient rule; f(t) = n(t)/d(t), so f' = (n'*d - n*d')/(d^2)
+    // quotient rule; f(t) = n(t)/d(t), so f' = (n'*d - n*d')/(d^2)
     *tu = ((num_u.ScaledBy(den)).Minus(num.ScaledBy(den_u)));
     *tu = tu->ScaledBy(1.0/(den*den));
 

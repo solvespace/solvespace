@@ -62,57 +62,51 @@ void SolveSpace::ExportSectionTo(char *filename) {
     n = n.WithMagnitude(1);
     d = origin.Dot(n);
 
-    SMesh m;
-    ZERO(&m);
-    m.MakeFromCopy(&(g->runningMesh));
-
-    // Delete all triangles in the mesh that do not lie in our export plane.
-    m.l.ClearTags();
-    int i;
-    for(i = 0; i < m.l.n; i++) {
-        STriangle *tr = &(m.l.elem[i]);
-
-        if((fabs(n.Dot(tr->a) - d) >= LENGTH_EPS) ||
-           (fabs(n.Dot(tr->b) - d) >= LENGTH_EPS) ||
-           (fabs(n.Dot(tr->c) - d) >= LENGTH_EPS))
-        {
-            tr->tag  = 1;
-        }
-    }
-    m.l.RemoveTagged();
-
-    // Select the naked edges in our resulting open mesh.
-    SKdNode *root = SKdNode::From(&m);
     SEdgeList el;
     ZERO(&el);
-    root->MakeNakedEdgesInto(&el);
-    m.Clear();
+    SBezierList bl;
+    ZERO(&bl);
+
+    g->runningShell.MakeSectionEdgesInto(n, d,
+        &el, SS.exportPwlCurves ? NULL : &bl);
+
+    el.CullExtraneousEdges();
 
     // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
         // parallel projection (no perspective), and no mesh
-        ExportLinesAndMesh(&el, NULL,
+        ExportLinesAndMesh(&el, &bl, NULL,
                            u, v, n, origin, 0,
                            out);
     }
     el.Clear();
+    bl.Clear();
 }
 
 void SolveSpace::ExportViewTo(char *filename) {
     int i;
     SEdgeList edges;
     ZERO(&edges);
+    SBezierList beziers;
+    ZERO(&beziers);
+
+    SMesh *sm = NULL;
+    if(SS.GW.showShaded) {
+        sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
+    }
+
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         if(!e->IsVisible()) continue;
 
-        e->GenerateEdges(&edges);
-    }
-    
-    SMesh *sm = NULL;
-    if(SS.GW.showShaded) {
-        sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
+        if(SS.exportPwlCurves || (sm && !SS.GW.showHdnLines)) {
+            // We will be doing hidden line removal, which we can't do on
+            // exact curves; so we need things broken down to pwls.
+            e->GenerateEdges(&edges);
+        } else {
+            e->GenerateBezierCurves(&beziers);
+        }
     }
 
     if(SS.GW.showEdges) {
@@ -130,14 +124,15 @@ void SolveSpace::ExportViewTo(char *filename) {
 
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
-        ExportLinesAndMesh(&edges, sm, 
+        ExportLinesAndMesh(&edges, &beziers, sm,
                            u, v, n, origin, SS.cameraTangent*SS.GW.scale,
                            out);
     }
     edges.Clear();
+    beziers.Clear();
 }
 
-void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
+void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
                                     Vector u, Vector v, Vector n,
                                         Vector origin, double cameraTan,
                                     VectorFileWriter *out)
@@ -151,6 +146,17 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
         // project into the specified csys, and apply export scale
         (e->a) = e->a.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
         (e->b) = e->b.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
+    }
+
+    SBezier *b;
+    if(sbl) {
+        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+            *b = b->InPerspective(u, v, n, origin, cameraTan);
+            int i;
+            for(i = 0; i <= b->deg; i++) {
+                b->ctrl[i] = (b->ctrl[i]).ScaledBy(s);
+            }
+        }
     }
 
     // If cutter radius compensation is requested, then perform it now
@@ -252,7 +258,7 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SMesh *sm,
     }
 
     // Now write the lines and triangles to the output file
-    out->Output(sel, &sms);
+    out->Output(sel, sbl, &sms);
 
     smp.Clear();
     sms.Clear();
@@ -301,9 +307,10 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     return ret;
 }
 
-void VectorFileWriter::Output(SEdgeList *sel, SMesh *sm) {
+void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
     STriangle *tr;
     SEdge *e;
+    SBezier *b;
 
     // First calculate the bounding box.
     ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
@@ -321,6 +328,14 @@ void VectorFileWriter::Output(SEdgeList *sel, SMesh *sm) {
             (tr->c).MakeMaxMin(&ptMax, &ptMin);
         }
     }
+    if(sbl) {
+        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+            int i;
+            for(i = 0; i <= b->deg; i++) {
+                (b->ctrl[i]).MakeMaxMin(&ptMax, &ptMin);
+            }
+        }
+    }
 
     StartFile();
     if(sm && SS.exportShadedTriangles) {
@@ -333,8 +348,26 @@ void VectorFileWriter::Output(SEdgeList *sel, SMesh *sm) {
             LineSegment(e->a.x, e->a.y, e->b.x, e->b.y);
         }
     }
+    if(sbl) {
+        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+            Bezier(b);
+        }
+    }
     FinishAndCloseFile();
 }
+
+void VectorFileWriter::BezierAsPwl(SBezier *sb) {
+    List<Vector> lv;
+    ZERO(&lv);
+    sb->MakePwlInto(&lv);
+    int i;
+    for(i = 1; i < lv.n; i++) {
+        LineSegment(lv.elem[i-1].x, lv.elem[i-1].y,
+                    lv.elem[i  ].x, lv.elem[i  ].y);
+    }
+    lv.Clear();
+}
+
 
 //-----------------------------------------------------------------------------
 // Routines for DXF export
@@ -405,7 +438,12 @@ void DxfFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
                     x0, y0, 0.0,
                     x1, y1, 0.0);
 }
+
 void DxfFileWriter::Triangle(STriangle *tr) {
+}
+
+void DxfFileWriter::Bezier(SBezier *sb) {
+    BezierAsPwl(sb);
 }
 
 void DxfFileWriter::FinishAndCloseFile(void) {
@@ -455,6 +493,7 @@ void EpsFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
             MmToPoints(x0 - ptMin.x), MmToPoints(y0 - ptMin.y),
             MmToPoints(x1 - ptMin.x), MmToPoints(y1 - ptMin.y));
 }
+
 void EpsFileWriter::Triangle(STriangle *tr) {
     fprintf(f,
 "%.3f %.3f %.3f setrgbcolor\r\n"
@@ -485,6 +524,10 @@ void EpsFileWriter::Triangle(STriangle *tr) {
             MmToPoints(tr->a.x - ptMin.x), MmToPoints(tr->a.y - ptMin.y),
             MmToPoints(tr->b.x - ptMin.x), MmToPoints(tr->b.y - ptMin.y),
             MmToPoints(tr->c.x - ptMin.x), MmToPoints(tr->c.y - ptMin.y));
+}
+
+void EpsFileWriter::Bezier(SBezier *sb) {
+    BezierAsPwl(sb);
 }
 
 void EpsFileWriter::FinishAndCloseFile(void) {
@@ -521,6 +564,7 @@ void SvgFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
             (x0 - ptMin.x), (ptMax.y - y0),
             (x1 - ptMin.x), (ptMax.y - y1));
 }
+
 void SvgFileWriter::Triangle(STriangle *tr) {
     // crispEdges turns of anti-aliasing, which tends to cause hairline
     // cracks between triangles; but there still is some cracking, so
@@ -536,6 +580,10 @@ void SvgFileWriter::Triangle(STriangle *tr) {
             RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color),
             sw,
             RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color));
+}
+
+void SvgFileWriter::Bezier(SBezier *sb) {
+    BezierAsPwl(sb);
 }
 
 void SvgFileWriter::FinishAndCloseFile(void) {
@@ -559,8 +607,12 @@ void HpglFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
     fprintf(f, "PU%d,%d;\r\n", (int)MmToHpglUnits(x0), (int)MmToHpglUnits(y0));
     fprintf(f, "PD%d,%d;\r\n", (int)MmToHpglUnits(x1), (int)MmToHpglUnits(y1));
 }
+
 void HpglFileWriter::Triangle(STriangle *tr) {
-    // HPGL does not support filled triangles
+}
+
+void HpglFileWriter::Bezier(SBezier *sb) {
+    BezierAsPwl(sb);
 }
 
 void HpglFileWriter::FinishAndCloseFile(void) {
