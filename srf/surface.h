@@ -73,6 +73,9 @@ public:
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Reverse(void);
 
+    bool IsCircle(Vector axis, Vector *center, double *r);
+    bool IsRational(void);
+
     SBezier TransformedBy(Vector t, Quaternion q);
     SBezier InPerspective(Vector u, Vector v, Vector n,
                           Vector origin, double cameraTan);
@@ -90,6 +93,7 @@ public:
     List<SBezier>   l;
 
     void Clear(void);
+    void CullIdenticalBeziers(void);
 };
 
 class SBezierLoop {
@@ -239,8 +243,8 @@ public:
     bool CoincidentWithPlane(Vector n, double d);
     bool CoincidentWith(SSurface *ss, bool sameNormal);
     bool IsExtrusion(SBezier *of, Vector *along);
-    bool IsCylinder(Vector *center, Vector *axis, double *r,
-            Vector *start, Vector *finish);
+    bool IsCylinder(Vector *axis, Vector *center, double *r,
+                        Vector *start, Vector *finish);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
     void MakeTrimEdgesInto(SEdgeList *sel, bool asUv, SCurve *sc, STrimBy *stb);

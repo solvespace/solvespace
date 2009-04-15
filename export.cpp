@@ -71,6 +71,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
         &el, SS.exportPwlCurves ? NULL : &bl);
 
     el.CullExtraneousEdges();
+    bl.CullIdenticalBeziers();
 
     // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
@@ -94,6 +95,9 @@ void SolveSpace::ExportViewTo(char *filename) {
     SMesh *sm = NULL;
     if(SS.GW.showShaded) {
         sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
+    }
+    if(sm->l.n == 0) {
+        sm = NULL;
     }
 
     for(i = 0; i < SS.entity.n; i++) {
@@ -368,7 +372,6 @@ void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     lv.Clear();
 }
 
-
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------
@@ -385,6 +388,18 @@ void DxfFileWriter::StartFile(void) {
 "$ACADVER\r\n"
 "  1\r\n"
 "AC1006\r\n"
+"  9\r\n"
+"$ANGDIR\r\n"
+"  70\r\n"
+"0\r\n"
+"  9\r\n"
+"$AUNITS\r\n"
+"  70\r\n"
+"0\r\n"
+"  9\r\n"
+"$AUPREC\r\n"
+"  70\r\n"
+"0\r\n"
 "  9\r\n"
 "$INSBASE\r\n"
 "  10\r\n"
@@ -443,7 +458,40 @@ void DxfFileWriter::Triangle(STriangle *tr) {
 }
 
 void DxfFileWriter::Bezier(SBezier *sb) {
-    BezierAsPwl(sb);
+    Vector c, n = Vector::From(0, 0, 1);
+    double r;
+    if(sb->IsCircle(n, &c, &r)) {
+        double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x),
+               theta1 = atan2(sb->ctrl[2].y - c.y, sb->ctrl[2].x - c.x),
+               dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
+        if(dtheta < 0) {
+            SWAP(double, theta0, theta1);
+        }
+
+        fprintf(f,
+"  0\r\n"
+"ARC\r\n"
+"  8\r\n"     // Layer code
+"%d\r\n"
+"  10\r\n"    // x
+"%.6f\r\n"
+"  20\r\n"    // y
+"%.6f\r\n"
+"  30\r\n"    // z
+"%.6f\r\n"
+"  40\r\n"    // radius
+"%.6f\r\n"
+"  50\r\n"    // start angle
+"%.6f\r\n"
+"  51\r\n"    // end angle
+"%.6f\r\n",
+                        0,
+                        c.x, c.y, 0.0,
+                        r,
+                        theta0*180/PI, theta1*180/PI);
+    } else {
+        BezierAsPwl(sb);
+    }
 }
 
 void DxfFileWriter::FinishAndCloseFile(void) {
@@ -527,7 +575,31 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 }
 
 void EpsFileWriter::Bezier(SBezier *sb) {
-    BezierAsPwl(sb);
+    Vector c, n = Vector::From(0, 0, 1);
+    double r;
+    if(sb->IsCircle(n, &c, &r)) {
+        Vector p0 = sb->ctrl[0], p1 = sb->ctrl[2];
+        double theta0 = atan2(p0.y - c.y, p0.x - c.x),
+               theta1 = atan2(p1.y - c.y, p1.x - c.x),
+               dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
+        if(dtheta < 0) {
+            SWAP(double, theta0, theta1);
+            SWAP(Vector, p0, p1);
+        }
+        fprintf(f,
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f %.3f %.3f %.3f arc\r\n"
+"    1 setlinewidth\r\n"
+"    0 setgray\r\n"
+"stroke\r\n",
+            MmToPoints(p0.x - ptMin.x), MmToPoints(p0.y - ptMin.y),
+            MmToPoints(c.x - ptMin.x),  MmToPoints(c.y - ptMin.y),
+            MmToPoints(r),
+            theta0*180/PI, theta1*180/PI);
+    } else {
+        BezierAsPwl(sb);
+    }
 }
 
 void EpsFileWriter::FinishAndCloseFile(void) {
@@ -541,6 +613,10 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 //-----------------------------------------------------------------------------
 // Routines for SVG output
 //-----------------------------------------------------------------------------
+
+const char *SvgFileWriter::SVG_STYLE =
+    "stroke-width='1' stroke='black' style='fill: none;'";
+
 void SvgFileWriter::StartFile(void) {
     fprintf(f,
 "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
@@ -559,10 +635,10 @@ void SvgFileWriter::StartFile(void) {
 void SvgFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
     // SVG uses a coordinate system with the origin at top left, +y down
     fprintf(f,
-"<polyline points='%.3f,%.3f %.3f,%.3f' "
-    "stroke-width='1' stroke='black' style='fill: none;' />\r\n",
+"<polyline points='%.3f,%.3f %.3f,%.3f' %s />\r\n",
             (x0 - ptMin.x), (ptMax.y - y0),
-            (x1 - ptMin.x), (ptMax.y - y1));
+            (x1 - ptMin.x), (ptMax.y - y1),
+            SVG_STYLE);
 }
 
 void SvgFileWriter::Triangle(STriangle *tr) {
@@ -583,7 +659,52 @@ void SvgFileWriter::Triangle(STriangle *tr) {
 }
 
 void SvgFileWriter::Bezier(SBezier *sb) {
-    BezierAsPwl(sb);
+    Vector c, n = Vector::From(0, 0, 1);
+    double r;
+    if(sb->IsCircle(n, &c, &r)) {
+        Vector p0 = sb->ctrl[0], p1 = sb->ctrl[2];
+        double theta0 = atan2(p0.y - c.y, p0.x - c.x),
+               theta1 = atan2(p1.y - c.y, p1.x - c.x),
+               dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
+        // The arc must be less than 180 degrees, or else it couldn't have
+        // been represented as a single rational Bezier. And arrange it
+        // to run counter-clockwise, which corresponds to clockwise in
+        // SVG's mirrored coordinate system.
+        if(dtheta < 0) {
+            SWAP(Vector, p0, p1);
+        }
+        fprintf(f, 
+"<path d='M%.3f,%.3f "
+         "A%.3f,%.3f 0 0,0 %.3f,%.3f' %s />\r\n",
+                p0.x - ptMin.x, ptMax.y - p0.y,
+                r, r,
+                p1.x - ptMin.x, ptMax.y - p1.y,
+                SVG_STYLE);
+    } else if(!sb->IsRational()) {
+        if(sb->deg == 1) {
+            LineSegment(sb->ctrl[0].x, sb->ctrl[0].y,
+                        sb->ctrl[1].x, sb->ctrl[1].y);
+        } else if(sb->deg == 2) {
+            fprintf(f,
+"<path d='M%.3f,%.3f "
+         "Q%.3f,%.3f %.3f,%.3f' %s />\r\n",
+                sb->ctrl[0].x - ptMin.x, ptMax.y - sb->ctrl[0].y,
+                sb->ctrl[1].x - ptMin.x, ptMax.y - sb->ctrl[1].y,
+                sb->ctrl[2].x - ptMin.x, ptMax.y - sb->ctrl[2].y,
+                SVG_STYLE);
+        } else if(sb->deg == 3) {
+            fprintf(f,
+"<path d='M%.3f,%.3f "
+         "C%.3f,%.3f %.3f,%.3f %.3f,%.3f' %s />\r\n",
+                sb->ctrl[0].x - ptMin.x, ptMax.y - sb->ctrl[0].y,
+                sb->ctrl[1].x - ptMin.x, ptMax.y - sb->ctrl[1].y,
+                sb->ctrl[2].x - ptMin.x, ptMax.y - sb->ctrl[2].y,
+                sb->ctrl[3].x - ptMin.x, ptMax.y - sb->ctrl[3].y,
+                SVG_STYLE);
+        }
+    } else {
+        BezierAsPwl(sb);
+    }
 }
 
 void SvgFileWriter::FinishAndCloseFile(void) {

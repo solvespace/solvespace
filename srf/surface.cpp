@@ -50,51 +50,15 @@ bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
     return true;
 }
 
-bool SSurface::IsCylinder(Vector *center, Vector *axis, double *r,
-                             Vector *start, Vector *finish)
+bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
+                            Vector *start, Vector *finish)
 {
     SBezier sb;
     if(!IsExtrusion(&sb, axis)) return false;
-    if(sb.deg != 2) return false;
+    if(!sb.IsCircle(*axis, center, r)) return false;
 
-    Vector t0 = (sb.ctrl[0]).Minus(sb.ctrl[1]),
-           t2 = (sb.ctrl[2]).Minus(sb.ctrl[1]),
-           r0 = axis->Cross(t0),
-           r2 = axis->Cross(t2);
-
-    *center = Vector::AtIntersectionOfLines(sb.ctrl[0], (sb.ctrl[0]).Plus(r0),
-                                            sb.ctrl[2], (sb.ctrl[2]).Plus(r2),
-                                            NULL, NULL, NULL);
-
-    double rd0 = center->Minus(sb.ctrl[0]).Magnitude(),
-           rd2 = center->Minus(sb.ctrl[2]).Magnitude();
-    if(fabs(rd0 - rd2) > LENGTH_EPS) {
-        return false;
-    }
-    *r = rd0;
-
-    Vector u = r0.WithMagnitude(1),
-           v = (axis->Cross(u)).WithMagnitude(1);
-    Point2d c2  = center->Project2d(u, v),
-            pa2 = (sb.ctrl[0]).Project2d(u, v).Minus(c2),
-            pb2 = (sb.ctrl[2]).Project2d(u, v).Minus(c2);
-    
-    double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
-           thetab = atan2(pb2.y, pb2.x),
-           dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
-    if(dtheta > PI) {
-        // Not possible with a second order Bezier arc; so we must have
-        // the points backwards.
-        dtheta = 2*PI - dtheta;
-    }
-
-    if(fabs(sb.weight[1] - cos(dtheta/2)) > LENGTH_EPS) {
-        return false;
-    }
-
-    *start  = sb.ctrl[0];
+    *start = sb.ctrl[0];
     *finish = sb.ctrl[2];
-
     return true;
 }
 

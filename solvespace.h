@@ -378,6 +378,7 @@ public:
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
+    static const char *SVG_STYLE;
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);

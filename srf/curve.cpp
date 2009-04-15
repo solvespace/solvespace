@@ -98,6 +98,59 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
 }
 
 //-----------------------------------------------------------------------------
+// Is this Bezier exactly the arc of a circle, projected along the specified
+// axis? If yes, return that circle's center and radius.
+//-----------------------------------------------------------------------------
+bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
+    if(deg != 2) return false;
+
+    Vector t0 = (ctrl[0]).Minus(ctrl[1]),
+           t2 = (ctrl[2]).Minus(ctrl[1]),
+           r0 = axis.Cross(t0),
+           r2 = axis.Cross(t2);
+
+    *center = Vector::AtIntersectionOfLines(ctrl[0], (ctrl[0]).Plus(r0),
+                                            ctrl[2], (ctrl[2]).Plus(r2),
+                                            NULL, NULL, NULL);
+
+    double rd0 = center->Minus(ctrl[0]).Magnitude(),
+           rd2 = center->Minus(ctrl[2]).Magnitude();
+    if(fabs(rd0 - rd2) > LENGTH_EPS) {
+        return false;
+    }
+    *r = rd0;
+
+    Vector u = r0.WithMagnitude(1),
+           v = (axis.Cross(u)).WithMagnitude(1);
+    Point2d c2  = center->Project2d(u, v),
+            pa2 = (ctrl[0]).Project2d(u, v).Minus(c2),
+            pb2 = (ctrl[2]).Project2d(u, v).Minus(c2);
+    
+    double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
+           thetab = atan2(pb2.y, pb2.x),
+           dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
+    if(dtheta > PI) {
+        // Not possible with a second order Bezier arc; so we must have
+        // the points backwards.
+        dtheta = 2*PI - dtheta;
+    }
+
+    if(fabs(weight[1] - cos(dtheta/2)) > LENGTH_EPS) {
+        return false;
+    }
+
+    return true;
+}
+
+bool SBezier::IsRational(void) {
+    int i;
+    for(i = 0; i <= deg; i++) {
+        if(fabs(weight[i] - 1) > LENGTH_EPS) return true;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
 // Apply a perspective transformation to a rational Bezier curve, calculating
 // the new weights as required.
 //-----------------------------------------------------------------------------
@@ -139,6 +192,32 @@ bool SBezier::Equals(SBezier *b) {
 
 void SBezierList::Clear(void) {
     l.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// If our list contains multiple identical Beziers (in either forward or
+// reverse order), then cull them.
+//-----------------------------------------------------------------------------
+void SBezierList::CullIdenticalBeziers(void) {
+    int i, j;
+
+    l.ClearTags();
+    for(i = 0; i < l.n; i++) {
+        SBezier *bi = &(l.elem[i]), bir;
+        bir = *bi;
+        bir.Reverse();
+
+        for(j = i + 1; j < l.n; j++) {
+            SBezier *bj = &(l.elem[j]);
+            if(bj->Equals(bi) ||
+               bj->Equals(&bir))
+            {
+                bi->tag = 1;
+                bj->tag = 1;
+            }
+        }
+    }
+    l.RemoveTagged();
 }
 
 

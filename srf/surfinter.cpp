@@ -469,7 +469,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
             ClosestPointTo(p, &(inter.p.x), &(inter.p.y));
             inters.Add(&inter);
         }
-    } else if(IsCylinder(&center, &axis, &radius, &start, &finish)) {
+    } else if(IsCylinder(&axis, &center, &radius, &start, &finish)) {
         // This one can be solved in closed form too.
         Vector ab = b.Minus(a);
         if(axis.Cross(ab).Magnitude() < LENGTH_EPS) {

@@ -1,11 +1,10 @@
 
 marching algorithm for surface intersection
 surfaces of revolution (lathed)
-cylinder-line special cases
 boundary avoidance when casting ray for point-in-shell
 tangent intersections
 short pwl edge avoidance
-exact curve export (at least for dxf)
+direct PDF export
 assembly
 
 -----
