@@ -81,6 +81,7 @@ int SaveFileYesNoCancel(void);
 #define STL_EXT "stl"
 #define VEC_PATTERN "DXF File (*.dxf)\0*.dxf\0" \
                     "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
+                    "PDF File (*.pdf)\0*.pdf\0" \
                     "Scalable Vector Graphics (*.svg)\0*.svg\0" \
                     "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
                     "All Files (*)\0*\0\0"
@@ -347,11 +348,14 @@ public:
     FILE *f;
     Vector ptMin, ptMax;
     
+    static double MmToPts(double mm);
     static bool StringEndsIn(char *str, char *ending);
+
     static VectorFileWriter *ForFile(char *file);
 
     void Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm);
     void BezierAsPwl(SBezier *sb);
+    void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
     virtual void Bezier(SBezier *sb) = 0;
     virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
@@ -369,7 +373,17 @@ public:
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
-    static double MmToPoints(double mm);
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
+class PdfFileWriter : public VectorFileWriter {
+public:
+    DWORD xref[10];
+    DWORD bodyStart;
+
     void LineSegment(double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);

@@ -4,7 +4,6 @@ surfaces of revolution (lathed)
 boundary avoidance when casting ray for point-in-shell
 tangent intersections
 short pwl edge avoidance
-direct PDF export
 assembly
 
 -----

@@ -269,6 +269,11 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
     hlrd.Clear();
 }
 
+double VectorFileWriter::MmToPts(double mm) {
+    // 72 points in an inch
+    return (mm/25.4)*72;
+}
+
 bool VectorFileWriter::StringEndsIn(char *str, char *ending) {
     int i, ls = strlen(str), le = strlen(ending);
 
@@ -290,6 +295,9 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     } else if(StringEndsIn(filename, ".ps") || StringEndsIn(filename, ".eps")) {
         static EpsFileWriter EpsWriter;
         ret = &EpsWriter;
+    } else if(StringEndsIn(filename, ".pdf")) {
+        static PdfFileWriter PdfWriter;
+        ret = &PdfWriter;
     } else if(StringEndsIn(filename, ".svg")) {
         static SvgFileWriter SvgWriter;
         ret = &SvgWriter;
@@ -298,7 +306,8 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
         ret = &HpglWriter;
     } else {
         Error("Can't identify output file type from file extension of "
-        "filename '%s'; try .dxf, .svg, .plt, .hpgl, .eps, or .ps.", filename);
+        "filename '%s'; try .dxf, .svg, .plt, .hpgl, .pdf, .eps, or .ps.",
+            filename);
         return NULL;
     }
 
@@ -370,6 +379,43 @@ void VectorFileWriter::BezierAsPwl(SBezier *sb) {
                     lv.elem[i  ].x, lv.elem[i  ].y);
     }
     lv.Clear();
+}
+
+void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
+    Vector t0 = sb->TangentAt(0), t1 = sb->TangentAt(1);
+    // The curve is correct, and the first derivatives are correct, at the
+    // endpoints.
+    SBezier bnr = SBezier::From(
+                        sb->Start(),
+                        sb->Start().Plus(t0.ScaledBy(1.0/3)),
+                        sb->Finish().Minus(t1.ScaledBy(1.0/3)),
+                        sb->Finish());
+
+    double tol = SS.ChordTolMm() / SS.exportScale;
+    // Arbitrary choice, but make it a little finer than pwl tolerance since
+    // it should be easier to achieve that with the smooth curves.
+    tol /= 2;
+
+    bool closeEnough = true;
+    int i;
+    for(i = 1; i <= 3; i++) {
+        double t = i/4.0;
+        Vector p0 = sb->PointAt(t),
+               pn = bnr.PointAt(t);
+        double d = (p0.Minus(pn)).Magnitude();
+        if(d > tol) {
+            closeEnough = false;
+        }
+    }
+    
+    if(closeEnough || depth > 3) {
+        Bezier(&bnr);
+    } else {
+        SBezier bef, aft;
+        sb->SplitAt(0.5, &bef, &aft);
+        BezierAsNonrationalCubic(&bef, depth+1);
+        BezierAsNonrationalCubic(&aft, depth+1);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -506,11 +552,6 @@ void DxfFileWriter::FinishAndCloseFile(void) {
 //-----------------------------------------------------------------------------
 // Routines for EPS output
 //-----------------------------------------------------------------------------
-double EpsFileWriter::MmToPoints(double mm) {
-    // 72 points in an inch
-    return (mm/25.4)*72;
-}
-
 void EpsFileWriter::StartFile(void) {
     fprintf(f,
 "%%!PS-Adobe-2.0\r\n"
@@ -524,10 +565,10 @@ void EpsFileWriter::StartFile(void) {
 "\r\n"
 "gsave\r\n"
 "\r\n",
-            (int)ceil(MmToPoints(ptMax.x - ptMin.x)),
-            (int)ceil(MmToPoints(ptMax.y - ptMin.y)),
-            MmToPoints(ptMax.x - ptMin.x),
-            MmToPoints(ptMax.y - ptMin.y));
+            (int)ceil(MmToPts(ptMax.x - ptMin.x)),
+            (int)ceil(MmToPts(ptMax.y - ptMin.y)),
+            MmToPts(ptMax.x - ptMin.x),
+            MmToPts(ptMax.y - ptMin.y));
 }
 
 void EpsFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
@@ -538,8 +579,8 @@ void EpsFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
 "    1 setlinewidth\r\n"
 "    0 setgray\r\n"
 "stroke\r\n",
-            MmToPoints(x0 - ptMin.x), MmToPoints(y0 - ptMin.y),
-            MmToPoints(x1 - ptMin.x), MmToPoints(y1 - ptMin.y));
+            MmToPts(x0 - ptMin.x), MmToPts(y0 - ptMin.y),
+            MmToPts(x1 - ptMin.x), MmToPts(y1 - ptMin.y));
 }
 
 void EpsFileWriter::Triangle(STriangle *tr) {
@@ -552,9 +593,9 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 "    closepath\r\n"
 "fill\r\n",
             REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
-            MmToPoints(tr->a.x - ptMin.x), MmToPoints(tr->a.y - ptMin.y),
-            MmToPoints(tr->b.x - ptMin.x), MmToPoints(tr->b.y - ptMin.y),
-            MmToPoints(tr->c.x - ptMin.x), MmToPoints(tr->c.y - ptMin.y));
+            MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
+            MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
+            MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
 
     // same issue with cracks, stroke it to avoid them
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
@@ -568,10 +609,10 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 "    closepath\r\n"
 "stroke\r\n",
             REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
-            MmToPoints(sw),
-            MmToPoints(tr->a.x - ptMin.x), MmToPoints(tr->a.y - ptMin.y),
-            MmToPoints(tr->b.x - ptMin.x), MmToPoints(tr->b.y - ptMin.y),
-            MmToPoints(tr->c.x - ptMin.x), MmToPoints(tr->c.y - ptMin.y));
+            MmToPts(sw),
+            MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
+            MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
+            MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
 }
 
 void EpsFileWriter::Bezier(SBezier *sb) {
@@ -593,12 +634,24 @@ void EpsFileWriter::Bezier(SBezier *sb) {
 "    1 setlinewidth\r\n"
 "    0 setgray\r\n"
 "stroke\r\n",
-            MmToPoints(p0.x - ptMin.x), MmToPoints(p0.y - ptMin.y),
-            MmToPoints(c.x - ptMin.x),  MmToPoints(c.y - ptMin.y),
-            MmToPoints(r),
+            MmToPts(p0.x - ptMin.x), MmToPts(p0.y - ptMin.y),
+            MmToPts(c.x - ptMin.x),  MmToPts(c.y - ptMin.y),
+            MmToPts(r),
             theta0*180/PI, theta1*180/PI);
+    } else if(sb->deg == 3 && !sb->IsRational()) {
+        fprintf(f,
+"newpath\r\n"
+"    %.3f %.3f moveto\r\n"
+"    %.3f %.3f %.3f %.3f %.3f %.3f curveto\r\n"
+"    1 setlinewidth\r\n"
+"    0 setgray\r\n"
+"stroke\r\n",
+            MmToPts(sb->ctrl[0].x - ptMin.x), MmToPts(sb->ctrl[0].y - ptMin.y),
+            MmToPts(sb->ctrl[1].x - ptMin.x), MmToPts(sb->ctrl[1].y - ptMin.y),
+            MmToPts(sb->ctrl[2].x - ptMin.x), MmToPts(sb->ctrl[2].y - ptMin.y),
+            MmToPts(sb->ctrl[3].x - ptMin.x), MmToPts(sb->ctrl[3].y - ptMin.y));
     } else {
-        BezierAsPwl(sb);
+        BezierAsNonrationalCubic(sb);
     }
 }
 
@@ -609,6 +662,175 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 "\r\n");
     fclose(f);
 }
+
+//-----------------------------------------------------------------------------
+// Routines for PDF output, some extra complexity because we have to generate
+// a correct xref table.
+//-----------------------------------------------------------------------------
+void PdfFileWriter::StartFile(void) {
+    fprintf(f,
+"%%PDF-1.1\r\n"
+"%%%c%c%c%c\r\n",
+        0xe2, 0xe3, 0xcf, 0xd3);
+    
+    xref[1] = ftell(f);
+    fprintf(f,
+"1 0 obj\r\n"
+"  << /Type /Catalog\r\n"
+"     /Outlines 2 0 R\r\n"
+"     /Pages 3 0 R\r\n"
+"  >>\r\n"
+"endobj\r\n");
+
+    xref[2] = ftell(f);
+    fprintf(f,
+"2 0 obj\r\n"
+"  << /Type /Outlines\r\n"
+"     /Count 0\r\n"
+"  >>\r\n"
+"endobj\r\n");
+
+    xref[3] = ftell(f);
+    fprintf(f,
+"3 0 obj\r\n"
+"  << /Type /Pages\r\n"
+"     /Kids [4 0 R]\r\n"
+"     /Count 1\r\n"
+"  >>\r\n"
+"endobj\r\n");
+
+    xref[4] = ftell(f);
+    fprintf(f,
+"4 0 obj\r\n"
+"  << /Type /Page\r\n"
+"     /Parent 3 0 R\r\n"
+"     /MediaBox [0 0 %.3f %.3f]\r\n"
+"     /Contents 5 0 R\r\n"
+"     /Resources << /ProcSet 7 0 R\r\n"
+"                   /Font << /F1 8 0 R >>\r\n"
+"                >>\r\n"
+"  >>\r\n"
+"endobj\r\n",
+            MmToPts(ptMax.x - ptMin.x),
+            MmToPts(ptMax.y - ptMin.y));
+
+    xref[5] = ftell(f);
+    fprintf(f,
+"5 0 obj\r\n"
+"  << /Length 6 0 R >>\r\n"
+"stream\r\n");
+    bodyStart = ftell(f);
+}
+
+void PdfFileWriter::FinishAndCloseFile(void) {
+    DWORD bodyEnd = ftell(f);
+
+    fprintf(f,
+"endstream\r\n"
+"endobj\r\n");
+
+    xref[6] = ftell(f);
+    fprintf(f,
+"6 0 obj\r\n"
+"  %d\r\n"
+"endobj\r\n",
+        bodyEnd - bodyStart);
+
+    xref[7] = ftell(f);
+    fprintf(f,
+"7 0 obj\r\n"
+"  [/PDF /Text]\r\n"
+"endobj\r\n");
+
+    xref[8] = ftell(f);
+    fprintf(f,
+"8 0 obj\r\n"
+"  << /Type /Font\r\n"
+"     /Subtype /Type1\r\n"
+"     /Name /F1\r\n"
+"     /BaseFont /Helvetica\r\n"
+"     /Encoding /WinAnsiEncoding\r\n"
+"  >>\r\n"
+"endobj\r\n");
+
+    xref[9] = ftell(f);
+    fprintf(f,
+"9 0 obj\r\n"
+"  << /Creator (SolveSpace)\r\n"
+"  >>\r\n");
+    
+    DWORD xrefStart = ftell(f);
+    fprintf(f,
+"xref\r\n"
+"0 10\r\n"
+"0000000000 65535 f\r\n");
+   
+    int i;
+    for(i = 1; i <= 9; i++) {
+        fprintf(f, "%010d %05d n\r\n", xref[i], 0);
+    }
+
+    fprintf(f,
+"\r\n"
+"trailer\r\n"
+"  << /Size 10\r\n"
+"     /Root 1 0 R\r\n"
+"     /Info 9 0 R\r\n"
+"  >>\r\n"
+"startxref\r\n"
+"%d\r\n"
+"%%%%EOF\r\n",
+        xrefStart);
+
+    fclose(f);
+
+}
+
+void PdfFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    fprintf(f,
+"1 w 0 0 0 RG\r\n"
+"%.3f %.3f m\r\n"
+"%.3f %.3f l\r\n"
+"S\r\n",
+            MmToPts(x0 - ptMin.x), MmToPts(y0 - ptMin.y),
+            MmToPts(x1 - ptMin.x), MmToPts(y1 - ptMin.y));
+}
+
+void PdfFileWriter::Triangle(STriangle *tr) {
+    double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
+
+    fprintf(f,
+"%.3f %.3f %.3f RG\r\n"
+"%.3f %.3f %.3f rg\r\n"
+"%.3f w\r\n"
+"%.3f %.3f m\r\n"
+"%.3f %.3f l\r\n"
+"%.3f %.3f l\r\n"
+"b\r\n",
+            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            MmToPts(sw),
+            MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
+            MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
+            MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
+}
+
+void PdfFileWriter::Bezier(SBezier *sb) {
+    if(sb->deg == 3 && !sb->IsRational()) {
+        fprintf(f,
+"1 w 0 0 0 RG\r\n"
+"%.3f %.3f m\r\n"
+"%.3f %.3f %.3f %.3f %.3f %.3f c\r\n"
+"S\r\n",
+            MmToPts(sb->ctrl[0].x - ptMin.x), MmToPts(sb->ctrl[0].y - ptMin.y),
+            MmToPts(sb->ctrl[1].x - ptMin.x), MmToPts(sb->ctrl[1].y - ptMin.y),
+            MmToPts(sb->ctrl[2].x - ptMin.x), MmToPts(sb->ctrl[2].y - ptMin.y),
+            MmToPts(sb->ctrl[3].x - ptMin.x), MmToPts(sb->ctrl[3].y - ptMin.y));
+    } else {
+        BezierAsNonrationalCubic(sb);
+    }
+}
+
 
 //-----------------------------------------------------------------------------
 // Routines for SVG output
@@ -703,7 +925,8 @@ void SvgFileWriter::Bezier(SBezier *sb) {
                 SVG_STYLE);
         }
     } else {
-        BezierAsPwl(sb);
+        BezierAsNonrationalCubic(sb);
+
     }
 }
 
