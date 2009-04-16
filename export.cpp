@@ -68,7 +68,8 @@ void SolveSpace::ExportSectionTo(char *filename) {
     ZERO(&bl);
 
     g->runningShell.MakeSectionEdgesInto(n, d,
-        &el, SS.exportPwlCurves ? NULL : &bl);
+       &el, 
+       (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);
 
     el.CullExtraneousEdges();
     bl.CullIdenticalBeziers();
@@ -103,10 +104,14 @@ void SolveSpace::ExportViewTo(char *filename) {
     for(i = 0; i < SS.entity.n; i++) {
         Entity *e = &(SS.entity.elem[i]);
         if(!e->IsVisible()) continue;
+        if(e->construction) continue;
 
-        if(SS.exportPwlCurves || (sm && !SS.GW.showHdnLines)) {
+        if(SS.exportPwlCurves || (sm && !SS.GW.showHdnLines) ||
+                                 fabs(SS.exportOffset) > LENGTH_EPS)
+        {
             // We will be doing hidden line removal, which we can't do on
-            // exact curves; so we need things broken down to pwls.
+            // exact curves; so we need things broken down to pwls. Same
+            // problem with cutter radius compensation.
             e->GenerateEdges(&edges);
         } else {
             e->GenerateBezierCurves(&beziers);

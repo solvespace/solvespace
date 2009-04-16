@@ -681,14 +681,19 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeShadedTriangles,
         (!SS.exportShadedTriangles ? "" : "no"),
         (!SS.exportShadedTriangles ? "no" : ""));
-    Printf(false, "%Ft curves as piecewise linear: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-        &ScreenChangePwlCurves,
-        (SS.exportPwlCurves ? "" : "yes"),
-        (SS.exportPwlCurves ? "yes" : ""),
-        &ScreenChangePwlCurves,
-        (!SS.exportPwlCurves ? "" : "no"),
-        (!SS.exportPwlCurves ? "no" : ""));
+    if(fabs(SS.exportOffset) > LENGTH_EPS) {
+        Printf(false, "%Ft curves as piecewise linear:%E %Fsyes");
+        Printf(false, "   (always pwl if cutter radius offset isn't 0)");
+    } else {
+        Printf(false, "%Ft curves as piecewise linear: "
+                      "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+            &ScreenChangePwlCurves,
+            (SS.exportPwlCurves ? "" : "yes"),
+            (SS.exportPwlCurves ? "yes" : ""),
+            &ScreenChangePwlCurves,
+            (!SS.exportPwlCurves ? "" : "no"),
+            (!SS.exportPwlCurves ? "no" : ""));
+    }
 
     Printf(false, "");
     Printf(false, "%Ft draw back faces: "
