@@ -302,6 +302,13 @@ void glxDrawEdges(SEdgeList *el)
         glxVertex3v(se->b);
     }
     glEnd();
+    glPointSize(12);
+    glBegin(GL_POINTS);
+    for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
+        glxVertex3v(se->a);
+        glxVertex3v(se->b);
+    }
+    glEnd();
 }
 
 void glxDebugMesh(SMesh *m)

@@ -136,8 +136,8 @@ void GraphicsWindow::Init(void) {
     orig.projUp = projUp;
 
     // And with the last group active
-    activeGroup = SS.group.elem[SS.group.n-1].h;
-    SS.GetGroup(activeGroup)->Activate();
+    activeGroup = SK.group.elem[SK.group.n-1].h;
+    SK.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;
     showNormals = true;
@@ -201,9 +201,9 @@ Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
 void GraphicsWindow::AnimateOntoWorkplane(void) {
     if(!LockedInWorkplane()) return;
 
-    Entity *w = SS.GetEntity(ActiveWorkplane());
+    Entity *w = SK.GetEntity(ActiveWorkplane());
     Quaternion quatf = w->Normal()->NormalGetNum();
-    Vector offsetf = (SS.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
+    Vector offsetf = (SK.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
 
     AnimateOnto(quatf, offsetf);
 }
@@ -268,8 +268,8 @@ void GraphicsWindow::LoopOverPoints(
     HandlePointForZoomToFit(Vector::From(0, 0, 0), pmax, pmin, wmin, div);
 
     int i, j;
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(!e->IsVisible()) continue;
         if(e->IsPoint()) {
             HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
@@ -279,8 +279,8 @@ void GraphicsWindow::LoopOverPoints(
             // reasonable without the mesh, because a zoom to fit is used to
             // set the zoom level to set the chord tol.
             double r = e->CircleGetRadiusNum();
-            Vector c = SS.GetEntity(e->point[0])->PointGetNum();
-            Quaternion q = SS.GetEntity(e->normal)->NormalGetNum();
+            Vector c = SK.GetEntity(e->point[0])->PointGetNum();
+            Quaternion q = SK.GetEntity(e->normal)->NormalGetNum();
             for(j = 0; j < 4; j++) {
                 Vector p = (j == 0) ? (c.Plus(q.RotationU().ScaledBy( r))) :
                            (j == 1) ? (c.Plus(q.RotationU().ScaledBy(-r))) :
@@ -290,7 +290,7 @@ void GraphicsWindow::LoopOverPoints(
             }
         }
     }
-    Group *g = SS.GetGroup(activeGroup);
+    Group *g = SK.GetGroup(activeGroup);
     for(i = 0; i < g->runningMesh.l.n; i++) {
         STriangle *tr = &(g->runningMesh.l.elem[i]);
         HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, div);
@@ -420,7 +420,7 @@ void GraphicsWindow::MenuView(int id) {
             if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
                 Quaternion quat0;
                 // Offset is the selected point, quaternion is same as before
-                Vector pt = SS.GetEntity(SS.GW.gs.point[0])->PointGetNum();
+                Vector pt = SK.GetEntity(SS.GW.gs.point[0])->PointGetNum();
                 quat0 = Quaternion::From(SS.GW.projRight, SS.GW.projUp);
                 SS.GW.AnimateOnto(quat0, pt.ScaledBy(-1));
                 SS.GW.ClearSelection();
@@ -461,15 +461,15 @@ void GraphicsWindow::MenuView(int id) {
 void GraphicsWindow::EnsureValidActives(void) {
     bool change = false;
     // The active group must exist, and not be the references.
-    Group *g = SS.group.FindByIdNoOops(activeGroup);
+    Group *g = SK.group.FindByIdNoOops(activeGroup);
     if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
         int i;
-        for(i = 0; i < SS.group.n; i++) {
-            if(SS.group.elem[i].h.v != Group::HGROUP_REFERENCES.v) {
+        for(i = 0; i < SK.group.n; i++) {
+            if(SK.group.elem[i].h.v != Group::HGROUP_REFERENCES.v) {
                 break;
             }
         }
-        if(i >= SS.group.n) {
+        if(i >= SK.group.n) {
             // This can happen if the user deletes all the groups in the
             // sketch. It's difficult to prevent that, because the last
             // group might have been deleted automatically, because it failed
@@ -478,15 +478,15 @@ void GraphicsWindow::EnsureValidActives(void) {
             // to delete the references, though.
             activeGroup = SS.CreateDefaultDrawingGroup();
         } else {
-            activeGroup = SS.group.elem[i].h;
+            activeGroup = SK.group.elem[i].h;
         }
-        SS.GetGroup(activeGroup)->Activate();
+        SK.GetGroup(activeGroup)->Activate();
         change = true;
     }
 
     // The active coordinate system must also exist.
     if(LockedInWorkplane()) {
-        Entity *e = SS.entity.FindByIdNoOops(ActiveWorkplane());
+        Entity *e = SK.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
             if(hgw.v != activeGroup.v && SS.GroupsInOrder(activeGroup, hgw)) {
@@ -527,10 +527,10 @@ void GraphicsWindow::EnsureValidActives(void) {
 }
 
 void GraphicsWindow::SetWorkplaneFreeIn3d(void) {
-    SS.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
+    SK.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
 }
 hEntity GraphicsWindow::ActiveWorkplane(void) {
-    Group *g = SS.group.FindByIdNoOops(activeGroup);
+    Group *g = SK.group.FindByIdNoOops(activeGroup);
     if(g) {
         return g->activeWorkplane;
     } else {
@@ -550,7 +550,7 @@ void GraphicsWindow::ForceTextWindowShown(void) {
 }
 
 void GraphicsWindow::DeleteTaggedRequests(void) {
-    SS.request.RemoveTagged();
+    SK.request.RemoveTagged();
 
     // An edit might be in progress for the just-deleted item. So
     // now it's not.
@@ -583,8 +583,8 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.UndoRemember();
 
             int i;
-            SS.request.ClearTags();
-            SS.constraint.ClearTags();
+            SK.request.ClearTags();
+            SK.constraint.ClearTags();
             for(i = 0; i < MAX_SELECTED; i++) {
                 Selection *s = &(SS.GW.selection[i]);
                 hRequest r; r.v = 0;
@@ -592,14 +592,14 @@ void GraphicsWindow::MenuEdit(int id) {
                     r = s->entity.request();
                 }
                 if(r.v && !r.IsFromReferences()) {
-                    SS.request.Tag(r, 1);
+                    SK.request.Tag(r, 1);
                 }
                 if(s->constraint.v) {
-                    SS.constraint.Tag(s->constraint, 1);
+                    SK.constraint.Tag(s->constraint, 1);
                 }
             }
 
-            SS.constraint.RemoveTagged();
+            SK.constraint.RemoveTagged();
             SS.GW.DeleteTaggedRequests();
             break;
         }
@@ -627,7 +627,7 @@ void GraphicsWindow::MenuRequest(int id) {
     switch(id) {
         case MNU_SEL_WORKPLANE: {
             SS.GW.GroupSelection();
-            Group *g = SS.GetGroup(SS.GW.activeGroup);
+            Group *g = SK.GetGroup(SS.GW.activeGroup);
 
             if(SS.GW.gs.n == 1 && SS.GW.gs.workplanes == 1) {
                 // A user-selected workplane
@@ -683,7 +683,7 @@ c:
             for(i = 0; i < SS.GW.gs.entities; i++) {
                 hEntity he = SS.GW.gs.entity[i];
                 if(!he.isFromRequest()) continue;
-                Request *r = SS.GetRequest(he.request());
+                Request *r = SK.GetRequest(he.request());
                 r->construction = !(r->construction);
                 SS.MarkGroupDirty(r->group);
             }

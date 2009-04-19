@@ -6,8 +6,8 @@
 //-----------------------------------------------------------------------------
 void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
     int i;
-    for(i = 0; i < SS.constraint.n; i++) {
-        Constraint *c = &(SS.constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
 
         if(c->type == Constraint::POINTS_COINCIDENT) {
             if(c->ptA.v == oldpt.v) c->ptA = newpt;
@@ -31,22 +31,22 @@ void GraphicsWindow::MakeTangentArc(void) {
     // Find two line segments that join at the specified point,
     // and blend them with a tangent arc. First, find the
     // requests that generate the line segments.
-    Vector pshared = SS.GetEntity(gs.point[0])->PointGetNum();
+    Vector pshared = SK.GetEntity(gs.point[0])->PointGetNum();
     ClearSelection();
 
     int i, c = 0;
     Entity *line[2];
     Request *lineReq[2];
     bool point1[2];
-    for(i = 0; i < SS.request.n; i++) {
-        Request *r = &(SS.request.elem[i]);
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
         if(r->type != Request::LINE_SEGMENT) continue;
         if(r->construction) continue;
 
-        Entity *e = SS.GetEntity(r->h.entity(0));
-        Vector p0 = SS.GetEntity(e->point[0])->PointGetNum(),
-               p1 = SS.GetEntity(e->point[1])->PointGetNum();
+        Entity *e = SK.GetEntity(r->h.entity(0));
+        Vector p0 = SK.GetEntity(e->point[0])->PointGetNum(),
+               p1 = SK.GetEntity(e->point[1])->PointGetNum();
         
         if(p0.Equals(pshared) || p1.Equals(pshared)) {
             if(c < 2) {
@@ -65,15 +65,15 @@ void GraphicsWindow::MakeTangentArc(void) {
 
     SS.UndoRemember();
 
-    Entity *wrkpl = SS.GetEntity(ActiveWorkplane());
+    Entity *wrkpl = SK.GetEntity(ActiveWorkplane());
     Vector wn = wrkpl->Normal()->NormalN();
 
     hEntity hshared = (line[0])->point[point1[0] ? 1 : 0],
             hother0 = (line[0])->point[point1[0] ? 0 : 1],
             hother1 = (line[1])->point[point1[1] ? 0 : 1];
 
-    Vector pother0 = SS.GetEntity(hother0)->PointGetNum(),
-           pother1 = SS.GetEntity(hother1)->PointGetNum();
+    Vector pother0 = SK.GetEntity(hother0)->PointGetNum(),
+           pother1 = SK.GetEntity(hother1)->PointGetNum();
 
     Vector v0shared = pshared.Minus(pother0),
            v1shared = pshared.Minus(pother1);
@@ -109,21 +109,21 @@ void GraphicsWindow::MakeTangentArc(void) {
              rln1 = AddRequest(Request::LINE_SEGMENT, false);
     hRequest rarc = AddRequest(Request::ARC_OF_CIRCLE, false);
 
-    Entity *ln0 = SS.GetEntity(rln0.entity(0)),
-           *ln1 = SS.GetEntity(rln1.entity(0));
-    Entity *arc = SS.GetEntity(rarc.entity(0));
+    Entity *ln0 = SK.GetEntity(rln0.entity(0)),
+           *ln1 = SK.GetEntity(rln1.entity(0));
+    Entity *arc = SK.GetEntity(rarc.entity(0));
 
-    SS.GetEntity(ln0->point[0])->PointForceTo(pother0);
+    SK.GetEntity(ln0->point[0])->PointForceTo(pother0);
     Constraint::ConstrainCoincident(ln0->point[0], hother0);
 
-    SS.GetEntity(ln1->point[0])->PointForceTo(pother1);
+    SK.GetEntity(ln1->point[0])->PointForceTo(pother1);
     Constraint::ConstrainCoincident(ln1->point[0], hother1);
 
     Vector arc0 = pshared.Minus(v0shared.WithMagnitude(el));
     Vector arc1 = pshared.Minus(v1shared.WithMagnitude(el));
 
-    SS.GetEntity(ln0->point[1])->PointForceTo(arc0);
-    SS.GetEntity(ln1->point[1])->PointForceTo(arc1);
+    SK.GetEntity(ln0->point[1])->PointForceTo(arc0);
+    SK.GetEntity(ln1->point[1])->PointForceTo(arc1);
 
     Constraint::Constrain(Constraint::PT_ON_LINE,
         ln0->point[1], Entity::NO_ENTITY, srcline0);
@@ -140,9 +140,9 @@ void GraphicsWindow::MakeTangentArc(void) {
         center = center.Plus(v0shared.Cross(wn).WithMagnitude(r));
     }
 
-    SS.GetEntity(arc->point[0])->PointForceTo(center);
-    SS.GetEntity(arc->point[a])->PointForceTo(arc0);
-    SS.GetEntity(arc->point[b])->PointForceTo(arc1);
+    SK.GetEntity(arc->point[0])->PointForceTo(center);
+    SK.GetEntity(arc->point[a])->PointForceTo(arc0);
+    SK.GetEntity(arc->point[b])->PointForceTo(arc1);
 
     Constraint::ConstrainCoincident(arc->point[a], ln0->point[1]);
     Constraint::ConstrainCoincident(arc->point[b], ln1->point[1]);
@@ -159,10 +159,10 @@ void GraphicsWindow::MakeTangentArc(void) {
 
 void GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     // Save the original endpoints, since we're about to delete this entity.
-    Entity *e01 = SS.GetEntity(he);
+    Entity *e01 = SK.GetEntity(he);
     hEntity hep0 = e01->point[0], hep1 = e01->point[1];
-    Vector p0 = SS.GetEntity(hep0)->PointGetNum(),
-           p1 = SS.GetEntity(hep1)->PointGetNum();
+    Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
+           p1 = SK.GetEntity(hep1)->PointGetNum();
 
     SS.UndoRemember();
 
@@ -171,22 +171,22 @@ void GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
              ri1 = AddRequest(Request::LINE_SEGMENT, false);
     // Don't get entities till after adding, realloc issues
 
-    Entity *e0i = SS.GetEntity(r0i.entity(0)),
-           *ei1 = SS.GetEntity(ri1.entity(0));
+    Entity *e0i = SK.GetEntity(r0i.entity(0)),
+           *ei1 = SK.GetEntity(ri1.entity(0));
 
-    SS.GetEntity(e0i->point[0])->PointForceTo(p0);
-    SS.GetEntity(e0i->point[1])->PointForceTo(pinter);
-    SS.GetEntity(ei1->point[0])->PointForceTo(pinter);
-    SS.GetEntity(ei1->point[1])->PointForceTo(p1);
+    SK.GetEntity(e0i->point[0])->PointForceTo(p0);
+    SK.GetEntity(e0i->point[1])->PointForceTo(pinter);
+    SK.GetEntity(ei1->point[0])->PointForceTo(pinter);
+    SK.GetEntity(ei1->point[1])->PointForceTo(p1);
 
     ReplacePointInConstraints(hep0, e0i->point[0]);
     ReplacePointInConstraints(hep1, ei1->point[1]);
 
     // Finally, delete the original line
     int i;
-    SS.request.ClearTags();
-    for(i = 0; i < SS.request.n; i++) {
-        Request *r = &(SS.request.elem[i]);
+    SK.request.ClearTags();
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
         if(r->type != Request::LINE_SEGMENT) continue;
     
@@ -203,46 +203,46 @@ void GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
 void GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
     SS.UndoRemember();
 
-    Entity *circle = SS.GetEntity(he);
+    Entity *circle = SK.GetEntity(he);
     if(circle->type == Entity::CIRCLE) {
         // Start with an unbroken circle, split it into a 360 degree arc.
-        Vector center = SS.GetEntity(circle->point[0])->PointGetNum();
+        Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
 
         circle = NULL; // shortly invalid!
         hRequest hr = AddRequest(Request::ARC_OF_CIRCLE, false);
 
-        Entity *arc = SS.GetEntity(hr.entity(0));
+        Entity *arc = SK.GetEntity(hr.entity(0));
 
-        SS.GetEntity(arc->point[0])->PointForceTo(center);
-        SS.GetEntity(arc->point[1])->PointForceTo(pinter);
-        SS.GetEntity(arc->point[2])->PointForceTo(pinter);
+        SK.GetEntity(arc->point[0])->PointForceTo(center);
+        SK.GetEntity(arc->point[1])->PointForceTo(pinter);
+        SK.GetEntity(arc->point[2])->PointForceTo(pinter);
     } else {
         // Start with an arc, break it in to two arcs
-        Vector center = SS.GetEntity(circle->point[0])->PointGetNum(),
-               start  = SS.GetEntity(circle->point[1])->PointGetNum(),
-               finish = SS.GetEntity(circle->point[2])->PointGetNum();
+        Vector center = SK.GetEntity(circle->point[0])->PointGetNum(),
+               start  = SK.GetEntity(circle->point[1])->PointGetNum(),
+               finish = SK.GetEntity(circle->point[2])->PointGetNum();
 
         circle = NULL; // shortly invalid!
         hRequest hr0 = AddRequest(Request::ARC_OF_CIRCLE, false),
                  hr1 = AddRequest(Request::ARC_OF_CIRCLE, false);
 
-        Entity *arc0 = SS.GetEntity(hr0.entity(0)),
-               *arc1 = SS.GetEntity(hr1.entity(0));
+        Entity *arc0 = SK.GetEntity(hr0.entity(0)),
+               *arc1 = SK.GetEntity(hr1.entity(0));
 
-        SS.GetEntity(arc0->point[0])->PointForceTo(center);
-        SS.GetEntity(arc0->point[1])->PointForceTo(start);
-        SS.GetEntity(arc0->point[2])->PointForceTo(pinter);
+        SK.GetEntity(arc0->point[0])->PointForceTo(center);
+        SK.GetEntity(arc0->point[1])->PointForceTo(start);
+        SK.GetEntity(arc0->point[2])->PointForceTo(pinter);
 
-        SS.GetEntity(arc1->point[0])->PointForceTo(center);
-        SS.GetEntity(arc1->point[1])->PointForceTo(pinter);
-        SS.GetEntity(arc1->point[2])->PointForceTo(finish);
+        SK.GetEntity(arc1->point[0])->PointForceTo(center);
+        SK.GetEntity(arc1->point[1])->PointForceTo(pinter);
+        SK.GetEntity(arc1->point[2])->PointForceTo(finish);
     }
 
     // Finally, delete the original circle or arc
     int i;
-    SS.request.ClearTags();
-    for(i = 0; i < SS.request.n; i++) {
-        Request *r = &(SS.request.elem[i]);
+    SK.request.ClearTags();
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
         if(r->type != Request::CIRCLE && r->type != Request::ARC_OF_CIRCLE) {
             continue;
@@ -266,12 +266,12 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
 
     GroupSelection();
     if(gs.n == 2 && gs.lineSegments == 2) {
-        Entity *la = SS.GetEntity(gs.entity[0]),
-               *lb = SS.GetEntity(gs.entity[1]);
-        Vector a0 = SS.GetEntity(la->point[0])->PointGetNum(),
-               a1 = SS.GetEntity(la->point[1])->PointGetNum(),
-               b0 = SS.GetEntity(lb->point[0])->PointGetNum(),
-               b1 = SS.GetEntity(lb->point[1])->PointGetNum();
+        Entity *la = SK.GetEntity(gs.entity[0]),
+               *lb = SK.GetEntity(gs.entity[1]);
+        Vector a0 = SK.GetEntity(la->point[0])->PointGetNum(),
+               a1 = SK.GetEntity(la->point[1])->PointGetNum(),
+               b0 = SK.GetEntity(lb->point[0])->PointGetNum(),
+               b1 = SK.GetEntity(lb->point[1])->PointGetNum();
         Vector da = a1.Minus(a0), db = b1.Minus(b0);
         
         // First, check if the lines intersect.
@@ -306,20 +306,20 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
                 "Nothing to split; intersection does not lie on either line.");
         }
     } else if(gs.n == 2 && gs.lineSegments == 1 && gs.circlesOrArcs == 1) {
-        Entity *line   = SS.GetEntity(gs.entity[0]),
-               *circle = SS.GetEntity(gs.entity[1]);
+        Entity *line   = SK.GetEntity(gs.entity[0]),
+               *circle = SK.GetEntity(gs.entity[1]);
         if(line->type != Entity::LINE_SEGMENT) {
             SWAP(Entity *, line, circle);
         }
         hEntity hline = line->h, hcircle = circle->h;
 
-        Vector l0 = SS.GetEntity(line->point[0])->PointGetNum(),
-               l1 = SS.GetEntity(line->point[1])->PointGetNum();
+        Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
+               l1 = SK.GetEntity(line->point[1])->PointGetNum();
         Vector dl = l1.Minus(l0);
 
-        Quaternion q = SS.GetEntity(circle->normal)->NormalGetNum();
+        Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
         Vector cn = q.RotationN();
-        Vector cc = SS.GetEntity(circle->point[0])->PointGetNum();
+        Vector cc = SK.GetEntity(circle->point[0])->PointGetNum();
         double cd = cc.Dot(cn);
         double cr = circle->CircleGetRadiusNum();
 
@@ -357,8 +357,8 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
             thetamin = 0;
             thetamax = 2.1*PI; // fudge, make sure it's a good complete circle
         } else {
-            Vector start  = SS.GetEntity(circle->point[1])->PointGetNum(),
-                   finish = SS.GetEntity(circle->point[2])->PointGetNum();
+            Vector start  = SK.GetEntity(circle->point[1])->PointGetNum(),
+                   finish = SK.GetEntity(circle->point[2])->PointGetNum();
             start  = (start .Minus(cc)).DotInToCsys(u, v, n);
             finish = (finish.Minus(cc)).DotInToCsys(u, v, n);
             thetamin = atan2(start.y, start.x);

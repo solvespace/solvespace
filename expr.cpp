@@ -299,7 +299,7 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
 
 double Expr::Eval(void) {
     switch(op) {
-        case PARAM:         return SS.GetParam(x.parh)->val;
+        case PARAM:         return SK.GetParam(x.parh)->val;
         case PARAM_PTR:     return (x.parp)->val;
 
         case CONSTANT:      return x.v;

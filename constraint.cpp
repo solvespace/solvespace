@@ -49,16 +49,16 @@ char *Constraint::DescriptionString(void) {
 //-----------------------------------------------------------------------------
 void Constraint::DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA)
 {
-    SS.constraint.ClearTags();
-    for(int i = 0; i < SS.constraint.n; i++) {
-        Constraint *ct = &(SS.constraint.elem[i]);
+    SK.constraint.ClearTags();
+    for(int i = 0; i < SK.constraint.n; i++) {
+        Constraint *ct = &(SK.constraint.elem[i]);
         if(ct->type != type) continue;
 
         if(ct->entityA.v != entityA.v) continue;
         if(ct->ptA.v != ptA.v) continue;
         ct->tag = 1;
     }
-    SS.constraint.RemoveTagged();
+    SK.constraint.RemoveTagged();
     // And no need to do anything special, since nothing
     // ever depends on a constraint. But do clear the
     // hover, in case the just-deleted constraint was
@@ -72,7 +72,7 @@ void Constraint::AddConstraint(Constraint *c) {
 void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
-    SS.constraint.AddAndAssignId(c);
+    SK.constraint.AddAndAssignId(c);
 
     SS.MarkGroupDirty(c->group);
     SS.later.generateAll = true;
@@ -119,7 +119,7 @@ void Constraint::MenuConstrain(int id) {
                 c.ptB = gs.point[1];
             } else if(gs.lineSegments == 1 && gs.n == 1) {
                 c.type = PT_PT_DISTANCE;
-                Entity *e = SS.GetEntity(gs.entity[0]);
+                Entity *e = SK.GetEntity(gs.entity[0]);
                 c.ptA = e->point[0];
                 c.ptB = e->point[1];
             } else if(gs.workplanes == 1 && gs.points == 1 && gs.n == 2) {
@@ -150,8 +150,8 @@ void Constraint::MenuConstrain(int id) {
             }
             if(c.type == PT_PT_DISTANCE) {
                 Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
-                Vector a = SS.GetEntity(c.ptA)->PointGetNum();
-                Vector b = SS.GetEntity(c.ptB)->PointGetNum();
+                Vector a = SK.GetEntity(c.ptA)->PointGetNum();
+                Vector b = SK.GetEntity(c.ptB)->PointGetNum();
                 c.disp.offset = n.Cross(a.Minus(b));
                 c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
             } else {
@@ -240,7 +240,7 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.entity[1];
             } else if(gs.arcs == 1 && gs.lineSegments == 1 && gs.n == 2) {
                 c.type = EQUAL_LINE_ARC_LEN;
-                if(SS.GetEntity(gs.entity[0])->type == Entity::ARC_OF_CIRCLE) {
+                if(SK.GetEntity(gs.entity[0])->type == Entity::ARC_OF_CIRCLE) {
                     c.entityA = gs.entity[1];
                     c.entityB = gs.entity[0];
                 } else {
@@ -268,10 +268,10 @@ void Constraint::MenuConstrain(int id) {
             }
             if(c.type == EQUAL_ANGLE) {
                 // Infer the nearest supplementary angle from the sketch.
-                Vector a1 = SS.GetEntity(c.entityA)->VectorGetNum(),
-                       b1 = SS.GetEntity(c.entityB)->VectorGetNum(),
-                       a2 = SS.GetEntity(c.entityC)->VectorGetNum(),
-                       b2 = SS.GetEntity(c.entityD)->VectorGetNum();
+                Vector a1 = SK.GetEntity(c.entityA)->VectorGetNum(),
+                       b1 = SK.GetEntity(c.entityB)->VectorGetNum(),
+                       a2 = SK.GetEntity(c.entityC)->VectorGetNum(),
+                       b2 = SK.GetEntity(c.entityD)->VectorGetNum();
                 double d1 = a1.Dot(b1), d2 = a2.Dot(b2);
 
                 if(d1*d2 < 0) {
@@ -309,7 +309,7 @@ void Constraint::MenuConstrain(int id) {
                 DeleteAllConstraintsFor(PT_ON_LINE, c.entityA, c.ptA);
             } else if(gs.lineSegments == 1 && gs.workplanes == 1 && gs.n == 2) {
                 c.type = AT_MIDPOINT;
-                int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
+                int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
                 c.entityA = gs.entity[i];
                 c.entityB = gs.entity[1-i];
             } else {
@@ -336,16 +336,16 @@ void Constraint::MenuConstrain(int id) {
                                 ((gs.workplanes == 1 && gs.n == 2) ||
                                  (gs.n == 1)))
             {
-                int i = SS.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
-                Entity *line = SS.GetEntity(gs.entity[i]);
+                int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
+                Entity *line = SK.GetEntity(gs.entity[i]);
                 c.entityA = gs.entity[1-i];
                 c.ptA = line->point[0];
                 c.ptB = line->point[1];
             } else if(SS.GW.LockedInWorkplane()
                         && gs.lineSegments == 2 && gs.n == 2)
             {
-                Entity *l0 = SS.GetEntity(gs.entity[0]),
-                       *l1 = SS.GetEntity(gs.entity[1]);
+                Entity *l0 = SK.GetEntity(gs.entity[0]),
+                       *l1 = SK.GetEntity(gs.entity[1]);
 
                 if((l1->group.v != SS.GW.activeGroup.v) ||
                    (l1->construction && !(l0->construction)))
@@ -384,10 +384,10 @@ void Constraint::MenuConstrain(int id) {
                           "symmetric without an explicit symmetry plane.");
                     return;
                 }
-                Vector pa = SS.GetEntity(c.ptA)->PointGetNum();
-                Vector pb = SS.GetEntity(c.ptB)->PointGetNum();
+                Vector pa = SK.GetEntity(c.ptA)->PointGetNum();
+                Vector pb = SK.GetEntity(c.ptB)->PointGetNum();
                 Vector dp = pa.Minus(pb);
-                Entity *norm = SS.GetEntity(c.workplane)->Normal();;
+                Entity *norm = SK.GetEntity(c.workplane)->Normal();;
                 Vector u = norm->NormalU(), v = norm->NormalV();
                 if(fabs(dp.Dot(u)) > fabs(dp.Dot(v))) {
                     c.type = SYMMETRIC_HORIZ;
@@ -419,7 +419,7 @@ void Constraint::MenuConstrain(int id) {
             }
             if(gs.lineSegments == 1 && gs.n == 1) {
                 c.entityA = gs.entity[0];
-                Entity *e = SS.GetEntity(c.entityA);
+                Entity *e = SK.GetEntity(c.entityA);
                 ha = e->point[0];
                 hb = e->point[1];
             } else if(gs.points == 2 && gs.n == 2) {
@@ -454,8 +454,8 @@ void Constraint::MenuConstrain(int id) {
             }
             SS.UndoRemember();
 
-            Entity *nfree = SS.GetEntity(c.entityA);
-            Entity *nref  = SS.GetEntity(c.entityB);
+            Entity *nfree = SK.GetEntity(c.entityA);
+            Entity *nref  = SK.GetEntity(c.entityB);
             if(nref->group.v == SS.GW.activeGroup.v) {
                 SWAP(Entity *, nref, nfree);
             }
@@ -485,7 +485,7 @@ void Constraint::MenuConstrain(int id) {
 
         case GraphicsWindow::MNU_OTHER_ANGLE:
             if(gs.constraints == 1 && gs.n == 0) {
-                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->type == ANGLE) {
                     SS.UndoRemember();
                     c->other = !(c->other);
@@ -505,10 +505,10 @@ void Constraint::MenuConstrain(int id) {
 
         case GraphicsWindow::MNU_REFERENCE:
             if(gs.constraints == 1 && gs.n == 0) {
-                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && c->type != COMMENT) {
                     (c->reference) = !(c->reference);
-                    SS.GetGroup(c->group)->clean = false;
+                    SK.GetGroup(c->group)->clean = false;
                     SS.GenerateAll();
                     break;
                 }
@@ -531,15 +531,15 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
 
-            Entity *ea = SS.GetEntity(c.entityA), 
-                   *eb = SS.GetEntity(c.entityB);
+            Entity *ea = SK.GetEntity(c.entityA), 
+                   *eb = SK.GetEntity(c.entityB);
             if(ea->type == Entity::LINE_SEGMENT &&
                eb->type == Entity::LINE_SEGMENT)
             {
-                Vector a0 = SS.GetEntity(ea->point[0])->PointGetNum(),
-                       a1 = SS.GetEntity(ea->point[1])->PointGetNum(),
-                       b0 = SS.GetEntity(eb->point[0])->PointGetNum(),
-                       b1 = SS.GetEntity(eb->point[1])->PointGetNum();
+                Vector a0 = SK.GetEntity(ea->point[0])->PointGetNum(),
+                       a1 = SK.GetEntity(ea->point[1])->PointGetNum(),
+                       b0 = SK.GetEntity(eb->point[0])->PointGetNum(),
+                       b1 = SK.GetEntity(eb->point[1])->PointGetNum();
                 if(a0.Equals(b0) || a1.Equals(b1)) {
                     // okay, vectors should be drawn in same sense
                 } else if(a0.Equals(b1) || a1.Equals(b0)) {
@@ -560,15 +560,15 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
             } else if(gs.lineSegments == 1 && gs.arcs == 1 && gs.n == 2) {
-                Entity *line = SS.GetEntity(gs.entity[0]);
-                Entity *arc  = SS.GetEntity(gs.entity[1]);
+                Entity *line = SK.GetEntity(gs.entity[0]);
+                Entity *arc  = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::ARC_OF_CIRCLE) {
                     SWAP(Entity *, line, arc);
                 }
-                Vector l0 = SS.GetEntity(line->point[0])->PointGetNum(),
-                       l1 = SS.GetEntity(line->point[1])->PointGetNum();
-                Vector a1 = SS.GetEntity(arc->point[1])->PointGetNum(),
-                       a2 = SS.GetEntity(arc->point[2])->PointGetNum();
+                Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
+                       l1 = SK.GetEntity(line->point[1])->PointGetNum();
+                Vector a1 = SK.GetEntity(arc->point[1])->PointGetNum(),
+                       a2 = SK.GetEntity(arc->point[2])->PointGetNum();
 
                 if(l0.Equals(a1) || l1.Equals(a1)) {
                     c.other = false;
@@ -584,15 +584,15 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = arc->h;
                 c.entityB = line->h;
             } else if(gs.lineSegments == 1 && gs.cubics == 1 && gs.n == 2) {
-                Entity *line  = SS.GetEntity(gs.entity[0]);
-                Entity *cubic = SS.GetEntity(gs.entity[1]);
+                Entity *line  = SK.GetEntity(gs.entity[0]);
+                Entity *cubic = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::CUBIC) {
                     SWAP(Entity *, line, cubic);
                 }
-                Vector l0 = SS.GetEntity(line->point[0])->PointGetNum(),
-                       l1 = SS.GetEntity(line->point[1])->PointGetNum();
-                Vector a0 = SS.GetEntity(cubic->point[0])->PointGetNum(),
-                       a3 = SS.GetEntity(cubic->point[3])->PointGetNum();
+                Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
+                       l1 = SK.GetEntity(line->point[1])->PointGetNum();
+                Vector a0 = SK.GetEntity(cubic->point[0])->PointGetNum(),
+                       a3 = SK.GetEntity(cubic->point[3])->PointGetNum();
 
                 if(l0.Equals(a0) || l1.Equals(a0)) {
                     c.other = false;

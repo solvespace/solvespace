@@ -1,6 +1,7 @@
 #include "solvespace.h"
 
 SolveSpace SS;
+Sketch SK;
 
 void SolveSpace::CheckLicenseFromRegistry(void) {
     // First, let's see if we're running licensed or free
@@ -388,7 +389,7 @@ void SolveSpace::MenuAnalyze(int id) {
     switch(id) {
         case GraphicsWindow::MNU_STEP_DIM:
             if(gs.constraints == 1 && gs.n == 0) {
-                Constraint *c = SS.GetConstraint(gs.constraint[0]);
+                Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && !c->reference) {
                     SS.TW.shown.dimFinish = c->valA;
                     SS.TW.shown.dimSteps = 10;
@@ -416,7 +417,7 @@ void SolveSpace::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_NAKED_EDGES: {
             SS.nakedEdges.Clear();
 
-            SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
+            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeNakedEdgesInto(&(SS.nakedEdges), &inters, &leaks);
@@ -440,7 +441,7 @@ void SolveSpace::MenuAnalyze(int id) {
         }
 
         case GraphicsWindow::MNU_VOLUME: {
-            SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
+            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
            
             double vol = 0;
             int i;

@@ -2,10 +2,10 @@
 
 char *Entity::DescriptionString(void) {
     if(h.isFromRequest()) {
-        Request *r = SS.GetRequest(h.request());
+        Request *r = SK.GetRequest(h.request());
         return r->DescriptionString();
     } else {
-        Group *g = SS.GetGroup(h.group());
+        Group *g = SK.GetGroup(h.group());
         return g->DescriptionString();
     }
 }
@@ -43,10 +43,10 @@ void Entity::DrawAll(void) {
         glxColor3d(0, 0.8, 0);
         glxDepthRangeOffset(6);
         glBegin(GL_QUADS);
-        for(i = 0; i < SS.entity.n; i++) {
-            Entity *e = &(SS.entity.elem[i]);
+        for(i = 0; i < SK.entity.n; i++) {
+            Entity *e = &(SK.entity.elem[i]);
             if(!e->IsPoint()) continue;
-            if(!(SS.GetGroup(e->group)->visible)) continue;
+            if(!(SK.GetGroup(e->group)->visible)) continue;
             if(SS.GroupsInOrder(SS.GW.activeGroup, e->group)) continue;
             if(e->forceHidden) continue;
 
@@ -54,14 +54,14 @@ void Entity::DrawAll(void) {
 
             bool free = false;
             if(e->type == POINT_IN_3D) {
-                Param *px = SS.GetParam(e->param[0]),
-                      *py = SS.GetParam(e->param[1]),
-                      *pz = SS.GetParam(e->param[2]);
+                Param *px = SK.GetParam(e->param[0]),
+                      *py = SK.GetParam(e->param[1]),
+                      *pz = SK.GetParam(e->param[2]);
 
                 free = (px->free) || (py->free) || (pz->free);
             } else if(e->type == POINT_IN_2D) {
-                Param *pu = SS.GetParam(e->param[0]),
-                      *pv = SS.GetParam(e->param[1]);
+                Param *pu = SK.GetParam(e->param[0]),
+                      *pv = SK.GetParam(e->param[1]);
 
                 free = (pu->free) || (pv->free);
             }
@@ -86,8 +86,8 @@ void Entity::DrawAll(void) {
     }
 
     glLineWidth(1.5);
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(e->IsPoint())
         {
             continue; // already handled
@@ -145,7 +145,7 @@ Vector Entity::GetReferencePos(void) {
 }
 
 bool Entity::IsVisible(void) {
-    Group *g = SS.GetGroup(group);
+    Group *g = SK.GetGroup(group);
 
     if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
         // The reference normals are always shown
@@ -178,17 +178,17 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
 
     switch(type) {
         case LINE_SEGMENT: {
-            Vector a = SS.GetEntity(point[0])->PointGetNum();
-            Vector b = SS.GetEntity(point[1])->PointGetNum();
+            Vector a = SK.GetEntity(point[0])->PointGetNum();
+            Vector b = SK.GetEntity(point[1])->PointGetNum();
             sb = SBezier::From(a, b);
             sbl->l.Add(&sb);
             break;
         }
         case CUBIC: {
-            Vector p0 = SS.GetEntity(point[0])->PointGetNum();
-            Vector p1 = SS.GetEntity(point[1])->PointGetNum();
-            Vector p2 = SS.GetEntity(point[2])->PointGetNum();
-            Vector p3 = SS.GetEntity(point[3])->PointGetNum();
+            Vector p0 = SK.GetEntity(point[0])->PointGetNum();
+            Vector p1 = SK.GetEntity(point[1])->PointGetNum();
+            Vector p2 = SK.GetEntity(point[2])->PointGetNum();
+            Vector p3 = SK.GetEntity(point[3])->PointGetNum();
             sb = SBezier::From(p0, p1, p2, p3);
             sbl->l.Add(&sb);
             break;
@@ -196,8 +196,8 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
 
         case CIRCLE:
         case ARC_OF_CIRCLE: {
-            Vector center = SS.GetEntity(point[0])->PointGetNum();
-            Quaternion q = SS.GetEntity(normal)->NormalGetNum();
+            Vector center = SK.GetEntity(point[0])->PointGetNum();
+            Quaternion q = SK.GetEntity(normal)->NormalGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
             double r = CircleGetRadiusNum();
             double thetaa, thetab, dtheta;
@@ -257,8 +257,8 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
         }
             
         case TTF_TEXT: {
-            Vector topLeft = SS.GetEntity(point[0])->PointGetNum();
-            Vector botLeft = SS.GetEntity(point[1])->PointGetNum();
+            Vector topLeft = SK.GetEntity(point[0])->PointGetNum();
+            Vector botLeft = SK.GetEntity(point[1])->PointGetNum();
             Vector n = Normal()->NormalN();
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
@@ -276,7 +276,7 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
 void Entity::DrawOrGetDistance(void) {
     if(!IsVisible()) return;
 
-    Group *g = SS.GetGroup(group);
+    Group *g = SK.GetGroup(group);
 
     if(group.v != SS.GW.activeGroup.v) {
         glxColor3d(0.5, 0.3, 0.0);
@@ -340,7 +340,7 @@ void Entity::DrawOrGetDistance(void) {
                 Quaternion q = NormalGetNum();
                 Vector tail;
                 if(i == 0) {
-                    tail = SS.GetEntity(point[0])->PointGetNum();
+                    tail = SK.GetEntity(point[0])->PointGetNum();
                     glLineWidth(1);
                 } else {
                     // Draw an extra copy of the x, y, and z axes, that's
@@ -376,7 +376,7 @@ void Entity::DrawOrGetDistance(void) {
 
         case WORKPLANE: {
             Vector p;
-            p = SS.GetEntity(point[0])->PointGetNum();
+            p = SK.GetEntity(point[0])->PointGetNum();
 
             Vector u = Normal()->NormalU();
             Vector v = Normal()->NormalV();

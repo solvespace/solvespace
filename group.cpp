@@ -17,7 +17,7 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
 }
 
 void Group::MenuGroup(int id) {
-    if(!SS.license.licensed && SS.group.n >= 7) {
+    if(!SS.license.licensed && SK.group.n >= 7) {
         Error("The free version of this software does not support more "
               "than six groups.\r\n\r\n"
               "To remove this restriction, please choose Help -> "
@@ -63,8 +63,8 @@ void Group::MenuGroup(int id) {
                 g.predef.entityB = gs.entity[0];
                 g.predef.entityC = gs.entity[1];
 
-                Vector ut = SS.GetEntity(g.predef.entityB)->VectorGetNum();
-                Vector vt = SS.GetEntity(g.predef.entityC)->VectorGetNum();
+                Vector ut = SK.GetEntity(g.predef.entityB)->VectorGetNum();
+                Vector vt = SK.GetEntity(g.predef.entityC)->VectorGetNum();
                 ut = ut.WithMagnitude(1);
                 vt = vt.WithMagnitude(1);
 
@@ -98,7 +98,7 @@ void Group::MenuGroup(int id) {
                 g.predef.origin = gs.point[0];
                 g.predef.entityB = gs.vector[0];
             } else if(gs.lineSegments == 1 && gs.n == 1) {
-                g.predef.origin = SS.GetEntity(gs.entity[0])->point[0];
+                g.predef.origin = SK.GetEntity(gs.entity[0])->point[0];
                 g.predef.entityB = gs.entity[0];
                 // since a line segment is a vector
             } else {
@@ -120,14 +120,14 @@ void Group::MenuGroup(int id) {
             // Get the group one before the active group; that's our
             // trajectory
             int i;
-            for(i = 1; i < SS.group.n - 1; i++) {
-                Group *gnext = &(SS.group.elem[i+1]);
+            for(i = 1; i < SK.group.n - 1; i++) {
+                Group *gnext = &(SK.group.elem[i+1]);
                 if(gnext->h.v == SS.GW.activeGroup.v) {
-                    g.opA = SS.group.elem[i].h;
+                    g.opA = SK.group.elem[i].h;
                     break;
                 }
             }
-            if(i >= SS.group.n - 1) {
+            if(i >= SK.group.n - 1) {
                 Error("At least one sketch before the active sketch must "
                       "exist; that specifies the sweep trajectory.");
                 return;
@@ -140,10 +140,10 @@ void Group::MenuGroup(int id) {
 
         case GraphicsWindow::MNU_GROUP_HELICAL: {
             if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
-                Vector pt = SS.GetEntity(gs.point[0])->PointGetNum();
-                Entity *ln = SS.GetEntity(gs.entity[0]);
-                Vector lpa = SS.GetEntity(ln->point[0])->PointGetNum();
-                Vector lpb = SS.GetEntity(ln->point[1])->PointGetNum();
+                Vector pt = SK.GetEntity(gs.point[0])->PointGetNum();
+                Entity *ln = SK.GetEntity(gs.entity[0]);
+                Vector lpa = SK.GetEntity(ln->point[0])->PointGetNum();
+                Vector lpb = SK.GetEntity(ln->point[1])->PointGetNum();
                 double d = pt.DistanceToLine(lpa, lpb.Minus(lpa));
                 if(d < LENGTH_EPS) {
                     Error("Point on helix can't lie on helix's axis!");
@@ -171,7 +171,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
-                Entity *w = SS.GetEntity(SS.GW.ActiveWorkplane());
+                Entity *w = SK.GetEntity(SS.GW.ActiveWorkplane());
                 g.predef.entityB = w->Normal()->h;
                 g.activeWorkplane = w->h;
             } else if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
@@ -220,8 +220,8 @@ void Group::MenuGroup(int id) {
     SS.GW.ClearSelection();
     SS.UndoRemember();
 
-    SS.group.AddAndAssignId(&g);
-    Group *gg = SS.GetGroup(g.h);
+    SK.group.AddAndAssignId(&g);
+    Group *gg = SK.GetGroup(g.h);
 
     if(gg->type == IMPORTED) {
         SS.ReloadAllImported();
@@ -277,8 +277,8 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         case DRAWING_WORKPLANE: {
             Quaternion q;
             if(subtype == WORKPLANE_BY_LINE_SEGMENTS) {
-                Vector u = SS.GetEntity(predef.entityB)->VectorGetNum();
-                Vector v = SS.GetEntity(predef.entityC)->VectorGetNum();
+                Vector u = SK.GetEntity(predef.entityB)->VectorGetNum();
+                Vector v = SK.GetEntity(predef.entityC)->VectorGetNum();
                 u = u.WithMagnitude(1);
                 Vector n = u.Cross(v);
                 v = (n.Cross(u)).WithMagnitude(1);
@@ -304,7 +304,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             Entity point;
             memset(&point, 0, sizeof(point));
             point.type = Entity::POINT_N_COPY;
-            point.numPoint = SS.GetEntity(predef.origin)->PointGetNum();
+            point.numPoint = SK.GetEntity(predef.origin)->PointGetNum();
             point.group = h;
             point.h = h.entity(2);
             entity->Add(&point);
@@ -344,11 +344,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
-                CopyEntity(entity, SS.GetEntity(he), ai, REMAP_BOTTOM,
+                CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true, false);
-                CopyEntity(entity, SS.GetEntity(he), af, REMAP_TOP,
+                CopyEntity(entity, SK.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     true, false);
@@ -477,12 +477,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
-        ExprVector orig = SS.GetEntity(predef.origin)->PointGetExprs();
+        ExprVector orig = SK.GetEntity(predef.origin)->PointGetExprs();
         AddEq(l, (orig.x)->Minus(EP(0)), 0);
         AddEq(l, (orig.y)->Minus(EP(1)), 1);
         AddEq(l, (orig.z)->Minus(EP(2)), 2);
         // param 3 is the angle, which is free
-        Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
+        Vector axis = SK.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
         AddEq(l, (EC(axis.x))->Minus(EP(4)), 3);
         AddEq(l, (EC(axis.y))->Minus(EP(5)), 4);
@@ -491,7 +491,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         if(predef.entityB.v != Entity::FREE_IN_3D.v) {
             // The extrusion path is locked along a line, normal to the
             // specified workplane.
-            Entity *w = SS.GetEntity(predef.entityB);
+            Entity *w = SK.GetEntity(predef.entityB);
             ExprVector u = w->Normal()->NormalExprsU();
             ExprVector v = w->Normal()->NormalExprsV();
             ExprVector extruden = {
@@ -504,7 +504,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         }
     } else if(type == TRANSLATE) {
         if(predef.entityB.v != Entity::FREE_IN_3D.v) {
-            Entity *w = SS.GetEntity(predef.entityB);
+            Entity *w = SK.GetEntity(predef.entityB);
             ExprVector n = w->Normal()->NormalExprsN();
             ExprVector trans;
             trans = ExprVector::From(h.param(0), h.param(1), h.param(2));
@@ -543,7 +543,7 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
 }
 
 void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
-    Entity *ep = SS.GetEntity(in);
+    Entity *ep = SK.GetEntity(in);
 
     Entity en;
     ZERO(&en);
@@ -558,8 +558,8 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
     } else if(ep->type == Entity::LINE_SEGMENT) {
         // A line gets extruded to form a plane face; an endpoint of the
         // original line is a point in the plane, and the line is in the plane.
-        Vector a = SS.GetEntity(ep->point[0])->PointGetNum();
-        Vector b = SS.GetEntity(ep->point[1])->PointGetNum();
+        Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
+        Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
         Vector ab = b.Minus(a);
 
         en.param[0] = h.param(0);
@@ -578,7 +578,7 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
 void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
 {
     if(pt.v == 0) return;
-    Group *src = SS.GetGroup(opA);
+    Group *src = SK.GetGroup(opA);
     Vector n = src->poly.normal;
 
     Entity en;
@@ -742,13 +742,13 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
 
 void Group::TagEdgesFromLineSegments(SEdgeList *el) {
     int i, j;
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(e->group.v != opA.v) continue;
         if(e->type != Entity::LINE_SEGMENT) continue;
 
-        Vector p0 = SS.GetEntity(e->point[0])->PointGetNum();
-        Vector p1 = SS.GetEntity(e->point[1])->PointGetNum();
+        Vector p0 = SK.GetEntity(e->point[0])->PointGetNum();
+        Vector p1 = SK.GetEntity(e->point[1])->PointGetNum();
         
         for(j = 0; j < el->l.n; j++) {
             SEdge *se = &(el->l.elem[j]);

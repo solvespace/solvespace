@@ -113,10 +113,10 @@ Quaternion Quaternion::From(double w, double vx, double vy, double vz) {
 
 Quaternion Quaternion::From(hParam w, hParam vx, hParam vy, hParam vz) {
     Quaternion q;
-    q.w  = SS.GetParam(w )->val;
-    q.vx = SS.GetParam(vx)->val;
-    q.vy = SS.GetParam(vy)->val;
-    q.vz = SS.GetParam(vz)->val;
+    q.w  = SK.GetParam(w )->val;
+    q.vx = SK.GetParam(vx)->val;
+    q.vy = SK.GetParam(vy)->val;
+    q.vz = SK.GetParam(vz)->val;
     return q;
 }
 
@@ -277,9 +277,9 @@ Vector Vector::From(double x, double y, double z) {
 
 Vector Vector::From(hParam x, hParam y, hParam z) {
     Vector v;
-    v.x = SS.GetParam(x)->val;
-    v.y = SS.GetParam(y)->val;
-    v.z = SS.GetParam(z)->val;
+    v.x = SK.GetParam(x)->val;
+    v.y = SK.GetParam(y)->val;
+    v.z = SK.GetParam(z)->val;
     return v;
 }
 
@@ -504,7 +504,7 @@ Vector Vector::WithMagnitude(double v) {
 }
 
 Vector Vector::ProjectVectorInto(hEntity wrkpl) {
-    Entity *w = SS.GetEntity(wrkpl);
+    Entity *w = SK.GetEntity(wrkpl);
     Vector u = w->Normal()->NormalU();
     Vector v = w->Normal()->NormalV();
 
@@ -515,7 +515,7 @@ Vector Vector::ProjectVectorInto(hEntity wrkpl) {
 }
 
 Vector Vector::ProjectInto(hEntity wrkpl) {
-    Entity *w = SS.GetEntity(wrkpl);
+    Entity *w = SK.GetEntity(wrkpl);
     Vector p0 = w->WorkplaneGetOffset();
 
     Vector f = this->Minus(p0);

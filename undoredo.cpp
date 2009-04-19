@@ -40,8 +40,8 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
 
     UndoState *ut = &(uk->d[uk->write]);
     ZERO(ut);
-    for(i = 0; i < group.n; i++) {
-        Group *src = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *src = &(SK.group.elem[i]);
         Group dest = *src;
         // And then clean up all the stuff that needs to be a deep copy,
         // and zero out all the dynamic stuff that will get regenerated.
@@ -62,17 +62,17 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         ZERO(&(dest.impEntity));
         ut->group.Add(&dest);
     }
-    for(i = 0; i < request.n; i++) {
-        ut->request.Add(&(request.elem[i]));
+    for(i = 0; i < SK.request.n; i++) {
+        ut->request.Add(&(SK.request.elem[i]));
     }
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *src = &(constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *src = &(SK.constraint.elem[i]);
         Constraint dest = *src;
         ZERO(&(dest.dogd));
         ut->constraint.Add(&dest);
     }
-    for(i = 0; i < param.n; i++) {
-        ut->param.Add(&(param.elem[i]));
+    for(i = 0; i < SK.param.n; i++) {
+        ut->param.Add(&(SK.param.elem[i]));
     }
     ut->activeGroup = SS.GW.activeGroup;
 
@@ -88,8 +88,8 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
 
     int i;
     // Free everything in the main copy of the program before replacing it
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         g->poly.Clear();
         g->bezierLoopSet.Clear();
         g->runningMesh.Clear();
@@ -100,16 +100,16 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
         g->impMesh.Clear();
         g->impEntity.Clear();
     }
-    group.Clear();
-    request.Clear();
-    constraint.Clear();
-    param.Clear();
+    SK.group.Clear();
+    SK.request.Clear();
+    SK.constraint.Clear();
+    SK.param.Clear();
 
     // And then do a shallow copy of the state from the undo list
-    ut->group.MoveSelfInto(&group);
-    ut->request.MoveSelfInto(&request);
-    ut->constraint.MoveSelfInto(&constraint);
-    ut->param.MoveSelfInto(&param);
+    ut->group.MoveSelfInto(&(SK.group));
+    ut->request.MoveSelfInto(&(SK.request));
+    ut->constraint.MoveSelfInto(&(SK.constraint));
+    ut->param.MoveSelfInto(&(SK.param));
     SS.GW.activeGroup = ut->activeGroup;
 
     // No need to free it, since a shallow copy was made above

@@ -1,15 +1,15 @@
 #include "solvespace.h"
 
 void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {
-    Entity *e = SS.GetEntity(he);
+    Entity *e = SK.GetEntity(he);
     MarkGroupDirty(e->group);
 }
 
 void SolveSpace::MarkGroupDirty(hGroup hg) {
     int i;
     bool go = false;
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         if(g->h.v == hg.v) {
             go = true;
         }
@@ -22,23 +22,23 @@ void SolveSpace::MarkGroupDirty(hGroup hg) {
 
 bool SolveSpace::PruneOrphans(void) {
     int i;
-    for(i = 0; i < request.n; i++) {
-        Request *r = &(request.elem[i]);
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
         if(GroupExists(r->group)) continue;
 
         (deleted.requests)++;
-        request.RemoveById(r->h);
+        SK.request.RemoveById(r->h);
         return true;
     }
 
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
         if(GroupExists(c->group)) continue;
 
         (deleted.constraints)++;
         (deleted.nonTrivialConstraints)++;
 
-        constraint.RemoveById(c->h);
+        SK.constraint.RemoveById(c->h);
         return true;
     }
     return false;
@@ -50,8 +50,8 @@ bool SolveSpace::GroupsInOrder(hGroup before, hGroup after) {
 
     int beforep = -1, afterp = -1;
     int i;
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         if(g->h.v == before.v) beforep = i;
         if(g->h.v == after.v)  afterp  = i;
     }
@@ -62,17 +62,17 @@ bool SolveSpace::GroupsInOrder(hGroup before, hGroup after) {
 
 bool SolveSpace::GroupExists(hGroup hg) {
     // A nonexistent group is not acceptable
-    return group.FindByIdNoOops(hg) ? true : false;
+    return SK.group.FindByIdNoOops(hg) ? true : false;
 }
 bool SolveSpace::EntityExists(hEntity he) {
     // A nonexstient entity is acceptable, though, usually just means it
     // doesn't apply.
     if(he.v == Entity::NO_ENTITY.v) return true;
-    return entity.FindByIdNoOops(he) ? true : false;
+    return SK.entity.FindByIdNoOops(he) ? true : false;
 }
 
 bool SolveSpace::PruneGroups(hGroup hg) {
-    Group *g = GetGroup(hg);
+    Group *g = SK.GetGroup(hg);
     if(GroupsInOrder(g->opA, hg) &&
        EntityExists(g->predef.origin) &&
        EntityExists(g->predef.entityB) &&
@@ -81,14 +81,14 @@ bool SolveSpace::PruneGroups(hGroup hg) {
         return false;
     }
     (deleted.groups)++;
-    group.RemoveById(g->h);
+    SK.group.RemoveById(g->h);
     return true;
 }
 
 bool SolveSpace::PruneRequests(hGroup hg) {
     int i;
-    for(i = 0; i < entity.n; i++) {
-        Entity *e = &(entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(e->group.v != hg.v) continue;
 
         if(EntityExists(e->workplane)) continue;
@@ -96,7 +96,7 @@ bool SolveSpace::PruneRequests(hGroup hg) {
         if(!e->h.isFromRequest()) oops();
 
         (deleted.requests)++;
-        request.RemoveById(e->h.request());
+        SK.request.RemoveById(e->h.request());
         return true;
     }
     return false;
@@ -104,8 +104,8 @@ bool SolveSpace::PruneRequests(hGroup hg) {
 
 bool SolveSpace::PruneConstraints(hGroup hg) {
     int i;
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
         if(c->group.v != hg.v) continue;
 
         if(EntityExists(c->workplane) &&
@@ -127,7 +127,7 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
             (deleted.nonTrivialConstraints)++;
         }
 
-        constraint.RemoveById(c->h);
+        SK.constraint.RemoveById(c->h);
         return true;
     }
     return false;
@@ -138,8 +138,8 @@ void SolveSpace::GenerateAll(void) {
     int firstDirty = INT_MAX, lastVisible = 0;
     // Start from the first dirty group, and solve until the active group,
     // since all groups after the active group are hidden.
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         g->order = i;
         if((!g->clean) || (g->solved.how != Group::SOLVED_OKAY)) {
             firstDirty = min(firstDirty, i);
@@ -167,11 +167,11 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
     // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev;
-    param.MoveSelfInto(&prev);
-    entity.Clear();
+    SK.param.MoveSelfInto(&prev);
+    SK.entity.Clear();
 
-    for(i = 0; i < group.n; i++) {
-        Group *g = &(group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
 
         // The group may depend on entities or other groups, to define its
         // workplane geometry or for its operands. Those must already exist
@@ -179,13 +179,13 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
         if(PruneGroups(g->h))
             goto pruned;
 
-        for(j = 0; j < request.n; j++) {
-            Request *r = &(request.elem[j]);
+        for(j = 0; j < SK.request.n; j++) {
+            Request *r = &(SK.request.elem[j]);
             if(r->group.v != g->h.v) continue;
 
-            r->Generate(&entity, &param);
+            r->Generate(&(SK.entity), &(SK.param));
         }
-        g->Generate(&entity, &param);
+        g->Generate(&(SK.entity), &(SK.param));
 
         // The requests and constraints depend on stuff in this or the
         // previous group, so check them after generating.
@@ -194,8 +194,8 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
         // Use the previous values for params that we've seen before, as
         // initial guesses for the solver.
-        for(j = 0; j < param.n; j++) {
-            Param *newp = &(param.elem[j]);
+        for(j = 0; j < SK.param.n; j++) {
+            Param *newp = &(SK.param.elem[j]);
             if(newp->known) continue;
 
             Param *prevp = prev.FindByIdNoOops(newp->h);
@@ -218,8 +218,8 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
                 // The group falls outside the range, so just assume that
                 // it's good wherever we left it. The mesh is unchanged,
                 // and the parameters must be marked as known.
-                for(j = 0; j < param.n; j++) {
-                    Param *newp = &(param.elem[j]);
+                for(j = 0; j < SK.param.n; j++) {
+                    Param *newp = &(SK.param.elem[j]);
 
                     Param *prevp = prev.FindByIdNoOops(newp->h);
                     if(prevp) newp->known = true;
@@ -229,20 +229,20 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
     }
 
     // And update any reference dimensions with their new values
-    for(i = 0; i < constraint.n; i++) {
-        Constraint *c = &(constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
         if(c->reference) {
             c->ModifyToSatisfy();
         }
     }
 
     // Make sure the point that we're tracing exists.
-    if(traced.point.v && !entity.FindByIdNoOops(traced.point)) {
+    if(traced.point.v && !SK.entity.FindByIdNoOops(traced.point)) {
         traced.point = Entity::NO_ENTITY;
     }
     // And if we're tracing a point, add its new value to the path
     if(traced.point.v) {
-        Entity *pt = GetEntity(traced.point);
+        Entity *pt = SK.GetEntity(traced.point);
         traced.path.AddPoint(pt->PointGetNum());
     }
 
@@ -294,8 +294,8 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
 pruned:
     // Restore the numerical guesses
-    param.Clear();
-    prev.MoveSelfInto(&param);
+    SK.param.Clear();
+    prev.MoveSelfInto(&(SK.param));
     // Try again
     GenerateAll(first, last);
 }
@@ -313,20 +313,20 @@ void SolveSpace::ForceReferences(void) {
     };
     for(int i = 0; i < 3; i++) {
         hRequest hr = Quat[i].hr;
-        Entity *wrkpl = GetEntity(hr.entity(0));
+        Entity *wrkpl = SK.GetEntity(hr.entity(0));
         // The origin for our coordinate system, always zero
-        Entity *origin = GetEntity(wrkpl->point[0]);
+        Entity *origin = SK.GetEntity(wrkpl->point[0]);
         origin->PointForceTo(Vector::From(0, 0, 0));
-        GetParam(origin->param[0])->known = true;
-        GetParam(origin->param[1])->known = true;
-        GetParam(origin->param[2])->known = true;
+        SK.GetParam(origin->param[0])->known = true;
+        SK.GetParam(origin->param[1])->known = true;
+        SK.GetParam(origin->param[2])->known = true;
         // The quaternion that defines the rotation, from the table.
-        Entity *normal = GetEntity(wrkpl->normal); 
+        Entity *normal = SK.GetEntity(wrkpl->normal); 
         normal->NormalForceTo(Quat[i].q);
-        GetParam(normal->param[0])->known = true;
-        GetParam(normal->param[1])->known = true;
-        GetParam(normal->param[2])->known = true;
-        GetParam(normal->param[3])->known = true;
+        SK.GetParam(normal->param[0])->known = true;
+        SK.GetParam(normal->param[1])->known = true;
+        SK.GetParam(normal->param[2])->known = true;
+        SK.GetParam(normal->param[3])->known = true;
     }
 }
 
@@ -337,20 +337,20 @@ void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
     sys.param.Clear();
     sys.eq.Clear();
     // And generate all the params for requests in this group
-    for(i = 0; i < request.n; i++) {
-        Request *r = &(request.elem[i]);
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
         if(r->group.v != hg.v) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
     }
     // And for the group itself
-    Group *g = SS.GetGroup(hg);
+    Group *g = SK.GetGroup(hg);
     g->Generate(&(sys.entity), &(sys.param));
     // Set the initial guesses for all the params
     for(i = 0; i < sys.param.n; i++) {
         Param *p = &(sys.param.elem[i]);
         p->known = false;
-        p->val = GetParam(p->h)->val;
+        p->val = SK.GetParam(p->h)->val;
     }
 
     sys.Solve(g, andFindFree);
@@ -360,8 +360,8 @@ void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
 bool SolveSpace::AllGroupsOkay(void) {
     int i;
     bool allOk = true;
-    for(i = 0; i < group.n; i++) {
-        if(group.elem[i].solved.how != Group::SOLVED_OKAY) {
+    for(i = 0; i < SK.group.n; i++) {
+        if(SK.group.elem[i].solved.how != Group::SOLVED_OKAY) {
             allOk = false;
         }
     }

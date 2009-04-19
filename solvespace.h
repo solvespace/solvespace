@@ -410,26 +410,29 @@ public:
     void FinishAndCloseFile(void);
 };
 
-class SolveSpace {
+class Sketch {
 public:
-    TextWindow                  TW;
-    GraphicsWindow              GW;
-
-    // These lists define the sketch, and are edited by the user.
+    // These are user-editable, and define the sketch.
     IdList<Group,hGroup>            group;
-    IdList<Request,hRequest>        request;
     IdList<Constraint,hConstraint>  constraint;
+    IdList<Request,hRequest>        request;
 
-    // These lists are generated automatically when we solve the sketch.
+    // These are generated from the above.
     IdList<Entity,hEntity>          entity;
     IdList<Param,hParam>            param;
 
     inline Constraint *GetConstraint(hConstraint h)
         { return constraint.FindById(h); }
-    inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Entity  *GetEntity (hEntity  h) { return entity. FindById(h); }
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
+    inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
+};
+
+class SolveSpace {
+public:
+    TextWindow                  TW;
+    GraphicsWindow              GW;
 
     // The state for undo/redo
     typedef struct {
@@ -608,5 +611,6 @@ public:
 };
 
 extern SolveSpace SS;
+extern Sketch SK;
 
 #endif

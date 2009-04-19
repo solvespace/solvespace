@@ -11,7 +11,7 @@ void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
 
     char *cd = SS.GW.LockedInWorkplane() ?
-                   SS.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString() :
+                   SK.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString() :
                    "free in 3d";
 
     // Navigation buttons
@@ -58,7 +58,7 @@ void TextWindow::ScreenSelectGroup(int link, DWORD v) {
 }
 void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     hGroup hg = { v };
-    Group *g = SS.GetGroup(hg);
+    Group *g = SK.GetGroup(hg);
     g->visible = !(g->visible);
     // If a group was just shown, then it might not have been generated
     // previously, so regenerate.
@@ -66,8 +66,8 @@ void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
     int i;
-    for(i = 0; i < SS.group.n; i++) {
-        Group *g = &(SS.group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
 
         if(link == 's') {
             g->visible = true;
@@ -78,10 +78,10 @@ void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
 }
 void TextWindow::ScreenActivateGroup(int link, DWORD v) {
     hGroup hg = { v };
-    Group *g = SS.GetGroup(hg);
+    Group *g = SK.GetGroup(hg);
     g->visible = true;
     SS.GW.activeGroup.v = v;
-    SS.GetGroup(SS.GW.activeGroup)->Activate();
+    SK.GetGroup(SS.GW.activeGroup)->Activate();
     SS.GW.ClearSuper();
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {
@@ -107,8 +107,8 @@ void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
     int i;
     bool afterActive = false;
-    for(i = 0; i < SS.group.n; i++) {
-        Group *g = &(SS.group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         char *s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
@@ -172,7 +172,7 @@ void TextWindow::ScreenHoverConstraint(int link, DWORD v) {
     if(!SS.GW.showConstraints) return;
 
     hConstraint hc = { v };
-    Constraint *c = SS.GetConstraint(hc);
+    Constraint *c = SK.GetConstraint(hc);
     if(c->group.v != SS.GW.activeGroup.v) {
         // Only constraints in the active group are visible
         return;
@@ -199,7 +199,7 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
 void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     if(g->subtype == Group::ONE_SIDED) {
         g->subtype = Group::TWO_SIDED;
     } else if(g->subtype == Group::TWO_SIDED) {
@@ -212,7 +212,7 @@ void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
 void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     (g->skipFirst) = !(g->skipFirst);
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
@@ -221,7 +221,7 @@ void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
 void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     g->meshCombine = v;
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
@@ -230,7 +230,7 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
 void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     g->suppress = !(g->suppress);
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
@@ -239,7 +239,7 @@ void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
 void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     if(g->subtype == Group::RIGHT_HANDED) {
         g->subtype = Group::LEFT_HANDED;
     } else {
@@ -250,7 +250,7 @@ void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     char str[1024];
     int r;
     if(link == 't') {
@@ -272,7 +272,7 @@ void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
 void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     if(v < 0 || v >= SS.MODEL_COLORS) return;
     g->color = SS.modelColor[v];
     SS.MarkGroupDirty(g->h);
@@ -280,7 +280,7 @@ void TextWindow::ScreenColor(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
 
     // There's an extra line for the skipFirst parameter in one-sided groups.
     int r = (g->subtype == Group::ONE_SIDED) ? 15 : 13;
@@ -292,7 +292,7 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
-    Group *g = SS.GetGroup(SS.TW.shown.group);
+    Group *g = SK.GetGroup(SS.TW.shown.group);
     ShowTextEditControl(7, 14, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
@@ -306,14 +306,14 @@ void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
               "before proceeding.");
         return;
     }
-    SS.group.RemoveById(SS.TW.shown.group);
+    SK.group.RemoveById(SS.TW.shown.group);
     // This is a major change, so let's re-solve everything.
     SS.TW.ClearSuper();
     SS.GW.ClearSuper();
     SS.GenerateAll(0, INT_MAX);
 }
 void TextWindow::ShowGroupInfo(void) {
-    Group *g = SS.group.FindById(shown.group);
+    Group *g = SK.group.FindById(shown.group);
     char *s, *s2, *s3;
 
     if(shown.group.v == Group::HGROUP_REFERENCES.v) {
@@ -459,8 +459,8 @@ void TextWindow::ShowGroupInfo(void) {
     }
 
     int i, a = 0;
-    for(i = 0; i < SS.request.n; i++) {
-        Request *r = &(SS.request.elem[i]);
+    for(i = 0; i < SK.request.n; i++) {
+        Request *r = &(SK.request.elem[i]);
 
         if(r->group.v == shown.group.v) {
             char *s = r->DescriptionString();
@@ -475,8 +475,8 @@ void TextWindow::ShowGroupInfo(void) {
 
     a = 0;
     Printf(true, "%Ftconstraints in group (%d DOF)", g->solved.dof);
-    for(i = 0; i < SS.constraint.n; i++) {
-        Constraint *c = &(SS.constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
 
         if(c->group.v == shown.group.v) {
             char *s = c->DescriptionString();
@@ -497,7 +497,7 @@ void TextWindow::ShowGroupInfo(void) {
 // constraints that could be removed to fix it.
 //-----------------------------------------------------------------------------
 void TextWindow::ShowGroupSolveInfo(void) {
-    Group *g = SS.group.FindById(shown.group);
+    Group *g = SK.group.FindById(shown.group);
     if(g->solved.how == Group::SOLVED_OKAY) {
         // Go back to the default group info screen
         shown.screen = SCREEN_GROUP_INFO;
@@ -520,7 +520,7 @@ void TextWindow::ShowGroupSolveInfo(void) {
 
     for(int i = 0; i < g->solved.remove.n; i++) {
         hConstraint hc = g->solved.remove.elem[i];
-        Constraint *c = SS.constraint.FindByIdNoOops(hc);
+        Constraint *c = SK.constraint.FindByIdNoOops(hc);
         if(!c) continue;
 
         Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
@@ -650,7 +650,7 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
         SS.chordTol,
         &ScreenChangeChordTolerance, 0,
-        SS.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
+        SK.GetGroup(SS.GW.activeGroup)->runningMesh.l.n);
     Printf(false, "%Ft max piecewise linear segments%E");
     Printf(false, "%Ba    %d %Fl%Ll%f[change]%E",
         SS.maxSegments,
@@ -732,13 +732,13 @@ void TextWindow::ScreenStepDimSteps(int link, DWORD v) {
 }
 void TextWindow::ScreenStepDimGo(int link, DWORD v) {
     hConstraint hc = SS.TW.shown.constraint;
-    Constraint *c = SS.constraint.FindByIdNoOops(hc);
+    Constraint *c = SK.constraint.FindByIdNoOops(hc);
     if(c) {
         SS.UndoRemember();
         double start = c->valA, finish = SS.TW.shown.dimFinish;
         int i, n = SS.TW.shown.dimSteps;
         for(i = 1; i <= n; i++) {
-            c = SS.GetConstraint(hc);
+            c = SK.GetConstraint(hc);
             c->valA = start + ((finish - start)*i)/n;
             SS.MarkGroupDirty(c->group);
             SS.GenerateAll();
@@ -753,7 +753,7 @@ void TextWindow::ScreenStepDimGo(int link, DWORD v) {
     SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
 }
 void TextWindow::ShowStepDimension(void) {
-    Constraint *c = SS.constraint.FindByIdNoOops(shown.constraint);
+    Constraint *c = SK.constraint.FindByIdNoOops(shown.constraint);
     if(!c) {
         shown.screen = SCREEN_LIST_OF_GROUPS;
         Show();
@@ -812,13 +812,13 @@ void TextWindow::EditControlDone(char *s) {
                     break;
                 }
 
-                Group *g = SS.GetGroup(edit.group);
+                Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
 
                 if(g->type == Group::ROTATE) {
                     int i, c = 0;
-                    for(i = 0; i < SS.constraint.n; i++) {
-                        if(SS.constraint.elem[i].group.v == g->h.v) c++;
+                    for(i = 0; i < SK.constraint.n; i++) {
+                        if(SK.constraint.elem[i].group.v == g->h.v) c++;
                     }
                     // If the group does not contain any constraints, then
                     // set the numerical guess to space the copies uniformly
@@ -826,7 +826,7 @@ void TextWindow::EditControlDone(char *s) {
                     // already constrained, because that would break
                     // convergence.
                     if(c == 0) {
-                        SS.GetParam(g->h.param(3))->val = PI/(2*ev);
+                        SK.GetParam(g->h.param(3))->val = PI/(2*ev);
                     }
                 }
 
@@ -850,7 +850,7 @@ void TextWindow::EditControlDone(char *s) {
             } else {
                 SS.UndoRemember();
 
-                Group *g = SS.GetGroup(edit.group);
+                Group *g = SK.GetGroup(edit.group);
                 g->name.strcpy(s);
             }
             SS.unsaved = true;
@@ -936,7 +936,7 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_HELIX_PITCH:
         case EDIT_HELIX_DRADIUS: {
             SS.UndoRemember();
-            Group *g = SS.GetGroup(edit.group);
+            Group *g = SK.GetGroup(edit.group);
             Expr *e = Expr::From(s);
             if(!e) {
                 Error("Not a valid number or expression: '%s'", s);
@@ -955,7 +955,7 @@ void TextWindow::EditControlDone(char *s) {
         }
         case EDIT_TTF_TEXT: {
             SS.UndoRemember();
-            Request *r = SS.request.FindByIdNoOops(edit.request);
+            Request *r = SK.request.FindByIdNoOops(edit.request);
             if(r) {
                 r->str.strcpy(s);
                 SS.MarkGroupDirty(r->group);

@@ -5,7 +5,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
 
-    Group *g = SS.GetGroup(SS.GW.activeGroup);
+    Group *g = SK.GetGroup(SS.GW.activeGroup);
     if(g->runningMesh.l.n == 0) {
         Error("No solid model present; draw one with extrudes and revolves, "
               "or use Export 2d View to export bare lines and curves.");
@@ -20,21 +20,21 @@ void SolveSpace::ExportSectionTo(char *filename) {
     SS.GW.GroupSelection();
 #define gs (SS.GW.gs)
     if((gs.n == 0 && g->activeWorkplane.v != Entity::FREE_IN_3D.v)) {
-        Entity *wrkpl = SS.GetEntity(g->activeWorkplane);
+        Entity *wrkpl = SK.GetEntity(g->activeWorkplane);
         origin = wrkpl->WorkplaneGetOffset();
         n = wrkpl->Normal()->NormalN();
         u = wrkpl->Normal()->NormalU();
         v = wrkpl->Normal()->NormalV();
     } else if(gs.n == 1 && gs.faces == 1) {
-        Entity *face = SS.GetEntity(gs.entity[0]);
+        Entity *face = SK.GetEntity(gs.entity[0]);
         origin = face->FaceGetPointNum();
         n = face->FaceGetNormalNum();
         if(n.Dot(gn) < 0) n = n.ScaledBy(-1);
         u = n.Normal(0);
         v = n.Normal(1);
     } else if(gs.n == 3 && gs.vectors == 2 && gs.points == 1) {
-        Vector ut = SS.GetEntity(gs.entity[0])->VectorGetNum(),
-               vt = SS.GetEntity(gs.entity[1])->VectorGetNum();
+        Vector ut = SK.GetEntity(gs.entity[0])->VectorGetNum(),
+               vt = SK.GetEntity(gs.entity[1])->VectorGetNum();
         ut = ut.WithMagnitude(1);
         vt = vt.WithMagnitude(1);
 
@@ -44,7 +44,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
         if(SS.GW.projRight.Dot(ut) < 0) ut = ut.ScaledBy(-1);
         if(SS.GW.projUp.   Dot(vt) < 0) vt = vt.ScaledBy(-1);
 
-        origin = SS.GetEntity(gs.point[0])->PointGetNum();
+        origin = SK.GetEntity(gs.point[0])->PointGetNum();
         n = ut.Cross(vt);
         u = ut.WithMagnitude(1);
         v = (n.Cross(u)).WithMagnitude(1);
@@ -95,14 +95,14 @@ void SolveSpace::ExportViewTo(char *filename) {
 
     SMesh *sm = NULL;
     if(SS.GW.showShaded) {
-        sm = &((SS.GetGroup(SS.GW.activeGroup))->runningMesh);
+        sm = &((SK.GetGroup(SS.GW.activeGroup))->runningMesh);
     }
     if(sm->l.n == 0) {
         sm = NULL;
     }
 
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(!e->IsVisible()) continue;
         if(e->construction) continue;
 
@@ -119,7 +119,7 @@ void SolveSpace::ExportViewTo(char *filename) {
     }
 
     if(SS.GW.showEdges) {
-        SEdgeList *selr = &((SS.GetGroup(SS.GW.activeGroup))->runningEdges);
+        SEdgeList *selr = &((SK.GetGroup(SS.GW.activeGroup))->runningEdges);
         SEdge *se;
         for(se = selr->l.First(); se; se = selr->l.NextAfter(se)) {
             edges.AddEdge(se->a, se->b);
@@ -973,7 +973,7 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 // not self-intersecting, so not much to do.
 //-----------------------------------------------------------------------------
 void SolveSpace::ExportMeshTo(char *filename) {
-    SMesh *m = &(SS.GetGroup(SS.GW.activeGroup)->runningMesh);
+    SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
     if(m->l.n == 0) {
         Error("Active group mesh is empty; nothing to export.");
         return;

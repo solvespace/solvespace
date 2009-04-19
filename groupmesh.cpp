@@ -7,8 +7,8 @@ bool Group::AssembleLoops(void) {
     ZERO(&sbl);
 
     int i;
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(e->group.v != h.v) continue;
         if(e->construction) continue;
 
@@ -52,7 +52,7 @@ void Group::GenerateLoops(void) {
 }
 
 void Group::GenerateShellForStepAndRepeat(void) {
-    Group *src = SS.GetGroup(opA);
+    Group *src = SK.GetGroup(opA);
     SShell *srcs = &(src->thisShell); // the shell to step and repeat
 
     SShell workA, workB;
@@ -79,7 +79,7 @@ void Group::GenerateShellForStepAndRepeat(void) {
             transd.MakeFromTransformationOf(srcs, trans, q);
         } else {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
-            double theta = ap * SS.GetParam(h.param(3))->val;
+            double theta = ap * SK.GetParam(h.param(3))->val;
             double c = cos(theta), s = sin(theta);
             Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
@@ -122,7 +122,7 @@ void Group::GenerateShellAndMesh(void) {
     }
 
     if(type == EXTRUDE) {
-        Group *src = SS.GetGroup(opA);
+        Group *src = SK.GetGroup(opA);
         Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
 
         Vector tbot, ttop;
@@ -162,12 +162,12 @@ void Group::GenerateShellAndMesh(void) {
             if(ss->degm != 1 || ss->degn != 1) continue;
 
             Entity *e;
-            for(e = SS.entity.First(); e; e = SS.entity.NextAfter(e)) {
+            for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
                 if(e->group.v != opA.v) continue;
                 if(e->type != Entity::LINE_SEGMENT) continue;
 
-                Vector a = SS.GetEntity(e->point[0])->PointGetNum(),
-                       b = SS.GetEntity(e->point[1])->PointGetNum();
+                Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
+                       b = SK.GetEntity(e->point[1])->PointGetNum();
                 a = a.Plus(ttop);
                 b = b.Plus(ttop);
                 // Could get taken backwards, so check all cases.
@@ -183,24 +183,24 @@ void Group::GenerateShellAndMesh(void) {
             }
         }
     } else if(type == LATHE) {
-        Group *src = SS.GetGroup(opA);
+        Group *src = SK.GetGroup(opA);
 
-        Vector orig = SS.GetEntity(predef.origin)->PointGetNum();
-        Vector axis = SS.GetEntity(predef.entityB)->VectorGetNum();
+        Vector orig = SK.GetEntity(predef.origin)->PointGetNum();
+        Vector axis = SK.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
 
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.
         Vector offset = {
-            SS.GetParam(h.param(0))->val,
-            SS.GetParam(h.param(1))->val,
-            SS.GetParam(h.param(2))->val };
+            SK.GetParam(h.param(0))->val,
+            SK.GetParam(h.param(1))->val,
+            SK.GetParam(h.param(2))->val };
         Quaternion q = {
-            SS.GetParam(h.param(3))->val,
-            SS.GetParam(h.param(4))->val,
-            SS.GetParam(h.param(5))->val,
-            SS.GetParam(h.param(6))->val };
+            SK.GetParam(h.param(3))->val,
+            SK.GetParam(h.param(4))->val,
+            SK.GetParam(h.param(5))->val,
+            SK.GetParam(h.param(6))->val };
 
         for(int i = 0; i < impMesh.l.n; i++) {
             STriangle st = impMesh.l.elem[i];
@@ -245,12 +245,12 @@ done:
 
 SShell *Group::PreviousGroupShell(void) {
     int i;
-    for(i = 0; i < SS.group.n; i++) {
-        Group *g = &(SS.group.elem[i]);
+    for(i = 0; i < SK.group.n; i++) {
+        Group *g = &(SK.group.elem[i]);
         if(g->h.v == h.v) break;
     }
-    if(i == 0 || i >= SS.group.n) oops();
-    return &(SS.group.elem[i-1].runningShell);
+    if(i == 0 || i >= SK.group.n) oops();
+    return &(SK.group.elem[i-1].runningShell);
 }
 
 void Group::Draw(void) {
@@ -272,7 +272,7 @@ void Group::Draw(void) {
     // or hovered, in order to draw them differently.
     DWORD mh = 0, ms1 = 0, ms2 = 0;
     hEntity he = SS.GW.hover.entity;
-    if(he.v != 0 && SS.GetEntity(he)->IsFace()) {
+    if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
         mh = he.v;
     }
     SS.GW.GroupSelection();

@@ -21,7 +21,7 @@ void System::WriteJacobian(int tag) {
         if(e->tag != tag) continue;
 
         mat.eq[i] = e->h;
-        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
+        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SK.param));
         f = f->FoldConstants();
 
         // Hash table (61 bits) to accelerate generation of zero partials.
@@ -33,7 +33,7 @@ void System::WriteJacobian(int tag) {
             {
                 pd = f->PartialWrt(mat.param[j]);
                 pd = pd->FoldConstants();
-                pd = pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
+                pd = pd->DeepCopyWithParamsAsPointers(&param, &(SK.param));
             } else {
                 pd = Expr::From(0.0);
             }
@@ -59,7 +59,7 @@ bool System::IsDragged(hParam p) {
         // The pending point could be one in a group that has not yet
         // been processed, in which case the lookup will fail; but
         // that's not an error.
-        Entity *pt = SS.entity.FindByIdNoOops(SS.GW.pending.point);
+        Entity *pt = SK.entity.FindByIdNoOops(SS.GW.pending.point);
         if(pt) {
             switch(pt->type) {
                 case Entity::POINT_N_TRANS:
@@ -77,9 +77,9 @@ bool System::IsDragged(hParam p) {
         }
     }
     if(SS.GW.pending.circle.v) {
-        Entity *circ = SS.entity.FindByIdNoOops(SS.GW.pending.circle);
+        Entity *circ = SK.entity.FindByIdNoOops(SS.GW.pending.circle);
         if(circ) {
-            Entity *dist = SS.GetEntity(circ->distance);
+            Entity *dist = SK.GetEntity(circ->distance);
             switch(dist->type) {
                 case Entity::DISTANCE:
                     if(p.v == (dist->param[0].v)) return true;
@@ -88,7 +88,7 @@ bool System::IsDragged(hParam p) {
         }
     }
     if(SS.GW.pending.normal.v) {
-        Entity *norm = SS.entity.FindByIdNoOops(SS.GW.pending.normal);
+        Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
         if(norm) {
             switch(norm->type) {
                 case Entity::NORMAL_IN_3D:
@@ -343,22 +343,22 @@ bool System::NewtonSolve(int tag) {
 void System::WriteEquationsExceptFor(hConstraint hc, hGroup hg) {
     int i;
     // Generate all the equations from constraints in this group
-    for(i = 0; i < SS.constraint.n; i++) {
-        Constraint *c = &(SS.constraint.elem[i]);
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
         if(c->group.v != hg.v) continue;
         if(c->h.v == hc.v) continue;
 
         c->Generate(&eq);
     }
     // And the equations from entities
-    for(i = 0; i < SS.entity.n; i++) {
-        Entity *e = &(SS.entity.elem[i]);
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
         if(e->group.v != hg.v) continue;
 
         e->GenerateEquations(&eq);
     }
     // And from the groups themselves
-    (SS.GetGroup(hg))->GenerateEquations(&eq);
+    (SK.GetGroup(hg))->GenerateEquations(&eq);
 }
 
 void System::FindWhichToRemoveToFixJacobian(Group *g) {
@@ -366,8 +366,8 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
     (g->solved.remove).Clear();
 
     for(a = 0; a < 2; a++) {
-        for(i = 0; i < SS.constraint.n; i++) {
-            Constraint *c = &(SS.constraint.elem[i]);
+        for(i = 0; i < SK.constraint.n; i++) {
+            Constraint *c = &(SK.constraint.elem[i]);
             if(c->group.v != g->h.v) continue;
             if((c->type == Constraint::POINTS_COINCIDENT && a == 0) ||
                (c->type != Constraint::POINTS_COINCIDENT && a == 1))
@@ -502,7 +502,7 @@ void System::Solve(Group *g, bool andFindFree) {
         } else {
             val = p->val;
         }
-        Param *pp = SS.GetParam(p->h);
+        Param *pp = SK.GetParam(p->h);
         pp->val = val;
         pp->known = true;
         pp->free = p->free;
@@ -516,14 +516,14 @@ void System::Solve(Group *g, bool andFindFree) {
 didnt_converge:
     g->solved.how = Group::DIDNT_CONVERGE;
     (g->solved.remove).Clear();
-    SS.constraint.ClearTags();
+    SK.constraint.ClearTags();
     for(i = 0; i < eq.n; i++) {
         if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
             // This constraint is unsatisfied.
             if(!mat.eq[i].isFromConstraint()) continue;
 
             hConstraint hc = mat.eq[i].constraint();
-            Constraint *c = SS.constraint.FindByIdNoOops(hc);
+            Constraint *c = SK.constraint.FindByIdNoOops(hc);
             if(!c) continue;
             // Don't double-show constraints that generated multiple
             // unsatisfied equations
