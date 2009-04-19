@@ -43,6 +43,7 @@ inline double WRAP_SYMMETRIC(double v, double n) {
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
+typedef unsigned __int64 QWORD;
 typedef signed long SDWORD;
 typedef signed short SWORD;
 
@@ -201,7 +202,7 @@ void MakePathAbsolute(char *base, char *path);
 
 class System {
 public:
-#define MAX_UNKNOWNS    200
+#define MAX_UNKNOWNS    1000
 
     EntityList                      entity;
     ParamList                       param;

@@ -77,7 +77,8 @@ public:
 
     Expr *PartialWrt(hParam p);
     double Eval(void);
-    DWORD ParamsUsed(void);
+    QWORD ParamsUsed(void);
+    bool DependsOn(hParam p);
     static bool Tol(double a, double b);
     Expr *FoldConstants(void);
     void Substitute(hParam oldh, hParam newh);

@@ -364,15 +364,25 @@ Expr *Expr::PartialWrt(hParam p) {
     }
 }
 
-DWORD Expr::ParamsUsed(void) {
-    DWORD r = 0;
-    if(op == PARAM)     r |= (1 << (x.parh.v % 31));
-    if(op == PARAM_PTR) r |= (1 << (x.parp->h.v % 31));
+QWORD Expr::ParamsUsed(void) {
+    QWORD r = 0;
+    if(op == PARAM)     r |= ((QWORD)1 << (x.parh.v % 61));
+    if(op == PARAM_PTR) r |= ((QWORD)1 << (x.parp->h.v % 61));
 
     int c = Children();
     if(c >= 1)          r |= a->ParamsUsed();
     if(c >= 2)          r |= b->ParamsUsed();
     return r;
+}
+
+bool Expr::DependsOn(hParam p) {
+    if(op == PARAM)     return (x.parh.v    == p.v);
+    if(op == PARAM_PTR) return (x.parp->h.v == p.v);
+
+    int c = Children();
+    if(c == 1)          return a->DependsOn(p);
+    if(c == 2)          return a->DependsOn(p) || b->DependsOn(p);
+    return false;
 }
 
 bool Expr::Tol(double a, double b) {

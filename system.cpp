@@ -24,11 +24,13 @@ void System::WriteJacobian(int tag) {
         Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SS.param));
         f = f->FoldConstants();
 
-        // Hash table (31 bits) to accelerate generation of zero partials.
-        DWORD scoreboard = f->ParamsUsed();
+        // Hash table (61 bits) to accelerate generation of zero partials.
+        QWORD scoreboard = f->ParamsUsed();
         for(j = 0; j < mat.n; j++) {
             Expr *pd;
-            if(scoreboard & (1 << (mat.param[j].v % 31))) { 
+            if(scoreboard & ((QWORD)1 << (mat.param[j].v % 61)) &&
+                f->DependsOn(mat.param[j]))
+            {
                 pd = f->PartialWrt(mat.param[j]);
                 pd = pd->FoldConstants();
                 pd = pd->DeepCopyWithParamsAsPointers(&param, &(SS.param));
@@ -225,7 +227,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
         for(ip = i+1; ip < n; ip++) {
             temp = A[ip][i]/A[i][i];
 
-            for(jp = 0; jp < n; jp++) {
+            for(jp = i; jp < n; jp++) {
                 A[ip][jp] -= temp*(A[i][jp]);
             }
             B[ip] -= temp*B[i];
@@ -291,7 +293,6 @@ bool System::SolveLeastSquares(void) {
 }
 
 bool System::NewtonSolve(int tag) {
-    WriteJacobian(tag);
     if(mat.m > mat.n) return false;
 
     int iter = 0;
@@ -438,6 +439,7 @@ void System::Solve(Group *g, bool andFindFree) {
 
         e->tag = alone;
         p->tag = alone;
+        WriteJacobian(alone);
         if(!NewtonSolve(alone)) {
             // Failed to converge, bail out early
             goto didnt_converge;
