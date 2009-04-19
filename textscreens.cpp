@@ -516,6 +516,10 @@ void TextWindow::ShowGroupSolveInfo(void) {
             Printf(true, "%FxSOLVE FAILED!%Fd inconsistent system");
             Printf(true, "remove any one of these to fix it");
             break;
+
+        case Group::TOO_MANY_UNKNOWNS:
+            Printf(true, "Too many unknowns in a single group!");
+            return;
     }
 
     for(int i = 0; i < g->solved.remove.n; i++) {

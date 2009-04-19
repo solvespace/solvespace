@@ -250,7 +250,7 @@ public:
                                   double B[], int N);
     bool SolveLeastSquares(void);
 
-    void WriteJacobian(int tag);
+    bool WriteJacobian(int tag);
     void EvalJacobian(void);
 
     void WriteEquationsExceptFor(hConstraint hc, hGroup hg);

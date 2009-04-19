@@ -3,11 +3,13 @@
 const double System::RANK_MAG_TOLERANCE = 1e-4;
 const double System::CONVERGE_TOLERANCE = 1e-10;
 
-void System::WriteJacobian(int tag) {
+bool System::WriteJacobian(int tag) {
     int a, i, j;
 
     j = 0;
     for(a = 0; a < param.n; a++) {
+        if(j >= MAX_UNKNOWNS) return false;
+
         Param *p = &(param.elem[a]);
         if(p->tag != tag) continue;
         mat.param[j] = p->h;
@@ -17,6 +19,8 @@ void System::WriteJacobian(int tag) {
 
     i = 0;
     for(a = 0; a < eq.n; a++) {
+        if(i >= MAX_UNKNOWNS) return false;
+
         Equation *e = &(eq.elem[a]);
         if(e->tag != tag) continue;
 
@@ -43,6 +47,8 @@ void System::WriteJacobian(int tag) {
         i++;
     }
     mat.m = i;
+
+    return true;
 }
 
 void System::EvalJacobian(void) {
@@ -449,7 +455,11 @@ void System::Solve(Group *g, bool andFindFree) {
 
     // Now write the Jacobian for what's left, and do a rank test; that
     // tells us if the system is inconsistently constrained.
-    WriteJacobian(0);
+    if(!WriteJacobian(0)) {
+        g->solved.how = Group::TOO_MANY_UNKNOWNS;
+        TextWindow::ReportHowGroupSolved(g->h);
+        return;
+    }
 
     EvalJacobian();
 
