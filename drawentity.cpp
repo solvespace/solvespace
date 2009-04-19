@@ -1,5 +1,15 @@
 #include "solvespace.h"
 
+char *Entity::DescriptionString(void) {
+    if(h.isFromRequest()) {
+        Request *r = SS.GetRequest(h.request());
+        return r->DescriptionString();
+    } else {
+        Group *g = SS.GetGroup(h.group());
+        return g->DescriptionString();
+    }
+}
+
 void Entity::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         // Draw lines from active group in front of those from previous

@@ -249,7 +249,7 @@ public:
     char *DescriptionString(void);
 };
 
-class Entity {
+class EntityBase {
 public:
     int         tag;
     hEntity     h;
@@ -289,6 +289,9 @@ public:
 
     int         type;
 
+    hGroup      group;
+    hEntity     workplane;   // or Entity::FREE_IN_3D
+
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
     hEntity     point[4];
@@ -303,23 +306,6 @@ public:
     Quaternion  numNormal;
     double      numDistance;
 
-    // An imported entity that was hidden in the source file ends up hidden
-    // here too.
-    bool        forceHidden;
-
-    // All points/normals/distances have their numerical value; this is
-    // a convenience, to simplify the import/assembly code, so that the
-    // part is entirely described by the entities.
-    Vector      actPoint;
-    Quaternion  actNormal;
-    double      actDistance;
-    // and the shown state also gets saved here, for later import
-    bool        actVisible;
-
-    hGroup      group;
-    hEntity     workplane;   // or Entity::FREE_IN_3D
-
-    bool        construction;
     NameStr     str;
     NameStr     font;
 
@@ -329,7 +315,6 @@ public:
 
     Quaternion GetAxisAngleQuaternion(int param0);
     ExprQuaternion GetAxisAngleQuaternionExprs(int param0);
-    bool IsVisible(void);
 
     bool IsCircle(void);
     Expr *CircleGetRadiusExpr(void);
@@ -383,6 +368,27 @@ public:
     ExprVector NormalExprsV(void);
     ExprVector NormalExprsN(void);
 
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
+    void GenerateEquations(IdList<Equation,hEquation> *l);
+};
+
+class Entity : public EntityBase {
+public:
+    // An imported entity that was hidden in the source file ends up hidden
+    // here too.
+    bool        forceHidden;
+
+    // All points/normals/distances have their numerical value; this is
+    // a convenience, to simplify the import/assembly code, so that the
+    // part is entirely described by the entities.
+    Vector      actPoint;
+    Quaternion  actNormal;
+    double      actDistance;
+    // and the shown state also gets saved here, for later import
+    bool        actVisible;
+
+    bool        construction;
+
     // Routines to draw and hit-test the representation of the entity
     // on-screen.
     struct {
@@ -394,6 +400,8 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(void);
 
+    bool IsVisible(void);
+
     void GenerateBezierCurves(SBezierList *sbl);
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 
@@ -401,9 +409,6 @@ public:
     void Draw(void);
     double GetDistance(Point2d mp);
     Vector GetReferencePos(void);
-
-    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
 
     void CalculateNumerical(bool forExport);
 
@@ -433,8 +438,11 @@ public:
     inline hEquation equation(int i);
 };
 
-class Constraint {
+class ConstraintBase {
 public:
+    int         tag;
+    hConstraint h;
+
     static const hConstraint NO_CONSTRAINT;
 
     static const int POINTS_COINCIDENT  =  20;
@@ -470,9 +478,6 @@ public:
 
     static const int COMMENT            = 1000;
 
-    int         tag;
-    hConstraint h;
-
     int         type;
 
     hGroup      group;
@@ -488,46 +493,8 @@ public:
     hEntity     entityD;
     bool        other;
 
-    bool        reference; // a ref dimension, that generates no eqs
-
-    NameStr     comment; // since comments are represented as constraints
-
-    // These define how the constraint is drawn on-screen.
-    struct {
-        Vector      offset;
-    } disp;
-
-    char *DescriptionString(void);
-
-    static void AddConstraint(Constraint *c, bool rememberForUndo);
-    static void AddConstraint(Constraint *c);
-    static void MenuConstrain(int id);
-
-    static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
-    
-    struct {
-        bool        drawing;
-        Point2d     mp;
-        double      dmin;
-        Vector      refp;
-    } dogd; // state for drawing or getting distance (for hit testing)
-    void LineDrawOrGetDistance(Vector a, Vector b);
-    void DrawOrGetDistance(Vector *labelPos);
-    double EllipticalInterpolation(double rx, double ry, double theta);
-    char *Label(void);
-    void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
-                        Vector offset, Vector *ref);
-    void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
-    void DoProjectedPoint(Vector *p);
-    void DoEqualLenTicks(Vector a, Vector b, Vector gn);
-    void DoEqualRadiusTicks(hEntity he);
-
-    double GetDistance(Point2d mp);
-    Vector GetLabelPos(void);
-    Vector GetReferencePos(void);
-    void Draw(void);
-
-    bool HasLabel(void);
+    bool        reference;  // a ref dimension, that generates no eqs
+    NameStr     comment;    // since comments are represented as constraints
 
     void Generate(IdList<Equation,hEquation> *l);
     void GenerateReal(IdList<Equation,hEquation> *l);
@@ -540,6 +507,46 @@ public:
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
     static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
+};
+
+class Constraint : public ConstraintBase {
+public:
+    // These define how the constraint is drawn on-screen.
+    struct {
+        Vector      offset;
+    } disp;
+
+    // State for drawing or getting distance (for hit testing).
+    struct {
+        bool        drawing;
+        Point2d     mp;
+        double      dmin;
+        Vector      refp;
+    } dogd;
+
+    double GetDistance(Point2d mp);
+    Vector GetLabelPos(void);
+    Vector GetReferencePos(void);
+    void Draw(void);
+
+    void LineDrawOrGetDistance(Vector a, Vector b);
+    void DrawOrGetDistance(Vector *labelPos);
+    double EllipticalInterpolation(double rx, double ry, double theta);
+    char *Label(void);
+    void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
+                        Vector offset, Vector *ref);
+    void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
+    void DoProjectedPoint(Vector *p);
+    void DoEqualLenTicks(Vector a, Vector b, Vector gn);
+    void DoEqualRadiusTicks(hEntity he);
+
+    bool HasLabel(void);
+    char *DescriptionString(void);
+
+    static void AddConstraint(Constraint *c, bool rememberForUndo);
+    static void AddConstraint(Constraint *c);
+    static void MenuConstrain(int id);
+    static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
 
     static void ConstrainCoincident(hEntity ptA, hEntity ptB);
     static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);

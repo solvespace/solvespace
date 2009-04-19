@@ -1,6 +1,8 @@
 #include "solvespace.h"
 
-Expr *Constraint::VectorsParallel(int eq, ExprVector a, ExprVector b) {
+const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
+
+Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     ExprVector r = a.Cross(b);
     // Hairy ball theorem screws me here. There's no clean solution that I
     // know, so let's pivot on the initial numerical guess. Our caller
@@ -29,7 +31,8 @@ Expr *Constraint::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     oops();
 }
 
-Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
+Expr *ConstraintBase::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln)
+{
     Entity *ln = SS.GetEntity(hln);
     Entity *a = SS.GetEntity(ln->point[0]);
     Entity *b = SS.GetEntity(ln->point[1]);
@@ -65,14 +68,14 @@ Expr *Constraint::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln) {
     }
 }
 
-Expr *Constraint::PointPlaneDistance(ExprVector p, hEntity hpl) {
+Expr *ConstraintBase::PointPlaneDistance(ExprVector p, hEntity hpl) {
     ExprVector n;
     Expr *d;
     SS.GetEntity(hpl)->WorkplaneGetPlaneExprs(&n, &d);
     return (p.Dot(n))->Minus(d);
 }
 
-Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
+Expr *ConstraintBase::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
     Entity *pa = SS.GetEntity(hpa);
     Entity *pb = SS.GetEntity(hpb);
     if(!(pa->IsPoint() && pb->IsPoint())) oops();
@@ -103,7 +106,9 @@ Expr *Constraint::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
 // Return the cosine of the angle between two vectors. If a workplane is
 // specified, then it's the cosine of their projections into that workplane.
 //-----------------------------------------------------------------------------
-Expr *Constraint::DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be) {
+Expr *ConstraintBase::DirectionCosine(hEntity wrkpl,
+                                      ExprVector ae, ExprVector be)
+{
     if(wrkpl.v == Entity::FREE_IN_3D.v) {
         Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
         return (ae.Dot(be))->Div(mags);
@@ -122,7 +127,9 @@ Expr *Constraint::DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be) {
     }
 }
 
-ExprVector Constraint::PointInThreeSpace(hEntity workplane, Expr *u, Expr *v) {
+ExprVector ConstraintBase::PointInThreeSpace(hEntity workplane,
+                                             Expr *u, Expr *v)
+{
     Entity *w = SS.GetEntity(workplane);
 
     ExprVector ub = w->Normal()->NormalExprsU();
@@ -132,7 +139,7 @@ ExprVector Constraint::PointInThreeSpace(hEntity workplane, Expr *u, Expr *v) {
     return (ub.ScaledBy(u)).Plus(vb.ScaledBy(v)).Plus(ob);
 }
 
-void Constraint::ModifyToSatisfy(void) {
+void ConstraintBase::ModifyToSatisfy(void) {
     if(type == ANGLE) {
         Vector a = SS.GetEntity(entityA)->VectorGetNum();
         Vector b = SS.GetEntity(entityB)->VectorGetNum();
@@ -161,19 +168,20 @@ void Constraint::ModifyToSatisfy(void) {
     }
 }
 
-void Constraint::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
+void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index)
+{
     Equation eq;
     eq.e = expr;
     eq.h = h.equation(index);
     l->Add(&eq);
 }
 
-void Constraint::Generate(IdList<Equation,hEquation> *l) {
+void ConstraintBase::Generate(IdList<Equation,hEquation> *l) {
     if(!reference) {
         GenerateReal(l);
     }
 }
-void Constraint::GenerateReal(IdList<Equation,hEquation> *l) {
+void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
     Expr *exA = Expr::From(valA);
 
     switch(type) {

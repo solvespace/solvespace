@@ -1,7 +1,5 @@
 #include "solvespace.h"
 
-const hConstraint Constraint::NO_CONSTRAINT = { 0 };
-
 char *Constraint::DescriptionString(void) {
     static char ret[1024];
 
