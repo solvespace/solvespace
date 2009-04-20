@@ -61,51 +61,9 @@ void System::EvalJacobian(void) {
 }
 
 bool System::IsDragged(hParam p) {
-    if(SS.GW.pending.point.v) {
-        // The pending point could be one in a group that has not yet
-        // been processed, in which case the lookup will fail; but
-        // that's not an error.
-        Entity *pt = SK.entity.FindByIdNoOops(SS.GW.pending.point);
-        if(pt) {
-            switch(pt->type) {
-                case Entity::POINT_N_TRANS:
-                case Entity::POINT_IN_3D:
-                    if(p.v == (pt->param[0]).v) return true;
-                    if(p.v == (pt->param[1]).v) return true;
-                    if(p.v == (pt->param[2]).v) return true;
-                    break;
-
-                case Entity::POINT_IN_2D:
-                    if(p.v == (pt->param[0]).v) return true;
-                    if(p.v == (pt->param[1]).v) return true;
-                    break;
-            }
-        }
-    }
-    if(SS.GW.pending.circle.v) {
-        Entity *circ = SK.entity.FindByIdNoOops(SS.GW.pending.circle);
-        if(circ) {
-            Entity *dist = SK.GetEntity(circ->distance);
-            switch(dist->type) {
-                case Entity::DISTANCE:
-                    if(p.v == (dist->param[0].v)) return true;
-                    break;
-            }
-        }
-    }
-    if(SS.GW.pending.normal.v) {
-        Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
-        if(norm) {
-            switch(norm->type) {
-                case Entity::NORMAL_IN_3D:
-                    if(p.v == (norm->param[0].v)) return true;
-                    if(p.v == (norm->param[1].v)) return true;
-                    if(p.v == (norm->param[2].v)) return true;
-                    if(p.v == (norm->param[3].v)) return true;
-                    break;
-                // other types are locked, so not draggable
-            }
-        }
+    int i;
+    for(i = 0; i < MAX_DRAGGED; i++) {
+        if(p.v == dragged[i].v) return true;
     }
     return false;
 }
@@ -346,34 +304,33 @@ bool System::NewtonSolve(int tag) {
     return converged;
 }
 
-void System::WriteEquationsExceptFor(hConstraint hc, hGroup hg) {
+void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
     int i;
     // Generate all the equations from constraints in this group
     for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->group.v != hg.v) continue;
+        ConstraintBase *c = &(SK.constraint.elem[i]);
+        if(c->group.v != g->h.v) continue;
         if(c->h.v == hc.v) continue;
 
         c->Generate(&eq);
     }
     // And the equations from entities
     for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
-        if(e->group.v != hg.v) continue;
+        EntityBase *e = &(SK.entity.elem[i]);
+        if(e->group.v != g->h.v) continue;
 
         e->GenerateEquations(&eq);
     }
     // And from the groups themselves
-    (SK.GetGroup(hg))->GenerateEquations(&eq);
+    g->GenerateEquations(&eq);
 }
 
-void System::FindWhichToRemoveToFixJacobian(Group *g) {
+void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
     int a, i;
-    (g->solved.remove).Clear();
 
     for(a = 0; a < 2; a++) {
         for(i = 0; i < SK.constraint.n; i++) {
-            Constraint *c = &(SK.constraint.elem[i]);
+            ConstraintBase *c = &(SK.constraint.elem[i]);
             if(c->group.v != g->h.v) continue;
             if((c->type == Constraint::POINTS_COINCIDENT && a == 0) ||
                (c->type != Constraint::POINTS_COINCIDENT && a == 1))
@@ -386,7 +343,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
 
             param.ClearTags();
             eq.Clear();
-            WriteEquationsExceptFor(c->h, g->h);
+            WriteEquationsExceptFor(c->h, g);
             eq.ClearTags();
 
             // It's a major speedup to solve the easy ones by substitution here,
@@ -399,16 +356,16 @@ void System::FindWhichToRemoveToFixJacobian(Group *g) {
             int rank = CalculateRank();
             if(rank == mat.m) {
                 // We fixed it by removing this constraint
-                (g->solved.remove).Add(&(c->h));
+                bad->Add(&(c->h));
             }
         }
     }
 }
 
-void System::Solve(Group *g, bool andFindFree) {
-    g->solved.remove.Clear();
-
-    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g->h);
+int System::Solve(Group *g, int *dof, List<hConstraint> *bad, 
+                  bool andFindFree)
+{
+    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
     int i, j = 0;
 /*
@@ -456,25 +413,20 @@ void System::Solve(Group *g, bool andFindFree) {
     // Now write the Jacobian for what's left, and do a rank test; that
     // tells us if the system is inconsistently constrained.
     if(!WriteJacobian(0)) {
-        g->solved.how = Group::TOO_MANY_UNKNOWNS;
-        TextWindow::ReportHowGroupSolved(g->h);
-        return;
+        return System::TOO_MANY_UNKNOWNS;
     }
 
     EvalJacobian();
 
     int rank = CalculateRank();
     if(rank != mat.m) {
-        FindWhichToRemoveToFixJacobian(g);
-        g->solved.how = Group::SINGULAR_JACOBIAN;
-        g->solved.dof = 0;
-        TextWindow::ReportHowGroupSolved(g->h);
-        return;
+        FindWhichToRemoveToFixJacobian(g, bad);
+        return System::SINGULAR_JACOBIAN;
     }
     // This is not the full Jacobian, but any substitutions or single-eq
     // solves removed one equation and one unknown, therefore no effect
     // on the number of DOF.
-    g->solved.dof = mat.n - mat.m;
+    if(dof) *dof = mat.n - mat.m;
 
     // And do the leftovers as one big system
     if(!NewtonSolve(0)) {
@@ -517,15 +469,9 @@ void System::Solve(Group *g, bool andFindFree) {
         pp->known = true;
         pp->free = p->free;
     }
-    if(g->solved.how != Group::SOLVED_OKAY) {
-        g->solved.how = Group::SOLVED_OKAY;
-        TextWindow::ReportHowGroupSolved(g->h);
-    }
-    return;
+    return System::SOLVED_OKAY;
 
 didnt_converge:
-    g->solved.how = Group::DIDNT_CONVERGE;
-    (g->solved.remove).Clear();
     SK.constraint.ClearTags();
     for(i = 0; i < eq.n; i++) {
         if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
@@ -533,17 +479,17 @@ didnt_converge:
             if(!mat.eq[i].isFromConstraint()) continue;
 
             hConstraint hc = mat.eq[i].constraint();
-            Constraint *c = SK.constraint.FindByIdNoOops(hc);
+            ConstraintBase *c = SK.constraint.FindByIdNoOops(hc);
             if(!c) continue;
             // Don't double-show constraints that generated multiple
             // unsatisfied equations
             if(!c->tag) {
-                (g->solved.remove).Add(&(c->h));
+                bad->Add(&(c->h));
                 c->tag = 1;
             }
         }
     }
-
-    TextWindow::ReportHowGroupSolved(g->h);
+    
+    return System::DIDNT_CONVERGE;
 }
 

@@ -233,6 +233,7 @@ public:
             } else if(hm.v < t->h.v) {
                 first = mid + 1;
             } else {
+                dbp("can't insert in list; is handle %d not unique?", t->h.v);
                 oops();
             }
         }

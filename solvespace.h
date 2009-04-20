@@ -143,6 +143,7 @@ void FreeAllTemporary(void);
 void *MemRealloc(void *p, int n);
 void *MemAlloc(int n);
 void MemFree(void *p);
+void InitHeaps(void);
 void vl(void); // debug function to validate heaps
 
 // End of platform-specific functions
@@ -202,11 +203,16 @@ void MakePathAbsolute(char *base, char *path);
 
 class System {
 public:
-#define MAX_UNKNOWNS    1000
+    static const int MAX_UNKNOWNS = 1000;
+    static const int MAX_DRAGGED  = 4;
 
     EntityList                      entity;
     ParamList                       param;
     IdList<Equation,hEquation>      eq;
+
+    // A list of parameters that are being dragged; these are the ones that
+    // we should put as close as possible to their initial positions.
+    hParam                          dragged[MAX_DRAGGED];
 
     // In general, the tag indicates the subsys that a variable/equation
     // has been assigned to; these are exceptions for variables:
@@ -253,14 +259,19 @@ public:
     bool WriteJacobian(int tag);
     void EvalJacobian(void);
 
-    void WriteEquationsExceptFor(hConstraint hc, hGroup hg);
-    void FindWhichToRemoveToFixJacobian(Group *g);
+    void WriteEquationsExceptFor(hConstraint hc, Group *g);
+    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad);
     void SolveBySubstitution(void);
 
-    static bool IsDragged(hParam p);
+    bool IsDragged(hParam p);
 
     bool NewtonSolve(int tag);
-    void Solve(Group *g, bool andFindFree);
+
+    static const int SOLVED_OKAY          = 0;
+    static const int DIDNT_CONVERGE       = 10;
+    static const int SINGULAR_JACOBIAN    = 11;
+    static const int TOO_MANY_UNKNOWNS    = 20;
+    int Solve(Group *g, int *dof, List<hConstraint> *bad, bool andFindFree);
 };
 
 class TtfFont {
@@ -410,20 +421,27 @@ public:
     void FinishAndCloseFile(void);
 };
 
+#ifdef LIBRARY
+#   define ENTITY EntityBase
+#   define CONSTRAINT ConstraintBase
+#else
+#   define ENTITY Entity
+#   define CONSTRAINT Constraint
+#endif
 class Sketch {
 public:
     // These are user-editable, and define the sketch.
     IdList<Group,hGroup>            group;
-    IdList<Constraint,hConstraint>  constraint;
+    IdList<CONSTRAINT,hConstraint>  constraint;
     IdList<Request,hRequest>        request;
 
     // These are generated from the above.
-    IdList<Entity,hEntity>          entity;
+    IdList<ENTITY,hEntity>          entity;
     IdList<Param,hParam>            param;
 
-    inline Constraint *GetConstraint(hConstraint h)
+    inline CONSTRAINT *GetConstraint(hConstraint h)
         { return constraint.FindById(h); }
-    inline Entity  *GetEntity (hEntity  h) { return entity. FindById(h); }
+    inline ENTITY  *GetEntity (hEntity  h) { return entity. FindById(h); }
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
@@ -565,6 +583,7 @@ public:
     void GenerateAll(void);
     void GenerateAll(int first, int last, bool andFindFree=false);
     void SolveGroup(hGroup hg, bool andFindFree);
+    void MarkDraggedParams(void);
     void ForceReferences(void);
 
     bool AllGroupsOkay(void);

@@ -387,7 +387,7 @@ void Constraint::MenuConstrain(int id) {
                 Vector pa = SK.GetEntity(c.ptA)->PointGetNum();
                 Vector pb = SK.GetEntity(c.ptB)->PointGetNum();
                 Vector dp = pa.Minus(pb);
-                Entity *norm = SK.GetEntity(c.workplane)->Normal();;
+                EntityBase *norm = SK.GetEntity(c.workplane)->Normal();;
                 Vector u = norm->NormalU(), v = norm->NormalV();
                 if(fabs(dp.Dot(u)) > fabs(dp.Dot(v))) {
                     c.type = SYMMETRIC_HORIZ;

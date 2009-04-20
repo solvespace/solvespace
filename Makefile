@@ -10,6 +10,7 @@ OBJDIR = obj
 FREEZE   = $(OBJDIR)\freeze.obj
 
 W32OBJS  = $(OBJDIR)\w32main.obj \
+           $(OBJDIR)\w32util.obj \
 
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\textwin.obj \

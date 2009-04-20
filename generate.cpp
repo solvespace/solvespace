@@ -141,7 +141,7 @@ void SolveSpace::GenerateAll(void) {
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
         g->order = i;
-        if((!g->clean) || (g->solved.how != Group::SOLVED_OKAY)) {
+        if((!g->clean) || (g->solved.how != System::SOLVED_OKAY)) {
             firstDirty = min(firstDirty, i);
         }
         if(g->h.v == SS.GW.activeGroup.v) {
@@ -204,7 +204,7 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
             ForceReferences();
-            g->solved.how = Group::SOLVED_OKAY;
+            g->solved.how = System::SOLVED_OKAY;
             g->clean = true;
         } else {
             if(i >= first && i <= last) {
@@ -330,6 +330,60 @@ void SolveSpace::ForceReferences(void) {
     }
 }
 
+void SolveSpace::MarkDraggedParams(void) {
+    int i;
+    for(i = 0; i < System::MAX_DRAGGED; i++) {
+        sys.dragged[i] = Param::NO_PARAM;
+    }
+
+    if(SS.GW.pending.point.v) {
+        // The pending point could be one in a group that has not yet
+        // been processed, in which case the lookup will fail; but
+        // that's not an error.
+        Entity *pt = SK.entity.FindByIdNoOops(SS.GW.pending.point);
+        if(pt) {
+            switch(pt->type) {
+                case Entity::POINT_N_TRANS:
+                case Entity::POINT_IN_3D:
+                    sys.dragged[0] = pt->param[0];
+                    sys.dragged[1] = pt->param[1];
+                    sys.dragged[2] = pt->param[2];
+                    break;
+
+                case Entity::POINT_IN_2D:
+                    sys.dragged[0] = pt->param[0];
+                    sys.dragged[1] = pt->param[1];
+                    break;
+            }
+        }
+    }
+    if(SS.GW.pending.circle.v) {
+        Entity *circ = SK.entity.FindByIdNoOops(SS.GW.pending.circle);
+        if(circ) {
+            Entity *dist = SK.GetEntity(circ->distance);
+            switch(dist->type) {
+                case Entity::DISTANCE:
+                    sys.dragged[0] = dist->param[0];
+                    break;
+            }
+        }
+    }
+    if(SS.GW.pending.normal.v) {
+        Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
+        if(norm) {
+            switch(norm->type) {
+                case Entity::NORMAL_IN_3D:
+                    sys.dragged[0] = norm->param[0];
+                    sys.dragged[1] = norm->param[1];
+                    sys.dragged[2] = norm->param[2];
+                    sys.dragged[3] = norm->param[3];
+                    break;
+                // other types are locked, so not draggable
+            }
+        }
+    }
+}
+
 void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
     int i;
     // Clear out the system to be solved.
@@ -353,7 +407,16 @@ void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
         p->val = SK.GetParam(p->h)->val;
     }
 
-    sys.Solve(g, andFindFree);
+    MarkDraggedParams();
+    g->solved.remove.Clear();
+    int how = sys.Solve(g, &(g->solved.dof),
+                           &(g->solved.remove), andFindFree);
+    if((how != System::SOLVED_OKAY) ||
+       (how == System::SOLVED_OKAY && g->solved.how != System::SOLVED_OKAY))
+    {
+        TextWindow::ReportHowGroupSolved(g->h);
+    }
+    g->solved.how = how;
     FreeAllTemporary();
 }
 
@@ -361,7 +424,7 @@ bool SolveSpace::AllGroupsOkay(void) {
     int i;
     bool allOk = true;
     for(i = 0; i < SK.group.n; i++) {
-        if(SK.group.elem[i].solved.how != Group::SOLVED_OKAY) {
+        if(SK.group.elem[i].solved.how != System::SOLVED_OKAY) {
             allOk = false;
         }
     }

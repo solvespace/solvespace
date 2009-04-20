@@ -104,9 +104,6 @@ public:
     double      valC;
     DWORD       color;
 
-    static const int SOLVED_OKAY          = 0;
-    static const int DIDNT_CONVERGE       = 10;
-    static const int SINGULAR_JACOBIAN    = 11;
     struct {
         int                 how;
         int                 dof;
@@ -336,7 +333,7 @@ public:
     void WorkplaneGetPlaneExprs(ExprVector *n, Expr **d);
     ExprVector WorkplaneGetOffsetExprs(void);
     Vector WorkplaneGetOffset(void);
-    Entity *Normal(void);
+    EntityBase *Normal(void);
 
     bool IsFace(void);
     ExprVector FaceGetNormalExprs(void);
@@ -350,7 +347,6 @@ public:
     ExprVector PointGetExprs(void);
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
-    bool PointIsFromReferences(void);
     // These apply only the POINT_N_ROT_TRANS, which has an assoc rotation
     Quaternion PointGetQuaternion(void);
     void PointForceQuaternionTo(Quaternion q);
@@ -401,6 +397,7 @@ public:
     void DrawOrGetDistance(void);
 
     bool IsVisible(void);
+    bool PointIsFromReferences(void);
 
     void GenerateBezierCurves(SBezierList *sbl);
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);

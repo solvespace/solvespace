@@ -112,7 +112,7 @@ void TextWindow::ShowListOfGroups(void) {
         char *s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
-        bool ok = (g->solved.how == Group::SOLVED_OKAY);
+        bool ok = (g->solved.how == System::SOLVED_OKAY);
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
                "%Fp%D%f%s%Ll%s%E%s  "
@@ -498,7 +498,7 @@ void TextWindow::ShowGroupInfo(void) {
 //-----------------------------------------------------------------------------
 void TextWindow::ShowGroupSolveInfo(void) {
     Group *g = SK.group.FindById(shown.group);
-    if(g->solved.how == Group::SOLVED_OKAY) {
+    if(g->solved.how == System::SOLVED_OKAY) {
         // Go back to the default group info screen
         shown.screen = SCREEN_GROUP_INFO;
         Show();
@@ -507,17 +507,17 @@ void TextWindow::ShowGroupSolveInfo(void) {
 
     Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
     switch(g->solved.how) {
-        case Group::DIDNT_CONVERGE:
+        case System::DIDNT_CONVERGE:
             Printf(true, "%FxSOLVE FAILED!%Fd no convergence");
             Printf(true, "the following constraints are unsatisfied");
             break;
 
-        case Group::SINGULAR_JACOBIAN:
+        case System::SINGULAR_JACOBIAN:
             Printf(true, "%FxSOLVE FAILED!%Fd inconsistent system");
             Printf(true, "remove any one of these to fix it");
             break;
 
-        case Group::TOO_MANY_UNKNOWNS:
+        case System::TOO_MANY_UNKNOWNS:
             Printf(true, "Too many unknowns in a single group!");
             return;
     }

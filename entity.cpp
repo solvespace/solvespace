@@ -162,7 +162,7 @@ void EntityBase::DistanceForceTo(double v) {
     } else oops();
 }
 
-Entity *EntityBase::Normal(void) {
+EntityBase *EntityBase::Normal(void) {
     return SK.GetEntity(normal);
 }
 
@@ -202,8 +202,8 @@ Quaternion EntityBase::NormalGetNum(void) {
             break;
 
         case NORMAL_IN_2D: {
-            Entity *wrkpl = SK.GetEntity(workplane);
-            Entity *norm = SK.GetEntity(wrkpl->normal);
+            EntityBase *wrkpl = SK.GetEntity(workplane);
+            EntityBase *norm = SK.GetEntity(wrkpl->normal);
             q = norm->NormalGetNum();
             break;
         }
@@ -286,8 +286,8 @@ ExprQuaternion EntityBase::NormalGetExprs(void) {
             break;
 
         case NORMAL_IN_2D: {
-            Entity *wrkpl = SK.GetEntity(workplane);
-            Entity *norm = SK.GetEntity(wrkpl->normal);
+            EntityBase *wrkpl = SK.GetEntity(workplane);
+            EntityBase *norm = SK.GetEntity(wrkpl->normal);
             q = norm->NormalGetExprs();
             break;
         }
@@ -315,10 +315,6 @@ ExprQuaternion EntityBase::NormalGetExprs(void) {
     return q;
 }
 
-bool EntityBase::PointIsFromReferences(void) {
-    return h.request().IsFromReferences();
-}
-
 void EntityBase::PointForceTo(Vector p) {
     switch(type) {
         case POINT_IN_3D:
@@ -328,7 +324,7 @@ void EntityBase::PointForceTo(Vector p) {
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SK.GetEntity(workplane);
+            EntityBase *c = SK.GetEntity(workplane);
             p = p.Minus(c->WorkplaneGetOffset());
             SK.GetParam(param[0])->val = p.Dot(c->Normal()->NormalU());
             SK.GetParam(param[1])->val = p.Dot(c->Normal()->NormalV());
@@ -390,7 +386,7 @@ Vector EntityBase::PointGetNum(void) {
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SK.GetEntity(workplane);
+            EntityBase *c = SK.GetEntity(workplane);
             Vector u = c->Normal()->NormalU();
             Vector v = c->Normal()->NormalV();
             p =        u.ScaledBy(SK.GetParam(param[0])->val);
@@ -439,7 +435,7 @@ ExprVector EntityBase::PointGetExprs(void) {
             break;
 
         case POINT_IN_2D: {
-            Entity *c = SK.GetEntity(workplane);
+            EntityBase *c = SK.GetEntity(workplane);
             ExprVector u = c->Normal()->NormalExprsU();
             ExprVector v = c->Normal()->NormalExprsV();
             r = c->WorkplaneGetOffsetExprs();
@@ -488,7 +484,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
         *v = Expr::From(param[1]);
     } else {
         // Get the offset and basis vectors for this weird exotic csys.
-        Entity *w = SK.GetEntity(wrkpl);
+        EntityBase *w = SK.GetEntity(wrkpl);
         ExprVector wp = w->WorkplaneGetOffsetExprs();
         ExprVector wu = w->Normal()->NormalExprsU();
         ExprVector wv = w->Normal()->NormalExprsV();
@@ -693,26 +689,6 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) {
         }
         default:;
             // Most entities do not generate equations.
-    }
-}
-
-void Entity::CalculateNumerical(bool forExport) {
-    if(IsPoint()) actPoint = PointGetNum();
-    if(IsNormal()) actNormal = NormalGetNum();
-    if(type == DISTANCE || type == DISTANCE_N_COPY) {
-        actDistance = DistanceGetNum();
-    }
-    if(IsFace()) {
-        actPoint  = FaceGetPointNum();
-        Vector n = FaceGetNormalNum();
-        actNormal = Quaternion::From(0, n.x, n.y, n.z);
-    }
-    if(forExport) {
-        // Visibility in copied import entities follows source file
-        actVisible = IsVisible();
-    } else {
-        // Copied entities within a file are always visible
-        actVisible = true;
     }
 }
 

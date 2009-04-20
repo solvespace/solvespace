@@ -173,6 +173,30 @@ bool Entity::IsVisible(void) {
     return true;
 }
 
+void Entity::CalculateNumerical(bool forExport) {
+    if(IsPoint()) actPoint = PointGetNum();
+    if(IsNormal()) actNormal = NormalGetNum();
+    if(type == DISTANCE || type == DISTANCE_N_COPY) {
+        actDistance = DistanceGetNum();
+    }
+    if(IsFace()) {
+        actPoint  = FaceGetPointNum();
+        Vector n = FaceGetNormalNum();
+        actNormal = Quaternion::From(0, n.x, n.y, n.z);
+    }
+    if(forExport) {
+        // Visibility in copied import entities follows source file
+        actVisible = IsVisible();
+    } else {
+        // Copied entities within a file are always visible
+        actVisible = true;
+    }
+}
+
+bool Entity::PointIsFromReferences(void) {
+    return h.request().IsFromReferences();
+}
+
 void Entity::GenerateBezierCurves(SBezierList  *sbl) {
     SBezier sb;
 

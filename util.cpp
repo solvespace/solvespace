@@ -504,7 +504,7 @@ Vector Vector::WithMagnitude(double v) {
 }
 
 Vector Vector::ProjectVectorInto(hEntity wrkpl) {
-    Entity *w = SK.GetEntity(wrkpl);
+    EntityBase *w = SK.GetEntity(wrkpl);
     Vector u = w->Normal()->NormalU();
     Vector v = w->Normal()->NormalV();
 
@@ -515,7 +515,7 @@ Vector Vector::ProjectVectorInto(hEntity wrkpl) {
 }
 
 Vector Vector::ProjectInto(hEntity wrkpl) {
-    Entity *w = SK.GetEntity(wrkpl);
+    EntityBase *w = SK.GetEntity(wrkpl);
     Vector p0 = w->WorkplaneGetOffset();
 
     Vector f = this->Minus(p0);

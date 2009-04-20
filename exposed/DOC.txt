@@ -1,0 +1,403 @@
+
+A sketch in SolveSpace consists of three basic elements: parameters,
+entities, and constraints.
+
+A parameter (Slvs_Param) is a single real number, represented internally
+by a double-precision floating point variable. The parameters are unknown
+variables that the solver modifies in order to satisfy the constraints.
+
+An entity (Slvs_Entity) is a geometric thing, like a point or a line
+segment or a circle. Entities are defined in terms of parameters,
+and in terms of other entities. For example, a point in three-space
+is represented by three parameters, corresponding to its x, y, and z
+coordinates in our base coordinate frame. A line segment is represented
+by two point entities, corresponding to its endpoints.
+
+A constraint (Slvs_Constraint) is a geometric property of an entity,
+or a relationship among multiple entities. For example, a point-point
+distance constraint will set the distance between two point entities.
+
+Paramters, entities, and constraints are typically referenced by their
+handles (Slvs_hParam, Slvs_hEntity, Slvs_hConstraint). These handles are
+32-bit integer values starting from 1. Each object has a unique handle
+within its type (but it's acceptable, for example to have a constraint
+with an Slvs_hConstraint of 7, and also to have an entity with an
+Slvs_hEntity of 7). The use of handles instead of pointers helps to
+avoid memory corruption.
+
+Entities and constraints are assigned into groups. A group is a set of
+entities and constraints that is solved simultaneously. In a parametric
+CAD system, a single group would typically correspond to a single sketch.
+Constraints within a group may refer to entities outside that group,
+but only the entities within that group will be modified by the solver.
+
+(Consider point A in group 1, and point B in group 2. We have a constraint
+in group 2 that makes the points coincident. When we solve group 2, the
+solver is allowed to move point B to place it on top of point A. It is
+not allowed to move point A to put it on top of point B, because point
+A is outside the group being solved.)
+
+This corresponds to the typical structure of a parametric CAD system. In a
+later sketch, we may constrain our entities against existing geometry from
+earlier sketches. The constraints will move the entities in our current
+sketch, but will not change the geometry from the earlier sketches.
+
+To use the solver, we first define a set of parameters, entities,
+and constraints. We provide an initial guess for each parameter; this
+will improve convergence, and also determine which solution gets chosen
+when (finitely many) multiple solutions exist. Typically, these initial
+guesses are provided by the initial configuration in which the user drew
+the entities before constraining them.
+
+We then run the solver for a given group. The entities within that group
+are modified in an attempt to satisfy the constraints.
+
+After running the solver, there are three possible outcomes:
+
+    * All constraints were satisfied to within our numerical
+      tolerance (i.e., success).
+
+    * The solver can prove that two constraints are inconsistent (for
+      example, if a line with nonzero length is constrained both
+      horizontal and vertical). In that case, a list of inconsistent
+      constraints is generated.
+
+    * The solver cannot prove that two constraints are inconsistent, but
+      it cannot find a solution. In that case, the list of unsatisfied
+      constraints is generated.
+
+
+SLVS_E_POINT_IN_3D
+
+    A point in 3d. Defined by three parameters:
+        
+        param[0]    the point's x coordinate
+        param[1]                y
+        param[1]                z
+
+
+SLVS_E_POINT_IN_2D
+
+    A point within a workplane. Defined by the workplane
+
+        wrkpl
+
+    and by two parameters
+
+        param[0]    the point's u coordinate
+        param[1]                v
+
+    within the coordinate system of the workplane. For example, if the
+    workplane is the zx plane, then u = z and v = x. If the workplane is
+    parallel to the zx plane, but translated so that the workplane's
+    origin is (3, 4, 5), then u = z - 5 and v = x - 3.
+
+
+SLVS_E_NORMAL_IN_3D
+
+    A normal. In SolveSpace, "normals" represent a 3x3 rotation matrix
+    from our base coordinate system to a new frame. Defined by the
+    unit quaternion
+
+        param[0]        w
+        param[1]        x
+        param[2]        y
+        param[3]        z
+
+    where the quaternion is given by w + x*i + y*j + z*k.
+
+    It is useful to think of this quaternion as representing a plane
+    through the origin. This plane has three associated vectors: basis
+    vectors U, V that lie within the plane, and normal N that is
+    perpendicular to it. This means that
+
+        [ U V N ]'
+
+    defines a 3x3 rotation matrix. So U, V, and N all have unit length,
+    and are orthogonal so that
+    
+        U cross V = N
+        V cross N = U
+        N cross U = V
+
+    Convenience functions (Slvs_Quaternion*) are provided to convert
+    between this representation as vectors U, V, N and the unit
+    quaternion.
+
+    A unit quaternion has only 3 degrees of freedom, but is specified in
+    terms of 4 parameters. An extra constraint is therefore generated
+    implicitly, that
+
+        w^2 + x^2 + y^2 + z^2 = 1
+
+
+SLVS_E_NORMAL_IN_2D
+
+    A normal within a workplane. This is identical to the workplane's
+    normal, so it is simply defined by
+
+        wrkpl
+
+    This entity type is used, for example, to define a circle that lies
+    within a workplane. The circle's normal is the same as the workplane's
+    normal, so we can use an SLVS_E_NORMAL_IN_2D to copy the workplane's
+    normal.
+
+
+SLVS_E_DISTANCE
+
+    A distance. This entity is used to define the radius of a circle, by
+    a single parameter
+
+        param[0]        r
+
+
+SLVS_E_WORKPLANE
+
+    An oriented plane, somewhere in 3d. This entity therefore has 6
+    degrees of freedom: three translational, and three rotational. It is
+    specified in terms of its origin
+
+        point[0]        origin
+
+    and a normal
+
+        normal
+
+    The normal describes three vectors U, V, N, as discussed in the
+    documentation for SLVS_E_NORMAL_IN_3D. The plane is therefore given
+    by the equation
+
+        p = origin + s*U + t*V
+
+    for any scalar s and t.
+
+
+SLVS_E_LINE_SEGMENT
+    
+    A line segment between two endpoints
+
+        point[0]
+        point[1]
+
+
+SLVS_E_CUBIC
+
+    A nonrational cubic Bezier segment
+
+        point[0]        starting point P0
+        point[1]        control point  P1
+        point[2]        control point  P2
+        point[3]        ending point   P3
+
+    The curve then has equation
+
+        p(t) = P0*(1 - t)^3 + 3*P1*(1 - t)^2*t + 3*P2*(1 - t)*t^2 + P3*t^3
+
+    as t goes from 0 to 1.
+
+
+SLVS_E_CIRCLE
+
+    A complete circle. The circle lies within a plane with normal
+
+        normal
+
+    The circle is centered at
+        
+        point[0]
+
+    The circle's radius is
+
+        distance
+
+
+SLVS_E_ARC_OF_CIRCLE
+
+    An arc of a circle. An arc must always lie within a workplane; it
+    cannot be free in 3d. So it is specified with a workplane
+
+        wrkpl
+
+    It is then defined by three points
+
+        point[0]        center of the circle
+        point[1]        begining of the arc
+        point[2]        end of the arc
+
+    The arc runs counter-clockwise from its beginning to its end (with
+    the workplane's normal pointing owards the viewer). If the begining
+    and end of the arc are coincident, then the arc is considered to
+    represent a full circle.
+
+    This representation has an extra degree of freedom. An extra
+    constraint is therefore generated implicitly, so that
+
+        distance(center, beginning) = distance(center, end)
+
+
+
+Many constraints can apply either in 3d, or in a workplane. This is
+determined by the wrkpl member of the constraint. If that member is set
+to SLVS_FREE_IN_3D, then the constraint applies in 3d. If that member
+is set equal to a workplane, the the constraint applies projected into
+that workplane. (For example, a constraint on the distance between two
+points actually applies to the projected distance).
+
+Constraints that may be used in 3d or projected into a workplane are
+marked with a single star (*). Constraints that must always be used with
+a workplane are marked with a double star (**). Constraints that ignore
+the wrkpl member are marked with no star.
+
+SLVS_C_PT_PT_DISTANCE*
+
+    The distance between points ptA and ptB is equal to valA.
+
+SLVS_C_POINTS_COINCIDENT*
+
+    Points ptA and ptB are coincident (i.e., exactly on top of each
+    other).
+
+SLVS_C_PT_PLANE_DISTANCE
+
+    The distance from point ptA to workplane entityA is equal to
+    valA. This is a signed distance; positive versus negative valA
+    correspond to a point that is above vs. below the plane.
+
+SLVS_C_PT_LINE_DISTANCE*
+
+    The distance from point ptA to line segment entityA is equal to valA.
+
+    If the constraint is projected, then valA is a signed distance;
+    positive versus negative valA correspond to a point that is above
+    vs. below the line.
+
+    If the constraint applies in 3d, then valA must always be positive.
+
+SLVS_C_PT_IN_PLANE
+
+    The point ptA lies in plane entityA.
+
+SLVS_C_PT_ON_LINE*
+
+    The point ptA lies on the line entityA.
+
+    Note that this constraint removes one degree of freedom when projected
+    in to the plane, but two degrees of freedom in 3d.
+
+SLVS_C_EQUAL_LENGTH_LINES*
+
+    The lines entityA and entityB have equal length.
+
+SLVS_C_LENGTH_RATIO*
+
+    The length of line entityA divided by the length of line entityB is
+    equal to valA.
+
+SLVS_C_EQ_LEN_PT_LINE_D*
+
+    The length of the line entityA is equal to the distance from point
+    ptA to line entityB.
+
+SLVS_C_EQ_PT_LN_DISTANCES*
+
+    The distance from the line entityA to the point ptA is equal to the
+    distance from the line entityB to the point ptB.
+
+SLVS_C_EQUAL_ANGLE*
+
+    The angle between lines entityA and entityB is equal to the angle
+    between lines entityC and entityD.
+
+    If other is true, then the angles are supplementary (i.e., theta1 =
+    180 - theta2) instead of equal.
+
+SLVS_C_EQUAL_LINE_ARC_LEN*
+
+    The length of the line entityA is equal to the length of the circular
+    arc entityB.
+
+SLVS_C_SYMMETRIC*
+
+    The points ptA and ptB are symmetric about the plane entityA. This
+    means that they are on opposite sides of the plane and at equal
+    distances from the plane, and that the line connecting ptA and ptB
+    is normal to the plane.
+
+SLVS_C_SYMMETRIC_HORIZ
+SLVS_C_SYMMETRIC_VERT**
+
+    The points ptA and ptB are symmetric about the horizontal or vertical
+    axis of the specified workplane.
+
+SLVS_C_SYMMETRIC_LINE*
+
+    The points ptA and ptB are symmetric about the line entityA.
+
+SLVS_C_AT_MIDPOINT*
+
+    The point ptA lies at the midpoint of the line entityA.
+    
+SLVS_C_HORIZONTAL
+SLVS_C_VERTICAL**
+
+    The line connecting points ptA and ptB is horizontal or vertical.
+
+SLVS_C_DIAMETER
+
+    The diameter of circle or arc entityA is equal to valA.
+
+SLVS_C_PT_ON_CIRCLE
+
+    The point ptA lies on the right cylinder obtained by extruding circle
+    entityA normal to its plane.
+
+SLVS_C_SAME_ORIENTATION
+
+    The normals entityA and entityB describe identical rotations. This
+    constraint therefore restricts three degrees of freedom.
+
+SLVS_C_ANGLE*
+
+    The angle between lines entityA and entityB is equal to valA, where
+    valA is specified in degrees. This constraint equation is written
+    in the form
+
+        (A dot B)/(|A||B|) = cos(valA)
+
+    where A and B are vectors in the directions of lines A and B. This
+    equation does not specify the angle unambiguously; for example,
+    note that val A = +/- 90 degrees will produce the same equation.
+
+    If other is true, then the constraint is instead that
+
+        (A dot B)/(|A||B|) = -cos(valA)
+
+SLVS_C_PERPENDICULAR*
+
+    Identical to SLVS_C_ANGLE with valA = 90 degrees.
+
+SLVS_C_PARALLEL*
+
+    Lines entityA and entityB are parallel.
+
+    Note that this constraint removes one degree of freedom when projected
+    in to the plane, but two degrees of freedom in 3d.
+
+SLVS_C_ARC_LINE_TANGENT**
+
+    The arc entityA is tangent to the line entityB. If other is false,
+    then the arc is tangent at its beginning (point[1]). If other is true,
+    then the arc is tangent at its end (point[2]).
+
+SLVS_C_CUBIC_LINE_TANGENT*
+
+    The cubic entityA is tangent to the line entityB. If other is false,
+    then the cubic is tangent at its beginning (point[0]). If other is
+    true, then the arc is tangent at its end (point[3]).
+
+SLVS_C_EQUAL_RADIUS
+
+    The circles or arcs entityA and entityB have equal radius.
+
+

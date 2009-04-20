@@ -354,7 +354,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 r = n.Normal(0);
                 d = n.Normal(1);
             } else if(type == PT_IN_PLANE) {
-                Entity *n = SK.GetEntity(entityA)->Normal();
+                EntityBase *n = SK.GetEntity(entityA)->Normal();
                 r = n->NormalU();
                 d = n->NormalV();
             } else {
@@ -434,7 +434,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 rn = gn;
                 ru = gu;
             } else {
-                Entity *normal = SK.GetEntity(workplane)->Normal();
+                EntityBase *normal = SK.GetEntity(workplane)->Normal();
                 rn = normal->NormalN();
                 ru = normal->NormalV(); // ru meaning r_up, not u/v
             }
@@ -485,7 +485,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                     v = gu;
                     n = gn;
                 } else {
-                    Entity *wn = SK.GetEntity(workplane)->Normal();
+                    EntityBase *wn = SK.GetEntity(workplane)->Normal();
                     u = wn->NormalU();
                     v = wn->NormalV();
                     n = wn->NormalN();
