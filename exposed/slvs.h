@@ -128,7 +128,14 @@ typedef struct {
     // Unused members of this array should be set to zero.
     Slvs_hParam         dragged[4];
 
-    //// OUTPUT PARAMETERS
+    // If the solver fails, then it can determine which constraints are
+    // causing the problem. But this is a relatively slow process (for
+    // a system with n constraints, about n times as long as just solving).
+    // If calculateFaileds is set, then the solver will do so, otherwise
+    // not.
+    int                 calculateFaileds;
+
+    //// OUTPUT VARIABLES
     // 
     // If the solver fails, then it can report which constraints are causing
     // the problem. The caller should allocate the array failed[], and pass

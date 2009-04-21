@@ -363,7 +363,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
 }
 
 int System::Solve(Group *g, int *dof, List<hConstraint> *bad, 
-                  bool andFindFree)
+                  bool andFindBad, bool andFindFree)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
@@ -420,7 +420,9 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 
     int rank = CalculateRank();
     if(rank != mat.m) {
-        FindWhichToRemoveToFixJacobian(g, bad);
+        if(andFindBad) {
+            FindWhichToRemoveToFixJacobian(g, bad);
+        }
         return System::SINGULAR_JACOBIAN;
     }
     // This is not the full Jacobian, but any substitutions or single-eq

@@ -410,7 +410,7 @@ void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
     MarkDraggedParams();
     g->solved.remove.Clear();
     int how = sys.Solve(g, &(g->solved.dof),
-                           &(g->solved.remove), andFindFree);
+                           &(g->solved.remove), true, andFindFree);
     if((how != System::SOLVED_OKAY) ||
        (how == System::SOLVED_OKAY && g->solved.how != System::SOLVED_OKAY))
     {

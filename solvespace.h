@@ -271,7 +271,8 @@ public:
     static const int DIDNT_CONVERGE       = 10;
     static const int SINGULAR_JACOBIAN    = 11;
     static const int TOO_MANY_UNKNOWNS    = 20;
-    int Solve(Group *g, int *dof, List<hConstraint> *bad, bool andFindFree);
+    int Solve(Group *g, int *dof, List<hConstraint> *bad,
+                bool andFindBad, bool andFindFree);
 };
 
 class TtfFont {

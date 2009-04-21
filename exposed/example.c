@@ -1,3 +1,15 @@
+//-----------------------------------------------------------------------------
+// Some sample code for slvs.lib. We draw some geometric entities, provide
+// initial guesses for their positions, and then constrain them. The solver
+// calculates their new positions, in order to satisfy the constraints.
+//
+// This code is provide for evaluation purposes only. To purchase a license,
+// please visit:
+//
+//     http://solvespace.com/
+//
+// Copyright 2009, Jonathan Westhues
+//-----------------------------------------------------------------------------
 #include <windows.h>
 #include <stdio.h>
 
@@ -141,14 +153,19 @@ void Example2d(void)
                                             200,
                                             15.0,
                                             301, 101, 0, 0);
-
-    // And the distance from one endpoint to the origin is 15.0 units.
+/*
+    // And same for the other endpoint; so if you add this constraint then
+    // the sketch is overconstrained and will signal an error.
     sys.constraint[sys.constraints++] = Slvs_MakeConstraint(
                                             5, g,
                                             SLVS_C_PT_PT_DISTANCE,
                                             200,
                                             18.0,
-                                            302, 101, 0, 0);
+                                            302, 101, 0, 0); */
+
+    // If the solver fails, then ask it to report which constraints caused
+    // the problem.
+    sys.calculateFaileds = 1;
 
     // And solve.
     Slvs_Solve(&sys, g);
