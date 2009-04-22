@@ -58,6 +58,17 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
 void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 {
     if(!IsInit) {
+#if 1
+        dbp("SolveSpace library initialized (evaluation version only).");
+        dbp("Built " __DATE__ " " __TIME__
+                    ". Copyright 2009 Jonathan Westhues.");
+        HWND h = GetForegroundWindow();
+        MessageBox(h,
+"This is an evaluation copy of SolveSpace. To purchase a license, please "
+"contact info@solvespace.com.\r\n\r\n"
+"Copyright 2009 Jonathan Westhues.",
+            "SolveSpace", MB_OK);
+#endif
         InitHeaps();
         IsInit = 1;
     }

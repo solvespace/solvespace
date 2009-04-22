@@ -78,9 +78,9 @@ void Example3d(void)
 }
 
 //-----------------------------------------------------------------------------
-// An example of a constraint in 2d. In an earlier group, we have created a
-// workplane. Then in our group to be solved, we create a line segment, which
-// we dimension to be horizontal and 2.0 units long.
+// An example of a constraint in 2d. In our first group, we create a workplane
+// along the reference frame's xy plane. In a second group, we create some
+// entities in that group and dimension them.
 //-----------------------------------------------------------------------------
 void Example2d(void)
 {
@@ -124,6 +124,38 @@ void Example2d(void)
     sys.entity[sys.entities++] = Slvs_MakeLineSegment(400, g, 
                                         200, 301, 302);
 
+    // Now three more points.
+    sys.param[sys.params++] = Slvs_MakeParam(15, g, 100.0);
+    sys.param[sys.params++] = Slvs_MakeParam(16, g, 120.0);
+    sys.entity[sys.entities++] = Slvs_MakePoint2d(303, g, 200, 15, 16);
+
+    sys.param[sys.params++] = Slvs_MakeParam(17, g, 120.0);
+    sys.param[sys.params++] = Slvs_MakeParam(18, g, 110.0);
+    sys.entity[sys.entities++] = Slvs_MakePoint2d(304, g, 200, 17, 18);
+
+    sys.param[sys.params++] = Slvs_MakeParam(19, g, 115.0);
+    sys.param[sys.params++] = Slvs_MakeParam(20, g, 115.0);
+    sys.entity[sys.entities++] = Slvs_MakePoint2d(305, g, 200, 19, 20);
+
+    // And arc, centered at point 303, starting at point 304, ending at
+    // point 305.
+    sys.entity[sys.entities++] = Slvs_MakeArcOfCircle(401, g, 200,
+                                    303, 304, 305);
+
+    // Now one more point, and a distance
+    sys.param[sys.params++] = Slvs_MakeParam(21, g, 200.0);
+    sys.param[sys.params++] = Slvs_MakeParam(22, g, 200.0);
+    sys.entity[sys.entities++] = Slvs_MakePoint2d(306, g, 200, 21, 22);
+
+    sys.param[sys.params++] = Slvs_MakeParam(23, g, 30.0);
+    sys.entity[sys.entities++] = Slvs_MakeDistance(307, g, 200, 23);
+
+    // And a complete circle, centered at point 306 with radius equal to
+    // distance 307. The normal is 102, the same as our workplane.
+    sys.entity[sys.entities++] = Slvs_MakeCircle(402, g, 200,
+                                    306, 102, 307);
+
+
     // The length of our line segment is 30.0 units.
     sys.constraint[sys.constraints++] = Slvs_MakeConstraint(
                                             1, g,
@@ -163,6 +195,21 @@ void Example2d(void)
                                             18.0,
                                             302, 101, 0, 0); */
 
+    // The arc and the circle have equal radius.
+    sys.constraint[sys.constraints++] = Slvs_MakeConstraint(
+                                            6, g,
+                                            SLVS_C_EQUAL_RADIUS,
+                                            200,
+                                            0.0,
+                                            0, 0, 401, 402);
+    // The arc has radius 17.0 units.
+    sys.constraint[sys.constraints++] = Slvs_MakeConstraint(
+                                            7, g,
+                                            SLVS_C_DIAMETER,
+                                            200,
+                                            17.0*2,
+                                            0, 0, 401, 0);
+
     // If the solver fails, then ask it to report which constraints caused
     // the problem.
     sys.calculateFaileds = 1;
@@ -171,10 +218,19 @@ void Example2d(void)
     Slvs_Solve(&sys, g);
 
     if(sys.result == SLVS_RESULT_OKAY) {
-        printf("okay; now at (%.3f %.3f)\n"
-               "             (%.3f %.3f)\n",
+        printf("solved okay\n");
+        printf("line from (%.3f %.3f) to (%.3f %.3f)\n",
                 sys.param[7].val, sys.param[8].val,
                 sys.param[9].val, sys.param[10].val);
+
+        printf("arc center (%.3f %.3f) start (%.3f %.3f) finish (%.3f %.3f)\n",
+                sys.param[11].val, sys.param[12].val,
+                sys.param[13].val, sys.param[14].val,
+                sys.param[15].val, sys.param[16].val);
+
+        printf("circle center (%.3f %.3f) radius %.3f\n",
+                sys.param[17].val, sys.param[18].val,
+                sys.param[19].val);
         printf("%d DOF\n", sys.dof);
     } else {
         int i;

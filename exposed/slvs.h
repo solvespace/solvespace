@@ -1,3 +1,16 @@
+//-----------------------------------------------------------------------------
+// Data structures and prototypes for slvs.lib, a geometric constraint solver.
+//
+// See the comments in this file, the accompanying sample code (example.c)
+// that uses this library, and the accompanying documentation (DOC.txt).
+//
+// This code is provide for evaluation purposes only. To purchase a license,
+// please visit:
+//
+//     http://solvespace.com/
+//
+// Copyright 2009, Jonathan Westhues
+//-----------------------------------------------------------------------------
 
 #ifndef __SLVS_H
 #define __SLVS_H
@@ -30,6 +43,10 @@ typedef struct {
 #define SLVS_E_NORMAL_IN_2D    60001
 
 #define SLVS_E_DISTANCE        70000
+
+// The special point, normal, and distance types used for parametric step
+// and repeat, extrude, and assembly are currently not exposed. Please
+// contact us if you are interested in using these.
 
 #define SLVS_E_WORKPLANE       80000
 #define SLVS_E_LINE_SEGMENT    80001
@@ -142,7 +159,10 @@ typedef struct {
     // its size in faileds. 
     //
     // The solver will set faileds equal to the number of problematic
-    // constraints, and write their Slvs_hConstraints on 
+    // constraints, and write their Slvs_hConstraints into failed[]. To
+    // ensure that there is sufficient space for any possible set of
+    // failing constraints, faileds should be greater than or equal to
+    // constraints.
     Slvs_hConstraint    *failed;
     int                 faileds;
 

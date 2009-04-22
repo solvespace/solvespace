@@ -1,4 +1,7 @@
 
+INTRODUCTION
+============
+
 A sketch in SolveSpace consists of three basic elements: parameters,
 entities, and constraints.
 
@@ -19,11 +22,11 @@ distance constraint will set the distance between two point entities.
 
 Paramters, entities, and constraints are typically referenced by their
 handles (Slvs_hParam, Slvs_hEntity, Slvs_hConstraint). These handles are
-32-bit integer values starting from 1. Each object has a unique handle
-within its type (but it's acceptable, for example to have a constraint
-with an Slvs_hConstraint of 7, and also to have an entity with an
-Slvs_hEntity of 7). The use of handles instead of pointers helps to
-avoid memory corruption.
+32-bit integer values starting from 1. The zero handle is reserved. Each
+object has a unique handle within its type (but it's acceptable, for
+example to have a constraint with an Slvs_hConstraint of 7, and also to
+have an entity with an Slvs_hEntity of 7). The use of handles instead
+of pointers helps to avoid memory corruption.
 
 Entities and constraints are assigned into groups. A group is a set of
 entities and constraints that is solved simultaneously. In a parametric
@@ -31,23 +34,23 @@ CAD system, a single group would typically correspond to a single sketch.
 Constraints within a group may refer to entities outside that group,
 but only the entities within that group will be modified by the solver.
 
-(Consider point A in group 1, and point B in group 2. We have a constraint
+Consider point A in group 1, and point B in group 2. We have a constraint
 in group 2 that makes the points coincident. When we solve group 2, the
 solver is allowed to move point B to place it on top of point A. It is
 not allowed to move point A to put it on top of point B, because point
-A is outside the group being solved.)
+A is outside the group being solved.
 
 This corresponds to the typical structure of a parametric CAD system. In a
 later sketch, we may constrain our entities against existing geometry from
 earlier sketches. The constraints will move the entities in our current
 sketch, but will not change the geometry from the earlier sketches.
 
-To use the solver, we first define a set of parameters, entities,
-and constraints. We provide an initial guess for each parameter; this
-will improve convergence, and also determine which solution gets chosen
-when (finitely many) multiple solutions exist. Typically, these initial
-guesses are provided by the initial configuration in which the user drew
-the entities before constraining them.
+To use the solver, we first define a set of parameters, entities, and
+constraints. We provide an initial guess for each parameter; this is
+necessary to achieve convergence, and also determines which solution
+gets chosen when (finitely many) multiple solutions exist. Typically,
+these initial guesses are provided by the initial configuration in which
+the user drew the entities before constraining them.
 
 We then run the solver for a given group. The entities within that group
 are modified in an attempt to satisfy the constraints.
@@ -55,17 +58,21 @@ are modified in an attempt to satisfy the constraints.
 After running the solver, there are three possible outcomes:
 
     * All constraints were satisfied to within our numerical
-      tolerance (i.e., success).
+      tolerance (i.e., success). The result is equal to SLVS_RESULT_OKAY,
+      and the parameters in param[] have been updated.
 
     * The solver can prove that two constraints are inconsistent (for
       example, if a line with nonzero length is constrained both
       horizontal and vertical). In that case, a list of inconsistent
-      constraints is generated.
+      constraints is generated in failed[].
 
     * The solver cannot prove that two constraints are inconsistent, but
       it cannot find a solution. In that case, the list of unsatisfied
-      constraints is generated.
+      constraints is generated in failed[].
 
+
+TYPES OF ENTITIES
+=================
 
 SLVS_E_POINT_IN_3D
 
@@ -236,6 +243,8 @@ SLVS_E_ARC_OF_CIRCLE
         distance(center, beginning) = distance(center, end)
 
 
+TYPES OF CONSTRAINTS
+====================
 
 Many constraints can apply either in 3d, or in a workplane. This is
 determined by the wrkpl member of the constraint. If that member is set
@@ -400,4 +409,12 @@ SLVS_C_EQUAL_RADIUS
 
     The circles or arcs entityA and entityB have equal radius.
 
+
+USING THE SOLVER
+================
+
+See the enclosed sample code, example.c.
+
+
+Copyright 2009, Jonathan Westhues.
 
