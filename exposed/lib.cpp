@@ -238,6 +238,9 @@ default: dbp("bad constraint type %d", sc->type); return;
 
     bad.Clear();
     SYS.param.Clear();
+    SYS.entity.Clear();
+    SYS.eq.Clear();
+
     SK.param.Clear();
     SK.entity.Clear();
     SK.constraint.Clear();
