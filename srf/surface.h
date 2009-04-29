@@ -201,6 +201,8 @@ public:
     SBspUv          *bsp;
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
+    static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
+                                        double thetas, double thetaf);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
                                          bool includingTrims);
@@ -264,6 +266,8 @@ public:
     IdList<SSurface,hSSurface>  surface;
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
+                             int color);
+    void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                              int color);
 
     void MakeFromUnionOf(SShell *a, SShell *b);

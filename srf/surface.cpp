@@ -62,6 +62,48 @@ bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
     return true;
 }
 
+SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
+                                    double thetas, double thetaf)
+{
+    SSurface ret;
+    ZERO(&ret);
+    ret.degm = sb->deg;
+    ret.degn = 2;
+
+    double dtheta = fabs(WRAP_SYMMETRIC(thetaf - thetas, 2*PI));
+
+    // We now wish to revolve the curve about the z axis
+    int i;
+    for(i = 0; i <= ret.degm; i++) {
+        Vector p = sb->ctrl[i];
+
+        Vector ps = p.RotatedAbout(pt, axis, thetas),
+               pf = p.RotatedAbout(pt, axis, thetaf);
+
+        Vector c = ps.ClosestPointOnLine(pt, axis);
+
+        Vector rs = ps.Minus(c),
+               rf = pf.Minus(c);
+
+        Vector ts = axis.Cross(rs),
+               tf = axis.Cross(rf);
+
+        Vector ct = Vector::AtIntersectionOfLines(ps, ps.Plus(ts),
+                                                  pf, pf.Plus(tf),
+                                                  NULL, NULL, NULL);
+
+        ret.ctrl[i][0] = ps;
+        ret.ctrl[i][1] = ct;
+        ret.ctrl[i][2] = pf;
+
+        ret.weight[i][0] = sb->weight[i];
+        ret.weight[i][1] = sb->weight[i]*cos(dtheta/2);
+        ret.weight[i][2] = sb->weight[i];
+    }
+
+    return ret;
+}
+
 SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     SSurface ret;
     ZERO(&ret);
@@ -427,6 +469,100 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
             (curve.FindById(tlp->hc))->surfB = ss->h;
         }
         trimLines.Clear();
+    }
+}
+
+
+void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
+                                   int color)
+{
+    ZERO(this);
+
+    // Normalize the axis direction so that the direction of revolution
+    // ends up parallel to the normal of the sketch, on the side of the
+    // axis where the sketch is.
+    Vector pto = sbls->point,
+           ptc = pto.ClosestPointOnLine(pt, axis),
+           up  = (pto.Minus(ptc)).WithMagnitude(1),
+           vp  = (sbls->normal).Cross(up);
+    
+    if(vp.Dot(axis) < 0) {
+        axis = axis.ScaledBy(-1);
+    }
+
+    SBezierLoop *sbl;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        int i, j;
+        SBezier *sb, *prev;
+
+        typedef struct {
+            hSSurface   d[4];
+        } Revolved;
+        List<Revolved> hsl;
+        ZERO(&hsl);
+
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            Revolved revs;
+            for(j = 0; j < 4; j++) {
+                SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
+                                                         (PI/2)*j,
+                                                         (PI/2)*(j+1));
+                ss.color = color;
+                revs.d[j] = surface.AddAndAssignId(&ss);
+            }
+            hsl.Add(&revs);
+        }
+
+        for(i = 0; i < sbl->l.n; i++) {
+            Revolved revs  = hsl.elem[i],
+                     revsp = hsl.elem[WRAP(i-1, sbl->l.n)];
+
+            sb   = &(sbl->l.elem[i]);
+            prev = &(sbl->l.elem[WRAP(i-1, sbl->l.n)]);
+
+            for(j = 0; j < 4; j++) {
+                Quaternion qs = Quaternion::From(axis, (PI/2)*j);
+                // we want Q*(x - p) + p = Q*x + (p - Q*p)
+                Vector ts = pt.Minus(qs.Rotate(pt));
+
+                SCurve sc;
+                ZERO(&sc);
+                sc.isExact = true;
+                sc.exact = sb->TransformedBy(ts, qs);
+                (sc.exact).MakePwlInto(&(sc.pts));
+                sc.surfA = revs.d[j];
+                sc.surfB = revs.d[WRAP(j-1, 4)];
+
+                hSCurve hcb = curve.AddAndAssignId(&sc);
+
+                STrimBy stb;
+                stb = STrimBy::EntireCurve(this, hcb, true);
+                (surface.FindById(sc.surfA))->trim.Add(&stb);
+                stb = STrimBy::EntireCurve(this, hcb, false);
+                (surface.FindById(sc.surfB))->trim.Add(&stb);
+
+                SSurface *ss = surface.FindById(sc.surfA);
+
+                ZERO(&sc);
+                sc.isExact = true;
+                sc.exact = SBezier::From(ss->ctrl[0][0],
+                                         ss->ctrl[0][1],
+                                         ss->ctrl[0][2]);
+                sc.exact.weight[1] = ss->weight[0][1];
+                (sc.exact).MakePwlInto(&(sc.pts));
+                sc.surfA = revs.d[j];
+                sc.surfB = revsp.d[j];
+
+                hSCurve hcc = curve.AddAndAssignId(&sc);
+
+                stb = STrimBy::EntireCurve(this, hcc, false);
+                (surface.FindById(sc.surfA))->trim.Add(&stb);
+                stb = STrimBy::EntireCurve(this, hcc, true);
+                (surface.FindById(sc.surfB))->trim.Add(&stb);
+            }
+        }
+
+        hsl.Clear();
     }
 }
 

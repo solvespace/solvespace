@@ -120,6 +120,17 @@ Quaternion Quaternion::From(hParam w, hParam vx, hParam vy, hParam vz) {
     return q;
 }
 
+Quaternion Quaternion::From(Vector axis, double dtheta) {
+    Quaternion q;
+    double c = cos(dtheta / 2), s = sin(dtheta / 2);
+    axis = axis.WithMagnitude(s);
+    q.w  = c;
+    q.vx = axis.x;
+    q.vy = axis.y;
+    q.vz = axis.z;
+    return q;
+}
+
 Quaternion Quaternion::From(Vector u, Vector v)
 {
     Vector n = u.Cross(v);

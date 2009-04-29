@@ -185,10 +185,11 @@ void Group::GenerateShellAndMesh(void) {
     } else if(type == LATHE) {
         Group *src = SK.GetGroup(opA);
 
-        Vector orig = SK.GetEntity(predef.origin)->PointGetNum();
-        Vector axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
+               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
 
+        thisShell.MakeFromRevolutionOf(&(src->bezierLoopSet), pt, axis, color);
     } else if(type == IMPORTED) {
         // Triangles are just copied over, with the appropriate transformation
         // applied.

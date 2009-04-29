@@ -21,6 +21,7 @@ public:
     static Quaternion From(double w, double vx, double vy, double vz);
     static Quaternion From(hParam w, hParam vx, hParam vy, hParam vz);
     static Quaternion From(Vector u, Vector v);
+    static Quaternion From(Vector axis, double dtheta);
 
     Quaternion Plus(Quaternion b);
     Quaternion Minus(Quaternion b);
