@@ -1,6 +1,5 @@
 
 marching algorithm for surface intersection
-surfaces of revolution (lathed)
 boundary avoidance when casting ray for point-in-shell
 tangent intersections
 short pwl edge avoidance

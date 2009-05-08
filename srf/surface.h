@@ -255,6 +255,9 @@ public:
     void MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl);
     void MakeClassifyingBsp(SShell *shell);
     double ChordToleranceForEdge(Vector a, Vector b);
+    void MakeTriangulationGridInto(List<double> *l, double vs, double vf,
+                                    bool swapped);
+    Vector PointAtMaybeSwapped(double u, double v, bool swapped);
 
     void Reverse(void);
     void Clear(void);

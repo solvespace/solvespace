@@ -170,7 +170,10 @@ int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, Vector *ppi) {
         dist_a = (se->a).DistanceToLine(a, d),
         dist_b = (se->b).DistanceToLine(a, d);
 
-        if(fabs(dist_a - dist_b) < LENGTH_EPS) {
+        // Can't just test if dist_a equals dist_b; they could be on opposite
+        // sides, since it's unsigned.
+        double m = sqrt(d.Magnitude()*dse.Magnitude());
+        if(sqrt(fabs(d.Dot(dse))) > (m - LENGTH_EPS)) {
             // The edges are parallel.
             if(fabs(dist_a) > LENGTH_EPS) {
                 // and not coincident, so can't be interesecting

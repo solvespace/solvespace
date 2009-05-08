@@ -299,9 +299,21 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     ZERO(&poly);
     if(el.AssemblePolygon(&poly, NULL, true)) {
         int i, start = sm->l.n;
-        // Curved surfaces are triangulated in such a way as to minimize
-        // deviation between edges and surface; but doesn't matter for planes.
-        poly.UvTriangulateInto(sm, (degm == 1 && degn == 1) ? NULL : this);
+        if(degm == 1 && degn == 1) {
+            // A plane; triangulate any old way
+            poly.UvTriangulateInto(sm, NULL);
+        } else if(degm == 1 || degn == 1) {
+            // A surface with curvature along one direction only; so 
+            // choose the triangulation with chords that lie as much
+            // as possible within the surface. And since the trim curves
+            // have been pwl'd to within the desired chord tol, that will
+            // produce a surface good to within roughly that tol.
+            poly.UvTriangulateInto(sm, this);
+        } else {
+            // A surface with compound curvature. So we must overlay a
+            // two-dimensional grid, and triangulate around that.
+            poly.UvGridTriangulateInto(sm, this);
+        }
 
         STriMeta meta = { face, color };
         for(i = start; i < sm->l.n; i++) {

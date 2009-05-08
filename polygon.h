@@ -91,6 +91,7 @@ public:
     Vector AnyPoint(void);
     void OffsetInto(SPolygon *dest, double r);
     void UvTriangulateInto(SMesh *m, SSurface *srf);
+    void UvGridTriangulateInto(SMesh *m, SSurface *srf);
 };
 
 class STriangle {

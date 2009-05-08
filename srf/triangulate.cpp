@@ -120,6 +120,29 @@ bool SContour::BridgeToContour(SContour *sc,
     int thisp, scp;
    
     Vector a, b, *f;
+
+    // First check if the contours share a point; in that case we should
+    // merge them there, without a bridge.
+    for(i = 0; i < l.n; i++) {
+        thisp = WRAP(i+thiso, l.n);
+        a = l.elem[thisp].p;
+
+        for(f = avoidPts->First(); f; f = avoidPts->NextAfter(f)) {
+            if(f->Equals(a)) break;
+        }
+        if(f) continue;
+
+        for(j = 0; j < (sc->l.n - 1); j++) {
+            scp = WRAP(j+sco, (sc->l.n - 1));
+            b = sc->l.elem[scp].p;
+
+            if(a.Equals(b)) {
+                goto haveEdge;
+            }
+        }
+    }
+
+    // If that fails, look for a bridge that does not intersect any edges.
     for(i = 0; i < l.n; i++) {
         thisp = WRAP(i+thiso, l.n);
         a = l.elem[thisp].p;
@@ -145,6 +168,7 @@ bool SContour::BridgeToContour(SContour *sc,
             }
         }
     }
+
     // Tried all the possibilities, didn't find an edge
     return false;
 
@@ -327,6 +351,138 @@ double SSurface::ChordToleranceForEdge(Vector a, Vector b) {
         worst = max(worst, (pps.Minus(ps)).MagSquared());
     }
     return sqrt(worst);
+}
+
+Vector SSurface::PointAtMaybeSwapped(double u, double v, bool swapped) {
+    if(swapped) {
+        return PointAt(v, u);
+    } else {
+        return PointAt(u, v);
+    }
+}
+
+void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
+                                         bool swapped)
+{
+    double worst = 0;
+
+    // Try piecewise linearizing four curves, at u = 0, 1/3, 2/3, 1; choose
+    // the worst chord tolerance of any of those.
+    int i;
+    for(i = 0; i <= 3; i++) {
+        double u = i/3.0;
+
+        // This chord test should be identical to the one in SBezier::MakePwl
+        // to make the piecewise linear edges line up with the grid more or
+        // less.
+        Vector ps = PointAtMaybeSwapped(u, vs, swapped),
+               pf = PointAtMaybeSwapped(u, vf, swapped);
+
+        double vm1 = (2*vs + vf) / 3,
+               vm2 = (vs + 2*vf) / 3;
+
+        Vector pm1 = PointAtMaybeSwapped(u, vm1, swapped),
+               pm2 = PointAtMaybeSwapped(u, vm2, swapped);
+
+        worst = max(worst, pm1.DistanceToLine(ps, pf.Minus(ps)));
+        worst = max(worst, pm2.DistanceToLine(ps, pf.Minus(ps)));
+    }
+
+    double step = 1.0/SS.maxSegments;
+    if((vf - vs) < step || worst < SS.ChordTolMm()) {
+        l->Add(&vf);
+    } else {
+        MakeTriangulationGridInto(l, vs, (vs+vf)/2, swapped);
+        MakeTriangulationGridInto(l, (vs+vf)/2, vf, swapped);
+    }
+}
+
+void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
+    SEdgeList orig;
+    ZERO(&orig);
+    MakeEdgesInto(&orig);
+
+    SEdgeList holes;
+    ZERO(&holes);
+
+    normal = Vector::From(0, 0, 1);
+    FixContourDirections();
+
+    // Build a rectangular grid, with horizontal and vertical lines in the
+    // uv plane. The spacing of these lines is adaptive, so calculate that.
+    List<double> li, lj;
+    ZERO(&li);
+    ZERO(&lj);
+    double v = 0;
+    li.Add(&v);
+    srf->MakeTriangulationGridInto(&li, 0, 1, true);
+    lj.Add(&v);
+    srf->MakeTriangulationGridInto(&lj, 0, 1, false);
+
+    // Now iterate over each quad in the grid. If it's outside the polygon,
+    // or if it intersects the polygon, then we discard it. Otherwise we
+    // generate two triangles in the mesh, and cut it out of our polygon.
+    int i, j;
+    for(i = 0; i < (li.n - 1); i++) {
+        for(j = 0; j < (lj.n - 1); j++) {
+            double us = li.elem[i], uf = li.elem[i+1],
+                   vs = lj.elem[j], vf = lj.elem[j+1];
+
+            Vector a = Vector::From(us, vs, 0),
+                   b = Vector::From(us, vf, 0),
+                   c = Vector::From(uf, vf, 0),
+                   d = Vector::From(uf, vs, 0);
+
+            if(orig.AnyEdgeCrossings(a, b, NULL) ||
+               orig.AnyEdgeCrossings(b, c, NULL) ||
+               orig.AnyEdgeCrossings(c, d, NULL) ||
+               orig.AnyEdgeCrossings(d, a, NULL))
+            {
+                continue;
+            }
+
+            // There's no intersections, so it doesn't matter which point
+            // we decide to test.
+            if(!this->ContainsPoint(a)) {
+                continue;
+            }
+
+            // Add the quad to our mesh
+            STriangle tr;
+            ZERO(&tr);
+            tr.a = a;
+            tr.b = b;
+            tr.c = c;
+            mesh->AddTriangle(&tr);
+            tr.a = a;
+            tr.b = c;
+            tr.c = d;
+            mesh->AddTriangle(&tr);
+
+            holes.AddEdge(a, b);
+            holes.AddEdge(b, c);
+            holes.AddEdge(c, d);
+            holes.AddEdge(d, a);
+        }
+    }
+
+    holes.CullExtraneousEdges();
+    SPolygon hp;
+    ZERO(&hp);
+    holes.AssemblePolygon(&hp, NULL, true);
+
+    SContour *sc;
+    for(sc = hp.l.First(); sc; sc = hp.l.NextAfter(sc)) {
+        l.Add(sc);
+    }
+
+    orig.Clear();
+    holes.Clear();
+    li.Clear();
+    lj.Clear();
+    hp.l.Clear();
+
+    UvTriangulateInto(mesh, srf);
 }
 
 
