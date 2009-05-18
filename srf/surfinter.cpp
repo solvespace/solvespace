@@ -35,7 +35,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         }
     }
     if(existing) {
-        Vector *v;
+        SCurvePt *v;
         for(v = existing->pts.First(); v; v = existing->pts.NextAfter(v)) {
             sc.pts.Add(v);
         }
@@ -51,11 +51,11 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
    
     if(0 && sb->deg == 1) {
         dbp(" ");
-        Vector *prev = NULL, *v;
+        SCurvePt *prev = NULL, *v;
         dbp("split.pts.n =%d", split.pts.n);
         for(v = split.pts.First(); v; v = split.pts.NextAfter(v)) {
             if(prev) {
-                SS.nakedEdges.AddEdge(*prev, *v);
+                SS.nakedEdges.AddEdge(prev->p, v->p);
             }
             prev = v;
         }
@@ -78,6 +78,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         // They cannot possibly intersect, no curves to generate
         return;
     }
+
+    Vector alongt, alongb;
+    SBezier oft, ofb;
+    bool isExtdt = this->IsExtrusion(&oft, &alongt),
+         isExtdb =    b->IsExtrusion(&ofb, &alongb);
 
     if(degm == 1 && degn == 1 && b->degm == 1 && b->degn == 1) {
         // Line-line intersection; it's a plane or nothing.
@@ -139,8 +144,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                            p.Plus(dl.ScaledBy(tmax)));
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
-    } else if((degm == 1 && degn == 1 && b->IsExtrusion(NULL, NULL)) ||
-              (b->degm == 1 && b->degn == 1 && this->IsExtrusion(NULL, NULL)))
+    } else if((degm == 1 && degn == 1 && isExtdb) ||
+              (b->degm == 1 && b->degn == 1 && isExtdt))
     {
         // The intersection between a plane and a surface of extrusion
         SSurface *splane, *sext;
@@ -202,6 +207,55 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
+    } else if(isExtdt && isExtdb && 
+                sqrt(fabs(alongt.Dot(alongb))) > 
+                sqrt(alongt.Magnitude() * alongb.Magnitude()) - LENGTH_EPS)
+    {
+        // Two surfaces of extrusion along the same axis. So they might
+        // intersect along some number of lines parallel to the axis.
+        Vector axis = alongt.WithMagnitude(1);
+        
+        List<SInter> inters;
+        ZERO(&inters);
+        List<Vector> lv;
+        ZERO(&lv);
+
+        Vector axisa = axis.ScaledBy((b->ctrl[0][0]).Dot(axis)),
+               axisb = axis.ScaledBy((b->ctrl[0][1]).Dot(axis)),
+               axisc = (axisa.Plus(axisb)).ScaledBy(0.5);
+
+        oft.MakePwlInto(&lv);
+
+        int i;
+        for(i = 0; i < lv.n - 1; i++) {
+            Vector pa = lv.elem[i], pb = lv.elem[i+1];
+            pa = pa.Minus(axis.ScaledBy(pa.Dot(axis)));
+            pb = pb.Minus(axis.ScaledBy(pb.Dot(axis)));
+            pa = pa.Plus(axisc);
+            pb = pb.Plus(axisc);
+
+            b->AllPointsIntersecting(pa, pb, &inters, true, false, false);
+        }
+
+        SInter *si;
+        for(si = inters.First(); si; si = inters.NextAfter(si)) {
+            Vector p = (si->p).Minus(axis.ScaledBy((si->p).Dot(axis)));
+            double ub, vb;
+            b->ClosestPointTo(p, &ub, &vb, true);
+            SSurface plane;
+            plane = SSurface::FromPlane(p, axis.Normal(0), axis.Normal(1));
+
+            b->PointOnSurfaces(this, &plane, &ub, &vb);
+
+            p = b->PointAt(ub, vb);
+
+            SBezier bezier;
+            bezier = SBezier::From(p.Plus(axisa), p.Plus(axisb));
+            AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
+        }
+
+        inters.Clear();
+        lv.Clear();
     }
 
     // need to implement general numerical surface intersection for tough
@@ -632,6 +686,7 @@ int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
 
             if(d < dmin) {
                 dmin = d;
+
                 if(d < LENGTH_EPS) {
                     // Edge-on-face (unless edge-on-edge above supercedes)
                     double dot = (si->surfNormal).Dot(edge_n);

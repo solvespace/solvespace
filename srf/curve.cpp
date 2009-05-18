@@ -388,9 +388,10 @@ SCurve SCurve::FromTransformationOf(SCurve *a, Vector t, Quaternion q) {
     ret.surfA = a->surfA;
     ret.surfB = a->surfB;
     
-    Vector *p;
+    SCurvePt *p;
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
-        Vector pp = (q.Rotate(*p)).Plus(t);
+        SCurvePt pp = *p;
+        pp.p = (q.Rotate(p->p)).Plus(t);
         ret.pts.Add(&pp);
     }
     return ret;
@@ -400,6 +401,55 @@ void SCurve::Clear(void) {
     pts.Clear();
 }
 
+//-----------------------------------------------------------------------------
+// When we split line segments wherever they intersect a surface, we introduce
+// extra pwl points. This may create very short edges that could be removed
+// without violating the chord tolerance. Those are ugly, and also break
+// stuff in the Booleans. So remove them.
+//-----------------------------------------------------------------------------
+void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
+    if(pts.n < 2) return;
+    pts.ClearTags();
+
+    Vector prev = pts.elem[0].p;
+    int i, a;
+    for(i = 1; i < pts.n - 1; i++) {
+        SCurvePt *sct = &(pts.elem[i]),
+                 *scn = &(pts.elem[i+1]);
+        if(sct->vertex) {
+            prev = sct->p;
+            continue;
+        }
+        bool mustKeep = false;
+
+        // We must check against both surfaces; the piecewise linear edge
+        // may have a different chord tolerance in the two surfaces. (For
+        // example, a circle in the surface of a cylinder is just a straight
+        // line, so it always has perfect chord tol, but that circle in
+        // a plane is a circle so it doesn't).
+        for(a = 0; a < 2; a++) {
+            SSurface *srf = (a == 0) ? srfA : srfB;
+            Vector puv, nuv;
+            srf->ClosestPointTo(prev,   &(puv.x), &(puv.y));
+            srf->ClosestPointTo(scn->p, &(nuv.x), &(nuv.y));
+
+            if(srf->ChordToleranceForEdge(nuv, puv) > SS.ChordTolMm()) {
+                mustKeep = true;
+            }
+        }
+
+        if(mustKeep) {
+            prev = sct->p;
+        } else {
+            sct->tag = 1;
+            // and prev is unchanged, since there's no longer any point
+            // in between
+        }
+    }
+
+    pts.RemoveTagged();
+}
+
 STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
     STrimBy stb;
     ZERO(&stb);
@@ -407,12 +457,12 @@ STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
     SCurve *sc = shell->curve.FindById(hsc);
 
     if(backwards) {
-        stb.finish = sc->pts.elem[0];
-        stb.start = sc->pts.elem[sc->pts.n - 1];
+        stb.finish = sc->pts.elem[0].p;
+        stb.start = sc->pts.elem[sc->pts.n - 1].p;
         stb.backwards = true;
     } else {
-        stb.start = sc->pts.elem[0];
-        stb.finish = sc->pts.elem[sc->pts.n - 1];
+        stb.start = sc->pts.elem[0].p;
+        stb.finish = sc->pts.elem[sc->pts.n - 1].p;
         stb.backwards = false;
     }
 

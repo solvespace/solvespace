@@ -1,8 +1,7 @@
 
 marching algorithm for surface intersection
-boundary avoidance when casting ray for point-in-shell
 tangent intersections
-short pwl edge avoidance
+surfaces with coincident control points
 assembly
 
 -----

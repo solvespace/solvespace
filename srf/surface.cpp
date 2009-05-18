@@ -202,7 +202,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, bool asUv,
         increment = 1;
     }
     for(i = first; i != (last + increment); i += increment) {
-        Vector *pt = &(sc->pts.elem[i]);
+        Vector *pt = &(sc->pts.elem[i].p);
         if(asUv) {
             ClosestPointTo(*pt, &u, &v);
             ptuv = Vector::From(u, v, 0);

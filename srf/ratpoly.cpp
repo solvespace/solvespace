@@ -199,6 +199,20 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
     }
 }
 
+void SBezier::MakePwlInto(List<SCurvePt> *l) {
+    List<Vector> lv;
+    ZERO(&lv);
+    MakePwlInto(&lv);
+    int i;
+    for(i = 0; i < lv.n; i++) {
+        SCurvePt scpt;
+        scpt.tag    = 0;
+        scpt.p      = lv.elem[i];
+        scpt.vertex = (i == 0) || (i == (lv.n - 1));
+        l->Add(&scpt);
+    }
+    lv.Clear();
+}
 void SBezier::MakePwlInto(List<Vector> *l) {
     l->Add(&(ctrl[0]));
     MakePwlWorker(l, 0.0, 1.0);

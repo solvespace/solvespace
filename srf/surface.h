@@ -7,6 +7,7 @@ double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
 
 class SSurface;
+class SCurvePt;
 
 // Utility data structure, a two-dimensional BSP to accelerate polygon
 // operations.
@@ -67,6 +68,7 @@ public:
     Vector Start(void);
     Vector Finish(void);
     bool Equals(SBezier *b);
+    void MakePwlInto(List<SCurvePt> *l);
     void MakePwlInto(List<Vector> *l);
     void MakePwlWorker(List<Vector> *l, double ta, double tb);
 
@@ -123,6 +125,13 @@ public:
 };
 
 // Stuff for the surface trim curves: piecewise linear
+class SCurvePt {
+public:
+    int         tag;
+    Vector      p;
+    bool        vertex;
+};
+
 class SCurve {
 public:
     hSCurve         h;
@@ -139,7 +148,7 @@ public:
     bool            isExact;
     SBezier         exact;
 
-    List<Vector>    pts;
+    List<SCurvePt>  pts;
 
     hSSurface       surfA;
     hSSurface       surfB;
@@ -147,6 +156,7 @@ public:
     static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
     SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                                 SSurface *srfA, SSurface *srfB);
+    void RemoveShortSegments(SSurface *srfA, SSurface *srfB);
 
     void Clear(void);
 };
