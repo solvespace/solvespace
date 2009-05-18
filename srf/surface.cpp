@@ -80,17 +80,25 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
         Vector ps = p.RotatedAbout(pt, axis, thetas),
                pf = p.RotatedAbout(pt, axis, thetaf);
 
-        Vector c = ps.ClosestPointOnLine(pt, axis);
+        Vector ct;
+        if(ps.Equals(pf)) {
+            // Degenerate case: a control point lies on the axis of revolution,
+            // so we get three coincident control points.
+            ct = ps;
+        } else {
+            // Normal case, the control point sweeps out a circle.
+            Vector c = ps.ClosestPointOnLine(pt, axis);
 
-        Vector rs = ps.Minus(c),
-               rf = pf.Minus(c);
+            Vector rs = ps.Minus(c),
+                   rf = pf.Minus(c);
 
-        Vector ts = axis.Cross(rs),
-               tf = axis.Cross(rf);
+            Vector ts = axis.Cross(rs),
+                   tf = axis.Cross(rf);
 
-        Vector ct = Vector::AtIntersectionOfLines(ps, ps.Plus(ts),
-                                                  pf, pf.Plus(tf),
-                                                  NULL, NULL, NULL);
+            ct = Vector::AtIntersectionOfLines(ps, ps.Plus(ts),
+                                               pf, pf.Plus(tf),
+                                               NULL, NULL, NULL);
+        }
 
         ret.ctrl[i][0] = ps;
         ret.ctrl[i][1] = ct;
@@ -489,20 +497,36 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                                    int color)
 {
     ZERO(this);
+    SBezierLoop *sbl;
 
     // Normalize the axis direction so that the direction of revolution
     // ends up parallel to the normal of the sketch, on the side of the
     // axis where the sketch is.
-    Vector pto = sbls->point,
-           ptc = pto.ClosestPointOnLine(pt, axis),
+    Vector pto;
+    double md = VERY_NEGATIVE;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        SBezier *sb;
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            // Choose the point farthest from the axis; we'll get garbage
+            // if we choose a point that lies on the axis, for example.
+            // (And our surface will be self-intersecting if the sketch
+            // spans the axis, so don't worry about that.)
+            Vector p = sb->Start();
+            double d = p.DistanceToLine(pt, axis);
+            if(d > md) {
+                md = d;
+                pto = p;
+            }
+        }
+    }
+    Vector ptc = pto.ClosestPointOnLine(pt, axis),
            up  = (pto.Minus(ptc)).WithMagnitude(1),
            vp  = (sbls->normal).Cross(up);
-    
     if(vp.Dot(axis) < 0) {
         axis = axis.ScaledBy(-1);
     }
 
-    SBezierLoop *sbl;
+    // Now we actually build and trim the surfaces.
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         int i, j;
         SBezier *sb, *prev;
@@ -516,11 +540,20 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
             Revolved revs;
             for(j = 0; j < 4; j++) {
-                SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
-                                                         (PI/2)*j,
-                                                         (PI/2)*(j+1));
-                ss.color = color;
-                revs.d[j] = surface.AddAndAssignId(&ss);
+                if(sb->deg == 1 && 
+                    (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
+                    (sb->ctrl[1]).DistanceToLine(pt, axis) < LENGTH_EPS)
+                {
+                    // This is a line on the axis of revolution; it does
+                    // not contribute a surface.
+                    revs.d[j].v = 0;
+                } else {
+                    SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
+                                                             (PI/2)*j,
+                                                             (PI/2)*(j+1));
+                    ss.color = color;
+                    revs.d[j] = surface.AddAndAssignId(&ss);
+                }
             }
             hsl.Add(&revs);
         }
@@ -533,44 +566,54 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
             prev = &(sbl->l.elem[WRAP(i-1, sbl->l.n)]);
 
             for(j = 0; j < 4; j++) {
+                SCurve sc;
                 Quaternion qs = Quaternion::From(axis, (PI/2)*j);
                 // we want Q*(x - p) + p = Q*x + (p - Q*p)
                 Vector ts = pt.Minus(qs.Rotate(pt));
 
-                SCurve sc;
-                ZERO(&sc);
-                sc.isExact = true;
-                sc.exact = sb->TransformedBy(ts, qs);
-                (sc.exact).MakePwlInto(&(sc.pts));
-                sc.surfA = revs.d[j];
-                sc.surfB = revs.d[WRAP(j-1, 4)];
+                // If this input curve generate a surface, then trim that
+                // surface with the rotated version of the input curve.
+                if(revs.d[j].v) {
+                    ZERO(&sc);
+                    sc.isExact = true;
+                    sc.exact = sb->TransformedBy(ts, qs);
+                    (sc.exact).MakePwlInto(&(sc.pts));
+                    sc.surfA = revs.d[j];
+                    sc.surfB = revs.d[WRAP(j-1, 4)];
 
-                hSCurve hcb = curve.AddAndAssignId(&sc);
+                    hSCurve hcb = curve.AddAndAssignId(&sc);
 
-                STrimBy stb;
-                stb = STrimBy::EntireCurve(this, hcb, true);
-                (surface.FindById(sc.surfA))->trim.Add(&stb);
-                stb = STrimBy::EntireCurve(this, hcb, false);
-                (surface.FindById(sc.surfB))->trim.Add(&stb);
+                    STrimBy stb;
+                    stb = STrimBy::EntireCurve(this, hcb, true);
+                    (surface.FindById(sc.surfA))->trim.Add(&stb);
+                    stb = STrimBy::EntireCurve(this, hcb, false);
+                    (surface.FindById(sc.surfB))->trim.Add(&stb);
+                }
 
-                SSurface *ss = surface.FindById(sc.surfA);
+                // And if this input curve and the one after it both generated
+                // surfaces, then trim both of those by the appropriate
+                // circle. 
+                if(revs.d[j].v && revsp.d[j].v) {
+                    SSurface *ss = surface.FindById(revs.d[j]);
 
-                ZERO(&sc);
-                sc.isExact = true;
-                sc.exact = SBezier::From(ss->ctrl[0][0],
-                                         ss->ctrl[0][1],
-                                         ss->ctrl[0][2]);
-                sc.exact.weight[1] = ss->weight[0][1];
-                (sc.exact).MakePwlInto(&(sc.pts));
-                sc.surfA = revs.d[j];
-                sc.surfB = revsp.d[j];
+                    ZERO(&sc);
+                    sc.isExact = true;
+                    sc.exact = SBezier::From(ss->ctrl[0][0],
+                                             ss->ctrl[0][1],
+                                             ss->ctrl[0][2]);
+                    sc.exact.weight[1] = ss->weight[0][1];
+                    (sc.exact).MakePwlInto(&(sc.pts));
+                    sc.surfA = revs.d[j];
+                    sc.surfB = revsp.d[j];
 
-                hSCurve hcc = curve.AddAndAssignId(&sc);
+                    hSCurve hcc = curve.AddAndAssignId(&sc);
 
-                stb = STrimBy::EntireCurve(this, hcc, false);
-                (surface.FindById(sc.surfA))->trim.Add(&stb);
-                stb = STrimBy::EntireCurve(this, hcc, true);
-                (surface.FindById(sc.surfB))->trim.Add(&stb);
+                    STrimBy stb;
+                    stb = STrimBy::EntireCurve(this, hcc, false);
+                    (surface.FindById(sc.surfA))->trim.Add(&stb);
+                    stb = STrimBy::EntireCurve(this, hcc, true);
+                    (surface.FindById(sc.surfB))->trim.Add(&stb);
+                }
             }
         }
 

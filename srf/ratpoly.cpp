@@ -301,17 +301,26 @@ Vector SSurface::NormalAt(double u, double v) {
 }
 
 void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
-    int i, j;
+    // A few special cases first; when control points are coincident the
+    // derivative goes to zero at the conrol points, and would result in
+    // nonconvergence. We avoid that here, and also guarantee a consistent
+    // (u, v) (of the infinitely many possible in one parameter).
+    if(p.Equals(ctrl[0]   [0]   )) { *u = 0; *v = 0; return; }
+    if(p.Equals(ctrl[degm][0]   )) { *u = 1; *v = 0; return; }
+    if(p.Equals(ctrl[degm][degn])) { *u = 1; *v = 1; return; }
+    if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
+    // Search for a reasonable initial guess
+    int i, j;
     if(degm == 1 && degn == 1) {
         *u = *v = 0; // a plane, perfect no matter what the initial guess
     } else {
         double minDist = VERY_POSITIVE;
-        double res = (max(degm, degn) == 2) ? 7.0 : 20.0;
-        for(i = 0; i < (int)res; i++) {
-            for(j = 0; j <= (int)res; j++) {
-                double tryu = (i/res), tryv = (j/res);
-                
+        int res = (max(degm, degn) == 2) ? 7 : 20;
+        for(i = 0; i < res; i++) {
+            for(j = 0; j < res; j++) {
+                double tryu = (i + 0.5)/res, tryv = (j + 0.5)/res;
+               
                 Vector tryp = PointAt(tryu, tryv);
                 double d = (tryp.Minus(p)).Magnitude();
                 if(d < minDist) {
@@ -323,7 +332,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
         }
     }
 
-    // Initial guess is in u, v
+    // Initial guess is in u, v; refine by Newton iteration.
     Vector p0;
     for(i = 0; i < (converge ? 15 : 3); i++) {
         p0 = PointAt(*u, *v);
