@@ -191,8 +191,8 @@ void Group::GenerateShellAndMesh(void) {
 
         thisShell.MakeFromRevolutionOf(&(src->bezierLoopSet), pt, axis, color);
     } else if(type == IMPORTED) {
-        // Triangles are just copied over, with the appropriate transformation
-        // applied.
+        // The imported shell or mesh are copied over, with the appropriate
+        // transformation applied. We also must remap the face entities.
         Vector offset = {
             SK.GetParam(h.param(0))->val,
             SK.GetParam(h.param(1))->val,
@@ -214,6 +214,16 @@ void Group::GenerateShellAndMesh(void) {
             st.b = q.Rotate(st.b).Plus(offset);
             st.c = q.Rotate(st.c).Plus(offset);
         }
+
+        thisShell.MakeFromTransformationOf(&impShell, offset, q);
+        SSurface *srf;
+        IdList<SSurface,hSSurface> *sl = &(thisShell.surface);
+        for(srf = sl->First(); srf; srf = sl->NextAfter(srf)) {
+            if(srf->face != 0) {
+                hEntity he = { srf->face };
+                srf->face = Remap(he, 0).v;
+            }
+        }
     }
 
     runningShell.Clear();
@@ -234,6 +244,7 @@ void Group::GenerateShellAndMesh(void) {
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         runningShell.MakeFromDifferenceOf(a, &thisShell);
     } else {
+        runningShell.MakeFromUnionOf(a, &thisShell);
         // TODO, assembly
     }
 

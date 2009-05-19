@@ -543,7 +543,8 @@ public:
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);
-    bool LoadEntitiesFromFile(char *filename, EntityList *le, SMesh *m);
+    bool LoadEntitiesFromFile(char *filename, EntityList *le,
+                                SMesh *m, SShell *sh);
     void ReloadAllImported(void);
     // And the various export options
     void ExportAsPngTo(char *file);

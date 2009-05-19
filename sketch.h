@@ -163,6 +163,7 @@ public:
     char                       impFile[MAX_PATH];
     char                       impFileRel[MAX_PATH];
     SMesh                      impMesh;
+    SShell                     impShell;
     EntityList                 impEntity;
 
     NameStr     name;

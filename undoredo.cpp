@@ -59,6 +59,7 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         src->remap.DeepCopyInto(&(dest.remap));
 
         ZERO(&(dest.impMesh));
+        ZERO(&(dest.impShell));
         ZERO(&(dest.impEntity));
         ut->group.Add(&dest);
     }
@@ -98,6 +99,7 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
         g->runningEdges.Clear();
         g->remap.Clear();
         g->impMesh.Clear();
+        g->impShell.Clear();
         g->impEntity.Clear();
     }
     SK.group.Clear();

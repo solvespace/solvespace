@@ -2,6 +2,10 @@
 
 #define VERSION_STRING "±²³SolveSpaceREVa"
 
+static int StrStartsWith(char *str, char *start) {
+    return memcmp(str, start, strlen(start)) == 0;
+}
+
 hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
     Group g;
     ZERO(&g);
@@ -199,7 +203,7 @@ bool SolveSpace::SaveToFile(char *filename) {
 
     fprintf(fh, "%s\n\n\n", VERSION_STRING);
 
-    int i;
+    int i, j;
     for(i = 0; i < SK.group.n; i++) {
         sv.g = SK.group.elem[i];
         SaveUsingTable('g');
@@ -238,6 +242,49 @@ bool SolveSpace::SaveToFile(char *filename) {
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color,
             CO(tr->a), CO(tr->b), CO(tr->c));
+    }
+
+    SShell *s = &(SK.group.elem[SK.group.n-1].runningShell);
+    SSurface *srf;
+    for(srf = s->surface.First(); srf; srf = s->surface.NextAfter(srf)) {
+        fprintf(fh, "Surface %08x %08x %08x %d %d\n",
+                        srf->h.v, srf->color, srf->face, srf->degm, srf->degn);
+        for(i = 0; i <= srf->degm; i++) {
+            for(j = 0; j <= srf->degn; j++) {
+                fprintf(fh, "SCtrl %d %d %.20f %.20f %.20f Weight %20.20f\n",
+                    i, j, CO(srf->ctrl[i][j]), srf->weight[i][j]);
+            }
+        }
+        
+        STrimBy *stb;
+        for(stb = srf->trim.First(); stb; stb = srf->trim.NextAfter(stb)) {
+            fprintf(fh, "TrimBy %08x %d %.20f %.20f %.20f  %.20f %.20f %.20f\n",
+                stb->curve.v, stb->backwards ? 1 : 0,
+                CO(stb->start), CO(stb->finish));
+        }
+
+        fprintf(fh, "AddSurface\n");
+    }
+    SCurve *sc;
+    for(sc = s->curve.First(); sc; sc = s->curve.NextAfter(sc)) {
+        fprintf(fh, "Curve %08x %d %d %08x %08x\n",
+            sc->h.v,
+            sc->isExact ? 1 : 0, sc->exact.deg,
+            sc->surfA.v, sc->surfB.v);
+
+        if(sc->isExact) {
+            for(i = 0; i <= sc->exact.deg; i++) {
+                fprintf(fh, "CCtrl %d %.20f %.20f %.20f Weight %.20f\n",
+                    i, CO(sc->exact.ctrl[i]), sc->exact.weight[i]);
+            }
+        }
+        SCurvePt *scpt;
+        for(scpt = sc->pts.First(); scpt; scpt = sc->pts.NextAfter(scpt)) {
+            fprintf(fh, "CurvePt %d %.20f %.20f %.20f\n",
+                scpt->vertex ? 1 : 0, CO(scpt->p));
+        }
+
+        fprintf(fh, "AddCurve\n");
     }
 
     fclose(fh);
@@ -345,8 +392,17 @@ bool SolveSpace::LoadFromFile(char *filename) {
             memset(&(sv.c), 0, sizeof(sv.c));
         } else if(strcmp(line, VERSION_STRING)==0) {
             // do nothing, version string
-        } else if(memcmp(line, "Triangle", 8)==0) {
-            // likewise ignore the triangles; we generate those
+        } else if(StrStartsWith(line, "Triangle ")      ||
+                  StrStartsWith(line, "Surface ")       ||
+                  StrStartsWith(line, "SCtrl ")         ||
+                  StrStartsWith(line, "TrimBy ")        ||
+                  StrStartsWith(line, "Curve ")         ||
+                  StrStartsWith(line, "CCtrl ")         ||
+                  StrStartsWith(line, "CurvePt ")       ||
+                  strcmp(line, "AddSurface")==0         ||
+                  strcmp(line, "AddCurve")==0)
+        {
+            // ignore the mesh or shell, since we regenerate that
         } else {
             oops();
         }
@@ -357,7 +413,14 @@ bool SolveSpace::LoadFromFile(char *filename) {
     return true;
 }
 
-bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
+bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
+                                      SMesh *m, SShell *sh)
+{
+    SSurface srf;
+    ZERO(&srf);
+    SCurve crv;
+    ZERO(&crv);
+
     fh = fopen(file, "rb");
     if(!fh) return false;
 
@@ -395,7 +458,7 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
 
         } else if(strcmp(line, VERSION_STRING)==0) {
 
-        } else if(memcmp(line, "Triangle", 8)==0) {
+        } else if(StrStartsWith(line, "Triangle ")) {
             STriangle tr; ZERO(&tr);
             if(sscanf(line, "Triangle %x %x  "
                              "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
@@ -407,6 +470,76 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le, SMesh *m) {
                 oops();
             }
             m->AddTriangle(&tr);
+        } else if(StrStartsWith(line, "Surface ")) {
+            if(sscanf(line, "Surface %x %x %x %d %d",
+                &(srf.h.v), &(srf.color), &(srf.face),
+                &(srf.degm), &(srf.degn)) != 5)
+            {
+                oops();
+            }
+        } else if(StrStartsWith(line, "SCtrl ")) {
+            int i, j;
+            Vector c;
+            double w;
+            if(sscanf(line, "SCtrl %d %d %lf %lf %lf Weight %lf",
+                                &i, &j, &(c.x), &(c.y), &(c.z), &w) != 6)
+            {
+                oops();
+            }
+            srf.ctrl[i][j] = c;
+            srf.weight[i][j] = w;
+        } else if(StrStartsWith(line, "TrimBy ")) {
+            STrimBy stb;
+            ZERO(&stb);
+            int backwards;
+            if(sscanf(line, "TrimBy %x %d  %lf %lf %lf  %lf %lf %lf",
+                &(stb.curve.v), &backwards,
+                &(stb.start.x), &(stb.start.y), &(stb.start.z),
+                &(stb.finish.x), &(stb.finish.y), &(stb.finish.z)) != 8)
+            {
+                oops();
+            }
+            stb.backwards = (backwards != 0);
+            srf.trim.Add(&stb);
+        } else if(strcmp(line, "AddSurface")==0) {
+            sh->surface.Add(&srf);
+            ZERO(&srf);
+        } else if(StrStartsWith(line, "Curve ")) {
+            int isExact;
+            if(sscanf(line, "Curve %x %d %d %x %x",
+                &(crv.h.v),
+                &(isExact),
+                &(crv.exact.deg),
+                &(crv.surfA.v), &(crv.surfB.v)) != 5)
+            {
+                oops();
+            }
+            crv.isExact = (isExact != 0);
+        } else if(StrStartsWith(line, "CCtrl ")) {
+            int i;
+            Vector c;
+            double w;
+            if(sscanf(line, "CCtrl %d %lf %lf %lf Weight %lf",
+                                &i, &(c.x), &(c.y), &(c.z), &w) != 5)
+            {
+                oops();
+            }
+            crv.exact.ctrl[i] = c;
+            crv.exact.weight[i] = w;
+        } else if(StrStartsWith(line, "CurvePt ")) {
+            SCurvePt scpt;
+            int vertex;
+            if(sscanf(line, "CurvePt %d %lf %lf %lf",
+                &vertex,
+                &(scpt.p.x), &(scpt.p.y), &(scpt.p.z)) != 4)
+            {
+                oops();
+            }
+            scpt.vertex = (vertex != 0);
+            crv.pts.Add(&scpt);
+        } else if(strcmp(line, "AddCurve")==0) {
+            sh->curve.Add(&crv);
+            ZERO(&crv);
         } else {
             oops();
         }
@@ -426,6 +559,7 @@ void SolveSpace::ReloadAllImported(void) {
 
         g->impEntity.Clear();
         g->impMesh.Clear();
+        g->impShell.Clear();
 
         FILE *test = fopen(g->impFile, "rb");
         if(test) {
@@ -446,7 +580,9 @@ void SolveSpace::ReloadAllImported(void) {
             }
         }
 
-        if(LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh))) {
+        if(LoadEntitiesFromFile(g->impFile,
+                        &(g->impEntity), &(g->impMesh), &(g->impShell)))
+        {
             if(SS.saveFile[0]) {
                 // Record the imported file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
