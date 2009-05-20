@@ -100,8 +100,10 @@ void Group::GenerateShellForStepAndRepeat(void) {
 
         if(src->meshCombine == COMBINE_AS_DIFFERENCE) {
             scratch->MakeFromDifferenceOf(soFar, &transd);
-        } else {
+        } else if(src->meshCombine == COMBINE_AS_UNION) {
             scratch->MakeFromUnionOf(soFar, &transd);
+        } else {
+            scratch->MakeFromAssemblyOf(soFar, &transd);
         }
         SWAP(SShell *, scratch, soFar);
 
@@ -244,8 +246,7 @@ void Group::GenerateShellAndMesh(void) {
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
         runningShell.MakeFromDifferenceOf(a, &thisShell);
     } else {
-        runningShell.MakeFromUnionOf(a, &thisShell);
-        // TODO, assembly
+        runningShell.MakeFromAssemblyOf(a, &thisShell);
     }
 
 done:

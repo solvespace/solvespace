@@ -498,6 +498,78 @@ void SShell::CleanupAfterBoolean(void) {
     }
 }
 
+//-----------------------------------------------------------------------------
+// All curves contain handles to the two surfaces that they trim. After a
+// Boolean or assembly, we must rewrite those handles to refer to the curves
+// by their new IDs. 
+//-----------------------------------------------------------------------------
+void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
+    SCurve *sc;
+
+    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
+        if(sc->source == SCurve::FROM_A) {
+            sc->surfA = a->surface.FindById(sc->surfA)->newH;
+            sc->surfB = a->surface.FindById(sc->surfB)->newH;
+        } else if(sc->source == SCurve::FROM_B) {
+            sc->surfA = b->surface.FindById(sc->surfA)->newH;
+            sc->surfB = b->surface.FindById(sc->surfB)->newH;
+        } else if(sc->source == SCurve::FROM_INTERSECTION) {
+            sc->surfA = a->surface.FindById(sc->surfA)->newH;
+            sc->surfB = b->surface.FindById(sc->surfB)->newH;
+        } else {
+            oops();
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Copy all the surfaces and curves from two different shells into a single
+// shell. The only difficulty is to rewrite all of their handles; we don't
+// look for any surface intersections, so if two objects interfere then the
+// result is just self-intersecting. This is used for assembly, since it's
+// much faster than merging as union.
+//-----------------------------------------------------------------------------
+void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
+    Vector t = Vector::From(0, 0, 0);
+    Quaternion q = Quaternion::IDENTITY;
+    int i = 0;
+    SShell *ab;
+   
+    // First, copy over all the curves. Note which shell (a or b) each curve
+    // came from, but assign it a new ID.
+    SCurve *c, cn;
+    for(i = 0; i < 2; i++) {
+        ab = (i == 0) ? a : b;
+        for(c = ab->curve.First(); c; c = ab->curve.NextAfter(c)) {
+            cn = SCurve::FromTransformationOf(c, t, q);
+            cn.source = (i == 0) ? SCurve::FROM_A : SCurve::FROM_B;
+            // surfA and surfB are wrong now, and we can't fix them until
+            // we've assigned IDs to the surfaces. So we'll get that later.
+            c->newH = curve.AddAndAssignId(&cn);
+        }
+    }
+
+    // Likewise copy over all the surfaces.
+    SSurface *s, sn;
+    for(i = 0; i < 2; i++) {
+        ab = (i == 0) ? a : b;
+        for(s = ab->surface.First(); s; s = ab->surface.NextAfter(s)) {
+            sn = SSurface::FromTransformationOf(s, t, q, true);
+            // All the trim curve IDs get rewritten; we know the new handles
+            // to the curves since we recorded them in the previous step.
+            STrimBy *stb;
+            for(stb = sn.trim.First(); stb; stb = sn.trim.NextAfter(stb)) {
+                stb->curve = ab->curve.FindById(stb->curve)->newH;
+            }
+            s->newH = surface.AddAndAssignId(&sn);
+        }
+    }
+
+    // Finally, rewrite the surfaces associated with each curve to use the
+    // new handles.
+    RewriteSurfaceHandlesForCurves(a, b);
+}
+
 void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     a->MakeClassifyingBsps();
     b->MakeClassifyingBsps();
@@ -540,20 +612,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     // Now that we've copied the surfaces, we know their new hSurfaces, so
     // rewrite the curves to refer to the surfaces by their handles in the
     // result.
-    for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-        if(sc->source == SCurve::FROM_A) {
-            sc->surfA = a->surface.FindById(sc->surfA)->newH;
-            sc->surfB = a->surface.FindById(sc->surfB)->newH;
-        } else if(sc->source == SCurve::FROM_B) {
-            sc->surfA = b->surface.FindById(sc->surfA)->newH;
-            sc->surfB = b->surface.FindById(sc->surfB)->newH;
-        } else if(sc->source == SCurve::FROM_INTERSECTION) {
-            sc->surfA = a->surface.FindById(sc->surfA)->newH;
-            sc->surfB = b->surface.FindById(sc->surfB)->newH;
-        } else {
-            oops();
-        }
-    }
+    RewriteSurfaceHandlesForCurves(a, b);
 
     // And clean up the piecewise linear things we made as a calculation aid
     a->CleanupAfterBoolean();

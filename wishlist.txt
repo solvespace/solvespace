@@ -2,7 +2,6 @@
 marching algorithm for surface intersection
 tangent intersections
 put back the meshes
-assembly
 
 -----
 line styles (color, thickness)

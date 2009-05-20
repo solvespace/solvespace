@@ -212,6 +212,7 @@ void Group::MenuGroup(int id) {
                 if(!GetOpenFile(g.impFile, SLVS_EXT, SLVS_PATTERN)) return;
             }
             g.name.strcpy("import");
+            g.meshCombine = COMBINE_AS_ASSEMBLE;
             break;
         }
 

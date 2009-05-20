@@ -297,6 +297,7 @@ public:
                                 bool seg, bool trimmed, bool inclTangent);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                  SEdgeList *el, SShell *useCurvesFrom);
+    void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
     void CleanupAfterBoolean(void);
 
     static const int INSIDE                 = 100;
@@ -312,6 +313,7 @@ public:
 
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);
+    void MakeFromAssemblyOf(SShell *a, SShell *b);
 
     void TriangulateInto(SMesh *sm);
     void MakeEdgesInto(SEdgeList *sel);
