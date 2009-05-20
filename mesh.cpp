@@ -638,7 +638,9 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
                 Point2d pt = ((se->a).Plus(se->b).ScaledBy(0.5)).ProjectXy();
                 se->tag = 1;
                 for(i = 0; i < 3; i++) {
-                    if(n[i].Dot(pt) - d[i] > -LENGTH_EPS) se->tag = 0;
+                    // If the test point lies on the boundary of our triangle,
+                    // then we still discard the edge.
+                    if(n[i].Dot(pt) - d[i] > LENGTH_EPS) se->tag = 0;
                 }
             }
         }
