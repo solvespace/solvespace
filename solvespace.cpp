@@ -417,7 +417,7 @@ void SolveSpace::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_NAKED_EDGES: {
             SS.nakedEdges.Clear();
 
-            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
+            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeNakedEdgesInto(&(SS.nakedEdges), &inters, &leaks);
@@ -441,7 +441,7 @@ void SolveSpace::MenuAnalyze(int id) {
         }
 
         case GraphicsWindow::MNU_VOLUME: {
-            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
+            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
            
             double vol = 0;
             int i;

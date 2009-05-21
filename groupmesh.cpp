@@ -238,8 +238,8 @@ void Group::GenerateShellAndMesh(void) {
         goto done;
     }
 
-    // So our group's mesh appears in thisMesh. Combine this with the previous
-    // group's mesh, using the requested operation.
+    // So our group's shell appears in thisShell. Combine this with the
+    // previous group's shell, using the requested operation.
     SShell *a = PreviousGroupShell();
     if(meshCombine == COMBINE_AS_UNION) {
         runningShell.MakeFromUnionOf(a, &thisShell);
@@ -250,10 +250,17 @@ void Group::GenerateShellAndMesh(void) {
     }
 
 done:
-    runningMesh.Clear();
-    runningShell.TriangulateInto(&runningMesh);
-    runningEdges.Clear();
-    runningShell.MakeEdgesInto(&runningEdges);
+    displayDirty = true;
+}
+
+void Group::GenerateDisplayItems(void) {
+    if(displayDirty) {
+        displayMesh.Clear();
+        runningShell.TriangulateInto(&displayMesh);
+        displayEdges.Clear();
+        runningShell.MakeEdgesInto(&displayEdges);
+        displayDirty = false;
+    }
 }
 
 SShell *Group::PreviousGroupShell(void) {
@@ -267,8 +274,12 @@ SShell *Group::PreviousGroupShell(void) {
 }
 
 void Group::Draw(void) {
-    // Show this even if the group is not visible. It's already possible
-    // to show or hide just this with the "show solids" flag.
+    // Everything here gets drawn whether or not the group is hidden; we
+    // can control this stuff independently, with show/hide solids, edges,
+    // mesh, etc.
+
+    // Triangulate the shells if necessary.
+    GenerateDisplayItems();
 
     int specColor;
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
@@ -294,7 +305,7 @@ void Group::Draw(void) {
 
     if(SS.GW.showShaded) {
         glEnable(GL_LIGHTING);
-        glxFillMesh(specColor, &runningMesh, mh, ms1, ms2);
+        glxFillMesh(specColor, &displayMesh, mh, ms1, ms2);
         glDisable(GL_LIGHTING);
     }
     if(SS.GW.showEdges) {
@@ -303,10 +314,10 @@ void Group::Draw(void) {
         glxColor3d(REDf  (SS.edgeColor),
                    GREENf(SS.edgeColor), 
                    BLUEf (SS.edgeColor));
-        glxDrawEdges(&runningEdges);
+        glxDrawEdges(&displayEdges);
     }
 
-    if(SS.GW.showMesh) glxDebugMesh(&runningMesh);
+    if(SS.GW.showMesh) glxDebugMesh(&displayMesh);
 
     // And finally show the polygons too
     if(!SS.GW.showShaded) return;

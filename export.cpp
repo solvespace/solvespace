@@ -6,7 +6,8 @@ void SolveSpace::ExportSectionTo(char *filename) {
     gn = gn.WithMagnitude(1);
 
     Group *g = SK.GetGroup(SS.GW.activeGroup);
-    if(g->runningMesh.l.n == 0) {
+    g->GenerateDisplayItems();
+    if(g->displayMesh.l.n == 0) {
         Error("No solid model present; draw one with extrudes and revolves, "
               "or use Export 2d View to export bare lines and curves.");
         return;
@@ -95,7 +96,9 @@ void SolveSpace::ExportViewTo(char *filename) {
 
     SMesh *sm = NULL;
     if(SS.GW.showShaded) {
-        sm = &((SK.GetGroup(SS.GW.activeGroup))->runningMesh);
+        Group *g = SK.GetGroup(SS.GW.activeGroup);
+        g->GenerateDisplayItems();
+        sm = &(g->displayMesh);
     }
     if(sm->l.n == 0) {
         sm = NULL;
@@ -119,7 +122,9 @@ void SolveSpace::ExportViewTo(char *filename) {
     }
 
     if(SS.GW.showEdges) {
-        SEdgeList *selr = &((SK.GetGroup(SS.GW.activeGroup))->runningEdges);
+        Group *g = SK.GetGroup(SS.GW.activeGroup);
+        g->GenerateDisplayItems();
+        SEdgeList *selr = &(g->displayEdges);
         SEdge *se;
         for(se = selr->l.First(); se; se = selr->l.NextAfter(se)) {
             edges.AddEdge(se->a, se->b);
@@ -973,7 +978,7 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 // not self-intersecting, so not much to do.
 //-----------------------------------------------------------------------------
 void SolveSpace::ExportMeshTo(char *filename) {
-    SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->runningMesh);
+    SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
     if(m->l.n == 0) {
         Error("Active group mesh is empty; nothing to export.");
         return;

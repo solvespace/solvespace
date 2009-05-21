@@ -78,6 +78,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
+    { 'g',  "Group.forceToMesh",        'd',    &(SS.sv.g.forceToMesh)        },
     { 'g',  "Group.predef.q.w",         'f',    &(SS.sv.g.predef.q.w)         },
     { 'g',  "Group.predef.q.vx",        'f',    &(SS.sv.g.predef.q.vx)        },
     { 'g',  "Group.predef.q.vy",        'f',    &(SS.sv.g.predef.q.vy)        },
@@ -234,6 +235,9 @@ bool SolveSpace::SaveToFile(char *filename) {
         SaveUsingTable('c');
         fprintf(fh, "AddConstraint\n\n");
     }
+
+    // A group will have either a mesh or a shell, but not both; but the code
+    // to print either of those just does nothing if the mesh/shell is empty.
 
     SMesh *m = &(SK.group.elem[SK.group.n-1].runningMesh);
     for(i = 0; i < m->l.n; i++) {

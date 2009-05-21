@@ -50,10 +50,12 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         ZERO(&(dest.poly));
         ZERO(&(dest.bezierLoopSet));
         ZERO(&(dest.polyError));
+        ZERO(&(dest.thisMesh));
         ZERO(&(dest.runningMesh));
         ZERO(&(dest.thisShell));
         ZERO(&(dest.runningShell));
-        ZERO(&(dest.runningEdges));
+        ZERO(&(dest.displayMesh));
+        ZERO(&(dest.displayEdges));
 
         ZERO(&(dest.remap));
         src->remap.DeepCopyInto(&(dest.remap));
@@ -93,10 +95,12 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
         Group *g = &(SK.group.elem[i]);
         g->poly.Clear();
         g->bezierLoopSet.Clear();
+        g->thisMesh.Clear();
         g->runningMesh.Clear();
         g->thisShell.Clear();
         g->runningShell.Clear();
-        g->runningEdges.Clear();
+        g->displayMesh.Clear();
+        g->displayEdges.Clear();
         g->remap.Clear();
         g->impMesh.Clear();
         g->impShell.Clear();

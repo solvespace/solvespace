@@ -148,13 +148,19 @@ public:
     SShell          thisShell;
     SShell          runningShell;
 
+    SMesh           thisMesh;
     SMesh           runningMesh;
-    SEdgeList       runningEdges;
+
+    bool            displayDirty;
+    SMesh           displayMesh;
+    SEdgeList       displayEdges;
 
     static const int COMBINE_AS_UNION           = 0;
     static const int COMBINE_AS_DIFFERENCE      = 1;
     static const int COMBINE_AS_ASSEMBLE        = 2;
     int meshCombine;
+
+    bool forceToMesh;
 
     IdList<EntityMap,EntityId> remap;
     static const int REMAP_PRIME = 19477;
@@ -203,6 +209,7 @@ public:
     // And the mesh stuff
     SShell *PreviousGroupShell(void);
     void GenerateShellForStepAndRepeat(void);
+    void GenerateDisplayItems(void);
     void GenerateShellAndMesh(void);
     void Draw(void);
 

@@ -290,9 +290,11 @@ void GraphicsWindow::LoopOverPoints(
             }
         }
     }
+
     Group *g = SK.GetGroup(activeGroup);
-    for(i = 0; i < g->runningMesh.l.n; i++) {
-        STriangle *tr = &(g->runningMesh.l.elem[i]);
+    g->GenerateDisplayItems();
+    for(i = 0; i < g->displayMesh.l.n; i++) {
+        STriangle *tr = &(g->displayMesh.l.elem[i]);
         HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, div);
         HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, div);
         HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, div);
