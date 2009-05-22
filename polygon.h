@@ -223,10 +223,11 @@ public:
     void AddTriangle(STriangle *tr);
     void MakeMeshInto(SMesh *m);
     void ClearTags(void);
-    
-    void FindEdgeOn(Vector a, Vector b, int *n, int cnt,
-                        bool *inter, bool *fwd);
-    void MakeNakedEdgesInto(SEdgeList *sel, bool *inter=NULL, bool *leaky=NULL);
+
+    void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool coplanarIsInter,
+                                                bool *inter, bool *fwd);
+    void MakeNakedEdgesInto(SEdgeList *sel, bool coplanarIsInter,
+                                                bool *inter, bool *leaky);
     void MakeTurningEdgesInto(SEdgeList *sel);
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);

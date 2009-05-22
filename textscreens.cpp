@@ -227,6 +227,15 @@ void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeMeshOrExact(int link, DWORD v) {
+    SS.UndoRemember();
+
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    g->forceToMesh = !(g->forceToMesh);
+    SS.MarkGroupDirty(g->h);
+    SS.GenerateAll();
+    SS.GW.ClearSuper();
+}
 void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -447,6 +456,25 @@ void TextWindow::ShowGroupInfo(void) {
             0x80000000 | SS.modelColor[5], 5, &TextWindow::ScreenColor,
             0x80000000 | SS.modelColor[6], 6, &TextWindow::ScreenColor,
             0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
+    }
+
+    if(shown.group.v != Group::HGROUP_REFERENCES.v &&
+            (g->runningMesh.l.n > 0 ||
+             g->runningShell.surface.n > 0))
+    {
+        Group *pg = g->PreviousGroup();
+        if(pg->runningMesh.l.n == 0 && g->thisMesh.l.n == 0) {
+            bool fm = g->forceToMesh;
+            Printf(true,
+                "%FtSURFACES%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+                    &TextWindow::ScreenChangeMeshOrExact,
+                    (!fm ? "" : "as NURBS"), (!fm ? "as NURBS" : ""),
+                    &TextWindow::ScreenChangeMeshOrExact,
+                    (fm ? "" : "as mesh"), (fm ? "as mesh" : ""));
+        } else {
+            Printf(false,
+                "%FtSURFACES%E %Fas mesh%FE");
+        }
     }
 
     // Leave more space if the group has configuration stuff above the req/

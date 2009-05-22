@@ -420,7 +420,7 @@ void SolveSpace::MenuAnalyze(int id) {
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
-            root->MakeNakedEdgesInto(&(SS.nakedEdges), &inters, &leaks);
+            root->MakeNakedEdgesInto(&(SS.nakedEdges), true, &inters, &leaks);
             InvalidateGraphics();
 
             char *intersMsg = inters ?
@@ -436,6 +436,24 @@ void SolveSpace::MenuAnalyze(int id) {
             } else {
                 Error("%s\r\n\r\n%s\r\n\r\n%d problematic edges, bad.",
                     intersMsg, leaksMsg, SS.nakedEdges.l.n);
+            }
+            break;
+        }
+
+        case GraphicsWindow::MNU_INTERFERENCE: {
+            SS.nakedEdges.Clear();
+
+            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
+            SKdNode *root = SKdNode::From(m);
+            bool inters, leaks;
+            root->MakeNakedEdgesInto(&(SS.nakedEdges), false, &inters, &leaks);
+            InvalidateGraphics();
+
+            if(inters) {
+                Error("%d edges interfere with other triangles, bad.",
+                    SS.nakedEdges.l.n);
+            } else {
+                Message("The assembly does not interfere, good.");
             }
             break;
         }
@@ -500,9 +518,6 @@ void SolveSpace::MenuAnalyze(int id) {
             SS.later.showTW = true;
             break;
         }
-
-        case GraphicsWindow::MNU_INTERFERENCE:
-            break;
 
         case GraphicsWindow::MNU_SHOW_DOF:
             // This works like a normal solve, except that it calculates

@@ -59,7 +59,7 @@ void Group::GenerateShellForStepAndRepeat(void) {
     ZERO(&workA);
     ZERO(&workB);
     SShell *soFar = &workA, *scratch = &workB;
-    soFar->MakeFromCopyOf(src->PreviousGroupShell());
+    soFar->MakeFromCopyOf(&(src->PreviousGroup()->runningShell));
 
     int n = (int)valA, a0 = 0;
     if(subtype == ONE_SIDED && skipFirst) {
@@ -234,13 +234,13 @@ void Group::GenerateShellAndMesh(void) {
     // same as last time, no combining required. Likewise if we have a mesh
     // but it's suppressed.
     if(suppress) {
-        runningShell.MakeFromCopyOf(PreviousGroupShell());
+        runningShell.MakeFromCopyOf(&(PreviousGroup()->runningShell));
         goto done;
     }
 
     // So our group's shell appears in thisShell. Combine this with the
     // previous group's shell, using the requested operation.
-    SShell *a = PreviousGroupShell();
+    SShell *a = &(PreviousGroup()->runningShell);
     if(meshCombine == COMBINE_AS_UNION) {
         runningShell.MakeFromUnionOf(a, &thisShell);
     } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
@@ -263,14 +263,14 @@ void Group::GenerateDisplayItems(void) {
     }
 }
 
-SShell *Group::PreviousGroupShell(void) {
+Group *Group::PreviousGroup(void) {
     int i;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
         if(g->h.v == h.v) break;
     }
     if(i == 0 || i >= SK.group.n) oops();
-    return &(SK.group.elem[i-1].runningShell);
+    return &(SK.group.elem[i-1]);
 }
 
 void Group::Draw(void) {

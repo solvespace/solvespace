@@ -207,7 +207,7 @@ public:
     bool AssembleLoops(void);
     void GenerateLoops(void);
     // And the mesh stuff
-    SShell *PreviousGroupShell(void);
+    Group *PreviousGroup(void);
     void GenerateShellForStepAndRepeat(void);
     void GenerateDisplayItems(void);
     void GenerateShellAndMesh(void);

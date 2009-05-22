@@ -136,6 +136,7 @@ public:
     static void ScreenChangeOneOrTwoSides(int link, DWORD v);
     static void ScreenChangeSkipFirst(int link, DWORD v);
     static void ScreenChangeMeshCombine(int link, DWORD v);
+    static void ScreenChangeMeshOrExact(int link, DWORD v);
     static void ScreenChangeSuppress(int link, DWORD v);
     static void ScreenChangeRightLeftHanded(int link, DWORD v);
     static void ScreenChangeHelixParameter(int link, DWORD v);
