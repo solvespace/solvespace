@@ -51,15 +51,35 @@ void Group::GenerateLoops(void) {
     }
 }
 
-void Group::GenerateShellForStepAndRepeat(void) {
-    Group *src = SK.GetGroup(opA);
-    SShell *srcs = &(src->thisShell); // the shell to step and repeat
+void SShell::RemapFaces(Group *g, int remap) {
+    SSurface *ss;
+    for(ss = surface.First(); ss; ss = surface.NextAfter(ss)){
+        hEntity face = { ss->face };
+        if(face.v == Entity::NO_ENTITY.v) continue;
 
-    SShell workA, workB;
+        face = g->Remap(face, remap);
+        ss->face = face.v;
+    }
+}
+
+void SMesh::RemapFaces(Group *g, int remap) {
+    STriangle *tr;
+    for(tr = l.First(); tr; tr = l.NextAfter(tr)) {
+        hEntity face = { tr->meta.face };
+        if(face.v == Entity::NO_ENTITY.v) continue;
+
+        face = g->Remap(face, remap);
+        tr->meta.face = face.v;
+    }
+}
+
+template<class T>
+void Group::GenerateForStepAndRepeat(T *prevs, T *steps, T *outs, int how) {
+    T workA, workB;
     ZERO(&workA);
     ZERO(&workB);
-    SShell *soFar = &workA, *scratch = &workB;
-    soFar->MakeFromCopyOf(&(src->PreviousGroup()->runningShell));
+    T *soFar = &workA, *scratch = &workB;
+    soFar->MakeFromCopyOf(prevs);
 
     int n = (int)valA, a0 = 0;
     if(subtype == ONE_SIDED && skipFirst) {
@@ -70,13 +90,12 @@ void Group::GenerateShellForStepAndRepeat(void) {
         int ap = a*2 - (subtype == ONE_SIDED ? 0 : (n-1));
         int remap = (a == (n - 1)) ? REMAP_LAST : a;
 
-        SShell transd;
+        T transd;
         ZERO(&transd);
         if(type == TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
-            Quaternion q = Quaternion::From(1, 0, 0, 0);
-            transd.MakeFromTransformationOf(srcs, trans, q);
+            transd.MakeFromTransformationOf(steps, trans, Quaternion::IDENTITY);
         } else {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             double theta = ap * SK.GetParam(h.param(3))->val;
@@ -84,43 +103,88 @@ void Group::GenerateShellForStepAndRepeat(void) {
             Vector axis = Vector::From(h.param(4), h.param(5), h.param(6));
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
             // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
-            transd.MakeFromTransformationOf(srcs,
+            transd.MakeFromTransformationOf(steps,
                 trans.Minus(q.Rotate(trans)), q);
         }
 
         // We need to rewrite any plane face entities to the transformed ones.
-        SSurface *ss;
-        for(ss = transd.surface.First(); ss; ss = transd.surface.NextAfter(ss)){
-            hEntity face = { ss->face };
-            if(face.v == Entity::NO_ENTITY.v) continue;
+        transd.RemapFaces(this, remap);
 
-            face = Remap(face, remap);
-            ss->face = face.v;
-        }
-
-        if(src->meshCombine == COMBINE_AS_DIFFERENCE) {
+        if(how == COMBINE_AS_DIFFERENCE) {
             scratch->MakeFromDifferenceOf(soFar, &transd);
-        } else if(src->meshCombine == COMBINE_AS_UNION) {
+        } else if(how == COMBINE_AS_UNION) {
             scratch->MakeFromUnionOf(soFar, &transd);
         } else {
             scratch->MakeFromAssemblyOf(soFar, &transd);
         }
-        SWAP(SShell *, scratch, soFar);
+        SWAP(T *, scratch, soFar);
 
         scratch->Clear();
         transd.Clear();
     }
 
-    runningShell.Clear();
-    runningShell = *soFar;
+    outs->Clear();
+    *outs = *soFar;
+}
+
+template<class T>
+void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs) {
+    // If this group contributes no new mesh, then our running mesh is the
+    // same as last time, no combining required. Likewise if we have a mesh
+    // but it's suppressed.
+    if(thiss->IsEmpty() || suppress) {
+        outs->MakeFromCopyOf(prevs);
+        return;
+    }
+
+    // So our group's shell appears in thisShell. Combine this with the
+    // previous group's shell, using the requested operation.
+    if(meshCombine == COMBINE_AS_UNION) {
+        outs->MakeFromUnionOf(prevs, thiss);
+    } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
+        outs->MakeFromDifferenceOf(prevs, thiss);
+    } else {
+        outs->MakeFromAssemblyOf(prevs, thiss);
+    }
 }
 
 void Group::GenerateShellAndMesh(void) {
     thisShell.Clear();
+    thisMesh.Clear();
+    runningShell.Clear();
+    runningMesh.Clear();
 
     if(type == TRANSLATE || type == ROTATE) {
-        GenerateShellForStepAndRepeat();
-        goto done;
+        Group *src = SK.GetGroup(opA);
+        Group *pg = src->PreviousGroup();
+
+        if(src->thisMesh.IsEmpty() && pg->runningMesh.IsEmpty() && !forceToMesh)
+        {
+            SShell *toStep = &(src->thisShell),
+                   *prev   = &(pg->runningShell);
+
+            GenerateForStepAndRepeat<SShell>
+                (prev, toStep, &runningShell, src->meshCombine);
+        } else {
+            SMesh prevm, stepm;
+            ZERO(&prevm);
+            ZERO(&stepm);
+
+            prevm.MakeFromCopyOf(&(pg->runningMesh));
+            pg->runningShell.TriangulateInto(&prevm);
+
+            stepm.MakeFromCopyOf(&(src->thisMesh));
+            src->thisShell.TriangulateInto(&stepm);
+
+            GenerateForStepAndRepeat<SMesh>
+                (&prevm, &stepm, &runningMesh, src->meshCombine);
+
+            stepm.Clear();
+            prevm.Clear();
+        }
+
+        displayDirty = true;
+        return;
     }
 
     if(type == EXTRUDE) {
@@ -205,51 +269,38 @@ void Group::GenerateShellAndMesh(void) {
             SK.GetParam(h.param(5))->val,
             SK.GetParam(h.param(6))->val };
 
-        for(int i = 0; i < impMesh.l.n; i++) {
-            STriangle st = impMesh.l.elem[i];
-
-            if(st.meta.face != 0) {
-                hEntity he = { st.meta.face };
-                st.meta.face = Remap(he, 0).v;
-            }
-            st.a = q.Rotate(st.a).Plus(offset);
-            st.b = q.Rotate(st.b).Plus(offset);
-            st.c = q.Rotate(st.c).Plus(offset);
-        }
+        thisMesh.MakeFromTransformationOf(&impMesh, offset, q);
+        thisMesh.RemapFaces(this, 0);
 
         thisShell.MakeFromTransformationOf(&impShell, offset, q);
-        SSurface *srf;
-        IdList<SSurface,hSSurface> *sl = &(thisShell.surface);
-        for(srf = sl->First(); srf; srf = sl->NextAfter(srf)) {
-            if(srf->face != 0) {
-                hEntity he = { srf->face };
-                srf->face = Remap(he, 0).v;
-            }
-        }
+        thisShell.RemapFaces(this, 0);
     }
 
-    runningShell.Clear();
+    // So now we've got the mesh or shell for this group. Combine it with
+    // the previous group's mesh or shell with the requested Boolean, and
+    // we're done.
 
-    // If this group contributes no new mesh, then our running mesh is the
-    // same as last time, no combining required. Likewise if we have a mesh
-    // but it's suppressed.
-    if(suppress) {
-        runningShell.MakeFromCopyOf(&(PreviousGroup()->runningShell));
-        goto done;
-    }
-
-    // So our group's shell appears in thisShell. Combine this with the
-    // previous group's shell, using the requested operation.
-    SShell *a = &(PreviousGroup()->runningShell);
-    if(meshCombine == COMBINE_AS_UNION) {
-        runningShell.MakeFromUnionOf(a, &thisShell);
-    } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
-        runningShell.MakeFromDifferenceOf(a, &thisShell);
+    Group *pg = PreviousGroup();
+    if(pg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
+        SShell *prevs = &(pg->runningShell);
+        GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell);
     } else {
-        runningShell.MakeFromAssemblyOf(a, &thisShell);
+        SMesh prevm, thism;
+        ZERO(&prevm);
+        ZERO(&thism);
+
+        prevm.MakeFromCopyOf(&(pg->runningMesh));
+        pg->runningShell.TriangulateInto(&prevm);
+
+        thism.MakeFromCopyOf(&thisMesh);
+        thisShell.TriangulateInto(&thism);
+
+        GenerateForBoolean<SMesh>(&prevm, &thism, &runningMesh);
+
+        thism.Clear();
+        prevm.Clear();
     }
 
-done:
     displayDirty = true;
 }
 
@@ -257,8 +308,19 @@ void Group::GenerateDisplayItems(void) {
     if(displayDirty) {
         displayMesh.Clear();
         runningShell.TriangulateInto(&displayMesh);
+        STriangle *tr;
+        for(tr = runningMesh.l.First(); tr; tr = runningMesh.l.NextAfter(tr)) {
+            STriangle trn = *tr;
+            Vector n = trn.Normal();
+            trn.an = n;
+            trn.bn = n;
+            trn.cn = n;
+            displayMesh.AddTriangle(&trn);
+        }
+
         displayEdges.Clear();
         runningShell.MakeEdgesInto(&displayEdges);
+
         displayDirty = false;
     }
 }
@@ -314,7 +376,7 @@ void Group::Draw(void) {
         glxColor3d(REDf  (SS.edgeColor),
                    GREENf(SS.edgeColor), 
                    BLUEf (SS.edgeColor));
-        glxDrawEdges(&displayEdges);
+        glxDrawEdges(&displayEdges, false);
     }
 
     if(SS.GW.showMesh) glxDebugMesh(&displayMesh);

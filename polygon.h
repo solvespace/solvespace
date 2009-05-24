@@ -184,10 +184,15 @@ public:
     void Simplify(int start);
 
     void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
-    void MakeFromUnion(SMesh *a, SMesh *b);
-    void MakeFromDifference(SMesh *a, SMesh *b);
-    bool MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *errorAt);
-    void MakeFromCopy(SMesh *a);
+    void MakeFromUnionOf(SMesh *a, SMesh *b);
+    void MakeFromDifferenceOf(SMesh *a, SMesh *b);
+
+    void MakeFromCopyOf(SMesh *a);
+    void MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q);
+    void MakeFromAssemblyOf(SMesh *a, SMesh *b);
+
+    bool IsEmpty(void);
+    void RemapFaces(Group *g, int remap);
 
     DWORD FirstIntersectionWith(Point2d mp);
 };

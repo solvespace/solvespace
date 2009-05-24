@@ -463,7 +463,7 @@ void TextWindow::ShowGroupInfo(void) {
              g->runningShell.surface.n > 0))
     {
         Group *pg = g->PreviousGroup();
-        if(pg->runningMesh.l.n == 0 && g->thisMesh.l.n == 0) {
+        if(pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
             bool fm = g->forceToMesh;
             Printf(true,
                 "%FtSURFACES%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
@@ -473,7 +473,7 @@ void TextWindow::ShowGroupInfo(void) {
                     (fm ? "" : "as mesh"), (fm ? "as mesh" : ""));
         } else {
             Printf(false,
-                "%FtSURFACES%E %Fas mesh%FE");
+                "%FtSURFACES%E %Fsas mesh%E");
         }
     }
 

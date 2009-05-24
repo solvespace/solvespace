@@ -7,7 +7,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
 
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     g->GenerateDisplayItems();
-    if(g->displayMesh.l.n == 0) {
+    if(g->displayMesh.IsEmpty()) {
         Error("No solid model present; draw one with extrudes and revolves, "
               "or use Export 2d View to export bare lines and curves.");
         return;
@@ -100,7 +100,7 @@ void SolveSpace::ExportViewTo(char *filename) {
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
     }
-    if(sm->l.n == 0) {
+    if(sm->IsEmpty()) {
         sm = NULL;
     }
 
@@ -979,7 +979,7 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 //-----------------------------------------------------------------------------
 void SolveSpace::ExportMeshTo(char *filename) {
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
-    if(m->l.n == 0) {
+    if(m->IsEmpty()) {
         Error("Active group mesh is empty; nothing to export.");
         return;
     }

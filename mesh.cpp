@@ -206,7 +206,7 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
     }
 }
 
-void SMesh::MakeFromUnion(SMesh *a, SMesh *b) {
+void SMesh::MakeFromUnionOf(SMesh *a, SMesh *b) {
     SBsp3 *bspa = SBsp3::FromMesh(a);
     SBsp3 *bspb = SBsp3::FromMesh(b);
 
@@ -219,7 +219,7 @@ void SMesh::MakeFromUnion(SMesh *a, SMesh *b) {
     AddAgainstBsp(a, bspb);
 }
 
-void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
+void SMesh::MakeFromDifferenceOf(SMesh *a, SMesh *b) {
     SBsp3 *bspa = SBsp3::FromMesh(a);
     SBsp3 *bspb = SBsp3::FromMesh(b);
 
@@ -232,38 +232,31 @@ void SMesh::MakeFromDifference(SMesh *a, SMesh *b) {
     AddAgainstBsp(a, bspb);
 }
 
-bool SMesh::MakeFromInterferenceCheck(SMesh *srca, SMesh *srcb, SMesh *error) {
-    SBsp3 *bspa = SBsp3::FromMesh(srca);
-    SBsp3 *bspb = SBsp3::FromMesh(srcb);
-
-    error->Clear();
-    error->flipNormal = true;
-    error->keepCoplanar = false;
-
-    error->AddAgainstBsp(srcb, bspa);
-    error->AddAgainstBsp(srca, bspb);
-    // Now we have a list of all the triangles (or fragments thereof) from
-    // A that lie inside B, or vice versa. That's the interference, and
-    // we report it so that it can be flagged.
-
-    // For the actual output, take the union.
-    flipNormal = false;
-    keepCoplanar = false;
-    AddAgainstBsp(srcb, bspa);
-
-    flipNormal = false;
-    keepCoplanar = true;
-    AddAgainstBsp(srca, bspb);
-    
-    // And we're successful if the intersection was empty.
-    return (error->l.n == 0);
-}
-
-void SMesh::MakeFromCopy(SMesh *a) {
+void SMesh::MakeFromCopyOf(SMesh *a) {
     int i;
     for(i = 0; i < a->l.n; i++) {
         AddTriangle(&(a->l.elem[i]));
     }
+}
+
+void SMesh::MakeFromAssemblyOf(SMesh *a, SMesh *b) {
+    MakeFromCopyOf(a);
+    MakeFromCopyOf(b);
+}
+
+void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q) {
+    STriangle *tr;
+    for(tr = a->l.First(); tr; tr = a->l.NextAfter(tr)) {
+        STriangle tt = *tr;
+        tt.a = (q.Rotate(tt.a)).Plus(trans);
+        tt.b = (q.Rotate(tt.b)).Plus(trans);
+        tt.c = (q.Rotate(tt.c)).Plus(trans);
+        AddTriangle(&tt);
+    }
+}
+
+bool SMesh::IsEmpty(void) {
+    return (l.n == 0);
 }
 
 DWORD SMesh::FirstIntersectionWith(Point2d mp) {

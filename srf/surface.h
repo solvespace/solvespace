@@ -319,6 +319,8 @@ public:
     void MakeEdgesInto(SEdgeList *sel);
     void MakeSectionEdgesInto(Vector n, double d,
                                 SEdgeList *sel, SBezierList *sbl);
+    bool IsEmpty(void);
+    void RemapFaces(Group *g, int remap);
     void Clear(void);
 };
 

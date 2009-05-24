@@ -666,6 +666,10 @@ void SShell::TriangulateInto(SMesh *sm) {
     }
 }
 
+bool SShell::IsEmpty(void) {
+    return (surface.n == 0);
+}
+
 void SShell::Clear(void) {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {

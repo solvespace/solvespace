@@ -149,7 +149,7 @@ void vl(void); // debug function to validate heaps
 // End of platform-specific functions
 //================
 
-
+class Group;
 class SSurface;
 #include "dsc.h"
 #include "polygon.h"
@@ -175,7 +175,7 @@ void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void glxFillPolygon(SPolygon *p);
 void glxFillMesh(int color, SMesh *m, DWORD h, DWORD s1, DWORD s2);
 void glxDebugPolygon(SPolygon *p);
-void glxDrawEdges(SEdgeList *l);
+void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
 void glxMarkPolygonNormal(SPolygon *p);
 void glxWriteText(char *str);

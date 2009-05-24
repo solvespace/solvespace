@@ -208,9 +208,10 @@ public:
     void GenerateLoops(void);
     // And the mesh stuff
     Group *PreviousGroup(void);
-    void GenerateShellForStepAndRepeat(void);
     void GenerateDisplayItems(void);
     void GenerateShellAndMesh(void);
+    template<class T> void GenerateForStepAndRepeat(T *a, T *b, T *o, int how);
+    template<class T> void GenerateForBoolean(T *a, T *b, T *o);
     void Draw(void);
 
     SPolygon GetPolygon(void);
