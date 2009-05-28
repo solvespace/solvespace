@@ -68,6 +68,10 @@ void SolveSpace::ExportSectionTo(char *filename) {
     SBezierList bl;
     ZERO(&bl);
 
+    // If there's a mesh, then grab the edges from it.
+    g->runningMesh.MakeEdgesInPlaneInto(&el, n, d);
+
+    // If there's a shell, then grab the edges and possibly Beziers.
     g->runningShell.MakeSectionEdgesInto(n, d,
        &el, 
        (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);

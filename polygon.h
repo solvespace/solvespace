@@ -191,6 +191,8 @@ public:
     void MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q);
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
+    void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
+
     bool IsEmpty(void);
     void RemapFaces(Group *g, int remap);
 
@@ -237,6 +239,9 @@ public:
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);
     void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr);
+
+    void SnapToMesh(SMesh *m);
+    void SnapToVertex(Vector v, SMesh *extras);
 };
 
 #endif

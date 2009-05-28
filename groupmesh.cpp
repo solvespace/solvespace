@@ -176,9 +176,17 @@ void Group::GenerateShellAndMesh(void) {
             stepm.MakeFromCopyOf(&(src->thisMesh));
             src->thisShell.TriangulateInto(&stepm);
 
+            SMesh outm;
+            ZERO(&outm);
             GenerateForStepAndRepeat<SMesh>
-                (&prevm, &stepm, &runningMesh, src->meshCombine);
+                (&prevm, &stepm, &outm, src->meshCombine);
 
+            // And make sure that the output mesh is vertex-to-vertex.
+            SKdNode *root = SKdNode::From(&outm);
+            root->SnapToMesh(&outm);
+            root->MakeMeshInto(&runningMesh);
+
+            outm.Clear();
             stepm.Clear();
             prevm.Clear();
         }
@@ -295,8 +303,16 @@ void Group::GenerateShellAndMesh(void) {
         thism.MakeFromCopyOf(&thisMesh);
         thisShell.TriangulateInto(&thism);
 
-        GenerateForBoolean<SMesh>(&prevm, &thism, &runningMesh);
+        SMesh outm;
+        ZERO(&outm);
+        GenerateForBoolean<SMesh>(&prevm, &thism, &outm);
 
+        // And make sure that the output mesh is vertex-to-vertex.
+        SKdNode *root = SKdNode::From(&outm);
+        root->SnapToMesh(&outm);
+        root->MakeMeshInto(&runningMesh);
+
+        outm.Clear();
         thism.Clear();
         prevm.Clear();
     }

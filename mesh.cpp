@@ -50,6 +50,38 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
     }
 }
 
+//----------------------------------------------------------------------------
+// Report the edges of the boundary of the region(s) of our mesh that lie
+// within the plane n dot p = d.
+//----------------------------------------------------------------------------
+void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
+    SMesh m;
+    ZERO(&m);
+    m.MakeFromCopyOf(this);
+
+    // Delete all triangles in the mesh that do not lie in our export plane.
+    m.l.ClearTags();
+    int i;
+    for(i = 0; i < m.l.n; i++) {
+        STriangle *tr = &(m.l.elem[i]);
+
+        if((fabs(n.Dot(tr->a) - d) >= LENGTH_EPS) ||
+           (fabs(n.Dot(tr->b) - d) >= LENGTH_EPS) ||
+           (fabs(n.Dot(tr->c) - d) >= LENGTH_EPS))
+        {
+            tr->tag  = 1;
+        }
+    }
+    m.l.RemoveTagged();
+
+    // Select the naked edges in our resulting open mesh.
+    SKdNode *root = SKdNode::From(&m);
+    root->SnapToMesh(&m);
+    root->MakeNakedEdgesInto(sel, false, NULL, NULL);
+
+    m.Clear();
+}
+
 void SMesh::Simplify(int start) {
     int maxTriangles = (l.n - start) + 10;
 
@@ -469,98 +501,111 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
-void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
-                            bool coplanarIsInter, bool *inter, bool *fwd)
-{
+//-----------------------------------------------------------------------------
+// If any triangles in the mesh have an edge that goes through v (but not
+// a vertex at v), then split those triangles so that they now have a vertex
+// there. The existing triangle is modified, and the new triangle appears
+// in extras.
+//-----------------------------------------------------------------------------
+void SKdNode::SnapToVertex(Vector v, SMesh *extras) {
     if(gt && lt) {
-        double ac = a.Element(which),
-               bc = b.Element(which);
-        if(ac < c + KDTREE_EPS ||
-           bc < c + KDTREE_EPS)
-        {
-            lt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+        double vc = v.Element(which);
+        if(vc < c + KDTREE_EPS) {
+            lt->SnapToVertex(v, extras);
         }
-        if(ac > c - KDTREE_EPS ||
-           bc > c - KDTREE_EPS)
-        {
-            gt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+        if(vc > c - KDTREE_EPS) {
+            gt->SnapToVertex(v, extras);
         }
-        return;
-    }
-    
-    // We are a leaf node; so we iterate over all the triangles in our
-    // linked list.
-    STriangleLl *ll;
-    for(ll = tris; ll; ll = ll->next) {
-        STriangle *tr = ll->tri;
+        // Nothing bad happens if the triangle to be split appears in both
+        // branches; the first call will split the triangle, so that the
+        // second call will do nothing, because the modified triangle will
+        // already contain v
+    } else {
+        STriangleLl *ll;
+        for(ll = tris; ll; ll = ll->next) {
+            STriangle *tr = ll->tri;
 
-        if(tr->tag == cnt) continue;
-        
-        // Test if this triangle matches up with the given edge
-        if((a.Equals(tr->b) && b.Equals(tr->a)) ||
-           (a.Equals(tr->c) && b.Equals(tr->b)) ||
-           (a.Equals(tr->a) && b.Equals(tr->c)))
-        {
-            (*n)++;
-            // Record whether this triangle is front- or back-facing.
-            if(tr->Normal().z > LENGTH_EPS) {
-                *fwd = true;
-            } else {
-                *fwd = false;
-            }
-        } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
-                   (a.Equals(tr->b) && b.Equals(tr->c)) ||
-                   (a.Equals(tr->c) && b.Equals(tr->a))))
-        {
-            // It's an edge of this triangle, okay.
-        } else {
-            // Check for self-intersection
-            Vector n = (tr->Normal()).WithMagnitude(1);
-            double d = (tr->a).Dot(n);
-            double pa = a.Dot(n) - d, pb = b.Dot(n) - d;
-            // It's an intersection if neither point lies in-plane,
-            // and the edge crosses the plane (should handle in-plane
-            // intersections separately but don't yet).
-            if((pa < -LENGTH_EPS || pa > LENGTH_EPS) &&
-               (pb < -LENGTH_EPS || pb > LENGTH_EPS) &&
-               (pa*pb < 0))
-            {
-                // The edge crosses the plane of the triangle; now see if
-                // it crosses inside the triangle.
-                if(tr->ContainsPointProjd(b.Minus(a), a)) {
-                    if(coplanarIsInter) {
-                        *inter = true;
-                    } else {
-                        Vector p = Vector::AtIntersectionOfPlaneAndLine(
-                                                n, d, a, b, NULL);
-                        Vector ta = tr->a,
-                               tb = tr->b,
-                               tc = tr->c;
-                        if((p.DistanceToLine(ta, tb.Minus(ta)) < LENGTH_EPS) ||
-                           (p.DistanceToLine(tb, tc.Minus(tb)) < LENGTH_EPS) ||
-                           (p.DistanceToLine(tc, ta.Minus(tc)) < LENGTH_EPS))
-                        {
-                            // Intersection lies on edge. This happens when
-                            // our edge is from a triangle coplanar with
-                            // another triangle in the mesh. We don't test
-                            // the edge against triangles whose plane contains
-                            // that edge, but we do end up testing against
-                            // the coplanar triangle's neighbours, which we
-                            // will intersect on their edges.
-                        } else {
-                            *inter = true;
-                        }
-                    }
+            // Do a cheap bbox test first
+            int k;
+            bool mightHit = true;
+
+            for(k = 0; k < 3; k++) {
+                if((tr->a).Element(k) < v.Element(k) - KDTREE_EPS &&
+                   (tr->b).Element(k) < v.Element(k) - KDTREE_EPS &&
+                   (tr->c).Element(k) < v.Element(k) - KDTREE_EPS)
+                {
+                    mightHit = false;
+                    break;
+                }
+                if((tr->a).Element(k) > v.Element(k) + KDTREE_EPS &&
+                   (tr->b).Element(k) > v.Element(k) + KDTREE_EPS &&
+                   (tr->c).Element(k) > v.Element(k) + KDTREE_EPS)
+                {
+                    mightHit = false;
+                    break;
                 }
             }
-        }
+            if(!mightHit) continue;
 
-        // Ensure that we don't count this triangle twice if it appears
-        // in two buckets of the kd tree.
-        tr->tag = cnt;
+            if(tr->a.Equals(v)) { tr->a = v; continue; }
+            if(tr->b.Equals(v)) { tr->b = v; continue; }
+            if(tr->c.Equals(v)) { tr->c = v; continue; }
+
+            if(v.OnLineSegment(tr->a, tr->b)) {
+                STriangle nt = STriangle::From(tr->meta, tr->a, v, tr->c);
+                extras->AddTriangle(&nt);
+                tr->a = v;
+                continue;
+            }
+            if(v.OnLineSegment(tr->b, tr->c)) {
+                STriangle nt = STriangle::From(tr->meta, tr->b, v, tr->a);
+                extras->AddTriangle(&nt);
+                tr->b = v;
+                continue;
+            }
+            if(v.OnLineSegment(tr->c, tr->a)) {
+                STriangle nt = STriangle::From(tr->meta, tr->c, v, tr->b);
+                extras->AddTriangle(&nt);
+                tr->c = v;
+                continue;
+            }
+        }
     }
 }
 
+//-----------------------------------------------------------------------------
+// Snap to each vertex of each triangle of the given mesh. If the given mesh
+// is identical to the mesh used to make this kd tree, then the result should
+// be a vertex-to-vertex mesh.
+//-----------------------------------------------------------------------------
+void SKdNode::SnapToMesh(SMesh *m) {
+    int i, j, k;
+    for(i = 0; i < m->l.n; i++) {
+        STriangle *tr = &(m->l.elem[i]);
+        for(j = 0; j < 3; j++) {
+            Vector v = ((j == 0) ? tr->a : 
+                       ((j == 1) ? tr->b :
+                                   tr->c));
+
+            SMesh extra;
+            ZERO(&extra);
+            SnapToVertex(v, &extra);
+
+            for(k = 0; k < extra.l.n; k++) {
+                STriangle *tra = (STriangle *)AllocTemporary(sizeof(*tra));
+                *tra = extra.l.elem[k];
+                AddTriangle(tra);
+            }
+            extra.Clear();
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// For all the edges in sel, split them against the given triangle, and test
+// them for occlusion. Keep only the visible segments. sel is both our input
+// and our output.
+//-----------------------------------------------------------------------------
 void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
     SEdgeList seln;
     ZERO(&seln);
@@ -666,6 +711,10 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
     }
 }
 
+//-----------------------------------------------------------------------------
+// Given an edge orig, occlusion test it against our mesh. We output an edge
+// list in sel, containing the visible portions of that edge.
+//-----------------------------------------------------------------------------
 void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
     if(gt && lt) {
         double ac = (orig.a).Element(which),
@@ -694,6 +743,107 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
             SplitLinesAgainstTriangle(sel, tr);
             tr->tag = cnt;
         }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Search the mesh for a triangle with an edge from b to a (i.e., the mate
+// for the edge from a to b), and increment *n each time that we find one.
+// If a triangle is found, then report whether it is front- or back-facing
+// using *fwd. And regardless of whether a mate is found, report whether
+// the edge intersects the mesh with *inter; if coplanarIsInter then we
+// count the edge as intersecting if it's coplanar with a triangle in the
+// mesh, otherwise not.
+//-----------------------------------------------------------------------------
+void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
+                            bool coplanarIsInter, bool *inter, bool *fwd)
+{
+    if(gt && lt) {
+        double ac = a.Element(which),
+               bc = b.Element(which);
+        if(ac < c + KDTREE_EPS ||
+           bc < c + KDTREE_EPS)
+        {
+            lt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+        }
+        if(ac > c - KDTREE_EPS ||
+           bc > c - KDTREE_EPS)
+        {
+            gt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+        }
+        return;
+    }
+    
+    // We are a leaf node; so we iterate over all the triangles in our
+    // linked list.
+    STriangleLl *ll;
+    for(ll = tris; ll; ll = ll->next) {
+        STriangle *tr = ll->tri;
+
+        if(tr->tag == cnt) continue;
+        
+        // Test if this triangle matches up with the given edge
+        if((a.Equals(tr->b) && b.Equals(tr->a)) ||
+           (a.Equals(tr->c) && b.Equals(tr->b)) ||
+           (a.Equals(tr->a) && b.Equals(tr->c)))
+        {
+            (*n)++;
+            // Record whether this triangle is front- or back-facing.
+            if(tr->Normal().z > LENGTH_EPS) {
+                *fwd = true;
+            } else {
+                *fwd = false;
+            }
+        } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
+                   (a.Equals(tr->b) && b.Equals(tr->c)) ||
+                   (a.Equals(tr->c) && b.Equals(tr->a))))
+        {
+            // It's an edge of this triangle, okay.
+        } else {
+            // Check for self-intersection
+            Vector n = (tr->Normal()).WithMagnitude(1);
+            double d = (tr->a).Dot(n);
+            double pa = a.Dot(n) - d, pb = b.Dot(n) - d;
+            // It's an intersection if neither point lies in-plane,
+            // and the edge crosses the plane (should handle in-plane
+            // intersections separately but don't yet).
+            if((pa < -LENGTH_EPS || pa > LENGTH_EPS) &&
+               (pb < -LENGTH_EPS || pb > LENGTH_EPS) &&
+               (pa*pb < 0))
+            {
+                // The edge crosses the plane of the triangle; now see if
+                // it crosses inside the triangle.
+                if(tr->ContainsPointProjd(b.Minus(a), a)) {
+                    if(coplanarIsInter) {
+                        *inter = true;
+                    } else {
+                        Vector p = Vector::AtIntersectionOfPlaneAndLine(
+                                                n, d, a, b, NULL);
+                        Vector ta = tr->a,
+                               tb = tr->b,
+                               tc = tr->c;
+                        if((p.DistanceToLine(ta, tb.Minus(ta)) < LENGTH_EPS) ||
+                           (p.DistanceToLine(tb, tc.Minus(tb)) < LENGTH_EPS) ||
+                           (p.DistanceToLine(tc, ta.Minus(tc)) < LENGTH_EPS))
+                        {
+                            // Intersection lies on edge. This happens when
+                            // our edge is from a triangle coplanar with
+                            // another triangle in the mesh. We don't test
+                            // the edge against triangles whose plane contains
+                            // that edge, but we do end up testing against
+                            // the coplanar triangle's neighbours, which we
+                            // will intersect on their edges.
+                        } else {
+                            *inter = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Ensure that we don't count this triangle twice if it appears
+        // in two buckets of the kd tree.
+        tr->tag = cnt;
     }
 }
 
@@ -744,6 +894,11 @@ void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool coplanarIsInter,
     m.Clear();
 }
 
+//-----------------------------------------------------------------------------
+// Report all the edges of the mesh where a front- and back-facing triangle
+// join. These edges should be drawn when we generate a wireframe drawing
+// of the part.
+//-----------------------------------------------------------------------------
 void SKdNode::MakeTurningEdgesInto(SEdgeList *sel) {
     SMesh m;
     ZERO(&m);
