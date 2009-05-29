@@ -192,6 +192,7 @@ public:
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
+    void MakeEmphasizedEdgesInto(SEdgeList *sel);
 
     bool IsEmpty(void);
     void RemapFaces(Group *g, int remap);
@@ -232,10 +233,13 @@ public:
     void ClearTags(void);
 
     void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool coplanarIsInter,
-                                                bool *inter, bool *fwd);
-    void MakeNakedEdgesInto(SEdgeList *sel, bool coplanarIsInter,
+                                                bool *inter, bool *fwd,
+                                                DWORD *face);
+    static const int NAKED_OR_SELF_INTER_EDGES  = 100;
+    static const int TURNING_EDGES              = 200;
+    static const int EMPHASIZED_EDGES           = 300;
+    void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
                                                 bool *inter, bool *leaky);
-    void MakeTurningEdgesInto(SEdgeList *sel);
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);
     void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr);

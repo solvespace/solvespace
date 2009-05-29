@@ -77,11 +77,28 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     // Select the naked edges in our resulting open mesh.
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
-    root->MakeNakedEdgesInto(sel, false, NULL, NULL);
+    root->MakeCertainEdgesInto(sel, SKdNode::NAKED_OR_SELF_INTER_EDGES, 
+                                false, NULL, NULL);
 
     m.Clear();
 }
 
+void SMesh::MakeEmphasizedEdgesInto(SEdgeList *sel) {
+    SKdNode *root = SKdNode::From(this);
+    root->MakeCertainEdgesInto(sel, SKdNode::EMPHASIZED_EDGES, 
+                                false, NULL, NULL);
+}
+
+//-----------------------------------------------------------------------------
+// When we are called, all of the triangles from l.elem[start] to the end must
+// be coplanar. So we try to find a set of fewer triangles that covers the
+// exact same area, in order to reduce the number of triangles in the mesh.
+// We use this after a triangle has been split against the BSP.
+//
+// This is really ugly code; basically it just pastes things together to
+// form convex polygons, merging collinear edges when possible, then
+// triangulates the convex poly.
+//-----------------------------------------------------------------------------
 void SMesh::Simplify(int start) {
     int maxTriangles = (l.n - start) + 10;
 
@@ -756,7 +773,8 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
 // mesh, otherwise not.
 //-----------------------------------------------------------------------------
 void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
-                            bool coplanarIsInter, bool *inter, bool *fwd)
+                            bool coplanarIsInter, bool *inter, bool *fwd,
+                            DWORD *face)
 {
     if(gt && lt) {
         double ac = a.Element(which),
@@ -764,12 +782,12 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+            lt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd, face);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd);
+            gt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd, face);
         }
         return;
     }
@@ -794,6 +812,8 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
             } else {
                 *fwd = false;
             }
+            // And record the triangle's face
+            *face = tr->meta.face;
         } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
                    (a.Equals(tr->b) && b.Equals(tr->c)) ||
                    (a.Equals(tr->c) && b.Equals(tr->a))))
@@ -848,15 +868,16 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
 }
 
 //-----------------------------------------------------------------------------
-// Report all naked edges of the mesh (i.e., edges that don't join up to
-// a single anti-parallel edge of another triangle), and all edges that
-// intersect another triangle. If coplanarIsInter, then edges coplanar with
-// another triangle and within it are reported, otherwise not. We report
-// in *inter and *leaky whether the mesh is self-intersecting or leaky
-// (having naked edges) respectively.
+// Pick certain classes of edges out from our mesh. These might be:
+//    * naked edges (i.e., edges with no anti-parallel neighbor) and self-
+//      intersecting edges (i.e., edges that cross another triangle)
+//    * turning edges (i.e., edges where a front-facing triangle joins
+//      a back-facing triangle)
+//    * emphasized edges (i.e., edges where a triangle from one face joins
+//      a triangle from a different face)
 //-----------------------------------------------------------------------------
-void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool coplanarIsInter,
-                                        bool *inter, bool *leaky)
+void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
+                                bool coplanarIsInter, bool *inter, bool *leaky)
 {
     if(inter) *inter = false;
     if(leaky) *leaky = false;
@@ -875,53 +896,47 @@ void SKdNode::MakeNakedEdgesInto(SEdgeList *sel, bool coplanarIsInter,
             Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
-            int n = 0, nOther = 0;
-            bool thisIntersects = false, fwd;
-            FindEdgeOn(a, b, &n, cnt, coplanarIsInter, &thisIntersects, &fwd);
-            if(n != 1) {
-                sel->AddEdge(a, b);
-                if(leaky) *leaky = true;
-            }
-            if(thisIntersects) {
-                sel->AddEdge(a, b);
-                if(inter) *inter = true;
-            }
-
-            cnt++;
-        }
-    }
-
-    m.Clear();
-}
-
-//-----------------------------------------------------------------------------
-// Report all the edges of the mesh where a front- and back-facing triangle
-// join. These edges should be drawn when we generate a wireframe drawing
-// of the part.
-//-----------------------------------------------------------------------------
-void SKdNode::MakeTurningEdgesInto(SEdgeList *sel) {
-    SMesh m;
-    ZERO(&m);
-    ClearTags();
-    MakeMeshInto(&m);
-
-    int cnt = 1234;
-    int i, j;
-    for(i = 0; i < m.l.n; i++) {
-        STriangle *tr = &(m.l.elem[i]);
-        if(tr->Normal().z > LENGTH_EPS) continue;
-        // So this is a back-facing triangle
-
-        for(j = 0; j < 3; j++) {
-            Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
-            Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
-
             int n = 0;
-            bool inter, fwd;
-            FindEdgeOn(a, b, &n, cnt, true, &inter, &fwd);
-            if(n == 1) {
-                // and its neighbour is front-facing, so generate the edge.
-                if(fwd) sel->AddEdge(a, b);
+            bool thisIntersects = false, fwd;
+            DWORD face;
+            FindEdgeOn(a, b, &n, cnt, coplanarIsInter,
+                &thisIntersects, &fwd, &face);
+
+            switch(how) {
+                case NAKED_OR_SELF_INTER_EDGES:
+                    if(n != 1) {
+                        sel->AddEdge(a, b);
+                        if(leaky) *leaky = true;
+                    }
+                    if(thisIntersects) {
+                        sel->AddEdge(a, b);
+                        if(inter) *inter = true;
+                    }
+                    break;
+
+                case TURNING_EDGES:
+                    if((tr->Normal().z < LENGTH_EPS) &&
+                       (n == 1) &&
+                       fwd)
+                    {
+                        // This triangle is back-facing (or on edge), and
+                        // this edge has exactly one mate, and that mate is
+                        // front-facing. So this is a turning edge.
+                        sel->AddEdge(a, b);
+                    }
+                    break;
+
+                case EMPHASIZED_EDGES:
+                    if(tr->meta.face != face && n == 1) {
+                        // The two triangles that join at this edge come from
+                        // different faces; either really different faces,
+                        // or one is from a face and the other is zero (i.e.,
+                        // not from a face).
+                        sel->AddEdge(a, b);
+                    }
+                    break;
+
+                default: oops();
             }
 
             cnt++;

@@ -301,8 +301,9 @@ public:
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
                                            double *wmin, bool div);
-    void LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin, bool div);
-    void ZoomToFit(void);
+    void LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin, bool div,
+                            bool includingInvisibles);
+    void ZoomToFit(bool includingInvisibles);
 
     hGroup  activeGroup;
     void EnsureValidActives(void);

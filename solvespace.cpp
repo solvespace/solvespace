@@ -213,13 +213,15 @@ void SolveSpace::AfterNewFile(void) {
     GW.height = h;
 
     // The triangles haven't been generated yet, but zoom to fit the entities
-    // roughly in the window, since that sets the mesh tolerance.
-    GW.ZoomToFit();
+    // roughly in the window, since that sets the mesh tolerance. Consider
+    // invisible entities, so we still get something reasonable if the only
+    // thing visible is the not-yet-generated surfaces.
+    GW.ZoomToFit(true);
 
     GenerateAll(0, INT_MAX);
     later.showTW = true;
     // Then zoom to fit again, to fit the triangles
-    GW.ZoomToFit();
+    GW.ZoomToFit(false);
 
     UpdateWindowTitle();
 }
@@ -420,7 +422,9 @@ void SolveSpace::MenuAnalyze(int id) {
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
-            root->MakeNakedEdgesInto(&(SS.nakedEdges), true, &inters, &leaks);
+            root->MakeCertainEdgesInto(&(SS.nakedEdges), 
+                SKdNode::NAKED_OR_SELF_INTER_EDGES, true, &inters, &leaks);
+
             InvalidateGraphics();
 
             char *intersMsg = inters ?
@@ -446,7 +450,9 @@ void SolveSpace::MenuAnalyze(int id) {
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
-            root->MakeNakedEdgesInto(&(SS.nakedEdges), false, &inters, &leaks);
+            root->MakeCertainEdgesInto(&(SS.nakedEdges),
+                SKdNode::NAKED_OR_SELF_INTER_EDGES, false, &inters, &leaks);
+
             InvalidateGraphics();
 
             if(inters) {

@@ -252,6 +252,9 @@ void GraphicsWindow::HandlePointForZoomToFit(Vector p,
 {
     double w;
     Vector pp = ProjectPoint4(p, &w);
+    // If div is true, then we calculate a perspective projection of the point.
+    // If not, then we do a parallel projection regardless of the current
+    // scale factor.
     if(div) {
         pp = pp.ScaledBy(1.0/w);
     }
@@ -262,15 +265,15 @@ void GraphicsWindow::HandlePointForZoomToFit(Vector p,
     pmin->y = min(pmin->y, pp.y);
     *wmin = min(*wmin, w);
 }
-void GraphicsWindow::LoopOverPoints(
-                        Point2d *pmax, Point2d *pmin, double *wmin, bool div)
+void GraphicsWindow::LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin,
+                        bool div, bool includingInvisibles)
 {
     HandlePointForZoomToFit(Vector::From(0, 0, 0), pmax, pmin, wmin, div);
 
     int i, j;
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
-        if(!e->IsVisible()) continue;
+        if(!(e->IsVisible() || includingInvisibles)) continue;
         if(e->IsPoint()) {
             HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
         } else if(e->type == Entity::CIRCLE) {
@@ -306,11 +309,11 @@ void GraphicsWindow::LoopOverPoints(
         }
     }
 }
-void GraphicsWindow::ZoomToFit(void) {
+void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
     // On the first run, ignore perspective.
     Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
     double wmin = 1;
-    LoopOverPoints(&pmax, &pmin, &wmin, false);
+    LoopOverPoints(&pmax, &pmin, &wmin, false, includingInvisibles);
 
     double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
     double dx = pmax.x - pmin.x, dy = pmax.y - pmin.y;
@@ -335,7 +338,7 @@ void GraphicsWindow::ZoomToFit(void) {
     pmax.x = -1e12; pmax.y = -1e12;
     pmin.x =  1e12; pmin.y =  1e12;
     wmin = 1;
-    LoopOverPoints(&pmax, &pmin, &wmin, true);
+    LoopOverPoints(&pmax, &pmin, &wmin, true, includingInvisibles);
 
     // Adjust the scale so that no points are behind the camera
     if(wmin < 0.1) {
@@ -359,7 +362,7 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_ZOOM_TO_FIT:
-            SS.GW.ZoomToFit();
+            SS.GW.ZoomToFit(false);
             break;
 
         case MNU_NEAREST_ORTHO:
@@ -717,6 +720,10 @@ void GraphicsWindow::ToggleBool(int link, DWORD v) {
     // The faces are shown as special stippling on the shaded triangle mesh,
     // so not meaningful to show them and hide the shaded.
     if(!SS.GW.showShaded) SS.GW.showFaces = false;
+
+    // We might need to regenerate the mesh and edge list, since the edges
+    // wouldn't have been generated if they were previously hidden.
+    if(SS.GW.showEdges) (SK.GetGroup(SS.GW.activeGroup))->displayDirty = true;
 
     SS.GenerateAll();
     InvalidateGraphics();

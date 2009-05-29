@@ -1,12 +1,11 @@
 
 marching algorithm for surface intersection
 tangent intersections
-put back the meshes
 
 -----
 line styles (color, thickness)
 loop detection
-incremental regen of entities?
 IGES and STEP export
+incremental regen of entities?
 
 

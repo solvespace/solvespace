@@ -321,6 +321,9 @@ void Group::GenerateShellAndMesh(void) {
 }
 
 void Group::GenerateDisplayItems(void) {
+    // This is potentially slow (since we've got to triangulate a shell, or
+    // to find the emphasized edges for a mesh), so we will run it only
+    // if its inputs have changed.
     if(displayDirty) {
         displayMesh.Clear();
         runningShell.TriangulateInto(&displayMesh);
@@ -335,7 +338,11 @@ void Group::GenerateDisplayItems(void) {
         }
 
         displayEdges.Clear();
-        runningShell.MakeEdgesInto(&displayEdges);
+
+        if(SS.GW.showEdges) {
+            runningShell.MakeEdgesInto(&displayEdges);
+            displayMesh.MakeEmphasizedEdgesInto(&displayEdges);
+        }
 
         displayDirty = false;
     }

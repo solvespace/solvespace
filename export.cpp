@@ -248,7 +248,8 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
         // Generate the edges where a curved surface turns from front-facing
         // to back-facing.
         if(SS.GW.showEdges) {
-            root->MakeTurningEdgesInto(sel);
+            root->MakeCertainEdgesInto(sel, SKdNode::TURNING_EDGES,
+                        false, NULL, NULL);
         }
 
         root->ClearTags();
@@ -864,8 +865,9 @@ void SvgFileWriter::StartFile(void) {
 "\r\n"
 "<title>Exported SVG</title>\r\n"
 "\r\n",
-        ptMax.x - ptMin.x, ptMax.y - ptMin.y,
-        ptMax.x - ptMin.x, ptMax.y - ptMin.y);
+        (ptMax.x - ptMin.x) + 1, (ptMax.y - ptMin.y) + 1,
+        (ptMax.x - ptMin.x) + 1, (ptMax.y - ptMin.y) + 1);
+    // A little bit of extra space for the stroke width.
 }
 
 void SvgFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
