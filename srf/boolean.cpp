@@ -454,6 +454,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     ZERO(&poly);
     final.l.ClearTags();
     if(!final.AssemblePolygon(&poly, NULL, true)) {
+        into->booleanFailed = true;
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
@@ -530,6 +531,8 @@ void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
 // much faster than merging as union.
 //-----------------------------------------------------------------------------
 void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
+    booleanFailed = false;
+
     Vector t = Vector::From(0, 0, 0);
     Quaternion q = Quaternion::IDENTITY;
     int i = 0;
@@ -571,6 +574,8 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
 }
 
 void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
+    booleanFailed = false;
+
     a->MakeClassifyingBsps();
     b->MakeClassifyingBsps();
 

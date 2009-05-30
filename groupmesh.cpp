@@ -148,7 +148,10 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs) {
     }
 }
 
-void Group::GenerateShellAndMesh(void) {
+void Group::GenerateShellAndMesh(void) {    
+    bool prevBooleanFailed = booleanFailed;
+    booleanFailed = false;
+
     thisShell.Clear();
     thisMesh.Clear();
     runningShell.Clear();
@@ -292,6 +295,13 @@ void Group::GenerateShellAndMesh(void) {
     if(pg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
         SShell *prevs = &(pg->runningShell);
         GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell);
+
+        // If the Boolean failed, then we should note that in the text screen
+        // for this group.
+        booleanFailed = runningShell.booleanFailed;
+        if(booleanFailed != prevBooleanFailed) {
+            SS.later.showTW = true;
+        }
     } else {
         SMesh prevm, thism;
         ZERO(&prevm);

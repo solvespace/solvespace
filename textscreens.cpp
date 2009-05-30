@@ -475,6 +475,12 @@ void TextWindow::ShowGroupInfo(void) {
             Printf(false,
                 "%FtSURFACES%E %Fsas mesh%E");
         }
+
+        if(g->booleanFailed) {
+            Printf(true,  "The Boolean operation failed. It may be ");
+            Printf(false, "possible to fix the problem by choosing ");
+            Printf(false, "surfaces 'as mesh' instead of 'as NURBS'.");
+        }
     }
 
     // Leave more space if the group has configuration stuff above the req/

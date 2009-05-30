@@ -626,6 +626,8 @@ void SShell::MakeFromCopyOf(SShell *a) {
 }
 
 void SShell::MakeFromTransformationOf(SShell *a, Vector t, Quaternion q) {
+    booleanFailed = false;
+
     SSurface *s;
     for(s = a->surface.First(); s; s = a->surface.NextAfter(s)) {
         SSurface n;

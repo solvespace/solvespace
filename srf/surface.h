@@ -278,6 +278,8 @@ public:
     IdList<SCurve,hSCurve>      curve;
     IdList<SSurface,hSSurface>  surface;
 
+    bool                        booleanFailed;
+
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              int color);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,

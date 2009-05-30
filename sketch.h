@@ -145,6 +145,8 @@ public:
         Vector          errorPointAt;
     }               polyError;
 
+    bool            booleanFailed;
+
     SShell          thisShell;
     SShell          runningShell;
 
