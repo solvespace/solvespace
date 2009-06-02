@@ -350,7 +350,10 @@ SLVS_C_AT_MIDPOINT*
 SLVS_C_HORIZONTAL
 SLVS_C_VERTICAL**
 
-    The line connecting points ptA and ptB is horizontal or vertical.
+    The line connecting points ptA and ptB is horizontal or vertical. Or,
+    the line segment entityA is horizontal or vertical. If points are
+    specified then the line segment should be left zero, and if a line
+    is specified then the points should be left zero.
 
 SLVS_C_DIAMETER
 

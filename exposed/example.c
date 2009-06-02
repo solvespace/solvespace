@@ -102,7 +102,7 @@ void Example2d(void)
     sys.param[sys.params++] = Slvs_MakeParam(5, g, qx);
     sys.param[sys.params++] = Slvs_MakeParam(6, g, qy);
     sys.param[sys.params++] = Slvs_MakeParam(7, g, qz);
-    sys.entity[sys.entities++] = Slvs_MakeNormal3d(102, g, 3, 4, 5, 6);
+    sys.entity[sys.entities++] = Slvs_MakeNormal3d(102, g, 4, 5, 6, 7);
 
     sys.entity[sys.entities++] = Slvs_MakeWorkplane(200, g, 101, 102);
 
