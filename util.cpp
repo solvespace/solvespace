@@ -460,6 +460,8 @@ double Vector::DistanceToLine(Vector p0, Vector dp) {
 }
 
 bool Vector::OnLineSegment(Vector a, Vector b) {
+    if(this->Equals(a) || this->Equals(b)) return true;
+
     Vector d = b.Minus(a);
 
     double m = d.MagSquared();
@@ -468,7 +470,7 @@ bool Vector::OnLineSegment(Vector a, Vector b) {
     if(distsq >= LENGTH_EPS*LENGTH_EPS) return false;
 
     double t = (this->Minus(a)).DivPivoting(d);
-    // On-endpoint must be tested for separately.
+    // On-endpoint already tested
     if(t < 0 || t > 1) return false;
     return true;
 }
@@ -508,6 +510,7 @@ Vector Vector::ScaledBy(double v) {
 Vector Vector::WithMagnitude(double v) {
     double m = Magnitude();
     if(m == 0) {
+        dbp("Vector::WithMagnitude of zero vector!");
         return From(v, 0, 0);
     } else {
         return ScaledBy(v/m);

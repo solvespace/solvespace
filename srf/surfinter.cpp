@@ -1,5 +1,8 @@
 #include "solvespace.h"
 
+// Dot product tolerance for perpendicular.
+const double SShell::DOTP_TOL = 1e-3;
+
 extern int FLAG;
 
 void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
@@ -220,9 +223,25 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         List<Vector> lv;
         ZERO(&lv);
 
-        Vector axisa = axis.ScaledBy((b->ctrl[0][0]).Dot(axis)),
-               axisb = axis.ScaledBy((b->ctrl[0][1]).Dot(axis)),
-               axisc = (axisa.Plus(axisb)).ScaledBy(0.5);
+        double a_axis0 = (   ctrl[0][0]).Dot(axis),
+               a_axis1 = (   ctrl[0][1]).Dot(axis),
+               b_axis0 = (b->ctrl[0][0]).Dot(axis),
+               b_axis1 = (b->ctrl[0][1]).Dot(axis);
+
+        if(a_axis0 > a_axis1) SWAP(double, a_axis0, a_axis1);
+        if(b_axis0 > b_axis1) SWAP(double, b_axis0, b_axis1);
+
+        double ab_axis0 = max(a_axis0, b_axis0),
+               ab_axis1 = min(a_axis1, b_axis1);
+
+        if(fabs(ab_axis0 - ab_axis1) < LENGTH_EPS) {
+            // The line would be zero-length
+            return;
+        }
+
+        Vector axis0 = axis.ScaledBy(ab_axis0),
+               axis1 = axis.ScaledBy(ab_axis1),
+               axisc = (axis0.Plus(axis1)).ScaledBy(0.5);
 
         oft.MakePwlInto(&lv);
 
@@ -250,7 +269,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             p = b->PointAt(ub, vb);
 
             SBezier bezier;
-            bezier = SBezier::From(p.Plus(axisa), p.Plus(axisb));
+            bezier = SBezier::From(p.Plus(axis0), p.Plus(axis1));
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
 
@@ -608,8 +627,8 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         }
        
         // And that it lies inside our trim region
-        Point2d dummy = { 0, 0 };
-        int c = bsp->ClassifyPoint(puv, dummy);
+        Point2d dummy = { 0, 0 }, ia = { 0, 0 }, ib = { 0, 0 };
+        int c = bsp->ClassifyPoint(puv, dummy, &ia, &ib);
         if(trimmed && c == SBspUv::OUTSIDE) {
             continue;
         }
@@ -618,9 +637,11 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         SInter si;
         si.p = pxyz;
         si.surfNormal = NormalAt(puv.x, puv.y);
-        si.hsrf = h;
+        si.pinter = puv;
         si.srf = this;
         si.onEdge = (c != SBspUv::INSIDE);
+        si.edgeA = ia;
+        si.edgeB = ib;
         l->Add(&si);
     }
 
@@ -637,6 +658,26 @@ void SShell::AllPointsIntersecting(Vector a, Vector b,
     }
 }
 
+int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
+                           Vector edge_surf_n)
+{
+    double dot = inter_surf_n.Dot(edge_n);
+    if(fabs(dot) < DOTP_TOL) {
+        // The edge's surface and the edge-on-face surface
+        // are coincident. Test the edge's surface normal
+        // to see if it's with same or opposite normals.
+        if(inter_surf_n.Dot(edge_surf_n) > 0) {
+            return COINC_SAME;
+        } else {
+            return COINC_OPP;
+        }
+    } else if(dot > 0) {
+        return OUTSIDE;
+    } else {
+        return INSIDE;
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Does the given point lie on our shell? There are many cases; inside and
 // outside are obvious, but then there's all the edge-on-edge and edge-on-face
@@ -646,15 +687,101 @@ void SShell::AllPointsIntersecting(Vector a, Vector b,
 // using the closest intersection point. If the ray hits a surface on edge,
 // then just reattempt in a different random direction.
 //-----------------------------------------------------------------------------
-int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
+bool SShell::ClassifyEdge(int *indir, int *outdir,
+                          Vector ea, Vector eb,
+                          Vector p, 
+                          Vector edge_n_in, Vector edge_n_out, Vector surf_n)
+{
     List<SInter> l;
     ZERO(&l);
 
     srand(0);
 
-    int ret, cnt = 0, edge_inters;
-    double edge_dotp[2];
+    // First, check for edge-on-edge
+    int edge_inters = 0;
+    Vector inter_surf_n[2], inter_edge_n[2];
+    SSurface *srf;
+    for(srf = surface.First(); srf; srf = surface.NextAfter(srf)) {
+        if(srf->LineEntirelyOutsideBbox(ea, eb, true)) continue;
 
+        SEdgeList *sel = &(srf->edges);
+        SEdge *se;
+        for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            if((ea.Equals(se->a) && eb.Equals(se->b)) ||
+               (eb.Equals(se->a) && ea.Equals(se->b)) ||
+                p.OnLineSegment(se->a, se->b))
+            {
+                if(edge_inters < 2) {
+                    // Edge-on-edge case
+                    Point2d pm;
+                    srf->ClosestPointTo(p,  &pm, false);
+                    // A vector normal to the surface, at the intersection point
+                    inter_surf_n[edge_inters] = srf->NormalAt(pm);
+                    // A vector normal to the intersecting edge (but within the
+                    // intersecting surface) at the intersection point, pointing
+                    // out.
+                    inter_edge_n[edge_inters] =
+                      (inter_surf_n[edge_inters]).Cross((se->b).Minus((se->a)));
+                }
+
+                edge_inters++;
+            }
+        }
+    }
+
+    if(edge_inters == 2) {
+        // TODO, make this use the appropriate curved normals
+        double dotp[2];
+        for(int i = 0; i < 2; i++) {
+            dotp[i] = edge_n_out.Dot(inter_surf_n[i]);
+        }
+
+        if(fabs(dotp[1]) < DOTP_TOL) {
+            SWAP(double, dotp[0],         dotp[1]);
+            SWAP(Vector, inter_surf_n[0], inter_surf_n[1]);
+            SWAP(Vector, inter_edge_n[0], inter_edge_n[1]);
+        }
+
+        int coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? COINC_SAME : COINC_OPP;
+
+        if(fabs(dotp[0]) < DOTP_TOL && fabs(dotp[1]) < DOTP_TOL) {
+            // This is actually an edge on face case, just that the face
+            // is split into two pieces joining at our edge.
+            *indir  = coinc;
+            *outdir = coinc;
+        } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] > DOTP_TOL) {
+            if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
+                *indir  = coinc;
+                *outdir = OUTSIDE;
+            } else {
+                *indir  = INSIDE;
+                *outdir = coinc;
+            }
+        } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] < -DOTP_TOL) {
+            if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
+                *indir  = coinc;
+                *outdir = INSIDE;
+            } else {
+                *indir  = OUTSIDE;
+                *outdir = coinc;
+            }
+        } else if(dotp[0] > DOTP_TOL && dotp[1] > DOTP_TOL) {
+            *indir  = INSIDE;
+            *outdir = OUTSIDE;
+        } else if(dotp[0] < -DOTP_TOL && dotp[1] < -DOTP_TOL) {
+            *indir  = OUTSIDE;
+            *outdir = INSIDE;
+        } else {
+            // Edge is tangent to the shell at shell's edge, so can't be
+            // a boundary of the surface.
+            return false;
+        }
+        return true;
+    }
+
+    if(edge_inters != 0) dbp("bad, edge_inters=%d", edge_inters);
+   
+    int cnt = 0;
     for(;;) {
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
@@ -663,8 +790,10 @@ int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l, false, true, false);
         
+        // no intersections means it's outside
+        *indir  = OUTSIDE;
+        *outdir = OUTSIDE;
         double dmin = VERY_POSITIVE;
-        ret = OUTSIDE; // no intersections means it's outside
         bool onEdge = false;
         edge_inters = 0;
 
@@ -678,9 +807,9 @@ int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
 
             double d = ((si->p).Minus(p)).Magnitude();
 
-            // Handle edge-on-edge
-            if(d < LENGTH_EPS && si->onEdge && edge_inters < 2) {
-                edge_dotp[edge_inters] = (si->surfNormal).Dot(edge_n);
+            // We actually should never hit this case; it should have been
+            // handled above.
+            if(d < LENGTH_EPS && si->onEdge) {
                 edge_inters++;
             }
 
@@ -689,21 +818,24 @@ int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
 
                 if(d < LENGTH_EPS) {
                     // Edge-on-face (unless edge-on-edge above supercedes)
-                    double dot = (si->surfNormal).Dot(edge_n);
-                    if(fabs(dot) < LENGTH_EPS && 0) {
-                        // TODO revamp this
-                    } else if(dot > 0) {
-                        ret = SURF_PARALLEL;
-                    } else {
-                        ret = SURF_ANTIPARALLEL;
-                    }
+                    Point2d pin, pout;
+                    (si->srf)->ClosestPointTo(p.Plus(edge_n_in),  &pin,  false);
+                    (si->srf)->ClosestPointTo(p.Plus(edge_n_out), &pout, false);
+
+                    Vector surf_n_in  = (si->srf)->NormalAt(pin),
+                           surf_n_out = (si->srf)->NormalAt(pout);
+
+                    *indir  = ClassifyRegion(edge_n_in,  surf_n_in,  surf_n);
+                    *outdir = ClassifyRegion(edge_n_out, surf_n_out, surf_n);
                 } else {
                     // Edge does not lie on surface; either strictly inside
                     // or strictly outside
                     if((si->surfNormal).Dot(ray) > 0) {
-                        ret = INSIDE;
+                        *indir  = INSIDE;
+                        *outdir = INSIDE;
                     } else {
-                        ret = OUTSIDE;
+                        *indir  = OUTSIDE;
+                        *outdir = OUTSIDE;
                     }
                 }
                 onEdge = si->onEdge;
@@ -714,27 +846,16 @@ int SShell::ClassifyPoint(Vector p, Vector edge_n, Vector surf_n) {
         // If the point being tested lies exactly on an edge of the shell,
         // then our ray always lies on edge, and that's okay. Otherwise
         // try again in a different random direction.
-        if((edge_inters == 2) || !onEdge) break;
+        if(!onEdge) break;
         if(cnt++ > 5) {
             dbp("can't find a ray that doesn't hit on edge!");
             dbp("on edge = %d, edge_inters = %d", onEdge, edge_inters);
+            SS.nakedEdges.AddEdge(ea, eb);
             break;
         }
     }
 
-    if(edge_inters == 2) {
-        double tol = 1e-3;
-
-        if(edge_dotp[0] > -tol && edge_dotp[1] > -tol) {
-            return EDGE_PARALLEL;
-        } else if(edge_dotp[0] < tol && edge_dotp[1] < tol) {
-            return EDGE_ANTIPARALLEL;
-        } else {
-            return EDGE_TANGENT;
-        }
-    } else {
-        return ret;
-    }
+    return true;
 }
 
 //-----------------------------------------------------------------------------

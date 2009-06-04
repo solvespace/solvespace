@@ -31,7 +31,8 @@ public:
 
     Point2d IntersectionWith(Point2d a, Point2d b);
     SBspUv *InsertEdge(Point2d a, Point2d b);
-    int ClassifyPoint(Point2d p, Point2d eb);
+    int ClassifyPoint(Point2d p, Point2d eb,
+                                        Point2d *ia=NULL, Point2d *ib=NULL);
     int ClassifyEdge(Point2d ea, Point2d eb);
 };
 
@@ -62,7 +63,7 @@ public:
 
     Vector PointAt(double t);
     Vector TangentAt(double t);
-    void ClosestPointTo(Vector p, double *t);
+    void ClosestPointTo(Vector p, double *t, bool converge=true);
     void SplitAt(double t, SBezier *bef, SBezier *aft);
 
     Vector Start(void);
@@ -184,9 +185,10 @@ public:
     int         tag;
     Vector      p;
     SSurface    *srf;
-    hSSurface   hsrf;
-    Vector      surfNormal; // of the intersecting surface, at pinter
-    bool        onEdge;     // pinter is on edge of trim poly
+    Point2d     pinter;
+    Vector      surfNormal;     // of the intersecting surface, at pinter
+    bool        onEdge;         // pinter is on edge of trim poly
+    Point2d     edgeA, edgeB;   // the edge that pinter is on
 };
 
 // A rational polynomial surface in Bezier form.
@@ -209,6 +211,7 @@ public:
 
     // For testing whether a point (u, v) on the surface lies inside the trim
     SBspUv          *bsp;
+    SEdgeList       edges;
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
@@ -217,6 +220,10 @@ public:
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
                                          bool includingTrims);
 
+    void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
+                                  Vector *pt, Vector *enin, Vector *enout,
+                                  Vector *surfn,
+                                  DWORD auxA, SShell *shell);
     SSurface MakeCopyTrimAgainst(SShell *against, SShell *parent, SShell *into,
                                  int type, bool opA);
     void TrimFromEdgeList(SEdgeList *el);
@@ -244,11 +251,15 @@ public:
                                             List<Inter> *l, bool segment,
                                             SSurface *sorig);
 
+    void ClosestPointTo(Vector p, Point2d *puv, bool converge=true);
     void ClosestPointTo(Vector p, double *u, double *v, bool converge=true);
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v);
+    Vector ClosestPointOnThisAndSurface(SSurface *srf2, Vector p);
     void PointOnSurfaces(SSurface *s1, SSurface *s2, double *u, double *v);
     Vector PointAt(double u, double v);
+    Vector PointAt(Point2d puv);
     void TangentsAt(double u, double v, Vector *tu, Vector *tv);
+    Vector NormalAt(Point2d puv);
     Vector NormalAt(double u, double v);
     bool LineEntirelyOutsideBbox(Vector a, Vector b, bool segment);
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin);
@@ -263,7 +274,7 @@ public:
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
             SShell *useCurvesFrom=NULL);
     void MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl);
-    void MakeClassifyingBsp(SShell *shell);
+    void MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom);
     double ChordToleranceForEdge(Vector a, Vector b);
     void MakeTriangulationGridInto(List<double> *l, double vs, double vf,
                                     bool swapped);
@@ -294,7 +305,7 @@ public:
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
     void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
-    void MakeClassifyingBsps(void);
+    void MakeClassifyingBsps(SShell *useCurvesFrom);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
                                 bool seg, bool trimmed, bool inclTangent);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
@@ -302,16 +313,19 @@ public:
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
     void CleanupAfterBoolean(void);
 
-    static const int INSIDE                 = 100;
-    static const int OUTSIDE                = 200;
-    static const int SURF_PARALLEL          = 300;
-    static const int SURF_ANTIPARALLEL      = 400;
-    static const int EDGE_PARALLEL          = 500;
-    static const int EDGE_ANTIPARALLEL      = 600;
-    static const int EDGE_TANGENT           = 700;
-
-    int ClassifyPoint(Vector p, Vector edge_n, Vector surf_n);
-
+    // Definitions when classifying regions of a surface; it is either inside,
+    // outside, or coincident (with parallel or antiparallel normal) with a
+    // shell.
+    static const int INSIDE     = 100;
+    static const int OUTSIDE    = 200;
+    static const int COINC_SAME = 300;
+    static const int COINC_OPP  = 400;
+    static const double DOTP_TOL;
+    int ClassifyRegion(Vector edge_n, Vector inter_surf_n, Vector edge_surf_n);
+    bool ClassifyEdge(int *indir, int *outdir,
+                      Vector ea, Vector eb,
+                      Vector p, 
+                      Vector edge_n_in, Vector edge_n_out, Vector surf_n);
 
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);

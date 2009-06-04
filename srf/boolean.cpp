@@ -158,26 +158,12 @@ void SSurface::TrimFromEdgeList(SEdgeList *el) {
     }
 }
 
-// For each edge, we record the membership of the regions to its left and
-// right, which we call the "in direction" and "out direction" (wrt its
-// outer normal)
-#define INDIR   (0)
-#define OUTDIR  (8)
-// Regions of interest are the other shell itself, the coincident faces of the
-// shell (same or opposite normal) and the original surface.
-#define SHELL                   (0)
-#define COINCIDENT_SAME         (1)
-#define COINCIDENT_OPPOSITE     (2)
-#define ORIG                    (3)
-// Macro for building bit to test
-#define INSIDE(reg, dir) (1 << ((reg)+(dir)))
-
-static bool KeepRegion(int type, bool opA, int tag, int dir)
+static bool KeepRegion(int type, bool opA, int shell, int orig)
 {
-    bool inShell = (tag & INSIDE(SHELL, dir))                != 0,
-         inSame  = (tag & INSIDE(COINCIDENT_SAME, dir))      != 0,
-         inOpp   = (tag & INSIDE(COINCIDENT_OPPOSITE, dir))  != 0,
-         inOrig  = (tag & INSIDE(ORIG, dir))                 != 0;
+    bool inShell = (shell == SShell::INSIDE),
+         inSame  = (shell == SShell::COINC_SAME),
+         inOpp   = (shell == SShell::COINC_OPP),
+         inOrig  = (orig == SShell::INSIDE);
 
     bool inFace = inSame || inOpp;
 
@@ -204,10 +190,12 @@ static bool KeepRegion(int type, bool opA, int tag, int dir)
         default: oops();
     }
 }
-static bool KeepEdge(int type, bool opA, int tag)
+static bool KeepEdge(int type, bool opA,
+                     int indir_shell, int outdir_shell,
+                     int indir_orig, int outdir_orig)
 {
-    bool keepIn  = KeepRegion(type, opA, tag, INDIR),
-         keepOut = KeepRegion(type, opA, tag, OUTDIR);
+    bool keepIn  = KeepRegion(type, opA, indir_shell,  indir_orig),
+         keepOut = KeepRegion(type, opA, outdir_shell, outdir_orig);
 
     // If the regions to the left and right of this edge are both in or both
     // out, then this edge is not useful and should be discarded.
@@ -215,35 +203,31 @@ static bool KeepEdge(int type, bool opA, int tag)
     return false;
 }
 
-static int TagByClassifiedEdge(int bspclass, int reg)
+static void TagByClassifiedEdge(int bspclass, int *indir, int *outdir)
 {
     switch(bspclass) {
         case SBspUv::INSIDE:
-            return INSIDE(reg, OUTDIR) | INSIDE(reg, INDIR);
+            *indir  = SShell::INSIDE;
+            *outdir = SShell::INSIDE;
+            break;
 
         case SBspUv::OUTSIDE:
-            return 0;
+            *indir  = SShell::OUTSIDE;
+            *outdir = SShell::OUTSIDE;
+            break;
 
         case SBspUv::EDGE_PARALLEL:
-            return INSIDE(reg, INDIR);
+            *indir  = SShell::INSIDE;
+            *outdir = SShell::OUTSIDE;
+            break;
 
         case SBspUv::EDGE_ANTIPARALLEL:
-            return INSIDE(reg, OUTDIR);
+            *indir  = SShell::OUTSIDE;
+            *outdir = SShell::INSIDE;
+            break;
 
         default: oops();
     }
-}
-
-void DBPEDGE(int tag) {
-    dbp("edge: indir %s %s %s %s ; outdir %s %s %s %s",
-        (tag & INSIDE(SHELL, INDIR)) ? "shell" : "",
-        (tag & INSIDE(COINCIDENT_SAME, INDIR)) ? "coinc-same" : "",
-        (tag & INSIDE(COINCIDENT_OPPOSITE, INDIR)) ? "coinc-opp" : "",
-        (tag & INSIDE(ORIG, INDIR)) ? "orig" : "",
-        (tag & INSIDE(SHELL, OUTDIR)) ? "shell" : "",
-        (tag & INSIDE(COINCIDENT_SAME, OUTDIR)) ? "coinc-same" : "",
-        (tag & INSIDE(COINCIDENT_OPPOSITE, OUTDIR)) ? "coinc-opp" : "",
-        (tag & INSIDE(ORIG, OUTDIR)) ? "orig" : "");
 }
 
 void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
@@ -262,6 +246,54 @@ void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
         SS.nakedEdges.AddEdge(surf->PointAt(mid.x, mid.y),
                               surf->PointAt(arrow.x, arrow.y));
     }
+}
+
+static char *REGION(int d) {
+    switch(d) {
+        case SShell::INSIDE:  return "inside";
+        case SShell::OUTSIDE: return "outside";
+        case SShell::COINC_SAME: return "same";
+        case SShell::COINC_OPP: return "opp";
+        default: return "xxx";
+    }
+}
+
+
+void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
+                                        Vector *pt,
+                                        Vector *enin, Vector *enout,
+                                        Vector *surfn,
+                                        DWORD auxA, SShell *shell)
+{
+    // the midpoint of the edge
+    Point2d muv  = (auv.Plus(buv)).ScaledBy(0.5);
+    // a vector parallel to the edge
+    Point2d abuv = buv.Minus(auv).WithMagnitude(0.01);
+    // the edge's inner normal
+    Point2d enuv = abuv.Normal();
+
+    *pt    = PointAt(muv);
+    *surfn = NormalAt(muv.x, muv.y);
+
+    // If this edge just approximates a curve, then refine our midpoint so
+    // so that it actually lies on that curve too. Otherwise stuff like
+    // point-on-face tests will fail, since the point won't actually lie
+    // on the other face.
+    hSCurve hc = { auxA };
+    SCurve *sc = shell->curve.FindById(hc);
+    if(sc->isExact && sc->exact.deg != 1) {
+        double t;
+        sc->exact.ClosestPointTo(*pt, &t, false);
+        *pt = sc->exact.PointAt(t);
+    }
+
+    // Compute the inner and outer normals of this edge (within the srf),
+    // in xyz space. These are not necessarily antiparallel, if the
+    // surface is curved.
+    Vector pin   = PointAt(muv.Plus(enuv)),
+           pout  = PointAt(muv.Minus(enuv));
+    *enin  = pin.Minus(*pt),
+    *enout = pout.Minus(*pt);
 }
 
 //-----------------------------------------------------------------------------
@@ -294,29 +326,14 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     }
 
     // Build up our original trim polygon; remember the coordinates could
-    // be changed if we just flipped the surface normal.
+    // be changed if we just flipped the surface normal, and we are using
+    // the split curves (not the original curves).
     SEdgeList orig;
     ZERO(&orig);
     ret.MakeEdgesInto(into, &orig, true);
     ret.trim.Clear();
     // which means that we can't necessarily use the old BSP...
     SBspUv *origBsp = SBspUv::From(&orig);
-
-    // Find any surfaces from the other shell that are coincident with ours,
-    // and get the intersection polygons, grouping surfaces with the same
-    // and with opposite normal separately.
-    SEdgeList sameNormal, oppositeNormal;
-    ZERO(&sameNormal);
-    ZERO(&oppositeNormal);
-    agnst->MakeCoincidentEdgesInto(&ret, true, &sameNormal, into);
-    agnst->MakeCoincidentEdgesInto(&ret, false, &oppositeNormal, into);
-    // and cull parallel or anti-parallel pairs, which may occur if multiple
-    // surfaces are coincident with ours
-    sameNormal.CullExtraneousEdges();
-    oppositeNormal.CullExtraneousEdges();
-    // and build the trees for quick in-polygon testing
-    SBspUv *sameBsp = SBspUv::From(&sameNormal);
-    SBspUv *oppositeBsp = SBspUv::From(&oppositeNormal);
 
     // And now intersect the other shell against us
     SEdgeList inter;
@@ -373,45 +390,25 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
 
     SEdge *se;
     for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
-        Point2d auv = (se->a).ProjectXy(),
-                buv = (se->b).ProjectXy();
+        Point2d auv  = (se->a).ProjectXy(),
+                buv  = (se->b).ProjectXy();
 
-        int c_same = sameBsp->ClassifyEdge(auv, buv);
-        int c_opp = oppositeBsp->ClassifyEdge(auv, buv);
+        Vector pt, enin, enout, surfn;
+        ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
+                                        se->auxA, into);
 
-        // Get the midpoint of this edge
-        Point2d am = (auv.Plus(buv)).ScaledBy(0.5);
-        Vector pt = ret.PointAt(am.x, am.y);
-        // and the outer normal from the trim polygon (within the surface)
-        Vector surf_n = ret.NormalAt(am.x, am.y);
-        Vector ea = ret.PointAt(auv.x, auv.y),
-               eb = ret.PointAt(buv.x, buv.y);
-        Vector edge_n = surf_n.Cross((eb.Minus(ea)));
+        int indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        int c_shell = agnst->ClassifyPoint(pt, edge_n, surf_n);
+        indir_orig  = SShell::INSIDE;
+        outdir_orig = SShell::OUTSIDE;
 
-        int tag = 0;
-        tag |= INSIDE(ORIG, INDIR);
-        tag |= TagByClassifiedEdge(c_same, COINCIDENT_SAME);
-        tag |= TagByClassifiedEdge(c_opp,  COINCIDENT_OPPOSITE);
+        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                            ret.PointAt(auv), ret.PointAt(buv), pt, 
+                            enin, enout, surfn);
 
-        if(c_shell == SShell::INSIDE) {
-            tag |= INSIDE(SHELL, INDIR) | INSIDE(SHELL, OUTDIR);
-        } else if(c_shell == SShell::OUTSIDE) {
-            tag |= 0;
-        } else if(c_shell == SShell::SURF_PARALLEL) {
-            tag |= INSIDE(SHELL, INDIR);
-        } else if(c_shell == SShell::SURF_ANTIPARALLEL) {
-            tag |= INSIDE(SHELL, OUTDIR);
-        } else if(c_shell == SShell::EDGE_PARALLEL) {
-            tag |= INSIDE(SHELL, INDIR);
-        } else if(c_shell == SShell::EDGE_ANTIPARALLEL) {
-            tag |= INSIDE(SHELL, OUTDIR);
-        } else if(c_shell == SShell::EDGE_TANGENT) {
-            continue;
-        }
-
-        if(KeepEdge(type, opA, tag)) {
+        if(KeepEdge(type, opA, indir_shell, outdir_shell, 
+                               indir_orig,  outdir_orig))
+        {
             final.AddEdge(se->a, se->b, se->auxA, se->auxB);
         }
     }
@@ -420,23 +417,22 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
         Point2d auv = (se->a).ProjectXy(),
                 buv = (se->b).ProjectXy();
 
+        Vector pt, enin, enout, surfn;
+        ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
+                                        se->auxA, into);
+
+        int indir_shell, outdir_shell, indir_orig, outdir_orig;
+
         int c_this = origBsp->ClassifyEdge(auv, buv);
-        int c_same = sameBsp->ClassifyEdge(auv, buv);
-        int c_opp = oppositeBsp->ClassifyEdge(auv, buv);
+        TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
-        int tag = 0;
-        tag |= TagByClassifiedEdge(c_this, ORIG);
-        tag |= TagByClassifiedEdge(c_same, COINCIDENT_SAME);
-        tag |= TagByClassifiedEdge(c_opp,  COINCIDENT_OPPOSITE);
+        agnst->ClassifyEdge(&indir_shell, &outdir_shell,
+                            ret.PointAt(auv), ret.PointAt(buv), pt, 
+                            enin, enout, surfn);
 
-        if(type == SShell::AS_DIFFERENCE && !opA) {
-            // The second operand of a difference gets turned inside out
-            tag |= INSIDE(SHELL, INDIR);
-        } else {
-            tag |= INSIDE(SHELL, OUTDIR);
-        }
-
-        if(KeepEdge(type, opA, tag)) {
+        if(KeepEdge(type, opA, indir_shell, outdir_shell, 
+                               indir_orig,  outdir_orig))
+        {
             final.AddEdge(se->a, se->b, se->auxA, se->auxB);
         }
     }
@@ -455,12 +451,11 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     final.l.ClearTags();
     if(!final.AssemblePolygon(&poly, NULL, true)) {
         into->booleanFailed = true;
+        dbp("failed: I=%d", I);
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
 
-    sameNormal.Clear();
-    oppositeNormal.Clear();
     final.Clear();
     inter.Clear();
     orig.Clear();
@@ -496,6 +491,7 @@ void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
 void SShell::CleanupAfterBoolean(void) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
+        ss->edges.Clear();
     }
 }
 
@@ -576,8 +572,8 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
 void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     booleanFailed = false;
 
-    a->MakeClassifyingBsps();
-    b->MakeClassifyingBsps();
+    a->MakeClassifyingBsps(NULL);
+    b->MakeClassifyingBsps(NULL);
 
     // Copy over all the original curves, splitting them so that a
     // piecwise linear segment never crosses a surface from the other
@@ -605,11 +601,21 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
         sc->RemoveShortSegments(srfA, srfB);
     }
     
+    // And clean up the piecewise linear things we made as a calculation aid
+    a->CleanupAfterBoolean();
+    b->CleanupAfterBoolean();
+    // Remake the classifying BSPs with the split (and short-segment-removed)
+    // curves
+    a->MakeClassifyingBsps(this);
+    b->MakeClassifyingBsps(this);
+
+    // Then trim and copy the surfaces
     if(b->surface.n == 0 || a->surface.n == 0) {
-        // Then trim and copy the surfaces
+        I = 1023123;
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     } else {
+        I = 0;
         a->CopySurfacesTrimAgainst(b, this, type, true);
         b->CopySurfacesTrimAgainst(a, this, type, false);
     }
@@ -627,21 +633,23 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
 //-----------------------------------------------------------------------------
 // All of the BSP routines that we use to perform and accelerate polygon ops.
 //-----------------------------------------------------------------------------
-void SShell::MakeClassifyingBsps(void) {
+void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->MakeClassifyingBsp(this);
+        ss->MakeClassifyingBsp(this, useCurvesFrom);
     }
 }
 
-void SSurface::MakeClassifyingBsp(SShell *shell) {
+void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
     SEdgeList el;
     ZERO(&el);
 
-    MakeEdgesInto(shell, &el, true);
+    MakeEdgesInto(shell, &el, true, useCurvesFrom);
     bsp = SBspUv::From(&el);
-
     el.Clear();
+
+    ZERO(&edges);
+    MakeEdgesInto(shell, &edges, false, useCurvesFrom);
 }
 
 SBspUv *SBspUv::Alloc(void) {
@@ -733,7 +741,7 @@ SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb) {
     return this;
 }
 
-int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
+int SBspUv::ClassifyPoint(Point2d p, Point2d eb, Point2d *ia, Point2d *ib) {
     if(!this) return OUTSIDE;
 
     Point2d n = ((b.Minus(a)).Normal()).WithMagnitude(1);
@@ -746,6 +754,11 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
         while(f) {
             Point2d ba = (f->b).Minus(f->a);
             if(p.DistanceToLine(f->a, ba, true) < LENGTH_EPS) {
+                if(ia && ib) {
+                    // Tell the caller which edge it happens to lie on.
+                    *ia = f->a;
+                    *ib = f->b;
+                }
                 if(eb.DistanceToLine(f->a, ba, false) < LENGTH_EPS) {
                     if(ba.Dot(eb.Minus(p)) > 0) {
                         return EDGE_PARALLEL;
@@ -759,16 +772,16 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb) {
             f = f->more;
         }
         // Pick arbitrarily which side to send it down, doesn't matter
-        int c1 =  neg ? neg->ClassifyPoint(p, eb) : OUTSIDE;
-        int c2 =  pos ? pos->ClassifyPoint(p, eb) : INSIDE;
+        int c1 =  neg ? neg->ClassifyPoint(p, eb, ia, ib) : OUTSIDE;
+        int c2 =  pos ? pos->ClassifyPoint(p, eb, ia, ib) : INSIDE;
         if(c1 != c2) {
             dbp("MISMATCH: %d %d %08x %08x", c1, c2, neg, pos);
         }
         return c1;
     } else if(dp > 0) {
-        return pos ? pos->ClassifyPoint(p, eb) : INSIDE;
+        return pos ? pos->ClassifyPoint(p, eb, ia, ib) : INSIDE;
     } else {
-        return neg ? neg->ClassifyPoint(p, eb) : OUTSIDE;
+        return neg ? neg->ClassifyPoint(p, eb, ia, ib) : OUTSIDE;
     }
 }
 

@@ -199,6 +199,13 @@ void SolveSpace::AfterNewFile(void) {
     // and the naked edges
     nakedEdges.Clear();
 
+    // GenerateAll() expects the view to be valid, because it uses that to
+    // fill in default values for extrusion depths etc. (which won't matter
+    // here, but just don't let it work on garbage)
+    SS.GW.offset    = Vector::From(0, 0, 0);
+    SS.GW.projRight = Vector::From(1, 0, 0);
+    SS.GW.projUp    = Vector::From(0, 1, 0);
+
     ReloadAllImported();
     GenerateAll(-1, -1);
 

@@ -93,7 +93,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Vertical\tV",                        MNU_VERTICAL,       'V',    mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&On Point / Curve / Plane\tO",        MNU_ON_ENTITY,      'O',    mCon  },
-{ 1, "E&qual Length / Radius\tQ",           MNU_EQUAL,          'Q',    mCon  },
+{ 1, "E&qual Length / Radius / Angle\tQ",   MNU_EQUAL,          'Q',    mCon  },
 { 1, "Length Ra&tio\tZ",                    MNU_RATIO,          'Z',    mCon  },
 { 1, "At &Midpoint\tM",                     MNU_AT_MIDPOINT,    'M',    mCon  },
 { 1, "S&ymmetric\tY",                       MNU_SYMMETRIC,      'Y',    mCon  },

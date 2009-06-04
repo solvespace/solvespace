@@ -130,7 +130,7 @@ Vector SBezier::TangentAt(double t) {
     return ret;
 }
 
-void SBezier::ClosestPointTo(Vector p, double *t) {
+void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
     int i;
     double minDist = VERY_POSITIVE;
     *t = 0;
@@ -147,7 +147,7 @@ void SBezier::ClosestPointTo(Vector p, double *t) {
     }
 
     Vector p0;
-    for(i = 0; i < 15; i++) {
+    for(i = 0; i < (converge ? 15 : 3); i++) {
         p0 = PointAt(*t);
         if(p0.Equals(p, RATPOLY_EPS)) {
             return;
@@ -157,7 +157,9 @@ void SBezier::ClosestPointTo(Vector p, double *t) {
         Vector pc = p.ClosestPointOnLine(p0, dp);
         *t += (pc.Minus(p0)).DivPivoting(dp);
     }
-    dbp("didn't converge (closest point on bezier curve)");
+    if(converge) {
+        dbp("didn't converge (closest point on bezier curve)");
+    }
 }
 
 void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
@@ -242,6 +244,9 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb) {
     }
 }
 
+Vector SSurface::PointAt(Point2d puv) {
+    return PointAt(puv.x, puv.y);
+}
 Vector SSurface::PointAt(double u, double v) {
     Vector num = Vector::From(0, 0, 0);
     double den = 0;
@@ -294,12 +299,18 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) {
     *tv = tv->ScaledBy(1.0/(den*den));
 }
 
+Vector SSurface::NormalAt(Point2d puv) {
+    return NormalAt(puv.x, puv.y);
+}
 Vector SSurface::NormalAt(double u, double v) {
     Vector tu, tv;
     TangentsAt(u, v, &tu, &tv);
     return tu.Cross(tv);
 }
 
+void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool converge) {
+    ClosestPointTo(p, &(puv->x), &(puv->y), converge);
+}
 void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     // A few special cases first; when control points are coincident the
     // derivative goes to zero at the conrol points, and would result in
@@ -392,6 +403,48 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
     }
 //    dbp("didn't converge (surface intersecting line)");
     return false;
+}
+
+Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
+    // This is untested.
+    int i, j;
+    Point2d puv[2];
+    SSurface *srf[2] = { this, srf2 };
+
+    for(j = 0; j < 2; j++) {
+        (srf[j])->ClosestPointTo(p, &(puv[j]), false);
+    }
+
+    for(i = 0; i < 4; i++) {
+        Vector tu[2], tv[2], cp[2], n[2];
+        double d[2];
+
+        for(j = 0; j < 2; j++) {
+            (srf[j])->TangentsAt(puv[j].x, puv[j].y, &(tu[j]), &(tv[j]));
+
+            cp[j] = (srf[j])->PointAt(puv[j]);
+
+            n[j] = ((tu[j]).Cross(tv[j])).WithMagnitude(1);
+            d[j] = (n[j]).Dot(cp[j]);
+        }
+
+        Vector p0 = Vector::AtIntersectionOfPlanes(n[0], d[0], n[1], d[1]),
+               dp = (n[0]).Cross(n[1]);
+        
+        Vector pc = p.ClosestPointOnLine(p0, dp);
+
+        // Adjust our guess and iterate
+        for(j = 0; j < 2; j++) {
+            Vector dc = pc.Minus(cp[j]);
+            double du = dc.Dot(tu[j]), dv = dc.Dot(tv[j]);
+            puv[j].x += du / ((tu[j]).MagSquared());
+            puv[j].y += dv / ((tv[j]).MagSquared());
+        }
+    }
+
+    // If this converged, then the two points are actually equal.
+    return ((srf[0])->PointAt(puv[0])).Plus(
+           ((srf[1])->PointAt(puv[1]))).ScaledBy(0.5);
 }
 
 void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2,
