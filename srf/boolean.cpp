@@ -109,7 +109,7 @@ void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
     }
 }
 
-void SSurface::TrimFromEdgeList(SEdgeList *el) {
+void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
     el->l.ClearTags();
    
     STrimBy stb;
@@ -151,9 +151,12 @@ void SSurface::TrimFromEdgeList(SEdgeList *el) {
             }
         } while(merged);
 
+        if(asUv) {
+            stb.start  = PointAt(stb.start.x,  stb.start.y);
+            stb.finish = PointAt(stb.finish.x, stb.finish.y);
+        }
+
         // And add the merged trim, with xyz (not uv like the polygon) pts
-        stb.start  = PointAt(stb.start.x,  stb.start.y);
-        stb.finish = PointAt(stb.finish.x, stb.finish.y);
         trim.Add(&stb);
     }
 }
@@ -444,7 +447,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     final.CullExtraneousEdges();
 
     // Use our reassembled edges to trim the new surface.
-    ret.TrimFromEdgeList(&final);
+    ret.TrimFromEdgeList(&final, true);
 
     SPolygon poly;
     ZERO(&poly);

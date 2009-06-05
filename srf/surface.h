@@ -194,6 +194,7 @@ public:
 // A rational polynomial surface in Bezier form.
 class SSurface {
 public:
+    int             tag;
     hSSurface       h;
 
     // Same as newH for the curves; record what a surface gets renamed to
@@ -226,7 +227,7 @@ public:
                                   DWORD auxA, SShell *shell);
     SSurface MakeCopyTrimAgainst(SShell *against, SShell *parent, SShell *into,
                                  int type, bool opA);
-    void TrimFromEdgeList(SEdgeList *el);
+    void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                           SShell *into);
     void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
@@ -330,6 +331,7 @@ public:
     void MakeFromCopyOf(SShell *a);
     void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);
     void MakeFromAssemblyOf(SShell *a, SShell *b);
+    void MergeCoincidentSurfaces(void);
 
     void TriangulateInto(SMesh *sm);
     void MakeEdgesInto(SEdgeList *sel);

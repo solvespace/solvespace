@@ -67,6 +67,8 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
 {
     SSurface ret;
     ZERO(&ret);
+
+
     ret.degm = sb->deg;
     ret.degn = 2;
 
@@ -499,6 +501,8 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
     ZERO(this);
     SBezierLoop *sbl;
 
+    int i0 = surface.n, i;
+
     // Normalize the axis direction so that the direction of revolution
     // ends up parallel to the normal of the sketch, on the side of the
     // axis where the sketch is.
@@ -619,6 +623,86 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
 
         hsl.Clear();
     }
+
+    for(i = i0; i < surface.n; i++) {
+        SSurface *srf = &(surface.elem[i]);
+
+        // Revolution of a line; this is potentially a plane, which we can
+        // rewrite to have degree (1, 1).
+        if(srf->degm == 1 && srf->degn == 2) {
+            // close start, far start, far finish
+            Vector cs, fs, ff;
+            double d0, d1;
+            d0 = (srf->ctrl[0][0]).DistanceToLine(pt, axis);
+            d1 = (srf->ctrl[1][0]).DistanceToLine(pt, axis);
+
+            if(d0 > d1) {
+                cs = srf->ctrl[1][0];
+                fs = srf->ctrl[0][0];
+                ff = srf->ctrl[0][2];
+            } else {
+                cs = srf->ctrl[0][0];
+                fs = srf->ctrl[1][0];
+                ff = srf->ctrl[1][2];
+            }
+
+            // origin close, origin far
+            Vector oc = cs.ClosestPointOnLine(pt, axis),
+                   of = fs.ClosestPointOnLine(pt, axis);
+
+            if(oc.Equals(of)) {
+                // This is a plane, not a (non-degenerate) cone.
+                Vector oldn = srf->NormalAt(0.5, 0.5);
+
+                Vector u = fs.Minus(of), v;
+
+                v = (axis.Cross(u)).WithMagnitude(1);
+
+                double vm = (ff.Minus(of)).Dot(v);
+                v = v.ScaledBy(vm);
+
+                srf->degm = 1;
+                srf->degn = 1;
+                srf->ctrl[0][0] = of;
+                srf->ctrl[0][1] = of.Plus(u);
+                srf->ctrl[1][0] = of.Plus(v);
+                srf->ctrl[1][1] = of.Plus(u).Plus(v);
+                srf->weight[0][0] = 1;
+                srf->weight[0][1] = 1;
+                srf->weight[1][0] = 1;
+                srf->weight[1][1] = 1;
+
+                if(oldn.Dot(srf->NormalAt(0.5, 0.5)) < 0) {
+                    SWAP(Vector, srf->ctrl[0][0], srf->ctrl[1][0]);
+                    SWAP(Vector, srf->ctrl[0][1], srf->ctrl[1][1]);
+                }
+                continue;
+            }
+
+            if(fabs(d0 - d1) < LENGTH_EPS) {
+                // This is a cylinder; so transpose it so that we'll recognize
+                // it as a surface of extrusion.
+                SSurface sn = *srf;
+
+                // Transposing u and v flips the normal, so reverse u to
+                // flip it again and put it back where we started.
+                sn.degm = 2;
+                sn.degn = 1;
+                int dm, dn;
+                for(dm = 0; dm <= 1; dm++) {
+                    for(dn = 0; dn <= 2; dn++) {
+                        sn.ctrl  [dn][dm] = srf->ctrl  [1-dm][dn];
+                        sn.weight[dn][dm] = srf->weight[1-dm][dn];
+                    }
+                }
+
+                *srf = sn;
+                continue;
+            }
+        }
+
+    }
+
 }
 
 void SShell::MakeFromCopyOf(SShell *a) {

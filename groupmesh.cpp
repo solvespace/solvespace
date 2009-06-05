@@ -168,6 +168,7 @@ void Group::GenerateShellAndMesh(void) {
 
             GenerateForStepAndRepeat<SShell>
                 (prev, toStep, &runningShell, src->meshCombine);
+            runningShell.MergeCoincidentSurfaces();
         } else {
             SMesh prevm, stepm;
             ZERO(&prevm);
@@ -287,6 +288,8 @@ void Group::GenerateShellAndMesh(void) {
         thisShell.RemapFaces(this, 0);
     }
 
+    thisShell.MergeCoincidentSurfaces();
+
     // So now we've got the mesh or shell for this group. Combine it with
     // the previous group's mesh or shell with the requested Boolean, and
     // we're done.
@@ -295,6 +298,7 @@ void Group::GenerateShellAndMesh(void) {
     if(pg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
         SShell *prevs = &(pg->runningShell);
         GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell);
+        runningShell.MergeCoincidentSurfaces();
 
         // If the Boolean failed, then we should note that in the text screen
         // for this group.
