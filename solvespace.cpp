@@ -466,6 +466,10 @@ void SolveSpace::MenuAnalyze(int id) {
                 Error("%d edges interfere with other triangles, bad.",
                     SS.nakedEdges.l.n);
             } else {
+                // MakeCertainEdgesInto also reports "naked" edges, which
+                // will include some types of coincident geometry that are
+                // not errors.
+                SS.nakedEdges.Clear();
                 Message("The assembly does not interfere, good.");
             }
             break;
