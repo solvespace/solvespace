@@ -362,7 +362,7 @@ void Group::GenerateDisplayItems(void) {
 
         if(SS.GW.showEdges) {
             runningShell.MakeEdgesInto(&displayEdges);
-            displayMesh.MakeEmphasizedEdgesInto(&displayEdges);
+            runningMesh.MakeEmphasizedEdgesInto(&displayEdges);
         }
 
         displayDirty = false;
