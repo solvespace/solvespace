@@ -236,8 +236,9 @@ public:
                                                 bool *inter, bool *fwd,
                                                 DWORD *face);
     static const int NAKED_OR_SELF_INTER_EDGES  = 100;
-    static const int TURNING_EDGES              = 200;
-    static const int EMPHASIZED_EDGES           = 300;
+    static const int SELF_INTER_EDGES           = 200;
+    static const int TURNING_EDGES              = 300;
+    static const int EMPHASIZED_EDGES           = 400;
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
                                                 bool *inter, bool *leaky);
 

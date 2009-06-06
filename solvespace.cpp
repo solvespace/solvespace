@@ -458,7 +458,7 @@ void SolveSpace::MenuAnalyze(int id) {
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                SKdNode::NAKED_OR_SELF_INTER_EDGES, false, &inters, &leaks);
+                SKdNode::SELF_INTER_EDGES, false, &inters, &leaks);
 
             InvalidateGraphics();
 
@@ -466,10 +466,6 @@ void SolveSpace::MenuAnalyze(int id) {
                 Error("%d edges interfere with other triangles, bad.",
                     SS.nakedEdges.l.n);
             } else {
-                // MakeCertainEdgesInto also reports "naked" edges, which
-                // will include some types of coincident geometry that are
-                // not errors.
-                SS.nakedEdges.Clear();
                 Message("The assembly does not interfere, good.");
             }
             break;

@@ -914,6 +914,13 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                     }
                     break;
 
+                case SELF_INTER_EDGES:
+                    if(thisIntersects) {
+                        sel->AddEdge(a, b);
+                        if(inter) *inter = true;
+                    }
+                    break;
+
                 case TURNING_EDGES:
                     if((tr->Normal().z < LENGTH_EPS) &&
                        (n == 1) &&
