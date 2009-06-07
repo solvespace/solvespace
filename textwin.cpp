@@ -441,6 +441,17 @@ void TextWindow::DescribeSelection(void) {
         Printf(true,  "  vector = " PT_AS_NUM, CO(v));
         double d = (p1.Minus(p0)).Dot(v);
         Printf(true,  "  proj_d = %Fi%s", SS.MmToString(d));
+    } else if(gs.n == 2 && gs.lineSegments == 1 && gs.points == 1) {
+        Entity *ln = SK.GetEntity(gs.entity[0]);
+        Vector lp0 = SK.GetEntity(ln->point[0])->PointGetNum(),
+               lp1 = SK.GetEntity(ln->point[1])->PointGetNum();
+        Printf(false, "%FtLINE SEGMENT AND POINT%E");
+        Printf(true,  "   ln thru " PT_AS_STR, COSTR(lp0));
+        Printf(false, "           " PT_AS_STR, COSTR(lp1));
+        Vector pp = SK.GetEntity(gs.point[0])->PointGetNum();
+        Printf(true,  "     point " PT_AS_STR, COSTR(pp));
+        Printf(true,  " pt-ln distance = %Fi%s%E",
+            SS.MmToString(pp.DistanceToLine(lp0, lp1.Minus(lp0))));
     } else if(gs.n == 2 && gs.faces == 2) {
         Printf(false, "%FtTWO PLANE FACES");
 

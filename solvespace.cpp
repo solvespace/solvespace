@@ -426,7 +426,8 @@ void SolveSpace::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_NAKED_EDGES: {
             SS.nakedEdges.Clear();
 
-            SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
+            Group *g = SK.GetGroup(SS.GW.activeGroup);
+            SMesh *m = &(g->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges), 
@@ -441,12 +442,17 @@ void SolveSpace::MenuAnalyze(int id) {
                 "The mesh has naked edges (NOT okay, invalid)." :
                 "The mesh is watertight (okay, valid).";
 
+            char cntMsg[1024];
+            sprintf(cntMsg, "\r\n\r\nThe model contains %d triangles, from "
+                            "%d surfaces.",
+                g->displayMesh.l.n, g->runningShell.surface.n);
+
             if(SS.nakedEdges.l.n == 0) {
-                Message("%s\r\n\r\n%s\r\n\r\nZero problematic edges, good.",
-                    intersMsg, leaksMsg);
+                Message("%s\r\n\r\n%s\r\n\r\nZero problematic edges, good.%s",
+                    intersMsg, leaksMsg, cntMsg);
             } else {
-                Error("%s\r\n\r\n%s\r\n\r\n%d problematic edges, bad.",
-                    intersMsg, leaksMsg, SS.nakedEdges.l.n);
+                Error("%s\r\n\r\n%s\r\n\r\n%d problematic edges, bad.%s",
+                    intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg);
             }
             break;
         }

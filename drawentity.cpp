@@ -348,6 +348,13 @@ void Entity::DrawOrGetDistance(void) {
         case NORMAL_IN_2D: {
             int i;
             for(i = 0; i < 2; i++) {
+                if(i == 0 && !SS.GW.showNormals) {
+                    // When the normals are hidden, we will continue to show
+                    // the coordinate axes at the bottom left corner, but
+                    // not at the origin.
+                    continue;
+                }
+
                 hRequest hr = h.request();
                 double f = (i == 0 ? 0.4 : 1);
                 if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
