@@ -22,7 +22,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Export &Image...",                    MNU_EXPORT_PNG,     0,      mFile },
 { 1, "Export 2d &View...",                  MNU_EXPORT_VIEW,    0,      mFile },
 { 1, "Export 2d &Section...",               MNU_EXPORT_SECTION, 0,      mFile },
-{ 1, "Export &Mesh...",                     MNU_EXPORT_MESH,    0,      mFile },
+{ 1, "Export Triangle &Mesh...",            MNU_EXPORT_MESH,    0,      mFile },
+{ 1, "Export &Surfaces...",                 MNU_EXPORT_SURFACES,0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "E&xit",                               MNU_EXIT,           0,      mFile },
 

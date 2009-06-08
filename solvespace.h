@@ -80,6 +80,9 @@ int SaveFileYesNoCancel(void);
 #define PNG_EXT "png"
 #define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
 #define STL_EXT "stl"
+#define SRF_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
+                    "All Files(*)\0*\0\0"
+#define SRF_EXT "step"
 #define VEC_PATTERN "DXF File (*.dxf)\0*.dxf\0" \
                     "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
                     "PDF File (*.pdf)\0*.pdf\0" \
@@ -420,6 +423,18 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+};
+
+class StepFileWriter {
+public:
+    void ExportTo(char *filename);
+    void WriteHeader(void);
+    int ExportCurve(SBezier *sb);
+    int ExportSurface(SSurface *ss);
+
+    SShell *shell;
+    FILE *f;
+    int id;
 };
 
 #ifdef LIBRARY

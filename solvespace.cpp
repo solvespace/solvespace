@@ -380,6 +380,15 @@ void SolveSpace::MenuFile(int id) {
             break;
         }
 
+        case GraphicsWindow::MNU_EXPORT_SURFACES: {
+            char exportFile[MAX_PATH] = "";
+            if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
+            StepFileWriter sfw;
+            ZERO(&sfw);
+            sfw.ExportTo(exportFile); 
+            break;
+        }
+
         case GraphicsWindow::MNU_EXIT:
             if(!SS.OkayToStartNewFile()) break;
             SS.Exit();

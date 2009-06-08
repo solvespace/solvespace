@@ -274,7 +274,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
         SCurve *sc = shell->curve.FindById(stb->curve);
         SBezier *sb = &(sc->exact);
 
-        if(sbl && sc->isExact && sb->deg != 1) {
+        if(sbl && sc->isExact && (sb->deg != 1 || !sel)) {
             double ts, tf;
             if(stb->backwards) {
                 sb->ClosestPointTo(stb->start,  &tf);
@@ -294,7 +294,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
 
             sbl->l.Add(&keep_bef);
         } else {
-            MakeTrimEdgesInto(sel, false, sc, stb);
+            if(sel) MakeTrimEdgesInto(sel, false, sc, stb);
         }
     }
 }
