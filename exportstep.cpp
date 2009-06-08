@@ -83,7 +83,50 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
     return ret;
 }
 
-int StepFileWriter::ExportSurface(SSurface *ss) {
+int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
+    List<int> listOfTrims;
+    ZERO(&listOfTrims);
+
+    SBezier *sb;
+    for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
+        int curveId = ExportCurve(sb);
+
+        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+            id, CO(sb->Start()));
+        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
+        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+            id+2, CO(sb->Finish()));
+        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+3, id+2);
+        fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
+            id+4, id+1, id+3, curveId, ".T.");
+        fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
+            id+5, id+4);
+
+        int oe = id+5;
+        listOfTrims.Add(&oe);
+
+        id += 6;
+    }
+
+    fprintf(f, "#%d=EDGE_LOOP('',(", id);
+    int *oe;
+    for(oe = listOfTrims.First(); oe; oe = listOfTrims.NextAfter(oe)) {
+        fprintf(f, "#%d", *oe);
+        if(listOfTrims.NextAfter(oe) != NULL) fprintf(f, ",");
+    }
+    fprintf(f, "));\n");
+
+    int fb = id + 1;
+        fprintf(f, "#%d=%s('',#%d,.T.);\n", 
+            fb, inner ? "FACE_BOUND" : "FACE_OUTER_BOUND", id);
+
+    id += 2;
+    listOfTrims.Clear();
+
+    return fb;
+}
+
+void StepFileWriter::ExportSurface(SSurface *ss) {
     int i, j, srfid = id;
 
     fprintf(f, "#%d=B_SPLINE_SURFACE_WITH_KNOTS('',%d,%d,(", 
@@ -113,6 +156,9 @@ int StepFileWriter::ExportSurface(SSurface *ss) {
 
     id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
 
+    // Get all of the loops of Beziers that trim our surface (with each
+    // Bezier split so that we use the section as t goes from 0 to 1), and
+    // the piecewise linearization of those loops in xyz space.
     SBezierList sbl;
     SPolygon sp;
     ZERO(&sbl);
@@ -122,66 +168,110 @@ int StepFileWriter::ExportSurface(SSurface *ss) {
     ss->MakeSectionEdgesInto(shell, NULL, &sbl);
     SBezierLoopSet sbls = SBezierLoopSet::From(&sbl, &sp, &allClosed, &errorAt);
 
-    List<int> listOfLoops;
-    ZERO(&listOfLoops);
-
-    SBezierLoop *loop;
-    for(loop = sbls.l.First(); loop; loop = sbls.l.NextAfter(loop)) {
-        List<int> listOfTrims;
-        ZERO(&listOfTrims);
-
-        SBezier *sb;
-        for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
-            int curveId = ExportCurve(sb);
-
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                id, CO(sb->Start()));
-            fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-                id+2, CO(sb->Finish()));
-            fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+3, id+2);
-            fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
-                id+4, id+1, id+3, curveId, ".T.");
-            fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
-                id+5, id+4);
-
-            i = id+5;
-            listOfTrims.Add(&i);
-
-            id += 6;
+    // Convert the xyz piecewise linear to uv piecewise linear.
+    SContour *contour;
+    for(contour = sp.l.First(); contour; contour = sp.l.NextAfter(contour)) {
+        SPoint *pt;
+        for(pt = contour->l.First(); pt; pt = contour->l.NextAfter(pt)) {
+            double u, v;
+            ss->ClosestPointTo(pt->p, &u, &v);
+            pt->p = Vector::From(u, v, 0);
         }
+    }
+    sp.normal = Vector::From(0, 0, 1);
 
-        fprintf(f, "#%d=EDGE_LOOP('',(", id);
-        int *ei;
-        for(ei = listOfTrims.First(); ei; ei = listOfTrims.NextAfter(ei)) {
-            fprintf(f, "#%d", *ei);
-            if(listOfTrims.NextAfter(ei) != NULL) fprintf(f, ",");
+    static const int OUTER_LOOP = 10;
+    static const int INNER_LOOP = 20;
+    static const int USED_LOOP  = 30;
+    // Fix the contour directions; SBezierLoopSet::From() works only for
+    // planes, since it uses the polygon xyz space.
+    sp.FixContourDirections();
+    for(i = 0; i < sp.l.n; i++) {
+        SContour    *contour = &(sp.l.elem[i]);
+        SBezierLoop *bl = &(sbls.l.elem[i]);
+        if(contour->tag) {
+            // This contour got reversed in the polygon to make the directions
+            // consistent, so the same must be necessary for the Bezier loop.
+            bl->Reverse();
         }
-        fprintf(f, "));\n");
-
-        int fb = id + 1;
-        fprintf(f, "#%d=FACE_OUTER_BOUND('',#%d,.T.);\n", fb, id);
-        listOfLoops.Add(&fb);
-
-        id += 2;
-        listOfTrims.Clear();
+        if(contour->IsClockwiseProjdToNormal(sp.normal)) {
+            bl->tag = INNER_LOOP;
+        } else {
+            bl->tag = OUTER_LOOP;
+        }
     }
 
-    int advFaceId = id;
-    fprintf(f, "#%d=ADVANCED_FACE('',(", advFaceId);
-    int *fb;
-    for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
-        fprintf(f, "#%d", *fb);
-        if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
+
+    bool loopsRemaining = true;
+    while(loopsRemaining) {
+        loopsRemaining = false;
+        for(i = 0; i < sbls.l.n; i++) {
+            SBezierLoop *loop = &(sbls.l.elem[i]);
+            if(loop->tag != OUTER_LOOP) continue;
+
+            // Check if this contour contains any outer loops; if it does, then
+            // we should do those "inner outer loops" first; otherwise we
+            // will steal their holes, since their holes also lie inside this
+            // contour.
+            for(j = 0; j < sbls.l.n; j++) {
+                SBezierLoop *outer = &(sbls.l.elem[j]);
+                if(i == j) continue;
+                if(outer->tag != OUTER_LOOP) continue;
+
+                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
+                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                    break;
+                }
+            }
+            if(j < sbls.l.n) {
+                // It does, can't do this one yet.
+                continue;
+            }
+
+            loopsRemaining = true;
+            loop->tag = USED_LOOP;
+
+            List<int> listOfLoops;
+            ZERO(&listOfLoops);
+
+            // Create the face outer boundary from the outer loop.
+            int fob = ExportCurveLoop(loop, false);
+            listOfLoops.Add(&fob);
+
+            // And create the face inner boundaries from any inner loops that 
+            // lie within this contour.
+            for(j = 0; j < sbls.l.n; j++) {
+                SBezierLoop *inner = &(sbls.l.elem[j]);
+                if(inner->tag != INNER_LOOP) continue;
+
+                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
+                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                    int fib = ExportCurveLoop(inner, true);
+                    listOfLoops.Add(&fib);
+
+                    inner->tag = USED_LOOP;
+                }
+            }
+
+            // And now create the face that corresponds to this outer loop
+            // and all of its holes.
+            int advFaceId = id;
+            fprintf(f, "#%d=ADVANCED_FACE('',(", advFaceId);
+            int *fb;
+            for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
+                fprintf(f, "#%d", *fb);
+                if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
+            }
+
+            fprintf(f, "),#%d,.T.);\n", srfid);
+            fprintf(f, "\n");
+            advancedFaces.Add(&advFaceId);
+
+            id++;
+
+            listOfLoops.Clear();
+        }
     }
-
-    fprintf(f, "),#%d,.T.);\n", srfid);
-    fprintf(f, "\n");
-
-    id++;
-
-    listOfLoops.Clear();
-    return advFaceId;
 }
 
 void StepFileWriter::ExportTo(char *file) {
@@ -190,8 +280,8 @@ void StepFileWriter::ExportTo(char *file) {
     if(shell->surface.n == 0) {
         Error("The model does not contain any surfaces to export.%s",
             g->runningMesh.l.n > 0 ? 
-                "\r\nThe model does contain triangles from a mesh, but a "
-                "triangle mesh cannot be exported as a STEP file. Try "
+                "\r\n\r\nThe model does contain triangles from a mesh, but "
+                "a triangle mesh cannot be exported as a STEP file. Try "
                 "File -> Export Mesh... instead." : "");
         return;
     }
@@ -206,22 +296,20 @@ void StepFileWriter::ExportTo(char *file) {
 
     id = 200;
 
-    List<int> ls;
-    ZERO(&ls);
+    ZERO(&advancedFaces);
 
     SSurface *ss;
     for(ss = shell->surface.First(); ss; ss = shell->surface.NextAfter(ss)) {
         if(ss->trim.n == 0) continue;
 
-        int sid = ExportSurface(ss);
-        ls.Add(&sid);
+        ExportSurface(ss);
     }
 
     fprintf(f, "#%d=CLOSED_SHELL('',(", id);
-    int *es;
-    for(es = ls.First(); es; es = ls.NextAfter(es)) {
-        fprintf(f, "#%d", *es);
-        if(ls.NextAfter(es) != NULL) fprintf(f, ",");
+    int *af;
+    for(af = advancedFaces.First(); af; af = advancedFaces.NextAfter(af)) {
+        fprintf(f, "#%d", *af);
+        if(advancedFaces.NextAfter(af) != NULL) fprintf(f, ",");
     }
     fprintf(f, "));\n");
     fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep_1',#%d);\n", id+1, id);
@@ -238,6 +326,6 @@ void StepFileWriter::ExportTo(char *file) {
         );
 
     fclose(f);
-    ls.Clear();
+    advancedFaces.Clear();
 }
 

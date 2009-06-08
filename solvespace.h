@@ -430,8 +430,10 @@ public:
     void ExportTo(char *filename);
     void WriteHeader(void);
     int ExportCurve(SBezier *sb);
-    int ExportSurface(SSurface *ss);
+    int ExportCurveLoop(SBezierLoop *loop, bool inner);
+    void ExportSurface(SSurface *ss);
 
+    List<int> advancedFaces;
     SShell *shell;
     FILE *f;
     int id;

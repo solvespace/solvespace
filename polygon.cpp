@@ -335,6 +335,11 @@ Vector SContour::ComputeNormal(void) {
     return n.WithMagnitude(1);
 }
 
+Vector SContour::AnyEdgeMidpoint(void) {
+    if(l.n < 2) oops();
+    return ((l.elem[0].p).Plus(l.elem[1].p)).ScaledBy(0.5);
+}
+
 bool SContour::IsClockwiseProjdToNormal(Vector n) {
     // Degenerate things might happen as we draw; doesn't really matter
     // what we do then.

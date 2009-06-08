@@ -59,6 +59,7 @@ public:
     void OffsetInto(SContour *dest, double r);
     void CopyInto(SContour *dest);
     void FindPointWithMinX(void);
+    Vector AnyEdgeMidpoint(void);
 
     bool IsEar(int bp);
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);

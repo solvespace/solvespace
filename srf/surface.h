@@ -101,6 +101,7 @@ public:
 
 class SBezierLoop {
 public:
+    int             tag;
     List<SBezier>   l;
 
     inline void Clear(void) { l.Clear(); }

@@ -40,7 +40,7 @@ void SolveSpace::Init(char *cmdLine) {
     lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
     lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
     // Chord tolerance
-    chordTol = CnfThawFloat(3.0f, "ChordTolerance");
+    chordTol = CnfThawFloat(1.5f, "ChordTolerance");
     // Max pwl segments to generate
     maxSegments = CnfThawDWORD(10, "MaxSegments");
     // View units

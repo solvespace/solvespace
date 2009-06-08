@@ -38,17 +38,20 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
         List<Vector> vl;
         ZERO(&vl);
 
-        // And now find all of its holes; 
+        // And now find all of its holes. Note that we will also find any
+        // outer contours that lie entirely within this contour, and any
+        // holes for those contours. But that's okay, because we can merge
+        // those too.
         SContour *sc;
         for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
             if(sc->timesEnclosed != 1) continue;
             if(sc->l.n < 2) continue;
 
             // Test the midpoint of an edge. Our polygon may not be self-
-            // intersecting, but two countours may share a vertex; so a
+            // intersecting, but two contours may share a vertex; so a
             // vertex could be on the edge of another polygon, in which
             // case ContainsPointProjdToNormal returns indeterminate.
-            Vector tp = ((sc->l.elem[0].p).Plus(sc->l.elem[1].p)).ScaledBy(0.5);
+            Vector tp = sc->AnyEdgeMidpoint();
             if(top->ContainsPointProjdToNormal(normal, tp)) {
                 sc->tag = 2;
                 sc->MakeEdgesInto(&el);
