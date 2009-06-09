@@ -62,15 +62,26 @@ void StepFileWriter::WriteHeader(void) {
 int StepFileWriter::ExportCurve(SBezier *sb) {
     int i, ret = id;
 
-    fprintf(f, "#%d=B_SPLINE_CURVE_WITH_KNOTS('',%d,(",
-        ret, sb->deg, (sb->deg + 1), (sb->deg + 1));
+    fprintf(f, "#%d=(\n", ret);
+    fprintf(f, "BOUNDED_CURVE()\n");
+    fprintf(f, "B_SPLINE_CURVE(%d,(", sb->deg);
     for(i = 0; i <= sb->deg; i++) {
         fprintf(f, "#%d", ret + i + 1);
         if(i != sb->deg) fprintf(f, ",");
     }
-    fprintf(f, "),.UNSPECIFIED.,.F.,.F.,(%d, %d),",
+    fprintf(f, "),.UNSPECIFIED.,.F.,.F.)\n");
+    fprintf(f, "B_SPLINE_CURVE_WITH_KNOTS((%d,%d),",
         (sb->deg + 1), (sb-> deg + 1));
-    fprintf(f, "(0.000,1.000),.UNSPECIFIED.);\n");
+    fprintf(f, "(0.000,1.000),.UNSPECIFIED.)\n");
+    fprintf(f, "CURVE()\n");
+    fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
+    fprintf(f, "RATIONAL_B_SPLINE_CURVE((");
+    for(i = 0; i <= sb->deg; i++) {
+        fprintf(f, "%.10f", sb->weight[i]);
+        if(i != sb->deg) fprintf(f, ",");
+    }
+    fprintf(f, "))\n");
+    fprintf(f, "REPRESENTATION_ITEM('')\n);\n");
 
     for(i = 0; i <= sb->deg; i++) {
         fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
@@ -84,28 +95,46 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
 }
 
 int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
+    if(loop->l.n < 1) oops();
+
     List<int> listOfTrims;
     ZERO(&listOfTrims);
 
-    SBezier *sb;
+    SBezier *sb = &(loop->l.elem[loop->l.n - 1]);
+
+    // Generate "exactly closed" contours, with the same vertex id for the
+    // finish of a previous edge and the start of the next one. So we need
+    // the finish of the last Bezier in the loop before we start our process.
+    fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+        id, CO(sb->Finish()));
+    fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
+    int lastFinish = id + 1, prevFinish = lastFinish;
+    id += 2;
+
     for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
         int curveId = ExportCurve(sb);
 
-        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-            id, CO(sb->Start()));
-        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
-        fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
-            id+2, CO(sb->Finish()));
-        fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+3, id+2);
+        int thisFinish;
+        if(loop->l.NextAfter(sb) != NULL) {
+            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
+                id, CO(sb->Finish()));
+            fprintf(f, "#%d=VERTEX_POINT('',#%d);\n", id+1, id);
+            thisFinish = id + 1;
+            id += 2;
+        } else {
+            thisFinish = lastFinish;
+        }
+
         fprintf(f, "#%d=EDGE_CURVE('',#%d,#%d,#%d,%s);\n",
-            id+4, id+1, id+3, curveId, ".T.");
+            id, prevFinish, thisFinish, curveId, ".T.");
         fprintf(f, "#%d=ORIENTED_EDGE('',*,*,#%d,.T.);\n",
-            id+5, id+4);
+            id+1, id);
 
-        int oe = id+5;
+        int oe = id+1;
         listOfTrims.Add(&oe);
+        id += 2;
 
-        id += 6;
+        prevFinish = thisFinish;
     }
 
     fprintf(f, "#%d=EDGE_LOOP('',(", id);
@@ -129,8 +158,9 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 void StepFileWriter::ExportSurface(SSurface *ss) {
     int i, j, srfid = id;
 
-    fprintf(f, "#%d=B_SPLINE_SURFACE_WITH_KNOTS('',%d,%d,(", 
-        srfid, ss->degm, ss->degn);
+    fprintf(f, "#%d=(\n", srfid);
+    fprintf(f, "BOUNDED_SURFACE()\n");
+    fprintf(f, "B_SPLINE_SURFACE(%d,%d,(", ss->degm, ss->degn);
     for(i = 0; i <= ss->degm; i++) {
         fprintf(f, "(");
         for(j = 0; j <= ss->degn; j++) {
@@ -140,10 +170,26 @@ void StepFileWriter::ExportSurface(SSurface *ss) {
         fprintf(f, ")");
         if(i != ss->degm) fprintf(f, ",");
     }
-    fprintf(f, "),.UNSPECIFIED.,.F.,.F.,.F.,(%d,%d),(%d,%d),",
+    fprintf(f, "),.UNSPECIFIED.,.F.,.F.,.F.)\n");
+    fprintf(f, "B_SPLINE_SURFACE_WITH_KNOTS((%d,%d),(%d,%d),",
         (ss->degm + 1), (ss->degm + 1),
         (ss->degn + 1), (ss->degn + 1));
-    fprintf(f, "(0.000,1.000),(0.000,1.000),.UNSPECIFIED.);\n");
+    fprintf(f, "(0.000,1.000),(0.000,1.000),.UNSPECIFIED.)\n");
+    fprintf(f, "GEOMETRIC_REPRESENTATION_ITEM()\n");
+    fprintf(f, "RATIONAL_B_SPLINE_SURFACE((");
+    for(i = 0; i <= ss->degm; i++) {
+        fprintf(f, "(");
+        for(j = 0; j <= ss->degn; j++) {
+            fprintf(f, "%.10f", ss->weight[i][j]);
+            if(j != ss->degn) fprintf(f, ",");
+        }
+        fprintf(f, ")");
+        if(i != ss->degm) fprintf(f, ",");
+    }
+    fprintf(f, "))\n");
+    fprintf(f, "REPRESENTATION_ITEM('')\n");
+    fprintf(f, "SURFACE()\n");
+    fprintf(f, ");\n");
 
     for(i = 0; i <= ss->degm; i++) {
         for(j = 0; j <= ss->degn; j++) {
@@ -312,7 +358,7 @@ void StepFileWriter::ExportTo(char *file) {
         if(advancedFaces.NextAfter(af) != NULL) fprintf(f, ",");
     }
     fprintf(f, "));\n");
-    fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep_1',#%d);\n", id+1, id);
+    fprintf(f, "#%d=MANIFOLD_SOLID_BREP('brep',#%d);\n", id+1, id);
     fprintf(f, "#%d=ADVANCED_BREP_SHAPE_REPRESENTATION('',(#%d,#170),#168);\n",
         id+2, id+1);
     fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP($,$,#169,#%d);\n",
