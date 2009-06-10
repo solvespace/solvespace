@@ -12,6 +12,23 @@ void SolveSpace::CheckLicenseFromRegistry(void) {
 
     license.licensed =
         LicenseValid(license.line1, license.line2, license.users, license.key);
+
+    // Now see if we've recorded a previous first use time in the registry. If
+    // yes then we use that, otherwise we record the current time.
+    SQWORD now = GetUnixTime();
+    DWORD timeLow  = CnfThawDWORD(0, "FirstUseLow");
+    DWORD timeHigh = CnfThawDWORD(0, "FirstUseHigh");
+    if(timeHigh == 0 && timeLow == 0) {
+        CnfFreezeDWORD((DWORD)((now      ) & 0xffffffff), "FirstUseLow");
+        CnfFreezeDWORD((DWORD)((now >> 32) & 0xffffffff), "FirstUseHigh");
+        license.firstUse = now;
+    } else {
+        license.firstUse = (((SQWORD)timeHigh) << 32) | ((SQWORD)timeLow);
+    }
+
+    const int SECONDS_IN_DAY = 60*60*24;
+    license.trialDaysRemaining = 90 -
+        (int)(((now - license.firstUse))/SECONDS_IN_DAY);
 }
 
 void SolveSpace::Init(char *cmdLine) {
@@ -257,6 +274,7 @@ void SolveSpace::AddToRecentList(char *file) {
 }
 
 bool SolveSpace::GetFilenameAndSave(bool saveAs) {
+
     char newFile[MAX_PATH];
     strcpy(newFile, saveFile);
     if(saveAs || strlen(newFile)==0) {

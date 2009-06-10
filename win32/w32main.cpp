@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "solvespace.h"
 
@@ -596,6 +597,13 @@ SDWORD GetMilliseconds(void)
     QueryPerformanceFrequency(&f);
     LONGLONG d = t.QuadPart/(f.QuadPart/1000);
     return (SDWORD)d;
+}
+
+SQWORD GetUnixTime(void)
+{
+    __time64_t ret;
+    _time64(&ret);
+    return ret;
 }
 
 void InvalidateText(void)

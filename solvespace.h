@@ -44,6 +44,7 @@ inline double WRAP_SYMMETRIC(double v, double n) {
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
 typedef unsigned __int64 QWORD;
+typedef signed __int64 SQWORD;
 typedef signed long SDWORD;
 typedef signed short SWORD;
 
@@ -118,6 +119,7 @@ void InvalidateGraphics(void);
 void PaintGraphics(void);
 void GetGraphicsWindowSize(int *w, int *h);
 SDWORD GetMilliseconds(void);
+SQWORD GetUnixTime(void);
 
 void dbp(char *str, ...);
 #define DBPTRI(tri) \
@@ -636,11 +638,13 @@ public:
     };
     Crc crc;
     struct {
-        bool licensed;
-        char line1[512];
-        char line2[512];
-        char users[512];
-        DWORD key;
+        bool    licensed;
+        char    line1[512];
+        char    line2[512];
+        char    users[512];
+        DWORD   key;
+        SQWORD  firstUse;
+        int     trialDaysRemaining;
     } license;
     static void MenuHelp(int id);
     void CleanEol(char *s);

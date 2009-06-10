@@ -17,14 +17,6 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
 }
 
 void Group::MenuGroup(int id) {
-    if(!SS.license.licensed && SK.group.n >= 7) {
-        Error("The free version of this software does not support more "
-              "than six groups.\r\n\r\n"
-              "To remove this restriction, please choose Help -> "
-              "Website / Manual, and purchase a license.");
-        return;
-    }
-
     Group g;
     ZERO(&g);
     g.visible = true;

@@ -157,7 +157,13 @@ void TextWindow::ShowListOfGroups(void) {
         Printf(false, "%Fg  %s", SS.license.users);
     } else {
         Printf(false, "%Fx*** NO LICENSE FILE IS PRESENT ***");
-        Printf(false, "%Fx  eval / non-commercial use only");
+        if(SS.license.trialDaysRemaining > 0) {
+            Printf(false, "%Fx  running as full demo, %d day%s remaining",
+                SS.license.trialDaysRemaining,
+                SS.license.trialDaysRemaining == 1 ? "" : "s");
+        } else {
+            Printf(false, "%Fx  demo expired, now running in light mode");
+        }
         Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.solvespace.com/%E",
             &ScreenGoToWebsite);
     }

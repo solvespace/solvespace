@@ -103,6 +103,16 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
 }
 
 void Constraint::MenuConstrain(int id) {
+    if(SK.constraint.n > 30) {
+        if((!SS.license.licensed) && SS.license.trialDaysRemaining <= 0) {
+            Error("The 90-day trial of SolveSpace has expired, and the light "
+                  "version does not support more than 30 constraints in a "
+                  "single file.\r\n\r\n"
+                  "Choose Help -> Website / Manual to purchase a license.");
+            return;
+        }
+    }
+
     Constraint c;
     ZERO(&c);
     c.group = SS.GW.activeGroup;
