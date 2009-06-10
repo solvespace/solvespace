@@ -276,7 +276,6 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
     Point2d enuv = abuv.Normal();
 
     *pt    = PointAt(muv);
-    *surfn = NormalAt(muv.x, muv.y);
 
     // If this edge just approximates a curve, then refine our midpoint so
     // so that it actually lies on that curve too. Otherwise stuff like
@@ -288,7 +287,10 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
         double t;
         sc->exact.ClosestPointTo(*pt, &t, false);
         *pt = sc->exact.PointAt(t);
+        ClosestPointTo(*pt, &muv);
     }
+
+    *surfn = NormalAt(muv.x, muv.y);
 
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the
@@ -487,7 +489,6 @@ void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
             // list for into.
             sa->IntersectAgainst(sb, this, agnst, into);
         }
-        FLAG++;
     }
 }
 

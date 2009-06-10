@@ -510,8 +510,11 @@ Vector Vector::ScaledBy(double v) {
 Vector Vector::WithMagnitude(double v) {
     double m = Magnitude();
     if(m == 0) {
-        dbp("Vector::WithMagnitude of zero vector!");
-        return From(v, 0, 0);
+        // We can do a zero vector with zero magnitude, but not any other cases.
+        if(fabs(v) > 1e-100) {
+            dbp("Vector::WithMagnitude of zero vector!");
+        }
+        return From(0, 0, 0);
     } else {
         return ScaledBy(v/m);
     }
