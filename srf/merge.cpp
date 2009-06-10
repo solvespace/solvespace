@@ -13,6 +13,9 @@ void SShell::MergeCoincidentSurfaces(void) {
     for(i = 0; i < surface.n; i++) {
         si = &(surface.elem[i]);
         if(si->tag) continue;
+        // Let someone else clean up the empty surfaces; we can certainly merge
+        // them, but we don't know how to calculate a reasonable bounding box.
+        if(si->trim.n == 0) continue;
 
         SEdgeList sel;
         ZERO(&sel);
