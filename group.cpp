@@ -78,6 +78,12 @@ void Group::MenuGroup(int id) {
             break;
 
         case GraphicsWindow::MNU_GROUP_EXTRUDE:
+            if(!SS.GW.LockedInWorkplane()) {
+                Error("Select a workplane (Sketch -> In Workplane) before "
+                      "extruding. The sketch will be extruded normal to the "
+                      "workplane.");
+                return;
+            }
             g.type = EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.predef.entityB = SS.GW.ActiveWorkplane();

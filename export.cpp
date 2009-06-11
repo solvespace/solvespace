@@ -319,9 +319,13 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     } else if(StringEndsIn(filename, ".plt")||StringEndsIn(filename, ".hpgl")) {
         static HpglFileWriter HpglWriter;
         ret = &HpglWriter;
+    } else if(StringEndsIn(filename, ".step")||StringEndsIn(filename, ".stp")) {
+        static Step2dFileWriter Step2dWriter;
+        ret = &Step2dWriter;
     } else {
         Error("Can't identify output file type from file extension of "
-        "filename '%s'; try .dxf, .svg, .plt, .hpgl, .pdf, .eps, or .ps.",
+        "filename '%s'; try .step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, "
+        ".eps, or .ps.",
             filename);
         return NULL;
     }
@@ -976,6 +980,36 @@ void HpglFileWriter::Bezier(SBezier *sb) {
 }
 
 void HpglFileWriter::FinishAndCloseFile(void) {
+    fclose(f);
+}
+
+//-----------------------------------------------------------------------------
+// Routine for STEP output; just a wrapper around the general STEP stuff that
+// can also be used for surfaces or 3d curves.
+//-----------------------------------------------------------------------------
+void Step2dFileWriter::StartFile(void) {
+    ZERO(&sfw);
+    sfw.f = f;
+    sfw.WriteHeader();
+}
+
+void Step2dFileWriter::Triangle(STriangle *tr) {
+}
+
+void Step2dFileWriter::LineSegment(double x0, double y0, double x1, double y1) {
+    SBezier sb = SBezier::From(Vector::From(x0, y0, 0),
+                               Vector::From(x1, y1, 0));
+    Bezier(&sb);
+}
+
+void Step2dFileWriter::Bezier(SBezier *sb) {
+    int c = sfw.ExportCurve(sb);
+    sfw.curves.Add(&c);
+}
+
+void Step2dFileWriter::FinishAndCloseFile(void) {
+    sfw.WriteWireframe();
+    sfw.WriteFooter();
     fclose(f);
 }
 

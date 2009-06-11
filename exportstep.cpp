@@ -57,6 +57,9 @@ void StepFileWriter::WriteHeader(void) {
 "#173=CARTESIAN_POINT('',(0.,0.,0.));\n"
 "\n"
     );
+
+    // Start the ID somewhere beyond the header IDs.
+    id = 200;
 }
 
 int StepFileWriter::ExportCurve(SBezier *sb) {
@@ -320,7 +323,16 @@ void StepFileWriter::ExportSurface(SSurface *ss) {
     }
 }
 
-void StepFileWriter::ExportTo(char *file) {
+void StepFileWriter::WriteFooter(void) {
+    fprintf(f,
+"\n"
+"ENDSEC;\n"
+"\n"
+"END-ISO-10303-21;\n"
+        );
+}
+
+void StepFileWriter::ExportSurfacesTo(char *file) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     shell = &(g->runningShell);
     if(shell->surface.n == 0) {
@@ -339,8 +351,6 @@ void StepFileWriter::ExportTo(char *file) {
     }
 
     WriteHeader();
-
-    id = 200;
 
     ZERO(&advancedFaces);
 
@@ -364,14 +374,26 @@ void StepFileWriter::ExportTo(char *file) {
     fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP($,$,#169,#%d);\n",
         id+3, id+2);
 
-    fprintf(f,
-"\n"
-"ENDSEC;\n"
-"\n"
-"END-ISO-10303-21;\n"
-        );
+    WriteFooter();
 
     fclose(f);
     advancedFaces.Clear();
+}
+
+void StepFileWriter::WriteWireframe(void) {
+    fprintf(f, "#%d=GEOMETRIC_CURVE_SET('curves',(", id);
+    int *c;
+    for(c = curves.First(); c; c = curves.NextAfter(c)) {
+        fprintf(f, "#%d", *c);
+        if(curves.NextAfter(c) != NULL) fprintf(f, ",");
+    }
+    fprintf(f, "));\n");
+    fprintf(f, "#%d=GEOMETRICALLY_BOUNDED_WIREFRAME_SHAPE_REPRESENTATION"
+                    "('',(#%d,#170),#168);\n", id+1, id);
+    fprintf(f, "#%d=SHAPE_REPRESENTATION_RELATIONSHIP($,$,#169,#%d);\n",
+        id+2, id+1);
+
+    id += 3;
+    curves.Clear();
 }
 

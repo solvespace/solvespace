@@ -84,13 +84,14 @@ int SaveFileYesNoCancel(void);
 #define SRF_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
                     "All Files(*)\0*\0\0"
 #define SRF_EXT "step"
-#define VEC_PATTERN "DXF File (*.dxf)\0*.dxf\0" \
+#define VEC_PATTERN "PDF File (*.pdf)\0*.pdf\0" \
                     "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
-                    "PDF File (*.pdf)\0*.pdf\0" \
                     "Scalable Vector Graphics (*.svg)\0*.svg\0" \
+                    "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
+                    "DXF File (*.dxf)\0*.dxf\0" \
                     "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
                     "All Files (*)\0*\0\0"
-#define VEC_EXT "dxf"
+#define VEC_EXT "pdf"
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
 #define LICENSE_PATTERN \
@@ -361,6 +362,23 @@ public:
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
 };
 
+class StepFileWriter {
+public:
+    void ExportSurfacesTo(char *filename);
+    void WriteHeader(void);
+    int ExportCurve(SBezier *sb);
+    int ExportCurveLoop(SBezierLoop *loop, bool inner);
+    void ExportSurface(SSurface *ss);
+    void WriteWireframe(void);
+    void WriteFooter(void);
+
+    List<int> curves;
+    List<int> advancedFaces;
+    SShell *shell;
+    FILE *f;
+    int id;
+};
+
 class VectorFileWriter {
 public:
     FILE *f;
@@ -426,19 +444,13 @@ public:
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
-
-class StepFileWriter {
-public:
-    void ExportTo(char *filename);
-    void WriteHeader(void);
-    int ExportCurve(SBezier *sb);
-    int ExportCurveLoop(SBezierLoop *loop, bool inner);
-    void ExportSurface(SSurface *ss);
-
-    List<int> advancedFaces;
-    SShell *shell;
-    FILE *f;
-    int id;
+class Step2dFileWriter : public VectorFileWriter {
+    StepFileWriter sfw;
+    void LineSegment(double x0, double y0, double x1, double y1);
+    void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
 };
 
 #ifdef LIBRARY

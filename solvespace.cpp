@@ -403,7 +403,7 @@ void SolveSpace::MenuFile(int id) {
             if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
             StepFileWriter sfw;
             ZERO(&sfw);
-            sfw.ExportTo(exportFile); 
+            sfw.ExportSurfacesTo(exportFile); 
             break;
         }
 
