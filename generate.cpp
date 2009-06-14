@@ -170,8 +170,58 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
     SK.param.MoveSelfInto(&prev);
     SK.entity.Clear();
 
+    SDWORD inTime = GetMilliseconds();
+
+    bool displayedStatusMessage = false;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
+
+        SDWORD now = GetMilliseconds();
+        // Display the status message if we've taken more than 400 ms, or
+        // if we've taken 200 ms but we're not even halfway done, or if
+        // we've already started displaying the status message.
+        if( (now - inTime > 400) ||
+           ((now - inTime > 200) && i < (SK.group.n / 2)) ||
+           displayedStatusMessage)
+        {
+            displayedStatusMessage = true;
+            char msg[1024];
+            sprintf(msg, "generating group %d/%d", i, SK.group.n);
+
+            int w, h;
+            GetGraphicsWindowSize(&w, &h);
+            glDrawBuffer(GL_FRONT);
+            glViewport(0, 0, w, h);
+            glLoadIdentity();
+            glTranslated(-1, 1, 0);
+            glScaled(2.0/w, 2.0/h, 1.0);
+            glDisable(GL_DEPTH_TEST);
+
+            double left = 80, top = -20, width = 240, height = 24;
+            glColor3d(0.9, 0.8, 0.8);
+            glBegin(GL_QUADS);
+                glVertex2d(left,        top);
+                glVertex2d(left+width,  top);
+                glVertex2d(left+width,  top-height);
+                glVertex2d(left,        top-height);
+            glEnd(); 
+            glLineWidth(1);
+            glColor3d(0.0, 0.0, 0.0);
+            glBegin(GL_LINE_LOOP);
+                glVertex2d(left,        top);
+                glVertex2d(left+width,  top);
+                glVertex2d(left+width,  top-height);
+                glVertex2d(left,        top-height);
+            glEnd(); 
+
+            glColor3d(0, 0, 0);
+            glPushMatrix();
+                glRasterPos2d(left+8, top-17);
+                DrawWithBitmapFont(msg);
+            glPopMatrix();
+            glFlush();
+            glDrawBuffer(GL_BACK);
+        }
 
         // The group may depend on entities or other groups, to define its
         // workplane geometry or for its operands. Those must already exist

@@ -734,7 +734,12 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         default:
             oops();
     }
-    en.forceHidden = !ep->actVisible;
+
+    // If the entity came from an imported file where it was invisible then
+    // ep->actiVisble will be false, and we should hide it. Or if the entity
+    // came from a copy (e.g. step and repeat) of a force-hidden imported 
+    // entity, then we also want to hide it.
+    en.forceHidden = (!ep->actVisible) || ep->forceHidden;
 
     el->Add(&en);
 }

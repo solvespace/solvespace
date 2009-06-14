@@ -65,7 +65,7 @@ void SolveSpace::Init(char *cmdLine) {
     // Camera tangent (determines perspective)
     cameraTangent = CnfThawFloat(0.0f, "CameraTangent");
     // Color for edges (drawn as lines for emphasis)
-    edgeColor = CnfThawDWORD(RGB(0, 0, 0), "EdgeColor");
+    edgeColor = CnfThawDWORD(RGB(200, 200, 200), "EdgeColor");
     // Export scale factor
     exportScale = CnfThawFloat(1.0f, "ExportScale");
     // Export offset (cutter radius comp)
@@ -715,10 +715,10 @@ void SolveSpace::MenuHelp(int id) {
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is SolveSpace version 1.3.\r\n\r\n"
-                  "For more information, see http://www.solvespace.com/\r\n\r\n"
-                  "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
-                  "Copyright 2008 Jonathan Westhues, All Rights Reserved.");
+            Message("This is SolveSpace version 1.4.\r\n\r\n"
+                 "For more information, see http://www.solvespace.com/\r\n\r\n"
+                 "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
+                 "Copyright 2008-2009 Jonathan Westhues, All Rights Reserved.");
             break;
 
         case GraphicsWindow::MNU_LICENSE: {

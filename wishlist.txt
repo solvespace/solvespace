@@ -1,12 +1,10 @@
 
-tangent intersections
-plane detection for solid of revolution
 
 -----
 line styles (color, thickness)
 marching algorithm for surface intersection
 loop detection
-IGES and STEP export
-incremental regen of entities?
+IGES export
+incremental regen of entities
 
 

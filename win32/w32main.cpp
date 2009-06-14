@@ -976,7 +976,7 @@ static void CreateMainWindows(void)
 
     HMENU top = CreateGraphicsWindowMenus();
     GraphicsWnd = CreateWindowEx(0, "GraphicsWnd",
-        "SolveSpace (Graphics Window)",
+        "SolveSpace (not yet saved)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
         50, 50, 900, 600, NULL, top, Instance, NULL);
@@ -1053,6 +1053,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ThawWindowPos(TextWnd);
     ThawWindowPos(GraphicsWnd);
 
+    ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
+    ShowWindow(GraphicsWnd, SW_SHOW);
+   
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT); 
+    SwapBuffers(GetDC(GraphicsWnd));
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT); 
+    SwapBuffers(GetDC(GraphicsWnd));
+
     // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
     InitHeaps();
 
@@ -1073,9 +1083,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // Call in to the platform-independent code, and let them do their init
     SS.Init(file);
 
-    ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
-    ShowWindow(GraphicsWnd, SW_SHOW);
-   
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.
     MSG msg;

@@ -11,6 +11,7 @@ bool Group::AssembleLoops(void) {
         Entity *e = &(SK.entity.elem[i]);
         if(e->group.v != h.v) continue;
         if(e->construction) continue;
+        if(e->forceHidden) continue;
 
         e->GenerateBezierCurves(&sbl);
     }
