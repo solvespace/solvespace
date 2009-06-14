@@ -103,10 +103,15 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
 }
 
 void Constraint::MenuConstrain(int id) {
-    if(SK.constraint.n > 30) {
+    int nt = 0;
+    Constraint *ct;
+    for(ct = SK.constraint.First(); ct; ct = SK.constraint.NextAfter(ct)) {
+        if(ct->type != POINTS_COINCIDENT) nt++;
+    }
+    if(nt > 25) {
         if((!SS.license.licensed) && SS.license.trialDaysRemaining <= 0) {
             Error("The 90-day trial of SolveSpace has expired, and the light "
-                  "version does not support more than 30 constraints in a "
+                  "version does not support more than 25 constraints in a "
                   "single file.\r\n\r\n"
                   "Choose Help -> Website / Manual to purchase a license.");
             return;
