@@ -159,6 +159,8 @@ public:
     SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                                 SSurface *srfA, SSurface *srfB);
     void RemoveShortSegments(SSurface *srfA, SSurface *srfB);
+    SSurface *GetSurfaceA(SShell *a, SShell *b);
+    SSurface *GetSurfaceB(SShell *a, SShell *b);
 
     void Clear(void);
 };
@@ -225,9 +227,10 @@ public:
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                   Vector *pt, Vector *enin, Vector *enout,
                                   Vector *surfn,
-                                  DWORD auxA, SShell *shell);
-    SSurface MakeCopyTrimAgainst(SShell *against, SShell *parent, SShell *into,
-                                 int type, bool opA);
+                                  DWORD auxA, 
+                                  SShell *shell, SShell *sha, SShell *shb);
+    SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
+                                    SShell *into, int type);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
                           SShell *into);
@@ -305,7 +308,8 @@ public:
     static const int AS_INTERSECT  = 12;
     void MakeFromBoolean(SShell *a, SShell *b, int type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
-    void CopySurfacesTrimAgainst(SShell *against, SShell *into, int t, bool a);
+    void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into,
+                                    int type);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(SShell *useCurvesFrom);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,

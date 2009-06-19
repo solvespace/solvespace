@@ -285,6 +285,27 @@ void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
     l.RemoveTagged();
 }
 
+void SPointList::Clear(void) {
+    l.Clear();
+}
+
+bool SPointList::ContainsPoint(Vector pt) {
+    SPoint *p;
+    for(p = l.First(); p; p = l.NextAfter(p)) {
+        if(pt.Equals(p->p)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void SPointList::Add(Vector pt) {
+    SPoint p;
+    ZERO(&p);
+    p.p = pt;
+    l.Add(&p);
+}
+
 void SContour::AddPoint(Vector p) {
     SPoint sp;
     sp.tag = 0;

@@ -276,10 +276,77 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
         inters.Clear();
         lv.Clear();
-    }
+    } else {
+        // Try intersecting the surfaces numerically, by a marching algorithm.
+        // First, we find all the intersections between a surface and the
+        // boundary of the other surface.
+        SPointList spl;
+        ZERO(&spl);
+        int a;
+        for(a = 0; a < 2; a++) {
+            SShell   *shA  = (a == 0) ? agnstA : agnstB,
+                     *shB  = (a == 0) ? agnstB : agnstA;
+            SSurface *srfA = (a == 0) ? this : b,
+                     *srfB = (a == 0) ? b : this;
 
-    // need to implement general numerical surface intersection for tough
-    // cases, just giving up for now
+            SEdgeList el;
+            ZERO(&el);
+            srfA->MakeEdgesInto(shA, &el, false, NULL);
+
+            SEdge *se;
+            for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
+                List<SInter> lsi;
+                ZERO(&lsi);
+
+                srfB->AllPointsIntersecting(se->a, se->b, &lsi,
+                    true, true, false);
+                if(lsi.n == 0) continue;
+
+                // Find the other surface that this curve trims.
+                hSCurve hsc = { se->auxA };
+                SCurve *sc = shA->curve.FindById(hsc);
+                hSSurface hother = (sc->surfA.v == srfA->h.v) ?
+                                                    sc->surfB : sc->surfA;
+                SSurface *other = shA->surface.FindById(hother);
+
+                SInter *si;
+                for(si = lsi.First(); si; si = lsi.NextAfter(si)) {
+                    Vector p = si->p;
+                    double u, v;
+                    srfA->ClosestPointTo(p, &u, &v);
+                    srfA->PointOnSurfaces(srfB, other, &u, &v);
+                    p = srfA->PointAt(u, v);
+                    if(!spl.ContainsPoint(p)) spl.Add(p);
+                }
+                lsi.Clear();
+            }
+
+            el.Clear();
+        }
+
+        SPoint *sp;
+        if(spl.l.n == 2) {
+
+            SCurve sc;
+            ZERO(&sc);
+            sc.surfA = h;
+            sc.surfB = b->h;
+            sc.isExact = false;
+            sc.source = SCurve::FROM_INTERSECTION;
+
+            SCurvePt scpt;
+            scpt.p = (spl.l.elem[0].p);
+            sc.pts.Add(&scpt);
+            scpt.p = (spl.l.elem[1].p);
+            sc.pts.Add(&scpt);
+
+            SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
+            sc.Clear();
+
+            into->curve.AddAndAssignId(&split);
+        }
+        spl.Clear();
+    }
 }
 
 

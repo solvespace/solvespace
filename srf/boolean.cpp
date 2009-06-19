@@ -266,14 +266,13 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                         Vector *pt,
                                         Vector *enin, Vector *enout,
                                         Vector *surfn,
-                                        DWORD auxA, SShell *shell)
+                                        DWORD auxA,
+                                        SShell *shell, SShell *sha, SShell *shb)
 {
     // the midpoint of the edge
     Point2d muv  = (auv.Plus(buv)).ScaledBy(0.5);
     // a vector parallel to the edge
     Point2d abuv = buv.Minus(auv).WithMagnitude(0.01);
-    // the edge's inner normal
-    Point2d enuv = abuv.Normal();
 
     *pt    = PointAt(muv);
 
@@ -288,15 +287,35 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
         sc->exact.ClosestPointTo(*pt, &t, false);
         *pt = sc->exact.PointAt(t);
         ClosestPointTo(*pt, &muv);
+    } else if(!sc->isExact) {
+        SSurface *trimmedA = sc->GetSurfaceA(sha, shb),
+                 *trimmedB = sc->GetSurfaceB(sha, shb);
+        *pt = trimmedA->ClosestPointOnThisAndSurface(trimmedB, *pt);
+        ClosestPointTo(*pt, &muv);
     }
 
     *surfn = NormalAt(muv.x, muv.y);
 
+    // Compute the edge's inner normal in xyz space.
+    Vector ab    = (PointAt(auv)).Minus(PointAt(buv)),
+           enxyz = (ab.Cross(*surfn)).WithMagnitude(SS.ChordTolMm());
+    // And based on that, compute the edge's inner normal in uv space. This
+    // vector is perpendicular to the edge in xyz, but not necessarily in uv.
+    Vector tu, tv;
+    TangentsAt(muv.x, muv.y, &tu, &tv);
+    Point2d enuv;
+    enuv.x = enxyz.Dot(tu) / tu.MagSquared();
+    enuv.y = enxyz.Dot(tv) / tv.MagSquared();
+    // Don't let the magnitude get too tiny at small chord tolerances; we
+    // will otherwise have numerical problems subtracting nearly-equal
+    // numbers.
+    enuv = enuv.WithMagnitude(0.01);
+
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the
     // surface is curved.
-    Vector pin   = PointAt(muv.Plus(enuv)),
-           pout  = PointAt(muv.Minus(enuv));
+    Vector pin   = PointAt(muv.Minus(enuv)),
+           pout  = PointAt(muv.Plus(enuv));
     *enin  = pin.Minus(*pt),
     *enout = pout.Minus(*pt);
 }
@@ -307,10 +326,14 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 // also need a pointer to the shell that contains our own surface, since that
 // contains our original trim curves.
 //-----------------------------------------------------------------------------
-SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
+SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
+                                       SShell *sha, SShell *shb,
                                        SShell *into,
-                                       int type, bool opA)
+                                       int type)
 {
+    bool opA = (parent == sha);
+    SShell *agnst = opA ? shb : sha;
+
     SSurface ret;
     // The returned surface is identical, just the trim curves change
     ret = *this;
@@ -400,7 +423,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
 
         Vector pt, enin, enout, surfn;
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
-                                        se->auxA, into);
+                                        se->auxA, into, sha, shb);
 
         int indir_shell, outdir_shell, indir_orig, outdir_orig;
 
@@ -424,7 +447,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
 
         Vector pt, enin, enout, surfn;
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
-                                        se->auxA, into);
+                                        se->auxA, into, sha, shb);
 
         int indir_shell, outdir_shell, indir_orig, outdir_orig;
 
@@ -467,13 +490,13 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *agnst, SShell *parent,
     return ret;
 }
 
-void SShell::CopySurfacesTrimAgainst(SShell *against, SShell *into,
-                                     int type, bool opA)
+void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into,
+                                        int type)
 {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         SSurface ssn;
-        ssn = ss->MakeCopyTrimAgainst(against, this, into, type, opA);
+        ssn = ss->MakeCopyTrimAgainst(this, sha, shb, into, type);
         ss->newH = into->surface.AddAndAssignId(&ssn);
         I++;
     }
@@ -506,20 +529,9 @@ void SShell::CleanupAfterBoolean(void) {
 //-----------------------------------------------------------------------------
 void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
     SCurve *sc;
-
     for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-        if(sc->source == SCurve::FROM_A) {
-            sc->surfA = a->surface.FindById(sc->surfA)->newH;
-            sc->surfB = a->surface.FindById(sc->surfB)->newH;
-        } else if(sc->source == SCurve::FROM_B) {
-            sc->surfA = b->surface.FindById(sc->surfA)->newH;
-            sc->surfB = b->surface.FindById(sc->surfB)->newH;
-        } else if(sc->source == SCurve::FROM_INTERSECTION) {
-            sc->surfA = a->surface.FindById(sc->surfA)->newH;
-            sc->surfB = b->surface.FindById(sc->surfB)->newH;
-        } else {
-            oops();
-        }
+        sc->surfA = sc->GetSurfaceA(a, b)->newH,
+        sc->surfB = sc->GetSurfaceB(a, b)->newH;
     }
 }
 
@@ -591,17 +603,9 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
 
     SCurve *sc;
     for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-        SSurface *srfA, *srfB;
-        if(sc->source == SCurve::FROM_A) {
-            srfA = a->surface.FindById(sc->surfA);
-            srfB = a->surface.FindById(sc->surfB);
-        } else if(sc->source == SCurve::FROM_B) {
-            srfA = b->surface.FindById(sc->surfA);
-            srfB = b->surface.FindById(sc->surfB);
-        } else if(sc->source == SCurve::FROM_INTERSECTION) {
-            srfA = a->surface.FindById(sc->surfA);
-            srfB = b->surface.FindById(sc->surfB);
-        }
+        SSurface *srfA = sc->GetSurfaceA(a, b),
+                 *srfB = sc->GetSurfaceB(a, b);
+
         sc->RemoveShortSegments(srfA, srfB);
     }
     
@@ -613,16 +617,14 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     a->MakeClassifyingBsps(this);
     b->MakeClassifyingBsps(this);
 
-    // Then trim and copy the surfaces
     if(b->surface.n == 0 || a->surface.n == 0) {
-        I = 1023123;
-        a->CopySurfacesTrimAgainst(b, this, type, true);
-        b->CopySurfacesTrimAgainst(a, this, type, false);
+        I = 1000000;
     } else {
         I = 0;
-        a->CopySurfacesTrimAgainst(b, this, type, true);
-        b->CopySurfacesTrimAgainst(a, this, type, false);
     }
+    // Then trim and copy the surfaces
+    a->CopySurfacesTrimAgainst(a, b, this, type);
+    b->CopySurfacesTrimAgainst(a, b, this, type);
 
     // Now that we've copied the surfaces, we know their new hSurfaces, so
     // rewrite the curves to refer to the surfaces by their handles in the

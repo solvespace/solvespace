@@ -415,7 +415,7 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
         (srf[j])->ClosestPointTo(p, &(puv[j]), false);
     }
 
-    for(i = 0; i < 4; i++) {
+    for(i = 0; i < 10; i++) {
         Vector tu[2], tv[2], cp[2], n[2];
         double d[2];
 
@@ -427,6 +427,8 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
             n[j] = ((tu[j]).Cross(tv[j])).WithMagnitude(1);
             d[j] = (n[j]).Dot(cp[j]);
         }
+
+        if((cp[0]).Equals(cp[1], RATPOLY_EPS)) break;
 
         Vector p0 = Vector::AtIntersectionOfPlanes(n[0], d[0], n[1], d[1]),
                dp = (n[0]).Cross(n[1]);

@@ -42,6 +42,15 @@ public:
     Vector  p;
 };
 
+class SPointList {
+public:
+    List<SPoint>    l;
+
+    void Clear(void);
+    bool ContainsPoint(Vector pt);
+    void Add(Vector pt);
+};
+
 class SContour {
 public:
     int             tag;

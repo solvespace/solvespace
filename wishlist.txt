@@ -1,8 +1,12 @@
 
+marching algorithm for surface intersection
+grid
+classification of edges only as necessary (all same for span between intersections)
+associative entities from solid model, as a special group
+rounding, as a special group
 
 -----
 line styles (color, thickness)
-marching algorithm for surface intersection
 loop detection
 IGES export
 incremental regen of entities
