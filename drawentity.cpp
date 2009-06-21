@@ -240,11 +240,11 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
                 ArcGetAngles(&thetaa, &thetab, &dtheta);
             }
             int i, n;
-            if(dtheta > 3*PI/2) {
+            if(dtheta > (3*PI/2 + 0.01)) {
                 n = 4;
-            } else if(dtheta > PI) {
+            } else if(dtheta > (PI + 0.01)) {
                 n = 3;
-            } else if(dtheta > PI/2) {
+            } else if(dtheta > (PI/2 + 0.01)) {
                 n = 2;
             } else {
                 n = 1;

@@ -51,7 +51,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, srfB);
         sc.Clear();
     }
-   
+
     if(0 && sb->deg == 1) {
         dbp(" ");
         SCurvePt *prev = NULL, *v;
@@ -192,7 +192,6 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 Vector al = along.ScaledBy(0.5);
                 SBezier bezier;
                 bezier = SBezier::From((si->p).Minus(al), (si->p).Plus(al));
-
                 AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
             }
 
@@ -313,10 +312,21 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 for(si = lsi.First(); si; si = lsi.NextAfter(si)) {
                     Vector p = si->p;
                     double u, v;
-                    srfA->ClosestPointTo(p, &u, &v);
-                    srfA->PointOnSurfaces(srfB, other, &u, &v);
-                    p = srfA->PointAt(u, v);
-                    if(!spl.ContainsPoint(p)) spl.Add(p);
+                    srfB->ClosestPointTo(p, &u, &v);
+                    srfB->PointOnSurfaces(srfA, other, &u, &v);
+                    p = srfB->PointAt(u, v);
+                    if(!spl.ContainsPoint(p)) {
+                        SPoint sp;
+                        sp.p = p;
+                        // We also need the edge normal, so that we know in
+                        // which direction to march.
+                        srfA->ClosestPointTo(p, &u, &v);
+                        Vector n = srfA->NormalAt(u, v);
+                        sp.auxv = n.Cross((se->b).Minus(se->a));
+                        sp.auxv = (sp.auxv).WithMagnitude(1);
+
+                        spl.l.Add(&sp);
+                    }
                 }
                 lsi.Clear();
             }
@@ -324,9 +334,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             el.Clear();
         }
 
-        SPoint *sp;
-        if(spl.l.n == 2) {
-
+        while(spl.l.n >= 2) {
             SCurve sc;
             ZERO(&sc);
             sc.surfA = h;
@@ -334,16 +342,82 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.isExact = false;
             sc.source = SCurve::FROM_INTERSECTION;
 
-            SCurvePt scpt;
-            scpt.p = (spl.l.elem[0].p);
-            sc.pts.Add(&scpt);
-            scpt.p = (spl.l.elem[1].p);
-            sc.pts.Add(&scpt);
+            Vector start  = spl.l.elem[0].p,
+                   startv = spl.l.elem[0].auxv;
+            spl.l.ClearTags();
+            spl.l.elem[0].tag = 1;
+            spl.l.RemoveTagged();
+            SCurvePt padd;
+            ZERO(&padd);
+            padd.vertex = true;
+            padd.p = start;
+            sc.pts.Add(&padd);
 
+            Point2d pa, pb;
+            Vector np, npc;
+            // Better to start with a too-small step, so that we don't miss
+            // features of the curve entirely.
+            bool fwd;
+            double tol, step = SS.ChordTolMm();
+            for(a = 0; a < 100; a++) {
+                ClosestPointTo(start, &pa);
+                b->ClosestPointTo(start, &pb);
+
+                Vector na =    NormalAt(pa).WithMagnitude(1), 
+                       nb = b->NormalAt(pb).WithMagnitude(1);
+
+                if(a == 0) {
+                    Vector dp = nb.Cross(na);
+                    if(dp.Dot(startv) < 0) {
+                        // We want to march in the more inward direction.
+                        fwd = true;
+                    } else {
+                        fwd = false;
+                    }
+                }
+
+                int i = 0;
+                do {
+                    if(i++ > 20) break;
+
+                    Vector dp = nb.Cross(na);
+                    if(!fwd) dp = dp.ScaledBy(-1);
+                    dp = dp.WithMagnitude(step);
+
+                    np = start.Plus(dp);
+                    npc = ClosestPointOnThisAndSurface(b, np);
+                    tol = (npc.Minus(np)).Magnitude();
+
+                    if(tol > SS.ChordTolMm()*0.8) {
+                        step *= 0.95;
+                    } else {
+                        step /= 0.95;
+                    }
+                } while(tol > SS.ChordTolMm() || tol < SS.ChordTolMm()/2);
+
+                SPoint *sp;
+                for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
+                    if((sp->p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
+                        sp->tag = 1;
+                        a = 1000;
+                        npc = sp->p;
+                    }
+                }
+
+                padd.p = npc;
+                padd.vertex = (a == 1000);
+                sc.pts.Add(&padd);
+
+                start = npc;
+            }
+
+            spl.l.RemoveTagged();
+
+            // And now we split and insert the curve
             SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
             sc.Clear();
-
             into->curve.AddAndAssignId(&split);
+            break;
         }
         spl.Clear();
     }
@@ -848,13 +922,46 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
     }
 
     if(edge_inters != 0) dbp("bad, edge_inters=%d", edge_inters);
-   
+
+    // Next, check for edge-on-surface. The ray-casting for edge-inside-shell
+    // would catch this too, but test separately, for speed (since many edges
+    // are on surface) and for numerical stability, so we don't pick up
+    // the additional error from the line intersection.
+
+    for(srf = surface.First(); srf; srf = surface.NextAfter(srf)) {
+        if(srf->LineEntirelyOutsideBbox(ea, eb, true)) continue;
+
+        Point2d puv;
+        srf->ClosestPointTo(p, &(puv.x), &(puv.y), false);
+        Vector pp = srf->PointAt(puv);
+
+        if((pp.Minus(p)).Magnitude() > LENGTH_EPS) continue;
+        Point2d dummy = { 0, 0 }, ia = { 0, 0 }, ib = { 0, 0 };
+        int c = srf->bsp->ClassifyPoint(puv, dummy, &ia, &ib);
+        if(c == SBspUv::OUTSIDE) continue;
+
+        // Edge-on-face (unless edge-on-edge above superceded)
+        Point2d pin, pout;
+        srf->ClosestPointTo(p.Plus(edge_n_in),  &pin,  false);
+        srf->ClosestPointTo(p.Plus(edge_n_out), &pout, false);
+
+        Vector surf_n_in  = srf->NormalAt(pin),
+               surf_n_out = srf->NormalAt(pout);
+
+        *indir  = ClassifyRegion(edge_n_in,  surf_n_in,  surf_n);
+        *outdir = ClassifyRegion(edge_n_out, surf_n_out, surf_n);
+        return true;
+    }
+
+    // Edge is not on face or on edge; so it's either inside or outside
+    // the shell, and we'll determine which by raycasting.
     int cnt = 0;
     for(;;) {
         // Cast a ray in a random direction (two-sided so that we test if
         // the point lies on a surface, but use only one side for in/out
         // testing)
         Vector ray = Vector::From(Random(1), Random(1), Random(1));
+
         AllPointsIntersecting(
             p.Minus(ray), p.Plus(ray), &l, false, true, false);
         
@@ -883,28 +990,14 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
 
             if(d < dmin) {
                 dmin = d;
-
-                if(d < LENGTH_EPS) {
-                    // Edge-on-face (unless edge-on-edge above supercedes)
-                    Point2d pin, pout;
-                    (si->srf)->ClosestPointTo(p.Plus(edge_n_in),  &pin,  false);
-                    (si->srf)->ClosestPointTo(p.Plus(edge_n_out), &pout, false);
-
-                    Vector surf_n_in  = (si->srf)->NormalAt(pin),
-                           surf_n_out = (si->srf)->NormalAt(pout);
-
-                    *indir  = ClassifyRegion(edge_n_in,  surf_n_in,  surf_n);
-                    *outdir = ClassifyRegion(edge_n_out, surf_n_out, surf_n);
+                // Edge does not lie on surface; either strictly inside
+                // or strictly outside
+                if((si->surfNormal).Dot(ray) > 0) {
+                    *indir  = INSIDE;
+                    *outdir = INSIDE;
                 } else {
-                    // Edge does not lie on surface; either strictly inside
-                    // or strictly outside
-                    if((si->surfNormal).Dot(ray) > 0) {
-                        *indir  = INSIDE;
-                        *outdir = INSIDE;
-                    } else {
-                        *indir  = OUTSIDE;
-                        *outdir = OUTSIDE;
-                    }
+                    *indir  = OUTSIDE;
+                    *outdir = OUTSIDE;
                 }
                 onEdge = si->onEdge;
             }

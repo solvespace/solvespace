@@ -147,7 +147,7 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
     }
 
     Vector p0;
-    for(i = 0; i < (converge ? 15 : 3); i++) {
+    for(i = 0; i < (converge ? 15 : 5); i++) {
         p0 = PointAt(*t);
         if(p0.Equals(p, RATPOLY_EPS)) {
             return;
@@ -345,7 +345,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
 
     // Initial guess is in u, v; refine by Newton iteration.
     Vector p0;
-    for(i = 0; i < (converge ? 15 : 3); i++) {
+    for(i = 0; i < (converge ? 25 : 5); i++) {
         p0 = PointAt(*u, *v);
         if(converge) {
             if(p0.Equals(p, RATPOLY_EPS)) {
@@ -443,6 +443,10 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
             puv[j].y += dv / ((tv[j]).MagSquared());
         }
     }
+    if(i >= 10) {
+        dbp("this and srf, didn't converge, d=%g",
+            (puv[0].Minus(puv[1])).Magnitude());
+    }
 
     // If this converged, then the two points are actually equal.
     return ((srf[0])->PointAt(puv[0])).Plus(
@@ -461,7 +465,7 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2,
     (srf[2])->ClosestPointTo(p, &(u[2]), &(v[2]), false);
 
     int i, j;
-    for(i = 0; i < 15; i++) {
+    for(i = 0; i < 20; i++) {
         // Approximate each surface by a plane
         Vector p[3], tu[3], tv[3], n[3];
         double d[3];

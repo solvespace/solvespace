@@ -74,7 +74,7 @@ public:
     Vector DotInToCsys(Vector u, Vector v, Vector n);
     Vector ScaleOutOfCsys(Vector u, Vector v, Vector n);
     double DistanceToLine(Vector p0, Vector dp);
-    bool OnLineSegment(Vector a, Vector b);
+    bool OnLineSegment(Vector a, Vector b, double tol=LENGTH_EPS);
     Vector ClosestPointOnLine(Vector p0, Vector dp);
     double Magnitude(void);
     double MagSquared(void);

@@ -40,6 +40,7 @@ public:
     int     ear;
 
     Vector  p;
+    Vector  auxv;
 };
 
 class SPointList {

@@ -459,15 +459,15 @@ double Vector::DistanceToLine(Vector p0, Vector dp) {
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
-bool Vector::OnLineSegment(Vector a, Vector b) {
-    if(this->Equals(a) || this->Equals(b)) return true;
+bool Vector::OnLineSegment(Vector a, Vector b, double tol) {
+    if(this->Equals(a, tol) || this->Equals(b, tol)) return true;
 
     Vector d = b.Minus(a);
 
     double m = d.MagSquared();
     double distsq = ((this->Minus(a)).Cross(d)).MagSquared() / m;
 
-    if(distsq >= LENGTH_EPS*LENGTH_EPS) return false;
+    if(distsq >= tol*tol) return false;
 
     double t = (this->Minus(a)).DivPivoting(d);
     // On-endpoint already tested
