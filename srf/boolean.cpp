@@ -241,7 +241,11 @@ static void TagByClassifiedEdge(int bspclass, int *indir, int *outdir)
             *outdir = SShell::INSIDE;
             break;
 
-        default: oops();
+        default:
+            dbp("TagByClassifiedEdge: fail!");
+            *indir  = SShell::OUTSIDE;
+            *outdir = SShell::OUTSIDE;
+            break;
     }
 }
 

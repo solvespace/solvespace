@@ -32,7 +32,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Redo\tCtrl+Y",                       MNU_REDO,           'Y'|C,  mEdit },
 { 1, "Re&generate All\tSpace",              MNU_REGEN_ALL,      ' ',    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
+{ 1, "Rotate Imported &90°\t9",             MNU_ROTATE_90,      '9',    mEdit },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
+
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 
@@ -607,6 +609,53 @@ void GraphicsWindow::MenuEdit(int id) {
 
             SK.constraint.RemoveTagged();
             SS.GW.DeleteTaggedRequests();
+            break;
+        }
+
+        case MNU_ROTATE_90: {
+            SS.GW.GroupSelection();
+            Entity *e = NULL;
+            if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
+                e = SK.GetEntity(SS.GW.gs.point[0]);
+            } else if(SS.GW.gs.n == 1 && SS.GW.gs.entities == 1) {
+                e = SK.GetEntity(SS.GW.gs.entity[0]);
+            }
+            SS.GW.ClearSelection();
+
+            hGroup hg = e ? e->group : SS.GW.activeGroup;
+            Group *g = SK.GetGroup(hg);
+            if(g->type != Group::IMPORTED) {
+                Error("To use this command, select a point or other "
+                      "entity from an imported part, or make an import "
+                      "group the active group.");
+                break;
+            }
+
+            hParam qw, qx, qy, qz;
+            qw = g->h.param(3);
+            qx = g->h.param(4);
+            qy = g->h.param(5);
+            qz = g->h.param(6);
+
+            SS.UndoRemember();
+            // Rotate by ninety degrees about the coordinate axis closest
+            // to the screen normal.
+            Quaternion q = Quaternion::From(qw, qx, qy, qz);
+            Vector norm = SS.GW.projRight.Cross(SS.GW.projUp);
+            norm = norm.ClosestOrtho();
+            norm = norm.WithMagnitude(1);
+            Quaternion qaa = Quaternion::From(norm, PI/2);
+            q = qaa.Times(q);
+
+            // And write the new quaternion
+            SK.GetParam(qw)->val = q.w;
+            SK.GetParam(qx)->val = q.vx;
+            SK.GetParam(qy)->val = q.vy;
+            SK.GetParam(qz)->val = q.vz;
+
+            // and regenerate as necessary.
+            SS.MarkGroupDirty(hg);
+            SS.GenerateAll();
             break;
         }
 

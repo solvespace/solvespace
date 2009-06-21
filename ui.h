@@ -204,6 +204,7 @@ public:
         MNU_UNDO,
         MNU_REDO,
         MNU_DELETE,
+        MNU_ROTATE_90,
         MNU_UNSELECT_ALL,
         MNU_REGEN_ALL,
         // Request
