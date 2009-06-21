@@ -47,6 +47,7 @@ SRFOBJS =  $(OBJDIR)\ratpoly.obj \
            $(OBJDIR)\triangulate.obj \
            $(OBJDIR)\boolean.obj \
            $(OBJDIR)\surfinter.obj \
+           $(OBJDIR)\raycast.obj \
            $(OBJDIR)\merge.obj \
 
 
