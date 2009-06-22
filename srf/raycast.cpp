@@ -7,8 +7,9 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-// Dot product tolerance for perpendicular.
-const double SShell::DOTP_TOL = 1e-3;
+// Dot product tolerance for perpendicular; this is on the direction cosine,
+// so it's about 0.001 degrees.
+const double SShell::DOTP_TOL = 1e-5;
 
 extern int FLAG;
 
@@ -394,7 +395,7 @@ void SShell::AllPointsIntersecting(Vector a, Vector b,
 int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
                            Vector edge_surf_n)
 {
-    double dot = inter_surf_n.Dot(edge_n);
+    double dot = inter_surf_n.DirectionCosineWith(edge_n);
     if(fabs(dot) < DOTP_TOL) {
         // The edge's surface and the edge-on-face surface
         // are coincident. Test the edge's surface normal
@@ -466,7 +467,7 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
         // TODO, make this use the appropriate curved normals
         double dotp[2];
         for(int i = 0; i < 2; i++) {
-            dotp[i] = edge_n_out.Dot(inter_surf_n[i]);
+            dotp[i] = edge_n_out.DirectionCosineWith(inter_surf_n[i]);
         }
 
         if(fabs(dotp[1]) < DOTP_TOL) {

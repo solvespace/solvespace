@@ -362,6 +362,12 @@ double Vector::Dot(Vector b) {
     return (x*b.x + y*b.y + z*b.z);
 }
 
+double Vector::DirectionCosineWith(Vector b) {
+    Vector a = this->WithMagnitude(1);
+    b = b.WithMagnitude(1);
+    return a.Dot(b);
+}
+
 Vector Vector::Normal(int which) {
     Vector n;
 

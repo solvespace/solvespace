@@ -322,10 +322,6 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
     Point2d enuv;
     enuv.x = enxyz.Dot(tu) / tu.MagSquared();
     enuv.y = enxyz.Dot(tv) / tv.MagSquared();
-    // Don't let the magnitude get too tiny at small chord tolerances; we
-    // will otherwise have numerical problems subtracting nearly-equal
-    // numbers.
-    enuv = enuv.WithMagnitude(0.01);
 
     // Compute the inner and outer normals of this edge (within the srf),
     // in xyz space. These are not necessarily antiparallel, if the

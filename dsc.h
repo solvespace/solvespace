@@ -67,6 +67,7 @@ public:
     Vector Minus(Vector b);
     Vector Negated(void);
     Vector Cross(Vector b);
+    double DirectionCosineWith(Vector b);
     double Dot(Vector b);
     Vector Normal(int which);
     Vector RotatedAbout(Vector orig, Vector axis, double theta);
