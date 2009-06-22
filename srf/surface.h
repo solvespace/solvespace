@@ -278,6 +278,8 @@ public:
     void MakeTrimEdgesInto(SEdgeList *sel, bool asUv, SCurve *sc, STrimBy *stb);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
             SShell *useCurvesFrom=NULL);
+    Vector ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
+                                Vector dir);
     void MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl);
     void MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom);
     double ChordToleranceForEdge(Vector a, Vector b);

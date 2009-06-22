@@ -349,6 +349,12 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             spl.l.ClearTags();
             spl.l.elem[0].tag = 1;
             spl.l.RemoveTagged();
+
+            // Our chord tolerance is whatever the user specified
+            double maxtol = SS.ChordTolMm();
+            int maxsteps = max(300, SS.maxSegments*3);
+
+            // The curve starts at our starting point.
             SCurvePt padd;
             ZERO(&padd);
             padd.vertex = true;
@@ -357,11 +363,11 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             Point2d pa, pb;
             Vector np, npc;
+            bool fwd;
             // Better to start with a too-small step, so that we don't miss
             // features of the curve entirely.
-            bool fwd;
-            double tol, step = SS.ChordTolMm();
-            for(a = 0; a < 100; a++) {
+            double tol, step = maxtol;
+            for(a = 0; a < maxsteps; a++) {
                 ClosestPointTo(start, &pa);
                 b->ClosestPointTo(start, &pb);
 
@@ -378,10 +384,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     }
                 }
 
-                int i = 0;
-                do {
-                    if(i++ > 20) break;
-
+                int i;
+                for(i = 0; i < 20; i++) {
                     Vector dp = nb.Cross(na);
                     if(!fwd) dp = dp.ScaledBy(-1);
                     dp = dp.WithMagnitude(step);
@@ -390,24 +394,30 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     npc = ClosestPointOnThisAndSurface(b, np);
                     tol = (npc.Minus(np)).Magnitude();
 
-                    if(tol > SS.ChordTolMm()*0.8) {
+                    if(tol > maxtol*0.8) {
                         step *= 0.95;
                     } else {
                         step /= 0.95;
                     }
-                } while(tol > SS.ChordTolMm() || tol < SS.ChordTolMm()/2);
+
+                    if((tol < maxtol) && (tol > maxtol/2)) {
+                        // If we meet the chord tolerance test, and we're
+                        // not too fine, then we break out.
+                        break;
+                    }
+                }
 
                 SPoint *sp;
                 for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
                     if((sp->p).OnLineSegment(start, npc, 2*SS.ChordTolMm())) {
                         sp->tag = 1;
-                        a = 1000;
+                        a = maxsteps;
                         npc = sp->p;
                     }
                 }
 
                 padd.p = npc;
-                padd.vertex = (a == 1000);
+                padd.vertex = (a == maxsteps);
                 sc.pts.Add(&padd);
 
                 start = npc;
@@ -419,7 +429,6 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             SCurve split = sc.MakeCopySplitAgainst(agnstA, agnstB, this, b);
             sc.Clear();
             into->curve.AddAndAssignId(&split);
-            break;
         }
         spl.Clear();
     }

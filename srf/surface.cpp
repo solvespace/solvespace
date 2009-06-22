@@ -262,6 +262,26 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
 }
 
 //-----------------------------------------------------------------------------
+// Compute the exact tangent to the intersection curve between two surfaces,
+// by taking the cross product of the surface normals. We choose the direction
+// of this tangent so that its dot product with dir is positive.
+//-----------------------------------------------------------------------------
+Vector SSurface::ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
+                                       Vector dir)
+{
+    Point2d puva, puvb;
+    srfA->ClosestPointTo(p, &puva);
+    srfB->ClosestPointTo(p, &puvb);
+    Vector ts = (srfA->NormalAt(puva)).Cross(
+                (srfB->NormalAt(puvb)));
+    ts = ts.WithMagnitude(1);
+    if(ts.Dot(dir) < 0) {
+        ts = ts.ScaledBy(-1);
+    }
+    return ts;
+}
+
+//-----------------------------------------------------------------------------
 // Report our trim curves. If a trim curve is exact and sbl is not null, then
 // add its exact form to sbl. Otherwise, add its piecewise linearization to
 // sel.
@@ -293,6 +313,76 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
             keep_aft.SplitAt(tf, &keep_bef, &junk_aft);
 
             sbl->l.Add(&keep_bef);
+        } else if(sbl && !sel && !sc->isExact) {
+            // We must approximate this trim curve, as piecewise cubic sections.
+            SSurface *srfA = shell->surface.FindById(sc->surfA),
+                     *srfB = shell->surface.FindById(sc->surfB);
+
+            Vector s = stb->backwards ? stb->finish : stb->start,
+                   f = stb->backwards ? stb->start : stb->finish;
+
+            int sp, fp;
+            for(sp = 0; sp < sc->pts.n; sp++) {
+                if(s.Equals(sc->pts.elem[sp].p)) break;
+            }
+            if(sp >= sc->pts.n) return;
+            for(fp = sp; fp < sc->pts.n; fp++) {
+                if(f.Equals(sc->pts.elem[fp].p)) break;
+            }
+            if(fp >= sc->pts.n) return;
+            // So now the curve we want goes from elem[sp] to elem[fp]
+
+            while(sp < fp) {
+                // Initially, we'll try approximating the entire trim curve
+                // as a single Bezier segment
+                int fpt = fp;
+
+                for(;;) {
+                    // So construct a cubic Bezier with the correct endpoints
+                    // and tangents for the current span.
+                    Vector st = sc->pts.elem[sp].p,
+                           ft = sc->pts.elem[fpt].p,
+                           sf = ft.Minus(st);
+                    double m = sf.Magnitude() / 3;
+
+                    Vector stan = ExactSurfaceTangentAt(st, srfA, srfB, sf),
+                           ftan = ExactSurfaceTangentAt(ft, srfA, srfB, sf);
+
+                    SBezier sb = SBezier::From(st,
+                                               st.Plus (stan.WithMagnitude(m)),
+                                               ft.Minus(ftan.WithMagnitude(m)),
+                                               ft);
+
+                    // And test how much this curve deviates from the
+                    // intermediate points (if any).
+                    int i;
+                    bool tooFar = false;
+                    for(i = sp + 1; i <= (fpt - 1); i++) {
+                        Vector p = sc->pts.elem[i].p;
+                        double t;
+                        sb.ClosestPointTo(p, &t, false);
+                        Vector pp = sb.PointAt(t);
+                        if((pp.Minus(p)).Magnitude() > SS.ChordTolMm()/2) {
+                            tooFar = true;
+                            break;
+                        }
+                    }
+
+                    if(tooFar) {
+                        // Deviates by too much, so try a shorter span
+                        fpt--;
+                        continue;
+                    } else {
+                        // Okay, so use this piece and break.
+                        sbl->l.Add(&sb);
+                        break;
+                    }
+                }
+
+                // And continue interpolating, starting wherever the curve
+                // we just generated finishes.
+                sp = fpt;
+            }
         } else {
             if(sel) MakeTrimEdgesInto(sel, false, sc, stb);
         }
