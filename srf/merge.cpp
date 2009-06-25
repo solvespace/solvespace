@@ -70,6 +70,18 @@ void SShell::MergeCoincidentSurfaces(void) {
                 vmin = min(vmin, vt);
             }
 
+            // An interesting problem here; the real curve could extend
+            // slightly beyond the bounding box of the piecewise linear
+            // bits. Not a problem for us, but some apps won't import STEP
+            // in that case. So give a bit of extra room; in theory just
+            // a chord tolerance, but more can't hurt.
+            double muv = max((umax - umin), (vmax - vmin));
+            double tol = muv/50 + 3*SS.ChordTolMm();
+            umax += tol;
+            vmax += tol;
+            umin -= tol;
+            vmin -= tol;
+
             // We move in the +v direction as v goes from 0 to 1, and in the
             // +u direction as u goes from 0 to 1. So our normal ends up
             // pointed the same direction.
