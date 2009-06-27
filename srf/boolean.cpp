@@ -278,6 +278,59 @@ static char *REGION(int d) {
 }
 
 
+//-----------------------------------------------------------------------------
+// We are given src, with at least one edge, and avoid, a list of points to
+// avoid. We return a chain of edges (that share endpoints), such that no
+// point within the avoid list ever occurs in the middle of a chain. And we
+// delete the edges in that chain from our source list.
+//-----------------------------------------------------------------------------
+void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest, 
+                                 SPointList *avoid)
+{
+    if(src->l.n < 1) oops();
+    // Start with an arbitrary edge.
+    dest->l.Add(&(src->l.elem[0]));
+    src->l.ClearTags();
+    src->l.elem[0].tag = 1;
+
+    bool added;
+    do {
+        added = false;
+        // The start and finish of the current edge chain
+        Vector s = dest->l.elem[0].a,
+               f = dest->l.elem[dest->l.n - 1].b;
+
+        // We can attach a new edge at the start or finish, as long as that
+        // start or finish point isn't in the list of points to avoid.
+        bool startOkay  = !avoid->ContainsPoint(s),
+             finishOkay = !avoid->ContainsPoint(f);
+
+        // Now look for an unused edge that joins at the start or finish of
+        // our chain (if permitted by the avoid list).
+        SEdge *se;
+        for(se = src->l.First(); se; se = src->l.NextAfter(se)) {
+            if(se->tag) continue;
+            if(startOkay && s.Equals(se->b)) {
+                dest->l.AddToBeginning(se);
+                s = se->a;
+                se->tag = 1;
+                startOkay = !avoid->ContainsPoint(s);
+            } else if(finishOkay && f.Equals(se->a)) {
+                dest->l.Add(se);
+                f = se->b;
+                se->tag = 1;
+                finishOkay = !avoid->ContainsPoint(f);
+            } else {
+                continue;
+            }
+
+            added = true;
+        }
+    } while(added);
+
+    src->l.RemoveTagged();
+}
+
 void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                         Vector *pt,
                                         Vector *enin, Vector *enout,
@@ -425,11 +478,45 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         }
     }
 
+    // Record all the points where more than two edges join, which I will call
+    // the choosing points. If two edges join at a non-choosing point, then
+    // they must either both be kept or both be discarded (since that would
+    // otherwise create an open contour).
+    SPointList choosing;
+    ZERO(&choosing);
+    SEdge *se;
+    for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
+        choosing.IncrementTagFor(se->a);
+        choosing.IncrementTagFor(se->b);
+    }
+    for(se = inter.l.First(); se; se = inter.l.NextAfter(se)) {
+        choosing.IncrementTagFor(se->a);
+        choosing.IncrementTagFor(se->b);
+    }
+    SPoint *sp;
+    for(sp = choosing.l.First(); sp; sp = choosing.l.NextAfter(sp)) {
+        if(sp->tag == 2) {
+            sp->tag = 1;
+        } else {
+            sp->tag = 0;
+        }
+    }
+    choosing.l.RemoveTagged();
+
+    // The list of edges to trim our new surface, a combination of edges from
+    // our original and intersecting edge lists.
     SEdgeList final;
     ZERO(&final);
 
-    SEdge *se;
-    for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
+    while(orig.l.n > 0) {
+        SEdgeList chain;
+        ZERO(&chain);
+        FindChainAvoiding(&orig, &chain, &choosing);
+
+        // Arbitrarily choose an edge within the chain to classify; they
+        // should all be the same, though.
+        se = &(chain.l.elem[chain.l.n/2]);
+
         Point2d auv  = (se->a).ProjectXy(),
                 buv  = (se->b).ProjectXy();
 
@@ -449,11 +536,21 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         if(KeepEdge(type, opA, indir_shell, outdir_shell, 
                                indir_orig,  outdir_orig))
         {
-            final.AddEdge(se->a, se->b, se->auxA, se->auxB);
+            for(se = chain.l.First(); se; se = chain.l.NextAfter(se)) {
+                final.AddEdge(se->a, se->b, se->auxA, se->auxB);
+            }
         }
+        chain.Clear();
     }
 
-    for(se = inter.l.First(); se; se = inter.l.NextAfter(se)) {
+    while(inter.l.n > 0) {
+        SEdgeList chain;
+        ZERO(&chain);
+        FindChainAvoiding(&inter, &chain, &choosing);
+
+        // Any edge in the chain, same as above.
+        se = &(chain.l.elem[chain.l.n/2]);
+        
         Point2d auv = (se->a).ProjectXy(),
                 buv = (se->b).ProjectXy();
 
@@ -473,8 +570,11 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         if(KeepEdge(type, opA, indir_shell, outdir_shell, 
                                indir_orig,  outdir_orig))
         {
-            final.AddEdge(se->a, se->b, se->auxA, se->auxB);
+            for(se = chain.l.First(); se; se = chain.l.NextAfter(se)) {
+                final.AddEdge(se->a, se->b, se->auxA, se->auxB);
+            }
         }
+        chain.Clear();
     }
 
     // Cull extraneous edges; duplicates or anti-parallel pairs. In particular,
@@ -491,11 +591,12 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     final.l.ClearTags();
     if(!final.AssemblePolygon(&poly, NULL, true)) {
         into->booleanFailed = true;
-        dbp("failed: I=%d", I);
+        dbp("failed: I=%d, avoid=%d", I, choosing.l.n);
         DEBUGEDGELIST(&final, &ret);
     }
     poly.Clear();
 
+    choosing.Clear();
     final.Clear();
     inter.Clear();
     orig.Clear();

@@ -49,6 +49,7 @@ public:
 
     void Clear(void);
     bool ContainsPoint(Vector pt);
+    void IncrementTagFor(Vector pt);
     void Add(Vector pt);
 };
 

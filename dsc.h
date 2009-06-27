@@ -140,12 +140,23 @@ public:
     int  n;
     int  elemsAllocated;
 
-    void Add(T *t) {
+    void AllocForOneMore(void) {
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
             elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
         }
+    }
+
+    void Add(T *t) {
+        AllocForOneMore();
         elem[n++] = *t;
+    }
+
+    void AddToBeginning(T *t) {
+        AllocForOneMore();
+        memmove(elem+1, elem, n*sizeof(elem[0]));
+        n++;
+        elem[0] = *t;
     }
 
     T *First(void) {

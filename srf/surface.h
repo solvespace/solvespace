@@ -229,6 +229,7 @@ public:
                                   Vector *surfn,
                                   DWORD auxA, 
                                   SShell *shell, SShell *sha, SShell *shb);
+    void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
                                     SShell *into, int type);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);

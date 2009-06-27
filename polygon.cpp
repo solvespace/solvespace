@@ -299,6 +299,20 @@ bool SPointList::ContainsPoint(Vector pt) {
     return false;
 }
 
+void SPointList::IncrementTagFor(Vector pt) {
+    SPoint *p;
+    for(p = l.First(); p; p = l.NextAfter(p)) {
+        if(pt.Equals(p->p)) {
+            (p->tag)++;
+            return;
+        }
+    }
+    SPoint pa;
+    pa.p = pt;
+    pa.tag = 1;
+    l.Add(&pa);
+}
+
 void SPointList::Add(Vector pt) {
     SPoint p;
     ZERO(&p);
