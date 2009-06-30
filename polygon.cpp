@@ -226,6 +226,26 @@ intersects:
 }
 
 //-----------------------------------------------------------------------------
+// Returns true if the intersecting edge list contains an edge that shares
+// an endpoint with one of our edges.
+//-----------------------------------------------------------------------------
+bool SEdgeList::ContainsEdgeFrom(SEdgeList *sel) {
+    SEdge *se;
+    for(se = l.First(); se; se = l.NextAfter(se)) {
+        if(sel->ContainsEdge(se)) return true;
+    }
+    return false;
+}
+bool SEdgeList::ContainsEdge(SEdge *set) {
+    SEdge *se;
+    for(se = l.First(); se; se = l.NextAfter(se)) {
+        if((se->a).Equals(set->a) && (se->b).Equals(set->b)) return true;
+        if((se->b).Equals(set->a) && (se->a).Equals(set->b)) return true;
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
 // Remove unnecessary edges: if two are anti-parallel then remove both, and if
 // two are parallel then remove one.
 //-----------------------------------------------------------------------------

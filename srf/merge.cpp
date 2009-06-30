@@ -16,36 +16,60 @@ void SShell::MergeCoincidentSurfaces(void) {
         // Let someone else clean up the empty surfaces; we can certainly merge
         // them, but we don't know how to calculate a reasonable bounding box.
         if(si->trim.n == 0) continue;
+        // And for now we handle only coincident planes, so no sense wasting
+        // time on other surfaces.
+        if(si->degm != 1 || si->degn != 1) continue;
 
         SEdgeList sel;
         ZERO(&sel);
+        si->MakeEdgesInto(this, &sel, false);
 
-        bool merged = false;
+        bool mergedThisTime, merged = false;
+        do {
+            mergedThisTime = false;
 
-        for(j = i + 1; j < surface.n; j++) {
-            sj = &(surface.elem[j]);
-            if(sj->tag) continue;
-            if(!sj->CoincidentWith(si, true)) continue;
-            if(sj->color != si->color) continue;
-            // But we do merge surfaces with different face entities, since
-            // otherwise we'd hardly ever merge anything.
+            for(j = i + 1; j < surface.n; j++) {
+                sj = &(surface.elem[j]);
+                if(sj->tag) continue;
+                if(!sj->CoincidentWith(si, true)) continue;
+                if(sj->color != si->color) continue;
+                // But we do merge surfaces with different face entities, since
+                // otherwise we'd hardly ever merge anything.
 
-            // This surface is coincident, so it gets merged.
-            sj->tag = 1;
-            merged = true;
-            sj->MakeEdgesInto(this, &sel, false);
-            sj->trim.Clear();
+                // This surface is coincident. But let's not merge coincident
+                // surfaces if they contain disjoint contours; that just makes
+                // the bounding box tests less effective, and possibly things
+                // less robust.
+                SEdgeList tel;
+                ZERO(&tel);
+                sj->MakeEdgesInto(this, &tel, false);
+                if(!sel.ContainsEdgeFrom(&tel)) {
+                    tel.Clear();
+                    continue;
+                }
+                tel.Clear();
 
-            // All the references to this surface get replaced with the new srf
-            SCurve *sc;
-            for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-                if(sc->surfA.v == sj->h.v) sc->surfA = si->h;
-                if(sc->surfB.v == sj->h.v) sc->surfB = si->h;
+                sj->tag = 1;
+                merged = true;
+                mergedThisTime = true;
+                sj->MakeEdgesInto(this, &sel, false);
+                sj->trim.Clear();
+
+                // All the references to this surface get replaced with the
+                // new srf
+                SCurve *sc;
+                for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
+                    if(sc->surfA.v == sj->h.v) sc->surfA = si->h;
+                    if(sc->surfB.v == sj->h.v) sc->surfB = si->h;
+                }
             }
-        }
+
+            // If this iteration merged a contour onto ours, then we have to
+            // go through the surfaces again; that might have made a new
+            // surface touch us.
+        } while(mergedThisTime);
 
         if(merged) {
-            si->MakeEdgesInto(this, &sel, false);
             sel.CullExtraneousEdges();
             si->trim.Clear();
             si->TrimFromEdgeList(&sel, false);
@@ -95,6 +119,7 @@ void SShell::MergeCoincidentSurfaces(void) {
             si->ctrl[1][0] =
                 Vector::From(umax, vmin, nt).ScaleOutOfCsys(u, v, n);
         }
+        sel.Clear();
     }
 
     surface.RemoveTagged();

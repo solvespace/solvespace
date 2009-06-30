@@ -26,6 +26,8 @@ public:
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                             SEdge *errorAt, bool keepDir);
     int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
+    bool ContainsEdgeFrom(SEdgeList *sel);
+    bool ContainsEdge(SEdge *se);
     void CullExtraneousEdges(void);
     void MergeCollinearSegments(Vector a, Vector b);
 };
