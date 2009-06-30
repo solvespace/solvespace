@@ -376,20 +376,13 @@ Group *Group::PreviousGroup(void) {
         Group *g = &(SK.group.elem[i]);
         if(g->h.v == h.v) break;
     }
-    if(i == 0 || i >= SK.group.n) oops();
+    if(i == 0 || i >= SK.group.n) return NULL;
     return &(SK.group.elem[i-1]);
 }
 
-void Group::Draw(void) {
-    // Everything here gets drawn whether or not the group is hidden; we
-    // can control this stuff independently, with show/hide solids, edges,
-    // mesh, etc.
-
-    // Triangulate the shells if necessary.
-    GenerateDisplayItems();
-
+void Group::DrawDisplayItems(int t) {
     int specColor;
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE) {
+    if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
         specColor = RGB(25, 25, 25); // force the color to something dim
     } else {
         specColor = -1; // use the model color
@@ -425,6 +418,25 @@ void Group::Draw(void) {
     }
 
     if(SS.GW.showMesh) glxDebugMesh(&displayMesh);
+}
+
+void Group::Draw(void) {
+    // Everything here gets drawn whether or not the group is hidden; we
+    // can control this stuff independently, with show/hide solids, edges,
+    // mesh, etc.
+
+    Group *pg = PreviousGroup();
+    if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
+        // We don't contribute any new solid model in this group, so our
+        // display items are identical to the previous group's; which means
+        // that we can just display those, and stop ourselves from
+        // recalculating for those every time we get a change in this group.
+        pg->GenerateDisplayItems();
+        pg->DrawDisplayItems(type);
+    } else {
+        GenerateDisplayItems();
+        DrawDisplayItems(type);
+    }
 
     // And finally show the polygons too
     if(!SS.GW.showShaded) return;
