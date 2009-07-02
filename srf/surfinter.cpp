@@ -395,9 +395,9 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                     tol = (npc.Minus(np)).Magnitude();
 
                     if(tol > maxtol*0.8) {
-                        step *= 0.95;
+                        step *= 0.90;
                     } else {
-                        step /= 0.95;
+                        step /= 0.90;
                     }
 
                     if((tol < maxtol) && (tol > maxtol/2)) {

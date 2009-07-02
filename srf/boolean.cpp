@@ -257,7 +257,7 @@ void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
         Vector arrow = (se->b).Minus(se->a);
         SWAP(double, arrow.x, arrow.y);
         arrow.x *= -1;
-        arrow = arrow.WithMagnitude(0.03);
+        arrow = arrow.WithMagnitude(0.01);
         arrow = arrow.Plus(mid);
 
         SS.nakedEdges.AddEdge(surf->PointAt(se->a.x, se->a.y),
@@ -426,7 +426,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     ret.MakeEdgesInto(into, &orig, true);
     ret.trim.Clear();
     // which means that we can't necessarily use the old BSP...
-    SBspUv *origBsp = SBspUv::From(&orig);
+    SBspUv *origBsp = SBspUv::From(&orig, &ret);
 
     // And now intersect the other shell against us
     SEdgeList inter;
@@ -452,7 +452,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                 ss->ClosestPointTo(a, &(auv.x), &(auv.y));
                 ss->ClosestPointTo(b, &(buv.x), &(buv.y));
 
-                int c = ss->bsp->ClassifyEdge(auv, buv);
+                int c = ss->bsp->ClassifyEdge(auv, buv, ss);
                 if(c != SBspUv::OUTSIDE) {
                     Vector ta = Vector::From(0, 0, 0);
                     Vector tb = Vector::From(0, 0, 0);
@@ -560,7 +560,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         int indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        int c_this = origBsp->ClassifyEdge(auv, buv);
+        int c_this = origBsp->ClassifyEdge(auv, buv, &ret);
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
@@ -764,7 +764,7 @@ void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
     ZERO(&el);
 
     MakeEdgesInto(shell, &el, true, useCurvesFrom);
-    bsp = SBspUv::From(&el);
+    bsp = SBspUv::From(&el, this);
     el.Clear();
 
     ZERO(&edges);
@@ -787,7 +787,7 @@ static int ByLength(const void *av, const void *bv)
     // stability for the normals.
     return (la < lb) ? 1 : -1;
 }
-SBspUv *SBspUv::From(SEdgeList *el) {
+SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
     SEdgeList work;
     ZERO(&work);
 
@@ -799,14 +799,50 @@ SBspUv *SBspUv::From(SEdgeList *el) {
 
     SBspUv *bsp = NULL;
     for(se = work.l.First(); se; se = work.l.NextAfter(se)) {
-        bsp = bsp->InsertEdge((se->a).ProjectXy(), (se->b).ProjectXy());
+        bsp = bsp->InsertEdge((se->a).ProjectXy(), (se->b).ProjectXy(), srf);
     }
 
     work.Clear();
     return bsp;
 }
 
-SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb) {
+//-----------------------------------------------------------------------------
+// The points in this BSP are in uv space, but we want to apply our tolerances
+// consistently in xyz (i.e., we want to say a point is on-edge if its xyz
+// distance to that edge is less than LENGTH_EPS, irrespective of its distance
+// in uv). So we linearize the surface about the point we're considering and
+// then do the test. That preserves point-on-line relationships, and the only
+// time we care about exact correctness is when we're very close to the line,
+// which is when the linearization is accurate.
+//-----------------------------------------------------------------------------
+void SBspUv::ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) {
+    Vector tu, tv;
+    srf->TangentsAt(pt->x, pt->y, &tu, &tv);
+    double mu = tu.Magnitude(), mv = tv.Magnitude();
+
+    pt->x *= mu; pt->y *= mv;
+    a ->x *= mu; a ->y *= mv;
+    b ->x *= mu; b ->y *= mv;
+}
+double SBspUv::ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b, 
+                                            SSurface *srf)
+{
+    ScalePoints(&pt, &a, &b, srf);
+
+    Point2d n = ((b.Minus(a)).Normal()).WithMagnitude(1);
+    double d = a.Dot(n);
+
+    return pt.Dot(n) - d;
+}
+double SBspUv::ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool seg,
+                                        SSurface *srf)
+{
+    ScalePoints(&pt, &a, &b, srf);
+
+    return pt.DistanceToLine(a, b, seg);
+}
+
+SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
     if(!this) {
         SBspUv *ret = Alloc();
         ret->a = ea;
@@ -814,11 +850,8 @@ SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb) {
         return ret;
     }
 
-    Point2d n = ((b.Minus(a)).Normal()).WithMagnitude(1);
-    double d = a.Dot(n);
-
-    double dea = ea.Dot(n) - d,
-           deb = eb.Dot(n) - d;
+    double dea = ScaledSignedDistanceToLine(ea, a, b, srf),
+           deb = ScaledSignedDistanceToLine(eb, a, b, srf);
 
     if(fabs(dea) < LENGTH_EPS && fabs(deb) < LENGTH_EPS) {
         // Line segment is coincident with this one, store in same node
@@ -830,55 +863,49 @@ SBspUv *SBspUv::InsertEdge(Point2d ea, Point2d eb) {
     } else if(fabs(dea) < LENGTH_EPS) {
         // Point A lies on this lie, but point B does not
         if(deb > 0) {
-            pos = pos->InsertEdge(ea, eb);
+            pos = pos->InsertEdge(ea, eb, srf);
         } else {
-            neg = neg->InsertEdge(ea, eb);
+            neg = neg->InsertEdge(ea, eb, srf);
         }
     } else if(fabs(deb) < LENGTH_EPS) {
         // Point B lies on this lie, but point A does not
         if(dea > 0) {
-            pos = pos->InsertEdge(ea, eb);
+            pos = pos->InsertEdge(ea, eb, srf);
         } else {
-            neg = neg->InsertEdge(ea, eb);
+            neg = neg->InsertEdge(ea, eb, srf);
         }
     } else if(dea > 0 && deb > 0) {
-        pos = pos->InsertEdge(ea, eb);
+        pos = pos->InsertEdge(ea, eb, srf);
     } else if(dea < 0 && deb < 0) {
-        neg = neg->InsertEdge(ea, eb);
+        neg = neg->InsertEdge(ea, eb, srf);
     } else {
         // New edge crosses this one; we need to split.
+        Point2d n = ((b.Minus(a)).Normal()).WithMagnitude(1);
+        double d = a.Dot(n);
         double t = (d - n.Dot(ea)) / (n.Dot(eb.Minus(ea)));
         Point2d pi = ea.Plus((eb.Minus(ea)).ScaledBy(t));
         if(dea > 0) {
-            pos = pos->InsertEdge(ea, pi);
-            neg = neg->InsertEdge(pi, eb);
+            pos = pos->InsertEdge(ea, pi, srf);
+            neg = neg->InsertEdge(pi, eb, srf);
         } else {
-            neg = neg->InsertEdge(ea, pi);
-            pos = pos->InsertEdge(pi, eb);
+            neg = neg->InsertEdge(ea, pi, srf);
+            pos = pos->InsertEdge(pi, eb, srf);
         }
     }
     return this;
 }
 
-int SBspUv::ClassifyPoint(Point2d p, Point2d eb, Point2d *ia, Point2d *ib) {
+int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) {
     if(!this) return OUTSIDE;
 
-    Point2d n = ((b.Minus(a)).Normal()).WithMagnitude(1);
-    double d = a.Dot(n);
-
-    double dp = p.Dot(n) - d;
+    double dp = ScaledSignedDistanceToLine(p, a, b, srf);
 
     if(fabs(dp) < LENGTH_EPS) {
         SBspUv *f = this;
         while(f) {
             Point2d ba = (f->b).Minus(f->a);
-            if(p.DistanceToLine(f->a, ba, true) < LENGTH_EPS) {
-                if(ia && ib) {
-                    // Tell the caller which edge it happens to lie on.
-                    *ia = f->a;
-                    *ib = f->b;
-                }
-                if(eb.DistanceToLine(f->a, ba, false) < LENGTH_EPS) {
+            if(ScaledDistanceToLine(p, f->a, ba, true, srf) < LENGTH_EPS) {
+                if(ScaledDistanceToLine(eb, f->a, ba, false, srf) < LENGTH_EPS){
                     if(ba.Dot(eb.Minus(p)) > 0) {
                         return EDGE_PARALLEL;
                     } else {
@@ -891,26 +918,26 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb, Point2d *ia, Point2d *ib) {
             f = f->more;
         }
         // Pick arbitrarily which side to send it down, doesn't matter
-        int c1 =  neg ? neg->ClassifyPoint(p, eb, ia, ib) : OUTSIDE;
-        int c2 =  pos ? pos->ClassifyPoint(p, eb, ia, ib) : INSIDE;
+        int c1 =  neg ? neg->ClassifyPoint(p, eb, srf) : OUTSIDE;
+        int c2 =  pos ? pos->ClassifyPoint(p, eb, srf) : INSIDE;
         if(c1 != c2) {
             dbp("MISMATCH: %d %d %08x %08x", c1, c2, neg, pos);
         }
         return c1;
     } else if(dp > 0) {
-        return pos ? pos->ClassifyPoint(p, eb, ia, ib) : INSIDE;
+        return pos ? pos->ClassifyPoint(p, eb, srf) : INSIDE;
     } else {
-        return neg ? neg->ClassifyPoint(p, eb, ia, ib) : OUTSIDE;
+        return neg ? neg->ClassifyPoint(p, eb, srf) : OUTSIDE;
     }
 }
 
-int SBspUv::ClassifyEdge(Point2d ea, Point2d eb) {
-    int ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb);
+int SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) {
+    int ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb, srf);
     if(ret == EDGE_OTHER) {
         // Perhaps the edge is tangent at its midpoint (and we screwed up
         // somewhere earlier and failed to split it); try a different
         // point on the edge.
-        ret = ClassifyPoint(ea.Plus((eb.Minus(ea)).ScaledBy(0.294)), eb);
+        ret = ClassifyPoint(ea.Plus((eb.Minus(ea)).ScaledBy(0.294)), eb, srf);
     }
     return ret;
 }

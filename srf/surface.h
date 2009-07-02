@@ -27,13 +27,17 @@ public:
     static const int EDGE_OTHER        = 500;
 
     static SBspUv *Alloc(void);
-    static SBspUv *From(SEdgeList *el);
+    static SBspUv *From(SEdgeList *el, SSurface *srf);
 
-    Point2d IntersectionWith(Point2d a, Point2d b);
-    SBspUv *InsertEdge(Point2d a, Point2d b);
-    int ClassifyPoint(Point2d p, Point2d eb,
-                                        Point2d *ia=NULL, Point2d *ib=NULL);
-    int ClassifyEdge(Point2d ea, Point2d eb);
+    void ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf);
+    double ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b,
+        SSurface *srf);
+    double ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool seg,
+        SSurface *srf);
+
+    SBspUv *InsertEdge(Point2d a, Point2d b, SSurface *srf);
+    int ClassifyPoint(Point2d p, Point2d eb, SSurface *srf);
+    int ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf);
 };
 
 // Now the data structures to represent a shell of trimmed rational polynomial
@@ -191,7 +195,6 @@ public:
     Point2d     pinter;
     Vector      surfNormal;     // of the intersecting surface, at pinter
     bool        onEdge;         // pinter is on edge of trim poly
-    Point2d     edgeA, edgeB;   // the edge that pinter is on
 };
 
 // A rational polynomial surface in Bezier form.
