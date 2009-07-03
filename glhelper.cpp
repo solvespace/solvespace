@@ -22,21 +22,41 @@ double glxStrHeight(void) {
     // The characters have height ~21, as they appear in the table.
     return 21.0*FONT_SCALE/SS.GW.scale;
 }
-void glxWriteTextRefCenter(char *str)
+void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v, 
+                                glxLineFn *fn, void *fndata)
 {
+    u = u.WithMagnitude(1);
+    v = v.WithMagnitude(1);
+
     double scale = FONT_SCALE/SS.GW.scale;
     double fh = glxStrHeight();
     double fw = glxStrWidth(str);
-    glPushMatrix();
-        glTranslated(-fw/2, -fh/2, 0);
-        // Undo the (+5, +5) offset that glxWriteText applies.
-        glTranslated(-5*scale, -5*scale, 0);
-        glxWriteText(str);
-    glPopMatrix();
+
+    t = t.Plus(u.ScaledBy(-fw/2));
+    t = t.Plus(v.ScaledBy(-fh/2));
+
+    // Undo the (+5, +5) offset that glxWriteText applies.
+    t = t.Plus(u.ScaledBy(-5*scale));
+    t = t.Plus(v.ScaledBy(-5*scale));
+
+    glxWriteText(str, t, u, v, fn, fndata);
 }
 
-void glxWriteText(char *str)
+static void LineDrawCallback(void *fndata, Vector a, Vector b)
 {
+    glBegin(GL_LINES);
+        glxVertex3v(a);
+        glxVertex3v(b);
+    glEnd();
+}
+
+void glxWriteText(char *str, Vector t, Vector u, Vector v,
+                    glxLineFn *fn, void *fndata)
+{
+    if(!fn) fn = LineDrawCallback;
+    u = u.WithMagnitude(1);
+    v = v.WithMagnitude(1);
+
     double scale = FONT_SCALE/SS.GW.scale;
     int xo = 5;
     int yo = 5;
@@ -47,20 +67,24 @@ void glxWriteText(char *str)
 
         c -= 32;
 
-        glBegin(GL_LINE_STRIP);
         int j;
+        Vector prevp = Vector::From(VERY_POSITIVE, 0, 0);
         for(j = 0; j < Font[c].points; j++) {
             int x = Font[c].coord[j*2];
             int y = Font[c].coord[j*2+1];
 
             if(x == PEN_UP && y == PEN_UP) {
-                glEnd();
-                glBegin(GL_LINE_STRIP);
+                prevp.x = VERY_POSITIVE;
             } else {
-                glVertex3d((xo + x)*scale, (yo + y)*scale, 0);
+                Vector p = t;
+                p = p.Plus(u.ScaledBy((xo + x)*scale));
+                p = p.Plus(v.ScaledBy((yo + y)*scale));
+                if(prevp.x != VERY_POSITIVE) {
+                    fn(fndata, prevp, p);
+                }
+                prevp = p;
             }
         }
-        glEnd();
 
         xo += Font[c].width;
     }
@@ -69,25 +93,6 @@ void glxWriteText(char *str)
 void glxVertex3v(Vector u)
 {
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
-}
-
-void glxTranslatev(Vector u)
-{
-    glTranslated((GLdouble)u.x, (GLdouble)u.y, (GLdouble)u.z);
-}
-
-void glxOntoWorkplane(Vector u, Vector v)
-{
-    u = u.WithMagnitude(1);
-    v = v.WithMagnitude(1);
-
-    double mat[16];
-    Vector n = u.Cross(v);
-    MakeMatrix(mat,     u.x, v.x, n.x, 0,
-                        u.y, v.y, n.y, 0,
-                        u.z, v.z, n.z, 0,
-                        0,   0,   0,   1);
-    glMultMatrixd(mat);
 }
 
 void glxLockColorTo(double r, double g, double b)

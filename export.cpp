@@ -135,6 +135,13 @@ void SolveSpace::ExportViewTo(char *filename) {
         }
     }
 
+    if(SS.GW.showConstraints) {
+        Constraint *c;
+        for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+            c->GetEdges(&edges);
+        }
+    }
+
     Vector u = SS.GW.projRight,
            v = SS.GW.projUp,
            n = u.Cross(v),
@@ -856,7 +863,7 @@ void PdfFileWriter::Bezier(SBezier *sb) {
 //-----------------------------------------------------------------------------
 
 const char *SvgFileWriter::SVG_STYLE =
-    "stroke-width='1' stroke='black' style='fill: none;'";
+    "stroke-width='0.1' stroke='black' style='fill: none;'";
 
 void SvgFileWriter::StartFile(void) {
     fprintf(f,

@@ -453,11 +453,9 @@ void Group::Draw(void) {
             glEnd();
             glLineWidth(1);
             glxColor3d(1, 0, 0);
-            glPushMatrix();
-                glxTranslatev(polyError.notClosedAt.b);
-                glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
-                glxWriteText("not closed contour!");
-            glPopMatrix();
+            glxWriteText("not closed contour!",
+                polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
+                NULL, NULL);
             glEnable(GL_DEPTH_TEST);
         }
     } else if(polyError.how == POLY_NOT_COPLANAR ||
@@ -467,15 +465,12 @@ void Group::Draw(void) {
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             glxColor3d(1, 0, 0);
-            glPushMatrix();
-                glxTranslatev(polyError.errorPointAt);
-                glxOntoWorkplane(SS.GW.projRight, SS.GW.projUp);
-                if(polyError.how == POLY_NOT_COPLANAR) {
-                    glxWriteText("points not all coplanar!");
-                } else {
-                    glxWriteText("contour is self-intersecting!");
-                }
-            glPopMatrix();
+            char *msg = (polyError.how == POLY_NOT_COPLANAR) ?
+                            "points not all coplanar!" :
+                            "contour is self-intersecting!";
+            glxWriteText(msg, 
+                polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
+                NULL, NULL);
             glEnable(GL_DEPTH_TEST);
         }
     } else {

@@ -440,11 +440,7 @@ void Entity::DrawOrGetDistance(void) {
 
             char *str = DescriptionString()+5;
             if(dogd.drawing) {
-                glPushMatrix();
-                    glxTranslatev(mm2);
-                    glxOntoWorkplane(u, v);
-                    glxWriteText(str);
-                glPopMatrix();
+                glxWriteText(str, mm2, u, v, NULL, NULL);
             } else {
                 Vector pos = mm2.Plus(u.ScaledBy(glxStrWidth(str)/2)).Plus(
                                       v.ScaledBy(glxStrHeight()/2));

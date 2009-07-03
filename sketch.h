@@ -531,12 +531,14 @@ public:
         Point2d     mp;
         double      dmin;
         Vector      refp;
+        SEdgeList   *sel;
     } dogd;
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos(void);
     Vector GetReferencePos(void);
     void Draw(void);
+    void GetEdges(SEdgeList *sel);
 
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);

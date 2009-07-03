@@ -184,12 +184,13 @@ void glxDebugPolygon(SPolygon *p);
 void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
 void glxMarkPolygonNormal(SPolygon *p);
-void glxWriteText(char *str);
-void glxWriteTextRefCenter(char *str);
+typedef void glxLineFn(void *data, Vector a, Vector b);
+void glxWriteText(char *str, Vector t, Vector u, Vector v,
+    glxLineFn *fn, void *fndata);
+void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v,
+    glxLineFn *fn, void *fndata);
 double glxStrWidth(char *str);
 double glxStrHeight(void);
-void glxTranslatev(Vector u);
-void glxOntoWorkplane(Vector u, Vector v);
 void glxLockColorTo(double r, double g, double b);
 void glxUnlockColor(void);
 void glxColor3d(double r, double g, double b);
@@ -383,6 +384,9 @@ class VectorFileWriter {
 public:
     FILE *f;
     Vector ptMin, ptMax;
+
+    double width;
+    double r, g, b;
     
     static double MmToPts(double mm);
     static bool StringEndsIn(char *str, char *ending);

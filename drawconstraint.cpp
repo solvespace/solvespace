@@ -19,10 +19,14 @@ bool Constraint::HasLabel(void) {
 
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        glBegin(GL_LINE_STRIP);
-            glxVertex3v(a);
-            glxVertex3v(b);
-        glEnd();
+        if(dogd.sel) {
+            dogd.sel->AddEdge(a, b);
+        } else {
+            glBegin(GL_LINE_STRIP);
+                glxVertex3v(a);
+                glxVertex3v(b);
+            glEnd();
+        }
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
@@ -31,6 +35,12 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
         dogd.dmin = min(dogd.dmin, d);
     }
     dogd.refp = (a.Plus(b)).ScaledBy(0.5);
+}
+
+static void LineCallback(void *fndata, Vector a, Vector b)
+{
+    Constraint *c = (Constraint *)fndata;
+    c->LineDrawOrGetDistance(a, b);
 }
 
 double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
@@ -70,11 +80,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     }
 
     if(dogd.drawing) {
-        glPushMatrix();
-            glxTranslatev(ref);
-            glxOntoWorkplane(gr, gu);
-            glxWriteTextRefCenter(s);
-        glPopMatrix();
+        glxWriteTextRefCenter(s, ref, gr, gu, LineCallback, this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);
@@ -183,12 +189,10 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // The lines are skew; no wonderful way to illustrate that.
         *ref = a0.Plus(b0);
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
-        glPushMatrix();
-            gu = gu.WithMagnitude(1);
-            glxTranslatev((*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight())));
-            glxOntoWorkplane(gr, gu);
-            glxWriteTextRefCenter("angle between skew lines");
-        glPopMatrix();
+        gu = gu.WithMagnitude(1);
+        Vector trans = (*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight()));
+        glxWriteTextRefCenter("angle between skew lines", 
+            trans, gr, gu, LineCallback, this);
     }
 }
 
@@ -500,11 +504,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             if(dogd.drawing) {
-                glPushMatrix();
-                    glxTranslatev(textAt);
-                    glxOntoWorkplane(u, v);
-                    glxWriteTextRefCenter("T");
-                glPopMatrix();
+                glxWriteTextRefCenter("T", textAt, u, v, LineCallback, this);
             } else {
                 dogd.refp = textAt;
                 Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -682,14 +682,12 @@ s:
                 if(type == AT_MIDPOINT) offset = offset.ScaledBy(-1);
 
                 if(dogd.drawing) {
-                    glPushMatrix();
-                        glxTranslatev(m.Plus(offset));
-                        glxOntoWorkplane(r, u);
-                        glxWriteTextRefCenter(
-                            (type == HORIZONTAL)  ? "H" : (
-                            (type == VERTICAL)    ? "V" : (
-                            (type == AT_MIDPOINT) ? "M" : NULL)));
-                    glPopMatrix();
+                    char *s =   (type == HORIZONTAL)  ? "H" : (
+                                (type == VERTICAL)    ? "V" : (
+                                (type == AT_MIDPOINT) ? "M" : NULL));
+
+                    glxWriteTextRefCenter(s, m.Plus(offset), r, u,
+                        LineCallback, this);
                 } else {
                     dogd.refp = m.Plus(offset);
                     Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -742,12 +740,14 @@ s:
 
 void Constraint::Draw(void) {
     dogd.drawing = true;
+    dogd.sel = NULL;
     glLineWidth(1);
     DrawOrGetDistance(NULL);
 }
 
 double Constraint::GetDistance(Point2d mp) {
     dogd.drawing = false;
+    dogd.sel = NULL;
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
@@ -758,6 +758,7 @@ double Constraint::GetDistance(Point2d mp) {
 
 Vector Constraint::GetLabelPos(void) {
     dogd.drawing = false;
+    dogd.sel = NULL;
     dogd.mp.x = 0; dogd.mp.y = 0;
     dogd.dmin = 1e12;
 
@@ -768,10 +769,18 @@ Vector Constraint::GetLabelPos(void) {
 
 Vector Constraint::GetReferencePos(void) {
     dogd.drawing = false;
+    dogd.sel = NULL;
 
     dogd.refp = SS.GW.offset.ScaledBy(-1);
     DrawOrGetDistance(NULL);
 
     return dogd.refp;
+}
+
+void Constraint::GetEdges(SEdgeList *sel) {
+    dogd.drawing = true;
+    dogd.sel = sel;
+    DrawOrGetDistance(NULL);
+    dogd.sel = NULL;
 }
 
