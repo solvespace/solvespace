@@ -347,8 +347,10 @@ public:
 
     void MakeTangentArc(void);
     void SplitLinesOrCurves(void);
-    void SplitLine(hEntity he, Vector pinter);
-    void SplitCircle(hEntity he, Vector pinter);
+    hEntity SplitEntity(hEntity he, Vector pinter);
+    hEntity SplitLine(hEntity he, Vector pinter);
+    hEntity SplitCircle(hEntity he, Vector pinter);
+    hEntity SplitCubic(hEntity he, Vector pinter);
     void ReplacePointInConstraints(hEntity oldpt, hEntity newpt);
     
     // The current selection.

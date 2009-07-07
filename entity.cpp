@@ -680,11 +680,27 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) {
             // If this is a copied entity, with its point already fixed
             // with respect to each other, then we don't want to generate
             // the distance constraint!
-            if(SK.GetEntity(point[0])->type == POINT_IN_2D) {
-                Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
-                Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
-                AddEq(l, ra->Minus(rb), 0);
+            if(SK.GetEntity(point[0])->type != POINT_IN_2D) break;
+
+            // If the two endpoints of the arc are constrained coincident
+            // (to make a complete circle), then our distance constraint
+            // would be redundant and therefore overconstrain things.
+            Constraint *c;
+            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+                if(c->group.v != group.v) continue;
+                if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                
+                if((c->ptA.v == point[1].v && c->ptB.v == point[2].v) || 
+                   (c->ptA.v == point[2].v && c->ptB.v == point[1].v))
+                {
+                    break;
+                }
             }
+            if(c) break;
+
+            Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
+            Expr *rb = Constraint::Distance(workplane, point[0], point[2]);
+            AddEq(l, ra->Minus(rb), 0);
             break;
         }
         default:;

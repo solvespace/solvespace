@@ -148,7 +148,9 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
 // but they are considered to cross if they are coincident and overlapping.
 // If pi is not NULL, then a crossing is returned in that.
 //-----------------------------------------------------------------------------
-int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, Vector *ppi) {
+int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, 
+                                Vector *ppi, SPointList *spl)
+{
     Vector d = b.Minus(a);
     double t_eps = LENGTH_EPS/d.Magnitude();
 
@@ -214,6 +216,7 @@ int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, Vector *ppi) {
             // inside of the other (or if they cross away from either's
             // vertex).
             if(ppi) *ppi = pi;
+            if(spl) spl->Add(pi);
             goto intersects;
         }
         continue;

@@ -69,14 +69,17 @@ public:
     Vector TangentAt(double t);
     void ClosestPointTo(Vector p, double *t, bool converge=true);
     void SplitAt(double t, SBezier *bef, SBezier *aft);
+    bool PointOnThisAndCurve(SBezier *sbb, Vector *p);
 
     Vector Start(void);
     Vector Finish(void);
     bool Equals(SBezier *b);
+    void MakePwlInto(SEdgeList *sel);
     void MakePwlInto(List<SCurvePt> *l);
     void MakePwlInto(List<Vector> *l);
     void MakePwlWorker(List<Vector> *l, double ta, double tb);
 
+    void AllIntersectionsWith(SBezier *sbb, SPointList *spl);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Reverse(void);
 
@@ -101,6 +104,7 @@ public:
 
     void Clear(void);
     void CullIdenticalBeziers(void);
+    void AllIntersectionsWith(SBezierList *sblb, SPointList *spl);
 };
 
 class SBezierLoop {

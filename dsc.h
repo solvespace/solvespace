@@ -59,6 +59,9 @@ public:
     static Vector AtIntersectionOfPlanes(Vector na, double da,
                                          Vector nb, double db,
                                          Vector nc, double dc, bool *parallel);
+    static void ClosestPointBetweenLines(Vector pa, Vector da,
+                                         Vector pb, Vector db,
+                                         double *ta, double *tb);
 
     double Element(int i);
     bool Equals(Vector v, double tol=LENGTH_EPS);

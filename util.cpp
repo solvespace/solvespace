@@ -660,14 +660,15 @@ Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
     return (n1.ScaledBy(c1)).Plus(n2.ScaledBy(c2));
 }
 
-Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
-                                     Vector b0, Vector b1,
-                                     bool *skew,
-                                     double *parama, double *paramb)
+void Vector::ClosestPointBetweenLines(Vector a0, Vector da,
+                                      Vector b0, Vector db,
+                                      double *ta, double *tb)
 {
-    Vector da = a1.Minus(a0), db = b1.Minus(b0);
+    Vector a1 = a0.Plus(da),
+           b1 = a1.Plus(db);
 
-    // Make an orthogonal coordinate system from those directions
+    // Make a semi-orthogonal coordinate system from those directions;
+    // note that dna and dnb need not be perpendicular.
     Vector dn = da.Cross(db); // normal to both
     Vector dna = dn.Cross(da); // normal to da
     Vector dnb = dn.Cross(db); // normal to db
@@ -676,8 +677,20 @@ Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
     //    a0 + pa*da = b0 + pb*db (where pa, pb are scalar params)
     // So dot this equation against dna and dnb to get two equations
     // to solve for da and db
-    double pb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
-    double pa = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
+    *tb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
+    *ta = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));   
+}
+
+Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
+                                     Vector b0, Vector b1,
+                                     bool *skew,
+                                     double *parama, double *paramb)
+{
+    Vector da = a1.Minus(a0), db = b1.Minus(b0);
+
+    double pa, pb;
+    Vector::ClosestPointBetweenLines(a0, da, b0, db, &pa, &pb);
+
     if(parama) *parama = pa;
     if(paramb) *paramb = pb;
 

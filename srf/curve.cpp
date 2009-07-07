@@ -220,6 +220,48 @@ void SBezierList::CullIdenticalBeziers(void) {
     l.RemoveTagged();
 }
 
+//-----------------------------------------------------------------------------
+// Find all the points where a list of Bezier curves intersects another list
+// of Bezier curves. We do this by intersecting their piecewise linearizations,
+// and then refining any intersections that we find to lie exactly on the
+// curves. So this will screw up on tangencies and stuff, but otherwise should
+// be fine.
+//-----------------------------------------------------------------------------
+void SBezierList::AllIntersectionsWith(SBezierList *sblb, SPointList *spl) {
+    SBezier *sba, *sbb;
+    for(sba = l.First(); sba; sba = l.NextAfter(sba)) {
+        for(sbb = sblb->l.First(); sbb; sbb = sblb->l.NextAfter(sbb)) {
+            sbb->AllIntersectionsWith(sba, spl);
+        }
+    }
+}
+void SBezier::AllIntersectionsWith(SBezier *sbb, SPointList *spl) {
+    SPointList splRaw;
+    ZERO(&splRaw);
+    SEdgeList sea, seb;
+    ZERO(&sea);
+    ZERO(&seb);
+    this->MakePwlInto(&sea);
+    sbb ->MakePwlInto(&seb);
+    SEdge *se;
+    for(se = sea.l.First(); se; se = sea.l.NextAfter(se)) {
+        // This isn't quite correct, since AnyEdgeCrossings doesn't count
+        // the case where two pairs of line segments intersect at their
+        // vertices. So this isn't robust, although that case isn't very
+        // likely.
+        seb.AnyEdgeCrossings(se->a, se->b, NULL, &splRaw);
+    }
+    SPoint *sp;
+    for(sp = splRaw.l.First(); sp; sp = splRaw.l.NextAfter(sp)) {
+        Vector p = sp->p;
+        if(PointOnThisAndCurve(sbb, &p)) {
+            if(!spl->ContainsPoint(p)) spl->Add(p);
+        }
+    }
+    sea.Clear();
+    seb.Clear();
+    splRaw.Clear();
+}
 
 SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
                                     bool *allClosed, SEdge *errorAt)

@@ -2,6 +2,7 @@
 #ifndef __POLYGON_H
 #define __POLYGON_H
 
+class SPointList;
 class SPolygon;
 class SContour;
 class SMesh;
@@ -25,7 +26,8 @@ public:
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false);
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                             SEdge *errorAt, bool keepDir);
-    int AnyEdgeCrossings(Vector a, Vector b, Vector *pi=NULL);
+    int AnyEdgeCrossings(Vector a, Vector b,
+        Vector *pi=NULL, SPointList *spl=NULL);
     bool ContainsEdgeFrom(SEdgeList *sel);
     bool ContainsEdge(SEdge *se);
     void CullExtraneousEdges(void);

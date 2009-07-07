@@ -162,6 +162,31 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
     }
 }
 
+bool SBezier::PointOnThisAndCurve(SBezier *sbb, Vector *p) {
+    double ta, tb;
+    this->ClosestPointTo(*p, &ta, false);
+    sbb ->ClosestPointTo(*p, &tb, false);
+
+    int i;
+    for(i = 0; i < 20; i++) {   
+        Vector pa = this->PointAt(ta),
+               pb = sbb ->PointAt(tb),
+               da = this->TangentAt(ta),
+               db = sbb ->TangentAt(tb);
+
+        if(pa.Equals(pb, RATPOLY_EPS)) {
+            *p = pa;
+            return true;
+        }
+      
+        double tta, ttb;
+        Vector::ClosestPointBetweenLines(pa, da, pb, db, &tta, &ttb);
+        ta += tta;
+        tb += ttb;
+    }
+    return false;
+}
+
 void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
     Vector4 ct[4];
     int i;
@@ -201,6 +226,16 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
     }
 }
 
+void SBezier::MakePwlInto(SEdgeList *sel) {
+    List<Vector> lv;
+    ZERO(&lv);
+    MakePwlInto(&lv);
+    int i;
+    for(i = 1; i < lv.n; i++) {
+        sel->AddEdge(lv.elem[i-1], lv.elem[i]);
+    }
+    lv.Clear();
+}
 void SBezier::MakePwlInto(List<SCurvePt> *l) {
     List<Vector> lv;
     ZERO(&lv);

@@ -157,7 +157,7 @@ void GraphicsWindow::MakeTangentArc(void) {
     SS.later.generateAll = true;
 }
 
-void GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
+hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     // Save the original endpoints, since we're about to delete this entity.
     Entity *e01 = SK.GetEntity(he);
     hEntity hep0 = e01->point[0], hep1 = e01->point[1];
@@ -181,26 +181,11 @@ void GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
 
     ReplacePointInConstraints(hep0, e0i->point[0]);
     ReplacePointInConstraints(hep1, ei1->point[1]);
-
-    // Finally, delete the original line
-    int i;
-    SK.request.ClearTags();
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(r->group.v != activeGroup.v) continue;
-        if(r->type != Request::LINE_SEGMENT) continue;
-    
-        // If the user wants to keep the old lines around, they can just
-        // mark it construction first.
-        if(he.v == r->h.entity(0).v && !r->construction) {
-            r->tag = 1;
-            break;
-        }
-    }
-    DeleteTaggedRequests();
+    Constraint::ConstrainCoincident(e0i->point[1], ei1->point[0]);
+    return e0i->point[1];
 }
 
-void GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
+hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
     SS.UndoRemember();
 
     Entity *circle = SK.GetEntity(he);
@@ -216,11 +201,17 @@ void GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
         SK.GetEntity(arc->point[0])->PointForceTo(center);
         SK.GetEntity(arc->point[1])->PointForceTo(pinter);
         SK.GetEntity(arc->point[2])->PointForceTo(pinter);
+
+        Constraint::ConstrainCoincident(arc->point[1], arc->point[2]);
+        return arc->point[1];
     } else {
         // Start with an arc, break it in to two arcs
-        Vector center = SK.GetEntity(circle->point[0])->PointGetNum(),
-               start  = SK.GetEntity(circle->point[1])->PointGetNum(),
-               finish = SK.GetEntity(circle->point[2])->PointGetNum();
+        hEntity hc = circle->point[0],
+                hs = circle->point[1],
+                hf = circle->point[2];
+        Vector center = SK.GetEntity(hc)->PointGetNum(),
+               start  = SK.GetEntity(hs)->PointGetNum(),
+               finish = SK.GetEntity(hf)->PointGetNum();
 
         circle = NULL; // shortly invalid!
         hRequest hr0 = AddRequest(Request::ARC_OF_CIRCLE, false),
@@ -236,26 +227,99 @@ void GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
         SK.GetEntity(arc1->point[0])->PointForceTo(center);
         SK.GetEntity(arc1->point[1])->PointForceTo(pinter);
         SK.GetEntity(arc1->point[2])->PointForceTo(finish);
+
+        ReplacePointInConstraints(hs, arc0->point[1]);
+        ReplacePointInConstraints(hf, arc1->point[2]);
+        Constraint::ConstrainCoincident(arc0->point[2], arc1->point[1]);
+        return arc0->point[2];
+    }
+}
+
+hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
+    // Save the original endpoints, since we're about to delete this entity.
+    Entity *e01 = SK.GetEntity(he);
+    hEntity hep0 = e01->point[0],
+            hep1 = e01->point[1],
+            hep2 = e01->point[2],
+            hep3 = e01->point[3];
+    Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
+           p1 = SK.GetEntity(hep1)->PointGetNum(),
+           p2 = SK.GetEntity(hep2)->PointGetNum(),
+           p3 = SK.GetEntity(hep3)->PointGetNum();
+
+    SS.UndoRemember();
+
+    SBezier b0i, bi1, b01 = SBezier::From(p0, p1, p2, p3);
+    double t;
+    b01.ClosestPointTo(pinter, &t, true);
+    b01.SplitAt(t, &b0i, &bi1);
+
+    // Add the two line segments this one gets split into.
+    hRequest r0i = AddRequest(Request::CUBIC, false),
+             ri1 = AddRequest(Request::CUBIC, false);
+    // Don't get entities till after adding, realloc issues
+
+    Entity *e0i = SK.GetEntity(r0i.entity(0)),
+           *ei1 = SK.GetEntity(ri1.entity(0));
+
+    SK.GetEntity(e0i->point[0])->PointForceTo(b0i.ctrl[0]);
+    SK.GetEntity(e0i->point[1])->PointForceTo(b0i.ctrl[1]);
+    SK.GetEntity(e0i->point[2])->PointForceTo(b0i.ctrl[2]);
+    SK.GetEntity(e0i->point[3])->PointForceTo(b0i.ctrl[3]);
+
+    SK.GetEntity(ei1->point[0])->PointForceTo(bi1.ctrl[0]);
+    SK.GetEntity(ei1->point[1])->PointForceTo(bi1.ctrl[1]);
+    SK.GetEntity(ei1->point[2])->PointForceTo(bi1.ctrl[2]);
+    SK.GetEntity(ei1->point[3])->PointForceTo(bi1.ctrl[3]);
+
+    ReplacePointInConstraints(hep0, e0i->point[0]);
+    ReplacePointInConstraints(hep1, ei1->point[3]);
+    Constraint::ConstrainCoincident(e0i->point[3], ei1->point[0]);
+    return e0i->point[3];
+}
+
+hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
+    Entity *e = SK.GetEntity(he);
+    int entityType = e->type;
+
+    hEntity ret;
+    if(e->IsCircle()) {
+        ret = SplitCircle(he, pinter);
+    } else if(e->type == Entity::LINE_SEGMENT) {
+        ret = SplitLine(he, pinter);
+    } else if(e->type == Entity::CUBIC) {
+        ret = SplitCubic(he, pinter);
+    } else {
+        Error("Couldn't split this entity; lines, circles, or cubics only.");
+        return Entity::NO_ENTITY;
     }
 
-    // Finally, delete the original circle or arc
+    // Finally, delete the request that generated the original entity.
+    int reqType;
+    switch(entityType) {
+        case Entity::CIRCLE:        reqType = Request::CIRCLE; break;
+        case Entity::ARC_OF_CIRCLE: reqType = Request::ARC_OF_CIRCLE; break;
+        case Entity::LINE_SEGMENT:  reqType = Request::LINE_SEGMENT; break;
+        case Entity::CUBIC:         reqType = Request::CUBIC; break;
+        default: oops();
+    }
     int i;
     SK.request.ClearTags();
     for(i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
-        if(r->type != Request::CIRCLE && r->type != Request::ARC_OF_CIRCLE) {
-            continue;
-        }
+        if(r->type != reqType) continue;
     
-        // If the user wants to keep the old lines around, they can just
-        // mark it construction first.
+        // If the user wants to keep the old entities around, they can just
+        // mark them construction first.
         if(he.v == r->h.entity(0).v && !r->construction) {
             r->tag = 1;
             break;
         }
     }
     DeleteTaggedRequests();
+
+    return ret;
 }
 
 void GraphicsWindow::SplitLinesOrCurves(void) {
@@ -265,144 +329,47 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     }
 
     GroupSelection();
-    if(gs.n == 2 && gs.lineSegments == 2) {
-        Entity *la = SK.GetEntity(gs.entity[0]),
-               *lb = SK.GetEntity(gs.entity[1]);
-        Vector a0 = SK.GetEntity(la->point[0])->PointGetNum(),
-               a1 = SK.GetEntity(la->point[1])->PointGetNum(),
-               b0 = SK.GetEntity(lb->point[0])->PointGetNum(),
-               b1 = SK.GetEntity(lb->point[1])->PointGetNum();
-        Vector da = a1.Minus(a0), db = b1.Minus(b0);
-        
-        // First, check if the lines intersect.
-        bool skew;
-        Vector pinter = Vector::AtIntersectionOfLines(a0, a1, b0, b1, &skew);
-        if(skew) {
-            Error("Lines are parallel or skew; no intersection to split.");
-            goto done;
-        }
-            
-        double ta = (pinter.Minus(a0)).DivPivoting(da),
-               tb = (pinter.Minus(b0)).DivPivoting(db);
-
-        double tola = LENGTH_EPS/da.Magnitude(),
-               tolb = LENGTH_EPS/db.Magnitude();
-
-        hEntity ha = la->h, hb = lb->h;
-        la = NULL; lb = NULL;
-        // Following adds will cause a realloc, break the pointers
-
-        bool didSomething = false;
-        if(ta > tola && ta < (1 - tola)) {
-            SplitLine(ha, pinter);
-            didSomething = true;
-        }
-        if(tb > tolb && tb < (1 - tolb)) {
-            SplitLine(hb, pinter);
-            didSomething = true;
-        }
-        if(!didSomething) {
-            Error(
-                "Nothing to split; intersection does not lie on either line.");
-        }
-    } else if(gs.n == 2 && gs.lineSegments == 1 && gs.circlesOrArcs == 1) {
-        Entity *line   = SK.GetEntity(gs.entity[0]),
-               *circle = SK.GetEntity(gs.entity[1]);
-        if(line->type != Entity::LINE_SEGMENT) {
-            SWAP(Entity *, line, circle);
-        }
-        hEntity hline = line->h, hcircle = circle->h;
-
-        Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
-               l1 = SK.GetEntity(line->point[1])->PointGetNum();
-        Vector dl = l1.Minus(l0);
-
-        Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
-        Vector cn = q.RotationN();
-        Vector cc = SK.GetEntity(circle->point[0])->PointGetNum();
-        double cd = cc.Dot(cn);
-        double cr = circle->CircleGetRadiusNum();
-
-        if(fabs(l0.Dot(cn) - cd) > LENGTH_EPS ||
-           fabs(l1.Dot(cn) - cd) > LENGTH_EPS)
-        {
-            Error("Lines does not lie in same plane as circle.");
-            goto done;
-        }
-        // Now let's see if they intersect; transform everything into a csys
-        // with origin at the center of the circle, and where the line is
-        // horizontal.
-        Vector n = cn.WithMagnitude(1);
-        Vector u = dl.WithMagnitude(1);
-        Vector v = n.Cross(u);
-        
-        Vector nl0 = (l0.Minus(cc)).DotInToCsys(u, v, n),
-               nl1 = (l1.Minus(cc)).DotInToCsys(u, v, n);
-
-        double yint = nl0.y;
-        if(fabs(yint) > (cr - LENGTH_EPS)) {
-            Error("Line does not intersect (or is tangent to) circle.");
-            goto done;
-        }
-        double xint = sqrt(cr*cr - yint*yint);
-
-        Vector inter0 = Vector::From( xint, yint, 0),
-               inter1 = Vector::From(-xint, yint, 0);
-
-        // While we're here, let's calculate the angles at which the
-        // intersections (and the endpoints of the arc) occur.
-        double theta0 = atan2(yint, xint), theta1 = atan2(yint, -xint);
-        double thetamin, thetamax;
-        if(circle->type == Entity::CIRCLE) {
-            thetamin = 0;
-            thetamax = 2.1*PI; // fudge, make sure it's a good complete circle
-        } else {
-            Vector start  = SK.GetEntity(circle->point[1])->PointGetNum(),
-                   finish = SK.GetEntity(circle->point[2])->PointGetNum();
-            start  = (start .Minus(cc)).DotInToCsys(u, v, n);
-            finish = (finish.Minus(cc)).DotInToCsys(u, v, n);
-            thetamin = atan2(start.y, start.x);
-            thetamax = atan2(finish.y, finish.x);
-
-            // Normalize; arc is drawn with increasing theta from start,
-            // so subtract that off and make all angles in (0, 2*pi]
-            theta0   = WRAP_NOT_0(theta0   - thetamin, 2*PI);
-            theta1   = WRAP_NOT_0(theta1   - thetamin, 2*PI);
-            thetamax = WRAP_NOT_0(thetamax - thetamin, 2*PI);
-        }
-
-        // And move our intersections back out to the base frame.
-        inter0 = inter0.ScaleOutOfCsys(u, v, n).Plus(cc);
-        inter1 = inter1.ScaleOutOfCsys(u, v, n).Plus(cc);
-
-        // So now we have our intersection points. Let's see where they are
-        // on the line.
-        double t0 = (inter0.Minus(l0)).DivPivoting(dl),
-               t1 = (inter1.Minus(l0)).DivPivoting(dl);
-        double tol = LENGTH_EPS/dl.Magnitude();
-   
-        bool didSomething = false;
-        // Split only once, even if it crosses multiple times; just pick
-        // arbitrarily which.
-        if(t0 > tol && t0 < (1 - tol) && theta0 < thetamax) {
-            SplitLine(hline, inter0);
-            SplitCircle(hcircle, inter0);
-            didSomething = true;
-        } else if(t1 > tol && t1 < (1 - tol) && theta1 < thetamax) {
-            SplitLine(hline, inter1);
-            SplitCircle(hcircle, inter1);
-            didSomething = true;
-        }
-        if(!didSomething) {
-            Error("Nothing to split; neither intersection lies on both the "
-                  "line and the circle.");
-        }
-    } else {
-        Error("Can't split these entities; select two lines, a line and "
-              "a circle, or a line and an arc.");
+    if(!(gs.n == 2 && (gs.lineSegments + gs.circlesOrArcs + gs.cubics) == 2)) {
+        Error("Select two entities that intersect each other (e.g. two lines "
+              "or two circles or a circle and a line).");
+        return;
     }
 
-done:
+    hEntity ha = gs.entity[0],
+            hb = gs.entity[1];
+    Entity *ea = SK.GetEntity(ha),
+           *eb = SK.GetEntity(hb);
+   
+    // Compute the possibly-rational Bezier curves for each of these entities
+    SBezierList sbla, sblb;
+    ZERO(&sbla);
+    ZERO(&sblb);
+    ea->GenerateBezierCurves(&sbla);
+    eb->GenerateBezierCurves(&sblb);
+    // and then compute the points where they intersect, based on those curves.
+    SPointList inters;
+    ZERO(&inters);
+    sbla.AllIntersectionsWith(&sblb, &inters);
+
+    // If there's multiple points, then just take the first one.
+    if(inters.l.n > 0) {
+        Vector pi = inters.l.elem[0].p;
+        hEntity hia = SplitEntity(ha, pi),
+                hib = SplitEntity(hb, pi);
+        // SplitEntity adds the coincident constraints to join the split halves
+        // of each original entity; and then we add the constraint to join
+        // the two entities together at the split point.
+        if(hia.v && hib.v) {
+            Constraint::ConstrainCoincident(hia, hib);
+        }
+    } else {
+        Error("Can't split; no intersection found.");
+    }
+
+    // All done, clean up and regenerate.
+    inters.Clear();
+    sbla.Clear();
+    sblb.Clear();
     ClearSelection();
     SS.later.generateAll = true;
 }
