@@ -39,6 +39,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\ttf.obj \
            $(OBJDIR)\generate.obj \
            $(OBJDIR)\export.obj \
+           $(OBJDIR)\exportvector.obj \
            $(OBJDIR)\exportstep.obj \
 
 SRFOBJS =  $(OBJDIR)\ratpoly.obj \
