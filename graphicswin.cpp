@@ -558,6 +558,14 @@ void GraphicsWindow::ForceTextWindowShown(void) {
 }
 
 void GraphicsWindow::DeleteTaggedRequests(void) {
+    // Rewrite any point-coincident constraints that were affected by this
+    // deletion.
+    Request *r;
+    for(r = SK.request.First(); r; r = SK.request.NextAfter(r)) {
+        if(!r->tag) continue;
+        FixConstraintsForRequestBeingDeleted(r->h);
+    }
+    // and then delete the tagged requests.
     SK.request.RemoveTagged();
 
     // An edit might be in progress for the just-deleted item. So

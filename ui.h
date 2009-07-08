@@ -352,6 +352,8 @@ public:
     hEntity SplitCircle(hEntity he, Vector pinter);
     hEntity SplitCubic(hEntity he, Vector pinter);
     void ReplacePointInConstraints(hEntity oldpt, hEntity newpt);
+    void FixConstraintsForRequestBeingDeleted(hRequest hr);
+    void FixConstraintsForPointBeingDeleted(hEntity hpt);
     
     // The current selection.
     class Selection {
