@@ -167,6 +167,11 @@ void Group::GenerateShellAndMesh(void) {
             SShell *toStep = &(src->thisShell),
                    *prev   = &(pg->runningShell);
 
+            // This isn't used, but it makes sure the display and calculation
+            // of our shell doesn't get optimized out because it looks like
+            // we contribute no solid model.
+            thisShell.MakeFromCopyOf(toStep);
+
             GenerateForStepAndRepeat<SShell>
                 (prev, toStep, &runningShell, src->meshCombine);
             if(meshCombine != COMBINE_AS_ASSEMBLE) {
@@ -179,6 +184,8 @@ void Group::GenerateShellAndMesh(void) {
 
             prevm.MakeFromCopyOf(&(pg->runningMesh));
             pg->runningShell.TriangulateInto(&prevm);
+            // Setting thisMesh for same reasons as thisShell above.
+            thisMesh.MakeFromCopyOf(&prevm);
 
             stepm.MakeFromCopyOf(&(src->thisMesh));
             src->thisShell.TriangulateInto(&stepm);
