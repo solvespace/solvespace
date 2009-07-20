@@ -239,6 +239,34 @@ void Group::MenuGroup(int id) {
     SS.later.showTW = true;
 }
 
+void Group::TransformImportedBy(Vector t, Quaternion q) {
+    if(type != IMPORTED) oops();
+
+    hParam tx, ty, tz, qw, qx, qy, qz;
+    tx = h.param(0);
+    ty = h.param(1);
+    tz = h.param(2);
+    qw = h.param(3);
+    qx = h.param(4);
+    qy = h.param(5);
+    qz = h.param(6);
+
+    Quaternion qg = Quaternion::From(qw, qx, qy, qz);
+    qg = q.Times(qg);
+    
+    Vector tg = Vector::From(tx, ty, tz);
+    tg = tg.Plus(t);
+
+    SK.GetParam(tx)->val = tg.x;
+    SK.GetParam(ty)->val = tg.y;
+    SK.GetParam(tz)->val = tg.z;
+
+    SK.GetParam(qw)->val = qg.w;
+    SK.GetParam(qx)->val = qg.vx;
+    SK.GetParam(qy)->val = qg.vy;
+    SK.GetParam(qz)->val = qg.vz;
+}
+
 char *Group::DescriptionString(void) {
     static char ret[100];
     if(name.str[0]) {

@@ -269,6 +269,75 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     havePainted = false;
 }
 
+void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
+                                         double rx, double ry, double rz,
+                                         bool shiftDown)
+{
+    if(!havePainted) return;
+    Vector out = projRight.Cross(projUp);
+
+    // rotation vector is axis of rotation, and its magnitude is angle
+    Vector aa = Vector::From(rx, ry, rz);
+    // but it's given with respect to screen projection frame
+    aa = aa.ScaleOutOfCsys(projRight, projUp, out);
+    double aam = aa.Magnitude();
+    aa = aa.WithMagnitude(1);
+
+    // This can either transform our view, or transform an imported part.
+    GroupSelection();
+    Entity *e = NULL;
+    Group *g = NULL;
+    if(gs.points == 1   && gs.n == 1) e = SK.GetEntity(gs.point [0]);
+    if(gs.entities == 1 && gs.n == 1) e = SK.GetEntity(gs.entity[0]);
+    if(e) g = SK.GetGroup(e->group);
+    if(g && g->type == Group::IMPORTED && !shiftDown) {
+        // Apply the transformation to an imported part.
+        Vector t = projRight.ScaledBy(tx).Plus(
+                   projUp   .ScaledBy(ty).Plus(
+                   out      .ScaledBy(tz)));
+        Quaternion q = Quaternion::From(aa, aam);
+
+        // If we go five seconds without SpaceNavigator input, or if we've
+        // switched groups, then consider that a new action and save an undo
+        // point.
+        SDWORD now = GetMilliseconds();
+        if(now - lastSpaceNavigatorTime > 5000 ||
+           lastSpaceNavigatorGroup.v != g->h.v)
+        {
+            SS.UndoRemember();
+        }
+
+        g->TransformImportedBy(t, q);
+
+        lastSpaceNavigatorTime = now;
+        lastSpaceNavigatorGroup = g->h;
+        SS.MarkGroupDirty(g->h);
+        SS.later.generateAll = true;
+    } else {
+        // Apply the transformation to the view of the everything. The
+        // x and y components are translation; but z component is scale,
+        // not translation, or else it would do nothing in a parallel
+        // projection
+        offset = offset.Plus(projRight.ScaledBy(tx));
+        offset = offset.Plus(projUp.ScaledBy(ty));
+        scale *= exp(0.01*tz); 
+
+        if(aam != 0.0) {
+            projRight = projRight.RotatedAbout(aa, -aam);
+            projUp    = projUp.   RotatedAbout(aa, -aam);
+            NormalizeProjectionVectors();
+        }
+    }
+
+    havePainted = false;
+    InvalidateGraphics();
+}
+
+void GraphicsWindow::SpaceNavigatorButtonUp(void) {
+    ZoomToFit(false);
+    InvalidateGraphics();
+}
+
 void GraphicsWindow::ClearPending(void) {
     memset(&pending, 0, sizeof(pending));
 }

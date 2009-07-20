@@ -9,6 +9,9 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <si/si.h>
+#include <si/siapp.h>
+
 #include "solvespace.h"
 
 #define FREEZE_SUBKEY "SolveSpace"
@@ -49,6 +52,9 @@ HMENU RecentOpenMenu, RecentImportMenu;
 int ClientIsSmallerBy;
 
 HFONT FixedFont, LinkFont;
+
+// The 6-DOF input device.
+SiHdl SpaceNavigator = SI_NO_HANDLE;
 
 static void DoMessageBox(char *str, va_list f, BOOL error)
 {
@@ -287,7 +293,22 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
     }
 }
 
-void MouseWheel(int delta) {
+static void MouseWheel(int thisDelta) {
+    static int DeltaAccum;
+    int delta = 0;
+    // Handle mouse deltas of less than 120 (like from an un-detented mouse
+    // wheel) correctly, even though no one ever uses those.
+    DeltaAccum += thisDelta;
+    while(DeltaAccum >= 120) {
+        DeltaAccum -= 120;
+        delta += 120;
+    }
+    while(DeltaAccum <= -120) {
+        DeltaAccum += 120;
+        delta -= 120;
+    }
+    if(delta == 0) return;
+
     POINT pt;
     GetCursorPos(&pt);
     HWND hw = WindowFromPoint(pt);
@@ -1025,6 +1046,42 @@ static void CreateMainWindows(void)
 }
 
 //-----------------------------------------------------------------------------
+// Test if a message comes from the SpaceNavigator device. If yes, dispatch
+// it appropriately and return TRUE. Otherwise, do nothing and return FALSE.
+//-----------------------------------------------------------------------------
+static BOOL ProcessSpaceNavigatorMsg(MSG *msg) {
+    if(SpaceNavigator == SI_NO_HANDLE) return FALSE;
+
+    SiGetEventData sged;
+    SiSpwEvent sse;
+
+    SiGetEventWinInit(&sged, msg->message, msg->wParam, msg->lParam);
+    int ret = SiGetEvent(SpaceNavigator, 0, &sged, &sse);
+    if(ret == SI_NOT_EVENT) return FALSE;
+    // So the device is a SpaceNavigator event, or a SpaceNavigator error.
+
+    if(ret == SI_IS_EVENT) {
+        if(sse.type == SI_MOTION_EVENT) {
+            // The Z axis translation and rotation are both
+            // backwards in the default mapping.
+            double tx =  sse.u.spwData.mData[SI_TX]*0.1,
+                   ty =  sse.u.spwData.mData[SI_TY]*0.1,
+                   tz = -sse.u.spwData.mData[SI_TZ]*0.1,
+                   rx =  sse.u.spwData.mData[SI_RX]*0.001,
+                   ry =  sse.u.spwData.mData[SI_RY]*0.001,
+                   rz = -sse.u.spwData.mData[SI_RZ]*0.001;
+            SS.GW.SpaceNavigatorMoved(tx, ty, tz, rx, ry, rz,
+                !!(GetAsyncKeyState(VK_SHIFT) & 0x8000));
+        } else if(sse.type == SI_BUTTON_EVENT) {
+            int button;
+            button = SiButtonReleased(&sse);
+            if(button == SI_APP_FIT_BUTTON) SS.GW.SpaceNavigatorButtonUp();
+        }
+    }
+    return TRUE;
+}
+
+//-----------------------------------------------------------------------------
 // Entry point into the program.
 //-----------------------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -1079,6 +1136,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if(*file != '\0') {
         GetAbsoluteFilename(file);
     }
+
+    // Initialize the SpaceBall, if present. Test if the driver is running
+    // first, to avoid a long timeout if it's not.
+    HWND swdc = FindWindow("SpaceWare Driver Class", NULL);
+    if(swdc != NULL) {
+        SiOpenData sod;
+        SiInitialize();
+        SiOpenWinInit(&sod, GraphicsWnd);
+        SpaceNavigator =
+            SiOpen("GraphicsWnd", SI_ANY_DEVICE, SI_NO_MASK, SI_EVENT, &sod);
+        SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
+    }
     
     // Call in to the platform-independent code, and let them do their init
     SS.Init(file);
@@ -1088,6 +1157,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     MSG msg;
     DWORD ret;
     while(ret = GetMessage(&msg, NULL, 0, 0)) {
+        // Is it a message from the six degree of freedom input device?
+        if(ProcessSpaceNavigatorMsg(&msg)) goto done;
+
+        // A message from the keyboard, which should be processed as a keyboard
+        // accelerator?
         if(msg.message == WM_KEYDOWN) {
             if(ProcessKeyDown(msg.wParam)) goto done;
         }
@@ -1096,10 +1170,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             // then that should probably go to the graphics window instead.
             SetForegroundWindow(GraphicsWnd);
         }
+
+        // None of the above; so just a normal message to process.
         TranslateMessage(&msg);
         DispatchMessage(&msg);
 done:
         SS.DoLater();
+    }
+
+    if(swdc != NULL) {
+        if(SpaceNavigator != SI_NO_HANDLE) SiClose(SpaceNavigator);
+        SiTerminate();
     }
 
     // Write everything back to the registry

@@ -436,6 +436,12 @@ public:
     void MouseScroll(double x, double y, int delta);
     void MouseLeave(void);
     void EditControlDone(char *s);
+
+    SDWORD lastSpaceNavigatorTime;
+    hGroup lastSpaceNavigatorGroup;
+    void SpaceNavigatorMoved(double tx, double ty, double tz,
+                             double rx, double ry, double rz, bool shiftDown);
+    void SpaceNavigatorButtonUp(void);
 };
 
 

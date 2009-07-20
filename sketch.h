@@ -188,6 +188,7 @@ public:
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
+    void TransformImportedBy(Vector t, Quaternion q);
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a

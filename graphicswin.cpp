@@ -639,27 +639,16 @@ void GraphicsWindow::MenuEdit(int id) {
                 break;
             }
 
-            hParam qw, qx, qy, qz;
-            qw = g->h.param(3);
-            qx = g->h.param(4);
-            qy = g->h.param(5);
-            qz = g->h.param(6);
 
             SS.UndoRemember();
             // Rotate by ninety degrees about the coordinate axis closest
             // to the screen normal.
-            Quaternion q = Quaternion::From(qw, qx, qy, qz);
             Vector norm = SS.GW.projRight.Cross(SS.GW.projUp);
             norm = norm.ClosestOrtho();
             norm = norm.WithMagnitude(1);
             Quaternion qaa = Quaternion::From(norm, PI/2);
-            q = qaa.Times(q);
 
-            // And write the new quaternion
-            SK.GetParam(qw)->val = q.w;
-            SK.GetParam(qx)->val = q.vx;
-            SK.GetParam(qy)->val = q.vy;
-            SK.GetParam(qz)->val = q.vz;
+            g->TransformImportedBy(Vector::From(0, 0, 0), qaa);
 
             // and regenerate as necessary.
             SS.MarkGroupDirty(hg);

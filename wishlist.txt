@@ -6,9 +6,9 @@ background color setting
 better text
 better drawing of dimensions
 faster triangulation
-SpaceNavigator support
 
 -----
+copy and paste
 loop detection
 IGES export
 incremental regen of entities
