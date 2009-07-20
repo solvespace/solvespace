@@ -6,13 +6,14 @@ class hGroup;
 class hRequest;
 class hEntity;
 class hParam;
+class hStyle;
+class hConstraint;
+class hEquation;
 
 class Entity;
 class Param;
-
-class hConstraint;
-class hEquation;
 class Equation;
+
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
@@ -53,6 +54,11 @@ public:
     DWORD       v;
 
     inline hRequest request(void);
+};
+
+class hStyle {
+public:
+    DWORD       v;
 };
 
 
@@ -210,9 +216,10 @@ public:
     void GenerateLoops(void);
     // And the mesh stuff
     Group *PreviousGroup(void);
+    Group *RunningMeshGroup(void);
     void GenerateShellAndMesh(void);
-    template<class T> void GenerateForStepAndRepeat(T *a, T *b, T *o, int how);
-    template<class T> void GenerateForBoolean(T *a, T *b, T *o);
+    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
+    template<class T> void GenerateForBoolean(T *a, T *b, T *o, int how);
     void GenerateDisplayItems(void);
     void DrawDisplayItems(int t);
     void Draw(void);
@@ -247,6 +254,7 @@ public:
 
     hEntity     workplane; // or Entity::FREE_IN_3D
     hGroup      group;
+    hStyle      style;
 
     bool        construction;
     NameStr     str;
@@ -395,6 +403,7 @@ public:
     // and the shown state also gets saved here, for later import
     bool        actVisible;
 
+    hStyle      style;
     bool        construction;
 
     // Routines to draw and hit-test the representation of the entity
@@ -523,6 +532,7 @@ public:
     // These define how the constraint is drawn on-screen.
     struct {
         Vector      offset;
+        hStyle      style;
     } disp;
 
     // State for drawing or getting distance (for hit testing).
@@ -580,6 +590,32 @@ public:
     hEquation   h;
 
     Expr        *e;
+};
+
+
+class Style {
+    int         tag;
+    hStyle      h;
+    
+    static const int ACTIVE         = 1;
+    static const int CONSTRUCTION   = 2;
+    static const int INACTIVE       = 3;
+    static const int DATUM          = 4;
+    static const int SOLID_EDGE     = 5;
+    static const int CONSTRAINT     = 6;
+    static const int SELECTED       = 7;
+    static const int HOVERED        = 8;
+
+    static const int FIRST_CUSTOM   = 0x1000;
+
+    static const int WIDTH_ABSOLUTE = 0;
+    static const int WIDTH_RELATIVE = 1;
+    static const int WIDTH_PIXELS   = 2;
+    double      width;
+    int         widthHow;
+    DWORD       color;
+    bool        visible;
+    bool        exportable;
 };
 
 

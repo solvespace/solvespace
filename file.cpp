@@ -103,12 +103,14 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'r',  "Request.workplane.v",      'x',    &(SS.sv.r.workplane.v)        },
     { 'r',  "Request.group.v",          'x',    &(SS.sv.r.group.v)            },
     { 'r',  "Request.construction",     'b',    &(SS.sv.r.construction)       },
+    { 'r',  "Request.style",            'x',    &(SS.sv.r.style)              },
     { 'r',  "Request.str",              'N',    &(SS.sv.r.str)                },
     { 'r',  "Request.font",             'N',    &(SS.sv.r.font)               },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
     { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
+    { 'e',  "Entity.style",             'x',    &(SS.sv.e.style)              },
     { 'e',  "Entity.str",               'N',    &(SS.sv.e.str)                },
     { 'e',  "Entity.font",              'N',    &(SS.sv.e.font)               },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
@@ -146,6 +148,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.disp.offset.x", 'f',    &(SS.sv.c.disp.offset.x)      },
     { 'c',  "Constraint.disp.offset.y", 'f',    &(SS.sv.c.disp.offset.y)      },
     { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },
+    { 'c',  "Constraint.disp.style",    'x',    &(SS.sv.c.disp.style)         },
 
     { 0, NULL, NULL, NULL     },
 };

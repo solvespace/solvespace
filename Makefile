@@ -18,6 +18,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\modify.obj \
            $(OBJDIR)\util.obj \
+           $(OBJDIR)\style.obj \
            $(OBJDIR)\entity.obj \
            $(OBJDIR)\drawentity.obj \
            $(OBJDIR)\group.obj \

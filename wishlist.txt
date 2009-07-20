@@ -1,12 +1,18 @@
 
 grid
-associative entities from solid model, as a special group
-rounding, as a special group
+line styles (color, thickness)
+margins in exported vector art
+background color setting
+better text
+better drawing of dimensions
+faster triangulation
+SpaceNavigator support
 
 -----
-line styles (color, thickness)
 loop detection
 IGES export
 incremental regen of entities
+associative entities from solid model, as a special group
+rounding, as a special group
 
 

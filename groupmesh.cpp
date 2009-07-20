@@ -75,12 +75,11 @@ void SMesh::RemapFaces(Group *g, int remap) {
 }
 
 template<class T>
-void Group::GenerateForStepAndRepeat(T *prevs, T *steps, T *outs, int how) {
+void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
     T workA, workB;
     ZERO(&workA);
     ZERO(&workB);
     T *soFar = &workA, *scratch = &workB;
-    soFar->MakeFromCopyOf(prevs);
 
     int n = (int)valA, a0 = 0;
     if(subtype == ONE_SIDED && skipFirst) {
@@ -111,15 +110,14 @@ void Group::GenerateForStepAndRepeat(T *prevs, T *steps, T *outs, int how) {
         // We need to rewrite any plane face entities to the transformed ones.
         transd.RemapFaces(this, remap);
 
-        if(how == COMBINE_AS_DIFFERENCE) {
-            scratch->MakeFromDifferenceOf(soFar, &transd);
-        } else if(how == COMBINE_AS_UNION) {
-            scratch->MakeFromUnionOf(soFar, &transd);
+        // And tack this transformed copy on to the return.
+        if(soFar->IsEmpty()) {
+            scratch->MakeFromCopyOf(&transd);
         } else {
-            scratch->MakeFromAssemblyOf(soFar, &transd);
+            scratch->MakeFromUnionOf(soFar, &transd);
         }
-        SWAP(T *, scratch, soFar);
 
+        SWAP(T *, scratch, soFar);
         scratch->Clear();
         transd.Clear();
     }
@@ -129,7 +127,7 @@ void Group::GenerateForStepAndRepeat(T *prevs, T *steps, T *outs, int how) {
 }
 
 template<class T>
-void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs) {
+void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, int how) {
     // If this group contributes no new mesh, then our running mesh is the
     // same as last time, no combining required. Likewise if we have a mesh
     // but it's suppressed.
@@ -140,9 +138,9 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs) {
 
     // So our group's shell appears in thisShell. Combine this with the
     // previous group's shell, using the requested operation.
-    if(meshCombine == COMBINE_AS_UNION) {
+    if(how == COMBINE_AS_UNION) {
         outs->MakeFromUnionOf(prevs, thiss);
-    } else if(meshCombine == COMBINE_AS_DIFFERENCE) {
+    } else if(how == COMBINE_AS_DIFFERENCE) {
         outs->MakeFromDifferenceOf(prevs, thiss);
     } else {
         outs->MakeFromAssemblyOf(prevs, thiss);
@@ -153,63 +151,21 @@ void Group::GenerateShellAndMesh(void) {
     bool prevBooleanFailed = booleanFailed;
     booleanFailed = false;
 
+    Group *srcg = this;
+
     thisShell.Clear();
     thisMesh.Clear();
     runningShell.Clear();
     runningMesh.Clear();
 
     if(type == TRANSLATE || type == ROTATE) {
-        Group *src = SK.GetGroup(opA);
-        Group *pg = src->PreviousGroup();
+        // A step and repeat gets merged against the group's prevous group,
+        // not our own previous group.
+        srcg = SK.GetGroup(opA);
 
-        if(src->thisMesh.IsEmpty() && pg->runningMesh.IsEmpty() && !forceToMesh)
-        {
-            SShell *toStep = &(src->thisShell),
-                   *prev   = &(pg->runningShell);
-
-            // This isn't used, but it makes sure the display and calculation
-            // of our shell doesn't get optimized out because it looks like
-            // we contribute no solid model.
-            thisShell.MakeFromCopyOf(toStep);
-
-            GenerateForStepAndRepeat<SShell>
-                (prev, toStep, &runningShell, src->meshCombine);
-            if(meshCombine != COMBINE_AS_ASSEMBLE) {
-                runningShell.MergeCoincidentSurfaces();
-            }
-        } else {
-            SMesh prevm, stepm;
-            ZERO(&prevm);
-            ZERO(&stepm);
-
-            prevm.MakeFromCopyOf(&(pg->runningMesh));
-            pg->runningShell.TriangulateInto(&prevm);
-            // Setting thisMesh for same reasons as thisShell above.
-            thisMesh.MakeFromCopyOf(&prevm);
-
-            stepm.MakeFromCopyOf(&(src->thisMesh));
-            src->thisShell.TriangulateInto(&stepm);
-
-            SMesh outm;
-            ZERO(&outm);
-            GenerateForStepAndRepeat<SMesh>
-                (&prevm, &stepm, &outm, src->meshCombine);
-
-            // And make sure that the output mesh is vertex-to-vertex.
-            SKdNode *root = SKdNode::From(&outm);
-            root->SnapToMesh(&outm);
-            root->MakeMeshInto(&runningMesh);
-
-            outm.Clear();
-            stepm.Clear();
-            prevm.Clear();
-        }
-
-        displayDirty = true;
-        return;
-    }
-
-    if(type == EXTRUDE) {
+        GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
+        GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
+    } else if(type == EXTRUDE) {
         Group *src = SK.GetGroup(opA);
         Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
 
@@ -298,7 +254,7 @@ void Group::GenerateShellAndMesh(void) {
         thisShell.RemapFaces(this, 0);
     }
 
-    if(meshCombine != COMBINE_AS_ASSEMBLE) {
+    if(srcg->meshCombine != COMBINE_AS_ASSEMBLE) {
         thisShell.MergeCoincidentSurfaces();
     }
 
@@ -306,12 +262,14 @@ void Group::GenerateShellAndMesh(void) {
     // the previous group's mesh or shell with the requested Boolean, and
     // we're done.
 
-    Group *pg = PreviousGroup();
-    if(pg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
-        SShell *prevs = &(pg->runningShell);
-        GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell);
+    Group *prevg = srcg->RunningMeshGroup();
 
-        if(meshCombine != COMBINE_AS_ASSEMBLE) {
+    if(prevg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
+        SShell *prevs = &(prevg->runningShell);
+        GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell,
+            srcg->meshCombine);
+
+        if(srcg->meshCombine != COMBINE_AS_ASSEMBLE) {
             runningShell.MergeCoincidentSurfaces();
         }
 
@@ -326,15 +284,15 @@ void Group::GenerateShellAndMesh(void) {
         ZERO(&prevm);
         ZERO(&thism);
 
-        prevm.MakeFromCopyOf(&(pg->runningMesh));
-        pg->runningShell.TriangulateInto(&prevm);
+        prevm.MakeFromCopyOf(&(prevg->runningMesh));
+        prevg->runningShell.TriangulateInto(&prevm);
 
         thism.MakeFromCopyOf(&thisMesh);
         thisShell.TriangulateInto(&thism);
 
         SMesh outm;
         ZERO(&outm);
-        GenerateForBoolean<SMesh>(&prevm, &thism, &outm);
+        GenerateForBoolean<SMesh>(&prevm, &thism, &outm, srcg->meshCombine);
 
         // And make sure that the output mesh is vertex-to-vertex.
         SKdNode *root = SKdNode::From(&outm);
@@ -387,6 +345,14 @@ Group *Group::PreviousGroup(void) {
     return &(SK.group.elem[i-1]);
 }
 
+Group *Group::RunningMeshGroup(void) {
+    if(type == TRANSLATE || type == ROTATE) {
+        return SK.GetGroup(opA)->RunningMeshGroup();
+    } else {
+        return PreviousGroup();
+    }
+}
+
 void Group::DrawDisplayItems(int t) {
     int specColor;
     if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
@@ -432,7 +398,7 @@ void Group::Draw(void) {
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
 
-    Group *pg = PreviousGroup();
+    Group *pg = RunningMeshGroup();
     if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
         // We don't contribute any new solid model in this group, so our
         // display items are identical to the previous group's; which means
