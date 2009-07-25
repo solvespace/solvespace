@@ -291,10 +291,12 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     if(gs.entities == 1 && gs.n == 1) e = SK.GetEntity(gs.entity[0]);
     if(e) g = SK.GetGroup(e->group);
     if(g && g->type == Group::IMPORTED && !shiftDown) {
-        // Apply the transformation to an imported part.
+        // Apply the transformation to an imported part. Gain down the Z
+        // axis, since it's hard to see what you're doing on that one since
+        // it's normal to the screen.
         Vector t = projRight.ScaledBy(tx).Plus(
                    projUp   .ScaledBy(ty).Plus(
-                   out      .ScaledBy(tz)));
+                   out      .ScaledBy(0.1*tz)));
         Quaternion q = Quaternion::From(aa, aam);
 
         // If we go five seconds without SpaceNavigator input, or if we've
