@@ -1064,9 +1064,9 @@ static BOOL ProcessSpaceNavigatorMsg(MSG *msg) {
         if(sse.type == SI_MOTION_EVENT) {
             // The Z axis translation and rotation are both
             // backwards in the default mapping.
-            double tx =  sse.u.spwData.mData[SI_TX]*0.1,
-                   ty =  sse.u.spwData.mData[SI_TY]*0.1,
-                   tz = -sse.u.spwData.mData[SI_TZ]*0.1,
+            double tx =  sse.u.spwData.mData[SI_TX]*1.0,
+                   ty =  sse.u.spwData.mData[SI_TY]*1.0,
+                   tz = -sse.u.spwData.mData[SI_TZ]*1.0,
                    rx =  sse.u.spwData.mData[SI_RX]*0.001,
                    ry =  sse.u.spwData.mData[SI_RY]*0.001,
                    rz = -sse.u.spwData.mData[SI_RZ]*0.001;

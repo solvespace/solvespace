@@ -294,9 +294,9 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         // Apply the transformation to an imported part. Gain down the Z
         // axis, since it's hard to see what you're doing on that one since
         // it's normal to the screen.
-        Vector t = projRight.ScaledBy(tx).Plus(
-                   projUp   .ScaledBy(ty).Plus(
-                   out      .ScaledBy(0.1*tz)));
+        Vector t = projRight.ScaledBy(tx/scale).Plus(
+                   projUp   .ScaledBy(ty/scale).Plus(
+                   out      .ScaledBy(0.1*tz/scale)));
         Quaternion q = Quaternion::From(aa, aam);
 
         // If we go five seconds without SpaceNavigator input, or if we've
@@ -320,9 +320,9 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         // x and y components are translation; but z component is scale,
         // not translation, or else it would do nothing in a parallel
         // projection
-        offset = offset.Plus(projRight.ScaledBy(tx));
-        offset = offset.Plus(projUp.ScaledBy(ty));
-        scale *= exp(0.01*tz); 
+        offset = offset.Plus(projRight.ScaledBy(tx/scale));
+        offset = offset.Plus(projUp.ScaledBy(ty/scale));
+        scale *= exp(0.001*tz); 
 
         if(aam != 0.0) {
             projRight = projRight.RotatedAbout(aa, -aam);
