@@ -356,6 +356,19 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     if(p.Equals(ctrl[degm][degn])) { *u = 1; *v = 1; return; }
     if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
+    // Try whatever the previous guess was. This is likely to do something
+    // good if we're working our way along a curve or something else where
+    // we project successive points that are close to each other; something
+    // like a 20% speedup empirically.
+    if(converge) {
+        double ut = cached.x, vt = cached.y;
+        if(ClosestPointNewton(p, &ut, &vt, converge)) {
+            cached.x = *u = ut;
+            cached.y = *v = vt;
+            return;
+        }
+    }
+
     // Search for a reasonable initial guess
     int i, j;
     if(degm == 1 && degn == 1) {
@@ -378,13 +391,27 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
         }
     }
 
+    if(ClosestPointNewton(p, u, v, converge)) {
+        cached.x = *u;
+        cached.y = *v;
+        return;
+    }
+
+    // If we failed to converge, then at least don't return NaN.
+    if(isnan(*u) || isnan(*v)) {
+        *u = *v = 0;
+    }
+}
+
+bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
+{
     // Initial guess is in u, v; refine by Newton iteration.
     Vector p0;
-    for(i = 0; i < (converge ? 25 : 5); i++) {
+    for(int i = 0; i < (converge ? 25 : 5); i++) {
         p0 = PointAt(*u, *v);
         if(converge) {
             if(p0.Equals(p, RATPOLY_EPS)) {
-                return;
+                return true;
             }
         }
 
@@ -406,10 +433,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
         dbp("want %.3f %.3f %.3f", CO(p));
         dbp("distance = %g", (p.Minus(p0)).Magnitude());
     }
-
-    if(isnan(*u) || isnan(*v)) {
-        *u = *v = 0;
-    }
+    return false;
 }
 
 bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)

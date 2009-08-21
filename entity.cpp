@@ -685,8 +685,9 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) {
             // If the two endpoints of the arc are constrained coincident
             // (to make a complete circle), then our distance constraint
             // would be redundant and therefore overconstrain things.
-            Constraint *c;
-            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+            int i;
+            for(i = 0; i < SK.constraint.n; i++) {
+                ConstraintBase *c = &(SK.constraint.elem[i]);
                 if(c->group.v != group.v) continue;
                 if(c->type != Constraint::POINTS_COINCIDENT) continue;
                 
@@ -696,7 +697,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) {
                     break;
                 }
             }
-            if(c) break;
+            if(i < SK.constraint.n) break;
 
             Expr *ra = Constraint::Distance(workplane, point[0], point[1]);
             Expr *rb = Constraint::Distance(workplane, point[0], point[2]);

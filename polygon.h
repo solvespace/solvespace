@@ -76,9 +76,9 @@ public:
     void FindPointWithMinX(void);
     Vector AnyEdgeMidpoint(void);
 
-    bool IsEar(int bp);
+    bool IsEar(int bp, double scaledEps);
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
-    void ClipEarInto(SMesh *m, int bp);
+    void ClipEarInto(SMesh *m, int bp, double scaledEps);
     void UvTriangulateInto(SMesh *m, SSurface *srf);
 };
 

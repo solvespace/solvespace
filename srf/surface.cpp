@@ -194,10 +194,10 @@ bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) {
 // Generate the piecewise linear approximation of the trim stb, which applies
 // to the curve sc.
 //-----------------------------------------------------------------------------
-void SSurface::MakeTrimEdgesInto(SEdgeList *sel, bool asUv,
+void SSurface::MakeTrimEdgesInto(SEdgeList *sel, int flags,
                                  SCurve *sc, STrimBy *stb)
 {
-    Vector prev, prevuv, ptuv;
+    Vector prev;
     bool inCurve = false, empty = true;
     double u = 0, v = 0;
 
@@ -212,22 +212,21 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, bool asUv,
         increment = 1;
     }
     for(i = first; i != (last + increment); i += increment) {
-        Vector *pt = &(sc->pts.elem[i].p);
-        if(asUv) {
+        Vector tpt, *pt = &(sc->pts.elem[i].p);
+
+        if(flags & AS_UV) {
             ClosestPointTo(*pt, &u, &v);
-            ptuv = Vector::From(u, v, 0);
-            if(inCurve) {
-                sel->AddEdge(prevuv, ptuv, sc->h.v, stb->backwards);
-                empty = false;
-            }
-            prevuv = ptuv;
+            tpt = Vector::From(u, v, 0);
         } else {
-            if(inCurve) {
-                sel->AddEdge(prev, *pt, sc->h.v, stb->backwards);
-                empty = false;
-            }
-            prev = *pt;
+            tpt = *pt;
         }
+
+        if(inCurve) {
+            sel->AddEdge(prev, tpt, sc->h.v, stb->backwards);
+            empty = false;
+        }
+
+        prev = tpt;     // either uv or xyz, depending on flags
 
         if(pt->Equals(stb->start)) inCurve = true;
         if(pt->Equals(stb->finish)) inCurve = false;
@@ -242,7 +241,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, bool asUv,
 // the split curves from useCurvesFrom instead of the curves in our own
 // shell.
 //-----------------------------------------------------------------------------
-void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
+void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
                              SShell *useCurvesFrom)
 {
     STrimBy *stb;
@@ -257,7 +256,7 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
             sc = useCurvesFrom->curve.FindById(sc->newH);
         }
 
-        MakeTrimEdgesInto(sel, asUv, sc, stb);
+        MakeTrimEdgesInto(sel, flags, sc, stb);
     }
 }
 
@@ -384,7 +383,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
                 sp = fpt;
             }
         } else {
-            if(sel) MakeTrimEdgesInto(sel, false, sc, stb);
+            if(sel) MakeTrimEdgesInto(sel, AS_XYZ, sc, stb);
         }
     }
 }
@@ -393,21 +392,21 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     SEdgeList el;
     ZERO(&el);
 
-    MakeEdgesInto(shell, &el, true);
+    MakeEdgesInto(shell, &el, AS_UV);
 
     SPolygon poly;
     ZERO(&poly);
     if(el.AssemblePolygon(&poly, NULL, true)) {
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
-            // A plane; triangulate any old way
-            poly.UvTriangulateInto(sm, NULL);
-        } else if(degm == 1 || degn == 1) {
             // A surface with curvature along one direction only; so 
             // choose the triangulation with chords that lie as much
             // as possible within the surface. And since the trim curves
             // have been pwl'd to within the desired chord tol, that will
             // produce a surface good to within roughly that tol.
+            //
+            // If this is just a plane (degree (1, 1)) then the triangulation
+            // code will notice that, and not bother checking chord tols.
             poly.UvTriangulateInto(sm, this);
         } else {
             // A surface with compound curvature. So we must overlay a
@@ -820,7 +819,7 @@ void SShell::MakeFromTransformationOf(SShell *a, Vector t, Quaternion q) {
 void SShell::MakeEdgesInto(SEdgeList *sel) {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->MakeEdgesInto(this, sel, false);
+        s->MakeEdgesInto(this, sel, SSurface::AS_XYZ);
     }
 }
 

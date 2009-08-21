@@ -22,7 +22,7 @@ void SShell::MergeCoincidentSurfaces(void) {
 
         SEdgeList sel;
         ZERO(&sel);
-        si->MakeEdgesInto(this, &sel, false);
+        si->MakeEdgesInto(this, &sel, SSurface::AS_XYZ);
 
         bool mergedThisTime, merged = false;
         do {
@@ -42,7 +42,7 @@ void SShell::MergeCoincidentSurfaces(void) {
                 // less robust.
                 SEdgeList tel;
                 ZERO(&tel);
-                sj->MakeEdgesInto(this, &tel, false);
+                sj->MakeEdgesInto(this, &tel, SSurface::AS_XYZ);
                 if(!sel.ContainsEdgeFrom(&tel)) {
                     tel.Clear();
                     continue;
@@ -52,7 +52,7 @@ void SShell::MergeCoincidentSurfaces(void) {
                 sj->tag = 1;
                 merged = true;
                 mergedThisTime = true;
-                sj->MakeEdgesInto(this, &sel, false);
+                sj->MakeEdgesInto(this, &sel, SSurface::AS_XYZ);
                 sj->trim.Clear();
 
                 // All the references to this surface get replaced with the

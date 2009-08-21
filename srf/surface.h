@@ -38,6 +38,7 @@ public:
     SBspUv *InsertEdge(Point2d a, Point2d b, SSurface *srf);
     int ClassifyPoint(Point2d p, Point2d eb, SSurface *srf);
     int ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf);
+    double MinimumDistanceToEdge(Point2d p, SSurface *srf);
 };
 
 // Now the data structures to represent a shell of trimmed rational polynomial
@@ -224,6 +225,10 @@ public:
     SBspUv          *bsp;
     SEdgeList       edges;
 
+    // For caching our initial (u, v) when doing Newton iterations to project
+    // a point into our surface.
+    Point2d         cached;
+
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
                                         double thetas, double thetaf);
@@ -266,6 +271,8 @@ public:
 
     void ClosestPointTo(Vector p, Point2d *puv, bool converge=true);
     void ClosestPointTo(Vector p, double *u, double *v, bool converge=true);
+    bool ClosestPointNewton(Vector p, double *u, double *v, bool converge=true);
+
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v);
     Vector ClosestPointOnThisAndSurface(SSurface *srf2, Vector p);
     void PointOnSurfaces(SSurface *s1, SSurface *s2, double *u, double *v);
@@ -283,9 +290,14 @@ public:
                         Vector *start, Vector *finish);
 
     void TriangulateInto(SShell *shell, SMesh *sm);
-    void MakeTrimEdgesInto(SEdgeList *sel, bool asUv, SCurve *sc, STrimBy *stb);
-    void MakeEdgesInto(SShell *shell, SEdgeList *sel, bool asUv,
+
+    // these are intended as bitmasks, even though there's just one now
+    static const int AS_UV  = 0x01;
+    static const int AS_XYZ = 0x00;
+    void MakeTrimEdgesInto(SEdgeList *sel, int flags, SCurve *sc, STrimBy *stb);
+    void MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
             SShell *useCurvesFrom=NULL);
+
     Vector ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
                                 Vector dir);
     void MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl);

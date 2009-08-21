@@ -54,13 +54,41 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         sc.Clear();
     }
 
-    if(0 && sb->deg == 1) {
+    // Test if the curve lies entirely outside one of the 
+    SCurvePt *scpt;
+    bool withinA = false, withinB = false;
+    for(scpt = split.pts.First(); scpt; scpt = split.pts.NextAfter(scpt)) {
+        double tol = 0.01;
+        Point2d puv;
+        ClosestPointTo(scpt->p, &puv);
+        if(puv.x > -tol && puv.x < 1 + tol &&
+           puv.y > -tol && puv.y < 1 + tol)
+        {
+            withinA = true;
+        }
+        srfB->ClosestPointTo(scpt->p, &puv);
+        if(puv.x > -tol && puv.x < 1 + tol &&
+           puv.y > -tol && puv.y < 1 + tol)
+        {
+            withinB = true;
+        }
+        // Break out early, no sense wasting time if we already have the answer.
+        if(withinA && withinB) break;
+    }
+    if(!(withinA && withinB)) {
+        // Intersection curve lies entirely outside one of the surfaces, so
+        // it's fake.
+        split.Clear();
+        return;
+    }
+
+    if(sb->deg == 2 && 0) {
         dbp(" ");
         SCurvePt *prev = NULL, *v;
-        dbp("split.pts.n =%d", split.pts.n);
+        dbp("split.pts.n = %d", split.pts.n);
         for(v = split.pts.First(); v; v = split.pts.NextAfter(v)) {
             if(prev) {
-                Vector e = (prev->p).Minus(v->p).WithMagnitude(-1);
+                Vector e = (prev->p).Minus(v->p).WithMagnitude(0);
                 SS.nakedEdges.AddEdge((prev->p).Plus(e), (v->p).Minus(e));
             }
             prev = v;
@@ -292,7 +320,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             SEdgeList el;
             ZERO(&el);
-            srfA->MakeEdgesInto(shA, &el, false, NULL);
+            srfA->MakeEdgesInto(shA, &el, AS_XYZ, NULL);
 
             SEdge *se;
             for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
@@ -480,7 +508,7 @@ void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         if(proto->CoincidentWith(ss, sameNormal)) {
-            ss->MakeEdgesInto(this, el, false, useCurvesFrom);
+            ss->MakeEdgesInto(this, el, SSurface::AS_XYZ, useCurvesFrom);
         }
     }
 

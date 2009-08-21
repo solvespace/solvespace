@@ -202,7 +202,7 @@ haveEdge:
     return true;
 }
 
-bool SContour::IsEar(int bp) {
+bool SContour::IsEar(int bp, double scaledEps) {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
 
@@ -219,7 +219,7 @@ bool SContour::IsEar(int bp) {
     }
 
     Vector n = Vector::From(0, 0, -1);
-    if((tr.Normal()).Dot(n) < LENGTH_EPS) {
+    if((tr.Normal()).Dot(n) < scaledEps) {
         // This vertex is reflex, or between two collinear edges; either way,
         // it's not an ear.
         return false;
@@ -251,7 +251,7 @@ bool SContour::IsEar(int bp) {
     return true;
 }
 
-void SContour::ClipEarInto(SMesh *m, int bp) {
+void SContour::ClipEarInto(SMesh *m, int bp, double scaledEps) {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
     
@@ -260,7 +260,7 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
     tr.a = l.elem[ap].p;
     tr.b = l.elem[bp].p;
     tr.c = l.elem[cp].p;
-    if(tr.Normal().MagSquared() < LENGTH_EPS*LENGTH_EPS) {
+    if(tr.Normal().MagSquared() < scaledEps*scaledEps) {
         // A vertex with more than two edges will cause us to generate
         // zero-area triangles, which must be culled.
     } else {
@@ -278,8 +278,15 @@ void SContour::ClipEarInto(SMesh *m, int bp) {
 }
 
 void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
-    int i;
+    Vector tu, tv;
+    srf->TangentsAt(0.5, 0.5, &tu, &tv);
+    double s = sqrt(tu.MagSquared() + tv.MagSquared());
+    // We would like to apply our tolerances in xyz; but that would be a lot
+    // of work, so at least scale the epsilon semi-reasonably. That's
+    // perfect for square planes, less perfect for anything else.
+    double scaledEps = LENGTH_EPS / s;
 
+    int i;
     // Clean the original contour by removing any zero-length edges.
     l.ClearTags();
     for(i = 1; i < l.n; i++) {
@@ -291,7 +298,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
 
     // Now calculate the ear-ness of each vertex
     for(i = 0; i < l.n; i++) {
-        (l.elem[i]).ear = IsEar(i) ? SPoint::EAR : SPoint::NOT_EAR;
+        (l.elem[i]).ear = IsEar(i, scaledEps) ? SPoint::EAR : SPoint::NOT_EAR;
     }
 
     bool toggle = false;
@@ -299,7 +306,8 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
         // Some points may have changed ear-ness, so recalculate
         for(i = 0; i < l.n; i++) {
             if(l.elem[i].ear == SPoint::UNKNOWN) {
-                (l.elem[i]).ear = IsEar(i) ? SPoint::EAR : SPoint::NOT_EAR;
+                (l.elem[i]).ear = IsEar(i, scaledEps) ?
+                                        SPoint::EAR : SPoint::NOT_EAR;
             }
         }
 
@@ -312,7 +320,8 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
         for(i = 0; i < l.n; i++) {
             int ear = WRAP(i+offset, l.n);
             if(l.elem[ear].ear == SPoint::EAR) {
-                if(!srf) {
+                if(srf->degm == 1 && srf->degn == 1) {
+                    // This is a plane; any ear is a good ear.
                     bestEar = ear;
                     break;
                 }
@@ -322,7 +331,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
                 Vector prev = l.elem[WRAP((i+offset-1), l.n)].p,
                        next = l.elem[WRAP((i+offset+1), l.n)].p;
                 double tol = srf->ChordToleranceForEdge(prev, next);
-                if(tol < bestChordTol - LENGTH_EPS) {
+                if(tol < bestChordTol - scaledEps) {
                     bestEar = ear;
                     bestChordTol = tol;
                 }
@@ -335,10 +344,10 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
             dbp("couldn't find an ear! fail");
             return;
         }
-        ClipEarInto(m, bestEar);
+        ClipEarInto(m, bestEar, scaledEps);
     }
 
-    ClipEarInto(m, 0); // add the last triangle
+    ClipEarInto(m, 0, scaledEps); // add the last triangle
 }
 
 double SSurface::ChordToleranceForEdge(Vector a, Vector b) {
