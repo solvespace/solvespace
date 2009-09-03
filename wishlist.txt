@@ -1,11 +1,10 @@
 
 grid
 line styles (color, thickness)
-margins in exported vector art
 background color setting
 better text
-better drawing of dimensions
 faster triangulation
+interpolating splines
 
 -----
 copy and paste

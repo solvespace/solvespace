@@ -202,7 +202,7 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
         ZERO(&compd);
         sp.normal = Vector::From(0, 0, -1);
         sp.FixContourDirections();
-        sp.OffsetInto(&compd, SS.exportOffset);
+        sp.OffsetInto(&compd, SS.exportOffset*s);
         sp.Clear();
 
         compd.MakeEdgesInto(sel);
@@ -380,6 +380,22 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
                 (b->ctrl[i]).MakeMaxMin(&ptMax, &ptMin);
             }
         }
+    }
+
+    // And now we compute the canvas size.
+    double s = 1.0 / SS.exportScale;
+    if(SS.exportCanvasSizeAuto) {
+        // It's based on the calculated bounding box; we grow it along each
+        // boundary by the specified amount.
+        ptMin.x -= s*SS.exportMargin.left;
+        ptMax.x += s*SS.exportMargin.right;
+        ptMin.y -= s*SS.exportMargin.bottom;
+        ptMax.y += s*SS.exportMargin.top;
+    } else {
+        ptMin.x = -(s*SS.exportCanvas.dx);
+        ptMin.y = -(s*SS.exportCanvas.dy);
+        ptMax.x = ptMin.x + (s*SS.exportCanvas.width);
+        ptMax.y = ptMin.y + (s*SS.exportCanvas.height);
     }
 
     StartFile();

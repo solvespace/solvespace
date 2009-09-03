@@ -529,6 +529,19 @@ public:
     int     showToolbar;
     int     exportShadedTriangles;
     int     exportPwlCurves;
+    int     exportCanvasSizeAuto;
+    struct {
+        float   left;
+        float   right;
+        float   bottom;
+        float   top;
+    }       exportMargin;
+    struct {
+        float   width;
+        float   height;
+        float   dx;
+        float   dy;
+    }       exportCanvas;
 
     int CircleSides(double r);
     typedef enum {

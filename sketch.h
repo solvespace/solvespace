@@ -557,6 +557,8 @@ public:
     char *Label(void);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                         Vector offset, Vector *ref);
+    void DoLineWithArrows(Vector ref, Vector a, Vector b, bool onlyOneExt);
+    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void DoProjectedPoint(Vector *p);
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);

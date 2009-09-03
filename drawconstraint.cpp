@@ -102,6 +102,142 @@ void Constraint::DoProjectedPoint(Vector *r) {
     *r = p;
 }
 
+//-----------------------------------------------------------------------------
+// There is a rectangular box, aligned to our display axes (projRight, projUp)
+// centered at ref. This is where a dimension label will be drawn. We want to
+// draw a line from A to B. If that line would intersect the label box, then
+// trim the line to leave a gap for it, and return zero. If not, then extend
+// the line to almost meet the box, and return either positive or negative,
+// depending whether that extension was from A or from B.
+//-----------------------------------------------------------------------------
+int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
+    Vector gu = SS.GW.projUp.WithMagnitude(1),
+           gr = SS.GW.projRight.WithMagnitude(1);
+
+    double pixels = 1.0 / SS.GW.scale;
+    char *s = Label();
+    double swidth  = glxStrWidth(s) + 4*pixels, 
+           sheight = glxStrHeight() + 8*pixels;
+
+    struct {
+        Vector n;
+        double d;
+    } planes[4];
+    // reference pos is the center of box occupied by text; build a rectangle
+    // around that, aligned to axes gr and gu, from four planes will all four
+    // normals pointing inward
+    planes[0].n = gu.ScaledBy(-1); planes[0].d = -(gu.Dot(ref) + sheight/2);
+    planes[1].n = gu;              planes[1].d =   gu.Dot(ref) - sheight/2;
+    planes[2].n = gr;              planes[2].d =   gr.Dot(ref) - swidth/2;
+    planes[3].n = gr.ScaledBy(-1); planes[3].d = -(gr.Dot(ref) + swidth/2);
+
+    double tmin = VERY_POSITIVE, tmax = VERY_NEGATIVE;
+    Vector dl = b.Minus(a);
+
+    for(int i = 0; i < 4; i++) {
+        bool parallel;
+        Vector p = Vector::AtIntersectionOfPlaneAndLine(
+                                planes[i].n, planes[i].d,
+                                a, b, &parallel);
+        if(parallel) continue;
+
+        int j;
+        for(j = 0; j < 4; j++) {
+            double d = (planes[j].n).Dot(p) - planes[j].d;
+            if(d < -LENGTH_EPS) break;
+        }
+        if(j < 4) continue;
+
+        double t = (p.Minus(a)).DivPivoting(dl);
+        tmin = min(t, tmin);
+        tmax = max(t, tmax);
+    }
+
+    int within = 0;
+
+    if(tmin > -0.01 && tmin < 1.01 && tmax > -0.01 && tmax < 1.01) {
+        // Both in range; so there's pieces of the line on both sides of the
+        // label box.
+        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
+        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+    } else if(tmin > -0.01 && tmin < 1.01) {
+        // Only one intersection in range; so the box is right on top of the
+        // endpoint
+        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
+    } else if(tmax > -0.01 && tmax < 1.01) {
+        // Likewise.
+        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+    } else {
+        // The line does not intersect the label; so the line should get
+        // extended to just barely meet the label.
+        if(tmin < 0.01 && tmax < 0.01) {
+            LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+            within = 1;
+        } else if(tmin > 0.99 && tmax > 0.99) {
+            LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
+            within = -1;
+        } else {
+            // This will happen if the entire line lies within the box.
+            LineDrawOrGetDistance(a, b);
+        }
+    }
+    // 0 means the label lies within the line, negative means it's outside
+    // and closer to b, positive means outside and closer to a.
+    return within;
+}
+
+//-----------------------------------------------------------------------------
+// Draw a line with arrows on both ends, and possibly a gap in the middle for
+// the dimension. We will use these for most length dimensions. The length
+// being dimensioned is from A to B; but those points get extended perpendicular
+// to the line AB, until the line between the extensions crosses ref (the
+// center of the label).
+//-----------------------------------------------------------------------------
+void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
+                                  bool onlyOneExt)
+{
+    Vector gn = (SS.GW.projRight.Cross(SS.GW.projUp)).WithMagnitude(1);
+    double pixels = 1.0 / SS.GW.scale;
+
+    Vector ab   = a.Minus(b);
+    Vector ar   = a.Minus(ref);
+    // Normal to a plane containing the line and the label origin.
+    Vector n    = ab.Cross(ar);
+    // Within that plane, and normal to the line AB; so that's our extension
+    // line.
+    Vector out  = ab.Cross(n).WithMagnitude(1);
+    out = out.ScaledBy(-out.Dot(ar));
+
+    Vector ae = a.Plus(out), be = b.Plus(out);
+
+    // Extension lines extend 10 pixels beyond where the arrows get
+    // drawn (which is at the same offset perpendicular from AB as the
+    // label).
+    LineDrawOrGetDistance(a, ae.Plus(out.WithMagnitude(10*pixels)));
+    if(!onlyOneExt) {
+        LineDrawOrGetDistance(b, be.Plus(out.WithMagnitude(10*pixels)));
+    }
+
+    int within = DoLineTrimmedAgainstBox(ref, ae, be);
+
+    // Arrow heads are 13 pixels long, with an 18 degree half-angle.
+    double theta = 18*PI/180;
+    Vector arrow = (be.Minus(ae)).WithMagnitude(13*pixels);
+
+    if(within != 0) {
+        arrow = arrow.ScaledBy(-1);
+        Vector seg = (be.Minus(ae)).WithMagnitude(18*pixels);
+        if(within < 0) LineDrawOrGetDistance(ae, ae.Minus(seg));
+        if(within > 0) LineDrawOrGetDistance(be, be.Plus(seg));
+    }
+
+    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(gn,  theta)));
+    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(gn, -theta)));
+    arrow = arrow.ScaledBy(-1);
+    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(gn,  theta)));
+    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(gn, -theta)));
+}
+
 void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
     Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
     Vector ab = a.Minus(b);
@@ -181,6 +317,9 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             prev = p;
         }
 
+        // The elliptical approximation isn't exactly right, but the correct
+        // calculation (against the bounding box of the text) would be rather
+        // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
             glxStrWidth(Label())/2, glxStrHeight()/2, tl);
@@ -224,16 +363,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
 
-            Vector ab   = ap.Minus(bp);
-            Vector ar   = ap.Minus(ref);
-            // Normal to a plan containing the line and the label origin.
-            Vector n    = ab.Cross(ar);
-            Vector out  = ab.Cross(n).WithMagnitude(1);
-            out = out.ScaledBy(-out.Dot(ar));
-
-            LineDrawOrGetDistance(ap, ap.Plus(out));
-            LineDrawOrGetDistance(bp, bp.Plus(out));
-
+            DoLineWithArrows(ref, ap, bp, false);
             DoLabel(ref, labelPos, gr, gu);
             break;
         }
@@ -252,11 +382,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             double d = (p.Minus(pt)).Dot(n);
-
             Vector closest = pt.Plus(n.WithMagnitude(d));
-            LineDrawOrGetDistance(pt, closest);
 
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
+
+            if(!pt.Equals(closest)) {
+                DoLineWithArrows(ref, pt, closest, true);
+            }
+
             DoLabel(ref, labelPos, gr, gu);
             break;
         }
@@ -266,6 +399,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Entity *line = SK.GetEntity(entityA);
             Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
             Vector lB = SK.GetEntity(line->point[1])->PointGetNum();
+            Vector dl = lB.Minus(lA);
 
             if(workplane.v != Entity::FREE_IN_3D.v) {
                 lA = lA.ProjectInto(workplane);
@@ -274,11 +408,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             // Find the closest point on the line
-            Vector closest = pt.ClosestPointOnLine(lA, (lA.Minus(lB)));
+            Vector closest = pt.ClosestPointOnLine(lA, dl);
 
-            LineDrawOrGetDistance(pt, closest);
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
             DoLabel(ref, labelPos, gr, gu);
+
+            if(!pt.Equals(closest)) {
+                DoLineWithArrows(ref, pt, closest, true);
+            }
 
             if(workplane.v != Entity::FREE_IN_3D.v) {
                 // Draw the projection marker from the closest point on the
@@ -298,17 +435,17 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case DIAMETER: {
             Entity *circle = SK.GetEntity(entityA);
             Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
+            Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
+            Vector n = q.RotationN().WithMagnitude(1);
             double r = circle->CircleGetRadiusNum();
-            Vector ref = center.Plus(disp.offset);
 
-            double theta = atan2(disp.offset.Dot(gu), disp.offset.Dot(gr));
-            double adj = EllipticalInterpolation(
-                glxStrWidth(Label())/2, glxStrHeight()/2, theta);
+            Vector ref = center.Plus(disp.offset);
+            // Force the label into the same plane as the circle.
+            ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
 
             Vector mark = ref.Minus(center);
             mark = mark.WithMagnitude(mark.Magnitude()-r);
-            LineDrawOrGetDistance(ref.Minus(mark.WithMagnitude(adj)),
-                                  ref.Minus(mark));
+            DoLineTrimmedAgainstBox(ref, ref, ref.Minus(mark));
 
             DoLabel(ref, labelPos, gr, gu);
             break;

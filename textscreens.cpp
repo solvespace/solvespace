@@ -640,10 +640,7 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
-    char str[1024];
-    sprintf(str, "%.2f", (double)SS.exportOffset);
-
-    ShowTextEditControl(63, 3, str);
+    ShowTextEditControl(63, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
@@ -657,6 +654,37 @@ void TextWindow::ScreenChangeShadedTriangles(int link, DWORD v) {
 void TextWindow::ScreenChangePwlCurves(int link, DWORD v) {
     SS.exportPwlCurves = !SS.exportPwlCurves;
     InvalidateGraphics();
+}
+void TextWindow::ScreenChangeCanvasSizeAuto(int link, DWORD v) {
+    SS.exportCanvasSizeAuto = !SS.exportCanvasSizeAuto;
+    InvalidateGraphics();
+}
+void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
+    double d;
+    switch(v) {
+        case  0: d = SS.exportMargin.left;      break;
+        case  1: d = SS.exportMargin.right;     break;
+        case  2: d = SS.exportMargin.bottom;    break;
+        case  3: d = SS.exportMargin.top;       break;
+
+        case 10: d = SS.exportCanvas.width;     break;
+        case 11: d = SS.exportCanvas.height;    break;
+        case 12: d = SS.exportCanvas.dx;        break;
+        case 13: d = SS.exportCanvas.dy;        break;
+
+        default: return;
+    }
+    int row = 77, col;
+    if(v < 10) {
+        row += v*2;
+        col = 11;
+    } else {
+        row += (v - 10)*2;
+        col = 13;
+    }
+    ShowTextEditControl(row, col, SS.MmToString(d));
+    SS.TW.edit.meaning = EDIT_CANVAS_SIZE;
+    SS.TW.edit.i = v;
 }
 void TextWindow::ShowConfiguration(void) {
     int i;
@@ -711,9 +739,9 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
-    Printf(false, "%Ft cutter radius offset (in export units) ");
-    Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E",
-        (double)SS.exportOffset,
+    Printf(false, "%Ft cutter radius offset (0=no offset) ");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        SS.MmToString(SS.exportOffset),
         &ScreenChangeExportOffset, 0);
 
     Printf(false, "");
@@ -726,8 +754,8 @@ void TextWindow::ShowConfiguration(void) {
         (!SS.exportShadedTriangles ? "" : "no"),
         (!SS.exportShadedTriangles ? "no" : ""));
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
-        Printf(false, "%Ft curves as piecewise linear:%E %Fsyes");
-        Printf(false, "   (always pwl if cutter radius offset isn't 0)");
+        Printf(false, "%Ft curves as piecewise linear:%E %Fsyes%Ft "
+                       "(since cutter radius is not zero)");
     } else {
         Printf(false, "%Ft curves as piecewise linear: "
                       "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
@@ -737,6 +765,37 @@ void TextWindow::ShowConfiguration(void) {
             &ScreenChangePwlCurves,
             (!SS.exportPwlCurves ? "" : "no"),
             (!SS.exportPwlCurves ? "no" : ""));
+    }
+
+    Printf(false, "");
+    Printf(false, "%Ft export canvas size: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeCanvasSizeAuto,
+        (!SS.exportCanvasSizeAuto ? "" : "fixed"),
+        (!SS.exportCanvasSizeAuto ? "fixed" : ""),
+        &ScreenChangeCanvasSizeAuto,
+        (SS.exportCanvasSizeAuto ? "" : "auto"),
+        (SS.exportCanvasSizeAuto ? "auto" : ""));
+    if(SS.exportCanvasSizeAuto) {
+        Printf(false, "%Ft (by margins around exported geometry)");
+        Printf(false, "%Ba%Ft   left:   %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportMargin.left), &ScreenChangeCanvasSize, 0);
+        Printf(false, "%Bd%Ft   right:  %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportMargin.right), &ScreenChangeCanvasSize, 1);
+        Printf(false, "%Ba%Ft   bottom: %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportMargin.bottom), &ScreenChangeCanvasSize, 2);
+        Printf(false, "%Bd%Ft   top:    %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportMargin.top), &ScreenChangeCanvasSize, 3);
+    } else {
+        Printf(false, "%Ft (by absolute dimensions and offsets)");
+        Printf(false, "%Ba%Ft   width:    %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportCanvas.width), &ScreenChangeCanvasSize, 10);
+        Printf(false, "%Bd%Ft   height:   %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportCanvas.height), &ScreenChangeCanvasSize, 11);
+        Printf(false, "%Ba%Ft   offset x: %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportCanvas.dx), &ScreenChangeCanvasSize, 12);
+        Printf(false, "%Bd%Ft   offset y: %Fd%s %Fl%Ll%f%D[change]%E",
+            SS.MmToString(SS.exportCanvas.dy), &ScreenChangeCanvasSize, 13);
     }
 
     Printf(false, "");
@@ -965,7 +1024,7 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_EXPORT_OFFSET: {
             Expr *e = Expr::From(s);
             if(e) {
-                double ev = e->Eval();
+                double ev = SS.ExprToMm(e);
                 if(isnan(ev) || ev < 0) {
                     Error("Cutter radius offset must not be negative!");
                 } else {
@@ -1025,6 +1084,27 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_STEP_DIM_STEPS:
             shown.dimSteps = min(300, max(1, atoi(s)));
             break;
+
+        case EDIT_CANVAS_SIZE: {
+            Expr *e = Expr::From(s);
+            if(!e) {
+                Error("Not a valid number or expression: '%s'", s);
+                break;
+            }
+            float d = (float)SS.ExprToMm(e);
+            switch(edit.i) {
+                case  0: SS.exportMargin.left   = d;    break;
+                case  1: SS.exportMargin.right  = d;    break;
+                case  2: SS.exportMargin.bottom = d;    break;
+                case  3: SS.exportMargin.top    = d;    break;
+
+                case 10: SS.exportCanvas.width  = d;    break;
+                case 11: SS.exportCanvas.height = d;    break;
+                case 12: SS.exportCanvas.dx     = d;    break;
+                case 13: SS.exportCanvas.dy     = d;    break;
+            }
+            break;
+        }
     }
     InvalidateGraphics();
     SS.later.showTW = true;

@@ -76,6 +76,18 @@ void SolveSpace::Init(char *cmdLine) {
     exportShadedTriangles = CnfThawDWORD(1, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
     exportPwlCurves = CnfThawDWORD(0, "ExportPwlCurves");
+    // Whether export canvas size is fixed or derived from bbox
+    exportCanvasSizeAuto = CnfThawDWORD(1, "ExportCanvasSizeAuto");
+    // Margins for automatic canvas size
+    exportMargin.left   = CnfThawFloat(5.0f, "ExportMargin_Left");
+    exportMargin.right  = CnfThawFloat(5.0f, "ExportMargin_Right");
+    exportMargin.bottom = CnfThawFloat(5.0f, "ExportMargin_Bottom");
+    exportMargin.top    = CnfThawFloat(5.0f, "ExportMargin_Top");
+    // Dimensions for fixed canvas size
+    exportCanvas.width  = CnfThawFloat(100.0f, "ExportCanvas_Width");
+    exportCanvas.height = CnfThawFloat(100.0f, "ExportCanvas_Height");
+    exportCanvas.dx     = CnfThawFloat(  5.0f, "ExportCanvas_Dx");
+    exportCanvas.dy     = CnfThawFloat(  5.0f, "ExportCanvas_Dy");
     // Show toolbar in the graphics window
     showToolbar = CnfThawDWORD(1, "ShowToolbar");
     // Recent files menus
@@ -144,6 +156,18 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD(exportShadedTriangles, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
     CnfFreezeDWORD(exportPwlCurves, "ExportPwlCurves");
+    // Whether export canvas size is fixed or derived from bbox
+    CnfFreezeDWORD(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
+    // Margins for automatic canvas size
+    CnfFreezeFloat(exportMargin.left,   "ExportMargin_Left");
+    CnfFreezeFloat(exportMargin.right,  "ExportMargin_Right");
+    CnfFreezeFloat(exportMargin.bottom, "ExportMargin_Bottom");
+    CnfFreezeFloat(exportMargin.top,    "ExportMargin_Top");
+    // Dimensions for fixed canvas size
+    CnfFreezeFloat(exportCanvas.width,  "ExportCanvas_Width");
+    CnfFreezeFloat(exportCanvas.height, "ExportCanvas_Height");
+    CnfFreezeFloat(exportCanvas.dx,     "ExportCanvas_Dx");
+    CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
     // Show toolbar in the graphics window
     CnfFreezeDWORD(showToolbar, "ShowToolbar");
 

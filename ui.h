@@ -80,6 +80,7 @@ public:
     static const int EDIT_EDGE_COLOR            = 16;
     static const int EDIT_EXPORT_SCALE          = 17;
     static const int EDIT_EXPORT_OFFSET         = 18;
+    static const int EDIT_CANVAS_SIZE           = 19;
     // For the helical sweep
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
@@ -147,6 +148,8 @@ public:
 
     static void ScreenChangeBackFaces(int link, DWORD v);
     static void ScreenChangePwlCurves(int link, DWORD v);
+    static void ScreenChangeCanvasSizeAuto(int link, DWORD v);
+    static void ScreenChangeCanvasSize(int link, DWORD v);
     static void ScreenChangeShadedTriangles(int link, DWORD v);
 
     static void ScreenStepDimSteps(int link, DWORD v);
