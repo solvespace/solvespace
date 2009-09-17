@@ -30,6 +30,7 @@ void SolveSpace::NewFile(void) {
     SK.constraint.Clear();
     SK.request.Clear();
     SK.group.Clear();
+    SK.style.Clear();
 
     SK.entity.Clear();
     SK.param.Clear();
@@ -150,6 +151,13 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },
     { 'c',  "Constraint.disp.style",    'x',    &(SS.sv.c.disp.style)         },
 
+    { 's',  "Style.h.v",                'x',    &(SS.sv.s.h.v)                },
+    { 's',  "Style.width",              'f',    &(SS.sv.s.width)              },
+    { 's',  "Style.widthHow",           'd',    &(SS.sv.s.widthHow)           },
+    { 's',  "Style.color",              'x',    &(SS.sv.s.color)              },
+    { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
+    { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
+
     { 0, NULL, NULL, NULL     },
 };
 
@@ -237,6 +245,14 @@ bool SolveSpace::SaveToFile(char *filename) {
         sv.c = SK.constraint.elem[i];
         SaveUsingTable('c');
         fprintf(fh, "AddConstraint\n\n");
+    }
+
+    for(i = 0; i < SK.style.n; i++) {
+        sv.s = SK.style.elem[i];
+        if(sv.s.h.v >= Style::FIRST_CUSTOM) {
+            SaveUsingTable('s');
+            fprintf(fh, "AddStyle\n\n");
+        }
     }
 
     // A group will have either a mesh or a shell, but not both; but the code
@@ -363,6 +379,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
     SK.group.Clear();
     SK.entity.Clear();
     SK.param.Clear();
+    SK.style.Clear();
     memset(&sv, 0, sizeof(sv));
 
     char line[1024];
@@ -383,20 +400,23 @@ bool SolveSpace::LoadFromFile(char *filename) {
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             SK.group.Add(&(sv.g));
-            memset(&(sv.g), 0, sizeof(sv.g));
+            ZERO(&(sv.g));
         } else if(strcmp(line, "AddParam")==0) {
             // params are regenerated, but we want to preload the values
             // for initial guesses
             SK.param.Add(&(sv.p));
-            memset(&(sv.p), 0, sizeof(sv.p));
+            ZERO(&(sv.p));
         } else if(strcmp(line, "AddEntity")==0) {
             // entities are regenerated
         } else if(strcmp(line, "AddRequest")==0) {
             SK.request.Add(&(sv.r));
-            memset(&(sv.r), 0, sizeof(sv.r));
+            ZERO(&(sv.r));
         } else if(strcmp(line, "AddConstraint")==0) {
             SK.constraint.Add(&(sv.c));
-            memset(&(sv.c), 0, sizeof(sv.c));
+            ZERO(&(sv.c));
+        } else if(strcmp(line, "AddStyle")==0) {
+            SK.style.Add(&(sv.s));
+            ZERO(&(sv.s));
         } else if(strcmp(line, VERSION_STRING)==0) {
             // do nothing, version string
         } else if(StrStartsWith(line, "Triangle ")      ||

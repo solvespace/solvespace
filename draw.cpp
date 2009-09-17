@@ -798,11 +798,9 @@ void GraphicsWindow::Selection::Clear(void) {
 void GraphicsWindow::Selection::Draw(void) {
     Vector refp;
     if(entity.v) {
-        glLineWidth(1.5);
         Entity *e = SK.GetEntity(entity);
         e->Draw();
         if(emphasized) refp = e->GetReferencePos();
-        glLineWidth(1);
     }
     if(constraint.v) {
         Constraint *c = SK.GetConstraint(constraint);
@@ -810,13 +808,17 @@ void GraphicsWindow::Selection::Draw(void) {
         if(emphasized) refp = c->GetReferencePos();
     }
     if(emphasized && (constraint.v || entity.v)) {
+        // We want to emphasize this constraint or entity, by drawing a thick
+        // line from the top left corner of the screen to the reference point
+        // of that entity or constraint.
         double s = 0.501/SS.GW.scale;
         Vector topLeft =       SS.GW.projRight.ScaledBy(-SS.GW.width*s);
         topLeft = topLeft.Plus(SS.GW.projUp.ScaledBy(SS.GW.height*s));
         topLeft = topLeft.Minus(SS.GW.offset);
 
         glLineWidth(40);
-        glColor4d(1.0, 1.0, 0, 0.2);
+        DWORD rgb = Style::Color(Style::HOVERED);
+        glColor4d(REDf(rgb), GREENf(rgb), BLUEf(rgb), 0.2);
         glBegin(GL_LINES);
             glxVertex3v(topLeft);
             glxVertex3v(refp);
@@ -1018,8 +1020,9 @@ void GraphicsWindow::Paint(int w, int h) {
     if(SS.AllGroupsOkay()) {
         glClearColor(0, 0, 0, 1.0f);
     } else {
-        // Draw a red background whenever we're having solve problems.
-        glClearColor(0.4f, 0, 0, 1.0f);
+        // Draw a different background whenever we're having solve problems.
+        DWORD rgb = Style::Color(Style::DRAW_ERROR);
+        glClearColor(0.4f*REDf(rgb), 0.4f*GREENf(rgb), 0.4f*BLUEf(rgb), 1.0f);
         // And show the text window, which has info to debug it
         ForceTextWindowShown();
     }
@@ -1085,8 +1088,8 @@ void GraphicsWindow::Paint(int w, int h) {
     }
 
     // Draw the traced path, if one exists
-    glLineWidth(1);
-    glColor3d(0, 1, 1);
+    glLineWidth(Style::Width(Style::ANALYZE));
+    glxColorRGB(Style::Color(Style::ANALYZE));
     SContour *sc = &(SS.traced.path);
     glBegin(GL_LINE_STRIP);
     for(i = 0; i < sc->l.n; i++) {
@@ -1095,20 +1098,22 @@ void GraphicsWindow::Paint(int w, int h) {
     glEnd();
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
-    glLineWidth(7);
-    glColor3d(1, 0, 0);
+    glLineWidth(Style::Width(Style::DRAW_ERROR));
+    glxColorRGB(Style::Color(Style::DRAW_ERROR));
     glxDrawEdges(&(SS.nakedEdges), true);
 
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST); 
-    glxLockColorTo(1, 1, 0);
+    glxLockColorTo(Style::Color(Style::HOVERED));
     hover.Draw();
 
     // And finally draw the selection, same mechanism.
-    glxLockColorTo(1, 0, 0);
+    glxLockColorTo(Style::Color(Style::SELECTED));
     for(i = 0; i < MAX_SELECTED; i++) {
         selection[i].Draw();
     }
+
+    glxUnlockColor();
 
     // And finally the toolbar.
     if(SS.showToolbar) {

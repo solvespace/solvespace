@@ -597,28 +597,64 @@ public:
 
 
 class Style {
+public:
     int         tag;
     hStyle      h;
-    
-    static const int ACTIVE         = 1;
+  
+    // If an entity has no style, then it will be colored according to
+    // whether the group that it's in is active or not, whether it's
+    // construction or not, and so on.
+    static const int NO_STYLE       = 0;
+
+    static const int ACTIVE_GRP     = 1;
     static const int CONSTRUCTION   = 2;
-    static const int INACTIVE       = 3;
+    static const int INACTIVE_GRP   = 3;
     static const int DATUM          = 4;
     static const int SOLID_EDGE     = 5;
     static const int CONSTRAINT     = 6;
     static const int SELECTED       = 7;
     static const int HOVERED        = 8;
+    static const int CONTOUR_FILL   = 9;
+    static const int NORMALS        = 10;
+    static const int ANALYZE        = 11;
+    static const int DRAW_ERROR     = 12;
+    static const int DIM_SOLID      = 13;
 
     static const int FIRST_CUSTOM   = 0x1000;
 
-    static const int WIDTH_ABSOLUTE = 0;
-    static const int WIDTH_RELATIVE = 1;
-    static const int WIDTH_PIXELS   = 2;
+    NameStr     name;
+
+    static const int WIDTH_MM       = 0;
+    static const int WIDTH_PIXELS   = 1;
     double      width;
     int         widthHow;
     DWORD       color;
     bool        visible;
     bool        exportable;
+
+    // The default styles, for entities that don't have a style assigned yet,
+    // and for datums and such.
+    typedef struct {
+        hStyle  h;
+        char    *cnfPrefix;
+        DWORD   color;
+        double  width;
+    } Default;
+    static const Default Defaults[];
+
+    static char *CnfColor(char *prefix);
+    static char *CnfWidth(char *prefix);
+    static char *CnfPrefixToName(char *prefix);
+    static void CreateDefaultStyle(hStyle h);
+    static void FreezeDefaultStyles(void);
+    static void LoadFactoryDefaults(void);
+
+    static Style *Get(hStyle hs);
+    static DWORD Color(hStyle hs, bool forExport=false);
+    static float Width(hStyle hs);
+    static DWORD Color(int hs, bool forExport=false);
+    static float Width(int hs);
+    static hStyle ForEntity(hEntity he);
 };
 
 

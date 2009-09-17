@@ -191,10 +191,10 @@ void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
 double glxStrWidth(char *str);
 double glxStrHeight(void);
-void glxLockColorTo(double r, double g, double b);
+void glxLockColorTo(DWORD rgb);
 void glxUnlockColor(void);
-void glxColor3d(double r, double g, double b);
-void glxColor4d(double r, double g, double b, double a);
+void glxColorRGB(DWORD rgb);
+void glxColorRGBa(DWORD rgb, double a);
 void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
 
@@ -470,6 +470,7 @@ public:
     IdList<Group,hGroup>            group;
     IdList<CONSTRAINT,hConstraint>  constraint;
     IdList<Request,hRequest>        request;
+    IdList<Style,hStyle>            style;
 
     // These are generated from the above.
     IdList<ENTITY,hEntity>          entity;
@@ -481,7 +482,10 @@ public:
     inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
+    // Styles are handled a bit differently.
 };
+#undef ENTITY
+#undef CONSTRAINT
 
 class SolveSpace {
 public:
@@ -494,6 +498,7 @@ public:
         IdList<Request,hRequest>        request;
         IdList<Constraint,hConstraint>  constraint;
         IdList<Param,hParam>            param;
+        IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
     } UndoState;
     static const int MAX_UNDO = 16;
@@ -522,7 +527,6 @@ public:
     double  chordTol;
     int     maxSegments;
     double  cameraTangent;
-    DWORD   edgeColor;
     float   exportScale;
     float   exportOffset;
     int     drawBackFaces;
@@ -582,6 +586,7 @@ public:
         Entity       e;
         Param        p;
         Constraint   c;
+        Style        s;
     } sv;
     static void MenuFile(int id);
     bool GetFilenameAndSave(bool saveAs);

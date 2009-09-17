@@ -356,7 +356,8 @@ Group *Group::RunningMeshGroup(void) {
 void Group::DrawDisplayItems(int t) {
     int specColor;
     if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
-        specColor = RGB(25, 25, 25); // force the color to something dim
+        // force the color to something dim
+        specColor = Style::Color(Style::DIM_SOLID);
     } else {
         specColor = -1; // use the model color
     }
@@ -382,11 +383,9 @@ void Group::DrawDisplayItems(int t) {
         glDisable(GL_LIGHTING);
     }
     if(SS.GW.showEdges) {
-        glLineWidth(1);
         glxDepthRangeOffset(2);
-        glxColor3d(REDf  (SS.edgeColor),
-                   GREENf(SS.edgeColor), 
-                   BLUEf (SS.edgeColor));
+        glxColorRGB(Style::Color(Style::SOLID_EDGE));
+        glLineWidth(Style::Width(Style::SOLID_EDGE));
         glxDrawEdges(&displayEdges, false);
     }
 
@@ -418,14 +417,13 @@ void Group::Draw(void) {
         // it's just a nuisance.
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
-            glxColor4d(1, 0, 0, 0.2);
-            glLineWidth(10);
+            glxColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
+            glLineWidth (Style::Width(Style::DRAW_ERROR));
             glBegin(GL_LINES);
                 glxVertex3v(polyError.notClosedAt.a);
                 glxVertex3v(polyError.notClosedAt.b);
             glEnd();
-            glLineWidth(1);
-            glxColor3d(1, 0, 0);
+            glxColorRGB(Style::Color(Style::DRAW_ERROR));
             glxWriteText("not closed contour!",
                 polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
@@ -437,7 +435,7 @@ void Group::Draw(void) {
         // These errors occur at points, not lines
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
-            glxColor3d(1, 0, 0);
+            glxColorRGB(Style::Color(Style::DRAW_ERROR));
             char *msg = (polyError.how == POLY_NOT_COPLANAR) ?
                             "points not all coplanar!" :
                             "contour is self-intersecting!";
@@ -447,7 +445,7 @@ void Group::Draw(void) {
             glEnable(GL_DEPTH_TEST);
         }
     } else {
-        glxColor4d(0, 0.1, 0.1, 0.5);
+        glxColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
         glxDepthRangeOffset(1);
         glxFillPolygon(&poly);
         glxDepthRangeOffset(0);

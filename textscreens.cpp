@@ -606,41 +606,33 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
-void TextWindow::ScreenChangeEdgeColor(int link, DWORD v) {
-    char str[1024];
-    sprintf(str, "%.3f, %.3f, %.3f", 
-        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor));
-
-    ShowTextEditControl(37, 3, str);
-    SS.TW.edit.meaning = EDIT_EDGE_COLOR;
-}
 void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.2f", SS.chordTol);
-    ShowTextEditControl(43, 3, str);
+    ShowTextEditControl(37, 3, str);
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 void TextWindow::ScreenChangeMaxSegments(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%d", SS.maxSegments);
-    ShowTextEditControl(47, 3, str);
+    ShowTextEditControl(41, 3, str);
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
 }
 void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", 1000*SS.cameraTangent);
-    ShowTextEditControl(53, 3, str);
+    ShowTextEditControl(47, 3, str);
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    ShowTextEditControl(59, 3, str);
+    ShowTextEditControl(53, 3, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
-    ShowTextEditControl(63, 3, SS.MmToString(SS.exportOffset));
+    ShowTextEditControl(57, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
@@ -674,7 +666,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
 
         default: return;
     }
-    int row = 77, col;
+    int row = 71, col;
     if(v < 10) {
         row += v*2;
         col = 11;
@@ -710,12 +702,6 @@ void TextWindow::ShowConfiguration(void) {
             CO(SS.lightDir[i]), i, &ScreenChangeLightDirection,
             SS.lightIntensity[i], i, &ScreenChangeLightIntensity);
     }
-
-    Printf(false, "");
-    Printf(false, "%Ft edge color r,g,b%E");
-    Printf(false, "%Ba    %@, %@, %@ %Fl%Ll%f%D[change]%E",
-        REDf(SS.edgeColor), GREENf(SS.edgeColor), BLUEf(SS.edgeColor),
-        &ScreenChangeEdgeColor, 0);
 
     Printf(false, "");
     Printf(false, "%Ft chord tolerance (in screen pixels)%E");
@@ -995,16 +981,6 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_CAMERA_TANGENT: {
             SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
             InvalidateGraphics();
-            break;
-        }
-        case EDIT_EDGE_COLOR: {
-            double r, g, b;
-            if(sscanf(s, "%lf, %lf, %lf", &r, &g, &b)==3) {
-                SS.edgeColor = RGB(r*255, g*255, b*255);
-            } else {
-                Error("Bad format: specify color as r, g, b");
-            }
-            SS.GenerateAll(0, INT_MAX);
             break;
         }
         case EDIT_EXPORT_SCALE: {

@@ -44,6 +44,7 @@ void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v,
 
 static void LineDrawCallback(void *fndata, Vector a, Vector b)
 {
+    glLineWidth(1);
     glBegin(GL_LINES);
         glxVertex3v(a);
         glxVertex3v(b);
@@ -95,26 +96,28 @@ void glxVertex3v(Vector u)
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }
 
-void glxLockColorTo(double r, double g, double b)
+void glxLockColorTo(DWORD rgb)
 {
-    ColorLocked = false;    
-    glxColor3d(r, g, b);
+    ColorLocked = false;
+    glColor3d(REDf(rgb), GREENf(rgb), BLUEf(rgb));
     ColorLocked = true;
 }
 
 void glxUnlockColor(void)
 {
-    ColorLocked = false;    
+    ColorLocked = false;
 }
 
-void glxColor3d(double r, double g, double b)
+void glxColorRGB(DWORD rgb)
 {
-    if(!ColorLocked) glColor3d(r, g, b);
+    // Is there a bug in some graphics drivers where this is not equivalent
+    // to glColor3d? There seems to be...
+    glxColorRGBa(rgb, 1.0);
 }
 
-void glxColor4d(double r, double g, double b, double a)
+void glxColorRGBa(DWORD rgb, double a)
 {
-    if(!ColorLocked) glColor4d(r, g, b, a);
+    if(!ColorLocked) glColor4d(REDf(rgb), GREENf(rgb), BLUEf(rgb), a);
 }
 
 static void Stipple(BOOL forSel)
@@ -148,11 +151,11 @@ static void Stipple(BOOL forSel)
     }
 }
 
-static void StippleTriangle(STriangle *tr, BOOL s, double r, double g, double b)
+static void StippleTriangle(STriangle *tr, BOOL s, DWORD rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
-    glColor3d(r, g, b);
+    glxColorRGB(rgb);
     Stipple(s);
     glBegin(GL_TRIANGLES);
         glxVertex3v(tr->a);
@@ -166,6 +169,9 @@ static void StippleTriangle(STriangle *tr, BOOL s, double r, double g, double b)
 
 void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
 {
+    DWORD rgbHovered  = Style::Color(Style::HOVERED),
+          rgbSelected = Style::Color(Style::SELECTED);
+
     glEnable(GL_NORMALIZE);
     int prevColor = -1;
     glBegin(GL_TRIANGLES);
@@ -208,10 +214,10 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
         if((s1 != 0 && tr->meta.face == s1) || 
            (s2 != 0 && tr->meta.face == s2))
         {
-            StippleTriangle(tr, TRUE, 1, 0, 0);
+            StippleTriangle(tr, TRUE, rgbSelected);
         }
         if(h != 0 && tr->meta.face == h) {
-            StippleTriangle(tr, FALSE, 1, 1, 0);
+            StippleTriangle(tr, FALSE, rgbHovered);
         }
     }
     glEnd();
@@ -283,13 +289,13 @@ void glxDebugPolygon(SPolygon *p)
             Vector a = (sc->l.elem[j]).p;
             Vector b = (sc->l.elem[j+1]).p;
 
-            glxLockColorTo(0, 0, 1);
+            glxLockColorTo(RGB(0, 0, 255));
             Vector d = (a.Minus(b)).WithMagnitude(-0);
             glBegin(GL_LINES);
                 glxVertex3v(a.Plus(d));
                 glxVertex3v(b.Minus(d));
             glEnd();
-            glxLockColorTo(1, 0, 0);
+            glxLockColorTo(RGB(255, 0, 0));
             glBegin(GL_POINTS);
                 glxVertex3v(a.Plus(d));
                 glxVertex3v(b.Minus(d));
@@ -327,7 +333,7 @@ void glxDebugMesh(SMesh *m)
     glxDepthRangeOffset(1);
     glxUnlockColor();
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glxColor4d(0, 1, 0, 1.0);
+    glxColorRGBa(RGB(0, 255, 0), 1.0);
     glBegin(GL_TRIANGLES);
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);

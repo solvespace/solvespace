@@ -40,7 +40,7 @@ void Entity::DrawAll(void) {
         double s = 3.5/SS.GW.scale;
         Vector r = SS.GW.projRight.ScaledBy(s);
         Vector d = SS.GW.projUp.ScaledBy(s);
-        glxColor3d(0, 0.8, 0);
+        glxColorRGB(Style::Color(Style::DATUM));
         glxDepthRangeOffset(6);
         glBegin(GL_QUADS);
         for(i = 0; i < SK.entity.n; i++) {
@@ -52,6 +52,9 @@ void Entity::DrawAll(void) {
 
             Vector v = e->PointGetNum();
 
+            // If we're analyzing the sketch to show the degrees of freedom,
+            // then we draw big colored squares over the points that are
+            // free to move.
             bool free = false;
             if(e->type == POINT_IN_3D) {
                 Param *px = SK.GetParam(e->param[0]),
@@ -68,12 +71,12 @@ void Entity::DrawAll(void) {
             if(free) {
                 Vector re = r.ScaledBy(2.5), de = d.ScaledBy(2.5);
 
-                glxColor3d(0, 1.0, 1.0);
+                glxColorRGB(Style::Color(Style::ANALYZE));
                 glxVertex3v(v.Plus (re).Plus (de));
                 glxVertex3v(v.Plus (re).Minus(de));
                 glxVertex3v(v.Minus(re).Minus(de));
                 glxVertex3v(v.Minus(re).Plus (de));
-                glxColor3d(0, 0.8, 0);
+                glxColorRGB(Style::Color(Style::DATUM));
             }
 
             glxVertex3v(v.Plus (r).Plus (d));
@@ -85,7 +88,6 @@ void Entity::DrawAll(void) {
         glxDepthRangeOffset(0);
     }
 
-    glLineWidth(1.5);
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
         if(e->IsPoint())
@@ -94,10 +96,13 @@ void Entity::DrawAll(void) {
         }
         e->Draw();
     }
-    glLineWidth(1);
 }
 
 void Entity::Draw(void) {
+    hStyle hs = Style::ForEntity(h);
+    glLineWidth(Style::Width(hs));
+    glxColorRGB(Style::Color(hs));
+
     dogd.drawing = true;
     DrawOrGetDistance();
 }
@@ -302,14 +307,6 @@ void Entity::DrawOrGetDistance(void) {
 
     Group *g = SK.GetGroup(group);
 
-    if(group.v != SS.GW.activeGroup.v) {
-        glxColor3d(0.5, 0.3, 0.0);
-    } else if(construction) {
-        glxColor3d(0.1, 0.7, 0.1);
-    } else {
-        glxColor3d(1, 1, 1);
-    }
-
     switch(type) {
         case POINT_N_COPY:
         case POINT_N_TRANS:
@@ -325,7 +322,7 @@ void Entity::DrawOrGetDistance(void) {
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
-                glxColor3d(0, 0.8, 0);
+                glxColorRGB(Style::Color(Style::DATUM));
                 glxDepthRangeOffset(6);
                 glBegin(GL_QUADS);
                     glxVertex3v(v.Plus (r).Plus (d));
@@ -356,15 +353,18 @@ void Entity::DrawOrGetDistance(void) {
                 }
 
                 hRequest hr = h.request();
-                double f = (i == 0 ? 0.4 : 1);
+                // Always draw the x, y, and z axes in red, green, and blue;
+                // brighter for the ones at the bottom left of the screen,
+                // dimmer for the ones at the model origin.
+                int f = (i == 0 ? 100 : 255);
                 if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                    glxColor3d(0, 0, f);
+                    glxColorRGB(RGB(0, 0, f));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                    glxColor3d(f, 0, 0);
+                    glxColorRGB(RGB(f, 0, 0));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                    glxColor3d(0, f, 0);
+                    glxColorRGB(RGB(0, f, 0));
                 } else {
-                    glxColor3d(0, 0.4, 0.4);
+                    glxColorRGB(Style::Color(Style::NORMALS));
                     if(i > 0) break;
                 }
 
@@ -396,7 +396,6 @@ void Entity::DrawOrGetDistance(void) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
             glxDepthRangeLockToFront(false);
-            glLineWidth(1.5);
             break;
         }
 
@@ -423,7 +422,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector mp = p.Minus(us).Plus (vs);
 
             glLineWidth(1);
-            glxColor3d(0, 0.3, 0.3);
+            glxColorRGB(Style::Color(Style::NORMALS));
             glEnable(GL_LINE_STIPPLE);
             glLineStipple(3, 0x1111);
             if(!h.isFromRequest()) {
@@ -436,7 +435,6 @@ void Entity::DrawOrGetDistance(void) {
             LineDrawOrGetDistance(mm, mp);
             LineDrawOrGetDistance(mp, pp);
             glDisable(GL_LINE_STIPPLE);
-            glLineWidth(1.5);
 
             char *str = DescriptionString()+5;
             if(dogd.drawing) {

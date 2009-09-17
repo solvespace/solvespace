@@ -77,10 +77,9 @@ public:
     static const int EDIT_CHORD_TOLERANCE       = 13;
     static const int EDIT_MAX_SEGMENTS          = 14;
     static const int EDIT_CAMERA_TANGENT        = 15;
-    static const int EDIT_EDGE_COLOR            = 16;
-    static const int EDIT_EXPORT_SCALE          = 17;
-    static const int EDIT_EXPORT_OFFSET         = 18;
-    static const int EDIT_CANVAS_SIZE           = 19;
+    static const int EDIT_EXPORT_SCALE          = 16;
+    static const int EDIT_EXPORT_OFFSET         = 17;
+    static const int EDIT_CANVAS_SIZE           = 18;
     // For the helical sweep
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
@@ -167,7 +166,6 @@ public:
     static void ScreenChangeChordTolerance(int link, DWORD v);
     static void ScreenChangeMaxSegments(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
-    static void ScreenChangeEdgeColor(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
 

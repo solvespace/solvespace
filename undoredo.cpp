@@ -77,6 +77,9 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
     for(i = 0; i < SK.param.n; i++) {
         ut->param.Add(&(SK.param.elem[i]));
     }
+    for(i = 0; i < SK.style.n; i++) {
+        ut->style.Add(&(SK.style.elem[i]));
+    }
     ut->activeGroup = SS.GW.activeGroup;
 
     uk->write = WRAP(uk->write + 1, MAX_UNDO);
@@ -110,12 +113,14 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     SK.request.Clear();
     SK.constraint.Clear();
     SK.param.Clear();
+    SK.style.Clear();
 
     // And then do a shallow copy of the state from the undo list
     ut->group.MoveSelfInto(&(SK.group));
     ut->request.MoveSelfInto(&(SK.request));
     ut->constraint.MoveSelfInto(&(SK.constraint));
     ut->param.MoveSelfInto(&(SK.param));
+    ut->style.MoveSelfInto(&(SK.style));
     SS.GW.activeGroup = ut->activeGroup;
 
     // No need to free it, since a shallow copy was made above
@@ -150,6 +155,7 @@ void SolveSpace::UndoClearState(UndoState *ut) {
     ut->request.Clear();
     ut->constraint.Clear();
     ut->param.Clear();
+    ut->style.Clear();
     ZERO(ut);
 }
 

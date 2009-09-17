@@ -350,7 +350,6 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     Vector gu = SS.GW.projUp.ScaledBy(1/SS.GW.scale);
     Vector gn = (gr.Cross(gu)).WithMagnitude(1/SS.GW.scale);
 
-    glxColor3d(1, 0.1, 1);
     switch(type) {
         case PT_PT_DISTANCE: {
             Vector ap = SK.GetEntity(ptA)->PointGetNum();
@@ -465,12 +464,25 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 break;
             }
 
+            // Let's adjust the color of this constraint to have the same
+            // rough luma as the point color, so that the constraint does not
+            // stand out in an ugly way.
+            DWORD cd = Style::Color(Style::DATUM),
+                  cc = Style::Color(Style::CONSTRAINT);
+            // convert from 8-bit color to a vector
+            Vector vd = Vector::From(REDf(cd), GREENf(cd), BLUEf(cd)),
+                   vc = Vector::From(REDf(cc), GREENf(cc), BLUEf(cc));
+            // and scale the constraint color to have the same magnitude as
+            // the datum color, maybe a bit dimmer
+            vc = vc.WithMagnitude(vd.Magnitude()*0.9);
+            // and set the color to that.
+            glxColorRGB(RGBf(vc.x, vc.y, vc.z));
+
             for(int a = 0; a < 2; a++) {
                 Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
                 for(int i = 0; i < 2; i++) {
                     Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
-                    glxColor3d(0.4, 0, 0.4);
                     glBegin(GL_QUADS);
                         glxVertex3v(p.Plus (r).Plus (d));
                         glxVertex3v(p.Plus (r).Minus(d));
@@ -878,7 +890,10 @@ s:
 void Constraint::Draw(void) {
     dogd.drawing = true;
     dogd.sel = NULL;
-    glLineWidth(1);
+
+    glLineWidth(Style::Width(Style::CONSTRAINT));
+    glxColorRGB(Style::Color(Style::CONSTRAINT));
+
     DrawOrGetDistance(NULL);
 }
 

@@ -64,8 +64,6 @@ void SolveSpace::Init(char *cmdLine) {
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
     cameraTangent = CnfThawFloat(0.0f, "CameraTangent");
-    // Color for edges (drawn as lines for emphasis)
-    edgeColor = CnfThawDWORD(RGB(200, 200, 200), "EdgeColor");
     // Export scale factor
     exportScale = CnfThawFloat(1.0f, "ExportScale");
     // Export offset (cutter radius comp)
@@ -98,6 +96,10 @@ void SolveSpace::Init(char *cmdLine) {
         CnfThawString(RecentFile[i], MAX_PATH, name);
     }
     RefreshRecentMenus();
+
+    // The default styles (colors, line widths, etc.) are also stored in the
+    // configuration file, but we will automatically load those as we need
+    // them.
 
     // Start with either an empty file, or the file specified on the
     // command line.
@@ -144,8 +146,6 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
     CnfFreezeFloat((float)cameraTangent, "CameraTangent");
-    // Color for edges (drawn as lines for emphasis)
-    CnfFreezeDWORD(edgeColor, "EdgeColor");
     // Export scale (a float, stored as a DWORD)
     CnfFreezeFloat(exportScale, "ExportScale");
     // Export offset (cutter radius comp)
@@ -170,6 +170,9 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
     // Show toolbar in the graphics window
     CnfFreezeDWORD(showToolbar, "ShowToolbar");
+
+    // And the default styles, colors and line widths and such.
+    Style::FreezeDefaultStyles();
 
     ExitNow();
 }
