@@ -65,6 +65,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     // Generate the entity that's specific to this request.
     e.type = et;
     e.group = group;
+    e.style = style;
     e.workplane = workplane;
     e.construction = construction;
     e.str.strcpy(str.str);
@@ -79,6 +80,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         // points start from entity 1, except for datum point case
         p.h = h.entity(i+(et ? 1 : 0));
         p.group = group;
+        p.style = style;
 
         if(workplane.v == Entity::FREE_IN_3D.v) {
             p.type = Entity::POINT_IN_3D;
@@ -101,6 +103,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         n.workplane = workplane;
         n.h = h.entity(32);
         n.group = group;
+        n.style = style;
         if(workplane.v == Entity::FREE_IN_3D.v) {
             n.type = Entity::NORMAL_IN_3D;
             n.param[0] = AddParam(param, h.param(32+0));
@@ -125,6 +128,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         d.workplane = workplane;
         d.h = h.entity(64);
         d.group = group;
+        d.style = style;
         d.type = Entity::DISTANCE;
         d.param[0] = AddParam(param, h.param(64));
         entity->Add(&d);

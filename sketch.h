@@ -414,8 +414,11 @@ public:
         Point2d     mp;
         double      dmin;
         Vector      refp;
+        double      lineWidth;
     } dogd; // state for drawing or getting distance (for hit testing)
-    void LineDrawOrGetDistance(Vector a, Vector b);
+    void FatLine(Vector a, Vector b);
+    void FatLineEndcap(Vector p, Vector u, Vector v);
+    void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false);
     void DrawOrGetDistance(void);
 
     bool IsVisible(void);
@@ -620,12 +623,12 @@ public:
     static const int DRAW_ERROR     = 12;
     static const int DIM_SOLID      = 13;
 
-    static const int FIRST_CUSTOM   = 0x1000;
+    static const int FIRST_CUSTOM   = 0x100;
 
     NameStr     name;
 
-    static const int WIDTH_MM       = 0;
-    static const int WIDTH_PIXELS   = 1;
+    static const int WIDTH_AS_MM       = 0;
+    static const int WIDTH_AS_PIXELS   = 1;
     double      width;
     int         widthHow;
     DWORD       color;
@@ -645,6 +648,8 @@ public:
     static char *CnfColor(char *prefix);
     static char *CnfWidth(char *prefix);
     static char *CnfPrefixToName(char *prefix);
+
+    static void CreateAllDefaultStyles(void);
     static void CreateDefaultStyle(hStyle h);
     static void FreezeDefaultStyles(void);
     static void LoadFactoryDefaults(void);
@@ -655,6 +660,8 @@ public:
     static DWORD Color(int hs, bool forExport=false);
     static float Width(int hs);
     static hStyle ForEntity(hEntity he);
+
+    char *DescriptionString(void);
 };
 
 

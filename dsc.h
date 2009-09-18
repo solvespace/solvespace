@@ -219,15 +219,18 @@ public:
     int   n;
     int   elemsAllocated;
 
-    H AddAndAssignId(T *t) {
-        int i;
+    DWORD MaximumId(void) {
         DWORD id = 0;
 
+        int i;
         for(i = 0; i < n; i++) {
             id = max(id, elem[i].h.v);
         }
+        return id;
+    }
 
-        t->h.v = (id + 1);
+    H AddAndAssignId(T *t) {
+        t->h.v = (MaximumId() + 1);
         Add(t);
 
         return t->h;

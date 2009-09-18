@@ -224,6 +224,8 @@ void TextWindow::Show(void) {
             case SCREEN_CONFIGURATION:      ShowConfiguration();    break;
             case SCREEN_STEP_DIMENSION:     ShowStepDimension();    break;
             case SCREEN_MESH_VOLUME:        ShowMeshVolume();       break;
+            case SCREEN_LIST_OF_STYLES:     ShowListOfStyles();     break;
+            case SCREEN_STYLE_INFO:         ShowStyleInfo();        break;
         }
     }
     Printf(false, "");

@@ -74,6 +74,8 @@ void SolveSpace::Init(char *cmdLine) {
     exportShadedTriangles = CnfThawDWORD(1, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
     exportPwlCurves = CnfThawDWORD(0, "ExportPwlCurves");
+    // Background color on-screen
+    backgroundColor = CnfThawDWORD(RGB(0, 0, 0), "BackgroundColor");
     // Whether export canvas size is fixed or derived from bbox
     exportCanvasSizeAuto = CnfThawDWORD(1, "ExportCanvasSizeAuto");
     // Margins for automatic canvas size
@@ -156,6 +158,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD(exportShadedTriangles, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
     CnfFreezeDWORD(exportPwlCurves, "ExportPwlCurves");
+    // Background color on-screen
+    CnfFreezeDWORD(backgroundColor, "BackgroundColor");
     // Whether export canvas size is fixed or derived from bbox
     CnfFreezeDWORD(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
     // Margins for automatic canvas size
@@ -273,6 +277,10 @@ void SolveSpace::AfterNewFile(void) {
     later.showTW = true;
     // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit(false);
+
+    // Create all the default styles; they'll get created on the fly anyways,
+    // but can't hurt to do it now.
+    Style::CreateAllDefaultStyles();
 
     UpdateWindowTitle();
 }

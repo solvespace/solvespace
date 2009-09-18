@@ -585,9 +585,16 @@ void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
             SS.GW.GroupSelection();
+            // If there's nothing selected to de-select, and no operation
+            // to cancel, then perhaps they want to return to the home
+            // screen in the text window.
             if(SS.GW.gs.n == 0 && SS.GW.pending.operation == 0) {
                 if(!TextEditControlIsVisible()) {
-                    SS.TW.ClearSuper();
+                    if(SS.TW.shown.screen == TextWindow::SCREEN_STYLE_INFO) {
+                        SS.TW.GoToScreen(TextWindow::SCREEN_LIST_OF_STYLES);
+                    } else {
+                        SS.TW.ClearSuper();
+                    }
                 }
             }
             SS.GW.ClearSuper();

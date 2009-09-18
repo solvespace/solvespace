@@ -152,6 +152,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'c',  "Constraint.disp.style",    'x',    &(SS.sv.c.disp.style)         },
 
     { 's',  "Style.h.v",                'x',    &(SS.sv.s.h.v)                },
+    { 's',  "Style.name",               'N',    &(SS.sv.s.name)               },
     { 's',  "Style.width",              'f',    &(SS.sv.s.width)              },
     { 's',  "Style.widthHow",           'd',    &(SS.sv.s.widthHow)           },
     { 's',  "Style.color",              'x',    &(SS.sv.s.color)              },

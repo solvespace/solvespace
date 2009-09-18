@@ -207,6 +207,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 void MakePathRelative(char *base, char *path);
 void MakePathAbsolute(char *base, char *path);
+bool StringAllPrintable(char *str);
 
 class System {
 public:
@@ -531,6 +532,7 @@ public:
     float   exportOffset;
     int     drawBackFaces;
     int     showToolbar;
+    DWORD   backgroundColor;
     int     exportShadedTriangles;
     int     exportPwlCurves;
     int     exportCanvasSizeAuto;

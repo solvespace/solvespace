@@ -143,7 +143,8 @@ void TextWindow::ShowListOfGroups(void) {
     Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
         &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial));
-    Printf(false,  "  %Fl%Ls%fconfiguration%E",
+    Printf(true,  "  %Fl%Ls%fline styles%E / %Fl%Ls%fconfiguration%E",
+        &(TextWindow::ScreenShowListOfStyles),
         &(TextWindow::ScreenShowConfiguration));
 
     // Show license info
@@ -915,7 +916,8 @@ void TextWindow::EditControlDone(char *s) {
                     // already constrained, because that would break
                     // convergence.
                     if(c == 0) {
-                        SK.GetParam(g->h.param(3))->val = PI/(2*ev);
+                        double copies = (g->skipFirst) ? (ev + 1) : ev;
+                        SK.GetParam(g->h.param(3))->val = PI/(2*copies);
                     }
                 }
 
@@ -927,14 +929,7 @@ void TextWindow::EditControlDone(char *s) {
             break;
         }
         case EDIT_GROUP_NAME: {
-            char *t;
-            bool invalid = false;
-            for(t = s; *t; t++) {
-                if(!(isalnum(*t) || *t == '-' || *t == '_')) {
-                    invalid = true;
-                }
-            }
-            if(invalid || !*s) {
+            if(!StringAllPrintable(s) || !*s) {
                 Error("Invalid characters. Allowed are: A-Z a-z 0-9 _ -");
             } else {
                 SS.UndoRemember();
@@ -942,7 +937,6 @@ void TextWindow::EditControlDone(char *s) {
                 Group *g = SK.GetGroup(edit.group);
                 g->name.strcpy(s);
             }
-            SS.unsaved = true;
             break;
         }
         case EDIT_LIGHT_INTENSITY:
@@ -1081,6 +1075,10 @@ void TextWindow::EditControlDone(char *s) {
             }
             break;
         }
+
+        default:
+            EditControlDoneForStyles(s);
+            break;
     }
     InvalidateGraphics();
     SS.later.showTW = true;

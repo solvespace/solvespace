@@ -1018,7 +1018,9 @@ void GraphicsWindow::Paint(int w, int h) {
     glDepthFunc(GL_LEQUAL);
 
     if(SS.AllGroupsOkay()) {
-        glClearColor(0, 0, 0, 1.0f);
+        glClearColor(REDf(SS.backgroundColor),
+                     GREENf(SS.backgroundColor),
+                     BLUEf(SS.backgroundColor), 1.0f);
     } else {
         // Draw a different background whenever we're having solve problems.
         DWORD rgb = Style::Color(Style::DRAW_ERROR);

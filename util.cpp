@@ -77,6 +77,17 @@ void MakePathAbsolute(char *basep, char *pathp) {
     strcpy(pathp, out);
 }
 
+bool StringAllPrintable(char *str)
+{
+    char *t;
+    for(t = str; *t; t++) {
+        if(!(isalnum(*t) || *t == '-' || *t == '_')) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,

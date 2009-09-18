@@ -52,10 +52,13 @@ public:
     static const int SCREEN_CONFIGURATION       = 3;
     static const int SCREEN_STEP_DIMENSION      = 4;
     static const int SCREEN_MESH_VOLUME         = 5;
+    static const int SCREEN_LIST_OF_STYLES      = 6;
+    static const int SCREEN_STYLE_INFO          = 7;
     typedef struct {
         int         screen;
 
         hGroup      group;
+        hStyle      style;
 
         hConstraint constraint;
         bool        dimIsDistance;
@@ -89,11 +92,17 @@ public:
     // For the step dimension screen
     static const int EDIT_STEP_DIM_FINISH       = 40;
     static const int EDIT_STEP_DIM_STEPS        = 41;
+    // For the styles stuff
+    static const int EDIT_STYLE_WIDTH           = 50;
+    static const int EDIT_STYLE_COLOR           = 51;
+    static const int EDIT_STYLE_NAME            = 52;
+    static const int EDIT_BACKGROUND_COLOR      = 53;
     struct {
         int         meaning;
         int         i;
         hGroup      group;
         hRequest    request;
+        hStyle      style;
     } edit;
 
     static void ReportHowGroupSolved(hGroup hg);
@@ -107,6 +116,8 @@ public:
     void ShowGroupInfo(void);
     void ShowGroupSolveInfo(void);
     void ShowConfiguration(void);
+    void ShowListOfStyles(void);
+    void ShowStyleInfo(void);
     void ShowStepDimension(void);
     void ShowMeshVolume(void);
     // Special screen, based on selection
@@ -142,6 +153,13 @@ public:
     static void ScreenChangeHelixParameter(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 
+    static void ScreenShowListOfStyles(int link, DWORD v);
+    static void ScreenShowStyleInfo(int link, DWORD v);
+    static void ScreenDeleteStyle(int link, DWORD v);
+    static void ScreenChangeStyleYesNo(int link, DWORD v);
+    static void ScreenCreateCustomStyle(int link, DWORD v);
+    static void ScreenLoadFactoryDefaultStyles(int link, DWORD v);
+
     static void ScreenShowConfiguration(int link, DWORD v);
     static void ScreenGoToWebsite(int link, DWORD v);
 
@@ -168,7 +186,12 @@ public:
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
+    static void ScreenChangeStyleName(int link, DWORD v);
+    static void ScreenChangeStyleWidth(int link, DWORD v);
+    static void ScreenChangeStyleColor(int link, DWORD v);
+    static void ScreenChangeBackgroundColor(int link, DWORD v);
 
+    bool EditControlDoneForStyles(char *s);
     void EditControlDone(char *s);
 };
 
