@@ -636,6 +636,9 @@ void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
     ShowTextEditControl(57, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
+void TextWindow::ScreenChangeFixExportColors(int link, DWORD v) {
+    SS.fixExportColors = !SS.fixExportColors;
+}
 void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     InvalidateGraphics();
@@ -786,7 +789,14 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft draw back faces: "
+    Printf(false, "%Ft fix white exported lines: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeFixExportColors,
+        ( SS.fixExportColors ? "" : "yes"), ( SS.fixExportColors ? "yes" : ""),
+        &ScreenChangeFixExportColors,
+        (!SS.fixExportColors ? "" : "no"),  (!SS.fixExportColors ? "no"  : ""));
+
+    Printf(false, "%Ft draw triangle back faces: "
                   "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
         &ScreenChangeBackFaces,
         (SS.drawBackFaces ? "" : "yes"), (SS.drawBackFaces ? "yes" : ""),

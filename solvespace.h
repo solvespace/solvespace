@@ -395,28 +395,34 @@ public:
     static VectorFileWriter *ForFile(char *file);
 
     void Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm);
-    void BezierAsPwl(SBezier *sb);
-    void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual void Bezier(SBezier *sb) = 0;
-    virtual void LineSegment(double x0, double y0, double x1, double y1) = 0;
+    void BezierAsPwl(DWORD rgb, double width, SBezier *sb);
+    void BezierAsNonrationalCubic(DWORD rgb, double width, 
+                                    SBezier *sb, int depth=0);
+
+    virtual void Bezier(DWORD rgb, double width, SBezier *sb) = 0;
+    virtual void LineSegment(DWORD rgb, double width,
+                                double x0, double y0, double x1, double y1) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void LineSegment(double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
-    void LineSegment(double x0, double y0, double x1, double y1);
+    static char *StyleString(DWORD rgb, double width);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -425,35 +431,40 @@ public:
     DWORD xref[10];
     DWORD bodyStart;
 
-    void LineSegment(double x0, double y0, double x1, double y1);
+    static char *StyleString(DWORD rgb, double width);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
-    static const char *SVG_STYLE;
-    void LineSegment(double x0, double y0, double x1, double y1);
+    static char *StyleString(DWORD rgb, double width);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
-    void LineSegment(double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
-    void LineSegment(double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, 
+                        double x0, double y0, double x1, double y1);
     void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
+    void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -530,6 +541,7 @@ public:
     double  cameraTangent;
     float   exportScale;
     float   exportOffset;
+    int     fixExportColors;
     int     drawBackFaces;
     int     showToolbar;
     DWORD   backgroundColor;

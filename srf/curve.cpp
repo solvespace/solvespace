@@ -104,6 +104,13 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q) {
 bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
     if(deg != 2) return false;
 
+    if(ctrl[1].DistanceToLine(ctrl[0], ctrl[2].Minus(ctrl[0])) < LENGTH_EPS) {
+        // This is almost a line segment. So it's a circle with very large
+        // radius, which is likely to make code that tries to handle circles
+        // blow up. So return false.
+        return false;
+    }
+
     Vector t0 = (ctrl[0]).Minus(ctrl[1]),
            t2 = (ctrl[2]).Minus(ctrl[1]),
            r0 = axis.Cross(t0),

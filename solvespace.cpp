@@ -68,6 +68,8 @@ void SolveSpace::Init(char *cmdLine) {
     exportScale = CnfThawFloat(1.0f, "ExportScale");
     // Export offset (cutter radius comp)
     exportOffset = CnfThawFloat(0.0f, "ExportOffset");
+    // Rewrite exported colors close to white into black (assuming white bg)
+    fixExportColors = CnfThawDWORD(1, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
     // Export shaded triangles in a 2d view
@@ -152,6 +154,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportScale, "ExportScale");
     // Export offset (cutter radius comp)
     CnfFreezeFloat(exportOffset, "ExportOffset");
+    // Rewrite exported colors close to white into black (assuming white bg)
+    CnfFreezeDWORD(fixExportColors, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
     // Export shaded triangles in a 2d view

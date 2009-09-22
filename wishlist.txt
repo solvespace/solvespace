@@ -1,8 +1,7 @@
 
 grid
-line styles (color, thickness)
-background color setting
 better text
+right-click menu
 faster triangulation
 interpolating splines
 

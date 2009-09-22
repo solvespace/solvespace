@@ -82,6 +82,16 @@ void SolveSpace::ExportSectionTo(char *filename) {
        &el, 
        (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);
 
+    // All of these are solid model edges, so use the appropriate style.
+    SEdge *se;
+    for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
+        se->auxA = Style::SOLID_EDGE;
+    }
+    SBezier *sb;
+    for(sb = bl.l.First(); sb; sb = bl.l.NextAfter(sb)) {
+        sb->auxA = Style::SOLID_EDGE;
+    }
+
     el.CullExtraneousEdges();
     bl.CullIdenticalBeziers();
 
@@ -137,7 +147,7 @@ void SolveSpace::ExportViewTo(char *filename) {
         SEdgeList *selr = &(g->displayEdges);
         SEdge *se;
         for(se = selr->l.First(); se; se = selr->l.NextAfter(se)) {
-            edges.AddEdge(se->a, se->b);
+            edges.AddEdge(se->a, se->b, Style::SOLID_EDGE);
         }
     }
 
@@ -406,30 +416,40 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
     }
     if(sel) {
         for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
-            LineSegment(e->a.x, e->a.y, e->b.x, e->b.y);
+            if(!Style::Exportable(e->auxA)) continue;
+
+            DWORD rgb = Style::Color  (e->auxA, true);
+            double w  = Style::WidthMm(e->auxA);
+            LineSegment(rgb, w, e->a.x, e->a.y, e->b.x, e->b.y);
         }
     }
     if(sbl) {
         for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
-            Bezier(b);
+            if(!Style::Exportable(b->auxA)) continue;
+
+            DWORD rgb = Style::Color  (b->auxA, true);
+            double w  = Style::WidthMm(b->auxA);
+            Bezier(rgb, w, b);
         }
     }
     FinishAndCloseFile();
 }
 
-void VectorFileWriter::BezierAsPwl(SBezier *sb) {
+void VectorFileWriter::BezierAsPwl(DWORD rgb, double width, SBezier *sb) {
     List<Vector> lv;
     ZERO(&lv);
     sb->MakePwlInto(&lv);
     int i;
     for(i = 1; i < lv.n; i++) {
-        LineSegment(lv.elem[i-1].x, lv.elem[i-1].y,
-                    lv.elem[i  ].x, lv.elem[i  ].y);
+        LineSegment(rgb, width, lv.elem[i-1].x, lv.elem[i-1].y,
+                                lv.elem[i  ].x, lv.elem[i  ].y);
     }
     lv.Clear();
 }
 
-void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
+void VectorFileWriter::BezierAsNonrationalCubic(DWORD rgb, double width,
+            SBezier *sb, int depth)
+{
     Vector t0 = sb->TangentAt(0), t1 = sb->TangentAt(1);
     // The curve is correct, and the first derivatives are correct, at the
     // endpoints.
@@ -457,12 +477,12 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
     }
     
     if(closeEnough || depth > 3) {
-        Bezier(&bnr);
+        Bezier(rgb, width, &bnr);
     } else {
         SBezier bef, aft;
         sb->SplitAt(0.5, &bef, &aft);
-        BezierAsNonrationalCubic(&bef, depth+1);
-        BezierAsNonrationalCubic(&aft, depth+1);
+        BezierAsNonrationalCubic(rgb, width, &bef, depth+1);
+        BezierAsNonrationalCubic(rgb, width, &aft, depth+1);
     }
 }
 

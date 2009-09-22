@@ -111,6 +111,8 @@ void Style::FreezeDefaultStyles(void) {
 // the style, according to our table of default styles.
 //-----------------------------------------------------------------------------
 Style *Style::Get(hStyle h) {
+    if(h.v == 0) h.v = ACTIVE_GRP;
+
     Style *s = SK.style.FindByIdNoOops(h);
     if(s) {
         // It exists, good.
@@ -140,6 +142,19 @@ float Style::Width(int s) {
 //-----------------------------------------------------------------------------
 DWORD Style::Color(hStyle h, bool forExport) {
     Style *s = Get(h);
+    if(forExport) {
+        Vector rgb = Vector::From(REDf(s->color),
+                                  GREENf(s->color),
+                                  BLUEf(s->color));
+        rgb = rgb.Minus(Vector::From(1, 1, 1));
+        if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
+            // This is an almost-white color in a default style, which is
+            // good for the default on-screen view (black bg) but probably
+            // not desired in the exported files, which typically are shown
+            // against white backgrounds.
+            return RGB(0, 0, 0);
+        }
+    }
     return s->color;
 }
 
@@ -156,6 +171,24 @@ float Style::Width(hStyle h) {
     }
     // This returns a float because glLineWidth expects a float, avoid casts.
     return (float)r;
+}
+
+//-----------------------------------------------------------------------------
+// Return the width associated with our style in millimeters..
+//-----------------------------------------------------------------------------
+double Style::WidthMm(int hs) {
+    double widthpx = Width(hs);
+    return widthpx / SS.GW.scale;
+}
+
+//-----------------------------------------------------------------------------
+// Should lines and curves from this style appear in the output file? Only
+// if it's both shown and exportable.
+//-----------------------------------------------------------------------------
+bool Style::Exportable(int si) {
+    hStyle hs = { si };
+    Style *s = Get(hs);
+    return (s->exportable) && (s->visible);
 }
 
 //-----------------------------------------------------------------------------
@@ -432,6 +465,39 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenChangeStyleYesNo,
             (!s->exportable ? "" : "no"),
             (!s->exportable ? "no" : ""));
+
+        Printf(false, "");
+        Printf(false, "To assign lines or curves to this style,");
+        Printf(false, "select them on the drawing. Then commit");
+        Printf(false, "by clicking the link at the bottom of");
+        Printf(false, "this window.");
     }
+}
+
+void TextWindow::ScreenAssignSelectionToStyle(int link, DWORD v) {
+    bool showError = false;
+    SS.GW.GroupSelection();
+
+    SS.UndoRemember();
+    for(int i = 0; i < SS.GW.gs.entities; i++) {
+        hEntity he = SS.GW.gs.entity[i];
+        if(!he.isFromRequest()) {
+            showError = true;
+            continue;
+        }
+
+        hRequest hr = he.request();
+        Request *r = SK.GetRequest(hr);
+        r->style.v = v;
+        SS.later.generateAll = true;
+    }
+
+    if(showError) {
+        Error("Can't assign style to an entity that's derived from another "
+              "entity; try assigning a style to this entity's parent.");
+    }
+
+    SS.GW.ClearSelection();
+    InvalidateGraphics();
 }
 

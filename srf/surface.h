@@ -62,6 +62,8 @@ public:
 class SBezier {
 public:
     int             tag;
+    int             auxA, auxB;
+
     int             deg;
     Vector          ctrl[4];
     double          weight[4];

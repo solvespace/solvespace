@@ -353,12 +353,8 @@ void SContour::AddPoint(Vector p) {
 
 void SContour::MakeEdgesInto(SEdgeList *el) {
     int i;
-    for(i = 0; i < (l.n-1); i++) {
-        SEdge e;
-        e.tag = 0;
-        e.a = l.elem[i].p;
-        e.b = l.elem[i+1].p;
-        el->l.Add(&e);
+    for(i = 0; i < (l.n - 1); i++) {
+        el->AddEdge(l.elem[i].p, l.elem[i+1].p);
     }
 }
 

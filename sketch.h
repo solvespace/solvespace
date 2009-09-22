@@ -659,6 +659,8 @@ public:
     static float Width(hStyle hs);
     static DWORD Color(int hs, bool forExport=false);
     static float Width(int hs);
+    static double WidthMm(int hs);
+    static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
 
     char *DescriptionString(void);

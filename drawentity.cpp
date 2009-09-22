@@ -179,7 +179,7 @@ void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
         ZERO(&lv);
         sb->MakePwlInto(&lv);
         for(j = 1; j < lv.n; j++) {
-            el->AddEdge(lv.elem[j-1], lv.elem[j]);
+            el->AddEdge(lv.elem[j-1], lv.elem[j], style.v);
         }
         lv.Clear();
     }
@@ -230,6 +230,11 @@ bool Entity::IsVisible(void) {
         }
     }
 
+    if(style.v) {
+        Style *s = Style::Get(style);
+        if(!s->visible) return false;
+    }
+
     if(forceHidden) return false;
 
     return true;
@@ -259,8 +264,10 @@ bool Entity::PointIsFromReferences(void) {
     return h.request().IsFromReferences();
 }
 
-void Entity::GenerateBezierCurves(SBezierList  *sbl) {
+void Entity::GenerateBezierCurves(SBezierList *sbl) {
     SBezier sb;
+
+    int i = sbl->l.n;
 
     switch(type) {
         case LINE_SEGMENT: {
@@ -356,6 +363,11 @@ void Entity::GenerateBezierCurves(SBezierList  *sbl) {
         default:
             // Not a problem, points and normals and such don't generate curves
             break;
+    }
+
+    // Record our style for all of the Beziers that we just created.
+    for(; i < sbl->l.n; i++) {
+        sbl->l.elem[i].auxA = style.v;
     }
 }
 

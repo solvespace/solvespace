@@ -20,7 +20,7 @@ bool Constraint::HasLabel(void) {
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         if(dogd.sel) {
-            dogd.sel->AddEdge(a, b);
+            dogd.sel->AddEdge(a, b, Style::CONSTRAINT);
         } else {
             glBegin(GL_LINE_STRIP);
                 glxVertex3v(a);

@@ -159,10 +159,12 @@ public:
     static void ScreenChangeStyleYesNo(int link, DWORD v);
     static void ScreenCreateCustomStyle(int link, DWORD v);
     static void ScreenLoadFactoryDefaultStyles(int link, DWORD v);
+    static void ScreenAssignSelectionToStyle(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
     static void ScreenGoToWebsite(int link, DWORD v);
 
+    static void ScreenChangeFixExportColors(int link, DWORD v);
     static void ScreenChangeBackFaces(int link, DWORD v);
     static void ScreenChangePwlCurves(int link, DWORD v);
     static void ScreenChangeCanvasSizeAuto(int link, DWORD v);

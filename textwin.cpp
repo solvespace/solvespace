@@ -414,6 +414,12 @@ void TextWindow::DescribeSelection(void) {
             Entity *w = SK.GetEntity(e->workplane);
             Printf(false, "%FtIN WORKPLANE%E  %s", w->DescriptionString());
         }
+        if(e->style.v) {
+            Style *s = Style::Get(e->style);
+            Printf(false, "%FtIN STYLE%E      %s", s->DescriptionString());
+        } else {
+            Printf(false, "%FtIN STYLE%E      none");
+        }
     } else if(gs.n == 2 && gs.points == 2) {
         Printf(false, "%FtTWO POINTS");
         Vector p0 = SK.GetEntity(gs.point[0])->PointGetNum();
@@ -479,6 +485,31 @@ void TextWindow::DescribeSelection(void) {
         }
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
+    }
+
+    if(shown.screen == SCREEN_STYLE_INFO && 
+       shown.style.v >= Style::FIRST_CUSTOM)
+    {
+        // If we are showing a screen for a particular style, then offer the
+        // option to assign our selected entities to that style.
+        Style *s = Style::Get(shown.style);
+        Printf(true, "%Fl%D%f%Ll(assign to style %s)%E",
+            shown.style.v,
+            &ScreenAssignSelectionToStyle,
+            s->DescriptionString());
+    }
+    // If any of the selected entities have an assigned style, then offer
+    // the option to remove that style.
+    for(i = 0; i < gs.entities; i++) {
+        Entity *e = SK.GetEntity(gs.entity[i]);
+        if(e->style.v != 0) {
+            break;
+        }
+    }
+    if(i < gs.entities) {
+        Printf(true, "%Fl%D%f%Ll(remove assigned style)%E",
+            0,
+            &ScreenAssignSelectionToStyle);
     }
 
     Printf(true, "%Fl%f%Ll(unselect all)%E", &TextWindow::ScreenUnselectAll);

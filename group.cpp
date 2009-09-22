@@ -579,6 +579,8 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
         en.point[0] = Remap(ep->h, REMAP_TOP);
         en.point[1] = Remap(ep->h, REMAP_BOTTOM);
         en.group = h;
+        en.construction = ep->construction;
+        en.style = ep->style;
         en.h = Remap(ep->h, REMAP_PT_TO_LINE);
         en.type = Entity::LINE_SEGMENT;
         el->Add(&en);
@@ -596,6 +598,8 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
         en.numNormal = Quaternion::From(0, ab.x, ab.y, ab.z);
 
         en.group = h;
+        en.construction = ep->construction;
+        en.style = ep->style;
         en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
         en.type = Entity::FACE_XPROD;
         el->Add(&en);
@@ -636,6 +640,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     en.timesApplied = timesApplied;
     en.group = h;
     en.construction = ep->construction;
+    en.style = ep->style;
 
     switch(ep->type) {
         case Entity::WORKPLANE:
