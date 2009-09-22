@@ -120,7 +120,7 @@ void SolveSpace::ExportViewTo(char *filename) {
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
     }
-    if(sm->IsEmpty()) {
+    if(sm && sm->IsEmpty()) {
         sm = NULL;
     }
 
@@ -280,10 +280,17 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
 
         SEdge *se;
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            if(se->auxA == Style::CONSTRAINT) {
+                // Constraints should not get hidden line removed; they're
+                // always on top.
+                hlrd.AddEdge(se->a, se->b, se->auxA);
+                continue;
+            }
+
             SEdgeList out;
             ZERO(&out);
             // Split the original edge against the mesh
-            out.AddEdge(se->a, se->b);
+            out.AddEdge(se->a, se->b, se->auxA);
             root->OcclusionTestLine(*se, &out, cnt);
             // the occlusion test splits unnecessarily; so fix those
             out.MergeCollinearSegments(se->a, se->b);
@@ -291,7 +298,7 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
             // And add the results to our output
             SEdge *sen;
             for(sen = out.l.First(); sen; sen = out.l.NextAfter(sen)) {
-                hlrd.AddEdge(sen->a, sen->b);
+                hlrd.AddEdge(sen->a, sen->b, sen->auxA);
             }
             out.Clear();
         }

@@ -79,9 +79,10 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
    
-    int nh;
+    int nh = -1;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
-    if(withinToolbar) {
+    // They might have clicked within the toolbar, but not on a button.
+    if(withinToolbar && nh >= 0) {
         for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
             if(nh == SS.GW.menu[i].id) {
                 (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)SS.GW.menu[i].id);

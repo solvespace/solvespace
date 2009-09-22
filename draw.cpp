@@ -281,7 +281,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     // but it's given with respect to screen projection frame
     aa = aa.ScaleOutOfCsys(projRight, projUp, out);
     double aam = aa.Magnitude();
-    aa = aa.WithMagnitude(1);
+    if(aam != 0.0) aa = aa.WithMagnitude(1);
 
     // This can either transform our view, or transform an imported part.
     GroupSelection();

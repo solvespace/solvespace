@@ -630,10 +630,11 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
     Vector tn = tr->Normal().WithMagnitude(1);
     double td = tn.Dot(tr->a);
 
-    // Consider front-facing triangles only
+    // Consider front-facing triangles only.
     if(tn.z > LENGTH_EPS) {
         // If the edge crosses our triangle's plane, then split into above
-        // and below parts.
+        // and below parts. Note that we must preserve auxA, which contains
+        // the style associated with this line.
         SEdge *se;
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
             double da = (se->a).Dot(tn) - td,
@@ -644,12 +645,12 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
                 Vector m = Vector::AtIntersectionOfPlaneAndLine(
                                         tn, td,
                                         se->a, se->b, NULL);
-                seln.AddEdge(m, se->b);
+                seln.AddEdge(m, se->b, se->auxA);
                 se->b = m;
             }
         }
         for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
-            sel->AddEdge(se->a, se->b);
+            sel->AddEdge(se->a, se->b, se->auxA);
         }
         seln.Clear();
 
@@ -659,10 +660,10 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
             if(pt.Dot(tn) - td > -LENGTH_EPS) {
                 // Edge is in front of or on our plane (remember, tn.z > 0)
                 // so it is exempt from further splitting
-                se->auxA = 1;
+                se->auxB = 1;
             } else {
                 // Edge is behind our plane, needs further splitting
-                se->auxA = 0;
+                se->auxB = 0;
             }
         }
 
@@ -684,7 +685,7 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
         int i;
         for(i = 0; i < 3; i++) {
             for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
-                if(se->auxA) continue;
+                if(se->auxB) continue;
 
                 Point2d ap = (se->a).ProjectXy(),
                         bp = (se->b).ProjectXy();
@@ -696,18 +697,20 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
                     double dab = (db - da);
                     Vector spl = ((se->a).ScaledBy( db/dab)).Plus(
                                   (se->b).ScaledBy(-da/dab));
-                    seln.AddEdge(spl, se->b);
+                    seln.AddEdge(spl, se->b, se->auxA);
                     se->b = spl;
                 }
             }
             for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
-                sel->AddEdge(se->a, se->b, 0);
+                // The split pieces are all behind the triangle, since only
+                // edges behind the triangle got split. So their auxB is 0.
+                sel->AddEdge(se->a, se->b, se->auxA, 0);
             }
             seln.Clear();
         }
        
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
-            if(se->auxA) {
+            if(se->auxB) {
                 // Lies above or on the triangle plane, so triangle doesn't
                 // occlude it.
                 se->tag = 0;
@@ -929,7 +932,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                         // This triangle is back-facing (or on edge), and
                         // this edge has exactly one mate, and that mate is
                         // front-facing. So this is a turning edge.
-                        sel->AddEdge(a, b);
+                        sel->AddEdge(a, b, Style::SOLID_EDGE);
                     }
                     break;
 
