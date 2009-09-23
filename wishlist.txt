@@ -2,10 +2,11 @@
 grid
 better text
 right-click menu
-faster triangulation
-interpolating splines
+wireframe export
 
 -----
+faster triangulation
+interpolating splines
 copy and paste
 loop detection
 IGES export

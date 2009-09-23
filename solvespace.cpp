@@ -27,7 +27,7 @@ void SolveSpace::CheckLicenseFromRegistry(void) {
     }
 
     const int SECONDS_IN_DAY = 60*60*24;
-    license.trialDaysRemaining = 90 -
+    license.trialDaysRemaining = 30 -
         (int)(((now - license.firstUse))/SECONDS_IN_DAY);
 }
 

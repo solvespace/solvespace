@@ -20,6 +20,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
 {
     if(GraphicsEditControlIsVisible()) return;
+    if(context.active) return;
+
     if(rightDown) {
         middleDown = true;
         shiftDown = !shiftDown;
@@ -33,6 +35,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 
     Point2d mp = { x, y };
+
+    if(rightDown && orig.mouse.DistanceTo(mp) < 5 && !orig.startedMoving) {
+        // Avoid accidentally panning (or rotating if shift is down) if the
+        // user wants a context menu.
+        return;
+    }
+    orig.startedMoving = true;
 
     // If the middle button is down, then mouse movement is used to pan and
     // rotate our view. This wins over everything else.
@@ -347,18 +356,174 @@ void GraphicsWindow::ClearPending(void) {
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     if(GraphicsEditControlIsVisible()) return;
 
-    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
-        // Special case; use a middle or right click to stop drawing lines,
-        // since a left click would draw another one. This is quicker and
-        // more intuitive than hitting escape.
-        ClearPending();
-    }
-
     orig.offset = offset;
     orig.projUp = projUp;
     orig.projRight = projRight;
     orig.mouse.x = x;
     orig.mouse.y = y;
+    orig.startedMoving = false;
+}
+
+void GraphicsWindow::ContextMenuListStyles(void) {
+    CreateContextSubmenu();
+    Style *s;
+    bool empty = true;
+    for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
+        if(s->h.v < Style::FIRST_CUSTOM) continue;
+
+        AddContextMenuItem(s->DescriptionString(), CMNU_FIRST_STYLE + s->h.v);
+        empty = false;
+    }
+
+    if(!empty) AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+
+    AddContextMenuItem("No Style", CMNU_NO_STYLE);
+    AddContextMenuItem("Newly Created Custom Style...", CMNU_NEW_CUSTOM_STYLE);
+}
+
+void GraphicsWindow::MouseRightUp(double x, double y) {
+    // Don't show a context menu if the user is right-clicking the toolbar,
+    // or if they are finishing a pan.
+    if(ToolbarMouseMoved((int)x, (int)y)) return;
+    if(orig.startedMoving) return;
+
+    if(context.active) return;
+    context.active = true;
+
+    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
+        // Special case; use a right click to stop drawing lines, since
+        // a left click would draw another one. This is quicker and more
+        // intuitive than hitting escape.
+        ClearPending();
+    }
+
+    GroupSelection();
+    if(hover.IsEmpty() && gs.n == 0 && gs.constraints == 0) {
+        // No reason to display a context menu.
+        goto done;
+    }
+
+    // We can either work on the selection (like the functions are designed to)
+    // or on the hovered item. In the latter case we can fudge things by just
+    // selecting the hovered item, and then applying our operation to the
+    // selection.
+    bool toggleForStyles = false,
+         toggleForGroupInfo = false,
+         toggleForDelete = false;
+
+    if(!hover.IsEmpty()) {
+        AddContextMenuItem("Toggle Hovered Item Selection", 
+            CMNU_TOGGLE_SELECTION);
+    }
+
+    if(gs.entities > 0) {
+        ContextMenuListStyles();
+        AddContextMenuItem("Assign Selection to Style", CONTEXT_SUBMENU);
+    } else if(hover.entity.v && gs.n == 0 && gs.constraints == 0) {
+        ContextMenuListStyles();
+        AddContextMenuItem("Assign Hovered Item to Style", CONTEXT_SUBMENU);
+        toggleForStyles = true;
+    }
+
+    if(gs.n + gs.constraints == 1) {
+        AddContextMenuItem("Group Info for Selected Item", CMNU_GROUP_INFO);
+    } else if(!hover.IsEmpty() && gs.n == 0 && gs.constraints == 0) {
+        AddContextMenuItem("Group Info for Hovered Item", CMNU_GROUP_INFO);
+        toggleForGroupInfo = true;
+    }
+
+    if(hover.constraint.v && gs.n == 0 && gs.constraints == 0) {
+        Constraint *c = SK.GetConstraint(hover.constraint);
+        if(c->HasLabel()) {
+            AddContextMenuItem("Toggle Reference Dimension",
+                CMNU_REFERENCE_DIM);
+        }
+        if(c->type == Constraint::ANGLE ||
+           c->type == Constraint::EQUAL_ANGLE)
+        {
+            AddContextMenuItem("Other Supplementary Angle",
+                CMNU_OTHER_ANGLE);
+        }
+    }
+
+    if(gs.n > 0 || gs.constraints > 0) {
+        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+        AddContextMenuItem("Delete Selection", CMNU_DELETE_SEL);
+        AddContextMenuItem("Unselect All", CMNU_UNSELECT_ALL);
+    } else if(!hover.IsEmpty()) {
+        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+        AddContextMenuItem("Delete Hovered Item", CMNU_DELETE_SEL);
+        toggleForDelete = true;
+    }
+
+    int ret = ShowContextMenu();
+    switch(ret) {
+        case CMNU_TOGGLE_SELECTION:
+            ToggleSelectionStateOfHovered();
+            break;
+
+        case CMNU_UNSELECT_ALL:
+            MenuEdit(MNU_UNSELECT_ALL);
+            break;
+
+        case CMNU_DELETE_SEL:
+            if(toggleForDelete) ToggleSelectionStateOfHovered();
+            MenuEdit(MNU_DELETE);
+            break;
+
+        case CMNU_REFERENCE_DIM:
+            ToggleSelectionStateOfHovered();
+            Constraint::MenuConstrain(MNU_REFERENCE);
+            break;
+
+        case CMNU_OTHER_ANGLE:
+            ToggleSelectionStateOfHovered();
+            Constraint::MenuConstrain(MNU_OTHER_ANGLE);
+            break;
+
+        case CMNU_GROUP_INFO: {
+            if(toggleForGroupInfo) ToggleSelectionStateOfHovered();
+            GroupSelection();
+            hGroup hg;
+            if(gs.entities == 1) {
+                hg = SK.GetEntity(gs.entity[0])->group;
+            } else if(gs.points == 1) {
+                hg = SK.GetEntity(gs.point[0])->group;
+            } else if(gs.constraints == 1) {
+                hg = SK.GetConstraint(gs.constraint[0])->group;
+            } else {
+                break;
+            }
+            ClearSelection();
+            SS.TW.GoToScreen(TextWindow::SCREEN_GROUP_INFO);
+            SS.TW.shown.group = hg;
+            SS.later.showTW = true;
+            break;
+        }
+
+        case CMNU_NEW_CUSTOM_STYLE: {
+            if(toggleForStyles) ToggleSelectionStateOfHovered();
+            DWORD v = Style::CreateCustomStyle();
+            Style::AssignSelectionToStyle(v);
+            break;
+        }
+
+        case CMNU_NO_STYLE:
+            if(toggleForStyles) ToggleSelectionStateOfHovered();
+            Style::AssignSelectionToStyle(0);
+            break;
+
+        default:
+            if(ret >= CMNU_FIRST_STYLE) {
+                if(toggleForStyles) ToggleSelectionStateOfHovered();
+                Style::AssignSelectionToStyle(ret - CMNU_FIRST_STYLE);
+            }
+            // otherwise it was probably cancelled, so do nothing
+            break;
+    }
+
+done:
+    context.active = false;
 }
 
 hRequest GraphicsWindow::AddRequest(int type) {
@@ -607,43 +772,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
 
         case 0:
-        default: {
+        default:
             ClearPending();
-
-            if(hover.IsEmpty()) break;
-
-            // If an item is hovered, then by clicking on it, we toggle its
-            // selection state.
-            int i;
-            for(i = 0; i < MAX_SELECTED; i++) {
-                if(selection[i].Equals(&hover)) {
-                    selection[i].Clear();
-                    break;
-                }
-            }
-            if(i != MAX_SELECTED) break;
-
-            if(hover.entity.v != 0 && SK.GetEntity(hover.entity)->IsFace()) {
-                // In the interest of speed for the triangle drawing code,
-                // only two faces may be selected at a time.
-                int c = 0;
-                for(i = 0; i < MAX_SELECTED; i++) {
-                    hEntity he = selection[i].entity;
-                    if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
-                        c++;
-                        if(c >= 2) selection[i].Clear();
-                    }
-                }
-            }
-
-            for(i = 0; i < MAX_SELECTED; i++) {
-                if(selection[i].IsEmpty()) {
-                    selection[i] = hover;
-                    break;
-                }
-            }
+            ToggleSelectionStateOfHovered();
             break;
-        }
     }
 
     SS.later.showTW = true;
@@ -771,11 +903,14 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
 }
 
 void GraphicsWindow::MouseLeave(void) {
-    // Un-hover everything when the mouse leaves our window.
-    hover.Clear();
-    toolbarTooltipped = 0;
-    toolbarHovered = 0;
-    PaintGraphics();
+    // Un-hover everything when the mouse leaves our window, unless there's
+    // currently a context menu shown.
+    if(!context.active) {
+        hover.Clear();
+        toolbarTooltipped = 0;
+        toolbarHovered = 0;
+        PaintGraphics();
+    }
 }
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
@@ -851,6 +986,51 @@ void GraphicsWindow::ClearNonexistentSelectionItems(void) {
     if(change) InvalidateGraphics();
 }
 
+//-----------------------------------------------------------------------------
+// Toggle the selection state of the hovered item: if it was selected then
+// un-select it, and if it wasn't then select it.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::ToggleSelectionStateOfHovered(void) {
+    if(hover.IsEmpty()) return;
+
+    // If an item was selected, then we just un-select it.
+    int i;
+    for(i = 0; i < MAX_SELECTED; i++) {
+        if(selection[i].Equals(&hover)) {
+            selection[i].Clear();
+            break;
+        }
+    }
+    if(i != MAX_SELECTED) return;
+
+    // So it's not selected, so we should select it.
+
+    if(hover.entity.v != 0 && SK.GetEntity(hover.entity)->IsFace()) {
+        // In the interest of speed for the triangle drawing code,
+        // only two faces may be selected at a time.
+        int c = 0;
+        for(i = 0; i < MAX_SELECTED; i++) {
+            hEntity he = selection[i].entity;
+            if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
+                c++;
+                if(c >= 2) selection[i].Clear();
+            }
+        }
+    }
+
+    for(i = 0; i < MAX_SELECTED; i++) {
+        if(selection[i].IsEmpty()) {
+            selection[i] = hover;
+            break;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Sort the selection according to various critieria: the entities and
+// constraints separately, counts of certain types of entities (circles,
+// lines, etc.), and so on.
+//-----------------------------------------------------------------------------
 void GraphicsWindow::GroupSelection(void) {
     memset(&gs, 0, sizeof(gs));
     int i;

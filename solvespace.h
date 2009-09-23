@@ -114,6 +114,12 @@ void ShowTextEditControl(int hr, int c, char *s);
 void HideTextEditControl(void);
 BOOL TextEditControlIsVisible(void);
 
+#define CONTEXT_SUBMENU     (-1)
+#define CONTEXT_SEPARATOR   (-2)
+void AddContextMenuItem(char *legend, int id);
+void CreateContextSubmenu(void);
+int ShowContextMenu(void);
+
 void ShowTextWindow(BOOL visible);
 void InvalidateText(void);
 void InvalidateGraphics(void);

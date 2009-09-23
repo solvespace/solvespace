@@ -201,7 +201,6 @@ public:
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
-    void TagEdgesFromLineSegments(SEdgeList *sle);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
@@ -653,6 +652,9 @@ public:
     static void CreateDefaultStyle(hStyle h);
     static void FreezeDefaultStyles(void);
     static void LoadFactoryDefaults(void);
+
+    static void AssignSelectionToStyle(DWORD v);
+    static DWORD CreateCustomStyle(void);
 
     static Style *Get(hStyle hs);
     static DWORD Color(hStyle hs, bool forExport=false);

@@ -313,12 +313,18 @@ public:
         Vector  projRight;
         Vector  projUp;
         Point2d mouse;
+        bool    startedMoving;
     }       orig;
 
     // When the user is dragging a point, don't solve multiple times without
     // allowing a paint in between. The extra solves are wasted if they're
     // not displayed.
     bool    havePainted;
+
+    // Some state for the context menu.
+    struct {
+        bool        active;
+    }       context;
 
     void NormalizeProjectionVectors(void);
     Point2d ProjectPoint(Vector p);
@@ -422,8 +428,19 @@ public:
         int         n;
     } gs;
     void GroupSelection(void);
-
+    void ToggleSelectionStateOfHovered(void);
     void ClearSuper(void);
+
+    static const int CMNU_TOGGLE_SELECTION = 0x100;
+    static const int CMNU_UNSELECT_ALL     = 0x101;
+    static const int CMNU_DELETE_SEL       = 0x102;
+    static const int CMNU_NEW_CUSTOM_STYLE = 0x103;
+    static const int CMNU_NO_STYLE         = 0x104;
+    static const int CMNU_GROUP_INFO       = 0x105;
+    static const int CMNU_REFERENCE_DIM    = 0x106;
+    static const int CMNU_OTHER_ANGLE      = 0x107;
+    static const int CMNU_FIRST_STYLE      = 0x40000000;
+    void ContextMenuListStyles(void);
 
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menu);
@@ -459,6 +476,7 @@ public:
     void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
+    void MouseRightUp(double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave(void);
     void EditControlDone(char *s);

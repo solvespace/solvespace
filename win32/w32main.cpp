@@ -49,6 +49,8 @@ char RecentFile[MAX_RECENT][MAX_PATH];
 HMENU SubMenus[100];
 HMENU RecentOpenMenu, RecentImportMenu;
 
+HMENU ContextMenu, ContextSubmenu;
+
 int ClientIsSmallerBy;
 
 HFONT FixedFont, LinkFont;
@@ -92,6 +94,42 @@ void Message(char *str, ...)
     va_start(f, str);
     DoMessageBox(str, f, FALSE);
     va_end(f);
+}
+
+void AddContextMenuItem(char *label, int id)
+{
+    if(!ContextMenu) ContextMenu = CreatePopupMenu();
+
+    if(id == CONTEXT_SUBMENU) {
+        AppendMenu(ContextMenu, MF_STRING | MF_POPUP, 
+            (UINT_PTR)ContextSubmenu, label);
+        ContextSubmenu = NULL;
+    } else {
+        HMENU m = ContextSubmenu ? ContextSubmenu : ContextMenu;
+        if(id == CONTEXT_SEPARATOR) {
+            AppendMenu(m, MF_SEPARATOR, 0, "");
+        } else {
+            AppendMenu(m, MF_STRING, id, label);
+        }
+    }
+}
+
+void CreateContextSubmenu(void)
+{
+    ContextSubmenu = CreatePopupMenu();
+}
+
+int ShowContextMenu(void)
+{
+    POINT p;
+    GetCursorPos(&p);
+    int r = TrackPopupMenu(ContextMenu, 
+        TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_TOPALIGN,
+        p.x, p.y, 0, GraphicsWnd, NULL);
+
+    DestroyMenu(ContextMenu);
+    ContextMenu = NULL;
+    return r;
 }
 
 void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
@@ -709,6 +747,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_LBUTTONUP:
         case WM_LBUTTONDBLCLK:
         case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
         case WM_MBUTTONDOWN: {
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
@@ -738,6 +777,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                 SS.GW.MouseLeftDoubleClick(x, y);
             } else if(msg == WM_MBUTTONDOWN || msg == WM_RBUTTONDOWN) {
                 SS.GW.MouseMiddleOrRightDown(x, y);
+            } else if(msg == WM_RBUTTONUP) {
+                SS.GW.MouseRightUp(x, y);
             } else if(msg == WM_MOUSEMOVE) {
                 SS.GW.MouseMoved(x, y,
                     !!(wParam & MK_LBUTTON),

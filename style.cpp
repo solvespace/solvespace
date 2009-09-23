@@ -33,8 +33,8 @@ char *Style::CnfWidth(char *prefix) {
 char *Style::CnfPrefixToName(char *prefix) {
     static char name[100];
     int i = 0, j;
-    strcpy(name, "def-");
-    j = 4;
+    strcpy(name, "#def-");
+    j = 5;
     while(prefix[i] && j < 90) {
         if(isupper(prefix[i]) && i != 0) {
             name[j++] = '-';
@@ -104,6 +104,46 @@ void Style::FreezeDefaultStyles(void) {
         CnfFreezeDWORD(Color(d->h), CnfColor(d->cnfPrefix));
         CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
     }
+}
+
+DWORD Style::CreateCustomStyle(void) {
+    SS.UndoRemember();
+    DWORD vs = max(Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
+    hStyle hs = { vs };
+    (void)Style::Get(hs);
+    return hs.v;
+}
+
+void Style::AssignSelectionToStyle(DWORD v) {
+    bool showError = false;
+    SS.GW.GroupSelection();
+
+    SS.UndoRemember();
+    for(int i = 0; i < SS.GW.gs.entities; i++) {
+        hEntity he = SS.GW.gs.entity[i];
+        if(!he.isFromRequest()) {
+            showError = true;
+            continue;
+        }
+
+        hRequest hr = he.request();
+        Request *r = SK.GetRequest(hr);
+        r->style.v = v;
+        SS.later.generateAll = true;
+    }
+
+    if(showError) {
+        Error("Can't assign style to an entity that's derived from another "
+              "entity; try assigning a style to this entity's parent.");
+    }
+
+    SS.GW.ClearSelection();
+    InvalidateGraphics();
+
+    // And show that style's info screen in the text window.
+    SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
+    SS.TW.shown.style.v = v;
+    SS.later.showTW = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -241,10 +281,7 @@ void TextWindow::ScreenLoadFactoryDefaultStyles(int link, DWORD v) {
 }
 
 void TextWindow::ScreenCreateCustomStyle(int link, DWORD v) {
-    SS.UndoRemember();
-    DWORD vs = max(Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
-    hStyle hs = { vs };
-    (void)Style::Get(hs);
+    Style::CreateCustomStyle();
 }
 
 void TextWindow::ScreenChangeBackgroundColor(int link, DWORD v) {
@@ -475,29 +512,6 @@ void TextWindow::ShowStyleInfo(void) {
 }
 
 void TextWindow::ScreenAssignSelectionToStyle(int link, DWORD v) {
-    bool showError = false;
-    SS.GW.GroupSelection();
-
-    SS.UndoRemember();
-    for(int i = 0; i < SS.GW.gs.entities; i++) {
-        hEntity he = SS.GW.gs.entity[i];
-        if(!he.isFromRequest()) {
-            showError = true;
-            continue;
-        }
-
-        hRequest hr = he.request();
-        Request *r = SK.GetRequest(hr);
-        r->style.v = v;
-        SS.later.generateAll = true;
-    }
-
-    if(showError) {
-        Error("Can't assign style to an entity that's derived from another "
-              "entity; try assigning a style to this entity's parent.");
-    }
-
-    SS.GW.ClearSelection();
-    InvalidateGraphics();
+    Style::AssignSelectionToStyle(v);
 }
 

@@ -154,6 +154,8 @@ void GraphicsWindow::Init(void) {
     showTextWindow = true;
     ShowTextWindow(showTextWindow);
 
+    context.active = false;
+
     // Do this last, so that all the menus get updated correctly.
     EnsureValidActives();
 }
