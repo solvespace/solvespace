@@ -181,6 +181,7 @@ typedef IdList<Param,hParam> ParamList;
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
+#define DEFAULT_TEXT_HEIGHT (11.5)
 #define GLX_CALLBACK __stdcall
 typedef void GLX_CALLBACK glxCallbackFptr(void);
 void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
@@ -191,13 +192,14 @@ void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
 void glxMarkPolygonNormal(SPolygon *p);
 typedef void glxLineFn(void *data, Vector a, Vector b);
-void glxWriteText(char *str, Vector t, Vector u, Vector v,
+void glxWriteText(char *str, double h, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
-void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v,
+void glxWriteTextRefCenter(char *str, double h, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
-double glxStrWidth(char *str);
-double glxStrHeight(void);
+double glxStrWidth(char *str, double h);
+double glxStrHeight(double h);
 void glxLockColorTo(DWORD rgb);
+void glxFatLine(Vector a, Vector b, double width);
 void glxUnlockColor(void);
 void glxColorRGB(DWORD rgb);
 void glxColorRGBa(DWORD rgb, double a);

@@ -19,13 +19,26 @@ bool Constraint::HasLabel(void) {
 
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        if(dogd.sel) {
-            dogd.sel->AddEdge(a, b, Style::CONSTRAINT);
+        // Draw comments in the specified style, but everything else in the
+        // default style for constraints.
+        hStyle hs;
+        if(type == COMMENT && disp.style.v) {
+            hs = disp.style;
         } else {
-            glBegin(GL_LINE_STRIP);
-                glxVertex3v(a);
-                glxVertex3v(b);
-            glEnd();
+            hs.v = Style::CONSTRAINT;
+        }
+
+        if(dogd.sel) {
+            dogd.sel->AddEdge(a, b, hs.v);
+        } else {
+            if(hs.v && Style::Width(disp.style) >= 3.0) {
+                glxFatLine(a, b, Style::Width(disp.style) / SS.GW.scale);
+            } else {
+                glBegin(GL_LINE_STRIP);
+                    glxVertex3v(a);
+                    glxVertex3v(b);
+                glEnd();
+            }
         }
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
@@ -70,8 +83,28 @@ char *Constraint::Label(void) {
 }
 
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
+    double th;
+    if(type == COMMENT) {
+        th = Style::TextHeight(disp.style);
+    } else {
+        th = DEFAULT_TEXT_HEIGHT;
+    }
+
     char *s = Label();
-    double swidth = glxStrWidth(s), sheight = glxStrHeight();
+    double swidth  = glxStrWidth(s, th), 
+           sheight = glxStrHeight(th);
+
+    // By default, the reference is from the center; but the style could
+    // specify otherwise if one is present.
+    if(type == COMMENT && disp.style.v) {
+        Style *s = Style::Get(disp.style);
+        int o = s->textOrigin;
+        if(o & Style::ORIGIN_LEFT) ref = ref.Plus(gr.WithMagnitude(swidth/2));
+        if(o & Style::ORIGIN_RIGHT) ref = ref.Minus(gr.WithMagnitude(swidth/2));
+        if(o & Style::ORIGIN_BOT) ref = ref.Plus(gu.WithMagnitude(sheight/2));
+        if(o & Style::ORIGIN_TOP) ref = ref.Minus(gu.WithMagnitude(sheight/2));
+    }
+
     if(labelPos) {
         // labelPos is from the top left corner (for the text box used to
         // edit things), but ref is from the center.
@@ -79,8 +112,9 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
                               gu.WithMagnitude(sheight/2));
     }
 
+
     if(dogd.drawing) {
-        glxWriteTextRefCenter(s, ref, gr, gu, LineCallback, this);
+        glxWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);
@@ -88,7 +122,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         Point2d b = SS.GW.ProjectPoint(ref.Plus (gr.WithMagnitude(l)));
         double d = dogd.mp.DistanceToLine(a, b.Minus(a), true);
 
-        dogd.dmin = min(dogd.dmin, d - 3);
+        dogd.dmin = min(dogd.dmin, d - (th / 2));
         dogd.refp = ref;
     }
 }
@@ -116,8 +150,8 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
 
     double pixels = 1.0 / SS.GW.scale;
     char *s = Label();
-    double swidth  = glxStrWidth(s) + 4*pixels, 
-           sheight = glxStrHeight() + 8*pixels;
+    double swidth  = glxStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels, 
+           sheight = glxStrHeight(DEFAULT_TEXT_HEIGHT)   + 8*pixels;
 
     struct {
         Vector n;
@@ -322,15 +356,18 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
-            glxStrWidth(Label())/2, glxStrHeight()/2, tl);
+            glxStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
+            glxStrHeight(DEFAULT_TEXT_HEIGHT)/2,
+            tl);
         *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
     } else {
         // The lines are skew; no wonderful way to illustrate that.
         *ref = a0.Plus(b0);
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
         gu = gu.WithMagnitude(1);
-        Vector trans = (*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight()));
-        glxWriteTextRefCenter("angle between skew lines", 
+        Vector trans =
+            (*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight(DEFAULT_TEXT_HEIGHT)));
+        glxWriteTextRefCenter("angle between skew lines", DEFAULT_TEXT_HEIGHT,
             trans, gr, gu, LineCallback, this);
     }
 }
@@ -653,7 +690,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             if(dogd.drawing) {
-                glxWriteTextRefCenter("T", textAt, u, v, LineCallback, this);
+                glxWriteTextRefCenter("T", DEFAULT_TEXT_HEIGHT,
+                    textAt, u, v, LineCallback, this);
             } else {
                 dogd.refp = textAt;
                 Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -835,8 +873,8 @@ s:
                                 (type == VERTICAL)    ? "V" : (
                                 (type == AT_MIDPOINT) ? "M" : NULL));
 
-                    glxWriteTextRefCenter(s, m.Plus(offset), r, u,
-                        LineCallback, this);
+                    glxWriteTextRefCenter(s, DEFAULT_TEXT_HEIGHT,
+                        m.Plus(offset), r, u, LineCallback, this);
                 } else {
                     dogd.refp = m.Plus(offset);
                     Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -880,6 +918,10 @@ s:
             break;
 
         case COMMENT:
+            if(disp.style.v) {
+                glLineWidth(Style::Width(disp.style));
+                glxColorRGB(Style::Color(disp.style));
+            }
             DoLabel(disp.offset, labelPos, gr, gu);
             break;
 

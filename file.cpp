@@ -154,7 +154,10 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 's',  "Style.h.v",                'x',    &(SS.sv.s.h.v)                },
     { 's',  "Style.name",               'N',    &(SS.sv.s.name)               },
     { 's',  "Style.width",              'f',    &(SS.sv.s.width)              },
-    { 's',  "Style.widthHow",           'd',    &(SS.sv.s.widthHow)           },
+    { 's',  "Style.widthAs",            'd',    &(SS.sv.s.widthAs)            },
+    { 's',  "Style.textHeight",         'f',    &(SS.sv.s.textHeight)         },
+    { 's',  "Style.textHeightAs",       'd',    &(SS.sv.s.textHeightAs)       },
+    { 's',  "Style.textOrigin",         'x',    &(SS.sv.s.textOrigin)         },
     { 's',  "Style.color",              'x',    &(SS.sv.s.color)              },
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
     { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
@@ -483,6 +486,8 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
         } else if(strcmp(line, "AddRequest")==0) {
 
         } else if(strcmp(line, "AddConstraint")==0) {
+
+        } else if(strcmp(line, "AddStyle")==0) {
 
         } else if(strcmp(line, VERSION_STRING)==0) {
 

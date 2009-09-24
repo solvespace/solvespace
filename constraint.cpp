@@ -654,10 +654,9 @@ void Constraint::MenuConstrain(int id) {
             break;
 
         case GraphicsWindow::MNU_COMMENT:
-            c.type = COMMENT;
-            c.comment.strcpy("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
-            c.disp.offset = SS.GW.offset.ScaledBy(-1);
-            AddConstraint(&c);
+            SS.GW.pending.operation = GraphicsWindow::MNU_COMMENT;
+            SS.GW.pending.description = "click center of comment text";
+            SS.later.showTW = true;
             break;
 
         default: oops();

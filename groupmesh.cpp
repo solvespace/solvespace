@@ -424,7 +424,7 @@ void Group::Draw(void) {
                 glxVertex3v(polyError.notClosedAt.b);
             glEnd();
             glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            glxWriteText("not closed contour!",
+            glxWriteText("not closed contour!", DEFAULT_TEXT_HEIGHT,
                 polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
@@ -439,7 +439,7 @@ void Group::Draw(void) {
             char *msg = (polyError.how == POLY_NOT_COPLANAR) ?
                             "points not all coplanar!" :
                             "contour is self-intersecting!";
-            glxWriteText(msg, 
+            glxWriteText(msg, DEFAULT_TEXT_HEIGHT,
                 polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);

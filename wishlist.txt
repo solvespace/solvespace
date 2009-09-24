@@ -1,7 +1,5 @@
 
 grid
-better text
-right-click menu
 wireframe export
 
 -----

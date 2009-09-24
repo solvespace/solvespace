@@ -6,8 +6,8 @@
 static bool ColorLocked;
 static bool DepthOffsetLocked;
 
-#define FONT_SCALE (0.55)
-double glxStrWidth(char *str) {
+#define FONT_SCALE(h) ((h)/22.0)
+double glxStrWidth(char *str, double h) {
     int w = 0;
     for(; *str; str++) {
         int c = *str;
@@ -16,21 +16,21 @@ double glxStrWidth(char *str) {
 
         w += Font[c].width;
     }
-    return w*FONT_SCALE/SS.GW.scale;
+    return w*FONT_SCALE(h)/SS.GW.scale;
 }
-double glxStrHeight(void) {
-    // The characters have height ~21, as they appear in the table.
-    return 21.0*FONT_SCALE/SS.GW.scale;
+double glxStrHeight(double h) {
+    // The characters have height ~22, as they appear in the table.
+    return 22.0*FONT_SCALE(h)/SS.GW.scale;
 }
-void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v, 
+void glxWriteTextRefCenter(char *str, double h, Vector t, Vector u, Vector v, 
                                 glxLineFn *fn, void *fndata)
 {
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
 
-    double scale = FONT_SCALE/SS.GW.scale;
-    double fh = glxStrHeight();
-    double fw = glxStrWidth(str);
+    double scale = FONT_SCALE(h)/SS.GW.scale;
+    double fh = glxStrHeight(h);
+    double fw = glxStrWidth(str, h);
 
     t = t.Plus(u.ScaledBy(-fw/2));
     t = t.Plus(v.ScaledBy(-fh/2));
@@ -39,7 +39,7 @@ void glxWriteTextRefCenter(char *str, Vector t, Vector u, Vector v,
     t = t.Plus(u.ScaledBy(-5*scale));
     t = t.Plus(v.ScaledBy(-5*scale));
 
-    glxWriteText(str, t, u, v, fn, fndata);
+    glxWriteText(str, h, t, u, v, fn, fndata);
 }
 
 static void LineDrawCallback(void *fndata, Vector a, Vector b)
@@ -51,14 +51,14 @@ static void LineDrawCallback(void *fndata, Vector a, Vector b)
     glEnd();
 }
 
-void glxWriteText(char *str, Vector t, Vector u, Vector v,
+void glxWriteText(char *str, double h, Vector t, Vector u, Vector v,
                     glxLineFn *fn, void *fndata)
 {
     if(!fn) fn = LineDrawCallback;
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
 
-    double scale = FONT_SCALE/SS.GW.scale;
+    double scale = FONT_SCALE(h)/SS.GW.scale;
     int xo = 5;
     int yo = 5;
     
@@ -95,6 +95,57 @@ void glxVertex3v(Vector u)
 {
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }
+
+static void FatLineEndcap(Vector p, Vector u, Vector v)
+{
+    // A table of cos and sin of (pi*i/10 + pi/2), as i goes from 0 to 10
+    static const double Circle[11][2] = {
+        {  0.0000,   1.0000 },
+        { -0.3090,   0.9511 },
+        { -0.5878,   0.8090 },
+        { -0.8090,   0.5878 },
+        { -0.9511,   0.3090 },
+        { -1.0000,   0.0000 },
+        { -0.9511,  -0.3090 },
+        { -0.8090,  -0.5878 },
+        { -0.5878,  -0.8090 },
+        { -0.3090,  -0.9511 },
+        {  0.0000,  -1.0000 },
+    };
+    glBegin(GL_TRIANGLE_FAN);
+    for(int i = 0; i <= 10; i++) {
+        double c = Circle[i][0], s = Circle[i][1];
+        glxVertex3v(p.Plus(u.ScaledBy(c)).Plus(v.ScaledBy(s)));
+    }
+    glEnd();
+}
+
+void glxFatLine(Vector a, Vector b, double width) {
+    // The half-width of the line we're drawing.
+    double hw = width / 2;
+    Vector ab  = b.Minus(a);
+    Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
+    Vector abn = (ab.Cross(gn)).WithMagnitude(1);
+    abn = abn.Minus(gn.ScaledBy(gn.Dot(abn)));
+    // So now abn is normal to the projection of ab into the screen, so the
+    // line will always have constant thickness as the view is rotated.
+
+    abn = abn.WithMagnitude(hw);
+    ab  = gn.Cross(abn);
+    ab  = ab. WithMagnitude(hw);
+
+    // The body of a line is a quad
+    glBegin(GL_QUADS);
+        glxVertex3v(a.Minus(abn));
+        glxVertex3v(b.Minus(abn));
+        glxVertex3v(b.Plus (abn));
+        glxVertex3v(a.Plus (abn));
+    glEnd();
+    // And the line has two semi-circular end caps.
+    FatLineEndcap(a, ab,              abn);
+    FatLineEndcap(b, ab.ScaledBy(-1), abn);
+}
+
 
 void glxLockColorTo(DWORD rgb)
 {

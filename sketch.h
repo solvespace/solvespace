@@ -415,8 +415,6 @@ public:
         Vector      refp;
         double      lineWidth;
     } dogd; // state for drawing or getting distance (for hit testing)
-    void FatLine(Vector a, Vector b);
-    void FatLineEndcap(Vector p, Vector u, Vector v);
     void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false);
     void DrawOrGetDistance(void);
 
@@ -626,10 +624,17 @@ public:
 
     NameStr     name;
 
-    static const int WIDTH_AS_MM       = 0;
-    static const int WIDTH_AS_PIXELS   = 1;
+    static const int UNITS_AS_PIXELS   = 0;
+    static const int UNITS_AS_MM       = 1;
     double      width;
-    int         widthHow;
+    int         widthAs;
+    double      textHeight;
+    int         textHeightAs;
+    static const int ORIGIN_LEFT       = 0x01;
+    static const int ORIGIN_RIGHT      = 0x02;
+    static const int ORIGIN_BOT        = 0x04;
+    static const int ORIGIN_TOP        = 0x08;
+    int         textOrigin;
     DWORD       color;
     bool        visible;
     bool        exportable;
@@ -662,6 +667,7 @@ public:
     static DWORD Color(int hs, bool forExport=false);
     static float Width(int hs);
     static double WidthMm(int hs);
+    static double TextHeight(hStyle hs);
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
 

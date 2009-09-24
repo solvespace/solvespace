@@ -68,12 +68,14 @@ void Style::CreateDefaultStyle(hStyle h) {
 
     Style ns;
     ZERO(&ns);
-    ns.color      = CnfThawDWORD(d->color, CnfColor(d->cnfPrefix));
-    ns.width      = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
-    ns.widthHow   = WIDTH_AS_PIXELS;
-    ns.visible    = true;
-    ns.exportable = true;
-    ns.h          = h;
+    ns.color        = CnfThawDWORD(d->color, CnfColor(d->cnfPrefix));
+    ns.width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    ns.widthAs      = UNITS_AS_PIXELS;
+    ns.textHeight   = DEFAULT_TEXT_HEIGHT;
+    ns.textHeightAs = UNITS_AS_PIXELS;
+    ns.visible      = true;
+    ns.exportable   = true;
+    ns.h            = h;
     if(isDefaultStyle) {
         ns.name.strcpy(CnfPrefixToName(d->cnfPrefix));
     } else {
@@ -88,11 +90,13 @@ void Style::LoadFactoryDefaults(void) {
     for(d = &(Defaults[0]); d->h.v; d++) {
         Style *s = Get(d->h);
 
-        s->color      = d->color;
-        s->width      = d->width;
-        s->widthHow   = WIDTH_AS_PIXELS;
-        s->visible    = true;
-        s->exportable = true;
+        s->color        = d->color;
+        s->width        = d->width;
+        s->widthAs      = UNITS_AS_PIXELS;
+        s->textHeight   = DEFAULT_TEXT_HEIGHT;
+        s->textHeightAs = UNITS_AS_PIXELS;
+        s->visible      = true;
+        s->exportable   = true;
         s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
     }
     SS.backgroundColor = RGB(0, 0, 0);
@@ -119,7 +123,8 @@ void Style::AssignSelectionToStyle(DWORD v) {
     SS.GW.GroupSelection();
 
     SS.UndoRemember();
-    for(int i = 0; i < SS.GW.gs.entities; i++) {
+    int i;
+    for(i = 0; i < SS.GW.gs.entities; i++) {
         hEntity he = SS.GW.gs.entity[i];
         if(!he.isFromRequest()) {
             showError = true;
@@ -130,6 +135,13 @@ void Style::AssignSelectionToStyle(DWORD v) {
         Request *r = SK.GetRequest(hr);
         r->style.v = v;
         SS.later.generateAll = true;
+    }
+    for(i = 0; i < SS.GW.gs.constraints; i++) {
+        hConstraint hc = SS.GW.gs.constraint[i];
+        Constraint *c = SK.GetConstraint(hc);
+        if(c->type != Constraint::COMMENT) continue;
+
+        c->disp.style.v = v;
     }
 
     if(showError) {
@@ -204,9 +216,9 @@ DWORD Style::Color(hStyle h, bool forExport) {
 float Style::Width(hStyle h) {
     double r = 1.0;
     Style *s = Get(h);
-    if(s->widthHow == WIDTH_AS_MM) {
+    if(s->widthAs == UNITS_AS_MM) {
         r = s->width * SS.GW.scale;
-    } else if(s->widthHow == WIDTH_AS_PIXELS) {
+    } else if(s->widthAs == UNITS_AS_PIXELS) {
         r = s->width;
     }
     // This returns a float because glLineWidth expects a float, avoid casts.
@@ -219,6 +231,20 @@ float Style::Width(hStyle h) {
 double Style::WidthMm(int hs) {
     double widthpx = Width(hs);
     return widthpx / SS.GW.scale;
+}
+
+//-----------------------------------------------------------------------------
+// Return the associated text height, in pixels.
+//-----------------------------------------------------------------------------
+double Style::TextHeight(hStyle hs) {
+    Style *s = Get(hs);
+    if(s->textHeightAs == UNITS_AS_MM) {
+        return s->textHeight * SS.GW.scale;
+    } else if(s->textHeightAs == UNITS_AS_PIXELS) {
+        return s->textHeight;
+    } else {
+        return DEFAULT_TEXT_HEIGHT;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -346,18 +372,22 @@ void TextWindow::ScreenDeleteStyle(int link, DWORD v) {
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeStyleWidth(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
+    double val   = (link == 'w') ? s->width   : s->textHeight;
+    int    units = (link == 'w') ? s->widthAs : s->textHeightAs;
+
     char str[300];
-    if(s->widthHow == Style::WIDTH_AS_PIXELS) {
-        sprintf(str, "%.2f", s->width);
+    if(units == Style::UNITS_AS_PIXELS) {
+        sprintf(str, "%.2f", val);
     } else {
-        strcpy(str, SS.MmToString(s->width));
+        strcpy(str, SS.MmToString(val));
     }
-    ShowTextEditControl(16, 8, str);
+    ShowTextEditControl((link == 'w') ? 21 : 26, 13, str);
     SS.TW.edit.style = hs;
-    SS.TW.edit.meaning = EDIT_STYLE_WIDTH;
+    SS.TW.edit.meaning = (link == 'w') ? EDIT_STYLE_WIDTH :
+                                         EDIT_STYLE_TEXT_HEIGHT;
 }
 
 void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
@@ -377,10 +407,24 @@ void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
     Style *s = Style::Get(hs);
     switch(link) {
         case 'w':
-            if(s->widthHow == Style::WIDTH_AS_PIXELS) {
-                s->widthHow = Style::WIDTH_AS_MM;
+            // Units for the width
+            if(s->widthAs == Style::UNITS_AS_PIXELS) {
+                s->widthAs = Style::UNITS_AS_MM;
+                s->width /= SS.GW.scale;
             } else {
-                s->widthHow = Style::WIDTH_AS_PIXELS;
+                s->widthAs = Style::UNITS_AS_PIXELS;
+                s->width *= SS.GW.scale;
+            }
+            break;
+
+        case 'h':
+            // Units for the height
+            if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
+                s->textHeightAs = Style::UNITS_AS_MM;
+                s->textHeight /= SS.GW.scale;
+            } else {
+                s->textHeightAs = Style::UNITS_AS_PIXELS;
+                s->textHeight *= SS.GW.scale;
             }
             break;
 
@@ -391,6 +435,34 @@ void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
         case 'v':
             s->visible = !(s->visible);
             break;
+
+        // Horizontal text alignment
+        case 'L':
+            s->textOrigin |=  Style::ORIGIN_LEFT;
+            s->textOrigin &= ~Style::ORIGIN_RIGHT;
+            break;
+        case 'H':
+            s->textOrigin &= ~Style::ORIGIN_LEFT;
+            s->textOrigin &= ~Style::ORIGIN_RIGHT;
+            break;
+        case 'R':
+            s->textOrigin &= ~Style::ORIGIN_LEFT;
+            s->textOrigin |=  Style::ORIGIN_RIGHT;
+            break;
+
+        // Vertical text alignment
+        case 'B':
+            s->textOrigin |=  Style::ORIGIN_BOT;
+            s->textOrigin &= ~Style::ORIGIN_TOP;
+            break;
+        case 'V':
+            s->textOrigin &= ~Style::ORIGIN_BOT;
+            s->textOrigin &= ~Style::ORIGIN_TOP;
+            break;
+        case 'T':
+            s->textOrigin &= ~Style::ORIGIN_BOT;
+            s->textOrigin |=  Style::ORIGIN_TOP;
+            break;
     }
     InvalidateGraphics();
 }
@@ -398,17 +470,27 @@ void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
 bool TextWindow::EditControlDoneForStyles(char *str) {
     Style *s;
     switch(edit.meaning) {
-        case EDIT_STYLE_WIDTH:
+        case EDIT_STYLE_TEXT_HEIGHT:
+        case EDIT_STYLE_WIDTH: {
             SS.UndoRemember();
             s = Style::Get(edit.style);
-            if(s->widthHow == Style::WIDTH_AS_MM) {
-                s->width = SS.StringToMm(str);
-            } else {
-                s->width = atof(str);
-            }
-            s->width = max(0, s->width);
-            return true;
 
+            double v;
+            int units = (edit.meaning == EDIT_STYLE_TEXT_HEIGHT) ?
+                            s->textHeightAs : s->widthAs;
+            if(units == Style::UNITS_AS_MM) {
+                v = SS.StringToMm(str);
+            } else {
+                v = atof(str);
+            }
+            v = max(0, v);
+            if(edit.meaning == EDIT_STYLE_TEXT_HEIGHT) {
+                s->textHeight = v;
+            } else {
+                s->width = v;
+            }
+            return true;
+        }
         case EDIT_BACKGROUND_COLOR:
         case EDIT_STYLE_COLOR: {
             double r, g, b;
@@ -462,31 +544,6 @@ void TextWindow::ShowStyleInfo(void) {
         REDf(s->color), GREENf(s->color), BLUEf(s->color),
         s->h.v, ScreenChangeStyleColor);
 
-    if(s->widthHow == Style::WIDTH_AS_PIXELS) {
-        Printf(true, "%FtWIDTH   %E%@ %D%f%Ll%Fl[change]%E",
-            s->width,
-            s->h.v, &ScreenChangeStyleWidth);
-    } else {
-        Printf(true, "%FtWIDTH   %E%s %D%f%Ll%Fl[change]%E",
-            SS.MmToString(s->width),
-            s->h.v, &ScreenChangeStyleWidth);
-    }
-
-    char *unit = (SS.viewUnits == SolveSpace::UNIT_INCHES) ? "inches" : "mm";
-    bool widthpx = (s->widthHow == Style::WIDTH_AS_PIXELS);
-
-    if(s->h.v < Style::FIRST_CUSTOM) {
-        Printf(false,"%FtUNITS   %Fspixels%E");
-    } else {
-        Printf(false,"%FtUNITS   %Fh%D%f%Lw%s%E%Fs%s%E / %Fh%D%f%Lw%s%E%Fs%s%E",
-            s->h.v, &ScreenChangeStyleYesNo,
-            ( widthpx ? "" : "pixels"),
-            ( widthpx ? "pixels" : ""),
-            s->h.v, &ScreenChangeStyleYesNo,
-            (!widthpx ? "" : unit),
-            (!widthpx ? unit : ""));
-    }
-
     if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(true, "%FtSHOW    %Fh%D%f%Lv%s%E%Fs%s%E / %Fh%D%f%Lv%s%E%Fs%s%E",
             s->h.v, &ScreenChangeStyleYesNo,
@@ -502,7 +559,98 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenChangeStyleYesNo,
             (!s->exportable ? "" : "no"),
             (!s->exportable ? "no" : ""));
+    }
 
+    char *unit = (SS.viewUnits == SolveSpace::UNIT_INCHES) ? "inches" : "mm";
+
+    // The line width, and its units
+    if(s->widthAs == Style::UNITS_AS_PIXELS) {
+        Printf(true, "%FtLINE WIDTH   %E%@ %D%f%Lw%Fl[change]%E",
+            s->width,
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight);
+    } else {
+        Printf(true, "%FtLINE WIDTH   %E%s %D%f%Lw%Fl[change]%E",
+            SS.MmToString(s->width),
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight);
+    }
+
+    bool widthpx = (s->widthAs == Style::UNITS_AS_PIXELS);
+    if(s->h.v < Style::FIRST_CUSTOM) {
+        Printf(false,"%FtIN UNITS OF  %Fspixels%E");
+    } else {
+        Printf(false,"%FtIN UNITS OF  "
+                            "%Fh%D%f%Lw%s%E%Fs%s%E / %Fh%D%f%Lw%s%E%Fs%s%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            ( widthpx ? "" : "pixels"),
+            ( widthpx ? "pixels" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            (!widthpx ? "" : unit),
+            (!widthpx ? unit : ""));
+    }
+
+    // The text height, and its units
+    char *chng = (s->h.v < Style::FIRST_CUSTOM) ? "" : "[change]";
+    if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
+        Printf(true, "%FtTEXT HEIGHT  %E%@ %D%f%Lt%Fl%s%E",
+            s->textHeight,
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            chng);
+    } else {
+        Printf(true, "%FtTEXT HEIGHT  %E%s %D%f%Lt%Fl%s%E",
+            SS.MmToString(s->textHeight),
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            chng);
+    }
+
+    bool textHeightpx = (s->textHeightAs == Style::UNITS_AS_PIXELS);
+    if(s->h.v < Style::FIRST_CUSTOM) {
+        Printf(false,"%FtIN UNITS OF  %Fspixels%E");
+    } else {
+        Printf(false,"%FtIN UNITS OF  "
+                            "%Fh%D%f%Lh%s%E%Fs%s%E / %Fh%D%f%Lh%s%E%Fs%s%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            ( textHeightpx ? "" : "pixels"),
+            ( textHeightpx ? "pixels" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            (!textHeightpx ? "" : unit),
+            (!textHeightpx ? unit : ""));
+    }
+
+    if(s->h.v >= Style::FIRST_CUSTOM) {
+        bool neither;
+
+        neither = !(s->textOrigin & (Style::ORIGIN_LEFT | Style::ORIGIN_RIGHT));
+        Printf(true, "%FtALIGN TEXT   "
+                            "%Fh%D%f%LL%s%E%Fs%s%E   / "
+                            "%Fh%D%f%LH%s%E%Fs%s%E / "
+                            "%Fh%D%f%LR%s%E%Fs%s%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            ((s->textOrigin & Style::ORIGIN_LEFT) ? "" : "left"),
+            ((s->textOrigin & Style::ORIGIN_LEFT) ? "left" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            (neither ? "" : "center"),
+            (neither ? "center" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            ((s->textOrigin & Style::ORIGIN_RIGHT) ? "" : "right"),
+            ((s->textOrigin & Style::ORIGIN_RIGHT) ? "right" : ""));
+
+        neither = !(s->textOrigin & (Style::ORIGIN_BOT | Style::ORIGIN_TOP));
+        Printf(false, "%Ft             "
+                            "%Fh%D%f%LB%s%E%Fs%s%E / "
+                            "%Fh%D%f%LV%s%E%Fs%s%E / "
+                            "%Fh%D%f%LT%s%E%Fs%s%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            ((s->textOrigin & Style::ORIGIN_BOT) ? "" : "bottom"),
+            ((s->textOrigin & Style::ORIGIN_BOT) ? "bottom" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            (neither ? "" : "center"),
+            (neither ? "center" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            ((s->textOrigin & Style::ORIGIN_TOP) ? "" : "top"),
+            ((s->textOrigin & Style::ORIGIN_TOP) ? "top" : ""));
+    }
+
+    if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "");
         Printf(false, "To assign lines or curves to this style,");
         Printf(false, "select them on the drawing. Then commit");

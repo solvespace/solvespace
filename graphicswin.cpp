@@ -591,7 +591,9 @@ void GraphicsWindow::MenuEdit(int id) {
             // to cancel, then perhaps they want to return to the home
             // screen in the text window.
             if(SS.GW.gs.n == 0 && SS.GW.pending.operation == 0) {
-                if(!TextEditControlIsVisible()) {
+                if(!(TextEditControlIsVisible() ||
+                     GraphicsEditControlIsVisible()))
+                {
                     if(SS.TW.shown.screen == TextWindow::SCREEN_STYLE_INFO) {
                         SS.TW.GoToScreen(TextWindow::SCREEN_LIST_OF_STYLES);
                     } else {

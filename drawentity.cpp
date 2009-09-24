@@ -10,55 +10,6 @@ char *Entity::DescriptionString(void) {
     }
 }
 
-void Entity::FatLineEndcap(Vector p, Vector u, Vector v) {
-    // A table of cos and sin of (pi*i/10 + pi/2), as i goes from 0 to 10
-    static const double Circle[11][2] = {
-        {  0.0000,   1.0000 },
-        { -0.3090,   0.9511 },
-        { -0.5878,   0.8090 },
-        { -0.8090,   0.5878 },
-        { -0.9511,   0.3090 },
-        { -1.0000,   0.0000 },
-        { -0.9511,  -0.3090 },
-        { -0.8090,  -0.5878 },
-        { -0.5878,  -0.8090 },
-        { -0.3090,  -0.9511 },
-        {  0.0000,  -1.0000 },
-    };
-    glBegin(GL_TRIANGLE_FAN);
-    for(int i = 0; i <= 10; i++) {
-        double c = Circle[i][0], s = Circle[i][1];
-        glxVertex3v(p.Plus(u.ScaledBy(c)).Plus(v.ScaledBy(s)));
-    }
-    glEnd();
-}
-
-void Entity::FatLine(Vector a, Vector b) {
-    // The half-width of the line we're drawing.
-    double hw = (dogd.lineWidth/SS.GW.scale) / 2;
-    Vector ab  = b.Minus(a);
-    Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
-    Vector abn = (ab.Cross(gn)).WithMagnitude(1);
-    abn = abn.Minus(gn.ScaledBy(gn.Dot(abn)));
-    // So now abn is normal to the projection of ab into the screen, so the
-    // line will always have constant thickness as the view is rotated.
-
-    abn = abn.WithMagnitude(hw);
-    ab  = gn.Cross(abn);
-    ab  = ab. WithMagnitude(hw);
-
-    // The body of a line is a quad
-    glBegin(GL_QUADS);
-        glxVertex3v(a.Minus(abn));
-        glxVertex3v(b.Minus(abn));
-        glxVertex3v(b.Plus (abn));
-        glxVertex3v(a.Plus (abn));
-    glEnd();
-    // And the line has two semi-circular end caps.
-    FatLineEndcap(a, ab,              abn);
-    FatLineEndcap(b, ab.ScaledBy(-1), abn);
-}
-
 void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
     if(dogd.drawing) {
         // Draw lines from active group in front of those from previous
@@ -71,7 +22,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
                 glxVertex3v(b);
             glEnd();
         } else {
-            FatLine(a, b);
+            glxFatLine(a, b, dogd.lineWidth/SS.GW.scale);
         }
             
         glxDepthRangeOffset(0);
@@ -506,11 +457,12 @@ void Entity::DrawOrGetDistance(void) {
             glDisable(GL_LINE_STIPPLE);
 
             char *str = DescriptionString()+5;
+            double th = DEFAULT_TEXT_HEIGHT;
             if(dogd.drawing) {
-                glxWriteText(str, mm2, u, v, NULL, NULL);
+                glxWriteText(str, th, mm2, u, v, NULL, NULL);
             } else {
-                Vector pos = mm2.Plus(u.ScaledBy(glxStrWidth(str)/2)).Plus(
-                                      v.ScaledBy(glxStrHeight()/2));
+                Vector pos = mm2.Plus(u.ScaledBy(glxStrWidth(str, th)/2)).Plus(
+                                      v.ScaledBy(glxStrHeight(th)/2));
                 Point2d pp = SS.GW.ProjectPoint(pos);
                 dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);
                 // If a line lies in a plane, then select the line, not

@@ -94,9 +94,10 @@ public:
     static const int EDIT_STEP_DIM_STEPS        = 41;
     // For the styles stuff
     static const int EDIT_STYLE_WIDTH           = 50;
-    static const int EDIT_STYLE_COLOR           = 51;
-    static const int EDIT_STYLE_NAME            = 52;
-    static const int EDIT_BACKGROUND_COLOR      = 53;
+    static const int EDIT_STYLE_TEXT_HEIGHT     = 51;
+    static const int EDIT_STYLE_COLOR           = 52;
+    static const int EDIT_STYLE_NAME            = 53;
+    static const int EDIT_BACKGROUND_COLOR      = 54;
     struct {
         int         meaning;
         int         i;
@@ -189,7 +190,7 @@ public:
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
     static void ScreenChangeStyleName(int link, DWORD v);
-    static void ScreenChangeStyleWidth(int link, DWORD v);
+    static void ScreenChangeStyleWidthOrTextHeight(int link, DWORD v);
     static void ScreenChangeStyleColor(int link, DWORD v);
     static void ScreenChangeBackgroundColor(int link, DWORD v);
 
@@ -400,6 +401,7 @@ public:
         void Clear(void);
         bool IsEmpty(void);
         bool Equals(Selection *b);
+        bool IsStylable(void);
     };
     Selection hover;
     static const int MAX_SELECTED = 32;
@@ -425,6 +427,7 @@ public:
         int         anyNormals;
         int         vectors;
         int         constraints;
+        int         stylables;
         int         n;
     } gs;
     void GroupSelection(void);
@@ -439,6 +442,7 @@ public:
     static const int CMNU_GROUP_INFO       = 0x105;
     static const int CMNU_REFERENCE_DIM    = 0x106;
     static const int CMNU_OTHER_ANGLE      = 0x107;
+    static const int CMNU_STYLE_INFO       = 0x108;
     static const int CMNU_FIRST_STYLE      = 0x40000000;
     void ContextMenuListStyles(void);
 

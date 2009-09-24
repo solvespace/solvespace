@@ -409,17 +409,18 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     // selection.
     bool toggleForStyles = false,
          toggleForGroupInfo = false,
-         toggleForDelete = false;
+         toggleForDelete = false,
+         toggleForStyleInfo = false;
 
     if(!hover.IsEmpty()) {
         AddContextMenuItem("Toggle Hovered Item Selection", 
             CMNU_TOGGLE_SELECTION);
     }
 
-    if(gs.entities > 0) {
+    if(gs.stylables > 0) {
         ContextMenuListStyles();
         AddContextMenuItem("Assign Selection to Style", CONTEXT_SUBMENU);
-    } else if(hover.entity.v && gs.n == 0 && gs.constraints == 0) {
+    } else if(gs.n == 0 && gs.constraints == 0 && hover.IsStylable()) {
         ContextMenuListStyles();
         AddContextMenuItem("Assign Hovered Item to Style", CONTEXT_SUBMENU);
         toggleForStyles = true;
@@ -432,9 +433,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         toggleForGroupInfo = true;
     }
 
+    if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
+        AddContextMenuItem("Style Info for Selected Item", CMNU_STYLE_INFO);
+    } else if(hover.IsStylable() && gs.n == 0 && gs.constraints == 0) {
+        AddContextMenuItem("Style Info for Hovered Item", CMNU_STYLE_INFO);
+        toggleForStyleInfo = true;
+    }
+
     if(hover.constraint.v && gs.n == 0 && gs.constraints == 0) {
         Constraint *c = SK.GetConstraint(hover.constraint);
-        if(c->HasLabel()) {
+        if(c->HasLabel() && c->type != Constraint::COMMENT) {
             AddContextMenuItem("Toggle Reference Dimension",
                 CMNU_REFERENCE_DIM);
         }
@@ -483,8 +491,9 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case CMNU_GROUP_INFO: {
             if(toggleForGroupInfo) ToggleSelectionStateOfHovered();
-            GroupSelection();
+
             hGroup hg;
+            GroupSelection();
             if(gs.entities == 1) {
                 hg = SK.GetEntity(gs.entity[0])->group;
             } else if(gs.points == 1) {
@@ -495,8 +504,32 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 break;
             }
             ClearSelection();
+
             SS.TW.GoToScreen(TextWindow::SCREEN_GROUP_INFO);
             SS.TW.shown.group = hg;
+            SS.later.showTW = true;
+            break;
+        }
+
+        case CMNU_STYLE_INFO: {
+            if(toggleForStyleInfo) ToggleSelectionStateOfHovered();
+
+            hStyle hs;
+            GroupSelection();
+            if(gs.entities == 1) {
+                hs = Style::ForEntity(gs.entity[0]);
+            } else if(gs.points == 1) {
+                hs = Style::ForEntity(gs.point[0]);
+            } else if(gs.constraints == 1) {
+                hs = SK.GetConstraint(gs.constraint[0])->disp.style;
+                if(!hs.v) hs.v = Style::CONSTRAINT;
+            } else {
+                break;
+            }
+            ClearSelection();
+
+            SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
+            SS.TW.shown.style = hs;
             SS.later.showTW = true;
             break;
         }
@@ -602,8 +635,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             ConstrainPointByHovered(hr.entity(0));
 
             ClearSuper();
-
-            pending.operation = 0;
             break;
 
         case MNU_LINE_SEGMENT:
@@ -735,6 +766,19 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = DRAGGING_NEW_POINT;
             pending.point = hr.entity(2);
             pending.description = "click to place bottom left of text";
+            break;
+        }
+
+        case MNU_COMMENT: {
+            ClearSuper();
+            Constraint c;
+            ZERO(&c);
+            c.group       = SS.GW.activeGroup;
+            c.workplane   = SS.GW.ActiveWorkplane();
+            c.type        = Constraint::COMMENT;
+            c.disp.offset = v;
+            c.comment.strcpy("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+            Constraint::AddConstraint(&c);
             break;
         }
 
@@ -925,6 +969,15 @@ bool GraphicsWindow::Selection::IsEmpty(void) {
     return true;
 }
 
+bool GraphicsWindow::Selection::IsStylable(void) {
+    if(entity.v) return true;
+    if(constraint.v) {
+        Constraint *c = SK.GetConstraint(constraint);
+        if(c->type == Constraint::COMMENT) return true;
+    }
+    return false;
+}
+
 void GraphicsWindow::Selection::Clear(void) {
     entity.v = constraint.v = 0;
     emphasized = false;
@@ -1045,6 +1098,7 @@ void GraphicsWindow::GroupSelection(void) {
                 gs.point[(gs.points)++] = s->entity;
             } else {
                 gs.entity[(gs.entities)++] = s->entity;
+                (gs.stylables)++;
             }
 
             // And an auxiliary list of normals, including normals from
@@ -1081,6 +1135,10 @@ void GraphicsWindow::GroupSelection(void) {
         }
         if(s->constraint.v) {
             gs.constraint[(gs.constraints)++] = s->constraint;
+            Constraint *c = SK.GetConstraint(s->constraint);
+            if(c->type == Constraint::COMMENT) {
+                (gs.stylables)++;
+            }
         }
     }
 }
