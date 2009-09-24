@@ -207,7 +207,7 @@ void TextWindow::Show(void) {
         Printf(false, "%s", SS.GW.pending.description);
         Printf(true, "%Fl%f%Ll(cancel operation)%E",
             &TextWindow::ScreenUnselectAll);
-    } else if(gs.n > 0) {
+    } else if(gs.n > 0 || gs.stylables > 0) {
         if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(false);
         DescribeSelection();
@@ -483,6 +483,8 @@ void TextWindow::DescribeSelection(void) {
             double d = (p1.Minus(p0)).Dot(n0);
             Printf(true,  "      distance = %Fi%s", SS.MmToString(d));
         }
+    } else if(gs.n == 0) {
+        Printf(true, "%FtSELECTED:%E comment text");
     } else {
         Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
     }
@@ -500,13 +502,20 @@ void TextWindow::DescribeSelection(void) {
     }
     // If any of the selected entities have an assigned style, then offer
     // the option to remove that style.
+    bool styleAssigned = false;
     for(i = 0; i < gs.entities; i++) {
         Entity *e = SK.GetEntity(gs.entity[i]);
         if(e->style.v != 0) {
-            break;
+            styleAssigned = true;
         }
     }
-    if(i < gs.entities) {
+    for(i = 0; i < gs.constraints; i++) {
+        Constraint *c = SK.GetConstraint(gs.constraint[i]);
+        if(c->type == Constraint::COMMENT && c->disp.style.v != 0) {
+            styleAssigned = true;
+        }
+    }
+    if(styleAssigned) {
         Printf(true, "%Fl%D%f%Ll(remove assigned style)%E",
             0,
             &ScreenAssignSelectionToStyle);

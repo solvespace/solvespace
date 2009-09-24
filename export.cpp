@@ -426,7 +426,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
             if(!Style::Exportable(e->auxA)) continue;
 
             DWORD rgb = Style::Color  (e->auxA, true);
-            double w  = Style::WidthMm(e->auxA);
+            double w  = Style::WidthMm(e->auxA)*s;
             LineSegment(rgb, w, e->a.x, e->a.y, e->b.x, e->b.y);
         }
     }
@@ -435,7 +435,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
             if(!Style::Exportable(b->auxA)) continue;
 
             DWORD rgb = Style::Color  (b->auxA, true);
-            double w  = Style::WidthMm(b->auxA);
+            double w  = Style::WidthMm(b->auxA)*s;
             Bezier(rgb, w, b);
         }
     }
