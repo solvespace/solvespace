@@ -8,7 +8,7 @@
 //
 //     http://solvespace.com/
 //
-// Copyright 2009, Jonathan Westhues
+// Copyright 2009 Useful Subset, LLC
 //-----------------------------------------------------------------------------
 #include <windows.h>
 #include <stdio.h>

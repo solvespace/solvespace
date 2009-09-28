@@ -1,8 +1,10 @@
 
 grid
-wireframe export
+multi-drag
+backslash / escape
 
 -----
+wireframe export
 faster triangulation
 interpolating splines
 copy and paste

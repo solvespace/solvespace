@@ -9,7 +9,7 @@
 //
 //     http://solvespace.com/
 //
-// Copyright 2009, Jonathan Westhues
+// Copyright 2009 Useful Subset, LLC
 //-----------------------------------------------------------------------------
 
 #ifndef __SLVS_H

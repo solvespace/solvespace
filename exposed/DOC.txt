@@ -419,5 +419,5 @@ USING THE SOLVER
 See the enclosed sample code, example.c.
 
 
-Copyright 2009, Jonathan Westhues.
+Copyright 2009 Useful Subset, LLC
 
