@@ -533,24 +533,21 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         }
     }
 
-    if(wParam == VK_BACK && !GraphicsEditControlIsVisible()) {
-        TextWindow::ScreenHome(0, 0);
-        SS.TW.Show();
-        return TRUE;
-    }
-
     int c;
     switch(wParam) {
-        case VK_OEM_PLUS:       c = '+';    break;
-        case VK_OEM_MINUS:      c = '-';    break;
-        case VK_ESCAPE:         c = 27;     break;
-        case VK_OEM_1:          c = ';';    break;
-        case VK_OEM_4:          c = '[';    break;
-        case VK_OEM_6:          c = ']';    break;
-        case VK_OEM_5:          c = '\\';   break;
-        case VK_SPACE:          c = ' ';    break;
-        case VK_DELETE:         c = 127;    break;
-        case VK_TAB:            c = '\t';   break;
+        case VK_OEM_PLUS:       c = '+';            break;
+        case VK_OEM_MINUS:      c = '-';            break;
+        case VK_ESCAPE:         c = 27;             break;
+        case VK_OEM_1:          c = ';';            break;
+        case VK_OEM_4:          c = '[';            break;
+        case VK_OEM_6:          c = ']';            break;
+        case VK_OEM_5:          c = '\\';           break;
+        case VK_SPACE:          c = ' ';            break;
+        case VK_DELETE:         c = 127;            break;
+        case VK_TAB:            c = '\t';           break;
+
+        case VK_BROWSER_BACK:
+        case VK_BACK:           c = 1 + 'h' - 'a';  break;
 
         case VK_F1:
         case VK_F2:
@@ -587,6 +584,8 @@ static BOOL ProcessKeyDown(WPARAM wParam)
             break;
         }
     }
+
+    if(SS.GW.KeyDown(c)) return TRUE;
 
     // No accelerator; process the key as normal.
     return FALSE;

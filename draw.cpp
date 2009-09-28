@@ -924,6 +924,16 @@ void GraphicsWindow::EditControlDone(char *s) {
     }
 }
 
+bool GraphicsWindow::KeyDown(int c) {
+    if(c == ('h' - 'a') + 1) {
+        // Treat backspace identically to escape.
+        MenuEdit(MNU_UNSELECT_ALL);
+        return true;
+    }
+
+    return false;
+}
+
 void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     double offsetRight = offset.Dot(projRight);
     double offsetUp = offset.Dot(projUp);

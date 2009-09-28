@@ -1,7 +1,6 @@
 
 grid
 multi-drag
-backslash / escape
 
 -----
 wireframe export

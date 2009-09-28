@@ -483,6 +483,7 @@ public:
     void MouseRightUp(double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave(void);
+    bool KeyDown(int c);
     void EditControlDone(char *s);
 
     SDWORD lastSpaceNavigatorTime;
