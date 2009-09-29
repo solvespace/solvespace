@@ -144,7 +144,11 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                 case 'L':
                     if(fmt[1] == '\0') goto done;
                     fmt++;
-                    link = *fmt;
+                    if(*fmt == 'p') {
+                        link = va_arg(vl, int);
+                    } else {
+                        link = *fmt;
+                    }
                     break;
 
                 case 'f':

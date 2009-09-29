@@ -73,6 +73,8 @@ void Style::CreateDefaultStyle(hStyle h) {
     ns.widthAs      = UNITS_AS_PIXELS;
     ns.textHeight   = DEFAULT_TEXT_HEIGHT;
     ns.textHeightAs = UNITS_AS_PIXELS;
+    ns.textOrigin   = 0;
+    ns.textAngle    = 0;
     ns.visible      = true;
     ns.exportable   = true;
     ns.h            = h;
@@ -95,6 +97,8 @@ void Style::LoadFactoryDefaults(void) {
         s->widthAs      = UNITS_AS_PIXELS;
         s->textHeight   = DEFAULT_TEXT_HEIGHT;
         s->textHeightAs = UNITS_AS_PIXELS;
+        s->textOrigin   = 0;
+        s->textAngle    = 0;
         s->visible      = true;
         s->exportable   = true;
         s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
@@ -375,8 +379,8 @@ void TextWindow::ScreenDeleteStyle(int link, DWORD v) {
 void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    double val   = (link == 'w') ? s->width   : s->textHeight;
-    int    units = (link == 'w') ? s->widthAs : s->textHeightAs;
+    double val   = (link == 't') ? s->textHeight   : s->width;
+    int    units = (link == 't') ? s->textHeightAs : s->widthAs;
 
     char str[300];
     if(units == Style::UNITS_AS_PIXELS) {
@@ -384,10 +388,28 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
     } else {
         strcpy(str, SS.MmToString(val));
     }
-    ShowTextEditControl((link == 'w') ? 21 : 26, 13, str);
+    int row = 0;
+    if(link == 'w') {
+        row = 16;               // width for a default style
+    } else if(link == 'W') {
+        row = 21;               // width for a custom style
+    } else if(link == 't') {
+        row = 27;               // text height (for custom styles only)
+    }
+    ShowTextEditControl(row, 13, str);
     SS.TW.edit.style = hs;
-    SS.TW.edit.meaning = (link == 'w') ? EDIT_STYLE_WIDTH :
-                                         EDIT_STYLE_TEXT_HEIGHT;
+    SS.TW.edit.meaning = (link == 't') ? EDIT_STYLE_TEXT_HEIGHT :
+                                         EDIT_STYLE_WIDTH;
+}
+
+void TextWindow::ScreenChangeStyleTextAngle(int link, DWORD v) {
+    hStyle hs = { v };
+    Style *s = Style::Get(hs);
+    char str[300];
+    sprintf(str, "%.2f", s->textAngle);
+    ShowTextEditControl(32, 13, str);
+    SS.TW.edit.style = hs;
+    SS.TW.edit.meaning = EDIT_STYLE_TEXT_ANGLE;
 }
 
 void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
@@ -491,6 +513,12 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             }
             return true;
         }
+        case EDIT_STYLE_TEXT_ANGLE:
+            SS.UndoRemember();
+            s = Style::Get(edit.style);
+            s->textAngle = WRAP_SYMMETRIC(atof(str), 360);
+            return true;
+
         case EDIT_BACKGROUND_COLOR:
         case EDIT_STYLE_COLOR: {
             double r, g, b;
@@ -565,13 +593,15 @@ void TextWindow::ShowStyleInfo(void) {
 
     // The line width, and its units
     if(s->widthAs == Style::UNITS_AS_PIXELS) {
-        Printf(true, "%FtLINE WIDTH   %E%@ %D%f%Lw%Fl[change]%E",
+        Printf(true, "%FtLINE WIDTH   %E%@ %D%f%Lp%Fl[change]%E",
             s->width,
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight);
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     } else {
-        Printf(true, "%FtLINE WIDTH   %E%s %D%f%Lw%Fl[change]%E",
+        Printf(true, "%FtLINE WIDTH   %E%s %D%f%Lp%Fl[change]%E",
             SS.MmToString(s->width),
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight);
+            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     }
 
     bool widthpx = (s->widthAs == Style::UNITS_AS_PIXELS);
@@ -589,14 +619,15 @@ void TextWindow::ShowStyleInfo(void) {
     }
 
     // The text height, and its units
+    Printf(false, "");
     char *chng = (s->h.v < Style::FIRST_CUSTOM) ? "" : "[change]";
     if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
-        Printf(true, "%FtTEXT HEIGHT  %E%@ %D%f%Lt%Fl%s%E",
+        Printf(false, "%FtTEXT HEIGHT  %E%@ %D%f%Lt%Fl%s%E",
             s->textHeight,
             s->h.v, &ScreenChangeStyleWidthOrTextHeight,
             chng);
     } else {
-        Printf(true, "%FtTEXT HEIGHT  %E%s %D%f%Lt%Fl%s%E",
+        Printf(false, "%FtTEXT HEIGHT  %E%s %D%f%Lt%Fl%s%E",
             SS.MmToString(s->textHeight),
             s->h.v, &ScreenChangeStyleWidthOrTextHeight,
             chng);
@@ -618,6 +649,10 @@ void TextWindow::ShowStyleInfo(void) {
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
         bool neither;
+
+        Printf(true, "%FtTEXT ANGLE   %E%@ %D%f%Ll%Fl[change]%E",
+            s->textAngle,
+            s->h.v, &ScreenChangeStyleTextAngle);
 
         neither = !(s->textOrigin & (Style::ORIGIN_LEFT | Style::ORIGIN_RIGHT));
         Printf(true, "%FtALIGN TEXT   "

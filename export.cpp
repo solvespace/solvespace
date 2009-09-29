@@ -166,7 +166,7 @@ void SolveSpace::ExportViewTo(char *filename) {
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
     if(out) {
         ExportLinesAndMesh(&edges, &beziers, sm,
-                           u, v, n, origin, SS.cameraTangent*SS.GW.scale,
+                           u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
                            out);
     }
     edges.Clear();

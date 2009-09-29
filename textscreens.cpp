@@ -273,7 +273,7 @@ void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
         sprintf(str, "%.3f", g->valA);
         SS.TW.edit.meaning = EDIT_HELIX_TURNS;
         r = 12;
-    } else if(link == 'p') {
+    } else if(link == 'i') {
         strcpy(str, SS.MmToString(g->valB));
         SS.TW.edit.meaning = EDIT_HELIX_PITCH;
         r = 14;
@@ -383,7 +383,7 @@ void TextWindow::ShowGroupInfo(void) {
                 (!rh ? "" : "left-hand"), (!rh ? "left-hand" : ""));
         Printf(false, "%FtTHROUGH%E  %@ turns %Fl%Lt%D%f[change]%E",
             g->valA, g->h.v, &ScreenChangeHelixParameter);
-        Printf(false, "%FtPITCH%E    %s axially per turn %Fl%Lp%D%f[change]%E",
+        Printf(false, "%FtPITCH%E    %s axially per turn %Fl%Li%D%f[change]%E",
             SS.MmToString(g->valB), g->h.v, &ScreenChangeHelixParameter);
         Printf(false, "%FtdRADIUS%E  %s radially per turn %Fl%Lr%D%f[change]%E",
             SS.MmToString(g->valC), g->h.v, &ScreenChangeHelixParameter);
@@ -625,15 +625,19 @@ void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
     ShowTextEditControl(47, 3, str);
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
+void TextWindow::ScreenChangeGridSpacing(int link, DWORD v) {
+    ShowTextEditControl(51, 3, SS.MmToString(SS.gridSpacing));
+    SS.TW.edit.meaning = EDIT_GRID_SPACING;
+}
 void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    ShowTextEditControl(53, 3, str);
+    ShowTextEditControl(57, 3, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
-    ShowTextEditControl(57, 3, SS.MmToString(SS.exportOffset));
+    ShowTextEditControl(61, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 void TextWindow::ScreenChangeFixExportColors(int link, DWORD v) {
@@ -670,7 +674,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
 
         default: return;
     }
-    int row = 71, col;
+    int row = 75, col;
     if(v < 10) {
         row += v*2;
         col = 11;
@@ -723,6 +727,10 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
         &ScreenChangeCameraTangent, 0);
+    Printf(false, "%Ft snap grid spacing%E");
+    Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
+        SS.MmToString(SS.gridSpacing),
+        &ScreenChangeGridSpacing, 0);
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1.0=mm, 25.4=inch)");
@@ -984,6 +992,15 @@ void TextWindow::EditControlDone(char *s) {
         }
         case EDIT_CAMERA_TANGENT: {
             SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
+            if(SS.forceParallelProj) {
+                Message("The perspective factor will have no effect until you "
+                        "disable View -> Force Parallel Projection.");
+            }
+            InvalidateGraphics();
+            break;
+        }
+        case EDIT_GRID_SPACING: {
+            SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
             InvalidateGraphics();
             break;
         }

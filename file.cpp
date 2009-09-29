@@ -157,6 +157,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 's',  "Style.widthAs",            'd',    &(SS.sv.s.widthAs)            },
     { 's',  "Style.textHeight",         'f',    &(SS.sv.s.textHeight)         },
     { 's',  "Style.textHeightAs",       'd',    &(SS.sv.s.textHeightAs)       },
+    { 's',  "Style.textAngle",          'f',    &(SS.sv.s.textAngle)          },
     { 's',  "Style.textOrigin",         'x',    &(SS.sv.s.textOrigin)         },
     { 's',  "Style.color",              'x',    &(SS.sv.s.color)              },
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },

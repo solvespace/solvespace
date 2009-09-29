@@ -32,9 +32,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Redo\tCtrl+Y",                       MNU_REDO,           'Y'|C,  mEdit },
 { 1, "Re&generate All\tSpace",              MNU_REGEN_ALL,      ' ',    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
+{ 1, "Snap Selection to &Grid\t.",          MNU_SNAP_TO_GRID,   '.',    mEdit },
 { 1, "Rotate Imported &90°\t9",             MNU_ROTATE_90,      '9',    mEdit },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
-
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 
@@ -42,6 +42,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
+{ 1,  NULL,                                 0,                          NULL  },
+{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '.'|S,  mView },
+{ 1, "Force &Parallel Projection\t`",       MNU_PARALLEL_PROJ,  '`',    mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Nearest &Ortho View\tF2",             MNU_NEAREST_ORTHO,  F(2),   mView },
 { 1, "Nearest &Isometric View\tF3",         MNU_NEAREST_ISO,    F(3),   mView },
@@ -154,6 +157,7 @@ void GraphicsWindow::Init(void) {
     showTextWindow = true;
     ShowTextWindow(showTextWindow);
 
+    showSnapGrid = false;
     context.active = false;
 
     // Do this last, so that all the menus get updated correctly.
@@ -199,7 +203,7 @@ Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
     r.y = p.Dot(projUp);
     r.z = p.Dot(projUp.Cross(projRight));
 
-    *w = 1 + r.z*SS.cameraTangent*scale;
+    *w = 1 + r.z*SS.CameraTangent()*scale;
     return r;
 }
 
@@ -230,6 +234,10 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // Animate transition, unless it's a tiny move.
     SDWORD dt = (mp < 0.01 && mo < 10) ? (-20) :
                     (SDWORD)(100 + 1000*mp + 0.4*mo);
+    // Don't ever animate for longer than 2000 ms; we can get absurdly
+    // long translations (as measured in pixels) if the user zooms out, moves,
+    // and then zooms in again.
+    if(dt > 2000) dt = 2000;
     SDWORD tn, t0 = GetMilliseconds();
     double s = 0;
     Quaternion dq = quatf.Times(quat0.Inverse());
@@ -347,7 +355,7 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
 
     // Adjust the scale so that no points are behind the camera
     if(wmin < 0.1) {
-        double k = SS.cameraTangent;
+        double k = SS.CameraTangent();
         // w = 1+k*scale*z
         double zmin = (wmin - 1)/(k*scale);
         // 0.1 = 1 + k*scale*zmin
@@ -368,6 +376,29 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_ZOOM_TO_FIT:
             SS.GW.ZoomToFit(false);
+            break;
+
+        case MNU_SHOW_GRID:
+            SS.GW.showSnapGrid = !SS.GW.showSnapGrid;
+            if(SS.GW.showSnapGrid && !SS.GW.LockedInWorkplane()) {
+                Message("No workplane is active, so the grid will not "
+                        "appear.");
+            }
+            SS.GW.EnsureValidActives();
+            InvalidateGraphics();
+            break;
+
+        case MNU_PARALLEL_PROJ:
+            SS.forceParallelProj = !SS.forceParallelProj;
+            if(SS.cameraTangent < 1e-6) {
+                Error("The perspective factor is set to zero, so the view will "
+                      "always be a parallel projection.\r\n\r\n"
+                      "For a perspective projection, modify the camera tangent "
+                      "in the configuration screen. A value around 0.3 is "
+                      "typical.");
+            }
+            SS.GW.EnsureValidActives();
+            InvalidateGraphics();
             break;
 
         case MNU_NEAREST_ORTHO:
@@ -448,7 +479,7 @@ void GraphicsWindow::MenuView(int id) {
         case MNU_SHOW_TOOLBAR:
             SS.showToolbar = !SS.showToolbar;
             SS.GW.EnsureValidActives();
-            PaintGraphics();
+            InvalidateGraphics();
             break;
 
         case MNU_UNITS_MM:
@@ -532,6 +563,8 @@ void GraphicsWindow::EnsureValidActives(void) {
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
     CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
+    CheckMenuById(MNU_PARALLEL_PROJ, SS.forceParallelProj);
+    CheckMenuById(MNU_SHOW_GRID, SS.GW.showSnapGrid);
 
     if(change) SS.later.showTW = true;
 }
@@ -583,6 +616,24 @@ void GraphicsWindow::DeleteTaggedRequests(void) {
     SS.later.showTW = true;
 }
 
+Vector GraphicsWindow::SnapToGrid(Vector p) {
+    if(!LockedInWorkplane()) return p;
+
+    EntityBase *wrkpl = SK.GetEntity(ActiveWorkplane()),
+               *norm  = wrkpl->Normal();
+    Vector wo = SK.GetEntity(wrkpl->point[0])->PointGetNum(),
+           wu = norm->NormalU(),
+           wv = norm->NormalV(),
+           wn = norm->NormalN();
+
+    Vector pp = (p.Minus(wo)).DotInToCsys(wu, wv, wn);
+    pp.x = floor((pp.x / SS.gridSpacing) + 0.5)*SS.gridSpacing;
+    pp.y = floor((pp.y / SS.gridSpacing) + 0.5)*SS.gridSpacing;
+    pp.z = 0;
+    
+    return pp.ScaleOutOfCsys(wu, wv, wn).Plus(wo);
+}
+
 void GraphicsWindow::MenuEdit(int id) {
     switch(id) {
         case MNU_UNSELECT_ALL:
@@ -590,7 +641,10 @@ void GraphicsWindow::MenuEdit(int id) {
             // If there's nothing selected to de-select, and no operation
             // to cancel, then perhaps they want to return to the home
             // screen in the text window.
-            if(SS.GW.gs.n == 0 && SS.GW.pending.operation == 0) {
+            if(SS.GW.gs.n               == 0 &&
+               SS.GW.gs.constraints     == 0 &&
+               SS.GW.pending.operation  == 0)
+            {
                 if(!(TextEditControlIsVisible() ||
                      GraphicsEditControlIsVisible()))
                 {
@@ -667,6 +721,46 @@ void GraphicsWindow::MenuEdit(int id) {
             break;
         }
 
+        case MNU_SNAP_TO_GRID: {
+            if(!SS.GW.LockedInWorkplane()) {
+                Error("No workplane is active. Select a workplane to define "
+                      "the plane for the snap grid.");
+                break;
+            }
+            SS.GW.GroupSelection();
+            if(SS.GW.gs.n != SS.GW.gs.points ||
+               SS.GW.gs.constraints != SS.GW.gs.comments ||
+               (SS.GW.gs.n == 0 && SS.GW.gs.constraints == 0))
+            {
+                Error("Can't snap these items to grid; select only points or "
+                      "text comments. To snap a line, select its endpoints.");
+                break;
+            }
+            SS.UndoRemember();
+            int i;
+            for(i = 0; i < SS.GW.gs.points; i++) {
+                hEntity hp = SS.GW.gs.point[i];
+                Entity *ep = SK.GetEntity(hp);
+                Vector p = ep->PointGetNum();
+
+                ep->PointForceTo(SS.GW.SnapToGrid(p));
+
+                // Regenerate, with this point marked as dragged so that it
+                // gets placed as close as possible to our snap
+                SS.GW.pending.point = hp;
+                SS.MarkGroupDirty(ep->group);
+                SS.GenerateAll();
+                SS.GW.pending.point = Entity::NO_ENTITY;
+            }
+            for(i = 0; i < SS.GW.gs.constraints; i++) {
+                Constraint *c = SK.GetConstraint(SS.GW.gs.constraint[i]);
+                c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
+            }
+            SS.GW.ClearSelection();
+            InvalidateGraphics();
+            break;
+        }
+
         case MNU_UNDO:
             SS.UndoUndo();
             break;
@@ -715,6 +809,7 @@ void GraphicsWindow::MenuRequest(int id) {
             SS.GW.SetWorkplaneFreeIn3d();
             SS.GW.EnsureValidActives();
             SS.later.showTW = true;
+            InvalidateGraphics();
             break;
 
         case MNU_ARC: {

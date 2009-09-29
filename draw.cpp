@@ -1148,6 +1148,7 @@ void GraphicsWindow::GroupSelection(void) {
             Constraint *c = SK.GetConstraint(s->constraint);
             if(c->type == Constraint::COMMENT) {
                 (gs.stylables)++;
+                (gs.comments)++;
             }
         }
     }
@@ -1226,7 +1227,7 @@ void GraphicsWindow::Paint(int w, int h) {
 
     double mat[16];
     // Last thing before display is to apply the perspective
-    double clp = SS.cameraTangent*scale;
+    double clp = SS.CameraTangent()*scale;
     MakeMatrix(mat, 1,              0,              0,              0,
                     0,              1,              0,              0,
                     0,              0,              1,              0,
@@ -1322,6 +1323,79 @@ void GraphicsWindow::Paint(int w, int h) {
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 
     glxUnlockColor();
+
+    if(showSnapGrid && LockedInWorkplane()) {
+        hEntity he = ActiveWorkplane();
+        EntityBase *wrkpl = SK.GetEntity(he),
+                   *norm  = wrkpl->Normal();
+        Vector wu, wv, wn, wp;
+        wp = SK.GetEntity(wrkpl->point[0])->PointGetNum();
+        wu = norm->NormalU();
+        wv = norm->NormalV();
+        wn = norm->NormalN();
+
+        double g = SS.gridSpacing;
+
+        double umin = VERY_POSITIVE, umax = VERY_NEGATIVE, 
+               vmin = VERY_POSITIVE, vmax = VERY_NEGATIVE;
+        int a;
+        for(a = 0; a < 4; a++) {
+            // Ideally, we would just do +/- half the width and height; but
+            // allow some extra slop for rounding.
+            Vector horiz = projRight.ScaledBy((0.6*width)/scale  + 2*g),
+                   vert  = projUp.   ScaledBy((0.6*height)/scale + 2*g);
+            if(a == 2 || a == 3) horiz = horiz.ScaledBy(-1);
+            if(a == 1 || a == 3) vert  = vert. ScaledBy(-1);
+            Vector tp = horiz.Plus(vert).Minus(offset);
+          
+            // Project the point into our grid plane, normal to the screen
+            // (not to the grid plane). If the plane is on edge then this is
+            // impossible so don't try to draw the grid.
+            bool parallel;
+            Vector tpp = Vector::AtIntersectionOfPlaneAndLine(
+                                            wn, wn.Dot(wp),
+                                            tp, tp.Plus(n),
+                                            &parallel);
+            if(parallel) goto nogrid;
+
+            tpp = tpp.Minus(wp);
+            double uu = tpp.Dot(wu),
+                   vv = tpp.Dot(wv);
+
+            umin = min(uu, umin);
+            umax = max(uu, umax);
+            vmin = min(vv, vmin);
+            vmax = max(vv, vmax);
+        }
+
+        int i, j, i0, i1, j0, j1;
+
+        i0 = (int)(umin / g);
+        i1 = (int)(umax / g);
+        j0 = (int)(vmin / g);
+        j1 = (int)(vmax / g);
+
+        if(i0 > i1 || i1 - i0 > 400) goto nogrid;
+        if(j0 > j1 || j1 - j0 > 400) goto nogrid;
+
+        glLineWidth(1);
+        glxColorRGBa(Style::Color(Style::DATUM), 0.3);
+        glBegin(GL_LINES);
+        for(i = i0 + 1; i < i1; i++) {
+            glxVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j0*g)));
+            glxVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j1*g)));
+        }
+        for(j = j0 + 1; j < j1; j++) {
+            glxVertex3v(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)));
+            glxVertex3v(wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)));
+        }
+        glEnd(); 
+
+        // Clear the depth buffer, so that the grid is at the very back of
+        // the Z order.
+        glClear(GL_DEPTH_BUFFER_BIT); 
+nogrid:;
+    }
 
     // Draw the active group; this fills the polygons in a drawing group, and
     // draws the solid mesh.

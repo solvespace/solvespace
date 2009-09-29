@@ -547,6 +547,7 @@ public:
     double  chordTol;
     int     maxSegments;
     double  cameraTangent;
+    float   gridSpacing;
     float   exportScale;
     float   exportOffset;
     int     fixExportColors;
@@ -569,7 +570,6 @@ public:
         float   dy;
     }       exportCanvas;
 
-    int CircleSides(double r);
     typedef enum {
         UNIT_MM = 0,
         UNIT_INCHES,
@@ -579,6 +579,8 @@ public:
     double ExprToMm(Expr *e);
     double StringToMm(char *s);
     double ChordTolMm(void);
+    bool forceParallelProj;
+    double CameraTangent(void);
 
     // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);

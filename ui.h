@@ -80,9 +80,10 @@ public:
     static const int EDIT_CHORD_TOLERANCE       = 13;
     static const int EDIT_MAX_SEGMENTS          = 14;
     static const int EDIT_CAMERA_TANGENT        = 15;
-    static const int EDIT_EXPORT_SCALE          = 16;
-    static const int EDIT_EXPORT_OFFSET         = 17;
-    static const int EDIT_CANVAS_SIZE           = 18;
+    static const int EDIT_GRID_SPACING          = 16;
+    static const int EDIT_EXPORT_SCALE          = 17;
+    static const int EDIT_EXPORT_OFFSET         = 18;
+    static const int EDIT_CANVAS_SIZE           = 19;
     // For the helical sweep
     static const int EDIT_HELIX_TURNS           = 20;
     static const int EDIT_HELIX_PITCH           = 21;
@@ -95,9 +96,10 @@ public:
     // For the styles stuff
     static const int EDIT_STYLE_WIDTH           = 50;
     static const int EDIT_STYLE_TEXT_HEIGHT     = 51;
-    static const int EDIT_STYLE_COLOR           = 52;
-    static const int EDIT_STYLE_NAME            = 53;
-    static const int EDIT_BACKGROUND_COLOR      = 54;
+    static const int EDIT_STYLE_TEXT_ANGLE      = 52;
+    static const int EDIT_STYLE_COLOR           = 53;
+    static const int EDIT_STYLE_NAME            = 54;
+    static const int EDIT_BACKGROUND_COLOR      = 55;
     struct {
         int         meaning;
         int         i;
@@ -187,10 +189,12 @@ public:
     static void ScreenChangeChordTolerance(int link, DWORD v);
     static void ScreenChangeMaxSegments(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
+    static void ScreenChangeGridSpacing(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
     static void ScreenChangeStyleName(int link, DWORD v);
     static void ScreenChangeStyleWidthOrTextHeight(int link, DWORD v);
+    static void ScreenChangeStyleTextAngle(int link, DWORD v);
     static void ScreenChangeStyleColor(int link, DWORD v);
     static void ScreenChangeBackgroundColor(int link, DWORD v);
 
@@ -220,6 +224,8 @@ public:
         MNU_ZOOM_IN,
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
+        MNU_SHOW_GRID,
+        MNU_PARALLEL_PROJ,
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,
         MNU_CENTER_VIEW,
@@ -231,6 +237,7 @@ public:
         MNU_UNDO,
         MNU_REDO,
         MNU_DELETE,
+        MNU_SNAP_TO_GRID,
         MNU_ROTATE_90,
         MNU_UNSELECT_ALL,
         MNU_REGEN_ALL,
@@ -373,6 +380,7 @@ public:
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
+    Vector SnapToGrid(Vector p);
     bool ConstrainPointByHovered(hEntity pt);
     void DeleteTaggedRequests(void);
     hRequest AddRequest(int type, bool rememberForUndo);
@@ -428,6 +436,7 @@ public:
         int         vectors;
         int         constraints;
         int         stylables;
+        int         comments;
         int         n;
     } gs;
     void GroupSelection(void);
@@ -468,6 +477,8 @@ public:
     bool    showMesh;
     bool    showHdnLines;
     static void ToggleBool(int link, DWORD v);
+
+    bool    showSnapGrid;
 
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);

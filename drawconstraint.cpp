@@ -31,8 +31,10 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
         if(dogd.sel) {
             dogd.sel->AddEdge(a, b, hs.v);
         } else {
-            if(hs.v && Style::Width(disp.style) >= 3.0) {
-                glxFatLine(a, b, Style::Width(disp.style) / SS.GW.scale);
+            // The only constraints with styles should be comments, so don't
+            // check otherwise, save looking up the styles constantly.
+            if(type == COMMENT && Style::Width(hs) >= 3.0) {
+                glxFatLine(a, b, Style::Width(hs) / SS.GW.scale);
             } else {
                 glBegin(GL_LINE_STRIP);
                     glxVertex3v(a);
@@ -95,10 +97,18 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
            sheight = glxStrHeight(th);
 
     // By default, the reference is from the center; but the style could
-    // specify otherwise if one is present.
+    // specify otherwise if one is present, and it could also specify a
+    // rotation.
     if(type == COMMENT && disp.style.v) {
-        Style *s = Style::Get(disp.style);
-        int o = s->textOrigin;
+        Style *st = Style::Get(disp.style);
+        // rotation first
+        double rads = st->textAngle*PI/180;
+        double c = cos(rads), s = sin(rads);
+        Vector pr = gr, pu = gu;
+        gr = pr.ScaledBy( c).Plus(pu.ScaledBy(s));
+        gu = pr.ScaledBy(-s).Plus(pu.ScaledBy(c));
+        // then origin
+        int o = st->textOrigin;
         if(o & Style::ORIGIN_LEFT) ref = ref.Plus(gr.WithMagnitude(swidth/2));
         if(o & Style::ORIGIN_RIGHT) ref = ref.Minus(gr.WithMagnitude(swidth/2));
         if(o & Style::ORIGIN_BOT) ref = ref.Plus(gu.WithMagnitude(sheight/2));
@@ -378,8 +388,15 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
     // If the group is hidden, then the constraints are hidden and not
     // able to be selected.
     if(!(g->visible)) return;
-    // And likewise if the group is not the active group.
-    if(g->h.v != SS.GW.activeGroup.v) return;
+    // And likewise if the group is not the active group; except for comments
+    // with an assigned style.
+    if(g->h.v != SS.GW.activeGroup.v && !(type == COMMENT && disp.style.v)) {
+        return;
+    }
+    if(disp.style.v) {
+        Style *s = Style::Get(disp.style);
+        if(!s->visible) return;
+    }
 
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.
@@ -917,13 +934,23 @@ s:
             }
             break;
 
-        case COMMENT:
+        case COMMENT: {
             if(disp.style.v) {
                 glLineWidth(Style::Width(disp.style));
                 glxColorRGB(Style::Color(disp.style));
             }
-            DoLabel(disp.offset, labelPos, gr, gu);
+            Vector u, v;
+            if(workplane.v == Entity::FREE_IN_3D.v) {
+                u = gr;
+                v = gu;
+            } else {
+                EntityBase *norm = SK.GetEntity(workplane)->Normal();
+                u = norm->NormalU();
+                v = norm->NormalV();
+            }
+            DoLabel(disp.offset, labelPos, u, v);
             break;
+        }
 
         default: oops();
     }

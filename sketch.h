@@ -635,6 +635,7 @@ public:
     static const int ORIGIN_BOT        = 0x04;
     static const int ORIGIN_TOP        = 0x08;
     int         textOrigin;
+    double      textAngle;
     DWORD       color;
     bool        visible;
     bool        exportable;

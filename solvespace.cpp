@@ -64,6 +64,8 @@ void SolveSpace::Init(char *cmdLine) {
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
     cameraTangent = CnfThawFloat(0.0f, "CameraTangent");
+    // Grid spacing
+    gridSpacing = CnfThawFloat(5.0f, "GridSpacing");
     // Export scale factor
     exportScale = CnfThawFloat(1.0f, "ExportScale");
     // Export offset (cutter radius comp)
@@ -150,6 +152,8 @@ void SolveSpace::Exit(void) {
     CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
     // Camera tangent (determines perspective)
     CnfFreezeFloat((float)cameraTangent, "CameraTangent");
+    // Grid spacing
+    CnfFreezeFloat(gridSpacing, "GridSpacing");
     // Export scale (a float, stored as a DWORD)
     CnfFreezeFloat(exportScale, "ExportScale");
     // Export offset (cutter radius comp)
@@ -191,25 +195,6 @@ void SolveSpace::DoLater(void) {
     ZERO(&later);
 }
 
-int SolveSpace::CircleSides(double r) {
-    // Let the pwl segment be symmetric about the x axis; then the curve
-    // goes out to r, and if there's n segments, then the endpoints are
-    // at +/- (2pi/n)/2 = +/- pi/n. So the chord goes to x = r cos pi/n,
-    // from x = r, so it's
-    //   tol = r - r cos pi/n
-    //   tol = r(1 - cos pi/n)
-    //   tol ~ r(1 - (1 - (pi/n)^2/2))  (Taylor expansion)
-    //   tol = r((pi/n)^2/2)
-    //   2*tol/r = (pi/n)^2
-    //   sqrt(2*tol/r) = pi/n
-    //   n = pi/sqrt(2*tol/r);
-    
-    double tol = chordTol/GW.scale;
-    int n = 3 + (int)(PI/sqrt(2*tol/r));
-
-    return max(7, min(n, maxSegments));
-}
-
 char *SolveSpace::MmToString(double v) {
     static int WhichBuf;
     static char Bufs[8][128];
@@ -243,6 +228,13 @@ double SolveSpace::ChordTolMm(void) {
     return SS.chordTol / SS.GW.scale;
 }
 
+double SolveSpace::CameraTangent(void) {
+    if(forceParallelProj) {
+        return 0;
+    } else {
+        return cameraTangent;
+    }
+}
 
 void SolveSpace::AfterNewFile(void) {
     // Clear out the traced point, which is no longer valid
