@@ -15,6 +15,7 @@ W32OBJS  = $(OBJDIR)\w32main.obj \
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\textwin.obj \
            $(OBJDIR)\textscreens.obj \
+           $(OBJDIR)\confscreen.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\modify.obj \
            $(OBJDIR)\util.obj \
@@ -28,6 +29,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\expr.obj \
            $(OBJDIR)\constraint.obj \
            $(OBJDIR)\constrainteq.obj \
+           $(OBJDIR)\mouse.obj \
            $(OBJDIR)\draw.obj \
            $(OBJDIR)\toolbar.obj \
            $(OBJDIR)\drawconstraint.obj \

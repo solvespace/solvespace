@@ -511,13 +511,13 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             } else {
                 s->width = v;
             }
-            return true;
+            break;
         }
         case EDIT_STYLE_TEXT_ANGLE:
             SS.UndoRemember();
             s = Style::Get(edit.style);
             s->textAngle = WRAP_SYMMETRIC(atof(str), 360);
-            return true;
+            break;
 
         case EDIT_BACKGROUND_COLOR:
         case EDIT_STYLE_COLOR: {
@@ -536,7 +536,7 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             } else {
                 Error("Bad format: specify color as r, g, b");
             }
-            return true;
+            break;
         }
         case EDIT_STYLE_NAME:
             if(!StringAllPrintable(str) || !*str) {
@@ -546,10 +546,11 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
                 s = Style::Get(edit.style);
                 s->name.strcpy(str);
             }
-            return true;
+            break;
 
         default: return false;
     }
+    return true;
 }
 
 void TextWindow::ShowStyleInfo(void) {

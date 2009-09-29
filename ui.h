@@ -199,6 +199,7 @@ public:
     static void ScreenChangeBackgroundColor(int link, DWORD v);
 
     bool EditControlDoneForStyles(char *s);
+    bool EditControlDoneForConfiguration(char *s);
     void EditControlDone(char *s);
 };
 

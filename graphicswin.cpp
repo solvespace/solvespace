@@ -164,49 +164,6 @@ void GraphicsWindow::Init(void) {
     EnsureValidActives();
 }
 
-void GraphicsWindow::NormalizeProjectionVectors(void) {
-    Vector norm = projRight.Cross(projUp);
-    projUp = norm.Cross(projRight);
-
-    projUp = projUp.ScaledBy(1/projUp.Magnitude());
-    projRight = projRight.ScaledBy(1/projRight.Magnitude());
-}
-
-//-----------------------------------------------------------------------------
-// Project a point in model space to screen space, exactly as gl would; return
-// units are pixels.
-//-----------------------------------------------------------------------------
-Point2d GraphicsWindow::ProjectPoint(Vector p) {
-    Vector p3 = ProjectPoint3(p);
-    Point2d p2 = { p3.x, p3.y };
-    return p2;
-}
-//-----------------------------------------------------------------------------
-// Project a point in model space to screen space, exactly as gl would; return
-// units are pixels. The z coordinate is also returned, also in pixels.
-//-----------------------------------------------------------------------------
-Vector GraphicsWindow::ProjectPoint3(Vector p) {
-    double w;
-    Vector r = ProjectPoint4(p, &w);
-    return r.ScaledBy(scale/w);
-}
-//-----------------------------------------------------------------------------
-// Project a point in model space halfway into screen space. The scale is
-// not applied, and the perspective divide isn't applied; instead the w
-// coordinate is returned separately.
-//-----------------------------------------------------------------------------
-Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
-    p = p.Plus(offset);
-
-    Vector r;
-    r.x = p.Dot(projRight);
-    r.y = p.Dot(projUp);
-    r.z = p.Dot(projUp.Cross(projRight));
-
-    *w = 1 + r.z*SS.CameraTangent()*scale;
-    return r;
-}
-
 void GraphicsWindow::AnimateOntoWorkplane(void) {
     if(!LockedInWorkplane()) return;
 
