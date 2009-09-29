@@ -369,6 +369,12 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     return ret;
 }
 
+static void AddUnregMessageCallback(void *fndata, Vector a, Vector b)
+{
+    SEdgeList *sel = (SEdgeList *)fndata;
+    sel->AddEdge(a, b, Style::SELECTED);
+}
+
 void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
     STriangle *tr;
     SEdge *e;
@@ -413,6 +419,38 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
         ptMin.y = -(s*SS.exportCanvas.dy);
         ptMax.x = ptMin.x + (s*SS.exportCanvas.width);
         ptMax.y = ptMin.y + (s*SS.exportCanvas.height);
+    }
+
+    // If the demo period has expired and there's no license, then print
+    // a message in any exported file.
+    if((!SS.license.licensed) && (SS.license.trialDaysRemaining <= 0)) {
+        char *str = 
+            "eval / nonprofit use only -- buy at http://solvespace.com/";
+        double aspect = (glxStrWidth(str, 1) / glxStrHeight(1));
+        double w = ptMax.x - ptMin.x, h = ptMax.y - ptMin.y;
+        Vector u, v, t;
+        double th;
+        if(w > h) {
+            th = w / aspect;
+            u = Vector::From(1, 0, 0);
+            v = Vector::From(0, 1, 0);
+            t = Vector::From(ptMin.x + (w/2), ptMin.y - 1.5*th, 0);
+        } else {
+            th = h / aspect;
+            u = Vector::From( 0, 1, 0);
+            v = Vector::From(-1, 0, 0);
+            t = Vector::From(ptMax.x + 1.5*th, ptMin.y + (h/2) , 0);
+        }
+        glxWriteTextRefCenter(
+            str,
+            0.9 * th * SS.GW.scale,
+            t, u, v,
+            AddUnregMessageCallback, sel);
+        if(w > h) {
+            ptMin.y -= th*3;
+        } else {
+            ptMax.x += th*3;
+        }
     }
 
     StartFile();
