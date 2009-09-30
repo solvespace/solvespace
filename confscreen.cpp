@@ -149,18 +149,18 @@ void TextWindow::ShowConfiguration(void) {
 
     Printf(false, "");
     Printf(false, "%Ft chord tolerance (in screen pixels)%E");
-    Printf(false, "%Ba   %2 %Fl%Ll%f%D[change]%E; now %d triangles",
+    Printf(false, "%Ba   %@ %Fl%Ll%f%D[change]%E; now %d triangles",
         SS.chordTol,
         &ScreenChangeChordTolerance, 0,
         SK.GetGroup(SS.GW.activeGroup)->displayMesh.l.n);
     Printf(false, "%Ft max piecewise linear segments%E");
-    Printf(false, "%Ba    %d %Fl%Ll%f[change]%E",
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.maxSegments,
         &ScreenChangeMaxSegments);
 
     Printf(false, "");
     Printf(false, "%Ft perspective factor (0 for parallel)%E");
-    Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
+    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
         &ScreenChangeCameraTangent, 0);
     Printf(false, "%Ft snap grid spacing%E");
@@ -170,7 +170,7 @@ void TextWindow::ShowConfiguration(void) {
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1.0=mm, 25.4=inch)");
-    Printf(false, "%Ba   %3 %Fl%Ll%f%D[change]%E",
+    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
     Printf(false, "%Ft cutter radius offset (0=no offset) ");

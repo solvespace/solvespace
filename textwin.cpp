@@ -102,6 +102,11 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                     sprintf(buf, "%s%.3f", v < 0 ? "" : " ", v);
                     break;
                 }
+                case '#': {
+                    double v = va_arg(vl, double);
+                    sprintf(buf, "%.3f", v);
+                    break;
+                }
                 case 's': {
                     char *s = va_arg(vl, char *);
                     memcpy(buf, s, min(sizeof(buf), strlen(s)+1));
