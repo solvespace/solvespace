@@ -453,6 +453,7 @@ public:
     static const int CMNU_REFERENCE_DIM    = 0x106;
     static const int CMNU_OTHER_ANGLE      = 0x107;
     static const int CMNU_STYLE_INFO       = 0x108;
+    static const int CMNU_SNAP_TO_GRID     = 0x109;
     static const int CMNU_FIRST_STYLE      = 0x40000000;
     void ContextMenuListStyles(void);
 

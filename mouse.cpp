@@ -385,6 +385,15 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
     }
 
+    if(gs.n == 0 && gs.constraints == 0 &&
+        (hover.constraint.v &&
+          SK.GetConstraint(hover.constraint)->type == Constraint::COMMENT) ||
+        (hover.entity.v &&
+          SK.GetEntity(hover.entity)->IsPoint()))
+    {
+        AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
+    }
+
     if(gs.n > 0 || gs.constraints > 0) {
         AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
         AddContextMenuItem("Delete Selection", CMNU_DELETE_SEL);
@@ -418,6 +427,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         case CMNU_OTHER_ANGLE:
             ToggleSelectionStateOfHovered();
             Constraint::MenuConstrain(MNU_OTHER_ANGLE);
+            break;
+
+        case CMNU_SNAP_TO_GRID:
+            ToggleSelectionStateOfHovered();
+            MenuEdit(MNU_SNAP_TO_GRID);
             break;
 
         case CMNU_GROUP_INFO: {
