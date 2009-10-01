@@ -169,6 +169,7 @@ public:
 
     static void ScreenChangeFixExportColors(int link, DWORD v);
     static void ScreenChangeBackFaces(int link, DWORD v);
+    static void ScreenChangeCheckClosedContour(int link, DWORD v);
     static void ScreenChangePwlCurves(int link, DWORD v);
     static void ScreenChangeCanvasSizeAuto(int link, DWORD v);
     static void ScreenChangeCanvasSize(int link, DWORD v);

@@ -101,7 +101,7 @@ void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
     SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
 void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
-    OpenWebsite("http://www.solvespace.com/txtlink");
+    OpenWebsite("http://solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups(void) {
     Printf(true, "%Ftactv  show  ok  group-name%E");
@@ -165,7 +165,7 @@ void TextWindow::ShowListOfGroups(void) {
         } else {
             Printf(false, "%Fx  demo expired, now running in light mode");
         }
-        Printf(false, "%Fx  buy at %Fl%f%Llhttp://www.solvespace.com/%E",
+        Printf(false, "%Fx  buy at %Fl%f%Llhttp://solvespace.com/%E",
             &ScreenGoToWebsite);
     }
 }

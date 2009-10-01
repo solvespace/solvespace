@@ -79,6 +79,11 @@ void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
     InvalidateGraphics();
 }
 
+void TextWindow::ScreenChangeCheckClosedContour(int link, DWORD v) {
+    SS.checkClosedContour = !SS.checkClosedContour;
+    InvalidateGraphics();
+}
+
 void TextWindow::ScreenChangeShadedTriangles(int link, DWORD v) {
     SS.exportShadedTriangles = !SS.exportShadedTriangles;
     InvalidateGraphics();
@@ -246,6 +251,14 @@ void TextWindow::ShowConfiguration(void) {
         (SS.drawBackFaces ? "" : "yes"), (SS.drawBackFaces ? "yes" : ""),
         &ScreenChangeBackFaces,
         (!SS.drawBackFaces ? "" : "no"), (!SS.drawBackFaces ? "no" : ""));
+
+    bool ccc = (SS.checkClosedContour != 0);
+    Printf(false, "%Ft check for closed contour: "
+                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &ScreenChangeCheckClosedContour,
+        (ccc ? "" : "yes"), (ccc ? "yes" : ""),
+        &ScreenChangeCheckClosedContour,
+        (!ccc ? "" : "no"), (!ccc ? "no" : ""));
     
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));

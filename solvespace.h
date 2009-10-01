@@ -552,6 +552,7 @@ public:
     float   exportOffset;
     int     fixExportColors;
     int     drawBackFaces;
+    int     checkClosedContour;
     int     showToolbar;
     DWORD   backgroundColor;
     int     exportShadedTriangles;

@@ -410,8 +410,10 @@ void Group::Draw(void) {
         DrawDisplayItems(type);
     }
 
-    // And finally show the polygons too
-    if(!SS.GW.showShaded) return;
+    if(!SS.checkClosedContour) return;
+
+    // And finally show the polygons too, and any errors if it's not possible
+    // to assemble the lines into closed polygons.
     if(polyError.how == POLY_NOT_CLOSED) {
         // Report this error only in sketch-in-workplane groups; otherwise
         // it's just a nuisance.
