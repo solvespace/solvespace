@@ -101,6 +101,7 @@ public:
     hGroup      opB;
     bool        visible;
     bool        suppress;
+    bool        relaxConstraints;
 
     bool        clean;
     bool        vvMeshClean;

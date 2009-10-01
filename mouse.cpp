@@ -910,6 +910,9 @@ void GraphicsWindow::MouseLeave(void) {
         toolbarHovered = 0;
         PaintGraphics();
     }
+    if(pending.operation == DRAGGING_POINT) {
+        ClearPending();
+    }
 }
 
 void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,

@@ -3,6 +3,7 @@ multi-drag
 
 -----
 some kind of import
+filled contours for export
 wireframe export
 faster triangulation
 interpolating splines

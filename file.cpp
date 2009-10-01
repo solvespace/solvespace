@@ -92,6 +92,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.predef.negateV",     'b',    &(SS.sv.g.predef.negateV)     },
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.suppress",           'b',    &(SS.sv.g.suppress)           },
+    { 'g',  "Group.relaxConstraints",   'b',    &(SS.sv.g.relaxConstraints)   },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },
     { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.impFileRel)         },

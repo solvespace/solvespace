@@ -252,6 +252,15 @@ void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
+void TextWindow::ScreenChangeRelaxConstraints(int link, DWORD v) {
+    SS.UndoRemember();
+
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    g->relaxConstraints = !(g->relaxConstraints);
+    SS.MarkGroupDirty(g->h);
+    SS.later.generateAll = true;
+    SS.later.showTW = true;
+}
 void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -447,6 +456,14 @@ void TextWindow::ShowGroupInfo(void) {
             &TextWindow::ScreenChangeSuppress,
             (!sup ? "" : "no"), (!sup ? "no" : ""));
     }
+
+    bool relax = g->relaxConstraints;
+    Printf(true, "%FtSOLVING%E  %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        &TextWindow::ScreenChangeRelaxConstraints,
+        (!relax ? "" : "with all constraints"),
+             (!relax ? "with all constraints" : ""),
+        &TextWindow::ScreenChangeRelaxConstraints,
+        (relax ? "" : "no"), (relax ? "no" : ""));
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
