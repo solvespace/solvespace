@@ -562,12 +562,17 @@ bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
     ZERO(&el);
     MakeEdgesInto(&el);
 
+    bool ret = false;
     SEdge *se;
     for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
         int inters = el.AnyEdgeCrossings(se->a, se->b, intersectsAt);
-        if(inters != 1) return true;
+        if(inters != 1) {
+            ret = true;
+            break;
+        }
     }
-    return false;
+    el.Clear();
+    return ret;
 }
 
 static int TriMode, TriVertexCount;

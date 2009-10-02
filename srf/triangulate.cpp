@@ -89,6 +89,13 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
         el.Clear();
         vl.Clear();
 
+        // Careful, need to free the points within the contours, and not just
+        // the contours themselves. This was a tricky memory leak.
+        for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
+            if(sc->tag) {
+                sc->l.Clear();
+            }
+        }
         l.RemoveTagged();
     }
 }
