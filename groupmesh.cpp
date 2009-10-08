@@ -312,23 +312,50 @@ void Group::GenerateDisplayItems(void) {
     // to find the emphasized edges for a mesh), so we will run it only
     // if its inputs have changed.
     if(displayDirty) {
-        displayMesh.Clear();
-        runningShell.TriangulateInto(&displayMesh);
-        STriangle *tr;
-        for(tr = runningMesh.l.First(); tr; tr = runningMesh.l.NextAfter(tr)) {
-            STriangle trn = *tr;
-            Vector n = trn.Normal();
-            trn.an = n;
-            trn.bn = n;
-            trn.cn = n;
-            displayMesh.AddTriangle(&trn);
-        }
+        Group *pg = RunningMeshGroup();
+        if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
+            // We don't contribute any new solid model in this group, so our
+            // display items are identical to the previous group's; which means
+            // that we can just display those, and stop ourselves from
+            // recalculating for those every time we get a change in this group.
+            //
+            // Note that this can end up recursing multiple times (if multiple
+            // groups that contribute no solid model exist in sequence), but
+            // that's okay.
+            pg->GenerateDisplayItems();
 
-        displayEdges.Clear();
+            displayMesh.Clear();
+            displayMesh.MakeFromCopyOf(&(pg->displayMesh));
 
-        if(SS.GW.showEdges) {
-            runningShell.MakeEdgesInto(&displayEdges);
-            runningMesh.MakeEmphasizedEdgesInto(&displayEdges);
+            displayEdges.Clear();
+            if(SS.GW.showEdges) {
+                SEdge *se;
+                SEdgeList *src = &(pg->displayEdges);
+                for(se = src->l.First(); se; se = src->l.NextAfter(se)) {
+                    displayEdges.l.Add(se);
+                }
+            }
+        } else {
+            // We do contribute new solid model, so we have to triangulate the
+            // shell, and edge-find the mesh.
+            displayMesh.Clear();
+            runningShell.TriangulateInto(&displayMesh);
+            STriangle *t;
+            for(t = runningMesh.l.First(); t; t = runningMesh.l.NextAfter(t)) {
+                STriangle trn = *t;
+                Vector n = trn.Normal();
+                trn.an = n;
+                trn.bn = n;
+                trn.cn = n;
+                displayMesh.AddTriangle(&trn);
+            }
+
+            displayEdges.Clear();
+
+            if(SS.GW.showEdges) {
+                runningShell.MakeEdgesInto(&displayEdges);
+                runningMesh.MakeEmphasizedEdgesInto(&displayEdges);
+            }
         }
 
         displayDirty = false;
@@ -397,20 +424,8 @@ void Group::Draw(void) {
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
 
-    // If this changes then make sure to also do the face selection off the
-    // correct mesh, in draw.cpp.
-    Group *pg = RunningMeshGroup();
-    if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
-        // We don't contribute any new solid model in this group, so our
-        // display items are identical to the previous group's; which means
-        // that we can just display those, and stop ourselves from
-        // recalculating for those every time we get a change in this group.
-        pg->GenerateDisplayItems();
-        pg->DrawDisplayItems(type);
-    } else {
-        GenerateDisplayItems();
-        DrawDisplayItems(type);
-    }
+    GenerateDisplayItems();
+    DrawDisplayItems(type);
 
     if(!SS.checkClosedContour) return;
 

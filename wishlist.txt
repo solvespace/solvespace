@@ -1,13 +1,14 @@
 
 multi-drag
+copy and paste
+wireframe export
+import mirrored
 
 -----
 some kind of import
 filled contours for export
-wireframe export
 faster triangulation
 interpolating splines
-copy and paste
 loop detection
 IGES export
 incremental regen of entities
