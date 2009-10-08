@@ -397,6 +397,8 @@ void Group::Draw(void) {
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
 
+    // If this changes then make sure to also do the face selection off the
+    // correct mesh, in draw.cpp.
     Group *pg = RunningMeshGroup();
     if(pg && thisMesh.IsEmpty() && thisShell.IsEmpty()) {
         // We don't contribute any new solid model in this group, so our
