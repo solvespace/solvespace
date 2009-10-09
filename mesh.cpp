@@ -293,10 +293,19 @@ void SMesh::MakeFromAssemblyOf(SMesh *a, SMesh *b) {
     MakeFromCopyOf(b);
 }
 
-void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q) {
+void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q,
+                                               bool mirror)
+{
     STriangle *tr;
     for(tr = a->l.First(); tr; tr = a->l.NextAfter(tr)) {
         STriangle tt = *tr;
+        if(mirror) {
+            tt.a.z *= -1;
+            tt.b.z *= -1;
+            tt.c.z *= -1;
+            // The mirroring would otherwise turn a closed mesh inside out.
+            SWAP(Vector, tt.a, tt.b);
+        }
         tt.a = (q.Rotate(tt.a)).Plus(trans);
         tt.b = (q.Rotate(tt.b)).Plus(trans);
         tt.c = (q.Rotate(tt.c)).Plus(trans);

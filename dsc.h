@@ -39,6 +39,7 @@ public:
     Quaternion ToThe(double p);
     Quaternion Inverse(void);
     Quaternion Times(Quaternion b);
+    Quaternion MirrorZ(void);
 };
 
 class Vector {

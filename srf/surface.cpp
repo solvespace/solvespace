@@ -133,6 +133,7 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
 }
 
 SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q,
+                                        bool mirror,
                                         bool includingTrims)
 {
     SSurface ret;
@@ -147,7 +148,10 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q,
     int i, j;
     for(i = 0; i <= 3; i++) {
         for(j = 0; j <= 3; j++) {
-            ret.ctrl[i][j] = (q.Rotate(a->ctrl[i][j])).Plus(t);
+            ret.ctrl[i][j] = a->ctrl[i][j];
+            if(mirror) ret.ctrl[i][j].z *= -1;
+            ret.ctrl[i][j] = (q.Rotate(ret.ctrl[i][j])).Plus(t);
+
             ret.weight[i][j] = a->weight[i][j];
         }
     }
@@ -156,10 +160,20 @@ SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q,
         STrimBy *stb;
         for(stb = a->trim.First(); stb; stb = a->trim.NextAfter(stb)) {
             STrimBy n = *stb;
+            if(mirror) {
+                n.start.z  *= -1;
+                n.finish.z *= -1;
+            }
             n.start  = (q.Rotate(n.start)) .Plus(t);
             n.finish = (q.Rotate(n.finish)).Plus(t);
             ret.trim.Add(&n);
         }
+    }
+
+    if(mirror) {
+        // If we mirror every surface of a shell, then it will end up inside
+        // out. So fix that here.
+        ret.Reverse();
     }
 
     return ret;
@@ -522,7 +536,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
             SCurve sc;
             ZERO(&sc);
             sc.isExact = true;
-            sc.exact = sb->TransformedBy(t0, Quaternion::IDENTITY);
+            sc.exact = sb->TransformedBy(t0, Quaternion::IDENTITY, false);
             (sc.exact).MakePwlInto(&(sc.pts));
             sc.surfA = hs0;
             sc.surfB = hsext;
@@ -530,7 +544,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
 
             ZERO(&sc);
             sc.isExact = true;
-            sc.exact = sb->TransformedBy(t1, Quaternion::IDENTITY);
+            sc.exact = sb->TransformedBy(t1, Quaternion::IDENTITY, false);
             (sc.exact).MakePwlInto(&(sc.pts));
             sc.surfA = hs1;
             sc.surfB = hsext;
@@ -669,7 +683,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                 if(revs.d[j].v) {
                     ZERO(&sc);
                     sc.isExact = true;
-                    sc.exact = sb->TransformedBy(ts, qs);
+                    sc.exact = sb->TransformedBy(ts, qs, false);
                     (sc.exact).MakePwlInto(&(sc.pts));
                     sc.surfA = revs.d[j];
                     sc.surfB = revs.d[WRAP(j-1, 4)];
@@ -795,23 +809,26 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
 }
 
 void SShell::MakeFromCopyOf(SShell *a) {
-    MakeFromTransformationOf(a, Vector::From(0, 0, 0), Quaternion::IDENTITY);
+    MakeFromTransformationOf(a,
+        Vector::From(0, 0, 0), Quaternion::IDENTITY, false);
 }
 
-void SShell::MakeFromTransformationOf(SShell *a, Vector t, Quaternion q) {
+void SShell::MakeFromTransformationOf(SShell *a,
+                                      Vector t, Quaternion q, bool mirror)
+{
     booleanFailed = false;
 
     SSurface *s;
     for(s = a->surface.First(); s; s = a->surface.NextAfter(s)) {
         SSurface n;
-        n = SSurface::FromTransformationOf(s, t, q, true);
+        n = SSurface::FromTransformationOf(s, t, q, mirror, true);
         surface.Add(&n); // keeping the old ID
     }
 
     SCurve *c;
     for(c = a->curve.First(); c; c = a->curve.NextAfter(c)) {
         SCurve n;
-        n = SCurve::FromTransformationOf(c, t, q);
+        n = SCurve::FromTransformationOf(c, t, q, mirror);
         curve.Add(&n); // keeping the old ID
     }
 }

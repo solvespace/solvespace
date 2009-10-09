@@ -290,6 +290,14 @@ Quaternion Quaternion::Times(Quaternion b) {
     return r;
 }
 
+Quaternion Quaternion::MirrorZ(void) {
+    Vector u = RotationU(),
+           v = RotationV();
+    u.z *= -1;
+    v.z *= -1;
+    return Quaternion::From(u, v);
+}
+
 
 Vector Vector::From(double x, double y, double z) {
     Vector v;

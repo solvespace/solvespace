@@ -95,7 +95,8 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
         if(type == TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
-            transd.MakeFromTransformationOf(steps, trans, Quaternion::IDENTITY);
+            transd.MakeFromTransformationOf(steps,
+                trans, Quaternion::IDENTITY, false);
         } else {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             double theta = ap * SK.GetParam(h.param(3))->val;
@@ -104,7 +105,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
             Quaternion q = Quaternion::From(c, s*axis.x, s*axis.y, s*axis.z);
             // Rotation is centered at t; so A(x - t) + t = Ax + (t - At)
             transd.MakeFromTransformationOf(steps,
-                trans.Minus(q.Rotate(trans)), q);
+                trans.Minus(q.Rotate(trans)), q, false);
         }
 
         // We need to rewrite any plane face entities to the transformed ones.
@@ -247,10 +248,10 @@ void Group::GenerateShellAndMesh(void) {
             SK.GetParam(h.param(5))->val,
             SK.GetParam(h.param(6))->val };
 
-        thisMesh.MakeFromTransformationOf(&impMesh, offset, q);
+        thisMesh.MakeFromTransformationOf(&impMesh, offset, q, mirror);
         thisMesh.RemapFaces(this, 0);
 
-        thisShell.MakeFromTransformationOf(&impShell, offset, q);
+        thisShell.MakeFromTransformationOf(&impShell, offset, q, mirror);
         thisShell.RemapFaces(this, 0);
     }
 

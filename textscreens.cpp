@@ -203,64 +203,51 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.GW.ClearSelection();
     SS.GW.selection[0].entity = hr.entity(0);
 }
-void TextWindow::ScreenChangeOneOrTwoSides(int link, DWORD v) {
-    SS.UndoRemember();
 
+void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
+    SS.UndoRemember();
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    if(g->subtype == Group::ONE_SIDED) {
-        g->subtype = Group::TWO_SIDED;
-    } else if(g->subtype == Group::TWO_SIDED) {
-        g->subtype = Group::ONE_SIDED;
-    } else oops();
+
+    switch(link) {
+        case 's':
+            if(g->subtype == Group::ONE_SIDED) {
+                g->subtype = Group::TWO_SIDED;
+            } else {
+                g->subtype = Group::ONE_SIDED;
+            }
+            break;
+
+        case 'k':
+            (g->skipFirst) = !(g->skipFirst);
+            break;
+
+        case 'c':
+            g->meshCombine = v;
+            break;
+
+        case 'P':
+            g->suppress = !(g->suppress);
+            break;
+
+        case 'm':
+            g->mirror = !(g->mirror);
+            break;
+
+        case 'r':
+            g->relaxConstraints = !(g->relaxConstraints);
+            break;
+
+        case 'f':
+            g->forceToMesh = !(g->forceToMesh);
+            break;
+
+    }
+
     SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
     SS.GW.ClearSuper();
 }
-void TextWindow::ScreenChangeSkipFirst(int link, DWORD v) {
-    SS.UndoRemember();
 
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    (g->skipFirst) = !(g->skipFirst);
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
-}
-void TextWindow::ScreenChangeMeshCombine(int link, DWORD v) {
-    SS.UndoRemember();
-
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    g->meshCombine = v;
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
-}
-void TextWindow::ScreenChangeMeshOrExact(int link, DWORD v) {
-    SS.UndoRemember();
-
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    g->forceToMesh = !(g->forceToMesh);
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
-}
-void TextWindow::ScreenChangeSuppress(int link, DWORD v) {
-    SS.UndoRemember();
-
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    g->suppress = !(g->suppress);
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
-}
-void TextWindow::ScreenChangeRelaxConstraints(int link, DWORD v) {
-    SS.UndoRemember();
-
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    g->relaxConstraints = !(g->relaxConstraints);
-    SS.MarkGroupDirty(g->h);
-    SS.later.generateAll = true;
-    SS.later.showTW = true;
-}
 void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -367,10 +354,10 @@ void TextWindow::ShowGroupInfo(void) {
        g->type == Group::TRANSLATE)
     {
         bool one = (g->subtype == Group::ONE_SIDED);
-        Printf(true, "%Ft%s%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E", s,
-            &TextWindow::ScreenChangeOneOrTwoSides,
+        Printf(true, "%Ft%s%E %Fh%f%Ls%s%E%Fs%s%E / %Fh%f%Ls%s%E%Fs%s%E", s,
+            &TextWindow::ScreenChangeGroupOption,
             (one ? "" : "one side"), (one ? "one side" : ""),
-            &TextWindow::ScreenChangeOneOrTwoSides,
+            &TextWindow::ScreenChangeGroupOption,
             (!one ? "" : "two sides"), (!one ? "two sides" : ""));
     } 
     
@@ -402,11 +389,11 @@ void TextWindow::ShowGroupInfo(void) {
         bool space;
         if(g->subtype == Group::ONE_SIDED) {
             bool skip = g->skipFirst;
-            Printf(true, "%Ft%s%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+            Printf(true, "%Ft%s%E %Fh%f%Lk%s%E%Fs%s%E / %Fh%f%Lk%s%E%Fs%s%E",
                 s3,
-                &ScreenChangeSkipFirst,
+                &ScreenChangeGroupOption,
                 (!skip ? "" : "with original"), (!skip ? "with original" : ""),
-                &ScreenChangeSkipFirst,
+                &ScreenChangeGroupOption,
                 (skip ? "":"with copy #1"), (skip ? "with copy #1":""));
             space = false;
         } else {
@@ -435,34 +422,40 @@ void TextWindow::ShowGroupInfo(void) {
         bool asa  = (g->type == Group::IMPORTED);
 
         Printf((g->type == Group::HELICAL_SWEEP),
-            "%FtMERGE AS%E %Fh%f%D%Ll%s%E%Fs%s%E / %Fh%f%D%Ll%s%E%Fs%s%E %s "
-            "%Fh%f%D%Ll%s%E%Fs%s%E",
-            &TextWindow::ScreenChangeMeshCombine,
+            "%FtMERGE AS%E %Fh%f%D%Lc%s%E%Fs%s%E / %Fh%f%D%Lc%s%E%Fs%s%E %s "
+            "%Fh%f%D%Lc%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_UNION,
             (un ? "" : "union"), (un ? "union" : ""),
-            &TextWindow::ScreenChangeMeshCombine,
+            &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_DIFFERENCE,
             (diff ? "" : "difference"), (diff ? "difference" : ""),
             asa ? "/" : "",
-            &TextWindow::ScreenChangeMeshCombine,
+            &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_ASSEMBLE,
             (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
     }
     if(g->type == Group::IMPORTED) {
         bool sup = g->suppress;
-        Printf(false, "%FtSUPPRESS%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-            &TextWindow::ScreenChangeSuppress,
+        Printf(false, "%FtSUPPRESS%E %Fh%f%LP%s%E%Fs%s%E / %Fh%f%LP%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeGroupOption,
             (sup ? "" : "yes"), (sup ? "yes" : ""),
-            &TextWindow::ScreenChangeSuppress,
+            &TextWindow::ScreenChangeGroupOption,
             (!sup ? "" : "no"), (!sup ? "no" : ""));
+
+        Printf(false, "%FtMIRROR%E   %Fh%f%Lm%s%E%Fs%s%E / %Fh%f%Lm%s%E%Fs%s%E",
+            &TextWindow::ScreenChangeGroupOption,
+            (g->mirror ? "" : "yes"), (g->mirror ? "yes" : ""),
+            &TextWindow::ScreenChangeGroupOption,
+            (!g->mirror ? "" : "no"), (!g->mirror ? "no" : ""));
     }
 
     bool relax = g->relaxConstraints;
-    Printf(true, "%FtSOLVING%E  %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-        &TextWindow::ScreenChangeRelaxConstraints,
+    Printf(true, "%FtSOLVING%E  %Fh%f%Lr%s%E%Fs%s%E / %Fh%f%Lr%s%E%Fs%s%E",
+        &TextWindow::ScreenChangeGroupOption,
         (!relax ? "" : "with all constraints"),
              (!relax ? "with all constraints" : ""),
-        &TextWindow::ScreenChangeRelaxConstraints,
+        &TextWindow::ScreenChangeGroupOption,
         (relax ? "" : "no"), (relax ? "no" : ""));
 
     if(g->type == Group::EXTRUDE ||
@@ -490,10 +483,10 @@ void TextWindow::ShowGroupInfo(void) {
         if(pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
             bool fm = g->forceToMesh;
             Printf(true,
-                "%FtSURFACES%E %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-                    &TextWindow::ScreenChangeMeshOrExact,
+                "%FtSURFACES%E %Fh%f%Lf%s%E%Fs%s%E / %Fh%f%Lf%s%E%Fs%s%E",
+                    &TextWindow::ScreenChangeGroupOption,
                     (!fm ? "" : "as NURBS"), (!fm ? "as NURBS" : ""),
-                    &TextWindow::ScreenChangeMeshOrExact,
+                    &TextWindow::ScreenChangeGroupOption,
                     (fm ? "" : "as mesh"), (fm ? "as mesh" : ""));
         } else {
             Printf(false,

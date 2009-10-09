@@ -706,6 +706,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[6] = qvz;
             }
             en.numPoint = ep->actPoint;
+            if(mirror) en.numPoint.z *= -1;
             break;
 
         case Entity::NORMAL_N_COPY:
@@ -727,6 +728,8 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[3] = qvz;
             }
             en.numNormal = ep->actNormal;
+            if(mirror) en.numNormal = en.numNormal.MirrorZ();
+
             en.point[0] = Remap(ep->point[0], remap);
             break;
 
@@ -762,6 +765,11 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             }
             en.numPoint = ep->actPoint;
             en.numNormal = ep->actNormal;
+            if(mirror) {
+                if(en.type != Entity::FACE_N_ROT_TRANS) oops();
+                en.numPoint.z   *= -1;
+                en.numNormal.vz *= -1;
+            }
             break;
 
         default:

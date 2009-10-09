@@ -89,7 +89,7 @@ public:
     bool IsCircle(Vector axis, Vector *center, double *r);
     bool IsRational(void);
 
-    SBezier TransformedBy(Vector t, Quaternion q);
+    SBezier TransformedBy(Vector t, Quaternion q, bool mirror);
     SBezier InPerspective(Vector u, Vector v, Vector n,
                           Vector origin, double cameraTan);
 
@@ -166,7 +166,8 @@ public:
     hSSurface       surfA;
     hSSurface       surfB;
 
-    static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q);
+    static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q, 
+                                        bool mirror);
     SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                                 SSurface *srfA, SSurface *srfB);
     void RemoveShortSegments(SSurface *srfA, SSurface *srfB);
@@ -235,7 +236,8 @@ public:
     static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
                                         double thetas, double thetaf);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
-    static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q, 
+    static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q,
+                                         bool mirror,
                                          bool includingTrims);
 
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
@@ -358,7 +360,8 @@ public:
                       Vector edge_n_in, Vector edge_n_out, Vector surf_n);
 
     void MakeFromCopyOf(SShell *a);
-    void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q);
+    void MakeFromTransformationOf(SShell *a, Vector trans, Quaternion q,
+                                    bool mirror);
     void MakeFromAssemblyOf(SShell *a, SShell *b);
     void MergeCoincidentSurfaces(void);
 

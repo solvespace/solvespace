@@ -2,17 +2,16 @@
 multi-drag
 copy and paste
 wireframe export
-import mirrored
+interpolating splines
+associative entities from solid model, as a special group
 
 -----
 some kind of import
 filled contours for export
 faster triangulation
-interpolating splines
 loop detection
 IGES export
 incremental regen of entities
-associative entities from solid model, as a special group
 rounding, as a special group
 
 
