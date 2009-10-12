@@ -158,7 +158,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     return fb;
 }
 
-void StepFileWriter::ExportSurface(SSurface *ss) {
+void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     int i, j, srfid = id;
 
     fprintf(f, "#%d=(\n", srfid);
@@ -205,17 +205,14 @@ void StepFileWriter::ExportSurface(SSurface *ss) {
 
     id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
 
-    // Get all of the loops of Beziers that trim our surface (with each
-    // Bezier split so that we use the section as t goes from 0 to 1), and
-    // the piecewise linearization of those loops in xyz space.
-    SBezierList sbl;
-    SPolygon sp;
-    ZERO(&sbl);
-    ZERO(&sp);
-    SEdge errorAt;
     bool allClosed;
-    ss->MakeSectionEdgesInto(shell, NULL, &sbl);
-    SBezierLoopSet sbls = SBezierLoopSet::From(&sbl, &sp, &allClosed, &errorAt);
+    SEdge errorAt;
+    SPolygon sp;
+    ZERO(&sp);
+    // Assemble the Bezier trim curves into closed loops; we also get the
+    // piecewise linearization of the curves (in the SPolygon sp), as a
+    // calculation aid for the loop direction.
+    SBezierLoopSet sbls = SBezierLoopSet::From(sbl, &sp, &allClosed, &errorAt);
 
     // Convert the xyz piecewise linear to uv piecewise linear.
     SContour *contour;
@@ -334,7 +331,8 @@ void StepFileWriter::WriteFooter(void) {
 
 void StepFileWriter::ExportSurfacesTo(char *file) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
-    shell = &(g->runningShell);
+    SShell *shell = &(g->runningShell);
+
     if(shell->surface.n == 0) {
         Error("The model does not contain any surfaces to export.%s",
             g->runningMesh.l.n > 0 ? 
@@ -358,7 +356,20 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
     for(ss = shell->surface.First(); ss; ss = shell->surface.NextAfter(ss)) {
         if(ss->trim.n == 0) continue;
 
-        ExportSurface(ss);
+        // Get all of the loops of Beziers that trim our surface (with each
+        // Bezier split so that we use the section as t goes from 0 to 1), and
+        // the piecewise linearization of those loops in xyz space.
+        SBezierList sbl;
+        ZERO(&sbl);
+        ss->MakeSectionEdgesInto(shell, NULL, &sbl);
+
+        // Apply the export scale factor.
+        ss->ScaleSelfBy(1.0/SS.exportScale);
+        sbl.ScaleSelfBy(1.0/SS.exportScale);
+
+        ExportSurface(ss, &sbl);
+
+        sbl.Clear();
     }
 
     fprintf(f, "#%d=CLOSED_SHELL('',(", id);

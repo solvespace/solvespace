@@ -61,7 +61,7 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    ShowTextEditControl(57, 3, str);
+    ShowTextEditControl(57, 5, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 
@@ -174,8 +174,8 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeGridSpacing, 0);
 
     Printf(false, "");
-    Printf(false, "%Ft export scale factor (1.0=mm, 25.4=inch)");
-    Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
+    Printf(false, "%Ft export scale factor (1:1=mm, 1:25.4=inch)");
+    Printf(false, "%Ba   1:%# %Fl%Ll%f%D[change]%E",
         (double)SS.exportScale,
         &ScreenChangeExportScale, 0);
     Printf(false, "%Ft cutter radius offset (0=no offset) ");

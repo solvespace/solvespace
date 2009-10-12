@@ -217,6 +217,7 @@ public:
         MNU_EXPORT_SURFACES,
         MNU_EXPORT_VIEW,
         MNU_EXPORT_SECTION,
+        MNU_EXPORT_WIREFRAME,
         MNU_EXIT,
         // View
         MNU_ZOOM_IN,

@@ -92,6 +92,7 @@ public:
     SBezier TransformedBy(Vector t, Quaternion q, bool mirror);
     SBezier InPerspective(Vector u, Vector v, Vector n,
                           Vector origin, double cameraTan);
+    void ScaleSelfBy(double s);
 
     static SBezier From(Vector p0, Vector p1, Vector p2, Vector p3);
     static SBezier From(Vector p0, Vector p1, Vector p2);
@@ -106,6 +107,7 @@ public:
     List<SBezier>   l;
 
     void Clear(void);
+    void ScaleSelfBy(double s);
     void CullIdenticalBeziers(void);
     void AllIntersectionsWith(SBezierList *sblb, SPointList *spl);
 };
@@ -239,6 +241,7 @@ public:
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q,
                                          bool mirror,
                                          bool includingTrims);
+    void ScaleSelfBy(double s);
 
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                   Vector *pt, Vector *enin, Vector *enout,

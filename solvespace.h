@@ -378,13 +378,12 @@ public:
     void WriteHeader(void);
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
-    void ExportSurface(SSurface *ss);
+    void ExportSurface(SSurface *ss, SBezierList *sbl);
     void WriteWireframe(void);
     void WriteFooter(void);
 
     List<int> curves;
     List<int> advancedFaces;
-    SShell *shell;
     FILE *f;
     int id;
 };

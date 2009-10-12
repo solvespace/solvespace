@@ -471,6 +471,15 @@ void SSurface::Reverse(void) {
     }
 }
 
+void SSurface::ScaleSelfBy(double s) {
+    int i, j;
+    for(i = 0; i <= degm; i++) {
+        for(j = 0; j <= degn; j++) {
+            ctrl[i][j] = ctrl[i][j].ScaledBy(s);
+        }
+    }
+}
+
 void SSurface::Clear(void) {
     trim.Clear();
 }

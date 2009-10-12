@@ -77,6 +77,13 @@ void SBezier::Reverse(void) {
     }
 }
 
+void SBezier::ScaleSelfBy(double s) {
+    int i;
+    for(i = 0; i <= deg; i++) {
+        ctrl[i] = ctrl[i].ScaledBy(s);
+    }
+}
+
 void SBezier::GetBoundingProjd(Vector u, Vector orig,
                                double *umin, double *umax)
 {
@@ -200,6 +207,13 @@ bool SBezier::Equals(SBezier *b) {
 
 void SBezierList::Clear(void) {
     l.Clear();
+}
+
+void SBezierList::ScaleSelfBy(double s) {
+    SBezier *sb;
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        sb->ScaleSelfBy(s);
+    }
 }
 
 //-----------------------------------------------------------------------------
