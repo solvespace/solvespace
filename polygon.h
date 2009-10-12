@@ -53,6 +53,7 @@ public:
 
     void Clear(void);
     bool ContainsPoint(Vector pt);
+    int IndexForPoint(Vector pt);
     void IncrementTagFor(Vector pt);
     void Add(Vector pt);
 };

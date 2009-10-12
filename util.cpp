@@ -88,6 +88,20 @@ bool StringAllPrintable(char *str)
     return true;
 }
 
+bool StringEndsIn(char *str, char *ending)
+{
+    int i, ls = strlen(str), le = strlen(ending);
+
+    if(ls < le) return false;
+        
+    for(i = 0; i < le; i++) {
+        if(tolower(ending[le-i-1]) != tolower(str[ls-i-1])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,

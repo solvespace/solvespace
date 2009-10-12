@@ -313,13 +313,19 @@ void SPointList::Clear(void) {
 }
 
 bool SPointList::ContainsPoint(Vector pt) {
-    SPoint *p;
-    for(p = l.First(); p; p = l.NextAfter(p)) {
+    return (IndexForPoint(pt) >= 0);
+}
+
+int SPointList::IndexForPoint(Vector pt) {
+    int i;
+    for(i = 0; i < l.n; i++) {
+        SPoint *p = &(l.elem[i]);
         if(pt.Equals(p->p)) {
-            return true;
+            return i;
         }
     }
-    return false;
+    // Not found, so return negative to indicate that.
+    return -1;
 }
 
 void SPointList::IncrementTagFor(Vector pt) {

@@ -82,8 +82,10 @@ int SaveFileYesNoCancel(void);
 #define PNG_PATTERN "PNG (*.png)\0*.png\0All Files (*)\0*\0\0"
 #define PNG_EXT "png"
 // Triangle mesh
-#define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
-#define STL_EXT "stl"
+#define MESH_PATTERN "STL Mesh (*.stl)\0*.stl\0" \
+                     "Wavefront OBJ Mesh (*.obj)\0*.obj\0" \
+                     "All Files (*)\0*\0\0"
+#define MESH_EXT "stl"
 // NURBS surfaces
 #define SRF_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
                     "All Files(*)\0*\0\0"
@@ -228,6 +230,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 void MakePathRelative(char *base, char *path);
 void MakePathAbsolute(char *base, char *path);
 bool StringAllPrintable(char *str);
+bool StringEndsIn(char *str, char *ending);
 
 class System {
 public:
@@ -406,7 +409,6 @@ public:
     Vector ptMin, ptMax;
 
     static double MmToPts(double mm);
-    static bool StringEndsIn(char *str, char *ending);
 
     static VectorFileWriter *ForFile(char *file);
 
@@ -629,6 +631,8 @@ public:
     // And the various export options
     void ExportAsPngTo(char *file);
     void ExportMeshTo(char *file);
+    void ExportMeshAsStlTo(FILE *f, SMesh *sm);
+    void ExportMeshAsObjTo(FILE *f, SMesh *sm);
     void ExportViewOrWireframeTo(char *file, bool wireframe);
     void ExportSectionTo(char *file);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,

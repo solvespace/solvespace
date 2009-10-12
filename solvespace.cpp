@@ -435,7 +435,7 @@ void SolveSpace::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
             char exportFile[MAX_PATH] = "";
-            if(!GetSaveFile(exportFile, STL_EXT, STL_PATTERN)) break;
+            if(!GetSaveFile(exportFile, MESH_EXT, MESH_PATTERN)) break;
             SS.ExportMeshTo(exportFile); 
             break;
         }

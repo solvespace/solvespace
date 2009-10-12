@@ -340,19 +340,6 @@ double VectorFileWriter::MmToPts(double mm) {
     return (mm/25.4)*72;
 }
 
-bool VectorFileWriter::StringEndsIn(char *str, char *ending) {
-    int i, ls = strlen(str), le = strlen(ending);
-
-    if(ls < le) return false;
-        
-    for(i = 0; i < le; i++) {
-        if(tolower(ending[le-i-1]) != tolower(str[ls-i-1])) {
-            return false;
-        }
-    }
-    return true;
-}
-
 VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     VectorFileWriter *ret;
     if(StringEndsIn(filename, ".dxf")) {
@@ -552,8 +539,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(DWORD rgb, double width,
 }
 
 //-----------------------------------------------------------------------------
-// Export the mesh as an STL file; it should always be vertex-to-vertex and
-// not self-intersecting, so not much to do.
+// Export a triangle mesh, in the requested format.
 //-----------------------------------------------------------------------------
 void SolveSpace::ExportMeshTo(char *filename) {
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
@@ -567,18 +553,36 @@ void SolveSpace::ExportMeshTo(char *filename) {
         Error("Couldn't write to '%s'", filename);
         return;
     }
+
+    if(StringEndsIn(filename, ".stl")) {
+        ExportMeshAsStlTo(f, m);
+    } else if(StringEndsIn(filename, ".obj")) {
+        ExportMeshAsObjTo(f, m);
+    } else {
+        Error("Can't identify output file type from file extension of "
+              "filename '%s'; try .stl, .obj.", filename);
+    }
+
+    fclose(f);
+}
+
+//-----------------------------------------------------------------------------
+// Export the mesh as an STL file; it should always be vertex-to-vertex and
+// not self-intersecting, so not much to do.
+//-----------------------------------------------------------------------------
+void SolveSpace::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     char str[80];
     memset(str, 0, sizeof(str));
     strcpy(str, "STL exported mesh");
     fwrite(str, 1, 80, f);
 
-    DWORD n = m->l.n;
+    DWORD n = sm->l.n;
     fwrite(&n, 4, 1, f);
 
     double s = SS.exportScale;
     int i;
-    for(i = 0; i < m->l.n; i++) {
-        STriangle *tr = &(m->l.elem[i]);
+    for(i = 0; i < sm->l.n; i++) {
+        STriangle *tr = &(sm->l.elem[i]);
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
         w = (float)n.x;           fwrite(&w, 4, 1, f);
@@ -596,8 +600,41 @@ void SolveSpace::ExportMeshTo(char *filename) {
         fputc(0, f);
         fputc(0, f);
     }
+}
 
-    fclose(f);
+//-----------------------------------------------------------------------------
+// Export the mesh as Wavefront OBJ format. This requires us to reduce all the
+// identical vertices to the same identifier, so do that first.
+//-----------------------------------------------------------------------------
+void SolveSpace::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
+    SPointList spl;
+    ZERO(&spl);
+    STriangle *tr;
+    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+        spl.IncrementTagFor(tr->a);
+        spl.IncrementTagFor(tr->b);
+        spl.IncrementTagFor(tr->c);
+    }
+
+    // Output all the vertices.
+    SPoint *sp;
+    for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
+        fprintf(f, "v %.10f %.10f %.10f\r\n",
+                        sp->p.x / SS.exportScale,
+                        sp->p.y / SS.exportScale,
+                        sp->p.z / SS.exportScale);
+    }
+
+    // And now all the triangular faces, in terms of those vertices. The
+    // file format counts from 1, not 0.
+    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+        fprintf(f, "f %d %d %d\r\n",
+                        spl.IndexForPoint(tr->a) + 1,
+                        spl.IndexForPoint(tr->b) + 1,
+                        spl.IndexForPoint(tr->c) + 1);
+    }
+
+    spl.Clear();
 }
 
 //-----------------------------------------------------------------------------
