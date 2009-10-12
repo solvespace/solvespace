@@ -107,7 +107,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
     bl.Clear();
 }
 
-void SolveSpace::ExportViewTo(char *filename) {
+void SolveSpace::ExportViewOrWireframeTo(char *filename, bool wireframe) {
     int i;
     SEdgeList edges;
     ZERO(&edges);
@@ -158,19 +158,40 @@ void SolveSpace::ExportViewTo(char *filename) {
         }
     }
 
-    Vector u = SS.GW.projRight,
-           v = SS.GW.projUp,
-           n = u.Cross(v),
-           origin = SS.GW.offset.ScaledBy(-1);
+    if(wireframe) {
+        VectorFileWriter *out = VectorFileWriter::ForFile(filename);
+        if(out) {
+            ExportWireframeCurves(&edges, &beziers, out);
+        }
+    } else {
+        Vector u = SS.GW.projRight,
+               v = SS.GW.projUp,
+               n = u.Cross(v),
+               origin = SS.GW.offset.ScaledBy(-1);
 
-    VectorFileWriter *out = VectorFileWriter::ForFile(filename);
-    if(out) {
-        ExportLinesAndMesh(&edges, &beziers, sm,
-                           u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
-                           out);
+        VectorFileWriter *out = VectorFileWriter::ForFile(filename);
+        if(out) {
+            ExportLinesAndMesh(&edges, &beziers, sm,
+                               u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
+                               out);
+        }
     }
+
     edges.Clear();
     beziers.Clear();
+}
+
+
+void SolveSpace::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
+                           VectorFileWriter *out)
+{
+    sbl->ScaleSelfBy(1.0/SS.exportScale);
+    SEdge *se;
+    for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+        se->a = (se->a).ScaledBy(1.0/SS.exportScale);
+        se->b = (se->b).ScaledBy(1.0/SS.exportScale);
+    }
+    out->Output(sel, sbl, NULL);
 }
 
 void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
@@ -465,7 +486,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
 
             DWORD rgb = Style::Color  (e->auxA, true);
             double w  = Style::WidthMm(e->auxA)*s;
-            LineSegment(rgb, w, e->a.x, e->a.y, e->b.x, e->b.y);
+            LineSegment(rgb, w, e->a, e->b);
         }
     }
     if(sbl) {
@@ -483,11 +504,10 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
 void VectorFileWriter::BezierAsPwl(DWORD rgb, double width, SBezier *sb) {
     List<Vector> lv;
     ZERO(&lv);
-    sb->MakePwlInto(&lv);
+    sb->MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
     int i;
     for(i = 1; i < lv.n; i++) {
-        LineSegment(rgb, width, lv.elem[i-1].x, lv.elem[i-1].y,
-                                lv.elem[i  ].x, lv.elem[i  ].y);
+        LineSegment(rgb, width, lv.elem[i-1], lv.elem[i]);
     }
     lv.Clear();
 }

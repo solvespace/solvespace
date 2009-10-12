@@ -106,6 +106,20 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q, bool mirror) {
 }
 
 //-----------------------------------------------------------------------------
+// Does this curve lie entirely within the specified plane? It does if all
+// the control points lie in that plane.
+//-----------------------------------------------------------------------------
+bool SBezier::IsInPlane(Vector n, double d) {
+    int i;
+    for(i = 0; i <= deg; i++) {
+        if(fabs((ctrl[i]).Dot(n) - d) > LENGTH_EPS) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 // Is this Bezier exactly the arc of a circle, projected along the specified
 // axis? If yes, return that circle's center and radius.
 //-----------------------------------------------------------------------------

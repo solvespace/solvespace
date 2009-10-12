@@ -226,20 +226,20 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
     }
 }
 
-void SBezier::MakePwlInto(SEdgeList *sel) {
+void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) {
     List<Vector> lv;
     ZERO(&lv);
-    MakePwlInto(&lv);
+    MakePwlInto(&lv, chordTol);
     int i;
     for(i = 1; i < lv.n; i++) {
         sel->AddEdge(lv.elem[i-1], lv.elem[i]);
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<SCurvePt> *l) {
+void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
     List<Vector> lv;
     ZERO(&lv);
-    MakePwlInto(&lv);
+    MakePwlInto(&lv, chordTol);
     int i;
     for(i = 0; i < lv.n; i++) {
         SCurvePt scpt;
@@ -250,11 +250,17 @@ void SBezier::MakePwlInto(List<SCurvePt> *l) {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<Vector> *l) {
+void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
+    if(chordTol == 0) {
+        // Use the default chord tolerance.
+        chordTol = SS.ChordTolMm();
+    }
     l->Add(&(ctrl[0]));
-    MakePwlWorker(l, 0.0, 1.0);
+    MakePwlWorker(l, 0.0, 1.0, chordTol);
 }
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb) {
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb,
+                                double chordTol)
+{
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
 
@@ -269,13 +275,13 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb) {
                    pm2.DistanceToLine(pa, pb.Minus(pa)));
 
     double step = 1.0/SS.maxSegments;
-    if((tb - ta) < step || d < SS.ChordTolMm()) {
+    if((tb - ta) < step || d < chordTol) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
     } else {
         double tm = (ta + tb) / 2;
-        MakePwlWorker(l, ta, tm);
-        MakePwlWorker(l, tm, tb);
+        MakePwlWorker(l, ta, tm, chordTol);
+        MakePwlWorker(l, tm, tb, chordTol);
     }
 }
 

@@ -1,7 +1,6 @@
 
 multi-drag
 copy and paste
-wireframe export
 interpolating splines
 associative entities from solid model, as a special group
 

@@ -77,15 +77,16 @@ public:
     Vector Start(void);
     Vector Finish(void);
     bool Equals(SBezier *b);
-    void MakePwlInto(SEdgeList *sel);
-    void MakePwlInto(List<SCurvePt> *l);
-    void MakePwlInto(List<Vector> *l);
-    void MakePwlWorker(List<Vector> *l, double ta, double tb);
+    void MakePwlInto(SEdgeList *sel, double chordTol=0);
+    void MakePwlInto(List<SCurvePt> *l, double chordTol=0);
+    void MakePwlInto(List<Vector> *l, double chordTol=0);
+    void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol);
 
     void AllIntersectionsWith(SBezier *sbb, SPointList *spl);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void Reverse(void);
 
+    bool IsInPlane(Vector n, double d);
     bool IsCircle(Vector axis, Vector *center, double *r);
     bool IsRational(void);
 

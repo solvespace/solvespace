@@ -415,7 +415,14 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
-            SS.ExportViewTo(exportFile); 
+            SS.ExportViewOrWireframeTo(exportFile, false); 
+            break;
+        }
+
+        case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
+            char exportFile[MAX_PATH] = "";
+            if(!GetSaveFile(exportFile, V3D_EXT, V3D_PATTERN)) break;
+            SS.ExportViewOrWireframeTo(exportFile, true); 
             break;
         }
 

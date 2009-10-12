@@ -75,15 +75,20 @@ extern char RecentFile[MAX_RECENT][MAX_PATH];
 void RefreshRecentMenus(void);
 
 int SaveFileYesNoCancel(void);
+// SolveSpace native file format
 #define SLVS_PATTERN "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0"
 #define SLVS_EXT "slvs"
+// PNG format bitmap
 #define PNG_PATTERN "PNG (*.png)\0*.png\0All Files (*)\0*\0\0"
 #define PNG_EXT "png"
+// Triangle mesh
 #define STL_PATTERN "STL Mesh (*.stl)\0*.stl\0All Files (*)\0*\0\0"
 #define STL_EXT "stl"
+// NURBS surfaces
 #define SRF_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
                     "All Files(*)\0*\0\0"
 #define SRF_EXT "step"
+// 2d vector (lines and curves) format
 #define VEC_PATTERN "PDF File (*.pdf)\0*.pdf\0" \
                     "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
                     "Scalable Vector Graphics (*.svg)\0*.svg\0" \
@@ -92,8 +97,15 @@ int SaveFileYesNoCancel(void);
                     "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
                     "All Files (*)\0*\0\0"
 #define VEC_EXT "pdf"
+// 3d vector (wireframe lines and curves) format
+#define V3D_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
+                    "DXF File (*.dxf)\0*.dxf\0" \
+                    "All Files (*)\0*\0\0"
+#define V3D_EXT "step"
+// Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
+// Native license file
 #define LICENSE_PATTERN \
     "License File (*.license)\0*.license\0All Files (*)\0*\0\0"
 #define LICENSE_EXT "license"
@@ -393,9 +405,6 @@ public:
     FILE *f;
     Vector ptMin, ptMax;
 
-    double width;
-    double r, g, b;
-    
     static double MmToPts(double mm);
     static bool StringEndsIn(char *str, char *ending);
 
@@ -408,16 +417,15 @@ public:
                                     SBezier *sb, int depth=0);
 
     virtual void Bezier(DWORD rgb, double width, SBezier *sb) = 0;
-    virtual void LineSegment(DWORD rgb, double width,
-                                double x0, double y0, double x1, double y1) = 0;
+    virtual void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB)
+                                                                            = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -426,8 +434,7 @@ public:
 class EpsFileWriter : public VectorFileWriter {
 public:
     static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -439,8 +446,7 @@ public:
     DWORD bodyStart;
 
     static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -449,8 +455,7 @@ public:
 class SvgFileWriter : public VectorFileWriter {
 public:
     static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -459,8 +464,7 @@ public:
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -468,8 +472,7 @@ public:
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
-    void LineSegment(DWORD rgb, double width, 
-                        double x0, double y0, double x1, double y1);
+    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
     void Triangle(STriangle *tr);
     void Bezier(DWORD rgb, double width, SBezier *sb);
     void StartFile(void);
@@ -626,8 +629,10 @@ public:
     // And the various export options
     void ExportAsPngTo(char *file);
     void ExportMeshTo(char *file);
-    void ExportViewTo(char *file);
+    void ExportViewOrWireframeTo(char *file, bool wireframe);
     void ExportSectionTo(char *file);
+    void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
+                               VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
                             Vector u, Vector v, Vector n, Vector origin,
                                 double cameraTan,
