@@ -205,12 +205,24 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
 
             hRequest hr = pending.point.request();
-            Vector p0 = SK.GetEntity(hr.entity(1))->PointGetNum();
-            Vector p3 = SK.GetEntity(hr.entity(4))->PointGetNum();
-            Vector p1 = p0.ScaledBy(2.0/3).Plus(p3.ScaledBy(1.0/3));
-            SK.GetEntity(hr.entity(2))->PointForceTo(p1);
-            Vector p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
-            SK.GetEntity(hr.entity(3))->PointForceTo(p2);
+            if(pending.point.v == hr.entity(4).v) {
+                // The very first segment; dragging final point drags both
+                // tangent points.
+                Vector p0 = SK.GetEntity(hr.entity(1))->PointGetNum(),
+                       p3 = SK.GetEntity(hr.entity(4))->PointGetNum(),
+                       p1 = p0.ScaledBy(2.0/3).Plus(p3.ScaledBy(1.0/3)),
+                       p2 = p0.ScaledBy(1.0/3).Plus(p3.ScaledBy(2.0/3));
+                SK.GetEntity(hr.entity(1+1))->PointForceTo(p1);
+                SK.GetEntity(hr.entity(1+2))->PointForceTo(p2);
+            } else {
+                // A subsequent segment; dragging point drags only final
+                // tangent point.
+                int i = SK.GetEntity(hr.entity(0))->extraPoints;
+                Vector pn   = SK.GetEntity(hr.entity(4+i))->PointGetNum(),
+                       pnm2 = SK.GetEntity(hr.entity(2+i))->PointGetNum(),
+                       pnm1 = (pn.Plus(pnm2)).ScaledBy(0.5);
+                SK.GetEntity(hr.entity(3+i))->PointForceTo(pnm1);
+            }
 
             SS.MarkGroupDirtyByEntity(pending.point);
             break;
@@ -282,6 +294,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
 void GraphicsWindow::ClearPending(void) {
     memset(&pending, 0, sizeof(pending));
+    SS.later.showTW = true;
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
@@ -319,14 +332,18 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(orig.startedMoving) return;
 
     if(context.active) return;
-    context.active = true;
 
-    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
+    if(pending.operation == DRAGGING_NEW_LINE_POINT ||
+       pending.operation == DRAGGING_NEW_CUBIC_POINT)
+    {
         // Special case; use a right click to stop drawing lines, since
         // a left click would draw another one. This is quicker and more
-        // intuitive than hitting escape.
+        // intuitive than hitting escape. Likewise for new cubic segments.
         ClearPending();
+        return;
     }
+
+    context.active = true;
 
     GroupSelection();
     if(hover.IsEmpty() && gs.n == 0 && gs.constraints == 0) {
@@ -591,7 +608,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             pending.operation = DRAGGING_NEW_LINE_POINT;
             pending.point = hr.entity(2);
-            pending.description = "click to place next point of line";
+            pending.description = "click next point of line, or press Esc";
             SK.GetEntity(pending.point)->PointForceTo(v);
             break;
 
@@ -675,7 +692,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             pending.operation = DRAGGING_NEW_CUBIC_POINT;
             pending.point = hr.entity(4);
-            pending.description = "click to place next point of cubic";
+            pending.description = "click next point of cubic, or press Esc";
             break;
 
         case MNU_WORKPLANE:
@@ -734,10 +751,59 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case DRAGGING_NEW_ARC_POINT:
-        case DRAGGING_NEW_CUBIC_POINT:
             ConstrainPointByHovered(pending.point);
             ClearPending();
             break;
+
+        case DRAGGING_NEW_CUBIC_POINT: {
+            hRequest hr = pending.point.request();
+            Request *r = SK.GetRequest(hr);
+
+            if(hover.entity.v == hr.entity(1).v && r->extraPoints >= 2) {
+                // They want the endpoints coincident, which means a periodic
+                // spline instead.
+                r->type = Request::CUBIC_PERIODIC;
+                // Remove the off-curve control points, which are no longer
+                // needed here; so move [2,ep+1] down, skipping first pt.
+                int i;
+                for(i = 2; i <= r->extraPoints+1; i++) {
+                    SK.GetEntity(hr.entity((i-1)+1))->PointForceTo(
+                        SK.GetEntity(hr.entity(i+1))->PointGetNum());
+                }
+                // and move ep+3 down by two, skipping both
+                SK.GetEntity(hr.entity((r->extraPoints+1)+1))->PointForceTo(
+                  SK.GetEntity(hr.entity((r->extraPoints+3)+1))->PointGetNum());
+                r->extraPoints -= 2;
+                // And we're done.
+                SS.MarkGroupDirty(r->group);
+                SS.later.generateAll = true;
+                ClearPending();
+                break;
+            }
+
+            if(ConstrainPointByHovered(pending.point)) {
+                ClearPending();
+                break;
+            }
+
+            Entity e;
+            if(r->extraPoints >= arraylen(e.point) - 4) {
+                ClearPending();
+                break;
+            }
+
+            (SK.GetRequest(hr)->extraPoints)++;
+            SS.GenerateAll(-1, -1);
+
+            int ep = r->extraPoints;
+            Vector last = SK.GetEntity(hr.entity(3+ep))->PointGetNum();
+
+            SK.GetEntity(hr.entity(2+ep))->PointForceTo(last);
+            SK.GetEntity(hr.entity(3+ep))->PointForceTo(v);
+            SK.GetEntity(hr.entity(4+ep))->PointForceTo(v);
+            pending.point = hr.entity(4+ep);
+            break;
+        }
 
         case DRAGGING_NEW_LINE_POINT: {
             if(ConstrainPointByHovered(pending.point)) {
@@ -755,7 +821,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             // And drag an endpoint of the new line segment
             pending.operation = DRAGGING_NEW_LINE_POINT;
             pending.point = hr.entity(2);
-            pending.description = "click to place next point of next line";
+            pending.description = "click next point of line, or press Esc";
 
             break;
         }

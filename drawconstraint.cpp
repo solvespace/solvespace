@@ -699,8 +699,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 }
 
                 Entity *cubic = SK.GetEntity(entityA);
-                Vector p =
-                    SK.GetEntity(cubic->point[other ? 3 : 0])->PointGetNum();
+                Vector p = other ? cubic->CubicGetFinishNum() :
+                                   cubic->CubicGetStartNum();  
                 Vector dir = SK.GetEntity(entityB)->VectorGetNum();
                 Vector out = n.Cross(dir);
                 textAt = p.Plus(out.WithMagnitude(14/SS.GW.scale));

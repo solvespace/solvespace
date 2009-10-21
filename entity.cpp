@@ -114,6 +114,23 @@ void EntityBase::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) {
     while(*dtheta > (2*PI)) *dtheta -= 2*PI;
 }
 
+Vector EntityBase::CubicGetStartNum(void) {
+    return SK.GetEntity(point[0])->PointGetNum();
+}
+Vector EntityBase::CubicGetFinishNum(void) {
+    return SK.GetEntity(point[3+extraPoints])->PointGetNum();
+}
+ExprVector EntityBase::CubicGetStartTangentExprs(void) {
+    ExprVector pon  = SK.GetEntity(point[0])->PointGetExprs(),
+               poff = SK.GetEntity(point[1])->PointGetExprs();
+    return (pon.Minus(poff));
+}
+ExprVector EntityBase::CubicGetFinishTangentExprs(void) {
+    ExprVector pon  = SK.GetEntity(point[3+extraPoints])->PointGetExprs(),
+               poff = SK.GetEntity(point[2+extraPoints])->PointGetExprs();
+    return (pon.Minus(poff));
+}
+
 bool EntityBase::IsWorkplane(void) {
     return (type == WORKPLANE);
 }

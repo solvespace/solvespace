@@ -215,6 +215,143 @@ bool Entity::PointIsFromReferences(void) {
     return h.request().IsFromReferences();
 }
 
+//-----------------------------------------------------------------------------
+// Compute a cubic, second derivative continuous, interpolating spline. Same
+// routine for periodic splines (in a loop) or open splines (with specified
+// end tangents).
+//-----------------------------------------------------------------------------
+void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
+    static const int MAX_N = BandedMatrix::MAX_UNKNOWNS;
+    int ep = extraPoints;
+
+    // The number of unknowns to solve for.
+    int n   = periodic ? 3 + ep : ep;
+    if(n >= MAX_N) oops();
+    // The number of on-curve points, one more than the number of segments.
+    int pts = periodic ? 4 + ep : 2 + ep;
+
+    int i, j, a;
+    
+    // The starting and finishing control points that define our end tangents
+    // (if the spline isn't periodic), and the on-curve points.
+    Vector ctrl_s, ctrl_f, pt[MAX_N+4];
+    if(periodic) {
+        for(i = 0; i < ep + 3; i++) {
+            pt[i] = SK.GetEntity(point[i])->PointGetNum();
+        }
+        pt[i++] = SK.GetEntity(point[0])->PointGetNum();
+    } else {
+        ctrl_s = SK.GetEntity(point[1])->PointGetNum();
+        ctrl_f = SK.GetEntity(point[ep+2])->PointGetNum();
+        j = 0;
+        pt[j++] = SK.GetEntity(point[0])->PointGetNum();
+        for(i = 2; i <= ep + 1; i++) {
+            pt[j++] = SK.GetEntity(point[i])->PointGetNum();
+        }
+        pt[j++] = SK.GetEntity(point[ep+3])->PointGetNum();
+    }
+
+    // The unknowns that we will be solving for, a set for each coordinate.
+    double Xx[MAX_N], Xy[MAX_N], Xz[MAX_N];
+    // For a cubic Bezier section f(t) as t goes from 0 to 1,
+    //    f' (0) = 3*(P1 - P0)
+    //    f' (1) = 3*(P3 - P2)
+    //    f''(0) = 6*(P0 - 2*P1 + P2)
+    //    f''(1) = 6*(P3 - 2*P2 + P1)
+    for(a = 0; a < 3; a++) {
+        BandedMatrix bm;
+        ZERO(&bm);
+        bm.n = n;
+   
+        for(i = 0; i < n; i++) {
+            int im, it, ip;
+            if(periodic) {
+                im = WRAP(i - 1, n);
+                it = i;
+                ip = WRAP(i + 1, n);
+            } else {
+                im = i;
+                it = i + 1;
+                ip = i + 2;
+            }
+            // All of these are expressed in terms of a constant part, and
+            // of X[i-1], X[i], and X[i+1]; so let these be the four
+            // components of that vector;
+            Vector4 A, B, C, D, E;
+            // The on-curve interpolated point
+            C = Vector4::From((pt[it]).Element(a), 0, 0, 0);
+            // control point one back, C - X[i]
+            B = C.Plus(Vector4::From(0, 0, -1, 0));
+            // control point one forward, C + X[i]
+            D = C.Plus(Vector4::From(0, 0, 1, 0));
+            // control point two back
+            if(i == 0 && !periodic) {
+                A = Vector4::From(ctrl_s.Element(a), 0, 0, 0);
+            } else {
+                // pt[im] + X[i-1]
+                A = Vector4::From(pt[im].Element(a), 1, 0, 0);
+            }
+            // control point two forward
+            if(i == (n - 1) && !periodic) {
+                E = Vector4::From(ctrl_f.Element(a), 0, 0, 0);
+            } else {
+                // pt[ip] - X[i+1]
+                E = Vector4::From((pt[ip]).Element(a), 0, 0, -1);
+            }
+            // Write the second derivatives of each segment, dropping constant
+            Vector4 fprev_pp = (C.Minus(B.ScaledBy(2))).Plus(A),
+                    fnext_pp = (C.Minus(D.ScaledBy(2))).Plus(E),
+                    eq       = fprev_pp.Minus(fnext_pp);
+
+            bm.B[i] = -eq.w;
+            if(periodic) {
+                bm.A[i][WRAP(i-2, n)] = eq.x;
+                bm.A[i][WRAP(i-1, n)] = eq.y;
+                bm.A[i][i]            = eq.z;
+            } else {
+                // The wrapping would work, except when n = 1 and everything
+                // wraps to zero...
+                if(i > 0)     bm.A[i][i - 1] = eq.x; 
+                              bm.A[i][i]     = eq.y;
+                if(i < (n-1)) bm.A[i][i + 1] = eq.z;
+            }
+        }
+        bm.Solve();
+        double *X = (a == 0) ? Xx :
+                    (a == 1) ? Xy :
+                               Xz;
+        memcpy(X, bm.X, n*sizeof(double));
+    }
+
+    for(i = 0; i < pts - 1; i++) {
+        Vector p0, p1, p2, p3;
+        if(periodic) {
+            p0 = pt[i];
+            int iw = WRAP(i - 1, n);
+            p1 = p0.Plus(Vector::From(Xx[iw], Xy[iw], Xz[iw]));
+        } else if(i == 0) {
+            p0 = pt[0];
+            p1 = ctrl_s;
+        } else {
+            p0 = pt[i];
+            p1 = p0.Plus(Vector::From(Xx[i-1], Xy[i-1], Xz[i-1]));
+        }
+        if(periodic) {
+            p3 = pt[i+1];
+            int iw = WRAP(i, n);
+            p2 = p3.Minus(Vector::From(Xx[iw], Xy[iw], Xz[iw]));
+        } else if(i == (pts - 2)) {
+            p3 = pt[pts-1];
+            p2 = ctrl_f;
+        } else {
+            p3 = pt[i+1];
+            p2 = p3.Minus(Vector::From(Xx[i], Xy[i], Xz[i]));
+        }
+        SBezier sb = SBezier::From(p0, p1, p2, p3);
+        sbl->l.Add(&sb);
+    }
+}
+
 void Entity::GenerateBezierCurves(SBezierList *sbl) {
     SBezier sb;
 
@@ -228,15 +365,13 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             sbl->l.Add(&sb);
             break;
         }
-        case CUBIC: {
-            Vector p0 = SK.GetEntity(point[0])->PointGetNum();
-            Vector p1 = SK.GetEntity(point[1])->PointGetNum();
-            Vector p2 = SK.GetEntity(point[2])->PointGetNum();
-            Vector p3 = SK.GetEntity(point[3])->PointGetNum();
-            sb = SBezier::From(p0, p1, p2, p3);
-            sbl->l.Add(&sb);
+        case CUBIC:
+            ComputeInterpolatingSpline(sbl, false);
             break;
-        }
+
+        case CUBIC_PERIODIC:
+            ComputeInterpolatingSpline(sbl, true);
+            break;
 
         case CIRCLE:
         case ARC_OF_CIRCLE: {
@@ -476,6 +611,7 @@ void Entity::DrawOrGetDistance(void) {
         case CIRCLE:
         case ARC_OF_CIRCLE:
         case CUBIC:
+        case CUBIC_PERIODIC:
         case TTF_TEXT:
             // Nothing but the curve(s).
             break;

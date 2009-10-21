@@ -172,6 +172,7 @@ void GraphicsWindow::GroupSelection(void) {
                 case Entity::WORKPLANE:     (gs.workplanes)++; break;
                 case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
                 case Entity::CUBIC:         (gs.cubics)++; break;
+                // but don't count periodic cubics
 
                 case Entity::ARC_OF_CIRCLE:
                     (gs.circlesOrArcs)++;
@@ -203,7 +204,17 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
         // Don't hover whatever's being dragged.
-        if(e->h.request().v == pending.point.request().v) continue;
+        if(e->h.request().v == pending.point.request().v) {
+            // The one exception is when we're creating a new cubic; we
+            // want to be able to hover the first point, because that's
+            // how we turn it into a periodic spline.
+            if(!e->IsPoint()) continue;
+            if(!e->h.isFromRequest()) continue;
+            Request *r = SK.GetRequest(e->h.request());
+            if(r->type != Request::CUBIC) continue;
+            if(r->extraPoints < 2) continue;
+            if(e->h.v != r->h.entity(1).v) continue;
+        }
 
         d = e->GetDistance(mp);
         if(d < 10 && d < dmin) {

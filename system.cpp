@@ -171,15 +171,15 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
         // greater. First, find a pivot (between rows i and N-1).
         max = 0;
         for(ip = i; ip < n; ip++) {
-            if(fabs(A[ip][i]) > max) {
+            if(ffabs(A[ip][i]) > max) {
                 imax = ip;
-                max = fabs(A[ip][i]);
+                max = ffabs(A[ip][i]);
             }
         }
         // Don't give up on a singular matrix unless it's really bad; the
         // assumption code is responsible for identifying that condition,
         // so we're not responsible for reporting that error.
-        if(fabs(max) < 1e-20) return false;
+        if(ffabs(max) < 1e-20) return false;
 
         // Swap row imax with row i
         for(jp = 0; jp < n; jp++) {
@@ -201,7 +201,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
     // We've put the matrix in upper triangular form, so at this point we
     // can solve by back-substitution.
     for(i = n - 1; i >= 0; i--) {
-        if(fabs(A[i][i]) < 1e-20) return false;
+        if(ffabs(A[i][i]) < 1e-20) return false;
 
         temp = B[i];
         for(j = n - 1; j > i; j--) {
@@ -294,7 +294,7 @@ bool System::NewtonSolve(int tag) {
             if(isnan(mat.B.num[i])) {
                 return false;
             }
-            if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
+            if(ffabs(mat.B.num[i]) > CONVERGE_TOLERANCE) {
                 converged = false;
                 break;
             }
@@ -483,7 +483,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 didnt_converge:
     SK.constraint.ClearTags();
     for(i = 0; i < eq.n; i++) {
-        if(fabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
+        if(ffabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
             // This constraint is unsatisfied.
             if(!mat.eq[i].isFromConstraint()) continue;
 

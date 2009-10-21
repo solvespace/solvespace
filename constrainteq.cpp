@@ -639,12 +639,12 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             EntityBase *cubic = SK.GetEntity(entityA);
             EntityBase *line  = SK.GetEntity(entityB);
             
-            ExprVector endpoint =
-                SK.GetEntity(cubic->point[other ? 3 : 0])->PointGetExprs();
-            ExprVector ctrlpoint = 
-                SK.GetEntity(cubic->point[other ? 2 : 1])->PointGetExprs();
-            
-            ExprVector a = endpoint.Minus(ctrlpoint);
+            ExprVector a;
+            if(other) {
+                a = cubic->CubicGetFinishTangentExprs();
+            } else {
+                a = cubic->CubicGetStartTangentExprs();
+            }
 
             ExprVector b = line->VectorGetExprs();
 

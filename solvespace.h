@@ -33,6 +33,9 @@ inline double WRAP_SYMMETRIC(double v, double n) {
     return v;
 }
 
+// Why is this faster than the library function?
+inline double ffabs(double v) { return (v > 0) ? v : (-v); }
+
 #define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
@@ -234,8 +237,8 @@ bool StringEndsIn(char *str, char *ending);
 
 class System {
 public:
-    static const int MAX_UNKNOWNS = 1000;
-    static const int MAX_DRAGGED  = 4;
+    static const int MAX_UNKNOWNS      = 1024;
+    static const int MAX_DRAGGED       = 4;
 
     EntityList                      entity;
     ParamList                       param;

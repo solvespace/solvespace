@@ -248,11 +248,13 @@ public:
     static const int DATUM_POINT            = 101;
     static const int LINE_SEGMENT           = 200;
     static const int CUBIC                  = 300;
+    static const int CUBIC_PERIODIC         = 301;
     static const int CIRCLE                 = 400;
     static const int ARC_OF_CIRCLE          = 500;
     static const int TTF_TEXT               = 600;
 
     int         type;
+    int         extraPoints;
 
     hEntity     workplane; // or Entity::FREE_IN_3D
     hGroup      group;
@@ -302,6 +304,7 @@ public:
     static const int WORKPLANE              = 10000;
     static const int LINE_SEGMENT           = 11000;
     static const int CUBIC                  = 12000;
+    static const int CUBIC_PERIODIC         = 12001;
     static const int CIRCLE                 = 13000;
     static const int ARC_OF_CIRCLE          = 14000;
     static const int TTF_TEXT               = 15000;
@@ -313,7 +316,8 @@ public:
 
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
-    hEntity     point[4];
+    hEntity     point[12];
+    int         extraPoints;
     hEntity     normal;
     hEntity     distance;
     // The only types that have their own params are points, normals,
@@ -386,6 +390,11 @@ public:
     ExprVector NormalExprsV(void);
     ExprVector NormalExprsN(void);
 
+    Vector CubicGetStartNum(void);
+    Vector CubicGetFinishNum(void);
+    ExprVector CubicGetStartTangentExprs(void);
+    ExprVector CubicGetFinishTangentExprs(void);
+
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 };
@@ -423,6 +432,7 @@ public:
     bool IsVisible(void);
     bool PointIsFromReferences(void);
 
+    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic);
     void GenerateBezierCurves(SBezierList *sbl);
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 

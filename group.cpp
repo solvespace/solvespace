@@ -636,6 +636,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     Entity en;
     memset(&en, 0, sizeof(en));
     en.type = ep->type;
+    en.extraPoints = ep->extraPoints;
     en.h = Remap(ep->h, remap);
     en.timesApplied = timesApplied;
     en.group = h;
@@ -652,12 +653,20 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             en.point[1] = Remap(ep->point[1], remap);
             break;
 
-        case Entity::CUBIC:
-            en.point[0] = Remap(ep->point[0], remap);
-            en.point[1] = Remap(ep->point[1], remap);
-            en.point[2] = Remap(ep->point[2], remap);
-            en.point[3] = Remap(ep->point[3], remap);
+        case Entity::CUBIC: {
+            int i;
+            for(i = 0; i < 4 + ep->extraPoints; i++) {
+                en.point[i] = Remap(ep->point[i], remap);
+            }
             break;
+        }
+        case Entity::CUBIC_PERIODIC: {
+            int i;
+            for(i = 0; i < 3 + ep->extraPoints; i++) {
+                en.point[i] = Remap(ep->point[i], remap);
+            }
+            break;
+        }
 
         case Entity::CIRCLE:
             en.point[0] = Remap(ep->point[0], remap);

@@ -591,12 +591,12 @@ void Constraint::MenuConstrain(int id) {
                 }
                 Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
                        l1 = SK.GetEntity(line->point[1])->PointGetNum();
-                Vector a0 = SK.GetEntity(cubic->point[0])->PointGetNum(),
-                       a3 = SK.GetEntity(cubic->point[3])->PointGetNum();
+                Vector as = cubic->CubicGetStartNum(),
+                       af = cubic->CubicGetFinishNum();
 
-                if(l0.Equals(a0) || l1.Equals(a0)) {
+                if(l0.Equals(as) || l1.Equals(as)) {
                     c.other = false;
-                } else if(l0.Equals(a3) || l1.Equals(a3)) {
+                } else if(l0.Equals(af) || l1.Equals(af)) {
                     c.other = true;
                 } else {
                     Error("The tangent cubic and line segment must share an "

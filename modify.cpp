@@ -310,7 +310,7 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
     b01.ClosestPointTo(pinter, &t, true);
     b01.SplitAt(t, &b0i, &bi1);
 
-    // Add the two line segments this one gets split into.
+    // Add the two cubic segments this one gets split into.
     hRequest r0i = AddRequest(Request::CUBIC, false),
              ri1 = AddRequest(Request::CUBIC, false);
     // Don't get entities till after adding, realloc issues
@@ -343,7 +343,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
         ret = SplitCircle(he, pinter);
     } else if(e->type == Entity::LINE_SEGMENT) {
         ret = SplitLine(he, pinter);
-    } else if(e->type == Entity::CUBIC) {
+    } else if(e->type == Entity::CUBIC && e->extraPoints == 0) {
         ret = SplitCubic(he, pinter);
     } else {
         Error("Couldn't split this entity; lines, circles, or cubics only.");

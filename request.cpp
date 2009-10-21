@@ -50,7 +50,12 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
         case Request::CUBIC:
             et = Entity::CUBIC;
-            points = 4; 
+            points = 4 + extraPoints; 
+            break;
+
+        case Request::CUBIC_PERIODIC:
+            et = Entity::CUBIC_PERIODIC;
+            points = 3 + extraPoints;
             break;
 
         case Request::TTF_TEXT:
@@ -64,6 +69,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
     // Generate the entity that's specific to this request.
     e.type = et;
+    e.extraPoints = extraPoints;
     e.group = group;
     e.style = style;
     e.workplane = workplane;
@@ -157,6 +163,7 @@ char *Request::DescriptionString(void) {
             case DATUM_POINT:       s = "datum-point"; break;
             case LINE_SEGMENT:      s = "line-segment"; break;
             case CUBIC:             s = "cubic-bezier"; break;
+            case CUBIC_PERIODIC:    s = "periodic-cubic"; break;
             case CIRCLE:            s = "circle"; break;
             case ARC_OF_CIRCLE:     s = "arc-of-circle"; break;
             case TTF_TEXT:          s = "ttf-text"; break;

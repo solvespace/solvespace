@@ -335,11 +335,22 @@ void TextWindow::DescribeSelection(void) {
                     SS.MmToString((p1.Minus(p0).Magnitude())));
                 break;
             }
+            case Entity::CUBIC_PERIODIC:
             case Entity::CUBIC:
-                Printf(false, "%FtCUBIC BEZIER CURVE%E");
-                for(i = 0; i <= 3; i++) {
+                int pts;
+                if(e->type == Entity::CUBIC_PERIODIC) {
+                    Printf(false, "%FtPERIODIC C2 CUBIC SPLINE%E");
+                    pts = (3 + e->extraPoints);
+                } else if(e->extraPoints > 0) {
+                    Printf(false, "%FtINTERPOLATING C2 CUBIC SPLINE%E");
+                    pts = (4 + e->extraPoints);
+                } else {
+                    Printf(false, "%FtCUBIC BEZIER CURVE%E");
+                    pts = 4;
+                }
+                for(i = 0; i < pts; i++) {
                     p = SK.GetEntity(e->point[i])->PointGetNum();
-                    Printf((i==0), "   p%c = " PT_AS_STR, '0'+i, COSTR(p));
+                    Printf((i==0), "   p%d = " PT_AS_STR, i, COSTR(p));
                 }
                 break;
 

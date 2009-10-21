@@ -367,4 +367,18 @@ public:
     }
 };
 
+class BandedMatrix {
+public:
+    static const int MAX_UNKNOWNS   = 16;
+    static const int RIGHT_OF_DIAG  = 1;
+    static const int LEFT_OF_DIAG   = 2;
+
+    double A[MAX_UNKNOWNS][MAX_UNKNOWNS];
+    double B[MAX_UNKNOWNS];
+    double X[MAX_UNKNOWNS];
+    int n;
+
+    void Solve(void);
+};
+
 #endif
