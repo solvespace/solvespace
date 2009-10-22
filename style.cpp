@@ -77,6 +77,8 @@ void Style::CreateDefaultStyle(hStyle h) {
     ns.textAngle    = 0;
     ns.visible      = true;
     ns.exportable   = true;
+    ns.filled       = false;
+    ns.fillColor    = RGBf(0.3, 0.3, 0.3);
     ns.h            = h;
     if(isDefaultStyle) {
         ns.name.strcpy(CnfPrefixToName(d->cnfPrefix));
@@ -101,6 +103,8 @@ void Style::LoadFactoryDefaults(void) {
         s->textAngle    = 0;
         s->visible      = true;
         s->exportable   = true;
+        s->filled       = false;
+        s->fillColor    = RGBf(0.3, 0.3, 0.3);
         s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
     }
     SS.backgroundColor = RGB(0, 0, 0);
@@ -392,7 +396,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
     if(link == 'w') {
         row = 16;               // width for a default style
     } else if(link == 'W') {
-        row = 21;               // width for a custom style
+        row = 16;               // width for a custom style
     } else if(link == 't') {
         row = 27;               // text height (for custom styles only)
     }
@@ -415,12 +419,25 @@ void TextWindow::ScreenChangeStyleTextAngle(int link, DWORD v) {
 void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
+    // Same function used for stroke and fill colors
+    int row, col, em;
+    DWORD rgb;
+    if(link == 's') {
+        row = 13; col = 17;
+        em = EDIT_STYLE_COLOR;
+        rgb = s->color;
+    } else if(link == 'f') {
+        row = 21; col = 17;
+        em = EDIT_STYLE_FILL_COLOR;
+        rgb = s->fillColor;
+    } else {
+        oops();
+    }
     char str[300];
-    sprintf(str, "%.2f, %.2f, %.2f",
-        REDf(s->color), GREENf(s->color), BLUEf(s->color));
-    ShowTextEditControl(13, 12, str);
+    sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
+    ShowTextEditControl(row, col, str);
     SS.TW.edit.style = hs;
-    SS.TW.edit.meaning = EDIT_STYLE_COLOR;
+    SS.TW.edit.meaning = em;
 }
 
 void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
@@ -456,6 +473,10 @@ void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
 
         case 'v':
             s->visible = !(s->visible);
+            break;
+
+        case 'f':
+            s->filled = !(s->filled);
             break;
 
         // Horizontal text alignment
@@ -520,6 +541,7 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             break;
 
         case EDIT_BACKGROUND_COLOR:
+        case EDIT_STYLE_FILL_COLOR:
         case EDIT_STYLE_COLOR: {
             double r, g, b;
             if(sscanf(str, "%lf, %lf, %lf", &r, &g, &b)==3) {
@@ -530,6 +552,10 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
                     SS.UndoRemember();
                     s = Style::Get(edit.style);
                     s->color = RGBf(r, g, b);
+                } else if(edit.meaning == EDIT_STYLE_FILL_COLOR) {
+                    SS.UndoRemember();
+                    s = Style::Get(edit.style);
+                    s->fillColor = RGBf(r, g, b);
                 } else {
                     SS.backgroundColor = RGBf(r, g, b);
                 }
@@ -568,27 +594,10 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenDeleteStyle);
     }
 
-    Printf(true, "%FtCOLOR   %E%Bp  %Bd (%@, %@, %@) %D%f%Ll%Fl[change]%E",
+    Printf(true, "%FtLINE COLOR   %E%Bp  %Bd (%@, %@, %@) %D%f%Ls%Fl[chng]%E",
         0x80000000 | s->color,
         REDf(s->color), GREENf(s->color), BLUEf(s->color),
         s->h.v, ScreenChangeStyleColor);
-
-    if(s->h.v >= Style::FIRST_CUSTOM) {
-        Printf(true, "%FtSHOW    %Fh%D%f%Lv%s%E%Fs%s%E / %Fh%D%f%Lv%s%E%Fs%s%E",
-            s->h.v, &ScreenChangeStyleYesNo,
-            ( s->visible ? "" : "yes"),
-            ( s->visible ? "yes" : ""),
-            s->h.v, &ScreenChangeStyleYesNo,
-            (!s->visible ? "" : "no"),
-            (!s->visible ? "no" : ""));
-        Printf(false,"%FtEXPORT  %Fh%D%f%Le%s%E%Fs%s%E / %Fh%D%f%Le%s%E%Fs%s%E",
-            s->h.v, &ScreenChangeStyleYesNo,
-            ( s->exportable ? "" : "yes"),
-            ( s->exportable ? "yes" : ""),
-            s->h.v, &ScreenChangeStyleYesNo,
-            (!s->exportable ? "" : "no"),
-            (!s->exportable ? "no" : ""));
-    }
 
     char *unit = (SS.viewUnits == SolveSpace::UNIT_INCHES) ? "inches" : "mm";
 
@@ -617,6 +626,23 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenChangeStyleYesNo,
             (!widthpx ? "" : unit),
             (!widthpx ? unit : ""));
+    }
+
+    if(s->h.v >= Style::FIRST_CUSTOM) {
+        // The fill color, and whether contours are filled
+        Printf(true,
+            "%FtFILL COLOR   %E%Bp  %Bd (%@, %@, %@) %D%f%Lf%Fl[chng]%E",
+                0x80000000 | s->fillColor,
+                REDf(s->fillColor), GREENf(s->fillColor), BLUEf(s->fillColor),
+                s->h.v, ScreenChangeStyleColor);
+        Printf(false, "%FtCONTOURS ARE %E"
+                            "%Fh%D%f%Lf%s%E%Fs%s%E / %Fh%D%f%Lf%s%E%Fs%s%E",
+            s->h.v, &ScreenChangeStyleYesNo,
+            ( s->filled ? "" : "filled"),
+            ( s->filled ? "filled" : ""),
+            s->h.v, &ScreenChangeStyleYesNo,
+            (!s->filled ? "" : "not filled"),
+            (!s->filled ? "not filled" : ""));
     }
 
     // The text height, and its units
@@ -649,12 +675,11 @@ void TextWindow::ShowStyleInfo(void) {
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
-        bool neither;
-
         Printf(true, "%FtTEXT ANGLE   %E%@ %D%f%Ll%Fl[change]%E",
             s->textAngle,
             s->h.v, &ScreenChangeStyleTextAngle);
 
+        bool neither;
         neither = !(s->textOrigin & (Style::ORIGIN_LEFT | Style::ORIGIN_RIGHT));
         Printf(true, "%FtALIGN TEXT   "
                             "%Fh%D%f%LL%s%E%Fs%s%E   / "
@@ -687,6 +712,24 @@ void TextWindow::ShowStyleInfo(void) {
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
+        Printf(false, "");
+        Printf(false,
+            "%FtOBJECTS ARE  %Fh%D%f%Lv%s%E%Fs%s%E / %Fh%D%f%Lv%s%E%Fs%s%E",
+                s->h.v, &ScreenChangeStyleYesNo,
+                ( s->visible ? "" : "shown"),
+                ( s->visible ? "shown" : ""),
+                s->h.v, &ScreenChangeStyleYesNo,
+                (!s->visible ? "" : "hidden"),
+                (!s->visible ? "hidden" : ""));
+        Printf(false,
+            "%Ft             %Fh%D%f%Le%s%E%Fs%s%E / %Fh%D%f%Le%s%E%Fs%s%E",
+                s->h.v, &ScreenChangeStyleYesNo,
+                ( s->exportable ? "" : "exported"),
+                ( s->exportable ? "exported" : ""),
+                s->h.v, &ScreenChangeStyleYesNo,
+                (!s->exportable ? "" : "not exported"),
+                (!s->exportable ? "not exported" : ""));
+
         Printf(false, "");
         Printf(false, "To assign lines or curves to this style,");
         Printf(false, "select them on the drawing. Then commit");

@@ -161,6 +161,8 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     int i, j, srfid = id;
 
+    // First, we create the untrimmed surface. We always specify a rational
+    // B-spline surface (in fact, just a Bezier surface).
     fprintf(f, "#%d=(\n", srfid);
     fprintf(f, "BOUNDED_SURFACE()\n");
     fprintf(f, "B_SPLINE_SURFACE(%d,%d,(", ss->degm, ss->degn);
@@ -194,6 +196,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     fprintf(f, "SURFACE()\n");
     fprintf(f, ");\n");
 
+    // The control points for the untrimmed surface.
     for(i = 0; i <= ss->degm; i++) {
         for(j = 0; j <= ss->degn; j++) {
             fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n", 
@@ -205,119 +208,51 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
 
     id = srfid + 1 + (ss->degm + 1)*(ss->degn + 1);
 
-    bool allClosed;
-    SEdge errorAt;
-    SPolygon sp;
-    ZERO(&sp);
-    // Assemble the Bezier trim curves into closed loops; we also get the
-    // piecewise linearization of the curves (in the SPolygon sp), as a
-    // calculation aid for the loop direction.
-    SBezierLoopSet sbls = SBezierLoopSet::From(sbl, &sp, &allClosed, &errorAt);
+    // Now we do the trim curves. We must group each outer loop separately
+    // along with its inner faces, so do that now.
+    SBezierLoopSetSet sblss;
+    ZERO(&sblss);
+    sblss.FindOuterFacesFrom(sbl, ss);
 
-    // Convert the xyz piecewise linear to uv piecewise linear.
-    SContour *contour;
-    for(contour = sp.l.First(); contour; contour = sp.l.NextAfter(contour)) {
-        SPoint *pt;
-        for(pt = contour->l.First(); pt; pt = contour->l.NextAfter(pt)) {
-            double u, v;
-            ss->ClosestPointTo(pt->p, &u, &v);
-            pt->p = Vector::From(u, v, 0);
+    // So in our list of SBezierLoopSet, each set contains at least one loop
+    // (the outer boundary), plus any inner loops associated with that outer
+    // loop.
+    SBezierLoopSet *sbls;
+    for(sbls = sblss.l.First(); sbls; sbls = sblss.l.NextAfter(sbls)) {
+        SBezierLoop *loop = sbls->l.First();
+
+        List<int> listOfLoops;
+        ZERO(&listOfLoops);
+        // Create the face outer boundary from the outer loop.
+        int fob = ExportCurveLoop(loop, false);
+        listOfLoops.Add(&fob);
+
+        // And create the face inner boundaries from any inner loops that 
+        // lie within this contour.
+        loop = sbls->l.NextAfter(loop);
+        for(; loop; loop = sbls->l.NextAfter(loop)) {
+            int fib = ExportCurveLoop(loop, true);
+            listOfLoops.Add(&fib);
         }
+
+        // And now create the face that corresponds to this outer loop
+        // and all of its holes.
+        int advFaceId = id;
+        fprintf(f, "#%d=ADVANCED_FACE('',(", advFaceId);
+        int *fb;
+        for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
+            fprintf(f, "#%d", *fb);
+            if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
+        }
+
+        fprintf(f, "),#%d,.T.);\n", srfid);
+        fprintf(f, "\n");
+        advancedFaces.Add(&advFaceId);
+
+        id++;
+        listOfLoops.Clear();
     }
-    sp.normal = Vector::From(0, 0, 1);
-
-    static const int OUTER_LOOP = 10;
-    static const int INNER_LOOP = 20;
-    static const int USED_LOOP  = 30;
-    // Fix the contour directions; SBezierLoopSet::From() works only for
-    // planes, since it uses the polygon xyz space.
-    sp.FixContourDirections();
-    for(i = 0; i < sp.l.n; i++) {
-        SContour    *contour = &(sp.l.elem[i]);
-        SBezierLoop *bl = &(sbls.l.elem[i]);
-        if(contour->tag) {
-            // This contour got reversed in the polygon to make the directions
-            // consistent, so the same must be necessary for the Bezier loop.
-            bl->Reverse();
-        }
-        if(contour->IsClockwiseProjdToNormal(sp.normal)) {
-            bl->tag = INNER_LOOP;
-        } else {
-            bl->tag = OUTER_LOOP;
-        }
-    }
-
-
-    bool loopsRemaining = true;
-    while(loopsRemaining) {
-        loopsRemaining = false;
-        for(i = 0; i < sbls.l.n; i++) {
-            SBezierLoop *loop = &(sbls.l.elem[i]);
-            if(loop->tag != OUTER_LOOP) continue;
-
-            // Check if this contour contains any outer loops; if it does, then
-            // we should do those "inner outer loops" first; otherwise we
-            // will steal their holes, since their holes also lie inside this
-            // contour.
-            for(j = 0; j < sbls.l.n; j++) {
-                SBezierLoop *outer = &(sbls.l.elem[j]);
-                if(i == j) continue;
-                if(outer->tag != OUTER_LOOP) continue;
-
-                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
-                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
-                    break;
-                }
-            }
-            if(j < sbls.l.n) {
-                // It does, can't do this one yet.
-                continue;
-            }
-
-            loopsRemaining = true;
-            loop->tag = USED_LOOP;
-
-            List<int> listOfLoops;
-            ZERO(&listOfLoops);
-
-            // Create the face outer boundary from the outer loop.
-            int fob = ExportCurveLoop(loop, false);
-            listOfLoops.Add(&fob);
-
-            // And create the face inner boundaries from any inner loops that 
-            // lie within this contour.
-            for(j = 0; j < sbls.l.n; j++) {
-                SBezierLoop *inner = &(sbls.l.elem[j]);
-                if(inner->tag != INNER_LOOP) continue;
-
-                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
-                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
-                    int fib = ExportCurveLoop(inner, true);
-                    listOfLoops.Add(&fib);
-
-                    inner->tag = USED_LOOP;
-                }
-            }
-
-            // And now create the face that corresponds to this outer loop
-            // and all of its holes.
-            int advFaceId = id;
-            fprintf(f, "#%d=ADVANCED_FACE('',(", advFaceId);
-            int *fb;
-            for(fb = listOfLoops.First(); fb; fb = listOfLoops.NextAfter(fb)) {
-                fprintf(f, "#%d", *fb);
-                if(listOfLoops.NextAfter(fb) != NULL) fprintf(f, ",");
-            }
-
-            fprintf(f, "),#%d,.T.);\n", srfid);
-            fprintf(f, "\n");
-            advancedFaces.Add(&advFaceId);
-
-            id++;
-
-            listOfLoops.Clear();
-        }
-    }
+    sblss.Clear();
 }
 
 void StepFileWriter::WriteFooter(void) {

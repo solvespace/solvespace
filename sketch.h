@@ -673,6 +673,8 @@ public:
     int         textOrigin;
     double      textAngle;
     DWORD       color;
+    bool        filled;
+    DWORD       fillColor;
     bool        visible;
     bool        exportable;
 

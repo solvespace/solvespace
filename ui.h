@@ -98,8 +98,9 @@ public:
     static const int EDIT_STYLE_TEXT_HEIGHT     = 51;
     static const int EDIT_STYLE_TEXT_ANGLE      = 52;
     static const int EDIT_STYLE_COLOR           = 53;
-    static const int EDIT_STYLE_NAME            = 54;
-    static const int EDIT_BACKGROUND_COLOR      = 55;
+    static const int EDIT_STYLE_FILL_COLOR      = 54;
+    static const int EDIT_STYLE_NAME            = 55;
+    static const int EDIT_BACKGROUND_COLOR      = 56;
     struct {
         int         meaning;
         int         i;

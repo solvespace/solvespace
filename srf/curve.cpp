@@ -395,6 +395,13 @@ void SBezierLoop::MakePwlInto(SContour *sc) {
     sc->l.elem[sc->l.n - 1] = sc->l.elem[0];
 }
 
+bool SBezierLoop::IsClosed(void) {
+    if(l.n < 1) return false;
+    Vector s = l.elem[0].Start(),
+           f = l.elem[l.n-1].Finish();
+    return s.Equals(f);
+}
+
 
 SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
                                     bool *allClosed, SEdge *errorAt)
@@ -453,6 +460,109 @@ void SBezierLoopSet::Clear(void) {
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).Clear();
     }
+    l.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// An export helper function. We start with a list of Bezier curves, and
+// assemble them into loops. We find the outer loops, and find the outer loops'
+// inner loops, and group them accordingly.
+//-----------------------------------------------------------------------------
+void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv) {
+    int i, j;
+    bool allClosed;
+    SEdge errorAt;
+    SPolygon sp;
+    ZERO(&sp);
+    // Assemble the Bezier trim curves into closed loops; we also get the
+    // piecewise linearization of the curves (in the SPolygon sp), as a
+    // calculation aid for the loop direction.
+    SBezierLoopSet sbls = SBezierLoopSet::From(sbl, &sp, &allClosed, &errorAt);
+
+    // Convert the xyz piecewise linear to uv piecewise linear.
+    SContour *contour;
+    for(contour = sp.l.First(); contour; contour = sp.l.NextAfter(contour)) {
+        SPoint *pt;
+        for(pt = contour->l.First(); pt; pt = contour->l.NextAfter(pt)) {
+            double u, v;
+            srfuv->ClosestPointTo(pt->p, &u, &v);
+            pt->p = Vector::From(u, v, 0);
+        }
+    }
+    sp.normal = Vector::From(0, 0, 1);
+
+    static const int OUTER_LOOP = 10;
+    static const int INNER_LOOP = 20;
+    static const int USED_LOOP  = 30;
+    // Fix the contour directions; SBezierLoopSet::From() works only for
+    // planes, since it uses the polygon xyz space.
+    sp.FixContourDirections();
+    for(i = 0; i < sp.l.n; i++) {
+        SContour    *contour = &(sp.l.elem[i]);
+        SBezierLoop *bl = &(sbls.l.elem[i]);
+        if(contour->tag) {
+            // This contour got reversed in the polygon to make the directions
+            // consistent, so the same must be necessary for the Bezier loop.
+            bl->Reverse();
+        }
+        if(contour->IsClockwiseProjdToNormal(sp.normal)) {
+            bl->tag = INNER_LOOP;
+        } else {
+            bl->tag = OUTER_LOOP;
+        }
+    }
+
+    bool loopsRemaining = true;
+    while(loopsRemaining) {
+        loopsRemaining = false;
+        for(i = 0; i < sbls.l.n; i++) {
+            SBezierLoop *loop = &(sbls.l.elem[i]);
+            if(loop->tag != OUTER_LOOP) continue;
+
+            // Check if this contour contains any outer loops; if it does, then
+            // we should do those "inner outer loops" first; otherwise we
+            // will steal their holes, since their holes also lie inside this
+            // contour.
+            for(j = 0; j < sbls.l.n; j++) {
+                SBezierLoop *outer = &(sbls.l.elem[j]);
+                if(i == j) continue;
+                if(outer->tag != OUTER_LOOP) continue;
+
+                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
+                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                    break;
+                }
+            }
+            if(j < sbls.l.n) {
+                // It does, can't do this one yet.
+                continue;
+            }
+
+            SBezierLoopSet outerAndInners;
+            ZERO(&outerAndInners);
+            loopsRemaining = true;
+            loop->tag = USED_LOOP;
+            outerAndInners.l.Add(loop);
+
+            for(j = 0; j < sbls.l.n; j++) {
+                SBezierLoop *inner = &(sbls.l.elem[j]);
+                if(inner->tag != INNER_LOOP) continue;
+
+                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
+                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                    outerAndInners.l.Add(inner);
+                    inner->tag = USED_LOOP;
+                }
+            }
+
+            l.Add(&outerAndInners);
+        }
+    }
+    sp.Clear();
+    // Don't free sbls; we've shallow-copied all of its members to ourself.
+}
+
+void SBezierLoopSetSet::Clear(void) {
     l.Clear();
 }
 

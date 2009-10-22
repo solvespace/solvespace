@@ -119,6 +119,7 @@ public:
     List<SBezier>   l;
 
     inline void Clear(void) { l.Clear(); }
+    bool IsClosed(void);
     void Reverse(void);
     void MakePwlInto(SContour *sc);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
@@ -137,6 +138,14 @@ public:
                           bool *allClosed, SEdge *errorAt);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
+    void Clear(void);
+};
+
+class SBezierLoopSetSet {
+public:
+    List<SBezierLoopSet>    l;
+
+    void FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv);
     void Clear(void);
 };
 
