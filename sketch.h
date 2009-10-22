@@ -446,6 +446,30 @@ public:
     char *DescriptionString(void);
 };
 
+class EntReqTable {
+public:
+    typedef struct {
+        int     reqType;
+        int     entType;
+        int     points;
+        bool    useExtraPoints;
+        bool    hasNormal;
+        bool    hasDistance;
+        char    *description;
+    } TableEntry;
+
+    static const TableEntry Table[];
+
+    static char *DescriptionForRequest(int req);
+    static void CopyEntityInfo(const TableEntry *te, int extraPoints,
+            int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance);
+    static void GetRequestInfo(int req, int extraPoints,
+                    int *ent, int *pts, bool *hasNormal, bool *hasDistance);
+    static void GetEntityInfo(int ent, int extraPoints,
+                    int *req, int *pts, bool *hasNormal, bool *hasDistance);
+    static int GetRequestForEntity(int ent);
+};
+
 class Param {
 public:
     int         tag;

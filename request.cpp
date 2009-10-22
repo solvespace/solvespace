@@ -4,68 +4,89 @@ const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
+const EntReqTable::TableEntry EntReqTable::Table[] = {
+//   request type               entity type       pts   xtra?   norml   dist    description
+{ Request::WORKPLANE,       Entity::WORKPLANE,      1,  false,  true,   false, "workplane"      },
+{ Request::DATUM_POINT,     0,                      1,  false,  false,  false, "datum-point"    },
+{ Request::LINE_SEGMENT,    Entity::LINE_SEGMENT,   2,  false,  false,  false, "line-segment"   },
+{ Request::CUBIC,           Entity::CUBIC,          4,  true,   false,  false, "cubic-bezier"   },
+{ Request::CUBIC_PERIODIC,  Entity::CUBIC_PERIODIC, 3,  true,   false,  false, "periodic-cubic" },
+{ Request::CIRCLE,          Entity::CIRCLE,         1,  false,  true,   true,  "circle"         },
+{ Request::ARC_OF_CIRCLE,   Entity::ARC_OF_CIRCLE,  3,  false,  true,   false, "arc-of-circle"  },
+{ Request::TTF_TEXT,        Entity::TTF_TEXT,       2,  false,  true,   false, "ttf-text"       },
+{ 0 },
+};
+
+char *EntReqTable::DescriptionForRequest(int req) {
+    for(int i = 0; Table[i].reqType; i++) {
+        if(req == Table[i].reqType) {
+            return Table[i].description;
+        }
+    }
+    return "???";
+}
+
+void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
+           int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance)
+{
+    int points = te->points;
+    if(te->useExtraPoints) points += extraPoints;
+
+    if(ent)         *ent         = te->entType;
+    if(req)         *req         = te->reqType;
+    if(pts)         *pts         = points;
+    if(hasNormal)   *hasNormal   = te->hasNormal;
+    if(hasDistance) *hasDistance = te->hasDistance;
+}
+
+void EntReqTable::GetRequestInfo(int req, int extraPoints,
+                     int *ent, int *pts, bool *hasNormal, bool *hasDistance)
+{
+    for(int i = 0; Table[i].reqType; i++) {
+        const TableEntry *te = &(Table[i]);
+        if(req == te->reqType) {
+            CopyEntityInfo(te, extraPoints,
+                ent, NULL, pts, hasNormal, hasDistance);
+            return;
+        }
+    }
+    oops();
+}
+
+void EntReqTable::GetEntityInfo(int ent, int extraPoints,
+                     int *req, int *pts, bool *hasNormal, bool *hasDistance)
+{
+    for(int i = 0; Table[i].reqType; i++) {
+        const TableEntry *te = &(Table[i]);
+        if(ent == te->entType) {
+            CopyEntityInfo(te, extraPoints,
+                NULL, req, pts, hasNormal, hasDistance);
+            return;
+        }
+    }
+    oops();
+}
+
+int EntReqTable::GetRequestForEntity(int ent) {
+    int req;
+    GetEntityInfo(ent, 0, &req, NULL, NULL, NULL);
+    return req;
+}
+
 
 void Request::Generate(IdList<Entity,hEntity> *entity,
                        IdList<Param,hParam> *param)
 {
     int points = 0;
-    int params = 0;
     int et = 0;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
 
     Entity e;
-    memset(&e, 0, sizeof(e));
-    switch(type) {
-        case Request::WORKPLANE:
-            et = Entity::WORKPLANE;
-            points = 1;
-            hasNormal = true;
-            break;
-
-        case Request::DATUM_POINT:
-            et = 0;
-            points = 1;
-            break;
-
-        case Request::LINE_SEGMENT:
-            et = Entity::LINE_SEGMENT;
-            points = 2;
-            break;
-
-        case Request::CIRCLE:
-            et = Entity::CIRCLE;
-            points = 1;
-            params = 1;
-            hasNormal = true;
-            hasDistance = true;
-            break;
-
-        case Request::ARC_OF_CIRCLE:
-            et = Entity::ARC_OF_CIRCLE;
-            points = 3;
-            hasNormal = true;
-            break;
-
-        case Request::CUBIC:
-            et = Entity::CUBIC;
-            points = 4 + extraPoints; 
-            break;
-
-        case Request::CUBIC_PERIODIC:
-            et = Entity::CUBIC_PERIODIC;
-            points = 3 + extraPoints;
-            break;
-
-        case Request::TTF_TEXT:
-            et = Entity::TTF_TEXT;
-            points = 2;
-            hasNormal = true;
-            break;
-
-        default: oops();
-    }
+    ZERO(&e);
+    EntReqTable::GetRequestInfo(type, extraPoints,
+                    &et, &points, &hasNormal, &hasDistance);
 
     // Generate the entity that's specific to this request.
     e.type = et;
@@ -140,11 +161,6 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         entity->Add(&d);
         e.distance = d.h;
     }
-    // And generate any params not associated with the point that
-    // we happen to need.
-    for(i = 0; i < params; i++) {
-        e.param[i] = AddParam(param, h.param(i));
-    }
 
     if(et) entity->Add(&e);
 }
@@ -158,17 +174,7 @@ char *Request::DescriptionString(void) {
     } else if(h.v == Request::HREQUEST_REFERENCE_ZX.v) {
         s = "#ZX";
     } else {
-        switch(type) {
-            case WORKPLANE:         s = "workplane"; break;
-            case DATUM_POINT:       s = "datum-point"; break;
-            case LINE_SEGMENT:      s = "line-segment"; break;
-            case CUBIC:             s = "cubic-bezier"; break;
-            case CUBIC_PERIODIC:    s = "periodic-cubic"; break;
-            case CIRCLE:            s = "circle"; break;
-            case ARC_OF_CIRCLE:     s = "arc-of-circle"; break;
-            case TTF_TEXT:          s = "ttf-text"; break;
-            default:                s = "???"; break;
-        }
+        s = EntReqTable::DescriptionForRequest(type);
     }
     static char ret[100];
     sprintf(ret, "r%03x-%s", h.v, s);

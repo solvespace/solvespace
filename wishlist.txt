@@ -1,11 +1,11 @@
 
 multi-drag
 copy and paste
+filled contours for export
 associative entities from solid model, as a special group
 
 -----
 some kind of import
-filled contours for export
 faster triangulation
 loop detection
 IGES export

@@ -351,17 +351,9 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     }
 
     // Finally, delete the request that generated the original entity.
-    int reqType;
-    switch(entityType) {
-        case Entity::CIRCLE:        reqType = Request::CIRCLE; break;
-        case Entity::ARC_OF_CIRCLE: reqType = Request::ARC_OF_CIRCLE; break;
-        case Entity::LINE_SEGMENT:  reqType = Request::LINE_SEGMENT; break;
-        case Entity::CUBIC:         reqType = Request::CUBIC; break;
-        default: oops();
-    }
-    int i;
+    int reqType = EntReqTable::GetRequestForEntity(entityType);
     SK.request.ClearTags();
-    for(i = 0; i < SK.request.n; i++) {
+    for(int i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
         if(r->type != reqType) continue;

@@ -645,9 +645,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
         case MNU_CIRCLE:
             hr = AddRequest(Request::CIRCLE);
+            // Centered where we clicked
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
+            // Normal to the screen
             SK.GetEntity(hr.entity(32))->NormalForceTo(
                 Quaternion::From(SS.GW.projRight, SS.GW.projUp));
+            // Initial radius zero
+            SK.GetEntity(hr.entity(64))->DistanceForceTo(0);
+
             ConstrainPointByHovered(hr.entity(1));
 
             ClearSuper();
@@ -655,7 +660,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = DRAGGING_NEW_RADIUS;
             pending.circle = hr.entity(0);
             pending.description = "click to set radius";
-            SK.GetParam(hr.param(0))->val = 0;
             break;
 
         case MNU_ARC: {

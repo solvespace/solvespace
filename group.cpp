@@ -634,7 +634,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                        bool asTrans, bool asAxisAngle)
 {
     Entity en;
-    memset(&en, 0, sizeof(en));
+    ZERO(&en);
     en.type = ep->type;
     en.extraPoints = ep->extraPoints;
     en.h = Remap(ep->h, remap);
@@ -642,52 +642,13 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     en.group = h;
     en.construction = ep->construction;
     en.style = ep->style;
+    en.str.strcpy(ep->str.str);
+    en.font.strcpy(ep->font.str);
 
     switch(ep->type) {
         case Entity::WORKPLANE:
             // Don't copy these.
             return;
-
-        case Entity::LINE_SEGMENT:  
-            en.point[0] = Remap(ep->point[0], remap);
-            en.point[1] = Remap(ep->point[1], remap);
-            break;
-
-        case Entity::CUBIC: {
-            int i;
-            for(i = 0; i < 4 + ep->extraPoints; i++) {
-                en.point[i] = Remap(ep->point[i], remap);
-            }
-            break;
-        }
-        case Entity::CUBIC_PERIODIC: {
-            int i;
-            for(i = 0; i < 3 + ep->extraPoints; i++) {
-                en.point[i] = Remap(ep->point[i], remap);
-            }
-            break;
-        }
-
-        case Entity::CIRCLE:
-            en.point[0] = Remap(ep->point[0], remap);
-            en.normal   = Remap(ep->normal, remap);
-            en.distance = Remap(ep->distance, remap);
-            break;
-
-        case Entity::ARC_OF_CIRCLE:
-            en.point[0] = Remap(ep->point[0], remap);
-            en.point[1] = Remap(ep->point[1], remap);
-            en.point[2] = Remap(ep->point[2], remap);
-            en.normal   = Remap(ep->normal, remap);
-            break;
-
-        case Entity::TTF_TEXT:
-            en.point[0] = Remap(ep->point[0], remap);
-            en.point[1] = Remap(ep->point[1], remap);
-            en.normal   = Remap(ep->normal, remap);
-            en.str.strcpy(ep->str.str);
-            en.font.strcpy(ep->font.str);
-            break;
 
         case Entity::POINT_N_COPY:
         case Entity::POINT_N_TRANS:
@@ -781,8 +742,18 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             }
             break;
 
-        default:
-            oops();
+        default: {
+            int i, points;
+            bool hasNormal, hasDistance;
+            EntReqTable::GetEntityInfo(ep->type, ep->extraPoints,
+                NULL, &points, &hasNormal, &hasDistance);
+            for(i = 0; i < points; i++) {
+                en.point[i] = Remap(ep->point[i], remap);
+            }
+            if(hasNormal)   en.normal   = Remap(ep->normal, remap);
+            if(hasDistance) en.distance = Remap(ep->distance, remap);
+            break;
+        }
     }
 
     // If the entity came from an imported file where it was invisible then
