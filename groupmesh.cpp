@@ -2,7 +2,7 @@
 
 #define gs (SS.GW.gs)
 
-bool Group::AssembleLoops(void) {
+void Group::AssembleLoops(bool *allClosed, bool *allCoplanar) {
     SBezierList sbl;
     ZERO(&sbl);
 
@@ -16,38 +16,40 @@ bool Group::AssembleLoops(void) {
         e->GenerateBezierCurves(&sbl);
     }
 
-    bool allClosed;
-    bezierLoopSet = SBezierLoopSet::From(&sbl, &poly,
-                                         &allClosed, &(polyError.notClosedAt));
+    // Try to assemble all these Beziers into loops. The closed loops go into
+    // bezierLoops, with the outer loops grouped with their holes. The
+    // leftovers, if any, go in bezierOpens.
+    bezierLoops.FindOuterFacesFrom(&sbl, &polyLoops, NULL,
+                                   SS.ChordTolMm(),
+                                   allClosed, &(polyError.notClosedAt),
+                                   allCoplanar, &(polyError.errorPointAt),
+                                   &bezierOpens);
     sbl.Clear();
-    return allClosed;
 }
 
 void Group::GenerateLoops(void) {
-    poly.Clear();
-    bezierLoopSet.Clear();
+    polyLoops.Clear();
+    bezierLoops.Clear();
+    bezierOpens.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
-        if(AssembleLoops()) {
-            polyError.how = POLY_GOOD;
-
-            if(!poly.AllPointsInPlane(&(polyError.errorPointAt))) {
-                // The edges aren't all coplanar; so not a good polygon
-                polyError.how = POLY_NOT_COPLANAR;
-                poly.Clear();
-                bezierLoopSet.Clear();
-            }
-            if(poly.SelfIntersecting(&(polyError.errorPointAt))) {
-                polyError.how = POLY_SELF_INTERSECTING;
-                poly.Clear();
-                bezierLoopSet.Clear();
-            }
-        } else {
+        bool allClosed, allCoplanar;
+        AssembleLoops(&allClosed, &allCoplanar);
+        if(!allCoplanar) {
+            polyError.how = POLY_NOT_COPLANAR;
+        } else if(!allClosed) {
             polyError.how = POLY_NOT_CLOSED;
-            poly.Clear();
-            bezierLoopSet.Clear();
+        } else {
+            polyError.how = POLY_GOOD;
+            // The self-intersecting check is kind of slow, so don't run it
+            // unless requested.
+            if(SS.checkClosedContour) {
+                if(polyLoops.SelfIntersecting(&(polyError.errorPointAt))) {
+                    polyError.how = POLY_SELF_INTERSECTING;
+                }
+            }
         }
     }
 }
@@ -159,6 +161,16 @@ void Group::GenerateShellAndMesh(void) {
     runningShell.Clear();
     runningMesh.Clear();
 
+    // Don't attempt a lathe or extrusion unless the source section is good:
+    // planar and not self-intersecting.
+    bool haveSrc = true;
+    if(type == EXTRUDE || type == LATHE) {
+        Group *src = SK.GetGroup(opA);
+        if(src->polyError.how != POLY_GOOD) {
+            haveSrc = false;
+        }
+    }
+
     if(type == TRANSLATE || type == ROTATE) {
         // A step and repeat gets merged against the group's prevous group,
         // not our own previous group.
@@ -166,7 +178,7 @@ void Group::GenerateShellAndMesh(void) {
 
         GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
         GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
-    } else if(type == EXTRUDE) {
+    } else if(type == EXTRUDE && haveSrc) {
         Group *src = SK.GetGroup(opA);
         Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
 
@@ -176,65 +188,76 @@ void Group::GenerateShellAndMesh(void) {
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
-        
-        thisShell.MakeFromExtrusionOf(&(src->bezierLoopSet), tbot, ttop, color);
-        Vector onOrig = src->bezierLoopSet.point;
-        // And for any plane faces, annotate the model with the entity for
-        // that face, so that the user can select them with the mouse.
-        int i;
-        for(i = 0; i < thisShell.surface.n; i++) {
-            SSurface *ss = &(thisShell.surface.elem[i]);
-            hEntity face = Entity::NO_ENTITY;
+     
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            int is = thisShell.surface.n;
+            // Extrude this outer contour (plus its inner contours, if present)
+            thisShell.MakeFromExtrusionOf(sbls, tbot, ttop, color);
 
-            Vector p = ss->PointAt(0, 0),
-                   n = ss->NormalAt(0, 0).WithMagnitude(1);
-            double d = n.Dot(p);
+            // And for any plane faces, annotate the model with the entity for
+            // that face, so that the user can select them with the mouse.
+            Vector onOrig = sbls->point;
+            int i;
+            for(i = is; i < thisShell.surface.n; i++) {
+                SSurface *ss = &(thisShell.surface.elem[i]);
+                hEntity face = Entity::NO_ENTITY;
 
-            if(i == 0 || i == 1) {
-                // These are the top and bottom of the shell.
-                if(fabs((onOrig.Plus(ttop)).Dot(n) - d) < LENGTH_EPS) {
-                    face = Remap(Entity::NO_ENTITY, REMAP_TOP);
-                    ss->face = face.v;
+                Vector p = ss->PointAt(0, 0),
+                       n = ss->NormalAt(0, 0).WithMagnitude(1);
+                double d = n.Dot(p);
+
+                if(i == is || i == (is + 1)) {
+                    // These are the top and bottom of the shell.
+                    if(fabs((onOrig.Plus(ttop)).Dot(n) - d) < LENGTH_EPS) {
+                        face = Remap(Entity::NO_ENTITY, REMAP_TOP);
+                        ss->face = face.v;
+                    }
+                    if(fabs((onOrig.Plus(tbot)).Dot(n) - d) < LENGTH_EPS) {
+                        face = Remap(Entity::NO_ENTITY, REMAP_BOTTOM);
+                        ss->face = face.v;
+                    }
+                    continue;
                 }
-                if(fabs((onOrig.Plus(tbot)).Dot(n) - d) < LENGTH_EPS) {
-                    face = Remap(Entity::NO_ENTITY, REMAP_BOTTOM);
-                    ss->face = face.v;
-                }
-                continue;
-            }
 
-            // So these are the sides
-            if(ss->degm != 1 || ss->degn != 1) continue;
+                // So these are the sides
+                if(ss->degm != 1 || ss->degn != 1) continue;
 
-            Entity *e;
-            for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                if(e->group.v != opA.v) continue;
-                if(e->type != Entity::LINE_SEGMENT) continue;
+                Entity *e;
+                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+                    if(e->group.v != opA.v) continue;
+                    if(e->type != Entity::LINE_SEGMENT) continue;
 
-                Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
-                       b = SK.GetEntity(e->point[1])->PointGetNum();
-                a = a.Plus(ttop);
-                b = b.Plus(ttop);
-                // Could get taken backwards, so check all cases.
-                if((a.Equals(ss->ctrl[0][0]) && b.Equals(ss->ctrl[1][0])) ||
-                   (b.Equals(ss->ctrl[0][0]) && a.Equals(ss->ctrl[1][0])) ||
-                   (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
-                   (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
-                {
-                    face = Remap(e->h, REMAP_LINE_TO_FACE);
-                    ss->face = face.v;
-                    break;
+                    Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
+                           b = SK.GetEntity(e->point[1])->PointGetNum();
+                    a = a.Plus(ttop);
+                    b = b.Plus(ttop);
+                    // Could get taken backwards, so check all cases.
+                    if((a.Equals(ss->ctrl[0][0]) && b.Equals(ss->ctrl[1][0])) ||
+                       (b.Equals(ss->ctrl[0][0]) && a.Equals(ss->ctrl[1][0])) ||
+                       (a.Equals(ss->ctrl[0][1]) && b.Equals(ss->ctrl[1][1])) ||
+                       (b.Equals(ss->ctrl[0][1]) && a.Equals(ss->ctrl[1][1])))
+                    {
+                        face = Remap(e->h, REMAP_LINE_TO_FACE);
+                        ss->face = face.v;
+                        break;
+                    }
                 }
             }
         }
-    } else if(type == LATHE) {
+    } else if(type == LATHE && haveSrc) {
         Group *src = SK.GetGroup(opA);
 
         Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
                axis = SK.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
 
-        thisShell.MakeFromRevolutionOf(&(src->bezierLoopSet), pt, axis, color);
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color);
+        }
     } else if(type == IMPORTED) {
         // The imported shell or mesh are copied over, with the appropriate
         // transformation applied. We also must remap the face entities.
@@ -465,10 +488,88 @@ void Group::Draw(void) {
             glEnable(GL_DEPTH_TEST);
         }
     } else {
-        glxColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
-        glxDepthRangeOffset(1);
-        glxFillPolygon(&poly);
-        glxDepthRangeOffset(0);
+        // The contours will get filled in DrawFilledPaths.
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Verify that the Beziers in this loop set all have the same auxA, and return
+// that value. If they don't, then set allSame to be false, and indicate a
+// point on the non-matching curve.
+//-----------------------------------------------------------------------------
+DWORD Group::GetLoopSetFillColor(SBezierLoopSet *sbls,
+                                 bool *allSame, Vector *errorAt)
+{
+    bool first = true;
+    DWORD fillRgb = (DWORD)-1;
+
+    SBezierLoop *sbl;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        SBezier *sb;
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            DWORD thisRgb = (DWORD)-1;
+            if(sb->auxA != 0) {
+                hStyle hs = { sb->auxA };
+                Style *s = Style::Get(hs);
+                if(s->filled) {
+                    thisRgb = s->fillColor;
+                }
+            }
+            if(first) {
+                fillRgb = thisRgb;
+                first = false;
+            } else {
+                if(fillRgb != thisRgb) {
+                    *allSame = false;
+                    *errorAt = sb->Start();
+                    return fillRgb;
+                }
+            }
+        }
+    }
+    *allSame = true;
+    return fillRgb;
+}
+
+void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
+    SPolygon sp;
+    ZERO(&sp);
+    sbls->MakePwlInto(&sp);
+    glxDepthRangeOffset(1);
+    glxFillPolygon(&sp);
+    glxDepthRangeOffset(0);
+    sp.Clear();
+}
+
+void Group::DrawFilledPaths(void) {
+    SBezierLoopSet *sbls;
+    SBezierLoopSetSet *sblss = &bezierLoops;
+    for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+        bool allSame;
+        Vector errorPt;
+        DWORD fillRgb = GetLoopSetFillColor(sbls, &allSame, &errorPt);
+        if(allSame && fillRgb != (DWORD)-1) {
+            glxColorRGBa(fillRgb, 1);
+            FillLoopSetAsPolygon(sbls);
+        } else if(!allSame) {
+            glDisable(GL_DEPTH_TEST);
+            glxColorRGB(Style::Color(Style::DRAW_ERROR));
+            glxWriteText("not all same fill color!", DEFAULT_TEXT_HEIGHT,
+                errorPt, SS.GW.projRight, SS.GW.projUp, NULL, NULL);
+            glEnable(GL_DEPTH_TEST);
+        } else {
+            if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
+               polyError.how == POLY_GOOD)
+            {
+                // If this is the active group, and we are supposed to check
+                // for closed contours, and we do indeed have a closed and
+                // non-intersecting contour, then fill it dimly.
+                glxColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
+                glxDepthRangeOffset(1);
+                FillLoopSetAsPolygon(sbls);
+                glxDepthRangeOffset(0);
+            }
+        }
     }
 }
 

@@ -447,18 +447,6 @@ bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) {
     return inside;
 }
 
-bool SContour::AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt) {
-    for(int i = 0; i < l.n; i++) {
-        Vector p = l.elem[i].p;
-        double dd = n.Dot(p) - d;
-        if(fabs(dd) > 10*LENGTH_EPS) {
-            *notCoplanarAt = p;
-            return false;
-        }
-    }
-    return true;
-}
-
 void SContour::Reverse(void) {
     l.Reverse();
 }
@@ -547,20 +535,6 @@ bool SPolygon::IsEmpty(void) {
 Vector SPolygon::AnyPoint(void) {
     if(IsEmpty()) oops();
     return l.elem[0].l.elem[0].p;
-}
-
-bool SPolygon::AllPointsInPlane(Vector *notCoplanarAt) {
-    if(IsEmpty()) return true;
-
-    Vector p0 = AnyPoint();
-    double d = normal.Dot(p0);
-
-    for(int i = 0; i < l.n; i++) {
-        if(!(l.elem[i]).AllPointsInPlane(normal, d, notCoplanarAt)) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool SPolygon::SelfIntersecting(Vector *intersectsAt) {

@@ -37,6 +37,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
     }
 
+    if(!leftDown && pending.operation == DRAGGING_POINT) {
+        ClearPending();
+    }
+
     Point2d mp = { x, y };
 
     if(rightDown && orig.mouse.DistanceTo(mp) < 5 && !orig.startedMoving) {
@@ -979,9 +983,6 @@ void GraphicsWindow::MouseLeave(void) {
         toolbarTooltipped = 0;
         toolbarHovered = 0;
         PaintGraphics();
-    }
-    if(pending.operation == DRAGGING_POINT) {
-        ClearPending();
     }
 }
 

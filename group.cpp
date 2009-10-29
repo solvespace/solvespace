@@ -16,6 +16,12 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
     param->Add(&pa);
 }
 
+bool Group::IsVisible(void) {
+    if(!visible) return false;
+    if(SS.GroupsInOrder(SS.GW.activeGroup, h)) return false;
+    return true;
+}
+
 void Group::MenuGroup(int id) {
     Group g;
     ZERO(&g);
@@ -610,7 +616,7 @@ void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
 {
     if(pt.v == 0) return;
     Group *src = SK.GetGroup(opA);
-    Vector n = src->poly.normal;
+    Vector n = src->polyLoops.normal;
 
     Entity en;
     ZERO(&en);

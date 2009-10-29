@@ -490,8 +490,15 @@ void GraphicsWindow::Paint(int w, int h) {
 nogrid:;
     }
 
-    // Draw the active group; this fills the polygons in a drawing group, and
-    // draws the solid mesh.
+    // Draw filled paths in all groups, when those filled paths were requested
+    // specially by assigning a style with a fill color.
+    Group *g;
+    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+        if(!(g->IsVisible())) continue;
+        g->DrawFilledPaths();
+    }
+
+    // Draw the active group; this does stuff like the mesh and edges.
     (SK.GetGroup(activeGroup))->Draw();
 
     // Now draw the entities

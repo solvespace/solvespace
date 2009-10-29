@@ -299,6 +299,95 @@ void SBezier::AllIntersectionsWith(SBezier *sbb, SPointList *spl) {
     splRaw.Clear();
 }
 
+//-----------------------------------------------------------------------------
+// Find a plane that contains all of the curves in this list. If the curves
+// are all colinear (or coincident, or empty), then that plane is not exactly
+// determined but we choose the additional degree(s) of freedom arbitrarily.
+// Returns true if all the curves are coplanar, otherwise false.
+//-----------------------------------------------------------------------------
+bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
+                        Vector *notCoplanarAt)
+{
+    Vector pt, ptFar, ptOffLine, dp, n;
+    double farMax, offLineMax;
+    int i;
+    SBezier *sb;
+
+    // Get any point on any Bezier; or an arbitrary point if list is empty.
+    if(l.n > 0) {
+        pt = l.elem[0].Start();
+    } else {
+        pt = Vector::From(0, 0, 0);
+    }
+    ptFar = ptOffLine = pt;
+
+    // Get the point farthest from our arbitrary point.
+    farMax = VERY_NEGATIVE;
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        for(i = 0; i <= sb->deg; i++) {
+            double m = (pt.Minus(sb->ctrl[i])).Magnitude();
+            if(m > farMax) {
+                ptFar = sb->ctrl[i];
+                farMax = m;
+            }
+        }
+    }
+    if(ptFar.Equals(pt)) {
+        // The points are all coincident. So neither basis vector matters.
+        *p = pt;
+        *u = Vector::From(1, 0, 0);
+        *v = Vector::From(0, 1, 0);
+        return true;
+    }
+
+    // Get the point farthest from the line between pt and ptFar
+    dp = ptFar.Minus(pt);
+    offLineMax = VERY_NEGATIVE;
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        for(i = 0; i <= sb->deg; i++) {
+            double m = (sb->ctrl[i]).DistanceToLine(pt, dp);
+            if(m > offLineMax) {
+                ptOffLine = sb->ctrl[i];
+                offLineMax = m;
+            }
+        }
+    }
+
+    *p = pt;
+    if(offLineMax < LENGTH_EPS) {
+        // The points are all colinear; so choose the second basis vector
+        // arbitrarily.
+        *u = (ptFar.Minus(pt)).WithMagnitude(1);
+        *v = (u->Normal(0)).WithMagnitude(1);
+    } else {
+        // The points actually define a plane.
+        n = (ptFar.Minus(pt)).Cross(ptOffLine.Minus(pt));
+        *u = (n.Normal(0)).WithMagnitude(1);
+        *v = (n.Normal(1)).WithMagnitude(1);
+    }
+
+    // So we have a plane; but check whether all of the points lie in that
+    // plane.
+    n = u->Cross(*v);
+    n = n.WithMagnitude(1);
+    double d = p->Dot(n);
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        for(i = 0; i <= sb->deg; i++) {
+            if(fabs(n.Dot(sb->ctrl[i]) - d) > LENGTH_EPS) {
+                if(notCoplanarAt) *notCoplanarAt = sb->ctrl[i];
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+// Assemble curves in sbl into a single loop. The curves may appear in any
+// direction (start to finish, or finish to start), and will be reversed if
+// necessary. The curves in the returned loop are removed from sbl, even if
+// the loop cannot be closed.
+//-----------------------------------------------------------------------------
 SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
                                     bool *allClosed, SEdge *errorAt)
 {
@@ -375,24 +464,20 @@ void SBezierLoop::GetBoundingProjd(Vector u, Vector orig,
     }
 }
 
-void SBezierLoop::MakePwlInto(SContour *sc) {
-    List<Vector> lv;
-    ZERO(&lv);
-
-    int i, j;
-    for(i = 0; i < l.n; i++) {
-        SBezier *sb = &(l.elem[i]);
-        sb->MakePwlInto(&lv);
-        
-        // Each curve's piecewise linearization includes its endpoints,
-        // which we don't want to duplicate (creating zero-len edges).
-        for(j = (i == 0 ? 0 : 1); j < lv.n; j++) {
-            sc->AddPoint(lv.elem[j]);
+void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) {
+    SBezier *sb;
+    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+        sb->MakePwlInto(sc, chordTol);
+        // Avoid double points at join between Beziers; except that
+        // first and last points should be identical.
+        if(l.NextAfter(sb) != NULL) {
+            sc->l.RemoveLast(1);
         }
-        lv.Clear();
     }
     // Ensure that it's exactly closed, not just within a numerical tolerance.
-    sc->l.elem[sc->l.n - 1] = sc->l.elem[0];
+    if((sc->l.elem[sc->l.n - 1].p).Equals(sc->l.elem[0].p)) {
+        sc->l.elem[sc->l.n - 1] = sc->l.elem[0];
+    }
 }
 
 bool SBezierLoop::IsClosed(void) {
@@ -403,26 +488,40 @@ bool SBezierLoop::IsClosed(void) {
 }
 
 
+//-----------------------------------------------------------------------------
+// Assemble the curves in sbl into multiple loops, and piecewise linearize the
+// curves into poly. If we can't close a contour, then we add it to
+// openContours (if that isn't NULL) and keep going; so this works even if the
+// input contains a mix of open and closed curves.
+//-----------------------------------------------------------------------------
 SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
-                                    bool *allClosed, SEdge *errorAt)
+                                    double chordTol,
+                                    bool *allClosed, SEdge *errorAt,
+                                    SBezierList *openContours)
 {
-    int i;
     SBezierLoopSet ret;
     ZERO(&ret);
 
+    *allClosed = true;
     while(sbl->l.n > 0) {
         bool thisClosed;
         SBezierLoop loop;
         loop = SBezierLoop::FromCurves(sbl, &thisClosed, errorAt);
         if(!thisClosed) {
-            ret.Clear();
+            // Record open loops in a separate list, if requested.
             *allClosed = false;
-            return ret;
+            if(openContours) {
+                SBezier *sb;
+                for(sb = loop.l.First(); sb; sb = loop.l.NextAfter(sb)) {
+                    openContours->l.Add(sb);
+                }
+            }
+            loop.Clear();
+        } else {
+            ret.l.Add(&loop);
+            poly->AddEmptyContour();
+            loop.MakePwlInto(&(poly->l.elem[poly->l.n-1]), chordTol);
         }
-
-        ret.l.Add(&loop);
-        poly->AddEmptyContour();
-        loop.MakePwlInto(&(poly->l.elem[poly->l.n-1]));
     }
 
     poly->normal = poly->ComputeNormal();
@@ -432,17 +531,7 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
     } else {
         ret.point = Vector::From(0, 0, 0);
     }
-    poly->FixContourDirections();
 
-    for(i = 0; i < poly->l.n; i++) {
-        if(poly->l.elem[i].tag) {
-            // We had to reverse this contour in order to fix the poly
-            // contour directions; so need to do the same with the curves.
-            ret.l.elem[i].Reverse();
-        }
-    }
-
-    *allClosed = true;
     return ret;
 }
 
@@ -452,6 +541,18 @@ void SBezierLoopSet::GetBoundingProjd(Vector u, Vector orig,
     SBezierLoop *sbl;
     for(sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
         sbl->GetBoundingProjd(u, orig, umin, umax);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Convert all the Beziers into piecewise linear form, and assemble that into
+// a polygon, one contour per loop.
+//-----------------------------------------------------------------------------
+void SBezierLoopSet::MakePwlInto(SPolygon *sp) {
+    SBezierLoop *sbl;
+    for(sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
+        sp->AddEmptyContour();
+        sbl->MakePwlInto(&(sp->l.elem[sp->l.n - 1]));
     }
 }
 
@@ -468,44 +569,73 @@ void SBezierLoopSet::Clear(void) {
 // assemble them into loops. We find the outer loops, and find the outer loops'
 // inner loops, and group them accordingly.
 //-----------------------------------------------------------------------------
-void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv) {
+void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
+                                   SSurface *srfuv,
+                                   double chordTol,
+                                   bool *allClosed, SEdge *notClosedAt,
+                                   bool *allCoplanar, Vector *notCoplanarAt,
+                                   SBezierList *openContours)
+{
+    SSurface srfPlane;
+    if(!srfuv) {
+        Vector p, u, v;
+        *allCoplanar =
+            sbl->GetPlaneContainingBeziers(&p, &u, &v, notCoplanarAt);
+        if(!*allCoplanar) {
+            // Don't even try to assemble them into loops if they're not
+            // all coplanar.
+            if(openContours) {
+                SBezier *sb;
+                for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+                    openContours->l.Add(sb);
+                }
+            }
+            return;
+        }
+        // All the curves lie in a plane through p with basis vectors u and v.
+        srfPlane = SSurface::FromPlane(p, u, v);
+        srfuv = &srfPlane;
+    }
+
     int i, j;
-    bool allClosed;
-    SEdge errorAt;
-    SPolygon sp;
-    ZERO(&sp);
     // Assemble the Bezier trim curves into closed loops; we also get the
-    // piecewise linearization of the curves (in the SPolygon sp), as a
+    // piecewise linearization of the curves (in the SPolygon spxyz), as a
     // calculation aid for the loop direction.
-    SBezierLoopSet sbls = SBezierLoopSet::From(sbl, &sp, &allClosed, &errorAt);
+    SBezierLoopSet sbls = SBezierLoopSet::From(sbl, spxyz, chordTol,
+                                               allClosed, notClosedAt,
+                                               openContours);
+    if(sbls.l.n != spxyz->l.n) return;
 
     // Convert the xyz piecewise linear to uv piecewise linear.
-    SContour *contour;
-    for(contour = sp.l.First(); contour; contour = sp.l.NextAfter(contour)) {
+    SPolygon spuv;
+    ZERO(&spuv);
+    SContour *sc;
+    for(sc = spxyz->l.First(); sc; sc = spxyz->l.NextAfter(sc)) {
+        spuv.AddEmptyContour();
         SPoint *pt;
-        for(pt = contour->l.First(); pt; pt = contour->l.NextAfter(pt)) {
+        for(pt = sc->l.First(); pt; pt = sc->l.NextAfter(pt)) {
             double u, v;
             srfuv->ClosestPointTo(pt->p, &u, &v);
-            pt->p = Vector::From(u, v, 0);
+            spuv.l.elem[spuv.l.n - 1].AddPoint(Vector::From(u, v, 0));
         }
     }
-    sp.normal = Vector::From(0, 0, 1);
+    spuv.normal = Vector::From(0, 0, 1); // must be, since it's in xy plane now
 
     static const int OUTER_LOOP = 10;
     static const int INNER_LOOP = 20;
     static const int USED_LOOP  = 30;
-    // Fix the contour directions; SBezierLoopSet::From() works only for
-    // planes, since it uses the polygon xyz space.
-    sp.FixContourDirections();
-    for(i = 0; i < sp.l.n; i++) {
-        SContour    *contour = &(sp.l.elem[i]);
+    // Fix the contour directions; we do this properly, in uv space, so it
+    // works for curved surfaces too (important for STEP export).
+    spuv.FixContourDirections();
+    for(i = 0; i < spuv.l.n; i++) {
+        SContour    *contour = &(spuv.l.elem[i]);
         SBezierLoop *bl = &(sbls.l.elem[i]);
         if(contour->tag) {
             // This contour got reversed in the polygon to make the directions
             // consistent, so the same must be necessary for the Bezier loop.
             bl->Reverse();
         }
-        if(contour->IsClockwiseProjdToNormal(sp.normal)) {
+        if(contour->IsClockwiseProjdToNormal(spuv.normal)) {
             bl->tag = INNER_LOOP;
         } else {
             bl->tag = OUTER_LOOP;
@@ -528,8 +658,8 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv) {
                 if(i == j) continue;
                 if(outer->tag != OUTER_LOOP) continue;
 
-                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
-                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                Vector p = spuv.l.elem[j].AnyEdgeMidpoint();
+                if(spuv.l.elem[i].ContainsPointProjdToNormal(spuv.normal, p)) {
                     break;
                 }
             }
@@ -548,17 +678,19 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv) {
                 SBezierLoop *inner = &(sbls.l.elem[j]);
                 if(inner->tag != INNER_LOOP) continue;
 
-                Vector p = sp.l.elem[j].AnyEdgeMidpoint();
-                if(sp.l.elem[i].ContainsPointProjdToNormal(sp.normal, p)) {
+                Vector p = spuv.l.elem[j].AnyEdgeMidpoint();
+                if(spuv.l.elem[i].ContainsPointProjdToNormal(spuv.normal, p)) {
                     outerAndInners.l.Add(inner);
                     inner->tag = USED_LOOP;
                 }
             }
-
+            
+            outerAndInners.point  = srfuv->PointAt(0, 0);
+            outerAndInners.normal = srfuv->NormalAt(0, 0);
             l.Add(&outerAndInners);
         }
     }
-    sp.Clear();
+    spuv.Clear();
     // Don't free sbls; we've shallow-copied all of its members to ourself.
 }
 

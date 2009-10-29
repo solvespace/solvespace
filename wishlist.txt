@@ -1,7 +1,9 @@
 
 multi-drag
+select loop, all in group, others
 copy and paste
 filled contours for export
+background image
 associative entities from solid model, as a special group
 
 -----

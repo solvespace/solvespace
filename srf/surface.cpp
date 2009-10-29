@@ -487,8 +487,6 @@ void SSurface::Clear(void) {
 void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                                  int color)
 {
-    ZERO(this);
-
     // Make the extrusion direction consistent with respect to the normal
     // of the sketch we're extruding.
     if((t0.Minus(t1)).Dot(sbls->normal) < 0) {
@@ -610,7 +608,6 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
 void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                                    int color)
 {
-    ZERO(this);
     SBezierLoop *sbl;
 
     int i0 = surface.n, i;

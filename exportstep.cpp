@@ -212,7 +212,19 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     // along with its inner faces, so do that now.
     SBezierLoopSetSet sblss;
     ZERO(&sblss);
-    sblss.FindOuterFacesFrom(sbl, ss);
+    SPolygon spxyz;
+    ZERO(&spxyz);
+    bool allClosed;
+    SEdge notClosedAt;
+    // We specify a surface, so it doesn't check for coplanarity; and we
+    // don't want it to give us any open contours. The polygon and chord
+    // tolerance are required, because they are used to calculate the
+    // contour directions and determine inner vs. outer contours.
+    sblss.FindOuterFacesFrom(sbl, &spxyz, ss,
+                             SS.ChordTolMm() / SS.exportScale,
+                             &allClosed, &notClosedAt,
+                             NULL, NULL,
+                             NULL);
 
     // So in our list of SBezierLoopSet, each set contains at least one loop
     // (the outer boundary), plus any inner loops associated with that outer
@@ -253,6 +265,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         listOfLoops.Clear();
     }
     sblss.Clear();
+    spxyz.Clear();
 }
 
 void StepFileWriter::WriteFooter(void) {

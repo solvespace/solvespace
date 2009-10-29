@@ -47,8 +47,9 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
         // and zero out all the dynamic stuff that will get regenerated.
         dest.clean = false;
         ZERO(&(dest.solved));
-        ZERO(&(dest.poly));
-        ZERO(&(dest.bezierLoopSet));
+        ZERO(&(dest.polyLoops));
+        ZERO(&(dest.bezierLoops));
+        ZERO(&(dest.bezierOpens));
         ZERO(&(dest.polyError));
         ZERO(&(dest.thisMesh));
         ZERO(&(dest.runningMesh));
@@ -96,8 +97,9 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     // Free everything in the main copy of the program before replacing it
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
-        g->poly.Clear();
-        g->bezierLoopSet.Clear();
+        g->polyLoops.Clear();
+        g->bezierLoops.Clear();
+        g->bezierOpens.Clear();
         g->thisMesh.Clear();
         g->runningMesh.Clear();
         g->thisShell.Clear();

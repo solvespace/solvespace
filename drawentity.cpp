@@ -53,8 +53,7 @@ void Entity::DrawAll(void) {
         for(i = 0; i < SK.entity.n; i++) {
             Entity *e = &(SK.entity.elem[i]);
             if(!e->IsPoint()) continue;
-            if(!(SK.GetGroup(e->group)->visible)) continue;
-            if(SS.GroupsInOrder(SS.GW.activeGroup, e->group)) continue;
+            if(!(SK.GetGroup(e->group)->IsVisible())) continue;
             if(e->forceHidden) continue;
 
             Vector v = e->PointGetNum();
@@ -164,8 +163,7 @@ bool Entity::IsVisible(void) {
         // The reference normals are always shown
         return true;
     }
-    if(!g->visible) return false;
-    if(SS.GroupsInOrder(SS.GW.activeGroup, group)) return false;
+    if(!(g->IsVisible())) return false;
 
     // Don't check if points are hidden; this gets called only for
     // selected or hovered points, and those should always be shown.

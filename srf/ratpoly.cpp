@@ -250,6 +250,16 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
     }
     lv.Clear();
 }
+void SBezier::MakePwlInto(SContour *sc, double chordTol) {
+    List<Vector> lv;
+    ZERO(&lv);
+    MakePwlInto(&lv, chordTol);
+    int i;
+    for(i = 0; i < lv.n; i++) {
+        sc->AddPoint(lv.elem[i]);
+    }
+    lv.Clear();
+}
 void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
     if(chordTol == 0) {
         // Use the default chord tolerance.
@@ -362,6 +372,19 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     if(p.Equals(ctrl[degm][degn])) { *u = 1; *v = 1; return; }
     if(p.Equals(ctrl[0]   [degn])) { *u = 0; *v = 1; return; }
 
+    // And planes are trivial, so don't waste time iterating over those.
+    if(degm == 1 && degn == 1) {
+        Vector orig =  ctrl[0][0],
+               bu   = (ctrl[1][0]).Minus(orig),
+               bv   = (ctrl[0][1]).Minus(orig);
+        if((ctrl[1][1]).Equals(orig.Plus(bu).Plus(bv))) {
+            Vector dp = p.Minus(orig);
+            *u = dp.Dot(bu) / bu.MagSquared();
+            *v = dp.Dot(bv) / bv.MagSquared();
+            return;
+        }
+    }
+
     // Try whatever the previous guess was. This is likely to do something
     // good if we're working our way along a curve or something else where
     // we project successive points that are close to each other; something
@@ -377,22 +400,18 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
 
     // Search for a reasonable initial guess
     int i, j;
-    if(degm == 1 && degn == 1) {
-        *u = *v = 0; // a plane, perfect no matter what the initial guess
-    } else {
-        double minDist = VERY_POSITIVE;
-        int res = (max(degm, degn) == 2) ? 7 : 20;
-        for(i = 0; i < res; i++) {
-            for(j = 0; j < res; j++) {
-                double tryu = (i + 0.5)/res, tryv = (j + 0.5)/res;
-               
-                Vector tryp = PointAt(tryu, tryv);
-                double d = (tryp.Minus(p)).Magnitude();
-                if(d < minDist) {
-                    *u = tryu;
-                    *v = tryv;
-                    minDist = d;
-                }
+    double minDist = VERY_POSITIVE;
+    int res = (max(degm, degn) == 2) ? 7 : 20;
+    for(i = 0; i < res; i++) {
+        for(j = 0; j < res; j++) {
+            double tryu = (i + 0.5)/res, tryv = (j + 0.5)/res;
+           
+            Vector tryp = PointAt(tryu, tryv);
+            double d = (tryp.Minus(p)).Magnitude();
+            if(d < minDist) {
+                *u = tryu;
+                *v = tryv;
+                minDist = d;
             }
         }
     }

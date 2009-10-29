@@ -202,6 +202,12 @@ public:
         // and elemsAllocated is untouched, because we didn't resize
     }
 
+    void RemoveLast(int cnt) {
+        if(n < cnt) oops();
+        n -= cnt;
+        // and elemsAllocated is untouched, same as in RemoveTagged
+    }
+
     void Reverse(void) {
         int i;
         for(i = 0; i < (n/2); i++) {

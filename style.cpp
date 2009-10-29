@@ -142,7 +142,7 @@ void Style::AssignSelectionToStyle(DWORD v) {
         hRequest hr = he.request();
         Request *r = SK.GetRequest(hr);
         r->style.v = v;
-        SS.later.generateAll = true;
+        SS.MarkGroupDirty(r->group);
     }
     for(i = 0; i < SS.GW.gs.constraints; i++) {
         hConstraint hc = SS.GW.gs.constraint[i];
@@ -159,6 +159,7 @@ void Style::AssignSelectionToStyle(DWORD v) {
 
     SS.GW.ClearSelection();
     InvalidateGraphics();
+    SS.later.generateAll = true;
 
     // And show that style's info screen in the text window.
     SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);

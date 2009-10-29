@@ -71,7 +71,6 @@ public:
     Vector ComputeNormal(void);
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
-    bool AllPointsInPlane(Vector n, double d, Vector *notCoplanarAt);
     void OffsetInto(SContour *dest, double r);
     void CopyInto(SContour *dest);
     void FindPointWithMinX(void);
@@ -102,7 +101,6 @@ public:
     void TriangulateInto(SMesh *m);
     void TriangulateInto(SMesh *m, STriMeta meta);
     void Clear(void);
-    bool AllPointsInPlane(Vector *notCoplanarAt);
     bool SelfIntersecting(Vector *intersectsAt);
     bool IsEmpty(void);
     Vector AnyPoint(void);

@@ -141,8 +141,9 @@ public:
         bool        negateV;
     } predef;
 
-    SPolygon                poly;
-    SBezierLoopSet          bezierLoopSet;
+    SPolygon                polyLoops;
+    SBezierLoopSetSet       bezierLoops;
+    SBezierList             bezierOpens;
     static const int POLY_GOOD              = 0;
     static const int POLY_NOT_CLOSED        = 1;
     static const int POLY_NOT_COPLANAR      = 2;
@@ -211,10 +212,11 @@ public:
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
+    bool IsVisible(void);
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
-    bool AssembleLoops(void);
+    void AssembleLoops(bool *allClosed, bool *allCoplanar);
     void GenerateLoops(void);
     // And the mesh stuff
     Group *PreviousGroup(void);
@@ -225,6 +227,10 @@ public:
     void GenerateDisplayItems(void);
     void DrawDisplayItems(int t);
     void Draw(void);
+    DWORD GetLoopSetFillColor(SBezierLoopSet *sbls,
+                              bool *allSame, Vector *errorAt);
+    void FillLoopSetAsPolygon(SBezierLoopSet *sbls);
+    void DrawFilledPaths(void);
 
     SPolygon GetPolygon(void);
 

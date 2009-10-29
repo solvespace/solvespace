@@ -79,6 +79,7 @@ public:
     bool Equals(SBezier *b);
     void MakePwlInto(SEdgeList *sel, double chordTol=0);
     void MakePwlInto(List<SCurvePt> *l, double chordTol=0);
+    void MakePwlInto(SContour *sc, double chordTol=0);
     void MakePwlInto(List<Vector> *l, double chordTol=0);
     void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol);
 
@@ -111,6 +112,8 @@ public:
     void ScaleSelfBy(double s);
     void CullIdenticalBeziers(void);
     void AllIntersectionsWith(SBezierList *sblb, SPointList *spl);
+    bool GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
+                                        Vector *notCoplanarAt);
 };
 
 class SBezierLoop {
@@ -121,7 +124,7 @@ public:
     inline void Clear(void) { l.Clear(); }
     bool IsClosed(void);
     void Reverse(void);
-    void MakePwlInto(SContour *sc);
+    void MakePwlInto(SContour *sc, double chordTol=0);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
 
     static SBezierLoop FromCurves(SBezierList *spcl,
@@ -135,9 +138,13 @@ public:
     Vector point;
 
     static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
-                          bool *allClosed, SEdge *errorAt);
+                               double chordTol,
+                               bool *allClosed, SEdge *errorAt,
+                               SBezierList *openContours);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
+    void MakePwlInto(SPolygon *sp);
+    int GetAuxA(bool *allSame, Vector *errorAt);
     void Clear(void);
 };
 
@@ -145,7 +152,11 @@ class SBezierLoopSetSet {
 public:
     List<SBezierLoopSet>    l;
 
-    void FindOuterFacesFrom(SBezierList *sbl, SSurface *srfuv);
+    void FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz, SSurface *srfuv,
+                            double chordTol,
+                            bool *allClosed, SEdge *notClosedAt,
+                            bool *allCoplanar, Vector *notCoplanarAt,
+                            SBezierList *openContours);
     void Clear(void);
 };
 

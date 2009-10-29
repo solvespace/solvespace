@@ -273,8 +273,8 @@ void GraphicsWindow::LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin,
         HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, div);
         HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, div);
     }
-    for(i = 0; i < g->poly.l.n; i++) {
-        SContour *sc = &(g->poly.l.elem[i]);
+    for(i = 0; i < g->polyLoops.l.n; i++) {
+        SContour *sc = &(g->polyLoops.l.elem[i]);
         for(j = 0; j < sc->l.n; j++) {
             HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, div);
         }
