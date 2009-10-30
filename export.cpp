@@ -181,17 +181,27 @@ void SolveSpace::ExportViewOrWireframeTo(char *filename, bool wireframe) {
     beziers.Clear();
 }
 
-
 void SolveSpace::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                            VectorFileWriter *out)
 {
-    sbl->ScaleSelfBy(1.0/SS.exportScale);
+    SBezierLoopSetSet sblss;
+    ZERO(&sblss);
     SEdge *se;
     for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
-        se->a = (se->a).ScaledBy(1.0/SS.exportScale);
-        se->b = (se->b).ScaledBy(1.0/SS.exportScale);
+        SBezier sb = SBezier::From(
+                                (se->a).ScaledBy(1.0 / SS.exportScale),
+                                (se->b).ScaledBy(1.0 / SS.exportScale));
+        sblss.AddOpenPath(&sb);
     }
-    out->Output(sel, sbl, NULL);
+
+    sbl->ScaleSelfBy(1.0/SS.exportScale);
+    SBezier *sb;
+    for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+        sblss.AddOpenPath(sb);
+    }
+
+    out->Output(&sblss, NULL);
+    sblss.Clear();
 }
 
 void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
@@ -327,9 +337,49 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
         sel = &hlrd;
     }
 
-    // Now write the lines and triangles to the output file
-    out->Output(sel, sbl, &sms);
+    // We kept the line segments and Beziers separate until now; but put them
+    // all together, and also project everything into the xy plane, since not
+    // all export targets ignore the z component of the points.
+    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+        SBezier sb = SBezier::From(e->a, e->b);
+        sb.auxA = e->auxA;
+        sbl->l.Add(&sb);
+    }
+    for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+        for(int i = 0; i <= b->deg; i++) {
+            b->ctrl[i].z = 0;
+        }
+    }
 
+    // If possible, then we will assemble these output curves into loops. They
+    // will then get exported as closed paths.
+    SBezierLoopSetSet sblss;
+    ZERO(&sblss);
+    SBezierList leftovers;
+    ZERO(&leftovers);
+    SSurface srf = SSurface::FromPlane(Vector::From(0, 0, 0),
+                                       Vector::From(1, 0, 0),
+                                       Vector::From(0, 1, 0));
+    SPolygon spxyz;
+    ZERO(&spxyz);
+    bool allClosed;
+    SEdge notClosedAt;
+    sbl->l.ClearTags();
+    sblss.FindOuterFacesFrom(sbl, &spxyz, &srf,
+                             SS.ChordTolMm()*s,
+                             &allClosed, &notClosedAt,
+                             NULL, NULL,
+                             &leftovers);
+    for(b = leftovers.l.First(); b; b = leftovers.l.NextAfter(b)) {
+        sblss.AddOpenPath(b);
+    }
+
+    // Now write the lines and triangles to the output file
+    out->Output(&sblss, &sms);
+
+    leftovers.Clear();
+    spxyz.Clear();
+    sblss.Clear();
     smp.Clear();
     sms.Clear();
     hlrd.Clear();
@@ -379,24 +429,19 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
 
 static void AddUnregMessageCallback(void *fndata, Vector a, Vector b)
 {
-    SEdgeList *sel = (SEdgeList *)fndata;
-    sel->AddEdge(a, b, Style::SELECTED);
+    SBezierLoopSetSet *sblss = (SBezierLoopSetSet *)fndata;
+    SBezier sb = SBezier::From(a, b);
+    sb.auxA = Style::SELECTED;
+    sblss->AddOpenPath(&sb);
 }
 
-void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
+void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
     STriangle *tr;
-    SEdge *e;
     SBezier *b;
 
     // First calculate the bounding box.
     ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
     ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
-    if(sel) {
-        for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
-            (e->a).MakeMaxMin(&ptMax, &ptMin);
-            (e->b).MakeMaxMin(&ptMax, &ptMin);
-        }
-    }
     if(sm) {
         for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
             (tr->a).MakeMaxMin(&ptMax, &ptMin);
@@ -404,11 +449,16 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
             (tr->c).MakeMaxMin(&ptMax, &ptMin);
         }
     }
-    if(sbl) {
-        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
-            int i;
-            for(i = 0; i <= b->deg; i++) {
-                (b->ctrl[i]).MakeMaxMin(&ptMax, &ptMin);
+    if(sblss) {
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            SBezierLoop *sbl;
+            for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+                    for(int i = 0; i <= b->deg; i++) {
+                        (b->ctrl[i]).MakeMaxMin(&ptMax, &ptMin);
+                    }
+                }
             }
         }
     }
@@ -431,7 +481,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
 
     // If the demo period has expired and there's no license, then print
     // a message in any exported file.
-    if((!SS.license.licensed) && (SS.license.trialDaysRemaining <= 0)) {
+    if((!SS.license.licensed) && (SS.license.trialDaysRemaining <= 0) && sblss){
         char *str = 
             "eval / nonprofit use only -- buy at http://solvespace.com/";
         double aspect = (glxStrWidth(str, 1) / glxStrHeight(1));
@@ -453,7 +503,7 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
             str,
             0.9 * th * SS.GW.scale,
             t, u, v,
-            AddUnregMessageCallback, sel);
+            AddUnregMessageCallback, sblss);
         if(w > h) {
             ptMin.y -= th*3;
         } else {
@@ -467,41 +517,45 @@ void VectorFileWriter::Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm) {
             Triangle(tr);
         }
     }
-    if(sel) {
-        for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
-            if(!Style::Exportable(e->auxA)) continue;
+    if(sblss) {
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            SBezierLoop *sbl;
+            sbl = sbls->l.First();
+            if(!sbl) continue;
+            b = sbl->l.First();
+            if(!b || !Style::Exportable(b->auxA)) continue;
 
-            DWORD rgb = Style::Color  (e->auxA, true);
-            double w  = Style::WidthMm(e->auxA)*s;
-            LineSegment(rgb, w, e->a, e->b);
-        }
-    }
-    if(sbl) {
-        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
-            if(!Style::Exportable(b->auxA)) continue;
+            hStyle hs = { b->auxA };
+            Style *stl = Style::Get(hs);
+            double lineWidth  = Style::WidthMm(b->auxA)*s;
+            DWORD strokeRgb = Style::Color(b->auxA, true);
 
-            DWORD rgb = Style::Color  (b->auxA, true);
-            double w  = Style::WidthMm(b->auxA)*s;
-            Bezier(rgb, w, b);
+            StartPath(strokeRgb, lineWidth, stl->filled, stl->fillColor);
+            for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+                for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+                    Bezier(b);
+                }
+            }
+            FinishPath(strokeRgb, lineWidth, stl->filled, stl->fillColor);
         }
     }
     FinishAndCloseFile();
 }
 
-void VectorFileWriter::BezierAsPwl(DWORD rgb, double width, SBezier *sb) {
+void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     List<Vector> lv;
     ZERO(&lv);
     sb->MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
     int i;
     for(i = 1; i < lv.n; i++) {
-        LineSegment(rgb, width, lv.elem[i-1], lv.elem[i]);
+        SBezier sb = SBezier::From(lv.elem[i-1], lv.elem[i]);
+        Bezier(&sb);
     }
     lv.Clear();
 }
 
-void VectorFileWriter::BezierAsNonrationalCubic(DWORD rgb, double width,
-            SBezier *sb, int depth)
-{
+void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
     Vector t0 = sb->TangentAt(0), t1 = sb->TangentAt(1);
     // The curve is correct, and the first derivatives are correct, at the
     // endpoints.
@@ -529,12 +583,12 @@ void VectorFileWriter::BezierAsNonrationalCubic(DWORD rgb, double width,
     }
     
     if(closeEnough || depth > 3) {
-        Bezier(rgb, width, &bnr);
+        Bezier(&bnr);
     } else {
         SBezier bef, aft;
         sb->SplitAt(0.5, &bef, &aft);
-        BezierAsNonrationalCubic(rgb, width, &bef, depth+1);
-        BezierAsNonrationalCubic(rgb, width, &aft, depth+1);
+        BezierAsNonrationalCubic(&bef, depth+1);
+        BezierAsNonrationalCubic(&aft, depth+1);
     }
 }
 

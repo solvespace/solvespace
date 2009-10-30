@@ -402,6 +402,7 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
     loop.l.Add(first);
     Vector start = first->Start();
     Vector hanging = first->Finish();
+    int auxA = first->auxA;
 
     sbl->l.RemoveTagged();
 
@@ -411,11 +412,11 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
         for(i = 0; i < sbl->l.n; i++) {
             SBezier *test = &(sbl->l.elem[i]);
 
-            if((test->Finish()).Equals(hanging)) {
+            if((test->Finish()).Equals(hanging) && test->auxA == auxA) {
                 test->Reverse();
                 // and let the next test catch it
             }
-            if((test->Start()).Equals(hanging)) {
+            if((test->Start()).Equals(hanging) && test->auxA == auxA) {
                 test->tag = 1;
                 loop.l.Add(test);
                 hanging = test->Finish();
@@ -690,11 +691,48 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
             l.Add(&outerAndInners);
         }
     }
+
+    // If we have poorly-formed loops--for example, overlapping zero-area
+    // stuff--then we can end up with leftovers. We use this function to
+    // group stuff into closed paths for export when possible, so it's bad
+    // to screw up on that stuff. So just add them onto the open curve list.
+    // Very ugly, but better than losing curves.
+    for(i = 0; i < sbls.l.n; i++) {
+        SBezierLoop *loop = &(sbls.l.elem[i]);
+        if(loop->tag == USED_LOOP) continue;
+
+        if(openContours) {
+            SBezier *sb;
+            for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
+                openContours->l.Add(sb);
+            }
+        }
+        loop->Clear();
+        // but don't free the used loops, since we shallow-copied them to
+        // ourself
+    }
+
+    sbls.l.Clear(); // not sbls.Clear(), since that would deep-clear
     spuv.Clear();
-    // Don't free sbls; we've shallow-copied all of its members to ourself.
+}
+
+void SBezierLoopSetSet::AddOpenPath(SBezier *sb) {
+    SBezierLoop sbl;
+    ZERO(&sbl);
+    sbl.l.Add(sb);
+
+    SBezierLoopSet sbls;
+    ZERO(&sbls);
+    sbls.l.Add(&sbl);
+
+    l.Add(&sbls);
 }
 
 void SBezierLoopSetSet::Clear(void) {
+    SBezierLoopSet *sbls;
+    for(sbls = l.First(); sbls; sbls = l.NextAfter(sbls)) {
+        sbls->Clear();
+    }
     l.Clear();
 }
 

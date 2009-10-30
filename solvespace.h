@@ -415,33 +415,42 @@ public:
 
     static VectorFileWriter *ForFile(char *file);
 
-    void Output(SEdgeList *sel, SBezierList *sbl, SMesh *sm);
+    void Output(SBezierLoopSetSet *sblss, SMesh *sm);
 
-    void BezierAsPwl(DWORD rgb, double width, SBezier *sb);
-    void BezierAsNonrationalCubic(DWORD rgb, double width, 
-                                    SBezier *sb, int depth=0);
+    void BezierAsPwl(SBezier *sb);
+    void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual void Bezier(DWORD rgb, double width, SBezier *sb) = 0;
-    virtual void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB)
-                                                                            = 0;
+    virtual void StartPath( DWORD strokeRgb, double lineWidth,
+                            bool filled, DWORD fillRgb) = 0;
+    virtual void FinishPath(DWORD strokeRgb, double lineWidth,
+                            bool filled, DWORD fillRgb) = 0;
+    virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
-    static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    Vector prevPt;
+    void MaybeMoveTo(Vector s, Vector f);
+
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
@@ -449,37 +458,52 @@ class PdfFileWriter : public VectorFileWriter {
 public:
     DWORD xref[10];
     DWORD bodyStart;
+    Vector prevPt;
+    void MaybeMoveTo(Vector s, Vector f);
 
-    static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
-    static char *StyleString(DWORD rgb, double width);
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    Vector prevPt;
+    void MaybeMoveTo(Vector s, Vector f);
+
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
-    void LineSegment(DWORD rgb, double width, Vector ptA, Vector ptB);
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
     void Triangle(STriangle *tr);
-    void Bezier(DWORD rgb, double width, SBezier *sb);
+    void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
 };

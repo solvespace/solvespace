@@ -144,7 +144,6 @@ public:
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void MakePwlInto(SPolygon *sp);
-    int GetAuxA(bool *allSame, Vector *errorAt);
     void Clear(void);
 };
 
@@ -157,6 +156,7 @@ public:
                             bool *allClosed, SEdge *notClosedAt,
                             bool *allCoplanar, Vector *notCoplanarAt,
                             SBezierList *openContours);
+    void AddOpenPath(SBezier *sb);
     void Clear(void);
 };
 

@@ -62,8 +62,23 @@ void DxfFileWriter::StartFile(void) {
 "ENTITIES\r\n");
 }
 
-void DxfFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
-    fprintf(f,
+void DxfFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+}
+void DxfFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
+}
+
+void DxfFileWriter::Triangle(STriangle *tr) {
+}
+
+void DxfFileWriter::Bezier(SBezier *sb) {
+    Vector c, n = Vector::From(0, 0, 1);
+    double r;
+    if(sb->deg == 1) {
+        fprintf(f,
 "  0\r\n"
 "LINE\r\n"
 "  8\r\n"     // Layer code
@@ -80,18 +95,10 @@ void DxfFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
 "%.6f\r\n"
 "  31\r\n"    // zB
 "%.6f\r\n",
-                    0,
-                    ptA.x, ptA.y, ptA.z,
-                    ptB.x, ptB.y, ptB.z);
-}
-
-void DxfFileWriter::Triangle(STriangle *tr) {
-}
-
-void DxfFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
-    Vector c, n = Vector::From(0, 0, 1);
-    double r;
-    if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
+                0,
+                sb->ctrl[0].x, sb->ctrl[0].y, sb->ctrl[0].z,
+                sb->ctrl[1].x, sb->ctrl[1].y, sb->ctrl[1].z);
+    } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
         double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x),
                theta1 = atan2(sb->ctrl[2].y - c.y, sb->ctrl[2].x - c.x),
                dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
@@ -121,7 +128,7 @@ void DxfFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
                         r,
                         theta0*180/PI, theta1*180/PI);
     } else {
-        BezierAsPwl(rgb, w, sb);
+        BezierAsPwl(sb);
     }
 }
 
@@ -137,17 +144,6 @@ void DxfFileWriter::FinishAndCloseFile(void) {
 //-----------------------------------------------------------------------------
 // Routines for EPS output
 //-----------------------------------------------------------------------------
-char *EpsFileWriter::StyleString(DWORD rgb, double w) {
-    static char ret[300];
-    sprintf(ret, "    %.3f setlinewidth\r\n"
-                 "    %.3f %.3f %.3f setrgbcolor\r\n"
-                 "    1 setlinejoin\r\n"  // rounded
-                 "    1 setlinecap\r\n",  // rounded
-        MmToPts(w),
-        REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    return ret;
-}
-
 void EpsFileWriter::StartFile(void) {
     fprintf(f,
 "%%!PS-Adobe-2.0\r\n"
@@ -167,16 +163,35 @@ void EpsFileWriter::StartFile(void) {
             MmToPts(ptMax.y - ptMin.y));
 }
 
-void EpsFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
-    fprintf(f,
-"newpath\r\n"
-"    %.3f %.3f moveto\r\n"
-"    %.3f %.3f lineto\r\n"
-"%s"
-"stroke\r\n",
-            MmToPts(ptA.x - ptMin.x), MmToPts(ptA.y - ptMin.y),
-            MmToPts(ptB.x - ptMin.x), MmToPts(ptB.y - ptMin.y),
-            StyleString(rgb, w));
+void EpsFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+    fprintf(f, "newpath\r\n");
+    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+}
+void EpsFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
+    fprintf(f, "    %.3f setlinewidth\r\n"
+               "    %.3f %.3f %.3f setrgbcolor\r\n"
+               "    1 setlinejoin\r\n"  // rounded
+               "    1 setlinecap\r\n"   // rounded
+               "    gsave stroke grestore\r\n",
+        MmToPts(lineWidth),
+        REDf(strokeRgb), GREENf(strokeRgb), BLUEf(strokeRgb));
+    if(filled) {
+        fprintf(f, "    %.3f %.3f %.3f setrgbcolor\r\n"
+                   "    gsave fill grestore\r\n",
+            REDf(fillRgb), GREENf(fillRgb), BLUEf(fillRgb));
+    }
+}
+
+void EpsFileWriter::MaybeMoveTo(Vector st, Vector fi) {
+    if(!prevPt.Equals(st)) {
+        fprintf(f, "    %.3f %.3f moveto\r\n",
+            MmToPts(st.x - ptMin.x), MmToPts(st.y - ptMin.y));
+    }
+    prevPt = fi;
 }
 
 void EpsFileWriter::Triangle(STriangle *tr) {
@@ -187,7 +202,7 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 "    %.3f %.3f lineto\r\n"
 "    %.3f %.3f lineto\r\n"
 "    closepath\r\n"
-"fill\r\n",
+"gsave fill grestore\r\n",
             REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
             MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
             MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
@@ -196,25 +211,22 @@ void EpsFileWriter::Triangle(STriangle *tr) {
     // same issue with cracks, stroke it to avoid them
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
     fprintf(f,
-"%.3f %.3f %.3f setrgbcolor\r\n"
+"1 setlinejoin\r\n"
+"1 setlinecap\r\n"
 "%.3f setlinewidth\r\n"
-"newpath\r\n"
-"    %.3f %.3f moveto\r\n"
-"    %.3f %.3f lineto\r\n"
-"    %.3f %.3f lineto\r\n"
-"    closepath\r\n"
-"stroke\r\n",
-            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
-            MmToPts(sw),
-            MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
-            MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
-            MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
+"gsave stroke grestore\r\n",
+            MmToPts(sw));
 }
 
-void EpsFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
+void EpsFileWriter::Bezier(SBezier *sb) {
     Vector c, n = Vector::From(0, 0, 1);
     double r;
-    if(sb->IsCircle(n, &c, &r)) {
+    if(sb->deg == 1) {
+        MaybeMoveTo(sb->ctrl[0], sb->ctrl[1]);
+        fprintf(f,     "    %.3f %.3f lineto\r\n",
+                MmToPts(sb->ctrl[1].x - ptMin.x),
+                MmToPts(sb->ctrl[1].y - ptMin.y));
+    } else if(sb->IsCircle(n, &c, &r)) {
         Vector p0 = sb->ctrl[0], p1 = sb->ctrl[2];
         double theta0 = atan2(p0.y - c.y, p0.x - c.x),
                theta1 = atan2(p1.y - c.y, p1.x - c.x),
@@ -223,31 +235,21 @@ void EpsFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
             SWAP(double, theta0, theta1);
             SWAP(Vector, p0, p1);
         }
+        MaybeMoveTo(p0, p1);
         fprintf(f,
-"newpath\r\n"
-"    %.3f %.3f moveto\r\n"
-"    %.3f %.3f %.3f %.3f %.3f arc\r\n"
-"%s"
-"stroke\r\n",
-            MmToPts(p0.x - ptMin.x), MmToPts(p0.y - ptMin.y),
+"    %.3f %.3f %.3f %.3f %.3f arc\r\n",
             MmToPts(c.x - ptMin.x),  MmToPts(c.y - ptMin.y),
             MmToPts(r),
-            theta0*180/PI, theta1*180/PI,
-            StyleString(rgb, w));
+            theta0*180/PI, theta1*180/PI);
     } else if(sb->deg == 3 && !sb->IsRational()) {
+        MaybeMoveTo(sb->ctrl[0], sb->ctrl[3]);
         fprintf(f,
-"newpath\r\n"
-"    %.3f %.3f moveto\r\n"
-"    %.3f %.3f %.3f %.3f %.3f %.3f curveto\r\n"
-"%s"
-"stroke\r\n",
-            MmToPts(sb->ctrl[0].x - ptMin.x), MmToPts(sb->ctrl[0].y - ptMin.y),
+"    %.3f %.3f %.3f %.3f %.3f %.3f curveto\r\n",
             MmToPts(sb->ctrl[1].x - ptMin.x), MmToPts(sb->ctrl[1].y - ptMin.y),
             MmToPts(sb->ctrl[2].x - ptMin.x), MmToPts(sb->ctrl[2].y - ptMin.y),
-            MmToPts(sb->ctrl[3].x - ptMin.x), MmToPts(sb->ctrl[3].y - ptMin.y),
-            StyleString(rgb, w));
+            MmToPts(sb->ctrl[3].x - ptMin.x), MmToPts(sb->ctrl[3].y - ptMin.y));
     } else {
-        BezierAsNonrationalCubic(rgb, w, sb);
+        BezierAsNonrationalCubic(sb);
     }
 }
 
@@ -263,16 +265,6 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 // Routines for PDF output, some extra complexity because we have to generate
 // a correct xref table.
 //-----------------------------------------------------------------------------
-char *PdfFileWriter::StyleString(DWORD rgb, double w) {
-    static char ret[300];
-    sprintf(ret, "1 J 1 j " // round endcaps and joins
-                 "%.3f w "
-                 "%.3f %.3f %.3f RG\r\n",
-        MmToPts(w),
-        REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    return ret;
-}
-
 void PdfFileWriter::StartFile(void) {
     fprintf(f,
 "%%PDF-1.1\r\n"
@@ -392,21 +384,44 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 
 }
 
-void PdfFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
-    fprintf(f,
-"%s"
-"%.3f %.3f m\r\n"
-"%.3f %.3f l\r\n"
-"S\r\n",
-            StyleString(rgb, w),
-            MmToPts(ptA.x - ptMin.x), MmToPts(ptA.y - ptMin.y),
-            MmToPts(ptB.x - ptMin.x), MmToPts(ptB.y - ptMin.y));
+void PdfFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+    fprintf(f, "1 J 1 j " // round endcaps and joins
+               "%.3f w "
+               "%.3f %.3f %.3f RG\r\n",
+        MmToPts(lineWidth),
+        REDf(strokeRgb), GREENf(strokeRgb), BLUEf(strokeRgb));
+    if(filled) {
+        fprintf(f, "%.3f %.3f %.3f rg\r\n",
+            REDf(fillRgb), GREENf(fillRgb), BLUEf(fillRgb));
+    }
+
+    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+}
+void PdfFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
+    if(filled) {
+        fprintf(f, "b\r\n");
+    } else {
+        fprintf(f, "S\r\n");
+    }
+}
+
+void PdfFileWriter::MaybeMoveTo(Vector st, Vector fi) {
+    if(!prevPt.Equals(st)) {
+        fprintf(f, "%.3f %.3f m\r\n",
+            MmToPts(st.x - ptMin.x), MmToPts(st.y - ptMin.y));
+    }
+    prevPt = fi;
 }
 
 void PdfFileWriter::Triangle(STriangle *tr) {
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
 
     fprintf(f,
+"1 J 1 j\r\n"
 "%.3f %.3f %.3f RG\r\n"
 "%.3f %.3f %.3f rg\r\n"
 "%.3f w\r\n"
@@ -422,35 +437,27 @@ void PdfFileWriter::Triangle(STriangle *tr) {
             MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
 }
 
-void PdfFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
-    if(sb->deg == 3 && !sb->IsRational()) {
+void PdfFileWriter::Bezier(SBezier *sb) {
+    if(sb->deg == 1) {
+        MaybeMoveTo(sb->ctrl[0], sb->ctrl[1]);
         fprintf(f,
-"%s"
-"%.3f %.3f m\r\n"
-"%.3f %.3f %.3f %.3f %.3f %.3f c\r\n"
-"S\r\n",
-            StyleString(rgb, w),
-            MmToPts(sb->ctrl[0].x - ptMin.x), MmToPts(sb->ctrl[0].y - ptMin.y),
+"%.3f %.3f l\r\n",
+            MmToPts(sb->ctrl[1].x - ptMin.x), MmToPts(sb->ctrl[1].y - ptMin.y));
+    } else if(sb->deg == 3 && !sb->IsRational()) {
+        MaybeMoveTo(sb->ctrl[0], sb->ctrl[3]);
+        fprintf(f,
+"%.3f %.3f %.3f %.3f %.3f %.3f c\r\n",
             MmToPts(sb->ctrl[1].x - ptMin.x), MmToPts(sb->ctrl[1].y - ptMin.y),
             MmToPts(sb->ctrl[2].x - ptMin.x), MmToPts(sb->ctrl[2].y - ptMin.y),
             MmToPts(sb->ctrl[3].x - ptMin.x), MmToPts(sb->ctrl[3].y - ptMin.y));
     } else {
-        BezierAsNonrationalCubic(rgb, w, sb);
+        BezierAsNonrationalCubic(sb);
     }
 }
 
 //-----------------------------------------------------------------------------
 // Routines for SVG output
 //-----------------------------------------------------------------------------
-char *SvgFileWriter::StyleString(DWORD rgb, double w) {
-    static char ret[200];
-    sprintf(ret, "stroke-width='%.3f' stroke='#%02x%02x%02x' "
-                  "style='fill: none;' "
-                  "stroke-linecap='round' stroke-linejoin='round' ",
-        w, RED(rgb), GREEN(rgb), BLUE(rgb));
-    return ret;
-}
-
 void SvgFileWriter::StartFile(void) {
     fprintf(f,
 "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
@@ -467,13 +474,35 @@ void SvgFileWriter::StartFile(void) {
     // A little bit of extra space for the stroke width.
 }
 
-void SvgFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
+void SvgFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+    fprintf(f, "<path d='");
+    prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
+}
+void SvgFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
+    char fill[100];
+    if(filled) {
+        sprintf(fill, "#%02x%02x%02x",
+            RED(fillRgb), GREEN(fillRgb), BLUE(fillRgb));
+    } else {
+        strcpy(fill, "none");
+    }
+    fprintf(f, "' stroke-width='%.3f' stroke='#%02x%02x%02x' "
+                 "stroke-linecap='round' stroke-linejoin='round' "
+                 "fill='%s' />\r\n",
+        lineWidth, RED(strokeRgb), GREEN(strokeRgb), BLUE(strokeRgb),
+        fill);
+}
+
+void SvgFileWriter::MaybeMoveTo(Vector st, Vector fi) {
     // SVG uses a coordinate system with the origin at top left, +y down
-    fprintf(f,
-"<polyline points='%.3f,%.3f %.3f,%.3f' %s />\r\n",
-            (ptA.x - ptMin.x), (ptMax.y - ptA.y),
-            (ptB.x - ptMin.x), (ptMax.y - ptB.y),
-            StyleString(rgb, w));
+    if(!prevPt.Equals(st)) {
+        fprintf(f, "M%.3f %.3f ", (st.x - ptMin.x), (ptMax.y - st.y));
+    }
+    prevPt = fi;
 }
 
 void SvgFileWriter::Triangle(STriangle *tr) {
@@ -493,10 +522,14 @@ void SvgFileWriter::Triangle(STriangle *tr) {
             RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color));
 }
 
-void SvgFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
+void SvgFileWriter::Bezier(SBezier *sb) {
     Vector c, n = Vector::From(0, 0, 1);
     double r;
-    if(sb->IsCircle(n, &c, &r)) {
+    if(sb->deg == 1) {
+        MaybeMoveTo(sb->ctrl[0], sb->ctrl[1]);
+        fprintf(f, "L%.3f,%.3f ",
+            (sb->ctrl[1].x - ptMin.x), (ptMax.y - sb->ctrl[1].y));
+    } else if(sb->IsCircle(n, &c, &r)) {
         Vector p0 = sb->ctrl[0], p1 = sb->ctrl[2];
         double theta0 = atan2(p0.y - c.y, p0.x - c.x),
                theta1 = atan2(p1.y - c.y, p1.x - c.x),
@@ -508,36 +541,25 @@ void SvgFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
         if(dtheta < 0) {
             SWAP(Vector, p0, p1);
         }
-        fprintf(f, 
-"<path d='M%.3f,%.3f "
-         "A%.3f,%.3f 0 0,0 %.3f,%.3f' %s />\r\n",
-                p0.x - ptMin.x, ptMax.y - p0.y,
-                r, r,
-                p1.x - ptMin.x, ptMax.y - p1.y,
-                StyleString(rgb, w));
+        MaybeMoveTo(p0, p1);
+        fprintf(f, "A%.3f,%.3f 0 0,0 %.3f,%.3f ",
+                        r, r,
+                        p1.x - ptMin.x, ptMax.y - p1.y);
     } else if(!sb->IsRational()) {
-        if(sb->deg == 1) {
-            LineSegment(rgb, w, sb->ctrl[0], sb->ctrl[1]);
-        } else if(sb->deg == 2) {
-            fprintf(f,
-"<path d='M%.3f,%.3f "
-         "Q%.3f,%.3f %.3f,%.3f' %s />\r\n",
-                sb->ctrl[0].x - ptMin.x, ptMax.y - sb->ctrl[0].y,
+        if(sb->deg == 2) {
+            MaybeMoveTo(sb->ctrl[0], sb->ctrl[2]);
+            fprintf(f, "Q%.3f,%.3f %.3f,%.3f ",
                 sb->ctrl[1].x - ptMin.x, ptMax.y - sb->ctrl[1].y,
-                sb->ctrl[2].x - ptMin.x, ptMax.y - sb->ctrl[2].y,
-                StyleString(rgb, w));
+                sb->ctrl[2].x - ptMin.x, ptMax.y - sb->ctrl[2].y);
         } else if(sb->deg == 3) {
-            fprintf(f,
-"<path d='M%.3f,%.3f "
-         "C%.3f,%.3f %.3f,%.3f %.3f,%.3f' %s />\r\n",
-                sb->ctrl[0].x - ptMin.x, ptMax.y - sb->ctrl[0].y,
+            MaybeMoveTo(sb->ctrl[0], sb->ctrl[3]);
+            fprintf(f, "C%.3f,%.3f %.3f,%.3f %.3f,%.3f ",
                 sb->ctrl[1].x - ptMin.x, ptMax.y - sb->ctrl[1].y,
                 sb->ctrl[2].x - ptMin.x, ptMax.y - sb->ctrl[2].y,
-                sb->ctrl[3].x - ptMin.x, ptMax.y - sb->ctrl[3].y,
-                StyleString(rgb, w));
+                sb->ctrl[3].x - ptMin.x, ptMax.y - sb->ctrl[3].y);
         }
     } else {
-        BezierAsNonrationalCubic(rgb, w, sb);
+        BezierAsNonrationalCubic(sb);
     }
 }
 
@@ -558,20 +580,29 @@ void HpglFileWriter::StartFile(void) {
     fprintf(f, "SP1;\r\n");
 }
 
-void HpglFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB) {
-    fprintf(f, "PU%d,%d;\r\n",
-        (int)MmToHpglUnits(ptA.x),
-        (int)MmToHpglUnits(ptA.y));
-    fprintf(f, "PD%d,%d;\r\n",
-        (int)MmToHpglUnits(ptB.x),
-        (int)MmToHpglUnits(ptB.y));
+void HpglFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+}
+void HpglFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
 }
 
 void HpglFileWriter::Triangle(STriangle *tr) {
 }
 
-void HpglFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
-    BezierAsPwl(rgb, w, sb);
+void HpglFileWriter::Bezier(SBezier *sb) {
+    if(sb->deg == 1) {
+        fprintf(f, "PU%d,%d;\r\n",
+            (int)MmToHpglUnits(sb->ctrl[0].x),
+            (int)MmToHpglUnits(sb->ctrl[0].y));
+        fprintf(f, "PD%d,%d;\r\n",
+            (int)MmToHpglUnits(sb->ctrl[1].x),
+            (int)MmToHpglUnits(sb->ctrl[1].y));
+    } else {
+        BezierAsPwl(sb);
+    }
 }
 
 void HpglFileWriter::FinishAndCloseFile(void) {
@@ -591,13 +622,16 @@ void Step2dFileWriter::StartFile(void) {
 void Step2dFileWriter::Triangle(STriangle *tr) {
 }
 
-void Step2dFileWriter::LineSegment(DWORD rgb, double w, Vector ptA, Vector ptB)
+void Step2dFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                                 bool filled, DWORD fillRgb)
 {
-    SBezier sb = SBezier::From(ptA, ptB);
-    Bezier(rgb, w, &sb);
+}
+void Step2dFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                                  bool filled, DWORD fillRgb)
+{
 }
 
-void Step2dFileWriter::Bezier(DWORD rgb, double w, SBezier *sb) {
+void Step2dFileWriter::Bezier(SBezier *sb) {
     int c = sfw.ExportCurve(sb);
     sfw.curves.Add(&c);
 }

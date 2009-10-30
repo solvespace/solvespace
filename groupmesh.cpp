@@ -467,7 +467,8 @@ void Group::Draw(void) {
                 glxVertex3v(polyError.notClosedAt.b);
             glEnd();
             glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            glxWriteText("not closed contour!", DEFAULT_TEXT_HEIGHT,
+            glxWriteText("not closed contour, or not all same style!",
+                DEFAULT_TEXT_HEIGHT,
                 polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
@@ -492,45 +493,6 @@ void Group::Draw(void) {
     }
 }
 
-//-----------------------------------------------------------------------------
-// Verify that the Beziers in this loop set all have the same auxA, and return
-// that value. If they don't, then set allSame to be false, and indicate a
-// point on the non-matching curve.
-//-----------------------------------------------------------------------------
-DWORD Group::GetLoopSetFillColor(SBezierLoopSet *sbls,
-                                 bool *allSame, Vector *errorAt)
-{
-    bool first = true;
-    DWORD fillRgb = (DWORD)-1;
-
-    SBezierLoop *sbl;
-    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
-        SBezier *sb;
-        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-            DWORD thisRgb = (DWORD)-1;
-            if(sb->auxA != 0) {
-                hStyle hs = { sb->auxA };
-                Style *s = Style::Get(hs);
-                if(s->filled) {
-                    thisRgb = s->fillColor;
-                }
-            }
-            if(first) {
-                fillRgb = thisRgb;
-                first = false;
-            } else {
-                if(fillRgb != thisRgb) {
-                    *allSame = false;
-                    *errorAt = sb->Start();
-                    return fillRgb;
-                }
-            }
-        }
-    }
-    *allSame = true;
-    return fillRgb;
-}
-
 void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
     SPolygon sp;
     ZERO(&sp);
@@ -545,18 +507,16 @@ void Group::DrawFilledPaths(void) {
     SBezierLoopSet *sbls;
     SBezierLoopSetSet *sblss = &bezierLoops;
     for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-        bool allSame;
-        Vector errorPt;
-        DWORD fillRgb = GetLoopSetFillColor(sbls, &allSame, &errorPt);
-        if(allSame && fillRgb != (DWORD)-1) {
-            glxColorRGBa(fillRgb, 1);
+        if(sbls->l.n == 0 || sbls->l.elem[0].l.n == 0) continue;
+        // In an assembled loop, all the styles should be the same; so doesn't
+        // matter which one we grab.
+        SBezier *sb = &(sbls->l.elem[0].l.elem[0]);
+        hStyle hs = { sb->auxA };
+        Style *s = Style::Get(hs);
+        if(s->filled) {
+            // This is a filled loop, where the user specified a fill color.
+            glxColorRGBa(s->fillColor, 1);
             FillLoopSetAsPolygon(sbls);
-        } else if(!allSame) {
-            glDisable(GL_DEPTH_TEST);
-            glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            glxWriteText("not all same fill color!", DEFAULT_TEXT_HEIGHT,
-                errorPt, SS.GW.projRight, SS.GW.projUp, NULL, NULL);
-            glEnable(GL_DEPTH_TEST);
         } else {
             if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
                polyError.how == POLY_GOOD)
