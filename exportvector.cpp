@@ -231,16 +231,13 @@ void EpsFileWriter::Bezier(SBezier *sb) {
         double theta0 = atan2(p0.y - c.y, p0.x - c.x),
                theta1 = atan2(p1.y - c.y, p1.x - c.x),
                dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
-        if(dtheta < 0) {
-            SWAP(double, theta0, theta1);
-            SWAP(Vector, p0, p1);
-        }
         MaybeMoveTo(p0, p1);
         fprintf(f,
-"    %.3f %.3f %.3f %.3f %.3f arc\r\n",
+"    %.3f %.3f %.3f %.3f %.3f %s\r\n",
             MmToPts(c.x - ptMin.x),  MmToPts(c.y - ptMin.y),
             MmToPts(r),
-            theta0*180/PI, theta1*180/PI);
+            theta0*180/PI, theta1*180/PI,
+            dtheta < 0 ? "arcn" : "arc");
     } else if(sb->deg == 3 && !sb->IsRational()) {
         MaybeMoveTo(sb->ctrl[0], sb->ctrl[3]);
         fprintf(f,
@@ -535,15 +532,14 @@ void SvgFileWriter::Bezier(SBezier *sb) {
                theta1 = atan2(p1.y - c.y, p1.x - c.x),
                dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
         // The arc must be less than 180 degrees, or else it couldn't have
-        // been represented as a single rational Bezier. And arrange it
-        // to run counter-clockwise, which corresponds to clockwise in
-        // SVG's mirrored coordinate system.
-        if(dtheta < 0) {
-            SWAP(Vector, p0, p1);
-        }
+        // been represented as a single rational Bezier. So large-arc-flag
+        // must be false. sweep-flag is determined by the sign of dtheta.
+        // Note that clockwise and counter-clockwise are backwards in SVG's
+        // mirrored csys.
         MaybeMoveTo(p0, p1);
-        fprintf(f, "A%.3f,%.3f 0 0,0 %.3f,%.3f ",
+        fprintf(f, "A%.3f,%.3f 0 0,%d %.3f,%.3f ",
                         r, r,
+                        (dtheta < 0) ? 1 : 0,
                         p1.x - ptMin.x, ptMax.y - p1.y);
     } else if(!sb->IsRational()) {
         if(sb->deg == 2) {
