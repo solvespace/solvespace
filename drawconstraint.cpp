@@ -275,11 +275,11 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
         if(within > 0) LineDrawOrGetDistance(be, be.Plus(seg));
     }
 
-    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(gn,  theta)));
-    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(gn, -theta)));
+    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(n,  theta)));
+    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(n, -theta)));
     arrow = arrow.ScaledBy(-1);
-    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(gn,  theta)));
-    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(gn, -theta)));
+    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(n,  theta)));
+    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(n, -theta)));
 }
 
 void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {

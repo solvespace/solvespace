@@ -480,6 +480,22 @@ void TextWindow::DescribeSelection(void) {
         Printf(true,  "     point " PT_AS_STR, COSTR(pp));
         Printf(true,  " pt-ln distance = %Fi%s%E",
             SS.MmToString(pp.DistanceToLine(lp0, lp1.Minus(lp0))));
+    } else if(gs.n == 2 && gs.vectors == 2) {
+        Printf(false, "%FtTWO VECTORS");
+
+        Vector v0 = SK.GetEntity(gs.entity[0])->VectorGetNum(),
+               v1 = SK.GetEntity(gs.entity[1])->VectorGetNum();
+        v0 = v0.WithMagnitude(1);
+        v1 = v1.WithMagnitude(1);
+
+        Printf(true,  "  vectorA = " PT_AS_NUM, CO(v0));
+        Printf(false, "  vectorB = " PT_AS_NUM, CO(v1));
+
+        double theta = acos(v0.Dot(v1));
+        Printf(true,  "    angle = %Fi%2%E degrees", theta*180/PI);
+        while(theta < PI/2) theta += PI;
+        while(theta > PI/2) theta -= PI; 
+        Printf(false, " or angle = %Fi%2%E (mod 180)", theta*180/PI);
     } else if(gs.n == 2 && gs.faces == 2) {
         Printf(false, "%FtTWO PLANE FACES");
 

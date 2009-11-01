@@ -674,10 +674,14 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
             loopsRemaining = true;
             loop->tag = USED_LOOP;
             outerAndInners.l.Add(loop);
+            int auxA = 0;
+            if(loop->l.n > 0) auxA = loop->l.elem[0].auxA;
 
             for(j = 0; j < sbls.l.n; j++) {
                 SBezierLoop *inner = &(sbls.l.elem[j]);
                 if(inner->tag != INNER_LOOP) continue;
+                if(inner->l.n < 1) continue;
+                if(inner->l.elem[0].auxA != auxA) continue;
 
                 Vector p = spuv.l.elem[j].AnyEdgeMidpoint();
                 if(spuv.l.elem[i].ContainsPointProjdToNormal(spuv.normal, p)) {
