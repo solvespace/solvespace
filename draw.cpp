@@ -26,6 +26,12 @@ bool GraphicsWindow::Selection::IsStylable(void) {
     return false;
 }
 
+bool GraphicsWindow::Selection::HasEndpoints(void) {
+    if(!entity.v) return false;
+    Entity *e = SK.GetEntity(entity);
+    return e->HasEndpoints();
+}
+
 void GraphicsWindow::Selection::Clear(void) {
     entity.v = constraint.v = 0;
     emphasized = false;
@@ -64,67 +70,75 @@ void GraphicsWindow::Selection::Draw(void) {
 }
 
 void GraphicsWindow::ClearSelection(void) {
-    for(int i = 0; i < MAX_SELECTED; i++) {
-        selection[i].Clear();
-    }
+    selection.Clear();
     SS.later.showTW = true;
     InvalidateGraphics();
 }
 
 void GraphicsWindow::ClearNonexistentSelectionItems(void) {
     bool change = false;
-    for(int i = 0; i < MAX_SELECTED; i++) {
-        Selection *s = &(selection[i]);
+    Selection *s;
+    selection.ClearTags();
+    for(s = selection.First(); s; s = selection.NextAfter(s)) {
         if(s->constraint.v && !(SK.constraint.FindByIdNoOops(s->constraint))) {
-            s->constraint.v = 0;
+            s->tag = 1;
             change = true;
         }
         if(s->entity.v && !(SK.entity.FindByIdNoOops(s->entity))) {
-            s->entity.v = 0;
+            s->tag = 1;
             change = true;
         }
     }
+    selection.RemoveTagged();
     if(change) InvalidateGraphics();
 }
 
 //-----------------------------------------------------------------------------
-// Toggle the selection state of the hovered item: if it was selected then
+// Toggle the selection state of the indicated item: if it was selected then
 // un-select it, and if it wasn't then select it.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::ToggleSelectionStateOfHovered(void) {
-    if(hover.IsEmpty()) return;
+void GraphicsWindow::ToggleSelectionStateOf(hEntity he) {
+    Selection stog;
+    ZERO(&stog);
+    stog.entity = he;
+    ToggleSelectionStateOf(&stog);
+}
+void GraphicsWindow::ToggleSelectionStateOf(Selection *stog) {
+    if(stog->IsEmpty()) return;
+
+    Selection *s;
 
     // If an item was selected, then we just un-select it.
-    int i;
-    for(i = 0; i < MAX_SELECTED; i++) {
-        if(selection[i].Equals(&hover)) {
-            selection[i].Clear();
+    bool wasSelected = false;
+    selection.ClearTags();
+    for(s = selection.First(); s; s = selection.NextAfter(s)) {
+        if(s->Equals(stog)) {
+            s->tag = 1;
+            wasSelected = true;
             break;
         }
     }
-    if(i != MAX_SELECTED) return;
+    selection.RemoveTagged();
+    if(wasSelected) return;
 
     // So it's not selected, so we should select it.
 
-    if(hover.entity.v != 0 && SK.GetEntity(hover.entity)->IsFace()) {
+    if(stog->entity.v != 0 && SK.GetEntity(stog->entity)->IsFace()) {
         // In the interest of speed for the triangle drawing code,
         // only two faces may be selected at a time.
         int c = 0;
-        for(i = 0; i < MAX_SELECTED; i++) {
-            hEntity he = selection[i].entity;
+        selection.ClearTags();
+        for(s = selection.First(); s; s = selection.NextAfter(s)) {
+            hEntity he = s->entity;
             if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
                 c++;
-                if(c >= 2) selection[i].Clear();
+                if(c >= 2) s->tag = 1;
             }
         }
+        selection.RemoveTagged();
     }
 
-    for(i = 0; i < MAX_SELECTED; i++) {
-        if(selection[i].IsEmpty()) {
-            selection[i] = hover;
-            break;
-        }
-    }
+    selection.Add(stog);
 }
 
 //-----------------------------------------------------------------------------
@@ -135,8 +149,8 @@ void GraphicsWindow::ToggleSelectionStateOfHovered(void) {
 void GraphicsWindow::GroupSelection(void) {
     memset(&gs, 0, sizeof(gs));
     int i;
-    for(i = 0; i < MAX_SELECTED; i++) {
-        Selection *s = &(selection[i]);
+    for(i = 0; i < selection.n && i < MAX_SELECTED; i++) {
+        Selection *s = &(selection.elem[i]);
         if(s->entity.v) {
             (gs.n)++;
 
@@ -165,6 +179,10 @@ void GraphicsWindow::GroupSelection(void) {
             // Faces (which are special, associated/drawn with triangles)
             if(e->IsFace()) {
                 gs.face[(gs.faces)++] = s->entity;
+            }
+
+            if(e->HasEndpoints()) {
+                (gs.withEndpoints)++;
             }
 
             // And some aux counts too
@@ -533,8 +551,8 @@ nogrid:;
 
     // And finally draw the selection, same mechanism.
     glxLockColorTo(Style::Color(Style::SELECTED));
-    for(i = 0; i < MAX_SELECTED; i++) {
-        selection[i].Draw();
+    for(Selection *s = selection.First(); s; s = selection.NextAfter(s)) {
+        s->Draw();
     }
 
     glxUnlockColor();

@@ -236,7 +236,12 @@ public:
         // Edit
         MNU_UNDO,
         MNU_REDO,
+        MNU_CUT,
+        MNU_COPY,
+        MNU_PASTE,
         MNU_DELETE,
+        MNU_SELECT_CHAIN,
+        MNU_INVERT_SEL,
         MNU_SNAP_TO_GRID,
         MNU_ROTATE_90,
         MNU_UNSELECT_ALL,
@@ -321,6 +326,7 @@ public:
         Vector  projRight;
         Vector  projUp;
         Point2d mouse;
+        Point2d mouseOnButtonDown;
         bool    startedMoving;
     }       orig;
 
@@ -357,7 +363,7 @@ public:
     // Operations that must be completed by doing something with the mouse
     // are noted here. These occupy the same space as the menu ids.
     static const int    FIRST_PENDING               = 0x0f000000;
-    static const int    DRAGGING_POINT              = 0x0f000000;
+    static const int    DRAGGING_POINTS             = 0x0f000000;
     static const int    DRAGGING_NEW_POINT          = 0x0f000001;
     static const int    DRAGGING_NEW_LINE_POINT     = 0x0f000002;
     static const int    DRAGGING_NEW_CUBIC_POINT    = 0x0f000003;
@@ -367,14 +373,15 @@ public:
     static const int    DRAGGING_NORMAL             = 0x0f000007;
     static const int    DRAGGING_NEW_RADIUS         = 0x0f000008;
     struct {
-        int         operation;
+        int             operation;
 
-        hEntity     point;
-        hEntity     circle;
-        hEntity     normal;
-        hConstraint constraint;
+        hEntity         point;
+        List<hEntity>   points;
+        hEntity         circle;
+        hEntity         normal;
+        hConstraint     constraint;
 
-        char        *description;
+        char            *description;
     } pending;
     void ClearPending(void);
     // The constraint that is being edited with the on-screen textbox.
@@ -399,9 +406,10 @@ public:
     // The current selection.
     class Selection {
     public:
+        int         tag;
+
         hEntity     entity;
         hConstraint constraint;
-        
         bool        emphasized;
 
         void Draw(void);
@@ -410,13 +418,14 @@ public:
         bool IsEmpty(void);
         bool Equals(Selection *b);
         bool IsStylable(void);
+        bool HasEndpoints(void);
     };
     Selection hover;
-    static const int MAX_SELECTED = 32;
-    Selection selection[MAX_SELECTED];
+    List<Selection> selection;
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
     void ClearNonexistentSelectionItems(void);
+    static const int MAX_SELECTED = 32;
     struct {
         hEntity     point[MAX_SELECTED];
         hEntity     entity[MAX_SELECTED];
@@ -437,13 +446,14 @@ public:
         int         constraints;
         int         stylables;
         int         comments;
+        int         withEndpoints;
         int         n;
     } gs;
     void GroupSelection(void);
-    void ToggleSelectionStateOfHovered(void);
+    void ToggleSelectionStateOf(hEntity he);
+    void ToggleSelectionStateOf(Selection *s);
     void ClearSuper(void);
 
-    static const int CMNU_TOGGLE_SELECTION = 0x100;
     static const int CMNU_UNSELECT_ALL     = 0x101;
     static const int CMNU_DELETE_SEL       = 0x102;
     static const int CMNU_NEW_CUSTOM_STYLE = 0x103;
@@ -453,6 +463,7 @@ public:
     static const int CMNU_OTHER_ANGLE      = 0x107;
     static const int CMNU_STYLE_INFO       = 0x108;
     static const int CMNU_SNAP_TO_GRID     = 0x109;
+    static const int CMNU_SELECT_CHAIN     = 0x10a;
     static const int CMNU_FIRST_STYLE      = 0x40000000;
     void ContextMenuListStyles(void);
 
@@ -481,6 +492,9 @@ public:
 
     bool    showSnapGrid;
 
+    void AddPointToDraggedList(hEntity hp);
+    void StartDraggingByEntity(hEntity he);
+    void StartDraggingBySelection(void);
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 

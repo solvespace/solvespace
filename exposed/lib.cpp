@@ -181,14 +181,12 @@ default: dbp("bad constraint type %d", sc->type); return;
         SK.constraint.Add(&c);
     }
 
-    if(System::MAX_DRAGGED < 4) oops();
-    for(i = 0; i < System::MAX_DRAGGED; i++) {
-        SYS.dragged[i].v = 0;
+    for(i = 0; i < arraylen(ssys->dragged); i++) {
+        if(ssys->dragged[i]) {
+            hParam hp = { ssys->dragged[i] };
+            SYS.dragged.Add(&hp);
+        }
     }
-    SYS.dragged[0].v = ssys->dragged[0];
-    SYS.dragged[1].v = ssys->dragged[1];
-    SYS.dragged[2].v = ssys->dragged[2];
-    SYS.dragged[3].v = ssys->dragged[3];
 
     Group g;
     ZERO(&g);
@@ -240,6 +238,7 @@ default: dbp("bad constraint type %d", sc->type); return;
     SYS.param.Clear();
     SYS.entity.Clear();
     SYS.eq.Clear();
+    SYS.dragged.Clear();
 
     SK.param.Clear();
     SK.entity.Clear();

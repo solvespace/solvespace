@@ -157,6 +157,10 @@ void EntityBase::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
     }
 }
 
+bool EntityBase::IsDistance(void) {
+    return (type == DISTANCE) ||
+           (type == DISTANCE_N_COPY);
+}
 double EntityBase::DistanceGetNum(void) {
     if(type == DISTANCE) {
         return SK.GetParam(param[0])->val;
@@ -677,6 +681,34 @@ Vector EntityBase::FaceGetPointNum(void) {
         r = r.Plus(trans);
     } else oops();
     return r;
+}
+
+bool EntityBase::HasEndpoints(void) {
+    return (type == LINE_SEGMENT) ||
+           (type == CUBIC) ||
+           (type == ARC_OF_CIRCLE);
+}
+Vector EntityBase::EndpointStart() {
+    if(type == LINE_SEGMENT) {
+        return SK.GetEntity(point[0])->PointGetNum();
+    } else if(type == CUBIC) {
+        return CubicGetStartNum();
+    } else if(type == ARC_OF_CIRCLE) {
+        return SK.GetEntity(point[1])->PointGetNum();
+    } else {
+        oops();
+    }
+}
+Vector EntityBase::EndpointFinish() {
+    if(type == LINE_SEGMENT) {
+        return SK.GetEntity(point[1])->PointGetNum();
+    } else if(type == CUBIC) {
+        return CubicGetFinishNum();
+    } else if(type == ARC_OF_CIRCLE) {
+        return SK.GetEntity(point[2])->PointGetNum();
+    } else {
+        oops();
+    }
 }
 
 void EntityBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {

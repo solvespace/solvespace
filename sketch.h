@@ -356,6 +356,7 @@ public:
     Vector VectorGetRefPoint(void);
 
     // For distances
+    bool IsDistance(void);
     double DistanceGetNum(void);
     Expr *DistanceGetExpr(void);
     void DistanceForceTo(double v);
@@ -400,6 +401,10 @@ public:
     Vector CubicGetFinishNum(void);
     ExprVector CubicGetStartTangentExprs(void);
     ExprVector CubicGetFinishTangentExprs(void);
+
+    bool HasEndpoints(void);
+    Vector EndpointStart();
+    Vector EndpointFinish();
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);

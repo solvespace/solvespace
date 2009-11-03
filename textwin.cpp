@@ -522,7 +522,8 @@ void TextWindow::DescribeSelection(void) {
     } else if(gs.n == 0) {
         Printf(true, "%FtSELECTED:%E comment text");
     } else {
-        Printf(true, "%FtSELECTED:%E %d item%s", gs.n, gs.n == 1 ? "" : "s");
+        int n = SS.GW.selection.n;
+        Printf(true, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");
     }
 
     if(shown.screen == SCREEN_STYLE_INFO && 

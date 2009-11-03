@@ -381,28 +381,33 @@ void SolveSpace::ForceReferences(void) {
 }
 
 void SolveSpace::MarkDraggedParams(void) {
-    int i;
-    for(i = 0; i < System::MAX_DRAGGED; i++) {
-        sys.dragged[i] = Param::NO_PARAM;
-    }
+    sys.dragged.Clear();
 
-    if(SS.GW.pending.point.v) {
+    for(int i = -1; i < SS.GW.pending.points.n; i++) {
+        hEntity hp;
+        if(i == -1) {
+            hp = SS.GW.pending.point;
+        } else {
+            hp = SS.GW.pending.points.elem[i];
+        }
+        if(!hp.v) continue;
+
         // The pending point could be one in a group that has not yet
         // been processed, in which case the lookup will fail; but
         // that's not an error.
-        Entity *pt = SK.entity.FindByIdNoOops(SS.GW.pending.point);
+        Entity *pt = SK.entity.FindByIdNoOops(hp);
         if(pt) {
             switch(pt->type) {
                 case Entity::POINT_N_TRANS:
                 case Entity::POINT_IN_3D:
-                    sys.dragged[0] = pt->param[0];
-                    sys.dragged[1] = pt->param[1];
-                    sys.dragged[2] = pt->param[2];
+                    sys.dragged.Add(&(pt->param[0]));
+                    sys.dragged.Add(&(pt->param[1]));
+                    sys.dragged.Add(&(pt->param[2]));
                     break;
 
                 case Entity::POINT_IN_2D:
-                    sys.dragged[0] = pt->param[0];
-                    sys.dragged[1] = pt->param[1];
+                    sys.dragged.Add(&(pt->param[0]));
+                    sys.dragged.Add(&(pt->param[1]));
                     break;
             }
         }
@@ -413,7 +418,7 @@ void SolveSpace::MarkDraggedParams(void) {
             Entity *dist = SK.GetEntity(circ->distance);
             switch(dist->type) {
                 case Entity::DISTANCE:
-                    sys.dragged[0] = dist->param[0];
+                    sys.dragged.Add(&(dist->param[0]));
                     break;
             }
         }
@@ -423,10 +428,10 @@ void SolveSpace::MarkDraggedParams(void) {
         if(norm) {
             switch(norm->type) {
                 case Entity::NORMAL_IN_3D:
-                    sys.dragged[0] = norm->param[0];
-                    sys.dragged[1] = norm->param[1];
-                    sys.dragged[2] = norm->param[2];
-                    sys.dragged[3] = norm->param[3];
+                    sys.dragged.Add(&(norm->param[0]));
+                    sys.dragged.Add(&(norm->param[1]));
+                    sys.dragged.Add(&(norm->param[2]));
+                    sys.dragged.Add(&(norm->param[3]));
                     break;
                 // other types are locked, so not draggable
             }

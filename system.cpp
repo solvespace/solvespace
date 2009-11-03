@@ -61,9 +61,9 @@ void System::EvalJacobian(void) {
 }
 
 bool System::IsDragged(hParam p) {
-    int i;
-    for(i = 0; i < MAX_DRAGGED; i++) {
-        if(p.v == dragged[i].v) return true;
+    hParam *pp;
+    for(pp = dragged.First(); pp; pp = dragged.NextAfter(pp)) {
+        if(p.v == pp->v) return true;
     }
     return false;
 }

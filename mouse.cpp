@@ -13,10 +13,64 @@ void GraphicsWindow::UpdateDraggedPoint(hEntity hp, double mx, double my) {
 void GraphicsWindow::UpdateDraggedNum(Vector *pos, double mx, double my) {
     *pos = pos->Plus(projRight.ScaledBy((mx - orig.mouse.x)/scale));
     *pos = pos->Plus(projUp.ScaledBy((my - orig.mouse.y)/scale));
+}
 
-    orig.mouse.x = mx;
-    orig.mouse.y = my;
-    InvalidateGraphics();
+void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
+    Entity *p = SK.GetEntity(hp);
+    // If an entity and its points are both selected, then its points could
+    // end up in the list twice. This would be bad, because it would move
+    // twice as far as the mouse pointer...
+    List<hEntity> *lhe = &(pending.points);
+    for(hEntity *hee = lhe->First(); hee; hee = lhe->NextAfter(hee)) {
+        if(hee->v == hp.v) {
+            // Exact same point.
+            return;
+        }
+        Entity *pe = SK.GetEntity(*hee);
+        if(pe->type == p->type &&
+           pe->type != Entity::POINT_IN_2D &&
+           pe->type != Entity::POINT_IN_3D &&
+           pe->group.v == p->group.v)
+        {
+            // Transform-type point, from the same group. So it handles the
+            // same unknowns.
+            return;
+        }
+    }
+    pending.points.Add(&hp);
+}
+
+void GraphicsWindow::StartDraggingByEntity(hEntity he) {
+    Entity *e = SK.GetEntity(he);
+    if(e->IsPoint()) {
+        AddPointToDraggedList(e->h);
+    } else if(e->type == Entity::LINE_SEGMENT || 
+              e->type == Entity::ARC_OF_CIRCLE ||
+              e->type == Entity::CUBIC ||
+              e->type == Entity::CUBIC_PERIODIC ||
+              e->type == Entity::CIRCLE ||
+              e->type == Entity::TTF_TEXT)
+    {
+        int pts;
+        EntReqTable::GetEntityInfo(e->type, e->extraPoints, 
+            NULL, &pts, NULL, NULL);
+        for(int i = 0; i < pts; i++) {
+            AddPointToDraggedList(e->point[i]);
+        }
+    }
+}
+
+void GraphicsWindow::StartDraggingBySelection(void) {
+    List<Selection> *ls = &(selection);
+    for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
+        if(!s->entity.v) continue;
+
+        StartDraggingByEntity(s->entity);
+    }
+    // The user might select a point, and then click it again to start
+    // dragging; but the point just got unselected by that click. So drag
+    // the hovered item too, and they'll always have it.
+    if(hover.entity.v) StartDraggingByEntity(hover.entity);
 }
 
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
@@ -37,7 +91,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
     }
 
-    if(!leftDown && pending.operation == DRAGGING_POINT) {
+    if(!leftDown && pending.operation == DRAGGING_POINTS) {
         ClearPending();
     }
 
@@ -96,12 +150,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         if(leftDown && dm > 3) {
             if(hover.entity.v) {
                 Entity *e = SK.GetEntity(hover.entity);
-                if(e->IsPoint()) {
-                    // Start dragging this point.
-                    ClearSelection();
-                    pending.point = hover.entity;
-                    pending.operation = DRAGGING_POINT;
-                } else if(e->type == Entity::CIRCLE) {
+                if(e->type == Entity::CIRCLE) {
                     // Drag the radius.
                     ClearSelection();
                     pending.circle = hover.entity;
@@ -110,6 +159,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     ClearSelection();
                     pending.normal = hover.entity;
                     pending.operation = DRAGGING_NORMAL;
+                } else {
+                    StartDraggingBySelection();
+                    ClearSelection();
+                    hover.Clear();
+                    pending.operation = DRAGGING_POINTS;
                 }
             } else if(hover.constraint.v && 
                             SK.GetConstraint(hover.constraint)->HasLabel())
@@ -149,26 +203,28 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         case DRAGGING_CONSTRAINT: {
             Constraint *c = SK.constraint.FindById(pending.constraint);
             UpdateDraggedNum(&(c->disp.offset), x, y);
+            orig.mouse = mp;
+            InvalidateGraphics();
             break;
         }
-        case DRAGGING_NEW_LINE_POINT:
-            HitTestMakeSelection(mp);
-            // and fall through
-        case DRAGGING_NEW_POINT:
-        case DRAGGING_POINT: {
-            Entity *p = SK.GetEntity(pending.point);
-            if((p->type == Entity::POINT_N_ROT_TRANS) &&
-               (shiftDown || ctrlDown))
-            {
-                // These points also come with a rotation, which the user can
-                // edit by pressing shift or control.
-                Quaternion q = p->PointGetQuaternion();
-                Vector p3 = p->PointGetNum();
-                Point2d p2 = ProjectPoint(p3);
 
-                Vector u = q.RotationU(), v = q.RotationV();
+        case DRAGGING_NEW_LINE_POINT:
+        case DRAGGING_NEW_POINT:
+            UpdateDraggedPoint(pending.point, x, y);
+            HitTestMakeSelection(mp);
+            SS.MarkGroupDirtyByEntity(pending.point);
+            orig.mouse = mp;
+            InvalidateGraphics();
+            break;
+
+        case DRAGGING_POINTS:
+            if(shiftDown || ctrlDown) {
+                // Edit the rotation associated with a POINT_N_ROT_TRANS,
+                // either within (ctrlDown) or out of (shiftDown) the plane
+                // of the screen. So first get the rotation to apply, in qt.
+                Quaternion qt;
                 if(ctrlDown) {
-                    double d = mp.DistanceTo(p2);
+                    double d = mp.DistanceTo(orig.mouseOnButtonDown);
                     if(d < 25) {
                         // Don't start dragging the position about the normal
                         // until we're a little ways out, to get a reasonable
@@ -176,34 +232,47 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         orig.mouse = mp;
                         break;
                     }
-                    double theta = atan2(orig.mouse.y-p2.y, orig.mouse.x-p2.x);
-                    theta -= atan2(y-p2.y, x-p2.x);
+                    double theta = atan2(orig.mouse.y-orig.mouseOnButtonDown.y,
+                                         orig.mouse.x-orig.mouseOnButtonDown.x);
+                    theta -= atan2(y-orig.mouseOnButtonDown.y,
+                                   x-orig.mouseOnButtonDown.x);
 
                     Vector gn = projRight.Cross(projUp);
-                    u = u.RotatedAbout(gn, -theta);
-                    v = v.RotatedAbout(gn, -theta);
+                    qt = Quaternion::From(gn, -theta);
                 } else {
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
                     double s = 0.3*(PI/180); // degrees per pixel
-                    u = u.RotatedAbout(projUp, -s*dx);
-                    u = u.RotatedAbout(projRight, s*dy);
-                    v = v.RotatedAbout(projUp, -s*dx);
-                    v = v.RotatedAbout(projRight, s*dy);
+                    qt = Quaternion::From(projUp,   -s*dx).Times(
+                         Quaternion::From(projRight, s*dy));
                 }
-                q = Quaternion::From(u, v);
-                p->PointForceQuaternionTo(q);
-                // Let's rotate about the selected point; so fix up the
-                // translation so that that point didn't move.
-                p->PointForceTo(p3);
                 orig.mouse = mp;
+
+                // Now apply this rotation to the points being dragged.
+                List<hEntity> *lhe = &(pending.points);
+                for(hEntity *he = lhe->First(); he; he = lhe->NextAfter(he)) {
+                    Entity *e = SK.GetEntity(*he);
+                    if(e->type != Entity::POINT_N_ROT_TRANS) continue;
+
+                    Quaternion q = e->PointGetQuaternion();
+                    Vector     p = e->PointGetNum();
+                    q = qt.Times(q);
+                    e->PointForceQuaternionTo(q);
+                    // Let's rotate about the selected point; so fix up the
+                    // translation so that that point didn't move.
+                    e->PointForceTo(p);
+                    SS.MarkGroupDirtyByEntity(e->h);
+                }
             } else {
-                UpdateDraggedPoint(pending.point, x, y);
-                HitTestMakeSelection(mp);
+                List<hEntity> *lhe = &(pending.points);
+                for(hEntity *he = lhe->First(); he; he = lhe->NextAfter(he)) {
+                    UpdateDraggedPoint(*he, x, y);
+                    SS.MarkGroupDirtyByEntity(*he);
+                }
+                orig.mouse = mp;
             }
-            SS.MarkGroupDirtyByEntity(pending.point);
             break;
-        }
+
         case DRAGGING_NEW_CUBIC_POINT: {
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
@@ -228,6 +297,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 SK.GetEntity(hr.entity(3+i))->PointForceTo(pnm1);
             }
 
+            orig.mouse = mp;
             SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
@@ -242,6 +312,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
             SK.GetEntity(hr.entity(1))->PointForceTo(center);
 
+            orig.mouse = mp;
             SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
@@ -297,7 +368,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 }
 
 void GraphicsWindow::ClearPending(void) {
-    memset(&pending, 0, sizeof(pending));
+    pending.points.Clear();
+    ZERO(&pending);
     SS.later.showTW = true;
 }
 
@@ -359,105 +431,99 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     // or on the hovered item. In the latter case we can fudge things by just
     // selecting the hovered item, and then applying our operation to the
     // selection.
-    bool toggleForStyles = false,
-         toggleForGroupInfo = false,
-         toggleForDelete = false,
-         toggleForStyleInfo = false;
-
-    if(!hover.IsEmpty()) {
-        AddContextMenuItem("Toggle Hovered Item Selection", 
-            CMNU_TOGGLE_SELECTION);
+    bool selEmpty = false;
+    if(gs.n == 0 && gs.constraints == 0) {
+        selEmpty = true;
     }
 
-    if(gs.stylables > 0) {
-        ContextMenuListStyles();
-        AddContextMenuItem("Assign Selection to Style", CONTEXT_SUBMENU);
-    } else if(gs.n == 0 && gs.constraints == 0 && hover.IsStylable()) {
-        ContextMenuListStyles();
-        AddContextMenuItem("Assign Hovered Item to Style", CONTEXT_SUBMENU);
-        toggleForStyles = true;
-    }
-
-    if(gs.n + gs.constraints == 1) {
-        AddContextMenuItem("Group Info for Selected Item", CMNU_GROUP_INFO);
-    } else if(!hover.IsEmpty() && gs.n == 0 && gs.constraints == 0) {
-        AddContextMenuItem("Group Info for Hovered Item", CMNU_GROUP_INFO);
-        toggleForGroupInfo = true;
-    }
-
-    if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-        AddContextMenuItem("Style Info for Selected Item", CMNU_STYLE_INFO);
-    } else if(hover.IsStylable() && gs.n == 0 && gs.constraints == 0) {
-        AddContextMenuItem("Style Info for Hovered Item", CMNU_STYLE_INFO);
-        toggleForStyleInfo = true;
-    }
-
-    if(hover.constraint.v && gs.n == 0 && gs.constraints == 0) {
-        Constraint *c = SK.GetConstraint(hover.constraint);
-        if(c->HasLabel() && c->type != Constraint::COMMENT) {
-            AddContextMenuItem("Toggle Reference Dimension",
-                CMNU_REFERENCE_DIM);
+    if(selEmpty) {
+        if(hover.IsStylable()) {
+            ContextMenuListStyles();
+            AddContextMenuItem("Hovered: Assign to Style", CONTEXT_SUBMENU);
         }
-        if(c->type == Constraint::ANGLE ||
-           c->type == Constraint::EQUAL_ANGLE)
+        if(!hover.IsEmpty()) {
+            AddContextMenuItem("Hovered: Group Info", CMNU_GROUP_INFO);
+        }
+        if(hover.IsStylable()) {
+            AddContextMenuItem("Hovered: Style Info", CMNU_STYLE_INFO);
+        }
+        if(hover.constraint.v) {
+            Constraint *c = SK.GetConstraint(hover.constraint);
+            if(c->HasLabel() && c->type != Constraint::COMMENT) {
+                AddContextMenuItem("Hovered: Toggle Reference Dimension",
+                    CMNU_REFERENCE_DIM);
+            }
+            if(c->type == Constraint::ANGLE ||
+               c->type == Constraint::EQUAL_ANGLE)
+            {
+                AddContextMenuItem("Hovered: Other Supplementary Angle",
+                    CMNU_OTHER_ANGLE);
+            }
+        }
+        if(hover.HasEndpoints()) {
+            AddContextMenuItem("Hovered: Select Edge Chain", CMNU_SELECT_CHAIN);
+        }
+        if((hover.constraint.v &&
+             SK.GetConstraint(hover.constraint)->type == Constraint::COMMENT) ||
+           (hover.entity.v &&
+             SK.GetEntity(hover.entity)->IsPoint()))
         {
-            AddContextMenuItem("Other Supplementary Angle",
-                CMNU_OTHER_ANGLE);
+            AddContextMenuItem("Hovered: Snap to Grid", CMNU_SNAP_TO_GRID);
         }
-    }
-
-    if(gs.n == 0 && gs.constraints == 0 &&
-        (hover.constraint.v &&
-          SK.GetConstraint(hover.constraint)->type == Constraint::COMMENT) ||
-        (hover.entity.v &&
-          SK.GetEntity(hover.entity)->IsPoint()))
-    {
-        AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
-    }
-
-    if(gs.n > 0 || gs.constraints > 0) {
+        if(!hover.IsEmpty()) {
+            AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+            AddContextMenuItem("Delete Hovered Item", CMNU_DELETE_SEL);
+        }
+    } else {
+        if(gs.stylables > 0) {
+            ContextMenuListStyles();
+            AddContextMenuItem("Selected: Assign to Style", CONTEXT_SUBMENU);
+        }
+        if(gs.n + gs.constraints == 1) {
+            AddContextMenuItem("Selected: Group Info", CMNU_GROUP_INFO);
+        }
+        if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
+            AddContextMenuItem("Selected: Style Info", CMNU_STYLE_INFO);
+        }
+        if(gs.withEndpoints > 0) {
+            AddContextMenuItem("Selected: Select Edge Chain",
+                CMNU_SELECT_CHAIN);
+        }
         AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
         AddContextMenuItem("Delete Selection", CMNU_DELETE_SEL);
         AddContextMenuItem("Unselect All", CMNU_UNSELECT_ALL);
-    } else if(!hover.IsEmpty()) {
-        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
-        AddContextMenuItem("Delete Hovered Item", CMNU_DELETE_SEL);
-        toggleForDelete = true;
     }
 
     int ret = ShowContextMenu();
+    if(ret != 0 && selEmpty) {
+        ToggleSelectionStateOf(&hover);
+    }
     switch(ret) {
-        case CMNU_TOGGLE_SELECTION:
-            ToggleSelectionStateOfHovered();
-            break;
-
         case CMNU_UNSELECT_ALL:
             MenuEdit(MNU_UNSELECT_ALL);
             break;
 
+        case CMNU_SELECT_CHAIN:
+            MenuEdit(MNU_SELECT_CHAIN);
+            break;
+
         case CMNU_DELETE_SEL:
-            if(toggleForDelete) ToggleSelectionStateOfHovered();
             MenuEdit(MNU_DELETE);
             break;
 
         case CMNU_REFERENCE_DIM:
-            ToggleSelectionStateOfHovered();
             Constraint::MenuConstrain(MNU_REFERENCE);
             break;
 
         case CMNU_OTHER_ANGLE:
-            ToggleSelectionStateOfHovered();
             Constraint::MenuConstrain(MNU_OTHER_ANGLE);
             break;
 
         case CMNU_SNAP_TO_GRID:
-            ToggleSelectionStateOfHovered();
             MenuEdit(MNU_SNAP_TO_GRID);
             break;
 
         case CMNU_GROUP_INFO: {
-            if(toggleForGroupInfo) ToggleSelectionStateOfHovered();
-
             hGroup hg;
             GroupSelection();
             if(gs.entities == 1) {
@@ -478,8 +544,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
 
         case CMNU_STYLE_INFO: {
-            if(toggleForStyleInfo) ToggleSelectionStateOfHovered();
-
             hStyle hs;
             GroupSelection();
             if(gs.entities == 1) {
@@ -501,23 +565,20 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
 
         case CMNU_NEW_CUSTOM_STYLE: {
-            if(toggleForStyles) ToggleSelectionStateOfHovered();
             DWORD v = Style::CreateCustomStyle();
             Style::AssignSelectionToStyle(v);
             break;
         }
 
         case CMNU_NO_STYLE:
-            if(toggleForStyles) ToggleSelectionStateOfHovered();
             Style::AssignSelectionToStyle(0);
             break;
 
         default:
             if(ret >= CMNU_FIRST_STYLE) {
-                if(toggleForStyles) ToggleSelectionStateOfHovered();
                 Style::AssignSelectionToStyle(ret - CMNU_FIRST_STYLE);
             }
-            // otherwise it was probably cancelled, so do nothing
+            // otherwise it was cancelled, so do nothing
             break;
     }
 
@@ -587,6 +648,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     MouseMoved(mx, my, false, false, false, false, false);
     orig.mouse.x = mx;
     orig.mouse.y = my;
+    orig.mouseOnButtonDown = orig.mouse;
 
     // The current mouse location
     Vector v = offset.ScaledBy(-1);
@@ -837,7 +899,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case 0:
         default:
             ClearPending();
-            ToggleSelectionStateOfHovered();
+            ToggleSelectionStateOf(&hover);
             break;
     }
 
@@ -847,7 +909,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
     switch(pending.operation) {
-        case DRAGGING_POINT:
+        case DRAGGING_POINTS:
         case DRAGGING_CONSTRAINT:
         case DRAGGING_NORMAL:
         case DRAGGING_RADIUS:

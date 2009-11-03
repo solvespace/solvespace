@@ -196,12 +196,18 @@ void TextWindow::ScreenHoverRequest(int link, DWORD v) {
 }
 void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
     SS.GW.ClearSelection();
-    SS.GW.selection[0].constraint.v = v;
+    GraphicsWindow::Selection sel;
+    ZERO(&sel);
+    sel.constraint.v = v;
+    SS.GW.selection.Add(&sel);
 }
 void TextWindow::ScreenSelectRequest(int link, DWORD v) {
-    hRequest hr = { v };
     SS.GW.ClearSelection();
-    SS.GW.selection[0].entity = hr.entity(0);
+    GraphicsWindow::Selection sel;
+    ZERO(&sel);
+    hRequest hr = { v };
+    sel.entity = hr.entity(0);
+    SS.GW.selection.Add(&sel);
 }
 
 void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {

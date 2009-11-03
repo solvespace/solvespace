@@ -238,7 +238,6 @@ bool StringEndsIn(char *str, char *ending);
 class System {
 public:
     static const int MAX_UNKNOWNS      = 1024;
-    static const int MAX_DRAGGED       = 4;
 
     EntityList                      entity;
     ParamList                       param;
@@ -246,7 +245,7 @@ public:
 
     // A list of parameters that are being dragged; these are the ones that
     // we should put as close as possible to their initial positions.
-    hParam                          dragged[MAX_DRAGGED];
+    List<hParam>                    dragged;
 
     // In general, the tag indicates the subsys that a variable/equation
     // has been assigned to; these are exceptions for variables:

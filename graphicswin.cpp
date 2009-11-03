@@ -35,8 +35,14 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Snap Selection to &Grid\t.",          MNU_SNAP_TO_GRID,   '.',    mEdit },
 { 1, "Rotate Imported &90°\t9",             MNU_ROTATE_90,      '9',    mEdit },
+{ 1,  NULL,                                 0,                          NULL  },
+{ 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mEdit },
+{ 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mEdit },
+{ 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mEdit },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
+{ 1, "Select Edge Cha&in\tCtrl+I",          MNU_SELECT_CHAIN,   'I'|C,  mEdit },
+{ 1, "Invert &Selection\tCtrl+A",           MNU_INVERT_SEL,     'A'|C,  mEdit },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 
 { 0, "&View",                               0,                          NULL  },
@@ -618,14 +624,75 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.nakedEdges.Clear();
             break;
 
+        case MNU_INVERT_SEL: {
+            Entity *e;
+            for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+                if(e->group.v != SS.GW.activeGroup.v) continue;
+                if(e->IsFace() || e->IsDistance()) continue;
+
+                SS.GW.ToggleSelectionStateOf(e->h);
+            }
+            InvalidateGraphics();
+            SS.later.showTW = true;
+            break;
+        }
+
+        case MNU_SELECT_CHAIN: {
+            Entity *e;
+            int newlySelected = 0;
+            bool didSomething;
+            do {
+                didSomething = false;
+                for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+                    if(e->group.v != SS.GW.activeGroup.v) continue;
+                    if(!e->HasEndpoints()) continue;
+
+                    Vector st = e->EndpointStart(),
+                           fi = e->EndpointFinish();
+                   
+                    bool onChain = false, alreadySelected = false;
+                    List<Selection> *ls = &(SS.GW.selection);
+                    for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
+                        if(!s->entity.v) continue;
+                        if(s->entity.v == e->h.v) {
+                            alreadySelected = true;
+                            continue;
+                        }
+                        Entity *se = SK.GetEntity(s->entity);
+                        if(!se->HasEndpoints()) continue;
+
+                        Vector sst = se->EndpointStart(),
+                               sfi = se->EndpointFinish();
+
+                        if(sst.Equals(st) || sst.Equals(fi) ||
+                           sfi.Equals(st) || sfi.Equals(fi))
+                        {
+                            onChain = true;
+                        }
+                    }
+                    if(onChain && !alreadySelected) {
+                        SS.GW.ToggleSelectionStateOf(e->h);
+                        newlySelected++;
+                        didSomething = true;
+                    }
+                }
+            } while(didSomething);
+            if(newlySelected == 0) {
+                Error("No entities share endpoints with the selected "
+                      "entities.");
+            }
+            InvalidateGraphics();
+            SS.later.showTW = true;
+            break;
+        }
+
         case MNU_DELETE: {
             SS.UndoRemember();
 
-            int i;
             SK.request.ClearTags();
             SK.constraint.ClearTags();
-            for(i = 0; i < MAX_SELECTED; i++) {
-                Selection *s = &(SS.GW.selection[i]);
+            List<Selection> *ls = &(SS.GW.selection);
+            for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
                 hRequest r; r.v = 0;
                 if(s->entity.v && s->entity.isFromRequest()) {
                     r = s->entity.request();
@@ -702,14 +769,14 @@ void GraphicsWindow::MenuEdit(int id) {
                 Vector p = ep->PointGetNum();
 
                 ep->PointForceTo(SS.GW.SnapToGrid(p));
-
-                // Regenerate, with this point marked as dragged so that it
-                // gets placed as close as possible to our snap
-                SS.GW.pending.point = hp;
+                SS.GW.pending.points.Add(&hp);
                 SS.MarkGroupDirty(ep->group);
-                SS.GenerateAll();
-                SS.GW.pending.point = Entity::NO_ENTITY;
             }
+            // Regenerate, with these points marked as dragged so that they
+            // get placed as close as possible to our snap grid.
+            SS.GenerateAll();
+            SS.GW.ClearPending();
+
             for(i = 0; i < SS.GW.gs.constraints; i++) {
                 Constraint *c = SK.GetConstraint(SS.GW.gs.constraint[i]);
                 c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
