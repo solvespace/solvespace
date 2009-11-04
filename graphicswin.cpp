@@ -629,6 +629,7 @@ void GraphicsWindow::MenuEdit(int id) {
             for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
                 if(e->group.v != SS.GW.activeGroup.v) continue;
                 if(e->IsFace() || e->IsDistance()) continue;
+                if(!e->IsVisible()) continue;
 
                 SS.GW.ToggleSelectionStateOf(e->h);
             }
@@ -646,6 +647,7 @@ void GraphicsWindow::MenuEdit(int id) {
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
                     if(e->group.v != SS.GW.activeGroup.v) continue;
                     if(!e->HasEndpoints()) continue;
+                    if(!e->IsVisible()) continue;
 
                     Vector st = e->EndpointStart(),
                            fi = e->EndpointFinish();
@@ -861,6 +863,7 @@ c:
             break;
 
         case MNU_CONSTRUCTION: {
+            SS.UndoRemember();
             SS.GW.GroupSelection();
             int i;
             for(i = 0; i < SS.GW.gs.entities; i++) {

@@ -175,6 +175,7 @@ void GraphicsWindow::SelectByMarquee(void) {
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
         if(e->group.v != SS.GW.activeGroup.v) continue;
         if(e->IsFace() || e->IsDistance()) continue;
+        if(!e->IsVisible()) continue;
 
         if(e->IsPoint() || e->IsNormal()) {
             Vector p = e->IsPoint() ? e->PointGetNum() :
@@ -193,7 +194,7 @@ void GraphicsWindow::SelectByMarquee(void) {
                    ptMax = Vector::From(xmax, ymax, 1);
             SEdgeList sel;
             ZERO(&sel);
-            e->GenerateEdges(&sel);
+            e->GenerateEdges(&sel, true);
             SEdge *se;
             for(se = sel.l.First(); se; se = sel.l.NextAfter(se)) {
                 Point2d ppa = ProjectPoint(se->a),
