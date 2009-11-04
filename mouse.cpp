@@ -460,6 +460,24 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     CMNU_OTHER_ANGLE);
             }
         }
+        if(hover.entity.v) {
+            Entity *p = SK.GetEntity(hover.entity);
+            if(p->IsPoint()) {
+                Constraint *c;
+                IdList<Constraint,hConstraint> *lc = &(SK.constraint);
+                for(c = lc->First(); c; c = lc->NextAfter(c)) {
+                    if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                    if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                        break;
+                    }
+                }
+                if(c) {
+                    AddContextMenuItem(
+                        "Hovered: Delete Point-Coincident Constraint",
+                        CMNU_DEL_COINCIDENT);
+                }
+            }
+        }
         if(hover.HasEndpoints()) {
             AddContextMenuItem("Hovered: Select Edge Chain", CMNU_SELECT_CHAIN);
         }
@@ -495,7 +513,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     int ret = ShowContextMenu();
-    if(ret != 0 && selEmpty) {
+    if(ret != 0 && ret != CMNU_DEL_COINCIDENT && selEmpty) {
         ToggleSelectionStateOf(&hover);
     }
     switch(ret) {
@@ -518,6 +536,24 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         case CMNU_OTHER_ANGLE:
             Constraint::MenuConstrain(MNU_OTHER_ANGLE);
             break;
+
+        case CMNU_DEL_COINCIDENT: {
+            SS.UndoRemember();
+            if(!hover.entity.v) break;
+            Entity *p = SK.GetEntity(hover.entity);
+            if(!p->IsPoint()) break;
+
+            SK.constraint.ClearTags();
+            Constraint *c;
+            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+                if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                    c->tag = 1;
+                }
+            }
+            SK.constraint.RemoveTagged();
+            break;
+        }
 
         case CMNU_SNAP_TO_GRID:
             MenuEdit(MNU_SNAP_TO_GRID);

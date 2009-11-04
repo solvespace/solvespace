@@ -454,13 +454,14 @@ public:
     void ToggleSelectionStateOf(Selection *s);
     void ClearSuper(void);
 
-    static const int CMNU_UNSELECT_ALL     = 0x101;
-    static const int CMNU_DELETE_SEL       = 0x102;
-    static const int CMNU_NEW_CUSTOM_STYLE = 0x103;
-    static const int CMNU_NO_STYLE         = 0x104;
-    static const int CMNU_GROUP_INFO       = 0x105;
-    static const int CMNU_REFERENCE_DIM    = 0x106;
-    static const int CMNU_OTHER_ANGLE      = 0x107;
+    static const int CMNU_UNSELECT_ALL     = 0x100;
+    static const int CMNU_DELETE_SEL       = 0x101;
+    static const int CMNU_NEW_CUSTOM_STYLE = 0x102;
+    static const int CMNU_NO_STYLE         = 0x103;
+    static const int CMNU_GROUP_INFO       = 0x104;
+    static const int CMNU_REFERENCE_DIM    = 0x105;
+    static const int CMNU_OTHER_ANGLE      = 0x106;
+    static const int CMNU_DEL_COINCIDENT   = 0x107;
     static const int CMNU_STYLE_INFO       = 0x108;
     static const int CMNU_SNAP_TO_GRID     = 0x109;
     static const int CMNU_SELECT_CHAIN     = 0x10a;
