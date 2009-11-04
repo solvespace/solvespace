@@ -327,6 +327,7 @@ public:
         Vector  projUp;
         Point2d mouse;
         Point2d mouseOnButtonDown;
+        Vector  marqueePoint;
         bool    startedMoving;
     }       orig;
 
@@ -344,6 +345,7 @@ public:
     Point2d ProjectPoint(Vector p);
     Vector ProjectPoint3(Vector p);
     Vector ProjectPoint4(Vector p, double *w);
+    Vector UnProjectPoint(Point2d p);
     void AnimateOnto(Quaternion quatf, Vector offsetf);
     void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(Vector rightUpForward);
@@ -372,6 +374,7 @@ public:
     static const int    DRAGGING_RADIUS             = 0x0f000006;
     static const int    DRAGGING_NORMAL             = 0x0f000007;
     static const int    DRAGGING_NEW_RADIUS         = 0x0f000008;
+    static const int    DRAGGING_MARQUEE            = 0x0f000009;
     struct {
         int             operation;
 
@@ -452,6 +455,7 @@ public:
     void GroupSelection(void);
     void ToggleSelectionStateOf(hEntity he);
     void ToggleSelectionStateOf(Selection *s);
+    void SelectByMarquee(void);
     void ClearSuper(void);
 
     static const int CMNU_UNSELECT_ALL     = 0x100;

@@ -118,6 +118,24 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog) {
             break;
         }
     }
+    // If two points are coincident, then it's impossible to hover one of
+    // them. But make sure to deselect both, to avoid mysterious seeming
+    // inability to deselect if the bottom one did somehow get selected.
+    if(wasSelected && stog->entity.v) {
+        Entity *e = SK.GetEntity(stog->entity);
+        if(e->IsPoint()) {
+            Vector ep = e->PointGetNum();
+            for(s = selection.First(); s; s = selection.NextAfter(s)) {
+                if(!s->entity.v) continue;
+                if(s->entity.v == stog->entity.v) continue;
+                Entity *se = SK.GetEntity(s->entity);
+                if(!se->IsPoint()) continue;
+                if(ep.Equals(se->PointGetNum())) {
+                    s->tag = 1;
+                }
+            }
+        }
+    }
     selection.RemoveTagged();
     if(wasSelected) return;
 
@@ -139,6 +157,61 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog) {
     }
 
     selection.Add(stog);
+}
+
+//-----------------------------------------------------------------------------
+// Select everything that lies within the marquee view-aligned rectangle. For
+// points, we test by the point location. For normals, we test by the normal's
+// associated point. For anything else, we test by any piecewise linear edge.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::SelectByMarquee(void) {
+    Point2d begin = ProjectPoint(orig.marqueePoint);
+    double xmin = min(orig.mouse.x, begin.x),
+           xmax = max(orig.mouse.x, begin.x),
+           ymin = min(orig.mouse.y, begin.y),
+           ymax = max(orig.mouse.y, begin.y);
+
+    Entity *e;
+    for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+        if(e->group.v != SS.GW.activeGroup.v) continue;
+        if(e->IsFace() || e->IsDistance()) continue;
+
+        if(e->IsPoint() || e->IsNormal()) {
+            Vector p = e->IsPoint() ? e->PointGetNum() :
+                                      SK.GetEntity(e->point[0])->PointGetNum();
+            Point2d pp = ProjectPoint(p);
+            if(pp.x >= xmin && pp.x <= xmax &&
+               pp.y >= ymin && pp.y <= ymax)
+            {
+                ToggleSelectionStateOf(e->h);
+            }
+        } else {
+            // Use the 3d bounding box test routines, to avoid duplication;
+            // so let our bounding square become a bounding box that certainly
+            // includes the z = 0 plane.
+            Vector ptMin = Vector::From(xmin, ymin, -1),
+                   ptMax = Vector::From(xmax, ymax, 1);
+            SEdgeList sel;
+            ZERO(&sel);
+            e->GenerateEdges(&sel);
+            SEdge *se;
+            for(se = sel.l.First(); se; se = sel.l.NextAfter(se)) {
+                Point2d ppa = ProjectPoint(se->a),
+                        ppb = ProjectPoint(se->b);
+                Vector  ptA = Vector::From(ppa.x, ppa.y, 0),
+                        ptB = Vector::From(ppb.x, ppb.y, 0);
+                if(Vector::BoundingBoxIntersectsLine(ptMax, ptMin,
+                                                     ptA, ptB, true) ||
+                   !ptA.OutsideAndNotOn(ptMax, ptMin) ||
+                   !ptB.OutsideAndNotOn(ptMax, ptMin))
+                {
+                    ToggleSelectionStateOf(e->h);
+                    break;
+                }
+            }
+            sel.Clear();
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -307,12 +380,28 @@ Vector GraphicsWindow::ProjectPoint4(Vector p, double *w) {
     return r;
 }
 
+//-----------------------------------------------------------------------------
+// Return a point in the plane parallel to the screen and through the offset,
+// that projects onto the specified (x, y) coordinates.
+//-----------------------------------------------------------------------------
+Vector GraphicsWindow::UnProjectPoint(Point2d p) {
+    Vector orig = offset.ScaledBy(-1);
+
+    // Note that we ignoring the effects of perspective. Since our returned
+    // point has the same component normal to the screen as the offset, it
+    // will have z = 0 after the rotation is applied, thus w = 1. So this is
+    // correct.
+    orig = orig.Plus(projRight.ScaledBy(p.x / scale)).Plus(
+                     projUp.   ScaledBy(p.y / scale));
+    return orig;
+}
+
 void GraphicsWindow::NormalizeProjectionVectors(void) {
     Vector norm = projRight.Cross(projUp);
     projUp = norm.Cross(projRight);
 
-    projUp = projUp.ScaledBy(1/projUp.Magnitude());
-    projRight = projRight.ScaledBy(1/projRight.Magnitude());
+    projUp = projUp.WithMagnitude(1);
+    projRight = projRight.WithMagnitude(1);
 }
 
 Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
@@ -556,6 +645,37 @@ nogrid:;
     }
 
     glxUnlockColor();
+
+    // If a marquee selection is in progress, then draw the selection
+    // rectangle, as an outline and a transparent fill.
+    if(pending.operation == DRAGGING_MARQUEE) {
+        Point2d begin = ProjectPoint(orig.marqueePoint);
+        double xmin = min(orig.mouse.x, begin.x),
+               xmax = max(orig.mouse.x, begin.x),
+               ymin = min(orig.mouse.y, begin.y),
+               ymax = max(orig.mouse.y, begin.y);
+
+        Vector tl = UnProjectPoint(Point2d::From(xmin, ymin)),
+               tr = UnProjectPoint(Point2d::From(xmax, ymin)),
+               br = UnProjectPoint(Point2d::From(xmax, ymax)),
+               bl = UnProjectPoint(Point2d::From(xmin, ymax));
+
+        glLineWidth((GLfloat)1.3);
+        glxColorRGB(Style::Color(Style::HOVERED));
+        glBegin(GL_LINE_LOOP);
+            glxVertex3v(tl);
+            glxVertex3v(tr);
+            glxVertex3v(br);
+            glxVertex3v(bl);
+        glEnd();
+        glxColorRGBa(Style::Color(Style::HOVERED), 0.10);
+        glBegin(GL_QUADS);
+            glxVertex3v(tl);
+            glxVertex3v(tr);
+            glxVertex3v(br);
+            glxVertex3v(bl);
+        glEnd();
+    }
 
     // And finally the toolbar.
     if(SS.showToolbar) {

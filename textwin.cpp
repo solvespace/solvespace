@@ -216,7 +216,7 @@ void TextWindow::Show(void) {
         Printf(false, "%s", SS.GW.pending.description);
         Printf(true, "%Fl%f%Ll(cancel operation)%E",
             &TextWindow::ScreenUnselectAll);
-    } else if(gs.n > 0 || gs.stylables > 0) {
+    } else if(gs.n > 0 || gs.constraints > 0) {
         if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(false);
         DescribeSelection();
@@ -519,7 +519,7 @@ void TextWindow::DescribeSelection(void) {
             double d = (p1.Minus(p0)).Dot(n0);
             Printf(true,  "      distance = %Fi%s", SS.MmToString(d));
         }
-    } else if(gs.n == 0) {
+    } else if(gs.n == 0 && gs.stylables > 0) {
         Printf(true, "%FtSELECTED:%E comment text");
     } else {
         int n = SS.GW.selection.n;
@@ -527,7 +527,7 @@ void TextWindow::DescribeSelection(void) {
     }
 
     if(shown.screen == SCREEN_STYLE_INFO && 
-       shown.style.v >= Style::FIRST_CUSTOM)
+       shown.style.v >= Style::FIRST_CUSTOM && gs.stylables > 0)
     {
         // If we are showing a screen for a particular style, then offer the
         // option to assign our selected entities to that style.

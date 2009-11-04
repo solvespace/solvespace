@@ -91,11 +91,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
     }
 
-    if(!leftDown && pending.operation == DRAGGING_POINTS) {
+    if(!leftDown && (pending.operation == DRAGGING_POINTS ||
+                     pending.operation == DRAGGING_MARQUEE))
+    {
         ClearPending();
+        InvalidateGraphics();
     }
 
-    Point2d mp = { x, y };
+    Point2d mp = Point2d::From(x, y);
 
     if(rightDown && orig.mouse.DistanceTo(mp) < 5 && !orig.startedMoving) {
         // Avoid accidentally panning (or rotating if shift is down) if the
@@ -148,9 +151,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         // If we're currently not doing anything, then see if we should
         // start dragging something.
         if(leftDown && dm > 3) {
-            if(hover.entity.v) {
+            Entity *e = NULL;
+            if(hover.entity.v) e = SK.GetEntity(hover.entity);
+            if(e && e->type != Entity::WORKPLANE) {
                 Entity *e = SK.GetEntity(hover.entity);
-                if(e->type == Entity::CIRCLE) {
+                if(e->type == Entity::CIRCLE && selection.n <= 1) {
                     // Drag the radius.
                     ClearSelection();
                     pending.circle = hover.entity;
@@ -176,6 +181,22 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 // We just started a drag, so remember for the undo before
                 // the drag changes anything.
                 SS.UndoRemember();
+            } else {
+                if(!hover.constraint.v) {
+                    // That's just marquee selection, which should not cause
+                    // an undo remember.
+                    if(dm > 10) {
+                        if(hover.entity.v) {
+                            // Avoid accidentally selecting workplanes when
+                            // starting drags.
+                            ToggleSelectionStateOf(hover.entity);
+                            hover.Clear();
+                        }
+                        pending.operation = DRAGGING_MARQUEE;
+                        orig.marqueePoint =
+                            UnProjectPoint(orig.mouseOnButtonDown);
+                    }
+                }
             }
         } else {
             // Otherwise, just hit test and give up; but don't hit test
@@ -359,9 +380,18 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             break;
         }
 
+        case DRAGGING_MARQUEE:
+            orig.mouse = mp;
+            InvalidateGraphics();
+            break;
+
         default: oops();
     }
-    if(pending.operation != 0 && pending.operation != DRAGGING_CONSTRAINT) {
+
+    if(pending.operation != 0 &&
+       pending.operation != DRAGGING_CONSTRAINT &&
+       pending.operation != DRAGGING_MARQUEE)
+    {
         SS.GenerateAll();
     }
     havePainted = false;
@@ -950,6 +980,13 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
         case DRAGGING_NORMAL:
         case DRAGGING_RADIUS:
             ClearPending();
+            InvalidateGraphics();
+            break;
+
+        case DRAGGING_MARQUEE:
+            SelectByMarquee();
+            ClearPending();
+            InvalidateGraphics();
             break;
 
         default:

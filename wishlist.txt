@@ -1,5 +1,4 @@
 
-marquee selection
 copy and paste
 background image
 associative entities from solid model, as a special group
