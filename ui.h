@@ -453,8 +453,8 @@ public:
         int         n;
     } gs;
     void GroupSelection(void);
-    void ToggleSelectionStateOf(hEntity he);
-    void ToggleSelectionStateOf(Selection *s);
+    void ToggleSelectionStateOf(hEntity he, bool batch=false);
+    void ToggleSelectionStateOf(Selection *s, bool batch=false);
     void SelectByMarquee(void);
     void ClearSuper(void);
 

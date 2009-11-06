@@ -97,13 +97,13 @@ void GraphicsWindow::ClearNonexistentSelectionItems(void) {
 // Toggle the selection state of the indicated item: if it was selected then
 // un-select it, and if it wasn't then select it.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::ToggleSelectionStateOf(hEntity he) {
+void GraphicsWindow::ToggleSelectionStateOf(hEntity he, bool batch) {
     Selection stog;
     ZERO(&stog);
     stog.entity = he;
-    ToggleSelectionStateOf(&stog);
+    ToggleSelectionStateOf(&stog, batch);
 }
-void GraphicsWindow::ToggleSelectionStateOf(Selection *stog) {
+void GraphicsWindow::ToggleSelectionStateOf(Selection *stog, bool batch) {
     if(stog->IsEmpty()) return;
 
     Selection *s;
@@ -121,7 +121,7 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog) {
     // If two points are coincident, then it's impossible to hover one of
     // them. But make sure to deselect both, to avoid mysterious seeming
     // inability to deselect if the bottom one did somehow get selected.
-    if(wasSelected && stog->entity.v) {
+    if(wasSelected && stog->entity.v && !batch) {
         Entity *e = SK.GetEntity(stog->entity);
         if(e->IsPoint()) {
             Vector ep = e->PointGetNum();
@@ -184,7 +184,7 @@ void GraphicsWindow::SelectByMarquee(void) {
             if(pp.x >= xmin && pp.x <= xmax &&
                pp.y >= ymin && pp.y <= ymax)
             {
-                ToggleSelectionStateOf(e->h);
+                ToggleSelectionStateOf(e->h, true);
             }
         } else {
             // Use the 3d bounding box test routines, to avoid duplication;
@@ -206,7 +206,7 @@ void GraphicsWindow::SelectByMarquee(void) {
                    !ptA.OutsideAndNotOn(ptMax, ptMin) ||
                    !ptB.OutsideAndNotOn(ptMax, ptMin))
                 {
-                    ToggleSelectionStateOf(e->h);
+                    ToggleSelectionStateOf(e->h, true);
                     break;
                 }
             }

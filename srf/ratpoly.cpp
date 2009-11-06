@@ -266,7 +266,15 @@ void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
         chordTol = SS.ChordTolMm();
     }
     l->Add(&(ctrl[0]));
-    MakePwlWorker(l, 0.0, 1.0, chordTol);
+    if(deg == 1) {
+        l->Add(&(ctrl[1]));
+    } else {
+        // Never do fewer than one intermediate point; people seem to get
+        // unhappy when their circles turn into squares, but maybe less
+        // unhappy with octagons.
+        MakePwlWorker(l, 0.0, 0.5, chordTol);
+        MakePwlWorker(l, 0.5, 1.0, chordTol);
+    }
 }
 void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb,
                                 double chordTol)

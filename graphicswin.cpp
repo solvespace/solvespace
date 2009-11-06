@@ -631,7 +631,7 @@ void GraphicsWindow::MenuEdit(int id) {
                 if(e->IsFace() || e->IsDistance()) continue;
                 if(!e->IsVisible()) continue;
 
-                SS.GW.ToggleSelectionStateOf(e->h);
+                SS.GW.ToggleSelectionStateOf(e->h, true);
             }
             InvalidateGraphics();
             SS.later.showTW = true;
@@ -673,7 +673,7 @@ void GraphicsWindow::MenuEdit(int id) {
                         }
                     }
                     if(onChain && !alreadySelected) {
-                        SS.GW.ToggleSelectionStateOf(e->h);
+                        SS.GW.ToggleSelectionStateOf(e->h, true);
                         newlySelected++;
                         didSomething = true;
                     }

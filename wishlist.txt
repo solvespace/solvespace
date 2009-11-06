@@ -2,6 +2,7 @@
 copy and paste
 background image
 associative entities from solid model, as a special group
+n*log(n) intersection finding
 
 -----
 some kind of import

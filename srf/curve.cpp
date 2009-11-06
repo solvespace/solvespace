@@ -793,7 +793,9 @@ SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) {
 // stuff in the Booleans. So remove them.
 //-----------------------------------------------------------------------------
 void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
-    if(pts.n < 2) return;
+    // Three, not two; curves are pwl'd to at least two edges (three points)
+    // even if not necessary, to avoid square holes.
+    if(pts.n <= 3) return;
     pts.ClearTags();
 
     Vector prev = pts.elem[0].p;
