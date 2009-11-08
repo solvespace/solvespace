@@ -79,6 +79,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     if(GraphicsEditControlIsVisible()) return;
     if(context.active) return;
 
+    if(!orig.mouseDown) {
+        // If someone drags the mouse into our window with the left button
+        // already depressed, then we don't have our starting point; so
+        // don't try.
+        leftDown = false;
+    }
+
     if(rightDown) {
         middleDown = true;
         shiftDown = !shiftDown;
@@ -703,6 +710,8 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 }
 
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
+    orig.mouseDown = true;
+
     if(GraphicsEditControlIsVisible()) return;
     HideTextEditControl();
 
@@ -974,6 +983,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 }
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
+    orig.mouseDown = false;
+
     switch(pending.operation) {
         case DRAGGING_POINTS:
         case DRAGGING_CONSTRAINT:

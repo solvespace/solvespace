@@ -479,8 +479,57 @@ void GraphicsWindow::Paint(int w, int h) {
         ForceTextWindowShown();
     }
 
-    glClearDepth(1.0); 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+
+    if(SS.bgImage.fromFile) {
+        // If a background image is loaded, then we draw it now as a texture.
+        // This handles the resizing for us nicely.
+        glBindTexture(GL_TEXTURE_2D, 10);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
+                     SS.bgImage.rw, SS.bgImage.rh,
+                     0,
+                     GL_RGB, GL_UNSIGNED_BYTE,
+                     SS.bgImage.fromFile);
+
+        double tw = ((double)SS.bgImage.w) / SS.bgImage.rw,
+               th = ((double)SS.bgImage.h) / SS.bgImage.rh;
+
+        double mmw = SS.bgImage.w / SS.bgImage.scale,
+               mmh = SS.bgImage.h / SS.bgImage.scale;
+
+        Vector origin = SS.bgImage.origin;
+        origin = origin.DotInToCsys(projRight, projUp, n);
+        // Place the depth of our origin at the point that corresponds to
+        // w = 1, so that it's unaffected by perspective.
+        origin.z = (offset.ScaledBy(-1)).Dot(n);
+        origin = origin.ScaleOutOfCsys(projRight, projUp, n);
+
+        glEnable(GL_TEXTURE_2D);
+        glBegin(GL_QUADS);
+            glTexCoord2d(0, 0);
+            glxVertex3v(origin);
+
+            glTexCoord2d(0, th);
+            glxVertex3v(origin.Plus(projUp.ScaledBy(mmh)));
+
+            glTexCoord2d(tw, th);
+            glxVertex3v(origin.Plus(projRight.ScaledBy(mmw).Plus(
+                                    projUp.   ScaledBy(mmh))));
+
+            glTexCoord2d(tw, 0);
+            glxVertex3v(origin.Plus(projRight.ScaledBy(mmw)));
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+
+    // Now clear the depth; so the background color and image are both at
+    // the very back of everything.
+    glClearDepth(1.0); 
 
     // Nasty case when we're reloading the imported files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and

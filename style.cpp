@@ -1,4 +1,5 @@
 #include "solvespace.h"
+#include <png.h>
 
 #define clamp01(x) (max(0, min(1, (x))))
 
@@ -108,6 +109,8 @@ void Style::LoadFactoryDefaults(void) {
         s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
     }
     SS.backgroundColor = RGB(0, 0, 0);
+    if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
+    SS.bgImage.fromFile = NULL;
 }
 
 void Style::FreezeDefaultStyles(void) {
@@ -327,6 +330,87 @@ void TextWindow::ScreenChangeBackgroundColor(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
 
+static int RoundUpToPowerOfTwo(int v)
+{
+    int i;
+    for(i = 0; i < 31; i++) {
+        int vt = (1 << i);
+        if(vt >= v) {
+            return vt;
+        }
+    }
+    return 0;
+}
+
+void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
+    if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
+    SS.bgImage.fromFile = NULL;
+
+    if(link == 'l') {
+        FILE *f = NULL;
+        png_struct *png_ptr = NULL;
+        png_info *info_ptr = NULL;
+
+        char importFile[MAX_PATH] = "";
+        if(!GetOpenFile(importFile, PNG_EXT, PNG_PATTERN)) goto err;
+        f = fopen(importFile, "rb");
+        if(!f) goto err;
+
+        BYTE header[8];
+        fread(header, 1, 8, f);
+        if(png_sig_cmp(header, 0, 8)) goto err;
+
+        png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
+            NULL, NULL, NULL);
+        if(!png_ptr) goto err;
+
+        info_ptr = png_create_info_struct(png_ptr);
+        if(!info_ptr) goto err;
+
+        if(setjmp(png_jmpbuf(png_ptr))) goto err;
+
+        png_init_io(png_ptr, f);
+        png_set_sig_bytes(png_ptr, 8);
+
+        png_read_png(png_ptr, info_ptr,
+            PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_ALPHA, NULL);
+        
+        int w = info_ptr->width,
+            h = info_ptr->height;
+        BYTE **rows = png_get_rows(png_ptr, info_ptr);
+
+        // Round to next-highest powers of two, since the textures require
+        // that. And round up to 4, to guarantee DWORD alignment.
+        int rw = max(4, RoundUpToPowerOfTwo(w)),
+            rh = max(4, RoundUpToPowerOfTwo(h));
+
+        SS.bgImage.fromFile = (BYTE *)MemAlloc(rw*rh*3);
+        for(int i = 0; i < h; i++) {
+            memcpy(SS.bgImage.fromFile + ((h - 1) - i)*(rw*3), rows[i], w*3);
+        }
+        SS.bgImage.w      = w;
+        SS.bgImage.h      = h;
+        SS.bgImage.rw     = rw;
+        SS.bgImage.rh     = rh;
+        SS.bgImage.scale  = SS.GW.scale;
+        SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
+
+err:
+        if(png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+        if(f) fclose(f);
+    }
+    SS.later.showTW = true;
+}
+
+void TextWindow::ScreenChangeBackgroundImageScale(int link, DWORD v) {
+    char str[300];
+    sprintf(str, "%.3f",
+        (SS.viewUnits == SolveSpace::UNIT_MM) ? SS.bgImage.scale :
+                                                SS.bgImage.scale * 25.4);
+    SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
+    ShowTextEditControl(v, 10, str);
+}
+
 void TextWindow::ShowListOfStyles(void) {
     Printf(true, "%Ft color  style-name");
 
@@ -353,6 +437,28 @@ void TextWindow::ShowListOfStyles(void) {
     Printf(false, "%Ba   %@, %@, %@ %Fl%D%f%Ll[change]%E",
         REDf(rgb), GREENf(rgb), BLUEf(rgb),
         top[rows-1] + 2, &ScreenChangeBackgroundColor);
+
+    Printf(false, "");
+    Printf(false, "%Ft background bitmap image%E");
+    if(SS.bgImage.fromFile) {
+        Printf(false, "%Ba   %Ftwidth:%E %dpx   %Ftheight:%E %dpx",
+            SS.bgImage.w, SS.bgImage.h);
+        if(SS.viewUnits == SolveSpace::UNIT_MM) {
+            Printf(false, "   %Ftscale:%E %# px/mm %Fl%Ll%f%D[change]%E",
+                SS.bgImage.scale,
+                &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
+        } else {
+            Printf(false, "   %Ftscale:%E %# px/inch %Fl%Ll%f%D[change]%E",
+                SS.bgImage.scale*25.4,
+                &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
+        }
+        Printf(false, "%Ba   %Fl%Lc%fclear background image%E",
+            &ScreenBackgroundImage);
+    } else {
+        Printf(false, "%Ba   none - %Fl%Ll%fload background image%E",
+            &ScreenBackgroundImage);
+        Printf(false, "   (bottom left will be center of view)");
+    }
 
     Printf(false, "");
     Printf(false, "  %Fl%Ll%fload factory defaults%E",
@@ -575,6 +681,22 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             }
             break;
 
+        case EDIT_BACKGROUND_IMG_SCALE: {
+            Expr *e = Expr::From(str);
+            if(e) {
+                double ev = e->Eval();
+                if(ev < 0.001 || isnan(ev)) {
+                    Error("Scale must not be zero or negative!");
+                } else {
+                    SS.bgImage.scale =
+                        (SS.viewUnits == SolveSpace::UNIT_MM) ? ev :
+                                                                ev / 25.4;
+                }
+            } else {
+                Error("Not a valid number or expression: '%s'", str);
+            }
+            break;
+        }
         default: return false;
     }
     return true;

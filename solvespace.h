@@ -669,11 +669,20 @@ public:
                             VectorFileWriter *out);
 
     static void MenuAnalyze(int id);
+
+    // Additional display stuff
     struct {
         SContour    path;
         hEntity     point;
     } traced;
     SEdgeList nakedEdges;
+    struct {
+        BYTE        *fromFile;
+        int         w, h;
+        int         rw, rh;
+        double      scale; // pixels per mm
+        Vector      origin;
+    } bgImage;
 
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);

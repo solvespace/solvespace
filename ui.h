@@ -101,6 +101,7 @@ public:
     static const int EDIT_STYLE_FILL_COLOR      = 54;
     static const int EDIT_STYLE_NAME            = 55;
     static const int EDIT_BACKGROUND_COLOR      = 56;
+    static const int EDIT_BACKGROUND_IMG_SCALE  = 57;
     struct {
         int         meaning;
         int         i;
@@ -160,6 +161,7 @@ public:
     static void ScreenCreateCustomStyle(int link, DWORD v);
     static void ScreenLoadFactoryDefaultStyles(int link, DWORD v);
     static void ScreenAssignSelectionToStyle(int link, DWORD v);
+    static void ScreenBackgroundImage(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
     static void ScreenGoToWebsite(int link, DWORD v);
@@ -195,6 +197,7 @@ public:
     static void ScreenChangeStyleTextAngle(int link, DWORD v);
     static void ScreenChangeStyleColor(int link, DWORD v);
     static void ScreenChangeBackgroundColor(int link, DWORD v);
+    static void ScreenChangeBackgroundImageScale(int link, DWORD v);
 
     bool EditControlDoneForStyles(char *s);
     bool EditControlDoneForConfiguration(char *s);
@@ -322,6 +325,7 @@ public:
     Vector  projUp;
     double  scale;
     struct {
+        bool    mouseDown;
         Vector  offset;
         Vector  projRight;
         Vector  projUp;
