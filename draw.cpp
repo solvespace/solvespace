@@ -478,8 +478,7 @@ void GraphicsWindow::Paint(int w, int h) {
         // And show the text window, which has info to debug it
         ForceTextWindowShown();
     }
-
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT); 
 
     if(SS.bgImage.fromFile) {
         // If a background image is loaded, then we draw it now as a texture.
@@ -530,6 +529,7 @@ void GraphicsWindow::Paint(int w, int h) {
     // Now clear the depth; so the background color and image are both at
     // the very back of everything.
     glClearDepth(1.0); 
+    glClear(GL_DEPTH_BUFFER_BIT); 
 
     // Nasty case when we're reloading the imported files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
