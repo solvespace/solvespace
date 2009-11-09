@@ -347,8 +347,6 @@ DWORD SMesh::FirstIntersectionWith(Point2d mp) {
     return face;
 }
 
-#define KDTREE_EPS (20*LENGTH_EPS) // nice and sloppy
-
 STriangleLl *STriangleLl::Alloc(void) 
     { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
 SKdNode *SKdNode::Alloc(void) 
@@ -378,18 +376,21 @@ SKdNode *SKdNode::From(SMesh *m) {
         tll = tn;
     }
 
-    return SKdNode::From(tll, 0);
+    return SKdNode::From(tll);
 }
 
-SKdNode *SKdNode::From(STriangleLl *tll, int which) {
+SKdNode *SKdNode::From(STriangleLl *tll) {
+    int which = 0;
     SKdNode *ret = Alloc();
 
-    if(!tll) goto leaf;
+    if(!tll) {
+        goto leaf;
+    }
 
     int i;
     int gtc[3] = { 0, 0, 0 }, ltc[3] = { 0, 0, 0 }, allc = 0;
-    double badness[3];
-    double split[3];
+    double badness[3] = { 0, 0, 0 };
+    double split[3] = { 0, 0, 0 };
     for(i = 0; i < 3; i++) {
         int tcnt = 0;
         STriangleLl *ll;
@@ -433,8 +434,9 @@ SKdNode *SKdNode::From(STriangleLl *tll, int which) {
         which = 2;
     }
 
-    if(allc < 10) goto leaf;
-    if(allc == gtc[which] || allc == ltc[which]) goto leaf;
+    if(allc < 3 || allc == gtc[which] || allc == ltc[which]) {
+        goto leaf;
+    }
 
     STriangleLl *ll;
     STriangleLl *lgt = NULL, *llt = NULL;
@@ -467,12 +469,11 @@ SKdNode *SKdNode::From(STriangleLl *tll, int which) {
 
     ret->which = which;
     ret->c = split[which];
-    ret->gt = SKdNode::From(lgt, (which + 1) % 3);
-    ret->lt = SKdNode::From(llt, (which + 1) % 3);
+    ret->gt = SKdNode::From(lgt);
+    ret->lt = SKdNode::From(llt);
     return ret;
 
 leaf:
-//    dbp("leaf: allc=%d gtc=%d ltc=%d which=%d", allc, gtc[which], ltc[which], which);
     ret->tris = tll;
     return ret;
 }

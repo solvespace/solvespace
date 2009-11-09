@@ -15,6 +15,7 @@ public:
     Vector a, b;
 
     static SEdge From(Vector a, Vector b);
+    bool EdgeCrosses(Vector a, Vector b, Vector *pi=NULL, SPointList *spl=NULL);
 };
 
 class SEdgeList {
@@ -32,6 +33,35 @@ public:
     bool ContainsEdge(SEdge *se);
     void CullExtraneousEdges(void);
     void MergeCollinearSegments(Vector a, Vector b);
+};
+
+// A kd-tree element needs to go on a side of a node if it's when KDTREE_EPS
+// of the boundary. So increasing this number never breaks anything, but may
+// result in more duplicated elements. So it's conservative to be sloppy here.
+#define KDTREE_EPS (20*LENGTH_EPS)
+
+class SEdgeLl {
+public:
+    SEdge       *se;
+    SEdgeLl     *next;
+
+    static SEdgeLl *Alloc(void);
+};
+
+class SKdNodeEdges {
+public:
+    int which; // whether c is x, y, or z
+    double c;
+    SKdNodeEdges    *gt;
+    SKdNodeEdges    *lt;
+
+    SEdgeLl         *edges;
+
+    static SKdNodeEdges *From(SEdgeList *sel);
+    static SKdNodeEdges *From(SEdgeLl *sell);
+    static SKdNodeEdges *Alloc(void);
+    int AnyEdgeCrossings(Vector a, Vector b, int cnt,
+        Vector *pi=NULL, SPointList *spl=NULL);
 };
 
 class SPoint {
@@ -219,7 +249,6 @@ public:
 // A linked list of triangles
 class STriangleLl {
 public:
-    int             tag;
     STriangle       *tri;
 
     STriangleLl     *next;
@@ -229,10 +258,7 @@ public:
 
 class SKdNode {
 public:
-    static const int BY_X = 0;
-    static const int BY_Y = 1;
-    static const int BY_Z = 2;
-    int which;
+    int which;  // whether c is x, y, or z
     double c;
 
     SKdNode      *gt;
@@ -242,7 +268,7 @@ public:
 
     static SKdNode *Alloc(void);
     static SKdNode *From(SMesh *m);
-    static SKdNode *From(STriangleLl *tll, int which);
+    static SKdNode *From(STriangleLl *tll);
 
     void AddTriangle(STriangle *tr);
     void MakeMeshInto(SMesh *m);

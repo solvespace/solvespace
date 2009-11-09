@@ -57,6 +57,75 @@ SEdge SEdge::From(Vector a, Vector b) {
     return se;
 }
 
+bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
+    Vector d = eb.Minus(ea);
+    double t_eps = LENGTH_EPS/d.Magnitude();
+
+    double dist_a, dist_b;
+    double t, tthis; 
+    bool skew;
+    Vector pi;
+    bool inOrEdge0, inOrEdge1;
+
+    Vector dthis = b.Minus(a);
+    double tthis_eps = LENGTH_EPS/dthis.Magnitude();
+
+    if(ea.Equals(a) && eb.Equals(b)) return true;
+    if(eb.Equals(a) && ea.Equals(b)) return true;
+
+    dist_a = a.DistanceToLine(ea, d),
+    dist_b = b.DistanceToLine(ea, d);
+
+    // Can't just test if dist_a equals dist_b; they could be on opposite
+    // sides, since it's unsigned.
+    double m = sqrt(d.Magnitude()*dthis.Magnitude());
+    if(sqrt(fabs(d.Dot(dthis))) > (m - LENGTH_EPS)) {
+        // The edges are parallel.
+        if(fabs(dist_a) > LENGTH_EPS) {
+            // and not coincident, so can't be interesecting
+            return false;
+        }
+        // The edges are coincident. Make sure that neither endpoint lies
+        // on the other
+        double t;
+        t = a.Minus(ea).DivPivoting(d);
+        if(t > t_eps && t < (1 - t_eps)) return true;
+        t = b.Minus(ea).DivPivoting(d);
+        if(t > t_eps && t < (1 - t_eps)) return true;
+        t = ea.Minus(a).DivPivoting(dthis);
+        if(t > tthis_eps && t < (1 - tthis_eps)) return true;
+        t = eb.Minus(a).DivPivoting(dthis);
+        if(t > tthis_eps && t < (1 - tthis_eps)) return true;
+        // So coincident but disjoint, okay.
+        return false;
+    }
+
+    // Lines are not parallel, so look for an intersection.
+    pi = Vector::AtIntersectionOfLines(ea, eb, a, b,
+                                       &skew,
+                                       &t, &tthis);
+    if(skew) return false;
+
+    inOrEdge0 = (t     > -t_eps)     && (t     < (1 + t_eps));
+    inOrEdge1 = (tthis > -tthis_eps) && (tthis < (1 + tthis_eps));
+
+    if(inOrEdge0 && inOrEdge1) {
+        if(a.Equals(ea) || b.Equals(ea) ||
+           a.Equals(eb) || b.Equals(eb))
+        {
+            // Not an intersection if we share an endpoint with an edge
+            return false;
+        }
+        // But it's an intersection if a vertex of one edge lies on the
+        // inside of the other (or if they cross away from either's
+        // vertex).
+        if(ppi) *ppi = pi;
+        if(spl) spl->Add(pi);
+        return true;
+    }
+    return false;
+}
+
 void SEdgeList::Clear(void) {
     l.Clear();
 }
@@ -151,79 +220,12 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
 int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, 
                                 Vector *ppi, SPointList *spl)
 {
-    Vector d = b.Minus(a);
-    double t_eps = LENGTH_EPS/d.Magnitude();
-
     int cnt = 0;
     SEdge *se;
     for(se = l.First(); se; se = l.NextAfter(se)) {
-        double dist_a, dist_b;
-        double t, tse; 
-        bool skew;
-        Vector pi;
-        bool inOrEdge0, inOrEdge1;
-
-        Vector dse = (se->b).Minus(se->a);
-        double tse_eps = LENGTH_EPS/dse.Magnitude();
-
-        if(a.Equals(se->a) && b.Equals(se->b)) goto intersects;
-        if(b.Equals(se->a) && a.Equals(se->b)) goto intersects;
-
-        dist_a = (se->a).DistanceToLine(a, d),
-        dist_b = (se->b).DistanceToLine(a, d);
-
-        // Can't just test if dist_a equals dist_b; they could be on opposite
-        // sides, since it's unsigned.
-        double m = sqrt(d.Magnitude()*dse.Magnitude());
-        if(sqrt(fabs(d.Dot(dse))) > (m - LENGTH_EPS)) {
-            // The edges are parallel.
-            if(fabs(dist_a) > LENGTH_EPS) {
-                // and not coincident, so can't be interesecting
-                continue;
-            }
-            // The edges are coincident. Make sure that neither endpoint lies
-            // on the other
-            double t;
-            t = ((se->a).Minus(a)).DivPivoting(d);
-            if(t > t_eps && t < (1 - t_eps)) goto intersects;
-            t = ((se->b).Minus(a)).DivPivoting(d);
-            if(t > t_eps && t < (1 - t_eps)) goto intersects;
-            t = a.Minus(se->a).DivPivoting(dse);
-            if(t > tse_eps && t < (1 - tse_eps)) goto intersects;
-            t = b.Minus(se->a).DivPivoting(dse);
-            if(t > tse_eps && t < (1 - tse_eps)) goto intersects;
-            // So coincident but disjoint, okay.
-            continue;
+        if(se->EdgeCrosses(a, b, ppi, spl)) {
+            cnt++;
         }
-
-        // Lines are not parallel, so look for an intersection.
-        pi = Vector::AtIntersectionOfLines(a, b, se->a, se->b,
-                                           &skew,
-                                           &t, &tse);
-        if(skew) continue;
-
-        inOrEdge0 = (t   >   -t_eps) && (t <   (1 +   t_eps));
-        inOrEdge1 = (tse > -tse_eps) && (tse < (1 + tse_eps));
-
-        if(inOrEdge0 && inOrEdge1) {
-            if((se->a).Equals(a) || (se->b).Equals(a) ||
-               (se->a).Equals(b) || (se->b).Equals(b))
-            {
-                // Not an intersection if we share an endpoint with an edge
-                continue;
-            }
-            // But it's an intersection if a vertex of one edge lies on the
-            // inside of the other (or if they cross away from either's
-            // vertex).
-            if(ppi) *ppi = pi;
-            if(spl) spl->Add(pi);
-            goto intersects;
-        }
-        continue;
-
-intersects:
-        cnt++;
-        // and continue with the loop
     }
     return cnt;
 }
@@ -271,6 +273,134 @@ void SEdgeList::CullExtraneousEdges(void) {
         }
     }
     l.RemoveTagged();
+}
+
+//-----------------------------------------------------------------------------
+// Make a kd-tree of edges. This is used for O(log(n)) implementations of stuff
+// that would naively be O(n).
+//-----------------------------------------------------------------------------
+SKdNodeEdges *SKdNodeEdges::Alloc(void) {
+    return (SKdNodeEdges *)AllocTemporary(sizeof(SKdNodeEdges));
+}
+SEdgeLl *SEdgeLl::Alloc(void) {
+    return (SEdgeLl *)AllocTemporary(sizeof(SEdgeLl));
+}
+SKdNodeEdges *SKdNodeEdges::From(SEdgeList *sel) {
+    SEdgeLl *sell = NULL;
+    SEdge *se;
+    for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+        SEdgeLl *n = SEdgeLl::Alloc();
+        n->se = se;
+        n->next = sell;
+        sell = n;
+    }
+    return SKdNodeEdges::From(sell);
+}
+SKdNodeEdges *SKdNodeEdges::From(SEdgeLl *sell) {
+    SKdNodeEdges *n = SKdNodeEdges::Alloc();
+
+    // Compute the midpoints (just mean, though median would be better) of
+    // each component.
+    Vector ptAve = Vector::From(0, 0, 0);
+    SEdgeLl *flip;
+    int totaln = 0;
+    for(flip = sell; flip; flip = flip->next) {
+        ptAve = ptAve.Plus(flip->se->a);
+        ptAve = ptAve.Plus(flip->se->b);
+        totaln++;
+    }
+    ptAve = ptAve.ScaledBy(1.0 / (2*totaln));
+
+    // For each component, see how it splits.
+    int ltln[3] = { 0, 0, 0 }, gtln[3] = { 0, 0, 0 };
+    double badness[3];
+    for(flip = sell; flip; flip = flip->next) {
+        for(int i = 0; i < 3; i++) {
+            if(flip->se->a.Element(i) < ptAve.Element(i) + KDTREE_EPS ||
+               flip->se->b.Element(i) < ptAve.Element(i) + KDTREE_EPS)
+            {
+                ltln[i]++;
+            }
+            if(flip->se->a.Element(i) > ptAve.Element(i) - KDTREE_EPS ||
+               flip->se->b.Element(i) > ptAve.Element(i) - KDTREE_EPS)
+            {
+                gtln[i]++;
+            }
+        }
+    }
+    for(int i = 0; i < 3; i++) {
+        badness[i] = pow((double)ltln[i], 4) + pow((double)gtln[i], 4);
+    }
+
+    // Choose the least bad coordinate to split along.
+    if(badness[0] < badness[1] && badness[0] < badness[2]) {
+        n->which = 0;
+    } else if(badness[1] < badness[2]) {
+        n->which = 1;
+    } else {
+        n->which = 2;
+    }
+    n->c = ptAve.Element(n->which);
+   
+    if(totaln < 3 || totaln == gtln[n->which] || totaln == ltln[n->which]) {
+        n->edges = sell;
+        // and we're a leaf node
+        return n;
+    }
+
+    // Sort the edges according to which side(s) of the split plane they're on.
+    SEdgeLl *gtl = NULL, *ltl = NULL;
+    for(flip = sell; flip; flip = flip->next) {
+        if(flip->se->a.Element(n->which) < n->c + KDTREE_EPS ||
+           flip->se->b.Element(n->which) < n->c + KDTREE_EPS)
+        {
+            SEdgeLl *selln = SEdgeLl::Alloc();
+            selln->se = flip->se;
+            selln->next = ltl;
+            ltl = selln;
+        }
+        if(flip->se->a.Element(n->which) > n->c - KDTREE_EPS ||
+           flip->se->b.Element(n->which) > n->c - KDTREE_EPS)
+        {
+            SEdgeLl *selln = SEdgeLl::Alloc();
+            selln->se = flip->se;
+            selln->next = gtl;
+            gtl = selln;
+        }
+    }
+
+    n->lt = SKdNodeEdges::From(ltl);
+    n->gt = SKdNodeEdges::From(gtl);
+    return n;
+}
+
+int SKdNodeEdges::AnyEdgeCrossings(Vector a, Vector b, int cnt,
+        Vector *pi, SPointList *spl)
+{
+    int inters = 0;
+    if(gt && lt) {
+        if(a.Element(which) < c + KDTREE_EPS ||
+           b.Element(which) < c + KDTREE_EPS)
+        {
+            inters += lt->AnyEdgeCrossings(a, b, cnt, pi, spl);
+        }
+        if(a.Element(which) > c - KDTREE_EPS ||
+           b.Element(which) > c - KDTREE_EPS)
+        {
+            inters += gt->AnyEdgeCrossings(a, b, cnt, pi, spl);
+        }
+    } else {
+        SEdgeLl *sell;
+        for(sell = edges; sell; sell = sell->next) {
+            SEdge *se = sell->se;
+            if(se->tag == cnt) continue;
+            if(se->EdgeCrosses(a, b, pi, spl)) {
+                inters++;
+            }
+            se->tag = cnt;
+        }
+    }
+    return inters;
 }
 
 //-----------------------------------------------------------------------------
@@ -541,16 +671,22 @@ bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
     SEdgeList el;
     ZERO(&el);
     MakeEdgesInto(&el);
+    SKdNodeEdges *kdtree = SKdNodeEdges::From(&el);
+
+    int cnt = 1;
+    el.l.ClearTags();
 
     bool ret = false;
     SEdge *se;
     for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
-        int inters = el.AnyEdgeCrossings(se->a, se->b, intersectsAt);
+        int inters = kdtree->AnyEdgeCrossings(se->a, se->b, cnt, intersectsAt);
         if(inters != 1) {
             ret = true;
             break;
         }
+        cnt++;
     }
+
     el.Clear();
     return ret;
 }

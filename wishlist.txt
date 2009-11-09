@@ -1,9 +1,9 @@
 
 copy and paste
-associative entities from solid model, as a special group
-n*log(n) intersection finding
+spline splitting
 
 -----
+associative entities from solid model, as a special group
 some kind of import
 faster triangulation
 loop detection
