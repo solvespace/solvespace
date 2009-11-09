@@ -691,65 +691,6 @@ bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
     return ret;
 }
 
-static int TriMode, TriVertexCount;
-static Vector Tri1, TriNMinus1, TriNMinus2;
-static Vector TriNormal;
-static SMesh *TriMesh;
-static STriMeta TriMeta;
-static void GLX_CALLBACK TriBegin(int mode) 
-{
-    TriMode = mode;
-    TriVertexCount = 0;
-}
-static void GLX_CALLBACK TriEnd(void)
-{
-}
-static void GLX_CALLBACK TriVertex(Vector *triN)
-{
-    if(TriVertexCount == 0) {
-        Tri1 = *triN;
-    }
-    if(TriMode == GL_TRIANGLES) {
-        if((TriVertexCount % 3) == 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
-        }
-    } else if(TriMode == GL_TRIANGLE_FAN) {
-        if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, Tri1, TriNMinus1, *triN);
-        }
-    } else if(TriMode == GL_TRIANGLE_STRIP) {
-        if(TriVertexCount >= 2) {
-            TriMesh->AddTriangle(
-                TriMeta, TriNormal, TriNMinus2, TriNMinus1, *triN);
-        }
-    } else oops();
-            
-    TriNMinus2 = TriNMinus1;
-    TriNMinus1 = *triN;
-    TriVertexCount++;
-}
-void SPolygon::TriangulateInto(SMesh *m) {
-    STriMeta meta;
-    ZERO(&meta);
-    TriangulateInto(m, meta);
-}
-void SPolygon::TriangulateInto(SMesh *m, STriMeta meta) {
-    TriMesh = m;
-    TriNormal = normal;
-    TriMeta = meta;
-
-    GLUtesselator *gt = gluNewTess();
-    gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)TriBegin);
-    gluTessCallback(gt, GLU_TESS_END, (glxCallbackFptr *)TriEnd);
-    gluTessCallback(gt, GLU_TESS_VERTEX, (glxCallbackFptr *)TriVertex);
-
-    glxTesselatePolygon(gt, this);
-
-    gluDeleteTess(gt);
-}
-
 //-----------------------------------------------------------------------------
 // Low-quality routines to cutter radius compensate a polygon. Assumes the
 // polygon is in the xy plane, and the contours all go in the right direction

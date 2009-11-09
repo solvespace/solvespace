@@ -128,8 +128,6 @@ public:
     bool ContainsPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
     void FixContourDirections(void);
-    void TriangulateInto(SMesh *m);
-    void TriangulateInto(SMesh *m, STriMeta meta);
     void Clear(void);
     bool SelfIntersecting(Vector *intersectsAt);
     bool IsEmpty(void);
