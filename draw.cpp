@@ -261,10 +261,10 @@ void GraphicsWindow::GroupSelection(void) {
 
             // And some aux counts too
             switch(e->type) {
-                case Entity::WORKPLANE:     (gs.workplanes)++; break;
-                case Entity::LINE_SEGMENT:  (gs.lineSegments)++; break;
-                case Entity::CUBIC:         (gs.cubics)++; break;
-                // but don't count periodic cubics
+                case Entity::WORKPLANE:      (gs.workplanes)++; break;
+                case Entity::LINE_SEGMENT:   (gs.lineSegments)++; break;
+                case Entity::CUBIC:          (gs.cubics)++; break;
+                case Entity::CUBIC_PERIODIC: (gs.periodicCubics)++; break;
 
                 case Entity::ARC_OF_CIRCLE:
                     (gs.circlesOrArcs)++;
@@ -724,6 +724,15 @@ nogrid:;
             glxVertex3v(tr);
             glxVertex3v(br);
             glxVertex3v(bl);
+        glEnd();
+    }
+
+    if(pending.drawLine) {
+        glLineWidth(1);
+        glxLockColorTo(Style::Color(Style::DATUM));
+        glBegin(GL_LINES);
+            glxVertex3v(pending.lnA);
+            glxVertex3v(pending.lnB);
         glEnd();
     }
 

@@ -16,7 +16,6 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
     }
 }
 
-
 void GraphicsWindow::FixConstraintsForRequestBeingDeleted(hRequest hr) {
     Request *r = SK.GetRequest(hr);
     if(r->group.v != SS.GW.activeGroup.v) return;
@@ -220,8 +219,6 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
     Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
            p1 = SK.GetEntity(hep1)->PointGetNum();
 
-    SS.UndoRemember();
-
     // Add the two line segments this one gets split into.
     hRequest r0i = AddRequest(Request::LINE_SEGMENT, false),
              ri1 = AddRequest(Request::LINE_SEGMENT, false);
@@ -242,8 +239,6 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
 }
 
 hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
-    SS.UndoRemember();
-
     Entity *circle = SK.GetEntity(he);
     if(circle->type == Entity::CIRCLE) {
         // Start with an unbroken circle, split it into a 360 degree arc.
@@ -294,44 +289,67 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
 hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
     // Save the original endpoints, since we're about to delete this entity.
     Entity *e01 = SK.GetEntity(he);
+    SBezierList sbl;
+    ZERO(&sbl);
+    e01->GenerateBezierCurves(&sbl);
+
     hEntity hep0 = e01->point[0],
-            hep1 = e01->point[1],
-            hep2 = e01->point[2],
-            hep3 = e01->point[3];
-    Vector p0 = SK.GetEntity(hep0)->PointGetNum(),
-           p1 = SK.GetEntity(hep1)->PointGetNum(),
-           p2 = SK.GetEntity(hep2)->PointGetNum(),
-           p3 = SK.GetEntity(hep3)->PointGetNum();
+            hep1 = e01->point[3+e01->extraPoints],
+            hep0n = Entity::NO_ENTITY, // the new start point
+            hep1n = Entity::NO_ENTITY, // the new finish point
+            hepin = Entity::NO_ENTITY; // the intersection point
 
-    SS.UndoRemember();
-
-    SBezier b0i, bi1, b01 = SBezier::From(p0, p1, p2, p3);
+    // The curve may consist of multiple cubic segments. So find which one
+    // contains the intersection point.
     double t;
-    b01.ClosestPointTo(pinter, &t, true);
-    b01.SplitAt(t, &b0i, &bi1);
+    int i, j;
+    for(i = 0; i < sbl.l.n; i++) {
+        SBezier *sb = &(sbl.l.elem[i]);
+        if(sb->deg != 3) oops();
 
-    // Add the two cubic segments this one gets split into.
-    hRequest r0i = AddRequest(Request::CUBIC, false),
-             ri1 = AddRequest(Request::CUBIC, false);
-    // Don't get entities till after adding, realloc issues
+        sb->ClosestPointTo(pinter, &t, false);
+        if(pinter.Equals(sb->PointAt(t))) {
+            // Split that segment at the intersection.
+            SBezier b0i, bi1, b01 = *sb;
+            b01.SplitAt(t, &b0i, &bi1);
 
-    Entity *e0i = SK.GetEntity(r0i.entity(0)),
-           *ei1 = SK.GetEntity(ri1.entity(0));
+            // Add the two cubic segments this one gets split into.
+            hRequest r0i = AddRequest(Request::CUBIC, false),
+                     ri1 = AddRequest(Request::CUBIC, false);
+            // Don't get entities till after adding, realloc issues
 
-    SK.GetEntity(e0i->point[0])->PointForceTo(b0i.ctrl[0]);
-    SK.GetEntity(e0i->point[1])->PointForceTo(b0i.ctrl[1]);
-    SK.GetEntity(e0i->point[2])->PointForceTo(b0i.ctrl[2]);
-    SK.GetEntity(e0i->point[3])->PointForceTo(b0i.ctrl[3]);
+            Entity *e0i = SK.GetEntity(r0i.entity(0)),
+                   *ei1 = SK.GetEntity(ri1.entity(0));
 
-    SK.GetEntity(ei1->point[0])->PointForceTo(bi1.ctrl[0]);
-    SK.GetEntity(ei1->point[1])->PointForceTo(bi1.ctrl[1]);
-    SK.GetEntity(ei1->point[2])->PointForceTo(bi1.ctrl[2]);
-    SK.GetEntity(ei1->point[3])->PointForceTo(bi1.ctrl[3]);
+            for(j = 0; j <= 3; j++) {
+                SK.GetEntity(e0i->point[j])->PointForceTo(b0i.ctrl[j]);
+            }
+            for(j = 0; j <= 3; j++) {
+                SK.GetEntity(ei1->point[j])->PointForceTo(bi1.ctrl[j]);
+            }
 
-    ReplacePointInConstraints(hep0, e0i->point[0]);
-    ReplacePointInConstraints(hep3, ei1->point[3]);
-    Constraint::ConstrainCoincident(e0i->point[3], ei1->point[0]);
-    return e0i->point[3];
+            Constraint::ConstrainCoincident(e0i->point[3], ei1->point[0]);
+            if(i == 0) hep0n = e0i->point[0];
+            hep1n = ei1->point[3];
+            hepin = e0i->point[3];
+        } else {
+            hRequest r = AddRequest(Request::CUBIC, false);
+            Entity *e = SK.GetEntity(r.entity(0));
+
+            for(j = 0; j <= 3; j++) {
+                SK.GetEntity(e->point[j])->PointForceTo(sb->ctrl[j]);
+            }
+
+            if(i == 0) hep0n = e->point[0];
+            hep1n = e->point[3];
+        }
+    }
+
+    sbl.Clear();
+
+    ReplacePointInConstraints(hep0, hep0n);
+    ReplacePointInConstraints(hep1, hep1n);
+    return hepin;
 }
 
 hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
@@ -343,7 +361,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
         ret = SplitCircle(he, pinter);
     } else if(e->type == Entity::LINE_SEGMENT) {
         ret = SplitLine(he, pinter);
-    } else if(e->type == Entity::CUBIC && e->extraPoints == 0) {
+    } else if(e->type == Entity::CUBIC || e->type == Entity::CUBIC_PERIODIC) {
         ret = SplitCubic(he, pinter);
     } else {
         Error("Couldn't split this entity; lines, circles, or cubics only.");
@@ -377,7 +395,11 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     }
 
     GroupSelection();
-    if(!(gs.n == 2 && (gs.lineSegments + gs.circlesOrArcs + gs.cubics) == 2)) {
+    if(!(gs.n == 2 &&(gs.lineSegments +
+                      gs.circlesOrArcs + 
+                      gs.cubics +
+                      gs.periodicCubics) == 2))
+    {
         Error("Select two entities that intersect each other (e.g. two lines "
               "or two circles or a circle and a line).");
         return;
@@ -402,6 +424,7 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     // If there's multiple points, then just take the first one.
     if(inters.l.n > 0) {
         Vector pi = inters.l.elem[0].p;
+        SS.UndoRemember();
         hEntity hia = SplitEntity(ha, pi),
                 hib = SplitEntity(hb, pi);
         // SplitEntity adds the coincident constraints to join the split halves

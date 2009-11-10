@@ -1,6 +1,6 @@
 
 copy and paste
-spline splitting
+de-select after left-clicking nothing, keep sel on drag?
 
 -----
 associative entities from solid model, as a special group

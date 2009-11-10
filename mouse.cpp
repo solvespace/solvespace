@@ -79,6 +79,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     if(GraphicsEditControlIsVisible()) return;
     if(context.active) return;
 
+    pending.drawLine = false;
+
     if(!orig.mouseDown) {
         // If someone drags the mouse into our window with the left button
         // already depressed, then we don't have our starting point; so
@@ -131,6 +133,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         } else if(ctrlDown) {
             double theta = atan2(orig.mouse.y, orig.mouse.x);
             theta -= atan2(y, x);
+            pending.drawLine = true;
+            pending.lnA = UnProjectPoint(Point2d::From(0, 0));
+            pending.lnB = UnProjectPoint(mp);
 
             Vector normal = orig.projRight.Cross(orig.projUp);
             projRight = orig.projRight.RotatedAbout(normal, theta);
@@ -226,7 +231,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     // We're currently dragging something; so do that. But if we haven't
     // painted since the last time we solved, do nothing, because there's
     // no sense solving a frame and not displaying it.
-    if(!havePainted) return;
+    if(!havePainted) {
+        if(pending.operation == DRAGGING_POINTS && ctrlDown) {
+            pending.lnA = UnProjectPoint(orig.mouseOnButtonDown);
+            pending.lnB = UnProjectPoint(mp);
+            pending.drawLine = true;
+        }
+        return;
+    }
     switch(pending.operation) {
         case DRAGGING_CONSTRAINT: {
             Constraint *c = SK.constraint.FindById(pending.constraint);
@@ -267,6 +279,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
                     Vector gn = projRight.Cross(projUp);
                     qt = Quaternion::From(gn, -theta);
+
+                    pending.drawLine = true;
+                    pending.lnA = UnProjectPoint(orig.mouseOnButtonDown);
+                    pending.lnB = UnProjectPoint(mp);
                 } else {
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
@@ -280,7 +296,17 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 List<hEntity> *lhe = &(pending.points);
                 for(hEntity *he = lhe->First(); he; he = lhe->NextAfter(he)) {
                     Entity *e = SK.GetEntity(*he);
-                    if(e->type != Entity::POINT_N_ROT_TRANS) continue;
+                    if(e->type != Entity::POINT_N_ROT_TRANS) {
+                        if(ctrlDown) {
+                            Vector p = e->PointGetNum();
+                            p = p.Minus(pending.lnA);
+                            p = qt.Rotate(p);
+                            p = p.Plus(pending.lnA);
+                            e->PointForceTo(p);
+                            SS.MarkGroupDirtyByEntity(e->h);
+                        }
+                        continue;
+                    }
 
                     Quaternion q = e->PointGetQuaternion();
                     Vector     p = e->PointGetNum();
@@ -439,6 +465,9 @@ void GraphicsWindow::ContextMenuListStyles(void) {
 }
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
+    pending.drawLine = false;
+    InvalidateGraphics();
+
     // Don't show a context menu if the user is right-clicking the toolbar,
     // or if they are finishing a pan.
     if(ToolbarMouseMoved((int)x, (int)y)) return;

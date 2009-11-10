@@ -242,6 +242,7 @@ public:
         MNU_CUT,
         MNU_COPY,
         MNU_PASTE,
+        MNU_PASTE_TRANSFORM,
         MNU_DELETE,
         MNU_SELECT_CHAIN,
         MNU_INVERT_SEL,
@@ -387,6 +388,9 @@ public:
         hEntity         circle;
         hEntity         normal;
         hConstraint     constraint;
+        
+        bool            drawLine;
+        Vector          lnA, lnB;
 
         char            *description;
     } pending;
@@ -448,6 +452,7 @@ public:
         int         circlesOrArcs;
         int         arcs;
         int         cubics;
+        int         periodicCubics;
         int         anyNormals;
         int         vectors;
         int         constraints;

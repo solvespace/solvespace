@@ -39,6 +39,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mEdit },
 { 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mEdit },
 { 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mEdit },
+{ 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mEdit },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Select Edge Cha&in\tCtrl+I",          MNU_SELECT_CHAIN,   'I'|C,  mEdit },
