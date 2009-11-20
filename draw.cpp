@@ -479,6 +479,8 @@ void GraphicsWindow::Paint(int w, int h) {
         ForceTextWindowShown();
     }
     glClear(GL_COLOR_BUFFER_BIT); 
+    glClearDepth(1.0); 
+    glClear(GL_DEPTH_BUFFER_BIT); 
 
     if(SS.bgImage.fromFile) {
         // If a background image is loaded, then we draw it now as a texture.
@@ -508,6 +510,9 @@ void GraphicsWindow::Paint(int w, int h) {
         origin.z = (offset.ScaledBy(-1)).Dot(n);
         origin = origin.ScaleOutOfCsys(projRight, projUp, n);
 
+        // Place the background at the very back of the Z order, though, by
+        // mucking with the depth range.
+        glDepthRange(1, 1);
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_QUADS);
             glTexCoord2d(0, 0);
@@ -525,11 +530,7 @@ void GraphicsWindow::Paint(int w, int h) {
         glEnd();
         glDisable(GL_TEXTURE_2D);
     }
-
-    // Now clear the depth; so the background color and image are both at
-    // the very back of everything.
-    glClearDepth(1.0); 
-    glClear(GL_DEPTH_BUFFER_BIT); 
+    glxDepthRangeOffset(0);
 
     // Nasty case when we're reloading the imported files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
