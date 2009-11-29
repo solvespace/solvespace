@@ -648,20 +648,23 @@ void GraphicsWindow::Paint(int w, int h) {
 nogrid:;
     }
 
-    // Draw filled paths in all groups, when those filled paths were requested
-    // specially by assigning a style with a fill color.
-    Group *g;
-    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
-        if(!(g->IsVisible())) continue;
-        g->DrawFilledPaths();
-    }
-
     // Draw the active group; this does stuff like the mesh and edges.
     (SK.GetGroup(activeGroup))->Draw();
 
     // Now draw the entities
     if(showHdnLines) glDisable(GL_DEPTH_TEST);
     Entity::DrawAll();
+
+    // Draw filled paths in all groups, when those filled paths were requested
+    // specially by assigning a style with a fill color, or when the filled
+    // paths are just being filled by default. This should go last, to make
+    // the transparency work.
+    Group *g;
+    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+        if(!(g->IsVisible())) continue;
+        g->DrawFilledPaths();
+    }
+
 
     glDisable(GL_DEPTH_TEST);
     // Draw the constraints
