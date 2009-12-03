@@ -148,6 +148,7 @@ public:
     static const int POLY_NOT_CLOSED        = 1;
     static const int POLY_NOT_COPLANAR      = 2;
     static const int POLY_SELF_INTERSECTING = 3;
+    static const int POLY_ZERO_LEN_EDGE     = 4;
     struct {
         int             how;
         SEdge           notClosedAt;
@@ -216,7 +217,7 @@ public:
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
-    void AssembleLoops(bool *allClosed, bool *allCoplanar);
+    void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
     void GenerateLoops(void);
     // And the mesh stuff
     Group *PreviousGroup(void);
@@ -276,6 +277,7 @@ public:
     char *DescriptionString(void);
 };
 
+#define MAX_POINTS_IN_ENTITY (12)
 class EntityBase {
 public:
     int         tag;
@@ -322,7 +324,7 @@ public:
 
     // When it comes time to draw an entity, we look here to get the
     // defining variables.
-    hEntity     point[12];
+    hEntity     point[MAX_POINTS_IN_ENTITY];
     int         extraPoints;
     hEntity     normal;
     hEntity     distance;
@@ -764,5 +766,17 @@ inline bool hEquation::isFromConstraint(void)
 inline hConstraint hEquation::constraint(void)
     { hConstraint r; r.v = (v >> 16); return r; }
 
+// The format for entities stored on the clipboard.
+class ClipboardEntity {
+public:
+    int         type;
+    Vector      point[MAX_POINTS_IN_ENTITY];
+    int         extraPoints;
+
+    hStyle      style;
+    NameStr     str;
+    NameStr     font;
+    bool        construction;
+};
 
 #endif

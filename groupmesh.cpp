@@ -2,7 +2,10 @@
 
 #define gs (SS.GW.gs)
 
-void Group::AssembleLoops(bool *allClosed, bool *allCoplanar) {
+void Group::AssembleLoops(bool *allClosed,
+                          bool *allCoplanar,
+                          bool *allNonZeroLen)
+{
     SBezierList sbl;
     ZERO(&sbl);
 
@@ -14,6 +17,22 @@ void Group::AssembleLoops(bool *allClosed, bool *allCoplanar) {
         if(e->forceHidden) continue;
 
         e->GenerateBezierCurves(&sbl);
+    }
+
+    SBezier *sb;
+    *allNonZeroLen = true;
+    for(sb = sbl.l.First(); sb; sb = sbl.l.NextAfter(sb)) {
+        for(i = 1; i <= sb->deg; i++) {
+            if(!(sb->ctrl[i]).Equals(sb->ctrl[0])) {
+                break;
+            }
+        }
+        if(i > sb->deg) {
+            // This is a zero-length edge.
+            *allNonZeroLen = false;
+            polyError.errorPointAt = sb->ctrl[0];
+            return;
+        }
     }
 
     // Try to assemble all these Beziers into loops. The closed loops go into
@@ -35,12 +54,14 @@ void Group::GenerateLoops(void) {
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
-        bool allClosed, allCoplanar;
-        AssembleLoops(&allClosed, &allCoplanar);
+        bool allClosed, allCoplanar, allNonZeroLen;
+        AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
         if(!allCoplanar) {
             polyError.how = POLY_NOT_COPLANAR;
         } else if(!allClosed) {
             polyError.how = POLY_NOT_CLOSED;
+        } else if(!allNonZeroLen) {
+            polyError.how = POLY_ZERO_LEN_EDGE;
         } else {
             polyError.how = POLY_GOOD;
             // The self-intersecting check is kind of slow, so don't run it
@@ -474,15 +495,21 @@ void Group::Draw(void) {
             glEnable(GL_DEPTH_TEST);
         }
     } else if(polyError.how == POLY_NOT_COPLANAR ||
-              polyError.how == POLY_SELF_INTERSECTING)
+              polyError.how == POLY_SELF_INTERSECTING ||
+              polyError.how == POLY_ZERO_LEN_EDGE)
     {
         // These errors occur at points, not lines
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            char *msg = (polyError.how == POLY_NOT_COPLANAR) ?
-                            "points not all coplanar!" :
-                            "contour is self-intersecting!";
+            char *msg;
+            if(polyError.how == POLY_NOT_COPLANAR) {
+                msg = "points not all coplanar!";
+            } else if(polyError.how == POLY_SELF_INTERSECTING) {
+                msg = "contour is self-intersecting!";
+            } else {
+                msg = "zero-length edge!";
+            }
             glxWriteText(msg, DEFAULT_TEXT_HEIGHT,
                 polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
