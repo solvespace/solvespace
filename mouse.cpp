@@ -987,7 +987,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             // Create a new line segment, so that we continue drawing.
             hRequest hr = AddRequest(Request::LINE_SEGMENT);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            SK.GetEntity(hr.entity(2))->PointForceTo(v);
+            // Displace the second point of the new line segment slightly,
+            // to avoid creating zero-length edge warnings.
+            SK.GetEntity(hr.entity(2))->PointForceTo(
+                v.Plus(projRight.ScaledBy(0.5/scale)));
 
             // Constrain the line segments to share an endpoint
             Constraint::ConstrainCoincident(pending.point, hr.entity(1));
