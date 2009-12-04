@@ -592,7 +592,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             break;
 
         case CMNU_DELETE_SEL:
-            MenuEdit(MNU_DELETE);
+            MenuClipboard(MNU_DELETE);
             break;
 
         case CMNU_REFERENCE_DIM:

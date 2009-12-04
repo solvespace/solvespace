@@ -39,7 +39,7 @@ void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
     if(hasDistance) *hasDistance = te->hasDistance;
 }
 
-void EntReqTable::GetRequestInfo(int req, int extraPoints,
+bool EntReqTable::GetRequestInfo(int req, int extraPoints,
                      int *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(int i = 0; Table[i].reqType; i++) {
@@ -47,13 +47,13 @@ void EntReqTable::GetRequestInfo(int req, int extraPoints,
         if(req == te->reqType) {
             CopyEntityInfo(te, extraPoints,
                 ent, NULL, pts, hasNormal, hasDistance);
-            return;
+            return true;
         }
     }
-    oops();
+    return false;
 }
 
-void EntReqTable::GetEntityInfo(int ent, int extraPoints,
+bool EntReqTable::GetEntityInfo(int ent, int extraPoints,
                      int *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
     for(int i = 0; Table[i].reqType; i++) {
@@ -61,10 +61,10 @@ void EntReqTable::GetEntityInfo(int ent, int extraPoints,
         if(ent == te->entType) {
             CopyEntityInfo(te, extraPoints,
                 NULL, req, pts, hasNormal, hasDistance);
-            return;
+            return true;
         }
     }
-    oops();
+    return false;
 }
 
 int EntReqTable::GetRequestForEntity(int ent) {

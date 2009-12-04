@@ -315,6 +315,10 @@ public:
     static void MenuView(int id);
     static void MenuEdit(int id);
     static void MenuRequest(int id);
+    void DeleteSelection(void);
+    void CopySelection(void);
+    void PasteClipboard(Vector trans, double theta, bool mirror);
+    static void MenuClipboard(int id);
 
     // The width and height (in pixels) of the window.
     double width, height;

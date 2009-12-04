@@ -1,6 +1,8 @@
 
-copy and paste
+paste transformed
 de-select after left-clicking nothing, keep sel on drag?
+bbox selection is select-only, not toggle?
+show and modify view parameters (translate, rotate, scale)
 
 -----
 associative entities from solid model, as a special group

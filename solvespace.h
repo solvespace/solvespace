@@ -684,6 +684,17 @@ public:
         Vector      origin;
     } bgImage;
 
+    class Clipboard {
+public:
+        List<ClipboardRequest>  r;
+        List<Constraint>        c;
+
+        void Clear(void);
+        bool ContainsEntity(hEntity old);
+        hEntity NewEntityFor(hEntity old);
+    };
+    Clipboard clipboard;
+
     void MarkGroupDirty(hGroup hg);
     void MarkGroupDirtyByEntity(hEntity he);
 

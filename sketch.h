@@ -476,9 +476,9 @@ public:
     static char *DescriptionForRequest(int req);
     static void CopyEntityInfo(const TableEntry *te, int extraPoints,
             int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance);
-    static void GetRequestInfo(int req, int extraPoints,
+    static bool GetRequestInfo(int req, int extraPoints,
                     int *ent, int *pts, bool *hasNormal, bool *hasDistance);
-    static void GetEntityInfo(int ent, int extraPoints,
+    static bool GetEntityInfo(int ent, int extraPoints,
                     int *req, int *pts, bool *hasNormal, bool *hasDistance);
     static int GetRequestForEntity(int ent);
 };
@@ -767,16 +767,21 @@ inline hConstraint hEquation::constraint(void)
     { hConstraint r; r.v = (v >> 16); return r; }
 
 // The format for entities stored on the clipboard.
-class ClipboardEntity {
+class ClipboardRequest {
 public:
     int         type;
-    Vector      point[MAX_POINTS_IN_ENTITY];
     int         extraPoints;
-
     hStyle      style;
     NameStr     str;
     NameStr     font;
     bool        construction;
+
+    Vector      point[MAX_POINTS_IN_ENTITY];
+    double      distance;
+
+    hEntity     oldEnt;
+    hEntity     oldPointEnt[MAX_POINTS_IN_ENTITY];
+    hRequest    newReq;
 };
 
 #endif

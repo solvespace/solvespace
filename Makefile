@@ -18,6 +18,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\confscreen.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\modify.obj \
+           $(OBJDIR)\clipboard.obj \
            $(OBJDIR)\util.obj \
            $(OBJDIR)\style.obj \
            $(OBJDIR)\entity.obj \

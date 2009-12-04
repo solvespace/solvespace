@@ -2,6 +2,7 @@
 
 #define mView (&GraphicsWindow::MenuView)
 #define mEdit (&GraphicsWindow::MenuEdit)
+#define mClip (&GraphicsWindow::MenuClipboard)
 #define mReq  (&GraphicsWindow::MenuRequest)
 #define mCon  (&Constraint::MenuConstrain)
 #define mFile (&SolveSpace::MenuFile)
@@ -36,11 +37,11 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Snap Selection to &Grid\t.",          MNU_SNAP_TO_GRID,   '.',    mEdit },
 { 1, "Rotate Imported &90°\t9",             MNU_ROTATE_90,      '9',    mEdit },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mEdit },
-{ 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mEdit },
-{ 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mEdit },
-{ 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mEdit },
-{ 1, "&Delete\tDel",                        MNU_DELETE,         127,    mEdit },
+{ 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mClip },
+{ 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mClip },
+{ 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mClip },
+{ 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mClip },
+{ 1, "&Delete\tDel",                        MNU_DELETE,         127,    mClip },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Select Edge Cha&in\tCtrl+I",          MNU_SELECT_CHAIN,   'I'|C,  mEdit },
 { 1, "Invert &Selection\tCtrl+A",           MNU_INVERT_SEL,     'A'|C,  mEdit },
@@ -358,9 +359,9 @@ void GraphicsWindow::MenuView(int id) {
             if(SS.cameraTangent < 1e-6) {
                 Error("The perspective factor is set to zero, so the view will "
                       "always be a parallel projection.\r\n\r\n"
-                      "For a perspective projection, modify the camera tangent "
-                      "in the configuration screen. A value around 0.3 is "
-                      "typical.");
+                      "For a perspective projection, modify the perspective "
+                      "factor in the configuration screen. A value around 0.3 "
+                      "is typical.");
             }
             SS.GW.EnsureValidActives();
             InvalidateGraphics();
@@ -689,30 +690,6 @@ void GraphicsWindow::MenuEdit(int id) {
             break;
         }
 
-        case MNU_DELETE: {
-            SS.UndoRemember();
-
-            SK.request.ClearTags();
-            SK.constraint.ClearTags();
-            List<Selection> *ls = &(SS.GW.selection);
-            for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-                hRequest r; r.v = 0;
-                if(s->entity.v && s->entity.isFromRequest()) {
-                    r = s->entity.request();
-                }
-                if(r.v && !r.IsFromReferences()) {
-                    SK.request.Tag(r, 1);
-                }
-                if(s->constraint.v) {
-                    SK.constraint.Tag(s->constraint, 1);
-                }
-            }
-
-            SK.constraint.RemoveTagged();
-            SS.GW.DeleteTaggedRequests();
-            break;
-        }
-
         case MNU_ROTATE_90: {
             SS.GW.GroupSelection();
             Entity *e = NULL;
@@ -756,34 +733,36 @@ void GraphicsWindow::MenuEdit(int id) {
                 break;
             }
             SS.GW.GroupSelection();
-            if(SS.GW.gs.n != SS.GW.gs.points ||
-               SS.GW.gs.constraints != SS.GW.gs.comments ||
-               (SS.GW.gs.n == 0 && SS.GW.gs.constraints == 0))
-            {
-                Error("Can't snap these items to grid; select only points or "
+            if(SS.GW.gs.points == 0 && SS.GW.gs.comments == 0) {
+                Error("Can't snap these items to grid; select points or "
                       "text comments. To snap a line, select its endpoints.");
                 break;
             }
             SS.UndoRemember();
-            int i;
-            for(i = 0; i < SS.GW.gs.points; i++) {
-                hEntity hp = SS.GW.gs.point[i];
-                Entity *ep = SK.GetEntity(hp);
-                Vector p = ep->PointGetNum();
 
-                ep->PointForceTo(SS.GW.SnapToGrid(p));
-                SS.GW.pending.points.Add(&hp);
-                SS.MarkGroupDirty(ep->group);
+            List<Selection> *ls = &(SS.GW.selection);
+            for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
+                if(s->entity.v) {
+                    hEntity hp = s->entity;
+                    Entity *ep = SK.GetEntity(hp);
+                    if(!ep->IsPoint()) continue;
+
+                    Vector p = ep->PointGetNum();
+                    ep->PointForceTo(SS.GW.SnapToGrid(p));
+                    SS.GW.pending.points.Add(&hp);
+                    SS.MarkGroupDirty(ep->group);
+                } else if(s->constraint.v) {
+                    Constraint *c = SK.GetConstraint(s->constraint);
+                    if(c->type != Constraint::COMMENT) continue;
+
+                    c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
+                }
             }
             // Regenerate, with these points marked as dragged so that they
             // get placed as close as possible to our snap grid.
             SS.GenerateAll();
             SS.GW.ClearPending();
 
-            for(i = 0; i < SS.GW.gs.constraints; i++) {
-                Constraint *c = SK.GetConstraint(SS.GW.gs.constraint[i]);
-                c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
-            }
             SS.GW.ClearSelection();
             InvalidateGraphics();
             break;
