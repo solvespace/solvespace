@@ -263,6 +263,13 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 // a correct xref table.
 //-----------------------------------------------------------------------------
 void PdfFileWriter::StartFile(void) {
+    if((ptMax.x - ptMin.x) > 200*25.4 || 
+       (ptMax.y - ptMin.y) > 200*25.4)
+    {
+        Message("PDF page size exceeds 200 by 200 inches; many viewers may "
+                "reject this file.");
+    }
+
     fprintf(f,
 "%%PDF-1.1\r\n"
 "%%%c%c%c%c\r\n",
