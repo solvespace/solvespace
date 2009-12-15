@@ -54,6 +54,7 @@ public:
     static const int SCREEN_MESH_VOLUME         = 5;
     static const int SCREEN_LIST_OF_STYLES      = 6;
     static const int SCREEN_STYLE_INFO          = 7;
+    static const int SCREEN_PASTE_TRANSFORMED   = 8;
     typedef struct {
         int         screen;
 
@@ -64,6 +65,14 @@ public:
         bool        dimIsDistance;
         double      dimFinish;
         int         dimSteps;
+
+        struct {
+            int         times;
+            Vector      trans;
+            double      theta;
+            Vector      origin;
+            double      scale;
+        }           paste;
         
         double      volume;
     } ShownState;
@@ -73,6 +82,7 @@ public:
     // For multiple groups
     static const int EDIT_TIMES_REPEATED        = 1;
     static const int EDIT_GROUP_NAME            = 2;
+    static const int EDIT_GROUP_SCALE           = 3;
     // For the configuraiton screen
     static const int EDIT_LIGHT_DIRECTION       = 10;
     static const int EDIT_LIGHT_INTENSITY       = 11;
@@ -102,6 +112,10 @@ public:
     static const int EDIT_STYLE_NAME            = 55;
     static const int EDIT_BACKGROUND_COLOR      = 56;
     static const int EDIT_BACKGROUND_IMG_SCALE  = 57;
+    // For paste transforming
+    static const int EDIT_PASTE_TIMES_REPEATED  = 60;
+    static const int EDIT_PASTE_ANGLE           = 61;
+    static const int EDIT_PASTE_SCALE           = 62;
     struct {
         int         meaning;
         int         i;
@@ -125,6 +139,7 @@ public:
     void ShowStyleInfo(void);
     void ShowStepDimension(void);
     void ShowMeshVolume(void);
+    void ShowPasteTransformed(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 
@@ -178,11 +193,14 @@ public:
     static void ScreenStepDimFinish(int link, DWORD v);
     static void ScreenStepDimGo(int link, DWORD v);
 
+    static void ScreenPasteTransformed(int link, DWORD v);
+
     static void ScreenHome(int link, DWORD v);
 
     // These ones do stuff with the edit control
     static void ScreenChangeExprA(int link, DWORD v);
     static void ScreenChangeGroupName(int link, DWORD v);
+    static void ScreenChangeGroupScale(int link, DWORD v);
     static void ScreenChangeLightDirection(int link, DWORD v);
     static void ScreenChangeLightIntensity(int link, DWORD v);
     static void ScreenChangeColor(int link, DWORD v);
@@ -198,9 +216,11 @@ public:
     static void ScreenChangeStyleColor(int link, DWORD v);
     static void ScreenChangeBackgroundColor(int link, DWORD v);
     static void ScreenChangeBackgroundImageScale(int link, DWORD v);
+    static void ScreenChangePasteTransformed(int link, DWORD v);
 
     bool EditControlDoneForStyles(char *s);
     bool EditControlDoneForConfiguration(char *s);
+    bool EditControlDoneForPaste(char *s);
     void EditControlDone(char *s);
 };
 
@@ -317,7 +337,7 @@ public:
     static void MenuRequest(int id);
     void DeleteSelection(void);
     void CopySelection(void);
-    void PasteClipboard(Vector trans, double theta, bool mirror);
+    void PasteClipboard(Vector trans, double theta, double scale);
     static void MenuClipboard(int id);
 
     // The width and height (in pixels) of the window.

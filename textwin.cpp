@@ -216,7 +216,9 @@ void TextWindow::Show(void) {
         Printf(false, "%s", SS.GW.pending.description);
         Printf(true, "%Fl%f%Ll(cancel operation)%E",
             &TextWindow::ScreenUnselectAll);
-    } else if(gs.n > 0 || gs.constraints > 0) {
+    } else if((gs.n > 0 || gs.constraints > 0) && 
+                                    shown.screen != SCREEN_PASTE_TRANSFORMED)
+    {
         if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
         ShowHeader(false);
         DescribeSelection();
@@ -235,6 +237,7 @@ void TextWindow::Show(void) {
             case SCREEN_MESH_VOLUME:        ShowMeshVolume();       break;
             case SCREEN_LIST_OF_STYLES:     ShowListOfStyles();     break;
             case SCREEN_STYLE_INFO:         ShowStyleInfo();        break;
+            case SCREEN_PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
         }
     }
     Printf(false, "");

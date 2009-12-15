@@ -95,11 +95,11 @@ void SBezier::GetBoundingProjd(Vector u, Vector orig,
     }
 }
 
-SBezier SBezier::TransformedBy(Vector t, Quaternion q, bool mirror) {
+SBezier SBezier::TransformedBy(Vector t, Quaternion q, double scale) {
     SBezier ret = *this;
     int i;
     for(i = 0; i <= deg; i++) {
-        if(mirror) ret.ctrl[i].z *= -1;
+        ret.ctrl[i] = (ret.ctrl[i]).ScaledBy(scale);
         ret.ctrl[i] = (q.Rotate(ret.ctrl[i])).Plus(t);
     }
     return ret;
@@ -189,7 +189,7 @@ SBezier SBezier::InPerspective(Vector u, Vector v, Vector n,
     Quaternion q = Quaternion::From(u, v);
     q = q.Inverse();
     // we want Q*(p - o) = Q*p - Q*o
-    SBezier ret = this->TransformedBy(q.Rotate(origin).ScaledBy(-1), q, false);
+    SBezier ret = this->TransformedBy(q.Rotate(origin).ScaledBy(-1), q, 1.0);
     int i;
     for(i = 0; i <= deg; i++) {
         Vector4 ct = Vector4::From(ret.weight[i], ret.ctrl[i]);
@@ -740,22 +740,22 @@ void SBezierLoopSetSet::Clear(void) {
     l.Clear();
 }
 
-SCurve SCurve::FromTransformationOf(SCurve *a, Vector t, Quaternion q,
-                                               bool mirror)
+SCurve SCurve::FromTransformationOf(SCurve *a,
+                                          Vector t, Quaternion q, double scale)
 {
     SCurve ret;
     ZERO(&ret);
 
     ret.h = a->h;
     ret.isExact = a->isExact;
-    ret.exact = (a->exact).TransformedBy(t, q, mirror);
+    ret.exact = (a->exact).TransformedBy(t, q, scale);
     ret.surfA = a->surfA;
     ret.surfB = a->surfB;
     
     SCurvePt *p;
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
         SCurvePt pp = *p;
-        if(mirror) pp.p.z *= -1;
+        pp.p = (pp.p).ScaledBy(scale);
         pp.p = (q.Rotate(pp.p)).Plus(t);
         ret.pts.Add(&pp);
     }

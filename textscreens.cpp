@@ -235,10 +235,6 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
             g->suppress = !(g->suppress);
             break;
 
-        case 'm':
-            g->mirror = !(g->mirror);
-            break;
-
         case 'r':
             g->relaxConstraints = !(g->relaxConstraints);
             break;
@@ -313,6 +309,15 @@ void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
     ShowTextEditControl(7, 14, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
+    SS.TW.edit.group.v = v;
+}
+void TextWindow::ScreenChangeGroupScale(int link, DWORD v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+
+    char str[1024];
+    sprintf(str, "%.3f", g->scale);
+    ShowTextEditControl(17, 9, str);
+    SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
@@ -449,11 +454,9 @@ void TextWindow::ShowGroupInfo(void) {
             &TextWindow::ScreenChangeGroupOption,
             (!sup ? "" : "no"), (!sup ? "no" : ""));
 
-        Printf(false, "%FtMIRROR%E   %Fh%f%Lm%s%E%Fs%s%E / %Fh%f%Lm%s%E%Fs%s%E",
-            &TextWindow::ScreenChangeGroupOption,
-            (g->mirror ? "" : "yes"), (g->mirror ? "yes" : ""),
-            &TextWindow::ScreenChangeGroupOption,
-            (!g->mirror ? "" : "no"), (!g->mirror ? "no" : ""));
+        Printf(true, "%FtSCALE BY%E %# %Fl%Ll%f%D[change]%E",
+            g->scale,
+            &TextWindow::ScreenChangeGroupScale, g->h.v);
     }
 
     bool relax = g->relaxConstraints;
@@ -734,6 +737,23 @@ void TextWindow::EditControlDone(char *s) {
             }
             break;
         }
+        case EDIT_GROUP_SCALE: {
+            Expr *e = Expr::From(s);
+            if(e) {
+                double ev = e->Eval();
+                if(fabs(ev) < 1e-6) {
+                    Error("Scale cannot be zero.");
+                } else {
+                    Group *g = SK.GetGroup(edit.group);
+                    g->scale = ev;
+                    SS.MarkGroupDirty(g->h);
+                    SS.later.generateAll = true;
+                }
+            } else {
+                Error("Not a valid number or expression: '%s'", s);
+            }
+            break;
+        }
         case EDIT_HELIX_TURNS:
         case EDIT_HELIX_PITCH:
         case EDIT_HELIX_DRADIUS: {
@@ -783,9 +803,11 @@ void TextWindow::EditControlDone(char *s) {
             break;
 
         default: {
-            bool st = EditControlDoneForStyles(s),
-                 cf = EditControlDoneForConfiguration(s);
-            if(st && cf) {
+            int cnt = 0;
+            if(EditControlDoneForStyles(s))         cnt++;
+            if(EditControlDoneForConfiguration(s))  cnt++;
+            if(EditControlDoneForPaste(s))          cnt++;
+            if(cnt > 1) {
                 // The identifiers were somehow assigned not uniquely?
                 oops();
             }

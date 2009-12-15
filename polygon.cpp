@@ -70,8 +70,13 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
     Vector dthis = b.Minus(a);
     double tthis_eps = LENGTH_EPS/dthis.Magnitude();
 
-    if(ea.Equals(a) && eb.Equals(b)) return true;
-    if(eb.Equals(a) && ea.Equals(b)) return true;
+    if((ea.Equals(a) && eb.Equals(b)) ||
+       (eb.Equals(a) && ea.Equals(b)))
+    {
+        if(ppi) *ppi = a;
+        if(spl) spl->Add(a);
+        return true;
+    }
 
     dist_a = a.DistanceToLine(ea, d),
     dist_b = b.DistanceToLine(ea, d);
@@ -87,17 +92,25 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
         }
         // The edges are coincident. Make sure that neither endpoint lies
         // on the other
+        bool inters = false;
         double t;
         t = a.Minus(ea).DivPivoting(d);
-        if(t > t_eps && t < (1 - t_eps)) return true;
+        if(t > t_eps && t < (1 - t_eps)) inters = true;
         t = b.Minus(ea).DivPivoting(d);
-        if(t > t_eps && t < (1 - t_eps)) return true;
+        if(t > t_eps && t < (1 - t_eps)) inters = true;
         t = ea.Minus(a).DivPivoting(dthis);
-        if(t > tthis_eps && t < (1 - tthis_eps)) return true;
+        if(t > tthis_eps && t < (1 - tthis_eps)) inters = true;
         t = eb.Minus(a).DivPivoting(dthis);
-        if(t > tthis_eps && t < (1 - tthis_eps)) return true;
-        // So coincident but disjoint, okay.
-        return false;
+        if(t > tthis_eps && t < (1 - tthis_eps)) inters = true;
+
+        if(inters) {
+            if(ppi) *ppi = a;
+            if(spl) spl->Add(a);
+            return true;
+        } else {
+            // So coincident but disjoint, okay.
+            return false;
+        }
     }
 
     // Lines are not parallel, so look for an intersection.

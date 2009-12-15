@@ -152,6 +152,7 @@ void SolveSpace::GenerateAll(void) {
         // All clean; so just regenerate the entities, and don't solve anything.
         GenerateAll(-1, -1);
     } else {
+        SS.nakedEdges.Clear();
         GenerateAll(firstDirty, lastVisible);
     }
 }

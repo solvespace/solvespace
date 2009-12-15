@@ -1,8 +1,8 @@
 
-paste transformed
 de-select after left-clicking nothing, keep sel on drag?
 bbox selection is select-only, not toggle?
 show and modify view parameters (translate, rotate, scale)
+context menu to hide / suppress groups by entity?
 
 -----
 associative entities from solid model, as a special group

@@ -43,7 +43,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mClip },
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mClip },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "Select Edge Cha&in\tCtrl+I",          MNU_SELECT_CHAIN,   'I'|C,  mEdit },
+{ 1, "Select &Edge Chain\tCtrl+E",          MNU_SELECT_CHAIN,   'E'|C,  mEdit },
 { 1, "Invert &Selection\tCtrl+A",           MNU_INVERT_SEL,     'A'|C,  mEdit },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 

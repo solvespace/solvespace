@@ -231,8 +231,8 @@ public:
     void MakeFromDifferenceOf(SMesh *a, SMesh *b);
 
     void MakeFromCopyOf(SMesh *a);
-    void MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q,
-                                    bool mirror);
+    void MakeFromTransformationOf(SMesh *a,
+                                    Vector trans, Quaternion q, double scale);
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);

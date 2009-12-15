@@ -93,7 +93,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.suppress",           'b',    &(SS.sv.g.suppress)           },
     { 'g',  "Group.relaxConstraints",   'b',    &(SS.sv.g.relaxConstraints)   },
-    { 'g',  "Group.mirror",             'b',    &(SS.sv.g.mirror)             },
+    { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },
     { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.impFileRel)         },
@@ -378,11 +378,14 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
             break;
         }
     }
-    if(SAVED[i].type == 0) oops();
+    if(SAVED[i].type == 0) {
+        fileLoadError = true;
+    }
 }
 
 bool SolveSpace::LoadFromFile(char *filename) {
     allConsistent = false;
+    fileLoadError = false;
 
     fh = fopen(filename, "rb");
     if(!fh) {   
@@ -400,6 +403,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
     SK.param.Clear();
     SK.style.Clear();
     memset(&sv, 0, sizeof(sv));
+    sv.g.scale = 1; // default is 1, not 0; so legacy files need this
 
     char line[1024];
     while(fgets(line, sizeof(line), fh)) {
@@ -420,6 +424,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
         } else if(strcmp(line, "AddGroup")==0) {
             SK.group.Add(&(sv.g));
             ZERO(&(sv.g));
+            sv.g.scale = 1; // default is 1, not 0; so legacy files need this
         } else if(strcmp(line, "AddParam")==0) {
             // params are regenerated, but we want to preload the values
             // for initial guesses
@@ -450,11 +455,16 @@ bool SolveSpace::LoadFromFile(char *filename) {
         {
             // ignore the mesh or shell, since we regenerate that
         } else {
-            oops();
+            fileLoadError = true;
         }
     }
 
     fclose(fh);
+
+    if(fileLoadError) {
+        Error("Unrecognized data in file. This file may be corrupt, or "
+              "from a new version of the program.");
+    }
 
     return true;
 }

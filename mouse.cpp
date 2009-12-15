@@ -980,10 +980,28 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
 
         case DRAGGING_NEW_LINE_POINT: {
+            if(hover.entity.v) {
+                Entity *e = SK.GetEntity(hover.entity);
+                if(e->IsPoint()) {
+                    hRequest hrl = pending.point.request();
+                    Entity *sp = SK.GetEntity(hrl.entity(1));
+                    if(( e->PointGetNum()).Equals(
+                       (sp->PointGetNum())))
+                    {
+                        // If we constrained by the hovered point, then we
+                        // would create a zero-length line segment. That's
+                        // not good, so just stop drawing.
+                        ClearPending();
+                        break;
+                    }
+                }
+            }
+
             if(ConstrainPointByHovered(pending.point)) {
                 ClearPending();
                 break;
             }
+
             // Create a new line segment, so that we continue drawing.
             hRequest hr = AddRequest(Request::LINE_SEGMENT);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);

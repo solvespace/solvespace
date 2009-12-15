@@ -27,6 +27,7 @@ void Group::MenuGroup(int id) {
     ZERO(&g);
     g.visible = true;
     g.color = RGB(100, 100, 100);
+    g.scale = 1;
 
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
         strcpy(g.impFile, RecentFile[id-RECENT_IMPORT]);
@@ -681,8 +682,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[5] = qvy;
                 en.param[6] = qvz;
             }
-            en.numPoint = ep->actPoint;
-            if(mirror) en.numPoint.z *= -1;
+            en.numPoint = (ep->actPoint).ScaledBy(scale);
             break;
 
         case Entity::NORMAL_N_COPY:
@@ -704,7 +704,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[3] = qvz;
             }
             en.numNormal = ep->actNormal;
-            if(mirror) en.numNormal = en.numNormal.MirrorZ();
+            if(scale < 0) en.numNormal = en.numNormal.Mirror();
 
             en.point[0] = Remap(ep->point[0], remap);
             break;
@@ -712,7 +712,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::DISTANCE_N_COPY:
         case Entity::DISTANCE:
             en.type = Entity::DISTANCE_N_COPY;
-            en.numDistance = ep->actDistance;
+            en.numDistance = ep->actDistance*fabs(scale);
             break;
 
         case Entity::FACE_NORMAL_PT:
@@ -739,13 +739,8 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[5] = qvy;
                 en.param[6] = qvz;
             }
-            en.numPoint = ep->actPoint;
-            en.numNormal = ep->actNormal;
-            if(mirror) {
-                if(en.type != Entity::FACE_N_ROT_TRANS) oops();
-                en.numPoint.z   *= -1;
-                en.numNormal.vz *= -1;
-            }
+            en.numPoint  = (ep->actPoint).ScaledBy(scale);
+            en.numNormal = (ep->actNormal).ScaledBy(scale);
             break;
 
         default: {

@@ -102,7 +102,7 @@ public:
     bool        visible;
     bool        suppress;
     bool        relaxConstraints;
-    bool        mirror;
+    double      scale;
 
     bool        clean;
     bool        vvMeshClean;

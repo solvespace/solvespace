@@ -687,7 +687,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;
         for(c = ab->curve.First(); c; c = ab->curve.NextAfter(c)) {
-            cn = SCurve::FromTransformationOf(c, t, q, false);
+            cn = SCurve::FromTransformationOf(c, t, q, 1.0);
             cn.source = (i == 0) ? SCurve::FROM_A : SCurve::FROM_B;
             // surfA and surfB are wrong now, and we can't fix them until
             // we've assigned IDs to the surfaces. So we'll get that later.
@@ -700,7 +700,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;
         for(s = ab->surface.First(); s; s = ab->surface.NextAfter(s)) {
-            sn = SSurface::FromTransformationOf(s, t, q, false, true);
+            sn = SSurface::FromTransformationOf(s, t, q, 1.0, true);
             // All the trim curve IDs get rewritten; we know the new handles
             // to the curves since we recorded them in the previous step.
             STrimBy *stb;

@@ -293,16 +293,16 @@ void SMesh::MakeFromAssemblyOf(SMesh *a, SMesh *b) {
     MakeFromCopyOf(b);
 }
 
-void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans, Quaternion q,
-                                               bool mirror)
+void SMesh::MakeFromTransformationOf(SMesh *a,
+                                      Vector trans, Quaternion q, double scale)
 {
     STriangle *tr;
     for(tr = a->l.First(); tr; tr = a->l.NextAfter(tr)) {
         STriangle tt = *tr;
-        if(mirror) {
-            tt.a.z *= -1;
-            tt.b.z *= -1;
-            tt.c.z *= -1;
+        tt.a = (tt.a).ScaledBy(scale);
+        tt.b = (tt.b).ScaledBy(scale);
+        tt.c = (tt.c).ScaledBy(scale);
+        if(scale < 0) {
             // The mirroring would otherwise turn a closed mesh inside out.
             SWAP(Vector, tt.a, tt.b);
         }

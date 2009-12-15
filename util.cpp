@@ -344,11 +344,11 @@ Quaternion Quaternion::Times(Quaternion b) {
     return r;
 }
 
-Quaternion Quaternion::MirrorZ(void) {
+Quaternion Quaternion::Mirror(void) {
     Vector u = RotationU(),
            v = RotationV();
-    u.z *= -1;
-    v.z *= -1;
+    u = u.ScaledBy(-1);
+    v = v.ScaledBy(-1);
     return Quaternion::From(u, v);
 }
 

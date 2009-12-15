@@ -625,6 +625,7 @@ public:
     static void RemoveFromRecentList(char *file);
     static void AddToRecentList(char *file);
     char saveFile[MAX_PATH];
+    bool fileLoadError;
     bool unsaved;
     typedef struct {
         char     type;
