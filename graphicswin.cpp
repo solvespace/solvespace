@@ -44,7 +44,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Delete\tDel",                        MNU_DELETE,         127,    mClip },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Select &Edge Chain\tCtrl+E",          MNU_SELECT_CHAIN,   'E'|C,  mEdit },
-{ 1, "Invert &Selection\tCtrl+A",           MNU_INVERT_SEL,     'A'|C,  mEdit },
+{ 1, "Select &All\tCtrl+A",                 MNU_SELECT_ALL,     'A'|C,  mEdit },
 { 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
 
 { 0, "&View",                               0,                          NULL  },
@@ -626,7 +626,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.nakedEdges.Clear();
             break;
 
-        case MNU_INVERT_SEL: {
+        case MNU_SELECT_ALL: {
             Entity *e;
             for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
                 if(e->group.v != SS.GW.activeGroup.v) continue;

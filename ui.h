@@ -265,7 +265,7 @@ public:
         MNU_PASTE_TRANSFORM,
         MNU_DELETE,
         MNU_SELECT_CHAIN,
-        MNU_INVERT_SEL,
+        MNU_SELECT_ALL,
         MNU_SNAP_TO_GRID,
         MNU_ROTATE_90,
         MNU_UNSELECT_ALL,
@@ -486,24 +486,29 @@ public:
         int         n;
     } gs;
     void GroupSelection(void);
+    bool EntityIsSelected(hEntity he);
     void ToggleSelectionStateOf(hEntity he, bool batch=false);
     void ToggleSelectionStateOf(Selection *s, bool batch=false);
     void SelectByMarquee(void);
     void ClearSuper(void);
 
     static const int CMNU_UNSELECT_ALL     = 0x100;
-    static const int CMNU_DELETE_SEL       = 0x101;
-    static const int CMNU_NEW_CUSTOM_STYLE = 0x102;
-    static const int CMNU_NO_STYLE         = 0x103;
-    static const int CMNU_GROUP_INFO       = 0x104;
-    static const int CMNU_REFERENCE_DIM    = 0x105;
-    static const int CMNU_OTHER_ANGLE      = 0x106;
-    static const int CMNU_DEL_COINCIDENT   = 0x107;
-    static const int CMNU_STYLE_INFO       = 0x108;
-    static const int CMNU_SNAP_TO_GRID     = 0x109;
-    static const int CMNU_SELECT_CHAIN     = 0x10a;
+    static const int CMNU_CUT_SEL          = 0x101;
+    static const int CMNU_COPY_SEL         = 0x102;
+    static const int CMNU_PASTE_SEL        = 0x103;
+    static const int CMNU_DELETE_SEL       = 0x104;
+    static const int CMNU_SELECT_CHAIN     = 0x105;
+    static const int CMNU_NEW_CUSTOM_STYLE = 0x110;
+    static const int CMNU_NO_STYLE         = 0x111;
+    static const int CMNU_GROUP_INFO       = 0x120;
+    static const int CMNU_STYLE_INFO       = 0x121;
+    static const int CMNU_REFERENCE_DIM    = 0x130;
+    static const int CMNU_OTHER_ANGLE      = 0x131;
+    static const int CMNU_DEL_COINCIDENT   = 0x132;
+    static const int CMNU_SNAP_TO_GRID     = 0x140;
     static const int CMNU_FIRST_STYLE      = 0x40000000;
     void ContextMenuListStyles(void);
+    SDWORD contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menu);

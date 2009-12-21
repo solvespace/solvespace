@@ -177,8 +177,21 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     pending.normal = hover.entity;
                     pending.operation = DRAGGING_NORMAL;
                 } else {
+                    if(EntityIsSelected(e->h)) {
+                        // The entity is selected, which means that it wasn't
+                        // before the user clicked to start dragging, which
+                        // means they're dragging just the hovered thing,
+                        // not the full selection. So clear all the selection
+                        // except that entity.
+                        ClearSelection();
+                        ToggleSelectionStateOf(e->h);
+                    }
                     StartDraggingBySelection();
-                    ClearSelection();
+                    // If something's hovered, then the user selected it when
+                    // they clicked to start dragging, but they probably
+                    // didn't mean to select it. Or if it was selected, then
+                    // they didn't mean to deselect it. So fix that.
+                    ToggleSelectionStateOf(e->h);
                     hover.Clear();
                     pending.operation = DRAGGING_POINTS;
                 }
@@ -488,7 +501,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     context.active = true;
 
     GroupSelection();
-    if(hover.IsEmpty() && gs.n == 0 && gs.constraints == 0) {
+    if(hover.IsEmpty() && 
+       gs.n == 0 && 
+       gs.constraints == 0 && 
+       (SS.clipboard.r.n == 0 || !LockedInWorkplane()))
+    {
         // No reason to display a context menu.
         goto done;
     }
@@ -574,6 +591,17 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 CMNU_SELECT_CHAIN);
         }
         AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+        if(LockedInWorkplane()) {
+            AddContextMenuItem("Cut Selection",  CMNU_CUT_SEL);
+            AddContextMenuItem("Copy Selection", CMNU_COPY_SEL);
+        }
+    }
+
+    if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
+        AddContextMenuItem("Paste Selection", CMNU_PASTE_SEL);
+    }
+
+    if(!selEmpty) {
         AddContextMenuItem("Delete Selection", CMNU_DELETE_SEL);
         AddContextMenuItem("Unselect All", CMNU_UNSELECT_ALL);
     }
@@ -589,6 +617,18 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case CMNU_SELECT_CHAIN:
             MenuEdit(MNU_SELECT_CHAIN);
+            break;
+
+        case CMNU_CUT_SEL:
+            MenuClipboard(MNU_CUT);
+            break;
+
+        case CMNU_COPY_SEL:
+            MenuClipboard(MNU_COPY);
+            break;
+
+        case CMNU_PASTE_SEL:
+            MenuClipboard(MNU_PASTE);
             break;
 
         case CMNU_DELETE_SEL:
@@ -679,8 +719,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         default:
             if(ret >= CMNU_FIRST_STYLE) {
                 Style::AssignSelectionToStyle(ret - CMNU_FIRST_STYLE);
+            } else {
+                // otherwise it was cancelled, so do nothing
+                contextMenuCancelTime = GetMilliseconds();
             }
-            // otherwise it was cancelled, so do nothing
             break;
     }
 
@@ -1024,7 +1066,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case 0:
         default:
             ClearPending();
-            ToggleSelectionStateOf(&hover);
+            if(hover.entity.v || hover.constraint.v) {
+                ToggleSelectionStateOf(&hover);
+            }
             break;
     }
 
@@ -1048,6 +1092,20 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
             SelectByMarquee();
             ClearPending();
             InvalidateGraphics();
+            break;
+
+        case 0:
+            // We need to clear the selection here, and not in the mouse down
+            // event, since a mouse down without anything hovered could also
+            // be the start of marquee selection. But don't do that on the
+            // left click to cancel a context menu. The time delay is an ugly
+            // hack.
+            if(hover.IsEmpty() && 
+                (contextMenuCancelTime == 0 ||
+                 (GetMilliseconds() - contextMenuCancelTime) > 200))
+            {
+                ClearSelection();
+            }
             break;
 
         default:

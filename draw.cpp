@@ -94,6 +94,19 @@ void GraphicsWindow::ClearNonexistentSelectionItems(void) {
 }
 
 //-----------------------------------------------------------------------------
+// Is this entity selected?
+//-----------------------------------------------------------------------------
+bool GraphicsWindow::EntityIsSelected(hEntity he) {
+    Selection *s;
+    for(s = selection.First(); s; s = selection.NextAfter(s)) {
+        if(s->entity.v == he.v) {
+            return true;
+        }
+    }
+    return false;
+}
+
+//-----------------------------------------------------------------------------
 // Toggle the selection state of the indicated item: if it was selected then
 // un-select it, and if it wasn't then select it.
 //-----------------------------------------------------------------------------
@@ -136,7 +149,12 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog, bool batch) {
             }
         }
     }
-    selection.RemoveTagged();
+
+    // It's too confusing to make operations that select multiple entities
+    // (like marquee selection) toggle. So make those select-only.
+    if(!batch) {
+        selection.RemoveTagged();
+    }
     if(wasSelected) return;
 
     // So it's not selected, so we should select it.

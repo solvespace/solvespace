@@ -139,10 +139,10 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         SS.GenerateAll(-1, -1);
         SS.MarkGroupDirty(r->group);
         bool hasDistance;
-        int pts;
+        int i, pts;
         EntReqTable::GetRequestInfo(r->type, r->extraPoints,
             NULL, &pts, NULL, &hasDistance);
-        for(int i = 0; i < pts; i++) {
+        for(i = 0; i < pts; i++) {
             Vector pt = cr->point[i];
             // We need the reflection to occur within the workplane; it may
             // otherwise correspond to just a rotation as projected.
@@ -165,6 +165,9 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
 
         cr->newReq = hr;
         ToggleSelectionStateOf(hr.entity(0));
+        for(i = 0; i < pts; i++) {
+            ToggleSelectionStateOf(hr.entity(i+1));
+        }
     }
     
     Constraint *c;
