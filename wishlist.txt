@@ -1,6 +1,5 @@
 
 show and modify view parameters (translate, rotate, scale)
-context menu to hide / suppress groups by entity?
 
 -----
 associative entities from solid model, as a special group

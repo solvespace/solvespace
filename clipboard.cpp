@@ -164,9 +164,9 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         }
 
         cr->newReq = hr;
-        ToggleSelectionStateOf(hr.entity(0));
+        MakeSelected(hr.entity(0));
         for(i = 0; i < pts; i++) {
-            ToggleSelectionStateOf(hr.entity(i+1));
+            MakeSelected(hr.entity(i+1));
         }
     }
     

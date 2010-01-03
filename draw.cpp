@@ -94,12 +94,18 @@ void GraphicsWindow::ClearNonexistentSelectionItems(void) {
 }
 
 //-----------------------------------------------------------------------------
-// Is this entity selected?
+// Is this entity/constraint selected?
 //-----------------------------------------------------------------------------
-bool GraphicsWindow::EntityIsSelected(hEntity he) {
+bool GraphicsWindow::IsSelected(hEntity he) {
+    Selection s;
+    ZERO(&s);
+    s.entity = he;
+    return IsSelected(&s);
+}
+bool GraphicsWindow::IsSelected(Selection *st) {
     Selection *s;
     for(s = selection.First(); s; s = selection.NextAfter(s)) {
-        if(s->entity.v == he.v) {
+        if(s->Equals(st)) {
             return true;
         }
     }
@@ -107,16 +113,18 @@ bool GraphicsWindow::EntityIsSelected(hEntity he) {
 }
 
 //-----------------------------------------------------------------------------
-// Toggle the selection state of the indicated item: if it was selected then
-// un-select it, and if it wasn't then select it.
+// Unselect an item, if it is selected. We can either unselect just that item,
+// or also unselect any coincident points. The latter is useful if the user
+// somehow selects two coincident points (like with select all), because it
+// would otherwise be impossible to de-select the lower of the two.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::ToggleSelectionStateOf(hEntity he, bool batch) {
+void GraphicsWindow::MakeUnselected(hEntity he, bool coincidentPointTrick) {
     Selection stog;
     ZERO(&stog);
     stog.entity = he;
-    ToggleSelectionStateOf(&stog, batch);
+    MakeUnselected(&stog, coincidentPointTrick);
 }
-void GraphicsWindow::ToggleSelectionStateOf(Selection *stog, bool batch) {
+void GraphicsWindow::MakeUnselected(Selection *stog, bool coincidentPointTrick){
     if(stog->IsEmpty()) return;
 
     Selection *s;
@@ -127,14 +135,12 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog, bool batch) {
     for(s = selection.First(); s; s = selection.NextAfter(s)) {
         if(s->Equals(stog)) {
             s->tag = 1;
-            wasSelected = true;
-            break;
         }
     }
     // If two points are coincident, then it's impossible to hover one of
     // them. But make sure to deselect both, to avoid mysterious seeming
     // inability to deselect if the bottom one did somehow get selected.
-    if(wasSelected && stog->entity.v && !batch) {
+    if(stog->entity.v && coincidentPointTrick) {
         Entity *e = SK.GetEntity(stog->entity);
         if(e->IsPoint()) {
             Vector ep = e->PointGetNum();
@@ -149,20 +155,27 @@ void GraphicsWindow::ToggleSelectionStateOf(Selection *stog, bool batch) {
             }
         }
     }
+    selection.RemoveTagged();
+}
 
-    // It's too confusing to make operations that select multiple entities
-    // (like marquee selection) toggle. So make those select-only.
-    if(!batch) {
-        selection.RemoveTagged();
-    }
-    if(wasSelected) return;
-
-    // So it's not selected, so we should select it.
+//-----------------------------------------------------------------------------
+// Select an item, if it isn't selected already.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::MakeSelected(hEntity he) {
+    Selection stog;
+    ZERO(&stog);
+    stog.entity = he;
+    MakeSelected(&stog);
+}
+void GraphicsWindow::MakeSelected(Selection *stog) {
+    if(stog->IsEmpty()) return;
+    if(IsSelected(stog)) return;
 
     if(stog->entity.v != 0 && SK.GetEntity(stog->entity)->IsFace()) {
         // In the interest of speed for the triangle drawing code,
         // only two faces may be selected at a time.
         int c = 0;
+        Selection *s;
         selection.ClearTags();
         for(s = selection.First(); s; s = selection.NextAfter(s)) {
             hEntity he = s->entity;
@@ -202,7 +215,7 @@ void GraphicsWindow::SelectByMarquee(void) {
             if(pp.x >= xmin && pp.x <= xmax &&
                pp.y >= ymin && pp.y <= ymax)
             {
-                ToggleSelectionStateOf(e->h, true);
+                MakeSelected(e->h);
             }
         } else {
             // Use the 3d bounding box test routines, to avoid duplication;
@@ -224,7 +237,7 @@ void GraphicsWindow::SelectByMarquee(void) {
                    !ptA.OutsideAndNotOn(ptMax, ptMin) ||
                    !ptB.OutsideAndNotOn(ptMax, ptMin))
                 {
-                    ToggleSelectionStateOf(e->h, true);
+                    MakeSelected(e->h);
                     break;
                 }
             }

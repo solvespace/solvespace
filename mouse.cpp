@@ -177,21 +177,21 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     pending.normal = hover.entity;
                     pending.operation = DRAGGING_NORMAL;
                 } else {
-                    if(EntityIsSelected(e->h)) {
-                        // The entity is selected, which means that it wasn't
-                        // before the user clicked to start dragging, which
+                    if(!hoverWasSelectedOnMousedown) {
+                        // The user clicked an unselected entity, which
                         // means they're dragging just the hovered thing,
                         // not the full selection. So clear all the selection
                         // except that entity.
                         ClearSelection();
-                        ToggleSelectionStateOf(e->h);
+                        MakeSelected(e->h);
                     }
                     StartDraggingBySelection();
-                    // If something's hovered, then the user selected it when
-                    // they clicked to start dragging, but they probably
-                    // didn't mean to select it. Or if it was selected, then
-                    // they didn't mean to deselect it. So fix that.
-                    ToggleSelectionStateOf(e->h);
+                    if(!hoverWasSelectedOnMousedown) {
+                        // And then clear the selection again, since they
+                        // probably didn't want that selected if they just
+                        // were dragging it.
+                        ClearSelection();
+                    }
                     hover.Clear();
                     pending.operation = DRAGGING_POINTS;
                 }
@@ -214,7 +214,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         if(hover.entity.v) {
                             // Avoid accidentally selecting workplanes when
                             // starting drags.
-                            ToggleSelectionStateOf(hover.entity);
+                            MakeUnselected(hover.entity, false);
                             hover.Clear();
                         }
                         pending.operation = DRAGGING_MARQUEE;
@@ -500,119 +500,93 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     context.active = true;
 
+    if(!hover.IsEmpty()) {
+        MakeSelected(&hover);
+        SS.later.showTW = true;
+    }
     GroupSelection();
-    if(hover.IsEmpty() && 
-       gs.n == 0 && 
-       gs.constraints == 0 && 
-       (SS.clipboard.r.n == 0 || !LockedInWorkplane()))
-    {
-        // No reason to display a context menu.
-        goto done;
-    }
 
-    // We can either work on the selection (like the functions are designed to)
-    // or on the hovered item. In the latter case we can fudge things by just
-    // selecting the hovered item, and then applying our operation to the
-    // selection.
-    bool selEmpty = false;
-    if(gs.n == 0 && gs.constraints == 0) {
-        selEmpty = true;
-    }
+    bool itemsSelected = (gs.n > 0 || gs.constraints > 0);
 
-    if(selEmpty) {
-        if(hover.IsStylable()) {
+    if(itemsSelected) {
+        if(gs.stylables > 0) {
             ContextMenuListStyles();
-            AddContextMenuItem("Hovered: Assign to Style", CONTEXT_SUBMENU);
+            AddContextMenuItem("Assign to Style", CONTEXT_SUBMENU);
         }
-        if(!hover.IsEmpty()) {
-            AddContextMenuItem("Hovered: Group Info", CMNU_GROUP_INFO);
+        if(gs.n + gs.constraints == 1) {
+            AddContextMenuItem("Group Info", CMNU_GROUP_INFO);
         }
-        if(hover.IsStylable()) {
-            AddContextMenuItem("Hovered: Style Info", CMNU_STYLE_INFO);
+        if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
+            AddContextMenuItem("Style Info", CMNU_STYLE_INFO);
         }
-        if(hover.constraint.v) {
-            Constraint *c = SK.GetConstraint(hover.constraint);
+        if(gs.withEndpoints > 0) {
+            AddContextMenuItem("Select Edge Chain", CMNU_SELECT_CHAIN);
+        }
+        if(gs.constraints == 1 && gs.n == 0) {
+            Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::COMMENT) {
-                AddContextMenuItem("Hovered: Toggle Reference Dimension",
+                AddContextMenuItem("Toggle Reference Dimension",
                     CMNU_REFERENCE_DIM);
             }
             if(c->type == Constraint::ANGLE ||
                c->type == Constraint::EQUAL_ANGLE)
             {
-                AddContextMenuItem("Hovered: Other Supplementary Angle",
+                AddContextMenuItem("Other Supplementary Angle",
                     CMNU_OTHER_ANGLE);
             }
         }
-        if(hover.entity.v) {
-            Entity *p = SK.GetEntity(hover.entity);
-            if(p->IsPoint()) {
-                Constraint *c;
-                IdList<Constraint,hConstraint> *lc = &(SK.constraint);
-                for(c = lc->First(); c; c = lc->NextAfter(c)) {
-                    if(c->type != Constraint::POINTS_COINCIDENT) continue;
-                    if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
-                        break;
-                    }
-                }
-                if(c) {
-                    AddContextMenuItem(
-                        "Hovered: Delete Point-Coincident Constraint",
-                        CMNU_DEL_COINCIDENT);
+        if(gs.comments > 0 || gs.points > 0) {
+            AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
+        }
+
+        if(gs.points == 1) {
+            Entity *p = SK.GetEntity(gs.point[0]);
+            Constraint *c;
+            IdList<Constraint,hConstraint> *lc = &(SK.constraint);
+            for(c = lc->First(); c; c = lc->NextAfter(c)) {
+                if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                    break;
                 }
             }
-        }
-        if(hover.HasEndpoints()) {
-            AddContextMenuItem("Hovered: Select Edge Chain", CMNU_SELECT_CHAIN);
-        }
-        if((hover.constraint.v &&
-             SK.GetConstraint(hover.constraint)->type == Constraint::COMMENT) ||
-           (hover.entity.v &&
-             SK.GetEntity(hover.entity)->IsPoint()))
-        {
-            AddContextMenuItem("Hovered: Snap to Grid", CMNU_SNAP_TO_GRID);
-        }
-        if(!hover.IsEmpty()) {
-            AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
-            AddContextMenuItem("Delete Hovered Item", CMNU_DELETE_SEL);
-        }
-    } else {
-        if(gs.stylables > 0) {
-            ContextMenuListStyles();
-            AddContextMenuItem("Selected: Assign to Style", CONTEXT_SUBMENU);
-        }
-        if(gs.n + gs.constraints == 1) {
-            AddContextMenuItem("Selected: Group Info", CMNU_GROUP_INFO);
-        }
-        if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-            AddContextMenuItem("Selected: Style Info", CMNU_STYLE_INFO);
-        }
-        if(gs.withEndpoints > 0) {
-            AddContextMenuItem("Selected: Select Edge Chain",
-                CMNU_SELECT_CHAIN);
+            if(c) {
+                AddContextMenuItem("Delete Point-Coincident Constraint",
+                                   CMNU_DEL_COINCIDENT);
+            }
         }
         AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
         if(LockedInWorkplane()) {
-            AddContextMenuItem("Cut Selection",  CMNU_CUT_SEL);
-            AddContextMenuItem("Copy Selection", CMNU_COPY_SEL);
+            AddContextMenuItem("Cut",  CMNU_CUT_SEL);
+            AddContextMenuItem("Copy", CMNU_COPY_SEL);
         }
     }
 
     if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
-        AddContextMenuItem("Paste Selection", CMNU_PASTE_SEL);
+        AddContextMenuItem("Paste", CMNU_PASTE_SEL);
     }
 
-    if(!selEmpty) {
-        AddContextMenuItem("Delete Selection", CMNU_DELETE_SEL);
+    if(itemsSelected) {
+        AddContextMenuItem("Delete", CMNU_DELETE_SEL);
+        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
         AddContextMenuItem("Unselect All", CMNU_UNSELECT_ALL);
+    }
+    // If only one item is selected, then it must be the one that we just
+    // selected from the hovered item; in which case unselect all and hovered
+    // are equivalent.
+    if(!hover.IsEmpty() && selection.n > 1) {
+        AddContextMenuItem("Unselect Hovered", CMNU_UNSELECT_HOVERED);
     }
 
     int ret = ShowContextMenu();
-    if(ret != 0 && ret != CMNU_DEL_COINCIDENT && selEmpty) {
-        ToggleSelectionStateOf(&hover);
-    }
     switch(ret) {
         case CMNU_UNSELECT_ALL:
             MenuEdit(MNU_UNSELECT_ALL);
+            break;
+
+        case CMNU_UNSELECT_HOVERED:
+            if(!hover.IsEmpty()) {
+                MakeUnselected(&hover, true);
+            }
             break;
 
         case CMNU_SELECT_CHAIN:
@@ -645,8 +619,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case CMNU_DEL_COINCIDENT: {
             SS.UndoRemember();
-            if(!hover.entity.v) break;
-            Entity *p = SK.GetEntity(hover.entity);
+            if(!gs.point[0].v) break;
+            Entity *p = SK.GetEntity(gs.point[0]);
             if(!p->IsPoint()) break;
 
             SK.constraint.ClearTags();
@@ -658,6 +632,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 }
             }
             SK.constraint.RemoveTagged();
+            ClearSelection();
             break;
         }
 
@@ -667,7 +642,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case CMNU_GROUP_INFO: {
             hGroup hg;
-            GroupSelection();
             if(gs.entities == 1) {
                 hg = SK.GetEntity(gs.entity[0])->group;
             } else if(gs.points == 1) {
@@ -687,7 +661,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case CMNU_STYLE_INFO: {
             hStyle hs;
-            GroupSelection();
             if(gs.entities == 1) {
                 hs = Style::ForEntity(gs.entity[0]);
             } else if(gs.points == 1) {
@@ -726,8 +699,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             break;
     }
 
-done:
     context.active = false;
+    SS.later.showTW = true;
 }
 
 hRequest GraphicsWindow::AddRequest(int type) {
@@ -1066,8 +1039,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         case 0:
         default:
             ClearPending();
-            if(hover.entity.v || hover.constraint.v) {
-                ToggleSelectionStateOf(&hover);
+            if(!hover.IsEmpty()) {
+                hoverWasSelectedOnMousedown = IsSelected(&hover);
+                MakeSelected(&hover);
             }
             break;
     }
@@ -1078,6 +1052,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
     orig.mouseDown = false;
+    hoverWasSelectedOnMousedown = false;
 
     switch(pending.operation) {
         case DRAGGING_POINTS:

@@ -456,6 +456,7 @@ public:
         bool HasEndpoints(void);
     };
     Selection hover;
+    bool hoverWasSelectedOnMousedown;
     List<Selection> selection;
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
@@ -486,18 +487,22 @@ public:
         int         n;
     } gs;
     void GroupSelection(void);
-    bool EntityIsSelected(hEntity he);
-    void ToggleSelectionStateOf(hEntity he, bool batch=false);
-    void ToggleSelectionStateOf(Selection *s, bool batch=false);
+    bool IsSelected(Selection *s);
+    bool IsSelected(hEntity he);
+    void MakeSelected(hEntity he);
+    void MakeSelected(Selection *s);
+    void MakeUnselected(hEntity he, bool coincidentPointTrick);
+    void MakeUnselected(Selection *s, bool coincidentPointTrick);
     void SelectByMarquee(void);
     void ClearSuper(void);
 
     static const int CMNU_UNSELECT_ALL     = 0x100;
-    static const int CMNU_CUT_SEL          = 0x101;
-    static const int CMNU_COPY_SEL         = 0x102;
-    static const int CMNU_PASTE_SEL        = 0x103;
-    static const int CMNU_DELETE_SEL       = 0x104;
-    static const int CMNU_SELECT_CHAIN     = 0x105;
+    static const int CMNU_UNSELECT_HOVERED = 0x101;
+    static const int CMNU_CUT_SEL          = 0x102;
+    static const int CMNU_COPY_SEL         = 0x103;
+    static const int CMNU_PASTE_SEL        = 0x104;
+    static const int CMNU_DELETE_SEL       = 0x105;
+    static const int CMNU_SELECT_CHAIN     = 0x106;
     static const int CMNU_NEW_CUSTOM_STYLE = 0x110;
     static const int CMNU_NO_STYLE         = 0x111;
     static const int CMNU_GROUP_INFO       = 0x120;

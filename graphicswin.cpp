@@ -633,7 +633,7 @@ void GraphicsWindow::MenuEdit(int id) {
                 if(e->IsFace() || e->IsDistance()) continue;
                 if(!e->IsVisible()) continue;
 
-                SS.GW.ToggleSelectionStateOf(e->h, true);
+                SS.GW.MakeSelected(e->h);
             }
             InvalidateGraphics();
             SS.later.showTW = true;
@@ -675,15 +675,15 @@ void GraphicsWindow::MenuEdit(int id) {
                         }
                     }
                     if(onChain && !alreadySelected) {
-                        SS.GW.ToggleSelectionStateOf(e->h, true);
+                        SS.GW.MakeSelected(e->h);
                         newlySelected++;
                         didSomething = true;
                     }
                 }
             } while(didSomething);
             if(newlySelected == 0) {
-                Error("No entities share endpoints with the selected "
-                      "entities.");
+                Error("No additional entities share endpoints with the "
+                      "selected entities.");
             }
             InvalidateGraphics();
             SS.later.showTW = true;
