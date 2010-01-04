@@ -115,15 +115,12 @@ void GraphicsWindow::CopySelection(void) {
 }
 
 void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
-    ClearSelection();
-
     Entity *wrkpl  = SK.GetEntity(ActiveWorkplane());
     Entity *wrkpln = SK.GetEntity(wrkpl->normal);
     Vector u = wrkpln->NormalU(),
            v = wrkpln->NormalV(),
            n = wrkpln->NormalN(),
            p = SK.GetEntity(wrkpl->point[0])->PointGetNum();
-
 
     ClipboardRequest *cr;
     for(cr = SS.clipboard.r.First(); cr; cr = SS.clipboard.r.NextAfter(cr)) {
@@ -193,6 +190,7 @@ void GraphicsWindow::MenuClipboard(int id) {
             SS.UndoRemember();
             Vector trans = SS.GW.projRight.ScaledBy(80/SS.GW.scale).Plus(
                            SS.GW.projUp   .ScaledBy(40/SS.GW.scale));
+            SS.GW.ClearSelection();
             SS.GW.PasteClipboard(trans, 0, 1);
             break;
         }
@@ -300,6 +298,7 @@ void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
             } else {
                 Error("Select one point to define origin of rotation.");
             }
+            SS.GW.ClearSelection();
             break;
 
         case 't':
@@ -311,6 +310,7 @@ void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
             } else {
                 Error("Select two points to define translation vector.");
             }
+            SS.GW.ClearSelection();
             break;
 
         case 'g': {
@@ -334,6 +334,7 @@ void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
             Entity *wrkpln = SK.GetEntity(wrkpl->normal);
             Vector wn = wrkpln->NormalN();
             SS.UndoRemember();
+            SS.GW.ClearSelection();
             for(int i = 0; i < SS.TW.shown.paste.times; i++) {
                 Vector trans  = SS.TW.shown.paste.trans.ScaledBy(i+1),
                        origin = SS.TW.shown.paste.origin;
@@ -351,7 +352,6 @@ void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
             break;
         }
     }
-    SS.GW.ClearSelection();
 }
 
 void TextWindow::ShowPasteTransformed(void) {
