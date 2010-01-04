@@ -23,7 +23,7 @@ void TextWindow::ShowEditView(void) {
     Printf(false, "%Ba   %Ftright%E (%3, %3, %3) %Fl%Ll%f[edit]%E",
         CO(SS.GW.projRight),
         &ScreenChangeViewProjection);
-    Printf(false, "%Ba   %Ftup%E    (%3, %3, %3)", CO(SS.GW.projUp));
+    Printf(false, "%Bd   %Ftup%E    (%3, %3, %3)", CO(SS.GW.projUp));
     Printf(false, "%Ba   %Ftout%E   (%3, %3, %3)", CO(n));
     Printf(false, "");
 
