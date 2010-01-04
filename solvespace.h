@@ -609,6 +609,8 @@ public:
     char *MmToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(char *s);
+    char *UnitName(void);
+    double MmPerUnit(void);
     double ChordTolMm(void);
     bool forceParallelProj;
     double CameraTangent(void);
@@ -677,6 +679,11 @@ public:
         hEntity     point;
     } traced;
     SEdgeList nakedEdges;
+    struct {
+        bool        draw;
+        Vector      ptA;
+        Vector      ptB;
+    } extraLine;
     struct {
         BYTE        *fromFile;
         int         w, h;

@@ -1,6 +1,4 @@
 
-show and modify view parameters (translate, rotate, scale)
-
 -----
 associative entities from solid model, as a special group
 some kind of import

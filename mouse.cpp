@@ -79,7 +79,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     if(GraphicsEditControlIsVisible()) return;
     if(context.active) return;
 
-    pending.drawLine = false;
+    SS.extraLine.draw = false;
 
     if(!orig.mouseDown) {
         // If someone drags the mouse into our window with the left button
@@ -133,9 +133,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         } else if(ctrlDown) {
             double theta = atan2(orig.mouse.y, orig.mouse.x);
             theta -= atan2(y, x);
-            pending.drawLine = true;
-            pending.lnA = UnProjectPoint(Point2d::From(0, 0));
-            pending.lnB = UnProjectPoint(mp);
+            SS.extraLine.draw = true;
+            SS.extraLine.ptA = UnProjectPoint(Point2d::From(0, 0));
+            SS.extraLine.ptB = UnProjectPoint(mp);
 
             Vector normal = orig.projRight.Cross(orig.projUp);
             projRight = orig.projRight.RotatedAbout(normal, theta);
@@ -154,7 +154,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         orig.mouse.x = x;
         orig.mouse.y = y;
 
+        if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
+            if(havePainted) {
+                SS.later.showTW = true;
+            }
+        }
         InvalidateGraphics();
+        havePainted = false;
         return;
     }
  
@@ -246,9 +252,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     // no sense solving a frame and not displaying it.
     if(!havePainted) {
         if(pending.operation == DRAGGING_POINTS && ctrlDown) {
-            pending.lnA = UnProjectPoint(orig.mouseOnButtonDown);
-            pending.lnB = UnProjectPoint(mp);
-            pending.drawLine = true;
+            SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
+            SS.extraLine.ptB = UnProjectPoint(mp);
+            SS.extraLine.draw = true;
         }
         return;
     }
@@ -293,9 +299,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     Vector gn = projRight.Cross(projUp);
                     qt = Quaternion::From(gn, -theta);
 
-                    pending.drawLine = true;
-                    pending.lnA = UnProjectPoint(orig.mouseOnButtonDown);
-                    pending.lnB = UnProjectPoint(mp);
+                    SS.extraLine.draw = true;
+                    SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
+                    SS.extraLine.ptB = UnProjectPoint(mp);
                 } else {
                     double dx = -(x - orig.mouse.x);
                     double dy = -(y - orig.mouse.y);
@@ -312,9 +318,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     if(e->type != Entity::POINT_N_ROT_TRANS) {
                         if(ctrlDown) {
                             Vector p = e->PointGetNum();
-                            p = p.Minus(pending.lnA);
+                            p = p.Minus(SS.extraLine.ptA);
                             p = qt.Rotate(p);
-                            p = p.Plus(pending.lnA);
+                            p = p.Plus(SS.extraLine.ptA);
                             e->PointForceTo(p);
                             SS.MarkGroupDirtyByEntity(e->h);
                         }
@@ -478,7 +484,7 @@ void GraphicsWindow::ContextMenuListStyles(void) {
 }
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
-    pending.drawLine = false;
+    SS.extraLine.draw = false;
     InvalidateGraphics();
 
     // Don't show a context menu if the user is right-clicking the toolbar,
@@ -1134,7 +1140,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         return;
     }
 
-    Expr *e = Expr::From(s);
+    Expr *e = Expr::From(s, true);
     if(e) {
         SS.UndoRemember();
 
@@ -1167,8 +1173,6 @@ void GraphicsWindow::EditControlDone(char *s) {
         }
         SS.MarkGroupDirty(c->group);
         SS.GenerateAll();
-    } else {
-        Error("Not a valid number or expression: '%s'", s);
     }
 }
 
@@ -1201,6 +1205,12 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     offset = offset.Plus(projRight.ScaledBy(rightf - righti));
     offset = offset.Plus(projUp.ScaledBy(upf - upi));
 
+    if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
+        if(havePainted) {
+            SS.later.showTW = true;
+        }
+    }
+    havePainted = false;
     InvalidateGraphics();
 }
 

@@ -342,6 +342,7 @@ void GraphicsWindow::MenuView(int id) {
 
         case MNU_ZOOM_TO_FIT:
             SS.GW.ZoomToFit(false);
+            SS.later.showTW = true;
             break;
 
         case MNU_SHOW_GRID:
@@ -521,6 +522,7 @@ void GraphicsWindow::EnsureValidActives(void) {
             break;
         default:
             SS.viewUnits = SolveSpace::UNIT_MM;
+            break;
     }
     CheckMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpace::UNIT_MM);
     CheckMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpace::UNIT_INCHES);

@@ -100,6 +100,9 @@ void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
 void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
     SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
+void TextWindow::ScreenShowEditView(int link, DWORD v) {
+    SS.TW.GoToScreen(SCREEN_EDIT_VIEW);
+}
 void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
     OpenWebsite("http://solvespace.com/txtlink");
 }
@@ -143,8 +146,11 @@ void TextWindow::ShowListOfGroups(void) {
     Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
         &(TextWindow::ScreenShowGroupsSpecial),
         &(TextWindow::ScreenShowGroupsSpecial));
-    Printf(true,  "  %Fl%Ls%fline styles%E / %Fl%Ls%fconfiguration%E",
+    Printf(true,  "  %Fl%Ls%fline styles%E /"
+                   " %Fl%Ls%fview%E /"
+                   " %Fl%Ls%fconfiguration%E",
         &(TextWindow::ScreenShowListOfStyles),
+        &(TextWindow::ScreenShowEditView),
         &(TextWindow::ScreenShowConfiguration));
 
     // Show license info
@@ -674,10 +680,11 @@ void TextWindow::ShowStepDimension(void) {
 void TextWindow::ShowMeshVolume(void) {
     Printf(true, "%FtMESH VOLUME");
 
-    if(SS.viewUnits == SolveSpace::UNIT_INCHES) {
-        Printf(true,  "   %3 in^3", shown.volume/(25.4*25.4*25.4));
-    } else {
-        Printf(true,  "   %2 mm^3", shown.volume);
+    Printf(true,  "   %3 %s^3",
+        shown.volume / pow(SS.MmPerUnit(), 3),
+        SS.UnitName());
+
+    if(SS.viewUnits == SolveSpace::UNIT_MM) {
         Printf(false, "   %2 mL", shown.volume/(10*10*10));
     }
 
@@ -688,9 +695,11 @@ void TextWindow::ShowMeshVolume(void) {
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
 void TextWindow::EditControlDone(char *s) {
+    edit.showAgain = false;
+
     switch(edit.meaning) {
         case EDIT_TIMES_REPEATED: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(e) {
                 SS.UndoRemember();
 
@@ -721,8 +730,6 @@ void TextWindow::EditControlDone(char *s) {
 
                 SS.MarkGroupDirty(g->h);
                 SS.later.generateAll = true;
-            } else {
-                Error("Not a valid number or expression: '%s'", s);
             }
             break;
         }
@@ -738,7 +745,7 @@ void TextWindow::EditControlDone(char *s) {
             break;
         }
         case EDIT_GROUP_SCALE: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = e->Eval();
                 if(fabs(ev) < 1e-6) {
@@ -749,8 +756,6 @@ void TextWindow::EditControlDone(char *s) {
                     SS.MarkGroupDirty(g->h);
                     SS.later.generateAll = true;
                 }
-            } else {
-                Error("Not a valid number or expression: '%s'", s);
             }
             break;
         }
@@ -759,9 +764,8 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_HELIX_DRADIUS: {
             SS.UndoRemember();
             Group *g = SK.GetGroup(edit.group);
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(!e) {
-                Error("Not a valid number or expression: '%s'", s);
                 break;
             }
             if(edit.meaning == EDIT_HELIX_TURNS) {
@@ -786,9 +790,8 @@ void TextWindow::EditControlDone(char *s) {
             break;
         }
         case EDIT_STEP_DIM_FINISH: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(!e) {
-                Error("Not a valid number or expression: '%s'", s);
                 break;
             }
             if(shown.dimIsDistance) {
@@ -807,6 +810,7 @@ void TextWindow::EditControlDone(char *s) {
             if(EditControlDoneForStyles(s))         cnt++;
             if(EditControlDoneForConfiguration(s))  cnt++;
             if(EditControlDoneForPaste(s))          cnt++;
+            if(EditControlDoneForView(s))           cnt++;
             if(cnt > 1) {
                 // The identifiers were somehow assigned not uniquely?
                 oops();
@@ -816,7 +820,10 @@ void TextWindow::EditControlDone(char *s) {
     }
     InvalidateGraphics();
     SS.later.showTW = true;
-    HideTextEditControl();
-    edit.meaning = EDIT_NOTHING;
+
+    if(!edit.showAgain) {
+        HideTextEditControl();
+        edit.meaning = EDIT_NOTHING;
+    }
 }
 

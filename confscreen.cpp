@@ -317,7 +317,7 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
             break;
         }
         case EDIT_EXPORT_SCALE: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = e->Eval();
                 if(fabs(ev) < 0.001 || isnan(ev)) {
@@ -325,13 +325,11 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
                 } else {
                     SS.exportScale = (float)ev;
                 }
-            } else {
-                Error("Not a valid number or expression: '%s'", s);
             }
             break;
         }
         case EDIT_EXPORT_OFFSET: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = SS.ExprToMm(e);
                 if(isnan(ev) || ev < 0) {
@@ -339,15 +337,12 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
                 } else {
                     SS.exportOffset = (float)ev;
                 }
-            } else {
-                Error("Not a valid number or expression: '%s'", s);
             }
             break;
         }
         case EDIT_CANVAS_SIZE: {
-            Expr *e = Expr::From(s);
+            Expr *e = Expr::From(s, true);
             if(!e) {
-                Error("Not a valid number or expression: '%s'", s);
                 break;
             }
             float d = (float)SS.ExprToMm(e);

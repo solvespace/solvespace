@@ -55,6 +55,7 @@ public:
     static const int SCREEN_LIST_OF_STYLES      = 6;
     static const int SCREEN_STYLE_INFO          = 7;
     static const int SCREEN_PASTE_TRANSFORMED   = 8;
+    static const int SCREEN_EDIT_VIEW           = 9;
     typedef struct {
         int         screen;
 
@@ -116,7 +117,13 @@ public:
     static const int EDIT_PASTE_TIMES_REPEATED  = 60;
     static const int EDIT_PASTE_ANGLE           = 61;
     static const int EDIT_PASTE_SCALE           = 62;
+    // For view
+    static const int EDIT_VIEW_SCALE            = 70;
+    static const int EDIT_VIEW_ORIGIN           = 71;
+    static const int EDIT_VIEW_PROJ_RIGHT       = 72;
+    static const int EDIT_VIEW_PROJ_UP          = 73;
     struct {
+        bool        showAgain;
         int         meaning;
         int         i;
         hGroup      group;
@@ -140,6 +147,7 @@ public:
     void ShowStepDimension(void);
     void ShowMeshVolume(void);
     void ShowPasteTransformed(void);
+    void ShowEditView(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 
@@ -179,6 +187,7 @@ public:
     static void ScreenBackgroundImage(int link, DWORD v);
 
     static void ScreenShowConfiguration(int link, DWORD v);
+    static void ScreenShowEditView(int link, DWORD v);
     static void ScreenGoToWebsite(int link, DWORD v);
 
     static void ScreenChangeFixExportColors(int link, DWORD v);
@@ -217,10 +226,14 @@ public:
     static void ScreenChangeBackgroundColor(int link, DWORD v);
     static void ScreenChangeBackgroundImageScale(int link, DWORD v);
     static void ScreenChangePasteTransformed(int link, DWORD v);
+    static void ScreenChangeViewScale(int link, DWORD v);
+    static void ScreenChangeViewOrigin(int link, DWORD v);
+    static void ScreenChangeViewProjection(int link, DWORD v);
 
     bool EditControlDoneForStyles(char *s);
     bool EditControlDoneForConfiguration(char *s);
     bool EditControlDoneForPaste(char *s);
+    bool EditControlDoneForView(char *s);
     void EditControlDone(char *s);
 };
 
@@ -413,9 +426,6 @@ public:
         hEntity         normal;
         hConstraint     constraint;
         
-        bool            drawLine;
-        Vector          lnA, lnB;
-
         char            *description;
     } pending;
     void ClearPending(void);

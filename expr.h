@@ -105,7 +105,7 @@ public:
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
         IdList<Param,hParam> *thenTry);
 
-    static Expr *From(char *in);
+    static Expr *From(char *in, bool popUpError);
     static void  Lex(char *in);
     static Expr *Next(void);
     static void  Consume(void);

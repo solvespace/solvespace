@@ -429,7 +429,16 @@ Vector GraphicsWindow::UnProjectPoint(Point2d p) {
 }
 
 void GraphicsWindow::NormalizeProjectionVectors(void) {
+    if(projRight.Magnitude() < LENGTH_EPS) {
+        projRight = Vector::From(1, 0, 0);
+    }
+
     Vector norm = projRight.Cross(projUp);
+    // If projRight and projUp somehow ended up parallel, then pick an
+    // arbitrary projUp normal to projRight.
+    if(norm.Magnitude() < LENGTH_EPS) {
+        norm = projRight.Normal(0);
+    }
     projUp = norm.Cross(projRight);
 
     projUp = projUp.WithMagnitude(1);
@@ -762,12 +771,12 @@ nogrid:;
         glEnd();
     }
 
-    if(pending.drawLine) {
+    if(SS.extraLine.draw) {
         glLineWidth(1);
         glxLockColorTo(Style::Color(Style::DATUM));
         glBegin(GL_LINES);
-            glxVertex3v(pending.lnA);
-            glxVertex3v(pending.lnB);
+            glxVertex3v(SS.extraLine.ptA);
+            glxVertex3v(SS.extraLine.ptB);
         glEnd();
     }
 

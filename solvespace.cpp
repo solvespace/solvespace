@@ -199,6 +199,20 @@ void SolveSpace::DoLater(void) {
     ZERO(&later);
 }
 
+double SolveSpace::MmPerUnit(void) {
+    if(viewUnits == UNIT_INCHES) {
+        return 25.4;
+    } else {
+        return 1.0;
+    }
+}
+char *SolveSpace::UnitName(void) {
+    if(viewUnits == UNIT_INCHES) {
+        return "inch";
+    } else {
+        return "mm";
+    }
+}
 char *SolveSpace::MmToString(double v) {
     static int WhichBuf;
     static char Bufs[8][128];
@@ -215,18 +229,10 @@ char *SolveSpace::MmToString(double v) {
     return s;
 }
 double SolveSpace::ExprToMm(Expr *e) {
-    if(viewUnits == UNIT_INCHES) {
-        return (e->Eval())*25.4;
-    } else {
-        return e->Eval();
-    }
+    return (e->Eval()) * MmPerUnit();
 }
 double SolveSpace::StringToMm(char *str) {
-    if(viewUnits == UNIT_INCHES) {
-        return atof(str)*25.4;
-    } else {
-        return atof(str);
-    }
+    return atof(str) * MmPerUnit();
 }
 double SolveSpace::ChordTolMm(void) {
     return SS.chordTol / SS.GW.scale;

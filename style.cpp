@@ -404,9 +404,7 @@ err:
 
 void TextWindow::ScreenChangeBackgroundImageScale(int link, DWORD v) {
     char str[300];
-    sprintf(str, "%.3f",
-        (SS.viewUnits == SolveSpace::UNIT_MM) ? SS.bgImage.scale :
-                                                SS.bgImage.scale * 25.4);
+    sprintf(str, "%.3f", SS.bgImage.scale * SS.MmPerUnit());
     SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
     ShowTextEditControl(v, 10, str);
 }
@@ -443,15 +441,12 @@ void TextWindow::ShowListOfStyles(void) {
     if(SS.bgImage.fromFile) {
         Printf(false, "%Ba   %Ftwidth:%E %dpx   %Ftheight:%E %dpx",
             SS.bgImage.w, SS.bgImage.h);
-        if(SS.viewUnits == SolveSpace::UNIT_MM) {
-            Printf(false, "   %Ftscale:%E %# px/mm %Fl%Ll%f%D[change]%E",
-                SS.bgImage.scale,
-                &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
-        } else {
-            Printf(false, "   %Ftscale:%E %# px/inch %Fl%Ll%f%D[change]%E",
-                SS.bgImage.scale*25.4,
-                &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
-        }
+
+        Printf(false, "   %Ftscale:%E %# px/%s %Fl%Ll%f%D[change]%E",
+            SS.bgImage.scale*SS.MmPerUnit(),
+            SS.UnitName(),
+            &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
+
         Printf(false, "%Ba   %Fl%Lc%fclear background image%E",
             &ScreenBackgroundImage);
     } else {
@@ -682,18 +677,14 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
             break;
 
         case EDIT_BACKGROUND_IMG_SCALE: {
-            Expr *e = Expr::From(str);
+            Expr *e = Expr::From(str, true);
             if(e) {
                 double ev = e->Eval();
                 if(ev < 0.001 || isnan(ev)) {
                     Error("Scale must not be zero or negative!");
                 } else {
-                    SS.bgImage.scale =
-                        (SS.viewUnits == SolveSpace::UNIT_MM) ? ev :
-                                                                ev / 25.4;
+                    SS.bgImage.scale = ev / SS.MmPerUnit();
                 }
-            } else {
-                Error("Not a valid number or expression: '%s'", str);
             }
             break;
         }
@@ -722,8 +713,6 @@ void TextWindow::ShowStyleInfo(void) {
         REDf(s->color), GREENf(s->color), BLUEf(s->color),
         s->h.v, ScreenChangeStyleColor);
 
-    char *unit = (SS.viewUnits == SolveSpace::UNIT_INCHES) ? "inches" : "mm";
-
     // The line width, and its units
     if(s->widthAs == Style::UNITS_AS_PIXELS) {
         Printf(true, "%FtLINE WIDTH   %E%@ %D%f%Lp%Fl[change]%E",
@@ -747,8 +736,8 @@ void TextWindow::ShowStyleInfo(void) {
             ( widthpx ? "" : "pixels"),
             ( widthpx ? "pixels" : ""),
             s->h.v, &ScreenChangeStyleYesNo,
-            (!widthpx ? "" : unit),
-            (!widthpx ? unit : ""));
+            (!widthpx ? "" : SS.UnitName()),
+            (!widthpx ? SS.UnitName() : ""));
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
@@ -793,8 +782,8 @@ void TextWindow::ShowStyleInfo(void) {
             ( textHeightpx ? "" : "pixels"),
             ( textHeightpx ? "pixels" : ""),
             s->h.v, &ScreenChangeStyleYesNo,
-            (!textHeightpx ? "" : unit),
-            (!textHeightpx ? unit : ""));
+            (!textHeightpx ? "" : SS.UnitName()),
+            (!textHeightpx ? SS.UnitName() : ""));
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {

@@ -763,7 +763,7 @@ void Expr::Lex(char *in) {
     }
 }
 
-Expr *Expr::From(char *in) {
+Expr *Expr::From(char *in, bool popUpError) {
     UnparsedCnt = 0;
     UnparsedP = 0;
     OperandsP = 0;
@@ -776,6 +776,9 @@ Expr *Expr::From(char *in) {
         r = PopOperand();
     } catch (char *e) {
         dbp("exception: parse/lex error: %s", e);
+        if(popUpError) {
+            Error("Not a valid number or expression: '%s'", in);
+        }
         return NULL;
     }
     return r;

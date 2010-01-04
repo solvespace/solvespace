@@ -238,6 +238,7 @@ void TextWindow::Show(void) {
             case SCREEN_LIST_OF_STYLES:     ShowListOfStyles();     break;
             case SCREEN_STYLE_INFO:         ShowStyleInfo();        break;
             case SCREEN_PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
+            case SCREEN_EDIT_VIEW:          ShowEditView();         break;
         }
     }
     Printf(false, "");
