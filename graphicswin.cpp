@@ -847,6 +847,10 @@ c:
         case MNU_CONSTRUCTION: {
             SS.UndoRemember();
             SS.GW.GroupSelection();
+            if(SS.GW.gs.entities == 0) {
+                Error("No entities are selected. Select entities before "
+                      "trying to toggle their construction state.");
+            }
             int i;
             for(i = 0; i < SS.GW.gs.entities; i++) {
                 hEntity he = SS.GW.gs.entity[i];
