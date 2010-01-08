@@ -762,7 +762,12 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
     orig.mouseDown = true;
 
-    if(GraphicsEditControlIsVisible()) return;
+    if(GraphicsEditControlIsVisible()) {
+        orig.mouse = Point2d::From(mx, my);
+        orig.mouseOnButtonDown = orig.mouse;
+        HideGraphicsEditControl();
+        return;
+    }
     HideTextEditControl();
 
     if(SS.showToolbar) {

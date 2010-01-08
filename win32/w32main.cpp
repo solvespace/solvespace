@@ -432,7 +432,12 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
             if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
-                SetCursor(LoadCursor(NULL, IDC_ARROW));
+                if(msg == WM_MOUSEMOVE) {
+                    SetCursor(LoadCursor(NULL, IDC_ARROW));
+                } else {
+                    HideTextEditControl();
+                    HideGraphicsEditControl();
+                }
                 break;
             }
             GraphicsWindow::Selection ps = SS.GW.hover;
