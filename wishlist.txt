@@ -1,5 +1,6 @@
 
 -----
+better level of detail
 associative entities from solid model, as a special group
 some kind of import
 faster triangulation

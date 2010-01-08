@@ -1103,6 +1103,10 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         ClearSuper();
 
         Constraint *c = SK.GetConstraint(constraintBeingEdited);
+        if(!c->HasLabel()) {
+            // Not meaningful to edit a constraint without a dimension
+            return;
+        }
         if(c->reference) {
             // Not meaningful to edit a reference dimension
             return;
