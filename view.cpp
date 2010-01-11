@@ -62,7 +62,12 @@ bool TextWindow::EditControlDoneForView(char *s) {
         case EDIT_VIEW_SCALE: {
             Expr *e = Expr::From(s, true);
             if(e) {
-                SS.GW.scale = e->Eval() / SS.MmPerUnit();
+                double v =  e->Eval() / SS.MmPerUnit();
+                if(v > LENGTH_EPS) {
+                    SS.GW.scale = v;
+                } else {
+                    Error("Scale cannot be zero or negative.");
+                }
             }
             break;
         }
