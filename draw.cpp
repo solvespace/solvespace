@@ -771,6 +771,8 @@ nogrid:;
         glEnd();
     }
 
+    // An extra line, used to indicate the origin when rotating within the
+    // plane of the monitor.
     if(SS.extraLine.draw) {
         glLineWidth(1);
         glxLockColorTo(Style::Color(Style::DATUM));
@@ -778,6 +780,32 @@ nogrid:;
             glxVertex3v(SS.extraLine.ptA);
             glxVertex3v(SS.extraLine.ptB);
         glEnd();
+    }
+
+    // A note to indicate the origin in the just-exported file.
+    if(SS.justExportedInfo.draw) {
+        glxColorRGB(Style::Color(Style::DATUM));
+        Vector p = SS.justExportedInfo.pt,
+               u = SS.justExportedInfo.u,
+               v = SS.justExportedInfo.v;
+
+        glLineWidth(1.5);
+        glBegin(GL_LINES);
+            glxVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
+            glxVertex3v(p.Plus(u.WithMagnitude(30/scale)));
+            glxVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
+            glxVertex3v(p.Plus(v.WithMagnitude(30/scale)));
+        glEnd();
+
+        glxWriteText("(x, y) = (0, 0) for file just exported",
+            DEFAULT_TEXT_HEIGHT,
+            p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)), 
+            u, v, NULL, NULL);
+        glxWriteText("press Esc to clear this message",
+            DEFAULT_TEXT_HEIGHT,
+            p.Plus(u.ScaledBy(40/scale)).Plus(
+                   v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)), 
+            u, v, NULL, NULL);
     }
 
     // And finally the toolbar.

@@ -428,6 +428,7 @@ public:
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
+    virtual bool HasCanvasSize(void) = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
@@ -439,6 +440,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return false; }
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
@@ -453,6 +455,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return true; }
 };
 class PdfFileWriter : public VectorFileWriter {
 public:
@@ -469,6 +472,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return true; }
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
@@ -483,6 +487,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return true; }
 };
 class HpglFileWriter : public VectorFileWriter {
 public:
@@ -495,6 +500,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return false; }
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
@@ -506,6 +512,7 @@ class Step2dFileWriter : public VectorFileWriter {
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return false; }
 };
 class GCodeFileWriter : public VectorFileWriter {
 public:
@@ -518,6 +525,7 @@ public:
     void Bezier(SBezier *sb);
     void StartFile(void);
     void FinishAndCloseFile(void);
+    bool HasCanvasSize(void) { return false; }
 };
 
 #ifdef LIBRARY
@@ -710,6 +718,10 @@ public:
         double      scale; // pixels per mm
         Vector      origin;
     } bgImage;
+    struct {
+        bool        draw;
+        Vector      pt, u, v;
+    } justExportedInfo;
 
     class Clipboard {
 public:

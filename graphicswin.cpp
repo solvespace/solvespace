@@ -334,10 +334,12 @@ void GraphicsWindow::MenuView(int id) {
     switch(id) {
         case MNU_ZOOM_IN:
             SS.GW.scale *= 1.2;
+            SS.later.showTW = true;
             break;
 
         case MNU_ZOOM_OUT:
             SS.GW.scale /= 1.2;
+            SS.later.showTW = true;
             break;
 
         case MNU_ZOOM_TO_FIT:
@@ -626,6 +628,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.GW.ClearSuper();
             HideTextEditControl();
             SS.nakedEdges.Clear();
+            SS.justExportedInfo.draw = false;
             break;
 
         case MNU_SELECT_ALL: {

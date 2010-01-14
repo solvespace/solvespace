@@ -175,6 +175,17 @@ void SolveSpace::ExportViewOrWireframeTo(char *filename, bool wireframe) {
                                u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
                                out);
         }
+
+        if(!out->HasCanvasSize()) {
+            // These file formats don't have a canvas size, so they just
+            // get exported in the raw coordinate system. So indicate what
+            // that was on-screen.
+            SS.justExportedInfo.draw = true;
+            SS.justExportedInfo.pt = origin;
+            SS.justExportedInfo.u = u;
+            SS.justExportedInfo.v = v;
+            InvalidateGraphics();
+        }
     }
 
     edges.Clear();
