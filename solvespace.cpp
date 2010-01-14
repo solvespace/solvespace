@@ -94,6 +94,11 @@ void SolveSpace::Init(char *cmdLine) {
     exportCanvas.height = CnfThawFloat(100.0f, "ExportCanvas_Height");
     exportCanvas.dx     = CnfThawFloat(  5.0f, "ExportCanvas_Dx");
     exportCanvas.dy     = CnfThawFloat(  5.0f, "ExportCanvas_Dy");
+    // Extra parameters when exporting G code
+    gCode.depth         = CnfThawFloat(10.0f, "GCode_Depth");
+    gCode.passes        = CnfThawDWORD(1, "GCode_Passes");
+    gCode.feed          = CnfThawFloat(10.0f, "GCode_Feed");
+    gCode.plungeFeed    = CnfThawFloat(10.0f, "GCode_PlungeFeed");
     // Show toolbar in the graphics window
     showToolbar = CnfThawDWORD(1, "ShowToolbar");
     // Recent files menus
@@ -184,6 +189,11 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportCanvas.height, "ExportCanvas_Height");
     CnfFreezeFloat(exportCanvas.dx,     "ExportCanvas_Dx");
     CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
+     // Extra parameters when exporting G code
+    CnfFreezeFloat(gCode.depth,         "GCode_Depth");
+    CnfFreezeDWORD(gCode.passes,        "GCode_Passes");
+    CnfFreezeFloat(gCode.feed,          "GCode_Feed");
+    CnfFreezeFloat(gCode.plungeFeed,    "GCode_PlungeFeed");
     // Show toolbar in the graphics window
     CnfFreezeDWORD(showToolbar, "ShowToolbar");
 
@@ -421,6 +431,19 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
+
+            // If the user is exporting something where it would be
+            // inappropriate to include the constraints, then warn.
+            if(SS.GW.showConstraints &&
+                (StringEndsIn(exportFile, ".txt") ||
+                 fabs(SS.exportOffset) > LENGTH_EPS))
+            {
+                Message("Constraints are currently shown, and will be exported "
+                        "in the toolpath. This is probably not what you want; "
+                        "hide them by clicking the link at the top of the "
+                        "text window.");
+            }
+
             SS.ExportViewOrWireframeTo(exportFile, false); 
             break;
         }

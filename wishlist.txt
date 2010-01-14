@@ -1,3 +1,6 @@
+better Error() and Message() dialog boxes
+lock point where dragged constraint
+projected and signed distance constraints
 
 -----
 better level of detail

@@ -85,43 +85,47 @@ public:
     static const int EDIT_GROUP_NAME            = 2;
     static const int EDIT_GROUP_SCALE           = 3;
     // For the configuraiton screen
-    static const int EDIT_LIGHT_DIRECTION       = 10;
-    static const int EDIT_LIGHT_INTENSITY       = 11;
-    static const int EDIT_COLOR                 = 12;
-    static const int EDIT_CHORD_TOLERANCE       = 13;
-    static const int EDIT_MAX_SEGMENTS          = 14;
-    static const int EDIT_CAMERA_TANGENT        = 15;
-    static const int EDIT_GRID_SPACING          = 16;
-    static const int EDIT_EXPORT_SCALE          = 17;
-    static const int EDIT_EXPORT_OFFSET         = 18;
-    static const int EDIT_CANVAS_SIZE           = 19;
+    static const int EDIT_LIGHT_DIRECTION       = 100;
+    static const int EDIT_LIGHT_INTENSITY       = 101;
+    static const int EDIT_COLOR                 = 102;
+    static const int EDIT_CHORD_TOLERANCE       = 103;
+    static const int EDIT_MAX_SEGMENTS          = 104;
+    static const int EDIT_CAMERA_TANGENT        = 105;
+    static const int EDIT_GRID_SPACING          = 106;
+    static const int EDIT_EXPORT_SCALE          = 107;
+    static const int EDIT_EXPORT_OFFSET         = 108;
+    static const int EDIT_CANVAS_SIZE           = 109;
+    static const int EDIT_G_CODE_DEPTH          = 110;
+    static const int EDIT_G_CODE_PASSES         = 111;
+    static const int EDIT_G_CODE_FEED           = 112;
+    static const int EDIT_G_CODE_PLUNGE_FEED    = 113;
     // For the helical sweep
-    static const int EDIT_HELIX_TURNS           = 20;
-    static const int EDIT_HELIX_PITCH           = 21;
-    static const int EDIT_HELIX_DRADIUS         = 22;
+    static const int EDIT_HELIX_TURNS           = 200;
+    static const int EDIT_HELIX_PITCH           = 201;
+    static const int EDIT_HELIX_DRADIUS         = 202;
     // For TTF text
-    static const int EDIT_TTF_TEXT              = 30;
+    static const int EDIT_TTF_TEXT              = 300;
     // For the step dimension screen
-    static const int EDIT_STEP_DIM_FINISH       = 40;
-    static const int EDIT_STEP_DIM_STEPS        = 41;
+    static const int EDIT_STEP_DIM_FINISH       = 400;
+    static const int EDIT_STEP_DIM_STEPS        = 401;
     // For the styles stuff
-    static const int EDIT_STYLE_WIDTH           = 50;
-    static const int EDIT_STYLE_TEXT_HEIGHT     = 51;
-    static const int EDIT_STYLE_TEXT_ANGLE      = 52;
-    static const int EDIT_STYLE_COLOR           = 53;
-    static const int EDIT_STYLE_FILL_COLOR      = 54;
-    static const int EDIT_STYLE_NAME            = 55;
-    static const int EDIT_BACKGROUND_COLOR      = 56;
-    static const int EDIT_BACKGROUND_IMG_SCALE  = 57;
+    static const int EDIT_STYLE_WIDTH           = 500;
+    static const int EDIT_STYLE_TEXT_HEIGHT     = 501;
+    static const int EDIT_STYLE_TEXT_ANGLE      = 502;
+    static const int EDIT_STYLE_COLOR           = 503;
+    static const int EDIT_STYLE_FILL_COLOR      = 504;
+    static const int EDIT_STYLE_NAME            = 505;
+    static const int EDIT_BACKGROUND_COLOR      = 506;
+    static const int EDIT_BACKGROUND_IMG_SCALE  = 507;
     // For paste transforming
-    static const int EDIT_PASTE_TIMES_REPEATED  = 60;
-    static const int EDIT_PASTE_ANGLE           = 61;
-    static const int EDIT_PASTE_SCALE           = 62;
+    static const int EDIT_PASTE_TIMES_REPEATED  = 600;
+    static const int EDIT_PASTE_ANGLE           = 601;
+    static const int EDIT_PASTE_SCALE           = 602;
     // For view
-    static const int EDIT_VIEW_SCALE            = 70;
-    static const int EDIT_VIEW_ORIGIN           = 71;
-    static const int EDIT_VIEW_PROJ_RIGHT       = 72;
-    static const int EDIT_VIEW_PROJ_UP          = 73;
+    static const int EDIT_VIEW_SCALE            = 700;
+    static const int EDIT_VIEW_ORIGIN           = 701;
+    static const int EDIT_VIEW_PROJ_RIGHT       = 702;
+    static const int EDIT_VIEW_PROJ_UP          = 703;
     struct {
         bool        showAgain;
         int         meaning;
@@ -219,6 +223,7 @@ public:
     static void ScreenChangeGridSpacing(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
+    static void ScreenChangeGCodeParameter(int link, DWORD v);
     static void ScreenChangeStyleName(int link, DWORD v);
     static void ScreenChangeStyleWidthOrTextHeight(int link, DWORD v);
     static void ScreenChangeStyleTextAngle(int link, DWORD v);

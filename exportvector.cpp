@@ -613,6 +613,70 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 }
 
 //-----------------------------------------------------------------------------
+// Routines for G Code output. Slightly complicated by our ability to generate
+// multiple passes, and to specify the feeds and depth; those parameters get
+// set in the configuration screen.
+//-----------------------------------------------------------------------------
+void GCodeFileWriter::StartFile(void) {
+    ZERO(&sel);
+}
+void GCodeFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
+                              bool filled, DWORD fillRgb)
+{
+}
+void GCodeFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
+                               bool filled, DWORD fillRgb)
+{
+}
+void GCodeFileWriter::Triangle(STriangle *tr) {
+}
+
+void GCodeFileWriter::Bezier(SBezier *sb) {
+    if(sb->deg == 1) {
+        sel.AddEdge(sb->ctrl[0], sb->ctrl[1]);
+    } else {
+        BezierAsPwl(sb);
+    }
+}
+
+void GCodeFileWriter::FinishAndCloseFile(void) {
+    SPolygon sp;
+    ZERO(&sp);
+    sel.AssemblePolygon(&sp, NULL);
+
+    int i;
+    for(i = 0; i < SS.gCode.passes; i++) {
+        double depth = (SS.gCode.depth / SS.gCode.passes)*(i+1);
+
+        SContour *sc;
+        for(sc = sp.l.First(); sc; sc = sp.l.NextAfter(sc)) {
+            if(sc->l.n < 2) continue;
+
+            SPoint *pt = sc->l.First();
+            fprintf(f, "G00 X%s Y%s\r\n",
+                    SS.MmToString(pt->p.x), SS.MmToString(pt->p.y));
+            fprintf(f, "G01 Z%s F%s\r\n",
+                SS.MmToString(depth), SS.MmToString(SS.gCode.plungeFeed));
+
+            pt = sc->l.NextAfter(pt);
+            for(; pt; pt = sc->l.NextAfter(pt)) {
+                fprintf(f, "G01 X%s Y%s F%s\r\n",
+                        SS.MmToString(pt->p.x), SS.MmToString(pt->p.y),
+                        SS.MmToString(SS.gCode.feed));
+            }
+            // Move up to a clearance plane 5mm above the work.
+            fprintf(f, "G00 Z%s\r\n", 
+                SS.MmToString(SS.gCode.depth < 0 ? +5 : -5));
+        }
+    }
+
+    sp.Clear();
+    sel.Clear();
+    fclose(f);
+}
+
+
+//-----------------------------------------------------------------------------
 // Routine for STEP output; just a wrapper around the general STEP stuff that
 // can also be used for surfaces or 3d curves.
 //-----------------------------------------------------------------------------

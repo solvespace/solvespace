@@ -410,9 +410,13 @@ VectorFileWriter *VectorFileWriter::ForFile(char *filename) {
     } else if(StringEndsIn(filename, ".step")||StringEndsIn(filename, ".stp")) {
         static Step2dFileWriter Step2dWriter;
         ret = &Step2dWriter;
+    } else if(StringEndsIn(filename, ".txt")) {
+        static GCodeFileWriter GCodeWriter;
+        ret = &GCodeWriter;
     } else {
         Error("Can't identify output file type from file extension of "
-        "filename '%s'; try .step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, "
+        "filename '%s'; try "
+        ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, "
         ".eps, or .ps.",
             filename);
         return NULL;

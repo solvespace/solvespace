@@ -127,6 +127,37 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
     SS.TW.edit.i = v;
 }
 
+void TextWindow::ScreenChangeGCodeParameter(int link, DWORD v) {
+    char buf[1024] = "";
+    int row = 95;
+    switch(link) {
+        case 'd':
+            SS.TW.edit.meaning = EDIT_G_CODE_DEPTH;
+            strcpy(buf, SS.MmToString(SS.gCode.depth));
+            row += 0;
+            break;
+
+        case 's':
+            SS.TW.edit.meaning = EDIT_G_CODE_PASSES;
+            sprintf(buf, "%d", SS.gCode.passes);
+            row += 2;
+            break;
+
+        case 'F':
+            SS.TW.edit.meaning = EDIT_G_CODE_FEED;
+            strcpy(buf, SS.MmToString(SS.gCode.feed));
+            row += 4;
+            break;
+
+        case 'P':
+            SS.TW.edit.meaning = EDIT_G_CODE_PLUNGE_FEED;
+            strcpy(buf, SS.MmToString(SS.gCode.plungeFeed));
+            row += 6;
+            break;
+    }
+    ShowTextEditControl(row, 14, buf);
+}
+
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft material   color-(r, g, b)");
@@ -259,6 +290,17 @@ void TextWindow::ShowConfiguration(void) {
         (ccc ? "" : "yes"), (ccc ? "yes" : ""),
         &ScreenChangeCheckClosedContour,
         (!ccc ? "" : "no"), (!ccc ? "no" : ""));
+
+    Printf(false, "");
+    Printf(false, "%Ft exported g code parameters");
+    Printf(false, "%Ba%Ft   depth:     %Fd%s %Fl%Ld%f[change]%E",
+        SS.MmToString(SS.gCode.depth), &ScreenChangeGCodeParameter);
+    Printf(false, "%Bd%Ft   passes:    %Fd%d %Fl%Ls%f[change]%E",
+        SS.gCode.passes, &ScreenChangeGCodeParameter);
+    Printf(false, "%Ba%Ft   feed:      %Fd%s %Fl%LF%f[change]%E",
+        SS.MmToString(SS.gCode.feed), &ScreenChangeGCodeParameter);
+    Printf(false, "%Bd%Ft   plunge fd: %Fd%s %Fl%LP%f[change]%E",
+        SS.MmToString(SS.gCode.plungeFeed), &ScreenChangeGCodeParameter);
     
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));
@@ -357,6 +399,27 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
                 case 12: SS.exportCanvas.dx     = d;    break;
                 case 13: SS.exportCanvas.dy     = d;    break;
             }
+            break;
+        }
+        case EDIT_G_CODE_DEPTH: {
+            Expr *e = Expr::From(s, true);
+            if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
+            break;
+        }
+        case EDIT_G_CODE_PASSES: {
+            Expr *e = Expr::From(s, true);
+            if(e) SS.gCode.passes = (int)(e->Eval());
+            SS.gCode.passes = max(1, min(1000, SS.gCode.passes));
+            break;
+        }
+        case EDIT_G_CODE_FEED: {
+            Expr *e = Expr::From(s, true);
+            if(e) SS.gCode.feed = (float)SS.ExprToMm(e);
+            break;
+        }
+        case EDIT_G_CODE_PLUNGE_FEED: {
+            Expr *e = Expr::From(s, true);
+            if(e) SS.gCode.plungeFeed = (float)SS.ExprToMm(e);
             break;
         }
 

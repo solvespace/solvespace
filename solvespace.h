@@ -100,6 +100,7 @@ int SaveFileYesNoCancel(void);
                     "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
                     "DXF File (*.dxf)\0*.dxf\0" \
                     "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
+                    "G Code (*.txt)\0*.txt\0" \
                     "All Files (*)\0*\0\0"
 #define VEC_EXT "pdf"
 // 3d vector (wireframe lines and curves) format
@@ -506,6 +507,18 @@ class Step2dFileWriter : public VectorFileWriter {
     void StartFile(void);
     void FinishAndCloseFile(void);
 };
+class GCodeFileWriter : public VectorFileWriter {
+public:
+    SEdgeList sel;
+    void StartPath( DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void FinishPath(DWORD strokeRgb, double lineWidth,
+                    bool filled, DWORD fillRgb);
+    void Triangle(STriangle *tr);
+    void Bezier(SBezier *sb);
+    void StartFile(void);
+    void FinishAndCloseFile(void);
+};
 
 #ifdef LIBRARY
 #   define ENTITY EntityBase
@@ -600,6 +613,12 @@ public:
         float   dx;
         float   dy;
     }       exportCanvas;
+    struct {
+        float   depth;
+        int     passes;
+        float   feed;
+        float   plungeFeed;
+    }       gCode;
 
     typedef enum {
         UNIT_MM = 0,
