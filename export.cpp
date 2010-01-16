@@ -56,12 +56,12 @@ void SolveSpace::ExportSectionTo(char *filename) {
         u = ut.WithMagnitude(1);
         v = (n.Cross(u)).WithMagnitude(1);
     } else {
-        Error("Bad selection for export section. Please select:\r\n\r\n"
+        Error("Bad selection for export section. Please select:\n\n"
               "    * nothing, with an active workplane "
-                        "(workplane is section plane)\r\n"
-              "    * a face (section plane through face)\r\n"
+                        "(workplane is section plane)\n"
+              "    * a face (section plane through face)\n"
               "    * a point and two line segments "
-                        "(plane through point and parallel to lines)\r\n");
+                        "(plane through point and parallel to lines)\n");
         return;
     }
     SS.GW.ClearSelection();

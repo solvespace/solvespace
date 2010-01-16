@@ -284,7 +284,7 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
     if(shell->surface.n == 0) {
         Error("The model does not contain any surfaces to export.%s",
             g->runningMesh.l.n > 0 ? 
-                "\r\n\r\nThe model does contain triangles from a mesh, but "
+                "\n\nThe model does contain triangles from a mesh, but "
                 "a triangle mesh cannot be exported as a STEP file. Try "
                 "File -> Export Mesh... instead." : "");
         return;

@@ -180,7 +180,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
 
 void GraphicsWindow::MenuClipboard(int id) {
     if(id != MNU_DELETE && !SS.GW.LockedInWorkplane()) {
-        Error("Cut, paste, and copy work only in a workplane.\r\n\r\n"
+        Error("Cut, paste, and copy work only in a workplane.\n\n"
               "Select one with Sketch -> In Workplane.");
         return;
     }

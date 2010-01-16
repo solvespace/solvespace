@@ -139,13 +139,13 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.entity[0];
             } else {
                 Error("Bad selection for distance / diameter constraint. This "
-                      "constraint can apply to:\r\n\r\n"
-                      "    * two points (distance between points)\r\n"
-                      "    * a line segment (length)\r\n"
-                      "    * a workplane and a point (minimum distance)\r\n"
-                      "    * a line segment and a point (minimum distance)\r\n"
-                      "    * a plane face and a point (minimum distance)\r\n"
-                      "    * a circle or an arc (diameter)\r\n");
+                      "constraint can apply to:\n\n"
+                      "    * two points (distance between points)\n"
+                      "    * a line segment (length)\n"
+                      "    * a workplane and a point (minimum distance)\n"
+                      "    * a line segment and a point (minimum distance)\n"
+                      "    * a plane face and a point (minimum distance)\n"
+                      "    * a circle or an arc (diameter)\n");
                 return;
             }
             if(c.type == PT_PT_DISTANCE) {
@@ -187,12 +187,12 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.face[0];
             } else {
                 Error("Bad selection for on point / curve / plane constraint. "
-                      "This constraint can apply to:\r\n\r\n"
-                      "    * two points (points coincident)\r\n"
-                      "    * a point and a workplane (point in plane)\r\n"
-                      "    * a point and a line segment (point on line)\r\n"
-                      "    * a point and a circle or arc (point on curve)\r\n"
-                      "    * a point and a plane face (point on face)\r\n");
+                      "This constraint can apply to:\n\n"
+                      "    * two points (points coincident)\n"
+                      "    * a point and a workplane (point in plane)\n"
+                      "    * a point and a line segment (point on line)\n"
+                      "    * a point and a circle or arc (point on curve)\n"
+                      "    * a point and a plane face (point on face)\n");
                 return;
             }
             AddConstraint(&c);
@@ -249,21 +249,21 @@ void Constraint::MenuConstrain(int id) {
                 }
             } else {
                 Error("Bad selection for equal length / radius constraint. "
-                      "This constraint can apply to:\r\n\r\n"
-                      "    * two line segments (equal length)\r\n"
+                      "This constraint can apply to:\n\n"
+                      "    * two line segments (equal length)\n"
                       "    * two line segments and two points "
-                              "(equal point-line distances)\r\n"
+                              "(equal point-line distances)\n"
                       "    * a line segment and two points "
-                              "(equal point-line distances)\r\n"
+                              "(equal point-line distances)\n"
                       "    * a line segment, and a point and line segment "
-                              "(point-line distance equals length)\r\n"
+                              "(point-line distance equals length)\n"
                       "    * four line segments or normals "
-                              "(equal angle between A,B and C,D)\r\n"
+                              "(equal angle between A,B and C,D)\n"
                       "    * three line segments or normals "
-                              "(equal angle between A,B and B,C)\r\n"
-                      "    * two circles or arcs (equal radius)\r\n"
+                              "(equal angle between A,B and B,C)\n"
+                      "    * two circles or arcs (equal radius)\n"
                       "    * a line segment and an arc "
-                              "(line segment length equals arc length)\r\n");
+                              "(line segment length equals arc length)\n");
                 return;
             }
             if(c.type == EQUAL_ANGLE) {
@@ -288,8 +288,8 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.entity[1];
             } else {
                 Error("Bad selection for length ratio constraint. This "
-                      "constraint can apply to:\r\n\r\n"
-                      "    * two line segments\r\n");
+                      "constraint can apply to:\n\n"
+                      "    * two line segments\n");
                 return;
             }
 
@@ -314,11 +314,11 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.entity[1-i];
             } else {
                 Error("Bad selection for at midpoint constraint. This "
-                      "constraint can apply to:\r\n\r\n"
+                      "constraint can apply to:\n\n"
                       "    * a line segment and a point "
-                            "(point at midpoint)\r\n"
+                            "(point at midpoint)\n"
                       "    * a line segment and a workplane "
-                            "(line's midpoint on plane)\r\n");
+                            "(line's midpoint on plane)\n");
                 return;
             }
             AddConstraint(&c);
@@ -365,13 +365,13 @@ void Constraint::MenuConstrain(int id) {
                 c.type = SYMMETRIC_LINE;
             } else {
                 Error("Bad selection for symmetric constraint. This constraint "
-                      "can apply to:\r\n\r\n"
+                      "can apply to:\n\n"
                       "    * two points or a line segment "
-                          "(symmetric about workplane's coordinate axis)\r\n"
+                          "(symmetric about workplane's coordinate axis)\n"
                       "    * line segment, and two points or a line segment "
-                          "(symmetric about line segment)\r\n"
+                          "(symmetric about line segment)\n"
                       "    * workplane, and two points or a line segment "
-                          "(symmetric about workplane)\r\n");
+                          "(symmetric about workplane)\n");
                 return;
             }
             if(c.type != 0) {
@@ -427,9 +427,9 @@ void Constraint::MenuConstrain(int id) {
                 hb = c.ptB = gs.point[1];
             } else {
                 Error("Bad selection for horizontal / vertical constraint. "
-                      "This constraint can apply to:\r\n\r\n"
-                      "    * two points\r\n"
-                      "    * a line segment\r\n");
+                      "This constraint can apply to:\n\n"
+                      "    * two points\n"
+                      "    * a line segment\n");
                 return;
             }
             if(id == GraphicsWindow::MNU_HORIZONTAL) {
@@ -448,8 +448,8 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.anyNormal[1];
             } else {
                 Error("Bad selection for same orientation constraint. This "
-                      "constraint can apply to:\r\n\r\n"
-                      "    * two normals\r\n");
+                      "constraint can apply to:\n\n"
+                      "    * two normals\n");
                 return;
             }
             SS.UndoRemember();
@@ -524,10 +524,10 @@ void Constraint::MenuConstrain(int id) {
                 c.valA = 0;
             } else {
                 Error("Bad selection for angle constraint. This constraint "
-                      "can apply to:\r\n\r\n"
-                      "    * two line segments\r\n"
-                      "    * a line segment and a normal\r\n"
-                      "    * two normals\r\n");
+                      "can apply to:\n\n"
+                      "    * two line segments\n"
+                      "    * a line segment and a normal\n"
+                      "    * two normals\n");
                 return;
             }
 
@@ -609,14 +609,14 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = line->h;
             } else {
                 Error("Bad selection for parallel / tangent constraint. This "
-                      "constraint can apply to:\r\n\r\n"
-                      "    * two line segments (parallel)\r\n"
-                      "    * a line segment and a normal (parallel)\r\n"
-                      "    * two normals (parallel)\r\n"
+                      "constraint can apply to:\n\n"
+                      "    * two line segments (parallel)\n"
+                      "    * a line segment and a normal (parallel)\n"
+                      "    * two normals (parallel)\n"
                       "    * a line segment and an arc, that share an endpoint "
-                             "(tangent)\r\n"
+                             "(tangent)\n"
                       "    * a line segment and a cubic bezier, that share an "
-                             "endpoint (tangent)\r\n");
+                             "endpoint (tangent)\n");
                 return;
             }
             AddConstraint(&c);
@@ -629,10 +629,10 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.vector[1];
             } else {
                 Error("Bad selection for perpendicular constraint. This "
-                      "constraint can apply to:\r\n\r\n"
-                      "    * two line segments\r\n"
-                      "    * a line segment and a normal\r\n"
-                      "    * two normals\r\n");
+                      "constraint can apply to:\n\n"
+                      "    * two line segments\n"
+                      "    * a line segment and a normal\n"
+                      "    * two normals\n");
                 return;
             }
             AddConstraint(&c);

@@ -541,15 +541,15 @@ void SolveSpace::MenuAnalyze(int id) {
                 "The mesh is watertight (okay, valid).";
 
             char cntMsg[1024];
-            sprintf(cntMsg, "\r\n\r\nThe model contains %d triangles, from "
+            sprintf(cntMsg, "\n\nThe model contains %d triangles, from "
                             "%d surfaces.",
                 g->displayMesh.l.n, g->runningShell.surface.n);
 
             if(SS.nakedEdges.l.n == 0) {
-                Message("%s\r\n\r\n%s\r\n\r\nZero problematic edges, good.%s",
+                Message("%s\n\n%s\n\nZero problematic edges, good.%s",
                     intersMsg, leaksMsg, cntMsg);
             } else {
-                Error("%s\r\n\r\n%s\r\n\r\n%d problematic edges, bad.%s",
+                Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
                     intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg);
             }
             break;
@@ -786,10 +786,10 @@ void SolveSpace::MenuHelp(int id) {
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is SolveSpace version 1.6.\r\n\r\n"
-                "For more information, see http://solvespace.com/\r\n\r\n"
-                "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
-                "Copyright 2008-2010 Useful Subset, LLC.\r\n"
+            Message("This is SolveSpace version 1.6.\n\n"
+                "For more information, see http://solvespace.com/\n\n"
+                "Built " __TIME__ " " __DATE__ ".\n\n"
+                "Copyright 2008-2010 Useful Subset, LLC.\n"
                 "All Rights Reserved.");
             break;
 

@@ -327,10 +327,10 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
             // be fine.
             Error("Additional sketch elements were deleted, because they "
                   "depend on the element that was just deleted explicitly. "
-                  "These include: \r\n"
-                  "     %d request%s\r\n"
-                  "     %d constraint%s\r\n"
-                  "     %d group%s\r\n\r\n"
+                  "These include: \n"
+                  "     %d request%s\n"
+                  "     %d constraint%s\n"
+                  "     %d group%s\n\n"
                   "Choose Edit -> Undo to undelete all elements.",
                     deleted.requests, deleted.requests == 1 ? "" : "s",
                     deleted.constraints, deleted.constraints == 1 ? "" : "s",

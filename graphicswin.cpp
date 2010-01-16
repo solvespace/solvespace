@@ -361,7 +361,7 @@ void GraphicsWindow::MenuView(int id) {
             SS.forceParallelProj = !SS.forceParallelProj;
             if(SS.cameraTangent < 1e-6) {
                 Error("The perspective factor is set to zero, so the view will "
-                      "always be a parallel projection.\r\n\r\n"
+                      "always be a parallel projection.\n\n"
                       "For a perspective projection, modify the perspective "
                       "factor in the configuration screen. A value around 0.3 "
                       "is typical.");
