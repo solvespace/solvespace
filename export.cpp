@@ -176,7 +176,7 @@ void SolveSpace::ExportViewOrWireframeTo(char *filename, bool wireframe) {
                                out);
         }
 
-        if(!out->HasCanvasSize()) {
+        if(out && !out->HasCanvasSize()) {
             // These file formats don't have a canvas size, so they just
             // get exported in the raw coordinate system. So indicate what
             // that was on-screen.

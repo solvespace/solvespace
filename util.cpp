@@ -126,6 +126,81 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 }
 
 //-----------------------------------------------------------------------------
+// Word-wrap the string for our message box appropriately, and then display
+// that string.
+//-----------------------------------------------------------------------------
+static void DoStringForMessageBox(char *str, va_list f, bool error)
+{
+    char inBuf[1024*50];
+    vsprintf(inBuf, str, f);
+
+    char outBuf[1024*50];
+    int i = 0, j = 0, len = 0, longestLen = 47;
+    int rows = 0, cols = 0;
+
+    // Count the width of the longest line that starts with spaces; those
+    // are list items, that should not be split in the middle.
+    bool listLine = false;
+    while(inBuf[i]) {
+        if(inBuf[i] == '\r') {
+            // ignore these
+        } else if(inBuf[i] == ' ' && len == 0) {
+            listLine = true;
+        } else if(inBuf[i] == '\n') {
+            if(listLine) longestLen = max(longestLen, len);
+            len = 0;
+        } else {
+            len++;
+        }
+        i++;
+    }
+    if(listLine) longestLen = max(longestLen, len);
+
+    // Word wrap according to our target line length longestLen.
+    len = 0;
+    i = 0;
+    while(inBuf[i]) {
+        if(inBuf[i] == '\r') {
+            // ignore these
+        } else if(inBuf[i] == '\n') {
+            outBuf[j++] = '\n';
+            if(len == 0) rows++;
+            len = 0;
+        } else if(inBuf[i] == ' ' && len > longestLen) {
+            outBuf[j++] = '\n';
+            len = 0;
+        } else {
+            outBuf[j++] = inBuf[i];
+            // Count rows when we draw the first character; so an empty
+            // row doesn't end up counting.
+            if(len == 0) rows++;
+            len++;
+        }
+        cols = max(cols, len);
+        i++;
+    }
+    outBuf[j++] = '\0';
+
+    // And then display the text with our actual longest line length.
+    DoMessageBox(outBuf, rows, cols, error);
+}
+void Error(char *str, ...)
+{
+    va_list f;
+    va_start(f, str);
+    DoStringForMessageBox(str, f, true);
+    va_end(f);
+}
+void Message(char *str, ...)
+{
+    va_list f;
+    va_start(f, str);
+    DoStringForMessageBox(str, f, false);
+    va_end(f);
+}
+
+
+//-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG
 // elements to the left of the diagonal element, and RIGHT_OF_DIAG elements to
 // the right (so that the total band width is LEFT_OF_DIAG + RIGHT_OF_DIAG + 1).

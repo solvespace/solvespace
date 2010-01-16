@@ -789,7 +789,8 @@ void SolveSpace::MenuHelp(int id) {
             Message("This is SolveSpace version 1.6.\r\n\r\n"
                 "For more information, see http://solvespace.com/\r\n\r\n"
                 "Built " __TIME__ " " __DATE__ ".\r\n\r\n"
-                "Copyright 2008-2010 Useful Subset, LLC. All Rights Reserved.");
+                "Copyright 2008-2010 Useful Subset, LLC.\r\n"
+                "All Rights Reserved.");
             break;
 
         case GraphicsWindow::MNU_LICENSE: {

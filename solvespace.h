@@ -152,8 +152,7 @@ void dbp(char *str, ...);
         CO((tri).a), CO((tri).b), CO((tri).c))
 
 void SetWindowTitle(char *str);
-void Message(char *str, ...);
-void Error(char *str, ...);
+void DoMessageBox(char *str, int rows, int cols, BOOL error);
 void SetTimerFor(int milliseconds);
 void ExitNow(void);
 
@@ -235,6 +234,8 @@ void MakePathRelative(char *base, char *path);
 void MakePathAbsolute(char *base, char *path);
 bool StringAllPrintable(char *str);
 bool StringEndsIn(char *str, char *ending);
+void Message(char *str, ...);
+void Error(char *str, ...);
 
 class System {
 public:

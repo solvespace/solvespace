@@ -58,42 +58,141 @@ HFONT FixedFont, LinkFont;
 // The 6-DOF input device.
 SiHdl SpaceNavigator = SI_NO_HANDLE;
 
-static void DoMessageBox(char *str, va_list f, BOOL error)
-{
-    char buf[1024*50];
-    vsprintf(buf, str, f);
+//-----------------------------------------------------------------------------
+// Routines to display message boxes on screen. Do our own, instead of using
+// MessageBox, because that is not consistent from version to version and 
+// there's word wrap problems.
+//-----------------------------------------------------------------------------
 
+HWND MessageWnd, OkButton;
+BOOL MessageDone;
+char *MessageString;
+
+static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
+    LPARAM lParam)
+{
+    switch (msg) {
+        case WM_COMMAND:
+            if((HWND)lParam == OkButton && wParam == BN_CLICKED) {
+                MessageDone = TRUE;
+            }
+            break;
+
+        case WM_CLOSE:
+        case WM_DESTROY:
+            MessageDone = TRUE;
+            break;
+
+        case WM_PAINT: {
+            PAINTSTRUCT ps;
+            HDC hdc = BeginPaint(hwnd, &ps);
+            int row = 0, col = 0, i;
+            SelectObject(hdc, FixedFont);
+            SetTextColor(hdc, RGB(0, 0, 0));
+            SetBkMode(hdc, TRANSPARENT);
+            for(i = 0; MessageString[i]; i++) {
+                if(MessageString[i] == '\n') {
+                    col = 0;
+                    row++;
+                } else {
+                    TextOut(hdc, col*TEXT_WIDTH + 10, row*TEXT_HEIGHT + 10, 
+                        &(MessageString[i]), 1);
+                    col++;
+                }
+            }
+            EndPaint(hwnd, &ps);
+            break;
+        }
+
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
+    }
+
+    return 1;
+}
+
+HWND CreateWindowClient(DWORD exStyle, char *className, char *windowName,
+    DWORD style, int x, int y, int width, int height, HWND parent,
+    HMENU menu, HINSTANCE instance, void *param)
+{
+    HWND h = CreateWindowEx(exStyle, className, windowName, style, x, y,
+        width, height, parent, menu, instance, param);
+
+    RECT r;
+    GetClientRect(h, &r);
+    width = width - (r.right - width);
+    height = height - (r.bottom - height);
+    
+    SetWindowPos(h, HWND_TOP, x, y, width, height, 0);
+
+    return h;
+}
+
+void DoMessageBox(char *str, int rows, int cols, BOOL error)
+{
     EnableWindow(GraphicsWnd, FALSE);
     EnableWindow(TextWnd, FALSE);
-
-    int flags;
-    if(error) {
-        flags = MB_OK | MB_ICONERROR;
-    } else {
-        flags = MB_OK | MB_ICONINFORMATION;
-    }
     HWND h = GetForegroundWindow();
-    MessageBox(h, buf, "SolveSpace", flags);
 
+    // Register the window class for our dialog.
+    WNDCLASSEX wc;
+    memset(&wc, 0, sizeof(wc));
+    wc.cbSize = sizeof(wc);
+    wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC;
+    wc.lpfnWndProc      = (WNDPROC)MessageProc;
+    wc.hInstance        = Instance;
+    wc.hbrBackground    = (HBRUSH)COLOR_BTNSHADOW;
+    wc.lpszClassName    = "MessageWnd";
+    wc.lpszMenuName     = NULL;
+    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+                            IMAGE_ICON, 32, 32, 0);
+    wc.hIconSm          = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+                            IMAGE_ICON, 16, 16, 0);
+    RegisterClassEx(&wc);
+
+    // Create the window.
+    MessageString = str;
+    RECT r;
+    GetWindowRect(GraphicsWnd, &r);
+    char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
+    int width = cols*TEXT_WIDTH + 20, height = rows*TEXT_HEIGHT + 60;
+    MessageWnd = CreateWindowClient(0, "MessageWnd", title,
+        WS_OVERLAPPED | WS_SYSMENU,
+        r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
+
+    OkButton = CreateWindowEx(0, WC_BUTTON, "OK",
+        WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
+        (width - 70)/2, rows*TEXT_HEIGHT + 20,
+        70, 25, MessageWnd, NULL, Instance, NULL); 
+    SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, TRUE);
+
+    ShowWindow(MessageWnd, TRUE);
+    SetFocus(OkButton);
+
+    MSG msg;
+    DWORD ret;
+    MessageDone = FALSE;
+    while((ret = GetMessage(&msg, NULL, 0, 0)) && !MessageDone) {
+        if((msg.message == WM_KEYDOWN &&
+               (msg.wParam == VK_RETURN ||
+                msg.wParam == VK_ESCAPE)) ||
+            (msg.message == WM_KEYUP &&
+               (msg.wParam == VK_SPACE)))
+        {
+            MessageDone = TRUE;
+            break;
+        }
+
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+    
+    MessageString = NULL;
     EnableWindow(TextWnd, TRUE);
     EnableWindow(GraphicsWnd, TRUE);
     SetForegroundWindow(GraphicsWnd);
-}
-
-void Error(char *str, ...)
-{
-    va_list f;
-    va_start(f, str);
-    DoMessageBox(str, f, TRUE);
-    va_end(f);
-}
-
-void Message(char *str, ...)
-{
-    va_list f;
-    va_start(f, str);
-    DoMessageBox(str, f, FALSE);
-    va_end(f);
+    DestroyWindow(MessageWnd);
 }
 
 void AddContextMenuItem(char *label, int id)
