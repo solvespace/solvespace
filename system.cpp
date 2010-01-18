@@ -1,7 +1,15 @@
 #include "solvespace.h"
 
+// This tolerance is used to determine whether two (linearized) constraints
+// are linearly dependent. If this is too small, then we will attempt to
+// solve truly inconsistent systems and fail. But if it's too large, then
+// we will give up on legitimate systems like a skinny right angle triangle by
+// its hypotenuse and long side.
 const double System::RANK_MAG_TOLERANCE = 1e-4;
-const double System::CONVERGE_TOLERANCE = 1e-10;
+
+// The solver will converge all unknowns to within this tolerance. This must
+// always be much less than LENGTH_EPS, and in practice should be much less.
+const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
 
 bool System::WriteJacobian(int tag) {
     int a, i, j;
