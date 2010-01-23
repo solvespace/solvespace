@@ -311,6 +311,7 @@ static Slvs_Entity Slvs_MakeCubic(Slvs_hEntity h, Slvs_hGroup group,
 }
 static Slvs_Entity Slvs_MakeArcOfCircle(Slvs_hEntity h, Slvs_hGroup group,
                                         Slvs_hEntity wrkpl,
+                                        Slvs_hEntity normal,
                                         Slvs_hEntity center,
                                         Slvs_hEntity start, Slvs_hEntity end)
 {
@@ -320,6 +321,7 @@ static Slvs_Entity Slvs_MakeArcOfCircle(Slvs_hEntity h, Slvs_hGroup group,
     r.group = group;
     r.type = SLVS_E_ARC_OF_CIRCLE;
     r.wrkpl = wrkpl;
+    r.normal = normal;
     r.point[0] = center;
     r.point[1] = start;
     r.point[2] = end;

@@ -139,7 +139,7 @@ void Example2d(void)
 
     // And arc, centered at point 303, starting at point 304, ending at
     // point 305.
-    sys.entity[sys.entities++] = Slvs_MakeArcOfCircle(401, g, 200,
+    sys.entity[sys.entities++] = Slvs_MakeArcOfCircle(401, g, 200, 102,
                                     303, 304, 305);
 
     // Now one more point, and a distance
