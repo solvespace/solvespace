@@ -10,6 +10,10 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     // Nothing to do for now.
 }
 
+void DoMessageBox(char *str, int rows, int cols, BOOL error)
+{
+}
+
 extern "C" {
 
 void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
