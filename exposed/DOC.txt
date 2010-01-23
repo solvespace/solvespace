@@ -232,6 +232,10 @@ SLVS_E_ARC_OF_CIRCLE
         point[1]        begining of the arc
         point[2]        end of the arc
 
+    and its normal
+
+        normal          identical to the normal of the workplane
+
     The arc runs counter-clockwise from its beginning to its end (with
     the workplane's normal pointing owards the viewer). If the begining
     and end of the arc are coincident, then the arc is considered to
