@@ -1,15 +1,15 @@
 replace show/hide links with icons?
 lock point where dragged constraint
 projected and signed distance constraints
+rounding, as a special group
+associative entities from solid model, as a special group
 
 -----
 better level of detail
-associative entities from solid model, as a special group
 some kind of import
 faster triangulation
 loop detection
 IGES export
 incremental regen of entities
-rounding, as a special group
 
 

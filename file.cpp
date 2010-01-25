@@ -464,6 +464,10 @@ bool SolveSpace::LoadFromFile(char *filename) {
     if(fileLoadError) {
         Error("Unrecognized data in file. This file may be corrupt, or "
               "from a new version of the program.");
+        // At least leave the program in a non-crashing state.
+        if(SK.group.n == 0) {
+            NewFile();
+        }
     }
 
     return true;
