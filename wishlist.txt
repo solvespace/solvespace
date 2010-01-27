@@ -1,6 +1,6 @@
 replace show/hide links with icons?
 lock point where dragged constraint
-projected and signed distance constraints
+remove toolbar icons for sketch in 3d, add View -> Align to Workplane
 rounding, as a special group
 associative entities from solid model, as a special group
 

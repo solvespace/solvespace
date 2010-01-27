@@ -6,6 +6,7 @@ bool Constraint::HasLabel(void) {
         case PT_PLANE_DISTANCE:
         case PT_FACE_DISTANCE:
         case PT_PT_DISTANCE:
+        case PROJ_PT_DISTANCE:
         case DIAMETER:
         case LENGTH_RATIO:
         case ANGLE:
@@ -137,12 +138,16 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     }
 }
 
-void Constraint::DoProjectedPoint(Vector *r) {
-    Vector p = r->ProjectInto(workplane);
+void Constraint::StippledLine(Vector a, Vector b) {
     glLineStipple(4, 0x5555);
     glEnable(GL_LINE_STIPPLE);
-    LineDrawOrGetDistance(p, *r);
+    LineDrawOrGetDistance(a, b);
     glDisable(GL_LINE_STIPPLE);
+}
+
+void Constraint::DoProjectedPoint(Vector *r) {
+    Vector p = r->ProjectInto(workplane);
+    StippledLine(p, *r);
     *r = p;
 }
 
@@ -417,6 +422,25 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
 
             DoLineWithArrows(ref, ap, bp, false);
+            DoLabel(ref, labelPos, gr, gu);
+            break;
+        }
+
+        case PROJ_PT_DISTANCE: {
+            Vector ap = SK.GetEntity(ptA)->PointGetNum(),
+                   bp = SK.GetEntity(ptB)->PointGetNum(),
+                   dp = (bp.Minus(ap)),
+                   pp = SK.GetEntity(entityA)->VectorGetNum();
+
+            Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
+
+            pp = pp.WithMagnitude(1);
+            double d = dp.Dot(pp);
+            Vector bpp = ap.Plus(pp.ScaledBy(d));
+            StippledLine(ap, bpp);
+            StippledLine(bp, bpp);
+
+            DoLineWithArrows(ref, ap, bpp, false);
             DoLabel(ref, labelPos, gr, gu);
             break;
         }

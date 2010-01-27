@@ -1154,6 +1154,7 @@ void GraphicsWindow::EditControlDone(char *s) {
         SS.UndoRemember();
 
         switch(c->type) {
+            case Constraint::PROJ_PT_DISTANCE:
             case Constraint::PT_LINE_DISTANCE:
             case Constraint::PT_FACE_DISTANCE:
             case Constraint::PT_PLANE_DISTANCE: {

@@ -189,6 +189,18 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
             break;
 
+        case PROJ_PT_DISTANCE: {
+            ExprVector pA = SK.GetEntity(ptA)->PointGetExprs(),
+                       pB = SK.GetEntity(ptB)->PointGetExprs(),
+                       dp = pB.Minus(pA);
+
+            ExprVector pp = SK.GetEntity(entityA)->VectorGetExprs();
+            pp = pp.WithMagnitude(Expr::From(1.0));
+
+            AddEq(l, (dp.Dot(pp))->Minus(exA), 0);
+            break;
+        }
+
         case PT_LINE_DISTANCE:
             AddEq(l,
                 PointLineDistance(workplane, ptA, entityA)->Minus(exA), 0);

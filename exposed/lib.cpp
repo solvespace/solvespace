@@ -164,6 +164,7 @@ case SLVS_C_PERPENDICULAR:      t = Constraint::PERPENDICULAR; break;
 case SLVS_C_ARC_LINE_TANGENT:   t = Constraint::ARC_LINE_TANGENT; break;
 case SLVS_C_CUBIC_LINE_TANGENT: t = Constraint::CUBIC_LINE_TANGENT; break;
 case SLVS_C_EQUAL_RADIUS:       t = Constraint::EQUAL_RADIUS; break;
+case SLVS_C_PROJ_PT_DISTANCE:   t = Constraint::PROJ_PT_DISTANCE; break;
 
 default: dbp("bad constraint type %d", sc->type); return;
         }

@@ -98,6 +98,7 @@ typedef struct {
 #define SLVS_C_ARC_LINE_TANGENT         100027
 #define SLVS_C_CUBIC_LINE_TANGENT       100028
 #define SLVS_C_EQUAL_RADIUS             100029
+#define SLVS_C_PROJ_PT_DISTANCE         100030
 
 typedef struct {
     Slvs_hConstraint    h;

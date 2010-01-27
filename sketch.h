@@ -518,6 +518,7 @@ public:
     static const int PT_PLANE_DISTANCE  =  31;
     static const int PT_LINE_DISTANCE   =  32;
     static const int PT_FACE_DISTANCE   =  33;
+    static const int PROJ_PT_DISTANCE   =  34;
     static const int PT_IN_PLANE        =  41;
     static const int PT_ON_LINE         =  42;
     static const int PT_ON_FACE         =  43;
@@ -609,6 +610,7 @@ public:
     void DoLineWithArrows(Vector ref, Vector a, Vector b, bool onlyOneExt);
     int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
+    void StippledLine(Vector a, Vector b);
     void DoProjectedPoint(Vector *p);
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);
     void DoEqualRadiusTicks(hEntity he);

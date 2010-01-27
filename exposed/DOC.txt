@@ -264,7 +264,13 @@ the wrkpl member are marked with no star.
 
 SLVS_C_PT_PT_DISTANCE*
 
-    The distance between points ptA and ptB is equal to valA.
+    The distance between points ptA and ptB is equal to valA. This is an
+    unsigned distance, so valA must always be positive.
+
+SLVS_C_PROJ_PT_DISTANCE
+
+    The distance between points ptA and ptB, as projected along the line
+    or normal entityA, is equal to valA. This is a signed distance.
 
 SLVS_C_POINTS_COINCIDENT*
 

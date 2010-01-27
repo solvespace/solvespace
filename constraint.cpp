@@ -10,6 +10,7 @@ char *Constraint::DescriptionString(void) {
         case PT_LINE_DISTANCE:  s = "pt-line-distance"; break;
         case PT_PLANE_DISTANCE: s = "pt-plane-distance"; break;
         case PT_FACE_DISTANCE:  s = "pt-face-distance"; break;
+        case PROJ_PT_DISTANCE:  s = "proj-pt-pt-distance"; break;
         case PT_IN_PLANE:       s = "pt-in-plane"; break;
         case PT_ON_LINE:        s = "pt-on-line"; break;
         case PT_ON_FACE:        s = "pt-on-face"; break;
@@ -122,6 +123,11 @@ void Constraint::MenuConstrain(int id) {
                 Entity *e = SK.GetEntity(gs.entity[0]);
                 c.ptA = e->point[0];
                 c.ptB = e->point[1];
+            } else if(gs.vectors == 1 && gs.points == 2 && gs.n == 3) {
+                c.type = PROJ_PT_DISTANCE;
+                c.ptA = gs.point[0];
+                c.ptB = gs.point[1];
+                c.entityA = gs.vector[0];
             } else if(gs.workplanes == 1 && gs.points == 1 && gs.n == 2) {
                 c.type = PT_PLANE_DISTANCE;
                 c.ptA = gs.point[0];
@@ -138,17 +144,19 @@ void Constraint::MenuConstrain(int id) {
                 c.type = DIAMETER;
                 c.entityA = gs.entity[0];
             } else {
-                Error("Bad selection for distance / diameter constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two points (distance between points)\n"
-                      "    * a line segment (length)\n"
-                      "    * a workplane and a point (minimum distance)\n"
-                      "    * a line segment and a point (minimum distance)\n"
-                      "    * a plane face and a point (minimum distance)\n"
-                      "    * a circle or an arc (diameter)\n");
+                Error(
+"Bad selection for distance / diameter constraint. This "
+"constraint can apply to:\n\n"
+"    * two points (distance between points)\n"
+"    * a line segment (length)\n"
+"    * two points and a line segment or normal (projected distance)\n"
+"    * a workplane and a point (minimum distance)\n"
+"    * a line segment and a point (minimum distance)\n"
+"    * a plane face and a point (minimum distance)\n"
+"    * a circle or an arc (diameter)\n");
                 return;
             }
-            if(c.type == PT_PT_DISTANCE) {
+            if(c.type == PT_PT_DISTANCE || c.type == PROJ_PT_DISTANCE) {
                 Vector n = SS.GW.projRight.Cross(SS.GW.projUp);
                 Vector a = SK.GetEntity(c.ptA)->PointGetNum();
                 Vector b = SK.GetEntity(c.ptB)->PointGetNum();
