@@ -224,6 +224,8 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     projUp = quatf.RotationV();
     offset = offsetf;
     InvalidateGraphics();
+    // If the view screen is open, then we need to refresh it.
+    SS.later.showTW = true;
 }
 
 void GraphicsWindow::HandlePointForZoomToFit(Vector p,

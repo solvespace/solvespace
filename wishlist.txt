@@ -1,10 +1,14 @@
-replace show/hide links with icons?
+replace show/hide links with icons
+add checked/unchecked checkbox and radio button
+fix bug with rotation in plane where green line stays displayed
+fix memory leak when switching between files
+area of sketch in a given workplane (easy, useful)
 lock point where dragged constraint
 remove toolbar icons for sketch in 3d, add View -> Align to Workplane
-rounding, as a special group
-associative entities from solid model, as a special group
 
 -----
+rounding, as a special group
+associative entities from solid model, as a special group
 better level of detail
 some kind of import
 faster triangulation
