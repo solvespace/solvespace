@@ -7,6 +7,27 @@ const hGroup Group::HGROUP_REFERENCES = { 1 };
 
 #define gs (SS.GW.gs)
 
+//-----------------------------------------------------------------------------
+// The group structure includes pointers to other dynamically-allocated
+// memory. This clears and frees them all.
+//-----------------------------------------------------------------------------
+void Group::Clear(void) {
+    polyLoops.Clear();
+    bezierLoops.Clear();
+    bezierOpens.Clear();
+    thisMesh.Clear();
+    runningMesh.Clear();
+    thisShell.Clear();
+    runningShell.Clear();
+    displayMesh.Clear();
+    displayEdges.Clear();
+    impMesh.Clear();
+    impShell.Clear();
+    impEntity.Clear();
+    // remap is the only one that doesn't get recreated when we regen
+    remap.Clear();
+}
+
 void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
     Param pa;
     memset(&pa, 0, sizeof(pa));

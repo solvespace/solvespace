@@ -6,6 +6,29 @@ static int StrStartsWith(char *str, char *start) {
     return memcmp(str, start, strlen(start)) == 0;
 }
 
+//-----------------------------------------------------------------------------
+// Clear and free all the dynamic memory associated with our currently-loaded
+// sketch. This does not leave the program in an acceptable state (with the
+// references created, and so on), so anyone calling this must fix that later.
+//-----------------------------------------------------------------------------
+void SolveSpace::ClearExisting(void) {
+    UndoClearStack(&redo);
+    UndoClearStack(&undo);
+
+    Group *g;
+    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+        g->Clear();
+    }
+
+    SK.constraint.Clear();
+    SK.request.Clear();
+    SK.group.Clear();
+    SK.style.Clear();
+
+    SK.entity.Clear();
+    SK.param.Clear();
+}
+
 hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
     Group g;
     ZERO(&g);
@@ -24,16 +47,7 @@ hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
 }
 
 void SolveSpace::NewFile(void) {
-    UndoClearStack(&redo);
-    UndoClearStack(&undo);
-
-    SK.constraint.Clear();
-    SK.request.Clear();
-    SK.group.Clear();
-    SK.style.Clear();
-
-    SK.entity.Clear();
-    SK.param.Clear();
+    ClearExisting();
 
     // Our initial group, that contains the references.
     Group g;
@@ -393,15 +407,8 @@ bool SolveSpace::LoadFromFile(char *filename) {
         return false;
     }
 
-    UndoClearStack(&redo);
-    UndoClearStack(&undo);
+    ClearExisting();
 
-    SK.constraint.Clear();
-    SK.request.Clear();
-    SK.group.Clear();
-    SK.entity.Clear();
-    SK.param.Clear();
-    SK.style.Clear();
     memset(&sv, 0, sizeof(sv));
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
 

@@ -679,6 +679,7 @@ public:
     bool OkayToStartNewFile(void);
     hGroup CreateDefaultDrawingGroup(void);
     void UpdateWindowTitle(void);
+    void ClearExisting(void);
     void NewFile(void);
     bool SaveToFile(char *filename);
     bool LoadFromFile(char *filename);

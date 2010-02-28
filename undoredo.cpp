@@ -93,23 +93,10 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
 
     UndoState *ut = &(uk->d[uk->write]);
 
-    int i;
     // Free everything in the main copy of the program before replacing it
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
-        g->polyLoops.Clear();
-        g->bezierLoops.Clear();
-        g->bezierOpens.Clear();
-        g->thisMesh.Clear();
-        g->runningMesh.Clear();
-        g->thisShell.Clear();
-        g->runningShell.Clear();
-        g->displayMesh.Clear();
-        g->displayEdges.Clear();
-        g->remap.Clear();
-        g->impMesh.Clear();
-        g->impShell.Clear();
-        g->impEntity.Clear();
+    Group *g;
+    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+        g->Clear();
     }
     SK.group.Clear();
     SK.request.Clear();
