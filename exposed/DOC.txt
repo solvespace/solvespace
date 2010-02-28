@@ -349,7 +349,7 @@ SLVS_C_SYMMETRIC_VERT**
     The points ptA and ptB are symmetric about the horizontal or vertical
     axis of the specified workplane.
 
-SLVS_C_SYMMETRIC_LINE*
+SLVS_C_SYMMETRIC_LINE**
 
     The points ptA and ptB are symmetric about the line entityA.
 
