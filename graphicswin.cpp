@@ -120,6 +120,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Analyze",                            0,                          NULL  },
 { 1, "Measure &Volume\tCtrl+Shift+V",       MNU_VOLUME,         'V'|S|C,mAna  },
+{ 1, "Measure &Area\tCtrl+Shift+A",         MNU_AREA,           'A'|S|C,mAna  },
 { 1, "Show &Interfering Parts\tCtrl+Shift+I", MNU_INTERFERENCE, 'I'|S|C,mAna  },
 { 1, "Show &Naked Edges\tCtrl+Shift+N",     MNU_NAKED_EDGES,    'N'|S|C,mAna  },
 { 1, NULL,                                  0,                          NULL  },
@@ -631,6 +632,12 @@ void GraphicsWindow::MenuEdit(int id) {
             HideTextEditControl();
             SS.nakedEdges.Clear();
             SS.justExportedInfo.draw = false;
+            // This clears the marks drawn to indicate which points are
+            // still free to drag.
+            Param *p;
+            for(p = SK.param.First(); p; p = SK.param.NextAfter(p)) {
+                p->free = false;
+            }
             break;
 
         case MNU_SELECT_ALL: {

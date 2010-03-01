@@ -675,23 +675,6 @@ void TextWindow::ShowStepDimension(void) {
 }
 
 //-----------------------------------------------------------------------------
-// A report of the volume of the mesh. No interaction, output-only.
-//-----------------------------------------------------------------------------
-void TextWindow::ShowMeshVolume(void) {
-    Printf(true, "%FtMESH VOLUME");
-
-    Printf(true,  "   %3 %s^3",
-        shown.volume / pow(SS.MmPerUnit(), 3),
-        SS.UnitName());
-
-    if(SS.viewUnits == SolveSpace::UNIT_MM) {
-        Printf(false, "   %2 mL", shown.volume/(10*10*10));
-    }
-
-    Printf(true, "%Fl%Ll%f(back)%E", &ScreenHome);
-}
-
-//-----------------------------------------------------------------------------
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
 void TextWindow::EditControlDone(char *s) {

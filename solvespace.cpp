@@ -630,9 +630,49 @@ void SolveSpace::MenuAnalyze(int id) {
 
                 vol += integral;
             }
-            SS.TW.shown.volume = vol;
-            SS.TW.GoToScreen(TextWindow::SCREEN_MESH_VOLUME);
-            SS.later.showTW = true;
+
+            char msg[1024];
+            sprintf(msg, "The volume of the solid model is:\n\n"
+                         "    %.3f %s^3",
+                vol / pow(SS.MmPerUnit(), 3),
+                SS.UnitName());
+
+            if(SS.viewUnits == SolveSpace::UNIT_MM) {
+                sprintf(msg+strlen(msg), "\n    %.2f mL", vol/(10*10*10));
+            }
+            strcpy(msg+strlen(msg),
+                "\n\nCurved surfaces have been approximated as triangles.\n"
+                "This introduces error, typically of around 1%.");
+            Message("%s", msg);
+            break;
+        }
+
+        case GraphicsWindow::MNU_AREA: {
+            Group *g = SK.GetGroup(SS.GW.activeGroup);
+            if(g->polyError.how != Group::POLY_GOOD) {
+                Error("This group does not contain a correctly-formed "
+                      "2d closed area. It is open, not coplanar, or self-"
+                      "intersecting.");
+                break;
+            }
+            SEdgeList sel;
+            ZERO(&sel);
+            g->polyLoops.MakeEdgesInto(&sel);
+            SPolygon sp;
+            ZERO(&sp);
+            sel.AssemblePolygon(&sp, NULL, true);
+            sp.normal = sp.ComputeNormal();
+            sp.FixContourDirections();
+            double area = sp.SignedArea();
+            double scale = SS.MmPerUnit();
+            Message("The area of the region sketched in this group is:\n\n"
+                    "    %.3f %s^2\n\n"
+                    "Curves have been approximated as piecewise linear.\n"
+                    "This introduces error, typically of around 1%%.",
+                area / (scale*scale),
+                SS.UnitName());
+            sel.Clear();
+            sp.Clear();
             break;
         }
 

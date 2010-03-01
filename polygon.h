@@ -99,6 +99,7 @@ public:
     void MakeEdgesInto(SEdgeList *el);
     void Reverse(void);
     Vector ComputeNormal(void);
+    double SignedAreaProjdToNormal(Vector n);
     bool IsClockwiseProjdToNormal(Vector n);
     bool ContainsPointProjdToNormal(Vector n, Vector p);
     void OffsetInto(SContour *dest, double r);
@@ -125,6 +126,7 @@ public:
     Vector ComputeNormal(void);
     void AddEmptyContour(void);
     int WindingNumberForPoint(Vector p);
+    double SignedArea(void);
     bool ContainsPoint(Vector p);
     void MakeEdgesInto(SEdgeList *el);
     void FixContourDirections(void);

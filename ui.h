@@ -51,11 +51,10 @@ public:
     static const int SCREEN_GROUP_SOLVE_INFO    = 2;
     static const int SCREEN_CONFIGURATION       = 3;
     static const int SCREEN_STEP_DIMENSION      = 4;
-    static const int SCREEN_MESH_VOLUME         = 5;
-    static const int SCREEN_LIST_OF_STYLES      = 6;
-    static const int SCREEN_STYLE_INFO          = 7;
-    static const int SCREEN_PASTE_TRANSFORMED   = 8;
-    static const int SCREEN_EDIT_VIEW           = 9;
+    static const int SCREEN_LIST_OF_STYLES      = 5;
+    static const int SCREEN_STYLE_INFO          = 6;
+    static const int SCREEN_PASTE_TRANSFORMED   = 7;
+    static const int SCREEN_EDIT_VIEW           = 8;
     typedef struct {
         int         screen;
 
@@ -74,8 +73,6 @@ public:
             Vector      origin;
             double      scale;
         }           paste;
-        
-        double      volume;
     } ShownState;
     ShownState shown;
 
@@ -149,7 +146,6 @@ public:
     void ShowListOfStyles(void);
     void ShowStyleInfo(void);
     void ShowStepDimension(void);
-    void ShowMeshVolume(void);
     void ShowPasteTransformed(void);
     void ShowEditView(void);
     // Special screen, based on selection
@@ -330,6 +326,7 @@ public:
         MNU_COMMENT,
         // Analyze
         MNU_VOLUME,
+        MNU_AREA,
         MNU_INTERFERENCE,
         MNU_NAKED_EDGES,
         MNU_SHOW_DOF,

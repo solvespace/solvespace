@@ -548,6 +548,10 @@ bool SContour::IsClockwiseProjdToNormal(Vector n) {
     // what we do then.
     if(n.Magnitude() < 0.01) return true;
 
+    return (SignedAreaProjdToNormal(n) < 0);
+}
+
+double SContour::SignedAreaProjdToNormal(Vector n) {
     // An arbitrary 2d coordinate system that has n as its normal
     Vector u = n.Normal(0);
     Vector v = n.Normal(1);
@@ -561,7 +565,7 @@ bool SContour::IsClockwiseProjdToNormal(Vector n) {
 
         area += ((v0 + v1)/2)*(u1 - u0);
     }
-    return (area < 0);
+    return area;
 }
 
 bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) {
@@ -619,6 +623,17 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) {
 Vector SPolygon::ComputeNormal(void) {
     if(l.n < 1) return Vector::From(0, 0, 0);
     return (l.elem[0]).ComputeNormal();
+}
+
+double SPolygon::SignedArea(void) {
+    SContour *sc;
+    double area = 0;
+    // This returns the true area only if the contours are all oriented
+    // correctly, with the holes backwards from the outer contours.
+    for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
+        area += sc->SignedAreaProjdToNormal(normal);
+    }
+    return area;
 }
 
 bool SPolygon::ContainsPoint(Vector p) {
