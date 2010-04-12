@@ -16,6 +16,7 @@ SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\textwin.obj \
            $(OBJDIR)\textscreens.obj \
            $(OBJDIR)\confscreen.obj \
+           $(OBJDIR)\describescreen.obj \
            $(OBJDIR)\graphicswin.obj \
            $(OBJDIR)\modify.obj \
            $(OBJDIR)\clipboard.obj \
