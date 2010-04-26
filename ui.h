@@ -5,6 +5,7 @@
 class TextWindow {
 public:
     static const int MAX_COLS = 100;
+    static const int MIN_COLS = 45;
     static const int MAX_ROWS = 2000;
 
 #ifndef RGB
@@ -24,6 +25,17 @@ public:
     static const Color fgColors[];
     static const Color bgColors[];
 
+    float bgColorTable[256*3];
+    float fgColorTable[256*3];
+
+    static const int CHAR_WIDTH     = 9;
+    static const int CHAR_HEIGHT    = 16;
+    static const int LINE_HEIGHT    = 20;
+    static const int LEFT_MARGIN    = 4;
+
+    int scrollPos;      // The scrollbar position, in half-row units
+    int halfRows;       // The height of our window, in half-row units
+
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
     static const int NOT_A_LINK = 0;
@@ -38,8 +50,15 @@ public:
     int top[MAX_ROWS]; // in half-line units, or -1 for unused
 
     int rows;
+
+    // These are called by the platform-specific code.
+    void Paint(int w, int h);
+    void MouseEvent(bool leftDown, double x, double y);
+    void MouseScroll(double x, double y, int delta);
+    void ScrollbarEvent(int newPos);
    
     void Init(void);
+    void MakeColorTable(const Color *in, float *out);
     void Printf(bool half, char *fmt, ...);
     void ClearScreen(void);
    

@@ -525,7 +525,7 @@ void GraphicsWindow::Paint(int w, int h) {
     if(SS.bgImage.fromFile) {
         // If a background image is loaded, then we draw it now as a texture.
         // This handles the resizing for us nicely.
-        glBindTexture(GL_TEXTURE_2D, 10);
+        glBindTexture(GL_TEXTURE_2D, TEXTURE_BACKGROUND_IMG);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);

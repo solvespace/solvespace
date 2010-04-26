@@ -3,6 +3,9 @@
 // A public-domain Hershey vector font ("Simplex").
 #include "font.table"
 
+// A bitmap font.
+#include "bitmapfont.table"
+
 static bool ColorLocked;
 static bool DepthOffsetLocked;
 
@@ -448,5 +451,56 @@ void glxDepthRangeLockToFront(bool yes) {
         DepthOffsetLocked = false;
         glxDepthRangeOffset(0);
     }
+}
+
+void glxCreateBitmapFont(void) {
+    glBindTexture(GL_TEXTURE_2D, TEXTURE_BITMAP_FONT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
+                 16, 128*16,
+                 0,
+                 GL_ALPHA, GL_UNSIGNED_BYTE,
+                 FontTexture);
+}
+
+void glxBitmapCharQuad(char c, double x, double y) {
+    int w = SS.TW.CHAR_WIDTH,
+        h = SS.TW.CHAR_HEIGHT;
+  
+    if(c != ' ' && c != 0 && c < 128) {
+        double s0 = 0,
+               s1 = h/16.0,
+               t0 = c/128.0,
+               t1 = t0 + (w/16.0)/128;
+
+        glTexCoord2d(s1, t0);
+        glVertex2d(x, y);
+
+        glTexCoord2d(s1, t1);
+        glVertex2d(x + w, y);
+
+        glTexCoord2d(s0, t1);
+        glVertex2d(x + w, y - h);
+
+        glTexCoord2d(s0, t0);
+        glVertex2d(x, y - h);
+    }
+}
+
+void glxBitmapText(char *str, Vector p) {
+    glEnable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+    while(*str) {
+        glxBitmapCharQuad(*str, p.x, p.y);
+
+        str++;
+        p.x += SS.TW.CHAR_WIDTH;
+    }
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
 }
 

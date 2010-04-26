@@ -209,6 +209,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     if(paint) {
         // Do this last so that nothing can draw over it.
         if(toolTip.show) {
+            glxCreateBitmapFont();
             char str[1024];
             if(strlen(toolTip.str) >= 200) oops();
             strcpy(str, toolTip.str);
@@ -229,10 +230,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw, th;
-            GetBitmapFontExtent(str, &tw, &th);
-            tw += 10;
-            th += 2;
+            int tw = strlen(str)*SS.TW.CHAR_WIDTH + 10,
+                th = SS.TW.LINE_HEIGHT + 2;
             
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
             glLineWidth(1);
@@ -253,8 +252,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
             glColor4d(0, 0, 0, 1);
             glPushMatrix();
-                glRasterPos2d(ox+6, oy+6);
-                DrawWithBitmapFont(str);
+                glTranslated(ox+5, oy+3, 0);
+                glScaled(1, -1, 1);
+                glxBitmapText(str, Vector::From(0, 0, 0));
             glPopMatrix();
         }
         glxDepthRangeLockToFront(false);

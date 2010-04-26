@@ -22,13 +22,28 @@ const TextWindow::Color TextWindow::bgColors[] = {
     { 0, 0 },
 };
 
+void TextWindow::MakeColorTable(const Color *in, float *out) {
+    int i;
+    for(i = 0; in[i].c != 0; i++) {
+        int c = in[i].c;
+        if(c < 0 || c > 255) oops();
+        out[c*3 + 0] = REDf(in[i].color);
+        out[c*3 + 1] = GREENf(in[i].color);
+        out[c*3 + 2] = BLUEf(in[i].color);
+    }
+}
+
 void TextWindow::Init(void) {
     ClearSuper();
 }
 
 void TextWindow::ClearSuper(void) {
     HideTextEditControl();
+
     memset(this, 0, sizeof(*this));
+    MakeColorTable(fgColors, fgColorTable);
+    MakeColorTable(bgColors, bgColorTable);
+
     ClearScreen();
     Show();
 }
@@ -242,5 +257,172 @@ void TextWindow::Show(void) {
     }
     Printf(false, "");
     InvalidateText();
+}
+
+void TextWindow::Paint(int width, int height) {
+    // We would like things pixel-exact, to avoid shimmering.
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    glClearColor(0, 0, 0, 1);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glColor3d(1, 1, 1);
+   
+    glTranslated(-1, 1, 0);
+    glScaled(2.0/width, -2.0/height, 1);
+    glTranslated(0, 0, 0);
+
+    halfRows = height / (LINE_HEIGHT/2);
+
+    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    scrollPos = min(scrollPos, bottom - halfRows);
+    scrollPos = max(scrollPos, 0);
+
+    // Let's set up the scroll bar first
+    MoveTextScrollbarTo(scrollPos, SS.TW.top[SS.TW.rows - 1] + 1, halfRows);
+
+    // Create the bitmap font that we're going to use.
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+
+    // Now paint the window.
+    int r, c, a;
+    for(a = 0; a < 3; a++) {
+        if(a == 0) {
+            glBegin(GL_QUADS);
+        } else if(a == 1) {
+            glEnable(GL_TEXTURE_2D);
+            glxCreateBitmapFont();
+            glBegin(GL_QUADS);
+        } else {
+            glBegin(GL_LINES);
+        }
+
+        for(r = 0; r < SS.TW.rows; r++) {
+            int top = SS.TW.top[r];
+            if(top < (scrollPos-1)) continue;
+            if(top > scrollPos+halfRows) break;
+
+            for(c = 0; c < min((width/CHAR_WIDTH)+1, SS.TW.MAX_COLS); c++) {
+                int x = LEFT_MARGIN + c*CHAR_WIDTH;
+                int y = (top-scrollPos)*(LINE_HEIGHT/2) + 2;
+
+                int fg = SS.TW.meta[r][c].fg;
+                int bg = SS.TW.meta[r][c].bg;
+
+                // On the first pass, all the background quads; on the next
+                // pass, all the foreground (i.e., font) quads.
+                if(a == 0) {
+                    int bh = LINE_HEIGHT, adj = 0;
+                    if(bg & 0x80000000) {
+                        glColor3f(REDf(bg), GREENf(bg), BLUEf(bg));
+                        bh = CHAR_HEIGHT;
+                        adj = 2;
+                    } else {
+                        glColor3fv(&(bgColorTable[bg*3]));
+                    }
+
+                    if(!(bg == 'd')) {
+                        // Move the quad down a bit, so that the descenders
+                        // still have the correct background.
+                        y += adj;
+                        glBegin(GL_QUADS);
+                            glVertex2d(x,              y);
+                            glVertex2d(x + CHAR_WIDTH, y);
+                            glVertex2d(x + CHAR_WIDTH, y + bh);
+                            glVertex2d(x,              y + bh);
+                        glEnd();
+                        y -= adj;
+                    }
+                } else if(a == 1) {
+                    glColor3fv(&(fgColorTable[fg*3]));
+                    glxBitmapCharQuad(SS.TW.text[r][c], x, y + CHAR_HEIGHT);
+                } else {
+                    if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].link != 'n') {
+                        glColor3fv(&(fgColorTable[fg*3]));
+                        y += CHAR_HEIGHT + 1;
+                        glVertex2d(x, y);
+                        glVertex2d(x + CHAR_WIDTH, y);
+                    }
+                }
+            }
+        }
+
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+    }
+}
+
+void TextWindow::MouseEvent(bool leftClick, double x, double y) {
+    if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
+        if(leftClick) {
+            HideTextEditControl();
+            HideGraphicsEditControl();
+        } else {
+            SetMousePointerToHand(false);
+        }
+        return;
+    }
+
+    GraphicsWindow::Selection ps = SS.GW.hover;
+    SS.GW.hover.Clear();
+
+    // Find the corresponding character in the text buffer
+    int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH);
+    int hh = (LINE_HEIGHT)/2;
+    y += scrollPos*hh;
+    int r;
+    for(r = 0; r < SS.TW.rows; r++) {
+        if(y >= SS.TW.top[r]*hh && y <= (SS.TW.top[r]+2)*hh) {
+            break;
+        }
+    }
+    if(r >= SS.TW.rows) {
+        SetMousePointerToHand(false);
+        goto done;
+    }
+
+#define META (SS.TW.meta[r][c])
+    if(leftClick) {
+        if(META.link && META.f) {
+            (META.f)(META.link, META.data);
+            SS.TW.Show();
+            InvalidateGraphics();
+        }
+    } else {
+        if(META.link) {
+            SetMousePointerToHand(true);
+            if(META.h) {
+                (META.h)(META.link, META.data);
+            }
+        } else {
+            SetMousePointerToHand(false);
+        }
+    }
+
+done:
+    if(!ps.Equals(&(SS.GW.hover))) {
+        InvalidateGraphics();
+    }
+}
+
+void TextWindow::ScrollbarEvent(int newPos) {
+    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    newPos = min(newPos, bottom - halfRows);
+    newPos = max(newPos, 0);
+
+    if(newPos != scrollPos) {
+        scrollPos = newPos;
+        MoveTextScrollbarTo(scrollPos, SS.TW.top[SS.TW.rows - 1] + 1, halfRows);
+
+        if(TextEditControlIsVisible()) {
+            extern int TextEditControlCol, TextEditControlHalfRow;
+            ShowTextEditControl(
+                TextEditControlHalfRow, TextEditControlCol, NULL);
+        }
+        InvalidateText();
+    }
 }
 

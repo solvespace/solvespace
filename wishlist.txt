@@ -3,6 +3,7 @@ add checked/unchecked checkbox and radio button
 fix bug with rotation in plane where green line stays displayed
 lock point where dragged constraint
 remove toolbar icons for sketch in 3d, add View -> Align to Workplane
+expose transformed point stuff in library, and email McNeel
 
 -----
 rounding, as a special group

@@ -17,29 +17,20 @@
 #define FREEZE_SUBKEY "SolveSpace"
 #include "freeze.h"
 
-#define MIN_COLS    45
-#define TEXT_HEIGHT 20
-#define TEXT_WIDTH  9
-#define TEXT_LEFT_MARGIN 4
-
 // For the edit controls
 #define EDIT_WIDTH  220
 #define EDIT_HEIGHT 21
-
-// The list representing glyph with ASCII code zero, for bitmap fonts
-#define BITMAP_GLYPH_BASE 1000
 
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
+HGLRC TextGl;
 int TextEditControlCol, TextEditControlHalfRow;
-int TextWndScrollPos; // The scrollbar position, in half-row units
-int TextWndHalfRows;  // The height of our window, in half-row units
 
 HWND GraphicsWnd;
-HGLRC GraphicsHpgl;
+HGLRC GraphicsGl;
 HWND GraphicsEditControl;
 struct {
     int x, y;
@@ -53,7 +44,7 @@ HMENU ContextMenu, ContextSubmenu;
 
 int ClientIsSmallerBy;
 
-HFONT FixedFont, LinkFont;
+HFONT FixedFont;
 
 // The 6-DOF input device.
 SiHdl SpaceNavigator = SI_NO_HANDLE;
@@ -95,8 +86,9 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
                     col = 0;
                     row++;
                 } else {
-                    TextOut(hdc, col*TEXT_WIDTH + 10, row*TEXT_HEIGHT + 10, 
-                        &(MessageString[i]), 1);
+                    TextOut(hdc, col*SS.TW.CHAR_WIDTH + 10,
+                                 row*SS.TW.LINE_HEIGHT + 10, 
+                                 &(MessageString[i]), 1);
                     col++;
                 }
             }
@@ -156,14 +148,15 @@ void DoMessageBox(char *str, int rows, int cols, BOOL error)
     RECT r;
     GetWindowRect(GraphicsWnd, &r);
     char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
-    int width = cols*TEXT_WIDTH + 20, height = rows*TEXT_HEIGHT + 60;
+    int width  = cols*SS.TW.CHAR_WIDTH + 20,
+        height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWnd = CreateWindowClient(0, "MessageWnd", title,
         WS_OVERLAPPED | WS_SYSMENU,
         r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
 
     OkButton = CreateWindowEx(0, WC_BUTTON, "OK",
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
-        (width - 70)/2, rows*TEXT_HEIGHT + 20,
+        (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
         70, 25, MessageWnd, NULL, Instance, NULL); 
     SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, TRUE);
 
@@ -242,17 +235,16 @@ void SetTimerFor(int milliseconds)
     SetTimer(GraphicsWnd, 1, milliseconds, TimerCallback);
 }
 
-void DrawWithBitmapFont(char *str)
+static void GetWindowSize(HWND hwnd, int *w, int *h)
 {
-    // These lists were created in CreateGlContext
-    glListBase(BITMAP_GLYPH_BASE); 
-    glCallLists(strlen(str), GL_UNSIGNED_BYTE, str);
+    RECT r;
+    GetClientRect(hwnd, &r);
+    *w = r.right - r.left;
+    *h = r.bottom - r.top;
 }
-void GetBitmapFontExtent(char *str, int *w, int *h)
+void GetGraphicsWindowSize(int *w, int *h)
 {
-    // Easy since that's a fixed-width font for now.
-    *h = TEXT_HEIGHT;
-    *w = TEXT_WIDTH*strlen(str);
+    GetWindowSize(GraphicsWnd, w, h);
 }
 
 void OpenWebsite(char *url) {
@@ -291,143 +283,59 @@ void SetWindowTitle(char *str) {
     SetWindowText(GraphicsWnd, str);
 }
 
+void SetMousePointerToHand(bool yes) {
+    SetCursor(LoadCursor(NULL, yes ? IDC_HAND : IDC_ARROW));
+}
+
 static void PaintTextWnd(HDC hdc)
 {
-    int i;
+    wglMakeCurrent(GetDC(TextWnd), TextGl);
 
-    static BOOL MadeBrushes = FALSE;
-    static COLORREF BgColor[256];
-    static COLORREF FgColor[256];
-    static HBRUSH   BgBrush[256];
-    static HBRUSH   FillBrush;
-    if(!MadeBrushes) {
-        // Generate the color table.
-        for(i = 0; SS.TW.fgColors[i].c != 0; i++) {
-            int c = SS.TW.fgColors[i].c;
-            if(c < 0 || c > 255) oops();
-            FgColor[c] = SS.TW.fgColors[i].color;
-        }
-        for(i = 0; SS.TW.bgColors[i].c != 0; i++) {
-            int c = SS.TW.bgColors[i].c;
-            if(c < 0 || c > 255) oops();
-            BgColor[c] = SS.TW.bgColors[i].color;
-            BgBrush[c] = CreateSolidBrush(BgColor[c]);
-        }
-        FillBrush = CreateSolidBrush(RGB(0, 0, 0));
-        MadeBrushes = TRUE;
-    }
+    int w, h;
+    GetWindowSize(TextWnd, &w, &h);
+    SS.TW.Paint(w, h);
+    SwapBuffers(GetDC(TextWnd));
 
-    RECT rect;
-    GetClientRect(TextWnd, &rect);
-    // Set up the back-buffer
-    HDC backDc = CreateCompatibleDC(hdc);
-    int width = rect.right - rect.left;
-    int height = rect.bottom - rect.top;
-    HBITMAP backBitmap = CreateCompatibleBitmap(hdc, width, height);
-    SelectObject(backDc, backBitmap);
+    // Leave the graphics window context active, except when we're painting
+    // this text window.
+    wglMakeCurrent(GetDC(GraphicsWnd), GraphicsGl);
+}
 
-    FillRect(backDc, &rect, FillBrush);
-
-    SelectObject(backDc, FixedFont);
-    SetBkColor(backDc, RGB(0, 0, 0));
-
-    int halfRows = height / (TEXT_HEIGHT/2);
-    TextWndHalfRows = halfRows;
-
-    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
-    TextWndScrollPos = min(TextWndScrollPos, bottom - halfRows);
-    TextWndScrollPos = max(TextWndScrollPos, 0);
-
-    // Let's set up the scroll bar first
+void MoveTextScrollbarTo(int pos, int maxPos, int page)
+{
     SCROLLINFO si;
     memset(&si, 0, sizeof(si));
     si.cbSize = sizeof(si);
     si.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
     si.nMin = 0;
-    si.nMax = SS.TW.top[SS.TW.rows - 1] + 1;
-    si.nPos = TextWndScrollPos;
-    si.nPage = halfRows;
+    si.nMax = maxPos;
+    si.nPos = pos;
+    si.nPage = page;
     SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
-
-    int r, c;
-    for(r = 0; r < SS.TW.rows; r++) {
-        int top = SS.TW.top[r];
-        if(top < (TextWndScrollPos-1)) continue;
-        if(top > TextWndScrollPos+halfRows) break;
-
-        for(c = 0; c < min((width/TEXT_WIDTH)+1, SS.TW.MAX_COLS); c++) {
-            int fg = SS.TW.meta[r][c].fg;
-            int bg = SS.TW.meta[r][c].bg;
-
-            SetTextColor(backDc, FgColor[fg]);
-
-            HBRUSH bgb;
-            if(bg & 0x80000000) {
-                bgb = (HBRUSH)GetStockObject(BLACK_BRUSH);
-                SetBkColor(backDc, bg & 0xffffff);
-            } else {
-                bgb = BgBrush[bg];
-                SetBkColor(backDc, BgColor[bg]);
-            }
-
-            if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].link != 'n') {
-                SelectObject(backDc, LinkFont);
-            } else {
-                SelectObject(backDc, FixedFont);
-            }
-
-            int x = TEXT_LEFT_MARGIN + c*TEXT_WIDTH;
-            int y = (top-TextWndScrollPos)*(TEXT_HEIGHT/2);
-
-            RECT a;
-            a.left = x; a.right = x+TEXT_WIDTH;
-            a.top = y; a.bottom = y+TEXT_HEIGHT;
-            FillRect(backDc, &a, bgb);
-
-            TextOut(backDc, x, y+2, (char *)&(SS.TW.text[r][c]), 1);
-        }
-    }
-
-    // And commit the back buffer
-    BitBlt(hdc, 0, 0, width, height, backDc, 0, 0, SRCCOPY);
-    DeleteObject(backBitmap);
-    DeleteDC(backDc);
 }
 
 void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
 {
-    int prevPos = TextWndScrollPos;
+    int maxPos, minPos, pos;
+    GetScrollRange(TextWndScrollBar, SB_CTL, &minPos, &maxPos);
+    pos = GetScrollPos(TextWndScrollBar, SB_CTL);
+
     switch(LOWORD(wParam)) {
-        case SB_LINEUP:         TextWndScrollPos--; break;
-        case SB_PAGEUP:         TextWndScrollPos -= 4; break;
+        case SB_LINEUP:         pos--; break;
+        case SB_PAGEUP:         pos -= 4; break;
 
-        case SB_LINEDOWN:       TextWndScrollPos++; break;
-        case SB_PAGEDOWN:       TextWndScrollPos += 4; break;
+        case SB_LINEDOWN:       pos++; break;
+        case SB_PAGEDOWN:       pos += 4; break;
 
-        case SB_TOP:            TextWndScrollPos = 0; break;
+        case SB_TOP:            pos = 0; break;
 
-        case SB_BOTTOM:         TextWndScrollPos = SS.TW.rows; break;
+        case SB_BOTTOM:         pos = maxPos; break;
 
         case SB_THUMBTRACK:
-        case SB_THUMBPOSITION:  TextWndScrollPos = HIWORD(wParam); break;
+        case SB_THUMBPOSITION:  pos = HIWORD(wParam); break;
     }
-    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
-    TextWndScrollPos = min(TextWndScrollPos, bottom - TextWndHalfRows);
-    TextWndScrollPos = max(TextWndScrollPos, 0);
-    if(prevPos != TextWndScrollPos) {
-        SCROLLINFO si;
-        si.cbSize = sizeof(si);
-        si.fMask = SIF_POS;
-        si.nPos = TextWndScrollPos;
-        SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
-
-        if(TextEditControlIsVisible()) {
-            int x = TEXT_LEFT_MARGIN + TEXT_WIDTH*TextEditControlCol;
-            int y = (TextEditControlHalfRow - TextWndScrollPos)*(TEXT_HEIGHT/2);
-            MoveWindow(TextEditControl, x, y, EDIT_WIDTH, EDIT_HEIGHT, TRUE);
-        }
-        InvalidateRect(TextWnd, NULL, FALSE);
-    }
+    
+    SS.TW.ScrollbarEvent(pos);
 }
 
 static void MouseWheel(int thisDelta) {
@@ -485,9 +393,11 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
 
         case WM_PAINT: {
+            // Actually paint the text window, with gl.
+            PaintTextWnd(GetDC(TextWnd));
+            // And then just make Windows happy.
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            PaintTextWnd(hdc);
             EndPaint(hwnd, &ps);
             break;
         }
@@ -495,7 +405,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_SIZING: {
             RECT *r = (RECT *)lParam;
             int hc = (r->bottom - r->top) - ClientIsSmallerBy;
-            int extra = hc % (TEXT_HEIGHT/2);
+            int extra = hc % (SS.TW.LINE_HEIGHT/2);
             switch(wParam) {
                 case WMSZ_BOTTOM:
                 case WMSZ_BOTTOMLEFT:
@@ -509,7 +419,8 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     r->top += extra;
                     break;
             }
-            int tooNarrow = (MIN_COLS*TEXT_WIDTH) - (r->right - r->left);
+            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH) -
+                                                (r->right - r->left);
             if(tooNarrow >= 0) {
                 switch(wParam) {
                     case WMSZ_RIGHT:
@@ -530,57 +441,9 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
-            if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
-                if(msg == WM_MOUSEMOVE) {
-                    SetCursor(LoadCursor(NULL, IDC_ARROW));
-                } else {
-                    HideTextEditControl();
-                    HideGraphicsEditControl();
-                }
-                break;
-            }
-            GraphicsWindow::Selection ps = SS.GW.hover;
-            SS.GW.hover.Clear();
-
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
-
-            // Find the corresponding character in the text buffer
-            int c = (x / TEXT_WIDTH);
-            int hh = (TEXT_HEIGHT)/2;
-            y += TextWndScrollPos*hh;
-            int r;
-            for(r = 0; r < SS.TW.rows; r++) {
-                if(y >= SS.TW.top[r]*hh && y <= (SS.TW.top[r]+2)*hh) {
-                    break;
-                }
-            }
-            if(r >= SS.TW.rows) {
-                SetCursor(LoadCursor(NULL, IDC_ARROW));
-                goto done;
-            }
-
-#define META (SS.TW.meta[r][c])
-            if(msg == WM_MOUSEMOVE) {
-                if(META.link) {
-                    SetCursor(LoadCursor(NULL, IDC_HAND));
-                    if(META.h) {
-                        (META.h)(META.link, META.data);
-                    }
-                } else {
-                    SetCursor(LoadCursor(NULL, IDC_ARROW));
-                }
-            } else {
-                if(META.link && META.f) {
-                    (META.f)(META.link, META.data);
-                    SS.TW.Show();
-                    InvalidateGraphics();
-                }
-            }
-done:
-            if(!ps.Equals(&(SS.GW.hover))) {
-                InvalidateGraphics();
-            }
+            SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, x, y);
             break;
         }
         
@@ -702,9 +565,9 @@ void ShowTextWindow(BOOL visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
-static void CreateGlContext(void)
-{   
-    HDC hdc = GetDC(GraphicsWnd);
+static void CreateGlContext(HWND hwnd, HGLRC *glrc)
+{
+    HDC hdc = GetDC(hwnd);
 
     PIXELFORMATDESCRIPTOR pfd;
     int pixelFormat;
@@ -726,32 +589,20 @@ static void CreateGlContext(void)
  
     if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
 
-    GraphicsHpgl = wglCreateContext(hdc); 
-    wglMakeCurrent(hdc, GraphicsHpgl);
-
-    // Create a bitmap font in a display list, for DrawWithBitmapFont().
-    SelectObject(hdc, FixedFont);
-    wglUseFontBitmaps(hdc, 0, 255, BITMAP_GLYPH_BASE); 
+    *glrc = wglCreateContext(hdc); 
+    wglMakeCurrent(hdc, *glrc);
 }
 
-void InvalidateGraphics(void)
-{
-    InvalidateRect(GraphicsWnd, NULL, FALSE);
-}
-void GetGraphicsWindowSize(int *w, int *h)
-{
-    RECT r;
-    GetClientRect(GraphicsWnd, &r);
-    *w = r.right - r.left;
-    *h = r.bottom - r.top;
-}
 void PaintGraphics(void)
 {
     int w, h;
-    GetGraphicsWindowSize(&w, &h);
-
+    GetWindowSize(GraphicsWnd, &w, &h);
     SS.GW.Paint(w, h);
     SwapBuffers(GetDC(GraphicsWnd));
+}
+void InvalidateGraphics(void)
+{
+    InvalidateRect(GraphicsWnd, NULL, FALSE);
 }
 
 SDWORD GetMilliseconds(void)
@@ -778,16 +629,18 @@ void InvalidateText(void)
 static void ShowEditControl(HWND h, int x, int y, char *s) {
     MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, TRUE);
     ShowWindow(h, SW_SHOW);
-    SendMessage(h, WM_SETTEXT, 0, (LPARAM)s);
-    SendMessage(h, EM_SETSEL, 0, strlen(s));
-    SetFocus(h);
+    if(s) {
+        SendMessage(h, WM_SETTEXT, 0, (LPARAM)s);
+        SendMessage(h, EM_SETSEL, 0, strlen(s));
+        SetFocus(h);
+    }
 }
 void ShowTextEditControl(int hr, int c, char *s)
 {
-    if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) return;
+    if(GraphicsEditControlIsVisible()) return;
 
-    int x = TEXT_LEFT_MARGIN + TEXT_WIDTH*c;
-    int y = (hr - TextWndScrollPos)*(TEXT_HEIGHT/2);
+    int x = SS.TW.LEFT_MARGIN + SS.TW.CHAR_WIDTH*c;
+    int y = (hr - SS.TW.scrollPos)*(SS.TW.LINE_HEIGHT/2);
     TextEditControlCol = c;
     TextEditControlHalfRow = hr;
     ShowEditControl(TextEditControl, x, y, s);
@@ -802,7 +655,7 @@ BOOL TextEditControlIsVisible(void)
 }
 void ShowGraphicsEditControl(int x, int y, char *s)
 {
-    if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) return;
+    if(GraphicsEditControlIsVisible()) return;
 
     RECT r;
     GetClientRect(GraphicsWnd, &r);
@@ -836,7 +689,9 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             break;
 
         case WM_PAINT: {
+            // Actually paint the window, with gl.
             PaintGraphics();
+            // And make Windows happy.
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
             EndPaint(hwnd, &ps);
@@ -1149,13 +1004,10 @@ static void CreateMainWindows(void)
         50, 50, 900, 600, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
 
-    CreateGlContext();
-
     GraphicsEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
     SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
-
 
     // The text window, with a comand line and some textual information
     // about the sketch.
@@ -1184,6 +1036,9 @@ static void CreateMainWindows(void)
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
     SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
 
+    // Now that all our windows exist, set up gl contexts.
+    CreateGlContext(TextWnd, &TextGl);
+    CreateGlContext(GraphicsWnd, &GraphicsGl);
 
     RECT r, rc;
     GetWindowRect(TextWnd, &r);
@@ -1238,16 +1093,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InitCommonControls();
 
     // A monospaced font
-    FixedFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
+    FixedFont = CreateFont(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
+        FW_REGULAR, FALSE,
         FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
-    LinkFont = CreateFont(TEXT_HEIGHT-4, TEXT_WIDTH, 0, 0, FW_REGULAR, FALSE,
-        TRUE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
     if(!FixedFont)
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
-    if(!LinkFont)
-        LinkFont = (HFONT)GetStockObject(SYSTEM_FONT);
 
     // Create the root windows: one for control, with text, and one for
     // the graphics

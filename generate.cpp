@@ -215,10 +215,12 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
                 glVertex2d(left,        top-height);
             glEnd(); 
 
+            glxCreateBitmapFont();
             glColor3d(0, 0, 0);
             glPushMatrix();
-                glRasterPos2d(left+8, top-17);
-                DrawWithBitmapFont(msg);
+                glTranslated(left+8, top-20, 0);
+                glScaled(1, -1, 1);
+                glxBitmapText(msg, Vector::From(0, 0, 0));
             glPopMatrix();
             glFlush();
             glDrawBuffer(GL_BACK);

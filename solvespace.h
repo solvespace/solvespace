@@ -131,6 +131,7 @@ BOOL GraphicsEditControlIsVisible(void);
 void ShowTextEditControl(int hr, int c, char *s);
 void HideTextEditControl(void);
 BOOL TextEditControlIsVisible(void);
+void MoveTextScrollbarTo(int pos, int maxPos, int page);
 
 #define CONTEXT_SUBMENU     (-1)
 #define CONTEXT_SEPARATOR   (-2)
@@ -152,12 +153,10 @@ void dbp(char *str, ...);
         CO((tri).a), CO((tri).b), CO((tri).c))
 
 void SetWindowTitle(char *str);
+void SetMousePointerToHand(bool yes);
 void DoMessageBox(char *str, int rows, int cols, BOOL error);
 void SetTimerFor(int milliseconds);
 void ExitNow(void);
-
-void DrawWithBitmapFont(char *str);
-void GetBitmapFontExtent(char *str, int *w, int *h);
 
 void CnfFreezeString(char *str, char *name);
 void CnfFreezeDWORD(DWORD v, char *name);
@@ -222,6 +221,11 @@ void glxColorRGB(DWORD rgb);
 void glxColorRGBa(DWORD rgb, double a);
 void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
+void glxCreateBitmapFont(void);
+void glxBitmapText(char *str, Vector p);
+void glxBitmapCharQuad(char c, double x, double y);
+#define TEXTURE_BACKGROUND_IMG  10
+#define TEXTURE_BITMAP_FONT     20
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
