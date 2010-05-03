@@ -31,7 +31,7 @@ public:
     static const int CHAR_WIDTH     = 9;
     static const int CHAR_HEIGHT    = 16;
     static const int LINE_HEIGHT    = 20;
-    static const int LEFT_MARGIN    = 4;
+    static const int LEFT_MARGIN    = 6;
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
@@ -47,15 +47,35 @@ public:
         LinkFunction   *f;
         LinkFunction   *h;
     }       meta[MAX_ROWS][MAX_COLS];
-    int top[MAX_ROWS]; // in half-line units, or -1 for unused
+    int hoveredRow, hoveredCol;
 
+
+    int top[MAX_ROWS]; // in half-line units, or -1 for unused
     int rows;
 
+    // The row of icons at the top of the text window, to hide/show things
+    typedef struct {
+        bool    *var;
+        BYTE    *icon;
+        char    *tip;
+    } HideShowIcon;
+    static HideShowIcon hideShowIcons[];
+    static bool SPACER;
+
     // These are called by the platform-specific code.
-    void Paint(int w, int h);
+    void Paint(void);
     void MouseEvent(bool leftDown, double x, double y);
     void MouseScroll(double x, double y, int delta);
+    void MouseLeave(void);
     void ScrollbarEvent(int newPos);
+
+    static const int PAINT = 0;
+    static const int HOVER = 1;
+    static const int CLICK = 2;
+    void DrawOrHitTestIcons(int how, double mx, double my);
+    void TimerCallback(void);
+    Point2d oldMousePos;
+    HideShowIcon *hoveredIcon, *tooltippedIcon;
    
     void Init(void);
     void MakeColorTable(const Color *in, float *out);
@@ -282,6 +302,7 @@ public:
         MNU_ZOOM_TO_FIT,
         MNU_SHOW_GRID,
         MNU_PARALLEL_PROJ,
+        MNU_ONTO_WORKPLANE,
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,
         MNU_CENTER_VIEW,
@@ -567,7 +588,7 @@ public:
     bool    showFaces;
     bool    showMesh;
     bool    showHdnLines;
-    static void ToggleBool(int link, DWORD v);
+    void ToggleBool(bool *v);
 
     bool    showSnapGrid;
 
@@ -578,7 +599,7 @@ public:
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
     // These are called by the platform-specific code.
-    void Paint(int w, int h);
+    void Paint(void);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
                                 bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);

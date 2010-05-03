@@ -716,7 +716,7 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     // so repaint the scene. And hide the toolbar too.
     int prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
-    SS.GW.Paint(w, h);
+    SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
     
     FILE *f = fopen(filename, "wb");

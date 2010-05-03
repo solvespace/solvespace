@@ -359,7 +359,7 @@ void TextWindow::ShowPasteTransformed(void) {
     Printf(true,  "%Ba  %FtREPEAT%E    %d time%s %Fl%Lt%f[change]%E",
         shown.paste.times, (shown.paste.times == 1) ? "" : "s",
         &ScreenChangePasteTransformed);
-    Printf(false, "%Bd  %FtROTATE%E    %@° %Fl%Lr%f[change]%E",
+    Printf(false, "%Bd  %FtROTATE%E    %@ degrees %Fl%Lr%f[change]%E",
         shown.paste.theta*180/PI,
         &ScreenChangePasteTransformed);
     Printf(false, "%Ba  %FtABOUT PT%E  (%s, %s, %s) %Fl%Lo%f[use selected]%E",

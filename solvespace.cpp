@@ -63,7 +63,7 @@ void SolveSpace::Init(char *cmdLine) {
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
-    cameraTangent = CnfThawFloat(0.0f, "CameraTangent");
+    cameraTangent = CnfThawFloat(0.3f, "CameraTangent");
     // Grid spacing
     gridSpacing = CnfThawFloat(5.0f, "GridSpacing");
     // Export scale factor
@@ -113,6 +113,10 @@ void SolveSpace::Init(char *cmdLine) {
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
     // them.
+
+    // The factory default settings include a non-zero perspective factor,
+    // but we'll default to that off.
+    forceParallelProj = true;
 
     // Start with either an empty file, or the file specified on the
     // command line.

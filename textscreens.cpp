@@ -10,42 +10,26 @@ void TextWindow::ScreenHome(int link, DWORD v) {
 void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
 
-    char *cd = SS.GW.LockedInWorkplane() ?
-                   SK.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString() :
-                   "free in 3d";
+    char cd[1024], cd2[1024];
+    if(SS.GW.LockedInWorkplane()) {
+        sprintf(cd, "in plane: ");
+        strcpy(cd2, SK.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString());
+    } else {
+        sprintf(cd, "drawing / constraining in 3d");
+        strcpy(cd2, "");
+    }
 
     // Navigation buttons
     if(withNav) {
-        Printf(false, " %Fl%Lh%fhome%E %Bt%Ft wrkpl:%Fd %s",
-                    (&TextWindow::ScreenHome),
-                    cd);
+        Printf(false, " %Fl%Lh%fhome%E   %Ft%s%E%s",
+            (&TextWindow::ScreenHome), cd, cd2);
     } else {
-        Printf(false, "      %Bt%Ft wrkpl:%Fd %s", cd);
+        Printf(false, "        %Ft%s%E%s", cd, cd2);
     }
 
-#define hs(b) ((b) ? 's' : 'h')
-    Printf(false, "%Bt%Ftshow: "
-           "%Fp%Ll%D%fwrkpls%E "
-           "%Fp%Ll%D%fnormals%E "
-           "%Fp%Ll%D%fpoints%E "
-           "%Fp%Ll%D%fconstraints%E ",
-  hs(SS.GW.showWorkplanes), (DWORD)&(SS.GW.showWorkplanes), &(SS.GW.ToggleBool),
-  hs(SS.GW.showNormals),    (DWORD)&(SS.GW.showNormals),    &(SS.GW.ToggleBool),
-  hs(SS.GW.showPoints),     (DWORD)&(SS.GW.showPoints),     &(SS.GW.ToggleBool),
-hs(SS.GW.showConstraints), (DWORD)(&SS.GW.showConstraints), &(SS.GW.ToggleBool) 
-    );
-    Printf(false, "%Bt%Ft      "
-           "%Fp%Ll%D%fshaded%E "
-           "%Fp%Ll%D%fedges%E "
-           "%Fp%Ll%D%fmesh%E "
-           "%Fp%Ll%D%ffaces%E "
-           "%Fp%Ll%D%fhidden-lns%E",
-hs(SS.GW.showShaded),      (DWORD)(&SS.GW.showShaded),      &(SS.GW.ToggleBool),
-hs(SS.GW.showEdges),       (DWORD)(&SS.GW.showEdges),       &(SS.GW.ToggleBool),
-hs(SS.GW.showMesh),        (DWORD)(&SS.GW.showMesh),        &(SS.GW.ToggleBool),
-hs(SS.GW.showFaces),       (DWORD)(&SS.GW.showFaces),       &(SS.GW.ToggleBool),
-hs(SS.GW.showHdnLines),    (DWORD)(&SS.GW.showHdnLines),    &(SS.GW.ToggleBool)
-    );
+    // Leave space for the icons that are painted here.
+    Printf(false, "");
+    Printf(false, "");
 }
 
 //-----------------------------------------------------------------------------

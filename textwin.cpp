@@ -1,4 +1,5 @@
 #include "solvespace.h"
+#include "obj/icons-proto.h"
 #include <stdarg.h>
 
 const TextWindow::Color TextWindow::fgColors[] = {
@@ -19,6 +20,22 @@ const TextWindow::Color TextWindow::bgColors[] = {
     { 't', RGB( 34,  15,  15) },
     { 'a', RGB( 20,  20,  20) },
     { 'r', RGB(255, 255, 255) },
+    { 0, 0 },
+};
+
+bool TextWindow::SPACER = false;
+TextWindow::HideShowIcon TextWindow::hideShowIcons[] = {
+    { &(SS.GW.showWorkplanes),  Icon_workplane,     "workplanes from inactive groups"},
+    { &(SS.GW.showNormals),     Icon_normal,        "normals"                        },
+    { &(SS.GW.showPoints),      Icon_point,         "points"                         },
+    { &(SS.GW.showConstraints), Icon_constraint,    "constraints and dimensions"     },
+    { &(SS.GW.showFaces),       Icon_faces,         "XXX - special cased"            },
+    { &SPACER, 0 },
+    { &(SS.GW.showShaded),      Icon_shaded,        "shaded view of solid model"     },
+    { &(SS.GW.showEdges),       Icon_edges,         "edges of solid model"           },
+    { &(SS.GW.showMesh),        Icon_mesh,          "triangle mesh of solid model"   },
+    { &SPACER, 0 },
+    { &(SS.GW.showHdnLines),    Icon_hidden_lines,  "hidden lines"                   },
     { 0, 0 },
 };
 
@@ -259,7 +276,140 @@ void TextWindow::Show(void) {
     InvalidateText();
 }
 
-void TextWindow::Paint(int width, int height) {
+void TextWindow::TimerCallback(void)
+{
+    tooltippedIcon = hoveredIcon;
+    InvalidateText();
+}
+
+void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
+{
+    int width, height;
+    GetTextWindowSize(&width, &height);
+
+    int x = 20, y = 33 + LINE_HEIGHT;
+    y -= scrollPos*(LINE_HEIGHT/2);
+
+    double grey = 30.0/255;
+    double top = y - 28, bot = y + 4;
+    glColor4d(grey, grey, grey, 1.0);
+    glxAxisAlignedQuad(0, width, top, bot);
+
+    HideShowIcon *oldHovered = hoveredIcon;
+    if(how != PAINT) {
+        hoveredIcon = NULL;
+    }
+
+    HideShowIcon *hsi;
+    for(hsi = &(hideShowIcons[0]); hsi->var; hsi++) {
+        if(hsi->var == &SPACER) {
+            // Draw a darker-grey spacer in between the groups of icons.
+            if(how == PAINT) {
+                int l = x, r = l + 4,
+                    t = y, b = t - 24;
+                glColor4d(0.17, 0.17, 0.17, 1);
+                glxAxisAlignedQuad(l, r, t, b);
+            }
+            x += 12;
+            continue;
+        }
+
+        if(how == PAINT) {
+            glPushMatrix();
+                glTranslated(x, y-24, 0);
+                // Only thing that matters about the color is the alpha,
+                // should be one for no transparency
+                glColor3d(0, 0, 0);
+                glxDrawPixelsWithTexture(hsi->icon, 24, 24);
+            glPopMatrix();
+
+            if(hsi == hoveredIcon) {
+                glColor4d(1, 1, 0, 0.3);
+                glxAxisAlignedQuad(x - 2, x + 26, y + 2, y - 26);
+            }
+            if(!*(hsi->var)) {
+                glColor4d(1, 0, 0, 0.6);
+                glLineWidth(2);
+                int s = 0, f = 24;
+                glBegin(GL_LINES);
+                    glVertex2d(x+s, y-s);
+                    glVertex2d(x+f, y-f);
+                    glVertex2d(x+s, y-f);
+                    glVertex2d(x+f, y-s);
+                glEnd();
+            }
+        } else {
+            if(mx > x - 2 && mx < x + 26 &&
+               my < y + 2 && my > y - 26)
+            {
+                // The mouse is hovered over this icon, so do the tooltip
+                // stuff.
+                if(hsi != tooltippedIcon) {
+                    oldMousePos = Point2d::From(mx, my);
+                }
+                if(hsi != oldHovered || how == CLICK) {
+                    SetTimerFor(1000);
+                }
+                hoveredIcon = hsi;
+                if(how == CLICK) {
+                    SS.GW.ToggleBool(hsi->var);
+                }
+            }
+        }
+
+        x += 32;
+    }
+
+    if(how != PAINT && hoveredIcon != oldHovered) {
+        InvalidateText();
+    }
+
+    if(tooltippedIcon) {
+        if(how == PAINT) {
+            char str[1024];
+
+            if(tooltippedIcon->icon == Icon_faces) {
+                if(SS.GW.showFaces) {
+                    strcpy(str, "Don't select faces with mouse");
+                } else {
+                    strcpy(str, "Select faces with mouse");
+                }
+            } else {
+                sprintf(str, "%s %s", *(tooltippedIcon->var) ? "Hide" : "Show",
+                    tooltippedIcon->tip);
+            }
+
+            double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
+            int tw = (strlen(str) + 1)*CHAR_WIDTH;
+            ox = min(ox, (width - 25) - tw);
+            oy = max(oy, 5);
+
+            glxCreateBitmapFont();
+            glLineWidth(1);
+            glColor4d(1.0, 1.0, 0.6, 1.0);
+            glxAxisAlignedQuad(ox, ox+tw, oy, oy+LINE_HEIGHT);
+            glColor4d(0.0, 0.0, 0.0, 1.0);
+            glxAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
+
+            glColor4d(0, 0, 0, 1);
+            glxBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
+        } else {
+            if(!hoveredIcon ||
+                (hoveredIcon != tooltippedIcon))
+            {
+                tooltippedIcon = NULL;
+                InvalidateGraphics();
+            }
+            // And if we're hovered, then we've set a timer that will cause
+            // us to show the tool tip later.
+        }
+    }
+}
+
+void TextWindow::Paint(void) {
+    int width, height;
+    GetTextWindowSize(&width, &height);
+
     // We would like things pixel-exact, to avoid shimmering.
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -276,12 +426,12 @@ void TextWindow::Paint(int width, int height) {
 
     halfRows = height / (LINE_HEIGHT/2);
 
-    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    int bottom = top[rows-1] + 2;
     scrollPos = min(scrollPos, bottom - halfRows);
     scrollPos = max(scrollPos, 0);
 
     // Let's set up the scroll bar first
-    MoveTextScrollbarTo(scrollPos, SS.TW.top[SS.TW.rows - 1] + 1, halfRows);
+    MoveTextScrollbarTo(scrollPos, top[rows - 1] + 1, halfRows);
 
     // Create the bitmap font that we're going to use.
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -289,33 +439,31 @@ void TextWindow::Paint(int width, int height) {
 
     // Now paint the window.
     int r, c, a;
-    for(a = 0; a < 3; a++) {
+    for(a = 0; a < 2; a++) {
         if(a == 0) {
             glBegin(GL_QUADS);
         } else if(a == 1) {
             glEnable(GL_TEXTURE_2D);
             glxCreateBitmapFont();
             glBegin(GL_QUADS);
-        } else {
-            glBegin(GL_LINES);
         }
 
-        for(r = 0; r < SS.TW.rows; r++) {
-            int top = SS.TW.top[r];
-            if(top < (scrollPos-1)) continue;
-            if(top > scrollPos+halfRows) break;
+        for(r = 0; r < rows; r++) {
+            int ltop = top[r];
+            if(ltop < (scrollPos-1)) continue;
+            if(ltop > scrollPos+halfRows) break;
 
-            for(c = 0; c < min((width/CHAR_WIDTH)+1, SS.TW.MAX_COLS); c++) {
+            for(c = 0; c < min((width/CHAR_WIDTH)+1, MAX_COLS); c++) {
                 int x = LEFT_MARGIN + c*CHAR_WIDTH;
-                int y = (top-scrollPos)*(LINE_HEIGHT/2) + 2;
+                int y = (ltop-scrollPos)*(LINE_HEIGHT/2) + 4;
 
-                int fg = SS.TW.meta[r][c].fg;
-                int bg = SS.TW.meta[r][c].bg;
+                int fg = meta[r][c].fg;
+                int bg = meta[r][c].bg;
 
                 // On the first pass, all the background quads; on the next
                 // pass, all the foreground (i.e., font) quads.
                 if(a == 0) {
-                    int bh = LINE_HEIGHT, adj = 0;
+                    int bh = LINE_HEIGHT, adj = -2;
                     if(bg & 0x80000000) {
                         glColor3f(REDf(bg), GREENf(bg), BLUEf(bg));
                         bh = CHAR_HEIGHT;
@@ -328,23 +476,45 @@ void TextWindow::Paint(int width, int height) {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;
-                        glBegin(GL_QUADS);
-                            glVertex2d(x,              y);
-                            glVertex2d(x + CHAR_WIDTH, y);
-                            glVertex2d(x + CHAR_WIDTH, y + bh);
-                            glVertex2d(x,              y + bh);
-                        glEnd();
+                        glxAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh);
                         y -= adj;
                     }
                 } else if(a == 1) {
                     glColor3fv(&(fgColorTable[fg*3]));
-                    glxBitmapCharQuad(SS.TW.text[r][c], x, y + CHAR_HEIGHT);
-                } else {
-                    if(SS.TW.meta[r][c].link && SS.TW.meta[r][c].link != 'n') {
-                        glColor3fv(&(fgColorTable[fg*3]));
-                        y += CHAR_HEIGHT + 1;
-                        glVertex2d(x, y);
-                        glVertex2d(x + CHAR_WIDTH, y);
+                    glxBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
+
+                    // If this is a link and it's hovered, then draw the
+                    // underline.
+                    if(meta[r][c].link && meta[r][c].link != 'n' &&
+                        (r == hoveredRow && c == hoveredCol))
+                    {
+                        int cs = c, cf = c;
+                        while(cs >= 0 && meta[r][cs].link &&
+                                         meta[r][cs].f    == meta[r][c].f &&
+                                         meta[r][cs].data == meta[r][c].data)
+                        {
+                            cs--;
+                        }
+                        cs++;
+
+                        while(          meta[r][cf].link &&
+                                        meta[r][cf].f    == meta[r][c].f &&
+                                        meta[r][cf].data == meta[r][c].data)
+                        {
+                            cf++;
+                        }
+                        glEnd();
+
+                        glDisable(GL_TEXTURE_2D);
+                        glLineWidth(1);
+                        glBegin(GL_LINES);
+                            int yp = y + CHAR_HEIGHT;
+                            glVertex2d(LEFT_MARGIN + cs*CHAR_WIDTH, yp);
+                            glVertex2d(LEFT_MARGIN + cf*CHAR_WIDTH, yp);
+                        glEnd();
+
+                        glEnable(GL_TEXTURE_2D);
+                        glBegin(GL_QUADS);
                     }
                 }
             }
@@ -353,6 +523,9 @@ void TextWindow::Paint(int width, int height) {
         glEnd();
         glDisable(GL_TEXTURE_2D);
     }
+
+    // The header has some icons that are drawn separately from the text
+    DrawOrHitTestIcons(PAINT, 0, 0);
 }
 
 void TextWindow::MouseEvent(bool leftClick, double x, double y) {
@@ -366,29 +539,39 @@ void TextWindow::MouseEvent(bool leftClick, double x, double y) {
         return;
     }
 
+    DrawOrHitTestIcons(leftClick ? CLICK : HOVER, x, y);
+
     GraphicsWindow::Selection ps = SS.GW.hover;
     SS.GW.hover.Clear();
+
+    int prevHoveredRow = hoveredRow,
+        prevHoveredCol = hoveredCol;
+    hoveredRow = 0;
+    hoveredCol = 0;
 
     // Find the corresponding character in the text buffer
     int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH);
     int hh = (LINE_HEIGHT)/2;
     y += scrollPos*hh;
     int r;
-    for(r = 0; r < SS.TW.rows; r++) {
-        if(y >= SS.TW.top[r]*hh && y <= (SS.TW.top[r]+2)*hh) {
+    for(r = 0; r < rows; r++) {
+        if(y >= top[r]*hh && y <= (top[r]+2)*hh) {
             break;
         }
     }
-    if(r >= SS.TW.rows) {
+    if(r >= rows) {
         SetMousePointerToHand(false);
         goto done;
     }
 
-#define META (SS.TW.meta[r][c])
+    hoveredRow = r;
+    hoveredCol = c;
+
+#define META (meta[r][c])
     if(leftClick) {
         if(META.link && META.f) {
             (META.f)(META.link, META.data);
-            SS.TW.Show();
+            Show();
             InvalidateGraphics();
         }
     } else {
@@ -403,19 +586,30 @@ void TextWindow::MouseEvent(bool leftClick, double x, double y) {
     }
 
 done:
-    if(!ps.Equals(&(SS.GW.hover))) {
+    if((!ps.Equals(&(SS.GW.hover))) ||
+        prevHoveredRow != hoveredRow ||
+        prevHoveredCol != hoveredCol)
+    {
         InvalidateGraphics();
+        InvalidateText();
     }
 }
 
+void TextWindow::MouseLeave(void) {
+    tooltippedIcon = NULL;
+    hoveredRow = 0;
+    hoveredCol = 0;
+    InvalidateText();
+}
+
 void TextWindow::ScrollbarEvent(int newPos) {
-    int bottom = SS.TW.top[SS.TW.rows-1] + 2;
+    int bottom = top[rows-1] + 2;
     newPos = min(newPos, bottom - halfRows);
     newPos = max(newPos, 0);
 
     if(newPos != scrollPos) {
         scrollPos = newPos;
-        MoveTextScrollbarTo(scrollPos, SS.TW.top[SS.TW.rows - 1] + 1, halfRows);
+        MoveTextScrollbarTo(scrollPos, top[rows - 1] + 1, halfRows);
 
         if(TextEditControlIsVisible()) {
             extern int TextEditControlCol, TextEditControlHalfRow;

@@ -200,20 +200,10 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
             double left = 80, top = -20, width = 240, height = 24;
             glColor3d(0.9, 0.8, 0.8);
-            glBegin(GL_QUADS);
-                glVertex2d(left,        top);
-                glVertex2d(left+width,  top);
-                glVertex2d(left+width,  top-height);
-                glVertex2d(left,        top-height);
-            glEnd(); 
+            glxAxisAlignedQuad(left, left+width, top, top-height);
             glLineWidth(1);
             glColor3d(0.0, 0.0, 0.0);
-            glBegin(GL_LINE_LOOP);
-                glVertex2d(left,        top);
-                glVertex2d(left+width,  top);
-                glVertex2d(left+width,  top-height);
-                glVertex2d(left,        top-height);
-            glEnd(); 
+            glxAxisAlignedLineLoop(left, left+width, top, top-height);
 
             glxCreateBitmapFont();
             glColor3d(0, 0, 0);

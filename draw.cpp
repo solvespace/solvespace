@@ -454,11 +454,13 @@ Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
     return r;
 }
 
-void GraphicsWindow::Paint(int w, int h) {
+void GraphicsWindow::Paint(void) {
     int i;
     havePainted = true;
-    width = w; height = h;
 
+    int w, h;
+    GetGraphicsWindowSize(&w, &h);
+    width = w; height = h;
     glViewport(0, 0, w, h);
 
     glMatrixMode(GL_PROJECTION); 

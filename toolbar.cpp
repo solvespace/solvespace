@@ -39,8 +39,8 @@ static const struct {
     { Icon_assemble,        GraphicsWindow::MNU_GROUP_IMPORT,   "New group importing / assembling file"             },
     { SPACER  },
 
-    { Icon_in3d,            GraphicsWindow::MNU_FREE_IN_3D,     "Sketch / constrain in 3d"                          },
-    { Icon_ontoworkplane,   GraphicsWindow::MNU_SEL_WORKPLANE,  "Sketch / constrain in workplane"                   },
+    { Icon_in3d,            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view"                            },
+    { Icon_ontoworkplane,   GraphicsWindow::MNU_ONTO_WORKPLANE, "Align view to active workplane"                    },
     { NULL  },
 };
 
@@ -122,12 +122,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
         double c = 30.0/255;
         glColor4d(c, c, c, 1.0);
-        glBegin(GL_QUADS);
-            glVertex2d(aleft,  atop);
-            glVertex2d(aleft,  abot);
-            glVertex2d(aright, abot);
-            glVertex2d(aright, atop);
-        glEnd();
+        glxAxisAlignedQuad(aleft, aright, atop, abot);
     }
 
     struct {
@@ -151,12 +146,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 glColor4d(0.17, 0.17, 0.17, 1);
                 x += 16;
                 y += 24;
-                glBegin(GL_QUADS);
-                    glVertex2d(x+divw, y+divh);
-                    glVertex2d(x+divw, y-divh);
-                    glVertex2d(x-divw, y-divh);
-                    glVertex2d(x-divw, y+divh);
-                glEnd(); 
+                glxAxisAlignedQuad(x+divw, x-divw, y+divh, y-divh);
                 x -= 16;
                 y -= 24;
             }
@@ -172,12 +162,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 // Highlight the hovered or pending item.
                 glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;
-                glBegin(GL_QUADS);
-                    glVertex2d(x+boxhw, y+boxhw);
-                    glVertex2d(x+boxhw, y-boxhw);
-                    glVertex2d(x-boxhw, y-boxhw);
-                    glVertex2d(x-boxhw, y+boxhw);
-                glEnd(); 
+                glxAxisAlignedQuad(x+boxhw, x-boxhw, y+boxhw, y-boxhw);
             }
 
             if(toolbarTooltipped == Toolbar[i].menu) {
@@ -218,13 +203,16 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 if(toolbarTooltipped == SS.GW.menu[i].id) {
                     int accel = SS.GW.menu[i].accel;
                     int ac = accel & 0xff;
+
+                    char *s = str+strlen(str);
                     if(isalnum(ac) || ac == '[') {
-                        char *s = str+strlen(str);
                         if(accel & 0x100) {
                             sprintf(s, " (Shift+%c)", ac);
                         } else if((accel & ~0xff) == 0) {
                             sprintf(s, " (%c)", ac);
                         }
+                    } else if(ac == 0xf3) {
+                        sprintf(s, " (F3)");
                     }
                     break;
                 }
@@ -236,19 +224,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
             glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);
-            glBegin(GL_QUADS);
-                glVertex2d(ox, oy);
-                glVertex2d(ox+tw, oy);
-                glVertex2d(ox+tw, oy+th);
-                glVertex2d(ox, oy+th);
-            glEnd();
+            glxAxisAlignedQuad(ox, ox+tw, oy, oy+th);
             glColor4d(0.0, 0.0, 0.0, 1.0);
-            glBegin(GL_LINE_LOOP);
-                glVertex2d(ox, oy);
-                glVertex2d(ox+tw, oy);
-                glVertex2d(ox+tw, oy+th);
-                glVertex2d(ox, oy+th);
-            glEnd();
+            glxAxisAlignedLineLoop(ox, ox+tw, oy, oy+th);
 
             glColor4d(0, 0, 0, 1);
             glPushMatrix();

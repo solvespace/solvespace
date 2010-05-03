@@ -10,7 +10,8 @@ static bool ColorLocked;
 static bool DepthOffsetLocked;
 
 #define FONT_SCALE(h) ((h)/22.0)
-double glxStrWidth(char *str, double h) {
+double glxStrWidth(char *str, double h)
+{
     int w = 0;
     for(; *str; str++) {
         int c = *str;
@@ -21,7 +22,8 @@ double glxStrWidth(char *str, double h) {
     }
     return w*FONT_SCALE(h)/SS.GW.scale;
 }
-double glxStrHeight(double h) {
+double glxStrHeight(double h)
+{
     // The characters have height ~22, as they appear in the table.
     return 22.0*FONT_SCALE(h)/SS.GW.scale;
 }
@@ -99,6 +101,26 @@ void glxVertex3v(Vector u)
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }
 
+void glxAxisAlignedQuad(double l, double r, double t, double b)
+{
+    glBegin(GL_QUADS);
+        glVertex2d(l, t);
+        glVertex2d(l, b);
+        glVertex2d(r, b);
+        glVertex2d(r, t);
+    glEnd();
+}
+
+void glxAxisAlignedLineLoop(double l, double r, double t, double b)
+{
+    glBegin(GL_LINE_LOOP);
+        glVertex2d(l, t);
+        glVertex2d(l, b);
+        glVertex2d(r, b);
+        glVertex2d(r, t);
+    glEnd();
+}
+
 static void FatLineEndcap(Vector p, Vector u, Vector v)
 {
     // A table of cos and sin of (pi*i/10 + pi/2), as i goes from 0 to 10
@@ -123,7 +145,8 @@ static void FatLineEndcap(Vector p, Vector u, Vector v)
     glEnd();
 }
 
-void glxFatLine(Vector a, Vector b, double width) {
+void glxFatLine(Vector a, Vector b, double width)
+{
     // The half-width of the line we're drawing.
     double hw = width / 2;
     Vector ab  = b.Minus(a);
@@ -277,10 +300,10 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
     glEnd();
 }
 
-static void GLX_CALLBACK Vertex(Vector *p) {
+static void GLX_CALLBACK Vertex(Vector *p)
+{
     glxVertex3v(*p);
 }
-
 void glxFillPolygon(SPolygon *p)
 {
     GLUtesselator *gt = gluNewTess();
@@ -434,7 +457,8 @@ void glxMarkPolygonNormal(SPolygon *p)
     glEnable(GL_LIGHTING);
 }
 
-void glxDepthRangeOffset(int units) {
+void glxDepthRangeOffset(int units)
+{
     if(!DepthOffsetLocked) {
         // The size of this step depends on the resolution of the Z buffer; for
         // a 16-bit buffer, this should be fine.
@@ -443,7 +467,8 @@ void glxDepthRangeOffset(int units) {
     }
 }
 
-void glxDepthRangeLockToFront(bool yes) {
+void glxDepthRangeLockToFront(bool yes)
+{
     if(yes) {
         DepthOffsetLocked = true;
         glDepthRange(0, 0);
@@ -453,7 +478,8 @@ void glxDepthRangeLockToFront(bool yes) {
     }
 }
 
-void glxCreateBitmapFont(void) {
+void glxCreateBitmapFont(void)
+{
     glBindTexture(GL_TEXTURE_2D, TEXTURE_BITMAP_FONT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -467,7 +493,8 @@ void glxCreateBitmapFont(void) {
                  FontTexture);
 }
 
-void glxBitmapCharQuad(char c, double x, double y) {
+void glxBitmapCharQuad(char c, double x, double y)
+{
     int w = SS.TW.CHAR_WIDTH,
         h = SS.TW.CHAR_HEIGHT;
   
@@ -491,7 +518,8 @@ void glxBitmapCharQuad(char c, double x, double y) {
     }
 }
 
-void glxBitmapText(char *str, Vector p) {
+void glxBitmapText(char *str, Vector p)
+{
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
     while(*str) {
@@ -500,6 +528,48 @@ void glxBitmapText(char *str, Vector p) {
         str++;
         p.x += SS.TW.CHAR_WIDTH;
     }
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+}
+
+void glxDrawPixelsWithTexture(BYTE *data, int w, int h)
+{
+#define MAX_DIM 32
+    static BYTE Texture[MAX_DIM*MAX_DIM*3];
+    int i, j;
+    if(w > MAX_DIM || h > MAX_DIM) oops();
+
+    for(i = 0; i < w; i++) {
+        for(j = 0; j < h; j++) {
+            Texture[(j*MAX_DIM + i)*3 + 0] = data[(j*w + i)*3 + 0];
+            Texture[(j*MAX_DIM + i)*3 + 1] = data[(j*w + i)*3 + 1];
+            Texture[(j*MAX_DIM + i)*3 + 2] = data[(j*w + i)*3 + 2];
+        }
+    }
+
+    glBindTexture(GL_TEXTURE_2D, TEXTURE_DRAW_PIXELS);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, MAX_DIM, MAX_DIM, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, Texture);
+
+    glEnable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+        glTexCoord2d(0, 0);
+        glVertex2d(0, h);
+
+        glTexCoord2d(((double)w)/MAX_DIM, 0);
+        glVertex2d(w, h);
+
+        glTexCoord2d(((double)w)/MAX_DIM, ((double)h)/MAX_DIM);
+        glVertex2d(w, 0);
+
+        glTexCoord2d(0, ((double)h)/MAX_DIM);
+        glVertex2d(0, 0);
     glEnd();
     glDisable(GL_TEXTURE_2D);
 }

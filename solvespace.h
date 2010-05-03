@@ -144,6 +144,7 @@ void InvalidateText(void);
 void InvalidateGraphics(void);
 void PaintGraphics(void);
 void GetGraphicsWindowSize(int *w, int *h);
+void GetTextWindowSize(int *w, int *h);
 SDWORD GetMilliseconds(void);
 SQWORD GetUnixTime(void);
 
@@ -197,6 +198,8 @@ typedef IdList<Param,hParam> ParamList;
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
+void glxAxisAlignedQuad(double l, double r, double t, double b);
+void glxAxisAlignedLineLoop(double l, double r, double t, double b);
 #define DEFAULT_TEXT_HEIGHT (11.5)
 #define GLX_CALLBACK __stdcall
 typedef void GLX_CALLBACK glxCallbackFptr(void);
@@ -221,11 +224,13 @@ void glxColorRGB(DWORD rgb);
 void glxColorRGBa(DWORD rgb, double a);
 void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
+void glxDrawPixelsWithTexture(BYTE *data, int w, int h);
 void glxCreateBitmapFont(void);
 void glxBitmapText(char *str, Vector p);
 void glxBitmapCharQuad(char c, double x, double y);
 #define TEXTURE_BACKGROUND_IMG  10
 #define TEXTURE_BITMAP_FONT     20
+#define TEXTURE_DRAW_PIXELS     30
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))

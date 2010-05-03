@@ -52,12 +52,13 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
 { 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
 { 1,  NULL,                                 0,                          NULL  },
-{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '.'|S,  mView },
-{ 1, "Force &Parallel Projection\t`",       MNU_PARALLEL_PROJ,  '`',    mView },
-{ 1,  NULL,                                 0,                          NULL  },
+{ 1, "Align View to &Workplane\tW",         MNU_ONTO_WORKPLANE, 'W',    mView },
 { 1, "Nearest &Ortho View\tF2",             MNU_NEAREST_ORTHO,  F(2),   mView },
 { 1, "Nearest &Isometric View\tF3",         MNU_NEAREST_ISO,    F(3),   mView },
 { 1, "&Center View At Point\tF4",           MNU_CENTER_VIEW,    F(4),   mView },
+{ 1,  NULL,                                 0,                          NULL  },
+{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '.'|S,  mView },
+{ 1, "Force &Parallel Projection\t`",       MNU_PARALLEL_PROJ,  '`',    mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1, "Show &Toolbar",                       MNU_SHOW_TOOLBAR,   0,      mView },
@@ -81,7 +82,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 {11, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
 
 { 0, "&Sketch",                             0,                          NULL  },
-{ 1, "In &Workplane\tW",                    MNU_SEL_WORKPLANE,  'W',    mReq  },
+{ 1, "In &Workplane\t2",                    MNU_SEL_WORKPLANE,  '2',    mReq  },
 { 1, "Anywhere In &3d\t3",                  MNU_FREE_IN_3D,     '3',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
@@ -371,6 +372,16 @@ void GraphicsWindow::MenuView(int id) {
             }
             SS.GW.EnsureValidActives();
             InvalidateGraphics();
+            break;
+
+        case MNU_ONTO_WORKPLANE:
+            if(!SS.GW.LockedInWorkplane()) {
+                Error("No workplane is active.");
+                break;
+            }
+            SS.GW.AnimateOntoWorkplane();
+            SS.GW.ClearSuper();
+            SS.later.showTW = true;
             break;
 
         case MNU_NEAREST_ORTHO:
@@ -813,11 +824,15 @@ void GraphicsWindow::MenuRequest(int id) {
             } else if(g->type == Group::DRAWING_WORKPLANE) {
                 // The group's default workplane
                 g->activeWorkplane = g->h.entity(0);
+                Message("No workplane selected. Activating default workplane "
+                        "for this group.");
             }
 
             if(!SS.GW.LockedInWorkplane()) {
-                Error("Select workplane (e.g., the XY plane) "
-                      "before locking on.");
+                Error("No workplane is selected, and the active group does "
+                      "not have a default workplane. Try selecting a "
+                      "workplane, or activating a sketch-in-new-workplane "
+                      "group.");
                 break;
             }
             // Align the view with the selected workplane
@@ -892,17 +907,16 @@ void GraphicsWindow::ClearSuper(void) {
     EnsureValidActives();
 }
 
-void GraphicsWindow::ToggleBool(int link, DWORD v) {
-    bool *vb = (bool *)v;
-    *vb = !*vb;
+void GraphicsWindow::ToggleBool(bool *v) {
+    *v = !*v;
 
     // The faces are shown as special stippling on the shaded triangle mesh,
     // so not meaningful to show them and hide the shaded.
-    if(!SS.GW.showShaded) SS.GW.showFaces = false;
+    if(!showShaded) showFaces = false;
 
     // We might need to regenerate the mesh and edge list, since the edges
     // wouldn't have been generated if they were previously hidden.
-    if(SS.GW.showEdges) (SK.GetGroup(SS.GW.activeGroup))->displayDirty = true;
+    if(showEdges) (SK.GetGroup(activeGroup))->displayDirty = true;
 
     SS.GenerateAll();
     InvalidateGraphics();

@@ -2,6 +2,10 @@
 
 use GD;
 
+my ($out, $proto) = @ARGV;
+open(OUT, ">$out") or die "$out: $!";
+open(PROTO, ">$proto") or die "$proto: $!";
+
 for $file (<icons/*.png>) {
    
     $file =~ m#.*/(.*)\.png#;
@@ -17,7 +21,8 @@ for $file (<icons/*.png>) {
     ($width, $height) = $img->getBounds();
     die "$file: $width, $height"  if ($width != 24) or ($height != 24);
 
-    print "unsigned char $base\[24*24*3] = {\n";
+    print PROTO "extern unsigned char $base\[24*24*3\];";
+    print OUT "unsigned char $base\[24*24*3] = {\n";
 
     for($y = 0; $y < 24; $y++) {
         for($x = 0; $x < 24; $x++) {
@@ -26,10 +31,10 @@ for $file (<icons/*.png>) {
             if($r + $g + $b < 11) {
                 ($r, $g, $b) = (30, 30, 30);
             }
-            printf "    0x%02x, 0x%02x, 0x%02x,\n", $r, $g, $b;
+            printf OUT "    0x%02x, 0x%02x, 0x%02x,\n", $r, $g, $b;
         }
     }
 
-    print "};\n\n";
+    print OUT "};\n\n";
 
 }

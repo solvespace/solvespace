@@ -97,5 +97,5 @@ toolbar.cpp: $(OBJDIR)/icons.h
 glhelper.cpp: bitmapfont.table font.table
 
 $(OBJDIR)/icons.h: icons/* png2c.pl
-    perl png2c.pl > $(OBJDIR)/icons.h
+    perl png2c.pl $(OBJDIR)/icons.h $(OBJDIR)/icons-proto.h
 

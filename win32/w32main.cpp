@@ -229,6 +229,7 @@ void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
     // The timer is periodic, so needs to be killed explicitly.
     KillTimer(GraphicsWnd, 1);
     SS.GW.TimerCallback();
+    SS.TW.TimerCallback();
 }
 void SetTimerFor(int milliseconds)
 {
@@ -245,6 +246,10 @@ static void GetWindowSize(HWND hwnd, int *w, int *h)
 void GetGraphicsWindowSize(int *w, int *h)
 {
     GetWindowSize(GraphicsWnd, w, h);
+}
+void GetTextWindowSize(int *w, int *h)
+{
+    GetWindowSize(TextWnd, w, h);
 }
 
 void OpenWebsite(char *url) {
@@ -291,9 +296,7 @@ static void PaintTextWnd(HDC hdc)
 {
     wglMakeCurrent(GetDC(TextWnd), TextGl);
 
-    int w, h;
-    GetWindowSize(TextWnd, &w, &h);
-    SS.TW.Paint(w, h);
+    SS.TW.Paint();
     SwapBuffers(GetDC(TextWnd));
 
     // Leave the graphics window context active, except when we're painting
@@ -439,8 +442,21 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             break;
         }
 
+        case WM_MOUSELEAVE:
+            SS.TW.MouseLeave();
+            break;
+
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
+            // We need this in order to get the WM_MOUSELEAVE
+            TRACKMOUSEEVENT tme;
+            ZERO(&tme);
+            tme.cbSize = sizeof(tme);
+            tme.dwFlags = TME_LEAVE;
+            tme.hwndTrack = TextWnd;
+            TrackMouseEvent(&tme);
+
+            // And process the actual message
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
             SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, x, y);
@@ -595,9 +611,7 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
 
 void PaintGraphics(void)
 {
-    int w, h;
-    GetWindowSize(GraphicsWnd, &w, &h);
-    SS.GW.Paint(w, h);
+    SS.GW.Paint();
     SwapBuffers(GetDC(GraphicsWnd));
 }
 void InvalidateGraphics(void)
@@ -1021,7 +1035,7 @@ static void CreateMainWindows(void)
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
     TextWnd = CreateWindowEx(0, 
-        "TextWnd", "SolveSpace (Text Window)", WS_THICKFRAME | WS_CLIPCHILDREN,
+        "TextWnd", "SolveSpace - Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 
