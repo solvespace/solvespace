@@ -301,7 +301,7 @@ public:
         MNU_ZOOM_OUT,
         MNU_ZOOM_TO_FIT,
         MNU_SHOW_GRID,
-        MNU_PARALLEL_PROJ,
+        MNU_PERSPECTIVE_PROJ,
         MNU_ONTO_WORKPLANE,
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,

@@ -114,10 +114,6 @@ void SolveSpace::Init(char *cmdLine) {
     // configuration file, but we will automatically load those as we need
     // them.
 
-    // The factory default settings include a non-zero perspective factor,
-    // but we'll default to that off.
-    forceParallelProj = true;
-
     // Start with either an empty file, or the file specified on the
     // command line.
     NewFile();
@@ -253,7 +249,7 @@ double SolveSpace::ChordTolMm(void) {
 }
 
 double SolveSpace::CameraTangent(void) {
-    if(forceParallelProj) {
+    if(!usePerspectiveProj) {
         return 0;
     } else {
         return cameraTangent;

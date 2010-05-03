@@ -346,9 +346,9 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
         }
         case EDIT_CAMERA_TANGENT: {
             SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
-            if(SS.forceParallelProj) {
+            if(!SS.usePerspectiveProj) {
                 Message("The perspective factor will have no effect until you "
-                        "disable View -> Force Parallel Projection.");
+                        "enable View -> Use Perspective Projection.");
             }
             InvalidateGraphics();
             break;

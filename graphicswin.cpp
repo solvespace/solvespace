@@ -58,7 +58,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Center View At Point\tF4",           MNU_CENTER_VIEW,    F(4),   mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '.'|S,  mView },
-{ 1, "Force &Parallel Projection\t`",       MNU_PARALLEL_PROJ,  '`',    mView },
+{ 1, "Use &Perspective Projection\t`",      MNU_PERSPECTIVE_PROJ,'`',   mView },
 { 1,  NULL,                                 0,                          NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1, "Show &Toolbar",                       MNU_SHOW_TOOLBAR,   0,      mView },
@@ -361,8 +361,8 @@ void GraphicsWindow::MenuView(int id) {
             InvalidateGraphics();
             break;
 
-        case MNU_PARALLEL_PROJ:
-            SS.forceParallelProj = !SS.forceParallelProj;
+        case MNU_PERSPECTIVE_PROJ:
+            SS.usePerspectiveProj = !SS.usePerspectiveProj;
             if(SS.cameraTangent < 1e-6) {
                 Error("The perspective factor is set to zero, so the view will "
                       "always be a parallel projection.\n\n"
@@ -547,7 +547,7 @@ void GraphicsWindow::EnsureValidActives(void) {
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
     CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
-    CheckMenuById(MNU_PARALLEL_PROJ, SS.forceParallelProj);
+    CheckMenuById(MNU_PERSPECTIVE_PROJ, SS.usePerspectiveProj);
     CheckMenuById(MNU_SHOW_GRID, SS.GW.showSnapGrid);
 
     if(change) SS.later.showTW = true;

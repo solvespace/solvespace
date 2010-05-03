@@ -649,7 +649,7 @@ public:
     char *UnitName(void);
     double MmPerUnit(void);
     double ChordTolMm(void);
-    bool forceParallelProj;
+    bool usePerspectiveProj;
     double CameraTangent(void);
 
     // The platform-dependent code calls this before entering the msg loop
