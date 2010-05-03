@@ -237,7 +237,31 @@ void Group::MenuGroup(int id) {
             if(strlen(g.impFile) == 0) {
                 if(!GetOpenFile(g.impFile, SLVS_EXT, SLVS_PATTERN)) return;
             }
-            g.name.strcpy("import");
+
+            // Assign the default name of the group based on the name of
+            // the imported file.
+            char groupName[MAX_PATH];
+            strcpy(groupName, g.impFile);
+            char *dot = strrchr(groupName, '.');
+            if(dot) *dot = '\0';
+
+            char *s, *start = groupName;
+            for(s = groupName; *s; s++) {
+                if(*s == '/' || *s == '\\') {
+                    start = s + 1;
+                } else if(isalnum(*s)) {
+                    // do nothing, valid character
+                } else {
+                    // convert invalid characters (like spaces) to dashes
+                    *s = '-';
+                }
+            }
+            if(strlen(start) > 0) {
+                g.name.strcpy(start);
+            } else {
+                g.name.strcpy("import");
+            }
+
             g.meshCombine = COMBINE_AS_ASSEMBLE;
             break;
         }
