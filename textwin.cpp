@@ -597,6 +597,7 @@ done:
 
 void TextWindow::MouseLeave(void) {
     tooltippedIcon = NULL;
+    hoveredIcon = NULL;
     hoveredRow = 0;
     hoveredCol = 0;
     InvalidateText();
