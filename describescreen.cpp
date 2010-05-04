@@ -204,6 +204,9 @@ void TextWindow::DescribeSelection(void) {
         } else {
             Printf(false, "%FtIN STYLE%E      none");
         }
+        if(e->construction) {
+            Printf(false, "%FtCONSTRUCTION");
+        }
     } else if(gs.n == 2 && gs.points == 2) {
         Printf(false, "%FtTWO POINTS");
         Vector p0 = SK.GetEntity(gs.point[0])->PointGetNum();
