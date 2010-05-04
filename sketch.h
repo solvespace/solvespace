@@ -545,6 +545,7 @@ public:
     static const int ARC_LINE_TANGENT   = 123;
     static const int CUBIC_LINE_TANGENT = 124;
     static const int EQUAL_RADIUS       = 130;
+    static const int WHERE_DRAGGED      = 200;
 
     static const int COMMENT            = 1000;
 

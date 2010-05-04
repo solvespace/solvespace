@@ -601,6 +601,25 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case WHERE_DRAGGED: {
+            Vector p = SK.GetEntity(ptA)->PointGetNum(),
+                   u = p.Plus(gu.WithMagnitude(8/SS.GW.scale)).Plus(
+                              gr.WithMagnitude(8/SS.GW.scale)),
+                   uu = u.Minus(gu.WithMagnitude(5/SS.GW.scale)),
+                   ur = u.Minus(gr.WithMagnitude(5/SS.GW.scale));
+            // Draw four little crop marks, uniformly spaced (by ninety
+            // degree rotations) around the point.
+            int i;
+            for(i = 0; i < 4; i++) {
+                LineDrawOrGetDistance(u, uu);
+                LineDrawOrGetDistance(u, ur);
+                u = u.RotatedAbout(p, gn, PI/2);
+                ur = ur.RotatedAbout(p, gn, PI/2);
+                uu = uu.RotatedAbout(p, gn, PI/2);
+            }
+            break;
+        }
+
         case SAME_ORIENTATION: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);

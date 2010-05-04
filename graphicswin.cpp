@@ -92,7 +92,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
 { 1, "&Circle\tC",                          MNU_CIRCLE,         'C',    mReq  },
 { 1, "&Arc of a Circle\tA",                 MNU_ARC,            'A',    mReq  },
-{ 1, "&Bezier Cubic Segment\tB",            MNU_CUBIC,          'B',    mReq  },
+{ 1, "&Bezier Cubic Spline\tB",             MNU_CUBIC,          'B',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "&Text in TrueType Font\tT",           MNU_TTF_TEXT,       'T',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
@@ -116,6 +116,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Para&llel / Tangent\tL",              MNU_PARALLEL,       'L',    mCon  },
 { 1, "&Perpendicular\t[",                   MNU_PERPENDICULAR,  '[',    mCon  },
 { 1, "Same Orient&ation\tX",                MNU_ORIENTED_SAME,  'X',    mCon  },
+{ 1, "Lock Point Where &Dragged\t]",        MNU_WHERE_DRAGGED,  ']',    mCon  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "Comment\t;",                          MNU_COMMENT,        ';',    mCon  },
 

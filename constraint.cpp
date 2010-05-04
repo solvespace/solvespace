@@ -36,6 +36,7 @@ char *Constraint::DescriptionString(void) {
         case EQUAL_RADIUS:      s = "eq-radius"; break;
         case EQUAL_ANGLE:       s = "eq-angle"; break;
         case EQUAL_LINE_ARC_LEN:s = "eq-line-len-arc-len"; break;
+        case WHERE_DRAGGED:     s = "lock-where-dragged"; break;
         case COMMENT:           s = "comment"; break;
         default:                s = "???"; break;
     }
@@ -641,6 +642,19 @@ void Constraint::MenuConstrain(int id) {
                       "    * two line segments\n"
                       "    * a line segment and a normal\n"
                       "    * two normals\n");
+                return;
+            }
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_WHERE_DRAGGED:
+            if(gs.points == 1 && gs.n == 1) {
+                c.type = WHERE_DRAGGED;
+                c.ptA = gs.point[0];
+            } else {
+                Error("Bad selection for lock point where dragged constraint. "
+                      "This constraint can apply to:\n\n"
+                      "    * a point\n");
                 return;
             }
             AddConstraint(&c);

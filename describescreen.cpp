@@ -284,10 +284,13 @@ void TextWindow::DescribeSelection(void) {
             Printf(true,  "      distance = %Fi%s", SS.MmToString(d));
         }
     } else if(gs.n == 0 && gs.stylables > 0) {
-        Printf(true, "%FtSELECTED:%E comment text");
+        Printf(false, "%FtSELECTED:%E comment text");
+    } else if(gs.n == 0 && gs.constraints == 1) {
+        Printf(false, "%FtSELECTED:%E %s",
+            SK.GetConstraint(gs.constraint[0])->DescriptionString());
     } else {
         int n = SS.GW.selection.n;
-        Printf(true, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");
+        Printf(false, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");
     }
 
     if(shown.screen == SCREEN_STYLE_INFO && 

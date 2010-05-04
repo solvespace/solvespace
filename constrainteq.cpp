@@ -690,6 +690,24 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             break;
         }
 
+        case WHERE_DRAGGED: {
+            EntityBase *ep = SK.GetEntity(ptA);
+            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+                ExprVector ev = ep->PointGetExprs();
+                Vector v = ep->PointGetNum();
+
+                AddEq(l, ev.x->Minus(Expr::From(v.x)), 0);
+                AddEq(l, ev.y->Minus(Expr::From(v.y)), 1);
+                AddEq(l, ev.z->Minus(Expr::From(v.z)), 2);
+            } else {
+                Expr *u, *v;
+                ep->PointGetExprsInWorkplane(workplane, &u, &v);
+                AddEq(l, u->Minus(Expr::From(u->Eval())), 0);
+                AddEq(l, v->Minus(Expr::From(v->Eval())), 1);
+            }
+            break;
+        }
+
         case COMMENT:
             break;
 

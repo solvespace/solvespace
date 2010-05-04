@@ -363,6 +363,7 @@ public:
         MNU_PARALLEL,
         MNU_PERPENDICULAR,
         MNU_ORIENTED_SAME,
+        MNU_WHERE_DRAGGED,
         MNU_COMMENT,
         // Analyze
         MNU_VOLUME,

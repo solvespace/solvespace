@@ -11,7 +11,7 @@ static const struct {
     { Icon_rectangle,       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle"                                  },
     { Icon_circle,          GraphicsWindow::MNU_CIRCLE,         "Sketch circle"                                     },
     { Icon_arc,             GraphicsWindow::MNU_ARC,            "Sketch arc, or tangent arc at selected point"      },
-    { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier section"                       },
+    { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline"                        },
     { Icon_point,           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point"                                },
     { Icon_construction,    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction"                               },
     { Icon_trim,            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect"         },
