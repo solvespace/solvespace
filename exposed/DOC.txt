@@ -422,6 +422,14 @@ SLVS_C_EQUAL_RADIUS
 
     The circles or arcs entityA and entityB have equal radius.
 
+SLVS_C_WHERE_DRAGGED*
+
+    The point ptA is locked at its initial numerical guess, and cannot
+    be moved. This constrains two degrees of freedom in a workplane,
+    and three in free space. It's therefore possible for this constraint
+    to overconstrain the sketch, for example if it's applied to a point
+    with one remaining degree of freedom.
+
 
 USING THE SOLVER
 ================
@@ -429,5 +437,5 @@ USING THE SOLVER
 See the enclosed sample code, example.c.
 
 
-Copyright 2009 Useful Subset, LLC
+Copyright 2009-2010 Useful Subset, LLC
 

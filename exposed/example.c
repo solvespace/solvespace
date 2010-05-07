@@ -8,7 +8,7 @@
 //
 //     http://solvespace.com/
 //
-// Copyright 2009 Useful Subset, LLC
+// Copyright 2009-2010 Useful Subset, LLC
 //-----------------------------------------------------------------------------
 #include <windows.h>
 #include <stdio.h>
@@ -28,7 +28,8 @@ void *CheckMalloc(size_t n)
 }
 
 //-----------------------------------------------------------------------------
-// An example of a constraint in 3d. We create 
+// An example of a constraint in 3d. We create a single group, with some
+// entities and constraints.
 //-----------------------------------------------------------------------------
 void Example3d(void)
 {

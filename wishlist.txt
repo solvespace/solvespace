@@ -1,6 +1,8 @@
 add checked/unchecked checkbox and radio button
 fix bug with rotation in plane where green line stays displayed
 expose transformed point stuff in library
+group option to make dimensions always reference?
+more tangencies
 
 -----
 rounding, as a special group

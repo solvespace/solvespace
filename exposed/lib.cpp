@@ -65,12 +65,12 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 #if 1
         dbp("SolveSpace library initialized (evaluation version only).");
         dbp("Built " __DATE__ " " __TIME__
-                    ". Copyright 2009 Useful Subset, LLC.");
+                    ". Copyright 2009-2010 Useful Subset, LLC.");
         HWND h = GetForegroundWindow();
         MessageBox(h,
 "This is an evaluation copy of SolveSpace. To purchase a license, please "
 "contact info@solvespace.com.\r\n\r\n"
-"Copyright 2009 Useful Subset, LLC.",
+"Copyright 2009-2010 Useful Subset, LLC.",
             "SolveSpace", MB_OK);
 #endif
         InitHeaps();
@@ -97,18 +97,18 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
         ZERO(&e);
 
         switch(se->type) {
-            case SLVS_E_POINT_IN_3D:    e.type = Entity::POINT_IN_3D; break;
-            case SLVS_E_POINT_IN_2D:    e.type = Entity::POINT_IN_2D; break;
-            case SLVS_E_NORMAL_IN_3D:   e.type = Entity::NORMAL_IN_3D; break;
-            case SLVS_E_NORMAL_IN_2D:   e.type = Entity::NORMAL_IN_2D; break;
-            case SLVS_E_DISTANCE:       e.type = Entity::DISTANCE; break;
-            case SLVS_E_WORKPLANE:      e.type = Entity::WORKPLANE; break;
-            case SLVS_E_LINE_SEGMENT:   e.type = Entity::LINE_SEGMENT; break;
-            case SLVS_E_CUBIC:          e.type = Entity::CUBIC; break;
-            case SLVS_E_CIRCLE:         e.type = Entity::CIRCLE; break;
-            case SLVS_E_ARC_OF_CIRCLE:  e.type = Entity::ARC_OF_CIRCLE; break;
+case SLVS_E_POINT_IN_3D:        e.type = Entity::POINT_IN_3D; break;
+case SLVS_E_POINT_IN_2D:        e.type = Entity::POINT_IN_2D; break;
+case SLVS_E_NORMAL_IN_3D:       e.type = Entity::NORMAL_IN_3D; break;
+case SLVS_E_NORMAL_IN_2D:       e.type = Entity::NORMAL_IN_2D; break;
+case SLVS_E_DISTANCE:           e.type = Entity::DISTANCE; break;
+case SLVS_E_WORKPLANE:          e.type = Entity::WORKPLANE; break;
+case SLVS_E_LINE_SEGMENT:       e.type = Entity::LINE_SEGMENT; break;
+case SLVS_E_CUBIC:              e.type = Entity::CUBIC; break;
+case SLVS_E_CIRCLE:             e.type = Entity::CIRCLE; break;
+case SLVS_E_ARC_OF_CIRCLE:      e.type = Entity::ARC_OF_CIRCLE; break;
 
-            default: dbp("bad entity type %d", se->type); return;
+default: dbp("bad entity type %d", se->type); return;
         }
         e.h.v           = se->h;
         e.group.v       = se->group;
@@ -165,6 +165,7 @@ case SLVS_C_ARC_LINE_TANGENT:   t = Constraint::ARC_LINE_TANGENT; break;
 case SLVS_C_CUBIC_LINE_TANGENT: t = Constraint::CUBIC_LINE_TANGENT; break;
 case SLVS_C_EQUAL_RADIUS:       t = Constraint::EQUAL_RADIUS; break;
 case SLVS_C_PROJ_PT_DISTANCE:   t = Constraint::PROJ_PT_DISTANCE; break;
+case SLVS_C_WHERE_DRAGGED:      t = Constraint::WHERE_DRAGGED; break;
 
 default: dbp("bad constraint type %d", sc->type); return;
         }

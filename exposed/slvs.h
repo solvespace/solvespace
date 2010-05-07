@@ -9,7 +9,7 @@
 //
 //     http://solvespace.com/
 //
-// Copyright 2009 Useful Subset, LLC
+// Copyright 2009-2010 Useful Subset, LLC
 //-----------------------------------------------------------------------------
 
 #ifndef __SLVS_H
@@ -36,23 +36,23 @@ typedef struct {
 } Slvs_Param;
 
 
-#define SLVS_E_POINT_IN_3D     50000
-#define SLVS_E_POINT_IN_2D     50001
+#define SLVS_E_POINT_IN_3D          50000
+#define SLVS_E_POINT_IN_2D          50001
 
-#define SLVS_E_NORMAL_IN_3D    60000
-#define SLVS_E_NORMAL_IN_2D    60001
+#define SLVS_E_NORMAL_IN_3D         60000
+#define SLVS_E_NORMAL_IN_2D         60001
 
-#define SLVS_E_DISTANCE        70000
+#define SLVS_E_DISTANCE             70000
 
 // The special point, normal, and distance types used for parametric step
 // and repeat, extrude, and assembly are currently not exposed. Please
 // contact us if you are interested in using these.
 
-#define SLVS_E_WORKPLANE       80000
-#define SLVS_E_LINE_SEGMENT    80001
-#define SLVS_E_CUBIC           80002
-#define SLVS_E_CIRCLE          80003
-#define SLVS_E_ARC_OF_CIRCLE   80004
+#define SLVS_E_WORKPLANE            80000
+#define SLVS_E_LINE_SEGMENT         80001
+#define SLVS_E_CUBIC                80002
+#define SLVS_E_CIRCLE               80003
+#define SLVS_E_ARC_OF_CIRCLE        80004
 
 typedef struct {
     Slvs_hEntity    h;
@@ -99,6 +99,7 @@ typedef struct {
 #define SLVS_C_CUBIC_LINE_TANGENT       100028
 #define SLVS_C_EQUAL_RADIUS             100029
 #define SLVS_C_PROJ_PT_DISTANCE         100030
+#define SLVS_C_WHERE_DRAGGED            100031
 
 typedef struct {
     Slvs_hConstraint    h;
@@ -115,7 +116,7 @@ typedef struct {
     Slvs_hEntity        entityB;
     Slvs_hEntity        entityC;
     Slvs_hEntity        entityD;
-
+    
     int                 other;
 } Slvs_Constraint;
 
@@ -141,7 +142,7 @@ typedef struct {
     // If a parameter corresponds to a point (distance, normal, etc.) being
     // dragged, then specify it here. This will cause the solver to favor
     // that parameter, and attempt to change it as little as possible even
-    // if that require it to change other parameters more.
+    // if that requires it to change other parameters more.
     //
     // Unused members of this array should be set to zero.
     Slvs_hParam         dragged[4];
@@ -149,7 +150,7 @@ typedef struct {
     // If the solver fails, then it can determine which constraints are
     // causing the problem. But this is a relatively slow process (for
     // a system with n constraints, about n times as long as just solving).
-    // If calculateFaileds is set, then the solver will do so, otherwise
+    // If calculateFaileds is true, then the solver will do so, otherwise
     // not.
     int                 calculateFaileds;
 
