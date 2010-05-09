@@ -20,7 +20,7 @@ int main(void)
     SelectObject(hdc, bitmap);
     SelectObject(hdc, font);
 
-    printf("static const BYTE FontTexture[] = {\n");
+    printf("static const BYTE FontTexture[256*16*16] = {\n");
 
     int c;
     for(c = 0; c < 128; c++) {
@@ -45,7 +45,7 @@ int main(void)
         }
         printf("\n");
     }
-
+    printf("#include \"bitmapextra.table\"\n");
     printf("};\n");
 
     return 0;

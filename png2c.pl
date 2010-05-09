@@ -7,7 +7,8 @@ open(OUT, ">$out") or die "$out: $!";
 open(PROTO, ">$proto") or die "$proto: $!";
 
 for $file (<icons/*.png>) {
-   
+    next if $file =~ /char-/;
+
     $file =~ m#.*/(.*)\.png#;
     $base = "Icon_$1";
     $base =~ y/-/_/;

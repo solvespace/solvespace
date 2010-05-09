@@ -33,6 +33,11 @@ public:
     static const int LINE_HEIGHT    = 20;
     static const int LEFT_MARGIN    = 6;
 
+    static const int CHECK_FALSE    = 0x80;
+    static const int CHECK_TRUE     = 0x81;
+    static const int RADIO_FALSE    = 0x82;
+    static const int RADIO_TRUE     = 0x83;
+
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 

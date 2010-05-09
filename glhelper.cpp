@@ -480,6 +480,21 @@ void glxDepthRangeLockToFront(bool yes)
 
 void glxCreateBitmapFont(void)
 {
+    // Place the font in our texture in a two-dimensional grid; 1d would
+    // be simpler, but long skinny textures (256*16 = 4096 pixels wide)
+    // won't work.
+    static BYTE MappedTexture[4*16*64*16];
+    int a, i;
+    for(a = 0; a < 256; a++) {
+        int row = a / 4, col = a % 4;
+
+        for(i = 0; i < 16; i++) {
+            memcpy(MappedTexture + row*4*16*16 + col*16 + i*4*16,
+                   FontTexture + a*16*16 + i*16,
+                   16);
+        }
+    }
+
     glBindTexture(GL_TEXTURE_2D, TEXTURE_BITMAP_FONT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -487,22 +502,32 @@ void glxCreateBitmapFont(void)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
-                 16, 128*16,
+                 16*4, 64*16,
                  0,
                  GL_ALPHA, GL_UNSIGNED_BYTE,
-                 FontTexture);
+                 MappedTexture);
 }
 
 void glxBitmapCharQuad(char c, double x, double y)
 {
-    int w = SS.TW.CHAR_WIDTH,
+    BYTE b = (BYTE)c;
+    int w, h;
+
+    if(b & 0x80) {
+        // Special character, like a checkbox or a radio button
+        w = h = 16;
+    } else {
+        // Normal character from our font
+        w = SS.TW.CHAR_WIDTH,
         h = SS.TW.CHAR_HEIGHT;
-  
-    if(c != ' ' && c != 0 && c < 128) {
-        double s0 = 0,
-               s1 = h/16.0,
-               t0 = c/128.0,
-               t1 = t0 + (w/16.0)/128;
+    }
+
+    if(b != ' ' && b != 0) {
+        int row = b / 4, col = b % 4;
+        double s0 = col/4.0,
+               s1 = (col+1)/4.0,
+               t0 = row/64.0,
+               t1 = t0 + (w/16.0)/64;
 
         glTexCoord2d(s1, t0);
         glVertex2d(x, y);
