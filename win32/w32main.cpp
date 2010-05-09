@@ -657,7 +657,7 @@ void ShowTextEditControl(int hr, int c, char *s)
     int y = (hr - SS.TW.scrollPos)*(SS.TW.LINE_HEIGHT/2);
     TextEditControlCol = c;
     TextEditControlHalfRow = hr;
-    ShowEditControl(TextEditControl, x, y, s);
+    ShowEditControl(TextEditControl, x - 1, y + 2, s);
 }
 void HideTextEditControl(void)
 {

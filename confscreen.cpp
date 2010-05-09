@@ -15,7 +15,7 @@ void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
 void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.2f", SS.lightIntensity[v]);
-    ShowTextEditControl(29+2*v, 30, str);
+    ShowTextEditControl(29+2*v, 31, str);
     SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
     SS.TW.edit.i = v;
 }
@@ -26,7 +26,7 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
         REDf(SS.modelColor[v]),
         GREENf(SS.modelColor[v]),
         BLUEf(SS.modelColor[v]));
-    ShowTextEditControl(9+2*v, 12, str);
+    ShowTextEditControl(9+2*v, 13, str);
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
@@ -95,7 +95,11 @@ void TextWindow::ScreenChangePwlCurves(int link, DWORD v) {
 }
 
 void TextWindow::ScreenChangeCanvasSizeAuto(int link, DWORD v) {
-    SS.exportCanvasSizeAuto = !SS.exportCanvasSizeAuto;
+    if(link == 't') {
+        SS.exportCanvasSizeAuto = true;
+    } else {
+        SS.exportCanvasSizeAuto = false;
+    }
     InvalidateGraphics();
 }
 
@@ -215,37 +219,28 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeExportOffset, 0);
 
     Printf(false, "");
-    Printf(false, "%Ft export shaded 2d triangles: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+    Printf(false, "  %Fd%f%Ll%c  export shaded 2d triangles%E",
         &ScreenChangeShadedTriangles,
-        (SS.exportShadedTriangles ? "" : "yes"),
-        (SS.exportShadedTriangles ? "yes" : ""),
-        &ScreenChangeShadedTriangles,
-        (!SS.exportShadedTriangles ? "" : "no"),
-        (!SS.exportShadedTriangles ? "no" : ""));
+        SS.exportShadedTriangles ? CHECK_TRUE : CHECK_FALSE);
+
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
-        Printf(false, "%Ft curves as piecewise linear:%E %Fsyes%Ft "
-                       "(since cutter radius is not zero)");
+        Printf(false, "  %Fd%c  curves as piecewise linear%E "
+                      "(since cutter radius is not zero)", CHECK_TRUE);
     } else {
-        Printf(false, "%Ft curves as piecewise linear: "
-                      "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        Printf(false, "  %Fd%f%Ll%c  export curves as piecewise linear%E",
             &ScreenChangePwlCurves,
-            (SS.exportPwlCurves ? "" : "yes"),
-            (SS.exportPwlCurves ? "yes" : ""),
-            &ScreenChangePwlCurves,
-            (!SS.exportPwlCurves ? "" : "no"),
-            (!SS.exportPwlCurves ? "no" : ""));
+            SS.exportPwlCurves ? CHECK_TRUE : CHECK_FALSE);
     }
 
     Printf(false, "");
-    Printf(false, "%Ft export canvas size: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+    Printf(false, "%Ft export canvas size:  "
+                  "%f%Fd%Lf%c fixed%E  "
+                  "%f%Fd%Lt%c auto%E",
         &ScreenChangeCanvasSizeAuto,
-        (!SS.exportCanvasSizeAuto ? "" : "fixed"),
-        (!SS.exportCanvasSizeAuto ? "fixed" : ""),
+        !SS.exportCanvasSizeAuto ? RADIO_TRUE : RADIO_FALSE,
         &ScreenChangeCanvasSizeAuto,
-        (SS.exportCanvasSizeAuto ? "" : "auto"),
-        (SS.exportCanvasSizeAuto ? "auto" : ""));
+        SS.exportCanvasSizeAuto ? RADIO_TRUE : RADIO_FALSE);
+
     if(SS.exportCanvasSizeAuto) {
         Printf(false, "%Ft (by margins around exported geometry)");
         Printf(false, "%Ba%Ft   left:   %Fd%s %Fl%Ll%f%D[change]%E",
@@ -269,27 +264,15 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft fix white exported lines: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+    Printf(false, "  %Fd%f%Ll%c  fix white exported lines%E",
         &ScreenChangeFixExportColors,
-        ( SS.fixExportColors ? "" : "yes"), ( SS.fixExportColors ? "yes" : ""),
-        &ScreenChangeFixExportColors,
-        (!SS.fixExportColors ? "" : "no"),  (!SS.fixExportColors ? "no"  : ""));
-
-    Printf(false, "%Ft draw triangle back faces: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%c  draw triangle back faces in red%E",
         &ScreenChangeBackFaces,
-        (SS.drawBackFaces ? "" : "yes"), (SS.drawBackFaces ? "yes" : ""),
-        &ScreenChangeBackFaces,
-        (!SS.drawBackFaces ? "" : "no"), (!SS.drawBackFaces ? "no" : ""));
-
-    bool ccc = (SS.checkClosedContour != 0);
-    Printf(false, "%Ft check for closed contour: "
-                  "%Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
+        SS.drawBackFaces ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
-        (ccc ? "" : "yes"), (ccc ? "yes" : ""),
-        &ScreenChangeCheckClosedContour,
-        (!ccc ? "" : "no"), (!ccc ? "no" : ""));
+        SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft exported g code parameters");

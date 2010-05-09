@@ -270,19 +270,19 @@ void TextWindow::ScreenChangePasteTransformed(int link, DWORD v) {
     switch(link) {
         case 't':
             sprintf(str, "%d", SS.TW.shown.paste.times);
-            ShowTextEditControl(10, 12, str);
+            ShowTextEditControl(10, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_TIMES_REPEATED;
             break;
 
         case 'r':
             sprintf(str, "%.3f", SS.TW.shown.paste.theta*180/PI);
-            ShowTextEditControl(12, 12, str);
+            ShowTextEditControl(12, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_ANGLE;
             break;
 
         case 's':
             sprintf(str, "%.3f", SS.TW.shown.paste.scale);
-            ShowTextEditControl(18, 12, str);
+            ShowTextEditControl(18, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_SCALE;
             break;
     }
@@ -356,23 +356,23 @@ void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
 
 void TextWindow::ShowPasteTransformed(void) {
     Printf(true, "%FtPASTE TRANSFORMED%E");
-    Printf(true,  "%Ba  %FtREPEAT%E    %d time%s %Fl%Lt%f[change]%E",
+    Printf(true,  "%Ba   %Ftrepeat%E    %d time%s %Fl%Lt%f[change]%E",
         shown.paste.times, (shown.paste.times == 1) ? "" : "s",
         &ScreenChangePasteTransformed);
-    Printf(false, "%Bd  %FtROTATE%E    %@ degrees %Fl%Lr%f[change]%E",
+    Printf(false, "%Bd   %Ftrotate%E    %@ degrees %Fl%Lr%f[change]%E",
         shown.paste.theta*180/PI,
         &ScreenChangePasteTransformed);
-    Printf(false, "%Ba  %FtABOUT PT%E  (%s, %s, %s) %Fl%Lo%f[use selected]%E",
+    Printf(false, "%Ba   %Ftabout pt%E  (%s, %s, %s) %Fl%Lo%f[use selected]%E",
             SS.MmToString(shown.paste.origin.x),
             SS.MmToString(shown.paste.origin.y),
             SS.MmToString(shown.paste.origin.z),
         &ScreenPasteTransformed);
-    Printf(false, "%Bd  %FtTRANSLATE%E (%s, %s, %s) %Fl%Lt%f[use selected]%E",
+    Printf(false, "%Bd   %Fttranslate%E (%s, %s, %s) %Fl%Lt%f[use selected]%E",
             SS.MmToString(shown.paste.trans.x),
             SS.MmToString(shown.paste.trans.y),
             SS.MmToString(shown.paste.trans.z),
         &ScreenPasteTransformed);
-    Printf(false, "%Ba  %FtSCALE%E     %@ %Fl%Ls%f[change]%E",
+    Printf(false, "%Ba   %Ftscale%E     %@ %Fl%Ls%f[change]%E",
         shown.paste.scale,
         &ScreenChangePasteTransformed);
 

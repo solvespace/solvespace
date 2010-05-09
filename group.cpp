@@ -141,59 +141,6 @@ void Group::MenuGroup(int id) {
             g.name.strcpy("lathe");
             break;
 
-        case GraphicsWindow::MNU_GROUP_SWEEP: {
-            g.type = SWEEP;
-            // Get the group one before the active group; that's our
-            // trajectory
-            int i;
-            for(i = 1; i < SK.group.n - 1; i++) {
-                Group *gnext = &(SK.group.elem[i+1]);
-                if(gnext->h.v == SS.GW.activeGroup.v) {
-                    g.opA = SK.group.elem[i].h;
-                    break;
-                }
-            }
-            if(i >= SK.group.n - 1) {
-                Error("At least one sketch before the active sketch must "
-                      "exist; that specifies the sweep trajectory.");
-                return;
-            }
-            // The active group is our section
-            g.opB = SS.GW.activeGroup;
-            g.name.strcpy("sweep");
-            break;
-        }
-
-        case GraphicsWindow::MNU_GROUP_HELICAL: {
-            if(gs.points == 1 && gs.lineSegments == 1 && gs.n == 2) {
-                Vector pt = SK.GetEntity(gs.point[0])->PointGetNum();
-                Entity *ln = SK.GetEntity(gs.entity[0]);
-                Vector lpa = SK.GetEntity(ln->point[0])->PointGetNum();
-                Vector lpb = SK.GetEntity(ln->point[1])->PointGetNum();
-                double d = pt.DistanceToLine(lpa, lpb.Minus(lpa));
-                if(d < LENGTH_EPS) {
-                    Error("Point on helix can't lie on helix's axis!");
-                    return;
-                }
-                g.predef.origin = gs.point[0];
-                g.predef.entityB = gs.entity[0];
-            } else {
-                Error("Bad selection for helical sweep. This group can "
-                      "be created with:\n\n"
-                      "    * a line segment and a point (line segment "
-                              "is axis of helix, point lies on helix)\n");
-                return;
-            }
-            g.type = HELICAL_SWEEP;
-            g.subtype = RIGHT_HANDED;
-            g.valA = 3; // turns;
-            g.valB = 300/SS.GW.scale; // pitch along axis
-            g.valC = 0; // pitch in radius
-            g.opA = SS.GW.activeGroup;
-            g.name.strcpy("helical-sweep");
-            break;
-        }
-
         case GraphicsWindow::MNU_GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
@@ -440,14 +387,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case LATHE: {
-            break;
-        }
-
-        case SWEEP: {
-            break;
-        }
-
-        case HELICAL_SWEEP: {
             break;
         }
 

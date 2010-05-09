@@ -516,6 +516,7 @@ void glxBitmapCharQuad(char c, double x, double y)
     if(b & 0x80) {
         // Special character, like a checkbox or a radio button
         w = h = 16;
+        x -= 3;
     } else {
         // Normal character from our font
         w = SS.TW.CHAR_WIDTH,

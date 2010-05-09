@@ -140,10 +140,6 @@ public:
     static const int EDIT_G_CODE_PASSES         = 111;
     static const int EDIT_G_CODE_FEED           = 112;
     static const int EDIT_G_CODE_PLUNGE_FEED    = 113;
-    // For the helical sweep
-    static const int EDIT_HELIX_TURNS           = 200;
-    static const int EDIT_HELIX_PITCH           = 201;
-    static const int EDIT_HELIX_DRADIUS         = 202;
     // For TTF text
     static const int EDIT_TTF_TEXT              = 300;
     // For the step dimension screen
@@ -217,8 +213,6 @@ public:
     static void ScreenSelectConstraint(int link, DWORD v);
 
     static void ScreenChangeGroupOption(int link, DWORD v);
-    static void ScreenChangeRightLeftHanded(int link, DWORD v);
-    static void ScreenChangeHelixParameter(int link, DWORD v);
     static void ScreenColor(int link, DWORD v);
 
     static void ScreenShowListOfStyles(int link, DWORD v);
@@ -347,8 +341,6 @@ public:
         MNU_GROUP_WRKPL,
         MNU_GROUP_EXTRUDE,
         MNU_GROUP_LATHE,
-        MNU_GROUP_SWEEP,
-        MNU_GROUP_HELICAL,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
         MNU_GROUP_IMPORT,

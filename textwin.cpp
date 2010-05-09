@@ -13,12 +13,13 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'x', RGB(255,  20,  20) },
     { 'i', RGB(  0, 255, 255) },
     { 'g', RGB(160, 160, 160) },
+    { 'b', RGB(200, 200, 200) },
     { 0, 0 },
 };
 const TextWindow::Color TextWindow::bgColors[] = {
     { 'd', RGB(  0,   0,   0) },
     { 't', RGB( 34,  15,  15) },
-    { 'a', RGB( 20,  20,  20) },
+    { 'a', RGB( 25,  25,  25) },
     { 'r', RGB(255, 255, 255) },
     { 0, 0 },
 };
@@ -146,7 +147,11 @@ void TextWindow::Printf(bool halfLine, char *fmt, ...) {
                 }
                 case 'c': {
                     char v = va_arg(vl, char);
-                    sprintf(buf, "%c", v);
+                    if(v == 0) {
+                        strcpy(buf, "");
+                    } else {
+                        sprintf(buf, "%c", v);
+                    }
                     break;
                 }
                 case 'E':
@@ -239,6 +244,8 @@ void TextWindow::Show(void) {
 
     SS.GW.GroupSelection();
 
+    // Make sure these tests agree with test used to draw indicator line on
+    // main list of groups screen.
     if(SS.GW.pending.description) {
         // A pending operation (that must be completed with the mouse in
         // the graphics window) will preempt our usual display.
@@ -370,9 +377,9 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
 
             if(tooltippedIcon->icon == Icon_faces) {
                 if(SS.GW.showFaces) {
-                    strcpy(str, "Don't select faces with mouse");
+                    strcpy(str, "Don't make faces selectable with mouse");
                 } else {
-                    strcpy(str, "Select faces with mouse");
+                    strcpy(str, "Make faces selectable with mouse");
                 }
             } else {
                 sprintf(str, "%s %s", *(tooltippedIcon->var) ? "Hide" : "Show",
@@ -467,7 +474,7 @@ void TextWindow::Paint(void) {
                     if(bg & 0x80000000) {
                         glColor3f(REDf(bg), GREENf(bg), BLUEf(bg));
                         bh = CHAR_HEIGHT;
-                        adj = 2;
+                        adj += 2;
                     } else {
                         glColor3fv(&(bgColorTable[bg*3]));
                     }
@@ -484,7 +491,7 @@ void TextWindow::Paint(void) {
                     glxBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
 
                     // If this is a link and it's hovered, then draw the
-                    // underline.
+                    // underline
                     if(meta[r][c].link && meta[r][c].link != 'n' &&
                         (r == hoveredRow && c == hoveredCol))
                     {
@@ -503,8 +510,20 @@ void TextWindow::Paint(void) {
                         {
                             cf++;
                         }
+
+                        // But don't underline checkboxes or radio buttons
+                        while((text[r][cs] & 0x80 || text[r][cs] == ' ') &&
+                                cs < cf)
+                        {
+                            cs++;
+                        }
+
                         glEnd();
 
+                        // Always use the color of the rightmost character
+                        // in the link, so that underline is consistent color
+                        fg = meta[r][cf-1].fg;
+                        glColor3fv(&(fgColorTable[fg*3]));
                         glDisable(GL_TEXTURE_2D);
                         glLineWidth(1);
                         glBegin(GL_LINES);
@@ -522,6 +541,24 @@ void TextWindow::Paint(void) {
 
         glEnd();
         glDisable(GL_TEXTURE_2D);
+    }
+
+    // The line to indicate the column of radio buttons that indicates the
+    // active group.
+    SS.GW.GroupSelection();
+    // Make sure this test agrees with test to determine which screen is drawn
+    if(!SS.GW.pending.description && gs.n == 0 && gs.constraints == 0 &&
+        shown.screen == SCREEN_LIST_OF_GROUPS)
+    {
+        int x = 29, y = 70 + LINE_HEIGHT;
+        y -= scrollPos*(LINE_HEIGHT/2);
+
+        glLineWidth(1);
+        glColor3fv(&(fgColorTable['t'*3]));
+        glBegin(GL_LINES);
+            glVertex2d(x, y);
+            glVertex2d(x, y+40);
+        glEnd();
     }
 
     // The header has some icons that are drawn separately from the text

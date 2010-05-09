@@ -91,7 +91,13 @@ void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
     OpenWebsite("http://solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups(void) {
-    Printf(true, "%Ftactv  show  ok  group-name%E");
+    char radioTrue[]  = { ' ', (char)RADIO_TRUE,  ' ', 0 },
+         radioFalse[] = { ' ', (char)RADIO_FALSE, ' ', 0 },
+         checkTrue[]  = { ' ', (char)CHECK_TRUE,  ' ', 0 },
+         checkFalse[] = { ' ', (char)CHECK_FALSE, ' ', 0 };
+
+    Printf(true, "%Ft active");
+    Printf(false, "%Ft    shown ok  group-name%E");
     int i;
     bool afterActive = false;
     for(i = 0; i < SK.group.n; i++) {
@@ -102,21 +108,20 @@ void TextWindow::ShowListOfGroups(void) {
         bool ok = (g->solved.how == System::SOLVED_OKAY);
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
-               "%Fp%D%f%s%Ll%s%E%s  "
-               "%Fp%D%f%Ll%s%E%Fh%s%E   "
+               "%Ft%s%Fb%D%f%Ll%s%E "
+               "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E  "
                "%Fl%Ll%D%f%s",
             // Alternate between light and dark backgrounds, for readability
-            (i & 1) ? 'd' : 'a',
+                (i & 1) ? 'd' : 'a',
             // Link that activates the group
-            active ? 's' : 'h', g->h.v, (&TextWindow::ScreenActivateGroup),
-                active ? "yes" : (ref ? "  " : ""),
-                active ? "" : (ref ? "" : "no"),
-                active ? "" : " ",
+                ref ? "   " : "",
+                g->h.v, (&TextWindow::ScreenActivateGroup),
+                ref ? "" : (active ? radioTrue : radioFalse),
             // Link that hides or shows the group
-            shown ? 's' : 'h', g->h.v, (&TextWindow::ScreenToggleGroupShown),
-                afterActive ? "" :    (shown ? "yes" : "no"),
-                afterActive ? " - " : (shown ? "" : " "),
+                afterActive ? " - " : "",
+                g->h.v, (&TextWindow::ScreenToggleGroupShown),
+                afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occured while solving
             ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
                 ok ? "ok" : "",
@@ -205,34 +210,19 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     switch(link) {
-        case 's':
-            if(g->subtype == Group::ONE_SIDED) {
-                g->subtype = Group::TWO_SIDED;
-            } else {
-                g->subtype = Group::ONE_SIDED;
-            }
-            break;
+        case 's': g->subtype = Group::ONE_SIDED; break;
+        case 'S': g->subtype = Group::TWO_SIDED; break;
 
-        case 'k':
-            (g->skipFirst) = !(g->skipFirst);
-            break;
+        case 'k': g->skipFirst = true; break;
+        case 'K': g->skipFirst = false; break;
 
-        case 'c':
-            g->meshCombine = v;
-            break;
+        case 'c': g->meshCombine = v; break;
 
-        case 'P':
-            g->suppress = !(g->suppress);
-            break;
+        case 'P': g->suppress = !(g->suppress); break;
 
-        case 'r':
-            g->relaxConstraints = !(g->relaxConstraints);
-            break;
+        case 'r': g->relaxConstraints = !(g->relaxConstraints); break;
 
-        case 'f':
-            g->forceToMesh = !(g->forceToMesh);
-            break;
-
+        case 'f': g->forceToMesh = !(g->forceToMesh); break;
     }
 
     SS.MarkGroupDirty(g->h);
@@ -240,39 +230,6 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 
-void TextWindow::ScreenChangeRightLeftHanded(int link, DWORD v) {
-    SS.UndoRemember();
-
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    if(g->subtype == Group::RIGHT_HANDED) {
-        g->subtype = Group::LEFT_HANDED;
-    } else {
-        g->subtype = Group::RIGHT_HANDED;
-    }
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
-}
-void TextWindow::ScreenChangeHelixParameter(int link, DWORD v) {
-    Group *g = SK.GetGroup(SS.TW.shown.group);
-    char str[1024];
-    int r;
-    if(link == 't') {
-        sprintf(str, "%.3f", g->valA);
-        SS.TW.edit.meaning = EDIT_HELIX_TURNS;
-        r = 12;
-    } else if(link == 'i') {
-        strcpy(str, SS.MmToString(g->valB));
-        SS.TW.edit.meaning = EDIT_HELIX_PITCH;
-        r = 14;
-    } else if(link == 'r') {
-        strcpy(str, SS.MmToString(g->valC));
-        SS.TW.edit.meaning = EDIT_HELIX_DRADIUS;
-        r = 16;
-    } else oops();
-    SS.TW.edit.group.v = v;
-    ShowTextEditControl(r, 9, str);
-}
 void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
@@ -287,17 +244,17 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     // There's an extra line for the skipFirst parameter in one-sided groups.
-    int r = (g->subtype == Group::ONE_SIDED) ? 15 : 13;
+    int r = (g->subtype == Group::ONE_SIDED) ? 16 : 14;
 
     char str[1024];
     sprintf(str, "%d", (int)g->valA);
-    ShowTextEditControl(r, 9, str);
+    ShowTextEditControl(r, 10, str);
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    ShowTextEditControl(7, 14, g->DescriptionString()+5);
+    ShowTextEditControl(7, 12, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
@@ -306,7 +263,7 @@ void TextWindow::ScreenChangeGroupScale(int link, DWORD v) {
 
     char str[1024];
     sprintf(str, "%.3f", g->scale);
-    ShowTextEditControl(17, 9, str);
+    ShowTextEditControl(14, 13, str);
     SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
@@ -327,94 +284,76 @@ void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SK.group.FindById(shown.group);
-    char *s, *s2, *s3;
+    char *s = "???";
 
     if(shown.group.v == Group::HGROUP_REFERENCES.v) {
-        Printf(true, "%FtGROUP    %E%s", g->DescriptionString());
+        Printf(true, "%FtGROUP  %E%s", g->DescriptionString());
+        goto list_items;
     } else {
-        Printf(true, "%FtGROUP    %E%s "
-                     "[%Fl%Ll%D%frename%E/%Fl%Ll%D%fdel%E]",
+        Printf(true, "%FtGROUP  %E%s [%Fl%Ll%D%frename%E/%Fl%Ll%D%fdel%E]",
             g->DescriptionString(),
             g->h.v, &TextWindow::ScreenChangeGroupName,
             g->h.v, &TextWindow::ScreenDeleteGroup);
     }
 
-    if(g->type == Group::EXTRUDE) {
-        s = "EXTRUDE ";
-    } else if(g->type == Group::TRANSLATE) {
-        s = "TRANSLATE";
-        s2 ="REPEAT  ";
-        s3 ="START   ";
-    } else if(g->type == Group::ROTATE) {
-        s = "ROTATE  ";
-        s2 ="REPEAT  ";
-        s3 ="START   ";
-    }
-
-    if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
-       g->type == Group::TRANSLATE)
-    {
-        bool one = (g->subtype == Group::ONE_SIDED);
-        Printf(true, "%Ft%s%E %Fh%f%Ls%s%E%Fs%s%E / %Fh%f%Ls%s%E%Fs%s%E", s,
-            &TextWindow::ScreenChangeGroupOption,
-            (one ? "" : "one side"), (one ? "one side" : ""),
-            &TextWindow::ScreenChangeGroupOption,
-            (!one ? "" : "two sides"), (!one ? "two sides" : ""));
-    } 
-    
     if(g->type == Group::LATHE) {
-        Printf(true, "%FtLATHE");
-    }
-    
-    if(g->type == Group::SWEEP) {
-        Printf(true, "%FtSWEEP");
-    }
-    
-    if(g->type == Group::HELICAL_SWEEP) {
-        bool rh = (g->subtype == Group::RIGHT_HANDED);
-        Printf(true,
-            "%FtHELICAL%E  %Fh%f%Ll%s%E%Fs%s%E / %Fh%f%Ll%s%E%Fs%s%E",
-                &ScreenChangeRightLeftHanded,
-                (rh ? "" : "right-hand"), (rh ? "right-hand" : ""),
-                &ScreenChangeRightLeftHanded,
-                (!rh ? "" : "left-hand"), (!rh ? "left-hand" : ""));
-        Printf(false, "%FtTHROUGH%E  %@ turns %Fl%Lt%D%f[change]%E",
-            g->valA, g->h.v, &ScreenChangeHelixParameter);
-        Printf(false, "%FtPITCH%E    %s axially per turn %Fl%Li%D%f[change]%E",
-            SS.MmToString(g->valB), g->h.v, &ScreenChangeHelixParameter);
-        Printf(false, "%FtdRADIUS%E  %s radially per turn %Fl%Lr%D%f[change]%E",
-            SS.MmToString(g->valC), g->h.v, &ScreenChangeHelixParameter);
-    }
-    
-    if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
-        bool space;
-        if(g->subtype == Group::ONE_SIDED) {
-            bool skip = g->skipFirst;
-            Printf(true, "%Ft%s%E %Fh%f%Lk%s%E%Fs%s%E / %Fh%f%Lk%s%E%Fs%s%E",
-                s3,
-                &ScreenChangeGroupOption,
-                (!skip ? "" : "with original"), (!skip ? "with original" : ""),
-                &ScreenChangeGroupOption,
-                (skip ? "":"with copy #1"), (skip ? "with copy #1":""));
-            space = false;
-        } else {
-            space = true;
+        Printf(true, " %Ftlathe plane sketch");
+    } else if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
+              g->type == Group::TRANSLATE)
+    {
+        if(g->type == Group::EXTRUDE) {
+            s = "extrude plane sketch";
+        } else if(g->type == Group::TRANSLATE) {
+            s = "translate original sketch";
+        } else if(g->type == Group::ROTATE) {
+            s = "rotate original sketch";
         }
+        Printf(true, " %Ft%s%E", s);
 
-        int times = (int)(g->valA);
-        Printf(space, "%Ft%s%E %d time%s %Fl%Ll%D%f[change]%E",
-            s2, times, times == 1 ? "" : "s",
-            g->h.v, &TextWindow::ScreenChangeExprA);
+        bool one = (g->subtype == Group::ONE_SIDED);
+        Printf(false,
+            "%Ba   %f%Ls%Fd%c one-sided%E  "
+                  "%f%LS%Fd%c two-sided%E",
+            &TextWindow::ScreenChangeGroupOption,
+            one ? RADIO_TRUE : RADIO_FALSE,
+            &TextWindow::ScreenChangeGroupOption,
+            !one ? RADIO_TRUE : RADIO_FALSE);
+
+        if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
+            if(g->subtype == Group::ONE_SIDED) {
+                bool skip = g->skipFirst;
+                Printf(false, 
+                   "%Bd   %Ftstart  %f%LK%Fd%c with original%E  "
+                         "%f%Lk%Fd%c with copy #1%E",
+                    &ScreenChangeGroupOption,
+                    !skip ? RADIO_TRUE : RADIO_FALSE,
+                    &ScreenChangeGroupOption,
+                    skip ? RADIO_TRUE : RADIO_FALSE);
+            }
+
+            int times = (int)(g->valA);
+            Printf(false, "%Bp   %Ftrepeat%E %d time%s %Fl%Ll%D%f[change]%E",
+                (g->subtype == Group::ONE_SIDED) ? 'a' : 'd',
+                times, times == 1 ? "" : "s",
+                g->h.v, &TextWindow::ScreenChangeExprA);
+        }
+    } else if(g->type == Group::IMPORTED) {
+        Printf(true, " %Ftimport geometry from file%E");
+        Printf(false, "%Ba   '%s'", g->impFileRel);
+        Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
+            g->scale,
+            &TextWindow::ScreenChangeGroupScale, g->h.v);
+    } else if(g->type == Group::DRAWING_3D) {
+        Printf(true, " %Ftsketch in 3d%E");
+    } else if(g->type == Group::DRAWING_WORKPLANE) {
+        Printf(true, " %Ftsketch in new workplane%E");
+    } else {
+        Printf(true, "???");
     }
-    
-    if(g->type == Group::IMPORTED) {
-        Printf(true, "%FtIMPORT%E  '%s'", g->impFileRel);
-    }
+    Printf(false, "");
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
-       g->type == Group::SWEEP ||
-       g->type == Group::HELICAL_SWEEP ||
        g->type == Group::IMPORTED)
     {
         bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
@@ -422,91 +361,68 @@ void TextWindow::ShowGroupInfo(void) {
         bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);
         bool asa  = (g->type == Group::IMPORTED);
 
-        Printf((g->type == Group::HELICAL_SWEEP),
-            "%FtMERGE AS%E %Fh%f%D%Lc%s%E%Fs%s%E / %Fh%f%D%Lc%s%E%Fs%s%E %s "
-            "%Fh%f%D%Lc%s%E%Fs%s%E",
+        Printf(false, " %Ftsolid model as");
+        Printf(false, "%Ba   %f%D%Lc%Fd%c union%E  "
+                             "%f%D%Lc%Fd%c difference%E  "
+                             "%f%D%Lc%Fd%c%s%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_UNION,
-            (un ? "" : "union"), (un ? "union" : ""),
+            un ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_DIFFERENCE,
-            (diff ? "" : "difference"), (diff ? "difference" : ""),
-            asa ? "/" : "",
+            diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_ASSEMBLE,
-            (asy || !asa ? "" : "assemble"), (asy && asa ? "assemble" : ""));
-    }
-    if(g->type == Group::IMPORTED) {
-        bool sup = g->suppress;
-        Printf(false, "%FtSUPPRESS%E %Fh%f%LP%s%E%Fs%s%E / %Fh%f%LP%s%E%Fs%s%E",
-            &TextWindow::ScreenChangeGroupOption,
-            (sup ? "" : "yes"), (sup ? "yes" : ""),
-            &TextWindow::ScreenChangeGroupOption,
-            (!sup ? "" : "no"), (!sup ? "no" : ""));
+            asa ? (asy ? RADIO_TRUE : RADIO_FALSE) : 0,
+            asa ? " assemble" : "");
 
-        Printf(true, "%FtSCALE BY%E %# %Fl%Ll%f%D[change]%E",
-            g->scale,
-            &TextWindow::ScreenChangeGroupScale, g->h.v);
-    }
-
-    bool relax = g->relaxConstraints;
-    Printf(true, "%FtSOLVING%E  %Fh%f%Lr%s%E%Fs%s%E / %Fh%f%Lr%s%E%Fs%s%E",
-        &TextWindow::ScreenChangeGroupOption,
-        (!relax ? "" : "with all constraints"),
-             (!relax ? "with all constraints" : ""),
-        &TextWindow::ScreenChangeGroupOption,
-        (relax ? "" : "no"), (relax ? "no" : ""));
-
-    if(g->type == Group::EXTRUDE ||
-       g->type == Group::LATHE ||
-       g->type == Group::SWEEP ||
-       g->type == Group::HELICAL_SWEEP)
-    {
+        if(g->type == Group::EXTRUDE ||
+           g->type == Group::LATHE)
+        {
 #define TWOX(v) v v
-        Printf(true, "%FtM_COLOR%E  " TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
-            0x80000000 | SS.modelColor[0], 0, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[1], 1, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[2], 2, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[3], 3, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[4], 4, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[5], 5, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[6], 6, &TextWindow::ScreenColor,
-            0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
-    }
-
-    if(shown.group.v != Group::HGROUP_REFERENCES.v &&
-            (g->runningMesh.l.n > 0 ||
-             g->runningShell.surface.n > 0))
-    {
-        Group *pg = g->PreviousGroup();
-        if(pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
-            bool fm = g->forceToMesh;
-            Printf(true,
-                "%FtSURFACES%E %Fh%f%Lf%s%E%Fs%s%E / %Fh%f%Lf%s%E%Fs%s%E",
-                    &TextWindow::ScreenChangeGroupOption,
-                    (!fm ? "" : "as NURBS"), (!fm ? "as NURBS" : ""),
-                    &TextWindow::ScreenChangeGroupOption,
-                    (fm ? "" : "as mesh"), (fm ? "as mesh" : ""));
-        } else {
-            Printf(false,
-                "%FtSURFACES%E %Fsas mesh%E");
+            Printf(false, "%Bd   %Ftcolor%E  "
+                         TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
+                0x80000000 | SS.modelColor[0], 0, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[1], 1, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[2], 2, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[3], 3, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[4], 4, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[5], 5, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[6], 6, &TextWindow::ScreenColor,
+                0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
+        } else if(g->type == Group::IMPORTED) {
+            bool sup = g->suppress;
+            Printf(false, "   %Fd%f%LP%c  suppress this group's solid model",
+                &TextWindow::ScreenChangeGroupOption,
+                g->suppress ? CHECK_TRUE : CHECK_FALSE);
         }
 
-        if(g->booleanFailed) {
-            Printf(true,  "The Boolean operation failed. It may be ");
-            Printf(false, "possible to fix the problem by choosing ");
-            Printf(false, "surfaces 'as mesh' instead of 'as NURBS'.");
-        }
-    }
-
-    // Leave more space if the group has configuration stuff above the req/
-    // constraint list (as all but the drawing groups do).
-    if(g->type == Group::DRAWING_3D || g->type == Group::DRAWING_WORKPLANE) {
-        Printf(true, "%Ftrequests in group");
-    } else {
         Printf(false, "");
-        Printf(false, "%Ftrequests in group");
     }
+
+    Group *pg = g->PreviousGroup();
+    if(pg && pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
+        Printf(false, " %f%Lf%Fd%c  force NURBS surfaces to triangle mesh",
+            &TextWindow::ScreenChangeGroupOption,
+            g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);
+    } else {
+        Printf(false, " (model already forced to triangle mesh)");
+    }
+
+    Printf(false, " %f%Lr%Fd%c  relax constraints and dimensions",
+        &TextWindow::ScreenChangeGroupOption,
+        g->relaxConstraints ? CHECK_TRUE : CHECK_FALSE);
+
+    if(g->booleanFailed) {
+        Printf(false, "");
+        Printf(false, "The Boolean operation failed. It may be ");
+        Printf(false, "possible to fix the problem by choosing ");
+        Printf(false, "'force NURBS surfaces to triangle mesh'.");
+    }
+
+list_items:
+    Printf(false, "");
+    Printf(false, "%Ft requests in group");
 
     int i, a = 0;
     for(i = 0; i < SK.request.n; i++) {
@@ -524,7 +440,8 @@ void TextWindow::ShowGroupInfo(void) {
     if(a == 0) Printf(false, "%Ba   (none)");
 
     a = 0;
-    Printf(true, "%Ftconstraints in group (%d DOF)", g->solved.dof);
+    Printf(false, "");
+    Printf(false, "%Ft constraints in group (%d DOF)", g->solved.dof);
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *c = &(SK.constraint.elem[i]);
 
@@ -601,13 +518,13 @@ void TextWindow::ScreenStepDimFinish(int link, DWORD v) {
     } else {
         sprintf(s, "%.3f", SS.TW.shown.dimFinish);
     }
-    ShowTextEditControl(12, 11, s);
+    ShowTextEditControl(12, 12, s);
 }
 void TextWindow::ScreenStepDimSteps(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%d", SS.TW.shown.dimSteps);
     SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
-    ShowTextEditControl(14, 11, str);
+    ShowTextEditControl(14, 12, str);
 }
 void TextWindow::ScreenStepDimGo(int link, DWORD v) {
     hConstraint hc = SS.TW.shown.constraint;
@@ -642,15 +559,15 @@ void TextWindow::ShowStepDimension(void) {
     Printf(true, "%FtSTEP DIMENSION%E %s", c->DescriptionString());
 
     if(shown.dimIsDistance) {
-        Printf(true,  "%Ba  %FtSTART%E    %s", SS.MmToString(c->valA));
-        Printf(false, "%Bd  %FtFINISH%E   %s %Fl%Ll%f[change]%E",
+        Printf(true,  "%Ba   %Ftstart%E    %s", SS.MmToString(c->valA));
+        Printf(false, "%Bd   %Ftfinish%E   %s %Fl%Ll%f[change]%E",
             SS.MmToString(shown.dimFinish), &ScreenStepDimFinish);
     } else {
-        Printf(true,  "%Ba  %FtSTART%E    %@", c->valA);
-        Printf(false, "%Bd  %FtFINISH%E   %@ %Fl%Ll%f[change]%E",
+        Printf(true,  "%Ba   %Ftstart%E    %@", c->valA);
+        Printf(false, "%Bd   %Ftfinish%E   %@ %Fl%Ll%f[change]%E",
             shown.dimFinish, &ScreenStepDimFinish);
     }
-    Printf(false, "%Ba  %FtSTEPS%E    %d %Fl%Ll%f%D[change]%E",
+    Printf(false, "%Ba   %Ftsteps%E    %d %Fl%Ll%f%D[change]%E",
         shown.dimSteps, &ScreenStepDimSteps);
 
     Printf(true, " %Fl%Ll%fstep dimension now%E", &ScreenStepDimGo);
@@ -724,26 +641,6 @@ void TextWindow::EditControlDone(char *s) {
                     SS.later.generateAll = true;
                 }
             }
-            break;
-        }
-        case EDIT_HELIX_TURNS:
-        case EDIT_HELIX_PITCH:
-        case EDIT_HELIX_DRADIUS: {
-            SS.UndoRemember();
-            Group *g = SK.GetGroup(edit.group);
-            Expr *e = Expr::From(s, true);
-            if(!e) {
-                break;
-            }
-            if(edit.meaning == EDIT_HELIX_TURNS) {
-                g->valA = min(30, fabs(e->Eval()));
-            } else if(edit.meaning == EDIT_HELIX_PITCH) {
-                g->valB = SS.ExprToMm(e);
-            } else {
-                g->valC = SS.ExprToMm(e);
-            }
-            SS.MarkGroupDirty(g->h);
-            SS.later.generateAll = true;
             break;
         }
         case EDIT_TTF_TEXT: {

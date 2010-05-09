@@ -88,8 +88,6 @@ public:
     static const int DRAWING_WORKPLANE             = 5001;
     static const int EXTRUDE                       = 5100;
     static const int LATHE                         = 5101;
-    static const int SWEEP                         = 5102;
-    static const int HELICAL_SWEEP                 = 5103;
     static const int ROTATE                        = 5200;
     static const int TRANSLATE                     = 5201;
     static const int IMPORTED                      = 5300;
@@ -105,7 +103,6 @@ public:
     double      scale;
 
     bool        clean;
-    bool        vvMeshClean;
     hEntity     activeWorkplane;
     double      valA;
     double      valB;
@@ -124,9 +121,6 @@ public:
     // For extrudes, translates, and rotates
     static const int ONE_SIDED                  = 7000;
     static const int TWO_SIDED                  = 7001;
-    // For helical sweeps
-    static const int RIGHT_HANDED               = 8000;
-    static const int LEFT_HANDED                = 8001;
     int subtype;
 
     bool skipFirst; // for step and repeat ops

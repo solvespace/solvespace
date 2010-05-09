@@ -94,7 +94,9 @@ $(RES): win32/$(@B).rc icon.ico
 
 toolbar.cpp: $(OBJDIR)/icons.h
 
-glhelper.cpp: bitmapfont.table font.table
+textwin.cpp: $(OBJDIR)/icons.h
+
+glhelper.cpp: bitmapfont.table font.table bitmapextra.table
 
 $(OBJDIR)/icons.h: icons/* png2c.pl
     perl png2c.pl $(OBJDIR)/icons.h $(OBJDIR)/icons-proto.h
