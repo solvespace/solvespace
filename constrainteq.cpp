@@ -689,6 +689,44 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             break;
         }
 
+        case CURVE_CURVE_TANGENT: {
+            bool parallel = true;
+            int i;
+            ExprVector dir[2];
+            for(i = 0; i < 2; i++) {
+                EntityBase *e = SK.GetEntity((i == 0) ? entityA : entityB);
+                bool oth = (i == 0) ? other : other2;
+
+                if(e->type == Entity::ARC_OF_CIRCLE) {
+                    ExprVector center, endpoint;
+                    center = SK.GetEntity(e->point[0])->PointGetExprs();
+                    endpoint =
+                        SK.GetEntity(e->point[oth ? 2 : 1])->PointGetExprs();
+                    dir[i] = endpoint.Minus(center);
+                    // We're using the vector from the center of the arc to
+                    // an endpoint; so that's normal to the tangent, not
+                    // parallel.
+                    parallel = !parallel;
+                } else if(e->type == Entity::CUBIC) {
+                    if(oth) {
+                        dir[i] = e->CubicGetFinishTangentExprs();
+                    } else {
+                        dir[i] = e->CubicGetStartTangentExprs();
+                    }
+                } else {
+                    oops();
+                }
+            }
+            if(parallel) {
+                EntityBase *w = SK.GetEntity(workplane);
+                ExprVector wn = w->Normal()->NormalExprsN();
+                AddEq(l, ((dir[0]).Cross(dir[1])).Dot(wn), 0);
+            } else {
+                AddEq(l, (dir[0]).Dot(dir[1]), 0);
+            }
+            break;
+        }
+
         case PARALLEL: {
             EntityBase *ea = SK.GetEntity(entityA), *eb = SK.GetEntity(entityB);
             if(eb->group.v != group.v) {

@@ -399,6 +399,8 @@ public:
     Vector CubicGetFinishNum(void);
     ExprVector CubicGetStartTangentExprs(void);
     ExprVector CubicGetFinishTangentExprs(void);
+    Vector CubicGetStartTangentNum(void);
+    Vector CubicGetFinishTangentNum(void);
 
     bool HasEndpoints(void);
     Vector EndpointStart();
@@ -509,40 +511,41 @@ public:
 
     static const hConstraint NO_CONSTRAINT;
 
-    static const int POINTS_COINCIDENT  =  20;
-    static const int PT_PT_DISTANCE     =  30;
-    static const int PT_PLANE_DISTANCE  =  31;
-    static const int PT_LINE_DISTANCE   =  32;
-    static const int PT_FACE_DISTANCE   =  33;
-    static const int PROJ_PT_DISTANCE   =  34;
-    static const int PT_IN_PLANE        =  41;
-    static const int PT_ON_LINE         =  42;
-    static const int PT_ON_FACE         =  43;
-    static const int EQUAL_LENGTH_LINES =  50;
-    static const int LENGTH_RATIO       =  51;
-    static const int EQ_LEN_PT_LINE_D   =  52;
-    static const int EQ_PT_LN_DISTANCES =  53;
-    static const int EQUAL_ANGLE        =  54;
-    static const int EQUAL_LINE_ARC_LEN =  55;
-    static const int SYMMETRIC          =  60;
-    static const int SYMMETRIC_HORIZ    =  61;
-    static const int SYMMETRIC_VERT     =  62;
-    static const int SYMMETRIC_LINE     =  63;
-    static const int AT_MIDPOINT        =  70;
-    static const int HORIZONTAL         =  80;
-    static const int VERTICAL           =  81;
-    static const int DIAMETER           =  90;
-    static const int PT_ON_CIRCLE       = 100;
-    static const int SAME_ORIENTATION   = 110;
-    static const int ANGLE              = 120;
-    static const int PARALLEL           = 121;
-    static const int PERPENDICULAR      = 122;
-    static const int ARC_LINE_TANGENT   = 123;
-    static const int CUBIC_LINE_TANGENT = 124;
-    static const int EQUAL_RADIUS       = 130;
-    static const int WHERE_DRAGGED      = 200;
+    static const int POINTS_COINCIDENT      =  20;
+    static const int PT_PT_DISTANCE         =  30;
+    static const int PT_PLANE_DISTANCE      =  31;
+    static const int PT_LINE_DISTANCE       =  32;
+    static const int PT_FACE_DISTANCE       =  33;
+    static const int PROJ_PT_DISTANCE       =  34;
+    static const int PT_IN_PLANE            =  41;
+    static const int PT_ON_LINE             =  42;
+    static const int PT_ON_FACE             =  43;
+    static const int EQUAL_LENGTH_LINES     =  50;
+    static const int LENGTH_RATIO           =  51;
+    static const int EQ_LEN_PT_LINE_D       =  52;
+    static const int EQ_PT_LN_DISTANCES     =  53;
+    static const int EQUAL_ANGLE            =  54;
+    static const int EQUAL_LINE_ARC_LEN     =  55;
+    static const int SYMMETRIC              =  60;
+    static const int SYMMETRIC_HORIZ        =  61;
+    static const int SYMMETRIC_VERT         =  62;
+    static const int SYMMETRIC_LINE         =  63;
+    static const int AT_MIDPOINT            =  70;
+    static const int HORIZONTAL             =  80;
+    static const int VERTICAL               =  81;
+    static const int DIAMETER               =  90;
+    static const int PT_ON_CIRCLE           = 100;
+    static const int SAME_ORIENTATION       = 110;
+    static const int ANGLE                  = 120;
+    static const int PARALLEL               = 121;
+    static const int PERPENDICULAR          = 122;
+    static const int ARC_LINE_TANGENT       = 123;
+    static const int CUBIC_LINE_TANGENT     = 124;
+    static const int CURVE_CURVE_TANGENT    = 125;
+    static const int EQUAL_RADIUS           = 130;
+    static const int WHERE_DRAGGED          = 200;
 
-    static const int COMMENT            = 1000;
+    static const int COMMENT                = 1000;
 
     int         type;
 
@@ -558,6 +561,7 @@ public:
     hEntity     entityC;
     hEntity     entityD;
     bool        other;
+    bool        other2;
 
     bool        reference;  // a ref dimension, that generates no eqs
     NameStr     comment;    // since comments are represented as constraints

@@ -100,6 +100,7 @@ typedef struct {
 #define SLVS_C_EQUAL_RADIUS             100029
 #define SLVS_C_PROJ_PT_DISTANCE         100030
 #define SLVS_C_WHERE_DRAGGED            100031
+#define SLVS_C_CURVE_CURVE_TANGENT      100032
 
 typedef struct {
     Slvs_hConstraint    h;
@@ -118,6 +119,7 @@ typedef struct {
     Slvs_hEntity        entityD;
     
     int                 other;
+    int                 other2;
 } Slvs_Constraint;
 
 

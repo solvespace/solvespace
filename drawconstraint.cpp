@@ -698,6 +698,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             break;
         }
 
+        case CURVE_CURVE_TANGENT:
         case CUBIC_LINE_TANGENT:
         case ARC_LINE_TANGENT: {
             Vector textAt, u, v;
@@ -712,7 +713,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 textAt = p.Plus(r.WithMagnitude(14/SS.GW.scale));
                 u = norm->NormalU();
                 v = norm->NormalV();
-            } else {
+            } else if(type == CUBIC_LINE_TANGENT) {
                 Vector n;
                 if(workplane.v == Entity::FREE_IN_3D.v) {
                     u = gr;
@@ -731,6 +732,37 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector dir = SK.GetEntity(entityB)->VectorGetNum();
                 Vector out = n.Cross(dir);
                 textAt = p.Plus(out.WithMagnitude(14/SS.GW.scale));
+            } else {
+                Vector n, dir;
+                EntityBase *wn = SK.GetEntity(workplane)->Normal();
+                u = wn->NormalU();
+                v = wn->NormalV();
+                n = wn->NormalN();
+                EntityBase *eA = SK.GetEntity(entityA);
+                // Big pain; we have to get a vector tangent to the curve
+                // at the shared point, which could be from either a cubic
+                // or an arc.
+                if(other) {
+                    textAt = eA->EndpointFinish();
+                    if(eA->type == Entity::CUBIC) {
+                        dir = eA->CubicGetFinishTangentNum();
+                    } else {
+                        dir = SK.GetEntity(eA->point[0])->PointGetNum().Minus(
+                              SK.GetEntity(eA->point[2])->PointGetNum());
+                        dir = n.Cross(dir);
+                    }
+                } else {
+                    textAt = eA->EndpointStart();
+                    if(eA->type == Entity::CUBIC) {
+                        dir = eA->CubicGetStartTangentNum();
+                    } else {
+                        dir = SK.GetEntity(eA->point[0])->PointGetNum().Minus(
+                              SK.GetEntity(eA->point[1])->PointGetNum());
+                        dir = n.Cross(dir);
+                    }
+                }
+                dir = n.Cross(dir);
+                textAt = textAt.Plus(dir.WithMagnitude(14/SS.GW.scale));
             }
 
             if(dogd.drawing) {

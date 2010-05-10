@@ -1,5 +1,5 @@
 fix bug with rotation in plane where green line stays displayed
-more tangencies, and rounding (of requests, not parametric)
+rounding (of requests, not parametric)
 
 -----
 rounding, as a special group

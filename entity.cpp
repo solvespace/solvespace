@@ -130,6 +130,16 @@ ExprVector EntityBase::CubicGetFinishTangentExprs(void) {
                poff = SK.GetEntity(point[2+extraPoints])->PointGetExprs();
     return (pon.Minus(poff));
 }
+Vector EntityBase::CubicGetStartTangentNum(void) {
+    Vector pon  = SK.GetEntity(point[0])->PointGetNum(),
+           poff = SK.GetEntity(point[1])->PointGetNum();
+    return (pon.Minus(poff));
+}
+Vector EntityBase::CubicGetFinishTangentNum(void) {
+    Vector pon  = SK.GetEntity(point[3+extraPoints])->PointGetNum(),
+           poff = SK.GetEntity(point[2+extraPoints])->PointGetNum();
+    return (pon.Minus(poff));
+}
 
 bool EntityBase::IsWorkplane(void) {
     return (type == WORKPLANE);

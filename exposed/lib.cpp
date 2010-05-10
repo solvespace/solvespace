@@ -166,6 +166,7 @@ case SLVS_C_CUBIC_LINE_TANGENT: t = Constraint::CUBIC_LINE_TANGENT; break;
 case SLVS_C_EQUAL_RADIUS:       t = Constraint::EQUAL_RADIUS; break;
 case SLVS_C_PROJ_PT_DISTANCE:   t = Constraint::PROJ_PT_DISTANCE; break;
 case SLVS_C_WHERE_DRAGGED:      t = Constraint::WHERE_DRAGGED; break;
+case SLVS_C_CURVE_CURVE_TANGENT:t = Constraint::CURVE_CURVE_TANGENT; break;
 
 default: dbp("bad constraint type %d", sc->type); return;
         }
@@ -183,6 +184,7 @@ default: dbp("bad constraint type %d", sc->type); return;
         c.entityC.v     = sc->entityC;
         c.entityD.v     = sc->entityD;
         c.other         = (sc->other) ? true : false;
+        c.other2        = (sc->other2) ? true : false;
 
         SK.constraint.Add(&c);
     }

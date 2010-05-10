@@ -414,9 +414,26 @@ SLVS_C_ARC_LINE_TANGENT**
 
 SLVS_C_CUBIC_LINE_TANGENT*
 
-    The cubic entityA is tangent to the line entityB. If other is false,
-    then the cubic is tangent at its beginning (point[0]). If other is
-    true, then the arc is tangent at its end (point[3]).
+    The cubic entityA is tangent to the line entityB. The variable
+    other indicates:
+
+        if false: the cubic is tangent at its beginning
+        if true:  the cubic is tangent at its end
+
+    The beginning of the cubic is point[0], and the end is point[3].
+
+SLVS_C_CURVE_CURVE_TANGENT**
+
+    The two entities entityA and entityB are tangent. These entities can
+    each be either an arc or a cubic, in any combination. The flags
+    other and other2 indicate which endpoint of the curve is tangent,
+    for entityA and entityB respectively:
+
+        if false: the entity is tangent at its beginning
+        if true:  the entity is tangent at its end
+
+    For cubics, point[0] is the beginning, and point[3] is the end. For
+    arcs, point[1] is the beginning, and point[2] is the end.
 
 SLVS_C_EQUAL_RADIUS
 

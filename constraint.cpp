@@ -5,40 +5,41 @@ char *Constraint::DescriptionString(void) {
 
     char *s;
     switch(type) {
-        case POINTS_COINCIDENT: s = "pts-coincident"; break;
-        case PT_PT_DISTANCE:    s = "pt-pt-distance"; break;
-        case PT_LINE_DISTANCE:  s = "pt-line-distance"; break;
-        case PT_PLANE_DISTANCE: s = "pt-plane-distance"; break;
-        case PT_FACE_DISTANCE:  s = "pt-face-distance"; break;
-        case PROJ_PT_DISTANCE:  s = "proj-pt-pt-distance"; break;
-        case PT_IN_PLANE:       s = "pt-in-plane"; break;
-        case PT_ON_LINE:        s = "pt-on-line"; break;
-        case PT_ON_FACE:        s = "pt-on-face"; break;
-        case EQUAL_LENGTH_LINES:s = "eq-length"; break;
-        case EQ_LEN_PT_LINE_D:  s = "eq-length-and-pt-ln-dist"; break;
-        case EQ_PT_LN_DISTANCES:s = "eq-pt-line-distances"; break;
-        case LENGTH_RATIO:      s = "length-ratio"; break;
-        case SYMMETRIC:         s = "symmetric"; break;
-        case SYMMETRIC_HORIZ:   s = "symmetric-h"; break;
-        case SYMMETRIC_VERT:    s = "symmetric-v"; break;
-        case SYMMETRIC_LINE:    s = "symmetric-line"; break;
-        case AT_MIDPOINT:       s = "at-midpoint"; break;
-        case HORIZONTAL:        s = "horizontal"; break;
-        case VERTICAL:          s = "vertical"; break;
-        case DIAMETER:          s = "diameter"; break;
-        case PT_ON_CIRCLE:      s = "pt-on-circle"; break;
-        case SAME_ORIENTATION:  s = "same-orientation"; break;
-        case ANGLE:             s = "angle"; break;
-        case PARALLEL:          s = "parallel"; break;
-        case ARC_LINE_TANGENT:  s = "arc-line-tangent"; break;
-        case CUBIC_LINE_TANGENT:s = "cubic-line-tangent"; break;
-        case PERPENDICULAR:     s = "perpendicular"; break;
-        case EQUAL_RADIUS:      s = "eq-radius"; break;
-        case EQUAL_ANGLE:       s = "eq-angle"; break;
-        case EQUAL_LINE_ARC_LEN:s = "eq-line-len-arc-len"; break;
-        case WHERE_DRAGGED:     s = "lock-where-dragged"; break;
-        case COMMENT:           s = "comment"; break;
-        default:                s = "???"; break;
+        case POINTS_COINCIDENT:     s = "pts-coincident"; break;
+        case PT_PT_DISTANCE:        s = "pt-pt-distance"; break;
+        case PT_LINE_DISTANCE:      s = "pt-line-distance"; break;
+        case PT_PLANE_DISTANCE:     s = "pt-plane-distance"; break;
+        case PT_FACE_DISTANCE:      s = "pt-face-distance"; break;
+        case PROJ_PT_DISTANCE:      s = "proj-pt-pt-distance"; break;
+        case PT_IN_PLANE:           s = "pt-in-plane"; break;
+        case PT_ON_LINE:            s = "pt-on-line"; break;
+        case PT_ON_FACE:            s = "pt-on-face"; break;
+        case EQUAL_LENGTH_LINES:    s = "eq-length"; break;
+        case EQ_LEN_PT_LINE_D:      s = "eq-length-and-pt-ln-dist"; break;
+        case EQ_PT_LN_DISTANCES:    s = "eq-pt-line-distances"; break;
+        case LENGTH_RATIO:          s = "length-ratio"; break;
+        case SYMMETRIC:             s = "symmetric"; break;
+        case SYMMETRIC_HORIZ:       s = "symmetric-h"; break;
+        case SYMMETRIC_VERT:        s = "symmetric-v"; break;
+        case SYMMETRIC_LINE:        s = "symmetric-line"; break;
+        case AT_MIDPOINT:           s = "at-midpoint"; break;
+        case HORIZONTAL:            s = "horizontal"; break;
+        case VERTICAL:              s = "vertical"; break;
+        case DIAMETER:              s = "diameter"; break;
+        case PT_ON_CIRCLE:          s = "pt-on-circle"; break;
+        case SAME_ORIENTATION:      s = "same-orientation"; break;
+        case ANGLE:                 s = "angle"; break;
+        case PARALLEL:              s = "parallel"; break;
+        case ARC_LINE_TANGENT:      s = "arc-line-tangent"; break;
+        case CUBIC_LINE_TANGENT:    s = "cubic-line-tangent"; break;
+        case CURVE_CURVE_TANGENT:   s = "curve-curve-tangent"; break;
+        case PERPENDICULAR:         s = "perpendicular"; break;
+        case EQUAL_RADIUS:          s = "eq-radius"; break;
+        case EQUAL_ANGLE:           s = "eq-angle"; break;
+        case EQUAL_LINE_ARC_LEN:    s = "eq-line-len-arc-len"; break;
+        case WHERE_DRAGGED:         s = "lock-where-dragged"; break;
+        case COMMENT:               s = "comment"; break;
+        default:                    s = "???"; break;
     }
 
     sprintf(ret, "c%03x-%s", h.v, s);
@@ -616,16 +617,42 @@ void Constraint::MenuConstrain(int id) {
                 c.type = CUBIC_LINE_TANGENT;
                 c.entityA = cubic->h;
                 c.entityB = line->h;
+            } else if(gs.cubics + gs.arcs == 2 && gs.n == 2) {
+                if(!SS.GW.LockedInWorkplane()) {
+                    Error("Curve-curve tangency must apply in workplane.");
+                    return;
+                }
+                Entity *eA = SK.GetEntity(gs.entity[0]),
+                       *eB = SK.GetEntity(gs.entity[1]);
+                Vector as = eA->EndpointStart(),
+                       af = eA->EndpointFinish(),
+                       bs = eB->EndpointStart(),
+                       bf = eB->EndpointFinish();
+                if(as.Equals(bs)) {
+                    c.other = false; c.other2 = false;
+                } else if(as.Equals(bf)) {
+                    c.other = false; c.other2 = true;
+                } else if(af.Equals(bs)) {
+                    c.other = true; c.other2 = false;
+                } else if(af.Equals(bf)) {
+                    c.other = true; c.other2 = true;
+                } else {
+                    Error("The curves must share an endpoint. Constrain them "
+                          "with Constrain -> On Point before constraining "
+                          "tangent.");
+                    return;
+                }
+                c.type = CURVE_CURVE_TANGENT;
+                c.entityA = eA->h;
+                c.entityB = eB->h;
             } else {
                 Error("Bad selection for parallel / tangent constraint. This "
                       "constraint can apply to:\n\n"
                       "    * two line segments (parallel)\n"
                       "    * a line segment and a normal (parallel)\n"
                       "    * two normals (parallel)\n"
-                      "    * a line segment and an arc, that share an endpoint "
-                             "(tangent)\n"
-                      "    * a line segment and a cubic bezier, that share an "
-                             "endpoint (tangent)\n");
+                      "    * two line segments, arcs, or beziers, that share "
+                            "an endpoint (tangent)\n");
                 return;
             }
             AddConstraint(&c);
