@@ -1,23 +1,5 @@
 #include "solvespace.h"
 
-bool Constraint::HasLabel(void) {
-    switch(type) {
-        case PT_LINE_DISTANCE:
-        case PT_PLANE_DISTANCE:
-        case PT_FACE_DISTANCE:
-        case PT_PT_DISTANCE:
-        case PROJ_PT_DISTANCE:
-        case DIAMETER:
-        case LENGTH_RATIO:
-        case ANGLE:
-        case COMMENT:
-            return true;
-
-        default:
-            return false;
-    }
-}
-
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
         // Draw comments in the specified style, but everything else in the

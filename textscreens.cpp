@@ -222,6 +222,8 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
 
         case 'r': g->relaxConstraints = !(g->relaxConstraints); break;
 
+        case 'd': g->allDimsReference = !(g->allDimsReference); break;
+
         case 'f': g->forceToMesh = !(g->forceToMesh); break;
     }
 
@@ -409,9 +411,13 @@ void TextWindow::ShowGroupInfo(void) {
         Printf(false, " (model already forced to triangle mesh)");
     }
 
-    Printf(false, " %f%Lr%Fd%c  relax constraints and dimensions",
+    Printf(true, " %f%Lr%Fd%c  relax constraints and dimensions",
         &TextWindow::ScreenChangeGroupOption,
         g->relaxConstraints ? CHECK_TRUE : CHECK_FALSE);
+
+    Printf(false, " %f%Ld%Fd%c  treat all dimensions as reference",
+        &TextWindow::ScreenChangeGroupOption,
+        g->allDimsReference ? CHECK_TRUE : CHECK_FALSE);
 
     if(g->booleanFailed) {
         Printf(false, "");

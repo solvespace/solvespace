@@ -1,5 +1,4 @@
 fix bug with rotation in plane where green line stays displayed
-group option to make dimensions always reference?
 more tangencies, and rounding (of requests, not parametric)
 
 -----

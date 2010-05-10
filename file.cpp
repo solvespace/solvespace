@@ -107,6 +107,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.visible",            'b',    &(SS.sv.g.visible)            },
     { 'g',  "Group.suppress",           'b',    &(SS.sv.g.suppress)           },
     { 'g',  "Group.relaxConstraints",   'b',    &(SS.sv.g.relaxConstraints)   },
+    { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
     { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },

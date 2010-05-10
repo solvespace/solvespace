@@ -2,6 +2,24 @@
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 
+bool ConstraintBase::HasLabel(void) {
+    switch(type) {
+        case PT_LINE_DISTANCE:
+        case PT_PLANE_DISTANCE:
+        case PT_FACE_DISTANCE:
+        case PT_PT_DISTANCE:
+        case PROJ_PT_DISTANCE:
+        case DIAMETER:
+        case LENGTH_RATIO:
+        case ANGLE:
+        case COMMENT:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
 Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     ExprVector r = a.Cross(b);
     // Hairy ball theorem screws me here. There's no clean solution that I

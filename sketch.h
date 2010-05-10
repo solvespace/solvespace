@@ -100,6 +100,7 @@ public:
     bool        visible;
     bool        suppress;
     bool        relaxConstraints;
+    bool        allDimsReference;
     double      scale;
 
     bool        clean;
@@ -561,6 +562,8 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     NameStr     comment;    // since comments are represented as constraints
 
+    bool HasLabel(void);
+
     void Generate(IdList<Equation,hEquation> *l);
     void GenerateReal(IdList<Equation,hEquation> *l);
     // Some helpers when generating symbolic constraint equations
@@ -611,7 +614,6 @@ public:
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);
     void DoEqualRadiusTicks(hEntity he);
 
-    bool HasLabel(void);
     char *DescriptionString(void);
 
     static void AddConstraint(Constraint *c, bool rememberForUndo);

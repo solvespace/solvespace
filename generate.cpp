@@ -344,7 +344,7 @@ pruned:
 }
 
 void SolveSpace::ForceReferences(void) {
-    // Force the values of the paramters that define the three reference
+    // Force the values of the parameters that define the three reference
     // coordinate systems.
     static const struct {
         hRequest    hr;
