@@ -1067,6 +1067,8 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
 
     switch(pending.operation) {
         case DRAGGING_POINTS:
+            SS.extraLine.draw = false;
+            // fall through
         case DRAGGING_CONSTRAINT:
         case DRAGGING_NORMAL:
         case DRAGGING_RADIUS:
@@ -1233,6 +1235,7 @@ void GraphicsWindow::MouseLeave(void) {
         toolbarHovered = 0;
         PaintGraphics();
     }
+    SS.extraLine.draw = false;
 }
 
 void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,

@@ -1,4 +1,3 @@
-fix bug with rotation in plane where green line stays displayed
 rounding (of requests, not parametric)
 
 -----
