@@ -222,6 +222,8 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
 
         case 'r': g->relaxConstraints = !(g->relaxConstraints); break;
 
+        case 'v': g->visible = !(g->visible); break;
+
         case 'd': g->allDimsReference = !(g->allDimsReference); break;
 
         case 'f': g->forceToMesh = !(g->forceToMesh); break;
@@ -401,6 +403,10 @@ void TextWindow::ShowGroupInfo(void) {
 
         Printf(false, "");
     }
+
+    Printf(false, " %f%Lv%Fd%c  show entities from this group",
+        &TextWindow::ScreenChangeGroupOption,
+        g->visible ? CHECK_TRUE : CHECK_FALSE);
 
     Group *pg = g->PreviousGroup();
     if(pg && pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
