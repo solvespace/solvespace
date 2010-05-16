@@ -65,7 +65,7 @@ void SolveSpace::Init(char *cmdLine) {
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
     // Camera tangent (determines perspective)
-    cameraTangent = CnfThawFloat(0.3f, "CameraTangent");
+    cameraTangent = CnfThawFloat(0.3f/1e3f, "CameraTangent");
     // Grid spacing
     gridSpacing = CnfThawFloat(5.0f, "GridSpacing");
     // Export scale factor
