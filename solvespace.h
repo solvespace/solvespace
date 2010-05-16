@@ -652,6 +652,12 @@ public:
     bool usePerspectiveProj;
     double CameraTangent(void);
 
+    // Some stuff relating to the tangent arcs created non-parametrically
+    // as special requests.
+    double tangentArcRadius;
+    bool tangentArcManual;
+    bool tangentArcDeleteOld;
+
     // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);
     void CheckLicenseFromRegistry(void);

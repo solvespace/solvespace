@@ -588,6 +588,51 @@ void TextWindow::ShowStepDimension(void) {
 }
 
 //-----------------------------------------------------------------------------
+// When we're creating tangent arcs (as requests, not as some parametric
+// thing). User gets to specify the radius, and whether the old untrimmed
+// curves are kept or deleted.
+//-----------------------------------------------------------------------------
+void TextWindow::ScreenChangeTangentArc(int link, DWORD v) {
+    switch(link) {
+        case 'r': {
+            char str[1024];
+            strcpy(str, SS.MmToString(SS.tangentArcRadius));
+            SS.TW.edit.meaning = EDIT_TANGENT_ARC_RADIUS;
+            ShowTextEditControl(12, 3, str);
+            break;
+        }
+
+        case 'a': SS.tangentArcManual = !SS.tangentArcManual; break;
+        case 'd': SS.tangentArcDeleteOld = !SS.tangentArcDeleteOld; break;
+    }
+}
+void TextWindow::ShowTangentArc(void) {
+    Printf(true, "%FtTANGENT ARC PARAMETERS%E");
+
+    Printf(true,  "%Ft radius of created arc%E");
+    if(SS.tangentArcManual) {
+        Printf(false, "%Ba   %s %Fl%Lr%f[change]%E",
+            SS.MmToString(SS.tangentArcRadius),
+            &(TextWindow::ScreenChangeTangentArc));
+    } else {
+        Printf(false, "%Ba   automatic");
+    }
+
+    Printf(false, "");
+    Printf(false, "  %Fd%f%La%c  choose radius automatically%E",
+        &ScreenChangeTangentArc,
+        !SS.tangentArcManual ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ld%c  delete original entities afterward%E",
+        &ScreenChangeTangentArc,
+        SS.tangentArcDeleteOld ? CHECK_TRUE : CHECK_FALSE);
+
+    Printf(false, "");
+    Printf(false, "To create a tangent arc at a point,");
+    Printf(false, "select that point and then choose");
+    Printf(false, "Sketch -> Tangent Arc at Point.");
+}
+
+//-----------------------------------------------------------------------------
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
 void TextWindow::EditControlDone(char *s) {
@@ -680,6 +725,17 @@ void TextWindow::EditControlDone(char *s) {
         case EDIT_STEP_DIM_STEPS:
             shown.dimSteps = min(300, max(1, atoi(s)));
             break;
+
+        case EDIT_TANGENT_ARC_RADIUS: {
+            Expr *e = Expr::From(s, true);
+            if(!e) break;
+            if(e->Eval() < LENGTH_EPS) {
+                Error("Radius cannot be zero or negative.");
+                break;
+            }
+            SS.tangentArcRadius = SS.ExprToMm(e);
+            break;
+        }
 
         default: {
             int cnt = 0;

@@ -16,6 +16,12 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
     }
 }
 
+//-----------------------------------------------------------------------------
+// Let's say that A is coincident with B, and B is coincident with C. This
+// implies that A is coincident with C; but if we delete B, then both
+// constraints must be deleted too (since they reference B), and A is no
+// longer constrained to C. This routine adds back that constraint.
+//-----------------------------------------------------------------------------
 void GraphicsWindow::FixConstraintsForRequestBeingDeleted(hRequest hr) {
     Request *r = SK.GetRequest(hr);
     if(r->group.v != SS.GW.activeGroup.v) return;
@@ -72,6 +78,131 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
 }
 
 //-----------------------------------------------------------------------------
+// A curve by its parametric equation, helper functions for computing tangent
+// arcs by a numerical method.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
+    ZERO(this);
+    Entity *e = SK.GetEntity(he);
+    if(e->type == Entity::LINE_SEGMENT) {
+        isLine = true;
+        p0 = e->EndpointStart(),
+        p1 = e->EndpointFinish();
+        if(reverse) {
+            SWAP(Vector, p0, p1);
+        }
+    } else if(e->type == Entity::ARC_OF_CIRCLE) {
+        isLine = false;
+        p0 = SK.GetEntity(e->point[0])->PointGetNum();
+        Vector pe = SK.GetEntity(e->point[1])->PointGetNum();
+        r = (pe.Minus(p0)).Magnitude();
+        e->ArcGetAngles(&theta0, &theta1, &dtheta);
+        if(reverse) {
+            SWAP(double, theta0, theta1);
+            dtheta = -dtheta;
+        }
+        EntityBase *wrkpln = SK.GetEntity(e->workplane)->Normal();
+        u = wrkpln->NormalU();
+        v = wrkpln->NormalV();
+    } else {
+        oops();
+    }
+}
+double GraphicsWindow::ParametricCurve::LengthForAuto(void) {
+    if(isLine) {
+        // Allow a third of the line to disappear with auto radius
+        return (p1.Minus(p0)).Magnitude() / 3;
+    } else {
+        // But only a twentieth of the arc; shorter means fewer numerical
+        // problems since the curve is more linear over shorter sections.
+        return (fabs(dtheta)*r)/20;
+    }
+}
+Vector GraphicsWindow::ParametricCurve::PointAt(double t) {
+    if(isLine) {
+        return p0.Plus((p1.Minus(p0)).ScaledBy(t));
+    } else {
+        double theta = theta0 + dtheta*t;
+        return p0.Plus(u.ScaledBy(r*cos(theta)).Plus(v.ScaledBy(r*sin(theta))));
+    }
+}
+Vector GraphicsWindow::ParametricCurve::TangentAt(double t) {
+    if(isLine) {
+        return p1.Minus(p0);
+    } else {
+        double theta = theta0 + dtheta*t;
+        Vector t =  u.ScaledBy(-r*sin(theta)).Plus(v.ScaledBy(r*cos(theta)));
+        t = t.ScaledBy(dtheta);
+        return t;
+    }
+}
+hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
+    bool extraConstraints, hEntity orig, hEntity arc, bool arcFinish)
+{
+    hRequest hr;
+    Entity *e;
+    if(isLine) {
+        hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false),
+        e = SK.GetEntity(hr.entity(0));
+        SK.GetEntity(e->point[0])->PointForceTo(PointAt(t));
+        SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+        ConstrainPointIfCoincident(e->point[0]);
+        ConstrainPointIfCoincident(e->point[1]);
+        if(extraConstraints) {
+            Constraint::Constrain(Constraint::PT_ON_LINE,
+                hr.entity(1), Entity::NO_ENTITY, orig);
+        }
+        Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
+            Entity::NO_ENTITY, Entity::NO_ENTITY,
+            arc, e->h, arcFinish, false);
+    } else {
+        hr = SS.GW.AddRequest(Request::ARC_OF_CIRCLE, false),
+        e = SK.GetEntity(hr.entity(0));
+        SK.GetEntity(e->point[0])->PointForceTo(p0);
+        if(dtheta > 0) {
+            SK.GetEntity(e->point[1])->PointForceTo(PointAt(t));
+            SK.GetEntity(e->point[2])->PointForceTo(PointAt(1));
+        } else {
+            SK.GetEntity(e->point[2])->PointForceTo(PointAt(t));
+            SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+        }
+        ConstrainPointIfCoincident(e->point[0]);
+        ConstrainPointIfCoincident(e->point[1]);
+        ConstrainPointIfCoincident(e->point[2]);
+        // The tangency constraint alone is enough to fully constrain it,
+        // so there's no need for more.
+        Constraint::Constrain(Constraint::CURVE_CURVE_TANGENT,
+            Entity::NO_ENTITY, Entity::NO_ENTITY,
+            arc, e->h, arcFinish, (dtheta < 0));
+    }
+    return hr;
+}
+
+//-----------------------------------------------------------------------------
+// If a point in the same group as hpt, and numerically coincident with hpt,
+// happens to exist, then constrain that point coincident to hpt.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::ParametricCurve::ConstrainPointIfCoincident(hEntity hpt) {
+    Entity *e, *pt;
+    pt = SK.GetEntity(hpt);
+    Vector ev, ptv;
+    ptv = pt->PointGetNum();
+
+    for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+        if(e->h.v == pt->h.v) continue;
+        if(!e->IsPoint()) continue;
+        if(e->group.v != pt->group.v) continue;
+        if(e->workplane.v != pt->workplane.v) continue;
+        
+        ev = e->PointGetNum();
+        if(!ev.Equals(ptv)) continue;
+
+        Constraint::ConstrainCoincident(hpt, e->h);
+        break;
+    }
+}
+
+//-----------------------------------------------------------------------------
 // A single point must be selected when this function is called. We find two
 // non-construction line segments that join at this point, and create a
 // tangent arc joining them.
@@ -83,131 +214,187 @@ void GraphicsWindow::MakeTangentArc(void) {
         return;
     }
 
-    // Find two line segments that join at the specified point,
-    // and blend them with a tangent arc. First, find the
-    // requests that generate the line segments.
+    // The point corresponding to the vertex to be rounded.
     Vector pshared = SK.GetEntity(gs.point[0])->PointGetNum();
     ClearSelection();
 
+    // First, find two requests (that are not construction, and that are
+    // in our group and workplane) that generate entities that have an
+    // endpoint at our vertex to be rounded.
     int i, c = 0;
-    Entity *line[2];
-    Request *lineReq[2];
-    bool point1[2];
+    Entity *ent[2];
+    Request *req[2];
+    hRequest hreq[2];
+    hEntity hent[2];
+    bool pointf[2];
     for(i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
-        if(r->type != Request::LINE_SEGMENT) continue;
+        if(r->workplane.v != ActiveWorkplane().v) continue;
         if(r->construction) continue;
+        if(r->type != Request::LINE_SEGMENT &&
+           r->type != Request::ARC_OF_CIRCLE)
+        {
+            continue;
+        }
 
         Entity *e = SK.GetEntity(r->h.entity(0));
-        Vector p0 = SK.GetEntity(e->point[0])->PointGetNum(),
-               p1 = SK.GetEntity(e->point[1])->PointGetNum();
+        Vector ps = e->EndpointStart(),
+               pf = e->EndpointFinish();
         
-        if(p0.Equals(pshared) || p1.Equals(pshared)) {
+        if(ps.Equals(pshared) || pf.Equals(pshared)) {
             if(c < 2) {
-                line[c] = e;
-                lineReq[c] = r;
-                point1[c] = (p1.Equals(pshared));
+                // We record the entity and request and their handles,
+                // and whether the vertex to be rounded is the start or
+                // finish of this entity.
+                ent[c] = e;
+                hent[c] = e->h;
+                req[c] = r;
+                hreq[c] = r->h;
+                pointf[c] = (pf.Equals(pshared));
             }
             c++;
         }
     }
     if(c != 2) {
-        Error("To create a tangent arc, select a point where "
-              "two non-construction line segments join.");
+        Error("To create a tangent arc, select a point where two "
+              "non-construction lines or cicles in this group and "
+              "workplane join.");
         return;
     }
-
-    SS.UndoRemember();
 
     Entity *wrkpl = SK.GetEntity(ActiveWorkplane());
     Vector wn = wrkpl->Normal()->NormalN();
 
-    hEntity hshared = (line[0])->point[point1[0] ? 1 : 0],
-            hother0 = (line[0])->point[point1[0] ? 0 : 1],
-            hother1 = (line[1])->point[point1[1] ? 0 : 1];
-
-    Vector pother0 = SK.GetEntity(hother0)->PointGetNum(),
-           pother1 = SK.GetEntity(hother1)->PointGetNum();
-
-    Vector v0shared = pshared.Minus(pother0),
-           v1shared = pshared.Minus(pother1);
-
-    hEntity srcline0 = (line[0])->h,
-            srcline1 = (line[1])->h;
-
-    (lineReq[0])->construction = true;
-    (lineReq[1])->construction = true;
+    // Based on these two entities, we make the objects that we'll use to
+    // numerically find the tangent arc.
+    ParametricCurve pc[2];
+    pc[0].MakeFromEntity(ent[0]->h, pointf[0]);
+    pc[1].MakeFromEntity(ent[1]->h, pointf[1]);
 
     // And thereafter we mustn't touch the entity or req ptrs,
     // because the new requests/entities we add might force a
     // realloc.
-    memset(line, 0, sizeof(line));
-    memset(lineReq, 0, sizeof(lineReq));
+    memset(ent, 0, sizeof(ent));
+    memset(req, 0, sizeof(req));
 
-    // The sign of vv determines whether shortest distance is
-    // clockwise or anti-clockwise.
-    Vector v = (wn.Cross(v0shared)).WithMagnitude(1);
-    double vv = v1shared.Dot(v);
+    Vector pinter;
+    double r, vv;
+    // We now do Newton iterations to find the tangent arc, and its positions
+    // t back along the two curves, starting from shared point of the curves
+    // at t = 0. Lots of iterations helps convergence, and this is still
+    // ~10 ms for everything.
+    int iters = 1000;
+    double t[2] = { 0, 0 }, tp[2];
+    for(i = 0; i < iters + 20; i++) {
+        Vector p0 = pc[0].PointAt(t[0]),
+               p1 = pc[1].PointAt(t[1]),
+               t0 = pc[0].TangentAt(t[0]),
+               t1 = pc[1].TangentAt(t[1]);
 
-    double dot = (v0shared.WithMagnitude(1)).Dot(
-                  v1shared.WithMagnitude(1));
-    double theta = acos(dot);
-    double r = 200/scale;
-    // Set the radius so that no more than one third of the 
-    // line segment disappears.
-    r = min(r, v0shared.Magnitude()*tan(theta/2)/3);
-    r = min(r, v1shared.Magnitude()*tan(theta/2)/3);
-    double el = r/tan(theta/2);
+        pinter = Vector::AtIntersectionOfLines(p0, p0.Plus(t0),
+                                               p1, p1.Plus(t1),
+                                               NULL, NULL, NULL);
 
-    hRequest rln0 = AddRequest(Request::LINE_SEGMENT, false),
-             rln1 = AddRequest(Request::LINE_SEGMENT, false);
-    hRequest rarc = AddRequest(Request::ARC_OF_CIRCLE, false);
+        // The sign of vv determines whether shortest distance is
+        // clockwise or anti-clockwise.
+        Vector v = (wn.Cross(t0)).WithMagnitude(1);
+        vv = t1.Dot(v);
 
-    Entity *ln0 = SK.GetEntity(rln0.entity(0)),
-           *ln1 = SK.GetEntity(rln1.entity(0));
-    Entity *arc = SK.GetEntity(rarc.entity(0));
+        double dot = (t0.WithMagnitude(1)).Dot(t1.WithMagnitude(1));
+        double theta = acos(dot);
 
-    SK.GetEntity(ln0->point[0])->PointForceTo(pother0);
-    Constraint::ConstrainCoincident(ln0->point[0], hother0);
+        if(SS.tangentArcManual) {
+            r = SS.tangentArcRadius;
+        } else {
+            r = 200/scale;
+            // Set the radius so that no more than one third of the 
+            // line segment disappears.
+            r = min(r, pc[0].LengthForAuto()*tan(theta/2));
+            r = min(r, pc[1].LengthForAuto()*tan(theta/2));;
+        }
+        // We are source-stepping the radius, to improve convergence. So
+        // ramp that for most of the iterations, and then do a few at
+        // the end with that constant for polishing.
+        if(i < iters) {
+            r *= 0.1 + 0.9*i/((double)iters);
+        }
 
-    SK.GetEntity(ln1->point[0])->PointForceTo(pother1);
-    Constraint::ConstrainCoincident(ln1->point[0], hother1);
+        // The distance from the intersection of the lines to the endpoint
+        // of the arc, along each line.
+        double el = r/tan(theta/2);
 
-    Vector arc0 = pshared.Minus(v0shared.WithMagnitude(el));
-    Vector arc1 = pshared.Minus(v1shared.WithMagnitude(el));
+        // Compute the endpoints of the arc, for each curve
+        Vector pa0 = pinter.Plus(t0.WithMagnitude(el)),
+               pa1 = pinter.Plus(t1.WithMagnitude(el));
 
-    SK.GetEntity(ln0->point[1])->PointForceTo(arc0);
-    SK.GetEntity(ln1->point[1])->PointForceTo(arc1);
+        tp[0] = t[0];
+        tp[1] = t[1];
 
-    Constraint::Constrain(Constraint::PT_ON_LINE,
-        ln0->point[1], Entity::NO_ENTITY, srcline0);
-    Constraint::Constrain(Constraint::PT_ON_LINE,
-        ln1->point[1], Entity::NO_ENTITY, srcline1);
+        // And convert those points to parameter values along the curve.
+        t[0] += (pa0.Minus(p0)).DivPivoting(t0);
+        t[1] += (pa1.Minus(p1)).DivPivoting(t1);
+    }
 
-    Vector center = arc0;
+    // Stupid check for convergence, and for an out of range result (as
+    // we would get, for example, if the line is too short to fit the
+    // rounding arc).
+    if(fabs(tp[0] - t[0]) > 1e-3 || fabs(tp[1] - t[1]) > 1e-3 ||
+        t[0] < 0.01 || t[1] < 0.01 ||
+        t[0] > 0.99 || t[1] > 0.99 ||
+        isnan(t[0]) || isnan(t[1]))
+    {
+        Error("Couldn't round this corner. Try a smaller radius, or try "
+              "creating the desired geometry by hand with tangency "
+              "constraints.");
+        return;
+    }
+
+    // Compute the location of the center of the arc
+    Vector center = pc[0].PointAt(t[0]),
+           v0inter = pinter.Minus(center);
     int a, b;
     if(vv < 0) {
         a = 1; b = 2;
-        center = center.Minus(v0shared.Cross(wn).WithMagnitude(r));
+        center = center.Minus(v0inter.Cross(wn).WithMagnitude(r));
     } else {
         a = 2; b = 1;
-        center = center.Plus(v0shared.Cross(wn).WithMagnitude(r));
+        center = center.Plus(v0inter.Cross(wn).WithMagnitude(r));
     }
 
-    SK.GetEntity(arc->point[0])->PointForceTo(center);
-    SK.GetEntity(arc->point[a])->PointForceTo(arc0);
-    SK.GetEntity(arc->point[b])->PointForceTo(arc1);
+    SS.UndoRemember();
 
-    Constraint::ConstrainCoincident(arc->point[a], ln0->point[1]);
-    Constraint::ConstrainCoincident(arc->point[b], ln1->point[1]);
+    hRequest harc = AddRequest(Request::ARC_OF_CIRCLE, false);
+    Entity *earc = SK.GetEntity(harc.entity(0));
+    hEntity hearc = earc->h;
 
-    Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
-        Entity::NO_ENTITY, Entity::NO_ENTITY,
-        arc->h, ln0->h, (a==2));
-    Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
-        Entity::NO_ENTITY, Entity::NO_ENTITY,
-        arc->h, ln1->h, (b==2));
+    SK.GetEntity(earc->point[0])->PointForceTo(center);
+    SK.GetEntity(earc->point[a])->PointForceTo(pc[0].PointAt(t[0]));
+    SK.GetEntity(earc->point[b])->PointForceTo(pc[1].PointAt(t[1]));
+    
+    earc = NULL;
+
+    pc[0].CreateRequestTrimmedTo(t[0], !SS.tangentArcDeleteOld,
+                hent[0], hearc, (b == 1));
+    pc[1].CreateRequestTrimmedTo(t[1], !SS.tangentArcDeleteOld,
+                hent[1], hearc, (a == 1));
+
+    // Now either make the original entities construction, or delete them
+    // entirely, according to user preference.
+    Request *re;
+    SK.request.ClearTags();
+    for(re = SK.request.First(); re; re = SK.request.NextAfter(re)) {
+        if(re->h.v == hreq[0].v || re->h.v == hreq[1].v) {
+            if(SS.tangentArcDeleteOld) {
+                re->tag = 1;
+            } else {
+                re->construction = true;
+            }
+        }
+    }
+    if(SS.tangentArcDeleteOld) {
+        DeleteTaggedRequests();
+    }
 
     SS.later.generateAll = true;
 }

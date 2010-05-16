@@ -629,7 +629,7 @@ public:
     static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
     static void Constrain(int type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB,
-                                    bool other);
+                                    bool other, bool other2);
 };
 
 class hEquation {

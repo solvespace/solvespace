@@ -34,6 +34,8 @@ void SolveSpace::CheckLicenseFromRegistry(void) {
 void SolveSpace::Init(char *cmdLine) {
     CheckLicenseFromRegistry();
 
+    SS.tangentArcRadius = 10.0;
+
     // Then, load the registry settings.
     int i;
     // Default list of colors for the model material

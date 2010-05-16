@@ -95,6 +95,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Text in TrueType Font\tT",           MNU_TTF_TEXT,       'T',    mReq  },
 { 1, NULL,                                  0,                          NULL  },
 { 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
+{ 1, "Tangent &Arc at Point\tShift+A",      MNU_TANGENT_ARC,    'A'|S,  mReq  },
 { 1, "Split Curves at &Intersection\tI",    MNU_SPLIT_CURVES,   'I',    mReq  },
 
 { 0, "&Constrain",                          0,                          NULL  },
@@ -847,16 +848,22 @@ void GraphicsWindow::MenuRequest(int id) {
             InvalidateGraphics();
             break;
 
-        case MNU_ARC: {
+        case MNU_TANGENT_ARC:
             SS.GW.GroupSelection();
             if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
                 SS.GW.MakeTangentArc();
+            } else if(SS.GW.gs.n != 0) {
+                Error("Bad selection for tangent arc at point. Select a "
+                      "single point, or select nothing to set up arc "
+                      "parameters.");
             } else {
-                s = "click point on arc (draws anti-clockwise)";
-                goto c;
+                SS.TW.GoToScreen(TextWindow::SCREEN_TANGENT_ARC);
+                SS.GW.ForceTextWindowShown();
+                SS.later.showTW = true;
             }
             break;
-        }
+
+        case MNU_ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;

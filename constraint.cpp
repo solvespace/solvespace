@@ -83,7 +83,7 @@ void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
 
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
                                      hEntity entityA, hEntity entityB,
-                                     bool other)
+                                     bool other, bool other2)
 {
     Constraint c;
     memset(&c, 0, sizeof(c));
@@ -95,14 +95,15 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
     c.entityA = entityA;
     c.entityB = entityB;
     c.other = other;
+    c.other2 = other2;
     AddConstraint(&c, false);
 }
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA){
-    Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false);
+    Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false, false);
 }
 void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
     Constrain(POINTS_COINCIDENT, ptA, ptB,
-        Entity::NO_ENTITY, Entity::NO_ENTITY, false);
+        Entity::NO_ENTITY, Entity::NO_ENTITY, false, false);
 }
 
 void Constraint::MenuConstrain(int id) {

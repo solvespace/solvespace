@@ -99,6 +99,7 @@ public:
     static const int SCREEN_STYLE_INFO          = 6;
     static const int SCREEN_PASTE_TRANSFORMED   = 7;
     static const int SCREEN_EDIT_VIEW           = 8;
+    static const int SCREEN_TANGENT_ARC         = 9;
     typedef struct {
         int         screen;
 
@@ -163,6 +164,8 @@ public:
     static const int EDIT_VIEW_ORIGIN           = 701;
     static const int EDIT_VIEW_PROJ_RIGHT       = 702;
     static const int EDIT_VIEW_PROJ_UP          = 703;
+    // For tangent arc
+    static const int EDIT_TANGENT_ARC_RADIUS    = 800;
     struct {
         bool        showAgain;
         int         meaning;
@@ -188,6 +191,7 @@ public:
     void ShowStepDimension(void);
     void ShowPasteTransformed(void);
     void ShowEditView(void);
+    void ShowTangentArc(void);
     // Special screen, based on selection
     void DescribeSelection(void);
 
@@ -239,6 +243,8 @@ public:
     static void ScreenStepDimSteps(int link, DWORD v);
     static void ScreenStepDimFinish(int link, DWORD v);
     static void ScreenStepDimGo(int link, DWORD v);
+
+    static void ScreenChangeTangentArc(int link, DWORD v);
 
     static void ScreenPasteTransformed(int link, DWORD v);
 
@@ -335,6 +341,7 @@ public:
         MNU_CUBIC,
         MNU_TTF_TEXT,
         MNU_SPLIT_CURVES,
+        MNU_TANGENT_ARC,
         MNU_CONSTRUCTION,
         // Group
         MNU_GROUP_3D,
@@ -478,6 +485,22 @@ public:
     hRequest AddRequest(int type, bool rememberForUndo);
     hRequest AddRequest(int type);
 
+    class ParametricCurve {
+    public:
+        bool isLine; // else circle
+        Vector p0, p1;
+        Vector u, v;
+        double r, theta0, theta1, dtheta;
+        
+        void MakeFromEntity(hEntity he, bool reverse);
+        Vector PointAt(double t);
+        Vector TangentAt(double t);
+        double LengthForAuto(void);
+
+        hRequest CreateRequestTrimmedTo(double t, bool extraConstraints,
+            hEntity orig, hEntity arc, bool arcFinish);
+        void ConstrainPointIfCoincident(hEntity hpt);
+    };
     void MakeTangentArc(void);
     void SplitLinesOrCurves(void);
     hEntity SplitEntity(hEntity he, Vector pinter);

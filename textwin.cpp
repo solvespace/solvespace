@@ -277,6 +277,7 @@ void TextWindow::Show(void) {
             case SCREEN_STYLE_INFO:         ShowStyleInfo();        break;
             case SCREEN_PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
             case SCREEN_EDIT_VIEW:          ShowEditView();         break;
+            case SCREEN_TANGENT_ARC:        ShowTangentArc();       break;
         }
     }
     Printf(false, "");
