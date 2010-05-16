@@ -10,7 +10,7 @@ static const struct {
     { Icon_line,            GraphicsWindow::MNU_LINE_SEGMENT,   "Sketch line segment"                               },
     { Icon_rectangle,       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle"                                  },
     { Icon_circle,          GraphicsWindow::MNU_CIRCLE,         "Sketch circle"                                     },
-    { Icon_arc,             GraphicsWindow::MNU_ARC,            "Sketch arc, or tangent arc at selected point"      },
+    { Icon_arc,             GraphicsWindow::MNU_ARC,            "Sketch arc of a circle"                            },
     { Icon_text,            GraphicsWindow::MNU_TTF_TEXT,       "Sketch curves from text in a TrueType font"        },
     { Icon_tangent_arc,     GraphicsWindow::MNU_TANGENT_ARC,    "Create tangent arc at selected point"              },
     { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline"                        },
