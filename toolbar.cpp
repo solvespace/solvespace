@@ -11,6 +11,8 @@ static const struct {
     { Icon_rectangle,       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle"                                  },
     { Icon_circle,          GraphicsWindow::MNU_CIRCLE,         "Sketch circle"                                     },
     { Icon_arc,             GraphicsWindow::MNU_ARC,            "Sketch arc, or tangent arc at selected point"      },
+    { Icon_text,            GraphicsWindow::MNU_TTF_TEXT,       "Sketch curves from text in a TrueType font"        },
+    { Icon_tangent_arc,     GraphicsWindow::MNU_TANGENT_ARC,    "Create tangent arc at selected point"              },
     { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline"                        },
     { Icon_point,           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point"                                },
     { Icon_construction,    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction"                               },
@@ -100,7 +102,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     int x = 17, y = (int)(height - 52);
 
     int fudge = 8;
-    int h = 32*14 + 3*16 + fudge;
+    int h = 32*15 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =
