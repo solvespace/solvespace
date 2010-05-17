@@ -630,6 +630,7 @@ void TextWindow::ShowTangentArc(void) {
     Printf(false, "To create a tangent arc at a point,");
     Printf(false, "select that point and then choose");
     Printf(false, "Sketch -> Tangent Arc at Point.");
+    Printf(true, "(or %Fl%Ll%fback to home screen%E)", &ScreenHome);
 }
 
 //-----------------------------------------------------------------------------

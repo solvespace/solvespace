@@ -1,4 +1,5 @@
-rounding (of requests, not parametric)
+O(n*log(n)) assembly of edges into contours
+good color picker
 
 -----
 rounding, as a special group
