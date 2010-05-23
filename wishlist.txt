@@ -1,5 +1,7 @@
 O(n*log(n)) assembly of edges into contours
 good color picker
+crude DXF, HPGL import
+a request to import a plane thing
 
 -----
 rounding, as a special group

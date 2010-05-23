@@ -57,6 +57,9 @@ char *Constraint::Label(void) {
         sprintf(Ret, "%.3f:1", valA);
     } else if(type == COMMENT) {
         strcpy(Ret, comment.str);
+    } else if(type == DIAMETER) {
+        // leading spaces for diameter symbol
+        sprintf(Ret, "  %s", SS.MmToString(valA));
     } else {
         // valA has units of distance
         strcpy(Ret, SS.MmToString(fabs(valA)));
@@ -506,7 +509,31 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             mark = mark.WithMagnitude(mark.Magnitude()-r);
             DoLineTrimmedAgainstBox(ref, ref, ref.Minus(mark));
 
-            DoLabel(ref, labelPos, gr, gu);
+            Vector topLeft;
+            DoLabel(ref, &topLeft, gr, gu);
+            if(labelPos) *labelPos = topLeft;
+
+            // Draw the diameter symbol
+            Vector dc = topLeft;
+            dc = dc.Plus(gu.WithMagnitude(5/SS.GW.scale));
+            dc = dc.Plus(gr.WithMagnitude(9/SS.GW.scale));
+            double dr = 5/SS.GW.scale;
+            double theta, dtheta = (2*PI)/12;
+            for(theta = 0; theta < 2*PI-0.01; theta += dtheta) {
+                LineDrawOrGetDistance(
+                    dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
+                            gr.WithMagnitude(sin(theta)*dr)),
+                    dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
+                            gr.WithMagnitude(sin(theta+dtheta)*dr)));
+            }
+            theta = 25*(PI/180);
+            dr *= 1.7;
+            dtheta = PI;
+            LineDrawOrGetDistance(
+                dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
+                        gr.WithMagnitude(sin(theta)*dr)),
+                dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
+                        gr.WithMagnitude(sin(theta+dtheta)*dr)));
             break;
         }
 
