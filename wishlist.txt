@@ -2,6 +2,8 @@ O(n*log(n)) assembly of edges into contours
 good color picker
 crude DXF, HPGL import
 a request to import a plane thing
+make export assemble only contours in same group
+make export rewrite fill color same as stroke color
 
 -----
 rounding, as a special group

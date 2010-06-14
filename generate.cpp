@@ -317,16 +317,16 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
             // pruned any orphaned etc. objects, and the message loop for the
             // messagebox could allow us to repaint and crash. But now we must
             // be fine.
-            Error("Additional sketch elements were deleted, because they "
-                  "depend on the element that was just deleted explicitly. "
-                  "These include: \n"
-                  "     %d request%s\n"
-                  "     %d constraint%s\n"
-                  "     %d group%s\n\n"
-                  "Choose Edit -> Undo to undelete all elements.",
-                    deleted.requests, deleted.requests == 1 ? "" : "s",
-                    deleted.constraints, deleted.constraints == 1 ? "" : "s",
-                    deleted.groups, deleted.groups == 1 ? "" : "s");
+            Message("Additional sketch elements were deleted, because they "
+                    "depend on the element that was just deleted explicitly. "
+                    "These include: \n"
+                    "     %d request%s\n"
+                    "     %d constraint%s\n"
+                    "     %d group%s\n\n"
+                    "Choose Edit -> Undo to undelete all elements.",
+                       deleted.requests, deleted.requests == 1 ? "" : "s",
+                       deleted.constraints, deleted.constraints == 1 ? "" : "s",
+                       deleted.groups, deleted.groups == 1 ? "" : "s");
         }
         memset(&deleted, 0, sizeof(deleted));
     }
