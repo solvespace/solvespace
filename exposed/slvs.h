@@ -15,6 +15,12 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
+#ifdef EXPORT_DLL
+#define DLL __declspec( dllexport ) 
+#else
+#define DLL __declspec( dllimport ) 
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -181,7 +187,7 @@ typedef struct {
     int                 result;
 } Slvs_System;
 
-void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
+DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
 
 
 // Our base coordinate system has basis vectors
@@ -190,17 +196,17 @@ void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
 // basis vectors
 //         U          V          N
 // which these functions compute from the quaternion.
-void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
-                         double *x, double *y, double *z);
-void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
-                         double *x, double *y, double *z);
-void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
-                         double *x, double *y, double *z);
+DLL void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
+                             double *x, double *y, double *z);
+DLL void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
+                             double *x, double *y, double *z);
+DLL void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
+                             double *x, double *y, double *z);
 
 // Similarly, compute a unit quaternion in terms of two basis vectors.
-void Slvs_MakeQuaternion(double ux, double uy, double uz,
-                         double vx, double vy, double vz,
-                         double *qw, double *qx, double *qy, double *qz);
+DLL void Slvs_MakeQuaternion(double ux, double uy, double uz,
+                             double vx, double vy, double vz,
+                             double *qw, double *qx, double *qy, double *qz);
 
 
 //-------------------------------------

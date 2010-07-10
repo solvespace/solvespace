@@ -29,11 +29,12 @@ all: $(OBJDIR)/ctest.exe
 clean:
 	rm -f obj/*
 
-$(OBJDIR)/slvs.lib: $(SSOBJS) $(LIBOBJS) $(W32OBJS)
-    @lib /OUT:$(OBJDIR)/slvs.lib $(SSOBJS) $(LIBOBJS) $(W32OBJS)
-    @echo slvs.lib
+$(OBJDIR)/slvs.dll: $(SSOBJS) $(LIBOBJS) $(W32OBJS)
+    @$(CC) /LD -Fe$(OBJDIR)/slvs.dll $(SSOBJS) $(LIBOBJS) $(W32OBJS) $(LIBS)
+    @cp $(OBJDIR)/slvs.dll .
+    @echo slvs.dll
 
-$(OBJDIR)/ctest.exe: example.c $(OBJDIR)/slvs.lib
+$(OBJDIR)/ctest.exe: example.c $(OBJDIR)/slvs.dll
     @$(CC) $(CFLAGS) -Fe$(OBJDIR)/ctest.exe example.c $(OBJDIR)/slvs.lib $(LIBS)
     @echo ctest.exe
 

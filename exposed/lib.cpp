@@ -1,4 +1,5 @@
 #include "solvespace.h"
+#define EXPORT_DLL
 #include "slvs.h"
 
 Sketch SK;
