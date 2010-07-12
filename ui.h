@@ -420,6 +420,9 @@ public:
         bool    startedMoving;
     }       orig;
 
+    // Most recent mouse position, updated every time the mouse moves.
+    Point2d currentMousePosition;
+
     // When the user is dragging a point, don't solve multiple times without
     // allowing a paint in between. The extra solves are wasted if they're
     // not displayed.

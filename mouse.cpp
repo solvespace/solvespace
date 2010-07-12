@@ -108,6 +108,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 
     Point2d mp = Point2d::From(x, y);
+    currentMousePosition = mp;
 
     if(rightDown && orig.mouse.DistanceTo(mp) < 5 && !orig.startedMoving) {
         // Avoid accidentally panning (or rotating if shift is down) if the

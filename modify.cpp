@@ -608,9 +608,20 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     ZERO(&inters);
     sbla.AllIntersectionsWith(&sblb, &inters);
 
-    // If there's multiple points, then just take the first one.
     if(inters.l.n > 0) {
-        Vector pi = inters.l.elem[0].p;
+        Vector pi;
+        // If there's multiple points, then take the one closest to the
+        // mouse pointer.
+        double dmin = VERY_POSITIVE;
+        SPoint *sp;
+        for(sp = inters.l.First(); sp; sp = inters.l.NextAfter(sp)) {
+            double d = ProjectPoint(sp->p).DistanceTo(currentMousePosition);
+            if(d < dmin) {
+                dmin = d;
+                pi = sp->p;
+            }
+        }
+
         SS.UndoRemember();
         hEntity hia = SplitEntity(ha, pi),
                 hib = SplitEntity(hb, pi);

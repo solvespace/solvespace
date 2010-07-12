@@ -4,7 +4,6 @@ crude DXF, HPGL import
 a request to import a plane thing
 make export assemble only contours in same group
 make export rewrite fill color same as stroke color
-choose split point closest to mouse pointer
 
 -----
 rounding, as a special group
