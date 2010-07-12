@@ -12,7 +12,7 @@ void TextWindow::ScreenEditTtfText(int link, DWORD v) {
     hRequest hr = { v };
     Request *r = SK.GetRequest(hr);
 
-    ShowTextEditControl(13, 10, r->str.str);
+    SS.TW.ShowEditControl(13, 10, r->str.str);
     SS.TW.edit.meaning = EDIT_TTF_TEXT;
     SS.TW.edit.request = hr;
 }

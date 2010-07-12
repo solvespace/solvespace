@@ -270,19 +270,19 @@ void TextWindow::ScreenChangePasteTransformed(int link, DWORD v) {
     switch(link) {
         case 't':
             sprintf(str, "%d", SS.TW.shown.paste.times);
-            ShowTextEditControl(10, 13, str);
+            SS.TW.ShowEditControl(10, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_TIMES_REPEATED;
             break;
 
         case 'r':
             sprintf(str, "%.3f", SS.TW.shown.paste.theta*180/PI);
-            ShowTextEditControl(12, 13, str);
+            SS.TW.ShowEditControl(12, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_ANGLE;
             break;
 
         case 's':
             sprintf(str, "%.3f", SS.TW.shown.paste.scale);
-            ShowTextEditControl(18, 13, str);
+            SS.TW.ShowEditControl(18, 13, str);
             SS.TW.edit.meaning = EDIT_PASTE_SCALE;
             break;
     }

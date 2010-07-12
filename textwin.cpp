@@ -56,7 +56,7 @@ void TextWindow::Init(void) {
 }
 
 void TextWindow::ClearSuper(void) {
-    HideTextEditControl();
+    HideEditControl();
 
     memset(this, 0, sizeof(*this));
     MakeColorTable(fgColors, fgColorTable);
@@ -64,6 +64,20 @@ void TextWindow::ClearSuper(void) {
 
     ClearScreen();
     Show();
+}
+
+void TextWindow::HideEditControl(void) {
+    HideTextEditControl();
+}
+
+void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
+    editControl.halfRow = halfRow;
+    editControl.col = col;
+
+    int x = LEFT_MARGIN + CHAR_WIDTH*col;
+    int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
+
+    ShowTextEditControl(x - 3, y + 2, s);
 }
 
 void TextWindow::ClearScreen(void) {
@@ -249,7 +263,7 @@ void TextWindow::Show(void) {
     if(SS.GW.pending.description) {
         // A pending operation (that must be completed with the mouse in
         // the graphics window) will preempt our usual display.
-        HideTextEditControl();
+        HideEditControl();
         ShowHeader(false);
         Printf(false, "");
         Printf(false, "%s", SS.GW.pending.description);
@@ -258,11 +272,11 @@ void TextWindow::Show(void) {
     } else if((gs.n > 0 || gs.constraints > 0) && 
                                     shown.screen != SCREEN_PASTE_TRANSFORMED)
     {
-        if(edit.meaning != EDIT_TTF_TEXT) HideTextEditControl();
+        if(edit.meaning != EDIT_TTF_TEXT) HideEditControl();
         ShowHeader(false);
         DescribeSelection();
     } else {
-        if(edit.meaning == EDIT_TTF_TEXT) HideTextEditControl();
+        if(edit.meaning == EDIT_TTF_TEXT) HideEditControl();
         ShowHeader(true);
         switch(shown.screen) {
             default:
@@ -571,7 +585,7 @@ void TextWindow::Paint(void) {
 void TextWindow::MouseEvent(bool leftClick, double x, double y) {
     if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
         if(leftClick) {
-            HideTextEditControl();
+            HideEditControl();
             HideGraphicsEditControl();
         } else {
             SetMousePointerToHand(false);
@@ -653,9 +667,7 @@ void TextWindow::ScrollbarEvent(int newPos) {
         MoveTextScrollbarTo(scrollPos, top[rows - 1] + 1, halfRows);
 
         if(TextEditControlIsVisible()) {
-            extern int TextEditControlCol, TextEditControlHalfRow;
-            ShowTextEditControl(
-                TextEditControlHalfRow, TextEditControlCol, NULL);
+            ShowEditControl(editControl.halfRow, editControl.col, NULL);
         }
         InvalidateText();
     }

@@ -177,6 +177,16 @@ public:
 
     static void ReportHowGroupSolved(hGroup hg);
 
+    struct {
+        int     halfRow;
+        int     col;
+
+        bool    showColorPicker;
+    } editControl;
+
+    void HideEditControl(void);
+    void ShowEditControl(int halfRow, int col, char *s);
+
     void ClearSuper(void);
 
     void ShowHeader(bool withNav);

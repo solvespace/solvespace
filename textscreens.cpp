@@ -252,13 +252,13 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
 
     char str[1024];
     sprintf(str, "%d", (int)g->valA);
-    ShowTextEditControl(r, 10, str);
+    SS.TW.ShowEditControl(r, 10, str);
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    ShowTextEditControl(7, 12, g->DescriptionString()+5);
+    SS.TW.ShowEditControl(7, 12, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
@@ -267,7 +267,7 @@ void TextWindow::ScreenChangeGroupScale(int link, DWORD v) {
 
     char str[1024];
     sprintf(str, "%.3f", g->scale);
-    ShowTextEditControl(14, 13, str);
+    SS.TW.ShowEditControl(14, 13, str);
     SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
@@ -530,13 +530,13 @@ void TextWindow::ScreenStepDimFinish(int link, DWORD v) {
     } else {
         sprintf(s, "%.3f", SS.TW.shown.dimFinish);
     }
-    ShowTextEditControl(12, 12, s);
+    SS.TW.ShowEditControl(12, 12, s);
 }
 void TextWindow::ScreenStepDimSteps(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%d", SS.TW.shown.dimSteps);
     SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
-    ShowTextEditControl(14, 12, str);
+    SS.TW.ShowEditControl(14, 12, str);
 }
 void TextWindow::ScreenStepDimGo(int link, DWORD v) {
     hConstraint hc = SS.TW.shown.constraint;
@@ -598,7 +598,7 @@ void TextWindow::ScreenChangeTangentArc(int link, DWORD v) {
             char str[1024];
             strcpy(str, SS.MmToString(SS.tangentArcRadius));
             SS.TW.edit.meaning = EDIT_TANGENT_ARC_RADIUS;
-            ShowTextEditControl(12, 3, str);
+            SS.TW.ShowEditControl(12, 3, str);
             break;
         }
 
@@ -755,7 +755,7 @@ void TextWindow::EditControlDone(char *s) {
     SS.later.showTW = true;
 
     if(!edit.showAgain) {
-        HideTextEditControl();
+        HideEditControl();
         edit.meaning = EDIT_NOTHING;
     }
 }

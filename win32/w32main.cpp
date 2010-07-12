@@ -27,7 +27,6 @@ HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
 HGLRC TextGl;
-int TextEditControlCol, TextEditControlHalfRow;
 
 HWND GraphicsWnd;
 HGLRC GraphicsGl;
@@ -649,15 +648,11 @@ static void ShowEditControl(HWND h, int x, int y, char *s) {
         SetFocus(h);
     }
 }
-void ShowTextEditControl(int hr, int c, char *s)
+void ShowTextEditControl(int x, int y, char *s)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    int x = SS.TW.LEFT_MARGIN + SS.TW.CHAR_WIDTH*c;
-    int y = (hr - SS.TW.scrollPos)*(SS.TW.LINE_HEIGHT/2);
-    TextEditControlCol = c;
-    TextEditControlHalfRow = hr;
-    ShowEditControl(TextEditControl, x - 1, y + 2, s);
+    ShowEditControl(TextEditControl, x, y, s);
 }
 void HideTextEditControl(void)
 {

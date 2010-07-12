@@ -769,7 +769,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         HideGraphicsEditControl();
         return;
     }
-    HideTextEditControl();
+    SS.TW.HideEditControl();
 
     if(SS.showToolbar) {
         if(ToolbarMouseDown((int)mx, (int)my)) return;
@@ -1104,7 +1104,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
 
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(GraphicsEditControlIsVisible()) return;
-    HideTextEditControl();
+    SS.TW.HideEditControl();
 
     if(hover.constraint.v) {
         constraintBeingEdited = hover.constraint;

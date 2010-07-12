@@ -7,7 +7,7 @@
 void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightDir[v]));
-    ShowTextEditControl(29+2*v, 8, str);
+    SS.TW.ShowEditControl(29+2*v, 8, str);
     SS.TW.edit.meaning = EDIT_LIGHT_DIRECTION;
     SS.TW.edit.i = v;
 }
@@ -15,7 +15,7 @@ void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
 void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.2f", SS.lightIntensity[v]);
-    ShowTextEditControl(29+2*v, 31, str);
+    SS.TW.ShowEditControl(29+2*v, 31, str);
     SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
     SS.TW.edit.i = v;
 }
@@ -26,7 +26,7 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
         REDf(SS.modelColor[v]),
         GREENf(SS.modelColor[v]),
         BLUEf(SS.modelColor[v]));
-    ShowTextEditControl(9+2*v, 13, str);
+    SS.TW.ShowEditControl(9+2*v, 13, str);
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
@@ -34,26 +34,26 @@ void TextWindow::ScreenChangeColor(int link, DWORD v) {
 void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.2f", SS.chordTol);
-    ShowTextEditControl(37, 3, str);
+    SS.TW.ShowEditControl(37, 3, str);
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 
 void TextWindow::ScreenChangeMaxSegments(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%d", SS.maxSegments);
-    ShowTextEditControl(41, 3, str);
+    SS.TW.ShowEditControl(41, 3, str);
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
 }
 
 void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", 1000*SS.cameraTangent);
-    ShowTextEditControl(47, 3, str);
+    SS.TW.ShowEditControl(47, 3, str);
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 
 void TextWindow::ScreenChangeGridSpacing(int link, DWORD v) {
-    ShowTextEditControl(51, 3, SS.MmToString(SS.gridSpacing));
+    SS.TW.ShowEditControl(51, 3, SS.MmToString(SS.gridSpacing));
     SS.TW.edit.meaning = EDIT_GRID_SPACING;
 }
 
@@ -61,12 +61,12 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    ShowTextEditControl(57, 5, str);
+    SS.TW.ShowEditControl(57, 5, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
-    ShowTextEditControl(61, 3, SS.MmToString(SS.exportOffset));
+    SS.TW.ShowEditControl(61, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 
@@ -126,7 +126,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
         row += (v - 10)*2;
         col = 13;
     }
-    ShowTextEditControl(row, col, SS.MmToString(d));
+    SS.TW.ShowEditControl(row, col, SS.MmToString(d));
     SS.TW.edit.meaning = EDIT_CANVAS_SIZE;
     SS.TW.edit.i = v;
 }
@@ -159,7 +159,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, DWORD v) {
             row += 6;
             break;
     }
-    ShowTextEditControl(row, 14, buf);
+    SS.TW.ShowEditControl(row, 14, buf);
 }
 
 void TextWindow::ShowConfiguration(void) {

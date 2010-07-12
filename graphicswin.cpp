@@ -590,7 +590,7 @@ void GraphicsWindow::DeleteTaggedRequests(void) {
     // An edit might be in progress for the just-deleted item. So
     // now it's not.
     HideGraphicsEditControl();
-    HideTextEditControl();
+    SS.TW.HideEditControl();
     // And clear out the selection, which could contain that item.
     ClearSuper();
     // And regenerate to get rid of what it generates, plus anything
@@ -640,7 +640,7 @@ void GraphicsWindow::MenuEdit(int id) {
                 }
             }
             SS.GW.ClearSuper();
-            HideTextEditControl();
+            SS.TW.HideEditControl();
             SS.nakedEdges.Clear();
             SS.justExportedInfo.draw = false;
             // This clears the marks drawn to indicate which points are

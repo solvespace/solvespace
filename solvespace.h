@@ -128,7 +128,7 @@ void EnableMenuById(int id, BOOL checked);
 void ShowGraphicsEditControl(int x, int y, char *s);
 void HideGraphicsEditControl(void);
 BOOL GraphicsEditControlIsVisible(void);
-void ShowTextEditControl(int hr, int c, char *s);
+void ShowTextEditControl(int x, int y, char *s);
 void HideTextEditControl(void);
 BOOL TextEditControlIsVisible(void);
 void MoveTextScrollbarTo(int pos, int maxPos, int page);

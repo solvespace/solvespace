@@ -326,7 +326,7 @@ void TextWindow::ScreenChangeBackgroundColor(int link, DWORD v) {
     DWORD rgb = SS.backgroundColor;
     char str[300];
     sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    ShowTextEditControl(v, 3, str);
+    SS.TW.ShowEditControl(v, 3, str);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
 
@@ -406,7 +406,7 @@ void TextWindow::ScreenChangeBackgroundImageScale(int link, DWORD v) {
     char str[300];
     sprintf(str, "%.3f", SS.bgImage.scale * SS.MmPerUnit());
     SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
-    ShowTextEditControl(v, 10, str);
+    SS.TW.ShowEditControl(v, 10, str);
 }
 
 void TextWindow::ShowListOfStyles(void) {
@@ -464,7 +464,7 @@ void TextWindow::ShowListOfStyles(void) {
 void TextWindow::ScreenChangeStyleName(int link, DWORD v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    ShowTextEditControl(10, 12, s->name.str);
+    SS.TW.ShowEditControl(10, 12, s->name.str);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_NAME;   
 }
@@ -503,7 +503,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
         row = 33;               // text height (for custom styles only)
         col++;
     }
-    ShowTextEditControl(row, col, str);
+    SS.TW.ShowEditControl(row, col, str);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = (link == 't') ? EDIT_STYLE_TEXT_HEIGHT :
                                          EDIT_STYLE_WIDTH;
@@ -514,7 +514,7 @@ void TextWindow::ScreenChangeStyleTextAngle(int link, DWORD v) {
     Style *s = Style::Get(hs);
     char str[300];
     sprintf(str, "%.2f", s->textAngle);
-    ShowTextEditControl(37, 9, str);
+    SS.TW.ShowEditControl(37, 9, str);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_TEXT_ANGLE;
 }
@@ -538,7 +538,7 @@ void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
     }
     char str[300];
     sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    ShowTextEditControl(row, col, str);
+    SS.TW.ShowEditControl(row, col, str);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = em;
 }
