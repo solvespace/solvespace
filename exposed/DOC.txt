@@ -372,7 +372,7 @@ SLVS_C_DIAMETER
 SLVS_C_PT_ON_CIRCLE
 
     The point ptA lies on the right cylinder obtained by extruding circle
-    entityA normal to its plane.
+    or arc entityA normal to its plane.
 
 SLVS_C_SAME_ORIENTATION
 
