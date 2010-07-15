@@ -20,7 +20,7 @@ A constraint (Slvs_Constraint) is a geometric property of an entity,
 or a relationship among multiple entities. For example, a point-point
 distance constraint will set the distance between two point entities.
 
-Paramters, entities, and constraints are typically referenced by their
+Parameters, entities, and constraints are typically referenced by their
 handles (Slvs_hParam, Slvs_hEntity, Slvs_hConstraint). These handles are
 32-bit integer values starting from 1. The zero handle is reserved. Each
 object has a unique handle within its type (but it's acceptable, for
