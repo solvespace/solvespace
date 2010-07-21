@@ -458,7 +458,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // And process the actual message
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
-            SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, x, y);
+            SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, wParam & MK_LBUTTON, x, y);
             break;
         }
         

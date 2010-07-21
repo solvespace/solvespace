@@ -736,6 +736,20 @@ Vector Vector::ClosestOrtho(void) {
     }
 }
 
+Vector Vector::ClampWithin(double minv, double maxv) {  
+    Vector ret = *this;
+
+    if(ret.x < minv) ret.x = minv;
+    if(ret.y < minv) ret.y = minv;
+    if(ret.z < minv) ret.z = minv;
+
+    if(ret.x > maxv) ret.x = maxv;
+    if(ret.y > maxv) ret.y = maxv;
+    if(ret.z > maxv) ret.z = maxv;
+
+    return ret;
+}
+
 void Vector::MakeMaxMin(Vector *maxv, Vector *minv) {
     maxv->x = max(maxv->x, x);
     maxv->y = max(maxv->y, y);

@@ -67,6 +67,7 @@ void TextWindow::ClearSuper(void) {
 }
 
 void TextWindow::HideEditControl(void) {
+    editControl.colorPicker.show = false;
     HideTextEditControl();
 }
 
@@ -78,6 +79,21 @@ void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
     int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
     ShowTextEditControl(x - 3, y + 2, s);
+}
+
+void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, DWORD rgb)
+{
+    char str[1024];
+    sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
+
+    SS.later.showTW = true;
+
+    editControl.colorPicker.show = true;
+    editControl.colorPicker.rgb = rgb;
+    editControl.colorPicker.h = 0;
+    editControl.colorPicker.s = 0;
+    editControl.colorPicker.v = 1;
+    ShowEditControl(halfRow, col, str);
 }
 
 void TextWindow::ClearScreen(void) {
@@ -295,6 +311,17 @@ void TextWindow::Show(void) {
         }
     }
     Printf(false, "");
+
+    // Make sure there's room for the color picker
+    if(editControl.colorPicker.show) {
+        int pickerHeight = 25;
+        int halfRow = editControl.halfRow;
+        if(top[rows-1] - halfRow < pickerHeight && rows < MAX_ROWS) {
+            rows++;
+            top[rows-1] = halfRow + pickerHeight;
+        }
+    }
+
     InvalidateText();
 }
 
@@ -430,6 +457,330 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
     }
 }
 
+//----------------------------------------------------------------------------
+// Given (x, y, z) = (h, s, v) in [0,6), [0,1], [0,1], return (x, y, z) =
+// (r, g, b) all in [0, 1].
+//----------------------------------------------------------------------------
+Vector TextWindow::HsvToRgb(Vector hsv) {
+    if(hsv.x >= 6) hsv.x -= 6;
+
+    Vector rgb;
+    double hmod2 = hsv.x;
+    while(hmod2 >= 2) hmod2 -= 2;
+    double x = (1 - fabs(hmod2 - 1));
+    if(hsv.x < 1) {
+        rgb = Vector::From(1, x, 0); 
+    } else if(hsv.x < 2) {
+        rgb = Vector::From(x, 1, 0); 
+    } else if(hsv.x < 3) {
+        rgb = Vector::From(0, 1, x); 
+    } else if(hsv.x < 4) {
+        rgb = Vector::From(0, x, 1); 
+    } else if(hsv.x < 5) {
+        rgb = Vector::From(x, 0, 1); 
+    } else {
+        rgb = Vector::From(1, 0, x); 
+    }
+    double c = hsv.y*hsv.z;
+    double m = 1 - hsv.z;
+    rgb = rgb.ScaledBy(c);
+    rgb = rgb.Plus(Vector::From(m, m, m));
+
+    return rgb;
+}
+
+BYTE *TextWindow::HsvPattern2d(void) {
+    static BYTE Texture[256*256*3];
+    static bool Init;
+
+    if(!Init) {
+        int i, j, p;
+        p = 0;
+        for(i = 0; i < 256; i++) {
+            for(j = 0; j < 256; j++) {
+                Vector hsv = Vector::From(6.0*i/255.0, 1.0*j/255.0, 1);
+                Vector rgb = HsvToRgb(hsv);
+                rgb = rgb.ScaledBy(255);
+                Texture[p++] = (BYTE)rgb.x;
+                Texture[p++] = (BYTE)rgb.y;
+                Texture[p++] = (BYTE)rgb.z;
+            }
+        }
+        Init = true;
+    }
+    return Texture;
+}
+
+BYTE *TextWindow::HsvPattern1d(double h, double s) {
+    static BYTE Texture[256*4];
+
+    int i, p;
+    p = 0;
+    for(i = 0; i < 256; i++) {
+        Vector hsv = Vector::From(6*h, s, 1.0*(255 - i)/255.0);
+        Vector rgb = HsvToRgb(hsv);
+        rgb = rgb.ScaledBy(255);
+        Texture[p++] = (BYTE)rgb.x;
+        Texture[p++] = (BYTE)rgb.y;
+        Texture[p++] = (BYTE)rgb.z;
+        // Needs a padding byte, to make things four-aligned
+        p++;
+    }
+    return Texture;
+}
+
+void TextWindow::ColorPickerDone(void) {
+    char str[1024];
+    DWORD rgb = editControl.colorPicker.rgb;
+    sprintf(str, "%.2f, %.2f, %.3f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
+    EditControlDone(str);
+}
+
+bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
+                                                double x, double y)
+{
+    bool mousePointerAsHand = false;
+
+    if(how == HOVER && !leftDown) {
+        editControl.colorPicker.picker1dActive = false;
+        editControl.colorPicker.picker2dActive = false;
+    }
+
+    if(!editControl.colorPicker.show) return false;
+    if(how == CLICK || (how == HOVER && leftDown)) InvalidateText();
+
+    static const DWORD BaseColor[12] = {
+        RGB(255,   0,   0),
+        RGB(  0, 255,   0),
+        RGB(  0,   0, 255),
+
+        RGB(  0, 255, 255),
+        RGB(255,   0, 255),
+        RGB(255, 255,   0),
+
+        RGB(255, 127,   0),
+        RGB(255,   0, 127),
+        RGB(  0, 255, 127),
+        RGB(127, 255,   0),
+        RGB(127,   0, 255),
+        RGB(  0, 127, 255),
+    };
+
+    int width, height;
+    GetTextWindowSize(&width, &height);
+
+    int px = LEFT_MARGIN + CHAR_WIDTH*editControl.col;
+    int py = (editControl.halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
+
+    py += LINE_HEIGHT + 5;
+
+    static const int WIDTH = 16, HEIGHT = 12;
+    static const int PITCH = 18, SIZE = 15;
+
+    px = min(px, width - (WIDTH*PITCH + 40));
+
+    int pxm = px + WIDTH*PITCH + 11,
+        pym = py + HEIGHT*PITCH + 7;
+
+    int bw = 6;
+    if(how == PAINT) {
+        glColor4d(0.2, 0.2, 0.2, 1);
+        glxAxisAlignedQuad(px, pxm+bw, py, pym+bw);
+        glColor4d(0.0, 0.0, 0.0, 1);
+        glxAxisAlignedQuad(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2));
+    } else {
+        if(x < px || x > pxm+(bw/2) ||
+           y < py || y > pym+(bw/2))
+        {
+            return false;
+        }
+    }
+    px += (bw/2);
+    py += (bw/2);
+
+    int i, j;
+    for(i = 0; i < WIDTH/2; i++) {
+        for(j = 0; j < HEIGHT; j++) {
+            Vector rgb;
+            DWORD d;
+            if(i == 0 && j < 8) {
+                d = SS.modelColor[j];
+                rgb = Vector::From(REDf(d), GREENf(d), BLUEf(d));
+            } else if(i == 0) {
+                double a = (j - 8.0)/3.0;
+                rgb = Vector::From(a, a, a);
+            } else {
+                d = BaseColor[j];
+                rgb = Vector::From(REDf(d), GREENf(d), BLUEf(d));
+                if(i >= 2 && i <= 4) {
+                    double a = (i == 2) ? 0.2 : (i == 3) ? 0.3 : 0.4;
+                    rgb = rgb.Plus(Vector::From(a, a, a));
+                }
+                if(i >= 5 && i <= 7) {
+                    double a = (i == 5) ? 0.7 : (i == 6) ? 0.4 : 0.18;
+                    rgb = rgb.ScaledBy(a);
+                }
+            }
+
+            rgb = rgb.ClampWithin(0, 1);
+            int sx = px + 5 + PITCH*(i + 8) + 4, sy = py + 5 + PITCH*j;
+
+            if(how == PAINT) {
+                glColor4d(CO(rgb), 1);
+                glxAxisAlignedQuad(sx, sx+SIZE, sy, sy+SIZE);
+            } else if(how == CLICK) {
+                if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
+                    editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
+                    ColorPickerDone();
+                }
+            } else if(how == HOVER) {
+                if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
+                    mousePointerAsHand = true;
+                }
+            }
+        }
+    }
+
+    int hxm, hym;
+    int hx = px + 5, hy = py + 5;
+    hxm = hx + PITCH*7 + SIZE;
+    hym = hy + PITCH*2 + SIZE;
+    if(how == PAINT) {
+        glxColorRGB(editControl.colorPicker.rgb);
+        glxAxisAlignedQuad(hx, hxm, hy, hym);
+    } else if(how == CLICK) {
+        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
+            ColorPickerDone();
+        }
+    } else if(how == HOVER) {
+        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
+            mousePointerAsHand = true;
+        }
+    }
+
+    hy += PITCH*3;
+
+    hxm = hx + PITCH*7 + SIZE;
+    hym = hy + PITCH*1 + SIZE;
+    // The one-dimensional thing to pick the color's value
+    if(how == PAINT) {
+        glBindTexture(GL_TEXTURE_2D, TEXTURE_COLOR_PICKER_1D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 256, 0,
+                     GL_RGB, GL_UNSIGNED_BYTE,
+                         HsvPattern1d(editControl.colorPicker.h,
+                                      editControl.colorPicker.s));
+
+        glEnable(GL_TEXTURE_2D);
+        glBegin(GL_QUADS);
+            glTexCoord2d(0, 0);
+            glVertex2d(hx, hy);
+
+            glTexCoord2d(1, 0);
+            glVertex2d(hx, hym);
+
+            glTexCoord2d(1, 1);
+            glVertex2d(hxm, hym);
+
+            glTexCoord2d(0, 1);
+            glVertex2d(hxm, hy);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+
+        double cx = hx+(hxm-hx)*(1 - editControl.colorPicker.v);
+        glColor4d(0, 0, 0, 1);
+        glLineWidth(1);
+        glBegin(GL_LINES);
+            glVertex2d(cx, hy);
+            glVertex2d(cx, hym);
+        glEnd();
+        glEnd();
+    } else if(how == CLICK || 
+          (how == HOVER && leftDown && editControl.colorPicker.picker1dActive))
+    {
+        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
+            editControl.colorPicker.v = 1 - (x - hx)/(hxm - hx);
+
+            Vector rgb = HsvToRgb(Vector::From(
+                            6*editControl.colorPicker.h,
+                            editControl.colorPicker.s,
+                            editControl.colorPicker.v));
+            editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
+
+            editControl.colorPicker.picker1dActive = true;
+        }
+    }
+    // and advance our vertical position
+    hy += PITCH*2;
+
+    hxm = hx + PITCH*7 + SIZE;
+    hym = hy + PITCH*6 + SIZE;
+    // Two-dimensional thing to pick a color by hue and saturation
+    if(how == PAINT) {
+        glBindTexture(GL_TEXTURE_2D, TEXTURE_COLOR_PICKER_2D);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 256, 0,
+                     GL_RGB, GL_UNSIGNED_BYTE, HsvPattern2d());
+
+        glEnable(GL_TEXTURE_2D);
+        glBegin(GL_QUADS);
+            glTexCoord2d(0, 0);
+            glVertex2d(hx, hy);
+
+            glTexCoord2d(1, 0);
+            glVertex2d(hx, hym);
+
+            glTexCoord2d(1, 1);
+            glVertex2d(hxm, hym);
+
+            glTexCoord2d(0, 1);
+            glVertex2d(hxm, hy);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+
+        glColor4d(1, 1, 1, 1);
+        glLineWidth(1);
+        double cx = hx+(hxm-hx)*editControl.colorPicker.h,
+               cy = hy+(hym-hy)*editControl.colorPicker.s;
+        glBegin(GL_LINES);
+            glVertex2d(cx - 5, cy);
+            glVertex2d(cx + 4, cy);
+            glVertex2d(cx, cy - 5);
+            glVertex2d(cx, cy + 4);
+        glEnd();
+    } else if(how == CLICK || 
+          (how == HOVER && leftDown && editControl.colorPicker.picker2dActive))
+    {
+        if(x >= hx && x <= hxm && y >= hy && y <= hym) {
+            double h = (x - hx)/(hxm - hx),
+                   s = (y - hy)/(hym - hy);
+            editControl.colorPicker.h = h;
+            editControl.colorPicker.s = s;
+
+            Vector rgb = HsvToRgb(Vector::From(
+                            6*editControl.colorPicker.h,
+                            editControl.colorPicker.s,
+                            editControl.colorPicker.v));
+            editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
+
+            editControl.colorPicker.picker2dActive = true;
+        }
+    }
+    
+    SetMousePointerToHand(mousePointerAsHand);
+    return true;
+}
+
 void TextWindow::Paint(void) {
     int width, height;
     GetTextWindowSize(&width, &height);
@@ -446,7 +797,8 @@ void TextWindow::Paint(void) {
    
     glTranslated(-1, 1, 0);
     glScaled(2.0/width, -2.0/height, 1);
-    glTranslated(0, 0, 0);
+    // Make things round consistently, avoiding exact integer boundary
+    glTranslated(-0.1, -0.1, 0);
 
     halfRows = height / (LINE_HEIGHT/2);
 
@@ -580,10 +932,18 @@ void TextWindow::Paint(void) {
 
     // The header has some icons that are drawn separately from the text
     DrawOrHitTestIcons(PAINT, 0, 0);
+
+    // And we may show a color picker for certain editable fields
+    DrawOrHitTestColorPicker(PAINT, false, 0, 0);
 }
 
-void TextWindow::MouseEvent(bool leftClick, double x, double y) {
+void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
     if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
+        if(DrawOrHitTestColorPicker(leftClick ? CLICK : HOVER, leftDown, x, y))
+        {
+            return;
+        }
+
         if(leftClick) {
             HideEditControl();
             HideGraphicsEditControl();

@@ -231,6 +231,8 @@ void glxBitmapCharQuad(char c, double x, double y);
 #define TEXTURE_BACKGROUND_IMG  10
 #define TEXTURE_BITMAP_FONT     20
 #define TEXTURE_DRAW_PIXELS     30
+#define TEXTURE_COLOR_PICKER_2D 40
+#define TEXTURE_COLOR_PICKER_1D 50
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))

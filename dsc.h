@@ -90,6 +90,7 @@ public:
     double DivPivoting(Vector delta);
     Vector ClosestOrtho(void);
     void MakeMaxMin(Vector *maxv, Vector *minv);
+    Vector ClampWithin(double minv, double maxv);
     static bool BoundingBoxesDisjoint(Vector amax, Vector amin,
                                       Vector bmax, Vector bmin);
     static bool BoundingBoxIntersectsLine(Vector amax, Vector amin,

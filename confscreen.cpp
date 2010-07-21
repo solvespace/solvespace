@@ -21,12 +21,8 @@ void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
 }
 
 void TextWindow::ScreenChangeColor(int link, DWORD v) {
-    char str[1024];
-    sprintf(str, "%.2f, %.2f, %.2f",
-        REDf(SS.modelColor[v]),
-        GREENf(SS.modelColor[v]),
-        BLUEf(SS.modelColor[v]));
-    SS.TW.ShowEditControl(9+2*v, 13, str);
+    SS.TW.ShowEditControlWithColorPicker(9+2*v, 13, SS.modelColor[v]);
+
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }

@@ -69,7 +69,7 @@ public:
 
     // These are called by the platform-specific code.
     void Paint(void);
-    void MouseEvent(bool leftDown, double x, double y);
+    void MouseEvent(bool isClick, bool leftDown, double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave(void);
     void ScrollbarEvent(int newPos);
@@ -81,6 +81,12 @@ public:
     void TimerCallback(void);
     Point2d oldMousePos;
     HideShowIcon *hoveredIcon, *tooltippedIcon;
+
+    Vector HsvToRgb(Vector hsv);
+    BYTE *HsvPattern2d(void);
+    BYTE *HsvPattern1d(double h, double s);
+    void ColorPickerDone(void);
+    bool DrawOrHitTestColorPicker(int how, bool leftDown, double x, double y);
    
     void Init(void);
     void MakeColorTable(const Color *in, float *out);
@@ -181,11 +187,18 @@ public:
         int     halfRow;
         int     col;
 
-        bool    showColorPicker;
+        struct {
+            DWORD   rgb;
+            double  h, s, v;
+            bool    show;
+            bool    picker1dActive;
+            bool    picker2dActive;
+        }       colorPicker;
     } editControl;
 
     void HideEditControl(void);
     void ShowEditControl(int halfRow, int col, char *s);
+    void ShowEditControlWithColorPicker(int halfRow, int col, DWORD rgb);
 
     void ClearSuper(void);
 

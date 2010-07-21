@@ -1,5 +1,6 @@
 O(n*log(n)) assembly of edges into contours
-good color picker
+make group model color use new color picker
+fix anti-aliased edge bug with filled contours
 crude DXF, HPGL import
 a request to import a plane thing
 make export assemble only contours in same group

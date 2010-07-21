@@ -324,9 +324,7 @@ void TextWindow::ScreenCreateCustomStyle(int link, DWORD v) {
 
 void TextWindow::ScreenChangeBackgroundColor(int link, DWORD v) {
     DWORD rgb = SS.backgroundColor;
-    char str[300];
-    sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    SS.TW.ShowEditControl(v, 3, str);
+    SS.TW.ShowEditControlWithColorPicker(v, 3, rgb);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
 
@@ -536,9 +534,7 @@ void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
     } else {
         oops();
     }
-    char str[300];
-    sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
-    SS.TW.ShowEditControl(row, col, str);
+    SS.TW.ShowEditControlWithColorPicker(row, col, rgb);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = em;
 }
