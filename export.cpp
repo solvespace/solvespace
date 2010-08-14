@@ -544,15 +544,16 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
             hStyle hs = { b->auxA };
             Style *stl = Style::Get(hs);
             double lineWidth  = Style::WidthMm(b->auxA)*s;
-            DWORD strokeRgb = Style::Color(b->auxA, true);
+            DWORD strokeRgb = Style::Color(hs, true);
+            DWORD fillRgb = Style::FillColor(hs, true);
 
-            StartPath(strokeRgb, lineWidth, stl->filled, stl->fillColor);
+            StartPath(strokeRgb, lineWidth, stl->filled, fillRgb);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
                 for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
                     Bezier(b);
                 }
             }
-            FinishPath(strokeRgb, lineWidth, stl->filled, stl->fillColor);
+            FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb);
         }
     }
     FinishAndCloseFile();

@@ -238,11 +238,8 @@ void TextWindow::ScreenColor(int link, DWORD v) {
     SS.UndoRemember();
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    if(v < 0 || v >= SS.MODEL_COLORS) return;
-    g->color = SS.modelColor[v];
-    SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
-    SS.GW.ClearSuper();
+    SS.TW.ShowEditControlWithColorPicker(v, 3, g->color);
+    SS.TW.edit.meaning = EDIT_GROUP_COLOR;
 }
 void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
@@ -383,17 +380,11 @@ void TextWindow::ShowGroupInfo(void) {
         if(g->type == Group::EXTRUDE ||
            g->type == Group::LATHE)
         {
-#define TWOX(v) v v
-            Printf(false, "%Bd   %Ftcolor%E  "
-                         TWOX(TWOX(TWOX("%Bp%D%f%Ln  %Bd%E  "))),
-                0x80000000 | SS.modelColor[0], 0, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[1], 1, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[2], 2, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[3], 3, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[4], 4, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[5], 5, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[6], 6, &TextWindow::ScreenColor,
-                0x80000000 | SS.modelColor[7], 7, &TextWindow::ScreenColor);
+            Printf(false,
+                "%Bd   %Ftcolor %E%Bp  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
+                0x80000000 | g->color,
+                REDf(g->color), GREENf(g->color), BLUEf(g->color),
+                ScreenColor, top[rows-1] + 2);
         } else if(g->type == Group::IMPORTED) {
             bool sup = g->suppress;
             Printf(false, "   %Fd%f%LP%c  suppress this group's solid model",
@@ -698,6 +689,23 @@ void TextWindow::EditControlDone(char *s) {
                     SS.MarkGroupDirty(g->h);
                     SS.later.generateAll = true;
                 }
+            }
+            break;
+        }
+        case EDIT_GROUP_COLOR: {
+            Vector rgb;
+            if(sscanf(s, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
+                rgb = rgb.ClampWithin(0, 1);
+
+                Group *g = SK.group.FindByIdNoOops(SS.TW.shown.group);
+                if(!g) break;
+                g->color = RGBf(rgb.x, rgb.y, rgb.z);
+
+                SS.MarkGroupDirty(g->h);
+                SS.later.generateAll = true;
+                SS.GW.ClearSuper();
+            } else {
+                Error("Bad format: specify color as r, g, b");
             }
             break;
         }

@@ -1,8 +1,6 @@
 #include "solvespace.h"
 #include <png.h>
 
-#define clamp01(x) (max(0, min(1, (x))))
-
 const Style::Default Style::Defaults[] = {
     { ACTIVE_GRP,   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, },
     { CONSTRUCTION, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, },
@@ -202,24 +200,45 @@ float Style::Width(int s) {
 }
 
 //-----------------------------------------------------------------------------
-// Return the color associated with our style as 8-bit RGB.
+// If a color is almost white, then we can rewrite it to black, just so that
+// it won't disappear on file formats with a light background.
+//-----------------------------------------------------------------------------
+DWORD Style::RewriteColor(DWORD rgbin) {
+    Vector rgb = Vector::From(REDf(rgbin), GREENf(rgbin), BLUEf(rgbin));
+    rgb = rgb.Minus(Vector::From(1, 1, 1));
+    if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
+        // This is an almost-white color in a default style, which is
+        // good for the default on-screen view (black bg) but probably
+        // not desired in the exported files, which typically are shown
+        // against white backgrounds.
+        return RGB(0, 0, 0);
+    } else {
+        return rgbin;
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Return the stroke color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
 DWORD Style::Color(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
-        Vector rgb = Vector::From(REDf(s->color),
-                                  GREENf(s->color),
-                                  BLUEf(s->color));
-        rgb = rgb.Minus(Vector::From(1, 1, 1));
-        if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
-            // This is an almost-white color in a default style, which is
-            // good for the default on-screen view (black bg) but probably
-            // not desired in the exported files, which typically are shown
-            // against white backgrounds.
-            return RGB(0, 0, 0);
-        }
+        return RewriteColor(s->color);
+    } else {
+        return s->color;
     }
-    return s->color;
+}
+
+//-----------------------------------------------------------------------------
+// Return the fill color associated with our style as 8-bit RGB.
+//-----------------------------------------------------------------------------
+DWORD Style::FillColor(hStyle h, bool forExport) {
+    Style *s = Get(h);
+    if(forExport) {
+        return RewriteColor(s->fillColor);
+    } else {
+        return s->fillColor;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -649,21 +668,19 @@ bool TextWindow::EditControlDoneForStyles(char *str) {
         case EDIT_BACKGROUND_COLOR:
         case EDIT_STYLE_FILL_COLOR:
         case EDIT_STYLE_COLOR: {
-            double r, g, b;
-            if(sscanf(str, "%lf, %lf, %lf", &r, &g, &b)==3) {
-                r = clamp01(r);
-                g = clamp01(g);
-                b = clamp01(b);
+            Vector rgb;
+            if(sscanf(str, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
+                rgb = rgb.ClampWithin(0, 1);
                 if(edit.meaning == EDIT_STYLE_COLOR) {
                     SS.UndoRemember();
                     s = Style::Get(edit.style);
-                    s->color = RGBf(r, g, b);
+                    s->color = RGBf(rgb.x, rgb.y, rgb.z);
                 } else if(edit.meaning == EDIT_STYLE_FILL_COLOR) {
                     SS.UndoRemember();
                     s = Style::Get(edit.style);
-                    s->fillColor = RGBf(r, g, b);
+                    s->fillColor = RGBf(rgb.x, rgb.y, rgb.z);
                 } else {
-                    SS.backgroundColor = RGBf(r, g, b);
+                    SS.backgroundColor = RGBf(rgb.x, rgb.y, rgb.z);
                 }
             } else {
                 Error("Bad format: specify color as r, g, b");

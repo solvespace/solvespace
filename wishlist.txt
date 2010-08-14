@@ -1,10 +1,9 @@
 O(n*log(n)) assembly of edges into contours
-make group model color use new color picker
 fix anti-aliased edge bug with filled contours
 crude DXF, HPGL import
 a request to import a plane thing
 make export assemble only contours in same group
-make export rewrite fill color same as stroke color
+rotation works about first point under cursor
 
 -----
 rounding, as a special group

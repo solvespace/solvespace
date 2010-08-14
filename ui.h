@@ -132,6 +132,7 @@ public:
     static const int EDIT_TIMES_REPEATED        = 1;
     static const int EDIT_GROUP_NAME            = 2;
     static const int EDIT_GROUP_SCALE           = 3;
+    static const int EDIT_GROUP_COLOR           = 4;
     // For the configuraiton screen
     static const int EDIT_LIGHT_DIRECTION       = 100;
     static const int EDIT_LIGHT_INTENSITY       = 101;

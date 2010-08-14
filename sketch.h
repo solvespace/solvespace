@@ -717,8 +717,11 @@ public:
     static void AssignSelectionToStyle(DWORD v);
     static DWORD CreateCustomStyle(void);
 
+    static DWORD RewriteColor(DWORD rgb);
+
     static Style *Get(hStyle hs);
     static DWORD Color(hStyle hs, bool forExport=false);
+    static DWORD FillColor(hStyle hs, bool forExport=false);
     static float Width(hStyle hs);
     static DWORD Color(int hs, bool forExport=false);
     static float Width(int hs);

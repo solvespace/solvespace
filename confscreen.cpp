@@ -160,7 +160,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, DWORD v) {
 
 void TextWindow::ShowConfiguration(void) {
     int i;
-    Printf(true, "%Ft material   color-(r, g, b)");
+    Printf(true, "%Ft user color (r, g, b)");
     
     for(i = 0; i < SS.MODEL_COLORS; i++) {
         Printf(false, "%Bp   #%d:  %Bp  %Bp  (%@, %@, %@) %f%D%Ll%Fl[change]%E",
@@ -305,9 +305,10 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
             break;
         }
         case EDIT_COLOR: {
-            double r, g, b;
-            if(sscanf(s, "%lf, %lf, %lf", &r, &g, &b)==3) {
-                SS.modelColor[edit.i] = RGB(r*255, g*255, b*255);
+            Vector rgb;
+            if(sscanf(s, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
+                rgb = rgb.ClampWithin(0, 1);
+                SS.modelColor[edit.i] = RGBf(rgb.x, rgb.y, rgb.z);
             } else {
                 Error("Bad format: specify color as r, g, b");
             }
