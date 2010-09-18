@@ -641,6 +641,10 @@ void TextWindow::EditControlDone(char *s) {
                     Error("Can't repeat fewer than 1 time.");
                     break;
                 }
+                if((int)ev > 999) {
+                    Error("Can't repeat more than 999 times.");
+                    break;
+                }
 
                 Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
