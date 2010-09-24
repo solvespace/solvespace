@@ -3,7 +3,7 @@ fix anti-aliased edge bug with filled contours
 crude DXF, HPGL import
 a request to import a plane thing
 make export assemble only contours in same group
-rotation works about first point under cursor
+rotation of model view works about z of first point under cursor
 
 -----
 rounding, as a special group

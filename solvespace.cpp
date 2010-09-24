@@ -64,6 +64,9 @@ void SolveSpace::Init(char *cmdLine) {
     maxSegments = CnfThawDWORD(10, "MaxSegments");
     // View units
     viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
+    // Number of digits after the decimal point
+    afterDecimalMm = CnfThawDWORD(2, "AfterDecimalMm");
+    afterDecimalInch = CnfThawDWORD(3, "AfterDecimalInch");
     // Camera tangent (determines perspective)
     cameraTangent = CnfThawFloat(0.3f/1e3f, "CameraTangent");
     // Grid spacing
@@ -157,8 +160,11 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat((float)chordTol, "ChordTolerance");
     // Max pwl segments to generate
     CnfFreezeDWORD((DWORD)maxSegments, "MaxSegments");
-    // Display/entry units
+    // View units
     CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
+    // Number of digits after the decimal point
+    CnfFreezeDWORD((DWORD)afterDecimalMm, "AfterDecimalMm");
+    CnfFreezeDWORD((DWORD)afterDecimalInch, "AfterDecimalInch");
     // Camera tangent (determines perspective)
     CnfFreezeFloat((float)cameraTangent, "CameraTangent");
     // Grid spacing
@@ -228,15 +234,18 @@ char *SolveSpace::UnitName(void) {
 char *SolveSpace::MmToString(double v) {
     static int WhichBuf;
     static char Bufs[8][128];
+    char fmt[128];
 
     WhichBuf++;
     if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
 
     char *s = Bufs[WhichBuf];
     if(viewUnits == UNIT_INCHES) {
-        sprintf(s, "%.3f", v/25.4);
+        sprintf(fmt, "%%.%df", afterDecimalInch);
+        sprintf(s, fmt, v/25.4);
     } else {
-        sprintf(s, "%.2f", v);
+        sprintf(fmt, "%%.%df", afterDecimalMm);
+        sprintf(s, fmt, v);
     }
     return s;
 }
@@ -248,6 +257,16 @@ double SolveSpace::StringToMm(char *str) {
 }
 double SolveSpace::ChordTolMm(void) {
     return SS.chordTol / SS.GW.scale;
+}
+int SolveSpace::UnitDigitsAfterDecimal(void) {
+    return (viewUnits == UNIT_INCHES) ? afterDecimalInch : afterDecimalMm;
+}
+void SolveSpace::SetUnitDigitsAfterDecimal(int v) {
+    if(viewUnits == UNIT_INCHES) {
+        afterDecimalInch = v;
+    } else {
+        afterDecimalMm = v;
+    }
 }
 
 double SolveSpace::CameraTangent(void) {

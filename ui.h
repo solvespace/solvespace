@@ -141,13 +141,14 @@ public:
     static const int EDIT_MAX_SEGMENTS          = 104;
     static const int EDIT_CAMERA_TANGENT        = 105;
     static const int EDIT_GRID_SPACING          = 106;
-    static const int EDIT_EXPORT_SCALE          = 107;
-    static const int EDIT_EXPORT_OFFSET         = 108;
-    static const int EDIT_CANVAS_SIZE           = 109;
-    static const int EDIT_G_CODE_DEPTH          = 110;
-    static const int EDIT_G_CODE_PASSES         = 111;
-    static const int EDIT_G_CODE_FEED           = 112;
-    static const int EDIT_G_CODE_PLUNGE_FEED    = 113;
+    static const int EDIT_DIGITS_AFTER_DECIMAL  = 107;
+    static const int EDIT_EXPORT_SCALE          = 108;
+    static const int EDIT_EXPORT_OFFSET         = 109;
+    static const int EDIT_CANVAS_SIZE           = 110;
+    static const int EDIT_G_CODE_DEPTH          = 120;
+    static const int EDIT_G_CODE_PASSES         = 121;
+    static const int EDIT_G_CODE_FEED           = 122;
+    static const int EDIT_G_CODE_PLUNGE_FEED    = 123;
     // For TTF text
     static const int EDIT_TTF_TEXT              = 300;
     // For the step dimension screen
@@ -285,6 +286,7 @@ public:
     static void ScreenChangeMaxSegments(int link, DWORD v);
     static void ScreenChangeCameraTangent(int link, DWORD v);
     static void ScreenChangeGridSpacing(int link, DWORD v);
+    static void ScreenChangeDigitsAfterDecimal(int link, DWORD v);
     static void ScreenChangeExportScale(int link, DWORD v);
     static void ScreenChangeExportOffset(int link, DWORD v);
     static void ScreenChangeGCodeParameter(int link, DWORD v);

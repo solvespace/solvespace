@@ -645,11 +645,16 @@ public:
         UNIT_INCHES,
     } Unit;
     Unit    viewUnits;
+    int     afterDecimalMm;
+    int     afterDecimalInch;
+
     char *MmToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(char *s);
     char *UnitName(void);
     double MmPerUnit(void);
+    int UnitDigitsAfterDecimal(void);
+    void SetUnitDigitsAfterDecimal(int v);
     double ChordTolMm(void);
     bool usePerspectiveProj;
     double CameraTangent(void);

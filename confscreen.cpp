@@ -53,16 +53,23 @@ void TextWindow::ScreenChangeGridSpacing(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_GRID_SPACING;
 }
 
+void TextWindow::ScreenChangeDigitsAfterDecimal(int link, DWORD v) {
+    char buf[128];
+    sprintf(buf, "%d", SS.UnitDigitsAfterDecimal());
+    SS.TW.ShowEditControl(55, 3, buf);
+    SS.TW.edit.meaning = EDIT_DIGITS_AFTER_DECIMAL;
+}
+
 void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
-    SS.TW.ShowEditControl(57, 5, str);
+    SS.TW.ShowEditControl(61, 5, str);
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
-    SS.TW.ShowEditControl(61, 3, SS.MmToString(SS.exportOffset));
+    SS.TW.ShowEditControl(65, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 
@@ -114,7 +121,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
 
         default: return;
     }
-    int row = 75, col;
+    int row = 81, col;
     if(v < 10) {
         row += v*2;
         col = 11;
@@ -129,7 +136,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
 
 void TextWindow::ScreenChangeGCodeParameter(int link, DWORD v) {
     char buf[1024] = "";
-    int row = 95;
+    int row = 93;
     switch(link) {
         case 'd':
             SS.TW.edit.meaning = EDIT_G_CODE_DEPTH;
@@ -203,6 +210,11 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.gridSpacing),
         &ScreenChangeGridSpacing, 0);
+    Printf(false, "%Ft digits after decimal point to show%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f%D[change]%E (e.g. '%s')",
+        SS.UnitDigitsAfterDecimal(),
+        &ScreenChangeDigitsAfterDecimal, 0,
+        SS.MmToString(SS.StringToMm("1.23456789")));
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1:1=mm, 1:25.4=inch)");
@@ -218,7 +230,6 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "  %Fd%f%Ll%c  export shaded 2d triangles%E",
         &ScreenChangeShadedTriangles,
         SS.exportShadedTriangles ? CHECK_TRUE : CHECK_FALSE);
-
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
         Printf(false, "  %Fd%c  curves as piecewise linear%E "
                       "(since cutter radius is not zero)", CHECK_TRUE);
@@ -227,6 +238,9 @@ void TextWindow::ShowConfiguration(void) {
             &ScreenChangePwlCurves,
             SS.exportPwlCurves ? CHECK_TRUE : CHECK_FALSE);
     }
+    Printf(false, "  %Fd%f%Ll%c  fix white exported lines%E",
+        &ScreenChangeFixExportColors,
+        SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export canvas size:  "
@@ -260,17 +274,6 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "  %Fd%f%Ll%c  fix white exported lines%E",
-        &ScreenChangeFixExportColors,
-        SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ll%c  draw triangle back faces in red%E",
-        &ScreenChangeBackFaces,
-        SS.drawBackFaces ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
-        &ScreenChangeCheckClosedContour,
-        SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
-
-    Printf(false, "");
     Printf(false, "%Ft exported g code parameters");
     Printf(false, "%Ba%Ft   depth:     %Fd%s %Fl%Ld%f[change]%E",
         SS.MmToString(SS.gCode.depth), &ScreenChangeGCodeParameter);
@@ -280,6 +283,14 @@ void TextWindow::ShowConfiguration(void) {
         SS.MmToString(SS.gCode.feed), &ScreenChangeGCodeParameter);
     Printf(false, "%Bd%Ft   plunge fd: %Fd%s %Fl%LP%f[change]%E",
         SS.MmToString(SS.gCode.plungeFeed), &ScreenChangeGCodeParameter);
+
+    Printf(false, "");
+    Printf(false, "  %Fd%f%Ll%c  draw triangle back faces in red%E",
+        &ScreenChangeBackFaces,
+        SS.drawBackFaces ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
+        &ScreenChangeCheckClosedContour,
+        SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
     
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));
@@ -335,6 +346,16 @@ bool TextWindow::EditControlDoneForConfiguration(char *s) {
         }
         case EDIT_GRID_SPACING: {
             SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
+            InvalidateGraphics();
+            break;
+        }
+        case EDIT_DIGITS_AFTER_DECIMAL: {
+            int v = atoi(s);
+            if(v < 0 || v > 8) {
+                Error("Specify between 0 and 8 digits after the decimal.");
+            } else {
+                SS.SetUnitDigitsAfterDecimal(v);
+            }
             InvalidateGraphics();
             break;
         }
