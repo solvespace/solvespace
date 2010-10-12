@@ -235,9 +235,12 @@ void GraphicsWindow::MenuClipboard(int id) {
 }
 
 bool TextWindow::EditControlDoneForPaste(char *s) {
+    Expr *e;
     switch(edit.meaning) {
         case EDIT_PASTE_TIMES_REPEATED: {
-            int v = atoi(s);
+            e = Expr::From(s, true);
+            if(!e) break;
+            int v = (int)e->Eval();
             if(v > 0) {
                 shown.paste.times = v;
             } else {
@@ -246,11 +249,14 @@ bool TextWindow::EditControlDoneForPaste(char *s) {
             break;
         }
         case EDIT_PASTE_ANGLE:
-            shown.paste.theta = WRAP_SYMMETRIC(atof(s)*PI/180, 2*PI);
+            e = Expr::From(s, true);
+            if(!e) break;
+            shown.paste.theta = WRAP_SYMMETRIC((e->Eval())*PI/180, 2*PI);
             break;
 
         case EDIT_PASTE_SCALE: {
-            double v = atof(s);
+            e = Expr::From(s, true);
+            double v = e->Eval();
             if(fabs(v) > 1e-6) {
                 shown.paste.scale = v;
             } else {

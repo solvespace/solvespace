@@ -1134,9 +1134,26 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                 sprintf(s, "%.3f", c->valA);
                 break;
 
-            default:
-                strcpy(s, SS.MmToString(fabs(c->valA)));
+            default: {
+                double v = fabs(c->valA);
+                char *def = SS.MmToString(v);
+                double eps = 1e-12;
+                if(fabs(SS.StringToMm(def) - v) < eps) {
+                    // Show value with default number of digits after decimal,
+                    // which is at least enough to represent it exactly.
+                    strcpy(s, def);
+                } else {
+                    // Show value with as many digits after decimal as
+                    // required to represent it exactly, up to 10.
+                    v /= SS.MmPerUnit();
+                    int i;
+                    for(i = 0; i <= 10; i++) {
+                        sprintf(s, "%.*f", i, v);
+                        if(fabs(atof(s) - v) < eps) break;
+                    }
+                }
                 break;
+            }
         }
         ShowGraphicsEditControl((int)p2.x, (int)p2.y-4, s);
     }
