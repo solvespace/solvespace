@@ -3,7 +3,7 @@
 // initial guesses for their positions, and then constrain them. The solver
 // calculates their new positions, in order to satisfy the constraints.
 //
-// This code is provide for evaluation purposes only. To purchase a license,
+// This code is provided for evaluation purposes only. To purchase a license,
 // please visit:
 //
 //     http://solvespace.com/
