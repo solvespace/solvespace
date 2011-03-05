@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Some sample code for slvs.lib. We draw some geometric entities, provide
+// Some sample code for slvs.dll. We draw some geometric entities, provide
 // initial guesses for their positions, and then constrain them. The solver
 // calculates their new positions, in order to satisfy the constraints.
 //

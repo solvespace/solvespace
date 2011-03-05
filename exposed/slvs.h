@@ -4,12 +4,12 @@
 // See the comments in this file, the accompanying sample code (example.c)
 // that uses this library, and the accompanying documentation (DOC.txt).
 //
-// This code is provide for evaluation purposes only. To purchase a license,
+// This code is provided for evaluation purposes only. To purchase a license,
 // please visit:
 //
 //     http://solvespace.com/
 //
-// Copyright 2009-2010 Useful Subset, LLC
+// Copyright 2009-2011 Useful Subset, LLC
 //-----------------------------------------------------------------------------
 
 #ifndef __SLVS_H

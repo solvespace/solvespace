@@ -389,7 +389,7 @@ SLVS_C_ANGLE*
 
     where A and B are vectors in the directions of lines A and B. This
     equation does not specify the angle unambiguously; for example,
-    note that val A = +/- 90 degrees will produce the same equation.
+    note that valA = +/- 90 degrees will produce the same equation.
 
     If other is true, then the constraint is instead that
 
@@ -451,8 +451,13 @@ SLVS_C_WHERE_DRAGGED*
 USING THE SOLVER
 ================
 
-See the enclosed sample code, example.c.
+The solver is provided as a DLL, and will be usable with most
+Windows-based developement tools. Examples are provided:
+
+    in C/C++        - example.c
+
+    in VB.NET       - VbDemo.vb
 
 
-Copyright 2009-2010 Useful Subset, LLC
+Copyright 2009-2011 Useful Subset, LLC
 
