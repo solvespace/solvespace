@@ -1,8 +1,8 @@
 //-----------------------------------------------------------------------------
 // Data structures and prototypes for slvs.lib, a geometric constraint solver.
 //
-// See the comments in this file, the accompanying sample code (example.c)
-// that uses this library, and the accompanying documentation (DOC.txt).
+// See the comments in this file, the accompanying sample code that uses
+// this library, and the accompanying documentation (DOC.txt).
 //
 // This code is provided for evaluation purposes only. To purchase a license,
 // please visit:

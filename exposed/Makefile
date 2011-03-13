@@ -22,9 +22,9 @@ LIBOBJS  = $(OBJDIR)\lib.obj \
 
 LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib shell32.lib
 
-all: $(OBJDIR)/ctest.exe
-    @cp $(OBJDIR)/ctest.exe .
-    ctest.exe
+all: $(OBJDIR)/CDemo.exe
+    @cp $(OBJDIR)/CDemo.exe .
+    CDemo.exe
 
 clean:
 	rm -f obj/*
@@ -34,9 +34,9 @@ $(OBJDIR)/slvs.dll: $(SSOBJS) $(LIBOBJS) $(W32OBJS)
     @cp $(OBJDIR)/slvs.dll .
     @echo slvs.dll
 
-$(OBJDIR)/ctest.exe: example.c $(OBJDIR)/slvs.dll
-    @$(CC) $(CFLAGS) -Fe$(OBJDIR)/ctest.exe example.c $(OBJDIR)/slvs.lib $(LIBS)
-    @echo ctest.exe
+$(OBJDIR)/CDemo.exe: CDemo.c $(OBJDIR)/slvs.dll
+    @$(CC) $(CFLAGS) -Fe$(OBJDIR)/CDemo.exe CDemo.c $(OBJDIR)/slvs.lib $(LIBS)
+    @echo CDemo.exe
 
 $(SSOBJS): ..\$(@B).cpp $(HEADERS)
     @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj ..\$(@B).cpp
