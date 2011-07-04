@@ -850,7 +850,7 @@ void SolveSpace::MenuHelp(int id) {
             Message("This is SolveSpace version 1.8.\n\n"
                 "For more information, see http://solvespace.com/\n\n"
                 "Built " __TIME__ " " __DATE__ ".\n\n"
-                "Copyright 2008-2010 Useful Subset, LLC.\n"
+                "Copyright 2008-2011 Useful Subset, LLC.\n"
                 "All Rights Reserved.");
             break;
 
