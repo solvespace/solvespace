@@ -141,28 +141,6 @@ void TextWindow::ShowListOfGroups(void) {
         &(TextWindow::ScreenShowListOfStyles),
         &(TextWindow::ScreenShowEditView),
         &(TextWindow::ScreenShowConfiguration));
-
-    // Show license info
-    Printf(false, "");
-    if(SS.license.licensed) {
-        Printf(false, "%FtLicensed to:");
-        Printf(false, "%Fg  %s", SS.license.line1);
-        if(strlen(SS.license.line2)) {
-            Printf(false, "%Fg  %s", SS.license.line2);
-        }
-        Printf(false, "%Fg  %s", SS.license.users);
-    } else {
-        Printf(false, "%Fx*** NO LICENSE FILE IS PRESENT ***");
-        if(SS.license.trialDaysRemaining > 0) {
-            Printf(false, "%Fx  running as full demo, %d day%s remaining",
-                SS.license.trialDaysRemaining,
-                SS.license.trialDaysRemaining == 1 ? "" : "s");
-        } else {
-            Printf(false, "%Fx  demo expired, now running in light mode");
-        }
-        Printf(false, "%Fx  buy at %Fl%f%Llhttp://solvespace.com/%E",
-            &ScreenGoToWebsite);
-    }
 }
 
 

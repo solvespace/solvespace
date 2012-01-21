@@ -132,8 +132,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Step &Dimension...\tCtrl+Shift+D",    MNU_STEP_DIM,       'D'|S|C,mAna  },
 
 { 0, "&Help",                               0,                  0,      NULL  },
-{ 1, "&Load License...",                    MNU_LICENSE,        0,      mHelp },
-{ 1, NULL,                                  0,                  0,      NULL  },
 { 1, "&Website / Manual",                   MNU_WEBSITE,        0,      mHelp },
 { 1, "&About",                              MNU_ABOUT,          0,      mHelp },
 { -1  },

@@ -111,10 +111,6 @@ int SaveFileYesNoCancel(void);
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
-// Native license file
-#define LICENSE_PATTERN \
-    "License File (*.license)\0*.license\0All Files (*)\0*\0\0"
-#define LICENSE_EXT "license"
 BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
 BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
@@ -667,7 +663,6 @@ public:
 
     // The platform-dependent code calls this before entering the msg loop
     void Init(char *cmdLine);
-    void CheckLicenseFromRegistry(void);
     void Exit(void);
 
     // File load/save routines, including the additional files that get
@@ -802,30 +797,7 @@ public:
     } later;
     void DoLater(void);
 
-    // For the licensing
-    class Crc {
-public:
-        static const DWORD POLY = 0xedb88320;
-        DWORD shiftReg;
-        
-        void ProcessBit(int bit);
-        void ProcessByte(BYTE b);
-        void ProcessString(char *s);
-    };
-    Crc crc;
-    struct {
-        bool    licensed;
-        char    line1[512];
-        char    line2[512];
-        char    users[512];
-        DWORD   key;
-        SQWORD  firstUse;
-        int     trialDaysRemaining;
-    } license;
     static void MenuHelp(int id);
-    void CleanEol(char *s);
-    void LoadLicenseFile(char *filename);
-    bool LicenseValid(char *line1, char *line2, char *users, DWORD key);
 };
 
 extern SolveSpace SS;

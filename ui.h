@@ -405,7 +405,6 @@ public:
         MNU_STOP_TRACING,
         MNU_STEP_DIM,
         // Help,
-        MNU_LICENSE,
         MNU_WEBSITE,
         MNU_ABOUT,
     } MenuId;
