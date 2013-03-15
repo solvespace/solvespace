@@ -66,12 +66,12 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 #if 1
         dbp("SolveSpace library initialized (evaluation version only).");
         dbp("Built " __DATE__ " " __TIME__
-                    ". Copyright 2009-2011 Useful Subset, LLC.");
+                    ". Copyright 2009-2013 Useful Subset, LLC.");
         HWND h = GetForegroundWindow();
         MessageBox(h,
 "This is an evaluation copy of SolveSpace. To purchase a license, please "
 "contact info@solvespace.com.\r\n\r\n"
-"Copyright 2009-2011 Useful Subset, LLC.",
+"Copyright 2009-2013 Useful Subset, LLC.",
             "SolveSpace", MB_OK);
 #endif
         InitHeaps();
@@ -252,6 +252,8 @@ default: dbp("bad constraint type %d", sc->type); return;
     SK.param.Clear();
     SK.entity.Clear();
     SK.constraint.Clear();
+
+    FreeAllTemporary();
 }
 
 }

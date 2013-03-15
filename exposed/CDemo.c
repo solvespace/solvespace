@@ -259,6 +259,11 @@ int main(void)
     sys.faileds = 50;
 
 //    Example3d();
-    Example2d();
+    for(;;) {
+        Example2d();
+        sys.params = sys.constraints = sys.entities = 0;
+        break;
+    }
+    return 0;
 }
 
