@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// A library wrapper around SolveSpace, to permit someone to use its constraint
+// solver without coupling their program too much to SolveSpace's internals.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 #define EXPORT_DLL
 #include "slvs.h"

@@ -66,7 +66,6 @@ LIBS = user32.lib gdi32.lib comctl32.lib advapi32.lib shell32.lib opengl32.lib g
 
 all: $(OBJDIR)/solvespace.exe
     @cp $(OBJDIR)/solvespace.exe .
-    solvespace t8.slvs
 
 clean:
 	rm -f obj/*
