@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// An expression in our symbolic algebra system, used to write, linearize,
+// and solve our constraint equations.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __EXPR_H
 #define __EXPR_H

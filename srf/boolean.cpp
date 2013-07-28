@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Top-level functions to compute the Boolean union or difference between
+// two shells of rational polynomial surfaces.
+// 
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 int I, N, FLAG;

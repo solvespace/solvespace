@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Implementation of our Request class; a request is a user-created thing
+// that will generate an entity (line, curve) when the sketch is generated,
+// in the same way that other entities are generated automatically, like
+// by an extrude or a step and repeat.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };

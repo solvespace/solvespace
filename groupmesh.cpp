@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// Routines to generate our watertight brep shells from the operations
+// and entities specified by the user in each group; templated to work either
+// on an SShell of ratpoly surfaces or on an SMesh of triangles.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 #define gs (SS.GW.gs)

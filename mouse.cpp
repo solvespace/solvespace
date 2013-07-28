@@ -1,5 +1,7 @@
 //-----------------------------------------------------------------------------
 // Anything relating to mouse, keyboard, or 6-DOF mouse input.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

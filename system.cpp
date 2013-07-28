@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Once we've written our constraint equations in the symbolic algebra system,
+// these routines linearize them, and solve by a modified Newton's method.
+// This also contains the routines to detect non-convergence or inconsistency,
+// and report diagnostics to the user.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 // This tolerance is used to determine whether two (linearized) constraints

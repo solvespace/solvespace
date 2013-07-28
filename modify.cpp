@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// User-initiated (not parametric) operations to modify our sketch, by
+// changing the requests, like to round a corner or split curves where they
+// intersect.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------

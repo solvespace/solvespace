@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// Routines to write and read our .slvs file format.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 #define VERSION_STRING "±²³SolveSpaceREVa"

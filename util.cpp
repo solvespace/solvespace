@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Utility functions, mostly various kinds of vector math (working on real
+// numbers, not working on quantities in the symbolic algebra system).
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void MakePathRelative(char *basep, char *pathp)

@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// The implementation of our entities in the symbolic algebra system, methods
+// to return a symbolic representation of the entity (line by its endpoints,
+// circle by center and radius, etc.).
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 const hEntity  EntityBase::FREE_IN_3D = { 0 };

@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// The user-visible undo/redo operation; whenever they change something, we
+// record our state and push it on a stack, and we pop the stack when they
+// select undo.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void SolveSpace::UndoRemember(void) {

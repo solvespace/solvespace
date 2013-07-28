@@ -3,6 +3,8 @@
 // format: getting the appropriate lines and curves, performing hidden line
 // removal, calculating bounding boxes, and so on. Also raster and triangle
 // mesh output.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include <png.h>

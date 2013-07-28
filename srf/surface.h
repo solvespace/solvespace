@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Functions relating to rational polynomial surfaces, which are trimmed by
+// curves (either rational polynomial curves, or piecewise linear
+// approximations to curves of intersection that can't be represented
+// exactly in ratpoly form), and assembled into watertight shells.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __SURFACE_H
 #define __SURFACE_H

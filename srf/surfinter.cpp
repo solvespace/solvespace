@@ -2,6 +2,8 @@
 // How to intersect two surfaces, to get some type of curve. This is either
 // an exact special case (e.g., two planes to make a line), or a numerical
 // thing.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

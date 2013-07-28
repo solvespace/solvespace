@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// Helper functions for the text-based browser window.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include "obj/icons-proto.h"
 #include <stdarg.h>

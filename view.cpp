@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// The View menu, stuff to snap to certain special vews of the model, and to
+// display our current view of the model to the user.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void TextWindow::ShowEditView(void) {

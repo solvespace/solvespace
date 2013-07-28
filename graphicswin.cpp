@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Top-level implementation of the program's main window, in which a graphical
+// representation of the model is drawn and edited by the user.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 #define mView (&GraphicsWindow::MenuView)

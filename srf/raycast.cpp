@@ -4,6 +4,8 @@
 // shell testing, and the intersection of edge line segments against surfaces
 // is used to get rough surface-curve intersections, which are later refined
 // numerically.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

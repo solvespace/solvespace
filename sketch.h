@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// The parametric structure of our sketch, in multiple groups, that generate
+// geometric entities and surfaces.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __SKETCH_H
 #define __SKETCH_H

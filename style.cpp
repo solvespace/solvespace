@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// Implementation of a cosmetic line style, which determines the color and
+// other appearance of a line or curve on-screen and in exported files. Some
+// styles are predefined, and others can be created by the user.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include <png.h>
 

@@ -1,4 +1,9 @@
-
+//-----------------------------------------------------------------------------
+// Data structures used frequently in the program, various kinds of vectors
+// (of real numbers, not symbolic algebra stuff) and our templated lists.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #ifndef __DSC_H
 #define __DSC_H
 

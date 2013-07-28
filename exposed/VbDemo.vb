@@ -9,12 +9,7 @@
 ' functions that you may wish to use a starting point in your own
 ' application.
 '
-' This code is provided for evaluation purposes only. To purchase a license,
-' please visit:
-'
-'     http://solvespace.com/
-'
-' Copyright 2009-2011 Useful Subset, LLC
+' Copyright 2008-2013 Jonathan Westhues.
 '-----------------------------------------------------------------------------
 
 Imports System.Runtime.InteropServices

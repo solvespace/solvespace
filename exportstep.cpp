@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// Export a STEP file describing our ratpoly shell.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void StepFileWriter::WriteHeader(void) {

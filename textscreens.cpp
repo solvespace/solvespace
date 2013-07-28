@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// The text-based browser window, used to view the structure of the model by
+// groups and for other similar purposes.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------

@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// Operations on polygons (planar, of line segment edges).
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 Vector STriangle::Normal(void) {

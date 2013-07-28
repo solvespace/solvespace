@@ -2,6 +2,8 @@
 // Math on rational polynomial surfaces and curves, typically in Bezier
 // form. Evaluate, root-find (by Newton's methods), evaluate derivatives,
 // and so on.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 

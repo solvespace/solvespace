@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// The toolbar that appears at the top left of the graphics window, where the
+// user can select icons with the mouse, to perform operations equivalent to
+// selecting a menu item or using a keyboard shortcut.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 #include "obj/icons.h"
 

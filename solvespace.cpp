@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Entry point in to the program, our registry-stored settings and top-level
+// housekeeping when we open, save, and create new files.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 SolveSpace SS;
@@ -718,10 +724,10 @@ void SolveSpace::MenuHelp(int id) {
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is SolveSpace version 1.9.\n\n"
+            Message("This is SolveSpace version 2.0.\n\n"
                 "For more information, see http://solvespace.com/\n\n"
                 "Built " __TIME__ " " __DATE__ ".\n\n"
-                "Copyright 2008-2012 Useful Subset, LLC.\n"
+                "Copyright 2008-2013 Jonathan Westhues.\n"
                 "All Rights Reserved.");
             break;
 

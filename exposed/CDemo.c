@@ -3,12 +3,7 @@
 // initial guesses for their positions, and then constrain them. The solver
 // calculates their new positions, in order to satisfy the constraints.
 //
-// This code is provided for evaluation purposes only. To purchase a license,
-// please visit:
-//
-//     http://solvespace.com/
-//
-// Copyright 2009-2010 Useful Subset, LLC
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include <windows.h>
 #include <stdio.h>

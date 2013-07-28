@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Operations on triangle meshes, like our mesh Booleans using the BSP, and
+// the stuff to check for watertightness.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void SMesh::Clear(void) {

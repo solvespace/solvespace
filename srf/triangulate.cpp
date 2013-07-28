@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Triangulate a surface. If the surface is curved, then we first superimpose
+// a grid of quads, with spacing to achieve our chord tolerance. We then
+// proceed by ear-clipping; the resulting mesh should be watertight and not
+// awful numerically, but has no special properties (Delaunay, etc.).
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "../solvespace.h"
 
 void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {

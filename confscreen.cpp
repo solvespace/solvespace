@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // For the configuration screen, setup items that are not specific to the
 // file being edited right now.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

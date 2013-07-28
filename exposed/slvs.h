@@ -4,12 +4,7 @@
 // See the comments in this file, the accompanying sample code that uses
 // this library, and the accompanying documentation (DOC.txt).
 //
-// This code is provided for evaluation purposes only. To purchase a license,
-// please visit:
-//
-//     http://solvespace.com/
-//
-// Copyright 2009-2011 Useful Subset, LLC
+// Copyright 2009-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
 #ifndef __SLVS_H

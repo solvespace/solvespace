@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Binary space partitioning tree, used to represent a volume in 3-space
+// bounded by a triangle mesh. These are used to compute Boolean operations
+// on meshes. These aren't used for anything relating to an SShell of
+// ratpoly surfaces.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }

@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Anything relating to plane polygons and triangles, and (generally, non-
+// planar) meshes thereof.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __POLYGON_H
 #define __POLYGON_H

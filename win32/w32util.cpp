@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Utility functions that depend on Win32. Notably, our memory allocation;
+// we use two separate allocators, one for long-lived stuff and one for
+// stuff that gets freed after every regeneration of the model, to save us
+// the trouble of freeing the latter explicitly.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include <windows.h>
 #include <stdarg.h>
 #include <string.h>

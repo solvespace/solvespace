@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Implementation of the Group class, which represents a set of entities and
+// constraints that are solved together, in some cases followed by another
+// operation, like to extrude surfaces from the entities or to step and
+// repeat them parametrically.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 const hParam   Param::NO_PARAM = { 0 };

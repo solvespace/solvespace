@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // Anything involving curves and sets of curves (except for the real math,
 // which is in ratpoly.cpp).
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 

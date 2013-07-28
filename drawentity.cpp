@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// Draw a representation of an entity on-screen, in the case of curves up
+// to our chord tolerance, or return the distance from the user's mouse pointer
+// to the entity for selection.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 char *Entity::DescriptionString(void) {

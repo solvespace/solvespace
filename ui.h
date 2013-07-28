@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Declarations relating to our user interface, in both the graphics and
+// text browser window.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __UI_H
 #define __UI_H

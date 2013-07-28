@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// Routines to read a TrueType font as vector outlines, and generate them
+// as entities, since they're always representable as either lines or
+// quadratic Bezier curves.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------

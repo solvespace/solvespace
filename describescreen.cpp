@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // The screens when an entity is selected, that show some description of it--
 // endpoints of the lines, diameter of the circle, etc.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

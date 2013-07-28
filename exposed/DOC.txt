@@ -459,5 +459,5 @@ Windows-based developement tools. Examples are provided:
     in VB.NET       - VbDemo.vb
 
 
-Copyright 2009-2011 Useful Subset, LLC
+Copyright 2009-2013 Jonathan Westhues.
 

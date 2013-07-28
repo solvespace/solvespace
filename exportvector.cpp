@@ -1,5 +1,7 @@
 //-----------------------------------------------------------------------------
 // The file format-specific stuff for all of the 2d vector output formats.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 

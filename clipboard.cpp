@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// The clipboard that gets manipulated when the user selects Edit -> Cut,
+// Copy, Paste, etc.; may contain entities only, not constraints.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void SolveSpace::Clipboard::Clear(void) {

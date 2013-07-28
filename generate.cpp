@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Generate our model based on its parametric description, by solving each
+// sketch, generating surfaces from the resulting entities, performing any
+// requested surface operations (e.g. Booleans) with our model so far, and
+// then repeating this process for each subsequent group.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {

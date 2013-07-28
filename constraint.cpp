@@ -1,3 +1,9 @@
+//-----------------------------------------------------------------------------
+// Implementation of the Constraint menu, to create new constraints in
+// the sketch.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 char *Constraint::DescriptionString(void) {

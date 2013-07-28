@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// Helper functions that ultimately draw stuff with gl.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 // A public-domain Hershey vector font ("Simplex").

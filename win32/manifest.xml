@@ -3,7 +3,7 @@
 <assemblyIdentity
     version="1.0.0.0"
     processorArchitecture="X86"
-    name="UsefulSubsetLlc.3dCAD.MechSketch"
+    name="JonathanWesthues.3dCAD.SolveSpace"
     type="win32"
 />
 <description>Parametric 3d CAD tool.</description>

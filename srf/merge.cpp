@@ -1,6 +1,8 @@
 //-----------------------------------------------------------------------------
 // Routines to merge multiple coincident surfaces (each with their own trim
 // curves) into a single surface, with all of the trim curves.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 

@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// Given a constraint, draw a graphical and user-selectable representation
+// of that constraint on-screen. We can either draw with gl, or compute the
+// distance from a point (the location of the mouse pointer) to the lines
+// that we would have drawn, for selection.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {

@@ -1,3 +1,11 @@
+//-----------------------------------------------------------------------------
+// The symbolic algebra system used to write our constraint equations;
+// routines to build expressions in software or from a user-provided string,
+// and to compute the partial derivatives that we'll use when write our
+// Jacobian matrix.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {

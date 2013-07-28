@@ -1,3 +1,10 @@
+//-----------------------------------------------------------------------------
+// Given a constraint, generate one or more equations in our symbolic algebra
+// system to represent that constraint; also various geometric helper
+// functions for that.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 #include "solvespace.h"
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };

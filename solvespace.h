@@ -1,3 +1,8 @@
+//-----------------------------------------------------------------------------
+// All declarations not grouped specially elsewhere.
+//
+// Copyright 2008-2013 Jonathan Westhues.
+//-----------------------------------------------------------------------------
 
 #ifndef __SOLVESPACE_H
 #define __SOLVESPACE_H

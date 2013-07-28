@@ -2,6 +2,8 @@
 // The root function to paint our graphics window, after setting up all the
 // views and such appropriately. Also contains all the stuff to manage the
 // selection.
+//
+// Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
