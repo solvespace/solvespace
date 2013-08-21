@@ -1,16 +1,15 @@
 DEFINES = /D_WIN32_WINNT=0x500 /DISOLATION_AWARE_ENABLED /D_WIN32_IE=0x500 /DWIN32_LEAN_AND_MEAN /DWIN32
 # Use the multi-threaded static libc because libpng and zlib do; not sure if anything bad
 # happens if those mix, but don't want to risk it.
-CFLAGS  = /W3 /nologo -MT -Iextlib -I..\common\win32 /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs  # /O2
+CFLAGS  = /W3 /nologo -MT -Iextlib /D_DEBUG /D_CRT_SECURE_NO_WARNINGS /I. /Zi /EHs  # /O2
 
-HEADERS = ..\common\win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h srf\surface.h
+HEADERS = win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h srf\surface.h
 
 OBJDIR = obj
 
-FREEZE   = $(OBJDIR)\freeze.obj
-
 W32OBJS  = $(OBJDIR)\w32main.obj \
            $(OBJDIR)\w32util.obj \
+           $(OBJDIR)\freeze.obj \
 
 SSOBJS   = $(OBJDIR)\solvespace.obj \
            $(OBJDIR)\textwin.obj \
@@ -83,9 +82,6 @@ $(SRFOBJS): srf\$(@B).cpp $(HEADERS)
 
 $(W32OBJS): win32/$(@B).cpp $(HEADERS)
     @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj win32/$(@B).cpp
-
-$(FREEZE): ..\common\win32\$(@B).cpp $(HEADERS)
-    @$(CC) $(CFLAGS) $(DEFINES) -c -Fo$(OBJDIR)/$(@B).obj ..\common\win32\$(@B).cpp
 
 $(RES): win32/$(@B).rc icon.ico
 	rc win32/$(@B).rc
