@@ -449,7 +449,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 
     EvalJacobian();
 
-    int rank = CalculateRank();
+    int rank; rank = CalculateRank();
     if(rank != mat.m) {
         if(andFindBad) {
             FindWhichToRemoveToFixJacobian(g, bad);

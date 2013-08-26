@@ -169,7 +169,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
     bool isPos[MAX_VERTICES];
     bool isNeg[MAX_VERTICES];
     bool isOn[MAX_VERTICES];
-    int posc = 0, negc = 0, onc = 0;
+    int posc, negc, onc; posc = negc = onc = 0;
     for(i = 0; i < cnt; i++) {
         double dt = n.Dot(vertex[i]);
         isPos[i] = isNeg[i] = isOn[i] = false;
@@ -207,10 +207,10 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
 
     Vector vpos[MAX_VERTICES];
     Vector vneg[MAX_VERTICES];
-    int npos = 0, nneg = 0;
+    int npos, nneg; npos = nneg = 0;
 
     Vector inter[2];
-    int inters = 0;
+    int inters; inters = 0;
 
     for(i = 0; i < cnt; i++) {
         int ip = WRAP((i + 1), cnt);

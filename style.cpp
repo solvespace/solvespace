@@ -399,14 +399,14 @@ void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
         png_read_png(png_ptr, info_ptr,
             PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_ALPHA, NULL);
         
-        int w = info_ptr->width,
-            h = info_ptr->height;
-        BYTE **rows = png_get_rows(png_ptr, info_ptr);
+        int w; w = (int)info_ptr->width;
+        int h; h = (int)info_ptr->height;
+        BYTE **rows; rows = png_get_rows(png_ptr, info_ptr);
 
         // Round to next-highest powers of two, since the textures require
         // that. And round up to 4, to guarantee DWORD alignment.
-        int rw = max(4, RoundUpToPowerOfTwo(w)),
-            rh = max(4, RoundUpToPowerOfTwo(h));
+        int rw; rw = max(4, RoundUpToPowerOfTwo(w));
+        int rh; rh = max(4, RoundUpToPowerOfTwo(h));
 
         SS.bgImage.fromFile = (BYTE *)MemAlloc(rw*rh*3);
         for(int i = 0; i < h; i++) {

@@ -685,11 +685,11 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     FILE *f = fopen(filename, "wb");
     if(!f) goto err;
 
-    png_struct *png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
+    png_struct *png_ptr; png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
         NULL, NULL, NULL);
     if(!png_ptr) goto err;
 
-    png_info *info_ptr = png_create_info_struct(png_ptr);
+    png_info *info_ptr; info_ptr = png_create_info_struct(png_ptr);
     if(!png_ptr) goto err;
 
     if(setjmp(png_jmpbuf(png_ptr))) goto err;
@@ -708,8 +708,8 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     png_write_info(png_ptr, info_ptr);
 
     // Get the pixel data from the framebuffer
-    BYTE *pixels = (BYTE *)AllocTemporary(3*w*h);
-    BYTE **rowptrs = (BYTE **)AllocTemporary(h*sizeof(BYTE *));
+    BYTE *pixels; pixels = (BYTE *)AllocTemporary(3*w*h);
+    BYTE **rowptrs; rowptrs = (BYTE **)AllocTemporary(h*sizeof(BYTE *));
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
     int y;

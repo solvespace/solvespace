@@ -389,14 +389,15 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
     int which = 0;
     SKdNode *ret = Alloc();
 
-    if(!tll) {
-        goto leaf;
-    }
-
     int i;
     int gtc[3] = { 0, 0, 0 }, ltc[3] = { 0, 0, 0 }, allc = 0;
     double badness[3] = { 0, 0, 0 };
     double split[3] = { 0, 0, 0 };
+
+    if(!tll) {
+        goto leaf;
+    }
+
     for(i = 0; i < 3; i++) {
         int tcnt = 0;
         STriangleLl *ll;
@@ -445,7 +446,7 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
     }
 
     STriangleLl *ll;
-    STriangleLl *lgt = NULL, *llt = NULL;
+    STriangleLl *lgt, *llt; lgt = llt = NULL;
     for(ll = tll; ll; ll = ll->next) {
         STriangle *tr = ll->tri;
         
