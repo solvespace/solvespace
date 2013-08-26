@@ -198,7 +198,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
     { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
 
-    { 0, NULL, NULL, NULL     },
+    { 0, NULL, 0, NULL }
 };
 
 void SolveSpace::SaveUsingTable(int type) {

@@ -684,7 +684,7 @@ void SPolygon::FixContourDirections(void) {
         }
    
         bool clockwise = sc->IsClockwiseProjdToNormal(normal);
-        if(clockwise && outer || (!clockwise && !outer)) {
+        if((clockwise && outer) || (!clockwise && !outer)) {
             sc->Reverse();
             sc->tag = 1;
         }

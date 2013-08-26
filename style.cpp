@@ -9,20 +9,20 @@
 #include <png.h>
 
 const Style::Default Style::Defaults[] = {
-    { ACTIVE_GRP,   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, },
-    { CONSTRUCTION, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, },
-    { INACTIVE_GRP, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, },
-    { DATUM,        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, },
-    { SOLID_EDGE,   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, },
-    { CONSTRAINT,   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, },
-    { SELECTED,     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, },
-    { HOVERED,      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, },
-    { CONTOUR_FILL, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, },
-    { NORMALS,      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, },
-    { ANALYZE,      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, },
-    { DRAW_ERROR,   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, },
-    { DIM_SOLID,    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, },
-    { 0,            NULL,           0,                   0.0, },
+    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, },
+    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, },
+    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, },
+    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, },
+    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, },
+    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, },
+    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, },
+    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, },
+    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, },
+    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, },
+    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, },
+    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, },
+    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, },
+    { { 0 },            NULL,           0,                   0.0, }
 };
 
 char *Style::CnfColor(const char *prefix) {

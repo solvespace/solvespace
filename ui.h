@@ -412,7 +412,7 @@ public:
         MNU_STEP_DIM,
         // Help,
         MNU_WEBSITE,
-        MNU_ABOUT,
+        MNU_ABOUT
     } MenuId;
     typedef void MenuHandler(int id);
     typedef struct {

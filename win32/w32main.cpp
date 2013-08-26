@@ -172,7 +172,7 @@ void DoMessageBox(const char *str, int rows, int cols, BOOL error)
     MSG msg;
     DWORD ret;
     MessageDone = FALSE;
-    while((ret = GetMessage(&msg, NULL, 0, 0)) && !MessageDone) {
+    while((ret = GetMessage(&msg, NULL, 0, 0)) != 0 && !MessageDone) {
         if((msg.message == WM_KEYDOWN &&
                (msg.wParam == VK_RETURN ||
                 msg.wParam == VK_ESCAPE)) ||
@@ -1169,7 +1169,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // will be from the wndprocs.
     MSG msg;
     DWORD ret;
-    while(ret = GetMessage(&msg, NULL, 0, 0)) {
+    while((ret = GetMessage(&msg, NULL, 0, 0)) != 0) {
         // Is it a message from the six degree of freedom input device?
         if(ProcessSpaceNavigatorMsg(&msg)) goto done;
 

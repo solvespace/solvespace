@@ -643,7 +643,7 @@ public:
 
     typedef enum {
         UNIT_MM = 0,
-        UNIT_INCHES,
+        UNIT_INCHES
     } Unit;
     Unit    viewUnits;
     int     afterDecimalMm;
