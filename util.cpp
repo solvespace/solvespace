@@ -15,12 +15,12 @@ void MakePathRelative(const char *basep, char *pathp)
     // Convert everything to lowercase
     p = basep;
     for(i = 0; *p; p++) {
-        base[i++] = tolower(*p);
+        base[i++] = (char)tolower(*p);
     }
     base[i++] = '\0';
     p = pathp;
     for(i = 0; *p; p++) {
-        path[i++] = tolower(*p);
+        path[i++] = (char)tolower(*p);
     }
     path[i++] = '\0';
 
@@ -71,7 +71,7 @@ void MakePathAbsolute(const char *basep, char *pathp) {
 
     // Chop off the filename
     int i;
-    for(i = strlen(out) - 1; i >= 0; i--) {
+    for(i = (int)strlen(out) - 1; i >= 0; i--) {
         if(out[i] == '\\' || out[i] == '/') break;
     }
     if(i < 0) return; // base is not an absolute path, or something?
@@ -96,7 +96,7 @@ bool StringAllPrintable(const char *str)
 
 bool StringEndsIn(const char *str, const char *ending)
 {
-    int i, ls = strlen(str), le = strlen(ending);
+    int i, ls = (int)strlen(str), le = (int)strlen(ending);
 
     if(ls < le) return false;
         

@@ -45,7 +45,7 @@ char *Style::CnfPrefixToName(const char *prefix) {
         if(isupper(prefix[i]) && i != 0) {
             name[j++] = '-';
         }
-        name[j++] = tolower(prefix[i]);
+        name[j++] = (char)tolower(prefix[i]);
         i++;
     }
     name[j++] = '\0';
@@ -198,11 +198,11 @@ Style *Style::Get(hStyle h) {
 // hStyle or with the integer corresponding to that hStyle.v.
 //-----------------------------------------------------------------------------
 DWORD Style::Color(int s, bool forExport) {
-    hStyle hs = { s };
+    hStyle hs = { (DWORD)s };
     return Color(hs, forExport);
 }
 float Style::Width(int s) {
-    hStyle hs = { s };
+    hStyle hs = { (DWORD)s };
     return Width(hs);
 }
 
@@ -290,7 +290,7 @@ double Style::TextHeight(hStyle hs) {
 // if it's both shown and exportable.
 //-----------------------------------------------------------------------------
 bool Style::Exportable(int si) {
-    hStyle hs = { si };
+    hStyle hs = { (DWORD)si };
     Style *s = Get(hs);
     return (s->exportable) && (s->visible);
 }

@@ -171,7 +171,7 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
             merged = false;
             for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
                 if(se->tag)                         continue;
-                if(se->auxA != stb.curve.v)         continue;
+                if(se->auxA != (int)stb.curve.v)    continue;
                 if(( se->auxB && !stb.backwards) ||
                    (!se->auxB &&  stb.backwards))   continue;
 

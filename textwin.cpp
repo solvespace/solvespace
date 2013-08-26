@@ -181,7 +181,8 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     break;
                 }
                 case 'c': {
-                    char v = va_arg(vl, char);
+                    // 'char' is promoted to 'int' when passed through '...'
+                    int v = va_arg(vl, int);
                     if(v == 0) {
                         strcpy(buf, "");
                     } else {
@@ -436,7 +437,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (strlen(str) + 1)*CHAR_WIDTH;
+            int tw = ((int)strlen(str) + 1)*CHAR_WIDTH;
             ox = min(ox, (width - 25) - tw);
             oy = max(oy, 5);
 

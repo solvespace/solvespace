@@ -334,7 +334,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 if(lsi.n == 0) continue;
 
                 // Find the other surface that this curve trims.
-                hSCurve hsc = { se->auxA };
+                hSCurve hsc = { (DWORD)se->auxA };
                 SCurve *sc = shA->curve.FindById(hsc);
                 hSSurface hother = (sc->surfA.v == srfA->h.v) ?
                                                     sc->surfB : sc->surfA;

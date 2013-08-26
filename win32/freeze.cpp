@@ -180,7 +180,7 @@ void FreezeStringF(const char *val, const char *subKey, const char *name)
     if(RegCreateKeyEx(software, subKey, 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
         return;
   
-    if(RegSetValueEx(sub, name, 0, REG_SZ, (const BYTE *)val, strlen(val)+1) != ERROR_SUCCESS)
+    if(RegSetValueEx(sub, name, 0, REG_SZ, (const BYTE *)val, (DWORD)strlen(val)+1) != ERROR_SUCCESS)
         return;
 }
 

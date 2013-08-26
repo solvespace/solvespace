@@ -990,7 +990,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
 
             Entity e;
-            if(r->extraPoints >= arraylen(e.point) - 4) {
+            if(r->extraPoints >= (int)arraylen(e.point) - 4) {
                 ClearPending();
                 break;
             }

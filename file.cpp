@@ -382,7 +382,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                     for(;;) {
                         EntityMap em;
                         char line2[1024];
-                        fgets(line2, sizeof(line2), fh);
+                        fgets(line2, (int)sizeof(line2), fh);
                         if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
                                                      &(em.copyNumber)) == 3)
                         {
@@ -420,7 +420,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
 
     char line[1024];
-    while(fgets(line, sizeof(line), fh)) {
+    while(fgets(line, (int)sizeof(line), fh)) {
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers
@@ -502,7 +502,7 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
     memset(&sv, 0, sizeof(sv));
 
     char line[1024];
-    while(fgets(line, sizeof(line), fh)) {
+    while(fgets(line, (int)sizeof(line), fh)) {
         char *s = strchr(line, '\n');
         if(s) *s = '\0';
         // We should never get files with \r characters in them, but mailers

@@ -478,7 +478,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 (r.bottom - r.top), TRUE);
             // If the window is growing, then the scrollbar position may
             // be moving, so it's as if we're dragging the scrollbar.
-            HandleTextWindowScrollBar(-1, -1);
+            HandleTextWindowScrollBar((WPARAM)-1, -1);
             InvalidateRect(TextWnd, NULL, FALSE);
             break;
         }
@@ -551,7 +551,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_F9:
         case VK_F10:
         case VK_F11:
-        case VK_F12:            c = (wParam - VK_F1) + 0xf1; break;
+        case VK_F12:            c = ((int)wParam - VK_F1) + 0xf1; break;
 
         // These overlap with some character codes that I'm using, so
         // don't let them trigger by accident.
@@ -563,7 +563,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_RWIN:           return FALSE;
 
         default:
-            c = wParam;
+            c = (int)wParam;
             break;
     }
     if(GetAsyncKeyState(VK_SHIFT) & 0x8000)   c |= 0x100;
@@ -890,7 +890,7 @@ void LoadAllFontFiles(void)
         ZERO(&tf);
 
         char fullPath[MAX_PATH];
-        GetWindowsDirectory(fullPath, MAX_PATH - (30 + strlen(wfd.cFileName)));
+        GetWindowsDirectory(fullPath, MAX_PATH - (30 + (UINT)strlen(wfd.cFileName)));
         strcat(fullPath, "\\fonts\\");
         strcat(fullPath, wfd.cFileName);
 

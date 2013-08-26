@@ -545,7 +545,7 @@ void Group::DrawFilledPaths(void) {
         // In an assembled loop, all the styles should be the same; so doesn't
         // matter which one we grab.
         SBezier *sb = &(sbls->l.elem[0].l.elem[0]);
-        hStyle hs = { sb->auxA };
+        hStyle hs = { (DWORD)sb->auxA };
         Style *s = Style::Get(hs);
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.

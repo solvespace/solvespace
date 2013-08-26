@@ -227,7 +227,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw = strlen(str)*SS.TW.CHAR_WIDTH + 10,
+            int tw = (int)strlen(str)*SS.TW.CHAR_WIDTH + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
             
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;

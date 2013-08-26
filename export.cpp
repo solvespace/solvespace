@@ -503,7 +503,7 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
             b = sbl->l.First();
             if(!b || !Style::Exportable(b->auxA)) continue;
 
-            hStyle hs = { b->auxA };
+            hStyle hs = { (DWORD)b->auxA };
             Style *stl = Style::Get(hs);
             double lineWidth  = Style::WidthMm(b->auxA)*s;
             DWORD strokeRgb = Style::Color(hs, true);
