@@ -76,7 +76,7 @@ bool EntReqTable::GetEntityInfo(int ent, int extraPoints,
 }
 
 int EntReqTable::GetRequestForEntity(int ent) {
-    int req;
+    int req = 0;
     GetEntityInfo(ent, 0, &req, NULL, NULL, NULL);
     return req;
 }

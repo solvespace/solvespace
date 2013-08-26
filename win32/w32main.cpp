@@ -956,7 +956,7 @@ void RefreshRecentMenus(void)
 HMENU CreateGraphicsWindowMenus(void)
 {
     HMENU top = CreateMenu();
-    HMENU m;
+    HMENU m = 0;
 
     int i;
     int subMenu = 0;

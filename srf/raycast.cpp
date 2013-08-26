@@ -18,7 +18,7 @@ extern int FLAG;
 
 double SSurface::DepartureFromCoplanar(void) {
     int i, j;
-    int ia, ja, ib, jb, ic, jc;
+    int ia, ja, ib = 0, jb = 0, ic = 0, jc = 0;
     double best;
 
     // Grab three points to define a plane; first choose (0, 0) arbitrarily.

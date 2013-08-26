@@ -392,8 +392,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.pts.Add(&padd);
 
             Point2d pa, pb;
-            Vector np, npc;
-            bool fwd;
+            Vector np, npc = Vector::From(0, 0, 0);
+            bool fwd = false;
             // Better to start with a too-small step, so that we don't miss
             // features of the curve entirely.
             double tol, step = maxtol;

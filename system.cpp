@@ -179,7 +179,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
     // Gaussian elimination, with partial pivoting. It's an error if the
     // matrix is singular, because that means two constraints are
     // equivalent.
-    int i, j, ip, jp, imax;
+    int i, j, ip, jp, imax = 0;
     double max, temp;
 
     for(i = 0; i < n; i++) {

@@ -695,7 +695,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         case PERPENDICULAR: {
-            Vector u, v;
+            Vector u = Vector::From(0, 0, 0), v = Vector::From(0, 0, 0);
             Vector rn, ru;
             if(workplane.v == Entity::FREE_IN_3D.v) {
                 rn = gn;
@@ -845,7 +845,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
         case LENGTH_RATIO:
         case EQUAL_LENGTH_LINES: {
-            Vector a, b;
+            Vector a, b = Vector::From(0, 0, 0);
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 a = SK.GetEntity(e->point[0])->PointGetNum();

@@ -49,7 +49,7 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
     Vector tc = ((tr->a).Plus(tr->b).Plus(tr->c)).ScaledBy(1.0/3);
 
     bool onFace = false;
-    bool sameNormal;
+    bool sameNormal = false;
     double maxNormalMag = -1;
 
     Vector lln, trn = tr->Normal();

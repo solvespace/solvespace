@@ -239,7 +239,9 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
     
     // The starting and finishing control points that define our end tangents
     // (if the spline isn't periodic), and the on-curve points.
-    Vector ctrl_s, ctrl_f, pt[MAX_N+4];
+    Vector ctrl_s = Vector::From(0, 0, 0);
+    Vector ctrl_f = Vector::From(0, 0, 0);
+    Vector pt[MAX_N+4];
     if(periodic) {
         for(i = 0; i < ep + 3; i++) {
             pt[i] = SK.GetEntity(point[i])->PointGetNum();

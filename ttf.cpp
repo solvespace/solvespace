@@ -318,7 +318,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         WORD  nameStringOffset      = GetWORD();
         // And now we're at the name records. Go through those till we find
         // one that we want.
-        int displayNameOffset, displayNameLength;
+        int displayNameOffset = 0, displayNameLength = 0;
         for(i = 0; i < nameCount; i++) {
             WORD    platformID      = GetWORD();
             WORD    encodingID      = GetWORD();
@@ -430,8 +430,8 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // and advance width) of the font.
         fseek(fh, hmtxAddr, SEEK_SET);
 
-        WORD  hmtxAdvanceWidth;
-        SWORD hmtxLsb;
+        WORD  hmtxAdvanceWidth = 0;
+        SWORD hmtxLsb = 0;
         for(i = 0; i < min(glyphs, hheaNumberOfMetrics); i++) {
             hmtxAdvanceWidth = GetWORD();
             hmtxLsb          = (SWORD)GetWORD();

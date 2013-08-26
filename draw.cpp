@@ -40,7 +40,7 @@ void GraphicsWindow::Selection::Clear(void) {
 }
 
 void GraphicsWindow::Selection::Draw(void) {
-    Vector refp;
+    Vector refp = Vector::From(0, 0, 0);
     if(entity.v) {
         Entity *e = SK.GetEntity(entity);
         e->Draw();

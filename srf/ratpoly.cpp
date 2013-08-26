@@ -441,7 +441,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
 bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
 {
     // Initial guess is in u, v; refine by Newton iteration.
-    Vector p0;
+    Vector p0 = Vector::From(0, 0, 0);
     for(int i = 0; i < (converge ? 25 : 5); i++) {
         p0 = PointAt(*u, *v);
         if(converge) {

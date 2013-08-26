@@ -286,7 +286,7 @@ void GraphicsWindow::MakeTangentArc(void) {
     memset(req, 0, sizeof(req));
 
     Vector pinter;
-    double r, vv;
+    double r = 0.0, vv = 0.0;
     // We now do Newton iterations to find the tangent arc, and its positions
     // t back along the two curves, starting from shared point of the curves
     // at t = 0. Lots of iterations helps convergence, and this is still
@@ -616,7 +616,7 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     sbla.AllIntersectionsWith(&sblb, &inters);
 
     if(inters.l.n > 0) {
-        Vector pi;
+        Vector pi = Vector::From(0, 0, 0);
         // If there's multiple points, then take the one closest to the
         // mouse pointer.
         double dmin = VERY_POSITIVE;

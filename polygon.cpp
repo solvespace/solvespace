@@ -203,7 +203,8 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
 
     bool allClosed = true;
     for(;;) {
-        Vector first, last;
+        Vector first = Vector::From(0, 0, 0);
+        Vector last  = Vector::From(0, 0, 0);
         int i;
         for(i = 0; i < l.n; i++) {
             if(!l.elem[i].tag) {
@@ -826,7 +827,7 @@ void SContour::OffsetInto(SContour *dest, double r) {
             // material as we can without removing any that we shouldn't.
             double px0, py0, pdx, pdy;
             double nx0, ny0, ndx, ndy;
-            double x, y;
+            double x = 0.0, y = 0.0;
 
             px0 = b.x - r*sin(thetap);
             py0 = b.y + r*cos(thetap);

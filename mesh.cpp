@@ -113,7 +113,8 @@ void SMesh::Simplify(int start) {
     STriangle *tout = (STriangle *)AllocTemporary(maxTriangles*sizeof(*tout));
     int toutc = 0;
 
-    Vector n, *conv = (Vector *)AllocTemporary(maxTriangles*3*sizeof(*conv));
+    Vector n = Vector::From(0, 0, 0);
+    Vector *conv = (Vector *)AllocTemporary(maxTriangles*3*sizeof(*conv));
     int convc = 0;
 
     int start0 = start;
