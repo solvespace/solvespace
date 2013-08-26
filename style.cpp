@@ -25,18 +25,18 @@ const Style::Default Style::Defaults[] = {
     { 0,            NULL,           0,                   0.0, },
 };
 
-char *Style::CnfColor(char *prefix) {
+char *Style::CnfColor(const char *prefix) {
     static char name[100];
     sprintf(name, "Style_%s_Color", prefix);
     return name;
 }
-char *Style::CnfWidth(char *prefix) {
+char *Style::CnfWidth(const char *prefix) {
     static char name[100];
     sprintf(name, "Style_%s_Width", prefix);
     return name;
 }
 
-char *Style::CnfPrefixToName(char *prefix) {
+char *Style::CnfPrefixToName(const char *prefix) {
     static char name[100];
     int i = 0, j;
     strcpy(name, "#def-");
@@ -789,7 +789,7 @@ void TextWindow::ShowStyleInfo(void) {
     Printf(false, "");
     Printf(false, "%Ft text comment style%E");
 
-    char *chng = (s->h.v < Style::FIRST_CUSTOM) ? "" : "[change]";
+    const char *chng = (s->h.v < Style::FIRST_CUSTOM) ? "" : "[change]";
     if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
         Printf(false, "%Ba   %Ftheight %E%@ %D%f%Lt%Fl%s%E",
             s->textHeight,

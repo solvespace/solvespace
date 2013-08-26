@@ -25,7 +25,7 @@ const EntReqTable::TableEntry EntReqTable::Table[] = {
 { 0 },
 };
 
-char *EntReqTable::DescriptionForRequest(int req) {
+const char *EntReqTable::DescriptionForRequest(int req) {
     for(int i = 0; Table[i].reqType; i++) {
         if(req == Table[i].reqType) {
             return Table[i].description;
@@ -174,7 +174,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 }
 
 char *Request::DescriptionString(void) {
-    char *s;
+    const char *s;
     if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
     } else if(h.v == Request::HREQUEST_REFERENCE_YZ.v) {

@@ -816,7 +816,7 @@ void GraphicsWindow::MenuEdit(int id) {
 }
 
 void GraphicsWindow::MenuRequest(int id) {
-    char *s;
+    const char *s;
     switch(id) {
         case MNU_SEL_WORKPLANE: {
             SS.GW.GroupSelection();

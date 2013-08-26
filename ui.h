@@ -66,9 +66,9 @@ public:
 
     // The row of icons at the top of the text window, to hide/show things
     typedef struct {
-        bool    *var;
-        BYTE    *icon;
-        char    *tip;
+        bool       *var;
+        BYTE       *icon;
+        const char *tip;
     } HideShowIcon;
     static HideShowIcon hideShowIcons[];
     static bool SPACER;
@@ -96,7 +96,7 @@ public:
    
     void Init(void);
     void MakeColorTable(const Color *in, float *out);
-    void Printf(bool half, char *fmt, ...);
+    void Printf(bool half, const char *fmt, ...);
     void ClearScreen(void);
    
     void Show(void);
@@ -417,7 +417,7 @@ public:
     typedef void MenuHandler(int id);
     typedef struct {
         int         level;          // 0 == on menu bar, 1 == one level down
-        char       *label;          // or NULL for a separator
+        const char *label;          // or NULL for a separator
         int         id;             // unique ID
         int         accel;          // keyboard accelerator
         MenuHandler *fn;
@@ -507,7 +507,7 @@ public:
         hEntity         normal;
         hConstraint     constraint;
         
-        char            *description;
+        const char     *description;
     } pending;
     void ClearPending(void);
     // The constraint that is being edited with the on-screen textbox.

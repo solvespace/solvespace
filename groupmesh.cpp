@@ -509,7 +509,7 @@ void Group::Draw(void) {
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            char *msg;
+            const char *msg;
             if(polyError.how == POLY_NOT_COPLANAR) {
                 msg = "points not all coplanar!";
             } else if(polyError.how == POLY_SELF_INTERSECTING) {

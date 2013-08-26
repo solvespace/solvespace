@@ -12,7 +12,7 @@ BYTE SPACER[1];
 static const struct {
     BYTE        *image;
     int          menu;
-    char        *tip;
+    const char  *tip;
 } Toolbar[] = {
     { Icon_line,            GraphicsWindow::MNU_LINE_SEGMENT,   "Sketch line segment"                               },
     { Icon_rectangle,       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle"                                  },
@@ -136,7 +136,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
     struct {
         bool show;
-        char *str;
+        const char *str;
     } toolTip = { false, NULL };
 
     bool leftpos = true;

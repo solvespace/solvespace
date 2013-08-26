@@ -116,12 +116,12 @@ int SaveFileYesNoCancel(void);
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
-BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
-BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
+BOOL GetSaveFile(char *file, const char *defExtension, const char *selPattern);
+BOOL GetOpenFile(char *file, const char *defExtension, const char *selPattern);
 void GetAbsoluteFilename(char *file);
 void LoadAllFontFiles(void);
 
-void OpenWebsite(char *url);
+void OpenWebsite(const char *url);
 
 void CheckMenuById(int id, BOOL checked);
 void EnableMenuById(int id, BOOL checked);
@@ -136,7 +136,7 @@ void MoveTextScrollbarTo(int pos, int maxPos, int page);
 
 #define CONTEXT_SUBMENU     (-1)
 #define CONTEXT_SEPARATOR   (-2)
-void AddContextMenuItem(char *legend, int id);
+void AddContextMenuItem(const char *legend, int id);
 void CreateContextSubmenu(void);
 int ShowContextMenu(void);
 
@@ -149,23 +149,23 @@ void GetTextWindowSize(int *w, int *h);
 SDWORD GetMilliseconds(void);
 SQWORD GetUnixTime(void);
 
-void dbp(char *str, ...);
+void dbp(const char *str, ...);
 #define DBPTRI(tri) \
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-void SetWindowTitle(char *str);
+void SetWindowTitle(const char *str);
 void SetMousePointerToHand(bool yes);
-void DoMessageBox(char *str, int rows, int cols, BOOL error);
+void DoMessageBox(const char *str, int rows, int cols, BOOL error);
 void SetTimerFor(int milliseconds);
 void ExitNow(void);
 
-void CnfFreezeString(char *str, char *name);
-void CnfFreezeDWORD(DWORD v, char *name);
-void CnfFreezeFloat(float v, char *name);
-void CnfThawString(char *str, int maxLen, char *name);
-DWORD CnfThawDWORD(DWORD v, char *name);
-float CnfThawFloat(float v, char *name);
+void CnfFreezeString(const char *str, const char *name);
+void CnfFreezeDWORD(DWORD v, const char *name);
+void CnfFreezeFloat(float v, const char *name);
+void CnfThawString(char *str, int maxLen, const char *name);
+DWORD CnfThawDWORD(DWORD v, const char *name);
+float CnfThawFloat(float v, const char *name);
 
 void *AllocTemporary(int n);
 void FreeTemporary(void *p);
@@ -212,11 +212,11 @@ void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
 void glxMarkPolygonNormal(SPolygon *p);
 typedef void glxLineFn(void *data, Vector a, Vector b);
-void glxWriteText(char *str, double h, Vector t, Vector u, Vector v,
+void glxWriteText(const char *str, double h, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
-void glxWriteTextRefCenter(char *str, double h, Vector t, Vector u, Vector v,
+void glxWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
-double glxStrWidth(char *str, double h);
+double glxStrWidth(const char *str, double h);
 double glxStrHeight(double h);
 void glxLockColorTo(DWORD rgb);
 void glxFatLine(Vector a, Vector b, double width);
@@ -227,7 +227,7 @@ void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
 void glxDrawPixelsWithTexture(BYTE *data, int w, int h);
 void glxCreateBitmapFont(void);
-void glxBitmapText(char *str, Vector p);
+void glxBitmapText(const char *str, Vector p);
 void glxBitmapCharQuad(char c, double x, double y);
 #define TEXTURE_BACKGROUND_IMG  10
 #define TEXTURE_BITMAP_FONT     20
@@ -242,12 +242,12 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
-void MakePathRelative(char *base, char *path);
-void MakePathAbsolute(char *base, char *path);
-bool StringAllPrintable(char *str);
-bool StringEndsIn(char *str, char *ending);
-void Message(char *str, ...);
-void Error(char *str, ...);
+void MakePathRelative(const char *base, char *path);
+void MakePathAbsolute(const char *base, char *path);
+bool StringAllPrintable(const char *str);
+bool StringEndsIn(const char *str, const char *ending);
+void Message(const char *str, ...);
+void Error(const char *str, ...);
 
 class System {
 public:
@@ -379,7 +379,7 @@ public:
 
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
-    char *FontFileBaseName(void);
+    const char *FontFileBaseName(void);
    
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
@@ -651,8 +651,8 @@ public:
 
     char *MmToString(double v);
     double ExprToMm(Expr *e);
-    double StringToMm(char *s);
-    char *UnitName(void);
+    double StringToMm(const char *s);
+    const char *UnitName(void);
     double MmPerUnit(void);
     int UnitDigitsAfterDecimal(void);
     void SetUnitDigitsAfterDecimal(int v);
@@ -680,10 +680,10 @@ public:
     bool fileLoadError;
     bool unsaved;
     typedef struct {
-        char     type;
-        char    *desc;
-        char     fmt;
-        void    *ptr;
+        char        type;
+        const char *desc;
+        char        fmt;
+        void       *ptr;
     } SaveTable;
     static const SaveTable SAVED[];
     void SaveUsingTable(int type);

@@ -12,22 +12,22 @@
 #endif
 
 #define FreezeWindowPos(hwnd) FreezeWindowPosF(hwnd, FREEZE_SUBKEY, #hwnd)
-void FreezeWindowPosF(HWND hWnd, char *subKey, char *name);
+void FreezeWindowPosF(HWND hWnd, const char *subKey, const char *name);
 
 #define ThawWindowPos(hwnd) ThawWindowPosF(hwnd, FREEZE_SUBKEY, #hwnd)
-void ThawWindowPosF(HWND hWnd, char *subKey, char *name);
+void ThawWindowPosF(HWND hWnd, const char *subKey, const char *name);
 
 #define FreezeDWORD(val) FreezeDWORDF(val, FREEZE_SUBKEY, #val)
-void FreezeDWORDF(DWORD val, char *subKey, char *name);
+void FreezeDWORDF(DWORD val, const char *subKey, const char *name);
 
 #define ThawDWORD(val) val = ThawDWORDF(val, FREEZE_SUBKEY, #val)
-DWORD ThawDWORDF(DWORD val, char *subKey, char *name);
+DWORD ThawDWORDF(DWORD val, const char *subKey, const char *name);
 
 #define FreezeString(val) FreezeStringF(val, FREEZE_SUBKEY, #val)
-void FreezeStringF(char *val, char *subKey, char *name);
+void FreezeStringF(const char *val, const char *subKey, const char *name);
 
 #define ThawString(val, max) ThawStringF(val, max, FREEZE_SUBKEY, #val)
-void ThawStringF(char *val, int max, char *subKey, char *name);
+void ThawStringF(char *val, int max, const char *subKey, const char *name);
 
 
 #endif

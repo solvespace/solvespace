@@ -15,7 +15,7 @@ static bool ColorLocked;
 static bool DepthOffsetLocked;
 
 #define FONT_SCALE(h) ((h)/22.0)
-double glxStrWidth(char *str, double h)
+double glxStrWidth(const char *str, double h)
 {
     int w = 0;
     for(; *str; str++) {
@@ -32,8 +32,8 @@ double glxStrHeight(double h)
     // The characters have height ~22, as they appear in the table.
     return 22.0*FONT_SCALE(h)/SS.GW.scale;
 }
-void glxWriteTextRefCenter(char *str, double h, Vector t, Vector u, Vector v, 
-                                glxLineFn *fn, void *fndata)
+void glxWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
+                           glxLineFn *fn, void *fndata)
 {
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
@@ -61,8 +61,8 @@ static void LineDrawCallback(void *fndata, Vector a, Vector b)
     glEnd();
 }
 
-void glxWriteText(char *str, double h, Vector t, Vector u, Vector v,
-                    glxLineFn *fn, void *fndata)
+void glxWriteText(const char *str, double h, Vector t, Vector u, Vector v,
+                  glxLineFn *fn, void *fndata)
 {
     if(!fn) fn = LineDrawCallback;
     u = u.WithMagnitude(1);
@@ -549,7 +549,7 @@ void glxBitmapCharQuad(char c, double x, double y)
     }
 }
 
-void glxBitmapText(char *str, Vector p)
+void glxBitmapText(const char *str, Vector p)
 {
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);

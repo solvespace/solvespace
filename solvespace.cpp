@@ -200,7 +200,7 @@ double SolveSpace::MmPerUnit(void) {
         return 1.0;
     }
 }
-char *SolveSpace::UnitName(void) {
+const char *SolveSpace::UnitName(void) {
     if(viewUnits == UNIT_INCHES) {
         return "inch";
     } else {
@@ -228,7 +228,7 @@ char *SolveSpace::MmToString(double v) {
 double SolveSpace::ExprToMm(Expr *e) {
     return (e->Eval()) * MmPerUnit();
 }
-double SolveSpace::StringToMm(char *str) {
+double SolveSpace::StringToMm(const char *str) {
     return atof(str) * MmPerUnit();
 }
 double SolveSpace::ChordTolMm(void) {
@@ -530,10 +530,10 @@ void SolveSpace::MenuAnalyze(int id) {
 
             InvalidateGraphics();
 
-            char *intersMsg = inters ?
+            const char *intersMsg = inters ?
                 "The mesh is self-intersecting (NOT okay, invalid)." :
                 "The mesh is not self-intersecting (okay, valid).";
-            char *leaksMsg = leaks ?
+            const char *leaksMsg = leaks ?
                 "The mesh has naked edges (NOT okay, invalid)." :
                 "The mesh is watertight (okay, valid).";
 

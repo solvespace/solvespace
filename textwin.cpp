@@ -115,7 +115,7 @@ void TextWindow::ClearScreen(void) {
     rows = 0;
 }
 
-void TextWindow::Printf(bool halfLine, char *fmt, ...) {
+void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     va_list vl;
     va_start(vl, fmt);
 

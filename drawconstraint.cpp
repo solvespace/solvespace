@@ -980,9 +980,9 @@ s:
                 if(type == AT_MIDPOINT) offset = offset.ScaledBy(-1);
 
                 if(dogd.drawing) {
-                    char *s =   (type == HORIZONTAL)  ? "H" : (
-                                (type == VERTICAL)    ? "V" : (
-                                (type == AT_MIDPOINT) ? "M" : NULL));
+                    const char *s = (type == HORIZONTAL)  ? "H" : (
+                                    (type == VERTICAL)    ? "V" : (
+                                    (type == AT_MIDPOINT) ? "M" : NULL));
 
                     glxWriteTextRefCenter(s, DEFAULT_TEXT_HEIGHT,
                         m.Plus(offset), r, u, LineCallback, this);

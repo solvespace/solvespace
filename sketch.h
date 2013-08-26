@@ -466,18 +466,18 @@ public:
 class EntReqTable {
 public:
     typedef struct {
-        int     reqType;
-        int     entType;
-        int     points;
-        bool    useExtraPoints;
-        bool    hasNormal;
-        bool    hasDistance;
-        char    *description;
+        int         reqType;
+        int         entType;
+        int         points;
+        bool        useExtraPoints;
+        bool        hasNormal;
+        bool        hasDistance;
+        const char *description;
     } TableEntry;
 
     static const TableEntry Table[];
 
-    static char *DescriptionForRequest(int req);
+    static const char *DescriptionForRequest(int req);
     static void CopyEntityInfo(const TableEntry *te, int extraPoints,
             int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance);
     static bool GetRequestInfo(int req, int extraPoints,
@@ -704,16 +704,16 @@ public:
     // The default styles, for entities that don't have a style assigned yet,
     // and for datums and such.
     typedef struct {
-        hStyle  h;
-        char    *cnfPrefix;
-        DWORD   color;
-        double  width;
+        hStyle      h;
+        const char *cnfPrefix;
+        DWORD       color;
+        double      width;
     } Default;
     static const Default Defaults[];
 
-    static char *CnfColor(char *prefix);
-    static char *CnfWidth(char *prefix);
-    static char *CnfPrefixToName(char *prefix);
+    static char *CnfColor(const char *prefix);
+    static char *CnfWidth(const char *prefix);
+    static char *CnfPrefixToName(const char *prefix);
 
     static void CreateAllDefaultStyles(void);
     static void CreateDefaultStyle(hStyle h);

@@ -7,7 +7,7 @@
 
 #define VERSION_STRING "±²³SolveSpaceREVa"
 
-static int StrStartsWith(char *str, char *start) {
+static int StrStartsWith(const char *str, const char *start) {
     return memcmp(str, start, strlen(start)) == 0;
 }
 

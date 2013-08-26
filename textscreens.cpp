@@ -269,7 +269,7 @@ void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SK.group.FindById(shown.group);
-    char *s = "???";
+    const char *s = "???";
 
     if(shown.group.v == Group::HGROUP_REFERENCES.v) {
         Printf(true, "%FtGROUP  %E%s", g->DescriptionString());

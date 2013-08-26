@@ -519,12 +519,12 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 //-----------------------------------------------------------------------------
 
 static char StringBuffer[4096];
-void Expr::App(char *s, ...) {
+void Expr::App(const char *s, ...) {
     va_list f;
     va_start(f, s);
     vsprintf(StringBuffer+strlen(StringBuffer), s, f);
 }
-char *Expr::Print(void) {
+const char *Expr::Print(void) {
     if(!this) return "0";
 
     StringBuffer[0] = '\0';

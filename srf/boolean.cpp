@@ -291,7 +291,7 @@ void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
     }
 }
 
-static char *REGION(int d) {
+static const char *REGION(int d) {
     switch(d) {
         case SShell::INSIDE:  return "inside";
         case SShell::OUTSIDE: return "outside";

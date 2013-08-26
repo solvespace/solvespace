@@ -63,7 +63,7 @@ SiHdl SpaceNavigator = SI_NO_HANDLE;
 
 HWND MessageWnd, OkButton;
 BOOL MessageDone;
-char *MessageString;
+const char *MessageString;
 
 static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
     LPARAM lParam)
@@ -126,7 +126,7 @@ HWND CreateWindowClient(DWORD exStyle, char *className, char *windowName,
     return h;
 }
 
-void DoMessageBox(char *str, int rows, int cols, BOOL error)
+void DoMessageBox(const char *str, int rows, int cols, BOOL error)
 {
     EnableWindow(GraphicsWnd, FALSE);
     EnableWindow(TextWnd, FALSE);
@@ -194,7 +194,7 @@ void DoMessageBox(char *str, int rows, int cols, BOOL error)
     DestroyWindow(MessageWnd);
 }
 
-void AddContextMenuItem(char *label, int id)
+void AddContextMenuItem(const char *label, int id)
 {
     if(!ContextMenu) ContextMenu = CreatePopupMenu();
 
@@ -258,7 +258,7 @@ void GetTextWindowSize(int *w, int *h)
     GetWindowSize(TextWnd, w, h);
 }
 
-void OpenWebsite(char *url) {
+void OpenWebsite(const char *url) {
     ShellExecute(GraphicsWnd, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
@@ -270,27 +270,27 @@ void ExitNow(void) {
 // Helpers so that we can read/write registry keys from the platform-
 // independent code.
 //-----------------------------------------------------------------------------
-void CnfFreezeString(char *str, char *name)
+void CnfFreezeString(const char *str, const char *name)
     { FreezeStringF(str, FREEZE_SUBKEY, name); }
 
-void CnfFreezeDWORD(DWORD v, char *name)
+void CnfFreezeDWORD(DWORD v, const char *name)
     { FreezeDWORDF(v, FREEZE_SUBKEY, name); }
 
-void CnfFreezeFloat(float v, char *name)
+void CnfFreezeFloat(float v, const char *name)
     { FreezeDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); }
 
-void CnfThawString(char *str, int maxLen, char *name)
+void CnfThawString(char *str, int maxLen, const char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
 
-DWORD CnfThawDWORD(DWORD v, char *name)
+DWORD CnfThawDWORD(DWORD v, const char *name)
     { return ThawDWORDF(v, FREEZE_SUBKEY, name); }
 
-float CnfThawFloat(float v, char *name) {
+float CnfThawFloat(float v, const char *name) {
     DWORD d = ThawDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); 
     return *((float *)&d);
 }
 
-void SetWindowTitle(char *str) {
+void SetWindowTitle(const char *str) {
     SetWindowText(GraphicsWnd, str);
 }
 
@@ -809,7 +809,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-BOOL GetOpenFile(char *file, char *defExtension, char *selPattern)
+BOOL GetOpenFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 
@@ -834,7 +834,7 @@ BOOL GetOpenFile(char *file, char *defExtension, char *selPattern)
 
     return r;
 }
-BOOL GetSaveFile(char *file, char *defExtension, char *selPattern)
+BOOL GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 

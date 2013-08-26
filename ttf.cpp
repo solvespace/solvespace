@@ -223,7 +223,7 @@ void TtfFont::LoadGlyph(int index) {
 // Return the basename of our font filename; that's how the requests and
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
-char *TtfFont::FontFileBaseName(void) {
+const char *TtfFont::FontFileBaseName(void) {
     char *sb = strrchr(fontFile, '\\');
     char *sf = strrchr(fontFile, '/');
     char *s = sf ? sf : sb;

@@ -15,7 +15,7 @@
 
 static HANDLE PermHeap, TempHeap;
 
-void dbp(char *str, ...)
+void dbp(const char *str, ...)
 {
     va_list f;
     static char buf[1024*50];
