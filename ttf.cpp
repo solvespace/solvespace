@@ -59,7 +59,7 @@ void TtfFontList::PlotString(char *font, char *str, double spacing,
 //-----------------------------------------------------------------------------
 int TtfFont::Getc(void) {
     int c = fgetc(fh);
-    if(c < 0) {
+    if(c == EOF) {
         throw "EOF";
     }
     return c;
@@ -68,22 +68,22 @@ int TtfFont::Getc(void) {
 //-----------------------------------------------------------------------------
 // Helpers to get 1, 2, or 4 bytes from the .ttf file. Big endian.
 //-----------------------------------------------------------------------------
-int TtfFont::GetBYTE(void) {
-    return Getc();
+BYTE TtfFont::GetBYTE(void) {
+    return (BYTE)Getc();
 }
-int TtfFont::GetWORD(void) {
+WORD TtfFont::GetWORD(void) {
     BYTE b0, b1;
-    b1 = Getc();
-    b0 = Getc();
+    b1 = (BYTE)Getc();
+    b0 = (BYTE)Getc();
 
     return (b1 << 8) | b0;
 }
-int TtfFont::GetDWORD(void) {
+DWORD TtfFont::GetDWORD(void) {
     BYTE b0, b1, b2, b3;
-    b3 = Getc();
-    b2 = Getc();
-    b1 = Getc();
-    b0 = Getc();
+    b3 = (BYTE)Getc();
+    b2 = (BYTE)Getc();
+    b1 = (BYTE)Getc();
+    b0 = (BYTE)Getc();
 
     return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 }
@@ -98,11 +98,11 @@ void TtfFont::LoadGlyph(int index) {
 
     int i;
 
-    SWORD contours          = GetWORD();
-    SWORD xMin              = GetWORD();
-    SWORD yMin              = GetWORD();
-    SWORD xMax              = GetWORD();
-    SWORD yMax              = GetWORD();
+    SWORD contours          = (SWORD)GetWORD();
+    SWORD xMin              = (SWORD)GetWORD();
+    SWORD yMin              = (SWORD)GetWORD();
+    SWORD xMax              = (SWORD)GetWORD();
+    SWORD yMax              = (SWORD)GetWORD();
 
     if(useGlyph['A'] == index) {
         scale = (1024*1024) / yMax;
@@ -167,7 +167,7 @@ void TtfFont::LoadGlyph(int index) {
                 if(flags[i] & FLAG_X_IS_SAME) {
                     // no change
                 } else {
-                    SWORD d = GetWORD();
+                    SWORD d = (SWORD)GetWORD();
                     xa += d;
                 }
             }
@@ -188,7 +188,7 @@ void TtfFont::LoadGlyph(int index) {
                 if(flags[i] & FLAG_Y_IS_SAME) {
                     // no change
                 } else {
-                    SWORD d = GetWORD();
+                    SWORD d = (SWORD)GetWORD();
                     ya += d;
                 }
             }
@@ -267,10 +267,10 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
         for(i = 0; i < numTables; i++) {
             char tag[5] = "xxxx";
-            tag[0]              = GetBYTE();
-            tag[1]              = GetBYTE();
-            tag[2]              = GetBYTE();
-            tag[3]              = GetBYTE();
+            tag[0]              = (char)GetBYTE();
+            tag[1]              = (char)GetBYTE();
+            tag[2]              = (char)GetBYTE();
+            tag[3]              = (char)GetBYTE();
             DWORD   checksum    = GetDWORD();
             DWORD   offset      = GetDWORD();
             DWORD   length      = GetDWORD();

@@ -373,9 +373,9 @@ public:
     Vector      origin, u, v;
 
     int Getc(void);
-    int GetBYTE(void);
-    int GetWORD(void);
-    int GetDWORD(void);
+    BYTE GetBYTE(void);
+    WORD GetWORD(void);
+    DWORD GetDWORD(void);
 
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
