@@ -381,7 +381,8 @@ void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
         if(!f) goto err;
 
         BYTE header[8];
-        fread(header, 1, 8, f);
+        if (fread(header, 1, 8, f) != 8)
+            goto err;
         if(png_sig_cmp(header, 0, 8)) goto err;
 
         png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,

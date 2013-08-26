@@ -382,7 +382,8 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                     for(;;) {
                         EntityMap em;
                         char line2[1024];
-                        fgets(line2, (int)sizeof(line2), fh);
+                        if (fgets(line2, (int)sizeof(line2), fh) == NULL)
+                            break;
                         if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
                                                      &(em.copyNumber)) == 3)
                         {
