@@ -25,7 +25,7 @@ static double Bernstein(int k, int deg, double t)
         case 1:
             if(k == 0) {
                 return (1 - t);
-            } else if(k = 1) {
+            } else if(k == 1) {
                 return t;
             }
             break;
@@ -65,7 +65,7 @@ double BernsteinDerivative(int k, int deg, double t)
         case 1:
             if(k == 0) {
                 return -1;
-            } else if(k = 1) {
+            } else if(k == 1) {
                 return 1;
             }
             break;
