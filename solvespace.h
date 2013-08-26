@@ -167,11 +167,11 @@ void CnfThawString(char *str, int maxLen, const char *name);
 DWORD CnfThawDWORD(DWORD v, const char *name);
 float CnfThawFloat(float v, const char *name);
 
-void *AllocTemporary(int n);
+void *AllocTemporary(size_t n);
 void FreeTemporary(void *p);
 void FreeAllTemporary(void);
-void *MemRealloc(void *p, int n);
-void *MemAlloc(int n);
+void *MemRealloc(void *p, size_t n);
+void *MemAlloc(size_t n);
 void MemFree(void *p);
 void InitHeaps(void);
 void vl(void); // debug function to validate heaps

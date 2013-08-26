@@ -39,7 +39,7 @@ void GetAbsoluteFilename(char *file)
 // to be sloppy with our memory management, and just free everything at once
 // at the end.
 //-----------------------------------------------------------------------------
-void *AllocTemporary(int n)
+void *AllocTemporary(size_t n)
 {
     void *v = HeapAlloc(TempHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
     if(!v) oops();
@@ -57,7 +57,7 @@ void FreeAllTemporary(void)
     vl();
 }
 
-void *MemRealloc(void *p, int n) {
+void *MemRealloc(void *p, size_t n) {
     if(!p) {
         return MemAlloc(n);
     }
@@ -66,7 +66,7 @@ void *MemRealloc(void *p, int n) {
     if(!p) oops();
     return p;
 }
-void *MemAlloc(int n) {
+void *MemAlloc(size_t n) {
     void *p = HeapAlloc(PermHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
     if(!p) oops();
     return p;
