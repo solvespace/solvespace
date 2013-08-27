@@ -6,7 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "obj/icons.h"
+#include <icons.h>
 
 BYTE SPACER[1];
 static const struct {

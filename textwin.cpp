@@ -4,8 +4,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "obj/icons-proto.h"
-#include <stdarg.h>
+#include <icons-proto.h>
 
 const TextWindow::Color TextWindow::fgColors[] = {
     { 'd', RGB(255, 255, 255) },
