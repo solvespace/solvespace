@@ -28,11 +28,13 @@ public:
 
     SBspUv  *more;
 
-    static const int INSIDE            = 100;
-    static const int OUTSIDE           = 200;
-    static const int EDGE_PARALLEL     = 300;
-    static const int EDGE_ANTIPARALLEL = 400;
-    static const int EDGE_OTHER        = 500;
+    enum {
+        INSIDE            = 100,
+        OUTSIDE           = 200,
+        EDGE_PARALLEL     = 300,
+        EDGE_ANTIPARALLEL = 400,
+        EDGE_OTHER        = 500
+    };
 
     static SBspUv *Alloc(void);
     static SBspUv *From(SEdgeList *el, SSurface *srf);
@@ -184,9 +186,11 @@ public:
     // therefore must get new hSCurves assigned. For the curves in A and B,
     // we use newH to record their new handle in C.
     hSCurve         newH;
-    static const int FROM_A             = 100;
-    static const int FROM_B             = 200;
-    static const int FROM_INTERSECTION  = 300;
+    enum {
+        FROM_A             = 100,
+        FROM_B             = 200,
+        FROM_INTERSECTION  = 300
+    };
     int             source;
 
     bool            isExact;
@@ -328,8 +332,10 @@ public:
     void TriangulateInto(SShell *shell, SMesh *sm);
 
     // these are intended as bitmasks, even though there's just one now
-    static const int AS_UV  = 0x01;
-    static const int AS_XYZ = 0x00;
+    enum {
+        AS_UV  = 0x01,
+        AS_XYZ = 0x00
+    };
     void MakeTrimEdgesInto(SEdgeList *sel, int flags, SCurve *sc, STrimBy *stb);
     void MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
             SShell *useCurvesFrom=NULL);
@@ -361,9 +367,11 @@ public:
 
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
-    static const int AS_UNION      = 10;
-    static const int AS_DIFFERENCE = 11;
-    static const int AS_INTERSECT  = 12;
+    enum {
+        AS_UNION      = 10,
+        AS_DIFFERENCE = 11,
+        AS_INTERSECT  = 12
+    };
     void MakeFromBoolean(SShell *a, SShell *b, int type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
     void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into,
@@ -380,10 +388,12 @@ public:
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
     // shell.
-    static const int INSIDE     = 100;
-    static const int OUTSIDE    = 200;
-    static const int COINC_SAME = 300;
-    static const int COINC_OPP  = 400;
+    enum {
+        INSIDE     = 100,
+        OUTSIDE    = 200,
+        COINC_SAME = 300,
+        COINC_OPP  = 400
+    };
     static const double DOTP_TOL;
     int ClassifyRegion(Vector edge_n, Vector inter_surf_n, Vector edge_surf_n);
     bool ClassifyEdge(int *indir, int *outdir,

@@ -10,9 +10,11 @@
 
 class TextWindow {
 public:
-    static const int MAX_COLS = 100;
-    static const int MIN_COLS = 45;
-    static const int MAX_ROWS = 2000;
+    enum {
+        MAX_COLS = 100,
+        MIN_COLS = 45,
+        MAX_ROWS = 2000
+    };
 
 #ifndef RGB
 #define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
@@ -34,22 +36,24 @@ public:
     float bgColorTable[256*3];
     float fgColorTable[256*3];
 
-    static const int CHAR_WIDTH     = 9;
-    static const int CHAR_HEIGHT    = 16;
-    static const int LINE_HEIGHT    = 20;
-    static const int LEFT_MARGIN    = 6;
+    enum {
+        CHAR_WIDTH     = 9,
+        CHAR_HEIGHT    = 16,
+        LINE_HEIGHT    = 20,
+        LEFT_MARGIN    = 6,
 
-    static const int CHECK_FALSE    = 0x80;
-    static const int CHECK_TRUE     = 0x81;
-    static const int RADIO_FALSE    = 0x82;
-    static const int RADIO_TRUE     = 0x83;
+        CHECK_FALSE    = 0x80,
+        CHECK_TRUE     = 0x81,
+        RADIO_FALSE    = 0x82,
+        RADIO_TRUE     = 0x83
+    };
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
     BYTE    text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, DWORD v);
-    static const int NOT_A_LINK = 0;
+    enum { NOT_A_LINK = 0 };
     struct {
         char            fg;
         int             bg;
@@ -80,9 +84,11 @@ public:
     void MouseLeave(void);
     void ScrollbarEvent(int newPos);
 
-    static const int PAINT = 0;
-    static const int HOVER = 1;
-    static const int CLICK = 2;
+    enum {
+        PAINT = 0,
+        HOVER = 1,
+        CLICK = 2
+    };
     void DrawOrHitTestIcons(int how, double mx, double my);
     void TimerCallback(void);
     Point2d oldMousePos;
@@ -102,16 +108,18 @@ public:
     void Show(void);
 
     // State for the screen that we are showing in the text window.
-    static const int SCREEN_LIST_OF_GROUPS      = 0;
-    static const int SCREEN_GROUP_INFO          = 1;
-    static const int SCREEN_GROUP_SOLVE_INFO    = 2;
-    static const int SCREEN_CONFIGURATION       = 3;
-    static const int SCREEN_STEP_DIMENSION      = 4;
-    static const int SCREEN_LIST_OF_STYLES      = 5;
-    static const int SCREEN_STYLE_INFO          = 6;
-    static const int SCREEN_PASTE_TRANSFORMED   = 7;
-    static const int SCREEN_EDIT_VIEW           = 8;
-    static const int SCREEN_TANGENT_ARC         = 9;
+    enum {
+        SCREEN_LIST_OF_GROUPS      = 0,
+        SCREEN_GROUP_INFO          = 1,
+        SCREEN_GROUP_SOLVE_INFO    = 2,
+        SCREEN_CONFIGURATION       = 3,
+        SCREEN_STEP_DIMENSION      = 4,
+        SCREEN_LIST_OF_STYLES      = 5,
+        SCREEN_STYLE_INFO          = 6,
+        SCREEN_PASTE_TRANSFORMED   = 7,
+        SCREEN_EDIT_VIEW           = 8,
+        SCREEN_TANGENT_ARC         = 9
+    };
     typedef struct {
         int         screen;
 
@@ -133,53 +141,55 @@ public:
     } ShownState;
     ShownState shown;
 
-    static const int EDIT_NOTHING               = 0;
-    // For multiple groups
-    static const int EDIT_TIMES_REPEATED        = 1;
-    static const int EDIT_GROUP_NAME            = 2;
-    static const int EDIT_GROUP_SCALE           = 3;
-    static const int EDIT_GROUP_COLOR           = 4;
-    // For the configuraiton screen
-    static const int EDIT_LIGHT_DIRECTION       = 100;
-    static const int EDIT_LIGHT_INTENSITY       = 101;
-    static const int EDIT_COLOR                 = 102;
-    static const int EDIT_CHORD_TOLERANCE       = 103;
-    static const int EDIT_MAX_SEGMENTS          = 104;
-    static const int EDIT_CAMERA_TANGENT        = 105;
-    static const int EDIT_GRID_SPACING          = 106;
-    static const int EDIT_DIGITS_AFTER_DECIMAL  = 107;
-    static const int EDIT_EXPORT_SCALE          = 108;
-    static const int EDIT_EXPORT_OFFSET         = 109;
-    static const int EDIT_CANVAS_SIZE           = 110;
-    static const int EDIT_G_CODE_DEPTH          = 120;
-    static const int EDIT_G_CODE_PASSES         = 121;
-    static const int EDIT_G_CODE_FEED           = 122;
-    static const int EDIT_G_CODE_PLUNGE_FEED    = 123;
-    // For TTF text
-    static const int EDIT_TTF_TEXT              = 300;
-    // For the step dimension screen
-    static const int EDIT_STEP_DIM_FINISH       = 400;
-    static const int EDIT_STEP_DIM_STEPS        = 401;
-    // For the styles stuff
-    static const int EDIT_STYLE_WIDTH           = 500;
-    static const int EDIT_STYLE_TEXT_HEIGHT     = 501;
-    static const int EDIT_STYLE_TEXT_ANGLE      = 502;
-    static const int EDIT_STYLE_COLOR           = 503;
-    static const int EDIT_STYLE_FILL_COLOR      = 504;
-    static const int EDIT_STYLE_NAME            = 505;
-    static const int EDIT_BACKGROUND_COLOR      = 506;
-    static const int EDIT_BACKGROUND_IMG_SCALE  = 507;
-    // For paste transforming
-    static const int EDIT_PASTE_TIMES_REPEATED  = 600;
-    static const int EDIT_PASTE_ANGLE           = 601;
-    static const int EDIT_PASTE_SCALE           = 602;
-    // For view
-    static const int EDIT_VIEW_SCALE            = 700;
-    static const int EDIT_VIEW_ORIGIN           = 701;
-    static const int EDIT_VIEW_PROJ_RIGHT       = 702;
-    static const int EDIT_VIEW_PROJ_UP          = 703;
-    // For tangent arc
-    static const int EDIT_TANGENT_ARC_RADIUS    = 800;
+    enum {
+        EDIT_NOTHING               = 0,
+        // For multiple groups
+        EDIT_TIMES_REPEATED        = 1,
+        EDIT_GROUP_NAME            = 2,
+        EDIT_GROUP_SCALE           = 3,
+        EDIT_GROUP_COLOR           = 4,
+        // For the configuraiton screen
+        EDIT_LIGHT_DIRECTION       = 100,
+        EDIT_LIGHT_INTENSITY       = 101,
+        EDIT_COLOR                 = 102,
+        EDIT_CHORD_TOLERANCE       = 103,
+        EDIT_MAX_SEGMENTS          = 104,
+        EDIT_CAMERA_TANGENT        = 105,
+        EDIT_GRID_SPACING          = 106,
+        EDIT_DIGITS_AFTER_DECIMAL  = 107,
+        EDIT_EXPORT_SCALE          = 108,
+        EDIT_EXPORT_OFFSET         = 109,
+        EDIT_CANVAS_SIZE           = 110,
+        EDIT_G_CODE_DEPTH          = 120,
+        EDIT_G_CODE_PASSES         = 121,
+        EDIT_G_CODE_FEED           = 122,
+        EDIT_G_CODE_PLUNGE_FEED    = 123,
+        // For TTF text
+        EDIT_TTF_TEXT              = 300,
+        // For the step dimension screen
+        EDIT_STEP_DIM_FINISH       = 400,
+        EDIT_STEP_DIM_STEPS        = 401,
+        // For the styles stuff
+        EDIT_STYLE_WIDTH           = 500,
+        EDIT_STYLE_TEXT_HEIGHT     = 501,
+        EDIT_STYLE_TEXT_ANGLE      = 502,
+        EDIT_STYLE_COLOR           = 503,
+        EDIT_STYLE_FILL_COLOR      = 504,
+        EDIT_STYLE_NAME            = 505,
+        EDIT_BACKGROUND_COLOR      = 506,
+        EDIT_BACKGROUND_IMG_SCALE  = 507,
+        // For paste transforming
+        EDIT_PASTE_TIMES_REPEATED  = 600,
+        EDIT_PASTE_ANGLE           = 601,
+        EDIT_PASTE_SCALE           = 602,
+        // For view
+        EDIT_VIEW_SCALE            = 700,
+        EDIT_VIEW_ORIGIN           = 701,
+        EDIT_VIEW_PROJ_RIGHT       = 702,
+        EDIT_VIEW_PROJ_UP          = 703,
+        // For tangent arc
+        EDIT_TANGENT_ARC_RADIUS    = 800
+    };
     struct {
         bool        showAgain;
         int         meaning;
@@ -487,17 +497,19 @@ public:
 
     // Operations that must be completed by doing something with the mouse
     // are noted here. These occupy the same space as the menu ids.
-    static const int    FIRST_PENDING               = 0x0f000000;
-    static const int    DRAGGING_POINTS             = 0x0f000000;
-    static const int    DRAGGING_NEW_POINT          = 0x0f000001;
-    static const int    DRAGGING_NEW_LINE_POINT     = 0x0f000002;
-    static const int    DRAGGING_NEW_CUBIC_POINT    = 0x0f000003;
-    static const int    DRAGGING_NEW_ARC_POINT      = 0x0f000004;
-    static const int    DRAGGING_CONSTRAINT         = 0x0f000005;
-    static const int    DRAGGING_RADIUS             = 0x0f000006;
-    static const int    DRAGGING_NORMAL             = 0x0f000007;
-    static const int    DRAGGING_NEW_RADIUS         = 0x0f000008;
-    static const int    DRAGGING_MARQUEE            = 0x0f000009;
+    enum {
+        FIRST_PENDING               = 0x0f000000,
+        DRAGGING_POINTS             = 0x0f000000,
+        DRAGGING_NEW_POINT          = 0x0f000001,
+        DRAGGING_NEW_LINE_POINT     = 0x0f000002,
+        DRAGGING_NEW_CUBIC_POINT    = 0x0f000003,
+        DRAGGING_NEW_ARC_POINT      = 0x0f000004,
+        DRAGGING_CONSTRAINT         = 0x0f000005,
+        DRAGGING_RADIUS             = 0x0f000006,
+        DRAGGING_NORMAL             = 0x0f000007,
+        DRAGGING_NEW_RADIUS         = 0x0f000008,
+        DRAGGING_MARQUEE            = 0x0f000009
+    };
     struct {
         int             operation;
 
@@ -568,7 +580,7 @@ public:
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
     void ClearNonexistentSelectionItems(void);
-    static const int MAX_SELECTED = 32;
+    enum { MAX_SELECTED = 32 };
     struct {
         hEntity     point[MAX_SELECTED];
         hEntity     entity[MAX_SELECTED];
@@ -603,22 +615,24 @@ public:
     void SelectByMarquee(void);
     void ClearSuper(void);
 
-    static const int CMNU_UNSELECT_ALL     = 0x100;
-    static const int CMNU_UNSELECT_HOVERED = 0x101;
-    static const int CMNU_CUT_SEL          = 0x102;
-    static const int CMNU_COPY_SEL         = 0x103;
-    static const int CMNU_PASTE_SEL        = 0x104;
-    static const int CMNU_DELETE_SEL       = 0x105;
-    static const int CMNU_SELECT_CHAIN     = 0x106;
-    static const int CMNU_NEW_CUSTOM_STYLE = 0x110;
-    static const int CMNU_NO_STYLE         = 0x111;
-    static const int CMNU_GROUP_INFO       = 0x120;
-    static const int CMNU_STYLE_INFO       = 0x121;
-    static const int CMNU_REFERENCE_DIM    = 0x130;
-    static const int CMNU_OTHER_ANGLE      = 0x131;
-    static const int CMNU_DEL_COINCIDENT   = 0x132;
-    static const int CMNU_SNAP_TO_GRID     = 0x140;
-    static const int CMNU_FIRST_STYLE      = 0x40000000;
+    enum {
+        CMNU_UNSELECT_ALL     = 0x100,
+        CMNU_UNSELECT_HOVERED = 0x101,
+        CMNU_CUT_SEL          = 0x102,
+        CMNU_COPY_SEL         = 0x103,
+        CMNU_PASTE_SEL        = 0x104,
+        CMNU_DELETE_SEL       = 0x105,
+        CMNU_SELECT_CHAIN     = 0x106,
+        CMNU_NEW_CUSTOM_STYLE = 0x110,
+        CMNU_NO_STYLE         = 0x111,
+        CMNU_GROUP_INFO       = 0x120,
+        CMNU_STYLE_INFO       = 0x121,
+        CMNU_REFERENCE_DIM    = 0x130,
+        CMNU_OTHER_ANGLE      = 0x131,
+        CMNU_DEL_COINCIDENT   = 0x132,
+        CMNU_SNAP_TO_GRID     = 0x140,
+        CMNU_FIRST_STYLE      = 0x40000000
+    };
     void ContextMenuListStyles(void);
     SDWORD contextMenuCancelTime;
 

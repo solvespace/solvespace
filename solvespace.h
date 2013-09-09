@@ -251,7 +251,7 @@ void Error(const char *str, ...);
 
 class System {
 public:
-    static const int MAX_UNKNOWNS      = 1024;
+    enum { MAX_UNKNOWNS = 1024 };
 
     EntityList                      entity;
     ParamList                       param;
@@ -261,12 +261,14 @@ public:
     // we should put as close as possible to their initial positions.
     List<hParam>                    dragged;
 
-    // In general, the tag indicates the subsys that a variable/equation
-    // has been assigned to; these are exceptions for variables:
-    static const int VAR_SUBSTITUTED      = 10000;
-    static const int VAR_DOF_TEST         = 10001;
-    // and for equations:
-    static const int EQ_SUBSTITUTED       = 20000;
+    enum {
+        // In general, the tag indicates the subsys that a variable/equation
+        // has been assigned to; these are exceptions for variables:
+        VAR_SUBSTITUTED      = 10000,
+        VAR_DOF_TEST         = 10001,
+        // and for equations:
+        EQ_SUBSTITUTED       = 20000
+    };
 
     // The system Jacobian matrix
     struct {
@@ -314,10 +316,12 @@ public:
 
     bool NewtonSolve(int tag);
 
-    static const int SOLVED_OKAY          = 0;
-    static const int DIDNT_CONVERGE       = 10;
-    static const int SINGULAR_JACOBIAN    = 11;
-    static const int TOO_MANY_UNKNOWNS    = 20;
+    enum {
+        SOLVED_OKAY          = 0,
+        DIDNT_CONVERGE       = 10,
+        SINGULAR_JACOBIAN    = 11,
+        TOO_MANY_UNKNOWNS    = 20
+    };
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);
 };
@@ -360,9 +364,11 @@ public:
     // The filehandle, while loading
     FILE   *fh;
     // Some state while rendering a character to curves
-    static const int NOTHING   = 0;
-    static const int ON_CURVE  = 1;
-    static const int OFF_CURVE = 2;
+    enum {
+        NOTHING   = 0,
+        ON_CURVE  = 1,
+        OFF_CURVE = 2
+    };
     int         lastWas;
     IntPoint    lastOnCurve;
     IntPoint    lastOffCurve;
@@ -585,7 +591,7 @@ public:
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
     } UndoState;
-    static const int MAX_UNDO = 16;
+    enum { MAX_UNDO = 16 };
     typedef struct {
         UndoState   d[MAX_UNDO];
         int         cnt;
@@ -603,7 +609,7 @@ public:
     void UndoClearStack(UndoStack *uk);
 
     // Little bits of extra configuration state
-    static const int MODEL_COLORS = 8;
+    enum { MODEL_COLORS = 8 };
     int     modelColor[MODEL_COLORS];
     Vector  lightDir[2];
     double  lightIntensity[2];

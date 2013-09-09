@@ -90,13 +90,15 @@ public:
     int         tag;
     hGroup      h;
 
-    static const int DRAWING_3D                    = 5000;
-    static const int DRAWING_WORKPLANE             = 5001;
-    static const int EXTRUDE                       = 5100;
-    static const int LATHE                         = 5101;
-    static const int ROTATE                        = 5200;
-    static const int TRANSLATE                     = 5201;
-    static const int IMPORTED                      = 5300;
+    enum {
+        DRAWING_3D                    = 5000,
+        DRAWING_WORKPLANE             = 5001,
+        EXTRUDE                       = 5100,
+        LATHE                         = 5101,
+        ROTATE                        = 5200,
+        TRANSLATE                     = 5201,
+        IMPORTED                      = 5300
+    };
     int type;
 
     int order;
@@ -122,12 +124,14 @@ public:
         List<hConstraint>   remove;
     } solved;
 
-    // For drawings in 2d
-    static const int WORKPLANE_BY_POINT_ORTHO   = 6000;
-    static const int WORKPLANE_BY_LINE_SEGMENTS = 6001;
-    // For extrudes, translates, and rotates
-    static const int ONE_SIDED                  = 7000;
-    static const int TWO_SIDED                  = 7001;
+    enum {
+        // For drawings in 2d
+        WORKPLANE_BY_POINT_ORTHO   = 6000,
+        WORKPLANE_BY_LINE_SEGMENTS = 6001,
+        // For extrudes, translates, and rotates
+        ONE_SIDED                  = 7000,
+        TWO_SIDED                  = 7001
+    };
     int subtype;
 
     bool skipFirst; // for step and repeat ops
@@ -145,11 +149,13 @@ public:
     SPolygon                polyLoops;
     SBezierLoopSetSet       bezierLoops;
     SBezierList             bezierOpens;
-    static const int POLY_GOOD              = 0;
-    static const int POLY_NOT_CLOSED        = 1;
-    static const int POLY_NOT_COPLANAR      = 2;
-    static const int POLY_SELF_INTERSECTING = 3;
-    static const int POLY_ZERO_LEN_EDGE     = 4;
+    enum {
+        POLY_GOOD              = 0,
+        POLY_NOT_CLOSED        = 1,
+        POLY_NOT_COPLANAR      = 2,
+        POLY_SELF_INTERSECTING = 3,
+        POLY_ZERO_LEN_EDGE     = 4
+    };
     struct {
         int             how;
         SEdge           notClosedAt;
@@ -168,15 +174,17 @@ public:
     SMesh           displayMesh;
     SEdgeList       displayEdges;
 
-    static const int COMBINE_AS_UNION           = 0;
-    static const int COMBINE_AS_DIFFERENCE      = 1;
-    static const int COMBINE_AS_ASSEMBLE        = 2;
+    enum {
+        COMBINE_AS_UNION           = 0,
+        COMBINE_AS_DIFFERENCE      = 1,
+        COMBINE_AS_ASSEMBLE        = 2
+    };
     int meshCombine;
 
     bool forceToMesh;
 
     IdList<EntityMap,EntityId> remap;
-    static const int REMAP_PRIME = 19477;
+    enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
     char                       impFile[MAX_PATH];
@@ -199,11 +207,13 @@ public:
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
     // mapping list.
-    static const int REMAP_LAST         = 1000;
-    static const int REMAP_TOP          = 1001;
-    static const int REMAP_BOTTOM       = 1002;
-    static const int REMAP_PT_TO_LINE   = 1003;
-    static const int REMAP_LINE_TO_FACE = 1004;
+    enum {
+        REMAP_LAST         = 1000,
+        REMAP_TOP          = 1001,
+        REMAP_BOTTOM       = 1002,
+        REMAP_PT_TO_LINE   = 1003,
+        REMAP_LINE_TO_FACE = 1004
+    };
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
@@ -253,14 +263,16 @@ public:
     hRequest    h;
 
     // Types of requests
-    static const int WORKPLANE              = 100;
-    static const int DATUM_POINT            = 101;
-    static const int LINE_SEGMENT           = 200;
-    static const int CUBIC                  = 300;
-    static const int CUBIC_PERIODIC         = 301;
-    static const int CIRCLE                 = 400;
-    static const int ARC_OF_CIRCLE          = 500;
-    static const int TTF_TEXT               = 600;
+    enum {
+        WORKPLANE              = 100,
+        DATUM_POINT            = 101,
+        LINE_SEGMENT           = 200,
+        CUBIC                  = 300,
+        CUBIC_PERIODIC         = 301,
+        CIRCLE                 = 400,
+        ARC_OF_CIRCLE          = 500,
+        TTF_TEXT               = 600
+    };
 
     int         type;
     int         extraPoints;
@@ -288,36 +300,38 @@ public:
     static const hEntity    FREE_IN_3D;
     static const hEntity    NO_ENTITY;
 
-    static const int POINT_IN_3D            =  2000;
-    static const int POINT_IN_2D            =  2001;
-    static const int POINT_N_TRANS          =  2010;
-    static const int POINT_N_ROT_TRANS      =  2011;
-    static const int POINT_N_COPY           =  2012;
-    static const int POINT_N_ROT_AA         =  2013;
+    enum {
+        POINT_IN_3D            =  2000,
+        POINT_IN_2D            =  2001,
+        POINT_N_TRANS          =  2010,
+        POINT_N_ROT_TRANS      =  2011,
+        POINT_N_COPY           =  2012,
+        POINT_N_ROT_AA         =  2013,
 
-    static const int NORMAL_IN_3D           =  3000;
-    static const int NORMAL_IN_2D           =  3001;
-    static const int NORMAL_N_COPY          =  3010;
-    static const int NORMAL_N_ROT           =  3011;
-    static const int NORMAL_N_ROT_AA        =  3012;
+        NORMAL_IN_3D           =  3000,
+        NORMAL_IN_2D           =  3001,
+        NORMAL_N_COPY          =  3010,
+        NORMAL_N_ROT           =  3011,
+        NORMAL_N_ROT_AA        =  3012,
 
-    static const int DISTANCE               =  4000;
-    static const int DISTANCE_N_COPY        =  4001;
+        DISTANCE               =  4000,
+        DISTANCE_N_COPY        =  4001,
 
-    static const int FACE_NORMAL_PT         =  5000;
-    static const int FACE_XPROD             =  5001;
-    static const int FACE_N_ROT_TRANS       =  5002;
-    static const int FACE_N_TRANS           =  5003;
-    static const int FACE_N_ROT_AA          =  5004;
+        FACE_NORMAL_PT         =  5000,
+        FACE_XPROD             =  5001,
+        FACE_N_ROT_TRANS       =  5002,
+        FACE_N_TRANS           =  5003,
+        FACE_N_ROT_AA          =  5004,
 
 
-    static const int WORKPLANE              = 10000;
-    static const int LINE_SEGMENT           = 11000;
-    static const int CUBIC                  = 12000;
-    static const int CUBIC_PERIODIC         = 12001;
-    static const int CIRCLE                 = 13000;
-    static const int ARC_OF_CIRCLE          = 14000;
-    static const int TTF_TEXT               = 15000;
+        WORKPLANE              = 10000,
+        LINE_SEGMENT           = 11000,
+        CUBIC                  = 12000,
+        CUBIC_PERIODIC         = 12001,
+        CIRCLE                 = 13000,
+        ARC_OF_CIRCLE          = 14000,
+        TTF_TEXT               = 15000
+    };
 
     int         type;
 
@@ -517,41 +531,43 @@ public:
 
     static const hConstraint NO_CONSTRAINT;
 
-    static const int POINTS_COINCIDENT      =  20;
-    static const int PT_PT_DISTANCE         =  30;
-    static const int PT_PLANE_DISTANCE      =  31;
-    static const int PT_LINE_DISTANCE       =  32;
-    static const int PT_FACE_DISTANCE       =  33;
-    static const int PROJ_PT_DISTANCE       =  34;
-    static const int PT_IN_PLANE            =  41;
-    static const int PT_ON_LINE             =  42;
-    static const int PT_ON_FACE             =  43;
-    static const int EQUAL_LENGTH_LINES     =  50;
-    static const int LENGTH_RATIO           =  51;
-    static const int EQ_LEN_PT_LINE_D       =  52;
-    static const int EQ_PT_LN_DISTANCES     =  53;
-    static const int EQUAL_ANGLE            =  54;
-    static const int EQUAL_LINE_ARC_LEN     =  55;
-    static const int SYMMETRIC              =  60;
-    static const int SYMMETRIC_HORIZ        =  61;
-    static const int SYMMETRIC_VERT         =  62;
-    static const int SYMMETRIC_LINE         =  63;
-    static const int AT_MIDPOINT            =  70;
-    static const int HORIZONTAL             =  80;
-    static const int VERTICAL               =  81;
-    static const int DIAMETER               =  90;
-    static const int PT_ON_CIRCLE           = 100;
-    static const int SAME_ORIENTATION       = 110;
-    static const int ANGLE                  = 120;
-    static const int PARALLEL               = 121;
-    static const int PERPENDICULAR          = 122;
-    static const int ARC_LINE_TANGENT       = 123;
-    static const int CUBIC_LINE_TANGENT     = 124;
-    static const int CURVE_CURVE_TANGENT    = 125;
-    static const int EQUAL_RADIUS           = 130;
-    static const int WHERE_DRAGGED          = 200;
+    enum {
+        POINTS_COINCIDENT      =  20,
+        PT_PT_DISTANCE         =  30,
+        PT_PLANE_DISTANCE      =  31,
+        PT_LINE_DISTANCE       =  32,
+        PT_FACE_DISTANCE       =  33,
+        PROJ_PT_DISTANCE       =  34,
+        PT_IN_PLANE            =  41,
+        PT_ON_LINE             =  42,
+        PT_ON_FACE             =  43,
+        EQUAL_LENGTH_LINES     =  50,
+        LENGTH_RATIO           =  51,
+        EQ_LEN_PT_LINE_D       =  52,
+        EQ_PT_LN_DISTANCES     =  53,
+        EQUAL_ANGLE            =  54,
+        EQUAL_LINE_ARC_LEN     =  55,
+        SYMMETRIC              =  60,
+        SYMMETRIC_HORIZ        =  61,
+        SYMMETRIC_VERT         =  62,
+        SYMMETRIC_LINE         =  63,
+        AT_MIDPOINT            =  70,
+        HORIZONTAL             =  80,
+        VERTICAL               =  81,
+        DIAMETER               =  90,
+        PT_ON_CIRCLE           = 100,
+        SAME_ORIENTATION       = 110,
+        ANGLE                  = 120,
+        PARALLEL               = 121,
+        PERPENDICULAR          = 122,
+        ARC_LINE_TANGENT       = 123,
+        CUBIC_LINE_TANGENT     = 124,
+        CURVE_CURVE_TANGENT    = 125,
+        EQUAL_RADIUS           = 130,
+        WHERE_DRAGGED          = 200,
 
-    static const int COMMENT                = 1000;
+        COMMENT                = 1000
+    };
 
     int         type;
 
@@ -659,40 +675,46 @@ class Style {
 public:
     int         tag;
     hStyle      h;
-  
-    // If an entity has no style, then it will be colored according to
-    // whether the group that it's in is active or not, whether it's
-    // construction or not, and so on.
-    static const int NO_STYLE       = 0;
 
-    static const int ACTIVE_GRP     = 1;
-    static const int CONSTRUCTION   = 2;
-    static const int INACTIVE_GRP   = 3;
-    static const int DATUM          = 4;
-    static const int SOLID_EDGE     = 5;
-    static const int CONSTRAINT     = 6;
-    static const int SELECTED       = 7;
-    static const int HOVERED        = 8;
-    static const int CONTOUR_FILL   = 9;
-    static const int NORMALS        = 10;
-    static const int ANALYZE        = 11;
-    static const int DRAW_ERROR     = 12;
-    static const int DIM_SOLID      = 13;
+    enum {
+        // If an entity has no style, then it will be colored according to
+        // whether the group that it's in is active or not, whether it's
+        // construction or not, and so on.
+        NO_STYLE       = 0,
 
-    static const int FIRST_CUSTOM   = 0x100;
+        ACTIVE_GRP     = 1,
+        CONSTRUCTION   = 2,
+        INACTIVE_GRP   = 3,
+        DATUM          = 4,
+        SOLID_EDGE     = 5,
+        CONSTRAINT     = 6,
+        SELECTED       = 7,
+        HOVERED        = 8,
+        CONTOUR_FILL   = 9,
+        NORMALS        = 10,
+        ANALYZE        = 11,
+        DRAW_ERROR     = 12,
+        DIM_SOLID      = 13,
+
+        FIRST_CUSTOM   = 0x100
+    };
 
     NameStr     name;
 
-    static const int UNITS_AS_PIXELS   = 0;
-    static const int UNITS_AS_MM       = 1;
+    enum {
+        UNITS_AS_PIXELS   = 0,
+        UNITS_AS_MM       = 1
+    };
     double      width;
     int         widthAs;
     double      textHeight;
     int         textHeightAs;
-    static const int ORIGIN_LEFT       = 0x01;
-    static const int ORIGIN_RIGHT      = 0x02;
-    static const int ORIGIN_BOT        = 0x04;
-    static const int ORIGIN_TOP        = 0x08;
+    enum {
+        ORIGIN_LEFT       = 0x01,
+        ORIGIN_RIGHT      = 0x02,
+        ORIGIN_BOT        = 0x04,
+        ORIGIN_TOP        = 0x08
+    };
     int         textOrigin;
     double      textAngle;
     DWORD       color;

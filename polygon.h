@@ -74,9 +74,11 @@ class SPoint {
 public:
     int     tag;
 
-    static const int UNKNOWN = 0;
-    static const int NOT_EAR = 1;
-    static const int EAR     = 2;
+    enum {
+        UNKNOWN = 0,
+        NOT_EAR = 1,
+        EAR     = 2
+    };
     int     ear;
 
     Vector  p;
@@ -174,7 +176,7 @@ public:
 
     SBsp2       *more;
 
-    static const int POS = 100, NEG = 101, COPLANAR = 200;
+    enum { POS = 100, NEG = 101, COPLANAR = 200 };
     void InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
     void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
     Vector IntersectionWith(Vector a, Vector b);
@@ -202,7 +204,7 @@ public:
 
     Vector IntersectionWith(Vector a, Vector b);
 
-    static const int POS = 100, NEG = 101, COPLANAR = 200;
+    enum { POS = 100, NEG = 101, COPLANAR = 200 };
     void InsertHow(int how, STriangle *str, SMesh *instead);
     SBsp3 *Insert(STriangle *str, SMesh *instead);
 
@@ -283,10 +285,12 @@ public:
     void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool coplanarIsInter,
                                                 bool *inter, bool *fwd,
                                                 DWORD *face);
-    static const int NAKED_OR_SELF_INTER_EDGES  = 100;
-    static const int SELF_INTER_EDGES           = 200;
-    static const int TURNING_EDGES              = 300;
-    static const int EMPHASIZED_EDGES           = 400;
+    enum {
+        NAKED_OR_SELF_INTER_EDGES  = 100,
+        SELF_INTER_EDGES           = 200,
+        TURNING_EDGES              = 300,
+        EMPHASIZED_EDGES           = 400
+    };
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
                                                 bool *inter, bool *leaky);
 

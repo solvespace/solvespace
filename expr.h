@@ -14,39 +14,41 @@ class Expr {
 public:
     DWORD marker;
 
-    // A parameter, by the hParam handle
-    static const int PARAM          =  0;
-    // A parameter, by a pointer straight in to the param table (faster,
-    // if we know that the param table won't move around)
-    static const int PARAM_PTR      =  1;
+    enum {
+        // A parameter, by the hParam handle
+        PARAM          =  0,
+        // A parameter, by a pointer straight in to the param table (faster,
+        // if we know that the param table won't move around)
+        PARAM_PTR      =  1,
 
-    // These are used only for user-entered expressions.
-    static const int POINT          = 10;
-    static const int ENTITY         = 11;
+        // These are used only for user-entered expressions.
+        POINT          = 10,
+        ENTITY         = 11,
 
-    static const int CONSTANT       = 20;
+        CONSTANT       = 20,
 
-    static const int PLUS           = 100;
-    static const int MINUS          = 101;
-    static const int TIMES          = 102;
-    static const int DIV            = 103;
-    static const int NEGATE         = 104;
-    static const int SQRT           = 105;
-    static const int SQUARE         = 106;
-    static const int SIN            = 107;
-    static const int COS            = 108;
-    static const int ASIN           = 109;
-    static const int ACOS           = 110;
+        PLUS           = 100,
+        MINUS          = 101,
+        TIMES          = 102,
+        DIV            = 103,
+        NEGATE         = 104,
+        SQRT           = 105,
+        SQUARE         = 106,
+        SIN            = 107,
+        COS            = 108,
+        ASIN           = 109,
+        ACOS           = 110,
 
-    // Special helpers for when we're parsing an expression from text.
-    // Initially, literals (like a constant number) appear in the same
-    // format as they will in the finished expression, but the operators
-    // are different until the parser fixes things up (and builds the
-    // tree from the flat list that the lexer outputs).
-    static const int ALL_RESOLVED   = 1000;
-    static const int PAREN          = 1001;
-    static const int BINARY_OP      = 1002;
-    static const int UNARY_OP       = 1003;
+        // Special helpers for when we're parsing an expression from text.
+        // Initially, literals (like a constant number) appear in the same
+        // format as they will in the finished expression, but the operators
+        // are different until the parser fixes things up (and builds the
+        // tree from the flat list that the lexer outputs).
+        ALL_RESOLVED   = 1000,
+        PAREN          = 1001,
+        BINARY_OP      = 1002,
+        UNARY_OP       = 1003
+    };
 
     int op;
     Expr    *a;
