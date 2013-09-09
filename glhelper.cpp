@@ -106,14 +106,14 @@ void glxVertex3v(Vector u)
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }
 
-void glxAxisAlignedQuad(double l, double r, double t, double b)
+void glxAxisAlignedQuad(double l, double r, double t, double b, bool lone)
 {
-    glBegin(GL_QUADS);
+    if(lone) glBegin(GL_QUADS);
         glVertex2d(l, t);
         glVertex2d(l, b);
         glVertex2d(r, b);
         glVertex2d(r, t);
-    glEnd();
+    if(lone) glEnd();
 }
 
 void glxAxisAlignedLineLoop(double l, double r, double t, double b)

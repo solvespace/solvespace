@@ -704,7 +704,6 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
             glVertex2d(cx, hy);
             glVertex2d(cx, hym);
         glEnd();
-        glEnd();
     } else if(how == CLICK || 
           (how == HOVER && leftDown && editControl.colorPicker.picker1dActive))
     {
@@ -857,7 +856,7 @@ void TextWindow::Paint(void) {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;
-                        glxAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh);
+                        glxAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, false);
                         y -= adj;
                     }
                 } else if(a == 1) {

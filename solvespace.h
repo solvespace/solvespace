@@ -199,7 +199,7 @@ typedef IdList<Param,hParam> ParamList;
 
 // Utility functions that are provided in the platform-independent code.
 void glxVertex3v(Vector u);
-void glxAxisAlignedQuad(double l, double r, double t, double b);
+void glxAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
 void glxAxisAlignedLineLoop(double l, double r, double t, double b);
 #define DEFAULT_TEXT_HEIGHT (11.5)
 #define GLX_CALLBACK __stdcall
