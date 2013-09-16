@@ -400,8 +400,8 @@ void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
         png_read_png(png_ptr, info_ptr,
             PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_ALPHA, NULL);
         
-        int w; w = (int)info_ptr->width;
-        int h; h = (int)info_ptr->height;
+        int w; w = (int)png_get_image_width(png_ptr, info_ptr);
+        int h; h = (int)png_get_image_height(png_ptr, info_ptr);
         BYTE **rows; rows = png_get_rows(png_ptr, info_ptr);
 
         // Round to next-highest powers of two, since the textures require
