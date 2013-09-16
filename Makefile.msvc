@@ -90,7 +90,7 @@ $(OBJDIR)\solvespace.exe: $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(RES)
 $(RES): win32\$(@B).rc icon.ico
 	$(RC) /fo$@ win32\$(@B).rc
 
-$(OBJDIR)\glhelper.obj: bitmapextra.table bitmapfont.table font.table
+$(OBJDIR)\glhelper.obj: bitmapextra.table.h bitmapfont.table.h font.table.h
 
 $(OBJDIR)\textwin.obj: icons.h
 
@@ -99,7 +99,7 @@ $(OBJDIR)\toolbar.obj: icons.h
 icons.h: icons\*.png png2c.pl
 	$(PERL) png2c.pl $@ icons-proto.h
 
-bitmapextra.table: icons\*.png pngchar2c.pl
+bitmapextra.table.h: icons\*.png pngchar2c.pl
 	$(PERL) pngchar2c.pl >tmp.$@
 	move /y tmp.$@ $@
 

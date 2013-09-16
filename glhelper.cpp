@@ -6,10 +6,10 @@
 #include "solvespace.h"
 
 // A public-domain Hershey vector font ("Simplex").
-#include "font.table"
+#include "font.table.h"
 
 // A bitmap font.
-#include "bitmapfont.table"
+#include "bitmapfont.table.h"
 
 static bool ColorLocked;
 static bool DepthOffsetLocked;

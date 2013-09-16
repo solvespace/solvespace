@@ -2175,5 +2175,5 @@ static const BYTE FontTexture[256*16*16] = {
   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 
   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 
 
-#include "bitmapextra.table"
+#include "bitmapextra.table.h"
 };

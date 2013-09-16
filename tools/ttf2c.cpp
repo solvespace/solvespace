@@ -45,7 +45,7 @@ int main(void)
         }
         printf("\n");
     }
-    printf("#include \"bitmapextra.table\"\n");
+    printf("#include \"bitmapextra.table.h\"\n");
     printf("};\n");
 
     return 0;
