@@ -611,7 +611,7 @@ void TextWindow::ShowTangentArc(void) {
 //-----------------------------------------------------------------------------
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
-void TextWindow::EditControlDone(char *s) {
+void TextWindow::EditControlDone(const char *s) {
     edit.showAgain = false;
 
     switch(edit.meaning) {

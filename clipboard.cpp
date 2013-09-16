@@ -240,7 +240,7 @@ void GraphicsWindow::MenuClipboard(int id) {
     }
 }
 
-bool TextWindow::EditControlDoneForPaste(char *s) {
+bool TextWindow::EditControlDoneForPaste(const char *s) {
     Expr *e;
     switch(edit.meaning) {
         case EDIT_PASTE_TIMES_REPEATED: {

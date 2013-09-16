@@ -317,11 +317,11 @@ public:
     static void ScreenChangeViewOrigin(int link, DWORD v);
     static void ScreenChangeViewProjection(int link, DWORD v);
 
-    bool EditControlDoneForStyles(char *s);
-    bool EditControlDoneForConfiguration(char *s);
-    bool EditControlDoneForPaste(char *s);
-    bool EditControlDoneForView(char *s);
-    void EditControlDone(char *s);
+    bool EditControlDoneForStyles(const char *s);
+    bool EditControlDoneForConfiguration(const char *s);
+    bool EditControlDoneForPaste(const char *s);
+    bool EditControlDoneForView(const char *s);
+    void EditControlDone(const char *s);
 };
 
 class GraphicsWindow {
@@ -679,7 +679,7 @@ public:
     void MouseScroll(double x, double y, int delta);
     void MouseLeave(void);
     bool KeyDown(int c);
-    void EditControlDone(char *s);
+    void EditControlDone(const char *s);
 
     SDWORD lastSpaceNavigatorTime;
     hGroup lastSpaceNavigatorGroup;

@@ -300,7 +300,7 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, " %Ft   version  %E%s", glGetString(GL_VERSION));
 }
 
-bool TextWindow::EditControlDoneForConfiguration(char *s) {
+bool TextWindow::EditControlDoneForConfiguration(const char *s) {
     switch(edit.meaning) {
         case EDIT_LIGHT_INTENSITY:
             SS.lightIntensity[edit.i] = min(1, max(0, atof(s)));

@@ -714,7 +714,7 @@ void Expr::Parse(void) {
     PopOperator(); // discard the ALL_RESOLVED marker
 }
 
-void Expr::Lex(char *in) {
+void Expr::Lex(const char *in) {
     while(*in) {
         if(UnparsedCnt >= MAX_UNPARSED) throw "too long";
 
@@ -771,7 +771,7 @@ void Expr::Lex(char *in) {
     }
 }
 
-Expr *Expr::From(char *in, bool popUpError) {
+Expr *Expr::From(const char *in, bool popUpError) {
     UnparsedCnt = 0;
     UnparsedP = 0;
     OperandsP = 0;

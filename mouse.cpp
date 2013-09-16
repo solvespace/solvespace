@@ -1161,7 +1161,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     }
 }
 
-void GraphicsWindow::EditControlDone(char *s) {
+void GraphicsWindow::EditControlDone(const char *s) {
     HideGraphicsEditControl();
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 

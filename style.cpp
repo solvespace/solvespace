@@ -643,7 +643,7 @@ void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
     InvalidateGraphics();
 }
 
-bool TextWindow::EditControlDoneForStyles(char *str) {
+bool TextWindow::EditControlDoneForStyles(const char *str) {
     Style *s;
     switch(edit.meaning) {
         case EDIT_STYLE_TEXT_HEIGHT:
