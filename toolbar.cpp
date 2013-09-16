@@ -61,7 +61,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
    
-    int nh;
+    int nh = 0;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
     if(!withinToolbar) nh = 0;
 

@@ -61,7 +61,7 @@ void Group::GenerateLoops(void) {
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
-        bool allClosed, allCoplanar, allNonZeroLen;
+        bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
         AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
         if(!allCoplanar) {
             polyError.how = POLY_NOT_COPLANAR;
