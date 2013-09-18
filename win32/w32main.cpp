@@ -873,7 +873,14 @@ int SaveFileYesNoCancel(void)
     EnableWindow(GraphicsWnd, TRUE);
     SetForegroundWindow(GraphicsWnd);
 
-    return r;
+    switch(r) {
+        case IDYES:    return SAVE_YES;
+        case IDNO:     return SAVE_NO;
+        case IDCANCEL: return SAVE_CANCEL;
+    }
+
+    oops();
+    return SAVE_CANCEL;
 }
 
 void LoadAllFontFiles(void)

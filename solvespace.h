@@ -82,7 +82,11 @@ class ExprQuaternion;
 extern char RecentFile[MAX_RECENT][MAX_PATH];
 void RefreshRecentMenus(void);
 
+#define SAVE_YES     (1)
+#define SAVE_NO     (-1)
+#define SAVE_CANCEL  (0)
 int SaveFileYesNoCancel(void);
+
 // SolveSpace native file format
 #define SLVS_PATTERN "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0"
 #define SLVS_EXT "slvs"

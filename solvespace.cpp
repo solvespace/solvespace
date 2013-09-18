@@ -343,16 +343,16 @@ bool SolveSpace::OkayToStartNewFile(void) {
     if(!unsaved) return true;
 
     switch(SaveFileYesNoCancel()) {
-        case IDYES:
+        case SAVE_YES:
             return GetFilenameAndSave(false);
 
-        case IDNO:
+        case SAVE_NO:
             return true;
 
-        case IDCANCEL:
+        case SAVE_CANCEL:
             return false;
         
-        default: oops();
+        default: oops(); break;
     }
 }
 
