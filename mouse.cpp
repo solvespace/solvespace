@@ -1209,7 +1209,7 @@ void GraphicsWindow::EditControlDone(const char *s) {
 }
 
 bool GraphicsWindow::KeyDown(int c) {
-    if(c == ('h' - 'a') + 1) {
+    if(c == '\b') {
         // Treat backspace identically to escape.
         MenuEdit(MNU_UNSELECT_ALL);
         return true;

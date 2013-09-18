@@ -538,7 +538,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_TAB:            c = '\t';           break;
 
         case VK_BROWSER_BACK:
-        case VK_BACK:           c = 1 + 'h' - 'a';  break;
+        case VK_BACK:           c = '\b';           break;
 
         case VK_F1:
         case VK_F2:
