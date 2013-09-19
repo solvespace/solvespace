@@ -531,8 +531,8 @@ void GraphicsWindow::EnsureValidActives(void) {
 
     // And update the checked state for various menus
     bool locked = LockedInWorkplane();
-    CheckMenuById(MNU_FREE_IN_3D, !locked);
-    CheckMenuById(MNU_SEL_WORKPLANE, locked);
+    RadioMenuById(MNU_FREE_IN_3D, !locked);
+    RadioMenuById(MNU_SEL_WORKPLANE, locked);
 
     SS.UndoEnableMenus();
 
@@ -544,8 +544,8 @@ void GraphicsWindow::EnsureValidActives(void) {
             SS.viewUnits = SolveSpace::UNIT_MM;
             break;
     }
-    CheckMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpace::UNIT_MM);
-    CheckMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpace::UNIT_INCHES);
+    RadioMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpace::UNIT_MM);
+    RadioMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpace::UNIT_INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);

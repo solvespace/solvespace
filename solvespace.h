@@ -128,7 +128,8 @@ void LoadAllFontFiles(void);
 void OpenWebsite(const char *url);
 
 void CheckMenuById(int id, BOOL checked);
-void EnableMenuById(int id, BOOL checked);
+void RadioMenuById(int id, BOOL selected);
+void EnableMenuById(int id, BOOL enabled);
 
 void ShowGraphicsEditControl(int x, int y, char *s);
 void HideGraphicsEditControl(void);

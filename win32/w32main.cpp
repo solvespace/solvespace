@@ -936,6 +936,11 @@ void CheckMenuById(int id, BOOL checked)
 {
     MenuById(id, checked, TRUE);
 }
+void RadioMenuById(int id, BOOL selected)
+{
+    // Windows does not natively support radio-button menu items
+    MenuById(id, selected, TRUE);
+}
 void EnableMenuById(int id, BOOL enabled)
 {
     MenuById(id, enabled, FALSE);
