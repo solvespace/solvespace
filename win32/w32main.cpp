@@ -918,7 +918,7 @@ static void MenuById(int id, BOOL yes, BOOL check)
         
         if(SS.GW.menu[i].id == id) {
             if(subMenu < 0) oops();
-            if(subMenu >= (sizeof(SubMenus)/sizeof(SubMenus[0]))) oops();
+            if(subMenu >= arraylen(SubMenus)) oops();
 
             if(check) {
                 CheckMenuItem(SubMenus[subMenu], id,

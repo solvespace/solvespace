@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-#define VERSION_STRING "±²³SolveSpaceREVa"
+#define VERSION_STRING "\261\262\263" "SolveSpaceREVa"
 
 static int StrStartsWith(const char *str, const char *start) {
     return memcmp(str, start, strlen(start)) == 0;

@@ -13,7 +13,7 @@
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
-static double Bernstein(int k, int deg, double t)
+double Bernstein(int k, int deg, double t)
 {
     if(k > deg || k < 0) return 0;
 

@@ -128,7 +128,7 @@ void Style::FreezeDefaultStyles(void) {
 
 DWORD Style::CreateCustomStyle(void) {
     SS.UndoRemember();
-    DWORD vs = max(Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
+    DWORD vs = max((DWORD)Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
     hStyle hs = { vs };
     (void)Style::Get(hs);
     return hs.v;

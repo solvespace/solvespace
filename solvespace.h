@@ -8,7 +8,7 @@
 #define __SOLVESPACE_H
 
 // Debugging functions
-#define oops() do { dbp("oops at line %d, file %s", __LINE__, __FILE__); \
+#define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
                     if(0) *(char *)0 = 1; exit(-1); } while(0)
 #ifndef min
 #define min(x, y) ((x) < (y) ? (x) : (y))

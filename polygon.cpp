@@ -58,7 +58,10 @@ STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
 }
 
 SEdge SEdge::From(Vector a, Vector b) {
-    SEdge se = { 0, 0, 0, a, b };
+    SEdge se;
+    ZERO(&se);
+    se.a = a;
+    se.b = b;
     return se;
 }
 

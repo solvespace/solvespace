@@ -130,7 +130,8 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         meta[r][c].link = NOT_A_LINK;
     }
 
-    int fg = 'd', bg = 'd';
+    char fg = 'd';
+    int bg = 'd';
     int link = NOT_A_LINK;
     DWORD data = 0;
     LinkFunction *f = NULL, *h = NULL;
@@ -211,7 +212,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                         color = 0;
                     }
                     if(*fmt == 'F') {
-                        fg = color;
+                        fg = (char)color;
                     } else {
                         bg = color;
                     }
@@ -1002,6 +1003,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
             SetMousePointerToHand(false);
         }
     }
+#undef META
 
 done:
     if((!ps.Equals(&(SS.GW.hover))) ||

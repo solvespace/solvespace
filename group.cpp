@@ -513,6 +513,8 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
         AddEq(l, (EC(axis.x))->Minus(EP(4)), 3);
         AddEq(l, (EC(axis.y))->Minus(EP(5)), 4);
         AddEq(l, (EC(axis.z))->Minus(EP(6)), 5);
+#undef EC
+#undef EP
     } else if(type == EXTRUDE) {
         if(predef.entityB.v != Entity::FREE_IN_3D.v) {
             // The extrusion path is locked along a line, normal to the
