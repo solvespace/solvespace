@@ -210,18 +210,15 @@ const char *SolveSpace::UnitName(void) {
 char *SolveSpace::MmToString(double v) {
     static int WhichBuf;
     static char Bufs[8][128];
-    char fmt[128];
 
     WhichBuf++;
     if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
 
     char *s = Bufs[WhichBuf];
     if(viewUnits == UNIT_INCHES) {
-        sprintf(fmt, "%%.%df", afterDecimalInch);
-        sprintf(s, fmt, v/25.4);
+        sprintf(s, "%.*f", afterDecimalInch, v/25.4);
     } else {
-        sprintf(fmt, "%%.%df", afterDecimalMm);
-        sprintf(s, fmt, v);
+        sprintf(s, "%.*f", afterDecimalMm, v);
     }
     return s;
 }
