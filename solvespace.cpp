@@ -734,3 +734,20 @@ void SolveSpace::MenuHelp(int id) {
         default: oops();
     }
 }
+
+void SolveSpace::Clear(void) {
+    sys.Clear();
+    for(int i = 0; i < MAX_UNDO; i++) {
+        if(i < undo.cnt) undo.d[i].Clear();
+        if(i < redo.cnt) redo.d[i].Clear();
+    }
+}
+
+void Sketch::Clear(void) {
+    group.Clear();
+    constraint.Clear();
+    request.Clear();
+    style.Clear();
+    entity.Clear();
+    param.Clear();
+}

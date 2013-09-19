@@ -1206,5 +1206,10 @@ done:
     // Write everything back to the registry
     FreezeWindowPos(TextWnd);
     FreezeWindowPos(GraphicsWnd);
+
+    // Free the memory we've used; anything that remains is a leak.
+    SK.Clear();
+    SS.Clear();
+
     return 0;
 }

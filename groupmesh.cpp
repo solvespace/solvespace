@@ -38,7 +38,7 @@ void Group::AssembleLoops(bool *allClosed,
             // This is a zero-length edge.
             *allNonZeroLen = false;
             polyError.errorPointAt = sb->ctrl[0];
-            return;
+            goto done;
         }
     }
 
@@ -50,6 +50,7 @@ void Group::AssembleLoops(bool *allClosed,
                                    allClosed, &(polyError.notClosedAt),
                                    allCoplanar, &(polyError.errorPointAt),
                                    &bezierOpens);
+    done:
     sbl.Clear();
 }
 

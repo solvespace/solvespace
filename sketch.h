@@ -80,6 +80,8 @@ public:
     hEntity     input;
     int         copyNumber;
     // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
+
+    void Clear(void) {}
 };
 
 // A set of requests. Every request must have an associated group.
@@ -289,6 +291,8 @@ public:
     void Generate(EntityList *entity, ParamList *param);
 
     char *DescriptionString(void);
+
+    void Clear(void) {}
 };
 
 #define MAX_POINTS_IN_ENTITY (12)
@@ -428,6 +432,8 @@ public:
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
+
+    void Clear(void) {}
 };
 
 class Entity : public EntityBase {
@@ -514,6 +520,8 @@ public:
     hParam      substd;
 
     static const hParam NO_PARAM;
+
+    void Clear(void) {}
 };
 
 
@@ -601,6 +609,8 @@ public:
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
     static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
+
+    void Clear(void) {}
 };
 
 class Constraint : public ConstraintBase {
@@ -668,6 +678,8 @@ public:
     hEquation   h;
 
     Expr        *e;
+
+    void Clear(void) {}
 };
 
 
@@ -759,6 +771,8 @@ public:
     static hStyle ForEntity(hEntity he);
 
     char *DescriptionString(void);
+
+    void Clear(void) {}
 };
 
 

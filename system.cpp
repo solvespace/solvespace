@@ -526,3 +526,9 @@ didnt_converge:
     return System::DIDNT_CONVERGE;
 }
 
+void System::Clear(void) {
+    entity.Clear();
+    param.Clear();
+    eq.Clear();
+    dragged.Clear();
+}

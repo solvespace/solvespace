@@ -362,6 +362,9 @@ public:
     }
 
     void Clear(void) {
+        for(int i = 0; i < n; i++) {
+            elem[i].Clear();
+        }
         elemsAllocated = n = 0;
         if(elem) MemFree(elem);
         elem = NULL;

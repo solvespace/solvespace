@@ -328,6 +328,8 @@ public:
     };
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);
+
+    void Clear(void);
 };
 
 class TtfFont {
@@ -577,6 +579,8 @@ public:
     inline Request *GetRequest(hRequest h) { return request.FindById(h); }
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
     // Styles are handled a bit differently.
+
+    void Clear(void);
 };
 #undef ENTITY
 #undef CONSTRAINT
@@ -594,6 +598,14 @@ public:
         IdList<Param,hParam>            param;
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
+
+        void Clear(void) {
+            group.Clear();
+            request.Clear();
+            constraint.Clear();
+            param.Clear();
+            style.Clear();
+        }
     } UndoState;
     enum { MAX_UNDO = 16 };
     typedef struct {
@@ -813,6 +825,8 @@ public:
     void DoLater(void);
 
     static void MenuHelp(int id);
+
+    void Clear(void);
 };
 
 extern SolveSpace SS;
