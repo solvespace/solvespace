@@ -249,6 +249,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 void MakePathRelative(const char *base, char *path);
 void MakePathAbsolute(const char *base, char *path);
+bool MakeAcceleratorLabel(int accel, char *out);
 bool StringAllPrintable(const char *str);
 bool StringEndsIn(const char *str, const char *ending);
 void Message(const char *str, ...);

@@ -978,11 +978,18 @@ HMENU CreateGraphicsWindowMenus(void)
     int subMenu = 0;
     
     for(i = 0; SS.GW.menu[i].level >= 0; i++) {
+        char label[100] = { '\0' };
+        if(SS.GW.menu[i].label) {
+            char accelbuf[40];
+            const char *sep =
+                MakeAcceleratorLabel(SS.GW.menu[i].accel, accelbuf) ?
+                "\t" : "";
+            sprintf(label, "%s%s%s", SS.GW.menu[i].label, sep, accelbuf);
+        }
+
         if(SS.GW.menu[i].level == 0) {
             m = CreateMenu();
-            AppendMenu(top, MF_STRING | MF_POPUP, (UINT_PTR)m, 
-                                                        SS.GW.menu[i].label);
-
+            AppendMenu(top, MF_STRING | MF_POPUP, (UINT_PTR)m, label);
             if(subMenu >= arraylen(SubMenus)) oops();
             SubMenus[subMenu] = m;
             subMenu++;
@@ -990,13 +997,13 @@ HMENU CreateGraphicsWindowMenus(void)
             if(SS.GW.menu[i].id == GraphicsWindow::MNU_OPEN_RECENT) {
                 RecentOpenMenu = CreateMenu();
                 AppendMenu(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentOpenMenu, SS.GW.menu[i].label);
+                    (UINT_PTR)RecentOpenMenu, label);
             } else if(SS.GW.menu[i].id == GraphicsWindow::MNU_GROUP_RECENT) {
                 RecentImportMenu = CreateMenu();
                 AppendMenu(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentImportMenu, SS.GW.menu[i].label);
+                    (UINT_PTR)RecentImportMenu, label);
             } else if(SS.GW.menu[i].label) {
-                AppendMenu(m, MF_STRING, SS.GW.menu[i].id, SS.GW.menu[i].label);
+                AppendMenu(m, MF_STRING, SS.GW.menu[i].id, label);
             } else {
                 AppendMenu(m, MF_SEPARATOR, SS.GW.menu[i].id, "");
             }

@@ -22,129 +22,129 @@
 #define F(k)  (FUNCTION_KEY_BASE+(k))
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 //level
-//   label                                  id                  accel   fn
-{ 0, "&File",                               0,                  0,      NULL  },
-{ 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
-{ 1, "&Open...\tCtrl+O",                    MNU_OPEN,           'O'|C,  mFile },
-{ 1, "Open &Recent",                        MNU_OPEN_RECENT,    0,      mFile },
-{ 1, "&Save\tCtrl+S",                       MNU_SAVE,           'S'|C,  mFile },
-{ 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Export &Image...",                    MNU_EXPORT_PNG,     0,      mFile },
-{ 1, "Export 2d &View...",                  MNU_EXPORT_VIEW,    0,      mFile },
-{ 1, "Export 2d &Section...",               MNU_EXPORT_SECTION, 0,      mFile },
-{ 1, "Export 3d &Wireframe...",             MNU_EXPORT_WIREFRAME, 0,    mFile },
-{ 1, "Export Triangle &Mesh...",            MNU_EXPORT_MESH,    0,      mFile },
-{ 1, "Export &Surfaces...",                 MNU_EXPORT_SURFACES,0,      mFile },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "E&xit\tCtrl+Q",                       MNU_EXIT,           'Q'|C,  mFile },
+//   label                          id                  accel   fn
+{ 0, "&File",                       0,                  0,      NULL  },
+{ 1, "&New",                        MNU_NEW,            C|'N',  mFile },
+{ 1, "&Open...",                    MNU_OPEN,           C|'O',  mFile },
+{ 1, "Open &Recent",                MNU_OPEN_RECENT,    0,      mFile },
+{ 1, "&Save",                       MNU_SAVE,           C|'S',  mFile },
+{ 1, "Save &As...",                 MNU_SAVE_AS,        0,      mFile },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Export &Image...",            MNU_EXPORT_PNG,     0,      mFile },
+{ 1, "Export 2d &View...",          MNU_EXPORT_VIEW,    0,      mFile },
+{ 1, "Export 2d &Section...",       MNU_EXPORT_SECTION, 0,      mFile },
+{ 1, "Export 3d &Wireframe...",     MNU_EXPORT_WIREFRAME, 0,    mFile },
+{ 1, "Export Triangle &Mesh...",    MNU_EXPORT_MESH,    0,      mFile },
+{ 1, "Export &Surfaces...",         MNU_EXPORT_SURFACES,0,      mFile },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "E&xit",                       MNU_EXIT,           C|'Q',  mFile },
 
-{ 0, "&Edit",                               0,                  0,      NULL  },
-{ 1, "&Undo\tCtrl+Z",                       MNU_UNDO,           'Z'|C,  mEdit },
-{ 1, "&Redo\tCtrl+Y",                       MNU_REDO,           'Y'|C,  mEdit },
-{ 1, "Re&generate All\tSpace",              MNU_REGEN_ALL,      ' ',    mEdit },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Snap Selection to &Grid\t.",          MNU_SNAP_TO_GRID,   '.',    mEdit },
-{ 1, "Rotate Imported &90\260\t9",          MNU_ROTATE_90,      '9',    mEdit },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mClip },
-{ 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mClip },
-{ 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mClip },
-{ 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mClip },
-{ 1, "&Delete\tDel",                        MNU_DELETE,         DEL,    mClip },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Select &Edge Chain\tCtrl+E",          MNU_SELECT_CHAIN,   'E'|C,  mEdit },
-{ 1, "Select &All\tCtrl+A",                 MNU_SELECT_ALL,     'A'|C,  mEdit },
-{ 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   ESC,    mEdit },
+{ 0, "&Edit",                       0,                  0,      NULL  },
+{ 1, "&Undo",                       MNU_UNDO,           C|'Z',  mEdit },
+{ 1, "&Redo",                       MNU_REDO,           C|'Y',  mEdit },
+{ 1, "Re&generate All",             MNU_REGEN_ALL,      ' ',    mEdit },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Snap Selection to &Grid",     MNU_SNAP_TO_GRID,   '.',    mEdit },
+{ 1, "Rotate Imported &90\260",     MNU_ROTATE_90,      '9',    mEdit },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Cu&t",                        MNU_CUT,            C|'X',  mClip },
+{ 1, "&Copy",                       MNU_COPY,           C|'C',  mClip },
+{ 1, "&Paste",                      MNU_PASTE,          C|'V',  mClip },
+{ 1, "Paste &Transformed...",       MNU_PASTE_TRANSFORM,C|'T',  mClip },
+{ 1, "&Delete",                     MNU_DELETE,         DEL,    mClip },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Select &Edge Chain",          MNU_SELECT_CHAIN,   C|'E',  mEdit },
+{ 1, "Select &All",                 MNU_SELECT_ALL,     C|'A',  mEdit },
+{ 1, "&Unselect All",               MNU_UNSELECT_ALL,   ESC,    mEdit },
 
-{ 0, "&View",                               0,                  0,      NULL  },
-{ 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
-{ 1, "Zoom &Out\t-",                        MNU_ZOOM_OUT,       '-',    mView },
-{ 1, "Zoom To &Fit\tF",                     MNU_ZOOM_TO_FIT,    'F',    mView },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Align View to &Workplane\tW",         MNU_ONTO_WORKPLANE, 'W',    mView },
-{ 1, "Nearest &Ortho View\tF2",             MNU_NEAREST_ORTHO,  F(2),   mView },
-{ 1, "Nearest &Isometric View\tF3",         MNU_NEAREST_ISO,    F(3),   mView },
-{ 1, "&Center View At Point\tF4",           MNU_CENTER_VIEW,    F(4),   mView },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '>',    mView },
-{ 1, "Use &Perspective Projection\t`",      MNU_PERSPECTIVE_PROJ,'`',   mView },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
-{ 1, "Show &Toolbar",                       MNU_SHOW_TOOLBAR,   0,      mView },
-{ 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Dimensions in &Inches",               MNU_UNITS_INCHES,   0,      mView },
-{ 1, "Dimensions in &Millimeters",          MNU_UNITS_MM,       0,      mView },
+{ 0, "&View",                       0,                  0,      NULL  },
+{ 1, "Zoom &In",                    MNU_ZOOM_IN,        '+',    mView },
+{ 1, "Zoom &Out",                   MNU_ZOOM_OUT,       '-',    mView },
+{ 1, "Zoom To &Fit",                MNU_ZOOM_TO_FIT,    'F',    mView },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Align View to &Workplane",    MNU_ONTO_WORKPLANE, 'W',    mView },
+{ 1, "Nearest &Ortho View",         MNU_NEAREST_ORTHO,  F(2),   mView },
+{ 1, "Nearest &Isometric View",     MNU_NEAREST_ISO,    F(3),   mView },
+{ 1, "&Center View At Point",       MNU_CENTER_VIEW,    F(4),   mView },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Show Snap &Grid",             MNU_SHOW_GRID,      '>',    mView },
+{ 1, "Use &Perspective Projection", MNU_PERSPECTIVE_PROJ,'`',   mView },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Show Text &Window",           MNU_SHOW_TEXT_WND,  '\t',   mView },
+{ 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,      mView },
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "Dimensions in &Inches",       MNU_UNITS_INCHES,   0,      mView },
+{ 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,      mView },
 
-{ 0, "&New Group",                          0,                  0,      NULL  },
-{ 1, "Sketch In &3d\tShift+3",              MNU_GROUP_3D,       '3'|S,  mGrp  },
-{ 1, "Sketch In New &Workplane\tShift+W",   MNU_GROUP_WRKPL,    'W'|S,  mGrp  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Step &Translating\tShift+T",          MNU_GROUP_TRANS,    'T'|S,  mGrp  },
-{ 1, "Step &Rotating\tShift+R",             MNU_GROUP_ROT,      'R'|S,  mGrp  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "E&xtrude\tShift+X",                   MNU_GROUP_EXTRUDE,  'X'|S,  mGrp  },
-{ 1, "&Lathe\tShift+L",                     MNU_GROUP_LATHE,    'L'|S,  mGrp  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Import / Assemble...\tShift+I",       MNU_GROUP_IMPORT,   'I'|S,  mGrp  },
-{ 1, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
+{ 0, "&New Group",                  0,                  0,      NULL  },
+{ 1, "Sketch In &3d",               MNU_GROUP_3D,       S|'3',  mGrp  },
+{ 1, "Sketch In New &Workplane",    MNU_GROUP_WRKPL,    S|'W',  mGrp  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Step &Translating",           MNU_GROUP_TRANS,    S|'T',  mGrp  },
+{ 1, "Step &Rotating",              MNU_GROUP_ROT,      S|'R',  mGrp  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "E&xtrude",                    MNU_GROUP_EXTRUDE,  S|'X',  mGrp  },
+{ 1, "&Lathe",                      MNU_GROUP_LATHE,    S|'L',  mGrp  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Import / Assemble...",        MNU_GROUP_IMPORT,   S|'I',  mGrp  },
+{ 1, "Import Recent",               MNU_GROUP_RECENT,   0,      mGrp  },
 
-{ 0, "&Sketch",                             0,                  0,      NULL  },
-{ 1, "In &Workplane\t2",                    MNU_SEL_WORKPLANE,  '2',    mReq  },
-{ 1, "Anywhere In &3d\t3",                  MNU_FREE_IN_3D,     '3',    mReq  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Datum &Point\tP",                     MNU_DATUM_POINT,    'P',    mReq  },
-{ 1, "&Workplane",                          MNU_WORKPLANE,      0,      mReq  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Line &Segment\tS",                    MNU_LINE_SEGMENT,   'S',    mReq  },
-{ 1, "&Rectangle\tR",                       MNU_RECTANGLE,      'R',    mReq  },
-{ 1, "&Circle\tC",                          MNU_CIRCLE,         'C',    mReq  },
-{ 1, "&Arc of a Circle\tA",                 MNU_ARC,            'A',    mReq  },
-{ 1, "&Bezier Cubic Spline\tB",             MNU_CUBIC,          'B',    mReq  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "&Text in TrueType Font\tT",           MNU_TTF_TEXT,       'T',    mReq  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "To&ggle Construction\tG",             MNU_CONSTRUCTION,   'G',    mReq  },
-{ 1, "Tangent &Arc at Point\tShift+A",      MNU_TANGENT_ARC,    'A'|S,  mReq  },
-{ 1, "Split Curves at &Intersection\tI",    MNU_SPLIT_CURVES,   'I',    mReq  },
+{ 0, "&Sketch",                     0,                  0,      NULL  },
+{ 1, "In &Workplane",               MNU_SEL_WORKPLANE,  '2',    mReq  },
+{ 1, "Anywhere In &3d",             MNU_FREE_IN_3D,     '3',    mReq  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Datum &Point",                MNU_DATUM_POINT,    'P',    mReq  },
+{ 1, "&Workplane",                  MNU_WORKPLANE,      0,      mReq  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Line &Segment",               MNU_LINE_SEGMENT,   'S',    mReq  },
+{ 1, "&Rectangle",                  MNU_RECTANGLE,      'R',    mReq  },
+{ 1, "&Circle",                     MNU_CIRCLE,         'C',    mReq  },
+{ 1, "&Arc of a Circle",            MNU_ARC,            'A',    mReq  },
+{ 1, "&Bezier Cubic Spline",        MNU_CUBIC,          'B',    mReq  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "&Text in TrueType Font",      MNU_TTF_TEXT,       'T',    mReq  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "To&ggle Construction",        MNU_CONSTRUCTION,   'G',    mReq  },
+{ 1, "Tangent &Arc at Point",       MNU_TANGENT_ARC,    S|'A',  mReq  },
+{ 1, "Split Curves at &Intersection", MNU_SPLIT_CURVES, 'I',    mReq  },
 
-{ 0, "&Constrain",                          0,                  0,      NULL  },
-{ 1, "&Distance / Diameter\tD",             MNU_DISTANCE_DIA,   'D',    mCon  },
-{ 1, "A&ngle\tN",                           MNU_ANGLE,          'N',    mCon  },
-{ 1, "Other S&upplementary Angle\tU",       MNU_OTHER_ANGLE,    'U',    mCon  },
-{ 1, "Toggle R&eference Dim\tE",            MNU_REFERENCE,      'E',    mCon  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "&Horizontal\tH",                      MNU_HORIZONTAL,     'H',    mCon  },
-{ 1, "&Vertical\tV",                        MNU_VERTICAL,       'V',    mCon  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "&On Point / Curve / Plane\tO",        MNU_ON_ENTITY,      'O',    mCon  },
-{ 1, "E&qual Length / Radius / Angle\tQ",   MNU_EQUAL,          'Q',    mCon  },
-{ 1, "Length Ra&tio\tZ",                    MNU_RATIO,          'Z',    mCon  },
-{ 1, "At &Midpoint\tM",                     MNU_AT_MIDPOINT,    'M',    mCon  },
-{ 1, "S&ymmetric\tY",                       MNU_SYMMETRIC,      'Y',    mCon  },
-{ 1, "Para&llel / Tangent\tL",              MNU_PARALLEL,       'L',    mCon  },
-{ 1, "&Perpendicular\t[",                   MNU_PERPENDICULAR,  '[',    mCon  },
-{ 1, "Same Orient&ation\tX",                MNU_ORIENTED_SAME,  'X',    mCon  },
-{ 1, "Lock Point Where &Dragged\t]",        MNU_WHERE_DRAGGED,  ']',    mCon  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Comment\t;",                          MNU_COMMENT,        ';',    mCon  },
+{ 0, "&Constrain",                  0,                  0,      NULL  },
+{ 1, "&Distance / Diameter",        MNU_DISTANCE_DIA,   'D',    mCon  },
+{ 1, "A&ngle",                      MNU_ANGLE,          'N',    mCon  },
+{ 1, "Other S&upplementary Angle",  MNU_OTHER_ANGLE,    'U',    mCon  },
+{ 1, "Toggle R&eference Dim",       MNU_REFERENCE,      'E',    mCon  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "&Horizontal",                 MNU_HORIZONTAL,     'H',    mCon  },
+{ 1, "&Vertical",                   MNU_VERTICAL,       'V',    mCon  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "&On Point / Curve / Plane",   MNU_ON_ENTITY,      'O',    mCon  },
+{ 1, "E&qual Length / Radius / Angle", MNU_EQUAL,       'Q',    mCon  },
+{ 1, "Length Ra&tio",               MNU_RATIO,          'Z',    mCon  },
+{ 1, "At &Midpoint",                MNU_AT_MIDPOINT,    'M',    mCon  },
+{ 1, "S&ymmetric",                  MNU_SYMMETRIC,      'Y',    mCon  },
+{ 1, "Para&llel / Tangent",         MNU_PARALLEL,       'L',    mCon  },
+{ 1, "&Perpendicular",              MNU_PERPENDICULAR,  '[',    mCon  },
+{ 1, "Same Orient&ation",           MNU_ORIENTED_SAME,  'X',    mCon  },
+{ 1, "Lock Point Where &Dragged",   MNU_WHERE_DRAGGED,  ']',    mCon  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Comment",                     MNU_COMMENT,        ';',    mCon  },
 
-{ 0, "&Analyze",                            0,                  0,      NULL  },
-{ 1, "Measure &Volume\tCtrl+Shift+V",       MNU_VOLUME,         'V'|S|C,mAna  },
-{ 1, "Measure &Area\tCtrl+Shift+A",         MNU_AREA,           'A'|S|C,mAna  },
-{ 1, "Show &Interfering Parts\tCtrl+Shift+I", MNU_INTERFERENCE, 'I'|S|C,mAna  },
-{ 1, "Show &Naked Edges\tCtrl+Shift+N",     MNU_NAKED_EDGES,    'N'|S|C,mAna  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "Show Degrees of &Freedom\tCtrl+Shift+F", MNU_SHOW_DOF,    'F'|S|C,mAna  },
-{ 1, NULL,                                  0,                  0,      NULL  },
-{ 1, "&Trace Point\tCtrl+Shift+T",          MNU_TRACE_PT,       'T'|S|C,mAna  },
-{ 1, "&Stop Tracing...\tCtrl+Shift+S",      MNU_STOP_TRACING,   'S'|S|C,mAna  },
-{ 1, "Step &Dimension...\tCtrl+Shift+D",    MNU_STEP_DIM,       'D'|S|C,mAna  },
+{ 0, "&Analyze",                    0,                  0,      NULL  },
+{ 1, "Measure &Volume",             MNU_VOLUME,         C|S|'V',mAna  },
+{ 1, "Measure &Area",               MNU_AREA,           C|S|'A',mAna  },
+{ 1, "Show &Interfering Parts",     MNU_INTERFERENCE,   C|S|'I',mAna  },
+{ 1, "Show &Naked Edges",           MNU_NAKED_EDGES,    C|S|'N',mAna  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "Show Degrees of &Freedom",    MNU_SHOW_DOF,       C|S|'F',mAna  },
+{ 1, NULL,                          0,                  0,      NULL  },
+{ 1, "&Trace Point",                MNU_TRACE_PT,       C|S|'T',mAna  },
+{ 1, "&Stop Tracing...",            MNU_STOP_TRACING,   C|S|'S',mAna  },
+{ 1, "Step &Dimension...",          MNU_STEP_DIM,       C|S|'D',mAna  },
 
-{ 0, "&Help",                               0,                  0,      NULL  },
-{ 1, "&Website / Manual",                   MNU_WEBSITE,        0,      mHelp },
-{ 1, "&About",                              MNU_ABOUT,          0,      mHelp },
-{ -1  },
+{ 0, "&Help",                       0,                  0,      NULL  },
+{ 1, "&Website / Manual",           MNU_WEBSITE,        0,      mHelp },
+{ 1, "&About",                      MNU_ABOUT,          0,      mHelp },
+{ -1 }
 };
 
 #undef DEL
@@ -152,6 +152,41 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 #undef S
 #undef C
 #undef F
+
+bool MakeAcceleratorLabel(int accel, char *out) {
+    if(!accel) {
+        out[0] = '\0';
+        return false;
+    }
+
+    const char *ctrl  = accel & GraphicsWindow::CTRL_MASK  ? "Ctrl+"  : "";
+    const char *shift = accel & GraphicsWindow::SHIFT_MASK ? "Shift+" : "";
+
+    char buf[8];
+    buf[0] = (char)(accel & 0xff);
+    buf[1] = '\0';
+
+    if(accel >= GraphicsWindow::FUNCTION_KEY_BASE + 1 &&
+       accel <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
+        sprintf(buf, "F%d", accel - GraphicsWindow::FUNCTION_KEY_BASE);
+    }
+
+    const char *key = buf;
+
+    switch(accel) {
+        case '\t': key = "Tab";   break;
+        case  ' ': key = "Space"; break;
+
+        case GraphicsWindow::ESCAPE_KEY: key = "Esc"; break;
+        case GraphicsWindow::DELETE_KEY: key = "Del"; break;
+    }
+
+    if(key[0] <  '!' || key[0] >  '~') oops();
+    if(key[0] >= 'a' && key[0] <= 'z') oops();
+
+    sprintf(out, "%s%s%s", ctrl, shift, key);
+    return true;
+}
 
 void GraphicsWindow::Init(void) {
     memset(this, 0, sizeof(*this));

@@ -210,18 +210,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
             for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                 if(toolbarTooltipped == SS.GW.menu[i].id) {
-                    int accel = SS.GW.menu[i].accel;
-                    int ac = accel & 0xff;
-
-                    char *s = str+strlen(str);
-                    if(isalnum(ac) || ac == '[') {
-                        if(accel & 0x100) {
-                            sprintf(s, " (Shift+%c)", ac);
-                        } else if((accel & ~0xff) == 0) {
-                            sprintf(s, " (%c)", ac);
-                        }
-                    } else if(ac == 0xf3) {
-                        sprintf(s, " (F3)");
+                    char accelbuf[40];
+                    if(MakeAcceleratorLabel(SS.GW.menu[i].accel, accelbuf)) {
+                        sprintf(str+strlen(str), " (%s)", accelbuf);
                     }
                     break;
                 }
