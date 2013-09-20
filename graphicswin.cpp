@@ -21,6 +21,8 @@
 #define C     CTRL_MASK
 #define F(k)  (FUNCTION_KEY_BASE+(k))
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
+//level
+//   label                                  id                  accel   fn
 { 0, "&File",                               0,                  0,      NULL  },
 { 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
 { 1, "&Open...\tCtrl+O",                    MNU_OPEN,           'O'|C,  mFile },
@@ -35,7 +37,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Export Triangle &Mesh...",            MNU_EXPORT_MESH,    0,      mFile },
 { 1, "Export &Surfaces...",                 MNU_EXPORT_SURFACES,0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "E&xit",                               MNU_EXIT,           0,      mFile },
+{ 1, "E&xit\tCtrl+Q",                       MNU_EXIT,           'Q'|C,  mFile },
 
 { 0, "&Edit",                               0,                  0,      NULL  },
 { 1, "&Undo\tCtrl+Z",                       MNU_UNDO,           'Z'|C,  mEdit },
@@ -43,7 +45,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Re&generate All\tSpace",              MNU_REGEN_ALL,      ' ',    mEdit },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "Snap Selection to &Grid\t.",          MNU_SNAP_TO_GRID,   '.',    mEdit },
-{ 1, "Rotate Imported &90°\t9",             MNU_ROTATE_90,      '9',    mEdit },
+{ 1, "Rotate Imported &90\260\t9",          MNU_ROTATE_90,      '9',    mEdit },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "Cu&t\tCtrl+X",                        MNU_CUT,            'X'|C,  mClip },
 { 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mClip },
@@ -144,6 +146,12 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&About",                              MNU_ABOUT,          0,      mHelp },
 { -1  },
 };
+
+#undef DEL
+#undef ESC
+#undef S
+#undef C
+#undef F
 
 void GraphicsWindow::Init(void) {
     memset(this, 0, sizeof(*this));
