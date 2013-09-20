@@ -425,6 +425,15 @@ public:
         MNU_ABOUT
     } MenuId;
     typedef void MenuHandler(int id);
+    enum {
+        ESCAPE_KEY = 27,
+        DELETE_KEY = 127,
+        FUNCTION_KEY_BASE = 0xf0
+    };
+    enum {
+        SHIFT_MASK = 0x100,
+        CTRL_MASK  = 0x200
+    };
     typedef struct {
         int         level;          // 0 == on menu bar, 1 == one level down
         const char *label;          // or NULL for a separator

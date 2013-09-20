@@ -15,9 +15,11 @@
 #define mGrp  (&Group::MenuGroup)
 #define mAna  (&SolveSpace::MenuAnalyze)
 #define mHelp (&SolveSpace::MenuHelp)
-#define S 0x100
-#define C 0x200
-#define F(k) (0xf0+(k))
+#define DEL   DELETE_KEY
+#define ESC   ESCAPE_KEY
+#define S     SHIFT_MASK
+#define C     CTRL_MASK
+#define F(k)  (FUNCTION_KEY_BASE+(k))
 const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                  0,      NULL  },
 { 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
@@ -47,11 +49,11 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Copy\tCtrl+C",                       MNU_COPY,           'C'|C,  mClip },
 { 1, "&Paste\tCtrl+V",                      MNU_PASTE,          'V'|C,  mClip },
 { 1, "Paste &Transformed...\tCtrl+T",       MNU_PASTE_TRANSFORM,'T'|C,  mClip },
-{ 1, "&Delete\tDel",                        MNU_DELETE,         127,    mClip },
+{ 1, "&Delete\tDel",                        MNU_DELETE,         DEL,    mClip },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "Select &Edge Chain\tCtrl+E",          MNU_SELECT_CHAIN,   'E'|C,  mEdit },
 { 1, "Select &All\tCtrl+A",                 MNU_SELECT_ALL,     'A'|C,  mEdit },
-{ 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   27,     mEdit },
+{ 1, "&Unselect All\tEsc",                  MNU_UNSELECT_ALL,   ESC,    mEdit },
 
 { 0, "&View",                               0,                  0,      NULL  },
 { 1, "Zoom &In\t+",                         MNU_ZOOM_IN,        '+',    mView },
