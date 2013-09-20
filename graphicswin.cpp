@@ -22,7 +22,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&File",                               0,                  0,      NULL  },
 { 1, "&New\tCtrl+N",                        MNU_NEW,            'N'|C,  mFile },
 { 1, "&Open...\tCtrl+O",                    MNU_OPEN,           'O'|C,  mFile },
-{10, "Open &Recent",                        MNU_OPEN_RECENT,    0,      mFile },
+{ 1, "Open &Recent",                        MNU_OPEN_RECENT,    0,      mFile },
 { 1, "&Save\tCtrl+S",                       MNU_SAVE,           'S'|C,  mFile },
 { 1, "Save &As...",                         MNU_SAVE_AS,        0,      mFile },
 { 1,  NULL,                                 0,                  0,      NULL  },
@@ -83,7 +83,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Lathe\tShift+L",                     MNU_GROUP_LATHE,    'L'|S,  mGrp  },
 { 1, NULL,                                  0,                  0,      NULL  },
 { 1, "Import / Assemble...\tShift+I",       MNU_GROUP_IMPORT,   'I'|S,  mGrp  },
-{11, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
+{ 1, "Import Recent",                       MNU_GROUP_RECENT,   0,      mGrp  },
 
 { 0, "&Sketch",                             0,                  0,      NULL  },
 { 1, "In &Workplane\t2",                    MNU_SEL_WORKPLANE,  '2',    mReq  },

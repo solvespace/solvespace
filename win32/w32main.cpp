@@ -983,19 +983,19 @@ HMENU CreateGraphicsWindowMenus(void)
             SubMenus[subMenu] = m;
             subMenu++;
         } else if(SS.GW.menu[i].level == 1) {
-            if(SS.GW.menu[i].label) {
+            if(SS.GW.menu[i].id == GraphicsWindow::MNU_OPEN_RECENT) {
+                RecentOpenMenu = CreateMenu();
+                AppendMenu(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)RecentOpenMenu, SS.GW.menu[i].label);
+            } else if(SS.GW.menu[i].id == GraphicsWindow::MNU_GROUP_RECENT) {
+                RecentImportMenu = CreateMenu();
+                AppendMenu(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)RecentImportMenu, SS.GW.menu[i].label);
+            } else if(SS.GW.menu[i].label) {
                 AppendMenu(m, MF_STRING, SS.GW.menu[i].id, SS.GW.menu[i].label);
             } else {
                 AppendMenu(m, MF_SEPARATOR, SS.GW.menu[i].id, "");
             }
-        } else if(SS.GW.menu[i].level == 10) {
-            RecentOpenMenu = CreateMenu();
-            AppendMenu(m, MF_STRING | MF_POPUP,
-                (UINT_PTR)RecentOpenMenu, SS.GW.menu[i].label);
-        } else if(SS.GW.menu[i].level == 11) {
-            RecentImportMenu = CreateMenu();
-            AppendMenu(m, MF_STRING | MF_POPUP,
-                (UINT_PTR)RecentImportMenu, SS.GW.menu[i].label);
         } else oops();
     }
     RefreshRecentMenus();
