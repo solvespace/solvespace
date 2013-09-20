@@ -569,6 +569,10 @@ static BOOL ProcessKeyDown(WPARAM wParam)
     if(GetAsyncKeyState(VK_SHIFT)   & 0x8000) c |= GraphicsWindow::SHIFT_MASK;
     if(GetAsyncKeyState(VK_CONTROL) & 0x8000) c |= GraphicsWindow::CTRL_MASK;
 
+    switch(c) {
+        case GraphicsWindow::SHIFT_MASK | '.': c = '>'; break;
+    }
+
     for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
         if(c == SS.GW.menu[i].accel) {
             (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)SS.GW.menu[i].id);

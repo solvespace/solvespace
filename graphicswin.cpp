@@ -65,7 +65,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Nearest &Isometric View\tF3",         MNU_NEAREST_ISO,    F(3),   mView },
 { 1, "&Center View At Point\tF4",           MNU_CENTER_VIEW,    F(4),   mView },
 { 1,  NULL,                                 0,                  0,      NULL  },
-{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '.'|S,  mView },
+{ 1, "Show Snap &Grid\t>",                  MNU_SHOW_GRID,      '>',    mView },
 { 1, "Use &Perspective Projection\t`",      MNU_PERSPECTIVE_PROJ,'`',   mView },
 { 1,  NULL,                                 0,                  0,      NULL  },
 { 1, "Show Text &Window\tTab",              MNU_SHOW_TEXT_WND,  '\t',   mView },
