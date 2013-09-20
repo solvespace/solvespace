@@ -16,8 +16,10 @@
 #include <stdio.h>
 #include <time.h>
 
-#include <si/si.h>
-#include <si/siapp.h>
+#ifdef HAVE_SPACEWARE_INPUT
+#   include <si/si.h>
+#   include <si/siapp.h>
+#endif
 
 #include "solvespace.h"
 
@@ -52,8 +54,10 @@ int ClientIsSmallerBy;
 
 HFONT FixedFont;
 
+#ifdef HAVE_SPACEWARE_INPUT
 // The 6-DOF input device.
 SiHdl SpaceNavigator = SI_NO_HANDLE;
+#endif
 
 //-----------------------------------------------------------------------------
 // Routines to display message boxes on screen. Do our own, instead of using
@@ -1085,6 +1089,7 @@ static void CreateMainWindows(void)
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
 }
 
+#ifdef HAVE_SPACEWARE_INPUT
 //-----------------------------------------------------------------------------
 // Test if a message comes from the SpaceNavigator device. If yes, dispatch
 // it appropriately and return TRUE. Otherwise, do nothing and return FALSE.
@@ -1120,6 +1125,7 @@ static BOOL ProcessSpaceNavigatorMsg(MSG *msg) {
     }
     return TRUE;
 }
+#endif // HAVE_SPACEWARE_INPUT
 
 //-----------------------------------------------------------------------------
 // Entry point into the program.
@@ -1173,6 +1179,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         GetAbsoluteFilename(file);
     }
 
+#ifdef HAVE_SPACEWARE_INPUT
     // Initialize the SpaceBall, if present. Test if the driver is running
     // first, to avoid a long timeout if it's not.
     HWND swdc = FindWindow("SpaceWare Driver Class", NULL);
@@ -1184,6 +1191,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
             SiOpen("GraphicsWnd", SI_ANY_DEVICE, SI_NO_MASK, SI_EVENT, &sod);
         SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
     }
+#endif
     
     // Call in to the platform-independent code, and let them do their init
     SS.Init(file);
@@ -1193,8 +1201,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     MSG msg;
     DWORD ret;
     while((ret = GetMessage(&msg, NULL, 0, 0)) != 0) {
+#ifdef HAVE_SPACEWARE_INPUT
         // Is it a message from the six degree of freedom input device?
         if(ProcessSpaceNavigatorMsg(&msg)) goto done;
+#endif
 
         // A message from the keyboard, which should be processed as a keyboard
         // accelerator?
@@ -1214,10 +1224,12 @@ done:
         SS.DoLater();
     }
 
+#ifdef HAVE_SPACEWARE_INPUT
     if(swdc != NULL) {
         if(SpaceNavigator != SI_NO_HANDLE) SiClose(SpaceNavigator);
         SiTerminate();
     }
+#endif
 
     // Write everything back to the registry
     FreezeWindowPos(TextWnd);
