@@ -61,6 +61,7 @@ typedef signed short SWORD;
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
+#include <limits.h>
 #include <windows.h> // required for GL stuff
 #include <gl/gl.h>
 #include <gl/glu.h>
