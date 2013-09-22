@@ -721,11 +721,22 @@ void SolveSpace::MenuHelp(int id) {
             break;
         
         case GraphicsWindow::MNU_ABOUT:
-            Message("This is SolveSpace version 2.0.\n\n"
-                "For more information, see http://solvespace.com/\n\n"
-                "Built " __TIME__ " " __DATE__ ".\n\n"
-                "Copyright 2008-2013 Jonathan Westhues.\n"
-                "All Rights Reserved.");
+            Message(
+"This is SolveSpace version 2.0.\n"
+"\n"
+"Built " __TIME__ " " __DATE__ ".\n"
+"\n"
+"For more information, see http://solvespace.com/\n"
+"\n"
+"SolveSpace is free software: you are free to modify\n"
+"and/or redistribute it under the terms of the GNU\n"
+"General Public License (GPL) version 3 or later.\n"
+"\n"
+"There is NO WARRANTY, to the extent permitted by\n"
+"law. For details, visit http://gnu.org/licenses/\n"
+"\n"
+"\xa9 2008-2013 Jonathan Westhues and subsequent authors.\n"
+);
             break;
 
         default: oops();
