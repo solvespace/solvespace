@@ -277,7 +277,7 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
     return true;
 }
 
-void TextWindow::ScreenChangePasteTransformed(int link, DWORD v) {
+void TextWindow::ScreenChangePasteTransformed(int link, uint32_t v) {
     char str[300];
     switch(link) {
         case 't':
@@ -300,7 +300,7 @@ void TextWindow::ScreenChangePasteTransformed(int link, DWORD v) {
     }
 }
 
-void TextWindow::ScreenPasteTransformed(int link, DWORD v) {
+void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
     SS.GW.GroupSelection();
     switch(link) {
         case 'o':

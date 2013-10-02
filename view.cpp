@@ -37,7 +37,7 @@ void TextWindow::ShowEditView(void) {
     Printf(false, "configuration screen.");
 }
 
-void TextWindow::ScreenChangeViewScale(int link, DWORD v) {
+void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
     char buf[1024];
     sprintf(buf, "%.3f", SS.GW.scale * SS.MmPerUnit());
 
@@ -45,7 +45,7 @@ void TextWindow::ScreenChangeViewScale(int link, DWORD v) {
     SS.TW.ShowEditControl(12, 3, buf);
 }
 
-void TextWindow::ScreenChangeViewOrigin(int link, DWORD v) {
+void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
     char buf[1024];
     sprintf(buf, "%s, %s, %s",
         SS.MmToString(-SS.GW.offset.x),
@@ -56,7 +56,7 @@ void TextWindow::ScreenChangeViewOrigin(int link, DWORD v) {
     SS.TW.ShowEditControl(18, 3, buf);
 }
 
-void TextWindow::ScreenChangeViewProjection(int link, DWORD v) {
+void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
     char buf[1024];
     sprintf(buf, "%.3f, %.3f, %.3f", CO(SS.GW.projRight));
     SS.TW.edit.meaning = EDIT_VIEW_PROJ_RIGHT;

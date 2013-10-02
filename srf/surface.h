@@ -58,12 +58,12 @@ class SShell;
 
 class hSSurface {
 public:
-    DWORD v;
+    uint32_t v;
 };
 
 class hSCurve {
 public:
-    DWORD v;
+    uint32_t v;
 };
 
 // Stuff for rational polynomial curves, of degree one to three. These are
@@ -250,8 +250,8 @@ public:
     // when I copy things over.
     hSSurface       newH;
 
-    int             color;
-    DWORD           face;
+    uint32_t        color;
+    uint32_t        face;
 
     int             degm, degn;
     Vector          ctrl[4][4];
@@ -279,7 +279,7 @@ public:
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                   Vector *pt, Vector *enin, Vector *enout,
                                   Vector *surfn,
-                                  DWORD auxA, 
+                                  uint32_t auxA,
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
@@ -361,9 +361,9 @@ public:
     bool                        booleanFailed;
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
-                             int color);
+                             uint32_t color);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                             int color);
+                              uint32_t color);
 
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);

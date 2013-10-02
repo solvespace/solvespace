@@ -10,8 +10,8 @@ int main(void)
     InitCommonControls();
 
     // A monospaced font
-    HFONT font = CreateFont(16, 9, 0, 0, FW_REGULAR, FALSE,
-        FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+    HFONT font = CreateFont(16, 9, 0, 0, FW_REGULAR, false,
+        false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
 
     HDC hdc = CreateDC("DISPLAY", NULL, NULL, NULL);
@@ -20,7 +20,7 @@ int main(void)
     SelectObject(hdc, bitmap);
     SelectObject(hdc, font);
 
-    printf("static const BYTE FontTexture[256*16*16] = {\n");
+    printf("static const uint8_t FontTexture[256*16*16] = {\n");
 
     int c;
     for(c = 0; c < 128; c++) {

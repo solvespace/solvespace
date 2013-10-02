@@ -85,7 +85,7 @@ void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
     ShowTextEditControl(x - 3, y + 2, s);
 }
 
-void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, DWORD rgb)
+void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, uint32_t rgb)
 {
     char str[1024];
     sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
@@ -133,7 +133,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     char fg = 'd';
     int bg = 'd';
     int link = NOT_A_LINK;
-    DWORD data = 0;
+    uint32_t data = 0;
     LinkFunction *f = NULL, *h = NULL;
 
     c = 0;
@@ -151,7 +151,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     break;
                 }
                 case 'x': {
-                    DWORD v = va_arg(vl, DWORD);
+                    unsigned int v = va_arg(vl, unsigned int);
                     sprintf(buf, "%08x", v);
                     break;
                 }
@@ -237,10 +237,11 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     h = va_arg(vl, LinkFunction *);
                     break;
 
-                case 'D':
-                    data = va_arg(vl, DWORD);
+                case 'D': {
+                    unsigned int v = va_arg(vl, unsigned int);
+                    data = (uint32_t)v;
                     break;
-                    
+                }
                 case '%':
                     strcpy(buf, "%");
                     break;
@@ -495,8 +496,8 @@ Vector TextWindow::HsvToRgb(Vector hsv) {
     return rgb;
 }
 
-BYTE *TextWindow::HsvPattern2d(void) {
-    static BYTE Texture[256*256*3];
+uint8_t *TextWindow::HsvPattern2d(void) {
+    static uint8_t Texture[256*256*3];
     static bool Init;
 
     if(!Init) {
@@ -507,9 +508,9 @@ BYTE *TextWindow::HsvPattern2d(void) {
                 Vector hsv = Vector::From(6.0*i/255.0, 1.0*j/255.0, 1);
                 Vector rgb = HsvToRgb(hsv);
                 rgb = rgb.ScaledBy(255);
-                Texture[p++] = (BYTE)rgb.x;
-                Texture[p++] = (BYTE)rgb.y;
-                Texture[p++] = (BYTE)rgb.z;
+                Texture[p++] = (uint8_t)rgb.x;
+                Texture[p++] = (uint8_t)rgb.y;
+                Texture[p++] = (uint8_t)rgb.z;
             }
         }
         Init = true;
@@ -517,8 +518,8 @@ BYTE *TextWindow::HsvPattern2d(void) {
     return Texture;
 }
 
-BYTE *TextWindow::HsvPattern1d(double h, double s) {
-    static BYTE Texture[256*4];
+uint8_t *TextWindow::HsvPattern1d(double h, double s) {
+    static uint8_t Texture[256*4];
 
     int i, p;
     p = 0;
@@ -526,9 +527,9 @@ BYTE *TextWindow::HsvPattern1d(double h, double s) {
         Vector hsv = Vector::From(6*h, s, 1.0*(255 - i)/255.0);
         Vector rgb = HsvToRgb(hsv);
         rgb = rgb.ScaledBy(255);
-        Texture[p++] = (BYTE)rgb.x;
-        Texture[p++] = (BYTE)rgb.y;
-        Texture[p++] = (BYTE)rgb.z;
+        Texture[p++] = (uint8_t)rgb.x;
+        Texture[p++] = (uint8_t)rgb.y;
+        Texture[p++] = (uint8_t)rgb.z;
         // Needs a padding byte, to make things four-aligned
         p++;
     }
@@ -537,13 +538,13 @@ BYTE *TextWindow::HsvPattern1d(double h, double s) {
 
 void TextWindow::ColorPickerDone(void) {
     char str[1024];
-    DWORD rgb = editControl.colorPicker.rgb;
+    uint32_t rgb = editControl.colorPicker.rgb;
     sprintf(str, "%.2f, %.2f, %.3f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
     EditControlDone(str);
 }
 
 bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
-                                                double x, double y)
+                                          double x, double y)
 {
     bool mousePointerAsHand = false;
 
@@ -555,7 +556,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     if(!editControl.colorPicker.show) return false;
     if(how == CLICK || (how == HOVER && leftDown)) InvalidateText();
 
-    static const DWORD BaseColor[12] = {
+    static const uint32_t BaseColor[12] = {
         RGB(255,   0,   0),
         RGB(  0, 255,   0),
         RGB(  0,   0, 255),
@@ -608,7 +609,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     for(i = 0; i < WIDTH/2; i++) {
         for(j = 0; j < HEIGHT; j++) {
             Vector rgb;
-            DWORD d;
+            uint32_t d;
             if(i == 0 && j < 8) {
                 d = SS.modelColor[j];
                 rgb = Vector::From(REDf(d), GREENf(d), BLUEf(d));

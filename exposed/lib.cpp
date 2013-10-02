@@ -17,7 +17,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     // Nothing to do for now.
 }
 
-void DoMessageBox(char *str, int rows, int cols, BOOL error)
+void DoMessageBox(char *str, int rows, int cols, bool error)
 {
 }
 

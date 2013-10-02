@@ -61,7 +61,7 @@ void GraphicsWindow::Selection::Draw(void) {
         topLeft = topLeft.Minus(SS.GW.offset);
 
         glLineWidth(40);
-        DWORD rgb = Style::Color(Style::HOVERED);
+        uint32_t rgb = Style::Color(Style::HOVERED);
         glColor4d(REDf(rgb), GREENf(rgb), BLUEf(rgb), 0.2);
         glBegin(GL_LINES);
             glxVertex3v(topLeft);
@@ -366,7 +366,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
             Group *g = SK.GetGroup(activeGroup);
             SMesh *m = &(g->displayMesh);
 
-            DWORD v = m->FirstIntersectionWith(mp);
+            uint32_t v = m->FirstIntersectionWith(mp);
             if(v) {
                 s.entity.v = v;
             }
@@ -517,7 +517,7 @@ void GraphicsWindow::Paint(void) {
                      BLUEf(SS.backgroundColor), 1.0f);
     } else {
         // Draw a different background whenever we're having solve problems.
-        DWORD rgb = Style::Color(Style::DRAW_ERROR);
+        uint32_t rgb = Style::Color(Style::DRAW_ERROR);
         glClearColor(0.4f*REDf(rgb), 0.4f*GREENf(rgb), 0.4f*BLUEf(rgb), 1.0f);
         // And show the text window, which has info to debug it
         ForceTextWindowShown();

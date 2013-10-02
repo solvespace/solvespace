@@ -67,23 +67,24 @@ int TtfFont::Getc(void) {
 
 //-----------------------------------------------------------------------------
 // Helpers to get 1, 2, or 4 bytes from the .ttf file. Big endian.
+// The BYTE, USHORT and ULONG nomenclature comes from the OpenType spec.
 //-----------------------------------------------------------------------------
-BYTE TtfFont::GetBYTE(void) {
-    return (BYTE)Getc();
+uint8_t TtfFont::GetBYTE(void) {
+    return (uint8_t)Getc();
 }
-WORD TtfFont::GetWORD(void) {
-    BYTE b0, b1;
-    b1 = (BYTE)Getc();
-    b0 = (BYTE)Getc();
+uint16_t TtfFont::GetUSHORT(void) {
+    uint8_t b0, b1;
+    b1 = (uint8_t)Getc();
+    b0 = (uint8_t)Getc();
 
     return (b1 << 8) | b0;
 }
-DWORD TtfFont::GetDWORD(void) {
-    BYTE b0, b1, b2, b3;
-    b3 = (BYTE)Getc();
-    b2 = (BYTE)Getc();
-    b1 = (BYTE)Getc();
-    b0 = (BYTE)Getc();
+uint32_t TtfFont::GetULONG(void) {
+    uint8_t b0, b1, b2, b3;
+    b3 = (uint8_t)Getc();
+    b2 = (uint8_t)Getc();
+    b1 = (uint8_t)Getc();
+    b0 = (uint8_t)Getc();
 
     return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
 }
@@ -98,35 +99,35 @@ void TtfFont::LoadGlyph(int index) {
 
     int i;
 
-    SWORD contours          = (SWORD)GetWORD();
-    SWORD xMin              = (SWORD)GetWORD();
-    SWORD yMin              = (SWORD)GetWORD();
-    SWORD xMax              = (SWORD)GetWORD();
-    SWORD yMax              = (SWORD)GetWORD();
+    int16_t contours        = (int16_t)GetUSHORT();
+    int16_t xMin            = (int16_t)GetUSHORT();
+    int16_t yMin            = (int16_t)GetUSHORT();
+    int16_t xMax            = (int16_t)GetUSHORT();
+    int16_t yMax            = (int16_t)GetUSHORT();
 
     if(useGlyph['A'] == index) {
         scale = (1024*1024) / yMax;
     }
 
     if(contours > 0) {
-        WORD *endPointsOfContours =
-            (WORD *)AllocTemporary(contours*sizeof(WORD));
+        uint16_t *endPointsOfContours =
+            (uint16_t *)AllocTemporary(contours*sizeof(uint16_t));
 
         for(i = 0; i < contours; i++) {
-            endPointsOfContours[i] = GetWORD();
+            endPointsOfContours[i] = GetUSHORT();
         }
-        WORD totalPts = endPointsOfContours[i-1] + 1;
+        uint16_t totalPts = endPointsOfContours[i-1] + 1;
 
-        WORD instructionLength = GetWORD();
+        uint16_t instructionLength = GetUSHORT();
         for(i = 0; i < instructionLength; i++) {
             // We can ignore the instructions, since we're doing vector
             // output.
             (void)GetBYTE();
         }
 
-        BYTE  *flags = (BYTE *)AllocTemporary(totalPts*sizeof(BYTE));
-        SWORD *x     = (SWORD *)AllocTemporary(totalPts*sizeof(SWORD));
-        SWORD *y     = (SWORD *)AllocTemporary(totalPts*sizeof(SWORD));
+        uint8_t *flags = (uint8_t *)AllocTemporary(totalPts*sizeof(uint8_t));
+        int16_t *x     = (int16_t *)AllocTemporary(totalPts*sizeof(int16_t));
+        int16_t *y     = (int16_t *)AllocTemporary(totalPts*sizeof(int16_t));
 
         // Flags, that indicate format of the coordinates
 #define FLAG_ON_CURVE           (1 << 0)
@@ -141,7 +142,7 @@ void TtfFont::LoadGlyph(int index) {
             flags[i] = GetBYTE();
             if(flags[i] & FLAG_REPEAT) {
                 int n = GetBYTE();
-                BYTE f = flags[i];
+                uint8_t f = flags[i];
                 int j;
                 for(j = 0; j < n; j++) {
                     i++;
@@ -154,10 +155,10 @@ void TtfFont::LoadGlyph(int index) {
         }
 
         // x coordinates
-        SWORD xa = 0;
+        int16_t xa = 0;
         for(i = 0; i < totalPts; i++) {
             if(flags[i] & FLAG_DX_IS_BYTE) {
-                BYTE v = GetBYTE();
+                uint8_t v = GetBYTE();
                 if(flags[i] & FLAG_X_IS_POSITIVE) {
                     xa += v;
                 } else {
@@ -167,7 +168,7 @@ void TtfFont::LoadGlyph(int index) {
                 if(flags[i] & FLAG_X_IS_SAME) {
                     // no change
                 } else {
-                    SWORD d = (SWORD)GetWORD();
+                    int16_t d = (int16_t)GetUSHORT();
                     xa += d;
                 }
             }
@@ -175,10 +176,10 @@ void TtfFont::LoadGlyph(int index) {
         }
 
         // y coordinates
-        SWORD ya = 0;
+        int16_t ya = 0;
         for(i = 0; i < totalPts; i++) {
             if(flags[i] & FLAG_DY_IS_BYTE) {
-                BYTE v = GetBYTE();
+                uint8_t v = GetBYTE();
                 if(flags[i] & FLAG_Y_IS_POSITIVE) {
                     ya += v;
                 } else {
@@ -188,7 +189,7 @@ void TtfFont::LoadGlyph(int index) {
                 if(flags[i] & FLAG_Y_IS_SAME) {
                     // no change
                 } else {
-                    SWORD d = (SWORD)GetWORD();
+                    int16_t d = (int16_t)GetUSHORT();
                     ya += d;
                 }
             }
@@ -201,7 +202,7 @@ void TtfFont::LoadGlyph(int index) {
         for(i = 0; i < totalPts; i++) {
             g->pt[i].x = x[i];
             g->pt[i].y = y[i];
-            g->pt[i].onCurve = (BYTE)(flags[i] & FLAG_ON_CURVE);
+            g->pt[i].onCurve = (uint8_t)(flags[i] & FLAG_ON_CURVE);
 
             if(i == endPointsOfContours[contour]) {
                 g->pt[i].lastInContour = true;
@@ -248,22 +249,22 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
     try {
         // First, load the Offset Table
-        DWORD   version         = GetDWORD();
-        WORD    numTables       = GetWORD();
-        WORD    searchRange     = GetWORD();
-        WORD    entrySelector   = GetWORD();
-        WORD    rangeShift      = GetWORD();
+        uint32_t   version         = GetULONG();
+        uint16_t   numTables       = GetUSHORT();
+        uint16_t   searchRange     = GetUSHORT();
+        uint16_t   entrySelector   = GetUSHORT();
+        uint16_t   rangeShift      = GetUSHORT();
 
         // Now load the Table Directory; our goal in doing this will be to
         // find the addresses of the tables that we will need.
-        DWORD   glyfAddr = (DWORD)-1, glyfLen;
-        DWORD   cmapAddr = (DWORD)-1, cmapLen;
-        DWORD   headAddr = (DWORD)-1, headLen;
-        DWORD   locaAddr = (DWORD)-1, locaLen;
-        DWORD   maxpAddr = (DWORD)-1, maxpLen;
-        DWORD   nameAddr = (DWORD)-1, nameLen;
-        DWORD   hmtxAddr = (DWORD)-1, hmtxLen;
-        DWORD   hheaAddr = (DWORD)-1, hheaLen;
+        uint32_t   glyfAddr = (uint32_t)-1, glyfLen;
+        uint32_t   cmapAddr = (uint32_t)-1, cmapLen;
+        uint32_t   headAddr = (uint32_t)-1, headLen;
+        uint32_t   locaAddr = (uint32_t)-1, locaLen;
+        uint32_t   maxpAddr = (uint32_t)-1, maxpLen;
+        uint32_t   nameAddr = (uint32_t)-1, nameLen;
+        uint32_t   hmtxAddr = (uint32_t)-1, hmtxLen;
+        uint32_t   hheaAddr = (uint32_t)-1, hheaLen;
 
         for(i = 0; i < numTables; i++) {
             char tag[5] = "xxxx";
@@ -271,9 +272,9 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             tag[1]              = (char)GetBYTE();
             tag[2]              = (char)GetBYTE();
             tag[3]              = (char)GetBYTE();
-            DWORD   checksum    = GetDWORD();
-            DWORD   offset      = GetDWORD();
-            DWORD   length      = GetDWORD();
+            uint32_t  checksum  = GetULONG();
+            uint32_t  offset    = GetULONG();
+            uint32_t  length    = GetULONG();
 
             if(strcmp(tag, "glyf")==0) {
                 glyfAddr = offset;
@@ -302,9 +303,14 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             }
         }
 
-        if(glyfAddr == (DWORD)-1 || cmapAddr == (DWORD)-1 || headAddr == (DWORD)-1 ||
-           locaAddr == (DWORD)-1 || maxpAddr == (DWORD)-1 || hmtxAddr == (DWORD)-1 ||
-           nameAddr == (DWORD)-1 || hheaAddr == (DWORD)-1)
+        if(glyfAddr == (uint32_t)-1 ||
+           cmapAddr == (uint32_t)-1 ||
+           headAddr == (uint32_t)-1 ||
+           locaAddr == (uint32_t)-1 ||
+           maxpAddr == (uint32_t)-1 ||
+           hmtxAddr == (uint32_t)-1 ||
+           nameAddr == (uint32_t)-1 ||
+           hheaAddr == (uint32_t)-1)
         {
             throw "missing table addr";
         }
@@ -313,19 +319,19 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // we need when we're giving the user a list to choose from.
         fseek(fh, nameAddr, SEEK_SET);
 
-        WORD  nameFormat            = GetWORD();
-        WORD  nameCount             = GetWORD();
-        WORD  nameStringOffset      = GetWORD();
+        uint16_t  nameFormat        = GetUSHORT();
+        uint16_t  nameCount         = GetUSHORT();
+        uint16_t  nameStringOffset  = GetUSHORT();
         // And now we're at the name records. Go through those till we find
         // one that we want.
         int displayNameOffset = 0, displayNameLength = 0;
         for(i = 0; i < nameCount; i++) {
-            WORD    platformID      = GetWORD();
-            WORD    encodingID      = GetWORD();
-            WORD    languageID      = GetWORD();
-            WORD    nameId          = GetWORD();
-            WORD    length          = GetWORD();
-            WORD    offset          = GetWORD();
+            uint16_t  platformID    = GetUSHORT();
+            uint16_t  encodingID    = GetUSHORT();
+            uint16_t  languageID    = GetUSHORT();
+            uint16_t  nameId        = GetUSHORT();
+            uint16_t  length        = GetUSHORT();
+            uint16_t  offset        = GetUSHORT();
 
             if(nameId == 4) {
                 displayNameOffset = offset;
@@ -342,7 +348,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             fseek(fh, nameAddr+nameStringOffset+displayNameOffset, SEEK_SET);
             int c = 0;
             for(i = 0; i < displayNameLength; i++) {
-                BYTE b = GetBYTE();
+                uint8_t b = GetBYTE();
                 if(b && c < ((int)sizeof(name.str) - 2)) {
                     name.str[c++] = b;
                 }
@@ -358,25 +364,25 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // loca table, 16- or 32-bit entries
         fseek(fh, headAddr, SEEK_SET);
 
-        DWORD headVersion           = GetDWORD();
-        DWORD headFontRevision      = GetDWORD();
-        DWORD headCheckSumAdj       = GetDWORD();
-        DWORD headMagicNumber       = GetDWORD();
-        WORD  headFlags             = GetWORD();
-        WORD  headUnitsPerEm        = GetWORD();
-        (void)GetDWORD(); // created time
-        (void)GetDWORD();
-        (void)GetDWORD(); // modified time
-        (void)GetDWORD();
-        WORD  headXmin              = GetWORD();
-        WORD  headYmin              = GetWORD();
-        WORD  headXmax              = GetWORD();
-        WORD  headYmax              = GetWORD();
-        WORD  headMacStyle          = GetWORD();
-        WORD  headLowestRecPPEM     = GetWORD();
-        WORD  headFontDirectionHint = GetWORD();
-        WORD  headIndexToLocFormat  = GetWORD();
-        WORD  headGlyphDataFormat   = GetWORD();
+        uint32_t headVersion           = GetULONG();
+        uint32_t headFontRevision      = GetULONG();
+        uint32_t headCheckSumAdj       = GetULONG();
+        uint32_t headMagicNumber       = GetULONG();
+        uint16_t headFlags             = GetUSHORT();
+        uint16_t headUnitsPerEm        = GetUSHORT();
+        (void)GetULONG(); // created time
+        (void)GetULONG();
+        (void)GetULONG(); // modified time
+        (void)GetULONG();
+        uint16_t headXmin              = GetUSHORT();
+        uint16_t headYmin              = GetUSHORT();
+        uint16_t headXmax              = GetUSHORT();
+        uint16_t headYmax              = GetUSHORT();
+        uint16_t headMacStyle          = GetUSHORT();
+        uint16_t headLowestRecPPEM     = GetUSHORT();
+        uint16_t headFontDirectionHint = GetUSHORT();
+        uint16_t headIndexToLocFormat  = GetUSHORT();
+        uint16_t headGlyphDataFormat   = GetUSHORT();
         
         if(headMagicNumber != 0x5F0F3CF5) {
             throw "bad magic number";
@@ -385,43 +391,43 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // Load the hhea table, which contains the number of entries in the
         // horizontal metrics (hmtx) table.
         fseek(fh, hheaAddr, SEEK_SET);
-        DWORD hheaVersion           = GetDWORD();
-        WORD  hheaAscender          = GetWORD();
-        WORD  hheaDescender         = GetWORD();
-        WORD  hheaLineGap           = GetWORD();
-        WORD  hheaAdvanceWidthMax   = GetWORD();
-        WORD  hheaMinLsb            = GetWORD();
-        WORD  hheaMinRsb            = GetWORD();
-        WORD  hheaXMaxExtent        = GetWORD();
-        WORD  hheaCaretSlopeRise    = GetWORD();
-        WORD  hheaCaretSlopeRun     = GetWORD();
-        WORD  hheaCaretOffset       = GetWORD();
-        (void)GetWORD();
-        (void)GetWORD();
-        (void)GetWORD();
-        (void)GetWORD();
-        WORD  hheaMetricDataFormat  = GetWORD();
-        WORD  hheaNumberOfMetrics   = GetWORD();
+        uint32_t hheaVersion           = GetULONG();
+        uint16_t hheaAscender          = GetUSHORT();
+        uint16_t hheaDescender         = GetUSHORT();
+        uint16_t hheaLineGap           = GetUSHORT();
+        uint16_t hheaAdvanceWidthMax   = GetUSHORT();
+        uint16_t hheaMinLsb            = GetUSHORT();
+        uint16_t hheaMinRsb            = GetUSHORT();
+        uint16_t hheaXMaxExtent        = GetUSHORT();
+        uint16_t hheaCaretSlopeRise    = GetUSHORT();
+        uint16_t hheaCaretSlopeRun     = GetUSHORT();
+        uint16_t hheaCaretOffset       = GetUSHORT();
+        (void)GetUSHORT();
+        (void)GetUSHORT();
+        (void)GetUSHORT();
+        (void)GetUSHORT();
+        uint16_t hheaMetricDataFormat  = GetUSHORT();
+        uint16_t hheaNumberOfMetrics   = GetUSHORT();
 
         // Load the maxp table, which determines (among other things) the number
         // of glyphs in the font
         fseek(fh, maxpAddr, SEEK_SET);
 
-        DWORD maxpVersion               = GetDWORD();
-        WORD  maxpNumGlyphs             = GetWORD();
-        WORD  maxpMaxPoints             = GetWORD();
-        WORD  maxpMaxContours           = GetWORD();
-        WORD  maxpMaxComponentPoints    = GetWORD();
-        WORD  maxpMaxComponentContours  = GetWORD();
-        WORD  maxpMaxZones              = GetWORD();
-        WORD  maxpMaxTwilightPoints     = GetWORD();
-        WORD  maxpMaxStorage            = GetWORD();
-        WORD  maxpMaxFunctionDefs       = GetWORD();
-        WORD  maxpMaxInstructionDefs    = GetWORD();
-        WORD  maxpMaxStackElements      = GetWORD();
-        WORD  maxpMaxSizeOfInstructions = GetWORD();
-        WORD  maxpMaxComponentElements  = GetWORD();
-        WORD  maxpMaxComponentDepth     = GetWORD();
+        uint32_t maxpVersion               = GetULONG();
+        uint16_t maxpNumGlyphs             = GetUSHORT();
+        uint16_t maxpMaxPoints             = GetUSHORT();
+        uint16_t maxpMaxContours           = GetUSHORT();
+        uint16_t maxpMaxComponentPoints    = GetUSHORT();
+        uint16_t maxpMaxComponentContours  = GetUSHORT();
+        uint16_t maxpMaxZones              = GetUSHORT();
+        uint16_t maxpMaxTwilightPoints     = GetUSHORT();
+        uint16_t maxpMaxStorage            = GetUSHORT();
+        uint16_t maxpMaxFunctionDefs       = GetUSHORT();
+        uint16_t maxpMaxInstructionDefs    = GetUSHORT();
+        uint16_t maxpMaxStackElements      = GetUSHORT();
+        uint16_t maxpMaxSizeOfInstructions = GetUSHORT();
+        uint16_t maxpMaxComponentElements  = GetUSHORT();
+        uint16_t maxpMaxComponentDepth     = GetUSHORT();
 
         glyphs = maxpNumGlyphs;
         glyph = (Glyph *)MemAlloc(glyphs*sizeof(glyph[0]));
@@ -430,11 +436,11 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // and advance width) of the font.
         fseek(fh, hmtxAddr, SEEK_SET);
 
-        WORD  hmtxAdvanceWidth = 0;
-        SWORD hmtxLsb = 0;
+        uint16_t hmtxAdvanceWidth = 0;
+        int16_t  hmtxLsb = 0;
         for(i = 0; i < min(glyphs, hheaNumberOfMetrics); i++) {
-            hmtxAdvanceWidth = GetWORD();
-            hmtxLsb          = (SWORD)GetWORD();
+            hmtxAdvanceWidth = GetUSHORT();
+            hmtxLsb          = (int16_t)GetUSHORT();
 
             glyph[i].leftSideBearing = hmtxLsb;
             glyph[i].advanceWidth = hmtxAdvanceWidth;
@@ -449,14 +455,14 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // glyphs.
         fseek(fh, cmapAddr, SEEK_SET);
 
-        DWORD usedTableAddr = (DWORD)-1;
+        uint32_t usedTableAddr = (uint32_t)-1;
 
-        WORD  cmapVersion        = GetWORD();
-        WORD  cmapTableCount     = GetWORD();
+        uint16_t cmapVersion    = GetUSHORT();
+        uint16_t cmapTableCount = GetUSHORT();
         for(i = 0; i < cmapTableCount; i++) {
-            WORD  platformId = GetWORD();
-            WORD  encodingId = GetWORD();
-            DWORD offset     = GetDWORD();
+            uint16_t platformId = GetUSHORT();
+            uint16_t encodingId = GetUSHORT();
+            uint32_t offset     = GetULONG();
 
             if(platformId == 3 && encodingId == 1) {
                 // The Windows Unicode mapping is our preference
@@ -464,7 +470,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             }
         }
 
-        if(usedTableAddr == (DWORD)-1) {
+        if(usedTableAddr == (uint32_t)-1) {
             throw "no used table addr";
         }
 
@@ -472,13 +478,13 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // which is us.
         fseek(fh, usedTableAddr, SEEK_SET);
 
-        WORD  mapFormat             = GetWORD();
-        WORD  mapLength             = GetWORD();
-        WORD  mapVersion            = GetWORD();
-        WORD  mapSegCountX2         = GetWORD();
-        WORD  mapSearchRange        = GetWORD();
-        WORD  mapEntrySelector      = GetWORD();
-        WORD  mapRangeShift         = GetWORD();
+        uint16_t mapFormat          = GetUSHORT();
+        uint16_t mapLength          = GetUSHORT();
+        uint16_t mapVersion         = GetUSHORT();
+        uint16_t mapSegCountX2      = GetUSHORT();
+        uint16_t mapSearchRange     = GetUSHORT();
+        uint16_t mapEntrySelector   = GetUSHORT();
+        uint16_t mapRangeShift      = GetUSHORT();
         
         if(mapFormat != 4) {
             // Required to use format 4 per spec
@@ -486,26 +492,26 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         }
 
         int segCount = mapSegCountX2 / 2;
-        WORD *endChar       = (WORD *)AllocTemporary(segCount*sizeof(WORD));
-        WORD *startChar     = (WORD *)AllocTemporary(segCount*sizeof(WORD));
-        WORD *idDelta       = (WORD *)AllocTemporary(segCount*sizeof(WORD));
-        WORD *idRangeOffset = (WORD *)AllocTemporary(segCount*sizeof(WORD));
+        uint16_t *endChar       = (uint16_t *)AllocTemporary(segCount*sizeof(uint16_t));
+        uint16_t *startChar     = (uint16_t *)AllocTemporary(segCount*sizeof(uint16_t));
+        uint16_t *idDelta       = (uint16_t *)AllocTemporary(segCount*sizeof(uint16_t));
+        uint16_t *idRangeOffset = (uint16_t *)AllocTemporary(segCount*sizeof(uint16_t));
 
-        DWORD *filePos = (DWORD *)AllocTemporary(segCount*sizeof(DWORD));
+        uint32_t *filePos = (uint32_t *)AllocTemporary(segCount*sizeof(uint32_t));
 
         for(i = 0; i < segCount; i++) {
-            endChar[i] = GetWORD();
+            endChar[i] = GetUSHORT();
         }
-        WORD  mapReservedPad        = GetWORD();
+        uint16_t mapReservedPad = GetUSHORT();
         for(i = 0; i < segCount; i++) {
-            startChar[i] = GetWORD();
-        }
-        for(i = 0; i < segCount; i++) {
-            idDelta[i] = GetWORD();
+            startChar[i] = GetUSHORT();
         }
         for(i = 0; i < segCount; i++) {
-            filePos[i] = (DWORD)ftell(fh);
-            idRangeOffset[i] = GetWORD();
+            idDelta[i] = GetUSHORT();
+        }
+        for(i = 0; i < segCount; i++) {
+            filePos[i] = (uint32_t)ftell(fh);
+            idRangeOffset[i] = GetUSHORT();
         }
 
         // So first, null out the glyph table in our in-memory representation
@@ -516,16 +522,16 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         }
 
         for(i = 0; i < segCount; i++) {
-            WORD v = idDelta[i];
+            uint16_t v = idDelta[i];
             if(idRangeOffset[i] == 0) {
                 int j;
                 for(j = startChar[i]; j <= endChar[i]; j++) {
                     if(j > 0 && j < (int)arraylen(useGlyph)) {
                         // Don't create a reference to a glyph that we won't
                         // store because it's bigger than the table.
-                        if((WORD)(j + v) < glyphs) {
+                        if((uint16_t)(j + v) < glyphs) {
                             // Arithmetic is modulo 2^16
-                            useGlyph[j] = (WORD)(j + v);
+                            useGlyph[j] = (uint16_t)(j + v);
                         }
                     }
                 }
@@ -534,11 +540,11 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
                 for(j = startChar[i]; j <= endChar[i]; j++) {
                     if(j > 0 && j < (int)arraylen(useGlyph)) {
                         int fp = filePos[i];
-                        fp += (j - startChar[i])*sizeof(WORD);
+                        fp += (j - startChar[i])*sizeof(uint16_t);
                         fp += idRangeOffset[i];
                         fseek(fh, fp, SEEK_SET);
 
-                        useGlyph[j] = GetWORD();
+                        useGlyph[j] = GetUSHORT();
                     }
                 }
             }
@@ -548,15 +554,15 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // relative to the beginning of the glyf table.
         fseek(fh, locaAddr, SEEK_SET);
 
-        DWORD *glyphOffsets = (DWORD *)AllocTemporary(glyphs*sizeof(DWORD));
+        uint32_t *glyphOffsets = (uint32_t *)AllocTemporary(glyphs*sizeof(uint32_t));
 
         for(i = 0; i < glyphs; i++) {
             if(headIndexToLocFormat == 1) {
                 // long offsets, 32 bits
-                glyphOffsets[i] = GetDWORD();
+                glyphOffsets[i] = GetULONG();
             } else if(headIndexToLocFormat == 0) {
                 // short offsets, 16 bits but divided by 2
-                glyphOffsets[i] = GetWORD()*2;
+                glyphOffsets[i] = GetUSHORT()*2;
             } else {
                 throw "bad headIndexToLocFormat";
             }

@@ -503,11 +503,11 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
             b = sbl->l.First();
             if(!b || !Style::Exportable(b->auxA)) continue;
 
-            hStyle hs = { (DWORD)b->auxA };
+            hStyle hs = { (uint32_t)b->auxA };
             Style *stl = Style::Get(hs);
             double lineWidth  = Style::WidthMm(b->auxA)*s;
-            DWORD strokeRgb = Style::Color(hs, true);
-            DWORD fillRgb = Style::FillColor(hs, true);
+            uint32_t strokeRgb = Style::Color(hs, true);
+            uint32_t fillRgb = Style::FillColor(hs, true);
 
             StartPath(strokeRgb, lineWidth, stl->filled, fillRgb);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
@@ -608,7 +608,7 @@ void SolveSpace::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     strcpy(str, "STL exported mesh");
     fwrite(str, 1, 80, f);
 
-    DWORD n = sm->l.n;
+    uint32_t n = sm->l.n;
     fwrite(&n, 4, 1, f);
 
     double s = SS.exportScale;
@@ -677,7 +677,7 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.
-    int prevShowToolbar = SS.showToolbar;
+    bool prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
@@ -708,8 +708,8 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     png_write_info(png_ptr, info_ptr);
 
     // Get the pixel data from the framebuffer
-    BYTE *pixels; pixels = (BYTE *)AllocTemporary(3*w*h);
-    BYTE **rowptrs; rowptrs = (BYTE **)AllocTemporary(h*sizeof(BYTE *));
+    uint8_t *pixels; pixels = (uint8_t *)AllocTemporary(3*w*h);
+    uint8_t **rowptrs; rowptrs = (uint8_t **)AllocTemporary(h*sizeof(uint8_t *));
     glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
 
     int y;

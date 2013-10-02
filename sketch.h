@@ -26,7 +26,7 @@ class Equation;
 class hGroup {
 public:
     // bits 15: 0   -- group index
-    DWORD v;
+    uint32_t v;
 
     inline hEntity entity(int i);
     inline hParam param(int i);
@@ -35,7 +35,7 @@ public:
 class hRequest {
 public:
     // bits 15: 0   -- request index
-    DWORD   v;
+    uint32_t v;
 
     inline hEntity entity(int i);
     inline hParam param(int i);
@@ -46,7 +46,7 @@ class hEntity {
 public:
     // bits 15: 0   -- entity index
     //      31:16   -- request index
-    DWORD   v;
+    uint32_t v;
 
     inline bool isFromRequest(void);
     inline hRequest request(void);
@@ -57,20 +57,20 @@ class hParam {
 public:
     // bits 15: 0   -- param index
     //      31:16   -- request index
-    DWORD       v;
+    uint32_t v;
 
     inline hRequest request(void);
 };
 
 class hStyle {
 public:
-    DWORD       v;
+    uint32_t v;
 };
 
 
 class EntityId {
 public:
-    DWORD v;        // entity ID, starting from 0
+    uint32_t v;     // entity ID, starting from 0
 };
 class EntityMap {
 public:
@@ -118,7 +118,7 @@ public:
     double      valA;
     double      valB;
     double      valC;
-    DWORD       color;
+    uint32_t    color;
 
     struct {
         int                 how;
@@ -242,8 +242,8 @@ public:
     void GenerateDisplayItems(void);
     void DrawDisplayItems(int t);
     void Draw(void);
-    DWORD GetLoopSetFillColor(SBezierLoopSet *sbls,
-                              bool *allSame, Vector *errorAt);
+    uint32_t GetLoopSetFillColor(SBezierLoopSet *sbls,
+                                 bool *allSame, Vector *errorAt);
     void FillLoopSetAsPolygon(SBezierLoopSet *sbls);
     void DrawFilledPaths(void);
 
@@ -527,7 +527,7 @@ public:
 
 class hConstraint {
 public:
-    DWORD   v;
+    uint32_t v;
 
     inline hEquation equation(int i);
 };
@@ -666,7 +666,7 @@ public:
 
 class hEquation {
 public:
-    DWORD v;
+    uint32_t v;
 
     inline bool isFromConstraint(void);
     inline hConstraint constraint(void);
@@ -729,9 +729,9 @@ public:
     };
     int         textOrigin;
     double      textAngle;
-    DWORD       color;
+    uint32_t    color;
     bool        filled;
-    DWORD       fillColor;
+    uint32_t    fillColor;
     bool        visible;
     bool        exportable;
 
@@ -740,7 +740,7 @@ public:
     typedef struct {
         hStyle      h;
         const char *cnfPrefix;
-        DWORD       color;
+        uint32_t    color;
         double      width;
     } Default;
     static const Default Defaults[];
@@ -754,16 +754,16 @@ public:
     static void FreezeDefaultStyles(void);
     static void LoadFactoryDefaults(void);
 
-    static void AssignSelectionToStyle(DWORD v);
-    static DWORD CreateCustomStyle(void);
+    static void AssignSelectionToStyle(uint32_t v);
+    static uint32_t CreateCustomStyle(void);
 
-    static DWORD RewriteColor(DWORD rgb);
+    static uint32_t RewriteColor(uint32_t rgb);
 
     static Style *Get(hStyle hs);
-    static DWORD Color(hStyle hs, bool forExport=false);
-    static DWORD FillColor(hStyle hs, bool forExport=false);
+    static uint32_t Color(hStyle hs, bool forExport=false);
+    static uint32_t FillColor(hStyle hs, bool forExport=false);
     static float Width(hStyle hs);
-    static DWORD Color(int hs, bool forExport=false);
+    static uint32_t Color(int hs, bool forExport=false);
     static float Width(int hs);
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);

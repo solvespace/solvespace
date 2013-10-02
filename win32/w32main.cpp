@@ -5,23 +5,17 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include <windows.h>
+#include "solvespace.h"
+#include <time.h>
 #include <shellapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
-#include <gl/gl.h> 
-#include <gl/glu.h> 
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-#include <time.h>
 
 #ifdef HAVE_SPACEWARE_INPUT
 #   include <si/si.h>
 #   include <si/siapp.h>
+#   undef uint32_t  // thanks but no thanks
 #endif
-
-#include "solvespace.h"
 
 #define FREEZE_SUBKEY "SolveSpace"
 #include "freeze.h"
@@ -66,7 +60,7 @@ SiHdl SpaceNavigator = SI_NO_HANDLE;
 //-----------------------------------------------------------------------------
 
 HWND MessageWnd, OkButton;
-BOOL MessageDone;
+bool MessageDone;
 const char *MessageString;
 
 static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -75,13 +69,13 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
     switch (msg) {
         case WM_COMMAND:
             if((HWND)lParam == OkButton && wParam == BN_CLICKED) {
-                MessageDone = TRUE;
+                MessageDone = true;
             }
             break;
 
         case WM_CLOSE:
         case WM_DESTROY:
-            MessageDone = TRUE;
+            MessageDone = true;
             break;
 
         case WM_PAINT: {
@@ -130,10 +124,10 @@ HWND CreateWindowClient(DWORD exStyle, char *className, char *windowName,
     return h;
 }
 
-void DoMessageBox(const char *str, int rows, int cols, BOOL error)
+void DoMessageBox(const char *str, int rows, int cols, bool error)
 {
-    EnableWindow(GraphicsWnd, FALSE);
-    EnableWindow(TextWnd, FALSE);
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
     HWND h = GetForegroundWindow();
 
     // Register the window class for our dialog.
@@ -168,14 +162,14 @@ void DoMessageBox(const char *str, int rows, int cols, BOOL error)
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
         (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
         70, 25, MessageWnd, NULL, Instance, NULL); 
-    SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, TRUE);
+    SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, true);
 
-    ShowWindow(MessageWnd, TRUE);
+    ShowWindow(MessageWnd, true);
     SetFocus(OkButton);
 
     MSG msg;
     DWORD ret;
-    MessageDone = FALSE;
+    MessageDone = false;
     while((ret = GetMessage(&msg, NULL, 0, 0)) != 0 && !MessageDone) {
         if((msg.message == WM_KEYDOWN &&
                (msg.wParam == VK_RETURN ||
@@ -183,7 +177,7 @@ void DoMessageBox(const char *str, int rows, int cols, BOOL error)
             (msg.message == WM_KEYUP &&
                (msg.wParam == VK_SPACE)))
         {
-            MessageDone = TRUE;
+            MessageDone = true;
             break;
         }
 
@@ -192,8 +186,8 @@ void DoMessageBox(const char *str, int rows, int cols, BOOL error)
     }
     
     MessageString = NULL;
-    EnableWindow(TextWnd, TRUE);
-    EnableWindow(GraphicsWnd, TRUE);
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
     DestroyWindow(MessageWnd);
 }
@@ -277,22 +271,28 @@ void ExitNow(void) {
 void CnfFreezeString(const char *str, const char *name)
     { FreezeStringF(str, FREEZE_SUBKEY, name); }
 
-void CnfFreezeDWORD(DWORD v, const char *name)
-    { FreezeDWORDF(v, FREEZE_SUBKEY, name); }
+void CnfFreezeInt(uint32_t v, const char *name)
+    { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
 void CnfFreezeFloat(float v, const char *name)
     { FreezeDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); }
 
+void CnfFreezeBool(bool v, const char *name)
+    { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
+
 void CnfThawString(char *str, int maxLen, const char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
 
-DWORD CnfThawDWORD(DWORD v, const char *name)
-    { return ThawDWORDF(v, FREEZE_SUBKEY, name); }
+uint32_t CnfThawInt(uint32_t v, const char *name)
+    { return (uint32_t)ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
 float CnfThawFloat(float v, const char *name) {
     DWORD d = ThawDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); 
     return *((float *)&d);
 }
+
+bool CnfThawBool(bool v, const char *name)
+    { return ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name) ? true : false; }
 
 void SetWindowTitle(const char *str) {
     SetWindowText(GraphicsWnd, str);
@@ -324,7 +324,7 @@ void MoveTextScrollbarTo(int pos, int maxPos, int page)
     si.nMax = maxPos;
     si.nPos = pos;
     si.nPage = page;
-    SetScrollInfo(TextWndScrollBar, SB_CTL, &si, TRUE);
+    SetScrollInfo(TextWndScrollBar, SB_CTL, &si, true);
 }
 
 void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
@@ -479,11 +479,11 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             int sw = r.right - r.left;
             GetClientRect(hwnd, &r);
             MoveWindow(TextWndScrollBar, r.right - sw, r.top, sw,
-                (r.bottom - r.top), TRUE);
+                (r.bottom - r.top), true);
             // If the window is growing, then the scrollbar position may
             // be moving, so it's as if we're dragging the scrollbar.
             HandleTextWindowScrollBar((WPARAM)-1, -1);
-            InvalidateRect(TextWnd, NULL, FALSE);
+            InvalidateRect(TextWnd, NULL, false);
             break;
         }
 
@@ -502,7 +502,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 1;
 }
 
-static BOOL ProcessKeyDown(WPARAM wParam)
+static bool ProcessKeyDown(WPARAM wParam)
 {
     if(GraphicsEditControlIsVisible() && wParam != VK_ESCAPE) {
         if(wParam == VK_RETURN) {
@@ -510,9 +510,9 @@ static BOOL ProcessKeyDown(WPARAM wParam)
             memset(s, 0, sizeof(s));
             SendMessage(GraphicsEditControl, WM_GETTEXT, 900, (LPARAM)s);
             SS.GW.EditControlDone(s);
-            return TRUE;
+            return true;
         } else {
-            return FALSE;
+            return false;
         }
     }
     if(TextEditControlIsVisible() && wParam != VK_ESCAPE) {
@@ -522,7 +522,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
             SendMessage(TextEditControl, WM_GETTEXT, 900, (LPARAM)s);
             SS.TW.EditControlDone(s);
         } else {
-            return FALSE;
+            return false;
         }
     }
 
@@ -564,7 +564,7 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         case VK_EXECUTE:
         case VK_APPS:
         case VK_LWIN:
-        case VK_RWIN:           return FALSE;
+        case VK_RWIN:           return false;
 
         default:
             c = (int)wParam;
@@ -584,13 +584,13 @@ static BOOL ProcessKeyDown(WPARAM wParam)
         }
     }
 
-    if(SS.GW.KeyDown(c)) return TRUE;
+    if(SS.GW.KeyDown(c)) return true;
 
     // No accelerator; process the key as normal.
-    return FALSE;
+    return false;
 }
 
-void ShowTextWindow(BOOL visible)
+void ShowTextWindow(bool visible)
 {
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
@@ -630,32 +630,32 @@ void PaintGraphics(void)
 }
 void InvalidateGraphics(void)
 {
-    InvalidateRect(GraphicsWnd, NULL, FALSE);
+    InvalidateRect(GraphicsWnd, NULL, false);
 }
 
-SDWORD GetMilliseconds(void)
+int32_t GetMilliseconds(void)
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
     LONGLONG d = t.QuadPart/(f.QuadPart/1000);
-    return (SDWORD)d;
+    return (int32_t)d;
 }
 
-SQWORD GetUnixTime(void)
+int64_t GetUnixTime(void)
 {
     __time64_t ret;
     _time64(&ret);
-    return ret;
+    return (int64_t)ret;
 }
 
 void InvalidateText(void)
 {
-    InvalidateRect(TextWnd, NULL, FALSE);
+    InvalidateRect(TextWnd, NULL, false);
 }
 
 static void ShowEditControl(HWND h, int x, int y, char *s) {
-    MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, TRUE);
+    MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, true);
     ShowWindow(h, SW_SHOW);
     if(s) {
         SendMessage(h, WM_SETTEXT, 0, (LPARAM)s);
@@ -673,9 +673,9 @@ void HideTextEditControl(void)
 {
     ShowWindow(TextEditControl, SW_HIDE);
 }
-BOOL TextEditControlIsVisible(void)
+bool TextEditControlIsVisible(void)
 {
-    return IsWindowVisible(TextEditControl);
+    return IsWindowVisible(TextEditControl) ? true : false;
 }
 void ShowGraphicsEditControl(int x, int y, char *s)
 {
@@ -696,9 +696,9 @@ void HideGraphicsEditControl(void)
 {
     ShowWindow(GraphicsEditControl, SW_HIDE);
 }
-BOOL GraphicsEditControlIsVisible(void)
+bool GraphicsEditControlIsVisible(void)
 {
-    return IsWindowVisible(GraphicsEditControl);
+    return IsWindowVisible(GraphicsEditControl) ? true : false;
 }
 
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -709,7 +709,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             break;
 
         case WM_SIZE:
-            InvalidateRect(GraphicsWnd, NULL, FALSE);
+            InvalidateRect(GraphicsWnd, NULL, false);
             break;
 
         case WM_PAINT: {
@@ -817,7 +817,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-BOOL GetOpenFile(char *file, const char *defExtension, const char *selPattern)
+bool GetOpenFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 
@@ -831,18 +831,18 @@ BOOL GetOpenFile(char *file, const char *defExtension, const char *selPattern)
     ofn.nMaxFile = MAX_PATH;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
-    EnableWindow(GraphicsWnd, FALSE);
-    EnableWindow(TextWnd, FALSE);
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
 
     BOOL r = GetOpenFileName(&ofn);
 
-    EnableWindow(TextWnd, TRUE);
-    EnableWindow(GraphicsWnd, TRUE);
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    return r;
+    return r ? true : false;
 }
-BOOL GetSaveFile(char *file, const char *defExtension, const char *selPattern)
+bool GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 
@@ -856,29 +856,29 @@ BOOL GetSaveFile(char *file, const char *defExtension, const char *selPattern)
     ofn.nMaxFile = MAX_PATH;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 
-    EnableWindow(GraphicsWnd, FALSE);
-    EnableWindow(TextWnd, FALSE);
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
 
     BOOL r = GetSaveFileName(&ofn);
 
-    EnableWindow(TextWnd, TRUE);
-    EnableWindow(GraphicsWnd, TRUE);
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    return r;
+    return r ? true : false;
 }
 int SaveFileYesNoCancel(void)
 {
-    EnableWindow(GraphicsWnd, FALSE);
-    EnableWindow(TextWnd, FALSE);
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
 
     int r = MessageBox(GraphicsWnd, 
         "The program has changed since it was last saved.\r\n\r\n"
         "Do you want to save the changes?", "SolveSpace",
         MB_YESNOCANCEL | MB_ICONWARNING);
 
-    EnableWindow(TextWnd, TRUE);
-    EnableWindow(GraphicsWnd, TRUE);
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
     switch(r) {
@@ -916,7 +916,7 @@ void LoadAllFontFiles(void)
     }
 }
 
-static void MenuById(int id, BOOL yes, BOOL check)
+static void MenuById(int id, bool yes, bool check)
 {
     int i;
     int subMenu = -1;
@@ -940,18 +940,18 @@ static void MenuById(int id, BOOL yes, BOOL check)
     }
     oops();
 }
-void CheckMenuById(int id, BOOL checked)
+void CheckMenuById(int id, bool checked)
 {
-    MenuById(id, checked, TRUE);
+    MenuById(id, checked, true);
 }
-void RadioMenuById(int id, BOOL selected)
+void RadioMenuById(int id, bool selected)
 {
     // Windows does not natively support radio-button menu items
-    MenuById(id, selected, TRUE);
+    MenuById(id, selected, true);
 }
-void EnableMenuById(int id, BOOL enabled)
+void EnableMenuById(int id, bool enabled)
 {
-    MenuById(id, enabled, FALSE);
+    MenuById(id, enabled, false);
 }
 static void DoRecent(HMENU m, int base)
 {
@@ -1050,7 +1050,7 @@ static void CreateMainWindows(void)
     GraphicsEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
-    SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
+    SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
 
     // The text window, with a comand line and some textual information
     // about the sketch.
@@ -1077,7 +1077,7 @@ static void CreateMainWindows(void)
     TextEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
-    SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, TRUE);
+    SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
 
     // Now that all our windows exist, set up gl contexts.
     CreateGlContext(TextWnd, &TextGl);
@@ -1092,17 +1092,17 @@ static void CreateMainWindows(void)
 #ifdef HAVE_SPACEWARE_INPUT
 //-----------------------------------------------------------------------------
 // Test if a message comes from the SpaceNavigator device. If yes, dispatch
-// it appropriately and return TRUE. Otherwise, do nothing and return FALSE.
+// it appropriately and return true. Otherwise, do nothing and return false.
 //-----------------------------------------------------------------------------
-static BOOL ProcessSpaceNavigatorMsg(MSG *msg) {
-    if(SpaceNavigator == SI_NO_HANDLE) return FALSE;
+static bool ProcessSpaceNavigatorMsg(MSG *msg) {
+    if(SpaceNavigator == SI_NO_HANDLE) return false;
 
     SiGetEventData sged;
     SiSpwEvent sse;
 
     SiGetEventWinInit(&sged, msg->message, msg->wParam, msg->lParam);
     int ret = SiGetEvent(SpaceNavigator, 0, &sged, &sse);
-    if(ret == SI_NOT_EVENT) return FALSE;
+    if(ret == SI_NOT_EVENT) return false;
     // So the device is a SpaceNavigator event, or a SpaceNavigator error.
 
     if(ret == SI_IS_EVENT) {
@@ -1123,7 +1123,7 @@ static BOOL ProcessSpaceNavigatorMsg(MSG *msg) {
             if(button == SI_APP_FIT_BUTTON) SS.GW.SpaceNavigatorButtonUp();
         }
     }
-    return TRUE;
+    return true;
 }
 #endif // HAVE_SPACEWARE_INPUT
 
@@ -1139,8 +1139,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // A monospaced font
     FixedFont = CreateFont(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
-        FW_REGULAR, FALSE,
-        FALSE, FALSE, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        FW_REGULAR, false,
+        false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
     if(!FixedFont)
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);

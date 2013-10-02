@@ -11,7 +11,7 @@
 void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
     if(l.n <= 0) return;
 
-    SDWORD in = GetMilliseconds();
+    int32_t in = GetMilliseconds();
 
     normal = Vector::From(0, 0, 1);
 

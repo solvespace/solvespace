@@ -45,10 +45,10 @@ bool System::WriteJacobian(int tag) {
         f = f->FoldConstants();
 
         // Hash table (61 bits) to accelerate generation of zero partials.
-        QWORD scoreboard = f->ParamsUsed();
+        uint64_t scoreboard = f->ParamsUsed();
         for(j = 0; j < mat.n; j++) {
             Expr *pd;
-            if(scoreboard & ((QWORD)1 << (mat.param[j].v % 61)) &&
+            if(scoreboard & ((uint64_t)1 << (mat.param[j].v % 61)) &&
                 f->DependsOn(mat.param[j]))
             {
                 pd = f->PartialWrt(mat.param[j]);

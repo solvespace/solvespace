@@ -249,13 +249,13 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     double mo = (offset0.Minus(offsetf)).Magnitude()*scale;
 
     // Animate transition, unless it's a tiny move.
-    SDWORD dt = (mp < 0.01 && mo < 10) ? (-20) :
-                    (SDWORD)(100 + 1000*mp + 0.4*mo);
+    int32_t dt = (mp < 0.01 && mo < 10) ? (-20) :
+                     (int32_t)(100 + 1000*mp + 0.4*mo);
     // Don't ever animate for longer than 2000 ms; we can get absurdly
     // long translations (as measured in pixels) if the user zooms out, moves,
     // and then zooms in again.
     if(dt > 2000) dt = 2000;
-    SDWORD tn, t0 = GetMilliseconds();
+    int32_t tn, t0 = GetMilliseconds();
     double s = 0;
     Quaternion dq = quatf.Times(quat0.Inverse());
     do {
@@ -621,7 +621,7 @@ void GraphicsWindow::ForceTextWindowShown(void) {
     if(!showTextWindow) {
         showTextWindow = true;
         CheckMenuById(MNU_SHOW_TEXT_WND, true);
-        ShowTextWindow(TRUE);
+        ShowTextWindow(true);
     }
 }
 

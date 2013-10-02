@@ -64,12 +64,12 @@ void DxfFileWriter::StartFile(void) {
 "ENTITIES\r\n");
 }
 
-void DxfFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void DxfFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
 }
-void DxfFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void DxfFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
 }
 
@@ -165,14 +165,14 @@ void EpsFileWriter::StartFile(void) {
             MmToPts(ptMax.y - ptMin.y));
 }
 
-void EpsFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void EpsFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
     fprintf(f, "newpath\r\n");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void EpsFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void EpsFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
     fprintf(f, "    %.3f setlinewidth\r\n"
                "    %.3f %.3f %.3f setrgbcolor\r\n"
@@ -277,7 +277,7 @@ void PdfFileWriter::StartFile(void) {
 "%%%c%c%c%c\r\n",
         0xe2, 0xe3, 0xcf, 0xd3);
     
-    xref[1] = (DWORD)ftell(f);
+    xref[1] = (uint32_t)ftell(f);
     fprintf(f,
 "1 0 obj\r\n"
 "  << /Type /Catalog\r\n"
@@ -286,7 +286,7 @@ void PdfFileWriter::StartFile(void) {
 "  >>\r\n"
 "endobj\r\n");
 
-    xref[2] = (DWORD)ftell(f);
+    xref[2] = (uint32_t)ftell(f);
     fprintf(f,
 "2 0 obj\r\n"
 "  << /Type /Outlines\r\n"
@@ -294,7 +294,7 @@ void PdfFileWriter::StartFile(void) {
 "  >>\r\n"
 "endobj\r\n");
 
-    xref[3] = (DWORD)ftell(f);
+    xref[3] = (uint32_t)ftell(f);
     fprintf(f,
 "3 0 obj\r\n"
 "  << /Type /Pages\r\n"
@@ -303,7 +303,7 @@ void PdfFileWriter::StartFile(void) {
 "  >>\r\n"
 "endobj\r\n");
 
-    xref[4] = (DWORD)ftell(f);
+    xref[4] = (uint32_t)ftell(f);
     fprintf(f,
 "4 0 obj\r\n"
 "  << /Type /Page\r\n"
@@ -318,35 +318,35 @@ void PdfFileWriter::StartFile(void) {
             MmToPts(ptMax.x - ptMin.x),
             MmToPts(ptMax.y - ptMin.y));
 
-    xref[5] = (DWORD)ftell(f);
+    xref[5] = (uint32_t)ftell(f);
     fprintf(f,
 "5 0 obj\r\n"
 "  << /Length 6 0 R >>\r\n"
 "stream\r\n");
-    bodyStart = (DWORD)ftell(f);
+    bodyStart = (uint32_t)ftell(f);
 }
 
 void PdfFileWriter::FinishAndCloseFile(void) {
-    DWORD bodyEnd = (DWORD)ftell(f);
+    uint32_t bodyEnd = (uint32_t)ftell(f);
 
     fprintf(f,
 "endstream\r\n"
 "endobj\r\n");
 
-    xref[6] = (DWORD)ftell(f);
+    xref[6] = (uint32_t)ftell(f);
     fprintf(f,
 "6 0 obj\r\n"
 "  %d\r\n"
 "endobj\r\n",
         bodyEnd - bodyStart);
 
-    xref[7] = (DWORD)ftell(f);
+    xref[7] = (uint32_t)ftell(f);
     fprintf(f,
 "7 0 obj\r\n"
 "  [/PDF /Text]\r\n"
 "endobj\r\n");
 
-    xref[8] = (DWORD)ftell(f);
+    xref[8] = (uint32_t)ftell(f);
     fprintf(f,
 "8 0 obj\r\n"
 "  << /Type /Font\r\n"
@@ -357,13 +357,13 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 "  >>\r\n"
 "endobj\r\n");
 
-    xref[9] = (DWORD)ftell(f);
+    xref[9] = (uint32_t)ftell(f);
     fprintf(f,
 "9 0 obj\r\n"
 "  << /Creator (SolveSpace)\r\n"
 "  >>\r\n");
     
-    DWORD xrefStart = (DWORD)ftell(f);
+    uint32_t xrefStart = (uint32_t)ftell(f);
     fprintf(f,
 "xref\r\n"
 "0 10\r\n"
@@ -390,8 +390,8 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 
 }
 
-void PdfFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void PdfFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
     fprintf(f, "1 J 1 j " // round endcaps and joins
                "%.3f w "
@@ -405,8 +405,8 @@ void PdfFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
 
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void PdfFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void PdfFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
     if(filled) {
         fprintf(f, "b\r\n");
@@ -480,14 +480,14 @@ void SvgFileWriter::StartFile(void) {
     // A little bit of extra space for the stroke width.
 }
 
-void SvgFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void SvgFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
     fprintf(f, "<path d='");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void SvgFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void SvgFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
     char fill[100];
     if(filled) {
@@ -585,12 +585,12 @@ void HpglFileWriter::StartFile(void) {
     fprintf(f, "SP1;\r\n");
 }
 
-void HpglFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void HpglFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
 }
-void HpglFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void HpglFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
 }
 
@@ -622,12 +622,12 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 void GCodeFileWriter::StartFile(void) {
     ZERO(&sel);
 }
-void GCodeFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                              bool filled, DWORD fillRgb)
+void GCodeFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                              bool filled, uint32_t fillRgb)
 {
 }
-void GCodeFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                               bool filled, DWORD fillRgb)
+void GCodeFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                               bool filled, uint32_t fillRgb)
 {
 }
 void GCodeFileWriter::Triangle(STriangle *tr) {
@@ -691,12 +691,12 @@ void Step2dFileWriter::StartFile(void) {
 void Step2dFileWriter::Triangle(STriangle *tr) {
 }
 
-void Step2dFileWriter::StartPath(DWORD strokeRgb, double lineWidth,
-                                 bool filled, DWORD fillRgb)
+void Step2dFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
+                                 bool filled, uint32_t fillRgb)
 {
 }
-void Step2dFileWriter::FinishPath(DWORD strokeRgb, double lineWidth,
-                                  bool filled, DWORD fillRgb)
+void Step2dFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
+                                  bool filled, uint32_t fillRgb)
 {
 }
 

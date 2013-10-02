@@ -178,7 +178,7 @@ void glxFatLine(Vector a, Vector b, double width)
 }
 
 
-void glxLockColorTo(DWORD rgb)
+void glxLockColorTo(uint32_t rgb)
 {
     ColorLocked = false;
     glColor3d(REDf(rgb), GREENf(rgb), BLUEf(rgb));
@@ -190,21 +190,21 @@ void glxUnlockColor(void)
     ColorLocked = false;
 }
 
-void glxColorRGB(DWORD rgb)
+void glxColorRGB(uint32_t rgb)
 {
     // Is there a bug in some graphics drivers where this is not equivalent
     // to glColor3d? There seems to be...
     glxColorRGBa(rgb, 1.0);
 }
 
-void glxColorRGBa(DWORD rgb, double a)
+void glxColorRGBa(uint32_t rgb, double a)
 {
     if(!ColorLocked) glColor4d(REDf(rgb), GREENf(rgb), BLUEf(rgb), a);
 }
 
-static void Stipple(BOOL forSel)
+static void Stipple(bool forSel)
 {
-    static BOOL Init;
+    static bool Init;
     const int BYTES = (32*32)/8;
     static GLubyte HoverMask[BYTES];
     static GLubyte SelMask[BYTES];
@@ -222,7 +222,7 @@ static void Stipple(BOOL forSel)
                 }
             }
         }
-        Init = TRUE;
+        Init = true;
     }
 
     glEnable(GL_POLYGON_STIPPLE);
@@ -233,7 +233,7 @@ static void Stipple(BOOL forSel)
     }
 }
 
-static void StippleTriangle(STriangle *tr, BOOL s, DWORD rgb)
+static void StippleTriangle(STriangle *tr, bool s, uint32_t rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
@@ -249,19 +249,19 @@ static void StippleTriangle(STriangle *tr, BOOL s, DWORD rgb)
     glBegin(GL_TRIANGLES);
 }
 
-void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
+void glxFillMesh(uint32_t specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
 {
-    DWORD rgbHovered  = Style::Color(Style::HOVERED),
-          rgbSelected = Style::Color(Style::SELECTED);
+    uint32_t rgbHovered  = Style::Color(Style::HOVERED),
+             rgbSelected = Style::Color(Style::SELECTED);
 
     glEnable(GL_NORMALIZE);
-    int prevColor = -1;
+    uint32_t prevColor = (uint32_t)-1;
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
 
-        int color;
-        if(specColor < 0) {
+        uint32_t color;
+        if(specColor & 0x80000000) {
             color = tr->meta.color;
         } else {
             color = specColor;
@@ -296,10 +296,10 @@ void glxFillMesh(int specColor, SMesh *m, DWORD h, DWORD s1, DWORD s2)
         if((s1 != 0 && tr->meta.face == s1) || 
            (s2 != 0 && tr->meta.face == s2))
         {
-            StippleTriangle(tr, TRUE, rgbSelected);
+            StippleTriangle(tr, true, rgbSelected);
         }
         if(h != 0 && tr->meta.face == h) {
-            StippleTriangle(tr, FALSE, rgbHovered);
+            StippleTriangle(tr, false, rgbHovered);
         }
     }
     glEnd();
@@ -488,7 +488,7 @@ void glxCreateBitmapFont(void)
     // Place the font in our texture in a two-dimensional grid; 1d would
     // be simpler, but long skinny textures (256*16 = 4096 pixels wide)
     // won't work.
-    static BYTE MappedTexture[4*16*64*16];
+    static uint8_t MappedTexture[4*16*64*16];
     int a, i;
     for(a = 0; a < 256; a++) {
         int row = a / 4, col = a % 4;
@@ -515,7 +515,7 @@ void glxCreateBitmapFont(void)
 
 void glxBitmapCharQuad(char c, double x, double y)
 {
-    BYTE b = (BYTE)c;
+    uint8_t b = (uint8_t)c;
     int w, h;
 
     if(b & 0x80) {
@@ -563,10 +563,10 @@ void glxBitmapText(const char *str, Vector p)
     glDisable(GL_TEXTURE_2D);
 }
 
-void glxDrawPixelsWithTexture(BYTE *data, int w, int h)
+void glxDrawPixelsWithTexture(uint8_t *data, int w, int h)
 {
 #define MAX_DIM 32
-    static BYTE Texture[MAX_DIM*MAX_DIM*3];
+    static uint8_t Texture[MAX_DIM*MAX_DIM*3];
     int i, j;
     if(w > MAX_DIM || h > MAX_DIM) oops();
 

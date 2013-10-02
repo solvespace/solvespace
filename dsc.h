@@ -7,9 +7,6 @@
 #ifndef __DSC_H
 #define __DSC_H
 
-typedef unsigned long DWORD;
-typedef unsigned char BYTE;
-
 class Vector;
 class Vector4;
 class Point2d;
@@ -232,8 +229,8 @@ public:
     int   n;
     int   elemsAllocated;
 
-    DWORD MaximumId(void) {
-        DWORD id = 0;
+    uint32_t MaximumId(void) {
+        uint32_t id = 0;
 
         int i;
         for(i = 0; i < n; i++) {

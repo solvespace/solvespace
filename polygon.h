@@ -122,8 +122,8 @@ public:
 };
 
 typedef struct {
-    DWORD   face;
-    int     color;
+    uint32_t face;
+    uint32_t color;
 } STriMeta;
 
 class SPolygon {
@@ -251,7 +251,7 @@ public:
     bool IsEmpty(void);
     void RemapFaces(Group *g, int remap);
 
-    DWORD FirstIntersectionWith(Point2d mp);
+    uint32_t FirstIntersectionWith(Point2d mp);
 };
 
 // A linked list of triangles
@@ -284,7 +284,7 @@ public:
 
     void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool coplanarIsInter,
                                                 bool *inter, bool *fwd,
-                                                DWORD *face);
+                                                uint32_t *face);
     enum {
         NAKED_OR_SELF_INTER_EDGES  = 100,
         SELF_INTER_EDGES           = 200,

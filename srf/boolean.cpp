@@ -359,7 +359,7 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                         Vector *pt,
                                         Vector *enin, Vector *enout,
                                         Vector *surfn,
-                                        DWORD auxA,
+                                        uint32_t auxA,
                                         SShell *shell, SShell *sha, SShell *shb)
 {
     // the midpoint of the edge

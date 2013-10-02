@@ -448,7 +448,7 @@ void Group::DrawDisplayItems(int t) {
 
     // When we fill the mesh, we need to know which triangles are selected
     // or hovered, in order to draw them differently.
-    DWORD mh = 0, ms1 = 0, ms2 = 0;
+    uint32_t mh = 0, ms1 = 0, ms2 = 0;
     hEntity he = SS.GW.hover.entity;
     if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
         mh = he.v;
@@ -546,7 +546,7 @@ void Group::DrawFilledPaths(void) {
         // In an assembled loop, all the styles should be the same; so doesn't
         // matter which one we grab.
         SBezier *sb = &(sbls->l.elem[0].l.elem[0]);
-        hStyle hs = { (DWORD)sb->auxA };
+        hStyle hs = { (uint32_t)sb->auxA };
         Style *s = Style::Get(hs);
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.

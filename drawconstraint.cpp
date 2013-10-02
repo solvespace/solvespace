@@ -562,8 +562,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             // Let's adjust the color of this constraint to have the same
             // rough luma as the point color, so that the constraint does not
             // stand out in an ugly way.
-            DWORD cd = Style::Color(Style::DATUM),
-                  cc = Style::Color(Style::CONSTRAINT);
+            uint32_t cd = Style::Color(Style::DATUM),
+                     cc = Style::Color(Style::CONSTRAINT);
             // convert from 8-bit color to a vector
             Vector vd = Vector::From(REDf(cd), GREENf(cd), BLUEf(cd)),
                    vc = Vector::From(REDf(cc), GREENf(cc), BLUEf(cc));

@@ -15,14 +15,14 @@ void SolveSpace::Init(char *cmdLine) {
     // Then, load the registry settings.
     int i;
     // Default list of colors for the model material
-    modelColor[0] = CnfThawDWORD(RGB(150, 150, 150), "ModelColor_0");
-    modelColor[1] = CnfThawDWORD(RGB(100, 100, 100), "ModelColor_1");
-    modelColor[2] = CnfThawDWORD(RGB( 30,  30,  30), "ModelColor_2");
-    modelColor[3] = CnfThawDWORD(RGB(150,   0,   0), "ModelColor_3");
-    modelColor[4] = CnfThawDWORD(RGB(  0, 100,   0), "ModelColor_4");
-    modelColor[5] = CnfThawDWORD(RGB(  0,  80,  80), "ModelColor_5");
-    modelColor[6] = CnfThawDWORD(RGB(  0,   0, 130), "ModelColor_6");
-    modelColor[7] = CnfThawDWORD(RGB( 80,   0,  80), "ModelColor_7");
+    modelColor[0] = CnfThawInt(RGB(150, 150, 150), "ModelColor_0");
+    modelColor[1] = CnfThawInt(RGB(100, 100, 100), "ModelColor_1");
+    modelColor[2] = CnfThawInt(RGB( 30,  30,  30), "ModelColor_2");
+    modelColor[3] = CnfThawInt(RGB(150,   0,   0), "ModelColor_3");
+    modelColor[4] = CnfThawInt(RGB(  0, 100,   0), "ModelColor_4");
+    modelColor[5] = CnfThawInt(RGB(  0,  80,  80), "ModelColor_5");
+    modelColor[6] = CnfThawInt(RGB(  0,   0, 130), "ModelColor_6");
+    modelColor[7] = CnfThawInt(RGB( 80,   0,  80), "ModelColor_7");
     // Light intensities
     lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
     lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
@@ -37,12 +37,12 @@ void SolveSpace::Init(char *cmdLine) {
     // Chord tolerance
     chordTol = CnfThawFloat(2.0f, "ChordTolerance");
     // Max pwl segments to generate
-    maxSegments = CnfThawDWORD(10, "MaxSegments");
+    maxSegments = CnfThawInt(10, "MaxSegments");
     // View units
-    viewUnits = (Unit)CnfThawDWORD((DWORD)UNIT_MM, "ViewUnits");
+    viewUnits = (Unit)CnfThawInt((uint32_t)UNIT_MM, "ViewUnits");
     // Number of digits after the decimal point
-    afterDecimalMm = CnfThawDWORD(2, "AfterDecimalMm");
-    afterDecimalInch = CnfThawDWORD(3, "AfterDecimalInch");
+    afterDecimalMm = CnfThawInt(2, "AfterDecimalMm");
+    afterDecimalInch = CnfThawInt(3, "AfterDecimalInch");
     // Camera tangent (determines perspective)
     cameraTangent = CnfThawFloat(0.3f/1e3f, "CameraTangent");
     // Grid spacing
@@ -52,19 +52,19 @@ void SolveSpace::Init(char *cmdLine) {
     // Export offset (cutter radius comp)
     exportOffset = CnfThawFloat(0.0f, "ExportOffset");
     // Rewrite exported colors close to white into black (assuming white bg)
-    fixExportColors = CnfThawDWORD(1, "FixExportColors");
+    fixExportColors = CnfThawBool(true, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    drawBackFaces = CnfThawDWORD(1, "DrawBackFaces");
+    drawBackFaces = CnfThawBool(true, "DrawBackFaces");
     // Check that contours are closed and not self-intersecting
-    checkClosedContour = CnfThawDWORD(1, "CheckClosedContour");
+    checkClosedContour = CnfThawBool(true, "CheckClosedContour");
     // Export shaded triangles in a 2d view
-    exportShadedTriangles = CnfThawDWORD(1, "ExportShadedTriangles");
+    exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
-    exportPwlCurves = CnfThawDWORD(0, "ExportPwlCurves");
+    exportPwlCurves = CnfThawBool(false, "ExportPwlCurves");
     // Background color on-screen
-    backgroundColor = CnfThawDWORD(RGB(0, 0, 0), "BackgroundColor");
+    backgroundColor = CnfThawInt(RGB(0, 0, 0), "BackgroundColor");
     // Whether export canvas size is fixed or derived from bbox
-    exportCanvasSizeAuto = CnfThawDWORD(1, "ExportCanvasSizeAuto");
+    exportCanvasSizeAuto = CnfThawBool(true, "ExportCanvasSizeAuto");
     // Margins for automatic canvas size
     exportMargin.left   = CnfThawFloat(5.0f, "ExportMargin_Left");
     exportMargin.right  = CnfThawFloat(5.0f, "ExportMargin_Right");
@@ -77,11 +77,11 @@ void SolveSpace::Init(char *cmdLine) {
     exportCanvas.dy     = CnfThawFloat(  5.0f, "ExportCanvas_Dy");
     // Extra parameters when exporting G code
     gCode.depth         = CnfThawFloat(10.0f, "GCode_Depth");
-    gCode.passes        = CnfThawDWORD(1, "GCode_Passes");
+    gCode.passes        = CnfThawInt(1, "GCode_Passes");
     gCode.feed          = CnfThawFloat(10.0f, "GCode_Feed");
     gCode.plungeFeed    = CnfThawFloat(10.0f, "GCode_PlungeFeed");
     // Show toolbar in the graphics window
-    showToolbar = CnfThawDWORD(1, "ShowToolbar");
+    showToolbar = CnfThawBool(true, "ShowToolbar");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
@@ -120,7 +120,7 @@ void SolveSpace::Exit(void) {
     // Model colors
     for(i = 0; i < MODEL_COLORS; i++) {
         sprintf(name, "ModelColor_%d", i);
-        CnfFreezeDWORD(modelColor[i], name);
+        CnfFreezeInt(modelColor[i], name);
     }
     // Light intensities
     CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
@@ -135,34 +135,34 @@ void SolveSpace::Exit(void) {
     // Chord tolerance
     CnfFreezeFloat((float)chordTol, "ChordTolerance");
     // Max pwl segments to generate
-    CnfFreezeDWORD((DWORD)maxSegments, "MaxSegments");
+    CnfFreezeInt((uint32_t)maxSegments, "MaxSegments");
     // View units
-    CnfFreezeDWORD((DWORD)viewUnits, "ViewUnits");
+    CnfFreezeInt((uint32_t)viewUnits, "ViewUnits");
     // Number of digits after the decimal point
-    CnfFreezeDWORD((DWORD)afterDecimalMm, "AfterDecimalMm");
-    CnfFreezeDWORD((DWORD)afterDecimalInch, "AfterDecimalInch");
+    CnfFreezeInt((uint32_t)afterDecimalMm, "AfterDecimalMm");
+    CnfFreezeInt((uint32_t)afterDecimalInch, "AfterDecimalInch");
     // Camera tangent (determines perspective)
     CnfFreezeFloat((float)cameraTangent, "CameraTangent");
     // Grid spacing
     CnfFreezeFloat(gridSpacing, "GridSpacing");
-    // Export scale (a float, stored as a DWORD)
+    // Export scale
     CnfFreezeFloat(exportScale, "ExportScale");
     // Export offset (cutter radius comp)
     CnfFreezeFloat(exportOffset, "ExportOffset");
     // Rewrite exported colors close to white into black (assuming white bg)
-    CnfFreezeDWORD(fixExportColors, "FixExportColors");
+    CnfFreezeBool(fixExportColors, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    CnfFreezeDWORD(drawBackFaces, "DrawBackFaces");
+    CnfFreezeBool(drawBackFaces, "DrawBackFaces");
     // Check that contours are closed and not self-intersecting
-    CnfFreezeDWORD(checkClosedContour, "CheckClosedContour");
+    CnfFreezeBool(checkClosedContour, "CheckClosedContour");
     // Export shaded triangles in a 2d view
-    CnfFreezeDWORD(exportShadedTriangles, "ExportShadedTriangles");
+    CnfFreezeBool(exportShadedTriangles, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
-    CnfFreezeDWORD(exportPwlCurves, "ExportPwlCurves");
+    CnfFreezeBool(exportPwlCurves, "ExportPwlCurves");
     // Background color on-screen
-    CnfFreezeDWORD(backgroundColor, "BackgroundColor");
+    CnfFreezeInt(backgroundColor, "BackgroundColor");
     // Whether export canvas size is fixed or derived from bbox
-    CnfFreezeDWORD(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
+    CnfFreezeBool(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
     // Margins for automatic canvas size
     CnfFreezeFloat(exportMargin.left,   "ExportMargin_Left");
     CnfFreezeFloat(exportMargin.right,  "ExportMargin_Right");
@@ -175,11 +175,11 @@ void SolveSpace::Exit(void) {
     CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
      // Extra parameters when exporting G code
     CnfFreezeFloat(gCode.depth,         "GCode_Depth");
-    CnfFreezeDWORD(gCode.passes,        "GCode_Passes");
+    CnfFreezeInt(gCode.passes,          "GCode_Passes");
     CnfFreezeFloat(gCode.feed,          "GCode_Feed");
     CnfFreezeFloat(gCode.plungeFeed,    "GCode_PlungeFeed");
     // Show toolbar in the graphics window
-    CnfFreezeDWORD(showToolbar, "ShowToolbar");
+    CnfFreezeBool(showToolbar, "ShowToolbar");
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles();

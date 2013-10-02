@@ -74,7 +74,7 @@ void Style::CreateDefaultStyle(hStyle h) {
 
     Style ns;
     ZERO(&ns);
-    ns.color        = CnfThawDWORD(d->color, CnfColor(d->cnfPrefix));
+    ns.color        = CnfThawInt(d->color, CnfColor(d->cnfPrefix));
     ns.width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     ns.widthAs      = UNITS_AS_PIXELS;
     ns.textHeight   = DEFAULT_TEXT_HEIGHT;
@@ -121,20 +121,20 @@ void Style::LoadFactoryDefaults(void) {
 void Style::FreezeDefaultStyles(void) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
-        CnfFreezeDWORD(Color(d->h), CnfColor(d->cnfPrefix));
+        CnfFreezeInt(Color(d->h), CnfColor(d->cnfPrefix));
         CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
     }
 }
 
-DWORD Style::CreateCustomStyle(void) {
+uint32_t Style::CreateCustomStyle(void) {
     SS.UndoRemember();
-    DWORD vs = max((DWORD)Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
+    uint32_t vs = max((uint32_t)Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
     hStyle hs = { vs };
     (void)Style::Get(hs);
     return hs.v;
 }
 
-void Style::AssignSelectionToStyle(DWORD v) {
+void Style::AssignSelectionToStyle(uint32_t v) {
     bool showError = false;
     SS.GW.GroupSelection();
 
@@ -197,12 +197,12 @@ Style *Style::Get(hStyle h) {
 // A couple of wrappers, so that I can call these functions with either an
 // hStyle or with the integer corresponding to that hStyle.v.
 //-----------------------------------------------------------------------------
-DWORD Style::Color(int s, bool forExport) {
-    hStyle hs = { (DWORD)s };
+uint32_t Style::Color(int s, bool forExport) {
+    hStyle hs = { (uint32_t)s };
     return Color(hs, forExport);
 }
 float Style::Width(int s) {
-    hStyle hs = { (DWORD)s };
+    hStyle hs = { (uint32_t)s };
     return Width(hs);
 }
 
@@ -210,7 +210,7 @@ float Style::Width(int s) {
 // If a color is almost white, then we can rewrite it to black, just so that
 // it won't disappear on file formats with a light background.
 //-----------------------------------------------------------------------------
-DWORD Style::RewriteColor(DWORD rgbin) {
+uint32_t Style::RewriteColor(uint32_t rgbin) {
     Vector rgb = Vector::From(REDf(rgbin), GREENf(rgbin), BLUEf(rgbin));
     rgb = rgb.Minus(Vector::From(1, 1, 1));
     if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
@@ -227,7 +227,7 @@ DWORD Style::RewriteColor(DWORD rgbin) {
 //-----------------------------------------------------------------------------
 // Return the stroke color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-DWORD Style::Color(hStyle h, bool forExport) {
+uint32_t Style::Color(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->color);
@@ -239,7 +239,7 @@ DWORD Style::Color(hStyle h, bool forExport) {
 //-----------------------------------------------------------------------------
 // Return the fill color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-DWORD Style::FillColor(hStyle h, bool forExport) {
+uint32_t Style::FillColor(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->fillColor);
@@ -290,7 +290,7 @@ double Style::TextHeight(hStyle hs) {
 // if it's both shown and exportable.
 //-----------------------------------------------------------------------------
 bool Style::Exportable(int si) {
-    hStyle hs = { (DWORD)si };
+    hStyle hs = { (uint32_t)si };
     Style *s = Get(hs);
     return (s->exportable) && (s->visible);
 }
@@ -331,25 +331,25 @@ char *Style::DescriptionString(void) {
 }
 
 
-void TextWindow::ScreenShowListOfStyles(int link, DWORD v) {
+void TextWindow::ScreenShowListOfStyles(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_LIST_OF_STYLES);
 }
-void TextWindow::ScreenShowStyleInfo(int link, DWORD v) {
+void TextWindow::ScreenShowStyleInfo(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_STYLE_INFO);
     SS.TW.shown.style.v = v;
 }
 
-void TextWindow::ScreenLoadFactoryDefaultStyles(int link, DWORD v) {
+void TextWindow::ScreenLoadFactoryDefaultStyles(int link, uint32_t v) {
     Style::LoadFactoryDefaults();
     SS.TW.GoToScreen(SCREEN_LIST_OF_STYLES);
 }
 
-void TextWindow::ScreenCreateCustomStyle(int link, DWORD v) {
+void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
     Style::CreateCustomStyle();
 }
 
-void TextWindow::ScreenChangeBackgroundColor(int link, DWORD v) {
-    DWORD rgb = SS.backgroundColor;
+void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
+    uint32_t rgb = SS.backgroundColor;
     SS.TW.ShowEditControlWithColorPicker(v, 3, rgb);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
@@ -366,7 +366,7 @@ static int RoundUpToPowerOfTwo(int v)
     return 0;
 }
 
-void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
+void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
     SS.bgImage.fromFile = NULL;
 
@@ -380,7 +380,7 @@ void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
         f = fopen(importFile, "rb");
         if(!f) goto err;
 
-        BYTE header[8];
+        uint8_t header[8];
         if (fread(header, 1, 8, f) != 8)
             goto err;
         if(png_sig_cmp(header, 0, 8)) goto err;
@@ -402,14 +402,14 @@ void TextWindow::ScreenBackgroundImage(int link, DWORD v) {
         
         int w; w = (int)png_get_image_width(png_ptr, info_ptr);
         int h; h = (int)png_get_image_height(png_ptr, info_ptr);
-        BYTE **rows; rows = png_get_rows(png_ptr, info_ptr);
+        uint8_t **rows; rows = png_get_rows(png_ptr, info_ptr);
 
         // Round to next-highest powers of two, since the textures require
-        // that. And round up to 4, to guarantee DWORD alignment.
+        // that. And round up to 4, to guarantee 32-bit alignment.
         int rw; rw = max(4, RoundUpToPowerOfTwo(w));
         int rh; rh = max(4, RoundUpToPowerOfTwo(h));
 
-        SS.bgImage.fromFile = (BYTE *)MemAlloc(rw*rh*3);
+        SS.bgImage.fromFile = (uint8_t *)MemAlloc(rw*rh*3);
         for(int i = 0; i < h; i++) {
             memcpy(SS.bgImage.fromFile + ((h - 1) - i)*(rw*3), rows[i], w*3);
         }
@@ -427,7 +427,7 @@ err:
     SS.later.showTW = true;
 }
 
-void TextWindow::ScreenChangeBackgroundImageScale(int link, DWORD v) {
+void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {
     char str[300];
     sprintf(str, "%.3f", SS.bgImage.scale * SS.MmPerUnit());
     SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
@@ -455,7 +455,7 @@ void TextWindow::ShowListOfStyles(void) {
 
     Printf(false, "");
 
-    DWORD rgb = SS.backgroundColor;
+    uint32_t rgb = SS.backgroundColor;
     Printf(false, "%Ft background color (r, g, b)%E");
     Printf(false, "%Ba   %@, %@, %@ %Fl%D%f%Ll[change]%E",
         REDf(rgb), GREENf(rgb), BLUEf(rgb),
@@ -486,7 +486,7 @@ void TextWindow::ShowListOfStyles(void) {
 }
 
 
-void TextWindow::ScreenChangeStyleName(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleName(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     SS.TW.ShowEditControl(10, 12, s->name.str);
@@ -494,7 +494,7 @@ void TextWindow::ScreenChangeStyleName(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_STYLE_NAME;   
 }
 
-void TextWindow::ScreenDeleteStyle(int link, DWORD v) {
+void TextWindow::ScreenDeleteStyle(int link, uint32_t v) {
     SS.UndoRemember();
     hStyle hs = { v };
     Style *s = SK.style.FindByIdNoOops(hs);
@@ -507,7 +507,7 @@ void TextWindow::ScreenDeleteStyle(int link, DWORD v) {
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     double val   = (link == 't') ? s->textHeight   : s->width;
@@ -534,7 +534,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, DWORD v) {
                                          EDIT_STYLE_WIDTH;
 }
 
-void TextWindow::ScreenChangeStyleTextAngle(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleTextAngle(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     char str[300];
@@ -544,12 +544,12 @@ void TextWindow::ScreenChangeStyleTextAngle(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_STYLE_TEXT_ANGLE;
 }
 
-void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleColor(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     // Same function used for stroke and fill colors
     int row, col, em;
-    DWORD rgb;
+    uint32_t rgb;
     if(link == 's') {
         row = 15; col = 13;
         em = EDIT_STYLE_COLOR;
@@ -566,7 +566,7 @@ void TextWindow::ScreenChangeStyleColor(int link, DWORD v) {
     SS.TW.edit.meaning = em;
 }
 
-void TextWindow::ScreenChangeStyleYesNo(int link, DWORD v) {
+void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
     SS.UndoRemember();
     hStyle hs = { v };
     Style *s = Style::Get(hs);
@@ -867,7 +867,7 @@ void TextWindow::ShowStyleInfo(void) {
     }
 }
 
-void TextWindow::ScreenAssignSelectionToStyle(int link, DWORD v) {
+void TextWindow::ScreenAssignSelectionToStyle(int link, uint32_t v) {
     Style::AssignSelectionToStyle(v);
 }
 

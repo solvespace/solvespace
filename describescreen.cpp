@@ -6,11 +6,11 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void TextWindow::ScreenUnselectAll(int link, DWORD v) {
+void TextWindow::ScreenUnselectAll(int link, uint32_t v) {
     GraphicsWindow::MenuEdit(GraphicsWindow::MNU_UNSELECT_ALL);
 }
 
-void TextWindow::ScreenEditTtfText(int link, DWORD v) {
+void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
     hRequest hr = { v };
     Request *r = SK.GetRequest(hr);
 
@@ -20,7 +20,7 @@ void TextWindow::ScreenEditTtfText(int link, DWORD v) {
 }
 
 #define gs (SS.GW.gs)
-void TextWindow::ScreenSetTtfFont(int link, DWORD v) {
+void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     int i = (int)v;
     if(i < 0) return;
     if(i >= SS.fonts.l.n) return;

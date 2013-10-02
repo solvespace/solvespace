@@ -179,13 +179,13 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
     SK.param.MoveSelfInto(&prev);
     SK.entity.Clear();
 
-    SDWORD inTime = GetMilliseconds();
+    int32_t inTime = GetMilliseconds();
 
     bool displayedStatusMessage = false;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
 
-        SDWORD now = GetMilliseconds();
+        int32_t now = GetMilliseconds();
         // Display the status message if we've taken more than 400 ms, or
         // if we've taken 200 ms but we're not even halfway done, or if
         // we've already started displaying the status message.

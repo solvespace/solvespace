@@ -324,12 +324,12 @@ bool SMesh::IsEmpty(void) {
     return (l.n == 0);
 }
 
-DWORD SMesh::FirstIntersectionWith(Point2d mp) {
+uint32_t SMesh::FirstIntersectionWith(Point2d mp) {
     Vector p0 = Vector::From(mp.x, mp.y, 0);
     Vector gn = Vector::From(0, 0, 1);
 
     double maxT = -1e12;
-    DWORD face = 0;
+    uint32_t face = 0;
 
     int i;
     for(i = 0; i < l.n; i++) {
@@ -795,7 +795,7 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
 //-----------------------------------------------------------------------------
 void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
                             bool coplanarIsInter, bool *inter, bool *fwd,
-                            DWORD *face)
+                            uint32_t *face)
 {
     if(gt && lt) {
         double ac = a.Element(which),
@@ -919,7 +919,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
 
             int n = 0;
             bool thisIntersects = false, fwd;
-            DWORD face;
+            uint32_t face;
             FindEdgeOn(a, b, &n, cnt, coplanarIsInter,
                 &thisIntersects, &fwd, &face);
 

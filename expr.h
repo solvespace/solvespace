@@ -12,7 +12,7 @@ class Expr;
 
 class Expr {
 public:
-    DWORD marker;
+    uint32_t marker;
 
     enum {
         // A parameter, by the hParam handle
@@ -85,7 +85,7 @@ public:
 
     Expr *PartialWrt(hParam p);
     double Eval(void);
-    QWORD ParamsUsed(void);
+    uint64_t ParamsUsed(void);
     bool DependsOn(hParam p);
     static bool Tol(double a, double b);
     Expr *FoldConstants(void);

@@ -10,7 +10,7 @@
 // A navigation bar that always appears at the top of the window, with a
 // link to bring us back home.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenHome(int link, DWORD v) {
+void TextWindow::ScreenHome(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
 }
 void TextWindow::ShowHeader(bool withNav) {
@@ -42,11 +42,11 @@ void TextWindow::ShowHeader(bool withNav) {
 // The screen that shows a list of every group in the sketch, with options
 // to hide or show them, and to view them in detail. This is our home page.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenSelectGroup(int link, DWORD v) {
+void TextWindow::ScreenSelectGroup(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_GROUP_INFO);
     SS.TW.shown.group.v = v;
 }
-void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
+void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
     hGroup hg = { v };
     Group *g = SK.GetGroup(hg);
     g->visible = !(g->visible);
@@ -54,7 +54,7 @@ void TextWindow::ScreenToggleGroupShown(int link, DWORD v) {
     // previously, so regenerate.
     SS.GenerateAll();
 }
-void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
+void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
     int i;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
@@ -66,7 +66,7 @@ void TextWindow::ScreenShowGroupsSpecial(int link, DWORD v) {
         }
     }
 }
-void TextWindow::ScreenActivateGroup(int link, DWORD v) {
+void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
     hGroup hg = { v };
     Group *g = SK.GetGroup(hg);
     g->visible = true;
@@ -80,20 +80,20 @@ void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.TW.shown.group.v = hg.v;
     SS.later.showTW = true;
 }
-void TextWindow::ScreenHowGroupSolved(int link, DWORD v) {
+void TextWindow::ScreenHowGroupSolved(int link, uint32_t v) {
     if(SS.GW.activeGroup.v != v) {
         ScreenActivateGroup(link, v);
     }
     SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
     SS.TW.shown.group.v = v;
 }
-void TextWindow::ScreenShowConfiguration(int link, DWORD v) {
+void TextWindow::ScreenShowConfiguration(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_CONFIGURATION);
 }
-void TextWindow::ScreenShowEditView(int link, DWORD v) {
+void TextWindow::ScreenShowEditView(int link, uint32_t v) {
     SS.TW.GoToScreen(SCREEN_EDIT_VIEW);
 }
-void TextWindow::ScreenGoToWebsite(int link, DWORD v) {
+void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     OpenWebsite("http://solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups(void) {
@@ -154,7 +154,7 @@ void TextWindow::ShowListOfGroups(void) {
 // The screen that shows information about a specific group, and allows the
 // user to edit various things about it.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenHoverConstraint(int link, DWORD v) {
+void TextWindow::ScreenHoverConstraint(int link, uint32_t v) {
     if(!SS.GW.showConstraints) return;
 
     hConstraint hc = { v };
@@ -167,20 +167,20 @@ void TextWindow::ScreenHoverConstraint(int link, DWORD v) {
     SS.GW.hover.constraint = hc;
     SS.GW.hover.emphasized = true;
 }
-void TextWindow::ScreenHoverRequest(int link, DWORD v) {
+void TextWindow::ScreenHoverRequest(int link, uint32_t v) {
     SS.GW.hover.Clear();
     hRequest hr = { v };
     SS.GW.hover.entity = hr.entity(0);
     SS.GW.hover.emphasized = true;
 }
-void TextWindow::ScreenSelectConstraint(int link, DWORD v) {
+void TextWindow::ScreenSelectConstraint(int link, uint32_t v) {
     SS.GW.ClearSelection();
     GraphicsWindow::Selection sel;
     ZERO(&sel);
     sel.constraint.v = v;
     SS.GW.selection.Add(&sel);
 }
-void TextWindow::ScreenSelectRequest(int link, DWORD v) {
+void TextWindow::ScreenSelectRequest(int link, uint32_t v) {
     SS.GW.ClearSelection();
     GraphicsWindow::Selection sel;
     ZERO(&sel);
@@ -189,7 +189,7 @@ void TextWindow::ScreenSelectRequest(int link, DWORD v) {
     SS.GW.selection.Add(&sel);
 }
 
-void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
+void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     SS.UndoRemember();
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
@@ -218,14 +218,14 @@ void TextWindow::ScreenChangeGroupOption(int link, DWORD v) {
     SS.GW.ClearSuper();
 }
 
-void TextWindow::ScreenColor(int link, DWORD v) {
+void TextWindow::ScreenColor(int link, uint32_t v) {
     SS.UndoRemember();
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
     SS.TW.ShowEditControlWithColorPicker(v, 3, g->color);
     SS.TW.edit.meaning = EDIT_GROUP_COLOR;
 }
-void TextWindow::ScreenChangeExprA(int link, DWORD v) {
+void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     // There's an extra line for the skipFirst parameter in one-sided groups.
@@ -237,13 +237,13 @@ void TextWindow::ScreenChangeExprA(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
-void TextWindow::ScreenChangeGroupName(int link, DWORD v) {
+void TextWindow::ScreenChangeGroupName(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
     SS.TW.ShowEditControl(7, 12, g->DescriptionString()+5);
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
-void TextWindow::ScreenChangeGroupScale(int link, DWORD v) {
+void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     char str[1024];
@@ -252,7 +252,7 @@ void TextWindow::ScreenChangeGroupScale(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
-void TextWindow::ScreenDeleteGroup(int link, DWORD v) {
+void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     SS.UndoRemember();
 
     hGroup hg = SS.TW.shown.group;
@@ -497,7 +497,7 @@ void TextWindow::ShowGroupSolveInfo(void) {
 // how many steps to take in between current and finish, re-solving each
 // time.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenStepDimFinish(int link, DWORD v) {
+void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_STEP_DIM_FINISH;
     char s[1024];
     if(SS.TW.shown.dimIsDistance) {
@@ -507,13 +507,13 @@ void TextWindow::ScreenStepDimFinish(int link, DWORD v) {
     }
     SS.TW.ShowEditControl(12, 12, s);
 }
-void TextWindow::ScreenStepDimSteps(int link, DWORD v) {
+void TextWindow::ScreenStepDimSteps(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%d", SS.TW.shown.dimSteps);
     SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
     SS.TW.ShowEditControl(14, 12, str);
 }
-void TextWindow::ScreenStepDimGo(int link, DWORD v) {
+void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
     hConstraint hc = SS.TW.shown.constraint;
     Constraint *c = SK.constraint.FindByIdNoOops(hc);
     if(c) {
@@ -567,7 +567,7 @@ void TextWindow::ShowStepDimension(void) {
 // thing). User gets to specify the radius, and whether the old untrimmed
 // curves are kept or deleted.
 //-----------------------------------------------------------------------------
-void TextWindow::ScreenChangeTangentArc(int link, DWORD v) {
+void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
     switch(link) {
         case 'r': {
             char str[1024];

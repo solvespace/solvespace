@@ -20,10 +20,10 @@
 extern "C" {
 #endif
 
-typedef DWORD Slvs_hParam;
-typedef DWORD Slvs_hEntity;
-typedef DWORD Slvs_hConstraint;
-typedef DWORD Slvs_hGroup;
+typedef uint32_t Slvs_hParam;
+typedef uint32_t Slvs_hEntity;
+typedef uint32_t Slvs_hConstraint;
+typedef uint32_t Slvs_hGroup;
 
 // To obtain the 3d (not projected into a workplane) of a constraint or
 // an entity, specify this instead of the workplane.

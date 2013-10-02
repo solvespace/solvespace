@@ -209,16 +209,16 @@ void SolveSpace::SaveUsingTable(int type) {
         int fmt = SAVED[i].fmt;
         void *p = SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
-        if(fmt == 'd' && *((int *)p)    == 0)   continue;
-        if(fmt == 'x' && *((DWORD *)p)  == 0)   continue;
-        if(fmt == 'f' && *((double *)p) == 0.0) continue;
+        if(fmt == 'd' && *((int *)p)      == 0)   continue;
+        if(fmt == 'x' && *((uint32_t *)p) == 0)   continue;
+        if(fmt == 'f' && *((double *)p)   == 0.0) continue;
         if(fmt == 'N' && strlen(((NameStr *)p)->str) == 0) continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
             case 'd': fprintf(fh, "%d", *((int *)p)); break;
             case 'b': fprintf(fh, "%d", *((bool *)p) ? 1 : 0); break;
-            case 'x': fprintf(fh, "%08x", *((DWORD *)p)); break;
+            case 'x': fprintf(fh, "%08x", *((uint32_t *)p)); break;
             case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
             case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
             case 'P': fprintf(fh, "%s", (char *)p); break;
@@ -360,10 +360,11 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
             void *p = SAVED[i].ptr;
+            unsigned int u = 0;
             switch(SAVED[i].fmt) {
                 case 'd': *((int *)p) = atoi(val); break;
                 case 'b': *((bool *)p) = (atoi(val) != 0); break;
-                case 'x': sscanf(val, "%x", (DWORD *)p); break;
+                case 'x': sscanf(val, "%x", &u); *((uint32_t *)p) = u; break;
                 case 'f': *((double *)p) = atof(val); break;
                 case 'N': ((NameStr *)p)->strcpy(val); break;
 

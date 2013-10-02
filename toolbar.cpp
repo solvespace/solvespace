@@ -8,9 +8,9 @@
 #include "solvespace.h"
 #include <icons.h>
 
-BYTE SPACER[1];
+uint8_t SPACER[1];
 static const struct {
-    BYTE        *image;
+    uint8_t     *image;
     int          menu;
     const char  *tip;
 } Toolbar[] = {

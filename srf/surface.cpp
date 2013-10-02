@@ -490,7 +490,7 @@ typedef struct {
 } TrimLine;
 
 void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
-                                 int color)
+                                 uint32_t color)
 {
     // Make the extrusion direction consistent with respect to the normal
     // of the sketch we're extruding.
@@ -610,7 +610,7 @@ typedef struct {
 } Revolved;
 
 void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                                   int color)
+                                  uint32_t color)
 {
     SBezierLoop *sbl;
 

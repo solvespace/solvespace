@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
+void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightDir[v]));
     SS.TW.ShowEditControl(29+2*v, 8, str);
@@ -14,7 +14,7 @@ void TextWindow::ScreenChangeLightDirection(int link, DWORD v) {
     SS.TW.edit.i = v;
 }
 
-void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
+void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%.2f", SS.lightIntensity[v]);
     SS.TW.ShowEditControl(29+2*v, 31, str);
@@ -22,47 +22,47 @@ void TextWindow::ScreenChangeLightIntensity(int link, DWORD v) {
     SS.TW.edit.i = v;
 }
 
-void TextWindow::ScreenChangeColor(int link, DWORD v) {
+void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(9+2*v, 13, SS.modelColor[v]);
 
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
 
-void TextWindow::ScreenChangeChordTolerance(int link, DWORD v) {
+void TextWindow::ScreenChangeChordTolerance(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%.2f", SS.chordTol);
     SS.TW.ShowEditControl(37, 3, str);
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 
-void TextWindow::ScreenChangeMaxSegments(int link, DWORD v) {
+void TextWindow::ScreenChangeMaxSegments(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%d", SS.maxSegments);
     SS.TW.ShowEditControl(41, 3, str);
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
 }
 
-void TextWindow::ScreenChangeCameraTangent(int link, DWORD v) {
+void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%.3f", 1000*SS.cameraTangent);
     SS.TW.ShowEditControl(47, 3, str);
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 
-void TextWindow::ScreenChangeGridSpacing(int link, DWORD v) {
+void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
     SS.TW.ShowEditControl(51, 3, SS.MmToString(SS.gridSpacing));
     SS.TW.edit.meaning = EDIT_GRID_SPACING;
 }
 
-void TextWindow::ScreenChangeDigitsAfterDecimal(int link, DWORD v) {
+void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
     char buf[128];
     sprintf(buf, "%d", SS.UnitDigitsAfterDecimal());
     SS.TW.ShowEditControl(55, 3, buf);
     SS.TW.edit.meaning = EDIT_DIGITS_AFTER_DECIMAL;
 }
 
-void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
+void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
     char str[1024];
     sprintf(str, "%.3f", (double)SS.exportScale);
 
@@ -70,36 +70,36 @@ void TextWindow::ScreenChangeExportScale(int link, DWORD v) {
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 
-void TextWindow::ScreenChangeExportOffset(int link, DWORD v) {
+void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
     SS.TW.ShowEditControl(65, 3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 
-void TextWindow::ScreenChangeFixExportColors(int link, DWORD v) {
+void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
     SS.fixExportColors = !SS.fixExportColors;
 }
 
-void TextWindow::ScreenChangeBackFaces(int link, DWORD v) {
+void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     SS.drawBackFaces = !SS.drawBackFaces;
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeCheckClosedContour(int link, DWORD v) {
+void TextWindow::ScreenChangeCheckClosedContour(int link, uint32_t v) {
     SS.checkClosedContour = !SS.checkClosedContour;
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeShadedTriangles(int link, DWORD v) {
+void TextWindow::ScreenChangeShadedTriangles(int link, uint32_t v) {
     SS.exportShadedTriangles = !SS.exportShadedTriangles;
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangePwlCurves(int link, DWORD v) {
+void TextWindow::ScreenChangePwlCurves(int link, uint32_t v) {
     SS.exportPwlCurves = !SS.exportPwlCurves;
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeCanvasSizeAuto(int link, DWORD v) {
+void TextWindow::ScreenChangeCanvasSizeAuto(int link, uint32_t v) {
     if(link == 't') {
         SS.exportCanvasSizeAuto = true;
     } else {
@@ -108,7 +108,7 @@ void TextWindow::ScreenChangeCanvasSizeAuto(int link, DWORD v) {
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
+void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
     double d;
     switch(v) {
         case  0: d = SS.exportMargin.left;      break;
@@ -136,7 +136,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, DWORD v) {
     SS.TW.edit.i = v;
 }
 
-void TextWindow::ScreenChangeGCodeParameter(int link, DWORD v) {
+void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     char buf[1024] = "";
     int row = 93;
     switch(link) {
