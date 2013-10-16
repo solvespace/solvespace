@@ -178,10 +178,10 @@ void glxFatLine(Vector a, Vector b, double width)
 }
 
 
-void glxLockColorTo(uint32_t rgb)
+void glxLockColorTo(RgbColor rgb)
 {
     ColorLocked = false;
-    glColor3d(REDf(rgb), GREENf(rgb), BLUEf(rgb));
+    glColor3d(rgb.redF(), rgb.greenF(), rgb.blueF());
     ColorLocked = true;
 }
 
@@ -190,16 +190,16 @@ void glxUnlockColor(void)
     ColorLocked = false;
 }
 
-void glxColorRGB(uint32_t rgb)
+void glxColorRGB(RgbColor rgb)
 {
     // Is there a bug in some graphics drivers where this is not equivalent
     // to glColor3d? There seems to be...
     glxColorRGBa(rgb, 1.0);
 }
 
-void glxColorRGBa(uint32_t rgb, double a)
+void glxColorRGBa(RgbColor rgb, double a)
 {
-    if(!ColorLocked) glColor4d(REDf(rgb), GREENf(rgb), BLUEf(rgb), a);
+    if(!ColorLocked) glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), a);
 }
 
 static void Stipple(bool forSel)
@@ -233,7 +233,7 @@ static void Stipple(bool forSel)
     }
 }
 
-static void StippleTriangle(STriangle *tr, bool s, uint32_t rgb)
+static void StippleTriangle(STriangle *tr, bool s, RgbColor rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
@@ -249,25 +249,25 @@ static void StippleTriangle(STriangle *tr, bool s, uint32_t rgb)
     glBegin(GL_TRIANGLES);
 }
 
-void glxFillMesh(uint32_t specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
+void glxFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
 {
-    uint32_t rgbHovered  = Style::Color(Style::HOVERED),
+    RgbColor rgbHovered  = Style::Color(Style::HOVERED),
              rgbSelected = Style::Color(Style::SELECTED);
 
     glEnable(GL_NORMALIZE);
-    uint32_t prevColor = (uint32_t)-1;
+    RgbColor prevColor = NULL_COLOR;
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
 
-        uint32_t color;
-        if(specColor & 0x80000000) {
+        RgbColor color;
+        if(specColor.UseDefault()) {
             color = tr->meta.color;
         } else {
             color = specColor;
         }
-        if(color != prevColor) {
-            GLfloat mpf[] = { REDf(color), GREENf(color), BLUEf(color), 1.0 };
+        if(!color.Equals(prevColor)) {
+            GLfloat mpf[] = { color.redF(), color.greenF(), color.blueF(), 1.0f };
             glEnd();
             glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
             prevColor = color;

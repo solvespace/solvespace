@@ -365,9 +365,9 @@ void TextWindow::ShowGroupInfo(void) {
            g->type == Group::LATHE)
         {
             Printf(false,
-                "%Bd   %Ftcolor %E%Bp  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
-                0x80000000 | g->color,
-                REDf(g->color), GREENf(g->color), BLUEf(g->color),
+                "%Bd   %Ftcolor %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
+                &g->color,
+                g->color.redF(), g->color.greenF(), g->color.blueF(),
                 ScreenColor, top[rows-1] + 2);
         } else if(g->type == Group::IMPORTED) {
             bool sup = g->suppress;

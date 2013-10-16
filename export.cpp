@@ -282,9 +282,9 @@ void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
             double lighting = SS.ambientIntensity +
                                   max(0, (SS.lightIntensity[0])*(n.Dot(l0))) +
                                   max(0, (SS.lightIntensity[1])*(n.Dot(l1)));
-            double r = min(1, REDf  (tt.meta.color)*lighting),
-                   g = min(1, GREENf(tt.meta.color)*lighting),
-                   b = min(1, BLUEf (tt.meta.color)*lighting);
+            double r = min(1, tt.meta.color.redF()  *lighting),
+                   g = min(1, tt.meta.color.greenF()*lighting),
+                   b = min(1, tt.meta.color.blueF() *lighting);
             tt.meta.color = RGBf(r, g, b);
             smp.AddTriangle(&tt);
         }
@@ -505,9 +505,9 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
 
             hStyle hs = { (uint32_t)b->auxA };
             Style *stl = Style::Get(hs);
-            double lineWidth  = Style::WidthMm(b->auxA)*s;
-            uint32_t strokeRgb = Style::Color(hs, true);
-            uint32_t fillRgb = Style::FillColor(hs, true);
+            double lineWidth   = Style::WidthMm(b->auxA)*s;
+            RgbColor strokeRgb = Style::Color(hs, true);
+            RgbColor fillRgb   = Style::FillColor(hs, true);
 
             StartPath(strokeRgb, lineWidth, stl->filled, fillRgb);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {

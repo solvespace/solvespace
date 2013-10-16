@@ -8,6 +8,8 @@
 #include "solvespace.h"
 #include <time.h>
 #include <shellapi.h>
+#undef  RGB  // our definition clashes with Microsoft's
+#define RGB(r, g, b) ((COLORREF)0)
 #include <commctrl.h>
 #include <commdlg.h>
 
@@ -83,7 +85,7 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
             HDC hdc = BeginPaint(hwnd, &ps);
             int row = 0, col = 0, i;
             SelectObject(hdc, FixedFont);
-            SetTextColor(hdc, RGB(0, 0, 0));
+            SetTextColor(hdc, 0x000000);
             SetBkMode(hdc, TRANSPARENT);
             for(i = 0; MessageString[i]; i++) {
                 if(MessageString[i] == '\n') {
@@ -277,9 +279,6 @@ void CnfFreezeInt(uint32_t v, const char *name)
 void CnfFreezeFloat(float v, const char *name)
     { FreezeDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); }
 
-void CnfFreezeBool(bool v, const char *name)
-    { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
-
 void CnfThawString(char *str, int maxLen, const char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
 
@@ -290,9 +289,6 @@ float CnfThawFloat(float v, const char *name) {
     DWORD d = ThawDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); 
     return *((float *)&d);
 }
-
-bool CnfThawBool(bool v, const char *name)
-    { return ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name) ? true : false; }
 
 void SetWindowTitle(const char *str) {
     SetWindowText(GraphicsWnd, str);

@@ -303,7 +303,7 @@ bool SolveSpace::SaveToFile(char *filename) {
         STriangle *tr = &(m->l.elem[i]);
         fprintf(fh, "Triangle %08x %08x  "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
-            tr->meta.face, tr->meta.color,
+            tr->meta.face, tr->meta.color.ToPackedInt(),
             CO(tr->a), CO(tr->b), CO(tr->c));
     }
 
@@ -311,7 +311,7 @@ bool SolveSpace::SaveToFile(char *filename) {
     SSurface *srf;
     for(srf = s->surface.First(); srf; srf = s->surface.NextAfter(srf)) {
         fprintf(fh, "Surface %08x %08x %08x %d %d\n",
-                        srf->h.v, srf->color, srf->face, srf->degm, srf->degn);
+            srf->h.v, srf->color.ToPackedInt(), srf->face, srf->degm, srf->degn);
         for(i = 0; i <= srf->degm; i++) {
             for(j = 0; j <= srf->degn; j++) {
                 fprintf(fh, "SCtrl %d %d %.20f %.20f %.20f Weight %20.20f\n",
@@ -538,23 +538,27 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
 
         } else if(StrStartsWith(line, "Triangle ")) {
             STriangle tr; ZERO(&tr);
+            unsigned int rgb = 0;
             if(sscanf(line, "Triangle %x %x  "
                              "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
-                &(tr.meta.face), &(tr.meta.color),
+                &(tr.meta.face), &rgb,
                 &(tr.a.x), &(tr.a.y), &(tr.a.z), 
                 &(tr.b.x), &(tr.b.y), &(tr.b.z), 
                 &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11)
             {
                 oops();
             }
+            tr.meta.color = RgbColor::FromPackedInt((uint32_t)rgb);
             m->AddTriangle(&tr);
         } else if(StrStartsWith(line, "Surface ")) {
+            unsigned int rgb = 0;
             if(sscanf(line, "Surface %x %x %x %d %d",
-                &(srf.h.v), &(srf.color), &(srf.face),
+                &(srf.h.v), &rgb, &(srf.face),
                 &(srf.degm), &(srf.degn)) != 5)
             {
                 oops();
             }
+            srf.color = RgbColor::FromPackedInt((uint32_t)rgb);
         } else if(StrStartsWith(line, "SCtrl ")) {
             int i, j;
             Vector c;

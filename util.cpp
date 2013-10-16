@@ -205,6 +205,18 @@ void Message(const char *str, ...)
     va_end(f);
 }
 
+void CnfFreezeBool(bool v, const char *name)
+    { CnfFreezeInt(v ? 1 : 0, name); }
+
+void CnfFreezeColor(RgbColor v, const char *name)
+    { CnfFreezeInt(v.ToPackedInt(), name); }
+
+bool CnfThawBool(bool v, const char *name)
+    { return CnfThawInt(v ? 1 : 0, name) != 0; }
+
+RgbColor CnfThawColor(RgbColor v, const char *name)
+    { return RgbColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
+
 
 //-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG

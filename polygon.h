@@ -123,7 +123,7 @@ public:
 
 typedef struct {
     uint32_t face;
-    uint32_t color;
+    RgbColor color;
 } STriMeta;
 
 class SPolygon {

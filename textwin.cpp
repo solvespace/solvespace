@@ -18,14 +18,14 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'i', RGB(  0, 255, 255) },
     { 'g', RGB(160, 160, 160) },
     { 'b', RGB(200, 200, 200) },
-    { 0, 0 },
+    { 0,   NULL_COLOR }
 };
 const TextWindow::Color TextWindow::bgColors[] = {
     { 'd', RGB(  0,   0,   0) },
     { 't', RGB( 34,  15,  15) },
     { 'a', RGB( 25,  25,  25) },
     { 'r', RGB(255, 255, 255) },
-    { 0, 0 },
+    { 0,   NULL_COLOR }
 };
 
 bool TextWindow::SPACER = false;
@@ -49,9 +49,9 @@ void TextWindow::MakeColorTable(const Color *in, float *out) {
     for(i = 0; in[i].c != 0; i++) {
         int c = in[i].c;
         if(c < 0 || c > 255) oops();
-        out[c*3 + 0] = REDf(in[i].color);
-        out[c*3 + 1] = GREENf(in[i].color);
-        out[c*3 + 2] = BLUEf(in[i].color);
+        out[c*3 + 0] = in[i].color.redF();
+        out[c*3 + 1] = in[i].color.greenF();
+        out[c*3 + 2] = in[i].color.blueF();
     }
 }
 
@@ -85,10 +85,10 @@ void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
     ShowTextEditControl(x - 3, y + 2, s);
 }
 
-void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, uint32_t rgb)
+void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbColor rgb)
 {
     char str[1024];
-    sprintf(str, "%.2f, %.2f, %.2f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
+    sprintf(str, "%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF());
 
     SS.later.showTW = true;
 
@@ -131,7 +131,8 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     }
 
     char fg = 'd';
-    int bg = 'd';
+    char bg = 'd';
+    RgbColor bgRgb = NULL_COLOR;
     int link = NOT_A_LINK;
     uint32_t data = 0;
     LinkFunction *f = NULL, *h = NULL;
@@ -201,20 +202,18 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
 
                 case 'F':
                 case 'B': {
-                    int color;
-                    if(fmt[1] == '\0') goto done;
-                    if(fmt[1] == 'p') {
-                        color = va_arg(vl, int);
-                    } else {
-                        color = fmt[1];
-                    }
-                    if((color < 0 || color > 255) && !(color & 0x80000000)) {
-                        color = 0;
+                    char cc = fmt[1];  // color code
+                    RgbColor *rgbPtr = NULL;
+                    switch(cc) {
+                        case 0:   goto done;  // truncated directive
+                        case 'p': cc = (char)va_arg(vl, int); break;
+                        case 'z': rgbPtr = va_arg(vl, RgbColor *); break;
                     }
                     if(*fmt == 'F') {
-                        fg = (char)color;
+                        fg = cc;
                     } else {
-                        bg = color;
+                        bg = cc;
+                        if(rgbPtr) bgRgb = *rgbPtr;
                     }
                     fmt++;
                     break;
@@ -248,7 +247,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             }
         } else {
             buf[0] = *fmt;
-            buf[1]= '\0';
+            buf[1] = '\0';
         }
 
         for(unsigned i = 0; i < strlen(buf); i++) {
@@ -256,6 +255,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             text[r][c] = buf[i];
             meta[r][c].fg = fg;
             meta[r][c].bg = bg;
+            meta[r][c].bgRgb = bgRgb;
             meta[r][c].link = link;
             meta[r][c].data = data;
             meta[r][c].f = f;
@@ -268,6 +268,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     while(c < MAX_COLS) {
         meta[r][c].fg = fg;
         meta[r][c].bg = bg;
+        meta[r][c].bgRgb = bgRgb;
         c++;
     }
 
@@ -538,8 +539,8 @@ uint8_t *TextWindow::HsvPattern1d(double h, double s) {
 
 void TextWindow::ColorPickerDone(void) {
     char str[1024];
-    uint32_t rgb = editControl.colorPicker.rgb;
-    sprintf(str, "%.2f, %.2f, %.3f", REDf(rgb), GREENf(rgb), BLUEf(rgb));
+    RgbColor rgb = editControl.colorPicker.rgb;
+    sprintf(str, "%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF());
     EditControlDone(str);
 }
 
@@ -556,7 +557,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     if(!editControl.colorPicker.show) return false;
     if(how == CLICK || (how == HOVER && leftDown)) InvalidateText();
 
-    static const uint32_t BaseColor[12] = {
+    static const RgbColor BaseColor[12] = {
         RGB(255,   0,   0),
         RGB(  0, 255,   0),
         RGB(  0,   0, 255),
@@ -609,16 +610,16 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     for(i = 0; i < WIDTH/2; i++) {
         for(j = 0; j < HEIGHT; j++) {
             Vector rgb;
-            uint32_t d;
+            RgbColor d;
             if(i == 0 && j < 8) {
                 d = SS.modelColor[j];
-                rgb = Vector::From(REDf(d), GREENf(d), BLUEf(d));
+                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
             } else if(i == 0) {
                 double a = (j - 8.0)/3.0;
                 rgb = Vector::From(a, a, a);
             } else {
                 d = BaseColor[j];
-                rgb = Vector::From(REDf(d), GREENf(d), BLUEf(d));
+                rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
                 if(i >= 2 && i <= 4) {
                     double a = (i == 2) ? 0.2 : (i == 3) ? 0.3 : 0.4;
                     rgb = rgb.Plus(Vector::From(a, a, a));
@@ -841,20 +842,21 @@ void TextWindow::Paint(void) {
 
                 int fg = meta[r][c].fg;
                 int bg = meta[r][c].bg;
+                RgbColor bgRgb = meta[r][c].bgRgb;
 
                 // On the first pass, all the background quads; on the next
                 // pass, all the foreground (i.e., font) quads.
                 if(a == 0) {
                     int bh = LINE_HEIGHT, adj = -2;
-                    if(bg & 0x80000000) {
-                        glColor3f(REDf(bg), GREENf(bg), BLUEf(bg));
+                    if(bg == 'z') {
+                        glColor3f(bgRgb.redF(), bgRgb.greenF(), bgRgb.blueF());
                         bh = CHAR_HEIGHT;
                         adj += 2;
                     } else {
                         glColor3fv(&(bgColorTable[bg*3]));
                     }
 
-                    if(!(bg == 'd')) {
+                    if(bg != 'd') {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;

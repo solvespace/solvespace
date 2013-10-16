@@ -82,6 +82,7 @@ inline double Random(double vmax) {
 class Expr;
 class ExprVector;
 class ExprQuaternion;
+class RgbColor;
 
 
 //================
@@ -178,11 +179,9 @@ void ExitNow(void);
 void CnfFreezeString(const char *str, const char *name);
 void CnfFreezeInt(uint32_t v, const char *name);
 void CnfFreezeFloat(float v, const char *name);
-void CnfFreezeBool(bool v, const char *name);
 void CnfThawString(char *str, int maxLen, const char *name);
 uint32_t CnfThawInt(uint32_t v, const char *name);
 float CnfThawFloat(float v, const char *name);
-bool CnfThawBool(bool v, const char *name);
 
 void *AllocTemporary(size_t n);
 void FreeTemporary(void *p);
@@ -223,7 +222,7 @@ void glxAxisAlignedLineLoop(double l, double r, double t, double b);
 typedef void GLX_CALLBACK glxCallbackFptr(void);
 void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void glxFillPolygon(SPolygon *p);
-void glxFillMesh(uint32_t color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
+void glxFillMesh(RgbColor color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
 void glxDebugPolygon(SPolygon *p);
 void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
@@ -235,11 +234,11 @@ void glxWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector
     glxLineFn *fn, void *fndata);
 double glxStrWidth(const char *str, double h);
 double glxStrHeight(double h);
-void glxLockColorTo(uint32_t rgb);
+void glxLockColorTo(RgbColor rgb);
 void glxFatLine(Vector a, Vector b, double width);
 void glxUnlockColor(void);
-void glxColorRGB(uint32_t rgb);
-void glxColorRGBa(uint32_t rgb, double a);
+void glxColorRGB(RgbColor rgb);
+void glxColorRGBa(RgbColor rgb, double a);
 void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
 void glxDrawPixelsWithTexture(uint8_t *data, int w, int h);
@@ -266,6 +265,10 @@ bool StringAllPrintable(const char *str);
 bool StringEndsIn(const char *str, const char *ending);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
+void CnfFreezeBool(bool v, const char *name);
+void CnfFreezeColor(RgbColor v, const char *name);
+bool CnfThawBool(bool v, const char *name);
+RgbColor CnfThawColor(RgbColor v, const char *name);
 
 class System {
 public:
@@ -459,10 +462,10 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual void StartPath( uint32_t strokeRgb, double lineWidth,
-                            bool filled, uint32_t fillRgb) = 0;
-    virtual void FinishPath(uint32_t strokeRgb, double lineWidth,
-                            bool filled, uint32_t fillRgb) = 0;
+    virtual void StartPath( RgbColor strokeRgb, double lineWidth,
+                            bool filled, RgbColor fillRgb) = 0;
+    virtual void FinishPath(RgbColor strokeRgb, double lineWidth,
+                            bool filled, RgbColor fillRgb) = 0;
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
@@ -471,10 +474,10 @@ public:
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -486,10 +489,10 @@ public:
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -503,10 +506,10 @@ public:
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -518,10 +521,10 @@ public:
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -531,10 +534,10 @@ public:
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -543,10 +546,10 @@ public:
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -556,10 +559,10 @@ class Step2dFileWriter : public VectorFileWriter {
 class GCodeFileWriter : public VectorFileWriter {
 public:
     SEdgeList sel;
-    void StartPath( uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
-    void FinishPath(uint32_t strokeRgb, double lineWidth,
-                    bool filled, uint32_t fillRgb);
+    void StartPath( RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
+    void FinishPath(RgbColor strokeRgb, double lineWidth,
+                    bool filled, RgbColor fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -640,7 +643,7 @@ public:
 
     // Little bits of extra configuration state
     enum { MODEL_COLORS = 8 };
-    uint32_t modelColor[MODEL_COLORS];
+    RgbColor modelColor[MODEL_COLORS];
     Vector   lightDir[2];
     double   lightIntensity[2];
     double   ambientIntensity;
@@ -654,7 +657,7 @@ public:
     bool     drawBackFaces;
     bool     checkClosedContour;
     bool     showToolbar;
-    uint32_t backgroundColor;
+    RgbColor backgroundColor;
     bool     exportShadedTriangles;
     bool     exportPwlCurves;
     bool     exportCanvasSizeAuto;

@@ -64,12 +64,12 @@ void DxfFileWriter::StartFile(void) {
 "ENTITIES\r\n");
 }
 
-void DxfFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void DxfFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                              bool filled, RgbColor fillRgb)
 {
 }
-void DxfFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void DxfFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                               bool filled, RgbColor fillRgb)
 {
 }
 
@@ -165,14 +165,14 @@ void EpsFileWriter::StartFile(void) {
             MmToPts(ptMax.y - ptMin.y));
 }
 
-void EpsFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void EpsFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                              bool filled, RgbColor fillRgb)
 {
     fprintf(f, "newpath\r\n");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void EpsFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void EpsFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                               bool filled, RgbColor fillRgb)
 {
     fprintf(f, "    %.3f setlinewidth\r\n"
                "    %.3f %.3f %.3f setrgbcolor\r\n"
@@ -180,11 +180,11 @@ void EpsFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
                "    1 setlinecap\r\n"   // rounded
                "    gsave stroke grestore\r\n",
         MmToPts(lineWidth),
-        REDf(strokeRgb), GREENf(strokeRgb), BLUEf(strokeRgb));
+        strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF());
     if(filled) {
         fprintf(f, "    %.3f %.3f %.3f setrgbcolor\r\n"
                    "    gsave fill grestore\r\n",
-            REDf(fillRgb), GREENf(fillRgb), BLUEf(fillRgb));
+            fillRgb.redF(), fillRgb.greenF(), fillRgb.blueF());
     }
 }
 
@@ -205,7 +205,7 @@ void EpsFileWriter::Triangle(STriangle *tr) {
 "    %.3f %.3f lineto\r\n"
 "    closepath\r\n"
 "gsave fill grestore\r\n",
-            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            tr->meta.color.redF(), tr->meta.color.greenF(), tr->meta.color.blueF(),
             MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
             MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
             MmToPts(tr->c.x - ptMin.x), MmToPts(tr->c.y - ptMin.y));
@@ -390,23 +390,23 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 
 }
 
-void PdfFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void PdfFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                              bool filled, RgbColor fillRgb)
 {
     fprintf(f, "1 J 1 j " // round endcaps and joins
                "%.3f w "
                "%.3f %.3f %.3f RG\r\n",
         MmToPts(lineWidth),
-        REDf(strokeRgb), GREENf(strokeRgb), BLUEf(strokeRgb));
+        strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF());
     if(filled) {
         fprintf(f, "%.3f %.3f %.3f rg\r\n",
-            REDf(fillRgb), GREENf(fillRgb), BLUEf(fillRgb));
+            fillRgb.redF(), fillRgb.greenF(), fillRgb.blueF());
     }
 
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void PdfFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void PdfFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                               bool filled, RgbColor fillRgb)
 {
     if(filled) {
         fprintf(f, "b\r\n");
@@ -435,8 +435,8 @@ void PdfFileWriter::Triangle(STriangle *tr) {
 "%.3f %.3f l\r\n"
 "%.3f %.3f l\r\n"
 "b\r\n",
-            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
-            REDf(tr->meta.color), GREENf(tr->meta.color), BLUEf(tr->meta.color),
+            tr->meta.color.redF(), tr->meta.color.greenF(), tr->meta.color.blueF(),
+            tr->meta.color.redF(), tr->meta.color.greenF(), tr->meta.color.blueF(),
             MmToPts(sw),
             MmToPts(tr->a.x - ptMin.x), MmToPts(tr->a.y - ptMin.y),
             MmToPts(tr->b.x - ptMin.x), MmToPts(tr->b.y - ptMin.y),
@@ -480,26 +480,26 @@ void SvgFileWriter::StartFile(void) {
     // A little bit of extra space for the stroke width.
 }
 
-void SvgFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void SvgFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                              bool filled, RgbColor fillRgb)
 {
     fprintf(f, "<path d='");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
-void SvgFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void SvgFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                               bool filled, RgbColor fillRgb)
 {
     char fill[100];
     if(filled) {
         sprintf(fill, "#%02x%02x%02x",
-            RED(fillRgb), GREEN(fillRgb), BLUE(fillRgb));
+            fillRgb.red, fillRgb.green, fillRgb.blue);
     } else {
         strcpy(fill, "none");
     }
     fprintf(f, "' stroke-width='%.3f' stroke='#%02x%02x%02x' "
                  "stroke-linecap='round' stroke-linejoin='round' "
                  "fill='%s' />\r\n",
-        lineWidth, RED(strokeRgb), GREEN(strokeRgb), BLUE(strokeRgb),
+        lineWidth, strokeRgb.red, strokeRgb.green, strokeRgb.blue,
         fill);
 }
 
@@ -523,9 +523,9 @@ void SvgFileWriter::Triangle(STriangle *tr) {
             (tr->a.x - ptMin.x), (ptMax.y - tr->a.y),
             (tr->b.x - ptMin.x), (ptMax.y - tr->b.y),
             (tr->c.x - ptMin.x), (ptMax.y - tr->c.y),
-            RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color),
+            tr->meta.color.red, tr->meta.color.green, tr->meta.color.blue,
             sw,
-            RED(tr->meta.color), GREEN(tr->meta.color), BLUE(tr->meta.color));
+            tr->meta.color.red, tr->meta.color.green, tr->meta.color.blue);
 }
 
 void SvgFileWriter::Bezier(SBezier *sb) {
@@ -585,12 +585,12 @@ void HpglFileWriter::StartFile(void) {
     fprintf(f, "SP1;\r\n");
 }
 
-void HpglFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void HpglFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                               bool filled, RgbColor fillRgb)
 {
 }
-void HpglFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void HpglFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                                bool filled, RgbColor fillRgb)
 {
 }
 
@@ -622,12 +622,12 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 void GCodeFileWriter::StartFile(void) {
     ZERO(&sel);
 }
-void GCodeFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                              bool filled, uint32_t fillRgb)
+void GCodeFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                                bool filled, RgbColor fillRgb)
 {
 }
-void GCodeFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                               bool filled, uint32_t fillRgb)
+void GCodeFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                                 bool filled, RgbColor fillRgb)
 {
 }
 void GCodeFileWriter::Triangle(STriangle *tr) {
@@ -691,12 +691,12 @@ void Step2dFileWriter::StartFile(void) {
 void Step2dFileWriter::Triangle(STriangle *tr) {
 }
 
-void Step2dFileWriter::StartPath(uint32_t strokeRgb, double lineWidth,
-                                 bool filled, uint32_t fillRgb)
+void Step2dFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
+                                 bool filled, RgbColor fillRgb)
 {
 }
-void Step2dFileWriter::FinishPath(uint32_t strokeRgb, double lineWidth,
-                                  bool filled, uint32_t fillRgb)
+void Step2dFileWriter::FinishPath(RgbColor strokeRgb, double lineWidth,
+                                  bool filled, RgbColor fillRgb)
 {
 }
 

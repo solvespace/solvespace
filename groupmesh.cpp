@@ -434,12 +434,12 @@ Group *Group::RunningMeshGroup(void) {
 }
 
 void Group::DrawDisplayItems(int t) {
-    int specColor;
+    RgbColor specColor;
     if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
         // force the color to something dim
         specColor = Style::Color(Style::DIM_SOLID);
     } else {
-        specColor = -1; // use the model color
+        specColor = RgbColor::Default(); // use the model color
     }
     // The back faces are drawn in red; should never seem them, since we
     // draw closed shells, so that's a debugging aid.

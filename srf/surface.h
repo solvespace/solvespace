@@ -250,7 +250,7 @@ public:
     // when I copy things over.
     hSSurface       newH;
 
-    uint32_t        color;
+    RgbColor        color;
     uint32_t        face;
 
     int             degm, degn;
@@ -361,9 +361,9 @@ public:
     bool                        booleanFailed;
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
-                             uint32_t color);
+                             RgbColor color);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                              uint32_t color);
+                              RgbColor color);
 
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);

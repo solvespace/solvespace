@@ -16,19 +16,9 @@ public:
         MAX_ROWS = 2000
     };
 
-#ifndef RGB
-#define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
-#endif
-#define RGBf(r, g, b) RGB((int)(255*(r)), (int)(255*(g)), (int)(255*(b)))
-#define RED(v)      (((v) >>  0) & 0xff)
-#define GREEN(v)    (((v) >>  8) & 0xff)
-#define BLUE(v)     (((v) >> 16) & 0xff)
-#define REDf(v)     (RED  (v) / 255.0f)
-#define GREENf(v)   (GREEN(v) / 255.0f)
-#define BLUEf(v)    (BLUE (v) / 255.0f)
     typedef struct {
         char     c;
-        uint32_t color;
+        RgbColor color;
     } Color;
     static const Color fgColors[];
     static const Color bgColors[];
@@ -56,7 +46,8 @@ public:
     enum { NOT_A_LINK = 0 };
     struct {
         char            fg;
-        int             bg;
+        char            bg;
+        RgbColor        bgRgb;
         int             link;
         uint32_t        data;
         LinkFunction   *f;
@@ -206,7 +197,7 @@ public:
         int     col;
 
         struct {
-            uint32_t rgb;
+            RgbColor rgb;
             double   h, s, v;
             bool     show;
             bool     picker1dActive;
@@ -216,7 +207,7 @@ public:
 
     void HideEditControl(void);
     void ShowEditControl(int halfRow, int col, char *s);
-    void ShowEditControlWithColorPicker(int halfRow, int col, uint32_t rgb);
+    void ShowEditControlWithColorPicker(int halfRow, int col, RgbColor rgb);
 
     void ClearSuper(void);
 

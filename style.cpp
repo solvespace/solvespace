@@ -22,7 +22,7 @@ const Style::Default Style::Defaults[] = {
     { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, },
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, },
-    { { 0 },            NULL,           0,                   0.0, }
+    { { 0 },            NULL,           NULL_COLOR,          0.0 }
 };
 
 char *Style::CnfColor(const char *prefix) {
@@ -74,7 +74,7 @@ void Style::CreateDefaultStyle(hStyle h) {
 
     Style ns;
     ZERO(&ns);
-    ns.color        = CnfThawInt(d->color, CnfColor(d->cnfPrefix));
+    ns.color        = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
     ns.width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     ns.widthAs      = UNITS_AS_PIXELS;
     ns.textHeight   = DEFAULT_TEXT_HEIGHT;
@@ -121,7 +121,7 @@ void Style::LoadFactoryDefaults(void) {
 void Style::FreezeDefaultStyles(void) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
-        CnfFreezeInt(Color(d->h), CnfColor(d->cnfPrefix));
+        CnfFreezeColor(Color(d->h), CnfColor(d->cnfPrefix));
         CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
     }
 }
@@ -197,7 +197,7 @@ Style *Style::Get(hStyle h) {
 // A couple of wrappers, so that I can call these functions with either an
 // hStyle or with the integer corresponding to that hStyle.v.
 //-----------------------------------------------------------------------------
-uint32_t Style::Color(int s, bool forExport) {
+RgbColor Style::Color(int s, bool forExport) {
     hStyle hs = { (uint32_t)s };
     return Color(hs, forExport);
 }
@@ -210,8 +210,8 @@ float Style::Width(int s) {
 // If a color is almost white, then we can rewrite it to black, just so that
 // it won't disappear on file formats with a light background.
 //-----------------------------------------------------------------------------
-uint32_t Style::RewriteColor(uint32_t rgbin) {
-    Vector rgb = Vector::From(REDf(rgbin), GREENf(rgbin), BLUEf(rgbin));
+RgbColor Style::RewriteColor(RgbColor rgbin) {
+    Vector rgb = Vector::From(rgbin.redF(), rgbin.greenF(), rgbin.blueF());
     rgb = rgb.Minus(Vector::From(1, 1, 1));
     if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
         // This is an almost-white color in a default style, which is
@@ -227,7 +227,7 @@ uint32_t Style::RewriteColor(uint32_t rgbin) {
 //-----------------------------------------------------------------------------
 // Return the stroke color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-uint32_t Style::Color(hStyle h, bool forExport) {
+RgbColor Style::Color(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->color);
@@ -239,7 +239,7 @@ uint32_t Style::Color(hStyle h, bool forExport) {
 //-----------------------------------------------------------------------------
 // Return the fill color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-uint32_t Style::FillColor(hStyle h, bool forExport) {
+RgbColor Style::FillColor(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->fillColor);
@@ -349,7 +349,7 @@ void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
-    uint32_t rgb = SS.backgroundColor;
+    RgbColor rgb = SS.backgroundColor;
     SS.TW.ShowEditControlWithColorPicker(v, 3, rgb);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
@@ -440,9 +440,9 @@ void TextWindow::ShowListOfStyles(void) {
     bool darkbg = false;
     Style *s;
     for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
-        Printf(false, "%Bp  %Bp   %Bp   %Fl%Ll%f%D%s%E",
+        Printf(false, "%Bp  %Bz   %Bp   %Fl%Ll%f%D%s%E",
             darkbg ? 'd' : 'a',
-            0x80000000 | s->color,
+            &s->color,
             darkbg ? 'd' : 'a',
             ScreenShowStyleInfo, s->h.v,
             s->DescriptionString());
@@ -455,10 +455,10 @@ void TextWindow::ShowListOfStyles(void) {
 
     Printf(false, "");
 
-    uint32_t rgb = SS.backgroundColor;
+    RgbColor rgb = SS.backgroundColor;
     Printf(false, "%Ft background color (r, g, b)%E");
     Printf(false, "%Ba   %@, %@, %@ %Fl%D%f%Ll[change]%E",
-        REDf(rgb), GREENf(rgb), BLUEf(rgb),
+        rgb.redF(), rgb.greenF(), rgb.blueF(),
         top[rows-1] + 2, &ScreenChangeBackgroundColor);
 
     Printf(false, "");
@@ -549,7 +549,7 @@ void TextWindow::ScreenChangeStyleColor(int link, uint32_t v) {
     Style *s = Style::Get(hs);
     // Same function used for stroke and fill colors
     int row, col, em;
-    uint32_t rgb;
+    RgbColor rgb;
     if(link == 's') {
         row = 15; col = 13;
         em = EDIT_STYLE_COLOR;
@@ -738,9 +738,9 @@ void TextWindow::ShowStyleInfo(void) {
     }
 
     Printf(true, "%Ft line stroke style%E");
-    Printf(false, "%Ba   %Ftcolor %E%Bp  %Ba (%@, %@, %@) %D%f%Ls%Fl[change]%E",
-        0x80000000 | s->color,
-        REDf(s->color), GREENf(s->color), BLUEf(s->color),
+    Printf(false, "%Ba   %Ftcolor %E%Bz  %Ba (%@, %@, %@) %D%f%Ls%Fl[change]%E",
+        &s->color,
+        s->color.redF(), s->color.greenF(), s->color.blueF(),
         s->h.v, ScreenChangeStyleColor);
 
     // The line width, and its units
@@ -776,9 +776,9 @@ void TextWindow::ShowStyleInfo(void) {
         Printf(false, "");
         Printf(false, "%Ft contour fill style%E");
         Printf(false,
-            "%Ba   %Ftcolor %E%Bp  %Ba (%@, %@, %@) %D%f%Lf%Fl[change]%E",
-            0x80000000 | s->fillColor,
-            REDf(s->fillColor), GREENf(s->fillColor), BLUEf(s->fillColor),
+            "%Ba   %Ftcolor %E%Bz  %Ba (%@, %@, %@) %D%f%Lf%Fl[change]%E",
+            &s->fillColor,
+            s->fillColor.redF(), s->fillColor.greenF(), s->fillColor.blueF(),
             s->h.v, ScreenChangeStyleColor);
 
         Printf(false, "%Bd   %D%f%Lf%c  contours are filled%E",

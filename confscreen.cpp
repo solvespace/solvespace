@@ -172,13 +172,13 @@ void TextWindow::ShowConfiguration(void) {
     Printf(true, "%Ft user color (r, g, b)");
     
     for(i = 0; i < SS.MODEL_COLORS; i++) {
-        Printf(false, "%Bp   #%d:  %Bp  %Bp  (%@, %@, %@) %f%D%Ll%Fl[change]%E",
+        Printf(false, "%Bp   #%d:  %Bz  %Bp  (%@, %@, %@) %f%D%Ll%Fl[change]%E",
             (i & 1) ? 'd' : 'a',
-            i, 0x80000000 | SS.modelColor[i],
+            i, &SS.modelColor[i],
             (i & 1) ? 'd' : 'a',
-            REDf(SS.modelColor[i]),
-            GREENf(SS.modelColor[i]),
-            BLUEf(SS.modelColor[i]),
+            SS.modelColor[i].redF(),
+            SS.modelColor[i].greenF(),
+            SS.modelColor[i].blueF(),
             &ScreenChangeColor, i);
     }
     

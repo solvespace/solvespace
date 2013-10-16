@@ -34,7 +34,7 @@ void SShell::MergeCoincidentSurfaces(void) {
                 sj = &(surface.elem[j]);
                 if(sj->tag) continue;
                 if(!sj->CoincidentWith(si, true)) continue;
-                if(sj->color != si->color) continue;
+                if(!sj->color.Equals(si->color)) continue;
                 // But we do merge surfaces with different face entities, since
                 // otherwise we'd hardly ever merge anything.
 

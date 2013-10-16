@@ -118,7 +118,7 @@ public:
     double      valA;
     double      valB;
     double      valC;
-    uint32_t    color;
+    RgbColor    color;
 
     struct {
         int                 how;
@@ -242,7 +242,7 @@ public:
     void GenerateDisplayItems(void);
     void DrawDisplayItems(int t);
     void Draw(void);
-    uint32_t GetLoopSetFillColor(SBezierLoopSet *sbls,
+    RgbColor GetLoopSetFillColor(SBezierLoopSet *sbls,
                                  bool *allSame, Vector *errorAt);
     void FillLoopSetAsPolygon(SBezierLoopSet *sbls);
     void DrawFilledPaths(void);
@@ -729,9 +729,9 @@ public:
     };
     int         textOrigin;
     double      textAngle;
-    uint32_t    color;
+    RgbColor    color;
     bool        filled;
-    uint32_t    fillColor;
+    RgbColor    fillColor;
     bool        visible;
     bool        exportable;
 
@@ -740,7 +740,7 @@ public:
     typedef struct {
         hStyle      h;
         const char *cnfPrefix;
-        uint32_t    color;
+        RgbColor    color;
         double      width;
     } Default;
     static const Default Defaults[];
@@ -757,13 +757,13 @@ public:
     static void AssignSelectionToStyle(uint32_t v);
     static uint32_t CreateCustomStyle(void);
 
-    static uint32_t RewriteColor(uint32_t rgb);
+    static RgbColor RewriteColor(RgbColor rgb);
 
     static Style *Get(hStyle hs);
-    static uint32_t Color(hStyle hs, bool forExport=false);
-    static uint32_t FillColor(hStyle hs, bool forExport=false);
+    static RgbColor Color(hStyle hs, bool forExport=false);
+    static RgbColor FillColor(hStyle hs, bool forExport=false);
     static float Width(hStyle hs);
-    static uint32_t Color(int hs, bool forExport=false);
+    static RgbColor Color(int hs, bool forExport=false);
     static float Width(int hs);
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);
