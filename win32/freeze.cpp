@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define FREEZE_SUBKEY ----
+#include "freeze.h"
+
 /*
  * store a window's position in the registry, or fail silently if the registry calls don't work
  */
@@ -24,7 +27,7 @@ void FreezeWindowPosF(HWND hwnd, const char *subKey, const char *name)
         return;
 
     HKEY sub;
-    if(RegCreateKeyEx(software, subKey, 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
+    if(RegCreateKeyEx(software, subKey, 0, (LPTSTR)"", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
         return;
 
     sprintf(keyName, "%s_left", name);
@@ -139,7 +142,7 @@ void FreezeDWORDF(DWORD val, const char *subKey, const char *name)
         return;
 
     HKEY sub;
-    if(RegCreateKeyEx(software, subKey, 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
+    if(RegCreateKeyEx(software, subKey, 0, (LPTSTR)"", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
         return;
   
     if(RegSetValueEx(sub, name, 0, REG_DWORD, (BYTE *)&val, sizeof(DWORD)) != ERROR_SUCCESS)
@@ -177,7 +180,7 @@ void FreezeStringF(const char *val, const char *subKey, const char *name)
         return;
 
     HKEY sub;
-    if(RegCreateKeyEx(software, subKey, 0, "", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
+    if(RegCreateKeyEx(software, subKey, 0, (LPTSTR)"", REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &sub, NULL) != ERROR_SUCCESS)
         return;
   
     if(RegSetValueEx(sub, name, 0, REG_SZ, (const BYTE *)val, (DWORD)strlen(val)+1) != ERROR_SUCCESS)

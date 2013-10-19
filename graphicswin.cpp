@@ -144,7 +144,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 0, "&Help",                       0,                  0,      NULL  },
 { 1, "&Website / Manual",           MNU_WEBSITE,        0,      mHelp },
 { 1, "&About",                      MNU_ABOUT,          0,      mHelp },
-{ -1 }
+
+{ -1, 0, 0, 0, 0 }
 };
 
 #undef DEL

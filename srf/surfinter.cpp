@@ -84,7 +84,8 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         return;
     }
 
-    if(sb->deg == 2 && 0) {
+#if 0
+    if(sb->deg == 2) {
         dbp(" ");
         SCurvePt *prev = NULL, *v;
         dbp("split.pts.n = %d", split.pts.n);
@@ -96,6 +97,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
             prev = v;
         }
     }
+#endif // 0
     // Nothing should be generating zero-len edges.
     if((sb->Start()).Equals(sb->Finish())) oops();
 

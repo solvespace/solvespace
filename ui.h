@@ -637,7 +637,7 @@ public:
     int32_t contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
-    bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menu);
+    bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menuHit);
     void ToolbarDraw(void);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);

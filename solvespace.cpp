@@ -735,7 +735,7 @@ void SolveSpace::MenuHelp(int id) {
 "There is NO WARRANTY, to the extent permitted by\n"
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
-"\xa9 2008-2013 Jonathan Westhues and subsequent authors.\n"
+"\xa9 2008-2013 Jonathan Westhues and other authors.\n"
 );
             break;
 

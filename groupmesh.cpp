@@ -443,7 +443,7 @@ void Group::DrawDisplayItems(int t) {
     }
     // The back faces are drawn in red; should never seem them, since we
     // draw closed shells, so that's a debugging aid.
-    GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0 };
+    GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0f };
     glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
 
     // When we fill the mesh, we need to know which triangles are selected

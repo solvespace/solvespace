@@ -914,8 +914,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         {
-        Vector n; 
         case SYMMETRIC:
+            Vector n;
             n = SK.GetEntity(entityA)->Normal()->NormalN(); goto s;
         case SYMMETRIC_HORIZ:
             n = SK.GetEntity(workplane)->Normal()->NormalU(); goto s;

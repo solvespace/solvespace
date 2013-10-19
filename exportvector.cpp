@@ -5,6 +5,13 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+void VectorFileWriter::Dummy(void) {
+    // This out-of-line virtual method definition quells the following warning
+    // from Clang++: "'VectorFileWriter' has no out-of-line virtual method
+    // definitions; its vtable will be emitted in every translation unit
+    // [-Wweak-vtables]"
+}
+
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------

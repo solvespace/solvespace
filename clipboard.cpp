@@ -90,12 +90,12 @@ void GraphicsWindow::CopySelection(void) {
         cr.str.strcpy(    e->str.str);
         cr.font.strcpy(   e->font.str);
         cr.construction = e->construction;
-        for(int i = 0; i < pts; i++) {
+        {for(int i = 0; i < pts; i++) {
             Vector pt = SK.GetEntity(e->point[i])->PointGetNum();
             pt = pt.Minus(p);
             pt = pt.DotInToCsys(u, v, n);
             cr.point[i] = pt;
-        }
+        }}
         if(hasDistance) {
             cr.distance = SK.GetEntity(e->distance)->DistanceGetNum();
         }

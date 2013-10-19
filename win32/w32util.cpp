@@ -6,11 +6,6 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include <windows.h>
-#include <stdarg.h>
-#include <string.h>
-#include <stdio.h>
-
 #include "solvespace.h"
 
 static HANDLE PermHeap, TempHeap;

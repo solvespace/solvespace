@@ -20,7 +20,6 @@ double Bernstein(int k, int deg, double t)
     switch(deg) {
         case 0:
             return 1;
-            break;
 
         case 1:
             if(k == 0) {
@@ -60,7 +59,6 @@ double BernsteinDerivative(int k, int deg, double t)
     switch(deg) {
         case 0:
             return 0;
-            break;
 
         case 1:
             if(k == 0) {

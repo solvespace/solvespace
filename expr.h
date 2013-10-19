@@ -70,10 +70,10 @@ public:
     static Expr *From(double v);
 
     Expr *AnyOp(int op, Expr *b);
-    inline Expr *Plus (Expr *b) { return AnyOp(PLUS,  b); }
-    inline Expr *Minus(Expr *b) { return AnyOp(MINUS, b); }
-    inline Expr *Times(Expr *b) { return AnyOp(TIMES, b); }
-    inline Expr *Div  (Expr *b) { return AnyOp(DIV,   b); }
+    inline Expr *Plus (Expr *b_) { return AnyOp(PLUS,  b_); }
+    inline Expr *Minus(Expr *b_) { return AnyOp(MINUS, b_); }
+    inline Expr *Times(Expr *b_) { return AnyOp(TIMES, b_); }
+    inline Expr *Div  (Expr *b_) { return AnyOp(DIV,   b_); }
 
     inline Expr *Negate(void) { return AnyOp(NEGATE, NULL); }
     inline Expr *Sqrt  (void) { return AnyOp(SQRT,   NULL); }

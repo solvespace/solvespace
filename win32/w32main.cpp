@@ -36,7 +36,7 @@ HGLRC TextGl;
 HWND GraphicsWnd;
 HGLRC GraphicsGl;
 HWND GraphicsEditControl;
-struct {
+static struct {
     int x, y;
 } LastMousePos;
 
@@ -109,7 +109,7 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
     return 1;
 }
 
-HWND CreateWindowClient(DWORD exStyle, char *className, char *windowName,
+HWND CreateWindowClient(DWORD exStyle, const char *className, const char *windowName,
     DWORD style, int x, int y, int width, int height, HWND parent,
     HMENU menu, HINSTANCE instance, void *param)
 {
@@ -130,7 +130,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
-    HWND h = GetForegroundWindow();
+    //HWND h = GetForegroundWindow();
 
     // Register the window class for our dialog.
     WNDCLASSEX wc;
@@ -153,7 +153,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error)
     MessageString = str;
     RECT r;
     GetWindowRect(GraphicsWnd, &r);
-    char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
+    const char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
     int width  = cols*SS.TW.CHAR_WIDTH + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWnd = CreateWindowClient(0, "MessageWnd", title,
@@ -276,8 +276,17 @@ void CnfFreezeString(const char *str, const char *name)
 void CnfFreezeInt(uint32_t v, const char *name)
     { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
-void CnfFreezeFloat(float v, const char *name)
-    { FreezeDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); }
+union floatDWORD {
+    float f;
+    DWORD d;
+};
+
+void CnfFreezeFloat(float v, const char *name) {
+    if(sizeof(float) != sizeof(DWORD)) oops();
+    floatDWORD u;
+    u.f = v;
+    FreezeDWORDF(u.d, FREEZE_SUBKEY, name);
+}
 
 void CnfThawString(char *str, int maxLen, const char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
@@ -286,8 +295,10 @@ uint32_t CnfThawInt(uint32_t v, const char *name)
     { return (uint32_t)ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
 float CnfThawFloat(float v, const char *name) {
-    DWORD d = ThawDWORDF(*((DWORD *)&v), FREEZE_SUBKEY, name); 
-    return *((float *)&d);
+    floatDWORD u;
+    u.f = v;
+    u.d = ThawDWORDF(u.d, FREEZE_SUBKEY, name);
+    return u.f;
 }
 
 void SetWindowTitle(const char *str) {
@@ -922,7 +933,7 @@ static void MenuById(int id, bool yes, bool check)
         
         if(SS.GW.menu[i].id == id) {
             if(subMenu < 0) oops();
-            if(subMenu >= arraylen(SubMenus)) oops();
+            if(subMenu >= (int)arraylen(SubMenus)) oops();
 
             if(check) {
                 CheckMenuItem(SubMenus[subMenu], id,
@@ -990,7 +1001,7 @@ HMENU CreateGraphicsWindowMenus(void)
         if(SS.GW.menu[i].level == 0) {
             m = CreateMenu();
             AppendMenu(top, MF_STRING | MF_POPUP, (UINT_PTR)m, label);
-            if(subMenu >= arraylen(SubMenus)) oops();
+            if(subMenu >= (int)arraylen(SubMenus)) oops();
             SubMenus[subMenu] = m;
             subMenu++;
         } else if(SS.GW.menu[i].level == 1) {

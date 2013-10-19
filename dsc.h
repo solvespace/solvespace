@@ -150,7 +150,7 @@ public:
     void AllocForOneMore(void) {
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
+            elem = (T *)MemRealloc(elem, (size_t)elemsAllocated*sizeof(elem[0]));
         }
     }
 
@@ -249,7 +249,7 @@ public:
     void Add(T *t) {
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (T *)MemRealloc(elem, elemsAllocated*sizeof(elem[0]));
+            elem = (T *)MemRealloc(elem, (size_t)elemsAllocated*sizeof(elem[0]));
         }
 
         int first = 0, last = n;
@@ -268,7 +268,7 @@ public:
         }
         int i = first;
 
-        memmove(elem+i+1, elem+i, (n-i)*sizeof(elem[0]));
+        memmove(elem+i+1, elem+i, (size_t)(n-i)*sizeof(elem[0]));
         elem[i] = *t;
         n++;
     }

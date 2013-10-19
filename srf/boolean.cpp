@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-int I, N, FLAG;
+static int I, N, FLAG;
 
 void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, AS_UNION);
@@ -216,7 +216,6 @@ static bool KeepRegion(int type, bool opA, int shell, int orig)
             } else {
                 return (!inShell && !inFace) || inSame;
             }
-            break;
 
         case SShell::AS_DIFFERENCE:
             if(opA) {
@@ -224,7 +223,6 @@ static bool KeepRegion(int type, bool opA, int shell, int orig)
             } else {
                 return (inShell && !inFace) || inSame;
             }
-            break;
 
         default: oops();
     }
@@ -273,7 +271,7 @@ static void TagByClassifiedEdge(int bspclass, int *indir, int *outdir)
     }
 }
 
-void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
+static void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
     dbp("print %d edges", sel->l.n);
     SEdge *se;
     for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {

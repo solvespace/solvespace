@@ -35,13 +35,13 @@ TextWindow::HideShowIcon TextWindow::hideShowIcons[] = {
     { &(SS.GW.showPoints),      Icon_point,         "points"                         },
     { &(SS.GW.showConstraints), Icon_constraint,    "constraints and dimensions"     },
     { &(SS.GW.showFaces),       Icon_faces,         "XXX - special cased"            },
-    { &SPACER, 0 },
+    { &SPACER, 0, 0 },
     { &(SS.GW.showShaded),      Icon_shaded,        "shaded view of solid model"     },
     { &(SS.GW.showEdges),       Icon_edges,         "edges of solid model"           },
     { &(SS.GW.showMesh),        Icon_mesh,          "triangle mesh of solid model"   },
-    { &SPACER, 0 },
+    { &SPACER, 0, 0 },
     { &(SS.GW.showHdnLines),    Icon_hidden_lines,  "hidden lines"                   },
-    { 0, 0 },
+    { 0, 0, 0 }
 };
 
 void TextWindow::MakeColorTable(const Color *in, float *out) {

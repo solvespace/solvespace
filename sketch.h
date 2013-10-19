@@ -777,11 +777,11 @@ public:
 
 
 inline hEntity hGroup::entity(int i)
-    { hEntity r; r.v = 0x80000000 | (v << 16) | i; return r; }
+    { hEntity r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
 inline hParam hGroup::param(int i)
-    { hParam r; r.v = 0x80000000 | (v << 16) | i; return r; }
+    { hParam r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
 inline hEquation hGroup::equation(int i)
-    { hEquation r; r.v = (v << 16) | 0x80000000 | i; return r; }
+    { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
 inline bool hRequest::IsFromReferences(void) {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
@@ -790,9 +790,9 @@ inline bool hRequest::IsFromReferences(void) {
     return false;
 }
 inline hEntity hRequest::entity(int i)
-    { hEntity r; r.v = (v << 16) | i; return r; }
+    { hEntity r; r.v = (v << 16) | (uint32_t)i; return r; }
 inline hParam hRequest::param(int i)
-    { hParam r; r.v = (v << 16) | i; return r; }
+    { hParam r; r.v = (v << 16) | (uint32_t)i; return r; }
 
 inline bool hEntity::isFromRequest(void)
     { if(v & 0x80000000) return false; else return true; }
@@ -808,7 +808,7 @@ inline hRequest hParam::request(void)
 
 
 inline hEquation hConstraint::equation(int i)
-    { hEquation r; r.v = (v << 16) | i; return r; }
+    { hEquation r; r.v = (v << 16) | (uint32_t)i; return r; }
 
 inline bool hEquation::isFromConstraint(void)
     { if(v & 0xc0000000) return false; else return true; }

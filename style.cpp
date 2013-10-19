@@ -410,9 +410,9 @@ void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
         int rh; rh = max(4, RoundUpToPowerOfTwo(h));
 
         SS.bgImage.fromFile = (uint8_t *)MemAlloc(rw*rh*3);
-        for(int i = 0; i < h; i++) {
+        {for(int i = 0; i < h; i++) {
             memcpy(SS.bgImage.fromFile + ((h - 1) - i)*(rw*3), rows[i], w*3);
-        }
+        }}
         SS.bgImage.w      = w;
         SS.bgImage.h      = h;
         SS.bgImage.rw     = rw;

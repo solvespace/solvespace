@@ -6,9 +6,10 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <icons-proto.h>
 #include <icons.h>
 
-uint8_t SPACER[1];
+static uint8_t SPACER[1];
 static const struct {
     uint8_t     *image;
     int          menu;
@@ -24,7 +25,7 @@ static const struct {
     { Icon_point,           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point"                                },
     { Icon_construction,    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction"                               },
     { Icon_trim,            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect"         },
-    { SPACER  },
+    { SPACER, 0, 0 },
 
     { Icon_length,          GraphicsWindow::MNU_DISTANCE_DIA,   "Constrain distance / diameter / length"            },
     { Icon_angle,           GraphicsWindow::MNU_ANGLE,          "Constrain angle"                                   },
@@ -38,7 +39,7 @@ static const struct {
     { Icon_same_orientation,GraphicsWindow::MNU_ORIENTED_SAME,  "Constrain normals in same orientation"             },
     { Icon_other_supp,      GraphicsWindow::MNU_OTHER_ANGLE,    "Other supplementary angle"                         },
     { Icon_ref,             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension"                        },
-    { SPACER  },
+    { SPACER, 0, 0 },
 
     { Icon_extrude,         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch"                 },
     { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
@@ -46,11 +47,11 @@ static const struct {
     { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
     { Icon_sketch_in_3d,    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d"                                   },
     { Icon_assemble,        GraphicsWindow::MNU_GROUP_IMPORT,   "New group importing / assembling file"             },
-    { SPACER  },
+    { SPACER, 0, 0 },
 
     { Icon_in3d,            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view"                            },
     { Icon_ontoworkplane,   GraphicsWindow::MNU_ONTO_WORKPLANE, "Align view to active workplane"                    },
-    { NULL  },
+    { NULL, 0, 0 }
 };
 
 void GraphicsWindow::ToolbarDraw(void) {
@@ -103,7 +104,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
 }
 
 bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
-                                          bool paint, int *menu)
+                                          bool paint, int *menuHit)
 {
     int i;
     int x = 17, y = (int)(height - 52);
@@ -186,7 +187,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             if(mx < (x+boxhw) && mx > (x - boxhw) &&
                my < (y+boxhw) && my > (y - boxhw))
             {
-                if(menu) *menu = Toolbar[i].menu;
+                if(menuHit) *menuHit = Toolbar[i].menu;
             }
         }
 

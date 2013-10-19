@@ -11,13 +11,15 @@
 #define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
                     if(0) *(char *)0 = 1; exit(-1); } while(0)
 #ifndef min
-#define min(x, y) ((x) < (y) ? (x) : (y))
+#   define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
 #ifndef max
-#define max(x, y) ((x) > (y) ? (x) : (y))
+#   define max(x, y) ((x) > (y) ? (x) : (y))
 #endif
 
-#define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
+#ifndef isnan
+#   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
+#endif
 
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
@@ -471,6 +473,8 @@ public:
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
     virtual bool HasCanvasSize(void) = 0;
+
+    virtual void Dummy(void);
 };
 class DxfFileWriter : public VectorFileWriter {
 public:

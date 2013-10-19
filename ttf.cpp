@@ -77,7 +77,7 @@ uint16_t TtfFont::GetUSHORT(void) {
     b1 = (uint8_t)Getc();
     b0 = (uint8_t)Getc();
 
-    return (b1 << 8) | b0;
+    return (uint16_t)(b1 << 8) | b0;
 }
 uint32_t TtfFont::GetULONG(void) {
     uint8_t b0, b1, b2, b3;
@@ -86,7 +86,11 @@ uint32_t TtfFont::GetULONG(void) {
     b1 = (uint8_t)Getc();
     b0 = (uint8_t)Getc();
 
-    return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
+    return
+        (uint32_t)(b3 << 24) |
+        (uint32_t)(b2 << 16) |
+        (uint32_t)(b1 <<  8) |
+        b0;
 }
 
 //-----------------------------------------------------------------------------
