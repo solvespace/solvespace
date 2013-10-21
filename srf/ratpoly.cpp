@@ -261,7 +261,7 @@ void SBezier::MakePwlInto(SContour *sc, double chordTol) {
     lv.Clear();
 }
 void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
-    if(chordTol == 0) {
+    if(EXACT(chordTol == 0)) {
         // Use the default chord tolerance.
         chordTol = SS.ChordTolMm();
     }

@@ -479,9 +479,9 @@ bool Vector::Equals(Vector v, double tol) {
 }
 
 bool Vector::EqualsExactly(Vector v) {
-    return (x == v.x) &&
-           (y == v.y) &&
-           (z == v.z);
+    return EXACT(x == v.x &&
+                 y == v.y &&
+                 z == v.z);
 }
 
 Vector Vector::Plus(Vector b) {
@@ -681,7 +681,7 @@ Vector Vector::ScaledBy(double v) {
 
 Vector Vector::WithMagnitude(double v) {
     double m = Magnitude();
-    if(m == 0) {
+    if(EXACT(m == 0)) {
         // We can do a zero vector with zero magnitude, but not any other cases.
         if(fabs(v) > 1e-100) {
             dbp("Vector::WithMagnitude(%g) of zero vector!", v);

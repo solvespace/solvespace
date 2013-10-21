@@ -7,6 +7,18 @@
 #ifndef __SOLVESPACE_H
 #define __SOLVESPACE_H
 
+// The few floating-point equality comparisons in SolveSpace have been
+// carefully considered, so we disable the -Wfloat-equal warning for them
+#ifdef __clang__
+#   define EXACT(expr) \
+        (_Pragma("clang diagnostic push") \
+         _Pragma("clang diagnostic ignored \"-Wfloat-equal\"") \
+         (expr) \
+         _Pragma("clang diagnostic pop"))
+#else
+#   define EXACT(expr) (expr)
+#endif
+
 // Debugging functions
 #define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
                     if(0) *(char *)0 = 1; exit(-1); } while(0)

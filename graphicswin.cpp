@@ -355,12 +355,12 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
                          projUp.   ScaledBy(-ym));
   
     // And based on this, we calculate the scale and offset
-    if(dx == 0 && dy == 0) {
+    if(EXACT(dx == 0 && dy == 0)) {
         scale = 5;
     } else {
         double scalex = 1e12, scaley = 1e12;
-        if(dx != 0) scalex = 0.9*width /dx;
-        if(dy != 0) scaley = 0.9*height/dy;
+        if(EXACT(dx != 0)) scalex = 0.9*width /dx;
+        if(EXACT(dy != 0)) scaley = 0.9*height/dy;
         scale = min(scalex, scaley);
 
         scale = min(300, scale);
