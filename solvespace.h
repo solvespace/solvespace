@@ -228,37 +228,37 @@ typedef IdList<Param,hParam> ParamList;
 
 
 // Utility functions that are provided in the platform-independent code.
-void glxVertex3v(Vector u);
-void glxAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
-void glxAxisAlignedLineLoop(double l, double r, double t, double b);
+void ssglVertex3v(Vector u);
+void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
+void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
 #define DEFAULT_TEXT_HEIGHT (11.5)
-#define GLX_CALLBACK __stdcall
-typedef void GLX_CALLBACK glxCallbackFptr(void);
-void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
-void glxFillPolygon(SPolygon *p);
-void glxFillMesh(RgbColor color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
-void glxDebugPolygon(SPolygon *p);
-void glxDrawEdges(SEdgeList *l, bool endpointsToo);
-void glxDebugMesh(SMesh *m);
-void glxMarkPolygonNormal(SPolygon *p);
-typedef void glxLineFn(void *data, Vector a, Vector b);
-void glxWriteText(const char *str, double h, Vector t, Vector u, Vector v,
-    glxLineFn *fn, void *fndata);
-void glxWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
-    glxLineFn *fn, void *fndata);
-double glxStrWidth(const char *str, double h);
-double glxStrHeight(double h);
-void glxLockColorTo(RgbColor rgb);
-void glxFatLine(Vector a, Vector b, double width);
-void glxUnlockColor(void);
-void glxColorRGB(RgbColor rgb);
-void glxColorRGBa(RgbColor rgb, double a);
-void glxDepthRangeOffset(int units);
-void glxDepthRangeLockToFront(bool yes);
-void glxDrawPixelsWithTexture(uint8_t *data, int w, int h);
-void glxCreateBitmapFont(void);
-void glxBitmapText(const char *str, Vector p);
-void glxBitmapCharQuad(char c, double x, double y);
+#define SSGL_CALLBACK __stdcall
+typedef void SSGL_CALLBACK ssglCallbackFptr(void);
+void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p);
+void ssglFillPolygon(SPolygon *p);
+void ssglFillMesh(RgbColor color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
+void ssglDebugPolygon(SPolygon *p);
+void ssglDrawEdges(SEdgeList *l, bool endpointsToo);
+void ssglDebugMesh(SMesh *m);
+void ssglMarkPolygonNormal(SPolygon *p);
+typedef void ssglLineFn(void *data, Vector a, Vector b);
+void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
+    ssglLineFn *fn, void *fndata);
+void ssglWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
+    ssglLineFn *fn, void *fndata);
+double ssglStrWidth(const char *str, double h);
+double ssglStrHeight(double h);
+void ssglLockColorTo(RgbColor rgb);
+void ssglFatLine(Vector a, Vector b, double width);
+void ssglUnlockColor(void);
+void ssglColorRGB(RgbColor rgb);
+void ssglColorRGBa(RgbColor rgb, double a);
+void ssglDepthRangeOffset(int units);
+void ssglDepthRangeLockToFront(bool yes);
+void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h);
+void ssglCreateBitmapFont(void);
+void ssglBitmapText(const char *str, Vector p);
+void ssglBitmapCharQuad(char c, double x, double y);
 #define TEXTURE_BACKGROUND_IMG  10
 #define TEXTURE_BITMAP_FONT     20
 #define TEXTURE_DRAW_PIXELS     30

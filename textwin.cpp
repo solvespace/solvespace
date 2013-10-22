@@ -350,7 +350,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
     double grey = 30.0/255;
     double top = y - 28, bot = y + 4;
     glColor4d(grey, grey, grey, 1.0);
-    glxAxisAlignedQuad(0, width, top, bot);
+    ssglAxisAlignedQuad(0, width, top, bot);
 
     HideShowIcon *oldHovered = hoveredIcon;
     if(how != PAINT) {
@@ -365,7 +365,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
                 int l = x, r = l + 4,
                     t = y, b = t - 24;
                 glColor4d(0.17, 0.17, 0.17, 1);
-                glxAxisAlignedQuad(l, r, t, b);
+                ssglAxisAlignedQuad(l, r, t, b);
             }
             x += 12;
             continue;
@@ -377,12 +377,12 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
                 // Only thing that matters about the color is the alpha,
                 // should be one for no transparency
                 glColor3d(0, 0, 0);
-                glxDrawPixelsWithTexture(hsi->icon, 24, 24);
+                ssglDrawPixelsWithTexture(hsi->icon, 24, 24);
             glPopMatrix();
 
             if(hsi == hoveredIcon) {
                 glColor4d(1, 1, 0, 0.3);
-                glxAxisAlignedQuad(x - 2, x + 26, y + 2, y - 26);
+                ssglAxisAlignedQuad(x - 2, x + 26, y + 2, y - 26);
             }
             if(!*(hsi->var)) {
                 glColor4d(1, 0, 0, 0.6);
@@ -443,15 +443,15 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             ox = min(ox, (width - 25) - tw);
             oy = max(oy, 5);
 
-            glxCreateBitmapFont();
+            ssglCreateBitmapFont();
             glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);
-            glxAxisAlignedQuad(ox, ox+tw, oy, oy+LINE_HEIGHT);
+            ssglAxisAlignedQuad(ox, ox+tw, oy, oy+LINE_HEIGHT);
             glColor4d(0.0, 0.0, 0.0, 1.0);
-            glxAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
+            ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
 
             glColor4d(0, 0, 0, 1);
-            glxBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
+            ssglBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
         } else {
             if(!hoveredIcon ||
                 (hoveredIcon != tooltippedIcon))
@@ -593,9 +593,9 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     int bw = 6;
     if(how == PAINT) {
         glColor4d(0.2, 0.2, 0.2, 1);
-        glxAxisAlignedQuad(px, pxm+bw, py, pym+bw);
+        ssglAxisAlignedQuad(px, pxm+bw, py, pym+bw);
         glColor4d(0.0, 0.0, 0.0, 1);
-        glxAxisAlignedQuad(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2));
+        ssglAxisAlignedQuad(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2));
     } else {
         if(x < px || x > pxm+(bw/2) ||
            y < py || y > pym+(bw/2))
@@ -635,7 +635,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
 
             if(how == PAINT) {
                 glColor4d(CO(rgb), 1);
-                glxAxisAlignedQuad(sx, sx+SIZE, sy, sy+SIZE);
+                ssglAxisAlignedQuad(sx, sx+SIZE, sy, sy+SIZE);
             } else if(how == CLICK) {
                 if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
                     editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
@@ -654,8 +654,8 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     hxm = hx + PITCH*7 + SIZE;
     hym = hy + PITCH*2 + SIZE;
     if(how == PAINT) {
-        glxColorRGB(editControl.colorPicker.rgb);
-        glxAxisAlignedQuad(hx, hxm, hy, hym);
+        ssglColorRGB(editControl.colorPicker.rgb);
+        ssglAxisAlignedQuad(hx, hxm, hy, hym);
     } else if(how == CLICK) {
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
             ColorPickerDone();
@@ -827,7 +827,7 @@ void TextWindow::Paint(void) {
             glBegin(GL_QUADS);
         } else if(a == 1) {
             glEnable(GL_TEXTURE_2D);
-            glxCreateBitmapFont();
+            ssglCreateBitmapFont();
             glBegin(GL_QUADS);
         }
 
@@ -860,12 +860,12 @@ void TextWindow::Paint(void) {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;
-                        glxAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, false);
+                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, false);
                         y -= adj;
                     }
                 } else if(a == 1) {
                     glColor3fv(&(fgColorTable[fg*3]));
-                    glxBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
+                    ssglBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
 
                     // If this is a link and it's hovered, then draw the
                     // underline

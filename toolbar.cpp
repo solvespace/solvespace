@@ -132,7 +132,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
         double c = 30.0/255;
         glColor4d(c, c, c, 1.0);
-        glxAxisAlignedQuad(aleft, aright, atop, abot);
+        ssglAxisAlignedQuad(aleft, aright, atop, abot);
     }
 
     struct {
@@ -156,7 +156,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 glColor4d(0.17, 0.17, 0.17, 1);
                 x += 16;
                 y += 24;
-                glxAxisAlignedQuad(x+divw, x-divw, y+divh, y-divh);
+                ssglAxisAlignedQuad(x+divw, x-divw, y+divh, y-divh);
                 x -= 16;
                 y -= 24;
             }
@@ -172,7 +172,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 // Highlight the hovered or pending item.
                 glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;
-                glxAxisAlignedQuad(x+boxhw, x-boxhw, y+boxhw, y-boxhw);
+                ssglAxisAlignedQuad(x+boxhw, x-boxhw, y+boxhw, y-boxhw);
             }
 
             if(toolbarTooltipped == Toolbar[i].menu) {
@@ -204,7 +204,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     if(paint) {
         // Do this last so that nothing can draw over it.
         if(toolTip.show) {
-            glxCreateBitmapFont();
+            ssglCreateBitmapFont();
             char str[1024];
             if(strlen(toolTip.str) >= 200) oops();
             strcpy(str, toolTip.str);
@@ -225,18 +225,18 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
             glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);
-            glxAxisAlignedQuad(ox, ox+tw, oy, oy+th);
+            ssglAxisAlignedQuad(ox, ox+tw, oy, oy+th);
             glColor4d(0.0, 0.0, 0.0, 1.0);
-            glxAxisAlignedLineLoop(ox, ox+tw, oy, oy+th);
+            ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+th);
 
             glColor4d(0, 0, 0, 1);
             glPushMatrix();
                 glTranslated(ox+5, oy+3, 0);
                 glScaled(1, -1, 1);
-                glxBitmapText(str, Vector::From(0, 0, 0));
+                ssglBitmapText(str, Vector::From(0, 0, 0));
             glPopMatrix();
         }
-        glxDepthRangeLockToFront(false);
+        ssglDepthRangeLockToFront(false);
     }
 
     return withinToolbar;

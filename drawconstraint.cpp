@@ -25,11 +25,11 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
             // The only constraints with styles should be comments, so don't
             // check otherwise, save looking up the styles constantly.
             if(type == COMMENT && Style::Width(hs) >= 3.0) {
-                glxFatLine(a, b, Style::Width(hs) / SS.GW.scale);
+                ssglFatLine(a, b, Style::Width(hs) / SS.GW.scale);
             } else {
                 glBegin(GL_LINE_STRIP);
-                    glxVertex3v(a);
-                    glxVertex3v(b);
+                    ssglVertex3v(a);
+                    ssglVertex3v(b);
                 glEnd();
             }
         }
@@ -87,8 +87,8 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     }
 
     char *s = Label();
-    double swidth  = glxStrWidth(s, th), 
-           sheight = glxStrHeight(th);
+    double swidth  = ssglStrWidth(s, th),
+           sheight = ssglStrHeight(th);
 
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
@@ -118,7 +118,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
 
 
     if(dogd.drawing) {
-        glxWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
+        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);
@@ -158,8 +158,8 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
 
     double pixels = 1.0 / SS.GW.scale;
     char *s = Label();
-    double swidth  = glxStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels, 
-           sheight = glxStrHeight(DEFAULT_TEXT_HEIGHT)   + 8*pixels;
+    double swidth  = ssglStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels,
+           sheight = ssglStrHeight(DEFAULT_TEXT_HEIGHT)   + 8*pixels;
 
     struct {
         Vector n;
@@ -364,8 +364,8 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
-            glxStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
-            glxStrHeight(DEFAULT_TEXT_HEIGHT)/2,
+            ssglStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
+            ssglStrHeight(DEFAULT_TEXT_HEIGHT)/2,
             tl);
         *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
     } else {
@@ -374,8 +374,8 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
         gu = gu.WithMagnitude(1);
         Vector trans =
-            (*ref).Plus(gu.ScaledBy(-1.5*glxStrHeight(DEFAULT_TEXT_HEIGHT)));
-        glxWriteTextRefCenter("angle between skew lines", DEFAULT_TEXT_HEIGHT,
+            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrHeight(DEFAULT_TEXT_HEIGHT)));
+        ssglWriteTextRefCenter("angle between skew lines", DEFAULT_TEXT_HEIGHT,
             trans, gr, gu, LineCallback, this);
     }
 }
@@ -571,7 +571,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             // the datum color, maybe a bit dimmer
             vc = vc.WithMagnitude(vd.Magnitude()*0.9);
             // and set the color to that.
-            glxColorRGB(RGBf(vc.x, vc.y, vc.z));
+            ssglColorRGB(RGBf(vc.x, vc.y, vc.z));
 
             for(int a = 0; a < 2; a++) {
                 Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
@@ -579,10 +579,10 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 for(int i = 0; i < 2; i++) {
                     Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
                     glBegin(GL_QUADS);
-                        glxVertex3v(p.Plus (r).Plus (d));
-                        glxVertex3v(p.Plus (r).Minus(d));
-                        glxVertex3v(p.Minus(r).Minus(d));
-                        glxVertex3v(p.Minus(r).Plus (d));
+                        ssglVertex3v(p.Plus (r).Plus (d));
+                        ssglVertex3v(p.Plus (r).Minus(d));
+                        ssglVertex3v(p.Minus(r).Minus(d));
+                        ssglVertex3v(p.Minus(r).Plus (d));
                     glEnd();
                 }
 
@@ -801,7 +801,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             if(dogd.drawing) {
-                glxWriteTextRefCenter("T", DEFAULT_TEXT_HEIGHT,
+                ssglWriteTextRefCenter("T", DEFAULT_TEXT_HEIGHT,
                     textAt, u, v, LineCallback, this);
             } else {
                 dogd.refp = textAt;
@@ -984,7 +984,7 @@ s:
                                     (type == VERTICAL)    ? "V" : (
                                     (type == AT_MIDPOINT) ? "M" : NULL));
 
-                    glxWriteTextRefCenter(s, DEFAULT_TEXT_HEIGHT,
+                    ssglWriteTextRefCenter(s, DEFAULT_TEXT_HEIGHT,
                         m.Plus(offset), r, u, LineCallback, this);
                 } else {
                     dogd.refp = m.Plus(offset);
@@ -1015,10 +1015,10 @@ s:
                     dp = dp.WithMagnitude(2/SS.GW.scale);
                     if(dogd.drawing) {
                         glBegin(GL_QUADS);
-                            glxVertex3v((c.Plus(d)).Plus(dp));
-                            glxVertex3v((c.Minus(d)).Plus(dp));
-                            glxVertex3v((c.Minus(d)).Minus(dp));
-                            glxVertex3v((c.Plus(d)).Minus(dp));
+                            ssglVertex3v((c.Plus(d)).Plus(dp));
+                            ssglVertex3v((c.Minus(d)).Plus(dp));
+                            ssglVertex3v((c.Minus(d)).Minus(dp));
+                            ssglVertex3v((c.Plus(d)).Minus(dp));
                         glEnd();
                     } else {
                         Point2d ref = SS.GW.ProjectPoint(c);
@@ -1031,7 +1031,7 @@ s:
         case COMMENT: {
             if(disp.style.v) {
                 glLineWidth(Style::Width(disp.style));
-                glxColorRGB(Style::Color(disp.style));
+                ssglColorRGB(Style::Color(disp.style));
             }
             Vector u, v;
             if(workplane.v == Entity::FREE_IN_3D.v) {
@@ -1055,7 +1055,7 @@ void Constraint::Draw(void) {
     dogd.sel = NULL;
 
     glLineWidth(Style::Width(Style::CONSTRAINT));
-    glxColorRGB(Style::Color(Style::CONSTRAINT));
+    ssglColorRGB(Style::Color(Style::CONSTRAINT));
 
     DrawOrGetDistance(NULL);
 }

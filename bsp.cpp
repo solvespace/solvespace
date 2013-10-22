@@ -432,31 +432,31 @@ void SBsp3::DebugDraw(void) {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glBegin(GL_TRIANGLES);
-        glxVertex3v(tri.a);
-        glxVertex3v(tri.b);
-        glxVertex3v(tri.c);
+        ssglVertex3v(tri.a);
+        ssglVertex3v(tri.b);
+        ssglVertex3v(tri.c);
     glEnd();
 
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glxDepthRangeOffset(2);
+    ssglDepthRangeOffset(2);
     glBegin(GL_TRIANGLES);
-        glxVertex3v(tri.a);
-        glxVertex3v(tri.b);
-        glxVertex3v(tri.c);
+        ssglVertex3v(tri.a);
+        ssglVertex3v(tri.b);
+        ssglVertex3v(tri.c);
     glEnd();
 
     glDisable(GL_LIGHTING);
     glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
     glPointSize(10);
-    glxDepthRangeOffset(2);
+    ssglDepthRangeOffset(2);
     glBegin(GL_TRIANGLES);
-        glxVertex3v(tri.a);
-        glxVertex3v(tri.b);
-        glxVertex3v(tri.c);
+        ssglVertex3v(tri.a);
+        ssglVertex3v(tri.b);
+        ssglVertex3v(tri.c);
     glEnd(); 
 
-    glxDepthRangeOffset(0);
+    ssglDepthRangeOffset(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
     more->DebugDraw();
@@ -669,8 +669,8 @@ void SBsp2::DebugDraw(Vector n, double d) {
 
     glLineWidth(10);
     glBegin(GL_LINES);
-        glxVertex3v(edge.a);
-        glxVertex3v(edge.b);
+        ssglVertex3v(edge.a);
+        ssglVertex3v(edge.b);
     glEnd();
     pos->DebugDraw(n, d);
     neg->DebugDraw(n, d);

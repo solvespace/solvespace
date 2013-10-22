@@ -64,8 +64,8 @@ void GraphicsWindow::Selection::Draw(void) {
         RgbColor rgb = Style::Color(Style::HOVERED);
         glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), 0.2);
         glBegin(GL_LINES);
-            glxVertex3v(topLeft);
-            glxVertex3v(refp);
+            ssglVertex3v(topLeft);
+            ssglVertex3v(refp);
         glEnd();
         glLineWidth(1);
     }
@@ -560,21 +560,21 @@ void GraphicsWindow::Paint(void) {
         glEnable(GL_TEXTURE_2D);
         glBegin(GL_QUADS);
             glTexCoord2d(0, 0);
-            glxVertex3v(origin);
+            ssglVertex3v(origin);
 
             glTexCoord2d(0, th);
-            glxVertex3v(origin.Plus(projUp.ScaledBy(mmh)));
+            ssglVertex3v(origin.Plus(projUp.ScaledBy(mmh)));
 
             glTexCoord2d(tw, th);
-            glxVertex3v(origin.Plus(projRight.ScaledBy(mmw).Plus(
-                                    projUp.   ScaledBy(mmh))));
+            ssglVertex3v(origin.Plus(projRight.ScaledBy(mmw).Plus(
+                                     projUp.   ScaledBy(mmh))));
 
             glTexCoord2d(tw, 0);
-            glxVertex3v(origin.Plus(projRight.ScaledBy(mmw)));
+            ssglVertex3v(origin.Plus(projRight.ScaledBy(mmw)));
         glEnd();
         glDisable(GL_TEXTURE_2D);
     }
-    glxDepthRangeOffset(0);
+    ssglDepthRangeOffset(0);
 
     // Nasty case when we're reloading the imported files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
@@ -617,7 +617,7 @@ void GraphicsWindow::Paint(void) {
                            (float)SS.ambientIntensity, 1 };
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
 
-    glxUnlockColor();
+    ssglUnlockColor();
 
     if(showSnapGrid && LockedInWorkplane()) {
         hEntity he = ActiveWorkplane();
@@ -674,15 +674,15 @@ void GraphicsWindow::Paint(void) {
         if(j0 > j1 || j1 - j0 > 400) goto nogrid;
 
         glLineWidth(1);
-        glxColorRGBa(Style::Color(Style::DATUM), 0.3);
+        ssglColorRGBa(Style::Color(Style::DATUM), 0.3);
         glBegin(GL_LINES);
         for(i = i0 + 1; i < i1; i++) {
-            glxVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j0*g)));
-            glxVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j1*g)));
+            ssglVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j0*g)));
+            ssglVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j1*g)));
         }
         for(j = j0 + 1; j < j1; j++) {
-            glxVertex3v(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)));
-            glxVertex3v(wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)));
+            ssglVertex3v(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)));
+            ssglVertex3v(wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)));
         }
         glEnd(); 
 
@@ -718,31 +718,31 @@ nogrid:;
 
     // Draw the traced path, if one exists
     glLineWidth(Style::Width(Style::ANALYZE));
-    glxColorRGB(Style::Color(Style::ANALYZE));
+    ssglColorRGB(Style::Color(Style::ANALYZE));
     SContour *sc = &(SS.traced.path);
     glBegin(GL_LINE_STRIP);
     for(i = 0; i < sc->l.n; i++) {
-        glxVertex3v(sc->l.elem[i].p);
+        ssglVertex3v(sc->l.elem[i].p);
     }
     glEnd();
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
     glLineWidth(Style::Width(Style::DRAW_ERROR));
-    glxColorRGB(Style::Color(Style::DRAW_ERROR));
-    glxDrawEdges(&(SS.nakedEdges), true);
+    ssglColorRGB(Style::Color(Style::DRAW_ERROR));
+    ssglDrawEdges(&(SS.nakedEdges), true);
 
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST); 
-    glxLockColorTo(Style::Color(Style::HOVERED));
+    ssglLockColorTo(Style::Color(Style::HOVERED));
     hover.Draw();
 
     // And finally draw the selection, same mechanism.
-    glxLockColorTo(Style::Color(Style::SELECTED));
+    ssglLockColorTo(Style::Color(Style::SELECTED));
     for(Selection *s = selection.First(); s; s = selection.NextAfter(s)) {
         s->Draw();
     }
 
-    glxUnlockColor();
+    ssglUnlockColor();
 
     // If a marquee selection is in progress, then draw the selection
     // rectangle, as an outline and a transparent fill.
@@ -759,19 +759,19 @@ nogrid:;
                bl = UnProjectPoint(Point2d::From(xmin, ymax));
 
         glLineWidth((GLfloat)1.3);
-        glxColorRGB(Style::Color(Style::HOVERED));
+        ssglColorRGB(Style::Color(Style::HOVERED));
         glBegin(GL_LINE_LOOP);
-            glxVertex3v(tl);
-            glxVertex3v(tr);
-            glxVertex3v(br);
-            glxVertex3v(bl);
+            ssglVertex3v(tl);
+            ssglVertex3v(tr);
+            ssglVertex3v(br);
+            ssglVertex3v(bl);
         glEnd();
-        glxColorRGBa(Style::Color(Style::HOVERED), 0.10);
+        ssglColorRGBa(Style::Color(Style::HOVERED), 0.10);
         glBegin(GL_QUADS);
-            glxVertex3v(tl);
-            glxVertex3v(tr);
-            glxVertex3v(br);
-            glxVertex3v(bl);
+            ssglVertex3v(tl);
+            ssglVertex3v(tr);
+            ssglVertex3v(br);
+            ssglVertex3v(bl);
         glEnd();
     }
 
@@ -779,33 +779,33 @@ nogrid:;
     // plane of the monitor.
     if(SS.extraLine.draw) {
         glLineWidth(1);
-        glxLockColorTo(Style::Color(Style::DATUM));
+        ssglLockColorTo(Style::Color(Style::DATUM));
         glBegin(GL_LINES);
-            glxVertex3v(SS.extraLine.ptA);
-            glxVertex3v(SS.extraLine.ptB);
+            ssglVertex3v(SS.extraLine.ptA);
+            ssglVertex3v(SS.extraLine.ptB);
         glEnd();
     }
 
     // A note to indicate the origin in the just-exported file.
     if(SS.justExportedInfo.draw) {
-        glxColorRGB(Style::Color(Style::DATUM));
+        ssglColorRGB(Style::Color(Style::DATUM));
         Vector p = SS.justExportedInfo.pt,
                u = SS.justExportedInfo.u,
                v = SS.justExportedInfo.v;
 
         glLineWidth(1.5);
         glBegin(GL_LINES);
-            glxVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
-            glxVertex3v(p.Plus(u.WithMagnitude(30/scale)));
-            glxVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
-            glxVertex3v(p.Plus(v.WithMagnitude(30/scale)));
+            ssglVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
+            ssglVertex3v(p.Plus(u.WithMagnitude(30/scale)));
+            ssglVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
+            ssglVertex3v(p.Plus(v.WithMagnitude(30/scale)));
         glEnd();
 
-        glxWriteText("(x, y) = (0, 0) for file just exported",
+        ssglWriteText("(x, y) = (0, 0) for file just exported",
             DEFAULT_TEXT_HEIGHT,
             p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)), 
             u, v, NULL, NULL);
-        glxWriteText("press Esc to clear this message",
+        ssglWriteText("press Esc to clear this message",
             DEFAULT_TEXT_HEIGHT,
             p.Plus(u.ScaledBy(40/scale)).Plus(
                    v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)), 

@@ -15,7 +15,7 @@ static bool ColorLocked;
 static bool DepthOffsetLocked;
 
 #define FONT_SCALE(h) ((h)/22.0)
-double glxStrWidth(const char *str, double h)
+double ssglStrWidth(const char *str, double h)
 {
     int w = 0;
     for(; *str; str++) {
@@ -27,42 +27,42 @@ double glxStrWidth(const char *str, double h)
     }
     return w*FONT_SCALE(h)/SS.GW.scale;
 }
-double glxStrHeight(double h)
+double ssglStrHeight(double h)
 {
     // The characters have height ~22, as they appear in the table.
     return 22.0*FONT_SCALE(h)/SS.GW.scale;
 }
-void glxWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
-                           glxLineFn *fn, void *fndata)
+void ssglWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
+                            ssglLineFn *fn, void *fndata)
 {
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
 
     double scale = FONT_SCALE(h)/SS.GW.scale;
-    double fh = glxStrHeight(h);
-    double fw = glxStrWidth(str, h);
+    double fh = ssglStrHeight(h);
+    double fw = ssglStrWidth(str, h);
 
     t = t.Plus(u.ScaledBy(-fw/2));
     t = t.Plus(v.ScaledBy(-fh/2));
 
-    // Undo the (+5, +5) offset that glxWriteText applies.
+    // Undo the (+5, +5) offset that ssglWriteText applies.
     t = t.Plus(u.ScaledBy(-5*scale));
     t = t.Plus(v.ScaledBy(-5*scale));
 
-    glxWriteText(str, h, t, u, v, fn, fndata);
+    ssglWriteText(str, h, t, u, v, fn, fndata);
 }
 
 static void LineDrawCallback(void *fndata, Vector a, Vector b)
 {
     glLineWidth(1);
     glBegin(GL_LINES);
-        glxVertex3v(a);
-        glxVertex3v(b);
+        ssglVertex3v(a);
+        ssglVertex3v(b);
     glEnd();
 }
 
-void glxWriteText(const char *str, double h, Vector t, Vector u, Vector v,
-                  glxLineFn *fn, void *fndata)
+void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
+                   ssglLineFn *fn, void *fndata)
 {
     if(!fn) fn = LineDrawCallback;
     u = u.WithMagnitude(1);
@@ -101,12 +101,12 @@ void glxWriteText(const char *str, double h, Vector t, Vector u, Vector v,
     }
 }
 
-void glxVertex3v(Vector u)
+void ssglVertex3v(Vector u)
 {
     glVertex3f((GLfloat)u.x, (GLfloat)u.y, (GLfloat)u.z);
 }
 
-void glxAxisAlignedQuad(double l, double r, double t, double b, bool lone)
+void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone)
 {
     if(lone) glBegin(GL_QUADS);
         glVertex2d(l, t);
@@ -116,7 +116,7 @@ void glxAxisAlignedQuad(double l, double r, double t, double b, bool lone)
     if(lone) glEnd();
 }
 
-void glxAxisAlignedLineLoop(double l, double r, double t, double b)
+void ssglAxisAlignedLineLoop(double l, double r, double t, double b)
 {
     glBegin(GL_LINE_LOOP);
         glVertex2d(l, t);
@@ -145,12 +145,12 @@ static void FatLineEndcap(Vector p, Vector u, Vector v)
     glBegin(GL_TRIANGLE_FAN);
     for(int i = 0; i <= 10; i++) {
         double c = Circle[i][0], s = Circle[i][1];
-        glxVertex3v(p.Plus(u.ScaledBy(c)).Plus(v.ScaledBy(s)));
+        ssglVertex3v(p.Plus(u.ScaledBy(c)).Plus(v.ScaledBy(s)));
     }
     glEnd();
 }
 
-void glxFatLine(Vector a, Vector b, double width)
+void ssglFatLine(Vector a, Vector b, double width)
 {
     // The half-width of the line we're drawing.
     double hw = width / 2;
@@ -167,10 +167,10 @@ void glxFatLine(Vector a, Vector b, double width)
 
     // The body of a line is a quad
     glBegin(GL_QUADS);
-        glxVertex3v(a.Minus(abn));
-        glxVertex3v(b.Minus(abn));
-        glxVertex3v(b.Plus (abn));
-        glxVertex3v(a.Plus (abn));
+        ssglVertex3v(a.Minus(abn));
+        ssglVertex3v(b.Minus(abn));
+        ssglVertex3v(b.Plus (abn));
+        ssglVertex3v(a.Plus (abn));
     glEnd();
     // And the line has two semi-circular end caps.
     FatLineEndcap(a, ab,              abn);
@@ -178,26 +178,26 @@ void glxFatLine(Vector a, Vector b, double width)
 }
 
 
-void glxLockColorTo(RgbColor rgb)
+void ssglLockColorTo(RgbColor rgb)
 {
     ColorLocked = false;
     glColor3d(rgb.redF(), rgb.greenF(), rgb.blueF());
     ColorLocked = true;
 }
 
-void glxUnlockColor(void)
+void ssglUnlockColor(void)
 {
     ColorLocked = false;
 }
 
-void glxColorRGB(RgbColor rgb)
+void ssglColorRGB(RgbColor rgb)
 {
     // Is there a bug in some graphics drivers where this is not equivalent
     // to glColor3d? There seems to be...
-    glxColorRGBa(rgb, 1.0);
+    ssglColorRGBa(rgb, 1.0);
 }
 
-void glxColorRGBa(RgbColor rgb, double a)
+void ssglColorRGBa(RgbColor rgb, double a)
 {
     if(!ColorLocked) glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), a);
 }
@@ -237,19 +237,19 @@ static void StippleTriangle(STriangle *tr, bool s, RgbColor rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
-    glxColorRGB(rgb);
+    ssglColorRGB(rgb);
     Stipple(s);
     glBegin(GL_TRIANGLES);
-        glxVertex3v(tr->a);
-        glxVertex3v(tr->b);
-        glxVertex3v(tr->c);
+        ssglVertex3v(tr->a);
+        ssglVertex3v(tr->b);
+        ssglVertex3v(tr->c);
     glEnd();
     glEnable(GL_LIGHTING);
     glDisable(GL_POLYGON_STIPPLE);
     glBegin(GL_TRIANGLES);
 }
 
-void glxFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
+void ssglFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
 {
     RgbColor rgbHovered  = Style::Color(Style::HOVERED),
              rgbSelected = Style::Color(Style::SELECTED);
@@ -278,19 +278,19 @@ void glxFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t
             // Compute the normal from the vertices
             Vector n = tr->Normal();
             glNormal3d(n.x, n.y, n.z);
-            glxVertex3v(tr->a);
-            glxVertex3v(tr->b);
-            glxVertex3v(tr->c);
+            ssglVertex3v(tr->a);
+            ssglVertex3v(tr->b);
+            ssglVertex3v(tr->c);
         } else {
             // Use the exact normals that are specified
             glNormal3d((tr->an).x, (tr->an).y, (tr->an).z);
-            glxVertex3v(tr->a);
+            ssglVertex3v(tr->a);
 
             glNormal3d((tr->bn).x, (tr->bn).y, (tr->bn).z);
-            glxVertex3v(tr->b);
+            ssglVertex3v(tr->b);
 
             glNormal3d((tr->cn).x, (tr->cn).y, (tr->cn).z);
-            glxVertex3v(tr->c);
+            ssglVertex3v(tr->c);
         }
 
         if((s1 != 0 && tr->meta.face == s1) || 
@@ -305,24 +305,24 @@ void glxFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t
     glEnd();
 }
 
-static void GLX_CALLBACK Vertex(Vector *p)
+static void SSGL_CALLBACK Vertex(Vector *p)
 {
-    glxVertex3v(*p);
+    ssglVertex3v(*p);
 }
-void glxFillPolygon(SPolygon *p)
+void ssglFillPolygon(SPolygon *p)
 {
     GLUtesselator *gt = gluNewTess();
-    gluTessCallback(gt, GLU_TESS_BEGIN, (glxCallbackFptr *)glBegin);
-    gluTessCallback(gt, GLU_TESS_END, (glxCallbackFptr *)glEnd);
-    gluTessCallback(gt, GLU_TESS_VERTEX, (glxCallbackFptr *)Vertex);
+    gluTessCallback(gt, GLU_TESS_BEGIN,  (ssglCallbackFptr *)glBegin);
+    gluTessCallback(gt, GLU_TESS_END,    (ssglCallbackFptr *)glEnd);
+    gluTessCallback(gt, GLU_TESS_VERTEX, (ssglCallbackFptr *)Vertex);
 
-    glxTesselatePolygon(gt, p);
+    ssglTesselatePolygon(gt, p);
 
     gluDeleteTess(gt);
 }
 
-static void GLX_CALLBACK Combine(double coords[3], void *vertexData[4],
-                                 float weight[4], void **outData)
+static void SSGL_CALLBACK Combine(double coords[3], void *vertexData[4],
+                                  float weight[4], void **outData)
 {
     Vector *n = (Vector *)AllocTemporary(sizeof(Vector));
     n->x = coords[0];
@@ -331,11 +331,11 @@ static void GLX_CALLBACK Combine(double coords[3], void *vertexData[4],
 
     *outData = n;
 }
-void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p)
+void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p)
 {
     int i, j;
 
-    gluTessCallback(gt, GLU_TESS_COMBINE, (glxCallbackFptr *)Combine);
+    gluTessCallback(gt, GLU_TESS_COMBINE, (ssglCallbackFptr *)Combine);
     gluTessProperty(gt, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
 
     Vector normal = p->normal;
@@ -359,7 +359,7 @@ void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p)
     gluTessEndPolygon(gt);
 }
 
-void glxDebugPolygon(SPolygon *p)
+void ssglDebugPolygon(SPolygon *p)
 {
     int i, j;
     glLineWidth(2);
@@ -371,28 +371,28 @@ void glxDebugPolygon(SPolygon *p)
             Vector a = (sc->l.elem[j]).p;
             Vector b = (sc->l.elem[j+1]).p;
 
-            glxLockColorTo(RGB(0, 0, 255));
+            ssglLockColorTo(RGB(0, 0, 255));
             Vector d = (a.Minus(b)).WithMagnitude(-0);
             glBegin(GL_LINES);
-                glxVertex3v(a.Plus(d));
-                glxVertex3v(b.Minus(d));
+                ssglVertex3v(a.Plus(d));
+                ssglVertex3v(b.Minus(d));
             glEnd();
-            glxLockColorTo(RGB(255, 0, 0));
+            ssglLockColorTo(RGB(255, 0, 0));
             glBegin(GL_POINTS);
-                glxVertex3v(a.Plus(d));
-                glxVertex3v(b.Minus(d));
+                ssglVertex3v(a.Plus(d));
+                ssglVertex3v(b.Minus(d));
             glEnd();
         }
     }
 }
 
-void glxDrawEdges(SEdgeList *el, bool endpointsToo)
+void ssglDrawEdges(SEdgeList *el, bool endpointsToo)
 {
     SEdge *se;
     glBegin(GL_LINES);
     for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
-        glxVertex3v(se->a);
-        glxVertex3v(se->b);
+        ssglVertex3v(se->a);
+        ssglVertex3v(se->b);
     }
     glEnd();
 
@@ -400,37 +400,37 @@ void glxDrawEdges(SEdgeList *el, bool endpointsToo)
         glPointSize(12);
         glBegin(GL_POINTS);
         for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
-            glxVertex3v(se->a);
-            glxVertex3v(se->b);
+            ssglVertex3v(se->a);
+            ssglVertex3v(se->b);
         }
         glEnd();
     }
 }
 
-void glxDebugMesh(SMesh *m)
+void ssglDebugMesh(SMesh *m)
 {
     int i;
     glLineWidth(1);
     glPointSize(7);
-    glxDepthRangeOffset(1);
-    glxUnlockColor();
+    ssglDepthRangeOffset(1);
+    ssglUnlockColor();
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glxColorRGBa(RGB(0, 255, 0), 1.0);
+    ssglColorRGBa(RGB(0, 255, 0), 1.0);
     glBegin(GL_TRIANGLES);
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);
         if(t->tag) continue;
 
-        glxVertex3v(t->a);
-        glxVertex3v(t->b);
-        glxVertex3v(t->c);
+        ssglVertex3v(t->a);
+        ssglVertex3v(t->b);
+        ssglVertex3v(t->c);
     }
     glEnd();
-    glxDepthRangeOffset(0);
+    ssglDepthRangeOffset(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 }
 
-void glxMarkPolygonNormal(SPolygon *p)
+void ssglMarkPolygonNormal(SPolygon *p)
 {
     Vector tail = Vector::From(0, 0, 0);
     int i, j, cnt = 0;
@@ -452,17 +452,17 @@ void glxMarkPolygonNormal(SPolygon *p)
 
     glColor3d(1, 1, 0);
     glBegin(GL_LINES);
-        glxVertex3v(tail);
-        glxVertex3v(tip);
-        glxVertex3v(tip);
-        glxVertex3v(tip.Minus(arrow.RotatedAbout(gn, 0.6)));
-        glxVertex3v(tip);
-        glxVertex3v(tip.Minus(arrow.RotatedAbout(gn, -0.6)));
+        ssglVertex3v(tail);
+        ssglVertex3v(tip);
+        ssglVertex3v(tip);
+        ssglVertex3v(tip.Minus(arrow.RotatedAbout(gn, 0.6)));
+        ssglVertex3v(tip);
+        ssglVertex3v(tip.Minus(arrow.RotatedAbout(gn, -0.6)));
     glEnd();
     glEnable(GL_LIGHTING);
 }
 
-void glxDepthRangeOffset(int units)
+void ssglDepthRangeOffset(int units)
 {
     if(!DepthOffsetLocked) {
         // The size of this step depends on the resolution of the Z buffer; for
@@ -472,18 +472,18 @@ void glxDepthRangeOffset(int units)
     }
 }
 
-void glxDepthRangeLockToFront(bool yes)
+void ssglDepthRangeLockToFront(bool yes)
 {
     if(yes) {
         DepthOffsetLocked = true;
         glDepthRange(0, 0);
     } else {
         DepthOffsetLocked = false;
-        glxDepthRangeOffset(0);
+        ssglDepthRangeOffset(0);
     }
 }
 
-void glxCreateBitmapFont(void)
+void ssglCreateBitmapFont(void)
 {
     // Place the font in our texture in a two-dimensional grid; 1d would
     // be simpler, but long skinny textures (256*16 = 4096 pixels wide)
@@ -513,7 +513,7 @@ void glxCreateBitmapFont(void)
                  MappedTexture);
 }
 
-void glxBitmapCharQuad(char c, double x, double y)
+void ssglBitmapCharQuad(char c, double x, double y)
 {
     uint8_t b = (uint8_t)c;
     int w, h;
@@ -549,12 +549,12 @@ void glxBitmapCharQuad(char c, double x, double y)
     }
 }
 
-void glxBitmapText(const char *str, Vector p)
+void ssglBitmapText(const char *str, Vector p)
 {
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
     while(*str) {
-        glxBitmapCharQuad(*str, p.x, p.y);
+        ssglBitmapCharQuad(*str, p.x, p.y);
 
         str++;
         p.x += SS.TW.CHAR_WIDTH;
@@ -563,7 +563,7 @@ void glxBitmapText(const char *str, Vector p)
     glDisable(GL_TEXTURE_2D);
 }
 
-void glxDrawPixelsWithTexture(uint8_t *data, int w, int h)
+void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h)
 {
 #define MAX_DIM 32
     static uint8_t Texture[MAX_DIM*MAX_DIM*3];

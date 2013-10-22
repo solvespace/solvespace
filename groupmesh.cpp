@@ -459,17 +459,17 @@ void Group::DrawDisplayItems(int t) {
 
     if(SS.GW.showShaded) {
         glEnable(GL_LIGHTING);
-        glxFillMesh(specColor, &displayMesh, mh, ms1, ms2);
+        ssglFillMesh(specColor, &displayMesh, mh, ms1, ms2);
         glDisable(GL_LIGHTING);
     }
     if(SS.GW.showEdges) {
-        glxDepthRangeOffset(2);
-        glxColorRGB(Style::Color(Style::SOLID_EDGE));
+        ssglDepthRangeOffset(2);
+        ssglColorRGB(Style::Color(Style::SOLID_EDGE));
         glLineWidth(Style::Width(Style::SOLID_EDGE));
-        glxDrawEdges(&displayEdges, false);
+        ssglDrawEdges(&displayEdges, false);
     }
 
-    if(SS.GW.showMesh) glxDebugMesh(&displayMesh);
+    if(SS.GW.showMesh) ssglDebugMesh(&displayMesh);
 }
 
 void Group::Draw(void) {
@@ -489,14 +489,14 @@ void Group::Draw(void) {
         // it's just a nuisance.
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
-            glxColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
+            ssglColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
             glLineWidth (Style::Width(Style::DRAW_ERROR));
             glBegin(GL_LINES);
-                glxVertex3v(polyError.notClosedAt.a);
-                glxVertex3v(polyError.notClosedAt.b);
+                ssglVertex3v(polyError.notClosedAt.a);
+                ssglVertex3v(polyError.notClosedAt.b);
             glEnd();
-            glxColorRGB(Style::Color(Style::DRAW_ERROR));
-            glxWriteText("not closed contour, or not all same style!",
+            ssglColorRGB(Style::Color(Style::DRAW_ERROR));
+            ssglWriteText("not closed contour, or not all same style!",
                 DEFAULT_TEXT_HEIGHT,
                 polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
@@ -509,7 +509,7 @@ void Group::Draw(void) {
         // These errors occur at points, not lines
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
-            glxColorRGB(Style::Color(Style::DRAW_ERROR));
+            ssglColorRGB(Style::Color(Style::DRAW_ERROR));
             const char *msg;
             if(polyError.how == POLY_NOT_COPLANAR) {
                 msg = "points not all coplanar!";
@@ -518,7 +518,7 @@ void Group::Draw(void) {
             } else {
                 msg = "zero-length edge!";
             }
-            glxWriteText(msg, DEFAULT_TEXT_HEIGHT,
+            ssglWriteText(msg, DEFAULT_TEXT_HEIGHT,
                 polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
@@ -532,9 +532,9 @@ void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
     SPolygon sp;
     ZERO(&sp);
     sbls->MakePwlInto(&sp);
-    glxDepthRangeOffset(1);
-    glxFillPolygon(&sp);
-    glxDepthRangeOffset(0);
+    ssglDepthRangeOffset(1);
+    ssglFillPolygon(&sp);
+    ssglDepthRangeOffset(0);
     sp.Clear();
 }
 
@@ -550,7 +550,7 @@ void Group::DrawFilledPaths(void) {
         Style *s = Style::Get(hs);
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
-            glxColorRGBa(s->fillColor, 1);
+            ssglColorRGBa(s->fillColor, 1);
             FillLoopSetAsPolygon(sbls);
         } else {
             if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
@@ -559,10 +559,10 @@ void Group::DrawFilledPaths(void) {
                 // If this is the active group, and we are supposed to check
                 // for closed contours, and we do indeed have a closed and
                 // non-intersecting contour, then fill it dimly.
-                glxColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
-                glxDepthRangeOffset(1);
+                ssglColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
+                ssglDepthRangeOffset(1);
                 FillLoopSetAsPolygon(sbls);
-                glxDepthRangeOffset(0);
+                ssglDepthRangeOffset(0);
             }
         }
     }

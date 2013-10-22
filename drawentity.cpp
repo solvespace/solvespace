@@ -20,19 +20,19 @@ char *Entity::DescriptionString(void) {
 void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
     if(dogd.drawing) {
         // Draw lines from active group in front of those from previous
-        glxDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
+        ssglDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
         // Narrow lines are drawn as lines, but fat lines must be drawn as
         // filled polygons, to get the line join style right.
         if(!maybeFat || dogd.lineWidth < 3) {
             glBegin(GL_LINES);
-                glxVertex3v(a);
-                glxVertex3v(b);
+                ssglVertex3v(a);
+                ssglVertex3v(b);
             glEnd();
         } else {
-            glxFatLine(a, b, dogd.lineWidth/SS.GW.scale);
+            ssglFatLine(a, b, dogd.lineWidth/SS.GW.scale);
         }
             
-        glxDepthRangeOffset(0);
+        ssglDepthRangeOffset(0);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
@@ -54,8 +54,8 @@ void Entity::DrawAll(void) {
         double s = 3.5/SS.GW.scale;
         Vector r = SS.GW.projRight.ScaledBy(s);
         Vector d = SS.GW.projUp.ScaledBy(s);
-        glxColorRGB(Style::Color(Style::DATUM));
-        glxDepthRangeOffset(6);
+        ssglColorRGB(Style::Color(Style::DATUM));
+        ssglDepthRangeOffset(6);
         glBegin(GL_QUADS);
         for(i = 0; i < SK.entity.n; i++) {
             Entity *e = &(SK.entity.elem[i]);
@@ -84,21 +84,21 @@ void Entity::DrawAll(void) {
             if(free) {
                 Vector re = r.ScaledBy(2.5), de = d.ScaledBy(2.5);
 
-                glxColorRGB(Style::Color(Style::ANALYZE));
-                glxVertex3v(v.Plus (re).Plus (de));
-                glxVertex3v(v.Plus (re).Minus(de));
-                glxVertex3v(v.Minus(re).Minus(de));
-                glxVertex3v(v.Minus(re).Plus (de));
-                glxColorRGB(Style::Color(Style::DATUM));
+                ssglColorRGB(Style::Color(Style::ANALYZE));
+                ssglVertex3v(v.Plus (re).Plus (de));
+                ssglVertex3v(v.Plus (re).Minus(de));
+                ssglVertex3v(v.Minus(re).Minus(de));
+                ssglVertex3v(v.Minus(re).Plus (de));
+                ssglColorRGB(Style::Color(Style::DATUM));
             }
 
-            glxVertex3v(v.Plus (r).Plus (d));
-            glxVertex3v(v.Plus (r).Minus(d));
-            glxVertex3v(v.Minus(r).Minus(d));
-            glxVertex3v(v.Minus(r).Plus (d));
+            ssglVertex3v(v.Plus (r).Plus (d));
+            ssglVertex3v(v.Plus (r).Minus(d));
+            ssglVertex3v(v.Minus(r).Minus(d));
+            ssglVertex3v(v.Minus(r).Plus (d));
         }
         glEnd();
-        glxDepthRangeOffset(0);
+        ssglDepthRangeOffset(0);
     }
 
     for(i = 0; i < SK.entity.n; i++) {
@@ -115,7 +115,7 @@ void Entity::Draw(void) {
     hStyle hs = Style::ForEntity(h);
     dogd.lineWidth = Style::Width(hs);
     glLineWidth((float)dogd.lineWidth);
-    glxColorRGB(Style::Color(hs));
+    ssglColorRGB(Style::Color(hs));
 
     dogd.drawing = true;
     DrawOrGetDistance();
@@ -484,15 +484,15 @@ void Entity::DrawOrGetDistance(void) {
                 Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
                 Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
 
-                glxColorRGB(Style::Color(Style::DATUM));
-                glxDepthRangeOffset(6);
+                ssglColorRGB(Style::Color(Style::DATUM));
+                ssglDepthRangeOffset(6);
                 glBegin(GL_QUADS);
-                    glxVertex3v(v.Plus (r).Plus (d));
-                    glxVertex3v(v.Plus (r).Minus(d));
-                    glxVertex3v(v.Minus(r).Minus(d));
-                    glxVertex3v(v.Minus(r).Plus (d));
+                    ssglVertex3v(v.Plus (r).Plus (d));
+                    ssglVertex3v(v.Plus (r).Minus(d));
+                    ssglVertex3v(v.Minus(r).Minus(d));
+                    ssglVertex3v(v.Minus(r).Plus (d));
                 glEnd();
-                glxDepthRangeOffset(0);
+                ssglDepthRangeOffset(0);
             } else {
                 Point2d pp = SS.GW.ProjectPoint(v);
                 dogd.dmin = pp.DistanceTo(dogd.mp) - 6;
@@ -520,13 +520,13 @@ void Entity::DrawOrGetDistance(void) {
                 // dimmer for the ones at the model origin.
                 int f = (i == 0 ? 100 : 255);
                 if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                    glxColorRGB(RGB(0, 0, f));
+                    ssglColorRGB(RGB(0, 0, f));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                    glxColorRGB(RGB(f, 0, 0));
+                    ssglColorRGB(RGB(f, 0, 0));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                    glxColorRGB(RGB(0, f, 0));
+                    ssglColorRGB(RGB(0, f, 0));
                 } else {
-                    glxColorRGB(Style::Color(Style::NORMALS));
+                    ssglColorRGB(Style::Color(Style::NORMALS));
                     if(i > 0) break;
                 }
 
@@ -544,7 +544,7 @@ void Entity::DrawOrGetDistance(void) {
                     double w = 60 - SS.GW.width/2;
                     tail = SS.GW.projRight.ScaledBy(w/s).Plus(
                            SS.GW.projUp.   ScaledBy(h/s)).Minus(SS.GW.offset);
-                    glxDepthRangeLockToFront(true);
+                    ssglDepthRangeLockToFront(true);
                     glLineWidth(2);
                 }
 
@@ -557,7 +557,7 @@ void Entity::DrawOrGetDistance(void) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
-            glxDepthRangeLockToFront(false);
+            ssglDepthRangeLockToFront(false);
             break;
         }
 
@@ -584,7 +584,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector mp = p.Minus(us).Plus (vs);
 
             glLineWidth(1);
-            glxColorRGB(Style::Color(Style::NORMALS));
+            ssglColorRGB(Style::Color(Style::NORMALS));
             glEnable(GL_LINE_STIPPLE);
             glLineStipple(3, 0x1111);
             if(!h.isFromRequest()) {
@@ -601,10 +601,10 @@ void Entity::DrawOrGetDistance(void) {
             char *str = DescriptionString()+5;
             double th = DEFAULT_TEXT_HEIGHT;
             if(dogd.drawing) {
-                glxWriteText(str, th, mm2, u, v, NULL, NULL);
+                ssglWriteText(str, th, mm2, u, v, NULL, NULL);
             } else {
-                Vector pos = mm2.Plus(u.ScaledBy(glxStrWidth(str, th)/2)).Plus(
-                                      v.ScaledBy(glxStrHeight(th)/2));
+                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
+                                      v.ScaledBy(ssglStrHeight(th)/2));
                 Point2d pp = SS.GW.ProjectPoint(pos);
                 dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);
                 // If a line lies in a plane, then select the line, not

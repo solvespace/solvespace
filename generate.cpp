@@ -208,17 +208,17 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
 
             double left = 80, top = -20, width = 240, height = 24;
             glColor3d(0.9, 0.8, 0.8);
-            glxAxisAlignedQuad(left, left+width, top, top-height);
+            ssglAxisAlignedQuad(left, left+width, top, top-height);
             glLineWidth(1);
             glColor3d(0.0, 0.0, 0.0);
-            glxAxisAlignedLineLoop(left, left+width, top, top-height);
+            ssglAxisAlignedLineLoop(left, left+width, top, top-height);
 
-            glxCreateBitmapFont();
+            ssglCreateBitmapFont();
             glColor3d(0, 0, 0);
             glPushMatrix();
                 glTranslated(left+8, top-20, 0);
                 glScaled(1, -1, 1);
-                glxBitmapText(msg, Vector::From(0, 0, 0));
+                ssglBitmapText(msg, Vector::From(0, 0, 0));
             glPopMatrix();
             glFlush();
             glDrawBuffer(GL_BACK);
