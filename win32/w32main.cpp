@@ -597,6 +597,16 @@ static bool ProcessKeyDown(WPARAM wParam)
     return false;
 }
 
+void ToggleMenuBar(void)
+{
+    // Implement me
+}
+bool MenuBarIsVisible(void)
+{
+    // Implement me
+    return true;
+}
+
 void ShowTextWindow(bool visible)
 {
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
@@ -638,6 +648,16 @@ void PaintGraphics(void)
 void InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, false);
+}
+
+void ToggleFullScreen(void)
+{
+    // Implement me
+}
+bool FullScreenIsActive(void)
+{
+    // Implement me
+    return false;
 }
 
 int32_t GetMilliseconds(void)

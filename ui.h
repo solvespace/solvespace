@@ -344,10 +344,12 @@ public:
         MNU_NEAREST_ORTHO,
         MNU_NEAREST_ISO,
         MNU_CENTER_VIEW,
-        MNU_SHOW_TEXT_WND,
+        MNU_SHOW_MENU_BAR,
         MNU_SHOW_TOOLBAR,
+        MNU_SHOW_TEXT_WND,
         MNU_UNITS_INCHES,
         MNU_UNITS_MM,
+        MNU_FULL_SCREEN,
         // Edit
         MNU_UNDO,
         MNU_REDO,

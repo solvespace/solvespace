@@ -70,11 +70,18 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Show Snap &Grid",             MNU_SHOW_GRID,      '>',    mView },
 { 1, "Use &Perspective Projection", MNU_PERSPECTIVE_PROJ,'`',   mView },
 { 1,  NULL,                         0,                  0,      NULL  },
-{ 1, "Show Text &Window",           MNU_SHOW_TEXT_WND,  '\t',   mView },
+#ifdef HAVE_FLTK
+{ 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  F(12),  mView },
+#endif
 { 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,      mView },
+{ 1, "Show Text &Window",           MNU_SHOW_TEXT_WND,  '\t',   mView },
 { 1,  NULL,                         0,                  0,      NULL  },
 { 1, "Dimensions in &Inches",       MNU_UNITS_INCHES,   0,      mView },
 { 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,      mView },
+#ifdef HAVE_FLTK_FULLSCREEN
+{ 1,  NULL,                         0,                  0,      NULL  },
+{ 1, "&Full Screen",                MNU_FULL_SCREEN,    F(11),  mView },
+#endif
 
 { 0, "&New Group",                  0,                  0,      NULL  },
 { 1, "Sketch In &3d",               MNU_GROUP_3D,       S|'3',  mGrp  },
@@ -504,9 +511,10 @@ void GraphicsWindow::MenuView(int id) {
             }
             break;
 
-        case MNU_SHOW_TEXT_WND:
-            SS.GW.showTextWindow = !SS.GW.showTextWindow;
+        case MNU_SHOW_MENU_BAR:
+            ToggleMenuBar();
             SS.GW.EnsureValidActives();
+            InvalidateGraphics();
             break;
 
         case MNU_SHOW_TOOLBAR:
@@ -515,15 +523,25 @@ void GraphicsWindow::MenuView(int id) {
             InvalidateGraphics();
             break;
 
-        case MNU_UNITS_MM:
-            SS.viewUnits = SolveSpace::UNIT_MM;
-            SS.later.showTW = true;
+        case MNU_SHOW_TEXT_WND:
+            SS.GW.showTextWindow = !SS.GW.showTextWindow;
             SS.GW.EnsureValidActives();
             break;
 
         case MNU_UNITS_INCHES:
             SS.viewUnits = SolveSpace::UNIT_INCHES;
             SS.later.showTW = true;
+            SS.GW.EnsureValidActives();
+            break;
+
+        case MNU_UNITS_MM:
+            SS.viewUnits = SolveSpace::UNIT_MM;
+            SS.later.showTW = true;
+            SS.GW.EnsureValidActives();
+            break;
+
+        case MNU_FULL_SCREEN:
+            ToggleFullScreen();
             SS.GW.EnsureValidActives();
             break;
 
@@ -596,9 +614,15 @@ void GraphicsWindow::EnsureValidActives(void) {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
+#ifdef HAVE_FLTK
+    CheckMenuById(MNU_SHOW_MENU_BAR, MenuBarIsVisible());
+#endif
     CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
     CheckMenuById(MNU_PERSPECTIVE_PROJ, SS.usePerspectiveProj);
     CheckMenuById(MNU_SHOW_GRID, SS.GW.showSnapGrid);
+#ifdef HAVE_FLTK_FULLSCREEN
+    CheckMenuById(MNU_FULL_SCREEN, FullScreenIsActive());
+#endif
 
     if(change) SS.later.showTW = true;
 }

@@ -7,6 +7,25 @@
 #ifndef __SOLVESPACE_H
 #define __SOLVESPACE_H
 
+#ifdef HAVE_CONFIG_H
+#   include <config.h>
+#endif
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <math.h>
+#include <limits.h>
+#ifdef HAVE_STDINT_H
+#   include <stdint.h>
+#endif
+#ifdef WIN32
+#   include <windows.h> // required by GL headers
+#endif
+#include <GL/gl.h>
+#include <GL/glu.h>
+
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
 #ifdef __clang__
@@ -22,6 +41,7 @@
 // Debugging functions
 #define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
                     if(0) *(char *)0 = 1; exit(-1); } while(0)
+
 #ifndef min
 #   define min(x, y) ((x) < (y) ? (x) : (y))
 #endif
@@ -65,18 +85,6 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
-#include <stdlib.h>
-#include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-#include <limits.h>
-#ifdef WIN32
-#   include <windows.h> // required by GL headers
-#endif
-#include <GL/gl.h>
-#include <GL/glu.h>
-
 #ifdef WIN32
 // Define some useful C99 integer types.
 typedef UINT64 uint64_t;
@@ -112,38 +120,58 @@ void RefreshRecentMenus(void);
 #define SAVE_CANCEL  (0)
 int SaveFileYesNoCancel(void);
 
+#ifdef HAVE_FLTK
+    // Selection pattern format for FLTK's file chooser classes:
+    //   "PNG File\t*.png\n"
+    //   "JPEG File\t*.{jpg,jpeg}\n"
+    //   "All Files\t*"
+#   define PAT1(desc,e1)    desc "\t*." e1 "\n"
+#   define PAT2(desc,e1,e2) desc "\t*.{" e1 "," e2 "}\n"
+#   define ENDPAT "All Files\t*"
+#else
+    // Selection pattern format for Win32's OPENFILENAME.lpstrFilter:
+    //   "PNG File (*.png)\0*.png\0"
+    //   "JPEG File (*.jpg;*.jpeg)\0*.jpg;*.jpeg\0"
+    //   "All Files (*)\0*\0\0"
+#   define PAT1(desc,e1)    desc " (*." e1 ")\0*." e1 "\0"
+#   define PAT2(desc,e1,e2) desc " (*." e1 ";*." e2 ")\0*." e1 ";*." e2 "\0"
+#   define ENDPAT "All Files (*)\0*\0\0"
+#endif
+
 // SolveSpace native file format
-#define SLVS_PATTERN "SolveSpace Models (*.slvs)\0*.slvs\0All Files (*)\0*\0\0"
+#define SLVS_PATTERN PAT1("SolveSpace Models", "slvs") ENDPAT
 #define SLVS_EXT "slvs"
 // PNG format bitmap
-#define PNG_PATTERN "PNG (*.png)\0*.png\0All Files (*)\0*\0\0"
+#define PNG_PATTERN PAT1("PNG", "png") ENDPAT
 #define PNG_EXT "png"
 // Triangle mesh
-#define MESH_PATTERN "STL Mesh (*.stl)\0*.stl\0" \
-                     "Wavefront OBJ Mesh (*.obj)\0*.obj\0" \
-                     "All Files (*)\0*\0\0"
+#define MESH_PATTERN \
+    PAT1("STL Mesh", "stl") \
+    PAT1("Wavefront OBJ Mesh", "obj") \
+    ENDPAT
 #define MESH_EXT "stl"
 // NURBS surfaces
-#define SRF_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
-                    "All Files(*)\0*\0\0"
+#define SRF_PATTERN PAT2("STEP File", "step", "stp") ENDPAT
 #define SRF_EXT "step"
 // 2d vector (lines and curves) format
-#define VEC_PATTERN "PDF File (*.pdf)\0*.pdf\0" \
-                    "Encapsulated PostScript (*.eps;*.ps)\0*.eps;*.ps\0" \
-                    "Scalable Vector Graphics (*.svg)\0*.svg\0" \
-                    "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
-                    "DXF File (*.dxf)\0*.dxf\0" \
-                    "HPGL File (*.plt;*.hpgl)\0*.plt;*.hpgl\0" \
-                    "G Code (*.txt)\0*.txt\0" \
-                    "All Files (*)\0*\0\0"
+#define VEC_PATTERN \
+    PAT1("PDF File", "pdf") \
+    PAT2("Encapsulated PostScript", "eps", "ps") \
+    PAT1("Scalable Vector Graphics", "svg") \
+    PAT2("STEP File", "step", "stp") \
+    PAT1("DXF File", "dxf") \
+    PAT2("HPGL File", "plt", "hpgl") \
+    PAT1("G Code", "txt") \
+    ENDPAT
 #define VEC_EXT "pdf"
 // 3d vector (wireframe lines and curves) format
-#define V3D_PATTERN "STEP File (*.step;*.stp)\0*.step;*.stp\0" \
-                    "DXF File (*.dxf)\0*.dxf\0" \
-                    "All Files (*)\0*\0\0"
+#define V3D_PATTERN \
+    PAT2("STEP File", "step", "stp") \
+    PAT1("DXF File", "dxf") \
+    ENDPAT
 #define V3D_EXT "step"
 // Comma-separated value, like a spreadsheet would use
-#define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
+#define CSV_PATTERN PAT1("CSV File", "csv") ENDPAT
 #define CSV_EXT "csv"
 bool GetSaveFile(char *file, const char *defExtension, const char *selPattern);
 bool GetOpenFile(char *file, const char *defExtension, const char *selPattern);
@@ -170,10 +198,14 @@ void AddContextMenuItem(const char *legend, int id);
 void CreateContextSubmenu(void);
 int ShowContextMenu(void);
 
+void ToggleMenuBar(void);
+bool MenuBarIsVisible(void);
 void ShowTextWindow(bool visible);
 void InvalidateText(void);
 void InvalidateGraphics(void);
 void PaintGraphics(void);
+void ToggleFullScreen(void);
+bool FullScreenIsActive(void);
 void GetGraphicsWindowSize(int *w, int *h);
 void GetTextWindowSize(int *w, int *h);
 int32_t GetMilliseconds(void);
@@ -232,8 +264,12 @@ void ssglVertex3v(Vector u);
 void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
 void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
 #define DEFAULT_TEXT_HEIGHT (11.5)
-#define SSGL_CALLBACK __stdcall
-typedef void SSGL_CALLBACK ssglCallbackFptr(void);
+#ifdef WIN32
+#   define SSGL_CALLBACK __stdcall
+#else
+#   define SSGL_CALLBACK
+#endif
+extern "C" { typedef void SSGL_CALLBACK ssglCallbackFptr(void); }
 void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void ssglFillPolygon(SPolygon *p);
 void ssglFillMesh(RgbColor color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
