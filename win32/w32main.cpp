@@ -660,13 +660,13 @@ bool FullScreenIsActive(void)
     return false;
 }
 
-int32_t GetMilliseconds(void)
+int64_t GetMilliseconds(void)
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
     QueryPerformanceFrequency(&f);
     LONGLONG d = t.QuadPart/(f.QuadPart/1000);
-    return (int32_t)d;
+    return (int64_t)d;
 }
 
 int64_t GetUnixTime(void)

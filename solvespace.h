@@ -208,7 +208,7 @@ void ToggleFullScreen(void);
 bool FullScreenIsActive(void);
 void GetGraphicsWindowSize(int *w, int *h);
 void GetTextWindowSize(int *w, int *h);
-int32_t GetMilliseconds(void);
+int64_t GetMilliseconds(void);
 int64_t GetUnixTime(void);
 
 void dbp(const char *str, ...);

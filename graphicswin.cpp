@@ -263,7 +263,7 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     // long translations (as measured in pixels) if the user zooms out, moves,
     // and then zooms in again.
     if(dt > 2000) dt = 2000;
-    int32_t tn, t0 = GetMilliseconds();
+    int64_t tn, t0 = GetMilliseconds();
     double s = 0;
     Quaternion dq = quatf.Times(quat0.Inverse());
     do {

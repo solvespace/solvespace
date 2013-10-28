@@ -636,7 +636,7 @@ public:
         CMNU_FIRST_STYLE      = 0x40000000
     };
     void ContextMenuListStyles(void);
-    int32_t contextMenuCancelTime;
+    int64_t contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menuHit);
@@ -683,7 +683,7 @@ public:
     bool KeyDown(int c);
     void EditControlDone(const char *s);
 
-    int32_t lastSpaceNavigatorTime;
+    int64_t lastSpaceNavigatorTime;
     hGroup lastSpaceNavigatorGroup;
     void SpaceNavigatorMoved(double tx, double ty, double tz,
                              double rx, double ry, double rz, bool shiftDown);

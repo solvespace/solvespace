@@ -1291,7 +1291,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         // If we go five seconds without SpaceNavigator input, or if we've
         // switched groups, then consider that a new action and save an undo
         // point.
-        int32_t now = GetMilliseconds();
+        int64_t now = GetMilliseconds();
         if(now - lastSpaceNavigatorTime > 5000 ||
            lastSpaceNavigatorGroup.v != g->h.v)
         {
