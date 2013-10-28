@@ -722,7 +722,7 @@ void SolveSpace::MenuHelp(int id) {
         
         case GraphicsWindow::MNU_ABOUT:
             Message(
-"This is SolveSpace version 2.0.\n"
+"This is SolveSpace version " PACKAGE_VERSION ".\n"
 "\n"
 "Built " __TIME__ " " __DATE__ ".\n"
 "\n"

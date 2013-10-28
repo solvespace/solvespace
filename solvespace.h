@@ -85,7 +85,7 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
-#ifdef WIN32
+#if defined(WIN32) && !defined(HAVE_C99_INTEGER_TYPES)
 // Define some useful C99 integer types.
 typedef UINT64 uint64_t;
 typedef  INT64  int64_t;
