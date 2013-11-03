@@ -94,7 +94,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 'g',  "Group.valA",               'f',    &(SS.sv.g.valA)               },
     { 'g',  "Group.valB",               'f',    &(SS.sv.g.valB)               },
     { 'g',  "Group.valC",               'f',    &(SS.sv.g.valB)               },
-    { 'g',  "Group.color",              'x',    &(SS.sv.g.color)              },
+    { 'g',  "Group.color",              'c',    &(SS.sv.g.color)              },
     { 'g',  "Group.subtype",            'd',    &(SS.sv.g.subtype)            },
     { 'g',  "Group.skipFirst",          'b',    &(SS.sv.g.skipFirst)          },
     { 'g',  "Group.meshCombine",        'd',    &(SS.sv.g.meshCombine)        },
@@ -192,7 +192,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 's',  "Style.textHeightAs",       'd',    &(SS.sv.s.textHeightAs)       },
     { 's',  "Style.textAngle",          'f',    &(SS.sv.s.textAngle)          },
     { 's',  "Style.textOrigin",         'x',    &(SS.sv.s.textOrigin)         },
-    { 's',  "Style.color",              'x',    &(SS.sv.s.color)              },
+    { 's',  "Style.color",              'c',    &(SS.sv.s.color)              },
     { 's',  "Style.fillColor",          'x',    &(SS.sv.s.fillColor)          },
     { 's',  "Style.filled",             'b',    &(SS.sv.s.filled)             },
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
@@ -221,6 +221,7 @@ void SolveSpace::SaveUsingTable(int type) {
             case 'x': fprintf(fh, "%08x", *((uint32_t *)p)); break;
             case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
             case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
+            case 'c': fprintf(fh, "%08x", ((RgbColor *)p)->ToPackedInt());break;
             case 'P': fprintf(fh, "%s", (char *)p); break;
 
             case 'M': {
@@ -367,6 +368,11 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                 case 'x': sscanf(val, "%x", &u); *((uint32_t *)p) = u; break;
                 case 'f': *((double *)p) = atof(val); break;
                 case 'N': ((NameStr *)p)->strcpy(val); break;
+
+                case 'c':
+                    sscanf(val, "%x", &u);
+                    *((RgbColor *)p) = RgbColor::FromPackedInt(u);
+                    break;
 
                 case 'P':
                     if(strlen(val)+1 < MAX_PATH) strcpy((char *)p, val);

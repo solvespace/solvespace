@@ -8,8 +8,12 @@
 #include "solvespace.h"
 #include <time.h>
 #include <shellapi.h>
-#undef  RGB  // our definition clashes with Microsoft's
-#define RGB(r, g, b) ((COLORREF)0)
+// we define RGB() to return our RgbColor, but that conflicts with Win32's
+// definition; so put that back like Windows expects
+#undef  RGB
+#define RGB(r,g,b) \
+    ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
+
 #include <commctrl.h>
 #include <commdlg.h>
 
