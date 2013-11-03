@@ -193,7 +193,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 's',  "Style.textAngle",          'f',    &(SS.sv.s.textAngle)          },
     { 's',  "Style.textOrigin",         'x',    &(SS.sv.s.textOrigin)         },
     { 's',  "Style.color",              'c',    &(SS.sv.s.color)              },
-    { 's',  "Style.fillColor",          'x',    &(SS.sv.s.fillColor)          },
+    { 's',  "Style.fillColor",          'c',    &(SS.sv.s.fillColor)          },
     { 's',  "Style.filled",             'b',    &(SS.sv.s.filled)             },
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
     { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
