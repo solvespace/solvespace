@@ -112,6 +112,51 @@ then
 fi
 
 ##
+## Libspnav
+##
+
+AC_ARG_WITH([libspnav],
+	[AS_HELP_STRING([[--with-libspnav[=PRFX]]],
+		[Enable SpaceNavigator (3D mouse) support via libspnav driver installed in PRFX])])
+
+case "$with_libspnav" in
+	no|'') want_libspnav=no ;;
+	yes) want_libspnav=yes ;;
+	*)
+	want_libspnav=yes
+	LIBSPNAV_CPPFLAGS="-I$with_libspnav/include"
+	LIBSPNAV_LDFLAGS="-L$with_libspnav/lib"
+	;;
+esac
+
+if test "$want_libspnav" = yes
+then
+	save_CPPFLAGS="$CPPFLAGS"
+	save_LDFLAGS="$LDFLAGS"
+	save_LIBS="$LIBS"
+
+	CPPFLAGS="$LIBSPNAV_CPPFLAGS"
+	LDFLAGS="$LIBSPNAV_LDFLAGS"
+	LIBS="-lspnav"
+
+	AC_MSG_CHECKING([for libspnav])
+
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <spnav.h>],
+			[if (spnav_open() < 0) return 1 /* ; */])],
+		[AC_MSG_RESULT([yes])
+		 AC_DEFINE([HAVE_LIBSPNAV], [1], [Define to 1 if you have the SpaceNav driver.])
+		 LIBSPNAV_LIBS="$LDFLAGS $LIBS"],
+		[AC_MSG_ERROR([cannot find libspnav])])
+
+	CPPFLAGS="$save_CPPFLAGS"
+	LDFLAGS="$save_LDFLAGS"
+	LIBS="$save_LIBS"
+fi
+
+AC_SUBST([LIBSPNAV_CPPFLAGS])
+AC_SUBST([LIBSPNAV_LIBS])
+
+##
 ## Wrap it up
 ##
 

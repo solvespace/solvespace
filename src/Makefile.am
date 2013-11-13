@@ -1,6 +1,6 @@
 ## src/Makefile.am
 
-AM_CPPFLAGS = $(FLTK_CXXFLAGS)
+AM_CPPFLAGS = $(FLTK_CXXFLAGS) $(LIBSPNAV_CPPFLAGS)
 
 if WIN32
 AM_CPPFLAGS += \
@@ -77,7 +77,7 @@ solvespace_SOURCES += \
 	fltk/fltkmain.cpp \
 	fltk/fltkutil.cpp
 
-solvespace_LDADD = $(FLTK_LDSTATICFLAGS) -lGLU
+solvespace_LDADD = $(FLTK_LDSTATICFLAGS) -lGLU $(LIBSPNAV_LIBS)
 endif
 
 if WIN32
