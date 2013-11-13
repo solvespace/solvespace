@@ -20,11 +20,18 @@ DEFINES = \
 # We build with /MT for compatibility with the SpaceWare library, and to
 # avoid a needless dependency on a C runtime DLL.
 #
-CXXFLAGS = /nologo /W3 /MT /I. /Iextlib\libpng /Iextlib\si /Iextlib\zlib /Zi /EHs  # /O2
+CXXFLAGS = /nologo /W3 /MT /Isrc /Iextlib\libpng /Iextlib\si /Iextlib\zlib /Zi /EHs  # /O2
 
-HEADERS = win32\freeze.h ui.h solvespace.h dsc.h sketch.h expr.h polygon.h srf\surface.h
+HEADERS =  src\dsc.h \
+           src\expr.h \
+           src\polygon.h \
+           src\sketch.h \
+           src\solvespace.h \
+           src\srf\surface.h \
+           src\ui.h \
+           src\win32\freeze.h
 
-OBJDIR = obj
+OBJDIR   = obj
 
 W32OBJS  = $(OBJDIR)\freeze.obj \
            $(OBJDIR)\w32main.obj \
@@ -94,37 +101,41 @@ all: $(OBJDIR)\solvespace.exe
 	@echo solvespace.exe
 
 clean:
-	del /q obj\*
+	-rmdir /s /q $(OBJDIR)
 
 $(OBJDIR)\solvespace.exe: $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(RES)
 	$(CXX) $(DEFINES) $(CXXFLAGS) /Fe$(OBJDIR)\solvespace.exe $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(RES) $(LIBS)
 	editbin /nologo /STACK:8388608 $(OBJDIR)\solvespace.exe
 
-{.}.cpp{$(OBJDIR)}.obj::
+{src}.cpp{$(OBJDIR)}.obj::
+	@if not exist $(OBJDIR) mkdir $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(DEFINES) /c /Fo$(OBJDIR)\ $<
 
-{srf}.cpp{$(OBJDIR)}.obj::
+{src\srf}.cpp{$(OBJDIR)}.obj::
+	@if not exist $(OBJDIR) mkdir $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(DEFINES) /c /Fo$(OBJDIR)\ $<
 
-{win32}.cpp{$(OBJDIR)}.obj::
+{src\win32}.cpp{$(OBJDIR)}.obj::
+	@if not exist $(OBJDIR) mkdir $(OBJDIR)
 	$(CXX) $(CXXFLAGS) $(DEFINES) /c /Fo$(OBJDIR)\ $<
 
-$(RES): win32\$(@B).rc icon.ico
-	$(RC) /fo$@ win32\$(@B).rc
+$(RES): src\win32\$(@B).rc src\win32\icon.ico
+	@if not exist $(OBJDIR) mkdir $(OBJDIR)
+	$(RC) /fo$@ src\win32\$(@B).rc
 
-$(OBJDIR)\glhelper.obj: bitmapextra.table.h bitmapfont.table.h font.table.h
+$(OBJDIR)\glhelper.obj: src\bitmapextra.table.h src\bitmapfont.table.h src\font.table.h
 
-$(OBJDIR)\textwin.obj: icons.h
+$(OBJDIR)\textwin.obj: src\icons.h
 
-$(OBJDIR)\toolbar.obj: icons.h
+$(OBJDIR)\toolbar.obj: src\icons.h
 
 !IFDEF PERL
 
-icons.h: icons\*.png png2c.pl
-	$(PERL) png2c.pl $@ icons-proto.h
+src\icons.h: src\icons\*.png src\png2c.pl
+	$(PERL) src/png2c.pl $@ icons-proto.h
 
-bitmapextra.table.h: icons\*.png pngchar2c.pl
-	$(PERL) pngchar2c.pl >tmp.$@
-	move /y tmp.$@ $@
+src\bitmapextra.table.h: src\icons\*.png src\pngchar2c.pl
+	$(PERL) src/pngchar2c.pl >$@.tmp
+	move /y $@.tmp $@
 
 !ENDIF # PERL

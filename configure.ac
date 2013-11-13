@@ -3,7 +3,7 @@
 AC_PREREQ([2.59])
 AC_INIT([SolveSpace], [2.1], [jwesthues@cq.cx], [solvespace])
 AC_CONFIG_HEADERS([config.h])
-AC_CONFIG_SRCDIR([solvespace.cpp])
+AC_CONFIG_SRCDIR([src/solvespace.cpp])
 AC_CONFIG_AUX_DIR([ac-aux])
 AC_CONFIG_MACRO_DIR([ac-aux])
 
@@ -115,7 +115,7 @@ fi
 ## Wrap it up
 ##
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile])
 AC_OUTPUT
 
 cat <<EOF
