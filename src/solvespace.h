@@ -106,6 +106,9 @@ class ExprVector;
 class ExprQuaternion;
 class RgbColor;
 
+#ifndef MAX_PATH
+#   define MAX_PATH PATH_MAX
+#endif
 
 //================
 // From the platform-specific code.
