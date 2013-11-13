@@ -18,8 +18,8 @@
 #include <commdlg.h>
 
 #ifdef HAVE_SPACEWARE_INPUT
-#   include <si/si.h>
-#   include <si/siapp.h>
+#   include <si.h>
+#   include <siapp.h>
 #   undef uint32_t  // thanks but no thanks
 #endif
 
