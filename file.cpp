@@ -201,35 +201,45 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
     { 0, NULL, 0, NULL }
 };
 
+union SAVEDptr {
+    IdList<EntityMap,EntityId> M;
+    NameStr  N;
+    char     P;
+    bool     b;
+    RgbColor c;
+    int      d;
+    double   f;
+    uint32_t x;
+};
+
 void SolveSpace::SaveUsingTable(int type) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(SAVED[i].type != type) continue;
 
         int fmt = SAVED[i].fmt;
-        void *p = SAVED[i].ptr;
+        union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
-        if(fmt == 'd' && *((int *)p)      == 0)   continue;
-        if(fmt == 'x' && *((uint32_t *)p) == 0)   continue;
-        if(fmt == 'f' && *((double *)p)   == 0.0) continue;
-        if(fmt == 'N' && strlen(((NameStr *)p)->str) == 0) continue;
+        if(fmt == 'N' && p->N.str == '\0')   continue;
+        if(fmt == 'd' && p->d == 0)          continue;
+        if(fmt == 'f' && EXACT(p->f == 0.0)) continue;
+        if(fmt == 'x' && p->x == 0)          continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
-            case 'd': fprintf(fh, "%d", *((int *)p)); break;
-            case 'b': fprintf(fh, "%d", *((bool *)p) ? 1 : 0); break;
-            case 'x': fprintf(fh, "%08x", *((uint32_t *)p)); break;
-            case 'f': fprintf(fh, "%.20f", *((double *)p)); break;
-            case 'N': fprintf(fh, "%s", ((NameStr *)p)->str); break;
-            case 'c': fprintf(fh, "%08x", ((RgbColor *)p)->ToPackedInt());break;
-            case 'P': fprintf(fh, "%s", (char *)p); break;
+            case 'N': fprintf(fh, "%s",    p->N.str);           break;
+            case 'P': fprintf(fh, "%s",    &(p->P));            break;
+            case 'b': fprintf(fh, "%d",    p->b ? 1 : 0);       break;
+            case 'c': fprintf(fh, "%08x",  p->c.ToPackedInt()); break;
+            case 'd': fprintf(fh, "%d",    p->d);               break;
+            case 'f': fprintf(fh, "%.20f", p->f);               break;
+            case 'x': fprintf(fh, "%08x",  p->x);               break;
 
             case 'M': {
                 int j;
                 fprintf(fh, "{\n");
-                IdList<EntityMap,EntityId> *m = (IdList<EntityMap,EntityId> *)p;
-                for(j = 0; j < m->n; j++) {
-                    EntityMap *em = &(m->elem[j]);
+                for(j = 0; j < p->M.n; j++) {
+                    EntityMap *em = &(p->M.elem[j]);
                     fprintf(fh, "    %d %08x %d\n", 
                             em->h.v, em->input.v, em->copyNumber);
                 }
@@ -360,32 +370,30 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
-            void *p = SAVED[i].ptr;
+            union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
             unsigned int u = 0;
             switch(SAVED[i].fmt) {
-                case 'd': *((int *)p) = atoi(val); break;
-                case 'b': *((bool *)p) = (atoi(val) != 0); break;
-                case 'x': sscanf(val, "%x", &u); *((uint32_t *)p) = u; break;
-                case 'f': *((double *)p) = atof(val); break;
-                case 'N': ((NameStr *)p)->strcpy(val); break;
+                case 'N': p->N.strcpy(val);        break;
+                case 'b': p->b = (atoi(val) != 0); break;
+                case 'd': p->d = atoi(val);        break;
+                case 'f': p->f = atof(val);        break;
+                case 'x': sscanf(val, "%x", &u); p->x = u; break;
 
                 case 'c':
                     sscanf(val, "%x", &u);
-                    *((RgbColor *)p) = RgbColor::FromPackedInt(u);
+                    p->c = RgbColor::FromPackedInt(u);
                     break;
 
                 case 'P':
-                    if(strlen(val)+1 < MAX_PATH) strcpy((char *)p, val);
+                    if(strlen(val)+1 < MAX_PATH) strcpy(&(p->P), val);
                     break;
 
                 case 'M': {
-                    IdList<EntityMap,EntityId> *m =
-                                (IdList<EntityMap,EntityId> *)p;
                     // Don't clear this list! When the group gets added, it
                     // makes a shallow copy, so that would result in us
                     // freeing memory that we want to keep around. Just
                     // zero it out so that new memory is allocated.
-                    memset(m, 0, sizeof(*m));
+                    memset(&(p->M), 0, sizeof(p->M));
                     for(;;) {
                         EntityMap em;
                         char line2[1024];
@@ -394,7 +402,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                         if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
                                                      &(em.copyNumber)) == 3)
                         {
-                            m->Add(&em);
+                            p->M.Add(&em);
                         } else {
                             break;
                         }
