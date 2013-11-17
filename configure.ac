@@ -58,6 +58,10 @@ AC_CHECK_SIZEOF([long double])
 AC_CHECK_SIZEOF([void *])
 AC_CHECK_SIZEOF([size_t])
 
+# Is the pre-built source directory present?
+#
+AM_CONDITIONAL([HAVE_PREBUILT_SOURCE], [test -d $srcdir/src/built])
+
 ##
 ## Windows support
 ##

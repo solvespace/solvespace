@@ -11,14 +11,16 @@ endif
 
 bin_PROGRAMS = solvespace
 
-icons_src = \
-	icons.h \
-	icons-proto.h
+built_src = \
+	bitmapextra.table.h \
+	bitmapfont.table.h \
+	icons-proto.h \
+	icons.h
 
-BUILT_SOURCES = $(icons_src)
+BUILT_SOURCES = $(built_src)
 
 solvespace_SOURCES = \
-	$(icons_src) \
+	$(built_src) \
 	bsp.cpp \
 	clipboard.cpp \
 	confscreen.cpp \
@@ -36,6 +38,7 @@ solvespace_SOURCES = \
 	expr.h \
 	expr.cpp \
 	file.cpp \
+	font.table.h \
 	generate.cpp \
 	glhelper.cpp \
 	graphicswin.cpp \
@@ -93,14 +96,14 @@ solvespace_LDFLAGS = \
 	-lzlib \
 	-luser32 -lgdi32 -lcomctl32 -ladvapi32 -lshell32 \
 	-lopengl32 -lglu32
-else
+else ! MINGW
 solvespace_LDFLAGS = -link \
 	-libpath:$(top_srcdir)/extlib/libpng libpng.lib \
 	-libpath:$(top_srcdir)/extlib/zlib zlib.lib \
 	user32.lib gdi32.lib comctl32.lib advapi32.lib shell32.lib \
 	opengl32.lib glu32.lib
-endif # MINGW
-endif # WIN32
+endif ! MINGW
+endif WIN32
 
 icons = \
 	icons/angle.png \
@@ -146,14 +149,8 @@ icons = \
 	icons/vert.png \
 	icons/workplane.png
 
-tables = \
-	bitmapextra.table.h \
-	bitmapfont.table.h \
-	font.table.h
-
 EXTRA_DIST = \
 	$(icons) \
-	$(tables) \
 	png2c.pl \
 	pngchar2c.pl \
 	win32/icon.ico \
@@ -163,16 +160,35 @@ EXTRA_DIST = \
 if MAINTAINER_MODE
 
 icons.h: $(icons) $(srcdir)/png2c.pl
-	$(PERL) $(srcdir)/png2c.pl $@ icons-proto.h $(srcdir)
+	$(PERL) $(srcdir)/png2c.pl icons.h icons-proto.h $(srcdir)
 
 icons-proto.h: icons.h
 	@exit 0
 
 bitmapextra.table.h: $(icons) $(srcdir)/pngchar2c.pl
-	$(PERL) $(srcdir)/pngchar2c.pl $(srcdir) >$@.tmp
-	mv -f $@.tmp $@
+	$(PERL) $(srcdir)/pngchar2c.pl $(srcdir) >bitmapextra.table.tmp
+	mv -f bitmapextra.table.tmp bitmapextra.table.h
 
-endif # MAINTAINER_MODE
+endif MAINTAINER_MODE
+
+if HAVE_PREBUILT_SOURCE
+if ! MAINTAINER_MODE
+
+icons.h: $(srcdir)/built/icons.h
+	cp $(srcdir)/built/icons.h icons.h
+
+icons-proto.h: $(srcdir)/built/icons-proto.h
+	cp $(srcdir)/built/icons-proto.h icons-proto.h
+
+bitmapextra.table.h: $(srcdir)/built/bitmapextra.table.h
+	cp $(srcdir)/built/bitmapextra.table.h bitmapextra.table.h
+
+endif ! MAINTAINER_MODE
+
+bitmapfont.table.h: $(srcdir)/built/bitmapfont.table.h
+	cp $(srcdir)/built/bitmapfont.table.h bitmapfont.table.h
+
+endif HAVE_PREBUILT_SOURCE
 
 run-valgrind: solvespace$(EXEEXT)
 	@test -z "$$VALGRIND_OPTS" || echo VALGRIND_OPTS = $$VALGRIND_OPTS
