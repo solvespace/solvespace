@@ -9,16 +9,27 @@
 #include "slvs.h"
 
 Sketch SK;
-System SYS;
+static System SYS;
 
-int IsInit = 0;
+static int IsInit = 0;
 
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     // Nothing to do for now.
 }
 
-void DoMessageBox(char *str, int rows, int cols, bool error)
+void CnfFreezeInt(uint32_t v, const char *name)
 {
+    abort();
+}
+
+uint32_t CnfThawInt(uint32_t v, const char *name)
+{
+    abort();
+}
+
+void DoMessageBox(const char *str, int rows, int cols, bool error)
+{
+    abort();
 }
 
 extern "C" {
@@ -185,7 +196,7 @@ default: dbp("bad constraint type %d", sc->type); return;
         SK.constraint.Add(&c);
     }
 
-    for(i = 0; i < arraylen(ssys->dragged); i++) {
+    for(i = 0; i < (int)arraylen(ssys->dragged); i++) {
         if(ssys->dragged[i]) {
             hParam hp = { ssys->dragged[i] };
             SYS.dragged.Add(&hp);
@@ -251,4 +262,4 @@ default: dbp("bad constraint type %d", sc->type); return;
     FreeAllTemporary();
 }
 
-}
+} /* extern "C" */

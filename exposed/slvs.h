@@ -1,23 +1,31 @@
-//-----------------------------------------------------------------------------
-// Data structures and prototypes for slvs.lib, a geometric constraint solver.
-//
-// See the comments in this file, the accompanying sample code that uses
-// this library, and the accompanying documentation (DOC.txt).
-//
-// Copyright 2009-2013 Jonathan Westhues.
-//-----------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
+ * Data structures and prototypes for slvs.lib, a geometric constraint solver.
+ *
+ * See the comments in this file, the accompanying sample code that uses
+ * this library, and the accompanying documentation (DOC.txt).
+ *
+ * Copyright 2009-2013 Jonathan Westhues.
+ *---------------------------------------------------------------------------*/
 
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifdef EXPORT_DLL
-#define DLL __declspec( dllexport ) 
+#ifdef WIN32
+#   ifdef EXPORT_DLL
+#       define DLL __declspec( dllexport )
+#   else
+#       define DLL __declspec( dllimport )
+#   endif
 #else
-#define DLL __declspec( dllimport ) 
+#   define DLL
 #endif
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(WIN32) && !defined(HAVE_C99_INTEGER_TYPES)
+typedef UINT32 uint32_t;
 #endif
 
 typedef uint32_t Slvs_hParam;
@@ -25,8 +33,8 @@ typedef uint32_t Slvs_hEntity;
 typedef uint32_t Slvs_hConstraint;
 typedef uint32_t Slvs_hGroup;
 
-// To obtain the 3d (not projected into a workplane) of a constraint or
-// an entity, specify this instead of the workplane.
+/* To obtain the 3d (not projected into a workplane) of a constraint or
+ * an entity, specify this instead of the workplane. */
 #define SLVS_FREE_IN_3D         0
 
 
@@ -45,9 +53,9 @@ typedef struct {
 
 #define SLVS_E_DISTANCE             70000
 
-// The special point, normal, and distance types used for parametric step
-// and repeat, extrude, and assembly are currently not exposed. Please
-// contact us if you are interested in using these.
+/* The special point, normal, and distance types used for parametric step
+ * and repeat, extrude, and assembly are currently not exposed. Please
+ * contact us if you are interested in using these. */
 
 #define SLVS_E_WORKPLANE            80000
 #define SLVS_E_LINE_SEGMENT         80001
@@ -125,16 +133,15 @@ typedef struct {
 
 
 typedef struct {
-    //// INPUT VARIABLES
-    //
-    // Here, we specify the parameters and their initial values, the entities,
-    // and the constraints. For example, param[] points to the array of
-    // parameters, which has length params, so that the last valid element
-    // is param[params-1].
-    //
-    // param[] is actually an in/out variable; if the solver is successful,
-    // then the new values (that satisfy the constraints) are written to it.
-    //
+    /*** INPUT VARIABLES
+     *
+     * Here, we specify the parameters and their initial values, the entities,
+     * and the constraints. For example, param[] points to the array of
+     * parameters, which has length params, so that the last valid element
+     * is param[params-1].
+     *
+     * param[] is actually an in/out variable; if the solver is successful,
+     * then the new values (that satisfy the constraints) are written to it. */
     Slvs_Param          *param;
     int                 params;
     Slvs_Entity         *entity;
@@ -142,39 +149,39 @@ typedef struct {
     Slvs_Constraint     *constraint;
     int                 constraints;
 
-    // If a parameter corresponds to a point (distance, normal, etc.) being
-    // dragged, then specify it here. This will cause the solver to favor
-    // that parameter, and attempt to change it as little as possible even
-    // if that requires it to change other parameters more.
-    //
-    // Unused members of this array should be set to zero.
+    /* If a parameter corresponds to a point (distance, normal, etc.) being
+     * dragged, then specify it here. This will cause the solver to favor
+     * that parameter, and attempt to change it as little as possible even
+     * if that requires it to change other parameters more.
+     *
+     * Unused members of this array should be set to zero. */
     Slvs_hParam         dragged[4];
 
-    // If the solver fails, then it can determine which constraints are
-    // causing the problem. But this is a relatively slow process (for
-    // a system with n constraints, about n times as long as just solving).
-    // If calculateFaileds is true, then the solver will do so, otherwise
-    // not.
+    /* If the solver fails, then it can determine which constraints are
+     * causing the problem. But this is a relatively slow process (for
+     * a system with n constraints, about n times as long as just solving).
+     * If calculateFaileds is true, then the solver will do so, otherwise
+     * not. */
     int                 calculateFaileds;
 
-    //// OUTPUT VARIABLES
-    // 
-    // If the solver fails, then it can report which constraints are causing
-    // the problem. The caller should allocate the array failed[], and pass
-    // its size in faileds. 
-    //
-    // The solver will set faileds equal to the number of problematic
-    // constraints, and write their Slvs_hConstraints into failed[]. To
-    // ensure that there is sufficient space for any possible set of
-    // failing constraints, faileds should be greater than or equal to
-    // constraints.
+    /*** OUTPUT VARIABLES
+     *
+     * If the solver fails, then it can report which constraints are causing
+     * the problem. The caller should allocate the array failed[], and pass
+     * its size in faileds.
+     *
+     * The solver will set faileds equal to the number of problematic
+     * constraints, and write their Slvs_hConstraints into failed[]. To
+     * ensure that there is sufficient space for any possible set of
+     * failing constraints, faileds should be greater than or equal to
+     * constraints. */
     Slvs_hConstraint    *failed;
     int                 faileds;
 
-    // The solver indicates the number of unconstrained degrees of freedom.
+    /* The solver indicates the number of unconstrained degrees of freedom. */
     int                 dof;
 
-    // The solver indicates whether the solution succeeded.
+    /* The solver indicates whether the solution succeeded. */
 #define SLVS_RESULT_OKAY                0
 #define SLVS_RESULT_INCONSISTENT        1
 #define SLVS_RESULT_DIDNT_CONVERGE      2
@@ -185,12 +192,12 @@ typedef struct {
 DLL void Slvs_Solve(Slvs_System *sys, Slvs_hGroup hg);
 
 
-// Our base coordinate system has basis vectors
-//     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)
-// A unit quaternion defines a rotation to a new coordinate system with
-// basis vectors
-//         U          V          N
-// which these functions compute from the quaternion.
+/* Our base coordinate system has basis vectors
+ *     (1, 0, 0)  (0, 1, 0)  (0, 0, 1)
+ * A unit quaternion defines a rotation to a new coordinate system with
+ * basis vectors
+ *         U          V          N
+ * which these functions compute from the quaternion. */
 DLL void Slvs_QuaternionU(double qw, double qx, double qy, double qz,
                              double *x, double *y, double *z);
 DLL void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
@@ -198,16 +205,16 @@ DLL void Slvs_QuaternionV(double qw, double qx, double qy, double qz,
 DLL void Slvs_QuaternionN(double qw, double qx, double qy, double qz,
                              double *x, double *y, double *z);
 
-// Similarly, compute a unit quaternion in terms of two basis vectors.
+/* Similarly, compute a unit quaternion in terms of two basis vectors. */
 DLL void Slvs_MakeQuaternion(double ux, double uy, double uz,
                              double vx, double vy, double vz,
                              double *qw, double *qx, double *qy, double *qz);
 
 
-//-------------------------------------
-// These are just convenience functions, to save you the trouble of filling
-// out the structures by hand. The code is included in the header file to
-// let the compiler inline them if possible.
+/*-------------------------------------
+ * These are just convenience functions, to save you the trouble of filling
+ * out the structures by hand. The code is included in the header file to
+ * let the compiler inline them if possible. */
 
 static Slvs_Param Slvs_MakeParam(Slvs_hParam h, Slvs_hGroup group, double val)
 {

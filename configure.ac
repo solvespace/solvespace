@@ -164,7 +164,7 @@ AC_SUBST([LIBSPNAV_LIBS])
 ## Wrap it up
 ##
 
-AC_CONFIG_FILES([Makefile src/Makefile])
+AC_CONFIG_FILES([Makefile exposed/Makefile src/Makefile])
 AC_OUTPUT
 
 cat <<EOF

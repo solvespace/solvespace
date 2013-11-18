@@ -60,7 +60,7 @@ void Constraint::DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA)
 {
     SK.constraint.ClearTags();
     for(int i = 0; i < SK.constraint.n; i++) {
-        Constraint *ct = &(SK.constraint.elem[i]);
+        ConstraintBase *ct = &(SK.constraint.elem[i]);
         if(ct->type != type) continue;
 
         if(ct->entityA.v != entityA.v) continue;
@@ -111,6 +111,8 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
     Constrain(POINTS_COINCIDENT, ptA, ptB,
         Entity::NO_ENTITY, Entity::NO_ENTITY, false, false);
 }
+
+#ifndef LIBRARY
 
 void Constraint::MenuConstrain(int id) {
     Constraint c;
@@ -707,3 +709,4 @@ void Constraint::MenuConstrain(int id) {
     InvalidateGraphics();
 }
 
+#endif /* ! LIBRARY */

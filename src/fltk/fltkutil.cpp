@@ -105,3 +105,7 @@ void *MemAlloc(size_t n) {
 void MemFree(void *p) {
     free(p);
 }
+
+void InitHeaps(void) {
+    /* nothing to do */
+}

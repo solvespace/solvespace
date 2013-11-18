@@ -2,7 +2,7 @@
 
 ACLOCAL_AMFLAGS = -I ac-aux
 
-SUBDIRS = src
+SUBDIRS = src exposed
 
 exposed = \
 	exposed/CDemo.c \
