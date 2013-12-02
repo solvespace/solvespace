@@ -55,7 +55,7 @@ void Group::MenuGroup(int id) {
     Group g;
     ZERO(&g);
     g.visible = true;
-    g.color = RGB(100, 100, 100);
+    g.color = RGBi(100, 100, 100);
     g.scale = 1;
 
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {

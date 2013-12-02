@@ -15,14 +15,14 @@ void SolveSpace::Init(char *cmdLine) {
     // Then, load the registry settings.
     int i;
     // Default list of colors for the model material
-    modelColor[0] = CnfThawColor(RGB(150, 150, 150), "ModelColor_0");
-    modelColor[1] = CnfThawColor(RGB(100, 100, 100), "ModelColor_1");
-    modelColor[2] = CnfThawColor(RGB( 30,  30,  30), "ModelColor_2");
-    modelColor[3] = CnfThawColor(RGB(150,   0,   0), "ModelColor_3");
-    modelColor[4] = CnfThawColor(RGB(  0, 100,   0), "ModelColor_4");
-    modelColor[5] = CnfThawColor(RGB(  0,  80,  80), "ModelColor_5");
-    modelColor[6] = CnfThawColor(RGB(  0,   0, 130), "ModelColor_6");
-    modelColor[7] = CnfThawColor(RGB( 80,   0,  80), "ModelColor_7");
+    modelColor[0] = CnfThawColor(RGBi(150, 150, 150), "ModelColor_0");
+    modelColor[1] = CnfThawColor(RGBi(100, 100, 100), "ModelColor_1");
+    modelColor[2] = CnfThawColor(RGBi( 30,  30,  30), "ModelColor_2");
+    modelColor[3] = CnfThawColor(RGBi(150,   0,   0), "ModelColor_3");
+    modelColor[4] = CnfThawColor(RGBi(  0, 100,   0), "ModelColor_4");
+    modelColor[5] = CnfThawColor(RGBi(  0,  80,  80), "ModelColor_5");
+    modelColor[6] = CnfThawColor(RGBi(  0,   0, 130), "ModelColor_6");
+    modelColor[7] = CnfThawColor(RGBi( 80,   0,  80), "ModelColor_7");
     // Light intensities
     lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
     lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
@@ -62,7 +62,7 @@ void SolveSpace::Init(char *cmdLine) {
     // Export pwl curves (instead of exact) always
     exportPwlCurves = CnfThawBool(false, "ExportPwlCurves");
     // Background color on-screen
-    backgroundColor = CnfThawColor(RGB(0, 0, 0), "BackgroundColor");
+    backgroundColor = CnfThawColor(RGBi(0, 0, 0), "BackgroundColor");
     // Whether export canvas size is fixed or derived from bbox
     exportCanvasSizeAuto = CnfThawBool(true, "ExportCanvasSizeAuto");
     // Margins for automatic canvas size

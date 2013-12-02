@@ -7,24 +7,24 @@
 #include <icons-proto.h>
 
 const TextWindow::Color TextWindow::fgColors[] = {
-    { 'd', RGB(255, 255, 255) },
-    { 'l', RGB(100, 100, 255) },
-    { 't', RGB(255, 200,   0) },
-    { 'h', RGB( 90,  90,  90) },
-    { 's', RGB( 40, 255,  40) },
-    { 'm', RGB(200, 200,   0) },
-    { 'r', RGB(  0,   0,   0) },
-    { 'x', RGB(255,  20,  20) },
-    { 'i', RGB(  0, 255, 255) },
-    { 'g', RGB(160, 160, 160) },
-    { 'b', RGB(200, 200, 200) },
+    { 'd', RGBi(255, 255, 255) },
+    { 'l', RGBi(100, 100, 255) },
+    { 't', RGBi(255, 200,   0) },
+    { 'h', RGBi( 90,  90,  90) },
+    { 's', RGBi( 40, 255,  40) },
+    { 'm', RGBi(200, 200,   0) },
+    { 'r', RGBi(  0,   0,   0) },
+    { 'x', RGBi(255,  20,  20) },
+    { 'i', RGBi(  0, 255, 255) },
+    { 'g', RGBi(160, 160, 160) },
+    { 'b', RGBi(200, 200, 200) },
     { 0,   NULL_COLOR }
 };
 const TextWindow::Color TextWindow::bgColors[] = {
-    { 'd', RGB(  0,   0,   0) },
-    { 't', RGB( 34,  15,  15) },
-    { 'a', RGB( 25,  25,  25) },
-    { 'r', RGB(255, 255, 255) },
+    { 'd', RGBi(  0,   0,   0) },
+    { 't', RGBi( 34,  15,  15) },
+    { 'a', RGBi( 25,  25,  25) },
+    { 'r', RGBi(255, 255, 255) },
     { 0,   NULL_COLOR }
 };
 
@@ -558,20 +558,20 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     if(how == CLICK || (how == HOVER && leftDown)) InvalidateText();
 
     static const RgbColor BaseColor[12] = {
-        RGB(255,   0,   0),
-        RGB(  0, 255,   0),
-        RGB(  0,   0, 255),
+        RGBi(255,   0,   0),
+        RGBi(  0, 255,   0),
+        RGBi(  0,   0, 255),
 
-        RGB(  0, 255, 255),
-        RGB(255,   0, 255),
-        RGB(255, 255,   0),
+        RGBi(  0, 255, 255),
+        RGBi(255,   0, 255),
+        RGBi(255, 255,   0),
 
-        RGB(255, 127,   0),
-        RGB(255,   0, 127),
-        RGB(  0, 255, 127),
-        RGB(127, 255,   0),
-        RGB(127,   0, 255),
-        RGB(  0, 127, 255),
+        RGBi(255, 127,   0),
+        RGBi(255,   0, 127),
+        RGBi(  0, 255, 127),
+        RGBi(127, 255,   0),
+        RGBi(127,   0, 255),
+        RGBi(  0, 127, 255),
     };
 
     int width, height;

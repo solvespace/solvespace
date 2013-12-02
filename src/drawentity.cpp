@@ -520,11 +520,11 @@ void Entity::DrawOrGetDistance(void) {
                 // dimmer for the ones at the model origin.
                 int f = (i == 0 ? 100 : 255);
                 if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                    ssglColorRGB(RGB(0, 0, f));
+                    ssglColorRGB(RGBi(0, 0, f));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                    ssglColorRGB(RGB(f, 0, 0));
+                    ssglColorRGB(RGBi(f, 0, 0));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                    ssglColorRGB(RGB(0, f, 0));
+                    ssglColorRGB(RGBi(0, f, 0));
                 } else {
                     ssglColorRGB(Style::Color(Style::NORMALS));
                     if(i > 0) break;

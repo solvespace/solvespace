@@ -113,7 +113,7 @@ void Style::LoadFactoryDefaults(void) {
         s->fillColor    = RGBf(0.3, 0.3, 0.3);
         s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
     }
-    SS.backgroundColor = RGB(0, 0, 0);
+    SS.backgroundColor = RGBi(0, 0, 0);
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
     SS.bgImage.fromFile = NULL;
 }
@@ -218,7 +218,7 @@ RgbColor Style::RewriteColor(RgbColor rgbin) {
         // good for the default on-screen view (black bg) but probably
         // not desired in the exported files, which typically are shown
         // against white backgrounds.
-        return RGB(0, 0, 0);
+        return RGBi(0, 0, 0);
     } else {
         return rgbin;
     }

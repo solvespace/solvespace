@@ -371,13 +371,13 @@ void ssglDebugPolygon(SPolygon *p)
             Vector a = (sc->l.elem[j]).p;
             Vector b = (sc->l.elem[j+1]).p;
 
-            ssglLockColorTo(RGB(0, 0, 255));
+            ssglLockColorTo(RGBi(0, 0, 255));
             Vector d = (a.Minus(b)).WithMagnitude(-0);
             glBegin(GL_LINES);
                 ssglVertex3v(a.Plus(d));
                 ssglVertex3v(b.Minus(d));
             glEnd();
-            ssglLockColorTo(RGB(255, 0, 0));
+            ssglLockColorTo(RGBi(255, 0, 0));
             glBegin(GL_POINTS);
                 ssglVertex3v(a.Plus(d));
                 ssglVertex3v(b.Minus(d));
@@ -415,7 +415,7 @@ void ssglDebugMesh(SMesh *m)
     ssglDepthRangeOffset(1);
     ssglUnlockColor();
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    ssglColorRGBa(RGB(0, 255, 0), 1.0);
+    ssglColorRGBa(RGBi(0, 255, 0), 1.0);
     glBegin(GL_TRIANGLES);
     for(i = 0; i < m->l.n; i++) {
         STriangle *t = &(m->l.elem[i]);

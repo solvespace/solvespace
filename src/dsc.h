@@ -395,8 +395,7 @@ public:
     void Solve(void);
 };
 
-#undef RGB
-#define RGB(r, g, b)  RgbColor::From((r), (g), (b))
+#define RGBi(r, g, b) RgbColor::From((r), (g), (b))
 #define RGBf(r, g, b) RgbColor::FromFloat((float)(r), (float)(g), (float)(b))
 #define NULL_COLOR    RgbColor::Default()
 
