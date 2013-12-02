@@ -90,7 +90,7 @@ void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
                 Vector p = t;
                 p = p.Plus(u.ScaledBy((xo + x)*scale));
                 p = p.Plus(v.ScaledBy((yo + y)*scale));
-                if(prevp.x != VERY_POSITIVE) {
+                if(EXACT(prevp.x != VERY_POSITIVE)) {
                     fn(fndata, prevp, p);
                 }
                 prevp = p;

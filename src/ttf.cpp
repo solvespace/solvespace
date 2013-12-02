@@ -109,7 +109,7 @@ void TtfFont::LoadGlyph(int index) {
     int16_t xMax            = (int16_t)GetUSHORT();
     int16_t yMax            = (int16_t)GetUSHORT();
 
-    if(useGlyph['A'] == index) {
+    if(useGlyph[(int)'A'] == index) {
         scale = (1024*1024) / yMax;
     }
 

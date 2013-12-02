@@ -506,6 +506,10 @@ public:
     FILE *f;
     Vector ptMin, ptMax;
 
+    // This quells the Clang++ warning "'VectorFileWriter' has virtual
+    // functions but non-virtual destructor"
+    virtual ~VectorFileWriter() {}
+
     static double MmToPts(double mm);
 
     static VectorFileWriter *ForFile(char *file);
