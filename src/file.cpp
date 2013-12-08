@@ -220,10 +220,10 @@ void SolveSpace::SaveUsingTable(int type) {
         int fmt = SAVED[i].fmt;
         union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
-        if(fmt == 'N' && p->N.str == '\0')   continue;
-        if(fmt == 'd' && p->d == 0)          continue;
-        if(fmt == 'f' && EXACT(p->f == 0.0)) continue;
-        if(fmt == 'x' && p->x == 0)          continue;
+        if(fmt == 'N' && p->N.str[0] == '\0')   continue;
+        if(fmt == 'd' && p->d == 0)             continue;
+        if(fmt == 'f' && EXACT(p->f == 0.0))    continue;
+        if(fmt == 'x' && p->x == 0)             continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {

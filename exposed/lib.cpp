@@ -25,6 +25,7 @@ void CnfFreezeInt(uint32_t v, const char *name)
 uint32_t CnfThawInt(uint32_t v, const char *name)
 {
     abort();
+    return 0;
 }
 
 void DoMessageBox(const char *str, int rows, int cols, bool error)

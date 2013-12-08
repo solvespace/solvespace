@@ -101,7 +101,8 @@ all: $(OBJDIR)\solvespace.exe
 	@echo solvespace.exe
 
 clean:
-	-rmdir /s /q $(OBJDIR)
+	-del /Q obj\*
+	-rmdir $(OBJDIR)
 
 $(OBJDIR)\solvespace.exe: $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(RES)
 	$(CXX) $(DEFINES) $(CXXFLAGS) /Fe$(OBJDIR)\solvespace.exe $(SSOBJS) $(SRFOBJS) $(W32OBJS) $(RES) $(LIBS)
@@ -132,10 +133,10 @@ $(OBJDIR)\toolbar.obj: src\icons.h
 !IFDEF PERL
 
 src\icons.h: src\icons\*.png src\png2c.pl
-	$(PERL) src\png2c.pl $@ src\icons-proto.h
+	$(PERL) src\png2c.pl $@ src\icons-proto.h src
 
 src\bitmapextra.table.h: src\icons\*.png src\pngchar2c.pl
-	$(PERL) src\pngchar2c.pl >$@.tmp
+	$(PERL) src\pngchar2c.pl src >$@.tmp
 	move /y $@.tmp $@
 
 !ELSE IF EXIST(src\built)
