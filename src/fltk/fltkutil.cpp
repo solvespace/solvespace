@@ -60,6 +60,7 @@ void *AllocTemporary(size_t n)
     h->prev = NULL;
     h->next = Head;
     Head = h;
+    memset(&h[1], 0, n);
     return (void *)&h[1];
 }
 
