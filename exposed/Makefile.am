@@ -1,5 +1,7 @@
 ## exposed/Makefile.am
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 AM_CPPFLAGS = -DLIBRARY -I$(top_srcdir)/src
 
 AM_LDFLAGS = -L.

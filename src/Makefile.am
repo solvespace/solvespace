@@ -1,5 +1,7 @@
 ## src/Makefile.am
 
+AUTOMAKE_OPTIONS = subdir-objects
+
 AM_CPPFLAGS = $(FLTK_CXXFLAGS) $(LIBSPNAV_CPPFLAGS)
 
 if WIN32
