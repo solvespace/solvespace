@@ -169,6 +169,12 @@ int Fl_Gl_Window_Group::handle_gl(int event) {
   return 0;
 }
 
+void Fl_Gl_Window_Group::resize(int x, int y,int w, int h)
+{
+    glstandin->resize(x,y,w,h);
+    Fl_Window::resize(x,y,w,h);
+}
+
 void Fl_Gl_Window_Group::flush(void) {
   // Fl_Window::make_current() does this, but not
   // Fl_Gl_Window::make_current(), and we can't override make_current()

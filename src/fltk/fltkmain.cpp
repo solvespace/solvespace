@@ -359,45 +359,6 @@ int64_t GetUnixTime(void)
     return (int64_t)ret;
 }
 
-void ShowTextEditControl(int x, int y, char *s)
-{
-    if(GraphicsEditControlIsVisible()) return;
-
-    // Note: TextEditControl->position() does NOT set (x,y) position!
-    TextEditControl->resize(x, y, TextEditControl->w(), TextEditControl->h());
-    if(s) TextEditControl->value(s);
-    TextEditControl->show();
-}
-
-void HideTextEditControl(void)
-{
-    TextEditControl->hide();
-}
-
-bool TextEditControlIsVisible(void)
-{
-    return TextEditControl->visible();
-}
-
-void ShowGraphicsEditControl(int x, int y, char *s)
-{
-    if(GraphicsEditControlIsVisible()) return;
-
-    GraphicsEditControl->position(x, y);
-    GraphicsEditControl->value(s);
-    GraphicsEditControl->show();
-}
-
-void HideGraphicsEditControl(void)
-{
-    GraphicsEditControl->hide();
-}
-
-bool GraphicsEditControlIsVisible(void)
-{
-    return GraphicsEditControl->visible();
-}
-
 class Graphics_Gl_Window : public Fl_Gl_Window_Group
 {
 public:
@@ -711,6 +672,73 @@ protected:
 void Text_Gl_Window::dummy(void)
 {
     // sop to Clang++'s -Wweak-vtables warning
+}
+
+void ShowTextEditControl(int x, int y, char *s)
+{
+    if(GraphicsEditControlIsVisible()) return;
+
+    // Note: TextEditControl->position() does NOT set (x,y) position!
+    // It changes the cursor postion in the input widget
+    // Use the :: operator to avoid confusion
+    TextEditControl->Fl_Widget::position(x, y);
+    if(s) TextEditControl->value(s);
+    TextEditControl->show();
+
+    // Grab focus and select all to ease editing
+    TextEditControl->take_focus();
+    TextEditControl->Fl_Input::position(TextEditControl->size());
+    TextEditControl->mark(0);
+
+}
+
+void HideTextEditControl(void)
+{
+    // return focus to the GL window before hiding the widget
+    // this avoid the disapparition of the mouse pointer if it was over the widget
+    TextGlWnd->take_focus();
+
+    TextEditControl->hide();
+}
+
+bool TextEditControlIsVisible(void)
+{
+    return TextEditControl->visible();
+}
+
+void ShowGraphicsEditControl(int x, int y, char *s)
+{
+    if(GraphicsEditControlIsVisible()) return;
+
+    // Convert to ij (vs. xy) style coordinates,
+    // and compensate for the input widget height due to inverse coord
+    x = x + GraphicsGlWnd->w()/2;
+    y = -y + GraphicsGlWnd->h()/2 - GraphicsEditControl->h();
+
+    // Use of the :: 0perator to avoid confusion with the Fl_input positon metod.
+    GraphicsEditControl->Fl_Widget::position(x, y);
+    GraphicsEditControl->value(s);
+    GraphicsEditControl->show();
+
+    // Grab focus and select all to ease editing
+    GraphicsEditControl->take_focus();
+    GraphicsEditControl->Fl_Input::position(GraphicsEditControl->size());
+    GraphicsEditControl->mark(0);
+
+}
+
+void HideGraphicsEditControl(void)
+{
+    // return focus to the GL window before hiding the widget
+    // this avoid the disapparition of the mouse pointer if it was over the widget
+    GraphicsGlWnd->take_focus();
+
+    GraphicsEditControl->hide();
+}
+
+bool GraphicsEditControlIsVisible(void)
+{
+    return GraphicsEditControl->visible();
 }
 
 void InvalidateText(void)

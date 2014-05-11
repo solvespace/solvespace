@@ -82,6 +82,9 @@ public:
   */
   virtual int handle_gl(int event);
 
+  // override resize
+  virtual void resize(int x, int y,int w, int h);
+
 protected:
 
   void draw(void);
