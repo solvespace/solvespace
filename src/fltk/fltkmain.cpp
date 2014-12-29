@@ -457,7 +457,7 @@ public:
                     case MOUSE(FL_RIGHT_MOUSE, FL_RELEASE):
                         SS.GW.MouseRightUp(x, y); break;
 
-                    default: oops(); break;
+                    default: break;
                 }
 #undef MOUSE
                 return 1;
