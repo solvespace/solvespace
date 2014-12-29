@@ -204,7 +204,7 @@ const SolveSpace::SaveTable SolveSpace::SAVED[] = {
 union SAVEDptr {
     IdList<EntityMap,EntityId> M;
     NameStr  N;
-    char     P;
+    char     P[MAX_PATH];
     bool     b;
     RgbColor c;
     int      d;
@@ -228,7 +228,7 @@ void SolveSpace::SaveUsingTable(int type) {
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
             case 'N': fprintf(fh, "%s",    p->N.str);           break;
-            case 'P': fprintf(fh, "%s",    &(p->P));            break;
+            case 'P': fprintf(fh, "%s",    p->P);            break;
             case 'b': fprintf(fh, "%d",    p->b ? 1 : 0);       break;
             case 'c': fprintf(fh, "%08x",  p->c.ToPackedInt()); break;
             case 'd': fprintf(fh, "%d",    p->d);               break;
@@ -385,7 +385,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
                     break;
 
                 case 'P':
-                    if(strlen(val)+1 < MAX_PATH) strcpy(&(p->P), val);
+                    if(strlen(val)+1 < MAX_PATH) strcpy(p->P, val);
                     break;
 
                 case 'M': {
