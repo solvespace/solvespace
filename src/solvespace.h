@@ -489,6 +489,7 @@ class StepFileWriter {
 public:
     void ExportSurfacesTo(char *filename);
     void WriteHeader(void);
+	void WriteProductHeader(void);
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
     void ExportSurface(SSurface *ss, SBezierList *sbl);

@@ -66,7 +66,21 @@ void StepFileWriter::WriteHeader(void) {
     // Start the ID somewhere beyond the header IDs.
     id = 200;
 }
-
+void StepFileWriter::WriteProductHeader(void) {
+	fprintf(f,
+		"#175 = SHAPE_DEFINITION_REPRESENTATION(#176, #169);\n"
+		"#176 = PRODUCT_DEFINITION_SHAPE('Version', 'Test Part', #177);\n"
+		"#177 = PRODUCT_DEFINITION('Version', 'Test Part', #182, #178);\n"
+		"#178 = DESIGN_CONTEXT('3D Mechanical Parts', #181, 'design');\n"
+		"#179 = PRODUCT('1', 'Product', 'Test Part', (#180));\n"
+		"#180 = MECHANICAL_CONTEXT('3D Mechanical Parts', #181, 'mechanical');\n"
+		"#181 = APPLICATION_CONTEXT(\n"
+		"'configuration controlled 3d designs of mechanical parts and assemblies');\n"
+		"#182 = PRODUCT_DEFINITION_FORMATION_WITH_SPECIFIED_SOURCE('Version',\n"
+		"'Test Part', #179, .MADE.);\n"
+		"\n"
+		);
+}
 int StepFileWriter::ExportCurve(SBezier *sb) {
     int i, ret = id;
 
@@ -302,6 +316,7 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
     }
 
     WriteHeader();
+	WriteProductHeader();
 
     ZERO(&advancedFaces);
 
