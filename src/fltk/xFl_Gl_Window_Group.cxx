@@ -19,28 +19,14 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <FL/Fl.H>
 #include <FL/Fl_Box.H>
-//#include "Fl_Gl_Choice.H"
-#if 1 //---------------- Extract from Fl_Gl_Choice.H
-#ifdef WIN32
-#  include <FL/gl.h>
-#  define GLContext HGLRC
-#elif defined(__APPLE_QUARTZ__)
-#  include <OpenGL/gl.h>
-#  include <AGL/agl.h>
-#  define GLContext AGLContext
-#else
-#  include <GL/glx.h>
-#  define GLContext GLXContext
-#endif
-GLContext fl_create_gl_context(XVisualInfo*);
-void fl_set_gl_context(Fl_Window*, GLContext);
-void fl_delete_gl_context(GLContext);
-#endif //----------------
-#include <fltk/xFl_Gl_Window_Group.H> //#include <FL/Fl_Gl_Window_Group.H>
+
 #include <FL/fl_draw.H>
 #include <FL/gl.h>
+
+#include <fltk/xFl_Gl_Window_Group.H>
 
 #if 1 //HAVE_GL
 
@@ -80,7 +66,6 @@ void Gl_Stand_In::dummy(void) {}
 void Fl_Gl_Window_Group::init(void) {
   begin();  // Revert the end() in the Fl_Gl_Window constructor
   glstandin = new Gl_Stand_In(w(), h(), this);
-  children_context = NULL;
   texid = 0;
   RESET_FIELDS();
 }
@@ -119,30 +104,21 @@ void Fl_Gl_Window_Group::adjust_offscr(int w, int h) {
 void Fl_Gl_Window_Group::show() {
   Fl_Gl_Window::show();
 
-  if (!children_context) {
-    children_context = fl_create_gl_context(fl_visual);
-    fl_set_gl_context(this, children_context);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_LIGHTING);
-    glEnable(GL_TEXTURE_RECTANGLE);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-    glGenTextures(1, &texid);
-    glBindTexture(GL_TEXTURE_RECTANGLE, texid);
-    make_current();
-  }
+  glDisable(GL_DEPTH_TEST);
+  glDisable(GL_LIGHTING);
+  glEnable(GL_TEXTURE_RECTANGLE);
+  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+  glGenTextures(1, &texid);
+  glBindTexture(GL_TEXTURE_RECTANGLE, texid);
+  make_current();
 }
 
 void Fl_Gl_Window_Group::hide() {
-  if (children_context) {
-    fl_set_gl_context(this, children_context);
-    glDeleteTextures(1, &texid);
-    texid = 0;
-    make_current();
-    fl_delete_gl_context(children_context);
-    children_context = NULL;
-  }
+  glDeleteTextures(1, &texid);
+  texid = 0;
+  make_current();
 
   Fl_Gl_Window::hide();
 }
@@ -197,8 +173,6 @@ void Fl_Gl_Window_Group::draw(void) {
   Draws all children of the group.
 */
 void Fl_Gl_Window_Group::draw_children(void) {
-  fl_set_gl_context(this, children_context);
-
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
   glOrtho(0, w(), 0, h(), -1.0, 1.0);
