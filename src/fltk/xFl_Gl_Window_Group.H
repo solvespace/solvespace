@@ -44,7 +44,6 @@ class FL_EXPORT Fl_Gl_Window_Group : public Fl_Gl_Window {
   int offscr_w, offscr_h;
   uchar *imgbuf;
 
-  GLContext children_context;
   unsigned int texid;
 
   void init(void);
