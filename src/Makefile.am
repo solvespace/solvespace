@@ -77,8 +77,6 @@ solvespace_SOURCES = \
 
 if HAVE_FLTK
 solvespace_SOURCES += \
-	fltk/xFl_Gl_Window_Group.H \
-	fltk/xFl_Gl_Window_Group.cxx \
 	fltk/fltkmain.cpp \
 	fltk/fltkutil.cpp
 

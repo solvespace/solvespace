@@ -26,12 +26,13 @@
 #   endif
 #endif
 
-#include <fltk/xFl_Gl_Window_Group.H> //#include <FL/Fl_Gl_Window_Group.H>
+#include <FL/Fl_Gl_Window.H>
 #include <FL/Fl_Native_File_Chooser.H>
 #include <FL/Fl_Preferences.H>
 #include <FL/Fl_Sys_Menu_Bar.H>
 #include <FL/forms.H> // for fl_gettime()
 #include <FL/gl.h>
+#include <FL/names.h>
 
 #include "solvespace.h"
 
@@ -44,6 +45,7 @@ class Text_Gl_Window;
 
 static Fl_Window          *GraphicsWnd = NULL;
 static Graphics_Gl_Window *GraphicsGlWnd = NULL;
+static Fl_Window          *GraphicsEditControlWindow = NULL;
 static Fl_Input           *GraphicsEditControl = NULL;
 static Fl_Sys_Menu_Bar    *MenuBar = NULL;
 static Fl_Menu_Item        MenuBarItems[120];
@@ -359,14 +361,22 @@ int64_t GetUnixTime(void)
     return (int64_t)ret;
 }
 
-class Graphics_Gl_Window : public Fl_Gl_Window_Group
+class Graphics_Gl_Window : public Fl_Gl_Window
 {
 public:
 
     Graphics_Gl_Window(int x, int y, int w, int h)
-    : Fl_Gl_Window_Group(x, y, w, h)
+    : Fl_Gl_Window(x, y, w, h)
     {
         mode(FL_RGB | FL_DOUBLE);
+    }
+
+    virtual int handle(int event) {
+        if(handle_gl(event) == 0) {
+            return Fl_Gl_Window::handle(event);
+        } else {
+            return 1;
+        }
     }
 
     int handle_gl(int event)
@@ -524,7 +534,16 @@ public:
         return 0;
     }
 
+    virtual void resize(int x, int y,int w, int h) {
+        Fl_Window::resize(x, y, w, h);
+    }
+
 protected:
+    virtual void draw() {
+        if(damage()) {
+            draw_gl();
+        }
+    }
 
     void draw_gl(void)
     {
@@ -608,14 +627,22 @@ bool MenuBarIsVisible(void)
     return MenuBarVisible;
 }
 
-class Text_Gl_Window : public Fl_Gl_Window_Group
+class Text_Gl_Window : public Fl_Gl_Window
 {
 public:
 
     Text_Gl_Window(int x, int y, int w, int h)
-    : Fl_Gl_Window_Group(x, y, w, h)
+    : Fl_Gl_Window(x, y, w, h)
     {
         mode(FL_RGB | FL_DOUBLE);
+    }
+
+    virtual int handle(int event) {
+        if(handle_gl(event) == 0) {
+            return Fl_Gl_Window::handle(event);
+        } else {
+            return 1;
+        }
     }
 
     int handle_gl(int event)
@@ -657,7 +684,16 @@ public:
         return 0;
     }
 
+    virtual void resize(int x, int y,int w, int h) {
+        Fl_Window::resize(x, y, w, h);
+    }
+
 protected:
+    virtual void draw() {
+        if(damage()) {
+            draw_gl();
+        }
+    }
 
     void draw_gl(void)
     {
@@ -713,12 +749,11 @@ void ShowGraphicsEditControl(int x, int y, char *s)
     // Convert to ij (vs. xy) style coordinates,
     // and compensate for the input widget height due to inverse coord
     x = x + GraphicsGlWnd->w()/2;
-    y = -y + GraphicsGlWnd->h()/2 - GraphicsEditControl->h();
+    y = -y + GraphicsGlWnd->h()/2 - GraphicsEditControlWindow->h();
 
-    // Use of the :: 0perator to avoid confusion with the Fl_input positon metod.
-    GraphicsEditControl->Fl_Widget::position(x, y);
+    GraphicsEditControlWindow->position(x, y);
     GraphicsEditControl->value(s);
-    GraphicsEditControl->show();
+    GraphicsEditControlWindow->show();
 
     // Grab focus and select all to ease editing
     GraphicsEditControl->take_focus();
@@ -733,12 +768,12 @@ void HideGraphicsEditControl(void)
     // this avoid the disapparition of the mouse pointer if it was over the widget
     GraphicsGlWnd->take_focus();
 
-    GraphicsEditControl->hide();
+    GraphicsEditControlWindow->hide();
 }
 
 bool GraphicsEditControlIsVisible(void)
 {
-    return GraphicsEditControl->visible();
+    return GraphicsEditControlWindow->visible();
 }
 
 void InvalidateText(void)
@@ -767,6 +802,9 @@ static void WindowCloseHandler(Fl_Window *wnd, void *data)
 {
     if(wnd == GraphicsWnd) {
         SolveSpace::MenuFile(GraphicsWindow::MNU_EXIT);
+    }
+    else if(wnd == GraphicsEditControlWindow) {
+        HideGraphicsEditControl();
     }
     else if(wnd == TextWnd) {
         if(SS.GW.showTextWindow) {
@@ -1123,14 +1161,33 @@ static void CreateMainWindows(void)
     GraphicsWnd->resizable(GraphicsGlWnd);
     GraphicsWnd->size_range(Fl::w() / 4, Fl::h() / 4);
 
-    GraphicsEditControl = new Fl_Input(0, 20, 120, 30);
+    GraphicsGlWnd->end();
+    GraphicsWnd->end();
+
+    int w = 120;
+    int h = 30;
+    int padding = 5;
+
+    GraphicsEditControlWindow = new Fl_Window(
+        w + (padding * 2), h + (padding * 2),
+        ""
+    );
+
+    GraphicsEditControlWindow->set_tooltip_window();
+
+    GraphicsEditControl = new Fl_Input(
+        (GraphicsEditControlWindow->w() / 2) - (w / 2),
+        (GraphicsEditControlWindow->h() / 2) - (h / 2),
+        w,
+        h
+    );
+
     GraphicsEditControl->textfont(SS_FONT_MONOSPACE);
     GraphicsEditControl->callback(EditControlCallback);
     GraphicsEditControl->when(FL_WHEN_ENTER_KEY | FL_WHEN_NOT_CHANGED);
-    GraphicsEditControl->hide();
 
-    GraphicsGlWnd->end();
-    GraphicsWnd->end();
+    GraphicsEditControlWindow->end();
+    GraphicsEditControlWindow->hide();
 
     // Text window
 
