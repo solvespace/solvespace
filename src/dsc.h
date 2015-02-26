@@ -7,7 +7,8 @@
 #ifndef __DSC_H
 #define __DSC_H
 
-#include <cstddef>
+#include <stddef.h>
+
 #include "solvespace.h"
 
 class Vector;

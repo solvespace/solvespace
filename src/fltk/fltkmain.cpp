@@ -748,8 +748,8 @@ void ShowGraphicsEditControl(int x, int y, char *s)
 
     // Convert to ij (vs. xy) style coordinates,
     // and compensate for the input widget height due to inverse coord
-    x = x + GraphicsGlWnd->w()/2;
-    y = -y + GraphicsGlWnd->h()/2 - GraphicsEditControlWindow->h();
+    x = x + GraphicsGlWnd->w()/2 + GraphicsWnd->x();
+    y = -y + GraphicsGlWnd->h()/2 - GraphicsEditControlWindow->h() + GraphicsWnd->y();
 
     GraphicsEditControlWindow->position(x, y);
     GraphicsEditControl->value(s);
