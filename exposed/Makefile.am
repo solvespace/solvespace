@@ -21,14 +21,17 @@ libslvs_a_SOURCES = \
 	../src/constrainteq.cpp \
 	../src/system.cpp
 
+CDemo_LDADD =
+
 if HAVE_FLTK
 CDemo_SOURCES += ../src/fltk/fltkutil.cpp
+CDemo_LDADD += $(FLTK_LDFLAGS) -lX11 -lGL -lGLU $(LIBSPNAV_LIBS)
 endif
 if WIN32
 CDemo_SOURCES += ../src/win32/w32util.cpp
 endif
 
-CDemo_LDADD = -lslvs $(FLTK_LDSTATICFLAGS)
+CDemo_LDADD += -lslvs
 
 EXTRA_DIST = \
 	DOC.txt \

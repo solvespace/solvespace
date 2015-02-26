@@ -80,7 +80,7 @@ solvespace_SOURCES += \
 	fltk/fltkmain.cpp \
 	fltk/fltkutil.cpp
 
-solvespace_LDADD = $(FLTK_LDSTATICFLAGS) -lGLU $(LIBSPNAV_LIBS)
+solvespace_LDADD = $(FLTK_LDFLAGS) -lX11 -lGL -lGLU $(LIBSPNAV_LIBS)
 endif
 
 if WIN32
