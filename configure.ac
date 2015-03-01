@@ -95,6 +95,13 @@ AH_VERBATIM([MSVC_FLAGS], [#if defined(_MSC_VER) && defined(_WIN32)
 # define WIN32_LEAN_AND_MEAN 1
 #endif])
 
+AC_CHECK_LIB(
+        [png], [png_set_sig_bytes], [],
+        [AC_MSG_ERROR([Cannot find -lpng])])
+AC_CHECK_HEADERS(
+        [png.h], [],
+        [AC_MSG_ERROR([Cannot find png.h])])
+
 ##
 ## FLTK
 ##
