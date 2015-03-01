@@ -2,7 +2,7 @@
 
 set -ex
 
-autoreconf --force --install --warnings=all
+autoreconf --force --install
 
 rm -f config.h.in~
 rm -rf autom4te.cache

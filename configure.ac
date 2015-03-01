@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([src/solvespace.cpp])
 AC_CONFIG_AUX_DIR([ac-aux])
 AC_CONFIG_MACRO_DIR([ac-aux])
 
-AM_INIT_AUTOMAKE([1.9.6 foreign tar-ustar])
+AM_INIT_AUTOMAKE([1.9.6 -Wall foreign tar-ustar])
 AM_MAINTAINER_MODE
 
 AC_PROG_CC
