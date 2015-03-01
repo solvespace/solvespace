@@ -11,6 +11,10 @@ noinst_LIBRARIES = libslvs.a
 
 CDemo_SOURCES = CDemo.c
 
+# Set explicit CPPFLAGS to force renaming of the object files.
+# Otherwise, the object files for the GUI application will be overwritten.
+libslvs_a_CPPFLAGS = $(AM_CPPFLAGS)
+
 libslvs_a_SOURCES = \
 	slvs.h \
 	lib.cpp \
