@@ -102,6 +102,20 @@ AC_CHECK_HEADERS(
         [png.h], [],
         [AC_MSG_ERROR([Cannot find png.h])])
 
+AC_CHECK_LIB(
+        [GL], [glVertex2d], [],
+        [AC_MSG_ERROR([Cannot find -lGL])])
+AC_CHECK_HEADERS(
+        [GL/gl.h], [],
+        [AC_MSG_ERROR([Cannot find GL/gl.h])])
+
+AC_CHECK_LIB(
+        [GLU], [gluTessVertex], [],
+        [AC_MSG_ERROR([Cannot find -lGLU])])
+AC_CHECK_HEADERS(
+        [GL/glu.h], [],
+        [AC_MSG_ERROR([Cannot find GL/glu.h])])
+
 ##
 ## FLTK
 ##
