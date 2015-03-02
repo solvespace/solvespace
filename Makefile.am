@@ -16,7 +16,6 @@ EXTRA_DIST = \
 	$(exposed) \
 	COPYING.txt \
 	Makefile.msvc \
-	extlib/build-fltk.sh \
 	tools/Makefile \
 	tools/ttf2c.cpp \
 	wishlist.txt
