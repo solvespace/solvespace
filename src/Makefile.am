@@ -1,7 +1,5 @@
 ## src/Makefile.am
 
-AUTOMAKE_OPTIONS = subdir-objects
-
 noinst_LIBRARIES = libslvs.a
 
 libslvs_a_SOURCES = \
