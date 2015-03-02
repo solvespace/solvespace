@@ -10,8 +10,7 @@ exposed = \
 	exposed/CDemo.c \
 	exposed/DOC.txt \
 	exposed/Makefile \
-	exposed/VbDemo.vb \
-	exposed/lib.cpp
+	exposed/VbDemo.vb
 
 EXTRA_DIST = \
 	$(exposed) \
