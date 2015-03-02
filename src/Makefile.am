@@ -2,6 +2,18 @@
 
 AUTOMAKE_OPTIONS = subdir-objects
 
+noinst_LIBRARIES = libslvs.a
+
+libslvs_a_SOURCES = \
+	../exposed/lib.cpp \
+	util.cpp \
+	entity.cpp \
+	expr.cpp \
+	constraint.cpp \
+	constrainteq.cpp \
+	system.cpp
+libslvs_a_CPPFLAGS = -DLIBRARY -I$(top_srcdir)/include
+
 AM_CPPFLAGS = $(FLTK_CXXFLAGS) $(LIBSPNAV_CPPFLAGS)
 
 if WIN32

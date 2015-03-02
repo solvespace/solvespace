@@ -2,27 +2,13 @@
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -DLIBRARY -I$(top_srcdir)/src -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include
 
-AM_LDFLAGS = -L.
+AM_LDFLAGS = -L../src
 
 noinst_PROGRAMS  = CDemo
-noinst_LIBRARIES = libslvs.a
 
 CDemo_SOURCES = CDemo.c
-
-# Set explicit CPPFLAGS to force renaming of the object files.
-# Otherwise, the object files for the GUI application will be overwritten.
-libslvs_a_CPPFLAGS = $(AM_CPPFLAGS)
-
-libslvs_a_SOURCES = \
-	lib.cpp \
-	../src/util.cpp \
-	../src/entity.cpp \
-	../src/expr.cpp \
-	../src/constraint.cpp \
-	../src/constrainteq.cpp \
-	../src/system.cpp
 
 CDemo_LDADD =
 
