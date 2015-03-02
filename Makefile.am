@@ -6,14 +6,7 @@ SUBDIRS = src exposed
 
 noinst_HEADERS = include/slvs.h
 
-exposed = \
-	exposed/CDemo.c \
-	exposed/DOC.txt \
-	exposed/Makefile \
-	exposed/VbDemo.vb
-
 EXTRA_DIST = \
-	$(exposed) \
 	COPYING.txt \
 	Makefile.msvc \
 	tools/Makefile \
