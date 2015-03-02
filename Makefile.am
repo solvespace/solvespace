@@ -11,9 +11,7 @@ EXTRA_DIST = \
 	Makefile.msvc \
 	tools/Makefile \
 	tools/ttf2c.cpp \
-	wishlist.txt
-
-optional_dist = \
+	wishlist.txt \
 	extlib/libpng/png.h \
 	extlib/libpng/pngconf.h \
 	extlib/libpng/pnglibconf.h \
@@ -28,17 +26,9 @@ optional_dist = \
 	extlib/si/siapp.lib \
 	extlib/zlib/zconf.h \
 	extlib/zlib/zlib.h \
-	extlib/zlib/zutil.h \
-	extlib/zlib/zlib.lib \
-	extlib/fltk-1.3.2-source.tar.gz
+	extlib/zlib/zlib.lib
 
 dist-hook:
-	for file in $(optional_dist); do \
-		test -f $(srcdir)/$$file || continue; \
-		dir=`dirname $$file`; \
-		test -d $(distdir)/$$dir || mkdir $(distdir)/$$dir || exit; \
-		cp -p $(srcdir)/$$file $(distdir)/$$file || exit; \
-	done
 	@if fgrep '/DPACKAGE_VERSION="\"$(PACKAGE_VERSION)\""' $(srcdir)/Makefile.msvc >/dev/null; \
 	then :; \
 	else \
