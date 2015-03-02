@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 #define EXPORT_DLL
-#include "slvs.h"
+#include <slvs.h>
 
 Sketch SK;
 static System SYS;

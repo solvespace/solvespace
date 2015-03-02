@@ -2,7 +2,7 @@
 
 AUTOMAKE_OPTIONS = subdir-objects
 
-AM_CPPFLAGS = -DLIBRARY -I$(top_srcdir)/src
+AM_CPPFLAGS = -DLIBRARY -I$(top_srcdir)/src -I$(top_srcdir)/include
 
 AM_LDFLAGS = -L.
 
@@ -16,7 +16,6 @@ CDemo_SOURCES = CDemo.c
 libslvs_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 libslvs_a_SOURCES = \
-	slvs.h \
 	lib.cpp \
 	../src/util.cpp \
 	../src/entity.cpp \

@@ -18,7 +18,7 @@
 #   include <stdint.h>
 #endif
 
-#include "slvs.h"
+#include <slvs.h>
 
 static Slvs_System sys;
 

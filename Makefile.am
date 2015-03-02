@@ -4,13 +4,14 @@ ACLOCAL_AMFLAGS = -I ac-aux
 
 SUBDIRS = src exposed
 
+noinst_HEADERS = include/slvs.h
+
 exposed = \
 	exposed/CDemo.c \
 	exposed/DOC.txt \
 	exposed/Makefile \
 	exposed/VbDemo.vb \
-	exposed/lib.cpp \
-	exposed/slvs.h
+	exposed/lib.cpp
 
 EXTRA_DIST = \
 	$(exposed) \
