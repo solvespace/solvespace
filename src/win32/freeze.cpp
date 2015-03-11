@@ -108,8 +108,16 @@ void ThawWindowPosF(HWND hwnd, const char *subKey, const char *name)
     if(v)
         ShowWindow(hwnd, SW_MAXIMIZE);
 
-    RECT dr;
-    GetWindowRect(GetDesktopWindow(), &dr);
+    
+	HMONITOR hMonitor;
+	MONITORINFO mi;
+	RECT dr;
+
+	hMonitor = MonitorFromRect(&r, MONITOR_DEFAULTTONEAREST);
+
+	mi.cbSize = sizeof(mi);
+	GetMonitorInfo(hMonitor, &mi);
+	dr = mi.rcMonitor;
 
     // If it somehow ended up off-screen, then put it back.
     Clamp(&(r.left),   dr.left, dr.right);
