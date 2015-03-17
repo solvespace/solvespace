@@ -23,8 +23,13 @@
 #ifdef WIN32
 #   include <windows.h> // required by GL headers
 #endif
-#include <GL/gl.h>
-#include <GL/glu.h>
+#ifdef __APPLE__
+#   include <OpenGL/gl.h>
+#   include <OpenGL/glu.h>
+#else
+#   include <GL/gl.h>
+#   include <GL/glu.h>
+#endif
 
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
