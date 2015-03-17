@@ -45,7 +45,11 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Re&generate All",             MNU_REGEN_ALL,      ' ',    mEdit },
 { 1,  NULL,                         0,                  0,      NULL  },
 { 1, "Snap Selection to &Grid",     MNU_SNAP_TO_GRID,   '.',    mEdit },
+#ifdef WIN32
 { 1, "Rotate Imported &90\260",     MNU_ROTATE_90,      '9',    mEdit },
+#else
+{ 1, "Rotate Imported &90°",        MNU_ROTATE_90,      '9',    mEdit },
+#endif
 { 1,  NULL,                         0,                  0,      NULL  },
 { 1, "Cu&t",                        MNU_CUT,            C|'X',  mClip },
 { 1, "&Copy",                       MNU_COPY,           C|'C',  mClip },
