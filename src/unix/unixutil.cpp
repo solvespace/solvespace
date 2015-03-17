@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Utility functions used by the FLTK port. Notably, our memory allocation;
+// Utility functions used by the Unix port. Notably, our memory allocation;
 // we use two separate allocators, one for long-lived stuff and one for
 // stuff that gets freed after every regeneration of the model, to save us
 // the trouble of freeing the latter explicitly.
@@ -12,8 +12,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
-
-#include <FL/filename.H>
 
 #include "solvespace.h"
 
@@ -31,9 +29,9 @@ void dbp(const char *str, ...)
 
 void GetAbsoluteFilename(char *file)
 {
-    char absoluteFile[PATH_MAX];
-    fl_filename_absolute(absoluteFile, sizeof(absoluteFile), file);
-    strcpy(file, absoluteFile);
+    char expanded[MAX_PATH];
+    realpath(file, expanded);
+    strcpy(file, expanded);
 }
 
 //-----------------------------------------------------------------------------

@@ -32,7 +32,7 @@ if(WIN32)
         win32/w32util.cpp)
 else()
     set(util_SOURCES
-        fltk/fltkutil.cpp)
+        unix/unixutil.cpp)
 endif()
 
 # libslvs
