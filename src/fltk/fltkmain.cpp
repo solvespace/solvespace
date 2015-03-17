@@ -1304,8 +1304,8 @@ int main(int argc, char **argv)
     // A filename may have been specified on the command line; if so, then
     // make it absolute.
     char file[MAX_PATH] = "";
-    if(optind < argc && strlen(argv[optind])+1 < MAX_PATH) {
-        strcpy(file, argv[optind]);
+    if(optndx < argc && strlen(argv[optndx])+1 < MAX_PATH) {
+        strcpy(file, argv[optndx]);
     }
     if(*file != '\0') {
         GetAbsoluteFilename(file);
