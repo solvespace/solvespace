@@ -1083,7 +1083,7 @@ static void CreateGraphicsWindowMenus(void)
                 if(accel & GraphicsWindow::SHIFT_MASK)
                     shortcut += FL_SHIFT;
                 if(accel & GraphicsWindow::CTRL_MASK)
-                    shortcut += FL_CTRL;
+                    shortcut += FL_COMMAND;
                 break;
         }
         if(accel >= (GraphicsWindow::FUNCTION_KEY_BASE + 1) &&
