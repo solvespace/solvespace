@@ -52,6 +52,8 @@ char *Constraint::DescriptionString(void) {
     return ret;
 }
 
+#ifndef LIBRARY
+
 //-----------------------------------------------------------------------------
 // Delete all constraints with the specified type, entityA, ptA. We use this
 // when auto-removing constraints that would become redundant.
@@ -111,8 +113,6 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
     Constrain(POINTS_COINCIDENT, ptA, ptB,
         Entity::NO_ENTITY, Entity::NO_ENTITY, false, false);
 }
-
-#ifndef LIBRARY
 
 void Constraint::MenuConstrain(int id) {
     Constraint c;
@@ -351,7 +351,7 @@ void Constraint::MenuConstrain(int id) {
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
-            } else if(gs.lineSegments == 1 && 
+            } else if(gs.lineSegments == 1 &&
                                 ((gs.workplanes == 1 && gs.n == 2) ||
                                  (gs.n == 1)))
             {
@@ -492,7 +492,7 @@ void Constraint::MenuConstrain(int id) {
                     // normal vector; allow that, since the numerical
                     // constraint does
                     SWAP(Vector, ru, rv);
-                } 
+                }
                 fu = fu.Dot(ru) > 0 ? ru : ru.ScaledBy(-1);
                 fv = fv.Dot(rv) > 0 ? rv : rv.ScaledBy(-1);
 
@@ -550,7 +550,7 @@ void Constraint::MenuConstrain(int id) {
                 return;
             }
 
-            Entity *ea = SK.GetEntity(c.entityA), 
+            Entity *ea = SK.GetEntity(c.entityA),
                    *eb = SK.GetEntity(c.entityB);
             if(ea->type == Entity::LINE_SEGMENT &&
                eb->type == Entity::LINE_SEGMENT)
