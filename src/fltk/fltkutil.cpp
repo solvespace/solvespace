@@ -28,6 +28,7 @@ void dbp(const char *str, ...)
     va_end(f);
 
     fputs(buf, stderr);
+    fputc('\n', stderr);
 }
 
 void GetAbsoluteFilename(char *file)
