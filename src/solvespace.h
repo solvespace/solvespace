@@ -44,8 +44,13 @@
 #endif
 
 // Debugging functions
+#ifdef NDEBUG
 #define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
-                    if(0) *(char *)0 = 1; exit(-1); } while(0)
+                    exit(-1); } while(0)
+#else
+#define oops() do { dbp("oops at line %d, file %s\n", __LINE__, __FILE__); \
+                    abort(); } while(0)
+#endif
 
 #ifndef min
 #   define min(x, y) ((x) < (y) ? (x) : (y))
