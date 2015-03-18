@@ -403,7 +403,7 @@ void GraphicsWindow::MakeTangentArc(void) {
         DeleteTaggedRequests();
     }
 
-    SS.later.generateAll = true;
+    SS.ScheduleGenerateAll();
 }
 
 hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
@@ -647,6 +647,6 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
     sbla.Clear();
     sblb.Clear();
     ClearSelection();
-    SS.later.generateAll = true;
+    SS.ScheduleGenerateAll();
 }
 

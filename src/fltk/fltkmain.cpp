@@ -169,6 +169,10 @@ void SetTimerFor(int milliseconds)
     Fl::add_timeout((double)milliseconds / 1000.0, TimerCallback);
 }
 
+void ScheduleLater()
+{
+}
+
 void OpenWebsite(const char *url)
 {
     fl_open_uri(url, NULL, 0);
@@ -354,13 +358,6 @@ int64_t GetMilliseconds(void)
     if(!StartTimeSeconds) StartTimeSeconds = sec;
     sec -= StartTimeSeconds;
     return 1000 * (int64_t)sec + (int64_t)usec / 1000;
-}
-
-int64_t GetUnixTime(void)
-{
-    time_t ret;
-    time(&ret);
-    return (int64_t)ret;
 }
 
 class Graphics_Gl_Window : public Fl_Gl_Window

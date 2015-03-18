@@ -253,11 +253,11 @@ void SolveSpace::SaveUsingTable(int type) {
     }
 }
 
-bool SolveSpace::SaveToFile(char *filename) {
+bool SolveSpace::SaveToFile(const char *filename) {
     // Make sure all the entities are regenerated up to date, since they
     // will be exported. We reload the imported files because that rewrites
     // the impFileRel for our possibly-new filename.
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
     SS.ReloadAllImported();
     SS.GenerateAll(0, INT_MAX);
 
@@ -423,7 +423,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
     }
 }
 
-bool SolveSpace::LoadFromFile(char *filename) {
+bool SolveSpace::LoadFromFile(const char *filename) {
     allConsistent = false;
     fileLoadError = false;
 
@@ -506,7 +506,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
     return true;
 }
 
-bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
+bool SolveSpace::LoadEntitiesFromFile(const char *file, EntityList *le,
                                       SMesh *m, SShell *sh)
 {
     SSurface srf;

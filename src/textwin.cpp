@@ -90,7 +90,7 @@ void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbColor r
     char str[1024];
     sprintf(str, "%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF());
 
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 
     editControl.colorPicker.show = true;
     editControl.colorPicker.rgb = rgb;

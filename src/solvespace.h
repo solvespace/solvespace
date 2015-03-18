@@ -131,13 +131,21 @@ void RefreshRecentMenus(void);
 #define SAVE_CANCEL  (0)
 int SaveFileYesNoCancel(void);
 
-#ifdef HAVE_FLTK
+#if defined(HAVE_FLTK)
     // Selection pattern format for FLTK's file chooser classes:
     //   "PNG File\t*.png\n"
     //   "JPEG File\t*.{jpg,jpeg}\n"
     //   "All Files\t*"
 #   define PAT1(desc,e1)    desc "\t*." e1 "\n"
 #   define PAT2(desc,e1,e2) desc "\t*.{" e1 "," e2 "}\n"
+#   define ENDPAT "All Files\t*"
+#elif defined(HAVE_GTK)
+    // Selection pattern format to be parsed by GTK3 glue code:
+    //   "PNG File\t*.png\n"
+    //   "JPEG File\t*.jpg\t*.jpeg\n"
+    //   "All Files\t*"
+#   define PAT1(desc,e1)    desc "\t*." e1 "\n"
+#   define PAT2(desc,e1,e2) desc "\t*." e1 "\t*." e2 "\n"
 #   define ENDPAT "All Files\t*"
 #else
     // Selection pattern format for Win32's OPENFILENAME.lpstrFilter:
@@ -231,6 +239,7 @@ void SetWindowTitle(const char *str);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
+void ScheduleLater();
 void ExitNow(void);
 
 void CnfFreezeString(const char *str, const char *name);
@@ -522,7 +531,7 @@ public:
 
     static double MmToPts(double mm);
 
-    static VectorFileWriter *ForFile(char *file);
+    static VectorFileWriter *ForFile(const char *file);
 
     void Output(SBezierLoopSetSet *sblss, SMesh *sm);
 
@@ -775,15 +784,15 @@ public:
     bool tangentArcDeleteOld;
 
     // The platform-dependent code calls this before entering the msg loop
-    void Init(char *cmdLine);
+    void Init(const char *cmdLine);
     void Exit(void);
 
     // File load/save routines, including the additional files that get
     // loaded when we have import groups.
     FILE        *fh;
     void AfterNewFile(void);
-    static void RemoveFromRecentList(char *file);
-    static void AddToRecentList(char *file);
+    static void RemoveFromRecentList(const char *file);
+    static void AddToRecentList(const char *file);
     char saveFile[MAX_PATH];
     bool fileLoadError;
     bool unsaved;
@@ -811,18 +820,18 @@ public:
     void UpdateWindowTitle(void);
     void ClearExisting(void);
     void NewFile(void);
-    bool SaveToFile(char *filename);
-    bool LoadFromFile(char *filename);
-    bool LoadEntitiesFromFile(char *filename, EntityList *le,
-                                SMesh *m, SShell *sh);
+    bool SaveToFile(const char *filename);
+    bool LoadFromFile(const char *filename);
+    bool LoadEntitiesFromFile(const char *filename, EntityList *le,
+                              SMesh *m, SShell *sh);
     void ReloadAllImported(void);
     // And the various export options
-    void ExportAsPngTo(char *file);
-    void ExportMeshTo(char *file);
+    void ExportAsPngTo(const char *file);
+    void ExportMeshTo(const char *file);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
-    void ExportViewOrWireframeTo(char *file, bool wireframe);
-    void ExportSectionTo(char *file);
+    void ExportViewOrWireframeTo(const char *file, bool wireframe);
+    void ExportSectionTo(const char *file);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
@@ -905,9 +914,12 @@ public:
     bool allConsistent;
 
     struct {
+        bool    scheduled;
         bool    showTW;
         bool    generateAll;
     } later;
+    void ScheduleShowTW();
+    void ScheduleGenerateAll();
     void DoLater(void);
 
     static void MenuHelp(int id);

@@ -427,12 +427,18 @@ public:
         SHIFT_MASK = 0x100,
         CTRL_MASK  = 0x200
     };
+    enum MenuItemKind {
+        MENU_ITEM_NORMAL = 0,
+        MENU_ITEM_CHECK,
+        MENU_ITEM_RADIO
+    };
     typedef struct {
-        int         level;          // 0 == on menu bar, 1 == one level down
-        const char *label;          // or NULL for a separator
-        int         id;             // unique ID
-        int         accel;          // keyboard accelerator
-        MenuHandler *fn;
+        int          level;          // 0 == on menu bar, 1 == one level down
+        const char  *label;          // or NULL for a separator
+        int          id;             // unique ID
+        int          accel;          // keyboard accelerator
+        MenuItemKind kind;
+        MenuHandler  *fn;
     } MenuEntry;
     static const MenuEntry menu[];
     static void MenuView(int id);

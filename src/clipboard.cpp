@@ -181,7 +181,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         }
     }
 
-    SS.later.generateAll = true;
+    SS.ScheduleGenerateAll();
 }
 
 void GraphicsWindow::MenuClipboard(int id) {
@@ -216,7 +216,7 @@ void GraphicsWindow::MenuClipboard(int id) {
             SS.TW.shown.paste.scale  = 1;
             SS.TW.GoToScreen(TextWindow::SCREEN_PASTE_TRANSFORMED);
             SS.GW.ForceTextWindowShown();
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
             break;
         }
 
@@ -360,7 +360,7 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
                 SS.GW.PasteClipboard(t, theta, SS.TW.shown.paste.scale);
             }
             SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
             break;
         }
     }

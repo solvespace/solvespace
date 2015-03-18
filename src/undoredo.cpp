@@ -128,7 +128,7 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     SS.TW.ClearSuper();
     SS.ReloadAllImported();
     SS.GenerateAll(0, INT_MAX);
-    later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 void SolveSpace::UndoClearStack(UndoStack *uk) {

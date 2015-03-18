@@ -9,7 +9,7 @@
 SolveSpace SS;
 Sketch SK;
 
-void SolveSpace::Init(char *cmdLine) {
+void SolveSpace::Init(const char *cmdLine) {
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.
@@ -187,6 +187,18 @@ void SolveSpace::Exit(void) {
     ExitNow();
 }
 
+void SolveSpace::ScheduleGenerateAll() {
+    if(!later.scheduled) ScheduleLater();
+    later.scheduled = true;
+    later.generateAll = true;
+}
+
+void SolveSpace::ScheduleShowTW() {
+    if(!later.scheduled) ScheduleLater();
+    later.scheduled = true;
+    later.showTW = true;
+}
+
 void SolveSpace::DoLater(void) {
     if(later.generateAll) GenerateAll();
     if(later.showTW) TW.Show();
@@ -284,7 +296,7 @@ void SolveSpace::AfterNewFile(void) {
     GW.ZoomToFit(true);
 
     GenerateAll(0, INT_MAX);
-    later.showTW = true;
+    SS.ScheduleShowTW();
     // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit(false);
 
@@ -295,7 +307,7 @@ void SolveSpace::AfterNewFile(void) {
     UpdateWindowTitle();
 }
 
-void SolveSpace::RemoveFromRecentList(char *file) {
+void SolveSpace::RemoveFromRecentList(const char *file) {
     int src, dest;
     dest = 0;
     for(src = 0; src < MAX_RECENT; src++) {
@@ -307,7 +319,7 @@ void SolveSpace::RemoveFromRecentList(char *file) {
     while(dest < MAX_RECENT) strcpy(RecentFile[dest++], "");
     RefreshRecentMenus();
 }
-void SolveSpace::AddToRecentList(char *file) {
+void SolveSpace::AddToRecentList(const char *file) {
     RemoveFromRecentList(file);
 
     int src;
@@ -507,7 +519,7 @@ void SolveSpace::MenuAnalyze(int id) {
                     // so force that to be shown.
                     SS.GW.ForceTextWindowShown();
 
-                    SS.later.showTW = true;
+                    SS.ScheduleShowTW();
                     SS.GW.ClearSelection();
                 } else {
                     Error("Constraint must have a label, and must not be "
@@ -738,7 +750,12 @@ void SolveSpace::MenuHelp(int id) {
 "There is NO WARRANTY, to the extent permitted by\n"
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
-"\xa9 2008-2013 Jonathan Westhues and other authors.\n"
+#ifdef WIN32
+"\xa9 "
+#else
+"© "
+#endif
+       "2008-2013 Jonathan Westhues and other authors.\n"
 );
             break;
 

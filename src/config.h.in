@@ -3,12 +3,23 @@
 
 #define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@"
 
+/* MSVC includes a proper stdint.h, but only since VS2008. */
 #cmakedefine HAVE_STDINT_H
-#cmakedefine HAVE_FONTCONFIG_FONTCONFIG_H
+
+/* Do we have the si library on win32, or libspnav on *nix? */
+#cmakedefine HAVE_SPACEWARE
+
+#cmakedefine HAVE_GTK
+#cmakedefine HAVE_GTK2
+#cmakedefine HAVE_GTK3
 
 #cmakedefine HAVE_FLTK
-#define HAVE_FLTK_FULLSCREEN
 
-#cmakedefine HAVE_SPACEWARE
+/* Only relevant for FLTK port. */
+#ifdef HAVE_FLTK
+#define HAVE_FLTK_FULLSCREEN
+#endif
+
+#cmakedefine HAVE_FONTCONFIG
 
 #endif

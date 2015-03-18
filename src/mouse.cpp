@@ -159,7 +159,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
             if(havePainted) {
-                SS.later.showTW = true;
+                SS.ScheduleShowTW();
             }
         }
         InvalidateGraphics();
@@ -455,7 +455,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 void GraphicsWindow::ClearPending(void) {
     pending.points.Clear();
     ZERO(&pending);
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
@@ -511,7 +511,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     if(!hover.IsEmpty()) {
         MakeSelected(&hover);
-        SS.later.showTW = true;
+        SS.ScheduleShowTW();
     }
     GroupSelection();
 
@@ -664,7 +664,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
             SS.TW.GoToScreen(TextWindow::SCREEN_GROUP_INFO);
             SS.TW.shown.group = hg;
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
             break;
         }
 
@@ -684,7 +684,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
             SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
             SS.TW.shown.style = hs;
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
             break;
         }
 
@@ -709,7 +709,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     context.active = false;
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 hRequest GraphicsWindow::AddRequest(int type) {
@@ -979,7 +979,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 r->extraPoints -= 2;
                 // And we're done.
                 SS.MarkGroupDirty(r->group);
-                SS.later.generateAll = true;
+                SS.ScheduleGenerateAll();
                 ClearPending();
                 break;
             }
@@ -1060,7 +1060,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
     }
 
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
     InvalidateGraphics();
 }
 
@@ -1227,9 +1227,9 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
 
     if(delta > 0) {
         scale *= 1.2;
-    } else {
+    } else if(delta < 0) {
         scale /= 1.2;
-    }
+    } else return;
 
     double rightf = x/scale - offsetRight;
     double upf = y/scale - offsetUp;
@@ -1239,7 +1239,7 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
 
     if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
         if(havePainted) {
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
         }
     }
     havePainted = false;
@@ -1303,7 +1303,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         lastSpaceNavigatorTime = now;
         lastSpaceNavigatorGroup = g->h;
         SS.MarkGroupDirty(g->h);
-        SS.later.generateAll = true;
+        SS.ScheduleGenerateAll();
     } else {
         // Apply the transformation to the view of the everything. The
         // x and y components are translation; but z component is scale,

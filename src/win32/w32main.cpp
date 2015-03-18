@@ -240,6 +240,10 @@ void SetTimerFor(int milliseconds)
     SetTimer(GraphicsWnd, 1, milliseconds, TimerCallback);
 }
 
+void ScheduleLater()
+{
+}
+
 static void GetWindowSize(HWND hwnd, int *w, int *h)
 {
     RECT r;

@@ -243,7 +243,7 @@ void Group::MenuGroup(int id) {
     gg->Activate();
     SS.GW.AnimateOntoWorkplane();
     TextWindow::ScreenSelectGroup(0, gg->h.v);
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {
@@ -291,8 +291,8 @@ void Group::Activate(void) {
         SS.GW.showFaces = false;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
-    SS.later.generateAll = true;
-    SS.later.showTW = true;
+    SS.ScheduleGenerateAll();
+    SS.ScheduleShowTW();
 }
 
 void Group::Generate(IdList<Entity,hEntity> *entity,

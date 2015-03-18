@@ -311,7 +311,7 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
         if(deleted.groups > 0) {
             SS.TW.ClearSuper();
         }
-        later.showTW = true;
+        ScheduleShowTW();
         GW.ClearSuper();
 
         // People get annoyed if I complain whenever they delete any request,

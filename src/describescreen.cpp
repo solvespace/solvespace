@@ -37,8 +37,8 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     SS.UndoRemember();
     r->font.strcpy(SS.fonts.l.elem[i].FontFileBaseName());
     SS.MarkGroupDirty(r->group);
-    SS.later.generateAll = true;
-    SS.later.showTW = true;
+    SS.ScheduleGenerateAll();
+    SS.ScheduleShowTW();
 }
 
 void TextWindow::DescribeSelection(void) {

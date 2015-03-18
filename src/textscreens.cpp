@@ -78,7 +78,7 @@ void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.GW.ClearSuper();
     SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
     SS.TW.shown.group.v = hg.v;
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 void TextWindow::ScreenHowGroupSolved(int link, uint32_t v) {
     if(SS.GW.activeGroup.v != v) {
@@ -650,7 +650,7 @@ void TextWindow::EditControlDone(const char *s) {
                 }
 
                 SS.MarkGroupDirty(g->h);
-                SS.later.generateAll = true;
+                SS.ScheduleGenerateAll();
             }
             break;
         }
@@ -675,7 +675,7 @@ void TextWindow::EditControlDone(const char *s) {
                     Group *g = SK.GetGroup(edit.group);
                     g->scale = ev;
                     SS.MarkGroupDirty(g->h);
-                    SS.later.generateAll = true;
+                    SS.ScheduleGenerateAll();
                 }
             }
             break;
@@ -690,7 +690,7 @@ void TextWindow::EditControlDone(const char *s) {
                 g->color = RGBf(rgb.x, rgb.y, rgb.z);
 
                 SS.MarkGroupDirty(g->h);
-                SS.later.generateAll = true;
+                SS.ScheduleGenerateAll();
                 SS.GW.ClearSuper();
             } else {
                 Error("Bad format: specify color as r, g, b");
@@ -703,7 +703,7 @@ void TextWindow::EditControlDone(const char *s) {
             if(r) {
                 r->str.strcpy(s);
                 SS.MarkGroupDirty(r->group);
-                SS.later.generateAll = true;
+                SS.ScheduleGenerateAll();
             }
             break;
         }
@@ -748,7 +748,7 @@ void TextWindow::EditControlDone(const char *s) {
         }
     }
     InvalidateGraphics();
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 
     if(!edit.showAgain) {
         HideEditControl();

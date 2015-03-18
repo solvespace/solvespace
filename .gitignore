@@ -1,2 +1,3 @@
 /CMakeCache.txt
 /cbuild/
+*.trace # OpenGL apitrace files

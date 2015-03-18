@@ -86,7 +86,7 @@ void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     SK.constraint.AddAndAssignId(c);
 
     SS.MarkGroupDirty(c->group);
-    SS.later.generateAll = true;
+    SS.ScheduleGenerateAll();
 }
 
 void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
@@ -515,7 +515,7 @@ void Constraint::MenuConstrain(int id) {
                     SS.UndoRemember();
                     c->other = !(c->other);
                     SS.MarkGroupDirty(c->group);
-                    SS.later.generateAll = true;
+                    SS.ScheduleGenerateAll();
                     break;
                 }
             }
@@ -699,7 +699,7 @@ void Constraint::MenuConstrain(int id) {
         case GraphicsWindow::MNU_COMMENT:
             SS.GW.pending.operation = GraphicsWindow::MNU_COMMENT;
             SS.GW.pending.description = "click center of comment text";
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
             break;
 
         default: oops();

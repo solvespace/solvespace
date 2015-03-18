@@ -12,6 +12,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "solvespace.h"
 
@@ -32,6 +33,13 @@ void GetAbsoluteFilename(char *file)
     char expanded[MAX_PATH];
     realpath(file, expanded);
     strcpy(file, expanded);
+}
+
+int64_t GetUnixTime(void)
+{
+    time_t ret;
+    time(&ret);
+    return (int64_t)ret;
 }
 
 //-----------------------------------------------------------------------------

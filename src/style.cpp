@@ -167,12 +167,12 @@ void Style::AssignSelectionToStyle(uint32_t v) {
 
     SS.GW.ClearSelection();
     InvalidateGraphics();
-    SS.later.generateAll = true;
+    SS.ScheduleGenerateAll();
 
     // And show that style's info screen in the text window.
     SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
     SS.TW.shown.style.v = v;
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 //-----------------------------------------------------------------------------
@@ -424,7 +424,7 @@ err:
         if(png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
         if(f) fclose(f);
     }
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
 }
 
 void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {

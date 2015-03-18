@@ -73,7 +73,7 @@ void GraphicsWindow::Selection::Draw(void) {
 
 void GraphicsWindow::ClearSelection(void) {
     selection.Clear();
-    SS.later.showTW = true;
+    SS.ScheduleShowTW();
     InvalidateGraphics();
 }
 

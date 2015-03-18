@@ -330,7 +330,7 @@ void Group::GenerateShellAndMesh(void) {
         // for this group.
         booleanFailed = runningShell.booleanFailed;
         if(booleanFailed != prevBooleanFailed) {
-            SS.later.showTW = true;
+            SS.ScheduleShowTW();
         }
     } else {
         SMesh prevm, thism;
