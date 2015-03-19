@@ -928,14 +928,14 @@ void LoadAllFontFiles(void)
     FcFontSet   *fs  = FcFontList(0, pat, os);
 
     for(int i = 0; i < fs->nfont; i++) {
-        char *s = FcPatternFormat(fs->fonts[i], "%{file}");
-        if(strlen(s)+1 <= MAX_PATH && fl_filename_match(s, "*.{TTF,ttf}") {
+        char *s = (char*)FcPatternFormat(fs->fonts[i], (FcChar8*) "%{file}");
+        if(strlen(s)+1 <= MAX_PATH && fl_filename_match(s, "*.{TTF,ttf}")) {
             TtfFont tf;
             ZERO(&tf);
             strcpy(tf.fontFile, s);
             SS.fonts.l.Add(&tf);
         }
-        FcStrFree(s);
+        FcStrFree((FcChar8*) s);
     }
 
     FcFontSetDestroy(fs);
