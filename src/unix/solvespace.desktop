@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=SolveSpace
+Comment=A parametric 2d/3d CAD
+Exec=/usr/bin/solvespace
+Icon=solvespace
+Type=Application
+Categories=Graphics
+Keywords=parametric;cad;2d;3d;
