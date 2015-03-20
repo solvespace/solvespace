@@ -293,6 +293,9 @@ public:
         GLXFBConfig fbconfig = fbconfigs[0];
         for(int i = 0; i < fbconfig_num; i++) {
             XVisualInfo *visual_info = glXGetVisualFromFBConfig(_xdisplay, fbconfigs[i]);
+            /* some GL visuals, notably on Chromium GL, do not have an associated
+               X visual; this is not an obstacle as we always render offscreen. */
+            if(!visual_info) continue;
             int depth = visual_info->depth;
             XFree(visual_info);
 
@@ -310,9 +313,24 @@ public:
         }
 
         XFree(fbconfigs);
+
+        /* create a dummy X window to create a rendering context against.
+           we could use a Pbuffer, but some implementations (Chromium GL)
+           don't support these. we could use an existing window, but
+           some implementations (Chromium GL... do you see a pattern?)
+           do really strange things, i.e. draw a black rectangle on
+           the very front of the desktop if you do this. */
+        _xwindow = XCreateSimpleWindow(_xdisplay,
+                XRootWindow(_xdisplay, gdk_x11_get_default_screen()),
+                /*x*/ 0, /*y*/ 0, /*width*/ 1, /*height*/ 1,
+                /*border_width*/ 0, /*border*/ 0, /*background*/ 0);
     }
 
     ~GlWidget() {
+        glXMakeCurrent(_xdisplay, None, NULL);
+
+        XDestroyWindow(_xdisplay, _xwindow);
+
         delete _offscreen;
 
         glXDestroyContext(_xdisplay, _glcontext);
@@ -322,13 +340,6 @@ protected:
     /* Draw on a GLX framebuffer object, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
     virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
-        /* We activate a GL context for the X window, because we need /something/,
-           but we never draw directly onto the window. */
-#ifdef HAVE_GTK3
-        ::Window _xwindow = gdk_x11_window_get_xid(get_window()->gobj());
-#else
-        ::Window _xwindow = gdk_x11_drawable_get_xid(get_window()->gobj());
-#endif
         if(!glXMakeCurrent(_xdisplay, _xwindow, _glcontext))
             oops();
 
@@ -365,6 +376,7 @@ private:
     Display *_xdisplay;
     GLXContext _glcontext;
     GLOffscreen *_offscreen;
+    ::Window _xwindow;
 };
 };
 
