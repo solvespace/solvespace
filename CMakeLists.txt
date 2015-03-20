@@ -82,6 +82,7 @@ else()
         find_package(PkgConfig REQUIRED)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
+        pkg_check_modules(GLEW REQUIRED glew)
 
         set(HAVE_GTK TRUE)
         if(GUI STREQUAL "gtk3")

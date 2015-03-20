@@ -142,25 +142,30 @@ elseif(HAVE_GTK)
     include_directories(
         ${GTKMM_INCLUDE_DIRS}
         ${JSONC_INCLUDE_DIRS}
-        ${FONTCONFIG_INCLUDE_DIRS})
+        ${FONTCONFIG_INCLUDE_DIRS}
+        ${GLEW_INCLUDE_DIRS})
 
     link_directories(
         ${GTKMM_LIBRARY_DIRS}
         ${JSONC_LIBRARY_DIRS}
-        ${FONTCONFIG_LIBRARY_DIRS})
+        ${FONTCONFIG_LIBRARY_DIRS}
+        ${GLEW_LIBRARY_DIRS})
 
     add_definitions(
         ${GTKMM_CFLAGS_OTHER}
         ${JSONC_CFLAGS_OTHER}
-        ${FONTCONFIG_CFLAGS_OTHER})
+        ${FONTCONFIG_CFLAGS_OTHER}
+        ${GLEW_CFLAGS_OTHER})
 
     set(platform_SOURCES
-        gtk/gtkmain.cpp)
+        gtk/gtkmain.cpp
+        unix/gloffscreen.cpp)
 
     set(platform_LIBRARIES
         ${GTKMM_LIBRARIES}
         ${JSONC_LIBRARIES}
-        ${FONTCONFIG_LIBRARIES})
+        ${FONTCONFIG_LIBRARIES}
+        ${GLEW_LIBRARIES})
 endif()
 
 # solvespace executable

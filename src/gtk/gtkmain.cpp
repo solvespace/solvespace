@@ -49,11 +49,11 @@
 
 #undef HAVE_STDINT_H /* no thanks, we have our own config.h */
 
-#define GLX_GLXEXT_PROTOTYPES
 #include <GL/glx.h>
 
-#include "solvespace.h"
 #include <config.h>
+#include "solvespace.h"
+#include "../unix/gloffscreen.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <spnav.h>
@@ -67,7 +67,8 @@ char RecentFile[MAX_RECENT][MAX_PATH];
 #define GL_CHECK() \
     do { \
         int err = (int)glGetError(); \
-        if(err) dbp("%s:%d: glGetError() == 0x%X\n", __FILE__, __LINE__, err); \
+        if(err) dbp("%s:%d: glGetError() == 0x%X %s", \
+                    __FILE__, __LINE__, err, gluErrorString(err)); \
     } while (0)
 
 /* Settings */
@@ -254,9 +255,7 @@ void ScheduleLater() {
 namespace SolveSpacePlatf {
 class GlWidget : public Gtk::DrawingArea {
 public:
-    GlWidget() : _pixels(NULL), _glpbuffer(0) {
-        set_double_buffered(false);
-
+    GlWidget() : _offscreen(NULL) {
         _xdisplay = gdk_x11_get_default_xdisplay();
 
         int glxmajor, glxminor;
@@ -287,7 +286,10 @@ public:
         /* prefer FBConfigs with depth of 32;
             * Mesa software rasterizer explodes with a BadMatch without this;
             * without this, Intel on Mesa flickers horribly for some reason.
-           this does not seem to affect other rasterizers (ie NVidia). */
+           this does not seem to affect other rasterizers (ie NVidia).
+
+           see this Mesa bug:
+           http://lists.freedesktop.org/archives/mesa-dev/2015-January/074693.html */
         GLXFBConfig fbconfig = fbconfigs[0];
         for(int i = 0; i < fbconfig_num; i++) {
             XVisualInfo *visual_info = glXGetVisualFromFBConfig(_xdisplay, fbconfigs[i]);
@@ -307,63 +309,43 @@ public:
             oops();
         }
 
-        int buffer_size = 2048;
-
-        _pixels = new uint32_t[buffer_size * buffer_size];
-        _pixels_inv = new uint32_t[buffer_size * buffer_size];
-
-        int pbuffer_attrs[] = {
-            GLX_PBUFFER_WIDTH,  2048,
-            GLX_PBUFFER_HEIGHT, 2048,
-            None
-        };
-        _glpbuffer = glXCreatePbuffer(_xdisplay, fbconfig, pbuffer_attrs);
-        if(!_glpbuffer)
-            oops();
-
         XFree(fbconfigs);
     }
 
     ~GlWidget() {
-        delete[] _pixels;
-        delete[] _pixels_inv;
+        delete _offscreen;
 
-        glXDestroyPbuffer(_xdisplay, _glpbuffer);
         glXDestroyContext(_xdisplay, _glcontext);
     }
 
 protected:
-    /* Draw on a GLX pbuffer, then read pixels out and draw them on
+    /* Draw on a GLX framebuffer object, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
     virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
-        if(!glXMakeContextCurrent(_xdisplay, _glpbuffer, _glpbuffer, _glcontext))
+        /* We activate a GL context for the X window, because we need /something/,
+           but we never draw directly onto the window. */
+#ifdef HAVE_GTK3
+        ::Window _xwindow = gdk_x11_window_get_xid(get_window()->gobj());
+#else
+        ::Window _xwindow = gdk_x11_drawable_get_xid(get_window()->gobj());
+#endif
+        if(!glXMakeCurrent(_xdisplay, _xwindow, _glcontext))
+            oops();
+
+        if(!_offscreen)
+            _offscreen = new GLOffscreen;
+
+        Gdk::Rectangle allocation = get_allocation();
+        if(!_offscreen->begin(allocation.get_width(), allocation.get_height()))
             oops();
 
         on_gl_draw();
         glFlush();
         GL_CHECK();
 
-        Gdk::Rectangle allocation = get_allocation();
-
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-        glReadPixels(0, 0, allocation.get_width(), allocation.get_height(),
-                GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels);
-#else
-        glReadPixels(0, 0, allocation.get_width(), allocation.get_height(),
-                GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, _pixels);
-#endif
-
-        /* in OpenGL coordinates, bottom is zero Y */
-        int row_size = allocation.get_width() * 4;
-        for(int i = 0; i < allocation.get_height(); i++) {
-            memcpy(&_pixels_inv[allocation.get_width() * i],
-                   &_pixels[allocation.get_width() * (allocation.get_height() - i - 1)],
-                   row_size);
-        }
-
         Cairo::RefPtr<Cairo::ImageSurface> surface = Cairo::ImageSurface::create(
-                (uint8_t*) _pixels_inv, Cairo::FORMAT_RGB24,
-                allocation.get_width(), allocation.get_height(), row_size);
+                _offscreen->end(), Cairo::FORMAT_RGB24,
+                allocation.get_width(), allocation.get_height(), allocation.get_width() * 4);
         cr->set_source(surface, 0, 0);
         cr->paint();
         surface->finish();
@@ -382,8 +364,7 @@ protected:
 private:
     Display *_xdisplay;
     GLXContext _glcontext;
-    GLXPbuffer _glpbuffer;
-    uint32_t *_pixels, *_pixels_inv;
+    GLOffscreen *_offscreen;
 };
 };
 
