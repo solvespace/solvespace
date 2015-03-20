@@ -1,0 +1,7 @@
+?package(solvespace):needs="X11" section="Applications/Graphics" \
+  title="SolveSpace" command="/usr/bin/solvespace" \
+  hints="CAD" \
+  icon16x16="/usr/share/pixmaps/solvespace-16x16.xpm" \
+  icon24x24="/usr/share/pixmaps/solvespace-24x24.xpm" \
+  icon32x32="/usr/share/pixmaps/solvespace-32x32.xpm" \
+  icon48x48="/usr/share/pixmaps/solvespace-48x48.xpm"

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<mime-info xmlns='http://www.freedesktop.org/standards/shared-mime-info'>
+    <mime-type type="application/x-solvespace">
+    <comment>SolveSpace sketch</comment>
+    <glob pattern="*.slvs"/>
+    <generic-icon name="x-office-document"/>
+  </mime-type>
+</mime-info>

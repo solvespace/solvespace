@@ -1,0 +1,3 @@
+tar-ignore = "*.sublime-*"
+tar-ignore = "cbuild"
+tar-ignore = ".git"

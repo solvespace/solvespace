@@ -76,7 +76,7 @@ set_target_properties(slvs PROPERTIES
 
 if(NOT WIN32)
     install(TARGETS slvs
-        LIBRARY DESTINATION lib
+        LIBRARY DESTINATION lib/${CMAKE_LIBRARY_PATH} # multiarch
         PUBLIC_HEADER DESTINATION include)
 endif()
 

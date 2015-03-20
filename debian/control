@@ -1,0 +1,53 @@
+Source: solvespace
+Section: graphics
+Priority: optional
+Maintainer: whitequark <whitequark@whitequark.org>
+Build-Depends: debhelper (>= 9), cmake, libpng12-dev, zlib1g-dev, libjson-c-dev,
+    libfontconfig1-dev, libgtkmm-2.4-dev, libpangomm-1.4-dev,
+    libgl-dev, libglu-dev, libglew-dev,
+    libgd-perl
+Standards-Version: 3.9.5
+Homepage: http://solvespace.com
+Vcs-Git: git://github.com/whitequark/solvespace
+Vcs-Browser: https://github.com/whitequark/solvespace
+
+Package: solvespace
+Architecture: any
+Multi-Arch: foreign
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: SolveSpace is a parametric 2d/3d CAD
+ SolveSpace is a parametric 2d/3d CAD program. Applications include:
+ .
+  * modeling 3d parts — draw with extrudes, revolves, and Boolean
+    (union / difference) operations;
+  * modeling 2d parts — draw the part as a single section, and export DXF,
+    PDF, SVG; use 3d assembly to verify fit;
+  * 3d-printed parts — export the STL or other triangle mesh expected by
+    most 3d printers;
+  * preparing CAM data — export 2d vector art for a waterjet machine or
+    laser cutter; or generate STEP or STL, for import into third-party
+    CAM software for machining;
+  * mechanism design — use the constraint solver to simulate planar or
+    spatial linkages, with pin, ball, or slide joints;
+  * plane and solid geometry — replace hand-solved trigonometry and
+    spreadsheets with a live dimensioned drawing.
+
+Package: libslvs1
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: SolveSpace geometric kernel
+ SolveSpace is a parametric 2d/3d CAD. libslvs contains the geometric
+ kernel of SolveSpace, built as a library.
+
+Package: libslvs1-dev
+Section: libs
+Architecture: any
+Multi-Arch: same
+Depends: libslvs1, ${misc:Depends}
+Description: SolveSpace geometric kernel (development files)
+ SolveSpace is a parametric 2d/3d CAD. libslvs contains the geometric
+ kernel of SolveSpace, built as a library.
+ .
+ This package includes development files for libslvs.

@@ -36,6 +36,10 @@ if(WIN32)
         -DWIN32_LEAN_AND_MEAN=1)
 endif()
 
+if((CMAKE_CXX_PLATFORM_ID STREQUAL "Linux") AND CMAKE_COMPILER_IS_GNUCC)
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
+endif()
+
 # dependencies
 
 CHECK_INCLUDE_FILE("stdint.h" HAVE_STDINT_H)
