@@ -49,6 +49,7 @@
 
 #undef HAVE_STDINT_H /* no thanks, we have our own config.h */
 
+#define GLX_GLXEXT_PROTOTYPES
 #include <GL/glx.h>
 
 #include "solvespace.h"
@@ -251,67 +252,121 @@ void ScheduleLater() {
 /* GL wrapper */
 
 namespace SolveSpacePlatf {
-/* Replace this with GLArea when GTK 3.16 is old enough */
 class GlWidget : public Gtk::DrawingArea {
 public:
-    GlWidget() : _xpixmap(0), _glpixmap(0) {
-        int attrlist[] = {
-            GLX_RGBA,
-            GLX_RED_SIZE, 8,
-            GLX_GREEN_SIZE, 8,
-            GLX_BLUE_SIZE, 8,
-            GLX_DEPTH_SIZE, 24,
-            GLX_DOUBLEBUFFER,
-            None
-        };
+    GlWidget() : _pixels(NULL), _glpbuffer(0) {
+        set_double_buffered(false);
 
         _xdisplay = gdk_x11_get_default_xdisplay();
-        if(!glXQueryExtension(_xdisplay, NULL, NULL)) {
+
+        int glxmajor, glxminor;
+        if(!glXQueryVersion(_xdisplay, &glxmajor, &glxminor)) {
             dbp("OpenGL is not supported");
             oops();
         }
 
-        _xvisual = XDefaultVisual(_xdisplay, gdk_x11_get_default_screen());
-
-        _xvinfo = glXChooseVisual(_xdisplay, gdk_x11_get_default_screen(), attrlist);
-        if(!_xvinfo) {
-            dbp("cannot create glx visual");
+        if(glxmajor < 1 || (glxmajor == 1 && glxminor < 3)) {
+            dbp("GLX version %d.%d is too old; 1.3 required", glxmajor, glxminor);
             oops();
         }
 
-        _gl = glXCreateContext(_xdisplay, _xvinfo, NULL, true);
+        static int fbconfig_attrs[] = {
+            GLX_RENDER_TYPE, GLX_RGBA_BIT,
+            GLX_RED_SIZE, 8,
+            GLX_GREEN_SIZE, 8,
+            GLX_BLUE_SIZE, 8,
+            GLX_DEPTH_SIZE, 24,
+            None
+        };
+        int fbconfig_num = 0;
+        GLXFBConfig *fbconfigs = glXChooseFBConfig(_xdisplay, DefaultScreen(_xdisplay),
+                fbconfig_attrs, &fbconfig_num);
+        if(!fbconfigs || fbconfig_num == 0)
+            oops();
+
+        /* prefer FBConfigs with depth of 32;
+            * Mesa software rasterizer explodes with a BadMatch without this;
+            * without this, Intel on Mesa flickers horribly for some reason.
+           this does not seem to affect other rasterizers (ie NVidia). */
+        GLXFBConfig fbconfig = fbconfigs[0];
+        for(int i = 0; i < fbconfig_num; i++) {
+            XVisualInfo *visual_info = glXGetVisualFromFBConfig(_xdisplay, fbconfigs[i]);
+            int depth = visual_info->depth;
+            XFree(visual_info);
+
+            if(depth == 32) {
+                fbconfig = fbconfigs[i];
+                break;
+            }
+        }
+
+        _glcontext = glXCreateNewContext(_xdisplay,
+                fbconfig, GLX_RGBA_TYPE, 0, True);
+        if(!_glcontext) {
+            dbp("cannot create OpenGL context");
+            oops();
+        }
+
+        int buffer_size = 2048;
+
+        _pixels = new uint32_t[buffer_size * buffer_size];
+        _pixels_inv = new uint32_t[buffer_size * buffer_size];
+
+        int pbuffer_attrs[] = {
+            GLX_PBUFFER_WIDTH,  2048,
+            GLX_PBUFFER_HEIGHT, 2048,
+            None
+        };
+        _glpbuffer = glXCreatePbuffer(_xdisplay, fbconfig, pbuffer_attrs);
+        if(!_glpbuffer)
+            oops();
+
+        XFree(fbconfigs);
     }
 
     ~GlWidget() {
-        destroy_buffer();
+        delete[] _pixels;
+        delete[] _pixels_inv;
 
-        glXDestroyContext(_xdisplay, _gl);
-
-        XFree(_xvinfo);
+        glXDestroyPbuffer(_xdisplay, _glpbuffer);
+        glXDestroyContext(_xdisplay, _glcontext);
     }
 
 protected:
-    /* Draw on a GLX pixmap, then read pixels out and draw them on
+    /* Draw on a GLX pbuffer, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
     virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
-        allocate_buffer(get_allocation());
-
-        if(!glXMakeCurrent(_xdisplay, _glpixmap, _gl))
+        if(!glXMakeContextCurrent(_xdisplay, _glpbuffer, _glpbuffer, _glcontext))
             oops();
 
-        glDrawBuffer(GL_FRONT);
         on_gl_draw();
+        glFlush();
         GL_CHECK();
 
         Gdk::Rectangle allocation = get_allocation();
-        Cairo::RefPtr<Cairo::XlibSurface> surface =
-                Cairo::XlibSurface::create(_xdisplay, _xpixmap, _xvisual,
-                                           allocation.get_width(), allocation.get_height());
+
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        glReadPixels(0, 0, allocation.get_width(), allocation.get_height(),
+                GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels);
+#else
+        glReadPixels(0, 0, allocation.get_width(), allocation.get_height(),
+                GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, _pixels);
+#endif
+
+        /* in OpenGL coordinates, bottom is zero Y */
+        int row_size = allocation.get_width() * 4;
+        for(int i = 0; i < allocation.get_height(); i++) {
+            memcpy(&_pixels_inv[allocation.get_width() * i],
+                   &_pixels[allocation.get_width() * (allocation.get_height() - i - 1)],
+                   row_size);
+        }
+
+        Cairo::RefPtr<Cairo::ImageSurface> surface = Cairo::ImageSurface::create(
+                (uint8_t*) _pixels_inv, Cairo::FORMAT_RGB24,
+                allocation.get_width(), allocation.get_height(), row_size);
         cr->set_source(surface, 0, 0);
         cr->paint();
-
-        if(!glXMakeCurrent(_xdisplay, None, NULL))
-            oops();
+        surface->finish();
 
         return true;
     }
@@ -322,45 +377,13 @@ protected:
     }
 #endif
 
-    virtual void on_size_allocate (Gtk::Allocation& allocation) {
-        destroy_buffer();
-
-        Gtk::DrawingArea::on_size_allocate(allocation);
-    }
-
     virtual void on_gl_draw() = 0;
 
 private:
     Display *_xdisplay;
-    Visual *_xvisual;
-    XVisualInfo *_xvinfo;
-    GLXContext _gl;
-    Pixmap _xpixmap;
-    GLXDrawable _glpixmap;
-
-    void destroy_buffer() {
-        if(_glpixmap) {
-            glXDestroyGLXPixmap(_xdisplay, _glpixmap);
-            _glpixmap = 0;
-        }
-
-        if(_xpixmap) {
-            XFreePixmap(_xdisplay, _xpixmap);
-            _xpixmap = 0;
-        }
-    }
-
-    void allocate_buffer(Gtk::Allocation allocation) {
-        if(!_xpixmap) {
-            _xpixmap = XCreatePixmap(_xdisplay,
-                XRootWindow(_xdisplay, gdk_x11_get_default_screen()),
-                allocation.get_width(), allocation.get_height(), 24);
-        }
-
-        if(!_glpixmap) {
-            _glpixmap = glXCreateGLXPixmap(_xdisplay, _xvinfo, _xpixmap);
-        }
-    }
+    GLXContext _glcontext;
+    GLXPbuffer _glpbuffer;
+    uint32_t *_pixels, *_pixels_inv;
 };
 };
 
