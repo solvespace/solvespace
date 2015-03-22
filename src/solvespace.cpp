@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <string>
 
 SolveSpaceUI SolveSpace::SS;
 Sketch SolveSpace::SK;
@@ -378,6 +379,13 @@ void SolveSpaceUI::UpdateWindowTitle(void) {
     }
 }
 
+static std::string Extname(std::string filename) {
+    int dot = filename.rfind('.');
+    if(dot >= 0)
+        return filename.substr(dot + 1, filename.length());
+    return "";
+}
+
 void SolveSpaceUI::MenuFile(int id) {
     if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
         if(!SS.OkayToStartNewFile()) return;
@@ -438,8 +446,10 @@ void SolveSpaceUI::MenuFile(int id) {
         }
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
-            char exportFile[MAX_PATH] = "";
-            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
+            char exportFile[MAX_PATH] = "", exportExt[10] = VEC_EXT;
+            CnfThawString(exportExt, sizeof(exportExt), "2DExportFormat");
+            if(!GetSaveFile(exportFile, exportExt, VEC_PATTERN)) break;
+            CnfFreezeString(Extname(exportFile).c_str(), "2DExportFormat");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
