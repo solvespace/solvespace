@@ -1157,6 +1157,11 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 
             default: {
                 double v = fabs(c->valA);
+
+                // If displayed as radius, also edit as radius.
+                if(c->type == Constraint::DIAMETER && c->other)
+                    v /= 2;
+
                 char *def = SS.MmToString(v);
                 double eps = 1e-12;
                 if(fabs(SS.StringToMm(def) - v) < eps) {
@@ -1215,6 +1220,15 @@ void GraphicsWindow::EditControlDone(const char *s) {
                 // These don't get the units conversion for distance, and
                 // they're always positive
                 c->valA = fabs(e->Eval());
+                break;
+
+            case Constraint::DIAMETER:
+                c->valA = fabs(SS.ExprToMm(e));
+
+                // If displayed and edited as radius, convert back
+                // to diameter
+                if(c->other)
+                    c->valA *= 2;
                 break;
 
             default:

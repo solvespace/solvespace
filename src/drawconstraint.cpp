@@ -66,8 +66,12 @@ char *Constraint::Label(void) {
     } else if(type == COMMENT) {
         strcpy(Ret, comment.str);
     } else if(type == DIAMETER) {
-        // leading spaces for diameter symbol
-        sprintf(Ret, "  %s", SS.MmToString(valA));
+        if(!other) {
+            // leading spaces for diameter symbol
+            sprintf(Ret, "  %s", SS.MmToString(valA));
+        } else {
+            sprintf(Ret, "R%s", SS.MmToString(valA / 2));
+        }
     } else {
         // valA has units of distance
         strcpy(Ret, SS.MmToString(fabs(valA)));
@@ -521,27 +525,30 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             DoLabel(ref, &topLeft, gr, gu);
             if(labelPos) *labelPos = topLeft;
 
-            // Draw the diameter symbol
-            Vector dc = topLeft;
-            dc = dc.Plus(gu.WithMagnitude(5/SS.GW.scale));
-            dc = dc.Plus(gr.WithMagnitude(9/SS.GW.scale));
-            double dr = 5/SS.GW.scale;
-            double theta, dtheta = (2*PI)/12;
-            for(theta = 0; theta < 2*PI-0.01; theta += dtheta) {
+            // Show this as diameter or radius?
+            if(!other) {
+                // Draw the diameter symbol
+                Vector dc = topLeft;
+                dc = dc.Plus(gu.WithMagnitude(5/SS.GW.scale));
+                dc = dc.Plus(gr.WithMagnitude(9/SS.GW.scale));
+                double dr = 5/SS.GW.scale;
+                double theta, dtheta = (2*PI)/12;
+                for(theta = 0; theta < 2*PI-0.01; theta += dtheta) {
+                    LineDrawOrGetDistance(
+                        dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
+                                gr.WithMagnitude(sin(theta)*dr)),
+                        dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
+                                gr.WithMagnitude(sin(theta+dtheta)*dr)));
+                }
+                theta = 25*(PI/180);
+                dr *= 1.7;
+                dtheta = PI;
                 LineDrawOrGetDistance(
                     dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
                             gr.WithMagnitude(sin(theta)*dr)),
                     dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
                             gr.WithMagnitude(sin(theta+dtheta)*dr)));
             }
-            theta = 25*(PI/180);
-            dr *= 1.7;
-            dtheta = PI;
-            LineDrawOrGetDistance(
-                dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
-                        gr.WithMagnitude(sin(theta)*dr)),
-                dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
-                        gr.WithMagnitude(sin(theta+dtheta)*dr)));
             break;
         }
 

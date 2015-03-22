@@ -41,6 +41,16 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     SS.ScheduleShowTW();
 }
 
+void TextWindow::ScreenConstraintShowAsRadius(int link, uint32_t v) {
+    hConstraint hc = { v };
+    Constraint *c = SK.GetConstraint(hc);
+
+    SS.UndoRemember();
+    c->other = !c->other;
+
+    SS.ScheduleShowTW();
+}
+
 void TextWindow::DescribeSelection(void) {
     Entity *e;
     Vector p;
@@ -291,8 +301,18 @@ void TextWindow::DescribeSelection(void) {
     } else if(gs.n == 0 && gs.stylables > 0) {
         Printf(false, "%FtSELECTED:%E comment text");
     } else if(gs.n == 0 && gs.constraints == 1) {
-        Printf(false, "%FtSELECTED:%E %s",
-            SK.GetConstraint(gs.constraint[0])->DescriptionString());
+        Constraint *c = SK.GetConstraint(gs.constraint[0]);
+
+        if(c->type == Constraint::DIAMETER) {
+            Printf(false, "%FtDIAMETER CONSTRAINT");
+
+            Printf(true, "  %Fd%f%D%Ll%c  show as radius",
+                   &ScreenConstraintShowAsRadius, gs.constraint[0],
+                   c->other ? CHECK_TRUE : CHECK_FALSE);
+        } else {
+            Printf(false, "%FtSELECTED:%E %s",
+                c->DescriptionString());
+        }
     } else {
         int n = SS.GW.selection.n;
         Printf(false, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");

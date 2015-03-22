@@ -236,6 +236,9 @@ public:
     static void ScreenSetTtfFont(int link, uint32_t v);
     static void ScreenUnselectAll(int link, uint32_t v);
 
+    // when we're describing a constraint
+    static void ScreenConstraintShowAsRadius(int link, uint32_t v);
+
     // and the rest from the stuff in textscreens.cpp
     static void ScreenSelectGroup(int link, uint32_t v);
     static void ScreenActivateGroup(int link, uint32_t v);
