@@ -446,15 +446,12 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_ONTO_WORKPLANE:
-            if(!SS.GW.LockedInWorkplane()) {
-                Error("No workplane is active.");
+            if(SS.GW.LockedInWorkplane()) {
+                SS.GW.AnimateOntoWorkplane();
+                SS.GW.ClearSuper();
+                SS.ScheduleShowTW();
                 break;
-            }
-            SS.GW.AnimateOntoWorkplane();
-            SS.GW.ClearSuper();
-            SS.ScheduleShowTW();
-            break;
-
+            }  // if not in 2d mode fall through and use ORTHO logic
         case MNU_NEAREST_ORTHO:
         case MNU_NEAREST_ISO: {
             static const Vector ortho[3] = {
@@ -480,7 +477,7 @@ void GraphicsWindow::MenuView(int id) {
                             Vector on = ou.Cross(ov);
 
                             Vector u, v;
-                            if(id == MNU_NEAREST_ORTHO) {
+                            if(id == MNU_NEAREST_ORTHO || id == MNU_ONTO_WORKPLANE) {
                                 u = ou;
                                 v = ov;
                             } else {
