@@ -114,7 +114,7 @@ void Entity::DrawAll(void) {
 void Entity::Draw(void) {
     hStyle hs = Style::ForEntity(h);
     dogd.lineWidth = Style::Width(hs);
-    glLineWidth((float)dogd.lineWidth);
+    ssglLineWidth((float)dogd.lineWidth);
     ssglColorRGB(Style::Color(hs));
 
     dogd.drawing = true;
@@ -534,7 +534,7 @@ void Entity::DrawOrGetDistance(void) {
                 Vector tail;
                 if(i == 0) {
                     tail = SK.GetEntity(point[0])->PointGetNum();
-                    glLineWidth(1);
+                    ssglLineWidth(1);
                 } else {
                     // Draw an extra copy of the x, y, and z axes, that's
                     // always in the corner of the view and at the front.
@@ -545,7 +545,7 @@ void Entity::DrawOrGetDistance(void) {
                     tail = SS.GW.projRight.ScaledBy(w/s).Plus(
                            SS.GW.projUp.   ScaledBy(h/s)).Minus(SS.GW.offset);
                     ssglDepthRangeLockToFront(true);
-                    glLineWidth(2);
+                    ssglLineWidth(2);
                 }
 
                 Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
@@ -583,7 +583,7 @@ void Entity::DrawOrGetDistance(void) {
             Vector mm = p.Minus(us).Minus(vs), mm2 = mm;
             Vector mp = p.Minus(us).Plus (vs);
 
-            glLineWidth(1);
+            ssglLineWidth(1);
             ssglColorRGB(Style::Color(Style::NORMALS));
             glEnable(GL_LINE_STIPPLE);
             glLineStipple(3, 0x1111);

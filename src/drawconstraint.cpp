@@ -1030,7 +1030,7 @@ s:
 
         case COMMENT: {
             if(disp.style.v) {
-                glLineWidth(Style::Width(disp.style));
+                ssglLineWidth(Style::Width(disp.style));
                 ssglColorRGB(Style::Color(disp.style));
             }
             Vector u, v;
@@ -1054,7 +1054,7 @@ void Constraint::Draw(void) {
     dogd.drawing = true;
     dogd.sel = NULL;
 
-    glLineWidth(Style::Width(Style::CONSTRAINT));
+    ssglLineWidth(Style::Width(Style::CONSTRAINT));
     ssglColorRGB(Style::Color(Style::CONSTRAINT));
 
     DrawOrGetDistance(NULL);

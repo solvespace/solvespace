@@ -60,14 +60,14 @@ void GraphicsWindow::Selection::Draw(void) {
         topLeft = topLeft.Plus(SS.GW.projUp.ScaledBy(SS.GW.height*s));
         topLeft = topLeft.Minus(SS.GW.offset);
 
-        glLineWidth(40);
+        ssglLineWidth(40);
         RgbColor rgb = Style::Color(Style::HOVERED);
         glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), 0.2);
         glBegin(GL_LINES);
             ssglVertex3v(topLeft);
             ssglVertex3v(refp);
         glEnd();
-        glLineWidth(1);
+        ssglLineWidth(1);
     }
 }
 
@@ -673,7 +673,7 @@ void GraphicsWindow::Paint(void) {
         if(i0 > i1 || i1 - i0 > 400) goto nogrid;
         if(j0 > j1 || j1 - j0 > 400) goto nogrid;
 
-        glLineWidth(1);
+        ssglLineWidth(1);
         ssglColorRGBa(Style::Color(Style::DATUM), 0.3);
         glBegin(GL_LINES);
         for(i = i0 + 1; i < i1; i++) {
@@ -717,7 +717,7 @@ nogrid:;
     }
 
     // Draw the traced path, if one exists
-    glLineWidth(Style::Width(Style::ANALYZE));
+    ssglLineWidth(Style::Width(Style::ANALYZE));
     ssglColorRGB(Style::Color(Style::ANALYZE));
     SContour *sc = &(SS.traced.path);
     glBegin(GL_LINE_STRIP);
@@ -727,7 +727,7 @@ nogrid:;
     glEnd();
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
-    glLineWidth(Style::Width(Style::DRAW_ERROR));
+    ssglLineWidth(Style::Width(Style::DRAW_ERROR));
     ssglColorRGB(Style::Color(Style::DRAW_ERROR));
     ssglDrawEdges(&(SS.nakedEdges), true);
 
@@ -758,7 +758,7 @@ nogrid:;
                br = UnProjectPoint(Point2d::From(xmax, ymax)),
                bl = UnProjectPoint(Point2d::From(xmin, ymax));
 
-        glLineWidth((GLfloat)1.3);
+        ssglLineWidth((GLfloat)1.3);
         ssglColorRGB(Style::Color(Style::HOVERED));
         glBegin(GL_LINE_LOOP);
             ssglVertex3v(tl);
@@ -778,7 +778,7 @@ nogrid:;
     // An extra line, used to indicate the origin when rotating within the
     // plane of the monitor.
     if(SS.extraLine.draw) {
-        glLineWidth(1);
+        ssglLineWidth(1);
         ssglLockColorTo(Style::Color(Style::DATUM));
         glBegin(GL_LINES);
             ssglVertex3v(SS.extraLine.ptA);
@@ -793,7 +793,7 @@ nogrid:;
                u = SS.justExportedInfo.u,
                v = SS.justExportedInfo.v;
 
-        glLineWidth(1.5);
+        ssglLineWidth(1.5);
         glBegin(GL_LINES);
             ssglVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
             ssglVertex3v(p.Plus(u.WithMagnitude(30/scale)));

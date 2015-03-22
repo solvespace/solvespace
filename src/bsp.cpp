@@ -667,7 +667,7 @@ void SBsp2::DebugDraw(Vector n, double d) {
     if(fabs((edge.a).Dot(n) - d) > LENGTH_EPS) oops();
     if(fabs((edge.b).Dot(n) - d) > LENGTH_EPS) oops();
 
-    glLineWidth(10);
+    ssglLineWidth(10);
     glBegin(GL_LINES);
         ssglVertex3v(edge.a);
         ssglVertex3v(edge.b);
@@ -675,6 +675,6 @@ void SBsp2::DebugDraw(Vector n, double d) {
     pos->DebugDraw(n, d);
     neg->DebugDraw(n, d);
     more->DebugDraw(n, d);
-    glLineWidth(1);
+    ssglLineWidth(1);
 }
 

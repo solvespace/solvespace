@@ -465,7 +465,7 @@ void Group::DrawDisplayItems(int t) {
     if(SS.GW.showEdges) {
         ssglDepthRangeOffset(2);
         ssglColorRGB(Style::Color(Style::SOLID_EDGE));
-        glLineWidth(Style::Width(Style::SOLID_EDGE));
+        ssglLineWidth(Style::Width(Style::SOLID_EDGE));
         ssglDrawEdges(&displayEdges, false);
     }
 
@@ -490,7 +490,7 @@ void Group::Draw(void) {
         if(type == DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             ssglColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
-            glLineWidth (Style::Width(Style::DRAW_ERROR));
+            ssglLineWidth (Style::Width(Style::DRAW_ERROR));
             glBegin(GL_LINES);
                 ssglVertex3v(polyError.notClosedAt.a);
                 ssglVertex3v(polyError.notClosedAt.b);

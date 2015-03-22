@@ -273,6 +273,7 @@ typedef IdList<Param,hParam> ParamList;
 
 
 // Utility functions that are provided in the platform-independent code.
+void ssglLineWidth(GLfloat width);
 void ssglVertex3v(Vector u);
 void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
 void ssglAxisAlignedLineLoop(double l, double r, double t, double b);

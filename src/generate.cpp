@@ -209,7 +209,7 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
             double left = 80, top = -20, width = 240, height = 24;
             glColor3d(0.9, 0.8, 0.8);
             ssglAxisAlignedQuad(left, left+width, top, top-height);
-            glLineWidth(1);
+            ssglLineWidth(1);
             glColor3d(0.0, 0.0, 0.0);
             ssglAxisAlignedLineLoop(left, left+width, top, top-height);
 

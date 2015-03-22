@@ -259,7 +259,7 @@ float Style::Width(hStyle h) {
     } else if(s->widthAs == UNITS_AS_PIXELS) {
         r = s->width;
     }
-    // This returns a float because glLineWidth expects a float, avoid casts.
+    // This returns a float because ssglLineWidth expects a float, avoid casts.
     return (float)r;
 }
 

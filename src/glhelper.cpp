@@ -52,9 +52,27 @@ void ssglWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vecto
     ssglWriteText(str, h, t, u, v, fn, fndata);
 }
 
+void ssglLineWidth(GLfloat width) {
+    // Intel GPUs with Mesa on *nix render thin lines poorly.
+    static bool workaroundChecked, workaroundEnabled;
+    if(!workaroundChecked) {
+        // ssglLineWidth can be called before GL is initialized
+        if(glGetString(GL_VENDOR)) {
+            workaroundChecked = true;
+            if(!strcmp((char*)glGetString(GL_VENDOR), "Intel Open Source Technology Center"))
+                workaroundEnabled = true;
+        }
+    }
+
+    if(workaroundEnabled && width < 1.6)
+        width = 1.6;
+
+    glLineWidth(width);
+}
+
 static void LineDrawCallback(void *fndata, Vector a, Vector b)
 {
-    glLineWidth(1);
+    ssglLineWidth(1);
     glBegin(GL_LINES);
         ssglVertex3v(a);
         ssglVertex3v(b);
@@ -362,7 +380,7 @@ void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p)
 void ssglDebugPolygon(SPolygon *p)
 {
     int i, j;
-    glLineWidth(2);
+    ssglLineWidth(2);
     glPointSize(7);
     glDisable(GL_DEPTH_TEST);
     for(i = 0; i < p->l.n; i++) {
@@ -410,7 +428,7 @@ void ssglDrawEdges(SEdgeList *el, bool endpointsToo)
 void ssglDebugMesh(SMesh *m)
 {
     int i;
-    glLineWidth(1);
+    ssglLineWidth(1);
     glPointSize(7);
     ssglDepthRangeOffset(1);
     ssglUnlockColor();
