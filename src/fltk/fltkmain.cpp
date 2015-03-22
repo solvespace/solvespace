@@ -34,6 +34,10 @@
 #include <FL/gl.h>
 #include <FL/names.h>
 
+#ifndef __APPLE__
+#include <GL/glx.h>
+#endif
+
 #include "solvespace.h"
 
 #define fl_snprintf snprintf
@@ -368,7 +372,22 @@ public:
     Graphics_Gl_Window(int x, int y, int w, int h)
     : Fl_Gl_Window(x, y, w, h)
     {
+#ifndef __APPLE__
+        /* Explicitly request a 24-bit depth buffer on X11.
+           Otherwise, a 8-bit depth buffer might be selected, which
+           is too shallow and will result in rendering artifacts. */
+        static int alist[] = {
+            GLX_RGBA,
+            GLX_RED_SIZE, 8,
+            GLX_GREEN_SIZE, 8,
+            GLX_BLUE_SIZE, 8,
+            GLX_DEPTH_SIZE, 24,
+            None
+        };
+        mode(alist);
+#else
         mode(FL_RGB | FL_DOUBLE);
+#endif
     }
 
     virtual int handle(int event) {
