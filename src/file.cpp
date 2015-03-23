@@ -16,7 +16,7 @@ static int StrStartsWith(const char *str, const char *start) {
 // sketch. This does not leave the program in an acceptable state (with the
 // references created, and so on), so anyone calling this must fix that later.
 //-----------------------------------------------------------------------------
-void SolveSpace::ClearExisting(void) {
+void SolveSpaceUI::ClearExisting(void) {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
@@ -34,7 +34,7 @@ void SolveSpace::ClearExisting(void) {
     SK.param.Clear();
 }
 
-hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
+hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
     Group g;
     ZERO(&g);
 
@@ -51,7 +51,7 @@ hGroup SolveSpace::CreateDefaultDrawingGroup(void) {
     return g.h;
 }
 
-void SolveSpace::NewFile(void) {
+void SolveSpaceUI::NewFile(void) {
     ClearExisting();
 
     // Our initial group, that contains the references.
@@ -83,7 +83,7 @@ void SolveSpace::NewFile(void) {
     CreateDefaultDrawingGroup();
 }
 
-const SolveSpace::SaveTable SolveSpace::SAVED[] = {
+const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.h.v",                'x',    &(SS.sv.g.h.v)                },
     { 'g',  "Group.type",               'd',    &(SS.sv.g.type)               },
     { 'g',  "Group.order",              'd',    &(SS.sv.g.order)              },
@@ -212,7 +212,7 @@ union SAVEDptr {
     uint32_t x;
 };
 
-void SolveSpace::SaveUsingTable(int type) {
+void SolveSpaceUI::SaveUsingTable(int type) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(SAVED[i].type != type) continue;
@@ -253,7 +253,7 @@ void SolveSpace::SaveUsingTable(int type) {
     }
 }
 
-bool SolveSpace::SaveToFile(const char *filename) {
+bool SolveSpaceUI::SaveToFile(const char *filename) {
     // Make sure all the entities are regenerated up to date, since they
     // will be exported. We reload the imported files because that rewrites
     // the impFileRel for our possibly-new filename.
@@ -369,7 +369,7 @@ bool SolveSpace::SaveToFile(const char *filename) {
     return true;
 }
 
-void SolveSpace::LoadUsingTable(char *key, char *val) {
+void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
@@ -423,7 +423,7 @@ void SolveSpace::LoadUsingTable(char *key, char *val) {
     }
 }
 
-bool SolveSpace::LoadFromFile(const char *filename) {
+bool SolveSpaceUI::LoadFromFile(const char *filename) {
     allConsistent = false;
     fileLoadError = false;
 
@@ -506,7 +506,7 @@ bool SolveSpace::LoadFromFile(const char *filename) {
     return true;
 }
 
-bool SolveSpace::LoadEntitiesFromFile(const char *file, EntityList *le,
+bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
                                       SMesh *m, SShell *sh)
 {
     SSurface srf;
@@ -648,7 +648,7 @@ bool SolveSpace::LoadEntitiesFromFile(const char *file, EntityList *le,
     return true;
 }
 
-void SolveSpace::ReloadAllImported(void) {
+void SolveSpaceUI::ReloadAllImported(void) {
     allConsistent = false;
 
     int i;

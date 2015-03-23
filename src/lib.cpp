@@ -8,7 +8,7 @@
 #define EXPORT_DLL
 #include <slvs.h>
 
-Sketch SK;
+Sketch SolveSpace::SK;
 static System SYS;
 
 static int IsInit = 0;
@@ -17,18 +17,18 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     // Nothing to do for now.
 }
 
-void CnfFreezeInt(uint32_t v, const char *name)
+void SolveSpace::CnfFreezeInt(uint32_t v, const char *name)
 {
     abort();
 }
 
-uint32_t CnfThawInt(uint32_t v, const char *name)
+uint32_t SolveSpace::CnfThawInt(uint32_t v, const char *name)
 {
     abort();
     return 0;
 }
 
-void DoMessageBox(const char *str, int rows, int cols, bool error)
+void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
 {
     abort();
 }

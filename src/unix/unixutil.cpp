@@ -16,6 +16,8 @@
 
 #include "solvespace.h"
 
+namespace SolveSpace {
+
 void dbp(const char *str, ...)
 {
     va_list f;
@@ -115,3 +117,5 @@ void MemFree(void *p) {
 void InitHeaps(void) {
     /* nothing to do */
 }
+
+};

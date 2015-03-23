@@ -5,11 +5,15 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #include <time.h>
+#include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
+
+#include <string>
+
+#include "solvespace.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <si.h>
@@ -38,7 +42,7 @@ static struct {
     int x, y;
 } LastMousePos;
 
-char RecentFile[MAX_RECENT][MAX_PATH];
+char SolveSpace::RecentFile[MAX_RECENT][MAX_PATH];
 HMENU SubMenus[100];
 HMENU RecentOpenMenu, RecentImportMenu;
 
@@ -124,7 +128,7 @@ HWND CreateWindowClient(DWORD exStyle, const char *className, const char *window
     return h;
 }
 
-void DoMessageBox(const char *str, int rows, int cols, bool error)
+void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
@@ -192,7 +196,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error)
     DestroyWindow(MessageWnd);
 }
 
-void AddContextMenuItem(const char *label, int id)
+void SolveSpace::AddContextMenuItem(const char *label, int id)
 {
     if(!ContextMenu) ContextMenu = CreatePopupMenu();
 
@@ -210,12 +214,12 @@ void AddContextMenuItem(const char *label, int id)
     }
 }
 
-void CreateContextSubmenu(void)
+void SolveSpace::CreateContextSubmenu(void)
 {
     ContextSubmenu = CreatePopupMenu();
 }
 
-int ShowContextMenu(void)
+int SolveSpace::ShowContextMenu(void)
 {
     POINT p;
     GetCursorPos(&p);
@@ -235,12 +239,12 @@ void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
     SS.GW.TimerCallback();
     SS.TW.TimerCallback();
 }
-void SetTimerFor(int milliseconds)
+void SolveSpace::SetTimerFor(int milliseconds)
 {
     SetTimer(GraphicsWnd, 1, milliseconds, TimerCallback);
 }
 
-void ScheduleLater()
+void SolveSpace::ScheduleLater()
 {
 }
 
@@ -251,20 +255,20 @@ static void GetWindowSize(HWND hwnd, int *w, int *h)
     *w = r.right - r.left;
     *h = r.bottom - r.top;
 }
-void GetGraphicsWindowSize(int *w, int *h)
+void SolveSpace::GetGraphicsWindowSize(int *w, int *h)
 {
     GetWindowSize(GraphicsWnd, w, h);
 }
-void GetTextWindowSize(int *w, int *h)
+void SolveSpace::GetTextWindowSize(int *w, int *h)
 {
     GetWindowSize(TextWnd, w, h);
 }
 
-void OpenWebsite(const char *url) {
+void SolveSpace::OpenWebsite(const char *url) {
     ShellExecute(GraphicsWnd, "open", url, NULL, NULL, SW_SHOWNORMAL);
 }
 
-void ExitNow(void) {
+void SolveSpace::ExitNow(void) {
     PostQuitMessage(0);
 }
 
@@ -272,10 +276,10 @@ void ExitNow(void) {
 // Helpers so that we can read/write registry keys from the platform-
 // independent code.
 //-----------------------------------------------------------------------------
-void CnfFreezeString(const char *str, const char *name)
+void SolveSpace::CnfFreezeString(const char *str, const char *name)
     { FreezeStringF(str, FREEZE_SUBKEY, name); }
 
-void CnfFreezeInt(uint32_t v, const char *name)
+void SolveSpace::CnfFreezeInt(uint32_t v, const char *name)
     { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
 union floatDWORD {
@@ -283,20 +287,20 @@ union floatDWORD {
     DWORD d;
 };
 
-void CnfFreezeFloat(float v, const char *name) {
+void SolveSpace::CnfFreezeFloat(float v, const char *name) {
     if(sizeof(float) != sizeof(DWORD)) oops();
     floatDWORD u;
     u.f = v;
     FreezeDWORDF(u.d, FREEZE_SUBKEY, name);
 }
 
-void CnfThawString(char *str, int maxLen, const char *name)
+void SolveSpace::CnfThawString(char *str, int maxLen, const char *name)
     { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
 
-uint32_t CnfThawInt(uint32_t v, const char *name)
+uint32_t SolveSpace::CnfThawInt(uint32_t v, const char *name)
     { return (uint32_t)ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
 
-float CnfThawFloat(float v, const char *name) {
+float SolveSpace::CnfThawFloat(float v, const char *name) {
     floatDWORD u;
     u.f = v;
     u.d = ThawDWORDF(u.d, FREEZE_SUBKEY, name);
@@ -307,7 +311,7 @@ void SetWindowTitle(const char *str) {
     SetWindowText(GraphicsWnd, str);
 }
 
-void SetMousePointerToHand(bool yes) {
+void SolveSpace::SetMousePointerToHand(bool yes) {
     SetCursor(LoadCursor(NULL, yes ? IDC_HAND : IDC_ARROW));
 }
 
@@ -323,7 +327,7 @@ static void PaintTextWnd(HDC hdc)
     wglMakeCurrent(GetDC(GraphicsWnd), GraphicsGl);
 }
 
-void MoveTextScrollbarTo(int pos, int maxPos, int page)
+void SolveSpace::MoveTextScrollbarTo(int pos, int maxPos, int page)
 {
     SCROLLINFO si;
     memset(&si, 0, sizeof(si));
@@ -411,7 +415,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_CLOSE:
         case WM_DESTROY:
-            SolveSpace::MenuFile(GraphicsWindow::MNU_EXIT);
+            SolveSpaceUI::MenuFile(GraphicsWindow::MNU_EXIT);
             break;
 
         case WM_PAINT: {
@@ -599,17 +603,17 @@ static bool ProcessKeyDown(WPARAM wParam)
     return false;
 }
 
-void ToggleMenuBar(void)
+void SolveSpace::ToggleMenuBar(void)
 {
     // Implement me
 }
-bool MenuBarIsVisible(void)
+bool SolveSpace::MenuBarIsVisible(void)
 {
     // Implement me
     return true;
 }
 
-void ShowTextWindow(bool visible)
+void SolveSpace::ShowTextWindow(bool visible)
 {
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
@@ -642,27 +646,27 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
     wglMakeCurrent(hdc, *glrc);
 }
 
-void PaintGraphics(void)
+void SolveSpace::PaintGraphics(void)
 {
     SS.GW.Paint();
     SwapBuffers(GetDC(GraphicsWnd));
 }
-void InvalidateGraphics(void)
+void SolveSpace::InvalidateGraphics(void)
 {
     InvalidateRect(GraphicsWnd, NULL, false);
 }
 
-void ToggleFullScreen(void)
+void SolveSpace::ToggleFullScreen(void)
 {
     // Implement me
 }
-bool FullScreenIsActive(void)
+bool SolveSpace::FullScreenIsActive(void)
 {
     // Implement me
     return false;
 }
 
-int64_t GetMilliseconds(void)
+int64_t SolveSpace::GetMilliseconds(void)
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
@@ -671,14 +675,14 @@ int64_t GetMilliseconds(void)
     return (int64_t)d;
 }
 
-int64_t GetUnixTime(void)
+int64_t SolveSpace::GetUnixTime(void)
 {
     __time64_t ret;
     _time64(&ret);
     return (int64_t)ret;
 }
 
-void InvalidateText(void)
+void SolveSpace::InvalidateText(void)
 {
     InvalidateRect(TextWnd, NULL, false);
 }
@@ -692,21 +696,21 @@ static void ShowEditControl(HWND h, int x, int y, char *s) {
         SetFocus(h);
     }
 }
-void ShowTextEditControl(int x, int y, char *s)
+void SolveSpace::ShowTextEditControl(int x, int y, char *s)
 {
     if(GraphicsEditControlIsVisible()) return;
 
     ShowEditControl(TextEditControl, x, y, s);
 }
-void HideTextEditControl(void)
+void SolveSpace::HideTextEditControl(void)
 {
     ShowWindow(TextEditControl, SW_HIDE);
 }
-bool TextEditControlIsVisible(void)
+bool SolveSpace::TextEditControlIsVisible(void)
 {
     return IsWindowVisible(TextEditControl) ? true : false;
 }
-void ShowGraphicsEditControl(int x, int y, char *s)
+void SolveSpace::ShowGraphicsEditControl(int x, int y, char *s)
 {
     if(GraphicsEditControlIsVisible()) return;
 
@@ -721,11 +725,11 @@ void ShowGraphicsEditControl(int x, int y, char *s)
 
     ShowEditControl(GraphicsEditControl, x, y, s);
 }
-void HideGraphicsEditControl(void)
+void SolveSpace::HideGraphicsEditControl(void)
 {
     ShowWindow(GraphicsEditControl, SW_HIDE);
 }
-bool GraphicsEditControlIsVisible(void)
+bool SolveSpace::GraphicsEditControlIsVisible(void)
 {
     return IsWindowVisible(GraphicsEditControl) ? true : false;
 }
@@ -812,7 +816,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             if(HIWORD(wParam) == 0) {
                 int id = LOWORD(wParam);
                 if((id >= RECENT_OPEN && id < (RECENT_OPEN + MAX_RECENT))) {
-                    SolveSpace::MenuFile(id);
+                    SolveSpaceUI::MenuFile(id);
                     break;
                 }
                 if((id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT))) {
@@ -833,7 +837,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 
         case WM_CLOSE:
         case WM_DESTROY:
-            SolveSpace::MenuFile(GraphicsWindow::MNU_EXIT);
+            SolveSpaceUI::MenuFile(GraphicsWindow::MNU_EXIT);
             return 1;
 
         default:
@@ -846,7 +850,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-bool GetOpenFile(char *file, const char *defExtension, const char *selPattern)
+bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 
@@ -871,7 +875,7 @@ bool GetOpenFile(char *file, const char *defExtension, const char *selPattern)
 
     return r ? true : false;
 }
-bool GetSaveFile(char *file, const char *defExtension, const char *selPattern)
+bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
 
@@ -896,7 +900,7 @@ bool GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 
     return r ? true : false;
 }
-int SaveFileYesNoCancel(void)
+int SolveSpace::SaveFileYesNoCancel(void)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
@@ -920,7 +924,7 @@ int SaveFileYesNoCancel(void)
     return SAVE_CANCEL;
 }
 
-void LoadAllFontFiles(void)
+void SolveSpace::LoadAllFontFiles(void)
 {
     WIN32_FIND_DATA wfd;
     char dir[MAX_PATH];
@@ -969,16 +973,16 @@ static void MenuById(int id, bool yes, bool check)
     }
     oops();
 }
-void CheckMenuById(int id, bool checked)
+void SolveSpace::CheckMenuById(int id, bool checked)
 {
     MenuById(id, checked, true);
 }
-void RadioMenuById(int id, bool selected)
+void SolveSpace::RadioMenuById(int id, bool selected)
 {
     // Windows does not natively support radio-button menu items
     MenuById(id, selected, true);
 }
-void EnableMenuById(int id, bool enabled)
+void SolveSpace::EnableMenuById(int id, bool enabled)
 {
     MenuById(id, enabled, false);
 }
@@ -996,7 +1000,7 @@ static void DoRecent(HMENU m, int base)
     }
     if(c == 0) AppendMenu(m, MF_STRING | MF_GRAYED, 0, "(no recent files)");
 }
-void RefreshRecentMenus(void)
+void SolveSpace::RefreshRecentMenus(void)
 {
     DoRecent(RecentOpenMenu,   RECENT_OPEN);
     DoRecent(RecentImportMenu, RECENT_IMPORT);

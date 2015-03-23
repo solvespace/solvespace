@@ -8,6 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
 static HANDLE PermHeap, TempHeap;
 
 void dbp(const char *str, ...)
@@ -81,4 +82,4 @@ void InitHeaps(void) {
     // Create the heap that we use to store Exprs and other temp stuff.
     FreeAllTemporary();
 }
-
+}

@@ -9,7 +9,7 @@
 #include "solvespace.h"
 #include <png.h>
 
-void SolveSpace::ExportSectionTo(const char *filename) {
+void SolveSpaceUI::ExportSectionTo(const char *filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
 
@@ -109,7 +109,7 @@ void SolveSpace::ExportSectionTo(const char *filename) {
     bl.Clear();
 }
 
-void SolveSpace::ExportViewOrWireframeTo(const char *filename, bool wireframe) {
+void SolveSpaceUI::ExportViewOrWireframeTo(const char *filename, bool wireframe) {
     int i;
     SEdgeList edges;
     ZERO(&edges);
@@ -194,7 +194,7 @@ void SolveSpace::ExportViewOrWireframeTo(const char *filename, bool wireframe) {
     beziers.Clear();
 }
 
-void SolveSpace::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
+void SolveSpaceUI::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                            VectorFileWriter *out)
 {
     SBezierLoopSetSet sblss;
@@ -217,7 +217,7 @@ void SolveSpace::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
     sblss.Clear();
 }
 
-void SolveSpace::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
+void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
                                     Vector u, Vector v, Vector n,
                                         Vector origin, double cameraTan,
                                     VectorFileWriter *out)
@@ -573,7 +573,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
 //-----------------------------------------------------------------------------
 // Export a triangle mesh, in the requested format.
 //-----------------------------------------------------------------------------
-void SolveSpace::ExportMeshTo(const char *filename) {
+void SolveSpaceUI::ExportMeshTo(const char *filename) {
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
     if(m->IsEmpty()) {
         Error("Active group mesh is empty; nothing to export.");
@@ -602,7 +602,7 @@ void SolveSpace::ExportMeshTo(const char *filename) {
 // Export the mesh as an STL file; it should always be vertex-to-vertex and
 // not self-intersecting, so not much to do.
 //-----------------------------------------------------------------------------
-void SolveSpace::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
+void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     char str[80];
     memset(str, 0, sizeof(str));
     strcpy(str, "STL exported mesh");
@@ -638,7 +638,7 @@ void SolveSpace::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 // Export the mesh as Wavefront OBJ format. This requires us to reduce all the
 // identical vertices to the same identifier, so do that first.
 //-----------------------------------------------------------------------------
-void SolveSpace::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
+void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
     SPointList spl;
     ZERO(&spl);
     STriangle *tr;
@@ -673,7 +673,7 @@ void SolveSpace::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
 // Export a view of the model as an image; we just take a screenshot, by
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
-void SolveSpace::ExportAsPngTo(const char *filename) {
+void SolveSpaceUI::ExportAsPngTo(const char *filename) {
     int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.

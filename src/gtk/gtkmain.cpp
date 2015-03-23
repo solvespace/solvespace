@@ -62,6 +62,7 @@
 #   endif
 #endif
 
+namespace SolveSpace {
 char RecentFile[MAX_RECENT][MAX_PATH];
 
 #define GL_CHECK() \
@@ -252,7 +253,6 @@ void ScheduleLater() {
 
 /* GL wrapper */
 
-namespace SolveSpacePlatf {
 class GlWidget : public Gtk::DrawingArea {
 public:
     GlWidget() : _offscreen(NULL) {
@@ -378,11 +378,9 @@ private:
     GLOffscreen *_offscreen;
     ::Window _xwindow;
 };
-};
 
 /* Editor overlay */
 
-namespace SolveSpacePlatf {
 class EditorOverlay : public Gtk::Fixed {
 public:
     EditorOverlay(Gtk::Widget &underlay) : _underlay(underlay) {
@@ -457,11 +455,9 @@ private:
     Gtk::Entry _entry;
     sigc::signal<void, Glib::ustring> _signal_editing_done;
 };
-};
 
 /* Graphics window */
 
-namespace SolveSpacePlatf {
 int DeltaYOfScrollEvent(GdkEventScroll *event) {
 #ifdef HAVE_GTK3
     int delta_y = event->delta_y;
@@ -629,9 +625,9 @@ private:
     }
 };
 
-class GraphicsWindow : public Gtk::Window {
+class GraphicsWindowGtk : public Gtk::Window {
 public:
-    GraphicsWindow() : _overlay(_widget) {
+    GraphicsWindowGtk() : _overlay(_widget) {
         set_default_size(900, 600);
 
         _box.pack_start(_menubar, false, true);
@@ -640,7 +636,7 @@ public:
         add(_box);
 
         _overlay.signal_editing_done().
-            connect(sigc::mem_fun(this, &GraphicsWindow::on_editing_done));
+            connect(sigc::mem_fun(this, &GraphicsWindowGtk::on_editing_done));
     }
 
     GraphicsWidget &get_widget() {
@@ -701,9 +697,8 @@ private:
 
     bool _is_fullscreen;
 };
-};
 
-SolveSpacePlatf::GraphicsWindow *GW = NULL;
+GraphicsWindowGtk *GW = NULL;
 
 void GetGraphicsWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = GW->get_widget().get_allocation();
@@ -767,7 +762,6 @@ bool MenuBarIsVisible(void) {
 
 /* Context menus */
 
-namespace SolveSpacePlatf {
 class ContextMenuItem : public Gtk::MenuItem {
 public:
     static int choice;
@@ -806,14 +800,13 @@ private:
 };
 
 int ContextMenuItem::choice = 0;
-};
 
 static Gtk::Menu *context_menu = NULL, *context_submenu = NULL;
 
 void AddContextMenuItem(const char *label, int id) {
     Gtk::MenuItem *menu_item;
     if(label)
-        menu_item = new SolveSpacePlatf::ContextMenuItem(label, id);
+        menu_item = new ContextMenuItem(label, id);
     else
         menu_item = new Gtk::SeparatorMenuItem();
 
@@ -846,7 +839,7 @@ int ShowContextMenu(void) {
     context_menu->signal_deactivate().
         connect(sigc::mem_fun(loop.operator->(), &Glib::MainLoop::quit));
 
-    SolveSpacePlatf::ContextMenuItem::choice = -1;
+    ContextMenuItem::choice = -1;
 
     context_menu->show_all();
     context_menu->popup(3, GDK_CURRENT_TIME);
@@ -856,15 +849,14 @@ int ShowContextMenu(void) {
     delete context_menu;
     context_menu = NULL;
 
-    return SolveSpacePlatf::ContextMenuItem::choice;
+    return ContextMenuItem::choice;
 }
 
 /* Main menu */
 
-namespace SolveSpacePlatf {
 template<class MenuItem> class MainMenuItem : public MenuItem {
 public:
-    MainMenuItem(const ::GraphicsWindow::MenuEntry &entry) :
+    MainMenuItem(const GraphicsWindow::MenuEntry &entry) :
             MenuItem(), _entry(entry), _synthetic(false) {
         Glib::ustring label(_entry.label);
         for(int i = 0; i < label.length(); i++) {
@@ -875,25 +867,25 @@ public:
         guint accel_key = 0;
         Gdk::ModifierType accel_mods = Gdk::ModifierType();
         switch(_entry.accel) {
-            case ::GraphicsWindow::DELETE_KEY:
+            case GraphicsWindow::DELETE_KEY:
             accel_key = GDK_KEY_Delete;
             break;
 
-            case ::GraphicsWindow::ESCAPE_KEY:
+            case GraphicsWindow::ESCAPE_KEY:
             accel_key = GDK_KEY_Escape;
             break;
 
             default:
-            accel_key = _entry.accel & ~(::GraphicsWindow::SHIFT_MASK | ::GraphicsWindow::CTRL_MASK);
-            if(accel_key > ::GraphicsWindow::FUNCTION_KEY_BASE &&
-                    accel_key <= ::GraphicsWindow::FUNCTION_KEY_BASE + 12)
-                accel_key = GDK_KEY_F1 + (accel_key - ::GraphicsWindow::FUNCTION_KEY_BASE - 1);
+            accel_key = _entry.accel & ~(GraphicsWindow::SHIFT_MASK | GraphicsWindow::CTRL_MASK);
+            if(accel_key > GraphicsWindow::FUNCTION_KEY_BASE &&
+                    accel_key <= GraphicsWindow::FUNCTION_KEY_BASE + 12)
+                accel_key = GDK_KEY_F1 + (accel_key - GraphicsWindow::FUNCTION_KEY_BASE - 1);
             else
                 accel_key = gdk_unicode_to_keyval(accel_key);
 
-            if(_entry.accel & ::GraphicsWindow::SHIFT_MASK)
+            if(_entry.accel & GraphicsWindow::SHIFT_MASK)
                 accel_mods |= Gdk::SHIFT_MASK;
-            if(_entry.accel & ::GraphicsWindow::CTRL_MASK)
+            if(_entry.accel & GraphicsWindow::CTRL_MASK)
                 accel_mods |= Gdk::CONTROL_MASK;
         }
 
@@ -922,9 +914,8 @@ protected:
     }
 
 private:
-    const ::GraphicsWindow::MenuEntry &_entry;
+    const GraphicsWindow::MenuEntry &_entry;
     bool _synthetic;
-};
 };
 
 static std::map<int, Gtk::MenuItem *> main_menu_items;
@@ -951,16 +942,16 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
         if(entry->label) {
             switch(entry->kind) {
                 case GraphicsWindow::MENU_ITEM_NORMAL:
-                menu_item = new SolveSpacePlatf::MainMenuItem<Gtk::MenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::MenuItem>(*entry);
                 break;
 
                 case GraphicsWindow::MENU_ITEM_CHECK:
-                menu_item = new SolveSpacePlatf::MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(*entry);
                 break;
 
                 case GraphicsWindow::MENU_ITEM_RADIO:
-                SolveSpacePlatf::MainMenuItem<Gtk::CheckMenuItem> *radio_item =
-                        new SolveSpacePlatf::MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                MainMenuItem<Gtk::CheckMenuItem> *radio_item =
+                        new MainMenuItem<Gtk::CheckMenuItem>(*entry);
                 radio_item->set_draw_as_radio(true);
                 menu_item = radio_item;
                 break;
@@ -986,15 +977,13 @@ static void ActivateMenuById(int id) {
 }
 
 void CheckMenuById(int id, bool checked) {
-    ((SolveSpacePlatf::MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[id])->
-        set_active(checked);
+    ((MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[id])->set_active(checked);
 }
 
 void RadioMenuById(int id, bool selected) {
-    CheckMenuById(id, selected);
+    SolveSpace::CheckMenuById(id, selected);
 }
 
-namespace SolveSpacePlatf {
 class RecentMenuItem : public Gtk::MenuItem {
 public:
     RecentMenuItem(const Glib::ustring& label, int id) :
@@ -1004,14 +993,13 @@ public:
 protected:
     virtual void on_activate() {
         if(_id >= RECENT_OPEN && _id < (RECENT_OPEN + MAX_RECENT))
-            SolveSpace::MenuFile(_id);
+            SolveSpaceUI::MenuFile(_id);
         else if(_id >= RECENT_IMPORT && _id < (RECENT_IMPORT + MAX_RECENT))
             Group::MenuGroup(_id);
     }
 
 private:
     int _id;
-};
 };
 
 static void RefreshRecentMenu(int id, int base) {
@@ -1030,8 +1018,7 @@ static void RefreshRecentMenu(int id, int base) {
             if(std::string(RecentFile[i]).empty())
                 break;
 
-            SolveSpacePlatf::RecentMenuItem *item =
-                    new SolveSpacePlatf::RecentMenuItem(RecentFile[i], base + i);
+            RecentMenuItem *item = new RecentMenuItem(RecentFile[i], base + i);
             menu->append(*item);
         }
     }
@@ -1213,7 +1200,6 @@ int SaveFileYesNoCancel(void) {
 
 /* Text window */
 
-namespace SolveSpacePlatf {
 class TextWidget : public GlWidget {
 public:
 #ifdef HAVE_GTK3
@@ -1279,10 +1265,10 @@ private:
 #endif
 };
 
-class TextWindow : public Gtk::Window {
+class TextWindowGtk : public Gtk::Window {
 public:
-    TextWindow() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
-                   _box(), _overlay(_widget) {
+    TextWindowGtk() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
+                      _box(), _overlay(_widget) {
         set_keep_above(true);
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
@@ -1295,15 +1281,15 @@ public:
         add(_box);
 
         _scrollbar.get_adjustment()->signal_value_changed().
-            connect(sigc::mem_fun(this, &TextWindow::on_scrollbar_value_changed));
+            connect(sigc::mem_fun(this, &TextWindowGtk::on_scrollbar_value_changed));
 
         _overlay.signal_editing_done().
-            connect(sigc::mem_fun(this, &TextWindow::on_editing_done));
+            connect(sigc::mem_fun(this, &TextWindowGtk::on_editing_done));
 
         _overlay.get_entry().signal_motion_notify_event().
-            connect(sigc::mem_fun(this, &TextWindow::on_editor_motion_notify_event));
+            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_motion_notify_event));
         _overlay.get_entry().signal_button_press_event().
-            connect(sigc::mem_fun(this, &TextWindow::on_editor_button_press_event));
+            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_button_press_event));
     }
 
     Gtk::VScrollbar &get_scrollbar() {
@@ -1333,7 +1319,7 @@ protected:
 
     virtual bool on_delete_event(GdkEventAny *event) {
         /* trigger the action and ignore the request */
-        ::GraphicsWindow::MenuView(::GraphicsWindow::MNU_SHOW_TEXT_WND);
+        GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
 
         return false;
     }
@@ -1360,9 +1346,8 @@ private:
     EditorOverlay _overlay;
     Gtk::HBox _box;
 };
-};
 
-SolveSpacePlatf::TextWindow *TW = NULL;
+TextWindowGtk *TW = NULL;
 
 void ShowTextWindow(bool visible) {
     if(visible)
@@ -1480,6 +1465,7 @@ void ExitNow(void) {
     GW->hide();
     TW->hide();
 }
+};
 
 int main(int argc, char** argv) {
     /* If we don't call this, gtk_init will set the C standard library
@@ -1496,8 +1482,8 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
-    TW = new SolveSpacePlatf::TextWindow;
-    GW = new SolveSpacePlatf::GraphicsWindow;
+    TW = new TextWindowGtk;
+    GW = new GraphicsWindowGtk;
     InitMainMenu(&GW->get_menubar());
     GW->get_menubar().accelerate(*TW);
 

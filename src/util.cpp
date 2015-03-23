@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void MakePathRelative(const char *basep, char *pathp)
+void SolveSpace::MakePathRelative(const char *basep, char *pathp)
 {
     int i;
     const char *p;
@@ -66,7 +66,7 @@ void MakePathRelative(const char *basep, char *pathp)
     strcpy(pathp, out);
 }
 
-void MakePathAbsolute(const char *basep, char *pathp) {
+void SolveSpace::MakePathAbsolute(const char *basep, char *pathp) {
     char out[MAX_PATH];
     strcpy(out, basep);
 
@@ -84,7 +84,7 @@ void MakePathAbsolute(const char *basep, char *pathp) {
     strcpy(pathp, out);
 }
 
-bool StringAllPrintable(const char *str)
+bool SolveSpace::StringAllPrintable(const char *str)
 {
     const char *t;
     for(t = str; *t; t++) {
@@ -95,7 +95,7 @@ bool StringAllPrintable(const char *str)
     return true;
 }
 
-bool StringEndsIn(const char *str, const char *ending)
+bool SolveSpace::StringEndsIn(const char *str, const char *ending)
 {
     int i, ls = (int)strlen(str), le = (int)strlen(ending);
 
@@ -109,10 +109,11 @@ bool StringEndsIn(const char *str, const char *ending)
     return true;
 }
 
-void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
-                             double a21, double a22, double a23, double a24,
-                             double a31, double a32, double a33, double a34,
-                             double a41, double a42, double a43, double a44)
+void SolveSpace::MakeMatrix(double *mat,
+                            double a11, double a12, double a13, double a14,
+                            double a21, double a22, double a23, double a24,
+                            double a31, double a32, double a33, double a34,
+                            double a41, double a42, double a43, double a44)
 {
     mat[ 0] = a11;
     mat[ 1] = a21;
@@ -191,14 +192,14 @@ static void DoStringForMessageBox(const char *str, va_list f, bool error)
     // And then display the text with our actual longest line length.
     DoMessageBox(outBuf, rows, cols, error);
 }
-void Error(const char *str, ...)
+void SolveSpace::Error(const char *str, ...)
 {
     va_list f;
     va_start(f, str);
     DoStringForMessageBox(str, f, true);
     va_end(f);
 }
-void Message(const char *str, ...)
+void SolveSpace::Message(const char *str, ...)
 {
     va_list f;
     va_start(f, str);
@@ -206,18 +207,17 @@ void Message(const char *str, ...)
     va_end(f);
 }
 
-void CnfFreezeBool(bool v, const char *name)
+void SolveSpace::CnfFreezeBool(bool v, const char *name)
     { CnfFreezeInt(v ? 1 : 0, name); }
 
-void CnfFreezeColor(RgbColor v, const char *name)
+void SolveSpace::CnfFreezeColor(RgbColor v, const char *name)
     { CnfFreezeInt(v.ToPackedInt(), name); }
 
-bool CnfThawBool(bool v, const char *name)
+bool SolveSpace::CnfThawBool(bool v, const char *name)
     { return CnfThawInt(v ? 1 : 0, name) != 0; }
 
-RgbColor CnfThawColor(RgbColor v, const char *name)
+RgbColor SolveSpace::CnfThawColor(RgbColor v, const char *name)
     { return RgbColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
-
 
 //-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG

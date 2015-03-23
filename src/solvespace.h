@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
+#include <stddef.h>
 #include <stdarg.h>
 #include <math.h>
 #include <limits.h>
@@ -60,6 +61,8 @@
 #ifndef isnan
 #   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 #endif
+
+namespace SolveSpace {
 
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
@@ -680,7 +683,7 @@ public:
 #undef ENTITY
 #undef CONSTRAINT
 
-class SolveSpace {
+class SolveSpaceUI {
 public:
     TextWindow                  TW;
     GraphicsWindow              GW;
@@ -927,7 +930,13 @@ public:
     void Clear(void);
 };
 
-extern SolveSpace SS;
+extern SolveSpaceUI SS;
 extern Sketch SK;
+
+};
+
+#ifndef __OBJC__
+using namespace SolveSpace;
+#endif
 
 #endif

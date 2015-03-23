@@ -8,12 +8,12 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpace::MarkGroupDirtyByEntity(hEntity he) {
+void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);
     MarkGroupDirty(e->group);
 }
 
-void SolveSpace::MarkGroupDirty(hGroup hg) {
+void SolveSpaceUI::MarkGroupDirty(hGroup hg) {
     int i;
     bool go = false;
     for(i = 0; i < SK.group.n; i++) {
@@ -28,7 +28,7 @@ void SolveSpace::MarkGroupDirty(hGroup hg) {
     unsaved = true;
 }
 
-bool SolveSpace::PruneOrphans(void) {
+bool SolveSpaceUI::PruneOrphans(void) {
     int i;
     for(i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
@@ -52,7 +52,7 @@ bool SolveSpace::PruneOrphans(void) {
     return false;
 }
 
-bool SolveSpace::GroupsInOrder(hGroup before, hGroup after) {
+bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     if(before.v == 0) return true;
     if(after.v  == 0) return true;
 
@@ -68,18 +68,18 @@ bool SolveSpace::GroupsInOrder(hGroup before, hGroup after) {
     return true;
 }
 
-bool SolveSpace::GroupExists(hGroup hg) {
+bool SolveSpaceUI::GroupExists(hGroup hg) {
     // A nonexistent group is not acceptable
     return SK.group.FindByIdNoOops(hg) ? true : false;
 }
-bool SolveSpace::EntityExists(hEntity he) {
+bool SolveSpaceUI::EntityExists(hEntity he) {
     // A nonexstient entity is acceptable, though, usually just means it
     // doesn't apply.
     if(he.v == Entity::NO_ENTITY.v) return true;
     return SK.entity.FindByIdNoOops(he) ? true : false;
 }
 
-bool SolveSpace::PruneGroups(hGroup hg) {
+bool SolveSpaceUI::PruneGroups(hGroup hg) {
     Group *g = SK.GetGroup(hg);
     if(GroupsInOrder(g->opA, hg) &&
        EntityExists(g->predef.origin) &&
@@ -93,7 +93,7 @@ bool SolveSpace::PruneGroups(hGroup hg) {
     return true;
 }
 
-bool SolveSpace::PruneRequests(hGroup hg) {
+bool SolveSpaceUI::PruneRequests(hGroup hg) {
     int i;
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
@@ -110,7 +110,7 @@ bool SolveSpace::PruneRequests(hGroup hg) {
     return false;
 }
 
-bool SolveSpace::PruneConstraints(hGroup hg) {
+bool SolveSpaceUI::PruneConstraints(hGroup hg) {
     int i;
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *c = &(SK.constraint.elem[i]);
@@ -141,7 +141,7 @@ bool SolveSpace::PruneConstraints(hGroup hg) {
     return false;
 }
 
-void SolveSpace::GenerateAll(void) {
+void SolveSpaceUI::GenerateAll(void) {
     int i;
     int firstDirty = INT_MAX, lastVisible = 0;
     // Start from the first dirty group, and solve until the active group,
@@ -165,7 +165,7 @@ void SolveSpace::GenerateAll(void) {
     }
 }
 
-void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
+void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
     int i, j;
 
     // Remove any requests or constraints that refer to a nonexistent
@@ -351,7 +351,7 @@ pruned:
     GenerateAll(first, last);
 }
 
-void SolveSpace::ForceReferences(void) {
+void SolveSpaceUI::ForceReferences(void) {
     // Force the values of the parameters that define the three reference
     // coordinate systems.
     static const struct {
@@ -381,7 +381,7 @@ void SolveSpace::ForceReferences(void) {
     }
 }
 
-void SolveSpace::MarkDraggedParams(void) {
+void SolveSpaceUI::MarkDraggedParams(void) {
     sys.dragged.Clear();
 
     for(int i = -1; i < SS.GW.pending.points.n; i++) {
@@ -440,7 +440,7 @@ void SolveSpace::MarkDraggedParams(void) {
     }
 }
 
-void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
+void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     int i;
     // Clear out the system to be solved.
     sys.entity.Clear();
@@ -476,7 +476,7 @@ void SolveSpace::SolveGroup(hGroup hg, bool andFindFree) {
     FreeAllTemporary();
 }
 
-bool SolveSpace::AllGroupsOkay(void) {
+bool SolveSpaceUI::AllGroupsOkay(void) {
     int i;
     bool allOk = true;
     for(i = 0; i < SK.group.n; i++) {

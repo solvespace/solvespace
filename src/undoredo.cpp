@@ -7,14 +7,14 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpace::UndoRemember(void) {
+void SolveSpaceUI::UndoRemember(void) {
     unsaved = true;
     PushFromCurrentOnto(&undo);
     UndoClearStack(&redo);
     UndoEnableMenus();
 }
 
-void SolveSpace::UndoUndo(void) {
+void SolveSpaceUI::UndoUndo(void) {
     if(undo.cnt <= 0) return;
 
     PushFromCurrentOnto(&redo);
@@ -22,7 +22,7 @@ void SolveSpace::UndoUndo(void) {
     UndoEnableMenus();
 }
 
-void SolveSpace::UndoRedo(void) {
+void SolveSpaceUI::UndoRedo(void) {
     if(redo.cnt <= 0) return;
 
     PushFromCurrentOnto(&undo);
@@ -30,12 +30,12 @@ void SolveSpace::UndoRedo(void) {
     UndoEnableMenus();
 }
 
-void SolveSpace::UndoEnableMenus(void) {
+void SolveSpaceUI::UndoEnableMenus(void) {
     EnableMenuById(GraphicsWindow::MNU_UNDO, undo.cnt > 0);
     EnableMenuById(GraphicsWindow::MNU_REDO, redo.cnt > 0);
 }
 
-void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
+void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     int i;
 
     if(uk->cnt == MAX_UNDO) {
@@ -93,7 +93,7 @@ void SolveSpace::PushFromCurrentOnto(UndoStack *uk) {
     uk->write = WRAP(uk->write + 1, MAX_UNDO);
 }
 
-void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
+void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     if(uk->cnt <= 0) oops();
     (uk->cnt)--;
     uk->write = WRAP(uk->write - 1, MAX_UNDO);
@@ -131,7 +131,7 @@ void SolveSpace::PopOntoCurrentFrom(UndoStack *uk) {
     SS.ScheduleShowTW();
 }
 
-void SolveSpace::UndoClearStack(UndoStack *uk) {
+void SolveSpaceUI::UndoClearStack(UndoStack *uk) {
     while(uk->cnt > 0) {
         uk->write = WRAP(uk->write - 1, MAX_UNDO);
         (uk->cnt)--;
@@ -140,7 +140,7 @@ void SolveSpace::UndoClearStack(UndoStack *uk) {
     ZERO(uk); // for good measure
 }
 
-void SolveSpace::UndoClearState(UndoState *ut) {
+void SolveSpaceUI::UndoClearState(UndoState *ut) {
     int i;
     for(i = 0; i < ut->group.n; i++) {
         Group *g = &(ut->group.elem[i]);

@@ -13,7 +13,7 @@
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
-double Bernstein(int k, int deg, double t)
+double SolveSpace::Bernstein(int k, int deg, double t)
 {
     if(k > deg || k < 0) return 0;
 
@@ -54,7 +54,7 @@ double Bernstein(int k, int deg, double t)
     oops();
 }
 
-double BernsteinDerivative(int k, int deg, double t)
+double SolveSpace::BernsteinDerivative(int k, int deg, double t)
 {
     switch(deg) {
         case 0:

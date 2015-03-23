@@ -6,12 +6,12 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpace::Clipboard::Clear(void) {
+void SolveSpaceUI::Clipboard::Clear(void) {
     c.Clear();
     r.Clear();
 }
 
-hEntity SolveSpace::Clipboard::NewEntityFor(hEntity he) {
+hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
     ClipboardRequest *cr;
     for(cr = r.First(); cr; cr = r.NextAfter(cr)) {
         if(cr->oldEnt.v == he.v) {
@@ -26,7 +26,7 @@ hEntity SolveSpace::Clipboard::NewEntityFor(hEntity he) {
     return Entity::NO_ENTITY;
 }
 
-bool SolveSpace::Clipboard::ContainsEntity(hEntity he) {
+bool SolveSpaceUI::Clipboard::ContainsEntity(hEntity he) {
     hEntity hen = NewEntityFor(he);
     if(hen.v) {
         return true;

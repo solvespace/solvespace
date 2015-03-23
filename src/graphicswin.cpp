@@ -11,10 +11,10 @@
 #define mClip (&GraphicsWindow::MenuClipboard)
 #define mReq  (&GraphicsWindow::MenuRequest)
 #define mCon  (&Constraint::MenuConstrain)
-#define mFile (&SolveSpace::MenuFile)
+#define mFile (&SolveSpaceUI::MenuFile)
 #define mGrp  (&Group::MenuGroup)
-#define mAna  (&SolveSpace::MenuAnalyze)
-#define mHelp (&SolveSpace::MenuHelp)
+#define mAna  (&SolveSpaceUI::MenuAnalyze)
+#define mHelp (&SolveSpaceUI::MenuHelp)
 #define DEL   DELETE_KEY
 #define ESC   ESCAPE_KEY
 #define S     SHIFT_MASK
@@ -171,7 +171,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 #undef IC
 #undef IR
 
-bool MakeAcceleratorLabel(int accel, char *out) {
+bool SolveSpace::MakeAcceleratorLabel(int accel, char *out) {
     if(!accel) {
         out[0] = '\0';
         return false;
@@ -539,13 +539,13 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_UNITS_INCHES:
-            SS.viewUnits = SolveSpace::UNIT_INCHES;
+            SS.viewUnits = SolveSpaceUI::UNIT_INCHES;
             SS.ScheduleShowTW();
             SS.GW.EnsureValidActives();
             break;
 
         case MNU_UNITS_MM:
-            SS.viewUnits = SolveSpace::UNIT_MM;
+            SS.viewUnits = SolveSpaceUI::UNIT_MM;
             SS.ScheduleShowTW();
             SS.GW.EnsureValidActives();
             break;
@@ -611,15 +611,15 @@ void GraphicsWindow::EnsureValidActives(void) {
     SS.UndoEnableMenus();
 
     switch(SS.viewUnits) {
-        case SolveSpace::UNIT_MM:
-        case SolveSpace::UNIT_INCHES:
+        case SolveSpaceUI::UNIT_MM:
+        case SolveSpaceUI::UNIT_INCHES:
             break;
         default:
-            SS.viewUnits = SolveSpace::UNIT_MM;
+            SS.viewUnits = SolveSpaceUI::UNIT_MM;
             break;
     }
-    RadioMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpace::UNIT_MM);
-    RadioMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpace::UNIT_INCHES);
+    RadioMenuById(MNU_UNITS_MM, SS.viewUnits == SolveSpaceUI::UNIT_MM);
+    RadioMenuById(MNU_UNITS_INCHES, SS.viewUnits == SolveSpaceUI::UNIT_INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
