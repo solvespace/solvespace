@@ -579,8 +579,8 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             fseek(fh, glyfAddr + glyphOffsets[i], SEEK_SET);
             LoadGlyph(i);
         }
-    } catch (char *s) {
-        dbp("failed: '%s'", s);
+    } catch (const char *s) {
+        dbp("ttf: file %s failed: '%s'", fontFile, s);
         fclose(fh);
         return false;
     }
