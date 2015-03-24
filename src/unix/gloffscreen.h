@@ -21,9 +21,10 @@ public:
     bool begin(int width, int height);
 
     /* get pixels out of the frame and restore OpenGL state.
-       the pixel format is ARGB32 with top row at index 0.
+       the pixel format is ARGB32 with top row at index 0 if
+       flip is true and bottom row at index 0 if flip is false.
        the returned array is valid until the next call to begin() */
-    uint8_t *end();
+    uint8_t *end(bool flip = true);
 
 private:
     unsigned int _framebuffer;

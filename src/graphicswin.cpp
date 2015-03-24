@@ -39,8 +39,10 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Export 3d &Wireframe...",     MNU_EXPORT_WIREFRAME, 0,     IN, mFile },
 { 1, "Export Triangle &Mesh...",    MNU_EXPORT_MESH,    0,       IN, mFile },
 { 1, "Export &Surfaces...",         MNU_EXPORT_SURFACES,0,       IN, mFile },
+#ifndef __APPLE__
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 { 1, "E&xit",                       MNU_EXIT,           C|'Q',   IN, mFile },
+#endif
 
 { 0, "&Edit",                       0,                  0,       IN, NULL  },
 { 1, "&Undo",                       MNU_UNDO,           C|'Z',   IN, mEdit },
@@ -77,7 +79,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Show Snap &Grid",             MNU_SHOW_GRID,      '>',     IC, mView },
 { 1, "Use &Perspective Projection", MNU_PERSPECTIVE_PROJ,'`',    IC, mView },
 { 1,  NULL,                         0,                  0,       IN, NULL  },
-#if defined(HAVE_FLTK)
+#if defined(HAVE_FLTK) || defined(__APPLE__)
 { 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  F(12),   IC, mView },
 #endif
 { 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,       IC, mView },
@@ -85,7 +87,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 { 1, "Dimensions in &Inches",       MNU_UNITS_INCHES,   0,       IR, mView },
 { 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,       IR, mView },
-#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK)
+#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK) || defined(__APPLE__)
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 { 1, "&Full Screen",                MNU_FULL_SCREEN,    F(11),   IC, mView },
 #endif
@@ -157,7 +159,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Help",                       0,                  0,       IN, NULL  },
 { 1, "&Website / Manual",           MNU_WEBSITE,        0,       IN, mHelp },
+#ifndef __APPLE__
 { 1, "&About",                      MNU_ABOUT,          0,       IN, mHelp },
+#endif
 
 { -1, 0, 0, 0, IN, 0 }
 };
@@ -624,13 +628,13 @@ void GraphicsWindow::EnsureValidActives(void) {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
-#if defined(HAVE_FLTK)
+#if defined(HAVE_FLTK) || defined(__APPLE__)
     CheckMenuById(MNU_SHOW_MENU_BAR, MenuBarIsVisible());
 #endif
     CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
     CheckMenuById(MNU_PERSPECTIVE_PROJ, SS.usePerspectiveProj);
     CheckMenuById(MNU_SHOW_GRID, SS.GW.showSnapGrid);
-#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK)
+#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK) || defined(__APPLE__)
     CheckMenuById(MNU_FULL_SCREEN, FullScreenIsActive());
 #endif
 

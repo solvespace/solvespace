@@ -3,14 +3,20 @@
 //
 // Copyright 2015 <whitequark@whitequark.org>
 //-----------------------------------------------------------------------------
+#ifdef __APPLE__
+#include <OpenGL/GL.h>
+#else
 #include <GL/glew.h>
+#endif
 
 #include "gloffscreen.h"
 #include "solvespace.h"
 
 GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL) {
+#ifndef __APPLE__
     if(glewInit() != GLEW_OK)
         oops();
+#endif
 
     if(!GL_EXT_framebuffer_object)
         oops();
@@ -57,7 +63,9 @@ bool GLOffscreen::begin(int width, int height) {
     return false;
 }
 
-uint8_t *GLOffscreen::end() {
+uint8_t *GLOffscreen::end(bool flip) {
+    uint32_t *pixels_tgt = flip ? _pixels_inv : _pixels;
+
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     glReadPixels(0, 0, _width, _height,
             GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels_inv);
@@ -66,11 +74,13 @@ uint8_t *GLOffscreen::end() {
             GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, _pixels_inv);
 #endif
 
-    /* in OpenGL coordinates, bottom is zero Y */
-    for(int i = 0; i < _height; i++)
-        memcpy(&_pixels[_width * i], &_pixels_inv[_width * (_height - i - 1)], _width * 4);
+    if(flip) {
+        /* in OpenGL coordinates, bottom is zero Y */
+        for(int i = 0; i < _height; i++)
+            memcpy(&_pixels[_width * i], &_pixels_inv[_width * (_height - i - 1)], _width * 4);
+    }
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-    return (uint8_t*) _pixels;
+    return (uint8_t*) (flip ? _pixels : _pixels_inv);
 }

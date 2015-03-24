@@ -9,7 +9,7 @@
 SolveSpaceUI SolveSpace::SS;
 Sketch SolveSpace::SK;
 
-void SolveSpaceUI::Init(const char *cmdLine) {
+void SolveSpaceUI::Init() {
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.
@@ -95,18 +95,20 @@ void SolveSpaceUI::Init(const char *cmdLine) {
     // configuration file, but we will automatically load those as we need
     // them.
 
-    // Start with either an empty file, or the file specified on the
-    // command line.
     NewFile();
     AfterNewFile();
-    if(strlen(cmdLine) != 0) {
-        if(LoadFromFile(cmdLine)) {
-            strcpy(saveFile, cmdLine);
-        } else {
-            NewFile();
-        }
+}
+
+bool SolveSpaceUI::OpenFile(const char *filename) {
+    bool success = LoadFromFile(filename);
+    if(success) {
+        AddToRecentList(filename);
+        strcpy(saveFile, filename);
+    } else {
+        NewFile();
     }
     AfterNewFile();
+    return success;
 }
 
 void SolveSpaceUI::Exit(void) {
@@ -370,11 +372,9 @@ bool SolveSpaceUI::OkayToStartNewFile(void) {
 
 void SolveSpaceUI::UpdateWindowTitle(void) {
     if(strlen(saveFile) == 0) {
-        SetWindowTitle("SolveSpace - (not yet saved)");
+        SetCurrentFilename(NULL);
     } else {
-        char buf[MAX_PATH+100];
-        sprintf(buf, "SolveSpace - %s", saveFile);
-        SetWindowTitle(buf);
+        SetCurrentFilename(saveFile);
     }
 }
 

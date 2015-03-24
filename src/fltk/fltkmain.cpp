@@ -294,8 +294,12 @@ static void LoadPreferences(void)
     Preferences = new Fl_Preferences(dir, "solvespace.org", "solvespace");
 }
 
-void SetWindowTitle(const char *str) {
-    GraphicsWnd->label(str);
+void SetCurrentFilename(const char *filename) {
+    if(filename) {
+        GraphicsWnd->label(std::string("SolveSpace - ") + filename);
+    } else {
+        GraphicsWnd->label("SolveSpace - (not yet saved)");
+    }
 }
 
 void SetMousePointerToHand(bool yes) {
@@ -1331,7 +1335,9 @@ int main(int argc, char **argv)
 #endif
 
     // Call in to the platform-independent code, and let them do their init
-    SS.Init(file);
+    SS.Init();
+    if(strcmp(file, ""))
+        SS.OpenFile(file);
 
     // And now it's the main event loop. All calls in to the rest of the
     // code will be from the callbacks.

@@ -72,7 +72,10 @@ if(WIN32)
         "${CMAKE_SOURCE_DIR}/extlib/si")
     set(SPACEWARE_LIBRARIES
         "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
-else()
+elseif(APPLE)
+    find_package(PNG REQUIRED)
+    find_library(APPKIT_LIBRARY AppKit REQUIRED)
+else() # Linux and compatible systems
     find_package(PNG REQUIRED)
     find_package(SpaceWare)
 

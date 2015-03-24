@@ -307,8 +307,13 @@ float SolveSpace::CnfThawFloat(float v, const char *name) {
     return u.f;
 }
 
-void SetWindowTitle(const char *str) {
-    SetWindowText(GraphicsWnd, str);
+void SolveSpace::SetCurrentFilename(const char *filename) {
+    if(filename) {
+        std::string title = std::string("SolveSpace - ") + filename;
+        SetWindowText(GraphicsWnd, title.c_str());
+    } else {
+        SetWindowText(GraphicsWnd, "SolveSpace - (not yet saved)");
+    }
 }
 
 void SolveSpace::SetMousePointerToHand(bool yes) {
@@ -1227,7 +1232,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 #endif
 
     // Call in to the platform-independent code, and let them do their init
-    SS.Init(file);
+    SS.Init();
+    if(strcmp(file, ""))
+        SS.OpenFile(file);
 
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.

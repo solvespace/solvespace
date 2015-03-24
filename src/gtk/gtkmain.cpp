@@ -716,8 +716,12 @@ void PaintGraphics(void) {
     Glib::MainContext::get_default()->iteration(false);
 }
 
-void SetWindowTitle(const char *str) {
-    GW->set_title(str);
+void SetCurrentFilename(const char *filename) {
+    if(filename) {
+        GW->set_title(std::string("SolveSpace - ") + filename);
+    } else {
+        GW->set_title("SolveSpace - (not yet saved)");
+    }
 }
 
 void ToggleFullScreen(void) {
@@ -1490,15 +1494,15 @@ int main(int argc, char** argv) {
     TW->show_all();
     GW->show_all();
 
+    SS.Init();
+
     if(argc >= 2) {
         if(argc > 2) {
             std::cerr << "Only the first file passed on command line will be opened."
                       << std::endl;
         }
 
-        SS.Init(argv[1]);
-    } else {
-        SS.Init("");
+        SS.OpenFile(argv[1]);
     }
 
     main.run(*GW);
