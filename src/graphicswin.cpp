@@ -80,7 +80,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Use &Perspective Projection", MNU_PERSPECTIVE_PROJ,'`',    IC, mView },
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 #if defined(HAVE_FLTK) || defined(__APPLE__)
-{ 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  F(12),   IC, mView },
+{ 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  C|F(12), IC, mView },
 #endif
 { 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,       IC, mView },
 { 1, "Show Text &Window",           MNU_SHOW_TEXT_WND,  '\t',    IC, mView },
@@ -89,7 +89,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,       IR, mView },
 #if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK) || defined(__APPLE__)
 { 1,  NULL,                         0,                  0,       IN, NULL  },
-{ 1, "&Full Screen",                MNU_FULL_SCREEN,    F(11),   IC, mView },
+{ 1, "&Full Screen",                MNU_FULL_SCREEN,    C|F(11), IC, mView },
 #endif
 
 { 0, "&New Group",                  0,                  0,       IN, NULL  },
