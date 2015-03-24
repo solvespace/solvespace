@@ -13,13 +13,4 @@
 #cmakedefine HAVE_GTK2
 #cmakedefine HAVE_GTK3
 
-#cmakedefine HAVE_FLTK
-
-/* Only relevant for FLTK port. */
-#ifdef HAVE_FLTK
-#define HAVE_FLTK_FULLSCREEN
-#endif
-
-#cmakedefine HAVE_FONTCONFIG
-
 #endif

@@ -134,15 +134,7 @@ void RefreshRecentMenus(void);
 #define SAVE_CANCEL  (0)
 int SaveFileYesNoCancel(void);
 
-#if defined(HAVE_FLTK)
-    // Selection pattern format for FLTK's file chooser classes:
-    //   "PNG File\t*.png\n"
-    //   "JPEG File\t*.{jpg,jpeg}\n"
-    //   "All Files\t*"
-#   define PAT1(desc,e1)    desc "\t*." e1 "\n"
-#   define PAT2(desc,e1,e2) desc "\t*.{" e1 "," e2 "}\n"
-#   define ENDPAT "All Files\t*"
-#elif defined(HAVE_GTK)
+#if defined(HAVE_GTK)
     // Selection pattern format to be parsed by GTK3 glue code:
     //   "PNG File\t*.png\n"
     //   "JPEG File\t*.jpg\t*.jpeg\n"

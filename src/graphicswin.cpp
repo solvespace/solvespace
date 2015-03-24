@@ -79,7 +79,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Show Snap &Grid",             MNU_SHOW_GRID,      '>',     IC, mView },
 { 1, "Use &Perspective Projection", MNU_PERSPECTIVE_PROJ,'`',    IC, mView },
 { 1,  NULL,                         0,                  0,       IN, NULL  },
-#if defined(HAVE_FLTK) || defined(__APPLE__)
+#if defined(__APPLE__)
 { 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  C|F(12), IC, mView },
 #endif
 { 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,       IC, mView },
@@ -87,7 +87,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 { 1, "Dimensions in &Inches",       MNU_UNITS_INCHES,   0,       IR, mView },
 { 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,       IR, mView },
-#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK) || defined(__APPLE__)
+#if defined(HAVE_GTK) || defined(__APPLE__)
 { 1,  NULL,                         0,                  0,       IN, NULL  },
 { 1, "&Full Screen",                MNU_FULL_SCREEN,    C|F(11), IC, mView },
 #endif
@@ -628,13 +628,13 @@ void GraphicsWindow::EnsureValidActives(void) {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuById(MNU_SHOW_TEXT_WND, SS.GW.showTextWindow);
 
-#if defined(HAVE_FLTK) || defined(__APPLE__)
+#if defined(__APPLE__)
     CheckMenuById(MNU_SHOW_MENU_BAR, MenuBarIsVisible());
 #endif
     CheckMenuById(MNU_SHOW_TOOLBAR, SS.showToolbar);
     CheckMenuById(MNU_PERSPECTIVE_PROJ, SS.usePerspectiveProj);
     CheckMenuById(MNU_SHOW_GRID, SS.GW.showSnapGrid);
-#if defined(HAVE_FLTK_FULLSCREEN) || defined(HAVE_GTK) || defined(__APPLE__)
+#if defined(HAVE_GTK) || defined(__APPLE__)
     CheckMenuById(MNU_FULL_SCREEN, FullScreenIsActive());
 #endif
 

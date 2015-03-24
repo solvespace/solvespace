@@ -29,7 +29,6 @@ if(SPACEWARE_FOUND)
 endif()
 
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
-set(HAVE_FLTK ${FLTK_FOUND})
 set(HAVE_GTK ${GTKMM_FOUND})
 configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
                "${CMAKE_CURRENT_BINARY_DIR}/config.h")
@@ -153,15 +152,6 @@ elseif(APPLE)
 
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
-elseif(HAVE_FLTK)
-    include_directories(${FLTK_INCLUDE_DIR})
-
-    set(platform_SOURCES
-        fltk/fltkmain.cpp)
-
-    set(platform_LIBRARIES
-        ${CMAKE_DL_LIBS}
-        ${FLTK_LIBRARIES})
 elseif(HAVE_GTK)
     include_directories(
         ${GTKMM_INCLUDE_DIRS}
