@@ -489,8 +489,7 @@ typedef struct {
     hSSurface   hs;
 } TrimLine;
 
-void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
-                                 RgbColor color)
+void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, RgbColor color)
 {
     // Make the extrusion direction consistent with respect to the normal
     // of the sketch we're extruding.
@@ -609,8 +608,7 @@ typedef struct {
     hSSurface   d[4];
 } Revolved;
 
-void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                                  RgbColor color)
+void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbColor color)
 {
     SBezierLoop *sbl;
 

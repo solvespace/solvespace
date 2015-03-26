@@ -225,6 +225,15 @@ void TextWindow::ScreenColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(v, 3, g->color);
     SS.TW.edit.meaning = EDIT_GROUP_COLOR;
 }
+void TextWindow::ScreenOpacity(int link, uint32_t v) {
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+
+    char str[1024];
+    sprintf(str, "%.2f", g->color.alphaF());
+    SS.TW.ShowEditControl(22, 11, str);
+    SS.TW.edit.meaning = EDIT_GROUP_OPACITY;
+    SS.TW.edit.group.v = g->h.v;
+}
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
@@ -365,10 +374,13 @@ void TextWindow::ShowGroupInfo(void) {
            g->type == Group::LATHE)
         {
             Printf(false,
-                "%Bd   %Ftcolor %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
+                "%Bd   %Ftcolor   %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
                 &g->color,
                 g->color.redF(), g->color.greenF(), g->color.blueF(),
                 ScreenColor, top[rows-1] + 2);
+            Printf(false, "%Bd   %Ftopacity%E %@ %f%Lf%Fl[change]%E",
+                g->color.alphaF(),
+                &TextWindow::ScreenOpacity);
         } else if(g->type == Group::IMPORTED) {
             bool sup = g->suppress;
             Printf(false, "   %Fd%f%LP%c  suppress this group's solid model",
@@ -694,6 +706,22 @@ void TextWindow::EditControlDone(const char *s) {
                 SS.GW.ClearSuper();
             } else {
                 Error("Bad format: specify color as r, g, b");
+            }
+            break;
+        }
+        case EDIT_GROUP_OPACITY: {
+            Expr *e = Expr::From(s, true);
+            if(e) {
+                double alpha = e->Eval();
+                if(alpha < 0 || alpha > 1) {
+                    Error("Opacity must be between zero and one.");
+                } else {
+                    Group *g = SK.GetGroup(edit.group);
+                    g->color.alpha = (int)(255.1f * alpha);
+                    SS.MarkGroupDirty(g->h);
+                    SS.ScheduleGenerateAll();
+                    SS.GW.ClearSuper();
+                }
             }
             break;
         }

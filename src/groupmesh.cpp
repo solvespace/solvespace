@@ -435,11 +435,13 @@ Group *Group::RunningMeshGroup(void) {
 
 void Group::DrawDisplayItems(int t) {
     RgbColor specColor;
+    bool useSpecColor;
     if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
         // force the color to something dim
         specColor = Style::Color(Style::DIM_SOLID);
+        useSpecColor = true;
     } else {
-        specColor = RgbColor::Default(); // use the model color
+        useSpecColor = false; // use the model color
     }
     // The back faces are drawn in red; should never seem them, since we
     // draw closed shells, so that's a debugging aid.
@@ -458,10 +460,19 @@ void Group::DrawDisplayItems(int t) {
     if(gs.faces > 1) ms2 = gs.face[1].v;
 
     if(SS.GW.showShaded) {
+        if(SS.drawBackFaces && !displayMesh.isTransparent) {
+            // For debugging, draw the backs of the triangles in red, so that we
+            // notice when a shell is open
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+        } else {
+            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+        }
+
         glEnable(GL_LIGHTING);
-        ssglFillMesh(specColor, &displayMesh, mh, ms1, ms2);
+        ssglFillMesh(useSpecColor, specColor, &displayMesh, mh, ms1, ms2);
         glDisable(GL_LIGHTING);
     }
+
     if(SS.GW.showEdges) {
         ssglDepthRangeOffset(2);
         ssglColorRGB(Style::Color(Style::SOLID_EDGE));

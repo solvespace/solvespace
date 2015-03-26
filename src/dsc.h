@@ -399,66 +399,57 @@ public:
 
 #define RGBi(r, g, b) RgbColor::From((r), (g), (b))
 #define RGBf(r, g, b) RgbColor::FromFloat((float)(r), (float)(g), (float)(b))
-#define NULL_COLOR    RgbColor::Default()
 
 // Note: sizeof(class RgbColor) should be exactly 4
 //
 class RgbColor {
-    uint8_t useDefault;
 public:
-    uint8_t red, green, blue;
+    uint8_t red, green, blue, alpha;
 
     float redF(void)   const { return (float)red   / 255.0f; }
     float greenF(void) const { return (float)green / 255.0f; }
     float blueF(void)  const { return (float)blue  / 255.0f; }
-
-    bool UseDefault(void) const { return useDefault != 0; }
+    float alphaF(void) const { return (float)alpha / 255.0f; }
 
     bool Equals(RgbColor c) const {
-        switch(c.useDefault + useDefault) {
-            case 0: return
-                c.red   == red   &&
-                c.green == green &&
-                c.blue  == blue;
-            case 1: return false;
-            case 2: return true;
-        }
-        return false;
+        return
+            c.red   == red   &&
+            c.green == green &&
+            c.blue  == blue  &&
+            c.alpha == alpha;
     }
 
     uint32_t ToPackedInt(void) const {
-        return red | (uint32_t)(green << 8) | (uint32_t)(blue << 16);
+        return
+            red |
+            (uint32_t)(green << 8) |
+            (uint32_t)(blue << 16) |
+            (uint32_t)((255 - alpha) << 24);
     }
 
-    static RgbColor Default(void) {
+    static RgbColor From(int r, int g, int b, int a = 255) {
         RgbColor c;
-        c.useDefault = 1;
-        // Leave r, g, b uninitialized so that Valgrind will notice
-        // if they are used inadvertently
-        return c;
-    }
-
-    static RgbColor From(int r, int g, int b) {
-        RgbColor c;
-        c.useDefault = 0;
         c.red   = (uint8_t)r;
         c.green = (uint8_t)g;
         c.blue  = (uint8_t)b;
+        c.alpha = (uint8_t)a;
         return c;
     }
 
-    static RgbColor FromFloat(float r, float g, float b) {
+    static RgbColor FromFloat(float r, float g, float b, float a = 1.0) {
         return From(
             (int)(255.1f * r),
             (int)(255.1f * g),
-            (int)(255.1f * b));
+            (int)(255.1f * b),
+            (int)(255.1f * a));
     }
 
-    static RgbColor FromPackedInt(uint32_t bgr) {
+    static RgbColor FromPackedInt(uint32_t bgra) {
         return From(
-            (int)((bgr)       & 0xff),
-            (int)((bgr >> 8)  & 0xff),
-            (int)((bgr >> 16) & 0xff));
+            (int)((bgra)       & 0xff),
+            (int)((bgra >> 8)  & 0xff),
+            (int)((bgra >> 16) & 0xff),
+            (int)(255 - ((bgra >> 24) & 0xff)));
     }
 };
 

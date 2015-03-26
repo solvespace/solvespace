@@ -604,14 +604,6 @@ void GraphicsWindow::Paint(void) {
     GLfloat ld1[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
     glLightfv(GL_LIGHT1, GL_POSITION, ld1);
 
-    if(SS.drawBackFaces) {
-        // For debugging, draw the backs of the triangles in red, so that we
-        // notice when a shell is open
-        glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 1);
-    } else {
-        glLightModelf(GL_LIGHT_MODEL_TWO_SIDE, 0);
-    }
-
     GLfloat ambient[4] = { (float)SS.ambientIntensity,
                            (float)SS.ambientIntensity,
                            (float)SS.ambientIntensity, 1 };

@@ -315,7 +315,7 @@ bool SolveSpaceUI::SaveToFile(const char *filename) {
     SMesh *m = &(SK.group.elem[SK.group.n-1].runningMesh);
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
-        fprintf(fh, "Triangle %08x %08x  "
+        fprintf(fh, "Triangle %08x %08x "
                 "%.20f %.20f %.20f  %.20f %.20f %.20f  %.20f %.20f %.20f\n",
             tr->meta.face, tr->meta.color.ToPackedInt(),
             CO(tr->a), CO(tr->b), CO(tr->c));
@@ -555,27 +555,25 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
 
         } else if(StrStartsWith(line, "Triangle ")) {
             STriangle tr; ZERO(&tr);
-            unsigned int rgb = 0;
+            unsigned int rgba = 0;
             if(sscanf(line, "Triangle %x %x  "
                              "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
-                &(tr.meta.face), &rgb,
+                &(tr.meta.face), &rgba,
                 &(tr.a.x), &(tr.a.y), &(tr.a.z),
                 &(tr.b.x), &(tr.b.y), &(tr.b.z),
-                &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11)
-            {
+                &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11) {
                 oops();
             }
-            tr.meta.color = RgbColor::FromPackedInt((uint32_t)rgb);
+            tr.meta.color = RgbColor::FromPackedInt((uint32_t)rgba);
             m->AddTriangle(&tr);
         } else if(StrStartsWith(line, "Surface ")) {
-            unsigned int rgb = 0;
+            unsigned int rgba = 0;
             if(sscanf(line, "Surface %x %x %x %d %d",
-                &(srf.h.v), &rgb, &(srf.face),
-                &(srf.degm), &(srf.degn)) != 5)
-            {
+                &(srf.h.v), &rgba, &(srf.face),
+                &(srf.degm), &(srf.degn)) != 5) {
                 oops();
             }
-            srf.color = RgbColor::FromPackedInt((uint32_t)rgb);
+            srf.color = RgbColor::FromPackedInt((uint32_t)rgba);
         } else if(StrStartsWith(line, "SCtrl ")) {
             int i, j;
             Vector c;

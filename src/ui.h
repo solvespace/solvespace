@@ -139,6 +139,7 @@ public:
         EDIT_GROUP_NAME            = 2,
         EDIT_GROUP_SCALE           = 3,
         EDIT_GROUP_COLOR           = 4,
+        EDIT_GROUP_OPACITY         = 5,
         // For the configuraiton screen
         EDIT_LIGHT_DIRECTION       = 100,
         EDIT_LIGHT_INTENSITY       = 101,
@@ -254,6 +255,7 @@ public:
 
     static void ScreenChangeGroupOption(int link, uint32_t v);
     static void ScreenColor(int link, uint32_t v);
+    static void ScreenOpacity(int link, uint32_t v);
 
     static void ScreenShowListOfStyles(int link, uint32_t v);
     static void ScreenShowStyleInfo(int link, uint32_t v);

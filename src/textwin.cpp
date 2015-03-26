@@ -18,14 +18,14 @@ const TextWindow::Color TextWindow::fgColors[] = {
     { 'i', RGBi(  0, 255, 255) },
     { 'g', RGBi(160, 160, 160) },
     { 'b', RGBi(200, 200, 200) },
-    { 0,   NULL_COLOR }
+    { 0,   RGBi(  0,   0,   0) }
 };
 const TextWindow::Color TextWindow::bgColors[] = {
     { 'd', RGBi(  0,   0,   0) },
     { 't', RGBi( 34,  15,  15) },
     { 'a', RGBi( 25,  25,  25) },
     { 'r', RGBi(255, 255, 255) },
-    { 0,   NULL_COLOR }
+    { 0,   RGBi(  0,   0,   0) }
 };
 
 bool TextWindow::SPACER = false;
@@ -132,7 +132,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
 
     char fg = 'd';
     char bg = 'd';
-    RgbColor bgRgb = NULL_COLOR;
+    RgbColor bgRgb = RGBi(0, 0, 0);
     int link = NOT_A_LINK;
     uint32_t data = 0;
     LinkFunction *f = NULL, *h = NULL;

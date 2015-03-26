@@ -300,7 +300,8 @@ void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
 extern "C" { typedef void SSGL_CALLBACK ssglCallbackFptr(void); }
 void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void ssglFillPolygon(SPolygon *p);
-void ssglFillMesh(RgbColor color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
+void ssglFillMesh(bool useSpecColor, RgbColor color,
+    SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
 void ssglDebugPolygon(SPolygon *p);
 void ssglDrawEdges(SEdgeList *l, bool endpointsToo);
 void ssglDebugMesh(SMesh *m);

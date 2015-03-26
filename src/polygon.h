@@ -226,6 +226,7 @@ public:
     bool    flipNormal;
     bool    keepCoplanar;
     bool    atLeastOneDiscarded;
+    bool    isTransparent;
 
     void Clear(void);
     void AddTriangle(STriangle *st);

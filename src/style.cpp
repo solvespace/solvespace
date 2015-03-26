@@ -22,7 +22,7 @@ const Style::Default Style::Defaults[] = {
     { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, },
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, },
-    { { 0 },            NULL,           NULL_COLOR,          0.0 }
+    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0 }
 };
 
 char *Style::CnfColor(const char *prefix) {

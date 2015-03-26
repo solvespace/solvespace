@@ -269,28 +269,31 @@ static void StippleTriangle(STriangle *tr, bool s, RgbColor rgb)
     glBegin(GL_TRIANGLES);
 }
 
-void ssglFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
+void ssglFillMesh(bool useSpecColor, RgbColor specColor,
+                  SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
 {
     RgbColor rgbHovered  = Style::Color(Style::HOVERED),
              rgbSelected = Style::Color(Style::SELECTED);
 
     glEnable(GL_NORMALIZE);
-    RgbColor prevColor = NULL_COLOR;
+    bool hasMaterial = false;
+    RgbColor prevColor;
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
 
         RgbColor color;
-        if(specColor.UseDefault()) {
-            color = tr->meta.color;
-        } else {
+        if(useSpecColor) {
             color = specColor;
+        } else {
+            color = tr->meta.color;
         }
-        if(!color.Equals(prevColor)) {
-            GLfloat mpf[] = { color.redF(), color.greenF(), color.blueF(), 1.0f };
+        if(!hasMaterial || !color.Equals(prevColor)) {
+            GLfloat mpf[] = { color.redF(), color.greenF(), color.blueF(), color.alphaF() };
             glEnd();
             glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, mpf);
             prevColor = color;
+            hasMaterial = true;
             glBegin(GL_TRIANGLES);
         }
 
