@@ -559,33 +559,35 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 break;
             }
 
-            // Let's adjust the color of this constraint to have the same
-            // rough luma as the point color, so that the constraint does not
-            // stand out in an ugly way.
-            RgbColor cd = Style::Color(Style::DATUM),
-                     cc = Style::Color(Style::CONSTRAINT);
-            // convert from 8-bit color to a vector
-            Vector vd = Vector::From(cd.redF(), cd.greenF(), cd.blueF()),
-                   vc = Vector::From(cc.redF(), cc.greenF(), cc.blueF());
-            // and scale the constraint color to have the same magnitude as
-            // the datum color, maybe a bit dimmer
-            vc = vc.WithMagnitude(vd.Magnitude()*0.9);
-            // and set the color to that.
-            ssglColorRGB(RGBf(vc.x, vc.y, vc.z));
+            if(dogd.drawing) {
+                // Let's adjust the color of this constraint to have the same
+                // rough luma as the point color, so that the constraint does not
+                // stand out in an ugly way.
+                RgbColor cd = Style::Color(Style::DATUM),
+                         cc = Style::Color(Style::CONSTRAINT);
+                // convert from 8-bit color to a vector
+                Vector vd = Vector::From(cd.redF(), cd.greenF(), cd.blueF()),
+                       vc = Vector::From(cc.redF(), cc.greenF(), cc.blueF());
+                // and scale the constraint color to have the same magnitude as
+                // the datum color, maybe a bit dimmer
+                vc = vc.WithMagnitude(vd.Magnitude()*0.9);
+                // and set the color to that.
+                ssglColorRGB(RGBf(vc.x, vc.y, vc.z));
 
-            for(int a = 0; a < 2; a++) {
-                Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
-                Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
-                for(int i = 0; i < 2; i++) {
-                    Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
-                    glBegin(GL_QUADS);
-                        ssglVertex3v(p.Plus (r).Plus (d));
-                        ssglVertex3v(p.Plus (r).Minus(d));
-                        ssglVertex3v(p.Minus(r).Minus(d));
-                        ssglVertex3v(p.Minus(r).Plus (d));
-                    glEnd();
+                for(int a = 0; a < 2; a++) {
+                    Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
+                    Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
+                    for(int i = 0; i < 2; i++) {
+                        Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
+                        glBegin(GL_QUADS);
+                            ssglVertex3v(p.Plus (r).Plus (d));
+                            ssglVertex3v(p.Plus (r).Minus(d));
+                            ssglVertex3v(p.Minus(r).Minus(d));
+                            ssglVertex3v(p.Minus(r).Plus (d));
+                        glEnd();
+                    }
+
                 }
-
             }
             break;
         }
@@ -1029,7 +1031,7 @@ s:
             break;
 
         case COMMENT: {
-            if(disp.style.v) {
+            if(dogd.drawing && disp.style.v) {
                 ssglLineWidth(Style::Width(disp.style));
                 ssglColorRGB(Style::Color(disp.style));
             }

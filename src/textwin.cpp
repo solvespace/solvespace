@@ -347,10 +347,12 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
     int x = 20, y = 33 + LINE_HEIGHT;
     y -= scrollPos*(LINE_HEIGHT/2);
 
-    double grey = 30.0/255;
-    double top = y - 28, bot = y + 4;
-    glColor4d(grey, grey, grey, 1.0);
-    ssglAxisAlignedQuad(0, width, top, bot);
+    if(how == PAINT) {
+        double grey = 30.0/255;
+        double top = y - 28, bot = y + 4;
+        glColor4d(grey, grey, grey, 1.0);
+        ssglAxisAlignedQuad(0, width, top, bot);
+    }
 
     HideShowIcon *oldHovered = hoveredIcon;
     if(how != PAINT) {

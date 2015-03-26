@@ -520,13 +520,17 @@ void Entity::DrawOrGetDistance(void) {
                 // dimmer for the ones at the model origin.
                 int f = (i == 0 ? 100 : 255);
                 if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                    ssglColorRGB(RGBi(0, 0, f));
+                    if(dogd.drawing)
+                        ssglColorRGB(RGBi(0, 0, f));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                    ssglColorRGB(RGBi(f, 0, 0));
+                    if(dogd.drawing)
+                        ssglColorRGB(RGBi(f, 0, 0));
                 } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                    ssglColorRGB(RGBi(0, f, 0));
+                    if(dogd.drawing)
+                        ssglColorRGB(RGBi(0, f, 0));
                 } else {
-                    ssglColorRGB(Style::Color(Style::NORMALS));
+                    if(dogd.drawing)
+                        ssglColorRGB(Style::Color(Style::NORMALS));
                     if(i > 0) break;
                 }
 
@@ -534,7 +538,8 @@ void Entity::DrawOrGetDistance(void) {
                 Vector tail;
                 if(i == 0) {
                     tail = SK.GetEntity(point[0])->PointGetNum();
-                    ssglLineWidth(1);
+                    if(dogd.drawing)
+                        ssglLineWidth(1);
                 } else {
                     // Draw an extra copy of the x, y, and z axes, that's
                     // always in the corner of the view and at the front.
@@ -544,8 +549,10 @@ void Entity::DrawOrGetDistance(void) {
                     double w = 60 - SS.GW.width/2;
                     tail = SS.GW.projRight.ScaledBy(w/s).Plus(
                            SS.GW.projUp.   ScaledBy(h/s)).Minus(SS.GW.offset);
-                    ssglDepthRangeLockToFront(true);
-                    ssglLineWidth(2);
+                    if(dogd.drawing) {
+                        ssglDepthRangeLockToFront(true);
+                        ssglLineWidth(2);
+                    }
                 }
 
                 Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
@@ -557,7 +564,8 @@ void Entity::DrawOrGetDistance(void) {
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
                 LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
             }
-            ssglDepthRangeLockToFront(false);
+            if(dogd.drawing)
+                ssglDepthRangeLockToFront(false);
             break;
         }
 
@@ -583,10 +591,13 @@ void Entity::DrawOrGetDistance(void) {
             Vector mm = p.Minus(us).Minus(vs), mm2 = mm;
             Vector mp = p.Minus(us).Plus (vs);
 
-            ssglLineWidth(1);
-            ssglColorRGB(Style::Color(Style::NORMALS));
-            glEnable(GL_LINE_STIPPLE);
-            glLineStipple(3, 0x1111);
+            if(dogd.drawing) {
+                ssglLineWidth(1);
+                ssglColorRGB(Style::Color(Style::NORMALS));
+                glEnable(GL_LINE_STIPPLE);
+                glLineStipple(3, 0x1111);
+            }
+
             if(!h.isFromRequest()) {
                 mm = mm.Plus(v.ScaledBy(60/SS.GW.scale));
                 mm2 = mm2.Plus(u.ScaledBy(60/SS.GW.scale));
@@ -596,7 +607,9 @@ void Entity::DrawOrGetDistance(void) {
             LineDrawOrGetDistance(pm, mm2);
             LineDrawOrGetDistance(mm, mp);
             LineDrawOrGetDistance(mp, pp);
-            glDisable(GL_LINE_STIPPLE);
+
+            if(dogd.drawing)
+                glDisable(GL_LINE_STIPPLE);
 
             char *str = DescriptionString()+5;
             double th = DEFAULT_TEXT_HEIGHT;
