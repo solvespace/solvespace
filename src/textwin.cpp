@@ -442,8 +442,8 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             ox += 3;
             oy -= 3;
             int tw = ((int)strlen(str) + 1)*CHAR_WIDTH;
-            ox = min(ox, (width - 25) - tw);
-            oy = max(oy, 5);
+            ox = min(ox, (double) (width - 25) - tw);
+            oy = max(oy, 5.0);
 
             ssglCreateBitmapFont();
             glLineWidth(1);
@@ -838,7 +838,7 @@ void TextWindow::Paint(void) {
             if(ltop < (scrollPos-1)) continue;
             if(ltop > scrollPos+halfRows) break;
 
-            for(c = 0; c < min((width/CHAR_WIDTH)+1, MAX_COLS); c++) {
+            for(c = 0; c < min((width/CHAR_WIDTH)+1, (int) MAX_COLS); c++) {
                 int x = LEFT_MARGIN + c*CHAR_WIDTH;
                 int y = (ltop-scrollPos)*(LINE_HEIGHT/2) + 4;
 

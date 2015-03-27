@@ -16,6 +16,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <limits.h>
+#include <algorithm>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -51,18 +52,15 @@
                     abort(); } while(0)
 #endif
 
-#ifndef min
-#   define min(x, y) ((x) < (y) ? (x) : (y))
-#endif
-#ifndef max
-#   define max(x, y) ((x) > (y) ? (x) : (y))
-#endif
-
 #ifndef isnan
 #   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 #endif
 
 namespace SolveSpace {
+
+using std::min;
+using std::max;
+using std::swap;
 
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
@@ -86,7 +84,6 @@ inline double WRAP_SYMMETRIC(double v, double n) {
 // Why is this faster than the library function?
 inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
-#define SWAP(T, a, b) do { T temp = (a); (a) = (b); (b) = temp; } while(0)
 #define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 

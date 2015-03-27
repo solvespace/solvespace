@@ -96,7 +96,7 @@ void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
         p0 = e->EndpointStart(),
         p1 = e->EndpointFinish();
         if(reverse) {
-            SWAP(Vector, p0, p1);
+            swap(p0, p1);
         }
     } else if(e->type == Entity::ARC_OF_CIRCLE) {
         isLine = false;
@@ -105,7 +105,7 @@ void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
         r = (pe.Minus(p0)).Magnitude();
         e->ArcGetAngles(&theta0, &theta1, &dtheta);
         if(reverse) {
-            SWAP(double, theta0, theta1);
+            swap(theta0, theta1);
             dtheta = -dtheta;
         }
         EntityBase *wrkpln = SK.GetEntity(e->workplane)->Normal();

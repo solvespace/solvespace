@@ -384,7 +384,7 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
         if(EXACT(dy != 0)) scaley = 0.9*height/dy;
         scale = min(scalex, scaley);
 
-        scale = min(300, scale);
+        scale = min(300.0, scale);
         scale = max(0.003, scale);
     }
 

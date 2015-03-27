@@ -277,7 +277,7 @@ static void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
     for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
         Vector mid = (se->a).Plus(se->b).ScaledBy(0.5);
         Vector arrow = (se->b).Minus(se->a);
-        SWAP(double, arrow.x, arrow.y);
+        swap(arrow.x, arrow.y);
         arrow.x *= -1;
         arrow = arrow.WithMagnitude(0.01);
         arrow = arrow.Plus(mid);

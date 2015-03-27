@@ -312,7 +312,7 @@ void SMesh::MakeFromTransformationOf(SMesh *a,
         tt.c = (tt.c).ScaledBy(scale);
         if(scale < 0) {
             // The mirroring would otherwise turn a closed mesh inside out.
-            SWAP(Vector, tt.a, tt.b);
+            swap(tt.a, tt.b);
         }
         tt.a = (q.Rotate(tt.a)).Plus(trans);
         tt.b = (q.Rotate(tt.b)).Plus(trans);
@@ -373,7 +373,7 @@ SKdNode *SKdNode::From(SMesh *m) {
     while(n > 1) {
         int k = rand() % n;
         n--;
-        SWAP(STriangle, tra[k], tra[n]);
+        swap(tra[k], tra[n]);
     }
 
     STriangleLl *tll = NULL;

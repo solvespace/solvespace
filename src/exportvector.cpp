@@ -112,7 +112,7 @@ void DxfFileWriter::Bezier(SBezier *sb) {
                theta1 = atan2(sb->ctrl[2].y - c.y, sb->ctrl[2].x - c.x),
                dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
         if(dtheta < 0) {
-            SWAP(double, theta0, theta1);
+            swap(theta0, theta1);
         }
 
         fprintf(f,

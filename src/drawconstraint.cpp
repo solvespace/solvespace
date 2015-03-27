@@ -727,7 +727,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                     // a bit of bias to stop it from flickering between the
                     // two possibilities
                     if(fabs(u.Dot(ru)) < fabs(v.Dot(ru)) + LENGTH_EPS) {
-                        SWAP(Vector, u, v);
+                        swap(u, v);
                     }
                     if(u.Dot(ru) < 0) u = u.ScaledBy(-1);
                 }

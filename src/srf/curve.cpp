@@ -74,8 +74,8 @@ Vector SBezier::Finish(void) {
 void SBezier::Reverse(void) {
     int i;
     for(i = 0; i < (deg+1)/2; i++) {
-        SWAP(Vector, ctrl[i], ctrl[deg-i]);
-        SWAP(double, weight[i], weight[deg-i]);
+        swap(ctrl[i], ctrl[deg-i]);
+        swap(weight[i], weight[deg-i]);
     }
 }
 

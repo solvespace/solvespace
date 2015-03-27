@@ -25,7 +25,7 @@ SBsp3 *SBsp3::FromMesh(SMesh *m) {
     while(n > 1) {
         int k = rand() % n;
         n--;
-        SWAP(STriangle, mc.l.elem[k], mc.l.elem[n]);
+        swap(mc.l.elem[k], mc.l.elem[n]);
     }
 
     for(i = 0; i < mc.l.n; i++) {

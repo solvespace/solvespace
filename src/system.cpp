@@ -199,9 +199,9 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
 
         // Swap row imax with row i
         for(jp = 0; jp < n; jp++) {
-            SWAP(double, A[i][jp], A[imax][jp]);
+            swap(A[i][jp], A[imax][jp]);
         }
-        SWAP(double, B[i], B[imax]);
+        swap(B[i], B[imax]);
 
         // For rows i+1 and greater, eliminate the term in column i.
         for(ip = i+1; ip < n; ip++) {

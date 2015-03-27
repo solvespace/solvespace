@@ -369,7 +369,7 @@ void Constraint::MenuConstrain(int id) {
                 if((l1->group.v != SS.GW.activeGroup.v) ||
                    (l1->construction && !(l0->construction)))
                 {
-                    SWAP(Entity *, l0, l1);
+                    swap(l0, l1);
                 }
                 c.ptA = l1->point[0];
                 c.ptB = l1->point[1];
@@ -476,7 +476,7 @@ void Constraint::MenuConstrain(int id) {
             Entity *nfree = SK.GetEntity(c.entityA);
             Entity *nref  = SK.GetEntity(c.entityB);
             if(nref->group.v == SS.GW.activeGroup.v) {
-                SWAP(Entity *, nref, nfree);
+                swap(nref, nfree);
             }
             if(nfree->group.v == SS.GW.activeGroup.v &&
                nref ->group.v != SS.GW.activeGroup.v)
@@ -491,7 +491,7 @@ void Constraint::MenuConstrain(int id) {
                     // There might be an odd*90 degree rotation about the
                     // normal vector; allow that, since the numerical
                     // constraint does
-                    SWAP(Vector, ru, rv);
+                    swap(ru, rv);
                 }
                 fu = fu.Dot(ru) > 0 ? ru : ru.ScaledBy(-1);
                 fv = fv.Dot(rv) > 0 ? rv : rv.ScaledBy(-1);
@@ -582,7 +582,7 @@ void Constraint::MenuConstrain(int id) {
                 Entity *line = SK.GetEntity(gs.entity[0]);
                 Entity *arc  = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::ARC_OF_CIRCLE) {
-                    SWAP(Entity *, line, arc);
+                    swap(line, arc);
                 }
                 Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
                        l1 = SK.GetEntity(line->point[1])->PointGetNum();
@@ -606,7 +606,7 @@ void Constraint::MenuConstrain(int id) {
                 Entity *line  = SK.GetEntity(gs.entity[0]);
                 Entity *cubic = SK.GetEntity(gs.entity[1]);
                 if(line->type == Entity::CUBIC) {
-                    SWAP(Entity *, line, cubic);
+                    swap(line, cubic);
                 }
                 Vector l0 = SK.GetEntity(line->point[0])->PointGetNum(),
                        l1 = SK.GetEntity(line->point[1])->PointGetNum();

@@ -592,7 +592,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             EntityBase *a = SK.GetEntity(entityA);
             EntityBase *b = SK.GetEntity(entityB);
             if(b->group.v != group.v) {
-                SWAP(EntityBase *, a, b);
+                swap(a, b);
             }
 
             ExprVector au = a->NormalExprsU(),
@@ -744,7 +744,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
         case PARALLEL: {
             EntityBase *ea = SK.GetEntity(entityA), *eb = SK.GetEntity(entityB);
             if(eb->group.v != group.v) {
-                SWAP(EntityBase *, ea, eb);
+                swap(ea, eb);
             }
             ExprVector a = ea->VectorGetExprs();
             ExprVector b = eb->VectorGetExprs();

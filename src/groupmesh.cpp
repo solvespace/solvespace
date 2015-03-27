@@ -149,7 +149,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
             scratch->MakeFromUnionOf(soFar, &transd);
         }
 
-        SWAP(T *, scratch, soFar);
+        swap(scratch, soFar);
         scratch->Clear();
         transd.Clear();
     }

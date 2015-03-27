@@ -316,7 +316,7 @@ void TextWindow::ShowConfiguration(void) {
 bool TextWindow::EditControlDoneForConfiguration(const char *s) {
     switch(edit.meaning) {
         case EDIT_LIGHT_INTENSITY:
-            SS.lightIntensity[edit.i] = min(1, max(0, atof(s)));
+            SS.lightIntensity[edit.i] = min(1.0, max(0.0, atof(s)));
             InvalidateGraphics();
             break;
 
@@ -341,7 +341,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             break;
         }
         case EDIT_CHORD_TOLERANCE: {
-            SS.chordTol = min(10, max(0.1, atof(s)));
+            SS.chordTol = min(10.0, max(0.1, atof(s)));
             SS.GenerateAll(0, INT_MAX);
             break;
         }
@@ -351,7 +351,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             break;
         }
         case EDIT_CAMERA_TANGENT: {
-            SS.cameraTangent = (min(2, max(0, atof(s))))/1000.0;
+            SS.cameraTangent = (min(2.0, max(0.0, atof(s))))/1000.0;
             if(!SS.usePerspectiveProj) {
                 Message("The perspective factor will have no effect until you "
                         "enable View -> Use Perspective Projection.");

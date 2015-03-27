@@ -442,7 +442,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
         uint16_t hmtxAdvanceWidth = 0;
         int16_t  hmtxLsb = 0;
-        for(i = 0; i < min(glyphs, hheaNumberOfMetrics); i++) {
+        for(i = 0; i < min(glyphs, (int)hheaNumberOfMetrics); i++) {
             hmtxAdvanceWidth = GetUSHORT();
             hmtxLsb          = (int16_t)GetUSHORT();
 

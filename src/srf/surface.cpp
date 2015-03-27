@@ -459,15 +459,15 @@ void SSurface::Reverse(void) {
     int i, j;
     for(i = 0; i < (degm+1)/2; i++) {
         for(j = 0; j <= degn; j++) {
-            SWAP(Vector, ctrl[i][j], ctrl[degm-i][j]);
-            SWAP(double, weight[i][j], weight[degm-i][j]);
+            swap(ctrl[i][j], ctrl[degm-i][j]);
+            swap(weight[i][j], weight[degm-i][j]);
         }
     }
 
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
         stb->backwards = !stb->backwards;
-        SWAP(Vector, stb->start, stb->finish);
+        swap(stb->start, stb->finish);
     }
 }
 
@@ -494,7 +494,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     // Make the extrusion direction consistent with respect to the normal
     // of the sketch we're extruding.
     if((t0.Minus(t1)).Dot(sbls->normal) < 0) {
-        SWAP(Vector, t0, t1);
+        swap(t0, t1);
     }
 
     // Define a coordinate system to contain the original sketch, and get
@@ -780,8 +780,8 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 srf->weight[1][1] = 1;
 
                 if(oldn.Dot(srf->NormalAt(0.5, 0.5)) < 0) {
-                    SWAP(Vector, srf->ctrl[0][0], srf->ctrl[1][0]);
-                    SWAP(Vector, srf->ctrl[0][1], srf->ctrl[1][1]);
+                    swap(srf->ctrl[0][0], srf->ctrl[1][0]);
+                    swap(srf->ctrl[0][1], srf->ctrl[1][1]);
                 }
                 continue;
             }

@@ -659,7 +659,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             } else {
                 v = atof(str);
             }
-            v = max(0, v);
+            v = max(0.0, v);
             if(edit.meaning == EDIT_STYLE_TEXT_HEIGHT) {
                 s->textHeight = v;
             } else {

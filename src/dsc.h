@@ -216,7 +216,7 @@ public:
     void Reverse(void) {
         int i;
         for(i = 0; i < (n/2); i++) {
-            SWAP(T, elem[i], elem[(n-1)-i]);
+            swap(elem[i], elem[(n-1)-i]);
         }
     }
 };

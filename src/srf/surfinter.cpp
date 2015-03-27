@@ -262,8 +262,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                b_axis0 = (b->ctrl[0][0]).Dot(axis),
                b_axis1 = (b->ctrl[0][1]).Dot(axis);
 
-        if(a_axis0 > a_axis1) SWAP(double, a_axis0, a_axis1);
-        if(b_axis0 > b_axis1) SWAP(double, b_axis0, b_axis1);
+        if(a_axis0 > a_axis1) swap(a_axis0, a_axis1);
+        if(b_axis0 > b_axis1) swap(b_axis0, b_axis1);
 
         double ab_axis0 = max(a_axis0, b_axis0),
                ab_axis1 = min(a_axis1, b_axis1);
