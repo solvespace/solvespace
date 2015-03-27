@@ -50,8 +50,7 @@ void GraphicsWindow::FixConstraintsForRequestBeingDeleted(hRequest hr) {
     }
 }
 void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
-    List<hEntity> ld;
-    ZERO(&ld);
+    List<hEntity> ld = {};
 
     Constraint *c;
     SK.constraint.ClearTags();
@@ -89,7 +88,7 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
 // arcs by a numerical method.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
-    ZERO(this);
+    *this = {};
     Entity *e = SK.GetEntity(he);
     if(e->type == Entity::LINE_SEGMENT) {
         isLine = true;
@@ -483,8 +482,7 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
 hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
     // Save the original endpoints, since we're about to delete this entity.
     Entity *e01 = SK.GetEntity(he);
-    SBezierList sbl;
-    ZERO(&sbl);
+    SBezierList sbl = {};
     e01->GenerateBezierCurves(&sbl);
 
     hEntity hep0 = e01->point[0],
@@ -606,13 +604,12 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
 
     // Compute the possibly-rational Bezier curves for each of these entities
     SBezierList sbla, sblb;
-    ZERO(&sbla);
-    ZERO(&sblb);
+    sbla = {};
+    sblb = {};
     ea->GenerateBezierCurves(&sbla);
     eb->GenerateBezierCurves(&sblb);
     // and then compute the points where they intersect, based on those curves.
-    SPointList inters;
-    ZERO(&inters);
+    SPointList inters = {};
     sbla.AllIntersectionsWith(&sblb, &inters);
 
     if(inters.l.n > 0) {

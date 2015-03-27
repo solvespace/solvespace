@@ -84,7 +84,6 @@ inline double WRAP_SYMMETRIC(double v, double n) {
 // Why is this faster than the library function?
 inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
-#define ZERO(v) memset((v), 0, sizeof(*(v)))
 #define CO(v) (v).x, (v).y, (v).z
 
 #define LENGTH_EPS      (1e-6)

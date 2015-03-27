@@ -626,7 +626,7 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 // set in the configuration screen.
 //-----------------------------------------------------------------------------
 void GCodeFileWriter::StartFile(void) {
-    ZERO(&sel);
+    sel = {};
 }
 void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                                 bool filled, RgbaColor fillRgb)
@@ -648,8 +648,7 @@ void GCodeFileWriter::Bezier(SBezier *sb) {
 }
 
 void GCodeFileWriter::FinishAndCloseFile(void) {
-    SPolygon sp;
-    ZERO(&sp);
+    SPolygon sp = {};
     sel.AssemblePolygon(&sp, NULL);
 
     int i;
@@ -689,7 +688,7 @@ void GCodeFileWriter::FinishAndCloseFile(void) {
 // can also be used for surfaces or 3d curves.
 //-----------------------------------------------------------------------------
 void Step2dFileWriter::StartFile(void) {
-    ZERO(&sfw);
+    sfw = {};
     sfw.f = f;
     sfw.WriteHeader();
 }

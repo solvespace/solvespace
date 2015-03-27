@@ -135,8 +135,7 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     //HWND h = GetForegroundWindow();
 
     // Register the window class for our dialog.
-    WNDCLASSEX wc;
-    memset(&wc, 0, sizeof(wc));
+    WNDCLASSEX wc = {};
     wc.cbSize = sizeof(wc);
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC;
     wc.lpfnWndProc      = (WNDPROC)MessageProc;
@@ -345,8 +344,7 @@ static void PaintTextWnd(HDC hdc)
 
 void SolveSpace::MoveTextScrollbarTo(int pos, int maxPos, int page)
 {
-    SCROLLINFO si;
-    memset(&si, 0, sizeof(si));
+    SCROLLINFO si = {};
     si.cbSize = sizeof(si);
     si.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
     si.nMin = 0;
@@ -488,8 +486,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_LBUTTONDOWN:
         case WM_MOUSEMOVE: {
             // We need this in order to get the WM_MOUSELEAVE
-            TRACKMOUSEEVENT tme;
-            ZERO(&tme);
+            TRACKMOUSEEVENT tme = {};
             tme.cbSize = sizeof(tme);
             tme.dwFlags = TME_LEAVE;
             tme.hwndTrack = TextWnd;
@@ -535,8 +532,7 @@ static bool ProcessKeyDown(WPARAM wParam)
 {
     if(GraphicsEditControlIsVisible() && wParam != VK_ESCAPE) {
         if(wParam == VK_RETURN) {
-            char s[1024];
-            memset(s, 0, sizeof(s));
+            char s[1024] = {};
             SendMessage(GraphicsEditControl, WM_GETTEXT, 900, (LPARAM)s);
             SS.GW.EditControlDone(s);
             return true;
@@ -546,8 +542,7 @@ static bool ProcessKeyDown(WPARAM wParam)
     }
     if(TextEditControlIsVisible() && wParam != VK_ESCAPE) {
         if(wParam == VK_RETURN) {
-            char s[1024];
-            memset(s, 0, sizeof(s));
+            char s[1024] = {};
             SendMessage(TextEditControl, WM_GETTEXT, 900, (LPARAM)s);
             SS.TW.EditControlDone(s);
         } else {
@@ -638,10 +633,9 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
 {
     HDC hdc = GetDC(hwnd);
 
-    PIXELFORMATDESCRIPTOR pfd;
+    PIXELFORMATDESCRIPTOR pfd = {};
     int pixelFormat;
 
-    memset(&pfd, 0, sizeof(pfd));
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
     pfd.nVersion = 1;
     pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
@@ -791,8 +785,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             int y = HIWORD(lParam);
 
             // We need this in order to get the WM_MOUSELEAVE
-            TRACKMOUSEEVENT tme;
-            ZERO(&tme);
+            TRACKMOUSEEVENT tme = {};
             tme.cbSize = sizeof(tme);
             tme.dwFlags = TME_LEAVE;
             tme.hwndTrack = GraphicsWnd;
@@ -873,9 +866,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *selPattern)
 {
-    OPENFILENAME ofn;
+    OPENFILENAME ofn = {};
 
-    memset(&ofn, 0, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hInstance = Instance;
     ofn.hwndOwner = GraphicsWnd;
@@ -899,9 +891,8 @@ bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *s
 
 bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 {
-    OPENFILENAME ofn;
+    OPENFILENAME ofn = {};
 
-    memset(&ofn, 0, sizeof(ofn));
     ofn.lStructSize = sizeof(ofn);
     ofn.hInstance = Instance;
     ofn.hwndOwner = GraphicsWnd;
@@ -979,8 +970,7 @@ void SolveSpace::LoadAllFontFiles(void)
     HANDLE h = FindFirstFile(dir, &wfd);
 
     while(h != INVALID_HANDLE_VALUE) {
-        TtfFont tf;
-        ZERO(&tf);
+        TtfFont tf = {};
 
         char fullPath[MAX_PATH];
         GetWindowsDirectory(fullPath, MAX_PATH - (30 + (UINT)strlen(wfd.cFileName)));
@@ -1098,9 +1088,8 @@ HMENU CreateGraphicsWindowMenus(void)
 
 static void CreateMainWindows(void)
 {
-    WNDCLASSEX wc;
+    WNDCLASSEX wc = {};
 
-    memset(&wc, 0, sizeof(wc));
     wc.cbSize = sizeof(wc);
 
     // The graphics window, where the sketch is drawn and shown.

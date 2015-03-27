@@ -72,8 +72,7 @@ void Style::CreateDefaultStyle(hStyle h) {
         isDefaultStyle = false;
     }
 
-    Style ns;
-    ZERO(&ns);
+    Style ns = {};
     ns.color        = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
     ns.width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     ns.widthAs      = UNITS_AS_PIXELS;

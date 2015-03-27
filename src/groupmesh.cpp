@@ -13,8 +13,7 @@ void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,
                           bool *allNonZeroLen)
 {
-    SBezierList sbl;
-    ZERO(&sbl);
+    SBezierList sbl = {};
 
     int i;
     for(i = 0; i < SK.entity.n; i++) {
@@ -108,8 +107,8 @@ void SMesh::RemapFaces(Group *g, int remap) {
 template<class T>
 void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
     T workA, workB;
-    ZERO(&workA);
-    ZERO(&workB);
+    workA = {};
+    workB = {};
     T *soFar = &workA, *scratch = &workB;
 
     int n = (int)valA, a0 = 0;
@@ -121,8 +120,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
         int ap = a*2 - (subtype == ONE_SIDED ? 0 : (n-1));
         int remap = (a == (n - 1)) ? REMAP_LAST : a;
 
-        T transd;
-        ZERO(&transd);
+        T transd = {};
         if(type == TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
@@ -334,8 +332,8 @@ void Group::GenerateShellAndMesh(void) {
         }
     } else {
         SMesh prevm, thism;
-        ZERO(&prevm);
-        ZERO(&thism);
+        prevm = {};
+        thism = {};
 
         prevm.MakeFromCopyOf(&(prevg->runningMesh));
         prevg->runningShell.TriangulateInto(&prevm);
@@ -343,8 +341,7 @@ void Group::GenerateShellAndMesh(void) {
         thism.MakeFromCopyOf(&thisMesh);
         thisShell.TriangulateInto(&thism);
 
-        SMesh outm;
-        ZERO(&outm);
+        SMesh outm = {};
         GenerateForBoolean<SMesh>(&prevm, &thism, &outm, srcg->meshCombine);
 
         // And make sure that the output mesh is vertex-to-vertex.
@@ -540,8 +537,7 @@ void Group::Draw(void) {
 }
 
 void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
-    SPolygon sp;
-    ZERO(&sp);
+    SPolygon sp = {};
     sbls->MakePwlInto(&sp);
     ssglDepthRangeOffset(1);
     ssglFillPolygon(&sp);

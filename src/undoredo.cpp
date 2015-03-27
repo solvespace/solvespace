@@ -46,31 +46,31 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     }
 
     UndoState *ut = &(uk->d[uk->write]);
-    ZERO(ut);
+    *ut = {};
     for(i = 0; i < SK.group.n; i++) {
         Group *src = &(SK.group.elem[i]);
         Group dest = *src;
         // And then clean up all the stuff that needs to be a deep copy,
         // and zero out all the dynamic stuff that will get regenerated.
         dest.clean = false;
-        ZERO(&(dest.solved));
-        ZERO(&(dest.polyLoops));
-        ZERO(&(dest.bezierLoops));
-        ZERO(&(dest.bezierOpens));
-        ZERO(&(dest.polyError));
-        ZERO(&(dest.thisMesh));
-        ZERO(&(dest.runningMesh));
-        ZERO(&(dest.thisShell));
-        ZERO(&(dest.runningShell));
-        ZERO(&(dest.displayMesh));
-        ZERO(&(dest.displayEdges));
+        dest.solved = {};
+        dest.polyLoops = {};
+        dest.bezierLoops = {};
+        dest.bezierOpens = {};
+        dest.polyError = {};
+        dest.thisMesh = {};
+        dest.runningMesh = {};
+        dest.thisShell = {};
+        dest.runningShell = {};
+        dest.displayMesh = {};
+        dest.displayEdges = {};
 
-        ZERO(&(dest.remap));
+        dest.remap = {};
         src->remap.DeepCopyInto(&(dest.remap));
 
-        ZERO(&(dest.impMesh));
-        ZERO(&(dest.impShell));
-        ZERO(&(dest.impEntity));
+        dest.impMesh = {};
+        dest.impShell = {};
+        dest.impEntity = {};
         ut->group.Add(&dest);
     }
     for(i = 0; i < SK.request.n; i++) {
@@ -79,7 +79,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *src = &(SK.constraint.elem[i]);
         Constraint dest = *src;
-        ZERO(&(dest.dogd));
+        dest.dogd = {};
         ut->constraint.Add(&dest);
     }
     for(i = 0; i < SK.param.n; i++) {
@@ -120,7 +120,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     SS.GW.activeGroup = ut->activeGroup;
 
     // No need to free it, since a shallow copy was made above
-    ZERO(ut);
+    *ut = {};
 
     // And reset the state everywhere else in the program, since the
     // sketch just changed a lot.
@@ -141,7 +141,7 @@ void SolveSpaceUI::UndoClearStack(UndoStack *uk) {
         (uk->cnt)--;
         UndoClearState(&(uk->d[uk->write]));
     }
-    ZERO(uk); // for good measure
+    *uk = {}; // for good measure
 }
 
 void SolveSpaceUI::UndoClearState(UndoState *ut) {
@@ -156,6 +156,6 @@ void SolveSpaceUI::UndoClearState(UndoState *ut) {
     ut->constraint.Clear();
     ut->param.Clear();
     ut->style.Clear();
-    ZERO(ut);
+    *ut = {};
 }
 

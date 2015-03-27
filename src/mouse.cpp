@@ -454,7 +454,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
 void GraphicsWindow::ClearPending(void) {
     pending.points.Clear();
-    ZERO(&pending);
+    pending = {};
     SS.ScheduleShowTW();
 }
 
@@ -727,8 +727,7 @@ hRequest GraphicsWindow::AddRequest(int type) {
 hRequest GraphicsWindow::AddRequest(int type, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
-    Request r;
-    memset(&r, 0, sizeof(r));
+    Request r = {};
     r.group = activeGroup;
     Group *g = SK.GetGroup(activeGroup);
     if(g->type == Group::DRAWING_3D || g->type == Group::DRAWING_WORKPLANE) {
@@ -948,8 +947,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
         case MNU_COMMENT: {
             ClearSuper();
-            Constraint c;
-            ZERO(&c);
+            Constraint c = {};
             c.group       = SS.GW.activeGroup;
             c.workplane   = SS.GW.ActiveWorkplane();
             c.type        = Constraint::COMMENT;

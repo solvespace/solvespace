@@ -40,7 +40,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
 {
     SCurve ret;
     ret = *this;
-    ZERO(&(ret.pts));
+    ret.pts = {};
 
     SCurvePt *p = pts.First();
     if(!p) oops();
@@ -49,8 +49,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     p = pts.NextAfter(p);
 
     for(; p; p = pts.NextAfter(p)) {
-        List<SInter> il;
-        ZERO(&il);
+        List<SInter> il = {};
 
         // Find all the intersections with the two passed shells
         if(agnstA)
@@ -148,8 +147,7 @@ void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
 void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
     el->l.ClearTags();
 
-    STrimBy stb;
-    ZERO(&stb);
+    STrimBy stb = {};
     for(;;) {
         // Find an edge, any edge; we'll start from there.
         SEdge *se;
@@ -424,7 +422,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     SSurface ret;
     // The returned surface is identical, just the trim curves change
     ret = *this;
-    ZERO(&(ret.trim));
+    ret.trim = {};
 
     // First, build a list of the existing trim curves; update them to use
     // the split curves.
@@ -443,16 +441,14 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // Build up our original trim polygon; remember the coordinates could
     // be changed if we just flipped the surface normal, and we are using
     // the split curves (not the original curves).
-    SEdgeList orig;
-    ZERO(&orig);
+    SEdgeList orig = {};
     ret.MakeEdgesInto(into, &orig, AS_UV);
     ret.trim.Clear();
     // which means that we can't necessarily use the old BSP...
     SBspUv *origBsp = SBspUv::From(&orig, &ret);
 
     // And now intersect the other shell against us
-    SEdgeList inter;
-    ZERO(&inter);
+    SEdgeList inter = {};
 
     SSurface *ss;
     for(ss = agnst->surface.First(); ss; ss = agnst->surface.NextAfter(ss)) {
@@ -504,8 +500,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // the choosing points. If two edges join at a non-choosing point, then
     // they must either both be kept or both be discarded (since that would
     // otherwise create an open contour).
-    SPointList choosing;
-    ZERO(&choosing);
+    SPointList choosing = {};
     SEdge *se;
     for(se = orig.l.First(); se; se = orig.l.NextAfter(se)) {
         choosing.IncrementTagFor(se->a);
@@ -527,12 +522,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
     // The list of edges to trim our new surface, a combination of edges from
     // our original and intersecting edge lists.
-    SEdgeList final;
-    ZERO(&final);
+    SEdgeList final = {};
 
     while(orig.l.n > 0) {
-        SEdgeList chain;
-        ZERO(&chain);
+        SEdgeList chain = {};
         FindChainAvoiding(&orig, &chain, &choosing);
 
         // Arbitrarily choose an edge within the chain to classify; they
@@ -566,8 +559,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     }
 
     while(inter.l.n > 0) {
-        SEdgeList chain;
-        ZERO(&chain);
+        SEdgeList chain = {};
         FindChainAvoiding(&inter, &chain, &choosing);
 
         // Any edge in the chain, same as above.
@@ -608,8 +600,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // Use our reassembled edges to trim the new surface.
     ret.TrimFromEdgeList(&final, true);
 
-    SPolygon poly;
-    ZERO(&poly);
+    SPolygon poly = {};
     final.l.ClearTags();
     if(!final.AssemblePolygon(&poly, NULL, true)) {
         into->booleanFailed = true;
@@ -782,14 +773,13 @@ void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
 }
 
 void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
-    SEdgeList el;
-    ZERO(&el);
+    SEdgeList el = {};
 
     MakeEdgesInto(shell, &el, AS_UV, useCurvesFrom);
     bsp = SBspUv::From(&el, this);
     el.Clear();
 
-    ZERO(&edges);
+    edges = {};
     MakeEdgesInto(shell, &edges, AS_XYZ, useCurvesFrom);
 }
 
@@ -810,8 +800,7 @@ static int ByLength(const void *av, const void *bv)
     return (la < lb) ? 1 : -1;
 }
 SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
-    SEdgeList work;
-    ZERO(&work);
+    SEdgeList work = {};
 
     SEdge *se;
     for(se = el->l.First(); se; se = el->l.NextAfter(se)) {

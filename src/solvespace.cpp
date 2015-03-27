@@ -7,8 +7,8 @@
 #include "solvespace.h"
 #include <string>
 
-SolveSpaceUI SolveSpace::SS;
-Sketch SolveSpace::SK;
+SolveSpaceUI SolveSpace::SS = {};
+Sketch SolveSpace::SK = {};
 
 void SolveSpaceUI::Init() {
     SS.tangentArcRadius = 10.0;
@@ -235,7 +235,7 @@ void SolveSpaceUI::ScheduleShowTW() {
 void SolveSpaceUI::DoLater(void) {
     if(later.generateAll) GenerateAll();
     if(later.showTW) TW.Show();
-    ZERO(&later);
+    later = {};
 }
 
 double SolveSpaceUI::MmPerUnit(void) {
@@ -530,8 +530,7 @@ void SolveSpaceUI::MenuFile(int id) {
         case GraphicsWindow::MNU_EXPORT_SURFACES: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
-            StepFileWriter sfw;
-            ZERO(&sfw);
+            StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
             break;
         }
@@ -714,11 +713,9 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                       "intersecting.");
                 break;
             }
-            SEdgeList sel;
-            ZERO(&sel);
+            SEdgeList sel = {};
             g->polyLoops.MakeEdgesInto(&sel);
-            SPolygon sp;
-            ZERO(&sp);
+            SPolygon sp = {};
             sel.AssemblePolygon(&sp, NULL, true);
             sp.normal = sp.ComputeNormal();
             sp.FixContourDirections();

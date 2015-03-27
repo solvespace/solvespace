@@ -1446,8 +1446,7 @@ void LoadAllFontFiles(void) {
         Glib::ustring ufilename = (char*) filename;
         if(ufilename.length() > 4 &&
            ufilename.substr(ufilename.length() - 4, 4).lowercase() == ".ttf") {
-            TtfFont tf;
-            ZERO(&tf);
+            TtfFont tf = {};
             strcpy(tf.fontFile, (char*) filename);
             SS.fonts.l.Add(&tf);
         }

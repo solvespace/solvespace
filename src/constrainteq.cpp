@@ -179,9 +179,7 @@ void ConstraintBase::ModifyToSatisfy(void) {
     } else {
         // We'll fix these ones up by looking at their symbolic equation;
         // that means no extra work.
-        IdList<Equation,hEquation> l;
-        // An uninit IdList could lead us to free some random address, bad.
-        ZERO(&l);
+        IdList<Equation,hEquation> l = {};
         // Generate the equations even if this is a reference dimension
         GenerateReal(&l);
         if(l.n != 1) oops();

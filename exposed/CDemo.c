@@ -52,7 +52,7 @@ static void Example3d(void)
     sys.param[sys.params++] = Slvs_MakeParam(6, g, 20.0);
     sys.entity[sys.entities++] = Slvs_MakePoint3d(102, g, 4, 5, 6);
     /* and a line segment connecting them. */
-    sys.entity[sys.entities++] = Slvs_MakeLineSegment(200, g, 
+    sys.entity[sys.entities++] = Slvs_MakeLineSegment(200, g,
                                         SLVS_FREE_IN_3D, 101, 102);
 
     /* The distance between the points should be 30.0 units. */
@@ -127,7 +127,7 @@ static void Example2d(void)
     sys.entity[sys.entities++] = Slvs_MakePoint2d(302, g, 200, 13, 14);
 
     /* And we create a line segment with those endpoints. */
-    sys.entity[sys.entities++] = Slvs_MakeLineSegment(400, g, 
+    sys.entity[sys.entities++] = Slvs_MakeLineSegment(400, g,
                                         200, 301, 302);
 
     /* Now three more points. */
@@ -256,7 +256,6 @@ static void Example2d(void)
 
 int main(void)
 {
-    memset(&sys, 0, sizeof(sys));
     sys.param      = CheckMalloc(50*sizeof(sys.param[0]));
     sys.entity     = CheckMalloc(50*sizeof(sys.entity[0]));
     sys.constraint = CheckMalloc(50*sizeof(sys.constraint[0]));

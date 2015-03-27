@@ -119,8 +119,7 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
 int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     if(loop->l.n < 1) oops();
 
-    List<int> listOfTrims;
-    ZERO(&listOfTrims);
+    List<int> listOfTrims = {};
 
     SBezier *sb = &(loop->l.elem[loop->l.n - 1]);
 
@@ -229,10 +228,8 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
 
     // Now we do the trim curves. We must group each outer loop separately
     // along with its inner faces, so do that now.
-    SBezierLoopSetSet sblss;
-    ZERO(&sblss);
-    SPolygon spxyz;
-    ZERO(&spxyz);
+    SBezierLoopSetSet sblss = {};
+    SPolygon spxyz = {};
     bool allClosed;
     SEdge notClosedAt;
     // We specify a surface, so it doesn't check for coplanarity; and we
@@ -252,8 +249,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     for(sbls = sblss.l.First(); sbls; sbls = sblss.l.NextAfter(sbls)) {
         SBezierLoop *loop = sbls->l.First();
 
-        List<int> listOfLoops;
-        ZERO(&listOfLoops);
+        List<int> listOfLoops = {};
         // Create the face outer boundary from the outer loop.
         int fob = ExportCurveLoop(loop, false);
         listOfLoops.Add(&fob);
@@ -318,7 +314,7 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
     WriteHeader();
 	WriteProductHeader();
 
-    ZERO(&advancedFaces);
+    advancedFaces = {};
 
     SSurface *ss;
     for(ss = shell->surface.First(); ss; ss = shell->surface.NextAfter(ss)) {
@@ -327,8 +323,7 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
         // Get all of the loops of Beziers that trim our surface (with each
         // Bezier split so that we use the section as t goes from 0 to 1), and
         // the piecewise linearization of those loops in xyz space.
-        SBezierList sbl;
-        ZERO(&sbl);
+        SBezierList sbl = {};
         ss->MakeSectionEdgesInto(shell, NULL, &sbl);
 
         // Apply the export scale factor.

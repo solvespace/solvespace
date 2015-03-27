@@ -215,8 +215,6 @@ bool SolveSpace::MakeAcceleratorLabel(int accel, char *out) {
 }
 
 void GraphicsWindow::Init(void) {
-    memset(this, 0, sizeof(*this));
-
     scale = 5;
     offset    = Vector::From(0, 0, 0);
     projRight = Vector::From(1, 0, 0);

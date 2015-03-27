@@ -175,15 +175,13 @@ void TextWindow::ScreenHoverRequest(int link, uint32_t v) {
 }
 void TextWindow::ScreenSelectConstraint(int link, uint32_t v) {
     SS.GW.ClearSelection();
-    GraphicsWindow::Selection sel;
-    ZERO(&sel);
+    GraphicsWindow::Selection sel = {};
     sel.constraint.v = v;
     SS.GW.selection.Add(&sel);
 }
 void TextWindow::ScreenSelectRequest(int link, uint32_t v) {
     SS.GW.ClearSelection();
-    GraphicsWindow::Selection sel;
-    ZERO(&sel);
+    GraphicsWindow::Selection sel = {};
     hRequest hr = { v };
     sel.entity = hr.entity(0);
     SS.GW.selection.Add(&sel);

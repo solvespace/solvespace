@@ -175,7 +175,7 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
         ;
 
     // Don't lose our numerical guesses when we regenerate.
-    IdList<Param,hParam> prev;
+    IdList<Param,hParam> prev = {};
     SK.param.MoveSelfInto(&prev);
     SK.entity.Clear();
 
@@ -336,7 +336,8 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
                        deleted.constraints, deleted.constraints == 1 ? "" : "s",
                        deleted.groups, deleted.groups == 1 ? "" : "s");
         }
-        memset(&deleted, 0, sizeof(deleted));
+
+        deleted = {};
     }
 
     FreeAllTemporary();

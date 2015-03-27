@@ -227,8 +227,7 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
 }
 
 void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) {
-    List<Vector> lv;
-    ZERO(&lv);
+    List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
     for(i = 1; i < lv.n; i++) {
@@ -237,8 +236,7 @@ void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) {
     lv.Clear();
 }
 void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
-    List<Vector> lv;
-    ZERO(&lv);
+    List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
     for(i = 0; i < lv.n; i++) {
@@ -251,8 +249,7 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
     lv.Clear();
 }
 void SBezier::MakePwlInto(SContour *sc, double chordTol) {
-    List<Vector> lv;
-    ZERO(&lv);
+    List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
     for(i = 0; i < lv.n; i++) {

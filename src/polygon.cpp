@@ -48,8 +48,7 @@ void STriangle::FlipNormal(void) {
 }
 
 STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
-    STriangle tr;
-    ZERO(&tr);
+    STriangle tr = {};
     tr.meta = meta;
     tr.a = a;
     tr.b = b;
@@ -58,8 +57,7 @@ STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
 }
 
 SEdge SEdge::From(Vector a, Vector b) {
-    SEdge se;
-    ZERO(&se);
+    SEdge se = {};
     se.a = a;
     se.b = b;
     return se;
@@ -152,7 +150,7 @@ void SEdgeList::Clear(void) {
 }
 
 void SEdgeList::AddEdge(Vector a, Vector b, int auxA, int auxB) {
-    SEdge e; ZERO(&e);
+    SEdge e = {};
     e.a = a;
     e.b = b;
     e.auxA = auxA;
@@ -303,12 +301,12 @@ void SEdgeList::CullExtraneousEdges(void) {
 //-----------------------------------------------------------------------------
 SKdNodeEdges *SKdNodeEdges::Alloc(void) {
     SKdNodeEdges *ne = (SKdNodeEdges *)AllocTemporary(sizeof(SKdNodeEdges));
-    ZERO(ne);
+    *ne = {};
     return ne;
 }
 SEdgeLl *SEdgeLl::Alloc(void) {
     SEdgeLl *sell = (SEdgeLl *)AllocTemporary(sizeof(SEdgeLl));
-    ZERO(sell);
+    *sell = {};
     return sell;
 }
 SKdNodeEdges *SKdNodeEdges::From(SEdgeList *sel) {
@@ -499,8 +497,7 @@ void SPointList::IncrementTagFor(Vector pt) {
 }
 
 void SPointList::Add(Vector pt) {
-    SPoint p;
-    ZERO(&p);
+    SPoint p = {};
     p.p = pt;
     l.Add(&p);
 }
@@ -621,8 +618,7 @@ void SPolygon::Clear(void) {
 }
 
 void SPolygon::AddEmptyContour(void) {
-    SContour c;
-    memset(&c, 0, sizeof(c));
+    SContour c = {};
     l.Add(&c);
 }
 
@@ -709,8 +705,7 @@ Vector SPolygon::AnyPoint(void) {
 }
 
 bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
-    SEdgeList el;
-    ZERO(&el);
+    SEdgeList el = {};
     MakeEdgesInto(&el);
     SKdNodeEdges *kdtree = SKdNodeEdges::From(&el);
 

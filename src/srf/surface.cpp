@@ -7,8 +7,7 @@
 #include "../solvespace.h"
 
 SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
-    SSurface ret;
-    ZERO(&ret);
+    SSurface ret = {};
 
     ret.degm = sb->deg;
     ret.degn = 1;
@@ -67,8 +66,7 @@ bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
 SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
                                     double thetas, double thetaf)
 {
-    SSurface ret;
-    ZERO(&ret);
+    SSurface ret = {};
 
 
     ret.degm = sb->deg;
@@ -117,8 +115,7 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
 }
 
 SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
-    SSurface ret;
-    ZERO(&ret);
+    SSurface ret = {};
 
     ret.degm = 1;
     ret.degn = 1;
@@ -138,8 +135,7 @@ SSurface SSurface::FromTransformationOf(SSurface *a,
                                         Vector t, Quaternion q, double scale,
                                         bool includingTrims)
 {
-    SSurface ret;
-    ZERO(&ret);
+    SSurface ret = {};
 
     ret.h = a->h;
     ret.color = a->color;
@@ -403,13 +399,11 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
 }
 
 void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
-    SEdgeList el;
-    ZERO(&el);
+    SEdgeList el = {};
 
     MakeEdgesInto(shell, &el, AS_UV);
 
-    SPolygon poly;
-    ZERO(&poly);
+    SPolygon poly = {};
     if(el.AssemblePolygon(&poly, NULL, true)) {
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
@@ -528,8 +522,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     SBezierLoop *sbl;
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         SBezier *sb;
-        List<TrimLine> trimLines;
-        ZERO(&trimLines);
+        List<TrimLine> trimLines = {};
 
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
             // Generate the surface of extrusion of this curve, and add
@@ -539,8 +532,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
             hSSurface hsext = surface.AddAndAssignId(&ss);
 
             // Translate the curve by t0 and t1 to produce two trim curves
-            SCurve sc;
-            ZERO(&sc);
+            SCurve sc = {};
             sc.isExact = true;
             sc.exact = sb->TransformedBy(t0, Quaternion::IDENTITY, 1.0);
             (sc.exact).MakePwlInto(&(sc.pts));
@@ -548,7 +540,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
             sc.surfB = hsext;
             hSCurve hc0 = curve.AddAndAssignId(&sc);
 
-            ZERO(&sc);
+            sc = {};
             sc.isExact = true;
             sc.exact = sb->TransformedBy(t1, Quaternion::IDENTITY, 1.0);
             (sc.exact).MakePwlInto(&(sc.pts));
@@ -571,7 +563,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
 
             // And form the trim line
             Vector pt = sb->Finish();
-            ZERO(&sc);
+            sc = {};
             sc.isExact = true;
             sc.exact = SBezier::From(pt.Plus(t0), pt.Plus(t1));
             (sc.exact).MakePwlInto(&(sc.pts));
@@ -645,8 +637,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         int i, j;
         SBezier *sb, *prev;
-        List<Revolved> hsl;
-        ZERO(&hsl);
+        List<Revolved> hsl = {};
 
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
             Revolved revs;
@@ -685,7 +676,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 // If this input curve generate a surface, then trim that
                 // surface with the rotated version of the input curve.
                 if(revs.d[j].v) {
-                    ZERO(&sc);
+                    sc = {};
                     sc.isExact = true;
                     sc.exact = sb->TransformedBy(ts, qs, 1.0);
                     (sc.exact).MakePwlInto(&(sc.pts));
@@ -707,7 +698,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 if(revs.d[j].v && revsp.d[j].v) {
                     SSurface *ss = surface.FindById(revs.d[j]);
 
-                    ZERO(&sc);
+                    sc = {};
                     sc.isExact = true;
                     sc.exact = SBezier::From(ss->ctrl[0][0],
                                              ss->ctrl[0][1],

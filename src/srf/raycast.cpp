@@ -254,8 +254,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     Vector ba = b.Minus(a);
     double bam = ba.Magnitude();
 
-    List<Inter> inters;
-    ZERO(&inters);
+    List<Inter> inters = {};
 
     // All the intersections between the line and the surface; either special
     // cases that we can quickly solve in closed form, or general numerical.
@@ -426,8 +425,7 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
                           Vector p,
                           Vector edge_n_in, Vector edge_n_out, Vector surf_n)
 {
-    List<SInter> l;
-    ZERO(&l);
+    List<SInter> l = {};
 
     srand(0);
 

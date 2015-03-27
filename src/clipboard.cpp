@@ -82,8 +82,7 @@ void GraphicsWindow::CopySelection(void) {
         }
         if(req == Request::WORKPLANE) continue;
 
-        ClipboardRequest cr;
-        ZERO(&cr);
+        ClipboardRequest cr = {};
         cr.type         = req;
         cr.extraPoints  = e->extraPoints;
         cr.style        = e->style;

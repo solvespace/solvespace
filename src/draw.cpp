@@ -99,8 +99,7 @@ void GraphicsWindow::ClearNonexistentSelectionItems(void) {
 // Is this entity/constraint selected?
 //-----------------------------------------------------------------------------
 bool GraphicsWindow::IsSelected(hEntity he) {
-    Selection s;
-    ZERO(&s);
+    Selection s = {};
     s.entity = he;
     return IsSelected(&s);
 }
@@ -121,8 +120,7 @@ bool GraphicsWindow::IsSelected(Selection *st) {
 // would otherwise be impossible to de-select the lower of the two.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::MakeUnselected(hEntity he, bool coincidentPointTrick) {
-    Selection stog;
-    ZERO(&stog);
+    Selection stog = {};
     stog.entity = he;
     MakeUnselected(&stog, coincidentPointTrick);
 }
@@ -164,8 +162,7 @@ void GraphicsWindow::MakeUnselected(Selection *stog, bool coincidentPointTrick){
 // Select an item, if it isn't selected already.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::MakeSelected(hEntity he) {
-    Selection stog;
-    ZERO(&stog);
+    Selection stog = {};
     stog.entity = he;
     MakeSelected(&stog);
 }
@@ -225,8 +222,7 @@ void GraphicsWindow::SelectByMarquee(void) {
             // includes the z = 0 plane.
             Vector ptMin = Vector::From(xmin, ymin, -1),
                    ptMax = Vector::From(xmax, ymax, 1);
-            SEdgeList sel;
-            ZERO(&sel);
+            SEdgeList sel = {};
             e->GenerateEdges(&sel, true);
             SEdge *se;
             for(se = sel.l.First(); se; se = sel.l.NextAfter(se)) {
@@ -254,7 +250,7 @@ void GraphicsWindow::SelectByMarquee(void) {
 // lines, etc.), and so on.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::GroupSelection(void) {
-    memset(&gs, 0, sizeof(gs));
+    gs = {};
     int i;
     for(i = 0; i < selection.n && i < MAX_SELECTED; i++) {
         Selection *s = &(selection.elem[i]);
@@ -321,8 +317,7 @@ void GraphicsWindow::GroupSelection(void) {
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     int i;
     double d, dmin = 1e12;
-    Selection s;
-    ZERO(&s);
+    Selection s = {};
 
     // Always do the entities; we might be dragging something that should
     // be auto-constrained, and we need the hover for that.
@@ -343,7 +338,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
 
         d = e->GetDistance(mp);
         if(d < 10 && d < dmin) {
-            memset(&s, 0, sizeof(s));
+            s = {};
             s.entity = e->h;
             dmin = d;
         }
@@ -355,7 +350,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         for(i = 0; i < SK.constraint.n; i++) {
             d = SK.constraint.elem[i].GetDistance(mp);
             if(d < 10 && d < dmin) {
-                memset(&s, 0, sizeof(s));
+                s = {};
                 s.constraint = SK.constraint.elem[i].h;
                 dmin = d;
             }
@@ -714,8 +709,7 @@ nogrid:;
         SuggestedConstraint suggested =
             SS.GW.SuggestLineConstraint(SS.GW.pending.request);
         if(suggested != GraphicsWindow::SUGGESTED_NONE) {
-            Constraint c;
-            ZERO(&c);
+            Constraint c = {};
             c.group = SS.GW.activeGroup;
             c.workplane = SS.GW.ActiveWorkplane();
             c.type = suggested;

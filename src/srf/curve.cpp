@@ -7,8 +7,7 @@
 #include "../solvespace.h"
 
 SBezier SBezier::From(Vector4 p0, Vector4 p1) {
-    SBezier ret;
-    ZERO(&ret);
+    SBezier ret = {};
     ret.deg = 1;
     ret.weight[0] = p0.w;
     ret.ctrl  [0] = p0.PerspectiveProject();
@@ -18,8 +17,7 @@ SBezier SBezier::From(Vector4 p0, Vector4 p1) {
 }
 
 SBezier SBezier::From(Vector4 p0, Vector4 p1, Vector4 p2) {
-    SBezier ret;
-    ZERO(&ret);
+    SBezier ret = {};
     ret.deg = 2;
     ret.weight[0] = p0.w;
     ret.ctrl  [0] = p0.PerspectiveProject();
@@ -31,8 +29,7 @@ SBezier SBezier::From(Vector4 p0, Vector4 p1, Vector4 p2) {
 }
 
 SBezier SBezier::From(Vector4 p0, Vector4 p1, Vector4 p2, Vector4 p3) {
-    SBezier ret;
-    ZERO(&ret);
+    SBezier ret = {};
     ret.deg = 3;
     ret.weight[0] = p0.w;
     ret.ctrl  [0] = p0.PerspectiveProject();
@@ -274,11 +271,10 @@ void SBezierList::AllIntersectionsWith(SBezierList *sblb, SPointList *spl) {
     }
 }
 void SBezier::AllIntersectionsWith(SBezier *sbb, SPointList *spl) {
-    SPointList splRaw;
-    ZERO(&splRaw);
+    SPointList splRaw = {};
     SEdgeList sea, seb;
-    ZERO(&sea);
-    ZERO(&seb);
+    sea = {};
+    seb = {};
     this->MakePwlInto(&sea);
     sbb ->MakePwlInto(&seb);
     SEdge *se;
@@ -393,8 +389,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
 SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
                                     bool *allClosed, SEdge *errorAt)
 {
-    SBezierLoop loop;
-    ZERO(&loop);
+    SBezierLoop loop = {};
 
     if(sbl->l.n < 1) return loop;
     sbl->l.ClearTags();
@@ -502,8 +497,7 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
                                     bool *allClosed, SEdge *errorAt,
                                     SBezierList *openContours)
 {
-    SBezierLoopSet ret;
-    ZERO(&ret);
+    SBezierLoopSet ret = {};
 
     *allClosed = true;
     while(sbl->l.n > 0) {
@@ -610,8 +604,7 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
     if(sbls.l.n != spxyz->l.n) return;
 
     // Convert the xyz piecewise linear to uv piecewise linear.
-    SPolygon spuv;
-    ZERO(&spuv);
+    SPolygon spuv = {};
     SContour *sc;
     for(sc = spxyz->l.First(); sc; sc = spxyz->l.NextAfter(sc)) {
         spuv.AddEmptyContour();
@@ -671,8 +664,7 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
                 continue;
             }
 
-            SBezierLoopSet outerAndInners;
-            ZERO(&outerAndInners);
+            SBezierLoopSet outerAndInners = {};
             loopsRemaining = true;
             loop->tag = USED_LOOP;
             outerAndInners.l.Add(loop);
@@ -723,12 +715,10 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
 }
 
 void SBezierLoopSetSet::AddOpenPath(SBezier *sb) {
-    SBezierLoop sbl;
-    ZERO(&sbl);
+    SBezierLoop sbl = {};
     sbl.l.Add(sb);
 
-    SBezierLoopSet sbls;
-    ZERO(&sbls);
+    SBezierLoopSet sbls = {};
     sbls.l.Add(&sbl);
 
     l.Add(&sbls);
@@ -745,8 +735,7 @@ void SBezierLoopSetSet::Clear(void) {
 SCurve SCurve::FromTransformationOf(SCurve *a,
                                           Vector t, Quaternion q, double scale)
 {
-    SCurve ret;
-    ZERO(&ret);
+    SCurve ret = {};
 
     ret.h = a->h;
     ret.isExact = a->isExact;
@@ -840,8 +829,7 @@ void SCurve::RemoveShortSegments(SSurface *srfA, SSurface *srfB) {
 }
 
 STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
-    STrimBy stb;
-    ZERO(&stb);
+    STrimBy stb = {};
     stb.curve = hsc;
     SCurve *sc = shell->curve.FindById(hsc);
 

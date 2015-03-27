@@ -438,6 +438,13 @@ public:
 
 class Entity : public EntityBase {
 public:
+    // Necessary for Entity e = {} to zero-initialize, since
+    // classes with base classes are not aggregates and
+    // the default constructor does not initialize members.
+    Entity() : EntityBase(), forceHidden(), actPoint(), actNormal(),
+        actDistance(), actVisible(), style(), construction(),
+        dogd() {};
+
     // An imported entity that was hidden in the source file ends up hidden
     // here too.
     bool        forceHidden;
@@ -616,6 +623,9 @@ public:
 
 class Constraint : public ConstraintBase {
 public:
+    // See Entity::Entity().
+    Constraint() : ConstraintBase(), disp(), dogd() {}
+
     // These define how the constraint is drawn on-screen.
     struct {
         Vector      offset;

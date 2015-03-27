@@ -62,7 +62,11 @@ void TextWindow::Init(void) {
 void TextWindow::ClearSuper(void) {
     HideEditControl();
 
+    // Cannot use *this = {} here because TextWindow instances
+    // are 2.4MB long; this causes stack overflows in prologue
+    // when built with MSVC, even with optimizations.
     memset(this, 0, sizeof(*this));
+
     MakeColorTable(fgColors, fgColorTable);
     MakeColorTable(bgColors, bgColorTable);
 

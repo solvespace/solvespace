@@ -91,8 +91,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     bool hasDistance = false;
     int i;
 
-    Entity e;
-    ZERO(&e);
+    Entity e = {};
     EntReqTable::GetRequestInfo(type, extraPoints,
                     &et, &points, &hasNormal, &hasDistance);
 
@@ -109,8 +108,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
     // And generate entities for the points
     for(i = 0; i < points; i++) {
-        Entity p;
-        memset(&p, 0, sizeof(p));
+        Entity p = {};
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
         p.h = h.entity(i+(et ? 1 : 0));
@@ -133,8 +131,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         e.point[i] = p.h;
     }
     if(hasNormal) {
-        Entity n;
-        memset(&n, 0, sizeof(n));
+        Entity n = {};
         n.workplane = workplane;
         n.h = h.entity(32);
         n.group = group;
@@ -158,8 +155,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         e.normal = n.h;
     }
     if(hasDistance) {
-        Entity d;
-        memset(&d, 0, sizeof(d));
+        Entity d = {};
         d.workplane = workplane;
         d.h = h.entity(64);
         d.group = group;
@@ -190,8 +186,7 @@ char *Request::DescriptionString(void) {
 }
 
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
-    Param pa;
-    memset(&pa, 0, sizeof(pa));
+    Param pa = {};
     pa.h = hp;
     param->Add(&pa);
     return hp;

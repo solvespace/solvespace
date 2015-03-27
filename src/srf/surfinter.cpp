@@ -12,8 +12,7 @@ extern int FLAG;
 void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                             SShell *agnstA, SShell *agnstB, SShell *into)
 {
-    SCurve sc;
-    ZERO(&sc);
+    SCurve sc = {};
     // Important to keep the order of (surfA, surfB) consistent; when we later
     // rewrite the identifiers, we rewrite surfA from A and surfB from B.
     sc.surfA = h;
@@ -48,7 +47,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         }
         if(backwards) sc.pts.Reverse();
         split = sc;
-        ZERO(&sc);
+        sc = {};
     } else {
         sb->MakePwlInto(&(sc.pts));
         // and split the line where it intersects our existing surfaces
@@ -216,8 +215,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             // extrusion, and dp component doesn't matter so zero
             p0 = n.ScaledBy(d).Plus(alu.ScaledBy(pm.Dot(alu)));
 
-            List<SInter> inters;
-            ZERO(&inters);
+            List<SInter> inters = {};
             sext->AllPointsIntersecting(
                 p0, p0.Plus(dp), &inters, false, false, true);
 
@@ -252,10 +250,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         // intersect along some number of lines parallel to the axis.
         Vector axis = alongt.WithMagnitude(1);
 
-        List<SInter> inters;
-        ZERO(&inters);
-        List<Vector> lv;
-        ZERO(&lv);
+        List<SInter> inters = {};
+        List<Vector> lv = {};
 
         double a_axis0 = (   ctrl[0][0]).Dot(axis),
                a_axis1 = (   ctrl[0][1]).Dot(axis),
@@ -313,8 +309,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         // Try intersecting the surfaces numerically, by a marching algorithm.
         // First, we find all the intersections between a surface and the
         // boundary of the other surface.
-        SPointList spl;
-        ZERO(&spl);
+        SPointList spl = {};
         int a;
         for(a = 0; a < 2; a++) {
             SShell   *shA  = (a == 0) ? agnstA : agnstB,
@@ -322,14 +317,12 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             SSurface *srfA = (a == 0) ? this : b,
                      *srfB = (a == 0) ? b : this;
 
-            SEdgeList el;
-            ZERO(&el);
+            SEdgeList el = {};
             srfA->MakeEdgesInto(shA, &el, AS_XYZ, NULL);
 
             SEdge *se;
             for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
-                List<SInter> lsi;
-                ZERO(&lsi);
+                List<SInter> lsi = {};
 
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
                     true, true, false);
@@ -369,8 +362,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         }
 
         while(spl.l.n >= 2) {
-            SCurve sc;
-            ZERO(&sc);
+            SCurve sc = {};
             sc.surfA = h;
             sc.surfB = b->h;
             sc.isExact = false;
@@ -387,8 +379,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             int maxsteps = max(300, SS.maxSegments*3);
 
             // The curve starts at our starting point.
-            SCurvePt padd;
-            ZERO(&padd);
+            SCurvePt padd = {};
             padd.vertex = true;
             padd.p = start;
             sc.pts.Add(&padd);

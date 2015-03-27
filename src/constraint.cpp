@@ -94,8 +94,7 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
                                      hEntity entityA, hEntity entityB,
                                      bool other, bool other2)
 {
-    Constraint c;
-    memset(&c, 0, sizeof(c));
+    Constraint c = {};
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
     c.type = type;
@@ -116,8 +115,7 @@ void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
 }
 
 void Constraint::MenuConstrain(int id) {
-    Constraint c;
-    ZERO(&c);
+    Constraint c = {};
     c.group = SS.GW.activeGroup;
     c.workplane = SS.GW.ActiveWorkplane();
 

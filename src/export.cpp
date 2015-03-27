@@ -71,10 +71,8 @@ void SolveSpaceUI::ExportSectionTo(const char *filename) {
     n = n.WithMagnitude(1);
     d = origin.Dot(n);
 
-    SEdgeList el;
-    ZERO(&el);
-    SBezierList bl;
-    ZERO(&bl);
+    SEdgeList el = {};
+    SBezierList bl = {};
 
     // If there's a mesh, then grab the edges from it.
     g->runningMesh.MakeEdgesInPlaneInto(&el, n, d);
@@ -111,10 +109,8 @@ void SolveSpaceUI::ExportSectionTo(const char *filename) {
 
 void SolveSpaceUI::ExportViewOrWireframeTo(const char *filename, bool wireframe) {
     int i;
-    SEdgeList edges;
-    ZERO(&edges);
-    SBezierList beziers;
-    ZERO(&beziers);
+    SEdgeList edges = {};
+    SBezierList beziers = {};
 
     SMesh *sm = NULL;
     if(SS.GW.showShaded) {
@@ -197,8 +193,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const char *filename, bool wireframe)
 void SolveSpaceUI::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                            VectorFileWriter *out)
 {
-    SBezierLoopSetSet sblss;
-    ZERO(&sblss);
+    SBezierLoopSetSet sblss = {};
     SEdge *se;
     for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
         SBezier sb = SBezier::From(
@@ -247,13 +242,11 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // If cutter radius compensation is requested, then perform it now
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
         // assemble those edges into a polygon, and clear the edge list
-        SPolygon sp;
-        ZERO(&sp);
+        SPolygon sp = {};
         sel->AssemblePolygon(&sp, NULL);
         sel->Clear();
 
-        SPolygon compd;
-        ZERO(&compd);
+        SPolygon compd = {};
         sp.normal = Vector::From(0, 0, -1);
         sp.FixContourDirections();
         sp.OffsetInto(&compd, SS.exportOffset*s);
@@ -265,8 +258,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // Now the triangle mesh; project, then build a BSP to perform
     // occlusion testing and generated the shaded surfaces.
-    SMesh smp;
-    ZERO(&smp);
+    SMesh smp = {};
     if(sm) {
         Vector l0 = (SS.lightDir[0]).WithMagnitude(1),
                l1 = (SS.lightDir[1]).WithMagnitude(1);
@@ -292,8 +284,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // Use the BSP routines to generate the split triangles in paint order.
     SBsp3 *bsp = SBsp3::FromMesh(&smp);
-    SMesh sms;
-    ZERO(&sms);
+    SMesh sms = {};
     bsp->GenerateInPaintOrder(&sms);
     // And cull the back-facing triangles
     STriangle *tr;
@@ -307,8 +298,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     sms.l.RemoveTagged();
 
     // And now we perform hidden line removal if requested
-    SEdgeList hlrd;
-    ZERO(&hlrd);
+    SEdgeList hlrd = {};
     if(sm && !SS.GW.showHdnLines) {
         SKdNode *root = SKdNode::From(&smp);
 
@@ -331,8 +321,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                 continue;
             }
 
-            SEdgeList out;
-            ZERO(&out);
+            SEdgeList out = {};
             // Split the original edge against the mesh
             out.AddEdge(se->a, se->b, se->auxA);
             root->OcclusionTestLine(*se, &out, cnt);
@@ -366,15 +355,12 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // If possible, then we will assemble these output curves into loops. They
     // will then get exported as closed paths.
-    SBezierLoopSetSet sblss;
-    ZERO(&sblss);
-    SBezierList leftovers;
-    ZERO(&leftovers);
+    SBezierLoopSetSet sblss = {};
+    SBezierList leftovers = {};
     SSurface srf = SSurface::FromPlane(Vector::From(0, 0, 0),
                                        Vector::From(1, 0, 0),
                                        Vector::From(0, 1, 0));
-    SPolygon spxyz;
-    ZERO(&spxyz);
+    SPolygon spxyz = {};
     bool allClosed;
     SEdge notClosedAt;
     sbl->l.ClearTags();
@@ -522,8 +508,7 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
 }
 
 void VectorFileWriter::BezierAsPwl(SBezier *sb) {
-    List<Vector> lv;
-    ZERO(&lv);
+    List<Vector> lv = {};
     sb->MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
     int i;
     for(i = 1; i < lv.n; i++) {
@@ -606,8 +591,7 @@ void SolveSpaceUI::ExportMeshTo(const char *filename) {
 // not self-intersecting, so not much to do.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
-    char str[80];
-    memset(str, 0, sizeof(str));
+    char str[80] = {};
     strcpy(str, "STL exported mesh");
     fwrite(str, 1, 80, f);
 
@@ -642,8 +626,7 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 // identical vertices to the same identifier, so do that first.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
-    SPointList spl;
-    ZERO(&spl);
+    SPointList spl = {};
     STriangle *tr;
     for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
         spl.IncrementTagFor(tr->a);
@@ -678,8 +661,7 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
 void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *sm,
                                          SEdgeList *sel)
 {
-    SPointList spl;
-    ZERO(&spl);
+    SPointList spl = {};
     STriangle *tr;
     SEdge *e;
     Vector bndl, bndh;

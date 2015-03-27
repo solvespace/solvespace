@@ -35,8 +35,7 @@ void SolveSpaceUI::ClearExisting(void) {
 }
 
 hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
-    Group g;
-    ZERO(&g);
+    Group g = {};
 
     // And an empty group, for the first stuff the user draws.
     g.visible = true;
@@ -55,8 +54,7 @@ void SolveSpaceUI::NewFile(void) {
     ClearExisting();
 
     // Our initial group, that contains the references.
-    Group g;
-    memset(&g, 0, sizeof(g));
+    Group g = {};
     g.visible = true;
     g.name.strcpy("#references");
     g.type = Group::DRAWING_3D;
@@ -65,8 +63,7 @@ void SolveSpaceUI::NewFile(void) {
 
     // Let's create three two-d coordinate systems, for the coordinate
     // planes; these are our references, present in every sketch.
-    Request r;
-    ZERO(&r);
+    Request r = {};
     r.type = Request::WORKPLANE;
     r.group = Group::HGROUP_REFERENCES;
     r.workplane = Entity::FREE_IN_3D;
@@ -396,7 +393,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                     // makes a shallow copy, so that would result in us
                     // freeing memory that we want to keep around. Just
                     // zero it out so that new memory is allocated.
-                    memset(&(p->M), 0, sizeof(p->M));
+                    p->M = {};
                     for(;;) {
                         EntityMap em;
                         char line2[1024];
@@ -435,7 +432,7 @@ bool SolveSpaceUI::LoadFromFile(const char *filename) {
 
     ClearExisting();
 
-    memset(&sv, 0, sizeof(sv));
+    sv = {};
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
 
     char line[1024];
@@ -456,24 +453,24 @@ bool SolveSpaceUI::LoadFromFile(const char *filename) {
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             SK.group.Add(&(sv.g));
-            ZERO(&(sv.g));
+            sv.g = {};
             sv.g.scale = 1; // default is 1, not 0; so legacy files need this
         } else if(strcmp(line, "AddParam")==0) {
             // params are regenerated, but we want to preload the values
             // for initial guesses
             SK.param.Add(&(sv.p));
-            ZERO(&(sv.p));
+            sv.p = {};
         } else if(strcmp(line, "AddEntity")==0) {
             // entities are regenerated
         } else if(strcmp(line, "AddRequest")==0) {
             SK.request.Add(&(sv.r));
-            ZERO(&(sv.r));
+            sv.r = {};
         } else if(strcmp(line, "AddConstraint")==0) {
             SK.constraint.Add(&(sv.c));
-            ZERO(&(sv.c));
+            sv.c = {};
         } else if(strcmp(line, "AddStyle")==0) {
             SK.style.Add(&(sv.s));
-            ZERO(&(sv.s));
+            sv.s = {};
         } else if(strcmp(line, VERSION_STRING)==0) {
             // do nothing, version string
         } else if(StrStartsWith(line, "Triangle ")      ||
@@ -507,18 +504,16 @@ bool SolveSpaceUI::LoadFromFile(const char *filename) {
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
-                                      SMesh *m, SShell *sh)
+                                        SMesh *m, SShell *sh)
 {
-    SSurface srf;
-    ZERO(&srf);
-    SCurve crv;
-    ZERO(&crv);
+    SSurface srf = {};
+    SCurve crv = {};
 
     fh = fopen(file, "rb");
     if(!fh) return false;
 
     le->Clear();
-    memset(&sv, 0, sizeof(sv));
+    sv = {};
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
@@ -544,7 +539,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
 
         } else if(strcmp(line, "AddEntity")==0) {
             le->Add(&(sv.e));
-            memset(&(sv.e), 0, sizeof(sv.e));
+            sv.e = {};
         } else if(strcmp(line, "AddRequest")==0) {
 
         } else if(strcmp(line, "AddConstraint")==0) {
@@ -554,7 +549,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
         } else if(strcmp(line, VERSION_STRING)==0) {
 
         } else if(StrStartsWith(line, "Triangle ")) {
-            STriangle tr; ZERO(&tr);
+            STriangle tr = {};
             unsigned int rgba = 0;
             if(sscanf(line, "Triangle %x %x  "
                              "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
@@ -586,8 +581,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
             srf.ctrl[i][j] = c;
             srf.weight[i][j] = w;
         } else if(StrStartsWith(line, "TrimBy ")) {
-            STrimBy stb;
-            ZERO(&stb);
+            STrimBy stb = {};
             int backwards;
             if(sscanf(line, "TrimBy %x %d  %lf %lf %lf  %lf %lf %lf",
                 &(stb.curve.v), &backwards,
@@ -600,7 +594,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
             srf.trim.Add(&stb);
         } else if(strcmp(line, "AddSurface")==0) {
             sh->surface.Add(&srf);
-            ZERO(&srf);
+            srf = {};
         } else if(StrStartsWith(line, "Curve ")) {
             int isExact;
             if(sscanf(line, "Curve %x %d %d %x %x",
@@ -636,7 +630,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
             crv.pts.Add(&scpt);
         } else if(strcmp(line, "AddCurve")==0) {
             sh->curve.Add(&crv);
-            ZERO(&crv);
+            crv = {};
         } else {
             oops();
         }

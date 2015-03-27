@@ -1063,8 +1063,7 @@ void SolveSpace::LoadAllFontFiles(void) {
         CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fontRef, kCTFontURLAttribute);
         NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
         if([[fontPath pathExtension] isEqual:@"ttf"]) {
-            TtfFont tf;
-            ZERO(&tf);
+            TtfFont tf = {};
             strcpy(tf.fontFile, [[NSFileManager defaultManager]
                 fileSystemRepresentationWithPath:fontPath]);
             SS.fonts.l.Add(&tf);

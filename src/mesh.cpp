@@ -24,7 +24,7 @@ void SMesh::AddTriangle(STriMeta meta, Vector n, Vector a, Vector b, Vector c) {
     }
 }
 void SMesh::AddTriangle(STriMeta meta, Vector a, Vector b, Vector c) {
-    STriangle t; ZERO(&t);
+    STriangle t = {};
     t.meta = meta;
     t.a = a;
     t.b = b;
@@ -62,8 +62,7 @@ void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
 // within the plane n dot p = d.
 //----------------------------------------------------------------------------
 void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
-    SMesh m;
-    ZERO(&m);
+    SMesh m = {};
     m.MakeFromCopyOf(this);
 
     // Delete all triangles in the mesh that do not lie in our export plane.
@@ -623,8 +622,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
                        ((j == 1) ? tr->b :
                                    tr->c));
 
-            SMesh extra;
-            ZERO(&extra);
+            SMesh extra = {};
             SnapToVertex(v, &extra);
 
             for(k = 0; k < extra.l.n; k++) {
@@ -643,8 +641,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
 // and our output.
 //-----------------------------------------------------------------------------
 void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
-    SEdgeList seln;
-    ZERO(&seln);
+    SEdgeList seln = {};
 
     Vector tn = tr->Normal().WithMagnitude(1);
     double td = tn.Dot(tr->a);
@@ -904,8 +901,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
     if(inter) *inter = false;
     if(leaky) *leaky = false;
 
-    SMesh m;
-    ZERO(&m);
+    SMesh m = {};
     ClearTags();
     MakeMeshInto(&m);
 

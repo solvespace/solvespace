@@ -124,16 +124,14 @@ void Entity::Draw(void) {
 void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
     if(construction && !includingConstruction) return;
 
-    SBezierList sbl;
-    ZERO(&sbl);
+    SBezierList sbl = {};
     GenerateBezierCurves(&sbl);
 
     int i, j;
     for(i = 0; i < sbl.l.n; i++) {
         SBezier *sb = &(sbl.l.elem[i]);
 
-        List<Vector> lv;
-        ZERO(&lv);
+        List<Vector> lv = {};
         sb->MakePwlInto(&lv);
         for(j = 1; j < lv.n; j++) {
             el->AddEdge(lv.elem[j-1], lv.elem[j], style.v);
@@ -266,8 +264,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
     //    f''(0) = 6*(P0 - 2*P1 + P2)
     //    f''(1) = 6*(P3 - 2*P2 + P1)
     for(a = 0; a < 3; a++) {
-        BandedMatrix bm;
-        ZERO(&bm);
+        BandedMatrix bm = {};
         bm.n = n;
 
         for(i = 0; i < n; i++) {
@@ -650,8 +647,7 @@ void Entity::DrawOrGetDistance(void) {
 
     // And draw the curves; generate the rational polynomial curves for
     // everything, then piecewise linearize them, and display those.
-    SEdgeList sel;
-    ZERO(&sel);
+    SEdgeList sel = {};
     GenerateEdges(&sel, true);
     int i;
     for(i = 0; i < sel.l.n; i++) {
