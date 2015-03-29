@@ -248,6 +248,17 @@ void SolveSpace::ScheduleLater()
 {
 }
 
+static void CALLBACK AutosaveCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
+{
+    KillTimer(GraphicsWnd, 1);
+    SS.Autosave();
+}
+
+void SolveSpace::SetAutosaveTimerFor(int minutes)
+{
+    SetTimer(GraphicsWnd, 2, minutes * 60 * 1000, AutosaveCallback);
+}
+
 static void GetWindowSize(HWND hwnd, int *w, int *h)
 {
     RECT r;
@@ -880,6 +891,7 @@ bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *s
 
     return r ? true : false;
 }
+
 bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *selPattern)
 {
     OPENFILENAME ofn;
@@ -905,6 +917,7 @@ bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *s
 
     return r ? true : false;
 }
+
 int SolveSpace::SaveFileYesNoCancel(void)
 {
     EnableWindow(GraphicsWnd, false);
@@ -927,6 +940,28 @@ int SolveSpace::SaveFileYesNoCancel(void)
 
     oops();
     return SAVE_CANCEL;
+}
+
+int SolveSpace::LoadAutosaveYesNo(void)
+{
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
+
+    int r = MessageBox(GraphicsWnd,
+        "An autosave file is availible for this project.\r\n\r\n"
+        "Do you want to load the autosave file instead?", "SolveSpace",
+        MB_YESNO | MB_ICONWARNING);
+
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
+    SetForegroundWindow(GraphicsWnd);
+
+    switch (r) {
+    case IDYES:    return SAVE_YES;
+    case IDNO:     return SAVE_NO;
+    }
+
+    oops();
 }
 
 void SolveSpace::LoadAllFontFiles(void)

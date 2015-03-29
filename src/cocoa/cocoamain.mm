@@ -85,6 +85,7 @@ int64_t SolveSpace::GetMilliseconds(void) {
 @interface DeferredHandler : NSObject
 + (void) runLater:(id)dummy;
 + (void) runCallback;
++ (void) doAutosave;
 @end
 
 @implementation DeferredHandler
@@ -95,16 +96,27 @@ int64_t SolveSpace::GetMilliseconds(void) {
     SolveSpace::SS.GW.TimerCallback();
     SolveSpace::SS.TW.TimerCallback();
 }
++ (void) doAutosave {
+    SolveSpace::SS.Autosave();
+}
 @end
 
-void SolveSpace::SetTimerFor(int milliseconds) {
+static void Schedule(SEL selector, double interval) {
     NSMethodSignature *signature = [[DeferredHandler class]
-        methodSignatureForSelector:@selector(runCallback)];
+        methodSignatureForSelector:selector];
     NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
-    [invocation setSelector:@selector(runCallback)];
+    [invocation setSelector:selector];
     [invocation setTarget:[DeferredHandler class]];
-    [NSTimer scheduledTimerWithTimeInterval:(milliseconds / 1000.0)
+    [NSTimer scheduledTimerWithTimeInterval:interval
         invocation:invocation repeats:NO];
+}
+
+void SolveSpace::SetTimerFor(int milliseconds) {
+    Schedule(@selector(runCallback), milliseconds / 1000.0);
+}
+
+void SolveSpace::SetAutosaveTimerFor(int minutes) {
+    Schedule(@selector(doAutosave), minutes * 60.0);
 }
 
 void SolveSpace::ScheduleLater() {
@@ -793,6 +805,23 @@ int SolveSpace::SaveFileYesNoCancel(void) {
         case NSAlertSecondButtonReturn:
         return SAVE_CANCEL;
         case NSAlertThirdButtonReturn:
+        return SAVE_NO;
+    }
+    abort(); /* unreachable */
+}
+
+int SolveSpace::LoadAutosaveYesNo(void) {
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:
+        @"An autosave file is availible for this project."];
+    [alert setInformativeText:
+        @"Do you want to load the autosave file instead?"];
+    [alert addButtonWithTitle:@"Load"];
+    [alert addButtonWithTitle:@"Don't Load"];
+    switch([alert runModal]) {
+        case NSAlertFirstButtonReturn:
+        return SAVE_YES;
+        case NSAlertSecondButtonReturn:
         return SAVE_NO;
     }
     abort(); /* unreachable */

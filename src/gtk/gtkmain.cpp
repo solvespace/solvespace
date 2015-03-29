@@ -224,7 +224,7 @@ static void CnfThawWindowPos(Gtk::Window *win, const char *key) {
     win->resize(w, h);
 }
 
-/* Timer */
+/* Timers */
 
 int64_t GetMilliseconds(void) {
     struct timespec ts;
@@ -240,6 +240,15 @@ static bool TimerCallback() {
 
 void SetTimerFor(int milliseconds) {
     Glib::signal_timeout().connect(&TimerCallback, milliseconds);
+}
+
+static bool AutosaveTimerCallback() {
+    SS.Autosave();
+    return false;
+}
+
+void SetAutosaveTimerFor(int minutes) {
+    Glib::signal_timeout().connect(&AutosaveTimerCallback, minutes * 60 * 1000);
 }
 
 static bool LaterCallback() {
@@ -1186,7 +1195,7 @@ int SaveFileYesNoCancel(void) {
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
     dialog.set_title("SolveSpace - Modified File");
     dialog.add_button("_Save", Gtk::RESPONSE_YES);
-    dialog.add_button("Do_n't save", Gtk::RESPONSE_NO);
+    dialog.add_button("Do_n't Save", Gtk::RESPONSE_NO);
     dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
 
     switch(dialog.run()) {
@@ -1199,6 +1208,26 @@ int SaveFileYesNoCancel(void) {
         case Gtk::RESPONSE_CANCEL:
         default:
         return SAVE_CANCEL;
+    }
+}
+
+int LoadAutosaveYesNo(void) {
+    Glib::ustring message =
+        "An autosave file is availible for this project.\n"
+        "Do you want to load the autosave file instead?";
+    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
+                              Gtk::BUTTONS_NONE, /*is_modal*/ true);
+    dialog.set_title("SolveSpace - Autosave Available");
+    dialog.add_button("_Load autosave", Gtk::RESPONSE_YES);
+    dialog.add_button("Do_n't Load", Gtk::RESPONSE_NO);
+
+    switch(dialog.run()) {
+        case Gtk::RESPONSE_YES:
+        return SAVE_YES;
+
+        case Gtk::RESPONSE_NO:
+        default:
+        return SAVE_NO;
     }
 }
 

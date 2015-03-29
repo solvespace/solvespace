@@ -133,6 +133,9 @@ void RefreshRecentMenus(void);
 #define SAVE_NO     (-1)
 #define SAVE_CANCEL  (0)
 int SaveFileYesNoCancel(void);
+int LoadAutosaveYesNo(void);
+
+#define AUTOSAVE_SUFFIX "~"
 
 #if defined(HAVE_GTK)
     // Selection pattern format to be parsed by GTK3 glue code:
@@ -242,6 +245,7 @@ void SetCurrentFilename(const char *filename);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
+void SetAutosaveTimerFor(int minutes);
 void ScheduleLater();
 void ExitNow(void);
 
@@ -768,6 +772,7 @@ public:
     Unit     viewUnits;
     int      afterDecimalMm;
     int      afterDecimalInch;
+    int      autosaveInterval; // in minutes
 
     char *MmToString(double v);
     double ExprToMm(Expr *e);
@@ -818,6 +823,8 @@ public:
         Style        s;
     } sv;
     static void MenuFile(int id);
+	bool Autosave();
+    void RemoveAutosave();
     bool GetFilenameAndSave(bool saveAs);
     bool OkayToStartNewFile(void);
     hGroup CreateDefaultDrawingGroup(void);
@@ -825,6 +832,7 @@ public:
     void ClearExisting(void);
     void NewFile(void);
     bool SaveToFile(const char *filename);
+    bool LoadAutosaveFor(const char *filename);
     bool LoadFromFile(const char *filename);
     bool LoadEntitiesFromFile(const char *filename, EntityList *le,
                               SMesh *m, SShell *sh);

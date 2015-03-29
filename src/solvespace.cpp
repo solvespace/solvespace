@@ -91,24 +91,49 @@ void SolveSpaceUI::Init() {
         CnfThawString(RecentFile[i], MAX_PATH, name);
     }
     RefreshRecentMenus();
+    // Autosave timer
+    autosaveInterval = CnfThawInt(5, "AutosaveInterval");
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
     // them.
 
+    SetAutosaveTimerFor(autosaveInterval);
+
     NewFile();
     AfterNewFile();
 }
 
+bool SolveSpaceUI::LoadAutosaveFor(const char *filename) {
+    char autosaveFile[MAX_PATH];
+    strcpy(autosaveFile, filename);
+    strcat(autosaveFile, AUTOSAVE_SUFFIX);
+
+    FILE *f = fopen(autosaveFile, "r");
+    if(!f)
+        return false;
+    fclose(f);
+
+    if(LoadAutosaveYesNo() == SAVE_YES) {
+        unsaved = true;
+        return LoadFromFile(autosaveFile);
+    }
+
+    return false;
+}
+
 bool SolveSpaceUI::OpenFile(const char *filename) {
-    bool success = LoadFromFile(filename);
+    bool autosaveLoaded = LoadAutosaveFor(filename);
+    bool success = autosaveLoaded || LoadFromFile(filename);
     if(success) {
+        RemoveAutosave();
         AddToRecentList(filename);
         strcpy(saveFile, filename);
     } else {
         NewFile();
     }
     AfterNewFile();
+    unsaved = autosaveLoaded;
     return success;
 }
 
@@ -183,9 +208,14 @@ void SolveSpaceUI::Exit(void) {
     CnfFreezeFloat(gCode.plungeFeed,    "GCode_PlungeFeed");
     // Show toolbar in the graphics window
     CnfFreezeBool(showToolbar, "ShowToolbar");
+    // Autosave timer
+    CnfFreezeInt(autosaveInterval, "AutosaveInterval");
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles();
+
+    // Exiting cleanly.
+    RemoveAutosave();
 
     ExitNow();
 }
@@ -345,6 +375,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
 
     if(SaveToFile(saveFile)) {
         AddToRecentList(saveFile);
+        RemoveAutosave();
         unsaved = false;
         return true;
     } else {
@@ -352,6 +383,28 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
         strcpy(saveFile, prevSaveFile);
         return false;
     }
+}
+
+bool SolveSpaceUI::Autosave()
+{
+    SetAutosaveTimerFor(autosaveInterval);
+
+    if (strlen(saveFile) != 0 && unsaved)  {
+        char autosaveFile[MAX_PATH];
+        strcpy(autosaveFile, saveFile);
+        strcat(autosaveFile, AUTOSAVE_SUFFIX);
+        return SaveToFile(autosaveFile);
+    }
+
+    return false;
+}
+
+void SolveSpaceUI::RemoveAutosave()
+{
+    char autosaveFile[MAX_PATH];
+    strcpy(autosaveFile, saveFile);
+    strcat(autosaveFile, AUTOSAVE_SUFFIX);
+    remove(autosaveFile);
 }
 
 bool SolveSpaceUI::OkayToStartNewFile(void) {
@@ -393,14 +446,7 @@ void SolveSpaceUI::MenuFile(int id) {
         char newFile[MAX_PATH];
         strcpy(newFile, RecentFile[id-RECENT_OPEN]);
         RemoveFromRecentList(newFile);
-        if(SS.LoadFromFile(newFile)) {
-            strcpy(SS.saveFile, newFile);
-            AddToRecentList(newFile);
-        } else {
-            strcpy(SS.saveFile, "");
-            SS.NewFile();
-        }
-        SS.AfterNewFile();
+        SS.OpenFile(newFile);
         return;
     }
 
@@ -418,14 +464,7 @@ void SolveSpaceUI::MenuFile(int id) {
 
             char newFile[MAX_PATH] = "";
             if(GetOpenFile(newFile, SLVS_EXT, SLVS_PATTERN)) {
-                if(SS.LoadFromFile(newFile)) {
-                    strcpy(SS.saveFile, newFile);
-                    AddToRecentList(newFile);
-                } else {
-                    strcpy(SS.saveFile, "");
-                    SS.NewFile();
-                }
-                SS.AfterNewFile();
+                SS.OpenFile(newFile);
             }
             break;
         }

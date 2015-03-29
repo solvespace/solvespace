@@ -167,6 +167,14 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     SS.TW.ShowEditControl(row, 14, buf);
 }
 
+void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
+    char str[1024];
+    sprintf(str, "%d", SS.autosaveInterval);
+
+    SS.TW.ShowEditControl(111, 3, str);
+    SS.TW.edit.meaning = EDIT_AUTOSAVE_INTERVAL;
+}
+
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
@@ -293,6 +301,11 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
+
+    Printf(false, "");
+    Printf(false, "%Ft autosave interval (in minutes)%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
+        SS.autosaveInterval, &ScreenChangeAutosaveInterval);
 
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));
@@ -424,6 +437,19 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             Expr *e = Expr::From(s, true);
             if(e) SS.gCode.plungeFeed = (float)SS.ExprToMm(e);
             break;
+        }
+        case EDIT_AUTOSAVE_INTERVAL: {
+            int interval;
+            if(sscanf(s, "%d", &interval)==1) {
+                if(interval >= 1) {
+                    SS.autosaveInterval = interval;
+                    SetAutosaveTimerFor(interval);
+                } else {
+                    Error("Bad value: autosave interval should be positive");
+                }
+            } else {
+                Error("Bad format: specify interval in integral minutes");
+            }
         }
 
         default: return false;

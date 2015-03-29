@@ -155,6 +155,7 @@ public:
         EDIT_G_CODE_PASSES         = 121,
         EDIT_G_CODE_FEED           = 122,
         EDIT_G_CODE_PLUNGE_FEED    = 123,
+        EDIT_AUTOSAVE_INTERVAL     = 124,
         // For TTF text
         EDIT_TTF_TEXT              = 300,
         // For the step dimension screen
@@ -297,6 +298,7 @@ public:
     static void ScreenChangeExportScale(int link, uint32_t v);
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
+    static void ScreenChangeAutosaveInterval(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
