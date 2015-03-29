@@ -523,6 +523,7 @@ public:
     struct {
         int             operation;
 
+        hRequest        request;
         hEntity         point;
         List<hEntity>   points;
         hEntity         circle;
@@ -534,6 +535,13 @@ public:
     void ClearPending(void);
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
+
+    enum SuggestedConstraint {
+        SUGGESTED_NONE = 0,
+        SUGGESTED_HORIZONTAL = Constraint::HORIZONTAL,
+        SUGGESTED_VERTICAL = Constraint::VERTICAL,
+    };
+    SuggestedConstraint SuggestLineConstraint(hRequest lineSegment);
 
     Vector SnapToGrid(Vector p);
     bool ConstrainPointByHovered(hEntity pt);

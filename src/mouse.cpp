@@ -497,6 +497,15 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     if(context.active) return;
 
+    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
+        SuggestedConstraint suggested =
+            SS.GW.SuggestLineConstraint(SS.GW.pending.request);
+        if(suggested != SUGGESTED_NONE) {
+            Constraint::Constrain(suggested,
+                Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
+        }
+    }
+
     if(pending.operation == DRAGGING_NEW_LINE_POINT ||
        pending.operation == DRAGGING_NEW_CUBIC_POINT)
     {
@@ -806,6 +815,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             ClearSuper();
 
             pending.operation = DRAGGING_NEW_LINE_POINT;
+            pending.request = hr;
             pending.point = hr.entity(2);
             pending.description = "click next point of line, or press Esc";
             SK.GetEntity(pending.point)->PointForceTo(v);
@@ -1009,6 +1019,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
 
         case DRAGGING_NEW_LINE_POINT: {
+            // Constrain the line segment horizontal or vertical if close enough
+            SuggestedConstraint suggested =
+                SS.GW.SuggestLineConstraint(SS.GW.pending.request);
+            if(suggested != SUGGESTED_NONE) {
+                Constraint::Constrain(suggested,
+                    Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
+            }
+
             if(hover.entity.v) {
                 Entity *e = SK.GetEntity(hover.entity);
                 if(e->IsPoint()) {
@@ -1044,6 +1062,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             // And drag an endpoint of the new line segment
             pending.operation = DRAGGING_NEW_LINE_POINT;
+            pending.request = hr;
             pending.point = hr.entity(2);
             pending.description = "click next point of line, or press Esc";
 

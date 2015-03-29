@@ -1016,3 +1016,27 @@ void GraphicsWindow::ToggleBool(bool *v) {
     SS.ScheduleShowTW();
 }
 
+GraphicsWindow::SuggestedConstraint GraphicsWindow::SuggestLineConstraint(hRequest request) {
+    if(LockedInWorkplane()) {
+        Entity *ptA = SK.GetEntity(request.entity(1)),
+               *ptB = SK.GetEntity(request.entity(2));
+
+        Expr *au, *av, *bu, *bv;
+
+        ptA->PointGetExprsInWorkplane(ActiveWorkplane(), &au, &av);
+        ptB->PointGetExprsInWorkplane(ActiveWorkplane(), &bu, &bv);
+
+        Expr *du = au->Minus(bu);
+        Expr *dv = av->Minus(bv);
+
+        const double TOLERANCE = 10.0;
+        if(fabs(du->Eval()) * scale < TOLERANCE)
+            return SUGGESTED_VERTICAL;
+        else if(fabs(dv->Eval()) * scale < TOLERANCE)
+            return SUGGESTED_HORIZONTAL;
+        else
+            return SUGGESTED_NONE;
+    } else {
+        return SUGGESTED_NONE;
+    }
+}

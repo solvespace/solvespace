@@ -716,6 +716,28 @@ nogrid:;
         SK.constraint.elem[i].Draw();
     }
 
+    // Draw the "pending" constraint, i.e. a constraint that would be
+    // placed on a line that is almost horizontal or vertical
+    if(SS.GW.pending.operation == DRAGGING_NEW_LINE_POINT) {
+        SuggestedConstraint suggested =
+            SS.GW.SuggestLineConstraint(SS.GW.pending.request);
+        if(suggested != GraphicsWindow::SUGGESTED_NONE) {
+            Constraint c;
+            ZERO(&c);
+            c.group = SS.GW.activeGroup;
+            c.workplane = SS.GW.ActiveWorkplane();
+            c.type = suggested;
+            c.ptA = Entity::NO_ENTITY;
+            c.ptB = Entity::NO_ENTITY;
+            c.entityA = SS.GW.pending.request.entity(0);
+            c.entityB = Entity::NO_ENTITY;
+            c.other = false;
+            c.other2 = false;
+            // Only draw.
+            c.Draw();
+        }
+    }
+
     // Draw the traced path, if one exists
     ssglLineWidth(Style::Width(Style::ANALYZE));
     ssglColorRGB(Style::Color(Style::ANALYZE));
