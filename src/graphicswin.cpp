@@ -945,6 +945,7 @@ void GraphicsWindow::MenuRequest(int id) {
                 SS.TW.GoToScreen(TextWindow::SCREEN_TANGENT_ARC);
                 SS.GW.ForceTextWindowShown();
                 SS.ScheduleShowTW();
+                InvalidateGraphics(); // repaint toolbar
             }
             break;
 
@@ -960,6 +961,7 @@ c:
             SS.GW.pending.operation = id;
             SS.GW.pending.description = s;
             SS.ScheduleShowTW();
+            InvalidateGraphics(); // repaint toolbar
             break;
 
         case MNU_CONSTRUCTION: {

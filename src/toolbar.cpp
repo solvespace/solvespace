@@ -168,7 +168,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             glRasterPos2i(x - 12, y - 12);
             glDrawPixels(24, 24, GL_RGB, GL_UNSIGNED_BYTE, Toolbar[i].image);
 
-            if(toolbarHovered == Toolbar[i].menu) {
+            if(toolbarHovered == Toolbar[i].menu ||
+               pending.operation == Toolbar[i].menu) {
                 // Highlight the hovered or pending item.
                 glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;
