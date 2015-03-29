@@ -103,7 +103,7 @@ if(PERL_FOUND AND PERLMODULES_FOUND)
         DEPENDENCIES ${icons})
 endif()
 
-if(WIN32)
+if(WIN32 AND NOT DISABLE_TTF2C)
     add_custom_command(
         OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/built/bitmapfont.table.h"
         COMMAND ttf2c "${CMAKE_CURRENT_SOURCE_DIR}/built/bitmapfont.table.h")

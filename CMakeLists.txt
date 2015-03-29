@@ -19,6 +19,11 @@ project(solvespace)
 set(solvespace_VERSION_MAJOR 2)
 set(solvespace_VERSION_MINOR 1)
 
+if(WIN32)
+    # ttf2c takes 10 minutes (!) on Appveyor CI
+    set(DISABLE_TTF2C CACHE BOOL "Disable font regeneration with ttf2c, for use on CI")
+endif()
+
 if(NOT WIN32)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()

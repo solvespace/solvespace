@@ -1,0 +1,8 @@
+version: 1.0.{build}
+before_build:
+- mkdir cbuild
+- cd cbuild
+- cmake -DDISABLE_TTF2C=ON -G"Visual Studio 12" ..
+build:
+  project: C:\projects\solvespace\cbuild\solvespace.sln
+  verbosity: minimal
