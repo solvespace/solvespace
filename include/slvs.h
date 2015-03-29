@@ -24,8 +24,10 @@
 extern "C" {
 #endif
 
-#if defined(WIN32) && !defined(HAVE_C99_INTEGER_TYPES)
-typedef UINT32 uint32_t;
+#ifdef _MSC_VER
+typedef unsigned __int32 uint32_t;
+#else
+#include <stdint.h>
 #endif
 
 typedef uint32_t Slvs_hParam;
