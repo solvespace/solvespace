@@ -5,8 +5,13 @@
 //-----------------------------------------------------------------------------
 // Entry point into the program.
 //-----------------------------------------------------------------------------
-int main(void)
+int main(int argc, char** argv)
 {
+    if(argc != 2) {
+        fprintf(stderr, "usage: ttf2c [output]");
+        return 1;
+    }
+
     InitCommonControls();
 
     // A monospaced font
@@ -20,7 +25,13 @@ int main(void)
     SelectObject(hdc, bitmap);
     SelectObject(hdc, font);
 
-    printf("static const uint8_t FontTexture[256*16*16] = {\n");
+    FILE* out = fopen(argv[1], "w");
+    if(!out) {
+        fprintf(stderr, "cannot open output file %s", argv[1]);
+        return 1;
+    }
+
+    fprintf(out, "static const uint8_t FontTexture[256*16*16] = {\n");
 
     int c;
     for(c = 0; c < 128; c++) {
@@ -34,19 +45,21 @@ int main(void)
         SetTextColor(hdc, RGB(255, 255, 255));
         char str[2] = { c, 0 };
         TextOut(hdc, 0, 0, str, 1);
-        
+
         int i, j;
         for(i = 0; i < 16; i++) {
             for(j = 0; j < 16; j++) {
                 COLORREF c = GetPixel(hdc, i, j);
-                printf("%3d, ", c ? 255 : 0);
+                fprintf(out, "%3d, ", c ? 255 : 0);
             }
-            printf("\n");
+            fprintf(out, "\n");
         }
-        printf("\n");
+        fprintf(out, "\n");
     }
-    printf("#include \"bitmapextra.table.h\"\n");
-    printf("};\n");
+    fprintf(out, "#include \"bitmapextra.table.h\"\n");
+    fprintf(out, "};\n");
+
+    fclose(out);
 
     return 0;
 }

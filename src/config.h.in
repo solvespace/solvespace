@@ -1,0 +1,14 @@
+#ifndef __CONFIG_H
+#define __CONFIG_H
+
+#define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@"
+
+#cmakedefine HAVE_STDINT_H
+#cmakedefine HAVE_FONTCONFIG_FONTCONFIG_H
+
+#cmakedefine HAVE_FLTK
+#define HAVE_FLTK_FULLSCREEN
+
+#cmakedefine HAVE_SPACEWARE
+
+#endif

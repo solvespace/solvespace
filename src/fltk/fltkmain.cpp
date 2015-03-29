@@ -6,20 +6,18 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // Copyright 2013 Daniel Richard G. <skunk@iSKUNK.ORG>
 //-----------------------------------------------------------------------------
-#ifdef HAVE_CONFIG_H
-#   include <config.h>
-#endif
+#include <config.h>
 
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
 
-#ifdef HAVE_FONTCONFIG_FONTCONFIG_H
+#ifdef HAVE_FONTCONFIG
 #   include <fontconfig/fontconfig.h>
 #endif
 
-#ifdef HAVE_LIBSPNAV
+#ifdef HAVE_SPACEWARE
 #   include <spnav.h>
 #   ifndef SI_APP_FIT_BUTTON
 #       define SI_APP_FIT_BUTTON 31
@@ -402,7 +400,7 @@ public:
     {
         switch(event)
         {
-#ifdef HAVE_LIBSPNAV
+#ifdef HAVE_SPACEWARE
             case FL_NO_EVENT: {
                 spnav_event sev;
                 if(!spnav_x11_event(fl_xevent, &sev)) break;
@@ -426,7 +424,7 @@ public:
                 }
                 return 1;
             }
-#endif // HAVE_LIBSPNAV
+#endif // HAVE_SPACEWARE
 
             case FL_PUSH:    // mouse button click...
             case FL_RELEASE: // ...and release
@@ -1330,7 +1328,7 @@ int main(int argc, char **argv)
         GetAbsoluteFilename(file);
     }
 
-#ifdef HAVE_LIBSPNAV
+#ifdef HAVE_SPACEWARE
     bool spacenavd_active =
         spnav_x11_open(fl_display, fl_xid(GraphicsWnd)) == 0;
 #endif
@@ -1355,7 +1353,7 @@ int main(int argc, char **argv)
         SS.DoLater();
     }
 
-#ifdef HAVE_LIBSPNAV
+#ifdef HAVE_SPACEWARE
     if(spacenavd_active) {
         spnav_close();
     }

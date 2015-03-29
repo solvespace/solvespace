@@ -11,7 +11,7 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
 #   include <si.h>
 #   include <siapp.h>
 #   undef uint32_t  // thanks but no thanks
@@ -48,7 +48,7 @@ int ClientIsSmallerBy;
 
 HFONT FixedFont;
 
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
 // The 6-DOF input device.
 SiHdl SpaceNavigator = SI_NO_HANDLE;
 #endif
@@ -1114,7 +1114,7 @@ static void CreateMainWindows(void)
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
 }
 
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
 //-----------------------------------------------------------------------------
 // Test if a message comes from the SpaceNavigator device. If yes, dispatch
 // it appropriately and return true. Otherwise, do nothing and return false.
@@ -1150,7 +1150,7 @@ static bool ProcessSpaceNavigatorMsg(MSG *msg) {
     }
     return true;
 }
-#endif // HAVE_SPACEWARE_INPUT
+#endif // HAVE_SPACEWARE
 
 //-----------------------------------------------------------------------------
 // Entry point into the program.
@@ -1204,7 +1204,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         GetAbsoluteFilename(file);
     }
 
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
     // Initialize the SpaceBall, if present. Test if the driver is running
     // first, to avoid a long timeout if it's not.
     HWND swdc = FindWindow("SpaceWare Driver Class", NULL);
@@ -1226,7 +1226,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     MSG msg;
     DWORD ret;
     while((ret = GetMessage(&msg, NULL, 0, 0)) != 0) {
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
         // Is it a message from the six degree of freedom input device?
         if(ProcessSpaceNavigatorMsg(&msg)) goto done;
 #endif
@@ -1249,7 +1249,7 @@ done:
         SS.DoLater();
     }
 
-#ifdef HAVE_SPACEWARE_INPUT
+#ifdef HAVE_SPACEWARE
     if(swdc != NULL) {
         if(SpaceNavigator != SI_NO_HANDLE) SiClose(SpaceNavigator);
         SiTerminate();

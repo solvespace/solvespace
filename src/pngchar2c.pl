@@ -5,11 +5,13 @@ use warnings;
 
 use GD;
 
-my ($srcdir) = @ARGV;
+my ($out, $srcdir) = @ARGV;
 defined($srcdir) or $srcdir = '.';
 -d "$srcdir/icons" || die "$srcdir/icons/: directory not found";
 
-print "/**** This is a generated file - do not edit ****/\n\n";
+open(OUT, ">$out") or die "$out: $!";
+
+print OUT "/**** This is a generated file - do not edit ****/\n\n";
 
 for my $file (sort <$srcdir/icons/char-*.png>) {
     open(PNG, $file) or die "$file: $!\n";
@@ -25,13 +27,13 @@ for my $file (sort <$srcdir/icons/char-*.png>) {
             my $index = $img->getPixel($x, $y);
             my ($r, $g, $b) = $img->rgb($index);
             if($r + $g + $b < 11) {
-                print "  0, ";
+                print OUT "  0, ";
             } else {
-                print "255, ";
+                print OUT "255, ";
             }
         }
-        print "\n";
+        print OUT "\n";
     }
-    print "\n";
+    print OUT "\n";
 }
 

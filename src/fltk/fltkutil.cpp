@@ -7,9 +7,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // Copyright 2013 Daniel Richard G. <skunk@iSKUNK.ORG>
 //-----------------------------------------------------------------------------
-#ifdef HAVE_CONFIG_H
-#   include <config.h>
-#endif
+#include <config.h>
 
 #include <stdarg.h>
 #include <string.h>
