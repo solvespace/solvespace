@@ -137,7 +137,7 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
     double res = (deg <= 2) ? 7.0 : 20.0;
     for(i = 0; i < (int)res; i++) {
         double tryt = (i/res);
-        
+
         Vector tryp = PointAt(tryt);
         double d = (tryp.Minus(p)).Magnitude();
         if(d < minDist) {
@@ -168,7 +168,7 @@ bool SBezier::PointOnThisAndCurve(SBezier *sbb, Vector *p) {
     sbb ->ClosestPointTo(*p, &tb, false);
 
     int i;
-    for(i = 0; i < 20; i++) {   
+    for(i = 0; i < 20; i++) {
         Vector pa = this->PointAt(ta),
                pb = sbb ->PointAt(tb),
                da = this->TangentAt(ta),
@@ -178,7 +178,7 @@ bool SBezier::PointOnThisAndCurve(SBezier *sbb, Vector *p) {
             *p = pa;
             return true;
         }
-      
+
         double tta, ttb;
         Vector::ClosestPointBetweenLines(pa, da, pb, db, &tta, &ttb);
         ta += tta;
@@ -413,7 +413,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     for(i = 0; i < res; i++) {
         for(j = 0; j < res; j++) {
             double tryu = (i + 0.5)/res, tryv = (j + 0.5)/res;
-           
+
             Vector tryp = PointAt(tryu, tryv);
             double d = (tryp.Minus(p)).Magnitude();
             if(d < minDist) {
@@ -450,7 +450,7 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
 
         Vector tu, tv;
         TangentsAt(*u, *v, &tu, &tv);
-        
+
         // Project the point into a plane through p0, with basis tu, tv; a
         // second-order thing would converge faster but needs second
         // derivatives.
@@ -476,7 +476,7 @@ bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
         Vector pi, p, tu, tv;
         p = PointAt(*u, *v);
         TangentsAt(*u, *v, &tu, &tv);
-        
+
         Vector n = (tu.Cross(tv)).WithMagnitude(1);
         double d = p.Dot(n);
 
@@ -524,7 +524,7 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
 
         Vector p0 = Vector::AtIntersectionOfPlanes(n[0], d[0], n[1], d[1]),
                dp = (n[0]).Cross(n[1]);
-        
+
         Vector pc = p.ClosestPointOnLine(p0, dp);
 
         // Adjust our guess and iterate
@@ -569,7 +569,7 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2,
         }
 
         // If a = b and b = c, then does a = c? No, it doesn't.
-        if((p[0]).Equals(p[1], RATPOLY_EPS) && 
+        if((p[0]).Equals(p[1], RATPOLY_EPS) &&
            (p[1]).Equals(p[2], RATPOLY_EPS) &&
            (p[2]).Equals(p[0], RATPOLY_EPS))
         {

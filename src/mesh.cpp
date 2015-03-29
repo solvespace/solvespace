@@ -83,7 +83,7 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     // Select the naked edges in our resulting open mesh.
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
-    root->MakeCertainEdgesInto(sel, SKdNode::NAKED_OR_SELF_INTER_EDGES, 
+    root->MakeCertainEdgesInto(sel, SKdNode::NAKED_OR_SELF_INTER_EDGES,
                                 false, NULL, NULL);
 
     m.Clear();
@@ -91,7 +91,7 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
 
 void SMesh::MakeEmphasizedEdgesInto(SEdgeList *sel) {
     SKdNode *root = SKdNode::From(this);
-    root->MakeCertainEdgesInto(sel, SKdNode::EMPHASIZED_EDGES, 
+    root->MakeCertainEdgesInto(sel, SKdNode::EMPHASIZED_EDGES,
                                 false, NULL, NULL);
 }
 
@@ -152,7 +152,7 @@ void SMesh::Simplify(int start) {
 
             for(j = 0; j < convc; j++) {
                 Vector a = conv[WRAP((j-1), convc)],
-                       b = conv[j], 
+                       b = conv[j],
                        d = conv[WRAP((j+1), convc)],
                        e = conv[WRAP((j+2), convc)];
 
@@ -182,11 +182,11 @@ void SMesh::Simplify(int start) {
 
                     bDot /= min(ab.Magnitude(), bc.Magnitude());
                     dDot /= min(cd.Magnitude(), de.Magnitude());
-                   
+
                     if(fabs(bDot) < LENGTH_EPS && fabs(dDot) < LENGTH_EPS) {
                         conv[WRAP((j+1), convc)] = c;
                         // and remove the vertex at j, which is a dup
-                        memmove(conv+j, conv+j+1, 
+                        memmove(conv+j, conv+j+1,
                                           (convc - j - 1)*sizeof(conv[0]));
                         convc--;
                     } else if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
@@ -214,7 +214,7 @@ void SMesh::Simplify(int start) {
         // still generates a convex polygon
         for(i = 0; i < convc; i++) {
             Vector a = conv[WRAP((i-1), convc)],
-                   b = conv[i], 
+                   b = conv[i],
                    c = conv[WRAP((i+1), convc)];
             Vector ab = b.Minus(a);
             Vector bc = c.Minus(b);
@@ -354,9 +354,9 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) {
     return face;
 }
 
-STriangleLl *STriangleLl::Alloc(void) 
+STriangleLl *STriangleLl::Alloc(void)
     { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
-SKdNode *SKdNode::Alloc(void) 
+SKdNode *SKdNode::Alloc(void)
     { return (SKdNode *)AllocTemporary(sizeof(SKdNode)); }
 
 SKdNode *SKdNode::From(SMesh *m) {
@@ -413,11 +413,11 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
 
         for(ll = tll; ll; ll = ll->next) {
             STriangle *tr = ll->tri;
-            
+
             double a = (tr->a).Element(i),
                    b = (tr->b).Element(i),
                    c = (tr->c).Element(i);
-            
+
             if(a < split[i] + KDTREE_EPS ||
                b < split[i] + KDTREE_EPS ||
                c < split[i] + KDTREE_EPS)
@@ -450,11 +450,11 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
     STriangleLl *lgt, *llt; lgt = llt = NULL;
     for(ll = tll; ll; ll = ll->next) {
         STriangle *tr = ll->tri;
-        
+
         double a = (tr->a).Element(which),
                b = (tr->b).Element(which),
                c = (tr->c).Element(which);
-        
+
         if(a < split[which] + KDTREE_EPS ||
            b < split[which] + KDTREE_EPS ||
            c < split[which] + KDTREE_EPS)
@@ -618,7 +618,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
         for(j = 0; j < 3; j++) {
-            Vector v = ((j == 0) ? tr->a : 
+            Vector v = ((j == 0) ? tr->a :
                        ((j == 1) ? tr->b :
                                    tr->c));
 
@@ -726,7 +726,7 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
             }
             seln.Clear();
         }
-       
+
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
             if(se->auxB) {
                 // Lies above or on the triangle plane, so triangle doesn't
@@ -812,7 +812,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
         }
         return;
     }
-    
+
     // We are a leaf node; so we iterate over all the triangles in our
     // linked list.
     STriangleLl *ll;
@@ -820,7 +820,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
         STriangle *tr = ll->tri;
 
         if(tr->tag == cnt) continue;
-        
+
         // Test if this triangle matches up with the given edge
         if((a.Equals(tr->b) && b.Equals(tr->a)) ||
            (a.Equals(tr->c) && b.Equals(tr->b)) ||

@@ -128,7 +128,7 @@ typedef struct {
     Slvs_hEntity        entityB;
     Slvs_hEntity        entityC;
     Slvs_hEntity        entityD;
-    
+
     int                 other;
     int                 other2;
 } Slvs_Constraint;

@@ -240,7 +240,7 @@ void SolveSpace::SaveUsingTable(int type) {
                 fprintf(fh, "{\n");
                 for(j = 0; j < p->M.n; j++) {
                     EntityMap *em = &(p->M.elem[j]);
-                    fprintf(fh, "    %d %08x %d\n", 
+                    fprintf(fh, "    %d %08x %d\n",
                             em->h.v, em->input.v, em->copyNumber);
                 }
                 fprintf(fh, "}");
@@ -262,7 +262,7 @@ bool SolveSpace::SaveToFile(char *filename) {
     SS.GenerateAll(0, INT_MAX);
 
     fh = fopen(filename, "wb");
-    if(!fh) {   
+    if(!fh) {
         Error("Couldn't write to file '%s'", filename);
         return false;
     }
@@ -332,7 +332,7 @@ bool SolveSpace::SaveToFile(char *filename) {
                     i, j, CO(srf->ctrl[i][j]), srf->weight[i][j]);
             }
         }
-        
+
         STrimBy *stb;
         for(stb = srf->trim.First(); stb; stb = srf->trim.NextAfter(stb)) {
             fprintf(fh, "TrimBy %08x %d %.20f %.20f %.20f  %.20f %.20f %.20f\n",
@@ -428,7 +428,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
     fileLoadError = false;
 
     fh = fopen(filename, "rb");
-    if(!fh) {   
+    if(!fh) {
         Error("Couldn't read from file '%s'", filename);
         return false;
     }
@@ -448,7 +448,7 @@ bool SolveSpace::LoadFromFile(char *filename) {
         if(s) *s = '\0';
 
         if(*line == '\0') continue;
-       
+
         char *e = strchr(line, '=');
         if(e) {
             *e = '\0';
@@ -530,7 +530,7 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
         if(s) *s = '\0';
 
         if(*line == '\0') continue;
-       
+
         char *e = strchr(line, '=');
         if(e) {
             *e = '\0';
@@ -559,8 +559,8 @@ bool SolveSpace::LoadEntitiesFromFile(char *file, EntityList *le,
             if(sscanf(line, "Triangle %x %x  "
                              "%lf %lf %lf  %lf %lf %lf  %lf %lf %lf",
                 &(tr.meta.face), &rgb,
-                &(tr.a.x), &(tr.a.y), &(tr.a.z), 
-                &(tr.b.x), &(tr.b.y), &(tr.b.z), 
+                &(tr.a.x), &(tr.a.y), &(tr.a.z),
+                &(tr.b.x), &(tr.b.y), &(tr.b.z),
                 &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11)
             {
                 oops();

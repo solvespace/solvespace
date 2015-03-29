@@ -70,7 +70,7 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
     double t_eps = LENGTH_EPS/d.Magnitude();
 
     double dist_a, dist_b;
-    double t, tthis; 
+    double t, tthis;
     bool skew;
     Vector pi;
     bool inOrEdge0, inOrEdge1;
@@ -239,7 +239,7 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
 // but they are considered to cross if they are coincident and overlapping.
 // If pi is not NULL, then a crossing is returned in that.
 //-----------------------------------------------------------------------------
-int SEdgeList::AnyEdgeCrossings(Vector a, Vector b, 
+int SEdgeList::AnyEdgeCrossings(Vector a, Vector b,
                                 Vector *ppi, SPointList *spl)
 {
     int cnt = 0;
@@ -367,7 +367,7 @@ SKdNodeEdges *SKdNodeEdges::From(SEdgeLl *sell) {
         n->which = 2;
     }
     n->c = ptAve.Element(n->which);
-   
+
     if(totaln < 3 || totaln == gtln[n->which] || totaln == ltln[n->which]) {
         n->edges = sell;
         // and we're a leaf node
@@ -438,7 +438,7 @@ static int ByTAlongLine(const void *av, const void *bv)
 {
     SEdge *a = (SEdge *)av,
           *b = (SEdge *)bv;
-    
+
     double ta = (a->a.Minus(LineStart)).DivPivoting(LineDirection),
            tb = (b->a.Minus(LineStart)).DivPivoting(LineDirection);
 
@@ -689,7 +689,7 @@ void SPolygon::FixContourDirections(void) {
                 (sc->timesEnclosed)++;
             }
         }
-   
+
         bool clockwise = sc->IsClockwiseProjdToNormal(normal);
         if((clockwise && outer) || (!clockwise && !outer)) {
             sc->Reverse();
@@ -777,7 +777,7 @@ static bool IntersectionOfLines(double x0A, double y0A, double dxA, double dyA,
     if(fabs(A[0][0]*A[1][1] - A[0][1]*A[1][0]) < LENGTH_EPS) {
         return false;
     }
-    
+
     // Solve
     double v = A[1][0] / A[0][0];
     A[1][0] -= A[0][0]*v;
@@ -820,7 +820,7 @@ void SContour::OffsetInto(SContour *dest, double r) {
         if(thetan < thetap && (thetap - thetan) > PI) {
             thetan += 2*PI;
         }
-    
+
         if(fabs(thetan - thetap) < (1*PI)/180) {
             Vector p = { b.x - r*sin(thetap), b.y + r*cos(thetap), 0 };
             dest->AddPoint(p);
@@ -846,7 +846,7 @@ void SContour::OffsetInto(SContour *dest, double r) {
             ndx = cos(thetan);
             ndy = sin(thetan);
 
-            IntersectionOfLines(px0, py0, pdx, pdy, 
+            IntersectionOfLines(px0, py0, pdx, pdy,
                                 nx0, ny0, ndx, ndy,
                                 &x, &y);
 

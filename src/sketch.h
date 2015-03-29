@@ -286,7 +286,7 @@ public:
     bool        construction;
     NameStr     str;
     NameStr     font;
-    
+
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
 

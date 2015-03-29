@@ -200,7 +200,7 @@ void GraphicsWindow::ParametricCurve::ConstrainPointIfCoincident(hEntity hpt) {
         if(!e->IsPoint()) continue;
         if(e->group.v != pt->group.v) continue;
         if(e->workplane.v != pt->workplane.v) continue;
-        
+
         ev = e->PointGetNum();
         if(!ev.Equals(ptv)) continue;
 
@@ -248,7 +248,7 @@ void GraphicsWindow::MakeTangentArc(void) {
         Entity *e = SK.GetEntity(r->h.entity(0));
         Vector ps = e->EndpointStart(),
                pf = e->EndpointFinish();
-        
+
         if(ps.Equals(pshared) || pf.Equals(pshared)) {
             if(c < 2) {
                 // We record the entity and request and their handles,
@@ -315,7 +315,7 @@ void GraphicsWindow::MakeTangentArc(void) {
             r = SS.tangentArcRadius;
         } else {
             r = 200/scale;
-            // Set the radius so that no more than one third of the 
+            // Set the radius so that no more than one third of the
             // line segment disappears.
             r = min(r, pc[0].LengthForAuto()*tan(theta/2));
             r = min(r, pc[1].LengthForAuto()*tan(theta/2));;
@@ -378,7 +378,7 @@ void GraphicsWindow::MakeTangentArc(void) {
     SK.GetEntity(earc->point[0])->PointForceTo(center);
     SK.GetEntity(earc->point[a])->PointForceTo(pc[0].PointAt(t[0]));
     SK.GetEntity(earc->point[b])->PointForceTo(pc[1].PointAt(t[1]));
-    
+
     earc = NULL;
 
     pc[0].CreateRequestTrimmedTo(t[0], !SS.tangentArcDeleteOld,
@@ -569,7 +569,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
         Request *r = &(SK.request.elem[i]);
         if(r->group.v != activeGroup.v) continue;
         if(r->type != reqType) continue;
-    
+
         // If the user wants to keep the old entities around, they can just
         // mark them construction first.
         if(he.v == r->h.entity(0).v && !r->construction) {
@@ -590,7 +590,7 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
 
     GroupSelection();
     if(!(gs.n == 2 &&(gs.lineSegments +
-                      gs.circlesOrArcs + 
+                      gs.circlesOrArcs +
                       gs.cubics +
                       gs.periodicCubics) == 2))
     {
@@ -603,7 +603,7 @@ void GraphicsWindow::SplitLinesOrCurves(void) {
             hb = gs.entity[1];
     Entity *ea = SK.GetEntity(ha),
            *eb = SK.GetEntity(hb);
-   
+
     // Compute the possibly-rational Bezier curves for each of these entities
     SBezierList sbla, sblb;
     ZERO(&sbla);

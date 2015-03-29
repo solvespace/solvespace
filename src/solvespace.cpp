@@ -351,7 +351,7 @@ bool SolveSpace::OkayToStartNewFile(void) {
 
         case SAVE_CANCEL:
             return false;
-        
+
         default: oops(); break;
     }
 }
@@ -421,7 +421,7 @@ void SolveSpace::MenuFile(int id) {
         case GraphicsWindow::MNU_EXPORT_PNG: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, PNG_EXT, PNG_PATTERN)) break;
-            SS.ExportAsPngTo(exportFile); 
+            SS.ExportAsPngTo(exportFile);
             break;
         }
 
@@ -441,28 +441,28 @@ void SolveSpace::MenuFile(int id) {
                         "text window.");
             }
 
-            SS.ExportViewOrWireframeTo(exportFile, false); 
+            SS.ExportViewOrWireframeTo(exportFile, false);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, V3D_EXT, V3D_PATTERN)) break;
-            SS.ExportViewOrWireframeTo(exportFile, true); 
+            SS.ExportViewOrWireframeTo(exportFile, true);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
-            SS.ExportSectionTo(exportFile); 
+            SS.ExportSectionTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
             char exportFile[MAX_PATH] = "";
             if(!GetSaveFile(exportFile, MESH_EXT, MESH_PATTERN)) break;
-            SS.ExportMeshTo(exportFile); 
+            SS.ExportMeshTo(exportFile);
             break;
         }
 
@@ -471,7 +471,7 @@ void SolveSpace::MenuFile(int id) {
             if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
             StepFileWriter sfw;
             ZERO(&sfw);
-            sfw.ExportSurfacesTo(exportFile); 
+            sfw.ExportSurfacesTo(exportFile);
             break;
         }
 
@@ -525,7 +525,7 @@ void SolveSpace::MenuAnalyze(int id) {
             SMesh *m = &(g->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
-            root->MakeCertainEdgesInto(&(SS.nakedEdges), 
+            root->MakeCertainEdgesInto(&(SS.nakedEdges),
                 SKdNode::NAKED_OR_SELF_INTER_EDGES, true, &inters, &leaks);
 
             InvalidateGraphics();
@@ -574,7 +574,7 @@ void SolveSpace::MenuAnalyze(int id) {
 
         case GraphicsWindow::MNU_VOLUME: {
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
-           
+
             double vol = 0;
             int i;
             for(i = 0; i < m->l.n; i++) {
@@ -604,7 +604,7 @@ void SolveSpace::MenuAnalyze(int id) {
 
                 // Triangles on edge don't contribute
                 if(fabs(n.z) < LENGTH_EPS) continue;
-               
+
                 // The plane has equation p dot n = a dot n
                 double d = (tr.a).Dot(n);
                 // nx*x + ny*y + nz*z = d
@@ -613,10 +613,10 @@ void SolveSpace::MenuAnalyze(int id) {
 
                 double mac = tr.c.y/tr.c.x, mbc = (tr.c.y - tr.b.y)/tr.c.x;
                 double xc = tr.c.x, yb = tr.b.y;
-               
+
                 // I asked Maple for
                 //    int(int(A*x + B*y +C, y=mac*x..(mbc*x + yb)), x=0..xc);
-                double integral = 
+                double integral =
                     (1.0/3)*(
                         A*(mbc-mac)+
                         (1.0/2)*B*(mbc*mbc-mac*mac)
@@ -687,7 +687,7 @@ void SolveSpace::MenuAnalyze(int id) {
                 Error("Bad selection for trace; select a single point.");
             }
             break;
-            
+
         case GraphicsWindow::MNU_STOP_TRACING: {
             char exportFile[MAX_PATH] = "";
             if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
@@ -722,7 +722,7 @@ void SolveSpace::MenuHelp(int id) {
         case GraphicsWindow::MNU_WEBSITE:
             OpenWebsite("http://solvespace.com/helpmenu");
             break;
-        
+
         case GraphicsWindow::MNU_ABOUT:
             Message(
 "This is SolveSpace version " PACKAGE_VERSION ".\n"

@@ -307,7 +307,7 @@ void TextWindow::ShowGroupInfo(void) {
         if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
             if(g->subtype == Group::ONE_SIDED) {
                 bool skip = g->skipFirst;
-                Printf(false, 
+                Printf(false,
                    "%Bd   %Ftstart  %f%LK%Fd%c with original%E  "
                          "%f%Lk%Fd%c with copy #1%E",
                     &ScreenChangeGroupOption,

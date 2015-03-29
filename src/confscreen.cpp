@@ -170,7 +170,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
 void TextWindow::ShowConfiguration(void) {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
-    
+
     for(i = 0; i < SS.MODEL_COLORS; i++) {
         Printf(false, "%Bp   #%d:  %Bz  %Bp  (%@, %@, %@) %f%D%Ll%Fl[change]%E",
             (i & 1) ? 'd' : 'a',
@@ -181,7 +181,7 @@ void TextWindow::ShowConfiguration(void) {
             SS.modelColor[i].blueF(),
             &ScreenChangeColor, i);
     }
-    
+
     Printf(false, "");
     Printf(false, "%Ft light direction               intensity");
     for(i = 0; i < 2; i++) {
@@ -293,7 +293,7 @@ void TextWindow::ShowConfiguration(void) {
     Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
-    
+
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", glGetString(GL_VENDOR));
     Printf(false, " %Ft   renderer %E%s", glGetString(GL_RENDERER));

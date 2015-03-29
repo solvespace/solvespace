@@ -20,7 +20,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
               "or use Export 2d View to export bare lines and curves.");
         return;
     }
-    
+
     // The plane in which the exported section lies; need this because we'll
     // reorient from that plane into the xy plane before exporting.
     Vector origin, u, v, n;
@@ -81,7 +81,7 @@ void SolveSpace::ExportSectionTo(char *filename) {
 
     // If there's a shell, then grab the edges and possibly Beziers.
     g->runningShell.MakeSectionEdgesInto(n, d,
-       &el, 
+       &el,
        (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);
 
     // All of these are solid model edges, so use the appropriate style.
@@ -559,7 +559,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
             closeEnough = false;
         }
     }
-    
+
     if(closeEnough || depth > 3) {
         Bezier(&bnr);
     } else {
@@ -681,7 +681,7 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     SS.showToolbar = false;
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
-    
+
     FILE *f = fopen(filename, "wb");
     if(!f) goto err;
 
@@ -704,7 +704,7 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     png_set_IHDR(png_ptr, info_ptr, w, h,
         8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
         PNG_COMPRESSION_TYPE_DEFAULT,PNG_FILTER_TYPE_DEFAULT);
-    
+
     png_write_info(png_ptr, info_ptr);
 
     // Get the pixel data from the framebuffer
@@ -724,7 +724,7 @@ void SolveSpace::ExportAsPngTo(char *filename) {
     fclose(f);
     return;
 
-err:    
+err:
     Error("Error writing PNG file '%s'", filename);
     if(f) fclose(f);
     return;

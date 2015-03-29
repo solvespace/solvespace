@@ -284,7 +284,7 @@ void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
     Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
     Vector ab = a.Minus(b);
     Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
-    
+
     LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
 }
 
@@ -326,7 +326,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
     }
 
     bool skew;
-    Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da), 
+    Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da),
                                               b0, b0.Plus(db), &skew);
 
     if(!skew) {
@@ -670,9 +670,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             if(other) da = da.ScaledBy(-1);
 
-            DoArcForAngle(a0, da, b0, db, 
+            DoArcForAngle(a0, da, b0, db,
                 da.WithMagnitude(40/SS.GW.scale), &ref);
-            DoArcForAngle(c0, dc, d0, dd, 
+            DoArcForAngle(c0, dc, d0, dd,
                 dc.WithMagnitude(40/SS.GW.scale), &ref);
 
             break;
@@ -681,7 +681,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case ANGLE: {
             Entity *a = SK.GetEntity(entityA);
             Entity *b = SK.GetEntity(entityB);
-            
+
             Vector a0 = a->VectorGetRefPoint();
             Vector b0 = b->VectorGetRefPoint();
             Vector da = a->VectorGetNum();
@@ -742,7 +742,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Entity *arc = SK.GetEntity(entityA);
                 Entity *norm = SK.GetEntity(arc->normal);
                 Vector c = SK.GetEntity(arc->point[0])->PointGetNum();
-                Vector p = 
+                Vector p =
                     SK.GetEntity(arc->point[other ? 2 : 1])->PointGetNum();
                 Vector r = p.Minus(c);
                 textAt = p.Plus(r.WithMagnitude(14/SS.GW.scale));
@@ -763,7 +763,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 Entity *cubic = SK.GetEntity(entityA);
                 Vector p = other ? cubic->CubicGetFinishNum() :
-                                   cubic->CubicGetStartNum();  
+                                   cubic->CubicGetStartNum();
                 Vector dir = SK.GetEntity(entityB)->VectorGetNum();
                 Vector out = n.Cross(dir);
                 textAt = p.Plus(out.WithMagnitude(14/SS.GW.scale));
@@ -1067,7 +1067,7 @@ double Constraint::GetDistance(Point2d mp) {
     dogd.dmin = 1e12;
 
     DrawOrGetDistance(NULL);
-    
+
     return dogd.dmin;
 }
 

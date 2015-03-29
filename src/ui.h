@@ -90,12 +90,12 @@ public:
     uint8_t *HsvPattern1d(double h, double s);
     void ColorPickerDone(void);
     bool DrawOrHitTestColorPicker(int how, bool leftDown, double x, double y);
-   
+
     void Init(void);
     void MakeColorTable(const Color *in, float *out);
     void Printf(bool half, const char *fmt, ...);
     void ClearScreen(void);
-   
+
     void Show(void);
 
     // State for the screen that we are showing in the text window.
@@ -520,7 +520,7 @@ public:
         hEntity         circle;
         hEntity         normal;
         hConstraint     constraint;
-        
+
         const char     *description;
     } pending;
     void ClearPending(void);
@@ -539,7 +539,7 @@ public:
         Vector p0, p1;
         Vector u, v;
         double r, theta0, theta1, dtheta;
-        
+
         void MakeFromEntity(hEntity he, bool reverse);
         Vector PointAt(double t);
         Vector TangentAt(double t);
@@ -558,7 +558,7 @@ public:
     void ReplacePointInConstraints(hEntity oldpt, hEntity newpt);
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
-    
+
     // The current selection.
     class Selection {
     public:

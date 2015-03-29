@@ -46,7 +46,7 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);
     if(e->IsPoint()) {
         AddPointToDraggedList(e->h);
-    } else if(e->type == Entity::LINE_SEGMENT || 
+    } else if(e->type == Entity::LINE_SEGMENT ||
               e->type == Entity::ARC_OF_CIRCLE ||
               e->type == Entity::CUBIC ||
               e->type == Entity::CUBIC_PERIODIC ||
@@ -54,7 +54,7 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
               e->type == Entity::TTF_TEXT)
     {
         int pts;
-        EntReqTable::GetEntityInfo(e->type, e->extraPoints, 
+        EntReqTable::GetEntityInfo(e->type, e->extraPoints,
             NULL, &pts, NULL, NULL);
         for(int i = 0; i < pts; i++) {
             AddPointToDraggedList(e->point[i]);
@@ -166,7 +166,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         havePainted = false;
         return;
     }
- 
+
     if(pending.operation == 0) {
         double dm = orig.mouse.DistanceTo(mp);
         // If we're currently not doing anything, then see if we should
@@ -204,7 +204,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     hover.Clear();
                     pending.operation = DRAGGING_POINTS;
                 }
-            } else if(hover.constraint.v && 
+            } else if(hover.constraint.v &&
                             SK.GetConstraint(hover.constraint)->HasLabel())
             {
                 ClearSelection();
@@ -749,7 +749,7 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
         return true;
     }
     if(e->IsCircle()) {
-        Constraint::Constrain(Constraint::PT_ON_CIRCLE, 
+        Constraint::Constrain(Constraint::PT_ON_CIRCLE,
             pt, Entity::NO_ENTITY, e->h);
         return true;
     }
@@ -832,7 +832,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             for(i = 0; i < 4; i++) {
                 Constraint::Constrain(
                     (i % 2) ? Constraint::HORIZONTAL : Constraint::VERTICAL,
-                    Entity::NO_ENTITY, Entity::NO_ENTITY,  
+                    Entity::NO_ENTITY, Entity::NO_ENTITY,
                     lns[i].entity(0));
             }
             ConstrainPointByHovered(lns[2].entity(1));
@@ -907,7 +907,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
             hr = AddRequest(Request::WORKPLANE);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            SK.GetEntity(hr.entity(32))->NormalForceTo( 
+            SK.GetEntity(hr.entity(32))->NormalForceTo(
                 Quaternion::From(SS.GW.projRight, SS.GW.projUp));
             ConstrainPointByHovered(hr.entity(1));
 
@@ -1091,7 +1091,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
             // be the start of marquee selection. But don't do that on the
             // left click to cancel a context menu. The time delay is an ugly
             // hack.
-            if(hover.IsEmpty() && 
+            if(hover.IsEmpty() &&
                 (contextMenuCancelTime == 0 ||
                  (GetMilliseconds() - contextMenuCancelTime) > 200))
             {
@@ -1311,7 +1311,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         // projection
         offset = offset.Plus(projRight.ScaledBy(tx/scale));
         offset = offset.Plus(projUp.ScaledBy(ty/scale));
-        scale *= exp(0.001*tz); 
+        scale *= exp(0.001*tz);
 
         if(aam > 0.0) {
             projRight = projRight.RotatedAbout(aa, -aam);

@@ -280,7 +280,7 @@ void EntityBase::NormalForceTo(Quaternion q) {
             break;
         case NORMAL_N_ROT: {
             Quaternion qp = q.Times(numNormal.Inverse());
-            
+
             SK.GetParam(param[0])->val = qp.w;
             SK.GetParam(param[1])->val = qp.vx;
             SK.GetParam(param[2])->val = qp.vy;
@@ -756,8 +756,8 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) {
                 ConstraintBase *c = &(SK.constraint.elem[i]);
                 if(c->group.v != group.v) continue;
                 if(c->type != Constraint::POINTS_COINCIDENT) continue;
-                
-                if((c->ptA.v == point[1].v && c->ptB.v == point[2].v) || 
+
+                if((c->ptA.v == point[1].v && c->ptB.v == point[2].v) ||
                    (c->ptA.v == point[2].v && c->ptB.v == point[1].v))
                 {
                     break;

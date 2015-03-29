@@ -156,7 +156,7 @@ bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
     Point2d c2  = center->Project2d(u, v),
             pa2 = (ctrl[0]).Project2d(u, v).Minus(c2),
             pb2 = (ctrl[2]).Project2d(u, v).Minus(c2);
-    
+
     double thetaa = atan2(pa2.y, pa2.x), // in fact always zero due to csys
            thetab = atan2(pb2.y, pb2.x),
            dtheta = WRAP_NOT_0(thetab - thetaa, 2*PI);
@@ -398,7 +398,7 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
 
     if(sbl->l.n < 1) return loop;
     sbl->l.ClearTags();
-  
+
     SBezier *first = &(sbl->l.elem[0]);
     first->tag = 1;
     loop.l.Add(first);
@@ -438,7 +438,7 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
     }
     if(hanging.Equals(start)) {
         *allClosed = true;
-    } else {    
+    } else {
         // We ran out of edges without forming a closed loop.
         errorAt->a = hanging;
         errorAt->b = start;
@@ -691,7 +691,7 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
                     inner->tag = USED_LOOP;
                 }
             }
-            
+
             outerAndInners.point  = srfuv->PointAt(0, 0);
             outerAndInners.normal = srfuv->NormalAt(0, 0);
             l.Add(&outerAndInners);
@@ -753,7 +753,7 @@ SCurve SCurve::FromTransformationOf(SCurve *a,
     ret.exact = (a->exact).TransformedBy(t, q, scale);
     ret.surfA = a->surfA;
     ret.surfB = a->surfB;
-    
+
     SCurvePt *p;
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
         SCurvePt pp = *p;

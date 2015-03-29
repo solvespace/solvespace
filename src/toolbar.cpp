@@ -61,7 +61,7 @@ void GraphicsWindow::ToolbarDraw(void) {
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
-   
+
     int nh = 0;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
     if(!withinToolbar) nh = 0;
@@ -88,7 +88,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
 bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
-   
+
     int nh = -1;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
     // They might have clicked within the toolbar, but not on a button.
@@ -120,7 +120,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
         // This gets called every MouseMove event, so return quickly.
         return false;
     }
-    
+
     if(paint) {
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
@@ -221,7 +221,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
             int tw = (int)strlen(str)*SS.TW.CHAR_WIDTH + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
-            
+
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
             glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);

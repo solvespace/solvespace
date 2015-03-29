@@ -473,7 +473,7 @@ public:
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
     const char *FontFileBaseName(void);
-   
+
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
     void PlotCharacter(int *dx, int c, double spacing);

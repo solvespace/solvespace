@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Top-level functions to compute the Boolean union or difference between
 // two shells of rational polynomial surfaces.
-// 
+//
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
@@ -29,7 +29,7 @@ static int ByTAlongLine(const void *av, const void *bv)
 {
     SInter *a = (SInter *)av,
            *b = (SInter *)bv;
-    
+
     double ta = (a->p.Minus(LineStart)).DivPivoting(LineDirection),
            tb = (b->p.Minus(LineStart)).DivPivoting(LineDirection);
 
@@ -106,7 +106,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             LineStart = prev.p;
             LineDirection = (p->p).Minus(prev.p);
             qsort(il.elem, il.n, sizeof(il.elem[0]), ByTAlongLine);
-   
+
             // And now uses the intersections to generate our split pwl edge(s)
             Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
@@ -131,7 +131,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     return ret;
 }
 
-void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {    
+void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
     SCurve *sc;
     for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
         SCurve scn = sc->MakeCopySplitAgainst(agnst, NULL,
@@ -147,7 +147,7 @@ void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
 
 void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
     el->l.ClearTags();
-   
+
     STrimBy stb;
     ZERO(&stb);
     for(;;) {
@@ -155,7 +155,7 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
         SEdge *se;
         for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
             if(se->tag) continue;
-            break;    
+            break;
         }
         if(!se) break;
         se->tag = 1;
@@ -306,7 +306,7 @@ static const char *REGION(int d) {
 // point within the avoid list ever occurs in the middle of a chain. And we
 // delete the edges in that chain from our source list.
 //-----------------------------------------------------------------------------
-void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest, 
+void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest,
                                  SPointList *avoid)
 {
     if(src->l.n < 1) oops();
@@ -464,7 +464,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
             } else {
                 if(sc->surfB.v != h.v || sc->surfA.v != ss->h.v) continue;
             }
-           
+
             int i;
             for(i = 1; i < sc->pts.n; i++) {
                 Vector a = sc->pts.elem[i-1].p,
@@ -492,7 +492,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                     if(type == SShell::AS_DIFFERENCE && !opA) bkwds = !bkwds;
                     if(bkwds) {
                         inter.AddEdge(tb, ta, sc->h.v, 1);
-                    } else { 
+                    } else {
                         inter.AddEdge(ta, tb, sc->h.v, 0);
                     }
                 }
@@ -552,10 +552,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         outdir_orig = SShell::OUTSIDE;
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt, 
+                            ret.PointAt(auv), ret.PointAt(buv), pt,
                             enin, enout, surfn);
 
-        if(KeepEdge(type, opA, indir_shell, outdir_shell, 
+        if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
         {
             for(se = chain.l.First(); se; se = chain.l.NextAfter(se)) {
@@ -572,7 +572,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         // Any edge in the chain, same as above.
         se = &(chain.l.elem[chain.l.n/2]);
-        
+
         Point2d auv = (se->a).ProjectXy(),
                 buv = (se->b).ProjectXy();
 
@@ -586,10 +586,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
-                            ret.PointAt(auv), ret.PointAt(buv), pt, 
+                            ret.PointAt(auv), ret.PointAt(buv), pt,
                             enin, enout, surfn);
 
-        if(KeepEdge(type, opA, indir_shell, outdir_shell, 
+        if(KeepEdge(type, opA, indir_shell, outdir_shell,
                                indir_orig,  outdir_orig))
         {
             for(se = chain.l.First(); se; se = chain.l.NextAfter(se)) {
@@ -660,7 +660,7 @@ void SShell::CleanupAfterBoolean(void) {
 //-----------------------------------------------------------------------------
 // All curves contain handles to the two surfaces that they trim. After a
 // Boolean or assembly, we must rewrite those handles to refer to the curves
-// by their new IDs. 
+// by their new IDs.
 //-----------------------------------------------------------------------------
 void SShell::RewriteSurfaceHandlesForCurves(SShell *a, SShell *b) {
     SCurve *sc;
@@ -684,7 +684,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     Quaternion q = Quaternion::IDENTITY;
     int i = 0;
     SShell *ab;
-   
+
     // First, copy over all the curves. Note which shell (a or b) each curve
     // came from, but assign it a new ID.
     SCurve *c, cn;
@@ -743,7 +743,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
 
         sc->RemoveShortSegments(srfA, srfB);
     }
-    
+
     // And clean up the piecewise linear things we made as a calculation aid
     a->CleanupAfterBoolean();
     b->CleanupAfterBoolean();
@@ -801,7 +801,7 @@ static int ByLength(const void *av, const void *bv)
 {
     SEdge *a = (SEdge *)av,
           *b = (SEdge *)bv;
-    
+
     double la = (a->a).Minus(a->b).Magnitude(),
            lb = (b->a).Minus(b->b).Magnitude();
 
@@ -846,7 +846,7 @@ void SBspUv::ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) {
     a ->x *= mu; a ->y *= mv;
     b ->x *= mu; b ->y *= mv;
 }
-double SBspUv::ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b, 
+double SBspUv::ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b,
                                             SSurface *srf)
 {
     ScalePoints(&pt, &a, &b, srf);

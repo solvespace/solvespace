@@ -33,7 +33,7 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
 
     Request *r = SK.request.FindByIdNoOops(e->h.request());
     if(!r) return;
-   
+
     SS.UndoRemember();
     r->font.strcpy(SS.fonts.l.elem[i].FontFileBaseName());
     SS.MarkGroupDirty(r->group);
@@ -195,7 +195,7 @@ void TextWindow::DescribeSelection(void) {
         Printf(false, "");
         Printf(false, "%FtIN GROUP%E      %s", g->DescriptionString());
         if(e->workplane.v == Entity::FREE_IN_3D.v) {
-            Printf(false, "%FtNOT LOCKED IN WORKPLANE%E"); 
+            Printf(false, "%FtNOT LOCKED IN WORKPLANE%E");
         } else {
             Entity *w = SK.GetEntity(e->workplane);
             Printf(false, "%FtIN WORKPLANE%E  %s", w->DescriptionString());
@@ -263,7 +263,7 @@ void TextWindow::DescribeSelection(void) {
         double theta = acos(v0.Dot(v1));
         Printf(true,  "    angle = %Fi%2%E degrees", theta*180/PI);
         while(theta < PI/2) theta += PI;
-        while(theta > PI/2) theta -= PI; 
+        while(theta > PI/2) theta -= PI;
         Printf(false, " or angle = %Fi%2%E (mod 180)", theta*180/PI);
     } else if(gs.n == 2 && gs.faces == 2) {
         Printf(false, "%FtTWO PLANE FACES");
@@ -281,7 +281,7 @@ void TextWindow::DescribeSelection(void) {
         double theta = acos(n0.Dot(n1));
         Printf(true,  "         angle = %Fi%2%E degrees", theta*180/PI);
         while(theta < PI/2) theta += PI;
-        while(theta > PI/2) theta -= PI; 
+        while(theta > PI/2) theta -= PI;
         Printf(false, "      or angle = %Fi%2%E (mod 180)", theta*180/PI);
 
         if(fabs(theta) < 0.01) {
@@ -298,7 +298,7 @@ void TextWindow::DescribeSelection(void) {
         Printf(false, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");
     }
 
-    if(shown.screen == SCREEN_STYLE_INFO && 
+    if(shown.screen == SCREEN_STYLE_INFO &&
        shown.style.v >= Style::FIRST_CUSTOM && gs.stylables > 0)
     {
         // If we are showing a screen for a particular style, then offer the

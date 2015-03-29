@@ -56,7 +56,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         sc.Clear();
     }
 
-    // Test if the curve lies entirely outside one of the 
+    // Test if the curve lies entirely outside one of the
     SCurvePt *scpt;
     bool withinA = false, withinB = false;
     for(scpt = split.pts.First(); scpt; scpt = split.pts.NextAfter(scpt)) {
@@ -105,7 +105,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     into->curve.AddAndAssignId(&split);
 }
 
-void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
+void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                                 SShell *into)
 {
     Vector amax, amin, bmax, bmin;
@@ -220,7 +220,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             ZERO(&inters);
             sext->AllPointsIntersecting(
                 p0, p0.Plus(dp), &inters, false, false, true);
-    
+
             SInter *si;
             for(si = inters.First(); si; si = inters.NextAfter(si)) {
                 Vector al = along.ScaledBy(0.5);
@@ -244,14 +244,14 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             AddExactIntersectionCurve(&bezier, b, agnstA, agnstB, into);
         }
-    } else if(isExtdt && isExtdb && 
-                sqrt(fabs(alongt.Dot(alongb))) > 
+    } else if(isExtdt && isExtdb &&
+                sqrt(fabs(alongt.Dot(alongb))) >
                 sqrt(alongt.Magnitude() * alongb.Magnitude()) - LENGTH_EPS)
     {
         // Two surfaces of extrusion along the same axis. So they might
         // intersect along some number of lines parallel to the axis.
         Vector axis = alongt.WithMagnitude(1);
-        
+
         List<SInter> inters;
         ZERO(&inters);
         List<Vector> lv;
@@ -403,7 +403,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 ClosestPointTo(start, &pa);
                 b->ClosestPointTo(start, &pb);
 
-                Vector na =    NormalAt(pa).WithMagnitude(1), 
+                Vector na =    NormalAt(pa).WithMagnitude(1),
                        nb = b->NormalAt(pb).WithMagnitude(1);
 
                 if(a == 0) {
@@ -496,7 +496,7 @@ bool SSurface::CoincidentWithPlane(Vector n, double d) {
     if(fabs(n.Dot(ctrl[0][1]) - d) > LENGTH_EPS) return false;
     if(fabs(n.Dot(ctrl[1][0]) - d) > LENGTH_EPS) return false;
     if(fabs(n.Dot(ctrl[1][1]) - d) > LENGTH_EPS) return false;
-    
+
     return true;
 }
 

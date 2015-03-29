@@ -465,7 +465,7 @@ void GraphicsWindow::Paint(void) {
     width = w; height = h;
     glViewport(0, 0, w, h);
 
-    glMatrixMode(GL_PROJECTION); 
+    glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
     glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/30000);
@@ -492,7 +492,7 @@ void GraphicsWindow::Paint(void) {
                     0,              0,              0,              1);
     glMultMatrixd(mat);
 
-    glMatrixMode(GL_MODELVIEW); 
+    glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     glShadeModel(GL_SMOOTH);
@@ -504,10 +504,10 @@ void GraphicsWindow::Paint(void) {
     // drawn with leaks in the mesh
     glEnable(GL_POLYGON_OFFSET_LINE);
     glEnable(GL_POLYGON_OFFSET_FILL);
-    glEnable(GL_DEPTH_TEST); 
+    glEnable(GL_DEPTH_TEST);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glEnable(GL_NORMALIZE);
-   
+
     // At the same depth, we want later lines drawn over earlier.
     glDepthFunc(GL_LEQUAL);
 
@@ -522,9 +522,9 @@ void GraphicsWindow::Paint(void) {
         // And show the text window, which has info to debug it
         ForceTextWindowShown();
     }
-    glClear(GL_COLOR_BUFFER_BIT); 
-    glClearDepth(1.0); 
-    glClear(GL_DEPTH_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT);
+    glClearDepth(1.0);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     if(SS.bgImage.fromFile) {
         // If a background image is loaded, then we draw it now as a texture.
@@ -631,7 +631,7 @@ void GraphicsWindow::Paint(void) {
 
         double g = SS.gridSpacing;
 
-        double umin = VERY_POSITIVE, umax = VERY_NEGATIVE, 
+        double umin = VERY_POSITIVE, umax = VERY_NEGATIVE,
                vmin = VERY_POSITIVE, vmax = VERY_NEGATIVE;
         int a;
         for(a = 0; a < 4; a++) {
@@ -642,7 +642,7 @@ void GraphicsWindow::Paint(void) {
             if(a == 2 || a == 3) horiz = horiz.ScaledBy(-1);
             if(a == 1 || a == 3) vert  = vert. ScaledBy(-1);
             Vector tp = horiz.Plus(vert).Minus(offset);
-          
+
             // Project the point into our grid plane, normal to the screen
             // (not to the grid plane). If the plane is on edge then this is
             // impossible so don't try to draw the grid.
@@ -684,11 +684,11 @@ void GraphicsWindow::Paint(void) {
             ssglVertex3v(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)));
             ssglVertex3v(wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)));
         }
-        glEnd(); 
+        glEnd();
 
         // Clear the depth buffer, so that the grid is at the very back of
         // the Z order.
-        glClear(GL_DEPTH_BUFFER_BIT); 
+        glClear(GL_DEPTH_BUFFER_BIT);
 nogrid:;
     }
 
@@ -732,7 +732,7 @@ nogrid:;
     ssglDrawEdges(&(SS.nakedEdges), true);
 
     // Then redraw whatever the mouse is hovering over, highlighted.
-    glDisable(GL_DEPTH_TEST); 
+    glDisable(GL_DEPTH_TEST);
     ssglLockColorTo(Style::Color(Style::HOVERED));
     hover.Draw();
 
@@ -803,12 +803,12 @@ nogrid:;
 
         ssglWriteText("(x, y) = (0, 0) for file just exported",
             DEFAULT_TEXT_HEIGHT,
-            p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)), 
+            p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)),
             u, v, NULL, NULL);
         ssglWriteText("press Esc to clear this message",
             DEFAULT_TEXT_HEIGHT,
             p.Plus(u.ScaledBy(40/scale)).Plus(
-                   v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)), 
+                   v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)),
             u, v, NULL, NULL);
     }
 

@@ -55,7 +55,7 @@ SiHdl SpaceNavigator = SI_NO_HANDLE;
 
 //-----------------------------------------------------------------------------
 // Routines to display message boxes on screen. Do our own, instead of using
-// MessageBox, because that is not consistent from version to version and 
+// MessageBox, because that is not consistent from version to version and
 // there's word wrap problems.
 //-----------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
                     row++;
                 } else {
                     TextOut(hdc, col*SS.TW.CHAR_WIDTH + 10,
-                                 row*SS.TW.LINE_HEIGHT + 10, 
+                                 row*SS.TW.LINE_HEIGHT + 10,
                                  &(MessageString[i]), 1);
                     col++;
                 }
@@ -118,7 +118,7 @@ HWND CreateWindowClient(DWORD exStyle, const char *className, const char *window
     GetClientRect(h, &r);
     width = width - (r.right - width);
     height = height - (r.bottom - height);
-    
+
     SetWindowPos(h, HWND_TOP, x, y, width, height, 0);
 
     return h;
@@ -161,7 +161,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error)
     OkButton = CreateWindowEx(0, WC_BUTTON, "OK",
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
         (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
-        70, 25, MessageWnd, NULL, Instance, NULL); 
+        70, 25, MessageWnd, NULL, Instance, NULL);
     SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, true);
 
     ShowWindow(MessageWnd, true);
@@ -184,7 +184,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error)
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    
+
     MessageString = NULL;
     EnableWindow(TextWnd, true);
     EnableWindow(GraphicsWnd, true);
@@ -197,7 +197,7 @@ void AddContextMenuItem(const char *label, int id)
     if(!ContextMenu) ContextMenu = CreatePopupMenu();
 
     if(id == CONTEXT_SUBMENU) {
-        AppendMenu(ContextMenu, MF_STRING | MF_POPUP, 
+        AppendMenu(ContextMenu, MF_STRING | MF_POPUP,
             (UINT_PTR)ContextSubmenu, label);
         ContextSubmenu = NULL;
     } else {
@@ -219,7 +219,7 @@ int ShowContextMenu(void)
 {
     POINT p;
     GetCursorPos(&p);
-    int r = TrackPopupMenu(ContextMenu, 
+    int r = TrackPopupMenu(ContextMenu,
         TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_TOPALIGN,
         p.x, p.y, 0, GraphicsWnd, NULL);
 
@@ -352,7 +352,7 @@ void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
         case SB_THUMBTRACK:
         case SB_THUMBPOSITION:  pos = HIWORD(wParam); break;
     }
-    
+
     SS.TW.ScrollbarEvent(pos);
 }
 
@@ -375,7 +375,7 @@ static void MouseWheel(int thisDelta) {
     POINT pt;
     GetCursorPos(&pt);
     HWND hw = WindowFromPoint(pt);
-    
+
     // Make the mousewheel work according to which window the mouse is
     // over, not according to which window is active.
     bool inTextWindow;
@@ -419,7 +419,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             EndPaint(hwnd, &ps);
             break;
         }
-        
+
         case WM_SIZING: {
             RECT *r = (RECT *)lParam;
             int hc = (r->bottom - r->top) - ClientIsSmallerBy;
@@ -477,7 +477,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
             SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, wParam & MK_LBUTTON, x, y);
             break;
         }
-        
+
         case WM_SIZE: {
             RECT r;
             GetWindowRect(TextWndScrollBar, &r);
@@ -618,23 +618,23 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
     int pixelFormat;
 
     memset(&pfd, 0, sizeof(pfd));
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR); 
-    pfd.nVersion = 1; 
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |  
-                        PFD_DOUBLEBUFFER; 
-    pfd.dwLayerMask = PFD_MAIN_PLANE; 
-    pfd.iPixelType = PFD_TYPE_RGBA; 
-    pfd.cColorBits = 32; 
-    pfd.cDepthBits = 24; 
-    pfd.cAccumBits = 0; 
-    pfd.cStencilBits = 0; 
- 
-    pixelFormat = ChoosePixelFormat(hdc, &pfd); 
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
+                        PFD_DOUBLEBUFFER;
+    pfd.dwLayerMask = PFD_MAIN_PLANE;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 24;
+    pfd.cAccumBits = 0;
+    pfd.cStencilBits = 0;
+
+    pixelFormat = ChoosePixelFormat(hdc, &pfd);
     if(!pixelFormat) oops();
- 
+
     if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
 
-    *glrc = wglCreateContext(hdc); 
+    *glrc = wglCreateContext(hdc);
     wglMakeCurrent(hdc, *glrc);
 }
 
@@ -897,7 +897,7 @@ int SaveFileYesNoCancel(void)
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
-    int r = MessageBox(GraphicsWnd, 
+    int r = MessageBox(GraphicsWnd,
         "The program has changed since it was last saved.\r\n\r\n"
         "Do you want to save the changes?", "SolveSpace",
         MB_YESNOCANCEL | MB_ICONWARNING);
@@ -948,7 +948,7 @@ static void MenuById(int id, bool yes, bool check)
 
     for(i = 0; SS.GW.menu[i].level >= 0; i++) {
         if(SS.GW.menu[i].level == 0) subMenu++;
-        
+
         if(SS.GW.menu[i].id == id) {
             if(subMenu < 0) oops();
             if(subMenu >= (int)arraylen(SubMenus)) oops();
@@ -1005,7 +1005,7 @@ HMENU CreateGraphicsWindowMenus(void)
 
     int i;
     int subMenu = 0;
-    
+
     for(i = 0; SS.GW.menu[i].level >= 0; i++) {
         char label[100] = { '\0' };
         if(SS.GW.menu[i].label) {
@@ -1054,7 +1054,7 @@ static void CreateMainWindows(void)
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC |
                           CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1); 
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
     wc.lpszClassName    = "GraphicsWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
@@ -1088,13 +1088,13 @@ static void CreateMainWindows(void)
 
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
-    TextWnd = CreateWindowEx(0, 
+    TextWnd = CreateWindowEx(0,
         "TextWnd", "SolveSpace - Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 
     TextWndScrollBar = CreateWindowEx(0, WC_SCROLLBAR, "", WS_CHILD |
-        SBS_VERT | SBS_LEFTALIGN | WS_VISIBLE | WS_CLIPSIBLINGS, 
+        SBS_VERT | SBS_LEFTALIGN | WS_VISIBLE | WS_CLIPSIBLINGS,
         200, 100, 100, 100, TextWnd, NULL, Instance, NULL);
     // Force the scrollbar to get resized to the window,
     TextWndProc(TextWnd, WM_SIZE, 0, 0);
@@ -1179,12 +1179,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);
-   
+
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT);
     SwapBuffers(GetDC(GraphicsWnd));
     glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT); 
+    glClear(GL_COLOR_BUFFER_BIT);
     SwapBuffers(GetDC(GraphicsWnd));
 
     // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
@@ -1217,7 +1217,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
     }
 #endif
-    
+
     // Call in to the platform-independent code, and let them do their init
     SS.Init(file);
 

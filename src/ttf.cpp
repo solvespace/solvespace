@@ -199,7 +199,7 @@ void TtfFont::LoadGlyph(int index) {
             }
             y[i] = ya;
         }
-   
+
         Glyph *g = &(glyph[index]);
         g->pt = (FontPoint *)MemAlloc(totalPts*sizeof(FontPoint));
         int contour = 0;
@@ -245,7 +245,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
     if(loaded) return true;
 
     int i;
-    
+
     fh = fopen(fontFile, "rb");
     if(!fh) {
         return false;
@@ -358,7 +358,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
                 }
             }
             name.str[c++] = '\0';
-         
+
             fclose(fh);
             return true;
         }
@@ -387,7 +387,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         uint16_t headFontDirectionHint = GetUSHORT();
         uint16_t headIndexToLocFormat  = GetUSHORT();
         uint16_t headGlyphDataFormat   = GetUSHORT();
-        
+
         if(headMagicNumber != 0x5F0F3CF5) {
             throw "bad magic number";
         }
@@ -489,7 +489,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         uint16_t mapSearchRange     = GetUSHORT();
         uint16_t mapEntrySelector   = GetUSHORT();
         uint16_t mapRangeShift      = GetUSHORT();
-        
+
         if(mapFormat != 4) {
             // Required to use format 4 per spec
             throw "not format 4";
@@ -606,7 +606,7 @@ void TtfFont::Handle(int *dx, int x, int y, bool onCurve) {
         // but we must store the off-curve point.
     } else if(lastWas == OFF_CURVE && onCurve) {
         // We are ready to do a Bezier.
-        Bezier(lastOnCurve.x, lastOnCurve.y, 
+        Bezier(lastOnCurve.x, lastOnCurve.y,
                lastOffCurve.x, lastOffCurve.y,
                x, y);
     } else if(lastWas == OFF_CURVE && !onCurve) {
@@ -616,7 +616,7 @@ void TtfFont::Handle(int *dx, int x, int y, bool onCurve) {
         IntPoint fake;
         fake.x = (x + lastOffCurve.x) / 2;
         fake.y = (y + lastOffCurve.y) / 2;
-        Bezier(lastOnCurve.x, lastOnCurve.y, 
+        Bezier(lastOnCurve.x, lastOnCurve.y,
                lastOffCurve.x, lastOffCurve.y,
                fake.x, fake.y);
 
@@ -659,7 +659,7 @@ void TtfFont::PlotCharacter(int *dx, int c, double spacing) {
     int firstInContour = 0;
     for(i = 0; i < g->pts; i++) {
         Handle(dx, g->pt[i].x, g->pt[i].y, g->pt[i].onCurve);
-        
+
         if(g->pt[i].lastInContour) {
             int f = firstInContour;
             Handle(dx, g->pt[f].x, g->pt[f].y, g->pt[f].onCurve);

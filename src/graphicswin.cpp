@@ -364,7 +364,7 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
 
     offset = offset.Plus(projRight.ScaledBy(-xm)).Plus(
                          projUp.   ScaledBy(-ym));
-  
+
     // And based on this, we calculate the scale and offset
     if(EXACT(dx == 0 && dy == 0)) {
         scale = 5;
@@ -692,7 +692,7 @@ Vector GraphicsWindow::SnapToGrid(Vector p) {
     pp.x = floor((pp.x / SS.gridSpacing) + 0.5)*SS.gridSpacing;
     pp.y = floor((pp.y / SS.gridSpacing) + 0.5)*SS.gridSpacing;
     pp.z = 0;
-    
+
     return pp.ScaleOutOfCsys(wu, wv, wn).Plus(wo);
 }
 
@@ -756,7 +756,7 @@ void GraphicsWindow::MenuEdit(int id) {
 
                     Vector st = e->EndpointStart(),
                            fi = e->EndpointFinish();
-                   
+
                     bool onChain = false, alreadySelected = false;
                     List<Selection> *ls = &(SS.GW.selection);
                     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
@@ -874,7 +874,7 @@ void GraphicsWindow::MenuEdit(int id) {
         case MNU_UNDO:
             SS.UndoUndo();
             break;
-        
+
         case MNU_REDO:
             SS.UndoRedo();
             break;

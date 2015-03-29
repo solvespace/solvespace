@@ -338,7 +338,7 @@ void SolveSpace::GenerateAll(int first, int last, bool andFindFree) {
         }
         memset(&deleted, 0, sizeof(deleted));
     }
-    
+
     FreeAllTemporary();
     allConsistent = true;
     return;
@@ -372,7 +372,7 @@ void SolveSpace::ForceReferences(void) {
         SK.GetParam(origin->param[1])->known = true;
         SK.GetParam(origin->param[2])->known = true;
         // The quaternion that defines the rotation, from the table.
-        Entity *normal = SK.GetEntity(wrkpl->normal); 
+        Entity *normal = SK.GetEntity(wrkpl->normal);
         normal->NormalForceTo(Quat[i].q);
         SK.GetParam(normal->param[0])->known = true;
         SK.GetParam(normal->param[1])->known = true;

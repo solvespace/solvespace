@@ -31,7 +31,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
         } else {
             ssglFatLine(a, b, dogd.lineWidth/SS.GW.scale);
         }
-            
+
         ssglDepthRangeOffset(0);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
@@ -150,7 +150,7 @@ double Entity::GetDistance(Point2d mp) {
     dogd.dmin = 1e12;
 
     DrawOrGetDistance();
-    
+
     return dogd.dmin;
 }
 
@@ -236,7 +236,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
     int pts = periodic ? 4 + ep : 2 + ep;
 
     int i, j, a;
-    
+
     // The starting and finishing control points that define our end tangents
     // (if the spline isn't periodic), and the on-curve points.
     Vector ctrl_s = Vector::From(0, 0, 0);
@@ -269,7 +269,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
         BandedMatrix bm;
         ZERO(&bm);
         bm.n = n;
-   
+
         for(i = 0; i < n; i++) {
             int im, it, ip;
             if(periodic) {
@@ -318,7 +318,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
             } else {
                 // The wrapping would work, except when n = 1 and everything
                 // wraps to zero...
-                if(i > 0)     bm.A[i][i - 1] = eq.x; 
+                if(i > 0)     bm.A[i][i - 1] = eq.x;
                               bm.A[i][i]     = eq.y;
                 if(i < (n-1)) bm.A[i][i + 1] = eq.z;
             }
@@ -441,7 +441,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             }
             break;
         }
-            
+
         case TTF_TEXT: {
             Vector topLeft = SK.GetEntity(point[0])->PointGetNum();
             Vector botLeft = SK.GetEntity(point[1])->PointGetNum();

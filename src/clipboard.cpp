@@ -172,7 +172,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             MakeSelected(hr.entity(i+1));
         }
     }
-    
+
     Constraint *c;
     for(c = SS.clipboard.c.First(); c; c = SS.clipboard.c.NextAfter(c)) {
         if(c->type == Constraint::POINTS_COINCIDENT) {
@@ -192,7 +192,7 @@ void GraphicsWindow::MenuClipboard(int id) {
     }
 
     switch(id) {
-        case MNU_PASTE: {   
+        case MNU_PASTE: {
             SS.UndoRemember();
             Vector trans = SS.GW.projRight.ScaledBy(80/SS.GW.scale).Plus(
                            SS.GW.projUp   .ScaledBy(40/SS.GW.scale));
@@ -206,7 +206,7 @@ void GraphicsWindow::MenuClipboard(int id) {
                 Error("Clipboard is empty; nothing to paste.");
                 break;
             }
-            
+
             Entity *wrkpl  = SK.GetEntity(SS.GW.ActiveWorkplane());
             Vector p = SK.GetEntity(wrkpl->point[0])->PointGetNum();
             SS.TW.shown.paste.times  = 1;

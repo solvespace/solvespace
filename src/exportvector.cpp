@@ -272,7 +272,7 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 // a correct xref table.
 //-----------------------------------------------------------------------------
 void PdfFileWriter::StartFile(void) {
-    if((ptMax.x - ptMin.x) > 200*25.4 || 
+    if((ptMax.x - ptMin.x) > 200*25.4 ||
        (ptMax.y - ptMin.y) > 200*25.4)
     {
         Message("PDF page size exceeds 200 by 200 inches; many viewers may "
@@ -283,7 +283,7 @@ void PdfFileWriter::StartFile(void) {
 "%%PDF-1.1\r\n"
 "%%%c%c%c%c\r\n",
         0xe2, 0xe3, 0xcf, 0xd3);
-    
+
     xref[1] = (uint32_t)ftell(f);
     fprintf(f,
 "1 0 obj\r\n"
@@ -369,13 +369,13 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 "9 0 obj\r\n"
 "  << /Creator (SolveSpace)\r\n"
 "  >>\r\n");
-    
+
     uint32_t xrefStart = (uint32_t)ftell(f);
     fprintf(f,
 "xref\r\n"
 "0 10\r\n"
 "0000000000 65535 f\r\n");
-   
+
     int i;
     for(i = 1; i <= 9; i++) {
         fprintf(f, "%010d %05d n\r\n", xref[i], 0);
@@ -673,7 +673,7 @@ void GCodeFileWriter::FinishAndCloseFile(void) {
                         SS.MmToString(SS.gCode.feed));
             }
             // Move up to a clearance plane 5mm above the work.
-            fprintf(f, "G00 Z%s\r\n", 
+            fprintf(f, "G00 Z%s\r\n",
                 SS.MmToString(SS.gCode.depth < 0 ? +5 : -5));
         }
     }

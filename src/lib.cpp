@@ -90,7 +90,7 @@ void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
         Slvs_Param *sp = &(ssys->param[i]);
         Param p;
         ZERO(&p);
-        
+
         p.h.v = sp->h;
         p.val = sp->val;
         SK.param.Add(&p);

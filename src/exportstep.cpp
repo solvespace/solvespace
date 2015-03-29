@@ -168,7 +168,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
     fprintf(f, "));\n");
 
     int fb = id + 1;
-        fprintf(f, "#%d=%s('',#%d,.T.);\n", 
+        fprintf(f, "#%d=%s('',#%d,.T.);\n",
             fb, inner ? "FACE_BOUND" : "FACE_OUTER_BOUND", id);
 
     id += 2;
@@ -218,7 +218,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     // The control points for the untrimmed surface.
     for(i = 0; i <= ss->degm; i++) {
         for(j = 0; j <= ss->degn; j++) {
-            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n", 
+            fprintf(f, "#%d=CARTESIAN_POINT('',(%.10f,%.10f,%.10f));\n",
                 srfid + 1 + j + i*(ss->degn + 1),
                 CO(ss->ctrl[i][j]));
         }
@@ -258,7 +258,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
         int fob = ExportCurveLoop(loop, false);
         listOfLoops.Add(&fob);
 
-        // And create the face inner boundaries from any inner loops that 
+        // And create the face inner boundaries from any inner loops that
         // lie within this contour.
         loop = sbls->l.NextAfter(loop);
         for(; loop; loop = sbls->l.NextAfter(loop)) {
@@ -302,7 +302,7 @@ void StepFileWriter::ExportSurfacesTo(char *file) {
 
     if(shell->surface.n == 0) {
         Error("The model does not contain any surfaces to export.%s",
-            g->runningMesh.l.n > 0 ? 
+            g->runningMesh.l.n > 0 ?
                 "\n\nThe model does contain triangles from a mesh, but "
                 "a triangle mesh cannot be exported as a STEP file. Try "
                 "File -> Export Mesh... instead." : "");

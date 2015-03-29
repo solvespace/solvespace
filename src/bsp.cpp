@@ -73,7 +73,7 @@ void SBsp3::InsertInPlane(bool pos2, STriangle *tr, SMesh *m) {
                                    (onFace && !sameNormal && m->keepCoplanar)))
     {
         m->AddTriangle(tr->meta, tr->c, tr->b, tr->a);
-    } else if(!(m->flipNormal) && ((pos2 && !onFace) || 
+    } else if(!(m->flipNormal) && ((pos2 && !onFace) ||
                                    (onFace && sameNormal && m->keepCoplanar)))
     {
         m->AddTriangle(tr->meta, tr->a, tr->b, tr->c);
@@ -180,7 +180,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
             }
             onc++;
         } else if(dt > d) {
-            isPos[i] = true; 
+            isPos[i] = true;
             posc++;
         } else {
             isNeg[i] = true;
@@ -454,7 +454,7 @@ void SBsp3::DebugDraw(void) {
         ssglVertex3v(tri.a);
         ssglVertex3v(tri.b);
         ssglVertex3v(tri.c);
-    glEnd(); 
+    glEnd();
 
     ssglDepthRangeOffset(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

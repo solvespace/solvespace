@@ -89,7 +89,7 @@ void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
     double scale = FONT_SCALE(h)/SS.GW.scale;
     int xo = 5;
     int yo = 5;
-    
+
     for(; *str; str++) {
         int c = *str;
         if(c < 32 || c > 126) c = 32;
@@ -311,7 +311,7 @@ void ssglFillMesh(RgbColor specColor, SMesh *m, uint32_t h, uint32_t s1, uint32_
             ssglVertex3v(tr->c);
         }
 
-        if((s1 != 0 && tr->meta.face == s1) || 
+        if((s1 != 0 && tr->meta.face == s1) ||
            (s2 != 0 && tr->meta.face == s2))
         {
             StippleTriangle(tr, true, rgbSelected);

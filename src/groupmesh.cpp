@@ -59,7 +59,7 @@ void Group::GenerateLoops(void) {
     bezierLoops.Clear();
     bezierOpens.Clear();
 
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE || 
+    if(type == DRAWING_3D || type == DRAWING_WORKPLANE ||
        type == ROTATE || type == TRANSLATE || type == IMPORTED)
     {
         bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
@@ -179,7 +179,7 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, int how) {
     }
 }
 
-void Group::GenerateShellAndMesh(void) {    
+void Group::GenerateShellAndMesh(void) {
     bool prevBooleanFailed = booleanFailed;
     booleanFailed = false;
 
@@ -217,7 +217,7 @@ void Group::GenerateShellAndMesh(void) {
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
         }
-     
+
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {

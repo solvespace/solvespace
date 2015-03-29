@@ -123,14 +123,14 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     ret.degm = 1;
     ret.degn = 1;
 
-    ret.weight[0][0] = ret.weight[0][1] = 1; 
+    ret.weight[0][0] = ret.weight[0][1] = 1;
     ret.weight[1][0] = ret.weight[1][1] = 1;
 
     ret.ctrl[0][0] = pt;
     ret.ctrl[0][1] = pt.Plus(u);
     ret.ctrl[1][0] = pt.Plus(v);
     ret.ctrl[1][1] = pt.Plus(v).Plus(u);
-    
+
     return ret;
 }
 
@@ -413,7 +413,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     if(el.AssemblePolygon(&poly, NULL, true)) {
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
-            // A surface with curvature along one direction only; so 
+            // A surface with curvature along one direction only; so
             // choose the triangulation with chords that lie as much
             // as possible within the surface. And since the trim curves
             // have been pwl'd to within the desired chord tol, that will
@@ -522,7 +522,7 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
     s1.color = color;
     hSSurface hs0 = surface.AddAndAssignId(&s0),
               hs1 = surface.AddAndAssignId(&s1);
-    
+
     // Now go through the input curves. For each one, generate its surface
     // of extrusion, its two translated trim curves, and one trim line. We
     // go through by loops so that we can assign the lines correctly.
@@ -653,7 +653,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
             Revolved revs;
             for(j = 0; j < 4; j++) {
-                if(sb->deg == 1 && 
+                if(sb->deg == 1 &&
                     (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
                     (sb->ctrl[1]).DistanceToLine(pt, axis) < LENGTH_EPS)
                 {
@@ -705,7 +705,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
 
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
-                // circle. 
+                // circle.
                 if(revs.d[j].v && revsp.d[j].v) {
                     SSurface *ss = surface.FindById(revs.d[j]);
 

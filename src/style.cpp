@@ -399,7 +399,7 @@ void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
 
         png_read_png(png_ptr, info_ptr,
             PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_ALPHA, NULL);
-        
+
         int w; w = (int)png_get_image_width(png_ptr, info_ptr);
         int h; h = (int)png_get_image_height(png_ptr, info_ptr);
         uint8_t **rows; rows = png_get_rows(png_ptr, info_ptr);
@@ -450,7 +450,7 @@ void TextWindow::ShowListOfStyles(void) {
         darkbg = !darkbg;
     }
 
-    Printf(true, "  %Fl%Ll%fcreate a new custom style%E", 
+    Printf(true, "  %Fl%Ll%fcreate a new custom style%E",
         &ScreenCreateCustomStyle);
 
     Printf(false, "");
@@ -491,7 +491,7 @@ void TextWindow::ScreenChangeStyleName(int link, uint32_t v) {
     Style *s = Style::Get(hs);
     SS.TW.ShowEditControl(10, 12, s->name.str);
     SS.TW.edit.style = hs;
-    SS.TW.edit.meaning = EDIT_STYLE_NAME;   
+    SS.TW.edit.meaning = EDIT_STYLE_NAME;
 }
 
 void TextWindow::ScreenDeleteStyle(int link, uint32_t v) {

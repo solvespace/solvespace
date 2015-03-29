@@ -108,7 +108,7 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
     }
 }
 
-bool SContour::BridgeToContour(SContour *sc, 
+bool SContour::BridgeToContour(SContour *sc,
                                SEdgeList *avoidEdges, List<Vector> *avoidPts)
 {
     int i, j;
@@ -136,7 +136,7 @@ bool SContour::BridgeToContour(SContour *sc,
     }
 
     int thisp, scp;
-   
+
     Vector a, b, *f;
 
     // First check if the contours share a point; in that case we should
@@ -248,7 +248,7 @@ bool SContour::IsEar(int bp, double scaledEps) {
     int i;
     for(i = 0; i < l.n; i++) {
         if(i == ap || i == bp || i == cp) continue;
-        
+
         Vector p = l.elem[i].p;
         if(p.OutsideAndNotOn(maxv, minv)) continue;
 
@@ -258,7 +258,7 @@ bool SContour::IsEar(int bp, double scaledEps) {
         if(p.EqualsExactly(tr.a)) continue;
         if(p.EqualsExactly(tr.b)) continue;
         if(p.EqualsExactly(tr.c)) continue;
-            
+
         if(tr.ContainsPointProjd(n, p)) {
             return false;
         }
@@ -269,7 +269,7 @@ bool SContour::IsEar(int bp, double scaledEps) {
 void SContour::ClipEarInto(SMesh *m, int bp, double scaledEps) {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
-    
+
     STriangle tr;
     ZERO(&tr);
     tr.a = l.elem[ap].p;
