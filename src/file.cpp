@@ -656,6 +656,16 @@ void SolveSpaceUI::ReloadAllImported(void) {
         Group *g = &(SK.group.elem[i]);
         if(g->type != Group::IMPORTED) continue;
 
+#ifndef WIN32
+        // Change backslashes to forward slashes on Unix.
+        // Done unconditionally to get the displayed filename
+        // consistent with current filesystem type.
+        for(int j = 0; j < strlen(g->impFileRel); j++) {
+            if(g->impFileRel[j] == '\\')
+                g->impFileRel[j] = '/';
+        }
+#endif
+
         g->impEntity.Clear();
         g->impMesh.Clear();
         g->impShell.Clear();
