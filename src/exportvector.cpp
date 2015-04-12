@@ -482,9 +482,8 @@ void SvgFileWriter::StartFile(void) {
 "\r\n"
 "<title>Exported SVG</title>\r\n"
 "\r\n",
-        (ptMax.x - ptMin.x) + 1, (ptMax.y - ptMin.y) + 1,
-        (ptMax.x - ptMin.x) + 1, (ptMax.y - ptMin.y) + 1);
-    // A little bit of extra space for the stroke width.
+        (ptMax.x - ptMin.x), (ptMax.y - ptMin.y),
+        (ptMax.x - ptMin.x), (ptMax.y - ptMin.y));
 }
 
 void SvgFileWriter::StartPath(RgbColor strokeRgb, double lineWidth,
