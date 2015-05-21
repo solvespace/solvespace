@@ -255,7 +255,10 @@ void SolveSpace::SaveUsingTable(int type) {
 
 bool SolveSpace::SaveToFile(char *filename) {
     // Make sure all the entities are regenerated up to date, since they
-    // will be exported.
+    // will be exported. We reload the imported files because that rewrites
+    // the impFileRel for our possibly-new filename.
+    SS.later.showTW = true;
+    SS.ReloadAllImported();
     SS.GenerateAll(0, INT_MAX);
 
     fh = fopen(filename, "wb");

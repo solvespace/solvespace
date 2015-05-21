@@ -60,7 +60,8 @@ void MakePathRelative(const char *basep, char *pathp)
     for(i = 0; i < sections; i++) {
         strcat(out, "../");
     }
-    strcat(out, path+com);
+    // comparison is case-insensitive, but output preserves input case
+    strcat(out, pathp+com);
 
     strcpy(pathp, out);
 }

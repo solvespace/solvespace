@@ -319,19 +319,22 @@ void SolveSpace::AddToRecentList(char *file) {
 }
 
 bool SolveSpace::GetFilenameAndSave(bool saveAs) {
+    char prevSaveFile[MAX_PATH];
+    strcpy(prevSaveFile, saveFile);
 
-    char newFile[MAX_PATH];
-    strcpy(newFile, saveFile);
-    if(saveAs || strlen(newFile)==0) {
-        if(!GetSaveFile(newFile, SLVS_EXT, SLVS_PATTERN)) return false;
+    if(saveAs || strlen(saveFile)==0) {
+        if(!GetSaveFile(saveFile, SLVS_EXT, SLVS_PATTERN)) return false;
+        // need to get new filename directly into saveFile, since that
+        // determines impFileRel path
     }
 
-    if(SaveToFile(newFile)) {
-        AddToRecentList(newFile);
-        strcpy(saveFile, newFile);
+    if(SaveToFile(saveFile)) {
+        AddToRecentList(saveFile);
         unsaved = false;
         return true;
     } else {
+        // don't store an invalid save filename
+        strcpy(saveFile, prevSaveFile);
         return false;
     }
 }
