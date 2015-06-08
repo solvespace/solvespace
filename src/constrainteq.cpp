@@ -628,8 +628,15 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             if(type == ANGLE) {
                 // The direction cosine is equal to the cosine of the
                 // specified angle
-                Expr *rads = exA->Times(Expr::From(PI/180));
-                AddEq(l, c->Minus(rads->Cos()), 0);
+                Expr *rads = exA->Times(Expr::From(PI/180)),
+                     *rc   = rads->Cos();
+                double arc = fabs(rc->Eval());
+                // avoid false detection of inconsistent systems by gaining
+                // up as the difference in dot products gets small at small
+                // angles; doubles still have plenty of precision, only
+                // problem is that rank test
+                Expr *mult = Expr::From(arc > 0.99 ? 0.01/(1.00001 - arc) : 1);
+                AddEq(l, (c->Minus(rc))->Times(mult), 0);
             } else {
                 // The dot product (and therefore the direction cosine)
                 // is equal to zero, perpendicular.
