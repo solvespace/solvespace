@@ -11,12 +11,10 @@ add_definitions(
     ${PNG_CFLAGS_OTHER})
 
 link_directories(
-    ${PNG_LIBRARY_DIRS}
-    ${ZLIB_LIBRARY_DIRS})
+    ${PNG_LIBRARY_DIRS})
 
 add_definitions(
-    ${PNG_CFLAGS_OTHER}
-    ${ZLIB_CFLAGS_OTHER})
+    ${PNG_CFLAGS_OTHER})
 
 include_directories(
     "${CMAKE_CURRENT_SOURCE_DIR}"
@@ -128,6 +126,9 @@ if(WIN32)
         win32/freeze.cpp
         win32/w32main.cpp
         win32/resource.rc)
+
+    set(platform_LIBRARIES
+        comctl32)
 elseif(APPLE)
     add_definitions(
         -mmacosx-version-min=10.6
@@ -315,7 +316,7 @@ target_link_libraries(solvespace
     "${PNG_LIBRARIES}"
     "${platform_LIBRARIES}")
 
-if(WIN32)
+if(WIN32 AND NOT MINGW)
     set_target_properties(solvespace PROPERTIES
         LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO")
 endif()

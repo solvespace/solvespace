@@ -45,6 +45,11 @@ if((CMAKE_CXX_PLATFORM_ID STREQUAL "Linux") AND CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
+if(MINGW)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+endif()
+
 # dependencies
 
 CHECK_INCLUDE_FILE("stdint.h" HAVE_STDINT_H)
@@ -61,22 +66,40 @@ if(WIN32)
     find_package(PNG)
 
     if(NOT PNG_FOUND)
-        message(STATUS "Using prebuilt libpng")
+        message(STATUS "Using in-tree libpng")
+
+        add_subdirectory(extlib/zlib)
+
+        message(STATUS "Using in-tree libpng")
+
+        set(ZLIB_LIBRARY
+            zlibstatic)
+        set(ZLIB_INCLUDE_DIR
+            "${CMAKE_SOURCE_DIR}/extlib/zlib"
+            "${CMAKE_BINARY_DIR}/extlib/zlib")
+        set(SKIP_INSTALL_ALL
+            ON)
+        add_subdirectory(extlib/libpng)
 
         set(PNG_FOUND TRUE)
         set(PNG_LIBRARIES
-            "${CMAKE_SOURCE_DIR}/extlib/libpng/libpng.lib"
-            "${CMAKE_SOURCE_DIR}/extlib/zlib/zlib.lib")
+            png16_static
+            zlibstatic)
         set(PNG_INCLUDE_DIRS
-            "${CMAKE_SOURCE_DIR}/extlib/libpng")
+            "${CMAKE_SOURCE_DIR}/extlib/libpng"
+            "${CMAKE_BINARY_DIR}/extlib/libpng"
+            "${CMAKE_SOURCE_DIR}/extlib/zlib"
+            "${CMAKE_BINARY_DIR}/extlib/zlib")
     endif()
 
-    message(STATUS "Using prebuilt SpaceWare")
-    set(SPACEWARE_FOUND TRUE)
-    set(SPACEWARE_INCLUDE_DIR
-        "${CMAKE_SOURCE_DIR}/extlib/si")
-    set(SPACEWARE_LIBRARIES
-        "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+    if(NOT MINGW)
+        message(STATUS "Using prebuilt SpaceWare")
+        set(SPACEWARE_FOUND TRUE)
+        set(SPACEWARE_INCLUDE_DIR
+            "${CMAKE_SOURCE_DIR}/extlib/si")
+        set(SPACEWARE_LIBRARIES
+            "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+    endif()
 elseif(APPLE)
     find_package(PNG REQUIRED)
     find_library(APPKIT_LIBRARY AppKit REQUIRED)

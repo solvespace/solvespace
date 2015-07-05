@@ -1,8 +1,9 @@
 version: 1.0.{build}
 before_build:
+- git submodule update --init
 - mkdir cbuild
 - cd cbuild
 - cmake -DDISABLE_TTF2C=ON -G"Visual Studio 12" ..
 build:
-  project: C:\projects\solvespace\cbuild\solvespace.sln
+  project: C:\projects\solvespace\cbuild\src\solvespace.vcxproj
   verbosity: minimal

@@ -8,8 +8,6 @@ This repository contains the official repository of [SolveSpace][].
 Installation
 ------------
 
-All binary packages are built from the `compat` branch.
-
 ### Debian (>=jessie) and Ubuntu (>=trusty)
 
 Binary packages for Ubuntu trusty and later versions are available
@@ -30,13 +28,15 @@ See below.
 Building on Linux
 -----------------
 
-You will need cmake, libpng, zlib, json-c, fontconfig, gtkmm 2.4, pangomm 1.4,
+### Building for Linux
+
+You will need CMake, libpng, zlib, json-c, fontconfig, gtkmm 2.4, pangomm 1.4,
 OpenGL and OpenGL GLU.
-On a Debian derivative (e.g. Ubuntu) these packages can be installed with:
+On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install libpng12-dev libjson-c-dev libfontconfig1-dev \
                     libgtkmm-2.4-dev libpangomm-1.4-dev libgl-dev libglu-dev \
-                    libglew-dev
+                    libglew-dev cmake
 
 After that, build SolveSpace as following:
 
@@ -49,10 +49,39 @@ After that, build SolveSpace as following:
 A fully functional port to GTK3 is available, but not recommended
 for use due to bugs in this toolkit.
 
+### Building for Windows
+
+You will need CMake and a Windows cross-compiler.
+On a Debian derivative (e.g. Ubuntu) these can be installed with:
+
+    apt-get install mingw-w64 cmake
+
+Before building, check out the submodules:
+
+    git submodule update --init
+
+After that, build 32-bit SolveSpace as following:
+
+    mkdir cbuild
+    cd cbuild
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw32.cmake ..
+    make solvespace
+
+Or, build 64-bit SolveSpace as following:
+
+    mkdir cbuild
+    cd cbuild
+    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake ..
+    make solvespace
+
+The application is built as `cbuild/src/solvespace.exe`.
+
+Space Navigator support will not be available.
+
 Building on Mac OS X
 --------------------
 
-You will need XCode tools, cmake and libpng. Assuming you use [homebrew][],
+You will need XCode tools, CMake and libpng. Assuming you use [homebrew][],
 these can be installed with:
 
     brew install cmake libpng
@@ -69,6 +98,20 @@ After that, build SolveSpace as following:
 The app bundle is built in `cbuild/src/solvespace.app`.
 
 [homebrew]: http://brew.sh/
+
+Building on Windows
+-------------------
+
+You will need [cmake][cmakewin] and Visual C++.
+
+You will also need to check out the git submodules.
+
+After installing them, create a directory `build` in the source tree
+and point cmake-gui to the source tree and that directory. Press
+"Configure" and "Generate", then open `build\solvespace.sln` with
+Visual C++ and build it.
+
+[cmakewin]: http://www.cmake.org/download/#latest
 
 License
 -------
