@@ -396,7 +396,9 @@ public:
         MNU_GROUP_RECENT,
         // Constrain
         MNU_DISTANCE_DIA,
+        MNU_REF_DISTANCE,
         MNU_ANGLE,
+        MNU_REF_ANGLE,
         MNU_OTHER_ANGLE,
         MNU_REFERENCE,
         MNU_EQUAL,

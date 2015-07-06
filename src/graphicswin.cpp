@@ -126,7 +126,9 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Constrain",                  0,                  0,       IN, NULL  },
 { 1, "&Distance / Diameter",        MNU_DISTANCE_DIA,   'D',     IN, mCon  },
+{ 1, "Re&ference Dimension",        MNU_REF_DISTANCE,   S|'D',   IN, mCon  },
 { 1, "A&ngle",                      MNU_ANGLE,          'N',     IN, mCon  },
+{ 1, "Reference An&gle",            MNU_REF_ANGLE,      S|'N',   IN, mCon  },
 { 1, "Other S&upplementary Angle",  MNU_OTHER_ANGLE,    'U',     IN, mCon  },
 { 1, "Toggle R&eference Dim",       MNU_REFERENCE,      'E',     IN, mCon  },
 { 1, NULL,                          0,                  0,       IN, NULL  },

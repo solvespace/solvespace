@@ -124,7 +124,8 @@ void Constraint::MenuConstrain(int id) {
 #define gs (SS.GW.gs)
 
     switch(id) {
-        case GraphicsWindow::MNU_DISTANCE_DIA: {
+        case GraphicsWindow::MNU_DISTANCE_DIA:
+        case GraphicsWindow::MNU_REF_DISTANCE: {
             if(gs.points == 2 && gs.n == 2) {
                 c.type = PT_PT_DISTANCE;
                 c.ptA = gs.point[0];
@@ -175,6 +176,10 @@ void Constraint::MenuConstrain(int id) {
                 c.disp.offset = (c.disp.offset).WithMagnitude(50/SS.GW.scale);
             } else {
                 c.disp.offset = Vector::From(0, 0, 0);
+            }
+
+            if(id == GraphicsWindow::MNU_REF_DISTANCE) {
+                c.reference = true;
             }
 
             c.valA = 0;
@@ -535,7 +540,8 @@ void Constraint::MenuConstrain(int id) {
             Error("Must select a constraint with associated label.");
             return;
 
-        case GraphicsWindow::MNU_ANGLE: {
+        case GraphicsWindow::MNU_ANGLE:
+        case GraphicsWindow::MNU_REF_ANGLE: {
             if(gs.vectors == 2 && gs.n == 2) {
                 c.type = ANGLE;
                 c.entityA = gs.vector[0];
@@ -568,6 +574,11 @@ void Constraint::MenuConstrain(int id) {
                     // no shared point; not clear which intersection to draw
                 }
             }
+
+            if(id == GraphicsWindow::MNU_REF_ANGLE) {
+                c.reference = true;
+            }
+
             c.ModifyToSatisfy();
             AddConstraint(&c);
             break;
