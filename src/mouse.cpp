@@ -808,7 +808,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case MNU_LINE_SEGMENT:
+        case MNU_CONSTR_SEGMENT:
             hr = AddRequest(Request::LINE_SEGMENT);
+            SK.GetRequest(hr)->construction = (pending.operation == MNU_CONSTR_SEGMENT);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(1));
 
@@ -1051,6 +1053,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             // Create a new line segment, so that we continue drawing.
             hRequest hr = AddRequest(Request::LINE_SEGMENT);
+            SK.GetRequest(hr)->construction = SK.GetRequest(pending.request)->construction;
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             // Displace the second point of the new line segment slightly,
             // to avoid creating zero-length edge warnings.

@@ -113,6 +113,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "&Workplane",                  MNU_WORKPLANE,      0,       IN, mReq  },
 { 1, NULL,                          0,                  0,       IN, NULL  },
 { 1, "Line &Segment",               MNU_LINE_SEGMENT,   'S',     IN, mReq  },
+{ 1, "C&onstruction Line Segment",  MNU_CONSTR_SEGMENT, S|'S',   IN, mReq  },
 { 1, "&Rectangle",                  MNU_RECTANGLE,      'R',     IN, mReq  },
 { 1, "&Circle",                     MNU_CIRCLE,         'C',     IN, mReq  },
 { 1, "&Arc of a Circle",            MNU_ARC,            'A',     IN, mReq  },
@@ -954,6 +955,7 @@ void GraphicsWindow::MenuRequest(int id) {
         case MNU_ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
         case MNU_DATUM_POINT: s = "click to place datum point"; goto c;
         case MNU_LINE_SEGMENT: s = "click first point of line segment"; goto c;
+        case MNU_CONSTR_SEGMENT: s = "click first point of construction line segment"; goto c;
         case MNU_CUBIC: s = "click first point of cubic segment"; goto c;
         case MNU_CIRCLE: s = "click center of circle"; goto c;
         case MNU_WORKPLANE: s = "click origin of workplane"; goto c;

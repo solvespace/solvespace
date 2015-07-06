@@ -377,6 +377,7 @@ public:
         MNU_DATUM_POINT,
         MNU_WORKPLANE,
         MNU_LINE_SEGMENT,
+        MNU_CONSTR_SEGMENT,
         MNU_CIRCLE,
         MNU_ARC,
         MNU_RECTANGLE,
