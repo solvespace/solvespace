@@ -434,7 +434,7 @@ Group *Group::RunningMeshGroup(void) {
 }
 
 void Group::DrawDisplayItems(int t) {
-    RgbColor specColor;
+    RgbaColor specColor;
     bool useSpecColor;
     if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
         // force the color to something dim

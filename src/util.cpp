@@ -210,14 +210,14 @@ void SolveSpace::Message(const char *str, ...)
 void SolveSpace::CnfFreezeBool(bool v, const char *name)
     { CnfFreezeInt(v ? 1 : 0, name); }
 
-void SolveSpace::CnfFreezeColor(RgbColor v, const char *name)
+void SolveSpace::CnfFreezeColor(RgbaColor v, const char *name)
     { CnfFreezeInt(v.ToPackedInt(), name); }
 
 bool SolveSpace::CnfThawBool(bool v, const char *name)
     { return CnfThawInt(v ? 1 : 0, name) != 0; }
 
-RgbColor SolveSpace::CnfThawColor(RgbColor v, const char *name)
-    { return RgbColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
+RgbaColor SolveSpace::CnfThawColor(RgbaColor v, const char *name)
+    { return RgbaColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
 
 //-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG

@@ -85,7 +85,7 @@ void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
     ShowTextEditControl(x - 3, y + 2, s);
 }
 
-void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbColor rgb)
+void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb)
 {
     char str[1024];
     sprintf(str, "%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF());
@@ -132,7 +132,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
 
     char fg = 'd';
     char bg = 'd';
-    RgbColor bgRgb = RGBi(0, 0, 0);
+    RgbaColor bgRgb = RGBi(0, 0, 0);
     int link = NOT_A_LINK;
     uint32_t data = 0;
     LinkFunction *f = NULL, *h = NULL;
@@ -203,11 +203,11 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                 case 'F':
                 case 'B': {
                     char cc = fmt[1];  // color code
-                    RgbColor *rgbPtr = NULL;
+                    RgbaColor *rgbPtr = NULL;
                     switch(cc) {
                         case 0:   goto done;  // truncated directive
                         case 'p': cc = (char)va_arg(vl, int); break;
-                        case 'z': rgbPtr = va_arg(vl, RgbColor *); break;
+                        case 'z': rgbPtr = va_arg(vl, RgbaColor *); break;
                     }
                     if(*fmt == 'F') {
                         fg = cc;
@@ -541,7 +541,7 @@ uint8_t *TextWindow::HsvPattern1d(double h, double s) {
 
 void TextWindow::ColorPickerDone(void) {
     char str[1024];
-    RgbColor rgb = editControl.colorPicker.rgb;
+    RgbaColor rgb = editControl.colorPicker.rgb;
     sprintf(str, "%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF());
     EditControlDone(str);
 }
@@ -559,7 +559,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     if(!editControl.colorPicker.show) return false;
     if(how == CLICK || (how == HOVER && leftDown)) InvalidateText();
 
-    static const RgbColor BaseColor[12] = {
+    static const RgbaColor BaseColor[12] = {
         RGBi(255,   0,   0),
         RGBi(  0, 255,   0),
         RGBi(  0,   0, 255),
@@ -612,7 +612,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     for(i = 0; i < WIDTH/2; i++) {
         for(j = 0; j < HEIGHT; j++) {
             Vector rgb;
-            RgbColor d;
+            RgbaColor d;
             if(i == 0 && j < 8) {
                 d = SS.modelColor[j];
                 rgb = Vector::From(d.redF(), d.greenF(), d.blueF());
@@ -844,7 +844,7 @@ void TextWindow::Paint(void) {
 
                 int fg = meta[r][c].fg;
                 int bg = meta[r][c].bg;
-                RgbColor bgRgb = meta[r][c].bgRgb;
+                RgbaColor bgRgb = meta[r][c].bgRgb;
 
                 // On the first pass, all the background quads; on the next
                 // pass, all the foreground (i.e., font) quads.

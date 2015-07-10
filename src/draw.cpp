@@ -61,7 +61,7 @@ void GraphicsWindow::Selection::Draw(void) {
         topLeft = topLeft.Minus(SS.GW.offset);
 
         ssglLineWidth(40);
-        RgbColor rgb = Style::Color(Style::HOVERED);
+        RgbaColor rgb = Style::Color(Style::HOVERED);
         glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), 0.2);
         glBegin(GL_LINES);
             ssglVertex3v(topLeft);
@@ -517,7 +517,7 @@ void GraphicsWindow::Paint(void) {
                      SS.backgroundColor.blueF(), 1.0f);
     } else {
         // Draw a different background whenever we're having solve problems.
-        RgbColor rgb = Style::Color(Style::DRAW_ERROR);
+        RgbaColor rgb = Style::Color(Style::DRAW_ERROR);
         glClearColor(0.4f*rgb.redF(), 0.4f*rgb.greenF(), 0.4f*rgb.blueF(), 1.0f);
         // And show the text window, which has info to debug it
         ForceTextWindowShown();

@@ -506,8 +506,8 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
             hStyle hs = { (uint32_t)b->auxA };
             Style *stl = Style::Get(hs);
             double lineWidth   = Style::WidthMm(b->auxA)*s;
-            RgbColor strokeRgb = Style::Color(hs, true);
-            RgbColor fillRgb   = Style::FillColor(hs, true);
+            RgbaColor strokeRgb = Style::Color(hs, true);
+            RgbaColor fillRgb   = Style::FillColor(hs, true);
 
             StartPath(strokeRgb, lineWidth, stl->filled, fillRgb);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {

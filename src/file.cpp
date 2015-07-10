@@ -203,13 +203,13 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 
 union SAVEDptr {
     IdList<EntityMap,EntityId> M;
-    NameStr  N;
-    char     P[MAX_PATH];
-    bool     b;
-    RgbColor c;
-    int      d;
-    double   f;
-    uint32_t x;
+    NameStr   N;
+    char      P[MAX_PATH];
+    bool      b;
+    RgbaColor c;
+    int       d;
+    double    f;
+    uint32_t  x;
 };
 
 void SolveSpaceUI::SaveUsingTable(int type) {
@@ -384,7 +384,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
 
                 case 'c':
                     sscanf(val, "%x", &u);
-                    p->c = RgbColor::FromPackedInt(u);
+                    p->c = RgbaColor::FromPackedInt(u);
                     break;
 
                 case 'P':
@@ -564,7 +564,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
                 &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11) {
                 oops();
             }
-            tr.meta.color = RgbColor::FromPackedInt((uint32_t)rgba);
+            tr.meta.color = RgbaColor::FromPackedInt((uint32_t)rgba);
             m->AddTriangle(&tr);
         } else if(StrStartsWith(line, "Surface ")) {
             unsigned int rgba = 0;
@@ -573,7 +573,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
                 &(srf.degm), &(srf.degn)) != 5) {
                 oops();
             }
-            srf.color = RgbColor::FromPackedInt((uint32_t)rgba);
+            srf.color = RgbaColor::FromPackedInt((uint32_t)rgba);
         } else if(StrStartsWith(line, "SCtrl ")) {
             int i, j;
             Vector c;

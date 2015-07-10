@@ -198,7 +198,7 @@ void ssglFatLine(Vector a, Vector b, double width)
 }
 
 
-void ssglLockColorTo(RgbColor rgb)
+void ssglLockColorTo(RgbaColor rgb)
 {
     ColorLocked = false;
     glColor3d(rgb.redF(), rgb.greenF(), rgb.blueF());
@@ -210,14 +210,14 @@ void ssglUnlockColor(void)
     ColorLocked = false;
 }
 
-void ssglColorRGB(RgbColor rgb)
+void ssglColorRGB(RgbaColor rgb)
 {
     // Is there a bug in some graphics drivers where this is not equivalent
     // to glColor3d? There seems to be...
     ssglColorRGBa(rgb, 1.0);
 }
 
-void ssglColorRGBa(RgbColor rgb, double a)
+void ssglColorRGBa(RgbaColor rgb, double a)
 {
     if(!ColorLocked) glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), a);
 }
@@ -253,7 +253,7 @@ static void Stipple(bool forSel)
     }
 }
 
-static void StippleTriangle(STriangle *tr, bool s, RgbColor rgb)
+static void StippleTriangle(STriangle *tr, bool s, RgbaColor rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
@@ -269,20 +269,20 @@ static void StippleTriangle(STriangle *tr, bool s, RgbColor rgb)
     glBegin(GL_TRIANGLES);
 }
 
-void ssglFillMesh(bool useSpecColor, RgbColor specColor,
+void ssglFillMesh(bool useSpecColor, RgbaColor specColor,
                   SMesh *m, uint32_t h, uint32_t s1, uint32_t s2)
 {
-    RgbColor rgbHovered  = Style::Color(Style::HOVERED),
+    RgbaColor rgbHovered  = Style::Color(Style::HOVERED),
              rgbSelected = Style::Color(Style::SELECTED);
 
     glEnable(GL_NORMALIZE);
     bool hasMaterial = false;
-    RgbColor prevColor;
+    RgbaColor prevColor;
     glBegin(GL_TRIANGLES);
     for(int i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
 
-        RgbColor color;
+        RgbaColor color;
         if(useSpecColor) {
             color = specColor;
         } else {

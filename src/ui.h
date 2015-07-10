@@ -17,8 +17,8 @@ public:
     };
 
     typedef struct {
-        char     c;
-        RgbColor color;
+        char      c;
+        RgbaColor color;
     } Color;
     static const Color fgColors[];
     static const Color bgColors[];
@@ -47,7 +47,7 @@ public:
     struct {
         char            fg;
         char            bg;
-        RgbColor        bgRgb;
+        RgbaColor       bgRgb;
         int             link;
         uint32_t        data;
         LinkFunction   *f;
@@ -199,17 +199,17 @@ public:
         int     col;
 
         struct {
-            RgbColor rgb;
-            double   h, s, v;
-            bool     show;
-            bool     picker1dActive;
-            bool     picker2dActive;
+            RgbaColor rgb;
+            double    h, s, v;
+            bool      show;
+            bool      picker1dActive;
+            bool      picker2dActive;
         }       colorPicker;
     } editControl;
 
     void HideEditControl(void);
     void ShowEditControl(int halfRow, int col, char *s);
-    void ShowEditControlWithColorPicker(int halfRow, int col, RgbColor rgb);
+    void ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb);
 
     void ClearSuper(void);
 

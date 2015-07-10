@@ -397,12 +397,12 @@ public:
     void Solve(void);
 };
 
-#define RGBi(r, g, b) RgbColor::From((r), (g), (b))
-#define RGBf(r, g, b) RgbColor::FromFloat((float)(r), (float)(g), (float)(b))
+#define RGBi(r, g, b) RgbaColor::From((r), (g), (b))
+#define RGBf(r, g, b) RgbaColor::FromFloat((float)(r), (float)(g), (float)(b))
 
-// Note: sizeof(class RgbColor) should be exactly 4
+// Note: sizeof(class RgbaColor) should be exactly 4
 //
-class RgbColor {
+class RgbaColor {
 public:
     uint8_t red, green, blue, alpha;
 
@@ -411,7 +411,7 @@ public:
     float blueF(void)  const { return (float)blue  / 255.0f; }
     float alphaF(void) const { return (float)alpha / 255.0f; }
 
-    bool Equals(RgbColor c) const {
+    bool Equals(RgbaColor c) const {
         return
             c.red   == red   &&
             c.green == green &&
@@ -427,8 +427,8 @@ public:
             (uint32_t)((255 - alpha) << 24);
     }
 
-    static RgbColor From(int r, int g, int b, int a = 255) {
-        RgbColor c;
+    static RgbaColor From(int r, int g, int b, int a = 255) {
+        RgbaColor c;
         c.red   = (uint8_t)r;
         c.green = (uint8_t)g;
         c.blue  = (uint8_t)b;
@@ -436,7 +436,7 @@ public:
         return c;
     }
 
-    static RgbColor FromFloat(float r, float g, float b, float a = 1.0) {
+    static RgbaColor FromFloat(float r, float g, float b, float a = 1.0) {
         return From(
             (int)(255.1f * r),
             (int)(255.1f * g),
@@ -444,7 +444,7 @@ public:
             (int)(255.1f * a));
     }
 
-    static RgbColor FromPackedInt(uint32_t bgra) {
+    static RgbaColor FromPackedInt(uint32_t bgra) {
         return From(
             (int)((bgra)       & 0xff),
             (int)((bgra >> 8)  & 0xff),

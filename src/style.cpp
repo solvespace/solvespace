@@ -197,7 +197,7 @@ Style *Style::Get(hStyle h) {
 // A couple of wrappers, so that I can call these functions with either an
 // hStyle or with the integer corresponding to that hStyle.v.
 //-----------------------------------------------------------------------------
-RgbColor Style::Color(int s, bool forExport) {
+RgbaColor Style::Color(int s, bool forExport) {
     hStyle hs = { (uint32_t)s };
     return Color(hs, forExport);
 }
@@ -210,7 +210,7 @@ float Style::Width(int s) {
 // If a color is almost white, then we can rewrite it to black, just so that
 // it won't disappear on file formats with a light background.
 //-----------------------------------------------------------------------------
-RgbColor Style::RewriteColor(RgbColor rgbin) {
+RgbaColor Style::RewriteColor(RgbaColor rgbin) {
     Vector rgb = Vector::From(rgbin.redF(), rgbin.greenF(), rgbin.blueF());
     rgb = rgb.Minus(Vector::From(1, 1, 1));
     if(rgb.Magnitude() < 0.4 && SS.fixExportColors) {
@@ -227,7 +227,7 @@ RgbColor Style::RewriteColor(RgbColor rgbin) {
 //-----------------------------------------------------------------------------
 // Return the stroke color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-RgbColor Style::Color(hStyle h, bool forExport) {
+RgbaColor Style::Color(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->color);
@@ -239,7 +239,7 @@ RgbColor Style::Color(hStyle h, bool forExport) {
 //-----------------------------------------------------------------------------
 // Return the fill color associated with our style as 8-bit RGB.
 //-----------------------------------------------------------------------------
-RgbColor Style::FillColor(hStyle h, bool forExport) {
+RgbaColor Style::FillColor(hStyle h, bool forExport) {
     Style *s = Get(h);
     if(forExport) {
         return RewriteColor(s->fillColor);
@@ -349,7 +349,7 @@ void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
-    RgbColor rgb = SS.backgroundColor;
+    RgbaColor rgb = SS.backgroundColor;
     SS.TW.ShowEditControlWithColorPicker(v, 3, rgb);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
@@ -455,7 +455,7 @@ void TextWindow::ShowListOfStyles(void) {
 
     Printf(false, "");
 
-    RgbColor rgb = SS.backgroundColor;
+    RgbaColor rgb = SS.backgroundColor;
     Printf(false, "%Ft background color (r, g, b)%E");
     Printf(false, "%Ba   %@, %@, %@ %Fl%D%f%Ll[change]%E",
         rgb.redF(), rgb.greenF(), rgb.blueF(),
@@ -549,7 +549,7 @@ void TextWindow::ScreenChangeStyleColor(int link, uint32_t v) {
     Style *s = Style::Get(hs);
     // Same function used for stroke and fill colors
     int row, col, em;
-    RgbColor rgb;
+    RgbaColor rgb;
     if(link == 's') {
         row = 15; col = 13;
         em = EDIT_STYLE_COLOR;
