@@ -3,4 +3,4 @@
 	url = https://github.com/madler/zlib
 [submodule "extlib/libpng"]
 	path = extlib/libpng
-	url = git://git.code.sf.net/p/libpng/code
+	url = https://github.com/glennrp/libpng
