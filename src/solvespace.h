@@ -170,6 +170,7 @@ int LoadAutosaveYesNo(void);
 #define MESH_PATTERN \
     PAT1("STL Mesh", "stl") \
     PAT1("Wavefront OBJ Mesh", "obj") \
+    PAT1("Three.js-compatible JavaScript Mesh", "js") \
     ENDPAT
 #define MESH_EXT "stl"
 // NURBS surfaces
@@ -840,6 +841,7 @@ public:
     void ExportMeshTo(const char *file);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
+    void ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *sm, SEdgeList *sel);
     void ExportViewOrWireframeTo(const char *file, bool wireframe);
     void ExportSectionTo(const char *file);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,

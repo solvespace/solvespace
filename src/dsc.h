@@ -427,6 +427,14 @@ public:
             (uint32_t)((255 - alpha) << 24);
     }
 
+    uint32_t ToARGB32(void) const {
+        return
+            blue |
+            (uint32_t)(green << 8) |
+            (uint32_t)(red << 16) |
+            (uint32_t)(alpha << 24);
+    }
+
     static RgbaColor From(int r, int g, int b, int a = 255) {
         RgbaColor c;
         c.red   = (uint8_t)r;
