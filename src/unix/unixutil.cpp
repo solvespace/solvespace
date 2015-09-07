@@ -66,6 +66,7 @@ void *AllocTemporary(size_t n)
         (AllocTempHeader *)malloc(n + sizeof(AllocTempHeader));
     h->prev = NULL;
     h->next = Head;
+    if(Head) Head->prev = h;
     Head = h;
     memset(&h[1], 0, n);
     return (void *)&h[1];
