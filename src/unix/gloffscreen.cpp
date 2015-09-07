@@ -12,7 +12,7 @@
 #include "gloffscreen.h"
 #include "solvespace.h"
 
-GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL) {
+GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL), _width(0), _height(0) {
 #ifndef __APPLE__
     if(glewInit() != GLEW_OK)
         oops();
