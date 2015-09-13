@@ -4,6 +4,7 @@
 /debian/tmp/
 /debian/*.log
 /debian/*.substvars
+/debian/*.debhelper
 /debian/files
 /debian/solvespace/
 /debian/libslvs1/

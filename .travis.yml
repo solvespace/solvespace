@@ -3,14 +3,25 @@ os:
   - linux
   - osx
 install:
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository -y ppa:smspillaz/cmake-master; sudo add-apt-repository -y ppa:ondrej/php5; sudo apt-get update -qq; sudo apt-get install -q -y cmake cmake-data libpng12-dev zlib1g-dev libjson0-dev libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev libgl1-mesa-dev libglu-dev libglew-dev; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo add-apt-repository -y ppa:smspillaz/cmake-master; sudo add-apt-repository -y ppa:ondrej/php5; sudo apt-get update -qq; sudo apt-get install -q -y cmake cmake-data libpng12-dev zlib1g-dev libjson0-dev libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev libgl1-mesa-dev libglu-dev libglew-dev libgd-gd2-perl dpkg-dev; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; brew upgrade cmake libpng; fi
 script:
   - mkdir cbuild
   - cd cbuild
-  - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7  -DCMAKE_BUILD_TYPE=Debug ..
-  - make
+  - cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 -DCMAKE_BUILD_TYPE=Debug ..
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cd ..; dpkg-buildpackage -b -us -uc; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make; fi
 deploy:
+  - provider: releases
+    api_key:
+      secure: DA3tW0My37vbi2t3dZ061281Xm8KSIkeLdFZsQISrut0g1kkbWuBTPxAfvE3B6OE8p47wAclE/wxA1+obMTVkY0oYpd5u+JelYNHxU/oL8Ww0xdUANwKNJ1JD2EZP8nSz7JSvxuGILC6AFPoTjawsG97SXwiTyp7z0PA6nvzraE=
+    skip_cleanup: true
+    file_glob: true
+    file: ../solvespace_*.deb
+    on:
+      repo: whitequark/solvespace
+      tags: true
+      condition: "$TRAVIS_OS_NAME == linux"
   - provider: releases
     api_key:
       secure: DA3tW0My37vbi2t3dZ061281Xm8KSIkeLdFZsQISrut0g1kkbWuBTPxAfvE3B6OE8p47wAclE/wxA1+obMTVkY0oYpd5u+JelYNHxU/oL8Ww0xdUANwKNJ1JD2EZP8nSz7JSvxuGILC6AFPoTjawsG97SXwiTyp7z0PA6nvzraE=
@@ -20,3 +31,4 @@ deploy:
       repo: whitequark/solvespace
       tags: true
       condition: "$TRAVIS_OS_NAME == osx"
+
