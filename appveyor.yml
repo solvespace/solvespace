@@ -1,9 +1,22 @@
-version: 1.0.{build}
+version: 2.1.{build}
 before_build:
-- git submodule update --init
-- mkdir cbuild
-- cd cbuild
-- cmake -DDISABLE_TTF2C=ON -G"Visual Studio 12" ..
+  - git submodule update --init
+  - mkdir cbuild
+  - cd cbuild
+  - cmake -DDISABLE_TTF2C=ON -G"Visual Studio 12" -T v120_xp ..
 build:
   project: C:\projects\solvespace\cbuild\src\solvespace.vcxproj
   verbosity: minimal
+artifacts:
+  - path: cbuild\src\Debug\solvespace.exe
+    name: solvespace.exe
+  - path: cbuild\src\Debug\solvespace.pdb
+    name: solvespace.pdb
+deploy:
+  - provider: GitHub
+    auth_token:
+      secure: Flqxu1cz6PyxVT1wzTP4bSrQOY8wFrO7pJxYxvjEkLqIUU4dsDQrs2rac/A9deet
+    description: ""
+    artifact: solvespace.exe
+    on:
+      appveyor_repo_tag: true
