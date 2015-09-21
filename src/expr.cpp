@@ -780,6 +780,9 @@ void Expr::Lex(const char *in) {
             } else if(strcmp(name, "sin")==0) {
                 e->op = UNARY_OP;
                 e->x.c = 's';
+            } else if(strcmp(name, "pi")==0) {
+                e->op = CONSTANT;
+                e->x.v = PI;
             } else {
                 throw "unknown name";
             }
