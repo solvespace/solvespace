@@ -63,6 +63,9 @@ public:
         char    c;
     }       x;
 
+    Expr() { }
+    Expr(double v) : op(CONSTANT) { x.v = v; }
+    
     static inline Expr *AllocExpr(void)
         { return (Expr *)AllocTemporary(sizeof(Expr)); }
 

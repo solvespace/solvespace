@@ -219,6 +219,35 @@ Expr *Expr::From(hParam p) {
 }
 
 Expr *Expr::From(double v) {
+    // Statically allocate common constants.
+    // Note: this is only valid because AllocExpr() uses AllocTemporary(),
+    // and Expr* is never explicitly freed.
+
+    if(v == 0.0) {
+        static Expr zero(0.0);
+        return &zero;
+    }
+
+    if(v == 1.0) {
+        static Expr one(1.0);
+        return &one;
+    }
+
+    if(v == -1.0) {
+        static Expr mone(-1.0);
+        return &mone;
+    }
+
+    if(v == 0.5) {
+        static Expr half(0.5);
+        return &half;
+    }
+
+    if(v == -0.5) {
+        static Expr mhalf(-0.5);
+        return &mhalf;
+    }
+
     Expr *r = AllocExpr();
     r->op = CONSTANT;
     r->x.v = v;
