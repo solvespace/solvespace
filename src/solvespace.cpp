@@ -560,7 +560,8 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                     SS.TW.shown.dimSteps = 10;
                     SS.TW.shown.dimIsDistance =
                         (c->type != Constraint::ANGLE) &&
-                        (c->type != Constraint::LENGTH_RATIO);
+                        (c->type != Constraint::LENGTH_RATIO) &&
+                        (c->type != Constraint::LENGTH_DIFFERENCE);
                     SS.TW.shown.constraint = c->h;
                     SS.TW.shown.screen = TextWindow::SCREEN_STEP_DIMENSION;
 

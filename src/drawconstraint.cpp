@@ -63,6 +63,8 @@ char *Constraint::Label(void) {
         sprintf(Ret, "%.2f", valA);
     } else if(type == LENGTH_RATIO) {
         sprintf(Ret, "%.3f:1", valA);
+    } else if(type == LENGTH_DIFFERENCE) {
+        sprintf(Ret, "%.3f", valA);
     } else if(type == COMMENT) {
         strcpy(Ret, comment.str);
     } else if(type == DIAMETER) {
@@ -853,6 +855,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         case LENGTH_RATIO:
+        case LENGTH_DIFFERENCE:
         case EQUAL_LENGTH_LINES: {
             Vector a, b = Vector::From(0, 0, 0);
             for(int i = 0; i < 2; i++) {
@@ -867,7 +870,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 DoEqualLenTicks(a, b, gn);
             }
-            if(type == LENGTH_RATIO) {
+            if((type == LENGTH_RATIO) || (type == LENGTH_DIFFERENCE)) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
                 DoLabel(ref, labelPos, gr, gu);
             }

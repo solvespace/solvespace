@@ -313,6 +313,10 @@ SLVS_C_LENGTH_RATIO*
     The length of line entityA divided by the length of line entityB is
     equal to valA.
 
+SLVS_C_LENGTH_DIFFERENCE*
+
+    The lengths of line entityA and line entityB differ by valA.
+
 SLVS_C_EQ_LEN_PT_LINE_D*
 
     The length of the line entityA is equal to the distance from point

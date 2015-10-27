@@ -18,6 +18,7 @@ bool ConstraintBase::HasLabel(void) {
         case PROJ_PT_DISTANCE:
         case DIAMETER:
         case LENGTH_RATIO:
+        case LENGTH_DIFFERENCE:
         case ANGLE:
         case COMMENT:
             return true;
@@ -276,6 +277,15 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             Expr *la = Distance(workplane, a->point[0], a->point[1]);
             Expr *lb = Distance(workplane, b->point[0], b->point[1]);
             AddEq(l, (la->Div(lb))->Minus(exA), 0);
+            break;
+        }
+
+        case LENGTH_DIFFERENCE: {
+            EntityBase *a = SK.GetEntity(entityA);
+            EntityBase *b = SK.GetEntity(entityB);
+            Expr *la = Distance(workplane, a->point[0], a->point[1]);
+            Expr *lb = Distance(workplane, b->point[0], b->point[1]);
+            AddEq(l, (la->Minus(lb))->Minus(exA), 0);
             break;
         }
 

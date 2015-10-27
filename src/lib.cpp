@@ -156,6 +156,7 @@ case SLVS_C_EQ_LEN_PT_LINE_D:   t = Constraint::EQ_LEN_PT_LINE_D; break;
 case SLVS_C_EQ_PT_LN_DISTANCES: t = Constraint::EQ_PT_LN_DISTANCES; break;
 case SLVS_C_EQUAL_ANGLE:        t = Constraint::EQUAL_ANGLE; break;
 case SLVS_C_EQUAL_LINE_ARC_LEN: t = Constraint::EQUAL_LINE_ARC_LEN; break;
+case SLVS_C_LENGTH_DIFFERENCE:  t = Constraint::LENGTH_DIFFERENCE; break;
 case SLVS_C_SYMMETRIC:          t = Constraint::SYMMETRIC; break;
 case SLVS_C_SYMMETRIC_HORIZ:    t = Constraint::SYMMETRIC_HORIZ; break;
 case SLVS_C_SYMMETRIC_VERT:     t = Constraint::SYMMETRIC_VERT; break;

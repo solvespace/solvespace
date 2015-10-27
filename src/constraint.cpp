@@ -24,6 +24,7 @@ char *Constraint::DescriptionString(void) {
         case EQ_LEN_PT_LINE_D:      s = "eq-length-and-pt-ln-dist"; break;
         case EQ_PT_LN_DISTANCES:    s = "eq-pt-line-distances"; break;
         case LENGTH_RATIO:          s = "length-ratio"; break;
+        case LENGTH_DIFFERENCE:     s = "length-difference"; break;
         case SYMMETRIC:             s = "symmetric"; break;
         case SYMMETRIC_HORIZ:       s = "symmetric-h"; break;
         case SYMMETRIC_VERT:        s = "symmetric-v"; break;
@@ -312,6 +313,23 @@ void Constraint::MenuConstrain(int id) {
                 c.entityB = gs.entity[1];
             } else {
                 Error("Bad selection for length ratio constraint. This "
+                      "constraint can apply to:\n\n"
+                      "    * two line segments\n");
+                return;
+            }
+
+            c.valA = 0;
+            c.ModifyToSatisfy();
+            AddConstraint(&c);
+            break;
+
+        case GraphicsWindow::MNU_DIFFERENCE:
+            if(gs.lineSegments == 2 && gs.n == 2) {
+                c.type = LENGTH_DIFFERENCE;
+                c.entityA = gs.entity[0];
+                c.entityB = gs.entity[1];
+            } else {
+                Error("Bad selection for length difference constraint. This "
                       "constraint can apply to:\n\n"
                       "    * two line segments\n");
                 return;

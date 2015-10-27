@@ -555,6 +555,7 @@ public:
         EQ_PT_LN_DISTANCES     =  53,
         EQUAL_ANGLE            =  54,
         EQUAL_LINE_ARC_LEN     =  55,
+        LENGTH_DIFFERENCE      =  56,
         SYMMETRIC              =  60,
         SYMMETRIC_HORIZ        =  61,
         SYMMETRIC_VERT         =  62,

@@ -511,6 +511,7 @@ Module VbDemo
         Public Const SLVS_C_PROJ_PT_DISTANCE As Integer = 100030
         Public Const SLVS_C_WHERE_DRAGGED As Integer = 100031
         Public Const SLVS_C_CURVE_CURVE_TANGENT As Integer = 100032
+        Public Const SLVS_C_LENGTH_DIFFERENCE As Integer = 100033
 
         <StructLayout(LayoutKind.Sequential)> Public Structure Slvs_Constraint
             Public h As UInteger

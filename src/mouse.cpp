@@ -1155,6 +1155,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 
             case Constraint::ANGLE:
             case Constraint::LENGTH_RATIO:
+            case Constraint::LENGTH_DIFFERENCE:
                 sprintf(s, "%.3f", c->valA);
                 break;
 
@@ -1206,7 +1207,8 @@ void GraphicsWindow::EditControlDone(const char *s) {
             case Constraint::PROJ_PT_DISTANCE:
             case Constraint::PT_LINE_DISTANCE:
             case Constraint::PT_FACE_DISTANCE:
-            case Constraint::PT_PLANE_DISTANCE: {
+            case Constraint::PT_PLANE_DISTANCE:
+            case Constraint::LENGTH_DIFFERENCE: {
                 // The sign is not displayed to the user, but this is a signed
                 // distance internally. To flip the sign, the user enters a
                 // negative distance.

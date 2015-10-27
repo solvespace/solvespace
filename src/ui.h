@@ -404,6 +404,7 @@ public:
         MNU_REFERENCE,
         MNU_EQUAL,
         MNU_RATIO,
+        MNU_DIFFERENCE,
         MNU_ON_ENTITY,
         MNU_SYMMETRIC,
         MNU_AT_MIDPOINT,
