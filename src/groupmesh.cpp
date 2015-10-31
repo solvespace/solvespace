@@ -283,7 +283,7 @@ void Group::GenerateShellAndMesh(void) {
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color);
+            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
         }
     } else if(type == IMPORTED) {
         // The imported shell or mesh are copied over, with the appropriate

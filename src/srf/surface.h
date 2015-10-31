@@ -77,6 +77,7 @@ public:
     int             deg;
     Vector          ctrl[4];
     double          weight[4];
+    uint32_t        entity;
 
     Vector PointAt(double t);
     Vector TangentAt(double t);
@@ -363,7 +364,7 @@ public:
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              RgbaColor color);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                              RgbaColor color);
+                              RgbaColor color, Group *group);
 
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);

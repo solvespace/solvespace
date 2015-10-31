@@ -214,10 +214,15 @@ public:
         REMAP_TOP          = 1001,
         REMAP_BOTTOM       = 1002,
         REMAP_PT_TO_LINE   = 1003,
-        REMAP_LINE_TO_FACE = 1004
+        REMAP_LINE_TO_FACE = 1004,
+        REMAP_LATHE_START  = 1006,
+        REMAP_LATHE_END    = 1007,
+        REMAP_PT_TO_ARC    = 1008,
+        REMAP_PT_TO_NORMAL = 1009,
     };
     hEntity Remap(hEntity in, int copyNumber);
     void MakeExtrusionLines(EntityList *el, hEntity in);
+    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis, int ai);
     void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,

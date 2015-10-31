@@ -366,6 +366,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             Vector a = SK.GetEntity(point[0])->PointGetNum();
             Vector b = SK.GetEntity(point[1])->PointGetNum();
             sb = SBezier::From(a, b);
+            sb.entity = h.v;
             sbl->l.Add(&sb);
             break;
         }

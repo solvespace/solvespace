@@ -94,6 +94,7 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
 #define CO(v) (v).x, (v).y, (v).z
 
+#define ANGLE_COS_EPS   (1e-6)
 #define LENGTH_EPS      (1e-6)
 #define VERY_POSITIVE   (1e10)
 #define VERY_NEGATIVE   (-1e10)

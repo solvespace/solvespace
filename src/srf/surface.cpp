@@ -600,7 +600,7 @@ typedef struct {
     hSSurface   d[4];
 } Revolved;
 
-void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color)
+void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color, Group *group)
 {
     SBezierLoop *sbl;
 
@@ -654,6 +654,14 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                                                              (PI/2)*j,
                                                              (PI/2)*(j+1));
                     ss.color = color;
+                    if(sb->entity != 0) {
+                        hEntity he;
+                        he.v = sb->entity;
+                        hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
+                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                            ss.face = hface.v;
+                        }
+                    }
                     revs.d[j] = surface.AddAndAssignId(&ss);
                 }
             }

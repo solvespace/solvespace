@@ -283,7 +283,7 @@ std::string Group::DescriptionString(void) {
 }
 
 void Group::Activate(void) {
-    if(type == EXTRUDE || type == IMPORTED) {
+    if(type == EXTRUDE || type == IMPORTED || type == LATHE || type == TRANSLATE || type == ROTATE) {
         SS.GW.showFaces = true;
     } else {
         SS.GW.showFaces = false;
@@ -390,6 +390,43 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case LATHE: {
+            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+
+            AddParam(param, h.param(0), axis_dir.x);
+            AddParam(param, h.param(1), axis_dir.y);
+            AddParam(param, h.param(2), axis_dir.z);
+
+            // Remapped entity index.
+            int ai = 1;
+
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v) continue;
+
+                e->CalculateNumerical(false);
+                hEntity he = e->h;
+
+                // As soon as I call CopyEntity, e may become invalid! That
+                // adds entities, which may cause a realloc.
+                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
+                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    true, false);
+
+                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
+                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    true, false);
+
+                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
+                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    true, false);
+
+                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                ai++;
+            }
             break;
         }
 
@@ -597,6 +634,78 @@ void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {
         en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
         en.type = Entity::FACE_XPROD;
         el->Add(&en);
+    }
+}
+
+void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis, int ai) {
+    Entity *ep = SK.GetEntity(in);
+
+    Entity en = {};
+    if(ep->IsPoint()) {
+        // A point gets revolved to form an arc.
+        en.point[0] = Remap(predef.origin, ai);
+        en.point[1] = Remap(ep->h, REMAP_LATHE_START);
+        en.point[2] = Remap(ep->h, REMAP_LATHE_END);
+
+        // Get arc center and point on arc.
+        Entity *pc = SK.GetEntity(en.point[0]);
+        Entity *pp = SK.GetEntity(en.point[1]);
+
+        // Project arc point to the revolution axis and use it for arc center.
+        double k = pp->numPoint.Minus(pt).Dot(axis) / axis.Dot(axis);
+        pc->numPoint = pt.Plus(axis.ScaledBy(k));
+
+        // Create arc entity.
+        en.group = h;
+        en.construction = ep->construction;
+        en.style = ep->style;
+        en.h = Remap(ep->h, REMAP_PT_TO_ARC);
+        en.type = Entity::ARC_OF_CIRCLE;
+
+        // Generate a normal.
+        Entity n = {};
+        n.workplane = en.workplane;
+        n.h = Remap(ep->h, REMAP_PT_TO_NORMAL);
+        n.group = en.group;
+        n.style = en.style;
+        n.type = Entity::NORMAL_N_COPY;
+
+        // Create basis for the normal.
+        Vector nu = pp->numPoint.Minus(pc->numPoint).WithMagnitude(1.0);
+        Vector nv = nu.Cross(axis).WithMagnitude(1.0);
+        n.numNormal = Quaternion::From(nv, nu);
+
+        // The point determines where the normal gets displayed on-screen;
+        // it's entirely cosmetic.
+        n.point[0] = en.point[0];
+        el->Add(&n);
+        en.normal = n.h;
+        el->Add(&en);
+    } else if(ep->type == Entity::LINE_SEGMENT) {
+        // An axis-perpendicular line gets revolved to form a face.
+        Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
+        Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
+        Vector u = b.Minus(a).WithMagnitude(1.0);
+
+        // Check for perpendicularity: calculate cosine of the angle
+        // between axis and line direction and check that
+        // cos(angle) == 0 <-> angle == +-90 deg.
+        if(fabs(u.Dot(axis) / axis.Magnitude()) < ANGLE_COS_EPS) {
+            en.param[0] = h.param(0);
+            en.param[1] = h.param(1);
+            en.param[2] = h.param(2);
+            Vector v = axis.Cross(u).WithMagnitude(1.0);
+            Vector n = u.Cross(v);
+            en.numNormal = Quaternion::From(0, n.x, n.y, n.z);
+
+            en.group = h;
+            en.construction = ep->construction;
+            en.style = ep->style;
+            en.h = Remap(ep->h, REMAP_LINE_TO_FACE);
+            en.type = Entity::FACE_NORMAL_PT;
+            en.point[0] = ep->point[0];
+            el->Add(&en);
+        }
     }
 }
 
