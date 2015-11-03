@@ -319,6 +319,7 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${solvespace_SOURCES})
 
 target_link_libraries(solvespace
+    dxfrw
     ${OPENGL_LIBRARIES}
     ${PNG_LIBRARIES}
     ${ZLIB_LIBRARIES}
