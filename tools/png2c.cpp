@@ -94,9 +94,6 @@ int main(int argc, char** argv) {
 
     for(int i = 3; i < argc; i++) {
         const char *filename = argv[i];
-        if(strstr(filename, "char-"))
-            continue;
-
         const char *basename = strrchr(filename, '/'); /* cmake uses / even on Windows */
         if(basename == NULL) {
             basename = filename;

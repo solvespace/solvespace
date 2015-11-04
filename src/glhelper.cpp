@@ -11,7 +11,7 @@ namespace SolveSpace {
 #include "font.table.h"
 
 // A bitmap font.
-#include "bitmapfont.table.h"
+#include "generated/bitmapfont.table.h"
 
 static bool ColorLocked;
 static bool DepthOffsetLocked;

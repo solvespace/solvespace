@@ -4,8 +4,7 @@ Priority: optional
 Maintainer: whitequark <whitequark@whitequark.org>
 Build-Depends: debhelper (>= 9), cmake, libpng12-dev, zlib1g-dev, libjson-c-dev,
     libfontconfig1-dev, libgtkmm-2.4-dev, libpangomm-1.4-dev,
-    libgl-dev, libglu-dev, libglew-dev,
-    libgd-gd2-perl
+    libgl-dev, libglu-dev, libglew-dev
 Standards-Version: 3.9.5
 Homepage: http://solvespace.com
 Vcs-Git: git://github.com/whitequark/solvespace
