@@ -6,8 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <icons-proto.h>
-#include <icons.h>
+#include "generated/icons.h"
 
 static uint8_t SPACER[1];
 static const struct {

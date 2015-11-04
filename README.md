@@ -51,10 +51,10 @@ for use due to bugs in this toolkit.
 
 ### Building for Windows
 
-You will need CMake and a Windows cross-compiler.
+You will need CMake, a Windows cross-compiler, and Wine with binfmt support.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install mingw-w64 cmake
+    apt-get install cmake mingw-w64 wine-binfmt
 
 Before building, check out the submodules:
 
