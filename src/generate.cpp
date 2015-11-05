@@ -213,7 +213,7 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
             glColor3d(0.0, 0.0, 0.0);
             ssglAxisAlignedLineLoop(left, left+width, top, top-height);
 
-            ssglCreateBitmapFont();
+            ssglInitializeBitmapFont();
             glColor3d(0, 0, 0);
             glPushMatrix();
                 glTranslated(left+8, top-20, 0);

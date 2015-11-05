@@ -250,21 +250,29 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     break;
             }
         } else {
-            buf[0] = *fmt;
-            buf[1] = '\0';
+            char32_t chr;
+            const char *fmtNext = ReadUTF8(fmt, &chr);
+            strncpy(buf, fmt, fmtNext - fmt);
+            buf[fmtNext - fmt] = '\0';
         }
 
-        for(unsigned i = 0; i < strlen(buf); i++) {
-            if(c >= MAX_COLS) goto done;
-            text[r][c] = buf[i];
-            meta[r][c].fg = fg;
-            meta[r][c].bg = bg;
-            meta[r][c].bgRgb = bgRgb;
-            meta[r][c].link = link;
-            meta[r][c].data = data;
-            meta[r][c].f = f;
-            meta[r][c].h = h;
-            c++;
+        const char *bufIter = buf;
+        while(*bufIter) {
+            char32_t chr;
+            bufIter = ReadUTF8(bufIter, &chr);
+
+            for(int i = 0; i < ssglBitmapCharWidth(chr); i++) {
+                if(c >= MAX_COLS) goto done;
+                text[r][c] = (i == 0) ? chr : ' ';
+                meta[r][c].fg = fg;
+                meta[r][c].bg = bg;
+                meta[r][c].bgRgb = bgRgb;
+                meta[r][c].link = link;
+                meta[r][c].data = data;
+                meta[r][c].f = f;
+                meta[r][c].h = h;
+                c++;
+            }
         }
 
         fmt++;
@@ -449,7 +457,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             ox = min(ox, (double) (width - 25) - tw);
             oy = max(oy, 5.0);
 
-            ssglCreateBitmapFont();
+            ssglInitializeBitmapFont();
             glLineWidth(1);
             glColor4d(1.0, 1.0, 0.6, 1.0);
             ssglAxisAlignedQuad(ox, ox+tw, oy, oy+LINE_HEIGHT);
@@ -833,7 +841,7 @@ void TextWindow::Paint(void) {
             glBegin(GL_QUADS);
         } else if(a == 1) {
             glEnable(GL_TEXTURE_2D);
-            ssglCreateBitmapFont();
+            ssglInitializeBitmapFont();
             glBegin(GL_QUADS);
         }
 
@@ -895,8 +903,9 @@ void TextWindow::Paint(void) {
                         }
 
                         // But don't underline checkboxes or radio buttons
-                        while((text[r][cs] & 0x80 || text[r][cs] == ' ') &&
-                                cs < cf)
+                        while(((text[r][cs] >= 0xe000 && text[r][cs] <= 0xefff) ||
+                                text[r][cs] == ' ') &&
+                              cs < cf)
                         {
                             cs++;
                         }

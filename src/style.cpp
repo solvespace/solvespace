@@ -695,8 +695,8 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             break;
         }
         case EDIT_STYLE_NAME:
-            if(!StringAllPrintable(str) || !*str) {
-                Error("Invalid characters. Allowed are: A-Z a-z 0-9 _ -");
+            if(!*str) {
+                Error("Style name cannot be empty");
             } else {
                 SS.UndoRemember();
                 s = Style::Get(edit.style);
@@ -760,8 +760,8 @@ void TextWindow::ShowStyleInfo(void) {
         Printf(false,"%Ba   %Ftin units of %Fdpixels%E");
     } else {
         Printf(false,"%Ba   %Ftin units of  %Fd"
-                            "%D%f%LW%c pixels%E  "
-                            "%D%f%Lw%c %s",
+                            "%D%f%LW%s pixels%E  "
+                            "%D%f%Lw%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
             widthpx ? RADIO_TRUE : RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
@@ -780,7 +780,7 @@ void TextWindow::ShowStyleInfo(void) {
             s->fillColor.redF(), s->fillColor.greenF(), s->fillColor.blueF(),
             s->h.v, ScreenChangeStyleColor);
 
-        Printf(false, "%Bd   %D%f%Lf%c  contours are filled%E",
+        Printf(false, "%Bd   %D%f%Lf%s  contours are filled%E",
             s->h.v, &ScreenChangeStyleYesNo,
             s->filled ? CHECK_TRUE : CHECK_FALSE);
     }
@@ -807,8 +807,8 @@ void TextWindow::ShowStyleInfo(void) {
         Printf(false,"%Bd   %Ftin units of %Fdpixels");
     } else {
         Printf(false,"%Bd   %Ftin units of  %Fd"
-                            "%D%f%LG%c pixels%E  "
-                            "%D%f%Lg%c %s",
+                            "%D%f%LG%s pixels%E  "
+                            "%D%f%Lg%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
             textHeightpx ? RADIO_TRUE : RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
@@ -826,9 +826,9 @@ void TextWindow::ShowStyleInfo(void) {
         bool neither;
         neither = !(s->textOrigin & (Style::ORIGIN_LEFT | Style::ORIGIN_RIGHT));
         Printf(false, "%Ba   "
-                      "%D%f%LL%c left%E    "
-                      "%D%f%LH%c center%E  "
-                      "%D%f%LR%c right%E  ",
+                      "%D%f%LL%s left%E    "
+                      "%D%f%LH%s center%E  "
+                      "%D%f%LR%s right%E  ",
             s->h.v, &ScreenChangeStyleYesNo,
             (s->textOrigin & Style::ORIGIN_LEFT) ? RADIO_TRUE : RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
@@ -838,9 +838,9 @@ void TextWindow::ShowStyleInfo(void) {
 
         neither = !(s->textOrigin & (Style::ORIGIN_BOT | Style::ORIGIN_TOP));
         Printf(false, "%Bd   "
-                      "%D%f%LB%c bottom%E  "
-                      "%D%f%LV%c center%E  "
-                      "%D%f%LT%c top%E  ",
+                      "%D%f%LB%s bottom%E  "
+                      "%D%f%LV%s center%E  "
+                      "%D%f%LT%s top%E  ",
             s->h.v, &ScreenChangeStyleYesNo,
             (s->textOrigin & Style::ORIGIN_BOT) ? RADIO_TRUE : RADIO_FALSE,
             s->h.v, &ScreenChangeStyleYesNo,
@@ -852,11 +852,11 @@ void TextWindow::ShowStyleInfo(void) {
     if(s->h.v >= Style::FIRST_CUSTOM) {
         Printf(false, "");
 
-        Printf(false, "  %Fd%D%f%Lv%c  show these objects on screen%E",
+        Printf(false, "  %Fd%D%f%Lv%s  show these objects on screen%E",
                 s->h.v, &ScreenChangeStyleYesNo,
                 s->visible ? CHECK_TRUE : CHECK_FALSE);
 
-        Printf(false, "  %Fd%D%f%Le%c  export these objects%E",
+        Printf(false, "  %Fd%D%f%Le%s  export these objects%E",
                 s->h.v, &ScreenChangeStyleYesNo,
                 s->exportable ? CHECK_TRUE : CHECK_FALSE);
 

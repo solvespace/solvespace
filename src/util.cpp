@@ -6,6 +6,30 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+// See https://github.com/GNOME/glibmm/blob/2fbd9f23/glib/glibmm/ustring.cc#L227
+const char *SolveSpace::ReadUTF8(const char *str, char32_t *result)
+{
+    *result = (unsigned char) *str;
+
+    if((*result & 0x80) != 0)
+    {
+      unsigned int mask = 0x40;
+
+      do
+      {
+        *result <<= 6;
+        const unsigned int c = (unsigned char) (*++str);
+        mask   <<= 5;
+        *result  += c - 0x80;
+      }
+      while((*result & mask) != 0);
+
+      *result &= mask - 1;
+    }
+
+    return str + 1;
+}
+
 bool SolveSpace::StringAllPrintable(const char *str)
 {
     const char *t;

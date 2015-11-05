@@ -306,6 +306,7 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
 target_link_libraries(solvespace
     "${OPENGL_LIBRARIES}"
     "${PNG_LIBRARIES}"
+    "${ZLIB_LIBRARIES}"
     "${platform_LIBRARIES}")
 
 if(WIN32 AND NOT MINGW)

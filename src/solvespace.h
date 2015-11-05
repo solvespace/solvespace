@@ -331,14 +331,15 @@ void ssglColorRGBa(RgbaColor rgb, double a);
 void ssglDepthRangeOffset(int units);
 void ssglDepthRangeLockToFront(bool yes);
 void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h);
-void ssglCreateBitmapFont(void);
+void ssglInitializeBitmapFont();
 void ssglBitmapText(const char *str, Vector p);
-void ssglBitmapCharQuad(char c, double x, double y);
+void ssglBitmapCharQuad(char32_t chr, double x, double y);
+int ssglBitmapCharWidth(char32_t chr);
 #define TEXTURE_BACKGROUND_IMG  10
-#define TEXTURE_BITMAP_FONT     20
-#define TEXTURE_DRAW_PIXELS     30
-#define TEXTURE_COLOR_PICKER_2D 40
-#define TEXTURE_COLOR_PICKER_1D 50
+#define TEXTURE_DRAW_PIXELS     20
+#define TEXTURE_COLOR_PICKER_2D 30
+#define TEXTURE_COLOR_PICKER_1D 40
+#define TEXTURE_BITMAP_FONT     50
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
@@ -348,6 +349,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
 bool MakeAcceleratorLabel(int accel, char *out);
+const char *ReadUTF8(const char *str, char32_t *chr);
 bool StringAllPrintable(const char *str);
 bool FilenameHasExtension(const std::string &str, const char *ext);
 void Message(const char *str, ...);

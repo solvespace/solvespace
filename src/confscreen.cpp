@@ -237,25 +237,25 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeExportOffset, 0);
 
     Printf(false, "");
-    Printf(false, "  %Fd%f%Ll%c  export shaded 2d triangles%E",
+    Printf(false, "  %Fd%f%Ll%s  export shaded 2d triangles%E",
         &ScreenChangeShadedTriangles,
         SS.exportShadedTriangles ? CHECK_TRUE : CHECK_FALSE);
     if(fabs(SS.exportOffset) > LENGTH_EPS) {
-        Printf(false, "  %Fd%c  curves as piecewise linear%E "
+        Printf(false, "  %Fd%s  curves as piecewise linear%E "
                       "(since cutter radius is not zero)", CHECK_TRUE);
     } else {
-        Printf(false, "  %Fd%f%Ll%c  export curves as piecewise linear%E",
+        Printf(false, "  %Fd%f%Ll%s  export curves as piecewise linear%E",
             &ScreenChangePwlCurves,
             SS.exportPwlCurves ? CHECK_TRUE : CHECK_FALSE);
     }
-    Printf(false, "  %Fd%f%Ll%c  fix white exported lines%E",
+    Printf(false, "  %Fd%f%Ll%s  fix white exported lines%E",
         &ScreenChangeFixExportColors,
         SS.fixExportColors ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export canvas size:  "
-                  "%f%Fd%Lf%c fixed%E  "
-                  "%f%Fd%Lt%c auto%E",
+                  "%f%Fd%Lf%s fixed%E  "
+                  "%f%Fd%Lt%s auto%E",
         &ScreenChangeCanvasSizeAuto,
         !SS.exportCanvasSizeAuto ? RADIO_TRUE : RADIO_FALSE,
         &ScreenChangeCanvasSizeAuto,
@@ -295,10 +295,10 @@ void TextWindow::ShowConfiguration(void) {
         SS.MmToString(SS.gCode.plungeFeed), &ScreenChangeGCodeParameter);
 
     Printf(false, "");
-    Printf(false, "  %Fd%f%Ll%c  draw triangle back faces in red%E",
+    Printf(false, "  %Fd%f%Ll%s  draw triangle back faces in red%E",
         &ScreenChangeBackFaces,
         SS.drawBackFaces ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ll%c  check sketch for closed contour%E",
+    Printf(false, "  %Fd%f%Ll%s  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
 

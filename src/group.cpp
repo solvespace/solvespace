@@ -205,10 +205,8 @@ void Group::MenuGroup(int id) {
                 groupName.erase(pos);
 
             for(int i = 0; i < groupName.length(); i++) {
-                if(isalnum(groupName[i])) {
-                    // do nothing, valid character
-                } else {
-                    // convert invalid characters (like spaces) to dashes
+                if(!(isalnum(groupName[i]) || (unsigned)groupName[i] >= 0x80)) {
+                    // convert punctuation to dashes
                     groupName[i] = '-';
                 }
             }

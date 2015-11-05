@@ -31,17 +31,17 @@ public:
         CHAR_HEIGHT    = 16,
         LINE_HEIGHT    = 20,
         LEFT_MARGIN    = 6,
-
-        CHECK_FALSE    = 0x80,
-        CHECK_TRUE     = 0x81,
-        RADIO_FALSE    = 0x82,
-        RADIO_TRUE     = 0x83
     };
+
+#define CHECK_FALSE "\xEE\x80\x80" // U+E000
+#define CHECK_TRUE  "\xEE\x80\x81"
+#define RADIO_FALSE "\xEE\x80\x82"
+#define RADIO_TRUE  "\xEE\x80\x83"
 
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
-    uint8_t text[MAX_ROWS][MAX_COLS];
+    uint32_t text[MAX_ROWS][MAX_COLS];
     typedef void LinkFunction(int link, uint32_t v);
     enum { NOT_A_LINK = 0 };
     struct {

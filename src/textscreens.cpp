@@ -97,10 +97,10 @@ void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     OpenWebsite("http://solvespace.com/txtlink");
 }
 void TextWindow::ShowListOfGroups(void) {
-    char radioTrue[]  = { ' ', (char)RADIO_TRUE,  ' ', 0 },
-         radioFalse[] = { ' ', (char)RADIO_FALSE, ' ', 0 },
-         checkTrue[]  = { ' ', (char)CHECK_TRUE,  ' ', 0 },
-         checkFalse[] = { ' ', (char)CHECK_FALSE, ' ', 0 };
+    const char *radioTrue  = " " RADIO_TRUE  " ",
+               *radioFalse = " " RADIO_FALSE " ",
+               *checkTrue  = " " CHECK_TRUE  " ",
+               *checkFalse = " " CHECK_FALSE " ";
 
     Printf(true, "%Ft active");
     Printf(false, "%Ft    shown ok  group-name%E");
@@ -304,8 +304,8 @@ void TextWindow::ShowGroupInfo(void) {
 
         bool one = (g->subtype == Group::ONE_SIDED);
         Printf(false,
-            "%Ba   %f%Ls%Fd%c one-sided%E  "
-                  "%f%LS%Fd%c two-sided%E",
+            "%Ba   %f%Ls%Fd%s one-sided%E  "
+                  "%f%LS%Fd%s two-sided%E",
             &TextWindow::ScreenChangeGroupOption,
             one ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
@@ -315,8 +315,8 @@ void TextWindow::ShowGroupInfo(void) {
             if(g->subtype == Group::ONE_SIDED) {
                 bool skip = g->skipFirst;
                 Printf(false,
-                   "%Bd   %Ftstart  %f%LK%Fd%c with original%E  "
-                         "%f%Lk%Fd%c with copy #1%E",
+                   "%Bd   %Ftstart  %f%LK%Fd%s with original%E  "
+                         "%f%Lk%Fd%s with copy #1%E",
                     &ScreenChangeGroupOption,
                     !skip ? RADIO_TRUE : RADIO_FALSE,
                     &ScreenChangeGroupOption,
@@ -354,9 +354,9 @@ void TextWindow::ShowGroupInfo(void) {
         bool asa  = (g->type == Group::IMPORTED);
 
         Printf(false, " %Ftsolid model as");
-        Printf(false, "%Ba   %f%D%Lc%Fd%c union%E  "
-                             "%f%D%Lc%Fd%c difference%E  "
-                             "%f%D%Lc%Fd%c%s%E  ",
+        Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
+                             "%f%D%Lc%Fd%s difference%E  "
+                             "%f%D%Lc%Fd%s%s%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_UNION,
             un ? RADIO_TRUE : RADIO_FALSE,
@@ -365,7 +365,7 @@ void TextWindow::ShowGroupInfo(void) {
             diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::COMBINE_AS_ASSEMBLE,
-            asa ? (asy ? RADIO_TRUE : RADIO_FALSE) : 0,
+            asa ? (asy ? RADIO_TRUE : RADIO_FALSE) : " ",
             asa ? " assemble" : "");
 
         if(g->type == Group::EXTRUDE ||
@@ -381,7 +381,7 @@ void TextWindow::ShowGroupInfo(void) {
                 &TextWindow::ScreenOpacity);
         } else if(g->type == Group::IMPORTED) {
             bool sup = g->suppress;
-            Printf(false, "   %Fd%f%LP%c  suppress this group's solid model",
+            Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);
         }
@@ -389,24 +389,24 @@ void TextWindow::ShowGroupInfo(void) {
         Printf(false, "");
     }
 
-    Printf(false, " %f%Lv%Fd%c  show entities from this group",
+    Printf(false, " %f%Lv%Fd%s  show entities from this group",
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
 
     Group *pg; pg = g->PreviousGroup();
     if(pg && pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
-        Printf(false, " %f%Lf%Fd%c  force NURBS surfaces to triangle mesh",
+        Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
             g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);
     } else {
         Printf(false, " (model already forced to triangle mesh)");
     }
 
-    Printf(true, " %f%Lr%Fd%c  relax constraints and dimensions",
+    Printf(true, " %f%Lr%Fd%s  relax constraints and dimensions",
         &TextWindow::ScreenChangeGroupOption,
         g->relaxConstraints ? CHECK_TRUE : CHECK_FALSE);
 
-    Printf(false, " %f%Ld%Fd%c  treat all dimensions as reference",
+    Printf(false, " %f%Ld%Fd%s  treat all dimensions as reference",
         &TextWindow::ScreenChangeGroupOption,
         g->allDimsReference ? CHECK_TRUE : CHECK_FALSE);
 
@@ -604,10 +604,10 @@ void TextWindow::ShowTangentArc(void) {
     }
 
     Printf(false, "");
-    Printf(false, "  %Fd%f%La%c  choose radius automatically%E",
+    Printf(false, "  %Fd%f%La%s  choose radius automatically%E",
         &ScreenChangeTangentArc,
         !SS.tangentArcManual ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ld%c  delete original entities afterward%E",
+    Printf(false, "  %Fd%f%Ld%s  delete original entities afterward%E",
         &ScreenChangeTangentArc,
         SS.tangentArcDeleteOld ? CHECK_TRUE : CHECK_FALSE);
 
@@ -665,8 +665,8 @@ void TextWindow::EditControlDone(const char *s) {
             break;
         }
         case EDIT_GROUP_NAME: {
-            if(!StringAllPrintable(s) || !*s) {
-                Error("Invalid characters. Allowed are: A-Z a-z 0-9 _ -");
+            if(!*s) {
+                Error("Group name cannot be empty");
             } else {
                 SS.UndoRemember();
 

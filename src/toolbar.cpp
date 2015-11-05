@@ -204,7 +204,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     if(paint) {
         // Do this last so that nothing can draw over it.
         if(toolTip.show) {
-            ssglCreateBitmapFont();
+            ssglInitializeBitmapFont();
             char str[1024];
             if(strlen(toolTip.str) >= 200) oops();
             strcpy(str, toolTip.str);

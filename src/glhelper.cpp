@@ -3,6 +3,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <zlib.h>
 #include "solvespace.h"
 
 namespace SolveSpace {
@@ -506,57 +507,125 @@ void ssglDepthRangeLockToFront(bool yes)
     }
 }
 
-void ssglCreateBitmapFont(void)
-{
-    // Place the font in our texture in a two-dimensional grid; 1d would
-    // be simpler, but long skinny textures (256*16 = 4096 pixels wide)
-    // won't work.
-    static uint8_t MappedTexture[4*16*64*16];
-    int a, i;
-    for(a = 0; a < 256; a++) {
-        int row = a / 4, col = a % 4;
+const int BitmapFontChunkSize = 64 * 64;
+static bool BitmapFontChunkInitialized[0x10000 / BitmapFontChunkSize];
+static int BitmapFontCurrentChunk = -1;
 
-        for(i = 0; i < 16; i++) {
-            memcpy(MappedTexture + row*4*16*16 + col*16 + i*4*16,
-                   FontTexture + a*16*16 + i*16,
+static void CreateBitmapFontChunk(const uint8_t *source, size_t sourceLength,
+                                  int textureIndex)
+{
+    // Place the font in our texture in a two-dimensional grid.
+    // The maximum texture size that is reasonably supported is 1024x1024.
+    const size_t fontTextureSize = BitmapFontChunkSize*16*16;
+    uint8_t *fontTexture = (uint8_t *)malloc(fontTextureSize),
+            *mappedTexture = (uint8_t *)malloc(fontTextureSize);
+
+    z_stream stream;
+    stream.zalloc = Z_NULL;
+    stream.zfree = Z_NULL;
+    stream.opaque = Z_NULL;
+    if(inflateInit(&stream) != Z_OK)
+        oops();
+
+    stream.next_in = (Bytef *)source;
+    stream.avail_in = sourceLength;
+    stream.next_out = fontTexture;
+    stream.avail_out = fontTextureSize;
+    if(inflate(&stream, Z_NO_FLUSH) != Z_STREAM_END)
+        oops();
+    if(stream.avail_out != 0)
+        oops();
+
+    inflateEnd(&stream);
+
+    for(int a = 0; a < BitmapFontChunkSize; a++) {
+        int row = a / 64, col = a % 64;
+
+        for(int i = 0; i < 16; i++) {
+            memcpy(mappedTexture + row*64*16*16 + col*16 + i*64*16,
+                   fontTexture + a*16*16 + i*16,
                    16);
         }
     }
 
-    glBindTexture(GL_TEXTURE_2D, TEXTURE_BITMAP_FONT);
+    free(fontTexture);
+
+    glBindTexture(GL_TEXTURE_2D, textureIndex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
-                 16*4, 64*16,
+                 16*64, 64*16,
                  0,
                  GL_ALPHA, GL_UNSIGNED_BYTE,
-                 MappedTexture);
+                 mappedTexture);
+
+    free(mappedTexture);
 }
 
-void ssglBitmapCharQuad(char c, double x, double y)
+static void SwitchToBitmapFontChunkFor(char32_t chr)
 {
-    uint8_t b = (uint8_t)c;
+    int plane = chr / BitmapFontChunkSize,
+        textureIndex = TEXTURE_BITMAP_FONT + plane;
+
+    if(BitmapFontCurrentChunk != textureIndex) {
+        glEnd();
+
+        if(!BitmapFontChunkInitialized[plane]) {
+            CreateBitmapFontChunk(CompressedFontTexture[plane].data,
+                                  CompressedFontTexture[plane].length,
+                                  textureIndex);
+            BitmapFontChunkInitialized[plane] = true;
+        } else {
+            glBindTexture(GL_TEXTURE_2D, textureIndex);
+        }
+
+        BitmapFontCurrentChunk = textureIndex;
+
+        glBegin(GL_QUADS);
+    }
+}
+
+void ssglInitializeBitmapFont()
+{
+    memset(BitmapFontChunkInitialized, 0, sizeof(BitmapFontChunkInitialized));
+    BitmapFontCurrentChunk = -1;
+}
+
+int ssglBitmapCharWidth(char32_t chr) {
+    if(!CodepointProperties[chr].exists)
+        oops();
+    return CodepointProperties[chr].isWide ? 2 : 1;
+}
+
+void ssglBitmapCharQuad(char32_t chr, double x, double y)
+{
     int w, h;
 
-    if(b & 0x80) {
+    h = 16;
+    if(chr >= 0xe000 && chr <= 0xefff) {
         // Special character, like a checkbox or a radio button
-        w = h = 16;
+        w = 16;
         x -= 3;
+    } else if(CodepointProperties[chr].isWide) {
+        // Wide (usually CJK or reserved) character
+        w = 16;
     } else {
-        // Normal character from our font
-        w = SS.TW.CHAR_WIDTH,
-        h = SS.TW.CHAR_HEIGHT;
+        // Normal character
+        w = 8;
     }
 
-    if(b != ' ' && b != 0) {
-        int row = b / 4, col = b % 4;
-        double s0 = col/4.0,
-               s1 = (col+1)/4.0,
+    if(chr != ' ' && chr != 0) {
+        int n = chr % BitmapFontChunkSize;
+        int row = n / 64, col = n % 64;
+        double s0 = col/64.0,
+               s1 = (col+1)/64.0,
                t0 = row/64.0,
                t1 = t0 + (w/16.0)/64;
+
+        SwitchToBitmapFontChunkFor(chr);
 
         glTexCoord2d(s1, t0);
         glVertex2d(x, y);
@@ -577,10 +646,11 @@ void ssglBitmapText(const char *str, Vector p)
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
     while(*str) {
-        ssglBitmapCharQuad(*str, p.x, p.y);
+        char32_t chr;
+        str = ReadUTF8(str, &chr);
 
-        str++;
-        p.x += SS.TW.CHAR_WIDTH;
+        ssglBitmapCharQuad(chr, p.x, p.y);
+        p.x += 8 * ssglBitmapCharWidth(chr);
     }
     glEnd();
     glDisable(GL_TEXTURE_2D);

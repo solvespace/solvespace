@@ -306,7 +306,7 @@ void TextWindow::DescribeSelection(void) {
         if(c->type == Constraint::DIAMETER) {
             Printf(false, "%FtDIAMETER CONSTRAINT");
 
-            Printf(true, "  %Fd%f%D%Ll%c  show as radius",
+            Printf(true, "  %Fd%f%D%Ll%s  show as radius",
                    &ScreenConstraintShowAsRadius, gs.constraint[0],
                    c->other ? CHECK_TRUE : CHECK_FALSE);
         } else {
