@@ -65,7 +65,7 @@ public:
 
     Expr() { }
     Expr(double v) : op(CONSTANT) { x.v = v; }
-    
+
     static inline Expr *AllocExpr(void)
         { return (Expr *)AllocTemporary(sizeof(Expr)); }
 
@@ -99,9 +99,7 @@ public:
 
     void ParamsToPointers(void);
 
-    void App(const char *str, ...);
-    const char *Print(void);
-    void PrintW(void); // worker
+    std::string Print(void);
 
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
     int Children(void);

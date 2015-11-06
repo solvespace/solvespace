@@ -18,9 +18,9 @@ void TextWindow::ShowEditView(void) {
 
     Printf(false, "%Bd %Ftorigin (maps to center of screen)%E");
     Printf(false, "%Ba   (%s, %s, %s) %Fl%Ll%f[edit]%E",
-        SS.MmToString(-SS.GW.offset.x),
-        SS.MmToString(-SS.GW.offset.y),
-        SS.MmToString(-SS.GW.offset.z),
+        SS.MmToString(-SS.GW.offset.x).c_str(),
+        SS.MmToString(-SS.GW.offset.y).c_str(),
+        SS.MmToString(-SS.GW.offset.z).c_str(),
         &ScreenChangeViewOrigin);
     Printf(false, "");
 
@@ -38,29 +38,26 @@ void TextWindow::ShowEditView(void) {
 }
 
 void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
-    char buf[1024];
-    sprintf(buf, "%.3f", SS.GW.scale * SS.MmPerUnit());
-
     SS.TW.edit.meaning = EDIT_VIEW_SCALE;
-    SS.TW.ShowEditControl(12, 3, buf);
+    SS.TW.ShowEditControl(12, 3, ssprintf("%.3f", SS.GW.scale * SS.MmPerUnit()));
 }
 
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
-    char buf[1024];
-    sprintf(buf, "%s, %s, %s",
-        SS.MmToString(-SS.GW.offset.x),
-        SS.MmToString(-SS.GW.offset.y),
-        SS.MmToString(-SS.GW.offset.z));
+    std::string edit_value =
+        ssprintf("%s, %s, %s",
+            SS.MmToString(-SS.GW.offset.x).c_str(),
+            SS.MmToString(-SS.GW.offset.y).c_str(),
+            SS.MmToString(-SS.GW.offset.z).c_str());
 
     SS.TW.edit.meaning = EDIT_VIEW_ORIGIN;
-    SS.TW.ShowEditControl(18, 3, buf);
+    SS.TW.ShowEditControl(18, 3, edit_value);
 }
 
 void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
-    char buf[1024];
-    sprintf(buf, "%.3f, %.3f, %.3f", CO(SS.GW.projRight));
+    std::string edit_value =
+        ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projRight));
     SS.TW.edit.meaning = EDIT_VIEW_PROJ_RIGHT;
-    SS.TW.ShowEditControl(24, 10, buf);
+    SS.TW.ShowEditControl(24, 10, edit_value);
 }
 
 bool TextWindow::EditControlDoneForView(const char *s) {

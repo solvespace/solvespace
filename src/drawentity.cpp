@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-char *Entity::DescriptionString(void) {
+std::string Entity::DescriptionString(void) {
     if(h.isFromRequest()) {
         Request *r = SK.GetRequest(h.request());
         return r->DescriptionString();
@@ -446,7 +446,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font.str, str.str, 0, sbl, botLeft, u, v);
+            SS.fonts.PlotString(font.c_str(), str.c_str(), 0, sbl, botLeft, u, v);
             break;
         }
 
@@ -608,12 +608,12 @@ void Entity::DrawOrGetDistance(void) {
             if(dogd.drawing)
                 glDisable(GL_LINE_STIPPLE);
 
-            char *str = DescriptionString()+5;
+            std::string str = DescriptionString().substr(5);
             double th = DEFAULT_TEXT_HEIGHT;
             if(dogd.drawing) {
-                ssglWriteText(str, th, mm2, u, v, NULL, NULL);
+                ssglWriteText(str.c_str(), th, mm2, u, v, NULL, NULL);
             } else {
-                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
+                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str.c_str(), th)/2)).Plus(
                                       v.ScaledBy(ssglStrHeight(th)/2));
                 Point2d pp = SS.GW.ProjectPoint(pos);
                 dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);

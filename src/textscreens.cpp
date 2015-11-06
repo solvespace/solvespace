@@ -16,21 +16,22 @@ void TextWindow::ScreenHome(int link, uint32_t v) {
 void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
 
-    char cd[1024], cd2[1024];
+    const char *header;
+    std::string desc;
     if(SS.GW.LockedInWorkplane()) {
-        sprintf(cd, "in plane: ");
-        strcpy(cd2, SK.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString());
+        header = "in plane: ";
+        desc = SK.GetEntity(SS.GW.ActiveWorkplane())->DescriptionString();
     } else {
-        sprintf(cd, "drawing / constraining in 3d");
-        strcpy(cd2, "");
+        header = "drawing / constraining in 3d";
+        desc = "";
     }
 
     // Navigation buttons
     if(withNav) {
         Printf(false, " %Fl%Lh%fhome%E   %Ft%s%E%s",
-            (&TextWindow::ScreenHome), cd, cd2);
+            (&TextWindow::ScreenHome), header, desc.c_str());
     } else {
-        Printf(false, "        %Ft%s%E%s", cd, cd2);
+        Printf(false, "        %Ft%s%E%s", header, desc.c_str());
     }
 
     // Leave space for the icons that are painted here.
@@ -108,7 +109,7 @@ void TextWindow::ShowListOfGroups(void) {
     bool afterActive = false;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
-        char *s = g->DescriptionString();
+        std::string s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
         bool ok = (g->solved.how == System::SOLVED_OKAY);
@@ -133,7 +134,7 @@ void TextWindow::ShowListOfGroups(void) {
                 ok ? "ok" : "",
                 ok ? "" : "NO",
             // Link to a screen that gives more details on the group
-            g->h.v, (&TextWindow::ScreenSelectGroup), s);
+            g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
         if(active) afterActive = true;
     }
@@ -246,16 +247,14 @@ void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
 }
 void TextWindow::ScreenChangeGroupName(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    SS.TW.ShowEditControl(7, 12, g->DescriptionString()+5);
+    SS.TW.ShowEditControl(7, 12, g->DescriptionString().substr(5));
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    char str[1024];
-    sprintf(str, "%.3f", g->scale);
-    SS.TW.ShowEditControl(14, 13, str);
+    SS.TW.ShowEditControl(14, 13, ssprintf("%.3f", g->scale));
     SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
@@ -279,11 +278,11 @@ void TextWindow::ShowGroupInfo(void) {
     const char *s = "???";
 
     if(shown.group.v == Group::HGROUP_REFERENCES.v) {
-        Printf(true, "%FtGROUP  %E%s", g->DescriptionString());
+        Printf(true, "%FtGROUP  %E%s", g->DescriptionString().c_str());
         goto list_items;
     } else {
         Printf(true, "%FtGROUP  %E%s [%Fl%Ll%D%frename%E/%Fl%Ll%D%fdel%E]",
-            g->DescriptionString(),
+            g->DescriptionString().c_str(),
             g->h.v, &TextWindow::ScreenChangeGroupName,
             g->h.v, &TextWindow::ScreenDeleteGroup);
     }
@@ -426,11 +425,11 @@ list_items:
         Request *r = &(SK.request.elem[i]);
 
         if(r->group.v == shown.group.v) {
-            char *s = r->DescriptionString();
+            std::string s = r->DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                 (a & 1) ? 'd' : 'a',
                 r->h.v, (&TextWindow::ScreenSelectRequest),
-                &(TextWindow::ScreenHoverRequest), s);
+                &(TextWindow::ScreenHoverRequest), s.c_str());
             a++;
         }
     }
@@ -443,11 +442,11 @@ list_items:
         Constraint *c = &(SK.constraint.elem[i]);
 
         if(c->group.v == shown.group.v) {
-            char *s = c->DescriptionString();
+            std::string s = c->DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
                 (a & 1) ? 'd' : 'a',
                 c->h.v, (&TextWindow::ScreenSelectConstraint),
-                (&TextWindow::ScreenHoverConstraint), s,
+                (&TextWindow::ScreenHoverConstraint), s.c_str(),
                 c->reference ? "(ref)" : "");
             a++;
         }
@@ -469,7 +468,7 @@ void TextWindow::ShowGroupSolveInfo(void) {
         return;
     }
 
-    Printf(true, "%FtGROUP   %E%s", g->DescriptionString());
+    Printf(true, "%FtGROUP   %E%s", g->DescriptionString().c_str());
     switch(g->solved.how) {
         case System::DIDNT_CONVERGE:
             Printf(true, "%FxSOLVE FAILED!%Fd no convergence");
@@ -495,7 +494,7 @@ void TextWindow::ShowGroupSolveInfo(void) {
             (i & 1) ? 'd' : 'a',
             c->h.v, (&TextWindow::ScreenSelectConstraint),
             (&TextWindow::ScreenHoverConstraint),
-            c->DescriptionString());
+            c->DescriptionString().c_str());
     }
 
     Printf(true,  "It may be possible to fix the problem ");
@@ -509,19 +508,17 @@ void TextWindow::ShowGroupSolveInfo(void) {
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_STEP_DIM_FINISH;
-    char s[1024];
+    std::string edit_value;
     if(SS.TW.shown.dimIsDistance) {
-        strcpy(s, SS.MmToString(SS.TW.shown.dimFinish));
+        edit_value = SS.MmToString(SS.TW.shown.dimFinish);
     } else {
-        sprintf(s, "%.3f", SS.TW.shown.dimFinish);
+        edit_value = ssprintf("%.3f", SS.TW.shown.dimFinish);
     }
-    SS.TW.ShowEditControl(12, 12, s);
+    SS.TW.ShowEditControl(12, 12, edit_value);
 }
 void TextWindow::ScreenStepDimSteps(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%d", SS.TW.shown.dimSteps);
     SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
-    SS.TW.ShowEditControl(14, 12, str);
+    SS.TW.ShowEditControl(14, 12, ssprintf("%d", SS.TW.shown.dimSteps));
 }
 void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
     hConstraint hc = SS.TW.shown.constraint;
@@ -553,12 +550,12 @@ void TextWindow::ShowStepDimension(void) {
         return;
     }
 
-    Printf(true, "%FtSTEP DIMENSION%E %s", c->DescriptionString());
+    Printf(true, "%FtSTEP DIMENSION%E %s", c->DescriptionString().c_str());
 
     if(shown.dimIsDistance) {
-        Printf(true,  "%Ba   %Ftstart%E    %s", SS.MmToString(c->valA));
+        Printf(true,  "%Ba   %Ftstart%E    %s", SS.MmToString(c->valA).c_str());
         Printf(false, "%Bd   %Ftfinish%E   %s %Fl%Ll%f[change]%E",
-            SS.MmToString(shown.dimFinish), &ScreenStepDimFinish);
+            SS.MmToString(shown.dimFinish).c_str(), &ScreenStepDimFinish);
     } else {
         Printf(true,  "%Ba   %Ftstart%E    %@", c->valA);
         Printf(false, "%Bd   %Ftfinish%E   %@ %Fl%Ll%f[change]%E",
@@ -580,10 +577,8 @@ void TextWindow::ShowStepDimension(void) {
 void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
     switch(link) {
         case 'r': {
-            char str[1024];
-            strcpy(str, SS.MmToString(SS.tangentArcRadius));
             SS.TW.edit.meaning = EDIT_TANGENT_ARC_RADIUS;
-            SS.TW.ShowEditControl(12, 3, str);
+            SS.TW.ShowEditControl(12, 3, SS.MmToString(SS.tangentArcRadius));
             break;
         }
 
@@ -597,7 +592,7 @@ void TextWindow::ShowTangentArc(void) {
     Printf(true,  "%Ft radius of created arc%E");
     if(SS.tangentArcManual) {
         Printf(false, "%Ba   %s %Fl%Lr%f[change]%E",
-            SS.MmToString(SS.tangentArcRadius),
+            SS.MmToString(SS.tangentArcRadius).c_str(),
             &(TextWindow::ScreenChangeTangentArc));
     } else {
         Printf(false, "%Ba   automatic");
@@ -671,7 +666,7 @@ void TextWindow::EditControlDone(const char *s) {
                 SS.UndoRemember();
 
                 Group *g = SK.GetGroup(edit.group);
-                g->name.strcpy(s);
+                g->name = s;
             }
             break;
         }
@@ -727,7 +722,7 @@ void TextWindow::EditControlDone(const char *s) {
             SS.UndoRemember();
             Request *r = SK.request.FindByIdNoOops(edit.request);
             if(r) {
-                r->str.strcpy(s);
+                r->str = s;
                 SS.MarkGroupDirty(r->group);
                 SS.ScheduleGenerateAll();
             }

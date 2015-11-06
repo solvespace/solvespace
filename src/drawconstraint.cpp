@@ -57,31 +57,31 @@ double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
     return v;
 }
 
-char *Constraint::Label(void) {
-    static char Ret[1024];
+std::string Constraint::Label(void) {
+    std::string result;
     if(type == ANGLE) {
-        sprintf(Ret, "%.2f", valA);
+        result = ssprintf("%.2f", valA);
     } else if(type == LENGTH_RATIO) {
-        sprintf(Ret, "%.3f:1", valA);
+        result = ssprintf("%.3f:1", valA);
     } else if(type == LENGTH_DIFFERENCE) {
-        sprintf(Ret, "%.3f", valA);
+        result = ssprintf("%.3f", valA);
     } else if(type == COMMENT) {
-        strcpy(Ret, comment.str);
+        result = comment;
     } else if(type == DIAMETER) {
         if(!other) {
             // leading spaces for diameter symbol
-            sprintf(Ret, "  %s", SS.MmToString(valA));
+            result = "  " + SS.MmToString(valA);
         } else {
-            sprintf(Ret, "R%s", SS.MmToString(valA / 2));
+            result = "R" + SS.MmToString(valA / 2);
         }
     } else {
         // valA has units of distance
-        strcpy(Ret, SS.MmToString(fabs(valA)));
+        result = SS.MmToString(fabs(valA));
     }
     if(reference) {
-        strcat(Ret, " REF");
+        result += " REF";
     }
-    return Ret;
+    return result;
 }
 
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
@@ -92,8 +92,8 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         th = DEFAULT_TEXT_HEIGHT;
     }
 
-    char *s = Label();
-    double swidth  = ssglStrWidth(s, th),
+    std::string s = Label();
+    double swidth  = ssglStrWidth(s.c_str(), th),
            sheight = ssglStrHeight(th);
 
     // By default, the reference is from the center; but the style could
@@ -124,7 +124,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
 
 
     if(dogd.drawing) {
-        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
+        ssglWriteTextRefCenter(s.c_str(), th, ref, gr, gu, LineCallback, this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);
@@ -163,9 +163,9 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
            gr = SS.GW.projRight.WithMagnitude(1);
 
     double pixels = 1.0 / SS.GW.scale;
-    char *s = Label();
-    double swidth  = ssglStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels,
-           sheight = ssglStrHeight(DEFAULT_TEXT_HEIGHT)   + 8*pixels;
+    std::string s = Label();
+    double swidth  = ssglStrWidth(s.c_str(), DEFAULT_TEXT_HEIGHT) + 4*pixels,
+           sheight = ssglStrHeight(DEFAULT_TEXT_HEIGHT) + 8*pixels;
 
     struct {
         Vector n;
@@ -370,7 +370,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
-            ssglStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
+            ssglStrWidth(Label().c_str(), DEFAULT_TEXT_HEIGHT)/2,
             ssglStrHeight(DEFAULT_TEXT_HEIGHT)/2,
             tl);
         *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));

@@ -208,7 +208,7 @@ public:
     } editControl;
 
     void HideEditControl(void);
-    void ShowEditControl(int halfRow, int col, char *s);
+    void ShowEditControl(int halfRow, int col, const std::string &str);
     void ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb);
 
     void ClearSuper(void);

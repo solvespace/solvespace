@@ -661,19 +661,19 @@ void GCodeFileWriter::FinishAndCloseFile(void) {
 
             SPoint *pt = sc->l.First();
             fprintf(f, "G00 X%s Y%s\r\n",
-                    SS.MmToString(pt->p.x), SS.MmToString(pt->p.y));
+                    SS.MmToString(pt->p.x).c_str(), SS.MmToString(pt->p.y).c_str());
             fprintf(f, "G01 Z%s F%s\r\n",
-                SS.MmToString(depth), SS.MmToString(SS.gCode.plungeFeed));
+                    SS.MmToString(depth).c_str(), SS.MmToString(SS.gCode.plungeFeed).c_str());
 
             pt = sc->l.NextAfter(pt);
             for(; pt; pt = sc->l.NextAfter(pt)) {
                 fprintf(f, "G01 X%s Y%s F%s\r\n",
-                        SS.MmToString(pt->p.x), SS.MmToString(pt->p.y),
-                        SS.MmToString(SS.gCode.feed));
+                        SS.MmToString(pt->p.x).c_str(), SS.MmToString(pt->p.y).c_str(),
+                        SS.MmToString(SS.gCode.feed).c_str());
             }
             // Move up to a clearance plane 5mm above the work.
             fprintf(f, "G00 Z%s\r\n",
-                SS.MmToString(SS.gCode.depth < 0 ? +5 : -5));
+                    SS.MmToString(SS.gCode.depth < 0 ? +5 : -5).c_str());
         }
     }
 

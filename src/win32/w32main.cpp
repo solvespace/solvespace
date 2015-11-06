@@ -812,11 +812,11 @@ static void ShowEditControl(HWND h, int x, int y, const std::wstring &s) {
         SetFocus(h);
     }
 }
-void SolveSpace::ShowTextEditControl(int x, int y, char *s)
+void SolveSpace::ShowTextEditControl(int x, int y, const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    ShowEditControl(TextEditControl, x, y, Widen(s));
+    ShowEditControl(TextEditControl, x, y, Widen(str));
 }
 void SolveSpace::HideTextEditControl(void)
 {
@@ -826,7 +826,7 @@ bool SolveSpace::TextEditControlIsVisible(void)
 {
     return IsWindowVisible(TextEditControl) ? true : false;
 }
-void SolveSpace::ShowGraphicsEditControl(int x, int y, char *s)
+void SolveSpace::ShowGraphicsEditControl(int x, int y, const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
 
@@ -839,7 +839,7 @@ void SolveSpace::ShowGraphicsEditControl(int x, int y, char *s)
     // top left corner
     y -= 20;
 
-    ShowEditControl(GraphicsEditControl, x, y, Widen(s));
+    ShowEditControl(GraphicsEditControl, x, y, Widen(str));
 }
 void SolveSpace::HideGraphicsEditControl(void)
 {

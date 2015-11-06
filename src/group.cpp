@@ -66,12 +66,12 @@ void Group::MenuGroup(int id) {
     switch(id) {
         case GraphicsWindow::MNU_GROUP_3D:
             g.type = DRAWING_3D;
-            g.name.strcpy("sketch-in-3d");
+            g.name = "sketch-in-3d";
             break;
 
         case GraphicsWindow::MNU_GROUP_WRKPL:
             g.type = DRAWING_WORKPLANE;
-            g.name.strcpy("sketch-in-plane");
+            g.name = "sketch-in-plane";
             if(gs.points == 1 && gs.n == 1) {
                 g.subtype = WORKPLANE_BY_POINT_ORTHO;
 
@@ -122,7 +122,7 @@ void Group::MenuGroup(int id) {
             g.opA = SS.GW.activeGroup;
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.subtype = ONE_SIDED;
-            g.name.strcpy("extrude");
+            g.name = "extrude";
             break;
 
         case GraphicsWindow::MNU_GROUP_LATHE:
@@ -144,7 +144,7 @@ void Group::MenuGroup(int id) {
             }
             g.type = LATHE;
             g.opA = SS.GW.activeGroup;
-            g.name.strcpy("lathe");
+            g.name = "lathe";
             break;
 
         case GraphicsWindow::MNU_GROUP_ROT: {
@@ -170,7 +170,7 @@ void Group::MenuGroup(int id) {
             g.opA = SS.GW.activeGroup;
             g.valA = 3;
             g.subtype = ONE_SIDED;
-            g.name.strcpy("rotate");
+            g.name = "rotate";
             break;
         }
 
@@ -181,7 +181,7 @@ void Group::MenuGroup(int id) {
             g.subtype = ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.activeWorkplane = SS.GW.ActiveWorkplane();
-            g.name.strcpy("translate");
+            g.name = "translate";
             break;
 
         case GraphicsWindow::MNU_GROUP_IMPORT: {
@@ -212,9 +212,9 @@ void Group::MenuGroup(int id) {
             }
 
             if(groupName.length() > 0) {
-                g.name.strcpy(groupName.substr(0, 64).c_str());
+                g.name = groupName;
             } else {
-                g.name.strcpy("import");
+                g.name = "import";
             }
 
             g.meshCombine = COMBINE_AS_ASSEMBLE;
@@ -274,14 +274,12 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     SK.GetParam(qz)->val = qg.vz;
 }
 
-char *Group::DescriptionString(void) {
-    static char ret[100];
-    if(name.str[0]) {
-        sprintf(ret, "g%03x-%s", h.v, name.str);
+std::string Group::DescriptionString(void) {
+    if(name.empty()) {
+        return ssprintf("g%03x-(unnamed)", h.v);
     } else {
-        sprintf(ret, "g%03x-(unnamed)", h.v);
+        return ssprintf("g%03x-%s", h.v, name.c_str());
     }
-    return ret;
 }
 
 void Group::Activate(void) {
@@ -636,8 +634,8 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     en.group = h;
     en.construction = ep->construction;
     en.style = ep->style;
-    en.str.strcpy(ep->str.str);
-    en.font.strcpy(ep->font.str);
+    en.str = ep->str;
+    en.font = ep->font;
 
     switch(ep->type) {
         case Entity::WORKPLANE:

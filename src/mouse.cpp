@@ -476,7 +476,7 @@ void GraphicsWindow::ContextMenuListStyles(void) {
     for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
         if(s->h.v < Style::FIRST_CUSTOM) continue;
 
-        AddContextMenuItem(s->DescriptionString(), CMNU_FIRST_STYLE + s->h.v);
+        AddContextMenuItem(s->DescriptionString().c_str(), CMNU_FIRST_STYLE + s->h.v);
         empty = false;
     }
 
@@ -933,8 +933,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
             hr = AddRequest(Request::TTF_TEXT);
             Request *r = SK.GetRequest(hr);
-            r->str.strcpy("Abc");
-            r->font.strcpy("arial.ttf");
+            r->str = "Abc";
+            r->font = "arial.ttf";
 
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             SK.GetEntity(hr.entity(2))->PointForceTo(v);
@@ -952,7 +952,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             c.workplane   = SS.GW.ActiveWorkplane();
             c.type        = Constraint::COMMENT;
             c.disp.offset = v;
-            c.comment.strcpy("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
+            c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
             Constraint::AddConstraint(&c);
             break;
         }
@@ -1145,16 +1145,16 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
 
-        char s[1024];
+        std::string edit_value;
         switch(c->type) {
             case Constraint::COMMENT:
-                strcpy(s, c->comment.str);
+                edit_value = c->comment;
                 break;
 
             case Constraint::ANGLE:
             case Constraint::LENGTH_RATIO:
             case Constraint::LENGTH_DIFFERENCE:
-                sprintf(s, "%.3f", c->valA);
+                edit_value = ssprintf("%.3f", c->valA);
                 break;
 
             default: {
@@ -1164,26 +1164,26 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                 if(c->type == Constraint::DIAMETER && c->other)
                     v /= 2;
 
-                char *def = SS.MmToString(v);
+                std::string def = SS.MmToString(v);
                 double eps = 1e-12;
                 if(fabs(SS.StringToMm(def) - v) < eps) {
                     // Show value with default number of digits after decimal,
                     // which is at least enough to represent it exactly.
-                    strcpy(s, def);
+                    edit_value = def;
                 } else {
                     // Show value with as many digits after decimal as
                     // required to represent it exactly, up to 10.
                     v /= SS.MmPerUnit();
                     int i;
                     for(i = 0; i <= 10; i++) {
-                        sprintf(s, "%.*f", i, v);
-                        if(fabs(atof(s) - v) < eps) break;
+                        edit_value = ssprintf("%.*f", i, v);
+                        if(fabs(std::stod(edit_value) - v) < eps) break;
                     }
                 }
                 break;
             }
         }
-        ShowGraphicsEditControl((int)p2.x, (int)p2.y-4, s);
+        ShowGraphicsEditControl((int)p2.x, (int)p2.y-4, edit_value);
     }
 }
 
@@ -1193,7 +1193,7 @@ void GraphicsWindow::EditControlDone(const char *s) {
 
     if(c->type == Constraint::COMMENT) {
         SS.UndoRemember();
-        c->comment.strcpy(s);
+        c->comment = s;
         return;
     }
 

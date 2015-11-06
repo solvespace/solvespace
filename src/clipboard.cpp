@@ -86,8 +86,8 @@ void GraphicsWindow::CopySelection(void) {
         cr.type         = req;
         cr.extraPoints  = e->extraPoints;
         cr.style        = e->style;
-        cr.str.strcpy(    e->str.str);
-        cr.font.strcpy(   e->font.str);
+        cr.str          = e->str;
+        cr.font         = e->font;
         cr.construction = e->construction;
         {for(int i = 0; i < pts; i++) {
             Vector pt = SK.GetEntity(e->point[i])->PointGetNum();
@@ -133,8 +133,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         Request *r = SK.GetRequest(hr);
         r->extraPoints  = cr->extraPoints;
         r->style        = cr->style;
-        r->str.strcpy(    cr->str.str);
-        r->font.strcpy(   cr->font.str);
+        r->str          = cr->str;
+        r->font         = cr->font;
         r->construction = cr->construction;
         // Need to regen to get the right number of points, if extraPoints
         // changed.
@@ -374,14 +374,14 @@ void TextWindow::ShowPasteTransformed(void) {
         shown.paste.theta*180/PI,
         &ScreenChangePasteTransformed);
     Printf(false, "%Ba   %Ftabout pt%E  (%s, %s, %s) %Fl%Lo%f[use selected]%E",
-            SS.MmToString(shown.paste.origin.x),
-            SS.MmToString(shown.paste.origin.y),
-            SS.MmToString(shown.paste.origin.z),
+            SS.MmToString(shown.paste.origin.x).c_str(),
+            SS.MmToString(shown.paste.origin.y).c_str(),
+            SS.MmToString(shown.paste.origin.z).c_str(),
         &ScreenPasteTransformed);
     Printf(false, "%Bd   %Fttranslate%E (%s, %s, %s) %Fl%Lt%f[use selected]%E",
-            SS.MmToString(shown.paste.trans.x),
-            SS.MmToString(shown.paste.trans.y),
-            SS.MmToString(shown.paste.trans.z),
+            SS.MmToString(shown.paste.trans.x).c_str(),
+            SS.MmToString(shown.paste.trans.y).c_str(),
+            SS.MmToString(shown.paste.trans.z).c_str(),
         &ScreenPasteTransformed);
     Printf(false, "%Ba   %Ftscale%E     %@ %Fl%Ls%f[change]%E",
         shown.paste.scale,

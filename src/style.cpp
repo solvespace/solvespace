@@ -25,30 +25,22 @@ const Style::Default Style::Defaults[] = {
     { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0 }
 };
 
-char *Style::CnfColor(const char *prefix) {
-    static char name[100];
-    sprintf(name, "Style_%s_Color", prefix);
-    return name;
+std::string Style::CnfColor(const std::string &prefix) {
+    return "Style_" + prefix + "_Color";
 }
-char *Style::CnfWidth(const char *prefix) {
-    static char name[100];
-    sprintf(name, "Style_%s_Width", prefix);
-    return name;
+std::string Style::CnfWidth(const std::string &prefix) {
+    return "Style_" + prefix + "_Width";
 }
 
-char *Style::CnfPrefixToName(const char *prefix) {
-    static char name[100];
-    int i = 0, j;
-    strcpy(name, "#def-");
-    j = 5;
-    while(prefix[i] && j < 90) {
-        if(isupper(prefix[i]) && i != 0) {
-            name[j++] = '-';
-        }
-        name[j++] = (char)tolower(prefix[i]);
-        i++;
+std::string Style::CnfPrefixToName(const std::string &prefix) {
+    std::string name = "#def-";
+
+    for(int i = 0; i < prefix.length(); i++) {
+        if(isupper(prefix[i]) && i != 0)
+            name += '-';
+        name += tolower(prefix[i]);
     }
-    name[j++] = '\0';
+
     return name;
 }
 
@@ -86,9 +78,9 @@ void Style::CreateDefaultStyle(hStyle h) {
     ns.fillColor    = RGBf(0.3, 0.3, 0.3);
     ns.h            = h;
     if(isDefaultStyle) {
-        ns.name.strcpy(CnfPrefixToName(d->cnfPrefix));
+        ns.name = CnfPrefixToName(d->cnfPrefix);
     } else {
-        ns.name.strcpy("new-custom-style");
+        ns.name = "new-custom-style";
     }
 
     SK.style.Add(&ns);
@@ -110,7 +102,7 @@ void Style::LoadFactoryDefaults(void) {
         s->exportable   = true;
         s->filled       = false;
         s->fillColor    = RGBf(0.3, 0.3, 0.3);
-        s->name.strcpy(CnfPrefixToName(d->cnfPrefix));
+        s->name         = CnfPrefixToName(d->cnfPrefix);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
@@ -319,14 +311,12 @@ hStyle Style::ForEntity(hEntity he) {
     return hs;
 }
 
-char *Style::DescriptionString(void) {
-    static char ret[100];
-    if(name.str[0]) {
-        sprintf(ret, "s%03x-%s", h.v, name.str);
+std::string Style::DescriptionString(void) {
+    if(name.empty()) {
+        return ssprintf("s%03x-(unnamed)", h.v);
     } else {
-        sprintf(ret, "s%03x-(unnamed)", h.v);
+        return ssprintf("s%03x-%s", h.v, name.c_str());
     }
-    return ret;
 }
 
 
@@ -444,7 +434,7 @@ void TextWindow::ShowListOfStyles(void) {
             &s->color,
             darkbg ? 'd' : 'a',
             ScreenShowStyleInfo, s->h.v,
-            s->DescriptionString());
+            s->DescriptionString().c_str());
 
         darkbg = !darkbg;
     }
@@ -488,7 +478,7 @@ void TextWindow::ShowListOfStyles(void) {
 void TextWindow::ScreenChangeStyleName(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    SS.TW.ShowEditControl(10, 12, s->name.str);
+    SS.TW.ShowEditControl(10, 12, s->name.c_str());
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_NAME;
 }
@@ -512,11 +502,11 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
     double val   = (link == 't') ? s->textHeight   : s->width;
     int    units = (link == 't') ? s->textHeightAs : s->widthAs;
 
-    char str[300];
+    std::string edit_value;
     if(units == Style::UNITS_AS_PIXELS) {
-        sprintf(str, "%.2f", val);
+        edit_value = ssprintf("%.2f", val);
     } else {
-        strcpy(str, SS.MmToString(val));
+        edit_value = SS.MmToString(val);
     }
     int row = 0, col = 9;
     if(link == 'w') {
@@ -527,7 +517,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
         row = 33;               // text height (for custom styles only)
         col++;
     }
-    SS.TW.ShowEditControl(row, col, str);
+    SS.TW.ShowEditControl(row, col, edit_value);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = (link == 't') ? EDIT_STYLE_TEXT_HEIGHT :
                                          EDIT_STYLE_WIDTH;
@@ -536,9 +526,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
 void TextWindow::ScreenChangeStyleTextAngle(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    char str[300];
-    sprintf(str, "%.2f", s->textAngle);
-    SS.TW.ShowEditControl(37, 9, str);
+    SS.TW.ShowEditControl(37, 9, ssprintf("%.2f", s->textAngle));
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_TEXT_ANGLE;
 }
@@ -700,7 +688,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             } else {
                 SS.UndoRemember();
                 s = Style::Get(edit.style);
-                s->name.strcpy(str);
+                s->name = str;
             }
             break;
 
@@ -727,11 +715,11 @@ void TextWindow::ShowStyleInfo(void) {
     Style *s = Style::Get(shown.style);
 
     if(s->h.v < Style::FIRST_CUSTOM) {
-        Printf(true, "%FtSTYLE  %E%s ", s->DescriptionString());
+        Printf(true, "%FtSTYLE  %E%s ", s->DescriptionString().c_str());
     } else {
         Printf(true, "%FtSTYLE  %E%s "
                      "[%Fl%Ll%D%frename%E/%Fl%Ll%D%fdel%E]",
-            s->DescriptionString(),
+            s->DescriptionString().c_str(),
             s->h.v, &ScreenChangeStyleName,
             s->h.v, &ScreenDeleteStyle);
     }
@@ -750,7 +738,7 @@ void TextWindow::ShowStyleInfo(void) {
             (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     } else {
         Printf(false, "   %Ftwidth%E %s %D%f%Lp%Fl[change]%E",
-            SS.MmToString(s->width),
+            SS.MmToString(s->width).c_str(),
             s->h.v, &ScreenChangeStyleWidthOrTextHeight,
             (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     }
@@ -797,7 +785,7 @@ void TextWindow::ShowStyleInfo(void) {
             chng);
     } else {
         Printf(false, "%Ba   %Ftheight %E%s %D%f%Lt%Fl%s%E",
-            SS.MmToString(s->textHeight),
+            SS.MmToString(s->textHeight).c_str(),
             s->h.v, &ScreenChangeStyleWidthOrTextHeight,
             chng);
     }

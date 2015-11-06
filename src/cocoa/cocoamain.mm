@@ -487,8 +487,8 @@ bool FullScreenIsActive(void) {
     return [GWDelegate isFullscreen];
 }
 
-void ShowGraphicsEditControl(int x, int y, char *str) {
-    [GWView startEditing:[NSString stringWithUTF8String:str]
+void ShowGraphicsEditControl(int x, int y, const std::string &str) {
+    [GWView startEditing:[NSString stringWithUTF8String:str.c_str()]
             at:(NSPoint){(CGFloat)x, (CGFloat)y}];
 }
 
@@ -1010,8 +1010,8 @@ void SetMousePointerToHand(bool is_hand) {
     [TWView setCursorHand:is_hand];
 }
 
-void ShowTextEditControl(int x, int y, char *str) {
-    return [TWView startEditing:[NSString stringWithUTF8String:str]
+void ShowTextEditControl(int x, int y, const std::string &str) {
+    return [TWView startEditing:[NSString stringWithUTF8String:str.c_str()]
                    at:(NSPoint){(CGFloat)x, (CGFloat)y}];
 }
 

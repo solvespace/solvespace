@@ -397,16 +397,6 @@ public:
 
 };
 
-class NameStr {
-public:
-    char str[64];
-
-    inline void strcpy(const char *in) {
-        memcpy(str, in, min(strlen(in)+1, sizeof(str)));
-        str[sizeof(str)-1] = '\0';
-    }
-};
-
 class BandedMatrix {
 public:
     enum {

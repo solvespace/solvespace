@@ -26,7 +26,7 @@ void TtfFontList::LoadAll(void) {
     loaded = true;
 }
 
-void TtfFontList::PlotString(const std::string &font, char *str, double spacing,
+void TtfFontList::PlotString(const std::string &font, const char *str, double spacing,
                              SBezierList *sbl,
                              Vector origin, Vector u, Vector v)
 {
@@ -350,14 +350,11 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         if(nameOnly) {
             // Find the display name, and store it in the provided buffer.
             fseek(fh, nameAddr+nameStringOffset+displayNameOffset, SEEK_SET);
-            int c = 0;
+            name.clear();
             for(i = 0; i < displayNameLength; i++) {
-                uint8_t b = GetBYTE();
-                if(b && c < ((int)sizeof(name.str) - 2)) {
-                    name.str[c++] = b;
-                }
+                char b = (char)GetBYTE();
+                if(b) name += b;
             }
-            name.str[c++] = '\0';
 
             fclose(fh);
             return true;
@@ -673,7 +670,7 @@ void TtfFont::PlotCharacter(int *dx, int c, double spacing) {
     *dx = dx0 + g->advanceWidth + (int)(spacing + 0.5);
 }
 
-void TtfFont::PlotString(char *str, double spacing,
+void TtfFont::PlotString(const char *str, double spacing,
                          SBezierList *sbl,
                          Vector porigin, Vector pu, Vector pv)
 {

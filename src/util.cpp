@@ -6,6 +6,25 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+std::string SolveSpace::ssprintf(const char *fmt, ...)
+{
+    va_list va;
+
+    va_start(va, fmt);
+    int size = vsnprintf(NULL, 0, fmt, va);
+    if(size < 0) oops();
+    va_end(va);
+
+    std::string result;
+    result.resize(size);
+
+    va_start(va, fmt);
+    vsnprintf(&result[0], size + 1, fmt, va);
+    va_end(va);
+
+    return result;
+}
+
 // See https://github.com/GNOME/glibmm/blob/2fbd9f23/glib/glibmm/ustring.cc#L227
 const char *SolveSpace::ReadUTF8(const char *str, char32_t *result)
 {

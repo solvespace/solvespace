@@ -387,7 +387,7 @@ public:
             connect(sigc::mem_fun(this, &EditorOverlay::on_activate));
     }
 
-    void start_editing(int x, int y, const char *val) {
+    void start_editing(int x, int y, const std::string &val) {
         move(_entry, x, y - 4);
         _entry.set_text(val);
         if(!_entry.is_visible()) {
@@ -720,7 +720,7 @@ bool FullScreenIsActive(void) {
     return GW->is_fullscreen();
 }
 
-void ShowGraphicsEditControl(int x, int y, char *val) {
+void ShowGraphicsEditControl(int x, int y, const std::string &val) {
     Gdk::Rectangle rect = GW->get_widget().get_allocation();
 
     // Convert to ij (vs. xy) style coordinates,
@@ -1378,7 +1378,7 @@ void SetMousePointerToHand(bool is_hand) {
     TW->get_widget().set_cursor_hand(is_hand);
 }
 
-void ShowTextEditControl(int x, int y, char *val) {
+void ShowTextEditControl(int x, int y, const std::string &val) {
     TW->get_overlay().start_editing(x, y, val);
 }
 

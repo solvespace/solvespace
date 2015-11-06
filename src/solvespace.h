@@ -65,6 +65,11 @@ using std::min;
 using std::max;
 using std::swap;
 
+#if defined(__GNUC__)
+__attribute__((__format__ (__printf__, 1, 2)))
+#endif
+std::string ssprintf(const char *fmt, ...);
+
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
     while(v >= n) v -= n;
@@ -220,10 +225,10 @@ void CheckMenuById(int id, bool checked);
 void RadioMenuById(int id, bool selected);
 void EnableMenuById(int id, bool enabled);
 
-void ShowGraphicsEditControl(int x, int y, char *s);
+void ShowGraphicsEditControl(int x, int y, const std::string &str);
 void HideGraphicsEditControl(void);
 bool GraphicsEditControlIsVisible(void);
-void ShowTextEditControl(int x, int y, char *s);
+void ShowTextEditControl(int x, int y, const std::string &str);
 void HideTextEditControl(void);
 bool TextEditControlIsVisible(void);
 void MoveTextScrollbarTo(int pos, int maxPos, int page);
@@ -462,7 +467,7 @@ public:
     } IntPoint;
 
     std::string fontFile;
-    NameStr     name;
+    std::string name;
     bool        loaded;
 
     // The font itself, plus the mapping from ASCII codes to glyphs
@@ -502,7 +507,7 @@ public:
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
     void PlotCharacter(int *dx, int c, double spacing);
-    void PlotString(char *str, double spacing,
+    void PlotString(const char *str, double spacing,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
 
     Vector TransformIntPoint(int x, int y);
@@ -517,7 +522,7 @@ public:
 
     void LoadAll(void);
 
-    void PlotString(const std::string &font, char *str, double spacing,
+    void PlotString(const std::string &font, const char *str, double spacing,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
 };
 
@@ -785,9 +790,9 @@ public:
     int      afterDecimalInch;
     int      autosaveInterval; // in minutes
 
-    char *MmToString(double v);
+    std::string MmToString(double v);
     double ExprToMm(Expr *e);
-    double StringToMm(const char *s);
+    double StringToMm(const std::string &s);
     const char *UnitName(void);
     double MmPerUnit(void);
     int UnitDigitsAfterDecimal(void);

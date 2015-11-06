@@ -242,26 +242,18 @@ const char *SolveSpaceUI::UnitName(void) {
         return "mm";
     }
 }
-char *SolveSpaceUI::MmToString(double v) {
-    static int WhichBuf;
-    static char Bufs[8][128];
-
-    WhichBuf++;
-    if(WhichBuf >= 8 || WhichBuf < 0) WhichBuf = 0;
-
-    char *s = Bufs[WhichBuf];
+std::string SolveSpaceUI::MmToString(double v) {
     if(viewUnits == UNIT_INCHES) {
-        sprintf(s, "%.*f", afterDecimalInch, v/25.4);
+        return ssprintf("%.*f", afterDecimalInch, v/25.4);
     } else {
-        sprintf(s, "%.*f", afterDecimalMm, v);
+        return ssprintf("%.*f", afterDecimalMm, v);
     }
-    return s;
 }
 double SolveSpaceUI::ExprToMm(Expr *e) {
     return (e->Eval()) * MmPerUnit();
 }
-double SolveSpaceUI::StringToMm(const char *str) {
-    return atof(str) * MmPerUnit();
+double SolveSpaceUI::StringToMm(const std::string &str) {
+    return std::stod(str) * MmPerUnit();
 }
 double SolveSpaceUI::ChordTolMm(void) {
     return SS.chordTol / SS.GW.scale;

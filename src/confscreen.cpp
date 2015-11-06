@@ -137,30 +137,30 @@ void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
-    char buf[1024] = "";
+    std::string buf;
     int row = 93;
     switch(link) {
         case 'd':
             SS.TW.edit.meaning = EDIT_G_CODE_DEPTH;
-            strcpy(buf, SS.MmToString(SS.gCode.depth));
+            buf += SS.MmToString(SS.gCode.depth);
             row += 0;
             break;
 
         case 's':
             SS.TW.edit.meaning = EDIT_G_CODE_PASSES;
-            sprintf(buf, "%d", SS.gCode.passes);
+            buf += std::to_string(SS.gCode.passes);
             row += 2;
             break;
 
         case 'F':
             SS.TW.edit.meaning = EDIT_G_CODE_FEED;
-            strcpy(buf, SS.MmToString(SS.gCode.feed));
+            buf += SS.MmToString(SS.gCode.feed);
             row += 4;
             break;
 
         case 'P':
             SS.TW.edit.meaning = EDIT_G_CODE_PLUNGE_FEED;
-            strcpy(buf, SS.MmToString(SS.gCode.plungeFeed));
+            buf += SS.MmToString(SS.gCode.plungeFeed);
             row += 6;
             break;
     }
@@ -168,10 +168,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%d", SS.autosaveInterval);
-
-    SS.TW.ShowEditControl(111, 3, str);
+    SS.TW.ShowEditControl(111, 3, std::to_string(SS.autosaveInterval));
     SS.TW.edit.meaning = EDIT_AUTOSAVE_INTERVAL;
 }
 
@@ -218,13 +215,13 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeCameraTangent, 0);
     Printf(false, "%Ft snap grid spacing%E");
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
-        SS.MmToString(SS.gridSpacing),
+        SS.MmToString(SS.gridSpacing).c_str(),
         &ScreenChangeGridSpacing, 0);
     Printf(false, "%Ft digits after decimal point to show%E");
     Printf(false, "%Ba   %d %Fl%Ll%f%D[change]%E (e.g. '%s')",
         SS.UnitDigitsAfterDecimal(),
         &ScreenChangeDigitsAfterDecimal, 0,
-        SS.MmToString(SS.StringToMm("1.23456789")));
+        SS.MmToString(SS.StringToMm("1.23456789")).c_str());
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1:1=mm, 1:25.4=inch)");
@@ -233,7 +230,7 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeExportScale, 0);
     Printf(false, "%Ft cutter radius offset (0=no offset) ");
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
-        SS.MmToString(SS.exportOffset),
+        SS.MmToString(SS.exportOffset).c_str(),
         &ScreenChangeExportOffset, 0);
 
     Printf(false, "");
@@ -264,35 +261,35 @@ void TextWindow::ShowConfiguration(void) {
     if(SS.exportCanvasSizeAuto) {
         Printf(false, "%Ft (by margins around exported geometry)");
         Printf(false, "%Ba%Ft   left:   %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportMargin.left), &ScreenChangeCanvasSize, 0);
+            SS.MmToString(SS.exportMargin.left).c_str(), &ScreenChangeCanvasSize, 0);
         Printf(false, "%Bd%Ft   right:  %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportMargin.right), &ScreenChangeCanvasSize, 1);
+            SS.MmToString(SS.exportMargin.right).c_str(), &ScreenChangeCanvasSize, 1);
         Printf(false, "%Ba%Ft   bottom: %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportMargin.bottom), &ScreenChangeCanvasSize, 2);
+            SS.MmToString(SS.exportMargin.bottom).c_str(), &ScreenChangeCanvasSize, 2);
         Printf(false, "%Bd%Ft   top:    %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportMargin.top), &ScreenChangeCanvasSize, 3);
+            SS.MmToString(SS.exportMargin.top).c_str(), &ScreenChangeCanvasSize, 3);
     } else {
         Printf(false, "%Ft (by absolute dimensions and offsets)");
         Printf(false, "%Ba%Ft   width:    %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportCanvas.width), &ScreenChangeCanvasSize, 10);
+            SS.MmToString(SS.exportCanvas.width).c_str(), &ScreenChangeCanvasSize, 10);
         Printf(false, "%Bd%Ft   height:   %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportCanvas.height), &ScreenChangeCanvasSize, 11);
+            SS.MmToString(SS.exportCanvas.height).c_str(), &ScreenChangeCanvasSize, 11);
         Printf(false, "%Ba%Ft   offset x: %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportCanvas.dx), &ScreenChangeCanvasSize, 12);
+            SS.MmToString(SS.exportCanvas.dx).c_str(), &ScreenChangeCanvasSize, 12);
         Printf(false, "%Bd%Ft   offset y: %Fd%s %Fl%Ll%f%D[change]%E",
-            SS.MmToString(SS.exportCanvas.dy), &ScreenChangeCanvasSize, 13);
+            SS.MmToString(SS.exportCanvas.dy).c_str(), &ScreenChangeCanvasSize, 13);
     }
 
     Printf(false, "");
     Printf(false, "%Ft exported g code parameters");
     Printf(false, "%Ba%Ft   depth:     %Fd%s %Fl%Ld%f[change]%E",
-        SS.MmToString(SS.gCode.depth), &ScreenChangeGCodeParameter);
+        SS.MmToString(SS.gCode.depth).c_str(), &ScreenChangeGCodeParameter);
     Printf(false, "%Bd%Ft   passes:    %Fd%d %Fl%Ls%f[change]%E",
         SS.gCode.passes, &ScreenChangeGCodeParameter);
     Printf(false, "%Ba%Ft   feed:      %Fd%s %Fl%LF%f[change]%E",
-        SS.MmToString(SS.gCode.feed), &ScreenChangeGCodeParameter);
+        SS.MmToString(SS.gCode.feed).c_str(), &ScreenChangeGCodeParameter);
     Printf(false, "%Bd%Ft   plunge fd: %Fd%s %Fl%LP%f[change]%E",
-        SS.MmToString(SS.gCode.plungeFeed), &ScreenChangeGCodeParameter);
+        SS.MmToString(SS.gCode.plungeFeed).c_str(), &ScreenChangeGCodeParameter);
 
     Printf(false, "");
     Printf(false, "  %Fd%f%Ll%s  draw triangle back faces in red%E",

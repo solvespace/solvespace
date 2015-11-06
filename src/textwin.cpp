@@ -79,14 +79,14 @@ void TextWindow::HideEditControl(void) {
     HideTextEditControl();
 }
 
-void TextWindow::ShowEditControl(int halfRow, int col, char *s) {
+void TextWindow::ShowEditControl(int halfRow, int col, const std::string &str) {
     editControl.halfRow = halfRow;
     editControl.col = col;
 
     int x = LEFT_MARGIN + CHAR_WIDTH*col;
     int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
-    ShowTextEditControl(x - 3, y + 2, s);
+    ShowTextEditControl(x - 3, y + 2, str);
 }
 
 void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb)

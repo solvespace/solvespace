@@ -44,7 +44,7 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
     g.predef.q = Quaternion::From(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
     g.predef.origin = hr.entity(1);
-    g.name.strcpy("sketch-in-plane");
+    g.name = "sketch-in-plane";
     SK.group.AddAndAssignId(&g);
     SK.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
     return g.h;
@@ -56,7 +56,7 @@ void SolveSpaceUI::NewFile(void) {
     // Our initial group, that contains the references.
     Group g = {};
     g.visible = true;
-    g.name.strcpy("#references");
+    g.name = "#references";
     g.type = Group::DRAWING_3D;
     g.h = Group::HGROUP_REFERENCES;
     SK.group.Add(&g);
@@ -84,7 +84,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.h.v",                'x',    &(SS.sv.g.h.v)                },
     { 'g',  "Group.type",               'd',    &(SS.sv.g.type)               },
     { 'g',  "Group.order",              'd',    &(SS.sv.g.order)              },
-    { 'g',  "Group.name",               'N',    &(SS.sv.g.name)               },
+    { 'g',  "Group.name",               'S',    &(SS.sv.g.name)               },
     { 'g',  "Group.activeWorkplane.v",  'x',    &(SS.sv.g.activeWorkplane.v)  },
     { 'g',  "Group.opA.v",              'x',    &(SS.sv.g.opA.v)              },
     { 'g',  "Group.opB.v",              'x',    &(SS.sv.g.opB.v)              },
@@ -112,8 +112,8 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
-    { 'g',  "Group.impFile",            'P',    &(SS.sv.g.impFile)            },
-    { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.impFileRel)         },
+    { 'g',  "Group.impFile",            'S',    &(SS.sv.g.impFile)            },
+    { 'g',  "Group.impFileRel",         'S',    &(SS.sv.g.impFileRel)         },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -125,15 +125,15 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'r',  "Request.group.v",          'x',    &(SS.sv.r.group.v)            },
     { 'r',  "Request.construction",     'b',    &(SS.sv.r.construction)       },
     { 'r',  "Request.style",            'x',    &(SS.sv.r.style)              },
-    { 'r',  "Request.str",              'N',    &(SS.sv.r.str)                },
-    { 'r',  "Request.font",             'N',    &(SS.sv.r.font)               },
+    { 'r',  "Request.str",              'S',    &(SS.sv.r.str)                },
+    { 'r',  "Request.font",             'S',    &(SS.sv.r.font)               },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
     { 'e',  "Entity.construction",      'b',    &(SS.sv.e.construction)       },
     { 'e',  "Entity.style",             'x',    &(SS.sv.e.style)              },
-    { 'e',  "Entity.str",               'N',    &(SS.sv.e.str)                },
-    { 'e',  "Entity.font",              'N',    &(SS.sv.e.font)               },
+    { 'e',  "Entity.str",               'S',    &(SS.sv.e.str)                },
+    { 'e',  "Entity.font",              'S',    &(SS.sv.e.font)               },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
     { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
     { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },
@@ -175,14 +175,14 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'c',  "Constraint.other",         'b',    &(SS.sv.c.other)              },
     { 'c',  "Constraint.other2",        'b',    &(SS.sv.c.other2)             },
     { 'c',  "Constraint.reference",     'b',    &(SS.sv.c.reference)          },
-    { 'c',  "Constraint.comment",       'N',    &(SS.sv.c.comment)            },
+    { 'c',  "Constraint.comment",       'S',    &(SS.sv.c.comment)            },
     { 'c',  "Constraint.disp.offset.x", 'f',    &(SS.sv.c.disp.offset.x)      },
     { 'c',  "Constraint.disp.offset.y", 'f',    &(SS.sv.c.disp.offset.y)      },
     { 'c',  "Constraint.disp.offset.z", 'f',    &(SS.sv.c.disp.offset.z)      },
     { 'c',  "Constraint.disp.style",    'x',    &(SS.sv.c.disp.style)         },
 
     { 's',  "Style.h.v",                'x',    &(SS.sv.s.h.v)                },
-    { 's',  "Style.name",               'N',    &(SS.sv.s.name)               },
+    { 's',  "Style.name",               'S',    &(SS.sv.s.name)               },
     { 's',  "Style.width",              'f',    &(SS.sv.s.width)              },
     { 's',  "Style.widthAs",            'd',    &(SS.sv.s.widthAs)            },
     { 's',  "Style.textHeight",         'f',    &(SS.sv.s.textHeight)         },
@@ -200,8 +200,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 
 union SAVEDptr {
     IdList<EntityMap,EntityId> M;
-    NameStr   N;
-    /* std::string P */
+    /* std::string S; */
     bool      b;
     RgbaColor c;
     int       d;
@@ -217,15 +216,14 @@ void SolveSpaceUI::SaveUsingTable(int type) {
         int fmt = SAVED[i].fmt;
         union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
-        if(fmt == 'N' && p->N.str[0] == '\0')   continue;
+        if(fmt == 'S' && ((std::string*)p)->empty()) continue;
         if(fmt == 'd' && p->d == 0)             continue;
         if(fmt == 'f' && EXACT(p->f == 0.0))    continue;
         if(fmt == 'x' && p->x == 0)             continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
-            case 'N': fprintf(fh, "%s",    p->N.str);           break;
-            case 'P': fprintf(fh, "%s",    ((std::string*)p)->c_str()); break;
+            case 'S': fprintf(fh, "%s",    ((std::string*)p)->c_str()); break;
             case 'b': fprintf(fh, "%d",    p->b ? 1 : 0);       break;
             case 'c': fprintf(fh, "%08x",  p->c.ToPackedInt()); break;
             case 'd': fprintf(fh, "%d",    p->d);               break;
@@ -373,7 +371,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
             union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
             unsigned int u = 0;
             switch(SAVED[i].fmt) {
-                case 'N': p->N.strcpy(val);        break;
+                case 'S': (*(std::string*)p) = val; break;
                 case 'b': p->b = (atoi(val) != 0); break;
                 case 'd': p->d = atoi(val);        break;
                 case 'f': p->f = atof(val);        break;

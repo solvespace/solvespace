@@ -547,47 +547,31 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 // Routines to pretty-print an expression. Mostly for debugging.
 //-----------------------------------------------------------------------------
 
-static char StringBuffer[4096];
-void Expr::App(const char *s, ...) {
-    va_list f;
-    va_start(f, s);
-    vsprintf(StringBuffer+strlen(StringBuffer), s, f);
-}
-const char *Expr::Print(void) {
+std::string Expr::Print(void) {
     if(!this) return "0";
 
-    StringBuffer[0] = '\0';
-    PrintW();
-    return StringBuffer;
-}
-
-void Expr::PrintW(void) {
     char c;
     switch(op) {
-        case PARAM:     App("param(%08x)", x.parh.v); break;
-        case PARAM_PTR: App("param(p%08x)", x.parp->h.v); break;
+        case PARAM:     return ssprintf("param(%08x)", x.parh.v);
+        case PARAM_PTR: return ssprintf("param(p%08x)", x.parp->h.v);
 
-        case CONSTANT:  App("%.3f", x.v); break;
+        case CONSTANT:  return ssprintf("%.3f", x.v);
 
         case PLUS:      c = '+'; goto p;
         case MINUS:     c = '-'; goto p;
         case TIMES:     c = '*'; goto p;
         case DIV:       c = '/'; goto p;
 p:
-            App("(");
-            a->PrintW();
-            App(" %c ", c);
-            b->PrintW();
-            App(")");
+            return "(" + a->Print() + " " + c + " " + b->Print() + ")";
             break;
 
-        case NEGATE:    App("(- "); a->PrintW(); App(")"); break;
-        case SQRT:      App("(sqrt "); a->PrintW(); App(")"); break;
-        case SQUARE:    App("(square "); a->PrintW(); App(")"); break;
-        case SIN:       App("(sin "); a->PrintW(); App(")"); break;
-        case COS:       App("(cos "); a->PrintW(); App(")"); break;
-        case ASIN:      App("(asin "); a->PrintW(); App(")"); break;
-        case ACOS:      App("(acos "); a->PrintW(); App(")"); break;
+        case NEGATE:    return "(- " + a->Print() + ")";
+        case SQRT:      return "(sqrt " + a->Print() + ")";
+        case SQUARE:    return "(square " + a->Print() + ")";
+        case SIN:       return "(sin " + a->Print() + ")";
+        case COS:       return "(cos " + a->Print() + ")";
+        case ASIN:      return "(asin " + a->Print() + ")";
+        case ACOS:      return "(acos " + a->Print() + ")";
 
         default: oops();
     }

@@ -102,8 +102,8 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     e.style = style;
     e.workplane = workplane;
     e.construction = construction;
-    e.str.strcpy(str.str);
-    e.font.strcpy(font.str);
+    e.str = str;
+    e.font = font;
     e.h = h.entity(0);
 
     // And generate entities for the points
@@ -169,7 +169,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     if(et) entity->Add(&e);
 }
 
-char *Request::DescriptionString(void) {
+std::string Request::DescriptionString(void) {
     const char *s;
     if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
@@ -180,9 +180,8 @@ char *Request::DescriptionString(void) {
     } else {
         s = EntReqTable::DescriptionForRequest(type);
     }
-    static char ret[100];
-    sprintf(ret, "r%03x-%s", h.v, s);
-    return ret;
+
+    return ssprintf("r%03x-%s", h.v, s);
 }
 
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
