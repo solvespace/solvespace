@@ -53,15 +53,6 @@ void FreeAllTemporary(void)
     vl();
 }
 
-void *MemRealloc(void *p, size_t n) {
-    if(!p) {
-        return MemAlloc(n);
-    }
-
-    p = HeapReAlloc(PermHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, p, n);
-    if(!p) oops();
-    return p;
-}
 void *MemAlloc(size_t n) {
     void *p = HeapAlloc(PermHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
     if(!p) oops();

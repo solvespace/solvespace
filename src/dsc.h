@@ -152,20 +152,27 @@ public:
     void AllocForOneMore(void) {
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (T *)MemRealloc(elem, (size_t)elemsAllocated*sizeof(elem[0]));
+            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
+            for(int i = 0; i < n; i++) {
+                new(&newElem[i]) T(std::move(elem[i]));
+                elem[i].~T();
+            }
+            MemFree(elem);
+            elem = newElem;
         }
     }
 
     void Add(T *t) {
         AllocForOneMore();
-        elem[n++] = *t;
+        new(&elem[n++]) T(*t);
     }
 
     void AddToBeginning(T *t) {
         AllocForOneMore();
-        memmove(elem+1, elem, n*sizeof(elem[0]));
-        n++;
+        new(&elem[n]) T();
+        std::move_backward(elem, elem + 1, elem + n + 1);
         elem[0] = *t;
+        n++;
     }
 
     T *First(void) {
@@ -185,6 +192,8 @@ public:
     }
 
     void Clear(void) {
+        for(int i = 0; i < n; i++)
+            elem[i].~T();
         if(elem) MemFree(elem);
         elem = NULL;
         n = elemsAllocated = 0;
@@ -203,12 +212,16 @@ public:
                 dest++;
             }
         }
+        for(int i = dest; i < n; i++)
+            elem[i].~T();
         n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
 
     void RemoveLast(int cnt) {
         if(n < cnt) oops();
+        for(int i = n - cnt; i < n; i++)
+            elem[i].~T();
         n -= cnt;
         // and elemsAllocated is untouched, same as in RemoveTagged
     }
@@ -251,7 +264,13 @@ public:
     void Add(T *t) {
         if(n >= elemsAllocated) {
             elemsAllocated = (elemsAllocated + 32)*2;
-            elem = (T *)MemRealloc(elem, (size_t)elemsAllocated*sizeof(elem[0]));
+            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
+            for(int i = 0; i < n; i++) {
+                new(&newElem[i]) T(std::move(elem[i]));
+                elem[i].~T();
+            }
+            MemFree(elem);
+            elem = newElem;
         }
 
         int first = 0, last = n;
@@ -268,9 +287,10 @@ public:
                 oops();
             }
         }
-        int i = first;
 
-        memmove(elem+i+1, elem+i, (size_t)(n-i)*sizeof(elem[0]));
+        int i = first;
+        new(&elem[n]) T();
+        std::move_backward(elem + i, elem + n, elem + n + 1);
         elem[i] = *t;
         n++;
     }
@@ -338,6 +358,8 @@ public:
                 dest++;
             }
         }
+        for(int i = dest; i < n; i++)
+            elem[i].~T();
         n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
@@ -349,7 +371,7 @@ public:
 
     void MoveSelfInto(IdList<T,H> *l) {
         l->Clear();
-        memcpy(l, this, sizeof(*this));
+        *l = *this;
         elemsAllocated = n = 0;
         elem = NULL;
     }
@@ -357,7 +379,8 @@ public:
     void DeepCopyInto(IdList<T,H> *l) {
         l->Clear();
         l->elem = (T *)MemAlloc(elemsAllocated * sizeof(elem[0]));
-        memcpy(l->elem, elem, elemsAllocated * sizeof(elem[0]));
+        for(int i = 0; i < n; i++)
+            new(&l->elem[i]) T(elem[i]);
         l->elemsAllocated = elemsAllocated;
         l->n = n;
     }
@@ -365,6 +388,7 @@ public:
     void Clear(void) {
         for(int i = 0; i < n; i++) {
             elem[i].Clear();
+            elem[i].~T();
         }
         elemsAllocated = n = 0;
         if(elem) MemFree(elem);

@@ -95,16 +95,6 @@ void FreeAllTemporary(void)
     Head = NULL;
 }
 
-void *MemRealloc(void *p, size_t n) {
-    if(!p) {
-        return MemAlloc(n);
-    }
-
-    p = realloc(p, n);
-    if(!p) oops();
-    return p;
-}
-
 void *MemAlloc(size_t n) {
     void *p = malloc(n);
     if(!p) oops();
