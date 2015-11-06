@@ -348,12 +348,14 @@ public:
     }
 
     void MoveSelfInto(IdList<T,H> *l) {
+        l->Clear();
         memcpy(l, this, sizeof(*this));
         elemsAllocated = n = 0;
         elem = NULL;
     }
 
     void DeepCopyInto(IdList<T,H> *l) {
+        l->Clear();
         l->elem = (T *)MemAlloc(elemsAllocated * sizeof(elem[0]));
         memcpy(l->elem, elem, elemsAllocated * sizeof(elem[0]));
         l->elemsAllocated = elemsAllocated;
