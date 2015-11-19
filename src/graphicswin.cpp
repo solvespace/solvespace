@@ -1026,13 +1026,13 @@ GraphicsWindow::SuggestedConstraint GraphicsWindow::SuggestLineConstraint(hReque
         ptA->PointGetExprsInWorkplane(ActiveWorkplane(), &au, &av);
         ptB->PointGetExprsInWorkplane(ActiveWorkplane(), &bu, &bv);
 
-        Expr *du = au->Minus(bu);
-        Expr *dv = av->Minus(bv);
+        double du = au->Minus(bu)->Eval();
+        double dv = av->Minus(bv)->Eval();
 
-        const double TOLERANCE = 10.0;
-        if(fabs(du->Eval()) * scale < TOLERANCE)
+        const double TOLERANCE_RATIO = 0.02;
+        if(fabs(dv) > LENGTH_EPS && fabs(du / dv) < TOLERANCE_RATIO)
             return SUGGESTED_VERTICAL;
-        else if(fabs(dv->Eval()) * scale < TOLERANCE)
+        else if(fabs(du) > LENGTH_EPS && fabs(dv / du) < TOLERANCE_RATIO)
             return SUGGESTED_HORIZONTAL;
         else
             return SUGGESTED_NONE;
