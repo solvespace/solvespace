@@ -3,6 +3,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
+#include <libdxfrw.h>
 #include "solvespace.h"
 
 void VectorFileWriter::Dummy(void) {
@@ -15,60 +16,77 @@ void VectorFileWriter::Dummy(void) {
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------
-void DxfFileWriter::StartFile(void) {
-    // Some software, like Adobe Illustrator, insists on a header.
-    fprintf(f,
-"  999\r\n"
-"file created by SolveSpace\r\n"
-"  0\r\n"
-"SECTION\r\n"
-"  2\r\n"
-"HEADER\r\n"
-"  9\r\n"
-"$ACADVER\r\n"
-"  1\r\n"
-"AC1006\r\n"
-"  9\r\n"
-"$ANGDIR\r\n"
-"  70\r\n"
-"0\r\n"
-"  9\r\n"
-"$AUNITS\r\n"
-"  70\r\n"
-"0\r\n"
-"  9\r\n"
-"$AUPREC\r\n"
-"  70\r\n"
-"0\r\n"
-"  9\r\n"
-"$INSBASE\r\n"
-"  10\r\n"
-"0.0\r\n"
-"  20\r\n"
-"0.0\r\n"
-"  30\r\n"
-"0.0\r\n"
-"  9\r\n"
-"$EXTMIN\r\n"
-"  10\r\n"
-"0.0\r\n"
-"  20\r\n"
-"0.0\r\n"
-"  9\r\n"
-"$EXTMAX\r\n"
-"  10\r\n"
-"10000.0\r\n"
-"  20\r\n"
-"10000.0\r\n"
-"  0\r\n"
-"ENDSEC\r\n");
 
-    // Then start the entities.
-    fprintf(f,
-"  0\r\n"
-"SECTION\r\n"
-"  2\r\n"
-"ENTITIES\r\n");
+class DxfWriteInterface : public DRW_Interface {
+    DxfFileWriter *writer;
+    dxfRW *dxf;
+
+public:
+    DxfWriteInterface(DxfFileWriter *w, dxfRW *dxfrw) :
+        writer(w), dxf(dxfrw) {}
+
+    virtual void writeEntities() {
+        for(SBezier *sb : writer->beziers) {
+            writeBezier(sb);
+        }
+    }
+
+    void writeLine(const Vector &p0, const Vector &p1) {
+        DRW_Line line;
+        line.basePoint = DRW_Coord(p0.x, p0.y, 0.0);
+        line.secPoint = DRW_Coord(p1.x, p1.y, 0.0);
+        dxf->writeLine(&line);
+    }
+
+    void writeArc(const Vector &c, double r, double sa, double ea) {
+        DRW_Arc arc;
+        arc.radious = r;
+        arc.basePoint = DRW_Coord(c.x, c.y, 0.0);
+        arc.staangle = sa;
+        arc.endangle = ea;
+        dxf->writeArc(&arc);
+    }
+
+    void writeBezierAsPwl(SBezier *sb) {
+        List<Vector> lv = {};
+        sb->MakePwlInto(&lv, SS.ExportChordTolMm());
+        DRW_LWPolyline polyline;
+        for(int i = 0; i < lv.n; i++) {
+            Vector *v = &lv.elem[i];
+            DRW_Vertex2D *vertex = new DRW_Vertex2D();
+            vertex->x = v->x;
+            vertex->y = v->y;
+            polyline.vertlist.push_back(vertex);
+        }
+        dxf->writeLWPolyline(&polyline);
+        lv.Clear();
+    }
+
+    void writeBezier(SBezier *sb) {
+        Vector c;
+        Vector n = Vector::From(0.0, 0.0, 1.0);
+        double r;
+
+        if(sb->deg == 1) {
+            // Line
+            writeLine(sb->ctrl[0], sb->ctrl[1]);
+        } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
+            // Circle perpendicular to camera
+            double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x);
+            double theta1 = atan2(sb->ctrl[2].y - c.y, sb->ctrl[2].x - c.x);
+            double dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2.0 * PI);
+            if(dtheta < 0.0) swap(theta0, theta1);
+
+            writeArc(c, r, theta0, theta1);
+        } else {
+            // Any other curve
+            writeBezierAsPwl(sb);
+        }
+    }
+};
+
+void DxfFileWriter::StartFile(void) {
+    beziers.clear();
 }
 
 void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
@@ -84,70 +102,14 @@ void DxfFileWriter::Triangle(STriangle *tr) {
 }
 
 void DxfFileWriter::Bezier(SBezier *sb) {
-    Vector c, n = Vector::From(0, 0, 1);
-    double r;
-    if(sb->deg == 1) {
-        fprintf(f,
-"  0\r\n"
-"LINE\r\n"
-"  8\r\n"     // Layer code
-"%d\r\n"
-"  10\r\n"    // xA
-"%.6f\r\n"
-"  20\r\n"    // yA
-"%.6f\r\n"
-"  30\r\n"    // zA
-"%.6f\r\n"
-"  11\r\n"    // xB
-"%.6f\r\n"
-"  21\r\n"    // yB
-"%.6f\r\n"
-"  31\r\n"    // zB
-"%.6f\r\n",
-                0,
-                sb->ctrl[0].x, sb->ctrl[0].y, sb->ctrl[0].z,
-                sb->ctrl[1].x, sb->ctrl[1].y, sb->ctrl[1].z);
-    } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
-        double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x),
-               theta1 = atan2(sb->ctrl[2].y - c.y, sb->ctrl[2].x - c.x),
-               dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2*PI);
-        if(dtheta < 0) {
-            swap(theta0, theta1);
-        }
-
-        fprintf(f,
-"  0\r\n"
-"ARC\r\n"
-"  8\r\n"     // Layer code
-"%d\r\n"
-"  10\r\n"    // x
-"%.6f\r\n"
-"  20\r\n"    // y
-"%.6f\r\n"
-"  30\r\n"    // z
-"%.6f\r\n"
-"  40\r\n"    // radius
-"%.6f\r\n"
-"  50\r\n"    // start angle
-"%.6f\r\n"
-"  51\r\n"    // end angle
-"%.6f\r\n",
-                        0,
-                        c.x, c.y, 0.0,
-                        r,
-                        theta0*180/PI, theta1*180/PI);
-    } else {
-        BezierAsPwl(sb);
-    }
+    beziers.push_back(sb);
 }
 
 void DxfFileWriter::FinishAndCloseFile(void) {
-    fprintf(f,
-"  0\r\n"
-"ENDSEC\r\n"
-"  0\r\n"
-"EOF\r\n" );
-    fclose(f);
+    dxfRW dxf(filename.c_str());
+    DxfWriteInterface interface(this, &dxf);
+    dxf.write(&interface, DRW::AC1012, false);
+    beziers.clear();
 }
 
 //-----------------------------------------------------------------------------

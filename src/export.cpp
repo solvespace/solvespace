@@ -398,9 +398,11 @@ double VectorFileWriter::MmToPts(double mm) {
 
 VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
     VectorFileWriter *ret;
+    bool needOpen = true;
     if(FilenameHasExtension(filename, ".dxf")) {
         static DxfFileWriter DxfWriter;
         ret = &DxfWriter;
+        needOpen = false;
     } else if(FilenameHasExtension(filename, ".ps") || FilenameHasExtension(filename, ".eps")) {
         static EpsFileWriter EpsWriter;
         ret = &EpsWriter;
@@ -427,6 +429,8 @@ VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
             filename.c_str());
         return NULL;
     }
+    ret->filename = filename;
+    if(!needOpen) return ret;
 
     FILE *f = ssfopen(filename, "wb");
     if(!f) {
