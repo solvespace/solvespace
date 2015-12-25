@@ -131,7 +131,6 @@ if(WIN32)
         comctl32)
 elseif(APPLE)
     add_definitions(
-        -mmacosx-version-min=10.6
         -fobjc-arc)
 
     set(platform_SOURCES
@@ -327,8 +326,6 @@ if(SPACEWARE_FOUND)
 endif()
 
 if(APPLE)
-    set_target_properties(solvespace PROPERTIES INSTALL_RPATH ON)
-
     set(fixups)
     foreach(lib ${platform_BUNDLED_LIBS})
         execute_process(COMMAND otool -XD ${lib}

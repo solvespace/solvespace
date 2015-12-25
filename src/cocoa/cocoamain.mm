@@ -489,7 +489,8 @@ bool FullScreenIsActive(void) {
 }
 
 void ShowGraphicsEditControl(int x, int y, char *str) {
-    [GWView startEditing:[NSString stringWithUTF8String:str] at:(NSPoint){x, y}];
+    [GWView startEditing:[NSString stringWithUTF8String:str]
+            at:(NSPoint){(CGFloat)x, (CGFloat)y}];
 }
 
 void HideGraphicsEditControl(void) {
@@ -1011,7 +1012,8 @@ void SetMousePointerToHand(bool is_hand) {
 }
 
 void ShowTextEditControl(int x, int y, char *str) {
-    return [TWView startEditing:[NSString stringWithUTF8String:str] at:(NSPoint){x, y}];
+    return [TWView startEditing:[NSString stringWithUTF8String:str]
+                   at:(NSPoint){(CGFloat)x, (CGFloat)y}];
 }
 
 void HideTextEditControl(void) {
