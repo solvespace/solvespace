@@ -79,59 +79,47 @@ char RecentFile[MAX_RECENT][MAX_PATH];
    a schema globally. */
 static json_object *settings = NULL;
 
-static int CnfPrepare(char *path, int pathsz) {
+static std::string CnfPrepare() {
     // Refer to http://standards.freedesktop.org/basedir-spec/latest/
 
-    const char *xdg_home, *home;
-    xdg_home = getenv("XDG_CONFIG_HOME");
-    home = getenv("HOME");
-
-    char dir[MAX_PATH];
-    int dirlen;
-    if(xdg_home)
-        dirlen = snprintf(dir, sizeof(dir), "%s/solvespace", xdg_home);
-    else if(home)
-        dirlen = snprintf(dir, sizeof(dir), "%s/.config/solvespace", home);
-    else {
-        dbp("neither XDG_CONFIG_HOME nor HOME is set");
-        return 1;
+    std::string dir;
+    if(getenv("XDG_CONFIG_HOME")) {
+        dir = std::string(getenv("XDG_CONFIG_HOME")) + "/solvespace";
+    } else if(getenv("HOME")) {
+        dir = std::string(getenv("HOME")) + "/.config/solvespace";
+    } else {
+        dbp("neither XDG_CONFIG_HOME nor HOME are set");
+        return "";
     }
-
-    if(dirlen >= sizeof(dir))
-        oops();
 
     struct stat st;
-    if(stat(dir, &st)) {
+    if(stat(dir.c_str(), &st)) {
         if(errno == ENOENT) {
-            if(mkdir(dir, 0777)) {
-                dbp("cannot mkdir %s: %s", dir, strerror(errno));
-                return 1;
+            if(mkdir(dir.c_str(), 0777)) {
+                dbp("cannot mkdir %s: %s", dir.c_str(), strerror(errno));
+                return "";
             }
         } else {
-            dbp("cannot stat %s: %s", dir, strerror(errno));
-            return 1;
+            dbp("cannot stat %s: %s", dir.c_str(), strerror(errno));
+            return "";
         }
     } else if(!S_ISDIR(st.st_mode)) {
-        dbp("%s is not a directory", dir);
-        return 1;
+        dbp("%s is not a directory", dir.c_str());
+        return "";
     }
 
-    int pathlen = snprintf(path, pathsz, "%s/settings.json", dir);
-    if(pathlen >= pathsz)
-        oops();
-
-    return 0;
+    return dir + "/settings.json";
 }
 
 static void CnfLoad() {
-    char path[MAX_PATH];
-    if(CnfPrepare(path, sizeof(path)))
+    std::string path = CnfPrepare();
+    if(path.empty())
         return;
 
     if(settings)
         json_object_put(settings); // deallocate
 
-    settings = json_object_from_file(path);
+    settings = json_object_from_file(path.c_str());
     if(!settings) {
         if(errno != ENOENT)
             dbp("cannot load settings: %s", strerror(errno));
@@ -141,84 +129,74 @@ static void CnfLoad() {
 }
 
 static void CnfSave() {
-    char path[MAX_PATH];
-    if(CnfPrepare(path, sizeof(path)))
+    std::string path = CnfPrepare();
+    if(path.empty())
         return;
 
-    if(json_object_to_file_ext(path, settings, JSON_C_TO_STRING_PRETTY))
+    /* json-c <0.12 has the first argument non-const here */
+    if(json_object_to_file_ext((char*) path.c_str(), settings, JSON_C_TO_STRING_PRETTY))
         dbp("cannot save settings: %s", strerror(errno));
 }
 
-void CnfFreezeInt(uint32_t val, const char *key) {
+void CnfFreezeInt(uint32_t val, const std::string &key) {
     struct json_object *jval = json_object_new_int(val);
-    json_object_object_add(settings, key, jval);
+    json_object_object_add(settings, key.c_str(), jval);
     CnfSave();
 }
 
-uint32_t CnfThawInt(uint32_t val, const char *key) {
+uint32_t CnfThawInt(uint32_t val, const std::string &key) {
     struct json_object *jval;
-    if(json_object_object_get_ex(settings, key, &jval))
+    if(json_object_object_get_ex(settings, key.c_str(), &jval))
         return json_object_get_int(jval);
     else return val;
 }
 
-void CnfFreezeFloat(float val, const char *key) {
+void CnfFreezeFloat(float val, const std::string &key) {
     struct json_object *jval = json_object_new_double(val);
-    json_object_object_add(settings, key, jval);
+    json_object_object_add(settings, key.c_str(), jval);
     CnfSave();
 }
 
-float CnfThawFloat(float val, const char *key) {
+float CnfThawFloat(float val, const std::string &key) {
     struct json_object *jval;
-    if(json_object_object_get_ex(settings, key, &jval))
+    if(json_object_object_get_ex(settings, key.c_str(), &jval))
         return json_object_get_double(jval);
     else return val;
 }
 
-void CnfFreezeString(const char *val, const char *key) {
-    struct json_object *jval = json_object_new_string(val);
-    json_object_object_add(settings, key, jval);
+void CnfFreezeString(const std::string &val, const std::string &key) {
+    struct json_object *jval = json_object_new_string(val.c_str());
+    json_object_object_add(settings, key.c_str(), jval);
     CnfSave();
 }
 
-void CnfThawString(char *val, int valsz, const char *key) {
+std::string CnfThawString(const std::string &val, const std::string &key) {
     struct json_object *jval;
-    if(json_object_object_get_ex(settings, key, &jval))
-        snprintf(val, valsz, "%s", json_object_get_string(jval));
+    if(json_object_object_get_ex(settings, key.c_str(), &jval))
+        return json_object_get_string(jval);
+    return val;
 }
 
-static void CnfFreezeWindowPos(Gtk::Window *win, const char *key) {
+static void CnfFreezeWindowPos(Gtk::Window *win, const std::string &key) {
     int x, y, w, h;
     win->get_position(x, y);
     win->get_size(w, h);
 
-    char buf[100];
-    snprintf(buf, sizeof(buf), "%s_left", key);
-    CnfFreezeInt(x, buf);
-    snprintf(buf, sizeof(buf), "%s_top", key);
-    CnfFreezeInt(y, buf);
-    snprintf(buf, sizeof(buf), "%s_width", key);
-    CnfFreezeInt(w, buf);
-    snprintf(buf, sizeof(buf), "%s_height", key);
-    CnfFreezeInt(h, buf);
-
-    CnfSave();
+    CnfFreezeInt(x, key + "_left");
+    CnfFreezeInt(y, key + "_top");
+    CnfFreezeInt(w, key + "_width");
+    CnfFreezeInt(h, key + "_height");
 }
 
-static void CnfThawWindowPos(Gtk::Window *win, const char *key) {
+static void CnfThawWindowPos(Gtk::Window *win, const std::string &key) {
     int x, y, w, h;
     win->get_position(x, y);
     win->get_size(w, h);
 
-    char buf[100];
-    snprintf(buf, sizeof(buf), "%s_left", key);
-    x = CnfThawInt(x, buf);
-    snprintf(buf, sizeof(buf), "%s_top", key);
-    y = CnfThawInt(y, buf);
-    snprintf(buf, sizeof(buf), "%s_width", key);
-    w = CnfThawInt(w, buf);
-    snprintf(buf, sizeof(buf), "%s_height", key);
-    h = CnfThawInt(h, buf);
+    x = CnfThawInt(x, key + "_left");
+    y = CnfThawInt(y, key + "_top");
+    w = CnfThawInt(w, key + "_width");
+    h = CnfThawInt(h, key + "_height");
 
     win->move(x, y);
     win->resize(w, h);
@@ -1105,10 +1083,7 @@ bool GetOpenFile(char *file, const char *active, const char *patterns) {
     chooser.set_filename(file);
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     chooser.add_button("_Open", Gtk::RESPONSE_OK);
-
-    char current_folder[MAX_PATH];
-    CnfThawString(current_folder, sizeof(current_folder), "FileChooserPath");
-    chooser.set_current_folder(current_folder);
+    chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
 
     FiltersFromPattern(active, patterns, chooser);
 
@@ -1168,9 +1143,7 @@ bool GetSaveFile(char *file, const char *active, const char *patterns) {
 
     FiltersFromPattern(active, patterns, chooser);
 
-    char current_folder[MAX_PATH];
-    CnfThawString(current_folder, sizeof(current_folder), "FileChooserPath");
-    chooser.set_current_folder(current_folder);
+    chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
     chooser.set_current_name(std::string("untitled.") + active);
 
     /* Gtk's dialog doesn't change the extension when you change the filter,
@@ -1179,7 +1152,7 @@ bool GetSaveFile(char *file, const char *active, const char *patterns) {
        connect(sigc::bind(sigc::ptr_fun(&ChooserFilterChanged), &chooser));
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
-        CnfFreezeString(chooser.get_current_folder().c_str(), "FileChooserPath");
+        CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
         strcpy(file, chooser.get_filename().c_str());
         return true;
     } else {

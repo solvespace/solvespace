@@ -21,9 +21,6 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
-#define FREEZE_SUBKEY "SolveSpace"
-#include "freeze.h"
-
 // For the edit controls
 #define EDIT_WIDTH  220
 #define EDIT_HEIGHT 21
@@ -286,35 +283,133 @@ void SolveSpace::ExitNow(void) {
 // Helpers so that we can read/write registry keys from the platform-
 // independent code.
 //-----------------------------------------------------------------------------
-void SolveSpace::CnfFreezeString(const char *str, const char *name)
-    { FreezeStringF(str, FREEZE_SUBKEY, name); }
-
-void SolveSpace::CnfFreezeInt(uint32_t v, const char *name)
-    { FreezeDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
-
-union floatDWORD {
-    float f;
-    DWORD d;
-};
-
-void SolveSpace::CnfFreezeFloat(float v, const char *name) {
-    if(sizeof(float) != sizeof(DWORD)) oops();
-    floatDWORD u;
-    u.f = v;
-    FreezeDWORDF(u.d, FREEZE_SUBKEY, name);
+inline int CLAMP(int v, int a, int b) {
+    // Clamp it to the range [a, b]
+    if(v <= a) return a;
+    if(v >= b) return b;
+    return v;
 }
 
-void SolveSpace::CnfThawString(char *str, int maxLen, const char *name)
-    { ThawStringF(str, maxLen, FREEZE_SUBKEY, name); }
+static HKEY GetRegistryKey()
+{
+    HKEY Software;
+    if(RegOpenKeyEx(HKEY_CURRENT_USER, "Software", 0, KEY_ALL_ACCESS, &Software) != ERROR_SUCCESS)
+        return NULL;
 
-uint32_t SolveSpace::CnfThawInt(uint32_t v, const char *name)
-    { return (uint32_t)ThawDWORDF((DWORD)v, FREEZE_SUBKEY, name); }
+    HKEY SolveSpace;
+    if(RegCreateKeyEx(Software, "SolveSpace", 0, NULL, 0,
+                      KEY_ALL_ACCESS, NULL, &SolveSpace, NULL) != ERROR_SUCCESS)
+        return NULL;
 
-float SolveSpace::CnfThawFloat(float v, const char *name) {
-    floatDWORD u;
-    u.f = v;
-    u.d = ThawDWORDF(u.d, FREEZE_SUBKEY, name);
-    return u.f;
+    RegCloseKey(Software);
+
+    return SolveSpace;
+}
+
+void SolveSpace::CnfFreezeInt(uint32_t val, const std::string &name)
+{
+    HKEY SolveSpace = GetRegistryKey();
+    RegSetValueEx(SolveSpace, &name[0], 0,
+                  REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
+    RegCloseKey(SolveSpace);
+}
+void SolveSpace::CnfFreezeFloat(float val, const std::string &name)
+{
+    static_assert(sizeof(float) == sizeof(DWORD),
+                  "sizes of float and DWORD must match");
+    HKEY SolveSpace = GetRegistryKey();
+    RegSetValueEx(SolveSpace, &name[0], 0,
+                  REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
+    RegCloseKey(SolveSpace);
+}
+void SolveSpace::CnfFreezeString(const std::string &str, const std::string &name)
+{
+    HKEY SolveSpace = GetRegistryKey();
+    RegSetValueEx(SolveSpace, &name[0], 0,
+                  REG_SZ, (const BYTE*) &str[0], str.length() + 1);
+    RegCloseKey(SolveSpace);
+}
+static void FreezeWindowPos(HWND hwnd, const std::string &name)
+{
+    RECT r;
+    GetWindowRect(hwnd, &r);
+    CnfFreezeInt(r.left,   name + "_left");
+    CnfFreezeInt(r.right,  name + "_right");
+    CnfFreezeInt(r.top,    name + "_top");
+    CnfFreezeInt(r.bottom, name + "_bottom");
+
+    CnfFreezeInt(IsZoomed(hwnd), name + "_maximized");
+}
+
+uint32_t SolveSpace::CnfThawInt(uint32_t val, const std::string &name)
+{
+    HKEY SolveSpace = GetRegistryKey();
+    DWORD type, newval, len = sizeof(DWORD);
+    LONG result = RegQueryValueEx(SolveSpace, &name[0], NULL, &type, (BYTE*) &newval, &len);
+    RegCloseKey(SolveSpace);
+
+    if(result == ERROR_SUCCESS && type == REG_DWORD)
+        return newval;
+    else
+        return val;
+}
+float SolveSpace::CnfThawFloat(float val, const std::string &name)
+{
+    HKEY SolveSpace = GetRegistryKey();
+    DWORD type, len = sizeof(DWORD);
+    float newval;
+    LONG result = RegQueryValueEx(SolveSpace, &name[0], NULL, &type, (BYTE*) &newval, &len);
+    RegCloseKey(SolveSpace);
+
+    if(result == ERROR_SUCCESS && type == REG_DWORD)
+        return newval;
+    else
+        return val;
+}
+std::string SolveSpace::CnfThawString(const std::string &val, const std::string &name)
+{
+    HKEY SolveSpace = GetRegistryKey();
+    DWORD type, len;
+    if(RegQueryValueEx(SolveSpace, &name[0], NULL,
+                       &type, NULL, &len) != ERROR_SUCCESS || type != REG_SZ) {
+        RegCloseKey(SolveSpace);
+        return val;
+    }
+
+    std::string newval(len, '\0');
+    if(RegQueryValueEx(SolveSpace, &name[0], NULL,
+                       NULL, (BYTE*) &newval[0], &len) != ERROR_SUCCESS) {
+        RegCloseKey(SolveSpace);
+        return val;
+    }
+
+    RegCloseKey(SolveSpace);
+    return newval;
+}
+static void ThawWindowPos(HWND hwnd, const std::string &name)
+{
+    RECT r;
+    GetWindowRect(hwnd, &r);
+    r.left   = CnfThawInt(r.left,   name + "_left");
+    r.right  = CnfThawInt(r.right,  name + "_right");
+    r.top    = CnfThawInt(r.top,    name + "_top");
+    r.bottom = CnfThawInt(r.bottom, name + "_bottom");
+
+    HMONITOR hMonitor = MonitorFromRect(&r, MONITOR_DEFAULTTONEAREST);;
+    MONITORINFO mi;
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hMonitor, &mi);
+
+    // If it somehow ended up off-screen, then put it back.
+    RECT dr = mi.rcMonitor;
+    r.left   = CLAMP(r.left,   dr.left, dr.right);
+    r.right  = CLAMP(r.right,  dr.left, dr.right);
+    r.top    = CLAMP(r.top,    dr.top,  dr.bottom);
+    r.bottom = CLAMP(r.bottom, dr.top,  dr.bottom);
+    MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom - r.top, TRUE);
+
+    if(CnfThawInt(FALSE, name + "_maximized"))
+        ShowWindow(hwnd, SW_MAXIMIZE);
 }
 
 void SolveSpace::SetCurrentFilename(const char *filename) {
@@ -1216,8 +1311,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // the graphics
     CreateMainWindows();
 
-    ThawWindowPos(TextWnd);
-    ThawWindowPos(GraphicsWnd);
+    ThawWindowPos(TextWnd, "TextWnd");
+    ThawWindowPos(GraphicsWnd, "GraphicsWnd");
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);
@@ -1301,8 +1396,8 @@ done:
 #endif
 
     // Write everything back to the registry
-    FreezeWindowPos(TextWnd);
-    FreezeWindowPos(GraphicsWnd);
+    FreezeWindowPos(TextWnd, "TextWnd");
+    FreezeWindowPos(GraphicsWnd, "GraphicsWnd");
 
     // Free the memory we've used; anything that remains is a leak.
     SK.Clear();

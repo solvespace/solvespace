@@ -116,11 +116,7 @@ set(generated_SOURCES
 # platform dependencies
 
 if(WIN32)
-    set(platform_HEADERS
-        win32/freeze.h)
-
     set(platform_SOURCES
-        win32/freeze.cpp
         win32/w32main.cpp
         win32/resource.rc)
 
@@ -300,7 +296,6 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${libslvs_HEADERS}
     ${libslvs_SOURCES}
     ${util_SOURCES}
-    ${platform_HEADERS}
     ${platform_SOURCES}
     ${platform_BUNDLED_RESOURCES}
     ${generated_SOURCES}

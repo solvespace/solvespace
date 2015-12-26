@@ -30,42 +30,43 @@ char SolveSpace::RecentFile[MAX_RECENT][MAX_PATH];
 /* Settings */
 
 namespace SolveSpace {
-void CnfFreezeInt(uint32_t val, const char *key) {
+void CnfFreezeInt(uint32_t val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setInteger:val forKey:[NSString stringWithUTF8String:key]];
+        setInteger:val forKey:[NSString stringWithUTF8String:key.c_str()]];
 }
 
-uint32_t CnfThawInt(uint32_t val, const char *key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key];
+uint32_t CnfThawInt(uint32_t val, const std::string &key) {
+    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
         return [[NSUserDefaults standardUserDefaults] integerForKey:nsKey];
     return val;
 }
 
-void CnfFreezeFloat(float val, const char *key) {
+void CnfFreezeFloat(float val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setFloat:val forKey:[NSString stringWithUTF8String:key]];
+        setFloat:val forKey:[NSString stringWithUTF8String:key.c_str()]];
 }
 
-float CnfThawFloat(float val, const char *key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key];
+float CnfThawFloat(float val, const std::string &key) {
+    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
         return [[NSUserDefaults standardUserDefaults] floatForKey:nsKey];
     return val;
 }
 
-void CnfFreezeString(const char *val, const char *key) {
+void CnfFreezeString(const std::string &val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setObject:[NSString stringWithUTF8String:val]
-        forKey:[NSString stringWithUTF8String:key]];
+        setObject:[NSString stringWithUTF8String:val.c_str()]
+        forKey:[NSString stringWithUTF8String:key.c_str()]];
 }
 
-void CnfThawString(char *val, int valsz, const char *key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key];
+std::string CnfThawString(const std::string &val, const std::string &key) {
+    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey]) {
-        NSString *nsVal = [[NSUserDefaults standardUserDefaults] stringForKey:nsKey];
-        snprintf(val, valsz, "%s", [nsVal UTF8String]);
+        NSString *nsNewVal = [[NSUserDefaults standardUserDefaults] stringForKey:nsKey];
+        return [nsNewVal UTF8String];
     }
+    return val;
 }
 };
 

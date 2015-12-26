@@ -17,6 +17,7 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
+#include <string>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -246,12 +247,12 @@ void SetAutosaveTimerFor(int minutes);
 void ScheduleLater();
 void ExitNow(void);
 
-void CnfFreezeString(const char *str, const char *name);
-void CnfFreezeInt(uint32_t v, const char *name);
-void CnfFreezeFloat(float v, const char *name);
-void CnfThawString(char *str, int maxLen, const char *name);
-uint32_t CnfThawInt(uint32_t v, const char *name);
-float CnfThawFloat(float v, const char *name);
+void CnfFreezeInt(uint32_t val, const std::string &name);
+void CnfFreezeFloat(float val, const std::string &name);
+void CnfFreezeString(const std::string &val, const std::string &name);
+std::string CnfThawString(const std::string &val, const std::string &name);
+uint32_t CnfThawInt(uint32_t val, const std::string &name);
+float CnfThawFloat(float val, const std::string &name);
 
 void *AllocTemporary(size_t n);
 void FreeTemporary(void *p);
@@ -340,10 +341,10 @@ bool StringAllPrintable(const char *str);
 bool StringEndsIn(const char *str, const char *ending);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
-void CnfFreezeBool(bool v, const char *name);
-void CnfFreezeColor(RgbaColor v, const char *name);
-bool CnfThawBool(bool v, const char *name);
-RgbaColor CnfThawColor(RgbaColor v, const char *name);
+void CnfFreezeBool(bool v, const std::string &name);
+void CnfFreezeColor(RgbaColor v, const std::string &name);
+bool CnfThawBool(bool v, const std::string &name);
+RgbaColor CnfThawColor(RgbaColor v, const std::string &name);
 
 class System {
 public:

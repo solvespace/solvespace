@@ -17,12 +17,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
     // Nothing to do for now.
 }
 
-void SolveSpace::CnfFreezeInt(uint32_t v, const char *name)
+void SolveSpace::CnfFreezeInt(uint32_t v, const std::string &name)
 {
     abort();
 }
 
-uint32_t SolveSpace::CnfThawInt(uint32_t v, const char *name)
+uint32_t SolveSpace::CnfThawInt(uint32_t v, const std::string &name)
 {
     abort();
     return 0;

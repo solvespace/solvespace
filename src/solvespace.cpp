@@ -5,7 +5,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <string>
 
 SolveSpaceUI SolveSpace::SS = {};
 Sketch SolveSpace::SK = {};
@@ -87,8 +86,8 @@ void SolveSpaceUI::Init() {
     for(i = 0; i < MAX_RECENT; i++) {
         char name[100];
         sprintf(name, "RecentFile_%d", i);
-        strcpy(RecentFile[i], "");
-        CnfThawString(RecentFile[i], MAX_PATH, name);
+        strncpy(RecentFile[i], CnfThawString("", name).c_str(), MAX_PATH);
+
     }
     RefreshRecentMenus();
     // Autosave timer
@@ -486,9 +485,9 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             char exportFile[MAX_PATH] = "", exportExt[10] = VEC_EXT;
-            CnfThawString(exportExt, sizeof(exportExt), "2DExportFormat");
+            strncpy(exportFile, CnfThawString("", "2DExportFormat").c_str(), MAX_PATH);
             if(!GetSaveFile(exportFile, exportExt, VEC_PATTERN)) break;
-            CnfFreezeString(Extname(exportFile).c_str(), "2DExportFormat");
+            CnfFreezeString(Extname(exportFile), "2DExportFormat");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
