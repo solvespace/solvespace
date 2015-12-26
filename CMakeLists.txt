@@ -63,33 +63,36 @@ if(NOT (PERL_FOUND AND PERLMODULES_FOUND))
 endif()
 
 if(WIN32)
-    find_package(PNG)
+    find_package(ZLIB)
 
-    if(NOT PNG_FOUND)
-        message(STATUS "Using in-tree libpng")
+    if(NOT ZLIB_FOUND)
+        message(STATUS "Using in-tree zlib")
 
         add_subdirectory(extlib/zlib)
-
-        message(STATUS "Using in-tree libpng")
 
         set(ZLIB_LIBRARY
             zlibstatic)
         set(ZLIB_INCLUDE_DIR
             "${CMAKE_SOURCE_DIR}/extlib/zlib"
             "${CMAKE_BINARY_DIR}/extlib/zlib")
+        find_package(ZLIB REQUIRED)
+    endif()
+
+    find_package(PNG)
+
+    if(NOT PNG_FOUND)
+        message(STATUS "Using in-tree libpng")
+
         set(SKIP_INSTALL_ALL
             ON)
         add_subdirectory(extlib/libpng)
 
-        set(PNG_FOUND TRUE)
-        set(PNG_LIBRARIES
-            png16_static
-            zlibstatic)
-        set(PNG_INCLUDE_DIRS
+        set(PNG_LIBRARY
+            png16_static)
+        set(PNG_PNG_INCLUDE_DIR
             "${CMAKE_SOURCE_DIR}/extlib/libpng"
-            "${CMAKE_BINARY_DIR}/extlib/libpng"
-            "${CMAKE_SOURCE_DIR}/extlib/zlib"
-            "${CMAKE_BINARY_DIR}/extlib/zlib")
+            "${CMAKE_BINARY_DIR}/extlib/libpng")
+        find_package(PNG REQUIRED)
     endif()
 
     if(NOT MINGW)

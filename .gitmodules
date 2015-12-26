@@ -1,6 +1,7 @@
 [submodule "extlib/zlib"]
 	path = extlib/zlib
 	url = https://github.com/madler/zlib
+	ignore = dirty
 [submodule "extlib/libpng"]
 	path = extlib/libpng
 	url = https://github.com/glennrp/libpng
