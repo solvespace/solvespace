@@ -18,6 +18,7 @@
 #include <limits.h>
 #include <algorithm>
 #include <string>
+#include <vector>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -25,6 +26,7 @@
 #   include <windows.h> // required by GL headers
 #endif
 #ifdef __APPLE__
+#   include <strings.h> // for strcasecmp in file.cpp
 #   include <OpenGL/gl.h>
 #   include <OpenGL/glu.h>
 #else
@@ -116,6 +118,12 @@ class RgbaColor;
 
 //================
 // From the platform-specific code.
+#if defined(WIN32)
+#define PATH_SEP "\\"
+#else
+#define PATH_SEP "/"
+#endif
+
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
 #define RECENT_IMPORT   (0xf100)
@@ -194,7 +202,6 @@ int LoadAutosaveYesNo(void);
 #define CSV_EXT "csv"
 bool GetSaveFile(std::string &filename, const char *defExtension, const char *selPattern);
 bool GetOpenFile(std::string &filename, const char *defExtension, const char *selPattern);
-std::string GetAbsoluteFilename(const std::string &filename);
 void LoadAllFontFiles(void);
 
 void OpenWebsite(const char *url);
@@ -330,8 +337,6 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
-std::string MakePathRelative(const std::string &base, const std::string &path);
-std::string MakePathAbsolute(const std::string &base, const std::string &path);
 bool MakeAcceleratorLabel(int accel, char *out);
 bool StringAllPrintable(const char *str);
 bool FilenameHasExtension(const std::string &str, const char *ext);

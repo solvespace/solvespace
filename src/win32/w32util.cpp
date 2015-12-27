@@ -22,15 +22,6 @@ void dbp(const char *str, ...)
     OutputDebugString(buf);
 }
 
-std::string GetAbsoluteFilename(const std::string &in)
-{
-    std::string out;
-    DWORD len = GetFullPathName(in.data(), 0, NULL, NULL);
-    out.resize(len - 1);
-    GetFullPathName(in.c_str(), len, &out[0], NULL);
-    return out;
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible

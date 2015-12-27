@@ -873,12 +873,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
 
     std::string baseFilename = filename;
 
-#ifdef WIN32
-    size_t lastSlash = baseFilename.rfind('\\');
-#else
-    size_t lastSlash = baseFilename.rfind('/');
-#endif
-
+    size_t lastSlash = baseFilename.rfind(PATH_SEP);
     if(lastSlash == std::string::npos) oops();
     baseFilename.erase(0, lastSlash + 1);
 

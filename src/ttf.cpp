@@ -229,13 +229,10 @@ void TtfFont::LoadGlyph(int index) {
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
 std::string TtfFont::FontFileBaseName(void) {
-    size_t pos;
-    pos = fontFile.rfind('/');
+    std::string baseName = fontFile;
+    size_t pos = baseName.rfind(PATH_SEP);
     if(pos != std::string::npos)
-        return fontFile.erase(0, pos);
-    pos = fontFile.rfind('\\');
-    if(pos != std::string::npos)
-        return fontFile.erase(0, pos);
+        return baseName.erase(0, pos + 1);
     return "";
 }
 

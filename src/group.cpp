@@ -196,15 +196,13 @@ void Group::MenuGroup(int id) {
             std::string groupName = g.impFile;
             size_t pos;
 
+            pos = groupName.rfind(PATH_SEP);
+            if(pos != std::string::npos)
+                groupName.erase(0, pos + 1);
+
             pos = groupName.rfind('.');
             if(pos != std::string::npos)
                 groupName.erase(pos);
-            pos = groupName.find('/');
-            if(pos != std::string::npos)
-                groupName.erase(0, pos);
-            pos = groupName.find('\\');
-            if(pos != std::string::npos)
-                groupName.erase(0, pos);
 
             for(int i = 0; i < groupName.length(); i++) {
                 if(isalnum(groupName[i])) {

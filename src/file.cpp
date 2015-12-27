@@ -640,7 +640,135 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
     return true;
 }
 
-void SolveSpaceUI::ReloadAllImported(void) {
+//-----------------------------------------------------------------------------
+// Handling of the relative-absolute path transformations for imports
+//-----------------------------------------------------------------------------
+static std::vector<std::string> Split(const std::string &haystack, const std::string &needle)
+{
+    std::vector<std::string> result;
+
+    size_t oldpos = 0, pos = 0;
+    while(true) {
+        oldpos = pos;
+        pos = haystack.find(needle, pos);
+        if(pos == std::string::npos) break;
+        result.push_back(haystack.substr(oldpos, pos - oldpos));
+        pos += needle.length();
+    }
+
+    if(oldpos != haystack.length() - 1)
+        result.push_back(haystack.substr(oldpos));
+
+    return result;
+}
+
+static std::string Join(const std::vector<std::string> &parts, const std::string &separator)
+{
+    bool first = true;
+    std::string result;
+    for(auto &part : parts) {
+        if(!first) result += separator;
+        result += part;
+        first = false;
+    }
+    return result;
+}
+
+static bool PlatformPathEqual(const std::string &a, const std::string &b)
+{
+    // Case-sensitivity is actually per-volume on both Windows and OS X,
+    // but it is extremely tedious to implement and test for little benefit.
+#if defined(WIN32)
+    std::wstring wa = Widen(a), wb = Widen(b);
+    return std::equal(wa.begin(), wa.end(), wb.begin(), /*wb.end(),*/
+                [](wchar_t wca, wchar_t wcb) { return towlower(wca) == towlower(wcb); });
+#elif defined(__APPLE__)
+    return !strcasecmp(a.c_str(), b.c_str());
+#else
+    return a == b;
+#endif
+}
+
+static std::string MakePathRelative(const std::string &base, const std::string &path)
+{
+    std::vector<std::string> baseParts = Split(base, PATH_SEP),
+                             pathParts = Split(path, PATH_SEP),
+                             resultParts;
+    baseParts.pop_back();
+
+    int common;
+    for(common = 0; common < baseParts.size() && common < pathParts.size(); common++) {
+        if(!PlatformPathEqual(baseParts[common], pathParts[common]))
+            break;
+    }
+
+    for(int i = common; i < baseParts.size(); i++)
+        resultParts.push_back("..");
+
+    resultParts.insert(resultParts.end(),
+                       pathParts.begin() + common, pathParts.end());
+
+    return Join(resultParts, PATH_SEP);
+}
+
+static std::string MakePathAbsolute(const std::string &base, const std::string &path)
+{
+    std::vector<std::string> resultParts = Split(base, PATH_SEP),
+                             pathParts = Split(path, PATH_SEP);
+    resultParts.pop_back();
+
+    for(auto &part : pathParts) {
+        if(part == ".") {
+            /* do nothing */
+        } else if(part == "..") {
+            if(resultParts.empty()) oops();
+            resultParts.pop_back();
+        } else {
+            resultParts.push_back(part);
+        }
+    }
+
+    return Join(resultParts, PATH_SEP);
+}
+
+static void PathSepNormalize(std::string &filename)
+{
+    for(int i = 0; i < filename.length(); i++) {
+        if(filename[i] == '\\')
+            filename[i] = '/';
+    }
+}
+
+static std::string PathSepPlatformToUNIX(const std::string &filename)
+{
+#if defined(WIN32)
+    std::string result = filename;
+    for(int i = 0; i < result.length(); i++) {
+        if(result[i] == '\\')
+            result[i] = '/';
+    }
+    return result;
+#else
+    return filename;
+#endif
+}
+
+static std::string PathSepUNIXToPlatform(const std::string &filename)
+{
+#if defined(WIN32)
+    std::string result = filename;
+    for(int i = 0; i < result.length(); i++) {
+        if(result[i] == '/')
+            result[i] = '\\';
+    }
+    return result;
+#else
+    return filename;
+#endif
+}
+
+void SolveSpaceUI::ReloadAllImported(void)
+{
     allConsistent = false;
 
     int i;
@@ -648,15 +776,12 @@ void SolveSpaceUI::ReloadAllImported(void) {
         Group *g = &(SK.group.elem[i]);
         if(g->type != Group::IMPORTED) continue;
 
-#ifndef WIN32
-        // Change backslashes to forward slashes on Unix.
-        // Done unconditionally to get the displayed filename
-        // consistent with current filesystem type.
-        for(int j = 0; j < g->impFileRel.length(); j++) {
-            if(g->impFileRel[j] == '\\')
-                g->impFileRel[j] = '/';
+        if(isalpha(g->impFile[0]) && g->impFile[1] == ':') {
+            // Make sure that g->impFileRel always contains a relative path
+            // in an UNIX format, even after we load an old file which had
+            // the path in Windows format
+            PathSepNormalize(g->impFileRel);
         }
-#endif
 
         g->impEntity.Clear();
         g->impMesh.Clear();
@@ -669,7 +794,8 @@ void SolveSpaceUI::ReloadAllImported(void) {
             // It doesn't exist. Perhaps the entire tree has moved, and we
             // can use the relative filename to get us back.
             if(!SS.saveFile.empty()) {
-                std::string fromRel = MakePathAbsolute(SS.saveFile, g->impFileRel);
+                std::string rel = PathSepUNIXToPlatform(g->impFileRel);
+                std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
                 test = fopen(fromRel.c_str(), "rb");
                 if(test) {
                     fclose(test);
@@ -684,9 +810,12 @@ void SolveSpaceUI::ReloadAllImported(void) {
             if(!SS.saveFile.empty()) {
                 // Record the imported file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
-                g->impFileRel = MakePathRelative(SS.saveFile, g->impFile);
+                std::string rel = MakePathRelative(SS.saveFile, g->impFile);
+                g->impFileRel = PathSepPlatformToUNIX(rel);
             } else {
-                // We're not yet saved, so can't make it absolute
+                // We're not yet saved, so can't make it absolute.
+                // This will only be used for display purposes, as SS.saveFile
+                // is always nonempty when we are actually writing anything.
                 g->impFileRel = g->impFile;
             }
         } else {
