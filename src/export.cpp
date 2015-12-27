@@ -9,7 +9,7 @@
 #include "solvespace.h"
 #include <png.h>
 
-void SolveSpaceUI::ExportSectionTo(const char *filename) {
+void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
 
@@ -107,7 +107,7 @@ void SolveSpaceUI::ExportSectionTo(const char *filename) {
     bl.Clear();
 }
 
-void SolveSpaceUI::ExportViewOrWireframeTo(const char *filename, bool wireframe) {
+void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wireframe) {
     int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
@@ -389,27 +389,27 @@ double VectorFileWriter::MmToPts(double mm) {
     return (mm/25.4)*72;
 }
 
-VectorFileWriter *VectorFileWriter::ForFile(const char *filename) {
+VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
     VectorFileWriter *ret;
-    if(StringEndsIn(filename, ".dxf")) {
+    if(FilenameHasExtension(filename, ".dxf")) {
         static DxfFileWriter DxfWriter;
         ret = &DxfWriter;
-    } else if(StringEndsIn(filename, ".ps") || StringEndsIn(filename, ".eps")) {
+    } else if(FilenameHasExtension(filename, ".ps") || FilenameHasExtension(filename, ".eps")) {
         static EpsFileWriter EpsWriter;
         ret = &EpsWriter;
-    } else if(StringEndsIn(filename, ".pdf")) {
+    } else if(FilenameHasExtension(filename, ".pdf")) {
         static PdfFileWriter PdfWriter;
         ret = &PdfWriter;
-    } else if(StringEndsIn(filename, ".svg")) {
+    } else if(FilenameHasExtension(filename, ".svg")) {
         static SvgFileWriter SvgWriter;
         ret = &SvgWriter;
-    } else if(StringEndsIn(filename, ".plt")||StringEndsIn(filename, ".hpgl")) {
+    } else if(FilenameHasExtension(filename, ".plt")||FilenameHasExtension(filename, ".hpgl")) {
         static HpglFileWriter HpglWriter;
         ret = &HpglWriter;
-    } else if(StringEndsIn(filename, ".step")||StringEndsIn(filename, ".stp")) {
+    } else if(FilenameHasExtension(filename, ".step")||FilenameHasExtension(filename, ".stp")) {
         static Step2dFileWriter Step2dWriter;
         ret = &Step2dWriter;
-    } else if(StringEndsIn(filename, ".txt")) {
+    } else if(FilenameHasExtension(filename, ".txt")) {
         static GCodeFileWriter GCodeWriter;
         ret = &GCodeWriter;
     } else {
@@ -417,13 +417,13 @@ VectorFileWriter *VectorFileWriter::ForFile(const char *filename) {
         "filename '%s'; try "
         ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, "
         ".eps, or .ps.",
-            filename);
+            filename.c_str());
         return NULL;
     }
 
-    FILE *f = fopen(filename, "wb");
+    FILE *f = fopen(filename.c_str(), "wb");
     if(!f) {
-        Error("Couldn't write to '%s'", filename);
+        Error("Couldn't write to '%s'", filename.c_str());
         return NULL;
     }
     ret->f = f;
@@ -558,29 +558,29 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
 //-----------------------------------------------------------------------------
 // Export a triangle mesh, in the requested format.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportMeshTo(const char *filename) {
+void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
     if(m->IsEmpty()) {
         Error("Active group mesh is empty; nothing to export.");
         return;
     }
 
-    FILE *f = fopen(filename, "wb");
+    FILE *f = fopen(filename.c_str(), "wb");
     if(!f) {
-        Error("Couldn't write to '%s'", filename);
+        Error("Couldn't write to '%s'", filename.c_str());
         return;
     }
 
-    if(StringEndsIn(filename, ".stl")) {
+    if(FilenameHasExtension(filename, ".stl")) {
         ExportMeshAsStlTo(f, m);
-    } else if(StringEndsIn(filename, ".obj")) {
+    } else if(FilenameHasExtension(filename, ".obj")) {
         ExportMeshAsObjTo(f, m);
-    } else if(StringEndsIn(filename, ".js")) {
+    } else if(FilenameHasExtension(filename, ".js")) {
         SEdgeList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayEdges);
         ExportMeshAsThreeJsTo(f, filename, m, e);
     } else {
         Error("Can't identify output file type from file extension of "
-              "filename '%s'; try .stl, .obj, .js.", filename);
+              "filename '%s'; try .stl, .obj, .js.", filename.c_str());
     }
 
     fclose(f);
@@ -658,7 +658,7 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
 //-----------------------------------------------------------------------------
 // Export the mesh as a JavaScript script, which is compatible with Three.js.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *sm,
+void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, SMesh *sm,
                                          SEdgeList *sel)
 {
     SPointList spl = {};
@@ -871,40 +871,38 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *
     double largerBoundXY = max((bndh.x - bndl.x), (bndh.y - bndl.y));
     double largerBoundZ = max(largerBoundXY, (bndh.z - bndl.z + 1));
 
-    char *baseFilename = (char *) MemAlloc(strlen(filename));
-    const char *lastSlash;
+    std::string baseFilename = filename;
 
 #ifdef WIN32
-    lastSlash = strrchr(filename, '\\');
+    size_t lastSlash = baseFilename.rfind('\\');
 #else
-    lastSlash = strrchr(filename, '/');
+    size_t lastSlash = baseFilename.rfind('/');
 #endif
 
-    if(!lastSlash) oops();
-    lastSlash++; // Point one past last slash.
-    strcpy(baseFilename, lastSlash); // Copy the file w/ extension.
-    *strrchr(baseFilename, '.') = '\0'; // Strip extension.
+    if(lastSlash == std::string::npos) oops();
+    baseFilename.erase(0, lastSlash + 1);
 
-    for(int i = 0; i < strlen(baseFilename); i++) {
+    size_t dot = baseFilename.rfind('.');
+    baseFilename.erase(dot);
+
+    for(int i = 0; i < baseFilename.length(); i++) {
         if(!isalpha(baseFilename[i]) &&
            /* also permit UTF-8 */ !((unsigned char)baseFilename[i] >= 0x80))
             baseFilename[i] = '_';
     }
 
-    fprintf(f, html, baseFilename, baseFilename);
+    fprintf(f, html, baseFilename.c_str(), baseFilename.c_str());
     fprintf(f, "var three_js_%s = {\n"
                "  bounds: {\n"
                "    x: %f, y: %f, near: %f, far: %f, z: %f, edgeBias: %f\n"
                "  },\n",
-                    baseFilename,
+                    baseFilename.c_str(),
                     largerBoundXY,
                     largerBoundXY,
                     1.0,
                     largerBoundZ * 2,
                     largerBoundZ,
                     largerBoundZ / 250);
-
-    MemFree(baseFilename);
 
     // Output lighting information.
     fputs("  lights: {\n"
@@ -994,7 +992,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *
 // Export a view of the model as an image; we just take a screenshot, by
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportAsPngTo(const char *filename) {
+void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.
@@ -1003,7 +1001,7 @@ void SolveSpaceUI::ExportAsPngTo(const char *filename) {
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
 
-    FILE *f = fopen(filename, "wb");
+    FILE *f = fopen(filename.c_str(), "wb");
     if(!f) goto err;
 
     png_struct *png_ptr; png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
@@ -1046,7 +1044,7 @@ void SolveSpaceUI::ExportAsPngTo(const char *filename) {
     return;
 
 err:
-    Error("Error writing PNG file '%s'", filename);
+    Error("Error writing PNG file '%s'", filename.c_str());
     if(f) fclose(f);
     return;
 }

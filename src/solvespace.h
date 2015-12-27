@@ -114,16 +114,12 @@ class ExprVector;
 class ExprQuaternion;
 class RgbaColor;
 
-#ifndef MAX_PATH
-#   define MAX_PATH PATH_MAX
-#endif
-
 //================
 // From the platform-specific code.
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
 #define RECENT_IMPORT   (0xf100)
-extern char RecentFile[MAX_RECENT][MAX_PATH];
+extern std::string RecentFile[MAX_RECENT];
 void RefreshRecentMenus(void);
 
 #define SAVE_YES     (1)
@@ -196,9 +192,9 @@ int LoadAutosaveYesNo(void);
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN PAT1("CSV File", "csv") ENDPAT
 #define CSV_EXT "csv"
-bool GetSaveFile(char *file, const char *defExtension, const char *selPattern);
-bool GetOpenFile(char *file, const char *defExtension, const char *selPattern);
-void GetAbsoluteFilename(char *file);
+bool GetSaveFile(std::string &filename, const char *defExtension, const char *selPattern);
+bool GetOpenFile(std::string &filename, const char *defExtension, const char *selPattern);
+std::string GetAbsoluteFilename(const std::string &filename);
 void LoadAllFontFiles(void);
 
 void OpenWebsite(const char *url);
@@ -239,7 +235,7 @@ void dbp(const char *str, ...);
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-void SetCurrentFilename(const char *filename);
+void SetCurrentFilename(const std::string &filename);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
@@ -334,11 +330,11 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
-void MakePathRelative(const char *base, char *path);
-void MakePathAbsolute(const char *base, char *path);
+std::string MakePathRelative(const std::string &base, const std::string &path);
+std::string MakePathAbsolute(const std::string &base, const std::string &path);
 bool MakeAcceleratorLabel(int accel, char *out);
 bool StringAllPrintable(const char *str);
-bool StringEndsIn(const char *str, const char *ending);
+bool FilenameHasExtension(const std::string &str, const char *ext);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
 void CnfFreezeBool(bool v, const std::string &name);
@@ -448,9 +444,9 @@ public:
         int x, y;
     } IntPoint;
 
-    char    fontFile[MAX_PATH];
-    NameStr name;
-    bool    loaded;
+    std::string fontFile;
+    NameStr     name;
+    bool        loaded;
 
     // The font itself, plus the mapping from ASCII codes to glyphs
     int     useGlyph[256];
@@ -484,7 +480,7 @@ public:
 
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
-    const char *FontFileBaseName(void);
+    std::string FontFileBaseName(void);
 
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
@@ -504,13 +500,13 @@ public:
 
     void LoadAll(void);
 
-    void PlotString(char *font, char *str, double spacing,
+    void PlotString(const std::string &font, char *str, double spacing,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
 };
 
 class StepFileWriter {
 public:
-    void ExportSurfacesTo(char *filename);
+    void ExportSurfacesTo(const std::string &filename);
     void WriteHeader(void);
 	void WriteProductHeader(void);
     int ExportCurve(SBezier *sb);
@@ -536,7 +532,7 @@ public:
 
     static double MmToPts(double mm);
 
-    static VectorFileWriter *ForFile(const char *file);
+    static VectorFileWriter *ForFile(const std::string &filename);
 
     void Output(SBezierLoopSetSet *sblss, SMesh *sm);
 
@@ -791,18 +787,18 @@ public:
 
     // The platform-dependent code calls this before entering the msg loop
     void Init(void);
-    bool OpenFile(const char *filename);
+    bool OpenFile(const std::string &filename);
     void Exit(void);
 
     // File load/save routines, including the additional files that get
     // loaded when we have import groups.
     FILE        *fh;
     void AfterNewFile(void);
-    static void RemoveFromRecentList(const char *file);
-    static void AddToRecentList(const char *file);
-    char saveFile[MAX_PATH];
-    bool fileLoadError;
-    bool unsaved;
+    static void RemoveFromRecentList(const std::string &filename);
+    static void AddToRecentList(const std::string &filename);
+    std::string saveFile;
+    bool        fileLoadError;
+    bool        unsaved;
     typedef struct {
         char        type;
         const char *desc;
@@ -829,20 +825,20 @@ public:
     void UpdateWindowTitle(void);
     void ClearExisting(void);
     void NewFile(void);
-    bool SaveToFile(const char *filename);
-    bool LoadAutosaveFor(const char *filename);
-    bool LoadFromFile(const char *filename);
-    bool LoadEntitiesFromFile(const char *filename, EntityList *le,
+    bool SaveToFile(const std::string &filename);
+    bool LoadAutosaveFor(const std::string &filename);
+    bool LoadFromFile(const std::string &filename);
+    bool LoadEntitiesFromFile(const std::string &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     void ReloadAllImported(void);
     // And the various export options
-    void ExportAsPngTo(const char *file);
-    void ExportMeshTo(const char *file);
+    void ExportAsPngTo(const std::string &filename);
+    void ExportMeshTo(const std::string &filename);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
-    void ExportMeshAsThreeJsTo(FILE *f, const char * filename, SMesh *sm, SEdgeList *sel);
-    void ExportViewOrWireframeTo(const char *file, bool wireframe);
-    void ExportSectionTo(const char *file);
+    void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, SMesh *sm, SEdgeList *sel);
+    void ExportViewOrWireframeTo(const std::string &filename, bool wireframe);
+    void ExportSectionTo(const std::string &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,

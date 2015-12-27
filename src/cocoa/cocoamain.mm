@@ -19,8 +19,6 @@
 
 using SolveSpace::dbp;
 
-char SolveSpace::RecentFile[MAX_RECENT][MAX_PATH];
-
 #define GL_CHECK() \
     do { \
         int err = (int)glGetError(); \
@@ -472,9 +470,9 @@ void PaintGraphics(void) {
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, YES);
 }
 
-void SetCurrentFilename(const char *filename) {
-    if(filename) {
-        [GW setTitleWithRepresentedFilename:[NSString stringWithUTF8String:filename]];
+void SetCurrentFilename(const std::string &filename) {
+    if(!filename.empty()) {
+        [GW setTitleWithRepresentedFilename:[NSString stringWithUTF8String:filename.c_str()]];
     } else {
         [GW setTitle:@"(new sketch)"];
         [GW setRepresentedFilename:@""];
@@ -679,7 +677,7 @@ static void RefreshRecentMenu(int id_, int base) {
                 break;
 
             NSMenuItem *item = [[NSMenuItem alloc]
-                initWithTitle:[[NSString stringWithUTF8String:RecentFile[i]]
+                initWithTitle:[[NSString stringWithUTF8String:RecentFile[i].c_str()]
                     stringByAbbreviatingWithTildeInPath]
                 action:nil keyEquivalent:@""];
             [item setTag:(base + i)];
@@ -706,7 +704,7 @@ bool MenuBarIsVisible(void) {
 
 /* Save/load */
 
-bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *selPattern) {
+bool SolveSpace::GetOpenFile(std::string &file, const char *defExtension, const char *selPattern) {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     NSMutableArray *filters = [[NSMutableArray alloc] init];
     for(NSString *filter in [[NSString stringWithUTF8String:selPattern]
@@ -719,8 +717,8 @@ bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *s
     [panel setAllowedFileTypes:filters];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        strcpy(file, [[NSFileManager defaultManager]
-            fileSystemRepresentationWithPath:[[panel URL] path]]);
+        file = [[NSFileManager defaultManager]
+            fileSystemRepresentationWithPath:[[panel URL] path]];
         return true;
     } else {
         return false;
@@ -747,7 +745,7 @@ bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *s
 }
 @end
 
-bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *selPattern) {
+bool SolveSpace::GetSaveFile(std::string &file, const char *defExtension, const char *selPattern) {
     NSSavePanel *panel = [NSSavePanel savePanel];
     [panel setNameFieldStringValue:[@"untitled"
         stringByAppendingPathExtension:[NSString stringWithUTF8String:defExtension]]];
@@ -777,8 +775,8 @@ bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *s
         indexOfObject:[NSString stringWithUTF8String:defExtension]]];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        strcpy(file, [[NSFileManager defaultManager]
-            fileSystemRepresentationWithPath:[[panel URL] path]]);
+        file = [[NSFileManager defaultManager]
+            fileSystemRepresentationWithPath:[[panel URL] path]];
         return true;
     } else {
         return false;
@@ -791,7 +789,7 @@ int SolveSpace::SaveFileYesNoCancel(void) {
         [alert setMessageText:
             [[@"Do you want to save the changes you made to the sketch “"
              stringByAppendingString:
-                [[NSString stringWithUTF8String:SolveSpace::SS.saveFile]
+                [[NSString stringWithUTF8String:SolveSpace::SS.saveFile.c_str()]
                     stringByAbbreviatingWithTildeInPath]]
              stringByAppendingString:@"”?"]];
     } else {
@@ -1065,8 +1063,8 @@ void SolveSpace::LoadAllFontFiles(void) {
         NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
         if([[fontPath pathExtension] isEqual:@"ttf"]) {
             TtfFont tf = {};
-            strcpy(tf.fontFile, [[NSFileManager defaultManager]
-                fileSystemRepresentationWithPath:fontPath]);
+            tf.fontFile = [[NSFileManager defaultManager]
+                fileSystemRepresentationWithPath:fontPath];
             SS.fonts.l.Add(&tf);
         }
     }

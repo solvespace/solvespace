@@ -331,7 +331,7 @@ void TextWindow::ShowGroupInfo(void) {
         }
     } else if(g->type == Group::IMPORTED) {
         Printf(true, " %Ftimport geometry from file%E");
-        Printf(false, "%Ba   '%s'", g->impFileRel);
+        Printf(false, "%Ba   '%s'", g->impFileRel.c_str());
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);

@@ -22,11 +22,13 @@ void dbp(const char *str, ...)
     OutputDebugString(buf);
 }
 
-void GetAbsoluteFilename(char *file)
+std::string GetAbsoluteFilename(const std::string &in)
 {
-    char absoluteFile[MAX_PATH];
-    GetFullPathName(file, sizeof(absoluteFile), absoluteFile, NULL);
-    strcpy(file, absoluteFile);
+    std::string out;
+    DWORD len = GetFullPathName(in.data(), 0, NULL, NULL);
+    out.resize(len - 1);
+    GetFullPathName(in.c_str(), len, &out[0], NULL);
+    return out;
 }
 
 //-----------------------------------------------------------------------------

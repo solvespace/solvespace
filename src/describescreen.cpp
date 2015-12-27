@@ -35,7 +35,7 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     if(!r) return;
 
     SS.UndoRemember();
-    r->font.strcpy(SS.fonts.l.elem[i].FontFileBaseName());
+    r->font.strcpy(SS.fonts.l.elem[i].FontFileBaseName().c_str());
     SS.MarkGroupDirty(r->group);
     SS.ScheduleGenerateAll();
     SS.ScheduleShowTW();
@@ -178,7 +178,7 @@ void TextWindow::DescribeSelection(void) {
                     int i;
                     for(i = 0; i < SS.fonts.l.n; i++) {
                         TtfFont *tf = &(SS.fonts.l.elem[i]);
-                        if(strcmp(e->font.str, tf->FontFileBaseName())==0) {
+                        if(strcmp(e->font.str, tf->FontFileBaseName().c_str())==0) {
                             Printf(false, "%Bp    %s",
                                 (i & 1) ? 'd' : 'a',
                                 tf->name.str);

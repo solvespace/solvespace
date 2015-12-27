@@ -30,11 +30,18 @@ void dbp(const char *str, ...)
     fputc('\n', stderr);
 }
 
-void GetAbsoluteFilename(char *file)
+std::string GetAbsoluteFilename(const std::string &filename)
 {
-    char expanded[MAX_PATH];
-    realpath(file, expanded);
-    strcpy(file, expanded);
+    // We rely on the POSIX.1-2008 version of realpath that allocates
+    // storage for itself; the POSIX.1-2001 version is broken by design.
+    char *expanded = realpath(filename.c_str(), NULL);
+    if(expanded) {
+        std::string result(expanded);
+        free(expanded);
+        return result;
+    } else {
+        return filename;
+    }
 }
 
 int64_t GetUnixTime(void)

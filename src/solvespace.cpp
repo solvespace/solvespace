@@ -9,6 +9,8 @@
 SolveSpaceUI SolveSpace::SS = {};
 Sketch SolveSpace::SK = {};
 
+std::string SolveSpace::RecentFile[MAX_RECENT] = {};
+
 void SolveSpaceUI::Init() {
     SS.tangentArcRadius = 10.0;
 
@@ -84,10 +86,7 @@ void SolveSpaceUI::Init() {
     showToolbar = CnfThawBool(true, "ShowToolbar");
     // Recent files menus
     for(i = 0; i < MAX_RECENT; i++) {
-        char name[100];
-        sprintf(name, "RecentFile_%d", i);
-        strncpy(RecentFile[i], CnfThawString("", name).c_str(), MAX_PATH);
-
+        RecentFile[i] = CnfThawString("", "RecentFile_" + std::to_string(i));
     }
     RefreshRecentMenus();
     // Autosave timer
@@ -103,12 +102,10 @@ void SolveSpaceUI::Init() {
     AfterNewFile();
 }
 
-bool SolveSpaceUI::LoadAutosaveFor(const char *filename) {
-    char autosaveFile[MAX_PATH];
-    strcpy(autosaveFile, filename);
-    strcat(autosaveFile, AUTOSAVE_SUFFIX);
+bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
+    std::string autosaveFile = filename + AUTOSAVE_SUFFIX;
 
-    FILE *f = fopen(autosaveFile, "r");
+    FILE *f = fopen(autosaveFile.c_str(), "r");
     if(!f)
         return false;
     fclose(f);
@@ -121,13 +118,13 @@ bool SolveSpaceUI::LoadAutosaveFor(const char *filename) {
     return false;
 }
 
-bool SolveSpaceUI::OpenFile(const char *filename) {
+bool SolveSpaceUI::OpenFile(const std::string &filename) {
     bool autosaveLoaded = LoadAutosaveFor(filename);
     bool success = autosaveLoaded || LoadFromFile(filename);
     if(success) {
         RemoveAutosave();
         AddToRecentList(filename);
-        strcpy(saveFile, filename);
+        saveFile = filename;
     } else {
         NewFile();
     }
@@ -137,18 +134,12 @@ bool SolveSpaceUI::OpenFile(const char *filename) {
 }
 
 void SolveSpaceUI::Exit(void) {
-    int i;
-    char name[100];
     // Recent files
-    for(i = 0; i < MAX_RECENT; i++) {
-        sprintf(name, "RecentFile_%d", i);
-        CnfFreezeString(RecentFile[i], name);
-    }
+    for(int i = 0; i < MAX_RECENT; i++)
+        CnfFreezeString(RecentFile[i], "RecentFile_" + std::to_string(i));
     // Model colors
-    for(i = 0; i < MODEL_COLORS; i++) {
-        sprintf(name, "ModelColor_%d", i);
-        CnfFreezeColor(modelColor[i], name);
-    }
+    for(int i = 0; i < MODEL_COLORS; i++)
+        CnfFreezeColor(modelColor[i], "ModelColor_" + std::to_string(i));
     // Light intensities
     CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
     CnfFreezeFloat((float)lightIntensity[1], "LightIntensity_1");
@@ -339,34 +330,33 @@ void SolveSpaceUI::AfterNewFile(void) {
     UpdateWindowTitle();
 }
 
-void SolveSpaceUI::RemoveFromRecentList(const char *file) {
+void SolveSpaceUI::RemoveFromRecentList(const std::string &filename) {
     int src, dest;
     dest = 0;
     for(src = 0; src < MAX_RECENT; src++) {
-        if(strcmp(file, RecentFile[src]) != 0) {
-            if(src != dest) strcpy(RecentFile[dest], RecentFile[src]);
+        if(filename != RecentFile[src]) {
+            if(src != dest) RecentFile[dest] = RecentFile[src];
             dest++;
         }
     }
-    while(dest < MAX_RECENT) strcpy(RecentFile[dest++], "");
+    while(dest < MAX_RECENT) RecentFile[dest++].clear();
     RefreshRecentMenus();
 }
-void SolveSpaceUI::AddToRecentList(const char *file) {
-    RemoveFromRecentList(file);
+void SolveSpaceUI::AddToRecentList(const std::string &filename) {
+    RemoveFromRecentList(filename);
 
     int src;
     for(src = MAX_RECENT - 2; src >= 0; src--) {
-        strcpy(RecentFile[src+1], RecentFile[src]);
+        RecentFile[src+1] = RecentFile[src];
     }
-    strcpy(RecentFile[0], file);
+    RecentFile[0] = filename;
     RefreshRecentMenus();
 }
 
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
-    char prevSaveFile[MAX_PATH];
-    strcpy(prevSaveFile, saveFile);
+    std::string prevSaveFile = saveFile;
 
-    if(saveAs || strlen(saveFile)==0) {
+    if(saveAs || saveFile.empty()) {
         if(!GetSaveFile(saveFile, SLVS_EXT, SLVS_PATTERN)) return false;
         // need to get new filename directly into saveFile, since that
         // determines impFileRel path
@@ -379,7 +369,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
         return true;
     } else {
         // don't store an invalid save filename
-        strcpy(saveFile, prevSaveFile);
+        saveFile = prevSaveFile;
         return false;
     }
 }
@@ -388,22 +378,16 @@ bool SolveSpaceUI::Autosave()
 {
     SetAutosaveTimerFor(autosaveInterval);
 
-    if (strlen(saveFile) != 0 && unsaved)  {
-        char autosaveFile[MAX_PATH];
-        strcpy(autosaveFile, saveFile);
-        strcat(autosaveFile, AUTOSAVE_SUFFIX);
-        return SaveToFile(autosaveFile);
-    }
+    if(!saveFile.empty() && unsaved)
+        return SaveToFile(saveFile + AUTOSAVE_SUFFIX);
 
     return false;
 }
 
 void SolveSpaceUI::RemoveAutosave()
 {
-    char autosaveFile[MAX_PATH];
-    strcpy(autosaveFile, saveFile);
-    strcat(autosaveFile, AUTOSAVE_SUFFIX);
-    remove(autosaveFile);
+    std::string autosaveFile = saveFile + AUTOSAVE_SUFFIX;
+    remove(autosaveFile.c_str());
 }
 
 bool SolveSpaceUI::OkayToStartNewFile(void) {
@@ -424,14 +408,10 @@ bool SolveSpaceUI::OkayToStartNewFile(void) {
 }
 
 void SolveSpaceUI::UpdateWindowTitle(void) {
-    if(strlen(saveFile) == 0) {
-        SetCurrentFilename(NULL);
-    } else {
-        SetCurrentFilename(saveFile);
-    }
+    SetCurrentFilename(saveFile);
 }
 
-static std::string Extname(std::string filename) {
+static std::string Extension(const std::string &filename) {
     int dot = filename.rfind('.');
     if(dot >= 0)
         return filename.substr(dot + 1, filename.length());
@@ -442,8 +422,7 @@ void SolveSpaceUI::MenuFile(int id) {
     if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
         if(!SS.OkayToStartNewFile()) return;
 
-        char newFile[MAX_PATH];
-        strcpy(newFile, RecentFile[id-RECENT_OPEN]);
+        std::string newFile = RecentFile[id - RECENT_OPEN];
         RemoveFromRecentList(newFile);
         SS.OpenFile(newFile);
         return;
@@ -453,7 +432,7 @@ void SolveSpaceUI::MenuFile(int id) {
         case GraphicsWindow::MNU_NEW:
             if(!SS.OkayToStartNewFile()) break;
 
-            strcpy(SS.saveFile, "");
+            SS.saveFile = "";
             SS.NewFile();
             SS.AfterNewFile();
             break;
@@ -461,7 +440,7 @@ void SolveSpaceUI::MenuFile(int id) {
         case GraphicsWindow::MNU_OPEN: {
             if(!SS.OkayToStartNewFile()) break;
 
-            char newFile[MAX_PATH] = "";
+            std::string newFile;
             if(GetOpenFile(newFile, SLVS_EXT, SLVS_PATTERN)) {
                 SS.OpenFile(newFile);
             }
@@ -477,22 +456,21 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
 
         case GraphicsWindow::MNU_EXPORT_PNG: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(!GetSaveFile(exportFile, PNG_EXT, PNG_PATTERN)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
-            char exportFile[MAX_PATH] = "", exportExt[10] = VEC_EXT;
-            strncpy(exportFile, CnfThawString("", "2DExportFormat").c_str(), MAX_PATH);
-            if(!GetSaveFile(exportFile, exportExt, VEC_PATTERN)) break;
-            CnfFreezeString(Extname(exportFile), "2DExportFormat");
+            std::string exportFile = CnfThawString("", "2DExportFormat");
+            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "2DExportFormat");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints &&
-                (StringEndsIn(exportFile, ".txt") ||
+                (FilenameHasExtension(exportFile, ".txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {
                 Message("Constraints are currently shown, and will be exported "
@@ -506,28 +484,28 @@ void SolveSpaceUI::MenuFile(int id) {
         }
 
         case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(!GetSaveFile(exportFile, V3D_EXT, V3D_PATTERN)) break;
             SS.ExportViewOrWireframeTo(exportFile, true);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
             SS.ExportSectionTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(!GetSaveFile(exportFile, MESH_EXT, MESH_PATTERN)) break;
             SS.ExportMeshTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SURFACES: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
@@ -747,9 +725,9 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
 
         case GraphicsWindow::MNU_STOP_TRACING: {
-            char exportFile[MAX_PATH] = "";
+            std::string exportFile;
             if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
-                FILE *f = fopen(exportFile, "wb");
+                FILE *f = fopen(exportFile.c_str(), "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);
@@ -761,7 +739,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                     }
                     fclose(f);
                 } else {
-                    Error("Couldn't write to '%s'", exportFile);
+                    Error("Couldn't write to '%s'", exportFile.c_str());
                 }
             }
             // Clear the trace, and stop tracing

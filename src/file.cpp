@@ -201,7 +201,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 union SAVEDptr {
     IdList<EntityMap,EntityId> M;
     NameStr   N;
-    char      P[MAX_PATH];
+    /* std::string P */
     bool      b;
     RgbaColor c;
     int       d;
@@ -225,7 +225,7 @@ void SolveSpaceUI::SaveUsingTable(int type) {
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
             case 'N': fprintf(fh, "%s",    p->N.str);           break;
-            case 'P': fprintf(fh, "%s",    p->P);            break;
+            case 'P': fprintf(fh, "%s",    ((std::string*)p)->c_str()); break;
             case 'b': fprintf(fh, "%d",    p->b ? 1 : 0);       break;
             case 'c': fprintf(fh, "%08x",  p->c.ToPackedInt()); break;
             case 'd': fprintf(fh, "%d",    p->d);               break;
@@ -250,7 +250,7 @@ void SolveSpaceUI::SaveUsingTable(int type) {
     }
 }
 
-bool SolveSpaceUI::SaveToFile(const char *filename) {
+bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // Make sure all the entities are regenerated up to date, since they
     // will be exported. We reload the imported files because that rewrites
     // the impFileRel for our possibly-new filename.
@@ -258,9 +258,9 @@ bool SolveSpaceUI::SaveToFile(const char *filename) {
     SS.ReloadAllImported();
     SS.GenerateAll(0, INT_MAX);
 
-    fh = fopen(filename, "wb");
+    fh = fopen(filename.c_str(), "wb");
     if(!fh) {
-        Error("Couldn't write to file '%s'", filename);
+        Error("Couldn't write to file '%s'", filename.c_str());
         return false;
     }
 
@@ -385,7 +385,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                     break;
 
                 case 'P':
-                    if(strlen(val)+1 < MAX_PATH) strcpy(p->P, val);
+                    *((std::string*)p) = val;
                     break;
 
                 case 'M': {
@@ -420,13 +420,13 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
     }
 }
 
-bool SolveSpaceUI::LoadFromFile(const char *filename) {
+bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
     allConsistent = false;
     fileLoadError = false;
 
-    fh = fopen(filename, "rb");
+    fh = fopen(filename.c_str(), "rb");
     if(!fh) {
-        Error("Couldn't read from file '%s'", filename);
+        Error("Couldn't read from file '%s'", filename.c_str());
         return false;
     }
 
@@ -503,13 +503,13 @@ bool SolveSpaceUI::LoadFromFile(const char *filename) {
     return true;
 }
 
-bool SolveSpaceUI::LoadEntitiesFromFile(const char *file, EntityList *le,
+bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
     SSurface srf = {};
     SCurve crv = {};
 
-    fh = fopen(file, "rb");
+    fh = fopen(filename.c_str(), "rb");
     if(!fh) return false;
 
     le->Clear();
@@ -652,7 +652,7 @@ void SolveSpaceUI::ReloadAllImported(void) {
         // Change backslashes to forward slashes on Unix.
         // Done unconditionally to get the displayed filename
         // consistent with current filesystem type.
-        for(int j = 0; j < strlen(g->impFileRel); j++) {
+        for(int j = 0; j < g->impFileRel.length(); j++) {
             if(g->impFileRel[j] == '\\')
                 g->impFileRel[j] = '/';
         }
@@ -662,39 +662,35 @@ void SolveSpaceUI::ReloadAllImported(void) {
         g->impMesh.Clear();
         g->impShell.Clear();
 
-        FILE *test = fopen(g->impFile, "rb");
+        FILE *test = fopen(g->impFile.c_str(), "rb");
         if(test) {
             fclose(test); // okay, exists
         } else {
             // It doesn't exist. Perhaps the entire tree has moved, and we
             // can use the relative filename to get us back.
-            if(SS.saveFile[0]) {
-                char fromRel[MAX_PATH];
-                strcpy(fromRel, g->impFileRel);
-                MakePathAbsolute(SS.saveFile, fromRel);
-                test = fopen(fromRel, "rb");
+            if(!SS.saveFile.empty()) {
+                std::string fromRel = MakePathAbsolute(SS.saveFile, g->impFileRel);
+                test = fopen(fromRel.c_str(), "rb");
                 if(test) {
                     fclose(test);
                     // It worked, this is our new absolute path
-                    strcpy(g->impFile, fromRel);
+                    g->impFile = fromRel;
                 }
             }
         }
 
-        if(LoadEntitiesFromFile(g->impFile,
-                        &(g->impEntity), &(g->impMesh), &(g->impShell)))
+        if(LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
         {
-            if(SS.saveFile[0]) {
+            if(!SS.saveFile.empty()) {
                 // Record the imported file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
-                strcpy(g->impFileRel, g->impFile);
-                MakePathRelative(SS.saveFile, g->impFileRel);
+                g->impFileRel = MakePathRelative(SS.saveFile, g->impFile);
             } else {
                 // We're not yet saved, so can't make it absolute
-                strcpy(g->impFileRel, g->impFile);
+                g->impFileRel = g->impFile;
             }
         } else {
-            Error("Failed to load imported file '%s'", g->impFile);
+            Error("Failed to load imported file '%s'", g->impFile.c_str());
         }
     }
 }

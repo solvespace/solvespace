@@ -57,7 +57,7 @@ void Group::MenuGroup(int id) {
     g.scale = 1;
 
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
-        strcpy(g.impFile, RecentFile[id-RECENT_IMPORT]);
+        g.impFile = RecentFile[id-RECENT_IMPORT];
         id = GraphicsWindow::MNU_GROUP_IMPORT;
     }
 
@@ -187,30 +187,36 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_IMPORT: {
             g.type = IMPORTED;
             g.opA = SS.GW.activeGroup;
-            if(strlen(g.impFile) == 0) {
+            if(g.impFile.empty()) {
                 if(!GetOpenFile(g.impFile, SLVS_EXT, SLVS_PATTERN)) return;
             }
 
             // Assign the default name of the group based on the name of
             // the imported file.
-            char groupName[MAX_PATH];
-            strcpy(groupName, g.impFile);
-            char *dot = strrchr(groupName, '.');
-            if(dot) *dot = '\0';
+            std::string groupName = g.impFile;
+            size_t pos;
 
-            char *s, *start = groupName;
-            for(s = groupName; *s; s++) {
-                if(*s == '/' || *s == '\\') {
-                    start = s + 1;
-                } else if(isalnum(*s)) {
+            pos = groupName.rfind('.');
+            if(pos != std::string::npos)
+                groupName.erase(pos);
+            pos = groupName.find('/');
+            if(pos != std::string::npos)
+                groupName.erase(0, pos);
+            pos = groupName.find('\\');
+            if(pos != std::string::npos)
+                groupName.erase(0, pos);
+
+            for(int i = 0; i < groupName.length(); i++) {
+                if(isalnum(groupName[i])) {
                     // do nothing, valid character
                 } else {
                     // convert invalid characters (like spaces) to dashes
-                    *s = '-';
+                    groupName[i] = '-';
                 }
             }
-            if(strlen(start) > 0) {
-                g.name.strcpy(start);
+
+            if(groupName.length() > 0) {
+                g.name.strcpy(groupName.substr(0, 64).c_str());
             } else {
                 g.name.strcpy("import");
             }

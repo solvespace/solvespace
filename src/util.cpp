@@ -6,45 +6,46 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpace::MakePathRelative(const char *basep, char *pathp)
+std::string SolveSpace::MakePathRelative(const std::string &basep, const std::string &pathp)
 {
     int i;
     const char *p;
-    char base[MAX_PATH], path[MAX_PATH], out[MAX_PATH];
+    std::string base, path;
 
     // Convert everything to lowercase
-    p = basep;
-    for(i = 0; *p; p++) {
-        base[i++] = (char)tolower(*p);
-    }
-    base[i++] = '\0';
-    p = pathp;
-    for(i = 0; *p; p++) {
-        path[i++] = (char)tolower(*p);
-    }
-    path[i++] = '\0';
+    // FIXME: This is not generally safe to do on Linux/FreeBSD
+    // FIXME: tolower will try to respect locale on POSIX. This is, obviously, broken
+    p = &basep[0];
+    for(i = 0; *p; p++)
+        base += (char)tolower(*p);
+
+    p = &pathp[0];
+    for(i = 0; *p; p++)
+        path += (char)tolower(*p);
+
 
     // Find the length of the common prefix
     int com;
-    for(com = 0; base[com] && path[com]; com++) {
+    for(com = 0; com < base.length() && com < path.length(); com++) {
         if(base[com] != path[com]) break;
     }
-    if(!(base[com] && path[com])) return; // weird, prefix is entire string
-    if(com == 0) return; // maybe on different drive letters?
+    if(com == base.length() || com == path.length())
+        return pathp; // weird, prefix is entire string
+    if(com == 0)
+        return pathp; // maybe on different drive letters?
 
     // Align the common prefix to the nearest slash; otherwise would break
     // on subdirectories or filenames that shared a prefix.
-    while(com >= 1 && base[com-1] != '/' && base[com-1] != '\\') {
+    while(com >= 1 && base[com-1] != '/' && base[com-1] != '\\')
         com--;
-    }
-    if(com == 0) return;
+    if(com == 0) return pathp;
 
     int sections = 0;
     int secLen = 0, secStart = 0;
-    for(i = com; base[i]; i++) {
+    for(i = com; i < base.length(); i++) {
         if(base[i] == '/' || base[i] == '\\') {
-            if(secLen == 2 && memcmp(base+secStart, "..", 2)==0) return;
-            if(secLen == 1 && memcmp(base+secStart, ".", 1)==0) return;
+            if(secLen == 2 && memcmp(&base[secStart], "..", 2)==0) return pathp;
+            if(secLen == 1 && memcmp(&base[secStart], ".", 1)==0) return pathp;
 
             sections++;
             secLen = 0;
@@ -56,32 +57,28 @@ void SolveSpace::MakePathRelative(const char *basep, char *pathp)
 
     // For every directory in the prefix of the base, we must go down a
     // directory in the relative path name
-    strcpy(out, "");
+    std::string out;
     for(i = 0; i < sections; i++) {
-        strcat(out, "../");
+        out += "../";
     }
     // comparison is case-insensitive, but output preserves input case
-    strcat(out, pathp+com);
-
-    strcpy(pathp, out);
+    out += pathp.substr(com);
+    return out;
 }
 
-void SolveSpace::MakePathAbsolute(const char *basep, char *pathp) {
-    char out[MAX_PATH];
-    strcpy(out, basep);
+std::string SolveSpace::MakePathAbsolute(const std::string &basep, const std::string &pathp) {
+    std::string out = basep;
 
     // Chop off the filename
     int i;
-    for(i = (int)strlen(out) - 1; i >= 0; i--) {
+    for(i = (int)out.length() - 1; i >= 0; i--) {
         if(out[i] == '\\' || out[i] == '/') break;
     }
-    if(i < 0) return; // base is not an absolute path, or something?
-    out[i+1] = '\0';
+    if(i < 0) return pathp; // base is not an absolute path, or something?
+    out.resize(i + 1);
 
-    strcat(out, pathp);
-    GetAbsoluteFilename(out);
-
-    strcpy(pathp, out);
+    out += pathp;
+    return GetAbsoluteFilename(out);
 }
 
 bool SolveSpace::StringAllPrintable(const char *str)
@@ -95,14 +92,14 @@ bool SolveSpace::StringAllPrintable(const char *str)
     return true;
 }
 
-bool SolveSpace::StringEndsIn(const char *str, const char *ending)
+bool SolveSpace::FilenameHasExtension(const std::string &str, const char *ext)
 {
-    int i, ls = (int)strlen(str), le = (int)strlen(ending);
+    int i, ls = str.length(), le = strlen(ext);
 
     if(ls < le) return false;
 
     for(i = 0; i < le; i++) {
-        if(tolower(ending[le-i-1]) != tolower(str[ls-i-1])) {
+        if(tolower(ext[le-i-1]) != tolower(str[ls-i-1])) {
             return false;
         }
     }

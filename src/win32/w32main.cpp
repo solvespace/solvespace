@@ -39,7 +39,6 @@ static struct {
     int x, y;
 } LastMousePos;
 
-char SolveSpace::RecentFile[MAX_RECENT][MAX_PATH];
 HMENU SubMenus[100];
 HMENU RecentOpenMenu, RecentImportMenu;
 
@@ -376,7 +375,8 @@ std::string SolveSpace::CnfThawString(const std::string &val, const std::string 
         return val;
     }
 
-    std::string newval(len, '\0');
+    std::string newval;
+    newval.resize(len - 1);
     if(RegQueryValueEx(SolveSpace, &name[0], NULL,
                        NULL, (BYTE*) &newval[0], &len) != ERROR_SUCCESS) {
         RegCloseKey(SolveSpace);
@@ -412,10 +412,9 @@ static void ThawWindowPos(HWND hwnd, const std::string &name)
         ShowWindow(hwnd, SW_MAXIMIZE);
 }
 
-void SolveSpace::SetCurrentFilename(const char *filename) {
-    if(filename) {
-        std::string title = std::string("SolveSpace - ") + filename;
-        SetWindowText(GraphicsWnd, title.c_str());
+void SolveSpace::SetCurrentFilename(const std::string &filename) {
+    if(!filename.empty()) {
+        SetWindowText(GraphicsWnd, ("SolveSpace - " + filename).c_str());
     } else {
         SetWindowText(GraphicsWnd, "SolveSpace - (not yet saved)");
     }
@@ -959,17 +958,24 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *selPattern)
+bool SolveSpace::GetOpenFile(std::string &filename,
+                             const char *defExtension, const char *selPattern)
 {
-    OPENFILENAME ofn = {};
+    // UNC paths may be arbitrarily long.
+    // Unfortunately, the Get*FileName API does not provide any way to use it
+    // except with a preallocated buffer of fixed size, so we use something
+    // reasonably large.
+    char filenameC[0xFFFF] = {};
+    strncpy(filenameC, filename.c_str(), sizeof(filenameC) - 1);
 
+    OPENFILENAME ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hInstance = Instance;
     ofn.hwndOwner = GraphicsWnd;
     ofn.lpstrFilter = selPattern;
     ofn.lpstrDefExt = defExtension;
-    ofn.lpstrFile = file;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFile = filenameC;
+    ofn.nMaxFile = sizeof(filenameC);
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     EnableWindow(GraphicsWnd, false);
@@ -981,20 +987,25 @@ bool SolveSpace::GetOpenFile(char *file, const char *defExtension, const char *s
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
+    if(r) filename = filenameC;
     return r ? true : false;
 }
 
-bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *selPattern)
+bool SolveSpace::GetSaveFile(std::string &filename,
+                             const char *defExtension, const char *selPattern)
 {
-    OPENFILENAME ofn = {};
+    // See GetOpenFile
+    char filenameC[0xFFFF] = {};
+    strncpy(filenameC, filename.c_str(), sizeof(filenameC) - 1);
 
+    OPENFILENAME ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hInstance = Instance;
     ofn.hwndOwner = GraphicsWnd;
     ofn.lpstrFilter = selPattern;
     ofn.lpstrDefExt = defExtension;
-    ofn.lpstrFile = file;
-    ofn.nMaxFile = MAX_PATH;
+    ofn.lpstrFile = filenameC;
+    ofn.nMaxFile = sizeof(filenameC);
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
 
     EnableWindow(GraphicsWnd, false);
@@ -1006,6 +1017,7 @@ bool SolveSpace::GetSaveFile(char *file, const char *defExtension, const char *s
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
+    if(r) filename = filenameC;
     return r ? true : false;
 }
 
@@ -1057,22 +1069,15 @@ int SolveSpace::LoadAutosaveYesNo(void)
 
 void SolveSpace::LoadAllFontFiles(void)
 {
+    std::string fontsDir(MAX_PATH, '\0');
+    fontsDir.resize(GetWindowsDirectory(&fontsDir[0], fontsDir.length()));
+    fontsDir += "\\fonts\\";
+
     WIN32_FIND_DATA wfd;
-    char dir[MAX_PATH];
-    GetWindowsDirectory(dir, MAX_PATH - 30);
-    strcat(dir, "\\fonts\\*.ttf");
-
-    HANDLE h = FindFirstFile(dir, &wfd);
-
+    HANDLE h = FindFirstFile((fontsDir + "*.ttf").c_str(), &wfd);
     while(h != INVALID_HANDLE_VALUE) {
         TtfFont tf = {};
-
-        char fullPath[MAX_PATH];
-        GetWindowsDirectory(fullPath, MAX_PATH - (30 + (UINT)strlen(wfd.cFileName)));
-        strcat(fullPath, "\\fonts\\");
-        strcat(fullPath, wfd.cFileName);
-
-        strcpy(tf.fontFile, fullPath);
+        tf.fontFile = fontsDir + wfd.cFileName;
         SS.fonts.l.Add(&tf);
 
         if(!FindNextFile(h, &wfd)) break;
@@ -1122,9 +1127,8 @@ static void DoRecent(HMENU m, int base)
         ;
     int i, c = 0;
     for(i = 0; i < MAX_RECENT; i++) {
-        char *s = RecentFile[i];
-        if(*s) {
-            AppendMenu(m, MF_STRING, base+i, s);
+        if(!RecentFile[i].empty()) {
+            AppendMenu(m, MF_STRING, base + i, RecentFile[i].c_str());
             c++;
         }
     }
@@ -1329,17 +1333,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // A filename may have been specified on the command line; if so, then
     // strip any quotation marks, and make it absolute.
-    char file[MAX_PATH] = "";
-    if(strlen(lpCmdLine)+1 < MAX_PATH) {
-        char *s = lpCmdLine;
-        while(*s == ' ' || *s == '"') s++;
-        strcpy(file, s);
-        s = strrchr(file, '"');
-        if(s) *s = '\0';
-    }
-    if(*file != '\0') {
-        GetAbsoluteFilename(file);
-    }
+    std::string filename = lpCmdLine;
+    size_t pos;
+    pos = filename.find_last_not_of("\"");
+    if(pos != std::string::npos)
+        filename.erase(pos + 1);
+    pos = filename.find_first_not_of(" \"");
+    if(pos != std::string::npos)
+        filename.erase(0, pos);
+    if(!filename.empty())
+        filename = GetAbsoluteFilename(filename);
 
 #ifdef HAVE_SPACEWARE
     // Initialize the SpaceBall, if present. Test if the driver is running
@@ -1357,8 +1360,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
-    if(strcmp(file, ""))
-        SS.OpenFile(file);
+    if(!filename.empty())
+        SS.OpenFile(filename);
 
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.

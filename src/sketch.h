@@ -189,11 +189,11 @@ public:
     enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
-    char                       impFile[MAX_PATH];
-    char                       impFileRel[MAX_PATH];
-    SMesh                      impMesh;
-    SShell                     impShell;
-    EntityList                 impEntity;
+    std::string impFile;
+    std::string impFileRel;
+    SMesh       impMesh;
+    SShell      impShell;
+    EntityList  impEntity;
 
     NameStr     name;
 

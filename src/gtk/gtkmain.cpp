@@ -63,15 +63,6 @@
 #endif
 
 namespace SolveSpace {
-char RecentFile[MAX_RECENT][MAX_PATH];
-
-#define GL_CHECK() \
-    do { \
-        int err = (int)glGetError(); \
-        if(err) dbp("%s:%d: glGetError() == 0x%X %s", \
-                    __FILE__, __LINE__, err, gluErrorString(err)); \
-    } while (0)
-
 /* Settings */
 
 /* Why not just use GSettings? Two reasons. It doesn't allow to easily see
@@ -239,6 +230,13 @@ void ScheduleLater() {
 }
 
 /* GL wrapper */
+
+#define GL_CHECK() \
+    do { \
+        int err = (int)glGetError(); \
+        if(err) dbp("%s:%d: glGetError() == 0x%X %s", \
+                    __FILE__, __LINE__, err, gluErrorString(err)); \
+    } while (0)
 
 class GlWidget : public Gtk::DrawingArea {
 public:
@@ -703,9 +701,9 @@ void PaintGraphics(void) {
     Glib::MainContext::get_default()->iteration(false);
 }
 
-void SetCurrentFilename(const char *filename) {
-    if(filename) {
-        GW->set_title(std::string("SolveSpace - ") + filename);
+void SetCurrentFilename(const std::string &filename) {
+    if(!filename.empty()) {
+        GW->set_title("SolveSpace - " + filename);
     } else {
         GW->set_title("SolveSpace - (not yet saved)");
     }
@@ -1078,7 +1076,7 @@ static void FiltersFromPattern(const char *active, const char *patterns,
     }
 }
 
-bool GetOpenFile(char *file, const char *active, const char *patterns) {
+bool GetOpenFile(std::string &file, const char *active, const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Open File");
     chooser.set_filename(file);
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
@@ -1088,8 +1086,8 @@ bool GetOpenFile(char *file, const char *active, const char *patterns) {
     FiltersFromPattern(active, patterns, chooser);
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
-        CnfFreezeString(chooser.get_current_folder().c_str(), "FileChooserPath");
-        strcpy(file, chooser.get_filename().c_str());
+        CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
+        file = chooser.get_filename();
         return true;
     } else {
         return false;
@@ -1134,7 +1132,7 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     }
 }
 
-bool GetSaveFile(char *file, const char *active, const char *patterns) {
+bool GetSaveFile(std::string &file, const char *active, const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);
@@ -1153,7 +1151,7 @@ bool GetSaveFile(char *file, const char *active, const char *patterns) {
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
         CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
-        strcpy(file, chooser.get_filename().c_str());
+        file = chooser.get_filename();
         return true;
     } else {
         return false;
@@ -1415,15 +1413,14 @@ void LoadAllFontFiles(void) {
     FcFontSet   *fs  = FcFontList(0, pat, os);
 
     for(int i = 0; i < fs->nfont; i++) {
-        FcChar8 *filename = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
-        Glib::ustring ufilename = (char*) filename;
-        if(ufilename.length() > 4 &&
-           ufilename.substr(ufilename.length() - 4, 4).lowercase() == ".ttf") {
+        FcChar8 *filenameFC = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
+        std::string filename = (char*) filenameFC;
+        if(FilenameHasExtension(filename, ".ttf")) {
             TtfFont tf = {};
-            strcpy(tf.fontFile, (char*) filename);
+            tf.fontFile = filename;
             SS.fonts.l.Add(&tf);
         }
-        FcStrFree(filename);
+        FcStrFree(filenameFC);
     }
 
     FcFontSetDestroy(fs);

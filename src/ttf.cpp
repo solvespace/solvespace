@@ -26,7 +26,7 @@ void TtfFontList::LoadAll(void) {
     loaded = true;
 }
 
-void TtfFontList::PlotString(char *font, char *str, double spacing,
+void TtfFontList::PlotString(const std::string &font, char *str, double spacing,
                              SBezierList *sbl,
                              Vector origin, Vector u, Vector v)
 {
@@ -35,7 +35,7 @@ void TtfFontList::PlotString(char *font, char *str, double spacing,
     int i;
     for(i = 0; i < l.n; i++) {
         TtfFont *tf = &(l.elem[i]);
-        if(strcmp(tf->FontFileBaseName(), font)==0) {
+        if(tf->FontFileBaseName() == font) {
             tf->LoadFontFromFile(false);
             tf->PlotString(str, spacing, sbl, origin, u, v);
             return;
@@ -228,12 +228,15 @@ void TtfFont::LoadGlyph(int index) {
 // Return the basename of our font filename; that's how the requests and
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
-const char *TtfFont::FontFileBaseName(void) {
-    char *sb = strrchr(fontFile, '\\');
-    char *sf = strrchr(fontFile, '/');
-    char *s = sf ? sf : sb;
-    if(!s) return "";
-    return s + 1;
+std::string TtfFont::FontFileBaseName(void) {
+    size_t pos;
+    pos = fontFile.rfind('/');
+    if(pos != std::string::npos)
+        return fontFile.erase(0, pos);
+    pos = fontFile.rfind('\\');
+    if(pos != std::string::npos)
+        return fontFile.erase(0, pos);
+    return "";
 }
 
 //-----------------------------------------------------------------------------
@@ -246,7 +249,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
     int i;
 
-    fh = fopen(fontFile, "rb");
+    fh = fopen(fontFile.c_str(), "rb");
     if(!fh) {
         return false;
     }
@@ -580,7 +583,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             LoadGlyph(i);
         }
     } catch (const char *s) {
-        dbp("ttf: file %s failed: '%s'", fontFile, s);
+        dbp("ttf: file %s failed: '%s'", fontFile.c_str(), s);
         fclose(fh);
         return false;
     }
