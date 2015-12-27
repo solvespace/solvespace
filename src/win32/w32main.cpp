@@ -90,9 +90,9 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
                     col = 0;
                     row++;
                 } else {
-                    TextOut(hdc, col*SS.TW.CHAR_WIDTH + 10,
-                                 row*SS.TW.LINE_HEIGHT + 10,
-                                 &(MessageString[i]), 1);
+                    TextOutW(hdc, col*SS.TW.CHAR_WIDTH + 10,
+                                  row*SS.TW.LINE_HEIGHT + 10,
+                                  Widen(&(MessageString[i])).c_str(), 1);
                     col++;
                 }
             }
@@ -107,11 +107,11 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
     return 1;
 }
 
-HWND CreateWindowClient(DWORD exStyle, const char *className, const char *windowName,
+HWND CreateWindowClient(DWORD exStyle, const wchar_t *className, const wchar_t *windowName,
     DWORD style, int x, int y, int width, int height, HWND parent,
     HMENU menu, HINSTANCE instance, void *param)
 {
-    HWND h = CreateWindowEx(exStyle, className, windowName, style, x, y,
+    HWND h = CreateWindowExW(exStyle, className, windowName, style, x, y,
         width, height, parent, menu, instance, param);
 
     RECT r;
@@ -128,16 +128,15 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
-    //HWND h = GetForegroundWindow();
 
     // Register the window class for our dialog.
     WNDCLASSEX wc = {};
-    wc.cbSize = sizeof(wc);
+    wc.cbSize           = sizeof(wc);
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC;
     wc.lpfnWndProc      = (WNDPROC)MessageProc;
     wc.hInstance        = Instance;
     wc.hbrBackground    = (HBRUSH)COLOR_BTNSHADOW;
-    wc.lpszClassName    = "MessageWnd";
+    wc.lpszClassName    = L"MessageWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
@@ -153,11 +152,11 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     const char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
     int width  = cols*SS.TW.CHAR_WIDTH + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
-    MessageWnd = CreateWindowClient(0, "MessageWnd", title,
+    MessageWnd = CreateWindowClient(0, L"MessageWnd", Widen(title).c_str(),
         WS_OVERLAPPED | WS_SYSMENU,
         r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
 
-    OkButton = CreateWindowEx(0, WC_BUTTON, "OK",
+    OkButton = CreateWindowExW(0, WC_BUTTON, L"OK",
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
         (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
         70, 25, MessageWnd, NULL, Instance, NULL);
@@ -196,15 +195,15 @@ void SolveSpace::AddContextMenuItem(const char *label, int id)
     if(!ContextMenu) ContextMenu = CreatePopupMenu();
 
     if(id == CONTEXT_SUBMENU) {
-        AppendMenu(ContextMenu, MF_STRING | MF_POPUP,
-            (UINT_PTR)ContextSubmenu, label);
+        AppendMenuW(ContextMenu, MF_STRING | MF_POPUP,
+            (UINT_PTR)ContextSubmenu, Widen(label).c_str());
         ContextSubmenu = NULL;
     } else {
         HMENU m = ContextSubmenu ? ContextSubmenu : ContextMenu;
         if(id == CONTEXT_SEPARATOR) {
-            AppendMenu(m, MF_SEPARATOR, 0, "");
+            AppendMenuW(m, MF_SEPARATOR, 0, L"");
         } else {
-            AppendMenu(m, MF_STRING, id, label);
+            AppendMenuW(m, MF_STRING, id, Widen(label).c_str());
         }
     }
 }
@@ -271,7 +270,7 @@ void SolveSpace::GetTextWindowSize(int *w, int *h)
 }
 
 void SolveSpace::OpenWebsite(const char *url) {
-    ShellExecute(GraphicsWnd, "open", url, NULL, NULL, SW_SHOWNORMAL);
+    ShellExecuteW(GraphicsWnd, L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 void SolveSpace::ExitNow(void) {
@@ -292,12 +291,13 @@ inline int CLAMP(int v, int a, int b) {
 static HKEY GetRegistryKey()
 {
     HKEY Software;
-    if(RegOpenKeyEx(HKEY_CURRENT_USER, "Software", 0, KEY_ALL_ACCESS, &Software) != ERROR_SUCCESS)
+    if(RegOpenKeyExW(HKEY_CURRENT_USER, L"Software", 0,
+                     KEY_ALL_ACCESS, &Software) != ERROR_SUCCESS)
         return NULL;
 
     HKEY SolveSpace;
-    if(RegCreateKeyEx(Software, "SolveSpace", 0, NULL, 0,
-                      KEY_ALL_ACCESS, NULL, &SolveSpace, NULL) != ERROR_SUCCESS)
+    if(RegCreateKeyExW(Software, L"SolveSpace", 0, NULL, 0,
+                       KEY_ALL_ACCESS, NULL, &SolveSpace, NULL) != ERROR_SUCCESS)
         return NULL;
 
     RegCloseKey(Software);
@@ -308,8 +308,8 @@ static HKEY GetRegistryKey()
 void SolveSpace::CnfFreezeInt(uint32_t val, const std::string &name)
 {
     HKEY SolveSpace = GetRegistryKey();
-    RegSetValueEx(SolveSpace, &name[0], 0,
-                  REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
+    RegSetValueExW(SolveSpace, &Widen(name)[0], 0,
+                   REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
     RegCloseKey(SolveSpace);
 }
 void SolveSpace::CnfFreezeFloat(float val, const std::string &name)
@@ -317,15 +317,16 @@ void SolveSpace::CnfFreezeFloat(float val, const std::string &name)
     static_assert(sizeof(float) == sizeof(DWORD),
                   "sizes of float and DWORD must match");
     HKEY SolveSpace = GetRegistryKey();
-    RegSetValueEx(SolveSpace, &name[0], 0,
-                  REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
+    RegSetValueExW(SolveSpace, &Widen(name)[0], 0,
+                   REG_DWORD, (const BYTE*) &val, sizeof(DWORD));
     RegCloseKey(SolveSpace);
 }
 void SolveSpace::CnfFreezeString(const std::string &str, const std::string &name)
 {
     HKEY SolveSpace = GetRegistryKey();
-    RegSetValueEx(SolveSpace, &name[0], 0,
-                  REG_SZ, (const BYTE*) &str[0], str.length() + 1);
+    std::wstring strW = Widen(str);
+    RegSetValueExW(SolveSpace, &Widen(name)[0], 0,
+                   REG_SZ, (const BYTE*) &strW[0], (strW.length() + 1) * 2);
     RegCloseKey(SolveSpace);
 }
 static void FreezeWindowPos(HWND hwnd, const std::string &name)
@@ -344,7 +345,8 @@ uint32_t SolveSpace::CnfThawInt(uint32_t val, const std::string &name)
 {
     HKEY SolveSpace = GetRegistryKey();
     DWORD type, newval, len = sizeof(DWORD);
-    LONG result = RegQueryValueEx(SolveSpace, &name[0], NULL, &type, (BYTE*) &newval, &len);
+    LONG result = RegQueryValueEx(SolveSpace, &Widen(name)[0], NULL,
+                                  &type, (BYTE*) &newval, &len);
     RegCloseKey(SolveSpace);
 
     if(result == ERROR_SUCCESS && type == REG_DWORD)
@@ -357,7 +359,8 @@ float SolveSpace::CnfThawFloat(float val, const std::string &name)
     HKEY SolveSpace = GetRegistryKey();
     DWORD type, len = sizeof(DWORD);
     float newval;
-    LONG result = RegQueryValueEx(SolveSpace, &name[0], NULL, &type, (BYTE*) &newval, &len);
+    LONG result = RegQueryValueExW(SolveSpace, &Widen(name)[0], NULL,
+                                   &type, (BYTE*) &newval, &len);
     RegCloseKey(SolveSpace);
 
     if(result == ERROR_SUCCESS && type == REG_DWORD)
@@ -369,22 +372,22 @@ std::string SolveSpace::CnfThawString(const std::string &val, const std::string 
 {
     HKEY SolveSpace = GetRegistryKey();
     DWORD type, len;
-    if(RegQueryValueEx(SolveSpace, &name[0], NULL,
-                       &type, NULL, &len) != ERROR_SUCCESS || type != REG_SZ) {
+    if(RegQueryValueExW(SolveSpace, &Widen(name)[0], NULL,
+                        &type, NULL, &len) != ERROR_SUCCESS || type != REG_SZ) {
         RegCloseKey(SolveSpace);
         return val;
     }
 
-    std::string newval;
-    newval.resize(len - 1);
-    if(RegQueryValueEx(SolveSpace, &name[0], NULL,
-                       NULL, (BYTE*) &newval[0], &len) != ERROR_SUCCESS) {
+    std::wstring newval;
+    newval.resize(len / 2 - 1);
+    if(RegQueryValueExW(SolveSpace, &Widen(name)[0], NULL,
+                        NULL, (BYTE*) &newval[0], &len) != ERROR_SUCCESS) {
         RegCloseKey(SolveSpace);
         return val;
     }
 
     RegCloseKey(SolveSpace);
-    return newval;
+    return Narrow(newval);
 }
 static void ThawWindowPos(HWND hwnd, const std::string &name)
 {
@@ -414,9 +417,9 @@ static void ThawWindowPos(HWND hwnd, const std::string &name)
 
 void SolveSpace::SetCurrentFilename(const std::string &filename) {
     if(!filename.empty()) {
-        SetWindowText(GraphicsWnd, ("SolveSpace - " + filename).c_str());
+        SetWindowTextW(GraphicsWnd, Widen("SolveSpace - " + filename).c_str());
     } else {
-        SetWindowText(GraphicsWnd, "SolveSpace - (not yet saved)");
+        SetWindowTextW(GraphicsWnd, L"SolveSpace - (not yet saved)");
     }
 }
 
@@ -622,13 +625,19 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return 1;
 }
 
+static std::string EditControlText(HWND hwnd)
+{
+    std::wstring result;
+    result.resize(GetWindowTextLength(hwnd));
+    GetWindowTextW(hwnd, &result[0], result.length() + 1);
+    return Narrow(result);
+}
+
 static bool ProcessKeyDown(WPARAM wParam)
 {
     if(GraphicsEditControlIsVisible() && wParam != VK_ESCAPE) {
         if(wParam == VK_RETURN) {
-            char s[1024] = {};
-            SendMessage(GraphicsEditControl, WM_GETTEXT, 900, (LPARAM)s);
-            SS.GW.EditControlDone(s);
+            SS.GW.EditControlDone(EditControlText(GraphicsEditControl).c_str());
             return true;
         } else {
             return false;
@@ -636,9 +645,7 @@ static bool ProcessKeyDown(WPARAM wParam)
     }
     if(TextEditControlIsVisible() && wParam != VK_ESCAPE) {
         if(wParam == VK_RETURN) {
-            char s[1024] = {};
-            SendMessage(TextEditControl, WM_GETTEXT, 900, (LPARAM)s);
-            SS.TW.EditControlDone(s);
+            SS.TW.EditControlDone(EditControlText(TextEditControl).c_str());
         } else {
             return false;
         }
@@ -796,12 +803,12 @@ void SolveSpace::InvalidateText(void)
     InvalidateRect(TextWnd, NULL, false);
 }
 
-static void ShowEditControl(HWND h, int x, int y, char *s) {
+static void ShowEditControl(HWND h, int x, int y, const std::wstring &s) {
     MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, true);
     ShowWindow(h, SW_SHOW);
-    if(s) {
-        SendMessage(h, WM_SETTEXT, 0, (LPARAM)s);
-        SendMessage(h, EM_SETSEL, 0, strlen(s));
+    if(!s.empty()) {
+        SendMessage(h, WM_SETTEXT, 0, (LPARAM)s.c_str());
+        SendMessage(h, EM_SETSEL, 0, s.length());
         SetFocus(h);
     }
 }
@@ -809,7 +816,7 @@ void SolveSpace::ShowTextEditControl(int x, int y, char *s)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    ShowEditControl(TextEditControl, x, y, s);
+    ShowEditControl(TextEditControl, x, y, Widen(s));
 }
 void SolveSpace::HideTextEditControl(void)
 {
@@ -832,7 +839,7 @@ void SolveSpace::ShowGraphicsEditControl(int x, int y, char *s)
     // top left corner
     y -= 20;
 
-    ShowEditControl(GraphicsEditControl, x, y, s);
+    ShowEditControl(GraphicsEditControl, x, y, Widen(s));
 }
 void SolveSpace::HideGraphicsEditControl(void)
 {
@@ -958,67 +965,63 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-bool SolveSpace::GetOpenFile(std::string &filename,
-                             const char *defExtension, const char *selPattern)
-{
-    // UNC paths may be arbitrarily long.
+static size_t strlen2(const char *p) {
+    const char *s = p;
+    while(*p || (!*p && *(p+1))) p++;
+    return p - s + 1;
+}
+
+static bool OpenSaveFile(bool isOpen, std::string &filename,
+                         const char *defExtension, const char *selPattern) {
+    // UNC paths may be as long as 32767 characters.
     // Unfortunately, the Get*FileName API does not provide any way to use it
     // except with a preallocated buffer of fixed size, so we use something
     // reasonably large.
-    char filenameC[0xFFFF] = {};
-    strncpy(filenameC, filename.c_str(), sizeof(filenameC) - 1);
+    const int len = 32768;
+    wchar_t filenameC[len] = {};
+    wcsncpy(filenameC, Widen(filename).c_str(), len - 1);
+
+    std::wstring selPatternW = Widen(std::string(selPattern, strlen2(selPattern)));
+    std::wstring defExtensionW = Widen(defExtension);
 
     OPENFILENAME ofn = {};
     ofn.lStructSize = sizeof(ofn);
     ofn.hInstance = Instance;
     ofn.hwndOwner = GraphicsWnd;
-    ofn.lpstrFilter = selPattern;
-    ofn.lpstrDefExt = defExtension;
+    ofn.lpstrFilter = selPatternW.c_str();
+    ofn.lpstrDefExt = defExtensionW.c_str();
     ofn.lpstrFile = filenameC;
-    ofn.nMaxFile = sizeof(filenameC);
+    ofn.nMaxFile = len;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
-    BOOL r = GetOpenFileName(&ofn);
+    BOOL r;
+    if(isOpen) {
+        r = GetOpenFileNameW(&ofn);
+    } else {
+        r = GetSaveFileNameW(&ofn);
+    }
 
     EnableWindow(TextWnd, true);
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    if(r) filename = filenameC;
+    if(r) filename = Narrow(filenameC);
     return r ? true : false;
+}
+
+bool SolveSpace::GetOpenFile(std::string &filename,
+                             const char *defExtension, const char *selPattern)
+{
+    return OpenSaveFile(true, filename, defExtension, selPattern);
 }
 
 bool SolveSpace::GetSaveFile(std::string &filename,
                              const char *defExtension, const char *selPattern)
 {
-    // See GetOpenFile
-    char filenameC[0xFFFF] = {};
-    strncpy(filenameC, filename.c_str(), sizeof(filenameC) - 1);
-
-    OPENFILENAME ofn = {};
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hInstance = Instance;
-    ofn.hwndOwner = GraphicsWnd;
-    ofn.lpstrFilter = selPattern;
-    ofn.lpstrDefExt = defExtension;
-    ofn.lpstrFile = filenameC;
-    ofn.nMaxFile = sizeof(filenameC);
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT;
-
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
-
-    BOOL r = GetSaveFileName(&ofn);
-
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
-
-    if(r) filename = filenameC;
-    return r ? true : false;
+    return OpenSaveFile(false, filename, defExtension, selPattern);
 }
 
 int SolveSpace::SaveFileYesNoCancel(void)
@@ -1026,9 +1029,9 @@ int SolveSpace::SaveFileYesNoCancel(void)
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
-    int r = MessageBox(GraphicsWnd,
-        "The program has changed since it was last saved.\r\n\r\n"
-        "Do you want to save the changes?", "SolveSpace",
+    int r = MessageBoxW(GraphicsWnd,
+        L"The program has changed since it was last saved.\r\n\r\n"
+        L"Do you want to save the changes?", L"SolveSpace",
         MB_YESNOCANCEL | MB_ICONWARNING);
 
     EnableWindow(TextWnd, true);
@@ -1050,9 +1053,9 @@ int SolveSpace::LoadAutosaveYesNo(void)
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
-    int r = MessageBox(GraphicsWnd,
-        "An autosave file is availible for this project.\r\n\r\n"
-        "Do you want to load the autosave file instead?", "SolveSpace",
+    int r = MessageBoxW(GraphicsWnd,
+        L"An autosave file is availible for this project.\r\n\r\n"
+        L"Do you want to load the autosave file instead?", L"SolveSpace",
         MB_YESNO | MB_ICONWARNING);
 
     EnableWindow(TextWnd, true);
@@ -1069,18 +1072,18 @@ int SolveSpace::LoadAutosaveYesNo(void)
 
 void SolveSpace::LoadAllFontFiles(void)
 {
-    std::string fontsDir(MAX_PATH, '\0');
-    fontsDir.resize(GetWindowsDirectory(&fontsDir[0], fontsDir.length()));
-    fontsDir += "\\fonts\\";
+    std::wstring fontsDir(MAX_PATH, '\0');
+    fontsDir.resize(GetWindowsDirectoryW(&fontsDir[0], fontsDir.length()));
+    fontsDir += L"\\fonts\\";
 
     WIN32_FIND_DATA wfd;
-    HANDLE h = FindFirstFile((fontsDir + "*.ttf").c_str(), &wfd);
+    HANDLE h = FindFirstFileW((fontsDir + L"*.ttf").c_str(), &wfd);
     while(h != INVALID_HANDLE_VALUE) {
         TtfFont tf = {};
-        tf.fontFile = fontsDir + wfd.cFileName;
+        tf.fontFile = Narrow(fontsDir) + Narrow(wfd.cFileName);
         SS.fonts.l.Add(&tf);
 
-        if(!FindNextFile(h, &wfd)) break;
+        if(!FindNextFileW(h, &wfd)) break;
     }
 }
 
@@ -1128,11 +1131,11 @@ static void DoRecent(HMENU m, int base)
     int i, c = 0;
     for(i = 0; i < MAX_RECENT; i++) {
         if(!RecentFile[i].empty()) {
-            AppendMenu(m, MF_STRING, base + i, RecentFile[i].c_str());
+            AppendMenuW(m, MF_STRING, base + i, Widen(RecentFile[i]).c_str());
             c++;
         }
     }
-    if(c == 0) AppendMenu(m, MF_STRING | MF_GRAYED, 0, "(no recent files)");
+    if(c == 0) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, L"(no recent files)");
 }
 void SolveSpace::RefreshRecentMenus(void)
 {
@@ -1160,23 +1163,23 @@ HMENU CreateGraphicsWindowMenus(void)
 
         if(SS.GW.menu[i].level == 0) {
             m = CreateMenu();
-            AppendMenu(top, MF_STRING | MF_POPUP, (UINT_PTR)m, label);
+            AppendMenuW(top, MF_STRING | MF_POPUP, (UINT_PTR)m, Widen(label).c_str());
             if(subMenu >= (int)arraylen(SubMenus)) oops();
             SubMenus[subMenu] = m;
             subMenu++;
         } else if(SS.GW.menu[i].level == 1) {
             if(SS.GW.menu[i].id == GraphicsWindow::MNU_OPEN_RECENT) {
                 RecentOpenMenu = CreateMenu();
-                AppendMenu(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentOpenMenu, label);
+                AppendMenuW(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)RecentOpenMenu, Widen(label).c_str());
             } else if(SS.GW.menu[i].id == GraphicsWindow::MNU_GROUP_RECENT) {
                 RecentImportMenu = CreateMenu();
-                AppendMenu(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentImportMenu, label);
+                AppendMenuW(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)RecentImportMenu, Widen(label).c_str());
             } else if(SS.GW.menu[i].label) {
-                AppendMenu(m, MF_STRING, SS.GW.menu[i].id, label);
+                AppendMenuW(m, MF_STRING, SS.GW.menu[i].id, Widen(label).c_str());
             } else {
-                AppendMenu(m, MF_SEPARATOR, SS.GW.menu[i].id, "");
+                AppendMenuW(m, MF_SEPARATOR, SS.GW.menu[i].id, L"");
             }
         } else oops();
     }
@@ -1196,7 +1199,7 @@ static void CreateMainWindows(void)
                           CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
     wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-    wc.lpszClassName    = "GraphicsWnd";
+    wc.lpszClassName    = L"GraphicsWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
@@ -1206,14 +1209,14 @@ static void CreateMainWindows(void)
     if(!RegisterClassEx(&wc)) oops();
 
     HMENU top = CreateGraphicsWindowMenus();
-    GraphicsWnd = CreateWindowEx(0, "GraphicsWnd",
-        "SolveSpace (not yet saved)",
+    GraphicsWnd = CreateWindowExW(0, L"GraphicsWnd",
+        L"SolveSpace (not yet saved)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
         50, 50, 900, 600, NULL, top, Instance, NULL);
     if(!GraphicsWnd) oops();
 
-    GraphicsEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
+    GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
     SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
@@ -1223,24 +1226,24 @@ static void CreateMainWindows(void)
     wc.style           &= ~CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)TextWndProc;
     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName    = "TextWnd";
+    wc.lpszClassName    = L"TextWnd";
     wc.hCursor          = NULL;
     if(!RegisterClassEx(&wc)) oops();
 
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
-    TextWnd = CreateWindowEx(0,
-        "TextWnd", "SolveSpace - Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
+    TextWnd = CreateWindowExW(0,
+        L"TextWnd", L"SolveSpace - Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 
-    TextWndScrollBar = CreateWindowEx(0, WC_SCROLLBAR, "", WS_CHILD |
+    TextWndScrollBar = CreateWindowExW(0, WC_SCROLLBAR, L"", WS_CHILD |
         SBS_VERT | SBS_LEFTALIGN | WS_VISIBLE | WS_CLIPSIBLINGS,
         200, 100, 100, 100, TextWnd, NULL, Instance, NULL);
     // Force the scrollbar to get resized to the window,
     TextWndProc(TextWnd, WM_SIZE, 0, 0);
 
-    TextEditControl = CreateWindowEx(WS_EX_CLIENTEDGE, WC_EDIT, "",
+    TextEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
     SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
@@ -1304,10 +1307,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InitCommonControls();
 
     // A monospaced font
-    FixedFont = CreateFont(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
+    FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
         FW_REGULAR, false,
         false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        DEFAULT_QUALITY, FF_DONTCARE, "Lucida Console");
+        DEFAULT_QUALITY, FF_DONTCARE, L"Lucida Console");
     if(!FixedFont)
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
 
@@ -1331,23 +1334,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
     InitHeaps();
 
+    // Pull out the Unicode command line.
+    int argc;
+    LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
     // A filename may have been specified on the command line; if so, then
     // strip any quotation marks, and make it absolute.
-    std::string filename = lpCmdLine;
-    size_t pos;
-    pos = filename.find_last_not_of("\"");
-    if(pos != std::string::npos)
-        filename.erase(pos + 1);
-    pos = filename.find_first_not_of(" \"");
-    if(pos != std::string::npos)
-        filename.erase(0, pos);
-    if(!filename.empty())
-        filename = GetAbsoluteFilename(filename);
+    std::wstring filenameRel, filename;
+    if(argc >= 2) {
+        filenameRel = argv[1];
+        if(filenameRel[0] == L'\"' && filenameRel[filenameRel.length() - 1] == L'\"') {
+            filenameRel.erase(0, 1);
+            filenameRel.erase(filenameRel.length() - 1, 1);
+        }
+
+        DWORD len = GetFullPathNameW(&filenameRel[0], 0, NULL, NULL);
+        filename.resize(len - 1);
+        GetFullPathNameW(&filenameRel[0], len, &filename[0], NULL);
+    }
 
 #ifdef HAVE_SPACEWARE
     // Initialize the SpaceBall, if present. Test if the driver is running
     // first, to avoid a long timeout if it's not.
-    HWND swdc = FindWindow("SpaceWare Driver Class", NULL);
+    HWND swdc = FindWindowW(L"SpaceWare Driver Class", NULL);
     if(swdc != NULL) {
         SiOpenData sod;
         SiInitialize();
@@ -1361,7 +1370,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
     if(!filename.empty())
-        SS.OpenFile(filename);
+        SS.OpenFile(Narrow(filename));
 
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.

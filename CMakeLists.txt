@@ -35,7 +35,9 @@ if(WIN32)
         -D_WIN32_IE=_WIN32_WINNT
         -DISOLATION_AWARE_ENABLED=1
         -DWIN32=1
-        -DWIN32_LEAN_AND_MEAN=1)
+        -DWIN32_LEAN_AND_MEAN=1
+        -DUNICODE
+        -D_UNICODE)
 endif()
 
 if(MINGW)

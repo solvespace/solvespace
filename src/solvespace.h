@@ -107,6 +107,13 @@ typedef  UCHAR  uint8_t;
 typedef   CHAR   int8_t;
 #endif
 
+#if defined(WIN32)
+std::string Narrow(const wchar_t *s);
+std::wstring Widen(const char *s);
+std::string Narrow(const std::wstring &s);
+std::wstring Widen(const std::string &s);
+#endif
+
 inline double Random(double vmax) {
     return (vmax*rand()) / RAND_MAX;
 }

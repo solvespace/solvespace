@@ -19,7 +19,52 @@ void dbp(const char *str, ...)
     _vsnprintf(buf, sizeof(buf), str, f);
     va_end(f);
 
-    OutputDebugString(buf);
+    // The native version of OutputDebugString, unlike most others,
+    // is OutputDebugStringA.
+    OutputDebugStringA(buf);
+}
+
+std::string Narrow(const wchar_t *in)
+{
+    std::string out;
+    DWORD len = WideCharToMultiByte(CP_UTF8, 0, in, -1, NULL, 0, NULL, NULL);
+    out.resize(len - 1);
+    if(!WideCharToMultiByte(CP_UTF8, 0, in, -1, &out[0], len, NULL, NULL))
+        oops();
+    return out;
+}
+
+std::string Narrow(const std::wstring &in)
+{
+    if(in == L"") return "";
+
+    std::string out;
+    out.resize(WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(), NULL, 0, NULL, NULL));
+    if(!WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(),
+                            &out[0], out.length(), NULL, NULL))
+        oops();
+    return out;
+}
+
+std::wstring Widen(const char *in)
+{
+    std::wstring out;
+    DWORD len = MultiByteToWideChar(CP_UTF8, 0, in, -1, NULL, 0);
+    out.resize(len - 1);
+    if(!MultiByteToWideChar(CP_UTF8, 0, in, -1, &out[0], len))
+        oops();
+    return out;
+}
+
+std::wstring Widen(const std::string &in)
+{
+    if(in == "") return L"";
+
+    std::wstring out;
+    out.resize(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), NULL, 0));
+    if(!MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), &out[0], out.length()))
+        oops();
+    return out;
 }
 
 //-----------------------------------------------------------------------------

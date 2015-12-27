@@ -1470,7 +1470,21 @@ void ExitNow(void) {
 };
 
 int main(int argc, char** argv) {
-    /* If we don't call this, gtk_init will set the C standard library
+    /* It would in principle be possible to judiciously use
+       Glib::filename_{from,to}_utf8, but it's not really worth
+       the effort.
+       The setlocale() call is necessary for Glib::get_charset()
+       to detect the system character set; otherwise it thinks
+       it is always ANSI_X3.4-1968.
+       We set it back to C after all.  */
+    setlocale(LC_ALL, "");
+    if(!Glib::get_charset()) {
+        std::cerr << "Sorry, only UTF-8 locales are supported." << std::endl;
+        return 1;
+    }
+    setlocale(LC_ALL, "C");
+
+    /* If we don't do this, gtk_init will set the C standard library
        locale, and printf will format floats using ",". We will then
        fail to parse these. Also, many text window lines will become
        ambiguous. */
@@ -1500,7 +1514,8 @@ int main(int argc, char** argv) {
                       << std::endl;
         }
 
-        SS.OpenFile(argv[1]);
+        /* Make sure the argument is valid UTF-8. */
+        SS.OpenFile(Glib::ustring(argv[1]));
     }
 
     main.run(*GW);
