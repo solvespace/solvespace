@@ -131,6 +131,9 @@ class RgbaColor;
 #define PATH_SEP "/"
 #endif
 
+FILE *ssfopen(const std::string &filename, const char *mode);
+void ssremove(const std::string &filename);
+
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
 #define RECENT_IMPORT   (0xf100)

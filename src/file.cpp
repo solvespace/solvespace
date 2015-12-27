@@ -258,7 +258,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     SS.ReloadAllImported();
     SS.GenerateAll(0, INT_MAX);
 
-    fh = fopen(filename.c_str(), "wb");
+    fh = ssfopen(filename, "wb");
     if(!fh) {
         Error("Couldn't write to file '%s'", filename.c_str());
         return false;
@@ -424,7 +424,7 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
     allConsistent = false;
     fileLoadError = false;
 
-    fh = fopen(filename.c_str(), "rb");
+    fh = ssfopen(filename, "rb");
     if(!fh) {
         Error("Couldn't read from file '%s'", filename.c_str());
         return false;
@@ -509,7 +509,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
     SSurface srf = {};
     SCurve crv = {};
 
-    fh = fopen(filename.c_str(), "rb");
+    fh = ssfopen(filename, "rb");
     if(!fh) return false;
 
     le->Clear();
@@ -787,7 +787,7 @@ void SolveSpaceUI::ReloadAllImported(void)
         g->impMesh.Clear();
         g->impShell.Clear();
 
-        FILE *test = fopen(g->impFile.c_str(), "rb");
+        FILE *test = ssfopen(g->impFile, "rb");
         if(test) {
             fclose(test); // okay, exists
         } else {
@@ -796,7 +796,7 @@ void SolveSpaceUI::ReloadAllImported(void)
             if(!SS.saveFile.empty()) {
                 std::string rel = PathSepUNIXToPlatform(g->impFileRel);
                 std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
-                test = fopen(fromRel.c_str(), "rb");
+                test = ssfopen(fromRel, "rb");
                 if(test) {
                     fclose(test);
                     // It worked, this is our new absolute path

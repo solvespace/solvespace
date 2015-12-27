@@ -376,7 +376,7 @@ void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
 
         std::string importFile;
         if(!GetOpenFile(importFile, PNG_EXT, PNG_PATTERN)) goto err;
-        f = fopen(importFile.c_str(), "rb");
+        f = ssfopen(importFile, "rb");
         if(!f) goto err;
 
         uint8_t header[8];

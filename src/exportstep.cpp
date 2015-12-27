@@ -305,7 +305,7 @@ void StepFileWriter::ExportSurfacesTo(const std::string &filename) {
         return;
     }
 
-    f = fopen(filename.c_str(), "wb");
+    f = ssfopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.c_str());
         return;

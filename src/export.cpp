@@ -421,7 +421,7 @@ VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
         return NULL;
     }
 
-    FILE *f = fopen(filename.c_str(), "wb");
+    FILE *f = ssfopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.c_str());
         return NULL;
@@ -565,7 +565,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
         return;
     }
 
-    FILE *f = fopen(filename.c_str(), "wb");
+    FILE *f = ssfopen(filename, "wb");
     if(!f) {
         Error("Couldn't write to '%s'", filename.c_str());
         return;
@@ -996,7 +996,7 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
 
-    FILE *f = fopen(filename.c_str(), "wb");
+    FILE *f = ssfopen(filename, "wb");
     if(!f) goto err;
 
     png_struct *png_ptr; png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,

@@ -105,7 +105,7 @@ void SolveSpaceUI::Init() {
 bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
     std::string autosaveFile = filename + AUTOSAVE_SUFFIX;
 
-    FILE *f = fopen(autosaveFile.c_str(), "r");
+    FILE *f = ssfopen(autosaveFile, "rb");
     if(!f)
         return false;
     fclose(f);
@@ -387,7 +387,7 @@ bool SolveSpaceUI::Autosave()
 void SolveSpaceUI::RemoveAutosave()
 {
     std::string autosaveFile = saveFile + AUTOSAVE_SUFFIX;
-    remove(autosaveFile.c_str());
+    ssremove(autosaveFile.c_str());
 }
 
 bool SolveSpaceUI::OkayToStartNewFile(void) {
@@ -727,7 +727,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_STOP_TRACING: {
             std::string exportFile;
             if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
-                FILE *f = fopen(exportFile.c_str(), "wb");
+                FILE *f = ssfopen(exportFile, "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);

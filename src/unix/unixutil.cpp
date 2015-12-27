@@ -30,6 +30,18 @@ void dbp(const char *str, ...)
     fputc('\n', stderr);
 }
 
+FILE *ssfopen(const std::string &filename, const char *mode)
+{
+    if(filename.length() != strlen(filename.c_str())) oops();
+    return fopen(filename.c_str(), mode);
+}
+
+void ssremove(const std::string &filename)
+{
+    if(filename.length() != strlen(filename.c_str())) oops();
+    remove(filename.c_str());
+}
+
 int64_t GetUnixTime(void)
 {
     time_t ret;

@@ -67,6 +67,26 @@ std::wstring Widen(const std::string &in)
     return out;
 }
 
+FILE *ssfopen(const std::string &filename, const char *mode)
+{
+    // Prepend \\?\ UNC prefix unless already an UNC path.
+    // We never try to fopen paths that are not absolute or
+    // contain separators inappropriate for the platform;
+    // thus, it is always safe to prepend this prefix.
+    std::string uncFilename = filename;
+    if(uncFilename.substr(0, 2) != "\\\\")
+        uncFilename = "\\\\?\\" + uncFilename;
+
+    if(filename.length() != strlen(filename.c_str())) oops();
+    return _wfopen(Widen(uncFilename).c_str(), Widen(mode).c_str());
+}
+
+void ssremove(const std::string &filename)
+{
+    if(filename.length() != strlen(filename.c_str())) oops();
+    _wremove(Widen(filename).c_str());
+}
+
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible

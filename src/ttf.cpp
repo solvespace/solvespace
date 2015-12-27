@@ -246,7 +246,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
     int i;
 
-    fh = fopen(fontFile.c_str(), "rb");
+    fh = ssfopen(fontFile, "rb");
     if(!fh) {
         return false;
     }
