@@ -451,6 +451,14 @@ public:
             c.alpha == alpha;
     }
 
+    uint32_t ToPackedIntBGRA(void) const {
+        return
+            blue |
+            (uint32_t)(green << 8) |
+            (uint32_t)(red << 16) |
+            (uint32_t)((255 - alpha) << 24);
+    }
+
     uint32_t ToPackedInt(void) const {
         return
             red |

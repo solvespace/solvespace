@@ -16,23 +16,34 @@ void VectorFileWriter::Dummy(void) {
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------
-
 class DxfWriteInterface : public DRW_Interface {
     DxfFileWriter *writer;
     dxfRW *dxf;
+    int currentColor;
+    double currentWidth;
 
 public:
     DxfWriteInterface(DxfFileWriter *w, dxfRW *dxfrw) :
         writer(w), dxf(dxfrw) {}
 
     virtual void writeEntities() {
-        for(SBezier *sb : writer->beziers) {
-            writeBezier(sb);
+        for(DxfFileWriter::BezierPath &path : writer->paths) {
+            currentColor = path.color;
+            currentWidth = path.width;
+            for(SBezier *sb : path.beziers) {
+                writeBezier(sb);
+            }
         }
+    }
+
+    void assignEntityDefaults(DRW_Entity *entity) {
+        entity->color24 = currentColor;
+        if(currentWidth > 0.0) entity->setWidthMm(currentWidth);
     }
 
     void writeLine(const Vector &p0, const Vector &p1) {
         DRW_Line line;
+        assignEntityDefaults(&line);
         line.basePoint = DRW_Coord(p0.x, p0.y, 0.0);
         line.secPoint = DRW_Coord(p1.x, p1.y, 0.0);
         dxf->writeLine(&line);
@@ -40,6 +51,7 @@ public:
 
     void writeArc(const Vector &c, double r, double sa, double ea) {
         DRW_Arc arc;
+        assignEntityDefaults(&arc);
         arc.radious = r;
         arc.basePoint = DRW_Coord(c.x, c.y, 0.0);
         arc.staangle = sa;
@@ -90,6 +102,7 @@ public:
     void writeSpline(SBezier *sb) {
         bool isRational = sb->IsRational();
         DRW_Spline spline;
+        assignEntityDefaults(&spline);
         spline.flags = (isRational) ? 0x04 : 0x08;
         spline.degree = sb->deg;
         spline.ncontrol = sb->deg + 1;
@@ -128,15 +141,32 @@ public:
             writeSpline(sb);
         }
     }
+
+    void writeBezierAsPwl(SBezier &sb) {
+        List<Vector> lv = {};
+        sb.MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
+        DRW_LWPolyline polyline;
+        assignEntityDefaults(&polyline);
+        for(int i = 0; i < lv.n; i++) {
+            DRW_Vertex2D *vertex = new DRW_Vertex2D();
+            vertex->x = lv.elem[i].x;
+            vertex->y = lv.elem[i].y;
+            polyline.vertlist.push_back(vertex);
+        }
+    }
 };
 
 void DxfFileWriter::StartFile(void) {
-    beziers.clear();
+    paths.clear();
 }
 
 void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb)
 {
+    BezierPath path = {};
+    path.color = strokeRgb.ToPackedIntBGRA();
+    path.width = lineWidth;
+    paths.push_back(path);
 }
 void DxfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                                bool filled, RgbaColor fillRgb)
@@ -147,14 +177,14 @@ void DxfFileWriter::Triangle(STriangle *tr) {
 }
 
 void DxfFileWriter::Bezier(SBezier *sb) {
-    beziers.push_back(sb);
+    paths.back().beziers.push_back(sb);
 }
 
 void DxfFileWriter::FinishAndCloseFile(void) {
     dxfRW dxf(filename.c_str());
     DxfWriteInterface interface(this, &dxf);
-    dxf.write(&interface, DRW::AC1012, false);
-    beziers.clear();
+    dxf.write(&interface, DRW::AC1018, false);
+    paths.clear();
 }
 
 //-----------------------------------------------------------------------------

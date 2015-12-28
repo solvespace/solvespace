@@ -522,7 +522,14 @@ public:
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    std::vector<SBezier *> beziers;
+    struct BezierPath {
+        std::vector<SBezier *> beziers;
+        int                    color;
+        double                 width;
+    };
+
+    std::vector<BezierPath> paths;
+
     void StartPath( RgbaColor strokeRgb, double lineWidth,
                     bool filled, RgbaColor fillRgb);
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
