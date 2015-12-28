@@ -99,7 +99,7 @@ uint32_t TtfFont::GetULONG(void) {
 // glyphs[index]
 //-----------------------------------------------------------------------------
 void TtfFont::LoadGlyph(int index) {
-    if(index < 0 || index >= glyphs) return;
+    if(index < 0 || index >= glyph.size()) return;
 
     int i;
 
@@ -109,8 +109,12 @@ void TtfFont::LoadGlyph(int index) {
     int16_t xMax            = (int16_t)GetUSHORT();
     int16_t yMax            = (int16_t)GetUSHORT();
 
-    if(useGlyph[(int)'A'] == index) {
-        scale = (1024*1024) / yMax;
+    if(charMap.size() > 'A' && charMap[(int)'A'] == index) {
+        if(yMax > 0) {
+            scale = (1024*1024) / yMax;
+        } else {
+            scale = 1;
+        }
     }
 
     if(contours > 0) {
@@ -430,8 +434,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         uint16_t maxpMaxComponentElements  = GetUSHORT();
         uint16_t maxpMaxComponentDepth     = GetUSHORT();
 
-        glyphs = maxpNumGlyphs;
-        glyph = (Glyph *)MemAlloc(glyphs*sizeof(glyph[0]));
+        glyph.resize(maxpNumGlyphs);
 
         // Load the hmtx table, which gives the horizontal metrics (spacing
         // and advance width) of the font.
@@ -439,7 +442,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
 
         uint16_t hmtxAdvanceWidth = 0;
         int16_t  hmtxLsb = 0;
-        for(i = 0; i < min(glyphs, (int)hheaNumberOfMetrics); i++) {
+        for(i = 0; i < min(glyph.size(), (size_t)hheaNumberOfMetrics); i++) {
             hmtxAdvanceWidth = GetUSHORT();
             hmtxLsb          = (int16_t)GetUSHORT();
 
@@ -447,7 +450,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             glyph[i].advanceWidth = hmtxAdvanceWidth;
         }
         // The last entry in the table applies to all subsequent glyphs also.
-        for(; i < glyphs; i++) {
+        for(; i < glyph.size(); i++) {
             glyph[i].leftSideBearing = hmtxLsb;
             glyph[i].advanceWidth = hmtxAdvanceWidth;
         }
@@ -515,38 +518,24 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
             idRangeOffset[i] = GetUSHORT();
         }
 
-        // So first, null out the glyph table in our in-memory representation
-        // of the font; any character for which cmap does not provide a glyph
-        // corresponds to -1
-        for(i = 0; i < (int)arraylen(useGlyph); i++) {
-            useGlyph[i] = 0;
-        }
-
         for(i = 0; i < segCount; i++) {
+            if(charMap.size() < endChar[i] + 1)
+                charMap.resize(endChar[i] + 1);
+
             uint16_t v = idDelta[i];
             if(idRangeOffset[i] == 0) {
-                int j;
-                for(j = startChar[i]; j <= endChar[i]; j++) {
-                    if(j > 0 && j < (int)arraylen(useGlyph)) {
-                        // Don't create a reference to a glyph that we won't
-                        // store because it's bigger than the table.
-                        if((uint16_t)(j + v) < glyphs) {
-                            // Arithmetic is modulo 2^16
-                            useGlyph[j] = (uint16_t)(j + v);
-                        }
-                    }
+                for(int j = startChar[i]; j <= endChar[i]; j++) {
+                    // Arithmetic is modulo 2^16
+                    charMap[j] = (uint16_t)(j + v);
                 }
             } else {
-                int j;
-                for(j = startChar[i]; j <= endChar[i]; j++) {
-                    if(j > 0 && j < (int)arraylen(useGlyph)) {
-                        int fp = filePos[i];
-                        fp += (j - startChar[i])*sizeof(uint16_t);
-                        fp += idRangeOffset[i];
-                        fseek(fh, fp, SEEK_SET);
+                for(int j = startChar[i]; j <= endChar[i]; j++) {
+                    int fp = filePos[i];
+                    fp += (j - startChar[i])*sizeof(uint16_t);
+                    fp += idRangeOffset[i];
+                    fseek(fh, fp, SEEK_SET);
 
-                        useGlyph[j] = GetUSHORT();
-                    }
+                    charMap[j] = GetUSHORT();
                 }
             }
         }
@@ -555,9 +544,9 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         // relative to the beginning of the glyf table.
         fseek(fh, locaAddr, SEEK_SET);
 
-        uint32_t *glyphOffsets = (uint32_t *)AllocTemporary(glyphs*sizeof(uint32_t));
+        uint32_t *glyphOffsets = (uint32_t *)AllocTemporary(glyph.size()*sizeof(uint32_t));
 
-        for(i = 0; i < glyphs; i++) {
+        for(i = 0; i < glyph.size(); i++) {
             if(headIndexToLocFormat == 1) {
                 // long offsets, 32 bits
                 glyphOffsets[i] = GetULONG();
@@ -572,7 +561,7 @@ bool TtfFont::LoadFontFromFile(bool nameOnly) {
         scale = 1024;
         // Load the glyf table. This contains the actual representations of the
         // letter forms, as piecewise linear or quadratic outlines.
-        for(i = 0; i < glyphs; i++) {
+        for(i = 0; i < glyph.size(); i++) {
             fseek(fh, glyfAddr + glyphOffsets[i], SEEK_SET);
             LoadGlyph(i);
         }
@@ -632,10 +621,16 @@ void TtfFont::Handle(int *dx, int x, int y, bool onCurve) {
     }
 }
 
-void TtfFont::PlotCharacter(int *dx, int c, double spacing) {
-    int gli = useGlyph[c];
+void TtfFont::PlotCharacter(int *dx, char32_t c, double spacing) {
+    int gli;
+    if(c < charMap.size()) {
+        gli = charMap[c];
+        if(gli < 0 || gli >= glyph.size())
+            gli = 0; // 0, by convention, is the unknown glyph
+    } else {
+        gli = 0;
+    }
 
-    if(gli < 0 || gli >= glyphs) return;
     Glyph *g = &(glyph[gli]);
     if(!g->pt) return;
 
@@ -688,10 +683,10 @@ void TtfFont::PlotString(const char *str, double spacing,
     }
 
     int dx = 0;
-
     while(*str) {
-        PlotCharacter(&dx, *str, spacing);
-        str++;
+        char32_t chr;
+        str = ReadUTF8(str, &chr);
+        PlotCharacter(&dx, chr, spacing);
     }
 }
 

@@ -466,17 +466,16 @@ public:
         int x, y;
     } IntPoint;
 
-    std::string fontFile;
-    std::string name;
-    bool        loaded;
+    std::string           fontFile;
+    std::string           name;
+    bool                  loaded;
 
     // The font itself, plus the mapping from ASCII codes to glyphs
-    int     useGlyph[256];
-    Glyph   *glyph;
-    int     glyphs;
+    std::vector<uint16_t> charMap;
+    std::vector<Glyph>    glyph;
 
-    int     maxPoints;
-    int     scale;
+    int                   maxPoints;
+    int                   scale;
 
     // The filehandle, while loading
     FILE   *fh;
@@ -486,9 +485,9 @@ public:
         ON_CURVE  = 1,
         OFF_CURVE = 2
     };
-    int         lastWas;
-    IntPoint    lastOnCurve;
-    IntPoint    lastOffCurve;
+    int                   lastWas;
+    IntPoint              lastOnCurve;
+    IntPoint              lastOffCurve;
 
     // And the state that the caller must specify, determines where we
     // render to and how
@@ -506,7 +505,7 @@ public:
 
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
-    void PlotCharacter(int *dx, int c, double spacing);
+    void PlotCharacter(int *dx, char32_t c, double spacing);
     void PlotString(const char *str, double spacing,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
 
