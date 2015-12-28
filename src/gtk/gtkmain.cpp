@@ -1301,7 +1301,7 @@ private:
 class TextWindowGtk : public Gtk::Window {
 public:
     TextWindowGtk() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
-                      _box(), _overlay(_widget) {
+                      _overlay(_widget), _box() {
         set_keep_above(true);
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
