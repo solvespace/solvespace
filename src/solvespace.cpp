@@ -774,12 +774,7 @@ void SolveSpaceUI::MenuHelp(int id) {
 "There is NO WARRANTY, to the extent permitted by\n"
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
-#ifdef WIN32
-"\xa9 "
-#else
-"© "
-#endif
-       "2008-2013 Jonathan Westhues and other authors.\n"
+"© 2008-2013 Jonathan Westhues and other authors.\n"
 );
             break;
 
