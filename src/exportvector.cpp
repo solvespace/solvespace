@@ -62,6 +62,45 @@ public:
         lv.Clear();
     }
 
+    void makeKnotsFor(DRW_Spline *spline) {
+        // QCad/LibreCAD require this for some reason.
+        if(spline->degree == 3) {
+            spline->nknots = 8;
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(1.0);
+            spline->knotslist.push_back(1.0);
+            spline->knotslist.push_back(1.0);
+            spline->knotslist.push_back(1.0);
+        } else if(spline->degree == 2) {
+            spline->nknots = 6;
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(0.0);
+            spline->knotslist.push_back(1.0);
+            spline->knotslist.push_back(1.0);
+            spline->knotslist.push_back(1.0);
+        } else {
+            oops();
+        }
+    }
+
+    void writeSpline(SBezier *sb) {
+        bool isRational = sb->IsRational();
+        DRW_Spline spline;
+        spline.flags = (isRational) ? 0x04 : 0x08;
+        spline.degree = sb->deg;
+        spline.ncontrol = sb->deg + 1;
+        makeKnotsFor(&spline);
+        for(int i = 0; i <= sb->deg; i++) {
+            spline.controllist.push_back(new DRW_Coord(sb->ctrl[i].x, sb->ctrl[i].y, 0.0));
+            if(isRational) spline.weightlist.push_back(sb->weight[i]);
+        }
+        dxf->writeSpline(&spline);
+    }
+
     void writeBezier(SBezier *sb) {
         Vector c;
         Vector n = Vector::From(0.0, 0.0, 1.0);
@@ -78,9 +117,15 @@ public:
             if(dtheta < 0.0) swap(theta0, theta1);
 
             writeArc(c, r, theta0, theta1);
+        } else if(sb->IsRational()) {
+            // Rational bezier
+            // We'd like to export rational beziers exactly, but the resulting DXF
+            // files can only be read by AutoCAD; LibreCAD/QCad simply do not
+            // implement the feature. So, export as piecewise linear for compatiblity.
+            writeBezierAsPwl(sb);
         } else {
             // Any other curve
-            writeBezierAsPwl(sb);
+            writeSpline(sb);
         }
     }
 };
