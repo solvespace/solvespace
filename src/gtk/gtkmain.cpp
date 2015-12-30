@@ -16,6 +16,7 @@
 #include <json-c/json_util.h>
 
 #include <glibmm/main.h>
+#include <glibmm/convert.h>
 #include <giomm/file.h>
 #include <gdkmm/cursor.h>
 #include <gtkmm/drawingarea.h>
