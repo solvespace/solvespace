@@ -11,28 +11,38 @@ void SolveSpaceUI::Clipboard::Clear(void) {
     r.Clear();
 }
 
-hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
+bool SolveSpaceUI::Clipboard::ContainsEntity(hEntity he) {
+    if(he.v == Entity::NO_ENTITY.v)
+        return true;
+
     ClipboardRequest *cr;
     for(cr = r.First(); cr; cr = r.NextAfter(cr)) {
-        if(cr->oldEnt.v == he.v) {
-            return cr->newReq.entity(0);
-        }
+        if(cr->oldEnt.v == he.v)
+            return true;
+
         for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
-            if(cr->oldPointEnt[i].v == he.v) {
-                return cr->newReq.entity(1+i);
-            }
+            if(cr->oldPointEnt[i].v == he.v)
+                return true;
         }
     }
-    return Entity::NO_ENTITY;
+    return false;
 }
 
-bool SolveSpaceUI::Clipboard::ContainsEntity(hEntity he) {
-    hEntity hen = NewEntityFor(he);
-    if(hen.v) {
-        return true;
-    } else {
-        return false;
+hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
+    if(he.v == Entity::NO_ENTITY.v)
+        return Entity::NO_ENTITY;
+
+    ClipboardRequest *cr;
+    for(cr = r.First(); cr; cr = r.NextAfter(cr)) {
+        if(cr->oldEnt.v == he.v)
+            return cr->newReq.entity(0);
+
+        for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
+            if(cr->oldPointEnt[i].v == he.v)
+                return cr->newReq.entity(1+i);
+        }
     }
+    oops();
 }
 
 void GraphicsWindow::DeleteSelection(void) {
@@ -109,10 +119,12 @@ void GraphicsWindow::CopySelection(void) {
 
     Constraint *c;
     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-        if(c->type == Constraint::POINTS_COINCIDENT) {
-            if(!SS.clipboard.ContainsEntity(c->ptA)) continue;
-            if(!SS.clipboard.ContainsEntity(c->ptB)) continue;
-        } else {
+        if(!SS.clipboard.ContainsEntity(c->ptA) ||
+           !SS.clipboard.ContainsEntity(c->ptB) ||
+           !SS.clipboard.ContainsEntity(c->entityA) ||
+           !SS.clipboard.ContainsEntity(c->entityB) ||
+           !SS.clipboard.ContainsEntity(c->entityC) ||
+           !SS.clipboard.ContainsEntity(c->entityD)) {
             continue;
         }
         SS.clipboard.c.Add(c);
@@ -172,12 +184,24 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         }
     }
 
-    Constraint *c;
-    for(c = SS.clipboard.c.First(); c; c = SS.clipboard.c.NextAfter(c)) {
-        if(c->type == Constraint::POINTS_COINCIDENT) {
-            Constraint::ConstrainCoincident(SS.clipboard.NewEntityFor(c->ptA),
-                                            SS.clipboard.NewEntityFor(c->ptB));
-        }
+    Constraint *cc;
+    for(cc = SS.clipboard.c.First(); cc; cc = SS.clipboard.c.NextAfter(cc)) {
+        Constraint c = {};
+        c.group = SS.GW.activeGroup;
+        c.workplane = SS.GW.ActiveWorkplane();
+        c.type = cc->type;
+        c.valA = cc->valA;
+        c.ptA = SS.clipboard.NewEntityFor(cc->ptA);
+        c.ptB = SS.clipboard.NewEntityFor(cc->ptB);
+        c.entityA = SS.clipboard.NewEntityFor(cc->entityA);
+        c.entityB = SS.clipboard.NewEntityFor(cc->entityB);
+        c.entityC = SS.clipboard.NewEntityFor(cc->entityC);
+        c.entityD = SS.clipboard.NewEntityFor(cc->entityD);
+        c.other = cc->other;
+        c.other2 = cc->other2;
+        c.reference = cc->reference;
+        c.disp = cc->disp;
+        Constraint::AddConstraint(&c);
     }
 
     SS.ScheduleGenerateAll();

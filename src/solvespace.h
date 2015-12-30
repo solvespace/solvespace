@@ -893,7 +893,7 @@ public:
     } justExportedInfo;
 
     class Clipboard {
-public:
+    public:
         List<ClipboardRequest>  r;
         List<Constraint>        c;
 
