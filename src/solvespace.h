@@ -207,14 +207,14 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
     PAT2("Encapsulated PostScript", "eps", "ps") \
     PAT1("Scalable Vector Graphics", "svg") \
     PAT2("STEP File", "step", "stp") \
-    PAT1("DXF File", "dxf") \
+    PAT1("DXF File (AutoCAD 2007)", "dxf") \
     PAT2("HPGL File", "plt", "hpgl") \
     PAT1("G Code", "txt") \
     ENDPAT
 // 3d vector (wireframe lines and curves) format
 #define V3D_PATTERN \
     PAT2("STEP File", "step", "stp") \
-    PAT1("DXF File", "dxf") \
+    PAT1("DXF File (AutoCAD 2007)", "dxf") \
     ENDPAT
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN \
