@@ -76,6 +76,22 @@ Vector EntityBase::VectorGetRefPoint(void) {
     }
 }
 
+Vector EntityBase::VectorGetStartPoint(void) {
+    switch(type) {
+        case LINE_SEGMENT:
+            return SK.GetEntity(point[1])->PointGetNum();
+
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
+            return SK.GetEntity(point[0])->PointGetNum();
+
+        default: oops();
+    }
+}
+
 bool EntityBase::IsCircle(void) {
     return (type == CIRCLE) || (type == ARC_OF_CIRCLE);
 }

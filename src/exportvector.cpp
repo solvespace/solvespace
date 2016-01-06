@@ -6,7 +6,7 @@
 #include <libdxfrw.h>
 #include "solvespace.h"
 
-void VectorFileWriter::Dummy(void) {
+VectorFileWriter::~VectorFileWriter() {
     // This out-of-line virtual method definition quells the following warning
     // from Clang++: "'VectorFileWriter' has no out-of-line virtual method
     // definitions; its vtable will be emitted in every translation unit
@@ -22,9 +22,24 @@ class DxfWriteInterface : public DRW_Interface {
     int currentColor;
     double currentWidth;
 
+    static DRW_Coord toCoord(const Vector &v) {
+        return DRW_Coord(v.x, v.y, v.z);
+    }
+
+    Vector xfrm(Vector v) {
+        return writer->Transform(v);
+    }
+
 public:
     DxfWriteInterface(DxfFileWriter *w, dxfRW *dxfrw) :
         writer(w), dxf(dxfrw) {}
+
+    virtual void writeTextstyles() {
+        DRW_Textstyle ts;
+        ts.name = "unicode";
+        ts.font = "unicode";
+        dxf->writeTextstyle(&ts);
+    }
 
     virtual void writeEntities() {
         for(DxfFileWriter::BezierPath &path : writer->paths) {
@@ -32,6 +47,110 @@ public:
             currentWidth = path.width;
             for(SBezier *sb : path.beziers) {
                 writeBezier(sb);
+            }
+        }
+
+        if(writer->constraint) {
+            Constraint *c;
+            for(c = writer->constraint->First(); c; c = writer->constraint->NextAfter(c)) {
+                switch(c->type) {
+                    case Constraint::PT_PT_DISTANCE: {
+                        Vector ap = SK.GetEntity(c->ptA)->PointGetNum();
+                        Vector bp = SK.GetEntity(c->ptB)->PointGetNum();
+                        Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(c->disp.offset);
+                        writeAlignedDimension(xfrm(ap),  xfrm(bp), xfrm(ref),
+                                              xfrm(ref), c->Label());
+                        break;
+                    }
+
+                    case Constraint::PT_LINE_DISTANCE: {
+                        Vector pt = SK.GetEntity(c->ptA)->PointGetNum();
+                        Entity *line = SK.GetEntity(c->entityA);
+                        Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
+                        Vector lB = SK.GetEntity(line->point[1])->PointGetNum();
+                        Vector dl = lB.Minus(lA);
+
+                        Vector closest = pt.ClosestPointOnLine(lA, dl);
+
+                        if(pt.Equals(closest)) break;
+
+                        Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(c->disp.offset);
+                        Vector refClosest = ref.ClosestPointOnLine(lA, dl);
+
+                        double ddl = dl.Dot(dl);
+                        if(fabs(ddl) > LENGTH_EPS * LENGTH_EPS) {
+                            double t = refClosest.Minus(lA).Dot(dl) / ddl;
+                            if(t < 0.0) {
+                                refClosest = lA;
+                            } else if(t > 1.0) {
+                                refClosest = lB;
+                            }
+                        }
+
+                        Vector xdl = xfrm(lB).Minus(xfrm(lA));
+                        writeLinearDimension(xfrm(pt), xfrm(refClosest), xfrm(ref),
+                                             xfrm(ref), c->Label(),
+                                             atan2(xdl.y, xdl.x) / PI * 180.0 + 90.0, 0.0);
+                        break;
+                    }
+
+                    case Constraint::DIAMETER: {
+                        Entity *circle = SK.GetEntity(c->entityA);
+                        Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
+                        Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
+                        Vector n = q.RotationN().WithMagnitude(1);
+                        double r = circle->CircleGetRadiusNum();
+
+                        Vector ref = center.Plus(c->disp.offset);
+                        // Force the label into the same plane as the circle.
+                        ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
+
+                        Vector rad = ref.Minus(center).WithMagnitude(r);
+                        if(/*isRadius*/c->other) {
+                            writeRadialDimension(
+                                xfrm(center), xfrm(center.Plus(rad)),
+                                xfrm(ref), c->Label());
+                        } else {
+                            writeDiametricDimension(
+                                xfrm(center.Minus(rad)), xfrm(center.Plus(rad)),
+                                xfrm(ref), c->Label());
+                        }
+                        break;
+                    }
+
+                    case Constraint::ANGLE: {
+                        Entity *a = SK.GetEntity(c->entityA);
+                        Entity *b = SK.GetEntity(c->entityB);
+
+                        Vector a0 = a->VectorGetStartPoint();
+                        Vector b0 = b->VectorGetStartPoint();
+                        Vector da = a->VectorGetNum();
+                        Vector db = b->VectorGetNum();
+                        if(/*otherAngle*/c->other) {
+                            a0 = a0.Plus(da);
+                            da = da.ScaledBy(-1);
+                        }
+
+                        bool skew = false;
+                        Vector ref = c->disp.offset;
+                        Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da), b0, b0.Plus(db),
+                                                                  &skew);
+                        if(!skew) ref = pi.Plus(c->disp.offset);
+
+                        writeAngularDimension(
+                            xfrm(a0), xfrm(a0.Plus(da)), xfrm(b0), xfrm(b0.Plus(db)), xfrm(ref),
+                            xfrm(ref), c->Label());
+                        break;
+                    }
+
+                    case Constraint::COMMENT: {
+                        Style *st = Style::Get(c->disp.style);
+                        writeText(xfrm(c->disp.offset), c->Label(),
+                                  Style::TextHeight(c->disp.style) / SS.GW.scale,
+                                  st->textAngle, st->textOrigin);
+                        break;
+                    }
+                }
             }
         }
     }
@@ -44,8 +163,8 @@ public:
     void writeLine(const Vector &p0, const Vector &p1) {
         DRW_Line line;
         assignEntityDefaults(&line);
-        line.basePoint = DRW_Coord(p0.x, p0.y, 0.0);
-        line.secPoint = DRW_Coord(p1.x, p1.y, 0.0);
+        line.basePoint = toCoord(p0);
+        line.secPoint = toCoord(p1);
         dxf->writeLine(&line);
     }
 
@@ -53,7 +172,7 @@ public:
         DRW_Arc arc;
         assignEntityDefaults(&arc);
         arc.radious = r;
-        arc.basePoint = DRW_Coord(c.x, c.y, 0.0);
+        arc.basePoint = toCoord(c);
         arc.staangle = sa;
         arc.endangle = ea;
         dxf->writeArc(&arc);
@@ -154,7 +273,94 @@ public:
             polyline.vertlist.push_back(vertex);
         }
     }
+
+    void writeAlignedDimension(Vector def1, Vector def2, Vector dimp,
+                               Vector textp, const std::string &text) {
+        DRW_DimAligned dim;
+        dim.setDef1Point(toCoord(def1));
+        dim.setDef2Point(toCoord(def2));
+        dim.setDimPoint(toCoord(dimp));
+        dim.setTextPoint(toCoord(textp));
+        dim.setText(text);
+        dxf->writeDimension(&dim);
+    }
+
+    void writeLinearDimension(Vector def1, Vector def2, Vector dimp,
+                              Vector textp, const std::string &text,
+                              double angle, double oblique) {
+        DRW_DimLinear dim;
+        dim.setDef1Point(toCoord(def1));
+        dim.setDef2Point(toCoord(def2));
+        dim.setDimPoint(toCoord(dimp));
+        dim.setTextPoint(toCoord(textp));
+        dim.setText(text);
+        dim.setAngle(angle);
+        dim.setOblique(oblique);
+        dxf->writeDimension(&dim);
+    }
+
+    void writeRadialDimension(Vector center, Vector radius,
+                              Vector textp, const std::string &text) {
+        DRW_DimRadial dim;
+        dim.setCenterPoint(toCoord(center));
+        dim.setDiameterPoint(toCoord(radius));
+        dim.setTextPoint(toCoord(textp));
+        dim.setText(text);
+        dxf->writeDimension(&dim);
+    }
+
+    void writeDiametricDimension(Vector def1, Vector def2,
+                                 Vector textp, const std::string &text) {
+        DRW_DimDiametric dim;
+        dim.setDiameter1Point(toCoord(def1));
+        dim.setDiameter2Point(toCoord(def2));
+        dim.setTextPoint(toCoord(textp));
+        dim.setText(text);
+        dxf->writeDimension(&dim);
+    }
+
+    void writeAngularDimension(Vector fl1, Vector fl2, Vector sl1, Vector sl2, Vector dimp,
+                               Vector textp, const std::string &text) {
+        DRW_DimAngular dim;
+        dim.setFirstLine1(toCoord(fl1));
+        dim.setFirstLine2(toCoord(fl2));
+        dim.setSecondLine1(toCoord(sl1));
+        dim.setSecondLine2(toCoord(sl2));
+        dim.setDimPoint(toCoord(dimp));
+        dim.setTextPoint(toCoord(textp));
+        dim.setText(text);
+        dxf->writeDimension(&dim);
+    }
+
+    void writeText(Vector textp, const std::string &text,
+                   double height, double angle, int origin) {
+        DRW_Text txt;
+        txt.style = "unicode";
+        txt.basePoint = toCoord(textp);
+        txt.secPoint = txt.basePoint;
+        txt.text = text;
+        txt.height = height;
+        txt.angle = angle;
+        txt.alignH = DRW_Text::HCenter;
+        if(origin & Style::ORIGIN_LEFT) {
+            txt.alignH = DRW_Text::HLeft;
+        } else if(origin & Style::ORIGIN_RIGHT) {
+            txt.alignH = DRW_Text::HRight;
+        }
+        txt.alignV = DRW_Text::VMiddle;
+        if(origin & Style::ORIGIN_TOP) {
+            txt.alignV = DRW_Text::VTop;
+        } else if(origin & Style::ORIGIN_BOT) {
+            txt.alignV = DRW_Text::VBaseLine;
+        }
+        dxf->writeText(&txt);
+    }
 };
+
+bool DxfFileWriter::OutputConstraints(IdList<Constraint,hConstraint> *constraint) {
+    this->constraint = constraint;
+    return true;
+}
 
 void DxfFileWriter::StartFile(void) {
     paths.clear();
@@ -183,8 +389,9 @@ void DxfFileWriter::Bezier(SBezier *sb) {
 void DxfFileWriter::FinishAndCloseFile(void) {
     dxfRW dxf(filename.c_str());
     DxfWriteInterface interface(this, &dxf);
-    dxf.write(&interface, DRW::AC1018, false);
+    dxf.write(&interface, DRW::AC1021, false);
     paths.clear();
+    constraint = NULL;
 }
 
 //-----------------------------------------------------------------------------

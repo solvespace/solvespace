@@ -383,6 +383,7 @@ public:
     ExprVector VectorGetExprs(void);
     Vector VectorGetNum(void);
     Vector VectorGetRefPoint(void);
+    Vector VectorGetStartPoint(void);
 
     // For distances
     bool IsDistance(void);

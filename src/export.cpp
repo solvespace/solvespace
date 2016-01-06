@@ -112,6 +112,9 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
     SEdgeList edges = {};
     SBezierList beziers = {};
 
+    VectorFileWriter *out = VectorFileWriter::ForFile(filename);
+    if(!out) return;
+
     SS.exportMode = true;
     GenerateAll(GENERATE_ALL);
 
@@ -153,31 +156,41 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
     }
 
     if(SS.GW.showConstraints) {
-        Constraint *c;
-        for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-            c->GetEdges(&edges);
+        if(!out->OutputConstraints(&SK.constraint)) {
+            // The output format cannot represent constraints directly,
+            // so convert them to edges.
+            Constraint *c;
+            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+                c->GetEdges(&edges);
+            }
         }
     }
 
     if(wireframe) {
-        VectorFileWriter *out = VectorFileWriter::ForFile(filename);
-        if(out) {
-            ExportWireframeCurves(&edges, &beziers, out);
-        }
+        Vector u = Vector::From(1.0, 0.0, 0.0),
+               v = Vector::From(0.0, 1.0, 0.0),
+               n = Vector::From(0.0, 0.0, 1.0),
+               origin = Vector::From(0.0, 0.0, 0.0);
+        double cameraTan = 0.0,
+               scale = 1.0;
+
+        out->SetModelviewProjection(u, v, n, origin, cameraTan, scale);
+
+        ExportWireframeCurves(&edges, &beziers, out);
     } else {
         Vector u = SS.GW.projRight,
                v = SS.GW.projUp,
                n = u.Cross(v),
                origin = SS.GW.offset.ScaledBy(-1);
 
-        VectorFileWriter *out = VectorFileWriter::ForFile(filename);
-        if(out) {
-            ExportLinesAndMesh(&edges, &beziers, sm,
-                               u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
-                               out);
-        }
+        out->SetModelviewProjection(u, v, n, origin,
+                                    SS.CameraTangent()*SS.GW.scale, SS.exportScale);
 
-        if(out && !out->HasCanvasSize()) {
+        ExportLinesAndMesh(&edges, &beziers, sm,
+                           u, v, n, origin, SS.CameraTangent()*SS.GW.scale,
+                           out);
+
+        if(!out->HasCanvasSize()) {
             // These file formats don't have a canvas size, so they just
             // get exported in the raw coordinate system. So indicate what
             // that was on-screen.
@@ -215,7 +228,7 @@ void SolveSpaceUI::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
         sblss.AddOpenPath(sb);
     }
 
-    out->Output(&sblss, NULL);
+    out->OutputLinesAndMesh(&sblss, NULL);
     sblss.Clear();
 }
 
@@ -381,7 +394,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     }
 
     // Now write the lines and triangles to the output file
-    out->Output(&sblss, &sms);
+    out->OutputLinesAndMesh(&sblss, &sms);
 
     leftovers.Clear();
     spxyz.Clear();
@@ -441,7 +454,22 @@ VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
     return ret;
 }
 
-void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
+void VectorFileWriter::SetModelviewProjection(const Vector &u, const Vector &v, const Vector &n,
+                                              const Vector &origin, double cameraTan,
+                                              double scale) {
+    this->u = u;
+    this->v = v;
+    this->n = n;
+    this->origin = origin;
+    this->cameraTan = cameraTan;
+    this->scale = scale;
+}
+
+Vector VectorFileWriter::Transform(Vector &pos) const {
+    return pos.InPerspective(u, v, n, origin, cameraTan).ScaledBy(1.0 / scale);
+}
+
+void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
     STriangle *tr;
     SBezier *b;
 

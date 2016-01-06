@@ -490,23 +490,32 @@ public:
 };
 
 class VectorFileWriter {
+protected:
+    Vector u, v, n, origin;
+    double cameraTan, scale;
+
 public:
     FILE *f;
     std::string filename;
     Vector ptMin, ptMax;
 
-    // This quells the Clang++ warning "'VectorFileWriter' has virtual
-    // functions but non-virtual destructor"
-    virtual ~VectorFileWriter() {}
-
     static double MmToPts(double mm);
 
     static VectorFileWriter *ForFile(const std::string &filename);
 
-    void Output(SBezierLoopSetSet *sblss, SMesh *sm);
+    ~VectorFileWriter();
+
+    void SetModelviewProjection(const Vector &u, const Vector &v, const Vector &n,
+                                const Vector &origin, double cameraTan, double scale);
+    Vector Transform(Vector &pos) const;
+
+    void OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm);
 
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
+
+    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *constraint)
+        { return false; }
 
     virtual void StartPath( RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb) = 0;
@@ -517,8 +526,6 @@ public:
     virtual void StartFile(void) = 0;
     virtual void FinishAndCloseFile(void) = 0;
     virtual bool HasCanvasSize(void) = 0;
-
-    virtual void Dummy(void);
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
@@ -528,7 +535,10 @@ public:
         double                 width;
     };
 
-    std::vector<BezierPath> paths;
+    std::vector<BezierPath>         paths;
+    IdList<Constraint,hConstraint> *constraint;
+
+    bool OutputConstraints(IdList<Constraint,hConstraint> *constraint);
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
                     bool filled, RgbaColor fillRgb);
