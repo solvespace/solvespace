@@ -490,6 +490,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             if(!pt.Equals(closest)) {
                 DoLineWithArrows(ref, pt, closest, true);
+                
+                // Extensions to line
+                double pixels = 1.0 / SS.GW.scale;
+                Vector refClosest = ref.ClosestPointOnLine(lA, dl);
+                double ddl = dl.Dot(dl);
+                if(fabs(ddl) > LENGTH_EPS * LENGTH_EPS) {
+                    double t = refClosest.Minus(lA).Dot(dl) / ddl;
+                    if(t < 0.0) {
+                        LineDrawOrGetDistance(refClosest.Minus(dl.WithMagnitude(10.0 * pixels)), lA);
+                    } else if(t > 1.0) {
+                        LineDrawOrGetDistance(refClosest.Plus(dl.WithMagnitude(10.0 * pixels)), lB);
+                    }
+                }
             }
 
             if(workplane.v != Entity::FREE_IN_3D.v) {
