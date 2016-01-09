@@ -174,7 +174,7 @@ void TextWindow::DescribeSelection(void) {
                 Printf(true, "  font = '%Fi%s%E'", e->font.c_str());
                 if(e->h.isFromRequest()) {
                     Printf(false, "  text = '%Fi%s%E' %Fl%Ll%f%D[change]%E",
-                        e->str.c_str(), &ScreenEditTtfText, e->h.request());
+                        e->str.c_str(), &ScreenEditTtfText, e->h.request().v);
                     Printf(true, "  select new font");
                     SS.fonts.LoadAll();
                     int i;
@@ -309,7 +309,7 @@ void TextWindow::DescribeSelection(void) {
             Printf(false, "%FtDIAMETER CONSTRAINT");
 
             Printf(true, "  %Fd%f%D%Ll%s  show as radius",
-                   &ScreenConstraintShowAsRadius, gs.constraint[0],
+                   &ScreenConstraintShowAsRadius, gs.constraint[0].v,
                    c->other ? CHECK_TRUE : CHECK_FALSE);
         } else {
             Printf(false, "%FtSELECTED:%E %s",
