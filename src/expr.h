@@ -20,10 +20,6 @@ public:
         // if we know that the param table won't move around)
         PARAM_PTR      =  1,
 
-        // These are used only for user-entered expressions.
-        POINT          = 10,
-        ENTITY         = 11,
-
         CONSTANT       = 20,
 
         PLUS           = 100,
@@ -55,7 +51,6 @@ public:
         double  v;
         hParam  parh;
         Param  *parp;
-        hEntity entity;
         Expr    *b;
 
         // For use while parsing
