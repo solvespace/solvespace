@@ -12,7 +12,6 @@ class Expr;
 
 class Expr {
 public:
-    uint32_t marker;
 
     enum {
         // A parameter, by the hParam handle

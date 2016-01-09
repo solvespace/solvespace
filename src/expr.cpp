@@ -300,7 +300,6 @@ int Expr::Nodes(void) {
 Expr *Expr::DeepCopy(void) {
     Expr *n = AllocExpr();
     *n = *this;
-    n->marker = 0;
     int c = n->Children();
     if(c > 0) n->a = a->DeepCopy();
     if(c > 1) n->b = b->DeepCopy();
