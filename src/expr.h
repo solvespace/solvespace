@@ -52,19 +52,19 @@ public:
 
     int op;
     Expr    *a;
-    Expr    *b;
     union {
         double  v;
         hParam  parh;
         Param  *parp;
         hEntity entity;
+        Expr    *b;
 
         // For use while parsing
         char    c;
-    }       x;
+    };
 
     Expr() { }
-    Expr(double v) : op(CONSTANT) { x.v = v; }
+    Expr(double val) : op(CONSTANT) { v = val; }
 
     static inline Expr *AllocExpr(void)
         { return (Expr *)AllocTemporary(sizeof(Expr)); }

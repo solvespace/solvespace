@@ -94,8 +94,8 @@ void System::SolveBySubstitution(void) {
            tex->a->op == Expr::PARAM &&
            tex->b->op == Expr::PARAM)
         {
-            hParam a = (tex->a)->x.parh;
-            hParam b = (tex->b)->x.parh;
+            hParam a = tex->a->parh;
+            hParam b = tex->b->parh;
             if(!(param.FindByIdNoOops(a) && param.FindByIdNoOops(b))) {
                 // Don't substitute unless they're both solver params;
                 // otherwise it's an equation that can be solved immediately,
