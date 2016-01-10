@@ -322,6 +322,7 @@ endif()
 if(APPLE)
     set(fixups)
     foreach(lib ${platform_BUNDLED_LIBS})
+        get_filename_component(name ${lib} NAME)
         execute_process(COMMAND otool -XD ${lib}
             OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
         add_custom_command(TARGET solvespace POST_BUILD
