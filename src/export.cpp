@@ -819,8 +819,12 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
     "\n"
     "          geometry.faces.push(new THREE.Face3(mesh_obj.faces[i][0],\n"
     "            mesh_obj.faces[i][1], mesh_obj.faces[i][2],\n"
-    "            new THREE.Vector3(mesh_obj.normals[i][0],\n"
-    "              mesh_obj.normals[i][1], mesh_obj.normals[i][2]),\n"
+    "            [new THREE.Vector3(mesh_obj.normals[i][0][0],\n"
+    "              mesh_obj.normals[i][0][1], mesh_obj.normals[i][0][2]),\n"
+    "             new THREE.Vector3(mesh_obj.normals[i][1][0],\n"
+    "              mesh_obj.normals[i][1][1], mesh_obj.normals[i][1][2]),\n"
+    "             new THREE.Vector3(mesh_obj.normals[i][2][0],\n"
+    "              mesh_obj.normals[i][2][1], mesh_obj.normals[i][2][2])],\n"
     "            new THREE.Color(mesh_obj.colors[i] & 0x00FFFFFF),\n"
     "            opacitiesSeen[currOpacity]));\n"
     "        }\n"
@@ -891,13 +895,13 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
                "  bounds: {\n"
                "    x: %f, y: %f, near: %f, far: %f, z: %f, edgeBias: %f\n"
                "  },\n",
-                    baseFilename.c_str(),
-                    largerBoundXY,
-                    largerBoundXY,
-                    1.0,
-                    largerBoundZ * 2,
-                    largerBoundZ,
-                    largerBoundZ / 250);
+            baseFilename.c_str(),
+            largerBoundXY,
+            largerBoundXY,
+            1.0,
+            largerBoundZ * 2,
+            largerBoundZ,
+            largerBoundZ / 250);
 
     // Output lighting information.
     fputs("  lights: {\n"
@@ -910,10 +914,8 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
         fprintf(f, "      {\n"
                    "        intensity: %f, direction: [%f, %f, %f]\n"
                    "      },\n",
-                        SS.lightIntensity[lightCount],
-                        SS.lightDir[lightCount].x,
-                        SS.lightDir[lightCount].y,
-                        SS.lightDir[lightCount].z);
+                SS.lightIntensity[lightCount],
+                CO(SS.lightDir[lightCount]));
     }
 
     // Global Ambience.
@@ -932,9 +934,9 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
           "  points: [\n", f);
     for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
         fprintf(f, "    [%f, %f, %f],\n",
-                        sp->p.x / SS.exportScale,
-                        sp->p.y / SS.exportScale,
-                        sp->p.z / SS.exportScale);
+                sp->p.x / SS.exportScale,
+                sp->p.y / SS.exportScale,
+                sp->p.z / SS.exportScale);
     }
 
     fputs("  ],\n"
@@ -943,9 +945,17 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
     // This time we count from zero.
     for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
         fprintf(f, "    [%d, %d, %d],\n",
-                    spl.IndexForPoint(tr->a),
-                    spl.IndexForPoint(tr->b),
-                    spl.IndexForPoint(tr->c));
+                spl.IndexForPoint(tr->a),
+                spl.IndexForPoint(tr->b),
+                spl.IndexForPoint(tr->c));
+    }
+
+    // Output face normals.
+    fputs("  ],\n"
+          "  normals: [\n", f);
+    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
+        fprintf(f, "    [[%f, %f, %f], [%f, %f, %f], [%f, %f, %f]],\n",
+                CO(tr->an), CO(tr->bn), CO(tr->cn));
     }
 
     fputs("  ],\n"
@@ -956,27 +966,11 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, S
     }
 
     fputs("  ],\n"
-          "  normals: [\n", f);
-    // Output face normals.
-    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
-        Vector currNormal = tr->Normal();
-        fprintf(f, "    [%f, %f, %f],\n",
-                        currNormal.x,
-                        currNormal.y,
-                        currNormal.z);
-    }
-
-    fputs("  ],\n"
           "  edges: [\n", f);
     // Output edges. Assume user's model colors do not obscure white edges.
     for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         fprintf(f, "    [[%f, %f, %f], [%f, %f, %f]],\n",
-                        e->a.x,
-                        e->a.y,
-                        e->a.z,
-                        e->b.x,
-                        e->b.y,
-                        e->b.z);
+                CO(e->a), CO(e->b));
     }
 
     fputs("  ]\n};\n", f);
