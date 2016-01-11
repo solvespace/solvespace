@@ -765,8 +765,9 @@ static std::string PathSepUNIXToPlatform(const std::string &filename)
 #endif
 }
 
-void SolveSpaceUI::ReloadAllImported(void)
+bool SolveSpaceUI::ReloadAllImported(bool canCancel)
 {
+    std::map<std::string, std::string> importMap;
     allConsistent = false;
 
     int i;
@@ -784,6 +785,12 @@ void SolveSpaceUI::ReloadAllImported(void)
         g->impEntity.Clear();
         g->impMesh.Clear();
         g->impShell.Clear();
+
+        if(importMap.count(g->impFile)) {
+            std::string newPath = importMap[g->impFile];
+            if(!newPath.empty())
+                g->impFile = newPath;
+        }
 
         FILE *test = ssfopen(g->impFile, "rb");
         if(test) {
@@ -803,6 +810,7 @@ void SolveSpaceUI::ReloadAllImported(void)
             }
         }
 
+try_load_file:
         if(LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
         {
             if(!SS.saveFile.empty()) {
@@ -816,9 +824,34 @@ void SolveSpaceUI::ReloadAllImported(void)
                 // is always nonempty when we are actually writing anything.
                 g->impFileRel = g->impFile;
             }
+        } else if(!importMap.count(g->impFile)) {
+            switch(LocateImportedFileYesNoCancel(g->impFileRel, canCancel)) {
+            case DIALOG_YES: {
+                std::string oldImpFile = g->impFile;
+                if(!GetOpenFile(g->impFile, "", SLVS_PATTERN)) {
+                    if(canCancel)
+                        return false;
+                    break;
+                } else {
+                    importMap[oldImpFile] = g->impFile;
+                    goto try_load_file;
+                }
+            }
+
+            case DIALOG_NO:
+                importMap[g->impFile] = "";
+                /* Geometry will be pruned by GenerateAll(). */
+                break;
+
+            case DIALOG_CANCEL:
+                return false;
+            }
         } else {
-            Error("Failed to load imported file '%s'", g->impFile.c_str());
+            // User was already asked to and refused to locate a missing
+            // imported file.
         }
     }
+
+    return true;
 }
 

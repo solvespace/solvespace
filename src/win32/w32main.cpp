@@ -1024,13 +1024,13 @@ bool SolveSpace::GetSaveFile(std::string &filename,
     return OpenSaveFile(false, filename, defExtension, selPattern);
 }
 
-int SolveSpace::SaveFileYesNoCancel(void)
+DialogChoice SolveSpace::SaveFileYesNoCancel(void)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
     int r = MessageBoxW(GraphicsWnd,
-        L"The program has changed since it was last saved.\r\n\r\n"
+        L"The file has changed since it was last saved.\n\n"
         L"Do you want to save the changes?", L"SolveSpace",
         MB_YESNOCANCEL | MB_ICONWARNING);
 
@@ -1039,22 +1039,23 @@ int SolveSpace::SaveFileYesNoCancel(void)
     SetForegroundWindow(GraphicsWnd);
 
     switch(r) {
-        case IDYES:    return SAVE_YES;
-        case IDNO:     return SAVE_NO;
-        case IDCANCEL: return SAVE_CANCEL;
+        case IDYES:
+        return DIALOG_YES;
+        case IDNO:
+        return DIALOG_NO;
+        case IDCANCEL:
+        default:
+        return DIALOG_CANCEL;
     }
-
-    oops();
-    return SAVE_CANCEL;
 }
 
-int SolveSpace::LoadAutosaveYesNo(void)
+DialogChoice SolveSpace::LoadAutosaveYesNo(void)
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
     int r = MessageBoxW(GraphicsWnd,
-        L"An autosave file is availible for this project.\r\n\r\n"
+        L"An autosave file is availible for this project.\n\n"
         L"Do you want to load the autosave file instead?", L"SolveSpace",
         MB_YESNO | MB_ICONWARNING);
 
@@ -1063,11 +1064,41 @@ int SolveSpace::LoadAutosaveYesNo(void)
     SetForegroundWindow(GraphicsWnd);
 
     switch (r) {
-    case IDYES:    return SAVE_YES;
-    case IDNO:     return SAVE_NO;
+        case IDYES:
+        return DIALOG_YES;
+        case IDNO:
+        default:
+        return DIALOG_NO;
     }
+}
 
-    oops();
+DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filename,
+                                                       bool canCancel) {
+    EnableWindow(GraphicsWnd, false);
+    EnableWindow(TextWnd, false);
+
+    std::string message =
+        "The imported file " + filename + " is not present.\n\n"
+        "Do you want to locate it manually?\n\n"
+        "If you select \"No\", any geometry that depends on "
+        "the missing file will be removed.";
+
+    int r = MessageBoxW(GraphicsWnd, Widen(message).c_str(), L"SolveSpace",
+        (canCancel ? MB_YESNOCANCEL : MB_YESNO) | MB_ICONWARNING);
+
+    EnableWindow(TextWnd, true);
+    EnableWindow(GraphicsWnd, true);
+    SetForegroundWindow(GraphicsWnd);
+
+    switch(r) {
+        case IDYES:
+        return DIALOG_YES;
+        case IDNO:
+        return DIALOG_NO;
+        case IDCANCEL:
+        default:
+        return DIALOG_CANCEL;
+    }
 }
 
 void SolveSpace::LoadAllFontFiles(void)

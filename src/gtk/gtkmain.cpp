@@ -1165,7 +1165,7 @@ bool GetSaveFile(std::string &file, const std::string &activeOrEmpty,
     }
 }
 
-int SaveFileYesNoCancel(void) {
+DialogChoice SaveFileYesNoCancel(void) {
     Glib::ustring message =
         "The file has changed since it was last saved.\n"
         "Do you want to save the changes?";
@@ -1178,18 +1178,18 @@ int SaveFileYesNoCancel(void) {
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
-        return SAVE_YES;
+        return DIALOG_YES;
 
         case Gtk::RESPONSE_NO:
-        return SAVE_NO;
+        return DIALOG_NO;
 
         case Gtk::RESPONSE_CANCEL:
         default:
-        return SAVE_CANCEL;
+        return DIALOG_CANCEL;
     }
 }
 
-int LoadAutosaveYesNo(void) {
+DialogChoice LoadAutosaveYesNo(void) {
     Glib::ustring message =
         "An autosave file is availible for this project.\n"
         "Do you want to load the autosave file instead?";
@@ -1201,11 +1201,39 @@ int LoadAutosaveYesNo(void) {
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
-        return SAVE_YES;
+        return DIALOG_YES;
 
         case Gtk::RESPONSE_NO:
         default:
-        return SAVE_NO;
+        return DIALOG_NO;
+    }
+}
+
+DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+                                           bool canCancel) {
+    Glib::ustring message =
+        "The imported file " + filename + " is not present.\n"
+        "Do you want to locate it manually?\n"
+        "If you select \"No\", any geometry that depends on "
+        "the missing file will be removed.";
+    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
+                              Gtk::BUTTONS_NONE, /*is_modal*/ true);
+    dialog.set_title("SolveSpace - Missing File");
+    dialog.add_button("_Yes", Gtk::RESPONSE_YES);
+    dialog.add_button("_No", Gtk::RESPONSE_NO);
+    if(canCancel)
+        dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+
+    switch(dialog.run()) {
+        case Gtk::RESPONSE_YES:
+        return DIALOG_YES;
+
+        case Gtk::RESPONSE_NO:
+        return DIALOG_NO;
+
+        case Gtk::RESPONSE_CANCEL:
+        default:
+        return DIALOG_CANCEL;
     }
 }
 

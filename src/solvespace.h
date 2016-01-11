@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <map>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -146,11 +147,11 @@ void ssremove(const std::string &filename);
 extern std::string RecentFile[MAX_RECENT];
 void RefreshRecentMenus(void);
 
-#define SAVE_YES     (1)
-#define SAVE_NO     (-1)
-#define SAVE_CANCEL  (0)
-int SaveFileYesNoCancel(void);
-int LoadAutosaveYesNo(void);
+enum DialogChoice { DIALOG_YES = 1, DIALOG_NO = -1, DIALOG_CANCEL = 0 };
+DialogChoice SaveFileYesNoCancel(void);
+DialogChoice LoadAutosaveYesNo(void);
+DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+                                           bool canCancel);
 
 #define AUTOSAVE_SUFFIX "~"
 
@@ -851,7 +852,7 @@ public:
     bool LoadFromFile(const std::string &filename);
     bool LoadEntitiesFromFile(const std::string &filename, EntityList *le,
                               SMesh *m, SShell *sh);
-    void ReloadAllImported(void);
+    bool ReloadAllImported(bool canCancel=false);
     // And the various export options
     void ExportAsPngTo(const std::string &filename);
     void ExportMeshTo(const std::string &filename);

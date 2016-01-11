@@ -110,7 +110,7 @@ bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
         return false;
     fclose(f);
 
-    if(LoadAutosaveYesNo() == SAVE_YES) {
+    if(LoadAutosaveYesNo() == DIALOG_YES) {
         unsaved = true;
         return LoadFromFile(autosaveFile);
     }
@@ -120,12 +120,15 @@ bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
 
 bool SolveSpaceUI::OpenFile(const std::string &filename) {
     bool autosaveLoaded = LoadAutosaveFor(filename);
-    bool success = autosaveLoaded || LoadFromFile(filename);
+    bool fileLoaded = autosaveLoaded || LoadFromFile(filename);
+    if(fileLoaded)
+        saveFile = filename;
+    bool success = fileLoaded && ReloadAllImported(/*canCancel=*/true);
     if(success) {
         RemoveAutosave();
         AddToRecentList(filename);
-        saveFile = filename;
     } else {
+        saveFile = "";
         NewFile();
     }
     AfterNewFile();
@@ -291,7 +294,6 @@ void SolveSpaceUI::AfterNewFile(void) {
     SS.GW.projRight = Vector::From(1, 0, 0);
     SS.GW.projUp    = Vector::From(0, 1, 0);
 
-    ReloadAllImported();
     GenerateAll(-1, -1);
 
     TW.Init();
@@ -386,13 +388,13 @@ bool SolveSpaceUI::OkayToStartNewFile(void) {
     if(!unsaved) return true;
 
     switch(SaveFileYesNoCancel()) {
-        case SAVE_YES:
+        case DIALOG_YES:
             return GetFilenameAndSave(false);
 
-        case SAVE_NO:
+        case DIALOG_NO:
             return true;
 
-        case SAVE_CANCEL:
+        case DIALOG_CANCEL:
             return false;
 
         default: oops(); break;
@@ -415,7 +417,6 @@ void SolveSpaceUI::MenuFile(int id) {
         if(!SS.OkayToStartNewFile()) return;
 
         std::string newFile = RecentFile[id - RECENT_OPEN];
-        RemoveFromRecentList(newFile);
         SS.OpenFile(newFile);
         return;
     }

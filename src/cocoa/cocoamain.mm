@@ -791,7 +791,7 @@ bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
     }
 }
 
-int SolveSpace::SaveFileYesNoCancel(void) {
+SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel(void) {
     NSAlert *alert = [[NSAlert alloc] init];
     if(!std::string(SolveSpace::SS.saveFile).empty()) {
         [alert setMessageText:
@@ -809,16 +809,16 @@ int SolveSpace::SaveFileYesNoCancel(void) {
     [alert addButtonWithTitle:@"Don't Save"];
     switch([alert runModal]) {
         case NSAlertFirstButtonReturn:
-        return SAVE_YES;
+        return DIALOG_YES;
         case NSAlertSecondButtonReturn:
-        return SAVE_CANCEL;
+        default:
+        return DIALOG_CANCEL;
         case NSAlertThirdButtonReturn:
-        return SAVE_NO;
+        return DIALOG_NO;
     }
-    abort(); /* unreachable */
 }
 
-int SolveSpace::LoadAutosaveYesNo(void) {
+SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo(void) {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:
         @"An autosave file is availible for this project."];
@@ -828,11 +828,37 @@ int SolveSpace::LoadAutosaveYesNo(void) {
     [alert addButtonWithTitle:@"Don't Load"];
     switch([alert runModal]) {
         case NSAlertFirstButtonReturn:
-        return SAVE_YES;
+        return DIALOG_YES;
         case NSAlertSecondButtonReturn:
-        return SAVE_NO;
+        default:
+        return DIALOG_NO;
     }
-    abort(); /* unreachable */
+}
+
+SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
+                            const std::string &filename, bool canCancel) {
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:[NSString stringWithUTF8String:
+        ("The imported file " + filename + " is not present.").c_str()]];
+    [alert setInformativeText:
+        @"Do you want to locate it manually?\n"
+         "If you select \"No\", any geometry that depends on "
+         "the missing file will be removed."];
+    [alert addButtonWithTitle:@"Yes"];
+    if(canCancel)
+        [alert addButtonWithTitle:@"Cancel"];
+    [alert addButtonWithTitle:@"No"];
+    switch([alert runModal]) {
+        case NSAlertFirstButtonReturn:
+        return DIALOG_YES;
+        case NSAlertSecondButtonReturn:
+        default:
+        if(canCancel)
+            return DIALOG_CANCEL;
+        /* fallthrough */
+        case NSAlertThirdButtonReturn:
+        return DIALOG_NO;
+    }
 }
 
 /* Text window */
