@@ -330,11 +330,12 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
                     "These include: \n"
                     "     %d request%s\n"
                     "     %d constraint%s\n"
-                    "     %d group%s\n\n"
-                    "Choose Edit -> Undo to undelete all elements.",
+                    "     %d group%s"
+                    "%s",
                        deleted.requests, deleted.requests == 1 ? "" : "s",
                        deleted.constraints, deleted.constraints == 1 ? "" : "s",
-                       deleted.groups, deleted.groups == 1 ? "" : "s");
+                       deleted.groups, deleted.groups == 1 ? "" : "s",
+                       undo.cnt > 0 ? "\n\nChoose Edit -> Undo to undelete all elements." : "");
         }
 
         deleted = {};
