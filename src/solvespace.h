@@ -182,20 +182,16 @@ int LoadAutosaveYesNo(void);
 
 // SolveSpace native file format
 #define SLVS_PATTERN PAT1("SolveSpace Models", "slvs") ENDPAT
-#define SLVS_EXT "slvs"
 // PNG format bitmap
 #define PNG_PATTERN PAT1("PNG", "png") ENDPAT
-#define PNG_EXT "png"
 // Triangle mesh
 #define MESH_PATTERN \
     PAT1("STL Mesh", "stl") \
     PAT1("Wavefront OBJ Mesh", "obj") \
     PAT1("Three.js-compatible JavaScript Mesh", "js") \
     ENDPAT
-#define MESH_EXT "stl"
 // NURBS surfaces
 #define SRF_PATTERN PAT2("STEP File", "step", "stp") ENDPAT
-#define SRF_EXT "step"
 // 2d vector (lines and curves) format
 #define VEC_PATTERN \
     PAT1("PDF File", "pdf") \
@@ -206,16 +202,16 @@ int LoadAutosaveYesNo(void);
     PAT2("HPGL File", "plt", "hpgl") \
     PAT1("G Code", "txt") \
     ENDPAT
-#define VEC_EXT "pdf"
 // 3d vector (wireframe lines and curves) format
 #define V3D_PATTERN \
     PAT2("STEP File", "step", "stp") \
     PAT1("DXF File", "dxf") \
     ENDPAT
-#define V3D_EXT "step"
 // Comma-separated value, like a spreadsheet would use
-#define CSV_PATTERN PAT1("CSV File", "csv") ENDPAT
-#define CSV_EXT "csv"
+#define CSV_PATTERN \
+    PAT1("CSV File", "csv") \
+    ENDPAT
+
 bool GetSaveFile(std::string &filename, const std::string &defExtension,
                  const char *selPattern);
 bool GetOpenFile(std::string &filename, const std::string &defExtension,

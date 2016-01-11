@@ -749,8 +749,6 @@ bool SolveSpace::GetOpenFile(std::string &file, const std::string &defExtension,
 bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
                              const char *selPattern) {
     NSSavePanel *panel = [NSSavePanel savePanel];
-    [panel setNameFieldStringValue:[@"untitled"
-        stringByAppendingPathExtension:[NSString stringWithUTF8String:defExtension.c_str()]]];
 
     SaveFormatController *controller =
         [[SaveFormatController alloc] initWithNibName:@"SaveFormatAccessory" bundle:nil];
@@ -773,8 +771,16 @@ bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
                 [filterExtensions componentsJoinedByString:@", "]]];
         [extensions addObject:[filterExtensions objectAtIndex:0]];
     }
-    [button selectItemAtIndex:[extensions
-        indexOfObject:[NSString stringWithUTF8String:defExtension.c_str()]]];
+
+    int extensionIndex = 0;
+    if(defExtension != "") {
+        extensionIndex = [extensions indexOfObject:
+            [NSString stringWithUTF8String:defExtension.c_str()]];
+    }
+
+    [button selectItemAtIndex:extensionIndex];
+    [panel setNameFieldStringValue:[@"untitled"
+        stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
         file = [[NSFileManager defaultManager]

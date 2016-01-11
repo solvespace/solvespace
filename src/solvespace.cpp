@@ -349,7 +349,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     std::string prevSaveFile = saveFile;
 
     if(saveAs || saveFile.empty()) {
-        if(!GetSaveFile(saveFile, SLVS_EXT, SLVS_PATTERN)) return false;
+        if(!GetSaveFile(saveFile, "", SLVS_PATTERN)) return false;
         // need to get new filename directly into saveFile, since that
         // determines impFileRel path
     }
@@ -433,7 +433,7 @@ void SolveSpaceUI::MenuFile(int id) {
             if(!SS.OkayToStartNewFile()) break;
 
             std::string newFile;
-            if(GetOpenFile(newFile, SLVS_EXT, SLVS_PATTERN)) {
+            if(GetOpenFile(newFile, "", SLVS_PATTERN)) {
                 SS.OpenFile(newFile);
             }
             break;
@@ -449,15 +449,15 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_PNG: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, PNG_EXT, PNG_PATTERN)) break;
+            if(!GetSaveFile(exportFile, "", PNG_PATTERN)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             std::string exportFile;
-            std::string exportFormat = CnfThawString(VEC_EXT, "ViewExportFormat");
-            if(!GetSaveFile(exportFile, exportFormat, VEC_PATTERN)) break;
+            if(!GetSaveFile(exportFile, CnfThawString("", "ViewExportFormat"),
+                            VEC_PATTERN)) break;
             CnfFreezeString(Extension(exportFile), "ViewExportFormat");
 
             // If the user is exporting something where it would be
@@ -478,8 +478,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
             std::string exportFile;
-            std::string exportFormat = CnfThawString(V3D_EXT, "WireframeExportFormat");
-            if(!GetSaveFile(exportFile, exportFormat, V3D_PATTERN)) break;
+            if(!GetSaveFile(exportFile, CnfThawString("", "WireframeExportFormat"),
+                            V3D_PATTERN)) break;
             CnfFreezeString(Extension(exportFile), "WireframeExportFormat");
 
             SS.ExportViewOrWireframeTo(exportFile, true);
@@ -488,8 +488,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
             std::string exportFile;
-            std::string exportFormat = CnfThawString(VEC_EXT, "SectionExportFormat");
-            if(!GetSaveFile(exportFile, exportFormat, VEC_PATTERN)) break;
+            if(!GetSaveFile(exportFile, CnfThawString("", "SectionExportFormat"),
+                            VEC_PATTERN)) break;
             CnfFreezeString(Extension(exportFile), "SectionExportFormat");
 
             SS.ExportSectionTo(exportFile);
@@ -498,8 +498,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
             std::string exportFile;
-            std::string exportFormat = CnfThawString(MESH_EXT, "MeshExportFormat");
-            if(!GetSaveFile(exportFile, exportFormat, MESH_PATTERN)) break;
+            if(!GetSaveFile(exportFile, CnfThawString("", "MeshExportFormat"),
+                            MESH_PATTERN)) break;
             CnfFreezeString(Extension(exportFile), "MeshExportFormat");
 
             SS.ExportMeshTo(exportFile);
@@ -508,8 +508,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_SURFACES: {
             std::string exportFile;
-            std::string exportFormat = CnfThawString(SRF_EXT, "SurfacesExportFormat");
-            if(!GetSaveFile(exportFile, exportFormat, SRF_PATTERN)) break;
+            if(!GetSaveFile(exportFile, CnfThawString("", "SurfacesExportFormat"),
+                            SRF_PATTERN)) break;
             CnfFreezeString(Extension(exportFile), "SurfacesExportFormat");
 
             StepFileWriter sfw = {};
@@ -731,7 +731,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
 
         case GraphicsWindow::MNU_STOP_TRACING: {
             std::string exportFile;
-            if(GetSaveFile(exportFile, CSV_EXT, CSV_PATTERN)) {
+            if(GetSaveFile(exportFile, "", CSV_PATTERN)) {
                 FILE *f = ssfopen(exportFile, "wb");
                 if(f) {
                     int i;

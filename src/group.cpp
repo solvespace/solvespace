@@ -188,7 +188,7 @@ void Group::MenuGroup(int id) {
             g.type = IMPORTED;
             g.opA = SS.GW.activeGroup;
             if(g.impFile.empty()) {
-                if(!GetOpenFile(g.impFile, SLVS_EXT, SLVS_PATTERN)) return;
+                if(!GetOpenFile(g.impFile, "", SLVS_PATTERN)) return;
             }
 
             // Assign the default name of the group based on the name of

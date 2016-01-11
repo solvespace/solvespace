@@ -1023,9 +1023,9 @@ void RefreshRecentMenus(void) {
 
 /* Save/load */
 
-static void FiltersFromPattern(const std::string &active, const char *patterns,
-                               Gtk::FileChooser &chooser) {
-    Glib::ustring uactive = "*." + active;
+static std::string FiltersFromPattern(const std::string &active, const char *patterns,
+                                      Gtk::FileChooser &chooser) {
+    Glib::ustring uactive = active;
     Glib::ustring upatterns = patterns;
 
 #ifdef HAVE_GTK3
@@ -1044,7 +1044,9 @@ static void FiltersFromPattern(const std::string &active, const char *patterns,
                 has_name = true;
             } else {
                 filter->add_pattern(frag);
-                if(uactive == frag)
+                if(uactive == "")
+                    uactive = frag.substr(2);
+                if("*." + uactive == frag)
                     is_active = true;
                 if(desc == "")
                     desc = frag;
@@ -1075,16 +1077,19 @@ static void FiltersFromPattern(const std::string &active, const char *patterns,
 
         last = i + 1;
     }
+
+    return uactive;
 }
 
-bool GetOpenFile(std::string &file, const std::string &active, const char *patterns) {
+bool GetOpenFile(std::string &file, const std::string &activeOrEmpty,
+                 const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Open File");
     chooser.set_filename(file);
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     chooser.add_button("_Open", Gtk::RESPONSE_OK);
     chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
 
-    FiltersFromPattern(active, patterns, chooser);
+    FiltersFromPattern(activeOrEmpty, patterns, chooser);
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
         CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
@@ -1133,14 +1138,15 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     }
 }
 
-bool GetSaveFile(std::string &file, const std::string &active, const char *patterns) {
+bool GetSaveFile(std::string &file, const std::string &activeOrEmpty,
+                 const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     chooser.add_button("_Save", Gtk::RESPONSE_OK);
 
-    FiltersFromPattern(active, patterns, chooser);
+    std::string active = FiltersFromPattern(activeOrEmpty, patterns, chooser);
 
     chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
     chooser.set_current_name(std::string("untitled.") + active);
