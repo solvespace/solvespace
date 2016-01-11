@@ -188,7 +188,8 @@ int LoadAutosaveYesNo(void);
 #define MESH_PATTERN \
     PAT1("STL Mesh", "stl") \
     PAT1("Wavefront OBJ Mesh", "obj") \
-    PAT1("Three.js-compatible JavaScript Mesh", "js") \
+    PAT1("Three.js-compatible Mesh, with viewer", "html") \
+    PAT1("Three.js-compatible Mesh, mesh only", "js") \
     ENDPAT
 // NURBS surfaces
 #define SRF_PATTERN PAT2("STEP File", "step", "stp") ENDPAT
@@ -856,7 +857,8 @@ public:
     void ExportMeshTo(const std::string &filename);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
-    void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename, SMesh *sm, SEdgeList *sel);
+    void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
+                               SMesh *sm, SEdgeList *sel);
     void ExportViewOrWireframeTo(const std::string &filename, bool wireframe);
     void ExportSectionTo(const std::string &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
