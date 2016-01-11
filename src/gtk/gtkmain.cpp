@@ -1023,9 +1023,9 @@ void RefreshRecentMenus(void) {
 
 /* Save/load */
 
-static void FiltersFromPattern(const char *active, const char *patterns,
+static void FiltersFromPattern(const std::string &active, const char *patterns,
                                Gtk::FileChooser &chooser) {
-    Glib::ustring uactive = "*." + Glib::ustring(active);
+    Glib::ustring uactive = "*." + active;
     Glib::ustring upatterns = patterns;
 
 #ifdef HAVE_GTK3
@@ -1077,7 +1077,7 @@ static void FiltersFromPattern(const char *active, const char *patterns,
     }
 }
 
-bool GetOpenFile(std::string &file, const char *active, const char *patterns) {
+bool GetOpenFile(std::string &file, const std::string &active, const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Open File");
     chooser.set_filename(file);
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
@@ -1133,7 +1133,7 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     }
 }
 
-bool GetSaveFile(std::string &file, const char *active, const char *patterns) {
+bool GetSaveFile(std::string &file, const std::string &active, const char *patterns) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);

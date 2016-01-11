@@ -455,9 +455,10 @@ void SolveSpaceUI::MenuFile(int id) {
         }
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
-            std::string exportFile = CnfThawString("", "2DExportFormat");
-            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
-            CnfFreezeString(Extension(exportFile), "2DExportFormat");
+            std::string exportFile;
+            std::string exportFormat = CnfThawString(VEC_EXT, "ViewExportFormat");
+            if(!GetSaveFile(exportFile, exportFormat, VEC_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "ViewExportFormat");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
@@ -477,28 +478,40 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, V3D_EXT, V3D_PATTERN)) break;
+            std::string exportFormat = CnfThawString(V3D_EXT, "WireframeExportFormat");
+            if(!GetSaveFile(exportFile, exportFormat, V3D_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "WireframeExportFormat");
+
             SS.ExportViewOrWireframeTo(exportFile, true);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, VEC_EXT, VEC_PATTERN)) break;
+            std::string exportFormat = CnfThawString(VEC_EXT, "SectionExportFormat");
+            if(!GetSaveFile(exportFile, exportFormat, VEC_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "SectionExportFormat");
+
             SS.ExportSectionTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, MESH_EXT, MESH_PATTERN)) break;
+            std::string exportFormat = CnfThawString(MESH_EXT, "MeshExportFormat");
+            if(!GetSaveFile(exportFile, exportFormat, MESH_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "MeshExportFormat");
+
             SS.ExportMeshTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_SURFACES: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, SRF_EXT, SRF_PATTERN)) break;
+            std::string exportFormat = CnfThawString(SRF_EXT, "SurfacesExportFormat");
+            if(!GetSaveFile(exportFile, exportFormat, SRF_PATTERN)) break;
+            CnfFreezeString(Extension(exportFile), "SurfacesExportFormat");
+
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
             break;

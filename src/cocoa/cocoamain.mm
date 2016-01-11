@@ -704,7 +704,8 @@ bool MenuBarIsVisible(void) {
 
 /* Save/load */
 
-bool SolveSpace::GetOpenFile(std::string &file, const char *defExtension, const char *selPattern) {
+bool SolveSpace::GetOpenFile(std::string &file, const std::string &defExtension,
+                             const char *selPattern) {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     NSMutableArray *filters = [[NSMutableArray alloc] init];
     for(NSString *filter in [[NSString stringWithUTF8String:selPattern]
@@ -745,10 +746,11 @@ bool SolveSpace::GetOpenFile(std::string &file, const char *defExtension, const 
 }
 @end
 
-bool SolveSpace::GetSaveFile(std::string &file, const char *defExtension, const char *selPattern) {
+bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
+                             const char *selPattern) {
     NSSavePanel *panel = [NSSavePanel savePanel];
     [panel setNameFieldStringValue:[@"untitled"
-        stringByAppendingPathExtension:[NSString stringWithUTF8String:defExtension]]];
+        stringByAppendingPathExtension:[NSString stringWithUTF8String:defExtension.c_str()]]];
 
     SaveFormatController *controller =
         [[SaveFormatController alloc] initWithNibName:@"SaveFormatAccessory" bundle:nil];
@@ -772,7 +774,7 @@ bool SolveSpace::GetSaveFile(std::string &file, const char *defExtension, const 
         [extensions addObject:[filterExtensions objectAtIndex:0]];
     }
     [button selectItemAtIndex:[extensions
-        indexOfObject:[NSString stringWithUTF8String:defExtension]]];
+        indexOfObject:[NSString stringWithUTF8String:defExtension.c_str()]]];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
         file = [[NSFileManager defaultManager]

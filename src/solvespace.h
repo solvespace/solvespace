@@ -216,8 +216,10 @@ int LoadAutosaveYesNo(void);
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN PAT1("CSV File", "csv") ENDPAT
 #define CSV_EXT "csv"
-bool GetSaveFile(std::string &filename, const char *defExtension, const char *selPattern);
-bool GetOpenFile(std::string &filename, const char *defExtension, const char *selPattern);
+bool GetSaveFile(std::string &filename, const std::string &defExtension,
+                 const char *selPattern);
+bool GetOpenFile(std::string &filename, const std::string &defExtension,
+                 const char *selPattern);
 void LoadAllFontFiles(void);
 
 void OpenWebsite(const char *url);

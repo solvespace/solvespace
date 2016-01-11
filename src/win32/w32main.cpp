@@ -972,7 +972,7 @@ static size_t strlen2(const char *p) {
 }
 
 static bool OpenSaveFile(bool isOpen, std::string &filename,
-                         const char *defExtension, const char *selPattern) {
+                         const std::string &defExtension, const char *selPattern) {
     // UNC paths may be as long as 32767 characters.
     // Unfortunately, the Get*FileName API does not provide any way to use it
     // except with a preallocated buffer of fixed size, so we use something
@@ -1013,13 +1013,13 @@ static bool OpenSaveFile(bool isOpen, std::string &filename,
 }
 
 bool SolveSpace::GetOpenFile(std::string &filename,
-                             const char *defExtension, const char *selPattern)
+                             const std::string &defExtension, const char *selPattern)
 {
     return OpenSaveFile(true, filename, defExtension, selPattern);
 }
 
 bool SolveSpace::GetSaveFile(std::string &filename,
-                             const char *defExtension, const char *selPattern)
+                             const std::string &defExtension, const char *selPattern)
 {
     return OpenSaveFile(false, filename, defExtension, selPattern);
 }
