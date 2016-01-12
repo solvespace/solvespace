@@ -14,7 +14,7 @@ Package: solvespace
 Architecture: any
 Multi-Arch: foreign
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: SolveSpace is a parametric 2d/3d CAD
+Description: SolveSpace parametric 2d/3d CAD
  SolveSpace is a parametric 2d/3d CAD program. Applications include:
  .
   * modeling 3d parts — draw with extrudes, revolves, and Boolean
@@ -30,6 +30,16 @@ Description: SolveSpace is a parametric 2d/3d CAD
     spatial linkages, with pin, ball, or slide joints;
   * plane and solid geometry — replace hand-solved trigonometry and
     spreadsheets with a live dimensioned drawing.
+
+Package: solvespace-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: solvespace (= ${binary:Version}), ${misc:Depends}
+Description: SolveSpace parametric 2d/3d CAD (debugging files)
+ SolveSpace is a parametric 2d/3d CAD.
+ .
+ This package contains the debugging symbols for solvespace.
 
 Package: libslvs1
 Section: libs
@@ -50,3 +60,14 @@ Description: SolveSpace geometric kernel (development files)
  kernel of SolveSpace, built as a library.
  .
  This package includes development files for libslvs.
+
+Package: libslvs1-dbg
+Architecture: any
+Section: debug
+Priority: extra
+Depends: libslvs1 (= ${binary:Version}), ${misc:Depends}
+Description: SolveSpace geometric kernel (debugging files)
+ SolveSpace is a parametric 2d/3d CAD. libslvs contains the geometric
+ kernel of SolveSpace, built as a library.
+ .
+ This package contains the debugging symbols for libslvs1.

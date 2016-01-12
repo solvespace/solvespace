@@ -16,3 +16,8 @@ include /usr/share/dpkg/default.mk
 override_dh_auto_configure:
 	dh_auto_configure -- \
 	-DCMAKE_LIBRARY_PATH=$(DEB_HOST_MULTIARCH)
+
+# create a -dbg package
+override_dh_strip:
+	dh_strip -psolvespace --dbg-package=solvespace-dbg
+	dh_strip -plibslvs1 --dbg-package=libslvs1-dbg

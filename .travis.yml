@@ -17,7 +17,9 @@ deploy:
       secure: DA3tW0My37vbi2t3dZ061281Xm8KSIkeLdFZsQISrut0g1kkbWuBTPxAfvE3B6OE8p47wAclE/wxA1+obMTVkY0oYpd5u+JelYNHxU/oL8Ww0xdUANwKNJ1JD2EZP8nSz7JSvxuGILC6AFPoTjawsG97SXwiTyp7z0PA6nvzraE=
     skip_cleanup: true
     file_glob: true
-    file: ../solvespace_*.deb
+    file:
+      - ../solvespace_*.deb
+      - ../solvespace-dbg_*.deb
     on:
       repo: whitequark/solvespace
       tags: true
