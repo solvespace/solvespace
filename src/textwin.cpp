@@ -1042,6 +1042,9 @@ void TextWindow::MouseLeave(void) {
 }
 
 void TextWindow::ScrollbarEvent(int newPos) {
+    if(TextEditControlIsVisible())
+        return;
+
     int bottom = top[rows-1] + 2;
     newPos = min(newPos, bottom - halfRows);
     newPos = max(newPos, 0);
@@ -1049,10 +1052,6 @@ void TextWindow::ScrollbarEvent(int newPos) {
     if(newPos != scrollPos) {
         scrollPos = newPos;
         MoveTextScrollbarTo(scrollPos, top[rows - 1] + 1, halfRows);
-
-        if(TextEditControlIsVisible()) {
-            ShowEditControl(editControl.halfRow, editControl.col, NULL);
-        }
         InvalidateText();
     }
 }
