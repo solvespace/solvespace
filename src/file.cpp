@@ -199,14 +199,14 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 0, NULL, 0, NULL }
 };
 
-union SAVEDptr {
-    IdList<EntityMap,EntityId> M;
-    /* std::string S; */
-    bool      b;
-    RgbaColor c;
-    int       d;
-    double    f;
-    uint32_t  x;
+struct SAVEDptr {
+    IdList<EntityMap,EntityId> &M() { return *((IdList<EntityMap,EntityId> *)this); }
+    std::string                &S() { return *((std::string *)this); }
+    bool      &b() { return *((bool *)this); }
+    RgbaColor &c() { return *((RgbaColor *)this); }
+    int       &d() { return *((int *)this); }
+    double    &f() { return *((double *)this); }
+    uint32_t  &x() { return *((uint32_t *)this); }
 };
 
 void SolveSpaceUI::SaveUsingTable(int type) {
@@ -215,27 +215,27 @@ void SolveSpaceUI::SaveUsingTable(int type) {
         if(SAVED[i].type != type) continue;
 
         int fmt = SAVED[i].fmt;
-        union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
+        SAVEDptr *p = (SAVEDptr *)SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
-        if(fmt == 'S' && ((std::string*)p)->empty()) continue;
-        if(fmt == 'd' && p->d == 0)             continue;
-        if(fmt == 'f' && EXACT(p->f == 0.0))    continue;
-        if(fmt == 'x' && p->x == 0)             continue;
+        if(fmt == 'S' && p->S().empty())          continue;
+        if(fmt == 'd' && p->d() == 0)             continue;
+        if(fmt == 'f' && EXACT(p->f() == 0.0))    continue;
+        if(fmt == 'x' && p->x() == 0)             continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
-            case 'S': fprintf(fh, "%s",    ((std::string*)p)->c_str()); break;
-            case 'b': fprintf(fh, "%d",    p->b ? 1 : 0);       break;
-            case 'c': fprintf(fh, "%08x",  p->c.ToPackedInt()); break;
-            case 'd': fprintf(fh, "%d",    p->d);               break;
-            case 'f': fprintf(fh, "%.20f", p->f);               break;
-            case 'x': fprintf(fh, "%08x",  p->x);               break;
+            case 'S': fprintf(fh, "%s",    p->S().c_str());       break;
+            case 'b': fprintf(fh, "%d",    p->b() ? 1 : 0);       break;
+            case 'c': fprintf(fh, "%08x",  p->c().ToPackedInt()); break;
+            case 'd': fprintf(fh, "%d",    p->d());               break;
+            case 'f': fprintf(fh, "%.20f", p->f());               break;
+            case 'x': fprintf(fh, "%08x",  p->x());               break;
 
             case 'M': {
                 int j;
                 fprintf(fh, "{\n");
-                for(j = 0; j < p->M.n; j++) {
-                    EntityMap *em = &(p->M.elem[j]);
+                for(j = 0; j < p->M().n; j++) {
+                    EntityMap *em = &(p->M().elem[j]);
                     fprintf(fh, "    %d %08x %d\n",
                             em->h.v, em->input.v, em->copyNumber);
                 }
@@ -369,22 +369,22 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
-            union SAVEDptr *p = (union SAVEDptr *)SAVED[i].ptr;
+            SAVEDptr *p = (SAVEDptr *)SAVED[i].ptr;
             unsigned int u = 0;
             switch(SAVED[i].fmt) {
-                case 'S': (*(std::string*)p) = val; break;
-                case 'b': p->b = (atoi(val) != 0); break;
-                case 'd': p->d = atoi(val);        break;
-                case 'f': p->f = atof(val);        break;
-                case 'x': sscanf(val, "%x", &u); p->x = u; break;
+                case 'S': p->S() = val;                     break;
+                case 'b': p->b() = (atoi(val) != 0);        break;
+                case 'd': p->d() = atoi(val);               break;
+                case 'f': p->f() = atof(val);               break;
+                case 'x': sscanf(val, "%x", &u); p->x()= u; break;
 
                 case 'c':
                     sscanf(val, "%x", &u);
-                    p->c = RgbaColor::FromPackedInt(u);
+                    p->c() = RgbaColor::FromPackedInt(u);
                     break;
 
                 case 'P':
-                    *((std::string*)p) = val;
+                    p->S() = val;
                     break;
 
                 case 'M': {
@@ -392,7 +392,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                     // makes a shallow copy, so that would result in us
                     // freeing memory that we want to keep around. Just
                     // zero it out so that new memory is allocated.
-                    p->M = {};
+                    p->M() = {};
                     for(;;) {
                         EntityMap em;
                         char line2[1024];
@@ -401,7 +401,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                         if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
                                                      &(em.copyNumber)) == 3)
                         {
-                            p->M.Add(&em);
+                            p->M().Add(&em);
                         } else {
                             break;
                         }
