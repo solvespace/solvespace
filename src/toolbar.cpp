@@ -41,6 +41,7 @@ static const struct {
     { SPACER, 0, 0 },
 
     { Icon_extrude,         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch"                 },
+    { Icon_lathe,           GraphicsWindow::MNU_GROUP_LATHE,    "New group rotating active sketch"                  },
     { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
     { Icon_step_rotate,     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating"                },
     { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
@@ -109,7 +110,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     int x = 17, y = (int)(height - 52);
 
     int fudge = 8;
-    int h = 32*15 + 3*16 + fudge;
+    int h = 32*16 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =
