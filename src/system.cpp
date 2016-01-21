@@ -447,6 +447,11 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         return System::TOO_MANY_UNKNOWNS;
     }
 
+    // And do the leftovers as one big system
+    if(!NewtonSolve(0)) {
+        goto didnt_converge;
+    }
+
     EvalJacobian();
 
     int rank; rank = CalculateRank();
@@ -460,11 +465,6 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     // solves removed one equation and one unknown, therefore no effect
     // on the number of DOF.
     if(dof) *dof = mat.n - mat.m;
-
-    // And do the leftovers as one big system
-    if(!NewtonSolve(0)) {
-        goto didnt_converge;
-    }
 
     // If requested, find all the free (unbound) variables. This might be
     // more than the number of degrees of freedom. Don't always do this,
