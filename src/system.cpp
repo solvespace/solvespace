@@ -277,7 +277,6 @@ bool System::SolveLeastSquares(void) {
 }
 
 bool System::NewtonSolve(int tag) {
-    if(mat.m > mat.n) return false;
 
     int iter = 0;
     bool converged = false;
