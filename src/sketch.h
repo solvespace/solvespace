@@ -110,6 +110,7 @@ public:
     bool        visible;
     bool        suppress;
     bool        relaxConstraints;
+    bool        allowRedundant;
     bool        allDimsReference;
     double      scale;
 
@@ -204,6 +205,7 @@ public:
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
+    bool IsSolvedOkay();
     void TransformImportedBy(Vector t, Quaternion q);
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to

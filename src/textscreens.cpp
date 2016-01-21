@@ -112,7 +112,7 @@ void TextWindow::ShowListOfGroups(void) {
         std::string s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
-        bool ok = (g->solved.how == System::SOLVED_OKAY);
+        bool ok = g->IsSolvedOkay();
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
@@ -204,6 +204,8 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
         case 'P': g->suppress = !(g->suppress); break;
 
         case 'r': g->relaxConstraints = !(g->relaxConstraints); break;
+
+        case 'e': g->allowRedundant = !(g->allowRedundant); break;
 
         case 'v': g->visible = !(g->visible); break;
 
@@ -405,6 +407,10 @@ void TextWindow::ShowGroupInfo(void) {
         &TextWindow::ScreenChangeGroupOption,
         g->relaxConstraints ? CHECK_TRUE : CHECK_FALSE);
 
+    Printf(false, " %f%Le%Fd%s  allow redundant constraints",
+        &TextWindow::ScreenChangeGroupOption,
+        g->allowRedundant ? CHECK_TRUE : CHECK_FALSE);
+
     Printf(false, " %f%Ld%Fd%s  treat all dimensions as reference",
         &TextWindow::ScreenChangeGroupOption,
         g->allDimsReference ? CHECK_TRUE : CHECK_FALSE);
@@ -459,9 +465,18 @@ list_items:
 // what failed, and (if the problem is a singular Jacobian) a list of
 // constraints that could be removed to fix it.
 //-----------------------------------------------------------------------------
+void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
+    SS.UndoRemember();
+
+    Group *g = SK.GetGroup(SS.TW.shown.group);
+    g->allowRedundant = true;
+
+    SS.TW.shown.screen = SCREEN_GROUP_INFO;
+    SS.TW.Show();
+}
 void TextWindow::ShowGroupSolveInfo(void) {
     Group *g = SK.group.FindById(shown.group);
-    if(g->solved.how == System::SOLVED_OKAY) {
+    if(g->IsSolvedOkay()) {
         // Go back to the default group info screen
         shown.screen = SCREEN_GROUP_INFO;
         Show();
@@ -504,6 +519,13 @@ void TextWindow::ShowGroupSolveInfo(void) {
 
     Printf(true,  "It may be possible to fix the problem ");
     Printf(false, "by selecting Edit -> Undo.");
+
+    if(g->solved.how == System::REDUNDANT_OKAY) {
+        Printf(true,  "It is possible to suppress this error ");
+        Printf(false, "by %Fl%f%Llallowing redundant constraints%E in ",
+                      &TextWindow::ScreenAllowRedundant);
+        Printf(false, "this group.");
+    }
 }
 
 //-----------------------------------------------------------------------------

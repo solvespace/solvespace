@@ -459,9 +459,12 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         goto didnt_converge;
     }
 
-    if(!TestRank()) {
-        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad);
-        return System::REDUNDANT_OKAY;
+    rankOk = TestRank();
+    if(!rankOk) {
+        if(!g->allowRedundant) {
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad);
+            return System::REDUNDANT_OKAY;
+        }
     }
 
     // This is not the full Jacobian, but any substitutions or single-eq
@@ -505,7 +508,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         pp->known = true;
         pp->free = p->free;
     }
-    return System::SOLVED_OKAY;
+    return rankOk ? System::SOLVED_OKAY : System::REDUNDANT_OKAY;
 
 didnt_converge:
     SK.constraint.ClearTags();

@@ -469,8 +469,9 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     g->solved.remove.Clear();
     int how = sys.Solve(g, &(g->solved.dof),
                            &(g->solved.remove), true, andFindFree);
-    if((how != System::SOLVED_OKAY) ||
-       (how == System::SOLVED_OKAY && g->solved.how != System::SOLVED_OKAY))
+    bool isOkay = how == System::SOLVED_OKAY ||
+                  (g->allowRedundant && how == System::REDUNDANT_OKAY);
+    if(!isOkay || (isOkay && !g->IsSolvedOkay()))
     {
         TextWindow::ReportHowGroupSolved(g->h);
     }
@@ -478,14 +479,11 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     FreeAllTemporary();
 }
 
-bool SolveSpaceUI::AllGroupsOkay(void) {
-    int i;
-    bool allOk = true;
-    for(i = 0; i < SK.group.n; i++) {
-        if(SK.group.elem[i].solved.how != System::SOLVED_OKAY) {
-            allOk = false;
-        }
+bool SolveSpaceUI::AllGroupsOkay() {
+    for(int i = 0; i < SK.group.n; i++) {
+        if(!SK.group.elem[i].IsSolvedOkay())
+            return false;
     }
-    return allOk;
+    return true;
 }
 
