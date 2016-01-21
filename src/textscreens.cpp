@@ -472,10 +472,15 @@ void TextWindow::ShowGroupSolveInfo(void) {
     switch(g->solved.how) {
         case System::DIDNT_CONVERGE:
             Printf(true, "%FxSOLVE FAILED!%Fd unsolvable constraints");
+            Printf(true, "the following constraints are incompatible");
+            break;
+
+        case System::REDUNDANT_DIDNT_CONVERGE:
+            Printf(true, "%FxSOLVE FAILED!%Fd unsolvable constraints");
             Printf(true, "the following constraints are unsatisfied");
             break;
 
-        case System::REDUNDANT:
+        case System::REDUNDANT_OKAY:
             Printf(true, "%FxSOLVE FAILED!%Fd redundant constraints");
             Printf(true, "remove any one of these to fix it");
             break;

@@ -417,6 +417,7 @@ public:
 
     static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
     int CalculateRank(void);
+    bool TestRank(void);
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);
     bool SolveLeastSquares(void);
@@ -433,10 +434,11 @@ public:
     bool NewtonSolve(int tag);
 
     enum {
-        SOLVED_OKAY             = 0,
-        DIDNT_CONVERGE          = 10,
-        REDUNDANT               = 11,
-        TOO_MANY_UNKNOWNS       = 20
+        SOLVED_OKAY              = 0,
+        DIDNT_CONVERGE           = 10,
+        REDUNDANT_OKAY           = 11,
+        REDUNDANT_DIDNT_CONVERGE = 12,
+        TOO_MANY_UNKNOWNS        = 20
     };
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);

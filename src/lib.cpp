@@ -220,7 +220,8 @@ default: dbp("bad constraint type %d", sc->type); return;
             ssys->result = SLVS_RESULT_DIDNT_CONVERGE;
             break;
 
-        case System::REDUNDANT:
+        case System::REDUNDANT_DIDNT_CONVERGE:
+        case System::REDUNDANT_OKAY:
             ssys->result = SLVS_RESULT_INCONSISTENT;
             break;
 

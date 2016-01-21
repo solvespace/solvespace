@@ -172,6 +172,11 @@ int System::CalculateRank(void) {
     return rank;
 }
 
+bool System::TestRank(void) {
+    EvalJacobian();
+    return CalculateRank() == mat.m;
+}
+
 bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                double B[], int n)
 {
@@ -194,7 +199,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
         // Don't give up on a singular matrix unless it's really bad; the
         // assumption code is responsible for identifying that condition,
         // so we're not responsible for reporting that error.
-        if(ffabs(max) < 1e-20) return false;
+        if(ffabs(max) < 1e-20) continue;
 
         // Swap row imax with row i
         for(jp = 0; jp < n; jp++) {
@@ -216,7 +221,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
     // We've put the matrix in upper triangular form, so at this point we
     // can solve by back-substitution.
     for(i = n - 1; i >= 0; i--) {
-        if(ffabs(A[i][i]) < 1e-20) return false;
+        if(ffabs(A[i][i]) < 1e-20) continue;
 
         temp = B[i];
         for(j = n - 1; j > i; j--) {
@@ -398,6 +403,8 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
     int i, j = 0;
+    bool rankOk;
+
 /*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
@@ -446,20 +453,18 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         return System::TOO_MANY_UNKNOWNS;
     }
 
+    rankOk = TestRank();
+
     // And do the leftovers as one big system
     if(!NewtonSolve(0)) {
         goto didnt_converge;
     }
 
-    EvalJacobian();
-
-    int rank; rank = CalculateRank();
-    if(rank != mat.m) {
-        if(andFindBad) {
-            FindWhichToRemoveToFixJacobian(g, bad);
-        }
-        return System::REDUNDANT;
+    if(!TestRank()) {
+        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad);
+        return System::REDUNDANT_OKAY;
     }
+
     // This is not the full Jacobian, but any substitutions or single-eq
     // solves removed one equation and one unknown, therefore no effect
     // on the number of DOF.
@@ -477,7 +482,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
                 p->tag = VAR_DOF_TEST;
                 WriteJacobian(0);
                 EvalJacobian();
-                rank = CalculateRank();
+                int rank = CalculateRank();
                 if(rank == mat.m) {
                     p->free = true;
                 }
@@ -522,7 +527,7 @@ didnt_converge:
         }
     }
 
-    return System::DIDNT_CONVERGE;
+    return rankOk ? System::DIDNT_CONVERGE : System::REDUNDANT_DIDNT_CONVERGE;
 }
 
 void System::Clear(void) {
