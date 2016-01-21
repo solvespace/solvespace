@@ -433,10 +433,10 @@ public:
     bool NewtonSolve(int tag);
 
     enum {
-        SOLVED_OKAY          = 0,
-        DIDNT_CONVERGE       = 10,
-        SINGULAR_JACOBIAN    = 11,
-        TOO_MANY_UNKNOWNS    = 20
+        SOLVED_OKAY             = 0,
+        DIDNT_CONVERGE          = 10,
+        REDUNDANT               = 11,
+        TOO_MANY_UNKNOWNS       = 20
     };
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);

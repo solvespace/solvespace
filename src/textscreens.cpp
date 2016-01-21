@@ -471,12 +471,12 @@ void TextWindow::ShowGroupSolveInfo(void) {
     Printf(true, "%FtGROUP   %E%s", g->DescriptionString().c_str());
     switch(g->solved.how) {
         case System::DIDNT_CONVERGE:
-            Printf(true, "%FxSOLVE FAILED!%Fd no convergence");
+            Printf(true, "%FxSOLVE FAILED!%Fd unsolvable constraints");
             Printf(true, "the following constraints are unsatisfied");
             break;
 
-        case System::SINGULAR_JACOBIAN:
-            Printf(true, "%FxSOLVE FAILED!%Fd inconsistent system");
+        case System::REDUNDANT:
+            Printf(true, "%FxSOLVE FAILED!%Fd redundant constraints");
             Printf(true, "remove any one of these to fix it");
             break;
 
