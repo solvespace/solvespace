@@ -322,10 +322,12 @@ public:
 
     bool NewtonSolve(int tag);
 
-    static const int SOLVED_OKAY          = 0;
-    static const int DIDNT_CONVERGE       = 10;
-    static const int SINGULAR_JACOBIAN    = 11;
-    static const int TOO_MANY_UNKNOWNS    = 20;
+    enum {
+        SOLVED_OKAY             = 0,
+        DIDNT_CONVERGE          = 10,
+        REDUNDANT               = 11,
+        TOO_MANY_UNKNOWNS       = 20
+    };
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);
 };

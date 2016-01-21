@@ -459,7 +459,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         if(andFindBad) {
             FindWhichToRemoveToFixJacobian(g, bad);
         }
-        return System::SINGULAR_JACOBIAN;
+        return System::REDUNDANT;
     }
     // This is not the full Jacobian, but any substitutions or single-eq
     // solves removed one equation and one unknown, therefore no effect

@@ -212,7 +212,7 @@ default: dbp("bad constraint type %d", sc->type); return;
             ssys->result = SLVS_RESULT_DIDNT_CONVERGE;
             break;
 
-        case System::SINGULAR_JACOBIAN:
+        case System::REDUNDANT:
             ssys->result = SLVS_RESULT_INCONSISTENT;
             break;
 
