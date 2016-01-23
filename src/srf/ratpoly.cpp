@@ -269,25 +269,47 @@ void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
         // Never do fewer than one intermediate point; people seem to get
         // unhappy when their circles turn into squares, but maybe less
         // unhappy with octagons.
-        MakePwlWorker(l, 0.0, 0.5, chordTol);
-        MakePwlWorker(l, 0.5, 1.0, chordTol);
+        MakePwlInitialWorker(l, 0.0, 0.5, chordTol);
+        MakePwlInitialWorker(l, 0.5, 1.0, chordTol);
     }
 }
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb,
-                                double chordTol)
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol)
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
 
-    // Can't test in the middle, or certain cubics would break.
-    double tm1 = (2*ta + tb) / 3;
-    double tm2 = (ta + 2*tb) / 3;
+    Vector pm = PointAt((ta + tb) / 2.0);
+    double d = pm.DistanceToLine(pa, pb.Minus(pa));
+
+    double step = 1.0/SS.maxSegments;
+    if((tb - ta) < step || d < chordTol) {
+        // A previous call has already added the beginning of our interval.
+        l->Add(&pb);
+    } else {
+        double tm = (ta + tb) / 2;
+        MakePwlWorker(l, ta, tm, chordTol);
+        MakePwlWorker(l, tm, tb, chordTol);
+    }
+}
+void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol)
+{
+    Vector pa = PointAt(ta);
+    Vector pb = PointAt(tb);
+
+    double tm1 = ta + (tb - ta) * 0.25;
+    double tm2 = ta + (tb - ta) * 0.5;
+    double tm3 = ta + (tb - ta) * 0.75;
 
     Vector pm1 = PointAt(tm1);
     Vector pm2 = PointAt(tm2);
+    Vector pm3 = PointAt(tm3);
+    Vector dir = pb.Minus(pa);
 
-    double d = max(pm1.DistanceToLine(pa, pb.Minus(pa)),
-                   pm2.DistanceToLine(pa, pb.Minus(pa)));
+    double d = max({
+                   pm1.DistanceToLine(pa, dir),
+                   pm2.DistanceToLine(pa, dir),
+                   pm3.DistanceToLine(pa, dir) 
+                });
 
     double step = 1.0/SS.maxSegments;
     if((tb - ta) < step || d < chordTol) {

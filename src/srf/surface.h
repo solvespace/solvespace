@@ -93,6 +93,7 @@ public:
     void MakePwlInto(SContour *sc, double chordTol=0);
     void MakePwlInto(List<Vector> *l, double chordTol=0);
     void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol);
+    void MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol);
 
     void AllIntersectionsWith(SBezier *sbb, SPointList *spl);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
