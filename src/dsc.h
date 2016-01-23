@@ -493,4 +493,19 @@ public:
     }
 };
 
+class BBox {
+public:
+    Vector minp;
+    Vector maxp;
+
+    BBox();
+    BBox(const Vector &p0, const Vector &p1);
+
+    Vector GetOrigin();
+    Vector GetExtents();
+
+    void Include(const Vector &v, double r = 0.0);
+    bool Overlaps(BBox &b1);
+};
+
 #endif

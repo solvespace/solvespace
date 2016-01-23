@@ -817,3 +817,37 @@ void Sketch::Clear(void) {
     entity.Clear();
     param.Clear();
 }
+
+BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
+    BBox box;
+    bool first = true;
+    for(int i = 0; i < entity.n; i++) {
+        Entity *e = (Entity *)&entity.elem[i];
+        if(!(e->IsVisible() || includingInvisible)) continue;
+
+        Vector point;
+        double r = 0.0;
+        if(e->IsPoint()) {
+            point = e->PointGetNum();
+        } else {
+            switch(e->type) {
+                case Entity::ARC_OF_CIRCLE:
+                case Entity::CIRCLE:
+                    r = e->CircleGetRadiusNum();
+                    point = GetEntity(e->point[0])->PointGetNum();
+                    break;
+                default: continue;
+            }
+        }
+
+        if(first) {
+            box.minp = point;
+            box.maxp = point;
+            box.Include(point, r);
+            first = false;
+        } else {
+            box.Include(point, r);
+        }
+    }
+    return box;
+}

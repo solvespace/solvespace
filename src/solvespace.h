@@ -701,6 +701,8 @@ public:
     // Styles are handled a bit differently.
 
     void Clear(void);
+
+    BBox CalculateEntityBBox(bool includingInvisible);
 };
 #undef ENTITY
 #undef CONSTRAINT

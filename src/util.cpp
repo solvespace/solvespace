@@ -1047,3 +1047,34 @@ bool Point2d::Equals(Point2d v, double tol) {
     return (this->Minus(v)).MagSquared() < tol*tol;
 }
 
+BBox::BBox() { }
+BBox::BBox(const Vector &p0, const Vector &p1) {
+    minp.x = min(p0.x, p1.x);
+    minp.y = min(p0.y, p1.y);
+    minp.z = min(p0.z, p1.z);
+
+    maxp.x = max(p0.x, p1.x);
+    maxp.y = max(p0.y, p1.y);
+    maxp.z = max(p0.z, p1.z);
+}
+
+Vector BBox::GetOrigin() { return minp.Plus(maxp.Minus(minp)).ScaledBy(0.5); }
+Vector BBox::GetExtents() { return maxp.Minus(minp).ScaledBy(0.5); }
+
+void BBox::Include(const Vector &v, double r) {
+    minp.x = min(minp.x, v.x - r);
+    minp.y = min(minp.y, v.y - r);
+    minp.z = min(minp.z, v.z - r);
+
+    maxp.x = max(maxp.x, v.x + r);
+    maxp.y = max(maxp.y, v.y + r);
+    maxp.z = max(maxp.z, v.z + r);
+}
+
+bool BBox::Overlaps(BBox &b1) {
+
+    Vector t = b1.GetOrigin().Minus(GetOrigin());
+    Vector e = b1.GetExtents().Plus(GetExtents());
+
+    return fabs(t.x) < e.x && fabs(t.y) < e.y && fabs(t.z) < e.z;
+}
