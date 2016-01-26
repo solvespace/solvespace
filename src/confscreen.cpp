@@ -7,56 +7,56 @@
 #include "solvespace.h"
 
 void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
-    SS.TW.ShowEditControl(29+2*v, 8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
+    SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
     SS.TW.edit.meaning = EDIT_LIGHT_DIRECTION;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
-    SS.TW.ShowEditControl(29+2*v, 31, ssprintf("%.2f", SS.lightIntensity[v]));
+    SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.lightIntensity[v]));
     SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
-    SS.TW.ShowEditControlWithColorPicker(9+2*v, 13, SS.modelColor[v]);
+    SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
 
     SS.TW.edit.meaning = EDIT_COLOR;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeChordTolerance(int link, uint32_t v) {
-    SS.TW.ShowEditControl(37, 3, ssprintf("%.2f", SS.chordTol));
+    SS.TW.ShowEditControl(3, ssprintf("%.2f", SS.chordTol));
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 
 void TextWindow::ScreenChangeMaxSegments(int link, uint32_t v) {
-    SS.TW.ShowEditControl(41, 3, ssprintf("%d", SS.maxSegments));
+    SS.TW.ShowEditControl(3, ssprintf("%d", SS.maxSegments));
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
 }
 
 void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
-    SS.TW.ShowEditControl(47, 3, ssprintf("%.3f", 1000*SS.cameraTangent));
+    SS.TW.ShowEditControl(3, ssprintf("%.3f", 1000*SS.cameraTangent));
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 
 void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
-    SS.TW.ShowEditControl(51, 3, SS.MmToString(SS.gridSpacing));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing));
     SS.TW.edit.meaning = EDIT_GRID_SPACING;
 }
 
 void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
-    SS.TW.ShowEditControl(55, 3, ssprintf("%d", SS.UnitDigitsAfterDecimal()));
+    SS.TW.ShowEditControl(3, ssprintf("%d", SS.UnitDigitsAfterDecimal()));
     SS.TW.edit.meaning = EDIT_DIGITS_AFTER_DECIMAL;
 }
 
 void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
-    SS.TW.ShowEditControl(61, 5, ssprintf("%.3f", (double)SS.exportScale));
+    SS.TW.ShowEditControl(5, ssprintf("%.3f", (double)SS.exportScale));
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
-    SS.TW.ShowEditControl(65, 3, SS.MmToString(SS.exportOffset));
+    SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset));
     SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
 }
 
@@ -108,52 +108,41 @@ void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
 
         default: return;
     }
-    int row = 81, col;
-    if(v < 10) {
-        row += v*2;
-        col = 11;
-    } else {
-        row += (v - 10)*2;
-        col = 13;
-    }
-    SS.TW.ShowEditControl(row, col, SS.MmToString(d));
+    int col = 13;
+    if(v < 10) col = 11;
+    SS.TW.ShowEditControl(col, SS.MmToString(d));
     SS.TW.edit.meaning = EDIT_CANVAS_SIZE;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     std::string buf;
-    int row = 93;
     switch(link) {
         case 'd':
             SS.TW.edit.meaning = EDIT_G_CODE_DEPTH;
             buf += SS.MmToString(SS.gCode.depth);
-            row += 0;
             break;
 
         case 's':
             SS.TW.edit.meaning = EDIT_G_CODE_PASSES;
             buf += std::to_string(SS.gCode.passes);
-            row += 2;
             break;
 
         case 'F':
             SS.TW.edit.meaning = EDIT_G_CODE_FEED;
             buf += SS.MmToString(SS.gCode.feed);
-            row += 4;
             break;
 
         case 'P':
             SS.TW.edit.meaning = EDIT_G_CODE_PLUNGE_FEED;
             buf += SS.MmToString(SS.gCode.plungeFeed);
-            row += 6;
             break;
     }
-    SS.TW.ShowEditControl(row, 14, buf);
+    SS.TW.ShowEditControl(14, buf);
 }
 
 void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
-    SS.TW.ShowEditControl(111, 3, std::to_string(SS.autosaveInterval));
+    SS.TW.ShowEditControl(3, std::to_string(SS.autosaveInterval));
     SS.TW.edit.meaning = EDIT_AUTOSAVE_INTERVAL;
 }
 

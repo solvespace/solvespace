@@ -339,7 +339,7 @@ void TextWindow::ScreenCreateCustomStyle(int link, uint32_t v) {
 
 void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
     RgbaColor rgb = SS.backgroundColor;
-    SS.TW.ShowEditControlWithColorPicker(v, 3, rgb);
+    SS.TW.ShowEditControlWithColorPicker(3, rgb);
     SS.TW.edit.meaning = EDIT_BACKGROUND_COLOR;
 }
 
@@ -418,7 +418,7 @@ err:
 
 void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
-    SS.TW.ShowEditControl(v, 10, ssprintf("%.3f", SS.bgImage.scale * SS.MmPerUnit()));
+    SS.TW.ShowEditControl(10, ssprintf("%.3f", SS.bgImage.scale * SS.MmPerUnit()));
 }
 
 void TextWindow::ShowListOfStyles(void) {
@@ -476,7 +476,7 @@ void TextWindow::ShowListOfStyles(void) {
 void TextWindow::ScreenChangeStyleName(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    SS.TW.ShowEditControl(10, 12, s->name.c_str());
+    SS.TW.ShowEditControl(12, s->name.c_str());
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_NAME;
 }
@@ -506,16 +506,9 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
     } else {
         edit_value = SS.MmToString(val);
     }
-    int row = 0, col = 9;
-    if(link == 'w') {
-        row = 17;               // width for a default style
-    } else if(link == 'W') {
-        row = 17;               // width for a custom style
-    } else if(link == 't') {
-        row = 33;               // text height (for custom styles only)
-        col++;
-    }
-    SS.TW.ShowEditControl(row, col, edit_value);
+    int col = 9;
+    if(link == 't') col++;
+    SS.TW.ShowEditControl(col, edit_value);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = (link == 't') ? EDIT_STYLE_TEXT_HEIGHT :
                                          EDIT_STYLE_WIDTH;
@@ -524,7 +517,7 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
 void TextWindow::ScreenChangeStyleTextAngle(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    SS.TW.ShowEditControl(37, 9, ssprintf("%.2f", s->textAngle));
+    SS.TW.ShowEditControl(9, ssprintf("%.2f", s->textAngle));
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_TEXT_ANGLE;
 }
@@ -533,20 +526,18 @@ void TextWindow::ScreenChangeStyleColor(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     // Same function used for stroke and fill colors
-    int row, col, em;
+    int em;
     RgbaColor rgb;
     if(link == 's') {
-        row = 15; col = 13;
         em = EDIT_STYLE_COLOR;
         rgb = s->color;
     } else if(link == 'f') {
-        row = 25; col = 13;
         em = EDIT_STYLE_FILL_COLOR;
         rgb = s->fillColor;
     } else {
         oops();
     }
-    SS.TW.ShowEditControlWithColorPicker(row, col, rgb);
+    SS.TW.ShowEditControlWithColorPicker(13, rgb);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = em;
 }

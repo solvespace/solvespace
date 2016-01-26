@@ -79,7 +79,8 @@ void TextWindow::HideEditControl(void) {
     HideTextEditControl();
 }
 
-void TextWindow::ShowEditControl(int halfRow, int col, const std::string &str) {
+void TextWindow::ShowEditControl(int col, const std::string &str, int halfRow) {
+    if(halfRow < 0) halfRow = top[hoveredRow];
     editControl.halfRow = halfRow;
     editControl.col = col;
 
@@ -89,7 +90,7 @@ void TextWindow::ShowEditControl(int halfRow, int col, const std::string &str) {
     ShowTextEditControl(x - 3, y + 2, str);
 }
 
-void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb)
+void TextWindow::ShowEditControlWithColorPicker(int col, RgbaColor rgb)
 {
     SS.ScheduleShowTW();
 
@@ -98,7 +99,7 @@ void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor 
     editControl.colorPicker.h = 0;
     editControl.colorPicker.s = 0;
     editControl.colorPicker.v = 1;
-    ShowEditControl(halfRow, col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
+    ShowEditControl(col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
 }
 
 void TextWindow::ClearScreen(void) {

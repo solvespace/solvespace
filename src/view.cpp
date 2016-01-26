@@ -39,7 +39,7 @@ void TextWindow::ShowEditView(void) {
 
 void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_VIEW_SCALE;
-    SS.TW.ShowEditControl(12, 3, ssprintf("%.3f", SS.GW.scale * SS.MmPerUnit()));
+    SS.TW.ShowEditControl(3, ssprintf("%.3f", SS.GW.scale * SS.MmPerUnit()));
 }
 
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
@@ -50,14 +50,14 @@ void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
             SS.MmToString(-SS.GW.offset.z).c_str());
 
     SS.TW.edit.meaning = EDIT_VIEW_ORIGIN;
-    SS.TW.ShowEditControl(18, 3, edit_value);
+    SS.TW.ShowEditControl(3, edit_value);
 }
 
 void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
     std::string edit_value =
         ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projRight));
     SS.TW.edit.meaning = EDIT_VIEW_PROJ_RIGHT;
-    SS.TW.ShowEditControl(24, 10, edit_value);
+    SS.TW.ShowEditControl(10, edit_value);
 }
 
 bool TextWindow::EditControlDoneForView(const char *s) {
@@ -98,7 +98,8 @@ bool TextWindow::EditControlDoneForView(const char *s) {
                 SS.GW.NormalizeProjectionVectors();
                 edit.meaning = EDIT_VIEW_PROJ_UP;
                 HideEditControl();
-                ShowEditControl(26, 10, ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projUp)));
+                ShowEditControl(10, ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projUp)),
+                                editControl.halfRow + 2);
                 edit.showAgain = true;
             } else {
                 SS.GW.projUp = pt;

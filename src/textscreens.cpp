@@ -223,36 +223,33 @@ void TextWindow::ScreenColor(int link, uint32_t v) {
     SS.UndoRemember();
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    SS.TW.ShowEditControlWithColorPicker(v, 3, g->color);
+    SS.TW.ShowEditControlWithColorPicker(3, g->color);
     SS.TW.edit.meaning = EDIT_GROUP_COLOR;
 }
 void TextWindow::ScreenOpacity(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    SS.TW.ShowEditControl(22, 11, ssprintf("%.2f", g->color.alphaF()));
+    SS.TW.ShowEditControl(11, ssprintf("%.2f", g->color.alphaF()));
     SS.TW.edit.meaning = EDIT_GROUP_OPACITY;
     SS.TW.edit.group.v = g->h.v;
 }
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    // There's an extra line for the skipFirst parameter in one-sided groups.
-    int r = (g->subtype == Group::ONE_SIDED) ? 16 : 14;
-
-    SS.TW.ShowEditControl(r, 10, ssprintf("%d", (int)g->valA));
+    SS.TW.ShowEditControl(10, ssprintf("%d", (int)g->valA));
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
-    SS.TW.ShowEditControl(7, 12, g->DescriptionString().substr(5));
+    SS.TW.ShowEditControl(12, g->DescriptionString().substr(5));
     SS.TW.edit.meaning = EDIT_GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    SS.TW.ShowEditControl(14, 13, ssprintf("%.3f", g->scale));
+    SS.TW.ShowEditControl(13, ssprintf("%.3f", g->scale));
     SS.TW.edit.meaning = EDIT_GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
@@ -537,11 +534,11 @@ void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     } else {
         edit_value = ssprintf("%.3f", SS.TW.shown.dimFinish);
     }
-    SS.TW.ShowEditControl(12, 12, edit_value);
+    SS.TW.ShowEditControl(12, edit_value);
 }
 void TextWindow::ScreenStepDimSteps(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
-    SS.TW.ShowEditControl(14, 12, ssprintf("%d", SS.TW.shown.dimSteps));
+    SS.TW.ShowEditControl(12, ssprintf("%d", SS.TW.shown.dimSteps));
 }
 void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
     hConstraint hc = SS.TW.shown.constraint;
@@ -601,7 +598,7 @@ void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
     switch(link) {
         case 'r': {
             SS.TW.edit.meaning = EDIT_TANGENT_ARC_RADIUS;
-            SS.TW.ShowEditControl(12, 3, SS.MmToString(SS.tangentArcRadius));
+            SS.TW.ShowEditControl(3, SS.MmToString(SS.tangentArcRadius));
             break;
         }
 

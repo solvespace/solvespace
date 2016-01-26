@@ -303,17 +303,17 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
 void TextWindow::ScreenChangePasteTransformed(int link, uint32_t v) {
     switch(link) {
         case 't':
-            SS.TW.ShowEditControl(10, 13, ssprintf("%d", SS.TW.shown.paste.times));
+            SS.TW.ShowEditControl(13, ssprintf("%d", SS.TW.shown.paste.times));
             SS.TW.edit.meaning = EDIT_PASTE_TIMES_REPEATED;
             break;
 
         case 'r':
-            SS.TW.ShowEditControl(12, 13, ssprintf("%.3f", SS.TW.shown.paste.theta*180/PI));
+            SS.TW.ShowEditControl(13, ssprintf("%.3f", SS.TW.shown.paste.theta*180/PI));
             SS.TW.edit.meaning = EDIT_PASTE_ANGLE;
             break;
 
         case 's':
-            SS.TW.ShowEditControl(18, 13, ssprintf("%.3f", SS.TW.shown.paste.scale));
+            SS.TW.ShowEditControl(13, ssprintf("%.3f", SS.TW.shown.paste.scale));
             SS.TW.edit.meaning = EDIT_PASTE_SCALE;
             break;
     }
