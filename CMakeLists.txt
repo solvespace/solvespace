@@ -37,6 +37,7 @@ if(WIN32)
         -DWIN32=1
         -DWIN32_LEAN_AND_MEAN=1
         -DUNICODE
+        -DNOMINMAX
         -D_UNICODE)
 endif()
 
