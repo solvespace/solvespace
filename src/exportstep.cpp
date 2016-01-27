@@ -237,7 +237,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     // tolerance are required, because they are used to calculate the
     // contour directions and determine inner vs. outer contours.
     sblss.FindOuterFacesFrom(sbl, &spxyz, ss,
-                             SS.ChordTolMm() / SS.exportScale,
+                             SS.ExportChordTolMm(),
                              &allClosed, &notClosedAt,
                              NULL, NULL,
                              NULL);

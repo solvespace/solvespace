@@ -26,13 +26,27 @@ void TextWindow::ScreenChangeColor(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeChordTolerance(int link, uint32_t v) {
-    SS.TW.ShowEditControl(3, ssprintf("%.2f", SS.chordTol));
+    SS.TW.ShowEditControl(3, ssprintf("%lg", SS.chordTol));
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
+    SS.TW.edit.i = 0;
 }
 
 void TextWindow::ScreenChangeMaxSegments(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%d", SS.maxSegments));
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
+    SS.TW.edit.i = 0;
+}
+
+void TextWindow::ScreenChangeExportChordTolerance(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, ssprintf("%lg", SS.exportChordTol));
+    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
+    SS.TW.edit.i = 1;
+}
+
+void TextWindow::ScreenChangeExportMaxSegments(int link, uint32_t v) {
+    SS.TW.ShowEditControl(3, ssprintf("%d", SS.exportMaxSegments));
+    SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
+    SS.TW.edit.i = 1;
 }
 
 void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
@@ -183,6 +197,16 @@ void TextWindow::ShowConfiguration(void) {
         &ScreenChangeMaxSegments);
 
     Printf(false, "");
+    Printf(false, "%Ft export chord tolerance (in mm)%E");
+    Printf(false, "%Ba   %@ %Fl%Ll%f%D[change]%E",
+        SS.exportChordTol,
+        &ScreenChangeExportChordTolerance, 0);
+    Printf(false, "%Ft export max piecewise linear segments%E");
+    Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
+        SS.exportMaxSegments,
+        &ScreenChangeExportMaxSegments);
+
+    Printf(false, "");
     Printf(false, "%Ft perspective factor (0 for parallel)%E");
     Printf(false, "%Ba   %# %Fl%Ll%f%D[change]%E",
         SS.cameraTangent*1000,
@@ -312,13 +336,21 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             break;
         }
         case EDIT_CHORD_TOLERANCE: {
-            SS.chordTol = min(10.0, max(0.1, atof(s)));
-            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+            if(edit.i == 0) {
+                SS.chordTol = max(0.0, atof(s));
+                SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+            } else {
+                SS.exportChordTol = max(0.0, atof(s));
+            }
             break;
         }
         case EDIT_MAX_SEGMENTS: {
-            SS.maxSegments = min(1000, max(7, atoi(s)));
-            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+            if(edit.i == 0) {
+                SS.maxSegments = min(1000, max(7, atoi(s)));
+                SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+            } else {
+                SS.exportMaxSegments = min(1000, max(7, atoi(s)));
+            }
             break;
         }
         case EDIT_CAMERA_TANGENT: {

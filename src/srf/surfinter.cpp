@@ -376,7 +376,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
             // Our chord tolerance is whatever the user specified
             double maxtol = SS.ChordTolMm();
-            int maxsteps = max(300, SS.maxSegments*3);
+            int maxsteps = max(300, SS.GetMaxSegments()*3);
 
             // The curve starts at our starting point.
             SCurvePt padd = {};

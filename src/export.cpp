@@ -112,6 +112,9 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
     SEdgeList edges = {};
     SBezierList beziers = {};
 
+    SS.exportMode = true;
+    GenerateAll(GENERATE_ALL);
+
     SMesh *sm = NULL;
     if(SS.GW.showShaded) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
@@ -178,12 +181,16 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
             // These file formats don't have a canvas size, so they just
             // get exported in the raw coordinate system. So indicate what
             // that was on-screen.
-            SS.justExportedInfo.draw = true;
+            SS.justExportedInfo.showOrigin = true;
             SS.justExportedInfo.pt = origin;
             SS.justExportedInfo.u = u;
             SS.justExportedInfo.v = v;
-            InvalidateGraphics();
+        } else {
+            SS.justExportedInfo.showOrigin = false;
         }
+
+        SS.justExportedInfo.draw = true;
+        InvalidateGraphics();
     }
 
     edges.Clear();
@@ -365,7 +372,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     SEdge notClosedAt;
     sbl->l.ClearTags();
     sblss.FindOuterFacesFrom(sbl, &spxyz, &srf,
-                             SS.ChordTolMm()*s,
+                             SS.ExportChordTolMm(),
                              &allClosed, &notClosedAt,
                              NULL, NULL,
                              &leftovers);
@@ -509,7 +516,7 @@ void VectorFileWriter::Output(SBezierLoopSetSet *sblss, SMesh *sm) {
 
 void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     List<Vector> lv = {};
-    sb->MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
+    sb->MakePwlInto(&lv, SS.ExportChordTolMm());
     int i;
     for(i = 1; i < lv.n; i++) {
         SBezier sb = SBezier::From(lv.elem[i-1], lv.elem[i]);
@@ -528,7 +535,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
                         sb->Finish().Minus(t1.ScaledBy(1.0/3)),
                         sb->Finish());
 
-    double tol = SS.ChordTolMm() / SS.exportScale;
+    double tol = SS.ExportChordTolMm();
     // Arbitrary choice, but make it a little finer than pwl tolerance since
     // it should be easier to achieve that with the smooth curves.
     tol /= 2;
@@ -559,6 +566,12 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
 // Export a triangle mesh, in the requested format.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
+    SS.exportMode = true;
+    GenerateAll(GENERATE_ALL);
+
+    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    g->GenerateDisplayItems();
+
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
     if(m->IsEmpty()) {
         Error("Active group mesh is empty; nothing to export.");
@@ -585,6 +598,10 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
     }
 
     fclose(f);
+
+    SS.justExportedInfo.showOrigin = false;
+    SS.justExportedInfo.draw = true;
+    InvalidateGraphics();
 }
 
 //-----------------------------------------------------------------------------

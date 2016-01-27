@@ -752,6 +752,8 @@ public:
     double   ambientIntensity;
     double   chordTol;
     int      maxSegments;
+    double   exportChordTol;
+    int      exportMaxSegments;
     double   cameraTangent;
     float    gridSpacing;
     float    exportScale;
@@ -764,6 +766,7 @@ public:
     bool     exportShadedTriangles;
     bool     exportPwlCurves;
     bool     exportCanvasSizeAuto;
+    bool     exportMode;
     struct {
         float   left;
         float   right;
@@ -800,6 +803,8 @@ public:
     int UnitDigitsAfterDecimal(void);
     void SetUnitDigitsAfterDecimal(int v);
     double ChordTolMm(void);
+    double ExportChordTolMm(void);
+    int GetMaxSegments(void);
     bool usePerspectiveProj;
     double CameraTangent(void);
 
@@ -892,7 +897,7 @@ public:
         Vector      origin;
     } bgImage;
     struct {
-        bool        draw;
+        bool        draw, showOrigin;
         Vector      pt, u, v;
     } justExportedInfo;
 

@@ -732,6 +732,10 @@ void GraphicsWindow::MenuEdit(int id) {
             for(p = SK.param.First(); p; p = SK.param.NextAfter(p)) {
                 p->free = false;
             }
+            if(SS.exportMode) {
+                SS.exportMode = false;
+                SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+            }
             break;
 
         case MNU_SELECT_ALL: {

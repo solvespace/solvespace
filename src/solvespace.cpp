@@ -36,10 +36,16 @@ void SolveSpaceUI::Init() {
     lightDir[1].x = CnfThawFloat( 1.0f, "LightDir_1_Right"     );
     lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
     lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
+
+    exportMode = false;
     // Chord tolerance
     chordTol = CnfThawFloat(2.0f, "ChordTolerance");
     // Max pwl segments to generate
     maxSegments = CnfThawInt(10, "MaxSegments");
+    // Chord tolerance
+    exportChordTol = CnfThawFloat(0.1f, "ExportChordTolerance");
+    // Max pwl segments to generate
+    exportMaxSegments = CnfThawInt(64, "ExportMaxSegments");
     // View units
     viewUnits = (Unit)CnfThawInt((uint32_t)UNIT_MM, "ViewUnits");
     // Number of digits after the decimal point
@@ -157,6 +163,10 @@ void SolveSpaceUI::Exit(void) {
     CnfFreezeFloat((float)chordTol, "ChordTolerance");
     // Max pwl segments to generate
     CnfFreezeInt((uint32_t)maxSegments, "MaxSegments");
+    // Export Chord tolerance
+    CnfFreezeFloat((float)exportChordTol, "ExportChordTolerance");
+    // Export Max pwl segments to generate
+    CnfFreezeInt((uint32_t)exportMaxSegments, "ExportMaxSegments");
     // View units
     CnfFreezeInt((uint32_t)viewUnits, "ViewUnits");
     // Number of digits after the decimal point
@@ -259,7 +269,15 @@ double SolveSpaceUI::StringToMm(const std::string &str) {
     return std::stod(str) * MmPerUnit();
 }
 double SolveSpaceUI::ChordTolMm(void) {
-    return SS.chordTol / SS.GW.scale;
+    if(exportMode) return ExportChordTolMm();
+    return chordTol / GW.scale;
+}
+double SolveSpaceUI::ExportChordTolMm(void) {
+    return exportChordTol / exportScale;
+}
+int SolveSpaceUI::GetMaxSegments(void) {
+    if(exportMode) return exportMaxSegments;
+    return maxSegments;
 }
 int SolveSpaceUI::UnitDigitsAfterDecimal(void) {
     return (viewUnits == UNIT_INCHES) ? afterDecimalInch : afterDecimalMm;

@@ -796,28 +796,39 @@ nogrid:;
 
     // A note to indicate the origin in the just-exported file.
     if(SS.justExportedInfo.draw) {
+        Vector p, u, v;
+        if(SS.justExportedInfo.showOrigin) {
+            p = SS.justExportedInfo.pt,
+            u = SS.justExportedInfo.u,
+            v = SS.justExportedInfo.v;
+        } else {
+            p = SS.GW.offset.ScaledBy(-1);
+            u = SS.GW.projRight;
+            v = SS.GW.projUp;
+        }
+
         ssglColorRGB(Style::Color(Style::DATUM));
-        Vector p = SS.justExportedInfo.pt,
-               u = SS.justExportedInfo.u,
-               v = SS.justExportedInfo.v;
 
-        ssglLineWidth(1.5);
-        glBegin(GL_LINES);
-            ssglVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
-            ssglVertex3v(p.Plus(u.WithMagnitude(30/scale)));
-            ssglVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
-            ssglVertex3v(p.Plus(v.WithMagnitude(30/scale)));
-        glEnd();
-
-        ssglWriteText("(x, y) = (0, 0) for file just exported",
+        ssglWriteText("previewing exported geometry; press Esc to return",
             DEFAULT_TEXT_HEIGHT,
             p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)),
             u, v, NULL, NULL);
-        ssglWriteText("press Esc to clear this message",
-            DEFAULT_TEXT_HEIGHT,
-            p.Plus(u.ScaledBy(40/scale)).Plus(
-                   v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)),
-            u, v, NULL, NULL);
+
+        if(SS.justExportedInfo.showOrigin) {
+            ssglLineWidth(1.5);
+            glBegin(GL_LINES);
+                ssglVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
+                ssglVertex3v(p.Plus(u.WithMagnitude(30/scale)));
+                ssglVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
+                ssglVertex3v(p.Plus(v.WithMagnitude(30/scale)));
+            glEnd();
+
+            ssglWriteText("(x, y) = (0, 0) for file just exported",
+                DEFAULT_TEXT_HEIGHT,
+                p.Plus(u.ScaledBy(40/scale)).Plus(
+                       v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)),
+                u, v, NULL, NULL);
+        }
     }
 
     // And finally the toolbar.

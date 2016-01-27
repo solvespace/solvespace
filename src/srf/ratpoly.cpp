@@ -281,7 +281,7 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordT
     Vector pm = PointAt((ta + tb) / 2.0);
     double d = pm.DistanceToLine(pa, pb.Minus(pa));
 
-    double step = 1.0/SS.maxSegments;
+    double step = 1.0/SS.GetMaxSegments();
     if((tb - ta) < step || d < chordTol) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);
@@ -311,7 +311,7 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
                    pm3.DistanceToLine(pa, dir) 
                 });
 
-    double step = 1.0/SS.maxSegments;
+    double step = 1.0/SS.GetMaxSegments();
     if((tb - ta) < step || d < chordTol) {
         // A previous call has already added the beginning of our interval.
         l->Add(&pb);

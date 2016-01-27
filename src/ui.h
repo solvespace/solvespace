@@ -299,6 +299,8 @@ public:
     static void ScreenChangeColor(int link, uint32_t v);
     static void ScreenChangeChordTolerance(int link, uint32_t v);
     static void ScreenChangeMaxSegments(int link, uint32_t v);
+    static void ScreenChangeExportChordTolerance(int link, uint32_t v);
+    static void ScreenChangeExportMaxSegments(int link, uint32_t v);
     static void ScreenChangeCameraTangent(int link, uint32_t v);
     static void ScreenChangeGridSpacing(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
