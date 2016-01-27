@@ -168,6 +168,12 @@ void SolveSpaceUI::GenerateAll(void) {
 void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
     int i, j;
 
+    // generate until active group
+    if(last == -2) {
+        last = SK.group.IndexOf(SS.GW.activeGroup);
+        if(last == -1) last = INT_MAX;
+    }
+
     // Remove any requests or constraints that refer to a nonexistent
     // group; can check those immediately, since we know what the list
     // of groups should be.

@@ -304,6 +304,22 @@ public:
         return t;
     }
 
+    int IndexOf(H h) {
+        int first = 0, last = n-1;
+        while(first <= last) {
+            int mid = (first + last)/2;
+            H hm = elem[mid].h;
+            if(hm.v > h.v) {
+                last = mid-1; // and first stays the same
+            } else if(hm.v < h.v) {
+                first = mid+1; // and last stays the same
+            } else {
+                return mid;
+            }
+        }
+        return -1;
+    }
+
     T *FindByIdNoOops(H h) {
         int first = 0, last = n-1;
         while(first <= last) {
