@@ -581,17 +581,15 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                 "The mesh has naked edges (NOT okay, invalid)." :
                 "The mesh is watertight (okay, valid).";
 
-            char cntMsg[1024];
-            sprintf(cntMsg, "\n\nThe model contains %d triangles, from "
-                            "%d surfaces.",
-                g->displayMesh.l.n, g->runningShell.surface.n);
+            std::string cntMsg = ssprintf("\n\nThe model contains %d triangles, from "
+                            "%d surfaces.", g->displayMesh.l.n, g->runningShell.surface.n);
 
             if(SS.nakedEdges.l.n == 0) {
                 Message("%s\n\n%s\n\nZero problematic edges, good.%s",
-                    intersMsg, leaksMsg, cntMsg);
+                    intersMsg, leaksMsg, cntMsg.c_str());
             } else {
                 Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
-                    intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg);
+                    intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg.c_str());
             }
             break;
         }
@@ -672,19 +670,16 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                 vol += integral;
             }
 
-            char msg[1024];
-            sprintf(msg, "The volume of the solid model is:\n\n"
-                         "    %.3f %s^3",
+            std::string msg = ssprintf("The volume of the solid model is:\n\n""    %.3f %s^3",
                 vol / pow(SS.MmPerUnit(), 3),
                 SS.UnitName());
 
             if(SS.viewUnits == SolveSpaceUI::UNIT_MM) {
-                sprintf(msg+strlen(msg), "\n    %.2f mL", vol/(10*10*10));
+                msg += ssprintf("\n    %.2f mL", vol/(10*10*10));
             }
-            strcpy(msg+strlen(msg),
-                "\n\nCurved surfaces have been approximated as triangles.\n"
-                "This introduces error, typically of around 1%.");
-            Message("%s", msg);
+            msg += "\n\nCurved surfaces have been approximated as triangles.\n"
+                   "This introduces error, typically of around 1%.";
+            Message("%s", msg.c_str());
             break;
         }
 

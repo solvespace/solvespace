@@ -417,10 +417,8 @@ err:
 }
 
 void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {
-    char str[300];
-    sprintf(str, "%.3f", SS.bgImage.scale * SS.MmPerUnit());
     SS.TW.edit.meaning = EDIT_BACKGROUND_IMG_SCALE;
-    SS.TW.ShowEditControl(v, 10, str);
+    SS.TW.ShowEditControl(v, 10, ssprintf("%.3f", SS.bgImage.scale * SS.MmPerUnit()));
 }
 
 void TextWindow::ShowListOfStyles(void) {

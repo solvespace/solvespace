@@ -495,18 +495,18 @@ void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
 void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                                bool filled, RgbaColor fillRgb)
 {
-    char fill[100];
+    std::string fill;
     if(filled) {
-        sprintf(fill, "#%02x%02x%02x",
+        fill = ssprintf("#%02x%02x%02x",
             fillRgb.red, fillRgb.green, fillRgb.blue);
     } else {
-        strcpy(fill, "none");
+        fill = "none";
     }
     fprintf(f, "' stroke-width='%.3f' stroke='#%02x%02x%02x' "
                  "stroke-linecap='round' stroke-linejoin='round' "
                  "fill='%s' />\r\n",
         lineWidth, strokeRgb.red, strokeRgb.green, strokeRgb.blue,
-        fill);
+        fill.c_str());
 }
 
 void SvgFileWriter::MaybeMoveTo(Vector st, Vector fi) {

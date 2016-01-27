@@ -206,21 +206,20 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
         // Do this last so that nothing can draw over it.
         if(toolTip.show) {
             ssglInitializeBitmapFont();
-            char str[1024];
             if(strlen(toolTip.str) >= 200) oops();
-            strcpy(str, toolTip.str);
+            std::string str { toolTip.str };
 
             for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                 if(toolbarTooltipped == SS.GW.menu[i].id) {
                     char accelbuf[40];
                     if(MakeAcceleratorLabel(SS.GW.menu[i].accel, accelbuf)) {
-                        sprintf(str+strlen(str), " (%s)", accelbuf);
+                        str += ssprintf(" (%s)", accelbuf);
                     }
                     break;
                 }
             }
 
-            int tw = (int)strlen(str)*SS.TW.CHAR_WIDTH + 10,
+            int tw = str.length() * SS.TW.CHAR_WIDTH + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
@@ -234,7 +233,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             glPushMatrix();
                 glTranslated(ox+5, oy+3, 0);
                 glScaled(1, -1, 1);
-                ssglBitmapText(str, Vector::From(0, 0, 0));
+                ssglBitmapText(str.c_str(), Vector::From(0, 0, 0));
             glPopMatrix();
         }
         ssglDepthRangeLockToFront(false);

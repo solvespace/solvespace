@@ -229,9 +229,7 @@ void TextWindow::ScreenColor(int link, uint32_t v) {
 void TextWindow::ScreenOpacity(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
-    char str[1024];
-    sprintf(str, "%.2f", g->color.alphaF());
-    SS.TW.ShowEditControl(22, 11, str);
+    SS.TW.ShowEditControl(22, 11, ssprintf("%.2f", g->color.alphaF()));
     SS.TW.edit.meaning = EDIT_GROUP_OPACITY;
     SS.TW.edit.group.v = g->h.v;
 }
@@ -241,9 +239,7 @@ void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     // There's an extra line for the skipFirst parameter in one-sided groups.
     int r = (g->subtype == Group::ONE_SIDED) ? 16 : 14;
 
-    char str[1024];
-    sprintf(str, "%d", (int)g->valA);
-    SS.TW.ShowEditControl(r, 10, str);
+    SS.TW.ShowEditControl(r, 10, ssprintf("%d", (int)g->valA));
     SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }

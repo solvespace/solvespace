@@ -91,9 +91,6 @@ void TextWindow::ShowEditControl(int halfRow, int col, const std::string &str) {
 
 void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor rgb)
 {
-    char str[1024];
-    sprintf(str, "%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF());
-
     SS.ScheduleShowTW();
 
     editControl.colorPicker.show = true;
@@ -101,7 +98,7 @@ void TextWindow::ShowEditControlWithColorPicker(int halfRow, int col, RgbaColor 
     editControl.colorPicker.h = 0;
     editControl.colorPicker.s = 0;
     editControl.colorPicker.v = 1;
-    ShowEditControl(halfRow, col, str);
+    ShowEditControl(halfRow, col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
 }
 
 void TextWindow::ClearScreen(void) {
@@ -437,23 +434,23 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
 
     if(tooltippedIcon) {
         if(how == PAINT) {
-            char str[1024];
+            std::string str;
 
             if(tooltippedIcon->icon == Icon_faces) {
                 if(SS.GW.showFaces) {
-                    strcpy(str, "Don't make faces selectable with mouse");
+                    str = "Don't make faces selectable with mouse";
                 } else {
-                    strcpy(str, "Make faces selectable with mouse");
+                    str = "Make faces selectable with mouse";
                 }
             } else {
-                sprintf(str, "%s %s", *(tooltippedIcon->var) ? "Hide" : "Show",
+                str = ssprintf("%s %s", *(tooltippedIcon->var) ? "Hide" : "Show",
                     tooltippedIcon->tip);
             }
 
             double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = ((int)strlen(str) + 1)*CHAR_WIDTH;
+            int tw = (str.length() + 1)*CHAR_WIDTH;
             ox = min(ox, (double) (width - 25) - tw);
             oy = max(oy, 5.0);
 
@@ -465,7 +462,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
 
             glColor4d(0, 0, 0, 1);
-            ssglBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
+            ssglBitmapText(str.c_str(), Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
         } else {
             if(!hoveredIcon ||
                 (hoveredIcon != tooltippedIcon))
@@ -552,10 +549,8 @@ uint8_t *TextWindow::HsvPattern1d(double h, double s) {
 }
 
 void TextWindow::ColorPickerDone(void) {
-    char str[1024];
     RgbaColor rgb = editControl.colorPicker.rgb;
-    sprintf(str, "%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF());
-    EditControlDone(str);
+    EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()).c_str());
 }
 
 bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,

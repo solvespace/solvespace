@@ -1183,13 +1183,13 @@ HMENU CreateGraphicsWindowMenus(void)
     int subMenu = 0;
 
     for(i = 0; SS.GW.menu[i].level >= 0; i++) {
-        char label[100] = { '\0' };
+        std::string label;
         if(SS.GW.menu[i].label) {
             char accelbuf[40];
             const char *sep =
                 MakeAcceleratorLabel(SS.GW.menu[i].accel, accelbuf) ?
                 "\t" : "";
-            sprintf(label, "%s%s%s", SS.GW.menu[i].label, sep, accelbuf);
+            label = ssprintf("%s%s%s", SS.GW.menu[i].label, sep, accelbuf);
         }
 
         if(SS.GW.menu[i].level == 0) {

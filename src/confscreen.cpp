@@ -7,17 +7,13 @@
 #include "solvespace.h"
 
 void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%.2f, %.2f, %.2f", CO(SS.lightDir[v]));
-    SS.TW.ShowEditControl(29+2*v, 8, str);
+    SS.TW.ShowEditControl(29+2*v, 8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
     SS.TW.edit.meaning = EDIT_LIGHT_DIRECTION;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%.2f", SS.lightIntensity[v]);
-    SS.TW.ShowEditControl(29+2*v, 31, str);
+    SS.TW.ShowEditControl(29+2*v, 31, ssprintf("%.2f", SS.lightIntensity[v]));
     SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
     SS.TW.edit.i = v;
 }
@@ -30,23 +26,17 @@ void TextWindow::ScreenChangeColor(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeChordTolerance(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%.2f", SS.chordTol);
-    SS.TW.ShowEditControl(37, 3, str);
+    SS.TW.ShowEditControl(37, 3, ssprintf("%.2f", SS.chordTol));
     SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
 }
 
 void TextWindow::ScreenChangeMaxSegments(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%d", SS.maxSegments);
-    SS.TW.ShowEditControl(41, 3, str);
+    SS.TW.ShowEditControl(41, 3, ssprintf("%d", SS.maxSegments));
     SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
 }
 
 void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%.3f", 1000*SS.cameraTangent);
-    SS.TW.ShowEditControl(47, 3, str);
+    SS.TW.ShowEditControl(47, 3, ssprintf("%.3f", 1000*SS.cameraTangent));
     SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
 }
 
@@ -56,17 +46,12 @@ void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
-    char buf[128];
-    sprintf(buf, "%d", SS.UnitDigitsAfterDecimal());
-    SS.TW.ShowEditControl(55, 3, buf);
+    SS.TW.ShowEditControl(55, 3, ssprintf("%d", SS.UnitDigitsAfterDecimal()));
     SS.TW.edit.meaning = EDIT_DIGITS_AFTER_DECIMAL;
 }
 
 void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
-    char str[1024];
-    sprintf(str, "%.3f", (double)SS.exportScale);
-
-    SS.TW.ShowEditControl(61, 5, str);
+    SS.TW.ShowEditControl(61, 5, ssprintf("%.3f", (double)SS.exportScale));
     SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
 }
 

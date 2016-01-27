@@ -194,8 +194,7 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
            displayedStatusMessage)
         {
             displayedStatusMessage = true;
-            char msg[1024];
-            sprintf(msg, "generating group %d/%d", i, SK.group.n);
+            std::string msg = ssprintf("generating group %d/%d", i, SK.group.n);
 
             int w, h;
             GetGraphicsWindowSize(&w, &h);
@@ -218,7 +217,7 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
             glPushMatrix();
                 glTranslated(left+8, top-20, 0);
                 glScaled(1, -1, 1);
-                ssglBitmapText(msg, Vector::From(0, 0, 0));
+                ssglBitmapText(msg.c_str(), Vector::From(0, 0, 0));
             glPopMatrix();
             glFlush();
             glDrawBuffer(GL_BACK);

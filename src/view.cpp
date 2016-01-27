@@ -97,10 +97,8 @@ bool TextWindow::EditControlDoneForView(const char *s) {
                 SS.GW.projRight = pt;
                 SS.GW.NormalizeProjectionVectors();
                 edit.meaning = EDIT_VIEW_PROJ_UP;
-                char buf[1024];
-                sprintf(buf, "%.3f, %.3f, %.3f", CO(SS.GW.projUp));
                 HideEditControl();
-                ShowEditControl(26, 10, buf);
+                ShowEditControl(26, 10, ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projUp)));
                 edit.showAgain = true;
             } else {
                 SS.GW.projUp = pt;
