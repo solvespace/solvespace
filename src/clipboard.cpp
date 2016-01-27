@@ -150,7 +150,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         r->construction = cr->construction;
         // Need to regen to get the right number of points, if extraPoints
         // changed.
-        SS.GenerateAll(-1, -1);
+        SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
         SS.MarkGroupDirty(r->group);
         bool hasDistance;
         int i, pts;

@@ -158,10 +158,19 @@ void SolveSpaceUI::GenerateAll(void) {
     }
     if(firstDirty == INT_MAX || lastVisible == 0) {
         // All clean; so just regenerate the entities, and don't solve anything.
-        GenerateAll(-1, -1);
+        GenerateAll(GENERATE_REGEN);
     } else {
         SS.nakedEdges.Clear();
         GenerateAll(firstDirty, lastVisible);
+    }
+}
+
+void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree) {
+    switch(type) {
+        case GENERATE_ALL:          GenerateAll(0, INT_MAX, andFindFree);   break;
+        case GENERATE_REGEN:        GenerateAll(-1, -1, andFindFree);       break;
+        case GENERATE_UNTIL_ACTIVE: GenerateAll(0, -2, andFindFree);        break;
+        default: oops();
     }
 }
 

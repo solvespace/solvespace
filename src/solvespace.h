@@ -926,6 +926,13 @@ public:
     bool PruneRequests(hGroup hg);
     bool PruneConstraints(hGroup hg);
 
+    enum GenerateType {
+        GENERATE_ALL,
+        GENERATE_REGEN,
+        GENERATE_UNTIL_ACTIVE,
+    };
+    
+    void GenerateAll(GenerateType type, bool andFindFree = false);
     void GenerateAll(void);
     void GenerateAll(int first, int last, bool andFindFree=false);
     void SolveGroup(hGroup hg, bool andFindFree);

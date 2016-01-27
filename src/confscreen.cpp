@@ -313,12 +313,12 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
         }
         case EDIT_CHORD_TOLERANCE: {
             SS.chordTol = min(10.0, max(0.1, atof(s)));
-            SS.GenerateAll(0, INT_MAX);
+            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
             break;
         }
         case EDIT_MAX_SEGMENTS: {
             SS.maxSegments = min(1000, max(7, atoi(s)));
-            SS.GenerateAll(0, INT_MAX);
+            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
             break;
         }
         case EDIT_CAMERA_TANGENT: {

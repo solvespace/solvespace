@@ -266,7 +266,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     // This is a major change, so let's re-solve everything.
     SS.TW.ClearSuper();
     SS.GW.ClearSuper();
-    SS.GenerateAll(0, INT_MAX);
+    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SK.group.FindById(shown.group);

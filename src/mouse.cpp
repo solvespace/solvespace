@@ -743,7 +743,7 @@ hRequest GraphicsWindow::AddRequest(int type, bool rememberForUndo) {
     // place this request's entities where the mouse is can do so. But
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
-    SS.GenerateAll(-1, -1);
+    SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
     SS.MarkGroupDirty(r.group);
     return r.h;
 }
@@ -1006,7 +1006,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
 
             (SK.GetRequest(hr)->extraPoints)++;
-            SS.GenerateAll(-1, -1);
+            SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
 
             int ep = r->extraPoints;
             Vector last = SK.GetEntity(hr.entity(3+ep))->PointGetNum();

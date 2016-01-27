@@ -127,7 +127,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     SS.GW.ClearSuper();
     SS.TW.ClearSuper();
     SS.ReloadAllImported();
-    SS.GenerateAll(0, INT_MAX);
+    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
     SS.ScheduleShowTW();
 
     // Activate the group that was active before.

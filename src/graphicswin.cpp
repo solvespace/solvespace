@@ -678,7 +678,7 @@ void GraphicsWindow::DeleteTaggedRequests(void) {
     ClearSuper();
     // And regenerate to get rid of what it generates, plus anything
     // that references it (since the regen code checks for that).
-    SS.GenerateAll(0, INT_MAX);
+    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
     EnsureValidActives();
     SS.ScheduleShowTW();
 }
@@ -886,7 +886,7 @@ void GraphicsWindow::MenuEdit(int id) {
 
         case MNU_REGEN_ALL:
             SS.ReloadAllImported();
-            SS.GenerateAll(0, -2);
+            SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
             SS.ScheduleShowTW();
             break;
 

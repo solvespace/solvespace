@@ -255,7 +255,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // the impFileRel for our possibly-new filename.
     SS.ScheduleShowTW();
     SS.ReloadAllImported();
-    SS.GenerateAll(0, INT_MAX);
+    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
 
     fh = ssfopen(filename, "wb");
     if(!fh) {

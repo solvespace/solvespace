@@ -294,7 +294,7 @@ void SolveSpaceUI::AfterNewFile(void) {
     SS.GW.projRight = Vector::From(1, 0, 0);
     SS.GW.projUp    = Vector::From(0, 1, 0);
 
-    GenerateAll(-1, -1);
+    GenerateAll(GENERATE_REGEN);
 
     TW.Init();
     GW.Init();
@@ -312,7 +312,7 @@ void SolveSpaceUI::AfterNewFile(void) {
     // thing visible is the not-yet-generated surfaces.
     GW.ZoomToFit(true);
 
-    GenerateAll(0, INT_MAX);
+    GenerateAll(GENERATE_ALL);
     SS.ScheduleShowTW();
     // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit(false);
@@ -713,7 +713,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
         case GraphicsWindow::MNU_SHOW_DOF:
             // This works like a normal solve, except that it calculates
             // which variables are free/bound at the same time.
-            SS.GenerateAll(0, INT_MAX, true);
+            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL, true);
             break;
 
         case GraphicsWindow::MNU_TRACE_PT:
