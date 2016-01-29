@@ -753,6 +753,7 @@ public:
     double   lightIntensity[2];
     double   ambientIntensity;
     double   chordTol;
+    double   chordTolCalculated;
     int      maxSegments;
     double   exportChordTol;
     int      exportMaxSegments;
@@ -941,7 +942,7 @@ public:
     
     void GenerateAll(GenerateType type, bool andFindFree = false);
     void GenerateAll(void);
-    void GenerateAll(int first, int last, bool andFindFree=false);
+    void GenerateAll(int first, int last, bool andFindFree = false, bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void MarkDraggedParams(void);
     void ForceReferences(void);

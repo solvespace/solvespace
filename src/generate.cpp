@@ -174,13 +174,23 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree) {
     }
 }
 
-void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
+void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree, bool genForBBox) {
     int i, j;
 
     // generate until active group
     if(last == -2) {
         last = SK.group.IndexOf(SS.GW.activeGroup);
         if(last == -1) last = INT_MAX;
+    }
+
+    // If we're generating entities for display, first we need to find
+    // the bounding box to turn relative chord tolerance to absolute.
+    if(!SS.exportMode && !genForBBox) {
+        GenerateAll(first, last, false, true);
+        BBox box = SK.CalculateEntityBBox(false);
+        Vector size = box.maxp.Minus(box.minp);
+        double maxSize = std::max({ size.x, size.y, size.z });
+        chordTolCalculated = maxSize * chordTol / 100.0;
     }
 
     // Remove any requests or constraints that refer to a nonexistent
@@ -275,10 +285,13 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree) {
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
-                SolveGroup(g->h, andFindFree);
-                g->GenerateLoops();
-                g->GenerateShellAndMesh();
-                g->clean = true;
+                if(genForBBox) {
+                    SolveGroup(g->h, andFindFree);
+                } else {
+                    g->GenerateLoops();
+                    g->GenerateShellAndMesh();
+                    g->clean = true;
+                }
             } else {
                 // The group falls outside the range, so just assume that
                 // it's good wherever we left it. The mesh is unchanged,
@@ -364,7 +377,7 @@ pruned:
     SK.param.Clear();
     prev.MoveSelfInto(&(SK.param));
     // Try again
-    GenerateAll(first, last);
+    GenerateAll(first, last, andFindFree, genForBBox);
 }
 
 void SolveSpaceUI::ForceReferences(void) {

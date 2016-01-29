@@ -39,7 +39,7 @@ void SolveSpaceUI::Init() {
 
     exportMode = false;
     // Chord tolerance
-    chordTol = CnfThawFloat(2.0f, "ChordTolerance");
+    chordTol = CnfThawFloat(0.5f, "ChordTolerancePct");
     // Max pwl segments to generate
     maxSegments = CnfThawInt(10, "MaxSegments");
     // Chord tolerance
@@ -160,7 +160,7 @@ void SolveSpaceUI::Exit(void) {
     CnfFreezeFloat((float)lightDir[1].y, "LightDir_1_Up");
     CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
     // Chord tolerance
-    CnfFreezeFloat((float)chordTol, "ChordTolerance");
+    CnfFreezeFloat((float)chordTol, "ChordTolerancePct");
     // Max pwl segments to generate
     CnfFreezeInt((uint32_t)maxSegments, "MaxSegments");
     // Export Chord tolerance
@@ -270,7 +270,7 @@ double SolveSpaceUI::StringToMm(const std::string &str) {
 }
 double SolveSpaceUI::ChordTolMm(void) {
     if(exportMode) return ExportChordTolMm();
-    return chordTol / GW.scale;
+    return chordTolCalculated;
 }
 double SolveSpaceUI::ExportChordTolMm(void) {
     return exportChordTol / exportScale;

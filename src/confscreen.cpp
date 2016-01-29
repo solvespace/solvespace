@@ -186,10 +186,10 @@ void TextWindow::ShowConfiguration(void) {
     }
 
     Printf(false, "");
-    Printf(false, "%Ft chord tolerance (in screen pixels)%E");
-    Printf(false, "%Ba   %@ %Fl%Ll%f%D[change]%E; now %d triangles",
+    Printf(false, "%Ft chord tolerance (in percents)%E");
+    Printf(false, "%Ba   %@ %% %Fl%Ll%f%D[change]%E; %@ mm, %d triangles",
         SS.chordTol,
-        &ScreenChangeChordTolerance, 0,
+        &ScreenChangeChordTolerance, 0, SS.chordTolCalculated,
         SK.GetGroup(SS.GW.activeGroup)->displayMesh.l.n);
     Printf(false, "%Ft max piecewise linear segments%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
