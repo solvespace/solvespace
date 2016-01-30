@@ -35,6 +35,13 @@
 #   include <GL/glu.h>
 #endif
 
+// We declare these in advance instead of simply using FT_Library
+// (defined as typedef FT_LibraryRec_* FT_Library) because including
+// freetype.h invokes indescribable horrors and we would like to avoid
+// doing that every time we include solvespace.h.
+struct FT_LibraryRec_;
+struct FT_FaceRec_;
+
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
 #ifdef __clang__
@@ -218,7 +225,7 @@ bool GetSaveFile(std::string &filename, const std::string &defExtension,
                  const char *selPattern);
 bool GetOpenFile(std::string &filename, const std::string &defExtension,
                  const char *selPattern);
-void LoadAllFontFiles(void);
+std::vector<std::string> GetFontFiles();
 
 void OpenWebsite(const char *url);
 
@@ -446,87 +453,7 @@ public:
     void Clear(void);
 };
 
-class TtfFont {
-public:
-    typedef struct {
-        bool        onCurve;
-        bool        lastInContour;
-        int16_t     x;
-        int16_t     y;
-    } FontPoint;
-
-    typedef struct {
-        FontPoint   *pt;
-        int         pts;
-
-        int         xMax;
-        int         xMin;
-        int         leftSideBearing;
-        int         advanceWidth;
-    } Glyph;
-
-    typedef struct {
-        int x, y;
-    } IntPoint;
-
-    std::string           fontFile;
-    std::string           name;
-    bool                  loaded;
-
-    // The font itself, plus the mapping from ASCII codes to glyphs
-    std::vector<uint16_t> charMap;
-    std::vector<Glyph>    glyph;
-
-    int                   maxPoints;
-    int                   scale;
-
-    // The filehandle, while loading
-    FILE   *fh;
-    // Some state while rendering a character to curves
-    enum {
-        NOTHING   = 0,
-        ON_CURVE  = 1,
-        OFF_CURVE = 2
-    };
-    int                   lastWas;
-    IntPoint              lastOnCurve;
-    IntPoint              lastOffCurve;
-
-    // And the state that the caller must specify, determines where we
-    // render to and how
-    SBezierList *beziers;
-    Vector      origin, u, v;
-
-    int Getc(void);
-    uint8_t GetBYTE(void);
-    uint16_t GetUSHORT(void);
-    uint32_t GetULONG(void);
-
-    void LoadGlyph(int index);
-    bool LoadFontFromFile(bool nameOnly);
-    std::string FontFileBaseName(void);
-
-    void Flush(void);
-    void Handle(int *dx, int x, int y, bool onCurve);
-    void PlotCharacter(int *dx, char32_t c, double spacing);
-    void PlotString(const char *str, double spacing,
-                    SBezierList *sbl, Vector origin, Vector u, Vector v);
-
-    Vector TransformIntPoint(int x, int y);
-    void LineSegment(int x0, int y0, int x1, int y1);
-    void Bezier(int x0, int y0, int x1, int y1, int x2, int y2);
-};
-
-class TtfFontList {
-public:
-    bool                loaded;
-    List<TtfFont>       l;
-
-    void LoadAll(void);
-
-    void PlotString(const std::string &font, const char *str, double spacing,
-                    SBezierList *sbl, Vector origin, Vector u, Vector v);
-};
+#include "ttf.h"
 
 class StepFileWriter {
 public:
@@ -939,7 +866,7 @@ public:
         GENERATE_REGEN,
         GENERATE_UNTIL_ACTIVE,
     };
-    
+
     void GenerateAll(GenerateType type, bool andFindFree = false);
     void GenerateAll(void);
     void GenerateAll(int first, int last, bool andFindFree = false, bool genForBBox = false);

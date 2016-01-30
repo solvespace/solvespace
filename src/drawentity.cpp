@@ -447,7 +447,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font.c_str(), str.c_str(), 0, sbl, botLeft, u, v);
+            SS.fonts.PlotString(font.c_str(), str.c_str(), sbl, botLeft, u, v);
             break;
         }
 

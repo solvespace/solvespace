@@ -1442,7 +1442,9 @@ void OpenWebsite(const char *url) {
 }
 
 /* fontconfig is already initialized by GTK */
-void LoadAllFontFiles(void) {
+std::vector<std::string> GetFontFiles() {
+    std::vector<std::string> fonts;
+
     FcPattern   *pat = FcPatternCreate();
     FcObjectSet *os  = FcObjectSetBuild(FC_FILE, (char *)0);
     FcFontSet   *fs  = FcFontList(0, pat, os);
@@ -1450,17 +1452,15 @@ void LoadAllFontFiles(void) {
     for(int i = 0; i < fs->nfont; i++) {
         FcChar8 *filenameFC = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
         std::string filename = (char*) filenameFC;
-        if(FilenameHasExtension(filename, ".ttf")) {
-            TtfFont tf = {};
-            tf.fontFile = filename;
-            SS.fonts.l.Add(&tf);
-        }
+        fonts.push_back(filename);
         FcStrFree(filenameFC);
     }
 
     FcFontSetDestroy(fs);
     FcObjectSetDestroy(os);
     FcPatternDestroy(pat);
+
+    return fonts;
 }
 
 /* Space Navigator support */

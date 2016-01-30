@@ -1101,21 +1101,21 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filena
     }
 }
 
-void SolveSpace::LoadAllFontFiles(void)
-{
+std::vector<std::string> SolveSpace::GetFontFiles() {
+    std::vector<std::string> fonts;
+
     std::wstring fontsDir(MAX_PATH, '\0');
     fontsDir.resize(GetWindowsDirectoryW(&fontsDir[0], fontsDir.length()));
     fontsDir += L"\\fonts\\";
 
     WIN32_FIND_DATA wfd;
-    HANDLE h = FindFirstFileW((fontsDir + L"*.ttf").c_str(), &wfd);
+    HANDLE h = FindFirstFileW((fontsDir + L"*").c_str(), &wfd);
     while(h != INVALID_HANDLE_VALUE) {
-        TtfFont tf = {};
-        tf.fontFile = Narrow(fontsDir) + Narrow(wfd.cFileName);
-        SS.fonts.l.Add(&tf);
-
+        fonts.push_back(Narrow(fontsDir) + Narrow(wfd.cFileName));
         if(!FindNextFileW(h, &wfd)) break;
     }
+
+    return fonts;
 }
 
 static void MenuById(int id, bool yes, bool check)

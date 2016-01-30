@@ -1088,20 +1088,20 @@ void SolveSpace::OpenWebsite(const char *url) {
         [NSURL URLWithString:[NSString stringWithUTF8String:url]]];
 }
 
-void SolveSpace::LoadAllFontFiles(void) {
+std::vector<std::string> SolveSpace::GetFontFiles() {
+    std::vector<std::string> fonts;
+
     NSArray *fontNames = [[NSFontManager sharedFontManager] availableFonts];
     for(NSString *fontName in fontNames) {
         CTFontDescriptorRef fontRef =
             CTFontDescriptorCreateWithNameAndSize ((__bridge CFStringRef)fontName, 10.0);
         CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fontRef, kCTFontURLAttribute);
         NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
-        if([[fontPath pathExtension] isEqual:@"ttf"]) {
-            TtfFont tf = {};
-            tf.fontFile = [[NSFileManager defaultManager]
-                fileSystemRepresentationWithPath:fontPath];
-            SS.fonts.l.Add(&tf);
-        }
+        fonts.push_back([[NSFileManager defaultManager]
+            fileSystemRepresentationWithPath:fontPath]);
     }
+
+    return fonts;
 }
 
 /* Application lifecycle */
