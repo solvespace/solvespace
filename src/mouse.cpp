@@ -1361,7 +1361,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
 }
 
 void GraphicsWindow::SpaceNavigatorButtonUp(void) {
-    ZoomToFit(false);
+    ZoomToFit(/*includingInvisibles=*/false, /*useSelection=*/true);
     InvalidateGraphics();
 }
 

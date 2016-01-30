@@ -299,15 +299,15 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     SS.ScheduleShowTW();
 }
 
-void GraphicsWindow::HandlePointForZoomToFit(Vector p,
-                        Point2d *pmax, Point2d *pmin, double *wmin, bool div)
+void GraphicsWindow::HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
+                                             double *wmin, bool usePerspective)
 {
     double w;
     Vector pp = ProjectPoint4(p, &w);
-    // If div is true, then we calculate a perspective projection of the point.
+    // If usePerspective is true, then we calculate a perspective projection of the point.
     // If not, then we do a parallel projection regardless of the current
     // scale factor.
-    if(div) {
+    if(usePerspective) {
         pp = pp.ScaledBy(1.0/w);
     }
 
@@ -317,17 +317,14 @@ void GraphicsWindow::HandlePointForZoomToFit(Vector p,
     pmin->y = min(pmin->y, pp.y);
     *wmin = min(*wmin, w);
 }
-void GraphicsWindow::LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin,
-                        bool div, bool includingInvisibles)
-{
-    HandlePointForZoomToFit(Vector::From(0, 0, 0), pmax, pmin, wmin, div);
+void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
+                                    Point2d *pmax, Point2d *pmin, double *wmin,
+                                    bool usePerspective, bool includeMesh) {
 
     int i, j;
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
-        if(!(e->IsVisible() || includingInvisibles)) continue;
+    for(Entity *e : entities) {
         if(e->IsPoint()) {
-            HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, div);
+            HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, usePerspective);
         } else if(e->type == Entity::CIRCLE) {
             // Lots of entities can extend outside the bbox of their points,
             // but circles are particularly bad. We want to get things halfway
@@ -341,31 +338,60 @@ void GraphicsWindow::LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin,
                            (j == 1) ? (c.Plus(q.RotationU().ScaledBy(-r))) :
                            (j == 2) ? (c.Plus(q.RotationV().ScaledBy( r))) :
                                       (c.Plus(q.RotationV().ScaledBy(-r)));
-                HandlePointForZoomToFit(p, pmax, pmin, wmin, div);
+                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
+            }
+        } else {
+            // We have to iterate children points, because we can select entites without points
+            for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
+                if(e->point[i].v == 0) break;
+                Vector p = SK.GetEntity(e->point[i])->PointGetNum();
+                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
             }
         }
     }
+
+    if(!includeMesh) return;
 
     Group *g = SK.GetGroup(activeGroup);
     g->GenerateDisplayItems();
     for(i = 0; i < g->displayMesh.l.n; i++) {
         STriangle *tr = &(g->displayMesh.l.elem[i]);
-        HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, div);
-        HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, div);
-        HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, div);
+        HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, usePerspective);
+        HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, usePerspective);
+        HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, usePerspective);
     }
     for(i = 0; i < g->polyLoops.l.n; i++) {
         SContour *sc = &(g->polyLoops.l.elem[i]);
         for(j = 0; j < sc->l.n; j++) {
-            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, div);
+            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, usePerspective);
         }
     }
 }
-void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
+void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
+    std::vector<Entity *> entities;
+    bool selectionUsed = useSelection && selection.n > 0;
+    if(selectionUsed) {
+        for(int i = 0; i < selection.n; i++) {
+            Selection *s = &selection.elem[i];
+            if(s->entity.v == 0) continue;
+            Entity *e = SK.entity.FindById(s->entity);
+            entities.push_back(e);
+        }
+    } else {
+        for(int i = 0; i<SK.entity.n; i++) {
+            Entity *e = &(SK.entity.elem[i]);
+            // we don't want to handle separate points, because we will iterate them inside entities.
+            if(e->IsPoint()) continue;
+            if(!includingInvisibles && !e->IsVisible()) continue;
+            entities.push_back(e);
+        }
+    }
+
     // On the first run, ignore perspective.
     Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
     double wmin = 1;
-    LoopOverPoints(&pmax, &pmin, &wmin, false, includingInvisibles);
+    LoopOverPoints(entities, &pmax, &pmin, &wmin,
+                   /*usePerspective=*/false, /*includeMesh=*/!selectionUsed);
 
     double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
     double dx = pmax.x - pmin.x, dy = pmax.y - pmin.y;
@@ -390,7 +416,8 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles) {
     pmax.x = -1e12; pmax.y = -1e12;
     pmin.x =  1e12; pmin.y =  1e12;
     wmin = 1;
-    LoopOverPoints(&pmax, &pmin, &wmin, true, includingInvisibles);
+    LoopOverPoints(entities, &pmax, &pmin, &wmin,
+                   /*usePerspective=*/true, /*includeMesh=*/!selectionUsed);
 
     // Adjust the scale so that no points are behind the camera
     if(wmin < 0.1) {
@@ -416,7 +443,7 @@ void GraphicsWindow::MenuView(int id) {
             break;
 
         case MNU_ZOOM_TO_FIT:
-            SS.GW.ZoomToFit(false);
+            SS.GW.ZoomToFit(/*includingInvisibles=*/false, /*useSelection=*/true);
             SS.ScheduleShowTW();
             break;
 

@@ -506,10 +506,10 @@ public:
     void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
-                                           double *wmin, bool div);
-    void LoopOverPoints(Point2d *pmax, Point2d *pmin, double *wmin, bool div,
-                            bool includingInvisibles);
-    void ZoomToFit(bool includingInvisibles);
+                                           double *wmin, bool usePerspective);
+    void LoopOverPoints(const std::vector<Entity *> &entity, Point2d *pmax, Point2d *pmin,
+                        double *wmin, bool usePerspective, bool includeMesh);
+    void ZoomToFit(bool includingInvisibles, bool useSelection = false);
 
     hGroup  activeGroup;
     void EnsureValidActives(void);
