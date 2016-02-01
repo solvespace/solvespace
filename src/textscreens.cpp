@@ -69,8 +69,6 @@ void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
 }
 void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
     hGroup hg = { v };
-    Group *g = SK.GetGroup(hg);
-    g->visible = true;
     SS.GW.activeGroup.v = v;
     SK.GetGroup(SS.GW.activeGroup)->Activate();
     SS.GW.ClearSuper();
