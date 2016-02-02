@@ -186,7 +186,6 @@ void Group::MenuGroup(int id) {
 
         case GraphicsWindow::MNU_GROUP_IMPORT: {
             g.type = IMPORTED;
-            g.opA = SS.GW.activeGroup;
             if(g.impFile.empty()) {
                 if(!GetOpenFile(g.impFile, "", SLVS_PATTERN)) return;
             }

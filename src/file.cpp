@@ -451,6 +451,11 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
             char *key = line, *val = e+1;
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
+            // legacy files have a spurious dependency between imported groups
+            // and their parent groups, remove
+            if(sv.g.type == Group::IMPORTED)
+                sv.g.opA.v = 0;
+
             SK.group.Add(&(sv.g));
             sv.g = {};
             sv.g.scale = 1; // default is 1, not 0; so legacy files need this
