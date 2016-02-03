@@ -948,33 +948,22 @@ Vector Vector4::PerspectiveProject(void) {
 }
 
 Point2d Point2d::From(double x, double y) {
-    Point2d r;
-    r.x = x; r.y = y;
-    return r;
+    return { x, y };
 }
 
-Point2d Point2d::Plus(Point2d b) {
-    Point2d r;
-    r.x = x + b.x;
-    r.y = y + b.y;
-    return r;
+Point2d Point2d::Plus(const Point2d &b) const {
+    return { x + b.x, y + b.y };
 }
 
-Point2d Point2d::Minus(Point2d b) {
-    Point2d r;
-    r.x = x - b.x;
-    r.y = y - b.y;
-    return r;
+Point2d Point2d::Minus(const Point2d &b) const {
+    return { x - b.x, y - b.y };
 }
 
-Point2d Point2d::ScaledBy(double s) {
-    Point2d r;
-    r.x = x*s;
-    r.y = y*s;
-    return r;
+Point2d Point2d::ScaledBy(double s) const {
+    return { x * s, y * s };
 }
 
-double Point2d::DivPivoting(Point2d delta) {
+double Point2d::DivPivoting(Point2d delta) const {
     if(fabs(delta.x) > fabs(delta.y)) {
         return x/delta.x;
     } else {
@@ -982,36 +971,34 @@ double Point2d::DivPivoting(Point2d delta) {
     }
 }
 
-double Point2d::MagSquared(void) {
+double Point2d::MagSquared(void) const {
     return x*x + y*y;
 }
 
-double Point2d::Magnitude(void) {
+double Point2d::Magnitude(void) const {
     return sqrt(x*x + y*y);
 }
 
-Point2d Point2d::WithMagnitude(double v) {
+Point2d Point2d::WithMagnitude(double v) const {
     double m = Magnitude();
     if(m < 1e-20) {
         dbp("!!! WithMagnitude() of zero vector");
-        Point2d r = { v, 0 };
-        return r;
-    } else {
-        return ScaledBy(v/m);
+        return { v, 0 };
     }
+    return { x * v / m, y * v / m };
 }
 
-double Point2d::DistanceTo(Point2d p) {
+double Point2d::DistanceTo(const Point2d &p) const {
     double dx = x - p.x;
     double dy = y - p.y;
     return sqrt(dx*dx + dy*dy);
 }
 
-double Point2d::Dot(Point2d p) {
+double Point2d::Dot(Point2d p) const {
     return x*p.x + y*p.y;
 }
 
-double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
+double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool segment) const {
     double m = dp.x*dp.x + dp.y*dp.y;
     if(m < LENGTH_EPS*LENGTH_EPS) return VERY_POSITIVE;
 
@@ -1030,14 +1017,11 @@ double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
     }
 }
 
-Point2d Point2d::Normal(void) {
-    Point2d ret;
-    ret.x = y;
-    ret.y = -x;
-    return ret;
+Point2d Point2d::Normal(void) const {
+    return { y, -x };
 }
 
-bool Point2d::Equals(Point2d v, double tol) {
+bool Point2d::Equals(Point2d v, double tol) const {
     double dx = v.x - x; if(dx < -tol || dx > tol) return false;
     double dy = v.y - y; if(dy < -tol || dy > tol) return false;
 

@@ -127,18 +127,18 @@ public:
 
     static Point2d From(double x, double y);
 
-    Point2d Plus(Point2d b);
-    Point2d Minus(Point2d b);
-    Point2d ScaledBy(double s);
-    double DivPivoting(Point2d delta);
-    double Dot(Point2d p);
-    double DistanceTo(Point2d p);
-    double DistanceToLine(Point2d p0, Point2d dp, bool segment);
-    double Magnitude(void);
-    double MagSquared(void);
-    Point2d WithMagnitude(double v);
-    Point2d Normal(void);
-    bool Equals(Point2d v, double tol=LENGTH_EPS);
+    Point2d Plus(const Point2d &b) const;
+    Point2d Minus(const Point2d &b) const;
+    Point2d ScaledBy(double s) const;
+    double DivPivoting(Point2d delta) const;
+    double Dot(Point2d p) const;
+    double DistanceTo(const Point2d &p) const;
+    double DistanceToLine(const Point2d &p0, const Point2d &dp, bool segment) const;
+    double Magnitude(void) const;
+    double MagSquared(void) const;
+    Point2d WithMagnitude(double v) const;
+    Point2d Normal(void) const;
+    bool Equals(Point2d v, double tol=LENGTH_EPS) const;
 };
 
 // A simple list
