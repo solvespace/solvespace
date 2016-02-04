@@ -118,12 +118,11 @@ void Entity::Draw(void) {
 void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
     if(construction && !includingConstruction) return;
 
-    SBezierList sbl = {};
-    GenerateBezierCurves(&sbl);
+    SBezierList *sbl = GetOrGenerateBezierCurves();
 
     int i, j;
-    for(i = 0; i < sbl.l.n; i++) {
-        SBezier *sb = &(sbl.l.elem[i]);
+    for(i = 0; i < sbl->l.n; i++) {
+        SBezier *sb = &(sbl->l.elem[i]);
 
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
@@ -133,7 +132,24 @@ void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
         lv.Clear();
     }
 
-    sbl.Clear();
+}
+
+SBezierList *Entity::GetOrGenerateBezierCurves() {
+    if(beziers.l.n == 0)
+        GenerateBezierCurves(&beziers);
+    return &beziers;
+}
+
+SEdgeList *Entity::GetOrGenerateEdges() {
+    if(edges.l.n != 0) {
+        if(EXACT(edgesChordTol == SS.ChordTolMm()))
+            return &edges;
+        edges.l.Clear();
+    }
+    if(edges.l.n == 0)
+        GenerateEdges(&edges, /*includingConstruction=*/true);
+    edgesChordTol = SS.ChordTolMm();
+    return &edges;
 }
 
 double Entity::GetDistance(Point2d mp) {
@@ -640,13 +656,11 @@ void Entity::DrawOrGetDistance(void) {
 
     // And draw the curves; generate the rational polynomial curves for
     // everything, then piecewise linearize them, and display those.
-    SEdgeList sel = {};
-    GenerateEdges(&sel, true);
+    SEdgeList *sel = GetOrGenerateEdges();
     int i;
-    for(i = 0; i < sel.l.n; i++) {
-        SEdge *se = &(sel.l.elem[i]);
+    for(i = 0; i < sel->l.n; i++) {
+        SEdge *se = &(sel->l.elem[i]);
         LineDrawOrGetDistance(se->a, se->b, true);
     }
-    sel.Clear();
 }
 

@@ -455,7 +455,7 @@ public:
     // POD members with indeterminate value.
     Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
         actDistance(), actVisible(), style(), construction(),
-        dogd() {};
+        dogd(), beziers(), edges(), edgesChordTol() {};
 
     // An imported entity that was hidden in the source file ends up hidden
     // here too.
@@ -472,6 +472,10 @@ public:
 
     hStyle      style;
     bool        construction;
+
+    SBezierList beziers;
+    SEdgeList   edges;
+    double      edgesChordTol;
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.
@@ -502,6 +506,14 @@ public:
     void CalculateNumerical(bool forExport);
 
     std::string DescriptionString(void);
+
+    SBezierList *GetOrGenerateBezierCurves();
+    SEdgeList *GetOrGenerateEdges();
+
+    void Clear() {
+        beziers.l.Clear();
+        edges.l.Clear();
+    }
 };
 
 class EntReqTable {
