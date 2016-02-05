@@ -330,11 +330,11 @@ void ssglDrawEdges(SEdgeList *l, bool endpointsToo);
 void ssglDebugMesh(SMesh *m);
 void ssglMarkPolygonNormal(SPolygon *p);
 typedef void ssglLineFn(void *data, Vector a, Vector b);
-void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
+void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
     ssglLineFn *fn, void *fndata);
-void ssglWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
+void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
     ssglLineFn *fn, void *fndata);
-double ssglStrWidth(const char *str, double h);
+double ssglStrWidth(const std::string &str, double h);
 double ssglStrHeight(double h);
 void ssglLockColorTo(RgbaColor rgb);
 void ssglFatLine(Vector a, Vector b, double width);

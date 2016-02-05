@@ -93,7 +93,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     }
 
     std::string s = Label();
-    double swidth  = ssglStrWidth(s.c_str(), th),
+    double swidth  = ssglStrWidth(s, th),
            sheight = ssglStrHeight(th);
 
     // By default, the reference is from the center; but the style could
@@ -164,7 +164,7 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
 
     double pixels = 1.0 / SS.GW.scale;
     std::string s = Label();
-    double swidth  = ssglStrWidth(s.c_str(), DEFAULT_TEXT_HEIGHT) + 4*pixels,
+    double swidth  = ssglStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels,
            sheight = ssglStrHeight(DEFAULT_TEXT_HEIGHT) + 8*pixels;
 
     struct {
@@ -370,7 +370,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
-            ssglStrWidth(Label().c_str(), DEFAULT_TEXT_HEIGHT)/2,
+            ssglStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
             ssglStrHeight(DEFAULT_TEXT_HEIGHT)/2,
             tl);
         *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));

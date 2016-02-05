@@ -614,7 +614,7 @@ void Entity::DrawOrGetDistance(void) {
             if(dogd.drawing) {
                 ssglWriteText(str.c_str(), th, mm2, u, v, NULL, NULL);
             } else {
-                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str.c_str(), th)/2)).Plus(
+                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
                                       v.ScaledBy(ssglStrHeight(th)/2));
                 Point2d pp = SS.GW.ProjectPoint(pos);
                 dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);

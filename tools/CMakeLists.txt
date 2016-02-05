@@ -15,3 +15,9 @@ add_executable(unifont2c
 
 target_link_libraries(unifont2c
     ${PNG_LIBRARIES} ${ZLIB_LIBRARIES})
+
+add_executable(lff2c
+    lff2c.cpp)
+
+target_link_libraries(lff2c
+    ${ZLIB_LIBRARIES})

@@ -102,7 +102,15 @@ add_custom_command(
             ${chars}
     DEPENDS unifont2c ${chars})
 
+add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h"
+    COMMAND $<TARGET_FILE:lff2c>
+            "${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h"
+            "${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz"
+    DEPENDS lff2c ${chars})
+
 set(generated_HEADERS
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
     ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
     ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h)
 
@@ -236,7 +244,6 @@ set(solvespace_HEADERS
     config.h
     dsc.h
     expr.h
-    font.table.h
     polygon.h
     sketch.h
     solvespace.h

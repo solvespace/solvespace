@@ -8,8 +8,8 @@
 
 namespace SolveSpace {
 
-// A public-domain Hershey vector font ("Simplex").
-#include "font.table.h"
+// A vector font.
+#include "generated/vectorfont.table.h"
 
 // A bitmap font.
 #include "generated/bitmapfont.table.h"
@@ -17,25 +17,51 @@ namespace SolveSpace {
 static bool ColorLocked;
 static bool DepthOffsetLocked;
 
-#define FONT_SCALE(h) ((h)/22.0)
-double ssglStrWidth(const char *str, double h)
-{
-    int w = 0;
-    for(; *str; str++) {
-        int c = *str;
-        if(c < 32 || c > 126) c = 32;
-        c -= 32;
-
-        w += Font[c].width;
+static const VectorGlyph &GetVectorGlyph(char32_t chr) {
+    int first = 0;
+    int last  = sizeof(VectorFont) / sizeof(VectorGlyph);
+    while(first <= last) {
+        int mid = (first + last) / 2;
+        char32_t midChr = VectorFont[mid].character;
+        if(midChr > chr) {
+            last = mid - 1; // and first stays the same
+            continue;
+        }
+        if(midChr < chr) {
+            first = mid + 1; // and last stays the same
+            continue;
+        }
+        return VectorFont[mid];
     }
-    return w*FONT_SCALE(h)/SS.GW.scale;
+    return GetVectorGlyph(0xfffd); // replacement character
+}
+
+#define FONT_SCALE(h) ((h)/75.0)
+double ssglStrWidth(const std::string &str, double h)
+{
+    int width = 0;
+    const char *iter = str.c_str();
+    while(*iter) {
+        char32_t chr;
+        iter = ReadUTF8(iter, &chr);
+
+        const VectorGlyph &glyph = GetVectorGlyph(chr);
+        int glyphWidth = glyph.width;
+        if(glyph.baseCharacter != 0) {
+            const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
+            width += max(glyph.width, baseGlyph.width);
+        } else {
+            width += glyph.width;
+        }
+    }
+    return width * FONT_SCALE(h) / SS.GW.scale;
 }
 double ssglStrHeight(double h)
 {
-    // The characters have height ~22, as they appear in the table.
-    return 22.0*FONT_SCALE(h)/SS.GW.scale;
+    // The characters have height ~90, as they appear in the table.
+    return 90.0 * FONT_SCALE(h) / SS.GW.scale;
 }
-void ssglWriteTextRefCenter(const char *str, double h, Vector t, Vector u, Vector v,
+void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
                             ssglLineFn *fn, void *fndata)
 {
     u = u.WithMagnitude(1);
@@ -82,43 +108,55 @@ static void LineDrawCallback(void *fndata, Vector a, Vector b)
     glEnd();
 }
 
-void ssglWriteText(const char *str, double h, Vector t, Vector u, Vector v,
+int ssglDrawCharacter(const VectorGlyph &glyph, Vector t, Vector o, Vector u, Vector v,
+                      double scale, ssglLineFn *fn, void *fndata) {
+    int width = glyph.width;
+
+    if(glyph.baseCharacter != 0) {
+        const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
+        int baseWidth = ssglDrawCharacter(baseGlyph, t, o, u, v, scale, fn, fndata);
+        width = max(glyph.width, baseWidth);
+    }
+
+    const int8_t *data = glyph.data;
+    bool pen_up = true;
+    Vector prevp;
+    while(true) {
+        int8_t x = *data++;
+        int8_t y = *data++;
+
+        if(x == PEN_UP && y == PEN_UP) {
+            if(pen_up) break;
+            pen_up = true;
+        } else {
+            Vector p = t;
+            p = p.Plus(u.ScaledBy((o.x + x) * scale));
+            p = p.Plus(v.ScaledBy((o.y + y) * scale));
+            if(!pen_up) fn(fndata, prevp, p);
+            prevp = p;
+            pen_up = false;
+        }
+    }
+
+    return width;
+}
+
+void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
                    ssglLineFn *fn, void *fndata)
 {
     if(!fn) fn = LineDrawCallback;
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
 
-    double scale = FONT_SCALE(h)/SS.GW.scale;
-    int xo = 5;
-    int yo = 5;
+    double scale = FONT_SCALE(h) / SS.GW.scale;
+    Vector o = { 5.0, 5.0 };
+    const char *iter = str.c_str();
+    while(*iter) {
+        char32_t chr;
+        iter = ReadUTF8(iter, &chr);
 
-    for(; *str; str++) {
-        int c = *str;
-        if(c < 32 || c > 126) c = 32;
-
-        c -= 32;
-
-        int j;
-        Vector prevp = Vector::From(VERY_POSITIVE, 0, 0);
-        for(j = 0; j < Font[c].points; j++) {
-            int x = Font[c].coord[j*2];
-            int y = Font[c].coord[j*2+1];
-
-            if(x == PEN_UP && y == PEN_UP) {
-                prevp.x = VERY_POSITIVE;
-            } else {
-                Vector p = t;
-                p = p.Plus(u.ScaledBy((xo + x)*scale));
-                p = p.Plus(v.ScaledBy((yo + y)*scale));
-                if(EXACT(prevp.x != VERY_POSITIVE)) {
-                    fn(fndata, prevp, p);
-                }
-                prevp = p;
-            }
-        }
-
-        xo += Font[c].width;
+        const VectorGlyph &glyph = GetVectorGlyph(chr);
+        o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata);
     }
 }
 
