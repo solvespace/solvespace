@@ -67,6 +67,32 @@ CHECK_INCLUDE_FILE("stdint.h" HAVE_STDINT_H)
 find_package(OpenGL REQUIRED)
 
 if(WIN32)
+    # We don't want any of the subprojects to install anything.
+    # We don't actually install anything on Windows (so overriding
+    # this is OK), but the combination of freetype's and png/zlib's
+    # CMakeLists.txt produces harmless but annoying CMake errors.
+    macro(install)
+    endmacro()
+
+    # Configure Freetype first. If done later, it will notice that
+    # zlib is available, try to use it and promptly break on MSVC
+    # in a very obscure way. Given that the only use of zlib, bzip2
+    # and png support is in support for extremely obsolete Unix fonts,
+    # we don't care.
+    find_package(Freetype)
+
+    if(NOT FREETYPE_FOUND)
+        message(STATUS "Using in-tree libfreetype")
+
+        add_subdirectory(extlib/libfreetype)
+
+        set(FREETYPE_LIBRARY
+            freetype)
+        set(FREETYPE_INCLUDE_DIRS
+            "${CMAKE_SOURCE_DIR}/extlib/libfreetype/include")
+        find_package(Freetype REQUIRED)
+    endif()
+
     find_package(ZLIB)
 
     if(NOT ZLIB_FOUND)
@@ -109,6 +135,7 @@ if(WIN32)
     endif()
 elseif(APPLE)
     find_package(PNG REQUIRED)
+    find_package(Freetype REQUIRED)
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
 else() # Linux and compatible systems
     find_package(SpaceWare)
@@ -120,6 +147,7 @@ else() # Linux and compatible systems
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
     pkg_check_modules(GLEW REQUIRED glew)
+    pkg_check_modules(FREETYPE REQUIRED freetype2)
 
     set(HAVE_GTK TRUE)
     if(GUI STREQUAL "gtk3")
