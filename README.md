@@ -104,17 +104,38 @@ Building on Windows
 
 You will need [cmake][cmakewin] and Visual C++.
 
-You will also need to check out the git submodules.
+### GUI build
 
-After installing them, create a directory `build` in the source tree
-and point cmake-gui to the source tree and that directory. Press
-"Configure" and "Generate", then open `build\solvespace.sln` with
+Check out the git submodules. Create a directory `build` in
+the source tree and point cmake-gui to the source tree and that directory.
+Press "Configure" and "Generate", then open `build\solvespace.sln` with
 Visual C++ and build it.
 
-Alternatively it is possible to build SolveSpace using [MinGW][mingw].
-Run cmake-gui as described above but after pressing "Configure" select
-the "MSYS Makefiles" generator. After that, run `make` in the `build`
-directory; make sure that the MinGW compiler is in your `PATH`.
+### Command-line build
+
+First, ensure that git and cl (the Visual C++ compiler driver) are in your
+`%PATH%`; the latter is usually done by invoking `vcvarsall.bat` from your
+Visual Studio install. Then, run the following in cmd or PowerShell:
+
+    git submodule update --init
+    mkdir build
+    cd build
+    cmake .. -G "NMake Makefiles"
+    nmake
+
+### MSVC build
+
+It is also possible to build SolveSpace using [MinGW][mingw], though
+Space Navigator support will be disabled.
+
+First, ensure that git and gcc are in your `$PATH`. Then, run the following
+in bash:
+
+    git submodule update --init
+    mkdir build
+    cd build
+    cmake ..
+    make
 
 [cmakewin]: http://www.cmake.org/download/#latest
 [mingw]: http://www.mingw.org/
