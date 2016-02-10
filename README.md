@@ -8,16 +8,10 @@ This repository contains the official repository of [SolveSpace][].
 Installation
 ------------
 
-### Debian (>=jessie) and Ubuntu (>=trusty)
+### Mac OS X (>=10.6 64-bit), Debian (>=jessie) and Ubuntu (>=trusty)
 
-Binary packages for Ubuntu trusty and later versions are available
-in [~whitequark/solvespace PPA][ppa].
-
-[ppa]: https://launchpad.net/~whitequark/+archive/ubuntu/solvespace
-
-### Mac OS X (>=10.6 64-bit)
-
-Binary packages for Mac OS X are available via [GitHub releases][rel].
+Binary packages for Mac OS X and Debian derivatives are available
+via [GitHub releases][rel].
 
 [rel]: https://github.com/whitequark/solvespace/releases
 
