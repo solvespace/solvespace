@@ -29,13 +29,14 @@ endif()
 
 if(WIN32)
     add_definitions(
-        -D_CRT_SECURE_NO_DEPRECATE=1
-        -D_CRT_SECURE_NO_WARNINGS=1
+        -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_SECURE_NO_WARNINGS
+        -D_SCL_SECURE_NO_WARNINGS
         -D_WIN32_WINNT=0x500
         -D_WIN32_IE=_WIN32_WINNT
-        -DISOLATION_AWARE_ENABLED=1
-        -DWIN32=1
-        -DWIN32_LEAN_AND_MEAN=1
+        -DISOLATION_AWARE_ENABLED
+        -DWIN32
+        -DWIN32_LEAN_AND_MEAN
         -DUNICODE
         -DNOMINMAX
         -D_UNICODE)
