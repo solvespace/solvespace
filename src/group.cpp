@@ -204,7 +204,7 @@ void Group::MenuGroup(int id) {
             if(pos != std::string::npos)
                 groupName.erase(pos);
 
-            for(int i = 0; i < groupName.length(); i++) {
+            for(size_t i = 0; i < groupName.length(); i++) {
                 if(!(isalnum(groupName[i]) || (unsigned)groupName[i] >= 0x80)) {
                     // convert punctuation to dashes
                     groupName[i] = '-';

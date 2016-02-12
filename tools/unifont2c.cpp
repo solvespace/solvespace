@@ -217,7 +217,7 @@ int main(int argc, char** argv) {
             deflate(&stream, Z_FINISH);
 
             chunk_output_size[chunk_index] += sizeof(compressed_chunk_data) - stream.avail_out;
-            for(int i = 0; i < sizeof(compressed_chunk_data) - stream.avail_out; i += 16) {
+            for(size_t i = 0; i < sizeof(compressed_chunk_data) - stream.avail_out; i += 16) {
                 unsigned char *d = &compressed_chunk_data[i];
                 fprintf(source, "    %3d, %3d, %3d, %3d, %3d, %3d, %3d, %3d, "
                                     "%3d, %3d, %3d, %3d, %3d, %3d, %3d, %3d,\n",

@@ -35,7 +35,7 @@ std::string Style::CnfWidth(const std::string &prefix) {
 std::string Style::CnfPrefixToName(const std::string &prefix) {
     std::string name = "#def-";
 
-    for(int i = 0; i < prefix.length(); i++) {
+    for(size_t i = 0; i < prefix.length(); i++) {
         if(isupper(prefix[i]) && i != 0)
             name += '-';
         name += tolower(prefix[i]);

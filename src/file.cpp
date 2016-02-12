@@ -695,13 +695,13 @@ static std::string MakePathRelative(const std::string &base, const std::string &
                              resultParts;
     baseParts.pop_back();
 
-    int common;
+    size_t common;
     for(common = 0; common < baseParts.size() && common < pathParts.size(); common++) {
         if(!PlatformPathEqual(baseParts[common], pathParts[common]))
             break;
     }
 
-    for(int i = common; i < baseParts.size(); i++)
+    for(size_t i = common; i < baseParts.size(); i++)
         resultParts.push_back("..");
 
     resultParts.insert(resultParts.end(),
@@ -732,7 +732,7 @@ static std::string MakePathAbsolute(const std::string &base, const std::string &
 
 static void PathSepNormalize(std::string &filename)
 {
-    for(int i = 0; i < filename.length(); i++) {
+    for(size_t i = 0; i < filename.length(); i++) {
         if(filename[i] == '\\')
             filename[i] = '/';
     }
@@ -742,7 +742,7 @@ static std::string PathSepPlatformToUNIX(const std::string &filename)
 {
 #if defined(WIN32)
     std::string result = filename;
-    for(int i = 0; i < result.length(); i++) {
+    for(size_t i = 0; i < result.length(); i++) {
         if(result[i] == '\\')
             result[i] = '/';
     }
@@ -756,7 +756,7 @@ static std::string PathSepUNIXToPlatform(const std::string &filename)
 {
 #if defined(WIN32)
     std::string result = filename;
-    for(int i = 0; i < result.length(); i++) {
+    for(size_t i = 0; i < result.length(); i++) {
         if(result[i] == '/')
             result[i] = '\\';
     }

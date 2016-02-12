@@ -890,7 +890,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     if(lastSlash == std::string::npos) oops();
     baseFilename.erase(0, lastSlash + 1);
 
-    for(int i = 0; i < baseFilename.length(); i++) {
+    for(size_t i = 0; i < baseFilename.length(); i++) {
         if(!isalpha(baseFilename[i]) &&
            /* also permit UTF-8 */ !((unsigned char)baseFilename[i] >= 0x80))
             baseFilename[i] = '_';
