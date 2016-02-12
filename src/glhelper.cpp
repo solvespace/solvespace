@@ -67,8 +67,8 @@ void ssglLineWidth(GLfloat width) {
         }
     }
 
-    if(workaroundEnabled && width < 1.6)
-        width = 1.6;
+    if(workaroundEnabled && width < 1.6f)
+        width = 1.6f;
 
     glLineWidth(width);
 }
