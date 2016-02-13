@@ -506,7 +506,7 @@ void GraphicsWindow::Paint(void) {
     // At the same depth, we want later lines drawn over earlier.
     glDepthFunc(GL_LEQUAL);
 
-    if(SS.AllGroupsOkay()) {
+    if(SS.ActiveGroupsOkay()) {
         glClearColor(SS.backgroundColor.redF(),
                      SS.backgroundColor.greenF(),
                      SS.backgroundColor.blueF(), 1.0f);

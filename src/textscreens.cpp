@@ -552,7 +552,7 @@ void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
             c->valA = start + ((finish - start)*i)/n;
             SS.MarkGroupDirty(c->group);
             SS.GenerateAll();
-            if(!SS.AllGroupsOkay()) {
+            if(!SS.ActiveGroupsOkay()) {
                 // Failed to solve, so quit
                 break;
             }

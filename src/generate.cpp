@@ -506,10 +506,13 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     FreeAllTemporary();
 }
 
-bool SolveSpaceUI::AllGroupsOkay() {
+bool SolveSpaceUI::ActiveGroupsOkay() {
     for(int i = 0; i < SK.group.n; i++) {
-        if(!SK.group.elem[i].IsSolvedOkay())
+        Group *group = &SK.group.elem[i];
+        if(!group->IsSolvedOkay())
             return false;
+        if(group->h.v == SS.GW.activeGroup.v)
+            break;
     }
     return true;
 }

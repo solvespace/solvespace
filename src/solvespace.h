@@ -874,7 +874,7 @@ public:
     void MarkDraggedParams(void);
     void ForceReferences(void);
 
-    bool AllGroupsOkay(void);
+    bool ActiveGroupsOkay(void);
 
     // The system to be solved.
     System  sys;
