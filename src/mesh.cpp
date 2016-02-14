@@ -403,7 +403,6 @@ SKdNode *SKdNode::From(STriangleLl *tll) {
         int tcnt = 0;
         STriangleLl *ll;
         for(ll = tll; ll; ll = ll->next) {
-            STriangle *tr = ll->tri;
             split[i] += (ll->tri->a).Element(i);
             split[i] += (ll->tri->b).Element(i);
             split[i] += (ll->tri->c).Element(i);
@@ -672,7 +671,6 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
 
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
             Vector pt = ((se->a).Plus(se->b)).ScaledBy(0.5);
-            double dt = pt.Dot(tn) - td;
             if(pt.Dot(tn) - td > -LENGTH_EPS) {
                 // Edge is in front of or on our plane (remember, tn.z > 0)
                 // so it is exempt from further splitting

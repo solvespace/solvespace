@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-static int I, N, FLAG;
+static int I;
 
 void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
     MakeFromBoolean(a, b, AS_UNION);
@@ -109,7 +109,6 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             // And now uses the intersections to generate our split pwl edge(s)
             Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
             for(pi = il.First(); pi; pi = il.NextAfter(pi)) {
-                double t = (pi->p.Minus(LineStart)).DivPivoting(LineDirection);
                 // On-edge intersection will generate same split point for
                 // both surfaces, so don't create zero-length edge.
                 if(!prev.Equals(pi->p)) {
@@ -360,8 +359,6 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 {
     // the midpoint of the edge
     Point2d muv  = (auv.Plus(buv)).ScaledBy(0.5);
-    // a vector parallel to the edge
-    Point2d abuv = buv.Minus(auv).WithMagnitude(0.01);
 
     *pt    = PointAt(muv);
 

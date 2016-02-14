@@ -810,9 +810,6 @@ void Vector::ClosestPointBetweenLines(Vector a0, Vector da,
                                       Vector b0, Vector db,
                                       double *ta, double *tb)
 {
-    Vector a1 = a0.Plus(da),
-           b1 = a1.Plus(db);
-
     // Make a semi-orthogonal coordinate system from those directions;
     // note that dna and dnb need not be perpendicular.
     Vector dn = da.Cross(db); // normal to both

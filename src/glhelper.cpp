@@ -46,7 +46,6 @@ double ssglStrWidth(const std::string &str, double h)
         iter = ReadUTF8(iter, &chr);
 
         const VectorGlyph &glyph = GetVectorGlyph(chr);
-        int glyphWidth = glyph.width;
         if(glyph.baseCharacter != 0) {
             const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
             width += max(glyph.width, baseGlyph.width);

@@ -244,7 +244,6 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
 void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
                                   bool onlyOneExt)
 {
-    Vector gn = (SS.GW.projRight.Cross(SS.GW.projUp)).WithMagnitude(1);
     double pixels = 1.0 / SS.GW.scale;
 
     Vector ab   = a.Minus(b);

@@ -374,7 +374,6 @@ void TextWindow::ShowGroupInfo(void) {
                 g->color.alphaF(),
                 &TextWindow::ScreenOpacity);
         } else if(g->type == Group::IMPORTED) {
-            bool sup = g->suppress;
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);

@@ -604,7 +604,6 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             }
 
             ExprVector au = a->NormalExprsU(),
-                       av = a->NormalExprsV(),
                        an = a->NormalExprsN();
             ExprVector bu = b->NormalExprsU(),
                        bv = b->NormalExprsV(),

@@ -64,8 +64,6 @@ bool GLOffscreen::begin(int width, int height) {
 }
 
 uint8_t *GLOffscreen::end(bool flip) {
-    uint32_t *pixels_tgt = flip ? _pixels_inv : _pixels;
-
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     glReadPixels(0, 0, _width, _height,
             GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels_inv);

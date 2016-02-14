@@ -312,8 +312,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
         SPointList spl = {};
         int a;
         for(a = 0; a < 2; a++) {
-            SShell   *shA  = (a == 0) ? agnstA : agnstB,
-                     *shB  = (a == 0) ? agnstB : agnstA;
+            SShell   *shA  = (a == 0) ? agnstA : agnstB;
             SSurface *srfA = (a == 0) ? this : b,
                      *srfB = (a == 0) ? b : this;
 

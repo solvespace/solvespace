@@ -465,8 +465,6 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
 void Entity::DrawOrGetDistance(void) {
     if(!IsVisible()) return;
 
-    Group *g = SK.GetGroup(group);
-
     switch(type) {
         case POINT_N_COPY:
         case POINT_N_TRANS:

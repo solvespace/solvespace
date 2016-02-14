@@ -130,7 +130,6 @@ void GraphicsWindow::MakeUnselected(Selection *stog, bool coincidentPointTrick){
     Selection *s;
 
     // If an item was selected, then we just un-select it.
-    bool wasSelected = false;
     selection.ClearTags();
     for(s = selection.First(); s; s = selection.NextAfter(s)) {
         if(s->Equals(stog)) {

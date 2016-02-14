@@ -514,7 +514,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
 bool Group::IsSolvedOkay() {
     return this->solved.how == System::SOLVED_OKAY ||
-           this->allowRedundant && this->solved.how == System::REDUNDANT_OKAY;
+           (this->allowRedundant && this->solved.how == System::REDUNDANT_OKAY);
 }
 
 void Group::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
@@ -525,7 +525,6 @@ void Group::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
 }
 
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
-    Equation eq = {};
     if(type == IMPORTED) {
         // Normalize the quaternion
         ExprQuaternion q = {

@@ -401,7 +401,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
-    int i, j = 0;
+    int i;
     bool rankOk;
 
 /*
