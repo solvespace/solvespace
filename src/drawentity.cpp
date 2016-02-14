@@ -447,7 +447,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
             Vector v = topLeft.Minus(botLeft);
             Vector u = (v.Cross(n)).WithMagnitude(v.Magnitude());
 
-            SS.fonts.PlotString(font.c_str(), str.c_str(), sbl, botLeft, u, v);
+            SS.fonts.PlotString(font, str, sbl, botLeft, u, v);
             break;
         }
 
@@ -610,7 +610,7 @@ void Entity::DrawOrGetDistance(void) {
             std::string str = DescriptionString().substr(5);
             double th = DEFAULT_TEXT_HEIGHT;
             if(dogd.drawing) {
-                ssglWriteText(str.c_str(), th, mm2, u, v, NULL, NULL);
+                ssglWriteText(str, th, mm2, u, v, NULL, NULL);
             } else {
                 Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
                                       v.ScaledBy(ssglStrHeight(th)/2));

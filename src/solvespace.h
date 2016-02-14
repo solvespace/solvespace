@@ -310,6 +310,25 @@ typedef IdList<Param,hParam> ParamList;
 
 
 // Utility functions that are provided in the platform-independent code.
+class utf8_iterator : std::iterator<std::forward_iterator_tag, char32_t> {
+    const char *p, *n;
+public:
+    utf8_iterator(const char *p) : p(p), n(NULL) {}
+    bool           operator==(const utf8_iterator &i) const { return p==i.p; }
+    bool           operator!=(const utf8_iterator &i) const { return p!=i.p; }
+    ptrdiff_t      operator- (const utf8_iterator &i) const { return p -i.p; }
+    utf8_iterator& operator++()    { **this; p=n; n=NULL; return *this; }
+    utf8_iterator  operator++(int) { utf8_iterator t(*this); operator++(); return t; }
+    char32_t       operator*();
+};
+class ReadUTF8 {
+    const std::string &str;
+public:
+    ReadUTF8(const std::string &str) : str(str) {}
+    utf8_iterator begin() const { return utf8_iterator(&str[0]); }
+    utf8_iterator end()   const { return utf8_iterator(&str[str.length()]); }
+};
+
 void ssglLineWidth(GLfloat width);
 void ssglVertex3v(Vector u);
 void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
@@ -345,7 +364,7 @@ void ssglDepthRangeOffset(int units);
 void ssglDepthRangeLockToFront(bool yes);
 void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h);
 void ssglInitializeBitmapFont();
-void ssglBitmapText(const char *str, Vector p);
+void ssglBitmapText(const std::string &str, Vector p);
 void ssglBitmapCharQuad(char32_t chr, double x, double y);
 int ssglBitmapCharWidth(char32_t chr);
 #define TEXTURE_BACKGROUND_IMG  10
@@ -362,8 +381,6 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
 bool MakeAcceleratorLabel(int accel, char *out);
-const char *ReadUTF8(const char *str, char32_t *chr);
-bool StringAllPrintable(const char *str);
 bool FilenameHasExtension(const std::string &str, const char *ext);
 void Message(const char *str, ...);
 void Error(const char *str, ...);

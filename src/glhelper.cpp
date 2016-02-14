@@ -40,11 +40,7 @@ static const VectorGlyph &GetVectorGlyph(char32_t chr) {
 double ssglStrWidth(const std::string &str, double h)
 {
     int width = 0;
-    const char *iter = str.c_str();
-    while(*iter) {
-        char32_t chr;
-        iter = ReadUTF8(iter, &chr);
-
+    for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         if(glyph.baseCharacter != 0) {
             const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
@@ -149,11 +145,7 @@ void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector 
 
     double scale = FONT_SCALE(h) / SS.GW.scale;
     Vector o = { 5.0, 5.0 };
-    const char *iter = str.c_str();
-    while(*iter) {
-        char32_t chr;
-        iter = ReadUTF8(iter, &chr);
-
+    for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata);
     }
@@ -678,14 +670,11 @@ void ssglBitmapCharQuad(char32_t chr, double x, double y)
     }
 }
 
-void ssglBitmapText(const char *str, Vector p)
+void ssglBitmapText(const std::string &str, Vector p)
 {
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
-    while(*str) {
-        char32_t chr;
-        str = ReadUTF8(str, &chr);
-
+    for(char32_t chr : ReadUTF8(str)) {
         ssglBitmapCharQuad(chr, p.x, p.y);
         p.x += 8 * ssglBitmapCharWidth(chr);
     }

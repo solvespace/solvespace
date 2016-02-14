@@ -476,7 +476,7 @@ void TextWindow::ShowListOfStyles(void) {
 void TextWindow::ScreenChangeStyleName(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    SS.TW.ShowEditControl(12, s->name.c_str());
+    SS.TW.ShowEditControl(12, s->name);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = EDIT_STYLE_NAME;
 }

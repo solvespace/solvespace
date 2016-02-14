@@ -242,7 +242,7 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree, bool genFo
             glPushMatrix();
                 glTranslated(left+8, top-20, 0);
                 glScaled(1, -1, 1);
-                ssglBitmapText(msg.c_str(), Vector::From(0, 0, 0));
+                ssglBitmapText(msg, Vector::From(0, 0, 0));
             glPopMatrix();
             glFlush();
             glDrawBuffer(GL_BACK);

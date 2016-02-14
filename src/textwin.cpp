@@ -248,20 +248,15 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
                     break;
             }
         } else {
-            char32_t chr;
-            const char *fmtNext = ReadUTF8(fmt, &chr);
-            strncpy(buf, fmt, fmtNext - fmt);
-            buf[fmtNext - fmt] = '\0';
+            utf8_iterator it2(fmt), it1 = it2++;
+            strncpy(buf, fmt, it2 - it1);
+            buf[it2 - it1] = '\0';
         }
 
-        const char *bufIter = buf;
-        while(*bufIter) {
-            char32_t chr;
-            bufIter = ReadUTF8(bufIter, &chr);
-
-            for(int i = 0; i < ssglBitmapCharWidth(chr); i++) {
+        for(utf8_iterator it(buf); *it; ++it) {
+            for(int i = 0; i < ssglBitmapCharWidth(*it); i++) {
                 if(c >= MAX_COLS) goto done;
-                text[r][c] = (i == 0) ? chr : ' ';
+                text[r][c] = (i == 0) ? *it : ' ';
                 meta[r][c].fg = fg;
                 meta[r][c].bg = bg;
                 meta[r][c].bgRgb = bgRgb;
@@ -463,7 +458,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
 
             glColor4d(0, 0, 0, 1);
-            ssglBitmapText(str.c_str(), Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
+            ssglBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
         } else {
             if(!hoveredIcon ||
                 (hoveredIcon != tooltippedIcon))

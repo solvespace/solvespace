@@ -233,7 +233,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             glPushMatrix();
                 glTranslated(ox+5, oy+3, 0);
                 glScaled(1, -1, 1);
-                ssglBitmapText(str.c_str(), Vector::From(0, 0, 0));
+                ssglBitmapText(str, Vector::From(0, 0, 0));
             glPopMatrix();
         }
         ssglDepthRangeLockToFront(false);

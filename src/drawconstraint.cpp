@@ -124,7 +124,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
 
 
     if(dogd.drawing) {
-        ssglWriteTextRefCenter(s.c_str(), th, ref, gr, gu, LineCallback, this);
+        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);

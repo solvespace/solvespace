@@ -14,7 +14,7 @@ void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
     hRequest hr = { v };
     Request *r = SK.GetRequest(hr);
 
-    SS.TW.ShowEditControl(10, r->str.c_str());
+    SS.TW.ShowEditControl(10, r->str);
     SS.TW.edit.meaning = EDIT_TTF_TEXT;
     SS.TW.edit.request = hr;
 }

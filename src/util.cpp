@@ -25,39 +25,26 @@ std::string SolveSpace::ssprintf(const char *fmt, ...)
     return result;
 }
 
-// See https://github.com/GNOME/glibmm/blob/2fbd9f23/glib/glibmm/ustring.cc#L227
-const char *SolveSpace::ReadUTF8(const char *str, char32_t *result)
+char32_t utf8_iterator::operator*()
 {
-    *result = (unsigned char) *str;
+    const uint8_t *it = (const uint8_t*) this->p;
+    char32_t result = *it;
 
-    if((*result & 0x80) != 0)
-    {
+    if((result & 0x80) != 0) {
       unsigned int mask = 0x40;
 
-      do
-      {
-        *result <<= 6;
-        const unsigned int c = (unsigned char) (*++str);
+      do {
+        result <<= 6;
+        unsigned int c = (*++it);
         mask   <<= 5;
-        *result  += c - 0x80;
-      }
-      while((*result & mask) != 0);
+        result  += c - 0x80;
+      } while((result & mask) != 0);
 
-      *result &= mask - 1;
+      result &= mask - 1;
     }
 
-    return str + 1;
-}
-
-bool SolveSpace::StringAllPrintable(const char *str)
-{
-    const char *t;
-    for(t = str; *t; t++) {
-        if(!(isalnum(*t) || *t == '-' || *t == '_')) {
-            return false;
-        }
-    }
-    return true;
+    this->n = (const char*) (it + 1);
+    return result;
 }
 
 bool SolveSpace::FilenameHasExtension(const std::string &str, const char *ext)

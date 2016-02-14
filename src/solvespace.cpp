@@ -399,7 +399,7 @@ bool SolveSpaceUI::Autosave()
 void SolveSpaceUI::RemoveAutosave()
 {
     std::string autosaveFile = saveFile + AUTOSAVE_SUFFIX;
-    ssremove(autosaveFile.c_str());
+    ssremove(autosaveFile);
 }
 
 bool SolveSpaceUI::OkayToStartNewFile(void) {

@@ -213,12 +213,8 @@ static const FT_Outline_Funcs outline_funcs = {
 void TtfFont::PlotString(const std::string &str,
                          SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
-    const char *cstr = str.c_str();
     FT_Pos dx = 0;
-    while(*cstr) {
-        char32_t chr;
-        cstr = ReadUTF8(cstr, &chr);
-
+    for(char32_t chr : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, chr);
         if (gid == 0) {
             dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
