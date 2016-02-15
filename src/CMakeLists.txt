@@ -311,6 +311,8 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${solvespace_HEADERS}
     ${solvespace_SOURCES})
 
+target_compile_features(solvespace PRIVATE cxx_noexcept)
+
 target_link_libraries(solvespace
     "${OPENGL_LIBRARIES}"
     "${PNG_LIBRARIES}"
