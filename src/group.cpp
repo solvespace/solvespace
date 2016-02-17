@@ -56,9 +56,6 @@ void Group::MenuGroup(int id) {
     g.color = RGBi(100, 100, 100);
     g.scale = 1;
 
-    Group *gl = SK.GetGroup(SK.groupOrder.elem[SK.groupOrder.n - 1]);
-    g.order = gl->order + 1;
-
     if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
         g.impFile = RecentFile[id-RECENT_IMPORT];
         id = GraphicsWindow::MNU_GROUP_IMPORT;
@@ -227,6 +224,17 @@ void Group::MenuGroup(int id) {
     }
     SS.GW.ClearSelection();
     SS.UndoRemember();
+
+    bool afterActive = false;
+    for(int i = 0; i < SK.groupOrder.n; i++) {
+        Group *gi = SK.GetGroup(SK.groupOrder.elem[i]);
+        if(afterActive)
+            gi->order += 1;
+        if(gi->h.v == SS.GW.activeGroup.v) {
+            g.order = gi->order + 1;
+            afterActive = true;
+        }
+    }
 
     SK.group.AddAndAssignId(&g);
     Group *gg = SK.GetGroup(g.h);
