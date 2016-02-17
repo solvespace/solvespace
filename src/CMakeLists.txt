@@ -1,5 +1,7 @@
 # global
 
+include(GNUInstallDirs)
+
 include_directories(
     ${OPENGL_INCLUDE_DIR}
     ${PNG_INCLUDE_DIRS}
@@ -69,8 +71,8 @@ set_target_properties(slvs PROPERTIES
 
 if(NOT WIN32)
     install(TARGETS slvs
-        LIBRARY DESTINATION lib/${CMAKE_LIBRARY_PATH} # multiarch
-        PUBLIC_HEADER DESTINATION include)
+        LIBRARY       DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
 # generated files
@@ -347,19 +349,21 @@ if(APPLE)
         DEPENDS ${CMAKE_BINARY_DIR}/${bundle}.dmg)
 endif()
 
-install(TARGETS solvespace
-    RUNTIME DESTINATION bin
-    BUNDLE DESTINATION .)
+if(NOT WIN32)
+    install(TARGETS solvespace
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        BUNDLE  DESTINATION .)
+endif()
 
 install(FILES unix/solvespace.desktop
-        DESTINATION share/applications)
+    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 foreach(SIZE 16x16 24x24 32x32 48x48)
     install(FILES unix/solvespace-${SIZE}.png
-            DESTINATION share/icons/hicolor/${SIZE}/apps
-            RENAME solvespace.png)
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
+        RENAME      solvespace.png)
     install(FILES unix/solvespace-${SIZE}.png
-            DESTINATION share/icons/hicolor/${SIZE}/mimetypes
-            RENAME application.x-solvespace.png)
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
+        RENAME      application.x-solvespace.png)
 endforeach()
 
 # valgrind
