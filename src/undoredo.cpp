@@ -73,6 +73,9 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
         dest.impEntity = {};
         ut->group.Add(&dest);
     }
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        ut->groupOrder.Add(&(SK.groupOrder.elem[i]));
+    }
     for(i = 0; i < SK.request.n; i++) {
         ut->request.Add(&(SK.request.elem[i]));
     }
@@ -94,6 +97,8 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
 }
 
 void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
+    int i;
+
     if(uk->cnt <= 0) oops();
     (uk->cnt)--;
     uk->write = WRAP(uk->write - 1, MAX_UNDO);
@@ -101,11 +106,12 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     UndoState *ut = &(uk->d[uk->write]);
 
     // Free everything in the main copy of the program before replacing it
-    Group *g;
-    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         g->Clear();
     }
     SK.group.Clear();
+    SK.groupOrder.Clear();
     SK.request.Clear();
     SK.constraint.Clear();
     SK.param.Clear();
@@ -113,6 +119,8 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
 
     // And then do a shallow copy of the state from the undo list
     ut->group.MoveSelfInto(&(SK.group));
+    for(i = 0; i < ut->groupOrder.n; i++)
+        SK.groupOrder.Add(&ut->groupOrder.elem[i]);
     ut->request.MoveSelfInto(&(SK.request));
     ut->constraint.MoveSelfInto(&(SK.constraint));
     ut->param.MoveSelfInto(&(SK.param));
@@ -131,7 +139,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     SS.ScheduleShowTW();
 
     // Activate the group that was active before.
-    Group *activeGroup = SK.group.FindById(SS.GW.activeGroup);
+    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     activeGroup->Activate();
 }
 

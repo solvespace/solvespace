@@ -414,12 +414,12 @@ void Group::GenerateDisplayItems(void) {
 
 Group *Group::PreviousGroup(void) {
     int i;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         if(g->h.v == h.v) break;
     }
-    if(i == 0 || i >= SK.group.n) return NULL;
-    return &(SK.group.elem[i-1]);
+    if(i == 0 || i >= SK.groupOrder.n) return NULL;
+    return SK.GetGroup(SK.groupOrder.elem[i - 1]);
 }
 
 Group *Group::RunningMeshGroup(void) {

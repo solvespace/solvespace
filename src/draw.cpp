@@ -689,8 +689,8 @@ nogrid:;
     // specially by assigning a style with a fill color, or when the filled
     // paths are just being filled by default. This should go last, to make
     // the transparency work.
-    Group *g;
-    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         if(!(g->IsVisible())) continue;
         g->DrawFilledPaths();
     }

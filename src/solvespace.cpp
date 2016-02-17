@@ -811,6 +811,7 @@ void SolveSpaceUI::Clear(void) {
 
 void Sketch::Clear(void) {
     group.Clear();
+    groupOrder.Clear();
     constraint.Clear();
     request.Clear();
     style.Clear();

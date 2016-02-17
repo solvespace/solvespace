@@ -222,7 +222,7 @@ void GraphicsWindow::Init(void) {
     orig.projUp = projUp;
 
     // And with the last group active
-    activeGroup = SK.group.elem[SK.group.n-1].h;
+    activeGroup = SK.groupOrder.elem[SK.groupOrder.n - 1];
     SK.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;
@@ -592,12 +592,12 @@ void GraphicsWindow::EnsureValidActives(void) {
     Group *g = SK.group.FindByIdNoOops(activeGroup);
     if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
         int i;
-        for(i = 0; i < SK.group.n; i++) {
-            if(SK.group.elem[i].h.v != Group::HGROUP_REFERENCES.v) {
+        for(i = 0; i < SK.groupOrder.n; i++) {
+            if(SK.groupOrder.elem[i].v != Group::HGROUP_REFERENCES.v) {
                 break;
             }
         }
-        if(i >= SK.group.n) {
+        if(i >= SK.groupOrder.n) {
             // This can happen if the user deletes all the groups in the
             // sketch. It's difficult to prevent that, because the last
             // group might have been deleted automatically, because it failed
@@ -606,7 +606,7 @@ void GraphicsWindow::EnsureValidActives(void) {
             // to delete the references, though.
             activeGroup = SS.CreateDefaultDrawingGroup();
         } else {
-            activeGroup = SK.group.elem[i].h;
+            activeGroup = SK.groupOrder.elem[i];
         }
         SK.GetGroup(activeGroup)->Activate();
         change = true;

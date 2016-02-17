@@ -20,14 +20,15 @@ void SolveSpaceUI::ClearExisting(void) {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
-    Group *g;
-    for(g = SK.group.First(); g; g = SK.group.NextAfter(g)) {
+    for(int i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         g->Clear();
     }
 
     SK.constraint.Clear();
     SK.request.Clear();
     SK.group.Clear();
+    SK.groupOrder.Clear();
     SK.style.Clear();
 
     SK.entity.Clear();
@@ -39,12 +40,13 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
 
     // And an empty group, for the first stuff the user draws.
     g.visible = true;
+    g.name = "sketch-in-plane";
     g.type = Group::DRAWING_WORKPLANE;
     g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
+    g.order = 1;
     g.predef.q = Quaternion::From(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
     g.predef.origin = hr.entity(1);
-    g.name = "sketch-in-plane";
     SK.group.AddAndAssignId(&g);
     SK.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
     return g.h;
@@ -58,6 +60,7 @@ void SolveSpaceUI::NewFile(void) {
     g.visible = true;
     g.name = "#references";
     g.type = Group::DRAWING_3D;
+    g.order = 0;
     g.h = Group::HGROUP_REFERENCES;
     SK.group.Add(&g);
 
@@ -308,7 +311,8 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // A group will have either a mesh or a shell, but not both; but the code
     // to print either of those just does nothing if the mesh/shell is empty.
 
-    SMesh *m = &(SK.group.elem[SK.group.n-1].runningMesh);
+    Group *g = SK.GetGroup(SK.groupOrder.elem[SK.groupOrder.n - 1]);
+    SMesh *m = &g->runningMesh;
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
         fprintf(fh, "Triangle %08x %08x "
@@ -317,7 +321,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
             CO(tr->a), CO(tr->b), CO(tr->c));
     }
 
-    SShell *s = &(SK.group.elem[SK.group.n-1].runningShell);
+    SShell *s = &g->runningShell;
     SSurface *srf;
     for(srf = s->surface.First(); srf; srf = s->surface.NextAfter(srf)) {
         fprintf(fh, "Surface %08x %08x %08x %d %d\n",

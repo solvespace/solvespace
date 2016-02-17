@@ -16,8 +16,8 @@ void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
 void SolveSpaceUI::MarkGroupDirty(hGroup hg) {
     int i;
     bool go = false;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         if(g->h.v == hg.v) {
             go = true;
         }
@@ -58,8 +58,8 @@ bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
 
     int beforep = -1, afterp = -1;
     int i;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         if(g->h.v == before.v) beforep = i;
         if(g->h.v == after.v)  afterp  = i;
     }
@@ -141,52 +141,71 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
     return false;
 }
 
-void SolveSpaceUI::GenerateAll(void) {
-    int i;
-    int firstDirty = INT_MAX, lastVisible = 0;
-    // Start from the first dirty group, and solve until the active group,
-    // since all groups after the active group are hidden.
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
-        g->order = i;
-        if((!g->clean) || (g->solved.how != System::SOLVED_OKAY)) {
-            firstDirty = min(firstDirty, i);
-        }
-        if(g->h.v == SS.GW.activeGroup.v) {
-            lastVisible = i;
-        }
-    }
-    if(firstDirty == INT_MAX || lastVisible == 0) {
-        // All clean; so just regenerate the entities, and don't solve anything.
-        GenerateAll(GENERATE_REGEN);
-    } else {
-        SS.nakedEdges.Clear();
-        GenerateAll(firstDirty, lastVisible);
-    }
-}
+void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForBBox) {
+    int first, last, i, j;
 
-void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree) {
+    SK.groupOrder.Clear();
+    for(int i = 0; i < SK.group.n; i++)
+        SK.groupOrder.Add(&SK.group.elem[i].h);
+    std::sort(&SK.groupOrder.elem[0], &SK.groupOrder.elem[SK.groupOrder.n],
+        [](const hGroup &ha, const hGroup &hb) {
+            return SK.GetGroup(ha)->order < SK.GetGroup(hb)->order;
+        });
+
     switch(type) {
-        case GENERATE_ALL:          GenerateAll(0, INT_MAX, andFindFree);   break;
-        case GENERATE_REGEN:        GenerateAll(-1, -1, andFindFree);       break;
-        case GENERATE_UNTIL_ACTIVE: GenerateAll(0, -2, andFindFree);        break;
+        case GENERATE_DIRTY: {
+            first = INT_MAX;
+            last  = 0;
+
+            // Start from the first dirty group, and solve until the active group,
+            // since all groups after the active group are hidden.
+            for(i = 0; i < SK.groupOrder.n; i++) {
+                Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+                if((!g->clean) || (g->solved.how != System::SOLVED_OKAY)) {
+                    first = min(first, i);
+                }
+                if(g->h.v == SS.GW.activeGroup.v) {
+                    last = i;
+                }
+            }
+            if(first == INT_MAX || last == 0) {
+                // All clean; so just regenerate the entities, and don't solve anything.
+                first = -1;
+                last  = -1;
+            } else {
+                SS.nakedEdges.Clear();
+            }
+            break;
+        }
+
+        case GENERATE_ALL:
+            first = 0;
+            last  = INT_MAX;
+            break;
+
+        case GENERATE_REGEN:
+            first = -1;
+            last  = -1;
+            break;
+
+        case GENERATE_UNTIL_ACTIVE: {
+            for(i = 0; i < SK.groupOrder.n; i++) {
+                if(SK.groupOrder.elem[i].v == SS.GW.activeGroup.v)
+                    break;
+            }
+
+            first = 0;
+            last  = i;
+            break;
+        }
+
         default: oops();
-    }
-}
-
-void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree, bool genForBBox) {
-    int i, j;
-
-    // generate until active group
-    if(last == -2) {
-        last = SK.group.IndexOf(SS.GW.activeGroup);
-        if(last == -1) last = INT_MAX;
     }
 
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
     if(!SS.exportMode && !genForBBox) {
-        GenerateAll(first, last, /*andFindFree=*/false, /*genForBBox=*/true);
+        GenerateAll(type, /*andFindFree=*/false, /*genForBBox=*/true);
         BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
         Vector size = box.maxp.Minus(box.minp);
         double maxSize = std::max({ size.x, size.y, size.z });
@@ -207,19 +226,19 @@ void SolveSpaceUI::GenerateAll(int first, int last, bool andFindFree, bool genFo
     int64_t inTime = GetMilliseconds();
 
     bool displayedStatusMessage = false;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
 
         int64_t now = GetMilliseconds();
         // Display the status message if we've taken more than 400 ms, or
         // if we've taken 200 ms but we're not even halfway done, or if
         // we've already started displaying the status message.
         if( (now - inTime > 400) ||
-           ((now - inTime > 200) && i < (SK.group.n / 2)) ||
+           ((now - inTime > 200) && i < (SK.groupOrder.n / 2)) ||
            displayedStatusMessage)
         {
             displayedStatusMessage = true;
-            std::string msg = ssprintf("generating group %d/%d", i, SK.group.n);
+            std::string msg = ssprintf("generating group %d/%d", i, SK.groupOrder.n);
 
             int w, h;
             GetGraphicsWindowSize(&w, &h);
@@ -377,7 +396,7 @@ pruned:
     SK.param.Clear();
     prev.MoveSelfInto(&(SK.param));
     // Try again
-    GenerateAll(first, last, andFindFree, genForBBox);
+    GenerateAll(type, andFindFree, genForBBox);
 }
 
 void SolveSpaceUI::ForceReferences(void) {
@@ -507,11 +526,11 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
 }
 
 bool SolveSpaceUI::ActiveGroupsOkay() {
-    for(int i = 0; i < SK.group.n; i++) {
-        Group *group = &SK.group.elem[i];
-        if(!group->IsSolvedOkay())
+    for(int i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+        if(!g->IsSolvedOkay())
             return false;
-        if(group->h.v == SS.GW.activeGroup.v)
+        if(g->h.v == SS.GW.activeGroup.v)
             break;
     }
     return true;

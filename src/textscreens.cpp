@@ -56,15 +56,10 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
     SS.GenerateAll();
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
-    int i;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
-
-        if(link == 's') {
-            g->visible = true;
-        } else {
-            g->visible = false;
-        }
+    bool state = link == 's';
+    for(int i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+        g->visible = state;
     }
 }
 void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
@@ -105,8 +100,8 @@ void TextWindow::ShowListOfGroups(void) {
     Printf(false, "%Ft    shown ok  group-name%E");
     int i;
     bool afterActive = false;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
+    for(i = 0; i < SK.groupOrder.n; i++) {
+        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         std::string s = g->DescriptionString();
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
@@ -260,14 +255,14 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
               "before proceeding.");
         return;
     }
-    SK.group.RemoveById(SS.TW.shown.group);
+    SK.group.RemoveById(hg);
     // This is a major change, so let's re-solve everything.
     SS.TW.ClearSuper();
     SS.GW.ClearSuper();
     SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
 }
 void TextWindow::ShowGroupInfo(void) {
-    Group *g = SK.group.FindById(shown.group);
+    Group *g = SK.GetGroup(shown.group);
     const char *s = "???";
 
     if(shown.group.v == Group::HGROUP_REFERENCES.v) {
@@ -465,7 +460,7 @@ void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
     SS.TW.Show();
 }
 void TextWindow::ShowGroupSolveInfo(void) {
-    Group *g = SK.group.FindById(shown.group);
+    Group *g = SK.GetGroup(shown.group);
     if(g->IsSolvedOkay()) {
         // Go back to the default group info screen
         shown.screen = SCREEN_GROUP_INFO;

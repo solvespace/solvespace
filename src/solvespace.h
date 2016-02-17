@@ -628,6 +628,7 @@ class Sketch {
 public:
     // These are user-editable, and define the sketch.
     IdList<Group,hGroup>            group;
+    List<hGroup>                    groupOrder;
     IdList<CONSTRAINT,hConstraint>  constraint;
     IdList<Request,hRequest>        request;
     IdList<Style,hStyle>            style;
@@ -659,6 +660,7 @@ public:
     // The state for undo/redo
     typedef struct {
         IdList<Group,hGroup>            group;
+        List<hGroup>                    groupOrder;
         IdList<Request,hRequest>        request;
         IdList<Constraint,hConstraint>  constraint;
         IdList<Param,hParam>            param;
@@ -879,14 +881,14 @@ public:
     bool PruneConstraints(hGroup hg);
 
     enum GenerateType {
+        GENERATE_DIRTY,
         GENERATE_ALL,
         GENERATE_REGEN,
         GENERATE_UNTIL_ACTIVE,
     };
 
-    void GenerateAll(GenerateType type, bool andFindFree = false);
-    void GenerateAll(void);
-    void GenerateAll(int first, int last, bool andFindFree = false, bool genForBBox = false);
+    void GenerateAll(GenerateType type = GENERATE_DIRTY, bool andFindFree = false,
+                     bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void MarkDraggedParams(void);
     void ForceReferences(void);
