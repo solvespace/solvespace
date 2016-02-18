@@ -605,6 +605,9 @@ void GraphicsWindow::EnsureValidActives(void) {
             // drawing group and activate that. They should never be able
             // to delete the references, though.
             activeGroup = SS.CreateDefaultDrawingGroup();
+            // We've created the default group, but not the workplane entity;
+            // do it now so that drawing mode isn't switched to "Free in 3d".
+            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
         } else {
             activeGroup = SK.groupOrder.elem[i];
         }

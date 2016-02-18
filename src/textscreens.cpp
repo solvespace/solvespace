@@ -63,7 +63,6 @@ void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
     }
 }
 void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
-    hGroup hg = { v };
     SS.GW.activeGroup.v = v;
     SK.GetGroup(SS.GW.activeGroup)->Activate();
     SS.GW.ClearSuper();
@@ -251,15 +250,20 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
 
     hGroup hg = SS.TW.shown.group;
     if(hg.v == SS.GW.activeGroup.v) {
-        Error("This group is currently active; activate a different group "
-              "before proceeding.");
-        return;
+        SS.GW.activeGroup = SK.GetGroup(SS.GW.activeGroup)->PreviousGroup()->h;
     }
-    SK.group.RemoveById(hg);
-    // This is a major change, so let's re-solve everything.
+
+    // Reset the text window, since we're displaying information about
+    // the group that's about to get deleted.
     SS.TW.ClearSuper();
-    SS.GW.ClearSuper();
+
+    // This is a major change, so let's re-solve everything.
+    SK.group.RemoveById(hg);
     SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+
+    // Reset the graphics window. This will also recreate the default
+    // group if it was removed.
+    SS.GW.ClearSuper();
 }
 void TextWindow::ShowGroupInfo(void) {
     Group *g = SK.GetGroup(shown.group);
