@@ -1015,15 +1015,16 @@ bool Point2d::Equals(Point2d v, double tol) const {
     return (this->Minus(v)).MagSquared() < tol*tol;
 }
 
-BBox::BBox() { }
-BBox::BBox(const Vector &p0, const Vector &p1) {
-    minp.x = min(p0.x, p1.x);
-    minp.y = min(p0.y, p1.y);
-    minp.z = min(p0.z, p1.z);
+BBox BBox::From(const Vector &p0, const Vector &p1) {
+    BBox bbox;
+    bbox.minp.x = min(p0.x, p1.x);
+    bbox.minp.y = min(p0.y, p1.y);
+    bbox.minp.z = min(p0.z, p1.z);
 
-    maxp.x = max(p0.x, p1.x);
-    maxp.y = max(p0.y, p1.y);
-    maxp.z = max(p0.z, p1.z);
+    bbox.maxp.x = max(p0.x, p1.x);
+    bbox.maxp.y = max(p0.y, p1.y);
+    bbox.maxp.z = max(p0.z, p1.z);
+    return bbox;
 }
 
 Vector BBox::GetOrigin() { return minp.Plus(maxp.Minus(minp)).ScaledBy(0.5); }

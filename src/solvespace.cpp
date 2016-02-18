@@ -819,7 +819,7 @@ void Sketch::Clear(void) {
 }
 
 BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
-    BBox box;
+    BBox box = {};
     bool first = true;
     for(int i = 0; i < entity.n; i++) {
         Entity *e = (Entity *)&entity.elem[i];
