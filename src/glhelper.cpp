@@ -625,13 +625,17 @@ void ssglInitializeBitmapFont()
 
 int ssglBitmapCharWidth(char32_t chr) {
     if(!CodepointProperties[chr].exists)
-        oops();
+        chr = 0xfffd; // replacement character
+
     return CodepointProperties[chr].isWide ? 2 : 1;
 }
 
 void ssglBitmapCharQuad(char32_t chr, double x, double y)
 {
     int w, h;
+
+    if(!CodepointProperties[chr].exists)
+        chr = 0xfffd; // replacement character
 
     h = 16;
     if(chr >= 0xe000 && chr <= 0xefff) {

@@ -103,15 +103,18 @@ add_custom_command(
             ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
             ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz
             ${chars}
-    DEPENDS unifont2c ${chars}
+    DEPENDS unifont2c
+            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz
+            ${chars}
     VERBATIM)
 
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
     COMMAND $<TARGET_FILE:lff2c>
-            "${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz"
-    DEPENDS lff2c ${chars}
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz
+    DEPENDS lff2c
+            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz
     VERBATIM)
 
 set(generated_HEADERS
