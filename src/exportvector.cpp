@@ -41,6 +41,16 @@ public:
         dxf->writeTextstyle(&ts);
     }
 
+    virtual void writeLayers() {
+        DRW_Layer layer;
+        layer.name = "entities";
+        dxf->writeLayer(&layer);
+        layer.name = "dimensions";
+        dxf->writeLayer(&layer);
+        layer.name = "text";
+        dxf->writeLayer(&layer);
+    }
+
     virtual void writeEntities() {
         for(DxfFileWriter::BezierPath &path : writer->paths) {
             currentColor = path.color;
@@ -157,7 +167,12 @@ public:
 
     void assignEntityDefaults(DRW_Entity *entity) {
         entity->color24 = currentColor;
+        entity->layer = "entities";
         if(currentWidth > 0.0) entity->setWidthMm(currentWidth);
+    }
+
+    void assignDimensionDefaults(DRW_Dimension *dimension) {
+        dimension->layer = "dimensions";
     }
 
     void writeLine(const Vector &p0, const Vector &p1) {
@@ -277,6 +292,7 @@ public:
     void writeAlignedDimension(Vector def1, Vector def2, Vector dimp,
                                Vector textp, const std::string &text) {
         DRW_DimAligned dim;
+        assignDimensionDefaults(&dim);
         dim.setDef1Point(toCoord(def1));
         dim.setDef2Point(toCoord(def2));
         dim.setDimPoint(toCoord(dimp));
@@ -289,6 +305,7 @@ public:
                               Vector textp, const std::string &text,
                               double angle, double oblique) {
         DRW_DimLinear dim;
+        assignDimensionDefaults(&dim);
         dim.setDef1Point(toCoord(def1));
         dim.setDef2Point(toCoord(def2));
         dim.setDimPoint(toCoord(dimp));
@@ -302,6 +319,7 @@ public:
     void writeRadialDimension(Vector center, Vector radius,
                               Vector textp, const std::string &text) {
         DRW_DimRadial dim;
+        assignDimensionDefaults(&dim);
         dim.setCenterPoint(toCoord(center));
         dim.setDiameterPoint(toCoord(radius));
         dim.setTextPoint(toCoord(textp));
@@ -312,6 +330,7 @@ public:
     void writeDiametricDimension(Vector def1, Vector def2,
                                  Vector textp, const std::string &text) {
         DRW_DimDiametric dim;
+        assignDimensionDefaults(&dim);
         dim.setDiameter1Point(toCoord(def1));
         dim.setDiameter2Point(toCoord(def2));
         dim.setTextPoint(toCoord(textp));
@@ -322,6 +341,7 @@ public:
     void writeAngularDimension(Vector fl1, Vector fl2, Vector sl1, Vector sl2, Vector dimp,
                                Vector textp, const std::string &text) {
         DRW_DimAngular dim;
+        assignDimensionDefaults(&dim);
         dim.setFirstLine1(toCoord(fl1));
         dim.setFirstLine2(toCoord(fl2));
         dim.setSecondLine1(toCoord(sl1));
@@ -335,6 +355,7 @@ public:
     void writeText(Vector textp, const std::string &text,
                    double height, double angle, int origin) {
         DRW_Text txt;
+        txt.layer = "text";
         txt.style = "unicode";
         txt.basePoint = toCoord(textp);
         txt.secPoint = txt.basePoint;
