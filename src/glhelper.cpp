@@ -36,7 +36,7 @@ static const VectorGlyph &GetVectorGlyph(char32_t chr) {
     return GetVectorGlyph(0xfffd); // replacement character
 }
 
-#define FONT_SCALE(h) ((h)/75.0)
+#define FONT_SCALE(h) ((h)/87.0)
 double ssglStrWidth(const std::string &str, double h)
 {
     int width = 0;
