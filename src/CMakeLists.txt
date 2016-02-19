@@ -15,19 +15,19 @@ add_definitions(
     ${PNG_CFLAGS_OTHER})
 
 include_directories(
-    "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/built"
-    "${CMAKE_CURRENT_BINARY_DIR}")
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/built
+    ${CMAKE_CURRENT_BINARY_DIR})
 
 if(SPACEWARE_FOUND)
     include_directories(
-        "${SPACEWARE_INCLUDE_DIR}")
+        ${SPACEWARE_INCLUDE_DIR})
 endif()
 
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 set(HAVE_GTK ${GTKMM_FOUND})
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/config.h.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/config.h")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 # platform utilities
 
@@ -62,10 +62,10 @@ target_compile_definitions(slvs
     PRIVATE -DLIBRARY)
 
 target_include_directories(slvs
-    PUBLIC "${CMAKE_SOURCE_DIR}/include")
+    PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 set_target_properties(slvs PROPERTIES
-    PUBLIC_HEADER "${CMAKE_SOURCE_DIR}/include/slvs.h"
+    PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
     VERSION ${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
     SOVERSION 1)
 
@@ -82,34 +82,37 @@ endif()
 # but unlike Windows, Linux does not have the machinery to map
 # an invocation of `tool` to an executable `tool.exe` in $PATH.
 
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/generated")
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
-file(GLOB icons "${CMAKE_CURRENT_SOURCE_DIR}/icons/*.png")
+file(GLOB icons ${CMAKE_CURRENT_SOURCE_DIR}/icons/*.png)
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp"
-           "${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h"
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp
+           ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h
     COMMAND $<TARGET_FILE:png2c>
-            "${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp"
-            "${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h"
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h
             ${icons}
-    DEPENDS png2c ${icons})
+    DEPENDS png2c ${icons}
+    VERBATIM)
 
-file(GLOB chars "${CMAKE_CURRENT_SOURCE_DIR}/fonts/private/*.png")
+file(GLOB chars ${CMAKE_CURRENT_SOURCE_DIR}/fonts/private/*.png)
 list(SORT chars)
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h"
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
     COMMAND $<TARGET_FILE:unifont2c>
-            "${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h"
-            "${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz"
+            ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
+            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz
             ${chars}
-    DEPENDS unifont2c ${chars})
+    DEPENDS unifont2c ${chars}
+    VERBATIM)
 
 add_custom_command(
-    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h"
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
     COMMAND $<TARGET_FILE:lff2c>
             "${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h"
             "${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz"
-    DEPENDS lff2c ${chars})
+    DEPENDS lff2c ${chars}
+    VERBATIM)
 
 set(generated_HEADERS
     ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
@@ -196,7 +199,8 @@ foreach(xib ${platform_XIBS})
             --output-format human-readable-text --compile
             ${target} ${source}
         COMMENT "Building Interface Builder file ${xib}"
-        DEPENDS ${xib})
+        DEPENDS ${xib}
+        VERBATIM)
 endforeach()
 
 foreach(icon ${platform_ICONS})
@@ -210,7 +214,8 @@ foreach(icon ${platform_ICONS})
         COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
         COMMAND iconutil -c icns -o ${target} ${source}
         COMMENT "Building icon set ${icon}"
-        DEPENDS ${source})
+        DEPENDS ${source}
+        VERBATIM)
 endforeach()
 
 foreach(res ${platform_RESOURCES})
@@ -224,7 +229,8 @@ foreach(res ${platform_RESOURCES})
         COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
         COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target}
         COMMENT "Copying resource file ${res}"
-        DEPENDS ${res})
+        DEPENDS ${res}
+        VERBATIM)
 endforeach()
 
 foreach(lib ${platform_BUNDLED_LIBS})
@@ -237,7 +243,8 @@ foreach(lib ${platform_BUNDLED_LIBS})
         COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
         COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${target}
         COMMENT "Bundling shared library ${lib}"
-        DEPENDS ${lib})
+        DEPENDS ${lib}
+        VERBATIM)
 endforeach()
 
 # solvespace executable
@@ -309,11 +316,11 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${solvespace_SOURCES})
 
 target_link_libraries(solvespace
-    "${OPENGL_LIBRARIES}"
-    "${PNG_LIBRARIES}"
-    "${ZLIB_LIBRARIES}"
-    "${FREETYPE_LIBRARIES}"
-    "${platform_LIBRARIES}")
+    ${OPENGL_LIBRARIES}
+    ${PNG_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${FREETYPE_LIBRARIES}
+    ${platform_LIBRARIES})
 
 if(WIN32 AND NOT MINGW)
     set_target_properties(solvespace PROPERTIES
@@ -322,7 +329,7 @@ endif()
 
 if(SPACEWARE_FOUND)
     target_link_libraries(solvespace
-        "${SPACEWARE_LIBRARIES}")
+        ${SPACEWARE_LIBRARIES})
 endif()
 
 if(APPLE)
@@ -332,9 +339,10 @@ if(APPLE)
         execute_process(COMMAND otool -XD ${lib}
             OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
         add_custom_command(TARGET solvespace POST_BUILD
-            COMMAND install_name_tool -change "${canonical_lib}" "@executable_path/${name}"
+            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
                     $<TARGET_FILE:solvespace>
-            COMMENT "Fixing up rpath for dylib ${name}")
+            COMMENT "Fixing up rpath for dylib ${name}"
+            VERBATIM)
     endforeach()
 
     set(bundle solvespace)
@@ -343,7 +351,8 @@ if(APPLE)
         COMMAND hdiutil create -srcfolder ${CMAKE_CURRENT_BINARY_DIR}/${bundle}.app
                 ${CMAKE_BINARY_DIR}/${bundle}.dmg
         DEPENDS $<TARGET_FILE:${bundle}>
-        COMMENT "Building ${bundle}.dmg")
+        COMMENT "Building ${bundle}.dmg"
+        VERBATIM)
 
     add_custom_target(${bundle}-dmg ALL
         DEPENDS ${CMAKE_BINARY_DIR}/${bundle}.dmg)
