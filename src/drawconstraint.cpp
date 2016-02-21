@@ -10,21 +10,13 @@
 
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        // Draw comments in the specified style, but everything else in the
-        // default style for constraints.
-        hStyle hs;
-        if(type == COMMENT && disp.style.v) {
-            hs = disp.style;
-        } else {
-            hs.v = Style::CONSTRAINT;
-        }
+        hStyle hs = disp.style;
+        if(hs.v == 0) hs.v = Style::CONSTRAINT;
 
         if(dogd.sel) {
             dogd.sel->AddEdge(a, b, hs.v);
         } else {
-            // The only constraints with styles should be comments, so don't
-            // check otherwise, save looking up the styles constantly.
-            if(type == COMMENT && Style::Width(hs) >= 3.0) {
+            if(Style::Width(hs) >= 3.0) {
                 ssglFatLine(a, b, Style::Width(hs) / SS.GW.scale);
             } else {
                 glBegin(GL_LINE_STRIP);
@@ -85,12 +77,9 @@ std::string Constraint::Label(void) {
 }
 
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
-    double th;
-    if(type == COMMENT) {
-        th = Style::TextHeight(disp.style);
-    } else {
-        th = Style::DefaultTextHeight();
-    }
+    hStyle hs = disp.style;
+    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    double th = Style::TextHeight(hs);
 
     std::string s = Label();
     double swidth  = ssglStrWidth(s, th),
@@ -159,13 +148,16 @@ void Constraint::DoProjectedPoint(Vector *r) {
 // depending whether that extension was from A or from B.
 //-----------------------------------------------------------------------------
 int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
+    hStyle hs = disp.style;
+    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    double th = Style::TextHeight(hs);
     Vector gu = SS.GW.projUp.WithMagnitude(1),
            gr = SS.GW.projRight.WithMagnitude(1);
 
     double pixels = 1.0 / SS.GW.scale;
     std::string s = Label();
-    double swidth  = ssglStrWidth(s, Style::DefaultTextHeight()) + 4*pixels,
-           sheight = ssglStrHeight(Style::DefaultTextHeight()) + 8*pixels;
+    double swidth  = ssglStrWidth(s, th) + 4*pixels,
+           sheight = ssglStrHeight(th) + 8*pixels;
 
     struct {
         Vector n;
@@ -1077,9 +1069,11 @@ s:
 void Constraint::Draw(void) {
     dogd.drawing = true;
     dogd.sel = NULL;
+    hStyle hs = disp.style;
+    if(hs.v == 0) hs.v = Style::CONSTRAINT;
 
-    ssglLineWidth(Style::Width(Style::CONSTRAINT));
-    ssglColorRGB(Style::Color(Style::CONSTRAINT));
+    ssglLineWidth(Style::Width(hs));
+    ssglColorRGB(Style::Color(hs));
 
     DrawOrGetDistance(NULL);
 }

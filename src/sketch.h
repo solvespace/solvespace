@@ -787,6 +787,7 @@ public:
 
     static std::string CnfColor(const std::string &prefix);
     static std::string CnfWidth(const std::string &prefix);
+    static std::string CnfTextHeight(const std::string &prefix);
     static std::string CnfPrefixToName(const std::string &prefix);
 
     static void CreateAllDefaultStyles(void);

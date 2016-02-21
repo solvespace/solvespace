@@ -33,6 +33,9 @@ std::string Style::CnfColor(const std::string &prefix) {
 std::string Style::CnfWidth(const std::string &prefix) {
     return "Style_" + prefix + "_Width";
 }
+std::string Style::CnfTextHeight(const std::string &prefix) {
+    return "Style_" + prefix + "_TextHeight";
+}
 
 std::string Style::CnfPrefixToName(const std::string &prefix) {
     std::string name = "#def-";
@@ -83,7 +86,7 @@ void Style::FillDefaultStyle(Style *s, const Default *d) {
     s->color         = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
     s->width         = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     s->widthAs       = UNITS_AS_PIXELS;
-    s->textHeight    = DEFAULT_TEXT_HEIGHT;
+    s->textHeight    = CnfThawFloat(DEFAULT_TEXT_HEIGHT, CnfTextHeight(d->cnfPrefix));
     s->textHeightAs  = UNITS_AS_PIXELS;
     s->textOrigin    = 0;
     s->textAngle     = 0;
@@ -125,6 +128,7 @@ void Style::FreezeDefaultStyles(void) {
     for(d = &(Defaults[0]); d->h.v; d++) {
         CnfFreezeColor(Color(d->h), CnfColor(d->cnfPrefix));
         CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
+        CnfFreezeFloat((float)TextHeight(d->h), CnfTextHeight(d->cnfPrefix));
     }
 }
 
@@ -810,7 +814,7 @@ void TextWindow::ShowStyleInfo(void) {
     if(s->h.v < Style::FIRST_CUSTOM) {
         Printf(false,"   %Ftin units of %Fdpixels%E");
     } else {
-        Printf(false,"   %Ftin units of  %Fd"
+        Printf(false,"%Ba   %Ftin units of  %Fd"
                             "%D%f%LW%s pixels%E  "
                             "%D%f%Lw%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
@@ -877,19 +881,18 @@ void TextWindow::ShowStyleInfo(void) {
 
     // The text height, and its units
     Printf(false, "");
-    Printf(false, "%Ft text comment style%E");
+    Printf(false, "%Ft text style%E");
 
-    const char *chng = (s->h.v < Style::FIRST_CUSTOM) ? "" : "[change]";
     if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
         Printf(false, "%Ba   %Ftheight %E%@ %D%f%Lt%Fl%s%E",
             s->textHeight,
             s->h.v, &ScreenChangeStyleMetric,
-            chng);
+            "[change]");
     } else {
         Printf(false, "%Ba   %Ftheight %E%s %D%f%Lt%Fl%s%E",
             SS.MmToString(s->textHeight).c_str(),
             s->h.v, &ScreenChangeStyleMetric,
-            chng);
+            "[change]");
     }
 
     bool textHeightpx = (s->textHeightAs == Style::UNITS_AS_PIXELS);
