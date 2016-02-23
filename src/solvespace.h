@@ -357,6 +357,10 @@ void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u
 double ssglStrWidth(const std::string &str, double h);
 double ssglStrHeight(double h);
 void ssglLockColorTo(RgbaColor rgb);
+void ssglStippledLine(Vector a, Vector b, double width,
+                      int stippleType, double stippleScale);
+void ssglStippledLine(Vector a, Vector b, double width,
+                      const char *stipplePattern, double stippleScale);
 void ssglFatLine(Vector a, Vector b, double width);
 void ssglUnlockColor(void);
 void ssglColorRGB(RgbaColor rgb);

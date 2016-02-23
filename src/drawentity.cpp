@@ -23,15 +23,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
         ssglDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
         // Narrow lines are drawn as lines, but fat lines must be drawn as
         // filled polygons, to get the line join style right.
-        if(!maybeFat || dogd.lineWidth < 3) {
-            glBegin(GL_LINES);
-                ssglVertex3v(a);
-                ssglVertex3v(b);
-            glEnd();
-        } else {
-            ssglFatLine(a, b, dogd.lineWidth/SS.GW.scale);
-        }
-
+        ssglStippledLine(a, b, dogd.lineWidth, dogd.stippleType, dogd.stippleScale);
         ssglDepthRangeOffset(0);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
@@ -114,6 +106,8 @@ void Entity::DrawAll(void) {
 void Entity::Draw(void) {
     hStyle hs = Style::ForEntity(h);
     dogd.lineWidth = Style::Width(hs);
+    dogd.stippleType = Style::PatternType(hs);
+    dogd.stippleScale = Style::StippleScaleMm(hs);
     ssglLineWidth((float)dogd.lineWidth);
     ssglColorRGB(Style::Color(hs));
 

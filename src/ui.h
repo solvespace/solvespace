@@ -171,6 +171,7 @@ public:
         EDIT_STYLE_NAME            = 505,
         EDIT_BACKGROUND_COLOR      = 506,
         EDIT_BACKGROUND_IMG_SCALE  = 507,
+        EDIT_STYLE_STIPPLE_PERIOD  = 508,
         // For paste transforming
         EDIT_PASTE_TIMES_REPEATED  = 600,
         EDIT_PASTE_ANGLE           = 601,
@@ -260,6 +261,7 @@ public:
     static void ScreenShowListOfStyles(int link, uint32_t v);
     static void ScreenShowStyleInfo(int link, uint32_t v);
     static void ScreenDeleteStyle(int link, uint32_t v);
+    static void ScreenChangeStylePatternType(int link, uint32_t v);
     static void ScreenChangeStyleYesNo(int link, uint32_t v);
     static void ScreenCreateCustomStyle(int link, uint32_t v);
     static void ScreenLoadFactoryDefaultStyles(int link, uint32_t v);
@@ -309,7 +311,7 @@ public:
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
-    static void ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v);
+    static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
     static void ScreenChangeStyleColor(int link, uint32_t v);
     static void ScreenChangeBackgroundColor(int link, uint32_t v);

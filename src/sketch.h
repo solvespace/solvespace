@@ -481,6 +481,8 @@ public:
         double      dmin;
         Vector      refp;
         double      lineWidth;
+        double      stippleScale;
+        int         stippleType;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false);
     void DrawOrGetDistance(void);
@@ -712,6 +714,19 @@ public:
     hStyle      h;
 
     enum {
+        STIPPLE_CONTINUOUS     = 0,
+        STIPPLE_DASH           = 1,
+        STIPPLE_LONG_DASH      = 2,
+        STIPPLE_DASH_DOT       = 3,
+        STIPPLE_DASH_DOT_DOT   = 4,
+        STIPPLE_DOT            = 5,
+        STIPPLE_FREEHAND       = 6,
+        STIPPLE_ZIGZAG         = 7,
+
+        LAST_STIPPLE           = STIPPLE_ZIGZAG
+    };
+
+    enum {
         // If an entity has no style, then it will be colored according to
         // whether the group that it's in is active or not, whether it's
         // construction or not, and so on.
@@ -757,6 +772,8 @@ public:
     RgbaColor   fillColor;
     bool        visible;
     bool        exportable;
+    int         stippleType;
+    double      stippleScale;
 
     // The default styles, for entities that don't have a style assigned yet,
     // and for datums and such.
@@ -793,6 +810,8 @@ public:
     static double TextHeight(hStyle hs);
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
+    static int PatternType(hStyle hs);
+    static double StippleScaleMm(hStyle hs);
 
     std::string DescriptionString(void);
 

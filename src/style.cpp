@@ -78,17 +78,19 @@ void Style::CreateDefaultStyle(hStyle h) {
 
 void Style::FillDefaultStyle(Style *s, const Default *d) {
     if(d == NULL) d = &Defaults[0];
-    s->color        = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
-    s->width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
-    s->widthAs      = UNITS_AS_PIXELS;
-    s->textHeight   = DEFAULT_TEXT_HEIGHT;
-    s->textHeightAs = UNITS_AS_PIXELS;
-    s->textOrigin   = 0;
-    s->textAngle    = 0;
-    s->visible      = true;
-    s->exportable   = true;
-    s->filled       = false;
-    s->fillColor    = RGBf(0.3, 0.3, 0.3);
+    s->color         = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
+    s->width         = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    s->widthAs       = UNITS_AS_PIXELS;
+    s->textHeight    = DEFAULT_TEXT_HEIGHT;
+    s->textHeightAs  = UNITS_AS_PIXELS;
+    s->textOrigin    = 0;
+    s->textAngle     = 0;
+    s->visible       = true;
+    s->exportable    = true;
+    s->filled        = false;
+    s->fillColor     = RGBf(0.3, 0.3, 0.3);
+    s->stippleType   = Style::STIPPLE_CONTINUOUS;
+    s->stippleScale  = 15.0;
 }
 
 void Style::LoadFactoryDefaults(void) {
@@ -96,18 +98,20 @@ void Style::LoadFactoryDefaults(void) {
     for(d = &(Defaults[0]); d->h.v; d++) {
         Style *s = Get(d->h);
 
-        s->color        = d->color;
-        s->width        = d->width;
-        s->widthAs      = UNITS_AS_PIXELS;
-        s->textHeight   = DEFAULT_TEXT_HEIGHT;
-        s->textHeightAs = UNITS_AS_PIXELS;
-        s->textOrigin   = 0;
-        s->textAngle    = 0;
-        s->visible      = true;
-        s->exportable   = true;
-        s->filled       = false;
-        s->fillColor    = RGBf(0.3, 0.3, 0.3);
-        s->name         = CnfPrefixToName(d->cnfPrefix);
+        s->color         = d->color;
+        s->width         = d->width;
+        s->widthAs       = UNITS_AS_PIXELS;
+        s->textHeight    = DEFAULT_TEXT_HEIGHT;
+        s->textHeightAs  = UNITS_AS_PIXELS;
+        s->textOrigin    = 0;
+        s->textAngle     = 0;
+        s->visible       = true;
+        s->exportable    = true;
+        s->filled        = false;
+        s->fillColor     = RGBf(0.3, 0.3, 0.3);
+        s->stippleType   = Style::STIPPLE_CONTINUOUS;
+        s->stippleScale  = 15.0;
+        s->name          = CnfPrefixToName(d->cnfPrefix);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
@@ -316,6 +320,21 @@ hStyle Style::ForEntity(hEntity he) {
     return hs;
 }
 
+int Style::PatternType(hStyle hs) {
+    Style *s = Get(hs);
+    return s->stippleType;
+}
+
+double Style::StippleScaleMm(hStyle hs) {
+    Style *s = Get(hs);
+    if(s->widthAs == UNITS_AS_MM) {
+        return s->stippleScale;
+    } else if(s->widthAs == UNITS_AS_PIXELS) {
+        return s->stippleScale / SS.GW.scale;
+    }
+    return 1.0;
+}
+
 std::string Style::DescriptionString(void) {
     if(name.empty()) {
         return ssprintf("s%03x-(unnamed)", h.v);
@@ -499,11 +518,42 @@ void TextWindow::ScreenDeleteStyle(int link, uint32_t v) {
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
+void TextWindow::ScreenChangeStylePatternType(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
-    double val   = (link == 't') ? s->textHeight   : s->width;
-    int    units = (link == 't') ? s->textHeightAs : s->widthAs;
+    s->stippleType = link - 1;
+}
+
+void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
+    hStyle hs = { v };
+    Style *s = Style::Get(hs);
+    double val;
+    int units, meaning, col;
+    switch(link) {
+        case 't':
+            val = s->textHeight;
+            units = s->textHeightAs;
+            col = 10;
+            meaning = EDIT_STYLE_TEXT_HEIGHT;
+            break;
+
+        case 's':
+            val = s->stippleScale;
+            units = s->widthAs;
+            col = 17;
+            meaning = EDIT_STYLE_STIPPLE_PERIOD;
+            break;
+
+        case 'w':
+        case 'W':
+            val = s->width;
+            units = s->widthAs;
+            col = 9;
+            meaning = EDIT_STYLE_WIDTH;
+            break;
+
+        default: oops();
+    }
 
     std::string edit_value;
     if(units == Style::UNITS_AS_PIXELS) {
@@ -511,12 +561,9 @@ void TextWindow::ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v) {
     } else {
         edit_value = SS.MmToString(val);
     }
-    int col = 9;
-    if(link == 't') col++;
     SS.TW.ShowEditControl(col, edit_value);
     SS.TW.edit.style = hs;
-    SS.TW.edit.meaning = (link == 't') ? EDIT_STYLE_TEXT_HEIGHT :
-                                         EDIT_STYLE_WIDTH;
+    SS.TW.edit.meaning = meaning;
 }
 
 void TextWindow::ScreenChangeStyleTextAngle(int link, uint32_t v) {
@@ -557,12 +604,14 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
             if(s->widthAs != Style::UNITS_AS_MM) {
                 s->widthAs = Style::UNITS_AS_MM;
                 s->width /= SS.GW.scale;
+                s->stippleScale /= SS.GW.scale;
             }
             break;
         case 'W':
             if(s->widthAs != Style::UNITS_AS_PIXELS) {
                 s->widthAs = Style::UNITS_AS_PIXELS;
                 s->width *= SS.GW.scale;
+                s->stippleScale *= SS.GW.scale;
             }
             break;
 
@@ -627,6 +676,7 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
 bool TextWindow::EditControlDoneForStyles(const char *str) {
     Style *s;
     switch(edit.meaning) {
+        case EDIT_STYLE_STIPPLE_PERIOD:
         case EDIT_STYLE_TEXT_HEIGHT:
         case EDIT_STYLE_WIDTH: {
             SS.UndoRemember();
@@ -643,6 +693,8 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             v = max(0.0, v);
             if(edit.meaning == EDIT_STYLE_TEXT_HEIGHT) {
                 s->textHeight = v;
+            } else if(edit.meaning == EDIT_STYLE_STIPPLE_PERIOD) {
+                s->stippleScale = v;
             } else {
                 s->width = v;
             }
@@ -728,20 +780,32 @@ void TextWindow::ShowStyleInfo(void) {
     if(s->widthAs == Style::UNITS_AS_PIXELS) {
         Printf(false, "   %Ftwidth%E %@ %D%f%Lp%Fl[change]%E",
             s->width,
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            s->h.v, &ScreenChangeStyleMetric,
             (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     } else {
         Printf(false, "   %Ftwidth%E %s %D%f%Lp%Fl[change]%E",
             SS.MmToString(s->width).c_str(),
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            s->h.v, &ScreenChangeStyleMetric,
             (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
+    }
+
+    if(s->h.v >= Style::FIRST_CUSTOM) {
+        if(s->widthAs == Style::UNITS_AS_PIXELS) {
+            Printf(false, "%Ba   %Ftstipple width%E %@ %D%f%Lp%Fl[change]%E",
+                s->stippleScale,
+                s->h.v, &ScreenChangeStyleMetric, 's');
+        } else {
+            Printf(false, "%Ba   %Ftstipple width%E %s %D%f%Lp%Fl[change]%E",
+                SS.MmToString(s->stippleScale).c_str(),
+                s->h.v, &ScreenChangeStyleMetric, 's');
+        }
     }
 
     bool widthpx = (s->widthAs == Style::UNITS_AS_PIXELS);
     if(s->h.v < Style::FIRST_CUSTOM) {
-        Printf(false,"%Ba   %Ftin units of %Fdpixels%E");
+        Printf(false,"   %Ftin units of %Fdpixels%E");
     } else {
-        Printf(false,"%Ba   %Ftin units of  %Fd"
+        Printf(false,"   %Ftin units of  %Fd"
                             "%D%f%LW%s pixels%E  "
                             "%D%f%Lw%s %s",
             s->h.v, &ScreenChangeStyleYesNo,
@@ -749,6 +813,45 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenChangeStyleYesNo,
             !widthpx ? RADIO_TRUE : RADIO_FALSE,
             SS.UnitName());
+    }
+
+    if(s->h.v >= Style::FIRST_CUSTOM) {
+        Printf(false,"%Ba   %Ftstipple type:%E");
+
+        const size_t patternCount = Style::LAST_STIPPLE + 1;
+        const char *patternsSource[patternCount] = {
+            "___________",
+            "- - - - - -",
+            "__ __ __ __",
+            "-.-.-.-.-.-",
+            "..-..-..-..",
+            "...........",
+            "~~~~~~~~~~~",
+            "__~__~__~__"
+        };
+        std::string patterns[patternCount];
+
+        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+            const char *str = patternsSource[i];
+            do {
+                switch(*str) {
+                    case ' ': patterns[i] += " "; break;
+                    case '.': patterns[i] += "\xEE\x80\x84"; break;
+                    case '_': patterns[i] += "\xEE\x80\x85"; break;
+                    case '-': patterns[i] += "\xEE\x80\x86"; break;
+                    case '~': patterns[i] += "\xEE\x80\x87"; break;
+                    default: oops();
+                }
+            } while(*(++str));
+        }
+
+        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+            const char *radio = s->stippleType == i ? RADIO_TRUE : RADIO_FALSE;
+            Printf(false, "%Bp     %D%f%Lp%s %s%E",
+                (i % 2 == 0) ? 'd' : 'a',
+                s->h.v, &ScreenChangeStylePatternType,
+                i + 1, radio, patterns[i].c_str());
+        }
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {
@@ -775,12 +878,12 @@ void TextWindow::ShowStyleInfo(void) {
     if(s->textHeightAs == Style::UNITS_AS_PIXELS) {
         Printf(false, "%Ba   %Ftheight %E%@ %D%f%Lt%Fl%s%E",
             s->textHeight,
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            s->h.v, &ScreenChangeStyleMetric,
             chng);
     } else {
         Printf(false, "%Ba   %Ftheight %E%s %D%f%Lt%Fl%s%E",
             SS.MmToString(s->textHeight).c_str(),
-            s->h.v, &ScreenChangeStyleWidthOrTextHeight,
+            s->h.v, &ScreenChangeStyleMetric,
             chng);
     }
 

@@ -198,6 +198,8 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 's',  "Style.filled",             'b',    &(SS.sv.s.filled)             },
     { 's',  "Style.visible",            'b',    &(SS.sv.s.visible)            },
     { 's',  "Style.exportable",         'b',    &(SS.sv.s.exportable)         },
+    { 's',  "Style.stippleType",        'd',    &(SS.sv.s.stippleType)        },
+    { 's',  "Style.stippleScale",       'f',    &(SS.sv.s.stippleScale)       },
 
     { 0, NULL, 0, NULL }
 };
