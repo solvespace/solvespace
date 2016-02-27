@@ -437,6 +437,7 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
 
     sv = {};
     sv.g.scale = 1; // default is 1, not 0; so legacy files need this
+    Style::FillDefaultStyle(&sv.s);
 
     char line[1024];
     while(fgets(line, (int)sizeof(line), fh)) {
@@ -479,6 +480,7 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
         } else if(strcmp(line, "AddStyle")==0) {
             SK.style.Add(&(sv.s));
             sv.s = {};
+            Style::FillDefaultStyle(&sv.s);
         } else if(strcmp(line, VERSION_STRING)==0) {
             // do nothing, version string
         } else if(StrStartsWith(line, "Triangle ")      ||

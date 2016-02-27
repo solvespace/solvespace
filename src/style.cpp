@@ -65,17 +65,7 @@ void Style::CreateDefaultStyle(hStyle h) {
     }
 
     Style ns = {};
-    ns.color        = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
-    ns.width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
-    ns.widthAs      = UNITS_AS_PIXELS;
-    ns.textHeight   = DEFAULT_TEXT_HEIGHT;
-    ns.textHeightAs = UNITS_AS_PIXELS;
-    ns.textOrigin   = 0;
-    ns.textAngle    = 0;
-    ns.visible      = true;
-    ns.exportable   = true;
-    ns.filled       = false;
-    ns.fillColor    = RGBf(0.3, 0.3, 0.3);
+    FillDefaultStyle(&ns, d);
     ns.h            = h;
     if(isDefaultStyle) {
         ns.name = CnfPrefixToName(d->cnfPrefix);
@@ -84,6 +74,21 @@ void Style::CreateDefaultStyle(hStyle h) {
     }
 
     SK.style.Add(&ns);
+}
+
+void Style::FillDefaultStyle(Style *s, const Default *d) {
+    if(d == NULL) d = &Defaults[0];
+    s->color        = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
+    s->width        = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    s->widthAs      = UNITS_AS_PIXELS;
+    s->textHeight   = DEFAULT_TEXT_HEIGHT;
+    s->textHeightAs = UNITS_AS_PIXELS;
+    s->textOrigin   = 0;
+    s->textAngle    = 0;
+    s->visible      = true;
+    s->exportable   = true;
+    s->filled       = false;
+    s->fillColor    = RGBf(0.3, 0.3, 0.3);
 }
 
 void Style::LoadFactoryDefaults(void) {

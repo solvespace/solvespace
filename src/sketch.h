@@ -774,6 +774,7 @@ public:
 
     static void CreateAllDefaultStyles(void);
     static void CreateDefaultStyle(hStyle h);
+    static void FillDefaultStyle(Style *s, const Default *d = NULL);
     static void FreezeDefaultStyles(void);
     static void LoadFactoryDefaults(void);
 
