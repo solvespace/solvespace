@@ -336,7 +336,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
 
         d = e->GetDistance(mp);
-        if(d < 10 && d < dmin) {
+        if(d < SELECTION_RADIUS && d < dmin) {
             s = {};
             s.entity = e->h;
             dmin = d;
@@ -348,7 +348,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         // Constraints
         for(i = 0; i < SK.constraint.n; i++) {
             d = SK.constraint.elem[i].GetDistance(mp);
-            if(d < 10 && d < dmin) {
+            if(d < SELECTION_RADIUS && d < dmin) {
                 s = {};
                 s.constraint = SK.constraint.elem[i].h;
                 dmin = d;

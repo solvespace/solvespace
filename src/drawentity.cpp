@@ -152,6 +152,37 @@ SEdgeList *Entity::GetOrGenerateEdges() {
     return &edges;
 }
 
+BBox Entity::GetScreenBBox(bool *hasBBox) {
+    SBezierList *sbl = GetOrGenerateBezierCurves();
+
+    // We don't bother with bounding boxes for normals, workplanes, etc.
+    *hasBBox = (IsPoint() || sbl->l.n > 0);
+    if(!*hasBBox) return {};
+
+    BBox result = {};
+    if(IsPoint()) {
+        Vector proj = SS.GW.ProjectPoint3(PointGetNum());
+        result = BBox::From(proj, proj);
+    } else if(sbl->l.n > 0) {
+        Vector first = SS.GW.ProjectPoint3(sbl->l.elem[0].ctrl[0]);
+        result = BBox::From(first, first);
+        for(int i = 0; i < sbl->l.n; i++) {
+            SBezier *sb = &sbl->l.elem[i];
+            for(int i = 0; i <= sb->deg; i++) {
+                result.Include(SS.GW.ProjectPoint3(sb->ctrl[i]));
+            }
+        }
+    } else oops();
+
+    // Enlarge the bounding box to consider selection radius.
+    result.minp.x -= SELECTION_RADIUS;
+    result.minp.y -= SELECTION_RADIUS;
+    result.maxp.x += SELECTION_RADIUS;
+    result.maxp.y += SELECTION_RADIUS;
+
+    return result;
+}
+
 double Entity::GetDistance(Point2d mp) {
     dogd.drawing = false;
     dogd.mp = mp;
@@ -473,6 +504,15 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
 }
 
 void Entity::DrawOrGetDistance(void) {
+    // If we're about to perform hit testing on an entity, consider
+    // whether the pointer is inside its bounding box first.
+    if(!dogd.drawing) {
+        bool hasBBox;
+        BBox box = GetScreenBBox(&hasBBox);
+        if(hasBBox && !box.Contains(dogd.mp))
+            return;
+    }
+
     if(!IsVisible()) return;
 
     switch(type) {

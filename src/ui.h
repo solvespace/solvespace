@@ -328,6 +328,8 @@ public:
     void EditControlDone(const char *s);
 };
 
+#define SELECTION_RADIUS 10.0
+
 class GraphicsWindow {
 public:
     void Init(void);

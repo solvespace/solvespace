@@ -513,6 +513,7 @@ public:
 
     void Include(const Vector &v, double r = 0.0);
     bool Overlaps(BBox &b1);
+    bool Contains(const Point2d &p);
 };
 
 #endif

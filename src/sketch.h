@@ -509,6 +509,7 @@ public:
 
     SBezierList *GetOrGenerateBezierCurves();
     SEdgeList *GetOrGenerateEdges();
+    BBox GetScreenBBox(bool *hasBBox);
 
     void Clear() {
         beziers.l.Clear();

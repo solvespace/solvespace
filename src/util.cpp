@@ -1047,3 +1047,7 @@ bool BBox::Overlaps(BBox &b1) {
 
     return fabs(t.x) < e.x && fabs(t.y) < e.y && fabs(t.z) < e.z;
 }
+
+bool BBox::Contains(const Point2d &p) {
+    return p.x >= minp.x && p.y >= minp.y && p.x <= maxp.x && p.y <= maxp.y;
+}
