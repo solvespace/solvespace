@@ -602,7 +602,7 @@ void Entity::DrawOrGetDistance(void) {
                 glDisable(GL_LINE_STIPPLE);
 
             std::string str = DescriptionString().substr(5);
-            double th = DEFAULT_TEXT_HEIGHT;
+            double th = Style::DefaultTextHeight();
             if(dogd.drawing) {
                 ssglWriteText(str, th, mm2, u, v, NULL, NULL);
             } else {

@@ -334,7 +334,6 @@ void ssglLineWidth(GLfloat width);
 void ssglVertex3v(Vector u);
 void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
 void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
-#define DEFAULT_TEXT_HEIGHT (11.5)
 #ifdef WIN32
 #   define SSGL_CALLBACK __stdcall
 #else

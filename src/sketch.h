@@ -808,6 +808,7 @@ public:
     static float Width(int hs);
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);
+    static double DefaultTextHeight();
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
     static int PatternType(hStyle hs);

@@ -89,7 +89,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     if(type == COMMENT) {
         th = Style::TextHeight(disp.style);
     } else {
-        th = DEFAULT_TEXT_HEIGHT;
+        th = Style::DefaultTextHeight();
     }
 
     std::string s = Label();
@@ -164,8 +164,8 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
 
     double pixels = 1.0 / SS.GW.scale;
     std::string s = Label();
-    double swidth  = ssglStrWidth(s, DEFAULT_TEXT_HEIGHT) + 4*pixels,
-           sheight = ssglStrHeight(DEFAULT_TEXT_HEIGHT) + 8*pixels;
+    double swidth  = ssglStrWidth(s, Style::DefaultTextHeight()) + 4*pixels,
+           sheight = ssglStrHeight(Style::DefaultTextHeight()) + 8*pixels;
 
     struct {
         Vector n;
@@ -369,8 +369,8 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // complex and this looks pretty good.
         double tl = atan2(rm.Dot(gu), rm.Dot(gr));
         double adj = EllipticalInterpolation(
-            ssglStrWidth(Label(), DEFAULT_TEXT_HEIGHT)/2,
-            ssglStrHeight(DEFAULT_TEXT_HEIGHT)/2,
+            ssglStrWidth(Label(), Style::DefaultTextHeight())/2,
+            ssglStrHeight(Style::DefaultTextHeight())/2,
             tl);
         *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
     } else {
@@ -379,8 +379,8 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
         gu = gu.WithMagnitude(1);
         Vector trans =
-            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrHeight(DEFAULT_TEXT_HEIGHT)));
-        ssglWriteTextRefCenter("angle between skew lines", DEFAULT_TEXT_HEIGHT,
+            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrHeight(Style::DefaultTextHeight())));
+        ssglWriteTextRefCenter("angle between skew lines", Style::DefaultTextHeight(),
             trans, gr, gu, LineCallback, this);
     }
 }
@@ -490,7 +490,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             if(!pt.Equals(closest)) {
                 DoLineWithArrows(ref, pt, closest, true);
-                
+
                 // Extensions to line
                 double pixels = 1.0 / SS.GW.scale;
                 Vector refClosest = ref.ClosestPointOnLine(lA, dl);
@@ -824,7 +824,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             if(dogd.drawing) {
-                ssglWriteTextRefCenter("T", DEFAULT_TEXT_HEIGHT,
+                ssglWriteTextRefCenter("T", Style::DefaultTextHeight(),
                     textAt, u, v, LineCallback, this);
             } else {
                 dogd.refp = textAt;
@@ -1008,7 +1008,7 @@ s:
                                     (type == VERTICAL)    ? "V" : (
                                     (type == AT_MIDPOINT) ? "M" : NULL));
 
-                    ssglWriteTextRefCenter(s, DEFAULT_TEXT_HEIGHT,
+                    ssglWriteTextRefCenter(s, Style::DefaultTextHeight(),
                         m.Plus(offset), r, u, LineCallback, this);
                 } else {
                     dogd.refp = m.Plus(offset);

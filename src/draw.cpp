@@ -809,7 +809,7 @@ nogrid:;
         ssglColorRGB(Style::Color(Style::DATUM));
 
         ssglWriteText("previewing exported geometry; press Esc to return",
-            DEFAULT_TEXT_HEIGHT,
+            Style::DefaultTextHeight(),
             p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)),
             u, v, NULL, NULL);
 
@@ -823,9 +823,9 @@ nogrid:;
             glEnd();
 
             ssglWriteText("(x, y) = (0, 0) for file just exported",
-                DEFAULT_TEXT_HEIGHT,
+                Style::DefaultTextHeight(),
                 p.Plus(u.ScaledBy(40/scale)).Plus(
-                       v.ScaledBy(-(DEFAULT_TEXT_HEIGHT)/scale)),
+                       v.ScaledBy(-(Style::DefaultTextHeight())/scale)),
                 u, v, NULL, NULL);
         }
     }

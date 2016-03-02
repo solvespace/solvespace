@@ -8,6 +8,8 @@
 #include "solvespace.h"
 #include <png.h>
 
+#define DEFAULT_TEXT_HEIGHT 11.5
+
 const Style::Default Style::Defaults[] = {
     { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, },
     { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, },
@@ -66,7 +68,7 @@ void Style::CreateDefaultStyle(hStyle h) {
 
     Style ns = {};
     FillDefaultStyle(&ns, d);
-    ns.h            = h;
+    ns.h = h;
     if(isDefaultStyle) {
         ns.name = CnfPrefixToName(d->cnfPrefix);
     } else {
@@ -278,11 +280,14 @@ double Style::TextHeight(hStyle hs) {
     Style *s = Get(hs);
     if(s->textHeightAs == UNITS_AS_MM) {
         return s->textHeight * SS.GW.scale;
-    } else if(s->textHeightAs == UNITS_AS_PIXELS) {
+    } else /* s->textHeightAs == UNITS_AS_PIXELS */ {
         return s->textHeight;
-    } else {
-        return DEFAULT_TEXT_HEIGHT;
     }
+}
+
+double Style::DefaultTextHeight() {
+    hStyle hs { Style::CONSTRAINT };
+    return TextHeight(hs);
 }
 
 //-----------------------------------------------------------------------------

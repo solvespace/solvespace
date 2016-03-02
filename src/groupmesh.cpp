@@ -505,7 +505,7 @@ void Group::Draw(void) {
             glEnd();
             ssglColorRGB(Style::Color(Style::DRAW_ERROR));
             ssglWriteText("not closed contour, or not all same style!",
-                DEFAULT_TEXT_HEIGHT,
+                Style::DefaultTextHeight(),
                 polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
@@ -526,7 +526,7 @@ void Group::Draw(void) {
             } else {
                 msg = "zero-length edge!";
             }
-            ssglWriteText(msg, DEFAULT_TEXT_HEIGHT,
+            ssglWriteText(msg, Style::DefaultTextHeight(),
                 polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
