@@ -343,19 +343,6 @@ public:
         }
     }
 
-    void writeBezierAsPwl(SBezier &sb) {
-        List<Vector> lv = {};
-        sb.MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
-        DRW_LWPolyline polyline;
-        assignEntityDefaults(&polyline, sb);
-        for(int i = 0; i < lv.n; i++) {
-            DRW_Vertex2D *vertex = new DRW_Vertex2D();
-            vertex->x = lv.elem[i].x;
-            vertex->y = lv.elem[i].y;
-            polyline.vertlist.push_back(vertex);
-        }
-    }
-
     void writeAlignedDimension(Vector def1, Vector def2, Vector dimp,
                                Vector textp, const std::string &text) {
         DRW_DimAligned dim;
