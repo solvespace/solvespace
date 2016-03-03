@@ -17,6 +17,7 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <vector>
 #include <map>

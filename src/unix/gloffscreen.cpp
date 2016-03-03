@@ -27,6 +27,8 @@ GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL), _width(0), _heigh
 }
 
 GLOffscreen::~GLOffscreen() {
+    delete[] _pixels;
+    delete[] _pixels_inv;
     glDeleteRenderbuffersEXT(1, &_depth_renderbuffer);
     glDeleteRenderbuffersEXT(1, &_color_renderbuffer);
     glDeleteFramebuffersEXT(1, &_framebuffer);

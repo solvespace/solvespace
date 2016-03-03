@@ -7,6 +7,9 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#ifndef WIN32
+#include <unix/gloffscreen.h>
+#endif
 #include <png.h>
 
 void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
@@ -1048,6 +1051,10 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     // so repaint the scene. And hide the toolbar too.
     bool prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
+#ifndef WIN32
+    std::unique_ptr<GLOffscreen> gloffscreen(new GLOffscreen);
+    gloffscreen->begin(w, h);
+#endif
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
 
