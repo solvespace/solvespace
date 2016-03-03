@@ -51,6 +51,67 @@ public:
         dxf->writeLayer(&layer);
     }
 
+    const char *lineTypeName(int stippleType) {
+        switch(stippleType) {
+            case Style::STIPPLE_CONTINUOUS:   return "CONTINUOUS";
+            case Style::STIPPLE_DASH:         return "DASHED";
+            case Style::STIPPLE_LONG_DASH:    return "DASHEDX2";
+            case Style::STIPPLE_DASH_DOT:     return "DASHDOT";
+            case Style::STIPPLE_DASH_DOT_DOT: return "DIVIDE";
+            case Style::STIPPLE_DOT:          return "DOT";
+            case Style::STIPPLE_FREEHAND:     return "CONTINUOUS";
+            case Style::STIPPLE_ZIGZAG:       return "CONTINUOUS";
+        }
+
+        return "CONTINUOUS";
+    }
+
+    virtual void writeLTypes() {
+        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+            DRW_LType type;
+            // LibreCAD requires the line type to have one of these exact names,
+            // or otherwise it overwrites it with its own (continuous) style.
+            type.name = lineTypeName(i);
+            double sw = 1.0;
+            switch(i) {
+                case Style::STIPPLE_CONTINUOUS:
+                    break;
+
+                case Style::STIPPLE_DASH:
+                    type.path.push_back(sw);
+                    type.path.push_back(-sw);
+                    break;
+
+                case Style::STIPPLE_LONG_DASH:
+                    type.path.push_back(sw * 2.0);
+                    type.path.push_back(-sw);
+                    break;
+
+                case Style::STIPPLE_DASH_DOT:
+                    type.path.push_back(sw);
+                    type.path.push_back(-sw);
+                    type.path.push_back(0.0);
+                    type.path.push_back(-sw);
+                    break;
+
+                case Style::STIPPLE_DOT:
+                    type.path.push_back(sw);
+                    type.path.push_back(0.0);
+                    break;
+
+                case Style::STIPPLE_DASH_DOT_DOT:
+                    type.path.push_back(sw);
+                    type.path.push_back(-sw);
+                    type.path.push_back(0.0);
+                    type.path.push_back(-sw);
+                    type.path.push_back(0.0);
+                    type.path.push_back(-sw);
+                    break;
+            }
+            dxf->writeLineType(&type);
+        }
+    }
+
     virtual void writeEntities() {
         for(DxfFileWriter::BezierPath &path : writer->paths) {
             currentColor = path.color;
@@ -165,9 +226,14 @@ public:
         }
     }
 
-    void assignEntityDefaults(DRW_Entity *entity) {
+    void assignEntityDefaults(DRW_Entity *entity, const SBezier &sb) {
+        hStyle hs = { (uint32_t)sb.auxA };
+        Style *s = Style::Get(hs);
         entity->color24 = currentColor;
         entity->layer = "entities";
+        entity->lineType = lineTypeName(s->stippleType);
+        entity->ltypeScale = Style::StippleScaleMm(s->h);
+
         if(currentWidth > 0.0) entity->setWidthMm(currentWidth);
     }
 
@@ -175,17 +241,17 @@ public:
         dimension->layer = "dimensions";
     }
 
-    void writeLine(const Vector &p0, const Vector &p1) {
+    void writeLine(const Vector &p0, const Vector &p1, const SBezier &sb) {
         DRW_Line line;
-        assignEntityDefaults(&line);
+        assignEntityDefaults(&line, sb);
         line.basePoint = toCoord(p0);
         line.secPoint = toCoord(p1);
         dxf->writeLine(&line);
     }
 
-    void writeArc(const Vector &c, double r, double sa, double ea) {
+    void writeArc(const Vector &c, double r, double sa, double ea, const SBezier &sb) {
         DRW_Arc arc;
-        assignEntityDefaults(&arc);
+        assignEntityDefaults(&arc, sb);
         arc.radious = r;
         arc.basePoint = toCoord(c);
         arc.staangle = sa;
@@ -197,6 +263,7 @@ public:
         List<Vector> lv = {};
         sb->MakePwlInto(&lv, SS.ExportChordTolMm());
         DRW_LWPolyline polyline;
+        assignEntityDefaults(&polyline, *sb);
         for(int i = 0; i < lv.n; i++) {
             Vector *v = &lv.elem[i];
             DRW_Vertex2D *vertex = new DRW_Vertex2D();
@@ -236,7 +303,7 @@ public:
     void writeSpline(SBezier *sb) {
         bool isRational = sb->IsRational();
         DRW_Spline spline;
-        assignEntityDefaults(&spline);
+        assignEntityDefaults(&spline, *sb);
         spline.flags = (isRational) ? 0x04 : 0x08;
         spline.degree = sb->deg;
         spline.ncontrol = sb->deg + 1;
@@ -255,7 +322,7 @@ public:
 
         if(sb->deg == 1) {
             // Line
-            writeLine(sb->ctrl[0], sb->ctrl[1]);
+            writeLine(sb->ctrl[0], sb->ctrl[1], *sb);
         } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
             // Circle perpendicular to camera
             double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x);
@@ -263,7 +330,7 @@ public:
             double dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2.0 * PI);
             if(dtheta < 0.0) swap(theta0, theta1);
 
-            writeArc(c, r, theta0, theta1);
+            writeArc(c, r, theta0, theta1, *sb);
         } else if(sb->IsRational()) {
             // Rational bezier
             // We'd like to export rational beziers exactly, but the resulting DXF
@@ -280,7 +347,7 @@ public:
         List<Vector> lv = {};
         sb.MakePwlInto(&lv, SS.ChordTolMm() / SS.exportScale);
         DRW_LWPolyline polyline;
-        assignEntityDefaults(&polyline);
+        assignEntityDefaults(&polyline, sb);
         for(int i = 0; i < lv.n; i++) {
             DRW_Vertex2D *vertex = new DRW_Vertex2D();
             vertex->x = lv.elem[i].x;
