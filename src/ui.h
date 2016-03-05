@@ -487,6 +487,14 @@ public:
         Vector  marqueePoint;
         bool    startedMoving;
     }       orig;
+    // We need to detect when the projection is changed to invalidate
+    // caches for drawn items.
+    struct {
+        Vector  offset;
+        Vector  projRight;
+        Vector  projUp;
+        double  scale;
+    }       cached;
 
     // Most recent mouse position, updated every time the mouse moves.
     Point2d currentMousePosition;

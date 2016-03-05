@@ -318,6 +318,20 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     double d, dmin = 1e12;
     Selection s = {};
 
+    // Did the view projection change? If so, invalidate bounding boxes.
+    if(!offset.EqualsExactly(cached.offset) ||
+           !projRight.EqualsExactly(cached.projRight) ||
+           !projUp.EqualsExactly(cached.projUp) ||
+           EXACT(scale != cached.scale)) {
+        cached.offset = offset;
+        cached.projRight = projRight;
+        cached.projUp = projUp;
+        cached.scale = scale;
+        for(Entity *e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
+            e->screenBBoxValid = false;
+        }
+    }
+
     // Always do the entities; we might be dragging something that should
     // be auto-constrained, and we need the hover for that.
     for(i = 0; i < SK.entity.n; i++) {

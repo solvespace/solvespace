@@ -455,7 +455,8 @@ public:
     // POD members with indeterminate value.
     Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
         actDistance(), actVisible(), style(), construction(),
-        dogd(), beziers(), edges(), edgesChordTol() {};
+        dogd(), beziers(), edges(), edgesChordTol(), screenBBox(),
+        screenBBoxValid() {};
 
     // An imported entity that was hidden in the source file ends up hidden
     // here too.
@@ -476,6 +477,8 @@ public:
     SBezierList beziers;
     SEdgeList   edges;
     double      edgesChordTol;
+    BBox        screenBBox;
+    bool        screenBBoxValid;
 
     // Routines to draw and hit-test the representation of the entity
     // on-screen.
@@ -509,7 +512,7 @@ public:
 
     SBezierList *GetOrGenerateBezierCurves();
     SEdgeList *GetOrGenerateEdges();
-    BBox GetScreenBBox(bool *hasBBox);
+    BBox GetOrGenerateScreenBBox(bool *hasBBox);
 
     void Clear() {
         beziers.l.Clear();
