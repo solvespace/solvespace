@@ -383,7 +383,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
 
     if(!s.Equals(&hover)) {
         hover = s;
-        InvalidateGraphics();
+        PaintGraphics();
     }
 }
 

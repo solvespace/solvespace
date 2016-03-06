@@ -238,7 +238,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             // a point, mouse down (thus selecting it), and drag, in an
             // effort to drag the point, but instead hover a different
             // entity before we move far enough to start the drag.
-            if(!leftDown) HitTestMakeSelection(mp);
+            if(!leftDown) {
+                // Hit testing can potentially take a lot of time.
+                // If we haven't painted since last time we highlighted
+                // something, don't hit test again, since this just causes
+                // a lag.
+                if(!havePainted) return;
+                HitTestMakeSelection(mp);
+            }
         }
         return;
     }
@@ -261,6 +268,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
         return;
     }
+
+    havePainted = false;
     switch(pending.operation) {
         case DRAGGING_CONSTRAINT: {
             Constraint *c = SK.constraint.FindById(pending.constraint);
@@ -449,7 +458,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     {
         SS.GenerateAll();
     }
-    havePainted = false;
 }
 
 void GraphicsWindow::ClearPending(void) {
