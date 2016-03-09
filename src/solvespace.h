@@ -345,7 +345,7 @@ void ssglFillPolygon(SPolygon *p);
 void ssglFillMesh(bool useSpecColor, RgbaColor color,
     SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
 void ssglDebugPolygon(SPolygon *p);
-void ssglDrawEdges(SEdgeList *l, bool endpointsToo);
+void ssglDrawEdges(SEdgeList *l, bool endpointsToo, hStyle hs);
 void ssglDebugMesh(SMesh *m);
 void ssglMarkPolygonNormal(SPolygon *p);
 typedef void ssglLineFn(void *data, Vector a, Vector b);

@@ -562,15 +562,19 @@ void ssglDebugPolygon(SPolygon *p)
     }
 }
 
-void ssglDrawEdges(SEdgeList *el, bool endpointsToo)
+void ssglDrawEdges(SEdgeList *el, bool endpointsToo, hStyle hs)
 {
+    double lineWidth = Style::Width(hs);
+    int stippleType = Style::PatternType(hs);
+    double stippleScale = Style::StippleScaleMm(hs);
+    ssglLineWidth(float(lineWidth));
+    ssglColorRGB(Style::Color(hs));
+
     SEdge *se;
-    glBegin(GL_LINES);
     for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
-        ssglVertex3v(se->a);
-        ssglVertex3v(se->b);
+        ssglStippledLine(se->a, se->b, lineWidth, stippleType, stippleScale,
+                         /*maybeFat=*/true);
     }
-    glEnd();
 
     if(endpointsToo) {
         glPointSize(12);

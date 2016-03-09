@@ -24,6 +24,7 @@ const Style::Default Style::Defaults[] = {
     { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, 0 },
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
+    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 2.0, 1 },
     { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
 };
 
@@ -94,7 +95,8 @@ void Style::FillDefaultStyle(Style *s, const Default *d) {
     s->exportable    = true;
     s->filled        = false;
     s->fillColor     = RGBf(0.3, 0.3, 0.3);
-    s->stippleType   = Style::STIPPLE_CONTINUOUS;
+    s->stippleType   = (d->h.v == Style::HIDDEN_EDGE) ? Style::STIPPLE_DASH
+                                                      : Style::STIPPLE_CONTINUOUS;
     s->stippleScale  = 15.0;
     s->zIndex        = d->zIndex;
 }
@@ -828,43 +830,41 @@ void TextWindow::ShowStyleInfo(void) {
             SS.UnitName());
     }
 
-    if(s->h.v >= Style::FIRST_CUSTOM) {
-        Printf(false,"%Ba   %Ftstipple type:%E");
+    Printf(false,"%Ba   %Ftstipple type:%E");
 
-        const size_t patternCount = Style::LAST_STIPPLE + 1;
-        const char *patternsSource[patternCount] = {
-            "___________",
-            "- - - - - -",
-            "__ __ __ __",
-            "-.-.-.-.-.-",
-            "..-..-..-..",
-            "...........",
-            "~~~~~~~~~~~",
-            "__~__~__~__"
-        };
-        std::string patterns[patternCount];
+    const size_t patternCount = Style::LAST_STIPPLE + 1;
+    const char *patternsSource[patternCount] = {
+        "___________",
+        "- - - - - -",
+        "__ __ __ __",
+        "-.-.-.-.-.-",
+        "..-..-..-..",
+        "...........",
+        "~~~~~~~~~~~",
+        "__~__~__~__"
+    };
+    std::string patterns[patternCount];
 
-        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
-            const char *str = patternsSource[i];
-            do {
-                switch(*str) {
-                    case ' ': patterns[i] += " "; break;
-                    case '.': patterns[i] += "\xEE\x80\x84"; break;
-                    case '_': patterns[i] += "\xEE\x80\x85"; break;
-                    case '-': patterns[i] += "\xEE\x80\x86"; break;
-                    case '~': patterns[i] += "\xEE\x80\x87"; break;
-                    default: oops();
-                }
-            } while(*(++str));
-        }
+    for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+        const char *str = patternsSource[i];
+        do {
+            switch(*str) {
+                case ' ': patterns[i] += " "; break;
+                case '.': patterns[i] += "\xEE\x80\x84"; break;
+                case '_': patterns[i] += "\xEE\x80\x85"; break;
+                case '-': patterns[i] += "\xEE\x80\x86"; break;
+                case '~': patterns[i] += "\xEE\x80\x87"; break;
+                default: oops();
+            }
+        } while(*(++str));
+    }
 
-        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
-            const char *radio = s->stippleType == i ? RADIO_TRUE : RADIO_FALSE;
-            Printf(false, "%Bp     %D%f%Lp%s %s%E",
-                (i % 2 == 0) ? 'd' : 'a',
-                s->h.v, &ScreenChangeStylePatternType,
-                i + 1, radio, patterns[i].c_str());
-        }
+    for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+        const char *radio = s->stippleType == i ? RADIO_TRUE : RADIO_FALSE;
+        Printf(false, "%Bp     %D%f%Lp%s %s%E",
+            (i % 2 == 0) ? 'd' : 'a',
+            s->h.v, &ScreenChangeStylePatternType,
+            i + 1, radio, patterns[i].c_str());
     }
 
     if(s->h.v >= Style::FIRST_CUSTOM) {

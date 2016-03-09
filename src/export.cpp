@@ -122,7 +122,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
     GenerateAll(GENERATE_ALL);
 
     SMesh *sm = NULL;
-    if(SS.GW.showShaded) {
+    if(SS.GW.showShaded || SS.GW.showHdnLines) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
@@ -136,8 +136,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
         if(!e->IsVisible()) continue;
         if(e->construction) continue;
 
-        if(SS.exportPwlCurves || (sm && !SS.GW.showHdnLines) ||
-                                 fabs(SS.exportOffset) > LENGTH_EPS)
+        if(SS.exportPwlCurves || sm || fabs(SS.exportOffset) > LENGTH_EPS)
         {
             // We will be doing hidden line removal, which we can't do on
             // exact curves; so we need things broken down to pwls. Same
@@ -322,7 +321,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // And now we perform hidden line removal if requested
     SEdgeList hlrd = {};
-    if(sm && !SS.GW.showHdnLines) {
+    if(sm) {
         SKdNode *root = SKdNode::From(&smp);
 
         // Generate the edges where a curved surface turns from front-facing
@@ -344,19 +343,19 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                 continue;
             }
 
-            SEdgeList out = {};
+            SEdgeList edges = {};
             // Split the original edge against the mesh
-            out.AddEdge(se->a, se->b, se->auxA);
-            root->OcclusionTestLine(*se, &out, cnt);
+            edges.AddEdge(se->a, se->b, se->auxA);
+            root->OcclusionTestLine(*se, &edges, cnt, /*removeHidden=*/!SS.GW.showHdnLines);
             // the occlusion test splits unnecessarily; so fix those
-            out.MergeCollinearSegments(se->a, se->b);
+            edges.MergeCollinearSegments(se->a, se->b);
             cnt++;
             // And add the results to our output
             SEdge *sen;
-            for(sen = out.l.First(); sen; sen = out.l.NextAfter(sen)) {
+            for(sen = edges.l.First(); sen; sen = edges.l.NextAfter(sen)) {
                 hlrd.AddEdge(sen->a, sen->b, sen->auxA);
             }
-            out.Clear();
+            edges.Clear();
         }
 
         sel = &hlrd;
@@ -514,6 +513,12 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                              &leftovers);
     for(b = leftovers.l.First(); b; b = leftovers.l.NextAfter(b)) {
         sblss.AddOpenPath(b);
+    }
+
+    // We need the mesh for occlusion testing, but if we don't export it,
+    // erase it now.
+    if(!SS.GW.showShaded) {
+        sms.Clear();
     }
 
     // Now write the lines and triangles to the output file

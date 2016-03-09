@@ -40,10 +40,9 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat, int data) 
     dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
-void Entity::DrawAll(void) {
-    // This handles points and line segments as a special case, because I
-    // seem to be able to get a huge speedup that way, by consolidating
-    // stuff to gl.
+void Entity::DrawAll(bool drawAsHidden) {
+    // This handles points as a special case, because I seem to be able
+    // to get a huge speedup that way, by consolidating stuff to gl.
     int i;
     if(SS.GW.showPoints) {
         double s = 3.5/SS.GW.scale;
@@ -98,19 +97,23 @@ void Entity::DrawAll(void) {
 
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
-        if(e->IsPoint())
-        {
+        if(e->IsPoint()) {
             continue; // already handled
         }
-        e->Draw();
+        e->Draw(drawAsHidden);
     }
 }
 
-void Entity::Draw(void) {
+void Entity::Draw(bool drawAsHidden) {
     hStyle hs = Style::ForEntity(h);
     dogd.lineWidth = Style::Width(hs);
-    dogd.stippleType = Style::PatternType(hs);
-    dogd.stippleScale = Style::StippleScaleMm(hs);
+    if(drawAsHidden) {
+        dogd.stippleType = Style::PatternType({ Style::HIDDEN_EDGE });
+        dogd.stippleScale = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
+    } else {
+        dogd.stippleType = Style::PatternType(hs);
+        dogd.stippleScale = Style::StippleScaleMm(hs);
+    }
     ssglLineWidth((float)dogd.lineWidth);
     ssglColorRGB(Style::Color(hs));
 

@@ -653,7 +653,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
 // them for occlusion. Keep only the visible segments. sel is both our input
 // and our output.
 //-----------------------------------------------------------------------------
-void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
+void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) {
     SEdgeList seln = {};
 
     Vector tn = tr->Normal().WithMagnitude(1);
@@ -754,8 +754,11 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
                     if(n[i].Dot(pt) - d[i] > LENGTH_EPS) se->tag = 0;
                 }
             }
+            if(!removeHidden && se->tag == 1)
+                se->auxA = Style::HIDDEN_EDGE;
         }
-        sel->l.RemoveTagged();
+        if(removeHidden)
+            sel->l.RemoveTagged();
     }
 }
 
@@ -763,7 +766,7 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) {
 // Given an edge orig, occlusion test it against our mesh. We output an edge
 // list in sel, containing the visible portions of that edge.
 //-----------------------------------------------------------------------------
-void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
+void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) {
     if(gt && lt) {
         double ac = (orig.a).Element(which),
                bc = (orig.b).Element(which);
@@ -773,13 +776,13 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
            bc < c + KDTREE_EPS ||
            which == 2)
         {
-            lt->OcclusionTestLine(orig, sel, cnt);
+            lt->OcclusionTestLine(orig, sel, cnt, removeHidden);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS ||
            which == 2)
         {
-            gt->OcclusionTestLine(orig, sel, cnt);
+            gt->OcclusionTestLine(orig, sel, cnt, removeHidden);
         }
     } else {
         STriangleLl *ll;
@@ -788,7 +791,7 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
 
             if(tr->tag == cnt) continue;
 
-            SplitLinesAgainstTriangle(sel, tr);
+            SplitLinesAgainstTriangle(sel, tr, removeHidden);
             tr->tag = cnt;
         }
     }

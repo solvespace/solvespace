@@ -505,8 +505,8 @@ public:
     void GenerateBezierCurves(SBezierList *sbl);
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 
-    static void DrawAll(void);
-    void Draw(void);
+    static void DrawAll(bool drawAsHidden);
+    void Draw(bool drawAsHidden);
     double GetDistance(Point2d mp);
     Vector GetReferencePos(void);
 
@@ -767,6 +767,7 @@ public:
         ANALYZE        = 11,
         DRAW_ERROR     = 12,
         DIM_SOLID      = 13,
+        HIDDEN_EDGE    = 14,
 
         FIRST_CUSTOM   = 0x100
     };

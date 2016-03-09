@@ -34,7 +34,7 @@ void GraphicsWindow::Selection::Draw(void) {
     Vector refp = Vector::From(0, 0, 0);
     if(entity.v) {
         Entity *e = SK.GetEntity(entity);
-        e->Draw();
+        e->Draw(/*drawAsHidden=*/false);
         if(emphasized) refp = e->GetReferencePos();
     }
     if(constraint.v) {
@@ -686,9 +686,15 @@ nogrid:;
     // Draw the active group; this does stuff like the mesh and edges.
     (SK.GetGroup(activeGroup))->Draw();
 
-    // Now draw the entities
-    if(showHdnLines) glDisable(GL_DEPTH_TEST);
-    Entity::DrawAll();
+    // Now draw the entities.
+    if(SS.GW.showHdnLines) {
+        ssglDepthRangeOffset(2);
+        glDepthFunc(GL_GREATER);
+        Entity::DrawAll(/*drawAsHidden=*/true);
+        glDepthFunc(GL_LEQUAL);
+    }
+    ssglDepthRangeOffset(0);
+    Entity::DrawAll(/*drawAsHidden=*/false);
 
     // Draw filled paths in all groups, when those filled paths were requested
     // specially by assigning a style with a fill color, or when the filled
@@ -737,9 +743,7 @@ nogrid:;
     glEnd();
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
-    ssglLineWidth(Style::Width(Style::DRAW_ERROR));
-    ssglColorRGB(Style::Color(Style::DRAW_ERROR));
-    ssglDrawEdges(&(SS.nakedEdges), true);
+    ssglDrawEdges(&(SS.nakedEdges), true, { Style::DRAW_ERROR });
 
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST);

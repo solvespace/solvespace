@@ -476,7 +476,7 @@ void Group::DrawDisplayItems(int t) {
     if(gs.faces > 0) ms1 = gs.face[0].v;
     if(gs.faces > 1) ms2 = gs.face[1].v;
 
-    if(SS.GW.showShaded) {
+    if(SS.GW.showShaded || SS.GW.showHdnLines) {
         if(SS.drawBackFaces && !displayMesh.isTransparent) {
             // For debugging, draw the backs of the triangles in red, so that we
             // notice when a shell is open
@@ -485,16 +485,26 @@ void Group::DrawDisplayItems(int t) {
             glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
         }
 
+        // Draw the shaded solid into the depth buffer for hidden line removal,
+        // and if we're actually going to display it, to the color buffer too.
         glEnable(GL_LIGHTING);
+        if(!SS.GW.showShaded) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
         ssglFillMesh(useSpecColor, specColor, &displayMesh, mh, ms1, ms2);
+        if(!SS.GW.showShaded) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
         glDisable(GL_LIGHTING);
     }
 
     if(SS.GW.showEdges) {
+        glDepthMask(GL_FALSE);
+        if(SS.GW.showHdnLines) {
+            ssglDepthRangeOffset(0);
+            glDepthFunc(GL_GREATER);
+            ssglDrawEdges(&displayEdges, false, { Style::HIDDEN_EDGE });
+            glDepthFunc(GL_LEQUAL);
+        }
         ssglDepthRangeOffset(2);
-        ssglColorRGB(Style::Color(Style::SOLID_EDGE));
-        ssglLineWidth(Style::Width(Style::SOLID_EDGE));
-        ssglDrawEdges(&displayEdges, false);
+        ssglDrawEdges(&displayEdges, false, { Style::SOLID_EDGE });
+        glDepthMask(GL_TRUE);
     }
 
     if(SS.GW.showMesh) ssglDebugMesh(&displayMesh);

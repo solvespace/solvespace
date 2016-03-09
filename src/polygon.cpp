@@ -453,7 +453,7 @@ void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
         SEdge *prev = &(l.elem[i-1]),
               *now  = &(l.elem[i]);
 
-        if((prev->b).Equals(now->a)) {
+        if((prev->b).Equals(now->a) && prev->auxA == now->auxA) {
             // The previous segment joins up to us; so merge it into us.
             prev->tag = 1;
             now->a = prev->a;

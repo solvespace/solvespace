@@ -306,8 +306,8 @@ public:
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
                                                 bool *inter, bool *leaky);
 
-    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt);
-    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr);
+    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden);
+    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden);
 
     void SnapToMesh(SMesh *m);
     void SnapToVertex(Vector v, SMesh *extras);
