@@ -362,6 +362,126 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         sel = &hlrd;
     }
 
+    // Clean up: remove overlapping line segments and
+    // segments with zero-length projections.
+    sel->l.ClearTags();
+    for(int i = 0; i < sel->l.n; ++i) {
+        SEdge *sei = &sel->l.elem[i];
+        hStyle hsi = { (uint32_t)sei->auxA };
+        Style *si = Style::Get(hsi);
+        if(sei->tag != 0) continue;
+
+        // Remove segments with zero length projections.
+        Vector ai = sei->a;
+        ai.z = 0.0;
+        Vector bi = sei->b;
+        bi.z = 0.0;
+        Vector di = bi.Minus(ai);
+        if(fabs(di.x) < LENGTH_EPS && fabs(di.y) < LENGTH_EPS) {
+            sei->tag = 1;
+            continue;
+        }
+
+        for(int j = i + 1; j < sel->l.n; ++j) {
+            SEdge *sej = &sel->l.elem[j];
+            if(sej->tag != 0) continue;
+
+            Vector *pAj = &sej->a;
+            Vector *pBj = &sej->b;
+
+            // Remove segments with zero length projections.
+            Vector aj = sej->a;
+            aj.z = 0.0;
+            Vector bj = sej->b;
+            bj.z = 0.0;
+            Vector dj = bj.Minus(aj);
+            if(fabs(dj.x) < LENGTH_EPS && fabs(dj.y) < LENGTH_EPS) {
+                sej->tag = 1;
+                continue;
+            }
+
+            // Skip non-collinear segments.
+            const double eps = 1e-6;
+            if(aj.DistanceToLine(ai, di) > eps) continue;
+            if(bj.DistanceToLine(ai, di) > eps) continue;
+
+            double ta = aj.Minus(ai).Dot(di) / di.Dot(di);
+            double tb = bj.Minus(ai).Dot(di) / di.Dot(di);
+            if(ta > tb) {
+                std::swap(pAj, pBj);
+                std::swap(ta, tb);
+            }
+
+            hStyle hsj = { (uint32_t)sej->auxA };
+            Style *sj = Style::Get(hsj);
+
+            bool canRemoveI = sej->auxA == sei->auxA || si->zIndex < sj->zIndex;
+            bool canRemoveJ = sej->auxA == sei->auxA || sj->zIndex < si->zIndex;
+
+            if(canRemoveJ) {
+                // j-segment inside i-segment
+                if(ta > 0.0 - eps && tb < 1.0 + eps) {
+                    sej->tag = 1;
+                    continue;
+                }
+
+                // cut segment
+                bool aInside = ta > 0.0 - eps && ta < 1.0 + eps;
+                if(tb > 1.0 - eps && aInside) {
+                    *pAj = sei->b;
+                    continue;
+                }
+
+                // cut segment
+                bool bInside = tb > 0.0 - eps && tb < 1.0 + eps;
+                if(ta < 0.0 - eps && bInside) {
+                    *pBj = sei->a;
+                    continue;
+                }
+
+                // split segment
+                if(ta < 0.0 - eps && tb > 1.0 + eps) {
+                    sel->AddEdge(sei->b, *pBj, sej->auxA, sej->auxB);
+                    *pBj = sei->a;
+                    continue;
+                }
+            }
+
+            if(canRemoveI) {
+                // j-segment inside i-segment
+                if(ta < 0.0 + eps && tb > 1.0 - eps) {
+                    sei->tag = 1;
+                    break;
+                }
+
+                // cut segment
+                bool aInside = ta > 0.0 + eps && ta < 1.0 - eps;
+                if(tb > 1.0 - eps && aInside) {
+                    sei->b = *pAj;
+                    i--;
+                    break;
+                }
+
+                // cut segment
+                bool bInside = tb > 0.0 + eps && tb < 1.0 - eps;
+                if(ta < 0.0 + eps && bInside) {
+                    sei->a = *pBj;
+                    i--;
+                    break;
+                }
+
+                // split segment
+                if(ta > 0.0 + eps && tb < 1.0 - eps) {
+                    sel->AddEdge(*pBj, sei->b, sei->auxA, sei->auxB);
+                    sei->b = *pAj;
+                    i--;
+                    break;
+                }
+            }
+        }
+    }
+    sel->l.RemoveTagged();
+
     // We kept the line segments and Beziers separate until now; but put them
     // all together, and also project everything into the xy plane, since not
     // all export targets ignore the z component of the points.

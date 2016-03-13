@@ -11,20 +11,20 @@
 #define DEFAULT_TEXT_HEIGHT 11.5
 
 const Style::Default Style::Defaults[] = {
-    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, },
-    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, },
-    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, },
-    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, },
-    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, },
-    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, },
-    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, },
-    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, },
-    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, },
-    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, },
-    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, },
-    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, },
-    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, },
-    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0 }
+    { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4 },
+    { { CONSTRUCTION }, "Construction", RGBf(0.1, 0.7, 0.1), 1.5, 0 },
+    { { INACTIVE_GRP }, "InactiveGrp",  RGBf(0.5, 0.3, 0.0), 1.5, 3 },
+    { { DATUM },        "Datum",        RGBf(0.0, 0.8, 0.0), 1.5, 0 },
+    { { SOLID_EDGE },   "SolidEdge",    RGBf(0.8, 0.8, 0.8), 1.0, 2 },
+    { { CONSTRAINT },   "Constraint",   RGBf(1.0, 0.1, 1.0), 1.0, 0 },
+    { { SELECTED },     "Selected",     RGBf(1.0, 0.0, 0.0), 1.5, 0 },
+    { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0 },
+    { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0 },
+    { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0 },
+    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, 0 },
+    { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
+    { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
+    { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
 };
 
 std::string Style::CnfColor(const std::string &prefix) {
@@ -96,6 +96,7 @@ void Style::FillDefaultStyle(Style *s, const Default *d) {
     s->fillColor     = RGBf(0.3, 0.3, 0.3);
     s->stippleType   = Style::STIPPLE_CONTINUOUS;
     s->stippleScale  = 15.0;
+    s->zIndex        = d->zIndex;
 }
 
 void Style::LoadFactoryDefaults(void) {
@@ -117,6 +118,7 @@ void Style::LoadFactoryDefaults(void) {
         s->stippleType   = Style::STIPPLE_CONTINUOUS;
         s->stippleScale  = 15.0;
         s->name          = CnfPrefixToName(d->cnfPrefix);
+        s->zIndex        = d->zIndex;
     }
     SS.backgroundColor = RGBi(0, 0, 0);
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
@@ -781,7 +783,6 @@ void TextWindow::ShowStyleInfo(void) {
             s->h.v, &ScreenChangeStyleName,
             s->h.v, &ScreenDeleteStyle);
     }
-
     Printf(true, "%Ft line stroke style%E");
     Printf(false, "%Ba   %Ftcolor %E%Bz  %Ba (%@, %@, %@) %D%f%Ls%Fl[change]%E",
         &s->color,

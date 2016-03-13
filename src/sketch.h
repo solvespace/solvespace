@@ -796,6 +796,7 @@ public:
     bool        exportable;
     int         stippleType;
     double      stippleScale;
+    int         zIndex;
 
     // The default styles, for entities that don't have a style assigned yet,
     // and for datums and such.
@@ -804,6 +805,7 @@ public:
         const char *cnfPrefix;
         RgbaColor   color;
         double      width;
+        int         zIndex;
     } Default;
     static const Default Defaults[];
 
