@@ -43,12 +43,30 @@ public:
 
     virtual void writeLayers() {
         DRW_Layer layer;
-        layer.name = "entities";
-        dxf->writeLayer(&layer);
+        
         layer.name = "dimensions";
         dxf->writeLayer(&layer);
         layer.name = "text";
         dxf->writeLayer(&layer);
+        
+        for(int i = 0; i < SK.style.n; i++) {
+            Style *s = &SK.style.elem[i];
+            
+            // check for using
+            bool used = false;
+            for(DxfFileWriter::BezierPath &path : writer->paths) {
+                for(SBezier *sb : path.beziers) {
+                    if(sb->auxA != s->h.v) continue;
+                    used = true;
+                    break;
+                }
+                if(used) break;
+            }
+            if(!used) continue;
+            
+            layer.name = s->DescriptionString();
+            dxf->writeLayer(&layer);
+        }
     }
 
     const char *lineTypeName(int stippleType) {
@@ -231,7 +249,7 @@ public:
         hStyle hs = { (uint32_t)sb.auxA };
         Style *s = Style::Get(hs);
         entity->color24 = currentColor;
-        entity->layer = "entities";
+        entity->layer = s->DescriptionString();
         entity->lineType = lineTypeName(s->stippleType);
         entity->ltypeScale = Style::StippleScaleMm(s->h);
 
