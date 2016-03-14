@@ -91,9 +91,10 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     m.Clear();
 }
 
-void SMesh::MakeCertainEdgesInto(SEdgeList *sel, int type) {
+void SMesh::MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, int type) {
     SKdNode *root = SKdNode::From(this);
     root->MakeCertainEdgesInto(sel, type, false, NULL, NULL);
+    root->MakeOutlinesInto(sol);
 }
 
 //-----------------------------------------------------------------------------
@@ -923,8 +924,8 @@ static bool CheckAndAddTrianglePair(std::set<std::pair<STriangle *, STriangle *>
 //    * emphasized edges (i.e., edges where a triangle from one face joins
 //      a triangle from a different face)
 //-----------------------------------------------------------------------------
-void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
-                                bool coplanarIsInter, bool *inter, bool *leaky)
+void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
+                                   bool *inter, bool *leaky, int auxA)
 {
     if(inter) *inter = false;
     if(leaky) *leaky = false;
@@ -946,18 +947,18 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
             switch(how) {
                 case NAKED_OR_SELF_INTER_EDGES:
                     if(info.count != 1) {
-                        sel->AddEdge(a, b);
+                        sel->AddEdge(a, b, auxA);
                         if(leaky) *leaky = true;
                     }
                     if(info.intersectsMesh) {
-                        sel->AddEdge(a, b);
+                        sel->AddEdge(a, b, auxA);
                         if(inter) *inter = true;
                     }
                     break;
 
                 case SELF_INTER_EDGES:
                     if(info.intersectsMesh) {
-                        sel->AddEdge(a, b);
+                        sel->AddEdge(a, b, auxA);
                         if(inter) *inter = true;
                     }
                     break;
@@ -972,7 +973,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                         // This triangle is back-facing (or on edge), and
                         // this edge has exactly one mate, and that mate is
                         // front-facing. So this is a turning edge.
-                        sel->AddEdge(a, b, Style::SOLID_EDGE);
+                        sel->AddEdge(a, b, auxA);
                     }
                     break;
 
@@ -984,7 +985,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                         // different faces; either really different faces,
                         // or one is from a face and the other is zero (i.e.,
                         // not from a face).
-                        sel->AddEdge(a, b);
+                        sel->AddEdge(a, b, auxA);
                     }
                     break;
 
@@ -1008,7 +1009,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                                 break;
                             // The two triangles that join at this edge meet at a sharp
                             // angle. This implies they come from different faces.
-                            sel->AddEdge(a, b);
+                            sel->AddEdge(a, b, auxA);
                         }
                     }
                     break;
@@ -1021,3 +1022,52 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
     }
 }
 
+void SKdNode::MakeOutlinesInto(SOutlineList *sol)
+{
+    std::vector<STriangle *> tris;
+    ClearTags();
+    ListTrianglesInto(&tris);
+
+    std::set<std::pair<STriangle *, STriangle *>> edgeTris;
+    int cnt = 1234;
+    for(STriangle *tr : tris) {
+        for(int j = 0; j < 3; j++) {
+            Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
+            Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
+
+            SKdNode::EdgeOnInfo info = {};
+            FindEdgeOn(a, b, cnt, /*coplanarIsInter=*/false, &info);
+            cnt++;
+            if(info.count != 1) continue;
+            if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
+                continue;
+
+            sol->AddEdge(a, b, tr->Normal(), info.tr->Normal());
+        }
+    }
+}
+
+void SOutlineList::Clear() {
+    l.Clear();
+}
+
+void SOutlineList::AddEdge(Vector a, Vector b, Vector nl, Vector nr) {
+    SOutline so = {};
+    so.a   = a;
+    so.b   = b;
+    so.nl  = nl;
+    so.nr  = nr;
+    l.Add(&so);
+}
+
+void SOutlineList::FillOutlineTags(Vector projDir) {
+    for(SOutline *so = l.First(); so; so = l.NextAfter(so)) {
+        so->tag = ((so->nl.Dot(projDir) > 0.0) != (so->nr.Dot(projDir) > 0.0));
+    }
+}
+
+void SOutlineList::MakeFromCopyOf(SOutlineList *sol) {
+    for(SOutline *so = sol->l.First(); so; so = sol->l.NextAfter(so)) {
+        l.Add(so);
+    }
+}

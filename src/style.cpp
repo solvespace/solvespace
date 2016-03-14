@@ -25,6 +25,7 @@ const Style::Default Style::Defaults[] = {
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
     { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 2.0, 1 },
+    { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5 },
     { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
 };
 

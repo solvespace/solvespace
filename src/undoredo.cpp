@@ -64,6 +64,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
         dest.runningShell = {};
         dest.displayMesh = {};
         dest.displayEdges = {};
+        dest.displayOutlines = {};
 
         dest.remap = {};
         src->remap.DeepCopyInto(&(dest.remap));

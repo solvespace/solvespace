@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #ifdef HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -346,6 +347,7 @@ void ssglFillMesh(bool useSpecColor, RgbaColor color,
     SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
 void ssglDebugPolygon(SPolygon *p);
 void ssglDrawEdges(SEdgeList *l, bool endpointsToo, hStyle hs);
+void ssglDrawOutlines(SOutlineList *l, Vector projDir, hStyle hs);
 void ssglDebugMesh(SMesh *m);
 void ssglMarkPolygonNormal(SPolygon *p);
 typedef void ssglLineFn(void *data, Vector a, Vector b);

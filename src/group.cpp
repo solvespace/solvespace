@@ -29,6 +29,7 @@ void Group::Clear(void) {
     runningShell.Clear();
     displayMesh.Clear();
     displayEdges.Clear();
+    displayOutlines.Clear();
     impMesh.Clear();
     impShell.Clear();
     impEntity.Clear();

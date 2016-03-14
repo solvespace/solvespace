@@ -328,7 +328,8 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         // to back-facing.
         if(SS.GW.showEdges) {
             root->MakeCertainEdgesInto(sel, SKdNode::TURNING_EDGES,
-                        false, NULL, NULL);
+                                       /*coplanarIsInter=*/false, NULL, NULL,
+                                       GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
         }
 
         root->ClearTags();

@@ -201,7 +201,7 @@ static void FatLineEndcap(Vector p, Vector u, Vector v)
 }
 
 void ssglLine(const Vector &a, const Vector &b, double pixelWidth, bool maybeFat) {
-    if(!maybeFat || pixelWidth < 3.0) {
+    if(!maybeFat || pixelWidth <= 3.0) {
         glBegin(GL_LINES);
             ssglVertex3v(a);
             ssglVertex3v(b);
@@ -213,7 +213,7 @@ void ssglLine(const Vector &a, const Vector &b, double pixelWidth, bool maybeFat
 
 void ssglPoint(Vector p, double pixelSize)
 {
-    if(/*!maybeFat || */pixelSize < 3.0) {
+    if(/*!maybeFat || */pixelSize <= 3.0) {
         glBegin(GL_LINES);
             Vector u = SS.GW.projRight.WithMagnitude(pixelSize / SS.GW.scale / 2.0);
             ssglVertex3v(p.Minus(u));
@@ -584,6 +584,22 @@ void ssglDrawEdges(SEdgeList *el, bool endpointsToo, hStyle hs)
             ssglVertex3v(se->b);
         }
         glEnd();
+    }
+}
+
+void ssglDrawOutlines(SOutlineList *sol, Vector projDir, hStyle hs)
+{
+    double lineWidth = Style::Width(hs);
+    int stippleType = Style::PatternType(hs);
+    double stippleScale = Style::StippleScaleMm(hs);
+    ssglLineWidth((float)lineWidth);
+    ssglColorRGB(Style::Color(hs));
+
+    sol->FillOutlineTags(projDir);
+    for(SOutline *so = sol->l.First(); so; so = sol->l.NextAfter(so)) {
+        if(!so->tag) continue;
+        ssglStippledLine(so->a, so->b, lineWidth, stippleType, stippleScale,
+                         /*maybeFat=*/true);
     }
 }
 

@@ -233,6 +233,7 @@ void GraphicsWindow::Init(void) {
     showShaded = true;
     showEdges = true;
     showMesh = false;
+    showOutlines = false;
 
     showTextWindow = true;
     ShowTextWindow(showTextWindow);

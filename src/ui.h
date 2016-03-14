@@ -704,6 +704,7 @@ public:
     bool    showTextWindow;
     bool    showShaded;
     bool    showEdges;
+    bool    showOutlines;
     bool    showFaces;
     bool    showMesh;
     bool    showHdnLines;

@@ -38,6 +38,7 @@ TextWindow::HideShowIcon TextWindow::hideShowIcons[] = {
     { &SPACER, 0, 0 },
     { &(SS.GW.showShaded),      Icon_shaded,        "shaded view of solid model"     },
     { &(SS.GW.showEdges),       Icon_edges,         "edges of solid model"           },
+    { &(SS.GW.showOutlines),    Icon_outlines,      "outline of solid model"         },
     { &(SS.GW.showMesh),        Icon_mesh,          "triangle mesh of solid model"   },
     { &SPACER, 0, 0 },
     { &(SS.GW.showHdnLines),    Icon_hidden_lines,  "hidden lines"                   },

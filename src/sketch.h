@@ -176,6 +176,7 @@ public:
     bool            displayDirty;
     SMesh           displayMesh;
     SEdgeList       displayEdges;
+    SOutlineList    displayOutlines;
 
     enum {
         COMBINE_AS_UNION           = 0,
@@ -768,6 +769,7 @@ public:
         DRAW_ERROR     = 12,
         DIM_SOLID      = 13,
         HIDDEN_EDGE    = 14,
+        OUTLINE        = 15,
 
         FIRST_CUSTOM   = 0x100
     };

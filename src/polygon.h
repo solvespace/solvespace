@@ -13,6 +13,7 @@ class SPolygon;
 class SContour;
 class SMesh;
 class SBsp3;
+class SOutlineList;
 
 class SEdge {
 public:
@@ -249,7 +250,7 @@ public:
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
-    void MakeCertainEdgesInto(SEdgeList *sel, int type);
+    void MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, int type);
 
     bool IsEmpty(void);
     void RemapFaces(Group *g, int remap);
@@ -265,6 +266,24 @@ public:
     STriangleLl     *next;
 
     static STriangleLl *Alloc(void);
+};
+
+class SOutline {
+public:
+    int    tag;
+    Vector a, b, nl, nr;
+};
+
+class SOutlineList {
+public:
+    List<SOutline> l;
+
+    void Clear();
+    void AddEdge(Vector a, Vector b, Vector nl, Vector nr);
+
+    void MakeFromCopyOf(SOutlineList *ol);
+
+    void FillOutlineTags(Vector projDir);
 };
 
 class SKdNode {
@@ -304,7 +323,8 @@ public:
         SHARP_EDGES                = 500,
     };
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
-                                                bool *inter, bool *leaky);
+                              bool *inter, bool *leaky, int auxA=0);
+    void MakeOutlinesInto(SOutlineList *sel);
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden);
     void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden);

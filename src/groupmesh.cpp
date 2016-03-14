@@ -378,12 +378,14 @@ void Group::GenerateDisplayItems(void) {
             displayMesh.MakeFromCopyOf(&(pg->displayMesh));
 
             displayEdges.Clear();
+            displayOutlines.Clear();
             if(SS.GW.showEdges) {
                 SEdge *se;
                 SEdgeList *src = &(pg->displayEdges);
                 for(se = src->l.First(); se; se = src->l.NextAfter(se)) {
                     displayEdges.l.Add(se);
                 }
+                displayOutlines.MakeFromCopyOf(&pg->displayOutlines);
             }
         } else {
             // We do contribute new solid model, so we have to triangulate the
@@ -401,17 +403,20 @@ void Group::GenerateDisplayItems(void) {
             }
 
             displayEdges.Clear();
+            displayOutlines.Clear();
 
             if(SS.GW.showEdges) {
                 if(runningMesh.l.n > 0) {
                     // Triangle mesh only; no shell or emphasized edges.
-                    runningMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::EMPHASIZED_EDGES);
+                    runningMesh.MakeCertainEdgesAndOutlinesInto(
+                        &displayEdges, &displayOutlines, SKdNode::EMPHASIZED_EDGES);
                 } else {
                     if(SS.exportMode) {
-                        displayMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::SHARP_EDGES);
+                        displayMesh.MakeCertainEdgesAndOutlinesInto(
+                            &displayEdges, &displayOutlines, SKdNode::SHARP_EDGES);
                     } else {
-                        runningShell.MakeEdgesInto(&displayEdges);
-                        displayMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::EMPHASIZED_EDGES);
+                        displayMesh.MakeCertainEdgesAndOutlinesInto(
+                            &displayEdges, &displayOutlines, SKdNode::EMPHASIZED_EDGES);
                     }
                 }
             }
@@ -495,15 +500,23 @@ void Group::DrawDisplayItems(int t) {
     }
 
     if(SS.GW.showEdges) {
+        Vector projDir = SS.GW.projRight.Cross(SS.GW.projUp);
+
         glDepthMask(GL_FALSE);
         if(SS.GW.showHdnLines) {
             ssglDepthRangeOffset(0);
             glDepthFunc(GL_GREATER);
             ssglDrawEdges(&displayEdges, false, { Style::HIDDEN_EDGE });
+            ssglDrawOutlines(&displayOutlines, projDir, { Style::HIDDEN_EDGE });
             glDepthFunc(GL_LEQUAL);
         }
         ssglDepthRangeOffset(2);
         ssglDrawEdges(&displayEdges, false, { Style::SOLID_EDGE });
+        if(SS.GW.showOutlines) {
+            ssglDrawOutlines(&displayOutlines, projDir, { Style::OUTLINE });
+        } else {
+            ssglDrawOutlines(&displayOutlines, projDir, { Style::SOLID_EDGE });
+        }
         glDepthMask(GL_TRUE);
     }
 
