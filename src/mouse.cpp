@@ -588,7 +588,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     }
 
     if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
-        AddContextMenuItem("Paste", CMNU_PASTE_SEL);
+        AddContextMenuItem("Paste", CMNU_PASTE);
+        AddContextMenuItem("Paste Transformed...", CMNU_PASTE_XFRM);
     }
 
     if(itemsSelected) {
@@ -627,8 +628,12 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             MenuClipboard(MNU_COPY);
             break;
 
-        case CMNU_PASTE_SEL:
+        case CMNU_PASTE:
             MenuClipboard(MNU_PASTE);
+            break;
+
+        case CMNU_PASTE_XFRM:
+            MenuClipboard(MNU_PASTE_TRANSFORM);
             break;
 
         case CMNU_DELETE_SEL:
