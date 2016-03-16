@@ -32,6 +32,10 @@ On a Debian derivative (e.g. Ubuntu) these can be installed with:
                     libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev \
                     libgl-dev libglu-dev libglew-dev cmake
 
+Before building, check out the necessary submodules:
+
+    git submodule update --init extlib/libdxfrw
+
 After that, build SolveSpace as following:
 
     mkdir cbuild
@@ -50,7 +54,7 @@ On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install cmake mingw-w64 wine-binfmt
 
-Before building, check out the submodules:
+Before building, check out the necessary submodules:
 
     git submodule update --init
 
@@ -81,6 +85,10 @@ these can be installed with:
     brew install cmake libpng
 
 XCode has to be installed via AppStore; it requires a free Apple ID.
+
+Before building, check out the necessary submodules:
+
+    git submodule update --init extlib/libdxfrw
 
 After that, build SolveSpace as following:
 
