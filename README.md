@@ -82,7 +82,7 @@ Building on Mac OS X
 You will need XCode tools, CMake and libpng. Assuming you use [homebrew][],
 these can be installed with:
 
-    brew install cmake libpng
+    brew install cmake libpng freetype
 
 XCode has to be installed via AppStore; it requires a free Apple ID.
 
