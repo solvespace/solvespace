@@ -42,9 +42,9 @@ static const struct {
 
     { Icon_extrude,         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch"                 },
     { Icon_lathe,           GraphicsWindow::MNU_GROUP_LATHE,    "New group rotating active sketch"                  },
-    { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
     { Icon_step_rotate,     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating"                },
     { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
+    { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
     { Icon_sketch_in_3d,    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d"                                   },
     { Icon_assemble,        GraphicsWindow::MNU_GROUP_IMPORT,   "New group importing / assembling file"             },
     { SPACER, 0, 0 },
