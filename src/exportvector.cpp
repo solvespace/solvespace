@@ -19,8 +19,6 @@ VectorFileWriter::~VectorFileWriter() {
 class DxfWriteInterface : public DRW_Interface {
     DxfFileWriter *writer;
     dxfRW *dxf;
-    int currentColor;
-    double currentWidth;
 
     static DRW_Coord toCoord(const Vector &v) {
         return DRW_Coord(v.x, v.y, v.z);
@@ -132,8 +130,6 @@ public:
 
     virtual void writeEntities() {
         for(DxfFileWriter::BezierPath &path : writer->paths) {
-            currentColor = path.color;
-            currentWidth = path.width;
             for(SBezier *sb : path.beziers) {
                 writeBezier(sb);
             }
@@ -245,32 +241,31 @@ public:
         }
     }
 
-    void assignEntityDefaults(DRW_Entity *entity, const SBezier &sb) {
-        hStyle hs = { (uint32_t)sb.auxA };
+    void assignEntityDefaults(DRW_Entity *entity, uint32_t style) {
+        hStyle hs = { style };
         Style *s = Style::Get(hs);
-        entity->color24 = currentColor;
+        entity->color24 = s->Color(hs, true).ToPackedIntBGRA();
         entity->layer = s->DescriptionString();
         entity->lineType = lineTypeName(s->stippleType);
         entity->ltypeScale = Style::StippleScaleMm(s->h);
-
-        if(currentWidth > 0.0) entity->setWidthMm(currentWidth);
+        entity->setWidthMm(Style::WidthMm(hs.v));
     }
 
     void assignDimensionDefaults(DRW_Dimension *dimension) {
         dimension->layer = "dimensions";
     }
 
-    void writeLine(const Vector &p0, const Vector &p1, const SBezier &sb) {
+    void writeLine(const Vector &p0, const Vector &p1, uint32_t style) {
         DRW_Line line;
-        assignEntityDefaults(&line, sb);
+        assignEntityDefaults(&line, style);
         line.basePoint = toCoord(p0);
         line.secPoint = toCoord(p1);
         dxf->writeLine(&line);
     }
 
-    void writeArc(const Vector &c, double r, double sa, double ea, const SBezier &sb) {
+    void writeArc(const Vector &c, double r, double sa, double ea, uint32_t style) {
         DRW_Arc arc;
-        assignEntityDefaults(&arc, sb);
+        assignEntityDefaults(&arc, style);
         arc.radious = r;
         arc.basePoint = toCoord(c);
         arc.staangle = sa;
@@ -282,7 +277,7 @@ public:
         List<Vector> lv = {};
         sb->MakePwlInto(&lv, SS.ExportChordTolMm());
         DRW_LWPolyline polyline;
-        assignEntityDefaults(&polyline, *sb);
+        assignEntityDefaults(&polyline, sb->auxA);
         for(int i = 0; i < lv.n; i++) {
             Vector *v = &lv.elem[i];
             DRW_Vertex2D *vertex = new DRW_Vertex2D();
@@ -322,7 +317,7 @@ public:
     void writeSpline(SBezier *sb) {
         bool isRational = sb->IsRational();
         DRW_Spline spline;
-        assignEntityDefaults(&spline, *sb);
+        assignEntityDefaults(&spline, sb->auxA);
         spline.flags = (isRational) ? 0x04 : 0x08;
         spline.degree = sb->deg;
         spline.ncontrol = sb->deg + 1;
@@ -341,7 +336,7 @@ public:
 
         if(sb->deg == 1) {
             // Line
-            writeLine(sb->ctrl[0], sb->ctrl[1], *sb);
+            writeLine(sb->ctrl[0], sb->ctrl[1], sb->auxA);
         } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
             // Circle perpendicular to camera
             double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x);
@@ -349,7 +344,7 @@ public:
             double dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2.0 * PI);
             if(dtheta < 0.0) swap(theta0, theta1);
 
-            writeArc(c, r, theta0, theta1, *sb);
+            writeArc(c, r, theta0, theta1, sb->auxA);
         } else if(sb->IsRational()) {
             // Rational bezier
             // We'd like to export rational beziers exactly, but the resulting DXF
@@ -464,8 +459,6 @@ void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
     BezierPath path = {};
-    path.color = strokeRgb.ToPackedIntBGRA();
-    path.width = lineWidth;
     paths.push_back(path);
 }
 void DxfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,

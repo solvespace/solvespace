@@ -535,8 +535,6 @@ class DxfFileWriter : public VectorFileWriter {
 public:
     struct BezierPath {
         std::vector<SBezier *> beziers;
-        int                    color;
-        double                 width;
     };
 
     std::vector<BezierPath>         paths;
