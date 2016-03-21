@@ -20,6 +20,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <map>
 #include <set>
 #ifdef HAVE_STDINT_H
