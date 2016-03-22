@@ -782,16 +782,15 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) {
 
 //-----------------------------------------------------------------------------
 // Search the mesh for a triangle with an edge from b to a (i.e., the mate
-// for the edge from a to b), and increment *n each time that we find one.
-// If a triangle is found, then report whether it is front- or back-facing
-// using *fwd. And regardless of whether a mate is found, report whether
-// the edge intersects the mesh with *inter; if coplanarIsInter then we
-// count the edge as intersecting if it's coplanar with a triangle in the
-// mesh, otherwise not.
+// for the edge from a to b), and increment info->count each time that we
+// find one. If a triangle is found, then report whether it is front- or
+// back-facing using info->frontFacing. And regardless of whether a mate is
+// found, report whether the edge intersects the mesh with info->intersectsMesh;
+// if coplanarIsInter then we count the edge as intersecting if it's coplanar
+// with a triangle in the mesh, otherwise not.
 //-----------------------------------------------------------------------------
-void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
-                            bool coplanarIsInter, bool *inter, bool *fwd,
-                            uint32_t *face)
+void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
+                         EdgeOnInfo *info)
 {
     if(gt && lt) {
         double ac = a.Element(which),
@@ -799,12 +798,12 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
         if(ac < c + KDTREE_EPS ||
            bc < c + KDTREE_EPS)
         {
-            lt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd, face);
+            lt->FindEdgeOn(a, b, cnt, coplanarIsInter, info);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS)
         {
-            gt->FindEdgeOn(a, b, n, cnt, coplanarIsInter, inter, fwd, face);
+            gt->FindEdgeOn(a, b, cnt, coplanarIsInter, info);
         }
         return;
     }
@@ -822,15 +821,15 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
            (a.Equals(tr->c) && b.Equals(tr->b)) ||
            (a.Equals(tr->a) && b.Equals(tr->c)))
         {
-            (*n)++;
+            info->count++;
             // Record whether this triangle is front- or back-facing.
             if(tr->Normal().z > LENGTH_EPS) {
-                *fwd = true;
+                info->frontFacing = true;
             } else {
-                *fwd = false;
+                info->frontFacing = false;
             }
             // And record the triangle's face
-            *face = tr->meta.face;
+            info->face = tr->meta.face;
         } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
                    (a.Equals(tr->b) && b.Equals(tr->c)) ||
                    (a.Equals(tr->c) && b.Equals(tr->a))))
@@ -852,7 +851,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
                 // it crosses inside the triangle.
                 if(tr->ContainsPointProjd(b.Minus(a), a)) {
                     if(coplanarIsInter) {
-                        *inter = true;
+                        info->intersectsMesh = true;
                     } else {
                         Vector p = Vector::AtIntersectionOfPlaneAndLine(
                                                 n, d, a, b, NULL);
@@ -871,7 +870,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int *n, int cnt,
                             // the coplanar triangle's neighbours, which we
                             // will intersect on their edges.
                         } else {
-                            *inter = true;
+                            info->intersectsMesh = true;
                         }
                     }
                 }
@@ -912,26 +911,23 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
             Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
-            int n = 0;
-            bool thisIntersects = false, fwd;
-            uint32_t face;
-            FindEdgeOn(a, b, &n, cnt, coplanarIsInter,
-                &thisIntersects, &fwd, &face);
+            SKdNode::EdgeOnInfo info = {};
+            FindEdgeOn(a, b, cnt, coplanarIsInter, &info);
 
             switch(how) {
                 case NAKED_OR_SELF_INTER_EDGES:
-                    if(n != 1) {
+                    if(info.count != 1) {
                         sel->AddEdge(a, b);
                         if(leaky) *leaky = true;
                     }
-                    if(thisIntersects) {
+                    if(info.intersectsMesh) {
                         sel->AddEdge(a, b);
                         if(inter) *inter = true;
                     }
                     break;
 
                 case SELF_INTER_EDGES:
-                    if(thisIntersects) {
+                    if(info.intersectsMesh) {
                         sel->AddEdge(a, b);
                         if(inter) *inter = true;
                     }
@@ -939,8 +935,8 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
 
                 case TURNING_EDGES:
                     if((tr->Normal().z < LENGTH_EPS) &&
-                       (n == 1) &&
-                       fwd)
+                       (info.count == 1) &&
+                       info.frontFacing)
                     {
                         // This triangle is back-facing (or on edge), and
                         // this edge has exactly one mate, and that mate is
@@ -950,7 +946,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                     break;
 
                 case EMPHASIZED_EDGES:
-                    if(tr->meta.face != face && n == 1) {
+                    if(tr->meta.face != info.face && info.count == 1) {
                         // The two triangles that join at this edge come from
                         // different faces; either really different faces,
                         // or one is from a face and the other is zero (i.e.,

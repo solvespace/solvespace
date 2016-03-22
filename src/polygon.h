@@ -269,6 +269,13 @@ public:
 
 class SKdNode {
 public:
+    struct EdgeOnInfo {
+        int        count;
+        bool       frontFacing;
+        bool       intersectsMesh;
+        uint32_t   face;
+    };
+
     int which;  // whether c is x, y, or z
     double c;
 
@@ -285,9 +292,7 @@ public:
     void MakeMeshInto(SMesh *m);
     void ClearTags(void);
 
-    void FindEdgeOn(Vector a, Vector b, int *n, int cnt, bool coplanarIsInter,
-                                                bool *inter, bool *fwd,
-                                                uint32_t *face);
+    void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info);
     enum {
         NAKED_OR_SELF_INTER_EDGES  = 100,
         SELF_INTER_EDGES           = 200,
