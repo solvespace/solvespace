@@ -89,10 +89,9 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     m.Clear();
 }
 
-void SMesh::MakeEmphasizedEdgesInto(SEdgeList *sel) {
+void SMesh::MakeCertainEdgesInto(SEdgeList *sel, int type) {
     SKdNode *root = SKdNode::From(this);
-    root->MakeCertainEdgesInto(sel, SKdNode::EMPHASIZED_EDGES,
-                                false, NULL, NULL);
+    root->MakeCertainEdgesInto(sel, type, false, NULL, NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -828,8 +827,11 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
             } else {
                 info->frontFacing = false;
             }
-            // And record the triangle's face
-            info->face = tr->meta.face;
+            // Record the triangle
+            info->tr = tr;
+            // And record which vertexes a and b correspond to
+            info->ai = a.Equals(tr->a) ? 0 : (a.Equals(tr->b) ? 1 : 2);
+            info->bi = b.Equals(tr->a) ? 0 : (b.Equals(tr->b) ? 1 : 2);
         } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
                    (a.Equals(tr->b) && b.Equals(tr->c)) ||
                    (a.Equals(tr->c) && b.Equals(tr->a))))
@@ -946,12 +948,35 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                     break;
 
                 case EMPHASIZED_EDGES:
-                    if(tr->meta.face != info.face && info.count == 1) {
+                    if(tr->meta.face != info.tr->meta.face && info.count == 1) {
                         // The two triangles that join at this edge come from
                         // different faces; either really different faces,
                         // or one is from a face and the other is zero (i.e.,
                         // not from a face).
                         sel->AddEdge(a, b);
+                    }
+                    break;
+
+                case SHARP_EDGES:
+                    if(info.count == 1) {
+                        Vector na0 = (j == 0) ? tr->an :
+                                    ((j == 1) ? tr->bn : tr->cn);
+                        Vector nb0 = (j == 0) ? tr->bn :
+                                    ((j == 1) ? tr->cn : tr->an);
+                        Vector na1 = (info.ai == 0) ? info.tr->an :
+                                    ((info.ai == 1) ? info.tr->bn : info.tr->cn);
+                        Vector nb1 = (info.bi == 0) ? info.tr->an :
+                                    ((info.bi == 1) ? info.tr->bn : info.tr->cn);
+                        na0 = na0.WithMagnitude(1.0);
+                        nb0 = nb0.WithMagnitude(1.0);
+                        na1 = na1.WithMagnitude(1.0);
+                        nb1 = nb1.WithMagnitude(1.0);
+                        if(!((na0.Equals(na1) && nb0.Equals(nb1)) ||
+                             (na0.Equals(nb1) && nb0.Equals(na1)))) {
+                            // The two triangles that join at this edge meet at a sharp
+                            // angle. This implies they come from different faces.
+                            sel->AddEdge(a, b);
+                        }
                     }
                     break;
 

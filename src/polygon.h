@@ -249,7 +249,7 @@ public:
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
-    void MakeEmphasizedEdgesInto(SEdgeList *sel);
+    void MakeCertainEdgesInto(SEdgeList *sel, int type);
 
     bool IsEmpty(void);
     void RemapFaces(Group *g, int remap);
@@ -273,7 +273,9 @@ public:
         int        count;
         bool       frontFacing;
         bool       intersectsMesh;
-        uint32_t   face;
+        STriangle *tr;
+        int        ai;
+        int        bi;
     };
 
     int which;  // whether c is x, y, or z
@@ -297,7 +299,8 @@ public:
         NAKED_OR_SELF_INTER_EDGES  = 100,
         SELF_INTER_EDGES           = 200,
         TURNING_EDGES              = 300,
-        EMPHASIZED_EDGES           = 400
+        EMPHASIZED_EDGES           = 400,
+        SHARP_EDGES                = 500,
     };
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
                                                 bool *inter, bool *leaky);

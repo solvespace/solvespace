@@ -403,8 +403,17 @@ void Group::GenerateDisplayItems(void) {
             displayEdges.Clear();
 
             if(SS.GW.showEdges) {
-                runningShell.MakeEdgesInto(&displayEdges);
-                runningMesh.MakeEmphasizedEdgesInto(&displayEdges);
+                if(runningMesh.l.n > 0) {
+                    // Triangle mesh only; no shell or emphasized edges.
+                    runningMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::EMPHASIZED_EDGES);
+                } else {
+                    if(SS.exportMode) {
+                        displayMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::SHARP_EDGES);
+                    } else {
+                        runningShell.MakeEdgesInto(&displayEdges);
+                        displayMesh.MakeCertainEdgesInto(&displayEdges, SKdNode::EMPHASIZED_EDGES);
+                    }
+                }
             }
         }
 
