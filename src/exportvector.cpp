@@ -124,6 +124,7 @@ public:
         if(writer->constraint) {
             Constraint *c;
             for(c = writer->constraint->First(); c; c = writer->constraint->NextAfter(c)) {
+                if(!writer->NeedToOutput(c)) continue;
                 switch(c->type) {
                     case Constraint::PT_PT_DISTANCE: {
                         Vector ap = SK.GetEntity(c->ptA)->PointGetNum();
@@ -467,6 +468,18 @@ void DxfFileWriter::FinishAndCloseFile(void) {
     dxf.write(&interface, DRW::AC1021, false);
     paths.clear();
     constraint = NULL;
+}
+
+bool DxfFileWriter::NeedToOutput(Constraint *c) {
+    switch(c->type) {
+        case Constraint::PT_PT_DISTANCE:
+        case Constraint::PT_LINE_DISTANCE:
+        case Constraint::DIAMETER:
+        case Constraint::ANGLE:
+        case Constraint::COMMENT:
+            return c->IsVisible();
+    }
+    return false;
 }
 
 //-----------------------------------------------------------------------------

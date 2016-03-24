@@ -680,6 +680,7 @@ public:
     bool IsStylable();
 
     void LineDrawOrGetDistance(Vector a, Vector b);
+    bool IsVisible() const;
     void DrawOrGetDistance(Vector *labelPos);
     double EllipticalInterpolation(double rx, double ry, double theta);
     std::string Label(void);

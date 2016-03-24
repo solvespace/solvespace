@@ -377,22 +377,28 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
     }
 }
 
-void Constraint::DrawOrGetDistance(Vector *labelPos) {
-    if(!SS.GW.showConstraints) return;
+bool Constraint::IsVisible() const {
+    if(!SS.GW.showConstraints) return false;
     Group *g = SK.GetGroup(group);
     // If the group is hidden, then the constraints are hidden and not
     // able to be selected.
-    if(!(g->visible)) return;
+    if(!(g->visible)) return false;
     // And likewise if the group is not the active group; except for comments
     // with an assigned style.
     if(g->h.v != SS.GW.activeGroup.v && !(type == COMMENT && disp.style.v)) {
-        return;
+        return false;
     }
     if(disp.style.v) {
         Style *s = Style::Get(disp.style);
-        if(!s->visible) return;
+        if(!s->visible) return false;
     }
+    return true;
+}
 
+void Constraint::DrawOrGetDistance(Vector *labelPos) {
+    
+    if(!IsVisible()) return;
+    
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.
     Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);

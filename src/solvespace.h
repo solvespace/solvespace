@@ -553,6 +553,7 @@ public:
     void StartFile(void);
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return false; }
+    bool NeedToOutput(Constraint *c);
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
