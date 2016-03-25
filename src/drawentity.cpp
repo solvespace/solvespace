@@ -205,6 +205,13 @@ Vector Entity::GetReferencePos(void) {
     return dogd.refp;
 }
 
+bool Entity::IsStylable() {
+    if(IsPoint()) return false;
+    if(IsWorkplane()) return false;
+    if(IsNormal()) return false;
+    return true;
+}
+
 bool Entity::IsVisible(void) {
     Group *g = SK.GetGroup(group);
 

@@ -148,6 +148,9 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     int i;
     for(i = 0; i < SS.GW.gs.entities; i++) {
         hEntity he = SS.GW.gs.entity[i];
+        Entity *e = SK.GetEntity(he);
+        if(!e->IsStylable()) continue;
+
         if(!he.isFromRequest()) {
             showError = true;
             continue;
@@ -161,7 +164,7 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     for(i = 0; i < SS.GW.gs.constraints; i++) {
         hConstraint hc = SS.GW.gs.constraint[i];
         Constraint *c = SK.GetConstraint(hc);
-        if(c->type != Constraint::COMMENT) continue;
+        if(!c->IsStylable()) continue;
 
         c->disp.style.v = v;
     }

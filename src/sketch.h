@@ -494,6 +494,7 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false);
     void DrawOrGetDistance(void);
 
+    bool IsStylable();
     bool IsVisible(void);
     bool PointIsFromReferences(void);
 
@@ -676,6 +677,7 @@ public:
     Vector GetReferencePos(void);
     void Draw(void);
     void GetEdges(SEdgeList *sel);
+    bool IsStylable();
 
     void LineDrawOrGetDistance(Vector a, Vector b);
     void DrawOrGetDistance(Vector *labelPos);

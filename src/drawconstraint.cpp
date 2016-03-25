@@ -1117,3 +1117,8 @@ void Constraint::GetEdges(SEdgeList *sel) {
     dogd.sel = NULL;
 }
 
+bool Constraint::IsStylable() {
+    if(type == COMMENT) return true;
+    return false;
+}
+

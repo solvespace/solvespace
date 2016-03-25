@@ -618,7 +618,6 @@ public:
         void Clear(void);
         bool IsEmpty(void);
         bool Equals(Selection *b);
-        bool IsStylable(void);
         bool HasEndpoints(void);
     };
     Selection hover;

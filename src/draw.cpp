@@ -19,15 +19,6 @@ bool GraphicsWindow::Selection::IsEmpty(void) {
     return true;
 }
 
-bool GraphicsWindow::Selection::IsStylable(void) {
-    if(entity.v) return true;
-    if(constraint.v) {
-        Constraint *c = SK.GetConstraint(constraint);
-        if(c->type == Constraint::COMMENT) return true;
-    }
-    return false;
-}
-
 bool GraphicsWindow::Selection::HasEndpoints(void) {
     if(!entity.v) return false;
     Entity *e = SK.GetEntity(entity);
@@ -257,12 +248,14 @@ void GraphicsWindow::GroupSelection(void) {
             (gs.n)++;
 
             Entity *e = SK.entity.FindById(s->entity);
+
+            if(e->IsStylable()) gs.stylables++;
+
             // A list of points, and a list of all entities that aren't points.
             if(e->IsPoint()) {
                 gs.point[(gs.points)++] = s->entity;
             } else {
                 gs.entity[(gs.entities)++] = s->entity;
-                (gs.stylables)++;
             }
 
             // And an auxiliary list of normals, including normals from
@@ -305,10 +298,8 @@ void GraphicsWindow::GroupSelection(void) {
         if(s->constraint.v) {
             gs.constraint[(gs.constraints)++] = s->constraint;
             Constraint *c = SK.GetConstraint(s->constraint);
-            if(c->type == Constraint::COMMENT) {
-                (gs.stylables)++;
-                (gs.comments)++;
-            }
+            if(c->IsStylable()) gs.stylables++;
+            if(c->type == Constraint::COMMENT) gs.comments++;
         }
     }
 }
