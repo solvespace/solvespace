@@ -201,7 +201,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.other2 = cc->other2;
         c.reference = cc->reference;
         c.disp = cc->disp;
-        Constraint::AddConstraint(&c);
+        Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
     }
 
     SS.ScheduleGenerateAll();
