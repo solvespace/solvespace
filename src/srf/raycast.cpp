@@ -361,7 +361,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
         // And that it lies inside our trim region
         Point2d dummy = { 0, 0 };
-        int c = bsp->ClassifyPoint(puv, dummy, this);
+        int c = (bsp) ? bsp->ClassifyPoint(puv, dummy, this) : SBspUv::OUTSIDE;
         if(trimmed && c == SBspUv::OUTSIDE) {
             continue;
         }
@@ -527,7 +527,7 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
 
         if((pp.Minus(p)).Magnitude() > LENGTH_EPS) continue;
         Point2d dummy = { 0, 0 };
-        int c = srf->bsp->ClassifyPoint(puv, dummy, srf);
+        int c = (srf->bsp) ? srf->bsp->ClassifyPoint(puv, dummy, srf) : SBspUv::OUTSIDE;
         if(c == SBspUv::OUTSIDE) continue;
 
         // Edge-on-face (unless edge-on-edge above superceded)

@@ -45,7 +45,8 @@ public:
     double ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool seg,
         SSurface *srf);
 
-    SBspUv *InsertEdge(Point2d a, Point2d b, SSurface *srf);
+    void InsertEdge(Point2d a, Point2d b, SSurface *srf);
+    static SBspUv *InsertOrCreateEdge(SBspUv *where, const Point2d &ea, const Point2d &eb, SSurface *srf);
     int ClassifyPoint(Point2d p, Point2d eb, SSurface *srf);
     int ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf);
     double MinimumDistanceToEdge(Point2d p, SSurface *srf);

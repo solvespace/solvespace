@@ -547,7 +547,6 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 //-----------------------------------------------------------------------------
 
 std::string Expr::Print(void) {
-    if(!this) return "0";
 
     char c;
     switch(op) {

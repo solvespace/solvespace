@@ -308,7 +308,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // Use the BSP routines to generate the split triangles in paint order.
     SBsp3 *bsp = SBsp3::FromMesh(&smp);
     SMesh sms = {};
-    bsp->GenerateInPaintOrder(&sms);
+    if(bsp) bsp->GenerateInPaintOrder(&sms);
     // And cull the back-facing triangles
     STriangle *tr;
     sms.l.ClearTags();

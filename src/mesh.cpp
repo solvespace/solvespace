@@ -247,7 +247,7 @@ void SMesh::AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3) {
         STriangle *st = &(srcm->l.elem[i]);
         int pn = l.n;
         atLeastOneDiscarded = false;
-        bsp3->Insert(st, this);
+        SBsp3::InsertOrCreate(NULL, st, this);
         if(!atLeastOneDiscarded && (l.n != (pn+1))) {
             l.n = pn;
             if(flipNormal) {

@@ -180,7 +180,8 @@ public:
     void InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
     void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
     Vector IntersectionWith(Vector a, Vector b);
-    SBsp2 *InsertEdge(SEdge *nedge, Vector nnp, Vector out);
+    void InsertEdge(SEdge *nedge, Vector nnp, Vector out);
+    static SBsp2 *InsertOrCreateEdge(SBsp2 *where, SEdge *nedge, Vector nnp, Vector out);
     static SBsp2 *Alloc(void);
 
     void DebugDraw(Vector n, double d);
@@ -206,7 +207,8 @@ public:
 
     enum { POS = 100, NEG = 101, COPLANAR = 200 };
     void InsertHow(int how, STriangle *str, SMesh *instead);
-    SBsp3 *Insert(STriangle *str, SMesh *instead);
+    void Insert(STriangle *str, SMesh *instead);
+    static SBsp3 *InsertOrCreate(SBsp3 *where, STriangle *str, SMesh *instead);
 
     void InsertConvexHow(int how, STriMeta meta, Vector *vertex, int n,
                                 SMesh *instead);

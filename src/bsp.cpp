@@ -29,7 +29,7 @@ SBsp3 *SBsp3::FromMesh(SMesh *m) {
     }
 
     for(i = 0; i < mc.l.n; i++) {
-        bsp3 = bsp3->Insert(&(mc.l.elem[i]), NULL);
+        bsp3 = InsertOrCreate(bsp3, &(mc.l.elem[i]), NULL);
     }
 
     mc.Clear();
@@ -86,12 +86,12 @@ void SBsp3::InsertHow(int how, STriangle *tr, SMesh *instead) {
     switch(how) {
         case POS:
             if(instead && !pos) goto alt;
-            pos = pos->Insert(tr, instead);
+            pos = InsertOrCreate(pos, tr, instead);
             break;
 
         case NEG:
             if(instead && !neg) goto alt;
-            neg = neg->Insert(tr, instead);
+            neg = InsertOrCreate(neg, tr, instead);
             break;
 
         case COPLANAR: {
@@ -192,7 +192,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
     if(onc == 2) {
         if(!instead) {
             SEdge se = SEdge::From(on[0], on[1]);
-            edges = edges->InsertEdge(&se, n, out);
+            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
         }
     }
 
@@ -239,10 +239,10 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
     if(!instead) {
         if(inters == 2) {
             SEdge se = SEdge::From(inter[0], inter[1]);
-            edges = edges->InsertEdge(&se, n, out);
+            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
         } else if(inters == 1 && onc == 1) {
             SEdge se = SEdge::From(inter[0], on[0]);
-            edges = edges->InsertEdge(&se, n, out);
+            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
         } else if(inters == 0 && onc == 2) {
             // We already handled this on-plane existing edge
         } else {
@@ -261,13 +261,13 @@ triangulate:
     for(i = 0; i < cnt - 2; i++) {
         STriangle tr = STriangle::From(meta,
                                        vertex[0], vertex[i+1], vertex[i+2]);
-        r = r->Insert(&tr, instead);
+        r = InsertOrCreate(r, &tr, instead);
     }
     return r;
 }
 
-SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
-    if(!this) {
+SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
+    if(where == NULL) {
         if(instead) {
             if(instead->flipNormal) {
                 instead->atLeastOneDiscarded = true;
@@ -284,7 +284,11 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
         r->tri = *tr;
         return r;
     }
+    where->Insert(tr, instead);
+    return where;
+}
 
+void SBsp3::Insert(STriangle *tr, SMesh *instead) {
     double dt[3] = { (tr->a).Dot(n), (tr->b).Dot(n), (tr->c).Dot(n) };
 
     int inc = 0, posc = 0, negc = 0;
@@ -306,7 +310,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     // All vertices in-plane
     if(inc == 3) {
         InsertHow(COPLANAR, tr, instead);
-        return this;
+        return;
     }
 
     // No split required
@@ -319,7 +323,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
             else oops();
             if(!instead) {
                 SEdge se = SEdge::From(a, b);
-                edges = edges->InsertEdge(&se, n, tr->Normal());
+                edges = SBsp2::InsertOrCreateEdge(edges, &se, n, tr->Normal());
             }
         }
 
@@ -328,7 +332,7 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
         } else {
             InsertHow(NEG, tr, instead);
         }
-        return this;
+        return;
     }
 
     // The polygon must be split into two pieces, one above, one below.
@@ -356,10 +360,10 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
 
         if(!instead) {
             SEdge se = SEdge::From(a, bPc);
-            edges = edges->InsertEdge(&se, n, tr->Normal());
+            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, tr->Normal());
         }
 
-        return this;
+        return;
     }
 
     if(posc == 2 && negc == 1) {
@@ -391,21 +395,20 @@ SBsp3 *SBsp3::Insert(STriangle *tr, SMesh *instead) {
     }
     if(!instead) {
         SEdge se = SEdge::From(aPb, cPa);
-        edges = edges->InsertEdge(&se, n, alone.Normal());
+        edges = SBsp2::InsertOrCreateEdge(edges, &se, n, alone.Normal());
     }
 
-    return this;
+    return;
 }
 
 void SBsp3::GenerateInPaintOrder(SMesh *m) {
-    if(!this) return;
 
     // Doesn't matter which branch we take if the normal has zero z
     // component, so don't need a separate case for that.
     if(n.z < 0) {
-        pos->GenerateInPaintOrder(m);
+        if(pos) pos->GenerateInPaintOrder(m);
     } else {
-        neg->GenerateInPaintOrder(m);
+        if(neg) neg->GenerateInPaintOrder(m);
     }
 
     SBsp3 *flip = this;
@@ -415,16 +418,15 @@ void SBsp3::GenerateInPaintOrder(SMesh *m) {
     }
 
     if(n.z < 0) {
-        neg->GenerateInPaintOrder(m);
+        if(neg) neg->GenerateInPaintOrder(m);
     } else {
-        pos->GenerateInPaintOrder(m);
+        if(pos) pos->GenerateInPaintOrder(m);
     }
 }
 
 void SBsp3::DebugDraw(void) {
-    if(!this) return;
 
-    pos->DebugDraw();
+    if(pos) pos->DebugDraw();
     Vector norm = tri.Normal();
     glNormal3d(norm.x, norm.y, norm.z);
 
@@ -458,10 +460,10 @@ void SBsp3::DebugDraw(void) {
     ssglDepthRangeOffset(0);
     glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-    more->DebugDraw();
-    neg->DebugDraw();
+    if(more) more->DebugDraw();
+    if(neg) neg->DebugDraw();
 
-    edges->DebugDraw(n, d);
+    if(edges) edges->DebugDraw(n, d);
 }
 
 /////////////////////////////////
@@ -475,8 +477,8 @@ Vector SBsp2::IntersectionWith(Vector a, Vector b) {
     return (a.ScaledBy(db/dab)).Plus(b.ScaledBy(-da/dab));
 }
 
-SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
-    if(!this) {
+SBsp2 *SBsp2::InsertOrCreateEdge(SBsp2 *where, SEdge *nedge, Vector nnp, Vector out) {
+    if(where == NULL) {
         // Brand new node; so allocate for it, and fill us in.
         SBsp2 *r = Alloc();
         r->np = nnp;
@@ -488,6 +490,11 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
         r->edge = *nedge;
         return r;
     }
+    where->InsertEdge(nedge, nnp, out);
+    return where;
+}
+
+void SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
 
     double dt[2] = { (nedge->a).Dot(no), (nedge->b).Dot(no) };
 
@@ -503,12 +510,12 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
     }
 
     if((isPos[0] && isPos[1])||(isPos[0] && isOn[1])||(isOn[0] && isPos[1])) {
-        pos = pos->InsertEdge(nedge, nnp, out);
-        return this;
+        pos = InsertOrCreateEdge(pos, nedge, nnp, out);
+        return;
     }
     if((isNeg[0] && isNeg[1])||(isNeg[0] && isOn[1])||(isOn[0] && isNeg[1])) {
-        neg = neg->InsertEdge(nedge, nnp, out);
-        return this;
+        neg = InsertOrCreateEdge(neg, nedge, nnp, out);
+        return;
     }
     if(isOn[0] && isOn[1]) {
         SBsp2 *m = Alloc();
@@ -523,7 +530,7 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
 
         m->more = more;
         more = m;
-        return this;
+        return;
     }
     if((isPos[0] && isNeg[1]) || (isNeg[0] && isPos[1])) {
         Vector aPb = IntersectionWith(nedge->a, nedge->b);
@@ -532,13 +539,13 @@ SBsp2 *SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
         SEdge eb = SEdge::From(aPb, nedge->b);
 
         if(isPos[0]) {
-            pos = pos->InsertEdge(&ea, nnp, out);
-            neg = neg->InsertEdge(&eb, nnp, out);
+            pos = InsertOrCreateEdge(pos, &ea, nnp, out);
+            neg = InsertOrCreateEdge(neg, &eb, nnp, out);
         } else {
-            neg = neg->InsertEdge(&ea, nnp, out);
-            pos = pos->InsertEdge(&eb, nnp, out);
+            neg = InsertOrCreateEdge(neg, &ea, nnp, out);
+            pos = InsertOrCreateEdge(pos, &eb, nnp, out);
         }
-        return this;
+        return;
     }
     oops();
 }
@@ -659,8 +666,6 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
 }
 
 void SBsp2::DebugDraw(Vector n, double d) {
-    if(!this) return;
-
     if(fabs((edge.a).Dot(n) - d) > LENGTH_EPS) oops();
     if(fabs((edge.b).Dot(n) - d) > LENGTH_EPS) oops();
 
@@ -669,9 +674,9 @@ void SBsp2::DebugDraw(Vector n, double d) {
         ssglVertex3v(edge.a);
         ssglVertex3v(edge.b);
     glEnd();
-    pos->DebugDraw(n, d);
-    neg->DebugDraw(n, d);
-    more->DebugDraw(n, d);
+    if(pos) pos->DebugDraw(n, d);
+    if(neg) neg->DebugDraw(n, d);
+    if(more) more->DebugDraw(n, d);
     ssglLineWidth(1);
 }
 
