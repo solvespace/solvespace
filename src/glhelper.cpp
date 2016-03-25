@@ -200,7 +200,7 @@ static void FatLineEndcap(Vector p, Vector u, Vector v)
     glEnd();
 }
 
-void ssglLine(const Vector &a, const Vector &b, double pixelWidth, bool maybeFat = true) {
+void ssglLine(const Vector &a, const Vector &b, double pixelWidth, bool maybeFat) {
     if(!maybeFat || pixelWidth < 3.0) {
         glBegin(GL_LINES);
             ssglVertex3v(a);
@@ -229,11 +229,11 @@ void ssglPoint(Vector p, double pixelSize)
 }
 
 void ssglStippledLine(Vector a, Vector b, double width,
-                      int stippleType, double stippleScale)
+                      int stippleType, double stippleScale, bool maybeFat)
 {
     const char *stipplePattern;
     switch(stippleType) {
-        case Style::STIPPLE_CONTINUOUS:    ssglLine(a, b, width); return;
+        case Style::STIPPLE_CONTINUOUS:    ssglLine(a, b, width, maybeFat); return;
         case Style::STIPPLE_DASH:          stipplePattern = "- ";  break;
         case Style::STIPPLE_LONG_DASH:     stipplePattern = "_ ";  break;
         case Style::STIPPLE_DASH_DOT:      stipplePattern = "-.";  break;
@@ -243,11 +243,11 @@ void ssglStippledLine(Vector a, Vector b, double width,
         case Style::STIPPLE_ZIGZAG:        stipplePattern = "~__"; break;
         default: oops();
     }
-    ssglStippledLine(a, b, width, stipplePattern, stippleScale);
+    ssglStippledLine(a, b, width, stipplePattern, stippleScale, maybeFat);
 }
 
 void ssglStippledLine(Vector a, Vector b, double width,
-                      const char *stipplePattern, double stippleScale)
+                      const char *stipplePattern, double stippleScale, bool maybeFat)
 {
     if(stipplePattern == NULL || *stipplePattern == 0) oops();
 
@@ -269,13 +269,13 @@ void ssglStippledLine(Vector a, Vector b, double width,
                 start = max(start - 0.5 * ss, 0.0);
                 end = max(start - 2.0 * ss, 0.0);
                 if(start == end) break;
-                ssglLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), width);
+                ssglLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), width, maybeFat);
                 end = max(end - 0.5 * ss, 0.0);
                 break;
 
             case '_':
                 end = max(end - 4.0 * ss, 0.0);
-                ssglLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), width);
+                ssglLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), width, maybeFat);
                 break;
 
             case '.':
@@ -296,7 +296,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
                 Vector aa = a.Plus(dir.ScaledBy(start));
                 Vector bb = a.Plus(dir.ScaledBy(end))
                              .Plus(abn.ScaledBy(pws * (start - end) / (0.5 * ss)));
-                ssglLine(aa, bb, width);
+                ssglLine(aa, bb, width, maybeFat);
                 if(end == 0.0) break;
 
                 start = end;
@@ -304,7 +304,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
                 aa = a.Plus(dir.ScaledBy(end))
                       .Plus(abn.ScaledBy(pws))
                       .Minus(abn.ScaledBy(2.0 * pws * (start - end) / ss));
-                ssglLine(bb, aa, width);
+                ssglLine(bb, aa, width, maybeFat);
                 if(end == 0.0) break;
 
                 start = end;
@@ -312,7 +312,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
                 bb = a.Plus(dir.ScaledBy(end))
                       .Minus(abn.ScaledBy(pws))
                       .Plus(abn.ScaledBy(pws * (start - end) / (0.5 * ss)));
-                ssglLine(aa, bb, width);
+                ssglLine(aa, bb, width, maybeFat);
                 break;
             }
 

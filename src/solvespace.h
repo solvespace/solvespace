@@ -357,9 +357,9 @@ double ssglStrWidth(const std::string &str, double h);
 double ssglStrHeight(double h);
 void ssglLockColorTo(RgbaColor rgb);
 void ssglStippledLine(Vector a, Vector b, double width,
-                      int stippleType, double stippleScale);
+                      int stippleType, double stippleScale, bool maybeFat);
 void ssglStippledLine(Vector a, Vector b, double width,
-                      const char *stipplePattern, double stippleScale);
+                      const char *stipplePattern, double stippleScale, bool maybeFat);
 void ssglFatLine(Vector a, Vector b, double width);
 void ssglUnlockColor(void);
 void ssglColorRGB(RgbaColor rgb);

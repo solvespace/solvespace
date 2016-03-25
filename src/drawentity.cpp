@@ -23,7 +23,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
         ssglDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
         // Narrow lines are drawn as lines, but fat lines must be drawn as
         // filled polygons, to get the line join style right.
-        ssglStippledLine(a, b, dogd.lineWidth, dogd.stippleType, dogd.stippleScale);
+        ssglStippledLine(a, b, dogd.lineWidth, dogd.stippleType, dogd.stippleScale, maybeFat);
         ssglDepthRangeOffset(0);
     } else {
         Point2d ap = SS.GW.ProjectPoint(a);
