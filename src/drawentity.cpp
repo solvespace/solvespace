@@ -667,8 +667,8 @@ void Entity::DrawOrGetDistance(void) {
             }
             LineDrawOrGetDistance(pp, pm);
             LineDrawOrGetDistance(pm, mm2);
-            LineDrawOrGetDistance(mm, mp);
-            LineDrawOrGetDistance(mp, pp);
+            LineDrawOrGetDistance(mp, mm);
+            LineDrawOrGetDistance(pp, mp);
 
             if(dogd.drawing)
                 glDisable(GL_LINE_STIPPLE);
