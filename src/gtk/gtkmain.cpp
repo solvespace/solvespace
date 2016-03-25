@@ -1114,7 +1114,7 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
        any way to list the patterns, so we extract it from the filter name.
        Gross. */
     std::string filter_name = chooser->get_filter()->get_name();
-    int lparen = filter_name.find('(') + 1;
+    int lparen = filter_name.rfind('(') + 1;
     int rdelim = filter_name.find(',', lparen);
     if(rdelim < 0)
         rdelim = filter_name.find(')', lparen);
