@@ -519,7 +519,7 @@ public:
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
                                            double *wmin, bool usePerspective);
-    void LoopOverPoints(const std::vector<Entity *> &entity, Point2d *pmax, Point2d *pmin,
+    void LoopOverPoints(const std::vector<Entity *> &entity, const std::vector<hEntity> &faces, Point2d *pmax, Point2d *pmin,
                         double *wmin, bool usePerspective, bool includeMesh);
     void ZoomToFit(bool includingInvisibles, bool useSelection = false);
 

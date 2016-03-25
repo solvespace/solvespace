@@ -318,6 +318,7 @@ void GraphicsWindow::HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *p
     *wmin = min(*wmin, w);
 }
 void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
+                                    const std::vector<hEntity> &faces,
                                     Point2d *pmax, Point2d *pmin, double *wmin,
                                     bool usePerspective, bool includeMesh) {
 
@@ -350,16 +351,26 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
         }
     }
 
-    if(!includeMesh) return;
+    if(!includeMesh && faces.empty()) return;
 
     Group *g = SK.GetGroup(activeGroup);
     g->GenerateDisplayItems();
     for(i = 0; i < g->displayMesh.l.n; i++) {
         STriangle *tr = &(g->displayMesh.l.elem[i]);
+        if(!includeMesh) {
+            bool found = false;
+            for(const hEntity &face : faces) {
+                if(face.v != tr->meta.face) continue;
+                found = true;
+                break;
+            }
+            if(!found) continue;
+        }
         HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, usePerspective);
         HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, usePerspective);
         HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, usePerspective);
     }
+    if(!includeMesh) return;
     for(i = 0; i < g->polyLoops.l.n; i++) {
         SContour *sc = &(g->polyLoops.l.elem[i]);
         for(j = 0; j < sc->l.n; j++) {
@@ -369,15 +380,24 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
 }
 void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
     std::vector<Entity *> entities;
-    bool selectionUsed = useSelection && selection.n > 0;
-    if(selectionUsed) {
+    std::vector<hEntity> faces;
+
+    if(useSelection) {
         for(int i = 0; i < selection.n; i++) {
             Selection *s = &selection.elem[i];
             if(s->entity.v == 0) continue;
             Entity *e = SK.entity.FindById(s->entity);
+            if(e->IsFace()) {
+                faces.push_back(e->h);
+                continue;
+            }
             entities.push_back(e);
         }
-    } else {
+    }
+
+    bool selectionUsed = !entities.empty() || !faces.empty();
+
+    if(!selectionUsed) {
         for(int i = 0; i<SK.entity.n; i++) {
             Entity *e = &(SK.entity.elem[i]);
             // we don't want to handle separate points, because we will iterate them inside entities.
@@ -390,7 +410,7 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
     // On the first run, ignore perspective.
     Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
     double wmin = 1;
-    LoopOverPoints(entities, &pmax, &pmin, &wmin,
+    LoopOverPoints(entities, faces, &pmax, &pmin, &wmin,
                    /*usePerspective=*/false, /*includeMesh=*/!selectionUsed);
 
     double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
@@ -416,7 +436,7 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
     pmax.x = -1e12; pmax.y = -1e12;
     pmin.x =  1e12; pmin.y =  1e12;
     wmin = 1;
-    LoopOverPoints(entities, &pmax, &pmin, &wmin,
+    LoopOverPoints(entities, faces, &pmax, &pmin, &wmin,
                    /*usePerspective=*/true, /*includeMesh=*/!selectionUsed);
 
     // Adjust the scale so that no points are behind the camera
