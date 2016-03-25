@@ -1030,7 +1030,12 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     // Output edges. Assume user's model colors do not obscure white edges.
     for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         fprintf(f, "    [[%f, %f, %f], [%f, %f, %f]],\n",
-                CO(e->a), CO(e->b));
+                e->a.x / SS.exportScale,
+                e->a.y / SS.exportScale,
+                e->a.z / SS.exportScale,
+                e->b.x / SS.exportScale,
+                e->b.y / SS.exportScale,
+                e->b.z / SS.exportScale);
     }
 
     fputs("  ]\n};\n", f);
