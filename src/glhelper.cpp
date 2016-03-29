@@ -324,6 +324,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
 
 void ssglFatLine(Vector a, Vector b, double width)
 {
+    if(a.EqualsExactly(b)) return;
     // The half-width of the line we're drawing.
     double hw = width / 2;
     Vector ab  = b.Minus(a);
