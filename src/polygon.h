@@ -292,6 +292,7 @@ public:
 
     void AddTriangle(STriangle *tr);
     void MakeMeshInto(SMesh *m);
+    void ListTrianglesInto(std::vector<STriangle *> *tl);
     void ClearTags(void);
 
     void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info);

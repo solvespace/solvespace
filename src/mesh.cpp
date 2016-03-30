@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+#include <set>
+
 void SMesh::Clear(void) {
     l.Clear();
 }
@@ -534,6 +536,19 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
+void SKdNode::ListTrianglesInto(std::vector<STriangle *> *tl) {
+    if(gt) gt->ListTrianglesInto(tl);
+    if(lt) lt->ListTrianglesInto(tl);
+
+    STriangleLl *ll;
+    for(ll = tris; ll; ll = ll->next) {
+        if(ll->tri->tag) continue;
+
+        tl->push_back(ll->tri);
+        ll->tri->tag = 1;
+    }
+}
+
 //-----------------------------------------------------------------------------
 // If any triangles in the mesh have an edge that goes through v (but not
 // a vertex at v), then split those triangles so that they now have a vertex
@@ -885,6 +900,17 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
     }
 }
 
+static bool CheckAndAddTrianglePair(std::set<std::pair<STriangle *, STriangle *>> *pairs,
+                                    STriangle *a, STriangle *b)
+{
+    if(pairs->find(std::make_pair(a, b)) != pairs->end() ||
+       pairs->find(std::make_pair(b, a)) != pairs->end())
+        return true;
+
+    pairs->emplace(a, b);
+    return false;
+}
+
 //-----------------------------------------------------------------------------
 // Pick certain classes of edges out from our mesh. These might be:
 //    * naked edges (i.e., edges with no anti-parallel neighbor) and self-
@@ -900,16 +926,14 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
     if(inter) *inter = false;
     if(leaky) *leaky = false;
 
-    SMesh m = {};
+    std::vector<STriangle *> tris;
     ClearTags();
-    MakeMeshInto(&m);
+    ListTrianglesInto(&tris);
 
+    std::set<std::pair<STriangle *, STriangle *>> edgeTris;
     int cnt = 1234;
-    int i, j;
-    for(i = 0; i < m.l.n; i++) {
-        STriangle *tr = &(m.l.elem[i]);
-
-        for(j = 0; j < 3; j++) {
+    for(STriangle *tr : tris) {
+        for(int j = 0; j < 3; j++) {
             Vector a = (j == 0) ? tr->a : ((j == 1)  ? tr->b : tr->c);
             Vector b = (j == 0) ? tr->b : ((j == 1)  ? tr->c : tr->a);
 
@@ -940,6 +964,8 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                        (info.count == 1) &&
                        info.frontFacing)
                     {
+                        if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
+                            break;
                         // This triangle is back-facing (or on edge), and
                         // this edge has exactly one mate, and that mate is
                         // front-facing. So this is a turning edge.
@@ -949,6 +975,8 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
 
                 case EMPHASIZED_EDGES:
                     if(tr->meta.face != info.tr->meta.face && info.count == 1) {
+                        if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
+                            break;
                         // The two triangles that join at this edge come from
                         // different faces; either really different faces,
                         // or one is from a face and the other is zero (i.e.,
@@ -973,6 +1001,8 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
                         nb1 = nb1.WithMagnitude(1.0);
                         if(!((na0.Equals(na1) && nb0.Equals(nb1)) ||
                              (na0.Equals(nb1) && nb0.Equals(na1)))) {
+                            if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
+                                break;
                             // The two triangles that join at this edge meet at a sharp
                             // angle. This implies they come from different faces.
                             sel->AddEdge(a, b);
@@ -986,7 +1016,5 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how,
             cnt++;
         }
     }
-
-    m.Clear();
 }
 
