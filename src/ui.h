@@ -545,27 +545,31 @@ public:
         DRAGGING_NEW_RADIUS         = 0x0f000008,
         DRAGGING_MARQUEE            = 0x0f000009
     };
-    struct {
-        int             operation;
-
-        hRequest        request;
-        hEntity         point;
-        List<hEntity>   points;
-        hEntity         circle;
-        hEntity         normal;
-        hConstraint     constraint;
-
-        const char     *description;
-    } pending;
-    void ClearPending(void);
-    // The constraint that is being edited with the on-screen textbox.
-    hConstraint constraintBeingEdited;
 
     enum SuggestedConstraint {
         SUGGESTED_NONE = 0,
         SUGGESTED_HORIZONTAL = Constraint::HORIZONTAL,
         SUGGESTED_VERTICAL = Constraint::VERTICAL,
     };
+
+    struct {
+        int                  operation;
+
+        hRequest             request;
+        hEntity              point;
+        List<hEntity>        points;
+        hEntity              circle;
+        hEntity              normal;
+        hConstraint          constraint;
+
+        const char          *description;
+
+        SuggestedConstraint  suggestion;
+    } pending;
+    void ClearPending(void);
+    // The constraint that is being edited with the on-screen textbox.
+    hConstraint constraintBeingEdited;
+
     SuggestedConstraint SuggestLineConstraint(hRequest lineSegment);
 
     Vector SnapToGrid(Vector p);
