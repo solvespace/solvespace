@@ -852,3 +852,15 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
     }
     return box;
 }
+
+Group *Sketch::GetRunningMeshGroup() {
+    if(groupOrder.n < 1) return NULL;
+    Group *g = GetGroup(groupOrder.elem[groupOrder.n - 1]);
+    while(g != NULL) {
+        if(g->IsMeshGroup()) {
+            return g;
+        }
+        g = g->PreviousGroup();
+    }
+    return NULL;
+}

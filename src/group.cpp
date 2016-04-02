@@ -222,6 +222,15 @@ void Group::MenuGroup(int id) {
 
         default: oops();
     }
+
+    // Copy color from the previous mesh-contributing group.
+    if(g.IsMeshGroup() && SK.groupOrder.n > 0) {
+        Group *running = SK.GetRunningMeshGroup();
+        if(running != NULL) {
+            g.color = running->color;
+        }
+    }
+
     SS.GW.ClearSelection();
     SS.UndoRemember();
 

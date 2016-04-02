@@ -430,6 +430,17 @@ Group *Group::RunningMeshGroup(void) {
     }
 }
 
+bool Group::IsMeshGroup() {
+    switch(type) {
+        case Group::EXTRUDE:
+        case Group::LATHE:
+        case Group::ROTATE:
+        case Group::TRANSLATE:
+            return true;
+    }
+    return false;
+}
+
 void Group::DrawDisplayItems(int t) {
     RgbaColor specColor;
     bool useSpecColor;

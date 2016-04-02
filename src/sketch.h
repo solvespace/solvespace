@@ -243,6 +243,7 @@ public:
     // And the mesh stuff
     Group *PreviousGroup(void);
     Group *RunningMeshGroup(void);
+    bool IsMeshGroup();
     void GenerateShellAndMesh(void);
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, int how);
