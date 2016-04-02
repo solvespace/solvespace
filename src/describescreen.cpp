@@ -229,6 +229,22 @@ void TextWindow::DescribeSelection(void) {
         Printf(false, "      " PT_AS_STR, COSTR(p1));
         double d = (p1.Minus(p0)).Magnitude();
         Printf(true, "  d = %Fi%s", SS.MmToString(d).c_str());
+    } else if(gs.n == 2 && gs.points == 1 && gs.circlesOrArcs == 1) {
+        Entity *ec = SK.GetEntity(gs.entity[0]);
+        if(ec->type == Entity::CIRCLE) {
+            Printf(false, "%FtPOINT AND A CIRCLE");
+        } else if(ec->type == Entity::ARC_OF_CIRCLE) {
+            Printf(false, "%FtPOINT AND AN ARC");
+        } else oops();
+        Vector p = SK.GetEntity(gs.point[0])->PointGetNum();
+        Printf(true,  "        pt at " PT_AS_STR, COSTR(p));
+        Vector c = SK.GetEntity(ec->point[0])->PointGetNum();
+        Printf(true,  "     center = " PT_AS_STR, COSTR(c));
+        double r = ec->CircleGetRadiusNum();
+        Printf(false, "   diameter =  %Fi%s", SS.MmToString(r*2).c_str());
+        Printf(false, "     radius =  %Fi%s", SS.MmToString(r).c_str());
+        double d = (p.Minus(c)).Magnitude() - r;
+        Printf(true,  "   distance = %Fi%s", SS.MmToString(d).c_str());
     } else if(gs.n == 2 && gs.faces == 1 && gs.points == 1) {
         Printf(false, "%FtA POINT AND A PLANE FACE");
         Vector pt = SK.GetEntity(gs.point[0])->PointGetNum();
