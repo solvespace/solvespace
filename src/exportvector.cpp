@@ -486,8 +486,13 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
 // Routines for EPS output
 //-----------------------------------------------------------------------------
 
-std::string MakeStipplePattern(int pattern, double scale, char delimiter) {
+static std::string MakeStipplePattern(int pattern, double scale, char delimiter,
+                                      bool inkscapeWorkaround = false) {
     scale /= 2.0;
+
+    // Inkscape ignores all elements that are exactly zero instead of drawing
+    // them as dots.
+    double zero = inkscapeWorkaround ? 1e-6 : 0;
 
     std::string result;
     switch(pattern) {
@@ -500,19 +505,21 @@ std::string MakeStipplePattern(int pattern, double scale, char delimiter) {
             result = ssprintf("%.3f_%.3f", scale, scale);
             break;
         case Style::STIPPLE_DASH_DOT:
-            result = ssprintf("%.3f_%.3f_0_%.3f",
-                              scale, scale * 0.5, scale * 0.5);
+            result = ssprintf("%.3f_%.3f_%.6f_%.3f",
+                              scale, scale * 0.5, zero, scale * 0.5);
             break;
         case Style::STIPPLE_DASH_DOT_DOT:
-            result = ssprintf("%.3f_%.3f_0_%.3f_0_%.3f",
-                              scale, scale * 0.5, scale * 0.5, scale * 0.5);
+            result = ssprintf("%.3f_%.3f_%.6f_%.3f_%.6f_%.3f",
+                              scale, scale * 0.5, zero,
+                              scale * 0.5, scale * 0.5, zero);
             break;
         case Style::STIPPLE_DOT:
-            result = ssprintf("0_%.3f", scale * 0.5);
+            result = ssprintf("%.6f_%.3f", zero, scale * 0.5);
             break;
         case Style::STIPPLE_LONG_DASH:
             result = ssprintf("%.3f_%.3f", scale * 2.0, scale * 0.5);
             break;
+
         default:
             oops();
     }
@@ -863,6 +870,37 @@ void SvgFileWriter::StartFile(void) {
 "\r\n",
         (ptMax.x - ptMin.x), (ptMax.y - ptMin.y),
         (ptMax.x - ptMin.x), (ptMax.y - ptMin.y));
+
+    fprintf(f, "<style><![CDATA[\r\n");
+    fprintf(f, "polygon {\r\n");
+    fprintf(f, "shape-rendering:crispEdges;\r\n");
+    // crispEdges turns of anti-aliasing, which tends to cause hairline
+    // cracks between triangles; but there still is some cracking, so
+    // specify a stroke width too, hope for around a pixel
+    double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
+    fprintf(f, "stroke-width:%f;\r\n", sw);
+    fprintf(f, "}\r\n");
+    for(int i = 0; i < SK.style.n; i++) {
+        Style *s = &SK.style.elem[i];
+        RgbaColor strokeRgb = Style::Color(s->h, true);
+        int pattern = Style::PatternType(s->h);
+        double stippleScale = Style::StippleScaleMm(s->h);
+
+        fprintf(f, ".s%x {\r\n", s->h.v);
+        fprintf(f, "stroke:#%02x%02x%02x;\r\n", strokeRgb.red, strokeRgb.green, strokeRgb.blue);
+        // don't know why we have to take a half of the width
+        fprintf(f, "stroke-width:%f;\r\n", Style::WidthMm(s->h.v) / 2.0);
+        fprintf(f, "stroke-linecap:round;\r\n");
+        fprintf(f, "stroke-linejoin:round;\r\n");
+        std::string patternStr = MakeStipplePattern(pattern, stippleScale, ',',
+                                                    /*inkscapeWorkaround=*/true);
+        if(!patternStr.empty()) {
+            fprintf(f, "stroke-dasharray:%s;\r\n", patternStr.c_str());
+        }
+        fprintf(f, "fill:none;\r\n");
+        fprintf(f, "}\r\n");
+    }
+    fprintf(f, "]]></style>\r\n");
 }
 
 void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
@@ -876,16 +914,11 @@ void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
 {
     std::string fill;
     if(filled) {
-        fill = ssprintf("#%02x%02x%02x",
+        fill = ssprintf("fill='#%02x%02x%02x'",
             fillRgb.red, fillRgb.green, fillRgb.blue);
-    } else {
-        fill = "none";
     }
-    fprintf(f, "' stroke-width='%.3f' stroke='#%02x%02x%02x' "
-                 "stroke-linecap='round' stroke-linejoin='round' "
-                 "fill='%s' />\r\n",
-        lineWidth, strokeRgb.red, strokeRgb.green, strokeRgb.blue,
-        fill.c_str());
+    std::string cls = ssprintf("s%x", style);
+    fprintf(f, "' class='%s' %s/>\r\n", cls.c_str(), fill.c_str());
 }
 
 void SvgFileWriter::MaybeMoveTo(Vector st, Vector fi) {
@@ -897,19 +930,14 @@ void SvgFileWriter::MaybeMoveTo(Vector st, Vector fi) {
 }
 
 void SvgFileWriter::Triangle(STriangle *tr) {
-    // crispEdges turns of anti-aliasing, which tends to cause hairline
-    // cracks between triangles; but there still is some cracking, so
-    // specify a stroke width too, hope for around a pixel
-    double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
     fprintf(f,
 "<polygon points='%.3f,%.3f %.3f,%.3f %.3f,%.3f' "
-    "stroke='#%02x%02x%02x' stroke-width='%.3f' "
-    "style='fill:#%02x%02x%02x' shape-rendering='crispEdges'/>\r\n",
+    "stroke='#%02x%02x%02x' "
+    "fill='#%02x%02x%02x'/>\r\n",
             (tr->a.x - ptMin.x), (ptMax.y - tr->a.y),
             (tr->b.x - ptMin.x), (ptMax.y - tr->b.y),
             (tr->c.x - ptMin.x), (ptMax.y - tr->c.y),
             tr->meta.color.red, tr->meta.color.green, tr->meta.color.blue,
-            sw,
             tr->meta.color.red, tr->meta.color.green, tr->meta.color.blue);
 }
 
