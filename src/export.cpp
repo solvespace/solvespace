@@ -537,13 +537,13 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
             RgbaColor strokeRgb = Style::Color(hs, true);
             RgbaColor fillRgb   = Style::FillColor(hs, true);
 
-            StartPath(strokeRgb, lineWidth, stl->filled, fillRgb);
+            StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs.v);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
                 for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
                     Bezier(b);
                 }
             }
-            FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb);
+            FinishPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs.v);
         }
     }
     FinishAndCloseFile();

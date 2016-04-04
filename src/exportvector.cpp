@@ -443,7 +443,7 @@ void DxfFileWriter::StartFile(void) {
 }
 
 void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb)
+                              bool filled, RgbaColor fillRgb, uint32_t style)
 {
     BezierPath path = {};
     path.color = strokeRgb.ToPackedIntBGRA();
@@ -451,7 +451,7 @@ void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
     paths.push_back(path);
 }
 void DxfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb)
+                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 
@@ -485,6 +485,41 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
 //-----------------------------------------------------------------------------
 // Routines for EPS output
 //-----------------------------------------------------------------------------
+
+std::string MakeStipplePattern(int pattern, double scale, char delimiter) {
+    scale /= 2.0;
+
+    std::string result;
+    switch(pattern) {
+        case Style::STIPPLE_CONTINUOUS:
+        case Style::STIPPLE_FREEHAND:
+        case Style::STIPPLE_ZIGZAG:
+            return "";
+
+        case Style::STIPPLE_DASH:
+            result = ssprintf("%.3f_%.3f", scale, scale);
+            break;
+        case Style::STIPPLE_DASH_DOT:
+            result = ssprintf("%.3f_%.3f_0_%.3f",
+                              scale, scale * 0.5, scale * 0.5);
+            break;
+        case Style::STIPPLE_DASH_DOT_DOT:
+            result = ssprintf("%.3f_%.3f_0_%.3f_0_%.3f",
+                              scale, scale * 0.5, scale * 0.5, scale * 0.5);
+            break;
+        case Style::STIPPLE_DOT:
+            result = ssprintf("0_%.3f", scale * 0.5);
+            break;
+        case Style::STIPPLE_LONG_DASH:
+            result = ssprintf("%.3f_%.3f", scale * 2.0, scale * 0.5);
+            break;
+        default:
+            oops();
+    }
+    std::replace(result.begin(), result.end(), '_', delimiter);
+    return result;
+}
+
 void EpsFileWriter::StartFile(void) {
     fprintf(f,
 "%%!PS-Adobe-2.0\r\n"
@@ -505,21 +540,28 @@ void EpsFileWriter::StartFile(void) {
 }
 
 void EpsFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb)
+                              bool filled, RgbaColor fillRgb, uint32_t style)
 {
     fprintf(f, "newpath\r\n");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void EpsFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb)
+                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
+    hStyle hs = { style };
+    int pattern = Style::PatternType(hs);
+    double stippleScale = MmToPts(Style::StippleScaleMm(hs));
+
     fprintf(f, "    %.3f setlinewidth\r\n"
                "    %.3f %.3f %.3f setrgbcolor\r\n"
                "    1 setlinejoin\r\n"  // rounded
                "    1 setlinecap\r\n"   // rounded
+               "    [%s] 0 setdash\r\n"
                "    gsave stroke grestore\r\n",
         MmToPts(lineWidth),
-        strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF());
+        strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF(),
+        MakeStipplePattern(pattern, stippleScale, ' ').c_str()
+        );
     if(filled) {
         fprintf(f, "    %.3f %.3f %.3f setrgbcolor\r\n"
                    "    gsave fill grestore\r\n",
@@ -730,12 +772,17 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 }
 
 void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb)
+                              bool filled, RgbaColor fillRgb, uint32_t style)
 {
+    hStyle hs = { style };
+    int pattern = Style::PatternType(hs);
+    double stippleScale = MmToPts(Style::StippleScaleMm(hs));
+
     fprintf(f, "1 J 1 j " // round endcaps and joins
-               "%.3f w "
+               "%.3f w [%s] 0 d "
                "%.3f %.3f %.3f RG\r\n",
         MmToPts(lineWidth),
+        MakeStipplePattern(pattern, stippleScale, ' ').c_str(),
         strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF());
     if(filled) {
         fprintf(f, "%.3f %.3f %.3f rg\r\n",
@@ -745,7 +792,7 @@ void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void PdfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb)
+                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
     if(filled) {
         fprintf(f, "b\r\n");
@@ -819,13 +866,13 @@ void SvgFileWriter::StartFile(void) {
 }
 
 void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb)
+                              bool filled, RgbaColor fillRgb, uint32_t style)
 {
     fprintf(f, "<path d='");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb)
+                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
     std::string fill;
     if(filled) {
@@ -924,11 +971,11 @@ void HpglFileWriter::StartFile(void) {
 }
 
 void HpglFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb)
+                               bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 void HpglFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                bool filled, RgbaColor fillRgb)
+                                bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 
@@ -961,11 +1008,11 @@ void GCodeFileWriter::StartFile(void) {
     sel = {};
 }
 void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                                bool filled, RgbaColor fillRgb)
+                                bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 void GCodeFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                 bool filled, RgbaColor fillRgb)
+                                 bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 void GCodeFileWriter::Triangle(STriangle *tr) {
@@ -1029,11 +1076,11 @@ void Step2dFileWriter::Triangle(STriangle *tr) {
 }
 
 void Step2dFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                                 bool filled, RgbaColor fillRgb)
+                                 bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 void Step2dFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                  bool filled, RgbaColor fillRgb)
+                                  bool filled, RgbaColor fillRgb, uint32_t style)
 {
 }
 
