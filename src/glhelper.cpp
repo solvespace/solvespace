@@ -36,20 +36,15 @@ static const VectorGlyph &GetVectorGlyph(char32_t chr) {
     return GetVectorGlyph(0xfffd); // replacement character
 }
 
-// The internal font metrics are as follows:
-//   * Cap height (measured on "A"):     22684
-//   * Ascender   (measured on "h"):     22684
-//   * Descender  (measured on "p"):    -7562
-//   * Font size  (ascender+descender):  30246
 // Internally and in the UI, the vector font is sized using cap height.
-#define FONT_SCALE(h) ((h)/22684.0)
+#define FONT_SCALE(h) ((h)/(double)FONT_CAP_HEIGHT)
 double ssglStrCapHeight(double h)
 {
-    return /*cap height*/22684.0 * FONT_SCALE(h) / SS.GW.scale;
+    return FONT_CAP_HEIGHT * FONT_SCALE(h) / SS.GW.scale;
 }
 double ssglStrFontSize(double h)
 {
-    return /*font size*/30246.0 * FONT_SCALE(h) / SS.GW.scale;
+    return FONT_SIZE * FONT_SCALE(h) / SS.GW.scale;
 }
 double ssglStrWidth(const std::string &str, double h)
 {
@@ -58,9 +53,9 @@ double ssglStrWidth(const std::string &str, double h)
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         if(glyph.baseCharacter != 0) {
             const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
-            width += max(glyph.width, baseGlyph.width);
+            width += max(glyph.advanceWidth, baseGlyph.advanceWidth);
         } else {
-            width += glyph.width;
+            width += glyph.advanceWidth;
         }
     }
     return width * FONT_SCALE(h) / SS.GW.scale;
@@ -111,15 +106,56 @@ static void LineDrawCallback(void *fndata, Vector a, Vector b)
     glEnd();
 }
 
+Vector pixelAlign(Vector v) {
+    v = SS.GW.ProjectPoint3(v);
+    v.x = floor(v.x) + 0.5;
+    v.y = floor(v.y) + 0.5;
+    v = SS.GW.UnProjectPoint3(v);
+    return v;
+}
+
 int ssglDrawCharacter(const VectorGlyph &glyph, Vector t, Vector o, Vector u, Vector v,
-                      double scale, ssglLineFn *fn, void *fndata) {
-    int width = glyph.width;
+                      double scale, ssglLineFn *fn, void *fndata, bool gridFit) {
+    int advanceWidth = glyph.advanceWidth;
 
     if(glyph.baseCharacter != 0) {
         const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
-        int baseWidth = ssglDrawCharacter(baseGlyph, t, o, u, v, scale, fn, fndata);
-        width = max(glyph.width, baseWidth);
+        int baseWidth = ssglDrawCharacter(baseGlyph, t, o, u, v, scale, fn, fndata, gridFit);
+        advanceWidth = max(glyph.advanceWidth, baseWidth);
     }
+
+    int actualWidth, offsetX;
+    if(gridFit) {
+        o.x         += glyph.leftSideBearing;
+        offsetX      = glyph.leftSideBearing;
+        actualWidth  = glyph.boundingWidth;
+        if(actualWidth == 0) {
+            // Dot, "i", etc.
+            actualWidth = 1;
+        }
+    } else {
+        offsetX      = 0;
+        actualWidth  = advanceWidth;
+    }
+
+    Vector tt = t;
+    tt = tt.Plus(u.ScaledBy(o.x * scale));
+    tt = tt.Plus(v.ScaledBy(o.y * scale));
+
+    Vector tu = tt;
+    tu = tu.Plus(u.ScaledBy(actualWidth * scale));
+
+    Vector tv = tt;
+    tv = tv.Plus(v.ScaledBy(FONT_CAP_HEIGHT * scale));
+
+    if(gridFit) {
+        tt = pixelAlign(tt);
+        tu = pixelAlign(tu);
+        tv = pixelAlign(tv);
+    }
+
+    tu = tu.Minus(tt).ScaledBy(1.0 / actualWidth);
+    tv = tv.Minus(tt).ScaledBy(1.0 / FONT_CAP_HEIGHT);
 
     const int16_t *data = glyph.data;
     bool pen_up = true;
@@ -132,16 +168,16 @@ int ssglDrawCharacter(const VectorGlyph &glyph, Vector t, Vector o, Vector u, Ve
             if(pen_up) break;
             pen_up = true;
         } else {
-            Vector p = t;
-            p = p.Plus(u.ScaledBy((o.x + x) * scale));
-            p = p.Plus(v.ScaledBy((o.y + y) * scale));
+            Vector p = tt;
+            p = p.Plus(tu.ScaledBy(x - offsetX));
+            p = p.Plus(tv.ScaledBy(y));
             if(!pen_up) fn(fndata, prevp, p);
             prevp = p;
             pen_up = false;
         }
     }
 
-    return width;
+    return advanceWidth;
 }
 
 void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
@@ -151,11 +187,14 @@ void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector 
     u = u.WithMagnitude(1);
     v = v.WithMagnitude(1);
 
+    // Perform grid-fitting only when the text is parallel to the view plane.
+    bool gridFit = !SS.exportMode && u.Equals(SS.GW.projRight) && v.Equals(SS.GW.projUp);
+
     double scale = FONT_SCALE(h) / SS.GW.scale;
     Vector o = { 3840.0, 3840.0 };
     for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
-        o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata);
+        o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata, gridFit);
     }
 }
 

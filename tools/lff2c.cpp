@@ -62,54 +62,45 @@ struct Glyph {
     char32_t baseCharacter;
     std::vector<Curve> curves;
 
-    void getBoundWidth(double *rminw, double *rmaxw) const {
-        if(curves.empty()) {
-            *rminw = 0.0;
-            *rmaxw = 0.0;
-            return;
-        }
-        double minw = curves[0].points[0].x;
-        double maxw = minw;
-        for(const Curve &c : curves) {
-            for(const Point &p : c.points) {
-                maxw = std::max(maxw, p.x);
-                minw = std::min(minw, p.x);
+    void getHorizontalBounds(double *rminx, double *rmaxx) const {
+        double minx = 0;
+        double maxx = 0;
+        if(!curves.empty()) {
+            minx = curves[0].points[0].x;
+            maxx = minx;
+            for(const Curve &c : curves) {
+                for(const Point &p : c.points) {
+                    maxx = std::max(maxx, p.x);
+                    minx = std::min(minx, p.x);
+                }
             }
         }
-        *rminw = minw;
-        *rmaxw = maxw;
+        if(rminx) *rminx = minx;
+        if(rmaxx) *rmaxx = maxx;
     }
 
-    void getBoundHeight(double *rminh, double *rmaxh) const {
-        if(curves.empty()) {
-            *rminh = 0.0;
-            *rmaxh = 0.0;
-            return;
-        }
-        double minh = curves[0].points[0].y;
-        double maxh = minh;
-        for(const Curve &c : curves) {
-            for(const Point &p : c.points) {
-                maxh = std::max(maxh, p.y);
-                minh = std::min(minh, p.y);
+    void getVerticalBounds(double *rminy, double *rmaxy) const {
+        double miny = 0;
+        double maxy = 0;
+        if(!curves.empty()) {
+            miny = curves[0].points[0].y;
+            maxy = miny;
+            for(const Curve &c : curves) {
+                for(const Point &p : c.points) {
+                    maxy = std::max(maxy, p.y);
+                    miny = std::min(miny, p.y);
+                }
             }
         }
-        *rminh = minh;
-        *rmaxh = maxh;
+        if(rminy) *rminy = miny;
+        if(rmaxy) *rmaxy = maxy;
     }
 
-    double getWidth() const {
-        double maxw;
-        double minw;
-        getBoundWidth(&minw, &maxw);
-        return maxw - minw;
-    }
-
-    double getHeight() const {
-        double maxh;
-        double minh;
-        getBoundHeight(&minh, &maxh);
-        return maxh - minh;
+    void getHorizontalMetrics(double *leftSideBearing, double *boundingWidth) const {
+        double minx, maxx;
+        getHorizontalBounds(&minx, &maxx);
+        *leftSideBearing = minx;
+        *boundingWidth = maxx - minx;
     }
 
     bool operator<(const Glyph &o) const { return character < o.character; }
@@ -120,6 +111,11 @@ struct Font {
     double wordSpacing;
     std::vector<Glyph> glyphs;
 
+    const Glyph &findGlyph(char32_t character) {
+        return *std::find_if(glyphs.begin(), glyphs.end(),
+            [&](const Glyph &g) { return g.character == character; });
+    }
+
     void getGlyphBound(double *rminw, double *rminh, double *rmaxw, double *rmaxh) {
         if(glyphs.empty()) {
             *rminw = 0.0;
@@ -129,12 +125,12 @@ struct Font {
             return;
         }
 
-        glyphs[0].getBoundWidth(rminw, rmaxw);
-        glyphs[0].getBoundHeight(rminh, rmaxh);
+        glyphs[0].getHorizontalBounds(rminw, rmaxw);
+        glyphs[0].getVerticalBounds(rminh, rmaxh);
         for(const Glyph &g : glyphs) {
             double minw, minh, maxw, maxh;
-            g.getBoundWidth(&minw, &maxw);
-            g.getBoundHeight(&minh, &maxh);
+            g.getHorizontalBounds(&minw, &maxw);
+            g.getVerticalBounds(&minh, &maxh);
             *rminw = std::min(*rminw, minw);
             *rminh = std::min(*rminh, minh);
             *rmaxw = std::max(*rmaxw, maxw);
@@ -204,7 +200,7 @@ struct Font {
         }
 
         // Read line by line until we find a new letter:
-        Glyph *currentGlyph = NULL;
+        Glyph *currentGlyph = nullptr;
         while(!gzeof(lfffont)) {
             std::string line;
             do {
@@ -261,7 +257,7 @@ struct Font {
                 char32_t chr = std::stoi(line.substr(1), &closingPos, 16);;
                 if(line[closingPos + 1] != ']') {
                     std::cerr << "unrecognized character number: " << line << std::endl;
-                    currentGlyph = NULL;
+                    currentGlyph = nullptr;
                     continue;
                 }
 
@@ -269,10 +265,10 @@ struct Font {
                 currentGlyph = &glyphs.back();
                 currentGlyph->character = chr;
                 currentGlyph->baseCharacter = 0;
-            } else if(currentGlyph != NULL) {
+            } else if(currentGlyph != nullptr) {
                 if (line[0] == 'C') {
                     // This is a reference to another glyph.
-                    currentGlyph->baseCharacter = std::stoi(line.substr(1), NULL, 16);
+                    currentGlyph->baseCharacter = std::stoi(line.substr(1), nullptr, 16);
                 } else {
                     // This is a series of curves.
                     currentGlyph->curves.emplace_back();
@@ -321,6 +317,11 @@ struct Font {
         double size  = 32766.0;
         double scale = size / std::max({ fabs(maxX), fabs(minX), fabs(maxY), fabs(minY) });
 
+        double capHeight, ascender, descender;
+        findGlyph('A').getVerticalBounds(nullptr, &capHeight);
+        findGlyph('h').getVerticalBounds(nullptr, &ascender);
+        findGlyph('p').getVerticalBounds(&descender, nullptr);
+
         // We use tabs for indentation here to make compilation slightly faster
         ts <<
         "/**** This is a generated file - do not edit ****/\n\n"
@@ -330,10 +331,17 @@ struct Font {
         "#define PEN_UP 32767\n"
         "#define UP PEN_UP\n"
         "\n"
+        "#define FONT_CAP_HEIGHT ((int16_t)" << (int)floor(capHeight * scale) << ")\n" <<
+        "#define FONT_ASCENDER   ((int16_t)" << (int)floor(ascender * scale) << ")\n" <<
+        "#define FONT_DESCENDER  ((int16_t)" << (int)floor(descender * scale) << ")\n" <<
+        "#define FONT_SIZE       (FONT_ASCENDER-FONT_DESCENDER)\n"
+        "\n"
         "struct VectorGlyph {\n"
-        "\tchar32_t      character;\n"
-        "\tchar32_t      baseCharacter;\n"
-        "\tint           width;\n"
+        "\tchar32_t       character;\n"
+        "\tchar32_t       baseCharacter;\n"
+        "\tint            leftSideBearing;\n"
+        "\tint            boundingWidth;\n"
+        "\tint            advanceWidth;\n"
         "\tconst int16_t *data;\n"
         "};\n"
         "\n"
@@ -347,8 +355,8 @@ struct Font {
             glyphIndexes[g.character] = index;
             for(const Curve &c : g.curves) {
                 for(const Point &p : c.points) {
-                    ts << "\t" << int(floor(p.x * scale)) << ", " <<
-                                  int(floor(p.y * scale)) << ",\n";
+                    ts << "\t" << (int)floor(p.x * scale) << ", " <<
+                                  (int)floor(p.y * scale) << ",\n";
                     index += 2;
                 }
                 ts << "\tUP, UP,\n";
@@ -363,13 +371,19 @@ struct Font {
         "\n"
         "const VectorGlyph VectorFont[] = {\n"
         "\t// U+20\n"
-        "\t{ 32, 0, " << int(floor(wordSpacing * scale)) << ", &VectorFontData[0] },\n";
+        "\t{ 32, 0, 0, 0, " << (int)floor(wordSpacing * scale) << ", &VectorFontData[0] },\n";
 
         for(const Glyph &g : glyphs) {
+            double leftSideBearing, boundingWidth;
+            g.getHorizontalMetrics(&leftSideBearing, &boundingWidth);
+
             ts << "\t// U+" << std::hex << g.character << std::dec << "\n";
             ts << "\t{ " << g.character << ", "
                          << g.baseCharacter << ", "
-                         << int(floor((g.getWidth() + letterSpacing) * scale)) << ", ";
+                         << (int)floor(leftSideBearing * scale) << ", "
+                         << (int)floor(boundingWidth * scale) << ", "
+                         << (int)floor((leftSideBearing + boundingWidth +
+                                        letterSpacing) * scale) << ", ";
             ts << "&VectorFontData[" << glyphIndexes[g.character] << "] },\n";
         }
 

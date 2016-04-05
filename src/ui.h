@@ -514,6 +514,7 @@ public:
     Vector ProjectPoint3(Vector p);
     Vector ProjectPoint4(Vector p, double *w);
     Vector UnProjectPoint(Point2d p);
+    Vector UnProjectPoint3(Vector p);
     void AnimateOnto(Quaternion quatf, Vector offsetf);
     void AnimateOntoWorkplane(void);
     Vector VectorFromProjs(Vector rightUpForward);

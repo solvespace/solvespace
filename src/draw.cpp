@@ -429,6 +429,19 @@ Vector GraphicsWindow::UnProjectPoint(Point2d p) {
     return orig;
 }
 
+Vector GraphicsWindow::UnProjectPoint3(Vector p) {
+    p.z = p.z / (scale - p.z * SS.CameraTangent() * scale);
+    double w = 1 + p.z * SS.CameraTangent() * scale;
+    p.x *= w / scale;
+    p.y *= w / scale;
+    
+    Vector orig = offset.ScaledBy(-1);
+    orig = orig.Plus(projRight.ScaledBy(p.x)).Plus(
+                     projUp.   ScaledBy(p.y).Plus(
+                     projRight.Cross(projUp). ScaledBy(p.z)));
+    return orig;
+}
+
 void GraphicsWindow::NormalizeProjectionVectors(void) {
     if(projRight.Magnitude() < LENGTH_EPS) {
         projRight = Vector::From(1, 0, 0);
