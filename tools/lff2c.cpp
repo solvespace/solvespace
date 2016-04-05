@@ -318,7 +318,7 @@ struct Font {
         double minX, minY, maxX, maxY;
         getGlyphBound(&minX, &minY, &maxX, &maxY);
 
-        double size  = 126.0;
+        double size  = 32766.0;
         double scale = size / std::max({ fabs(maxX), fabs(minX), fabs(maxY), fabs(minY) });
 
         // We use tabs for indentation here to make compilation slightly faster
@@ -327,17 +327,17 @@ struct Font {
         "#ifndef __VECTORFONT_TABLE_H\n"
         "#define __VECTORFONT_TABLE_H\n"
         "\n"
-        "#define PEN_UP 127\n"
+        "#define PEN_UP 32767\n"
         "#define UP PEN_UP\n"
         "\n"
         "struct VectorGlyph {\n"
         "\tchar32_t      character;\n"
         "\tchar32_t      baseCharacter;\n"
         "\tint           width;\n"
-        "\tconst int8_t *data;\n"
+        "\tconst int16_t *data;\n"
         "};\n"
         "\n"
-        "const int8_t VectorFontData[] = {\n"
+        "const int16_t VectorFontData[] = {\n"
         "\tUP, UP,\n";
 
         std::map<char32_t, size_t> glyphIndexes;

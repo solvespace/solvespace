@@ -37,19 +37,19 @@ static const VectorGlyph &GetVectorGlyph(char32_t chr) {
 }
 
 // The internal font metrics are as follows:
-//   * Cap height (measured on "A"):     87
-//   * Ascender   (measured on "h"):     87
-//   * Descender  (measured on "p"):    -30
-//   * Font size  (ascender+descender): 126
+//   * Cap height (measured on "A"):     22684
+//   * Ascender   (measured on "h"):     22684
+//   * Descender  (measured on "p"):    -7562
+//   * Font size  (ascender+descender):  30246
 // Internally and in the UI, the vector font is sized using cap height.
-#define FONT_SCALE(h) ((h)/87.0)
+#define FONT_SCALE(h) ((h)/22684.0)
 double ssglStrCapHeight(double h)
 {
-    return /*cap height*/87.0 * FONT_SCALE(h) / SS.GW.scale;
+    return /*cap height*/22684.0 * FONT_SCALE(h) / SS.GW.scale;
 }
 double ssglStrFontSize(double h)
 {
-    return /*font size*/126.0 * FONT_SCALE(h) / SS.GW.scale;
+    return /*font size*/30246.0 * FONT_SCALE(h) / SS.GW.scale;
 }
 double ssglStrWidth(const std::string &str, double h)
 {
@@ -79,7 +79,7 @@ void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u
     t = t.Plus(v.ScaledBy(-fh/2));
 
     // Apply additional offset to get an exact center alignment.
-    t = t.Plus(v.ScaledBy(-18*scale));
+    t = t.Plus(v.ScaledBy(-4608*scale));
 
     ssglWriteText(str, h, t, u, v, fn, fndata);
 }
@@ -121,12 +121,12 @@ int ssglDrawCharacter(const VectorGlyph &glyph, Vector t, Vector o, Vector u, Ve
         width = max(glyph.width, baseWidth);
     }
 
-    const int8_t *data = glyph.data;
+    const int16_t *data = glyph.data;
     bool pen_up = true;
     Vector prevp;
     while(true) {
-        int8_t x = *data++;
-        int8_t y = *data++;
+        int16_t x = *data++;
+        int16_t y = *data++;
 
         if(x == PEN_UP && y == PEN_UP) {
             if(pen_up) break;
@@ -152,7 +152,7 @@ void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector 
     v = v.WithMagnitude(1);
 
     double scale = FONT_SCALE(h) / SS.GW.scale;
-    Vector o = { 15.0, 15.0 };
+    Vector o = { 3840.0, 3840.0 };
     for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata);
