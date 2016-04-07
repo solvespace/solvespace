@@ -184,6 +184,18 @@ std::string Request::DescriptionString(void) {
     return ssprintf("r%03x-%s", h.v, s);
 }
 
+int Request::IndexOfPoint(hEntity he) {
+    if(type == DATUM_POINT) {
+        return (he.v == h.entity(0).v) ? 0 : -1;
+    }
+    for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
+        if(he.v == h.entity(i + 1).v) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 hParam Request::AddParam(IdList<Param,hParam> *param, hParam hp) {
     Param pa = {};
     pa.h = hp;

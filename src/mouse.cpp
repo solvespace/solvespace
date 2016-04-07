@@ -567,6 +567,18 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.comments > 0 || gs.points > 0) {
             AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
+
+            if(gs.points == 1) {
+                hRequest hr = gs.point[0].request();
+                if(hr.v != 0) {
+                    Request *r = SK.GetRequest(hr);
+                    int index = r->IndexOfPoint(gs.point[0]);
+                    if((r->type == Request::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
+                            r->type == Request::CUBIC_PERIODIC) {
+                        AddContextMenuItem("Remove Spline Point", CMNU_REMOVE_SPLINE_PT);
+                    }
+                }
+            }
         }
 
         if(gs.points == 1) {
@@ -674,6 +686,36 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         case CMNU_SNAP_TO_GRID:
             MenuEdit(MNU_SNAP_TO_GRID);
             break;
+
+        case CMNU_REMOVE_SPLINE_PT: {
+            hRequest hr = gs.point[0].request();
+            Request *r = SK.GetRequest(hr);
+
+            int index = r->IndexOfPoint(gs.point[0]);
+            if(r->extraPoints == 0) oops();
+
+            SS.UndoRemember();
+            Entity *e = SK.GetEntity(r->h.entity(0));
+
+            // First, fix point-coincident constraints involving this point.
+            // Then, remove all other constraints, since they would otherwise
+            // jump to an adjacent one and mess up the bezier after generation.
+            FixConstraintsForPointBeingDeleted(e->point[index]);
+            RemoveConstraintsForPointBeingDeleted(e->point[index]);
+
+            for(int i = index; i < MAX_POINTS_IN_ENTITY - 1; i++) {
+                if(e->point[i + 1].v == 0) break;
+                Entity *p0 = SK.GetEntity(e->point[i]);
+                Entity *p1 = SK.GetEntity(e->point[i + 1]);
+                ReplacePointInConstraints(p1->h, p0->h);
+                p0->PointForceTo(p1->PointGetNum());
+            }
+            r->extraPoints--;
+            SS.MarkGroupDirtyByEntity(gs.point[0]);
+            SS.ScheduleGenerateAll();
+            ClearSelection();
+            break;
+        }
 
         case CMNU_GROUP_INFO: {
             hGroup hg;

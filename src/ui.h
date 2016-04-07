@@ -601,6 +601,7 @@ public:
     hEntity SplitCircle(hEntity he, Vector pinter);
     hEntity SplitCubic(hEntity he, Vector pinter);
     void ReplacePointInConstraints(hEntity oldpt, hEntity newpt);
+    void RemoveConstraintsForPointBeingDeleted(hEntity hpt);
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
 
@@ -678,6 +679,7 @@ public:
         CMNU_OTHER_ANGLE      = 0x131,
         CMNU_DEL_COINCIDENT   = 0x132,
         CMNU_SNAP_TO_GRID     = 0x140,
+        CMNU_REMOVE_SPLINE_PT = 0x141,
         CMNU_FIRST_STYLE      = 0x40000000
     };
     void ContextMenuListStyles(void);

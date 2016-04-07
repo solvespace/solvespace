@@ -8,8 +8,8 @@
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------
-// Replace a point-coincident constraint on oldpt with that same constraint
-// on newpt. Useful when splitting or tangent arcing.
+// Replace constraints on oldpt with the same constraints on newpt.
+// Useful when splitting, tangent arcing, or removing bezier points.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
     int i;
@@ -21,6 +21,27 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
             if(c->ptB.v == oldpt.v) c->ptB = newpt;
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+// Remove constraints on hpt. Useful when removing bezier points.
+//-----------------------------------------------------------------------------
+void GraphicsWindow::RemoveConstraintsForPointBeingDeleted(hEntity hpt) {
+    SK.constraint.ClearTags();
+    for(int i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &(SK.constraint.elem[i]);
+        if(c->ptA.v == hpt.v || c->ptB.v == hpt.v) {
+            c->tag = 1;
+            (SS.deleted.constraints)++;
+            if(c->type != Constraint::POINTS_COINCIDENT &&
+               c->type != Constraint::HORIZONTAL &&
+               c->type != Constraint::VERTICAL)
+            {
+                (SS.deleted.nonTrivialConstraints)++;
+            }
+        }
+    }
+    SK.constraint.RemoveTagged();
 }
 
 //-----------------------------------------------------------------------------
@@ -67,9 +88,12 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
             c->tag = 1;
         }
     }
-    // These would get removed anyways when we regenerated, but do it now;
-    // that way subsequent calls of this function (if multiple coincident
-    // points are getting deleted) will work correctly.
+    // Remove constraints without waiting for regeneration; this way
+    // if another point takes the place of the deleted one (e.g. when
+    // removing control points of a bezier) the constraint doesn't
+    // spuriously move. Similarly, subsequent calls of this function
+    // (if multiple coincident points are getting deleted) will work
+    // correctly.
     SK.constraint.RemoveTagged();
 
     // If more than one point was constrained coincident with hpt, then

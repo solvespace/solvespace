@@ -299,6 +299,7 @@ public:
     void Generate(EntityList *entity, ParamList *param);
 
     std::string DescriptionString(void);
+    int IndexOfPoint(hEntity he);
 
     void Clear(void) {}
 };
