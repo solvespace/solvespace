@@ -680,6 +680,7 @@ public:
         CMNU_DEL_COINCIDENT   = 0x132,
         CMNU_SNAP_TO_GRID     = 0x140,
         CMNU_REMOVE_SPLINE_PT = 0x141,
+        CMNU_ADD_SPLINE_PT    = 0x142,
         CMNU_FIRST_STYLE      = 0x40000000
     };
     void ContextMenuListStyles(void);

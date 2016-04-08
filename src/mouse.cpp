@@ -528,6 +528,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         return;
     }
 
+    // The current mouse location
+    Vector v = offset.ScaledBy(-1);
+    v = v.Plus(projRight.ScaledBy(x/scale));
+    v = v.Plus(projUp.ScaledBy(y/scale));
+
     context.active = true;
 
     if(!hover.IsEmpty()) {
@@ -537,6 +542,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     GroupSelection();
 
     bool itemsSelected = (gs.n > 0 || gs.constraints > 0);
+    int addAfterPoint = -1;
 
     if(itemsSelected) {
         if(gs.stylables > 0) {
@@ -577,6 +583,22 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                             r->type == Request::CUBIC_PERIODIC) {
                         AddContextMenuItem("Remove Spline Point", CMNU_REMOVE_SPLINE_PT);
                     }
+                }
+            }
+        }
+
+        if(gs.entities == 1) {
+            hRequest hr = gs.entity[0].request();
+            if(hr.v != 0) {
+                Request *r = SK.GetRequest(hr);
+                if(r->type == Request::CUBIC || r->type == Request::CUBIC_PERIODIC) {
+                    Entity *e = SK.GetEntity(gs.entity[0]);
+                    e->GetDistance(Point2d::From(x, y));
+                    addAfterPoint = e->dogd.data;
+                    if(addAfterPoint == -1) oops();
+                    // Skip derivative point.
+                    if(r->type == Request::CUBIC) addAfterPoint++;
+                    AddContextMenuItem("Add Spline Point", CMNU_ADD_SPLINE_PT);
                 }
             }
         }
@@ -714,6 +736,36 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             SS.MarkGroupDirtyByEntity(gs.point[0]);
             SS.ScheduleGenerateAll();
             ClearSelection();
+            break;
+        }
+
+        case CMNU_ADD_SPLINE_PT: {
+            hRequest hr = gs.entity[0].request();
+            Request *r = SK.GetRequest(hr);
+
+            int pointCount = r->extraPoints + ((r->type == Request::CUBIC_PERIODIC) ? 3 : 4);
+            if(pointCount < MAX_POINTS_IN_ENTITY) {
+                SS.UndoRemember();
+                r->extraPoints++;
+                SS.MarkGroupDirtyByEntity(gs.entity[0]);
+                SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
+
+                Entity *e = SK.GetEntity(r->h.entity(0));
+                for(int i = MAX_POINTS_IN_ENTITY; i > addAfterPoint + 1; i--) {
+                    Entity *p0 = SK.entity.FindByIdNoOops(e->point[i]);
+                    if(p0 == NULL) continue;
+                    Entity *p1 = SK.GetEntity(e->point[i - 1]);
+                    ReplacePointInConstraints(p1->h, p0->h);
+                    p0->PointForceTo(p1->PointGetNum());
+                }
+                Entity *p = SK.GetEntity(e->point[addAfterPoint + 1]);
+                p->PointForceTo(v);
+                SS.MarkGroupDirtyByEntity(gs.entity[0]);
+                SS.ScheduleGenerateAll();
+                ClearSelection();
+            } else {
+                Error("Cannot add spline point: maximum number of points reached.");
+            }
             break;
         }
 

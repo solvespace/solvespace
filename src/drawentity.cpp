@@ -17,7 +17,7 @@ std::string Entity::DescriptionString(void) {
     }
 }
 
-void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
+void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat, int data) {
     if(dogd.drawing) {
         // Draw lines from active group in front of those from previous
         ssglDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
@@ -32,7 +32,10 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat) {
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
         // A little bit easier to select in the active group
         if(group.v == SS.GW.activeGroup.v) d -= 1;
-        dogd.dmin = min(dogd.dmin, d);
+        if(d < dogd.dmin) {
+            dogd.dmin = d;
+            dogd.data = data;
+        }
     }
     dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
@@ -127,7 +130,7 @@ void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
         for(j = 1; j < lv.n; j++) {
-            el->AddEdge(lv.elem[j-1], lv.elem[j], style.v);
+            el->AddEdge(lv.elem[j-1], lv.elem[j], style.v, i);
         }
         lv.Clear();
     }
@@ -707,10 +710,10 @@ void Entity::DrawOrGetDistance(void) {
     // And draw the curves; generate the rational polynomial curves for
     // everything, then piecewise linearize them, and display those.
     SEdgeList *sel = GetOrGenerateEdges();
-    int i;
-    for(i = 0; i < sel->l.n; i++) {
+    dogd.data = -1;
+    for(int i = 0; i < sel->l.n; i++) {
         SEdge *se = &(sel->l.elem[i]);
-        LineDrawOrGetDistance(se->a, se->b, true);
+        LineDrawOrGetDistance(se->a, se->b, true, se->auxB);
     }
 }
 

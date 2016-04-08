@@ -15,11 +15,8 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
     int i;
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *c = &(SK.constraint.elem[i]);
-
-        if(c->type == Constraint::POINTS_COINCIDENT) {
-            if(c->ptA.v == oldpt.v) c->ptA = newpt;
-            if(c->ptB.v == oldpt.v) c->ptB = newpt;
-        }
+        if(c->ptA.v == oldpt.v) c->ptA = newpt;
+        if(c->ptB.v == oldpt.v) c->ptB = newpt;
     }
 }
 

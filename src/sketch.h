@@ -492,8 +492,9 @@ public:
         double      lineWidth;
         double      stippleScale;
         int         stippleType;
+        int         data;
     } dogd; // state for drawing or getting distance (for hit testing)
-    void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false);
+    void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false, int userData = -1);
     void DrawOrGetDistance(void);
 
     bool IsStylable();
