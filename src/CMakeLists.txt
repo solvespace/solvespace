@@ -153,7 +153,8 @@ elseif(APPLE)
         unix/solvespace-48x48.png)
 
     set(platform_BUNDLED_LIBS
-        ${PNG_LIBRARIES})
+        ${PNG_LIBRARIES}
+        ${FREETYPE_LIBRARIES})
 
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
