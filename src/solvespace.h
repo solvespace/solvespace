@@ -670,7 +670,7 @@ public:
     void Clear(void);
 
     BBox CalculateEntityBBox(bool includingInvisible);
-    Group *GetRunningMeshGroup();
+    Group *GetRunningMeshGroupFor(hGroup h);
 };
 #undef ENTITY
 #undef CONSTRAINT
