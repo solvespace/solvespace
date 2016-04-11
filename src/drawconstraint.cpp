@@ -227,6 +227,13 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
     return within;
 }
 
+void Constraint::DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da) {
+    dir = dir.WithMagnitude(width / cos(angle));
+    dir = dir.RotatedAbout(n, da);
+    LineDrawOrGetDistance(p, p.Plus(dir.RotatedAbout(n,  angle)));
+    LineDrawOrGetDistance(p, p.Plus(dir.RotatedAbout(n, -angle)));
+}
+
 //-----------------------------------------------------------------------------
 // Draw a line with arrows on both ends, and possibly a gap in the middle for
 // the dimension. We will use these for most length dimensions. The length
@@ -271,11 +278,8 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
         if(within > 0) LineDrawOrGetDistance(be, be.Plus(seg));
     }
 
-    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(n,  theta)));
-    LineDrawOrGetDistance(ae, ae.Plus(arrow.RotatedAbout(n, -theta)));
-    arrow = arrow.ScaledBy(-1);
-    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(n,  theta)));
-    LineDrawOrGetDistance(be, be.Plus(arrow.RotatedAbout(n, -theta)));
+    DoArrow(ae, arrow, n, 13.0 * pixels, theta, 0.0);
+    DoArrow(be, arrow.Negated(), n, 13.0 * pixels, theta, 0.0);
 }
 
 void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
@@ -323,6 +327,10 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         db = db.ProjectVectorInto(workplane);
     }
 
+    double px = 1.0 / SS.GW.scale;
+    Vector a1 = a0.Plus(da);
+    Vector b1 = b0.Plus(db);
+
     bool skew;
     Vector pi = Vector::AtIntersectionOfLines(a0, a0.Plus(da),
                                               b0, b0.Plus(db), &skew);
@@ -332,12 +340,13 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // We draw in a coordinate system centered at the intersection point.
         // One basis vector is da, and the other is normal to da and in
         // the plane that contains our lines (so normal to its normal).
-        Vector dna = (da.Cross(db)).Cross(da);
-        da = da.WithMagnitude(1); dna = dna.WithMagnitude(1);
+        Vector norm = da.Cross(db);
+        Vector dna = norm.Cross(da).WithMagnitude(1.0);
+        da = da.WithMagnitude(1);
 
         Vector rm = (*ref).Minus(pi);
         double rda = rm.Dot(da), rdna = rm.Dot(dna);
-        double r = sqrt(rda*rda + rdna*rdna);
+        double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * px);
         double c = (da.Dot(db))/(da.Magnitude()*db.Magnitude());
         double thetaf = acos(c);
 
@@ -348,6 +357,8 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         }
 
         Vector prev = da.ScaledBy(r).Plus(pi);
+        Vector apa = prev;
+
         int i, n = 30;
         for(i = 0; i <= n; i++) {
             double theta = (i*thetaf)/n;
@@ -355,6 +366,20 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                        dna.ScaledBy(r*sin(theta))).Plus(pi);
             LineDrawOrGetDistance(prev, p);
             prev = p;
+        }
+
+        Vector apb = prev;
+        DoLineExtend(a0, a1, apa, 5.0 * px);
+        DoLineExtend(b0, b1, apb, 5.0 * px);
+
+        double arrowW = 13 * px;
+        double arrowA = 18.0 * PI / 180.0;
+
+        // Draw arrows only when we have enough space.
+        if(apb.Minus(apa).Magnitude() > 2.5 * arrowW) {
+            double angleCorr = arrowW / (2.0 * r);
+            DoArrow(apa, dna, norm, arrowW, arrowA, angleCorr);
+            DoArrow(apb, dna, norm, arrowW, arrowA, thetaf + PI - angleCorr);
         }
 
         // The elliptical approximation isn't exactly right, but the correct
@@ -396,10 +421,39 @@ bool Constraint::IsVisible() const {
     return true;
 }
 
+bool Constraint::DoLineExtend(Vector p0, Vector p1, Vector pt, double salient) {
+    Vector dir = p1.Minus(p0);
+    double k = dir.Dot(pt.Minus(p0)) / dir.Dot(dir);
+    Vector ptOnLine = p0.Plus(dir.ScaledBy(k));
+
+    // Draw projection line.
+    LineDrawOrGetDistance(pt, ptOnLine);
+
+    // Calculate salient direction.
+    Vector sd = dir.WithMagnitude(1.0).ScaledBy(salient);
+
+    Vector from;
+    Vector to;
+
+    if(k < 0.0) {
+        from = p0;
+        to = ptOnLine.Minus(sd);
+    } else if(k > 1.0) {
+        from = p1;
+        to = ptOnLine.Plus(sd);
+    } else {
+        return false;
+    }
+
+    // Draw extension line.
+    LineDrawOrGetDistance(from, to);
+    return true;
+}
+
 void Constraint::DrawOrGetDistance(Vector *labelPos) {
-    
+
     if(!IsVisible()) return;
-    
+
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.
     Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);
@@ -656,16 +710,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Entity *c = SK.GetEntity(entityC);
             Entity *d = SK.GetEntity(entityD);
 
-            Vector a0 = a->VectorGetRefPoint();
-            Vector b0 = b->VectorGetRefPoint();
-            Vector c0 = c->VectorGetRefPoint();
-            Vector d0 = d->VectorGetRefPoint();
+            Vector a0 = a->VectorGetStartPoint();
+            Vector b0 = b->VectorGetStartPoint();
+            Vector c0 = c->VectorGetStartPoint();
+            Vector d0 = d->VectorGetStartPoint();
             Vector da = a->VectorGetNum();
             Vector db = b->VectorGetNum();
             Vector dc = c->VectorGetNum();
             Vector dd = d->VectorGetNum();
 
-            if(other) da = da.ScaledBy(-1);
+            if(other) {
+                a0 = a0.Plus(da);
+                da = da.ScaledBy(-1);
+            }
 
             DoArcForAngle(a0, da, b0, db,
                 da.WithMagnitude(40/SS.GW.scale), &ref);
@@ -679,11 +736,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Entity *a = SK.GetEntity(entityA);
             Entity *b = SK.GetEntity(entityB);
 
-            Vector a0 = a->VectorGetRefPoint();
-            Vector b0 = b->VectorGetRefPoint();
+            Vector a0 = a->VectorGetStartPoint();
+            Vector b0 = b->VectorGetStartPoint();
             Vector da = a->VectorGetNum();
             Vector db = b->VectorGetNum();
-            if(other) da = da.ScaledBy(-1);
+            if(other) {
+                a0 = a0.Plus(da);
+                da = da.ScaledBy(-1);
+            }
 
             Vector ref;
             DoArcForAngle(a0, da, b0, db, disp.offset, &ref);

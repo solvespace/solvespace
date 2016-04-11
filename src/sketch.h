@@ -688,8 +688,10 @@ public:
     void DrawOrGetDistance(Vector *labelPos);
     double EllipticalInterpolation(double rx, double ry, double theta);
     std::string Label(void);
+    bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                         Vector offset, Vector *ref);
+    void DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da);
     void DoLineWithArrows(Vector ref, Vector a, Vector b, bool onlyOneExt);
     int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
