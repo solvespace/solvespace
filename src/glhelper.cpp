@@ -36,7 +36,21 @@ static const VectorGlyph &GetVectorGlyph(char32_t chr) {
     return GetVectorGlyph(0xfffd); // replacement character
 }
 
+// The internal font metrics are as follows:
+//   * Cap height (measured on "A"):     87
+//   * Ascender   (measured on "h"):     87
+//   * Descender  (measured on "p"):    -30
+//   * Font size  (ascender+descender): 126
+// Internally and in the UI, the vector font is sized using cap height.
 #define FONT_SCALE(h) ((h)/87.0)
+double ssglStrCapHeight(double h)
+{
+    return /*cap height*/87.0 * FONT_SCALE(h) / SS.GW.scale;
+}
+double ssglStrFontSize(double h)
+{
+    return /*font size*/126.0 * FONT_SCALE(h) / SS.GW.scale;
+}
 double ssglStrWidth(const std::string &str, double h)
 {
     int width = 0;
@@ -51,11 +65,6 @@ double ssglStrWidth(const std::string &str, double h)
     }
     return width * FONT_SCALE(h) / SS.GW.scale;
 }
-double ssglStrHeight(double h)
-{
-    // The characters have height ~90, as they appear in the table.
-    return 90.0 * FONT_SCALE(h) / SS.GW.scale;
-}
 void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
                             ssglLineFn *fn, void *fndata)
 {
@@ -63,7 +72,7 @@ void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u
     v = v.WithMagnitude(1);
 
     double scale = FONT_SCALE(h)/SS.GW.scale;
-    double fh = ssglStrHeight(h);
+    double fh = ssglStrCapHeight(h);
     double fw = ssglStrWidth(str, h);
 
     t = t.Plus(u.ScaledBy(-fw/2));

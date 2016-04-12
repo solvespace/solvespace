@@ -679,7 +679,7 @@ void Entity::DrawOrGetDistance(void) {
                 ssglWriteText(str, th, mm2, u, v, NULL, NULL);
             } else {
                 Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
-                                      v.ScaledBy(ssglStrHeight(th)/2));
+                                      v.ScaledBy(ssglStrCapHeight(th)/2));
                 Point2d pp = SS.GW.ProjectPoint(pos);
                 dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);
                 // If a line lies in a plane, then select the line, not

@@ -83,7 +83,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
 
     std::string s = Label();
     double swidth  = ssglStrWidth(s, th),
-           sheight = ssglStrHeight(th);
+           sheight = ssglStrCapHeight(th);
 
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
@@ -157,7 +157,7 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
     double pixels = 1.0 / SS.GW.scale;
     std::string s = Label();
     double swidth  = ssglStrWidth(s, th) + 4*pixels,
-           sheight = ssglStrHeight(th) + 8*pixels;
+           sheight = ssglStrCapHeight(th) + 8*pixels;
 
     struct {
         Vector n;
@@ -371,7 +371,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
         gu = gu.WithMagnitude(1);
         Vector trans =
-            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrHeight(Style::DefaultTextHeight())));
+            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrCapHeight(Style::DefaultTextHeight())));
         ssglWriteTextRefCenter("angle between skew lines", Style::DefaultTextHeight(),
             trans, gr, gu, LineCallback, this);
     }
