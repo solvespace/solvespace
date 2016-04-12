@@ -41,15 +41,15 @@ public:
 
     virtual void writeLayers() {
         DRW_Layer layer;
-        
+
         layer.name = "dimensions";
         dxf->writeLayer(&layer);
         layer.name = "text";
         dxf->writeLayer(&layer);
-        
+
         for(int i = 0; i < SK.style.n; i++) {
             Style *s = &SK.style.elem[i];
-            
+
             // check for using
             bool used = false;
             for(DxfFileWriter::BezierPath &path : writer->paths) {
@@ -61,7 +61,7 @@ public:
                 if(used) break;
             }
             if(!used) continue;
-            
+
             layer.name = s->DescriptionString();
             dxf->writeLayer(&layer);
         }
@@ -241,8 +241,7 @@ public:
         }
     }
 
-    void assignEntityDefaults(DRW_Entity *entity, uint32_t style) {
-        hStyle hs = { style };
+    void assignEntityDefaults(DRW_Entity *entity, hStyle hs) {
         Style *s = Style::Get(hs);
         entity->color24 = s->Color(hs, true).ToPackedIntBGRA();
         entity->layer = s->DescriptionString();
@@ -255,17 +254,17 @@ public:
         dimension->layer = "dimensions";
     }
 
-    void writeLine(const Vector &p0, const Vector &p1, uint32_t style) {
+    void writeLine(const Vector &p0, const Vector &p1, hStyle hs) {
         DRW_Line line;
-        assignEntityDefaults(&line, style);
+        assignEntityDefaults(&line, hs);
         line.basePoint = toCoord(p0);
         line.secPoint = toCoord(p1);
         dxf->writeLine(&line);
     }
 
-    void writeArc(const Vector &c, double r, double sa, double ea, uint32_t style) {
+    void writeArc(const Vector &c, double r, double sa, double ea, hStyle hs) {
         DRW_Arc arc;
-        assignEntityDefaults(&arc, style);
+        assignEntityDefaults(&arc, hs);
         arc.radious = r;
         arc.basePoint = toCoord(c);
         arc.staangle = sa;
@@ -276,8 +275,9 @@ public:
     void writeBezierAsPwl(SBezier *sb) {
         List<Vector> lv = {};
         sb->MakePwlInto(&lv, SS.ExportChordTolMm());
+        hStyle hs = { (uint32_t)sb->auxA };
         DRW_LWPolyline polyline;
-        assignEntityDefaults(&polyline, sb->auxA);
+        assignEntityDefaults(&polyline, hs);
         for(int i = 0; i < lv.n; i++) {
             Vector *v = &lv.elem[i];
             DRW_Vertex2D *vertex = new DRW_Vertex2D();
@@ -316,8 +316,9 @@ public:
 
     void writeSpline(SBezier *sb) {
         bool isRational = sb->IsRational();
+        hStyle hs = { (uint32_t)sb->auxA };
         DRW_Spline spline;
-        assignEntityDefaults(&spline, sb->auxA);
+        assignEntityDefaults(&spline, hs);
         spline.flags = (isRational) ? 0x04 : 0x08;
         spline.degree = sb->deg;
         spline.ncontrol = sb->deg + 1;
@@ -330,13 +331,14 @@ public:
     }
 
     void writeBezier(SBezier *sb) {
+        hStyle hs = { (uint32_t)sb->auxA };
         Vector c;
         Vector n = Vector::From(0.0, 0.0, 1.0);
         double r;
 
         if(sb->deg == 1) {
             // Line
-            writeLine(sb->ctrl[0], sb->ctrl[1], sb->auxA);
+            writeLine(sb->ctrl[0], sb->ctrl[1], hs);
         } else if(sb->IsInPlane(n, 0) && sb->IsCircle(n, &c, &r)) {
             // Circle perpendicular to camera
             double theta0 = atan2(sb->ctrl[0].y - c.y, sb->ctrl[0].x - c.x);
@@ -344,7 +346,7 @@ public:
             double dtheta = WRAP_SYMMETRIC(theta1 - theta0, 2.0 * PI);
             if(dtheta < 0.0) swap(theta0, theta1);
 
-            writeArc(c, r, theta0, theta1, sb->auxA);
+            writeArc(c, r, theta0, theta1, hs);
         } else if(sb->IsRational()) {
             // Rational bezier
             // We'd like to export rational beziers exactly, but the resulting DXF
@@ -456,13 +458,13 @@ void DxfFileWriter::StartFile(void) {
 }
 
 void DxfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb, uint32_t style)
+                              bool filled, RgbaColor fillRgb, hStyle hs)
 {
     BezierPath path = {};
     paths.push_back(path);
 }
 void DxfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, uint32_t style)
+                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 
@@ -558,15 +560,14 @@ void EpsFileWriter::StartFile(void) {
 }
 
 void EpsFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb, uint32_t style)
+                              bool filled, RgbaColor fillRgb, hStyle hs)
 {
     fprintf(f, "newpath\r\n");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void EpsFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, uint32_t style)
+                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
-    hStyle hs = { style };
     int pattern = Style::PatternType(hs);
     double stippleScale = MmToPts(Style::StippleScaleMm(hs));
 
@@ -790,9 +791,8 @@ void PdfFileWriter::FinishAndCloseFile(void) {
 }
 
 void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb, uint32_t style)
+                              bool filled, RgbaColor fillRgb, hStyle hs)
 {
-    hStyle hs = { style };
     int pattern = Style::PatternType(hs);
     double stippleScale = MmToPts(Style::StippleScaleMm(hs));
 
@@ -810,7 +810,7 @@ void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void PdfFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, uint32_t style)
+                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
     if(filled) {
         fprintf(f, "b\r\n");
@@ -915,20 +915,20 @@ void SvgFileWriter::StartFile(void) {
 }
 
 void SvgFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                              bool filled, RgbaColor fillRgb, uint32_t style)
+                              bool filled, RgbaColor fillRgb, hStyle hs)
 {
     fprintf(f, "<path d='");
     prevPt = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 }
 void SvgFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, uint32_t style)
+                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
     std::string fill;
     if(filled) {
         fill = ssprintf("fill='#%02x%02x%02x'",
             fillRgb.red, fillRgb.green, fillRgb.blue);
     }
-    std::string cls = ssprintf("s%x", style);
+    std::string cls = ssprintf("s%x", hs.v);
     fprintf(f, "' class='%s' %s/>\r\n", cls.c_str(), fill.c_str());
 }
 
@@ -1010,11 +1010,11 @@ void HpglFileWriter::StartFile(void) {
 }
 
 void HpglFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                               bool filled, RgbaColor fillRgb, uint32_t style)
+                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 void HpglFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                bool filled, RgbaColor fillRgb, uint32_t style)
+                                bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 
@@ -1047,11 +1047,11 @@ void GCodeFileWriter::StartFile(void) {
     sel = {};
 }
 void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                                bool filled, RgbaColor fillRgb, uint32_t style)
+                                bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 void GCodeFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                 bool filled, RgbaColor fillRgb, uint32_t style)
+                                 bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 void GCodeFileWriter::Triangle(STriangle *tr) {
@@ -1115,11 +1115,11 @@ void Step2dFileWriter::Triangle(STriangle *tr) {
 }
 
 void Step2dFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
-                                 bool filled, RgbaColor fillRgb, uint32_t style)
+                                 bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 void Step2dFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
-                                  bool filled, RgbaColor fillRgb, uint32_t style)
+                                  bool filled, RgbaColor fillRgb, hStyle hs)
 {
 }
 
