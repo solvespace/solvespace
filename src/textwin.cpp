@@ -88,7 +88,7 @@ void TextWindow::ShowEditControl(int col, const std::string &str, int halfRow) {
     int x = LEFT_MARGIN + CHAR_WIDTH*col;
     int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
-    ShowTextEditControl(x - 3, y + 2, str);
+    ShowTextEditControl(x, y + 18, str);
 }
 
 void TextWindow::ShowEditControlWithColorPicker(int col, RgbaColor rgb)

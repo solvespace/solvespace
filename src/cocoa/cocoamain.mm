@@ -133,7 +133,8 @@ void SolveSpace::ScheduleLater() {
 @property BOOL wantsBackingStoreScaling;
 
 @property(readonly, getter=isEditing) BOOL editing;
-- (void)startEditing:(NSString*)text at:(NSPoint)origin;
+- (void)startEditing:(NSString*)text at:(NSPoint)origin
+        withSize:(double)fontSize usingMonospace:(BOOL)isMonospace;
 - (void)stopEditing;
 - (void)didEdit:(NSString*)text;
 @end
@@ -160,6 +161,8 @@ void SolveSpace::ScheduleLater() {
 
     editor = [[NSTextField alloc] init];
     [editor setEditable:YES];
+    [[editor cell] setUsesSingleLineMode:YES];
+    [editor setBezeled:NO];
     [editor setTarget:self];
     [editor setAction:@selector(editorAction:)];
 
@@ -202,7 +205,6 @@ CONVERT(Rect)
         offscreen = new GLOffscreen;
 
     NSSize size = [self convertSizeToBacking:[self bounds].size];
-    NSRect bounds = [self convertRectToBacking:[self bounds]];
     offscreen->begin(size.width, size.height);
 
     [self drawGL];
@@ -225,11 +227,23 @@ CONVERT(Rect)
 
 @synthesize editing;
 
-- (void)startEditing:(NSString*)text at:(NSPoint)origin {
+- (void)startEditing:(NSString*)text at:(NSPoint)origin
+        withSize:(double)fontSize usingMonospace:(BOOL)isMonospace {
     if(!self->editing) {
         [self addSubview:editor];
         self->editing = YES;
     }
+
+    NSFont *font;
+    if(isMonospace)
+        font = [NSFont fontWithName:@"Monaco" size:fontSize];
+    else
+        font = [NSFont controlContentFontOfSize:fontSize];
+    [editor setFont:font];
+
+    origin.x -= 3; /* left padding; no way to get it from NSTextField */
+    origin.y -= [editor intrinsicContentSize].height;
+    origin.y += [editor baselineOffsetFromBottom];
 
     [editor setFrameOrigin:origin];
     [editor setStringValue:text];
@@ -251,9 +265,10 @@ CONVERT(Rect)
 }
 
 - (void)prepareEditor {
+    CGFloat intrinsicContentHeight = [editor intrinsicContentSize].height;
     [editor setFrameSize:(NSSize){
-        .width = 100,
-        .height = [editor intrinsicContentSize].height }];
+        .width = intrinsicContentHeight * 12,
+        .height = intrinsicContentHeight }];
 }
 
 - (void)didEdit:(NSString*)text {
@@ -382,18 +397,20 @@ CONVERT(Rect)
         [super keyDown:event];
 }
 
-- (void)startEditing:(NSString*)text at:(NSPoint)xy {
+- (void)startEditing:(NSString*)text at:(NSPoint)xy withSize:(double)fontSize {
     // Convert to ij (vs. xy) style coordinates
     NSSize size = [self convertSizeToBacking:[self bounds].size];
     NSPoint point = {
         .x = xy.x + size.width / 2,
-        .y = xy.y - size.height / 2 + [editor intrinsicContentSize].height
+        .y = xy.y - size.height / 2
     };
-    [super startEditing:text at:[self convertPointFromBacking:point]];
+    [super startEditing:text at:[self convertPointFromBacking:point]
+           withSize:fontSize usingMonospace:FALSE];
 }
 
 - (void)didEdit:(NSString*)text {
     SolveSpace::SS.GW.EditControlDone([text UTF8String]);
+    [self setNeedsDisplay:YES];
 }
 
 - (void)cancelOperation:(id)sender {
@@ -487,9 +504,10 @@ bool FullScreenIsActive(void) {
     return [GWDelegate isFullscreen];
 }
 
-void ShowGraphicsEditControl(int x, int y, const std::string &str) {
+void ShowGraphicsEditControl(int x, int y, int fontSize, const std::string &str) {
     [GWView startEditing:[NSString stringWithUTF8String:str.c_str()]
-            at:(NSPoint){(CGFloat)x, (CGFloat)y}];
+            at:(NSPoint){(CGFloat)x, (CGFloat)y}
+            withSize:fontSize];
 }
 
 void HideGraphicsEditControl(void) {
@@ -937,8 +955,8 @@ SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
 
 - (void)startEditing:(NSString*)text at:(NSPoint)point {
     point = [self convertPointFromBacking:point];
-    point.y = -point.y;
-    [super startEditing:text at:point];
+    point.y = -point.y + 2;
+    [super startEditing:text at:point withSize:15.0 usingMonospace:TRUE];
     [[self window] makeKeyWindow];
     [[self window] makeFirstResponder:editor];
 }

@@ -21,10 +21,6 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
-// For the edit controls
-#define EDIT_WIDTH  220
-#define EDIT_HEIGHT 21
-
 HINSTANCE Instance;
 
 HWND TextWnd;
@@ -803,8 +799,29 @@ void SolveSpace::InvalidateText(void)
     InvalidateRect(TextWnd, NULL, false);
 }
 
-static void ShowEditControl(HWND h, int x, int y, const std::wstring &s) {
-    MoveWindow(h, x, y, EDIT_WIDTH, EDIT_HEIGHT, true);
+static void ShowEditControl(HWND h, int x, int y, int fontHeight,
+                            bool isMonospace, const std::wstring &s) {
+    static HFONT hf;
+    if(hf) DeleteObject(hf);
+    hf = CreateFontW(-fontHeight, 0, 0, 0,
+        FW_REGULAR, false, false, false, ANSI_CHARSET,
+        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+        DEFAULT_QUALITY, FF_DONTCARE, isMonospace ? L"Lucida Console" : L"Arial");
+    if(hf) SendMessage(h, WM_SETFONT, (WPARAM)hf, false);
+    else   SendMessage(h, WM_SETFONT, (WPARAM)(HFONT)GetStockObject(SYSTEM_FONT), false);
+    SendMessage(h, EM_SETMARGINS, EC_LEFTMARGIN|EC_RIGHTMARGIN, 0);
+
+    TEXTMETRICW tm;
+    HDC hdc = GetDC(h);
+    SelectObject(hdc, hf);
+    GetTextMetrics(hdc, &tm);
+    ReleaseDC(h, hdc);
+    y -= tm.tmAscent; /* y coordinate denotes baseline */
+
+    RECT rc = { x, y, x + tm.tmAveCharWidth * 30, y + tm.tmHeight };
+    AdjustWindowRectEx(&rc, 0, false, WS_EX_CLIENTEDGE);
+
+    MoveWindow(h, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, true);
     ShowWindow(h, SW_SHOW);
     if(!s.empty()) {
         SendMessage(h, WM_SETTEXT, 0, (LPARAM)s.c_str());
@@ -816,7 +833,8 @@ void SolveSpace::ShowTextEditControl(int x, int y, const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    ShowEditControl(TextEditControl, x, y, Widen(str));
+    ShowEditControl(TextEditControl, x, y, TextWindow::CHAR_HEIGHT,
+                    /*isMonospace=*/true, Widen(str));
 }
 void SolveSpace::HideTextEditControl(void)
 {
@@ -826,7 +844,8 @@ bool SolveSpace::TextEditControlIsVisible(void)
 {
     return IsWindowVisible(TextEditControl) ? true : false;
 }
-void SolveSpace::ShowGraphicsEditControl(int x, int y, const std::string &str)
+void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight,
+                                         const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
 
@@ -835,11 +854,8 @@ void SolveSpace::ShowGraphicsEditControl(int x, int y, const std::string &str)
     x = x + (r.right - r.left)/2;
     y = (r.bottom - r.top)/2 - y;
 
-    // (x, y) are the bottom left, but the edit control is placed by its
-    // top left corner
-    y -= 20;
-
-    ShowEditControl(GraphicsEditControl, x, y, Widen(str));
+    ShowEditControl(GraphicsEditControl, x, y, fontHeight,
+                    /*isMonospace=*/false, Widen(str));
 }
 void SolveSpace::HideGraphicsEditControl(void)
 {
@@ -1250,7 +1266,6 @@ static void CreateMainWindows(void)
     GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
-    SendMessage(GraphicsEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
 
     // The text window, with a comand line and some textual information
     // about the sketch.
@@ -1277,7 +1292,6 @@ static void CreateMainWindows(void)
     TextEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
-    SendMessage(TextEditControl, WM_SETFONT, (WPARAM)FixedFont, true);
 
     // Now that all our windows exist, set up gl contexts.
     CreateGlContext(TextWnd, &TextGl);

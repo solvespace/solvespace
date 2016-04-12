@@ -372,24 +372,44 @@ public:
     EditorOverlay(Gtk::Widget &underlay) : _underlay(underlay) {
         add(_underlay);
 
-        Pango::FontDescription desc;
-        desc.set_family("monospace");
-        desc.set_size(7000);
-#ifdef HAVE_GTK3
-        _entry.override_font(desc);
-#else
-        _entry.modify_font(desc);
-#endif
         _entry.set_width_chars(30);
         _entry.set_no_show_all(true);
+        _entry.set_has_frame(false);
         add(_entry);
 
         _entry.signal_activate().
             connect(sigc::mem_fun(this, &EditorOverlay::on_activate));
     }
 
-    void start_editing(int x, int y, const std::string &val) {
-        move(_entry, x, y - 4);
+    void start_editing(int x, int y, int font_height,
+                       bool is_monospace, const std::string &val) {
+        Pango::FontDescription font_desc;
+        font_desc.set_family(is_monospace ? "monospace" : "normal");
+        font_desc.set_absolute_size(font_height * Pango::SCALE);
+
+#ifdef HAVE_GTK3
+        _entry.override_font(font_desc);
+#else
+        _entry.modify_font(font_desc);
+#endif
+
+        /* y coordinate denotes baseline */
+        Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
+        y -= font_metrics.get_ascent() / Pango::SCALE;
+
+#ifdef HAVE_GTK3
+        Gtk::Border border = _entry.get_style_context()->get_padding();
+        move(_entry, x - border.get_left(), y - border.get_top());
+#else
+        /* We need _gtk_entry_effective_inner_border, but it's not
+           in the public API, so emulate its logic. */
+        Gtk::Border border = { 2, 2, 2, 2 }, *style_border;
+        gtk_widget_style_get(GTK_WIDGET(_entry.gobj()), "inner-border",
+                             &style_border, NULL);
+        if(style_border) border = *style_border;
+        move(_entry, x - border.left, y - border.top);
+#endif
+
         _entry.set_text(val);
         if(!_entry.is_visible()) {
             _entry.show();
@@ -721,16 +741,16 @@ bool FullScreenIsActive(void) {
     return GW->is_fullscreen();
 }
 
-void ShowGraphicsEditControl(int x, int y, const std::string &val) {
+void ShowGraphicsEditControl(int x, int y, int fontHeight, const std::string &val) {
     Gdk::Rectangle rect = GW->get_widget().get_allocation();
 
     // Convert to ij (vs. xy) style coordinates,
     // and compensate for the input widget height due to inverse coord
     int i, j;
     i = x + rect.get_width() / 2;
-    j = -y + rect.get_height() / 2 - 24;
+    j = -y + rect.get_height() / 2;
 
-    GW->get_overlay().start_editing(i, j, val);
+    GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, val);
 }
 
 void HideGraphicsEditControl(void) {
@@ -1414,7 +1434,8 @@ void SetMousePointerToHand(bool is_hand) {
 }
 
 void ShowTextEditControl(int x, int y, const std::string &val) {
-    TW->get_overlay().start_editing(x, y, val);
+    TW->get_overlay().start_editing(x, y, TextWindow::CHAR_HEIGHT,
+                                    /*is_monospace=*/true, val);
 }
 
 void HideTextEditControl(void) {
