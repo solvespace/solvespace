@@ -41,14 +41,6 @@ static void LineCallback(void *fndata, Vector a, Vector b)
     c->LineDrawOrGetDistance(a, b);
 }
 
-double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
-    double ex = rx*cos(theta);
-    double ey = ry*sin(theta);
-    double v = sqrt(ex*ex + ey*ey);
-
-    return v;
-}
-
 std::string Constraint::Label(void) {
     std::string result;
     if(type == ANGLE) {
@@ -148,7 +140,7 @@ void Constraint::DoProjectedPoint(Vector *r) {
 // the line to almost meet the box, and return either positive or negative,
 // depending whether that extension was from A or from B.
 //-----------------------------------------------------------------------------
-int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
+int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend) {
     hStyle hs = disp.style;
     if(hs.v == 0) hs.v = Style::CONSTRAINT;
     double th = Style::TextHeight(hs);
@@ -160,6 +152,11 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
     double swidth  = ssglStrWidth(s, th) + 4*pixels,
            sheight = ssglStrCapHeight(th) + 8*pixels;
 
+    return DoLineTrimmedAgainstBox(ref, a, b, extend, gr, gu, swidth, sheight);
+}
+
+int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend,
+                                        Vector gr, Vector gu, double swidth, double sheight) {
     struct {
         Vector n;
         double d;
@@ -194,37 +191,43 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b) {
         tmax = max(t, tmax);
     }
 
-    int within = 0;
-
-    if(tmin > -0.01 && tmin < 1.01 && tmax > -0.01 && tmax < 1.01) {
-        // Both in range; so there's pieces of the line on both sides of the
-        // label box.
+    // Both in range; so there's pieces of the line on both sides of the label box.
+    if(tmin >= 0.0 && tmin <= 1.0 && tmax >= 0.0 && tmax <= 1.0) {
         LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
         LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
-    } else if(tmin > -0.01 && tmin < 1.01) {
-        // Only one intersection in range; so the box is right on top of the
-        // endpoint
-        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
-    } else if(tmax > -0.01 && tmax < 1.01) {
-        // Likewise.
-        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
-    } else {
-        // The line does not intersect the label; so the line should get
-        // extended to just barely meet the label.
-        if(tmin < 0.01 && tmax < 0.01) {
-            LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
-            within = 1;
-        } else if(tmin > 0.99 && tmax > 0.99) {
-            LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
-            within = -1;
-        } else {
-            // This will happen if the entire line lies within the box.
-            LineDrawOrGetDistance(a, b);
-        }
+        return 0;
     }
+
+    // Only one intersection in range; so the box is right on top of the endpoint
+    if(tmin >= 0.0 && tmin <= 1.0) {
+        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
+        return 0;
+    }
+
+    // Likewise.
+    if(tmax >= 0.0 && tmax <= 1.0) {
+        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+        return 0;
+    }
+
+    // The line does not intersect the label; so the line should get
+    // extended to just barely meet the label.
     // 0 means the label lies within the line, negative means it's outside
     // and closer to b, positive means outside and closer to a.
-    return within;
+    if(tmax < 0.0) {
+        if(extend) a = a.Plus(dl.ScaledBy(tmax));
+        LineDrawOrGetDistance(a, b);
+        return 1;
+    }
+
+    if(tmin > 1.0) {
+        if(extend) b = a.Plus(dl.ScaledBy(tmin));
+        LineDrawOrGetDistance(a, b);
+        return -1;
+    }
+
+    // This will happen if the entire line lies within the box.
+    return 0;
 }
 
 void Constraint::DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da) {
@@ -315,10 +318,10 @@ void Constraint::DoEqualRadiusTicks(hEntity he) {
 }
 
 void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
-                                   Vector offset, Vector *ref)
+                                   Vector offset, Vector *ref, bool trim)
 {
-    Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);
-    Vector gu = SS.GW.projUp.ScaledBy(1/SS.GW.scale);
+    Vector gr = SS.GW.projRight.ScaledBy(1.0);
+    Vector gu = SS.GW.projUp.ScaledBy(1.0);
 
     if(workplane.v != Entity::FREE_IN_3D.v) {
         a0 = a0.ProjectInto(workplane);
@@ -356,6 +359,14 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
         }
 
+        hStyle hs = disp.style;
+        if(hs.v == 0) hs.v = Style::CONSTRAINT;
+        double th = Style::TextHeight(hs);
+        double swidth  = ssglStrWidth(Label(), th) + 4.0 * px;
+        double sheight = ssglStrCapHeight(th) + 8.0 * px;
+        double textR = sqrt(swidth * swidth + sheight * sheight) / 2.0;
+        *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * px + textR)));
+
         Vector prev = da.ScaledBy(r).Plus(pi);
         Vector apa = prev;
 
@@ -364,7 +375,11 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             double theta = (i*thetaf)/n;
             Vector p = da. ScaledBy(r*cos(theta)).Plus(
                        dna.ScaledBy(r*sin(theta))).Plus(pi);
-            LineDrawOrGetDistance(prev, p);
+            if(trim) {
+                DoLineTrimmedAgainstBox(*ref, prev, p, false, gr, gu, swidth, sheight);
+            } else {
+                LineDrawOrGetDistance(prev, p);
+            }
             prev = p;
         }
 
@@ -381,16 +396,6 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             DoArrow(apa, dna, norm, arrowW, arrowA, angleCorr);
             DoArrow(apb, dna, norm, arrowW, arrowA, thetaf + PI - angleCorr);
         }
-
-        // The elliptical approximation isn't exactly right, but the correct
-        // calculation (against the bounding box of the text) would be rather
-        // complex and this looks pretty good.
-        double tl = atan2(rm.Dot(gu), rm.Dot(gr));
-        double adj = EllipticalInterpolation(
-            ssglStrWidth(Label(), Style::DefaultTextHeight())/2,
-            ssglStrHeight(Style::DefaultTextHeight())/2,
-            tl);
-        *ref = (*ref).Plus(rm.WithMagnitude(adj + 3/SS.GW.scale));
     } else {
         // The lines are skew; no wonderful way to illustrate that.
         *ref = a0.Plus(b0);
@@ -399,7 +404,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         Vector trans =
             (*ref).Plus(gu.ScaledBy(-1.5*ssglStrCapHeight(Style::DefaultTextHeight())));
         ssglWriteTextRefCenter("angle between skew lines", Style::DefaultTextHeight(),
-            trans, gr, gu, LineCallback, this);
+            trans, gr.WithMagnitude(px), gu.WithMagnitude(px), LineCallback, this);
     }
 }
 
@@ -725,9 +730,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             DoArcForAngle(a0, da, b0, db,
-                da.WithMagnitude(40/SS.GW.scale), &ref);
+                da.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
             DoArcForAngle(c0, dc, d0, dd,
-                dc.WithMagnitude(40/SS.GW.scale), &ref);
+                dc.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
 
             break;
         }
@@ -746,7 +751,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             Vector ref;
-            DoArcForAngle(a0, da, b0, db, disp.offset, &ref);
+            DoArcForAngle(a0, da, b0, db, disp.offset, &ref, /*trim=*/true);
             DoLabel(ref, labelPos, gr, gu);
             break;
         }

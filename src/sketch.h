@@ -686,14 +686,14 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b);
     bool IsVisible() const;
     void DrawOrGetDistance(Vector *labelPos);
-    double EllipticalInterpolation(double rx, double ry, double theta);
     std::string Label(void);
     bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
-                        Vector offset, Vector *ref);
+                        Vector offset, Vector *ref, bool trim);
     void DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da);
     void DoLineWithArrows(Vector ref, Vector a, Vector b, bool onlyOneExt);
-    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b);
+    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend, Vector gr, Vector gu, double swidth, double sheight);
+    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend = true);
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void StippledLine(Vector a, Vector b);
     void DoProjectedPoint(Vector *p);
