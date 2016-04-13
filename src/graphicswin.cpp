@@ -40,6 +40,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Export 3d &Wireframe...",     MNU_EXPORT_WIREFRAME, 0,     TN, mFile },
 { 1, "Export Triangle &Mesh...",    MNU_EXPORT_MESH,    0,       TN, mFile },
 { 1, "Export &Surfaces...",         MNU_EXPORT_SURFACES,0,       TN, mFile },
+{ 1, "Im&port...",                  MNU_IMPORT         ,0,       TN, mFile },
 #ifndef __APPLE__
 { 1,  NULL,                         0,                  0,       TN, NULL  },
 { 1, "E&xit",                       MNU_EXIT,           C|'Q',   TN, mFile },

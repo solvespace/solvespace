@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <locale>
 #include <vector>
 #include <unordered_map>
 #include <map>
@@ -193,6 +194,11 @@ const FileFilter VectorFileFilter[] = {
 const FileFilter Vector3dFileFilter[] = {
     { "STEP file",                  { "step", "stp" } },
     { "DXF file (AutoCAD 2007)",    { "dxf" } },
+    { NULL }
+};
+// All Importable formats
+const FileFilter ImportableFileFilter[] = {
+    { "AutoCAD DXF and DWG files",  { "dxf", "dwg" } },
     { NULL }
 };
 // Comma-separated value, like a spreadsheet would use
@@ -534,6 +540,9 @@ public:
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return false; }
     bool NeedToOutput(Constraint *c);
+
+    static const char *lineTypeName(int stippleType);
+
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
@@ -941,6 +950,8 @@ public:
         delete pSys;
     }
 };
+
+void ImportDxf(const std::string &file);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

@@ -195,27 +195,12 @@ public:
         }
     }
 
-    const char *lineTypeName(int stippleType) {
-        switch(stippleType) {
-            case Style::STIPPLE_CONTINUOUS:   return "CONTINUOUS";
-            case Style::STIPPLE_DASH:         return "DASHED";
-            case Style::STIPPLE_LONG_DASH:    return "DASHEDX2";
-            case Style::STIPPLE_DASH_DOT:     return "DASHDOT";
-            case Style::STIPPLE_DASH_DOT_DOT: return "DIVIDE";
-            case Style::STIPPLE_DOT:          return "DOT";
-            case Style::STIPPLE_FREEHAND:     return "CONTINUOUS";
-            case Style::STIPPLE_ZIGZAG:       return "CONTINUOUS";
-        }
-
-        return "CONTINUOUS";
-    }
-
     virtual void writeLTypes() {
         for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
             DRW_LType type;
             // LibreCAD requires the line type to have one of these exact names,
             // or otherwise it overwrites it with its own (continuous) style.
-            type.name = lineTypeName(i);
+            type.name = DxfFileWriter::lineTypeName(i);
             double sw = 1.0;
             switch(i) {
                 case Style::STIPPLE_CONTINUOUS:
@@ -421,7 +406,7 @@ public:
         Style *s = Style::Get(hs);
         entity->color24 = s->Color(hs, true).ToPackedIntBGRA();
         entity->layer = s->DescriptionString();
-        entity->lineType = lineTypeName(s->stippleType);
+        entity->lineType = DxfFileWriter::lineTypeName(s->stippleType);
         entity->ltypeScale = Style::StippleScaleMm(s->h);
         entity->setWidthMm(Style::WidthMm(hs.v));
     }
@@ -669,6 +654,21 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
             return c->IsVisible();
     }
     return false;
+}
+
+const char *DxfFileWriter::lineTypeName(int stippleType) {
+    switch(stippleType) {
+        case Style::STIPPLE_CONTINUOUS:   return "CONTINUOUS";
+        case Style::STIPPLE_DASH:         return "DASHED";
+        case Style::STIPPLE_LONG_DASH:    return "DASHEDX2";
+        case Style::STIPPLE_DASH_DOT:     return "DASHDOT";
+        case Style::STIPPLE_DASH_DOT_DOT: return "DIVIDE";
+        case Style::STIPPLE_DOT:          return "DOT";
+        case Style::STIPPLE_FREEHAND:     return "CONTINUOUS";
+        case Style::STIPPLE_ZIGZAG:       return "CONTINUOUS";
+    }
+
+    return "CONTINUOUS";
 }
 
 //-----------------------------------------------------------------------------

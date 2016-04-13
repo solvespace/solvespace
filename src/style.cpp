@@ -122,8 +122,8 @@ void Style::FreezeDefaultStyles(void) {
     }
 }
 
-uint32_t Style::CreateCustomStyle(void) {
-    SS.UndoRemember();
+uint32_t Style::CreateCustomStyle(bool rememberForUndo) {
+    if(rememberForUndo) SS.UndoRemember();
     uint32_t vs = max((uint32_t)Style::FIRST_CUSTOM, SK.style.MaximumId() + 1);
     hStyle hs = { vs };
     (void)Style::Get(hs);

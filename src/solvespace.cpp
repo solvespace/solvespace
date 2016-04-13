@@ -541,6 +541,16 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
+        case GraphicsWindow::MNU_IMPORT: {
+            std::string importFile;
+            if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
+                            ImportableFileFilter)) break;
+            CnfFreezeString(Extension(importFile), "ImportFormat");
+
+            ImportDxf(importFile);
+            break;
+        }
+
         case GraphicsWindow::MNU_EXIT:
             if(!SS.OkayToStartNewFile()) break;
             SS.Exit();
