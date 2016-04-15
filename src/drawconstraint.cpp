@@ -343,21 +343,32 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         // We draw in a coordinate system centered at the intersection point.
         // One basis vector is da, and the other is normal to da and in
         // the plane that contains our lines (so normal to its normal).
-        Vector norm = da.Cross(db);
-        Vector dna = norm.Cross(da).WithMagnitude(1.0);
         da = da.WithMagnitude(1);
+        db = db.WithMagnitude(1);
 
-        Vector rm = (*ref).Minus(pi);
-        double rda = rm.Dot(da), rdna = rm.Dot(dna);
-        double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * px);
-        double c = (da.Dot(db))/(da.Magnitude()*db.Magnitude());
-        double thetaf = acos(c);
+        Vector norm = da.Cross(db);
 
+        Vector dna = norm.Cross(da).WithMagnitude(1.0);
+        Vector dnb = norm.Cross(db).WithMagnitude(1.0);
+
+        // da and db magnitudes are 1.0
+        double thetaf = acos(da.Dot(db));
+
+        // Calculate median
         Vector m = da.ScaledBy(cos(thetaf/2)).Plus(
                    dna.ScaledBy(sin(thetaf/2)));
+        Vector rm = (*ref).Minus(pi);
+
+        // Test which side we have to place an arc
         if(m.Dot(rm) < 0) {
             da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
+            db = db.ScaledBy(-1); dnb = dnb.ScaledBy(-1);
         }
+
+        double rda = rm.Dot(da), rdna = rm.Dot(dna);
+
+        // Introduce minimal arc radius in pixels
+        double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * px);
 
         hStyle hs = disp.style;
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
@@ -367,23 +378,53 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         double textR = sqrt(swidth * swidth + sheight * sheight) / 2.0;
         *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * px + textR)));
 
-        Vector prev = da.ScaledBy(r).Plus(pi);
-        Vector apa = prev;
+        // Additional extension angle
+        double addAngle = 0.0;
 
-        int i, n = 30;
-        for(i = 0; i <= n; i++) {
-            double theta = (i*thetaf)/n;
-            Vector p = da. ScaledBy(r*cos(theta)).Plus(
-                       dna.ScaledBy(r*sin(theta))).Plus(pi);
-            if(trim) {
-                DoLineTrimmedAgainstBox(*ref, prev, p, false, gr, gu, swidth, sheight);
-            } else {
-                LineDrawOrGetDistance(prev, p);
+        // Arc extension to db.
+        // We have just enlarge angle value.
+        if(HasLabel() && rm.Dot(dnb) > 0.0) {
+            // rm direction projected to plane with u = da, v = dna
+            Vector rmp = da.ScaledBy(rda).Plus(dna.ScaledBy(rdna)).WithMagnitude(1.0);
+            // rmp and db magnitudes are 1.0
+            addAngle = acos(rmp.Dot(db));
+        }
+
+        Vector ru = da;
+        Vector rv = dna;
+
+        // Arc extension to da.
+        // We are enlarge angle value and rewrite basis to align along rm projection.
+        if(HasLabel() && rm.Dot(dna) < 0.0) {
+            // rm direction projected to plane with u = da, v = dna
+            Vector rmp = da.ScaledBy(rda).Plus(dna.ScaledBy(rdna)).WithMagnitude(1.0);
+            ru = rmp;
+            rv = norm.Cross(ru).WithMagnitude(1.0);
+            // rmp and da magnitudes are 1.0
+            addAngle = acos(rmp.Dot(da));
+        }
+
+        Vector prev;
+        int n = 30;
+        for(int i = 0; i <= n; i++) {
+            double theta = (i*(thetaf + addAngle))/n;
+            Vector p = ru.ScaledBy(r*cos(theta)).Plus(
+                       rv.ScaledBy(r*sin(theta))).Plus(pi);
+            if(i > 0) {
+                if(trim) {
+                    DoLineTrimmedAgainstBox(*ref, prev, p, false, gr, gu, swidth, sheight);
+                } else {
+                    LineDrawOrGetDistance(prev, p);
+                }
             }
             prev = p;
         }
 
-        Vector apb = prev;
+        // Arrow points
+        Vector apa = da. ScaledBy(r).Plus(pi);
+        Vector apb = da. ScaledBy(r*cos(thetaf)).Plus(
+                     dna.ScaledBy(r*sin(thetaf))).Plus(pi);
+
         DoLineExtend(a0, a1, apa, 5.0 * px);
         DoLineExtend(b0, b1, apb, 5.0 * px);
 
