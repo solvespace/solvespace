@@ -411,13 +411,8 @@ void Group::GenerateDisplayItems(void) {
                     runningMesh.MakeCertainEdgesAndOutlinesInto(
                         &displayEdges, &displayOutlines, SKdNode::EMPHASIZED_EDGES);
                 } else {
-                    if(SS.exportMode) {
-                        displayMesh.MakeCertainEdgesAndOutlinesInto(
-                            &displayEdges, &displayOutlines, SKdNode::SHARP_EDGES);
-                    } else {
-                        displayMesh.MakeCertainEdgesAndOutlinesInto(
-                            &displayEdges, &displayOutlines, SKdNode::EMPHASIZED_EDGES);
-                    }
+                    displayMesh.MakeCertainEdgesAndOutlinesInto(
+                        &displayEdges, &displayOutlines, SKdNode::SHARP_EDGES);
                 }
             }
         }
