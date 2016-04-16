@@ -1264,7 +1264,6 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
 
             case Constraint::ANGLE:
             case Constraint::LENGTH_RATIO:
-            case Constraint::LENGTH_DIFFERENCE:
                 editValue = ssprintf("%.3f", c->valA);
                 editMinWidthChar = 5;
                 break;

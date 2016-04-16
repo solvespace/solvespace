@@ -55,8 +55,6 @@ std::string Constraint::Label(void) {
         result = ssprintf("%.2f°", valA);
     } else if(type == LENGTH_RATIO) {
         result = ssprintf("%.3f:1", valA);
-    } else if(type == LENGTH_DIFFERENCE) {
-        result = ssprintf("%.3f", valA);
     } else if(type == COMMENT) {
         result = comment;
     } else if(type == DIAMETER) {
