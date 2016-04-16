@@ -78,9 +78,8 @@ void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u
     t = t.Plus(u.ScaledBy(-fw/2));
     t = t.Plus(v.ScaledBy(-fh/2));
 
-    // Undo the (+5, +5) offset that ssglWriteText applies.
-    t = t.Plus(u.ScaledBy(-5*scale));
-    t = t.Plus(v.ScaledBy(-5*scale));
+    // Apply additional offset to get an exact center alignment.
+    t = t.Plus(v.ScaledBy(-18*scale));
 
     ssglWriteText(str, h, t, u, v, fn, fndata);
 }
@@ -153,7 +152,7 @@ void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector 
     v = v.WithMagnitude(1);
 
     double scale = FONT_SCALE(h) / SS.GW.scale;
-    Vector o = { 5.0, 5.0 };
+    Vector o = { 15.0, 15.0 };
     for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata);
