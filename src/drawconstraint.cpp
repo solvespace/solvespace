@@ -52,7 +52,11 @@ double Constraint::EllipticalInterpolation(double rx, double ry, double theta) {
 std::string Constraint::Label(void) {
     std::string result;
     if(type == ANGLE) {
-        result = ssprintf("%.2f°", valA);
+        if(valA == floor(valA)) {
+            result = ssprintf("%.0f°", valA);
+        } else {
+            result = ssprintf("%.2f°", valA);
+        }
     } else if(type == LENGTH_RATIO) {
         result = ssprintf("%.3f:1", valA);
     } else if(type == COMMENT) {
