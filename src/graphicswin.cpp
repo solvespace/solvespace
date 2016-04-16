@@ -242,7 +242,7 @@ void GraphicsWindow::Init(void) {
     context.active = false;
 
     // Do this last, so that all the menus get updated correctly.
-    EnsureValidActives();
+    ClearSuper();
 }
 
 void GraphicsWindow::AnimateOntoWorkplane(void) {
