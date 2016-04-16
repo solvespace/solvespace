@@ -305,6 +305,10 @@ void SolveSpaceUI::AfterNewFile(void) {
     // and the naked edges
     nakedEdges.Clear();
 
+    // Quit export mode
+    justExportedInfo.draw = false;
+    exportMode = false;
+
     // GenerateAll() expects the view to be valid, because it uses that to
     // fill in default values for extrusion depths etc. (which won't matter
     // here, but just don't let it work on garbage)
