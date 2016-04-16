@@ -378,8 +378,24 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         double textR = sqrt(swidth * swidth + sheight * sheight) / 2.0;
         *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * px + textR)));
 
-        // Additional extension angle
+        // Arrow points
+        Vector apa = da. ScaledBy(r).Plus(pi);
+        Vector apb = da. ScaledBy(r*cos(thetaf)).Plus(
+                     dna.ScaledBy(r*sin(thetaf))).Plus(pi);
+
+        double arrowW = 13 * px;
+        double arrowA = 18.0 * PI / 180.0;
+        bool arrowVisible = apb.Minus(apa).Magnitude() > 2.5 * arrowW;
+        // Arrow reversing indicator
+        bool arrowRev = false;
+
+        // The minimal extension length in angular representation
+        double extAngle = 18 * px / r;
+
+        // Arc additional angle
         double addAngle = 0.0;
+        // Arc start angle
+        double startAngle = 0.0;
 
         // Arc extension to db.
         // We have just enlarge angle value.
@@ -387,29 +403,36 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             // rm direction projected to plane with u = da, v = dna
             Vector rmp = da.ScaledBy(rda).Plus(dna.ScaledBy(rdna)).WithMagnitude(1.0);
             // rmp and db magnitudes are 1.0
-            addAngle = acos(rmp.Dot(db));
-        }
+            addAngle = std::max(acos(rmp.Dot(db)), extAngle);
 
-        Vector ru = da;
-        Vector rv = dna;
+            if(arrowVisible) {
+                startAngle = -extAngle;
+                addAngle += extAngle;
+                arrowRev = true;
+            }
+        }
 
         // Arc extension to da.
         // We are enlarge angle value and rewrite basis to align along rm projection.
         if(HasLabel() && rm.Dot(dna) < 0.0) {
             // rm direction projected to plane with u = da, v = dna
             Vector rmp = da.ScaledBy(rda).Plus(dna.ScaledBy(rdna)).WithMagnitude(1.0);
-            ru = rmp;
-            rv = norm.Cross(ru).WithMagnitude(1.0);
             // rmp and da magnitudes are 1.0
-            addAngle = acos(rmp.Dot(da));
+            startAngle = -std::max(acos(rmp.Dot(da)), extAngle);
+            addAngle = -startAngle;
+
+            if(arrowVisible) {
+                addAngle += extAngle;
+                arrowRev = true;
+            }
         }
 
         Vector prev;
         int n = 30;
         for(int i = 0; i <= n; i++) {
-            double theta = (i*(thetaf + addAngle))/n;
-            Vector p = ru.ScaledBy(r*cos(theta)).Plus(
-                       rv.ScaledBy(r*sin(theta))).Plus(pi);
+            double theta = startAngle + (i*(thetaf + addAngle))/n;
+            Vector p =  da.ScaledBy(r*cos(theta)).Plus(
+                       dna.ScaledBy(r*sin(theta))).Plus(pi);
             if(i > 0) {
                 if(trim) {
                     DoLineTrimmedAgainstBox(*ref, prev, p, false, gr, gu, swidth, sheight);
@@ -420,20 +443,16 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
             prev = p;
         }
 
-        // Arrow points
-        Vector apa = da. ScaledBy(r).Plus(pi);
-        Vector apb = da. ScaledBy(r*cos(thetaf)).Plus(
-                     dna.ScaledBy(r*sin(thetaf))).Plus(pi);
-
         DoLineExtend(a0, a1, apa, 5.0 * px);
         DoLineExtend(b0, b1, apb, 5.0 * px);
 
-        double arrowW = 13 * px;
-        double arrowA = 18.0 * PI / 180.0;
-
         // Draw arrows only when we have enough space.
-        if(apb.Minus(apa).Magnitude() > 2.5 * arrowW) {
+        if(arrowVisible) {
             double angleCorr = arrowW / (2.0 * r);
+            if(arrowRev) {
+                dna = dna.ScaledBy(-1.0);
+                angleCorr = -angleCorr;
+            }
             DoArrow(apa, dna, norm, arrowW, arrowA, angleCorr);
             DoArrow(apb, dna, norm, arrowW, arrowA, thetaf + PI - angleCorr);
         }
