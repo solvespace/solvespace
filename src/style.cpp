@@ -106,22 +106,7 @@ void Style::LoadFactoryDefaults(void) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
         Style *s = Get(d->h);
-
-        s->color         = d->color;
-        s->width         = d->width;
-        s->widthAs       = UNITS_AS_PIXELS;
-        s->textHeight    = DEFAULT_TEXT_HEIGHT;
-        s->textHeightAs  = UNITS_AS_PIXELS;
-        s->textOrigin    = 0;
-        s->textAngle     = 0;
-        s->visible       = true;
-        s->exportable    = true;
-        s->filled        = false;
-        s->fillColor     = RGBf(0.3, 0.3, 0.3);
-        s->stippleType   = Style::STIPPLE_CONTINUOUS;
-        s->stippleScale  = 15.0;
-        s->name          = CnfPrefixToName(d->cnfPrefix);
-        s->zIndex        = d->zIndex;
+        FillDefaultStyle(s, d);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
     if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
