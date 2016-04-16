@@ -61,8 +61,7 @@ std::string Constraint::Label(void) {
         result = comment;
     } else if(type == DIAMETER) {
         if(!other) {
-            // leading spaces for diameter symbol
-            result = "  " + SS.MmToString(valA);
+            result = "⌀" + SS.MmToString(valA);
         } else {
             result = "R" + SS.MmToString(valA / 2);
         }
@@ -536,31 +535,6 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector topLeft;
             DoLabel(ref, &topLeft, gr, gu);
             if(labelPos) *labelPos = topLeft;
-
-            // Show this as diameter or radius?
-            if(!other) {
-                // Draw the diameter symbol
-                Vector dc = topLeft;
-                dc = dc.Plus(gu.WithMagnitude(5/SS.GW.scale));
-                dc = dc.Plus(gr.WithMagnitude(9/SS.GW.scale));
-                double dr = 5/SS.GW.scale;
-                double theta, dtheta = (2*PI)/12;
-                for(theta = 0; theta < 2*PI-0.01; theta += dtheta) {
-                    LineDrawOrGetDistance(
-                        dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
-                                gr.WithMagnitude(sin(theta)*dr)),
-                        dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
-                                gr.WithMagnitude(sin(theta+dtheta)*dr)));
-                }
-                theta = 25*(PI/180);
-                dr *= 1.7;
-                dtheta = PI;
-                LineDrawOrGetDistance(
-                    dc.Plus(gu.WithMagnitude(cos(theta)*dr)).Plus(
-                            gr.WithMagnitude(sin(theta)*dr)),
-                    dc.Plus(gu.WithMagnitude(cos(theta+dtheta)*dr)).Plus(
-                            gr.WithMagnitude(sin(theta+dtheta)*dr)));
-            }
             break;
         }
 
