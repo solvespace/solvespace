@@ -235,7 +235,8 @@ void CheckMenuById(int id, bool checked);
 void RadioMenuById(int id, bool selected);
 void EnableMenuById(int id, bool enabled);
 
-void ShowGraphicsEditControl(int x, int y, int fontHeight, const std::string &str);
+void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
+                             const std::string &str);
 void HideGraphicsEditControl(void);
 bool GraphicsEditControlIsVisible(void);
 void ShowTextEditControl(int x, int y, const std::string &str);

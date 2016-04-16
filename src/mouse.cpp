@@ -1254,16 +1254,19 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         Vector p3 = c->GetLabelPos();
         Point2d p2 = ProjectPoint(p3);
 
-        std::string edit_value;
+        std::string editValue;
+        int editMinWidthChar;
         switch(c->type) {
             case Constraint::COMMENT:
-                edit_value = c->comment;
+                editValue = c->comment;
+                editMinWidthChar = 30;
                 break;
 
             case Constraint::ANGLE:
             case Constraint::LENGTH_RATIO:
             case Constraint::LENGTH_DIFFERENCE:
-                edit_value = ssprintf("%.3f", c->valA);
+                editValue = ssprintf("%.3f", c->valA);
+                editMinWidthChar = 5;
                 break;
 
             default: {
@@ -1278,17 +1281,18 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                 if(fabs(SS.StringToMm(def) - v) < eps) {
                     // Show value with default number of digits after decimal,
                     // which is at least enough to represent it exactly.
-                    edit_value = def;
+                    editValue = def;
                 } else {
                     // Show value with as many digits after decimal as
                     // required to represent it exactly, up to 10.
                     v /= SS.MmPerUnit();
                     int i;
                     for(i = 0; i <= 10; i++) {
-                        edit_value = ssprintf("%.*f", i, v);
-                        if(fabs(std::stod(edit_value) - v) < eps) break;
+                        editValue = ssprintf("%.*f", i, v);
+                        if(fabs(std::stod(editValue) - v) < eps) break;
                     }
                 }
+                editMinWidthChar = 5;
                 break;
             }
         }
@@ -1296,7 +1300,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
         ShowGraphicsEditControl((int)p2.x, (int)p2.y,
                                 ssglStrFontSize(Style::TextHeight(hs)) * scale,
-                                edit_value);
+                                editMinWidthChar, editValue);
     }
 }
 

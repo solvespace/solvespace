@@ -799,7 +799,7 @@ void SolveSpace::InvalidateText(void)
     InvalidateRect(TextWnd, NULL, false);
 }
 
-static void ShowEditControl(HWND h, int x, int y, int fontHeight,
+static void ShowEditControl(HWND h, int x, int y, int fontHeight, int minWidthChars,
                             bool isMonospace, const std::wstring &s) {
     static HFONT hf;
     if(hf) DeleteObject(hf);
@@ -811,16 +811,23 @@ static void ShowEditControl(HWND h, int x, int y, int fontHeight,
     else   SendMessage(h, WM_SETFONT, (WPARAM)(HFONT)GetStockObject(SYSTEM_FONT), false);
     SendMessage(h, EM_SETMARGINS, EC_LEFTMARGIN|EC_RIGHTMARGIN, 0);
 
-    TEXTMETRICW tm;
     HDC hdc = GetDC(h);
+    TEXTMETRICW tm;
+    SIZE ts;
     SelectObject(hdc, hf);
     GetTextMetrics(hdc, &tm);
+    GetTextExtentPoint32W(hdc, s.c_str(), s.length(), &ts);
     ReleaseDC(h, hdc);
-    y -= tm.tmAscent; /* y coordinate denotes baseline */
 
-    RECT rc = { x, y, x + tm.tmAveCharWidth * 30, y + tm.tmHeight };
+    RECT rc;
+    rc.left   = x;
+    rc.top    = y - tm.tmAscent;
+    // Add one extra char width to avoid scrolling.
+    rc.right  = x + std::max(tm.tmAveCharWidth * minWidthChars,
+                             ts.cx + tm.tmAveCharWidth);
+    rc.bottom = y + tm.tmDescent;
+
     AdjustWindowRectEx(&rc, 0, false, WS_EX_CLIENTEDGE);
-
     MoveWindow(h, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, true);
     ShowWindow(h, SW_SHOW);
     if(!s.empty()) {
@@ -833,7 +840,7 @@ void SolveSpace::ShowTextEditControl(int x, int y, const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    ShowEditControl(TextEditControl, x, y, TextWindow::CHAR_HEIGHT,
+    ShowEditControl(TextEditControl, x, y, TextWindow::CHAR_HEIGHT, 30,
                     /*isMonospace=*/true, Widen(str));
 }
 void SolveSpace::HideTextEditControl(void)
@@ -844,7 +851,7 @@ bool SolveSpace::TextEditControlIsVisible(void)
 {
     return IsWindowVisible(TextEditControl) ? true : false;
 }
-void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight,
+void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
                                          const std::string &str)
 {
     if(GraphicsEditControlIsVisible()) return;
@@ -854,7 +861,7 @@ void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight,
     x = x + (r.right - r.left)/2;
     y = (r.bottom - r.top)/2 - y;
 
-    ShowEditControl(GraphicsEditControl, x, y, fontHeight,
+    ShowEditControl(GraphicsEditControl, x, y, fontHeight, minWidthChars,
                     /*isMonospace=*/false, Widen(str));
 }
 void SolveSpace::HideGraphicsEditControl(void)

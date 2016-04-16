@@ -372,7 +372,6 @@ public:
     EditorOverlay(Gtk::Widget &underlay) : _underlay(underlay) {
         add(_underlay);
 
-        _entry.set_width_chars(30);
         _entry.set_no_show_all(true);
         _entry.set_has_frame(false);
         add(_entry);
@@ -381,8 +380,8 @@ public:
             connect(sigc::mem_fun(this, &EditorOverlay::on_activate));
     }
 
-    void start_editing(int x, int y, int font_height,
-                       bool is_monospace, const std::string &val) {
+    void start_editing(int x, int y, int font_height, bool is_monospace, int minWidthChars,
+                       const std::string &val) {
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
@@ -396,6 +395,12 @@ public:
         /* y coordinate denotes baseline */
         Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
         y -= font_metrics.get_ascent() / Pango::SCALE;
+
+        Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(get_pango_context());
+        layout->set_font_description(font_desc);
+        layout->set_text(val + " "); /* avoid scrolling */
+        int width = std::max(minWidthChars * font_metrics.get_approximate_char_width(),
+                             layout->get_logical_extents().get_width()) / Pango::SCALE;
 
 #ifdef HAVE_GTK3
         Gtk::Border border = _entry.get_style_context()->get_padding();
@@ -411,6 +416,7 @@ public:
 #endif
 
         _entry.set_text(val);
+        _entry.set_size_request(width, -1);
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
@@ -741,7 +747,8 @@ bool FullScreenIsActive(void) {
     return GW->is_fullscreen();
 }
 
-void ShowGraphicsEditControl(int x, int y, int fontHeight, const std::string &val) {
+void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
+                             const std::string &val) {
     Gdk::Rectangle rect = GW->get_widget().get_allocation();
 
     // Convert to ij (vs. xy) style coordinates,
@@ -750,7 +757,7 @@ void ShowGraphicsEditControl(int x, int y, int fontHeight, const std::string &va
     i = x + rect.get_width() / 2;
     j = -y + rect.get_height() / 2;
 
-    GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, val);
+    GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, minWidthChars, val);
 }
 
 void HideGraphicsEditControl(void) {
@@ -1434,8 +1441,7 @@ void SetMousePointerToHand(bool is_hand) {
 }
 
 void ShowTextEditControl(int x, int y, const std::string &val) {
-    TW->get_overlay().start_editing(x, y, TextWindow::CHAR_HEIGHT,
-                                    /*is_monospace=*/true, val);
+    TW->get_overlay().start_editing(x, y, TextWindow::CHAR_HEIGHT, /*is_monospace=*/true, 30, val);
 }
 
 void HideTextEditControl(void) {
