@@ -63,12 +63,12 @@ void Group::GenerateLoops(void) {
     {
         bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
         AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
-        if(!allCoplanar) {
+        if(!allNonZeroLen) {
+            polyError.how = POLY_ZERO_LEN_EDGE;
+        } else if(!allCoplanar) {
             polyError.how = POLY_NOT_COPLANAR;
         } else if(!allClosed) {
             polyError.how = POLY_NOT_CLOSED;
-        } else if(!allNonZeroLen) {
-            polyError.how = POLY_ZERO_LEN_EDGE;
         } else {
             polyError.how = POLY_GOOD;
             // The self-intersecting check is kind of slow, so don't run it
