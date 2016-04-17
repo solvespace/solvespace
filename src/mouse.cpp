@@ -573,33 +573,27 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         if(gs.comments > 0 || gs.points > 0) {
             AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
-
-            if(gs.points == 1) {
-                hRequest hr = gs.point[0].request();
-                if(hr.v != 0) {
-                    Request *r = SK.GetRequest(hr);
-                    int index = r->IndexOfPoint(gs.point[0]);
-                    if((r->type == Request::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
-                            r->type == Request::CUBIC_PERIODIC) {
-                        AddContextMenuItem("Remove Spline Point", CMNU_REMOVE_SPLINE_PT);
-                    }
-                }
-            }
         }
 
-        if(gs.entities == 1) {
-            hRequest hr = gs.entity[0].request();
-            if(hr.v != 0) {
-                Request *r = SK.GetRequest(hr);
-                if(r->type == Request::CUBIC || r->type == Request::CUBIC_PERIODIC) {
-                    Entity *e = SK.GetEntity(gs.entity[0]);
-                    e->GetDistance(Point2d::From(x, y));
-                    addAfterPoint = e->dogd.data;
-                    if(addAfterPoint == -1) oops();
-                    // Skip derivative point.
-                    if(r->type == Request::CUBIC) addAfterPoint++;
-                    AddContextMenuItem("Add Spline Point", CMNU_ADD_SPLINE_PT);
-                }
+
+        if(gs.points == 1 && gs.point[0].isFromRequest()) {
+            Request *r = SK.GetRequest(gs.point[0].request());
+            int index = r->IndexOfPoint(gs.point[0]);
+            if((r->type == Request::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
+                    r->type == Request::CUBIC_PERIODIC) {
+                AddContextMenuItem("Remove Spline Point", CMNU_REMOVE_SPLINE_PT);
+            }
+        }
+        if(gs.entities == 1 && gs.entity[0].isFromRequest()) {
+            Request *r = SK.GetRequest(gs.entity[0].request());
+            if(r->type == Request::CUBIC || r->type == Request::CUBIC_PERIODIC) {
+                Entity *e = SK.GetEntity(gs.entity[0]);
+                e->GetDistance(Point2d::From(x, y));
+                addAfterPoint = e->dogd.data;
+                if(addAfterPoint == -1) oops();
+                // Skip derivative point.
+                if(r->type == Request::CUBIC) addAfterPoint++;
+                AddContextMenuItem("Add Spline Point", CMNU_ADD_SPLINE_PT);
             }
         }
 
