@@ -779,6 +779,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             SS.TW.GoToScreen(TextWindow::SCREEN_GROUP_INFO);
             SS.TW.shown.group = hg;
             SS.ScheduleShowTW();
+            ForceTextWindowShown();
             break;
         }
 
@@ -799,12 +800,14 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
             SS.TW.shown.style = hs;
             SS.ScheduleShowTW();
+            ForceTextWindowShown();
             break;
         }
 
         case CMNU_NEW_CUSTOM_STYLE: {
             uint32_t v = Style::CreateCustomStyle();
             Style::AssignSelectionToStyle(v);
+            ForceTextWindowShown();
             break;
         }
 
