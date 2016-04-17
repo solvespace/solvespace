@@ -1208,11 +1208,9 @@ HMENU CreateGraphicsWindowMenus(void)
     for(i = 0; SS.GW.menu[i].level >= 0; i++) {
         std::string label;
         if(SS.GW.menu[i].label) {
-            char accelbuf[40];
-            const char *sep =
-                MakeAcceleratorLabel(SS.GW.menu[i].accel, accelbuf) ?
-                "\t" : "";
-            label = ssprintf("%s%s%s", SS.GW.menu[i].label, sep, accelbuf);
+            std::string accel = MakeAcceleratorLabel(SS.GW.menu[i].accel);
+            const char *sep = accel.empty() ? "" : "\t";
+            label = ssprintf("%s%s%s", SS.GW.menu[i].label, sep, accel.c_str());
         }
 
         if(SS.GW.menu[i].level == 0) {

@@ -175,39 +175,31 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 #undef TC
 #undef TR
 
-bool SolveSpace::MakeAcceleratorLabel(int accel, char *out) {
-    if(!accel) {
-        out[0] = '\0';
-        return false;
+std::string SolveSpace::MakeAcceleratorLabel(int accel) {
+    if(!accel) return "";
+
+    std::string label;
+    if(accel & GraphicsWindow::CTRL_MASK) {
+        label += "Ctrl+";
     }
-
-    const char *ctrl  = accel & GraphicsWindow::CTRL_MASK  ? "Ctrl+"  : "";
-    const char *shift = accel & GraphicsWindow::SHIFT_MASK ? "Shift+" : "";
-
-    char buf[8];
-    buf[0] = (char)(accel & 0xff);
-    buf[1] = '\0';
-
+    if(accel & GraphicsWindow::SHIFT_MASK) {
+        label += "Shift+";
+    }
     if(accel >= GraphicsWindow::FUNCTION_KEY_BASE + 1 &&
        accel <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
-        sprintf(buf, "F%d", accel - GraphicsWindow::FUNCTION_KEY_BASE);
+        label += ssprintf("F%d", accel - GraphicsWindow::FUNCTION_KEY_BASE);
+    } else if(accel == '\t') {
+        label += "Tab";
+    } else if(accel == ' ') {
+        label += "Space";
+    } else if(accel == GraphicsWindow::ESCAPE_KEY) {
+        label += "Esc";
+    } else if(accel == GraphicsWindow::DELETE_KEY) {
+        label += "Del";
+    } else {
+        label += (char)(accel & 0xff);
     }
-
-    const char *key = buf;
-
-    switch(accel) {
-        case '\t': key = "Tab";   break;
-        case  ' ': key = "Space"; break;
-
-        case GraphicsWindow::ESCAPE_KEY: key = "Esc"; break;
-        case GraphicsWindow::DELETE_KEY: key = "Del"; break;
-    }
-
-    if(key[0] <  '!' || key[0] >  '~') oops();
-    if(key[0] >= 'a' && key[0] <= 'z') oops();
-
-    sprintf(out, "%s%s%s", ctrl, shift, key);
-    return true;
+    return label;
 }
 
 void GraphicsWindow::Init(void) {

@@ -447,7 +447,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (str.length() + 1)*CHAR_WIDTH;
+            int tw = (str.length() + 1)*(CHAR_WIDTH - 1);
             ox = min(ox, (double) (width - 25) - tw);
             oy = max(oy, 5.0);
 
