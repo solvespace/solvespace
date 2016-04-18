@@ -682,6 +682,7 @@ public:
     void Draw(void);
     void GetEdges(SEdgeList *sel);
     bool IsStylable();
+    bool HasLabel();
 
     void LineDrawOrGetDistance(Vector a, Vector b);
     bool IsVisible() const;

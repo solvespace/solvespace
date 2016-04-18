@@ -1229,3 +1229,21 @@ bool Constraint::IsStylable() {
     return false;
 }
 
+bool Constraint::HasLabel() {
+    switch(type) {
+        case COMMENT:
+        case PT_PT_DISTANCE:
+        case PT_PLANE_DISTANCE:
+        case PT_LINE_DISTANCE:
+        case PT_FACE_DISTANCE:
+        case PROJ_PT_DISTANCE:
+        case LENGTH_RATIO:
+        case LENGTH_DIFFERENCE:
+        case DIAMETER:
+        case ANGLE:
+            return true;
+
+        default:
+            return false;
+    }
+}

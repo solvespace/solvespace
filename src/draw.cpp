@@ -299,7 +299,7 @@ void GraphicsWindow::GroupSelection(void) {
             gs.constraint[(gs.constraints)++] = s->constraint;
             Constraint *c = SK.GetConstraint(s->constraint);
             if(c->IsStylable()) gs.stylables++;
-            if(c->type == Constraint::COMMENT) gs.comments++;
+            if(c->HasLabel()) gs.constraintLabels++;
         }
     }
 }
@@ -434,7 +434,7 @@ Vector GraphicsWindow::UnProjectPoint3(Vector p) {
     double w = 1 + p.z * SS.CameraTangent() * scale;
     p.x *= w / scale;
     p.y *= w / scale;
-    
+
     Vector orig = offset.ScaledBy(-1);
     orig = orig.Plus(projRight.ScaledBy(p.x)).Plus(
                      projUp.   ScaledBy(p.y).Plus(

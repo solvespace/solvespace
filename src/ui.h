@@ -649,7 +649,7 @@ public:
         int         vectors;
         int         constraints;
         int         stylables;
-        int         comments;
+        int         constraintLabels;
         int         withEndpoints;
         int         n;
     } gs;

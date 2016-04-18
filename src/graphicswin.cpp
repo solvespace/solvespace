@@ -888,9 +888,10 @@ void GraphicsWindow::MenuEdit(int id) {
                 break;
             }
             SS.GW.GroupSelection();
-            if(SS.GW.gs.points == 0 && SS.GW.gs.comments == 0) {
-                Error("Can't snap these items to grid; select points or "
-                      "text comments. To snap a line, select its endpoints.");
+            if(SS.GW.gs.points == 0 && SS.GW.gs.constraintLabels == 0) {
+                Error("Can't snap these items to grid; select points, "
+                      "text comments, or constraints with a label. "
+                      "To snap a line, select its endpoints.");
                 break;
             }
             SS.UndoRemember();
@@ -908,8 +909,6 @@ void GraphicsWindow::MenuEdit(int id) {
                     SS.MarkGroupDirty(ep->group);
                 } else if(s->constraint.v) {
                     Constraint *c = SK.GetConstraint(s->constraint);
-                    if(c->type != Constraint::COMMENT) continue;
-
                     c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
                 }
             }

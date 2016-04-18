@@ -571,7 +571,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     CMNU_OTHER_ANGLE);
             }
         }
-        if(gs.comments > 0 || gs.points > 0) {
+        if(gs.constraintLabels > 0 || gs.points > 0) {
             AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
         }
 
