@@ -387,7 +387,13 @@ public:
         font_desc.set_absolute_size(font_height * Pango::SCALE);
 
 #ifdef HAVE_GTK3
-        _entry.override_font(font_desc);
+        /* For some reason override_font doesn't take screen DPI into
+           account on GTK3 when working with font descriptors specified
+           in absolute sizes; modify_font does on GTK2. */
+        Pango::FontDescription override_font_desc(font_desc);
+        double dpi = get_screen()->get_resolution();
+        override_font_desc.set_size(font_height * 72.0 / dpi * Pango::SCALE);
+        _entry.override_font(override_font_desc);
 #else
         _entry.modify_font(font_desc);
 #endif
@@ -399,12 +405,13 @@ public:
         Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(get_pango_context());
         layout->set_font_description(font_desc);
         layout->set_text(val + " "); /* avoid scrolling */
-        int width = std::max(minWidthChars * font_metrics.get_approximate_char_width(),
-                             layout->get_logical_extents().get_width()) / Pango::SCALE;
+        int width = layout->get_logical_extents().get_width();
 
 #ifdef HAVE_GTK3
         Gtk::Border border = _entry.get_style_context()->get_padding();
         move(_entry, x - border.get_left(), y - border.get_top());
+        _entry.set_width_chars(minWidthChars);
+        _entry.set_size_request(width / Pango::SCALE, -1);
 #else
         /* We need _gtk_entry_effective_inner_border, but it's not
            in the public API, so emulate its logic. */
@@ -413,10 +420,13 @@ public:
                              &style_border, NULL);
         if(style_border) border = *style_border;
         move(_entry, x - border.left, y - border.top);
+        /* This is what set_width_chars does. */
+        int minWidth = minWidthChars * std::max(font_metrics.get_approximate_digit_width(),
+                                                font_metrics.get_approximate_char_width());
+        _entry.set_size_request(std::max(width, minWidth) / Pango::SCALE, -1);
 #endif
 
         _entry.set_text(val);
-        _entry.set_size_request(width, -1);
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
