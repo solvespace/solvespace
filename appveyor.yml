@@ -19,6 +19,15 @@ artifacts:
   - path: build\src\RelWithDebInfo\solvespace.pdb
     name: solvespace.pdb
 deploy:
+  # Releases to solvespace/solvespace
+  - provider: GitHub
+    auth_token:
+      secure: P9/pf2nM+jlWKe7pCjMp41HycBNP/+5AsmE/TETrDUoBOa/9WFHelqdVFrbRn9IC
+    description: ""
+    artifact: solvespace.exe
+    on:
+      appveyor_repo_tag: true
+  # Releases to whitequark/solvespace (to be removed)
   - provider: GitHub
     auth_token:
       secure: Flqxu1cz6PyxVT1wzTP4bSrQOY8wFrO7pJxYxvjEkLqIUU4dsDQrs2rac/A9deet

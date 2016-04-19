@@ -10,4 +10,4 @@
 	url = http://git.sv.nongnu.org/r/freetype/freetype2.git
 [submodule "extlib/libdxfrw"]
 	path = extlib/libdxfrw
-	url = https://github.com/whitequark/libdxfrw.git
+	url = https://github.com/solvespace/libdxfrw.git

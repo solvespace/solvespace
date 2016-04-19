@@ -1,7 +1,8 @@
 SolveSpace
 ==========
 
-This repository contains the official repository of [SolveSpace][].
+This repository contains the source code of [SolveSpace][], a parametric
+2d/3d CAD.
 
 [solvespace]: http://solvespace.com
 
@@ -13,7 +14,7 @@ Installation
 Binary packages for Mac OS X and Debian derivatives are available
 via [GitHub releases][rel].
 
-[rel]: https://github.com/whitequark/solvespace/releases
+[rel]: https://github.com/solvespace/solvespace/releases
 
 ### Other systems
 
@@ -38,8 +39,8 @@ Before building, check out the necessary submodules:
 
 After that, build SolveSpace as following:
 
-    mkdir cbuild
-    cd cbuild
+    mkdir build
+    cd build
     cmake ..
     make
     sudo make install
@@ -60,19 +61,19 @@ Before building, check out the necessary submodules:
 
 After that, build 32-bit SolveSpace as following:
 
-    mkdir cbuild
-    cd cbuild
+    mkdir build
+    cd build
     cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw32.cmake ..
     make solvespace
 
 Or, build 64-bit SolveSpace as following:
 
-    mkdir cbuild
-    cd cbuild
+    mkdir build
+    cd build
     cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake ..
     make solvespace
 
-The application is built as `cbuild/src/solvespace.exe`.
+The application is built as `build/src/solvespace.exe`.
 
 Space Navigator support will not be available.
 
@@ -92,12 +93,12 @@ Before building, check out the necessary submodules:
 
 After that, build SolveSpace as following:
 
-    mkdir cbuild
-    cd cbuild
+    mkdir build
+    cd build
     cmake ..
     make
 
-The app bundle is built in `cbuild/src/solvespace.app`.
+The app bundle is built in `build/src/solvespace.app`.
 
 [homebrew]: http://brew.sh/
 
