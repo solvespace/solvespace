@@ -681,7 +681,8 @@ public:
 
 class SolveSpaceUI {
 public:
-    TextWindow                  TW;
+    TextWindow                 *pTW;
+    TextWindow                 &TW;
     GraphicsWindow              GW;
 
     // The state for undo/redo
@@ -923,7 +924,8 @@ public:
     bool ActiveGroupsOkay(void);
 
     // The system to be solved.
-    System  sys;
+    System     *pSys;
+    System     &sys;
 
     // All the TrueType fonts in memory
     TtfFontList fonts;
@@ -945,6 +947,18 @@ public:
     static void MenuHelp(int id);
 
     void Clear(void);
+
+    // We allocate TW and sys on the heap to work around an MSVC problem
+    // where it puts zero-initialized global data in the binary (~30M of zeroes)
+    // in release builds.
+    SolveSpaceUI()
+        : pTW(new TextWindow({})), TW(*pTW),
+          pSys(new System({})), sys(*pSys) {}
+
+    ~SolveSpaceUI() {
+        delete pTW;
+        delete pSys;
+    }
 };
 
 extern SolveSpaceUI SS;
