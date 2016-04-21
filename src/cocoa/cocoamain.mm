@@ -248,7 +248,6 @@ CONVERT(Rect)
 
     [editor setFrameOrigin:origin];
     [editor setStringValue:text];
-    [[self window] becomeKeyWindow];
     [[self window] makeFirstResponder:editor];
 }
 
@@ -398,6 +397,7 @@ CONVERT(Rect)
         .x = xy.x + size.width / 2,
         .y = xy.y - size.height / 2
     };
+    [[self window] becomeKeyWindow];
     [super startEditing:text at:[self convertPointFromBacking:point]
            withHeight:fontHeight usingMonospace:FALSE];
     [self prepareEditorWithMinWidthInChars:minWidthChars];
@@ -966,6 +966,7 @@ SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
 - (void)startEditing:(NSString*)text at:(NSPoint)point {
     point = [self convertPointFromBacking:point];
     point.y = -point.y + 2;
+    [[self window] makeKeyWindow];
     [super startEditing:text at:point withHeight:15.0 usingMonospace:TRUE];
     [editor setFrameSize:(NSSize){
         .width = [self bounds].size.width - [editor frame].origin.x,
