@@ -141,16 +141,6 @@ elseif(APPLE)
         cocoa/cocoamain.mm
         unix/gloffscreen.cpp)
 
-    set(platform_XIBS
-        cocoa/MainMenu.xib
-        cocoa/SaveFormatAccessory.xib)
-
-    set(platform_ICONS
-        cocoa/AppIcon.iconset)
-
-    set(platform_RESOURCES
-        unix/solvespace-48x48.png)
-
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
@@ -186,69 +176,6 @@ elseif(HAVE_GTK)
         ${FONTCONFIG_LIBRARIES}
         ${GLEW_LIBRARIES})
 endif()
-
-set(platform_BUNDLED_RESOURCES)
-
-foreach(xib ${platform_XIBS})
-    get_filename_component(nib ${xib} NAME_WE)
-    set(source ${CMAKE_CURRENT_SOURCE_DIR}/${xib})
-    set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources/${nib}.nib)
-    list(APPEND platform_BUNDLED_RESOURCES ${target})
-
-    add_custom_command(
-        OUTPUT ${target}
-        COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
-        COMMAND ibtool --errors --warnings --notices
-            --output-format human-readable-text --compile
-            ${target} ${source}
-        COMMENT "Building Interface Builder file ${xib}"
-        DEPENDS ${xib}
-        VERBATIM)
-endforeach()
-
-foreach(icon ${platform_ICONS})
-    get_filename_component(name ${icon} NAME_WE)
-    set(source ${CMAKE_CURRENT_SOURCE_DIR}/${icon})
-    set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources/${name}.icns)
-    list(APPEND platform_BUNDLED_RESOURCES ${target})
-
-    add_custom_command(
-        OUTPUT ${target}
-        COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
-        COMMAND iconutil -c icns -o ${target} ${source}
-        COMMENT "Building icon set ${icon}"
-        DEPENDS ${source}
-        VERBATIM)
-endforeach()
-
-foreach(res ${platform_RESOURCES})
-    get_filename_component(name ${res} NAME)
-    set(source ${CMAKE_CURRENT_SOURCE_DIR}/${res})
-    set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources/${name})
-    list(APPEND platform_BUNDLED_RESOURCES ${target})
-
-    add_custom_command(
-        OUTPUT ${target}
-        COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
-        COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target}
-        COMMENT "Copying resource file ${res}"
-        DEPENDS ${res}
-        VERBATIM)
-endforeach()
-
-foreach(lib ${platform_BUNDLED_LIBS})
-    get_filename_component(name ${lib} NAME)
-    set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/${name})
-    list(APPEND platform_BUNDLED_RESOURCES ${target})
-
-    add_custom_command(
-        OUTPUT ${target}
-        COMMAND mkdir -p ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/Resources
-        COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${target}
-        COMMENT "Bundling shared library ${lib}"
-        DEPENDS ${lib}
-        VERBATIM)
-endforeach()
 
 # solvespace executable
 
@@ -314,7 +241,6 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${libslvs_SOURCES}
     ${util_SOURCES}
     ${platform_SOURCES}
-    ${platform_BUNDLED_RESOURCES}
     ${generated_SOURCES}
     ${generated_HEADERS}
     ${solvespace_HEADERS}
@@ -343,15 +269,17 @@ if(SPACEWARE_FOUND)
 endif()
 
 if(APPLE)
-    set(fixups)
     foreach(lib ${platform_BUNDLED_LIBS})
         get_filename_component(name ${lib} NAME)
+        set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/${name})
+
         execute_process(COMMAND otool -XD ${lib}
             OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
         add_custom_command(TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${target}
             COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
                     $<TARGET_FILE:solvespace>
-            COMMENT "Fixing up rpath for dylib ${name}"
+            COMMENT "Bundling shared library ${lib}"
             VERBATIM)
     endforeach()
 
@@ -363,7 +291,6 @@ if(APPLE)
         DEPENDS $<TARGET_FILE:${bundle}>
         COMMENT "Building ${bundle}.dmg"
         VERBATIM)
-
     add_custom_target(${bundle}-dmg ALL
         DEPENDS ${CMAKE_BINARY_DIR}/${bundle}.dmg)
 endif()
