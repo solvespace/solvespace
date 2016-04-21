@@ -5,4 +5,10 @@ if echo $TRAVIS_TAG | grep ^release-; then BUILD_TYPE=RelWithDebInfo; else BUILD
 mkdir build
 cd build
 cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.7 -DCMAKE_BUILD_TYPE=$BUILD_TYPE ..
-make VERBOSE=1
+if ! make VERBOSE=1; then
+  echo "Sigh, transient build failure. Retrying..."
+  if ! make VERBOSE=1; then
+    echo "Okay, this is probably an actual bug."
+    exit 1
+  fi
+fi
