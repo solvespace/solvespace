@@ -129,8 +129,7 @@ set(generated_SOURCES
 
 if(WIN32)
     set(platform_SOURCES
-        win32/w32main.cpp
-        win32/resource.rc)
+        win32/w32main.cpp)
 
     set(platform_LIBRARIES
         comctl32)

@@ -97,6 +97,10 @@ else() # Unix
 endif()
 
 # Second, register all resources.
+if(WIN32)
+    add_resource(win32/icon.ico     RT_ICON_GROUP APP_ICON)
+    add_resource(win32/manifest.xml RT_MANIFEST   APP_MANIFEST)
+endif()
 add_resource(banner.txt)
 
 # Third, distribute the resources.
