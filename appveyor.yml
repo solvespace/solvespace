@@ -8,7 +8,7 @@ before_build:
   - if %tag:~,9% == xrelease- (set BUILD_TYPE=RelWithDebInfo) else (set BUILD_TYPE=Debug)
   - cmake -G"Visual Studio 12" -T v120_xp -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ..
 build_script:
-  - msbuild "C:\projects\solvespace\build\src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 artifacts:
   - path: build\src\Debug\solvespace.exe
     name: solvespace.exe
