@@ -1323,6 +1323,16 @@ static void CreateMainWindows(void)
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
 }
 
+const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
+    HRSRC hres = FindResourceW(NULL, Widen(name).c_str(), RT_RCDATA);
+    if(!hres) oops();
+    HGLOBAL res = LoadResource(NULL, hres);
+    if(!res) oops();
+
+    *size = SizeofResource(NULL, hres);
+    return LockResource(res);
+}
+
 #ifdef HAVE_SPACEWARE
 //-----------------------------------------------------------------------------
 // Test if a message comes from the SpaceNavigator device. If yes, dispatch

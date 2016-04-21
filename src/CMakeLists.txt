@@ -289,6 +289,7 @@ set(solvespace_SOURCES
     modify.cpp
     mouse.cpp
     polygon.cpp
+    resource.cpp
     request.cpp
     solvespace.cpp
     style.cpp
@@ -318,7 +319,11 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${generated_SOURCES}
     ${generated_HEADERS}
     ${solvespace_HEADERS}
-    ${solvespace_SOURCES})
+    ${solvespace_SOURCES}
+    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+
+add_dependencies(solvespace
+    resources)
 
 target_link_libraries(solvespace
     dxfrw

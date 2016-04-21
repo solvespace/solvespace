@@ -1474,6 +1474,36 @@ std::vector<std::string> GetFontFiles() {
     return fonts;
 }
 
+static std::string resource_dir;
+const void *LoadResource(const std::string &name, size_t *size) {
+    static std::map<std::string, std::vector<uint8_t>> cache;
+
+    auto it = cache.find(name);
+    if(it == cache.end()) {
+        struct stat st;
+        std::string path;
+
+        path = (UNIX_DATADIR "/") + name;
+        if(stat(path.c_str(), &st)) {
+            if(errno != ENOENT) oops();
+            path = resource_dir + "/" + name;
+            if(stat(path.c_str(), &st)) oops();
+        }
+
+        std::vector<uint8_t> data(st.st_size);
+        FILE *f = ssfopen(path.c_str(), "rb");
+        if(!f) oops();
+        fread(&data[0], 1, st.st_size, f);
+        fclose(f);
+
+        cache.emplace(name, std::move(data));
+        it = cache.find(name);
+    }
+
+    *size = (*it).second.size();
+    return &(*it).second[0];
+}
+
 /* Space Navigator support */
 
 #ifdef HAVE_SPACEWARE
@@ -1535,6 +1565,11 @@ int main(int argc, char** argv) {
        fail to parse these. Also, many text window lines will become
        ambiguous. */
     gtk_disable_setlocale();
+
+    resource_dir = argv[0]; // .../src/solvespace
+    resource_dir.erase(resource_dir.rfind('/'));
+    resource_dir.erase(resource_dir.rfind('/'));
+    resource_dir += "/res"; // .../res
 
     Gtk::Main main(argc, argv);
 

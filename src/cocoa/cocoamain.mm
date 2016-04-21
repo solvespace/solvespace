@@ -1130,6 +1130,26 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
     return fonts;
 }
 
+const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
+    static NSMutableDictionary *cache;
+
+    if(cache == nil) {
+        cache = [[NSMutableDictionary alloc] init];
+    }
+
+    NSString *key = [NSString stringWithUTF8String:name.c_str()];
+    NSData *data = [cache objectForKey:key];
+    if(data == nil) {
+        NSString *path = [[NSBundle mainBundle] pathForResource:key ofType:nil];
+        data = [[NSFileHandle fileHandleForReadingAtPath:path] readDataToEndOfFile];
+        if(data == nil) oops();
+        [cache setObject:data forKey:key];
+    }
+
+    *size = [data length];
+    return [data bytes];
+}
+
 /* Application lifecycle */
 
 @interface ApplicationDelegate : NSObject<NSApplicationDelegate>

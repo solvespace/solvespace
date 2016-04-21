@@ -275,6 +275,8 @@ void MemFree(void *p);
 void InitHeaps(void);
 void vl(void); // debug function to validate heaps
 
+#include "resource.h"
+
 // End of platform-specific functions
 //================
 

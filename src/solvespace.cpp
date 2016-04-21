@@ -13,6 +13,9 @@ Sketch SolveSpace::SK = {};
 std::string SolveSpace::RecentFile[MAX_RECENT] = {};
 
 void SolveSpaceUI::Init() {
+    // Check that the resource system works.
+    dbp("%s", LoadString("banner.txt").data());
+
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.

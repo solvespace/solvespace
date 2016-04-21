@@ -3,6 +3,9 @@
 
 #define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@~@solvespace_GIT_HASH@"
 
+/* Non-OS X *nix only */
+#define UNIX_DATADIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_DATAROOTDIR@/solvespace"
+
 /* Do we have the si library on win32, or libspnav on *nix? */
 #cmakedefine HAVE_SPACEWARE
 

@@ -184,5 +184,6 @@ endif()
 # components
 
 add_subdirectory(tools)
+add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(exposed)
