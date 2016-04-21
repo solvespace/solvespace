@@ -33,10 +33,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 if(WIN32)
     set(util_SOURCES
-        win32/w32util.cpp)
+        platform/w32util.cpp)
 else()
     set(util_SOURCES
-        unix/unixutil.cpp)
+        platform/unixutil.cpp)
 endif()
 
 # libslvs
@@ -129,7 +129,7 @@ set(generated_SOURCES
 
 if(WIN32)
     set(platform_SOURCES
-        win32/w32main.cpp)
+        platform/w32main.cpp)
 
     set(platform_LIBRARIES
         comctl32)
@@ -138,8 +138,8 @@ elseif(APPLE)
         -fobjc-arc)
 
     set(platform_SOURCES
-        cocoa/cocoamain.mm
-        unix/gloffscreen.cpp)
+        platform/cocoamain.mm
+        platform/gloffscreen.cpp)
 
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
@@ -167,8 +167,8 @@ elseif(HAVE_GTK)
         ${GLEW_CFLAGS_OTHER})
 
     set(platform_SOURCES
-        gtk/gtkmain.cpp
-        unix/gloffscreen.cpp)
+        platform/gtkmain.cpp
+        platform/gloffscreen.cpp)
 
     set(platform_LIBRARIES
         ${GTKMM_LIBRARIES}

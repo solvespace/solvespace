@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 #ifndef WIN32
-#include <unix/gloffscreen.h>
+#include <platform/gloffscreen.h>
 #endif
 #include <png.h>
 

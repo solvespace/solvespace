@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
-// Our main() function, and GTK3-specific stuff to set up our windows and
+// Our main() function, and GTK2/3-specific stuff to set up our windows and
 // otherwise handle our interface to the operating system. Everything
-// outside gtk/... should be standard C++ and OpenGL.
+// outside platform/... should be standard C++ and OpenGL.
 //
 // Copyright 2015 <whitequark@whitequark.org>
 //-----------------------------------------------------------------------------
@@ -52,7 +52,7 @@
 
 #include "solvespace.h"
 #include "config.h"
-#include "../unix/gloffscreen.h"
+#include "gloffscreen.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <spnav.h>

@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Our WinMain() functions, and Win32-specific stuff to set up our windows
 // and otherwise handle our interface to the operating system. Everything
-// outside win32/... should be standard C++ and gl.
+// outside platform/... should be standard C++ and gl.
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------

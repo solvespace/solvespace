@@ -1,7 +1,7 @@
 //-----------------------------------------------------------------------------
 // Our main() function, and Cocoa-specific stuff to set up our windows and
 // otherwise handle our interface to the operating system. Everything
-// outside gtk/... should be standard C++ and OpenGL.
+// outside platform/... should be standard C++ and OpenGL.
 //
 // Copyright 2015 <whitequark@whitequark.org>
 //-----------------------------------------------------------------------------
@@ -14,7 +14,7 @@
 #include <map>
 
 #include "solvespace.h"
-#include "../unix/gloffscreen.h"
+#include "gloffscreen.h"
 #include <config.h>
 
 using SolveSpace::dbp;
