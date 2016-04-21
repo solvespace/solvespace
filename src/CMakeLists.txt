@@ -374,17 +374,6 @@ if(NOT WIN32)
         BUNDLE  DESTINATION .)
 endif()
 
-install(FILES unix/solvespace.desktop
-    DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
-foreach(SIZE 16x16 24x24 32x32 48x48)
-    install(FILES unix/solvespace-${SIZE}.png
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
-        RENAME      solvespace.png)
-    install(FILES unix/solvespace-${SIZE}.png
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
-        RENAME      application.x-solvespace.png)
-endforeach()
-
 # valgrind
 
 add_custom_target(solvespace-valgrind

@@ -100,6 +100,19 @@ endif()
 if(WIN32)
     add_resource(win32/icon.ico     RT_ICON_GROUP APP_ICON)
     add_resource(win32/manifest.xml RT_MANIFEST   APP_MANIFEST)
+elseif(APPLE)
+else()
+    install(FILES freedesktop/solvespace.desktop
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+
+    foreach(SIZE 16x16 24x24 32x32 48x48)
+        install(FILES freedesktop/solvespace-${SIZE}.png
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
+            RENAME      solvespace.png)
+        install(FILES freedesktop/solvespace-${SIZE}.png
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
+            RENAME      application.x-solvespace.png)
+    endforeach()
 endif()
 add_resource(banner.txt)
 
