@@ -76,13 +76,6 @@ message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
 if(WIN32)
-    # We don't want any of the subprojects to install anything.
-    # We don't actually install anything on Windows (so overriding
-    # this is OK), but the combination of freetype's and png/zlib's
-    # CMakeLists.txt produces harmless but annoying CMake errors.
-    macro(install)
-    endmacro()
-
     # Configure Freetype first. If done later, it will notice that
     # zlib is available, try to use it and promptly break on MSVC
     # in a very obscure way. Given that the only use of zlib, bzip2
@@ -93,7 +86,7 @@ if(WIN32)
     if(NOT FREETYPE_FOUND)
         message(STATUS "Using in-tree libfreetype")
 
-        add_subdirectory(extlib/libfreetype)
+        add_subdirectory(extlib/libfreetype EXCLUDE_FROM_ALL)
 
         set(FREETYPE_LIBRARY
             freetype)
@@ -106,7 +99,7 @@ if(WIN32)
 
     if(NOT ZLIB_FOUND)
         message(STATUS "Using in-tree zlib")
-        add_subdirectory(extlib/zlib)
+        add_subdirectory(extlib/zlib EXCLUDE_FROM_ALL)
 
         message(STATUS "Using in-tree libpng")
         set(ZLIB_LIBRARY
@@ -124,7 +117,7 @@ if(WIN32)
 
         set(SKIP_INSTALL_ALL
             ON)
-        add_subdirectory(extlib/libpng)
+        add_subdirectory(extlib/libpng EXCLUDE_FROM_ALL)
 
         set(PNG_LIBRARY
             png16_static)
