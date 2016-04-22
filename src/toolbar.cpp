@@ -6,52 +6,52 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "generated/icons.h"
 
-static uint8_t SPACER[1];
-static const struct {
-    uint8_t     *image;
+static const char *SPACER = "";
+static struct {
+    const char  *iconName;
     int          menu;
     const char  *tip;
+    Pixmap       icon;
 } Toolbar[] = {
-    { Icon_line,            GraphicsWindow::MNU_LINE_SEGMENT,   "Sketch line segment"                               },
-    { Icon_rectangle,       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle"                                  },
-    { Icon_circle,          GraphicsWindow::MNU_CIRCLE,         "Sketch circle"                                     },
-    { Icon_arc,             GraphicsWindow::MNU_ARC,            "Sketch arc of a circle"                            },
-    { Icon_text,            GraphicsWindow::MNU_TTF_TEXT,       "Sketch curves from text in a TrueType font"        },
-    { Icon_tangent_arc,     GraphicsWindow::MNU_TANGENT_ARC,    "Create tangent arc at selected point"              },
-    { Icon_bezier,          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline"                        },
-    { Icon_point,           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point"                                },
-    { Icon_construction,    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction"                               },
-    { Icon_trim,            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect"         },
-    { SPACER, 0, 0 },
+    { "line",            GraphicsWindow::MNU_LINE_SEGMENT,   "Sketch line segment",                              {} },
+    { "rectangle",       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle",                                 {} },
+    { "circle",          GraphicsWindow::MNU_CIRCLE,         "Sketch circle",                                    {} },
+    { "arc",             GraphicsWindow::MNU_ARC,            "Sketch arc of a circle",                           {} },
+    { "text",            GraphicsWindow::MNU_TTF_TEXT,       "Sketch curves from text in a TrueType font",       {} },
+    { "tangent-arc",     GraphicsWindow::MNU_TANGENT_ARC,    "Create tangent arc at selected point",             {} },
+    { "bezier",          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline",                       {} },
+    { "point",           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point",                               {} },
+    { "construction",    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction",                              {} },
+    { "trim",            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect",        {} },
+    { SPACER, 0, 0, {} },
 
-    { Icon_length,          GraphicsWindow::MNU_DISTANCE_DIA,   "Constrain distance / diameter / length"            },
-    { Icon_angle,           GraphicsWindow::MNU_ANGLE,          "Constrain angle"                                   },
-    { Icon_horiz,           GraphicsWindow::MNU_HORIZONTAL,     "Constrain to be horizontal"                        },
-    { Icon_vert,            GraphicsWindow::MNU_VERTICAL,       "Constrain to be vertical"                          },
-    { Icon_parallel,        GraphicsWindow::MNU_PARALLEL,       "Constrain to be parallel or tangent"               },
-    { Icon_perpendicular,   GraphicsWindow::MNU_PERPENDICULAR,  "Constrain to be perpendicular"                     },
-    { Icon_pointonx,        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / point"   },
-    { Icon_symmetric,       GraphicsWindow::MNU_SYMMETRIC,      "Constrain symmetric"                               },
-    { Icon_equal,           GraphicsWindow::MNU_EQUAL,          "Constrain equal length / radius / angle"           },
-    { Icon_same_orientation,GraphicsWindow::MNU_ORIENTED_SAME,  "Constrain normals in same orientation"             },
-    { Icon_other_supp,      GraphicsWindow::MNU_OTHER_ANGLE,    "Other supplementary angle"                         },
-    { Icon_ref,             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension"                        },
-    { SPACER, 0, 0 },
+    { "length",          GraphicsWindow::MNU_DISTANCE_DIA,   "Constrain distance / diameter / length",           {} },
+    { "angle",           GraphicsWindow::MNU_ANGLE,          "Constrain angle",                                  {} },
+    { "horiz",           GraphicsWindow::MNU_HORIZONTAL,     "Constrain to be horizontal",                       {} },
+    { "vert",            GraphicsWindow::MNU_VERTICAL,       "Constrain to be vertical",                         {} },
+    { "parallel",        GraphicsWindow::MNU_PARALLEL,       "Constrain to be parallel or tangent",              {} },
+    { "perpendicular",   GraphicsWindow::MNU_PERPENDICULAR,  "Constrain to be perpendicular",                    {} },
+    { "pointonx",        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / point",  {} },
+    { "symmetric",       GraphicsWindow::MNU_SYMMETRIC,      "Constrain symmetric",                              {} },
+    { "equal",           GraphicsWindow::MNU_EQUAL,          "Constrain equal length / radius / angle",          {} },
+    { "same-orientation",GraphicsWindow::MNU_ORIENTED_SAME,  "Constrain normals in same orientation",            {} },
+    { "other-supp",      GraphicsWindow::MNU_OTHER_ANGLE,    "Other supplementary angle",                        {} },
+    { "ref",             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension",                       {} },
+    { SPACER, 0, 0, {} },
 
-    { Icon_extrude,         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch"                 },
-    { Icon_lathe,           GraphicsWindow::MNU_GROUP_LATHE,    "New group rotating active sketch"                  },
-    { Icon_step_rotate,     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating"                },
-    { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
-    { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
-    { Icon_sketch_in_3d,    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d"                                   },
-    { Icon_assemble,        GraphicsWindow::MNU_GROUP_LINK,     "New group linking / assembling file"               },
-    { SPACER, 0, 0 },
+    { "extrude",         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
+    { "lathe",           GraphicsWindow::MNU_GROUP_LATHE,    "New group rotating active sketch",                 {} },
+    { "step-rotate",     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating",               {} },
+    { "step-translate",  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating",            {} },
+    { "sketch-in-plane", GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
+    { "sketch-in-3d",    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d",                                  {} },
+    { "assemble",        GraphicsWindow::MNU_GROUP_LINK,     "New group linking / assembling file",              {} },
+    { SPACER, 0, 0, {} },
 
-    { Icon_in3d,            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view"                            },
-    { Icon_ontoworkplane,   GraphicsWindow::MNU_ONTO_WORKPLANE, "Align view to active workplane"                    },
-    { NULL, 0, 0 }
+    { "in3d",            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view",                           {} },
+    { "ontoworkplane",   GraphicsWindow::MNU_ONTO_WORKPLANE, "Align view to active workplane",                   {} },
+    { NULL, 0, 0, {} }
 };
 
 void GraphicsWindow::ToolbarDraw(void) {
@@ -141,8 +141,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     } toolTip = { false, NULL };
 
     bool leftpos = true;
-    for(i = 0; Toolbar[i].image; i++) {
-        if(Toolbar[i].image == SPACER) {
+    for(i = 0; Toolbar[i].iconName; i++) {
+        if(Toolbar[i].iconName == SPACER) {
             if(!leftpos) {
                 leftpos = true;
                 y -= 32;
@@ -164,9 +164,17 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             continue;
         }
 
+        if(Toolbar[i].icon.IsEmpty()) {
+            std::string name = ssprintf("icons/graphics-window/%s.png", Toolbar[i].iconName);
+            Toolbar[i].icon = LoadPNG(name);
+        }
+
         if(paint) {
-            glRasterPos2i(x - 12, y - 12);
-            glDrawPixels(24, 24, GL_RGB, GL_UNSIGNED_BYTE, Toolbar[i].image);
+            glPushMatrix();
+                glTranslated(x - Toolbar[i].icon.width / 2, y - Toolbar[i].icon.height / 2, 0);
+                glColor4d(0, 0, 0, 1.0);
+                ssglDrawPixmap(Toolbar[i].icon, /*flip=*/true);
+            glPopMatrix();
 
             if(toolbarHovered == Toolbar[i].menu ||
                pending.operation == Toolbar[i].menu) {

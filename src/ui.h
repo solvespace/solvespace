@@ -62,8 +62,9 @@ public:
     // The row of icons at the top of the text window, to hide/show things
     typedef struct {
         bool       *var;
-        uint8_t    *icon;
+        const char *iconName;
         const char *tip;
+        Pixmap      icon;
     } HideShowIcon;
     static HideShowIcon hideShowIcons[];
     static bool SPACER;

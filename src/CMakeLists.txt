@@ -84,17 +84,6 @@ endif()
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
-file(GLOB icons ${CMAKE_CURRENT_SOURCE_DIR}/icons/*.png)
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp
-           ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h
-    COMMAND $<TARGET_FILE:png2c>
-            ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp
-            ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h
-            ${icons}
-    DEPENDS png2c ${icons}
-    VERBATIM)
-
 file(GLOB chars ${CMAKE_CURRENT_SOURCE_DIR}/fonts/private/*.png)
 list(SORT chars)
 add_custom_command(
@@ -119,11 +108,7 @@ add_custom_command(
 
 set(generated_HEADERS
     ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.h)
-
-set(generated_SOURCES
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/icons.cpp)
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h)
 
 # platform dependencies
 
@@ -241,7 +226,6 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${libslvs_SOURCES}
     ${util_SOURCES}
     ${platform_SOURCES}
-    ${generated_SOURCES}
     ${generated_HEADERS}
     ${solvespace_HEADERS}
     ${solvespace_SOURCES}

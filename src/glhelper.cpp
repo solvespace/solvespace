@@ -876,44 +876,31 @@ void ssglBitmapText(const std::string &str, Vector p)
     glDisable(GL_TEXTURE_2D);
 }
 
-void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h)
-{
-#define MAX_DIM 32
-    static uint8_t Texture[MAX_DIM*MAX_DIM*3];
-    int i, j;
-    if(w > MAX_DIM || h > MAX_DIM) oops();
-
-    for(i = 0; i < w; i++) {
-        for(j = 0; j < h; j++) {
-            Texture[(j*MAX_DIM + i)*3 + 0] = data[(j*w + i)*3 + 0];
-            Texture[(j*MAX_DIM + i)*3 + 1] = data[(j*w + i)*3 + 1];
-            Texture[(j*MAX_DIM + i)*3 + 2] = data[(j*w + i)*3 + 2];
-        }
-    }
-
+void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
     glBindTexture(GL_TEXTURE_2D, TEXTURE_DRAW_PIXELS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, MAX_DIM, MAX_DIM, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, Texture);
+    int format = pixmap.hasAlpha ? GL_RGBA : GL_RGB;
+    glTexImage2D(GL_TEXTURE_2D, 0, format, pixmap.width, pixmap.height, 0,
+                 format, GL_UNSIGNED_BYTE, pixmap.data.get());
 
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
-        glTexCoord2d(0, 0);
-        glVertex2d(0, h);
+        glTexCoord2d(0.0, flip ? 0.0 : 1.0);
+        glVertex2d(0.0, (double)pixmap.height);
 
-        glTexCoord2d(((double)w)/MAX_DIM, 0);
-        glVertex2d(w, h);
+        glTexCoord2d(1.0, flip ? 0.0 : 1.0);
+        glVertex2d((double)pixmap.width, (double)pixmap.height);
 
-        glTexCoord2d(((double)w)/MAX_DIM, ((double)h)/MAX_DIM);
-        glVertex2d(w, 0);
+        glTexCoord2d(1.0, flip ? 1.0 : 0.0);
+        glVertex2d((double)pixmap.width, 0.0);
 
-        glTexCoord2d(0, ((double)h)/MAX_DIM);
-        glVertex2d(0, 0);
+        glTexCoord2d(0.0, flip ? 1.0 : 0.0);
+        glVertex2d(0.0, 0.0);
     glEnd();
     glDisable(GL_TEXTURE_2D);
 }

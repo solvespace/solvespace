@@ -4,7 +4,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "generated/icons.h"
 
 const TextWindow::Color TextWindow::fgColors[] = {
     { 'd', RGBi(255, 255, 255) },
@@ -30,19 +29,19 @@ const TextWindow::Color TextWindow::bgColors[] = {
 
 bool TextWindow::SPACER = false;
 TextWindow::HideShowIcon TextWindow::hideShowIcons[] = {
-    { &(SS.GW.showWorkplanes),  Icon_workplane,     "workplanes from inactive groups"},
-    { &(SS.GW.showNormals),     Icon_normal,        "normals"                        },
-    { &(SS.GW.showPoints),      Icon_point,         "points"                         },
-    { &(SS.GW.showConstraints), Icon_constraint,    "constraints and dimensions"     },
-    { &(SS.GW.showFaces),       Icon_faces,         "XXX - special cased"            },
-    { &SPACER, 0, 0 },
-    { &(SS.GW.showShaded),      Icon_shaded,        "shaded view of solid model"     },
-    { &(SS.GW.showEdges),       Icon_edges,         "edges of solid model"           },
-    { &(SS.GW.showOutlines),    Icon_outlines,      "outline of solid model"         },
-    { &(SS.GW.showMesh),        Icon_mesh,          "triangle mesh of solid model"   },
-    { &SPACER, 0, 0 },
-    { &(SS.GW.showHdnLines),    Icon_hidden_lines,  "hidden lines"                   },
-    { 0, 0, 0 }
+    { &(SS.GW.showWorkplanes),  "workplane",     "workplanes from inactive groups", {} },
+    { &(SS.GW.showNormals),     "normal",        "normals",                         {} },
+    { &(SS.GW.showPoints),      "point",         "points",                          {} },
+    { &(SS.GW.showConstraints), "constraint",    "constraints and dimensions",      {} },
+    { &(SS.GW.showFaces),       "faces",         "XXX - special cased",             {} },
+    { &SPACER, 0, 0, {} },
+    { &(SS.GW.showShaded),      "shaded",        "shaded view of solid model",      {} },
+    { &(SS.GW.showEdges),       "edges",         "edges of solid model",            {} },
+    { &(SS.GW.showOutlines),    "outlines",      "outline of solid model",          {} },
+    { &(SS.GW.showMesh),        "mesh",          "triangle mesh of solid model",    {} },
+    { &SPACER, 0, 0, {} },
+    { &(SS.GW.showHdnLines),    "hidden-lines",  "hidden lines",                    {} },
+    { 0, 0, 0, {} }
 };
 
 void TextWindow::MakeColorTable(const Color *in, float *out) {
@@ -379,13 +378,15 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             continue;
         }
 
+        if(hsi->icon.IsEmpty()) {
+            hsi->icon = LoadPNG(ssprintf("icons/text-window/%s.png", hsi->iconName));
+        }
+
         if(how == PAINT) {
             glPushMatrix();
                 glTranslated(x, y-24, 0);
-                // Only thing that matters about the color is the alpha,
-                // should be one for no transparency
                 glColor3d(0, 0, 0);
-                ssglDrawPixelsWithTexture(hsi->icon, 24, 24);
+                ssglDrawPixmap(hsi->icon);
             glPopMatrix();
 
             if(hsi == hoveredIcon) {
@@ -433,7 +434,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
         if(how == PAINT) {
             std::string str;
 
-            if(tooltippedIcon->icon == Icon_faces) {
+            if(tooltippedIcon->var == &(SS.GW.showFaces)) {
                 if(SS.GW.showFaces) {
                     str = "Don't make faces selectable with mouse";
                 } else {

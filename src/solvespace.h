@@ -356,7 +356,7 @@ void ssglColorRGB(RgbaColor rgb);
 void ssglColorRGBa(RgbaColor rgb, double a);
 void ssglDepthRangeOffset(int units);
 void ssglDepthRangeLockToFront(bool yes);
-void ssglDrawPixelsWithTexture(uint8_t *data, int w, int h);
+void ssglDrawPixmap(const Pixmap &pixmap, bool flip = false);
 void ssglInitializeBitmapFont();
 void ssglBitmapText(const std::string &str, Vector p);
 void ssglBitmapCharQuad(char32_t chr, double x, double y);

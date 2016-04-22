@@ -96,6 +96,13 @@ else() # Unix
     endfunction()
 endif()
 
+function(add_resources)
+    foreach(name ${ARGN})
+        add_resource(${name})
+        set(resource_list "${resource_list}" PARENT_SCOPE)
+    endforeach()
+endfunction()
+
 # Second, register all resources.
 if(WIN32)
     add_resource(win32/icon.ico     RT_ICON_GROUP APP_ICON)
@@ -117,7 +124,50 @@ else()
             RENAME      application.x-solvespace.png)
     endforeach()
 endif()
-add_resource(banner.txt)
+
+add_resources(
+    banner.txt
+    icons/graphics-window/angle.png
+    icons/graphics-window/arc.png
+    icons/graphics-window/assemble.png
+    icons/graphics-window/bezier.png
+    icons/graphics-window/circle.png
+    icons/graphics-window/construction.png
+    icons/graphics-window/equal.png
+    icons/graphics-window/extrude.png
+    icons/graphics-window/horiz.png
+    icons/graphics-window/in3d.png
+    icons/graphics-window/lathe.png
+    icons/graphics-window/length.png
+    icons/graphics-window/line.png
+    icons/graphics-window/ontoworkplane.png
+    icons/graphics-window/other-supp.png
+    icons/graphics-window/parallel.png
+    icons/graphics-window/perpendicular.png
+    icons/graphics-window/pointonx.png
+    icons/graphics-window/point.png
+    icons/graphics-window/rectangle.png
+    icons/graphics-window/ref.png
+    icons/graphics-window/same-orientation.png
+    icons/graphics-window/sketch-in-3d.png
+    icons/graphics-window/sketch-in-plane.png
+    icons/graphics-window/step-rotate.png
+    icons/graphics-window/step-translate.png
+    icons/graphics-window/symmetric.png
+    icons/graphics-window/tangent-arc.png
+    icons/graphics-window/text.png
+    icons/graphics-window/trim.png
+    icons/graphics-window/vert.png
+    icons/text-window/constraint.png
+    icons/text-window/edges.png
+    icons/text-window/faces.png
+    icons/text-window/hidden-lines.png
+    icons/text-window/mesh.png
+    icons/text-window/normal.png
+    icons/text-window/outlines.png
+    icons/text-window/point.png
+    icons/text-window/shaded.png
+    icons/text-window/workplane.png)
 
 # Third, distribute the resources.
 add_custom_target(resources
