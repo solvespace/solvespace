@@ -69,6 +69,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
+if(SANITIZE)
+    if(NOT (CMAKE_C_COMPILER_ID STREQUAL Clang AND CMAKE_CXX_COMPILER_ID STREQUAL Clang))
+        message(ERROR "Sanitizers are only available in Clang/Clang++")
+    endif()
+    set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fsanitize=address,undefined,integer")
+    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
+endif()
+
 # dependencies
 
 find_package(OpenGL REQUIRED)
