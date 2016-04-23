@@ -786,8 +786,6 @@ void SolveSpaceUI::MenuHelp(int id) {
             Message(
 "This is SolveSpace version " PACKAGE_VERSION ".\n"
 "\n"
-"Built " __TIME__ " " __DATE__ ".\n"
-"\n"
 "For more information, see http://solvespace.com/\n"
 "\n"
 "SolveSpace is free software: you are free to modify\n"
@@ -797,7 +795,7 @@ void SolveSpaceUI::MenuHelp(int id) {
 "There is NO WARRANTY, to the extent permitted by\n"
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
-"© 2008-2013 Jonathan Westhues and other authors.\n"
+"© 2008-2016 Jonathan Westhues and other authors.\n"
 );
             break;
 

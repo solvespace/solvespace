@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H
 #define __CONFIG_H
 
-#define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@"
+#define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@~@solvespace_GIT_HASH@"
 
 /* MSVC includes a proper stdint.h, but only since VS2008. */
 #cmakedefine HAVE_STDINT_H
