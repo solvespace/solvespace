@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 SolveSpaceUI SolveSpace::SS = {};
 Sketch SolveSpace::SK = {};

@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 #define mView (&GraphicsWindow::MenuView)
 #define mEdit (&GraphicsWindow::MenuEdit)

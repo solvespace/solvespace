@@ -71,8 +71,6 @@ endif()
 
 # dependencies
 
-CHECK_INCLUDE_FILE("stdint.h" HAVE_STDINT_H)
-
 find_package(OpenGL REQUIRED)
 
 message(STATUS "Using in-tree libdxfrw")

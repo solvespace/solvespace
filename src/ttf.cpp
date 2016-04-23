@@ -39,8 +39,6 @@ extern "C" const char *ft_error_string(int err) {
 #undef FT_ERROR_START_LIST
 #undef FT_ERROR_END_LIST
 
-#undef HAVE_STDINT_H /* no thanks, we have our own config.h */
-
 #include "solvespace.h"
 
 //-----------------------------------------------------------------------------

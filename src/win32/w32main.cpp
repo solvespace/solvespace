@@ -11,9 +11,8 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
-#include <string>
-
 #include "solvespace.h"
+#include "config.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <si.h>

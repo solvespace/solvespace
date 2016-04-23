@@ -48,12 +48,10 @@
 #include <gdk/gdkx.h>
 #include <fontconfig/fontconfig.h>
 
-#undef HAVE_STDINT_H /* no thanks, we have our own config.h */
-
 #include <GL/glx.h>
 
-#include <config.h>
 #include "solvespace.h"
+#include "config.h"
 #include "../unix/gloffscreen.h"
 
 #ifdef HAVE_SPACEWARE

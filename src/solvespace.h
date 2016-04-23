@@ -7,7 +7,7 @@
 #ifndef __SOLVESPACE_H
 #define __SOLVESPACE_H
 
-#include <config.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
@@ -23,9 +23,6 @@
 #include <unordered_map>
 #include <map>
 #include <set>
-#ifdef HAVE_STDINT_H
-#   include <stdint.h>
-#endif
 #ifdef WIN32
 #   include <windows.h> // required by GL headers
 #endif
@@ -111,18 +108,6 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 #define VERY_NEGATIVE   (-1e10)
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
-
-#if defined(WIN32) && !defined(HAVE_STDINT_H)
-// Define some useful C99 integer types.
-typedef UINT64 uint64_t;
-typedef  INT64  int64_t;
-typedef UINT32 uint32_t;
-typedef  INT32  int32_t;
-typedef USHORT uint16_t;
-typedef  SHORT  int16_t;
-typedef  UCHAR  uint8_t;
-typedef   CHAR   int8_t;
-#endif
 
 #if defined(WIN32)
 std::string Narrow(const wchar_t *s);

@@ -3,9 +3,6 @@
 
 #define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@~@solvespace_GIT_HASH@"
 
-/* MSVC includes a proper stdint.h, but only since VS2008. */
-#cmakedefine HAVE_STDINT_H
-
 /* Do we have the si library on win32, or libspnav on *nix? */
 #cmakedefine HAVE_SPACEWARE
 
