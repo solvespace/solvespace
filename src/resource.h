@@ -16,6 +16,7 @@ class Pixmap;
 const void *LoadResource(const std::string &name, size_t *size);
 
 std::string LoadString(const std::string &name);
+std::string LoadStringFromGzip(const std::string &name);
 Pixmap LoadPNG(const std::string &name);
 
 class Pixmap {
@@ -31,8 +32,33 @@ public:
 
     bool IsEmpty() const { return width == 0 && height == 0; }
     size_t GetBytesPerPixel() const { return hasAlpha ? 4 : 3; }
+    RgbaColor GetPixel(size_t x, size_t y) const;
 
     void Clear();
+};
+
+class BitmapFont {
+public:
+    struct Glyph {
+        uint8_t  advanceCells;
+        uint16_t position;
+    };
+
+    static const size_t TEXTURE_DIM = 1024;
+
+    std::string                unifontData;
+    std::map<char32_t, Glyph>  glyphs;
+    std::unique_ptr<uint8_t[]> texture;
+    uint16_t                   nextPosition;
+
+    static BitmapFont From(std::string &&unifontData);
+
+    bool IsEmpty() const { return unifontData.empty(); }
+    const Glyph &GetGlyph(char32_t codepoint);
+    bool LocateGlyph(char32_t codepoint, double *s0, double *t0, double *s1, double *t1,
+                     size_t *advanceWidth, size_t *boundingHeight);
+
+    void AddGlyph(char32_t codepoint, const Pixmap &pixmap);
 };
 
 #endif

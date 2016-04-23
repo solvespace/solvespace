@@ -84,19 +84,6 @@ endif()
 
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
 
-file(GLOB chars ${CMAKE_CURRENT_SOURCE_DIR}/fonts/private/*.png)
-list(SORT chars)
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
-    COMMAND $<TARGET_FILE:unifont2c>
-            ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz
-            ${chars}
-    DEPENDS unifont2c
-            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unifont-8.0.01.hex.gz
-            ${chars}
-    VERBATIM)
-
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
     COMMAND $<TARGET_FILE:lff2c>
@@ -107,8 +94,7 @@ add_custom_command(
     VERBATIM)
 
 set(generated_HEADERS
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/bitmapfont.table.h)
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h)
 
 # platform dependencies
 

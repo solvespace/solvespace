@@ -167,7 +167,16 @@ add_resources(
     icons/text-window/outlines.png
     icons/text-window/point.png
     icons/text-window/shaded.png
-    icons/text-window/workplane.png)
+    icons/text-window/workplane.png
+    fonts/unifont.hex.gz
+    fonts/private/0-check-false.png
+    fonts/private/1-check-true.png
+    fonts/private/2-radio-false.png
+    fonts/private/3-radio-true.png
+    fonts/private/4-stipple-dot.png
+    fonts/private/5-stipple-dash-long.png
+    fonts/private/6-stipple-dash.png
+    fonts/private/7-stipple-zigzag.png)
 
 # Third, distribute the resources.
 add_custom_target(resources

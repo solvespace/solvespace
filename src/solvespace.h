@@ -359,7 +359,7 @@ void ssglDepthRangeLockToFront(bool yes);
 void ssglDrawPixmap(const Pixmap &pixmap, bool flip = false);
 void ssglInitializeBitmapFont();
 void ssglBitmapText(const std::string &str, Vector p);
-void ssglBitmapCharQuad(char32_t chr, double x, double y);
+double ssglBitmapCharQuad(char32_t chr, double x, double y);
 int ssglBitmapCharWidth(char32_t chr);
 #define TEXTURE_BACKGROUND_IMG  10
 #define TEXTURE_DRAW_PIXELS     20

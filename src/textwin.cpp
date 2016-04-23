@@ -448,7 +448,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (str.length() + 1)*(CHAR_WIDTH - 1);
+            int tw = (str.length() + 1) * (CHAR_WIDTH - 1);
             ox = min(ox, (double) (width - 25) - tw);
             oy = max(oy, 5.0);
 
@@ -872,7 +872,9 @@ void TextWindow::Paint(void) {
                     }
                 } else if(a == 1) {
                     glColor3fv(&(fgColorTable[fg*3]));
-                    ssglBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
+                    if(text[r][c] != ' ') {
+                        ssglBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
+                    }
 
                     // If this is a link and it's hovered, then draw the
                     // underline

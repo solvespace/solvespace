@@ -3,16 +3,12 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include <zlib.h>
 #include "solvespace.h"
 
 namespace SolveSpace {
 
 // A vector font.
 #include "generated/vectorfont.table.h"
-
-// A bitmap font.
-#include "generated/bitmapfont.table.h"
 
 static bool ColorLocked;
 static bool DepthOffsetLocked;
@@ -726,156 +722,6 @@ void ssglDepthRangeLockToFront(bool yes)
     }
 }
 
-const int BitmapFontChunkSize = 64 * 64;
-static bool BitmapFontChunkInitialized[0x10000 / BitmapFontChunkSize];
-static int BitmapFontCurrentChunk = -1;
-
-static void CreateBitmapFontChunk(const uint8_t *source, size_t sourceLength,
-                                  int textureIndex)
-{
-    // Place the font in our texture in a two-dimensional grid.
-    // The maximum texture size that is reasonably supported is 1024x1024.
-    const size_t fontTextureSize = BitmapFontChunkSize*16*16;
-    uint8_t *fontTexture = (uint8_t *)malloc(fontTextureSize),
-            *mappedTexture = (uint8_t *)malloc(fontTextureSize);
-
-    z_stream stream;
-    stream.zalloc = Z_NULL;
-    stream.zfree = Z_NULL;
-    stream.opaque = Z_NULL;
-    if(inflateInit(&stream) != Z_OK)
-        oops();
-
-    stream.next_in = (Bytef *)source;
-    stream.avail_in = sourceLength;
-    stream.next_out = fontTexture;
-    stream.avail_out = fontTextureSize;
-    if(inflate(&stream, Z_NO_FLUSH) != Z_STREAM_END)
-        oops();
-    if(stream.avail_out != 0)
-        oops();
-
-    inflateEnd(&stream);
-
-    for(int a = 0; a < BitmapFontChunkSize; a++) {
-        int row = a / 64, col = a % 64;
-
-        for(int i = 0; i < 16; i++) {
-            memcpy(mappedTexture + row*64*16*16 + col*16 + i*64*16,
-                   fontTexture + a*16*16 + i*16,
-                   16);
-        }
-    }
-
-    free(fontTexture);
-
-    glBindTexture(GL_TEXTURE_2D, textureIndex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
-                 16*64, 64*16,
-                 0,
-                 GL_ALPHA, GL_UNSIGNED_BYTE,
-                 mappedTexture);
-
-    free(mappedTexture);
-}
-
-static void SwitchToBitmapFontChunkFor(char32_t chr)
-{
-    int plane = chr / BitmapFontChunkSize,
-        textureIndex = TEXTURE_BITMAP_FONT + plane;
-
-    if(BitmapFontCurrentChunk != textureIndex) {
-        glEnd();
-
-        if(!BitmapFontChunkInitialized[plane]) {
-            CreateBitmapFontChunk(CompressedFontTexture[plane].data,
-                                  CompressedFontTexture[plane].length,
-                                  textureIndex);
-            BitmapFontChunkInitialized[plane] = true;
-        } else {
-            glBindTexture(GL_TEXTURE_2D, textureIndex);
-        }
-
-        BitmapFontCurrentChunk = textureIndex;
-
-        glBegin(GL_QUADS);
-    }
-}
-
-void ssglInitializeBitmapFont()
-{
-    memset(BitmapFontChunkInitialized, 0, sizeof(BitmapFontChunkInitialized));
-    BitmapFontCurrentChunk = -1;
-}
-
-int ssglBitmapCharWidth(char32_t chr) {
-    if(!CodepointProperties[chr].exists)
-        chr = 0xfffd; // replacement character
-
-    return CodepointProperties[chr].isWide ? 2 : 1;
-}
-
-void ssglBitmapCharQuad(char32_t chr, double x, double y)
-{
-    int w, h;
-
-    if(!CodepointProperties[chr].exists)
-        chr = 0xfffd; // replacement character
-
-    h = 16;
-    if(chr >= 0xe000 && chr <= 0xefff) {
-        // Special character, like a checkbox or a radio button
-        w = 16;
-        x -= 3;
-    } else if(CodepointProperties[chr].isWide) {
-        // Wide (usually CJK or reserved) character
-        w = 16;
-    } else {
-        // Normal character
-        w = 8;
-    }
-
-    if(chr != ' ' && chr != 0) {
-        int n = chr % BitmapFontChunkSize;
-        int row = n / 64, col = n % 64;
-        double s0 = col/64.0,
-               s1 = (col+1)/64.0,
-               t0 = row/64.0,
-               t1 = t0 + (w/16.0)/64;
-
-        SwitchToBitmapFontChunkFor(chr);
-
-        glTexCoord2d(s1, t0);
-        glVertex2d(x, y);
-
-        glTexCoord2d(s1, t1);
-        glVertex2d(x + w, y);
-
-        glTexCoord2d(s0, t1);
-        glVertex2d(x + w, y - h);
-
-        glTexCoord2d(s0, t0);
-        glVertex2d(x, y - h);
-    }
-}
-
-void ssglBitmapText(const std::string &str, Vector p)
-{
-    glEnable(GL_TEXTURE_2D);
-    glBegin(GL_QUADS);
-    for(char32_t chr : ReadUTF8(str)) {
-        ssglBitmapCharQuad(chr, p.x, p.y);
-        p.x += 8 * ssglBitmapCharWidth(chr);
-    }
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-}
-
 void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
     glBindTexture(GL_TEXTURE_2D, TEXTURE_DRAW_PIXELS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -901,6 +747,96 @@ void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
 
         glTexCoord2d(0.0, flip ? 1.0 : 0.0);
         glVertex2d(0.0, 0.0);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+}
+
+//-----------------------------------------------------------------------------
+// Bitmap font rendering
+//-----------------------------------------------------------------------------
+
+static BitmapFont BuiltinBitmapFont;
+static void LoadBitmapFont() {
+    if(!BuiltinBitmapFont.IsEmpty()) return;
+
+    BuiltinBitmapFont = BitmapFont::From(LoadStringFromGzip("fonts/unifont.hex.gz"));
+    BuiltinBitmapFont.AddGlyph(0xE000, LoadPNG("fonts/private/0-check-false.png"));
+    BuiltinBitmapFont.AddGlyph(0xE001, LoadPNG("fonts/private/1-check-true.png"));
+    BuiltinBitmapFont.AddGlyph(0xE002, LoadPNG("fonts/private/2-radio-false.png"));
+    BuiltinBitmapFont.AddGlyph(0xE003, LoadPNG("fonts/private/3-radio-true.png"));
+    BuiltinBitmapFont.AddGlyph(0xE004, LoadPNG("fonts/private/4-stipple-dot.png"));
+    BuiltinBitmapFont.AddGlyph(0xE005, LoadPNG("fonts/private/5-stipple-dash-long.png"));
+    BuiltinBitmapFont.AddGlyph(0xE006, LoadPNG("fonts/private/6-stipple-dash.png"));
+    BuiltinBitmapFont.AddGlyph(0xE007, LoadPNG("fonts/private/7-stipple-zigzag.png"));
+    // Unifont doesn't have a glyph for U+0020.
+    std::unique_ptr<uint8_t[]> blank(new uint8_t[8*16*3] {});
+    BuiltinBitmapFont.AddGlyph(0x20,   Pixmap({ 8, 16, 8*3, false, std::move(blank) }));
+}
+
+void ssglInitializeBitmapFont()
+{
+    LoadBitmapFont();
+
+    glBindTexture(GL_TEXTURE_2D, TEXTURE_BITMAP_FONT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
+                 BitmapFont::TEXTURE_DIM, BitmapFont::TEXTURE_DIM,
+                 0, GL_ALPHA, GL_UNSIGNED_BYTE, BuiltinBitmapFont.texture.get());
+}
+
+int ssglBitmapCharWidth(char32_t codepoint) {
+    if(codepoint >= 0xe000 && codepoint <= 0xefff) {
+        // These are special-cased because checkboxes predate support for 2 cell wide
+        // characters; and so all Printf() calls pad them with spaces.
+        return 1;
+    }
+
+    LoadBitmapFont();
+    return BuiltinBitmapFont.GetGlyph(codepoint).advanceCells;
+}
+
+double ssglBitmapCharQuad(char32_t codepoint, double x, double y)
+{
+    double s0, t0, s1, t1;
+    size_t w, h;
+    if(BuiltinBitmapFont.LocateGlyph(codepoint, &s0, &t0, &s1, &t1, &w, &h)) {
+        // LocateGlyph modified the texture, reload it.
+        glEnd();
+        ssglInitializeBitmapFont();
+        glBegin(GL_QUADS);
+    }
+
+    if(codepoint >= 0xe000 && codepoint <= 0xefff) {
+        // Special character, like a checkbox or a radio button
+        x -= 3;
+    }
+
+    glTexCoord2d(s0, t0);
+    glVertex2d(x, y - h);
+
+    glTexCoord2d(s0, t1);
+    glVertex2d(x, y);
+
+    glTexCoord2d(s1, t1);
+    glVertex2d(x + w, y);
+
+    glTexCoord2d(s1, t0);
+    glVertex2d(x + w, y - h);
+
+    return w;
+}
+
+void ssglBitmapText(const std::string &str, Vector p)
+{
+    glEnable(GL_TEXTURE_2D);
+    glBegin(GL_QUADS);
+    for(char32_t codepoint : ReadUTF8(str)) {
+        p.x += ssglBitmapCharQuad(codepoint, p.x, p.y);
+    }
     glEnd();
     glDisable(GL_TEXTURE_2D);
 }
