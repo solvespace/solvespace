@@ -647,7 +647,7 @@ private:
 
 class GraphicsWindowGtk : public Gtk::Window {
 public:
-    GraphicsWindowGtk() : _overlay(_widget) {
+    GraphicsWindowGtk() : _overlay(_widget), _is_fullscreen(false) {
         set_default_size(900, 600);
 
         _box.pack_start(_menubar, false, true);
