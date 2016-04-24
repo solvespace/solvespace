@@ -661,8 +661,8 @@ void Entity::DrawOrGetDistance(void) {
             }
 
             if(!h.isFromRequest()) {
-                mm = mm.Plus(v.ScaledBy(60/SS.GW.scale));
-                mm2 = mm2.Plus(u.ScaledBy(60/SS.GW.scale));
+                mm = mm.Plus(v.ScaledBy(70/SS.GW.scale));
+                mm2 = mm2.Plus(u.ScaledBy(70/SS.GW.scale));
                 LineDrawOrGetDistance(mm2, mm);
             }
             LineDrawOrGetDistance(pp, pm);
@@ -676,7 +676,9 @@ void Entity::DrawOrGetDistance(void) {
             std::string str = DescriptionString().substr(5);
             double th = Style::DefaultTextHeight();
             if(dogd.drawing) {
-                ssglWriteText(str, th, mm2, u, v, NULL, NULL);
+                Vector o = mm2.Plus(u.ScaledBy(3/SS.GW.scale)).Plus(
+                                    v.ScaledBy(3/SS.GW.scale));
+                ssglWriteText(str, th, o, u, v, NULL, NULL);
             } else {
                 Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
                                       v.ScaledBy(ssglStrCapHeight(th)/2));
