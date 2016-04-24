@@ -75,27 +75,6 @@ if(NOT WIN32)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-# generated files
-
-# `$<TARGET_FILE:tool>` allows us to use binfmt support on Linux
-# without special-casing anything; running `tool.exe` would succeed
-# but unlike Windows, Linux does not have the machinery to map
-# an invocation of `tool` to an executable `tool.exe` in $PATH.
-
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
-
-add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
-    COMMAND $<TARGET_FILE:lff2c>
-            ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h
-            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz
-    DEPENDS lff2c
-            ${CMAKE_CURRENT_SOURCE_DIR}/fonts/unicode.lff.gz
-    VERBATIM)
-
-set(generated_HEADERS
-    ${CMAKE_CURRENT_BINARY_DIR}/generated/vectorfont.table.h)
-
 # platform dependencies
 
 if(WIN32)
@@ -212,7 +191,6 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
     ${libslvs_SOURCES}
     ${util_SOURCES}
     ${platform_SOURCES}
-    ${generated_HEADERS}
     ${solvespace_HEADERS}
     ${solvespace_SOURCES}
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)

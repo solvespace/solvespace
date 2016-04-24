@@ -3,9 +3,10 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #include <zlib.h>
 #include <png.h>
+#include <regex>
+#include "solvespace.h"
 
 namespace SolveSpace {
 
@@ -175,18 +176,39 @@ public:
         return ASCIIReader({ str.cbegin(), str.cend() });
     }
 
-    size_t LengthToEOL() {
+    bool AtEnd() const {
+        return pos == end;
+    }
+
+    size_t CountUntilEOL() const {
         return std::find(pos, end, '\n') - pos;
     }
 
-    void ReadChar(char c) {
-        if(pos == end) oops();
-        if(*pos++ != c) oops();
+    void SkipUntilEOL() {
+        pos = std::find(pos, end, '\n');
+    }
+
+    char ReadChar() {
+        if(AtEnd()) oops();
+        return *pos++;
+    }
+
+    bool TryChar(char c) {
+        if(AtEnd()) oops();
+        if(*pos == c) {
+            pos++;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void ExpectChar(char c) {
+        if(ReadChar() != c) oops();
     }
 
     uint8_t Read4HexBits() {
-        if(pos == end) oops();
-        char c = *pos++;
+        char c = ReadChar();
         if(c >= '0' && c <= '9') {
             return c - '0';
         } else if(c >= 'a' && c <= 'f') {
@@ -206,6 +228,23 @@ public:
         uint16_t h = Read8HexBits(),
                  l = Read8HexBits();
         return (h << 8) + l;
+    }
+
+    double ReadDoubleString() {
+        char *endptr;
+        double d = strtod(&*pos, &endptr);
+        if(&*pos == endptr) oops();
+        pos += endptr - &*pos;
+        return d;
+    }
+
+    bool ReadRegex(const std::regex &re, std::smatch *m) {
+        if(std::regex_search(pos, end, *m, re, std::regex_constants::match_continuous)) {
+            pos = (*m)[0].second;
+            return true;
+        } else {
+            return false;
+        }
     }
 };
 
@@ -273,7 +312,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
         // Read the codepoint.
         ASCIIReader reader = { mid, unifontData.cend() };
         char32_t foundCodepoint = reader.Read16HexBits();
-        reader.ReadChar(':');
+        reader.ExpectChar(':');
 
         if(foundCodepoint > codepoint) {
             last = mid - 1;
@@ -294,7 +333,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
 
         // Read glyph bits.
         unsigned short glyphBits[16];
-        int glyphLength = reader.LengthToEOL();
+        int glyphLength = reader.CountUntilEOL();
         if(glyphLength == 4 * 16) {
             glyph.advanceCells = 2;
             for(size_t i = 0; i < 16; i++) {
@@ -338,6 +377,203 @@ bool BitmapFont::LocateGlyph(char32_t codepoint,
     *t0 = (16.0 * (glyph.position / CHARS_PER_ROW)) / TEXTURE_DIM;
     *t1 = *t0 + (double)(*h) / TEXTURE_DIM;
     return textureUpdated;
+}
+
+//-----------------------------------------------------------------------------
+// Vector font manipulation
+//-----------------------------------------------------------------------------
+
+const static int ARC_POINTS = 8;
+static void MakePwlArc(VectorFont::Contour *contour, bool isReversed,
+                       const Point2d &cp, double radius, double a1, double a2) {
+    if (radius < LENGTH_EPS) return;
+
+    double aSign = 1.0;
+    if(isReversed) {
+        if(a1 <= a2 + LENGTH_EPS) a1 += 2.0 * M_PI;
+        aSign = -1.0;
+    } else {
+        if(a2 <= a1 + LENGTH_EPS) a2 += 2.0 * M_PI;
+    }
+
+    double aStep = aSign * fabs(a2 - a1) / (double)ARC_POINTS;
+    for(int i = 0; i <= ARC_POINTS; i++) {
+        contour->points.emplace_back(cp.Plus(Point2d::FromPolar(radius, a1 + aStep * i)));
+    }
+}
+
+static void MakePwlBulge(VectorFont::Contour *contour, const Point2d &v, double bulge) {
+    bool reversed = bulge < 0.0;
+    double alpha = atan(bulge) * 4.0;
+    const Point2d &point = contour->points.back();
+
+    Point2d middle = point.Plus(v).ScaledBy(0.5);
+    double dist = point.DistanceTo(v) / 2.0;
+    double angle = point.AngleTo(v);
+
+    // alpha can't be 0.0 at this point
+    double radius = fabs(dist / sin(alpha / 2.0));
+    double wu = fabs(radius*radius - dist*dist);
+    double h = sqrt(wu);
+
+    if(bulge > 0.0) {
+        angle += M_PI_2;
+    } else {
+        angle -= M_PI_2;
+    }
+
+    if (fabs(alpha) > M_PI) {
+        h = -h;
+    }
+
+    Point2d center = Point2d::FromPolar(h, angle).Plus(middle);
+    double a1 = center.AngleTo(point);
+    double a2 = center.AngleTo(v);
+    MakePwlArc(contour, reversed, center, radius, a1, a2);
+}
+
+static void GetGlyphBBox(const VectorFont::Glyph &glyph,
+                         double *rminx, double *rmaxx, double *rminy, double *rmaxy) {
+    double minx = 0.0, maxx = 0.0, miny = 0.0, maxy = 0.0;
+    if(!glyph.contours.empty()) {
+        const Point2d &start = glyph.contours[0].points[0];
+        minx = maxx = start.x;
+        miny = maxy = start.y;
+        for(const VectorFont::Contour &c : glyph.contours) {
+            for(const Point2d &p : c.points) {
+                maxx = std::max(maxx, p.x);
+                minx = std::min(minx, p.x);
+                maxy = std::max(maxy, p.y);
+                miny = std::min(miny, p.y);
+            }
+        }
+    }
+
+    if(rminx) *rminx = minx;
+    if(rmaxx) *rmaxx = maxx;
+    if(rminy) *rminy = miny;
+    if(rmaxy) *rmaxy = maxy;
+}
+
+VectorFont VectorFont::From(std::string &&lffData) {
+    VectorFont font = {};
+    font.lffData = std::move(lffData);
+
+    ASCIIReader reader = ASCIIReader::From(font.lffData);
+    std::smatch m;
+    while(reader.ReadRegex(std::regex("#\\s*(\\w+)\\s*:\\s*(.+?)\n"), &m)) {
+        std::string name  = m.str(1),
+                    value = m.str(2);
+        std::transform(name.begin(), name.end(), name.begin(), ::tolower);
+        if (name == "letterspacing") {
+            font.rightSideBearing = std::stod(value);
+        } else if (name == "wordspacing") {
+            Glyph space = {};
+            space.advanceWidth = std::stod(value);
+            font.glyphs.emplace(' ', std::move(space));
+        }
+    }
+
+    GetGlyphBBox(font.GetGlyph('A'), nullptr, nullptr, nullptr, &font.capHeight);
+    GetGlyphBBox(font.GetGlyph('h'), nullptr, nullptr, nullptr, &font.ascender);
+    GetGlyphBBox(font.GetGlyph('p'), nullptr, nullptr, &font.descender, nullptr);
+
+    return font;
+}
+
+const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
+    auto it = glyphs.find(codepoint);
+    if(it != glyphs.end()) {
+        return (*it).second;
+    }
+
+    auto firstGlyph = std::find(lffData.cbegin(), lffData.cend(), '[');
+    if(firstGlyph == lffData.cend()) oops();
+
+    // Find the serialized representation in the (sorted) lff file.
+    auto first = firstGlyph,
+         last  = lffData.cend();
+    while(first <= last) {
+        auto mid = first + (last - first) / 2;
+        while(mid > first) {
+            if(*mid == '[' && *(mid - 1) == '\n') break;
+            mid--;
+        }
+
+        // Read the codepoint.
+        ASCIIReader reader = { mid, lffData.cend() };
+        reader.ExpectChar('[');
+        char32_t foundCodepoint = reader.Read16HexBits();
+        reader.ExpectChar(']');
+        reader.SkipUntilEOL();
+
+        if(foundCodepoint > codepoint) {
+            last = mid - 1;
+            continue; // and first stays the same
+        }
+        if(foundCodepoint < codepoint) {
+            first = mid + 1;
+            while(first != lffData.cend()) {
+                if(*first == '[' && *(first - 1) == '\n') break;
+                first++;
+            }
+            continue; // and last stays the same
+        }
+
+        // Found the codepoint.
+        VectorFont::Glyph glyph = {};
+
+        // Read glyph contours.
+        while(!reader.AtEnd()) {
+            if(reader.TryChar('\n')) {
+                // Skip.
+            } else if(reader.TryChar('[')) {
+                // End of glyph.
+                if(glyph.contours.back().points.empty()) {
+                    // Remove an useless empty contour, if any.
+                    glyph.contours.pop_back();
+                }
+                break;
+            } else if(reader.TryChar('C')) {
+                // Another character is referenced in this one.
+                char32_t baseCodepoint = reader.Read16HexBits();
+                const VectorFont::Glyph &baseGlyph = GetGlyph(baseCodepoint);
+                std::copy(baseGlyph.contours.begin(), baseGlyph.contours.end(),
+                          std::back_inserter(glyph.contours));
+            } else {
+                Contour contour;
+                do {
+                    Point2d p;
+                    p.x = reader.ReadDoubleString();
+                    reader.ExpectChar(',');
+                    p.y = reader.ReadDoubleString();
+
+                    if(reader.TryChar(',')) {
+                        // Point with a bulge.
+                        reader.ExpectChar('A');
+                        double bulge = reader.ReadDoubleString();
+                        MakePwlBulge(&contour, p, bulge);
+                    } else {
+                        // Just a point.
+                        contour.points.emplace_back(std::move(p));
+                    }
+                } while(reader.TryChar(';'));
+                reader.ExpectChar('\n');
+                glyph.contours.emplace_back(std::move(contour));
+            }
+        }
+
+        // Calculate metrics.
+        GetGlyphBBox(glyph, &glyph.leftSideBearing, &glyph.boundingWidth, nullptr, nullptr);
+        glyph.advanceWidth = glyph.leftSideBearing + glyph.boundingWidth + rightSideBearing;
+
+        it = glyphs.emplace(codepoint, std::move(glyph)).first;
+        return (*it).second;
+    }
+
+    // Glyph doesn't exist; return replacement glyph instead.
+    if(codepoint == 0xfffd) oops();
+    return GetGlyph(0xfffd);
 }
 
 }

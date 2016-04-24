@@ -938,6 +938,19 @@ Point2d Point2d::From(double x, double y) {
     return { x, y };
 }
 
+Point2d Point2d::FromPolar(double r, double a) {
+    return { r * cos(a), r * sin(a) };
+}
+
+double Point2d::Angle() const {
+    double a = atan2(y, x);
+    return M_PI + remainder(a - M_PI, 2 * M_PI);
+}
+
+double Point2d::AngleTo(const Point2d &p) const {
+    return p.Minus(*this).Angle();
+}
+
 Point2d Point2d::Plus(const Point2d &b) const {
     return { x + b.x, y + b.y };
 }

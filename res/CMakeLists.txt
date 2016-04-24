@@ -176,7 +176,8 @@ add_resources(
     fonts/private/4-stipple-dot.png
     fonts/private/5-stipple-dash-long.png
     fonts/private/6-stipple-dash.png
-    fonts/private/7-stipple-zigzag.png)
+    fonts/private/7-stipple-zigzag.png
+    fonts/unicode.lff.gz)
 
 # Third, distribute the resources.
 add_custom_target(resources

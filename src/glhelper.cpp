@@ -7,73 +7,8 @@
 
 namespace SolveSpace {
 
-// A vector font.
-#include "generated/vectorfont.table.h"
-
 static bool ColorLocked;
 static bool DepthOffsetLocked;
-
-static const VectorGlyph &GetVectorGlyph(char32_t chr) {
-    int first = 0;
-    int last  = sizeof(VectorFont) / sizeof(VectorGlyph);
-    while(first <= last) {
-        int mid = (first + last) / 2;
-        char32_t midChr = VectorFont[mid].character;
-        if(midChr > chr) {
-            last = mid - 1; // and first stays the same
-            continue;
-        }
-        if(midChr < chr) {
-            first = mid + 1; // and last stays the same
-            continue;
-        }
-        return VectorFont[mid];
-    }
-    return GetVectorGlyph(0xfffd); // replacement character
-}
-
-// Internally and in the UI, the vector font is sized using cap height.
-#define FONT_SCALE(h) ((h)/(double)FONT_CAP_HEIGHT)
-double ssglStrCapHeight(double h)
-{
-    return FONT_CAP_HEIGHT * FONT_SCALE(h) / SS.GW.scale;
-}
-double ssglStrFontSize(double h)
-{
-    return FONT_SIZE * FONT_SCALE(h) / SS.GW.scale;
-}
-double ssglStrWidth(const std::string &str, double h)
-{
-    int width = 0;
-    for(char32_t chr : ReadUTF8(str)) {
-        const VectorGlyph &glyph = GetVectorGlyph(chr);
-        if(glyph.baseCharacter != 0) {
-            const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
-            width += max(glyph.advanceWidth, baseGlyph.advanceWidth);
-        } else {
-            width += glyph.advanceWidth;
-        }
-    }
-    return width * FONT_SCALE(h) / SS.GW.scale;
-}
-void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
-                            ssglLineFn *fn, void *fndata)
-{
-    u = u.WithMagnitude(1);
-    v = v.WithMagnitude(1);
-
-    double scale = FONT_SCALE(h)/SS.GW.scale;
-    double fh = ssglStrCapHeight(h);
-    double fw = ssglStrWidth(str, h);
-
-    t = t.Plus(u.ScaledBy(-fw/2));
-    t = t.Plus(v.ScaledBy(-fh/2));
-
-    // Apply additional offset to get an exact center alignment.
-    t = t.Plus(v.ScaledBy(-4608*scale));
-
-    ssglWriteText(str, h, t, u, v, fn, fndata);
-}
 
 void ssglLineWidth(GLfloat width) {
     // Intel GPUs with Mesa on *nix render thin lines poorly.
@@ -100,98 +35,6 @@ static void LineDrawCallback(void *fndata, Vector a, Vector b)
         ssglVertex3v(a);
         ssglVertex3v(b);
     glEnd();
-}
-
-Vector pixelAlign(Vector v) {
-    v = SS.GW.ProjectPoint3(v);
-    v.x = floor(v.x) + 0.5;
-    v.y = floor(v.y) + 0.5;
-    v = SS.GW.UnProjectPoint3(v);
-    return v;
-}
-
-int ssglDrawCharacter(const VectorGlyph &glyph, Vector t, Vector o, Vector u, Vector v,
-                      double scale, ssglLineFn *fn, void *fndata, bool gridFit) {
-    int advanceWidth = glyph.advanceWidth;
-
-    if(glyph.baseCharacter != 0) {
-        const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
-        int baseWidth = ssglDrawCharacter(baseGlyph, t, o, u, v, scale, fn, fndata, gridFit);
-        advanceWidth = max(glyph.advanceWidth, baseWidth);
-    }
-
-    int actualWidth, offsetX;
-    if(gridFit) {
-        o.x         += glyph.leftSideBearing;
-        offsetX      = glyph.leftSideBearing;
-        actualWidth  = glyph.boundingWidth;
-        if(actualWidth == 0) {
-            // Dot, "i", etc.
-            actualWidth = 1;
-        }
-    } else {
-        offsetX      = 0;
-        actualWidth  = advanceWidth;
-    }
-
-    Vector tt = t;
-    tt = tt.Plus(u.ScaledBy(o.x * scale));
-    tt = tt.Plus(v.ScaledBy(o.y * scale));
-
-    Vector tu = tt;
-    tu = tu.Plus(u.ScaledBy(actualWidth * scale));
-
-    Vector tv = tt;
-    tv = tv.Plus(v.ScaledBy(FONT_CAP_HEIGHT * scale));
-
-    if(gridFit) {
-        tt = pixelAlign(tt);
-        tu = pixelAlign(tu);
-        tv = pixelAlign(tv);
-    }
-
-    tu = tu.Minus(tt).ScaledBy(1.0 / actualWidth);
-    tv = tv.Minus(tt).ScaledBy(1.0 / FONT_CAP_HEIGHT);
-
-    const int16_t *data = glyph.data;
-    bool pen_up = true;
-    Vector prevp;
-    while(true) {
-        int16_t x = *data++;
-        int16_t y = *data++;
-
-        if(x == PEN_UP && y == PEN_UP) {
-            if(pen_up) break;
-            pen_up = true;
-        } else {
-            Vector p = tt;
-            p = p.Plus(tu.ScaledBy(x - offsetX));
-            p = p.Plus(tv.ScaledBy(y));
-            if(!pen_up) fn(fndata, prevp, p);
-            prevp = p;
-            pen_up = false;
-        }
-    }
-
-    return advanceWidth;
-}
-
-void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
-                   ssglLineFn *fn, void *fndata)
-{
-    if(!fn) fn = LineDrawCallback;
-    u = u.WithMagnitude(1);
-    v = v.WithMagnitude(1);
-
-    // Perform grid-fitting only when the text is parallel to the view plane.
-    bool gridFit = !SS.exportMode && u.Equals(SS.GW.projRight) && v.Equals(SS.GW.projUp);
-
-    double scale = FONT_SCALE(h) / SS.GW.scale;
-    Vector o = { 3840.0, 3840.0, 0.0 };
-    for(char32_t chr : ReadUTF8(str)) {
-        const VectorGlyph &glyph = GetVectorGlyph(chr);
-        o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata, gridFit);
-    }
 }
 
 void ssglVertex3v(Vector u)
@@ -839,6 +682,141 @@ void ssglBitmapText(const std::string &str, Vector p)
     }
     glEnd();
     glDisable(GL_TEXTURE_2D);
+}
+
+//-----------------------------------------------------------------------------
+// Bitmap font rendering
+//-----------------------------------------------------------------------------
+
+static VectorFont BuiltinVectorFont;
+static void LoadVectorFont() {
+    if(!BuiltinVectorFont.IsEmpty()) return;
+
+    BuiltinVectorFont = VectorFont::From(LoadStringFromGzip("fonts/unicode.lff.gz"));
+}
+
+// Internally and in the UI, the vector font is sized using cap height.
+#define FONT_SCALE(h) ((h)/(double)BuiltinVectorFont.capHeight)
+
+double ssglStrCapHeight(double h)
+{
+    return BuiltinVectorFont.capHeight *
+            FONT_SCALE(h) / SS.GW.scale;
+}
+
+double ssglStrFontSize(double h)
+{
+    return (BuiltinVectorFont.ascender - BuiltinVectorFont.descender) *
+            FONT_SCALE(h) / SS.GW.scale;
+}
+
+double ssglStrWidth(const std::string &str, double h)
+{
+    LoadVectorFont();
+
+    int width = 0;
+    for(char32_t codepoint : ReadUTF8(str)) {
+        width += BuiltinVectorFont.GetGlyph(codepoint).advanceWidth;
+    }
+    return width * FONT_SCALE(h) / SS.GW.scale;
+}
+
+static Vector PixelAlign(Vector v) {
+    v = SS.GW.ProjectPoint3(v);
+    v.x = floor(v.x) + 0.5;
+    v.y = floor(v.y) + 0.5;
+    v = SS.GW.UnProjectPoint3(v);
+    return v;
+}
+
+static int DrawCharacter(const VectorFont::Glyph &glyph, Vector t, Vector o, Vector u, Vector v,
+                         double scale, ssglLineFn *fn, void *fndata, bool gridFit) {
+    int advanceWidth = glyph.advanceWidth;
+
+    int actualWidth, offsetX;
+    if(gridFit) {
+        o.x         += glyph.leftSideBearing;
+        offsetX      = glyph.leftSideBearing;
+        actualWidth  = glyph.boundingWidth;
+        if(actualWidth == 0) {
+            // Dot, "i", etc.
+            actualWidth = 1;
+        }
+    } else {
+        offsetX      = 0;
+        actualWidth  = advanceWidth;
+    }
+
+    Vector tt = t;
+    tt = tt.Plus(u.ScaledBy(o.x * scale));
+    tt = tt.Plus(v.ScaledBy(o.y * scale));
+
+    Vector tu = tt;
+    tu = tu.Plus(u.ScaledBy(actualWidth * scale));
+
+    Vector tv = tt;
+    tv = tv.Plus(v.ScaledBy(BuiltinVectorFont.capHeight * scale));
+
+    if(gridFit) {
+        tt = PixelAlign(tt);
+        tu = PixelAlign(tu);
+        tv = PixelAlign(tv);
+    }
+
+    tu = tu.Minus(tt).ScaledBy(1.0 / actualWidth);
+    tv = tv.Minus(tt).ScaledBy(1.0 / BuiltinVectorFont.capHeight);
+
+    for(const VectorFont::Contour &contour : glyph.contours) {
+        Vector prevp;
+        bool penUp = true;
+        for(const Point2d &pt : contour.points) {
+            Vector p = tt;
+            p = p.Plus(tu.ScaledBy(pt.x - offsetX));
+            p = p.Plus(tv.ScaledBy(pt.y));
+            if(!penUp) fn(fndata, prevp, p);
+            prevp = p;
+            penUp = false;
+        }
+    }
+
+    return advanceWidth;
+}
+
+void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
+                   ssglLineFn *fn, void *fndata)
+{
+    LoadVectorFont();
+
+    if(!fn) fn = LineDrawCallback;
+    u = u.WithMagnitude(1);
+    v = v.WithMagnitude(1);
+
+    // Perform grid-fitting only when the text is parallel to the view plane.
+    bool gridFit = !SS.exportMode && u.Equals(SS.GW.projRight) && v.Equals(SS.GW.projUp);
+
+    double scale = FONT_SCALE(h) / SS.GW.scale;
+    Vector o = {};
+    for(char32_t codepoint : ReadUTF8(str)) {
+        o.x += DrawCharacter(BuiltinVectorFont.GetGlyph(codepoint),
+                             t, o, u, v, scale, fn, fndata, gridFit);
+    }
+}
+
+void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
+                            ssglLineFn *fn, void *fndata)
+{
+    LoadVectorFont();
+
+    u = u.WithMagnitude(1);
+    v = v.WithMagnitude(1);
+
+    double fh = ssglStrCapHeight(h);
+    double fw = ssglStrWidth(str, h);
+
+    t = t.Plus(u.ScaledBy(-fw/2));
+    t = t.Plus(v.ScaledBy(-fh/2));
+
+    ssglWriteText(str, h, t, u, v, fn, fndata);
 }
 
 };

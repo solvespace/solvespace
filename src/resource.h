@@ -7,6 +7,7 @@
 #ifndef __RESOURCE_H
 #define __RESOURCE_H
 
+class Point2d;
 class Pixmap;
 
 // Only the following function is platform-specific.
@@ -59,6 +60,33 @@ public:
                      size_t *advanceWidth, size_t *boundingHeight);
 
     void AddGlyph(char32_t codepoint, const Pixmap &pixmap);
+};
+
+class VectorFont {
+public:
+    struct Contour {
+        std::vector<Point2d>   points;
+    };
+
+    struct Glyph {
+        std::vector<Contour>   contours;
+        double                 leftSideBearing;
+        double                 boundingWidth;
+        double                 advanceWidth;
+    };
+
+    std::string                lffData;
+    std::map<char32_t, Glyph>  glyphs;
+    double                     rightSideBearing;
+    double                     capHeight;
+    double                     ascender;
+    double                     descender;
+
+    static VectorFont From(std::string &&lffData);
+
+    bool IsEmpty() const { return lffData.empty(); }
+
+    const Glyph &GetGlyph(char32_t codepoint);
 };
 
 #endif
