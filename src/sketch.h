@@ -706,14 +706,14 @@ public:
 
     std::string DescriptionString(void);
 
-    static void AddConstraint(Constraint *c, bool rememberForUndo);
-    static void AddConstraint(Constraint *c);
+    static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
+    static hConstraint AddConstraint(Constraint *c);
     static void MenuConstrain(int id);
     static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
 
-    static void ConstrainCoincident(hEntity ptA, hEntity ptB);
-    static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
-    static void Constrain(int type, hEntity ptA, hEntity ptB,
+    static hConstraint ConstrainCoincident(hEntity ptA, hEntity ptB);
+    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
+    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB,
                                     bool other, bool other2);
 };

@@ -68,9 +68,10 @@ public:
         if(oldSign != newSign) std::swap(*p0, *p1);
     }
 
-    Vector toVector(const DRW_Coord &c) {
+    Vector toVector(const DRW_Coord &c, bool transform = true) {
         Vector result = Vector::From(c.x, c.y, 0.0);
-        return blockTransform(result);
+        if(transform) return blockTransform(result);
+        return result;
     }
 
     Vector toVector(const DRW_Vertex2D &c) {
@@ -126,6 +127,9 @@ public:
         SK.GetEntity(hr.entity(1))->PointForceTo(center);
         SK.GetEntity(hr.entity(2))->PointForceTo(p0);
         SK.GetEntity(hr.entity(3))->PointForceTo(p1);
+        processPoint(hr.entity(1));
+        processPoint(hr.entity(2));
+        processPoint(hr.entity(3));
         return hr;
     }
 
@@ -179,6 +183,21 @@ public:
                 break;
             case DRW::MTEXT:
                 addMText(*static_cast<DRW_MText *>(e));
+                break;
+            case DRW::DIMALIGNED:
+                addDimAlign(static_cast<DRW_DimAligned *>(e));
+                break;
+            case DRW::DIMLINEAR:
+                addDimLinear(static_cast<DRW_DimLinear *>(e));
+                break;
+            case DRW::DIMRADIAL:
+                addDimRadial(static_cast<DRW_DimRadial *>(e));
+                break;
+            case DRW::DIMDIAMETRIC:
+                addDimDiametric(static_cast<DRW_DimDiametric *>(e));
+                break;
+            case DRW::DIMANGULAR:
+                addDimAngular(static_cast<DRW_DimAngular *>(e));
                 break;
             default:
                 unknownEntities++;
@@ -302,6 +321,23 @@ public:
         return result;
     }
 
+    hStyle invisibleStyle() {
+        std::string id = "@dxf-invisible";
+
+        auto si = styles.find(id);
+        if(si != styles.end()) {
+            return si->second;
+        }
+
+        hStyle hs = { Style::CreateCustomStyle(/*rememberForUndo=*/false) };
+        Style *s = Style::Get(hs);
+        s->name = id;
+        s->visible = false;
+
+        styles.emplace(id, hs);
+        return hs;
+    }
+
     hStyle styleFor(const DRW_Entity *e) {
         DRW_Layer *layer = NULL;
         auto bi = layers.find(e->layer);
@@ -394,6 +430,107 @@ public:
         r->style = hs;
     }
 
+    struct VectorHash {
+        size_t operator()(const Vector &v) const {
+            static const size_t size = std::numeric_limits<size_t>::max() / 2 - 1;
+            static const double eps = (4.0 * LENGTH_EPS);
+
+            double x = fabs(v.x) / eps;
+            double y = fabs(v.y) / eps;
+
+            size_t xs = size_t(fmod(x, double(size)));
+            size_t ys = size_t(fmod(y, double(size)));
+
+            return ys * size + xs;
+        }
+    };
+
+    struct VectorPred {
+        bool operator()(Vector a, Vector b) const {
+            return a.Equals(b, LENGTH_EPS);
+        }
+    };
+
+    std::unordered_map<Vector, hEntity, VectorHash, VectorPred> points;
+
+    void processPoint(hEntity he, bool constrain = true) {
+        Entity *e = SK.GetEntity(he);
+        Vector pos = e->PointGetNum();
+        hEntity p = findPoint(pos);
+        if(p.v == he.v) return;
+        if(p.v != Entity::NO_ENTITY.v) {
+            if(constrain) {
+                Constraint::ConstrainCoincident(he, p);
+            }
+            // We don't add point because we already
+            // have point in this position
+            return;
+        }
+        points.emplace(pos, he);
+    }
+
+    hEntity findPoint(const Vector &p) {
+        auto it = points.find(p);
+        if(it == points.end()) return Entity::NO_ENTITY;
+        return it->second;
+    }
+
+    hEntity createOrGetPoint(const Vector &p) {
+        hEntity he = findPoint(p);
+        if(he.v != Entity::NO_ENTITY.v) return he;
+
+        hRequest hr = SS.GW.AddRequest(Request::DATUM_POINT, false);
+        he = hr.entity(0);
+        SK.GetEntity(he)->PointForceTo(p);
+        points.emplace(p, he);
+        return he;
+    }
+
+    hEntity createLine(Vector p0, Vector p1, uint32_t style, bool constrainHV = false) {
+        if(p0.Equals(p1)) return Entity::NO_ENTITY;
+        hRequest hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
+        SK.GetEntity(hr.entity(1))->PointForceTo(p0);
+        SK.GetEntity(hr.entity(2))->PointForceTo(p1);
+        processPoint(hr.entity(1));
+        processPoint(hr.entity(2));
+
+        if(constrainHV) {
+            int cType = -1;
+            if(fabs(p0.x - p1.x) < LENGTH_EPS) {
+                cType = Constraint::VERTICAL;
+            }
+            else if(fabs(p0.y - p1.y) < LENGTH_EPS) {
+                cType = Constraint::HORIZONTAL;
+            }
+            if(cType != -1) {
+                Constraint::Constrain(
+                    cType,
+                    Entity::NO_ENTITY,
+                    Entity::NO_ENTITY,
+                    hr.entity(0)
+                );
+            }
+        }
+
+        if(style != 0) {
+            Request *r = SK.GetRequest(hr);
+            r->style = hStyle{ style };
+        }
+        return hr.entity(0);
+    }
+
+    hEntity createCircle(const Vector &c, double r, uint32_t style) {
+        hRequest hr = SS.GW.AddRequest(Request::CIRCLE, false);
+        SK.GetEntity(hr.entity(1))->PointForceTo(c);
+        processPoint(hr.entity(1));
+        SK.GetEntity(hr.entity(64))->DistanceForceTo(r);
+        if(style != 0) {
+            Request *r = SK.GetRequest(hr);
+            r->style = hStyle{ style };
+        }
+        return hr.entity(0);
+    }
+
     virtual void addLayer(const DRW_Layer &data) {
         layers.emplace(data.name, data);
     }
@@ -414,16 +551,14 @@ public:
 
         hRequest hr = SS.GW.AddRequest(Request::DATUM_POINT, false);
         SK.GetEntity(hr.entity(0))->PointForceTo(toVector(data.basePoint));
+        processPoint(hr.entity(0));
     }
 
     virtual void addLine(const DRW_Line &data) {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Line>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
-        SK.GetEntity(hr.entity(1))->PointForceTo(toVector(data.basePoint));
-        SK.GetEntity(hr.entity(2))->PointForceTo(toVector(data.secPoint));
-        setStyle(hr, styleFor(&data));
+        createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data).v, true);
     }
 
     virtual void addArc(const DRW_Arc &data) {
@@ -450,6 +585,9 @@ public:
         SK.GetEntity(hr.entity(1))->PointForceTo(c);
         SK.GetEntity(hr.entity(2))->PointForceTo(rvs);
         SK.GetEntity(hr.entity(3))->PointForceTo(rve);
+        processPoint(hr.entity(1));
+        processPoint(hr.entity(2));
+        processPoint(hr.entity(3));
         setStyle(hr, styleFor(&data));
     }
 
@@ -457,10 +595,7 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Circle>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::CIRCLE, false);
-        SK.GetEntity(hr.entity(1))->PointForceTo(toVector(data.basePoint));
-        SK.GetEntity(hr.entity(64))->DistanceForceTo(data.radious);
-        setStyle(hr, styleFor(&data));
+        createCircle(toVector(data.basePoint), data.radious, styleFor(&data).v);
     }
 
     virtual void addLWPolyline(const DRW_LWPolyline &data)  {
@@ -491,10 +626,7 @@ public:
             hStyle hs = styleFor(&data);
 
             if(EXACT(data.vertlist[i]->bulge == 0.0)) {
-                hRequest hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
-                SK.GetEntity(hr.entity(1))->PointForceTo(blockTransform(p0));
-                SK.GetEntity(hr.entity(2))->PointForceTo(blockTransform(p1));
-                setStyle(hr, hs);
+                createLine(blockTransform(p0), blockTransform(p1), hs.v, true);
             } else {
                 hRequest hr = createBulge(p0, p1, c0.bulge);
                 setStyle(hr, hs);
@@ -531,10 +663,7 @@ public:
             hStyle hs = styleFor(&data);
 
             if(EXACT(bulge == 0.0)) {
-                hRequest hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
-                SK.GetEntity(hr.entity(1))->PointForceTo(blockTransform(p0));
-                SK.GetEntity(hr.entity(2))->PointForceTo(blockTransform(p1));
-                setStyle(hr, hs);
+                createLine(blockTransform(p0), blockTransform(p1), hs.v, true);
             } else {
                 hRequest hr = createBulge(p0, p1, bulge);
                 setStyle(hr, hs);
@@ -550,6 +679,7 @@ public:
         hRequest hr = SS.GW.AddRequest(Request::CUBIC, false);
         for(int i = 0; i < 4; i++) {
             SK.GetEntity(hr.entity(i + 1))->PointForceTo(toVector(*data->controllist[i]));
+            processPoint(hr.entity(i + 1));
         }
         setStyle(hr, styleFor(data));
     }
@@ -609,6 +739,142 @@ public:
         c.comment       = data.text;
         c.disp.style    = styleFor(&data);
         Constraint::AddConstraint(&c, false);
+    }
+
+    virtual void addDimAlign(const DRW_DimAligned *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimAligned>(*data)) return;
+
+        Vector p0 = toVector(data->getDef1Point());
+        Vector p1 = toVector(data->getDef2Point());
+        Vector p2 = toVector(data->getTextPoint());
+        hConstraint hc = Constraint::Constrain(
+            Constraint::PT_PT_DISTANCE,
+            createOrGetPoint(p0),
+            createOrGetPoint(p1),
+            Entity::NO_ENTITY
+        );
+
+        Constraint *c = SK.GetConstraint(hc);
+        c->ModifyToSatisfy();
+        c->disp.offset = p2.Minus(p0.Plus(p1).ScaledBy(0.5));
+    }
+
+    virtual void addDimLinear(const DRW_DimLinear *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimLinear>(*data)) return;
+
+        Vector p0 = toVector(data->getDef1Point(), false);
+        Vector p1 = toVector(data->getDef2Point(), false);
+        Vector p2 = toVector(data->getTextPoint(), false);
+
+        double angle = data->getAngle() * PI / 180.0;
+        Vector dir = Vector::From(cos(angle), sin(angle), 0.0);
+        Vector p3 = p1.Minus(p1.ClosestPointOnLine(p2, dir)).Plus(p1);
+        if(p1.Minus(p3).Magnitude() < LENGTH_EPS) {
+            p3 = p0.Minus(p0.ClosestPointOnLine(p2, dir)).Plus(p1);
+        }
+
+        Vector p4 = p0.ClosestPointOnLine(p1, p3.Minus(p1)).Plus(p0).ScaledBy(0.5);
+
+        p0 = blockTransform(p0);
+        p1 = blockTransform(p1);
+        p2 = blockTransform(p2);
+        p3 = blockTransform(p3);
+        p4 = blockTransform(p4);
+
+        hConstraint hc = Constraint::Constrain(
+            Constraint::PT_LINE_DISTANCE,
+            createOrGetPoint(p0),
+            Entity::NO_ENTITY,
+            createLine(p1, p3, invisibleStyle().v)
+        );
+
+        Constraint *c = SK.GetConstraint(hc);
+        c->ModifyToSatisfy();
+        c->disp.offset = p2.Minus(p4);
+    }
+
+    virtual void addDimAngular(const DRW_DimAngular *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimAngular>(*data)) return;
+
+        Vector l0p0 = toVector(data->getFirstLine1());
+        Vector l0p1 = toVector(data->getFirstLine2());
+        Vector l1p0 = toVector(data->getSecondLine1());
+        Vector l1p1 = toVector(data->getSecondLine2());
+
+        hConstraint hc = Constraint::Constrain(
+            Constraint::ANGLE,
+            Entity::NO_ENTITY,
+            Entity::NO_ENTITY,
+            createLine(l0p0, l0p1, invisibleStyle().v),
+            createLine(l1p1, l1p0, invisibleStyle().v),
+            /*other=*/false,
+            /*other2=*/false
+        );
+
+        Constraint *c = SK.GetConstraint(hc);
+        c->ModifyToSatisfy();
+
+        bool skew = false;
+        Vector pi = Vector::AtIntersectionOfLines(l0p0, l0p1, l1p0, l1p1, &skew);
+        if(!skew) {
+            c->disp.offset = toVector(data->getTextPoint()).Minus(pi);
+        }
+    }
+
+    hConstraint createDiametric(Vector cp, double r, Vector tp, bool asRadius = false) {
+        hEntity he = createCircle(cp, r, invisibleStyle().v);
+
+        hConstraint hc = Constraint::Constrain(
+            Constraint::DIAMETER,
+            Entity::NO_ENTITY,
+            Entity::NO_ENTITY,
+            he
+        );
+
+        Constraint *c = SK.GetConstraint(hc);
+        c->ModifyToSatisfy();
+        c->disp.offset = tp.Minus(cp);
+        if(asRadius) c->other = true;
+        return hc;
+    }
+
+    virtual void addDimRadial(const DRW_DimRadial *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimRadial>(*data)) return;
+
+        Vector cp = toVector(data->getCenterPoint());
+        Vector dp = toVector(data->getDiameterPoint());
+        Vector tp = toVector(data->getTextPoint());
+
+        createDiametric(cp, cp.Minus(dp).Magnitude(), tp, /*asRadius=*/true);
+    }
+
+    virtual void addDimDiametric(const DRW_DimDiametric *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimRadial>(*data)) return;
+
+        Vector dp1 = toVector(data->getDiameter1Point());
+        Vector dp2 = toVector(data->getDiameter2Point());
+
+        Vector cp = dp1.Plus(dp2).ScaledBy(0.5);
+        Vector tp = toVector(data->getTextPoint());
+
+        createDiametric(cp, cp.Minus(dp1).Magnitude(), tp, /*asRadius=*/false);
+    }
+
+    virtual void addDimAngular3P(const DRW_DimAngular3p *data) {
+        if(data->space != DRW::ModelSpace) return;
+        if(addPendingBlockEntity<DRW_DimAngular3p>(*data)) return;
+
+        DRW_DimAngular dim = *static_cast<const DRW_Dimension *>(data);
+        dim.setFirstLine1(data->getVertexPoint());
+        dim.setFirstLine2(data->getFirstLine());
+        dim.setSecondLine1(data->getVertexPoint());
+        dim.setSecondLine2(data->getSecondLine());
+        addDimAngular(&dim);
     }
 };
 
