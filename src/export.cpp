@@ -304,20 +304,25 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         }
     }
 
-    // Use the BSP routines to generate the split triangles in paint order.
-    SBsp3 *bsp = SBsp3::FromMesh(&smp);
     SMesh sms = {};
-    if(bsp) bsp->GenerateInPaintOrder(&sms);
-    // And cull the back-facing triangles
-    STriangle *tr;
-    sms.l.ClearTags();
-    for(tr = sms.l.First(); tr; tr = sms.l.NextAfter(tr)) {
-        Vector n = tr->Normal();
-        if(n.z < 0) {
-            tr->tag = 1;
+
+    // We need the mesh for occlusion testing, but if we don't/can't export it,
+    // don't generate it.
+    if(SS.GW.showShaded && out->CanOutputMesh()) {
+        // Use the BSP routines to generate the split triangles in paint order.
+        SBsp3 *bsp = SBsp3::FromMesh(&smp);
+        if(bsp) bsp->GenerateInPaintOrder(&sms);
+        // And cull the back-facing triangles
+        STriangle *tr;
+        sms.l.ClearTags();
+        for(tr = sms.l.First(); tr; tr = sms.l.NextAfter(tr)) {
+            Vector n = tr->Normal();
+            if(n.z < 0) {
+                tr->tag = 1;
+            }
         }
+        sms.l.RemoveTagged();
     }
-    sms.l.RemoveTagged();
 
     // And now we perform hidden line removal if requested
     SEdgeList hlrd = {};
@@ -514,12 +519,6 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                              &leftovers);
     for(b = leftovers.l.First(); b; b = leftovers.l.NextAfter(b)) {
         sblss.AddOpenPath(b);
-    }
-
-    // We need the mesh for occlusion testing, but if we don't export it,
-    // erase it now.
-    if(!SS.GW.showShaded) {
-        sms.Clear();
     }
 
     // Now write the lines and triangles to the output file

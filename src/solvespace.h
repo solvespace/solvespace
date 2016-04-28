@@ -500,8 +500,8 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *constraint)
-        { return false; }
+    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) { return false; }
+    virtual bool CanOutputMesh() const { return false; }
 
     virtual void StartPath( RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
@@ -549,6 +549,7 @@ public:
     void StartFile(void);
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return true; }
+    bool CanOutputMesh() const { return true; }
 };
 class PdfFileWriter : public VectorFileWriter {
 public:
@@ -566,6 +567,7 @@ public:
     void StartFile(void);
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return true; }
+    bool CanOutputMesh() const { return true; }
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
@@ -581,6 +583,7 @@ public:
     void StartFile(void);
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return true; }
+    bool CanOutputMesh() const { return true; }
 };
 class HpglFileWriter : public VectorFileWriter {
 public:
