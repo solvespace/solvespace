@@ -978,7 +978,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
                     break;
 
                 case EMPHASIZED_EDGES:
-                    if(tr->meta.face != info.tr->meta.face && info.count == 1) {
+                    if(info.count == 1 && tr->meta.face != info.tr->meta.face) {
                         if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
                             break;
                         // The two triangles that join at this edge come from
