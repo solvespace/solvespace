@@ -125,9 +125,268 @@ alt:
     }
 }
 
-void SBsp3::InsertConvexHow(BspClass how, STriMeta meta, Vector *vertex, int n,
-                            SMesh *instead)
-{
+class BspUtil {
+public:
+    SBsp3      *bsp;
+
+    size_t      onc;
+    size_t      posc;
+    size_t      negc;
+    bool       *isPos;
+    bool       *isNeg;
+    bool       *isOn;
+
+    // triangle operations
+    STriangle  *tr;
+    STriangle  *btri; // also as alone
+    STriangle  *ctri;
+
+    // convex operations
+    Vector     *on;
+    size_t      npos;
+    size_t      nneg;
+    Vector     *vpos; // also as quad
+    Vector     *vneg;
+
+    static BspUtil *Alloc() {
+        return (BspUtil *)AllocTemporary(sizeof(BspUtil));
+    }
+
+    void AllocOn() {
+        on = (Vector *)AllocTemporary(sizeof(Vector) * 2);
+    }
+
+    void AllocTriangle() {
+        btri = (STriangle *)AllocTemporary(sizeof(STriangle));
+    }
+
+    void AllocTriangles() {
+        btri = (STriangle *)AllocTemporary(sizeof(STriangle) * 2);
+        ctri = &btri[1];
+    }
+
+    void AllocQuad() {
+        vpos = (Vector *)AllocTemporary(sizeof(Vector) * 4);
+    }
+
+    void AllocClassify(size_t size) {
+        // Allocate a one big piece is faster than a small ones.
+        isPos = (bool *)AllocTemporary(sizeof(bool) * size * 3);
+        isNeg = &isPos[size];
+        isOn  = &isNeg[size];
+    }
+
+    void AllocVertices(size_t size) {
+        vpos = (Vector *)AllocTemporary(sizeof(Vector) * size * 2);
+        vneg = &vpos[size];
+    }
+
+    void ClassifyTriangle(STriangle *tri, SBsp3 *node) {
+        tr   = tri;
+        bsp  = node;
+        onc  = 0;
+        posc = 0;
+        negc = 0;
+
+        AllocClassify(3);
+
+        double dt[3] = { (tr->a).Dot(bsp->n), (tr->b).Dot(bsp->n), (tr->c).Dot(bsp->n) };
+        double d = bsp->d;
+        // Count vertices in the plane
+        for(int i = 0; i < 3; i++) {
+            if(dt[i] > d + LENGTH_EPS) {
+                posc++;
+                isPos[i] = true;
+            } else if(dt[i] < d - LENGTH_EPS) {
+                negc++;
+                isNeg[i] = true;
+            } else {
+                onc++;
+                isOn[i] = true;
+            }
+        }
+    }
+
+    bool ClassifyConvex(Vector *vertex, size_t cnt, SBsp3 *node, bool insertEdge) {
+        bsp  = node;
+        onc  = 0;
+        posc = 0;
+        negc = 0;
+
+        AllocClassify(cnt);
+        AllocOn();
+
+        for(size_t i = 0; i < cnt; i++) {
+            double dt = bsp->n.Dot(vertex[i]);
+            isPos[i] = isNeg[i] = isOn[i] = false;
+            if(fabs(dt - bsp->d) < LENGTH_EPS) {
+                isOn[i] = true;
+                if(onc < 2) {
+                    on[onc] = vertex[i];
+                }
+                onc++;
+            } else if(dt > bsp->d) {
+                isPos[i] = true;
+                posc++;
+            } else {
+                isNeg[i] = true;
+                negc++;
+            }
+        }
+
+        if(onc != 2 && onc != 1 && onc != 0) return false;
+        if(onc == 2) {
+            if(insertEdge) {
+                Vector e01 = (vertex[1]).Minus(vertex[0]);
+                Vector e12 = (vertex[2]).Minus(vertex[1]);
+                Vector out = e01.Cross(e12);
+                SEdge se = SEdge::From(on[0], on[1]);
+                bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, out);
+            }
+        }
+        return true;
+    }
+
+    bool ClassifyConvexVertices(Vector *vertex, size_t cnt, bool insertEdges) {
+        Vector inter[2];
+        int inters = 0;
+
+        npos = 0;
+        nneg = 0;
+
+        // Enlarge vertices list to consider two intersections
+        AllocVertices(cnt + 4);
+
+        for(size_t i = 0; i < cnt; i++) {
+            size_t ip = WRAP((i + 1), cnt);
+
+            if(isPos[i]) {
+                vpos[npos++] = vertex[i];
+            }
+            if(isNeg[i]) {
+                vneg[nneg++] = vertex[i];
+            }
+            if(isOn[i]) {
+                vneg[nneg++] = vertex[i];
+                vpos[npos++] = vertex[i];
+            }
+            if((isPos[i] && isNeg[ip]) || (isNeg[i] && isPos[ip])) {
+                Vector vi = bsp->IntersectionWith(vertex[i], vertex[ip]);
+                vpos[npos++] = vi;
+                vneg[nneg++] = vi;
+
+                if(inters >= 2) return false; // triangulate: XXX shouldn't happen but does
+                inter[inters++] = vi;
+            }
+        }
+        ssassert(npos <= cnt + 1 && nneg <= cnt + 1, "Impossible");
+
+        if(insertEdges) {
+            Vector e01 = (vertex[1]).Minus(vertex[0]);
+            Vector e12 = (vertex[2]).Minus(vertex[1]);
+            Vector out = e01.Cross(e12);
+            if(inters == 2) {
+                SEdge se = SEdge::From(inter[0], inter[1]);
+                bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, out);
+            } else if(inters == 1 && onc == 1) {
+                SEdge se = SEdge::From(inter[0], on[0]);
+                bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, out);
+            } else if(inters == 0 && onc == 2) {
+                // We already handled this on-plane existing edge
+            } else {
+                return false; //triangulate;
+            }
+        }
+        if(nneg < 3 || npos < 3) return false; // triangulate; // XXX
+
+        return true;
+    }
+
+    void ProcessEdgeInsert() {
+        ssassert(onc == 2, "Impossible");
+
+        Vector a, b;
+        if     (!isOn[0]) { a = tr->b; b = tr->c; }
+        else if(!isOn[1]) { a = tr->c; b = tr->a; }
+        else if(!isOn[2]) { a = tr->a; b = tr->b; }
+        else ssassert(false, "Impossible");
+
+        SEdge se = SEdge::From(a, b);
+        bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, tr->Normal());
+    }
+
+    bool SplitIntoTwoTriangles(bool insertEdge) {
+        ssassert(posc == 1 && negc == 1 && onc == 1, "Impossible");
+
+        bool bpos;
+        Vector a, b, c;
+
+        // Standardize so that a is on the plane
+        if       (isOn[0]) { a = tr->a; b = tr->b; c = tr->c; bpos = isPos[1];
+        } else if(isOn[1]) { a = tr->b; b = tr->c; c = tr->a; bpos = isPos[2];
+        } else if(isOn[2]) { a = tr->c; b = tr->a; c = tr->b; bpos = isPos[0];
+        } else ssassert(false, "Impossible");
+
+        AllocTriangles();
+        Vector bPc = bsp->IntersectionWith(b, c);
+        *btri = STriangle::From(tr->meta, a, b, bPc);
+        *ctri = STriangle::From(tr->meta, c, a, bPc);
+
+        if(insertEdge) {
+            SEdge se = SEdge::From(a, bPc);
+            bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, tr->Normal());
+        }
+
+        return bpos;
+    }
+
+    bool SplitIntoTwoPieces(bool insertEdge) {
+        Vector a, b, c;
+        if(posc == 2 && negc == 1) {
+            // Standardize so that a is on one side, and b and c are on the other.
+            if       (isNeg[0]) {   a = tr->a; b = tr->b; c = tr->c;
+            } else if(isNeg[1]) {   a = tr->b; b = tr->c; c = tr->a;
+            } else if(isNeg[2]) {   a = tr->c; b = tr->a; c = tr->b;
+            } else ssassert(false, "Impossible");
+        } else if(posc == 1 && negc == 2) {
+            if       (isPos[0]) {   a = tr->a; b = tr->b; c = tr->c;
+            } else if(isPos[1]) {   a = tr->b; b = tr->c; c = tr->a;
+            } else if(isPos[2]) {   a = tr->c; b = tr->a; c = tr->b;
+            } else ssassert(false, "Impossible");
+        } else ssassert(false, "Impossible");
+
+        Vector aPb = bsp->IntersectionWith(a, b);
+        Vector cPa = bsp->IntersectionWith(c, a);
+        AllocTriangle();
+        AllocQuad();
+
+        *btri = STriangle::From(tr->meta, a, aPb, cPa);
+
+        vpos[0] = aPb;
+        vpos[1] = b;
+        vpos[2] = c;
+        vpos[3] = cPa;
+
+        if(insertEdge) {
+            SEdge se = SEdge::From(aPb, cPa);
+            bsp->edges = SBsp2::InsertOrCreateEdge(bsp->edges, &se, bsp->n, btri->Normal());
+        }
+
+        return posc == 2 && negc == 1;
+    }
+
+    static SBsp3 *Triangulate(SBsp3 *bsp, const STriMeta &meta, Vector *vertex,
+                              size_t cnt, SMesh *instead) {
+        for(size_t i = 0; i < cnt - 2; i++) {
+            STriangle tr = STriangle::From(meta, vertex[0], vertex[i + 1], vertex[i + 2]);
+            bsp = SBsp3::InsertOrCreate(bsp, &tr, instead);
+        }
+        return bsp;
+    }
+};
+
+void SBsp3::InsertConvexHow(BspClass how, STriMeta meta, Vector *vertex, size_t n,
+                            SMesh *instead) {
     switch(how) {
         case BspClass::POS:
             if(pos) {
@@ -145,124 +404,35 @@ void SBsp3::InsertConvexHow(BspClass how, STriMeta meta, Vector *vertex, int n,
 
         default: ssassert(false, "Unexpected BSP insert type");
     }
-    int i;
-    for(i = 0; i < n - 2; i++) {
+
+    for(size_t i = 0; i < n - 2; i++) {
         STriangle tr = STriangle::From(meta,
                                        vertex[0], vertex[i+1], vertex[i+2]);
         InsertHow(how, &tr, instead);
     }
 }
 
-SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
-                           SMesh *instead)
-{
-    Vector e01 = (vertex[1]).Minus(vertex[0]);
-    Vector e12 = (vertex[2]).Minus(vertex[1]);
-    Vector out = e01.Cross(e12);
-
-#define MAX_VERTICES 50
-    if(cnt+1 >= MAX_VERTICES) goto triangulate;
-
-    int i;
-    Vector on[2];
-    bool isPos[MAX_VERTICES];
-    bool isNeg[MAX_VERTICES];
-    bool isOn[MAX_VERTICES];
-    int posc, negc, onc; posc = negc = onc = 0;
-    for(i = 0; i < cnt; i++) {
-        double dt = n.Dot(vertex[i]);
-        isPos[i] = isNeg[i] = isOn[i] = false;
-        if(fabs(dt - d) < LENGTH_EPS) {
-            isOn[i] = true;
-            if(onc < 2) {
-                on[onc] = vertex[i];
-            }
-            onc++;
-        } else if(dt > d) {
-            isPos[i] = true;
-            posc++;
-        } else {
-            isNeg[i] = true;
-            negc++;
+SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, size_t cnt, SMesh *instead) {
+    BspUtil *u = BspUtil::Alloc();
+    if(u->ClassifyConvex(vertex, cnt, this, !instead)) {
+        if(u->posc == 0) {
+            InsertConvexHow(BspClass::NEG, meta, vertex, cnt, instead);
+            return this;
         }
-    }
-    if(onc != 2 && onc != 1 && onc != 0) goto triangulate;
+        if(u->negc == 0) {
+            InsertConvexHow(BspClass::POS, meta, vertex, cnt, instead);
+            return this;
+        }
 
-    if(onc == 2) {
-        if(!instead) {
-            SEdge se = SEdge::From(on[0], on[1]);
-            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
+        if(u->ClassifyConvexVertices(vertex, cnt, !instead)) {
+            InsertConvexHow(BspClass::NEG, meta, u->vneg, u->nneg, instead);
+            InsertConvexHow(BspClass::POS, meta, u->vpos, u->npos, instead);
+            return this;
         }
     }
 
-    if(posc == 0) {
-        InsertConvexHow(BspClass::NEG, meta, vertex, cnt, instead);
-        return this;
-    }
-    if(negc == 0) {
-        InsertConvexHow(BspClass::POS, meta, vertex, cnt, instead);
-        return this;
-    }
-
-    Vector vpos[MAX_VERTICES];
-    Vector vneg[MAX_VERTICES];
-    int npos, nneg; npos = nneg = 0;
-
-    Vector inter[2];
-    int inters; inters = 0;
-
-    for(i = 0; i < cnt; i++) {
-        int ip = WRAP((i + 1), cnt);
-
-        if(isPos[i]) {
-            vpos[npos++] = vertex[i];
-        }
-        if(isNeg[i]) {
-            vneg[nneg++] = vertex[i];
-        }
-        if(isOn[i]) {
-            vneg[nneg++] = vertex[i];
-            vpos[npos++] = vertex[i];
-        }
-        if((isPos[i] && isNeg[ip]) || (isNeg[i] && isPos[ip])) {
-            Vector vi = IntersectionWith(vertex[i], vertex[ip]);
-            vpos[npos++] = vi;
-            vneg[nneg++] = vi;
-
-            if(inters >= 2) goto triangulate; // XXX shouldn't happen but does
-            inter[inters++] = vi;
-        }
-    }
-    if(npos > cnt + 1 || nneg > cnt + 1) ssassert(false, "Impossible");
-
-    if(!instead) {
-        if(inters == 2) {
-            SEdge se = SEdge::From(inter[0], inter[1]);
-            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
-        } else if(inters == 1 && onc == 1) {
-            SEdge se = SEdge::From(inter[0], on[0]);
-            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, out);
-        } else if(inters == 0 && onc == 2) {
-            // We already handled this on-plane existing edge
-        } else {
-            goto triangulate;
-        }
-    }
-    if(nneg < 3 || npos < 3) goto triangulate; // XXX
-
-    InsertConvexHow(BspClass::NEG, meta, vneg, nneg, instead);
-    InsertConvexHow(BspClass::POS, meta, vpos, npos, instead);
-    return this;
-
-triangulate:
     // We don't handle the special case for this; do it as triangles
-    SBsp3 *r = this;
-    for(i = 0; i < cnt - 2; i++) {
-        STriangle tr = STriangle::From(meta,
-                                       vertex[0], vertex[i+1], vertex[i+2]);
-        r = InsertOrCreate(r, &tr, instead);
-    }
-    return r;
+    return BspUtil::Triangulate(this, meta, vertex, cnt, instead);
 }
 
 SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
@@ -288,45 +458,22 @@ SBsp3 *SBsp3::InsertOrCreate(SBsp3 *where, STriangle *tr, SMesh *instead) {
 }
 
 void SBsp3::Insert(STriangle *tr, SMesh *instead) {
-    double dt[3] = { (tr->a).Dot(n), (tr->b).Dot(n), (tr->c).Dot(n) };
-
-    int inc = 0, posc = 0, negc = 0;
-    bool isPos[3] = {}, isNeg[3] = {}, isOn[3] = {};
-    // Count vertices in the plane
-    for(int i = 0; i < 3; i++) {
-        if(fabs(dt[i] - d) < LENGTH_EPS) {
-            inc++;
-            isOn[i] = true;
-        } else if(dt[i] > d) {
-            posc++;
-            isPos[i] = true;
-        } else {
-            negc++;
-            isNeg[i] = true;
-        }
-    }
+    BspUtil *u = BspUtil::Alloc();
+    u->ClassifyTriangle(tr, this);
 
     // All vertices in-plane
-    if(inc == 3) {
+    if(u->onc == 3) {
         InsertHow(BspClass::COPLANAR, tr, instead);
         return;
     }
 
     // No split required
-    if(posc == 0 || negc == 0) {
-        if(inc == 2) {
-            Vector a, b;
-            if     (!isOn[0]) { a = tr->b; b = tr->c; }
-            else if(!isOn[1]) { a = tr->c; b = tr->a; }
-            else if(!isOn[2]) { a = tr->a; b = tr->b; }
-            else ssassert(false, "Impossible");
-            if(!instead) {
-                SEdge se = SEdge::From(a, b);
-                edges = SBsp2::InsertOrCreateEdge(edges, &se, n, tr->Normal());
-            }
+    if(u->posc == 0 || u->negc == 0) {
+        if(!instead && u->onc == 2) {
+            u->ProcessEdgeInsert();
         }
 
-        if(posc > 0) {
+        if(u->posc > 0) {
             InsertHow(BspClass::POS, tr, instead);
         } else {
             InsertHow(BspClass::NEG, tr, instead);
@@ -334,74 +481,29 @@ void SBsp3::Insert(STriangle *tr, SMesh *instead) {
         return;
     }
 
-    // The polygon must be split into two pieces, one above, one below.
-    Vector a, b, c;
-
-    if(posc == 1 && negc == 1 && inc == 1) {
-        bool bpos;
-        // Standardize so that a is on the plane
-        if       (isOn[0]) { a = tr->a; b = tr->b; c = tr->c; bpos = isPos[1];
-        } else if(isOn[1]) { a = tr->b; b = tr->c; c = tr->a; bpos = isPos[2];
-        } else if(isOn[2]) { a = tr->c; b = tr->a; c = tr->b; bpos = isPos[0];
-        } else ssassert(false, "Impossible");
-
-        Vector bPc = IntersectionWith(b, c);
-        STriangle btri = STriangle::From(tr->meta, a, b, bPc);
-        STriangle ctri = STriangle::From(tr->meta, c, a, bPc);
-
-        if(bpos) {
-            InsertHow(BspClass::POS, &btri, instead);
-            InsertHow(BspClass::NEG, &ctri, instead);
+    // The polygon must be split into two triangles, one above, one below.
+    if(u->posc == 1 && u->negc == 1 && u->onc == 1) {
+        if(u->SplitIntoTwoTriangles(!instead)) {
+            InsertHow(BspClass::POS, u->btri, instead);
+            InsertHow(BspClass::NEG, u->ctri, instead);
         } else {
-            InsertHow(BspClass::POS, &ctri, instead);
-            InsertHow(BspClass::NEG, &btri, instead);
+            InsertHow(BspClass::POS, u->ctri, instead);
+            InsertHow(BspClass::NEG, u->btri, instead);
         }
-
-        if(!instead) {
-            SEdge se = SEdge::From(a, bPc);
-            edges = SBsp2::InsertOrCreateEdge(edges, &se, n, tr->Normal());
-        }
-
         return;
     }
 
-    if(posc == 2 && negc == 1) {
-        // Standardize so that a is on one side, and b and c are on the other.
-        if       (isNeg[0]) {   a = tr->a; b = tr->b; c = tr->c;
-        } else if(isNeg[1]) {   a = tr->b; b = tr->c; c = tr->a;
-        } else if(isNeg[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else ssassert(false, "Impossible");
-
-    } else if(posc == 1 && negc == 2) {
-        if       (isPos[0]) {   a = tr->a; b = tr->b; c = tr->c;
-        } else if(isPos[1]) {   a = tr->b; b = tr->c; c = tr->a;
-        } else if(isPos[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else ssassert(false, "Impossible");
-    } else ssassert(false, "Impossible");
-
-    Vector aPb = IntersectionWith(a, b);
-    Vector cPa = IntersectionWith(c, a);
-
-    STriangle alone = STriangle::From(tr->meta, a, aPb, cPa);
-    Vector quad[4] = { aPb, b, c, cPa };
-
-    if(posc == 2 && negc == 1) {
-        InsertConvexHow(BspClass::POS, tr->meta, quad, 4, instead);
-        InsertHow(BspClass::NEG, &alone, instead);
+    // The polygon must be split into two pieces: a triangle and a quad.
+    if(u->SplitIntoTwoPieces(!instead)) {
+        InsertConvexHow(BspClass::POS, tr->meta, u->vpos, 4, instead);
+        InsertHow(BspClass::NEG, u->btri, instead);
     } else {
-        InsertConvexHow(BspClass::NEG, tr->meta, quad, 4, instead);
-        InsertHow(BspClass::POS, &alone, instead);
+        InsertConvexHow(BspClass::NEG, tr->meta, u->vpos, 4, instead);
+        InsertHow(BspClass::POS, u->btri, instead);
     }
-    if(!instead) {
-        SEdge se = SEdge::From(aPb, cPa);
-        edges = SBsp2::InsertOrCreateEdge(edges, &se, n, alone.Normal());
-    }
-
-    return;
 }
 
 void SBsp3::GenerateInPaintOrder(SMesh *m) const {
-
     // Doesn't matter which branch we take if the normal has zero z
     // component, so don't need a separate case for that.
     if(n.z < 0) {
