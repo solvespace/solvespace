@@ -25,6 +25,8 @@ public:
     bool CheckLoad(const char *file, int line, const char *fixture);
     bool CheckSave(const char *file, int line, const char *reference);
     bool CheckRender(const char *file, int line, const char *fixture);
+    bool CheckRenderXY(const char *file, int line, const char *fixture);
+    bool CheckRenderIso(const char *file, int line, const char *fixture);
 };
 
 class Case {
@@ -54,4 +56,6 @@ using namespace SolveSpace;
 #define CHECK_SAVE(fixture) \
     do { if(!helper->CheckSave(__FILE__, __LINE__, fixture)) return; } while(0)
 #define CHECK_RENDER(reference) \
-    do { if(!helper->CheckRender(__FILE__, __LINE__, reference)) return; } while(0)
+    do { if(!helper->CheckRenderXY(__FILE__, __LINE__, reference)) return; } while(0)
+#define CHECK_RENDER_ISO(reference) \
+    do { if(!helper->CheckRenderIso(__FILE__, __LINE__, reference)) return; } while(0)

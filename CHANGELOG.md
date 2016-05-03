@@ -4,6 +4,10 @@ Changelog
 3.0
 ---
 
+New sketch features:
+  * Extrude, lathe, translate and rotate groups can now use the "assembly"
+    boolean operation, to increase performance.
+
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
     use the current viewport projection.

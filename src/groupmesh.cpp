@@ -103,7 +103,7 @@ void SMesh::RemapFaces(Group *g, int remap) {
 }
 
 template<class T>
-void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
+void Group::GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat) {
     T workA, workB;
     workA = {};
     workB = {};
@@ -141,6 +141,8 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
         // And tack this transformed copy on to the return.
         if(soFar->IsEmpty()) {
             scratch->MakeFromCopyOf(&transd);
+        } else if (forWhat == CombineAs::ASSEMBLE) {
+            scratch->MakeFromAssemblyOf(soFar, &transd);
         } else {
             scratch->MakeFromUnionOf(soFar, &transd);
         }
@@ -202,8 +204,8 @@ void Group::GenerateShellAndMesh() {
         srcg = SK.GetGroup(opA);
 
         if(!srcg->suppress) {
-            GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
-            GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
+            GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell, srcg->meshCombine);
+            GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh, srcg->meshCombine);
         }
     } else if(type == Type::EXTRUDE && haveSrc) {
         Group *src = SK.GetGroup(opA);

@@ -260,6 +260,18 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
     }
 }
 
+bool Test::Helper::CheckRenderXY(const char *file, int line, const char *fixture) {
+    SS.GW.projRight = Vector::From(1, 0, 0);
+    SS.GW.projUp    = Vector::From(0, 1, 0);
+    return CheckRender(file, line, fixture);
+}
+
+bool Test::Helper::CheckRenderIso(const char *file, int line, const char *fixture) {
+    SS.GW.projRight = Vector::From(0.707,  0.000, -0.707);
+    SS.GW.projUp    = Vector::From(-0.408, 0.816, -0.408);
+    return CheckRender(file, line, fixture);
+}
+
 // Avoid global constructors; using a global static vector instead of a local one
 // breaks MinGW for some obscure reason.
 static std::vector<Test::Case> *testCasesPtr;

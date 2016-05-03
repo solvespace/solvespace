@@ -268,7 +268,7 @@ public:
     bool IsMeshGroup();
 
     void GenerateShellAndMesh();
-    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
+    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
 

@@ -52,7 +52,9 @@ set(testsuite_SOURCES
     request/cubic_periodic/test.cpp
     request/datum_point/test.cpp
     request/line_segment/test.cpp
-    request/ttf_text/test.cpp)
+    request/ttf_text/test.cpp
+    group/translate_asy/test.cpp
+)
 
 add_executable(solvespace_testsuite
     ${testsuite_SOURCES})

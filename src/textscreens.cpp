@@ -352,12 +352,11 @@ void TextWindow::ShowGroupInfo() {
         bool un   = (g->meshCombine == Group::CombineAs::UNION);
         bool diff = (g->meshCombine == Group::CombineAs::DIFFERENCE);
         bool asy  = (g->meshCombine == Group::CombineAs::ASSEMBLE);
-        bool asa  = (g->type == Group::Type::LINKED);
 
         Printf(false, " %Ftsolid model as");
         Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
                              "%f%D%Lc%Fd%s difference%E  "
-                             "%f%D%Lc%Fd%s%s%E  ",
+                             "%f%D%Lc%Fd%s assemble%E  ",
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::UNION,
             un ? RADIO_TRUE : RADIO_FALSE,
@@ -366,8 +365,7 @@ void TextWindow::ShowGroupInfo() {
             diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
             Group::CombineAs::ASSEMBLE,
-            asa ? (asy ? RADIO_TRUE : RADIO_FALSE) : " ",
-            asa ? " assemble" : "");
+            (asy ? RADIO_TRUE : RADIO_FALSE));
 
         if(g->type == Group::Type::EXTRUDE ||
            g->type == Group::Type::LATHE)
