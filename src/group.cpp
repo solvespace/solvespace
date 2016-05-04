@@ -51,6 +51,26 @@ bool Group::IsVisible(void) {
     return true;
 }
 
+int Group::GetNumConstraints(void) {
+    int num = 0;
+    for(int i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &SK.constraint.elem[i];
+        if(c->group.v != h.v) continue;
+        num++;
+    }
+    return num;
+}
+
+Vector Group::ExtrusionGetVector() {
+    return Vector::From(h.param(0), h.param(1), h.param(2));
+}
+
+void Group::ExtrusionForceVectorTo(const Vector &v) {
+    SK.GetParam(h.param(0))->val = v.x;
+    SK.GetParam(h.param(1))->val = v.y;
+    SK.GetParam(h.param(2))->val = v.z;
+}
+
 void Group::MenuGroup(int id) {
     Group g = {};
     g.visible = true;

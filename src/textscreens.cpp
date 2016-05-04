@@ -191,7 +191,15 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
         case 'k': g->skipFirst = true; break;
         case 'K': g->skipFirst = false; break;
 
-        case 'c': g->meshCombine = v; break;
+        case 'c':
+            // When an extrude group is first created, it's positioned for a union
+            // extrusion. If no constraints were added, flip it when we switch between
+            // union and difference modes to avoid manual work doing the smae.
+            if(g->meshCombine != v && g->GetNumConstraints() == 0) {
+                g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
+            }
+            g->meshCombine = v;
+            break;
 
         case 'P': g->suppress = !(g->suppress); break;
 

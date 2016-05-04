@@ -236,6 +236,9 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
     bool IsVisible(void);
+    int GetNumConstraints();
+    Vector ExtrusionGetVector();
+    void ExtrusionForceVectorTo(const Vector &v);
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
