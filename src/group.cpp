@@ -188,7 +188,7 @@ void Group::MenuGroup(int id) {
         case GraphicsWindow::MNU_GROUP_IMPORT: {
             g.type = IMPORTED;
             if(g.impFile.empty()) {
-                if(!GetOpenFile(g.impFile, "", SLVS_PATTERN)) return;
+                if(!GetOpenFile(&g.impFile, "", SlvsFileFilter)) return;
             }
 
             // Assign the default name of the group based on the name of

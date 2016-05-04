@@ -732,21 +732,20 @@ bool MenuBarIsVisible(void) {
 
 /* Save/load */
 
-bool SolveSpace::GetOpenFile(std::string &file, const std::string &defExtension,
-                             const char *selPattern) {
+bool SolveSpace::GetOpenFile(std::string *file, const std::string &defExtension,
+                             const FileFilter ssFilters[]) {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     NSMutableArray *filters = [[NSMutableArray alloc] init];
-    for(NSString *filter in [[NSString stringWithUTF8String:selPattern]
-            componentsSeparatedByString:@"\n"]) {
-        [filters addObjectsFromArray:
-            [[[filter componentsSeparatedByString:@"\t"] objectAtIndex:1]
-                componentsSeparatedByString:@","]];
+    for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
+        for(const char *const *ssPattern = ssFilter->patterns; *ssPattern; ssPattern++) {
+            [filters addObject:[NSString stringWithUTF8String:*ssPattern]];
+        }
     }
     [filters removeObjectIdenticalTo:@"*"];
     [panel setAllowedFileTypes:filters];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        file = [[NSFileManager defaultManager]
+        *file = [[NSFileManager defaultManager]
             fileSystemRepresentationWithPath:[[panel URL] path]];
         return true;
     } else {
@@ -774,8 +773,8 @@ bool SolveSpace::GetOpenFile(std::string &file, const std::string &defExtension,
 }
 @end
 
-bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
-                             const char *selPattern) {
+bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
+                             const FileFilter ssFilters[]) {
     NSSavePanel *panel = [NSSavePanel savePanel];
 
     SaveFormatController *controller =
@@ -788,16 +787,19 @@ bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
 
     NSPopUpButton *button = [controller button];
     [button removeAllItems];
-    for(NSString *filter in [[NSString stringWithUTF8String:selPattern]
-            componentsSeparatedByString:@"\n"]) {
-        NSArray *filterParts = [filter componentsSeparatedByString:@"\t"];
-        NSString *filterName = [filterParts objectAtIndex:0];
-        NSArray *filterExtensions = [[filterParts objectAtIndex:1]
-            componentsSeparatedByString:@","];
-        [button addItemWithTitle:
-            [[NSString alloc] initWithFormat:@"%@ (%@)", filterName,
-                [filterExtensions componentsJoinedByString:@", "]]];
-        [extensions addObject:[filterExtensions objectAtIndex:0]];
+    for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
+        std::string desc;
+        for(const char *const *ssPattern = ssFilter->patterns; *ssPattern; ssPattern++) {
+            if(desc == "") {
+                desc = *ssPattern;
+            } else {
+                desc += ", ";
+                desc += *ssPattern;
+            }
+        }
+        std::string title = std::string(ssFilter->name) + " (" + desc + ")";
+        [button addItemWithTitle:[NSString stringWithUTF8String:title.c_str()]];
+        [extensions addObject:[NSString stringWithUTF8String:ssFilter->patterns[0]]];
     }
 
     int extensionIndex = 0;
@@ -811,7 +813,7 @@ bool SolveSpace::GetSaveFile(std::string &file, const std::string &defExtension,
         stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        file = [[NSFileManager defaultManager]
+        *file = [[NSFileManager defaultManager]
             fileSystemRepresentationWithPath:[[panel URL] path]];
         return true;
     } else {

@@ -150,69 +150,61 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 #define AUTOSAVE_SUFFIX "~"
 
-#if defined(HAVE_GTK)
-    // Selection pattern format to be parsed by GTK3 glue code:
-    //   "PNG File\t*.png\n"
-    //   "JPEG File\t*.jpg\t*.jpeg\n"
-    //   "All Files\t*"
-#   define PAT1(desc,e1)    desc "\t*." e1 "\n"
-#   define PAT2(desc,e1,e2) desc "\t*." e1 "\t*." e2 "\n"
-#   define ENDPAT "All Files\t*"
-#elif defined(__APPLE__)
-    // Selection pattern format to be parsed by Cocoa glue code:
-    //   "PNG File\tpng\n"
-    //   "JPEG file\tjpg,jpeg\n"
-    //   "All Files\t*"
-#   define PAT1(desc,e1)    desc "\t" e1 "\n"
-#   define PAT2(desc,e1,e2) desc "\t" e1 "," e2 "\n"
-#   define ENDPAT "All Files\t*"
-#else
-    // Selection pattern format for Win32's OPENFILENAME.lpstrFilter:
-    //   "PNG File (*.png)\0*.png\0"
-    //   "JPEG File (*.jpg;*.jpeg)\0*.jpg;*.jpeg\0"
-    //   "All Files (*)\0*\0\0"
-#   define PAT1(desc,e1)    desc " (*." e1 ")\0*." e1 "\0"
-#   define PAT2(desc,e1,e2) desc " (*." e1 ";*." e2 ")\0*." e1 ";*." e2 "\0"
-#   define ENDPAT "All Files (*)\0*\0\0"
-#endif
+struct FileFilter {
+    const char *name;
+    const char *patterns[3];
+};
 
 // SolveSpace native file format
-#define SLVS_PATTERN PAT1("SolveSpace Models", "slvs") ENDPAT
+const FileFilter SlvsFileFilter[] = {
+    { "SolveSpace models",          { "slvs" } },
+    { NULL }
+};
 // PNG format bitmap
-#define PNG_PATTERN PAT1("PNG", "png") ENDPAT
+const FileFilter PngFileFilter[] = {
+    { "PNG",                        { "png" } },
+    { NULL }
+};
 // Triangle mesh
-#define MESH_PATTERN \
-    PAT1("STL Mesh", "stl") \
-    PAT1("Wavefront OBJ Mesh", "obj") \
-    PAT1("Three.js-compatible Mesh, with viewer", "html") \
-    PAT1("Three.js-compatible Mesh, mesh only", "js") \
-    ENDPAT
+const FileFilter MeshFileFilter[] = {
+    { "STL mesh",                   { "stl" } },
+    { "Wavefront OBJ mesh",         { "obj" } },
+    { "Three.js-compatible mesh, with viewer",  { "html" } },
+    { "Three.js-compatible mesh, mesh only",    { "js" } },
+    { NULL }
+};
 // NURBS surfaces
-#define SRF_PATTERN PAT2("STEP File", "step", "stp") ENDPAT
+const FileFilter SurfaceFileFilter[] = {
+    { "STEP file",                  { "step", "stp" } },
+    { NULL }
+};
 // 2d vector (lines and curves) format
-#define VEC_PATTERN \
-    PAT1("PDF File", "pdf") \
-    PAT2("Encapsulated PostScript", "eps", "ps") \
-    PAT1("Scalable Vector Graphics", "svg") \
-    PAT2("STEP File", "step", "stp") \
-    PAT1("DXF File (AutoCAD 2007)", "dxf") \
-    PAT2("HPGL File", "plt", "hpgl") \
-    PAT1("G Code", "txt") \
-    ENDPAT
+const FileFilter VectorFileFilter[] = {
+    { "PDF file",                   { "pdf" } },
+    { "Encapsulated PostScript",    { "eps",  "ps" } },
+    { "Scalable Vector Graphics",   { "svg" } },
+    { "STEP file",                  { "step", "stp" } },
+    { "DXF file (AutoCAD 2007)",    { "dxf" } },
+    { "HPGL file",                  { "plt",  "hpgl" } },
+    { "G Code",                     { "ngc",  "txt" } },
+    { NULL }
+};
 // 3d vector (wireframe lines and curves) format
-#define V3D_PATTERN \
-    PAT2("STEP File", "step", "stp") \
-    PAT1("DXF File (AutoCAD 2007)", "dxf") \
-    ENDPAT
+const FileFilter Vector3dFileFilter[] = {
+    { "STEP file",                  { "step", "stp" } },
+    { "DXF file (AutoCAD 2007)",    { "dxf" } },
+    { NULL }
+};
 // Comma-separated value, like a spreadsheet would use
-#define CSV_PATTERN \
-    PAT1("CSV File", "csv") \
-    ENDPAT
+const FileFilter CsvFileFilter[] = {
+    { "CSV",                        { "csv" } },
+    { NULL }
+};
 
-bool GetSaveFile(std::string &filename, const std::string &defExtension,
-                 const char *selPattern);
-bool GetOpenFile(std::string &filename, const std::string &defExtension,
-                 const char *selPattern);
+bool GetSaveFile(std::string *filename, const std::string &defExtension,
+                 const FileFilter filters[]);
+bool GetOpenFile(std::string *filename, const std::string &defExtension,
+                 const FileFilter filters[]);
 std::vector<std::string> GetFontFiles();
 
 void OpenWebsite(const char *url);

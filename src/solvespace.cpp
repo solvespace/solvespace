@@ -374,7 +374,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     std::string prevSaveFile = saveFile;
 
     if(saveAs || saveFile.empty()) {
-        if(!GetSaveFile(saveFile, "", SLVS_PATTERN)) return false;
+        if(!GetSaveFile(&saveFile, "", SlvsFileFilter)) return false;
         // need to get new filename directly into saveFile, since that
         // determines impFileRel path
     }
@@ -457,7 +457,7 @@ void SolveSpaceUI::MenuFile(int id) {
             if(!SS.OkayToStartNewFile()) break;
 
             std::string newFile;
-            if(GetOpenFile(newFile, "", SLVS_PATTERN)) {
+            if(GetOpenFile(&newFile, "", SlvsFileFilter)) {
                 SS.OpenFile(newFile);
             }
             break;
@@ -473,15 +473,15 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_PNG: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, "", PNG_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, "", PngFileFilter)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }
 
         case GraphicsWindow::MNU_EXPORT_VIEW: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, CnfThawString("", "ViewExportFormat"),
-                            VEC_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, CnfThawString("", "ViewExportFormat"),
+                            VectorFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "ViewExportFormat");
 
             // If the user is exporting something where it would be
@@ -502,8 +502,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, CnfThawString("", "WireframeExportFormat"),
-                            V3D_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, CnfThawString("", "WireframeExportFormat"),
+                            Vector3dFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "WireframeExportFormat");
 
             SS.ExportViewOrWireframeTo(exportFile, true);
@@ -512,8 +512,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_SECTION: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, CnfThawString("", "SectionExportFormat"),
-                            VEC_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, CnfThawString("", "SectionExportFormat"),
+                            VectorFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "SectionExportFormat");
 
             SS.ExportSectionTo(exportFile);
@@ -522,8 +522,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_MESH: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, CnfThawString("", "MeshExportFormat"),
-                            MESH_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, CnfThawString("", "MeshExportFormat"),
+                            MeshFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "MeshExportFormat");
 
             SS.ExportMeshTo(exportFile);
@@ -532,8 +532,8 @@ void SolveSpaceUI::MenuFile(int id) {
 
         case GraphicsWindow::MNU_EXPORT_SURFACES: {
             std::string exportFile;
-            if(!GetSaveFile(exportFile, CnfThawString("", "SurfacesExportFormat"),
-                            SRF_PATTERN)) break;
+            if(!GetSaveFile(&exportFile, CnfThawString("", "SurfacesExportFormat"),
+                            SurfaceFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "SurfacesExportFormat");
 
             StepFileWriter sfw = {};
@@ -750,7 +750,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
 
         case GraphicsWindow::MNU_STOP_TRACING: {
             std::string exportFile;
-            if(GetSaveFile(exportFile, "", CSV_PATTERN)) {
+            if(GetSaveFile(&exportFile, "", CsvFileFilter)) {
                 FILE *f = ssfopen(exportFile, "wb");
                 if(f) {
                     int i;

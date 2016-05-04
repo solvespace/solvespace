@@ -987,23 +987,39 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
 //-----------------------------------------------------------------------------
 // Common dialog routines, to open or save a file.
 //-----------------------------------------------------------------------------
-static size_t strlen2(const char *p) {
-    const char *s = p;
-    while(*p || (!*p && *(p+1))) p++;
-    return p - s + 1;
+static std::string ConvertFilters(const FileFilter ssFilters[]) {
+    std::string filter;
+    for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
+        std::string desc, patterns;
+        for(const char *const *ssPattern = ssFilter->patterns; *ssPattern; ssPattern++) {
+            std::string pattern = "*." + std::string(*ssPattern);
+            if(desc == "")
+                desc = pattern;
+            else
+                desc += ", " + pattern;
+            if(patterns == "")
+                patterns = pattern;
+            else
+                patterns += ";" + pattern;
+        }
+        filter += std::string(ssFilter->name) + " (" + desc + ")" + '\0';
+        filter += patterns + '\0';
+    }
+    filter += '\0';
+    return filter;
 }
 
-static bool OpenSaveFile(bool isOpen, std::string &filename,
-                         const std::string &defExtension, const char *selPattern) {
+static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &defExtension,
+                         const FileFilter filters[]) {
     // UNC paths may be as long as 32767 characters.
     // Unfortunately, the Get*FileName API does not provide any way to use it
     // except with a preallocated buffer of fixed size, so we use something
     // reasonably large.
     const int len = 32768;
     wchar_t filenameC[len] = {};
-    wcsncpy(filenameC, Widen(filename).c_str(), len - 1);
+    wcsncpy(filenameC, Widen(*filename).c_str(), len - 1);
 
-    std::wstring selPatternW = Widen(std::string(selPattern, strlen2(selPattern)));
+    std::wstring selPatternW = Widen(ConvertFilters(filters));
     std::wstring defExtensionW = Widen(defExtension);
 
     OPENFILENAME ofn = {};
@@ -1030,20 +1046,20 @@ static bool OpenSaveFile(bool isOpen, std::string &filename,
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    if(r) filename = Narrow(filenameC);
+    if(r) *filename = Narrow(filenameC);
     return r ? true : false;
 }
 
-bool SolveSpace::GetOpenFile(std::string &filename,
-                             const std::string &defExtension, const char *selPattern)
+bool SolveSpace::GetOpenFile(std::string *filename, const std::string &defExtension,
+                             const FileFilter filters[])
 {
-    return OpenSaveFile(true, filename, defExtension, selPattern);
+    return OpenSaveFile(true, filename, defExtension, filters);
 }
 
-bool SolveSpace::GetSaveFile(std::string &filename,
-                             const std::string &defExtension, const char *selPattern)
+bool SolveSpace::GetSaveFile(std::string *filename, const std::string &defExtension,
+                             const FileFilter filters[])
 {
-    return OpenSaveFile(false, filename, defExtension, selPattern);
+    return OpenSaveFile(false, filename, defExtension, filters);
 }
 
 DialogChoice SolveSpace::SaveFileYesNoCancel(void)

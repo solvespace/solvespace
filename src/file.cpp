@@ -842,7 +842,7 @@ try_load_file:
             switch(LocateImportedFileYesNoCancel(g->impFileRel, canCancel)) {
             case DIALOG_YES: {
                 std::string oldImpFile = g->impFile;
-                if(!GetOpenFile(g->impFile, "", SLVS_PATTERN)) {
+                if(!GetOpenFile(&g->impFile, "", SlvsFileFilter)) {
                     if(canCancel)
                         return false;
                     break;
