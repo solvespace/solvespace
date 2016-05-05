@@ -627,7 +627,7 @@ void SShell::MakeIntersectionCurvesAgainst(SShell *agnst, SShell *into) {
     }
 }
 
-void SShell::CleanupAfterBoolean(void) {
+void SShell::CleanupAfterBoolean() {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         ss->edges.Clear();
@@ -769,7 +769,7 @@ void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
     MakeEdgesInto(shell, &edges, AS_XYZ, useCurvesFrom);
 }
 
-SBspUv *SBspUv::Alloc(void) {
+SBspUv *SBspUv::Alloc() {
     return (SBspUv *)AllocTemporary(sizeof(SBspUv));
 }
 

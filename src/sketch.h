@@ -41,7 +41,7 @@ public:
     inline hEntity entity(int i);
     inline hParam param(int i);
 
-    inline bool IsFromReferences(void);
+    inline bool IsFromReferences();
 };
 class hEntity {
 public:
@@ -49,9 +49,9 @@ public:
     //      31:16   -- request index
     uint32_t v;
 
-    inline bool isFromRequest(void);
-    inline hRequest request(void);
-    inline hGroup group(void);
+    inline bool isFromRequest();
+    inline hRequest request();
+    inline hGroup group();
     inline hEquation equation(int i);
 };
 class hParam {
@@ -60,7 +60,7 @@ public:
     //      31:16   -- request index
     uint32_t v;
 
-    inline hRequest request(void);
+    inline hRequest request();
 };
 
 class hStyle {
@@ -82,7 +82,7 @@ public:
     int         copyNumber;
     // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 // A set of requests. Every request must have an associated group.
@@ -201,9 +201,9 @@ public:
     std::string     name;
 
 
-    void Activate(void);
-    std::string DescriptionString(void);
-    void Clear(void);
+    void Activate();
+    std::string DescriptionString();
+    void Clear();
 
     static void AddParam(ParamList *param, hParam hp, double v);
     void Generate(EntityList *entity, ParamList *param);
@@ -236,7 +236,7 @@ public:
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
-    bool IsVisible(void);
+    bool IsVisible();
     int GetNumConstraints();
     Vector ExtrusionGetVector();
     void ExtrusionForceVectorTo(const Vector &v);
@@ -244,23 +244,23 @@ public:
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
     void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
-    void GenerateLoops(void);
+    void GenerateLoops();
     // And the mesh stuff
-    Group *PreviousGroup(void);
-    Group *RunningMeshGroup(void);
+    Group *PreviousGroup();
+    Group *RunningMeshGroup();
     bool IsMeshGroup();
-    void GenerateShellAndMesh(void);
+    void GenerateShellAndMesh();
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, int how);
-    void GenerateDisplayItems(void);
+    void GenerateDisplayItems();
     void DrawDisplayItems(int t);
-    void Draw(void);
+    void Draw();
     RgbaColor GetLoopSetFillColor(SBezierLoopSet *sbls,
                                  bool *allSame, Vector *errorAt);
     void FillLoopSetAsPolygon(SBezierLoopSet *sbls);
-    void DrawFilledPaths(void);
+    void DrawFilledPaths();
 
-    SPolygon GetPolygon(void);
+    SPolygon GetPolygon();
 
     static void MenuGroup(int id);
 };
@@ -303,10 +303,10 @@ public:
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
 
-    std::string DescriptionString(void);
+    std::string DescriptionString();
     int IndexOfPoint(hEntity he);
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 #define MAX_POINTS_IN_ENTITY (12)
@@ -381,74 +381,74 @@ public:
     Quaternion GetAxisAngleQuaternion(int param0);
     ExprQuaternion GetAxisAngleQuaternionExprs(int param0);
 
-    bool IsCircle(void);
-    Expr *CircleGetRadiusExpr(void);
-    double CircleGetRadiusNum(void);
+    bool IsCircle();
+    Expr *CircleGetRadiusExpr();
+    double CircleGetRadiusNum();
     void ArcGetAngles(double *thetaa, double *thetab, double *dtheta);
 
-    bool HasVector(void);
-    ExprVector VectorGetExprs(void);
-    Vector VectorGetNum(void);
-    Vector VectorGetRefPoint(void);
-    Vector VectorGetStartPoint(void);
+    bool HasVector();
+    ExprVector VectorGetExprs();
+    Vector VectorGetNum();
+    Vector VectorGetRefPoint();
+    Vector VectorGetStartPoint();
 
     // For distances
-    bool IsDistance(void);
-    double DistanceGetNum(void);
-    Expr *DistanceGetExpr(void);
+    bool IsDistance();
+    double DistanceGetNum();
+    Expr *DistanceGetExpr();
     void DistanceForceTo(double v);
 
-    bool IsWorkplane(void);
+    bool IsWorkplane();
     // The plane is points P such that P dot (xn, yn, zn) - d = 0
     void WorkplaneGetPlaneExprs(ExprVector *n, Expr **d);
-    ExprVector WorkplaneGetOffsetExprs(void);
-    Vector WorkplaneGetOffset(void);
-    EntityBase *Normal(void);
+    ExprVector WorkplaneGetOffsetExprs();
+    Vector WorkplaneGetOffset();
+    EntityBase *Normal();
 
-    bool IsFace(void);
-    ExprVector FaceGetNormalExprs(void);
-    Vector FaceGetNormalNum(void);
-    ExprVector FaceGetPointExprs(void);
-    Vector FaceGetPointNum(void);
+    bool IsFace();
+    ExprVector FaceGetNormalExprs();
+    Vector FaceGetNormalNum();
+    ExprVector FaceGetPointExprs();
+    Vector FaceGetPointNum();
 
-    bool IsPoint(void);
+    bool IsPoint();
     // Applies for any of the point types
-    Vector PointGetNum(void);
-    ExprVector PointGetExprs(void);
+    Vector PointGetNum();
+    ExprVector PointGetExprs();
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
     void PointForceTo(Vector v);
     // These apply only the POINT_N_ROT_TRANS, which has an assoc rotation
-    Quaternion PointGetQuaternion(void);
+    Quaternion PointGetQuaternion();
     void PointForceQuaternionTo(Quaternion q);
 
-    bool IsNormal(void);
+    bool IsNormal();
     // Applies for any of the normal types
-    Quaternion NormalGetNum(void);
-    ExprQuaternion NormalGetExprs(void);
+    Quaternion NormalGetNum();
+    ExprQuaternion NormalGetExprs();
     void NormalForceTo(Quaternion q);
 
-    Vector NormalU(void);
-    Vector NormalV(void);
-    Vector NormalN(void);
-    ExprVector NormalExprsU(void);
-    ExprVector NormalExprsV(void);
-    ExprVector NormalExprsN(void);
+    Vector NormalU();
+    Vector NormalV();
+    Vector NormalN();
+    ExprVector NormalExprsU();
+    ExprVector NormalExprsV();
+    ExprVector NormalExprsN();
 
-    Vector CubicGetStartNum(void);
-    Vector CubicGetFinishNum(void);
-    ExprVector CubicGetStartTangentExprs(void);
-    ExprVector CubicGetFinishTangentExprs(void);
-    Vector CubicGetStartTangentNum(void);
-    Vector CubicGetFinishTangentNum(void);
+    Vector CubicGetStartNum();
+    Vector CubicGetFinishNum();
+    ExprVector CubicGetStartTangentExprs();
+    ExprVector CubicGetFinishTangentExprs();
+    Vector CubicGetStartTangentNum();
+    Vector CubicGetFinishTangentNum();
 
-    bool HasEndpoints(void);
+    bool HasEndpoints();
     Vector EndpointStart();
     Vector EndpointFinish();
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 class Entity : public EntityBase {
@@ -500,11 +500,11 @@ public:
         int         data;
     } dogd; // state for drawing or getting distance (for hit testing)
     void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false, int userData = -1);
-    void DrawOrGetDistance(void);
+    void DrawOrGetDistance();
 
     bool IsStylable();
-    bool IsVisible(void);
-    bool PointIsFromReferences(void);
+    bool IsVisible();
+    bool PointIsFromReferences();
 
     void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic);
     void GenerateBezierCurves(SBezierList *sbl);
@@ -513,11 +513,11 @@ public:
     static void DrawAll(bool drawAsHidden);
     void Draw(bool drawAsHidden);
     double GetDistance(Point2d mp);
-    Vector GetReferencePos(void);
+    Vector GetReferencePos();
 
     void CalculateNumerical(bool forExport);
 
-    std::string DescriptionString(void);
+    std::string DescriptionString();
 
     SBezierList *GetOrGenerateBezierCurves();
     SEdgeList *GetOrGenerateEdges();
@@ -567,7 +567,7 @@ public:
 
     static const hParam NO_PARAM;
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 
@@ -643,12 +643,12 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
 
-    bool HasLabel(void);
+    bool HasLabel();
 
     void Generate(IdList<Equation,hEquation> *l);
     void GenerateReal(IdList<Equation,hEquation> *l);
     // Some helpers when generating symbolic constraint equations
-    void ModifyToSatisfy(void);
+    void ModifyToSatisfy();
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     static Expr *DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be);
     static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
@@ -657,7 +657,7 @@ public:
     static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 class Constraint : public ConstraintBase {
@@ -681,9 +681,9 @@ public:
     } dogd;
 
     double GetDistance(Point2d mp);
-    Vector GetLabelPos(void);
-    Vector GetReferencePos(void);
-    void Draw(void);
+    Vector GetLabelPos();
+    Vector GetReferencePos();
+    void Draw();
     void GetEdges(SEdgeList *sel);
     bool IsStylable();
     hStyle GetStyle() const;
@@ -692,7 +692,7 @@ public:
     void LineDrawOrGetDistance(Vector a, Vector b);
     bool IsVisible() const;
     void DrawOrGetDistance(Vector *labelPos);
-    std::string Label(void);
+    std::string Label();
     bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                         Vector offset, Vector *ref, bool trim);
@@ -706,7 +706,7 @@ public:
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);
     void DoEqualRadiusTicks(hEntity he);
 
-    std::string DescriptionString(void);
+    std::string DescriptionString();
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
     static hConstraint AddConstraint(Constraint *c);
@@ -724,8 +724,8 @@ class hEquation {
 public:
     uint32_t v;
 
-    inline bool isFromConstraint(void);
-    inline hConstraint constraint(void);
+    inline bool isFromConstraint();
+    inline hConstraint constraint();
 };
 
 class Equation {
@@ -735,7 +735,7 @@ public:
 
     Expr        *e;
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 
@@ -825,11 +825,11 @@ public:
     static std::string CnfTextHeight(const std::string &prefix);
     static std::string CnfPrefixToName(const std::string &prefix);
 
-    static void CreateAllDefaultStyles(void);
+    static void CreateAllDefaultStyles();
     static void CreateDefaultStyle(hStyle h);
     static void FillDefaultStyle(Style *s, const Default *d = NULL);
-    static void FreezeDefaultStyles(void);
-    static void LoadFactoryDefaults(void);
+    static void FreezeDefaultStyles();
+    static void LoadFactoryDefaults();
 
     static void AssignSelectionToStyle(uint32_t v);
     static uint32_t CreateCustomStyle(bool rememberForUndo = true);
@@ -850,9 +850,9 @@ public:
     static int PatternType(hStyle hs);
     static double StippleScaleMm(hStyle hs);
 
-    std::string DescriptionString(void);
+    std::string DescriptionString();
 
-    void Clear(void) {}
+    void Clear() {}
 };
 
 
@@ -863,7 +863,7 @@ inline hParam hGroup::param(int i)
 inline hEquation hGroup::equation(int i)
     { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
-inline bool hRequest::IsFromReferences(void) {
+inline bool hRequest::IsFromReferences() {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
     if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
     if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
@@ -874,25 +874,25 @@ inline hEntity hRequest::entity(int i)
 inline hParam hRequest::param(int i)
     { hParam r; r.v = (v << 16) | (uint32_t)i; return r; }
 
-inline bool hEntity::isFromRequest(void)
+inline bool hEntity::isFromRequest()
     { if(v & 0x80000000) return false; else return true; }
-inline hRequest hEntity::request(void)
+inline hRequest hEntity::request()
     { hRequest r; r.v = (v >> 16); return r; }
-inline hGroup hEntity::group(void)
+inline hGroup hEntity::group()
     { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
 inline hEquation hEntity::equation(int i)
     { hEquation r; r.v = v | 0x40000000; return r; }
 
-inline hRequest hParam::request(void)
+inline hRequest hParam::request()
     { hRequest r; r.v = (v >> 16); return r; }
 
 
 inline hEquation hConstraint::equation(int i)
     { hEquation r; r.v = (v << 16) | (uint32_t)i; return r; }
 
-inline bool hEquation::isFromConstraint(void)
+inline bool hEquation::isFromConstraint()
     { if(v & 0xc0000000) return false; else return true; }
-inline hConstraint hEquation::constraint(void)
+inline hConstraint hEquation::constraint()
     { hConstraint r; r.v = (v >> 16); return r; }
 
 // The format for entities stored on the clipboard.

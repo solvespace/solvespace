@@ -54,7 +54,7 @@ static struct {
     { NULL, 0, 0, {} }
 };
 
-void GraphicsWindow::ToolbarDraw(void) {
+void GraphicsWindow::ToolbarDraw() {
     ToolbarDrawOrHitTest(0, 0, true, NULL);
 }
 
@@ -249,7 +249,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     return withinToolbar;
 }
 
-void GraphicsWindow::TimerCallback(void) {
+void GraphicsWindow::TimerCallback() {
     SS.GW.toolbarTooltipped = SS.GW.toolbarHovered;
     PaintGraphics();
 }

@@ -5,12 +5,12 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-Vector STriangle::Normal(void) {
+Vector STriangle::Normal() {
     Vector ab = b.Minus(a), bc = c.Minus(b);
     return ab.Cross(bc);
 }
 
-double STriangle::MinAltitude(void) {
+double STriangle::MinAltitude() {
     double altA = a.DistanceToLine(b, c.Minus(b)),
            altB = b.DistanceToLine(c, a.Minus(c)),
            altC = c.DistanceToLine(a, b.Minus(a));
@@ -42,7 +42,7 @@ bool STriangle::ContainsPointProjd(Vector n, Vector p) {
     return true;
 }
 
-void STriangle::FlipNormal(void) {
+void STriangle::FlipNormal() {
     swap(a, b);
     swap(an, bn);
 }
@@ -141,7 +141,7 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
     return false;
 }
 
-void SEdgeList::Clear(void) {
+void SEdgeList::Clear() {
     l.Clear();
 }
 
@@ -270,7 +270,7 @@ bool SEdgeList::ContainsEdge(SEdge *set) {
 // Remove unnecessary edges: if two are anti-parallel then remove both, and if
 // two are parallel then remove one.
 //-----------------------------------------------------------------------------
-void SEdgeList::CullExtraneousEdges(void) {
+void SEdgeList::CullExtraneousEdges() {
     l.ClearTags();
     int i, j;
     for(i = 0; i < l.n; i++) {
@@ -295,12 +295,12 @@ void SEdgeList::CullExtraneousEdges(void) {
 // Make a kd-tree of edges. This is used for O(log(n)) implementations of stuff
 // that would naively be O(n).
 //-----------------------------------------------------------------------------
-SKdNodeEdges *SKdNodeEdges::Alloc(void) {
+SKdNodeEdges *SKdNodeEdges::Alloc() {
     SKdNodeEdges *ne = (SKdNodeEdges *)AllocTemporary(sizeof(SKdNodeEdges));
     *ne = {};
     return ne;
 }
-SEdgeLl *SEdgeLl::Alloc(void) {
+SEdgeLl *SEdgeLl::Alloc() {
     SEdgeLl *sell = (SEdgeLl *)AllocTemporary(sizeof(SEdgeLl));
     *sell = {};
     return sell;
@@ -458,7 +458,7 @@ void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
     l.RemoveTagged();
 }
 
-void SPointList::Clear(void) {
+void SPointList::Clear() {
     l.Clear();
 }
 
@@ -520,7 +520,7 @@ void SContour::CopyInto(SContour *dest) {
     }
 }
 
-void SContour::FindPointWithMinX(void) {
+void SContour::FindPointWithMinX() {
     SPoint *sp;
     xminPt = Vector::From(1e10, 1e10, 1e10);
     for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
@@ -530,7 +530,7 @@ void SContour::FindPointWithMinX(void) {
     }
 }
 
-Vector SContour::ComputeNormal(void) {
+Vector SContour::ComputeNormal() {
     Vector n = Vector::From(0, 0, 0);
 
     for(int i = 0; i < l.n - 2; i++) {
@@ -544,7 +544,7 @@ Vector SContour::ComputeNormal(void) {
     return n.WithMagnitude(1);
 }
 
-Vector SContour::AnyEdgeMidpoint(void) {
+Vector SContour::AnyEdgeMidpoint() {
     ssassert(l.n >= 2, "Need two points to find a midpoint");
     return ((l.elem[0].p).Plus(l.elem[1].p)).ScaledBy(0.5);
 }
@@ -600,12 +600,12 @@ bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) {
     return inside;
 }
 
-void SContour::Reverse(void) {
+void SContour::Reverse() {
     l.Reverse();
 }
 
 
-void SPolygon::Clear(void) {
+void SPolygon::Clear() {
     int i;
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).l.Clear();
@@ -613,7 +613,7 @@ void SPolygon::Clear(void) {
     l.Clear();
 }
 
-void SPolygon::AddEmptyContour(void) {
+void SPolygon::AddEmptyContour() {
     SContour c = {};
     l.Add(&c);
 }
@@ -625,12 +625,12 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) {
     }
 }
 
-Vector SPolygon::ComputeNormal(void) {
+Vector SPolygon::ComputeNormal() {
     if(l.n < 1) return Vector::From(0, 0, 0);
     return (l.elem[0]).ComputeNormal();
 }
 
-double SPolygon::SignedArea(void) {
+double SPolygon::SignedArea() {
     SContour *sc;
     double area = 0;
     // This returns the true area only if the contours are all oriented
@@ -657,7 +657,7 @@ int SPolygon::WindingNumberForPoint(Vector p) {
     return winding;
 }
 
-void SPolygon::FixContourDirections(void) {
+void SPolygon::FixContourDirections() {
     // At output, the contour's tag will be 1 if we reversed it, else 0.
     l.ClearTags();
 
@@ -690,12 +690,12 @@ void SPolygon::FixContourDirections(void) {
     }
 }
 
-bool SPolygon::IsEmpty(void) {
+bool SPolygon::IsEmpty() {
     if(l.n == 0 || l.elem[0].l.n == 0) return true;
     return false;
 }
 
-Vector SPolygon::AnyPoint(void) {
+Vector SPolygon::AnyPoint() {
     ssassert(!IsEmpty(), "Need at least one point");
     return l.elem[0].l.elem[0].p;
 }

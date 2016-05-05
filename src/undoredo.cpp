@@ -7,14 +7,14 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpaceUI::UndoRemember(void) {
+void SolveSpaceUI::UndoRemember() {
     unsaved = true;
     PushFromCurrentOnto(&undo);
     UndoClearStack(&redo);
     UndoEnableMenus();
 }
 
-void SolveSpaceUI::UndoUndo(void) {
+void SolveSpaceUI::UndoUndo() {
     if(undo.cnt <= 0) return;
 
     PushFromCurrentOnto(&redo);
@@ -22,7 +22,7 @@ void SolveSpaceUI::UndoUndo(void) {
     UndoEnableMenus();
 }
 
-void SolveSpaceUI::UndoRedo(void) {
+void SolveSpaceUI::UndoRedo() {
     if(redo.cnt <= 0) return;
 
     PushFromCurrentOnto(&undo);
@@ -30,7 +30,7 @@ void SolveSpaceUI::UndoRedo(void) {
     UndoEnableMenus();
 }
 
-void SolveSpaceUI::UndoEnableMenus(void) {
+void SolveSpaceUI::UndoEnableMenus() {
     EnableMenuById(GraphicsWindow::MNU_UNDO, undo.cnt > 0);
     EnableMenuById(GraphicsWindow::MNU_REDO, redo.cnt > 0);
 }

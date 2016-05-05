@@ -16,7 +16,7 @@ static int StrStartsWith(const char *str, const char *start) {
 // sketch. This does not leave the program in an acceptable state (with the
 // references created, and so on), so anyone calling this must fix that later.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ClearExisting(void) {
+void SolveSpaceUI::ClearExisting() {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
@@ -35,7 +35,7 @@ void SolveSpaceUI::ClearExisting(void) {
     SK.param.Clear();
 }
 
-hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
+hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
     Group g = {};
 
     // And an empty group, for the first stuff the user draws.
@@ -52,7 +52,7 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup(void) {
     return g.h;
 }
 
-void SolveSpaceUI::NewFile(void) {
+void SolveSpaceUI::NewFile() {
     ClearExisting();
 
     // Our initial group, that contains the references.

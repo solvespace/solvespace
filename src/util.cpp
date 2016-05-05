@@ -178,7 +178,7 @@ RgbaColor SolveSpace::CnfThawColor(RgbaColor v, const std::string &name)
 // There also may be elements in the last two columns of any row. We solve
 // without pivoting.
 //-----------------------------------------------------------------------------
-void BandedMatrix::Solve(void) {
+void BandedMatrix::Solve() {
     int i, ip, j, jp;
     double temp;
 
@@ -306,7 +306,7 @@ Quaternion Quaternion::ScaledBy(double s) {
     return q;
 }
 
-double Quaternion::Magnitude(void) {
+double Quaternion::Magnitude() {
     return sqrt(w*w + vx*vx + vy*vy + vz*vz);
 }
 
@@ -314,7 +314,7 @@ Quaternion Quaternion::WithMagnitude(double s) {
     return ScaledBy(s/Magnitude());
 }
 
-Vector Quaternion::RotationU(void) {
+Vector Quaternion::RotationU() {
     Vector v;
     v.x = w*w + vx*vx - vy*vy - vz*vz;
     v.y = 2*w *vz + 2*vx*vy;
@@ -322,7 +322,7 @@ Vector Quaternion::RotationU(void) {
     return v;
 }
 
-Vector Quaternion::RotationV(void) {
+Vector Quaternion::RotationV() {
     Vector v;
     v.x = 2*vx*vy - 2*w*vz;
     v.y = w*w - vx*vx + vy*vy - vz*vz;
@@ -330,7 +330,7 @@ Vector Quaternion::RotationV(void) {
     return v;
 }
 
-Vector Quaternion::RotationN(void) {
+Vector Quaternion::RotationN() {
     Vector v;
     v.x = 2*w*vy + 2*vx*vz;
     v.y = 2*vy*vz - 2*w*vx;
@@ -345,7 +345,7 @@ Vector Quaternion::Rotate(Vector p) {
             RotationN().ScaledBy(p.z));
 }
 
-Quaternion Quaternion::Inverse(void) {
+Quaternion Quaternion::Inverse() {
     Quaternion r;
     r.w = w;
     r.vx = -vx;
@@ -390,7 +390,7 @@ Quaternion Quaternion::Times(Quaternion b) {
     return r;
 }
 
-Quaternion Quaternion::Mirror(void) {
+Quaternion Quaternion::Mirror() {
     Vector u = RotationU(),
            v = RotationV();
     u = u.ScaledBy(-1);
@@ -457,7 +457,7 @@ Vector Vector::Minus(Vector b) {
     return r;
 }
 
-Vector Vector::Negated(void) {
+Vector Vector::Negated() {
     Vector r;
 
     r.x = -x;
@@ -614,11 +614,11 @@ Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
     return this->Plus(n.WithMagnitude(d));
 }
 
-double Vector::MagSquared(void) {
+double Vector::MagSquared() {
     return x*x + y*y + z*z;
 }
 
-double Vector::Magnitude(void) {
+double Vector::Magnitude() {
     return sqrt(x*x + y*y + z*z);
 }
 
@@ -672,14 +672,14 @@ Point2d Vector::Project2d(Vector u, Vector v) {
     return p;
 }
 
-Point2d Vector::ProjectXy(void) {
+Point2d Vector::ProjectXy() {
     Point2d p;
     p.x = x;
     p.y = y;
     return p;
 }
 
-Vector4 Vector::Project4d(void) {
+Vector4 Vector::Project4d() {
     return Vector4::From(1, x, y, z);
 }
 
@@ -695,7 +695,7 @@ double Vector::DivPivoting(Vector delta) {
     }
 }
 
-Vector Vector::ClosestOrtho(void) {
+Vector Vector::ClosestOrtho() {
     double mx = fabs(x), my = fabs(y), mz = fabs(z);
 
     if(mx > my && mx > mz) {
@@ -930,7 +930,7 @@ Vector4 Vector4::ScaledBy(double s) {
     return Vector4::From(w*s, x*s, y*s, z*s);
 }
 
-Vector Vector4::PerspectiveProject(void) {
+Vector Vector4::PerspectiveProject() {
     return Vector::From(x / w, y / w, z / w);
 }
 
@@ -971,11 +971,11 @@ double Point2d::DivPivoting(Point2d delta) const {
     }
 }
 
-double Point2d::MagSquared(void) const {
+double Point2d::MagSquared() const {
     return x*x + y*y;
 }
 
-double Point2d::Magnitude(void) const {
+double Point2d::Magnitude() const {
     return sqrt(x*x + y*y);
 }
 
@@ -1017,7 +1017,7 @@ double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool segmen
     }
 }
 
-Point2d Point2d::Normal(void) const {
+Point2d Point2d::Normal() const {
     return { y, -x };
 }
 

@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
 
-void SShell::MergeCoincidentSurfaces(void) {
+void SShell::MergeCoincidentSurfaces() {
     surface.ClearTags();
 
     int i, j;

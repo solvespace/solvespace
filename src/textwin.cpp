@@ -55,11 +55,11 @@ void TextWindow::MakeColorTable(const Color *in, float *out) {
     }
 }
 
-void TextWindow::Init(void) {
+void TextWindow::Init() {
     ClearSuper();
 }
 
-void TextWindow::ClearSuper(void) {
+void TextWindow::ClearSuper() {
     HideEditControl();
 
     // Cannot use *this = {} here because TextWindow instances
@@ -74,7 +74,7 @@ void TextWindow::ClearSuper(void) {
     Show();
 }
 
-void TextWindow::HideEditControl(void) {
+void TextWindow::HideEditControl() {
     editControl.colorPicker.show = false;
     HideTextEditControl();
 }
@@ -102,7 +102,7 @@ void TextWindow::ShowEditControlWithColorPicker(int col, RgbaColor rgb)
     ShowEditControl(col, ssprintf("%.2f, %.2f, %.2f", rgb.redF(), rgb.greenF(), rgb.blueF()));
 }
 
-void TextWindow::ClearScreen(void) {
+void TextWindow::ClearScreen() {
     int i, j;
     for(i = 0; i < MAX_ROWS; i++) {
         for(j = 0; j < MAX_COLS; j++) {
@@ -282,7 +282,7 @@ done:
 }
 
 #define gs (SS.GW.gs)
-void TextWindow::Show(void) {
+void TextWindow::Show() {
     if(!(SS.GW.pending.operation)) SS.GW.ClearPending();
 
     SS.GW.GroupSelection();
@@ -338,7 +338,7 @@ void TextWindow::Show(void) {
     InvalidateText();
 }
 
-void TextWindow::TimerCallback(void)
+void TextWindow::TimerCallback()
 {
     tooltippedIcon = hoveredIcon;
     InvalidateText();
@@ -506,7 +506,7 @@ Vector TextWindow::HsvToRgb(Vector hsv) {
     return rgb;
 }
 
-uint8_t *TextWindow::HsvPattern2d(void) {
+uint8_t *TextWindow::HsvPattern2d() {
     static uint8_t Texture[256*256*3];
     static bool Init;
 
@@ -546,7 +546,7 @@ uint8_t *TextWindow::HsvPattern1d(double h, double s) {
     return Texture;
 }
 
-void TextWindow::ColorPickerDone(void) {
+void TextWindow::ColorPickerDone() {
     RgbaColor rgb = editControl.colorPicker.rgb;
     EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()).c_str());
 }
@@ -795,7 +795,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     return true;
 }
 
-void TextWindow::Paint(void) {
+void TextWindow::Paint() {
     int width, height;
     GetTextWindowSize(&width, &height);
 
@@ -1028,7 +1028,7 @@ done:
     }
 }
 
-void TextWindow::MouseLeave(void) {
+void TextWindow::MouseLeave() {
     tooltippedIcon = NULL;
     hoveredIcon = NULL;
     hoveredRow = 0;

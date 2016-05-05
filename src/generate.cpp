@@ -28,7 +28,7 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg) {
     unsaved = true;
 }
 
-bool SolveSpaceUI::PruneOrphans(void) {
+bool SolveSpaceUI::PruneOrphans() {
     int i;
     for(i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
@@ -399,7 +399,7 @@ pruned:
     GenerateAll(type, andFindFree, genForBBox);
 }
 
-void SolveSpaceUI::ForceReferences(void) {
+void SolveSpaceUI::ForceReferences() {
     // Force the values of the parameters that define the three reference
     // coordinate systems.
     static const struct {
@@ -429,7 +429,7 @@ void SolveSpaceUI::ForceReferences(void) {
     }
 }
 
-void SolveSpaceUI::MarkDraggedParams(void) {
+void SolveSpaceUI::MarkDraggedParams() {
     sys.dragged.Clear();
 
     for(int i = -1; i < SS.GW.pending.points.n; i++) {

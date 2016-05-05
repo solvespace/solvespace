@@ -62,7 +62,7 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
     }
 }
 
-void GraphicsWindow::StartDraggingBySelection(void) {
+void GraphicsWindow::StartDraggingBySelection() {
     List<Selection> *ls = &(selection);
     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
         if(!s->entity.v) continue;
@@ -466,7 +466,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 }
 
-void GraphicsWindow::ClearPending(void) {
+void GraphicsWindow::ClearPending() {
     pending.points.Clear();
     pending = {};
     SS.ScheduleShowTW();
@@ -483,7 +483,7 @@ void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     orig.startedMoving = false;
 }
 
-void GraphicsWindow::ContextMenuListStyles(void) {
+void GraphicsWindow::ContextMenuListStyles() {
     CreateContextSubmenu();
     Style *s;
     bool empty = true;
@@ -1394,7 +1394,7 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     InvalidateGraphics();
 }
 
-void GraphicsWindow::MouseLeave(void) {
+void GraphicsWindow::MouseLeave() {
     // Un-hover everything when the mouse leaves our window, unless there's
     // currently a context menu shown.
     if(!context.active) {
@@ -1472,7 +1472,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     InvalidateGraphics();
 }
 
-void GraphicsWindow::SpaceNavigatorButtonUp(void) {
+void GraphicsWindow::SpaceNavigatorButtonUp() {
     ZoomToFit(/*includingInvisibles=*/false, /*useSelection=*/true);
     InvalidateGraphics();
 }

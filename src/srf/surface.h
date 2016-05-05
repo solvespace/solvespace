@@ -36,7 +36,7 @@ public:
         EDGE_OTHER        = 500
     };
 
-    static SBspUv *Alloc(void);
+    static SBspUv *Alloc();
     static SBspUv *From(SEdgeList *el, SSurface *srf);
 
     void ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf);
@@ -86,8 +86,8 @@ public:
     void SplitAt(double t, SBezier *bef, SBezier *aft);
     bool PointOnThisAndCurve(SBezier *sbb, Vector *p);
 
-    Vector Start(void);
-    Vector Finish(void);
+    Vector Start();
+    Vector Finish();
     bool Equals(SBezier *b);
     void MakePwlInto(SEdgeList *sel, double chordTol=0);
     void MakePwlInto(List<SCurvePt> *l, double chordTol=0);
@@ -98,11 +98,11 @@ public:
 
     void AllIntersectionsWith(SBezier *sbb, SPointList *spl);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
-    void Reverse(void);
+    void Reverse();
 
     bool IsInPlane(Vector n, double d);
     bool IsCircle(Vector axis, Vector *center, double *r);
-    bool IsRational(void);
+    bool IsRational();
 
     SBezier TransformedBy(Vector t, Quaternion q, double scale);
     SBezier InPerspective(Vector u, Vector v, Vector n,
@@ -121,9 +121,9 @@ class SBezierList {
 public:
     List<SBezier>   l;
 
-    void Clear(void);
+    void Clear();
     void ScaleSelfBy(double s);
-    void CullIdenticalBeziers(void);
+    void CullIdenticalBeziers();
     void AllIntersectionsWith(SBezierList *sblb, SPointList *spl);
     bool GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
                                         Vector *notCoplanarAt);
@@ -134,9 +134,9 @@ public:
     int             tag;
     List<SBezier>   l;
 
-    inline void Clear(void) { l.Clear(); }
-    bool IsClosed(void);
-    void Reverse(void);
+    inline void Clear() { l.Clear(); }
+    bool IsClosed();
+    void Reverse();
     void MakePwlInto(SContour *sc, double chordTol=0);
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
 
@@ -157,7 +157,7 @@ public:
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax);
     void MakePwlInto(SPolygon *sp);
-    void Clear(void);
+    void Clear();
 };
 
 class SBezierLoopSetSet {
@@ -170,7 +170,7 @@ public:
                             bool *allCoplanar, Vector *notCoplanarAt,
                             SBezierList *openContours);
     void AddOpenPath(SBezier *sb);
-    void Clear(void);
+    void Clear();
 };
 
 // Stuff for the surface trim curves: piecewise linear
@@ -212,7 +212,7 @@ public:
     SSurface *GetSurfaceA(SShell *a, SShell *b);
     SSurface *GetSurfaceB(SShell *a, SShell *b);
 
-    void Clear(void);
+    void Clear();
 };
 
 // A segment of a curve by which a surface is trimmed: indicates which curve,
@@ -297,12 +297,12 @@ public:
         int     tag;
         Point2d p;
     } Inter;
-    void WeightControlPoints(void);
-    void UnWeightControlPoints(void);
+    void WeightControlPoints();
+    void UnWeightControlPoints();
     void CopyRowOrCol(bool row, int this_ij, SSurface *src, int src_ij);
     void BlendRowOrCol(bool row, int this_ij, SSurface *a, int a_ij,
                                               SSurface *b, int b_ij);
-    double DepartureFromCoplanar(void);
+    double DepartureFromCoplanar();
     void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
                                     List<SInter> *l,
@@ -352,8 +352,8 @@ public:
                                     bool swapped);
     Vector PointAtMaybeSwapped(double u, double v, bool swapped);
 
-    void Reverse(void);
-    void Clear(void);
+    void Reverse();
+    void Clear();
 };
 
 class SShell {
@@ -386,7 +386,7 @@ public:
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                  SEdgeList *el, SShell *useCurvesFrom);
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);
-    void CleanupAfterBoolean(void);
+    void CleanupAfterBoolean();
 
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
@@ -408,15 +408,15 @@ public:
     void MakeFromTransformationOf(SShell *a,
                                     Vector trans, Quaternion q, double scale);
     void MakeFromAssemblyOf(SShell *a, SShell *b);
-    void MergeCoincidentSurfaces(void);
+    void MergeCoincidentSurfaces();
 
     void TriangulateInto(SMesh *sm);
     void MakeEdgesInto(SEdgeList *sel);
     void MakeSectionEdgesInto(Vector n, double d,
                                 SEdgeList *sel, SBezierList *sbl);
-    bool IsEmpty(void);
+    bool IsEmpty();
     void RemapFaces(Group *g, int remap);
-    void Clear(void);
+    void Clear();
 };
 
 #endif

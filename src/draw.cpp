@@ -13,24 +13,24 @@ bool GraphicsWindow::Selection::Equals(Selection *b) {
     return true;
 }
 
-bool GraphicsWindow::Selection::IsEmpty(void) {
+bool GraphicsWindow::Selection::IsEmpty() {
     if(entity.v)        return false;
     if(constraint.v)    return false;
     return true;
 }
 
-bool GraphicsWindow::Selection::HasEndpoints(void) {
+bool GraphicsWindow::Selection::HasEndpoints() {
     if(!entity.v) return false;
     Entity *e = SK.GetEntity(entity);
     return e->HasEndpoints();
 }
 
-void GraphicsWindow::Selection::Clear(void) {
+void GraphicsWindow::Selection::Clear() {
     entity.v = constraint.v = 0;
     emphasized = false;
 }
 
-void GraphicsWindow::Selection::Draw(void) {
+void GraphicsWindow::Selection::Draw() {
     Vector refp = Vector::From(0, 0, 0);
     if(entity.v) {
         Entity *e = SK.GetEntity(entity);
@@ -62,13 +62,13 @@ void GraphicsWindow::Selection::Draw(void) {
     }
 }
 
-void GraphicsWindow::ClearSelection(void) {
+void GraphicsWindow::ClearSelection() {
     selection.Clear();
     SS.ScheduleShowTW();
     InvalidateGraphics();
 }
 
-void GraphicsWindow::ClearNonexistentSelectionItems(void) {
+void GraphicsWindow::ClearNonexistentSelectionItems() {
     bool change = false;
     Selection *s;
     selection.ClearTags();
@@ -184,7 +184,7 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 // points, we test by the point location. For normals, we test by the normal's
 // associated point. For anything else, we test by any piecewise linear edge.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::SelectByMarquee(void) {
+void GraphicsWindow::SelectByMarquee() {
     Point2d begin = ProjectPoint(orig.marqueePoint);
     double xmin = min(orig.mouse.x, begin.x),
            xmax = max(orig.mouse.x, begin.x),
@@ -239,7 +239,7 @@ void GraphicsWindow::SelectByMarquee(void) {
 // constraints separately, counts of certain types of entities (circles,
 // lines, etc.), and so on.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::GroupSelection(void) {
+void GraphicsWindow::GroupSelection() {
     gs = {};
     int i;
     for(i = 0; i < selection.n && i < MAX_SELECTED; i++) {
@@ -442,7 +442,7 @@ Vector GraphicsWindow::UnProjectPoint3(Vector p) {
     return orig;
 }
 
-void GraphicsWindow::NormalizeProjectionVectors(void) {
+void GraphicsWindow::NormalizeProjectionVectors() {
     if(projRight.Magnitude() < LENGTH_EPS) {
         projRight = Vector::From(1, 0, 0);
     }
@@ -468,7 +468,7 @@ Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
     return r;
 }
 
-void GraphicsWindow::Paint(void) {
+void GraphicsWindow::Paint() {
     int i;
     havePainted = true;
 

@@ -8,7 +8,7 @@
 
 #include <set>
 
-void SMesh::Clear(void) {
+void SMesh::Clear() {
     l.Clear();
 }
 
@@ -322,7 +322,7 @@ void SMesh::MakeFromTransformationOf(SMesh *a,
     }
 }
 
-bool SMesh::IsEmpty(void) {
+bool SMesh::IsEmpty() {
     return (l.n == 0);
 }
 
@@ -356,9 +356,9 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) {
     return face;
 }
 
-STriangleLl *STriangleLl::Alloc(void)
+STriangleLl *STriangleLl::Alloc()
     { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
-SKdNode *SKdNode::Alloc(void)
+SKdNode *SKdNode::Alloc()
     { return (SKdNode *)AllocTemporary(sizeof(SKdNode)); }
 
 SKdNode *SKdNode::From(SMesh *m) {
@@ -487,7 +487,7 @@ leaf:
     return ret;
 }
 
-void SKdNode::ClearTags(void) {
+void SKdNode::ClearTags() {
     if(gt && lt) {
         gt->ClearTags();
         lt->ClearTags();

@@ -658,7 +658,7 @@ bool DxfFileWriter::OutputConstraints(IdList<Constraint,hConstraint> *constraint
     return true;
 }
 
-void DxfFileWriter::StartFile(void) {
+void DxfFileWriter::StartFile() {
     paths.clear();
 }
 
@@ -680,7 +680,7 @@ void DxfFileWriter::Bezier(SBezier *sb) {
     paths.back().beziers.push_back(sb);
 }
 
-void DxfFileWriter::FinishAndCloseFile(void) {
+void DxfFileWriter::FinishAndCloseFile() {
     dxfRW dxf(filename.c_str());
     DxfWriteInterface interface(this, &dxf);
     dxf.write(&interface, DRW::AC1021, false);
@@ -759,7 +759,7 @@ static std::string MakeStipplePattern(int pattern, double scale, char delimiter,
     return result;
 }
 
-void EpsFileWriter::StartFile(void) {
+void EpsFileWriter::StartFile() {
     fprintf(f,
 "%%!PS-Adobe-2.0\r\n"
 "%%%%Creator: SolveSpace\r\n"
@@ -871,7 +871,7 @@ void EpsFileWriter::Bezier(SBezier *sb) {
     }
 }
 
-void EpsFileWriter::FinishAndCloseFile(void) {
+void EpsFileWriter::FinishAndCloseFile() {
     fprintf(f,
 "\r\n"
 "grestore\r\n"
@@ -883,7 +883,7 @@ void EpsFileWriter::FinishAndCloseFile(void) {
 // Routines for PDF output, some extra complexity because we have to generate
 // a correct xref table.
 //-----------------------------------------------------------------------------
-void PdfFileWriter::StartFile(void) {
+void PdfFileWriter::StartFile() {
     if((ptMax.x - ptMin.x) > 200*25.4 ||
        (ptMax.y - ptMin.y) > 200*25.4)
     {
@@ -945,7 +945,7 @@ void PdfFileWriter::StartFile(void) {
     bodyStart = (uint32_t)ftell(f);
 }
 
-void PdfFileWriter::FinishAndCloseFile(void) {
+void PdfFileWriter::FinishAndCloseFile() {
     uint32_t bodyEnd = (uint32_t)ftell(f);
 
     fprintf(f,
@@ -1087,7 +1087,7 @@ void PdfFileWriter::Bezier(SBezier *sb) {
 //-----------------------------------------------------------------------------
 // Routines for SVG output
 //-----------------------------------------------------------------------------
-void SvgFileWriter::StartFile(void) {
+void SvgFileWriter::StartFile() {
     fprintf(f,
 "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.0//EN\" "
     "\"http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd\">\r\n"
@@ -1211,7 +1211,7 @@ void SvgFileWriter::Bezier(SBezier *sb) {
     }
 }
 
-void SvgFileWriter::FinishAndCloseFile(void) {
+void SvgFileWriter::FinishAndCloseFile() {
     fprintf(f, "\r\n</svg>\r\n");
     fclose(f);
 }
@@ -1223,7 +1223,7 @@ double HpglFileWriter::MmToHpglUnits(double mm) {
     return mm*40;
 }
 
-void HpglFileWriter::StartFile(void) {
+void HpglFileWriter::StartFile() {
     fprintf(f, "IN;\r\n");
     fprintf(f, "SP1;\r\n");
 }
@@ -1253,7 +1253,7 @@ void HpglFileWriter::Bezier(SBezier *sb) {
     }
 }
 
-void HpglFileWriter::FinishAndCloseFile(void) {
+void HpglFileWriter::FinishAndCloseFile() {
     fclose(f);
 }
 
@@ -1262,7 +1262,7 @@ void HpglFileWriter::FinishAndCloseFile(void) {
 // multiple passes, and to specify the feeds and depth; those parameters get
 // set in the configuration screen.
 //-----------------------------------------------------------------------------
-void GCodeFileWriter::StartFile(void) {
+void GCodeFileWriter::StartFile() {
     sel = {};
 }
 void GCodeFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
@@ -1284,7 +1284,7 @@ void GCodeFileWriter::Bezier(SBezier *sb) {
     }
 }
 
-void GCodeFileWriter::FinishAndCloseFile(void) {
+void GCodeFileWriter::FinishAndCloseFile() {
     SPolygon sp = {};
     sel.AssemblePolygon(&sp, NULL);
 
@@ -1324,7 +1324,7 @@ void GCodeFileWriter::FinishAndCloseFile(void) {
 // Routine for STEP output; just a wrapper around the general STEP stuff that
 // can also be used for surfaces or 3d curves.
 //-----------------------------------------------------------------------------
-void Step2dFileWriter::StartFile(void) {
+void Step2dFileWriter::StartFile() {
     sfw = {};
     sfw.f = f;
     sfw.WriteHeader();
@@ -1347,7 +1347,7 @@ void Step2dFileWriter::Bezier(SBezier *sb) {
     sfw.curves.Add(&c);
 }
 
-void Step2dFileWriter::FinishAndCloseFile(void) {
+void Step2dFileWriter::FinishAndCloseFile() {
     sfw.WriteWireframe();
     sfw.WriteFooter();
     fclose(f);

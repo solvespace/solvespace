@@ -16,7 +16,7 @@ const double SShell::DOTP_TOL = 1e-5;
 extern int FLAG;
 
 
-double SSurface::DepartureFromCoplanar(void) {
+double SSurface::DepartureFromCoplanar() {
     int i, j;
     int ia, ja, ib = 0, jb = 0, ic = 0, jc = 0;
     double best;
@@ -73,7 +73,7 @@ double SSurface::DepartureFromCoplanar(void) {
     return farthest;
 }
 
-void SSurface::WeightControlPoints(void) {
+void SSurface::WeightControlPoints() {
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {
@@ -81,7 +81,7 @@ void SSurface::WeightControlPoints(void) {
         }
     }
 }
-void SSurface::UnWeightControlPoints(void) {
+void SSurface::UnWeightControlPoints() {
     int i, j;
     for(i = 0; i <= degm; i++) {
         for(j = 0; j <= degn; j++) {

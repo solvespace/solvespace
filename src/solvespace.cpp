@@ -146,7 +146,7 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
     return success;
 }
 
-void SolveSpaceUI::Exit(void) {
+void SolveSpaceUI::Exit() {
     if(!OkayToStartNewFile())
         return;
 
@@ -242,20 +242,20 @@ void SolveSpaceUI::ScheduleShowTW() {
     later.showTW = true;
 }
 
-void SolveSpaceUI::DoLater(void) {
+void SolveSpaceUI::DoLater() {
     if(later.generateAll) GenerateAll();
     if(later.showTW) TW.Show();
     later = {};
 }
 
-double SolveSpaceUI::MmPerUnit(void) {
+double SolveSpaceUI::MmPerUnit() {
     if(viewUnits == UNIT_INCHES) {
         return 25.4;
     } else {
         return 1.0;
     }
 }
-const char *SolveSpaceUI::UnitName(void) {
+const char *SolveSpaceUI::UnitName() {
     if(viewUnits == UNIT_INCHES) {
         return "inch";
     } else {
@@ -275,18 +275,18 @@ double SolveSpaceUI::ExprToMm(Expr *e) {
 double SolveSpaceUI::StringToMm(const std::string &str) {
     return std::stod(str) * MmPerUnit();
 }
-double SolveSpaceUI::ChordTolMm(void) {
+double SolveSpaceUI::ChordTolMm() {
     if(exportMode) return ExportChordTolMm();
     return chordTolCalculated;
 }
-double SolveSpaceUI::ExportChordTolMm(void) {
+double SolveSpaceUI::ExportChordTolMm() {
     return exportChordTol / exportScale;
 }
-int SolveSpaceUI::GetMaxSegments(void) {
+int SolveSpaceUI::GetMaxSegments() {
     if(exportMode) return exportMaxSegments;
     return maxSegments;
 }
-int SolveSpaceUI::UnitDigitsAfterDecimal(void) {
+int SolveSpaceUI::UnitDigitsAfterDecimal() {
     return (viewUnits == UNIT_INCHES) ? afterDecimalInch : afterDecimalMm;
 }
 void SolveSpaceUI::SetUnitDigitsAfterDecimal(int v) {
@@ -297,7 +297,7 @@ void SolveSpaceUI::SetUnitDigitsAfterDecimal(int v) {
     }
 }
 
-double SolveSpaceUI::CameraTangent(void) {
+double SolveSpaceUI::CameraTangent() {
     if(!usePerspectiveProj) {
         return 0;
     } else {
@@ -305,7 +305,7 @@ double SolveSpaceUI::CameraTangent(void) {
     }
 }
 
-void SolveSpaceUI::AfterNewFile(void) {
+void SolveSpaceUI::AfterNewFile() {
     // Clear out the traced point, which is no longer valid
     traced.point = Entity::NO_ENTITY;
     traced.path.l.Clear();
@@ -413,7 +413,7 @@ void SolveSpaceUI::RemoveAutosave()
     ssremove(autosaveFile);
 }
 
-bool SolveSpaceUI::OkayToStartNewFile(void) {
+bool SolveSpaceUI::OkayToStartNewFile() {
     if(!unsaved) return true;
 
     switch(SaveFileYesNoCancel()) {
@@ -430,7 +430,7 @@ bool SolveSpaceUI::OkayToStartNewFile(void) {
     }
 }
 
-void SolveSpaceUI::UpdateWindowTitle(void) {
+void SolveSpaceUI::UpdateWindowTitle() {
     SetCurrentFilename(saveFile);
 }
 
@@ -827,7 +827,7 @@ void SolveSpaceUI::MenuHelp(int id) {
     }
 }
 
-void SolveSpaceUI::Clear(void) {
+void SolveSpaceUI::Clear() {
     sys.Clear();
     for(int i = 0; i < MAX_UNDO; i++) {
         if(i < undo.cnt) undo.d[i].Clear();
@@ -835,7 +835,7 @@ void SolveSpaceUI::Clear(void) {
     }
 }
 
-void Sketch::Clear(void) {
+void Sketch::Clear() {
     group.Clear();
     groupOrder.Clear();
     constraint.Clear();

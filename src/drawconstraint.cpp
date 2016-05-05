@@ -40,7 +40,7 @@ static void LineCallback(void *fndata, Vector a, Vector b)
     c->LineDrawOrGetDistance(a, b);
 }
 
-std::string Constraint::Label(void) {
+std::string Constraint::Label() {
     std::string result;
     if(type == ANGLE) {
         if(valA == floor(valA)) {
@@ -1170,7 +1170,7 @@ s:
     }
 }
 
-void Constraint::Draw(void) {
+void Constraint::Draw() {
     dogd.drawing = true;
     dogd.sel = NULL;
     hStyle hs = GetStyle();
@@ -1192,7 +1192,7 @@ double Constraint::GetDistance(Point2d mp) {
     return dogd.dmin;
 }
 
-Vector Constraint::GetLabelPos(void) {
+Vector Constraint::GetLabelPos() {
     dogd.drawing = false;
     dogd.sel = NULL;
     dogd.mp.x = 0; dogd.mp.y = 0;
@@ -1203,7 +1203,7 @@ Vector Constraint::GetLabelPos(void) {
     return p;
 }
 
-Vector Constraint::GetReferencePos(void) {
+Vector Constraint::GetReferencePos() {
     dogd.drawing = false;
     dogd.sel = NULL;
 

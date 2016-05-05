@@ -82,7 +82,7 @@ ExprVector ExprVector::WithMagnitude(Expr *s) {
     return ScaledBy(s->Div(m));
 }
 
-Expr *ExprVector::Magnitude(void) {
+Expr *ExprVector::Magnitude() {
     Expr *r;
     r =         x->Square();
     r = r->Plus(y->Square());
@@ -90,7 +90,7 @@ Expr *ExprVector::Magnitude(void) {
     return r->Sqrt();
 }
 
-Vector ExprVector::Eval(void) {
+Vector ExprVector::Eval() {
     Vector r;
     r.x = x->Eval();
     r.y = y->Eval();
@@ -126,7 +126,7 @@ ExprQuaternion ExprQuaternion::From(Quaternion qn) {
     return qe;
 }
 
-ExprVector ExprQuaternion::RotationU(void) {
+ExprVector ExprQuaternion::RotationU() {
     ExprVector u;
     Expr *two = Expr::From(2);
 
@@ -144,7 +144,7 @@ ExprVector ExprQuaternion::RotationU(void) {
     return u;
 }
 
-ExprVector ExprQuaternion::RotationV(void) {
+ExprVector ExprQuaternion::RotationV() {
     ExprVector v;
     Expr *two = Expr::From(2);
 
@@ -162,7 +162,7 @@ ExprVector ExprQuaternion::RotationV(void) {
     return v;
 }
 
-ExprVector ExprQuaternion::RotationN(void) {
+ExprVector ExprQuaternion::RotationN() {
     ExprVector n;
     Expr *two = Expr::From(2);
 
@@ -203,7 +203,7 @@ ExprQuaternion ExprQuaternion::Times(ExprQuaternion b) {
     return r;
 }
 
-Expr *ExprQuaternion::Magnitude(void) {
+Expr *ExprQuaternion::Magnitude() {
     return ((w ->Square())->Plus(
             (vx->Square())->Plus(
             (vy->Square())->Plus(
@@ -262,7 +262,7 @@ Expr *Expr::AnyOp(int newOp, Expr *b) {
     return r;
 }
 
-int Expr::Children(void) {
+int Expr::Children() {
     switch(op) {
         case PARAM:
         case PARAM_PTR:
@@ -288,7 +288,7 @@ int Expr::Children(void) {
     }
 }
 
-int Expr::Nodes(void) {
+int Expr::Nodes() {
     switch(Children()) {
         case 0: return 1;
         case 1: return 1 + a->Nodes();
@@ -297,7 +297,7 @@ int Expr::Nodes(void) {
     }
 }
 
-Expr *Expr::DeepCopy(void) {
+Expr *Expr::DeepCopy() {
     Expr *n = AllocExpr();
     *n = *this;
     int c = n->Children();
@@ -333,7 +333,7 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
     return n;
 }
 
-double Expr::Eval(void) {
+double Expr::Eval() {
     switch(op) {
         case PARAM:         return SK.GetParam(parh)->val;
         case PARAM_PTR:     return parp->val;
@@ -400,7 +400,7 @@ Expr *Expr::PartialWrt(hParam p) {
     }
 }
 
-uint64_t Expr::ParamsUsed(void) {
+uint64_t Expr::ParamsUsed() {
     uint64_t r = 0;
     if(op == PARAM)     r |= ((uint64_t)1 << (parh.v % 61));
     if(op == PARAM_PTR) r |= ((uint64_t)1 << (parp->h.v % 61));
@@ -424,7 +424,7 @@ bool Expr::DependsOn(hParam p) {
 bool Expr::Tol(double a, double b) {
     return fabs(a - b) < 0.001;
 }
-Expr *Expr::FoldConstants(void) {
+Expr *Expr::FoldConstants() {
     Expr *n = AllocExpr();
     *n = *this;
 
@@ -546,7 +546,7 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 // Routines to pretty-print an expression. Mostly for debugging.
 //-----------------------------------------------------------------------------
 
-std::string Expr::Print(void) {
+std::string Expr::Print() {
 
     char c;
     switch(op) {
@@ -597,11 +597,11 @@ void Expr::PushOperator(Expr *e) {
     if(OperatorsP >= MAX_UNPARSED) throw "operator stack full!";
     Operators[OperatorsP++] = e;
 }
-Expr *Expr::TopOperator(void) {
+Expr *Expr::TopOperator() {
     if(OperatorsP <= 0) throw "operator stack empty (get top)";
     return Operators[OperatorsP-1];
 }
-Expr *Expr::PopOperator(void) {
+Expr *Expr::PopOperator() {
     if(OperatorsP <= 0) throw "operator stack empty (pop)";
     return Operators[--OperatorsP];
 }
@@ -609,15 +609,15 @@ void Expr::PushOperand(Expr *e) {
     if(OperandsP >= MAX_UNPARSED) throw "operand stack full";
     Operands[OperandsP++] = e;
 }
-Expr *Expr::PopOperand(void) {
+Expr *Expr::PopOperand() {
     if(OperandsP <= 0) throw "operand stack empty";
     return Operands[--OperandsP];
 }
-Expr *Expr::Next(void) {
+Expr *Expr::Next() {
     if(UnparsedP >= UnparsedCnt) return NULL;
     return Unparsed[UnparsedP];
 }
-void Expr::Consume(void) {
+void Expr::Consume() {
     if(UnparsedP >= UnparsedCnt) throw "no token to consume";
     UnparsedP++;
 }
@@ -642,7 +642,7 @@ int Expr::Precedence(Expr *e) {
     }
 }
 
-void Expr::Reduce(void) {
+void Expr::Reduce() {
     Expr *a, *b;
 
     Expr *op = PopOperator();
@@ -676,7 +676,7 @@ void Expr::ReduceAndPush(Expr *n) {
     PushOperator(n);
 }
 
-void Expr::Parse(void) {
+void Expr::Parse() {
     Expr *e = AllocExpr();
     e->op = ALL_RESOLVED;
     PushOperator(e);

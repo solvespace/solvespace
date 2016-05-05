@@ -60,7 +60,7 @@ public:
     Expr() { }
     Expr(double val) : op(CONSTANT) { v = val; }
 
-    static inline Expr *AllocExpr(void)
+    static inline Expr *AllocExpr()
         { return (Expr *)AllocTemporary(sizeof(Expr)); }
 
     static Expr *From(hParam p);
@@ -72,36 +72,36 @@ public:
     inline Expr *Times(Expr *b_) { return AnyOp(TIMES, b_); }
     inline Expr *Div  (Expr *b_) { return AnyOp(DIV,   b_); }
 
-    inline Expr *Negate(void) { return AnyOp(NEGATE, NULL); }
-    inline Expr *Sqrt  (void) { return AnyOp(SQRT,   NULL); }
-    inline Expr *Square(void) { return AnyOp(SQUARE, NULL); }
-    inline Expr *Sin   (void) { return AnyOp(SIN,    NULL); }
-    inline Expr *Cos   (void) { return AnyOp(COS,    NULL); }
-    inline Expr *ASin  (void) { return AnyOp(ASIN,   NULL); }
-    inline Expr *ACos  (void) { return AnyOp(ACOS,   NULL); }
+    inline Expr *Negate() { return AnyOp(NEGATE, NULL); }
+    inline Expr *Sqrt  () { return AnyOp(SQRT,   NULL); }
+    inline Expr *Square() { return AnyOp(SQUARE, NULL); }
+    inline Expr *Sin   () { return AnyOp(SIN,    NULL); }
+    inline Expr *Cos   () { return AnyOp(COS,    NULL); }
+    inline Expr *ASin  () { return AnyOp(ASIN,   NULL); }
+    inline Expr *ACos  () { return AnyOp(ACOS,   NULL); }
 
     Expr *PartialWrt(hParam p);
-    double Eval(void);
-    uint64_t ParamsUsed(void);
+    double Eval();
+    uint64_t ParamsUsed();
     bool DependsOn(hParam p);
     static bool Tol(double a, double b);
-    Expr *FoldConstants(void);
+    Expr *FoldConstants();
     void Substitute(hParam oldh, hParam newh);
 
     static const hParam NO_PARAMS, MULTIPLE_PARAMS;
     hParam ReferencedParams(ParamList *pl);
 
-    void ParamsToPointers(void);
+    void ParamsToPointers();
 
-    std::string Print(void);
+    std::string Print();
 
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
-    int Children(void);
+    int Children();
     // total number of nodes in the tree
-    int Nodes(void);
+    int Nodes();
 
     // Make a simple copy
-    Expr *DeepCopy(void);
+    Expr *DeepCopy();
     // Make a copy, with the parameters (usually referenced by hParam)
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
@@ -110,21 +110,21 @@ public:
 
     static Expr *From(const char *in, bool popUpError);
     static void  Lex(const char *in);
-    static Expr *Next(void);
-    static void  Consume(void);
+    static Expr *Next();
+    static void  Consume();
 
     static void PushOperator(Expr *e);
-    static Expr *PopOperator(void);
-    static Expr *TopOperator(void);
+    static Expr *PopOperator();
+    static Expr *TopOperator();
     static void PushOperand(Expr *e);
-    static Expr *PopOperand(void);
+    static Expr *PopOperand();
 
-    static void Reduce(void);
+    static void Reduce();
     static void ReduceAndPush(Expr *e);
     static int Precedence(Expr *e);
 
     static int Precedence(int op);
-    static void Parse(void);
+    static void Parse();
 };
 
 class ExprVector {
@@ -142,9 +142,9 @@ public:
     ExprVector Cross(ExprVector b);
     ExprVector ScaledBy(Expr *s);
     ExprVector WithMagnitude(Expr *s);
-    Expr *Magnitude(void);
+    Expr *Magnitude();
 
-    Vector Eval(void);
+    Vector Eval();
 };
 
 class ExprQuaternion {
@@ -155,14 +155,14 @@ public:
     static ExprQuaternion From(Quaternion qn);
     static ExprQuaternion From(hParam w, hParam vx, hParam vy, hParam vz);
 
-    ExprVector RotationU(void);
-    ExprVector RotationV(void);
-    ExprVector RotationN(void);
+    ExprVector RotationU();
+    ExprVector RotationV();
+    ExprVector RotationN();
 
     ExprVector Rotate(ExprVector p);
     ExprQuaternion Times(ExprQuaternion b);
 
-    Expr *Magnitude(void);
+    Expr *Magnitude();
 };
 
 #endif

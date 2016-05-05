@@ -51,7 +51,7 @@ std::string Style::CnfPrefixToName(const std::string &prefix) {
     return name;
 }
 
-void Style::CreateAllDefaultStyles(void) {
+void Style::CreateAllDefaultStyles() {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
         (void)Get(d->h);
@@ -102,7 +102,7 @@ void Style::FillDefaultStyle(Style *s, const Default *d) {
     s->zIndex        = d->zIndex;
 }
 
-void Style::LoadFactoryDefaults(void) {
+void Style::LoadFactoryDefaults() {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
         Style *s = Get(d->h);
@@ -113,7 +113,7 @@ void Style::LoadFactoryDefaults(void) {
     SS.bgImage.fromFile = NULL;
 }
 
-void Style::FreezeDefaultStyles(void) {
+void Style::FreezeDefaultStyles() {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
         CnfFreezeColor(Color(d->h), CnfColor(d->cnfPrefix));
@@ -337,7 +337,7 @@ double Style::StippleScaleMm(hStyle hs) {
     return 1.0;
 }
 
-std::string Style::DescriptionString(void) {
+std::string Style::DescriptionString() {
     if(name.empty()) {
         return ssprintf("s%03x-(unnamed)", h.v);
     } else {
@@ -447,7 +447,7 @@ void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {
     SS.TW.ShowEditControl(10, ssprintf("%.3f", SS.bgImage.scale * SS.MmPerUnit()));
 }
 
-void TextWindow::ShowListOfStyles(void) {
+void TextWindow::ShowListOfStyles() {
     Printf(true, "%Ft color  style-name");
 
     bool darkbg = false;
@@ -755,7 +755,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
     return true;
 }
 
-void TextWindow::ShowStyleInfo(void) {
+void TextWindow::ShowStyleInfo() {
     Printf(true, "%Fl%f%Ll(back to list of styles)%E", &ScreenShowListOfStyles);
 
     Style *s = Style::Get(shown.style);

@@ -67,7 +67,7 @@ bool System::WriteJacobian(int tag) {
     return true;
 }
 
-void System::EvalJacobian(void) {
+void System::EvalJacobian() {
     int i, j;
     for(i = 0; i < mat.m; i++) {
         for(j = 0; j < mat.n; j++) {
@@ -84,7 +84,7 @@ bool System::IsDragged(hParam p) {
     return false;
 }
 
-void System::SolveBySubstitution(void) {
+void System::SolveBySubstitution() {
     int i;
     for(i = 0; i < eq.n; i++) {
         Equation *teq = &(eq.elem[i]);
@@ -135,7 +135,7 @@ void System::SolveBySubstitution(void) {
 // in place. A row (~equation) is considered to be all zeros if its magnitude
 // is less than the tolerance RANK_MAG_TOLERANCE.
 //-----------------------------------------------------------------------------
-int System::CalculateRank(void) {
+int System::CalculateRank() {
     // Actually work with magnitudes squared, not the magnitudes
     double rowMag[MAX_UNKNOWNS] = {};
     double tol = RANK_MAG_TOLERANCE*RANK_MAG_TOLERANCE;
@@ -172,7 +172,7 @@ int System::CalculateRank(void) {
     return rank;
 }
 
-bool System::TestRank(void) {
+bool System::TestRank() {
     EvalJacobian();
     return CalculateRank() == mat.m;
 }
@@ -233,7 +233,7 @@ bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
     return true;
 }
 
-bool System::SolveLeastSquares(void) {
+bool System::SolveLeastSquares() {
     int r, c, i;
 
     // Scale the columns; this scale weights the parameters for the least
@@ -532,7 +532,7 @@ didnt_converge:
     return rankOk ? System::DIDNT_CONVERGE : System::REDUNDANT_DIDNT_CONVERGE;
 }
 
-void System::Clear(void) {
+void System::Clear() {
     entity.Clear();
     param.Clear();
     eq.Clear();

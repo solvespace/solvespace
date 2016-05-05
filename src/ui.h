@@ -70,10 +70,10 @@ public:
     static bool SPACER;
 
     // These are called by the platform-specific code.
-    void Paint(void);
+    void Paint();
     void MouseEvent(bool isClick, bool leftDown, double x, double y);
     void MouseScroll(double x, double y, int delta);
-    void MouseLeave(void);
+    void MouseLeave();
     void ScrollbarEvent(int newPos);
 
     enum {
@@ -82,22 +82,22 @@ public:
         CLICK = 2
     };
     void DrawOrHitTestIcons(int how, double mx, double my);
-    void TimerCallback(void);
+    void TimerCallback();
     Point2d oldMousePos;
     HideShowIcon *hoveredIcon, *tooltippedIcon;
 
     Vector HsvToRgb(Vector hsv);
-    uint8_t *HsvPattern2d(void);
+    uint8_t *HsvPattern2d();
     uint8_t *HsvPattern1d(double h, double s);
-    void ColorPickerDone(void);
+    void ColorPickerDone();
     bool DrawOrHitTestColorPicker(int how, bool leftDown, double x, double y);
 
-    void Init(void);
+    void Init();
     void MakeColorTable(const Color *in, float *out);
     void Printf(bool half, const char *fmt, ...);
-    void ClearScreen(void);
+    void ClearScreen();
 
-    void Show(void);
+    void Show();
 
     // State for the screen that we are showing in the text window.
     enum {
@@ -209,27 +209,27 @@ public:
         }       colorPicker;
     } editControl;
 
-    void HideEditControl(void);
+    void HideEditControl();
     void ShowEditControl(int col, const std::string &str, int halfRow = -1);
     void ShowEditControlWithColorPicker(int col, RgbaColor rgb);
 
-    void ClearSuper(void);
+    void ClearSuper();
 
     void ShowHeader(bool withNav);
     // These are self-contained screens, that show some information about
     // the sketch.
-    void ShowListOfGroups(void);
-    void ShowGroupInfo(void);
-    void ShowGroupSolveInfo(void);
-    void ShowConfiguration(void);
-    void ShowListOfStyles(void);
-    void ShowStyleInfo(void);
-    void ShowStepDimension(void);
-    void ShowPasteTransformed(void);
-    void ShowEditView(void);
-    void ShowTangentArc(void);
+    void ShowListOfGroups();
+    void ShowGroupInfo();
+    void ShowGroupSolveInfo();
+    void ShowConfiguration();
+    void ShowListOfStyles();
+    void ShowStyleInfo();
+    void ShowStepDimension();
+    void ShowPasteTransformed();
+    void ShowEditView();
+    void ShowTangentArc();
     // Special screen, based on selection
-    void DescribeSelection(void);
+    void DescribeSelection();
 
     void GoToScreen(int screen);
 
@@ -333,7 +333,7 @@ public:
 
 class GraphicsWindow {
 public:
-    void Init(void);
+    void Init();
 
     // This table describes the top-level menus in the graphics winodw.
     typedef enum {
@@ -465,8 +465,8 @@ public:
     static void MenuView(int id);
     static void MenuEdit(int id);
     static void MenuRequest(int id);
-    void DeleteSelection(void);
-    void CopySelection(void);
+    void DeleteSelection();
+    void CopySelection();
     void PasteClipboard(Vector trans, double theta, double scale);
     static void MenuClipboard(int id);
 
@@ -511,14 +511,14 @@ public:
         bool        active;
     }       context;
 
-    void NormalizeProjectionVectors(void);
+    void NormalizeProjectionVectors();
     Point2d ProjectPoint(Vector p);
     Vector ProjectPoint3(Vector p);
     Vector ProjectPoint4(Vector p, double *w);
     Vector UnProjectPoint(Point2d p);
     Vector UnProjectPoint3(Vector p);
     void AnimateOnto(Quaternion quatf, Vector offsetf);
-    void AnimateOntoWorkplane(void);
+    void AnimateOntoWorkplane();
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
                                            double *wmin, bool usePerspective);
@@ -527,11 +527,11 @@ public:
     void ZoomToFit(bool includingInvisibles, bool useSelection = false);
 
     hGroup  activeGroup;
-    void EnsureValidActives(void);
-    bool LockedInWorkplane(void);
-    void SetWorkplaneFreeIn3d(void);
-    hEntity ActiveWorkplane(void);
-    void ForceTextWindowShown(void);
+    void EnsureValidActives();
+    bool LockedInWorkplane();
+    void SetWorkplaneFreeIn3d();
+    hEntity ActiveWorkplane();
+    void ForceTextWindowShown();
 
     // Operations that must be completed by doing something with the mouse
     // are noted here. These occupy the same space as the menu ids.
@@ -569,7 +569,7 @@ public:
 
         SuggestedConstraint  suggestion;
     } pending;
-    void ClearPending(void);
+    void ClearPending();
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
@@ -577,7 +577,7 @@ public:
 
     Vector SnapToGrid(Vector p);
     bool ConstrainPointByHovered(hEntity pt);
-    void DeleteTaggedRequests(void);
+    void DeleteTaggedRequests();
     hRequest AddRequest(int type, bool rememberForUndo);
     hRequest AddRequest(int type);
 
@@ -591,14 +591,14 @@ public:
         void MakeFromEntity(hEntity he, bool reverse);
         Vector PointAt(double t);
         Vector TangentAt(double t);
-        double LengthForAuto(void);
+        double LengthForAuto();
 
         hRequest CreateRequestTrimmedTo(double t, bool extraConstraints,
             hEntity orig, hEntity arc, bool arcFinish);
         void ConstrainPointIfCoincident(hEntity hpt);
     };
-    void MakeTangentArc(void);
-    void SplitLinesOrCurves(void);
+    void MakeTangentArc();
+    void SplitLinesOrCurves();
     hEntity SplitEntity(hEntity he, Vector pinter);
     hEntity SplitLine(hEntity he, Vector pinter);
     hEntity SplitCircle(hEntity he, Vector pinter);
@@ -617,19 +617,19 @@ public:
         hConstraint constraint;
         bool        emphasized;
 
-        void Draw(void);
+        void Draw();
 
-        void Clear(void);
-        bool IsEmpty(void);
+        void Clear();
+        bool IsEmpty();
         bool Equals(Selection *b);
-        bool HasEndpoints(void);
+        bool HasEndpoints();
     };
     Selection hover;
     bool hoverWasSelectedOnMousedown;
     List<Selection> selection;
     void HitTestMakeSelection(Point2d mp);
-    void ClearSelection(void);
-    void ClearNonexistentSelectionItems(void);
+    void ClearSelection();
+    void ClearNonexistentSelectionItems();
     enum { MAX_SELECTED = 32 };
     struct {
         hEntity     point[MAX_SELECTED];
@@ -655,15 +655,15 @@ public:
         int         withEndpoints;
         int         n;
     } gs;
-    void GroupSelection(void);
+    void GroupSelection();
     bool IsSelected(Selection *s);
     bool IsSelected(hEntity he);
     void MakeSelected(hEntity he);
     void MakeSelected(Selection *s);
     void MakeUnselected(hEntity he, bool coincidentPointTrick);
     void MakeUnselected(Selection *s, bool coincidentPointTrick);
-    void SelectByMarquee(void);
-    void ClearSuper(void);
+    void SelectByMarquee();
+    void ClearSuper();
 
     enum {
         CMNU_UNSELECT_ALL     = 0x100,
@@ -686,15 +686,15 @@ public:
         CMNU_ADD_SPLINE_PT    = 0x142,
         CMNU_FIRST_STYLE      = 0x40000000
     };
-    void ContextMenuListStyles(void);
+    void ContextMenuListStyles();
     int64_t contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menuHit);
-    void ToolbarDraw(void);
+    void ToolbarDraw();
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
-    static void TimerCallback(void);
+    static void TimerCallback();
     int toolbarHovered;
     int toolbarTooltipped;
     int toolbarMouseX, toolbarMouseY;
@@ -717,12 +717,12 @@ public:
 
     void AddPointToDraggedList(hEntity hp);
     void StartDraggingByEntity(hEntity he);
-    void StartDraggingBySelection(void);
+    void StartDraggingBySelection();
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
     // These are called by the platform-specific code.
-    void Paint(void);
+    void Paint();
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
                                 bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);
@@ -731,7 +731,7 @@ public:
     void MouseMiddleOrRightDown(double x, double y);
     void MouseRightUp(double x, double y);
     void MouseScroll(double x, double y, int delta);
-    void MouseLeave(void);
+    void MouseLeave();
     bool KeyDown(int c);
     void EditControlDone(const char *s);
 
@@ -739,7 +739,7 @@ public:
     hGroup lastSpaceNavigatorGroup;
     void SpaceNavigatorMoved(double tx, double ty, double tz,
                              double rx, double ry, double rz, bool shiftDown);
-    void SpaceNavigatorButtonUp(void);
+    void SpaceNavigatorButtonUp();
 };
 
 

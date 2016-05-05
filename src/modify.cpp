@@ -133,7 +133,7 @@ void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
         v = wrkpln->NormalV();
     } else ssassert(false, "Unexpected entity type");
 }
-double GraphicsWindow::ParametricCurve::LengthForAuto(void) {
+double GraphicsWindow::ParametricCurve::LengthForAuto() {
     if(isLine) {
         // Allow a third of the line to disappear with auto radius
         return (p1.Minus(p0)).Magnitude() / 3;
@@ -232,7 +232,7 @@ void GraphicsWindow::ParametricCurve::ConstrainPointIfCoincident(hEntity hpt) {
 // non-construction line segments that join at this point, and create a
 // tangent arc joining them.
 //-----------------------------------------------------------------------------
-void GraphicsWindow::MakeTangentArc(void) {
+void GraphicsWindow::MakeTangentArc() {
     if(!LockedInWorkplane()) {
         Error("Must be sketching in workplane to create tangent "
               "arc.");
@@ -599,7 +599,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     return ret;
 }
 
-void GraphicsWindow::SplitLinesOrCurves(void) {
+void GraphicsWindow::SplitLinesOrCurves() {
     if(!LockedInWorkplane()) {
         Error("Must be sketching in workplane to split.");
         return;

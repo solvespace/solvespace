@@ -89,7 +89,7 @@ void TextWindow::ScreenShowEditView(int link, uint32_t v) {
 void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     OpenWebsite("http://solvespace.com/txtlink");
 }
-void TextWindow::ShowListOfGroups(void) {
+void TextWindow::ShowListOfGroups() {
     const char *radioTrue  = " " RADIO_TRUE  " ",
                *radioFalse = " " RADIO_FALSE " ",
                *checkTrue  = " " CHECK_TRUE  " ",
@@ -275,7 +275,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
     // group if it was removed.
     SS.GW.ClearSuper();
 }
-void TextWindow::ShowGroupInfo(void) {
+void TextWindow::ShowGroupInfo() {
     Group *g = SK.GetGroup(shown.group);
     const char *s = "???";
 
@@ -474,7 +474,7 @@ void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
     SS.TW.shown.screen = SCREEN_GROUP_INFO;
     SS.TW.Show();
 }
-void TextWindow::ShowGroupSolveInfo(void) {
+void TextWindow::ShowGroupSolveInfo() {
     Group *g = SK.GetGroup(shown.group);
     if(g->IsSolvedOkay()) {
         // Go back to the default group info screen
@@ -569,7 +569,7 @@ void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
     InvalidateGraphics();
     SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
 }
-void TextWindow::ShowStepDimension(void) {
+void TextWindow::ShowStepDimension() {
     Constraint *c = SK.constraint.FindByIdNoOops(shown.constraint);
     if(!c) {
         shown.screen = SCREEN_LIST_OF_GROUPS;
@@ -613,7 +613,7 @@ void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
         case 'd': SS.tangentArcDeleteOld = !SS.tangentArcDeleteOld; break;
     }
 }
-void TextWindow::ShowTangentArc(void) {
+void TextWindow::ShowTangentArc() {
     Printf(true, "%FtTANGENT ARC PARAMETERS%E");
 
     Printf(true,  "%Ft radius of created arc%E");

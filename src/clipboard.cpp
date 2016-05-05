@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpaceUI::Clipboard::Clear(void) {
+void SolveSpaceUI::Clipboard::Clear() {
     c.Clear();
     r.Clear();
 }
@@ -46,7 +46,7 @@ hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
     ssassert(false, "Expected to find entity in some clipboard request");
 }
 
-void GraphicsWindow::DeleteSelection(void) {
+void GraphicsWindow::DeleteSelection() {
     SK.request.ClearTags();
     SK.constraint.ClearTags();
     List<Selection> *ls = &(selection);
@@ -69,7 +69,7 @@ void GraphicsWindow::DeleteSelection(void) {
     DeleteTaggedRequests();
 }
 
-void GraphicsWindow::CopySelection(void) {
+void GraphicsWindow::CopySelection() {
     SS.clipboard.Clear();
 
     Entity *wrkpl  = SK.GetEntity(ActiveWorkplane());
@@ -386,7 +386,7 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
     }
 }
 
-void TextWindow::ShowPasteTransformed(void) {
+void TextWindow::ShowPasteTransformed() {
     Printf(true, "%FtPASTE TRANSFORMED%E");
     Printf(true,  "%Ba   %Ftrepeat%E    %d time%s %Fl%Lt%f[change]%E",
         shown.paste.times, (shown.paste.times == 1) ? "" : "s",

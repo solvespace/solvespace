@@ -203,12 +203,12 @@ void SolveSpace::AddContextMenuItem(const char *label, int id)
     }
 }
 
-void SolveSpace::CreateContextSubmenu(void)
+void SolveSpace::CreateContextSubmenu()
 {
     ContextSubmenu = CreatePopupMenu();
 }
 
-int SolveSpace::ShowContextMenu(void)
+int SolveSpace::ShowContextMenu()
 {
     POINT p;
     GetCursorPos(&p);
@@ -268,7 +268,7 @@ void SolveSpace::OpenWebsite(const char *url) {
     ShellExecuteW(GraphicsWnd, L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
-void SolveSpace::ExitNow(void) {
+void SolveSpace::ExitNow() {
     PostQuitMessage(0);
 }
 
@@ -710,11 +710,11 @@ static bool ProcessKeyDown(WPARAM wParam)
     return false;
 }
 
-void SolveSpace::ToggleMenuBar(void)
+void SolveSpace::ToggleMenuBar()
 {
     // Implement me
 }
-bool SolveSpace::MenuBarIsVisible(void)
+bool SolveSpace::MenuBarIsVisible()
 {
     // Implement me
     return true;
@@ -752,27 +752,27 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
     wglMakeCurrent(hdc, *glrc);
 }
 
-void SolveSpace::PaintGraphics(void)
+void SolveSpace::PaintGraphics()
 {
     SS.GW.Paint();
     SwapBuffers(GetDC(GraphicsWnd));
 }
-void SolveSpace::InvalidateGraphics(void)
+void SolveSpace::InvalidateGraphics()
 {
     InvalidateRect(GraphicsWnd, NULL, false);
 }
 
-void SolveSpace::ToggleFullScreen(void)
+void SolveSpace::ToggleFullScreen()
 {
     // Implement me
 }
-bool SolveSpace::FullScreenIsActive(void)
+bool SolveSpace::FullScreenIsActive()
 {
     // Implement me
     return false;
 }
 
-int64_t SolveSpace::GetMilliseconds(void)
+int64_t SolveSpace::GetMilliseconds()
 {
     LARGE_INTEGER t, f;
     QueryPerformanceCounter(&t);
@@ -781,7 +781,7 @@ int64_t SolveSpace::GetMilliseconds(void)
     return (int64_t)d;
 }
 
-void SolveSpace::InvalidateText(void)
+void SolveSpace::InvalidateText()
 {
     InvalidateRect(TextWnd, NULL, false);
 }
@@ -830,11 +830,11 @@ void SolveSpace::ShowTextEditControl(int x, int y, const std::string &str)
     ShowEditControl(TextEditControl, x, y, TextWindow::CHAR_HEIGHT, 30,
                     /*isMonospace=*/true, Widen(str));
 }
-void SolveSpace::HideTextEditControl(void)
+void SolveSpace::HideTextEditControl()
 {
     ShowWindow(TextEditControl, SW_HIDE);
 }
-bool SolveSpace::TextEditControlIsVisible(void)
+bool SolveSpace::TextEditControlIsVisible()
 {
     return IsWindowVisible(TextEditControl) ? true : false;
 }
@@ -851,11 +851,11 @@ void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight, int minWi
     ShowEditControl(GraphicsEditControl, x, y, fontHeight, minWidthChars,
                     /*isMonospace=*/false, Widen(str));
 }
-void SolveSpace::HideGraphicsEditControl(void)
+void SolveSpace::HideGraphicsEditControl()
 {
     ShowWindow(GraphicsEditControl, SW_HIDE);
 }
-bool SolveSpace::GraphicsEditControlIsVisible(void)
+bool SolveSpace::GraphicsEditControlIsVisible()
 {
     return IsWindowVisible(GraphicsEditControl) ? true : false;
 }
@@ -1048,7 +1048,7 @@ bool SolveSpace::GetSaveFile(std::string *filename, const std::string &defExtens
     return OpenSaveFile(false, filename, defExtension, filters);
 }
 
-DialogChoice SolveSpace::SaveFileYesNoCancel(void)
+DialogChoice SolveSpace::SaveFileYesNoCancel()
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
@@ -1073,7 +1073,7 @@ DialogChoice SolveSpace::SaveFileYesNoCancel(void)
     }
 }
 
-DialogChoice SolveSpace::LoadAutosaveYesNo(void)
+DialogChoice SolveSpace::LoadAutosaveYesNo()
 {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
@@ -1192,13 +1192,13 @@ static void DoRecent(HMENU m, int base)
     }
     if(c == 0) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, L"(no recent files)");
 }
-void SolveSpace::RefreshRecentMenus(void)
+void SolveSpace::RefreshRecentMenus()
 {
     DoRecent(RecentOpenMenu,   RECENT_OPEN);
     DoRecent(RecentImportMenu, RECENT_LINK);
 }
 
-HMENU CreateGraphicsWindowMenus(void)
+HMENU CreateGraphicsWindowMenus()
 {
     HMENU top = CreateMenu();
     HMENU m = 0;
@@ -1241,7 +1241,7 @@ HMENU CreateGraphicsWindowMenus(void)
     return top;
 }
 
-static void CreateMainWindows(void)
+static void CreateMainWindows()
 {
     WNDCLASSEX wc = {};
 

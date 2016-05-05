@@ -5,7 +5,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void StepFileWriter::WriteHeader(void) {
+void StepFileWriter::WriteHeader() {
     fprintf(f,
 "ISO-10303-21;\n"
 "HEADER;\n"
@@ -66,7 +66,7 @@ void StepFileWriter::WriteHeader(void) {
     // Start the ID somewhere beyond the header IDs.
     id = 200;
 }
-void StepFileWriter::WriteProductHeader(void) {
+void StepFileWriter::WriteProductHeader() {
 	fprintf(f,
 		"#175 = SHAPE_DEFINITION_REPRESENTATION(#176, #169);\n"
 		"#176 = PRODUCT_DEFINITION_SHAPE('Version', 'Test Part', #177);\n"
@@ -283,7 +283,7 @@ void StepFileWriter::ExportSurface(SSurface *ss, SBezierList *sbl) {
     spxyz.Clear();
 }
 
-void StepFileWriter::WriteFooter(void) {
+void StepFileWriter::WriteFooter() {
     fprintf(f,
 "\n"
 "ENDSEC;\n"
@@ -354,7 +354,7 @@ void StepFileWriter::ExportSurfacesTo(const std::string &filename) {
     advancedFaces.Clear();
 }
 
-void StepFileWriter::WriteWireframe(void) {
+void StepFileWriter::WriteWireframe() {
     fprintf(f, "#%d=GEOMETRIC_CURVE_SET('curves',(", id);
     int *c;
     for(c = curves.First(); c; c = curves.NextAfter(c)) {

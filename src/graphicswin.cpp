@@ -204,7 +204,7 @@ std::string SolveSpace::MakeAcceleratorLabel(int accel) {
     return label;
 }
 
-void GraphicsWindow::Init(void) {
+void GraphicsWindow::Init() {
     scale = 5;
     offset    = Vector::From(0, 0, 0);
     projRight = Vector::From(1, 0, 0);
@@ -239,7 +239,7 @@ void GraphicsWindow::Init(void) {
     ClearSuper();
 }
 
-void GraphicsWindow::AnimateOntoWorkplane(void) {
+void GraphicsWindow::AnimateOntoWorkplane() {
     if(!LockedInWorkplane()) return;
 
     Entity *w = SK.GetEntity(ActiveWorkplane());
@@ -601,7 +601,7 @@ void GraphicsWindow::MenuView(int id) {
     InvalidateGraphics();
 }
 
-void GraphicsWindow::EnsureValidActives(void) {
+void GraphicsWindow::EnsureValidActives() {
     bool change = false;
     // The active group must exist, and not be the references.
     Group *g = SK.group.FindByIdNoOops(activeGroup);
@@ -681,10 +681,10 @@ void GraphicsWindow::EnsureValidActives(void) {
     if(change) SS.ScheduleShowTW();
 }
 
-void GraphicsWindow::SetWorkplaneFreeIn3d(void) {
+void GraphicsWindow::SetWorkplaneFreeIn3d() {
     SK.GetGroup(activeGroup)->activeWorkplane = Entity::FREE_IN_3D;
 }
-hEntity GraphicsWindow::ActiveWorkplane(void) {
+hEntity GraphicsWindow::ActiveWorkplane() {
     Group *g = SK.group.FindByIdNoOops(activeGroup);
     if(g) {
         return g->activeWorkplane;
@@ -692,11 +692,11 @@ hEntity GraphicsWindow::ActiveWorkplane(void) {
         return Entity::FREE_IN_3D;
     }
 }
-bool GraphicsWindow::LockedInWorkplane(void) {
+bool GraphicsWindow::LockedInWorkplane() {
     return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
 }
 
-void GraphicsWindow::ForceTextWindowShown(void) {
+void GraphicsWindow::ForceTextWindowShown() {
     if(!showTextWindow) {
         showTextWindow = true;
         CheckMenuById(MNU_SHOW_TEXT_WND, true);
@@ -704,7 +704,7 @@ void GraphicsWindow::ForceTextWindowShown(void) {
     }
 }
 
-void GraphicsWindow::DeleteTaggedRequests(void) {
+void GraphicsWindow::DeleteTaggedRequests() {
     // Rewrite any point-coincident constraints that were affected by this
     // deletion.
     Request *r;
@@ -1039,7 +1039,7 @@ c:
     }
 }
 
-void GraphicsWindow::ClearSuper(void) {
+void GraphicsWindow::ClearSuper() {
     HideGraphicsEditControl();
     ClearPending();
     ClearSelection();

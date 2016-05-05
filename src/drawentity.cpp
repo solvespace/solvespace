@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-std::string Entity::DescriptionString(void) {
+std::string Entity::DescriptionString() {
     if(h.isFromRequest()) {
         Request *r = SK.GetRequest(h.request());
         return r->DescriptionString();
@@ -202,7 +202,7 @@ double Entity::GetDistance(Point2d mp) {
     return dogd.dmin;
 }
 
-Vector Entity::GetReferencePos(void) {
+Vector Entity::GetReferencePos() {
     dogd.drawing = false;
 
     dogd.refp = SS.GW.offset.ScaledBy(-1);
@@ -218,7 +218,7 @@ bool Entity::IsStylable() {
     return true;
 }
 
-bool Entity::IsVisible(void) {
+bool Entity::IsVisible() {
     Group *g = SK.GetGroup(group);
 
     if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
@@ -271,7 +271,7 @@ void Entity::CalculateNumerical(bool forExport) {
     }
 }
 
-bool Entity::PointIsFromReferences(void) {
+bool Entity::PointIsFromReferences() {
     return h.request().IsFromReferences();
 }
 
@@ -519,7 +519,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) {
     }
 }
 
-void Entity::DrawOrGetDistance(void) {
+void Entity::DrawOrGetDistance() {
     // If we're about to perform hit testing on an entity, consider
     // whether the pointer is inside its bounding box first.
     if(!dogd.drawing) {

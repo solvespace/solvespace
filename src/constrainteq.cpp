@@ -9,7 +9,7 @@
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 
-bool ConstraintBase::HasLabel(void) {
+bool ConstraintBase::HasLabel() {
     switch(type) {
         case PT_LINE_DISTANCE:
         case PT_PLANE_DISTANCE:
@@ -166,7 +166,7 @@ ExprVector ConstraintBase::PointInThreeSpace(hEntity workplane,
     return (ub.ScaledBy(u)).Plus(vb.ScaledBy(v)).Plus(ob);
 }
 
-void ConstraintBase::ModifyToSatisfy(void) {
+void ConstraintBase::ModifyToSatisfy() {
     if(type == ANGLE) {
         Vector a = SK.GetEntity(entityA)->VectorGetNum();
         Vector b = SK.GetEntity(entityB)->VectorGetNum();

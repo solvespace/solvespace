@@ -449,7 +449,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 // normal. We therefore must reverse all our trim curves too. The uv
 // coordinates change, but trim curves are stored as xyz so nothing happens
 //-----------------------------------------------------------------------------
-void SSurface::Reverse(void) {
+void SSurface::Reverse() {
     int i, j;
     for(i = 0; i < (degm+1)/2; i++) {
         for(j = 0; j <= degn; j++) {
@@ -474,7 +474,7 @@ void SSurface::ScaleSelfBy(double s) {
     }
 }
 
-void SSurface::Clear(void) {
+void SSurface::Clear() {
     trim.Clear();
 }
 
@@ -860,11 +860,11 @@ void SShell::TriangulateInto(SMesh *sm) {
     }
 }
 
-bool SShell::IsEmpty(void) {
+bool SShell::IsEmpty() {
     return (surface.n == 0);
 }
 
-void SShell::Clear(void) {
+void SShell::Clear() {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {
         s->Clear();

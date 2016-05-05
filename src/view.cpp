@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void TextWindow::ShowEditView(void) {
+void TextWindow::ShowEditView() {
     Printf(true, "%Ft3D VIEW PARAMETERS%E");
 
     Printf(true,  "%Bd %Ftoverall scale factor%E");

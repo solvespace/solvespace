@@ -10,7 +10,7 @@
 const hEntity  EntityBase::FREE_IN_3D = { 0 };
 const hEntity  EntityBase::NO_ENTITY = { 0 };
 
-bool EntityBase::HasVector(void) {
+bool EntityBase::HasVector() {
     switch(type) {
         case LINE_SEGMENT:
         case NORMAL_IN_3D:
@@ -25,7 +25,7 @@ bool EntityBase::HasVector(void) {
     }
 }
 
-ExprVector EntityBase::VectorGetExprs(void) {
+ExprVector EntityBase::VectorGetExprs() {
     switch(type) {
         case LINE_SEGMENT:
             return (SK.GetEntity(point[0])->PointGetExprs()).Minus(
@@ -42,7 +42,7 @@ ExprVector EntityBase::VectorGetExprs(void) {
     }
 }
 
-Vector EntityBase::VectorGetNum(void) {
+Vector EntityBase::VectorGetNum() {
     switch(type) {
         case LINE_SEGMENT:
             return (SK.GetEntity(point[0])->PointGetNum()).Minus(
@@ -59,7 +59,7 @@ Vector EntityBase::VectorGetNum(void) {
     }
 }
 
-Vector EntityBase::VectorGetRefPoint(void) {
+Vector EntityBase::VectorGetRefPoint() {
     switch(type) {
         case LINE_SEGMENT:
             return ((SK.GetEntity(point[0])->PointGetNum()).Plus(
@@ -76,7 +76,7 @@ Vector EntityBase::VectorGetRefPoint(void) {
     }
 }
 
-Vector EntityBase::VectorGetStartPoint(void) {
+Vector EntityBase::VectorGetStartPoint() {
     switch(type) {
         case LINE_SEGMENT:
             return SK.GetEntity(point[1])->PointGetNum();
@@ -92,11 +92,11 @@ Vector EntityBase::VectorGetStartPoint(void) {
     }
 }
 
-bool EntityBase::IsCircle(void) {
+bool EntityBase::IsCircle() {
     return (type == CIRCLE) || (type == ARC_OF_CIRCLE);
 }
 
-Expr *EntityBase::CircleGetRadiusExpr(void) {
+Expr *EntityBase::CircleGetRadiusExpr() {
     if(type == CIRCLE) {
         return SK.GetEntity(distance)->DistanceGetExpr();
     } else if(type == ARC_OF_CIRCLE) {
@@ -104,7 +104,7 @@ Expr *EntityBase::CircleGetRadiusExpr(void) {
     } else ssassert(false, "Unexpected entity type");
 }
 
-double EntityBase::CircleGetRadiusNum(void) {
+double EntityBase::CircleGetRadiusNum() {
     if(type == CIRCLE) {
         return SK.GetEntity(distance)->DistanceGetNum();
     } else if(type == ARC_OF_CIRCLE) {
@@ -137,42 +137,42 @@ void EntityBase::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) {
     while(*dtheta > (2*PI)) *dtheta -= 2*PI;
 }
 
-Vector EntityBase::CubicGetStartNum(void) {
+Vector EntityBase::CubicGetStartNum() {
     return SK.GetEntity(point[0])->PointGetNum();
 }
-Vector EntityBase::CubicGetFinishNum(void) {
+Vector EntityBase::CubicGetFinishNum() {
     return SK.GetEntity(point[3+extraPoints])->PointGetNum();
 }
-ExprVector EntityBase::CubicGetStartTangentExprs(void) {
+ExprVector EntityBase::CubicGetStartTangentExprs() {
     ExprVector pon  = SK.GetEntity(point[0])->PointGetExprs(),
                poff = SK.GetEntity(point[1])->PointGetExprs();
     return (pon.Minus(poff));
 }
-ExprVector EntityBase::CubicGetFinishTangentExprs(void) {
+ExprVector EntityBase::CubicGetFinishTangentExprs() {
     ExprVector pon  = SK.GetEntity(point[3+extraPoints])->PointGetExprs(),
                poff = SK.GetEntity(point[2+extraPoints])->PointGetExprs();
     return (pon.Minus(poff));
 }
-Vector EntityBase::CubicGetStartTangentNum(void) {
+Vector EntityBase::CubicGetStartTangentNum() {
     Vector pon  = SK.GetEntity(point[0])->PointGetNum(),
            poff = SK.GetEntity(point[1])->PointGetNum();
     return (pon.Minus(poff));
 }
-Vector EntityBase::CubicGetFinishTangentNum(void) {
+Vector EntityBase::CubicGetFinishTangentNum() {
     Vector pon  = SK.GetEntity(point[3+extraPoints])->PointGetNum(),
            poff = SK.GetEntity(point[2+extraPoints])->PointGetNum();
     return (pon.Minus(poff));
 }
 
-bool EntityBase::IsWorkplane(void) {
+bool EntityBase::IsWorkplane() {
     return (type == WORKPLANE);
 }
 
-ExprVector EntityBase::WorkplaneGetOffsetExprs(void) {
+ExprVector EntityBase::WorkplaneGetOffsetExprs() {
     return SK.GetEntity(point[0])->PointGetExprs();
 }
 
-Vector EntityBase::WorkplaneGetOffset(void) {
+Vector EntityBase::WorkplaneGetOffset() {
     return SK.GetEntity(point[0])->PointGetNum();
 }
 
@@ -188,18 +188,18 @@ void EntityBase::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
     } else ssassert(false, "Unexpected entity type");
 }
 
-bool EntityBase::IsDistance(void) {
+bool EntityBase::IsDistance() {
     return (type == DISTANCE) ||
            (type == DISTANCE_N_COPY);
 }
-double EntityBase::DistanceGetNum(void) {
+double EntityBase::DistanceGetNum() {
     if(type == DISTANCE) {
         return SK.GetParam(param[0])->val;
     } else if(type == DISTANCE_N_COPY) {
         return numDistance;
     } else ssassert(false, "Unexpected entity type");
 }
-Expr *EntityBase::DistanceGetExpr(void) {
+Expr *EntityBase::DistanceGetExpr() {
     if(type == DISTANCE) {
         return Expr::From(param[0]);
     } else if(type == DISTANCE_N_COPY) {
@@ -214,11 +214,11 @@ void EntityBase::DistanceForceTo(double v) {
     } else ssassert(false, "Unexpected entity type");
 }
 
-EntityBase *EntityBase::Normal(void) {
+EntityBase *EntityBase::Normal() {
     return SK.GetEntity(normal);
 }
 
-bool EntityBase::IsPoint(void) {
+bool EntityBase::IsPoint() {
     switch(type) {
         case POINT_IN_3D:
         case POINT_IN_2D:
@@ -233,7 +233,7 @@ bool EntityBase::IsPoint(void) {
     }
 }
 
-bool EntityBase::IsNormal(void) {
+bool EntityBase::IsNormal() {
     switch(type) {
         case NORMAL_IN_3D:
         case NORMAL_IN_2D:
@@ -246,7 +246,7 @@ bool EntityBase::IsNormal(void) {
     }
 }
 
-Quaternion EntityBase::NormalGetNum(void) {
+Quaternion EntityBase::NormalGetNum() {
     Quaternion q;
     switch(type) {
         case NORMAL_IN_3D:
@@ -310,27 +310,27 @@ void EntityBase::NormalForceTo(Quaternion q) {
     }
 }
 
-Vector EntityBase::NormalU(void) {
+Vector EntityBase::NormalU() {
     return NormalGetNum().RotationU();
 }
-Vector EntityBase::NormalV(void) {
+Vector EntityBase::NormalV() {
     return NormalGetNum().RotationV();
 }
-Vector EntityBase::NormalN(void) {
+Vector EntityBase::NormalN() {
     return NormalGetNum().RotationN();
 }
 
-ExprVector EntityBase::NormalExprsU(void) {
+ExprVector EntityBase::NormalExprsU() {
     return NormalGetExprs().RotationU();
 }
-ExprVector EntityBase::NormalExprsV(void) {
+ExprVector EntityBase::NormalExprsV() {
     return NormalGetExprs().RotationV();
 }
-ExprVector EntityBase::NormalExprsN(void) {
+ExprVector EntityBase::NormalExprsN() {
     return NormalGetExprs().RotationN();
 }
 
-ExprQuaternion EntityBase::NormalGetExprs(void) {
+ExprQuaternion EntityBase::NormalGetExprs() {
     ExprQuaternion q;
     switch(type) {
         case NORMAL_IN_3D:
@@ -430,7 +430,7 @@ void EntityBase::PointForceTo(Vector p) {
     }
 }
 
-Vector EntityBase::PointGetNum(void) {
+Vector EntityBase::PointGetNum() {
     Vector p;
     switch(type) {
         case POINT_IN_3D:
@@ -479,7 +479,7 @@ Vector EntityBase::PointGetNum(void) {
     return p;
 }
 
-ExprVector EntityBase::PointGetExprs(void) {
+ExprVector EntityBase::PointGetExprs() {
     ExprVector r;
     switch(type) {
         case POINT_IN_3D:
@@ -583,7 +583,7 @@ ExprQuaternion EntityBase::GetAxisAngleQuaternionExprs(int param0) {
     return q;
 }
 
-Quaternion EntityBase::PointGetQuaternion(void) {
+Quaternion EntityBase::PointGetQuaternion() {
     Quaternion q;
 
     if(type == POINT_N_ROT_AA) {
@@ -595,7 +595,7 @@ Quaternion EntityBase::PointGetQuaternion(void) {
     return q;
 }
 
-bool EntityBase::IsFace(void) {
+bool EntityBase::IsFace() {
     switch(type) {
         case FACE_NORMAL_PT:
         case FACE_XPROD:
@@ -608,7 +608,7 @@ bool EntityBase::IsFace(void) {
     }
 }
 
-ExprVector EntityBase::FaceGetNormalExprs(void) {
+ExprVector EntityBase::FaceGetNormalExprs() {
     ExprVector r;
     if(type == FACE_NORMAL_PT) {
         Vector v = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
@@ -637,7 +637,7 @@ ExprVector EntityBase::FaceGetNormalExprs(void) {
     return r;
 }
 
-Vector EntityBase::FaceGetNormalNum(void) {
+Vector EntityBase::FaceGetNormalNum() {
     Vector r;
     if(type == FACE_NORMAL_PT) {
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
@@ -660,7 +660,7 @@ Vector EntityBase::FaceGetNormalNum(void) {
     return r.WithMagnitude(1);
 }
 
-ExprVector EntityBase::FaceGetPointExprs(void) {
+ExprVector EntityBase::FaceGetPointExprs() {
     ExprVector r;
     if(type == FACE_NORMAL_PT) {
         r = SK.GetEntity(point[0])->PointGetExprs();
@@ -689,7 +689,7 @@ ExprVector EntityBase::FaceGetPointExprs(void) {
     return r;
 }
 
-Vector EntityBase::FaceGetPointNum(void) {
+Vector EntityBase::FaceGetPointNum() {
     Vector r;
     if(type == FACE_NORMAL_PT) {
         r = SK.GetEntity(point[0])->PointGetNum();
@@ -714,7 +714,7 @@ Vector EntityBase::FaceGetPointNum(void) {
     return r;
 }
 
-bool EntityBase::HasEndpoints(void) {
+bool EntityBase::HasEndpoints() {
     return (type == LINE_SEGMENT) ||
            (type == CUBIC) ||
            (type == ARC_OF_CIRCLE);

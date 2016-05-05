@@ -157,11 +157,11 @@ void ssremove(const std::string &filename);
 #define RECENT_OPEN     (0xf000)
 #define RECENT_LINK     (0xf100)
 extern std::string RecentFile[MAX_RECENT];
-void RefreshRecentMenus(void);
+void RefreshRecentMenus();
 
 enum DialogChoice { DIALOG_YES = 1, DIALOG_NO = -1, DIALOG_CANCEL = 0 };
-DialogChoice SaveFileYesNoCancel(void);
-DialogChoice LoadAutosaveYesNo(void);
+DialogChoice SaveFileYesNoCancel();
+DialogChoice LoadAutosaveYesNo();
 DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
                                            bool canCancel);
 
@@ -237,30 +237,30 @@ void EnableMenuById(int id, bool enabled);
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
                              const std::string &str);
-void HideGraphicsEditControl(void);
-bool GraphicsEditControlIsVisible(void);
+void HideGraphicsEditControl();
+bool GraphicsEditControlIsVisible();
 void ShowTextEditControl(int x, int y, const std::string &str);
-void HideTextEditControl(void);
-bool TextEditControlIsVisible(void);
+void HideTextEditControl();
+bool TextEditControlIsVisible();
 void MoveTextScrollbarTo(int pos, int maxPos, int page);
 
 #define CONTEXT_SUBMENU     (-1)
 #define CONTEXT_SEPARATOR   (-2)
 void AddContextMenuItem(const char *legend, int id);
-void CreateContextSubmenu(void);
-int ShowContextMenu(void);
+void CreateContextSubmenu();
+int ShowContextMenu();
 
-void ToggleMenuBar(void);
-bool MenuBarIsVisible(void);
+void ToggleMenuBar();
+bool MenuBarIsVisible();
 void ShowTextWindow(bool visible);
-void InvalidateText(void);
-void InvalidateGraphics(void);
-void PaintGraphics(void);
-void ToggleFullScreen(void);
-bool FullScreenIsActive(void);
+void InvalidateText();
+void InvalidateGraphics();
+void PaintGraphics();
+void ToggleFullScreen();
+bool FullScreenIsActive();
 void GetGraphicsWindowSize(int *w, int *h);
 void GetTextWindowSize(int *w, int *h);
-int64_t GetMilliseconds(void);
+int64_t GetMilliseconds();
 
 void dbp(const char *str, ...);
 #define DBPTRI(tri) \
@@ -273,7 +273,7 @@ void DoMessageBox(const char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
 void SetAutosaveTimerFor(int minutes);
 void ScheduleLater();
-void ExitNow(void);
+void ExitNow();
 
 void CnfFreezeInt(uint32_t val, const std::string &name);
 void CnfFreezeFloat(float val, const std::string &name);
@@ -284,11 +284,11 @@ float CnfThawFloat(float val, const std::string &name);
 
 void *AllocTemporary(size_t n);
 void FreeTemporary(void *p);
-void FreeAllTemporary(void);
+void FreeAllTemporary();
 void *MemAlloc(size_t n);
 void MemFree(void *p);
-void InitHeaps(void);
-void vl(void); // debug function to validate heaps
+void InitHeaps();
+void vl(); // debug function to validate heaps
 
 #include "resource.h"
 
@@ -342,7 +342,7 @@ void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
 #else
 #   define SSGL_CALLBACK
 #endif
-extern "C" { typedef void SSGL_CALLBACK ssglCallbackFptr(void); }
+extern "C" { typedef void SSGL_CALLBACK ssglCallbackFptr(); }
 void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void ssglFillPolygon(SPolygon *p);
 void ssglFillMesh(bool useSpecColor, RgbaColor color,
@@ -366,7 +366,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
 void ssglStippledLine(Vector a, Vector b, double width,
                       const char *stipplePattern, double stippleScale, bool maybeFat);
 void ssglFatLine(Vector a, Vector b, double width);
-void ssglUnlockColor(void);
+void ssglUnlockColor();
 void ssglColorRGB(RgbaColor rgb);
 void ssglColorRGBa(RgbaColor rgb, double a);
 void ssglDepthRangeOffset(int units);
@@ -449,18 +449,18 @@ public:
     } mat;
 
     static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
-    int CalculateRank(void);
-    bool TestRank(void);
+    int CalculateRank();
+    bool TestRank();
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);
-    bool SolveLeastSquares(void);
+    bool SolveLeastSquares();
 
     bool WriteJacobian(int tag);
-    void EvalJacobian(void);
+    void EvalJacobian();
 
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
     void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad);
-    void SolveBySubstitution(void);
+    void SolveBySubstitution();
 
     bool IsDragged(hParam p);
 
@@ -476,7 +476,7 @@ public:
     int Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);
 
-    void Clear(void);
+    void Clear();
 };
 
 #include "ttf.h"
@@ -484,13 +484,13 @@ public:
 class StepFileWriter {
 public:
     void ExportSurfacesTo(const std::string &filename);
-    void WriteHeader(void);
-	void WriteProductHeader(void);
+    void WriteHeader();
+	void WriteProductHeader();
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
     void ExportSurface(SSurface *ss, SBezierList *sbl);
-    void WriteWireframe(void);
-    void WriteFooter(void);
+    void WriteWireframe();
+    void WriteFooter();
 
     List<int> curves;
     List<int> advancedFaces;
@@ -678,7 +678,7 @@ public:
     inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
     // Styles are handled a bit differently.
 
-    void Clear(void);
+    void Clear();
 
     BBox CalculateEntityBBox(bool includingInvisible);
     Group *GetRunningMeshGroupFor(hGroup h);
@@ -702,7 +702,7 @@ public:
         IdList<Style,hStyle>            style;
         hGroup                          activeGroup;
 
-        void Clear(void) {
+        void Clear() {
             group.Clear();
             request.Clear();
             constraint.Clear();
@@ -718,10 +718,10 @@ public:
     } UndoStack;
     UndoStack   undo;
     UndoStack   redo;
-    void UndoEnableMenus(void);
-    void UndoRemember(void);
-    void UndoUndo(void);
-    void UndoRedo(void);
+    void UndoEnableMenus();
+    void UndoRemember();
+    void UndoUndo();
+    void UndoRedo();
     void PushFromCurrentOnto(UndoStack *uk);
     void PopOntoCurrentFrom(UndoStack *uk);
     void UndoClearState(UndoState *ut);
@@ -782,15 +782,15 @@ public:
     std::string MmToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(const std::string &s);
-    const char *UnitName(void);
-    double MmPerUnit(void);
-    int UnitDigitsAfterDecimal(void);
+    const char *UnitName();
+    double MmPerUnit();
+    int UnitDigitsAfterDecimal();
     void SetUnitDigitsAfterDecimal(int v);
-    double ChordTolMm(void);
-    double ExportChordTolMm(void);
-    int GetMaxSegments(void);
+    double ChordTolMm();
+    double ExportChordTolMm();
+    int GetMaxSegments();
     bool usePerspectiveProj;
-    double CameraTangent(void);
+    double CameraTangent();
 
     // Some stuff relating to the tangent arcs created non-parametrically
     // as special requests.
@@ -799,14 +799,14 @@ public:
     bool tangentArcDeleteOld;
 
     // The platform-dependent code calls this before entering the msg loop
-    void Init(void);
+    void Init();
     bool OpenFile(const std::string &filename);
-    void Exit(void);
+    void Exit();
 
     // File load/save routines, including the additional files that get
     // loaded when we have link groups.
     FILE        *fh;
-    void AfterNewFile(void);
+    void AfterNewFile();
     static void RemoveFromRecentList(const std::string &filename);
     static void AddToRecentList(const std::string &filename);
     std::string saveFile;
@@ -833,11 +833,11 @@ public:
 	bool Autosave();
     void RemoveAutosave();
     bool GetFilenameAndSave(bool saveAs);
-    bool OkayToStartNewFile(void);
-    hGroup CreateDefaultDrawingGroup(void);
-    void UpdateWindowTitle(void);
-    void ClearExisting(void);
-    void NewFile(void);
+    bool OkayToStartNewFile();
+    hGroup CreateDefaultDrawingGroup();
+    void UpdateWindowTitle();
+    void ClearExisting();
+    void NewFile();
     bool SaveToFile(const std::string &filename);
     bool LoadAutosaveFor(const std::string &filename);
     bool LoadFromFile(const std::string &filename);
@@ -890,7 +890,7 @@ public:
         List<ClipboardRequest>  r;
         List<Constraint>        c;
 
-        void Clear(void);
+        void Clear();
         bool ContainsEntity(hEntity old);
         hEntity NewEntityFor(hEntity old);
     };
@@ -908,7 +908,7 @@ public:
         int     nonTrivialConstraints;
     } deleted;
     bool GroupExists(hGroup hg);
-    bool PruneOrphans(void);
+    bool PruneOrphans();
     bool EntityExists(hEntity he);
     bool GroupsInOrder(hGroup before, hGroup after);
     bool PruneGroups(hGroup hg);
@@ -925,10 +925,10 @@ public:
     void GenerateAll(GenerateType type = GENERATE_DIRTY, bool andFindFree = false,
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
-    void MarkDraggedParams(void);
-    void ForceReferences(void);
+    void MarkDraggedParams();
+    void ForceReferences();
 
-    bool ActiveGroupsOkay(void);
+    bool ActiveGroupsOkay();
 
     // The system to be solved.
     System     *pSys;
@@ -949,11 +949,11 @@ public:
     } later;
     void ScheduleShowTW();
     void ScheduleGenerateAll();
-    void DoLater(void);
+    void DoLater();
 
     static void MenuHelp(int id);
 
-    void Clear(void);
+    void Clear();
 
     // We allocate TW and sys on the heap to work around an MSVC problem
     // where it puts zero-initialized global data in the binary (~30M of zeroes)

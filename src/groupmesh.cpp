@@ -53,7 +53,7 @@ void Group::AssembleLoops(bool *allClosed,
     sbl.Clear();
 }
 
-void Group::GenerateLoops(void) {
+void Group::GenerateLoops() {
     polyLoops.Clear();
     bezierLoops.Clear();
     bezierOpens.Clear();
@@ -177,7 +177,7 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, int how) {
     }
 }
 
-void Group::GenerateShellAndMesh(void) {
+void Group::GenerateShellAndMesh() {
     bool prevBooleanFailed = booleanFailed;
     booleanFailed = false;
 
@@ -357,7 +357,7 @@ void Group::GenerateShellAndMesh(void) {
     displayDirty = true;
 }
 
-void Group::GenerateDisplayItems(void) {
+void Group::GenerateDisplayItems() {
     // This is potentially slow (since we've got to triangulate a shell, or
     // to find the emphasized edges for a mesh), so we will run it only
     // if its inputs have changed.
@@ -421,7 +421,7 @@ void Group::GenerateDisplayItems(void) {
     }
 }
 
-Group *Group::PreviousGroup(void) {
+Group *Group::PreviousGroup() {
     int i;
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
@@ -431,7 +431,7 @@ Group *Group::PreviousGroup(void) {
     return SK.GetGroup(SK.groupOrder.elem[i - 1]);
 }
 
-Group *Group::RunningMeshGroup(void) {
+Group *Group::RunningMeshGroup() {
     if(type == TRANSLATE || type == ROTATE) {
         return SK.GetGroup(opA)->RunningMeshGroup();
     } else {
@@ -518,7 +518,7 @@ void Group::DrawDisplayItems(int t) {
     if(SS.GW.showMesh) ssglDebugMesh(&displayMesh);
 }
 
-void Group::Draw(void) {
+void Group::Draw() {
     // Everything here gets drawn whether or not the group is hidden; we
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
@@ -583,7 +583,7 @@ void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
     sp.Clear();
 }
 
-void Group::DrawFilledPaths(void) {
+void Group::DrawFilledPaths() {
     SBezierLoopSet *sbls;
     SBezierLoopSetSet *sblss = &bezierLoops;
     for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {

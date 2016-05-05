@@ -19,7 +19,7 @@ const hGroup Group::HGROUP_REFERENCES = { 1 };
 // The group structure includes pointers to other dynamically-allocated
 // memory. This clears and frees them all.
 //-----------------------------------------------------------------------------
-void Group::Clear(void) {
+void Group::Clear() {
     polyLoops.Clear();
     bezierLoops.Clear();
     bezierOpens.Clear();
@@ -45,7 +45,7 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
     param->Add(&pa);
 }
 
-bool Group::IsVisible(void) {
+bool Group::IsVisible() {
     if(!visible) return false;
     if(SS.GroupsInOrder(SS.GW.activeGroup, h)) return false;
     return true;
@@ -314,7 +314,7 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     SK.GetParam(qz)->val = qg.vz;
 }
 
-std::string Group::DescriptionString(void) {
+std::string Group::DescriptionString() {
     if(name.empty()) {
         return ssprintf("g%03x-(unnamed)", h.v);
     } else {
@@ -322,7 +322,7 @@ std::string Group::DescriptionString(void) {
     }
 }
 
-void Group::Activate(void) {
+void Group::Activate() {
     if(type == EXTRUDE || type == LINKED || type == LATHE || type == TRANSLATE || type == ROTATE) {
         SS.GW.showFaces = true;
     } else {

@@ -8,8 +8,8 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-SBsp2 *SBsp2::Alloc(void) { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
-SBsp3 *SBsp3::Alloc(void) { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
+SBsp2 *SBsp2::Alloc() { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
+SBsp3 *SBsp3::Alloc() { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 
 SBsp3 *SBsp3::FromMesh(SMesh *m) {
     SBsp3 *bsp3 = NULL;
@@ -424,7 +424,7 @@ void SBsp3::GenerateInPaintOrder(SMesh *m) {
     }
 }
 
-void SBsp3::DebugDraw(void) {
+void SBsp3::DebugDraw() {
 
     if(pos) pos->DebugDraw();
     Vector norm = tri.Normal();

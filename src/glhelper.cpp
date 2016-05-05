@@ -244,7 +244,7 @@ void ssglLockColorTo(RgbaColor rgb)
     ColorLocked = true;
 }
 
-void ssglUnlockColor(void)
+void ssglUnlockColor()
 {
     ColorLocked = false;
 }

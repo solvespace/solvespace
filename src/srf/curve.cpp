@@ -60,15 +60,15 @@ SBezier SBezier::From(Vector p0, Vector p1, Vector p2, Vector p3) {
                          p3.Project4d());
 }
 
-Vector SBezier::Start(void) {
+Vector SBezier::Start() {
     return ctrl[0];
 }
 
-Vector SBezier::Finish(void) {
+Vector SBezier::Finish() {
     return ctrl[deg];
 }
 
-void SBezier::Reverse(void) {
+void SBezier::Reverse() {
     int i;
     for(i = 0; i < (deg+1)/2; i++) {
         swap(ctrl[i], ctrl[deg-i]);
@@ -170,7 +170,7 @@ bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
     return true;
 }
 
-bool SBezier::IsRational(void) {
+bool SBezier::IsRational() {
     int i;
     for(i = 0; i <= deg; i++) {
         if(fabs(weight[i] - 1) > LENGTH_EPS) return true;
@@ -218,7 +218,7 @@ bool SBezier::Equals(SBezier *b) {
     return true;
 }
 
-void SBezierList::Clear(void) {
+void SBezierList::Clear() {
     l.Clear();
 }
 
@@ -233,7 +233,7 @@ void SBezierList::ScaleSelfBy(double s) {
 // If our list contains multiple identical Beziers (in either forward or
 // reverse order), then cull them.
 //-----------------------------------------------------------------------------
-void SBezierList::CullIdenticalBeziers(void) {
+void SBezierList::CullIdenticalBeziers() {
     int i, j;
 
     l.ClearTags();
@@ -443,7 +443,7 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
     return loop;
 }
 
-void SBezierLoop::Reverse(void) {
+void SBezierLoop::Reverse() {
     l.Reverse();
     SBezier *sb;
     for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
@@ -478,7 +478,7 @@ void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) {
     }
 }
 
-bool SBezierLoop::IsClosed(void) {
+bool SBezierLoop::IsClosed() {
     if(l.n < 1) return false;
     Vector s = l.elem[0].Start(),
            f = l.elem[l.n-1].Finish();
@@ -553,7 +553,7 @@ void SBezierLoopSet::MakePwlInto(SPolygon *sp) {
     }
 }
 
-void SBezierLoopSet::Clear(void) {
+void SBezierLoopSet::Clear() {
     int i;
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).Clear();
@@ -724,7 +724,7 @@ void SBezierLoopSetSet::AddOpenPath(SBezier *sb) {
     l.Add(&sbls);
 }
 
-void SBezierLoopSetSet::Clear(void) {
+void SBezierLoopSetSet::Clear() {
     SBezierLoopSet *sbls;
     for(sbls = l.First(); sbls; sbls = l.NextAfter(sbls)) {
         sbls->Clear();
@@ -753,7 +753,7 @@ SCurve SCurve::FromTransformationOf(SCurve *a,
     return ret;
 }
 
-void SCurve::Clear(void) {
+void SCurve::Clear() {
     pts.Clear();
 }
 

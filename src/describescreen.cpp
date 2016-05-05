@@ -51,7 +51,7 @@ void TextWindow::ScreenConstraintShowAsRadius(int link, uint32_t v) {
     SS.ScheduleShowTW();
 }
 
-void TextWindow::DescribeSelection(void) {
+void TextWindow::DescribeSelection() {
     Entity *e;
     Vector p;
     int i;

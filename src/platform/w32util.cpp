@@ -115,7 +115,7 @@ void *AllocTemporary(size_t n)
 void FreeTemporary(void *p) {
     HeapFree(TempHeap, HEAP_NO_SERIALIZE, p);
 }
-void FreeAllTemporary(void)
+void FreeAllTemporary()
 {
     if(TempHeap) HeapDestroy(TempHeap);
     TempHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
@@ -133,12 +133,12 @@ void MemFree(void *p) {
     HeapFree(PermHeap, HEAP_NO_SERIALIZE, p);
 }
 
-void vl(void) {
+void vl() {
     ssassert(HeapValidate(TempHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
     ssassert(HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
 }
 
-void InitHeaps(void) {
+void InitHeaps() {
     // Create the heap used for long-lived stuff (that gets freed piecewise).
     PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
     // Create the heap that we use to store Exprs and other temp stuff.

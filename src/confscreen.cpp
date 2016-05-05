@@ -160,7 +160,7 @@ void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
     SS.TW.edit.meaning = EDIT_AUTOSAVE_INTERVAL;
 }
 
-void TextWindow::ShowConfiguration(void) {
+void TextWindow::ShowConfiguration() {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
 

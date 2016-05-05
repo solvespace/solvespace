@@ -169,7 +169,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     if(et) entity->Add(&e);
 }
 
-std::string Request::DescriptionString(void) {
+std::string Request::DescriptionString() {
     const char *s;
     if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
