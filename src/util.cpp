@@ -1005,16 +1005,12 @@ double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool segmen
     // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
     double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;
 
-    if((t < 0 || t > 1) && segment) {
-        // The closest point is one of the endpoints; determine which.
-        double d0 = DistanceTo(p0);
-        double d1 = DistanceTo(p0.Plus(dp));
-
-        return min(d1, d0);
-    } else {
-        Point2d closest = p0.Plus(dp.ScaledBy(t));
-        return DistanceTo(closest);
+    if(segment) {
+        if(t < 0.0) return DistanceTo(p0);
+        if(t > 1.0) return DistanceTo(p0.Plus(dp));
     }
+    Point2d closest = p0.Plus(dp.ScaledBy(t));
+    return DistanceTo(closest);
 }
 
 Point2d Point2d::Normal() const {
