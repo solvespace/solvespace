@@ -537,7 +537,6 @@ public:
     }
 
     virtual void addBlock(const DRW_Block &data) {
-        blocks.emplace(data.name, Block());
         readBlock = &blocks[data.name];
         readBlock->data = data;
     }
