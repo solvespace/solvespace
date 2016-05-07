@@ -385,6 +385,33 @@ public:
                                                                   &skew);
                         if(!skew) ref = pi.Plus(c->disp.offset);
 
+                        Vector norm = da.Cross(db);
+                        Vector dna = norm.Cross(da).WithMagnitude(1.0);
+
+                        double thetaf = acos(da.DirectionCosineWith(db));
+                        
+                        // Calculate median
+                        Vector m = da.WithMagnitude(1.0).ScaledBy(cos(thetaf/2)).Plus(
+                                   dna.ScaledBy(sin(thetaf/2)));
+                        Vector rm = ref.Minus(pi);
+
+                        // Test which side we have to place an arc
+                        if(m.Dot(rm) < 0) {
+                            da = da.ScaledBy(-1); dna = dna.ScaledBy(-1);
+                            db = db.ScaledBy(-1);
+                        }
+
+                        Vector bisect = da.WithMagnitude(1.0).ScaledBy(cos(thetaf / 2.0)).Plus(
+                                        dna.ScaledBy(sin(thetaf / 2.0)));
+
+                        ref = pi.Plus(bisect.WithMagnitude(c->disp.offset.Magnitude()));
+
+                        // Get lines agian to write exact line.
+                        a0 = a->VectorGetStartPoint();
+                        b0 = b->VectorGetStartPoint();
+                        da = a->VectorGetNum();
+                        db = b->VectorGetNum();
+
                         writeAngularDimension(
                             xfrm(a0), xfrm(a0.Plus(da)), xfrm(b0), xfrm(b0.Plus(db)), xfrm(ref),
                             xfrm(ref), c->Label(), c->GetStyle(), c->valA);
