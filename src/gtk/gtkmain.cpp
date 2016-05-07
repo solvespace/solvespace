@@ -1019,7 +1019,7 @@ protected:
     virtual void on_activate() {
         if(_id >= RECENT_OPEN && _id < (RECENT_OPEN + MAX_RECENT))
             SolveSpaceUI::MenuFile(_id);
-        else if(_id >= RECENT_IMPORT && _id < (RECENT_IMPORT + MAX_RECENT))
+        else if(_id >= RECENT_LINK && _id < (RECENT_LINK + MAX_RECENT))
             Group::MenuGroup(_id);
     }
 
@@ -1053,7 +1053,7 @@ static void RefreshRecentMenu(int id, int base) {
 
 void RefreshRecentMenus(void) {
     RefreshRecentMenu(GraphicsWindow::MNU_OPEN_RECENT, RECENT_OPEN);
-    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_IMPORT);
+    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_LINK);
 }
 
 /* Save/load */
@@ -1223,7 +1223,7 @@ DialogChoice LoadAutosaveYesNo(void) {
 DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
                                            bool canCancel) {
     Glib::ustring message =
-        "The imported file " + filename + " is not present.\n"
+        "The linked file " + filename + " is not present.\n"
         "Do you want to locate it manually?\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";

@@ -116,8 +116,8 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
-    { 'g',  "Group.impFile",            'S',    &(SS.sv.g.impFile)            },
-    { 'g',  "Group.impFileRel",         'S',    &(SS.sv.g.impFileRel)         },
+    { 'g',  "Group.impFile",            'S',    &(SS.sv.g.linkFile)           },
+    { 'g',  "Group.impFileRel",         'S',    &(SS.sv.g.linkFileRel)        },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -256,8 +256,8 @@ void SolveSpaceUI::SaveUsingTable(int type) {
 
 bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // Make sure all the entities are regenerated up to date, since they
-    // will be exported. We reload the imported files because that rewrites
-    // the impFileRel for our possibly-new filename.
+    // will be exported. We reload the linked files because that rewrites
+    // the linkFileRel for our possibly-new filename.
     SS.ScheduleShowTW();
     SS.ReloadAllImported();
     SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
@@ -458,9 +458,9 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
             char *key = line, *val = e+1;
             LoadUsingTable(key, val);
         } else if(strcmp(line, "AddGroup")==0) {
-            // legacy files have a spurious dependency between imported groups
+            // legacy files have a spurious dependency between linked groups
             // and their parent groups, remove
-            if(sv.g.type == Group::IMPORTED)
+            if(sv.g.type == Group::LINKED)
                 sv.g.opA.v = 0;
 
             SK.group.Add(&(sv.g));
@@ -653,7 +653,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
 }
 
 //-----------------------------------------------------------------------------
-// Handling of the relative-absolute path transformations for imports
+// Handling of the relative-absolute path transformations for links
 //-----------------------------------------------------------------------------
 static std::vector<std::string> Split(const std::string &haystack, const std::string &needle)
 {
@@ -781,79 +781,79 @@ static std::string PathSepUNIXToPlatform(const std::string &filename)
 
 bool SolveSpaceUI::ReloadAllImported(bool canCancel)
 {
-    std::map<std::string, std::string> importMap;
+    std::map<std::string, std::string> linkMap;
     allConsistent = false;
 
     int i;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
-        if(g->type != Group::IMPORTED) continue;
+        if(g->type != Group::LINKED) continue;
 
-        if(isalpha(g->impFile[0]) && g->impFile[1] == ':') {
-            // Make sure that g->impFileRel always contains a relative path
+        if(isalpha(g->linkFile[0]) && g->linkFile[1] == ':') {
+            // Make sure that g->linkFileRel always contains a relative path
             // in an UNIX format, even after we load an old file which had
             // the path in Windows format
-            PathSepNormalize(g->impFileRel);
+            PathSepNormalize(g->linkFileRel);
         }
 
         g->impEntity.Clear();
         g->impMesh.Clear();
         g->impShell.Clear();
 
-        if(importMap.count(g->impFile)) {
-            std::string newPath = importMap[g->impFile];
+        if(linkMap.count(g->linkFile)) {
+            std::string newPath = linkMap[g->linkFile];
             if(!newPath.empty())
-                g->impFile = newPath;
+                g->linkFile = newPath;
         }
 
-        FILE *test = ssfopen(g->impFile, "rb");
+        FILE *test = ssfopen(g->linkFile, "rb");
         if(test) {
             fclose(test); // okay, exists
         } else {
             // It doesn't exist. Perhaps the entire tree has moved, and we
             // can use the relative filename to get us back.
             if(!SS.saveFile.empty()) {
-                std::string rel = PathSepUNIXToPlatform(g->impFileRel);
+                std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
                 std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
                 test = ssfopen(fromRel, "rb");
                 if(test) {
                     fclose(test);
                     // It worked, this is our new absolute path
-                    g->impFile = fromRel;
+                    g->linkFile = fromRel;
                 }
             }
         }
 
 try_load_file:
-        if(LoadEntitiesFromFile(g->impFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
+        if(LoadEntitiesFromFile(g->linkFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
         {
             if(!SS.saveFile.empty()) {
-                // Record the imported file's name relative to our filename;
+                // Record the linked file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
-                std::string rel = MakePathRelative(SS.saveFile, g->impFile);
-                g->impFileRel = PathSepPlatformToUNIX(rel);
+                std::string rel = MakePathRelative(SS.saveFile, g->linkFile);
+                g->linkFileRel = PathSepPlatformToUNIX(rel);
             } else {
                 // We're not yet saved, so can't make it absolute.
                 // This will only be used for display purposes, as SS.saveFile
                 // is always nonempty when we are actually writing anything.
-                g->impFileRel = g->impFile;
+                g->linkFileRel = g->linkFile;
             }
-        } else if(!importMap.count(g->impFile)) {
-            switch(LocateImportedFileYesNoCancel(g->impFileRel, canCancel)) {
+        } else if(!linkMap.count(g->linkFile)) {
+            switch(LocateImportedFileYesNoCancel(g->linkFileRel, canCancel)) {
             case DIALOG_YES: {
-                std::string oldImpFile = g->impFile;
-                if(!GetOpenFile(&g->impFile, "", SlvsFileFilter)) {
+                std::string oldImpFile = g->linkFile;
+                if(!GetOpenFile(&g->linkFile, "", SlvsFileFilter)) {
                     if(canCancel)
                         return false;
                     break;
                 } else {
-                    importMap[oldImpFile] = g->impFile;
+                    linkMap[oldImpFile] = g->linkFile;
                     goto try_load_file;
                 }
             }
 
             case DIALOG_NO:
-                importMap[g->impFile] = "";
+                linkMap[g->linkFile] = "";
                 /* Geometry will be pruned by GenerateAll(). */
                 break;
 
@@ -862,7 +862,7 @@ try_load_file:
             }
         } else {
             // User was already asked to and refused to locate a missing
-            // imported file.
+            // linked file.
         }
     }
 

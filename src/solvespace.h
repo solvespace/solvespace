@@ -139,7 +139,7 @@ void ssremove(const std::string &filename);
 
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
-#define RECENT_IMPORT   (0xf100)
+#define RECENT_LINK     (0xf100)
 extern std::string RecentFile[MAX_RECENT];
 void RefreshRecentMenus(void);
 
@@ -787,7 +787,7 @@ public:
     void Exit(void);
 
     // File load/save routines, including the additional files that get
-    // loaded when we have import groups.
+    // loaded when we have link groups.
     FILE        *fh;
     void AfterNewFile(void);
     static void RemoveFromRecentList(const std::string &filename);

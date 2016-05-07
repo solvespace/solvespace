@@ -376,7 +376,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     if(saveAs || saveFile.empty()) {
         if(!GetSaveFile(&saveFile, "", SlvsFileFilter)) return false;
         // need to get new filename directly into saveFile, since that
-        // determines impFileRel path
+        // determines linkFileRel path
     }
 
     if(SaveToFile(saveFile)) {

@@ -263,7 +263,7 @@ void Entity::CalculateNumerical(bool forExport) {
         actNormal = Quaternion::From(0, n.x, n.y, n.z);
     }
     if(forExport) {
-        // Visibility in copied import entities follows source file
+        // Visibility in copied linked entities follows source file
         actVisible = IsVisible();
     } else {
         // Copied entities within a file are always visible

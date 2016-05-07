@@ -402,7 +402,7 @@ public:
         MNU_GROUP_LATHE,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
-        MNU_GROUP_IMPORT,
+        MNU_GROUP_LINK,
         MNU_GROUP_RECENT,
         // Constrain
         MNU_DISTANCE_DIA,

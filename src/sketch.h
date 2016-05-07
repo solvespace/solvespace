@@ -99,7 +99,7 @@ public:
         LATHE                         = 5101,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
-        IMPORTED                      = 5300
+        LINKED                        = 5300
     };
     int type;
 
@@ -191,8 +191,8 @@ public:
     enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
-    std::string impFile;
-    std::string impFileRel;
+    std::string linkFile;
+    std::string linkFileRel;
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;
@@ -464,12 +464,12 @@ public:
         dogd(), beziers(), edges(), edgesChordTol(), screenBBox(),
         screenBBoxValid() {};
 
-    // An imported entity that was hidden in the source file ends up hidden
+    // A linked entity that was hidden in the source file ends up hidden
     // here too.
     bool        forceHidden;
 
     // All points/normals/distances have their numerical value; this is
-    // a convenience, to simplify the import/assembly code, so that the
+    // a convenience, to simplify the link/assembly code, so that the
     // part is entirely described by the entities.
     Vector      actPoint;
     Quaternion  actNormal;

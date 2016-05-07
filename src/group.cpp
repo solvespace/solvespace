@@ -77,9 +77,9 @@ void Group::MenuGroup(int id) {
     g.color = RGBi(100, 100, 100);
     g.scale = 1;
 
-    if(id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT)) {
-        g.impFile = RecentFile[id-RECENT_IMPORT];
-        id = GraphicsWindow::MNU_GROUP_IMPORT;
+    if(id >= RECENT_LINK && id < (RECENT_LINK + MAX_RECENT)) {
+        g.linkFile = RecentFile[id-RECENT_LINK];
+        id = GraphicsWindow::MNU_GROUP_LINK;
     }
 
     SS.GW.GroupSelection();
@@ -205,15 +205,15 @@ void Group::MenuGroup(int id) {
             g.name = "translate";
             break;
 
-        case GraphicsWindow::MNU_GROUP_IMPORT: {
-            g.type = IMPORTED;
-            if(g.impFile.empty()) {
-                if(!GetOpenFile(&g.impFile, "", SlvsFileFilter)) return;
+        case GraphicsWindow::MNU_GROUP_LINK: {
+            g.type = LINKED;
+            if(g.linkFile.empty()) {
+                if(!GetOpenFile(&g.linkFile, "", SlvsFileFilter)) return;
             }
 
             // Assign the default name of the group based on the name of
-            // the imported file.
-            std::string groupName = g.impFile;
+            // the linked file.
+            std::string groupName = g.linkFile;
             size_t pos;
 
             pos = groupName.rfind(PATH_SEP);
@@ -234,7 +234,7 @@ void Group::MenuGroup(int id) {
             if(groupName.length() > 0) {
                 g.name = groupName;
             } else {
-                g.name = "import";
+                g.name = "link";
             }
 
             g.meshCombine = COMBINE_AS_ASSEMBLE;
@@ -269,7 +269,7 @@ void Group::MenuGroup(int id) {
     SK.group.AddAndAssignId(&g);
     Group *gg = SK.GetGroup(g.h);
 
-    if(gg->type == IMPORTED) {
+    if(gg->type == LINKED) {
         SS.ReloadAllImported();
     }
     gg->clean = false;
@@ -287,7 +287,7 @@ void Group::MenuGroup(int id) {
 }
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {
-    if(type != IMPORTED) oops();
+    if(type != LINKED) oops();
 
     hParam tx, ty, tz, qw, qx, qy, qz;
     tx = h.param(0);
@@ -323,7 +323,7 @@ std::string Group::DescriptionString(void) {
 }
 
 void Group::Activate(void) {
-    if(type == EXTRUDE || type == IMPORTED || type == LATHE || type == TRANSLATE || type == ROTATE) {
+    if(type == EXTRUDE || type == LINKED || type == LATHE || type == TRANSLATE || type == ROTATE) {
         SS.GW.showFaces = true;
     } else {
         SS.GW.showFaces = false;
@@ -529,7 +529,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             }
             break;
         }
-        case IMPORTED:
+        case LINKED:
             // The translation vector
             AddParam(param, h.param(0), gp.x);
             AddParam(param, h.param(1), gp.y);
@@ -566,7 +566,7 @@ void Group::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {
 }
 
 void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
-    if(type == IMPORTED) {
+    if(type == LINKED) {
         // Normalize the quaternion
         ExprQuaternion q = {
             Expr::From(h.param(3)),
@@ -895,9 +895,9 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         }
     }
 
-    // If the entity came from an imported file where it was invisible then
+    // If the entity came from an linked file where it was invisible then
     // ep->actiVisble will be false, and we should hide it. Or if the entity
-    // came from a copy (e.g. step and repeat) of a force-hidden imported
+    // came from a copy (e.g. step and repeat) of a force-hidden linked
     // entity, then we also want to hide it.
     en.forceHidden = (!ep->actVisible) || ep->forceHidden;
 

@@ -588,7 +588,7 @@ void GraphicsWindow::Paint(void) {
     }
     ssglDepthRangeOffset(0);
 
-    // Nasty case when we're reloading the imported files; could be that
+    // Nasty case when we're reloading the linked files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
     // we have to get called to paint ourselves. If the sketch is screwed
     // up, then we could trigger an oops trying to draw.

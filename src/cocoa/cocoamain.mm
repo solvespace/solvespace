@@ -613,7 +613,7 @@ int ShowContextMenu(void) {
     int id_ = [sender tag];
     if(id_ >= RECENT_OPEN && id_ < (RECENT_OPEN + MAX_RECENT))
         SolveSpace::SolveSpaceUI::MenuFile(id_);
-    else if(id_ >= RECENT_IMPORT && id_ < (RECENT_IMPORT + MAX_RECENT))
+    else if(id_ >= RECENT_LINK && id_ < (RECENT_LINK + MAX_RECENT))
         SolveSpace::Group::MenuGroup(id_);
 }
 @end
@@ -718,7 +718,7 @@ static void RefreshRecentMenu(int id_, int base) {
 
 void RefreshRecentMenus(void) {
     RefreshRecentMenu(GraphicsWindow::MNU_OPEN_RECENT, RECENT_OPEN);
-    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_IMPORT);
+    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_LINK);
 }
 
 void ToggleMenuBar(void) {
@@ -869,7 +869,7 @@ SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
                             const std::string &filename, bool canCancel) {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:[NSString stringWithUTF8String:
-        ("The imported file " + filename + " is not present.").c_str()]];
+        ("The linked file " + filename + " is not present.").c_str()]];
     [alert setInformativeText:
         @"Do you want to locate it manually?\n"
          "If you select \"No\", any geometry that depends on "
