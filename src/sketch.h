@@ -461,8 +461,8 @@ public:
     // POD members with indeterminate value.
     Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
         actDistance(), actVisible(), style(), construction(),
-        dogd(), beziers(), edges(), edgesChordTol(), screenBBox(),
-        screenBBoxValid() {};
+        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid(),
+        dogd() {};
 
     // A linked entity that was hidden in the source file ends up hidden
     // here too.

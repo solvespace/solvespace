@@ -46,7 +46,7 @@ if(WIN32)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-    set(WARNING_FLAGS   "-Wunused-variable")
+    set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${WARNING_FLAGS}")
 endif()

@@ -182,7 +182,7 @@ public:
             bool used = false;
             for(DxfFileWriter::BezierPath &path : writer->paths) {
                 for(SBezier *sb : path.beziers) {
-                    if(sb->auxA != s->h.v) continue;
+                    if((uint32_t)sb->auxA != s->h.v) continue;
                     used = true;
                     break;
                 }

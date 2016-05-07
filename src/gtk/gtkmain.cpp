@@ -349,7 +349,7 @@ protected:
     }
 
 #ifdef HAVE_GTK2
-    virtual bool on_expose_event(GdkEventExpose *event) {
+    virtual bool on_expose_event(GdkEventExpose *) {
         return on_draw(get_window()->create_cairo_context());
     }
 #endif
@@ -590,7 +590,7 @@ protected:
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing*event) {
+    virtual bool on_leave_notify_event (GdkEventCrossing *) {
         SS.GW.MouseLeave();
 
         return true;
@@ -688,7 +688,7 @@ protected:
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *event) {
+    virtual bool on_delete_event(GdkEventAny *) {
         SS.Exit();
 
         return true;
@@ -884,7 +884,7 @@ public:
     MainMenuItem(const GraphicsWindow::MenuEntry &entry) :
             MenuItem(), _entry(entry), _synthetic(false) {
         Glib::ustring label(_entry.label);
-        for(int i = 0; i < label.length(); i++) {
+        for(size_t i = 0; i < label.length(); i++) {
             if(label[i] == '&')
                 label.replace(i, 1, "_");
         }
@@ -956,7 +956,7 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
             Gtk::Menu *menu = new Gtk::Menu;
             menu_item->set_submenu(*menu);
 
-            if(entry->level >= sizeof(levels) / sizeof(levels[0]))
+            if((unsigned)entry->level >= sizeof(levels) / sizeof(levels[0]))
                 oops();
 
             levels[entry->level] = menu;
@@ -995,10 +995,6 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
 
 void EnableMenuById(int id, bool enabled) {
     main_menu_items[id]->set_sensitive(enabled);
-}
-
-static void ActivateMenuById(int id) {
-    main_menu_items[id]->activate();
 }
 
 void CheckMenuById(int id, bool checked) {
@@ -1301,7 +1297,7 @@ protected:
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing*event) {
+    virtual bool on_leave_notify_event (GdkEventCrossing *) {
         SS.TW.MouseLeave();
 
         return true;
@@ -1367,7 +1363,7 @@ protected:
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *event) {
+    virtual bool on_delete_event(GdkEventAny *) {
         /* trigger the action and ignore the request */
         GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
 
@@ -1477,7 +1473,7 @@ std::vector<std::string> GetFontFiles() {
 /* Space Navigator support */
 
 #ifdef HAVE_SPACEWARE
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *event, gpointer data) {
+static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) {
     XEvent *xevent = (XEvent*) gxevent;
 
     spnav_event sev;

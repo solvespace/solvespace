@@ -340,10 +340,6 @@ public:
     }
 
     hStyle styleFor(const DRW_Entity *e) {
-        DRW_Layer *layer = NULL;
-        auto bi = layers.find(e->layer);
-        if(bi != layers.end()) layer = &bi->second;
-
         // Color.
         // TODO: which color to choose: index or RGB one?
         int col = getColor(e);

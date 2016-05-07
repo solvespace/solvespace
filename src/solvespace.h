@@ -159,12 +159,12 @@ struct FileFilter {
 // SolveSpace native file format
 const FileFilter SlvsFileFilter[] = {
     { "SolveSpace models",          { "slvs" } },
-    { NULL }
+    { NULL, {} }
 };
 // PNG format bitmap
 const FileFilter PngFileFilter[] = {
     { "PNG",                        { "png" } },
-    { NULL }
+    { NULL, {} }
 };
 // Triangle mesh
 const FileFilter MeshFileFilter[] = {
@@ -172,12 +172,12 @@ const FileFilter MeshFileFilter[] = {
     { "Wavefront OBJ mesh",         { "obj" } },
     { "Three.js-compatible mesh, with viewer",  { "html" } },
     { "Three.js-compatible mesh, mesh only",    { "js" } },
-    { NULL }
+    { NULL, {} }
 };
 // NURBS surfaces
 const FileFilter SurfaceFileFilter[] = {
     { "STEP file",                  { "step", "stp" } },
-    { NULL }
+    { NULL, {} }
 };
 // 2d vector (lines and curves) format
 const FileFilter VectorFileFilter[] = {
@@ -188,23 +188,23 @@ const FileFilter VectorFileFilter[] = {
     { "DXF file (AutoCAD 2007)",    { "dxf" } },
     { "HPGL file",                  { "plt",  "hpgl" } },
     { "G Code",                     { "ngc",  "txt" } },
-    { NULL }
+    { NULL, {} }
 };
 // 3d vector (wireframe lines and curves) format
 const FileFilter Vector3dFileFilter[] = {
     { "STEP file",                  { "step", "stp" } },
     { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { NULL }
+    { NULL, {} }
 };
 // All Importable formats
 const FileFilter ImportableFileFilter[] = {
     { "AutoCAD DXF and DWG files",  { "dxf", "dwg" } },
-    { NULL }
+    { NULL, {} }
 };
 // Comma-separated value, like a spreadsheet would use
 const FileFilter CsvFileFilter[] = {
     { "CSV",                        { "csv" } },
-    { NULL }
+    { NULL, {} }
 };
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
@@ -506,7 +506,7 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) { return false; }
+    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
     virtual bool CanOutputMesh() const { return false; }
 
     virtual void StartPath( RgbaColor strokeRgb, double lineWidth,

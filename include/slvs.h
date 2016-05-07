@@ -219,7 +219,7 @@ DLL void Slvs_MakeQuaternion(double ux, double uy, double uz,
  * out the structures by hand. The code is included in the header file to
  * let the compiler inline them if possible. */
 
-static Slvs_Param Slvs_MakeParam(Slvs_hParam h, Slvs_hGroup group, double val)
+static inline Slvs_Param Slvs_MakeParam(Slvs_hParam h, Slvs_hGroup group, double val)
 {
     Slvs_Param r;
     r.h = h;
@@ -227,9 +227,9 @@ static Slvs_Param Slvs_MakeParam(Slvs_hParam h, Slvs_hGroup group, double val)
     r.val = val;
     return r;
 }
-static Slvs_Entity Slvs_MakePoint2d(Slvs_hEntity h, Slvs_hGroup group,
-                                    Slvs_hEntity wrkpl,
-                                    Slvs_hParam u, Slvs_hParam v)
+static inline Slvs_Entity Slvs_MakePoint2d(Slvs_hEntity h, Slvs_hGroup group,
+                                           Slvs_hEntity wrkpl,
+                                           Slvs_hParam u, Slvs_hParam v)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -241,8 +241,8 @@ static Slvs_Entity Slvs_MakePoint2d(Slvs_hEntity h, Slvs_hGroup group,
     r.param[1] = v;
     return r;
 }
-static Slvs_Entity Slvs_MakePoint3d(Slvs_hEntity h, Slvs_hGroup group,
-                               Slvs_hParam x, Slvs_hParam y, Slvs_hParam z)
+static inline Slvs_Entity Slvs_MakePoint3d(Slvs_hEntity h, Slvs_hGroup group,
+                                           Slvs_hParam x, Slvs_hParam y, Slvs_hParam z)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -255,8 +255,9 @@ static Slvs_Entity Slvs_MakePoint3d(Slvs_hEntity h, Slvs_hGroup group,
     r.param[2] = z;
     return r;
 }
-static Slvs_Entity Slvs_MakeNormal3d(Slvs_hEntity h, Slvs_hGroup group,
-              Slvs_hParam qw, Slvs_hParam qx, Slvs_hParam qy, Slvs_hParam qz)
+static inline Slvs_Entity Slvs_MakeNormal3d(Slvs_hEntity h, Slvs_hGroup group,
+                                            Slvs_hParam qw, Slvs_hParam qx,
+                                            Slvs_hParam qy, Slvs_hParam qz)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -270,8 +271,8 @@ static Slvs_Entity Slvs_MakeNormal3d(Slvs_hEntity h, Slvs_hGroup group,
     r.param[3] = qz;
     return r;
 }
-static Slvs_Entity Slvs_MakeNormal2d(Slvs_hEntity h, Slvs_hGroup group,
-                                     Slvs_hEntity wrkpl)
+static inline Slvs_Entity Slvs_MakeNormal2d(Slvs_hEntity h, Slvs_hGroup group,
+                                            Slvs_hEntity wrkpl)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -281,8 +282,8 @@ static Slvs_Entity Slvs_MakeNormal2d(Slvs_hEntity h, Slvs_hGroup group,
     r.wrkpl = wrkpl;
     return r;
 }
-static Slvs_Entity Slvs_MakeDistance(Slvs_hEntity h, Slvs_hGroup group,
-                                     Slvs_hEntity wrkpl, Slvs_hParam d)
+static inline Slvs_Entity Slvs_MakeDistance(Slvs_hEntity h, Slvs_hGroup group,
+                                            Slvs_hEntity wrkpl, Slvs_hParam d)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -293,9 +294,9 @@ static Slvs_Entity Slvs_MakeDistance(Slvs_hEntity h, Slvs_hGroup group,
     r.param[0] = d;
     return r;
 }
-static Slvs_Entity Slvs_MakeLineSegment(Slvs_hEntity h, Slvs_hGroup group,
-                                        Slvs_hEntity wrkpl,
-                                        Slvs_hEntity ptA, Slvs_hEntity ptB)
+static inline Slvs_Entity Slvs_MakeLineSegment(Slvs_hEntity h, Slvs_hGroup group,
+                                               Slvs_hEntity wrkpl,
+                                               Slvs_hEntity ptA, Slvs_hEntity ptB)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -307,10 +308,10 @@ static Slvs_Entity Slvs_MakeLineSegment(Slvs_hEntity h, Slvs_hGroup group,
     r.point[1] = ptB;
     return r;
 }
-static Slvs_Entity Slvs_MakeCubic(Slvs_hEntity h, Slvs_hGroup group,
-                                  Slvs_hEntity wrkpl,
-                                  Slvs_hEntity pt0, Slvs_hEntity pt1,
-                                  Slvs_hEntity pt2, Slvs_hEntity pt3)
+static inline Slvs_Entity Slvs_MakeCubic(Slvs_hEntity h, Slvs_hGroup group,
+                                         Slvs_hEntity wrkpl,
+                                         Slvs_hEntity pt0, Slvs_hEntity pt1,
+                                         Slvs_hEntity pt2, Slvs_hEntity pt3)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -324,11 +325,11 @@ static Slvs_Entity Slvs_MakeCubic(Slvs_hEntity h, Slvs_hGroup group,
     r.point[3] = pt3;
     return r;
 }
-static Slvs_Entity Slvs_MakeArcOfCircle(Slvs_hEntity h, Slvs_hGroup group,
-                                        Slvs_hEntity wrkpl,
-                                        Slvs_hEntity normal,
-                                        Slvs_hEntity center,
-                                        Slvs_hEntity start, Slvs_hEntity end)
+static inline Slvs_Entity Slvs_MakeArcOfCircle(Slvs_hEntity h, Slvs_hGroup group,
+                                               Slvs_hEntity wrkpl,
+                                               Slvs_hEntity normal,
+                                               Slvs_hEntity center,
+                                               Slvs_hEntity start, Slvs_hEntity end)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -342,10 +343,10 @@ static Slvs_Entity Slvs_MakeArcOfCircle(Slvs_hEntity h, Slvs_hGroup group,
     r.point[2] = end;
     return r;
 }
-static Slvs_Entity Slvs_MakeCircle(Slvs_hEntity h, Slvs_hGroup group,
-                                   Slvs_hEntity wrkpl,
-                                   Slvs_hEntity center,
-                                   Slvs_hEntity normal, Slvs_hEntity radius)
+static inline Slvs_Entity Slvs_MakeCircle(Slvs_hEntity h, Slvs_hGroup group,
+                                          Slvs_hEntity wrkpl,
+                                          Slvs_hEntity center,
+                                          Slvs_hEntity normal, Slvs_hEntity radius)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -358,8 +359,8 @@ static Slvs_Entity Slvs_MakeCircle(Slvs_hEntity h, Slvs_hGroup group,
     r.distance = radius;
     return r;
 }
-static Slvs_Entity Slvs_MakeWorkplane(Slvs_hEntity h, Slvs_hGroup group,
-                                      Slvs_hEntity origin, Slvs_hEntity normal)
+static inline Slvs_Entity Slvs_MakeWorkplane(Slvs_hEntity h, Slvs_hGroup group,
+                                             Slvs_hEntity origin, Slvs_hEntity normal)
 {
     Slvs_Entity r;
     memset(&r, 0, sizeof(r));
@@ -372,15 +373,15 @@ static Slvs_Entity Slvs_MakeWorkplane(Slvs_hEntity h, Slvs_hGroup group,
     return r;
 }
 
-static Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
-                                           Slvs_hGroup group,
-                                           int type,
-                                           Slvs_hEntity wrkpl,
-                                           double valA,
-                                           Slvs_hEntity ptA,
-                                           Slvs_hEntity ptB,
-                                           Slvs_hEntity entityA,
-                                           Slvs_hEntity entityB)
+static inline Slvs_Constraint Slvs_MakeConstraint(Slvs_hConstraint h,
+                                                  Slvs_hGroup group,
+                                                  int type,
+                                                  Slvs_hEntity wrkpl,
+                                                  double valA,
+                                                  Slvs_hEntity ptA,
+                                                  Slvs_hEntity ptB,
+                                                  Slvs_hEntity entityA,
+                                                  Slvs_hEntity entityB)
 {
     Slvs_Constraint r;
     memset(&r, 0, sizeof(r));
