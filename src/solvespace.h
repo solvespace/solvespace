@@ -952,6 +952,7 @@ public:
 };
 
 void ImportDxf(const std::string &file);
+void ImportDwg(const std::string &file);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

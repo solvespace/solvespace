@@ -547,7 +547,11 @@ void SolveSpaceUI::MenuFile(int id) {
                             ImportableFileFilter)) break;
             CnfFreezeString(Extension(importFile), "ImportFormat");
 
-            ImportDxf(importFile);
+            if(Extension(importFile) == "dxf") {
+                ImportDxf(importFile);
+            } else if(Extension(importFile) == "dwg") {
+                ImportDwg(importFile);
+            } else oops();
             break;
         }
 

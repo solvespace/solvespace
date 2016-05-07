@@ -1,5 +1,6 @@
 #include "solvespace.h"
 #include "libdxfrw.h"
+#include "libdwgr.h"
 
 #ifdef WIN32
 // Conflicts with DRW::TEXT.
@@ -882,9 +883,24 @@ void ImportDxf(const std::string &filename) {
     dxfRW dxf(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
-    dxf.read(&interface, false);
+    if(!dxf.read(&interface, false)) {
+        Error("Corrupted DXF file!");
+    }
     if(interface.unknownEntities > 0) {
         Message(ssprintf("%u DXF entities of unknown type were ignored.",
+                         interface.unknownEntities).c_str());
+    }
+}
+
+void ImportDwg(const std::string &filename) {
+    dwgR dwg(filename.c_str());
+    DxfReadInterface interface;
+    interface.clearBlockTransform();
+    if(!dwg.read(&interface, false)) {
+        Error("Corrupted DWG file!");
+    }
+    if(interface.unknownEntities > 0) {
+        Message(ssprintf("%u DWG entities of unknown type were ignored.",
                          interface.unknownEntities).c_str());
     }
 }
