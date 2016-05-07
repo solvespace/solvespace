@@ -19,6 +19,7 @@ class hEquation;
 class Entity;
 class Param;
 class Equation;
+class Style;
 
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
@@ -685,6 +686,7 @@ public:
     void Draw(void);
     void GetEdges(SEdgeList *sel);
     bool IsStylable();
+    hStyle GetStyle() const;
     bool HasLabel();
 
     void LineDrawOrGetDistance(Vector a, Vector b);

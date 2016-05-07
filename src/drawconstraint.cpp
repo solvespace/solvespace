@@ -10,8 +10,7 @@
 
 void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
     if(dogd.drawing) {
-        hStyle hs = disp.style;
-        if(hs.v == 0) hs.v = Style::CONSTRAINT;
+        hStyle hs = GetStyle();
 
         if(dogd.sel) {
             dogd.sel->AddEdge(a, b, hs.v);
@@ -70,8 +69,7 @@ std::string Constraint::Label(void) {
 }
 
 void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
-    hStyle hs = disp.style;
-    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    hStyle hs = GetStyle();
     double th = Style::TextHeight(hs);
 
     std::string s = Label();
@@ -141,8 +139,7 @@ void Constraint::DoProjectedPoint(Vector *r) {
 // depending whether that extension was from A or from B.
 //-----------------------------------------------------------------------------
 int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend) {
-    hStyle hs = disp.style;
-    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    hStyle hs = GetStyle();
     double th = Style::TextHeight(hs);
     Vector gu = SS.GW.projUp.WithMagnitude(1),
            gr = SS.GW.projRight.WithMagnitude(1);
@@ -1176,8 +1173,7 @@ s:
 void Constraint::Draw(void) {
     dogd.drawing = true;
     dogd.sel = NULL;
-    hStyle hs = disp.style;
-    if(hs.v == 0) hs.v = Style::CONSTRAINT;
+    hStyle hs = GetStyle();
 
     ssglLineWidth(Style::Width(hs));
     ssglColorRGB(Style::Color(hs));
@@ -1227,6 +1223,11 @@ void Constraint::GetEdges(SEdgeList *sel) {
 bool Constraint::IsStylable() {
     if(type == COMMENT) return true;
     return false;
+}
+
+hStyle Constraint::GetStyle() const {
+    if(disp.style.v != 0) return disp.style;
+    return { Style::CONSTRAINT };
 }
 
 bool Constraint::HasLabel() {

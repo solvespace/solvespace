@@ -306,7 +306,7 @@ public:
                         Vector bp = SK.GetEntity(c->ptB)->PointGetNum();
                         Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(c->disp.offset);
                         writeAlignedDimension(xfrm(ap),  xfrm(bp), xfrm(ref),
-                                              xfrm(ref), c->Label());
+                                              xfrm(ref), c->Label(), c->GetStyle());
                         break;
                     }
 
@@ -337,7 +337,7 @@ public:
                         Vector xdl = xfrm(lB).Minus(xfrm(lA));
                         writeLinearDimension(xfrm(pt), xfrm(refClosest), xfrm(ref),
                                              xfrm(ref), c->Label(),
-                                             atan2(xdl.y, xdl.x) / PI * 180.0 + 90.0, 0.0);
+                                             atan2(xdl.y, xdl.x) / PI * 180.0 + 90.0, 0.0, c->GetStyle());
                         break;
                     }
 
@@ -356,11 +356,11 @@ public:
                         if(/*isRadius*/c->other) {
                             writeRadialDimension(
                                 xfrm(center), xfrm(center.Plus(rad)),
-                                xfrm(ref), c->Label());
+                                xfrm(ref), c->Label(), c->GetStyle());
                         } else {
                             writeDiametricDimension(
                                 xfrm(center.Minus(rad)), xfrm(center.Plus(rad)),
-                                xfrm(ref), c->Label());
+                                xfrm(ref), c->Label(), c->GetStyle());
                         }
                         break;
                     }
@@ -386,15 +386,15 @@ public:
 
                         writeAngularDimension(
                             xfrm(a0), xfrm(a0.Plus(da)), xfrm(b0), xfrm(b0.Plus(db)), xfrm(ref),
-                            xfrm(ref), c->Label());
+                            xfrm(ref), c->Label(), c->GetStyle());
                         break;
                     }
 
                     case Constraint::COMMENT: {
-                        Style *st = Style::Get(c->disp.style);
+                        Style *st = SK.style.FindById(c->GetStyle());
                         writeText(xfrm(c->disp.offset), c->Label(),
-                                  Style::TextHeight(c->disp.style) / SS.GW.scale,
-                                  st->textAngle, st->textOrigin);
+                                  Style::TextHeight(c->GetStyle()) / SS.GW.scale,
+                                  st->textAngle, st->textOrigin, c->GetStyle());
                         break;
                     }
                 }
@@ -402,16 +402,35 @@ public:
         }
     }
 
+    int findDxfColor(const RgbaColor &src) {
+        int best = 0;
+        double minDist = VERY_POSITIVE;
+        Vector srcv = Vector::From(src.redF(), src.greenF(), src.blueF());
+        for(int i = 1; i < 256; i++) {
+            RgbaColor dst = RGBi(DRW::dxfColors[i][0], DRW::dxfColors[i][1], DRW::dxfColors[i][2]);
+            Vector dstv = Vector::From(dst.redF(), dst.greenF(), dst.blueF());
+            double dist = srcv.Minus(dstv).Magnitude();
+            if(dist < minDist || best == 0) {
+                best = i;
+                minDist = dist;
+            }
+        }
+        return best;
+    }
+
     void assignEntityDefaults(DRW_Entity *entity, hStyle hs) {
         Style *s = Style::Get(hs);
-        entity->color24 = s->Color(hs, true).ToPackedIntBGRA();
+        RgbaColor color = s->Color(hs, true);
+        entity->color24 = color.ToPackedIntBGRA();
+        entity->color = findDxfColor(color);
         entity->layer = s->DescriptionString();
         entity->lineType = DxfFileWriter::lineTypeName(s->stippleType);
         entity->ltypeScale = Style::StippleScaleMm(s->h);
         entity->setWidthMm(Style::WidthMm(hs.v));
     }
 
-    void assignDimensionDefaults(DRW_Dimension *dimension) {
+    void assignDimensionDefaults(DRW_Dimension *dimension, hStyle hs) {
+        assignEntityDefaults(dimension, hs);
         dimension->layer = "dimensions";
     }
 
@@ -521,9 +540,9 @@ public:
     }
 
     void writeAlignedDimension(Vector def1, Vector def2, Vector dimp,
-                               Vector textp, const std::string &text) {
+                               Vector textp, const std::string &text, hStyle hs) {
         DRW_DimAligned dim;
-        assignDimensionDefaults(&dim);
+        assignDimensionDefaults(&dim, hs);
         dim.setDef1Point(toCoord(def1));
         dim.setDef2Point(toCoord(def2));
         dim.setDimPoint(toCoord(dimp));
@@ -534,9 +553,9 @@ public:
 
     void writeLinearDimension(Vector def1, Vector def2, Vector dimp,
                               Vector textp, const std::string &text,
-                              double angle, double oblique) {
+                              double angle, double oblique, hStyle hs) {
         DRW_DimLinear dim;
-        assignDimensionDefaults(&dim);
+        assignDimensionDefaults(&dim, hs);
         dim.setDef1Point(toCoord(def1));
         dim.setDef2Point(toCoord(def2));
         dim.setDimPoint(toCoord(dimp));
@@ -548,9 +567,9 @@ public:
     }
 
     void writeRadialDimension(Vector center, Vector radius,
-                              Vector textp, const std::string &text) {
+                              Vector textp, const std::string &text, hStyle hs) {
         DRW_DimRadial dim;
-        assignDimensionDefaults(&dim);
+        assignDimensionDefaults(&dim, hs);
         dim.setCenterPoint(toCoord(center));
         dim.setDiameterPoint(toCoord(radius));
         dim.setTextPoint(toCoord(textp));
@@ -559,9 +578,9 @@ public:
     }
 
     void writeDiametricDimension(Vector def1, Vector def2,
-                                 Vector textp, const std::string &text) {
+                                 Vector textp, const std::string &text, hStyle hs) {
         DRW_DimDiametric dim;
-        assignDimensionDefaults(&dim);
+        assignDimensionDefaults(&dim, hs);
         dim.setDiameter1Point(toCoord(def1));
         dim.setDiameter2Point(toCoord(def2));
         dim.setTextPoint(toCoord(textp));
@@ -570,9 +589,9 @@ public:
     }
 
     void writeAngularDimension(Vector fl1, Vector fl2, Vector sl1, Vector sl2, Vector dimp,
-                               Vector textp, const std::string &text) {
+                               Vector textp, const std::string &text, hStyle hs) {
         DRW_DimAngular dim;
-        assignDimensionDefaults(&dim);
+        assignDimensionDefaults(&dim, hs);
         dim.setFirstLine1(toCoord(fl1));
         dim.setFirstLine2(toCoord(fl2));
         dim.setSecondLine1(toCoord(sl1));
@@ -584,8 +603,9 @@ public:
     }
 
     void writeText(Vector textp, const std::string &text,
-                   double height, double angle, int origin) {
+                   double height, double angle, int origin, hStyle hs) {
         DRW_Text txt;
+        assignEntityDefaults(&txt, hs);
         txt.layer = "text";
         txt.style = "unicode";
         txt.basePoint = toCoord(textp);

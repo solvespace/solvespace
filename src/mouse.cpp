@@ -790,8 +790,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             } else if(gs.points == 1) {
                 hs = Style::ForEntity(gs.point[0]);
             } else if(gs.constraints == 1) {
-                hs = SK.GetConstraint(gs.constraint[0])->disp.style;
-                if(!hs.v) hs.v = Style::CONSTRAINT;
+                hs = SK.GetConstraint(gs.constraint[0])->GetStyle();
             } else {
                 break;
             }
