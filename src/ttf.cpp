@@ -88,6 +88,7 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
         [&](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(!str.empty() && tf != &l.elem[l.n]) {
+        tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
         tf->PlotString(str, sbl, origin, u, v);
     } else {
         // No text or no font; so draw a big X for an error marker.
@@ -116,7 +117,7 @@ std::string TtfFont::FontFileBaseName() const {
 // the letter shapes, and about the mappings that determine which glyph goes
 // with which character.
 //-----------------------------------------------------------------------------
-bool TtfFont::LoadFromFile(FT_Library fontLibrary) {
+bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
     FT_Open_Args args = {};
     args.flags    = FT_OPEN_PATHNAME;
     args.pathname = &fontFile[0]; // FT_String is char* for historical reasons
@@ -139,6 +140,12 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary) {
 
     name = std::string(fontFace->family_name) +
            " (" + std::string(fontFace->style_name) + ")";
+
+    if(nameOnly) {
+        FT_Done_Face(fontFace);
+        fontFace = NULL;
+    }
+
     return true;
 }
 
@@ -211,6 +218,8 @@ static const FT_Outline_Funcs outline_funcs = {
 void TtfFont::PlotString(const std::string &str,
                          SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
+    if(fontFace == NULL) oops();
+
     FT_Pos dx = 0;
     for(char32_t chr : ReadUTF8(str)) {
         uint32_t gid = FT_Get_Char_Index(fontFace, chr);

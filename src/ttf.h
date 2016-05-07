@@ -16,7 +16,7 @@ public:
     FT_FaceRec_    *fontFace;
 
     std::string FontFileBaseName() const;
-    bool LoadFromFile(FT_LibraryRec_ *fontLibrary);
+    bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
 
     void PlotString(const std::string &str,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
