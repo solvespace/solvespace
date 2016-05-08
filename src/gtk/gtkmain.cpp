@@ -1426,7 +1426,6 @@ void ShowTextEditControl(int x, int y, const std::string &val) {
 
 void HideTextEditControl(void) {
     TW->get_overlay().stop_editing();
-    GW->raise();
 }
 
 bool TextEditControlIsVisible(void) {
