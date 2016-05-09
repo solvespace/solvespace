@@ -552,6 +552,9 @@ void SolveSpaceUI::MenuFile(int id) {
             } else if(Extension(importFile) == "dwg") {
                 ImportDwg(importFile);
             } else oops();
+
+            SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
+            SS.ScheduleShowTW();
             break;
         }
 
