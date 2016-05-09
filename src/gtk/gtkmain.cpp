@@ -718,7 +718,7 @@ private:
     bool _is_fullscreen;
 };
 
-GraphicsWindowGtk *GW = NULL;
+std::unique_ptr<GraphicsWindowGtk> GW;
 
 void GetGraphicsWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = GW->get_widget().get_allocation();
@@ -1315,7 +1315,6 @@ class TextWindowGtk : public Gtk::Window {
 public:
     TextWindowGtk() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
                       _overlay(_widget), _box() {
-        set_keep_above(true);
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
         set_skip_pager_hint(true);
@@ -1393,7 +1392,7 @@ private:
     Gtk::HBox _box;
 };
 
-TextWindowGtk *TW = NULL;
+std::unique_ptr<TextWindowGtk> TW;
 
 void ShowTextWindow(bool visible) {
     if(visible)
@@ -1539,10 +1538,11 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
-    TW = new TextWindowGtk;
-    GW = new GraphicsWindowGtk;
+    TW.reset(new TextWindowGtk);
+    GW.reset(new GraphicsWindowGtk);
     InitMainMenu(&GW->get_menubar());
     GW->get_menubar().accelerate(*TW);
+    TW->set_transient_for(*GW);
 
     TW->show_all();
     GW->show_all();
@@ -1561,8 +1561,8 @@ int main(int argc, char** argv) {
 
     main.run(*GW);
 
-    delete GW;
-    delete TW;
+    TW.reset();
+    GW.reset();
 
     SK.Clear();
     SS.Clear();
