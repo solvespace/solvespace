@@ -1080,9 +1080,15 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
         }
         filter->set_name(filter->get_name() + " (" + desc + ")");
 
+#ifdef HAVE_GTK3
+        chooser->add_filter(filter);
+        if(is_active)
+            chooser->set_filter(filter);
+#else
         chooser->add_filter(*filter);
         if(is_active)
             chooser->set_filter(*filter);
+#endif
     }
 
     return active;
