@@ -27,23 +27,25 @@ std::string SolveSpace::ssprintf(const char *fmt, ...)
 
 char32_t utf8_iterator::operator*()
 {
-    const uint8_t *it = (const uint8_t*) this->p;
+    auto it = reinterpret_cast<const uint8_t*>(this->p);
     char32_t result = *it;
-
-    if((result & 0x80) != 0) {
-      unsigned int mask = 0x40;
-
-      do {
-        result <<= 6;
-        unsigned int c = (*++it);
-        mask   <<= 5;
-        result  += c - 0x80;
-      } while((result & mask) != 0);
-
-      result &= mask - 1;
-    }
-
-    this->n = (const char*) (it + 1);
+	if ((result & 0xE0) == 0xE0)
+	{
+		result = (*it & 0x0F) << 12
+			| (*(it + 1) & 0x3F) << 6
+			| (*(it + 2) & 0x3F);
+		this->n = reinterpret_cast<const char*>(it + 3);
+	}
+	else if ((result & 0xC0) == 0xC0)
+	{
+		result = (*it & 0x1F) << 6
+			| (*(it + 1) & 0x3F);
+		this->n = reinterpret_cast<const char*>(it + 2);
+	}
+	else
+	{
+		this->n = reinterpret_cast<const char*>(it + 1);
+	}
     return result;
 }
 
