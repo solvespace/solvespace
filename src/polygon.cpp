@@ -67,7 +67,6 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
     Vector d = eb.Minus(ea);
     double t_eps = LENGTH_EPS/d.Magnitude();
 
-    double dist_a, dist_b;
     double t, tthis;
     bool skew;
     Vector pi;
@@ -84,15 +83,12 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
         return true;
     }
 
-    dist_a = a.DistanceToLine(ea, d),
-    dist_b = b.DistanceToLine(ea, d);
-
-    // Can't just test if dist_a equals dist_b; they could be on opposite
-    // sides, since it's unsigned.
+    // Can't just test if distance between d and a equals distance between d and b;
+    // they could be on opposite sides, since we don't have the sign.
     double m = sqrt(d.Magnitude()*dthis.Magnitude());
     if(sqrt(fabs(d.Dot(dthis))) > (m - LENGTH_EPS)) {
         // The edges are parallel.
-        if(fabs(dist_a) > LENGTH_EPS) {
+        if(fabs(a.DistanceToLine(ea, d)) > LENGTH_EPS) {
             // and not coincident, so can't be interesecting
             return false;
         }

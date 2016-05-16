@@ -191,7 +191,7 @@ void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector 
     bool gridFit = !SS.exportMode && u.Equals(SS.GW.projRight) && v.Equals(SS.GW.projUp);
 
     double scale = FONT_SCALE(h) / SS.GW.scale;
-    Vector o = { 3840.0, 3840.0 };
+    Vector o = { 3840.0, 3840.0, 0.0 };
     for(char32_t chr : ReadUTF8(str)) {
         const VectorGlyph &glyph = GetVectorGlyph(chr);
         o.x += ssglDrawCharacter(glyph, t, o, u, v, scale, fn, fndata, gridFit);

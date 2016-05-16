@@ -59,7 +59,7 @@ void Group::GenerateLoops(void) {
     bezierOpens.Clear();
 
     if(type == DRAWING_3D || type == DRAWING_WORKPLANE ||
-       type == ROTATE || type == TRANSLATE || type == IMPORTED)
+       type == ROTATE || type == TRANSLATE || type == LINKED)
     {
         bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
         AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
@@ -285,7 +285,7 @@ void Group::GenerateShellAndMesh(void) {
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
         }
-    } else if(type == IMPORTED) {
+    } else if(type == LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
         // transformation applied. We also must remap the face entities.
         Vector offset = {

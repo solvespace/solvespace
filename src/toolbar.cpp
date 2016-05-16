@@ -46,7 +46,7 @@ static const struct {
     { Icon_step_translate,  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating"             },
     { Icon_sketch_in_plane, GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)"  },
     { Icon_sketch_in_3d,    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d"                                   },
-    { Icon_assemble,        GraphicsWindow::MNU_GROUP_IMPORT,   "New group importing / assembling file"             },
+    { Icon_assemble,        GraphicsWindow::MNU_GROUP_LINK,     "New group linking / assembling file"               },
     { SPACER, 0, 0 },
 
     { Icon_in3d,            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view"                            },

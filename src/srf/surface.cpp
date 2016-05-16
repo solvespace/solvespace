@@ -636,7 +636,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
     // Now we actually build and trim the surfaces.
     for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
         int i, j;
-        SBezier *sb, *prev;
+        SBezier *sb;
         List<Revolved> hsl = {};
 
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
@@ -673,7 +673,6 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                      revsp = hsl.elem[WRAP(i-1, sbl->l.n)];
 
             sb   = &(sbl->l.elem[i]);
-            prev = &(sbl->l.elem[WRAP(i-1, sbl->l.n)]);
 
             for(j = 0; j < 4; j++) {
                 SCurve sc;

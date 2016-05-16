@@ -161,7 +161,7 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
             // since all groups after the active group are hidden.
             for(i = 0; i < SK.groupOrder.n; i++) {
                 Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-                if((!g->clean) || (g->solved.how != System::SOLVED_OKAY)) {
+                if((!g->clean) || !g->IsSolvedOkay()) {
                     first = min(first, i);
                 }
                 if(g->h.v == SS.GW.activeGroup.v) {

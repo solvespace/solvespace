@@ -144,6 +144,9 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
 }
 
 void SolveSpaceUI::Exit(void) {
+    if(!OkayToStartNewFile())
+        return;
+
     // Recent files
     for(int i = 0; i < MAX_RECENT; i++)
         CnfFreezeString(RecentFile[i], "RecentFile_" + std::to_string(i));
@@ -376,7 +379,7 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     if(saveAs || saveFile.empty()) {
         if(!GetSaveFile(&saveFile, "", SlvsFileFilter)) return false;
         // need to get new filename directly into saveFile, since that
-        // determines impFileRel path
+        // determines linkFileRel path
     }
 
     if(SaveToFile(saveFile)) {
@@ -538,6 +541,23 @@ void SolveSpaceUI::MenuFile(int id) {
 
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
+            break;
+        }
+
+        case GraphicsWindow::MNU_IMPORT: {
+            std::string importFile;
+            if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
+                            ImportableFileFilter)) break;
+            CnfFreezeString(Extension(importFile), "ImportFormat");
+
+            if(Extension(importFile) == "dxf") {
+                ImportDxf(importFile);
+            } else if(Extension(importFile) == "dwg") {
+                ImportDwg(importFile);
+            } else oops();
+
+            SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
+            SS.ScheduleShowTW();
             break;
         }
 

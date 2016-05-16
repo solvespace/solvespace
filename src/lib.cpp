@@ -13,22 +13,22 @@ static System SYS;
 
 static int IsInit = 0;
 
-void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
+void Group::GenerateEquations(IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }
 
-void SolveSpace::CnfFreezeInt(uint32_t v, const std::string &name)
+void SolveSpace::CnfFreezeInt(uint32_t, const std::string &)
 {
     abort();
 }
 
-uint32_t SolveSpace::CnfThawInt(uint32_t v, const std::string &name)
+uint32_t SolveSpace::CnfThawInt(uint32_t, const std::string &)
 {
     abort();
     return 0;
 }
 
-void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
+void SolveSpace::DoMessageBox(const char *, int, int, bool)
 {
     abort();
 }

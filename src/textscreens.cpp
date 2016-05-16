@@ -191,7 +191,17 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
         case 'k': g->skipFirst = true; break;
         case 'K': g->skipFirst = false; break;
 
-        case 'c': g->meshCombine = v; break;
+        case 'c':
+            // When an extrude group is first created, it's positioned for a union
+            // extrusion. If no constraints were added, flip it when we switch between
+            // union and difference modes to avoid manual work doing the smae.
+            if(g->meshCombine != (int)v && g->GetNumConstraints() == 0 &&
+               (v == Group::COMBINE_AS_DIFFERENCE ||
+                g->meshCombine == Group::COMBINE_AS_DIFFERENCE)) {
+                g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
+            }
+            g->meshCombine = v;
+            break;
 
         case 'P': g->suppress = !(g->suppress); break;
 
@@ -320,9 +330,9 @@ void TextWindow::ShowGroupInfo(void) {
                 times, times == 1 ? "" : "s",
                 g->h.v, &TextWindow::ScreenChangeExprA);
         }
-    } else if(g->type == Group::IMPORTED) {
-        Printf(true, " %Ftimport geometry from file%E");
-        Printf(false, "%Ba   '%s'", g->impFileRel.c_str());
+    } else if(g->type == Group::LINKED) {
+        Printf(true, " %Ftlink geometry from file%E");
+        Printf(false, "%Ba   '%s'", g->linkFileRel.c_str());
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
@@ -337,12 +347,12 @@ void TextWindow::ShowGroupInfo(void) {
 
     if(g->type == Group::EXTRUDE ||
        g->type == Group::LATHE ||
-       g->type == Group::IMPORTED)
+       g->type == Group::LINKED)
     {
         bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
         bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
         bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);
-        bool asa  = (g->type == Group::IMPORTED);
+        bool asa  = (g->type == Group::LINKED);
 
         Printf(false, " %Ftsolid model as");
         Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
@@ -370,7 +380,7 @@ void TextWindow::ShowGroupInfo(void) {
             Printf(false, "%Bd   %Ftopacity%E %@ %f%Lf%Fl[change]%E",
                 g->color.alphaF(),
                 &TextWindow::ScreenOpacity);
-        } else if(g->type == Group::IMPORTED) {
+        } else if(g->type == Group::LINKED) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);

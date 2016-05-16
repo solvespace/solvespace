@@ -36,7 +36,7 @@ static void *CheckMalloc(size_t n)
  * An example of a constraint in 3d. We create a single group, with some
  * entities and constraints.
  *---------------------------------------------------------------------------*/
-static void Example3d(void)
+void Example3d(void)
 {
     /* This will contain a single group, which will arbitrarily number 1. */
     Slvs_hGroup g = 1;
@@ -88,7 +88,7 @@ static void Example3d(void)
  * along the reference frame's xy plane. In a second group, we create some
  * entities in that group and dimension them.
  *---------------------------------------------------------------------------*/
-static void Example2d(void)
+void Example2d(void)
 {
     Slvs_hGroup g;
     double qw, qx, qy, qz;

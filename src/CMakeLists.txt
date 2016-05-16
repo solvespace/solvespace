@@ -284,6 +284,7 @@ set(solvespace_SOURCES
     graphicswin.cpp
     group.cpp
     groupmesh.cpp
+    importdxf.cpp
     mesh.cpp
     modify.cpp
     mouse.cpp

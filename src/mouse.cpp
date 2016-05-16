@@ -1421,15 +1421,15 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     double aam = aa.Magnitude();
     if(aam > 0.0) aa = aa.WithMagnitude(1);
 
-    // This can either transform our view, or transform an imported part.
+    // This can either transform our view, or transform a linked part.
     GroupSelection();
     Entity *e = NULL;
     Group *g = NULL;
     if(gs.points == 1   && gs.n == 1) e = SK.GetEntity(gs.point [0]);
     if(gs.entities == 1 && gs.n == 1) e = SK.GetEntity(gs.entity[0]);
     if(e) g = SK.GetGroup(e->group);
-    if(g && g->type == Group::IMPORTED && !shiftDown) {
-        // Apply the transformation to an imported part. Gain down the Z
+    if(g && g->type == Group::LINKED && !shiftDown) {
+        // Apply the transformation to a linked part. Gain down the Z
         // axis, since it's hard to see what you're doing on that one since
         // it's normal to the screen.
         Vector t = projRight.ScaledBy(tx/scale).Plus(

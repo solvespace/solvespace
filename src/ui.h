@@ -348,6 +348,7 @@ public:
         MNU_EXPORT_VIEW,
         MNU_EXPORT_SECTION,
         MNU_EXPORT_WIREFRAME,
+        MNU_IMPORT,
         MNU_EXIT,
         // View
         MNU_ZOOM_IN,
@@ -401,7 +402,7 @@ public:
         MNU_GROUP_LATHE,
         MNU_GROUP_ROT,
         MNU_GROUP_TRANS,
-        MNU_GROUP_IMPORT,
+        MNU_GROUP_LINK,
         MNU_GROUP_RECENT,
         // Constrain
         MNU_DISTANCE_DIA,

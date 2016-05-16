@@ -956,7 +956,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     SolveSpaceUI::MenuFile(id);
                     break;
                 }
-                if((id >= RECENT_IMPORT && id < (RECENT_IMPORT + MAX_RECENT))) {
+                if((id >= RECENT_LINK && id < (RECENT_LINK + MAX_RECENT))) {
                     Group::MenuGroup(id);
                     break;
                 }
@@ -1116,7 +1116,7 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filena
     EnableWindow(TextWnd, false);
 
     std::string message =
-        "The imported file " + filename + " is not present.\n\n"
+        "The linked file " + filename + " is not present.\n\n"
         "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
@@ -1209,7 +1209,7 @@ static void DoRecent(HMENU m, int base)
 void SolveSpace::RefreshRecentMenus(void)
 {
     DoRecent(RecentOpenMenu,   RECENT_OPEN);
-    DoRecent(RecentImportMenu, RECENT_IMPORT);
+    DoRecent(RecentImportMenu, RECENT_LINK);
 }
 
 HMENU CreateGraphicsWindowMenus(void)

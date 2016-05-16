@@ -75,19 +75,21 @@ void Constraint::DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA)
     SS.GW.hover.Clear();
 }
 
-void Constraint::AddConstraint(Constraint *c) {
-    AddConstraint(c, true);
+hConstraint Constraint::AddConstraint(Constraint *c) {
+    return AddConstraint(c, true);
 }
-void Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
+
+hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
     SK.constraint.AddAndAssignId(c);
 
     SS.MarkGroupDirty(c->group);
     SS.ScheduleGenerateAll();
+    return c->h;
 }
 
-void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
+hConstraint Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
                                      hEntity entityA, hEntity entityB,
                                      bool other, bool other2)
 {
@@ -101,13 +103,15 @@ void Constraint::Constrain(int type, hEntity ptA, hEntity ptB,
     c.entityB = entityB;
     c.other = other;
     c.other2 = other2;
-    AddConstraint(&c, false);
+    return AddConstraint(&c, false);
 }
-void Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA){
-    Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false, false);
+
+hConstraint Constraint::Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA){
+    return Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false, false);
 }
-void Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
-    Constrain(POINTS_COINCIDENT, ptA, ptB,
+
+hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
+    return Constrain(POINTS_COINCIDENT, ptA, ptB,
         Entity::NO_ENTITY, Entity::NO_ENTITY, false, false);
 }
 

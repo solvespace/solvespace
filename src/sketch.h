@@ -99,7 +99,7 @@ public:
         LATHE                         = 5101,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
-        IMPORTED                      = 5300
+        LINKED                        = 5300
     };
     int type;
 
@@ -191,8 +191,8 @@ public:
     enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
-    std::string impFile;
-    std::string impFileRel;
+    std::string linkFile;
+    std::string linkFileRel;
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;
@@ -236,6 +236,9 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
     bool IsVisible(void);
+    int GetNumConstraints();
+    Vector ExtrusionGetVector();
+    void ExtrusionForceVectorTo(const Vector &v);
 
     // Assembling the curves into loops, and into a piecewise linear polygon
     // at the same time.
@@ -458,15 +461,15 @@ public:
     // POD members with indeterminate value.
     Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
         actDistance(), actVisible(), style(), construction(),
-        dogd(), beziers(), edges(), edgesChordTol(), screenBBox(),
-        screenBBoxValid() {};
+        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid(),
+        dogd() {};
 
-    // An imported entity that was hidden in the source file ends up hidden
+    // A linked entity that was hidden in the source file ends up hidden
     // here too.
     bool        forceHidden;
 
     // All points/normals/distances have their numerical value; this is
-    // a convenience, to simplify the import/assembly code, so that the
+    // a convenience, to simplify the link/assembly code, so that the
     // part is entirely described by the entities.
     Vector      actPoint;
     Quaternion  actNormal;
@@ -703,14 +706,14 @@ public:
 
     std::string DescriptionString(void);
 
-    static void AddConstraint(Constraint *c, bool rememberForUndo);
-    static void AddConstraint(Constraint *c);
+    static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
+    static hConstraint AddConstraint(Constraint *c);
     static void MenuConstrain(int id);
     static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
 
-    static void ConstrainCoincident(hEntity ptA, hEntity ptB);
-    static void Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
-    static void Constrain(int type, hEntity ptA, hEntity ptB,
+    static hConstraint ConstrainCoincident(hEntity ptA, hEntity ptB);
+    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
+    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB,
                                     bool other, bool other2);
 };
@@ -827,7 +830,7 @@ public:
     static void LoadFactoryDefaults(void);
 
     static void AssignSelectionToStyle(uint32_t v);
-    static uint32_t CreateCustomStyle(void);
+    static uint32_t CreateCustomStyle(bool rememberForUndo = true);
 
     static RgbaColor RewriteColor(RgbaColor rgb);
 

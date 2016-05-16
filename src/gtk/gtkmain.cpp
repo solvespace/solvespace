@@ -349,7 +349,7 @@ protected:
     }
 
 #ifdef HAVE_GTK2
-    virtual bool on_expose_event(GdkEventExpose *event) {
+    virtual bool on_expose_event(GdkEventExpose *) {
         return on_draw(get_window()->create_cairo_context());
     }
 #endif
@@ -590,7 +590,7 @@ protected:
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing*event) {
+    virtual bool on_leave_notify_event (GdkEventCrossing *) {
         SS.GW.MouseLeave();
 
         return true;
@@ -688,7 +688,7 @@ protected:
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *event) {
+    virtual bool on_delete_event(GdkEventAny *) {
         SS.Exit();
 
         return true;
@@ -718,7 +718,7 @@ private:
     bool _is_fullscreen;
 };
 
-GraphicsWindowGtk *GW = NULL;
+std::unique_ptr<GraphicsWindowGtk> GW;
 
 void GetGraphicsWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = GW->get_widget().get_allocation();
@@ -884,7 +884,7 @@ public:
     MainMenuItem(const GraphicsWindow::MenuEntry &entry) :
             MenuItem(), _entry(entry), _synthetic(false) {
         Glib::ustring label(_entry.label);
-        for(int i = 0; i < label.length(); i++) {
+        for(size_t i = 0; i < label.length(); i++) {
             if(label[i] == '&')
                 label.replace(i, 1, "_");
         }
@@ -956,7 +956,7 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
             Gtk::Menu *menu = new Gtk::Menu;
             menu_item->set_submenu(*menu);
 
-            if(entry->level >= sizeof(levels) / sizeof(levels[0]))
+            if((unsigned)entry->level >= sizeof(levels) / sizeof(levels[0]))
                 oops();
 
             levels[entry->level] = menu;
@@ -997,10 +997,6 @@ void EnableMenuById(int id, bool enabled) {
     main_menu_items[id]->set_sensitive(enabled);
 }
 
-static void ActivateMenuById(int id) {
-    main_menu_items[id]->activate();
-}
-
 void CheckMenuById(int id, bool checked) {
     ((MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[id])->set_active(checked);
 }
@@ -1019,7 +1015,7 @@ protected:
     virtual void on_activate() {
         if(_id >= RECENT_OPEN && _id < (RECENT_OPEN + MAX_RECENT))
             SolveSpaceUI::MenuFile(_id);
-        else if(_id >= RECENT_IMPORT && _id < (RECENT_IMPORT + MAX_RECENT))
+        else if(_id >= RECENT_LINK && _id < (RECENT_LINK + MAX_RECENT))
             Group::MenuGroup(_id);
     }
 
@@ -1053,7 +1049,7 @@ static void RefreshRecentMenu(int id, int base) {
 
 void RefreshRecentMenus(void) {
     RefreshRecentMenu(GraphicsWindow::MNU_OPEN_RECENT, RECENT_OPEN);
-    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_IMPORT);
+    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_LINK);
 }
 
 /* Save/load */
@@ -1084,9 +1080,15 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
         }
         filter->set_name(filter->get_name() + " (" + desc + ")");
 
+#ifdef HAVE_GTK3
+        chooser->add_filter(filter);
+        if(is_active)
+            chooser->set_filter(filter);
+#else
         chooser->add_filter(*filter);
         if(is_active)
             chooser->set_filter(*filter);
+#endif
     }
 
     return active;
@@ -1223,7 +1225,7 @@ DialogChoice LoadAutosaveYesNo(void) {
 DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
                                            bool canCancel) {
     Glib::ustring message =
-        "The imported file " + filename + " is not present.\n"
+        "The linked file " + filename + " is not present.\n"
         "Do you want to locate it manually?\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
@@ -1301,7 +1303,7 @@ protected:
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing*event) {
+    virtual bool on_leave_notify_event (GdkEventCrossing *) {
         SS.TW.MouseLeave();
 
         return true;
@@ -1319,7 +1321,6 @@ class TextWindowGtk : public Gtk::Window {
 public:
     TextWindowGtk() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
                       _overlay(_widget), _box() {
-        set_keep_above(true);
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
         set_skip_pager_hint(true);
@@ -1367,7 +1368,7 @@ protected:
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *event) {
+    virtual bool on_delete_event(GdkEventAny *) {
         /* trigger the action and ignore the request */
         GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
 
@@ -1397,7 +1398,7 @@ private:
     Gtk::HBox _box;
 };
 
-TextWindowGtk *TW = NULL;
+std::unique_ptr<TextWindowGtk> TW;
 
 void ShowTextWindow(bool visible) {
     if(visible)
@@ -1430,7 +1431,6 @@ void ShowTextEditControl(int x, int y, const std::string &val) {
 
 void HideTextEditControl(void) {
     TW->get_overlay().stop_editing();
-    GW->raise();
 }
 
 bool TextEditControlIsVisible(void) {
@@ -1477,7 +1477,7 @@ std::vector<std::string> GetFontFiles() {
 /* Space Navigator support */
 
 #ifdef HAVE_SPACEWARE
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *event, gpointer data) {
+static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) {
     XEvent *xevent = (XEvent*) gxevent;
 
     spnav_event sev;
@@ -1544,10 +1544,11 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
-    TW = new TextWindowGtk;
-    GW = new GraphicsWindowGtk;
+    TW.reset(new TextWindowGtk);
+    GW.reset(new GraphicsWindowGtk);
     InitMainMenu(&GW->get_menubar());
     GW->get_menubar().accelerate(*TW);
+    TW->set_transient_for(*GW);
 
     TW->show_all();
     GW->show_all();
@@ -1566,8 +1567,8 @@ int main(int argc, char** argv) {
 
     main.run(*GW);
 
-    delete GW;
-    delete TW;
+    TW.reset();
+    GW.reset();
 
     SK.Clear();
     SS.Clear();

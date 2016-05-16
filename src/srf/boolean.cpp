@@ -286,17 +286,6 @@ static void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
     }
 }
 
-static const char *REGION(int d) {
-    switch(d) {
-        case SShell::INSIDE:  return "inside";
-        case SShell::OUTSIDE: return "outside";
-        case SShell::COINC_SAME: return "same";
-        case SShell::COINC_OPP: return "opp";
-        default: return "xxx";
-    }
-}
-
-
 //-----------------------------------------------------------------------------
 // We are given src, with at least one edge, and avoid, a list of points to
 // avoid. We return a chain of edges (that share endpoints), such that no

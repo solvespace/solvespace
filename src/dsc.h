@@ -492,13 +492,22 @@ public:
             (int)(255.1f * a));
     }
 
-    static RgbaColor FromPackedInt(uint32_t bgra) {
+    static RgbaColor FromPackedInt(uint32_t rgba) {
         return From(
-            (int)((bgra)       & 0xff),
-            (int)((bgra >> 8)  & 0xff),
+            (int)((rgba)       & 0xff),
+            (int)((rgba >> 8)  & 0xff),
+            (int)((rgba >> 16) & 0xff),
+            (int)(255 - ((rgba >> 24) & 0xff)));
+    }
+
+    static RgbaColor FromPackedIntBGRA(uint32_t bgra) {
+        return From(
             (int)((bgra >> 16) & 0xff),
+            (int)((bgra >> 8)  & 0xff),
+            (int)((bgra)       & 0xff),
             (int)(255 - ((bgra >> 24) & 0xff)));
     }
+
 };
 
 class BBox {

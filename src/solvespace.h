@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <locale>
 #include <vector>
 #include <unordered_map>
 #include <map>
@@ -138,7 +139,7 @@ void ssremove(const std::string &filename);
 
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
-#define RECENT_IMPORT   (0xf100)
+#define RECENT_LINK     (0xf100)
 extern std::string RecentFile[MAX_RECENT];
 void RefreshRecentMenus(void);
 
@@ -158,12 +159,12 @@ struct FileFilter {
 // SolveSpace native file format
 const FileFilter SlvsFileFilter[] = {
     { "SolveSpace models",          { "slvs" } },
-    { NULL }
+    { NULL, {} }
 };
 // PNG format bitmap
 const FileFilter PngFileFilter[] = {
     { "PNG",                        { "png" } },
-    { NULL }
+    { NULL, {} }
 };
 // Triangle mesh
 const FileFilter MeshFileFilter[] = {
@@ -171,12 +172,12 @@ const FileFilter MeshFileFilter[] = {
     { "Wavefront OBJ mesh",         { "obj" } },
     { "Three.js-compatible mesh, with viewer",  { "html" } },
     { "Three.js-compatible mesh, mesh only",    { "js" } },
-    { NULL }
+    { NULL, {} }
 };
 // NURBS surfaces
 const FileFilter SurfaceFileFilter[] = {
     { "STEP file",                  { "step", "stp" } },
-    { NULL }
+    { NULL, {} }
 };
 // 2d vector (lines and curves) format
 const FileFilter VectorFileFilter[] = {
@@ -187,18 +188,23 @@ const FileFilter VectorFileFilter[] = {
     { "DXF file (AutoCAD 2007)",    { "dxf" } },
     { "HPGL file",                  { "plt",  "hpgl" } },
     { "G Code",                     { "ngc",  "txt" } },
-    { NULL }
+    { NULL, {} }
 };
 // 3d vector (wireframe lines and curves) format
 const FileFilter Vector3dFileFilter[] = {
     { "STEP file",                  { "step", "stp" } },
     { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { NULL }
+    { NULL, {} }
+};
+// All Importable formats
+const FileFilter ImportableFileFilter[] = {
+    { "AutoCAD DXF and DWG files",  { "dxf", "dwg" } },
+    { NULL, {} }
 };
 // Comma-separated value, like a spreadsheet would use
 const FileFilter CsvFileFilter[] = {
     { "CSV",                        { "csv" } },
-    { NULL }
+    { NULL, {} }
 };
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
@@ -500,7 +506,7 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) { return false; }
+    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
     virtual bool CanOutputMesh() const { return false; }
 
     virtual void StartPath( RgbaColor strokeRgb, double lineWidth,
@@ -534,6 +540,9 @@ public:
     void FinishAndCloseFile(void);
     bool HasCanvasSize(void) { return false; }
     bool NeedToOutput(Constraint *c);
+
+    static const char *lineTypeName(int stippleType);
+
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
@@ -778,7 +787,7 @@ public:
     void Exit(void);
 
     // File load/save routines, including the additional files that get
-    // loaded when we have import groups.
+    // loaded when we have link groups.
     FILE        *fh;
     void AfterNewFile(void);
     static void RemoveFromRecentList(const std::string &filename);
@@ -941,6 +950,9 @@ public:
         delete pSys;
     }
 };
+
+void ImportDxf(const std::string &file);
+void ImportDwg(const std::string &file);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

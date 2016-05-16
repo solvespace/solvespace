@@ -40,6 +40,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Export 3d &Wireframe...",     MNU_EXPORT_WIREFRAME, 0,     TN, mFile },
 { 1, "Export Triangle &Mesh...",    MNU_EXPORT_MESH,    0,       TN, mFile },
 { 1, "Export &Surfaces...",         MNU_EXPORT_SURFACES,0,       TN, mFile },
+{ 1, "Im&port...",                  MNU_IMPORT         ,0,       TN, mFile },
 #ifndef __APPLE__
 { 1,  NULL,                         0,                  0,       TN, NULL  },
 { 1, "E&xit",                       MNU_EXIT,           C|'Q',   TN, mFile },
@@ -99,8 +100,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "E&xtrude",                    MNU_GROUP_EXTRUDE,  S|'X',   TN, mGrp  },
 { 1, "&Lathe",                      MNU_GROUP_LATHE,    S|'L',   TN, mGrp  },
 { 1, NULL,                          0,                  0,       TN, NULL  },
-{ 1, "Import / Assemble...",        MNU_GROUP_IMPORT,   S|'I',   TN, mGrp  },
-{ 1, "Import Recent",               MNU_GROUP_RECENT,   0,       TN, mGrp  },
+{ 1, "Link / Assemble...",          MNU_GROUP_LINK,     S|'I',   TN, mGrp  },
+{ 1, "Link Recent",                 MNU_GROUP_RECENT,   0,       TN, mGrp  },
 
 { 0, "&Sketch",                     0,                  0,       TN, NULL  },
 { 1, "In &Workplane",               MNU_SEL_WORKPLANE,  '2',     TR, mReq  },
@@ -858,9 +859,9 @@ void GraphicsWindow::MenuEdit(int id) {
 
             hGroup hg = e ? e->group : SS.GW.activeGroup;
             Group *g = SK.GetGroup(hg);
-            if(g->type != Group::IMPORTED) {
+            if(g->type != Group::LINKED) {
                 Error("To use this command, select a point or other "
-                      "entity from an imported part, or make an import "
+                      "entity from an linked part, or make a link "
                       "group the active group.");
                 break;
             }
