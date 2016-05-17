@@ -45,6 +45,13 @@ if(WIN32)
         -D_UNICODE)
 endif()
 
+if(MSVC)
+    # Many versions of MSVC do not have the (C99) inline keyword, instead
+    # they have their own __inline; this breaks `static inline` functions.
+    # We do not want to care and so we fix this with a definition.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
