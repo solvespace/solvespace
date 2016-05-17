@@ -1,6 +1,6 @@
 #!/bin/sh -xe
 
-if echo $TRAVIS_TAG | grep ^release-; then BUILD_TYPE=RelWithDebInfo; else BUILD_TYPE=Debug; fi
+if echo $TRAVIS_TAG | grep ^v; then BUILD_TYPE=RelWithDebInfo; else BUILD_TYPE=Debug; fi
 
 mkdir build
 cd build

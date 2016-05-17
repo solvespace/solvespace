@@ -5,7 +5,7 @@ before_build:
   - mkdir build
   - cd build
   - set tag=x%APPVEYOR_REPO_TAG_NAME%
-  - if %tag:~,9% == xrelease- (set BUILD_TYPE=RelWithDebInfo) else (set BUILD_TYPE=Debug)
+  - if %tag:~,2% == xv (set BUILD_TYPE=RelWithDebInfo) else (set BUILD_TYPE=Debug)
   - cmake -G"Visual Studio 12" -T v120_xp -DCMAKE_BUILD_TYPE=%BUILD_TYPE% ..
 build_script:
   - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
