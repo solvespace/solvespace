@@ -752,7 +752,11 @@ public:
         );
 
         Constraint *c = SK.GetConstraint(hc);
-        c->ModifyToSatisfy();
+        if(data->hasActualMeasurement()) {
+            c->valA = data->getActualMeasurement();
+        } else {
+            c->ModifyToSatisfy();
+        }
         c->disp.offset = p2.Minus(p0.Plus(p1).ScaledBy(0.5));
     }
 
@@ -787,7 +791,11 @@ public:
         );
 
         Constraint *c = SK.GetConstraint(hc);
-        c->ModifyToSatisfy();
+        if(data->hasActualMeasurement()) {
+            c->valA = data->getActualMeasurement();
+        } else {
+            c->ModifyToSatisfy();
+        }
         c->disp.offset = p2.Minus(p4);
     }
 
@@ -812,6 +820,13 @@ public:
 
         Constraint *c = SK.GetConstraint(hc);
         c->ModifyToSatisfy();
+        if(data->hasActualMeasurement()) {
+            double actual = data->getActualMeasurement() / PI * 180.0;
+            if(fabs(180.0 - actual - c->valA) < fabs(actual - c->valA)) {
+                c->other = true;
+            }
+            c->valA = actual;
+        }
 
         bool skew = false;
         Vector pi = Vector::AtIntersectionOfLines(l0p0, l0p1, l1p0, l1p1, &skew);
@@ -820,7 +835,7 @@ public:
         }
     }
 
-    hConstraint createDiametric(Vector cp, double r, Vector tp, bool asRadius = false) {
+    hConstraint createDiametric(Vector cp, double r, Vector tp, double actual, bool asRadius = false) {
         hEntity he = createCircle(cp, r, invisibleStyle().v);
 
         hConstraint hc = Constraint::Constrain(
@@ -831,7 +846,11 @@ public:
         );
 
         Constraint *c = SK.GetConstraint(hc);
-        c->ModifyToSatisfy();
+        if(actual > 0.0) {
+            c->valA = asRadius ? actual * 2.0 : actual;
+        } else {
+            c->ModifyToSatisfy();
+        }
         c->disp.offset = tp.Minus(cp);
         if(asRadius) c->other = true;
         return hc;
@@ -844,8 +863,12 @@ public:
         Vector cp = toVector(data->getCenterPoint());
         Vector dp = toVector(data->getDiameterPoint());
         Vector tp = toVector(data->getTextPoint());
+        double actual = -1.0;
+        if(data->hasActualMeasurement()) {
+            actual = data->getActualMeasurement();
+        }
 
-        createDiametric(cp, cp.Minus(dp).Magnitude(), tp, /*asRadius=*/true);
+        createDiametric(cp, cp.Minus(dp).Magnitude(), tp, actual, /*asRadius=*/true);
     }
 
     virtual void addDimDiametric(const DRW_DimDiametric *data) {
@@ -857,8 +880,12 @@ public:
 
         Vector cp = dp1.Plus(dp2).ScaledBy(0.5);
         Vector tp = toVector(data->getTextPoint());
+        double actual = -1.0;
+        if(data->hasActualMeasurement()) {
+            actual = data->getActualMeasurement();
+        }
 
-        createDiametric(cp, cp.Minus(dp1).Magnitude(), tp, /*asRadius=*/false);
+        createDiametric(cp, cp.Minus(dp1).Magnitude(), tp, actual, /*asRadius=*/false);
     }
 
     virtual void addDimAngular3P(const DRW_DimAngular3p *data) {
