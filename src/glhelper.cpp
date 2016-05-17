@@ -48,11 +48,11 @@ double ssglStrFontSize(double h)
 }
 double ssglStrWidth(const std::string &str, double h)
 {
-    int width = 0;
-    for(char32_t chr : ReadUTF8(str)) {
-        const VectorGlyph &glyph = GetVectorGlyph(chr);
+	auto width = 0;
+    for(auto chr : ReadUTF8(str)) {
+        const auto& glyph = GetVectorGlyph(chr);
         if(glyph.baseCharacter != 0) {
-            const VectorGlyph &baseGlyph = GetVectorGlyph(glyph.baseCharacter);
+            const auto& baseGlyph = GetVectorGlyph(glyph.baseCharacter);
             width += max(glyph.advanceWidth, baseGlyph.advanceWidth);
         } else {
             width += glyph.advanceWidth;
