@@ -806,22 +806,17 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
                 g->linkFile = newPath;
         }
 
-        FILE *test = ssfopen(g->linkFile, "rb");
+        std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
+        std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
+        FILE *test = ssfopen(fromRel, "rb");
         if(test) {
-            fclose(test); // okay, exists
+            fclose(test);
+            // Okay, exists; update the absolute path.
+            g->linkFile = fromRel;
         } else {
-            // It doesn't exist. Perhaps the entire tree has moved, and we
-            // can use the relative filename to get us back.
-            if(!SS.saveFile.empty()) {
-                std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
-                std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
-                test = ssfopen(fromRel, "rb");
-                if(test) {
-                    fclose(test);
-                    // It worked, this is our new absolute path
-                    g->linkFile = fromRel;
-                }
-            }
+            // It doesn't exist. Perhaps the file was moved but the tree wasn't, and we
+            // can use the absolute filename to get us back. The relative path will be
+            // updated below.
         }
 
 try_load_file:
