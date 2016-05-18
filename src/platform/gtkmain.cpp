@@ -513,10 +513,6 @@ public:
         set_double_buffered(true);
     }
 
-    void emulate_key_press(GdkEventKey *event) {
-        on_key_press_event(event);
-    }
-
 protected:
     virtual bool on_configure_event(GdkEventConfigure *event) {
         _w = event->width;
@@ -596,45 +592,6 @@ protected:
         return true;
     }
 
-    virtual bool on_key_press_event(GdkEventKey *event) {
-        int chr;
-
-        switch(event->keyval) {
-            case GDK_KEY_Escape:
-            chr = GraphicsWindow::ESCAPE_KEY;
-            break;
-
-            case GDK_KEY_Delete:
-            chr = GraphicsWindow::DELETE_KEY;
-            break;
-
-            case GDK_KEY_Tab:
-            chr = '\t';
-            break;
-
-            case GDK_KEY_BackSpace:
-            case GDK_KEY_Back:
-            chr = '\b';
-            break;
-
-            default:
-            if(event->keyval >= GDK_KEY_F1 && event->keyval <= GDK_KEY_F12)
-                chr = GraphicsWindow::FUNCTION_KEY_BASE + (event->keyval - GDK_KEY_F1);
-            else
-                chr = gdk_keyval_to_unicode(event->keyval);
-        }
-
-        if(event->state & GDK_SHIFT_MASK)
-            chr |= GraphicsWindow::SHIFT_MASK;
-        if(event->state & GDK_CONTROL_MASK)
-            chr |= GraphicsWindow::CTRL_MASK;
-
-        if(chr && SS.GW.KeyDown(chr))
-            return true;
-
-        return false;
-    }
-
 private:
     int _w, _h;
     void ij_to_xy(double i, double j, int &x, int &y) {
@@ -675,6 +632,10 @@ public:
         return _is_fullscreen;
     }
 
+    bool emulate_key_press(GdkEventKey *event) {
+        return on_key_press_event(event);
+    }
+
 protected:
     virtual void on_show() {
         Gtk::Window::on_show();
@@ -703,6 +664,55 @@ protected:
         SS.GW.EnsureValidActives();
 
         return Gtk::Window::on_window_state_event(event);
+    }
+
+    virtual bool on_key_press_event(GdkEventKey *event) {
+        int chr;
+
+        switch(event->keyval) {
+            case GDK_KEY_Escape:
+            chr = GraphicsWindow::ESCAPE_KEY;
+            break;
+
+            case GDK_KEY_Delete:
+            chr = GraphicsWindow::DELETE_KEY;
+            break;
+
+            case GDK_KEY_Tab:
+            chr = '\t';
+            break;
+
+            case GDK_KEY_BackSpace:
+            case GDK_KEY_Back:
+            chr = '\b';
+            break;
+
+            default:
+            if(event->keyval >= GDK_KEY_F1 && event->keyval <= GDK_KEY_F12) {
+                chr = GraphicsWindow::FUNCTION_KEY_BASE + (event->keyval - GDK_KEY_F1);
+            } else {
+                chr = gdk_keyval_to_unicode(event->keyval);
+            }
+        }
+
+        if(event->state & GDK_SHIFT_MASK){
+            chr |= GraphicsWindow::SHIFT_MASK;
+        }
+        if(event->state & GDK_CONTROL_MASK) {
+            chr |= GraphicsWindow::CTRL_MASK;
+        }
+
+        if(chr && SS.GW.KeyDown(chr)) {
+            return true;
+        }
+
+        if(chr == '\t') {
+            // Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=123994.
+            GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
+            return true;
+        }
+
+        return Gtk::Window::on_key_press_event(event);
     }
 
     virtual void on_editing_done(Glib::ustring value) {
@@ -898,6 +908,10 @@ public:
 
             case GraphicsWindow::ESCAPE_KEY:
             accel_key = GDK_KEY_Escape;
+            break;
+
+            case '\t':
+            accel_key = GDK_KEY_Tab;
             break;
 
             default:
@@ -1389,6 +1403,14 @@ protected:
 
     virtual bool on_editor_button_press_event(GdkEventButton *event) {
         return _widget.event((GdkEvent*) event);
+    }
+
+    virtual bool on_key_press_event(GdkEventKey *event) {
+        if(GW->emulate_key_press(event)) {
+            return true;
+        }
+
+        return Gtk::Window::on_key_press_event(event);
     }
 
 private:
