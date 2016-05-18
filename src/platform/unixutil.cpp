@@ -37,13 +37,6 @@ void ssremove(const std::string &filename)
     remove(filename.c_str());
 }
 
-int64_t GetUnixTime(void)
-{
-    time_t ret;
-    time(&ret);
-    return (int64_t)ret;
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since fragmentation is less of a concern, and it also makes it possible

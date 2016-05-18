@@ -781,18 +781,6 @@ int64_t SolveSpace::GetMilliseconds(void)
     return (int64_t)d;
 }
 
-int64_t SolveSpace::GetUnixTime(void)
-{
-#ifdef __MINGW32__
-    time_t ret;
-    time(&ret);
-#else
-    __time64_t ret;
-    _time64(&ret);
-#endif
-    return (int64_t)ret;
-}
-
 void SolveSpace::InvalidateText(void)
 {
     InvalidateRect(TextWnd, NULL, false);
