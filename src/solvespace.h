@@ -497,8 +497,6 @@ public:
 
     static VectorFileWriter *ForFile(const std::string &filename);
 
-    ~VectorFileWriter();
-
     void SetModelviewProjection(const Vector &u, const Vector &v, const Vector &n,
                                 const Vector &origin, double cameraTan, double scale);
     Vector Transform(Vector &pos) const;
@@ -508,18 +506,17 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
-    virtual bool CanOutputMesh() const { return false; }
-
     virtual void StartPath( RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
     virtual void FinishPath(RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
-    virtual void StartFile(void) = 0;
-    virtual void FinishAndCloseFile(void) = 0;
-    virtual bool HasCanvasSize(void) = 0;
+    virtual bool OutputConstraints(IdList<Constraint,hConstraint> *) { return false; }
+    virtual void StartFile() = 0;
+    virtual void FinishAndCloseFile() = 0;
+    virtual bool HasCanvasSize() const = 0;
+    virtual bool CanOutputMesh() const = 0;
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
@@ -530,21 +527,21 @@ public:
     std::vector<BezierPath>         paths;
     IdList<Constraint,hConstraint> *constraint;
 
-    bool OutputConstraints(IdList<Constraint,hConstraint> *constraint);
-
-    void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return false; }
-    bool NeedToOutput(Constraint *c);
-
     static const char *lineTypeName(int stippleType);
 
+    bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) override;
+
+    void StartPath( RgbaColor strokeRgb, double lineWidth,
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void FinishPath(RgbaColor strokeRgb, double lineWidth,
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return false; }
+    bool CanOutputMesh() const override { return false; }
+    bool NeedToOutput(Constraint *c);
 };
 class EpsFileWriter : public VectorFileWriter {
 public:
@@ -552,15 +549,15 @@ public:
     void MaybeMoveTo(Vector s, Vector f);
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return true; }
-    bool CanOutputMesh() const { return true; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return true; }
+    bool CanOutputMesh() const override { return true; }
 };
 class PdfFileWriter : public VectorFileWriter {
 public:
@@ -570,15 +567,15 @@ public:
     void MaybeMoveTo(Vector s, Vector f);
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return true; }
-    bool CanOutputMesh() const { return true; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return true; }
+    bool CanOutputMesh() const override { return true; }
 };
 class SvgFileWriter : public VectorFileWriter {
 public:
@@ -586,53 +583,56 @@ public:
     void MaybeMoveTo(Vector s, Vector f);
 
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return true; }
-    bool CanOutputMesh() const { return true; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return true; }
+    bool CanOutputMesh() const override { return true; }
 };
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return false; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return false; }
+    bool CanOutputMesh() const override { return false; }
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return false; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return false; }
+    bool CanOutputMesh() const override { return false; }
 };
 class GCodeFileWriter : public VectorFileWriter {
 public:
     SEdgeList sel;
     void StartPath( RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
     void FinishPath(RgbaColor strokeRgb, double lineWidth,
-                    bool filled, RgbaColor fillRgb, hStyle hs);
-    void Triangle(STriangle *tr);
-    void Bezier(SBezier *sb);
-    void StartFile(void);
-    void FinishAndCloseFile(void);
-    bool HasCanvasSize(void) { return false; }
+                    bool filled, RgbaColor fillRgb, hStyle hs) override;
+    void Triangle(STriangle *tr) override;
+    void Bezier(SBezier *sb) override;
+    void StartFile() override;
+    void FinishAndCloseFile() override;
+    bool HasCanvasSize() const override { return false; }
+    bool CanOutputMesh() const override { return false; }
 };
 
 #ifdef LIBRARY

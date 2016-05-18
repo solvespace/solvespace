@@ -323,7 +323,12 @@ public:
 protected:
     /* Draw on a GLX framebuffer object, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
-    virtual bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) {
+#ifdef HAVE_GTK3
+    bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) override {
+#else
+    bool on_expose_event(GdkEventExpose *) override {
+        const Cairo::RefPtr<Cairo::Context> &cr = get_window()->create_cairo_context();
+#endif
         if(!glXMakeCurrent(_xdisplay, _xwindow, _glcontext))
             oops();
 
@@ -347,12 +352,6 @@ protected:
 
         return true;
     }
-
-#ifdef HAVE_GTK2
-    virtual bool on_expose_event(GdkEventExpose *) {
-        return on_draw(get_window()->create_cairo_context());
-    }
-#endif
 
     virtual void on_gl_draw() = 0;
 
@@ -451,7 +450,7 @@ public:
     }
 
 protected:
-    virtual bool on_key_press_event(GdkEventKey *event) {
+    bool on_key_press_event(GdkEventKey *event) override {
         if(event->keyval == GDK_KEY_Escape) {
             stop_editing();
             return true;
@@ -460,13 +459,13 @@ protected:
         return false;
     }
 
-    virtual void on_size_allocate(Gtk::Allocation& allocation) {
+    void on_size_allocate(Gtk::Allocation& allocation) override {
         Gtk::Fixed::on_size_allocate(allocation);
 
         _underlay.size_allocate(allocation);
     }
 
-    virtual void on_activate() {
+    void on_activate() {
         _signal_editing_done(_entry.get_text());
     }
 
@@ -514,18 +513,18 @@ public:
     }
 
 protected:
-    virtual bool on_configure_event(GdkEventConfigure *event) {
+    bool on_configure_event(GdkEventConfigure *event) override {
         _w = event->width;
         _h = event->height;
 
         return GlWidget::on_configure_event(event);;
     }
 
-    virtual void on_gl_draw() {
+    void on_gl_draw() override {
         SS.GW.Paint();
     }
 
-    virtual bool on_motion_notify_event(GdkEventMotion *event) {
+    bool on_motion_notify_event(GdkEventMotion *event) override {
         int x, y;
         ij_to_xy(event->x, event->y, x, y);
 
@@ -539,7 +538,7 @@ protected:
         return true;
     }
 
-    virtual bool on_button_press_event(GdkEventButton *event) {
+    bool on_button_press_event(GdkEventButton *event) override {
         int x, y;
         ij_to_xy(event->x, event->y, x, y);
 
@@ -560,7 +559,7 @@ protected:
         return true;
     }
 
-    virtual bool on_button_release_event(GdkEventButton *event) {
+    bool on_button_release_event(GdkEventButton *event) override {
         int x, y;
         ij_to_xy(event->x, event->y, x, y);
 
@@ -577,7 +576,7 @@ protected:
         return true;
     }
 
-    virtual bool on_scroll_event(GdkEventScroll *event) {
+    bool on_scroll_event(GdkEventScroll *event) override {
         int x, y;
         ij_to_xy(event->x, event->y, x, y);
 
@@ -586,7 +585,7 @@ protected:
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing *) {
+    bool on_leave_notify_event (GdkEventCrossing *) override {
         SS.GW.MouseLeave();
 
         return true;
@@ -637,25 +636,25 @@ public:
     }
 
 protected:
-    virtual void on_show() {
+    void on_show() override {
         Gtk::Window::on_show();
 
         CnfThawWindowPos(this, "GraphicsWindow");
     }
 
-    virtual void on_hide() {
+    void on_hide() override {
         CnfFreezeWindowPos(this, "GraphicsWindow");
 
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *) {
+    bool on_delete_event(GdkEventAny *) override {
         SS.Exit();
 
         return true;
     }
 
-    virtual bool on_window_state_event(GdkEventWindowState *event) {
+    bool on_window_state_event(GdkEventWindowState *event) override {
         _is_fullscreen = event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
 
         /* The event arrives too late for the caller of ToggleFullScreen
@@ -666,7 +665,7 @@ protected:
         return Gtk::Window::on_window_state_event(event);
     }
 
-    virtual bool on_key_press_event(GdkEventKey *event) {
+    bool on_key_press_event(GdkEventKey *event) override {
         int chr;
 
         switch(event->keyval) {
@@ -715,7 +714,7 @@ protected:
         return Gtk::Window::on_key_press_event(event);
     }
 
-    virtual void on_editing_done(Glib::ustring value) {
+    void on_editing_done(Glib::ustring value) {
         SS.GW.EditControlDone(value.c_str());
     }
 
@@ -806,7 +805,7 @@ public:
     }
 
 protected:
-    virtual void on_activate() {
+    void on_activate() override {
         Gtk::MenuItem::on_activate();
 
         if(has_submenu())
@@ -821,7 +820,7 @@ protected:
        via keyboard.
        This selects the item twice in some cases, but we are idempotent.
      */
-    virtual bool on_button_press_event(GdkEventButton *event) {
+    bool on_button_press_event(GdkEventButton *event) override {
         if(event->button == 1 && event->type == GDK_BUTTON_PRESS) {
             on_activate();
             return true;
@@ -943,7 +942,7 @@ public:
     }
 
 protected:
-    virtual void on_activate() {
+    void on_activate() override {
         MenuItem::on_activate();
 
         if(_synthetic)
@@ -1026,7 +1025,7 @@ public:
     }
 
 protected:
-    virtual void on_activate() {
+    void on_activate() override {
         if(_id >= RECENT_OPEN && _id < (RECENT_OPEN + MAX_RECENT))
             SolveSpaceUI::MenuFile(_id);
         else if(_id >= RECENT_LINK && _id < (RECENT_LINK + MAX_RECENT))
@@ -1290,11 +1289,11 @@ public:
     }
 
 protected:
-    virtual void on_gl_draw() {
+    void on_gl_draw() override {
         SS.TW.Paint();
     }
 
-    virtual bool on_motion_notify_event(GdkEventMotion *event) {
+    bool on_motion_notify_event(GdkEventMotion *event) override {
         SS.TW.MouseEvent(/*leftClick*/ false,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
                          event->x, event->y);
@@ -1302,7 +1301,7 @@ protected:
         return true;
     }
 
-    virtual bool on_button_press_event(GdkEventButton *event) {
+    bool on_button_press_event(GdkEventButton *event) override {
         SS.TW.MouseEvent(/*leftClick*/ event->type == GDK_BUTTON_PRESS,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
                          event->x, event->y);
@@ -1310,14 +1309,14 @@ protected:
         return true;
     }
 
-    virtual bool on_scroll_event(GdkEventScroll *event) {
+    bool on_scroll_event(GdkEventScroll *event) override {
         _adjustment->set_value(_adjustment->get_value() +
                 DeltaYOfScrollEvent(event) * _adjustment->get_page_increment());
 
         return true;
     }
 
-    virtual bool on_leave_notify_event (GdkEventCrossing *) {
+    bool on_leave_notify_event (GdkEventCrossing *) override {
         SS.TW.MouseLeave();
 
         return true;
@@ -1370,47 +1369,47 @@ public:
     }
 
 protected:
-    virtual void on_show() {
+    void on_show() override {
         Gtk::Window::on_show();
 
         CnfThawWindowPos(this, "TextWindow");
     }
 
-    virtual void on_hide() {
+    void on_hide() override {
         CnfFreezeWindowPos(this, "TextWindow");
 
         Gtk::Window::on_hide();
     }
 
-    virtual bool on_delete_event(GdkEventAny *) {
+    bool on_key_press_event(GdkEventKey *event) override {
+        if(GW->emulate_key_press(event)) {
+            return true;
+        }
+
+        return Gtk::Window::on_key_press_event(event);
+    }
+
+    bool on_delete_event(GdkEventAny *) override {
         /* trigger the action and ignore the request */
         GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
 
         return false;
     }
 
-    virtual void on_scrollbar_value_changed() {
+    void on_scrollbar_value_changed() {
         SS.TW.ScrollbarEvent((int)_scrollbar.get_adjustment()->get_value());
     }
 
-    virtual void on_editing_done(Glib::ustring value) {
+    void on_editing_done(Glib::ustring value) {
         SS.TW.EditControlDone(value.c_str());
     }
 
-    virtual bool on_editor_motion_notify_event(GdkEventMotion *event) {
+    bool on_editor_motion_notify_event(GdkEventMotion *event) {
         return _widget.event((GdkEvent*) event);
     }
 
-    virtual bool on_editor_button_press_event(GdkEventButton *event) {
+    bool on_editor_button_press_event(GdkEventButton *event) {
         return _widget.event((GdkEvent*) event);
-    }
-
-    virtual bool on_key_press_event(GdkEventKey *event) {
-        if(GW->emulate_key_press(event)) {
-            return true;
-        }
-
-        return Gtk::Window::on_key_press_event(event);
     }
 
 private:

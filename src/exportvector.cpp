@@ -6,13 +6,6 @@
 #include <libdxfrw.h>
 #include "solvespace.h"
 
-VectorFileWriter::~VectorFileWriter() {
-    // This out-of-line virtual method definition quells the following warning
-    // from Clang++: "'VectorFileWriter' has no out-of-line virtual method
-    // definitions; its vtable will be emitted in every translation unit
-    // [-Wweak-vtables]"
-}
-
 class PolylineBuilder {
 public:
     struct Edge;
@@ -160,14 +153,14 @@ public:
     DxfWriteInterface(DxfFileWriter *w, dxfRW *dxfrw) :
         writer(w), dxf(dxfrw) {}
 
-    virtual void writeTextstyles() {
+    void writeTextstyles() override {
         DRW_Textstyle ts;
         ts.name = "unicode";
         ts.font = "unicode";
         dxf->writeTextstyle(&ts);
     }
 
-    virtual void writeLayers() {
+    void writeLayers() override {
         DRW_Layer layer;
 
         layer.name = "dimensions";
@@ -195,7 +188,7 @@ public:
         }
     }
 
-    virtual void writeLTypes() {
+    void writeLTypes() override {
         for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
             DRW_LType type;
             // LibreCAD requires the line type to have one of these exact names,
@@ -286,7 +279,7 @@ public:
         }
     }
 
-    virtual void writeEntities() {
+    void writeEntities() override {
         writePolylines();
 
         for(DxfFileWriter::BezierPath &path : writer->paths) {
@@ -389,7 +382,7 @@ public:
                         Vector dna = norm.Cross(da).WithMagnitude(1.0);
 
                         double thetaf = acos(da.DirectionCosineWith(db));
-                        
+
                         // Calculate median
                         Vector m = da.WithMagnitude(1.0).ScaledBy(cos(thetaf/2)).Plus(
                                    dna.ScaledBy(sin(thetaf/2)));

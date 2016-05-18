@@ -528,20 +528,20 @@ public:
         return hr.entity(0);
     }
 
-    virtual void addLayer(const DRW_Layer &data) {
+    void addLayer(const DRW_Layer &data) override {
         layers.emplace(data.name, data);
     }
 
-    virtual void addBlock(const DRW_Block &data) {
+    void addBlock(const DRW_Block &data) override {
         readBlock = &blocks[data.name];
         readBlock->data = data;
     }
 
-    virtual void endBlock() {
+    void endBlock() override {
         readBlock = NULL;
     }
 
-    virtual void addPoint(const DRW_Point &data) {
+    void addPoint(const DRW_Point &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Point>(data)) return;
 
@@ -550,14 +550,14 @@ public:
         processPoint(hr.entity(0));
     }
 
-    virtual void addLine(const DRW_Line &data) {
+    void addLine(const DRW_Line &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Line>(data)) return;
 
         createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data).v, true);
     }
 
-    virtual void addArc(const DRW_Arc &data) {
+    void addArc(const DRW_Arc &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Arc>(data)) return;
 
@@ -587,14 +587,14 @@ public:
         setStyle(hr, styleFor(&data));
     }
 
-    virtual void addCircle(const DRW_Circle &data) {
+    void addCircle(const DRW_Circle &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Circle>(data)) return;
 
         createCircle(toVector(data.basePoint), data.radious, styleFor(&data).v);
     }
 
-    virtual void addLWPolyline(const DRW_LWPolyline &data)  {
+    void addLWPolyline(const DRW_LWPolyline &data)  override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_LWPolyline>(data)) return;
 
@@ -630,7 +630,7 @@ public:
         }
     }
 
-    virtual void addPolyline(const DRW_Polyline &data) {
+    void addPolyline(const DRW_Polyline &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Polyline>(data)) return;
 
@@ -667,7 +667,7 @@ public:
         }
     }
 
-    virtual void addSpline(const DRW_Spline *data) {
+    void addSpline(const DRW_Spline *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(data->degree != 3) return;
         if(addPendingBlockEntity<DRW_Spline>(*data)) return;
@@ -680,7 +680,7 @@ public:
         setStyle(hr, styleFor(data));
     }
 
-    virtual void addInsert(const DRW_Insert &data) {
+    void addInsert(const DRW_Insert &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Insert>(data)) return;
 
@@ -710,7 +710,7 @@ public:
         blockT = t;
     }
 
-    virtual void addMText(const DRW_MText &data) {
+    void addMText(const DRW_MText &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_MText>(data)) return;
 
@@ -719,7 +719,7 @@ public:
         addText(text);
     }
 
-    virtual void addText(const DRW_Text &data) {
+    void addText(const DRW_Text &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Text>(data)) return;
 
@@ -737,7 +737,7 @@ public:
         Constraint::AddConstraint(&c, false);
     }
 
-    virtual void addDimAlign(const DRW_DimAligned *data) {
+    void addDimAlign(const DRW_DimAligned *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimAligned>(*data)) return;
 
@@ -760,7 +760,7 @@ public:
         c->disp.offset = p2.Minus(p0.Plus(p1).ScaledBy(0.5));
     }
 
-    virtual void addDimLinear(const DRW_DimLinear *data) {
+    void addDimLinear(const DRW_DimLinear *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimLinear>(*data)) return;
 
@@ -799,7 +799,7 @@ public:
         c->disp.offset = p2.Minus(p4);
     }
 
-    virtual void addDimAngular(const DRW_DimAngular *data) {
+    void addDimAngular(const DRW_DimAngular *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimAngular>(*data)) return;
 
@@ -856,7 +856,7 @@ public:
         return hc;
     }
 
-    virtual void addDimRadial(const DRW_DimRadial *data) {
+    void addDimRadial(const DRW_DimRadial *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimRadial>(*data)) return;
 
@@ -871,7 +871,7 @@ public:
         createDiametric(cp, cp.Minus(dp).Magnitude(), tp, actual, /*asRadius=*/true);
     }
 
-    virtual void addDimDiametric(const DRW_DimDiametric *data) {
+    void addDimDiametric(const DRW_DimDiametric *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimRadial>(*data)) return;
 
@@ -888,7 +888,7 @@ public:
         createDiametric(cp, cp.Minus(dp1).Magnitude(), tp, actual, /*asRadius=*/false);
     }
 
-    virtual void addDimAngular3P(const DRW_DimAngular3p *data) {
+    void addDimAngular3P(const DRW_DimAngular3p *data) override {
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimAngular3p>(*data)) return;
 
