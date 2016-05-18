@@ -179,7 +179,10 @@ add_resources(
     fonts/private/5-stipple-dash-long.png
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
-    fonts/unicode.lff.gz)
+    fonts/unicode.lff.gz
+    threejs/three-r76.js.gz
+    threejs/hammer-2.0.8.js.gz
+    threejs/SolveSpaceControls.js)
 
 # Third, distribute the resources.
 add_custom_target(resources
