@@ -221,6 +221,9 @@ CONVERT(Rect)
 
     CGContextDrawImage((CGContextRef) [[NSGraphicsContext currentContext] graphicsPort],
                        [self bounds], image);
+
+    CGImageRelease(image);
+    CGDataProviderRelease(provider);
 }
 
 - (void)drawGL {
