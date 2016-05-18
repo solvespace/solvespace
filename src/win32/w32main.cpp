@@ -1299,7 +1299,7 @@ static void CreateMainWindows(void)
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
     TextWnd = CreateWindowExW(0,
-        L"TextWnd", L"SolveSpace - Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
+        L"TextWnd", L"SolveSpace - Property Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     if(!TextWnd) oops();
 

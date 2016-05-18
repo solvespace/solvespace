@@ -81,7 +81,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Show Menu &Bar",              MNU_SHOW_MENU_BAR,  C|F(12), TC, mView },
 #endif
 { 1, "Show &Toolbar",               MNU_SHOW_TOOLBAR,   0,       TC, mView },
-{ 1, "Show Text &Window",           MNU_SHOW_TEXT_WND,  '\t',    TC, mView },
+{ 1, "Show Property Bro&wser",      MNU_SHOW_TEXT_WND,  '\t',    TC, mView },
 { 1,  NULL,                         0,                  0,       TN, NULL  },
 { 1, "Dimensions in &Inches",       MNU_UNITS_INCHES,   0,       TR, mView },
 { 1, "Dimensions in &Millimeters",  MNU_UNITS_MM,       0,       TR, mView },
