@@ -575,7 +575,7 @@ void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
 
     int format = pixmap.hasAlpha ? GL_RGBA : GL_RGB;
     glTexImage2D(GL_TEXTURE_2D, 0, format, pixmap.width, pixmap.height, 0,
-                 format, GL_UNSIGNED_BYTE, pixmap.data.get());
+                 format, GL_UNSIGNED_BYTE, &pixmap.data[0]);
 
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
@@ -612,8 +612,7 @@ static void LoadBitmapFont() {
     BuiltinBitmapFont.AddGlyph(0xE006, LoadPNG("fonts/private/6-stipple-dash.png"));
     BuiltinBitmapFont.AddGlyph(0xE007, LoadPNG("fonts/private/7-stipple-zigzag.png"));
     // Unifont doesn't have a glyph for U+0020.
-    std::unique_ptr<uint8_t[]> blank(new uint8_t[8*16*3] {});
-    BuiltinBitmapFont.AddGlyph(0x20,   Pixmap({ 8, 16, 8*3, false, std::move(blank) }));
+    BuiltinBitmapFont.AddGlyph(0x20,   Pixmap({ 8, 16, 8*3, false, std::vector<uint8_t>(8*16*3) }));
 }
 
 void ssglInitializeBitmapFont()
@@ -628,7 +627,7 @@ void ssglInitializeBitmapFont()
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA,
                  BitmapFont::TEXTURE_DIM, BitmapFont::TEXTURE_DIM,
-                 0, GL_ALPHA, GL_UNSIGNED_BYTE, BuiltinBitmapFont.texture.get());
+                 0, GL_ALPHA, GL_UNSIGNED_BYTE, &BuiltinBitmapFont.texture[0]);
 }
 
 int ssglBitmapCharWidth(char32_t codepoint) {

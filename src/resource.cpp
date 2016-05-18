@@ -73,7 +73,7 @@ void Pixmap::Clear() {
 }
 
 RgbaColor Pixmap::GetPixel(size_t x, size_t y) const {
-    uint8_t *pixel = &data[y * stride + x * GetBytesPerPixel()];
+    const uint8_t *pixel = &data[y * stride + x * GetBytesPerPixel()];
 
     if(hasAlpha) {
         return RgbaColor::From(pixel[0], pixel[1], pixel[2], pixel[3]);
@@ -94,7 +94,7 @@ static Pixmap ReadPNGIntoPixmap(png_struct *png_ptr, png_info *info_ptr) {
     if(stride % 4 != 0) stride += 4 - stride % 4;
     pixmap.stride = stride;
 
-    pixmap.data = std::unique_ptr<uint8_t[]>(new uint8_t[pixmap.stride * pixmap.height]);
+    pixmap.data = std::vector<uint8_t>(pixmap.stride * pixmap.height);
     uint8_t **rows = png_get_rows(png_ptr, info_ptr);
     for(size_t y = 0; y < pixmap.height; y++) {
         memcpy(&pixmap.data[pixmap.stride * y], rows[y],
@@ -264,7 +264,7 @@ static uint8_t *BitmapFontTextureRow(uint8_t *texture, uint16_t position, size_t
 BitmapFont BitmapFont::From(std::string &&unifontData) {
     BitmapFont font  = {};
     font.unifontData = std::move(unifontData);
-    font.texture     = std::unique_ptr<uint8_t[]>(new uint8_t[TEXTURE_DIM * TEXTURE_DIM]);
+    font.texture     = std::vector<uint8_t>(TEXTURE_DIM * TEXTURE_DIM);
     return font;
 }
 
@@ -279,7 +279,7 @@ void BitmapFont::AddGlyph(char32_t codepoint, const Pixmap &pixmap) {
     glyphs.emplace(codepoint, std::move(glyph));
 
     for(size_t y = 0; y < pixmap.height; y++) {
-        uint8_t *row = BitmapFontTextureRow(texture.get(), glyph.position, y);
+        uint8_t *row = BitmapFontTextureRow(&texture[0], glyph.position, y);
         for(size_t x = 0; x < pixmap.width; x++) {
             if(pixmap.GetPixel(x, y).ToPackedInt() != 0) {
                 row[x] = 255;
@@ -348,7 +348,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
 
         // Fill in the texture (one texture byte per glyph bit).
         for(size_t y = 0; y < 16; y++) {
-            uint8_t *row = BitmapFontTextureRow(texture.get(), glyph.position, y);
+            uint8_t *row = BitmapFontTextureRow(&texture[0], glyph.position, y);
             for(size_t x = 0; x < 16; x++) {
                 if(glyphBits[y] & (1 << (15 - x))) {
                     row[x] = 255;

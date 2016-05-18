@@ -26,7 +26,7 @@ public:
     size_t                     height;
     size_t                     stride;
     bool                       hasAlpha;
-    std::unique_ptr<uint8_t[]> data;
+    std::vector<uint8_t>       data;
 
     static Pixmap FromPNG(const uint8_t *data, size_t size);
     static Pixmap FromPNG(FILE *f);
@@ -49,7 +49,7 @@ public:
 
     std::string                unifontData;
     std::map<char32_t, Glyph>  glyphs;
-    std::unique_ptr<uint8_t[]> texture;
+    std::vector<uint8_t>       texture;
     uint16_t                   nextPosition;
 
     static BitmapFont From(std::string &&unifontData);
