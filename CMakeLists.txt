@@ -41,8 +41,9 @@ if(WIN32)
         -DWIN32
         -DWIN32_LEAN_AND_MEAN
         -DUNICODE
+        -D_UNICODE
         -DNOMINMAX
-        -D_UNICODE)
+        -D_USE_MATH_DEFINES)
 endif()
 
 if(MSVC)
