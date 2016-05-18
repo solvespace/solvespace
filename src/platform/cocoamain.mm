@@ -1021,7 +1021,7 @@ void InitTextWindow() {
                       NSUtilityWindowMask)];
     [[TW standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
     [[TW standardWindowButton:NSWindowZoomButton] setHidden:YES];
-    [TW setTitle:@"Browser"];
+    [TW setTitle:@"Property Browser"];
     [TW setFrameAutosaveName:@"TextWindow"];
     [TW setFloatingPanel:YES];
     [TW setBecomesKeyOnlyIfNeeded:YES];

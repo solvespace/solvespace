@@ -1324,7 +1324,7 @@ public:
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
         set_skip_pager_hint(true);
-        set_title("SolveSpace - Browser");
+        set_title("SolveSpace - Property Browser");
         set_default_size(420, 300);
 
         _box.pack_start(_overlay, true, true);
