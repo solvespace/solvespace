@@ -685,7 +685,7 @@ public:
         if(addPendingBlockEntity<DRW_Insert>(data)) return;
 
         auto bi = blocks.find(data.name);
-        if(bi == blocks.end()) oops();
+        ssassert(bi != blocks.end(), "Inserted block does not exist");
         Block *block = &bi->second;
 
         // Push transform.

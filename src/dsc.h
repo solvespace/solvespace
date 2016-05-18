@@ -222,7 +222,7 @@ public:
     }
 
     void RemoveLast(int cnt) {
-        if(n < cnt) oops();
+        ssassert(n >= cnt, "Removing more elements than the list contains");
         for(int i = n - cnt; i < n; i++)
             elem[i].~T();
         n -= cnt;
@@ -281,13 +281,11 @@ public:
         while(first != last) {
             int mid = (first + last)/2;
             H hm = elem[mid].h;
+            ssassert(hm.v != t->h.v, "Handle isn't unique");
             if(hm.v > t->h.v) {
                 last = mid;
             } else if(hm.v < t->h.v) {
                 first = mid + 1;
-            } else {
-                dbp("can't insert in list; is handle %d not unique?", t->h.v);
-                oops();
             }
         }
 
@@ -300,10 +298,7 @@ public:
 
     T *FindById(H h) {
         T *t = FindByIdNoOops(h);
-        if(!t) {
-            dbp("failed to look up item %08x, searched %d items", h.v, n);
-            oops();
-        }
+        ssassert(t != NULL, "Cannot find handle");
         return t;
     }
 

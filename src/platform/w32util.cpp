@@ -40,8 +40,8 @@ std::string Narrow(const wchar_t *in)
     std::string out;
     DWORD len = WideCharToMultiByte(CP_UTF8, 0, in, -1, NULL, 0, NULL, NULL);
     out.resize(len - 1);
-    if(!WideCharToMultiByte(CP_UTF8, 0, in, -1, &out[0], len, NULL, NULL))
-        oops();
+    ssassert(WideCharToMultiByte(CP_UTF8, 0, in, -1, &out[0], len, NULL, NULL),
+             "Invalid UTF-16");
     return out;
 }
 
@@ -51,9 +51,9 @@ std::string Narrow(const std::wstring &in)
 
     std::string out;
     out.resize(WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(), NULL, 0, NULL, NULL));
-    if(!WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(),
-                            &out[0], out.length(), NULL, NULL))
-        oops();
+    ssassert(WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(),
+                                 &out[0], out.length(), NULL, NULL),
+             "Invalid UTF-16");
     return out;
 }
 
@@ -62,8 +62,8 @@ std::wstring Widen(const char *in)
     std::wstring out;
     DWORD len = MultiByteToWideChar(CP_UTF8, 0, in, -1, NULL, 0);
     out.resize(len - 1);
-    if(!MultiByteToWideChar(CP_UTF8, 0, in, -1, &out[0], len))
-        oops();
+    ssassert(MultiByteToWideChar(CP_UTF8, 0, in, -1, &out[0], len),
+             "Invalid UTF-8");
     return out;
 }
 
@@ -73,8 +73,8 @@ std::wstring Widen(const std::string &in)
 
     std::wstring out;
     out.resize(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), NULL, 0));
-    if(!MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), &out[0], out.length()))
-        oops();
+    ssassert(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), &out[0], out.length()),
+             "Invalid UTF-8");
     return out;
 }
 
@@ -88,13 +88,15 @@ FILE *ssfopen(const std::string &filename, const char *mode)
     if(uncFilename.substr(0, 2) != "\\\\")
         uncFilename = "\\\\?\\" + uncFilename;
 
-    if(filename.length() != strlen(filename.c_str())) oops();
+    ssassert(filename.length() == strlen(filename.c_str()),
+             "Unexpected null byte in middle of a path");
     return _wfopen(Widen(uncFilename).c_str(), Widen(mode).c_str());
 }
 
 void ssremove(const std::string &filename)
 {
-    if(filename.length() != strlen(filename.c_str())) oops();
+    ssassert(filename.length() == strlen(filename.c_str()),
+             "Unexpected null byte in middle of a path");
     _wremove(Widen(filename).c_str());
 }
 
@@ -107,7 +109,7 @@ void ssremove(const std::string &filename)
 void *AllocTemporary(size_t n)
 {
     void *v = HeapAlloc(TempHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
-    if(!v) oops();
+    ssassert(v != NULL, "Cannot allocate memory");
     return v;
 }
 void FreeTemporary(void *p) {
@@ -124,7 +126,7 @@ void FreeAllTemporary(void)
 
 void *MemAlloc(size_t n) {
     void *p = HeapAlloc(PermHeap, HEAP_NO_SERIALIZE | HEAP_ZERO_MEMORY, n);
-    if(!p) oops();
+    ssassert(p != NULL, "Cannot allocate memory");
     return p;
 }
 void MemFree(void *p) {
@@ -132,8 +134,8 @@ void MemFree(void *p) {
 }
 
 void vl(void) {
-    if(!HeapValidate(TempHeap, HEAP_NO_SERIALIZE, NULL)) oops();
-    if(!HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL)) oops();
+    ssassert(HeapValidate(TempHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
+    ssassert(HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
 }
 
 void InitHeaps(void) {

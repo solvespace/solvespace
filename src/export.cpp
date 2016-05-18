@@ -895,7 +895,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 
     std::string baseFilename = noExtFilename;
     size_t lastSlash = baseFilename.rfind(PATH_SEP);
-    if(lastSlash == std::string::npos) oops();
+    ssassert(lastSlash != std::string::npos, "Expected at least one path separator");
     baseFilename.erase(0, lastSlash + 1);
 
     for(size_t i = 0; i < baseFilename.length(); i++) {

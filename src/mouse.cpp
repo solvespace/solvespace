@@ -455,7 +455,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             InvalidateGraphics();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected pending operation");
     }
 
     if(pending.operation != 0 &&
@@ -590,7 +590,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 Entity *e = SK.GetEntity(gs.entity[0]);
                 e->GetDistance(Point2d::From(x, y));
                 addAfterPoint = e->dogd.data;
-                if(addAfterPoint == -1) oops();
+                ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
                 if(r->type == Request::CUBIC) addAfterPoint++;
                 AddContextMenuItem("Add Spline Point", CMNU_ADD_SPLINE_PT);
@@ -708,7 +708,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             Request *r = SK.GetRequest(hr);
 
             int index = r->IndexOfPoint(gs.point[0]);
-            if(r->extraPoints == 0) oops();
+            ssassert(r->extraPoints != 0, "Expected a bezier with interior control points");
 
             SS.UndoRemember();
             Entity *e = SK.GetEntity(r->h.entity(0));

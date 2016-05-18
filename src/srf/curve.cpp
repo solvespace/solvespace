@@ -764,7 +764,7 @@ SSurface *SCurve::GetSurfaceA(SShell *a, SShell *b) {
         return b->surface.FindById(surfA);
     } else if(source == FROM_INTERSECTION) {
         return a->surface.FindById(surfA);
-    } else oops();
+    } else ssassert(false, "Unexpected curve source");
 }
 
 SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) {
@@ -774,7 +774,7 @@ SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) {
         return b->surface.FindById(surfB);
     } else if(source == FROM_INTERSECTION) {
         return b->surface.FindById(surfB);
-    } else oops();
+    } else ssassert(false, "Unexpected curve source");
 }
 
 //-----------------------------------------------------------------------------

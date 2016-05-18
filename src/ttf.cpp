@@ -218,7 +218,7 @@ static const FT_Outline_Funcs outline_funcs = {
 void TtfFont::PlotString(const std::string &str,
                          SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
-    if(fontFace == NULL) oops();
+    ssassert(fontFace != NULL, "Expected font face to be loaded");
 
     FT_Pos dx = 0;
     for(char32_t chr : ReadUTF8(str)) {

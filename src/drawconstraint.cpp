@@ -305,7 +305,7 @@ void Constraint::DoEqualRadiusTicks(hEntity he) {
         double thetaa, thetab, dtheta;
         circ->ArcGetAngles(&thetaa, &thetab, &dtheta);
         theta = thetaa + dtheta/2;
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 
     Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
     d = d.ScaledBy(r);
@@ -1166,7 +1166,7 @@ s:
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected constraint type");
     }
 }
 

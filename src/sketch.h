@@ -881,7 +881,7 @@ inline hRequest hEntity::request(void)
 inline hGroup hEntity::group(void)
     { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
 inline hEquation hEntity::equation(int i)
-    { if(i != 0) oops(); hEquation r; r.v = v | 0x40000000; return r; }
+    { hEquation r; r.v = v | 0x40000000; return r; }
 
 inline hRequest hParam::request(void)
     { hRequest r; r.v = (v >> 16); return r; }

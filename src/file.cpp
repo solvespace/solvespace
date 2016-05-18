@@ -248,7 +248,7 @@ void SolveSpaceUI::SaveUsingTable(int type) {
                 break;
             }
 
-            default: oops();
+            default: ssassert(false, "Unexpected value format");
         }
         fprintf(fh, "\n");
     }
@@ -415,7 +415,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                     break;
                 }
 
-                default: oops();
+                default: ssassert(false, "Unexpected value format");
             }
             break;
         }
@@ -569,7 +569,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
                 &(tr.a.x), &(tr.a.y), &(tr.a.z),
                 &(tr.b.x), &(tr.b.y), &(tr.b.z),
                 &(tr.c.x), &(tr.c.y), &(tr.c.z)) != 11) {
-                oops();
+                ssassert(false, "Unexpected Triangle format");
             }
             tr.meta.color = RgbaColor::FromPackedInt((uint32_t)rgba);
             m->AddTriangle(&tr);
@@ -578,7 +578,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
             if(sscanf(line, "Surface %x %x %x %d %d",
                 &(srf.h.v), &rgba, &(srf.face),
                 &(srf.degm), &(srf.degn)) != 5) {
-                oops();
+                ssassert(false, "Unexpected Surface format");
             }
             srf.color = RgbaColor::FromPackedInt((uint32_t)rgba);
         } else if(StrStartsWith(line, "SCtrl ")) {
@@ -588,7 +588,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
             if(sscanf(line, "SCtrl %d %d %lf %lf %lf Weight %lf",
                                 &i, &j, &(c.x), &(c.y), &(c.z), &w) != 6)
             {
-                oops();
+                ssassert(false, "Unexpected SCtrl format");
             }
             srf.ctrl[i][j] = c;
             srf.weight[i][j] = w;
@@ -600,7 +600,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
                 &(stb.start.x), &(stb.start.y), &(stb.start.z),
                 &(stb.finish.x), &(stb.finish.y), &(stb.finish.z)) != 8)
             {
-                oops();
+                ssassert(false, "Unexpected TrimBy format");
             }
             stb.backwards = (backwards != 0);
             srf.trim.Add(&stb);
@@ -615,7 +615,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
                 &(crv.exact.deg),
                 &(crv.surfA.v), &(crv.surfB.v)) != 5)
             {
-                oops();
+                ssassert(false, "Unexpected Curve format");
             }
             crv.isExact = (isExact != 0);
         } else if(StrStartsWith(line, "CCtrl ")) {
@@ -625,7 +625,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
             if(sscanf(line, "CCtrl %d %lf %lf %lf Weight %lf",
                                 &i, &(c.x), &(c.y), &(c.z), &w) != 5)
             {
-                oops();
+                ssassert(false, "Unexpected CCtrl format");
             }
             crv.exact.ctrl[i] = c;
             crv.exact.weight[i] = w;
@@ -636,16 +636,14 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
                 &vertex,
                 &(scpt.p.x), &(scpt.p.y), &(scpt.p.z)) != 4)
             {
-                oops();
+                ssassert(false, "Unexpected CurvePt format");
             }
             scpt.vertex = (vertex != 0);
             crv.pts.Add(&scpt);
         } else if(strcmp(line, "AddCurve")==0) {
             sh->curve.Add(&crv);
             crv = {};
-        } else {
-            oops();
-        }
+        } else ssassert(false, "Unexpected operation");
     }
 
     fclose(fh);
@@ -733,7 +731,7 @@ static std::string MakePathAbsolute(const std::string &base, const std::string &
         if(part == ".") {
             /* do nothing */
         } else if(part == "..") {
-            if(resultParts.empty()) oops();
+            ssassert(!resultParts.empty(), "Relative path pointing outside of root directory");
             resultParts.pop_back();
         } else {
             resultParts.push_back(part);

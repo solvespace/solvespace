@@ -730,7 +730,7 @@ void Constraint::MenuConstrain(int id) {
             SS.ScheduleShowTW();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 
     SS.GW.ClearSelection();

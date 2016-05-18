@@ -48,7 +48,7 @@ void TextWindow::MakeColorTable(const Color *in, float *out) {
     int i;
     for(i = 0; in[i].c != 0; i++) {
         int c = in[i].c;
-        if(c < 0 || c > 255) oops();
+        ssassert(c >= 0 && c <= 255, "Unexpected color index");
         out[c*3 + 0] = in[i].color.redF();
         out[c*3 + 1] = in[i].color.greenF();
         out[c*3 + 2] = in[i].color.blueF();

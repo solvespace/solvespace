@@ -788,10 +788,7 @@ void TextWindow::EditControlDone(const char *s) {
             if(EditControlDoneForConfiguration(s))  cnt++;
             if(EditControlDoneForPaste(s))          cnt++;
             if(EditControlDoneForView(s))           cnt++;
-            if(cnt > 1) {
-                // The identifiers were somehow assigned not uniquely?
-                oops();
-            }
+            ssassert(cnt == 1, "Expected exactly one parameter to be edited");
             break;
         }
     }

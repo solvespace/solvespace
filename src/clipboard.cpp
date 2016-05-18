@@ -42,7 +42,8 @@ hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
                 return cr->newReq.entity(1+i);
         }
     }
-    oops();
+
+    ssassert(false, "Expected to find entity in some clipboard request");
 }
 
 void GraphicsWindow::DeleteSelection(void) {
@@ -259,7 +260,7 @@ void GraphicsWindow::MenuClipboard(int id) {
             SS.GW.DeleteSelection();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 }
 

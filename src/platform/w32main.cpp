@@ -744,9 +744,9 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
     pfd.cStencilBits = 0;
 
     pixelFormat = ChoosePixelFormat(hdc, &pfd);
-    if(!pixelFormat) oops();
+    ssassert(pixelFormat != 0, "Expected a valid pixel format to be chosen");
 
-    if(!SetPixelFormat(hdc, pixelFormat, &pfd)) oops();
+    ssassert(SetPixelFormat(hdc, pixelFormat, &pfd), "Cannot set pixel format");
 
     *glrc = wglCreateContext(hdc);
     wglMakeCurrent(hdc, *glrc);
@@ -928,8 +928,6 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     !!(wParam & MK_RBUTTON),
                     !!(wParam & MK_SHIFT),
                     !!(wParam & MK_CONTROL));
-            } else {
-                oops();
             }
             break;
         }
@@ -955,7 +953,7 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                         break;
                     }
                 }
-                if(SS.GW.menu[i].level < 0) oops();
+                ssassert(SS.GW.menu[i].level >= 0, "Cannot find command in the menu");
             }
             break;
         }
@@ -1153,8 +1151,8 @@ static void MenuById(int id, bool yes, bool check)
         if(SS.GW.menu[i].level == 0) subMenu++;
 
         if(SS.GW.menu[i].id == id) {
-            if(subMenu < 0) oops();
-            if(subMenu >= (int)arraylen(SubMenus)) oops();
+            ssassert(subMenu >= 0 && subMenu < (int)arraylen(SubMenus),
+                     "Submenu out of range");
 
             if(check) {
                 CheckMenuItem(SubMenus[subMenu], id,
@@ -1166,7 +1164,7 @@ static void MenuById(int id, bool yes, bool check)
             return;
         }
     }
-    oops();
+    ssassert(false, "Cannot find submenu");
 }
 void SolveSpace::CheckMenuById(int id, bool checked)
 {
@@ -1219,7 +1217,7 @@ HMENU CreateGraphicsWindowMenus(void)
         if(SS.GW.menu[i].level == 0) {
             m = CreateMenu();
             AppendMenuW(top, MF_STRING | MF_POPUP, (UINT_PTR)m, Widen(label).c_str());
-            if(subMenu >= (int)arraylen(SubMenus)) oops();
+            ssassert(subMenu < (int)arraylen(SubMenus), "Too many submenus");
             SubMenus[subMenu] = m;
             subMenu++;
         } else if(SS.GW.menu[i].level == 1) {
@@ -1236,7 +1234,7 @@ HMENU CreateGraphicsWindowMenus(void)
             } else {
                 AppendMenuW(m, MF_SEPARATOR, SS.GW.menu[i].id, L"");
             }
-        } else oops();
+        } else ssassert(false, "Submenus nested too deeply");
     }
     RefreshRecentMenus();
 
@@ -1261,7 +1259,7 @@ static void CreateMainWindows(void)
                             IMAGE_ICON, 32, 32, 0);
     wc.hIconSm          = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
                             IMAGE_ICON, 16, 16, 0);
-    if(!RegisterClassEx(&wc)) oops();
+    ssassert(RegisterClassEx(&wc), "Cannot register window class");
 
     HMENU top = CreateGraphicsWindowMenus();
     GraphicsWnd = CreateWindowExW(0, L"GraphicsWnd",
@@ -1269,7 +1267,7 @@ static void CreateMainWindows(void)
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
         50, 50, 900, 600, NULL, top, Instance, NULL);
-    if(!GraphicsWnd) oops();
+    ssassert(GraphicsWnd != NULL, "Cannot create window");
 
     GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
@@ -1282,14 +1280,14 @@ static void CreateMainWindows(void)
     wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
     wc.lpszClassName    = L"TextWnd";
     wc.hCursor          = NULL;
-    if(!RegisterClassEx(&wc)) oops();
+    ssassert(RegisterClassEx(&wc), "Cannot register window class");
 
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
     TextWnd = CreateWindowExW(0,
         L"TextWnd", L"SolveSpace - Property Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
-    if(!TextWnd) oops();
+    ssassert(TextWnd != NULL, "Cannot create window");
 
     TextWndScrollBar = CreateWindowExW(0, WC_SCROLLBAR, L"", WS_CHILD |
         SBS_VERT | SBS_LEFTALIGN | WS_VISIBLE | WS_CLIPSIBLINGS,
@@ -1313,9 +1311,9 @@ static void CreateMainWindows(void)
 
 const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
     HRSRC hres = FindResourceW(NULL, Widen(name).c_str(), RT_RCDATA);
-    if(!hres) oops();
+    ssassert(hres != NULL, "Cannot find resource");
     HGLOBAL res = LoadResource(NULL, hres);
-    if(!res) oops();
+    ssassert(res != NULL, "Cannot load resource");
 
     *size = SizeofResource(NULL, hres);
     return LockResource(res);

@@ -409,7 +409,7 @@ CONVERT(Rect)
 - (void)prepareEditorWithMinWidthInChars:(int)minWidthChars {
     NSFont *font = [editor font];
     NSGlyph glyphA = [font glyphWithName:@"a"];
-    if(glyphA == -1) oops();
+    ssassert(glyphA != -1, "Expected font to have U+0061");
     CGFloat glyphAWidth = [font advancementForGlyph:glyphA].width;
 
     [editor sizeToFit];
@@ -578,7 +578,7 @@ void AddContextMenuItem(const char *label, int id_) {
 }
 
 void CreateContextSubmenu(void) {
-    if(contextSubmenu) oops();
+    ssassert(!contextSubmenu, "Unexpected nested submenu");
 
     contextSubmenu = [[NSMenu alloc] initWithTitle:@""];
 }
@@ -637,8 +637,8 @@ void InitMainMenu(NSMenu *mainMenu) {
             [menu setAutoenablesItems:NO];
             [menuItem setSubmenu:menu];
 
-            if(entry->level >= sizeof(levels) / sizeof(levels[0]))
-                oops();
+            ssassert((unsigned)entry->level < sizeof(levels) / sizeof(levels[0]),
+                     "Unexpected depth of menu nesting");
 
             levels[entry->level] = menu;
         }
@@ -1145,7 +1145,7 @@ const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
     if(data == nil) {
         NSString *path = [[NSBundle mainBundle] pathForResource:key ofType:nil];
         data = [[NSFileHandle fileHandleForReadingAtPath:path] readDataToEndOfFile];
-        if(data == nil) oops();
+        ssassert(data != nil, "Cannot find resource");
         [cache setObject:data forKey:key];
     }
 

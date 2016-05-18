@@ -241,7 +241,7 @@ void Group::MenuGroup(int id) {
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 
     // Copy color from the previous mesh-contributing group.
@@ -287,7 +287,7 @@ void Group::MenuGroup(int id) {
 }
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {
-    if(type != LINKED) oops();
+    ssassert(type == LINKED, "Expected a linked group");
 
     hParam tx, ty, tz, qw, qx, qy, qz;
     tx = h.param(0);
@@ -362,7 +362,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             } else if(subtype == WORKPLANE_BY_POINT_ORTHO) {
                 // Already given, numerically.
                 q = predef.q;
-            } else oops();
+            } else ssassert(false, "Unexpected workplane subtype");
 
             Entity normal = {};
             normal.type = Entity::NORMAL_N_COPY;
@@ -398,7 +398,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 ai = 0; af = 2;
             } else if(subtype == TWO_SIDED) {
                 ai = -1; af = 1;
-            } else oops();
+            } else ssassert(false, "Unexpected extrusion subtype");
 
             // Get some arbitrary point in the sketch, that will be used
             // as a reference when defining top and bottom faces.
@@ -549,7 +549,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             }
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected group type");
     }
 }
 

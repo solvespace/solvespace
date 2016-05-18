@@ -100,7 +100,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
 void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     int i;
 
-    if(uk->cnt <= 0) oops();
+    ssassert(uk->cnt > 0, "Cannot pop from empty undo stack");
     (uk->cnt)--;
     uk->write = WRAP(uk->write - 1, MAX_UNDO);
 

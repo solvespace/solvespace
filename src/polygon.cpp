@@ -545,7 +545,7 @@ Vector SContour::ComputeNormal(void) {
 }
 
 Vector SContour::AnyEdgeMidpoint(void) {
-    if(l.n < 2) oops();
+    ssassert(l.n >= 2, "Need two points to find a midpoint");
     return ((l.elem[0].p).Plus(l.elem[1].p)).ScaledBy(0.5);
 }
 
@@ -696,7 +696,7 @@ bool SPolygon::IsEmpty(void) {
 }
 
 Vector SPolygon::AnyPoint(void) {
-    if(IsEmpty()) oops();
+    ssassert(!IsEmpty(), "Need at least one point");
     return l.elem[0].l.elem[0].p;
 }
 

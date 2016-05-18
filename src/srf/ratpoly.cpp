@@ -51,7 +51,7 @@ double SolveSpace::Bernstein(int k, int deg, double t)
             }
             break;
     }
-    oops();
+    ssassert(false, "Unexpected degree of spline");
 }
 
 double SolveSpace::BernsteinDerivative(int k, int deg, double t)
@@ -90,7 +90,7 @@ double SolveSpace::BernsteinDerivative(int k, int deg, double t)
             }
             break;
     }
-    oops();
+    ssassert(false, "Unexpected degree of spline");
 }
 
 Vector SBezier::PointAt(double t) {
@@ -222,7 +222,7 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
             *aft = SBezier::From(cts, ct12_23, ct23, ct[3]);
             break;
         }
-        default: oops();
+        default: ssassert(false, "Unexpected degree of spline");
     }
 }
 
@@ -308,7 +308,7 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
     double d = max({
                    pm1.DistanceToLine(pa, dir),
                    pm2.DistanceToLine(pa, dir),
-                   pm3.DistanceToLine(pa, dir) 
+                   pm3.DistanceToLine(pa, dir)
                 });
 
     double step = 1.0/SS.GetMaxSegments();

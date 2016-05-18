@@ -12,7 +12,7 @@ std::string SolveSpace::ssprintf(const char *fmt, ...)
 
     va_start(va, fmt);
     int size = vsnprintf(NULL, 0, fmt, va);
-    if(size < 0) oops();
+    ssassert(size >= 0, "vsnprintf could not encode string");
     va_end(va);
 
     std::string result;
@@ -418,7 +418,7 @@ double Vector::Element(int i) {
         case 0: return x;
         case 1: return y;
         case 2: return z;
-        default: oops();
+        default: ssassert(false, "Unexpected vector element index");
     }
 }
 
@@ -514,7 +514,7 @@ Vector Vector::Normal(int which) {
         // That's the vector we return.
     } else if(which == 1) {
         n = this->Cross(n);
-    } else oops();
+    } else ssassert(false, "Unexpected vector normal index");
 
     n = n.WithMagnitude(1);
 

@@ -74,8 +74,6 @@ struct FT_FaceRec_;
     } while(0)
 #endif
 
-#define oops() ssassert(false, "oops() called")
-
 #ifndef isnan
 #   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
 #endif

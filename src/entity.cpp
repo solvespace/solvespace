@@ -38,7 +38,7 @@ ExprVector EntityBase::VectorGetExprs(void) {
         case NORMAL_N_ROT_AA:
             return NormalExprsN();
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -55,7 +55,7 @@ Vector EntityBase::VectorGetNum(void) {
         case NORMAL_N_ROT_AA:
             return NormalN();
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -72,7 +72,7 @@ Vector EntityBase::VectorGetRefPoint(void) {
         case NORMAL_N_ROT_AA:
             return SK.GetEntity(point[0])->PointGetNum();
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -88,7 +88,7 @@ Vector EntityBase::VectorGetStartPoint(void) {
         case NORMAL_N_ROT_AA:
             return SK.GetEntity(point[0])->PointGetNum();
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -101,7 +101,7 @@ Expr *EntityBase::CircleGetRadiusExpr(void) {
         return SK.GetEntity(distance)->DistanceGetExpr();
     } else if(type == ARC_OF_CIRCLE) {
         return Constraint::Distance(workplane, point[0], point[1]);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 }
 
 double EntityBase::CircleGetRadiusNum(void) {
@@ -111,11 +111,11 @@ double EntityBase::CircleGetRadiusNum(void) {
         Vector c  = SK.GetEntity(point[0])->PointGetNum();
         Vector pa = SK.GetEntity(point[1])->PointGetNum();
         return (pa.Minus(c)).Magnitude();
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 }
 
 void EntityBase::ArcGetAngles(double *thetaa, double *thetab, double *dtheta) {
-    if(type != ARC_OF_CIRCLE) oops();
+    ssassert(type == ARC_OF_CIRCLE, "Unexpected entity type");
 
     Quaternion q = Normal()->NormalGetNum();
     Vector u = q.RotationU(), v = q.RotationV();
@@ -185,9 +185,7 @@ void EntityBase::WorkplaneGetPlaneExprs(ExprVector *n, Expr **dn) {
         //              n dot p - n dot p0 = 0
         // so dn = n dot p0
         *dn = p0.Dot(*n);
-    } else {
-        oops();
-    }
+    } else ssassert(false, "Unexpected entity type");
 }
 
 bool EntityBase::IsDistance(void) {
@@ -199,21 +197,21 @@ double EntityBase::DistanceGetNum(void) {
         return SK.GetParam(param[0])->val;
     } else if(type == DISTANCE_N_COPY) {
         return numDistance;
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 }
 Expr *EntityBase::DistanceGetExpr(void) {
     if(type == DISTANCE) {
         return Expr::From(param[0]);
     } else if(type == DISTANCE_N_COPY) {
         return Expr::From(numDistance);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 }
 void EntityBase::DistanceForceTo(double v) {
     if(type == DISTANCE) {
         (SK.GetParam(param[0]))->val = v;
     } else if(type == DISTANCE_N_COPY) {
         // do nothing, it's locked
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 }
 
 EntityBase *EntityBase::Normal(void) {
@@ -276,7 +274,7 @@ Quaternion EntityBase::NormalGetNum(void) {
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
     return q;
 }
@@ -308,7 +306,7 @@ void EntityBase::NormalForceTo(Quaternion q) {
             // Not sure if I'll bother implementing this one
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -364,7 +362,7 @@ ExprQuaternion EntityBase::NormalGetExprs(void) {
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
     return q;
 }
@@ -428,7 +426,7 @@ void EntityBase::PointForceTo(Vector p) {
             // Nothing to do; it's a static copy
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 }
 
@@ -476,7 +474,7 @@ Vector EntityBase::PointGetNum(void) {
             p = numPoint;
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
     return p;
 }
@@ -525,7 +523,7 @@ ExprVector EntityBase::PointGetExprs(void) {
             r = ExprVector::From(numPoint);
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected entity type");
     }
     return r;
 }
@@ -553,7 +551,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) {
 }
 
 void EntityBase::PointForceQuaternionTo(Quaternion q) {
-    if(type != POINT_N_ROT_TRANS) oops();
+    ssassert(type == POINT_N_ROT_TRANS, "Unexpected entity type");
 
     SK.GetParam(param[3])->val = q.w;
     SK.GetParam(param[4])->val = q.vx;
@@ -592,7 +590,7 @@ Quaternion EntityBase::PointGetQuaternion(void) {
         q = GetAxisAngleQuaternion(3);
     } else if(type == POINT_N_ROT_TRANS) {
         q = Quaternion::From(param[3], param[4], param[5], param[6]);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
 
     return q;
 }
@@ -635,7 +633,7 @@ ExprVector EntityBase::FaceGetNormalExprs(void) {
         r = ExprVector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
         r = q.Rotate(r);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
     return r;
 }
 
@@ -658,7 +656,7 @@ Vector EntityBase::FaceGetNormalNum(void) {
         r = Vector::From(numNormal.vx, numNormal.vy, numNormal.vz);
         Quaternion q = GetAxisAngleQuaternion(3);
         r = q.Rotate(r);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
     return r.WithMagnitude(1);
 }
 
@@ -687,7 +685,7 @@ ExprVector EntityBase::FaceGetPointExprs(void) {
         r = r.Minus(trans);
         r = q.Rotate(r);
         r = r.Plus(trans);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
     return r;
 }
 
@@ -712,7 +710,7 @@ Vector EntityBase::FaceGetPointNum(void) {
         r = numPoint.Minus(trans);
         r = q.Rotate(r);
         r = r.Plus(trans);
-    } else oops();
+    } else ssassert(false, "Unexpected entity type");
     return r;
 }
 
@@ -728,9 +726,7 @@ Vector EntityBase::EndpointStart() {
         return CubicGetStartNum();
     } else if(type == ARC_OF_CIRCLE) {
         return SK.GetEntity(point[1])->PointGetNum();
-    } else {
-        oops();
-    }
+    } else ssassert(false, "Unexpected entity type");
 }
 Vector EntityBase::EndpointFinish() {
     if(type == LINE_SEGMENT) {
@@ -739,9 +735,7 @@ Vector EntityBase::EndpointFinish() {
         return CubicGetFinishNum();
     } else if(type == ARC_OF_CIRCLE) {
         return SK.GetEntity(point[2])->PointGetNum();
-    } else {
-        oops();
-    }
+    } else ssassert(false, "Unexpected entity type");
 }
 
 void EntityBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) {

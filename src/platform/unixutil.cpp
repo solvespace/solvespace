@@ -51,13 +51,15 @@ void assert_failure(const char *file, unsigned line, const char *function,
 
 FILE *ssfopen(const std::string &filename, const char *mode)
 {
-    if(filename.length() != strlen(filename.c_str())) oops();
+    ssassert(filename.length() == strlen(filename.c_str()),
+             "Unexpected null byte in middle of a path");
     return fopen(filename.c_str(), mode);
 }
 
 void ssremove(const std::string &filename)
 {
-    if(filename.length() != strlen(filename.c_str())) oops();
+    ssassert(filename.length() == strlen(filename.c_str()),
+             "Unexpected null byte in middle of a path");
     remove(filename.c_str());
 }
 
@@ -114,7 +116,7 @@ void FreeAllTemporary(void)
 
 void *MemAlloc(size_t n) {
     void *p = malloc(n);
-    if(!p) oops();
+    ssassert(p != NULL, "Cannot allocate memory");
     return p;
 }
 

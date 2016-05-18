@@ -596,7 +596,7 @@ void GraphicsWindow::MenuView(int id) {
             SS.GW.EnsureValidActives();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
     InvalidateGraphics();
 }
@@ -938,7 +938,7 @@ void GraphicsWindow::MenuEdit(int id) {
             SS.ScheduleShowTW();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 }
 
@@ -1035,7 +1035,7 @@ c:
             SS.GW.SplitLinesOrCurves();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 }
 

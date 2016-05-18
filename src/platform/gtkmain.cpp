@@ -243,15 +243,11 @@ public:
         _xdisplay = gdk_x11_get_default_xdisplay();
 
         int glxmajor, glxminor;
-        if(!glXQueryVersion(_xdisplay, &glxmajor, &glxminor)) {
-            dbp("OpenGL is not supported");
-            oops();
-        }
+        ssassert(glXQueryVersion(_xdisplay, &glxmajor, &glxminor),
+                 "Expected OpenGL to be available");
 
-        if(glxmajor < 1 || (glxmajor == 1 && glxminor < 3)) {
-            dbp("GLX version %d.%d is too old; 1.3 required", glxmajor, glxminor);
-            oops();
-        }
+        ssassert(glxmajor > 1 || (glxmajor == 1 && glxminor >= 3),
+                 "Expected GLX >= 1.3");
 
         static int fbconfig_attrs[] = {
             GLX_RENDER_TYPE, GLX_RGBA_BIT,
@@ -264,8 +260,8 @@ public:
         int fbconfig_num = 0;
         GLXFBConfig *fbconfigs = glXChooseFBConfig(_xdisplay, DefaultScreen(_xdisplay),
                 fbconfig_attrs, &fbconfig_num);
-        if(!fbconfigs || fbconfig_num == 0)
-            oops();
+        ssassert(fbconfigs && fbconfig_num > 0,
+                 "Expected an available framebuffer configuration");
 
         /* prefer FBConfigs with depth of 32;
             * Mesa software rasterizer explodes with a BadMatch without this;
@@ -291,10 +287,7 @@ public:
 
         _glcontext = glXCreateNewContext(_xdisplay,
                 fbconfig, GLX_RGBA_TYPE, 0, True);
-        if(!_glcontext) {
-            dbp("cannot create OpenGL context");
-            oops();
-        }
+        ssassert(_glcontext != NULL, "Cannot create an OpenGL context");
 
         XFree(fbconfigs);
 
@@ -329,15 +322,15 @@ protected:
     bool on_expose_event(GdkEventExpose *) override {
         const Cairo::RefPtr<Cairo::Context> &cr = get_window()->create_cairo_context();
 #endif
-        if(!glXMakeCurrent(_xdisplay, _xwindow, _glcontext))
-            oops();
+        ssassert(glXMakeCurrent(_xdisplay, _xwindow, _glcontext),
+                 "Cannot make OpenGL context current");
 
         if(!_offscreen)
             _offscreen = new GLOffscreen;
 
         Gdk::Rectangle allocation = get_allocation();
-        if(!_offscreen->begin(allocation.get_width(), allocation.get_height()))
-            oops();
+        ssassert(_offscreen->begin(allocation.get_width(), allocation.get_height()),
+                 "Cannot allocate offscreen rendering buffer");
 
         on_gl_draw();
         glFlush();
@@ -860,7 +853,7 @@ void AddContextMenuItem(const char *label, int id) {
 }
 
 void CreateContextSubmenu(void) {
-    if(context_submenu) oops();
+    ssassert(!context_submenu, "Unexpected nested submenu");
 
     context_submenu = new Gtk::Menu;
 }
@@ -969,8 +962,8 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
             Gtk::Menu *menu = new Gtk::Menu;
             menu_item->set_submenu(*menu);
 
-            if((unsigned)entry->level >= sizeof(levels) / sizeof(levels[0]))
-                oops();
+            ssassert((unsigned)entry->level < sizeof(levels) / sizeof(levels[0]),
+                     "Unexpected depth of menu nesting");
 
             levels[entry->level] = menu;
         }
@@ -1144,8 +1137,7 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     int rdelim = filter_name.find(',', lparen);
     if(rdelim < 0)
         rdelim = filter_name.find(')', lparen);
-    if(lparen < 0 || rdelim < 0)
-        oops();
+    ssassert(lparen > 0 && rdelim > 0, "Expected to find a parenthesized extension");
 
     std::string extension = filter_name.substr(lparen, rdelim - lparen);
     if(extension == "*")
@@ -1506,14 +1498,14 @@ const void *LoadResource(const std::string &name, size_t *size) {
 
         path = (UNIX_DATADIR "/") + name;
         if(stat(path.c_str(), &st)) {
-            if(errno != ENOENT) oops();
+            ssassert(errno == ENOENT, "Unexpected stat() error");
             path = resource_dir + "/" + name;
-            if(stat(path.c_str(), &st)) oops();
+            ssassert(!stat(path.c_str(), &st), "Cannot find resource");
         }
 
         std::vector<uint8_t> data(st.st_size);
         FILE *f = ssfopen(path.c_str(), "rb");
-        if(!f) oops();
+        ssassert(f != NULL, "Cannot open resource");
         fread(&data[0], 1, st.st_size, f);
         fclose(f);
 

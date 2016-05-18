@@ -97,8 +97,8 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
         }
     }
 #endif // 0
-    // Nothing should be generating zero-len edges.
-    if((sb->Start()).Equals(sb->Finish())) oops();
+    ssassert(!(sb->Start()).Equals(sb->Finish()),
+             "Unexpected zero-length edge");
 
     split.source = SCurve::FROM_INTERSECTION;
     into->curve.AddAndAssignId(&split);

@@ -554,7 +554,7 @@ void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
             meaning = EDIT_STYLE_WIDTH;
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected link");
     }
 
     std::string edit_value;
@@ -588,9 +588,7 @@ void TextWindow::ScreenChangeStyleColor(int link, uint32_t v) {
     } else if(link == 'f') {
         em = EDIT_STYLE_FILL_COLOR;
         rgb = s->fillColor;
-    } else {
-        oops();
-    }
+    } else ssassert(false, "Unexpected link");
     SS.TW.ShowEditControlWithColorPicker(13, rgb);
     SS.TW.edit.style = hs;
     SS.TW.edit.meaning = em;
@@ -840,7 +838,7 @@ void TextWindow::ShowStyleInfo(void) {
                 case '_': patterns[i] += "\xEE\x80\x85"; break;
                 case '-': patterns[i] += "\xEE\x80\x86"; break;
                 case '~': patterns[i] += "\xEE\x80\x87"; break;
-                default: oops();
+                default: ssassert(false, "Unexpected stipple pattern element");
             }
         } while(*(++str));
     }

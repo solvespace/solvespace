@@ -43,7 +43,7 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
     ret.pts = {};
 
     SCurvePt *p = pts.First();
-    if(!p) oops();
+    ssassert(p != NULL, "Cannot split an empty curve");
     SCurvePt prev = *p;
     ret.pts.Add(p);
     p = pts.NextAfter(p);
@@ -221,7 +221,7 @@ static bool KeepRegion(int type, bool opA, int shell, int orig)
                 return (inShell && !inFace) || inSame;
             }
 
-        default: oops();
+        default: ssassert(false, "Unexpected shell type");
     }
 }
 static bool KeepEdge(int type, bool opA,
@@ -295,7 +295,7 @@ static void DEBUGEDGELIST(SEdgeList *sel, SSurface *surf) {
 void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest,
                                  SPointList *avoid)
 {
-    if(src->l.n < 1) oops();
+    ssassert(src->l.n > 0, "Need at least one edge");
     // Start with an arbitrary edge.
     dest->l.Add(&(src->l.elem[0]));
     src->l.ClearTags();

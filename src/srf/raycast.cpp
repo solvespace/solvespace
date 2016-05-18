@@ -172,7 +172,7 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected degree of spline");
     }
 
     sa->UnWeightControlPoints();

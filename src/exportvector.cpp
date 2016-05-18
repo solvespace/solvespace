@@ -510,9 +510,7 @@ public:
             spline->knotslist.push_back(1.0);
             spline->knotslist.push_back(1.0);
             spline->knotslist.push_back(1.0);
-        } else {
-            oops();
-        }
+        } else ssassert(false, "Unexpected degree of spline");
     }
 
     void writeSpline(SBezier *sb) {
@@ -755,8 +753,7 @@ static std::string MakeStipplePattern(int pattern, double scale, char delimiter,
             result = ssprintf("%.3f_%.3f", scale * 2.0, scale * 0.5);
             break;
 
-        default:
-            oops();
+        default: ssassert(false, "Unexpected stipple pattern");
     }
     std::replace(result.begin(), result.end(), '_', delimiter);
     return result;

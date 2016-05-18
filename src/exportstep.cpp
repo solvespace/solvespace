@@ -117,7 +117,7 @@ int StepFileWriter::ExportCurve(SBezier *sb) {
 }
 
 int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
-    if(loop->l.n < 1) oops();
+    ssassert(loop->l.n >= 1, "Expected at least one loop");
 
     List<int> listOfTrims = {};
 

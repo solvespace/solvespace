@@ -284,7 +284,7 @@ int Expr::Children(void) {
         case ACOS:
             return 1;
 
-        default: oops();
+        default: ssassert(false, "Unexpected operation");
     }
 }
 
@@ -293,7 +293,7 @@ int Expr::Nodes(void) {
         case 0: return 1;
         case 1: return 1 + a->Nodes();
         case 2: return 1 + a->Nodes() + b->Nodes();
-        default: oops();
+        default: ssassert(false, "Unexpected children count");
     }
 }
 
@@ -353,7 +353,7 @@ double Expr::Eval(void) {
         case ACOS:          return acos(a->Eval());
         case ASIN:          return asin(a->Eval());
 
-        default: oops();
+        default: ssassert(false, "Unexpected operation");
     }
 }
 
@@ -396,7 +396,7 @@ Expr *Expr::PartialWrt(hParam p) {
             return (From(-1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
                         ->Times(a->PartialWrt(p));
 
-        default: oops();
+        default: ssassert(false, "Unexpected operation");
     }
 }
 
@@ -487,13 +487,13 @@ Expr *Expr::FoldConstants(void) {
             }
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected operation");
     }
     return n;
 }
 
 void Expr::Substitute(hParam oldh, hParam newh) {
-    if(op == PARAM_PTR) oops();
+    ssassert(op != PARAM_PTR, "Expected an expression that refer to params via handles");
 
     if(op == PARAM && parh.v == oldh.v) {
         parh = newh;
@@ -518,7 +518,7 @@ hParam Expr::ReferencedParams(ParamList *pl) {
             return NO_PARAMS;
         }
     }
-    if(op == PARAM_PTR) oops();
+    ssassert(op != PARAM_PTR, "Expected an expression that refer to params via handles");
 
     int c = Children();
     if(c == 0) {
@@ -538,7 +538,7 @@ hParam Expr::ReferencedParams(ParamList *pl) {
         } else {
             return MULTIPLE_PARAMS;
         }
-    } else oops();
+    } else ssassert(false, "Unexpected children count");
 }
 
 
@@ -571,7 +571,7 @@ p:
         case ASIN:      return "(asin " + a->Print() + ")";
         case ACOS:      return "(acos " + a->Print() + ")";
 
-        default: oops();
+        default: ssassert(false, "Unexpected operation");
     }
 }
 
@@ -624,7 +624,7 @@ void Expr::Consume(void) {
 
 int Expr::Precedence(Expr *e) {
     if(e->op == ALL_RESOLVED) return -1; // never want to reduce this marker
-    if(e->op != BINARY_OP && e->op != UNARY_OP) oops();
+    ssassert(e->op == BINARY_OP || e->op == UNARY_OP, "Unexpected operation");
 
     switch(e->c) {
         case 'q':
@@ -638,7 +638,7 @@ int Expr::Precedence(Expr *e) {
         case '+':
         case '-':   return 10;
 
-        default: oops();
+        default: ssassert(false, "Unexpected operator");
     }
 }
 
@@ -664,7 +664,7 @@ c:
         case 's': n = (PopOperand()->Times(Expr::From(PI/180)))->Sin(); break;
         case 'c': n = (PopOperand()->Times(Expr::From(PI/180)))->Cos(); break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected operator");
     }
     PushOperand(n);
 }

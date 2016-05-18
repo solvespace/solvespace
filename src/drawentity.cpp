@@ -180,7 +180,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
                 screenBBox.Include(SS.GW.ProjectPoint3(sb->ctrl[i]));
             }
         }
-    } else oops();
+    } else ssassert(false, "Expected entity to be a point or have beziers");
 
     // Enlarge the bounding box to consider selection radius.
     screenBBox.minp.x -= SELECTION_RADIUS;
@@ -286,7 +286,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
 
     // The number of unknowns to solve for.
     int n   = periodic ? 3 + ep : ep;
-    if(n >= MAX_N) oops();
+    ssassert(n < MAX_N, "Too many unknowns");
     // The number of on-curve points, one more than the number of segments.
     int pts = periodic ? 4 + ep : 2 + ep;
 
@@ -708,8 +708,7 @@ void Entity::DrawOrGetDistance(void) {
             // Do nothing; these are drawn with the triangle mesh
             break;
 
-        default:
-            oops();
+        default: ssassert(false, "Unexpected entity type");
     }
 
     // And draw the curves; generate the rational polynomial curves for

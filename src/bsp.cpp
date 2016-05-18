@@ -39,7 +39,7 @@ SBsp3 *SBsp3::FromMesh(SMesh *m) {
 Vector SBsp3::IntersectionWith(Vector a, Vector b) {
     double da = a.Dot(n) - d;
     double db = b.Dot(n) - d;
-    if(da*db > 0) oops();
+    ssassert(da*db < 0, "Expected segment to intersect BSP node");
 
     double dab = (db - da);
     return (a.ScaledBy(db/dab)).Plus(b.ScaledBy(-da/dab));
@@ -104,7 +104,7 @@ void SBsp3::InsertHow(int how, STriangle *tr, SMesh *instead) {
             more = m;
             break;
         }
-        default: oops();
+        default: ssassert(false, "Unexpected BSP insert type");
     }
     return;
 
@@ -144,7 +144,7 @@ void SBsp3::InsertConvexHow(int how, STriMeta meta, Vector *vertex, int n,
             }
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected BSP insert type");
     }
     int i;
     for(i = 0; i < n - 2; i++) {
@@ -234,7 +234,7 @@ SBsp3 *SBsp3::InsertConvex(STriMeta meta, Vector *vertex, int cnt,
             inter[inters++] = vi;
         }
     }
-    if(npos > cnt + 1 || nneg > cnt + 1) oops();
+    if(npos > cnt + 1 || nneg > cnt + 1) ssassert(false, "Impossible");
 
     if(!instead) {
         if(inters == 2) {
@@ -320,7 +320,7 @@ void SBsp3::Insert(STriangle *tr, SMesh *instead) {
             if     (!isOn[0]) { a = tr->b; b = tr->c; }
             else if(!isOn[1]) { a = tr->c; b = tr->a; }
             else if(!isOn[2]) { a = tr->a; b = tr->b; }
-            else oops();
+            else ssassert(false, "Impossible");
             if(!instead) {
                 SEdge se = SEdge::From(a, b);
                 edges = SBsp2::InsertOrCreateEdge(edges, &se, n, tr->Normal());
@@ -344,7 +344,7 @@ void SBsp3::Insert(STriangle *tr, SMesh *instead) {
         if       (isOn[0]) { a = tr->a; b = tr->b; c = tr->c; bpos = isPos[1];
         } else if(isOn[1]) { a = tr->b; b = tr->c; c = tr->a; bpos = isPos[2];
         } else if(isOn[2]) { a = tr->c; b = tr->a; c = tr->b; bpos = isPos[0];
-        } else oops();
+        } else ssassert(false, "Impossible");
 
         Vector bPc = IntersectionWith(b, c);
         STriangle btri = STriangle::From(tr->meta, a, b, bPc);
@@ -371,14 +371,14 @@ void SBsp3::Insert(STriangle *tr, SMesh *instead) {
         if       (isNeg[0]) {   a = tr->a; b = tr->b; c = tr->c;
         } else if(isNeg[1]) {   a = tr->b; b = tr->c; c = tr->a;
         } else if(isNeg[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else oops();
+        } else ssassert(false, "Impossible");
 
     } else if(posc == 1 && negc == 2) {
         if       (isPos[0]) {   a = tr->a; b = tr->b; c = tr->c;
         } else if(isPos[1]) {   a = tr->b; b = tr->c; c = tr->a;
         } else if(isPos[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else oops();
-    } else oops();
+        } else ssassert(false, "Impossible");
+    } else ssassert(false, "Impossible");
 
     Vector aPb = IntersectionWith(a, b);
     Vector cPa = IntersectionWith(c, a);
@@ -471,7 +471,7 @@ void SBsp3::DebugDraw(void) {
 Vector SBsp2::IntersectionWith(Vector a, Vector b) {
     double da = a.Dot(no) - d;
     double db = b.Dot(no) - d;
-    if(da*db > 0) oops();
+    ssassert(da*db < 0, "Expected segment to intersect BSP node");
 
     double dab = (db - da);
     return (a.ScaledBy(db/dab)).Plus(b.ScaledBy(-da/dab));
@@ -547,7 +547,7 @@ void SBsp2::InsertEdge(SEdge *nedge, Vector nnp, Vector out) {
         }
         return;
     }
-    oops();
+    ssassert(false, "Impossible");
 }
 
 void SBsp2::InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3) {
@@ -568,7 +568,7 @@ void SBsp2::InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3) {
             }
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected BSP insert type");
     }
 }
 
@@ -614,7 +614,7 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
         if       (isOn[0]) { a = tr->a; b = tr->b; c = tr->c; bpos = isPos[1];
         } else if(isOn[1]) { a = tr->b; b = tr->c; c = tr->a; bpos = isPos[2];
         } else if(isOn[2]) { a = tr->c; b = tr->a; c = tr->b; bpos = isPos[0];
-        } else oops();
+        } else ssassert(false, "Impossible");
 
         Vector bPc = IntersectionWith(b, c);
         STriangle btri = STriangle::From(tr->meta, a, b, bPc);
@@ -636,14 +636,14 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
         if       (isNeg[0]) {   a = tr->a; b = tr->b; c = tr->c;
         } else if(isNeg[1]) {   a = tr->b; b = tr->c; c = tr->a;
         } else if(isNeg[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else oops();
+        } else ssassert(false, "Impossible");
 
     } else if(posc == 1 && negc == 2) {
         if       (isPos[0]) {   a = tr->a; b = tr->b; c = tr->c;
         } else if(isPos[1]) {   a = tr->b; b = tr->c; c = tr->a;
         } else if(isPos[2]) {   a = tr->c; b = tr->a; c = tr->b;
-        } else oops();
-    } else oops();
+        } else ssassert(false, "Impossible");
+    } else ssassert(false, "Impossible");
 
     Vector aPb = IntersectionWith(a, b);
     Vector cPa = IntersectionWith(c, a);
@@ -666,8 +666,8 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
 }
 
 void SBsp2::DebugDraw(Vector n, double d) {
-    if(fabs((edge.a).Dot(n) - d) > LENGTH_EPS) oops();
-    if(fabs((edge.b).Dot(n) - d) > LENGTH_EPS) oops();
+    ssassert(fabs((edge.a).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
+    ssassert(fabs((edge.b).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
 
     ssglLineWidth(10);
     glBegin(GL_LINES);

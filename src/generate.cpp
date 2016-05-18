@@ -101,7 +101,7 @@ bool SolveSpaceUI::PruneRequests(hGroup hg) {
 
         if(EntityExists(e->workplane)) continue;
 
-        if(!e->h.isFromRequest()) oops();
+        ssassert(e->h.isFromRequest(), "Only explicitly created entities can be pruned");
 
         (deleted.requests)++;
         SK.request.RemoveById(e->h.request());
@@ -199,7 +199,7 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected generation mode");
     }
 
     // If we're generating entities for display, first we need to find

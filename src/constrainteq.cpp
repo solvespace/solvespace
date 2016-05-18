@@ -54,7 +54,7 @@ Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
 
     if(eq == 0) return e0;
     if(eq == 1) return e1;
-    oops();
+    ssassert(false, "Unexpected index of equation");
 }
 
 Expr *ConstraintBase::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln)
@@ -104,7 +104,8 @@ Expr *ConstraintBase::PointPlaneDistance(ExprVector p, hEntity hpl) {
 Expr *ConstraintBase::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
     EntityBase *pa = SK.GetEntity(hpa);
     EntityBase *pb = SK.GetEntity(hpb);
-    if(!(pa->IsPoint() && pb->IsPoint())) oops();
+    ssassert(pa->IsPoint() && pb->IsPoint(),
+             "Expected two points to measure projected distance between");
 
     if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
         // This is true distance
@@ -182,7 +183,7 @@ void ConstraintBase::ModifyToSatisfy(void) {
         IdList<Equation,hEquation> l = {};
         // Generate the equations even if this is a reference dimension
         GenerateReal(&l);
-        if(l.n != 1) oops();
+        ssassert(l.n == 1, "Expected constraint to generate a single equation");
 
         // These equations are written in the form f(...) - d = 0, where
         // d is the value of the valA.
@@ -735,7 +736,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
                         dir[i] = e->CubicGetStartTangentExprs();
                     }
                 } else {
-                    oops();
+                    ssassert(false, "Unexpected entity types for CURVE_CURVE_TANGENT");
                 }
             }
             if(parallel) {
@@ -788,7 +789,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
         case COMMENT:
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected constraint ID");
     }
 }
 

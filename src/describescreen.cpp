@@ -235,7 +235,7 @@ void TextWindow::DescribeSelection(void) {
             Printf(false, "%FtPOINT AND A CIRCLE");
         } else if(ec->type == Entity::ARC_OF_CIRCLE) {
             Printf(false, "%FtPOINT AND AN ARC");
-        } else oops();
+        } else ssassert(false, "Unexpected entity type");
         Vector p = SK.GetEntity(gs.point[0])->PointGetNum();
         Printf(true,  "        pt at " PT_AS_STR, COSTR(p));
         Vector c = SK.GetEntity(ec->point[0])->PointGetNum();

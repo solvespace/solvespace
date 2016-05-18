@@ -1014,7 +1014,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
                     }
                     break;
 
-                default: oops();
+                default: ssassert(false, "Unexpected edge class");
             }
 
             cnt++;

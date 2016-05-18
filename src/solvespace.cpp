@@ -426,7 +426,7 @@ bool SolveSpaceUI::OkayToStartNewFile(void) {
         case DIALOG_CANCEL:
             return false;
 
-        default: oops(); break;
+        default: ssassert(false, "Unexpected dialog choice");
     }
 }
 
@@ -557,7 +557,7 @@ void SolveSpaceUI::MenuFile(int id) {
                 ImportDxf(importFile);
             } else if(Extension(importFile) == "dwg") {
                 ImportDwg(importFile);
-            } else oops();
+            } else ssassert(false, "Unexpected extension of file to import");
 
             SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
             SS.ScheduleShowTW();
@@ -569,7 +569,7 @@ void SolveSpaceUI::MenuFile(int id) {
             SS.Exit();
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 
     SS.UpdateWindowTitle();
@@ -796,7 +796,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
         }
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 }
 
@@ -823,7 +823,7 @@ void SolveSpaceUI::MenuHelp(int id) {
 );
             break;
 
-        default: oops();
+        default: ssassert(false, "Unexpected menu ID");
     }
 }
 

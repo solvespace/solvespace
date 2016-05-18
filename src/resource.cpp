@@ -17,36 +17,31 @@ namespace SolveSpace {
 std::string LoadString(const std::string &name) {
     size_t size;
     const void *data = LoadResource(name, &size);
-    if(data == NULL) oops();
-
     return std::string(static_cast<const char *>(data), size);
 }
 
 std::string LoadStringFromGzip(const std::string &name) {
     size_t size;
     const void *data = LoadResource(name, &size);
-    if(data == NULL) oops();
 
     z_stream stream;
     stream.zalloc = Z_NULL;
     stream.zfree = Z_NULL;
     stream.opaque = Z_NULL;
-    if(inflateInit2(&stream, /*decode gzip header*/16) != Z_OK)
-        oops();
+    ssassert(inflateInit2(&stream, /*decode gzip header*/16) == Z_OK,
+             "Cannot start inflation");
 
     // Extract length mod 2**32 from the gzip trailer.
     std::string result;
-    if(size < 4) oops();
+    ssassert(size >= 4, "Resource too small to have gzip trailer");
     result.resize(*(uint32_t *)((uintptr_t)data + size - 4));
 
     stream.next_in = (Bytef *)data;
     stream.avail_in = size;
     stream.next_out = (Bytef *)&result[0];
     stream.avail_out = result.length();
-    if(inflate(&stream, Z_NO_FLUSH) != Z_STREAM_END)
-        oops();
-    if(stream.avail_out != 0)
-        oops();
+    ssassert(inflate(&stream, Z_NO_FLUSH) == Z_STREAM_END, "Cannot inflate resource");
+    ssassert(stream.avail_out == 0, "Inflated resource larger than what trailer indicates");
 
     inflateEnd(&stream);
 
@@ -56,10 +51,9 @@ std::string LoadStringFromGzip(const std::string &name) {
 Pixmap LoadPNG(const std::string &name) {
     size_t size;
     const void *data = LoadResource(name, &size);
-    if(data == NULL) oops();
 
     Pixmap pixmap = Pixmap::FromPNG(static_cast<const uint8_t *>(data), size);
-    if(pixmap.IsEmpty()) oops();
+    ssassert(!pixmap.IsEmpty(), "Cannot load pixmap");
 
     return pixmap;
 }
@@ -189,12 +183,12 @@ public:
     }
 
     char ReadChar() {
-        if(AtEnd()) oops();
+        ssassert(!AtEnd(), "Unexpected EOF");
         return *pos++;
     }
 
     bool TryChar(char c) {
-        if(AtEnd()) oops();
+        ssassert(!AtEnd(), "Unexpected EOF");
         if(*pos == c) {
             pos++;
             return true;
@@ -204,7 +198,7 @@ public:
     }
 
     void ExpectChar(char c) {
-        if(ReadChar() != c) oops();
+        ssassert(ReadChar() == c, "Unexpected character");
     }
 
     uint8_t Read4HexBits() {
@@ -215,7 +209,7 @@ public:
             return 10 + (c - 'a');
         } else if(c >= 'A' && c <= 'F') {
             return 10 + (c - 'A');
-        } else oops();
+        } else ssassert(false, "Unexpected hex digit");
     }
 
     uint8_t Read8HexBits() {
@@ -233,12 +227,12 @@ public:
     double ReadDoubleString() {
         char *endptr;
         double d = strtod(&*pos, &endptr);
-        if(&*pos == endptr) oops();
+        ssassert(&*pos != endptr, "Cannot read a double-precision number");
         pos += endptr - &*pos;
         return d;
     }
 
-    bool ReadRegex(const std::regex &re, std::smatch *m) {
+    bool TryRegex(const std::regex &re, std::smatch *m) {
         if(std::regex_search(pos, end, *m, re, std::regex_constants::match_continuous)) {
             pos = (*m)[0].second;
             return true;
@@ -269,9 +263,12 @@ BitmapFont BitmapFont::From(std::string &&unifontData) {
 }
 
 void BitmapFont::AddGlyph(char32_t codepoint, const Pixmap &pixmap) {
-    if(pixmap.width != 8 && pixmap.width != 16 && pixmap.height != 16) oops();
-    if(glyphs.find(codepoint) != glyphs.end()) oops();
-    if(nextPosition == 0xffff) oops();
+    ssassert((pixmap.width == 8 || pixmap.width == 16) && pixmap.height == 16,
+             "Unexpected glyph dimensions");
+    ssassert(glyphs.find(codepoint) == glyphs.end(),
+             "Glyph with this codepoint already exists");
+    ssassert(nextPosition != 0xffff,
+             "Too many glyphs for current texture size");
 
     BitmapFont::Glyph glyph = {};
     glyph.advanceCells = pixmap.width / 8;
@@ -294,7 +291,8 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
         return (*it).second;
     }
 
-    if(nextPosition == 0xffff) oops();
+    ssassert(nextPosition != 0xffff,
+             "Too many glyphs for current texture size");
 
     // Find the hex representation in the (sorted) Unifont file.
     auto first = unifontData.cbegin(),
@@ -344,7 +342,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
             for(size_t i = 0; i < 16; i++) {
                 glyphBits[i] = (uint16_t)reader.Read8HexBits() << 8;
             }
-        } else oops();
+        } else ssassert(false, "Unexpected glyph bitmap length");
 
         // Fill in the texture (one texture byte per glyph bit).
         for(size_t y = 0; y < 16; y++) {
@@ -361,7 +359,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
     }
 
     // Glyph doesn't exist; return replacement glyph instead.
-    if(codepoint == 0xfffd) oops();
+    ssassert(codepoint != 0xfffd, "Cannot parse replacement glyph");
     return GetGlyph(0xfffd);
 }
 
@@ -461,7 +459,7 @@ VectorFont VectorFont::From(std::string &&lffData) {
 
     ASCIIReader reader = ASCIIReader::From(font.lffData);
     std::smatch m;
-    while(reader.ReadRegex(std::regex("#\\s*(\\w+)\\s*:\\s*(.+?)\n"), &m)) {
+    while(reader.TryRegex(std::regex("#\\s*(\\w+)\\s*:\\s*(.+?)\n"), &m)) {
         std::string name  = m.str(1),
                     value = m.str(2);
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
@@ -488,7 +486,7 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
     }
 
     auto firstGlyph = std::find(lffData.cbegin(), lffData.cend(), '[');
-    if(firstGlyph == lffData.cend()) oops();
+    ssassert(firstGlyph != lffData.cend(), "Vector font contains no glyphs");
 
     // Find the serialized representation in the (sorted) lff file.
     auto first = firstGlyph,
@@ -572,7 +570,7 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
     }
 
     // Glyph doesn't exist; return replacement glyph instead.
-    if(codepoint == 0xfffd) oops();
+    ssassert(codepoint != 0xfffd, "Cannot parse replacement glyph");
     return GetGlyph(0xfffd);
 }
 

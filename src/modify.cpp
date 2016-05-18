@@ -131,9 +131,7 @@ void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
         EntityBase *wrkpln = SK.GetEntity(e->workplane)->Normal();
         u = wrkpln->NormalU();
         v = wrkpln->NormalV();
-    } else {
-        oops();
-    }
+    } else ssassert(false, "Unexpected entity type");
 }
 double GraphicsWindow::ParametricCurve::LengthForAuto(void) {
     if(isLine) {
@@ -518,7 +516,7 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
     int i, j;
     for(i = 0; i < sbl.l.n; i++) {
         SBezier *sb = &(sbl.l.elem[i]);
-        if(sb->deg != 3) oops();
+        ssassert(sb->deg == 3, "Expected a cubic bezier");
 
         sb->ClosestPointTo(pinter, &t, false);
         if(pinter.Equals(sb->PointAt(t))) {

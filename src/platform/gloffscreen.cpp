@@ -14,12 +14,10 @@
 
 GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL), _width(0), _height(0) {
 #ifndef __APPLE__
-    if(glewInit() != GLEW_OK)
-        oops();
+    ssassert(glewInit() == GLEW_OK, "Unexpected GLEW failure");
 #endif
 
-    if(!GL_EXT_framebuffer_object)
-        oops();
+    ssassert(GL_EXT_framebuffer_object, "Expected an available FBO extension");
 
     glGenFramebuffersEXT(1, &_framebuffer);
     glGenRenderbuffersEXT(1, &_color_renderbuffer);

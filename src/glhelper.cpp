@@ -127,7 +127,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
         case Style::STIPPLE_DOT:           stipplePattern = ".";   break;
         case Style::STIPPLE_FREEHAND:      stipplePattern = "~";   break;
         case Style::STIPPLE_ZIGZAG:        stipplePattern = "~__"; break;
-        default: oops();
+        default: ssassert(false, "Unexpected stipple pattern");
     }
     ssglStippledLine(a, b, width, stipplePattern, stippleScale, maybeFat);
 }
@@ -135,7 +135,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
 void ssglStippledLine(Vector a, Vector b, double width,
                       const char *stipplePattern, double stippleScale, bool maybeFat)
 {
-    if(stipplePattern == NULL || *stipplePattern == 0) oops();
+    ssassert(stipplePattern != NULL, "Unexpected stipple pattern");
 
     Vector dir = b.Minus(a);
     double len = dir.Magnitude();
@@ -202,7 +202,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
                 break;
             }
 
-            default: oops();
+            default: ssassert(false, "Unexpected stipple pattern element");
         }
         if(*(++si) == 0) si = stipplePattern;
     } while(end > 0.0);

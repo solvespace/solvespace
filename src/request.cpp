@@ -147,7 +147,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             // and this is just a copy of the workplane quaternion,
             // so no params required
         }
-        if(points < 1) oops();
+        ssassert(points >= 1, "Positioning a normal requires a point");
         // The point determines where the normal gets displayed on-screen;
         // it's entirely cosmetic.
         n.point[0] = e.point[0];
