@@ -637,11 +637,11 @@ protected:
 
 private:
     int _w, _h;
-    void ij_to_xy(int i, int j, int &x, int &y) {
+    void ij_to_xy(double i, double j, int &x, int &y) {
         // Convert to xy (vs. ij) style coordinates,
         // with (0, 0) at center
-        x = i - _w / 2;
-        y = _h / 2 - j;
+        x = (int)i - _w / 2;
+        y = _h / 2 - (int)j;
     }
 };
 
@@ -1376,7 +1376,7 @@ protected:
     }
 
     virtual void on_scrollbar_value_changed() {
-        SS.TW.ScrollbarEvent(_scrollbar.get_adjustment()->get_value());
+        SS.TW.ScrollbarEvent((int)_scrollbar.get_adjustment()->get_value());
     }
 
     virtual void on_editing_done(Glib::ustring value) {

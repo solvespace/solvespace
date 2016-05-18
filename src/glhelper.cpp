@@ -713,7 +713,7 @@ double ssglStrWidth(const std::string &str, double h)
 {
     LoadVectorFont();
 
-    int width = 0;
+    double width = 0;
     for(char32_t codepoint : ReadUTF8(str)) {
         width += BuiltinVectorFont.GetGlyph(codepoint).advanceWidth;
     }
@@ -728,11 +728,11 @@ static Vector PixelAlign(Vector v) {
     return v;
 }
 
-static int DrawCharacter(const VectorFont::Glyph &glyph, Vector t, Vector o, Vector u, Vector v,
-                         double scale, ssglLineFn *fn, void *fndata, bool gridFit) {
-    int advanceWidth = glyph.advanceWidth;
+static double DrawCharacter(const VectorFont::Glyph &glyph, Vector t, Vector o, Vector u, Vector v,
+                            double scale, ssglLineFn *fn, void *fndata, bool gridFit) {
+    double advanceWidth = glyph.advanceWidth;
 
-    int actualWidth, offsetX;
+    double actualWidth, offsetX;
     if(gridFit) {
         o.x         += glyph.leftSideBearing;
         offsetX      = glyph.leftSideBearing;

@@ -1294,7 +1294,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         hStyle hs = c->disp.style;
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
         ShowGraphicsEditControl((int)p2.x, (int)p2.y,
-                                ssglStrFontSize(Style::TextHeight(hs)) * scale,
+                                (int)(ssglStrFontSize(Style::TextHeight(hs)) * scale),
                                 editMinWidthChar, editValue);
     }
 }

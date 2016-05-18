@@ -88,7 +88,7 @@ static Pixmap ReadPNGIntoPixmap(png_struct *png_ptr, png_info *info_ptr) {
     Pixmap pixmap = {};
     pixmap.width    = png_get_image_width(png_ptr, info_ptr);
     pixmap.height   = png_get_image_height(png_ptr, info_ptr);
-    pixmap.hasAlpha = png_get_color_type(png_ptr, info_ptr) & PNG_COLOR_MASK_ALPHA;
+    pixmap.hasAlpha = (png_get_color_type(png_ptr, info_ptr) & PNG_COLOR_MASK_ALPHA) != 0;
 
     size_t stride = pixmap.width * pixmap.GetBytesPerPixel();
     if(stride % 4 != 0) stride += 4 - stride % 4;
