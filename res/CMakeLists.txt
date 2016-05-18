@@ -114,6 +114,8 @@ elseif(APPLE)
     add_xib     (cocoa/MainMenu.xib)
     add_xib     (cocoa/SaveFormatAccessory.xib)
 else()
+    add_resource(freedesktop/solvespace-48x48.png)
+
     install(FILES freedesktop/solvespace.desktop
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 

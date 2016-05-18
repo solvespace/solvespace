@@ -1601,11 +1601,18 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
+    SolveSpace::Pixmap icon = LoadPNG("freedesktop/solvespace-48x48.png");
+    Glib::RefPtr<Gdk::Pixbuf> icon_gdk =
+        Gdk::Pixbuf::create_from_data(&icon.data[0], Gdk::COLORSPACE_RGB,
+                                      icon.hasAlpha, 8, icon.width, icon.height, icon.stride);
+
     TW.reset(new TextWindowGtk);
     GW.reset(new GraphicsWindowGtk);
     InitMainMenu(&GW->get_menubar());
     GW->get_menubar().accelerate(*TW);
     TW->set_transient_for(*GW);
+    GW->set_icon(icon_gdk);
+    TW->set_icon(icon_gdk);
 
     TW->show_all();
     GW->show_all();
