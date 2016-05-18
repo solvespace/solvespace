@@ -53,6 +53,13 @@ if(MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+    if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
+        # GCC 4.8/4.9 ship with broken but present <regex>. meh.
+        message(FATAL_ERROR "GCC 5.0+ is required")
+    endif()
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
     if(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
