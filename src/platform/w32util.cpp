@@ -24,6 +24,17 @@ void dbp(const char *str, ...)
     OutputDebugStringA(buf);
 }
 
+void assert_failure(const char *file, unsigned line, const char *function,
+                    const char *condition, const char *message) {
+    dbp("File %s, line %u, function %s:\n", file, line, function);
+    dbp("Assertion '%s' failed: ((%s) == false).\n", message, condition);
+#ifdef NDEBUG
+    _exit(1);
+#else
+    abort();
+#endif
+}
+
 std::string Narrow(const wchar_t *in)
 {
     std::string out;

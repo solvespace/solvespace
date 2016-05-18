@@ -49,6 +49,8 @@ if(MSVC)
     # they have their own __inline; this breaks `static inline` functions.
     # We do not want to care and so we fix this with a definition.
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
+    # Same for the (C99) __func__ special variable; we use it only in C++ code.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
