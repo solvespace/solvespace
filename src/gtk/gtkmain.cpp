@@ -650,6 +650,7 @@ protected:
     }
 
     virtual bool on_delete_event(GdkEventAny *) {
+        if(!SS.OkayToStartNewFile()) return true;
         SS.Exit();
 
         return true;

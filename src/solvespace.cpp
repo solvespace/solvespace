@@ -144,9 +144,6 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
 }
 
 void SolveSpaceUI::Exit(void) {
-    if(!OkayToStartNewFile())
-        return;
-
     // Recent files
     for(int i = 0; i < MAX_RECENT; i++)
         CnfFreezeString(RecentFile[i], "RecentFile_" + std::to_string(i));
