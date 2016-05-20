@@ -117,6 +117,15 @@ void GraphicsWindow::CopySelection(void) {
         SS.clipboard.r.Add(&cr);
     }
 
+    for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
+        if(!s->constraint.v) continue;
+
+        Constraint *c = SK.GetConstraint(s->constraint);
+        if(c->type == Constraint::COMMENT) {
+            SS.clipboard.c.Add(c);
+        }
+    }
+
     Constraint *c;
     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
         if(!SS.clipboard.ContainsEntity(c->ptA) ||
@@ -124,7 +133,8 @@ void GraphicsWindow::CopySelection(void) {
            !SS.clipboard.ContainsEntity(c->entityA) ||
            !SS.clipboard.ContainsEntity(c->entityB) ||
            !SS.clipboard.ContainsEntity(c->entityC) ||
-           !SS.clipboard.ContainsEntity(c->entityD)) {
+           !SS.clipboard.ContainsEntity(c->entityD) ||
+           c->type == Constraint::COMMENT) {
             continue;
         }
         SS.clipboard.c.Add(c);
@@ -201,7 +211,12 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.other2 = cc->other2;
         c.reference = cc->reference;
         c.disp = cc->disp;
-        Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+        c.comment = cc->comment;
+        hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
+        if(c.type == Constraint::COMMENT) {
+            SK.GetConstraint(hc)->disp.offset = SK.GetConstraint(hc)->disp.offset.Plus(trans);
+            MakeSelected(hc);
+        }
     }
 
     SS.ScheduleGenerateAll();
