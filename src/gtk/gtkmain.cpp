@@ -368,6 +368,8 @@ private:
 class EditorOverlay : public Gtk::Fixed {
 public:
     EditorOverlay(Gtk::Widget &underlay) : _underlay(underlay) {
+        set_size_request(0, 0);
+
         add(_underlay);
 
         _entry.set_no_show_all(true);
