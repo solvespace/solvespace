@@ -659,6 +659,7 @@ public:
     bool IsSelected(Selection *s);
     bool IsSelected(hEntity he);
     void MakeSelected(hEntity he);
+    void MakeSelected(hConstraint hc);
     void MakeSelected(Selection *s);
     void MakeUnselected(hEntity he, bool coincidentPointTrick);
     void MakeUnselected(Selection *s, bool coincidentPointTrick);

@@ -156,6 +156,13 @@ void GraphicsWindow::MakeSelected(hEntity he) {
     stog.entity = he;
     MakeSelected(&stog);
 }
+
+void GraphicsWindow::MakeSelected(hConstraint hc) {
+    Selection stog = {};
+    stog.constraint = hc;
+    MakeSelected(&stog);
+}
+
 void GraphicsWindow::MakeSelected(Selection *stog) {
     if(stog->IsEmpty()) return;
     if(IsSelected(stog)) return;
