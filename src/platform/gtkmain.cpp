@@ -642,6 +642,7 @@ protected:
     }
 
     bool on_delete_event(GdkEventAny *) override {
+        if(!SS.OkayToStartNewFile()) return true;
         SS.Exit();
 
         return true;

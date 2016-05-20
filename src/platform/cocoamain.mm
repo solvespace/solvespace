@@ -1176,8 +1176,6 @@ const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
-    SolveSpace::SK.Clear();
-    SolveSpace::SS.Clear();
     SolveSpace::SS.Exit();
 }
 
@@ -1210,6 +1208,9 @@ int main(int argc, const char *argv[]) {
     [GW makeKeyAndOrderFront:nil];
     [NSApp activateIgnoringOtherApps:YES];
     [NSApp run];
+
+    SolveSpace::SK.Clear();
+    SolveSpace::SS.Clear();
 
     return 0;
 }
