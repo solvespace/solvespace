@@ -902,6 +902,7 @@ public:
 };
 
 void ImportDxf(const std::string &filename) {
+    SS.UndoRemember();
     dxfRW dxf(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
@@ -915,6 +916,7 @@ void ImportDxf(const std::string &filename) {
 }
 
 void ImportDwg(const std::string &filename) {
+    SS.UndoRemember();
     dwgR dwg(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
