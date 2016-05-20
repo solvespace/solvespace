@@ -30,8 +30,8 @@ void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
         }
         Entity *pe = SK.GetEntity(*hee);
         if(pe->type == p->type &&
-           pe->type != Entity::POINT_IN_2D &&
-           pe->type != Entity::POINT_IN_3D &&
+           pe->type != Entity::Type::POINT_IN_2D &&
+           pe->type != Entity::Type::POINT_IN_3D &&
            pe->group.v == p->group.v)
         {
             // Transform-type point, from the same group. So it handles the
@@ -46,12 +46,12 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);
     if(e->IsPoint()) {
         AddPointToDraggedList(e->h);
-    } else if(e->type == Entity::LINE_SEGMENT ||
-              e->type == Entity::ARC_OF_CIRCLE ||
-              e->type == Entity::CUBIC ||
-              e->type == Entity::CUBIC_PERIODIC ||
-              e->type == Entity::CIRCLE ||
-              e->type == Entity::TTF_TEXT)
+    } else if(e->type == Entity::Type::LINE_SEGMENT ||
+              e->type == Entity::Type::ARC_OF_CIRCLE ||
+              e->type == Entity::Type::CUBIC ||
+              e->type == Entity::Type::CUBIC_PERIODIC ||
+              e->type == Entity::Type::CIRCLE ||
+              e->type == Entity::Type::TTF_TEXT)
     {
         int pts;
         EntReqTable::GetEntityInfo(e->type, e->extraPoints,
@@ -157,7 +157,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         orig.mouse.x = x;
         orig.mouse.y = y;
 
-        if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
+        if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
             if(havePainted) {
                 SS.ScheduleShowTW();
             }
@@ -174,9 +174,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         if(leftDown && dm > 3) {
             Entity *e = NULL;
             if(hover.entity.v) e = SK.GetEntity(hover.entity);
-            if(e && e->type != Entity::WORKPLANE) {
+            if(e && e->type != Entity::Type::WORKPLANE) {
                 Entity *e = SK.GetEntity(hover.entity);
-                if(e->type == Entity::CIRCLE && selection.n <= 1) {
+                if(e->type == Entity::Type::CIRCLE && selection.n <= 1) {
                     // Drag the radius.
                     ClearSelection();
                     pending.circle = hover.entity;
@@ -284,7 +284,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 SS.GW.pending.suggestion =
                     SS.GW.SuggestLineConstraint(SS.GW.pending.request);
             } else {
-                SS.GW.pending.suggestion = SUGGESTED_NONE;
+                SS.GW.pending.suggestion = Constraint::Type::UNKNOWN;
             }
         case DRAGGING_NEW_POINT:
             UpdateDraggedPoint(pending.point, x, y);
@@ -333,7 +333,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 List<hEntity> *lhe = &(pending.points);
                 for(hEntity *he = lhe->First(); he; he = lhe->NextAfter(he)) {
                     Entity *e = SK.GetEntity(*he);
-                    if(e->type != Entity::POINT_N_ROT_TRANS) {
+                    if(e->type != Entity::Type::POINT_N_ROT_TRANS) {
                         if(ctrlDown) {
                             Vector p = e->PointGetNum();
                             p = p.Minus(SS.extraLine.ptA);
@@ -490,14 +490,14 @@ void GraphicsWindow::ContextMenuListStyles() {
     for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
         if(s->h.v < Style::FIRST_CUSTOM) continue;
 
-        AddContextMenuItem(s->DescriptionString().c_str(), CMNU_FIRST_STYLE + s->h.v);
+        AddContextMenuItem(s->DescriptionString().c_str(), (ContextCommand)((uint32_t)ContextCommand::FIRST_STYLE + s->h.v));
         empty = false;
     }
 
-    if(!empty) AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+    if(!empty) AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
 
-    AddContextMenuItem("No Style", CMNU_NO_STYLE);
-    AddContextMenuItem("Newly Created Custom Style...", CMNU_NEW_CUSTOM_STYLE);
+    AddContextMenuItem("No Style", ContextCommand::NO_STYLE);
+    AddContextMenuItem("Newly Created Custom Style...", ContextCommand::NEW_CUSTOM_STYLE);
 }
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
@@ -512,7 +512,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(context.active) return;
 
     if(pending.operation == DRAGGING_NEW_LINE_POINT) {
-        if(SS.GW.pending.suggestion != SUGGESTED_NONE) {
+        if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
             Constraint::Constrain(SS.GW.pending.suggestion,
                 Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
         }
@@ -547,53 +547,53 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(itemsSelected) {
         if(gs.stylables > 0) {
             ContextMenuListStyles();
-            AddContextMenuItem("Assign to Style", CONTEXT_SUBMENU);
+            AddContextMenuItem("Assign to Style", ContextCommand::SUBMENU);
         }
         if(gs.n + gs.constraints == 1) {
-            AddContextMenuItem("Group Info", CMNU_GROUP_INFO);
+            AddContextMenuItem("Group Info", ContextCommand::GROUP_INFO);
         }
         if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-            AddContextMenuItem("Style Info", CMNU_STYLE_INFO);
+            AddContextMenuItem("Style Info", ContextCommand::STYLE_INFO);
         }
         if(gs.withEndpoints > 0) {
-            AddContextMenuItem("Select Edge Chain", CMNU_SELECT_CHAIN);
+            AddContextMenuItem("Select Edge Chain", ContextCommand::SELECT_CHAIN);
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
-            if(c->HasLabel() && c->type != Constraint::COMMENT) {
+            if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
                 AddContextMenuItem("Toggle Reference Dimension",
-                    CMNU_REFERENCE_DIM);
+                    ContextCommand::REFERENCE_DIM);
             }
-            if(c->type == Constraint::ANGLE ||
-               c->type == Constraint::EQUAL_ANGLE)
+            if(c->type == Constraint::Type::ANGLE ||
+               c->type == Constraint::Type::EQUAL_ANGLE)
             {
                 AddContextMenuItem("Other Supplementary Angle",
-                    CMNU_OTHER_ANGLE);
+                    ContextCommand::OTHER_ANGLE);
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
-            AddContextMenuItem("Snap to Grid", CMNU_SNAP_TO_GRID);
+            AddContextMenuItem("Snap to Grid", ContextCommand::SNAP_TO_GRID);
         }
 
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.point[0].request());
             int index = r->IndexOfPoint(gs.point[0]);
-            if((r->type == Request::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
-                    r->type == Request::CUBIC_PERIODIC) {
-                AddContextMenuItem("Remove Spline Point", CMNU_REMOVE_SPLINE_PT);
+            if((r->type == Request::Type::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
+                    r->type == Request::Type::CUBIC_PERIODIC) {
+                AddContextMenuItem("Remove Spline Point", ContextCommand::REMOVE_SPLINE_PT);
             }
         }
         if(gs.entities == 1 && gs.entity[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.entity[0].request());
-            if(r->type == Request::CUBIC || r->type == Request::CUBIC_PERIODIC) {
+            if(r->type == Request::Type::CUBIC || r->type == Request::Type::CUBIC_PERIODIC) {
                 Entity *e = SK.GetEntity(gs.entity[0]);
                 e->GetDistance(Point2d::From(x, y));
                 addAfterPoint = e->dogd.data;
                 ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
-                if(r->type == Request::CUBIC) addAfterPoint++;
-                AddContextMenuItem("Add Spline Point", CMNU_ADD_SPLINE_PT);
+                if(r->type == Request::Type::CUBIC) addAfterPoint++;
+                AddContextMenuItem("Add Spline Point", ContextCommand::ADD_SPLINE_PT);
             }
         }
 
@@ -602,85 +602,90 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             Constraint *c;
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
             for(c = lc->First(); c; c = lc->NextAfter(c)) {
-                if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
                 if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
                     break;
                 }
             }
             if(c) {
                 AddContextMenuItem("Delete Point-Coincident Constraint",
-                                   CMNU_DEL_COINCIDENT);
+                                   ContextCommand::DEL_COINCIDENT);
             }
         }
-        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
+        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
         if(LockedInWorkplane()) {
-            AddContextMenuItem("Cut",  CMNU_CUT_SEL);
-            AddContextMenuItem("Copy", CMNU_COPY_SEL);
+            AddContextMenuItem("Cut",  ContextCommand::CUT_SEL);
+            AddContextMenuItem("Copy", ContextCommand::COPY_SEL);
         }
     }
 
     if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
-        AddContextMenuItem("Paste", CMNU_PASTE);
-        AddContextMenuItem("Paste Transformed...", CMNU_PASTE_XFRM);
+        AddContextMenuItem("Paste", ContextCommand::PASTE);
+        AddContextMenuItem("Paste Transformed...", ContextCommand::PASTE_XFRM);
     }
 
     if(itemsSelected) {
-        AddContextMenuItem("Delete", CMNU_DELETE_SEL);
-        AddContextMenuItem(NULL, CONTEXT_SEPARATOR);
-        AddContextMenuItem("Unselect All", CMNU_UNSELECT_ALL);
+        AddContextMenuItem("Delete", ContextCommand::DELETE_SEL);
+        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
+        AddContextMenuItem("Unselect All", ContextCommand::UNSELECT_ALL);
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
-        AddContextMenuItem("Unselect Hovered", CMNU_UNSELECT_HOVERED);
+        AddContextMenuItem("Unselect Hovered", ContextCommand::UNSELECT_HOVERED);
     }
 
-    int ret = ShowContextMenu();
+    ContextCommand ret = ShowContextMenu();
     switch(ret) {
-        case CMNU_UNSELECT_ALL:
-            MenuEdit(MNU_UNSELECT_ALL);
+        case ContextCommand::CANCELLED:
+            // otherwise it was cancelled, so do nothing
+            contextMenuCancelTime = GetMilliseconds();
             break;
 
-        case CMNU_UNSELECT_HOVERED:
+        case ContextCommand::UNSELECT_ALL:
+            MenuEdit(Command::UNSELECT_ALL);
+            break;
+
+        case ContextCommand::UNSELECT_HOVERED:
             if(!hover.IsEmpty()) {
                 MakeUnselected(&hover, true);
             }
             break;
 
-        case CMNU_SELECT_CHAIN:
-            MenuEdit(MNU_SELECT_CHAIN);
+        case ContextCommand::SELECT_CHAIN:
+            MenuEdit(Command::SELECT_CHAIN);
             break;
 
-        case CMNU_CUT_SEL:
-            MenuClipboard(MNU_CUT);
+        case ContextCommand::CUT_SEL:
+            MenuClipboard(Command::CUT);
             break;
 
-        case CMNU_COPY_SEL:
-            MenuClipboard(MNU_COPY);
+        case ContextCommand::COPY_SEL:
+            MenuClipboard(Command::COPY);
             break;
 
-        case CMNU_PASTE:
-            MenuClipboard(MNU_PASTE);
+        case ContextCommand::PASTE:
+            MenuClipboard(Command::PASTE);
             break;
 
-        case CMNU_PASTE_XFRM:
-            MenuClipboard(MNU_PASTE_TRANSFORM);
+        case ContextCommand::PASTE_XFRM:
+            MenuClipboard(Command::PASTE_TRANSFORM);
             break;
 
-        case CMNU_DELETE_SEL:
-            MenuClipboard(MNU_DELETE);
+        case ContextCommand::DELETE_SEL:
+            MenuClipboard(Command::DELETE);
             break;
 
-        case CMNU_REFERENCE_DIM:
-            Constraint::MenuConstrain(MNU_REFERENCE);
+        case ContextCommand::REFERENCE_DIM:
+            Constraint::MenuConstrain(Command::REFERENCE);
             break;
 
-        case CMNU_OTHER_ANGLE:
-            Constraint::MenuConstrain(MNU_OTHER_ANGLE);
+        case ContextCommand::OTHER_ANGLE:
+            Constraint::MenuConstrain(Command::OTHER_ANGLE);
             break;
 
-        case CMNU_DEL_COINCIDENT: {
+        case ContextCommand::DEL_COINCIDENT: {
             SS.UndoRemember();
             if(!gs.point[0].v) break;
             Entity *p = SK.GetEntity(gs.point[0]);
@@ -689,7 +694,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             SK.constraint.ClearTags();
             Constraint *c;
             for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-                if(c->type != Constraint::POINTS_COINCIDENT) continue;
+                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
                 if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
                     c->tag = 1;
                 }
@@ -699,11 +704,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             break;
         }
 
-        case CMNU_SNAP_TO_GRID:
-            MenuEdit(MNU_SNAP_TO_GRID);
+        case ContextCommand::SNAP_TO_GRID:
+            MenuEdit(Command::SNAP_TO_GRID);
             break;
 
-        case CMNU_REMOVE_SPLINE_PT: {
+        case ContextCommand::REMOVE_SPLINE_PT: {
             hRequest hr = gs.point[0].request();
             Request *r = SK.GetRequest(hr);
 
@@ -733,16 +738,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             break;
         }
 
-        case CMNU_ADD_SPLINE_PT: {
+        case ContextCommand::ADD_SPLINE_PT: {
             hRequest hr = gs.entity[0].request();
             Request *r = SK.GetRequest(hr);
 
-            int pointCount = r->extraPoints + ((r->type == Request::CUBIC_PERIODIC) ? 3 : 4);
+            int pointCount = r->extraPoints + ((r->type == Request::Type::CUBIC_PERIODIC) ? 3 : 4);
             if(pointCount < MAX_POINTS_IN_ENTITY) {
                 SS.UndoRemember();
                 r->extraPoints++;
                 SS.MarkGroupDirtyByEntity(gs.entity[0]);
-                SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
+                SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
                 Entity *e = SK.GetEntity(r->h.entity(0));
                 for(int i = MAX_POINTS_IN_ENTITY; i > addAfterPoint + 1; i--) {
@@ -763,7 +768,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             break;
         }
 
-        case CMNU_GROUP_INFO: {
+        case ContextCommand::GROUP_INFO: {
             hGroup hg;
             if(gs.entities == 1) {
                 hg = SK.GetEntity(gs.entity[0])->group;
@@ -776,14 +781,14 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             }
             ClearSelection();
 
-            SS.TW.GoToScreen(TextWindow::SCREEN_GROUP_INFO);
+            SS.TW.GoToScreen(TextWindow::Screen::GROUP_INFO);
             SS.TW.shown.group = hg;
             SS.ScheduleShowTW();
             ForceTextWindowShown();
             break;
         }
 
-        case CMNU_STYLE_INFO: {
+        case ContextCommand::STYLE_INFO: {
             hStyle hs;
             if(gs.entities == 1) {
                 hs = Style::ForEntity(gs.entity[0]);
@@ -796,31 +801,27 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             }
             ClearSelection();
 
-            SS.TW.GoToScreen(TextWindow::SCREEN_STYLE_INFO);
+            SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);
             SS.TW.shown.style = hs;
             SS.ScheduleShowTW();
             ForceTextWindowShown();
             break;
         }
 
-        case CMNU_NEW_CUSTOM_STYLE: {
+        case ContextCommand::NEW_CUSTOM_STYLE: {
             uint32_t v = Style::CreateCustomStyle();
             Style::AssignSelectionToStyle(v);
             ForceTextWindowShown();
             break;
         }
 
-        case CMNU_NO_STYLE:
+        case ContextCommand::NO_STYLE:
             Style::AssignSelectionToStyle(0);
             break;
 
         default:
-            if(ret >= CMNU_FIRST_STYLE) {
-                Style::AssignSelectionToStyle(ret - CMNU_FIRST_STYLE);
-            } else {
-                // otherwise it was cancelled, so do nothing
-                contextMenuCancelTime = GetMilliseconds();
-            }
+            ssassert(ret >= ContextCommand::FIRST_STYLE, "Expected a style to be chosen");
+            Style::AssignSelectionToStyle((uint32_t)ret - (uint32_t)ContextCommand::FIRST_STYLE);
             break;
     }
 
@@ -828,16 +829,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     SS.ScheduleShowTW();
 }
 
-hRequest GraphicsWindow::AddRequest(int type) {
+hRequest GraphicsWindow::AddRequest(Request::Type type) {
     return AddRequest(type, true);
 }
-hRequest GraphicsWindow::AddRequest(int type, bool rememberForUndo) {
+hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
     Request r = {};
     r.group = activeGroup;
     Group *g = SK.GetGroup(activeGroup);
-    if(g->type == Group::DRAWING_3D || g->type == Group::DRAWING_WORKPLANE) {
+    if(g->type == Group::Type::DRAWING_3D || g->type == Group::Type::DRAWING_WORKPLANE) {
         r.construction = false;
     } else {
         r.construction = true;
@@ -850,7 +851,7 @@ hRequest GraphicsWindow::AddRequest(int type, bool rememberForUndo) {
     // place this request's entities where the mouse is can do so. But
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
-    SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
+    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
     SS.MarkGroupDirty(r.group);
     return r.h;
 }
@@ -864,12 +865,12 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
         return true;
     }
     if(e->IsCircle()) {
-        Constraint::Constrain(Constraint::PT_ON_CIRCLE,
+        Constraint::Constrain(Constraint::Type::PT_ON_CIRCLE,
             pt, Entity::NO_ENTITY, e->h);
         return true;
     }
-    if(e->type == Entity::LINE_SEGMENT) {
-        Constraint::Constrain(Constraint::PT_ON_LINE,
+    if(e->type == Entity::Type::LINE_SEGMENT) {
+        Constraint::Constrain(Constraint::Type::PT_ON_LINE,
             pt, Entity::NO_ENTITY, e->h);
         return true;
     }
@@ -905,18 +906,18 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
     hRequest hr;
     switch(pending.operation) {
-        case MNU_DATUM_POINT:
-            hr = AddRequest(Request::DATUM_POINT);
+        case Command::DATUM_POINT:
+            hr = AddRequest(Request::Type::DATUM_POINT);
             SK.GetEntity(hr.entity(0))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(0));
 
             ClearSuper();
             break;
 
-        case MNU_LINE_SEGMENT:
-        case MNU_CONSTR_SEGMENT:
-            hr = AddRequest(Request::LINE_SEGMENT);
-            SK.GetRequest(hr)->construction = (pending.operation == MNU_CONSTR_SEGMENT);
+        case Command::LINE_SEGMENT:
+        case Command::CONSTR_SEGMENT:
+            hr = AddRequest(Request::Type::LINE_SEGMENT);
+            SK.GetRequest(hr)->construction = (pending.operation == (uint32_t)Command::CONSTR_SEGMENT);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             ConstrainPointByHovered(hr.entity(1));
 
@@ -929,7 +930,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             SK.GetEntity(pending.point)->PointForceTo(v);
             break;
 
-        case MNU_RECTANGLE: {
+        case Command::RECTANGLE: {
             if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw rectangle in 3d; select a workplane first.");
                 ClearSuper();
@@ -939,7 +940,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             int i;
             SS.UndoRemember();
             for(i = 0; i < 4; i++) {
-                lns[i] = AddRequest(Request::LINE_SEGMENT, false);
+                lns[i] = AddRequest(Request::Type::LINE_SEGMENT, false);
             }
             for(i = 0; i < 4; i++) {
                 Constraint::ConstrainCoincident(
@@ -949,7 +950,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
             for(i = 0; i < 4; i++) {
                 Constraint::Constrain(
-                    (i % 2) ? Constraint::HORIZONTAL : Constraint::VERTICAL,
+                    (i % 2) ? Constraint::Type::HORIZONTAL : Constraint::Type::VERTICAL,
                     Entity::NO_ENTITY, Entity::NO_ENTITY,
                     lns[i].entity(0));
             }
@@ -960,8 +961,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.description = "click to place other corner of rectangle";
             break;
         }
-        case MNU_CIRCLE:
-            hr = AddRequest(Request::CIRCLE);
+        case Command::CIRCLE:
+            hr = AddRequest(Request::Type::CIRCLE);
             // Centered where we clicked
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             // Normal to the screen
@@ -979,13 +980,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.description = "click to set radius";
             break;
 
-        case MNU_ARC: {
+        case Command::ARC: {
             if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw arc in 3d; select a workplane first.");
                 ClearPending();
                 break;
             }
-            hr = AddRequest(Request::ARC_OF_CIRCLE);
+            hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
             // This fudge factor stops us from immediately failing to solve
             // because of the arc's implicit (equal radius) tangent.
             Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
@@ -1001,8 +1002,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.description = "click to place point";
             break;
         }
-        case MNU_CUBIC:
-            hr = AddRequest(Request::CUBIC);
+        case Command::CUBIC:
+            hr = AddRequest(Request::Type::CUBIC);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             SK.GetEntity(hr.entity(2))->PointForceTo(v);
             SK.GetEntity(hr.entity(3))->PointForceTo(v);
@@ -1016,14 +1017,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.description = "click next point of cubic, or press Esc";
             break;
 
-        case MNU_WORKPLANE:
+        case Command::WORKPLANE:
             if(LockedInWorkplane()) {
                 Error("Sketching in a workplane already; sketch in 3d before "
                       "creating new workplane.");
                 ClearSuper();
                 break;
             }
-            hr = AddRequest(Request::WORKPLANE);
+            hr = AddRequest(Request::Type::WORKPLANE);
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             SK.GetEntity(hr.entity(32))->NormalForceTo(
                 Quaternion::From(SS.GW.projRight, SS.GW.projUp));
@@ -1032,13 +1033,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             ClearSuper();
             break;
 
-        case MNU_TTF_TEXT: {
+        case Command::TTF_TEXT: {
             if(!SS.GW.LockedInWorkplane()) {
                 Error("Can't draw text in 3d; select a workplane first.");
                 ClearSuper();
                 break;
             }
-            hr = AddRequest(Request::TTF_TEXT);
+            hr = AddRequest(Request::Type::TTF_TEXT);
             Request *r = SK.GetRequest(hr);
             r->str = "Abc";
             r->font = "arial.ttf";
@@ -1052,12 +1053,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
 
-        case MNU_COMMENT: {
+        case Command::COMMENT: {
             ClearSuper();
             Constraint c = {};
             c.group       = SS.GW.activeGroup;
             c.workplane   = SS.GW.ActiveWorkplane();
-            c.type        = Constraint::COMMENT;
+            c.type        = Constraint::Type::COMMENT;
             c.disp.offset = v;
             c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
             Constraint::AddConstraint(&c);
@@ -1082,7 +1083,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             if(hover.entity.v == hr.entity(1).v && r->extraPoints >= 2) {
                 // They want the endpoints coincident, which means a periodic
                 // spline instead.
-                r->type = Request::CUBIC_PERIODIC;
+                r->type = Request::Type::CUBIC_PERIODIC;
                 // Remove the off-curve control points, which are no longer
                 // needed here; so move [2,ep+1] down, skipping first pt.
                 int i;
@@ -1113,7 +1114,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
 
             (SK.GetRequest(hr)->extraPoints)++;
-            SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
+            SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
             int ep = r->extraPoints;
             Vector last = SK.GetEntity(hr.entity(3+ep))->PointGetNum();
@@ -1127,7 +1128,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
         case DRAGGING_NEW_LINE_POINT: {
             // Constrain the line segment horizontal or vertical if close enough
-            if(SS.GW.pending.suggestion != SUGGESTED_NONE) {
+            if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
                 Constraint::Constrain(SS.GW.pending.suggestion,
                     Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
             }
@@ -1155,7 +1156,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             }
 
             // Create a new line segment, so that we continue drawing.
-            hRequest hr = AddRequest(Request::LINE_SEGMENT);
+            hRequest hr = AddRequest(Request::Type::LINE_SEGMENT);
             SK.GetRequest(hr)->construction = SK.GetRequest(pending.request)->construction;
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             // Displace the second point of the new line segment slightly,
@@ -1253,13 +1254,13 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         std::string editValue;
         int editMinWidthChar;
         switch(c->type) {
-            case Constraint::COMMENT:
+            case Constraint::Type::COMMENT:
                 editValue = c->comment;
                 editMinWidthChar = 30;
                 break;
 
-            case Constraint::ANGLE:
-            case Constraint::LENGTH_RATIO:
+            case Constraint::Type::ANGLE:
+            case Constraint::Type::LENGTH_RATIO:
                 editValue = ssprintf("%.3f", c->valA);
                 editMinWidthChar = 5;
                 break;
@@ -1268,7 +1269,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                 double v = fabs(c->valA);
 
                 // If displayed as radius, also edit as radius.
-                if(c->type == Constraint::DIAMETER && c->other)
+                if(c->type == Constraint::Type::DIAMETER && c->other)
                     v /= 2;
 
                 std::string def = SS.MmToString(v);
@@ -1303,7 +1304,7 @@ void GraphicsWindow::EditControlDone(const char *s) {
     HideGraphicsEditControl();
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 
-    if(c->type == Constraint::COMMENT) {
+    if(c->type == Constraint::Type::COMMENT) {
         SS.UndoRemember();
         c->comment = s;
         return;
@@ -1314,11 +1315,11 @@ void GraphicsWindow::EditControlDone(const char *s) {
         SS.UndoRemember();
 
         switch(c->type) {
-            case Constraint::PROJ_PT_DISTANCE:
-            case Constraint::PT_LINE_DISTANCE:
-            case Constraint::PT_FACE_DISTANCE:
-            case Constraint::PT_PLANE_DISTANCE:
-            case Constraint::LENGTH_DIFFERENCE: {
+            case Constraint::Type::PROJ_PT_DISTANCE:
+            case Constraint::Type::PT_LINE_DISTANCE:
+            case Constraint::Type::PT_FACE_DISTANCE:
+            case Constraint::Type::PT_PLANE_DISTANCE:
+            case Constraint::Type::LENGTH_DIFFERENCE: {
                 // The sign is not displayed to the user, but this is a signed
                 // distance internally. To flip the sign, the user enters a
                 // negative distance.
@@ -1330,14 +1331,14 @@ void GraphicsWindow::EditControlDone(const char *s) {
                 }
                 break;
             }
-            case Constraint::ANGLE:
-            case Constraint::LENGTH_RATIO:
+            case Constraint::Type::ANGLE:
+            case Constraint::Type::LENGTH_RATIO:
                 // These don't get the units conversion for distance, and
                 // they're always positive
                 c->valA = fabs(e->Eval());
                 break;
 
-            case Constraint::DIAMETER:
+            case Constraint::Type::DIAMETER:
                 c->valA = fabs(SS.ExprToMm(e));
 
                 // If displayed and edited as radius, convert back
@@ -1359,7 +1360,7 @@ void GraphicsWindow::EditControlDone(const char *s) {
 bool GraphicsWindow::KeyDown(int c) {
     if(c == '\b') {
         // Treat backspace identically to escape.
-        MenuEdit(MNU_UNSELECT_ALL);
+        MenuEdit(Command::UNSELECT_ALL);
         return true;
     }
 
@@ -1385,7 +1386,7 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
     offset = offset.Plus(projRight.ScaledBy(rightf - righti));
     offset = offset.Plus(projUp.ScaledBy(upf - upi));
 
-    if(SS.TW.shown.screen == TextWindow::SCREEN_EDIT_VIEW) {
+    if(SS.TW.shown.screen == TextWindow::Screen::EDIT_VIEW) {
         if(havePainted) {
             SS.ScheduleShowTW();
         }
@@ -1399,8 +1400,8 @@ void GraphicsWindow::MouseLeave() {
     // currently a context menu shown.
     if(!context.active) {
         hover.Clear();
-        toolbarTooltipped = 0;
-        toolbarHovered = 0;
+        toolbarTooltipped = Command::NONE;
+        toolbarHovered = Command::NONE;
         PaintGraphics();
     }
     SS.extraLine.draw = false;
@@ -1427,7 +1428,7 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     if(gs.points == 1   && gs.n == 1) e = SK.GetEntity(gs.point [0]);
     if(gs.entities == 1 && gs.n == 1) e = SK.GetEntity(gs.entity[0]);
     if(e) g = SK.GetGroup(e->group);
-    if(g && g->type == Group::LINKED && !shiftDown) {
+    if(g && g->type == Group::Type::LINKED && !shiftDown) {
         // Apply the transformation to a linked part. Gain down the Z
         // axis, since it's hard to see what you're doing on that one since
         // it's normal to the screen.

@@ -30,9 +30,9 @@ void GraphicsWindow::RemoveConstraintsForPointBeingDeleted(hEntity hpt) {
         if(c->ptA.v == hpt.v || c->ptB.v == hpt.v) {
             c->tag = 1;
             (SS.deleted.constraints)++;
-            if(c->type != Constraint::POINTS_COINCIDENT &&
-               c->type != Constraint::HORIZONTAL &&
-               c->type != Constraint::VERTICAL)
+            if(c->type != Constraint::Type::POINTS_COINCIDENT &&
+               c->type != Constraint::Type::HORIZONTAL &&
+               c->type != Constraint::Type::VERTICAL)
             {
                 (SS.deleted.nonTrivialConstraints)++;
             }
@@ -56,8 +56,8 @@ void GraphicsWindow::FixConstraintsForRequestBeingDeleted(hRequest hr) {
         if(!(e->h.isFromRequest())) continue;
         if(e->h.request().v != hr.v) continue;
 
-        if(e->type != Entity::POINT_IN_2D &&
-           e->type != Entity::POINT_IN_3D)
+        if(e->type != Entity::Type::POINT_IN_2D &&
+           e->type != Entity::Type::POINT_IN_3D)
         {
             continue;
         }
@@ -73,7 +73,7 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
     Constraint *c;
     SK.constraint.ClearTags();
     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-        if(c->type != Constraint::POINTS_COINCIDENT) continue;
+        if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
         if(c->group.v != SS.GW.activeGroup.v) continue;
 
         if(c->ptA.v == hpt.v) {
@@ -111,14 +111,14 @@ void GraphicsWindow::FixConstraintsForPointBeingDeleted(hEntity hpt) {
 void GraphicsWindow::ParametricCurve::MakeFromEntity(hEntity he, bool reverse) {
     *this = {};
     Entity *e = SK.GetEntity(he);
-    if(e->type == Entity::LINE_SEGMENT) {
+    if(e->type == Entity::Type::LINE_SEGMENT) {
         isLine = true;
         p0 = e->EndpointStart(),
         p1 = e->EndpointFinish();
         if(reverse) {
             swap(p0, p1);
         }
-    } else if(e->type == Entity::ARC_OF_CIRCLE) {
+    } else if(e->type == Entity::Type::ARC_OF_CIRCLE) {
         isLine = false;
         p0 = SK.GetEntity(e->point[0])->PointGetNum();
         Vector pe = SK.GetEntity(e->point[1])->PointGetNum();
@@ -167,21 +167,21 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
     hRequest hr;
     Entity *e;
     if(isLine) {
-        hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false),
+        hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, false),
         e = SK.GetEntity(hr.entity(0));
         SK.GetEntity(e->point[0])->PointForceTo(PointAt(t));
         SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
         ConstrainPointIfCoincident(e->point[0]);
         ConstrainPointIfCoincident(e->point[1]);
         if(extraConstraints) {
-            Constraint::Constrain(Constraint::PT_ON_LINE,
+            Constraint::Constrain(Constraint::Type::PT_ON_LINE,
                 hr.entity(1), Entity::NO_ENTITY, orig);
         }
-        Constraint::Constrain(Constraint::ARC_LINE_TANGENT,
+        Constraint::Constrain(Constraint::Type::ARC_LINE_TANGENT,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
             arc, e->h, arcFinish, false);
     } else {
-        hr = SS.GW.AddRequest(Request::ARC_OF_CIRCLE, false),
+        hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false),
         e = SK.GetEntity(hr.entity(0));
         SK.GetEntity(e->point[0])->PointForceTo(p0);
         if(dtheta > 0) {
@@ -196,7 +196,7 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
         ConstrainPointIfCoincident(e->point[2]);
         // The tangency constraint alone is enough to fully constrain it,
         // so there's no need for more.
-        Constraint::Constrain(Constraint::CURVE_CURVE_TANGENT,
+        Constraint::Constrain(Constraint::Type::CURVE_CURVE_TANGENT,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
             arc, e->h, arcFinish, (dtheta < 0));
     }
@@ -257,8 +257,8 @@ void GraphicsWindow::MakeTangentArc() {
         if(r->group.v != activeGroup.v) continue;
         if(r->workplane.v != ActiveWorkplane().v) continue;
         if(r->construction) continue;
-        if(r->type != Request::LINE_SEGMENT &&
-           r->type != Request::ARC_OF_CIRCLE)
+        if(r->type != Request::Type::LINE_SEGMENT &&
+           r->type != Request::Type::ARC_OF_CIRCLE)
         {
             continue;
         }
@@ -389,7 +389,7 @@ void GraphicsWindow::MakeTangentArc() {
 
     SS.UndoRemember();
 
-    hRequest harc = AddRequest(Request::ARC_OF_CIRCLE, false);
+    hRequest harc = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
     Entity *earc = SK.GetEntity(harc.entity(0));
     hEntity hearc = earc->h;
 
@@ -432,8 +432,8 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
            p1 = SK.GetEntity(hep1)->PointGetNum();
 
     // Add the two line segments this one gets split into.
-    hRequest r0i = AddRequest(Request::LINE_SEGMENT, false),
-             ri1 = AddRequest(Request::LINE_SEGMENT, false);
+    hRequest r0i = AddRequest(Request::Type::LINE_SEGMENT, false),
+             ri1 = AddRequest(Request::Type::LINE_SEGMENT, false);
     // Don't get entities till after adding, realloc issues
 
     Entity *e0i = SK.GetEntity(r0i.entity(0)),
@@ -452,12 +452,12 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
 
 hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
     Entity *circle = SK.GetEntity(he);
-    if(circle->type == Entity::CIRCLE) {
+    if(circle->type == Entity::Type::CIRCLE) {
         // Start with an unbroken circle, split it into a 360 degree arc.
         Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
 
         circle = NULL; // shortly invalid!
-        hRequest hr = AddRequest(Request::ARC_OF_CIRCLE, false);
+        hRequest hr = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
 
         Entity *arc = SK.GetEntity(hr.entity(0));
 
@@ -477,8 +477,8 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
                finish = SK.GetEntity(hf)->PointGetNum();
 
         circle = NULL; // shortly invalid!
-        hRequest hr0 = AddRequest(Request::ARC_OF_CIRCLE, false),
-                 hr1 = AddRequest(Request::ARC_OF_CIRCLE, false);
+        hRequest hr0 = AddRequest(Request::Type::ARC_OF_CIRCLE, false),
+                 hr1 = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
 
         Entity *arc0 = SK.GetEntity(hr0.entity(0)),
                *arc1 = SK.GetEntity(hr1.entity(0));
@@ -525,8 +525,8 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
             b01.SplitAt(t, &b0i, &bi1);
 
             // Add the two cubic segments this one gets split into.
-            hRequest r0i = AddRequest(Request::CUBIC, false),
-                     ri1 = AddRequest(Request::CUBIC, false);
+            hRequest r0i = AddRequest(Request::Type::CUBIC, false),
+                     ri1 = AddRequest(Request::Type::CUBIC, false);
             // Don't get entities till after adding, realloc issues
 
             Entity *e0i = SK.GetEntity(r0i.entity(0)),
@@ -544,7 +544,7 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
             hep1n = ei1->point[3];
             hepin = e0i->point[3];
         } else {
-            hRequest r = AddRequest(Request::CUBIC, false);
+            hRequest r = AddRequest(Request::Type::CUBIC, false);
             Entity *e = SK.GetEntity(r.entity(0));
 
             for(j = 0; j <= 3; j++) {
@@ -565,14 +565,14 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
 
 hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     Entity *e = SK.GetEntity(he);
-    int entityType = e->type;
+    Entity::Type entityType = e->type;
 
     hEntity ret;
     if(e->IsCircle()) {
         ret = SplitCircle(he, pinter);
-    } else if(e->type == Entity::LINE_SEGMENT) {
+    } else if(e->type == Entity::Type::LINE_SEGMENT) {
         ret = SplitLine(he, pinter);
-    } else if(e->type == Entity::CUBIC || e->type == Entity::CUBIC_PERIODIC) {
+    } else if(e->type == Entity::Type::CUBIC || e->type == Entity::Type::CUBIC_PERIODIC) {
         ret = SplitCubic(he, pinter);
     } else {
         Error("Couldn't split this entity; lines, circles, or cubics only.");
@@ -580,7 +580,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     }
 
     // Finally, delete the request that generated the original entity.
-    int reqType = EntReqTable::GetRequestForEntity(entityType);
+    Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
     SK.request.ClearTags();
     for(int i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);

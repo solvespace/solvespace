@@ -7,7 +7,7 @@
 #include "solvespace.h"
 
 void TextWindow::ScreenUnselectAll(int link, uint32_t v) {
-    GraphicsWindow::MenuEdit(GraphicsWindow::MNU_UNSELECT_ALL);
+    GraphicsWindow::MenuEdit(Command::UNSELECT_ALL);
 }
 
 void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
@@ -15,7 +15,7 @@ void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
     Request *r = SK.GetRequest(hr);
 
     SS.TW.ShowEditControl(10, r->str);
-    SS.TW.edit.meaning = EDIT_TTF_TEXT;
+    SS.TW.edit.meaning = Edit::TTF_TEXT;
     SS.TW.edit.request = hr;
 }
 
@@ -29,7 +29,7 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     if(gs.entities != 1 || gs.n != 1) return;
 
     Entity *e = SK.entity.FindByIdNoOops(gs.entity[0]);
-    if(!e || e->type != Entity::TTF_TEXT || !e->h.isFromRequest()) return;
+    if(!e || e->type != Entity::Type::TTF_TEXT || !e->h.isFromRequest()) return;
 
     Request *r = SK.request.FindByIdNoOops(e->h.request());
     if(!r) return;
@@ -67,21 +67,21 @@ void TextWindow::DescribeSelection() {
 #define PT_AS_STR "(%Fi%s%E, %Fi%s%E, %Fi%s%E)"
 #define PT_AS_NUM "(%Fi%3%E, %Fi%3%E, %Fi%3%E)"
         switch(e->type) {
-            case Entity::POINT_IN_3D:
-            case Entity::POINT_IN_2D:
-            case Entity::POINT_N_TRANS:
-            case Entity::POINT_N_ROT_TRANS:
-            case Entity::POINT_N_COPY:
-            case Entity::POINT_N_ROT_AA:
+            case Entity::Type::POINT_IN_3D:
+            case Entity::Type::POINT_IN_2D:
+            case Entity::Type::POINT_N_TRANS:
+            case Entity::Type::POINT_N_ROT_TRANS:
+            case Entity::Type::POINT_N_COPY:
+            case Entity::Type::POINT_N_ROT_AA:
                 p = e->PointGetNum();
                 Printf(false, "%FtPOINT%E at " PT_AS_STR, COSTR(p));
                 break;
 
-            case Entity::NORMAL_IN_3D:
-            case Entity::NORMAL_IN_2D:
-            case Entity::NORMAL_N_COPY:
-            case Entity::NORMAL_N_ROT:
-            case Entity::NORMAL_N_ROT_AA: {
+            case Entity::Type::NORMAL_IN_3D:
+            case Entity::Type::NORMAL_IN_2D:
+            case Entity::Type::NORMAL_N_COPY:
+            case Entity::Type::NORMAL_N_ROT:
+            case Entity::Type::NORMAL_N_ROT_AA: {
                 Quaternion q = e->NormalGetNum();
                 p = q.RotationN();
                 Printf(false, "%FtNORMAL / COORDINATE SYSTEM%E");
@@ -92,7 +92,7 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "        v = " PT_AS_NUM, CO(p));
                 break;
             }
-            case Entity::WORKPLANE: {
+            case Entity::Type::WORKPLANE: {
                 p = SK.GetEntity(e->point[0])->PointGetNum();
                 Printf(false, "%FtWORKPLANE%E");
                 Printf(true, "   origin = " PT_AS_STR, COSTR(p));
@@ -101,7 +101,7 @@ void TextWindow::DescribeSelection() {
                 Printf(true, "   normal = " PT_AS_NUM, CO(p));
                 break;
             }
-            case Entity::LINE_SEGMENT: {
+            case Entity::Type::LINE_SEGMENT: {
                 Vector p0 = SK.GetEntity(e->point[0])->PointGetNum();
                 p = p0;
                 Printf(false, "%FtLINE SEGMENT%E");
@@ -113,10 +113,10 @@ void TextWindow::DescribeSelection() {
                     SS.MmToString((p1.Minus(p0).Magnitude())).c_str());
                 break;
             }
-            case Entity::CUBIC_PERIODIC:
-            case Entity::CUBIC:
+            case Entity::Type::CUBIC_PERIODIC:
+            case Entity::Type::CUBIC:
                 int pts;
-                if(e->type == Entity::CUBIC_PERIODIC) {
+                if(e->type == Entity::Type::CUBIC_PERIODIC) {
                     Printf(false, "%FtPERIODIC C2 CUBIC SPLINE%E");
                     pts = (3 + e->extraPoints);
                 } else if(e->extraPoints > 0) {
@@ -132,7 +132,7 @@ void TextWindow::DescribeSelection() {
                 }
                 break;
 
-            case Entity::ARC_OF_CIRCLE: {
+            case Entity::Type::ARC_OF_CIRCLE: {
                 Printf(false, "%FtARC OF A CIRCLE%E");
                 p = SK.GetEntity(e->point[0])->PointGetNum();
                 Printf(true,  "     center = " PT_AS_STR, COSTR(p));
@@ -148,7 +148,7 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "    arc len =  %Fi%s", SS.MmToString(dtheta*r).c_str());
                 break;
             }
-            case Entity::CIRCLE: {
+            case Entity::Type::CIRCLE: {
                 Printf(false, "%FtCIRCLE%E");
                 p = SK.GetEntity(e->point[0])->PointGetNum();
                 Printf(true,  "     center = " PT_AS_STR, COSTR(p));
@@ -157,11 +157,11 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "     radius =  %Fi%s", SS.MmToString(r).c_str());
                 break;
             }
-            case Entity::FACE_NORMAL_PT:
-            case Entity::FACE_XPROD:
-            case Entity::FACE_N_ROT_TRANS:
-            case Entity::FACE_N_ROT_AA:
-            case Entity::FACE_N_TRANS:
+            case Entity::Type::FACE_NORMAL_PT:
+            case Entity::Type::FACE_XPROD:
+            case Entity::Type::FACE_N_ROT_TRANS:
+            case Entity::Type::FACE_N_ROT_AA:
+            case Entity::Type::FACE_N_TRANS:
                 Printf(false, "%FtPLANE FACE%E");
                 p = e->FaceGetNormalNum();
                 Printf(true,  "   normal = " PT_AS_NUM, CO(p));
@@ -169,7 +169,7 @@ void TextWindow::DescribeSelection() {
                 Printf(false, "     thru = " PT_AS_STR, COSTR(p));
                 break;
 
-            case Entity::TTF_TEXT: {
+            case Entity::Type::TTF_TEXT: {
                 Printf(false, "%FtTRUETYPE FONT TEXT%E");
                 Printf(true, "  font = '%Fi%s%E'", e->font.c_str());
                 if(e->h.isFromRequest()) {
@@ -231,9 +231,9 @@ void TextWindow::DescribeSelection() {
         Printf(true, "  d = %Fi%s", SS.MmToString(d).c_str());
     } else if(gs.n == 2 && gs.points == 1 && gs.circlesOrArcs == 1) {
         Entity *ec = SK.GetEntity(gs.entity[0]);
-        if(ec->type == Entity::CIRCLE) {
+        if(ec->type == Entity::Type::CIRCLE) {
             Printf(false, "%FtPOINT AND A CIRCLE");
-        } else if(ec->type == Entity::ARC_OF_CIRCLE) {
+        } else if(ec->type == Entity::Type::ARC_OF_CIRCLE) {
             Printf(false, "%FtPOINT AND AN ARC");
         } else ssassert(false, "Unexpected entity type");
         Vector p = SK.GetEntity(gs.point[0])->PointGetNum();
@@ -321,7 +321,7 @@ void TextWindow::DescribeSelection() {
     } else if(gs.n == 0 && gs.constraints == 1) {
         Constraint *c = SK.GetConstraint(gs.constraint[0]);
 
-        if(c->type == Constraint::DIAMETER) {
+        if(c->type == Constraint::Type::DIAMETER) {
             Printf(false, "%FtDIAMETER CONSTRAINT");
 
             Printf(true, "  %Fd%f%D%Ll%s  show as radius",
@@ -336,7 +336,7 @@ void TextWindow::DescribeSelection() {
         Printf(false, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");
     }
 
-    if(shown.screen == SCREEN_STYLE_INFO &&
+    if(shown.screen == Screen::STYLE_INFO &&
        shown.style.v >= Style::FIRST_CUSTOM && gs.stylables > 0)
     {
         // If we are showing a screen for a particular style, then offer the
@@ -358,7 +358,7 @@ void TextWindow::DescribeSelection() {
     }
     for(i = 0; i < gs.constraints; i++) {
         Constraint *c = SK.GetConstraint(gs.constraint[i]);
-        if(c->type == Constraint::COMMENT && c->disp.style.v != 0) {
+        if(c->type == Constraint::Type::COMMENT && c->disp.style.v != 0) {
             styleAssigned = true;
         }
     }
@@ -371,7 +371,7 @@ void TextWindow::DescribeSelection() {
     Printf(true, "%Fl%f%Ll(unselect all)%E", &TextWindow::ScreenUnselectAll);
 }
 
-void TextWindow::GoToScreen(int screen) {
+void TextWindow::GoToScreen(Screen screen) {
     shown.screen = screen;
 }
 

@@ -8,6 +8,144 @@
 #ifndef __UI_H
 #define __UI_H
 
+#ifdef WIN32
+    // winnt.h
+    #undef DELETE
+#endif
+
+// This table describes the top-level menus in the graphics winodw.
+enum class Command : uint32_t {
+    NONE = 0,
+    // File
+    NEW = 100,
+    OPEN,
+    OPEN_RECENT,
+    SAVE,
+    SAVE_AS,
+    EXPORT_PNG,
+    EXPORT_MESH,
+    EXPORT_SURFACES,
+    EXPORT_VIEW,
+    EXPORT_SECTION,
+    EXPORT_WIREFRAME,
+    IMPORT,
+    EXIT,
+    // View
+    ZOOM_IN,
+    ZOOM_OUT,
+    ZOOM_TO_FIT,
+    SHOW_GRID,
+    PERSPECTIVE_PROJ,
+    ONTO_WORKPLANE,
+    NEAREST_ORTHO,
+    NEAREST_ISO,
+    CENTER_VIEW,
+    SHOW_MENU_BAR,
+    SHOW_TOOLBAR,
+    SHOW_TEXT_WND,
+    UNITS_INCHES,
+    UNITS_MM,
+    FULL_SCREEN,
+    // Edit
+    UNDO,
+    REDO,
+    CUT,
+    COPY,
+    PASTE,
+    PASTE_TRANSFORM,
+    DELETE,
+    SELECT_CHAIN,
+    SELECT_ALL,
+    SNAP_TO_GRID,
+    ROTATE_90,
+    UNSELECT_ALL,
+    REGEN_ALL,
+    // Request
+    SEL_WORKPLANE,
+    FREE_IN_3D,
+    DATUM_POINT,
+    WORKPLANE,
+    LINE_SEGMENT,
+    CONSTR_SEGMENT,
+    CIRCLE,
+    ARC,
+    RECTANGLE,
+    CUBIC,
+    TTF_TEXT,
+    SPLIT_CURVES,
+    TANGENT_ARC,
+    CONSTRUCTION,
+    // Group
+    GROUP_3D,
+    GROUP_WRKPL,
+    GROUP_EXTRUDE,
+    GROUP_LATHE,
+    GROUP_ROT,
+    GROUP_TRANS,
+    GROUP_LINK,
+    GROUP_RECENT,
+    // Constrain
+    DISTANCE_DIA,
+    REF_DISTANCE,
+    ANGLE,
+    REF_ANGLE,
+    OTHER_ANGLE,
+    REFERENCE,
+    EQUAL,
+    RATIO,
+    DIFFERENCE,
+    ON_ENTITY,
+    SYMMETRIC,
+    AT_MIDPOINT,
+    HORIZONTAL,
+    VERTICAL,
+    PARALLEL,
+    PERPENDICULAR,
+    ORIENTED_SAME,
+    WHERE_DRAGGED,
+    COMMENT,
+    // Analyze
+    VOLUME,
+    AREA,
+    INTERFERENCE,
+    NAKED_EDGES,
+    SHOW_DOF,
+    TRACE_PT,
+    STOP_TRACING,
+    STEP_DIM,
+    // Help
+    WEBSITE,
+    ABOUT,
+    // Recent
+    RECENT_OPEN = 0xf000,
+    RECENT_LINK = 0xf100,
+};
+
+enum class ContextCommand : uint32_t {
+    CANCELLED        = 0x000,
+    SUBMENU          = 0x001,
+    SEPARATOR        = 0x002,
+    UNSELECT_ALL     = 0x100,
+    UNSELECT_HOVERED = 0x101,
+    CUT_SEL          = 0x102,
+    COPY_SEL         = 0x103,
+    PASTE            = 0x104,
+    PASTE_XFRM       = 0x105,
+    DELETE_SEL       = 0x106,
+    SELECT_CHAIN     = 0x107,
+    NEW_CUSTOM_STYLE = 0x110,
+    NO_STYLE         = 0x111,
+    GROUP_INFO       = 0x120,
+    STYLE_INFO       = 0x121,
+    REFERENCE_DIM    = 0x130,
+    OTHER_ANGLE      = 0x131,
+    DEL_COINCIDENT   = 0x132,
+    SNAP_TO_GRID     = 0x140,
+    REMOVE_SPLINE_PT = 0x141,
+    ADD_SPLINE_PT    = 0x142,
+    FIRST_STYLE      = 0x40000000
+};
+
 class TextWindow {
 public:
     enum {
@@ -76,12 +214,12 @@ public:
     void MouseLeave();
     void ScrollbarEvent(int newPos);
 
-    enum {
+    enum DrawOrHitHow : uint32_t {
         PAINT = 0,
         HOVER = 1,
         CLICK = 2
     };
-    void DrawOrHitTestIcons(int how, double mx, double my);
+    void DrawOrHitTestIcons(DrawOrHitHow how, double mx, double my);
     void TimerCallback();
     Point2d oldMousePos;
     HideShowIcon *hoveredIcon, *tooltippedIcon;
@@ -90,7 +228,7 @@ public:
     uint8_t *HsvPattern2d();
     uint8_t *HsvPattern1d(double h, double s);
     void ColorPickerDone();
-    bool DrawOrHitTestColorPicker(int how, bool leftDown, double x, double y);
+    bool DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown, double x, double y);
 
     void Init();
     void MakeColorTable(const Color *in, float *out);
@@ -100,20 +238,20 @@ public:
     void Show();
 
     // State for the screen that we are showing in the text window.
-    enum {
-        SCREEN_LIST_OF_GROUPS      = 0,
-        SCREEN_GROUP_INFO          = 1,
-        SCREEN_GROUP_SOLVE_INFO    = 2,
-        SCREEN_CONFIGURATION       = 3,
-        SCREEN_STEP_DIMENSION      = 4,
-        SCREEN_LIST_OF_STYLES      = 5,
-        SCREEN_STYLE_INFO          = 6,
-        SCREEN_PASTE_TRANSFORMED   = 7,
-        SCREEN_EDIT_VIEW           = 8,
-        SCREEN_TANGENT_ARC         = 9
+    enum class Screen : uint32_t {
+        LIST_OF_GROUPS      = 0,
+        GROUP_INFO          = 1,
+        GROUP_SOLVE_INFO    = 2,
+        CONFIGURATION       = 3,
+        STEP_DIMENSION      = 4,
+        LIST_OF_STYLES      = 5,
+        STYLE_INFO          = 6,
+        PASTE_TRANSFORMED   = 7,
+        EDIT_VIEW           = 8,
+        TANGENT_ARC         = 9
     };
     typedef struct {
-        int         screen;
+        Screen  screen;
 
         hGroup      group;
         hStyle      style;
@@ -133,61 +271,61 @@ public:
     } ShownState;
     ShownState shown;
 
-    enum {
-        EDIT_NOTHING               = 0,
+    enum class Edit : uint32_t {
+        NOTHING               = 0,
         // For multiple groups
-        EDIT_TIMES_REPEATED        = 1,
-        EDIT_GROUP_NAME            = 2,
-        EDIT_GROUP_SCALE           = 3,
-        EDIT_GROUP_COLOR           = 4,
-        EDIT_GROUP_OPACITY         = 5,
+        TIMES_REPEATED        = 1,
+        GROUP_NAME            = 2,
+        GROUP_SCALE           = 3,
+        GROUP_COLOR           = 4,
+        GROUP_OPACITY         = 5,
         // For the configuraiton screen
-        EDIT_LIGHT_DIRECTION       = 100,
-        EDIT_LIGHT_INTENSITY       = 101,
-        EDIT_COLOR                 = 102,
-        EDIT_CHORD_TOLERANCE       = 103,
-        EDIT_MAX_SEGMENTS          = 104,
-        EDIT_CAMERA_TANGENT        = 105,
-        EDIT_GRID_SPACING          = 106,
-        EDIT_DIGITS_AFTER_DECIMAL  = 107,
-        EDIT_EXPORT_SCALE          = 108,
-        EDIT_EXPORT_OFFSET         = 109,
-        EDIT_CANVAS_SIZE           = 110,
-        EDIT_G_CODE_DEPTH          = 120,
-        EDIT_G_CODE_PASSES         = 121,
-        EDIT_G_CODE_FEED           = 122,
-        EDIT_G_CODE_PLUNGE_FEED    = 123,
-        EDIT_AUTOSAVE_INTERVAL     = 124,
+        LIGHT_DIRECTION       = 100,
+        LIGHT_INTENSITY       = 101,
+        COLOR                 = 102,
+        CHORD_TOLERANCE       = 103,
+        MAX_SEGMENTS          = 104,
+        CAMERA_TANGENT        = 105,
+        GRID_SPACING          = 106,
+        DIGITS_AFTER_DECIMAL  = 107,
+        EXPORT_SCALE          = 108,
+        EXPORT_OFFSET         = 109,
+        CANVAS_SIZE           = 110,
+        G_CODE_DEPTH          = 120,
+        G_CODE_PASSES         = 121,
+        G_CODE_FEED           = 122,
+        G_CODE_PLUNGE_FEED    = 123,
+        AUTOSAVE_INTERVAL     = 124,
         // For TTF text
-        EDIT_TTF_TEXT              = 300,
+        TTF_TEXT              = 300,
         // For the step dimension screen
-        EDIT_STEP_DIM_FINISH       = 400,
-        EDIT_STEP_DIM_STEPS        = 401,
+        STEP_DIM_FINISH       = 400,
+        STEP_DIM_STEPS        = 401,
         // For the styles stuff
-        EDIT_STYLE_WIDTH           = 500,
-        EDIT_STYLE_TEXT_HEIGHT     = 501,
-        EDIT_STYLE_TEXT_ANGLE      = 502,
-        EDIT_STYLE_COLOR           = 503,
-        EDIT_STYLE_FILL_COLOR      = 504,
-        EDIT_STYLE_NAME            = 505,
-        EDIT_BACKGROUND_COLOR      = 506,
-        EDIT_BACKGROUND_IMG_SCALE  = 507,
-        EDIT_STYLE_STIPPLE_PERIOD  = 508,
+        STYLE_WIDTH           = 500,
+        STYLE_TEXT_HEIGHT     = 501,
+        STYLE_TEXT_ANGLE      = 502,
+        STYLE_COLOR           = 503,
+        STYLE_FILL_COLOR      = 504,
+        STYLE_NAME            = 505,
+        BACKGROUND_COLOR      = 506,
+        BACKGROUND_IMG_SCALE  = 507,
+        STYLE_STIPPLE_PERIOD  = 508,
         // For paste transforming
-        EDIT_PASTE_TIMES_REPEATED  = 600,
-        EDIT_PASTE_ANGLE           = 601,
-        EDIT_PASTE_SCALE           = 602,
+        PASTE_TIMES_REPEATED  = 600,
+        PASTE_ANGLE           = 601,
+        PASTE_SCALE           = 602,
         // For view
-        EDIT_VIEW_SCALE            = 700,
-        EDIT_VIEW_ORIGIN           = 701,
-        EDIT_VIEW_PROJ_RIGHT       = 702,
-        EDIT_VIEW_PROJ_UP          = 703,
+        VIEW_SCALE            = 700,
+        VIEW_ORIGIN           = 701,
+        VIEW_PROJ_RIGHT       = 702,
+        VIEW_PROJ_UP          = 703,
         // For tangent arc
-        EDIT_TANGENT_ARC_RADIUS    = 800
+        TANGENT_ARC_RADIUS    = 800
     };
     struct {
         bool        showAgain;
-        int         meaning;
+        Edit        meaning;
         int         i;
         hGroup      group;
         hRequest    request;
@@ -231,7 +369,7 @@ public:
     // Special screen, based on selection
     void DescribeSelection();
 
-    void GoToScreen(int screen);
+    void GoToScreen(Screen screen);
 
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
@@ -335,110 +473,7 @@ class GraphicsWindow {
 public:
     void Init();
 
-    // This table describes the top-level menus in the graphics winodw.
-    typedef enum {
-        // File
-        MNU_NEW = 100,
-        MNU_OPEN,
-        MNU_OPEN_RECENT,
-        MNU_SAVE,
-        MNU_SAVE_AS,
-        MNU_EXPORT_PNG,
-        MNU_EXPORT_MESH,
-        MNU_EXPORT_SURFACES,
-        MNU_EXPORT_VIEW,
-        MNU_EXPORT_SECTION,
-        MNU_EXPORT_WIREFRAME,
-        MNU_IMPORT,
-        MNU_EXIT,
-        // View
-        MNU_ZOOM_IN,
-        MNU_ZOOM_OUT,
-        MNU_ZOOM_TO_FIT,
-        MNU_SHOW_GRID,
-        MNU_PERSPECTIVE_PROJ,
-        MNU_ONTO_WORKPLANE,
-        MNU_NEAREST_ORTHO,
-        MNU_NEAREST_ISO,
-        MNU_CENTER_VIEW,
-        MNU_SHOW_MENU_BAR,
-        MNU_SHOW_TOOLBAR,
-        MNU_SHOW_TEXT_WND,
-        MNU_UNITS_INCHES,
-        MNU_UNITS_MM,
-        MNU_FULL_SCREEN,
-        // Edit
-        MNU_UNDO,
-        MNU_REDO,
-        MNU_CUT,
-        MNU_COPY,
-        MNU_PASTE,
-        MNU_PASTE_TRANSFORM,
-        MNU_DELETE,
-        MNU_SELECT_CHAIN,
-        MNU_SELECT_ALL,
-        MNU_SNAP_TO_GRID,
-        MNU_ROTATE_90,
-        MNU_UNSELECT_ALL,
-        MNU_REGEN_ALL,
-        // Request
-        MNU_SEL_WORKPLANE,
-        MNU_FREE_IN_3D,
-        MNU_DATUM_POINT,
-        MNU_WORKPLANE,
-        MNU_LINE_SEGMENT,
-        MNU_CONSTR_SEGMENT,
-        MNU_CIRCLE,
-        MNU_ARC,
-        MNU_RECTANGLE,
-        MNU_CUBIC,
-        MNU_TTF_TEXT,
-        MNU_SPLIT_CURVES,
-        MNU_TANGENT_ARC,
-        MNU_CONSTRUCTION,
-        // Group
-        MNU_GROUP_3D,
-        MNU_GROUP_WRKPL,
-        MNU_GROUP_EXTRUDE,
-        MNU_GROUP_LATHE,
-        MNU_GROUP_ROT,
-        MNU_GROUP_TRANS,
-        MNU_GROUP_LINK,
-        MNU_GROUP_RECENT,
-        // Constrain
-        MNU_DISTANCE_DIA,
-        MNU_REF_DISTANCE,
-        MNU_ANGLE,
-        MNU_REF_ANGLE,
-        MNU_OTHER_ANGLE,
-        MNU_REFERENCE,
-        MNU_EQUAL,
-        MNU_RATIO,
-        MNU_DIFFERENCE,
-        MNU_ON_ENTITY,
-        MNU_SYMMETRIC,
-        MNU_AT_MIDPOINT,
-        MNU_HORIZONTAL,
-        MNU_VERTICAL,
-        MNU_PARALLEL,
-        MNU_PERPENDICULAR,
-        MNU_ORIENTED_SAME,
-        MNU_WHERE_DRAGGED,
-        MNU_COMMENT,
-        // Analyze
-        MNU_VOLUME,
-        MNU_AREA,
-        MNU_INTERFERENCE,
-        MNU_NAKED_EDGES,
-        MNU_SHOW_DOF,
-        MNU_TRACE_PT,
-        MNU_STOP_TRACING,
-        MNU_STEP_DIM,
-        // Help,
-        MNU_WEBSITE,
-        MNU_ABOUT
-    } MenuId;
-    typedef void MenuHandler(int id);
+    typedef void MenuHandler(Command id);
     enum {
         ESCAPE_KEY = 27,
         DELETE_KEY = 127,
@@ -448,27 +483,27 @@ public:
         SHIFT_MASK = 0x100,
         CTRL_MASK  = 0x200
     };
-    enum MenuItemKind {
-        MENU_ITEM_NORMAL = 0,
-        MENU_ITEM_CHECK,
-        MENU_ITEM_RADIO
+    enum class MenuKind : uint32_t {
+        NORMAL = 0,
+        CHECK,
+        RADIO
     };
     typedef struct {
         int          level;          // 0 == on menu bar, 1 == one level down
         const char  *label;          // or NULL for a separator
-        int          id;             // unique ID
+        Command      id;             // unique ID
         int          accel;          // keyboard accelerator
-        MenuItemKind kind;
+        MenuKind     kind;
         MenuHandler  *fn;
     } MenuEntry;
     static const MenuEntry menu[];
-    static void MenuView(int id);
-    static void MenuEdit(int id);
-    static void MenuRequest(int id);
+    static void MenuView(Command id);
+    static void MenuEdit(Command id);
+    static void MenuRequest(Command id);
     void DeleteSelection();
     void CopySelection();
     void PasteClipboard(Vector trans, double theta, double scale);
-    static void MenuClipboard(int id);
+    static void MenuClipboard(Command id);
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -549,12 +584,6 @@ public:
         DRAGGING_MARQUEE            = 0x0f000009
     };
 
-    enum SuggestedConstraint {
-        SUGGESTED_NONE = 0,
-        SUGGESTED_HORIZONTAL = Constraint::HORIZONTAL,
-        SUGGESTED_VERTICAL = Constraint::VERTICAL,
-    };
-
     struct {
         int                  operation;
 
@@ -567,19 +596,19 @@ public:
 
         const char          *description;
 
-        SuggestedConstraint  suggestion;
+        Constraint::Type    suggestion;
     } pending;
     void ClearPending();
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
-    SuggestedConstraint SuggestLineConstraint(hRequest lineSegment);
+    ConstraintBase::Type SuggestLineConstraint(hRequest lineSegment);
 
     Vector SnapToGrid(Vector p);
     bool ConstrainPointByHovered(hEntity pt);
     void DeleteTaggedRequests();
-    hRequest AddRequest(int type, bool rememberForUndo);
-    hRequest AddRequest(int type);
+    hRequest AddRequest(Request::Type type, bool rememberForUndo);
+    hRequest AddRequest(Request::Type type);
 
     class ParametricCurve {
     public:
@@ -666,38 +695,17 @@ public:
     void SelectByMarquee();
     void ClearSuper();
 
-    enum {
-        CMNU_UNSELECT_ALL     = 0x100,
-        CMNU_UNSELECT_HOVERED = 0x101,
-        CMNU_CUT_SEL          = 0x102,
-        CMNU_COPY_SEL         = 0x103,
-        CMNU_PASTE            = 0x104,
-        CMNU_PASTE_XFRM       = 0x105,
-        CMNU_DELETE_SEL       = 0x106,
-        CMNU_SELECT_CHAIN     = 0x107,
-        CMNU_NEW_CUSTOM_STYLE = 0x110,
-        CMNU_NO_STYLE         = 0x111,
-        CMNU_GROUP_INFO       = 0x120,
-        CMNU_STYLE_INFO       = 0x121,
-        CMNU_REFERENCE_DIM    = 0x130,
-        CMNU_OTHER_ANGLE      = 0x131,
-        CMNU_DEL_COINCIDENT   = 0x132,
-        CMNU_SNAP_TO_GRID     = 0x140,
-        CMNU_REMOVE_SPLINE_PT = 0x141,
-        CMNU_ADD_SPLINE_PT    = 0x142,
-        CMNU_FIRST_STYLE      = 0x40000000
-    };
     void ContextMenuListStyles();
     int64_t contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
-    bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menuHit);
+    bool ToolbarDrawOrHitTest(int x, int y, bool paint, Command *menuHit);
     void ToolbarDraw();
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
     static void TimerCallback();
-    int toolbarHovered;
-    int toolbarTooltipped;
+    Command toolbarHovered;
+    Command toolbarTooltipped;
     int toolbarMouseX, toolbarMouseY;
 
     // This sets what gets displayed.

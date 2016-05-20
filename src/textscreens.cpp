@@ -11,7 +11,7 @@
 // link to bring us back home.
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenHome(int link, uint32_t v) {
-    SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
+    SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
 }
 void TextWindow::ShowHeader(bool withNav) {
     ClearScreen();
@@ -44,7 +44,7 @@ void TextWindow::ShowHeader(bool withNav) {
 // to hide or show them, and to view them in detail. This is our home page.
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenSelectGroup(int link, uint32_t v) {
-    SS.TW.GoToScreen(SCREEN_GROUP_INFO);
+    SS.TW.GoToScreen(Screen::GROUP_INFO);
     SS.TW.shown.group.v = v;
 }
 void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
@@ -69,7 +69,7 @@ void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
 }
 void TextWindow::ReportHowGroupSolved(hGroup hg) {
     SS.GW.ClearSuper();
-    SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.GoToScreen(Screen::GROUP_SOLVE_INFO);
     SS.TW.shown.group.v = hg.v;
     SS.ScheduleShowTW();
 }
@@ -77,14 +77,14 @@ void TextWindow::ScreenHowGroupSolved(int link, uint32_t v) {
     if(SS.GW.activeGroup.v != v) {
         ScreenActivateGroup(link, v);
     }
-    SS.TW.GoToScreen(SCREEN_GROUP_SOLVE_INFO);
+    SS.TW.GoToScreen(Screen::GROUP_SOLVE_INFO);
     SS.TW.shown.group.v = v;
 }
 void TextWindow::ScreenShowConfiguration(int link, uint32_t v) {
-    SS.TW.GoToScreen(SCREEN_CONFIGURATION);
+    SS.TW.GoToScreen(Screen::CONFIGURATION);
 }
 void TextWindow::ScreenShowEditView(int link, uint32_t v) {
-    SS.TW.GoToScreen(SCREEN_EDIT_VIEW);
+    SS.TW.GoToScreen(Screen::EDIT_VIEW);
 }
 void TextWindow::ScreenGoToWebsite(int link, uint32_t v) {
     OpenWebsite("http://solvespace.com/txtlink");
@@ -185,8 +185,8 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     switch(link) {
-        case 's': g->subtype = Group::ONE_SIDED; break;
-        case 'S': g->subtype = Group::TWO_SIDED; break;
+        case 's': g->subtype = Group::Subtype::ONE_SIDED; break;
+        case 'S': g->subtype = Group::Subtype::TWO_SIDED; break;
 
         case 'k': g->skipFirst = true; break;
         case 'K': g->skipFirst = false; break;
@@ -195,12 +195,12 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
             // When an extrude group is first created, it's positioned for a union
             // extrusion. If no constraints were added, flip it when we switch between
             // union and difference modes to avoid manual work doing the smae.
-            if(g->meshCombine != (int)v && g->GetNumConstraints() == 0 &&
-               (v == Group::COMBINE_AS_DIFFERENCE ||
-                g->meshCombine == Group::COMBINE_AS_DIFFERENCE)) {
+            if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0 &&
+               ((Group::CombineAs)v == Group::CombineAs::DIFFERENCE ||
+                g->meshCombine == Group::CombineAs::DIFFERENCE)) {
                 g->ExtrusionForceVectorTo(g->ExtrusionGetVector().Negated());
             }
-            g->meshCombine = v;
+            g->meshCombine = (Group::CombineAs)v;
             break;
 
         case 'P': g->suppress = !(g->suppress); break;
@@ -226,33 +226,33 @@ void TextWindow::ScreenColor(int link, uint32_t v) {
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
     SS.TW.ShowEditControlWithColorPicker(3, g->color);
-    SS.TW.edit.meaning = EDIT_GROUP_COLOR;
+    SS.TW.edit.meaning = Edit::GROUP_COLOR;
 }
 void TextWindow::ScreenOpacity(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     SS.TW.ShowEditControl(11, ssprintf("%.2f", g->color.alphaF()));
-    SS.TW.edit.meaning = EDIT_GROUP_OPACITY;
+    SS.TW.edit.meaning = Edit::GROUP_OPACITY;
     SS.TW.edit.group.v = g->h.v;
 }
 void TextWindow::ScreenChangeExprA(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     SS.TW.ShowEditControl(10, ssprintf("%d", (int)g->valA));
-    SS.TW.edit.meaning = EDIT_TIMES_REPEATED;
+    SS.TW.edit.meaning = Edit::TIMES_REPEATED;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupName(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
     SS.TW.ShowEditControl(12, g->DescriptionString().substr(5));
-    SS.TW.edit.meaning = EDIT_GROUP_NAME;
+    SS.TW.edit.meaning = Edit::GROUP_NAME;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenChangeGroupScale(int link, uint32_t v) {
     Group *g = SK.GetGroup(SS.TW.shown.group);
 
     SS.TW.ShowEditControl(13, ssprintf("%.3f", g->scale));
-    SS.TW.edit.meaning = EDIT_GROUP_SCALE;
+    SS.TW.edit.meaning = Edit::GROUP_SCALE;
     SS.TW.edit.group.v = v;
 }
 void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
@@ -269,7 +269,7 @@ void TextWindow::ScreenDeleteGroup(int link, uint32_t v) {
 
     // This is a major change, so let's re-solve everything.
     SK.group.RemoveById(hg);
-    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
 
     // Reset the graphics window. This will also recreate the default
     // group if it was removed.
@@ -289,21 +289,21 @@ void TextWindow::ShowGroupInfo() {
             g->h.v, &TextWindow::ScreenDeleteGroup);
     }
 
-    if(g->type == Group::LATHE) {
+    if(g->type == Group::Type::LATHE) {
         Printf(true, " %Ftlathe plane sketch");
-    } else if(g->type == Group::EXTRUDE || g->type == Group::ROTATE ||
-              g->type == Group::TRANSLATE)
+    } else if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::ROTATE ||
+              g->type == Group::Type::TRANSLATE)
     {
-        if(g->type == Group::EXTRUDE) {
+        if(g->type == Group::Type::EXTRUDE) {
             s = "extrude plane sketch";
-        } else if(g->type == Group::TRANSLATE) {
+        } else if(g->type == Group::Type::TRANSLATE) {
             s = "translate original sketch";
-        } else if(g->type == Group::ROTATE) {
+        } else if(g->type == Group::Type::ROTATE) {
             s = "rotate original sketch";
         }
         Printf(true, " %Ft%s%E", s);
 
-        bool one = (g->subtype == Group::ONE_SIDED);
+        bool one = (g->subtype == Group::Subtype::ONE_SIDED);
         Printf(false,
             "%Ba   %f%Ls%Fd%s one-sided%E  "
                   "%f%LS%Fd%s two-sided%E",
@@ -312,8 +312,8 @@ void TextWindow::ShowGroupInfo() {
             &TextWindow::ScreenChangeGroupOption,
             !one ? RADIO_TRUE : RADIO_FALSE);
 
-        if(g->type == Group::ROTATE || g->type == Group::TRANSLATE) {
-            if(g->subtype == Group::ONE_SIDED) {
+        if(g->type == Group::Type::ROTATE || g->type == Group::Type::TRANSLATE) {
+            if(g->subtype == Group::Subtype::ONE_SIDED) {
                 bool skip = g->skipFirst;
                 Printf(false,
                    "%Bd   %Ftstart  %f%LK%Fd%s with original%E  "
@@ -326,51 +326,51 @@ void TextWindow::ShowGroupInfo() {
 
             int times = (int)(g->valA);
             Printf(false, "%Bp   %Ftrepeat%E %d time%s %Fl%Ll%D%f[change]%E",
-                (g->subtype == Group::ONE_SIDED) ? 'a' : 'd',
+                (g->subtype == Group::Subtype::ONE_SIDED) ? 'a' : 'd',
                 times, times == 1 ? "" : "s",
                 g->h.v, &TextWindow::ScreenChangeExprA);
         }
-    } else if(g->type == Group::LINKED) {
+    } else if(g->type == Group::Type::LINKED) {
         Printf(true, " %Ftlink geometry from file%E");
         Printf(false, "%Ba   '%s'", g->linkFileRel.c_str());
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
-    } else if(g->type == Group::DRAWING_3D) {
+    } else if(g->type == Group::Type::DRAWING_3D) {
         Printf(true, " %Ftsketch in 3d%E");
-    } else if(g->type == Group::DRAWING_WORKPLANE) {
+    } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
         Printf(true, " %Ftsketch in new workplane%E");
     } else {
         Printf(true, "???");
     }
     Printf(false, "");
 
-    if(g->type == Group::EXTRUDE ||
-       g->type == Group::LATHE ||
-       g->type == Group::LINKED)
+    if(g->type == Group::Type::EXTRUDE ||
+       g->type == Group::Type::LATHE ||
+       g->type == Group::Type::LINKED)
     {
-        bool un   = (g->meshCombine == Group::COMBINE_AS_UNION);
-        bool diff = (g->meshCombine == Group::COMBINE_AS_DIFFERENCE);
-        bool asy  = (g->meshCombine == Group::COMBINE_AS_ASSEMBLE);
-        bool asa  = (g->type == Group::LINKED);
+        bool un   = (g->meshCombine == Group::CombineAs::UNION);
+        bool diff = (g->meshCombine == Group::CombineAs::DIFFERENCE);
+        bool asy  = (g->meshCombine == Group::CombineAs::ASSEMBLE);
+        bool asa  = (g->type == Group::Type::LINKED);
 
         Printf(false, " %Ftsolid model as");
         Printf(false, "%Ba   %f%D%Lc%Fd%s union%E  "
                              "%f%D%Lc%Fd%s difference%E  "
                              "%f%D%Lc%Fd%s%s%E  ",
             &TextWindow::ScreenChangeGroupOption,
-            Group::COMBINE_AS_UNION,
+            Group::CombineAs::UNION,
             un ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            Group::COMBINE_AS_DIFFERENCE,
+            Group::CombineAs::DIFFERENCE,
             diff ? RADIO_TRUE : RADIO_FALSE,
             &TextWindow::ScreenChangeGroupOption,
-            Group::COMBINE_AS_ASSEMBLE,
+            Group::CombineAs::ASSEMBLE,
             asa ? (asy ? RADIO_TRUE : RADIO_FALSE) : " ",
             asa ? " assemble" : "");
 
-        if(g->type == Group::EXTRUDE ||
-           g->type == Group::LATHE)
+        if(g->type == Group::Type::EXTRUDE ||
+           g->type == Group::Type::LATHE)
         {
             Printf(false,
                 "%Bd   %Ftcolor   %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
@@ -380,7 +380,7 @@ void TextWindow::ShowGroupInfo() {
             Printf(false, "%Bd   %Ftopacity%E %@ %f%Lf%Fl[change]%E",
                 g->color.alphaF(),
                 &TextWindow::ScreenOpacity);
-        } else if(g->type == Group::LINKED) {
+        } else if(g->type == Group::Type::LINKED) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);
@@ -471,36 +471,36 @@ void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
     g->allowRedundant = true;
     SS.GenerateAll();
 
-    SS.TW.shown.screen = SCREEN_GROUP_INFO;
+    SS.TW.shown.screen = Screen::GROUP_INFO;
     SS.TW.Show();
 }
 void TextWindow::ShowGroupSolveInfo() {
     Group *g = SK.GetGroup(shown.group);
     if(g->IsSolvedOkay()) {
         // Go back to the default group info screen
-        shown.screen = SCREEN_GROUP_INFO;
+        shown.screen = Screen::GROUP_INFO;
         Show();
         return;
     }
 
     Printf(true, "%FtGROUP   %E%s", g->DescriptionString().c_str());
     switch(g->solved.how) {
-        case System::DIDNT_CONVERGE:
+        case SolveResult::DIDNT_CONVERGE:
             Printf(true, "%FxSOLVE FAILED!%Fd unsolvable constraints");
             Printf(true, "the following constraints are incompatible");
             break;
 
-        case System::REDUNDANT_DIDNT_CONVERGE:
+        case SolveResult::REDUNDANT_DIDNT_CONVERGE:
             Printf(true, "%FxSOLVE FAILED!%Fd unsolvable constraints");
             Printf(true, "the following constraints are unsatisfied");
             break;
 
-        case System::REDUNDANT_OKAY:
+        case SolveResult::REDUNDANT_OKAY:
             Printf(true, "%FxSOLVE FAILED!%Fd redundant constraints");
             Printf(true, "remove any one of these to fix it");
             break;
 
-        case System::TOO_MANY_UNKNOWNS:
+        case SolveResult::TOO_MANY_UNKNOWNS:
             Printf(true, "Too many unknowns in a single group!");
             return;
     }
@@ -520,7 +520,7 @@ void TextWindow::ShowGroupSolveInfo() {
     Printf(true,  "It may be possible to fix the problem ");
     Printf(false, "by selecting Edit -> Undo.");
 
-    if(g->solved.how == System::REDUNDANT_OKAY) {
+    if(g->solved.how == SolveResult::REDUNDANT_OKAY) {
         Printf(true,  "It is possible to suppress this error ");
         Printf(false, "by %Fl%f%Llallowing redundant constraints%E in ",
                       &TextWindow::ScreenAllowRedundant);
@@ -534,7 +534,7 @@ void TextWindow::ShowGroupSolveInfo() {
 // time.
 //-----------------------------------------------------------------------------
 void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
-    SS.TW.edit.meaning = EDIT_STEP_DIM_FINISH;
+    SS.TW.edit.meaning = Edit::STEP_DIM_FINISH;
     std::string edit_value;
     if(SS.TW.shown.dimIsDistance) {
         edit_value = SS.MmToString(SS.TW.shown.dimFinish);
@@ -544,7 +544,7 @@ void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     SS.TW.ShowEditControl(12, edit_value);
 }
 void TextWindow::ScreenStepDimSteps(int link, uint32_t v) {
-    SS.TW.edit.meaning = EDIT_STEP_DIM_STEPS;
+    SS.TW.edit.meaning = Edit::STEP_DIM_STEPS;
     SS.TW.ShowEditControl(12, ssprintf("%d", SS.TW.shown.dimSteps));
 }
 void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
@@ -567,12 +567,12 @@ void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
         }
     }
     InvalidateGraphics();
-    SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
+    SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
 }
 void TextWindow::ShowStepDimension() {
     Constraint *c = SK.constraint.FindByIdNoOops(shown.constraint);
     if(!c) {
-        shown.screen = SCREEN_LIST_OF_GROUPS;
+        shown.screen = Screen::LIST_OF_GROUPS;
         Show();
         return;
     }
@@ -604,7 +604,7 @@ void TextWindow::ShowStepDimension() {
 void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
     switch(link) {
         case 'r': {
-            SS.TW.edit.meaning = EDIT_TANGENT_ARC_RADIUS;
+            SS.TW.edit.meaning = Edit::TANGENT_ARC_RADIUS;
             SS.TW.ShowEditControl(3, SS.MmToString(SS.tangentArcRadius));
             break;
         }
@@ -647,7 +647,7 @@ void TextWindow::EditControlDone(const char *s) {
     edit.showAgain = false;
 
     switch(edit.meaning) {
-        case EDIT_TIMES_REPEATED: {
+        case Edit::TIMES_REPEATED: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 SS.UndoRemember();
@@ -665,7 +665,7 @@ void TextWindow::EditControlDone(const char *s) {
                 Group *g = SK.GetGroup(edit.group);
                 g->valA = ev;
 
-                if(g->type == Group::ROTATE) {
+                if(g->type == Group::Type::ROTATE) {
                     int i, c = 0;
                     for(i = 0; i < SK.constraint.n; i++) {
                         if(SK.constraint.elem[i].group.v == g->h.v) c++;
@@ -686,7 +686,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_GROUP_NAME: {
+        case Edit::GROUP_NAME: {
             if(!*s) {
                 Error("Group name cannot be empty");
             } else {
@@ -697,7 +697,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_GROUP_SCALE: {
+        case Edit::GROUP_SCALE: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = e->Eval();
@@ -712,7 +712,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_GROUP_COLOR: {
+        case Edit::GROUP_COLOR: {
             Vector rgb;
             if(sscanf(s, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
                 rgb = rgb.ClampWithin(0, 1);
@@ -729,7 +729,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_GROUP_OPACITY: {
+        case Edit::GROUP_OPACITY: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 double alpha = e->Eval();
@@ -745,7 +745,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_TTF_TEXT: {
+        case Edit::TTF_TEXT: {
             SS.UndoRemember();
             Request *r = SK.request.FindByIdNoOops(edit.request);
             if(r) {
@@ -755,7 +755,7 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_STEP_DIM_FINISH: {
+        case Edit::STEP_DIM_FINISH: {
             Expr *e = Expr::From(s, true);
             if(!e) {
                 break;
@@ -767,11 +767,11 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case EDIT_STEP_DIM_STEPS:
+        case Edit::STEP_DIM_STEPS:
             shown.dimSteps = min(300, max(1, atoi(s)));
             break;
 
-        case EDIT_TANGENT_ARC_RADIUS: {
+        case Edit::TANGENT_ARC_RADIUS: {
             Expr *e = Expr::From(s, true);
             if(!e) break;
             if(e->Eval() < LENGTH_EPS) {
@@ -797,7 +797,7 @@ void TextWindow::EditControlDone(const char *s) {
 
     if(!edit.showAgain) {
         HideEditControl();
-        edit.meaning = EDIT_NOTHING;
+        edit.meaning = Edit::NOTHING;
     }
 }
 

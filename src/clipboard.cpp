@@ -85,13 +85,14 @@ void GraphicsWindow::CopySelection() {
         // Work only on entities that have requests that will generate them.
         Entity *e = SK.GetEntity(s->entity);
         bool hasDistance;
-        int req, pts;
+        Request::Type req;
+        int pts;
         if(!EntReqTable::GetEntityInfo(e->type, e->extraPoints,
                 &req, &pts, NULL, &hasDistance))
         {
             continue;
         }
-        if(req == Request::WORKPLANE) continue;
+        if(req == Request::Type::WORKPLANE) continue;
 
         ClipboardRequest cr = {};
         cr.type         = req;
@@ -122,7 +123,7 @@ void GraphicsWindow::CopySelection() {
         if(!s->constraint.v) continue;
 
         Constraint *c = SK.GetConstraint(s->constraint);
-        if(c->type == Constraint::COMMENT) {
+        if(c->type == Constraint::Type::COMMENT) {
             SS.clipboard.c.Add(c);
         }
     }
@@ -135,7 +136,7 @@ void GraphicsWindow::CopySelection() {
            !SS.clipboard.ContainsEntity(c->entityB) ||
            !SS.clipboard.ContainsEntity(c->entityC) ||
            !SS.clipboard.ContainsEntity(c->entityD) ||
-           c->type == Constraint::COMMENT) {
+           c->type == Constraint::Type::COMMENT) {
             continue;
         }
         SS.clipboard.c.Add(c);
@@ -161,7 +162,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         r->construction = cr->construction;
         // Need to regen to get the right number of points, if extraPoints
         // changed.
-        SS.GenerateAll(SolveSpaceUI::GENERATE_REGEN);
+        SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
         SS.MarkGroupDirty(r->group);
         bool hasDistance;
         int i, pts;
@@ -214,7 +215,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.disp = cc->disp;
         c.comment = cc->comment;
         hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
-        if(c.type == Constraint::COMMENT) {
+        if(c.type == Constraint::Type::COMMENT) {
             SK.GetConstraint(hc)->disp.offset = SK.GetConstraint(hc)->disp.offset.Plus(trans);
             MakeSelected(hc);
         }
@@ -223,15 +224,15 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
     SS.ScheduleGenerateAll();
 }
 
-void GraphicsWindow::MenuClipboard(int id) {
-    if(id != MNU_DELETE && !SS.GW.LockedInWorkplane()) {
+void GraphicsWindow::MenuClipboard(Command id) {
+    if(id != Command::DELETE && !SS.GW.LockedInWorkplane()) {
         Error("Cut, paste, and copy work only in a workplane.\n\n"
               "Select one with Sketch -> In Workplane.");
         return;
     }
 
     switch(id) {
-        case MNU_PASTE: {
+        case Command::PASTE: {
             SS.UndoRemember();
             Vector trans = SS.GW.projRight.ScaledBy(80/SS.GW.scale).Plus(
                            SS.GW.projUp   .ScaledBy(40/SS.GW.scale));
@@ -240,7 +241,7 @@ void GraphicsWindow::MenuClipboard(int id) {
             break;
         }
 
-        case MNU_PASTE_TRANSFORM: {
+        case Command::PASTE_TRANSFORM: {
             if(SS.clipboard.r.n == 0) {
                 Error("Clipboard is empty; nothing to paste.");
                 break;
@@ -253,24 +254,24 @@ void GraphicsWindow::MenuClipboard(int id) {
             SS.TW.shown.paste.theta  = 0;
             SS.TW.shown.paste.origin = p;
             SS.TW.shown.paste.scale  = 1;
-            SS.TW.GoToScreen(TextWindow::SCREEN_PASTE_TRANSFORMED);
+            SS.TW.GoToScreen(TextWindow::Screen::PASTE_TRANSFORMED);
             SS.GW.ForceTextWindowShown();
             SS.ScheduleShowTW();
             break;
         }
 
-        case MNU_COPY:
+        case Command::COPY:
             SS.GW.CopySelection();
             SS.GW.ClearSelection();
             break;
 
-        case MNU_CUT:
+        case Command::CUT:
             SS.UndoRemember();
             SS.GW.CopySelection();
             SS.GW.DeleteSelection();
             break;
 
-        case MNU_DELETE:
+        case Command::DELETE:
             SS.UndoRemember();
             SS.GW.DeleteSelection();
             break;
@@ -282,7 +283,7 @@ void GraphicsWindow::MenuClipboard(int id) {
 bool TextWindow::EditControlDoneForPaste(const char *s) {
     Expr *e;
     switch(edit.meaning) {
-        case EDIT_PASTE_TIMES_REPEATED: {
+        case Edit::PASTE_TIMES_REPEATED: {
             e = Expr::From(s, true);
             if(!e) break;
             int v = (int)e->Eval();
@@ -293,13 +294,13 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
             }
             break;
         }
-        case EDIT_PASTE_ANGLE:
+        case Edit::PASTE_ANGLE:
             e = Expr::From(s, true);
             if(!e) break;
             shown.paste.theta = WRAP_SYMMETRIC((e->Eval())*PI/180, 2*PI);
             break;
 
-        case EDIT_PASTE_SCALE: {
+        case Edit::PASTE_SCALE: {
             e = Expr::From(s, true);
             double v = e->Eval();
             if(fabs(v) > 1e-6) {
@@ -320,17 +321,17 @@ void TextWindow::ScreenChangePasteTransformed(int link, uint32_t v) {
     switch(link) {
         case 't':
             SS.TW.ShowEditControl(13, ssprintf("%d", SS.TW.shown.paste.times));
-            SS.TW.edit.meaning = EDIT_PASTE_TIMES_REPEATED;
+            SS.TW.edit.meaning = Edit::PASTE_TIMES_REPEATED;
             break;
 
         case 'r':
             SS.TW.ShowEditControl(13, ssprintf("%.3f", SS.TW.shown.paste.theta*180/PI));
-            SS.TW.edit.meaning = EDIT_PASTE_ANGLE;
+            SS.TW.edit.meaning = Edit::PASTE_ANGLE;
             break;
 
         case 's':
             SS.TW.ShowEditControl(13, ssprintf("%.3f", SS.TW.shown.paste.scale));
-            SS.TW.edit.meaning = EDIT_PASTE_SCALE;
+            SS.TW.edit.meaning = Edit::PASTE_SCALE;
             break;
     }
 }
@@ -394,7 +395,7 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
 
                 SS.GW.PasteClipboard(t, theta, SS.TW.shown.paste.scale);
             }
-            SS.TW.GoToScreen(SCREEN_LIST_OF_GROUPS);
+            SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
             SS.ScheduleShowTW();
             break;
         }

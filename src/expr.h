@@ -13,7 +13,7 @@ class Expr;
 class Expr {
 public:
 
-    enum {
+    enum class Op : uint32_t {
         // A parameter, by the hParam handle
         PARAM          =  0,
         // A parameter, by a pointer straight in to the param table (faster,
@@ -45,7 +45,7 @@ public:
         UNARY_OP       = 1003
     };
 
-    int op;
+    Op      op;
     Expr    *a;
     union {
         double  v;
@@ -58,7 +58,7 @@ public:
     };
 
     Expr() { }
-    Expr(double val) : op(CONSTANT) { v = val; }
+    Expr(double val) : op(Op::CONSTANT) { v = val; }
 
     static inline Expr *AllocExpr()
         { return (Expr *)AllocTemporary(sizeof(Expr)); }
@@ -66,19 +66,19 @@ public:
     static Expr *From(hParam p);
     static Expr *From(double v);
 
-    Expr *AnyOp(int op, Expr *b);
-    inline Expr *Plus (Expr *b_) { return AnyOp(PLUS,  b_); }
-    inline Expr *Minus(Expr *b_) { return AnyOp(MINUS, b_); }
-    inline Expr *Times(Expr *b_) { return AnyOp(TIMES, b_); }
-    inline Expr *Div  (Expr *b_) { return AnyOp(DIV,   b_); }
+    Expr *AnyOp(Op op, Expr *b);
+    inline Expr *Plus (Expr *b_) { return AnyOp(Op::PLUS,  b_); }
+    inline Expr *Minus(Expr *b_) { return AnyOp(Op::MINUS, b_); }
+    inline Expr *Times(Expr *b_) { return AnyOp(Op::TIMES, b_); }
+    inline Expr *Div  (Expr *b_) { return AnyOp(Op::DIV,   b_); }
 
-    inline Expr *Negate() { return AnyOp(NEGATE, NULL); }
-    inline Expr *Sqrt  () { return AnyOp(SQRT,   NULL); }
-    inline Expr *Square() { return AnyOp(SQUARE, NULL); }
-    inline Expr *Sin   () { return AnyOp(SIN,    NULL); }
-    inline Expr *Cos   () { return AnyOp(COS,    NULL); }
-    inline Expr *ASin  () { return AnyOp(ASIN,   NULL); }
-    inline Expr *ACos  () { return AnyOp(ACOS,   NULL); }
+    inline Expr *Negate() { return AnyOp(Op::NEGATE, NULL); }
+    inline Expr *Sqrt  () { return AnyOp(Op::SQRT,   NULL); }
+    inline Expr *Square() { return AnyOp(Op::SQUARE, NULL); }
+    inline Expr *Sin   () { return AnyOp(Op::SIN,    NULL); }
+    inline Expr *Cos   () { return AnyOp(Op::COS,    NULL); }
+    inline Expr *ASin  () { return AnyOp(Op::ASIN,   NULL); }
+    inline Expr *ACos  () { return AnyOp(Op::ACOS,   NULL); }
 
     Expr *PartialWrt(hParam p) const;
     double Eval() const;

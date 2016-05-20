@@ -58,24 +58,24 @@ void Group::GenerateLoops() {
     bezierLoops.Clear();
     bezierOpens.Clear();
 
-    if(type == DRAWING_3D || type == DRAWING_WORKPLANE ||
-       type == ROTATE || type == TRANSLATE || type == LINKED)
+    if(type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE ||
+       type == Type::ROTATE || type == Type::TRANSLATE || type == Type::LINKED)
     {
         bool allClosed = false, allCoplanar = false, allNonZeroLen = false;
         AssembleLoops(&allClosed, &allCoplanar, &allNonZeroLen);
         if(!allNonZeroLen) {
-            polyError.how = POLY_ZERO_LEN_EDGE;
+            polyError.how = PolyError::ZERO_LEN_EDGE;
         } else if(!allCoplanar) {
-            polyError.how = POLY_NOT_COPLANAR;
+            polyError.how = PolyError::NOT_COPLANAR;
         } else if(!allClosed) {
-            polyError.how = POLY_NOT_CLOSED;
+            polyError.how = PolyError::NOT_CLOSED;
         } else {
-            polyError.how = POLY_GOOD;
+            polyError.how = PolyError::GOOD;
             // The self-intersecting check is kind of slow, so don't run it
             // unless requested.
             if(SS.checkClosedContour) {
                 if(polyLoops.SelfIntersecting(&(polyError.errorPointAt))) {
-                    polyError.how = POLY_SELF_INTERSECTING;
+                    polyError.how = PolyError::SELF_INTERSECTING;
                 }
             }
         }
@@ -112,16 +112,16 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
     T *soFar = &workA, *scratch = &workB;
 
     int n = (int)valA, a0 = 0;
-    if(subtype == ONE_SIDED && skipFirst) {
+    if(subtype == Subtype::ONE_SIDED && skipFirst) {
         a0++; n++;
     }
     int a;
     for(a = a0; a < n; a++) {
-        int ap = a*2 - (subtype == ONE_SIDED ? 0 : (n-1));
+        int ap = a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1));
         int remap = (a == (n - 1)) ? REMAP_LAST : a;
 
         T transd = {};
-        if(type == TRANSLATE) {
+        if(type == Type::TRANSLATE) {
             Vector trans = Vector::From(h.param(0), h.param(1), h.param(2));
             trans = trans.ScaledBy(ap);
             transd.MakeFromTransformationOf(steps,
@@ -157,7 +157,7 @@ void Group::GenerateForStepAndRepeat(T *steps, T *outs) {
 }
 
 template<class T>
-void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, int how) {
+void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, Group::CombineAs how) {
     // If this group contributes no new mesh, then our running mesh is the
     // same as last time, no combining required. Likewise if we have a mesh
     // but it's suppressed.
@@ -168,9 +168,9 @@ void Group::GenerateForBoolean(T *prevs, T *thiss, T *outs, int how) {
 
     // So our group's shell appears in thisShell. Combine this with the
     // previous group's shell, using the requested operation.
-    if(how == COMBINE_AS_UNION) {
+    if(how == CombineAs::UNION) {
         outs->MakeFromUnionOf(prevs, thiss);
-    } else if(how == COMBINE_AS_DIFFERENCE) {
+    } else if(how == CombineAs::DIFFERENCE) {
         outs->MakeFromDifferenceOf(prevs, thiss);
     } else {
         outs->MakeFromAssemblyOf(prevs, thiss);
@@ -191,26 +191,26 @@ void Group::GenerateShellAndMesh() {
     // Don't attempt a lathe or extrusion unless the source section is good:
     // planar and not self-intersecting.
     bool haveSrc = true;
-    if(type == EXTRUDE || type == LATHE) {
+    if(type == Type::EXTRUDE || type == Type::LATHE) {
         Group *src = SK.GetGroup(opA);
-        if(src->polyError.how != POLY_GOOD) {
+        if(src->polyError.how != PolyError::GOOD) {
             haveSrc = false;
         }
     }
 
-    if(type == TRANSLATE || type == ROTATE) {
+    if(type == Type::TRANSLATE || type == Type::ROTATE) {
         // A step and repeat gets merged against the group's prevous group,
         // not our own previous group.
         srcg = SK.GetGroup(opA);
 
         GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
         GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
-    } else if(type == EXTRUDE && haveSrc) {
+    } else if(type == Type::EXTRUDE && haveSrc) {
         Group *src = SK.GetGroup(opA);
         Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
 
         Vector tbot, ttop;
-        if(subtype == ONE_SIDED) {
+        if(subtype == Subtype::ONE_SIDED) {
             tbot = Vector::From(0, 0, 0); ttop = translate.ScaledBy(2);
         } else {
             tbot = translate.ScaledBy(-1); ttop = translate.ScaledBy(1);
@@ -254,7 +254,7 @@ void Group::GenerateShellAndMesh() {
                 Entity *e;
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
                     if(e->group.v != opA.v) continue;
-                    if(e->type != Entity::LINE_SEGMENT) continue;
+                    if(e->type != Entity::Type::LINE_SEGMENT) continue;
 
                     Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
                            b = SK.GetEntity(e->point[1])->PointGetNum();
@@ -273,7 +273,7 @@ void Group::GenerateShellAndMesh() {
                 }
             }
         }
-    } else if(type == LATHE && haveSrc) {
+    } else if(type == Type::LATHE && haveSrc) {
         Group *src = SK.GetGroup(opA);
 
         Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
@@ -285,7 +285,7 @@ void Group::GenerateShellAndMesh() {
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
         }
-    } else if(type == LINKED) {
+    } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
         // transformation applied. We also must remap the face entities.
         Vector offset = {
@@ -305,7 +305,7 @@ void Group::GenerateShellAndMesh() {
         thisShell.RemapFaces(this, 0);
     }
 
-    if(srcg->meshCombine != COMBINE_AS_ASSEMBLE) {
+    if(srcg->meshCombine != CombineAs::ASSEMBLE) {
         thisShell.MergeCoincidentSurfaces();
     }
 
@@ -320,7 +320,7 @@ void Group::GenerateShellAndMesh() {
         GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell,
             srcg->meshCombine);
 
-        if(srcg->meshCombine != COMBINE_AS_ASSEMBLE) {
+        if(srcg->meshCombine != CombineAs::ASSEMBLE) {
             runningShell.MergeCoincidentSurfaces();
         }
 
@@ -409,10 +409,10 @@ void Group::GenerateDisplayItems() {
                 if(runningMesh.l.n > 0) {
                     // Triangle mesh only; no shell or emphasized edges.
                     runningMesh.MakeCertainEdgesAndOutlinesInto(
-                        &displayEdges, &displayOutlines, SKdNode::EMPHASIZED_EDGES);
+                        &displayEdges, &displayOutlines, EdgeKind::EMPHASIZED);
                 } else {
                     displayMesh.MakeCertainEdgesAndOutlinesInto(
-                        &displayEdges, &displayOutlines, SKdNode::SHARP_EDGES);
+                        &displayEdges, &displayOutlines, EdgeKind::SHARP);
                 }
             }
         }
@@ -432,7 +432,7 @@ Group *Group::PreviousGroup() {
 }
 
 Group *Group::RunningMeshGroup() {
-    if(type == TRANSLATE || type == ROTATE) {
+    if(type == Type::TRANSLATE || type == Type::ROTATE) {
         return SK.GetGroup(opA)->RunningMeshGroup();
     } else {
         return PreviousGroup();
@@ -441,19 +441,19 @@ Group *Group::RunningMeshGroup() {
 
 bool Group::IsMeshGroup() {
     switch(type) {
-        case Group::EXTRUDE:
-        case Group::LATHE:
-        case Group::ROTATE:
-        case Group::TRANSLATE:
+        case Group::Type::EXTRUDE:
+        case Group::Type::LATHE:
+        case Group::Type::ROTATE:
+        case Group::Type::TRANSLATE:
             return true;
     }
     return false;
 }
 
-void Group::DrawDisplayItems(int t) {
+void Group::DrawDisplayItems(Group::Type t) {
     RgbaColor specColor;
     bool useSpecColor;
-    if(t == DRAWING_3D || t == DRAWING_WORKPLANE) {
+    if(t == Type::DRAWING_3D || t == Type::DRAWING_WORKPLANE) {
         // force the color to something dim
         specColor = Style::Color(Style::DIM_SOLID);
         useSpecColor = true;
@@ -530,10 +530,10 @@ void Group::Draw() {
 
     // And finally show the polygons too, and any errors if it's not possible
     // to assemble the lines into closed polygons.
-    if(polyError.how == POLY_NOT_CLOSED) {
+    if(polyError.how == PolyError::NOT_CLOSED) {
         // Report this error only in sketch-in-workplane groups; otherwise
         // it's just a nuisance.
-        if(type == DRAWING_WORKPLANE) {
+        if(type == Type::DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             ssglColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
             ssglLineWidth (Style::Width(Style::DRAW_ERROR));
@@ -548,18 +548,18 @@ void Group::Draw() {
                 NULL, NULL);
             glEnable(GL_DEPTH_TEST);
         }
-    } else if(polyError.how == POLY_NOT_COPLANAR ||
-              polyError.how == POLY_SELF_INTERSECTING ||
-              polyError.how == POLY_ZERO_LEN_EDGE)
+    } else if(polyError.how == PolyError::NOT_COPLANAR ||
+              polyError.how == PolyError::SELF_INTERSECTING ||
+              polyError.how == PolyError::ZERO_LEN_EDGE)
     {
         // These errors occur at points, not lines
-        if(type == DRAWING_WORKPLANE) {
+        if(type == Type::DRAWING_WORKPLANE) {
             glDisable(GL_DEPTH_TEST);
             ssglColorRGB(Style::Color(Style::DRAW_ERROR));
             const char *msg;
-            if(polyError.how == POLY_NOT_COPLANAR) {
+            if(polyError.how == PolyError::NOT_COPLANAR) {
                 msg = "points not all coplanar!";
-            } else if(polyError.how == POLY_SELF_INTERSECTING) {
+            } else if(polyError.how == PolyError::SELF_INTERSECTING) {
                 msg = "contour is self-intersecting!";
             } else {
                 msg = "zero-length edge!";
@@ -599,7 +599,7 @@ void Group::DrawFilledPaths() {
             FillLoopSetAsPolygon(sbls);
         } else {
             if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
-               polyError.how == POLY_GOOD)
+               polyError.how == PolyError::GOOD)
             {
                 // If this is the active group, and we are supposed to check
                 // for closed contours, and we do indeed have a closed and

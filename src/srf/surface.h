@@ -10,6 +10,10 @@
 #ifndef __SURFACE_H
 #define __SURFACE_H
 
+#ifdef WIN32
+    #undef DIFFERENCE
+#endif
+
 // Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
@@ -28,7 +32,7 @@ public:
 
     SBspUv  *more;
 
-    enum {
+    enum class Class : uint32_t {
         INSIDE            = 100,
         OUTSIDE           = 200,
         EDGE_PARALLEL     = 300,
@@ -47,8 +51,8 @@ public:
 
     void InsertEdge(Point2d a, Point2d b, SSurface *srf);
     static SBspUv *InsertOrCreateEdge(SBspUv *where, Point2d ea, Point2d eb, SSurface *srf);
-    int ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const;
-    int ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) const;
+    Class ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const;
+    Class ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) const;
     double MinimumDistanceToEdge(Point2d p, SSurface *srf) const;
 };
 
@@ -189,12 +193,12 @@ public:
     // therefore must get new hSCurves assigned. For the curves in A and B,
     // we use newH to record their new handle in C.
     hSCurve         newH;
-    enum {
-        FROM_A             = 100,
-        FROM_B             = 200,
-        FROM_INTERSECTION  = 300
+    enum class Source : uint32_t {
+        A             = 100,
+        B             = 200,
+        INTERSECTION  = 300
     };
-    int             source;
+    Source          source;
 
     bool            isExact;
     SBezier         exact;
@@ -246,6 +250,13 @@ public:
 // A rational polynomial surface in Bezier form.
 class SSurface {
 public:
+
+    enum class CombineAs : uint32_t {
+        UNION      = 10,
+        DIFFERENCE = 11,
+        INTERSECT  = 12
+    };
+
     int             tag;
     hSSurface       h;
 
@@ -286,7 +297,7 @@ public:
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
-                                    SShell *into, int type);
+                                    SShell *into, SSurface::CombineAs type);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
     void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                           SShell *into);
@@ -335,12 +346,12 @@ public:
     void TriangulateInto(SShell *shell, SMesh *sm);
 
     // these are intended as bitmasks, even though there's just one now
-    enum {
-        AS_UV  = 0x01,
-        AS_XYZ = 0x00
+    enum class MakeAs : uint32_t {
+       UV  = 0x01,
+       XYZ = 0x00
     };
-    void MakeTrimEdgesInto(SEdgeList *sel, int flags, SCurve *sc, STrimBy *stb);
-    void MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
+    void MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags, SCurve *sc, STrimBy *stb);
+    void MakeEdgesInto(SShell *shell, SEdgeList *sel, MakeAs flags,
                        SShell *useCurvesFrom=NULL);
 
     Vector ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
@@ -370,14 +381,9 @@ public:
 
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
-    enum {
-        AS_UNION      = 10,
-        AS_DIFFERENCE = 11,
-        AS_INTERSECT  = 12
-    };
-    void MakeFromBoolean(SShell *a, SShell *b, int type);
+    void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);
     void CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into);
-    void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, int type);
+    void CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type);
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(SShell *useCurvesFrom);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
@@ -390,17 +396,17 @@ public:
     // Definitions when classifying regions of a surface; it is either inside,
     // outside, or coincident (with parallel or antiparallel normal) with a
     // shell.
-    enum {
+    enum class Class : uint32_t {
         INSIDE     = 100,
         OUTSIDE    = 200,
         COINC_SAME = 300,
         COINC_OPP  = 400
     };
     static const double DOTP_TOL;
-    int ClassifyRegion(Vector edge_n, Vector inter_surf_n,
+    Class ClassifyRegion(Vector edge_n, Vector inter_surf_n,
                        Vector edge_surf_n) const;
 
-    bool ClassifyEdge(int *indir, int *outdir,
+    bool ClassifyEdge(Class *indir, Class *outdir,
                       Vector ea, Vector eb,
                       Vector p, Vector edge_n_in,
                       Vector edge_n_out, Vector surf_n);

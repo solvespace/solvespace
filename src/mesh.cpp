@@ -85,13 +85,13 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     // Select the naked edges in our resulting open mesh.
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
-    root->MakeCertainEdgesInto(sel, SKdNode::NAKED_OR_SELF_INTER_EDGES,
+    root->MakeCertainEdgesInto(sel, EdgeKind::NAKED_OR_SELF_INTER,
                                 false, NULL, NULL);
 
     m.Clear();
 }
 
-void SMesh::MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, int type) {
+void SMesh::MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, EdgeKind type) {
     SKdNode *root = SKdNode::From(this);
     root->MakeCertainEdgesInto(sel, type, false, NULL, NULL);
     root->MakeOutlinesInto(sol);
@@ -924,7 +924,7 @@ static bool CheckAndAddTrianglePair(std::set<std::pair<STriangle *, STriangle *>
 //    * emphasized edges (i.e., edges where a triangle from one face joins
 //      a triangle from a different face)
 //-----------------------------------------------------------------------------
-void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
+void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIsInter,
                                    bool *inter, bool *leaky, int auxA) const
 {
     if(inter) *inter = false;
@@ -945,7 +945,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
             FindEdgeOn(a, b, cnt, coplanarIsInter, &info);
 
             switch(how) {
-                case NAKED_OR_SELF_INTER_EDGES:
+                case EdgeKind::NAKED_OR_SELF_INTER:
                     if(info.count != 1) {
                         sel->AddEdge(a, b, auxA);
                         if(leaky) *leaky = true;
@@ -956,14 +956,14 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
                     }
                     break;
 
-                case SELF_INTER_EDGES:
+                case EdgeKind::SELF_INTER:
                     if(info.intersectsMesh) {
                         sel->AddEdge(a, b, auxA);
                         if(inter) *inter = true;
                     }
                     break;
 
-                case TURNING_EDGES:
+                case EdgeKind::TURNING:
                     if((tr->Normal().z < LENGTH_EPS) &&
                        (info.count == 1) &&
                        info.frontFacing)
@@ -977,7 +977,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
                     }
                     break;
 
-                case EMPHASIZED_EDGES:
+                case EdgeKind::EMPHASIZED:
                     if(info.count == 1 && tr->meta.face != info.tr->meta.face) {
                         if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
                             break;
@@ -989,7 +989,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
                     }
                     break;
 
-                case SHARP_EDGES:
+                case EdgeKind::SHARP:
                     if(info.count == 1) {
                         Vector na0 = (j == 0) ? tr->an :
                                     ((j == 1) ? tr->bn : tr->cn);

@@ -8,6 +8,11 @@
 #ifndef __SKETCH_H
 #define __SKETCH_H
 
+#ifdef WIN32
+    // winuser.h confilct (DIFFERENCE)
+    #undef DIFFERENCE
+#endif
+
 class hGroup;
 class hRequest;
 class hEntity;
@@ -20,6 +25,29 @@ class Entity;
 class Param;
 class Equation;
 class Style;
+
+enum class PolyError : uint32_t {
+    GOOD              = 0,
+    NOT_CLOSED        = 1,
+    NOT_COPLANAR      = 2,
+    SELF_INTERSECTING = 3,
+    ZERO_LEN_EDGE     = 4
+};
+
+enum class StipplePattern : uint32_t {
+    CONTINUOUS     = 0,
+    DASH           = 1,
+    LONG_DASH      = 2,
+    DASH_DOT       = 3,
+    DASH_DOT_DOT   = 4,
+    DOT            = 5,
+    FREEHAND       = 6,
+    ZIGZAG         = 7,
+
+    LAST           = ZIGZAG
+};
+
+enum class Command : uint32_t;
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
@@ -91,7 +119,7 @@ public:
     int         tag;
     hGroup      h;
 
-    enum {
+    enum class Type : uint32_t {
         DRAWING_3D                    = 5000,
         DRAWING_WORKPLANE             = 5001,
         EXTRUDE                       = 5100,
@@ -100,7 +128,7 @@ public:
         TRANSLATE                     = 5201,
         LINKED                        = 5300
     };
-    int type;
+    Group::Type type;
 
     int order;
 
@@ -121,12 +149,12 @@ public:
     RgbaColor   color;
 
     struct {
-        int                 how;
+        SolveResult         how;
         int                 dof;
         List<hConstraint>   remove;
     } solved;
 
-    enum {
+    enum class Subtype : uint32_t {
         // For drawings in 2d
         WORKPLANE_BY_POINT_ORTHO   = 6000,
         WORKPLANE_BY_LINE_SEGMENTS = 6001,
@@ -134,7 +162,7 @@ public:
         ONE_SIDED                  = 7000,
         TWO_SIDED                  = 7001
     };
-    int subtype;
+    Group::Subtype subtype;
 
     bool skipFirst; // for step and repeat ops
 
@@ -151,15 +179,9 @@ public:
     SPolygon                polyLoops;
     SBezierLoopSetSet       bezierLoops;
     SBezierList             bezierOpens;
-    enum {
-        POLY_GOOD              = 0,
-        POLY_NOT_CLOSED        = 1,
-        POLY_NOT_COPLANAR      = 2,
-        POLY_SELF_INTERSECTING = 3,
-        POLY_ZERO_LEN_EDGE     = 4
-    };
+
     struct {
-        int             how;
+        PolyError       how;
         SEdge           notClosedAt;
         Vector          errorPointAt;
     }               polyError;
@@ -177,12 +199,12 @@ public:
     SEdgeList       displayEdges;
     SOutlineList    displayOutlines;
 
-    enum {
-        COMBINE_AS_UNION           = 0,
-        COMBINE_AS_DIFFERENCE      = 1,
-        COMBINE_AS_ASSEMBLE        = 2
+    enum class CombineAs : uint32_t {
+        UNION           = 0,
+        DIFFERENCE      = 1,
+        ASSEMBLE        = 2
     };
-    int meshCombine;
+    CombineAs meshCombine;
 
     bool forceToMesh;
 
@@ -249,9 +271,9 @@ public:
     bool IsMeshGroup();
     void GenerateShellAndMesh();
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
-    template<class T> void GenerateForBoolean(T *a, T *b, T *o, int how);
+    template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
-    void DrawDisplayItems(int t);
+    void DrawDisplayItems(Group::Type t);
     void Draw();
     RgbaColor GetLoopSetFillColor(SBezierLoopSet *sbls,
                                  bool *allSame, Vector *errorAt);
@@ -260,7 +282,7 @@ public:
 
     SPolygon GetPolygon();
 
-    static void MenuGroup(int id);
+    static void MenuGroup(Command id);
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -276,7 +298,8 @@ public:
     hRequest    h;
 
     // Types of requests
-    enum {
+    enum class Type : uint32_t {
+        UNKNOWN                = 0,
         WORKPLANE              = 100,
         DATUM_POINT            = 101,
         LINE_SEGMENT           = 200,
@@ -287,7 +310,7 @@ public:
         TTF_TEXT               = 600
     };
 
-    int         type;
+    Request::Type type;
     int         extraPoints;
 
     hEntity     workplane; // or Entity::FREE_IN_3D
@@ -316,7 +339,9 @@ public:
     static const hEntity    FREE_IN_3D;
     static const hEntity    NO_ENTITY;
 
-    enum {
+    enum class Type : uint32_t {
+        DATUM_POINT            =  0,
+        UNKNOWN                =  1000,
         POINT_IN_3D            =  2000,
         POINT_IN_2D            =  2001,
         POINT_N_TRANS          =  2010,
@@ -349,7 +374,7 @@ public:
         TTF_TEXT               = 15000
     };
 
-    int         type;
+    Type        type;
 
     hGroup      group;
     hEntity     workplane;   // or Entity::FREE_IN_3D
@@ -493,7 +518,7 @@ public:
         double      dmin;
         double      lineWidth;
         double      stippleScale;
-        int         stippleType;
+        StipplePattern stippleType;
         int         data;
     } dogd; // state for drawing or getting distance (for hit testing)
 
@@ -530,8 +555,8 @@ public:
 class EntReqTable {
 public:
     typedef struct {
-        int         reqType;
-        int         entType;
+        Request::Type reqType;
+        Entity::Type  entType;
         int         points;
         bool        useExtraPoints;
         bool        hasNormal;
@@ -541,14 +566,14 @@ public:
 
     static const TableEntry Table[];
 
-    static const char *DescriptionForRequest(int req);
+    static const char *DescriptionForRequest(Request::Type req);
     static void CopyEntityInfo(const TableEntry *te, int extraPoints,
-            int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance);
-    static bool GetRequestInfo(int req, int extraPoints,
-                    int *ent, int *pts, bool *hasNormal, bool *hasDistance);
-    static bool GetEntityInfo(int ent, int extraPoints,
-                    int *req, int *pts, bool *hasNormal, bool *hasDistance);
-    static int GetRequestForEntity(int ent);
+            Entity::Type *ent, Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
+    static bool GetRequestInfo(Request::Type req, int extraPoints,
+                    EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance);
+    static bool GetEntityInfo(EntityBase::Type ent, int extraPoints,
+                    Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
+    static Request::Type GetRequestForEntity(EntityBase::Type ent);
 };
 
 class Param {
@@ -583,7 +608,8 @@ public:
 
     static const hConstraint NO_CONSTRAINT;
 
-    enum {
+    enum class Type : uint32_t {
+        UNKNOWN                =  0,
         POINTS_COINCIDENT      =  20,
         PT_PT_DISTANCE         =  30,
         PT_PLANE_DISTANCE      =  31,
@@ -622,7 +648,7 @@ public:
         COMMENT                = 1000
     };
 
-    int         type;
+    Type        type;
 
     hGroup      group;
     hEntity     workplane;
@@ -707,12 +733,12 @@ public:
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
     static hConstraint AddConstraint(Constraint *c);
-    static void MenuConstrain(int id);
-    static void DeleteAllConstraintsFor(int type, hEntity entityA, hEntity ptA);
+    static void MenuConstrain(Command id);
+    static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 
     static hConstraint ConstrainCoincident(hEntity ptA, hEntity ptB);
-    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB, hEntity entityA);
-    static hConstraint Constrain(int type, hEntity ptA, hEntity ptB,
+    static hConstraint Constrain(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA);
+    static hConstraint Constrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                     hEntity entityA, hEntity entityB,
                                     bool other, bool other2);
 };
@@ -742,19 +768,6 @@ public:
     hStyle      h;
 
     enum {
-        STIPPLE_CONTINUOUS     = 0,
-        STIPPLE_DASH           = 1,
-        STIPPLE_LONG_DASH      = 2,
-        STIPPLE_DASH_DOT       = 3,
-        STIPPLE_DASH_DOT_DOT   = 4,
-        STIPPLE_DOT            = 5,
-        STIPPLE_FREEHAND       = 6,
-        STIPPLE_ZIGZAG         = 7,
-
-        LAST_STIPPLE           = STIPPLE_ZIGZAG
-    };
-
-    enum {
         // If an entity has no style, then it will be colored according to
         // whether the group that it's in is active or not, whether it's
         // construction or not, and so on.
@@ -781,28 +794,29 @@ public:
 
     std::string name;
 
-    enum {
-        UNITS_AS_PIXELS   = 0,
-        UNITS_AS_MM       = 1
+    enum class UnitsAs : uint32_t {
+        PIXELS   = 0,
+        MM       = 1
     };
     double      width;
-    int         widthAs;
+    UnitsAs     widthAs;
     double      textHeight;
-    int         textHeightAs;
-    enum {
-        ORIGIN_LEFT       = 0x01,
-        ORIGIN_RIGHT      = 0x02,
-        ORIGIN_BOT        = 0x04,
-        ORIGIN_TOP        = 0x08
+    UnitsAs     textHeightAs;
+    enum class TextOrigin : uint32_t {
+        NONE    = 0x00,
+        LEFT    = 0x01,
+        RIGHT   = 0x02,
+        BOT     = 0x04,
+        TOP     = 0x08
     };
-    int         textOrigin;
+    TextOrigin  textOrigin;
     double      textAngle;
     RgbaColor   color;
     bool        filled;
     RgbaColor   fillColor;
     bool        visible;
     bool        exportable;
-    int         stippleType;
+    StipplePattern stippleType;
     double      stippleScale;
     int         zIndex;
 
@@ -844,7 +858,7 @@ public:
     static double DefaultTextHeight();
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
-    static int PatternType(hStyle hs);
+    static StipplePattern PatternType(hStyle hs);
     static double StippleScaleMm(hStyle hs);
 
     std::string DescriptionString() const;
@@ -895,7 +909,7 @@ inline hConstraint hEquation::constraint() const
 // The format for entities stored on the clipboard.
 class ClipboardRequest {
 public:
-    int         type;
+    Request::Type type;
     int         extraPoints;
     hStyle      style;
     std::string str;

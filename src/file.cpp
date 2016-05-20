@@ -41,8 +41,8 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
     // And an empty group, for the first stuff the user draws.
     g.visible = true;
     g.name = "sketch-in-plane";
-    g.type = Group::DRAWING_WORKPLANE;
-    g.subtype = Group::WORKPLANE_BY_POINT_ORTHO;
+    g.type = Group::Type::DRAWING_WORKPLANE;
+    g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
     g.order = 1;
     g.predef.q = Quaternion::From(1, 0, 0, 0);
     hRequest hr = Request::HREQUEST_REFERENCE_XY;
@@ -59,7 +59,7 @@ void SolveSpaceUI::NewFile() {
     Group g = {};
     g.visible = true;
     g.name = "#references";
-    g.type = Group::DRAWING_3D;
+    g.type = Group::Type::DRAWING_3D;
     g.order = 0;
     g.h = Group::HGROUP_REFERENCES;
     SK.group.Add(&g);
@@ -67,7 +67,7 @@ void SolveSpaceUI::NewFile() {
     // Let's create three two-d coordinate systems, for the coordinate
     // planes; these are our references, present in every sketch.
     Request r = {};
-    r.type = Request::WORKPLANE;
+    r.type = Request::Type::WORKPLANE;
     r.group = Group::HGROUP_REFERENCES;
     r.workplane = Entity::FREE_IN_3D;
 
@@ -260,7 +260,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // the linkFileRel for our possibly-new filename.
     SS.ScheduleShowTW();
     SS.ReloadAllImported();
-    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
 
     fh = ssfopen(filename, "wb");
     if(!fh) {
@@ -460,7 +460,7 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
         } else if(strcmp(line, "AddGroup")==0) {
             // legacy files have a spurious dependency between linked groups
             // and their parent groups, remove
-            if(sv.g.type == Group::LINKED)
+            if(sv.g.type == Group::Type::LINKED)
                 sv.g.opA.v = 0;
 
             SK.group.Add(&(sv.g));
@@ -785,7 +785,7 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
     int i;
     for(i = 0; i < SK.group.n; i++) {
         Group *g = &(SK.group.elem[i]);
-        if(g->type != Group::LINKED) continue;
+        if(g->type != Group::Type::LINKED) continue;
 
         if(isalpha(g->linkFile[0]) && g->linkFile[1] == ':') {
             // Make sure that g->linkFileRel always contains a relative path

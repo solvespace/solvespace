@@ -752,21 +752,21 @@ void SCurve::Clear() {
 }
 
 SSurface *SCurve::GetSurfaceA(SShell *a, SShell *b) const {
-    if(source == FROM_A) {
+    if(source == Source::A) {
         return a->surface.FindById(surfA);
-    } else if(source == FROM_B) {
+    } else if(source == Source::B) {
         return b->surface.FindById(surfA);
-    } else if(source == FROM_INTERSECTION) {
+    } else if(source == Source::INTERSECTION) {
         return a->surface.FindById(surfA);
     } else ssassert(false, "Unexpected curve source");
 }
 
 SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) const {
-    if(source == FROM_A) {
+    if(source == Source::A) {
         return a->surface.FindById(surfB);
-    } else if(source == FROM_B) {
+    } else if(source == Source::B) {
         return b->surface.FindById(surfB);
-    } else if(source == FROM_INTERSECTION) {
+    } else if(source == Source::INTERSECTION) {
         return b->surface.FindById(surfB);
     } else ssassert(false, "Unexpected curve source");
 }

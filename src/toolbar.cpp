@@ -10,48 +10,48 @@
 static const char *SPACER = "";
 static struct {
     const char  *iconName;
-    int          menu;
+    Command       menu;
     const char  *tip;
     Pixmap       icon;
 } Toolbar[] = {
-    { "line",            GraphicsWindow::MNU_LINE_SEGMENT,   "Sketch line segment",                              {} },
-    { "rectangle",       GraphicsWindow::MNU_RECTANGLE,      "Sketch rectangle",                                 {} },
-    { "circle",          GraphicsWindow::MNU_CIRCLE,         "Sketch circle",                                    {} },
-    { "arc",             GraphicsWindow::MNU_ARC,            "Sketch arc of a circle",                           {} },
-    { "text",            GraphicsWindow::MNU_TTF_TEXT,       "Sketch curves from text in a TrueType font",       {} },
-    { "tangent-arc",     GraphicsWindow::MNU_TANGENT_ARC,    "Create tangent arc at selected point",             {} },
-    { "bezier",          GraphicsWindow::MNU_CUBIC,          "Sketch cubic Bezier spline",                       {} },
-    { "point",           GraphicsWindow::MNU_DATUM_POINT,    "Sketch datum point",                               {} },
-    { "construction",    GraphicsWindow::MNU_CONSTRUCTION,   "Toggle construction",                              {} },
-    { "trim",            GraphicsWindow::MNU_SPLIT_CURVES,   "Split lines / curves where they intersect",        {} },
-    { SPACER, 0, 0, {} },
+    { "line",            Command::LINE_SEGMENT,   "Sketch line segment",                              {} },
+    { "rectangle",       Command::RECTANGLE,      "Sketch rectangle",                                 {} },
+    { "circle",          Command::CIRCLE,         "Sketch circle",                                    {} },
+    { "arc",             Command::ARC,            "Sketch arc of a circle",                           {} },
+    { "text",            Command::TTF_TEXT,       "Sketch curves from text in a TrueType font",       {} },
+    { "tangent-arc",     Command::TANGENT_ARC,    "Create tangent arc at selected point",             {} },
+    { "bezier",          Command::CUBIC,          "Sketch cubic Bezier spline",                       {} },
+    { "point",           Command::DATUM_POINT,    "Sketch datum point",                               {} },
+    { "construction",    Command::CONSTRUCTION,   "Toggle construction",                              {} },
+    { "trim",            Command::SPLIT_CURVES,   "Split lines / curves where they intersect",        {} },
+    { SPACER, Command::NONE, 0, {} },
 
-    { "length",          GraphicsWindow::MNU_DISTANCE_DIA,   "Constrain distance / diameter / length",           {} },
-    { "angle",           GraphicsWindow::MNU_ANGLE,          "Constrain angle",                                  {} },
-    { "horiz",           GraphicsWindow::MNU_HORIZONTAL,     "Constrain to be horizontal",                       {} },
-    { "vert",            GraphicsWindow::MNU_VERTICAL,       "Constrain to be vertical",                         {} },
-    { "parallel",        GraphicsWindow::MNU_PARALLEL,       "Constrain to be parallel or tangent",              {} },
-    { "perpendicular",   GraphicsWindow::MNU_PERPENDICULAR,  "Constrain to be perpendicular",                    {} },
-    { "pointonx",        GraphicsWindow::MNU_ON_ENTITY,      "Constrain point on line / curve / plane / point",  {} },
-    { "symmetric",       GraphicsWindow::MNU_SYMMETRIC,      "Constrain symmetric",                              {} },
-    { "equal",           GraphicsWindow::MNU_EQUAL,          "Constrain equal length / radius / angle",          {} },
-    { "same-orientation",GraphicsWindow::MNU_ORIENTED_SAME,  "Constrain normals in same orientation",            {} },
-    { "other-supp",      GraphicsWindow::MNU_OTHER_ANGLE,    "Other supplementary angle",                        {} },
-    { "ref",             GraphicsWindow::MNU_REFERENCE,      "Toggle reference dimension",                       {} },
-    { SPACER, 0, 0, {} },
+    { "length",          Command::DISTANCE_DIA,   "Constrain distance / diameter / length",           {} },
+    { "angle",           Command::ANGLE,          "Constrain angle",                                  {} },
+    { "horiz",           Command::HORIZONTAL,     "Constrain to be horizontal",                       {} },
+    { "vert",            Command::VERTICAL,       "Constrain to be vertical",                         {} },
+    { "parallel",        Command::PARALLEL,       "Constrain to be parallel or tangent",              {} },
+    { "perpendicular",   Command::PERPENDICULAR,  "Constrain to be perpendicular",                    {} },
+    { "pointonx",        Command::ON_ENTITY,      "Constrain point on line / curve / plane / point",  {} },
+    { "symmetric",       Command::SYMMETRIC,      "Constrain symmetric",                              {} },
+    { "equal",           Command::EQUAL,          "Constrain equal length / radius / angle",          {} },
+    { "same-orientation",Command::ORIENTED_SAME,  "Constrain normals in same orientation",            {} },
+    { "other-supp",      Command::OTHER_ANGLE,    "Other supplementary angle",                        {} },
+    { "ref",             Command::REFERENCE,      "Toggle reference dimension",                       {} },
+    { SPACER, Command::NONE, 0, {} },
 
-    { "extrude",         GraphicsWindow::MNU_GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
-    { "lathe",           GraphicsWindow::MNU_GROUP_LATHE,    "New group rotating active sketch",                 {} },
-    { "step-rotate",     GraphicsWindow::MNU_GROUP_ROT,      "New group step and repeat rotating",               {} },
-    { "step-translate",  GraphicsWindow::MNU_GROUP_TRANS,    "New group step and repeat translating",            {} },
-    { "sketch-in-plane", GraphicsWindow::MNU_GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
-    { "sketch-in-3d",    GraphicsWindow::MNU_GROUP_3D,       "New group in 3d",                                  {} },
-    { "assemble",        GraphicsWindow::MNU_GROUP_LINK,     "New group linking / assembling file",              {} },
-    { SPACER, 0, 0, {} },
+    { "extrude",         Command::GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
+    { "lathe",           Command::GROUP_LATHE,    "New group rotating active sketch",                 {} },
+    { "step-rotate",     Command::GROUP_ROT,      "New group step and repeat rotating",               {} },
+    { "step-translate",  Command::GROUP_TRANS,    "New group step and repeat translating",            {} },
+    { "sketch-in-plane", Command::GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
+    { "sketch-in-3d",    Command::GROUP_3D,       "New group in 3d",                                  {} },
+    { "assemble",        Command::GROUP_LINK,     "New group linking / assembling file",              {} },
+    { SPACER, Command::NONE, 0, {} },
 
-    { "in3d",            GraphicsWindow::MNU_NEAREST_ISO,    "Nearest isometric view",                           {} },
-    { "ontoworkplane",   GraphicsWindow::MNU_ONTO_WORKPLANE, "Align view to active workplane",                   {} },
-    { NULL, 0, 0, {} }
+    { "in3d",            Command::NEAREST_ISO,    "Nearest isometric view",                           {} },
+    { "ontoworkplane",   Command::ONTO_WORKPLANE, "Align view to active workplane",                   {} },
+    { NULL, Command::NONE, 0, {} }
 };
 
 void GraphicsWindow::ToolbarDraw() {
@@ -62,16 +62,16 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    int nh = 0;
+    Command nh = Command::NONE;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
-    if(!withinToolbar) nh = 0;
+    if(!withinToolbar) nh = Command::NONE;
 
     if(nh != toolbarTooltipped) {
         // Don't let the tool tip move around if the mouse moves within the
         // same item.
         toolbarMouseX = x;
         toolbarMouseY = y;
-        toolbarTooltipped = 0;
+        toolbarTooltipped = Command::NONE;
     }
 
     if(nh != toolbarHovered) {
@@ -89,13 +89,13 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    int nh = -1;
+    Command nh = Command::NONE;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
     // They might have clicked within the toolbar, but not on a button.
-    if(withinToolbar && nh >= 0) {
+    if(withinToolbar && nh != Command::NONE) {
         for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
             if(nh == SS.GW.menu[i].id) {
-                (SS.GW.menu[i].fn)((GraphicsWindow::MenuId)SS.GW.menu[i].id);
+                (SS.GW.menu[i].fn)((Command)SS.GW.menu[i].id);
                 break;
             }
         }
@@ -104,7 +104,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
 }
 
 bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
-                                          bool paint, int *menuHit)
+                                          bool paint, Command *menuHit)
 {
     int i;
     int x = 17, y = (int)(height - 52);
@@ -176,7 +176,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             ssglDrawPixmap(Toolbar[i].icon, o, /*flip=*/true);
 
             if(toolbarHovered == Toolbar[i].menu ||
-               pending.operation == Toolbar[i].menu) {
+               pending.operation == (uint32_t)Toolbar[i].menu) {
                 // Highlight the hovered or pending item.
                 glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;

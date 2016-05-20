@@ -38,7 +38,7 @@ void TextWindow::ShowEditView() {
 }
 
 void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
-    SS.TW.edit.meaning = EDIT_VIEW_SCALE;
+    SS.TW.edit.meaning = Edit::VIEW_SCALE;
     SS.TW.ShowEditControl(3, ssprintf("%.3f", SS.GW.scale * SS.MmPerUnit()));
 }
 
@@ -49,20 +49,20 @@ void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
             SS.MmToString(-SS.GW.offset.y).c_str(),
             SS.MmToString(-SS.GW.offset.z).c_str());
 
-    SS.TW.edit.meaning = EDIT_VIEW_ORIGIN;
+    SS.TW.edit.meaning = Edit::VIEW_ORIGIN;
     SS.TW.ShowEditControl(3, edit_value);
 }
 
 void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
     std::string edit_value =
         ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projRight));
-    SS.TW.edit.meaning = EDIT_VIEW_PROJ_RIGHT;
+    SS.TW.edit.meaning = Edit::VIEW_PROJ_RIGHT;
     SS.TW.ShowEditControl(10, edit_value);
 }
 
 bool TextWindow::EditControlDoneForView(const char *s) {
     switch(edit.meaning) {
-        case EDIT_VIEW_SCALE: {
+        case Edit::VIEW_SCALE: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 double v =  e->Eval() / SS.MmPerUnit();
@@ -75,7 +75,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
             break;
         }
 
-        case EDIT_VIEW_ORIGIN: {
+        case Edit::VIEW_ORIGIN: {
             Vector pt;
             if(sscanf(s, "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) == 3) {
                 pt = pt.ScaledBy(SS.MmPerUnit());
@@ -86,17 +86,17 @@ bool TextWindow::EditControlDoneForView(const char *s) {
             break;
         }
 
-        case EDIT_VIEW_PROJ_RIGHT:
-        case EDIT_VIEW_PROJ_UP: {
+        case Edit::VIEW_PROJ_RIGHT:
+        case Edit::VIEW_PROJ_UP: {
             Vector pt;
             if(sscanf(s, "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) != 3) {
                 Error("Bad format: specify x, y, z");
                 break;
             }
-            if(edit.meaning == EDIT_VIEW_PROJ_RIGHT) {
+            if(edit.meaning == Edit::VIEW_PROJ_RIGHT) {
                 SS.GW.projRight = pt;
                 SS.GW.NormalizeProjectionVectors();
-                edit.meaning = EDIT_VIEW_PROJ_UP;
+                edit.meaning = Edit::VIEW_PROJ_UP;
                 HideEditControl();
                 ShowEditControl(10, ssprintf("%.3f, %.3f, %.3f", CO(SS.GW.projUp)),
                                 editControl.halfRow + 2);

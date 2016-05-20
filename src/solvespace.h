@@ -141,6 +141,8 @@ class Expr;
 class ExprVector;
 class ExprQuaternion;
 class RgbaColor;
+enum class Command : uint32_t;
+enum class ContextCommand : uint32_t;
 
 //================
 // From the platform-specific code.
@@ -153,9 +155,7 @@ class RgbaColor;
 FILE *ssfopen(const std::string &filename, const char *mode);
 void ssremove(const std::string &filename);
 
-#define MAX_RECENT 8
-#define RECENT_OPEN     (0xf000)
-#define RECENT_LINK     (0xf100)
+const size_t MAX_RECENT = 8;
 extern std::string RecentFile[MAX_RECENT];
 void RefreshRecentMenus();
 
@@ -223,6 +223,11 @@ const FileFilter CsvFileFilter[] = {
     { NULL, {} }
 };
 
+enum class Unit : uint32_t {
+    MM = 0,
+    INCHES
+};
+
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]);
 bool GetOpenFile(std::string *filename, const std::string &defExtension,
@@ -231,9 +236,9 @@ std::vector<std::string> GetFontFiles();
 
 void OpenWebsite(const char *url);
 
-void CheckMenuById(int id, bool checked);
-void RadioMenuById(int id, bool selected);
-void EnableMenuById(int id, bool enabled);
+void CheckMenuByCmd(Command id, bool checked);
+void RadioMenuByCmd(Command id, bool selected);
+void EnableMenuByCmd(Command id, bool enabled);
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
                              const std::string &str);
@@ -244,11 +249,9 @@ void HideTextEditControl();
 bool TextEditControlIsVisible();
 void MoveTextScrollbarTo(int pos, int maxPos, int page);
 
-#define CONTEXT_SUBMENU     (-1)
-#define CONTEXT_SEPARATOR   (-2)
-void AddContextMenuItem(const char *legend, int id);
+void AddContextMenuItem(const char *legend, ContextCommand id);
 void CreateContextSubmenu();
-int ShowContextMenu();
+ContextCommand ShowContextMenu();
 
 void ToggleMenuBar();
 bool MenuBarIsVisible();
@@ -308,6 +311,15 @@ class hParam;
 typedef IdList<Entity,hEntity> EntityList;
 typedef IdList<Param,hParam> ParamList;
 
+enum class SolveResult : uint32_t {
+    OKAY                     = 0,
+    DIDNT_CONVERGE           = 10,
+    REDUNDANT_OKAY           = 11,
+    REDUNDANT_DIDNT_CONVERGE = 12,
+    TOO_MANY_UNKNOWNS        = 20
+};
+
+
 #include "sketch.h"
 #include "ui.h"
 #include "expr.h"
@@ -362,7 +374,7 @@ double ssglStrFontSize(double h);
 double ssglStrWidth(const std::string &str, double h);
 void ssglLockColorTo(RgbaColor rgb);
 void ssglStippledLine(Vector a, Vector b, double width,
-                      int stippleType, double stippleScale, bool maybeFat);
+                      StipplePattern stippleType, double stippleScale, bool maybeFat);
 void ssglStippledLine(Vector a, Vector b, double width,
                       const char *stipplePattern, double stippleScale, bool maybeFat);
 void ssglFatLine(Vector a, Vector b, double width);
@@ -467,14 +479,7 @@ public:
 
     bool NewtonSolve(int tag);
 
-    enum {
-        SOLVED_OKAY              = 0,
-        DIDNT_CONVERGE           = 10,
-        REDUNDANT_OKAY           = 11,
-        REDUNDANT_DIDNT_CONVERGE = 12,
-        TOO_MANY_UNKNOWNS        = 20
-    };
-    int Solve(Group *g, int *dof, List<hConstraint> *bad,
+    SolveResult Solve(Group *g, int *dof, List<hConstraint> *bad,
                 bool andFindBad, bool andFindFree);
 
     void Clear();
@@ -543,7 +548,7 @@ public:
     std::vector<BezierPath>         paths;
     IdList<Constraint,hConstraint> *constraint;
 
-    static const char *lineTypeName(int stippleType);
+    static const char *lineTypeName(StipplePattern stippleType);
 
     bool OutputConstraints(IdList<Constraint,hConstraint> *constraint) override;
 
@@ -771,10 +776,6 @@ public:
         float   plungeFeed;
     }        gCode;
 
-    typedef enum {
-        UNIT_MM = 0,
-        UNIT_INCHES
-    } Unit;
     Unit     viewUnits;
     int      afterDecimalMm;
     int      afterDecimalInch;
@@ -830,7 +831,7 @@ public:
         Constraint   c;
         Style        s;
     } sv;
-    static void MenuFile(int id);
+    static void MenuFile(Command id);
 	bool Autosave();
     void RemoveAutosave();
     bool GetFilenameAndSave(bool saveAs);
@@ -862,7 +863,7 @@ public:
                             double cameraTan,
                             VectorFileWriter *out);
 
-    static void MenuAnalyze(int id);
+    static void MenuAnalyze(Command id);
 
     // Additional display stuff
     struct {
@@ -915,14 +916,14 @@ public:
     bool PruneRequests(hGroup hg);
     bool PruneConstraints(hGroup hg);
 
-    enum GenerateType {
-        GENERATE_DIRTY,
-        GENERATE_ALL,
-        GENERATE_REGEN,
-        GENERATE_UNTIL_ACTIVE,
+    enum class Generate : uint32_t {
+        DIRTY,
+        ALL,
+        REGEN,
+        UNTIL_ACTIVE,
     };
 
-    void GenerateAll(GenerateType type = GENERATE_DIRTY, bool andFindFree = false,
+    void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false,
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void MarkDraggedParams();
@@ -951,7 +952,7 @@ public:
     void ScheduleGenerateAll();
     void DoLater();
 
-    static void MenuHelp(int id);
+    static void MenuHelp(Command id);
 
     void Clear();
 

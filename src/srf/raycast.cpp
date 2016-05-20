@@ -361,8 +361,8 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
         // And that it lies inside our trim region
         Point2d dummy = { 0, 0 };
-        int c = (bsp) ? bsp->ClassifyPoint(puv, dummy, this) : SBspUv::OUTSIDE;
-        if(trimmed && c == SBspUv::OUTSIDE) {
+        SBspUv::Class c = (bsp) ? bsp->ClassifyPoint(puv, dummy, this) : SBspUv::Class::OUTSIDE;
+        if(trimmed && c == SBspUv::Class::OUTSIDE) {
             continue;
         }
 
@@ -372,7 +372,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         si.surfNormal = NormalAt(puv.x, puv.y);
         si.pinter = puv;
         si.srf = this;
-        si.onEdge = (c != SBspUv::INSIDE);
+        si.onEdge = (c != SBspUv::Class::INSIDE);
         l->Add(&si);
     }
 
@@ -391,7 +391,7 @@ void SShell::AllPointsIntersecting(Vector a, Vector b,
 
 
 
-int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
+SShell::Class SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
                            Vector edge_surf_n) const
 {
     double dot = inter_surf_n.DirectionCosineWith(edge_n);
@@ -400,14 +400,14 @@ int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
         // are coincident. Test the edge's surface normal
         // to see if it's with same or opposite normals.
         if(inter_surf_n.Dot(edge_surf_n) > 0) {
-            return COINC_SAME;
+            return Class::COINC_SAME;
         } else {
-            return COINC_OPP;
+            return Class::COINC_OPP;
         }
     } else if(dot > 0) {
-        return OUTSIDE;
+        return Class::OUTSIDE;
     } else {
-        return INSIDE;
+        return Class::INSIDE;
     }
 }
 
@@ -420,7 +420,7 @@ int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
 // using the closest intersection point. If the ray hits a surface on edge,
 // then just reattempt in a different random direction.
 //-----------------------------------------------------------------------------
-bool SShell::ClassifyEdge(int *indir, int *outdir,
+bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                           Vector ea, Vector eb,
                           Vector p,
                           Vector edge_n_in, Vector edge_n_out, Vector surf_n)
@@ -474,7 +474,7 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
             swap(inter_edge_n[0], inter_edge_n[1]);
         }
 
-        int coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? COINC_SAME : COINC_OPP;
+        Class coinc = (surf_n.Dot(inter_surf_n[0])) > 0 ? Class::COINC_SAME : Class::COINC_OPP;
 
         if(fabs(dotp[0]) < DOTP_TOL && fabs(dotp[1]) < DOTP_TOL) {
             // This is actually an edge on face case, just that the face
@@ -484,25 +484,25 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] > DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
                 *indir  = coinc;
-                *outdir = OUTSIDE;
+                *outdir = Class::OUTSIDE;
             } else {
-                *indir  = INSIDE;
+                *indir  = Class::INSIDE;
                 *outdir = coinc;
             }
         } else if(fabs(dotp[0]) < DOTP_TOL && dotp[1] < -DOTP_TOL) {
             if(edge_n_out.Dot(inter_edge_n[0]) > 0) {
                 *indir  = coinc;
-                *outdir = INSIDE;
+                *outdir = Class::INSIDE;
             } else {
-                *indir  = OUTSIDE;
+                *indir  = Class::OUTSIDE;
                 *outdir = coinc;
             }
         } else if(dotp[0] > DOTP_TOL && dotp[1] > DOTP_TOL) {
-            *indir  = INSIDE;
-            *outdir = OUTSIDE;
+            *indir  = Class::INSIDE;
+            *outdir = Class::OUTSIDE;
         } else if(dotp[0] < -DOTP_TOL && dotp[1] < -DOTP_TOL) {
-            *indir  = OUTSIDE;
-            *outdir = INSIDE;
+            *indir  = Class::OUTSIDE;
+            *outdir = Class::INSIDE;
         } else {
             // Edge is tangent to the shell at shell's edge, so can't be
             // a boundary of the surface.
@@ -527,8 +527,8 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
 
         if((pp.Minus(p)).Magnitude() > LENGTH_EPS) continue;
         Point2d dummy = { 0, 0 };
-        int c = (srf->bsp) ? srf->bsp->ClassifyPoint(puv, dummy, srf) : SBspUv::OUTSIDE;
-        if(c == SBspUv::OUTSIDE) continue;
+        SBspUv::Class c = (srf->bsp) ? srf->bsp->ClassifyPoint(puv, dummy, srf) : SBspUv::Class::OUTSIDE;
+        if(c == SBspUv::Class::OUTSIDE) continue;
 
         // Edge-on-face (unless edge-on-edge above superceded)
         Point2d pin, pout;
@@ -556,8 +556,8 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
             p.Minus(ray), p.Plus(ray), &l, false, true, false);
 
         // no intersections means it's outside
-        *indir  = OUTSIDE;
-        *outdir = OUTSIDE;
+        *indir  = Class::OUTSIDE;
+        *outdir = Class::OUTSIDE;
         double dmin = VERY_POSITIVE;
         bool onEdge = false;
         edge_inters = 0;
@@ -583,11 +583,11 @@ bool SShell::ClassifyEdge(int *indir, int *outdir,
                 // Edge does not lie on surface; either strictly inside
                 // or strictly outside
                 if((si->surfNormal).Dot(ray) > 0) {
-                    *indir  = INSIDE;
-                    *outdir = INSIDE;
+                    *indir  = Class::INSIDE;
+                    *outdir = Class::INSIDE;
                 } else {
-                    *indir  = OUTSIDE;
-                    *outdir = OUTSIDE;
+                    *indir  = Class::OUTSIDE;
+                    *outdir = Class::OUTSIDE;
                 }
                 onEdge = si->onEdge;
             }

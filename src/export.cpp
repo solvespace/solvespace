@@ -119,7 +119,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
     if(!out) return;
 
     SS.exportMode = true;
-    GenerateAll(GENERATE_ALL);
+    GenerateAll(Generate::ALL);
 
     SMesh *sm = NULL;
     if(SS.GW.showShaded || SS.GW.showHdnLines) {
@@ -332,7 +332,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         // Generate the edges where a curved surface turns from front-facing
         // to back-facing.
         if(SS.GW.showEdges) {
-            root->MakeCertainEdgesInto(sel, SKdNode::TURNING_EDGES,
+            root->MakeCertainEdgesInto(sel, EdgeKind::TURNING,
                                        /*coplanarIsInter=*/false, NULL, NULL,
                                        GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
         }
@@ -727,7 +727,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
     SS.exportMode = true;
-    GenerateAll(GENERATE_ALL);
+    GenerateAll(Generate::ALL);
 
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     g->GenerateDisplayItems();

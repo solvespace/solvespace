@@ -189,39 +189,40 @@ public:
     }
 
     void writeLTypes() override {
-        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
+        for(uint32_t i = 0; i <= (uint32_t)StipplePattern::LAST; i++) {
+            StipplePattern st = (StipplePattern)i;
             DRW_LType type;
             // LibreCAD requires the line type to have one of these exact names,
             // or otherwise it overwrites it with its own (continuous) style.
-            type.name = DxfFileWriter::lineTypeName(i);
+            type.name = DxfFileWriter::lineTypeName(st);
             double sw = 1.0;
-            switch(i) {
-                case Style::STIPPLE_CONTINUOUS:
+            switch(st) {
+                case StipplePattern::CONTINUOUS:
                     break;
 
-                case Style::STIPPLE_DASH:
+                case StipplePattern::DASH:
                     type.path.push_back(sw);
                     type.path.push_back(-sw);
                     break;
 
-                case Style::STIPPLE_LONG_DASH:
+                case StipplePattern::LONG_DASH:
                     type.path.push_back(sw * 2.0);
                     type.path.push_back(-sw);
                     break;
 
-                case Style::STIPPLE_DASH_DOT:
+                case StipplePattern::DASH_DOT:
                     type.path.push_back(sw);
                     type.path.push_back(-sw);
                     type.path.push_back(0.0);
                     type.path.push_back(-sw);
                     break;
 
-                case Style::STIPPLE_DOT:
+                case StipplePattern::DOT:
                     type.path.push_back(sw);
                     type.path.push_back(0.0);
                     break;
 
-                case Style::STIPPLE_DASH_DOT_DOT:
+                case StipplePattern::DASH_DOT_DOT:
                     type.path.push_back(sw);
                     type.path.push_back(-sw);
                     type.path.push_back(0.0);
@@ -294,7 +295,7 @@ public:
             for(c = writer->constraint->First(); c; c = writer->constraint->NextAfter(c)) {
                 if(!writer->NeedToOutput(c)) continue;
                 switch(c->type) {
-                    case Constraint::PT_PT_DISTANCE: {
+                    case Constraint::Type::PT_PT_DISTANCE: {
                         Vector ap = SK.GetEntity(c->ptA)->PointGetNum();
                         Vector bp = SK.GetEntity(c->ptB)->PointGetNum();
                         Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(c->disp.offset);
@@ -303,7 +304,7 @@ public:
                         break;
                     }
 
-                    case Constraint::PT_LINE_DISTANCE: {
+                    case Constraint::Type::PT_LINE_DISTANCE: {
                         Vector pt = SK.GetEntity(c->ptA)->PointGetNum();
                         Entity *line = SK.GetEntity(c->entityA);
                         Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
@@ -335,7 +336,7 @@ public:
                         break;
                     }
 
-                    case Constraint::DIAMETER: {
+                    case Constraint::Type::DIAMETER: {
                         Entity *circle = SK.GetEntity(c->entityA);
                         Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
                         Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
@@ -359,7 +360,7 @@ public:
                         break;
                     }
 
-                    case Constraint::ANGLE: {
+                    case Constraint::Type::ANGLE: {
                         Entity *a = SK.GetEntity(c->entityA);
                         Entity *b = SK.GetEntity(c->entityB);
 
@@ -411,7 +412,7 @@ public:
                         break;
                     }
 
-                    case Constraint::COMMENT: {
+                    case Constraint::Type::COMMENT: {
                         Style *st = SK.style.FindById(c->GetStyle());
                         writeText(xfrm(c->disp.offset), c->Label(),
                                   Style::TextHeight(c->GetStyle()) / SS.GW.scale,
@@ -627,7 +628,7 @@ public:
     }
 
     void writeText(Vector textp, const std::string &text,
-                   double height, double angle, int origin, hStyle hs) {
+                   double height, double angle, Style::TextOrigin origin, hStyle hs) {
         DRW_Text txt;
         assignEntityDefaults(&txt, hs);
         txt.layer = "text";
@@ -638,15 +639,15 @@ public:
         txt.height = height;
         txt.angle = angle;
         txt.alignH = DRW_Text::HCenter;
-        if(origin & Style::ORIGIN_LEFT) {
+        if((uint32_t)origin & (uint32_t)Style::TextOrigin::LEFT) {
             txt.alignH = DRW_Text::HLeft;
-        } else if(origin & Style::ORIGIN_RIGHT) {
+        } else if((uint32_t)origin & (uint32_t)Style::TextOrigin::RIGHT) {
             txt.alignH = DRW_Text::HRight;
         }
         txt.alignV = DRW_Text::VMiddle;
-        if(origin & Style::ORIGIN_TOP) {
+        if((uint32_t)origin & (uint32_t)Style::TextOrigin::TOP) {
             txt.alignV = DRW_Text::VTop;
-        } else if(origin & Style::ORIGIN_BOT) {
+        } else if((uint32_t)origin & (uint32_t)Style::TextOrigin::BOT) {
             txt.alignV = DRW_Text::VBaseLine;
         }
         dxf->writeText(&txt);
@@ -690,26 +691,26 @@ void DxfFileWriter::FinishAndCloseFile() {
 
 bool DxfFileWriter::NeedToOutput(Constraint *c) {
     switch(c->type) {
-        case Constraint::PT_PT_DISTANCE:
-        case Constraint::PT_LINE_DISTANCE:
-        case Constraint::DIAMETER:
-        case Constraint::ANGLE:
-        case Constraint::COMMENT:
+        case Constraint::Type::PT_PT_DISTANCE:
+        case Constraint::Type::PT_LINE_DISTANCE:
+        case Constraint::Type::DIAMETER:
+        case Constraint::Type::ANGLE:
+        case Constraint::Type::COMMENT:
             return c->IsVisible();
     }
     return false;
 }
 
-const char *DxfFileWriter::lineTypeName(int stippleType) {
+const char *DxfFileWriter::lineTypeName(StipplePattern stippleType) {
     switch(stippleType) {
-        case Style::STIPPLE_CONTINUOUS:   return "CONTINUOUS";
-        case Style::STIPPLE_DASH:         return "DASHED";
-        case Style::STIPPLE_LONG_DASH:    return "DASHEDX2";
-        case Style::STIPPLE_DASH_DOT:     return "DASHDOT";
-        case Style::STIPPLE_DASH_DOT_DOT: return "DIVIDE";
-        case Style::STIPPLE_DOT:          return "DOT";
-        case Style::STIPPLE_FREEHAND:     return "CONTINUOUS";
-        case Style::STIPPLE_ZIGZAG:       return "CONTINUOUS";
+        case StipplePattern::CONTINUOUS:   return "CONTINUOUS";
+        case StipplePattern::DASH:         return "DASHED";
+        case StipplePattern::LONG_DASH:    return "DASHEDX2";
+        case StipplePattern::DASH_DOT:     return "DASHDOT";
+        case StipplePattern::DASH_DOT_DOT: return "DIVIDE";
+        case StipplePattern::DOT:          return "DOT";
+        case StipplePattern::FREEHAND:     return "CONTINUOUS";
+        case StipplePattern::ZIGZAG:       return "CONTINUOUS";
     }
 
     return "CONTINUOUS";
@@ -719,7 +720,7 @@ const char *DxfFileWriter::lineTypeName(int stippleType) {
 // Routines for EPS output
 //-----------------------------------------------------------------------------
 
-static std::string MakeStipplePattern(int pattern, double scale, char delimiter,
+static std::string MakeStipplePattern(StipplePattern pattern, double scale, char delimiter,
                                       bool inkscapeWorkaround = false) {
     scale /= 2.0;
 
@@ -729,27 +730,27 @@ static std::string MakeStipplePattern(int pattern, double scale, char delimiter,
 
     std::string result;
     switch(pattern) {
-        case Style::STIPPLE_CONTINUOUS:
-        case Style::STIPPLE_FREEHAND:
-        case Style::STIPPLE_ZIGZAG:
+        case StipplePattern::CONTINUOUS:
+        case StipplePattern::FREEHAND:
+        case StipplePattern::ZIGZAG:
             return "";
 
-        case Style::STIPPLE_DASH:
+        case StipplePattern::DASH:
             result = ssprintf("%.3f_%.3f", scale, scale);
             break;
-        case Style::STIPPLE_DASH_DOT:
+        case StipplePattern::DASH_DOT:
             result = ssprintf("%.3f_%.3f_%.6f_%.3f",
                               scale, scale * 0.5, zero, scale * 0.5);
             break;
-        case Style::STIPPLE_DASH_DOT_DOT:
+        case StipplePattern::DASH_DOT_DOT:
             result = ssprintf("%.3f_%.3f_%.6f_%.3f_%.6f_%.3f",
                               scale, scale * 0.5, zero,
                               scale * 0.5, scale * 0.5, zero);
             break;
-        case Style::STIPPLE_DOT:
+        case StipplePattern::DOT:
             result = ssprintf("%.6f_%.3f", zero, scale * 0.5);
             break;
-        case Style::STIPPLE_LONG_DASH:
+        case StipplePattern::LONG_DASH:
             result = ssprintf("%.3f_%.3f", scale * 2.0, scale * 0.5);
             break;
 
@@ -787,7 +788,7 @@ void EpsFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
 void EpsFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                                bool filled, RgbaColor fillRgb, hStyle hs)
 {
-    int pattern = Style::PatternType(hs);
+    StipplePattern pattern = Style::PatternType(hs);
     double stippleScale = MmToPts(Style::StippleScaleMm(hs));
 
     fprintf(f, "    %.3f setlinewidth\r\n"
@@ -798,8 +799,7 @@ void EpsFileWriter::FinishPath(RgbaColor strokeRgb, double lineWidth,
                "    gsave stroke grestore\r\n",
         MmToPts(lineWidth),
         strokeRgb.redF(), strokeRgb.greenF(), strokeRgb.blueF(),
-        MakeStipplePattern(pattern, stippleScale, ' ').c_str()
-        );
+        MakeStipplePattern(pattern, stippleScale, ' ').c_str());
     if(filled) {
         fprintf(f, "    %.3f %.3f %.3f setrgbcolor\r\n"
                    "    gsave fill grestore\r\n",
@@ -1012,7 +1012,7 @@ void PdfFileWriter::FinishAndCloseFile() {
 void PdfFileWriter::StartPath(RgbaColor strokeRgb, double lineWidth,
                               bool filled, RgbaColor fillRgb, hStyle hs)
 {
-    int pattern = Style::PatternType(hs);
+    StipplePattern pattern = Style::PatternType(hs);
     double stippleScale = MmToPts(Style::StippleScaleMm(hs));
 
     fprintf(f, "1 J 1 j " // round endcaps and joins
@@ -1113,7 +1113,7 @@ void SvgFileWriter::StartFile() {
     for(int i = 0; i < SK.style.n; i++) {
         Style *s = &SK.style.elem[i];
         RgbaColor strokeRgb = Style::Color(s->h, true);
-        int pattern = Style::PatternType(s->h);
+        StipplePattern pattern = Style::PatternType(s->h);
         double stippleScale = Style::StippleScaleMm(s->h);
 
         fprintf(f, ".s%x {\r\n", s->h.v);

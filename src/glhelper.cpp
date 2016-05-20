@@ -115,18 +115,18 @@ void ssglPoint(Vector p, double pixelSize)
 }
 
 void ssglStippledLine(Vector a, Vector b, double width,
-                      int stippleType, double stippleScale, bool maybeFat)
+                      StipplePattern stippleType, double stippleScale, bool maybeFat)
 {
     const char *stipplePattern;
     switch(stippleType) {
-        case Style::STIPPLE_CONTINUOUS:    ssglLine(a, b, width, maybeFat); return;
-        case Style::STIPPLE_DASH:          stipplePattern = "- ";  break;
-        case Style::STIPPLE_LONG_DASH:     stipplePattern = "_ ";  break;
-        case Style::STIPPLE_DASH_DOT:      stipplePattern = "-.";  break;
-        case Style::STIPPLE_DASH_DOT_DOT:  stipplePattern = "-.."; break;
-        case Style::STIPPLE_DOT:           stipplePattern = ".";   break;
-        case Style::STIPPLE_FREEHAND:      stipplePattern = "~";   break;
-        case Style::STIPPLE_ZIGZAG:        stipplePattern = "~__"; break;
+        case StipplePattern::CONTINUOUS:    ssglLine(a, b, width, maybeFat); return;
+        case StipplePattern::DASH:          stipplePattern = "- ";  break;
+        case StipplePattern::LONG_DASH:     stipplePattern = "_ ";  break;
+        case StipplePattern::DASH_DOT:      stipplePattern = "-.";  break;
+        case StipplePattern::DASH_DOT_DOT:  stipplePattern = "-.."; break;
+        case StipplePattern::DOT:           stipplePattern = ".";   break;
+        case StipplePattern::FREEHAND:      stipplePattern = "~";   break;
+        case StipplePattern::ZIGZAG:        stipplePattern = "~__"; break;
         default: ssassert(false, "Unexpected stipple pattern");
     }
     ssglStippledLine(a, b, width, stipplePattern, stippleScale, maybeFat);
@@ -451,7 +451,7 @@ void ssglDebugPolygon(SPolygon *p)
 void ssglDrawEdges(SEdgeList *el, bool endpointsToo, hStyle hs)
 {
     double lineWidth = Style::Width(hs);
-    int stippleType = Style::PatternType(hs);
+    StipplePattern stippleType = Style::PatternType(hs);
     double stippleScale = Style::StippleScaleMm(hs);
     ssglLineWidth(float(lineWidth));
     ssglColorRGB(Style::Color(hs));
@@ -476,7 +476,7 @@ void ssglDrawEdges(SEdgeList *el, bool endpointsToo, hStyle hs)
 void ssglDrawOutlines(SOutlineList *sol, Vector projDir, hStyle hs)
 {
     double lineWidth = Style::Width(hs);
-    int stippleType = Style::PatternType(hs);
+    StipplePattern stippleType = Style::PatternType(hs);
     double stippleScale = Style::StippleScaleMm(hs);
     ssglLineWidth((float)lineWidth);
     ssglColorRGB(Style::Color(hs));

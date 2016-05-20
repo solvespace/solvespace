@@ -261,17 +261,17 @@ void GraphicsWindow::GroupSelection() {
 
             // And some aux counts too
             switch(e->type) {
-                case Entity::WORKPLANE:      (gs.workplanes)++; break;
-                case Entity::LINE_SEGMENT:   (gs.lineSegments)++; break;
-                case Entity::CUBIC:          (gs.cubics)++; break;
-                case Entity::CUBIC_PERIODIC: (gs.periodicCubics)++; break;
+                case Entity::Type::WORKPLANE:      (gs.workplanes)++; break;
+                case Entity::Type::LINE_SEGMENT:   (gs.lineSegments)++; break;
+                case Entity::Type::CUBIC:          (gs.cubics)++; break;
+                case Entity::Type::CUBIC_PERIODIC: (gs.periodicCubics)++; break;
 
-                case Entity::ARC_OF_CIRCLE:
+                case Entity::Type::ARC_OF_CIRCLE:
                     (gs.circlesOrArcs)++;
                     (gs.arcs)++;
                     break;
 
-                case Entity::CIRCLE:        (gs.circlesOrArcs)++; break;
+                case Entity::Type::CIRCLE:        (gs.circlesOrArcs)++; break;
             }
         }
         if(s->constraint.v) {
@@ -314,7 +314,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
             if(!e->IsPoint()) continue;
             if(!e->h.isFromRequest()) continue;
             Request *r = SK.GetRequest(e->h.request());
-            if(r->type != Request::CUBIC) continue;
+            if(r->type != Request::Type::CUBIC) continue;
             if(r->extraPoints < 2) continue;
             if(e->h.v != r->h.entity(1).v) continue;
         }
@@ -681,7 +681,7 @@ nogrid:;
     // Draw the "pending" constraint, i.e. a constraint that would be
     // placed on a line that is almost horizontal or vertical
     if(SS.GW.pending.operation == DRAGGING_NEW_LINE_POINT) {
-        if(SS.GW.pending.suggestion != GraphicsWindow::SUGGESTED_NONE) {
+        if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
             Constraint c = {};
             c.group = SS.GW.activeGroup;
             c.workplane = SS.GW.ActiveWorkplane();

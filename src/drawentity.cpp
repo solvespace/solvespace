@@ -62,13 +62,13 @@ void Entity::DrawAll(bool drawAsHidden) {
             // then we draw big colored squares over the points that are
             // free to move.
             bool free = false;
-            if(e->type == POINT_IN_3D) {
+            if(e->type == Type::POINT_IN_3D) {
                 Param *px = SK.GetParam(e->param[0]),
                       *py = SK.GetParam(e->param[1]),
                       *pz = SK.GetParam(e->param[2]);
 
                 free = (px->free) || (py->free) || (pz->free);
-            } else if(e->type == POINT_IN_2D) {
+            } else if(e->type == Type::POINT_IN_2D) {
                 Param *pu = SK.GetParam(e->param[0]),
                       *pv = SK.GetParam(e->param[1]);
 
@@ -197,27 +197,27 @@ double Entity::GetDistance(Point2d mp) {
 
 Vector Entity::GetReferencePos() {
     switch(type) {
-        case POINT_N_COPY:
-        case POINT_N_TRANS:
-        case POINT_N_ROT_TRANS:
-        case POINT_N_ROT_AA:
-        case POINT_IN_3D:
-        case POINT_IN_2D:
+        case Type::POINT_N_COPY:
+        case Type::POINT_N_TRANS:
+        case Type::POINT_N_ROT_TRANS:
+        case Type::POINT_N_ROT_AA:
+        case Type::POINT_IN_3D:
+        case Type::POINT_IN_2D:
             return PointGetNum();
 
-        case NORMAL_N_COPY:
-        case NORMAL_N_ROT:
-        case NORMAL_N_ROT_AA:
-        case NORMAL_IN_3D:
-        case NORMAL_IN_2D:
-        case CIRCLE:
-        case ARC_OF_CIRCLE:
-        case CUBIC:
-        case CUBIC_PERIODIC:
-        case TTF_TEXT:
+        case Type::NORMAL_N_COPY:
+        case Type::NORMAL_N_ROT:
+        case Type::NORMAL_N_ROT_AA:
+        case Type::NORMAL_IN_3D:
+        case Type::NORMAL_IN_2D:
+        case Type::CIRCLE:
+        case Type::ARC_OF_CIRCLE:
+        case Type::CUBIC:
+        case Type::CUBIC_PERIODIC:
+        case Type::TTF_TEXT:
             return SK.GetEntity(point[0])->PointGetNum();
 
-        case LINE_SEGMENT: {
+        case Type::LINE_SEGMENT: {
             Vector a = SK.GetEntity(point[0])->PointGetNum(),
                    b = SK.GetEntity(point[1])->PointGetNum();
             return b.Plus(a.Minus(b).ScaledBy(0.5));
@@ -270,7 +270,7 @@ bool Entity::IsVisible() const {
 void Entity::CalculateNumerical(bool forExport) {
     if(IsPoint()) actPoint = PointGetNum();
     if(IsNormal()) actNormal = NormalGetNum();
-    if(type == DISTANCE || type == DISTANCE_N_COPY) {
+    if(type == Type::DISTANCE || type == Type::DISTANCE_N_COPY) {
         actDistance = DistanceGetNum();
     }
     if(IsFace()) {
@@ -435,7 +435,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
     int i = sbl->l.n;
 
     switch(type) {
-        case LINE_SEGMENT: {
+        case Type::LINE_SEGMENT: {
             Vector a = SK.GetEntity(point[0])->PointGetNum();
             Vector b = SK.GetEntity(point[1])->PointGetNum();
             sb = SBezier::From(a, b);
@@ -443,16 +443,16 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             sbl->l.Add(&sb);
             break;
         }
-        case CUBIC:
+        case Type::CUBIC:
             ComputeInterpolatingSpline(sbl, false);
             break;
 
-        case CUBIC_PERIODIC:
+        case Type::CUBIC_PERIODIC:
             ComputeInterpolatingSpline(sbl, true);
             break;
 
-        case CIRCLE:
-        case ARC_OF_CIRCLE: {
+        case Type::CIRCLE:
+        case Type::ARC_OF_CIRCLE: {
             Vector center = SK.GetEntity(point[0])->PointGetNum();
             Quaternion q = SK.GetEntity(normal)->NormalGetNum();
             Vector u = q.RotationU(), v = q.RotationV();
@@ -465,7 +465,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
                 break;
             }
 
-            if(type == CIRCLE) {
+            if(type == Type::CIRCLE) {
                 thetaa = 0;
                 thetab = 2*PI;
                 dtheta = 2*PI;
@@ -513,7 +513,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             break;
         }
 
-        case TTF_TEXT: {
+        case Type::TTF_TEXT: {
             Vector topLeft = SK.GetEntity(point[0])->PointGetNum();
             Vector botLeft = SK.GetEntity(point[1])->PointGetNum();
             Vector n = Normal()->NormalN();
@@ -548,12 +548,12 @@ void Entity::DrawOrGetDistance() {
     if(!IsVisible()) return;
 
     switch(type) {
-        case POINT_N_COPY:
-        case POINT_N_TRANS:
-        case POINT_N_ROT_TRANS:
-        case POINT_N_ROT_AA:
-        case POINT_IN_3D:
-        case POINT_IN_2D: {
+        case Type::POINT_N_COPY:
+        case Type::POINT_N_TRANS:
+        case Type::POINT_N_ROT_TRANS:
+        case Type::POINT_N_ROT_AA:
+        case Type::POINT_IN_3D:
+        case Type::POINT_IN_2D: {
             Vector v = PointGetNum();
 
             if(dogd.drawing) {
@@ -577,11 +577,11 @@ void Entity::DrawOrGetDistance() {
             break;
         }
 
-        case NORMAL_N_COPY:
-        case NORMAL_N_ROT:
-        case NORMAL_N_ROT_AA:
-        case NORMAL_IN_3D:
-        case NORMAL_IN_2D: {
+        case Type::NORMAL_N_COPY:
+        case Type::NORMAL_N_ROT:
+        case Type::NORMAL_N_ROT_AA:
+        case Type::NORMAL_IN_3D:
+        case Type::NORMAL_IN_2D: {
             int i;
             for(i = 0; i < 2; i++) {
                 if(i == 0 && !SS.GW.showNormals) {
@@ -646,12 +646,12 @@ void Entity::DrawOrGetDistance() {
             break;
         }
 
-        case DISTANCE:
-        case DISTANCE_N_COPY:
+        case Type::DISTANCE:
+        case Type::DISTANCE_N_COPY:
             // These are used only as data structures, nothing to display.
             break;
 
-        case WORKPLANE: {
+        case Type::WORKPLANE: {
             Vector p;
             p = SK.GetEntity(point[0])->PointGetNum();
 
@@ -706,20 +706,20 @@ void Entity::DrawOrGetDistance() {
             break;
         }
 
-        case LINE_SEGMENT:
-        case CIRCLE:
-        case ARC_OF_CIRCLE:
-        case CUBIC:
-        case CUBIC_PERIODIC:
-        case TTF_TEXT:
+        case Type::LINE_SEGMENT:
+        case Type::CIRCLE:
+        case Type::ARC_OF_CIRCLE:
+        case Type::CUBIC:
+        case Type::CUBIC_PERIODIC:
+        case Type::TTF_TEXT:
             // Nothing but the curve(s).
             break;
 
-        case FACE_NORMAL_PT:
-        case FACE_XPROD:
-        case FACE_N_ROT_TRANS:
-        case FACE_N_TRANS:
-        case FACE_N_ROT_AA:
+        case Type::FACE_NORMAL_PT:
+        case Type::FACE_XPROD:
+        case Type::FACE_N_ROT_TRANS:
+        case Type::FACE_N_TRANS:
+        case Type::FACE_N_ROT_AA:
             // Do nothing; these are drawn with the triangle mesh
             break;
 

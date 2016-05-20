@@ -8,70 +8,70 @@
 
 void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
     SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));
-    SS.TW.edit.meaning = EDIT_LIGHT_DIRECTION;
+    SS.TW.edit.meaning = Edit::LIGHT_DIRECTION;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeLightIntensity(int link, uint32_t v) {
     SS.TW.ShowEditControl(31, ssprintf("%.2f", SS.lightIntensity[v]));
-    SS.TW.edit.meaning = EDIT_LIGHT_INTENSITY;
+    SS.TW.edit.meaning = Edit::LIGHT_INTENSITY;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeColor(int link, uint32_t v) {
     SS.TW.ShowEditControlWithColorPicker(13, SS.modelColor[v]);
 
-    SS.TW.edit.meaning = EDIT_COLOR;
+    SS.TW.edit.meaning = Edit::COLOR;
     SS.TW.edit.i = v;
 }
 
 void TextWindow::ScreenChangeChordTolerance(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%lg", SS.chordTol));
-    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
+    SS.TW.edit.meaning = Edit::CHORD_TOLERANCE;
     SS.TW.edit.i = 0;
 }
 
 void TextWindow::ScreenChangeMaxSegments(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%d", SS.maxSegments));
-    SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
+    SS.TW.edit.meaning = Edit::MAX_SEGMENTS;
     SS.TW.edit.i = 0;
 }
 
 void TextWindow::ScreenChangeExportChordTolerance(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%lg", SS.exportChordTol));
-    SS.TW.edit.meaning = EDIT_CHORD_TOLERANCE;
+    SS.TW.edit.meaning = Edit::CHORD_TOLERANCE;
     SS.TW.edit.i = 1;
 }
 
 void TextWindow::ScreenChangeExportMaxSegments(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%d", SS.exportMaxSegments));
-    SS.TW.edit.meaning = EDIT_MAX_SEGMENTS;
+    SS.TW.edit.meaning = Edit::MAX_SEGMENTS;
     SS.TW.edit.i = 1;
 }
 
 void TextWindow::ScreenChangeCameraTangent(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%.3f", 1000*SS.cameraTangent));
-    SS.TW.edit.meaning = EDIT_CAMERA_TANGENT;
+    SS.TW.edit.meaning = Edit::CAMERA_TANGENT;
 }
 
 void TextWindow::ScreenChangeGridSpacing(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, SS.MmToString(SS.gridSpacing));
-    SS.TW.edit.meaning = EDIT_GRID_SPACING;
+    SS.TW.edit.meaning = Edit::GRID_SPACING;
 }
 
 void TextWindow::ScreenChangeDigitsAfterDecimal(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, ssprintf("%d", SS.UnitDigitsAfterDecimal()));
-    SS.TW.edit.meaning = EDIT_DIGITS_AFTER_DECIMAL;
+    SS.TW.edit.meaning = Edit::DIGITS_AFTER_DECIMAL;
 }
 
 void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
     SS.TW.ShowEditControl(5, ssprintf("%.3f", (double)SS.exportScale));
-    SS.TW.edit.meaning = EDIT_EXPORT_SCALE;
+    SS.TW.edit.meaning = Edit::EXPORT_SCALE;
 }
 
 void TextWindow::ScreenChangeExportOffset(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, SS.MmToString(SS.exportOffset));
-    SS.TW.edit.meaning = EDIT_EXPORT_OFFSET;
+    SS.TW.edit.meaning = Edit::EXPORT_OFFSET;
 }
 
 void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
@@ -125,7 +125,7 @@ void TextWindow::ScreenChangeCanvasSize(int link, uint32_t v) {
     int col = 13;
     if(v < 10) col = 11;
     SS.TW.ShowEditControl(col, SS.MmToString(d));
-    SS.TW.edit.meaning = EDIT_CANVAS_SIZE;
+    SS.TW.edit.meaning = Edit::CANVAS_SIZE;
     SS.TW.edit.i = v;
 }
 
@@ -133,22 +133,22 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
     std::string buf;
     switch(link) {
         case 'd':
-            SS.TW.edit.meaning = EDIT_G_CODE_DEPTH;
+            SS.TW.edit.meaning = Edit::G_CODE_DEPTH;
             buf += SS.MmToString(SS.gCode.depth);
             break;
 
         case 's':
-            SS.TW.edit.meaning = EDIT_G_CODE_PASSES;
+            SS.TW.edit.meaning = Edit::G_CODE_PASSES;
             buf += std::to_string(SS.gCode.passes);
             break;
 
         case 'F':
-            SS.TW.edit.meaning = EDIT_G_CODE_FEED;
+            SS.TW.edit.meaning = Edit::G_CODE_FEED;
             buf += SS.MmToString(SS.gCode.feed);
             break;
 
         case 'P':
-            SS.TW.edit.meaning = EDIT_G_CODE_PLUNGE_FEED;
+            SS.TW.edit.meaning = Edit::G_CODE_PLUNGE_FEED;
             buf += SS.MmToString(SS.gCode.plungeFeed);
             break;
     }
@@ -157,7 +157,7 @@ void TextWindow::ScreenChangeGCodeParameter(int link, uint32_t v) {
 
 void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
     SS.TW.ShowEditControl(3, std::to_string(SS.autosaveInterval));
-    SS.TW.edit.meaning = EDIT_AUTOSAVE_INTERVAL;
+    SS.TW.edit.meaning = Edit::AUTOSAVE_INTERVAL;
 }
 
 void TextWindow::ShowConfiguration() {
@@ -310,12 +310,12 @@ void TextWindow::ShowConfiguration() {
 
 bool TextWindow::EditControlDoneForConfiguration(const char *s) {
     switch(edit.meaning) {
-        case EDIT_LIGHT_INTENSITY:
+        case Edit::LIGHT_INTENSITY:
             SS.lightIntensity[edit.i] = min(1.0, max(0.0, atof(s)));
             InvalidateGraphics();
             break;
 
-        case EDIT_LIGHT_DIRECTION: {
+        case Edit::LIGHT_DIRECTION: {
             double x, y, z;
             if(sscanf(s, "%lf, %lf, %lf", &x, &y, &z)==3) {
                 SS.lightDir[edit.i] = Vector::From(x, y, z);
@@ -325,7 +325,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             InvalidateGraphics();
             break;
         }
-        case EDIT_COLOR: {
+        case Edit::COLOR: {
             Vector rgb;
             if(sscanf(s, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
                 rgb = rgb.ClampWithin(0, 1);
@@ -335,25 +335,25 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             }
             break;
         }
-        case EDIT_CHORD_TOLERANCE: {
+        case Edit::CHORD_TOLERANCE: {
             if(edit.i == 0) {
                 SS.chordTol = max(0.0, atof(s));
-                SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
             } else {
                 SS.exportChordTol = max(0.0, atof(s));
             }
             break;
         }
-        case EDIT_MAX_SEGMENTS: {
+        case Edit::MAX_SEGMENTS: {
             if(edit.i == 0) {
                 SS.maxSegments = min(1000, max(7, atoi(s)));
-                SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+                SS.GenerateAll(SolveSpaceUI::Generate::ALL);
             } else {
                 SS.exportMaxSegments = min(1000, max(7, atoi(s)));
             }
             break;
         }
-        case EDIT_CAMERA_TANGENT: {
+        case Edit::CAMERA_TANGENT: {
             SS.cameraTangent = (min(2.0, max(0.0, atof(s))))/1000.0;
             if(!SS.usePerspectiveProj) {
                 Message("The perspective factor will have no effect until you "
@@ -362,12 +362,12 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             InvalidateGraphics();
             break;
         }
-        case EDIT_GRID_SPACING: {
+        case Edit::GRID_SPACING: {
             SS.gridSpacing = (float)min(1e4, max(1e-3, SS.StringToMm(s)));
             InvalidateGraphics();
             break;
         }
-        case EDIT_DIGITS_AFTER_DECIMAL: {
+        case Edit::DIGITS_AFTER_DECIMAL: {
             int v = atoi(s);
             if(v < 0 || v > 8) {
                 Error("Specify between 0 and 8 digits after the decimal.");
@@ -377,7 +377,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             InvalidateGraphics();
             break;
         }
-        case EDIT_EXPORT_SCALE: {
+        case Edit::EXPORT_SCALE: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = e->Eval();
@@ -389,7 +389,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             }
             break;
         }
-        case EDIT_EXPORT_OFFSET: {
+        case Edit::EXPORT_OFFSET: {
             Expr *e = Expr::From(s, true);
             if(e) {
                 double ev = SS.ExprToMm(e);
@@ -401,7 +401,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             }
             break;
         }
-        case EDIT_CANVAS_SIZE: {
+        case Edit::CANVAS_SIZE: {
             Expr *e = Expr::From(s, true);
             if(!e) {
                 break;
@@ -420,28 +420,28 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             }
             break;
         }
-        case EDIT_G_CODE_DEPTH: {
+        case Edit::G_CODE_DEPTH: {
             Expr *e = Expr::From(s, true);
             if(e) SS.gCode.depth = (float)SS.ExprToMm(e);
             break;
         }
-        case EDIT_G_CODE_PASSES: {
+        case Edit::G_CODE_PASSES: {
             Expr *e = Expr::From(s, true);
             if(e) SS.gCode.passes = (int)(e->Eval());
             SS.gCode.passes = max(1, min(1000, SS.gCode.passes));
             break;
         }
-        case EDIT_G_CODE_FEED: {
+        case Edit::G_CODE_FEED: {
             Expr *e = Expr::From(s, true);
             if(e) SS.gCode.feed = (float)SS.ExprToMm(e);
             break;
         }
-        case EDIT_G_CODE_PLUNGE_FEED: {
+        case Edit::G_CODE_PLUNGE_FEED: {
             Expr *e = Expr::From(s, true);
             if(e) SS.gCode.plungeFeed = (float)SS.ExprToMm(e);
             break;
         }
-        case EDIT_AUTOSAVE_INTERVAL: {
+        case Edit::AUTOSAVE_INTERVAL: {
             int interval;
             if(sscanf(s, "%d", &interval)==1) {
                 if(interval >= 1) {

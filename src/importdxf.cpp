@@ -124,7 +124,7 @@ public:
         if(reversed) std::swap(p0, p1);
         blockTransformArc(&center, &p0, &p1);
 
-        hRequest hr = SS.GW.AddRequest(Request::ARC_OF_CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false);
         SK.GetEntity(hr.entity(1))->PointForceTo(center);
         SK.GetEntity(hr.entity(2))->PointForceTo(p0);
         SK.GetEntity(hr.entity(3))->PointForceTo(p1);
@@ -205,11 +205,11 @@ public:
         }
     }
 
-    int dxfAlignToOrigin(DRW_Text::HAlign alignH, DRW_Text::VAlign alignV) {
-        int origin = 0;
+    Style::TextOrigin dxfAlignToOrigin(DRW_Text::HAlign alignH, DRW_Text::VAlign alignV) {
+        uint32_t origin = 0;
         switch(alignH) {
             case DRW_Text::HLeft:
-                origin |= Style::ORIGIN_LEFT;
+                origin |= (uint32_t)Style::TextOrigin::LEFT;
                 break;
 
             case DRW_Text::HMiddle:
@@ -217,35 +217,35 @@ public:
                 break;
 
             case DRW_Text::HRight:
-                origin |= Style::ORIGIN_RIGHT;
+                origin |= (uint32_t)Style::TextOrigin::RIGHT;
                 break;
 
             case DRW_Text::HAligned:
             case DRW_Text::HFit:
             default:
-                origin |= Style::ORIGIN_LEFT;
+                origin |= (uint32_t)Style::TextOrigin::LEFT;
                 break;
         }
 
         switch(alignV) {
             case DRW_Text::VBaseLine:
             case DRW_Text::VBottom:
-                origin |= Style::ORIGIN_BOT;
+                origin |= (uint32_t)Style::TextOrigin::BOT;
                 break;
 
             case DRW_Text::VMiddle:
                 break;
 
             case DRW_Text::VTop:
-                origin |= Style::ORIGIN_TOP;
+                origin |= (uint32_t)Style::TextOrigin::TOP;
                 break;
 
             default:
-                origin |= Style::ORIGIN_BOT;
+                origin |= (uint32_t)Style::TextOrigin::BOT;
                 break;
         }
 
-        return origin;
+        return (Style::TextOrigin)origin;
     }
 
     DRW_Layer *getSourceLayer(const DRW_Entity *e) {
@@ -355,10 +355,11 @@ public:
         // Line stipple.
         // TODO: Probably, we can load default autocad patterns and match it with ours.
         std::string lineType = getLineType(e);
-        int stipple = Style::STIPPLE_CONTINUOUS;
-        for(int i = 0; i <= Style::LAST_STIPPLE; i++) {
-            if(lineType == DxfFileWriter::lineTypeName(i)) {
-                stipple = i;
+        StipplePattern stipple = StipplePattern::CONTINUOUS;
+        for(uint32_t i = 0; i <= (uint32_t)StipplePattern::LAST; i++) {
+            StipplePattern st = (StipplePattern)i;
+            if(lineType == DxfFileWriter::lineTypeName(st)) {
+                stipple = st;
                 break;
             }
         }
@@ -406,14 +407,14 @@ public:
         hStyle hs = { Style::CreateCustomStyle(/*rememberForUndo=*/false) };
         Style *s = Style::Get(hs);
         if(lw != DRW_LW_Conv::widthDefault) {
-            s->widthAs = Style::UNITS_AS_MM;
+            s->widthAs = Style::UnitsAs::MM;
             s->width = width;
             s->stippleScale = 1.0 + width * 2.0;
         }
         s->name = id;
         s->stippleType = stipple;
         if(c.red != 0 || c.green != 0 || c.blue != 0) s->color = c;
-        s->textHeightAs = Style::UNITS_AS_MM;
+        s->textHeightAs = Style::UnitsAs::MM;
         s->textHeight = textHeight;
         s->textAngle = textAngle;
         s->textOrigin = dxfAlignToOrigin(alignH, alignV);
@@ -476,7 +477,7 @@ public:
         hEntity he = findPoint(p);
         if(he.v != Entity::NO_ENTITY.v) return he;
 
-        hRequest hr = SS.GW.AddRequest(Request::DATUM_POINT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, false);
         he = hr.entity(0);
         SK.GetEntity(he)->PointForceTo(p);
         points.emplace(p, he);
@@ -485,21 +486,21 @@ public:
 
     hEntity createLine(Vector p0, Vector p1, uint32_t style, bool constrainHV = false) {
         if(p0.Equals(p1)) return Entity::NO_ENTITY;
-        hRequest hr = SS.GW.AddRequest(Request::LINE_SEGMENT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, false);
         SK.GetEntity(hr.entity(1))->PointForceTo(p0);
         SK.GetEntity(hr.entity(2))->PointForceTo(p1);
         processPoint(hr.entity(1));
         processPoint(hr.entity(2));
 
         if(constrainHV) {
-            int cType = -1;
+            Constraint::Type cType = Constraint::Type::UNKNOWN;
             if(fabs(p0.x - p1.x) < LENGTH_EPS) {
-                cType = Constraint::VERTICAL;
+                cType = Constraint::Type::VERTICAL;
             }
             else if(fabs(p0.y - p1.y) < LENGTH_EPS) {
-                cType = Constraint::HORIZONTAL;
+                cType = Constraint::Type::HORIZONTAL;
             }
-            if(cType != -1) {
+            if(cType != Constraint::Type::UNKNOWN) {
                 Constraint::Constrain(
                     cType,
                     Entity::NO_ENTITY,
@@ -517,7 +518,7 @@ public:
     }
 
     hEntity createCircle(const Vector &c, double r, uint32_t style) {
-        hRequest hr = SS.GW.AddRequest(Request::CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, false);
         SK.GetEntity(hr.entity(1))->PointForceTo(c);
         processPoint(hr.entity(1));
         SK.GetEntity(hr.entity(64))->DistanceForceTo(r);
@@ -545,7 +546,7 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Point>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::DATUM_POINT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, false);
         SK.GetEntity(hr.entity(0))->PointForceTo(toVector(data.basePoint));
         processPoint(hr.entity(0));
     }
@@ -561,7 +562,7 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Arc>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::ARC_OF_CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false);
         double r = data.radious;
         double sa = data.staangle;
         double ea = data.endangle;
@@ -672,7 +673,7 @@ public:
         if(data->degree != 3) return;
         if(addPendingBlockEntity<DRW_Spline>(*data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::CUBIC, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::CUBIC, false);
         for(int i = 0; i < 4; i++) {
             SK.GetEntity(hr.entity(i + 1))->PointForceTo(toVector(*data->controllist[i]));
             processPoint(hr.entity(i + 1));
@@ -726,7 +727,7 @@ public:
         Constraint c = {};
         c.group         = SS.GW.activeGroup;
         c.workplane     = SS.GW.ActiveWorkplane();
-        c.type          = Constraint::COMMENT;
+        c.type          = Constraint::Type::COMMENT;
         if(data.alignH == DRW_Text::HLeft && data.alignV == DRW_Text::VBaseLine) {
             c.disp.offset   = toVector(data.basePoint);
         } else {
@@ -745,7 +746,7 @@ public:
         Vector p1 = toVector(data->getDef2Point());
         Vector p2 = toVector(data->getTextPoint());
         hConstraint hc = Constraint::Constrain(
-            Constraint::PT_PT_DISTANCE,
+            Constraint::Type::PT_PT_DISTANCE,
             createOrGetPoint(p0),
             createOrGetPoint(p1),
             Entity::NO_ENTITY
@@ -784,7 +785,7 @@ public:
         p4 = blockTransform(p4);
 
         hConstraint hc = Constraint::Constrain(
-            Constraint::PT_LINE_DISTANCE,
+            Constraint::Type::PT_LINE_DISTANCE,
             createOrGetPoint(p0),
             Entity::NO_ENTITY,
             createLine(p1, p3, invisibleStyle().v)
@@ -809,7 +810,7 @@ public:
         Vector l1p1 = toVector(data->getSecondLine2());
 
         hConstraint hc = Constraint::Constrain(
-            Constraint::ANGLE,
+            Constraint::Type::ANGLE,
             Entity::NO_ENTITY,
             Entity::NO_ENTITY,
             createLine(l0p0, l0p1, invisibleStyle().v),
@@ -839,7 +840,7 @@ public:
         hEntity he = createCircle(cp, r, invisibleStyle().v);
 
         hConstraint hc = Constraint::Constrain(
-            Constraint::DIAMETER,
+            Constraint::Type::DIAMETER,
             Entity::NO_ENTITY,
             Entity::NO_ENTITY,
             he

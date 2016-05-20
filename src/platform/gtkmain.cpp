@@ -703,7 +703,7 @@ protected:
 
         if(chr == '\t') {
             // Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=123994.
-            GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
+            GraphicsWindow::MenuView(Command::SHOW_TEXT_WND);
             return true;
         }
 
@@ -794,10 +794,10 @@ bool MenuBarIsVisible(void) {
 
 class ContextMenuItem : public Gtk::MenuItem {
 public:
-    static int choice;
+    static ContextCommand choice;
 
-    ContextMenuItem(const Glib::ustring &label, int id, bool mnemonic=false) :
-            Gtk::MenuItem(label, mnemonic), _id(id) {
+    ContextMenuItem(const Glib::ustring &label, ContextCommand cmd, bool mnemonic=false) :
+            Gtk::MenuItem(label, mnemonic), _cmd(cmd) {
     }
 
 protected:
@@ -807,7 +807,7 @@ protected:
         if(has_submenu())
             return;
 
-        choice = _id;
+        choice = _cmd;
     }
 
     /* Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=695488.
@@ -826,21 +826,21 @@ protected:
     }
 
 private:
-    int _id;
+    ContextCommand _cmd;
 };
 
-int ContextMenuItem::choice = 0;
+ContextCommand ContextMenuItem::choice = ContextCommand::CANCELLED;
 
 static Gtk::Menu *context_menu = NULL, *context_submenu = NULL;
 
-void AddContextMenuItem(const char *label, int id) {
+void AddContextMenuItem(const char *label, ContextCommand cmd) {
     Gtk::MenuItem *menu_item;
     if(label)
-        menu_item = new ContextMenuItem(label, id);
+        menu_item = new ContextMenuItem(label, cmd);
     else
         menu_item = new Gtk::SeparatorMenuItem();
 
-    if(id == CONTEXT_SUBMENU) {
+    if(cmd == ContextCommand::SUBMENU) {
         menu_item->set_submenu(*context_submenu);
         context_submenu = NULL;
     }
@@ -861,15 +861,15 @@ void CreateContextSubmenu(void) {
     context_submenu = new Gtk::Menu;
 }
 
-int ShowContextMenu(void) {
+ContextCommand ShowContextMenu(void) {
     if(!context_menu)
-        return -1;
+        return ContextCommand::CANCELLED;
 
     Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
     context_menu->signal_deactivate().
         connect(sigc::mem_fun(loop.operator->(), &Glib::MainLoop::quit));
 
-    ContextMenuItem::choice = -1;
+    ContextMenuItem::choice = ContextCommand::CANCELLED;
 
     context_menu->show_all();
     context_menu->popup(3, GDK_CURRENT_TIME);
@@ -952,7 +952,7 @@ private:
     bool _synthetic;
 };
 
-static std::map<int, Gtk::MenuItem *> main_menu_items;
+static std::map<uint32_t, Gtk::MenuItem *> main_menu_items;
 
 static void InitMainMenu(Gtk::MenuShell *menu_shell) {
     Gtk::MenuItem *menu_item = NULL;
@@ -975,15 +975,15 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
 
         if(entry->label) {
             switch(entry->kind) {
-                case GraphicsWindow::MENU_ITEM_NORMAL:
+                case GraphicsWindow::MenuKind::NORMAL:
                 menu_item = new MainMenuItem<Gtk::MenuItem>(*entry);
                 break;
 
-                case GraphicsWindow::MENU_ITEM_CHECK:
+                case GraphicsWindow::MenuKind::CHECK:
                 menu_item = new MainMenuItem<Gtk::CheckMenuItem>(*entry);
                 break;
 
-                case GraphicsWindow::MENU_ITEM_RADIO:
+                case GraphicsWindow::MenuKind::RADIO:
                 MainMenuItem<Gtk::CheckMenuItem> *radio_item =
                         new MainMenuItem<Gtk::CheckMenuItem>(*entry);
                 radio_item->set_draw_as_radio(true);
@@ -996,44 +996,47 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
 
         levels[entry->level]->append(*menu_item);
 
-        main_menu_items[entry->id] = menu_item;
+        main_menu_items[(uint32_t)entry->id] = menu_item;
 
         ++entry;
     }
 }
 
-void EnableMenuById(int id, bool enabled) {
-    main_menu_items[id]->set_sensitive(enabled);
+void EnableMenuByCmd(Command cmd, bool enabled) {
+    main_menu_items[(uint32_t)cmd]->set_sensitive(enabled);
 }
 
-void CheckMenuById(int id, bool checked) {
-    ((MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[id])->set_active(checked);
+void CheckMenuByCmd(Command cmd, bool checked) {
+    ((MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[(uint32_t)cmd])->set_active(checked);
 }
 
-void RadioMenuById(int id, bool selected) {
-    SolveSpace::CheckMenuById(id, selected);
+void RadioMenuByCmd(Command cmd, bool selected) {
+    SolveSpace::CheckMenuByCmd(cmd, selected);
 }
 
 class RecentMenuItem : public Gtk::MenuItem {
 public:
-    RecentMenuItem(const Glib::ustring& label, int id) :
-            MenuItem(label), _id(id) {
+    RecentMenuItem(const Glib::ustring& label, uint32_t cmd) :
+            MenuItem(label), _cmd(cmd) {
     }
 
 protected:
     void on_activate() override {
-        if(_id >= RECENT_OPEN && _id < (RECENT_OPEN + MAX_RECENT))
-            SolveSpaceUI::MenuFile(_id);
-        else if(_id >= RECENT_LINK && _id < (RECENT_LINK + MAX_RECENT))
-            Group::MenuGroup(_id);
+        if(_cmd >= (uint32_t)Command::RECENT_OPEN &&
+           _cmd < ((uint32_t)Command::RECENT_OPEN + MAX_RECENT)) {
+            SolveSpaceUI::MenuFile((Command)_cmd);
+        } else if(_cmd >= (uint32_t)Command::RECENT_LINK &&
+                  _cmd < ((uint32_t)Command::RECENT_LINK + MAX_RECENT)) {
+            Group::MenuGroup((Command)_cmd);
+        }
     }
 
 private:
-    int _id;
+    uint32_t _cmd;
 };
 
-static void RefreshRecentMenu(int id, int base) {
-    Gtk::MenuItem *recent = static_cast<Gtk::MenuItem*>(main_menu_items[id]);
+static void RefreshRecentMenu(Command cmd, Command base) {
+    Gtk::MenuItem *recent = static_cast<Gtk::MenuItem*>(main_menu_items[(uint32_t)cmd]);
     recent->unset_submenu();
 
     Gtk::Menu *menu = new Gtk::Menu;
@@ -1048,7 +1051,7 @@ static void RefreshRecentMenu(int id, int base) {
             if(std::string(RecentFile[i]).empty())
                 break;
 
-            RecentMenuItem *item = new RecentMenuItem(RecentFile[i], base + i);
+            RecentMenuItem *item = new RecentMenuItem(RecentFile[i], (uint32_t)base + i);
             menu->append(*item);
         }
     }
@@ -1057,8 +1060,8 @@ static void RefreshRecentMenu(int id, int base) {
 }
 
 void RefreshRecentMenus(void) {
-    RefreshRecentMenu(GraphicsWindow::MNU_OPEN_RECENT, RECENT_OPEN);
-    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_LINK);
+    RefreshRecentMenu(Command::OPEN_RECENT, Command::RECENT_OPEN);
+    RefreshRecentMenu(Command::GROUP_RECENT, Command::RECENT_LINK);
 }
 
 /* Save/load */
@@ -1386,7 +1389,7 @@ protected:
 
     bool on_delete_event(GdkEventAny *) override {
         /* trigger the action and ignore the request */
-        GraphicsWindow::MenuView(GraphicsWindow::MNU_SHOW_TEXT_WND);
+        GraphicsWindow::MenuView(Command::SHOW_TEXT_WND);
 
         return false;
     }

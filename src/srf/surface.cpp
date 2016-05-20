@@ -204,7 +204,7 @@ bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) const {
 // Generate the piecewise linear approximation of the trim stb, which applies
 // to the curve sc.
 //-----------------------------------------------------------------------------
-void SSurface::MakeTrimEdgesInto(SEdgeList *sel, int flags,
+void SSurface::MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags,
                                  SCurve *sc, STrimBy *stb)
 {
     Vector prev = Vector::From(0, 0, 0);
@@ -224,7 +224,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, int flags,
     for(i = first; i != (last + increment); i += increment) {
         Vector tpt, *pt = &(sc->pts.elem[i].p);
 
-        if(flags & AS_UV) {
+        if(flags == MakeAs::UV) {
             ClosestPointTo(*pt, &u, &v);
             tpt = Vector::From(u, v, 0);
         } else {
@@ -251,7 +251,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, int flags,
 // the split curves from useCurvesFrom instead of the curves in our own
 // shell.
 //-----------------------------------------------------------------------------
-void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
+void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, MakeAs flags,
                              SShell *useCurvesFrom)
 {
     STrimBy *stb;
@@ -391,7 +391,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
                 sp = fpt;
             }
         } else {
-            if(sel) MakeTrimEdgesInto(sel, AS_XYZ, sc, stb);
+            if(sel) MakeTrimEdgesInto(sel, MakeAs::XYZ, sc, stb);
         }
     }
 }
@@ -399,7 +399,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
 void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     SEdgeList el = {};
 
-    MakeEdgesInto(shell, &el, AS_UV);
+    MakeEdgesInto(shell, &el, MakeAs::UV);
 
     SPolygon poly = {};
     if(el.AssemblePolygon(&poly, NULL, true)) {
@@ -836,7 +836,7 @@ void SShell::MakeFromTransformationOf(SShell *a,
 void SShell::MakeEdgesInto(SEdgeList *sel) {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {
-        s->MakeEdgesInto(this, sel, SSurface::AS_XYZ);
+        s->MakeEdgesInto(this, sel, SSurface::MakeAs::XYZ);
     }
 }
 

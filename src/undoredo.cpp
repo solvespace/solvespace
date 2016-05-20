@@ -31,8 +31,8 @@ void SolveSpaceUI::UndoRedo() {
 }
 
 void SolveSpaceUI::UndoEnableMenus() {
-    EnableMenuById(GraphicsWindow::MNU_UNDO, undo.cnt > 0);
-    EnableMenuById(GraphicsWindow::MNU_REDO, redo.cnt > 0);
+    EnableMenuByCmd(Command::UNDO, undo.cnt > 0);
+    EnableMenuByCmd(Command::REDO, redo.cnt > 0);
 }
 
 void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
@@ -136,7 +136,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     SS.GW.ClearSuper();
     SS.TW.ClearSuper();
     SS.ReloadAllImported();
-    SS.GenerateAll(SolveSpaceUI::GENERATE_ALL);
+    SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     SS.ScheduleShowTW();
 
     // Activate the group that was active before.

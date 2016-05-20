@@ -299,28 +299,28 @@ void TextWindow::Show() {
         Printf(true, "%Fl%f%Ll(cancel operation)%E",
             &TextWindow::ScreenUnselectAll);
     } else if((gs.n > 0 || gs.constraints > 0) &&
-                                    shown.screen != SCREEN_PASTE_TRANSFORMED)
+                                    shown.screen != Screen::PASTE_TRANSFORMED)
     {
-        if(edit.meaning != EDIT_TTF_TEXT) HideEditControl();
+        if(edit.meaning != Edit::TTF_TEXT) HideEditControl();
         ShowHeader(false);
         DescribeSelection();
     } else {
-        if(edit.meaning == EDIT_TTF_TEXT) HideEditControl();
+        if(edit.meaning == Edit::TTF_TEXT) HideEditControl();
         ShowHeader(true);
         switch(shown.screen) {
             default:
-                shown.screen = SCREEN_LIST_OF_GROUPS;
+                shown.screen = Screen::LIST_OF_GROUPS;
                 // fall through
-            case SCREEN_LIST_OF_GROUPS:     ShowListOfGroups();     break;
-            case SCREEN_GROUP_INFO:         ShowGroupInfo();        break;
-            case SCREEN_GROUP_SOLVE_INFO:   ShowGroupSolveInfo();   break;
-            case SCREEN_CONFIGURATION:      ShowConfiguration();    break;
-            case SCREEN_STEP_DIMENSION:     ShowStepDimension();    break;
-            case SCREEN_LIST_OF_STYLES:     ShowListOfStyles();     break;
-            case SCREEN_STYLE_INFO:         ShowStyleInfo();        break;
-            case SCREEN_PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
-            case SCREEN_EDIT_VIEW:          ShowEditView();         break;
-            case SCREEN_TANGENT_ARC:        ShowTangentArc();       break;
+            case Screen::LIST_OF_GROUPS:     ShowListOfGroups();     break;
+            case Screen::GROUP_INFO:         ShowGroupInfo();        break;
+            case Screen::GROUP_SOLVE_INFO:   ShowGroupSolveInfo();   break;
+            case Screen::CONFIGURATION:      ShowConfiguration();    break;
+            case Screen::STEP_DIMENSION:     ShowStepDimension();    break;
+            case Screen::LIST_OF_STYLES:     ShowListOfStyles();     break;
+            case Screen::STYLE_INFO:         ShowStyleInfo();        break;
+            case Screen::PASTE_TRANSFORMED:  ShowPasteTransformed(); break;
+            case Screen::EDIT_VIEW:          ShowEditView();         break;
+            case Screen::TANGENT_ARC:        ShowTangentArc();       break;
         }
     }
     Printf(false, "");
@@ -344,7 +344,7 @@ void TextWindow::TimerCallback()
     InvalidateText();
 }
 
-void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
+void TextWindow::DrawOrHitTestIcons(TextWindow::DrawOrHitHow how, double mx, double my)
 {
     int width, height;
     GetTextWindowSize(&width, &height);
@@ -549,7 +549,7 @@ void TextWindow::ColorPickerDone() {
     EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()).c_str());
 }
 
-bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
+bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
                                           double x, double y)
 {
     bool mousePointerAsHand = false;
@@ -933,7 +933,7 @@ void TextWindow::Paint() {
     SS.GW.GroupSelection();
     // Make sure this test agrees with test to determine which screen is drawn
     if(!SS.GW.pending.description && gs.n == 0 && gs.constraints == 0 &&
-        shown.screen == SCREEN_LIST_OF_GROUPS)
+        shown.screen == Screen::LIST_OF_GROUPS)
     {
         int x = 29, y = 70 + LINE_HEIGHT;
         y -= scrollPos*(LINE_HEIGHT/2);

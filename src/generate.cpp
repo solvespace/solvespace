@@ -128,9 +128,9 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
         }
 
         (deleted.constraints)++;
-        if(c->type != Constraint::POINTS_COINCIDENT &&
-           c->type != Constraint::HORIZONTAL &&
-           c->type != Constraint::VERTICAL)
+        if(c->type != Constraint::Type::POINTS_COINCIDENT &&
+           c->type != Constraint::Type::HORIZONTAL &&
+           c->type != Constraint::Type::VERTICAL)
         {
             (deleted.nonTrivialConstraints)++;
         }
@@ -141,7 +141,7 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
     return false;
 }
 
-void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForBBox) {
+void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
     int first, last, i, j;
 
     SK.groupOrder.Clear();
@@ -153,7 +153,7 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
         });
 
     switch(type) {
-        case GENERATE_DIRTY: {
+        case Generate::DIRTY: {
             first = INT_MAX;
             last  = 0;
 
@@ -178,17 +178,17 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
             break;
         }
 
-        case GENERATE_ALL:
+        case Generate::ALL:
             first = 0;
             last  = INT_MAX;
             break;
 
-        case GENERATE_REGEN:
+        case Generate::REGEN:
             first = -1;
             last  = -1;
             break;
 
-        case GENERATE_UNTIL_ACTIVE: {
+        case Generate::UNTIL_ACTIVE: {
             for(i = 0; i < SK.groupOrder.n; i++) {
                 if(SK.groupOrder.elem[i].v == SS.GW.activeGroup.v)
                     break;
@@ -298,7 +298,7 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
 
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
             ForceReferences();
-            g->solved.how = System::SOLVED_OKAY;
+            g->solved.how = SolveResult::OKAY;
             g->clean = true;
         } else {
             if(i >= first && i <= last) {
@@ -447,14 +447,14 @@ void SolveSpaceUI::MarkDraggedParams() {
         Entity *pt = SK.entity.FindByIdNoOops(hp);
         if(pt) {
             switch(pt->type) {
-                case Entity::POINT_N_TRANS:
-                case Entity::POINT_IN_3D:
+                case Entity::Type::POINT_N_TRANS:
+                case Entity::Type::POINT_IN_3D:
                     sys.dragged.Add(&(pt->param[0]));
                     sys.dragged.Add(&(pt->param[1]));
                     sys.dragged.Add(&(pt->param[2]));
                     break;
 
-                case Entity::POINT_IN_2D:
+                case Entity::Type::POINT_IN_2D:
                     sys.dragged.Add(&(pt->param[0]));
                     sys.dragged.Add(&(pt->param[1]));
                     break;
@@ -466,7 +466,7 @@ void SolveSpaceUI::MarkDraggedParams() {
         if(circ) {
             Entity *dist = SK.GetEntity(circ->distance);
             switch(dist->type) {
-                case Entity::DISTANCE:
+                case Entity::Type::DISTANCE:
                     sys.dragged.Add(&(dist->param[0]));
                     break;
             }
@@ -476,7 +476,7 @@ void SolveSpaceUI::MarkDraggedParams() {
         Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
         if(norm) {
             switch(norm->type) {
-                case Entity::NORMAL_IN_3D:
+                case Entity::Type::NORMAL_IN_3D:
                     sys.dragged.Add(&(norm->param[0]));
                     sys.dragged.Add(&(norm->param[1]));
                     sys.dragged.Add(&(norm->param[2]));
@@ -513,10 +513,10 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
 
     MarkDraggedParams();
     g->solved.remove.Clear();
-    int how = sys.Solve(g, &(g->solved.dof),
+    SolveResult how = sys.Solve(g, &(g->solved.dof),
                            &(g->solved.remove), true, andFindFree);
-    bool isOkay = how == System::SOLVED_OKAY ||
-                  (g->allowRedundant && how == System::REDUNDANT_OKAY);
+    bool isOkay = how == SolveResult::OKAY ||
+                  (g->allowRedundant && how == SolveResult::REDUNDANT_OKAY);
     if(!isOkay || (isOkay && !g->IsSolvedOkay()))
     {
         TextWindow::ReportHowGroupSolved(g->h);

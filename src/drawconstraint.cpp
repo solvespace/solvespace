@@ -41,17 +41,17 @@ static void LineCallback(void *fndata, Vector a, Vector b)
 
 std::string Constraint::Label() const {
     std::string result;
-    if(type == ANGLE) {
+    if(type == Type::ANGLE) {
         if(valA == floor(valA)) {
             result = ssprintf("%.0f°", valA);
         } else {
             result = ssprintf("%.2f°", valA);
         }
-    } else if(type == LENGTH_RATIO) {
+    } else if(type == Type::LENGTH_RATIO) {
         result = ssprintf("%.3f:1", valA);
-    } else if(type == COMMENT) {
+    } else if(type == Type::COMMENT) {
         result = comment;
-    } else if(type == DIAMETER) {
+    } else if(type == Type::DIAMETER) {
         if(!other) {
             result = "⌀" + SS.MmToString(valA);
         } else {
@@ -78,7 +78,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
     // rotation.
-    if(type == COMMENT && disp.style.v) {
+    if(type == Type::COMMENT && disp.style.v) {
         Style *st = Style::Get(disp.style);
         // rotation first
         double rads = st->textAngle*PI/180;
@@ -87,11 +87,11 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         gr = pr.ScaledBy( c).Plus(pu.ScaledBy(s));
         gu = pr.ScaledBy(-s).Plus(pu.ScaledBy(c));
         // then origin
-        int o = st->textOrigin;
-        if(o & Style::ORIGIN_LEFT) ref = ref.Plus(gr.WithMagnitude(swidth/2));
-        if(o & Style::ORIGIN_RIGHT) ref = ref.Minus(gr.WithMagnitude(swidth/2));
-        if(o & Style::ORIGIN_BOT) ref = ref.Plus(gu.WithMagnitude(sheight/2));
-        if(o & Style::ORIGIN_TOP) ref = ref.Minus(gu.WithMagnitude(sheight/2));
+        uint32_t o = (uint32_t)st->textOrigin;
+        if(o & (uint32_t)Style::TextOrigin::LEFT) ref = ref.Plus(gr.WithMagnitude(swidth/2));
+        if(o & (uint32_t)Style::TextOrigin::RIGHT) ref = ref.Minus(gr.WithMagnitude(swidth/2));
+        if(o & (uint32_t)Style::TextOrigin::BOT) ref = ref.Plus(gu.WithMagnitude(sheight/2));
+        if(o & (uint32_t)Style::TextOrigin::TOP) ref = ref.Minus(gu.WithMagnitude(sheight/2));
     }
 
     if(labelPos) {
@@ -298,9 +298,9 @@ void Constraint::DoEqualRadiusTicks(hEntity he, Vector *refp) {
     Vector u = q.RotationU(), v = q.RotationV();
 
     double theta;
-    if(circ->type == Entity::CIRCLE) {
+    if(circ->type == Entity::Type::CIRCLE) {
         theta = PI/2;
-    } else if(circ->type == Entity::ARC_OF_CIRCLE) {
+    } else if(circ->type == Entity::Type::ARC_OF_CIRCLE) {
         double thetaa, thetab, dtheta;
         circ->ArcGetAngles(&thetaa, &thetab, &dtheta);
         theta = thetaa + dtheta/2;
@@ -473,7 +473,7 @@ bool Constraint::IsVisible() const {
     if(!(g->visible)) return false;
     // And likewise if the group is not the active group; except for comments
     // with an assigned style.
-    if(g->h.v != SS.GW.activeGroup.v && !(type == COMMENT && disp.style.v)) {
+    if(g->h.v != SS.GW.activeGroup.v && !(type == Type::COMMENT && disp.style.v)) {
         return false;
     }
     if(disp.style.v) {
@@ -522,7 +522,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
     Vector gn = (gr.Cross(gu)).WithMagnitude(1/SS.GW.scale);
 
     switch(type) {
-        case PT_PT_DISTANCE: {
+        case Type::PT_PT_DISTANCE: {
             Vector ap = SK.GetEntity(ptA)->PointGetNum();
             Vector bp = SK.GetEntity(ptB)->PointGetNum();
 
@@ -539,7 +539,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PROJ_PT_DISTANCE: {
+        case Type::PROJ_PT_DISTANCE: {
             Vector ap = SK.GetEntity(ptA)->PointGetNum(),
                    bp = SK.GetEntity(ptB)->PointGetNum(),
                    dp = (bp.Minus(ap)),
@@ -559,12 +559,12 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PT_FACE_DISTANCE:
-        case PT_PLANE_DISTANCE: {
+        case Type::PT_FACE_DISTANCE:
+        case Type::PT_PLANE_DISTANCE: {
             Vector pt = SK.GetEntity(ptA)->PointGetNum();
             Entity *enta = SK.GetEntity(entityA);
             Vector n, p;
-            if(type == PT_PLANE_DISTANCE) {
+            if(type == Type::PT_PLANE_DISTANCE) {
                 n = enta->Normal()->NormalN();
                 p = enta->WorkplaneGetOffset();
             } else {
@@ -586,7 +586,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PT_LINE_DISTANCE: {
+        case Type::PT_LINE_DISTANCE: {
             Vector pt = SK.GetEntity(ptA)->PointGetNum();
             Entity *line = SK.GetEntity(entityA);
             Vector lA = SK.GetEntity(line->point[0])->PointGetNum();
@@ -638,7 +638,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case DIAMETER: {
+        case Type::DIAMETER: {
             Entity *circle = SK.GetEntity(entityA);
             Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
             Quaternion q = SK.GetEntity(circle->normal)->NormalGetNum();
@@ -660,7 +660,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case POINTS_COINCIDENT: {
+        case Type::POINTS_COINCIDENT: {
             if(!dogd.drawing) {
                 for(int i = 0; i < 2; i++) {
                     Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
@@ -707,19 +707,19 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PT_ON_CIRCLE:
-        case PT_ON_LINE:
-        case PT_ON_FACE:
-        case PT_IN_PLANE: {
+        case Type::PT_ON_CIRCLE:
+        case Type::PT_ON_LINE:
+        case Type::PT_ON_FACE:
+        case Type::PT_IN_PLANE: {
             double s = 8/SS.GW.scale;
             Vector p = SK.GetEntity(ptA)->PointGetNum();
             if(refps) refps[0] = refps[1] = p;
             Vector r, d;
-            if(type == PT_ON_FACE) {
+            if(type == Type::PT_ON_FACE) {
                 Vector n = SK.GetEntity(entityA)->FaceGetNormalNum();
                 r = n.Normal(0);
                 d = n.Normal(1);
-            } else if(type == PT_IN_PLANE) {
+            } else if(type == Type::PT_IN_PLANE) {
                 EntityBase *n = SK.GetEntity(entityA)->Normal();
                 r = n->NormalU();
                 d = n->NormalV();
@@ -736,7 +736,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case WHERE_DRAGGED: {
+        case Type::WHERE_DRAGGED: {
             Vector p = SK.GetEntity(ptA)->PointGetNum();
             if(refps) refps[0] = refps[1] = p;
             Vector u = p.Plus(gu.WithMagnitude(8/SS.GW.scale)).Plus(
@@ -756,7 +756,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case SAME_ORIENTATION: {
+        case Type::SAME_ORIENTATION: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 Quaternion q = e->NormalGetNum();
@@ -772,7 +772,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case EQUAL_ANGLE: {
+        case Type::EQUAL_ANGLE: {
             Vector ref;
             Entity *a = SK.GetEntity(entityA);
             Entity *b = SK.GetEntity(entityB);
@@ -803,7 +803,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case ANGLE: {
+        case Type::ANGLE: {
             Entity *a = SK.GetEntity(entityA);
             Entity *b = SK.GetEntity(entityB);
 
@@ -823,7 +823,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PERPENDICULAR: {
+        case Type::PERPENDICULAR: {
             Vector u = Vector::From(0, 0, 0), v = Vector::From(0, 0, 0);
             Vector rn, ru;
             if(workplane.v == Entity::FREE_IN_3D.v) {
@@ -862,12 +862,12 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case CURVE_CURVE_TANGENT:
-        case CUBIC_LINE_TANGENT:
-        case ARC_LINE_TANGENT: {
+        case Type::CURVE_CURVE_TANGENT:
+        case Type::CUBIC_LINE_TANGENT:
+        case Type::ARC_LINE_TANGENT: {
             Vector textAt, u, v;
 
-            if(type == ARC_LINE_TANGENT) {
+            if(type == Type::ARC_LINE_TANGENT) {
                 Entity *arc = SK.GetEntity(entityA);
                 Entity *norm = SK.GetEntity(arc->normal);
                 Vector c = SK.GetEntity(arc->point[0])->PointGetNum();
@@ -877,7 +877,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 textAt = p.Plus(r.WithMagnitude(14/SS.GW.scale));
                 u = norm->NormalU();
                 v = norm->NormalV();
-            } else if(type == CUBIC_LINE_TANGENT) {
+            } else if(type == Type::CUBIC_LINE_TANGENT) {
                 Vector n;
                 if(workplane.v == Entity::FREE_IN_3D.v) {
                     u = gr;
@@ -908,7 +908,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 // or an arc.
                 if(other) {
                     textAt = eA->EndpointFinish();
-                    if(eA->type == Entity::CUBIC) {
+                    if(eA->type == Entity::Type::CUBIC) {
                         dir = eA->CubicGetFinishTangentNum();
                     } else {
                         dir = SK.GetEntity(eA->point[0])->PointGetNum().Minus(
@@ -917,7 +917,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                     }
                 } else {
                     textAt = eA->EndpointStart();
-                    if(eA->type == Entity::CUBIC) {
+                    if(eA->type == Entity::Type::CUBIC) {
                         dir = eA->CubicGetStartTangentNum();
                     } else {
                         dir = SK.GetEntity(eA->point[0])->PointGetNum().Minus(
@@ -940,7 +940,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case PARALLEL: {
+        case Type::PARALLEL: {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 Vector n = e->VectorGetNum();
@@ -955,7 +955,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case EQUAL_RADIUS: {
+        case Type::EQUAL_RADIUS: {
             for(int i = 0; i < 2; i++) {
                 Vector ref;
                 DoEqualRadiusTicks(i == 0 ? entityA : entityB, &ref);
@@ -964,7 +964,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case EQUAL_LINE_ARC_LEN: {
+        case Type::EQUAL_LINE_ARC_LEN: {
             Entity *line = SK.GetEntity(entityA);
             Vector refa, refb;
             DoEqualLenTicks(
@@ -979,9 +979,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case LENGTH_RATIO:
-        case LENGTH_DIFFERENCE:
-        case EQUAL_LENGTH_LINES: {
+        case Type::LENGTH_RATIO:
+        case Type::LENGTH_DIFFERENCE:
+        case Type::EQUAL_LENGTH_LINES: {
             Vector a, b = Vector::From(0, 0, 0);
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
@@ -997,14 +997,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 DoEqualLenTicks(a, b, gn, &ref);
                 if(refps) refps[i] = ref;
             }
-            if((type == LENGTH_RATIO) || (type == LENGTH_DIFFERENCE)) {
+            if((type == Type::LENGTH_RATIO) || (type == Type::LENGTH_DIFFERENCE)) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
                 DoLabel(ref, labelPos, gr, gu);
             }
             break;
         }
 
-        case EQ_LEN_PT_LINE_D: {
+        case Type::EQ_LEN_PT_LINE_D: {
             Entity *forLen = SK.GetEntity(entityA);
             Vector a = SK.GetEntity(forLen->point[0])->PointGetNum(),
                    b = SK.GetEntity(forLen->point[1])->PointGetNum();
@@ -1034,7 +1034,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             break;
         }
 
-        case EQ_PT_LN_DISTANCES: {
+        case Type::EQ_PT_LN_DISTANCES: {
             for(int i = 0; i < 2; i++) {
                 Entity *ln = SK.GetEntity(i == 0 ? entityA : entityB);
                 Vector la = SK.GetEntity(ln->point[0])->PointGetNum(),
@@ -1059,14 +1059,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
         }
 
         {
-        case SYMMETRIC:
+        case Type::SYMMETRIC:
             Vector n;
             n = SK.GetEntity(entityA)->Normal()->NormalN(); goto s;
-        case SYMMETRIC_HORIZ:
+        case Type::SYMMETRIC_HORIZ:
             n = SK.GetEntity(workplane)->Normal()->NormalU(); goto s;
-        case SYMMETRIC_VERT:
+        case Type::SYMMETRIC_VERT:
             n = SK.GetEntity(workplane)->Normal()->NormalV(); goto s;
-        case SYMMETRIC_LINE: {
+        case Type::SYMMETRIC_LINE: {
             Entity *ln = SK.GetEntity(entityA);
             Vector la = SK.GetEntity(ln->point[0])->PointGetNum(),
                    lb = SK.GetEntity(ln->point[1])->PointGetNum();
@@ -1102,9 +1102,9 @@ s:
             break;
         }
 
-        case AT_MIDPOINT:
-        case HORIZONTAL:
-        case VERTICAL:
+        case Type::AT_MIDPOINT:
+        case Type::HORIZONTAL:
+        case Type::VERTICAL:
             if(entityA.v) {
                 Vector r, u, n;
                 if(workplane.v == Entity::FREE_IN_3D.v) {
@@ -1123,12 +1123,12 @@ s:
                 offset = offset.WithMagnitude(13/SS.GW.scale);
                 // Draw midpoint constraint on other side of line, so that
                 // a line can be midpoint and horizontal at same time.
-                if(type == AT_MIDPOINT) offset = offset.ScaledBy(-1);
+                if(type == Type::AT_MIDPOINT) offset = offset.ScaledBy(-1);
 
                 if(dogd.drawing) {
-                    const char *s = (type == HORIZONTAL)  ? "H" : (
-                                    (type == VERTICAL)    ? "V" : (
-                                    (type == AT_MIDPOINT) ? "M" : NULL));
+                    const char *s = (type == Type::HORIZONTAL)  ? "H" : (
+                                    (type == Type::VERTICAL)    ? "V" : (
+                                    (type == Type::AT_MIDPOINT) ? "M" : NULL));
 
                     ssglWriteTextRefCenter(s, Style::DefaultTextHeight(),
                         m.Plus(offset), r, u, LineCallback, (void *)this);
@@ -1150,7 +1150,7 @@ s:
                 for(i = 0; i < 2; i++) {
                     Vector o = (i == 0) ? a : b;
                     Vector oo = (i == 0) ? a.Minus(b) : b.Minus(a);
-                    Vector d = (type == HORIZONTAL) ? cu : cv;
+                    Vector d = (type == Type::HORIZONTAL) ? cu : cv;
                     if(oo.Dot(d) < 0) d = d.ScaledBy(-1);
 
                     Vector dp = cn.Cross(d);
@@ -1175,7 +1175,7 @@ s:
             }
             break;
 
-        case COMMENT: {
+        case Type::COMMENT: {
             if(dogd.drawing && disp.style.v) {
                 ssglLineWidth(Style::Width(disp.style));
                 ssglColorRGB(Style::Color(disp.style));
@@ -1246,7 +1246,7 @@ void Constraint::GetEdges(SEdgeList *sel) {
 }
 
 bool Constraint::IsStylable() const {
-    if(type == COMMENT) return true;
+    if(type == Type::COMMENT) return true;
     return false;
 }
 
@@ -1257,16 +1257,16 @@ hStyle Constraint::GetStyle() const {
 
 bool Constraint::HasLabel() const {
     switch(type) {
-        case COMMENT:
-        case PT_PT_DISTANCE:
-        case PT_PLANE_DISTANCE:
-        case PT_LINE_DISTANCE:
-        case PT_FACE_DISTANCE:
-        case PROJ_PT_DISTANCE:
-        case LENGTH_RATIO:
-        case LENGTH_DIFFERENCE:
-        case DIAMETER:
-        case ANGLE:
+        case Type::COMMENT:
+        case Type::PT_PT_DISTANCE:
+        case Type::PT_PLANE_DISTANCE:
+        case Type::PT_LINE_DISTANCE:
+        case Type::PT_FACE_DISTANCE:
+        case Type::PROJ_PT_DISTANCE:
+        case Type::LENGTH_RATIO:
+        case Type::LENGTH_DIFFERENCE:
+        case Type::DIAMETER:
+        case Type::ANGLE:
             return true;
 
         default:

@@ -213,7 +213,7 @@ Expr *ExprQuaternion::Magnitude() const {
 
 Expr *Expr::From(hParam p) {
     Expr *r = AllocExpr();
-    r->op = PARAM;
+    r->op = Op::PARAM;
     r->parh = p;
     return r;
 }
@@ -249,12 +249,12 @@ Expr *Expr::From(double v) {
     }
 
     Expr *r = AllocExpr();
-    r->op = CONSTANT;
+    r->op = Op::CONSTANT;
     r->v = v;
     return r;
 }
 
-Expr *Expr::AnyOp(int newOp, Expr *b) {
+Expr *Expr::AnyOp(Op newOp, Expr *b) {
     Expr *r = AllocExpr();
     r->op = newOp;
     r->a = this;
@@ -264,24 +264,24 @@ Expr *Expr::AnyOp(int newOp, Expr *b) {
 
 int Expr::Children() const {
     switch(op) {
-        case PARAM:
-        case PARAM_PTR:
-        case CONSTANT:
+        case Op::PARAM:
+        case Op::PARAM_PTR:
+        case Op::CONSTANT:
             return 0;
 
-        case PLUS:
-        case MINUS:
-        case TIMES:
-        case DIV:
+        case Op::PLUS:
+        case Op::MINUS:
+        case Op::TIMES:
+        case Op::DIV:
             return 2;
 
-        case NEGATE:
-        case SQRT:
-        case SQUARE:
-        case SIN:
-        case COS:
-        case ASIN:
-        case ACOS:
+        case Op::NEGATE:
+        case Op::SQRT:
+        case Op::SQUARE:
+        case Op::SIN:
+        case Op::COS:
+        case Op::ASIN:
+        case Op::ACOS:
             return 1;
 
         default: ssassert(false, "Unexpected operation");
@@ -310,17 +310,17 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
     IdList<Param,hParam> *thenTry) const
 {
     Expr *n = AllocExpr();
-    if(op == PARAM) {
+    if(op == Op::PARAM) {
         // A param that is referenced by its hParam gets rewritten to go
         // straight in to the parameter table with a pointer, or simply
         // into a constant if it's already known.
         Param *p = firstTry->FindByIdNoOops(parh);
         if(!p) p = thenTry->FindById(parh);
         if(p->known) {
-            n->op = CONSTANT;
+            n->op = Op::CONSTANT;
             n->v = p->val;
         } else {
-            n->op = PARAM_PTR;
+            n->op = Op::PARAM_PTR;
             n->parp = p;
         }
         return n;
@@ -335,23 +335,23 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
 
 double Expr::Eval() const {
     switch(op) {
-        case PARAM:         return SK.GetParam(parh)->val;
-        case PARAM_PTR:     return parp->val;
+        case Op::PARAM:         return SK.GetParam(parh)->val;
+        case Op::PARAM_PTR:     return parp->val;
 
-        case CONSTANT:      return v;
+        case Op::CONSTANT:      return v;
 
-        case PLUS:          return a->Eval() + b->Eval();
-        case MINUS:         return a->Eval() - b->Eval();
-        case TIMES:         return a->Eval() * b->Eval();
-        case DIV:           return a->Eval() / b->Eval();
+        case Op::PLUS:          return a->Eval() + b->Eval();
+        case Op::MINUS:         return a->Eval() - b->Eval();
+        case Op::TIMES:         return a->Eval() * b->Eval();
+        case Op::DIV:           return a->Eval() / b->Eval();
 
-        case NEGATE:        return -(a->Eval());
-        case SQRT:          return sqrt(a->Eval());
-        case SQUARE:        { double r = a->Eval(); return r*r; }
-        case SIN:           return sin(a->Eval());
-        case COS:           return cos(a->Eval());
-        case ACOS:          return acos(a->Eval());
-        case ASIN:          return asin(a->Eval());
+        case Op::NEGATE:        return -(a->Eval());
+        case Op::SQRT:          return sqrt(a->Eval());
+        case Op::SQUARE:        { double r = a->Eval(); return r*r; }
+        case Op::SIN:           return sin(a->Eval());
+        case Op::COS:           return cos(a->Eval());
+        case Op::ACOS:          return acos(a->Eval());
+        case Op::ASIN:          return asin(a->Eval());
 
         default: ssassert(false, "Unexpected operation");
     }
@@ -361,38 +361,38 @@ Expr *Expr::PartialWrt(hParam p) const {
     Expr *da, *db;
 
     switch(op) {
-        case PARAM_PTR: return From(p.v == parp->h.v ? 1 : 0);
-        case PARAM:     return From(p.v == parh.v ? 1 : 0);
+        case Op::PARAM_PTR: return From(p.v == parp->h.v ? 1 : 0);
+        case Op::PARAM:     return From(p.v == parh.v ? 1 : 0);
 
-        case CONSTANT:  return From(0.0);
+        case Op::CONSTANT:  return From(0.0);
 
-        case PLUS:      return (a->PartialWrt(p))->Plus(b->PartialWrt(p));
-        case MINUS:     return (a->PartialWrt(p))->Minus(b->PartialWrt(p));
+        case Op::PLUS:      return (a->PartialWrt(p))->Plus(b->PartialWrt(p));
+        case Op::MINUS:     return (a->PartialWrt(p))->Minus(b->PartialWrt(p));
 
-        case TIMES:
+        case Op::TIMES:
             da = a->PartialWrt(p);
             db = b->PartialWrt(p);
             return (a->Times(db))->Plus(b->Times(da));
 
-        case DIV:
+        case Op::DIV:
             da = a->PartialWrt(p);
             db = b->PartialWrt(p);
             return ((da->Times(b))->Minus(a->Times(db)))->Div(b->Square());
 
-        case SQRT:
+        case Op::SQRT:
             return (From(0.5)->Div(a->Sqrt()))->Times(a->PartialWrt(p));
 
-        case SQUARE:
+        case Op::SQUARE:
             return (From(2.0)->Times(a))->Times(a->PartialWrt(p));
 
-        case NEGATE:    return (a->PartialWrt(p))->Negate();
-        case SIN:       return (a->Cos())->Times(a->PartialWrt(p));
-        case COS:       return ((a->Sin())->Times(a->PartialWrt(p)))->Negate();
+        case Op::NEGATE:    return (a->PartialWrt(p))->Negate();
+        case Op::SIN:       return (a->Cos())->Times(a->PartialWrt(p));
+        case Op::COS:       return ((a->Sin())->Times(a->PartialWrt(p)))->Negate();
 
-        case ASIN:
+        case Op::ASIN:
             return (From(1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
                         ->Times(a->PartialWrt(p));
-        case ACOS:
+        case Op::ACOS:
             return (From(-1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
                         ->Times(a->PartialWrt(p));
 
@@ -402,8 +402,8 @@ Expr *Expr::PartialWrt(hParam p) const {
 
 uint64_t Expr::ParamsUsed() const {
     uint64_t r = 0;
-    if(op == PARAM)     r |= ((uint64_t)1 << (parh.v % 61));
-    if(op == PARAM_PTR) r |= ((uint64_t)1 << (parp->h.v % 61));
+    if(op == Op::PARAM)     r |= ((uint64_t)1 << (parh.v % 61));
+    if(op == Op::PARAM_PTR) r |= ((uint64_t)1 << (parp->h.v % 61));
 
     int c = Children();
     if(c >= 1)          r |= a->ParamsUsed();
@@ -412,8 +412,8 @@ uint64_t Expr::ParamsUsed() const {
 }
 
 bool Expr::DependsOn(hParam p) const {
-    if(op == PARAM)     return (parh.v    == p.v);
-    if(op == PARAM_PTR) return (parp->h.v == p.v);
+    if(op == Op::PARAM)     return (parh.v    == p.v);
+    if(op == Op::PARAM_PTR) return (parp->h.v == p.v);
 
     int c = Children();
     if(c == 1)          return a->DependsOn(p);
@@ -433,56 +433,56 @@ Expr *Expr::FoldConstants() {
     if(c >= 2) n->b = b->FoldConstants();
 
     switch(op) {
-        case PARAM_PTR:
-        case PARAM:
-        case CONSTANT:
+        case Op::PARAM_PTR:
+        case Op::PARAM:
+        case Op::CONSTANT:
             break;
 
-        case MINUS:
-        case TIMES:
-        case DIV:
-        case PLUS:
+        case Op::MINUS:
+        case Op::TIMES:
+        case Op::DIV:
+        case Op::PLUS:
             // If both ops are known, then we can evaluate immediately
-            if(n->a->op == CONSTANT && n->b->op == CONSTANT) {
+            if(n->a->op == Op::CONSTANT && n->b->op == Op::CONSTANT) {
                 double nv = n->Eval();
-                n->op = CONSTANT;
+                n->op = Op::CONSTANT;
                 n->v = nv;
                 break;
             }
             // x + 0 = 0 + x = x
-            if(op == PLUS && n->b->op == CONSTANT && Tol(n->b->v, 0)) {
+            if(op == Op::PLUS && n->b->op == Op::CONSTANT && Tol(n->b->v, 0)) {
                 *n = *(n->a); break;
             }
-            if(op == PLUS && n->a->op == CONSTANT && Tol(n->a->v, 0)) {
+            if(op == Op::PLUS && n->a->op == Op::CONSTANT && Tol(n->a->v, 0)) {
                 *n = *(n->b); break;
             }
             // 1*x = x*1 = x
-            if(op == TIMES && n->b->op == CONSTANT && Tol(n->b->v, 1)) {
+            if(op == Op::TIMES && n->b->op == Op::CONSTANT && Tol(n->b->v, 1)) {
                 *n = *(n->a); break;
             }
-            if(op == TIMES && n->a->op == CONSTANT && Tol(n->a->v, 1)) {
+            if(op == Op::TIMES && n->a->op == Op::CONSTANT && Tol(n->a->v, 1)) {
                 *n = *(n->b); break;
             }
             // 0*x = x*0 = 0
-            if(op == TIMES && n->b->op == CONSTANT && Tol(n->b->v, 0)) {
-                n->op = CONSTANT; n->v = 0; break;
+            if(op == Op::TIMES && n->b->op == Op::CONSTANT && Tol(n->b->v, 0)) {
+                n->op = Op::CONSTANT; n->v = 0; break;
             }
-            if(op == TIMES && n->a->op == CONSTANT && Tol(n->a->v, 0)) {
-                n->op = CONSTANT; n->v = 0; break;
+            if(op == Op::TIMES && n->a->op == Op::CONSTANT && Tol(n->a->v, 0)) {
+                n->op = Op::CONSTANT; n->v = 0; break;
             }
 
             break;
 
-        case SQRT:
-        case SQUARE:
-        case NEGATE:
-        case SIN:
-        case COS:
-        case ASIN:
-        case ACOS:
-            if(n->a->op == CONSTANT) {
+        case Op::SQRT:
+        case Op::SQUARE:
+        case Op::NEGATE:
+        case Op::SIN:
+        case Op::COS:
+        case Op::ASIN:
+        case Op::ACOS:
+            if(n->a->op == Op::CONSTANT) {
                 double nv = n->Eval();
-                n->op = CONSTANT;
+                n->op = Op::CONSTANT;
                 n->v = nv;
             }
             break;
@@ -493,9 +493,9 @@ Expr *Expr::FoldConstants() {
 }
 
 void Expr::Substitute(hParam oldh, hParam newh) {
-    ssassert(op != PARAM_PTR, "Expected an expression that refer to params via handles");
+    ssassert(op != Op::PARAM_PTR, "Expected an expression that refer to params via handles");
 
-    if(op == PARAM && parh.v == oldh.v) {
+    if(op == Op::PARAM && parh.v == oldh.v) {
         parh = newh;
     }
     int c = Children();
@@ -511,14 +511,14 @@ void Expr::Substitute(hParam oldh, hParam newh) {
 const hParam Expr::NO_PARAMS       = { 0 };
 const hParam Expr::MULTIPLE_PARAMS = { 1 };
 hParam Expr::ReferencedParams(ParamList *pl) const {
-    if(op == PARAM) {
+    if(op == Op::PARAM) {
         if(pl->FindByIdNoOops(parh)) {
             return parh;
         } else {
             return NO_PARAMS;
         }
     }
-    ssassert(op != PARAM_PTR, "Expected an expression that refer to params via handles");
+    ssassert(op != Op::PARAM_PTR, "Expected an expression that refer to params via handles");
 
     int c = Children();
     if(c == 0) {
@@ -550,26 +550,26 @@ std::string Expr::Print() const {
 
     char c;
     switch(op) {
-        case PARAM:     return ssprintf("param(%08x)", parh.v);
-        case PARAM_PTR: return ssprintf("param(p%08x)", parp->h.v);
+        case Op::PARAM:     return ssprintf("param(%08x)", parh.v);
+        case Op::PARAM_PTR: return ssprintf("param(p%08x)", parp->h.v);
 
-        case CONSTANT:  return ssprintf("%.3f", v);
+        case Op::CONSTANT:  return ssprintf("%.3f", v);
 
-        case PLUS:      c = '+'; goto p;
-        case MINUS:     c = '-'; goto p;
-        case TIMES:     c = '*'; goto p;
-        case DIV:       c = '/'; goto p;
+        case Op::PLUS:      c = '+'; goto p;
+        case Op::MINUS:     c = '-'; goto p;
+        case Op::TIMES:     c = '*'; goto p;
+        case Op::DIV:       c = '/'; goto p;
 p:
             return "(" + a->Print() + " " + c + " " + b->Print() + ")";
             break;
 
-        case NEGATE:    return "(- " + a->Print() + ")";
-        case SQRT:      return "(sqrt " + a->Print() + ")";
-        case SQUARE:    return "(square " + a->Print() + ")";
-        case SIN:       return "(sin " + a->Print() + ")";
-        case COS:       return "(cos " + a->Print() + ")";
-        case ASIN:      return "(asin " + a->Print() + ")";
-        case ACOS:      return "(acos " + a->Print() + ")";
+        case Op::NEGATE:    return "(- " + a->Print() + ")";
+        case Op::SQRT:      return "(sqrt " + a->Print() + ")";
+        case Op::SQUARE:    return "(square " + a->Print() + ")";
+        case Op::SIN:       return "(sin " + a->Print() + ")";
+        case Op::COS:       return "(cos " + a->Print() + ")";
+        case Op::ASIN:      return "(asin " + a->Print() + ")";
+        case Op::ACOS:      return "(acos " + a->Print() + ")";
 
         default: ssassert(false, "Unexpected operation");
     }
@@ -623,8 +623,8 @@ void Expr::Consume() {
 }
 
 int Expr::Precedence(Expr *e) {
-    if(e->op == ALL_RESOLVED) return -1; // never want to reduce this marker
-    ssassert(e->op == BINARY_OP || e->op == UNARY_OP, "Unexpected operation");
+    if(e->op == Op::ALL_RESOLVED) return -1; // never want to reduce this marker
+    ssassert(e->op == Op::BINARY_OP || e->op == Op::UNARY_OP, "Unexpected operation");
 
     switch(e->c) {
         case 'q':
@@ -647,12 +647,12 @@ void Expr::Reduce() {
 
     Expr *op = PopOperator();
     Expr *n;
-    int o;
+    Op o;
     switch(op->c) {
-        case '+': o = PLUS;  goto c;
-        case '-': o = MINUS; goto c;
-        case '*': o = TIMES; goto c;
-        case '/': o = DIV;   goto c;
+        case '+': o = Op::PLUS;  goto c;
+        case '-': o = Op::MINUS; goto c;
+        case '*': o = Op::TIMES; goto c;
+        case '/': o = Op::DIV;   goto c;
 c:
             b = PopOperand();
             a = PopOperand();
@@ -678,30 +678,30 @@ void Expr::ReduceAndPush(Expr *n) {
 
 void Expr::Parse() {
     Expr *e = AllocExpr();
-    e->op = ALL_RESOLVED;
+    e->op = Op::ALL_RESOLVED;
     PushOperator(e);
 
     for(;;) {
         Expr *n = Next();
         if(!n) throw "end of expression unexpected";
 
-        if(n->op == CONSTANT) {
+        if(n->op == Op::CONSTANT) {
             PushOperand(n);
             Consume();
-        } else if(n->op == PAREN && n->c == '(') {
+        } else if(n->op == Op::PAREN && n->c == '(') {
             Consume();
             Parse();
             n = Next();
-            if(n->op != PAREN || n->c != ')') throw "expected: )";
+            if(n->op != Op::PAREN || n->c != ')') throw "expected: )";
             Consume();
-        } else if(n->op == UNARY_OP) {
+        } else if(n->op == Op::UNARY_OP) {
             PushOperator(n);
             Consume();
             continue;
-        } else if(n->op == BINARY_OP && n->c == '-') {
+        } else if(n->op == Op::BINARY_OP && n->c == '-') {
             // The minus sign is special, because it might be binary or
             // unary, depending on context.
-            n->op = UNARY_OP;
+            n->op = Op::UNARY_OP;
             n->c = 'n';
             PushOperator(n);
             Consume();
@@ -711,7 +711,7 @@ void Expr::Parse() {
         }
 
         n = Next();
-        if(n && n->op == BINARY_OP) {
+        if(n && n->op == Op::BINARY_OP) {
             ReduceAndPush(n);
             Consume();
         } else {
@@ -719,7 +719,7 @@ void Expr::Parse() {
         }
     }
 
-    while(TopOperator()->op != ALL_RESOLVED) {
+    while(TopOperator()->op != Op::ALL_RESOLVED) {
         Reduce();
     }
     PopOperator(); // discard the ALL_RESOLVED marker
@@ -740,7 +740,7 @@ void Expr::Lex(const char *in) {
             }
             number[len++] = '\0';
             Expr *e = AllocExpr();
-            e->op = CONSTANT;
+            e->op = Op::CONSTANT;
             e->v = atof(number);
             Unparsed[UnparsedCnt++] = e;
         } else if(isalpha(c) || c == '_') {
@@ -754,16 +754,16 @@ void Expr::Lex(const char *in) {
 
             Expr *e = AllocExpr();
             if(strcmp(name, "sqrt")==0) {
-                e->op = UNARY_OP;
+                e->op = Op::UNARY_OP;
                 e->c = 'q';
             } else if(strcmp(name, "cos")==0) {
-                e->op = UNARY_OP;
+                e->op = Op::UNARY_OP;
                 e->c = 'c';
             } else if(strcmp(name, "sin")==0) {
-                e->op = UNARY_OP;
+                e->op = Op::UNARY_OP;
                 e->c = 's';
             } else if(strcmp(name, "pi")==0) {
-                e->op = CONSTANT;
+                e->op = Op::CONSTANT;
                 e->v = PI;
             } else {
                 throw "unknown name";
@@ -771,7 +771,7 @@ void Expr::Lex(const char *in) {
             Unparsed[UnparsedCnt++] = e;
         } else if(strchr("+-*/()", c)) {
             Expr *e = AllocExpr();
-            e->op = (c == '(' || c == ')') ? PAREN : BINARY_OP;
+            e->op = (c == '(' || c == ')') ? Op::PAREN : Op::BINARY_OP;
             e->c = c;
             Unparsed[UnparsedCnt++] = e;
             in++;

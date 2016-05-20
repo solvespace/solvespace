@@ -9,11 +9,11 @@
 static int I;
 
 void SShell::MakeFromUnionOf(SShell *a, SShell *b) {
-    MakeFromBoolean(a, b, AS_UNION);
+    MakeFromBoolean(a, b, SSurface::CombineAs::UNION);
 }
 
 void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
-    MakeFromBoolean(a, b, AS_DIFFERENCE);
+    MakeFromBoolean(a, b, SSurface::CombineAs::DIFFERENCE);
 }
 
 //-----------------------------------------------------------------------------
@@ -83,8 +83,8 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                 // some slop if points are close to edge and pwl is too coarse,
                 // and it doesn't hurt to split unnecessarily.
                 Point2d dummy = { 0, 0 };
-                int c = (pi->srf->bsp) ? pi->srf->bsp->ClassifyPoint(puv, dummy, pi->srf) : SBspUv::OUTSIDE;
-                if(c == SBspUv::OUTSIDE) {
+                SBspUv::Class c = (pi->srf->bsp) ? pi->srf->bsp->ClassifyPoint(puv, dummy, pi->srf) : SBspUv::Class::OUTSIDE;
+                if(c == SBspUv::Class::OUTSIDE) {
                     double d = VERY_POSITIVE;
                     if(pi->srf->bsp) d = pi->srf->bsp->MinimumDistanceToEdge(puv, pi->srf);
                     if(d > SS.ChordTolMm()) {
@@ -135,7 +135,7 @@ void SShell::CopyCurvesSplitAgainst(bool opA, SShell *agnst, SShell *into) {
         SCurve scn = sc->MakeCopySplitAgainst(agnst, NULL,
                                 surface.FindById(sc->surfA),
                                 surface.FindById(sc->surfB));
-        scn.source = opA ? SCurve::FROM_A : SCurve::FROM_B;
+        scn.source = opA ? SCurve::Source::A : SCurve::Source::B;
 
         hSCurve hsc = into->curve.AddAndAssignId(&scn);
         // And note the new ID so that we can rewrite the trims appropriately
@@ -194,12 +194,12 @@ void SSurface::TrimFromEdgeList(SEdgeList *el, bool asUv) {
     }
 }
 
-static bool KeepRegion(int type, bool opA, int shell, int orig)
+static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, SShell::Class orig)
 {
-    bool inShell = (shell == SShell::INSIDE),
-         inSame  = (shell == SShell::COINC_SAME),
-         inOpp   = (shell == SShell::COINC_OPP),
-         inOrig  = (orig == SShell::INSIDE);
+    bool inShell = (shell == SShell::Class::INSIDE),
+         inSame  = (shell == SShell::Class::COINC_SAME),
+         inOpp   = (shell == SShell::Class::COINC_OPP),
+         inOrig  = (orig == SShell::Class::INSIDE);
 
     bool inFace = inSame || inOpp;
 
@@ -207,14 +207,14 @@ static bool KeepRegion(int type, bool opA, int shell, int orig)
     // if inFace is true.
     if(!inOrig) return false;
     switch(type) {
-        case SShell::AS_UNION:
+        case SSurface::CombineAs::UNION:
             if(opA) {
                 return (!inShell && !inFace);
             } else {
                 return (!inShell && !inFace) || inSame;
             }
 
-        case SShell::AS_DIFFERENCE:
+        case SSurface::CombineAs::DIFFERENCE:
             if(opA) {
                 return (!inShell && !inFace);
             } else {
@@ -224,9 +224,9 @@ static bool KeepRegion(int type, bool opA, int shell, int orig)
         default: ssassert(false, "Unexpected shell type");
     }
 }
-static bool KeepEdge(int type, bool opA,
-                     int indir_shell, int outdir_shell,
-                     int indir_orig, int outdir_orig)
+static bool KeepEdge(SSurface::CombineAs type, bool opA,
+                     SShell::Class indir_shell, SShell::Class outdir_shell,
+                     SShell::Class indir_orig, SShell::Class outdir_orig)
 {
     bool keepIn  = KeepRegion(type, opA, indir_shell,  indir_orig),
          keepOut = KeepRegion(type, opA, outdir_shell, outdir_orig);
@@ -237,33 +237,33 @@ static bool KeepEdge(int type, bool opA,
     return false;
 }
 
-static void TagByClassifiedEdge(int bspclass, int *indir, int *outdir)
+static void TagByClassifiedEdge(SBspUv::Class bspclass, SShell::Class *indir, SShell::Class *outdir)
 {
     switch(bspclass) {
-        case SBspUv::INSIDE:
-            *indir  = SShell::INSIDE;
-            *outdir = SShell::INSIDE;
+        case SBspUv::Class::INSIDE:
+            *indir  = SShell::Class::INSIDE;
+            *outdir = SShell::Class::INSIDE;
             break;
 
-        case SBspUv::OUTSIDE:
-            *indir  = SShell::OUTSIDE;
-            *outdir = SShell::OUTSIDE;
+        case SBspUv::Class::OUTSIDE:
+            *indir  = SShell::Class::OUTSIDE;
+            *outdir = SShell::Class::OUTSIDE;
             break;
 
-        case SBspUv::EDGE_PARALLEL:
-            *indir  = SShell::INSIDE;
-            *outdir = SShell::OUTSIDE;
+        case SBspUv::Class::EDGE_PARALLEL:
+            *indir  = SShell::Class::INSIDE;
+            *outdir = SShell::Class::OUTSIDE;
             break;
 
-        case SBspUv::EDGE_ANTIPARALLEL:
-            *indir  = SShell::OUTSIDE;
-            *outdir = SShell::INSIDE;
+        case SBspUv::Class::EDGE_ANTIPARALLEL:
+            *indir  = SShell::Class::OUTSIDE;
+            *outdir = SShell::Class::INSIDE;
             break;
 
         default:
             dbp("TagByClassifiedEdge: fail!");
-            *indir  = SShell::OUTSIDE;
-            *outdir = SShell::OUTSIDE;
+            *indir  = SShell::Class::OUTSIDE;
+            *outdir = SShell::Class::OUTSIDE;
             break;
     }
 }
@@ -400,7 +400,7 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
 SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                                        SShell *sha, SShell *shb,
                                        SShell *into,
-                                       int type)
+                                       SSurface::CombineAs type)
 {
     bool opA = (parent == sha);
     SShell *agnst = opA ? shb : sha;
@@ -419,7 +419,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.trim.Add(&stn);
     }
 
-    if(type == SShell::AS_DIFFERENCE && !opA) {
+    if(type == SSurface::CombineAs::DIFFERENCE && !opA) {
         // The second operand of a Boolean difference gets turned inside out
         ret.Reverse();
     }
@@ -428,7 +428,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     // be changed if we just flipped the surface normal, and we are using
     // the split curves (not the original curves).
     SEdgeList orig = {};
-    ret.MakeEdgesInto(into, &orig, AS_UV);
+    ret.MakeEdgesInto(into, &orig, MakeAs::UV);
     ret.trim.Clear();
     // which means that we can't necessarily use the old BSP...
     SBspUv *origBsp = SBspUv::From(&orig, &ret);
@@ -440,7 +440,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     for(ss = agnst->surface.First(); ss; ss = agnst->surface.NextAfter(ss)) {
         SCurve *sc;
         for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
-            if(sc->source != SCurve::FROM_INTERSECTION) continue;
+            if(sc->source != SCurve::Source::INTERSECTION) continue;
             if(opA) {
                 if(sc->surfA.v != h.v || sc->surfB.v != ss->h.v) continue;
             } else {
@@ -456,8 +456,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                 ss->ClosestPointTo(a, &(auv.x), &(auv.y));
                 ss->ClosestPointTo(b, &(buv.x), &(buv.y));
 
-                int c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::OUTSIDE;
-                if(c != SBspUv::OUTSIDE) {
+                SBspUv::Class c = (ss->bsp) ? ss->bsp->ClassifyEdge(auv, buv, ss) : SBspUv::Class::OUTSIDE;
+                if(c != SBspUv::Class::OUTSIDE) {
                     Vector ta = Vector::From(0, 0, 0);
                     Vector tb = Vector::From(0, 0, 0);
                     ret.ClosestPointTo(a, &(ta.x), &(ta.y));
@@ -471,7 +471,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
                     // point opposite to the surface normal.
                     bool bkwds = true;
                     if((tn.Cross(b.Minus(a))).Dot(sn) < 0) bkwds = !bkwds;
-                    if(type == SShell::AS_DIFFERENCE && !opA) bkwds = !bkwds;
+                    if(type == SSurface::CombineAs::DIFFERENCE && !opA) bkwds = !bkwds;
                     if(bkwds) {
                         inter.AddEdge(tb, ta, sc->h.v, 1);
                     } else {
@@ -525,10 +525,10 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        int indir_shell, outdir_shell, indir_orig, outdir_orig;
+        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        indir_orig  = SShell::INSIDE;
-        outdir_orig = SShell::OUTSIDE;
+        indir_orig  = SShell::Class::INSIDE;
+        outdir_orig = SShell::Class::OUTSIDE;
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
                             ret.PointAt(auv), ret.PointAt(buv), pt,
@@ -558,9 +558,9 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         ret.EdgeNormalsWithinSurface(auv, buv, &pt, &enin, &enout, &surfn,
                                         se->auxA, into, sha, shb);
 
-        int indir_shell, outdir_shell, indir_orig, outdir_orig;
+        SShell::Class indir_shell, outdir_shell, indir_orig, outdir_orig;
 
-        int c_this = (origBsp) ? origBsp->ClassifyEdge(auv, buv, &ret) : SBspUv::OUTSIDE;
+        SBspUv::Class c_this = (origBsp) ? origBsp->ClassifyEdge(auv, buv, &ret) : SBspUv::Class::OUTSIDE;
         TagByClassifiedEdge(c_this, &indir_orig, &outdir_orig);
 
         agnst->ClassifyEdge(&indir_shell, &outdir_shell,
@@ -602,7 +602,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     return ret;
 }
 
-void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, int type) {
+void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, SSurface::CombineAs type) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         SSurface ssn;
@@ -667,7 +667,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
         ab = (i == 0) ? a : b;
         for(c = ab->curve.First(); c; c = ab->curve.NextAfter(c)) {
             cn = SCurve::FromTransformationOf(c, t, q, 1.0);
-            cn.source = (i == 0) ? SCurve::FROM_A : SCurve::FROM_B;
+            cn.source = (i == 0) ? SCurve::Source::A : SCurve::Source::B;
             // surfA and surfB are wrong now, and we can't fix them until
             // we've assigned IDs to the surfaces. So we'll get that later.
             c->newH = curve.AddAndAssignId(&cn);
@@ -695,7 +695,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     RewriteSurfaceHandlesForCurves(a, b);
 }
 
-void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
+void SShell::MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type) {
     booleanFailed = false;
 
     a->MakeClassifyingBsps(NULL);
@@ -759,12 +759,12 @@ void SShell::MakeClassifyingBsps(SShell *useCurvesFrom) {
 void SSurface::MakeClassifyingBsp(SShell *shell, SShell *useCurvesFrom) {
     SEdgeList el = {};
 
-    MakeEdgesInto(shell, &el, AS_UV, useCurvesFrom);
+    MakeEdgesInto(shell, &el, MakeAs::UV, useCurvesFrom);
     bsp = SBspUv::From(&el, this);
     el.Clear();
 
     edges = {};
-    MakeEdgesInto(shell, &edges, AS_XYZ, useCurvesFrom);
+    MakeEdgesInto(shell, &edges, MakeAs::XYZ, useCurvesFrom);
 }
 
 SBspUv *SBspUv::Alloc() {
@@ -898,7 +898,7 @@ void SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
     return;
 }
 
-int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const {
+SBspUv::Class SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const {
     double dp = ScaledSignedDistanceToLine(p, a, b, srf);
 
     if(fabs(dp) < LENGTH_EPS) {
@@ -908,33 +908,33 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const {
             if(ScaledDistanceToLine(p, f->a, ba, true, srf) < LENGTH_EPS) {
                 if(ScaledDistanceToLine(eb, f->a, ba, false, srf) < LENGTH_EPS){
                     if(ba.Dot(eb.Minus(p)) > 0) {
-                        return EDGE_PARALLEL;
+                        return Class::EDGE_PARALLEL;
                     } else {
-                        return EDGE_ANTIPARALLEL;
+                        return Class::EDGE_ANTIPARALLEL;
                     }
                 } else {
-                    return EDGE_OTHER;
+                    return Class::EDGE_OTHER;
                 }
             }
             f = f->more;
         }
         // Pick arbitrarily which side to send it down, doesn't matter
-        int c1 =  neg ? neg->ClassifyPoint(p, eb, srf) : OUTSIDE;
-        int c2 =  pos ? pos->ClassifyPoint(p, eb, srf) : INSIDE;
+        Class c1 =  neg ? neg->ClassifyPoint(p, eb, srf) : Class::OUTSIDE;
+        Class c2 =  pos ? pos->ClassifyPoint(p, eb, srf) : Class::INSIDE;
         if(c1 != c2) {
             dbp("MISMATCH: %d %d %08x %08x", c1, c2, neg, pos);
         }
         return c1;
     } else if(dp > 0) {
-        return pos ? pos->ClassifyPoint(p, eb, srf) : INSIDE;
+        return pos ? pos->ClassifyPoint(p, eb, srf) : Class::INSIDE;
     } else {
-        return neg ? neg->ClassifyPoint(p, eb, srf) : OUTSIDE;
+        return neg ? neg->ClassifyPoint(p, eb, srf) : Class::OUTSIDE;
     }
 }
 
-int SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) const {
-    int ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb, srf);
-    if(ret == EDGE_OTHER) {
+SBspUv::Class SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) const {
+    SBspUv::Class ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb, srf);
+    if(ret == Class::EDGE_OTHER) {
         // Perhaps the edge is tangent at its midpoint (and we screwed up
         // somewhere earlier and failed to split it); try a different
         // point on the edge.

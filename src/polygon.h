@@ -15,6 +15,26 @@ class SMesh;
 class SBsp3;
 class SOutlineList;
 
+enum class EarType : uint32_t {
+    UNKNOWN = 0,
+    NOT_EAR = 1,
+    EAR     = 2
+};
+
+enum class BspClass : uint32_t {
+    POS         = 100,
+    NEG         = 101,
+    COPLANAR    = 200
+};
+    
+enum class EdgeKind : uint32_t {
+    NAKED_OR_SELF_INTER  = 100,
+    SELF_INTER           = 200,
+    TURNING              = 300,
+    EMPHASIZED           = 400,
+    SHARP                = 500,
+};
+
 class SEdge {
 public:
     int    tag;
@@ -75,12 +95,7 @@ class SPoint {
 public:
     int     tag;
 
-    enum {
-        UNKNOWN = 0,
-        NOT_EAR = 1,
-        EAR     = 2
-    };
-    int     ear;
+    EarType ear;
 
     Vector  p;
     Vector  auxv;
@@ -177,8 +192,7 @@ public:
 
     SBsp2       *more;
 
-    enum { POS = 100, NEG = 101, COPLANAR = 200 };
-    void InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
+    void InsertTriangleHow(BspClass how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
     void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
     Vector IntersectionWith(Vector a, Vector b) const;
     void InsertEdge(SEdge *nedge, Vector nnp, Vector out);
@@ -207,12 +221,11 @@ public:
 
     Vector IntersectionWith(Vector a, Vector b) const;
 
-    enum { POS = 100, NEG = 101, COPLANAR = 200 };
-    void InsertHow(int how, STriangle *str, SMesh *instead);
+    void InsertHow(BspClass how, STriangle *str, SMesh *instead);
     void Insert(STriangle *str, SMesh *instead);
     static SBsp3 *InsertOrCreate(SBsp3 *where, STriangle *str, SMesh *instead);
 
-    void InsertConvexHow(int how, STriMeta meta, Vector *vertex, int n,
+    void InsertConvexHow(BspClass how, STriMeta meta, Vector *vertex, int n,
                                 SMesh *instead);
     SBsp3 *InsertConvex(STriMeta meta, Vector *vertex, int n, SMesh *instead);
 
@@ -252,7 +265,7 @@ public:
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
-    void MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, int type);
+    void MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, EdgeKind type);
 
     bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);
@@ -317,14 +330,7 @@ public:
     void ClearTags() const;
 
     void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info) const;
-    enum {
-        NAKED_OR_SELF_INTER_EDGES  = 100,
-        SELF_INTER_EDGES           = 200,
-        TURNING_EDGES              = 300,
-        EMPHASIZED_EDGES           = 400,
-        SHARP_EDGES                = 500,
-    };
-    void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
+    void MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIsInter,
                               bool *inter, bool *leaky, int auxA = 0) const;
     void MakeOutlinesInto(SOutlineList *sel) const;
 

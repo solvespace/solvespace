@@ -278,8 +278,8 @@ void SContour::ClipEarInto(SMesh *m, int bp, double scaledEps) {
 
     // By deleting the point at bp, we may change the ear-ness of the points
     // on either side.
-    l.elem[ap].ear = SPoint::UNKNOWN;
-    l.elem[cp].ear = SPoint::UNKNOWN;
+    l.elem[ap].ear = EarType::UNKNOWN;
+    l.elem[cp].ear = EarType::UNKNOWN;
 
     l.ClearTags();
     l.elem[bp].tag = 1;
@@ -307,16 +307,16 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
 
     // Now calculate the ear-ness of each vertex
     for(i = 0; i < l.n; i++) {
-        (l.elem[i]).ear = IsEar(i, scaledEps) ? SPoint::EAR : SPoint::NOT_EAR;
+        (l.elem[i]).ear = IsEar(i, scaledEps) ? EarType::EAR : EarType::NOT_EAR;
     }
 
     bool toggle = false;
     while(l.n > 3) {
         // Some points may have changed ear-ness, so recalculate
         for(i = 0; i < l.n; i++) {
-            if(l.elem[i].ear == SPoint::UNKNOWN) {
+            if(l.elem[i].ear == EarType::UNKNOWN) {
                 (l.elem[i]).ear = IsEar(i, scaledEps) ?
-                                        SPoint::EAR : SPoint::NOT_EAR;
+                                        EarType::EAR : EarType::NOT_EAR;
             }
         }
 
@@ -328,7 +328,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
         int offset = toggle ? -1 : 0;
         for(i = 0; i < l.n; i++) {
             int ear = WRAP(i+offset, l.n);
-            if(l.elem[ear].ear == SPoint::EAR) {
+            if(l.elem[ear].ear == EarType::EAR) {
                 if(srf->degm == 1 && srf->degn == 1) {
                     // This is a plane; any ear is a good ear.
                     bestEar = ear;

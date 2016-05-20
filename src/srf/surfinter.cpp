@@ -100,7 +100,7 @@ void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
     ssassert(!(sb->Start()).Equals(sb->Finish()),
              "Unexpected zero-length edge");
 
-    split.source = SCurve::FROM_INTERSECTION;
+    split.source = SCurve::Source::INTERSECTION;
     into->curve.AddAndAssignId(&split);
 }
 
@@ -317,7 +317,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                      *srfB = (a == 0) ? b : this;
 
             SEdgeList el = {};
-            srfA->MakeEdgesInto(shA, &el, AS_XYZ, NULL);
+            srfA->MakeEdgesInto(shA, &el, MakeAs::XYZ, NULL);
 
             SEdge *se;
             for(se = el.l.First(); se; se = el.l.NextAfter(se)) {
@@ -365,7 +365,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             sc.surfA = h;
             sc.surfB = b->h;
             sc.isExact = false;
-            sc.source = SCurve::FROM_INTERSECTION;
+            sc.source = SCurve::Source::INTERSECTION;
 
             Vector start  = spl.l.elem[0].p,
                    startv = spl.l.elem[0].auxv;
@@ -502,7 +502,7 @@ void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         if(proto->CoincidentWith(ss, sameNormal)) {
-            ss->MakeEdgesInto(this, el, SSurface::AS_XYZ, useCurvesFrom);
+            ss->MakeEdgesInto(this, el, SSurface::MakeAs::XYZ, useCurvesFrom);
         }
     }
 

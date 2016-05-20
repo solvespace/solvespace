@@ -19,7 +19,6 @@ void SolveSpaceUI::Init() {
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.
-    int i;
     // Default list of colors for the model material
     modelColor[0] = CnfThawColor(RGBi(150, 150, 150), "ModelColor_0");
     modelColor[1] = CnfThawColor(RGBi(100, 100, 100), "ModelColor_1");
@@ -51,7 +50,7 @@ void SolveSpaceUI::Init() {
     // Max pwl segments to generate
     exportMaxSegments = CnfThawInt(64, "ExportMaxSegments");
     // View units
-    viewUnits = (Unit)CnfThawInt((uint32_t)UNIT_MM, "ViewUnits");
+    viewUnits = (Unit)CnfThawInt((uint32_t)Unit::MM, "ViewUnits");
     // Number of digits after the decimal point
     afterDecimalMm = CnfThawInt(2, "AfterDecimalMm");
     afterDecimalInch = CnfThawInt(3, "AfterDecimalInch");
@@ -95,7 +94,7 @@ void SolveSpaceUI::Init() {
     // Show toolbar in the graphics window
     showToolbar = CnfThawBool(true, "ShowToolbar");
     // Recent files menus
-    for(i = 0; i < MAX_RECENT; i++) {
+    for(size_t i = 0; i < MAX_RECENT; i++) {
         RecentFile[i] = CnfThawString("", "RecentFile_" + std::to_string(i));
     }
     RefreshRecentMenus();
@@ -148,10 +147,10 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
 
 void SolveSpaceUI::Exit() {
     // Recent files
-    for(int i = 0; i < MAX_RECENT; i++)
+    for(size_t i = 0; i < MAX_RECENT; i++)
         CnfFreezeString(RecentFile[i], "RecentFile_" + std::to_string(i));
     // Model colors
-    for(int i = 0; i < MODEL_COLORS; i++)
+    for(size_t i = 0; i < MODEL_COLORS; i++)
         CnfFreezeColor(modelColor[i], "ModelColor_" + std::to_string(i));
     // Light intensities
     CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
@@ -246,21 +245,21 @@ void SolveSpaceUI::DoLater() {
 }
 
 double SolveSpaceUI::MmPerUnit() {
-    if(viewUnits == UNIT_INCHES) {
+    if(viewUnits == Unit::INCHES) {
         return 25.4;
     } else {
         return 1.0;
     }
 }
 const char *SolveSpaceUI::UnitName() {
-    if(viewUnits == UNIT_INCHES) {
+    if(viewUnits == Unit::INCHES) {
         return "inch";
     } else {
         return "mm";
     }
 }
 std::string SolveSpaceUI::MmToString(double v) {
-    if(viewUnits == UNIT_INCHES) {
+    if(viewUnits == Unit::INCHES) {
         return ssprintf("%.*f", afterDecimalInch, v/25.4);
     } else {
         return ssprintf("%.*f", afterDecimalMm, v);
@@ -284,10 +283,10 @@ int SolveSpaceUI::GetMaxSegments() {
     return maxSegments;
 }
 int SolveSpaceUI::UnitDigitsAfterDecimal() {
-    return (viewUnits == UNIT_INCHES) ? afterDecimalInch : afterDecimalMm;
+    return (viewUnits == Unit::INCHES) ? afterDecimalInch : afterDecimalMm;
 }
 void SolveSpaceUI::SetUnitDigitsAfterDecimal(int v) {
-    if(viewUnits == UNIT_INCHES) {
+    if(viewUnits == Unit::INCHES) {
         afterDecimalInch = v;
     } else {
         afterDecimalMm = v;
@@ -320,7 +319,7 @@ void SolveSpaceUI::AfterNewFile() {
     SS.GW.projRight = Vector::From(1, 0, 0);
     SS.GW.projUp    = Vector::From(0, 1, 0);
 
-    GenerateAll(GENERATE_REGEN);
+    GenerateAll(Generate::REGEN);
 
     TW.Init();
     GW.Init();
@@ -338,7 +337,7 @@ void SolveSpaceUI::AfterNewFile() {
     // thing visible is the not-yet-generated surfaces.
     GW.ZoomToFit(true);
 
-    GenerateAll(GENERATE_ALL);
+    GenerateAll(Generate::ALL);
     SS.ScheduleShowTW();
     // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit(false);
@@ -351,22 +350,20 @@ void SolveSpaceUI::AfterNewFile() {
 }
 
 void SolveSpaceUI::RemoveFromRecentList(const std::string &filename) {
-    int src, dest;
-    dest = 0;
-    for(src = 0; src < MAX_RECENT; src++) {
+    int dest = 0;
+    for(int src = 0; src < (int)MAX_RECENT; src++) {
         if(filename != RecentFile[src]) {
             if(src != dest) RecentFile[dest] = RecentFile[src];
             dest++;
         }
     }
-    while(dest < MAX_RECENT) RecentFile[dest++].clear();
+    while(dest < (int)MAX_RECENT) RecentFile[dest++].clear();
     RefreshRecentMenus();
 }
 void SolveSpaceUI::AddToRecentList(const std::string &filename) {
     RemoveFromRecentList(filename);
 
-    int src;
-    for(src = MAX_RECENT - 2; src >= 0; src--) {
+    for(int src = MAX_RECENT - 2; src >= 0; src--) {
         RecentFile[src+1] = RecentFile[src];
     }
     RecentFile[0] = filename;
@@ -438,17 +435,18 @@ static std::string Extension(const std::string &filename) {
     return "";
 }
 
-void SolveSpaceUI::MenuFile(int id) {
-    if(id >= RECENT_OPEN && id < (RECENT_OPEN+MAX_RECENT)) {
+void SolveSpaceUI::MenuFile(Command id) {
+    if((uint32_t)id >= (uint32_t)Command::RECENT_OPEN &&
+       (uint32_t)id < ((uint32_t)Command::RECENT_OPEN+MAX_RECENT)) {
         if(!SS.OkayToStartNewFile()) return;
 
-        std::string newFile = RecentFile[id - RECENT_OPEN];
+        std::string newFile = RecentFile[(uint32_t)id - (uint32_t)Command::RECENT_OPEN];
         SS.OpenFile(newFile);
         return;
     }
 
     switch(id) {
-        case GraphicsWindow::MNU_NEW:
+        case Command::NEW:
             if(!SS.OkayToStartNewFile()) break;
 
             SS.saveFile = "";
@@ -456,7 +454,7 @@ void SolveSpaceUI::MenuFile(int id) {
             SS.AfterNewFile();
             break;
 
-        case GraphicsWindow::MNU_OPEN: {
+        case Command::OPEN: {
             if(!SS.OkayToStartNewFile()) break;
 
             std::string newFile;
@@ -466,22 +464,22 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_SAVE:
+        case Command::SAVE:
             SS.GetFilenameAndSave(false);
             break;
 
-        case GraphicsWindow::MNU_SAVE_AS:
+        case Command::SAVE_AS:
             SS.GetFilenameAndSave(true);
             break;
 
-        case GraphicsWindow::MNU_EXPORT_PNG: {
+        case Command::EXPORT_PNG: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, "", PngFileFilter)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }
 
-        case GraphicsWindow::MNU_EXPORT_VIEW: {
+        case Command::EXPORT_VIEW: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "ViewExportFormat"),
                             VectorFileFilter)) break;
@@ -503,7 +501,7 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_EXPORT_WIREFRAME: {
+        case Command::EXPORT_WIREFRAME: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "WireframeExportFormat"),
                             Vector3dFileFilter)) break;
@@ -513,7 +511,7 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_EXPORT_SECTION: {
+        case Command::EXPORT_SECTION: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "SectionExportFormat"),
                             VectorFileFilter)) break;
@@ -523,7 +521,7 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_EXPORT_MESH: {
+        case Command::EXPORT_MESH: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "MeshExportFormat"),
                             MeshFileFilter)) break;
@@ -533,7 +531,7 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_EXPORT_SURFACES: {
+        case Command::EXPORT_SURFACES: {
             std::string exportFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "SurfacesExportFormat"),
                             SurfaceFileFilter)) break;
@@ -544,7 +542,7 @@ void SolveSpaceUI::MenuFile(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_IMPORT: {
+        case Command::IMPORT: {
             std::string importFile;
             if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
                             ImportableFileFilter)) break;
@@ -556,12 +554,12 @@ void SolveSpaceUI::MenuFile(int id) {
                 ImportDwg(importFile);
             } else ssassert(false, "Unexpected extension of file to import");
 
-            SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
+            SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
             SS.ScheduleShowTW();
             break;
         }
 
-        case GraphicsWindow::MNU_EXIT:
+        case Command::EXIT:
             if(!SS.OkayToStartNewFile()) break;
             SS.Exit();
             break;
@@ -572,23 +570,23 @@ void SolveSpaceUI::MenuFile(int id) {
     SS.UpdateWindowTitle();
 }
 
-void SolveSpaceUI::MenuAnalyze(int id) {
+void SolveSpaceUI::MenuAnalyze(Command id) {
     SS.GW.GroupSelection();
 #define gs (SS.GW.gs)
 
     switch(id) {
-        case GraphicsWindow::MNU_STEP_DIM:
+        case Command::STEP_DIM:
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && !c->reference) {
                     SS.TW.shown.dimFinish = c->valA;
                     SS.TW.shown.dimSteps = 10;
                     SS.TW.shown.dimIsDistance =
-                        (c->type != Constraint::ANGLE) &&
-                        (c->type != Constraint::LENGTH_RATIO) &&
-                        (c->type != Constraint::LENGTH_DIFFERENCE);
+                        (c->type != Constraint::Type::ANGLE) &&
+                        (c->type != Constraint::Type::LENGTH_RATIO) &&
+                        (c->type != Constraint::Type::LENGTH_DIFFERENCE);
                     SS.TW.shown.constraint = c->h;
-                    SS.TW.shown.screen = TextWindow::SCREEN_STEP_DIMENSION;
+                    SS.TW.shown.screen = TextWindow::Screen::STEP_DIMENSION;
 
                     // The step params are specified in the text window,
                     // so force that to be shown.
@@ -605,7 +603,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             }
             break;
 
-        case GraphicsWindow::MNU_NAKED_EDGES: {
+        case Command::NAKED_EDGES: {
             SS.nakedEdges.Clear();
 
             Group *g = SK.GetGroup(SS.GW.activeGroup);
@@ -613,7 +611,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                SKdNode::NAKED_OR_SELF_INTER_EDGES, true, &inters, &leaks);
+                EdgeKind::NAKED_OR_SELF_INTER, true, &inters, &leaks);
 
             InvalidateGraphics();
 
@@ -637,14 +635,14 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_INTERFERENCE: {
+        case Command::INTERFERENCE: {
             SS.nakedEdges.Clear();
 
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                SKdNode::SELF_INTER_EDGES, false, &inters, &leaks);
+                EdgeKind::SELF_INTER, false, &inters, &leaks);
 
             InvalidateGraphics();
 
@@ -657,7 +655,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_VOLUME: {
+        case Command::VOLUME: {
             SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
 
             double vol = 0;
@@ -717,7 +715,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
                 vol / pow(SS.MmPerUnit(), 3),
                 SS.UnitName());
 
-            if(SS.viewUnits == SolveSpaceUI::UNIT_MM) {
+            if(SS.viewUnits == Unit::MM) {
                 msg += ssprintf("\n    %.2f mL", vol/(10*10*10));
             }
             msg += "\n\nCurved surfaces have been approximated as triangles.\n"
@@ -726,9 +724,9 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_AREA: {
+        case Command::AREA: {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
-            if(g->polyError.how != Group::POLY_GOOD) {
+            if(g->polyError.how != PolyError::GOOD) {
                 Error("This group does not contain a correctly-formed "
                       "2d closed area. It is open, not coplanar, or self-"
                       "intersecting.");
@@ -753,13 +751,13 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             break;
         }
 
-        case GraphicsWindow::MNU_SHOW_DOF:
+        case Command::SHOW_DOF:
             // This works like a normal solve, except that it calculates
             // which variables are free/bound at the same time.
-            SS.GenerateAll(SolveSpaceUI::GENERATE_ALL, true);
+            SS.GenerateAll(SolveSpaceUI::Generate::ALL, true);
             break;
 
-        case GraphicsWindow::MNU_TRACE_PT:
+        case Command::TRACE_PT:
             if(gs.points == 1 && gs.n == 1) {
                 SS.traced.point = gs.point[0];
                 SS.GW.ClearSelection();
@@ -768,7 +766,7 @@ void SolveSpaceUI::MenuAnalyze(int id) {
             }
             break;
 
-        case GraphicsWindow::MNU_STOP_TRACING: {
+        case Command::STOP_TRACING: {
             std::string exportFile;
             if(GetSaveFile(&exportFile, "", CsvFileFilter)) {
                 FILE *f = ssfopen(exportFile, "wb");
@@ -797,13 +795,13 @@ void SolveSpaceUI::MenuAnalyze(int id) {
     }
 }
 
-void SolveSpaceUI::MenuHelp(int id) {
+void SolveSpaceUI::MenuHelp(Command id) {
     switch(id) {
-        case GraphicsWindow::MNU_WEBSITE:
+        case Command::WEBSITE:
             OpenWebsite("http://solvespace.com/helpmenu");
             break;
 
-        case GraphicsWindow::MNU_ABOUT:
+        case Command::ABOUT:
             Message(
 "This is SolveSpace version " PACKAGE_VERSION ".\n"
 "\n"
@@ -855,8 +853,8 @@ BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
             point = e->PointGetNum();
         } else {
             switch(e->type) {
-                case Entity::ARC_OF_CIRCLE:
-                case Entity::CIRCLE:
+                case Entity::Type::ARC_OF_CIRCLE:
+                case Entity::Type::CIRCLE:
                     r = e->CircleGetRadiusNum();
                     point = GetEntity(e->point[0])->PointGetNum();
                     break;

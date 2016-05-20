@@ -14,19 +14,19 @@ const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
 const EntReqTable::TableEntry EntReqTable::Table[] = {
 //   request type               entity type       pts   xtra?   norml   dist    description
-{ Request::WORKPLANE,       Entity::WORKPLANE,      1,  false,  true,   false, "workplane"      },
-{ Request::DATUM_POINT,     0,                      1,  false,  false,  false, "datum-point"    },
-{ Request::LINE_SEGMENT,    Entity::LINE_SEGMENT,   2,  false,  false,  false, "line-segment"   },
-{ Request::CUBIC,           Entity::CUBIC,          4,  true,   false,  false, "cubic-bezier"   },
-{ Request::CUBIC_PERIODIC,  Entity::CUBIC_PERIODIC, 3,  true,   false,  false, "periodic-cubic" },
-{ Request::CIRCLE,          Entity::CIRCLE,         1,  false,  true,   true,  "circle"         },
-{ Request::ARC_OF_CIRCLE,   Entity::ARC_OF_CIRCLE,  3,  false,  true,   false, "arc-of-circle"  },
-{ Request::TTF_TEXT,        Entity::TTF_TEXT,       2,  false,  true,   false, "ttf-text"       },
-{ 0, 0, 0, false, false, false, 0 },
+{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false, "workplane"      },
+{ Request::Type::DATUM_POINT,     Entity::Type::DATUM_POINT,    1,  false,  false,  false, "datum-point"    },
+{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false, "line-segment"   },
+{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false, "cubic-bezier"   },
+{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false, "periodic-cubic" },
+{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true,  "circle"         },
+{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false, "arc-of-circle"  },
+{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       2,  false,  true,   false, "ttf-text"       },
+{ Request::Type::UNKNOWN,         Entity::Type::UNKNOWN,        0,  false,  false,  false, NULL             },
 };
 
-const char *EntReqTable::DescriptionForRequest(int req) {
-    for(int i = 0; Table[i].reqType; i++) {
+const char *EntReqTable::DescriptionForRequest(Request::Type req) {
+    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
         if(req == Table[i].reqType) {
             return Table[i].description;
         }
@@ -35,7 +35,7 @@ const char *EntReqTable::DescriptionForRequest(int req) {
 }
 
 void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
-           int *ent, int *req, int *pts, bool *hasNormal, bool *hasDistance)
+           Entity::Type *ent, Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
     int points = te->points;
     if(te->useExtraPoints) points += extraPoints;
@@ -47,10 +47,10 @@ void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
     if(hasDistance) *hasDistance = te->hasDistance;
 }
 
-bool EntReqTable::GetRequestInfo(int req, int extraPoints,
-                     int *ent, int *pts, bool *hasNormal, bool *hasDistance)
+bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
+                     Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType; i++) {
+    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
         const TableEntry *te = &(Table[i]);
         if(req == te->reqType) {
             CopyEntityInfo(te, extraPoints,
@@ -61,10 +61,10 @@ bool EntReqTable::GetRequestInfo(int req, int extraPoints,
     return false;
 }
 
-bool EntReqTable::GetEntityInfo(int ent, int extraPoints,
-                     int *req, int *pts, bool *hasNormal, bool *hasDistance)
+bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
+                     Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType; i++) {
+    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
         const TableEntry *te = &(Table[i]);
         if(ent == te->entType) {
             CopyEntityInfo(te, extraPoints,
@@ -75,8 +75,8 @@ bool EntReqTable::GetEntityInfo(int ent, int extraPoints,
     return false;
 }
 
-int EntReqTable::GetRequestForEntity(int ent) {
-    int req = 0;
+Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
+    Request::Type req = Request::Type::UNKNOWN;
     GetEntityInfo(ent, 0, &req, NULL, NULL, NULL);
     return req;
 }
@@ -86,7 +86,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
                        IdList<Param,hParam> *param) const
 {
     int points = 0;
-    int et = 0;
+    Entity::Type et = Entity::Type::UNKNOWN;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
@@ -111,18 +111,18 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         Entity p = {};
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
-        p.h = h.entity(i+(et ? 1 : 0));
+        p.h = h.entity(i+((et != Entity::Type::DATUM_POINT) ? 1 : 0));
         p.group = group;
         p.style = style;
 
         if(workplane.v == Entity::FREE_IN_3D.v) {
-            p.type = Entity::POINT_IN_3D;
+            p.type = Entity::Type::POINT_IN_3D;
             // params for x y z
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
             p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
             p.param[2] = AddParam(param, h.param(16 + 3*i + 2));
         } else {
-            p.type = Entity::POINT_IN_2D;
+            p.type = Entity::Type::POINT_IN_2D;
             // params for u v
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
             p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
@@ -137,13 +137,13 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         n.group = group;
         n.style = style;
         if(workplane.v == Entity::FREE_IN_3D.v) {
-            n.type = Entity::NORMAL_IN_3D;
+            n.type = Entity::Type::NORMAL_IN_3D;
             n.param[0] = AddParam(param, h.param(32+0));
             n.param[1] = AddParam(param, h.param(32+1));
             n.param[2] = AddParam(param, h.param(32+2));
             n.param[3] = AddParam(param, h.param(32+3));
         } else {
-            n.type = Entity::NORMAL_IN_2D;
+            n.type = Entity::Type::NORMAL_IN_2D;
             // and this is just a copy of the workplane quaternion,
             // so no params required
         }
@@ -160,13 +160,13 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         d.h = h.entity(64);
         d.group = group;
         d.style = style;
-        d.type = Entity::DISTANCE;
+        d.type = Entity::Type::DISTANCE;
         d.param[0] = AddParam(param, h.param(64));
         entity->Add(&d);
         e.distance = d.h;
     }
 
-    if(et) entity->Add(&e);
+    if(et != Entity::Type::DATUM_POINT) entity->Add(&e);
 }
 
 std::string Request::DescriptionString() const {
@@ -185,7 +185,7 @@ std::string Request::DescriptionString() const {
 }
 
 int Request::IndexOfPoint(hEntity he) const {
-    if(type == DATUM_POINT) {
+    if(type == Type::DATUM_POINT) {
         return (he.v == h.entity(0).v) ? 0 : -1;
     }
     for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {

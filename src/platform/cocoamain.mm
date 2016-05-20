@@ -536,7 +536,7 @@ bool GraphicsEditControlIsVisible(void) {
 
 /* Context menus */
 
-static int contextMenuChoice;
+static SolveSpace::ContextCommand contextMenuChoice;
 
 @interface ContextMenuResponder : NSObject
 + (void)handleClick:(id)sender;
@@ -544,25 +544,25 @@ static int contextMenuChoice;
 
 @implementation ContextMenuResponder
 + (void)handleClick:(id)sender {
-    contextMenuChoice = [sender tag];
+    contextMenuChoice = (SolveSpace::ContextCommand)[sender tag];
 }
 @end
 
 namespace SolveSpace {
 NSMenu *contextMenu, *contextSubmenu;
 
-void AddContextMenuItem(const char *label, int id_) {
+void AddContextMenuItem(const char *label, ContextCommand cmd) {
     NSMenuItem *menuItem;
     if(label) {
         menuItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithUTF8String:label]
             action:@selector(handleClick:) keyEquivalent:@""];
         [menuItem setTarget:[ContextMenuResponder class]];
-        [menuItem setTag:id_];
+        [menuItem setTag:(NSInteger)cmd];
     } else {
         menuItem = [NSMenuItem separatorItem];
     }
 
-    if(id_ == CONTEXT_SUBMENU) {
+    if(cmd == SolveSpace::ContextCommand::SUBMENU) {
         [menuItem setSubmenu:contextSubmenu];
         contextSubmenu = nil;
     }
@@ -585,9 +585,9 @@ void CreateContextSubmenu(void) {
     contextSubmenu = [[NSMenu alloc] initWithTitle:@""];
 }
 
-int ShowContextMenu(void) {
+ContextCommand ShowContextMenu(void) {
     if(!contextMenu)
-        return -1;
+        return ContextCommand::CANCELLED;
 
     [NSMenu popUpContextMenu:contextMenu
         withEvent:[GWView lastContextMenuEvent] forView:GWView];
@@ -615,16 +615,19 @@ int ShowContextMenu(void) {
 }
 
 + (void)handleRecent:(id)sender {
-    int id_ = [sender tag];
-    if(id_ >= RECENT_OPEN && id_ < (RECENT_OPEN + MAX_RECENT))
-        SolveSpace::SolveSpaceUI::MenuFile(id_);
-    else if(id_ >= RECENT_LINK && id_ < (RECENT_LINK + MAX_RECENT))
-        SolveSpace::Group::MenuGroup(id_);
+    uint32_t cmd = [sender tag];
+    if(cmd >= (uint32_t)SolveSpace::Command::RECENT_OPEN &&
+       cmd < ((uint32_t)SolveSpace::Command::RECENT_OPEN + SolveSpace::MAX_RECENT)) {
+        SolveSpace::SolveSpaceUI::MenuFile((SolveSpace::Command)cmd);
+    } else if(cmd >= (uint32_t)SolveSpace::Command::RECENT_LINK &&
+              cmd < ((uint32_t)SolveSpace::Command::RECENT_LINK + SolveSpace::MAX_RECENT)) {
+        SolveSpace::Group::MenuGroup((SolveSpace::Command)cmd);
+    }
 }
 @end
 
 namespace SolveSpace {
-std::map<int, NSMenuItem*> mainMenuItems;
+std::map<uint32_t, NSMenuItem*> mainMenuItems;
 
 void InitMainMenu(NSMenu *mainMenu) {
     NSMenuItem *menuItem = NULL;
@@ -676,26 +679,26 @@ void InitMainMenu(NSMenu *mainMenu) {
             [levels[entry->level] addItem:[NSMenuItem separatorItem]];
         }
 
-        mainMenuItems[entry->id] = menuItem;
+        mainMenuItems[(uint32_t)entry->id] = menuItem;
 
         ++entry;
     }
 }
 
-void EnableMenuById(int id_, bool enabled) {
-    [mainMenuItems[id_] setEnabled:enabled];
+void EnableMenuByCmd(SolveSpace::Command cmd, bool enabled) {
+    [mainMenuItems[(uint32_t)cmd] setEnabled:enabled];
 }
 
-void CheckMenuById(int id_, bool checked) {
-    [mainMenuItems[id_] setState:(checked ? NSOnState : NSOffState)];
+void CheckMenuByCmd(SolveSpace::Command cmd, bool checked) {
+    [mainMenuItems[(uint32_t)cmd] setState:(checked ? NSOnState : NSOffState)];
 }
 
-void RadioMenuById(int id_, bool selected) {
-    CheckMenuById(id_, selected);
+void RadioMenuByCmd(SolveSpace::Command cmd, bool selected) {
+    CheckMenuByCmd(cmd, selected);
 }
 
-static void RefreshRecentMenu(int id_, int base) {
-    NSMenuItem *recent = mainMenuItems[id_];
+static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base) {
+    NSMenuItem *recent = mainMenuItems[(uint32_t)cmd];
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
     [recent setSubmenu:menu];
 
@@ -705,7 +708,7 @@ static void RefreshRecentMenu(int id_, int base) {
         [placeholder setEnabled:NO];
         [menu addItem:placeholder];
     } else {
-        for(int i = 0; i < MAX_RECENT; i++) {
+        for(size_t i = 0; i < MAX_RECENT; i++) {
             if(std::string(RecentFile[i]).empty())
                 break;
 
@@ -713,7 +716,7 @@ static void RefreshRecentMenu(int id_, int base) {
                 initWithTitle:[[NSString stringWithUTF8String:RecentFile[i].c_str()]
                     stringByAbbreviatingWithTildeInPath]
                 action:nil keyEquivalent:@""];
-            [item setTag:(base + i)];
+            [item setTag:((uint32_t)base + i)];
             [item setAction:@selector(handleRecent:)];
             [item setTarget:[MainMenuResponder class]];
             [menu addItem:item];
@@ -722,8 +725,8 @@ static void RefreshRecentMenu(int id_, int base) {
 }
 
 void RefreshRecentMenus(void) {
-    RefreshRecentMenu(GraphicsWindow::MNU_OPEN_RECENT, RECENT_OPEN);
-    RefreshRecentMenu(GraphicsWindow::MNU_GROUP_RECENT, RECENT_LINK);
+    RefreshRecentMenu(Command::OPEN_RECENT, Command::RECENT_OPEN);
+    RefreshRecentMenu(Command::GROUP_RECENT, Command::RECENT_LINK);
 }
 
 void ToggleMenuBar(void) {
@@ -1001,7 +1004,7 @@ SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
 
 @implementation TextWindowDelegate
 - (BOOL)windowShouldClose:(id)sender {
-    SolveSpace::GraphicsWindow::MenuView(SolveSpace::GraphicsWindow::MNU_SHOW_TEXT_WND);
+    SolveSpace::GraphicsWindow::MenuView(SolveSpace::Command::SHOW_TEXT_WND);
     return NO;
 }
 
@@ -1186,7 +1189,7 @@ const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
 }
 
 - (IBAction)preferences:(id)sender {
-    SolveSpace::SS.TW.GoToScreen(SolveSpace::TextWindow::SCREEN_CONFIGURATION);
+    SolveSpace::SS.TW.GoToScreen(SolveSpace::TextWindow::Screen::CONFIGURATION);
     SolveSpace::SS.ScheduleShowTW();
 }
 @end
