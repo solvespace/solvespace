@@ -80,33 +80,33 @@ public:
     inline Expr *ASin  () { return AnyOp(ASIN,   NULL); }
     inline Expr *ACos  () { return AnyOp(ACOS,   NULL); }
 
-    Expr *PartialWrt(hParam p);
-    double Eval();
-    uint64_t ParamsUsed();
-    bool DependsOn(hParam p);
+    Expr *PartialWrt(hParam p) const;
+    double Eval() const;
+    uint64_t ParamsUsed() const;
+    bool DependsOn(hParam p) const;
     static bool Tol(double a, double b);
     Expr *FoldConstants();
     void Substitute(hParam oldh, hParam newh);
 
     static const hParam NO_PARAMS, MULTIPLE_PARAMS;
-    hParam ReferencedParams(ParamList *pl);
+    hParam ReferencedParams(ParamList *pl) const;
 
     void ParamsToPointers();
 
-    std::string Print();
+    std::string Print() const;
 
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
-    int Children();
+    int Children() const;
     // total number of nodes in the tree
-    int Nodes();
+    int Nodes() const;
 
     // Make a simple copy
-    Expr *DeepCopy();
+    Expr *DeepCopy() const;
     // Make a copy, with the parameters (usually referenced by hParam)
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-        IdList<Param,hParam> *thenTry);
+        IdList<Param,hParam> *thenTry) const;
 
     static Expr *From(const char *in, bool popUpError);
     static void  Lex(const char *in);
@@ -136,15 +136,15 @@ public:
     static ExprVector From(hParam x, hParam y, hParam z);
     static ExprVector From(double x, double y, double z);
 
-    ExprVector Plus(ExprVector b);
-    ExprVector Minus(ExprVector b);
-    Expr *Dot(ExprVector b);
-    ExprVector Cross(ExprVector b);
-    ExprVector ScaledBy(Expr *s);
-    ExprVector WithMagnitude(Expr *s);
-    Expr *Magnitude();
+    ExprVector Plus(ExprVector b) const;
+    ExprVector Minus(ExprVector b) const;
+    Expr *Dot(ExprVector b) const;
+    ExprVector Cross(ExprVector b) const;
+    ExprVector ScaledBy(Expr *s) const;
+    ExprVector WithMagnitude(Expr *s) const;
+    Expr *Magnitude() const;
 
-    Vector Eval();
+    Vector Eval() const;
 };
 
 class ExprQuaternion {
@@ -155,14 +155,14 @@ public:
     static ExprQuaternion From(Quaternion qn);
     static ExprQuaternion From(hParam w, hParam vx, hParam vy, hParam vz);
 
-    ExprVector RotationU();
-    ExprVector RotationV();
-    ExprVector RotationN();
+    ExprVector RotationU() const;
+    ExprVector RotationV() const;
+    ExprVector RotationN() const;
 
-    ExprVector Rotate(ExprVector p);
-    ExprQuaternion Times(ExprQuaternion b);
+    ExprVector Rotate(ExprVector p) const;
+    ExprQuaternion Times(ExprQuaternion b) const;
 
-    Expr *Magnitude();
+    Expr *Magnitude() const;
 };
 
 #endif

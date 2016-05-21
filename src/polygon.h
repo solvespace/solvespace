@@ -22,7 +22,7 @@ public:
     Vector a, b;
 
     static SEdge From(Vector a, Vector b);
-    bool EdgeCrosses(Vector a, Vector b, Vector *pi=NULL, SPointList *spl=NULL);
+    bool EdgeCrosses(Vector a, Vector b, Vector *pi=NULL, SPointList *spl=NULL) const;
 };
 
 class SEdgeList {
@@ -31,13 +31,13 @@ public:
 
     void Clear();
     void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0);
-    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false);
+    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
     bool AssembleContour(Vector first, Vector last, SContour *dest,
-                            SEdge *errorAt, bool keepDir);
+                            SEdge *errorAt, bool keepDir) const;
     int AnyEdgeCrossings(Vector a, Vector b,
-        Vector *pi=NULL, SPointList *spl=NULL);
-    bool ContainsEdgeFrom(SEdgeList *sel);
-    bool ContainsEdge(SEdge *se);
+        Vector *pi=NULL, SPointList *spl=NULL) const;
+    bool ContainsEdgeFrom(const SEdgeList *sel) const;
+    bool ContainsEdge(const SEdge *se) const;
     void CullExtraneousEdges();
     void MergeCollinearSegments(Vector a, Vector b);
 };
@@ -68,7 +68,7 @@ public:
     static SKdNodeEdges *From(SEdgeLl *sell);
     static SKdNodeEdges *Alloc();
     int AnyEdgeCrossings(Vector a, Vector b, int cnt,
-        Vector *pi=NULL, SPointList *spl=NULL);
+        Vector *pi=NULL, SPointList *spl=NULL) const;
 };
 
 class SPoint {
@@ -91,8 +91,8 @@ public:
     List<SPoint>    l;
 
     void Clear();
-    bool ContainsPoint(Vector pt);
-    int IndexForPoint(Vector pt);
+    bool ContainsPoint(Vector pt) const;
+    int IndexForPoint(Vector pt) const;
     void IncrementTagFor(Vector pt);
     void Add(Vector pt);
 };
@@ -105,18 +105,18 @@ public:
     List<SPoint>    l;
 
     void AddPoint(Vector p);
-    void MakeEdgesInto(SEdgeList *el);
+    void MakeEdgesInto(SEdgeList *el) const;
     void Reverse();
-    Vector ComputeNormal();
-    double SignedAreaProjdToNormal(Vector n);
-    bool IsClockwiseProjdToNormal(Vector n);
-    bool ContainsPointProjdToNormal(Vector n, Vector p);
-    void OffsetInto(SContour *dest, double r);
-    void CopyInto(SContour *dest);
+    Vector ComputeNormal() const;
+    double SignedAreaProjdToNormal(Vector n) const;
+    bool IsClockwiseProjdToNormal(Vector n) const;
+    bool ContainsPointProjdToNormal(Vector n, Vector p) const;
+    void OffsetInto(SContour *dest, double r) const;
+    void CopyInto(SContour *dest) const;
     void FindPointWithMinX();
-    Vector AnyEdgeMidpoint();
+    Vector AnyEdgeMidpoint() const;
 
-    bool IsEar(int bp, double scaledEps);
+    bool IsEar(int bp, double scaledEps) const;
     bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
     void ClipEarInto(SMesh *m, int bp, double scaledEps);
     void UvTriangulateInto(SMesh *m, SSurface *srf);
@@ -134,16 +134,16 @@ public:
 
     Vector ComputeNormal();
     void AddEmptyContour();
-    int WindingNumberForPoint(Vector p);
-    double SignedArea();
-    bool ContainsPoint(Vector p);
-    void MakeEdgesInto(SEdgeList *el);
+    int WindingNumberForPoint(Vector p) const;
+    double SignedArea() const;
+    bool ContainsPoint(Vector p) const;
+    void MakeEdgesInto(SEdgeList *el) const;
     void FixContourDirections();
     void Clear();
-    bool SelfIntersecting(Vector *intersectsAt);
-    bool IsEmpty();
-    Vector AnyPoint();
-    void OffsetInto(SPolygon *dest, double r);
+    bool SelfIntersecting(Vector *intersectsAt) const;
+    bool IsEmpty() const;
+    Vector AnyPoint() const;
+    void OffsetInto(SPolygon *dest, double r) const;
     void UvTriangulateInto(SMesh *m, SSurface *srf);
     void UvGridTriangulateInto(SMesh *m, SSurface *srf);
 };
@@ -156,12 +156,12 @@ public:
     Vector      an, bn, cn;
 
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
-    Vector Normal();
+    Vector Normal() const;
     void FlipNormal();
-    double MinAltitude();
-    int WindingNumberForPoint(Vector p);
-    bool ContainsPoint(Vector p);
-    bool ContainsPointProjd(Vector n, Vector p);
+    double MinAltitude() const;
+    int WindingNumberForPoint(Vector p) const;
+    bool ContainsPoint(Vector p) const;
+    bool ContainsPointProjd(Vector n, Vector p) const;
 };
 
 class SBsp2 {
@@ -180,12 +180,13 @@ public:
     enum { POS = 100, NEG = 101, COPLANAR = 200 };
     void InsertTriangleHow(int how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
     void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
-    Vector IntersectionWith(Vector a, Vector b);
+    Vector IntersectionWith(Vector a, Vector b) const;
     void InsertEdge(SEdge *nedge, Vector nnp, Vector out);
-    static SBsp2 *InsertOrCreateEdge(SBsp2 *where, SEdge *nedge, Vector nnp, Vector out);
+    static SBsp2 *InsertOrCreateEdge(SBsp2 *where, SEdge *nedge,
+                                     Vector nnp, Vector out);
     static SBsp2 *Alloc();
 
-    void DebugDraw(Vector n, double d);
+    void DebugDraw(Vector n, double d) const;
 };
 
 class SBsp3 {
@@ -204,7 +205,7 @@ public:
     static SBsp3 *Alloc();
     static SBsp3 *FromMesh(SMesh *m);
 
-    Vector IntersectionWith(Vector a, Vector b);
+    Vector IntersectionWith(Vector a, Vector b) const;
 
     enum { POS = 100, NEG = 101, COPLANAR = 200 };
     void InsertHow(int how, STriangle *str, SMesh *instead);
@@ -217,9 +218,9 @@ public:
 
     void InsertInPlane(bool pos2, STriangle *tr, SMesh *m);
 
-    void GenerateInPaintOrder(SMesh *m);
+    void GenerateInPaintOrder(SMesh *m) const;
 
-    void DebugDraw();
+    void DebugDraw() const;
 };
 
 class SMesh {
@@ -232,11 +233,12 @@ public:
     bool    isTransparent;
 
     void Clear();
-    void AddTriangle(STriangle *st);
+    void AddTriangle(const STriangle *st);
     void AddTriangle(STriMeta meta, Vector a, Vector b, Vector c);
-    void AddTriangle(STriMeta meta, Vector n, Vector a, Vector b, Vector c);
-    void DoBounding(Vector v, Vector *vmax, Vector *vmin);
-    void GetBounding(Vector *vmax, Vector *vmin);
+    void AddTriangle(STriMeta meta, Vector n,
+                     Vector a, Vector b, Vector c);
+    void DoBounding(Vector v, Vector *vmax, Vector *vmin) const;
+    void GetBounding(Vector *vmax, Vector *vmin) const;
 
     void Simplify(int start);
 
@@ -245,17 +247,17 @@ public:
     void MakeFromDifferenceOf(SMesh *a, SMesh *b);
 
     void MakeFromCopyOf(SMesh *a);
-    void MakeFromTransformationOf(SMesh *a,
-                                    Vector trans, Quaternion q, double scale);
+    void MakeFromTransformationOf(SMesh *a, Vector trans,
+                                  Quaternion q, double scale);
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
     void MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, int type);
 
-    bool IsEmpty();
+    bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);
 
-    uint32_t FirstIntersectionWith(Point2d mp);
+    uint32_t FirstIntersectionWith(Point2d mp) const;
 };
 
 // A linked list of triangles
@@ -310,11 +312,11 @@ public:
     static SKdNode *From(STriangleLl *tll);
 
     void AddTriangle(STriangle *tr);
-    void MakeMeshInto(SMesh *m);
-    void ListTrianglesInto(std::vector<STriangle *> *tl);
-    void ClearTags();
+    void MakeMeshInto(SMesh *m) const;
+    void ListTrianglesInto(std::vector<STriangle *> *tl) const;
+    void ClearTags() const;
 
-    void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info);
+    void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info) const;
     enum {
         NAKED_OR_SELF_INTER_EDGES  = 100,
         SELF_INTER_EDGES           = 200,
@@ -323,11 +325,11 @@ public:
         SHARP_EDGES                = 500,
     };
     void MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
-                              bool *inter, bool *leaky, int auxA=0);
-    void MakeOutlinesInto(SOutlineList *sel);
+                              bool *inter, bool *leaky, int auxA = 0) const;
+    void MakeOutlinesInto(SOutlineList *sel) const;
 
-    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden);
-    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden);
+    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) const;
+    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) const;
 
     void SnapToMesh(SMesh *m);
     void SnapToVertex(Vector v, SMesh *extras);

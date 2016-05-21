@@ -93,7 +93,7 @@ double SolveSpace::BernsteinDerivative(int k, int deg, double t)
     ssassert(false, "Unexpected degree of spline");
 }
 
-Vector SBezier::PointAt(double t) {
+Vector SBezier::PointAt(double t) const {
     Vector pt = Vector::From(0, 0, 0);
     double d = 0;
 
@@ -107,7 +107,7 @@ Vector SBezier::PointAt(double t) {
     return pt;
 }
 
-Vector SBezier::TangentAt(double t) {
+Vector SBezier::TangentAt(double t) const {
     Vector pt = Vector::From(0, 0, 0), pt_p = Vector::From(0, 0, 0);
     double d = 0, d_p = 0;
 
@@ -130,7 +130,7 @@ Vector SBezier::TangentAt(double t) {
     return ret;
 }
 
-void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
+void SBezier::ClosestPointTo(Vector p, double *t, bool converge) const {
     int i;
     double minDist = VERY_POSITIVE;
     *t = 0;
@@ -162,7 +162,7 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) {
     }
 }
 
-bool SBezier::PointOnThisAndCurve(SBezier *sbb, Vector *p) {
+bool SBezier::PointOnThisAndCurve(const SBezier *sbb, Vector *p) const {
     double ta, tb;
     this->ClosestPointTo(*p, &ta, false);
     sbb ->ClosestPointTo(*p, &tb, false);
@@ -187,7 +187,7 @@ bool SBezier::PointOnThisAndCurve(SBezier *sbb, Vector *p) {
     return false;
 }
 
-void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
+void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) const {
     Vector4 ct[4];
     int i;
     for(i = 0; i <= deg; i++) {
@@ -226,7 +226,7 @@ void SBezier::SplitAt(double t, SBezier *bef, SBezier *aft) {
     }
 }
 
-void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) {
+void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) const {
     List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
@@ -235,7 +235,7 @@ void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
+void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
     List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
@@ -248,7 +248,7 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(SContour *sc, double chordTol) {
+void SBezier::MakePwlInto(SContour *sc, double chordTol) const {
     List<Vector> lv = {};
     MakePwlInto(&lv, chordTol);
     int i;
@@ -257,7 +257,7 @@ void SBezier::MakePwlInto(SContour *sc, double chordTol) {
     }
     lv.Clear();
 }
-void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
+void SBezier::MakePwlInto(List<Vector> *l, double chordTol) const {
     if(EXACT(chordTol == 0)) {
         // Use the default chord tolerance.
         chordTol = SS.ChordTolMm();
@@ -273,7 +273,7 @@ void SBezier::MakePwlInto(List<Vector> *l, double chordTol) {
         MakePwlInitialWorker(l, 0.5, 1.0, chordTol);
     }
 }
-void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol)
+void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -291,7 +291,7 @@ void SBezier::MakePwlWorker(List<Vector> *l, double ta, double tb, double chordT
         MakePwlWorker(l, tm, tb, chordTol);
     }
 }
-void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol)
+void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol) const
 {
     Vector pa = PointAt(ta);
     Vector pb = PointAt(tb);
@@ -322,10 +322,10 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
     }
 }
 
-Vector SSurface::PointAt(Point2d puv) {
+Vector SSurface::PointAt(Point2d puv) const {
     return PointAt(puv.x, puv.y);
 }
-Vector SSurface::PointAt(double u, double v) {
+Vector SSurface::PointAt(double u, double v) const {
     Vector num = Vector::From(0, 0, 0);
     double den = 0;
 
@@ -343,7 +343,7 @@ Vector SSurface::PointAt(double u, double v) {
     return num;
 }
 
-void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) {
+void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) const {
     Vector num   = Vector::From(0, 0, 0),
            num_u = Vector::From(0, 0, 0),
            num_v = Vector::From(0, 0, 0);
@@ -377,10 +377,11 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv) {
     *tv = tv->ScaledBy(1.0/(den*den));
 }
 
-Vector SSurface::NormalAt(Point2d puv) {
+Vector SSurface::NormalAt(Point2d puv) const {
     return NormalAt(puv.x, puv.y);
 }
-Vector SSurface::NormalAt(double u, double v) {
+
+Vector SSurface::NormalAt(double u, double v) const {
     Vector tu, tv;
     TangentsAt(u, v, &tu, &tv);
     return tu.Cross(tv);
@@ -389,6 +390,7 @@ Vector SSurface::NormalAt(double u, double v) {
 void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool converge) {
     ClosestPointTo(p, &(puv->x), &(puv->y), converge);
 }
+
 void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     // A few special cases first; when control points are coincident the
     // derivative goes to zero at the conrol points, and would result in
@@ -455,7 +457,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     }
 }
 
-bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
+bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge) const
 {
     // Initial guess is in u, v; refine by Newton iteration.
     Vector p0 = Vector::From(0, 0, 0);
@@ -488,7 +490,7 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
     return false;
 }
 
-bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v)
+bool SSurface::PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const
 {
     int i;
     for(i = 0; i < 15; i++) {
@@ -564,8 +566,7 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
            ((srf[1])->PointAt(puv[1]))).ScaledBy(0.5);
 }
 
-void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2,
-                                                double *up, double *vp)
+void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *vp)
 {
     double u[3] = { *up, 0, 0 }, v[3] = { *vp, 0, 0 };
     SSurface *srf[3] = { this, s1, s2 };

@@ -5,12 +5,12 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-Vector STriangle::Normal() {
+Vector STriangle::Normal() const {
     Vector ab = b.Minus(a), bc = c.Minus(b);
     return ab.Cross(bc);
 }
 
-double STriangle::MinAltitude() {
+double STriangle::MinAltitude() const {
     double altA = a.DistanceToLine(b, c.Minus(b)),
            altB = b.DistanceToLine(c, a.Minus(c)),
            altC = c.DistanceToLine(a, b.Minus(a));
@@ -18,7 +18,7 @@ double STriangle::MinAltitude() {
     return min(altA, min(altB, altC));
 }
 
-bool STriangle::ContainsPoint(Vector p) {
+bool STriangle::ContainsPoint(Vector p) const {
     Vector n = Normal();
     if(MinAltitude() < LENGTH_EPS) {
         // shouldn't happen; zero-area triangle
@@ -27,7 +27,7 @@ bool STriangle::ContainsPoint(Vector p) {
     return ContainsPointProjd(n.WithMagnitude(1), p);
 }
 
-bool STriangle::ContainsPointProjd(Vector n, Vector p) {
+bool STriangle::ContainsPointProjd(Vector n, Vector p) const {
     Vector ab = b.Minus(a), bc = c.Minus(b), ca = a.Minus(c);
 
     Vector no_ab = n.Cross(ab);
@@ -63,7 +63,7 @@ SEdge SEdge::From(Vector a, Vector b) {
     return se;
 }
 
-bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) {
+bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) const {
     Vector d = eb.Minus(ea);
     double t_eps = LENGTH_EPS/d.Magnitude();
 
@@ -155,7 +155,7 @@ void SEdgeList::AddEdge(Vector a, Vector b, int auxA, int auxB) {
 }
 
 bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
-                                SEdge *errorAt, bool keepDir)
+                                SEdge *errorAt, bool keepDir) const
 {
     int i;
 
@@ -195,7 +195,7 @@ bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
     return true;
 }
 
-bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
+bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) const {
     dest->Clear();
 
     bool allClosed = true;
@@ -234,11 +234,10 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) {
 // If pi is not NULL, then a crossing is returned in that.
 //-----------------------------------------------------------------------------
 int SEdgeList::AnyEdgeCrossings(Vector a, Vector b,
-                                Vector *ppi, SPointList *spl)
+                                Vector *ppi, SPointList *spl) const
 {
     int cnt = 0;
-    SEdge *se;
-    for(se = l.First(); se; se = l.NextAfter(se)) {
+    for(const SEdge *se = l.First(); se; se = l.NextAfter(se)) {
         if(se->EdgeCrosses(a, b, ppi, spl)) {
             cnt++;
         }
@@ -250,16 +249,14 @@ int SEdgeList::AnyEdgeCrossings(Vector a, Vector b,
 // Returns true if the intersecting edge list contains an edge that shares
 // an endpoint with one of our edges.
 //-----------------------------------------------------------------------------
-bool SEdgeList::ContainsEdgeFrom(SEdgeList *sel) {
-    SEdge *se;
-    for(se = l.First(); se; se = l.NextAfter(se)) {
+bool SEdgeList::ContainsEdgeFrom(const SEdgeList *sel) const {
+    for(const SEdge *se = l.First(); se; se = l.NextAfter(se)) {
         if(sel->ContainsEdge(se)) return true;
     }
     return false;
 }
-bool SEdgeList::ContainsEdge(SEdge *set) {
-    SEdge *se;
-    for(se = l.First(); se; se = l.NextAfter(se)) {
+bool SEdgeList::ContainsEdge(const SEdge *set) const {
+    for(const SEdge *se = l.First(); se; se = l.NextAfter(se)) {
         if((se->a).Equals(set->a) && (se->b).Equals(set->b)) return true;
         if((se->b).Equals(set->a) && (se->a).Equals(set->b)) return true;
     }
@@ -395,7 +392,7 @@ SKdNodeEdges *SKdNodeEdges::From(SEdgeLl *sell) {
 }
 
 int SKdNodeEdges::AnyEdgeCrossings(Vector a, Vector b, int cnt,
-        Vector *pi, SPointList *spl)
+        Vector *pi, SPointList *spl) const
 {
     int inters = 0;
     if(gt && lt) {
@@ -462,11 +459,11 @@ void SPointList::Clear() {
     l.Clear();
 }
 
-bool SPointList::ContainsPoint(Vector pt) {
+bool SPointList::ContainsPoint(Vector pt) const {
     return (IndexForPoint(pt) >= 0);
 }
 
-int SPointList::IndexForPoint(Vector pt) {
+int SPointList::IndexForPoint(Vector pt) const {
     int i;
     for(i = 0; i < l.n; i++) {
         SPoint *p = &(l.elem[i]);
@@ -506,31 +503,29 @@ void SContour::AddPoint(Vector p) {
     l.Add(&sp);
 }
 
-void SContour::MakeEdgesInto(SEdgeList *el) {
+void SContour::MakeEdgesInto(SEdgeList *el) const {
     int i;
     for(i = 0; i < (l.n - 1); i++) {
         el->AddEdge(l.elem[i].p, l.elem[i+1].p);
     }
 }
 
-void SContour::CopyInto(SContour *dest) {
-    SPoint *sp;
-    for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
+void SContour::CopyInto(SContour *dest) const {
+    for(const SPoint *sp = l.First(); sp; sp = l.NextAfter(sp)) {
         dest->AddPoint(sp->p);
     }
 }
 
 void SContour::FindPointWithMinX() {
-    SPoint *sp;
     xminPt = Vector::From(1e10, 1e10, 1e10);
-    for(sp = l.First(); sp; sp = l.NextAfter(sp)) {
+    for(const SPoint *sp = l.First(); sp; sp = l.NextAfter(sp)) {
         if(sp->p.x < xminPt.x) {
             xminPt = sp->p;
         }
     }
 }
 
-Vector SContour::ComputeNormal() {
+Vector SContour::ComputeNormal() const {
     Vector n = Vector::From(0, 0, 0);
 
     for(int i = 0; i < l.n - 2; i++) {
@@ -544,12 +539,12 @@ Vector SContour::ComputeNormal() {
     return n.WithMagnitude(1);
 }
 
-Vector SContour::AnyEdgeMidpoint() {
+Vector SContour::AnyEdgeMidpoint() const {
     ssassert(l.n >= 2, "Need two points to find a midpoint");
     return ((l.elem[0].p).Plus(l.elem[1].p)).ScaledBy(0.5);
 }
 
-bool SContour::IsClockwiseProjdToNormal(Vector n) {
+bool SContour::IsClockwiseProjdToNormal(Vector n) const {
     // Degenerate things might happen as we draw; doesn't really matter
     // what we do then.
     if(n.Magnitude() < 0.01) return true;
@@ -557,7 +552,7 @@ bool SContour::IsClockwiseProjdToNormal(Vector n) {
     return (SignedAreaProjdToNormal(n) < 0);
 }
 
-double SContour::SignedAreaProjdToNormal(Vector n) {
+double SContour::SignedAreaProjdToNormal(Vector n) const {
     // An arbitrary 2d coordinate system that has n as its normal
     Vector u = n.Normal(0);
     Vector v = n.Normal(1);
@@ -574,7 +569,7 @@ double SContour::SignedAreaProjdToNormal(Vector n) {
     return area;
 }
 
-bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) {
+bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) const {
     Vector u = n.Normal(0);
     Vector v = n.Normal(1);
 
@@ -618,7 +613,7 @@ void SPolygon::AddEmptyContour() {
     l.Add(&c);
 }
 
-void SPolygon::MakeEdgesInto(SEdgeList *el) {
+void SPolygon::MakeEdgesInto(SEdgeList *el) const {
     int i;
     for(i = 0; i < l.n; i++) {
         (l.elem[i]).MakeEdgesInto(el);
@@ -630,22 +625,21 @@ Vector SPolygon::ComputeNormal() {
     return (l.elem[0]).ComputeNormal();
 }
 
-double SPolygon::SignedArea() {
-    SContour *sc;
+double SPolygon::SignedArea() const {
     double area = 0;
     // This returns the true area only if the contours are all oriented
     // correctly, with the holes backwards from the outer contours.
-    for(sc = l.First(); sc; sc = l.NextAfter(sc)) {
+    for(const SContour *sc = l.First(); sc; sc = l.NextAfter(sc)) {
         area += sc->SignedAreaProjdToNormal(normal);
     }
     return area;
 }
 
-bool SPolygon::ContainsPoint(Vector p) {
+bool SPolygon::ContainsPoint(Vector p) const {
     return (WindingNumberForPoint(p) % 2) == 1;
 }
 
-int SPolygon::WindingNumberForPoint(Vector p) {
+int SPolygon::WindingNumberForPoint(Vector p) const {
     int winding = 0;
     int i;
     for(i = 0; i < l.n; i++) {
@@ -690,17 +684,17 @@ void SPolygon::FixContourDirections() {
     }
 }
 
-bool SPolygon::IsEmpty() {
+bool SPolygon::IsEmpty() const {
     if(l.n == 0 || l.elem[0].l.n == 0) return true;
     return false;
 }
 
-Vector SPolygon::AnyPoint() {
+Vector SPolygon::AnyPoint() const {
     ssassert(!IsEmpty(), "Need at least one point");
     return l.elem[0].l.elem[0].p;
 }
 
-bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
+bool SPolygon::SelfIntersecting(Vector *intersectsAt) const {
     SEdgeList el = {};
     MakeEdgesInto(&el);
     SKdNodeEdges *kdtree = SKdNodeEdges::From(&el);
@@ -728,7 +722,7 @@ bool SPolygon::SelfIntersecting(Vector *intersectsAt) {
 // polygon is in the xy plane, and the contours all go in the right direction
 // with respect to normal (0, 0, -1).
 //-----------------------------------------------------------------------------
-void SPolygon::OffsetInto(SPolygon *dest, double r) {
+void SPolygon::OffsetInto(SPolygon *dest, double r) const {
     int i;
     dest->Clear();
     for(i = 0; i < l.n; i++) {
@@ -781,7 +775,7 @@ static bool IntersectionOfLines(double x0A, double y0A, double dxA, double dyA,
 
     return true;
 }
-void SContour::OffsetInto(SContour *dest, double r) {
+void SContour::OffsetInto(SContour *dest, double r) const {
     int i;
 
     for(i = 0; i < l.n; i++) {

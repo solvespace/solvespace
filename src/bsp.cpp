@@ -36,7 +36,7 @@ SBsp3 *SBsp3::FromMesh(SMesh *m) {
     return bsp3;
 }
 
-Vector SBsp3::IntersectionWith(Vector a, Vector b) {
+Vector SBsp3::IntersectionWith(Vector a, Vector b) const {
     double da = a.Dot(n) - d;
     double db = b.Dot(n) - d;
     ssassert(da*db < 0, "Expected segment to intersect BSP node");
@@ -401,7 +401,7 @@ void SBsp3::Insert(STriangle *tr, SMesh *instead) {
     return;
 }
 
-void SBsp3::GenerateInPaintOrder(SMesh *m) {
+void SBsp3::GenerateInPaintOrder(SMesh *m) const {
 
     // Doesn't matter which branch we take if the normal has zero z
     // component, so don't need a separate case for that.
@@ -411,7 +411,7 @@ void SBsp3::GenerateInPaintOrder(SMesh *m) {
         if(neg) neg->GenerateInPaintOrder(m);
     }
 
-    SBsp3 *flip = this;
+    const SBsp3 *flip = this;
     while(flip) {
         m->AddTriangle(&(flip->tri));
         flip = flip->more;
@@ -424,7 +424,7 @@ void SBsp3::GenerateInPaintOrder(SMesh *m) {
     }
 }
 
-void SBsp3::DebugDraw() {
+void SBsp3::DebugDraw() const {
 
     if(pos) pos->DebugDraw();
     Vector norm = tri.Normal();
@@ -468,7 +468,7 @@ void SBsp3::DebugDraw() {
 
 /////////////////////////////////
 
-Vector SBsp2::IntersectionWith(Vector a, Vector b) {
+Vector SBsp2::IntersectionWith(Vector a, Vector b) const {
     double da = a.Dot(no) - d;
     double db = b.Dot(no) - d;
     ssassert(da*db < 0, "Expected segment to intersect BSP node");
@@ -665,7 +665,7 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
     return;
 }
 
-void SBsp2::DebugDraw(Vector n, double d) {
+void SBsp2::DebugDraw(Vector n, double d) const {
     ssassert(fabs((edge.a).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
     ssassert(fabs((edge.b).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
 

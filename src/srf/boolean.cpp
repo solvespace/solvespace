@@ -36,13 +36,13 @@ static int ByTAlongLine(const void *av, const void *bv)
     return (ta > tb) ? 1 : -1;
 }
 SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
-                                    SSurface *srfA, SSurface *srfB)
+                                    SSurface *srfA, SSurface *srfB) const
 {
     SCurve ret;
     ret = *this;
     ret.pts = {};
 
-    SCurvePt *p = pts.First();
+    const SCurvePt *p = pts.First();
     ssassert(p != NULL, "Cannot split an empty curve");
     SCurvePt prev = *p;
     ret.pts.Add(p);
@@ -364,7 +364,7 @@ void SSurface::EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
         ClosestPointTo(*pt, &muv);
     } else if(!sc->isExact) {
         SSurface *trimmedA = sc->GetSurfaceA(sha, shb),
-                 *trimmedB = sc->GetSurfaceB(sha, shb);
+                       *trimmedB = sc->GetSurfaceB(sha, shb);
         *pt = trimmedA->ClosestPointOnThisAndSurface(trimmedB, *pt);
         ClosestPointTo(*pt, &muv);
     }
@@ -602,9 +602,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
     return ret;
 }
 
-void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into,
-                                        int type)
-{
+void SShell::CopySurfacesTrimAgainst(SShell *sha, SShell *shb, SShell *into, int type) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
         SSurface ssn;
@@ -716,7 +714,7 @@ void SShell::MakeFromBoolean(SShell *a, SShell *b, int type) {
     SCurve *sc;
     for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
         SSurface *srfA = sc->GetSurfaceA(a, b),
-                 *srfB = sc->GetSurfaceB(a, b);
+                       *srfB = sc->GetSurfaceB(a, b);
 
         sc->RemoveShortSegments(srfA, srfB);
     }
@@ -785,6 +783,7 @@ static int ByLength(const void *av, const void *bv)
     // stability for the normals.
     return (la < lb) ? 1 : -1;
 }
+
 SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
     SEdgeList work = {};
 
@@ -812,7 +811,8 @@ SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
 // time we care about exact correctness is when we're very close to the line,
 // which is when the linearization is accurate.
 //-----------------------------------------------------------------------------
-void SBspUv::ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) {
+
+void SBspUv::ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) const {
     Vector tu, tv;
     srf->TangentsAt(pt->x, pt->y, &tu, &tv);
     double mu = tu.Magnitude(), mv = tv.Magnitude();
@@ -821,8 +821,9 @@ void SBspUv::ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) {
     a ->x *= mu; a ->y *= mv;
     b ->x *= mu; b ->y *= mv;
 }
+
 double SBspUv::ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b,
-                                            SSurface *srf)
+                                          SSurface *srf) const
 {
     ScalePoints(&pt, &a, &b, srf);
 
@@ -831,15 +832,16 @@ double SBspUv::ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b,
 
     return pt.Dot(n) - d;
 }
+
 double SBspUv::ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool seg,
-                                        SSurface *srf)
+                                    SSurface *srf) const
 {
     ScalePoints(&pt, &a, &b, srf);
 
     return pt.DistanceToLine(a, b, seg);
 }
 
-SBspUv *SBspUv::InsertOrCreateEdge(SBspUv *where, const Point2d &ea, const Point2d &eb, SSurface *srf) {
+SBspUv *SBspUv::InsertOrCreateEdge(SBspUv *where, Point2d ea, Point2d eb, SSurface *srf) {
     if(where == NULL) {
         SBspUv *ret = Alloc();
         ret->a = ea;
@@ -896,12 +898,11 @@ void SBspUv::InsertEdge(Point2d ea, Point2d eb, SSurface *srf) {
     return;
 }
 
-int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) {
-
+int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) const {
     double dp = ScaledSignedDistanceToLine(p, a, b, srf);
 
     if(fabs(dp) < LENGTH_EPS) {
-        SBspUv *f = this;
+        const SBspUv *f = this;
         while(f) {
             Point2d ba = (f->b).Minus(f->a);
             if(ScaledDistanceToLine(p, f->a, ba, true, srf) < LENGTH_EPS) {
@@ -931,7 +932,7 @@ int SBspUv::ClassifyPoint(Point2d p, Point2d eb, SSurface *srf) {
     }
 }
 
-int SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) {
+int SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) const {
     int ret = ClassifyPoint((ea.Plus(eb)).ScaledBy(0.5), eb, srf);
     if(ret == EDGE_OTHER) {
         // Perhaps the edge is tangent at its midpoint (and we screwed up
@@ -942,7 +943,7 @@ int SBspUv::ClassifyEdge(Point2d ea, Point2d eb, SSurface *srf) {
     return ret;
 }
 
-double SBspUv::MinimumDistanceToEdge(Point2d p, SSurface *srf) {
+double SBspUv::MinimumDistanceToEdge(Point2d p, SSurface *srf) const {
 
     double dn = (neg) ? neg->MinimumDistanceToEdge(p, srf) : VERY_POSITIVE;
     double dp = (pos) ? pos->MinimumDistanceToEdge(p, srf) : VERY_POSITIVE;

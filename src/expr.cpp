@@ -37,7 +37,7 @@ ExprVector ExprVector::From(double x, double y, double z) {
     return ve;
 }
 
-ExprVector ExprVector::Minus(ExprVector b) {
+ExprVector ExprVector::Minus(ExprVector b) const {
     ExprVector r;
     r.x = x->Minus(b.x);
     r.y = y->Minus(b.y);
@@ -45,7 +45,7 @@ ExprVector ExprVector::Minus(ExprVector b) {
     return r;
 }
 
-ExprVector ExprVector::Plus(ExprVector b) {
+ExprVector ExprVector::Plus(ExprVector b) const {
     ExprVector r;
     r.x = x->Plus(b.x);
     r.y = y->Plus(b.y);
@@ -53,7 +53,7 @@ ExprVector ExprVector::Plus(ExprVector b) {
     return r;
 }
 
-Expr *ExprVector::Dot(ExprVector b) {
+Expr *ExprVector::Dot(ExprVector b) const {
     Expr *r;
     r =         x->Times(b.x);
     r = r->Plus(y->Times(b.y));
@@ -61,7 +61,7 @@ Expr *ExprVector::Dot(ExprVector b) {
     return r;
 }
 
-ExprVector ExprVector::Cross(ExprVector b) {
+ExprVector ExprVector::Cross(ExprVector b) const {
     ExprVector r;
     r.x = (y->Times(b.z))->Minus(z->Times(b.y));
     r.y = (z->Times(b.x))->Minus(x->Times(b.z));
@@ -69,7 +69,7 @@ ExprVector ExprVector::Cross(ExprVector b) {
     return r;
 }
 
-ExprVector ExprVector::ScaledBy(Expr *s) {
+ExprVector ExprVector::ScaledBy(Expr *s) const {
     ExprVector r;
     r.x = x->Times(s);
     r.y = y->Times(s);
@@ -77,12 +77,12 @@ ExprVector ExprVector::ScaledBy(Expr *s) {
     return r;
 }
 
-ExprVector ExprVector::WithMagnitude(Expr *s) {
+ExprVector ExprVector::WithMagnitude(Expr *s) const {
     Expr *m = Magnitude();
     return ScaledBy(s->Div(m));
 }
 
-Expr *ExprVector::Magnitude() {
+Expr *ExprVector::Magnitude() const {
     Expr *r;
     r =         x->Square();
     r = r->Plus(y->Square());
@@ -90,7 +90,7 @@ Expr *ExprVector::Magnitude() {
     return r->Sqrt();
 }
 
-Vector ExprVector::Eval() {
+Vector ExprVector::Eval() const {
     Vector r;
     r.x = x->Eval();
     r.y = y->Eval();
@@ -126,7 +126,7 @@ ExprQuaternion ExprQuaternion::From(Quaternion qn) {
     return qe;
 }
 
-ExprVector ExprQuaternion::RotationU() {
+ExprVector ExprQuaternion::RotationU() const {
     ExprVector u;
     Expr *two = Expr::From(2);
 
@@ -144,7 +144,7 @@ ExprVector ExprQuaternion::RotationU() {
     return u;
 }
 
-ExprVector ExprQuaternion::RotationV() {
+ExprVector ExprQuaternion::RotationV() const {
     ExprVector v;
     Expr *two = Expr::From(2);
 
@@ -162,7 +162,7 @@ ExprVector ExprQuaternion::RotationV() {
     return v;
 }
 
-ExprVector ExprQuaternion::RotationN() {
+ExprVector ExprQuaternion::RotationN() const {
     ExprVector n;
     Expr *two = Expr::From(2);
 
@@ -180,14 +180,14 @@ ExprVector ExprQuaternion::RotationN() {
     return n;
 }
 
-ExprVector ExprQuaternion::Rotate(ExprVector p) {
+ExprVector ExprQuaternion::Rotate(ExprVector p) const {
     // Express the point in the new basis
     return (RotationU().ScaledBy(p.x)).Plus(
             RotationV().ScaledBy(p.y)).Plus(
             RotationN().ScaledBy(p.z));
 }
 
-ExprQuaternion ExprQuaternion::Times(ExprQuaternion b) {
+ExprQuaternion ExprQuaternion::Times(ExprQuaternion b) const {
     Expr *sa = w, *sb = b.w;
     ExprVector va = { vx, vy, vz };
     ExprVector vb = { b.vx, b.vy, b.vz };
@@ -203,7 +203,7 @@ ExprQuaternion ExprQuaternion::Times(ExprQuaternion b) {
     return r;
 }
 
-Expr *ExprQuaternion::Magnitude() {
+Expr *ExprQuaternion::Magnitude() const {
     return ((w ->Square())->Plus(
             (vx->Square())->Plus(
             (vy->Square())->Plus(
@@ -262,7 +262,7 @@ Expr *Expr::AnyOp(int newOp, Expr *b) {
     return r;
 }
 
-int Expr::Children() {
+int Expr::Children() const {
     switch(op) {
         case PARAM:
         case PARAM_PTR:
@@ -288,7 +288,7 @@ int Expr::Children() {
     }
 }
 
-int Expr::Nodes() {
+int Expr::Nodes() const {
     switch(Children()) {
         case 0: return 1;
         case 1: return 1 + a->Nodes();
@@ -297,7 +297,7 @@ int Expr::Nodes() {
     }
 }
 
-Expr *Expr::DeepCopy() {
+Expr *Expr::DeepCopy() const {
     Expr *n = AllocExpr();
     *n = *this;
     int c = n->Children();
@@ -307,7 +307,7 @@ Expr *Expr::DeepCopy() {
 }
 
 Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-    IdList<Param,hParam> *thenTry)
+    IdList<Param,hParam> *thenTry) const
 {
     Expr *n = AllocExpr();
     if(op == PARAM) {
@@ -333,7 +333,7 @@ Expr *Expr::DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
     return n;
 }
 
-double Expr::Eval() {
+double Expr::Eval() const {
     switch(op) {
         case PARAM:         return SK.GetParam(parh)->val;
         case PARAM_PTR:     return parp->val;
@@ -357,7 +357,7 @@ double Expr::Eval() {
     }
 }
 
-Expr *Expr::PartialWrt(hParam p) {
+Expr *Expr::PartialWrt(hParam p) const {
     Expr *da, *db;
 
     switch(op) {
@@ -400,7 +400,7 @@ Expr *Expr::PartialWrt(hParam p) {
     }
 }
 
-uint64_t Expr::ParamsUsed() {
+uint64_t Expr::ParamsUsed() const {
     uint64_t r = 0;
     if(op == PARAM)     r |= ((uint64_t)1 << (parh.v % 61));
     if(op == PARAM_PTR) r |= ((uint64_t)1 << (parp->h.v % 61));
@@ -411,7 +411,7 @@ uint64_t Expr::ParamsUsed() {
     return r;
 }
 
-bool Expr::DependsOn(hParam p) {
+bool Expr::DependsOn(hParam p) const {
     if(op == PARAM)     return (parh.v    == p.v);
     if(op == PARAM_PTR) return (parp->h.v == p.v);
 
@@ -510,7 +510,7 @@ void Expr::Substitute(hParam oldh, hParam newh) {
 //-----------------------------------------------------------------------------
 const hParam Expr::NO_PARAMS       = { 0 };
 const hParam Expr::MULTIPLE_PARAMS = { 1 };
-hParam Expr::ReferencedParams(ParamList *pl) {
+hParam Expr::ReferencedParams(ParamList *pl) const {
     if(op == PARAM) {
         if(pl->FindByIdNoOops(parh)) {
             return parh;
@@ -546,7 +546,7 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 // Routines to pretty-print an expression. Mostly for debugging.
 //-----------------------------------------------------------------------------
 
-std::string Expr::Print() {
+std::string Expr::Print() const {
 
     char c;
     switch(op) {

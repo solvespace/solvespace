@@ -10,7 +10,7 @@
 extern int FLAG;
 
 void SSurface::AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
-                            SShell *agnstA, SShell *agnstB, SShell *into)
+                                         SShell *agnstA, SShell *agnstB, SShell *into)
 {
     SCurve sc = {};
     // Important to keep the order of (surfA, surfB) consistent; when we later
@@ -460,7 +460,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 // Are two surfaces coincident, with the same (or with opposite) normals?
 // Currently handles planes only.
 //-----------------------------------------------------------------------------
-bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) {
+bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) const {
     if(degm != 1 || degn != 1) return false;
     if(ss->degm != 1 || ss->degn != 1) return false;
 
@@ -480,7 +480,7 @@ bool SSurface::CoincidentWith(SSurface *ss, bool sameNormal) {
     return true;
 }
 
-bool SSurface::CoincidentWithPlane(Vector n, double d) {
+bool SSurface::CoincidentWithPlane(Vector n, double d) const {
     if(degm != 1 || degn != 1) return false;
     if(fabs(n.Dot(ctrl[0][0]) - d) > LENGTH_EPS) return false;
     if(fabs(n.Dot(ctrl[0][1]) - d) > LENGTH_EPS) return false;

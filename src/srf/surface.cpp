@@ -24,7 +24,7 @@ SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     return ret;
 }
 
-bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
+bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) const {
     int i;
 
     if(degn != 1) return false;
@@ -52,7 +52,7 @@ bool SSurface::IsExtrusion(SBezier *of, Vector *alongp) {
 }
 
 bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
-                            Vector *start, Vector *finish)
+                            Vector *start, Vector *finish) const
 {
     SBezier sb;
     if(!IsExtrusion(&sb, axis)) return false;
@@ -175,7 +175,7 @@ SSurface SSurface::FromTransformationOf(SSurface *a,
     return ret;
 }
 
-void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
+void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
     *ptMax = Vector::From(VERY_NEGATIVE, VERY_NEGATIVE, VERY_NEGATIVE);
     *ptMin = Vector::From(VERY_POSITIVE, VERY_POSITIVE, VERY_POSITIVE);
 
@@ -187,7 +187,7 @@ void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) {
     }
 }
 
-bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) {
+bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) const {
     Vector amax, amin;
     GetAxisAlignedBounding(&amax, &amin);
     if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, segment)) {
@@ -275,8 +275,7 @@ void SSurface::MakeEdgesInto(SShell *shell, SEdgeList *sel, int flags,
 // by taking the cross product of the surface normals. We choose the direction
 // of this tangent so that its dot product with dir is positive.
 //-----------------------------------------------------------------------------
-Vector SSurface::ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
-                                       Vector dir)
+Vector SSurface::ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB, Vector dir)
 {
     Point2d puva, puvb;
     srfA->ClosestPointTo(p, &puva);
@@ -295,8 +294,7 @@ Vector SSurface::ExactSurfaceTangentAt(Vector p, SSurface *srfA, SSurface *srfB,
 // add its exact form to sbl. Otherwise, add its piecewise linearization to
 // sel.
 //-----------------------------------------------------------------------------
-void SSurface::MakeSectionEdgesInto(SShell *shell,
-                                    SEdgeList *sel, SBezierList *sbl)
+void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *sbl)
 {
     STrimBy *stb;
     for(stb = trim.First(); stb; stb = trim.NextAfter(stb)) {
@@ -324,8 +322,8 @@ void SSurface::MakeSectionEdgesInto(SShell *shell,
             sbl->l.Add(&keep_bef);
         } else if(sbl && !sel && !sc->isExact) {
             // We must approximate this trim curve, as piecewise cubic sections.
-            SSurface *srfA = shell->surface.FindById(sc->surfA),
-                     *srfB = shell->surface.FindById(sc->surfB);
+            SSurface *srfA = shell->surface.FindById(sc->surfA);
+            SSurface *srfB = shell->surface.FindById(sc->surfB);
 
             Vector s = stb->backwards ? stb->finish : stb->start,
                    f = stb->backwards ? stb->start : stb->finish;
@@ -842,8 +840,7 @@ void SShell::MakeEdgesInto(SEdgeList *sel) {
     }
 }
 
-void SShell::MakeSectionEdgesInto(Vector n, double d,
-                                 SEdgeList *sel, SBezierList *sbl)
+void SShell::MakeSectionEdgesInto(Vector n, double d, SEdgeList *sel, SBezierList *sbl)
 {
     SSurface *s;
     for(s = surface.First(); s; s = surface.NextAfter(s)) {
@@ -860,7 +857,7 @@ void SShell::TriangulateInto(SMesh *sm) {
     }
 }
 
-bool SShell::IsEmpty() {
+bool SShell::IsEmpty() const {
     return (surface.n == 0);
 }
 

@@ -7,7 +7,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-std::string Entity::DescriptionString() {
+std::string Entity::DescriptionString() const {
     if(h.isFromRequest()) {
         Request *r = SK.GetRequest(h.request());
         return r->DescriptionString();
@@ -137,7 +137,6 @@ void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
         }
         lv.Clear();
     }
-
 }
 
 SBezierList *Entity::GetOrGenerateBezierCurves() {
@@ -211,14 +210,14 @@ Vector Entity::GetReferencePos() {
     return dogd.refp;
 }
 
-bool Entity::IsStylable() {
+bool Entity::IsStylable() const {
     if(IsPoint()) return false;
     if(IsWorkplane()) return false;
     if(IsNormal()) return false;
     return true;
 }
 
-bool Entity::IsVisible() {
+bool Entity::IsVisible() const {
     Group *g = SK.GetGroup(group);
 
     if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
@@ -271,7 +270,7 @@ void Entity::CalculateNumerical(bool forExport) {
     }
 }
 
-bool Entity::PointIsFromReferences() {
+bool Entity::PointIsFromReferences() const {
     return h.request().IsFromReferences();
 }
 
@@ -280,7 +279,7 @@ bool Entity::PointIsFromReferences() {
 // routine for periodic splines (in a loop) or open splines (with specified
 // end tangents).
 //-----------------------------------------------------------------------------
-void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
+void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
     static const int MAX_N = BandedMatrix::MAX_UNKNOWNS;
     int ep = extraPoints;
 
@@ -413,7 +412,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) {
     }
 }
 
-void Entity::GenerateBezierCurves(SBezierList *sbl) {
+void Entity::GenerateBezierCurves(SBezierList *sbl) const {
     SBezier sb;
 
     int i = sbl->l.n;

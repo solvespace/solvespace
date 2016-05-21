@@ -9,7 +9,7 @@
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 
-bool ConstraintBase::HasLabel() {
+bool ConstraintBase::HasLabel() const {
     switch(type) {
         case PT_LINE_DISTANCE:
         case PT_PLANE_DISTANCE:
@@ -193,7 +193,7 @@ void ConstraintBase::ModifyToSatisfy() {
     }
 }
 
-void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index)
+void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const
 {
     Equation eq;
     eq.e = expr;
@@ -201,12 +201,12 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index)
     l->Add(&eq);
 }
 
-void ConstraintBase::Generate(IdList<Equation,hEquation> *l) {
+void ConstraintBase::Generate(IdList<Equation,hEquation> *l) const {
     if(!reference) {
         GenerateReal(l);
     }
 }
-void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
+void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
     Expr *exA = Expr::From(valA);
 
     switch(type) {

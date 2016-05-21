@@ -337,7 +337,7 @@ double Style::StippleScaleMm(hStyle hs) {
     return 1.0;
 }
 
-std::string Style::DescriptionString() {
+std::string Style::DescriptionString() const {
     if(name.empty()) {
         return ssprintf("s%03x-(unnamed)", h.v);
     } else {

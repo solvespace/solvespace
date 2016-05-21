@@ -521,7 +521,7 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual void StartPath( RgbaColor strokeRgb, double lineWidth,
+    virtual void StartPath(RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
     virtual void FinishPath(RgbaColor strokeRgb, double lineWidth,
                             bool filled, RgbaColor fillRgb, hStyle hs) = 0;
@@ -856,8 +856,9 @@ public:
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
-                            Vector u, Vector v, Vector n, Vector origin,
-                                double cameraTan,
+                            Vector u, Vector v,
+                            Vector n, Vector origin,
+                            double cameraTan,
                             VectorFileWriter *out);
 
     static void MenuAnalyze(int id);
@@ -974,7 +975,7 @@ void ImportDwg(const std::string &file);
 extern SolveSpaceUI SS;
 extern Sketch SK;
 
-};
+}
 
 #ifndef __OBJC__
 using namespace SolveSpace;

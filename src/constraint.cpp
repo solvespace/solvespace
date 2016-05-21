@@ -6,7 +6,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-std::string Constraint::DescriptionString() {
+std::string Constraint::DescriptionString() const {
     const char *s;
     switch(type) {
         case POINTS_COINCIDENT:     s = "pts-coincident"; break;

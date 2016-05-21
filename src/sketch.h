@@ -21,7 +21,6 @@ class Param;
 class Equation;
 class Style;
 
-
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
 class hGroup {
@@ -29,19 +28,19 @@ public:
     // bits 15: 0   -- group index
     uint32_t v;
 
-    inline hEntity entity(int i);
-    inline hParam param(int i);
-    inline hEquation equation(int i);
+    inline hEntity entity(int i) const;
+    inline hParam param(int i) const;
+    inline hEquation equation(int i) const;
 };
 class hRequest {
 public:
     // bits 15: 0   -- request index
     uint32_t v;
 
-    inline hEntity entity(int i);
-    inline hParam param(int i);
+    inline hEntity entity(int i) const;
+    inline hParam param(int i) const;
 
-    inline bool IsFromReferences();
+    inline bool IsFromReferences() const;
 };
 class hEntity {
 public:
@@ -49,10 +48,10 @@ public:
     //      31:16   -- request index
     uint32_t v;
 
-    inline bool isFromRequest();
-    inline hRequest request();
-    inline hGroup group();
-    inline hEquation equation(int i);
+    inline bool isFromRequest() const;
+    inline hRequest request() const;
+    inline hGroup group() const;
+    inline hEquation equation(int i) const;
 };
 class hParam {
 public:
@@ -60,14 +59,13 @@ public:
     //      31:16   -- request index
     uint32_t v;
 
-    inline hRequest request();
+    inline hRequest request() const;
 };
 
 class hStyle {
 public:
     uint32_t v;
 };
-
 
 class EntityId {
 public:
@@ -301,10 +299,10 @@ public:
     std::string font;
 
     static hParam AddParam(ParamList *param, hParam hp);
-    void Generate(EntityList *entity, ParamList *param);
+    void Generate(EntityList *entity, ParamList *param) const;
 
-    std::string DescriptionString();
-    int IndexOfPoint(hEntity he);
+    std::string DescriptionString() const;
+    int IndexOfPoint(hEntity he) const;
 
     void Clear() {}
 };
@@ -378,75 +376,75 @@ public:
     // times to apply the transformation.
     int timesApplied;
 
-    Quaternion GetAxisAngleQuaternion(int param0);
-    ExprQuaternion GetAxisAngleQuaternionExprs(int param0);
+    Quaternion GetAxisAngleQuaternion(int param0) const;
+    ExprQuaternion GetAxisAngleQuaternionExprs(int param0) const;
 
-    bool IsCircle();
-    Expr *CircleGetRadiusExpr();
-    double CircleGetRadiusNum();
-    void ArcGetAngles(double *thetaa, double *thetab, double *dtheta);
+    bool IsCircle() const;
+    Expr *CircleGetRadiusExpr() const;
+    double CircleGetRadiusNum() const;
+    void ArcGetAngles(double *thetaa, double *thetab, double *dtheta) const;
 
-    bool HasVector();
-    ExprVector VectorGetExprs();
-    Vector VectorGetNum();
-    Vector VectorGetRefPoint();
-    Vector VectorGetStartPoint();
+    bool HasVector() const;
+    ExprVector VectorGetExprs() const;
+    Vector VectorGetNum() const;
+    Vector VectorGetRefPoint() const;
+    Vector VectorGetStartPoint() const;
 
     // For distances
-    bool IsDistance();
-    double DistanceGetNum();
-    Expr *DistanceGetExpr();
+    bool IsDistance() const;
+    double DistanceGetNum() const;
+    Expr *DistanceGetExpr() const;
     void DistanceForceTo(double v);
 
-    bool IsWorkplane();
+    bool IsWorkplane() const;
     // The plane is points P such that P dot (xn, yn, zn) - d = 0
-    void WorkplaneGetPlaneExprs(ExprVector *n, Expr **d);
-    ExprVector WorkplaneGetOffsetExprs();
-    Vector WorkplaneGetOffset();
-    EntityBase *Normal();
+    void WorkplaneGetPlaneExprs(ExprVector *n, Expr **d) const;
+    ExprVector WorkplaneGetOffsetExprs() const;
+    Vector WorkplaneGetOffset() const;
+    EntityBase *Normal() const;
 
-    bool IsFace();
-    ExprVector FaceGetNormalExprs();
-    Vector FaceGetNormalNum();
-    ExprVector FaceGetPointExprs();
-    Vector FaceGetPointNum();
+    bool IsFace() const;
+    ExprVector FaceGetNormalExprs() const;
+    Vector FaceGetNormalNum() const;
+    ExprVector FaceGetPointExprs() const;
+    Vector FaceGetPointNum() const;
 
-    bool IsPoint();
+    bool IsPoint() const;
     // Applies for any of the point types
-    Vector PointGetNum();
-    ExprVector PointGetExprs();
-    void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v);
+    Vector PointGetNum() const;
+    ExprVector PointGetExprs() const;
+    void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) const;
     void PointForceTo(Vector v);
     // These apply only the POINT_N_ROT_TRANS, which has an assoc rotation
-    Quaternion PointGetQuaternion();
+    Quaternion PointGetQuaternion() const;
     void PointForceQuaternionTo(Quaternion q);
 
-    bool IsNormal();
+    bool IsNormal() const;
     // Applies for any of the normal types
-    Quaternion NormalGetNum();
-    ExprQuaternion NormalGetExprs();
+    Quaternion NormalGetNum() const;
+    ExprQuaternion NormalGetExprs() const;
     void NormalForceTo(Quaternion q);
 
-    Vector NormalU();
-    Vector NormalV();
-    Vector NormalN();
-    ExprVector NormalExprsU();
-    ExprVector NormalExprsV();
-    ExprVector NormalExprsN();
+    Vector NormalU() const;
+    Vector NormalV() const;
+    Vector NormalN() const;
+    ExprVector NormalExprsU() const;
+    ExprVector NormalExprsV() const;
+    ExprVector NormalExprsN() const;
 
-    Vector CubicGetStartNum();
-    Vector CubicGetFinishNum();
-    ExprVector CubicGetStartTangentExprs();
-    ExprVector CubicGetFinishTangentExprs();
-    Vector CubicGetStartTangentNum();
-    Vector CubicGetFinishTangentNum();
+    Vector CubicGetStartNum() const;
+    Vector CubicGetFinishNum() const;
+    ExprVector CubicGetStartTangentExprs() const;
+    ExprVector CubicGetFinishTangentExprs() const;
+    Vector CubicGetStartTangentNum() const;
+    Vector CubicGetFinishTangentNum() const;
 
-    bool HasEndpoints();
-    Vector EndpointStart();
-    Vector EndpointFinish();
+    bool HasEndpoints() const;
+    Vector EndpointStart() const;
+    Vector EndpointFinish() const;
 
-    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
+    void GenerateEquations(IdList<Equation,hEquation> *l) const;
 
     void Clear() {}
 };
@@ -499,15 +497,16 @@ public:
         int         stippleType;
         int         data;
     } dogd; // state for drawing or getting distance (for hit testing)
+
     void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false, int userData = -1);
     void DrawOrGetDistance();
 
-    bool IsStylable();
-    bool IsVisible();
-    bool PointIsFromReferences();
+    bool IsStylable() const;
+    bool IsVisible() const;
+    bool PointIsFromReferences() const;
 
-    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic);
-    void GenerateBezierCurves(SBezierList *sbl);
+    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
+    void GenerateBezierCurves(SBezierList *sbl) const;
     void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
 
     static void DrawAll(bool drawAsHidden);
@@ -517,7 +516,7 @@ public:
 
     void CalculateNumerical(bool forExport);
 
-    std::string DescriptionString();
+    std::string DescriptionString() const;
 
     SBezierList *GetOrGenerateBezierCurves();
     SEdgeList *GetOrGenerateEdges();
@@ -575,7 +574,7 @@ class hConstraint {
 public:
     uint32_t v;
 
-    inline hEquation equation(int i);
+    inline hEquation equation(int i) const;
 };
 
 class ConstraintBase {
@@ -643,13 +642,13 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
 
-    bool HasLabel();
+    bool HasLabel() const;
 
-    void Generate(IdList<Equation,hEquation> *l);
-    void GenerateReal(IdList<Equation,hEquation> *l);
+    void Generate(IdList<Equation,hEquation> *l) const;
+    void GenerateReal(IdList<Equation,hEquation> *l) const;
     // Some helpers when generating symbolic constraint equations
     void ModifyToSatisfy();
-    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
+    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     static Expr *DirectionCosine(hEntity wrkpl, ExprVector ae, ExprVector be);
     static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
     static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
@@ -685,14 +684,14 @@ public:
     Vector GetReferencePos();
     void Draw();
     void GetEdges(SEdgeList *sel);
-    bool IsStylable();
+    bool IsStylable() const;
     hStyle GetStyle() const;
-    bool HasLabel();
+    bool HasLabel() const;
 
     void LineDrawOrGetDistance(Vector a, Vector b);
     bool IsVisible() const;
     void DrawOrGetDistance(Vector *labelPos);
-    std::string Label();
+    std::string Label() const;
     bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                         Vector offset, Vector *ref, bool trim);
@@ -706,7 +705,7 @@ public:
     void DoEqualLenTicks(Vector a, Vector b, Vector gn);
     void DoEqualRadiusTicks(hEntity he);
 
-    std::string DescriptionString();
+    std::string DescriptionString() const;
 
     static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
     static hConstraint AddConstraint(Constraint *c);
@@ -724,8 +723,8 @@ class hEquation {
 public:
     uint32_t v;
 
-    inline bool isFromConstraint();
-    inline hConstraint constraint();
+    inline bool isFromConstraint() const;
+    inline hConstraint constraint() const;
 };
 
 class Equation {
@@ -850,49 +849,49 @@ public:
     static int PatternType(hStyle hs);
     static double StippleScaleMm(hStyle hs);
 
-    std::string DescriptionString();
+    std::string DescriptionString() const;
 
     void Clear() {}
 };
 
 
-inline hEntity hGroup::entity(int i)
+inline hEntity hGroup::entity(int i) const
     { hEntity r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
-inline hParam hGroup::param(int i)
+inline hParam hGroup::param(int i) const
     { hParam r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
-inline hEquation hGroup::equation(int i)
+inline hEquation hGroup::equation(int i) const
     { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
-inline bool hRequest::IsFromReferences() {
+inline bool hRequest::IsFromReferences() const {
     if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
     if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
     if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
     return false;
 }
-inline hEntity hRequest::entity(int i)
+inline hEntity hRequest::entity(int i) const
     { hEntity r; r.v = (v << 16) | (uint32_t)i; return r; }
-inline hParam hRequest::param(int i)
+inline hParam hRequest::param(int i) const
     { hParam r; r.v = (v << 16) | (uint32_t)i; return r; }
 
-inline bool hEntity::isFromRequest()
+inline bool hEntity::isFromRequest() const
     { if(v & 0x80000000) return false; else return true; }
-inline hRequest hEntity::request()
+inline hRequest hEntity::request() const
     { hRequest r; r.v = (v >> 16); return r; }
-inline hGroup hEntity::group()
+inline hGroup hEntity::group() const
     { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
-inline hEquation hEntity::equation(int i)
+inline hEquation hEntity::equation(int i) const
     { hEquation r; r.v = v | 0x40000000; return r; }
 
-inline hRequest hParam::request()
+inline hRequest hParam::request() const
     { hRequest r; r.v = (v >> 16); return r; }
 
 
-inline hEquation hConstraint::equation(int i)
+inline hEquation hConstraint::equation(int i) const
     { hEquation r; r.v = (v << 16) | (uint32_t)i; return r; }
 
-inline bool hEquation::isFromConstraint()
+inline bool hEquation::isFromConstraint() const
     { if(v & 0xc0000000) return false; else return true; }
-inline hConstraint hEquation::constraint()
+inline hConstraint hEquation::constraint() const
     { hConstraint r; r.v = (v >> 16); return r; }
 
 // The format for entities stored on the clipboard.

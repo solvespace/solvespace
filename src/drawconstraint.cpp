@@ -40,7 +40,7 @@ static void LineCallback(void *fndata, Vector a, Vector b)
     c->LineDrawOrGetDistance(a, b);
 }
 
-std::string Constraint::Label() {
+std::string Constraint::Label() const {
     std::string result;
     if(type == ANGLE) {
         if(valA == floor(valA)) {
@@ -104,7 +104,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
 
 
     if(dogd.drawing) {
-        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, this);
+        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, (void *)this);
     } else {
         double l = swidth/2 - sheight/2;
         l = max(l, 5/SS.GW.scale);
@@ -461,7 +461,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         Vector trans =
             (*ref).Plus(gu.ScaledBy(-1.5*ssglStrCapHeight(Style::DefaultTextHeight())));
         ssglWriteTextRefCenter("angle between skew lines", Style::DefaultTextHeight(),
-            trans, gr.WithMagnitude(px), gu.WithMagnitude(px), LineCallback, this);
+            trans, gr.WithMagnitude(px), gu.WithMagnitude(px), LineCallback, (void *)this);
     }
 }
 
@@ -921,7 +921,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             if(dogd.drawing) {
                 ssglWriteTextRefCenter("T", Style::DefaultTextHeight(),
-                    textAt, u, v, LineCallback, this);
+                    textAt, u, v, LineCallback, (void *)this);
             } else {
                 dogd.refp = textAt;
                 Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -1105,7 +1105,7 @@ s:
                                     (type == AT_MIDPOINT) ? "M" : NULL));
 
                     ssglWriteTextRefCenter(s, Style::DefaultTextHeight(),
-                        m.Plus(offset), r, u, LineCallback, this);
+                        m.Plus(offset), r, u, LineCallback, (void *)this);
                 } else {
                     dogd.refp = m.Plus(offset);
                     Point2d ref = SS.GW.ProjectPoint(dogd.refp);
@@ -1220,7 +1220,7 @@ void Constraint::GetEdges(SEdgeList *sel) {
     dogd.sel = NULL;
 }
 
-bool Constraint::IsStylable() {
+bool Constraint::IsStylable() const {
     if(type == COMMENT) return true;
     return false;
 }
@@ -1230,7 +1230,7 @@ hStyle Constraint::GetStyle() const {
     return { Style::CONSTRAINT };
 }
 
-bool Constraint::HasLabel() {
+bool Constraint::HasLabel() const {
     switch(type) {
         case COMMENT:
         case PT_PT_DISTANCE:

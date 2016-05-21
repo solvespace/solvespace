@@ -16,7 +16,7 @@ const double SShell::DOTP_TOL = 1e-5;
 extern int FLAG;
 
 
-double SSurface::DepartureFromCoplanar() {
+double SSurface::DepartureFromCoplanar() const {
     int i, j;
     int ia, ja, ib = 0, jb = 0, ic = 0, jc = 0;
     double best;
@@ -392,7 +392,7 @@ void SShell::AllPointsIntersecting(Vector a, Vector b,
 
 
 int SShell::ClassifyRegion(Vector edge_n, Vector inter_surf_n,
-                           Vector edge_surf_n)
+                           Vector edge_surf_n) const
 {
     double dot = inter_surf_n.DirectionCosineWith(edge_n);
     if(fabs(dot) < DOTP_TOL) {

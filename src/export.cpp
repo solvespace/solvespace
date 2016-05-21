@@ -235,9 +235,9 @@ void SolveSpaceUI::ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
 }
 
 void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
-                                    Vector u, Vector v, Vector n,
-                                        Vector origin, double cameraTan,
-                                    VectorFileWriter *out)
+                                      Vector u, Vector v, Vector n,
+                                      Vector origin, double cameraTan,
+                                      VectorFileWriter *out)
 {
     double s = 1.0 / SS.exportScale;
 

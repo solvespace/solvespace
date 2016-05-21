@@ -279,7 +279,7 @@ Quaternion Quaternion::From(Vector u, Vector v)
     return q.WithMagnitude(1);
 }
 
-Quaternion Quaternion::Plus(Quaternion b) {
+Quaternion Quaternion::Plus(Quaternion b) const {
     Quaternion q;
     q.w  = w  + b.w;
     q.vx = vx + b.vx;
@@ -288,7 +288,7 @@ Quaternion Quaternion::Plus(Quaternion b) {
     return q;
 }
 
-Quaternion Quaternion::Minus(Quaternion b) {
+Quaternion Quaternion::Minus(Quaternion b) const {
     Quaternion q;
     q.w  = w  - b.w;
     q.vx = vx - b.vx;
@@ -297,7 +297,7 @@ Quaternion Quaternion::Minus(Quaternion b) {
     return q;
 }
 
-Quaternion Quaternion::ScaledBy(double s) {
+Quaternion Quaternion::ScaledBy(double s) const {
     Quaternion q;
     q.w  = w*s;
     q.vx = vx*s;
@@ -306,15 +306,15 @@ Quaternion Quaternion::ScaledBy(double s) {
     return q;
 }
 
-double Quaternion::Magnitude() {
+double Quaternion::Magnitude() const {
     return sqrt(w*w + vx*vx + vy*vy + vz*vz);
 }
 
-Quaternion Quaternion::WithMagnitude(double s) {
+Quaternion Quaternion::WithMagnitude(double s) const {
     return ScaledBy(s/Magnitude());
 }
 
-Vector Quaternion::RotationU() {
+Vector Quaternion::RotationU() const {
     Vector v;
     v.x = w*w + vx*vx - vy*vy - vz*vz;
     v.y = 2*w *vz + 2*vx*vy;
@@ -322,7 +322,7 @@ Vector Quaternion::RotationU() {
     return v;
 }
 
-Vector Quaternion::RotationV() {
+Vector Quaternion::RotationV() const {
     Vector v;
     v.x = 2*vx*vy - 2*w*vz;
     v.y = w*w - vx*vx + vy*vy - vz*vz;
@@ -330,7 +330,7 @@ Vector Quaternion::RotationV() {
     return v;
 }
 
-Vector Quaternion::RotationN() {
+Vector Quaternion::RotationN() const {
     Vector v;
     v.x = 2*w*vy + 2*vx*vz;
     v.y = 2*vy*vz - 2*w*vx;
@@ -338,14 +338,14 @@ Vector Quaternion::RotationN() {
     return v;
 }
 
-Vector Quaternion::Rotate(Vector p) {
+Vector Quaternion::Rotate(Vector p) const {
     // Express the point in the new basis
     return (RotationU().ScaledBy(p.x)).Plus(
             RotationV().ScaledBy(p.y)).Plus(
             RotationN().ScaledBy(p.z));
 }
 
-Quaternion Quaternion::Inverse() {
+Quaternion Quaternion::Inverse() const {
     Quaternion r;
     r.w = w;
     r.vx = -vx;
@@ -354,7 +354,7 @@ Quaternion Quaternion::Inverse() {
     return r.WithMagnitude(1); // not that the normalize should be reqd
 }
 
-Quaternion Quaternion::ToThe(double p) {
+Quaternion Quaternion::ToThe(double p) const {
     // Avoid division by zero, or arccos of something not in its domain
     if(w >= (1 - 1e-6)) {
         return From(1, 0, 0, 0);
@@ -374,7 +374,7 @@ Quaternion Quaternion::ToThe(double p) {
     return r;
 }
 
-Quaternion Quaternion::Times(Quaternion b) {
+Quaternion Quaternion::Times(Quaternion b) const {
     double sa = w, sb = b.w;
     Vector va = { vx, vy, vz };
     Vector vb = { b.vx, b.vy, b.vz };
@@ -390,7 +390,7 @@ Quaternion Quaternion::Times(Quaternion b) {
     return r;
 }
 
-Quaternion Quaternion::Mirror() {
+Quaternion Quaternion::Mirror() const {
     Vector u = RotationU(),
            v = RotationV();
     u = u.ScaledBy(-1);
@@ -413,7 +413,7 @@ Vector Vector::From(hParam x, hParam y, hParam z) {
     return v;
 }
 
-double Vector::Element(int i) {
+double Vector::Element(int i) const {
     switch(i) {
         case 0: return x;
         case 1: return y;
@@ -422,7 +422,7 @@ double Vector::Element(int i) {
     }
 }
 
-bool Vector::Equals(Vector v, double tol) {
+bool Vector::Equals(Vector v, double tol) const {
     // Quick axis-aligned tests before going further
     double dx = v.x - x; if(dx < -tol || dx > tol) return false;
     double dy = v.y - y; if(dy < -tol || dy > tol) return false;
@@ -431,13 +431,13 @@ bool Vector::Equals(Vector v, double tol) {
     return (this->Minus(v)).MagSquared() < tol*tol;
 }
 
-bool Vector::EqualsExactly(Vector v) {
+bool Vector::EqualsExactly(Vector v) const {
     return EXACT(x == v.x &&
                  y == v.y &&
                  z == v.z);
 }
 
-Vector Vector::Plus(Vector b) {
+Vector Vector::Plus(Vector b) const {
     Vector r;
 
     r.x = x + b.x;
@@ -447,7 +447,7 @@ Vector Vector::Plus(Vector b) {
     return r;
 }
 
-Vector Vector::Minus(Vector b) {
+Vector Vector::Minus(Vector b) const {
     Vector r;
 
     r.x = x - b.x;
@@ -457,7 +457,7 @@ Vector Vector::Minus(Vector b) {
     return r;
 }
 
-Vector Vector::Negated() {
+Vector Vector::Negated() const {
     Vector r;
 
     r.x = -x;
@@ -467,7 +467,7 @@ Vector Vector::Negated() {
     return r;
 }
 
-Vector Vector::Cross(Vector b) {
+Vector Vector::Cross(Vector b) const {
     Vector r;
 
     r.x = -(z*b.y) + (y*b.z);
@@ -477,17 +477,17 @@ Vector Vector::Cross(Vector b) {
     return r;
 }
 
-double Vector::Dot(Vector b) {
+double Vector::Dot(Vector b) const {
     return (x*b.x + y*b.y + z*b.z);
 }
 
-double Vector::DirectionCosineWith(Vector b) {
+double Vector::DirectionCosineWith(Vector b) const {
     Vector a = this->WithMagnitude(1);
     b = b.WithMagnitude(1);
     return a.Dot(b);
 }
 
-Vector Vector::Normal(int which) {
+Vector Vector::Normal(int which) const {
     Vector n;
 
     // Arbitrarily choose one vector that's normal to us, pivoting
@@ -521,13 +521,13 @@ Vector Vector::Normal(int which) {
     return n;
 }
 
-Vector Vector::RotatedAbout(Vector orig, Vector axis, double theta) {
+Vector Vector::RotatedAbout(Vector orig, Vector axis, double theta) const {
     Vector r = this->Minus(orig);
     r = r.RotatedAbout(axis, theta);
     return r.Plus(orig);
 }
 
-Vector Vector::RotatedAbout(Vector axis, double theta) {
+Vector Vector::RotatedAbout(Vector axis, double theta) const {
     double c = cos(theta);
     double s = sin(theta);
 
@@ -550,7 +550,7 @@ Vector Vector::RotatedAbout(Vector axis, double theta) {
     return r;
 }
 
-Vector Vector::DotInToCsys(Vector u, Vector v, Vector n) {
+Vector Vector::DotInToCsys(Vector u, Vector v, Vector n) const {
     Vector r = {
         this->Dot(u),
         this->Dot(v),
@@ -559,7 +559,7 @@ Vector Vector::DotInToCsys(Vector u, Vector v, Vector n) {
     return r;
 }
 
-Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) {
+Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) const {
     Vector r = u.ScaledBy(x).Plus(
                v.ScaledBy(y).Plus(
                n.ScaledBy(z)));
@@ -567,7 +567,7 @@ Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) {
 }
 
 Vector Vector::InPerspective(Vector u, Vector v, Vector n,
-                             Vector origin, double cameraTan)
+                             Vector origin, double cameraTan) const
 {
     Vector r = this->Minus(origin);
     r = r.DotInToCsys(u, v, n);
@@ -579,12 +579,12 @@ Vector Vector::InPerspective(Vector u, Vector v, Vector n,
     return r;
 }
 
-double Vector::DistanceToLine(Vector p0, Vector dp) {
+double Vector::DistanceToLine(Vector p0, Vector dp) const {
     double m = dp.Magnitude();
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
-bool Vector::OnLineSegment(Vector a, Vector b, double tol) {
+bool Vector::OnLineSegment(Vector a, Vector b, double tol) const {
     if(this->Equals(a, tol) || this->Equals(b, tol)) return true;
 
     Vector d = b.Minus(a);
@@ -600,7 +600,7 @@ bool Vector::OnLineSegment(Vector a, Vector b, double tol) {
     return true;
 }
 
-Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
+Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) const {
     dp = dp.WithMagnitude(1);
     // this, p0, and (p0+dp) define a plane; the min distance is in
     // that plane, so calculate its normal
@@ -614,15 +614,15 @@ Vector Vector::ClosestPointOnLine(Vector p0, Vector dp) {
     return this->Plus(n.WithMagnitude(d));
 }
 
-double Vector::MagSquared() {
+double Vector::MagSquared() const {
     return x*x + y*y + z*z;
 }
 
-double Vector::Magnitude() {
+double Vector::Magnitude() const {
     return sqrt(x*x + y*y + z*z);
 }
 
-Vector Vector::ScaledBy(double v) {
+Vector Vector::ScaledBy(double v) const {
     Vector r;
 
     r.x = x * v;
@@ -632,7 +632,7 @@ Vector Vector::ScaledBy(double v) {
     return r;
 }
 
-Vector Vector::WithMagnitude(double v) {
+Vector Vector::WithMagnitude(double v) const {
     double m = Magnitude();
     if(EXACT(m == 0)) {
         // We can do a zero vector with zero magnitude, but not any other cases.
@@ -645,7 +645,7 @@ Vector Vector::WithMagnitude(double v) {
     }
 }
 
-Vector Vector::ProjectVectorInto(hEntity wrkpl) {
+Vector Vector::ProjectVectorInto(hEntity wrkpl) const {
     EntityBase *w = SK.GetEntity(wrkpl);
     Vector u = w->Normal()->NormalU();
     Vector v = w->Normal()->NormalV();
@@ -656,7 +656,7 @@ Vector Vector::ProjectVectorInto(hEntity wrkpl) {
     return (u.ScaledBy(up)).Plus(v.ScaledBy(vp));
 }
 
-Vector Vector::ProjectInto(hEntity wrkpl) {
+Vector Vector::ProjectInto(hEntity wrkpl) const {
     EntityBase *w = SK.GetEntity(wrkpl);
     Vector p0 = w->WorkplaneGetOffset();
 
@@ -665,25 +665,25 @@ Vector Vector::ProjectInto(hEntity wrkpl) {
     return p0.Plus(f.ProjectVectorInto(wrkpl));
 }
 
-Point2d Vector::Project2d(Vector u, Vector v) {
+Point2d Vector::Project2d(Vector u, Vector v) const {
     Point2d p;
     p.x = this->Dot(u);
     p.y = this->Dot(v);
     return p;
 }
 
-Point2d Vector::ProjectXy() {
+Point2d Vector::ProjectXy() const {
     Point2d p;
     p.x = x;
     p.y = y;
     return p;
 }
 
-Vector4 Vector::Project4d() {
+Vector4 Vector::Project4d() const {
     return Vector4::From(1, x, y, z);
 }
 
-double Vector::DivPivoting(Vector delta) {
+double Vector::DivPivoting(Vector delta) const {
     double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
 
     if(mx > my && mx > mz) {
@@ -695,7 +695,7 @@ double Vector::DivPivoting(Vector delta) {
     }
 }
 
-Vector Vector::ClosestOrtho() {
+Vector Vector::ClosestOrtho() const {
     double mx = fabs(x), my = fabs(y), mz = fabs(z);
 
     if(mx > my && mx > mz) {
@@ -707,7 +707,7 @@ Vector Vector::ClosestOrtho() {
     }
 }
 
-Vector Vector::ClampWithin(double minv, double maxv) {
+Vector Vector::ClampWithin(double minv, double maxv) const {
     Vector ret = *this;
 
     if(ret.x < minv) ret.x = minv;
@@ -721,7 +721,7 @@ Vector Vector::ClampWithin(double minv, double maxv) {
     return ret;
 }
 
-void Vector::MakeMaxMin(Vector *maxv, Vector *minv) {
+void Vector::MakeMaxMin(Vector *maxv, Vector *minv) const {
     maxv->x = max(maxv->x, x);
     maxv->y = max(maxv->y, y);
     maxv->z = max(maxv->z, z);
@@ -731,7 +731,7 @@ void Vector::MakeMaxMin(Vector *maxv, Vector *minv) {
     minv->z = min(minv->z, z);
 }
 
-bool Vector::OutsideAndNotOn(Vector maxv, Vector minv) {
+bool Vector::OutsideAndNotOn(Vector maxv, Vector minv) const {
     return (x > maxv.x + LENGTH_EPS) || (x < minv.x - LENGTH_EPS) ||
            (y > maxv.y + LENGTH_EPS) || (y < minv.y - LENGTH_EPS) ||
            (z > maxv.z + LENGTH_EPS) || (z < minv.z - LENGTH_EPS);
@@ -918,19 +918,19 @@ Vector4 Vector4::Blend(Vector4 a, Vector4 b, double t) {
     return (a.ScaledBy(1 - t)).Plus(b.ScaledBy(t));
 }
 
-Vector4 Vector4::Plus(Vector4 b) {
+Vector4 Vector4::Plus(Vector4 b) const {
     return Vector4::From(w + b.w, x + b.x, y + b.y, z + b.z);
 }
 
-Vector4 Vector4::Minus(Vector4 b) {
+Vector4 Vector4::Minus(Vector4 b) const {
     return Vector4::From(w - b.w, x - b.x, y - b.y, z - b.z);
 }
 
-Vector4 Vector4::ScaledBy(double s) {
+Vector4 Vector4::ScaledBy(double s) const {
     return Vector4::From(w*s, x*s, y*s, z*s);
 }
 
-Vector Vector4::PerspectiveProject() {
+Vector Vector4::PerspectiveProject() const {
     return Vector::From(x / w, y / w, z / w);
 }
 
@@ -1036,8 +1036,8 @@ BBox BBox::From(const Vector &p0, const Vector &p1) {
     return bbox;
 }
 
-Vector BBox::GetOrigin() { return minp.Plus(maxp.Minus(minp)).ScaledBy(0.5); }
-Vector BBox::GetExtents() { return maxp.Minus(minp).ScaledBy(0.5); }
+Vector BBox::GetOrigin() const { return minp.Plus(maxp.Minus(minp)).ScaledBy(0.5); }
+Vector BBox::GetExtents() const { return maxp.Minus(minp).ScaledBy(0.5); }
 
 void BBox::Include(const Vector &v, double r) {
     minp.x = min(minp.x, v.x - r);
@@ -1049,7 +1049,7 @@ void BBox::Include(const Vector &v, double r) {
     maxp.z = max(maxp.z, v.z + r);
 }
 
-bool BBox::Overlaps(BBox &b1) {
+bool BBox::Overlaps(const BBox &b1) const {
 
     Vector t = b1.GetOrigin().Minus(GetOrigin());
     Vector e = b1.GetExtents().Plus(GetExtents());
@@ -1057,6 +1057,6 @@ bool BBox::Overlaps(BBox &b1) {
     return fabs(t.x) < e.x && fabs(t.y) < e.y && fabs(t.z) < e.z;
 }
 
-bool BBox::Contains(const Point2d &p) {
+bool BBox::Contains(const Point2d &p) const {
     return p.x >= minp.x && p.y >= minp.y && p.x <= maxp.x && p.y <= maxp.y;
 }

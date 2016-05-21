@@ -213,7 +213,7 @@ haveEdge:
     return true;
 }
 
-bool SContour::IsEar(int bp, double scaledEps) {
+bool SContour::IsEar(int bp, double scaledEps) const {
     int ap = WRAP(bp-1, l.n),
         cp = WRAP(bp+1, l.n);
 
@@ -359,7 +359,7 @@ void SContour::UvTriangulateInto(SMesh *m, SSurface *srf) {
     ClipEarInto(m, 0, scaledEps); // add the last triangle
 }
 
-double SSurface::ChordToleranceForEdge(Vector a, Vector b) {
+double SSurface::ChordToleranceForEdge(Vector a, Vector b) const {
     Vector as = PointAt(a.x, a.y), bs = PointAt(b.x, b.y);
 
     double worst = VERY_NEGATIVE;
@@ -374,7 +374,7 @@ double SSurface::ChordToleranceForEdge(Vector a, Vector b) {
     return sqrt(worst);
 }
 
-Vector SSurface::PointAtMaybeSwapped(double u, double v, bool swapped) {
+Vector SSurface::PointAtMaybeSwapped(double u, double v, bool swapped) const {
     if(swapped) {
         return PointAt(v, u);
     } else {
@@ -383,7 +383,7 @@ Vector SSurface::PointAtMaybeSwapped(double u, double v, bool swapped) {
 }
 
 void SSurface::MakeTriangulationGridInto(List<double> *l, double vs, double vf,
-                                         bool swapped)
+                                         bool swapped) const
 {
     double worst = 0;
 

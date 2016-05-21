@@ -83,7 +83,7 @@ int EntReqTable::GetRequestForEntity(int ent) {
 
 
 void Request::Generate(IdList<Entity,hEntity> *entity,
-                       IdList<Param,hParam> *param)
+                       IdList<Param,hParam> *param) const
 {
     int points = 0;
     int et = 0;
@@ -169,7 +169,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     if(et) entity->Add(&e);
 }
 
-std::string Request::DescriptionString() {
+std::string Request::DescriptionString() const {
     const char *s;
     if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
@@ -184,7 +184,7 @@ std::string Request::DescriptionString() {
     return ssprintf("r%03x-%s", h.v, s);
 }
 
-int Request::IndexOfPoint(hEntity he) {
+int Request::IndexOfPoint(hEntity he) const {
     if(type == DATUM_POINT) {
         return (he.v == h.entity(0).v) ? 0 : -1;
     }

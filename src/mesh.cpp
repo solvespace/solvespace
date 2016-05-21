@@ -33,12 +33,12 @@ void SMesh::AddTriangle(STriMeta meta, Vector a, Vector b, Vector c) {
     t.c = c;
     AddTriangle(&t);
 }
-void SMesh::AddTriangle(STriangle *st) {
+void SMesh::AddTriangle(const STriangle *st) {
     if(st->meta.color.alpha != 255) isTransparent = true;
     l.Add(st);
 }
 
-void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) {
+void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) const {
     vmax->x = max(vmax->x, v.x);
     vmax->y = max(vmax->y, v.y);
     vmax->z = max(vmax->z, v.z);
@@ -47,7 +47,7 @@ void SMesh::DoBounding(Vector v, Vector *vmax, Vector *vmin) {
     vmin->y = min(vmin->y, v.y);
     vmin->z = min(vmin->z, v.z);
 }
-void SMesh::GetBounding(Vector *vmax, Vector *vmin) {
+void SMesh::GetBounding(Vector *vmax, Vector *vmin) const {
     int i;
     *vmin = Vector::From( 1e12,  1e12,  1e12);
     *vmax = Vector::From(-1e12, -1e12, -1e12);
@@ -302,8 +302,8 @@ void SMesh::MakeFromAssemblyOf(SMesh *a, SMesh *b) {
     MakeFromCopyOf(b);
 }
 
-void SMesh::MakeFromTransformationOf(SMesh *a,
-                                      Vector trans, Quaternion q, double scale)
+void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans,
+                                     Quaternion q, double scale)
 {
     STriangle *tr;
     for(tr = a->l.First(); tr; tr = a->l.NextAfter(tr)) {
@@ -322,11 +322,11 @@ void SMesh::MakeFromTransformationOf(SMesh *a,
     }
 }
 
-bool SMesh::IsEmpty() {
+bool SMesh::IsEmpty() const {
     return (l.n == 0);
 }
 
-uint32_t SMesh::FirstIntersectionWith(Point2d mp) {
+uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     Vector p0 = Vector::From(mp.x, mp.y, 0);
     Vector gn = Vector::From(0, 0, 1);
 
@@ -487,7 +487,7 @@ leaf:
     return ret;
 }
 
-void SKdNode::ClearTags() {
+void SKdNode::ClearTags() const {
     if(gt && lt) {
         gt->ClearTags();
         lt->ClearTags();
@@ -524,7 +524,7 @@ void SKdNode::AddTriangle(STriangle *tr) {
     }
 }
 
-void SKdNode::MakeMeshInto(SMesh *m) {
+void SKdNode::MakeMeshInto(SMesh *m) const {
     if(gt) gt->MakeMeshInto(m);
     if(lt) lt->MakeMeshInto(m);
 
@@ -537,7 +537,7 @@ void SKdNode::MakeMeshInto(SMesh *m) {
     }
 }
 
-void SKdNode::ListTrianglesInto(std::vector<STriangle *> *tl) {
+void SKdNode::ListTrianglesInto(std::vector<STriangle *> *tl) const {
     if(gt) gt->ListTrianglesInto(tl);
     if(lt) lt->ListTrianglesInto(tl);
 
@@ -654,7 +654,7 @@ void SKdNode::SnapToMesh(SMesh *m) {
 // them for occlusion. Keep only the visible segments. sel is both our input
 // and our output.
 //-----------------------------------------------------------------------------
-void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) {
+void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) const {
     SEdgeList seln = {};
 
     Vector tn = tr->Normal().WithMagnitude(1);
@@ -767,7 +767,7 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool remo
 // Given an edge orig, occlusion test it against our mesh. We output an edge
 // list in sel, containing the visible portions of that edge.
 //-----------------------------------------------------------------------------
-void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) {
+void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) const {
     if(gt && lt) {
         double ac = (orig.a).Element(which),
                bc = (orig.b).Element(which);
@@ -808,7 +808,7 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool remove
 // with a triangle in the mesh, otherwise not.
 //-----------------------------------------------------------------------------
 void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
-                         EdgeOnInfo *info)
+                         EdgeOnInfo *info) const
 {
     if(gt && lt) {
         double ac = a.Element(which),
@@ -925,7 +925,7 @@ static bool CheckAndAddTrianglePair(std::set<std::pair<STriangle *, STriangle *>
 //      a triangle from a different face)
 //-----------------------------------------------------------------------------
 void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter,
-                                   bool *inter, bool *leaky, int auxA)
+                                   bool *inter, bool *leaky, int auxA) const
 {
     if(inter) *inter = false;
     if(leaky) *leaky = false;
@@ -1022,7 +1022,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, int how, bool coplanarIsInter
     }
 }
 
-void SKdNode::MakeOutlinesInto(SOutlineList *sol)
+void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
 {
     std::vector<STriangle *> tris;
     ClearTags();

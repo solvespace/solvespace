@@ -60,11 +60,11 @@ SBezier SBezier::From(Vector p0, Vector p1, Vector p2, Vector p3) {
                          p3.Project4d());
 }
 
-Vector SBezier::Start() {
+Vector SBezier::Start() const {
     return ctrl[0];
 }
 
-Vector SBezier::Finish() {
+Vector SBezier::Finish() const {
     return ctrl[deg];
 }
 
@@ -84,7 +84,7 @@ void SBezier::ScaleSelfBy(double s) {
 }
 
 void SBezier::GetBoundingProjd(Vector u, Vector orig,
-                               double *umin, double *umax)
+                               double *umin, double *umax) const
 {
     int i;
     for(i = 0; i <= deg; i++) {
@@ -94,7 +94,7 @@ void SBezier::GetBoundingProjd(Vector u, Vector orig,
     }
 }
 
-SBezier SBezier::TransformedBy(Vector t, Quaternion q, double scale) {
+SBezier SBezier::TransformedBy(Vector t, Quaternion q, double scale) const {
     SBezier ret = *this;
     int i;
     for(i = 0; i <= deg; i++) {
@@ -108,7 +108,7 @@ SBezier SBezier::TransformedBy(Vector t, Quaternion q, double scale) {
 // Does this curve lie entirely within the specified plane? It does if all
 // the control points lie in that plane.
 //-----------------------------------------------------------------------------
-bool SBezier::IsInPlane(Vector n, double d) {
+bool SBezier::IsInPlane(Vector n, double d) const {
     int i;
     for(i = 0; i <= deg; i++) {
         if(fabs((ctrl[i]).Dot(n) - d) > LENGTH_EPS) {
@@ -122,7 +122,7 @@ bool SBezier::IsInPlane(Vector n, double d) {
 // Is this Bezier exactly the arc of a circle, projected along the specified
 // axis? If yes, return that circle's center and radius.
 //-----------------------------------------------------------------------------
-bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
+bool SBezier::IsCircle(Vector axis, Vector *center, double *r) const {
     if(deg != 2) return false;
 
     if(ctrl[1].DistanceToLine(ctrl[0], ctrl[2].Minus(ctrl[0])) < LENGTH_EPS) {
@@ -170,7 +170,7 @@ bool SBezier::IsCircle(Vector axis, Vector *center, double *r) {
     return true;
 }
 
-bool SBezier::IsRational() {
+bool SBezier::IsRational() const {
     int i;
     for(i = 0; i <= deg; i++) {
         if(fabs(weight[i] - 1) > LENGTH_EPS) return true;
@@ -183,7 +183,7 @@ bool SBezier::IsRational() {
 // the new weights as required.
 //-----------------------------------------------------------------------------
 SBezier SBezier::InPerspective(Vector u, Vector v, Vector n,
-                               Vector origin, double cameraTan)
+                               Vector origin, double cameraTan) const
 {
     Quaternion q = Quaternion::From(u, v);
     q = q.Inverse();
@@ -206,7 +206,7 @@ SBezier SBezier::InPerspective(Vector u, Vector v, Vector n,
     return ret;
 }
 
-bool SBezier::Equals(SBezier *b) {
+bool SBezier::Equals(SBezier *b) const {
     // We just test of identical degree and control points, even though two
     // curves could still be coincident (even sharing endpoints).
     if(deg != b->deg) return false;
@@ -262,15 +262,14 @@ void SBezierList::CullIdenticalBeziers() {
 // curves. So this will screw up on tangencies and stuff, but otherwise should
 // be fine.
 //-----------------------------------------------------------------------------
-void SBezierList::AllIntersectionsWith(SBezierList *sblb, SPointList *spl) {
-    SBezier *sba, *sbb;
-    for(sba = l.First(); sba; sba = l.NextAfter(sba)) {
-        for(sbb = sblb->l.First(); sbb; sbb = sblb->l.NextAfter(sbb)) {
+void SBezierList::AllIntersectionsWith(SBezierList *sblb, SPointList *spl) const {
+    for(const SBezier *sba = l.First(); sba; sba = l.NextAfter(sba)) {
+        for(const SBezier *sbb = sblb->l.First(); sbb; sbb = sblb->l.NextAfter(sbb)) {
             sbb->AllIntersectionsWith(sba, spl);
         }
     }
 }
-void SBezier::AllIntersectionsWith(SBezier *sbb, SPointList *spl) {
+void SBezier::AllIntersectionsWith(const SBezier *sbb, SPointList *spl) const {
     SPointList splRaw = {};
     SEdgeList sea, seb;
     sea = {};
@@ -304,12 +303,11 @@ void SBezier::AllIntersectionsWith(SBezier *sbb, SPointList *spl) {
 // Returns true if all the curves are coplanar, otherwise false.
 //-----------------------------------------------------------------------------
 bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
-                        Vector *notCoplanarAt)
+                        Vector *notCoplanarAt) const
 {
     Vector pt, ptFar, ptOffLine, dp, n;
     double farMax, offLineMax;
     int i;
-    SBezier *sb;
 
     // Get any point on any Bezier; or an arbitrary point if list is empty.
     if(l.n > 0) {
@@ -321,7 +319,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
 
     // Get the point farthest from our arbitrary point.
     farMax = VERY_NEGATIVE;
-    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+    for(const SBezier *sb = l.First(); sb; sb = l.NextAfter(sb)) {
         for(i = 0; i <= sb->deg; i++) {
             double m = (pt.Minus(sb->ctrl[i])).Magnitude();
             if(m > farMax) {
@@ -341,7 +339,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     // Get the point farthest from the line between pt and ptFar
     dp = ptFar.Minus(pt);
     offLineMax = VERY_NEGATIVE;
-    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+    for(const SBezier *sb = l.First(); sb; sb = l.NextAfter(sb)) {
         for(i = 0; i <= sb->deg; i++) {
             double m = (sb->ctrl[i]).DistanceToLine(pt, dp);
             if(m > offLineMax) {
@@ -369,7 +367,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     n = u->Cross(*v);
     n = n.WithMagnitude(1);
     double d = p->Dot(n);
-    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+    for(const SBezier *sb = l.First(); sb; sb = l.NextAfter(sb)) {
         for(i = 0; i <= sb->deg; i++) {
             if(fabs(n.Dot(sb->ctrl[i]) - d) > LENGTH_EPS) {
                 if(notCoplanarAt) *notCoplanarAt = sb->ctrl[i];
@@ -454,17 +452,15 @@ void SBezierLoop::Reverse() {
 }
 
 void SBezierLoop::GetBoundingProjd(Vector u, Vector orig,
-                                   double *umin, double *umax)
+                                   double *umin, double *umax) const
 {
-    SBezier *sb;
-    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+    for(const SBezier *sb = l.First(); sb; sb = l.NextAfter(sb)) {
         sb->GetBoundingProjd(u, orig, umin, umax);
     }
 }
 
-void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) {
-    SBezier *sb;
-    for(sb = l.First(); sb; sb = l.NextAfter(sb)) {
+void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) const {
+    for(const SBezier *sb = l.First(); sb; sb = l.NextAfter(sb)) {
         sb->MakePwlInto(sc, chordTol);
         // Avoid double points at join between Beziers; except that
         // first and last points should be identical.
@@ -478,7 +474,7 @@ void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) {
     }
 }
 
-bool SBezierLoop::IsClosed() {
+bool SBezierLoop::IsClosed() const {
     if(l.n < 1) return false;
     Vector s = l.elem[0].Start(),
            f = l.elem[l.n-1].Finish();
@@ -533,10 +529,9 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
 }
 
 void SBezierLoopSet::GetBoundingProjd(Vector u, Vector orig,
-                                      double *umin, double *umax)
+                                      double *umin, double *umax) const
 {
-    SBezierLoop *sbl;
-    for(sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
+    for(const SBezierLoop *sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
         sbl->GetBoundingProjd(u, orig, umin, umax);
     }
 }
@@ -545,9 +540,8 @@ void SBezierLoopSet::GetBoundingProjd(Vector u, Vector orig,
 // Convert all the Beziers into piecewise linear form, and assemble that into
 // a polygon, one contour per loop.
 //-----------------------------------------------------------------------------
-void SBezierLoopSet::MakePwlInto(SPolygon *sp) {
-    SBezierLoop *sbl;
-    for(sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
+void SBezierLoopSet::MakePwlInto(SPolygon *sp) const {
+    for(const SBezierLoop *sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
         sp->AddEmptyContour();
         sbl->MakePwlInto(&(sp->l.elem[sp->l.n - 1]));
     }
@@ -732,8 +726,8 @@ void SBezierLoopSetSet::Clear() {
     l.Clear();
 }
 
-SCurve SCurve::FromTransformationOf(SCurve *a,
-                                          Vector t, Quaternion q, double scale)
+SCurve SCurve::FromTransformationOf(SCurve *a, Vector t,
+                                    Quaternion q, double scale)
 {
     SCurve ret = {};
 
@@ -757,7 +751,7 @@ void SCurve::Clear() {
     pts.Clear();
 }
 
-SSurface *SCurve::GetSurfaceA(SShell *a, SShell *b) {
+SSurface *SCurve::GetSurfaceA(SShell *a, SShell *b) const {
     if(source == FROM_A) {
         return a->surface.FindById(surfA);
     } else if(source == FROM_B) {
@@ -767,7 +761,7 @@ SSurface *SCurve::GetSurfaceA(SShell *a, SShell *b) {
     } else ssassert(false, "Unexpected curve source");
 }
 
-SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) {
+SSurface *SCurve::GetSurfaceB(SShell *a, SShell *b) const {
     if(source == FROM_A) {
         return a->surface.FindById(surfB);
     } else if(source == FROM_B) {
