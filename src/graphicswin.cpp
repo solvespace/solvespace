@@ -754,7 +754,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             // screen in the text window.
             if(SS.GW.gs.n               == 0 &&
                SS.GW.gs.constraints     == 0 &&
-               SS.GW.pending.operation  == 0)
+               SS.GW.pending.operation  == Pending::NONE)
             {
                 if(!(TextEditControlIsVisible() ||
                      GraphicsEditControlIsVisible()))
@@ -1004,7 +1004,8 @@ void GraphicsWindow::MenuRequest(Command id) {
         case Command::RECTANGLE: s = "click one corner of rectangle"; goto c;
         case Command::TTF_TEXT: s = "click top left of text"; goto c;
 c:
-            SS.GW.pending.operation = (uint32_t)id;
+            SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+            SS.GW.pending.command = id;
             SS.GW.pending.description = s;
             SS.ScheduleShowTW();
             InvalidateGraphics(); // repaint toolbar

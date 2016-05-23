@@ -725,7 +725,8 @@ void Constraint::MenuConstrain(Command id) {
             break;
 
         case Command::COMMENT:
-            SS.GW.pending.operation = (int)Command::COMMENT;
+            SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
+            SS.GW.pending.command = Command::COMMENT;
             SS.GW.pending.description = "click center of comment text";
             SS.ScheduleShowTW();
             break;

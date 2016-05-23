@@ -102,8 +102,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         }
     }
 
-    if(!leftDown && (pending.operation == DRAGGING_POINTS ||
-                     pending.operation == DRAGGING_MARQUEE))
+    if(!leftDown && (pending.operation == Pending::DRAGGING_POINTS ||
+                     pending.operation == Pending::DRAGGING_MARQUEE))
     {
         ClearPending();
         InvalidateGraphics();
@@ -167,7 +167,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         return;
     }
 
-    if(pending.operation == 0) {
+    if(pending.operation == Pending::NONE) {
         double dm = orig.mouse.DistanceTo(mp);
         // If we're currently not doing anything, then see if we should
         // start dragging something.
@@ -180,11 +180,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     // Drag the radius.
                     ClearSelection();
                     pending.circle = hover.entity;
-                    pending.operation = DRAGGING_RADIUS;
+                    pending.operation = Pending::DRAGGING_RADIUS;
                 } else if(e->IsNormal()) {
                     ClearSelection();
                     pending.normal = hover.entity;
-                    pending.operation = DRAGGING_NORMAL;
+                    pending.operation = Pending::DRAGGING_NORMAL;
                 } else {
                     if(!hoverWasSelectedOnMousedown) {
                         // The user clicked an unselected entity, which
@@ -202,16 +202,16 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         ClearSelection();
                     }
                     hover.Clear();
-                    pending.operation = DRAGGING_POINTS;
+                    pending.operation = Pending::DRAGGING_POINTS;
                 }
             } else if(hover.constraint.v &&
                             SK.GetConstraint(hover.constraint)->HasLabel())
             {
                 ClearSelection();
                 pending.constraint = hover.constraint;
-                pending.operation = DRAGGING_CONSTRAINT;
+                pending.operation = Pending::DRAGGING_CONSTRAINT;
             }
-            if(pending.operation != 0) {
+            if(pending.operation != Pending::NONE) {
                 // We just started a drag, so remember for the undo before
                 // the drag changes anything.
                 SS.UndoRemember();
@@ -226,7 +226,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                             MakeUnselected(hover.entity, false);
                             hover.Clear();
                         }
-                        pending.operation = DRAGGING_MARQUEE;
+                        pending.operation = Pending::DRAGGING_MARQUEE;
                         orig.marqueePoint =
                             UnProjectPoint(orig.mouseOnButtonDown);
                     }
@@ -252,7 +252,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
     // If the user has started an operation from the menu, but not
     // completed it, then just do the selection.
-    if(pending.operation < FIRST_PENDING) {
+    if(pending.operation == Pending::COMMAND) {
         HitTestMakeSelection(mp);
         return;
     }
@@ -261,7 +261,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     // painted since the last time we solved, do nothing, because there's
     // no sense solving a frame and not displaying it.
     if(!havePainted) {
-        if(pending.operation == DRAGGING_POINTS && ctrlDown) {
+        if(pending.operation == Pending::DRAGGING_POINTS && ctrlDown) {
             SS.extraLine.ptA = UnProjectPoint(orig.mouseOnButtonDown);
             SS.extraLine.ptB = UnProjectPoint(mp);
             SS.extraLine.draw = true;
@@ -271,7 +271,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
     havePainted = false;
     switch(pending.operation) {
-        case DRAGGING_CONSTRAINT: {
+        case Pending::DRAGGING_CONSTRAINT: {
             Constraint *c = SK.constraint.FindById(pending.constraint);
             UpdateDraggedNum(&(c->disp.offset), x, y);
             orig.mouse = mp;
@@ -279,14 +279,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             break;
         }
 
-        case DRAGGING_NEW_LINE_POINT:
+        case Pending::DRAGGING_NEW_LINE_POINT:
             if(!ctrlDown) {
                 SS.GW.pending.suggestion =
                     SS.GW.SuggestLineConstraint(SS.GW.pending.request);
             } else {
                 SS.GW.pending.suggestion = Constraint::Type::UNKNOWN;
             }
-        case DRAGGING_NEW_POINT:
+        case Pending::DRAGGING_NEW_POINT:
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
             SS.MarkGroupDirtyByEntity(pending.point);
@@ -294,7 +294,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             InvalidateGraphics();
             break;
 
-        case DRAGGING_POINTS:
+        case Pending::DRAGGING_POINTS:
             if(shiftDown || ctrlDown) {
                 // Edit the rotation associated with a POINT_N_ROT_TRANS,
                 // either within (ctrlDown) or out of (shiftDown) the plane
@@ -364,7 +364,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             }
             break;
 
-        case DRAGGING_NEW_CUBIC_POINT: {
+        case Pending::DRAGGING_NEW_CUBIC_POINT: {
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
 
@@ -392,7 +392,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
-        case DRAGGING_NEW_ARC_POINT: {
+        case Pending::DRAGGING_NEW_ARC_POINT: {
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
 
@@ -407,8 +407,8 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             SS.MarkGroupDirtyByEntity(pending.point);
             break;
         }
-        case DRAGGING_NEW_RADIUS:
-        case DRAGGING_RADIUS: {
+        case Pending::DRAGGING_NEW_RADIUS:
+        case Pending::DRAGGING_RADIUS: {
             Entity *circle = SK.GetEntity(pending.circle);
             Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
             Point2d c2 = ProjectPoint(center);
@@ -419,7 +419,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             break;
         }
 
-        case DRAGGING_NORMAL: {
+        case Pending::DRAGGING_NORMAL: {
             Entity *normal = SK.GetEntity(pending.normal);
             Vector p = SK.GetEntity(normal->point[0])->PointGetNum();
             Point2d p2 = ProjectPoint(p);
@@ -450,7 +450,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             break;
         }
 
-        case DRAGGING_MARQUEE:
+        case Pending::DRAGGING_MARQUEE:
             orig.mouse = mp;
             InvalidateGraphics();
             break;
@@ -458,9 +458,9 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         default: ssassert(false, "Unexpected pending operation");
     }
 
-    if(pending.operation != 0 &&
-       pending.operation != DRAGGING_CONSTRAINT &&
-       pending.operation != DRAGGING_MARQUEE)
+    if(pending.operation != Pending::NONE &&
+       pending.operation != Pending::DRAGGING_CONSTRAINT &&
+       pending.operation != Pending::DRAGGING_MARQUEE)
     {
         SS.GenerateAll();
     }
@@ -511,15 +511,15 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     if(context.active) return;
 
-    if(pending.operation == DRAGGING_NEW_LINE_POINT) {
+    if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT) {
         if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
             Constraint::Constrain(SS.GW.pending.suggestion,
                 Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
         }
     }
 
-    if(pending.operation == DRAGGING_NEW_LINE_POINT ||
-       pending.operation == DRAGGING_NEW_CUBIC_POINT)
+    if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
+       pending.operation == Pending::DRAGGING_NEW_CUBIC_POINT)
     {
         // Special case; use a right click to stop drawing lines, since
         // a left click would draw another one. This is quicker and more
@@ -904,179 +904,185 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     v = v.Plus(projRight.ScaledBy(mx/scale));
     v = v.Plus(projUp.ScaledBy(my/scale));
 
+
     hRequest hr;
     switch(pending.operation) {
-        case Command::DATUM_POINT:
-            hr = AddRequest(Request::Type::DATUM_POINT);
-            SK.GetEntity(hr.entity(0))->PointForceTo(v);
-            ConstrainPointByHovered(hr.entity(0));
+        case Pending::COMMAND:
+            switch(pending.command) {
+                case Command::DATUM_POINT:
+                    hr = AddRequest(Request::Type::DATUM_POINT);
+                    SK.GetEntity(hr.entity(0))->PointForceTo(v);
+                    ConstrainPointByHovered(hr.entity(0));
 
-            ClearSuper();
-            break;
+                    ClearSuper();
+                    break;
 
-        case Command::LINE_SEGMENT:
-        case Command::CONSTR_SEGMENT:
-            hr = AddRequest(Request::Type::LINE_SEGMENT);
-            SK.GetRequest(hr)->construction = (pending.operation == (uint32_t)Command::CONSTR_SEGMENT);
-            SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            ConstrainPointByHovered(hr.entity(1));
+                case Command::LINE_SEGMENT:
+                case Command::CONSTR_SEGMENT:
+                    hr = AddRequest(Request::Type::LINE_SEGMENT);
+                    SK.GetRequest(hr)->construction = (pending.command == Command::CONSTR_SEGMENT);
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    ConstrainPointByHovered(hr.entity(1));
 
-            ClearSuper();
+                    ClearSuper();
 
-            pending.operation = DRAGGING_NEW_LINE_POINT;
-            pending.request = hr;
-            pending.point = hr.entity(2);
-            pending.description = "click next point of line, or press Esc";
-            SK.GetEntity(pending.point)->PointForceTo(v);
-            break;
+                    pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
+                    pending.request = hr;
+                    pending.point = hr.entity(2);
+                    pending.description = "click next point of line, or press Esc";
+                    SK.GetEntity(pending.point)->PointForceTo(v);
+                    break;
 
-        case Command::RECTANGLE: {
-            if(!SS.GW.LockedInWorkplane()) {
-                Error("Can't draw rectangle in 3d; select a workplane first.");
-                ClearSuper();
-                break;
+                case Command::RECTANGLE: {
+                    if(!SS.GW.LockedInWorkplane()) {
+                        Error("Can't draw rectangle in 3d; select a workplane first.");
+                        ClearSuper();
+                        break;
+                    }
+                    hRequest lns[4];
+                    int i;
+                    SS.UndoRemember();
+                    for(i = 0; i < 4; i++) {
+                        lns[i] = AddRequest(Request::Type::LINE_SEGMENT, false);
+                    }
+                    for(i = 0; i < 4; i++) {
+                        Constraint::ConstrainCoincident(
+                            lns[i].entity(1), lns[(i+1)%4].entity(2));
+                        SK.GetEntity(lns[i].entity(1))->PointForceTo(v);
+                        SK.GetEntity(lns[i].entity(2))->PointForceTo(v);
+                    }
+                    for(i = 0; i < 4; i++) {
+                        Constraint::Constrain(
+                            (i % 2) ? Constraint::Type::HORIZONTAL : Constraint::Type::VERTICAL,
+                            Entity::NO_ENTITY, Entity::NO_ENTITY,
+                            lns[i].entity(0));
+                    }
+                    ConstrainPointByHovered(lns[2].entity(1));
+
+                    pending.operation = Pending::DRAGGING_NEW_POINT;
+                    pending.point = lns[1].entity(2);
+                    pending.description = "click to place other corner of rectangle";
+                    break;
+                }
+                case Command::CIRCLE:
+                    hr = AddRequest(Request::Type::CIRCLE);
+                    // Centered where we clicked
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    // Normal to the screen
+                    SK.GetEntity(hr.entity(32))->NormalForceTo(
+                        Quaternion::From(SS.GW.projRight, SS.GW.projUp));
+                    // Initial radius zero
+                    SK.GetEntity(hr.entity(64))->DistanceForceTo(0);
+
+                    ConstrainPointByHovered(hr.entity(1));
+
+                    ClearSuper();
+
+                    pending.operation = Pending::DRAGGING_NEW_RADIUS;
+                    pending.circle = hr.entity(0);
+                    pending.description = "click to set radius";
+                    break;
+
+                case Command::ARC: {
+                    if(!SS.GW.LockedInWorkplane()) {
+                        Error("Can't draw arc in 3d; select a workplane first.");
+                        ClearPending();
+                        break;
+                    }
+                    hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
+                    // This fudge factor stops us from immediately failing to solve
+                    // because of the arc's implicit (equal radius) tangent.
+                    Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v.Minus(adj));
+                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(3))->PointForceTo(v);
+                    ConstrainPointByHovered(hr.entity(2));
+
+                    ClearSuper();
+
+                    pending.operation = Pending::DRAGGING_NEW_ARC_POINT;
+                    pending.point = hr.entity(3);
+                    pending.description = "click to place point";
+                    break;
+                }
+                case Command::CUBIC:
+                    hr = AddRequest(Request::Type::CUBIC);
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(3))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(4))->PointForceTo(v);
+                    ConstrainPointByHovered(hr.entity(1));
+
+                    ClearSuper();
+
+                    pending.operation = Pending::DRAGGING_NEW_CUBIC_POINT;
+                    pending.point = hr.entity(4);
+                    pending.description = "click next point of cubic, or press Esc";
+                    break;
+
+                case Command::WORKPLANE:
+                    if(LockedInWorkplane()) {
+                        Error("Sketching in a workplane already; sketch in 3d before "
+                              "creating new workplane.");
+                        ClearSuper();
+                        break;
+                    }
+                    hr = AddRequest(Request::Type::WORKPLANE);
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(32))->NormalForceTo(
+                        Quaternion::From(SS.GW.projRight, SS.GW.projUp));
+                    ConstrainPointByHovered(hr.entity(1));
+
+                    ClearSuper();
+                    break;
+
+                case Command::TTF_TEXT: {
+                    if(!SS.GW.LockedInWorkplane()) {
+                        Error("Can't draw text in 3d; select a workplane first.");
+                        ClearSuper();
+                        break;
+                    }
+                    hr = AddRequest(Request::Type::TTF_TEXT);
+                    Request *r = SK.GetRequest(hr);
+                    r->str = "Abc";
+                    r->font = "arial.ttf";
+
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+
+                    pending.operation = Pending::DRAGGING_NEW_POINT;
+                    pending.point = hr.entity(2);
+                    pending.description = "click to place bottom left of text";
+                    break;
+                }
+
+                case Command::COMMENT: {
+                    ClearSuper();
+                    Constraint c = {};
+                    c.group       = SS.GW.activeGroup;
+                    c.workplane   = SS.GW.ActiveWorkplane();
+                    c.type        = Constraint::Type::COMMENT;
+                    c.disp.offset = v;
+                    c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
+                    Constraint::AddConstraint(&c);
+                    break;
+                }
+                default: ssassert(false, "Unexpected pending menu id");
             }
-            hRequest lns[4];
-            int i;
-            SS.UndoRemember();
-            for(i = 0; i < 4; i++) {
-                lns[i] = AddRequest(Request::Type::LINE_SEGMENT, false);
-            }
-            for(i = 0; i < 4; i++) {
-                Constraint::ConstrainCoincident(
-                    lns[i].entity(1), lns[(i+1)%4].entity(2));
-                SK.GetEntity(lns[i].entity(1))->PointForceTo(v);
-                SK.GetEntity(lns[i].entity(2))->PointForceTo(v);
-            }
-            for(i = 0; i < 4; i++) {
-                Constraint::Constrain(
-                    (i % 2) ? Constraint::Type::HORIZONTAL : Constraint::Type::VERTICAL,
-                    Entity::NO_ENTITY, Entity::NO_ENTITY,
-                    lns[i].entity(0));
-            }
-            ConstrainPointByHovered(lns[2].entity(1));
-
-            pending.operation = DRAGGING_NEW_POINT;
-            pending.point = lns[1].entity(2);
-            pending.description = "click to place other corner of rectangle";
-            break;
-        }
-        case Command::CIRCLE:
-            hr = AddRequest(Request::Type::CIRCLE);
-            // Centered where we clicked
-            SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            // Normal to the screen
-            SK.GetEntity(hr.entity(32))->NormalForceTo(
-                Quaternion::From(SS.GW.projRight, SS.GW.projUp));
-            // Initial radius zero
-            SK.GetEntity(hr.entity(64))->DistanceForceTo(0);
-
-            ConstrainPointByHovered(hr.entity(1));
-
-            ClearSuper();
-
-            pending.operation = DRAGGING_NEW_RADIUS;
-            pending.circle = hr.entity(0);
-            pending.description = "click to set radius";
             break;
 
-        case Command::ARC: {
-            if(!SS.GW.LockedInWorkplane()) {
-                Error("Can't draw arc in 3d; select a workplane first.");
-                ClearPending();
-                break;
-            }
-            hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
-            // This fudge factor stops us from immediately failing to solve
-            // because of the arc's implicit (equal radius) tangent.
-            Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
-            SK.GetEntity(hr.entity(1))->PointForceTo(v.Minus(adj));
-            SK.GetEntity(hr.entity(2))->PointForceTo(v);
-            SK.GetEntity(hr.entity(3))->PointForceTo(v);
-            ConstrainPointByHovered(hr.entity(2));
-
-            ClearSuper();
-
-            pending.operation = DRAGGING_NEW_ARC_POINT;
-            pending.point = hr.entity(3);
-            pending.description = "click to place point";
-            break;
-        }
-        case Command::CUBIC:
-            hr = AddRequest(Request::Type::CUBIC);
-            SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            SK.GetEntity(hr.entity(2))->PointForceTo(v);
-            SK.GetEntity(hr.entity(3))->PointForceTo(v);
-            SK.GetEntity(hr.entity(4))->PointForceTo(v);
-            ConstrainPointByHovered(hr.entity(1));
-
-            ClearSuper();
-
-            pending.operation = DRAGGING_NEW_CUBIC_POINT;
-            pending.point = hr.entity(4);
-            pending.description = "click next point of cubic, or press Esc";
-            break;
-
-        case Command::WORKPLANE:
-            if(LockedInWorkplane()) {
-                Error("Sketching in a workplane already; sketch in 3d before "
-                      "creating new workplane.");
-                ClearSuper();
-                break;
-            }
-            hr = AddRequest(Request::Type::WORKPLANE);
-            SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            SK.GetEntity(hr.entity(32))->NormalForceTo(
-                Quaternion::From(SS.GW.projRight, SS.GW.projUp));
-            ConstrainPointByHovered(hr.entity(1));
-
-            ClearSuper();
-            break;
-
-        case Command::TTF_TEXT: {
-            if(!SS.GW.LockedInWorkplane()) {
-                Error("Can't draw text in 3d; select a workplane first.");
-                ClearSuper();
-                break;
-            }
-            hr = AddRequest(Request::Type::TTF_TEXT);
-            Request *r = SK.GetRequest(hr);
-            r->str = "Abc";
-            r->font = "arial.ttf";
-
-            SK.GetEntity(hr.entity(1))->PointForceTo(v);
-            SK.GetEntity(hr.entity(2))->PointForceTo(v);
-
-            pending.operation = DRAGGING_NEW_POINT;
-            pending.point = hr.entity(2);
-            pending.description = "click to place bottom left of text";
-            break;
-        }
-
-        case Command::COMMENT: {
-            ClearSuper();
-            Constraint c = {};
-            c.group       = SS.GW.activeGroup;
-            c.workplane   = SS.GW.ActiveWorkplane();
-            c.type        = Constraint::Type::COMMENT;
-            c.disp.offset = v;
-            c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
-            Constraint::AddConstraint(&c);
-            break;
-        }
-
-        case DRAGGING_RADIUS:
-        case DRAGGING_NEW_POINT:
+        case Pending::DRAGGING_RADIUS:
+        case Pending::DRAGGING_NEW_POINT:
             // The MouseMoved event has already dragged it as desired.
             ClearPending();
             break;
 
-        case DRAGGING_NEW_ARC_POINT:
+        case Pending::DRAGGING_NEW_ARC_POINT:
             ConstrainPointByHovered(pending.point);
             ClearPending();
             break;
 
-        case DRAGGING_NEW_CUBIC_POINT: {
+        case Pending::DRAGGING_NEW_CUBIC_POINT: {
             hRequest hr = pending.point.request();
             Request *r = SK.GetRequest(hr);
 
@@ -1126,7 +1132,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
 
-        case DRAGGING_NEW_LINE_POINT: {
+        case Pending::DRAGGING_NEW_LINE_POINT: {
             // Constrain the line segment horizontal or vertical if close enough
             if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
                 Constraint::Constrain(SS.GW.pending.suggestion,
@@ -1168,7 +1174,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             Constraint::ConstrainCoincident(pending.point, hr.entity(1));
 
             // And drag an endpoint of the new line segment
-            pending.operation = DRAGGING_NEW_LINE_POINT;
+            pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
             pending.request = hr;
             pending.point = hr.entity(2);
             pending.description = "click next point of line, or press Esc";
@@ -1176,7 +1182,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
         }
 
-        case 0:
+        case Pending::NONE:
         default:
             ClearPending();
             if(!hover.IsEmpty()) {
@@ -1195,23 +1201,23 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
     hoverWasSelectedOnMousedown = false;
 
     switch(pending.operation) {
-        case DRAGGING_POINTS:
+        case Pending::DRAGGING_POINTS:
             SS.extraLine.draw = false;
             // fall through
-        case DRAGGING_CONSTRAINT:
-        case DRAGGING_NORMAL:
-        case DRAGGING_RADIUS:
+        case Pending::DRAGGING_CONSTRAINT:
+        case Pending::DRAGGING_NORMAL:
+        case Pending::DRAGGING_RADIUS:
             ClearPending();
             InvalidateGraphics();
             break;
 
-        case DRAGGING_MARQUEE:
+        case Pending::DRAGGING_MARQUEE:
             SelectByMarquee();
             ClearPending();
             InvalidateGraphics();
             break;
 
-        case 0:
+        case Pending::NONE:
             // We need to clear the selection here, and not in the mouse down
             // event, since a mouse down without anything hovered could also
             // be the start of marquee selection. But don't do that on the

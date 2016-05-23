@@ -283,7 +283,7 @@ done:
 
 #define gs (SS.GW.gs)
 void TextWindow::Show() {
-    if(!(SS.GW.pending.operation)) SS.GW.ClearPending();
+    if(SS.GW.pending.operation == GraphicsWindow::Pending::NONE) SS.GW.ClearPending();
 
     SS.GW.GroupSelection();
 

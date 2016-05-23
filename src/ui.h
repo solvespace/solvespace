@@ -569,23 +569,25 @@ public:
     void ForceTextWindowShown();
 
     // Operations that must be completed by doing something with the mouse
-    // are noted here. These occupy the same space as the menu ids.
-    enum {
-        FIRST_PENDING               = 0x0f000000,
-        DRAGGING_POINTS             = 0x0f000000,
-        DRAGGING_NEW_POINT          = 0x0f000001,
-        DRAGGING_NEW_LINE_POINT     = 0x0f000002,
-        DRAGGING_NEW_CUBIC_POINT    = 0x0f000003,
-        DRAGGING_NEW_ARC_POINT      = 0x0f000004,
-        DRAGGING_CONSTRAINT         = 0x0f000005,
-        DRAGGING_RADIUS             = 0x0f000006,
-        DRAGGING_NORMAL             = 0x0f000007,
-        DRAGGING_NEW_RADIUS         = 0x0f000008,
-        DRAGGING_MARQUEE            = 0x0f000009
+    // are noted here.
+    enum class Pending : uint32_t {
+        NONE                        = 0,
+        COMMAND                     = 1,
+        DRAGGING_POINTS             = 2,
+        DRAGGING_NEW_POINT          = 3,
+        DRAGGING_NEW_LINE_POINT     = 4,
+        DRAGGING_NEW_CUBIC_POINT    = 5,
+        DRAGGING_NEW_ARC_POINT      = 6,
+        DRAGGING_CONSTRAINT         = 7,
+        DRAGGING_RADIUS             = 8,
+        DRAGGING_NORMAL             = 9,
+        DRAGGING_NEW_RADIUS         = 10,
+        DRAGGING_MARQUEE            = 11,
     };
 
     struct {
-        int                  operation;
+        Pending              operation;
+        Command              command;
 
         hRequest             request;
         hEntity              point;

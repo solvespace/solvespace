@@ -328,7 +328,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     }
 
     // The constraints and faces happen only when nothing's in progress.
-    if(pending.operation == 0) {
+    if(pending.operation == Pending::NONE) {
         // Constraints
         for(i = 0; i < SK.constraint.n; i++) {
             d = SK.constraint.elem[i].GetDistance(mp);
@@ -680,7 +680,7 @@ nogrid:;
 
     // Draw the "pending" constraint, i.e. a constraint that would be
     // placed on a line that is almost horizontal or vertical
-    if(SS.GW.pending.operation == DRAGGING_NEW_LINE_POINT) {
+    if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT) {
         if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
             Constraint c = {};
             c.group = SS.GW.activeGroup;
@@ -725,7 +725,7 @@ nogrid:;
 
     // If a marquee selection is in progress, then draw the selection
     // rectangle, as an outline and a transparent fill.
-    if(pending.operation == DRAGGING_MARQUEE) {
+    if(pending.operation == Pending::DRAGGING_MARQUEE) {
         Point2d begin = ProjectPoint(orig.marqueePoint);
         double xmin = min(orig.mouse.x, begin.x),
                xmax = max(orig.mouse.x, begin.x),
