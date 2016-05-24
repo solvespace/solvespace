@@ -1036,7 +1036,7 @@ BBox BBox::From(const Vector &p0, const Vector &p1) {
     return bbox;
 }
 
-Vector BBox::GetOrigin() const { return minp.Plus(maxp.Minus(minp)).ScaledBy(0.5); }
+Vector BBox::GetOrigin() const { return minp.Plus(maxp.Minus(minp).ScaledBy(0.5)); }
 Vector BBox::GetExtents() const { return maxp.Minus(minp).ScaledBy(0.5); }
 
 void BBox::Include(const Vector &v, double r) {
@@ -1050,13 +1050,15 @@ void BBox::Include(const Vector &v, double r) {
 }
 
 bool BBox::Overlaps(const BBox &b1) const {
-
     Vector t = b1.GetOrigin().Minus(GetOrigin());
     Vector e = b1.GetExtents().Plus(GetExtents());
 
     return fabs(t.x) < e.x && fabs(t.y) < e.y && fabs(t.z) < e.z;
 }
 
-bool BBox::Contains(const Point2d &p) const {
-    return p.x >= minp.x && p.y >= minp.y && p.x <= maxp.x && p.y <= maxp.y;
+bool BBox::Contains(const Point2d &p, double r) const {
+    return p.x >= (minp.x - r) &&
+           p.y >= (minp.y - r) &&
+           p.x <= (maxp.x + r) &&
+           p.y <= (maxp.y + r);
 }

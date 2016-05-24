@@ -187,16 +187,12 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
 }
 
 //-----------------------------------------------------------------------------
-// Select everything that lies within the marquee view-aligned rectangle. For
-// points, we test by the point location. For normals, we test by the normal's
-// associated point. For anything else, we test by any piecewise linear edge.
+// Select everything that lies within the marquee view-aligned rectangle.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::SelectByMarquee() {
-    Point2d begin = ProjectPoint(orig.marqueePoint);
-    double xmin = min(orig.mouse.x, begin.x),
-           xmax = max(orig.mouse.x, begin.x),
-           ymin = min(orig.mouse.y, begin.y),
-           ymax = max(orig.mouse.y, begin.y);
+    Point2d marqueePoint = ProjectPoint(orig.marqueePoint);
+    BBox marqueeBBox = BBox::From(Vector::From(marqueePoint.x, marqueePoint.y, -1),
+                                  Vector::From(orig.mouse.x,   orig.mouse.y,    1));
 
     Entity *e;
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
@@ -204,39 +200,10 @@ void GraphicsWindow::SelectByMarquee() {
         if(e->IsFace() || e->IsDistance()) continue;
         if(!e->IsVisible()) continue;
 
-        if(e->IsPoint() || e->IsNormal()) {
-            Vector p = e->IsPoint() ? e->PointGetNum() :
-                                      SK.GetEntity(e->point[0])->PointGetNum();
-            Point2d pp = ProjectPoint(p);
-            if(pp.x >= xmin && pp.x <= xmax &&
-               pp.y >= ymin && pp.y <= ymax)
-            {
-                MakeSelected(e->h);
-            }
-        } else {
-            // Use the 3d bounding box test routines, to avoid duplication;
-            // so let our bounding square become a bounding box that certainly
-            // includes the z = 0 plane.
-            Vector ptMin = Vector::From(xmin, ymin, -1),
-                   ptMax = Vector::From(xmax, ymax, 1);
-            SEdgeList sel = {};
-            e->GenerateEdges(&sel, true);
-            SEdge *se;
-            for(se = sel.l.First(); se; se = sel.l.NextAfter(se)) {
-                Point2d ppa = ProjectPoint(se->a),
-                        ppb = ProjectPoint(se->b);
-                Vector  ptA = Vector::From(ppa.x, ppa.y, 0),
-                        ptB = Vector::From(ppb.x, ppb.y, 0);
-                if(Vector::BoundingBoxIntersectsLine(ptMax, ptMin,
-                                                     ptA, ptB, true) ||
-                   !ptA.OutsideAndNotOn(ptMax, ptMin) ||
-                   !ptB.OutsideAndNotOn(ptMax, ptMin))
-                {
-                    MakeSelected(e->h);
-                    break;
-                }
-            }
-            sel.Clear();
+        bool entityHasBBox;
+        BBox entityBBox = e->GetOrGenerateScreenBBox(&entityHasBBox);
+        if(entityHasBBox && entityBBox.Overlaps(marqueeBBox)) {
+            MakeSelected(e->h);
         }
     }
 }

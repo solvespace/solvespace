@@ -160,8 +160,8 @@ SEdgeList *Entity::GetOrGenerateEdges() {
 BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
-    // We don't bother with bounding boxes for normals, workplanes, etc.
-    *hasBBox = (IsPoint() || sbl->l.n > 0);
+    // We don't bother with bounding boxes for workplanes, etc.
+    *hasBBox = (IsPoint() || IsNormal() || sbl->l.n > 0);
     if(!*hasBBox) return {};
 
     if(screenBBoxValid)
@@ -169,6 +169,9 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
 
     if(IsPoint()) {
         Vector proj = SS.GW.ProjectPoint3(PointGetNum());
+        screenBBox = BBox::From(proj, proj);
+    } else if(IsNormal()) {
+        Vector proj = SK.GetEntity(point[0])->PointGetNum();
         screenBBox = BBox::From(proj, proj);
     } else if(sbl->l.n > 0) {
         Vector first = SS.GW.ProjectPoint3(sbl->l.elem[0].ctrl[0]);
@@ -180,12 +183,6 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
             }
         }
     } else ssassert(false, "Expected entity to be a point or have beziers");
-
-    // Enlarge the bounding box to consider selection radius.
-    screenBBox.minp.x -= SELECTION_RADIUS;
-    screenBBox.minp.y -= SELECTION_RADIUS;
-    screenBBox.maxp.x += SELECTION_RADIUS;
-    screenBBox.maxp.y += SELECTION_RADIUS;
 
     screenBBoxValid = true;
     return screenBBox;
@@ -521,10 +518,10 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 void Entity::DrawOrGetDistance() {
     // If we're about to perform hit testing on an entity, consider
     // whether the pointer is inside its bounding box first.
-    if(!dogd.drawing) {
+    if(!dogd.drawing && !IsNormal()) {
         bool hasBBox;
         BBox box = GetOrGenerateScreenBBox(&hasBBox);
-        if(hasBBox && !box.Contains(dogd.mp))
+        if(hasBBox && !box.Contains(dogd.mp, SELECTION_RADIUS))
             return;
     }
 
