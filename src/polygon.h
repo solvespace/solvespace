@@ -274,6 +274,8 @@ class SOutline {
 public:
     int    tag;
     Vector a, b, nl, nr;
+
+    bool IsVisible(Vector projDir) const;
 };
 
 class SOutlineList {
@@ -284,8 +286,6 @@ public:
     void AddEdge(Vector a, Vector b, Vector nl, Vector nr);
 
     void MakeFromCopyOf(SOutlineList *ol);
-
-    void FillOutlineTags(Vector projDir);
 };
 
 class SKdNode {

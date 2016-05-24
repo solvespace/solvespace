@@ -1047,6 +1047,10 @@ void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
     }
 }
 
+bool SOutline::IsVisible(Vector projDir) const {
+    return (nl.Dot(projDir) > 0.0) != (nr.Dot(projDir) > 0.0);
+}
+
 void SOutlineList::Clear() {
     l.Clear();
 }
@@ -1058,12 +1062,6 @@ void SOutlineList::AddEdge(Vector a, Vector b, Vector nl, Vector nr) {
     so.nl  = nl;
     so.nr  = nr;
     l.Add(&so);
-}
-
-void SOutlineList::FillOutlineTags(Vector projDir) {
-    for(SOutline *so = l.First(); so; so = l.NextAfter(so)) {
-        so->tag = ((so->nl.Dot(projDir) > 0.0) != (so->nr.Dot(projDir) > 0.0));
-    }
 }
 
 void SOutlineList::MakeFromCopyOf(SOutlineList *sol) {

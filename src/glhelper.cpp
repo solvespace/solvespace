@@ -481,9 +481,8 @@ void ssglDrawOutlines(SOutlineList *sol, Vector projDir, hStyle hs)
     ssglLineWidth((float)lineWidth);
     ssglColorRGB(Style::Color(hs));
 
-    sol->FillOutlineTags(projDir);
     for(SOutline *so = sol->l.First(); so; so = sol->l.NextAfter(so)) {
-        if(!so->tag) continue;
+        if(!so->IsVisible(projDir)) continue;
         ssglStippledLine(so->a, so->b, lineWidth, stippleType, stippleScale,
                          /*maybeFat=*/true);
     }
