@@ -121,9 +121,7 @@ void Entity::Draw(bool drawAsHidden) {
     DrawOrGetDistance();
 }
 
-void Entity::GenerateEdges(SEdgeList *el, bool includingConstruction) {
-    if(construction && !includingConstruction) return;
-
+void Entity::GenerateEdges(SEdgeList *el) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
     int i, j;
@@ -152,7 +150,7 @@ SEdgeList *Entity::GetOrGenerateEdges() {
         edges.l.Clear();
     }
     if(edges.l.n == 0)
-        GenerateEdges(&edges, /*includingConstruction=*/true);
+        GenerateEdges(&edges);
     edgesChordTol = SS.ChordTolMm();
     return &edges;
 }

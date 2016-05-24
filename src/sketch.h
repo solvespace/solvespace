@@ -507,7 +507,7 @@ public:
 
     void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
     void GenerateBezierCurves(SBezierList *sbl) const;
-    void GenerateEdges(SEdgeList *el, bool includingConstruction=false);
+    void GenerateEdges(SEdgeList *el);
 
     static void DrawAll(bool drawAsHidden);
     void Draw(bool drawAsHidden);
