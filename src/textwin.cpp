@@ -383,11 +383,9 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
         }
 
         if(how == PAINT) {
-            glPushMatrix();
-                glTranslated(x, y-24, 0);
-                glColor3d(0, 0, 0);
-                ssglDrawPixmap(hsi->icon);
-            glPopMatrix();
+            glColor4d(0, 0, 0, 1.0);
+            Point2d o = { (double)x, (double)(y - 24) };
+            ssglDrawPixmap(hsi->icon, o);
 
             if(hsi == hoveredIcon) {
                 glColor4d(1, 1, 0, 0.3);

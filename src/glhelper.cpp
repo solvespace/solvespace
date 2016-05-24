@@ -564,7 +564,7 @@ void ssglDepthRangeLockToFront(bool yes)
     }
 }
 
-void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
+void ssglDrawPixmap(const Pixmap &pixmap, Vector a, Vector b, Vector c, Vector d) {
     glBindTexture(GL_TEXTURE_2D, TEXTURE_DRAW_PIXELS);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -578,19 +578,33 @@ void ssglDrawPixmap(const Pixmap &pixmap, bool flip) {
 
     glEnable(GL_TEXTURE_2D);
     glBegin(GL_QUADS);
-        glTexCoord2d(0.0, flip ? 0.0 : 1.0);
-        glVertex2d(0.0, (double)pixmap.height);
-
-        glTexCoord2d(1.0, flip ? 0.0 : 1.0);
-        glVertex2d((double)pixmap.width, (double)pixmap.height);
-
-        glTexCoord2d(1.0, flip ? 1.0 : 0.0);
-        glVertex2d((double)pixmap.width, 0.0);
-
-        glTexCoord2d(0.0, flip ? 1.0 : 0.0);
-        glVertex2d(0.0, 0.0);
+        glTexCoord2d(0.0, 0.0);
+        glVertex3d(CO(a));
+        glTexCoord2d(0.0, 1.0);
+        glVertex3d(CO(b));
+        glTexCoord2d(1.0, 1.0);
+        glVertex3d(CO(c));
+        glTexCoord2d(1.0, 0.0);
+        glVertex3d(CO(d));
     glEnd();
     glDisable(GL_TEXTURE_2D);
+}
+
+void ssglDrawPixmap(const Pixmap &pixmap, Point2d o, bool flip) {
+    double w = (double)pixmap.width, h = (double)pixmap.height;
+    if(!flip) {
+        Vector a = { o.x,     o.y,     0.0 },
+               b = { o.x,     o.y + h, 0.0 },
+               c = { o.x + w, o.y + h, 0.0 },
+               d = { o.x + w, o.y,     0.0 };
+       ssglDrawPixmap(pixmap, a, b, c, d);
+    } else {
+        Vector a = { o.x,     o.y + h, 0.0 },
+               b = { o.x,     o.y,     0.0 },
+               c = { o.x + w, o.y,     0.0 },
+               d = { o.x + w, o.y + h, 0.0 };
+        ssglDrawPixmap(pixmap, a, b, c, d);
+    }
 }
 
 //-----------------------------------------------------------------------------

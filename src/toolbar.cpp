@@ -170,11 +170,10 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
         }
 
         if(paint) {
-            glPushMatrix();
-                glTranslated(x - Toolbar[i].icon.width / 2, y - Toolbar[i].icon.height / 2, 0);
-                glColor4d(0, 0, 0, 1.0);
-                ssglDrawPixmap(Toolbar[i].icon, /*flip=*/true);
-            glPopMatrix();
+            glColor4d(0, 0, 0, 1.0);
+            Point2d o = { (double)(x - Toolbar[i].icon.width  / 2),
+                          (double)(y - Toolbar[i].icon.height / 2) };
+            ssglDrawPixmap(Toolbar[i].icon, o, /*flip=*/true);
 
             if(toolbarHovered == Toolbar[i].menu ||
                pending.operation == Toolbar[i].menu) {

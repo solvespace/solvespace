@@ -371,7 +371,8 @@ void ssglColorRGB(RgbaColor rgb);
 void ssglColorRGBa(RgbaColor rgb, double a);
 void ssglDepthRangeOffset(int units);
 void ssglDepthRangeLockToFront(bool yes);
-void ssglDrawPixmap(const Pixmap &pixmap, bool flip = false);
+void ssglDrawPixmap(const Pixmap &pixmap, Vector a, Vector b, Vector c, Vector d);
+void ssglDrawPixmap(const Pixmap &pixmap, Point2d o, bool flip = false);
 void ssglInitializeBitmapFont();
 void ssglBitmapText(const std::string &str, Vector p);
 double ssglBitmapCharQuad(char32_t chr, double x, double y);
@@ -875,9 +876,7 @@ public:
         Vector      ptB;
     } extraLine;
     struct {
-        uint8_t     *fromFile;
-        int         w, h;
-        int         rw, rh;
+        Pixmap      pixmap;
         double      scale; // pixels per mm
         Vector      origin;
     } bgImage;

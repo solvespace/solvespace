@@ -109,8 +109,7 @@ void Style::LoadFactoryDefaults() {
         FillDefaultStyle(s, d);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
-    if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
-    SS.bgImage.fromFile = NULL;
+    SS.bgImage.pixmap.Clear();
 }
 
 void Style::FreezeDefaultStyles() {
@@ -382,62 +381,18 @@ static int RoundUpToPowerOfTwo(int v)
 }
 
 void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
-    if(SS.bgImage.fromFile) MemFree(SS.bgImage.fromFile);
-    SS.bgImage.fromFile = NULL;
+    SS.bgImage.pixmap.Clear();
 
     if(link == 'l') {
-        FILE *f = NULL;
-        png_struct *png_ptr = NULL;
-        png_info *info_ptr = NULL;
-
-        std::string importFile;
-        if(!GetOpenFile(&importFile, "", PngFileFilter)) goto err;
-        f = ssfopen(importFile, "rb");
-        if(!f) goto err;
-
-        uint8_t header[8];
-        if (fread(header, 1, 8, f) != 8)
-            goto err;
-        if(png_sig_cmp(header, 0, 8)) goto err;
-
-        png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING,
-            NULL, NULL, NULL);
-        if(!png_ptr) goto err;
-
-        info_ptr = png_create_info_struct(png_ptr);
-        if(!info_ptr) goto err;
-
-        if(setjmp(png_jmpbuf(png_ptr))) goto err;
-
-        png_init_io(png_ptr, f);
-        png_set_sig_bytes(png_ptr, 8);
-
-        png_read_png(png_ptr, info_ptr,
-            PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_ALPHA, NULL);
-
-        int w; w = (int)png_get_image_width(png_ptr, info_ptr);
-        int h; h = (int)png_get_image_height(png_ptr, info_ptr);
-        uint8_t **rows; rows = png_get_rows(png_ptr, info_ptr);
-
-        // Round to next-highest powers of two, since the textures require
-        // that. And round up to 4, to guarantee 32-bit alignment.
-        int rw; rw = max(4, RoundUpToPowerOfTwo(w));
-        int rh; rh = max(4, RoundUpToPowerOfTwo(h));
-
-        SS.bgImage.fromFile = (uint8_t *)MemAlloc(rw*rh*3);
-        {for(int i = 0; i < h; i++) {
-            memcpy(SS.bgImage.fromFile + ((h - 1) - i)*(rw*3), rows[i], w*3);
-        }}
-        SS.bgImage.w      = w;
-        SS.bgImage.h      = h;
-        SS.bgImage.rw     = rw;
-        SS.bgImage.rh     = rh;
-        SS.bgImage.scale  = SS.GW.scale;
-        SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
-
-err:
-        if(png_ptr) png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-        if(f) fclose(f);
+        std::string bgImageFile;
+        if(GetOpenFile(&bgImageFile, "", PngFileFilter)) {
+            FILE *f = ssfopen(bgImageFile, "rb");
+            if(f) {
+                SS.bgImage.pixmap = Pixmap::FromPNG(f);
+                SS.bgImage.scale  = SS.GW.scale;
+                SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
+            }
+        }
     }
     SS.ScheduleShowTW();
 }
@@ -476,9 +431,9 @@ void TextWindow::ShowListOfStyles() {
 
     Printf(false, "");
     Printf(false, "%Ft background bitmap image%E");
-    if(SS.bgImage.fromFile) {
+    if(!SS.bgImage.pixmap.IsEmpty()) {
         Printf(false, "%Ba   %Ftwidth:%E %dpx   %Ftheight:%E %dpx",
-            SS.bgImage.w, SS.bgImage.h);
+            SS.bgImage.pixmap.width, SS.bgImage.pixmap.height);
 
         Printf(false, "   %Ftscale:%E %# px/%s %Fl%Ll%f%D[change]%E",
             SS.bgImage.scale*SS.MmPerUnit(),

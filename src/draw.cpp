@@ -517,26 +517,9 @@ void GraphicsWindow::Paint() {
     glClearDepth(1.0);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    if(SS.bgImage.fromFile) {
-        // If a background image is loaded, then we draw it now as a texture.
-        // This handles the resizing for us nicely.
-        glBindTexture(GL_TEXTURE_2D, TEXTURE_BACKGROUND_IMG);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                     SS.bgImage.rw, SS.bgImage.rh,
-                     0,
-                     GL_RGB, GL_UNSIGNED_BYTE,
-                     SS.bgImage.fromFile);
-
-        double tw = ((double)SS.bgImage.w) / SS.bgImage.rw,
-               th = ((double)SS.bgImage.h) / SS.bgImage.rh;
-
-        double mmw = SS.bgImage.w / SS.bgImage.scale,
-               mmh = SS.bgImage.h / SS.bgImage.scale;
+    if(!SS.bgImage.pixmap.IsEmpty()) {
+        double mmw = SS.bgImage.pixmap.width  / SS.bgImage.scale,
+               mmh = SS.bgImage.pixmap.height / SS.bgImage.scale;
 
         Vector origin = SS.bgImage.origin;
         origin = origin.DotInToCsys(projRight, projUp, n);
@@ -548,22 +531,12 @@ void GraphicsWindow::Paint() {
         // Place the background at the very back of the Z order, though, by
         // mucking with the depth range.
         glDepthRange(1, 1);
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-            glTexCoord2d(0, 0);
-            ssglVertex3v(origin);
-
-            glTexCoord2d(0, th);
-            ssglVertex3v(origin.Plus(projUp.ScaledBy(mmh)));
-
-            glTexCoord2d(tw, th);
-            ssglVertex3v(origin.Plus(projRight.ScaledBy(mmw).Plus(
-                                     projUp.   ScaledBy(mmh))));
-
-            glTexCoord2d(tw, 0);
-            ssglVertex3v(origin.Plus(projRight.ScaledBy(mmw)));
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
+        ssglDrawPixmap(SS.bgImage.pixmap,
+                       origin,
+                       origin.Plus(projUp.ScaledBy(mmh)),
+                       origin.Plus(projRight.ScaledBy(mmw).Plus(
+                                   projUp.   ScaledBy(mmh))),
+                       origin.Plus(projRight.ScaledBy(mmw)));
     }
     ssglDepthRangeOffset(0);
 
