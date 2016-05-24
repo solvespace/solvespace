@@ -37,7 +37,6 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat, int data) 
             dogd.data = data;
         }
     }
-    dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
 void Entity::DrawAll(bool drawAsHidden) {
@@ -197,12 +196,35 @@ double Entity::GetDistance(Point2d mp) {
 }
 
 Vector Entity::GetReferencePos() {
-    dogd.drawing = false;
+    switch(type) {
+        case POINT_N_COPY:
+        case POINT_N_TRANS:
+        case POINT_N_ROT_TRANS:
+        case POINT_N_ROT_AA:
+        case POINT_IN_3D:
+        case POINT_IN_2D:
+            return PointGetNum();
 
-    dogd.refp = SS.GW.offset.ScaledBy(-1);
-    DrawOrGetDistance();
+        case NORMAL_N_COPY:
+        case NORMAL_N_ROT:
+        case NORMAL_N_ROT_AA:
+        case NORMAL_IN_3D:
+        case NORMAL_IN_2D:
+        case CIRCLE:
+        case ARC_OF_CIRCLE:
+        case CUBIC:
+        case CUBIC_PERIODIC:
+        case TTF_TEXT:
+            return SK.GetEntity(point[0])->PointGetNum();
 
-    return dogd.refp;
+        case LINE_SEGMENT: {
+            Vector a = SK.GetEntity(point[0])->PointGetNum(),
+                   b = SK.GetEntity(point[1])->PointGetNum();
+            return b.Plus(a.Minus(b).ScaledBy(0.5));
+        }
+
+        default: ssassert(false, "Unexpected entity type");
+    }
 }
 
 bool Entity::IsStylable() const {
@@ -533,7 +555,6 @@ void Entity::DrawOrGetDistance() {
         case POINT_IN_3D:
         case POINT_IN_2D: {
             Vector v = PointGetNum();
-            dogd.refp = v;
 
             if(dogd.drawing) {
                 double s = 3.5;

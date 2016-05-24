@@ -491,7 +491,6 @@ public:
         bool        drawing;
         Point2d     mp;
         double      dmin;
-        Vector      refp;
         double      lineWidth;
         double      stippleScale;
         int         stippleType;
