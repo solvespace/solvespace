@@ -31,7 +31,6 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
         double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
         dogd.dmin = min(dogd.dmin, d);
     }
-    dogd.refp = (a.Plus(b)).ScaledBy(0.5);
 }
 
 static void LineCallback(void *fndata, Vector a, Vector b)
@@ -113,7 +112,6 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         double d = dogd.mp.DistanceToLine(a, b.Minus(a), true);
 
         dogd.dmin = min(dogd.dmin, d - (th / 2));
-        dogd.refp = ref;
     }
 }
 
@@ -282,15 +280,16 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
     DoArrow(be, arrow.Negated(), n, 13.0 * pixels, theta, 0.0);
 }
 
-void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn) {
+void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn, Vector *refp) {
     Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
+    if(refp) *refp = m;
     Vector ab = a.Minus(b);
     Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
 
     LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
 }
 
-void Constraint::DoEqualRadiusTicks(hEntity he) {
+void Constraint::DoEqualRadiusTicks(hEntity he, Vector *refp) {
     Entity *circ = SK.GetEntity(he);
 
     Vector center = SK.GetEntity(circ->point[0])->PointGetNum();
@@ -310,6 +309,7 @@ void Constraint::DoEqualRadiusTicks(hEntity he) {
     Vector d = u.ScaledBy(cos(theta)).Plus(v.ScaledBy(sin(theta)));
     d = d.ScaledBy(r);
     Vector p = center.Plus(d);
+    if(refp) *refp = p;
     Vector tick = d.WithMagnitude(10/SS.GW.scale);
     LineDrawOrGetDistance(p.Plus(tick), p.Minus(tick));
 }
@@ -512,8 +512,7 @@ bool Constraint::DoLineExtend(Vector p0, Vector p1, Vector pt, double salient) {
     return true;
 }
 
-void Constraint::DrawOrGetDistance(Vector *labelPos) {
-
+void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
     if(!IsVisible()) return;
 
     // Unit vectors that describe our current view of the scene. One pixel
@@ -533,6 +532,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             }
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
+            if(refps) refps[0] = refps[1] = ref;
 
             DoLineWithArrows(ref, ap, bp, false);
             DoLabel(ref, labelPos, gr, gu);
@@ -546,6 +546,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                    pp = SK.GetEntity(entityA)->VectorGetNum();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
+            if(refps) refps[0] = refps[1] = ref;
 
             pp = pp.WithMagnitude(1);
             double d = dp.Dot(pp);
@@ -575,6 +576,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector closest = pt.Plus(n.WithMagnitude(d));
 
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
+            if(refps) refps[0] = refps[1] = ref;
 
             if(!pt.Equals(closest)) {
                 DoLineWithArrows(ref, pt, closest, true);
@@ -601,6 +603,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector closest = pt.ClosestPointOnLine(lA, dl);
 
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
+            if(refps) refps[0] = refps[1] = ref;
             DoLabel(ref, labelPos, gr, gu);
 
             if(!pt.Equals(closest)) {
@@ -645,6 +648,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector ref = center.Plus(disp.offset);
             // Force the label into the same plane as the circle.
             ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
+            if(refps) refps[0] = refps[1] = ref;
 
             Vector mark = ref.Minus(center);
             mark = mark.WithMagnitude(mark.Magnitude()-r);
@@ -660,12 +664,12 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             if(!dogd.drawing) {
                 for(int i = 0; i < 2; i++) {
                     Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
+                    if(refps) refps[i] = p;
                     Point2d pp = SS.GW.ProjectPoint(p);
                     // The point is selected within a radius of 7, from the
                     // same center; so if the point is visible, then this
                     // constraint cannot be selected. But that's okay.
                     dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 3);
-                    dogd.refp = p;
                 }
                 break;
             }
@@ -709,6 +713,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         case PT_IN_PLANE: {
             double s = 8/SS.GW.scale;
             Vector p = SK.GetEntity(ptA)->PointGetNum();
+            if(refps) refps[0] = refps[1] = p;
             Vector r, d;
             if(type == PT_ON_FACE) {
                 Vector n = SK.GetEntity(entityA)->FaceGetNormalNum();
@@ -732,8 +737,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
         }
 
         case WHERE_DRAGGED: {
-            Vector p = SK.GetEntity(ptA)->PointGetNum(),
-                   u = p.Plus(gu.WithMagnitude(8/SS.GW.scale)).Plus(
+            Vector p = SK.GetEntity(ptA)->PointGetNum();
+            if(refps) refps[0] = refps[1] = p;
+            Vector u = p.Plus(gu.WithMagnitude(8/SS.GW.scale)).Plus(
                               gr.WithMagnitude(8/SS.GW.scale)),
                    uu = u.Minus(gu.WithMagnitude(5/SS.GW.scale)),
                    ur = u.Minus(gr.WithMagnitude(5/SS.GW.scale));
@@ -758,6 +764,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector u = q.RotationU().WithMagnitude(6/SS.GW.scale);
                 Vector p = SK.GetEntity(e->point[0])->PointGetNum();
                 p = p.Plus(n.WithMagnitude(10/SS.GW.scale));
+                if(refps) refps[i] = p;
 
                 LineDrawOrGetDistance(p.Plus(u), p.Minus(u).Plus(n));
                 LineDrawOrGetDistance(p.Minus(u), p.Plus(u).Plus(n));
@@ -788,8 +795,10 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             DoArcForAngle(a0, da, b0, db,
                 da.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
+            if(refps) refps[0] = ref;
             DoArcForAngle(c0, dc, d0, dd,
                 dc.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
+            if(refps) refps[1] = ref;
 
             break;
         }
@@ -810,6 +819,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
             Vector ref;
             DoArcForAngle(a0, da, b0, db, disp.offset, &ref, /*trim=*/true);
             DoLabel(ref, labelPos, gr, gu);
+            if(refps) refps[0] = refps[1] = ref;
             break;
         }
 
@@ -845,9 +855,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 Vector p = e->VectorGetRefPoint();
                 Vector s = p.Plus(u).Plus(v);
                 LineDrawOrGetDistance(s, s.Plus(v));
-
                 Vector m = s.Plus(v.ScaledBy(0.5));
                 LineDrawOrGetDistance(m, m.Plus(u));
+                if(refps) refps[i] = m;
             }
             break;
         }
@@ -923,8 +933,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 ssglWriteTextRefCenter("T", Style::DefaultTextHeight(),
                     textAt, u, v, LineCallback, (void *)this);
             } else {
-                dogd.refp = textAt;
-                Point2d ref = SS.GW.ProjectPoint(dogd.refp);
+                if(refps) refps[0] = refps[1] = textAt;
+                Point2d ref = SS.GW.ProjectPoint(textAt);
                 dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
             }
             break;
@@ -940,25 +950,32 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
                 LineDrawOrGetDistance(p.Plus(u), p.Plus(u).Plus(n));
                 LineDrawOrGetDistance(p.Minus(u), p.Minus(u).Plus(n));
+                if(refps) refps[i] = p.Plus(n.ScaledBy(0.5));
             }
             break;
         }
 
         case EQUAL_RADIUS: {
             for(int i = 0; i < 2; i++) {
-                DoEqualRadiusTicks(i == 0 ? entityA : entityB);
+                Vector ref;
+                DoEqualRadiusTicks(i == 0 ? entityA : entityB, &ref);
+                if(refps) refps[i] = ref;
             }
             break;
         }
 
         case EQUAL_LINE_ARC_LEN: {
             Entity *line = SK.GetEntity(entityA);
+            Vector refa, refb;
             DoEqualLenTicks(
                 SK.GetEntity(line->point[0])->PointGetNum(),
                 SK.GetEntity(line->point[1])->PointGetNum(),
-                gn);
-
-            DoEqualRadiusTicks(entityB);
+                gn, &refa);
+            DoEqualRadiusTicks(entityB, &refb); // FIXME
+            if(refps) {
+                refps[0] = refa;
+                refps[1] = refb;
+            }
             break;
         }
 
@@ -976,7 +993,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                     DoProjectedPoint(&b);
                 }
 
-                DoEqualLenTicks(a, b, gn);
+                Vector ref;
+                DoEqualLenTicks(a, b, gn, &ref);
+                if(refps) refps[i] = ref;
             }
             if((type == LENGTH_RATIO) || (type == LENGTH_DIFFERENCE)) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
@@ -993,7 +1012,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 DoProjectedPoint(&a);
                 DoProjectedPoint(&b);
             }
-            DoEqualLenTicks(a, b, gn);
+            Vector refa;
+            DoEqualLenTicks(a, b, gn, &refa);
+            if(refps) refps[0] = refa;
 
             Entity *ln = SK.GetEntity(entityB);
             Vector la = SK.GetEntity(ln->point[0])->PointGetNum(),
@@ -1007,7 +1028,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
 
             Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
             LineDrawOrGetDistance(pt, closest);
-            DoEqualLenTicks(pt, closest, gn);
+            Vector refb;
+            DoEqualLenTicks(pt, closest, gn, &refb);
+            if(refps) refps[1] = refb;
             break;
         }
 
@@ -1026,9 +1049,11 @@ void Constraint::DrawOrGetDistance(Vector *labelPos) {
                 }
 
                 Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
-
                 LineDrawOrGetDistance(pt, closest);
-                DoEqualLenTicks(pt, closest, gn);
+
+                Vector ref;
+                DoEqualLenTicks(pt, closest, gn, &ref);
+                if(refps) refps[i] = ref;
             }
             break;
         }
@@ -1067,6 +1092,7 @@ s:
                 d = n.ScaledBy(d.Dot(n));
                 d = d.WithMagnitude(20/SS.GW.scale);
                 Vector tip = tail.Plus(d);
+                if(refps) refps[i] = tip;
 
                 LineDrawOrGetDistance(tail, tip);
                 d = d.WithMagnitude(9/SS.GW.scale);
@@ -1107,8 +1133,8 @@ s:
                     ssglWriteTextRefCenter(s, Style::DefaultTextHeight(),
                         m.Plus(offset), r, u, LineCallback, (void *)this);
                 } else {
-                    dogd.refp = m.Plus(offset);
-                    Point2d ref = SS.GW.ProjectPoint(dogd.refp);
+                    if(refps) refps[0] = refps[1] = m.Plus(offset);
+                    Point2d ref = SS.GW.ProjectPoint(m.Plus(offset));
                     dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
                 }
             } else {
@@ -1141,6 +1167,7 @@ s:
                             ssglVertex3v((c.Plus(d)).Minus(dp));
                         glEnd();
                     } else {
+                        if(refps) refps[0] = refps[1] = c;
                         Point2d ref = SS.GW.ProjectPoint(c);
                         dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-6);
                     }
@@ -1162,6 +1189,7 @@ s:
                 u = norm->NormalU();
                 v = norm->NormalV();
             }
+            if(refps) refps[0] = refps[1] = disp.offset;
             DoLabel(disp.offset, labelPos, u, v);
             break;
         }
@@ -1178,7 +1206,7 @@ void Constraint::Draw() {
     ssglLineWidth(Style::Width(hs));
     ssglColorRGB(Style::Color(hs));
 
-    DrawOrGetDistance(NULL);
+    DrawOrGetDistance(NULL, NULL);
 }
 
 double Constraint::GetDistance(Point2d mp) {
@@ -1187,7 +1215,7 @@ double Constraint::GetDistance(Point2d mp) {
     dogd.mp = mp;
     dogd.dmin = 1e12;
 
-    DrawOrGetDistance(NULL);
+    DrawOrGetDistance(NULL, NULL);
 
     return dogd.dmin;
 }
@@ -1199,24 +1227,21 @@ Vector Constraint::GetLabelPos() {
     dogd.dmin = 1e12;
 
     Vector p;
-    DrawOrGetDistance(&p);
+    DrawOrGetDistance(&p, NULL);
     return p;
 }
 
-Vector Constraint::GetReferencePos() {
+void Constraint::GetReferencePos(Vector *refps) {
     dogd.drawing = false;
     dogd.sel = NULL;
 
-    dogd.refp = SS.GW.offset.ScaledBy(-1);
-    DrawOrGetDistance(NULL);
-
-    return dogd.refp;
+    DrawOrGetDistance(NULL, refps);
 }
 
 void Constraint::GetEdges(SEdgeList *sel) {
     dogd.drawing = true;
     dogd.sel = sel;
-    DrawOrGetDistance(NULL);
+    DrawOrGetDistance(NULL, NULL);
     dogd.sel = NULL;
 }
 

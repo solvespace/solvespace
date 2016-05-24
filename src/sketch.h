@@ -674,13 +674,12 @@ public:
         bool        drawing;
         Point2d     mp;
         double      dmin;
-        Vector      refp;
         SEdgeList   *sel;
     } dogd;
 
     double GetDistance(Point2d mp);
     Vector GetLabelPos();
-    Vector GetReferencePos();
+    void GetReferencePos(Vector *refps);
     void Draw();
     void GetEdges(SEdgeList *sel);
     bool IsStylable() const;
@@ -689,7 +688,7 @@ public:
 
     void LineDrawOrGetDistance(Vector a, Vector b);
     bool IsVisible() const;
-    void DrawOrGetDistance(Vector *labelPos);
+    void DrawOrGetDistance(Vector *labelPos, Vector *refps);
     std::string Label() const;
     bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
@@ -701,8 +700,8 @@ public:
     void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
     void StippledLine(Vector a, Vector b);
     void DoProjectedPoint(Vector *p);
-    void DoEqualLenTicks(Vector a, Vector b, Vector gn);
-    void DoEqualRadiusTicks(hEntity he);
+    void DoEqualLenTicks(Vector a, Vector b, Vector gn, Vector *refp);
+    void DoEqualRadiusTicks(hEntity he, Vector *refp);
 
     std::string DescriptionString() const;
 

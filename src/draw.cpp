@@ -31,20 +31,23 @@ void GraphicsWindow::Selection::Clear() {
 }
 
 void GraphicsWindow::Selection::Draw() {
-    Vector refp = Vector::From(0, 0, 0);
+    Vector refp[2];
+    refp[0] = refp[1] = Vector::From(0, 0, 0);
     if(entity.v) {
         Entity *e = SK.GetEntity(entity);
         e->Draw(/*drawAsHidden=*/false);
-        if(emphasized) refp = e->GetReferencePos();
+        if(emphasized) {
+            refp[0] = refp[1] = e->GetReferencePos();
+        }
     }
     if(constraint.v) {
         Constraint *c = SK.GetConstraint(constraint);
         c->Draw();
-        if(emphasized) refp = c->GetReferencePos();
+        if(emphasized) c->GetReferencePos(refp);
     }
     if(emphasized && (constraint.v || entity.v)) {
         // We want to emphasize this constraint or entity, by drawing a thick
-        // line from the top left corner of the screen to the reference point
+        // line from the top left corner of the screen to the reference point(s)
         // of that entity or constraint.
         double s = 0.501/SS.GW.scale;
         Vector topLeft =       SS.GW.projRight.ScaledBy(-SS.GW.width*s);
@@ -54,10 +57,12 @@ void GraphicsWindow::Selection::Draw() {
         ssglLineWidth(40);
         RgbaColor rgb = Style::Color(Style::HOVERED);
         glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), 0.2);
-        glBegin(GL_LINES);
-            ssglVertex3v(topLeft);
-            ssglVertex3v(refp);
-        glEnd();
+        for(int i = 0; i < (refp[0].Equals(refp[1]) ? 1 : 2); i++) {
+            glBegin(GL_LINES);
+                ssglVertex3v(topLeft);
+                ssglVertex3v(refp[i]);
+            glEnd();
+        }
         ssglLineWidth(1);
     }
 }
