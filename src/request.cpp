@@ -12,30 +12,29 @@ const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
 const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
-const EntReqTable::TableEntry EntReqTable::Table[] = {
-// request type                   entity type                 pts   xtra?   norml   dist    description
-{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false, "workplane"      },
-{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false, "datum-point"    },
-{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false, "line-segment"   },
-{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false, "cubic-bezier"   },
-{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false, "periodic-cubic" },
-{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true,  "circle"         },
-{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false, "arc-of-circle"  },
-{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       2,  false,  true,   false, "ttf-text"       },
-{ (Request::Type)0,               (Entity::Type)0,              0,  false,  false,  false, NULL             },
+struct EntReqMapping {
+    Request::Type  reqType;
+    Entity::Type   entType;
+    int            points;
+    bool           useExtraPoints;
+    bool           hasNormal;
+    bool           hasDistance;
+};
+static const EntReqMapping EntReqMap[] = {
+// request type                   entity type                 pts   xtra?   norml   dist
+{ Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false },
+{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false },
+{ Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false },
+{ Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false },
+{ Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
+{ Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true  },
+{ Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
+{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       2,  false,  true,   false },
 };
 
-const char *EntReqTable::DescriptionForRequest(Request::Type req) {
-    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
-        if(req == Table[i].reqType) {
-            return Table[i].description;
-        }
-    }
-    return "???";
-}
-
-void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
-           Entity::Type *ent, Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
+static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
+                           Entity::Type *ent, Request::Type *req,
+                           int *pts, bool *hasNormal, bool *hasDistance)
 {
     int points = te->points;
     if(te->useExtraPoints) points += extraPoints;
@@ -48,13 +47,11 @@ void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
 }
 
 bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
-                     Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
+                                 Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
-        const TableEntry *te = &(Table[i]);
-        if(req == te->reqType) {
-            CopyEntityInfo(te, extraPoints,
-                ent, NULL, pts, hasNormal, hasDistance);
+    for(const EntReqMapping &te : EntReqMap) {
+        if(req == te.reqType) {
+            CopyEntityInfo(&te, extraPoints, ent, NULL, pts, hasNormal, hasDistance);
             return true;
         }
     }
@@ -62,13 +59,11 @@ bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
 }
 
 bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
-                     Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
+                                Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
-        const TableEntry *te = &(Table[i]);
-        if(ent == te->entType) {
-            CopyEntityInfo(te, extraPoints,
-                NULL, req, pts, hasNormal, hasDistance);
+    for(const EntReqMapping &te : EntReqMap) {
+        if(ent == te.entType) {
+            CopyEntityInfo(&te, extraPoints, NULL, req, pts, hasNormal, hasDistance);
             return true;
         }
     }
@@ -81,7 +76,6 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
              "No entity for request");
     return req;
 }
-
 
 void Request::Generate(IdList<Entity,hEntity> *entity,
                        IdList<Param,hParam> *param) const
@@ -178,9 +172,18 @@ std::string Request::DescriptionString() const {
     } else if(h.v == Request::HREQUEST_REFERENCE_ZX.v) {
         s = "#ZX";
     } else {
-        s = EntReqTable::DescriptionForRequest(type);
+        switch(type) {
+            case Type::WORKPLANE:       s = "workplane";      break;
+            case Type::DATUM_POINT:     s = "datum-point";    break;
+            case Type::LINE_SEGMENT:    s = "line-segment";   break;
+            case Type::CUBIC:           s = "cubic-bezier";   break;
+            case Type::CUBIC_PERIODIC:  s = "periodic-cubic"; break;
+            case Type::CIRCLE:          s = "circle";         break;
+            case Type::ARC_OF_CIRCLE:   s = "arc-of-circle;";  break;
+            case Type::TTF_TEXT:        s = "ttf-text";       break;
+        }
     }
-
+    ssassert(s != NULL, "Unexpected request type");
     return ssprintf("r%03x-%s", h.v, s);
 }
 

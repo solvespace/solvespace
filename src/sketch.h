@@ -550,25 +550,10 @@ public:
 
 class EntReqTable {
 public:
-    typedef struct {
-        Request::Type reqType;
-        Entity::Type  entType;
-        int         points;
-        bool        useExtraPoints;
-        bool        hasNormal;
-        bool        hasDistance;
-        const char *description;
-    } TableEntry;
-
-    static const TableEntry Table[];
-
-    static const char *DescriptionForRequest(Request::Type req);
-    static void CopyEntityInfo(const TableEntry *te, int extraPoints,
-            Entity::Type *ent, Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
     static bool GetRequestInfo(Request::Type req, int extraPoints,
-                    EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance);
+                               EntityBase::Type *ent, int *pts, bool *hasNormal, bool *hasDistance);
     static bool GetEntityInfo(EntityBase::Type ent, int extraPoints,
-                    Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
+                              Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance);
     static Request::Type GetRequestForEntity(EntityBase::Type ent);
 };
 
