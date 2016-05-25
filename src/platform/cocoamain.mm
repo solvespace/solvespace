@@ -147,7 +147,7 @@ void SolveSpace::ScheduleLater() {
     NSTextField *editor;
 }
 
-- initWithFrame:(NSRect)frameRect {
+- (id)initWithFrame:(NSRect)frameRect {
     self = [super initWithFrame:frameRect];
     [self setWantsLayer:YES];
 
@@ -205,18 +205,20 @@ CONVERT(Rect)
     if(!offscreen)
         offscreen = new GLOffscreen;
 
-    NSSize size = [self convertSizeToBacking:[self bounds].size];
-    offscreen->begin(size.width, size.height);
+    NSSize size   = [self convertSizeToBacking:[self bounds].size];
+    int    width  = (int)size.width,
+           height = (int)size.height;
+    offscreen->begin(width, height);
 
     [self drawGL];
     GL_CHECK();
 
     uint8_t *pixels = offscreen->end(![self isFlipped]);
     CGDataProviderRef provider = CGDataProviderCreateWithData(
-        NULL, pixels, size.width * size.height * 4, NULL);
+        NULL, pixels, width * height * 4, NULL);
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
-    CGImageRef image = CGImageCreate(size.width, size.height, 8, 32,
-        size.width * 4, colorspace, kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,
+    CGImageRef image = CGImageCreate(width, height, 8, 32,
+        width * 4, colorspace, kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,
         provider, NULL, true, kCGRenderingIntentDefault);
 
     CGContextDrawImage((CGContextRef) [[NSGraphicsContext currentContext] graphicsPort],
@@ -362,7 +364,7 @@ CONVERT(Rect)
 
 - (void)scrollWheel:(NSEvent*)event {
     NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
-    SolveSpace::SS.GW.MouseScroll(point.x, point.y, -[event deltaY]);
+    SolveSpace::SS.GW.MouseScroll(point.x, point.y, (int)-[event deltaY]);
 }
 
 - (void)mouseExited:(NSEvent*)event {
@@ -409,7 +411,7 @@ CONVERT(Rect)
 - (void)prepareEditorWithMinWidthInChars:(int)minWidthChars {
     NSFont *font = [editor font];
     NSGlyph glyphA = [font glyphWithName:@"a"];
-    ssassert(glyphA != -1, "Expected font to have U+0061");
+    ssassert(glyphA != (NSGlyph)-1, "Expected font to have U+0061");
     CGFloat glyphAWidth = [font advancementForGlyph:glyphA].width;
 
     [editor sizeToFit];
@@ -485,8 +487,8 @@ void InitGraphicsWindow() {
 
 void GetGraphicsWindowSize(int *w, int *h) {
     NSSize size = [GWView convertSizeToBacking:[GWView frame].size];
-    *w = size.width;
-    *h = size.height;
+    *w = (int)size.width;
+    *h = (int)size.height;
 }
 
 void InvalidateGraphics(void) {
@@ -1054,8 +1056,8 @@ void ShowTextWindow(bool visible) {
 
 void GetTextWindowSize(int *w, int *h) {
     NSSize size = [TWView convertSizeToBacking:[TWView frame].size];
-    *w = size.width;
-    *h = size.height;
+    *w = (int)size.width;
+    *h = (int)size.height;
 }
 
 void InvalidateText(void) {
