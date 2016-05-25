@@ -665,16 +665,16 @@ void GraphicsWindow::EnsureValidActives() {
     RadioMenuByCmd(Command::UNITS_INCHES, SS.viewUnits == Unit::INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);
-    CheckMenuByCmd(Command::SHOW_TEXT_WND, SS.GW.showTextWindow);
+    CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/SS.GW.showTextWindow);
 
 #if defined(__APPLE__)
-    CheckMenuByCmd(Command::SHOW_MENU_BAR, MenuBarIsVisible());
+    CheckMenuByCmd(Command::SHOW_MENU_BAR, /*checked=*/MenuBarIsVisible());
 #endif
-    CheckMenuByCmd(Command::SHOW_TOOLBAR, SS.showToolbar);
-    CheckMenuByCmd(Command::PERSPECTIVE_PROJ, SS.usePerspectiveProj);
-    CheckMenuByCmd(Command::SHOW_GRID, SS.GW.showSnapGrid);
+    CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
+    CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
+    CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
 #if defined(HAVE_GTK) || defined(__APPLE__)
-    CheckMenuByCmd(Command::FULL_SCREEN, FullScreenIsActive());
+    CheckMenuByCmd(Command::FULL_SCREEN, /*checked=*/FullScreenIsActive());
 #endif
 
     if(change) SS.ScheduleShowTW();
@@ -698,7 +698,7 @@ bool GraphicsWindow::LockedInWorkplane() {
 void GraphicsWindow::ForceTextWindowShown() {
     if(!showTextWindow) {
         showTextWindow = true;
-        CheckMenuByCmd(Command::SHOW_TEXT_WND, true);
+        CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/true);
         ShowTextWindow(true);
     }
 }

@@ -46,7 +46,7 @@ public:
     void ScalePoints(Point2d *pt, Point2d *a, Point2d *b, SSurface *srf) const;
     double ScaledSignedDistanceToLine(Point2d pt, Point2d a, Point2d b,
         SSurface *srf) const;
-    double ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool seg,
+    double ScaledDistanceToLine(Point2d pt, Point2d a, Point2d b, bool asSegment,
         SSurface *srf) const;
 
     void InsertEdge(Point2d a, Point2d b, SSurface *srf);
@@ -86,7 +86,7 @@ public:
 
     Vector PointAt(double t) const;
     Vector TangentAt(double t) const;
-    void ClosestPointTo(Vector p, double *t, bool converge=true) const;
+    void ClosestPointTo(Vector p, double *t, bool mustConverge=true) const;
     void SplitAt(double t, SBezier *bef, SBezier *aft) const;
     bool PointOnThisAndCurve(const SBezier *sbb, Vector *p) const;
 
@@ -233,7 +233,7 @@ public:
     Vector      start;
     Vector      finish;
 
-    static STrimBy EntireCurve(SShell *shell, hSCurve hsc, bool bkwds);
+    static STrimBy EntireCurve(SShell *shell, hSCurve hsc, bool backwards);
 };
 
 // An intersection point between a line and a surface
@@ -317,15 +317,15 @@ public:
     void SplitInHalf(bool byU, SSurface *sa, SSurface *sb);
     void AllPointsIntersecting(Vector a, Vector b,
                                List<SInter> *l,
-                               bool seg, bool trimmed, bool inclTangent);
+                               bool asSegment, bool trimmed, bool inclTangent);
     void AllPointsIntersectingUntrimmed(Vector a, Vector b,
                                         int *cnt, int *level,
-                                        List<Inter> *l, bool segment,
+                                        List<Inter> *l, bool asSegment,
                                         SSurface *sorig);
 
-    void ClosestPointTo(Vector p, Point2d *puv, bool converge=true);
-    void ClosestPointTo(Vector p, double *u, double *v, bool converge=true);
-    bool ClosestPointNewton(Vector p, double *u, double *v, bool converge=true) const;
+    void ClosestPointTo(Vector p, Point2d *puv, bool mustConverge=true);
+    void ClosestPointTo(Vector p, double *u, double *v, bool mustConverge=true);
+    bool ClosestPointNewton(Vector p, double *u, double *v, bool mustConverge=true) const;
 
     bool PointIntersectingLine(Vector p0, Vector p1, double *u, double *v) const;
     Vector ClosestPointOnThisAndSurface(SSurface *srf2, Vector p);
@@ -335,7 +335,7 @@ public:
     void TangentsAt(double u, double v, Vector *tu, Vector *tv) const;
     Vector NormalAt(Point2d puv) const;
     Vector NormalAt(double u, double v) const;
-    bool LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) const;
+    bool LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const;
     void GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const;
     bool CoincidentWithPlane(Vector n, double d) const;
     bool CoincidentWith(SSurface *ss, bool sameNormal) const;
@@ -387,7 +387,7 @@ public:
     void MakeIntersectionCurvesAgainst(SShell *against, SShell *into);
     void MakeClassifyingBsps(SShell *useCurvesFrom);
     void AllPointsIntersecting(Vector a, Vector b, List<SInter> *il,
-                                bool seg, bool trimmed, bool inclTangent);
+                                bool asSegment, bool trimmed, bool inclTangent);
     void MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
                                  SEdgeList *el, SShell *useCurvesFrom);
     void RewriteSurfaceHandlesForCurves(SShell *a, SShell *b);

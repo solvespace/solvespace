@@ -216,8 +216,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             p0 = n.ScaledBy(d).Plus(alu.ScaledBy(pm.Dot(alu)));
 
             List<SInter> inters = {};
-            sext->AllPointsIntersecting(
-                p0, p0.Plus(dp), &inters, false, false, true);
+            sext->AllPointsIntersecting(p0, p0.Plus(dp), &inters,
+                /*asSegment=*/false, /*trimmed=*/false, /*inclTangent=*/true);
 
             SInter *si;
             for(si = inters.First(); si; si = inters.NextAfter(si)) {
@@ -283,14 +283,15 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
             pa = pa.Plus(axisc);
             pb = pb.Plus(axisc);
 
-            b->AllPointsIntersecting(pa, pb, &inters, true, false, false);
+            b->AllPointsIntersecting(pa, pb, &inters,
+                /*asSegment=*/true,/*trimmed=*/false, /*inclTangent=*/false);
         }
 
         SInter *si;
         for(si = inters.First(); si; si = inters.NextAfter(si)) {
             Vector p = (si->p).Minus(axis.ScaledBy((si->p).Dot(axis)));
             double ub, vb;
-            b->ClosestPointTo(p, &ub, &vb, true);
+            b->ClosestPointTo(p, &ub, &vb, /*mustConverge=*/true);
             SSurface plane;
             plane = SSurface::FromPlane(p, axis.Normal(0), axis.Normal(1));
 
@@ -324,7 +325,7 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                 List<SInter> lsi = {};
 
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
-                    true, true, false);
+                    /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/false);
                 if(lsi.n == 0) continue;
 
                 // Find the other surface that this curve trims.

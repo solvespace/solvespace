@@ -411,18 +411,18 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 if(e->IsPoint()) pt = e->h;
 
-                e->CalculateNumerical(false);
+                e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h; e = NULL;
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
                 CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, false);
+                    /*asTrans=*/true, /*asAxisAngle=*/false);
                 CopyEntity(entity, SK.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, false);
+                    /*asTrans=*/true, /*asAxisAngle=*/false);
                 MakeExtrusionLines(entity, he);
             }
             // Remapped versions of that arbitrary point will be used to
@@ -446,7 +446,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                e->CalculateNumerical(false);
+                e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h;
 
                 // As soon as I call CopyEntity, e may become invalid! That
@@ -454,17 +454,17 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, false);
+                    /*asTrans=*/true, /*asAxisAngle=*/false);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, false);
+                    /*asTrans=*/true, /*asAxisAngle=*/false);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    true, false);
+                    /*asTrans=*/true, /*asAxisAngle=*/false);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 ai++;
@@ -488,13 +488,13 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
 
-                    e->CalculateNumerical(false);
+                    e->CalculateNumerical(/*forExport=*/false);
                     CopyEntity(entity, e,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                        true, false);
+                        /*asTrans=*/true, /*asAxisAngle=*/false);
                 }
             }
             return;
@@ -520,13 +520,13 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     Entity *e = &(entity->elem[i]);
                     if(e->group.v != opA.v) continue;
 
-                    e->CalculateNumerical(false);
+                    e->CalculateNumerical(/*forExport=*/false);
                     CopyEntity(entity, e,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         h.param(3), h.param(4), h.param(5), h.param(6),
-                        false, true);
+                        /*asTrans=*/false, /*asAxisAngle=*/true);
                 }
             }
             return;
@@ -547,7 +547,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
-                    false, false);
+                    /*asTrans=*/false, /*asAxisAngle=*/false);
             }
             return;
     }

@@ -86,14 +86,14 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     SKdNode *root = SKdNode::From(&m);
     root->SnapToMesh(&m);
     root->MakeCertainEdgesInto(sel, EdgeKind::NAKED_OR_SELF_INTER,
-                                false, NULL, NULL);
+                               /*coplanarIsInter=*/false, NULL, NULL);
 
     m.Clear();
 }
 
 void SMesh::MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, EdgeKind type) {
     SKdNode *root = SKdNode::From(this);
-    root->MakeCertainEdgesInto(sel, type, false, NULL, NULL);
+    root->MakeCertainEdgesInto(sel, type, /*coplanarIsInter=*/false, NULL, NULL);
     root->MakeOutlinesInto(sol);
 }
 

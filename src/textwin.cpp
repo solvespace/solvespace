@@ -865,7 +865,7 @@ void TextWindow::Paint() {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;
-                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, false);
+                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, /*lone=*/false);
                         y -= adj;
                     }
                 } else if(a == 1) {

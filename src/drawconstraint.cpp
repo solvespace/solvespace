@@ -28,7 +28,7 @@ void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
 
-        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
+        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
         dogd.dmin = min(dogd.dmin, d);
     }
 }
@@ -109,7 +109,7 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         l = max(l, 5/SS.GW.scale);
         Point2d a = SS.GW.ProjectPoint(ref.Minus(gr.WithMagnitude(l)));
         Point2d b = SS.GW.ProjectPoint(ref.Plus (gr.WithMagnitude(l)));
-        double d = dogd.mp.DistanceToLine(a, b.Minus(a), true);
+        double d = dogd.mp.DistanceToLine(a, b.Minus(a), /*asSegment=*/true);
 
         dogd.dmin = min(dogd.dmin, d - (th / 2));
     }
@@ -432,7 +432,7 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                        dna.ScaledBy(r*sin(theta))).Plus(pi);
             if(i > 0) {
                 if(trim) {
-                    DoLineTrimmedAgainstBox(*ref, prev, p, false, gr, gu, swidth, sheight);
+                    DoLineTrimmedAgainstBox(*ref, prev, p, /*extend=*/false, gr, gu, swidth, sheight);
                 } else {
                     LineDrawOrGetDistance(prev, p);
                 }
@@ -534,7 +534,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
             if(refps) refps[0] = refps[1] = ref;
 
-            DoLineWithArrows(ref, ap, bp, false);
+            DoLineWithArrows(ref, ap, bp, /*onlyOneExt=*/false);
             DoLabel(ref, labelPos, gr, gu);
             return;
         }
@@ -554,7 +554,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             StippledLine(ap, bpp);
             StippledLine(bp, bpp);
 
-            DoLineWithArrows(ref, ap, bpp, false);
+            DoLineWithArrows(ref, ap, bpp, /*onlyOneExt=*/false);
             DoLabel(ref, labelPos, gr, gu);
             return;
         }
@@ -579,7 +579,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             if(refps) refps[0] = refps[1] = ref;
 
             if(!pt.Equals(closest)) {
-                DoLineWithArrows(ref, pt, closest, true);
+                DoLineWithArrows(ref, pt, closest, /*onlyOneExt=*/true);
             }
 
             DoLabel(ref, labelPos, gr, gu);
@@ -607,7 +607,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             DoLabel(ref, labelPos, gr, gu);
 
             if(!pt.Equals(closest)) {
-                DoLineWithArrows(ref, pt, closest, true);
+                DoLineWithArrows(ref, pt, closest, /*onlyOneExt=*/true);
 
                 // Extensions to line
                 double pixels = 1.0 / SS.GW.scale;

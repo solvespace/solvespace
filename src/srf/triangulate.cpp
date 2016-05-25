@@ -434,9 +434,9 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     lj = {};
     double v = 0;
     li.Add(&v);
-    srf->MakeTriangulationGridInto(&li, 0, 1, true);
+    srf->MakeTriangulationGridInto(&li, 0, 1, /*swapped=*/true);
     lj.Add(&v);
-    srf->MakeTriangulationGridInto(&lj, 0, 1, false);
+    srf->MakeTriangulationGridInto(&lj, 0, 1, /*swapped=*/false);
 
     // Now iterate over each quad in the grid. If it's outside the polygon,
     // or if it intersects the polygon, then we discard it. Otherwise we
@@ -486,7 +486,7 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
 
     holes.CullExtraneousEdges();
     SPolygon hp = {};
-    holes.AssemblePolygon(&hp, NULL, true);
+    holes.AssemblePolygon(&hp, NULL, /*keepDir=*/true);
 
     SContour *sc;
     for(sc = hp.l.First(); sc; sc = hp.l.NextAfter(sc)) {

@@ -335,12 +335,12 @@ void SolveSpaceUI::AfterNewFile() {
     // roughly in the window, since that sets the mesh tolerance. Consider
     // invisible entities, so we still get something reasonable if the only
     // thing visible is the not-yet-generated surfaces.
-    GW.ZoomToFit(true);
+    GW.ZoomToFit(/*includingInvisibles=*/true);
 
     GenerateAll(Generate::ALL);
     SS.ScheduleShowTW();
     // Then zoom to fit again, to fit the triangles
-    GW.ZoomToFit(false);
+    GW.ZoomToFit(/*includingInvisibles=*/false);
 
     // Create all the default styles; they'll get created on the fly anyways,
     // but can't hurt to do it now.
@@ -412,7 +412,7 @@ bool SolveSpaceUI::OkayToStartNewFile() {
 
     switch(SaveFileYesNoCancel()) {
         case DIALOG_YES:
-            return GetFilenameAndSave(false);
+            return GetFilenameAndSave(/*saveAs=*/false);
 
         case DIALOG_NO:
             return true;
@@ -464,11 +464,11 @@ void SolveSpaceUI::MenuFile(Command id) {
         }
 
         case Command::SAVE:
-            SS.GetFilenameAndSave(false);
+            SS.GetFilenameAndSave(/*saveAs=*/false);
             break;
 
         case Command::SAVE_AS:
-            SS.GetFilenameAndSave(true);
+            SS.GetFilenameAndSave(/*saveAs=*/true);
             break;
 
         case Command::EXPORT_PNG: {
@@ -496,7 +496,7 @@ void SolveSpaceUI::MenuFile(Command id) {
                         "text window.");
             }
 
-            SS.ExportViewOrWireframeTo(exportFile, false);
+            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/false);
             break;
         }
 
@@ -506,7 +506,7 @@ void SolveSpaceUI::MenuFile(Command id) {
                             Vector3dFileFilter)) break;
             CnfFreezeString(Extension(exportFile), "WireframeExportFormat");
 
-            SS.ExportViewOrWireframeTo(exportFile, true);
+            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/true);
             break;
         }
 
@@ -610,7 +610,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                EdgeKind::NAKED_OR_SELF_INTER, true, &inters, &leaks);
+                EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
 
             InvalidateGraphics();
 
@@ -641,7 +641,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             SKdNode *root = SKdNode::From(m);
             bool inters, leaks;
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                EdgeKind::SELF_INTER, false, &inters, &leaks);
+                EdgeKind::SELF_INTER, /*coplanarIsInter=*/false, &inters, &leaks);
 
             InvalidateGraphics();
 
@@ -734,7 +734,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             SEdgeList sel = {};
             g->polyLoops.MakeEdgesInto(&sel);
             SPolygon sp = {};
-            sel.AssemblePolygon(&sp, NULL, true);
+            sel.AssemblePolygon(&sp, NULL, /*keepDir=*/true);
             sp.normal = sp.ComputeNormal();
             sp.FixContourDirections();
             double area = sp.SignedArea();

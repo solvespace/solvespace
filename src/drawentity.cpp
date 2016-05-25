@@ -29,7 +29,7 @@ void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat, int data) 
         Point2d ap = SS.GW.ProjectPoint(a);
         Point2d bp = SS.GW.ProjectPoint(b);
 
-        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), true);
+        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
         // A little bit easier to select in the active group
         if(group.v == SS.GW.activeGroup.v) d -= 1;
         if(d < dogd.dmin) {
@@ -453,11 +453,11 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
             break;
         }
         case Type::CUBIC:
-            ComputeInterpolatingSpline(sbl, false);
+            ComputeInterpolatingSpline(sbl, /*periodic=*/false);
             break;
 
         case Type::CUBIC_PERIODIC:
-            ComputeInterpolatingSpline(sbl, true);
+            ComputeInterpolatingSpline(sbl, /*periodic=*/true);
             break;
 
         case Type::CIRCLE:
@@ -727,7 +727,7 @@ void Entity::DrawOrGetDistance() {
             dogd.data = -1;
             for(int i = 0; i < sel->l.n; i++) {
                 SEdge *se = &(sel->l.elem[i]);
-                LineDrawOrGetDistance(se->a, se->b, true, se->auxB);
+                LineDrawOrGetDistance(se->a, se->b, /*maybeFat=*/true, se->auxB);
             }
             return;
         }

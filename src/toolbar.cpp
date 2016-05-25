@@ -54,7 +54,7 @@ static ToolIcon Toolbar[] = {
 };
 
 void GraphicsWindow::ToolbarDraw() {
-    ToolbarDrawOrHitTest(0, 0, true, NULL);
+    ToolbarDrawOrHitTest(0, 0, /*paint=*/true, NULL);
 }
 
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
@@ -62,7 +62,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     y += ((int)height/2);
 
     Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, /*paint=*/false, &nh);
     if(!withinToolbar) nh = Command::NONE;
 
     if(nh != toolbarTooltipped) {
@@ -89,7 +89,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     y += ((int)height/2);
 
     Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, false, &nh);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, /*paint=*/false, &nh);
     // They might have clicked within the toolbar, but not on a button.
     if(withinToolbar && nh != Command::NONE) {
         for(int i = 0; SS.GW.menu[i].level >= 0; i++) {

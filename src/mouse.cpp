@@ -223,7 +223,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                         if(hover.entity.v) {
                             // Avoid accidentally selecting workplanes when
                             // starting drags.
-                            MakeUnselected(hover.entity, false);
+                            MakeUnselected(hover.entity, /*coincidentPointTrick=*/false);
                             hover.Clear();
                         }
                         pending.operation = Pending::DRAGGING_MARQUEE;
@@ -644,7 +644,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case ContextCommand::UNSELECT_HOVERED:
             if(!hover.IsEmpty()) {
-                MakeUnselected(&hover, true);
+                MakeUnselected(&hover, /*coincidentPointTrick=*/true);
             }
             break;
 
@@ -825,7 +825,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 }
 
 hRequest GraphicsWindow::AddRequest(Request::Type type) {
-    return AddRequest(type, true);
+    return AddRequest(type, /*rememberForUndo=*/true);
 }
 hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
@@ -889,7 +889,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     }
 
     // Make sure the hover is up to date.
-    MouseMoved(mx, my, false, false, false, false, false);
+    MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false, 
+        /*shiftDown=*/false, /*ctrlDown=*/false);
     orig.mouse.x = mx;
     orig.mouse.y = my;
     orig.mouseOnButtonDown = orig.mouse;
@@ -938,7 +939,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     int i;
                     SS.UndoRemember();
                     for(i = 0; i < 4; i++) {
-                        lns[i] = AddRequest(Request::Type::LINE_SEGMENT, false);
+                        lns[i] = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
                     }
                     for(i = 0; i < 4; i++) {
                         Constraint::ConstrainCoincident(

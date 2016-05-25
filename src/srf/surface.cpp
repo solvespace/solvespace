@@ -187,10 +187,10 @@ void SSurface::GetAxisAlignedBounding(Vector *ptMax, Vector *ptMin) const {
     }
 }
 
-bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool segment) const {
+bool SSurface::LineEntirelyOutsideBbox(Vector a, Vector b, bool asSegment) const {
     Vector amax, amin;
     GetAxisAlignedBounding(&amax, &amin);
-    if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, segment)) {
+    if(!Vector::BoundingBoxIntersectsLine(amax, amin, a, b, asSegment)) {
         // The line segment could fail to intersect the bbox, but lie entirely
         // within it and intersect the surface.
         if(a.OutsideAndNotOn(amax, amin) && b.OutsideAndNotOn(amax, amin)) {
@@ -367,7 +367,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
                     for(i = sp + 1; i <= (fpt - 1); i++) {
                         Vector p = sc->pts.elem[i].p;
                         double t;
-                        sb.ClosestPointTo(p, &t, false);
+                        sb.ClosestPointTo(p, &t, /*mustConverge=*/false);
                         Vector pp = sb.PointAt(t);
                         if((pp.Minus(p)).Magnitude() > SS.ChordTolMm()/2) {
                             tooFar = true;
@@ -402,7 +402,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
     MakeEdgesInto(shell, &el, MakeAs::UV);
 
     SPolygon poly = {};
-    if(el.AssemblePolygon(&poly, NULL, true)) {
+    if(el.AssemblePolygon(&poly, NULL, /*keepDir=*/true)) {
         int i, start = sm->l.n;
         if(degm == 1 && degn == 1) {
             // A surface with curvature along one direction only; so
@@ -548,14 +548,14 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
 
             STrimBy stb0, stb1;
             // The translated curves trim the flat top and bottom surfaces.
-            stb0 = STrimBy::EntireCurve(this, hc0, false);
-            stb1 = STrimBy::EntireCurve(this, hc1, true);
+            stb0 = STrimBy::EntireCurve(this, hc0, /*backwards=*/false);
+            stb1 = STrimBy::EntireCurve(this, hc1, /*backwards=*/true);
             (surface.FindById(hs0))->trim.Add(&stb0);
             (surface.FindById(hs1))->trim.Add(&stb1);
 
             // The translated curves also trim the surface of extrusion.
-            stb0 = STrimBy::EntireCurve(this, hc0, true);
-            stb1 = STrimBy::EntireCurve(this, hc1, false);
+            stb0 = STrimBy::EntireCurve(this, hc0, /*backwards=*/true);
+            stb1 = STrimBy::EntireCurve(this, hc1, /*backwards=*/false);
             (surface.FindById(hsext))->trim.Add(&stb0);
             (surface.FindById(hsext))->trim.Add(&stb1);
 
@@ -581,9 +581,9 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
             TrimLine *tlp = &(trimLines.elem[WRAP(i-1, trimLines.n)]);
 
             STrimBy stb;
-            stb = STrimBy::EntireCurve(this, tl->hc, true);
+            stb = STrimBy::EntireCurve(this, tl->hc, /*backwards=*/true);
             ss->trim.Add(&stb);
-            stb = STrimBy::EntireCurve(this, tlp->hc, false);
+            stb = STrimBy::EntireCurve(this, tlp->hc, /*backwards=*/false);
             ss->trim.Add(&stb);
 
             (curve.FindById(tl->hc))->surfA = ss->h;
@@ -691,9 +691,9 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                     hSCurve hcb = curve.AddAndAssignId(&sc);
 
                     STrimBy stb;
-                    stb = STrimBy::EntireCurve(this, hcb, true);
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/true);
                     (surface.FindById(sc.surfA))->trim.Add(&stb);
-                    stb = STrimBy::EntireCurve(this, hcb, false);
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/false);
                     (surface.FindById(sc.surfB))->trim.Add(&stb);
                 }
 
@@ -716,9 +716,9 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                     hSCurve hcc = curve.AddAndAssignId(&sc);
 
                     STrimBy stb;
-                    stb = STrimBy::EntireCurve(this, hcc, false);
+                    stb = STrimBy::EntireCurve(this, hcc, /*backwards=*/false);
                     (surface.FindById(sc.surfA))->trim.Add(&stb);
-                    stb = STrimBy::EntireCurve(this, hcc, true);
+                    stb = STrimBy::EntireCurve(this, hcc, /*backwards=*/true);
                     (surface.FindById(sc.surfB))->trim.Add(&stb);
                 }
             }
@@ -821,7 +821,7 @@ void SShell::MakeFromTransformationOf(SShell *a,
     SSurface *s;
     for(s = a->surface.First(); s; s = a->surface.NextAfter(s)) {
         SSurface n;
-        n = SSurface::FromTransformationOf(s, t, q, scale, true);
+        n = SSurface::FromTransformationOf(s, t, q, scale, /*includingTrims=*/true);
         surface.Add(&n); // keeping the old ID
     }
 

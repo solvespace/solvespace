@@ -98,7 +98,7 @@ public:
     static bool BoundingBoxesDisjoint(Vector amax, Vector amin,
                                       Vector bmax, Vector bmin);
     static bool BoundingBoxIntersectsLine(Vector amax, Vector amin,
-                                          Vector p0, Vector p1, bool segment);
+                                          Vector p0, Vector p1, bool asSegment);
     bool OutsideAndNotOn(Vector maxv, Vector minv) const;
     Vector InPerspective(Vector u, Vector v, Vector n,
                          Vector origin, double cameraTan) const;
@@ -134,7 +134,7 @@ public:
     double DivPivoting(Point2d delta) const;
     double Dot(Point2d p) const;
     double DistanceTo(const Point2d &p) const;
-    double DistanceToLine(const Point2d &p0, const Point2d &dp, bool segment) const;
+    double DistanceToLine(const Point2d &p0, const Point2d &dp, bool asSegment) const;
     double Angle() const;
     double AngleTo(const Point2d &p) const;
     double Magnitude() const;

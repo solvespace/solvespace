@@ -260,7 +260,7 @@ void ssglColorRGBa(RgbaColor rgb, double a)
     if(!ColorLocked) glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), a);
 }
 
-static void Stipple(bool forSel)
+static void Stipple(bool forSelection)
 {
     static bool Init;
     const int BYTES = (32*32)/8;
@@ -284,19 +284,19 @@ static void Stipple(bool forSel)
     }
 
     glEnable(GL_POLYGON_STIPPLE);
-    if(forSel) {
+    if(forSelection) {
         glPolygonStipple(SelMask);
     } else {
         glPolygonStipple(HoverMask);
     }
 }
 
-static void StippleTriangle(STriangle *tr, bool s, RgbaColor rgb)
+static void StippleTriangle(STriangle *tr, bool forSelection, RgbaColor rgb)
 {
     glEnd();
     glDisable(GL_LIGHTING);
     ssglColorRGB(rgb);
-    Stipple(s);
+    Stipple(forSelection);
     glBegin(GL_TRIANGLES);
         ssglVertex3v(tr->a);
         ssglVertex3v(tr->b);
@@ -357,10 +357,10 @@ void ssglFillMesh(bool useSpecColor, RgbaColor specColor,
         if((s1 != 0 && tr->meta.face == s1) ||
            (s2 != 0 && tr->meta.face == s2))
         {
-            StippleTriangle(tr, true, rgbSelected);
+            StippleTriangle(tr, /*forSelection=*/true, rgbSelected);
         }
         if(h != 0 && tr->meta.face == h) {
-            StippleTriangle(tr, false, rgbHovered);
+            StippleTriangle(tr, /*forSelection=*/false, rgbHovered);
         }
     }
     glEnd();
@@ -624,7 +624,8 @@ static void LoadBitmapFont() {
     BuiltinBitmapFont.AddGlyph(0xE006, LoadPNG("fonts/private/6-stipple-dash.png"));
     BuiltinBitmapFont.AddGlyph(0xE007, LoadPNG("fonts/private/7-stipple-zigzag.png"));
     // Unifont doesn't have a glyph for U+0020.
-    BuiltinBitmapFont.AddGlyph(0x20,   Pixmap({ 8, 16, 8*3, false, std::vector<uint8_t>(8*16*3) }));
+    BuiltinBitmapFont.AddGlyph(0x20,
+        Pixmap({ 8, 16, 8*3, /*hasAlpha=*/false, std::vector<uint8_t>(8*16*3) }));
 }
 
 void ssglInitializeBitmapFont()

@@ -148,14 +148,14 @@ void SolveSpace::Error(const char *str, ...)
 {
     va_list f;
     va_start(f, str);
-    DoStringForMessageBox(str, f, true);
+    DoStringForMessageBox(str, f, /*error=*/true);
     va_end(f);
 }
 void SolveSpace::Message(const char *str, ...)
 {
     va_list f;
     va_start(f, str);
-    DoStringForMessageBox(str, f, false);
+    DoStringForMessageBox(str, f, /*error=*/false);
     va_end(f);
 }
 
@@ -749,7 +749,7 @@ bool Vector::BoundingBoxesDisjoint(Vector amax, Vector amin,
 }
 
 bool Vector::BoundingBoxIntersectsLine(Vector amax, Vector amin,
-                                       Vector p0, Vector p1, bool segment)
+                                       Vector p0, Vector p1, bool asSegment)
 {
     Vector dp = p1.Minus(p0);
     double lp = dp.Magnitude();
@@ -767,7 +767,7 @@ bool Vector::BoundingBoxIntersectsLine(Vector amax, Vector amin,
             double t = (d - p0.Element(i)) / dp.Element(i);
             Vector p = p0.Plus(dp.ScaledBy(t));
 
-            if(segment && (t < -LENGTH_EPS || t > (lp+LENGTH_EPS))) continue;
+            if(asSegment && (t < -LENGTH_EPS || t > (lp+LENGTH_EPS))) continue;
 
             if(p.Element(j) > amax.Element(j) + LENGTH_EPS) continue;
             if(p.Element(k) > amax.Element(k) + LENGTH_EPS) continue;
@@ -998,14 +998,14 @@ double Point2d::Dot(Point2d p) const {
     return x*p.x + y*p.y;
 }
 
-double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool segment) const {
+double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool asSegment) const {
     double m = dp.x*dp.x + dp.y*dp.y;
     if(m < LENGTH_EPS*LENGTH_EPS) return VERY_POSITIVE;
 
     // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
     double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;
 
-    if(segment) {
+    if(asSegment) {
         if(t < 0.0) return DistanceTo(p0);
         if(t > 1.0) return DistanceTo(p0.Plus(dp));
     }

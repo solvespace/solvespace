@@ -32,7 +32,7 @@ void SShell::MergeCoincidentSurfaces() {
             for(j = i + 1; j < surface.n; j++) {
                 sj = &(surface.elem[j]);
                 if(sj->tag) continue;
-                if(!sj->CoincidentWith(si, true)) continue;
+                if(!sj->CoincidentWith(si, /*sameNormal=*/true)) continue;
                 if(!sj->color.Equals(si->color)) continue;
                 // But we do merge surfaces with different face entities, since
                 // otherwise we'd hardly ever merge anything.
@@ -72,7 +72,7 @@ void SShell::MergeCoincidentSurfaces() {
         if(merged) {
             sel.CullExtraneousEdges();
             si->trim.Clear();
-            si->TrimFromEdgeList(&sel, false);
+            si->TrimFromEdgeList(&sel, /*asUv=*/false);
 
             // And we must choose control points such that all the trims lie
             // with u and v in [0, 1], so that the bbox tests work.

@@ -709,7 +709,7 @@ nogrid:;
     glEnd();
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
-    ssglDrawEdges(&(SS.nakedEdges), true, { Style::DRAW_ERROR });
+    ssglDrawEdges(&(SS.nakedEdges), /*endpointsToo=*/true, { Style::DRAW_ERROR });
 
     // Then redraw whatever the mouse is hovering over, highlighted.
     glDisable(GL_DEPTH_TEST);

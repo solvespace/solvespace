@@ -853,7 +853,7 @@ public:
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
                                SMesh *sm, SEdgeList *sel);
-    void ExportViewOrWireframeTo(const std::string &filename, bool wireframe);
+    void ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe);
     void ExportSectionTo(const std::string &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);

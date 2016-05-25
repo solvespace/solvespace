@@ -110,7 +110,7 @@ void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     bl.Clear();
 }
 
-void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wireframe) {
+void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe) {
     int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
@@ -168,7 +168,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool wir
         }
     }
 
-    if(wireframe) {
+    if(exportWireframe) {
         Vector u = Vector::From(1.0, 0.0, 0.0),
                v = Vector::From(0.0, 1.0, 0.0),
                n = Vector::From(0.0, 0.0, 1.0),
@@ -659,8 +659,8 @@ void VectorFileWriter::OutputLinesAndMesh(SBezierLoopSetSet *sblss, SMesh *sm) {
             hStyle hs = { (uint32_t)b->auxA };
             Style *stl = Style::Get(hs);
             double lineWidth   = Style::WidthMm(b->auxA)*s;
-            RgbaColor strokeRgb = Style::Color(hs, true);
-            RgbaColor fillRgb   = Style::FillColor(hs, true);
+            RgbaColor strokeRgb = Style::Color(hs, /*forExport=*/true);
+            RgbaColor fillRgb   = Style::FillColor(hs, /*forExport=*/true);
 
             StartPath(strokeRgb, lineWidth, stl->filled, fillRgb, hs);
             for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {

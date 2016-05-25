@@ -520,7 +520,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     MarkDraggedParams();
     g->solved.remove.Clear();
     SolveResult how = sys.Solve(g, &(g->solved.dof),
-                           &(g->solved.remove), true, andFindFree);
+                           &(g->solved.remove), /*andFindBad=*/true, andFindFree);
     bool isOkay = how == SolveResult::OKAY ||
                   (g->allowRedundant && how == SolveResult::REDUNDANT_OKAY);
     if(!isOkay || (isOkay && !g->IsSolvedOkay()))

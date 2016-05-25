@@ -450,7 +450,7 @@ public:
 
     void assignEntityDefaults(DRW_Entity *entity, hStyle hs) {
         Style *s = Style::Get(hs);
-        RgbaColor color = s->Color(hs, true);
+        RgbaColor color = s->Color(hs, /*forExport=*/true);
         entity->color24 = color.ToPackedIntBGRA();
         entity->color = findDxfColor(color);
         entity->layer = s->DescriptionString();
@@ -692,7 +692,7 @@ void DxfFileWriter::Bezier(SBezier *sb) {
 void DxfFileWriter::FinishAndCloseFile() {
     dxfRW dxf(filename.c_str());
     DxfWriteInterface interface(this, &dxf);
-    dxf.write(&interface, DRW::AC1021, false);
+    dxf.write(&interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
     constraint = NULL;
 }
@@ -1123,7 +1123,7 @@ void SvgFileWriter::StartFile() {
     fprintf(f, "}\r\n");
     for(int i = 0; i < SK.style.n; i++) {
         Style *s = &SK.style.elem[i];
-        RgbaColor strokeRgb = Style::Color(s->h, true);
+        RgbaColor strokeRgb = Style::Color(s->h, /*forExport=*/true);
         StipplePattern pattern = Style::PatternType(s->h);
         double stippleScale = Style::StippleScaleMm(s->h);
 

@@ -167,7 +167,7 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
     hRequest hr;
     Entity *e;
     if(isLine) {
-        hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, false),
+        hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
         e = SK.GetEntity(hr.entity(0));
         SK.GetEntity(e->point[0])->PointForceTo(PointAt(t));
         SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
@@ -179,9 +179,9 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
         }
         Constraint::Constrain(Constraint::Type::ARC_LINE_TANGENT,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
-            arc, e->h, arcFinish, false);
+            arc, e->h, /*other=*/arcFinish, /*other2=*/false);
     } else {
-        hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false),
+        hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
         e = SK.GetEntity(hr.entity(0));
         SK.GetEntity(e->point[0])->PointForceTo(p0);
         if(dtheta > 0) {
@@ -198,7 +198,7 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
         // so there's no need for more.
         Constraint::Constrain(Constraint::Type::CURVE_CURVE_TANGENT,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
-            arc, e->h, arcFinish, (dtheta < 0));
+            arc, e->h, /*other=*/arcFinish, /*other2=*/(dtheta < 0));
     }
     return hr;
 }
@@ -389,7 +389,7 @@ void GraphicsWindow::MakeTangentArc() {
 
     SS.UndoRemember();
 
-    hRequest harc = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
+    hRequest harc = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
     Entity *earc = SK.GetEntity(harc.entity(0));
     hEntity hearc = earc->h;
 
@@ -400,9 +400,9 @@ void GraphicsWindow::MakeTangentArc() {
     earc = NULL;
 
     pc[0].CreateRequestTrimmedTo(t[0], !SS.tangentArcDeleteOld,
-                hent[0], hearc, (b == 1));
+                hent[0], hearc, /*arcFinish=*/(b == 1));
     pc[1].CreateRequestTrimmedTo(t[1], !SS.tangentArcDeleteOld,
-                hent[1], hearc, (a == 1));
+                hent[1], hearc, /*arcFinish=*/(a == 1));
 
     // Now either make the original entities construction, or delete them
     // entirely, according to user preference.
@@ -432,8 +432,8 @@ hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
            p1 = SK.GetEntity(hep1)->PointGetNum();
 
     // Add the two line segments this one gets split into.
-    hRequest r0i = AddRequest(Request::Type::LINE_SEGMENT, false),
-             ri1 = AddRequest(Request::Type::LINE_SEGMENT, false);
+    hRequest r0i = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
+             ri1 = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
     // Don't get entities till after adding, realloc issues
 
     Entity *e0i = SK.GetEntity(r0i.entity(0)),
@@ -457,7 +457,7 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
         Vector center = SK.GetEntity(circle->point[0])->PointGetNum();
 
         circle = NULL; // shortly invalid!
-        hRequest hr = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
+        hRequest hr = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
 
         Entity *arc = SK.GetEntity(hr.entity(0));
 
@@ -477,8 +477,8 @@ hEntity GraphicsWindow::SplitCircle(hEntity he, Vector pinter) {
                finish = SK.GetEntity(hf)->PointGetNum();
 
         circle = NULL; // shortly invalid!
-        hRequest hr0 = AddRequest(Request::Type::ARC_OF_CIRCLE, false),
-                 hr1 = AddRequest(Request::Type::ARC_OF_CIRCLE, false);
+        hRequest hr0 = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
+                 hr1 = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
 
         Entity *arc0 = SK.GetEntity(hr0.entity(0)),
                *arc1 = SK.GetEntity(hr1.entity(0));
@@ -518,15 +518,15 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
         SBezier *sb = &(sbl.l.elem[i]);
         ssassert(sb->deg == 3, "Expected a cubic bezier");
 
-        sb->ClosestPointTo(pinter, &t, false);
+        sb->ClosestPointTo(pinter, &t, /*mustConverge=*/false);
         if(pinter.Equals(sb->PointAt(t))) {
             // Split that segment at the intersection.
             SBezier b0i, bi1, b01 = *sb;
             b01.SplitAt(t, &b0i, &bi1);
 
             // Add the two cubic segments this one gets split into.
-            hRequest r0i = AddRequest(Request::Type::CUBIC, false),
-                     ri1 = AddRequest(Request::Type::CUBIC, false);
+            hRequest r0i = AddRequest(Request::Type::CUBIC, /*rememberForUndo=*/false),
+                     ri1 = AddRequest(Request::Type::CUBIC, /*rememberForUndo=*/false);
             // Don't get entities till after adding, realloc issues
 
             Entity *e0i = SK.GetEntity(r0i.entity(0)),
@@ -544,7 +544,7 @@ hEntity GraphicsWindow::SplitCubic(hEntity he, Vector pinter) {
             hep1n = ei1->point[3];
             hepin = e0i->point[3];
         } else {
-            hRequest r = AddRequest(Request::Type::CUBIC, false);
+            hRequest r = AddRequest(Request::Type::CUBIC, /*rememberForUndo=*/false);
             Entity *e = SK.GetEntity(r.entity(0));
 
             for(j = 0; j <= 3; j++) {

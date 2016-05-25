@@ -503,12 +503,12 @@ void Group::DrawDisplayItems(Group::Type t) {
         if(SS.GW.showHdnLines) {
             ssglDepthRangeOffset(0);
             glDepthFunc(GL_GREATER);
-            ssglDrawEdges(&displayEdges, false, { Style::HIDDEN_EDGE });
+            ssglDrawEdges(&displayEdges, /*endpointsToo=*/false, { Style::HIDDEN_EDGE });
             ssglDrawOutlines(&displayOutlines, projDir, { Style::HIDDEN_EDGE });
             glDepthFunc(GL_LEQUAL);
         }
         ssglDepthRangeOffset(2);
-        ssglDrawEdges(&displayEdges, false, { Style::SOLID_EDGE });
+        ssglDrawEdges(&displayEdges, /*endpointsToo=*/false, { Style::SOLID_EDGE });
         if(SS.GW.showOutlines) {
             ssglDrawOutlines(&displayOutlines, projDir, { Style::OUTLINE });
         } else {

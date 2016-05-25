@@ -76,7 +76,7 @@ void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA,
 }
 
 hConstraint Constraint::AddConstraint(Constraint *c) {
-    return AddConstraint(c, true);
+    return AddConstraint(c, /*rememberForUndo=*/true);
 }
 
 hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
@@ -103,16 +103,16 @@ hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity pt
     c.entityB = entityB;
     c.other = other;
     c.other2 = other2;
-    return AddConstraint(&c, false);
+    return AddConstraint(&c, /*rememberForUndo=*/false);
 }
 
 hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA){
-    return Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, false, false);
+    return Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
 }
 
 hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {
     return Constrain(Type::POINTS_COINCIDENT, ptA, ptB,
-        Entity::NO_ENTITY, Entity::NO_ENTITY, false, false);
+        Entity::NO_ENTITY, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
 }
 
 void Constraint::MenuConstrain(Command id) {
@@ -516,7 +516,7 @@ void Constraint::MenuConstrain(Command id) {
 
                 nfree->NormalForceTo(Quaternion::From(fu, fv));
             }
-            AddConstraint(&c, false);
+            AddConstraint(&c, /*rememberForUndo=*/false);
             break;
         }
 

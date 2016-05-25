@@ -124,7 +124,7 @@ public:
         if(reversed) std::swap(p0, p1);
         blockTransformArc(&center, &p0, &p1);
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(center);
         SK.GetEntity(hr.entity(2))->PointForceTo(p0);
         SK.GetEntity(hr.entity(3))->PointForceTo(p1);
@@ -477,7 +477,7 @@ public:
         hEntity he = findPoint(p);
         if(he.v != Entity::NO_ENTITY.v) return he;
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, /*rememberForUndo=*/false);
         he = hr.entity(0);
         SK.GetEntity(he)->PointForceTo(p);
         points.emplace(p, he);
@@ -486,7 +486,7 @@ public:
 
     hEntity createLine(Vector p0, Vector p1, uint32_t style, bool constrainHV = false) {
         if(p0.Equals(p1)) return Entity::NO_ENTITY;
-        hRequest hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(p0);
         SK.GetEntity(hr.entity(2))->PointForceTo(p1);
         processPoint(hr.entity(1));
@@ -520,7 +520,7 @@ public:
     }
 
     hEntity createCircle(const Vector &c, double r, uint32_t style) {
-        hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(c);
         processPoint(hr.entity(1));
         SK.GetEntity(hr.entity(64))->DistanceForceTo(r);
@@ -548,7 +548,7 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Point>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(0))->PointForceTo(toVector(data.basePoint));
         processPoint(hr.entity(0));
     }
@@ -557,14 +557,14 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Line>(data)) return;
 
-        createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data).v, true);
+        createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data).v, /*constrainHV=*/true);
     }
 
     void addArc(const DRW_Arc &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Arc>(data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
         double r = data.radious;
         double sa = data.staangle;
         double ea = data.endangle;
@@ -625,7 +625,7 @@ public:
             hStyle hs = styleFor(&data);
 
             if(EXACT(data.vertlist[i]->bulge == 0.0)) {
-                createLine(blockTransform(p0), blockTransform(p1), hs.v, true);
+                createLine(blockTransform(p0), blockTransform(p1), hs.v, /*constrainHV=*/true);
             } else {
                 hRequest hr = createBulge(p0, p1, c0.bulge);
                 setStyle(hr, hs);
@@ -662,7 +662,7 @@ public:
             hStyle hs = styleFor(&data);
 
             if(EXACT(bulge == 0.0)) {
-                createLine(blockTransform(p0), blockTransform(p1), hs.v, true);
+                createLine(blockTransform(p0), blockTransform(p1), hs.v, /*constrainHV=*/true);
             } else {
                 hRequest hr = createBulge(p0, p1, bulge);
                 setStyle(hr, hs);
@@ -675,7 +675,7 @@ public:
         if(data->degree != 3) return;
         if(addPendingBlockEntity<DRW_Spline>(*data)) return;
 
-        hRequest hr = SS.GW.AddRequest(Request::Type::CUBIC, false);
+        hRequest hr = SS.GW.AddRequest(Request::Type::CUBIC, /*rememberForUndo=*/false);
         for(int i = 0; i < 4; i++) {
             SK.GetEntity(hr.entity(i + 1))->PointForceTo(toVector(*data->controllist[i]));
             processPoint(hr.entity(i + 1));
@@ -737,7 +737,7 @@ public:
         }
         c.comment       = data.text;
         c.disp.style    = styleFor(&data);
-        Constraint::AddConstraint(&c, false);
+        Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
     }
 
     void addDimAlign(const DRW_DimAligned *data) override {
@@ -767,9 +767,9 @@ public:
         if(data->space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_DimLinear>(*data)) return;
 
-        Vector p0 = toVector(data->getDef1Point(), false);
-        Vector p1 = toVector(data->getDef2Point(), false);
-        Vector p2 = toVector(data->getTextPoint(), false);
+        Vector p0 = toVector(data->getDef1Point(), /*transform=*/false);
+        Vector p1 = toVector(data->getDef2Point(), /*transform=*/false);
+        Vector p2 = toVector(data->getTextPoint(), /*transform=*/false);
 
         double angle = data->getAngle() * PI / 180.0;
         Vector dir = Vector::From(cos(angle), sin(angle), 0.0);
@@ -909,7 +909,7 @@ void ImportDxf(const std::string &filename) {
     dxfRW dxf(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
-    if(!dxf.read(&interface, false)) {
+    if(!dxf.read(&interface, /*ext=*/false)) {
         Error("Corrupted DXF file!");
     }
     if(interface.unknownEntities > 0) {
@@ -923,7 +923,7 @@ void ImportDwg(const std::string &filename) {
     dwgR dwg(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
-    if(!dwg.read(&interface, false)) {
+    if(!dwg.read(&interface, /*ext=*/false)) {
         Error("Corrupted DWG file!");
     }
     if(interface.unknownEntities > 0) {

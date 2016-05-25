@@ -153,7 +153,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
 
     ClipboardRequest *cr;
     for(cr = SS.clipboard.r.First(); cr; cr = SS.clipboard.r.NextAfter(cr)) {
-        hRequest hr = AddRequest(cr->type, false);
+        hRequest hr = AddRequest(cr->type, /*rememberForUndo=*/false);
         Request *r = SK.GetRequest(hr);
         r->extraPoints  = cr->extraPoints;
         r->style        = cr->style;
@@ -284,7 +284,7 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
     Expr *e;
     switch(edit.meaning) {
         case Edit::PASTE_TIMES_REPEATED: {
-            e = Expr::From(s, true);
+            e = Expr::From(s, /*popUpError=*/true);
             if(!e) break;
             int v = (int)e->Eval();
             if(v > 0) {
@@ -295,13 +295,13 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
             break;
         }
         case Edit::PASTE_ANGLE:
-            e = Expr::From(s, true);
+            e = Expr::From(s, /*popUpError=*/true);
             if(!e) break;
             shown.paste.theta = WRAP_SYMMETRIC((e->Eval())*PI/180, 2*PI);
             break;
 
         case Edit::PASTE_SCALE: {
-            e = Expr::From(s, true);
+            e = Expr::From(s, /*popUpError=*/true);
             double v = e->Eval();
             if(fabs(v) > 1e-6) {
                 shown.paste.scale = v;

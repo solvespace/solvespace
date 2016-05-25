@@ -130,7 +130,7 @@ Vector SBezier::TangentAt(double t) const {
     return ret;
 }
 
-void SBezier::ClosestPointTo(Vector p, double *t, bool converge) const {
+void SBezier::ClosestPointTo(Vector p, double *t, bool mustConverge) const {
     int i;
     double minDist = VERY_POSITIVE;
     *t = 0;
@@ -147,7 +147,7 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) const {
     }
 
     Vector p0;
-    for(i = 0; i < (converge ? 15 : 5); i++) {
+    for(i = 0; i < (mustConverge ? 15 : 5); i++) {
         p0 = PointAt(*t);
         if(p0.Equals(p, RATPOLY_EPS)) {
             return;
@@ -157,15 +157,15 @@ void SBezier::ClosestPointTo(Vector p, double *t, bool converge) const {
         Vector pc = p.ClosestPointOnLine(p0, dp);
         *t += (pc.Minus(p0)).DivPivoting(dp);
     }
-    if(converge) {
+    if(mustConverge) {
         dbp("didn't converge (closest point on bezier curve)");
     }
 }
 
 bool SBezier::PointOnThisAndCurve(const SBezier *sbb, Vector *p) const {
     double ta, tb;
-    this->ClosestPointTo(*p, &ta, false);
-    sbb ->ClosestPointTo(*p, &tb, false);
+    this->ClosestPointTo(*p, &ta, /*mustConverge=*/false);
+    sbb ->ClosestPointTo(*p, &tb, /*mustConverge=*/false);
 
     int i;
     for(i = 0; i < 20; i++) {
@@ -387,11 +387,11 @@ Vector SSurface::NormalAt(double u, double v) const {
     return tu.Cross(tv);
 }
 
-void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool converge) {
-    ClosestPointTo(p, &(puv->x), &(puv->y), converge);
+void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool mustConverge) {
+    ClosestPointTo(p, &(puv->x), &(puv->y), mustConverge);
 }
 
-void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
+void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge) {
     // A few special cases first; when control points are coincident the
     // derivative goes to zero at the conrol points, and would result in
     // nonconvergence. We avoid that here, and also guarantee a consistent
@@ -418,9 +418,9 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     // good if we're working our way along a curve or something else where
     // we project successive points that are close to each other; something
     // like a 20% speedup empirically.
-    if(converge) {
+    if(mustConverge) {
         double ut = cached.x, vt = cached.y;
-        if(ClosestPointNewton(p, &ut, &vt, converge)) {
+        if(ClosestPointNewton(p, &ut, &vt, mustConverge)) {
             cached.x = *u = ut;
             cached.y = *v = vt;
             return;
@@ -445,7 +445,7 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
         }
     }
 
-    if(ClosestPointNewton(p, u, v, converge)) {
+    if(ClosestPointNewton(p, u, v, mustConverge)) {
         cached.x = *u;
         cached.y = *v;
         return;
@@ -457,13 +457,13 @@ void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool converge) {
     }
 }
 
-bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge) const
+bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool mustConverge) const
 {
     // Initial guess is in u, v; refine by Newton iteration.
     Vector p0 = Vector::From(0, 0, 0);
-    for(int i = 0; i < (converge ? 25 : 5); i++) {
+    for(int i = 0; i < (mustConverge ? 25 : 5); i++) {
         p0 = PointAt(*u, *v);
-        if(converge) {
+        if(mustConverge) {
             if(p0.Equals(p, RATPOLY_EPS)) {
                 return true;
             }
@@ -481,7 +481,7 @@ bool SSurface::ClosestPointNewton(Vector p, double *u, double *v, bool converge)
         *v += dv / (tv.MagSquared());
     }
 
-    if(converge) {
+    if(mustConverge) {
         dbp("didn't converge");
         dbp("have %.3f %.3f %.3f", CO(p0));
         dbp("want %.3f %.3f %.3f", CO(p));
@@ -525,7 +525,7 @@ Vector SSurface::ClosestPointOnThisAndSurface(SSurface *srf2, Vector p) {
     SSurface *srf[2] = { this, srf2 };
 
     for(j = 0; j < 2; j++) {
-        (srf[j])->ClosestPointTo(p, &(puv[j]), false);
+        (srf[j])->ClosestPointTo(p, &(puv[j]), /*mustConverge=*/false);
     }
 
     for(i = 0; i < 10; i++) {
@@ -573,8 +573,8 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *v
 
     // Get initial guesses for (u, v) in the other surfaces
     Vector p = PointAt(*u, *v);
-    (srf[1])->ClosestPointTo(p, &(u[1]), &(v[1]), false);
-    (srf[2])->ClosestPointTo(p, &(u[2]), &(v[2]), false);
+    (srf[1])->ClosestPointTo(p, &(u[1]), &(v[1]), /*mustConverge=*/false);
+    (srf[2])->ClosestPointTo(p, &(u[2]), &(v[2]), /*mustConverge=*/false);
 
     int i, j;
     for(i = 0; i < 20; i++) {

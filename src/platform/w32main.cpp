@@ -1041,13 +1041,13 @@ static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &
 bool SolveSpace::GetOpenFile(std::string *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
-    return OpenSaveFile(true, filename, defExtension, filters);
+    return OpenSaveFile(/*isOpen=*/true, filename, defExtension, filters);
 }
 
 bool SolveSpace::GetSaveFile(std::string *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
-    return OpenSaveFile(false, filename, defExtension, filters);
+    return OpenSaveFile(/*isOpen=*/false, filename, defExtension, filters);
 }
 
 DialogChoice SolveSpace::SaveFileYesNoCancel()

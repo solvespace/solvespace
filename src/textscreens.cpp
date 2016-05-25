@@ -650,7 +650,7 @@ void TextWindow::EditControlDone(const char *s) {
 
     switch(edit.meaning) {
         case Edit::TIMES_REPEATED: {
-            Expr *e = Expr::From(s, true);
+            Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
                 SS.UndoRemember();
 
@@ -700,7 +700,7 @@ void TextWindow::EditControlDone(const char *s) {
             break;
         }
         case Edit::GROUP_SCALE: {
-            Expr *e = Expr::From(s, true);
+            Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
                 double ev = e->Eval();
                 if(fabs(ev) < 1e-6) {
@@ -732,7 +732,7 @@ void TextWindow::EditControlDone(const char *s) {
             break;
         }
         case Edit::GROUP_OPACITY: {
-            Expr *e = Expr::From(s, true);
+            Expr *e = Expr::From(s, /*popUpError=*/true);
             if(e) {
                 double alpha = e->Eval();
                 if(alpha < 0 || alpha > 1) {
@@ -758,7 +758,7 @@ void TextWindow::EditControlDone(const char *s) {
             break;
         }
         case Edit::STEP_DIM_FINISH: {
-            Expr *e = Expr::From(s, true);
+            Expr *e = Expr::From(s, /*popUpError=*/true);
             if(!e) {
                 break;
             }
@@ -774,7 +774,7 @@ void TextWindow::EditControlDone(const char *s) {
             break;
 
         case Edit::TANGENT_ARC_RADIUS: {
-            Expr *e = Expr::From(s, true);
+            Expr *e = Expr::From(s, /*popUpError=*/true);
             if(!e) break;
             if(e->Eval() < LENGTH_EPS) {
                 Error("Radius cannot be zero or negative.");

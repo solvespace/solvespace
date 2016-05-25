@@ -118,7 +118,7 @@ alt:
         } else {
             // I suppose this actually is allowed to happen, if the coplanar
             // face is the leaf, and all of its neighbors are earlier in tree?
-            InsertInPlane(false, tr, instead);
+            InsertInPlane(/*pos2=*/false, tr, instead);
         }
     } else {
         instead->atLeastOneDiscarded = true;
@@ -555,7 +555,7 @@ void SBsp2::InsertTriangleHow(BspClass how, STriangle *tr, SMesh *m, SBsp3 *bsp3
             if(pos) {
                 pos->InsertTriangle(tr, m, bsp3);
             } else {
-                bsp3->InsertInPlane(true, tr, m);
+                bsp3->InsertInPlane(/*pos2=*/true, tr, m);
             }
             break;
 
@@ -563,7 +563,7 @@ void SBsp2::InsertTriangleHow(BspClass how, STriangle *tr, SMesh *m, SBsp3 *bsp3
             if(neg) {
                 neg->InsertTriangle(tr, m, bsp3);
             } else {
-                bsp3->InsertInPlane(false, tr, m);
+                bsp3->InsertInPlane(/*pos2=*/false, tr, m);
             }
             break;
 

@@ -190,12 +190,12 @@ void SSurface::SplitInHalf(bool byU, SSurface *sa, SSurface *sb) {
 //-----------------------------------------------------------------------------
 void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
                                               int *cnt, int *level,
-                                              List<Inter> *l, bool segment,
+                                              List<Inter> *l, bool asSegment,
                                               SSurface *sorig)
 {
     // Test if the line intersects our axis-aligned bounding box; if no, then
     // no possibility of an intersection
-    if(LineEntirelyOutsideBbox(a, b, segment)) return;
+    if(LineEntirelyOutsideBbox(a, b, asSegment)) return;
 
     if(*cnt > 2000) {
         dbp("!!! too many subdivisions (level=%d)!", *level);
@@ -212,7 +212,7 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
                     ctrl[degm][0   ]).Plus(
                     ctrl[degm][degn]).ScaledBy(0.25);
         Inter inter;
-        sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), false);
+        sorig->ClosestPointTo(p, &(inter.p.x), &(inter.p.y), /*mustConverge=*/false);
         if(sorig->PointIntersectingLine(a, b, &(inter.p.x), &(inter.p.y))) {
             Vector p = sorig->PointAt(inter.p.x, inter.p.y);
             // Debug check, verify that the point lies in both surfaces
@@ -232,9 +232,9 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 
     int nextLevel = (*level) + 1;
     (*level) = nextLevel;
-    surf0.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, segment, sorig);
+    surf0.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, asSegment, sorig);
     (*level) = nextLevel;
-    surf1.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, segment, sorig);
+    surf1.AllPointsIntersectingUntrimmed(a, b, cnt, level, l, asSegment, sorig);
 }
 
 //-----------------------------------------------------------------------------
@@ -247,9 +247,9 @@ void SSurface::AllPointsIntersectingUntrimmed(Vector a, Vector b,
 //-----------------------------------------------------------------------------
 void SSurface::AllPointsIntersecting(Vector a, Vector b,
                                      List<SInter> *l,
-                                     bool seg, bool trimmed, bool inclTangent)
+                                     bool asSegment, bool trimmed, bool inclTangent)
 {
-    if(LineEntirelyOutsideBbox(a, b, seg)) return;
+    if(LineEntirelyOutsideBbox(a, b, asSegment)) return;
 
     Vector ba = b.Minus(a);
     double bam = ba.Magnitude();
@@ -266,7 +266,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         double d = n.Dot(PointAt(0, 0));
         // Trim to line segment now if requested, don't generate points that
         // would just get discarded later.
-        if(!seg ||
+        if(!asSegment ||
            (n.Dot(a) > d + LENGTH_EPS && n.Dot(b) < d - LENGTH_EPS) ||
            (n.Dot(b) > d + LENGTH_EPS && n.Dot(a) < d - LENGTH_EPS))
         {
@@ -334,7 +334,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
     } else {
         // General numerical solution by subdivision, fallback
         int cnt = 0, level = 0;
-        AllPointsIntersectingUntrimmed(a, b, &cnt, &level, &inters, seg, this);
+        AllPointsIntersectingUntrimmed(a, b, &cnt, &level, &inters, asSegment, this);
     }
 
     // Remove duplicate intersection points
@@ -355,7 +355,7 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
         // Make sure the point lies within the finite line segment
         Vector pxyz = PointAt(puv.x, puv.y);
         double t = (pxyz.Minus(a)).DivPivoting(ba);
-        if(seg && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
+        if(asSegment && (t > 1 - LENGTH_EPS/bam || t < LENGTH_EPS/bam)) {
             continue;
         }
 
@@ -381,11 +381,12 @@ void SSurface::AllPointsIntersecting(Vector a, Vector b,
 
 void SShell::AllPointsIntersecting(Vector a, Vector b,
                                    List<SInter> *il,
-                                   bool seg, bool trimmed, bool inclTangent)
+                                   bool asSegment, bool trimmed, bool inclTangent)
 {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)) {
-        ss->AllPointsIntersecting(a, b, il, seg, trimmed, inclTangent);
+        ss->AllPointsIntersecting(a, b, il,
+            asSegment, trimmed, inclTangent);
     }
 }
 
@@ -434,7 +435,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     Vector inter_surf_n[2], inter_edge_n[2];
     SSurface *srf;
     for(srf = surface.First(); srf; srf = surface.NextAfter(srf)) {
-        if(srf->LineEntirelyOutsideBbox(ea, eb, true)) continue;
+        if(srf->LineEntirelyOutsideBbox(ea, eb, /*asSegment=*/true)) continue;
 
         SEdgeList *sel = &(srf->edges);
         SEdge *se;
@@ -446,7 +447,7 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
                 if(edge_inters < 2) {
                     // Edge-on-edge case
                     Point2d pm;
-                    srf->ClosestPointTo(p,  &pm, false);
+                    srf->ClosestPointTo(p,  &pm, /*mustConverge=*/false);
                     // A vector normal to the surface, at the intersection point
                     inter_surf_n[edge_inters] = srf->NormalAt(pm);
                     // A vector normal to the intersecting edge (but within the
@@ -519,10 +520,10 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     // the additional error from the line intersection.
 
     for(srf = surface.First(); srf; srf = surface.NextAfter(srf)) {
-        if(srf->LineEntirelyOutsideBbox(ea, eb, true)) continue;
+        if(srf->LineEntirelyOutsideBbox(ea, eb, /*asSegment=*/true)) continue;
 
         Point2d puv;
-        srf->ClosestPointTo(p, &(puv.x), &(puv.y), false);
+        srf->ClosestPointTo(p, &(puv.x), &(puv.y), /*mustConverge=*/false);
         Vector pp = srf->PointAt(puv);
 
         if((pp.Minus(p)).Magnitude() > LENGTH_EPS) continue;
@@ -532,8 +533,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
 
         // Edge-on-face (unless edge-on-edge above superceded)
         Point2d pin, pout;
-        srf->ClosestPointTo(p.Plus(edge_n_in),  &pin,  false);
-        srf->ClosestPointTo(p.Plus(edge_n_out), &pout, false);
+        srf->ClosestPointTo(p.Plus(edge_n_in),  &pin,  /*mustConverge=*/false);
+        srf->ClosestPointTo(p.Plus(edge_n_out), &pout, /*mustConverge=*/false);
 
         Vector surf_n_in  = srf->NormalAt(pin),
                surf_n_out = srf->NormalAt(pout);
@@ -553,7 +554,8 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
         Vector ray = Vector::From(Random(1), Random(1), Random(1));
 
         AllPointsIntersecting(
-            p.Minus(ray), p.Plus(ray), &l, false, true, false);
+            p.Minus(ray), p.Plus(ray), &l,
+                /*asSegment=*/false, /*trimmed=*/true, /*inclTangent=*/false);
 
         // no intersections means it's outside
         *indir  = Class::OUTSIDE;

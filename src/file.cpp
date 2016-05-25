@@ -290,7 +290,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     }
 
     for(i = 0; i < SK.entity.n; i++) {
-        (SK.entity.elem[i]).CalculateNumerical(true);
+        (SK.entity.elem[i]).CalculateNumerical(/*forExport=*/true);
         sv.e = SK.entity.elem[i];
         SaveUsingTable('e');
         fprintf(fh, "AddEntity\n\n");
