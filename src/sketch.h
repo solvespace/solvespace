@@ -299,7 +299,6 @@ public:
 
     // Types of requests
     enum class Type : uint32_t {
-        UNKNOWN                = 0,
         WORKPLANE              = 100,
         DATUM_POINT            = 101,
         LINE_SEGMENT           = 200,
@@ -340,8 +339,6 @@ public:
     static const hEntity    NO_ENTITY;
 
     enum class Type : uint32_t {
-        DATUM_POINT            =  0,
-        UNKNOWN                =  1000,
         POINT_IN_3D            =  2000,
         POINT_IN_2D            =  2001,
         POINT_N_TRANS          =  2010,
@@ -363,7 +360,6 @@ public:
         FACE_N_ROT_TRANS       =  5002,
         FACE_N_TRANS           =  5003,
         FACE_N_ROT_AA          =  5004,
-
 
         WORKPLANE              = 10000,
         LINE_SEGMENT           = 11000,
@@ -609,7 +605,6 @@ public:
     static const hConstraint NO_CONSTRAINT;
 
     enum class Type : uint32_t {
-        UNKNOWN                =  0,
         POINTS_COINCIDENT      =  20,
         PT_PT_DISTANCE         =  30,
         PT_PLANE_DISTANCE      =  31,

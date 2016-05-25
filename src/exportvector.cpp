@@ -230,6 +230,10 @@ public:
                     type.path.push_back(0.0);
                     type.path.push_back(-sw);
                     break;
+
+                case StipplePattern::FREEHAND:
+                case StipplePattern::ZIGZAG:
+                    ssassert(false, "Freehand and zigzag export not implemented");
             }
             dxf->writeLineType(&type);
         }
@@ -419,6 +423,10 @@ public:
                                   st->textAngle, st->textOrigin, c->GetStyle());
                         break;
                     }
+
+                    default:
+                        // Other types of constraints do not have a DXF dimension equivalent.
+                        break;
                 }
             }
         }
@@ -697,6 +705,9 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
         case Constraint::Type::ANGLE:
         case Constraint::Type::COMMENT:
             return c->IsVisible();
+
+        default: // See writeEntities().
+            break;
     }
     return false;
 }
@@ -731,8 +742,6 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
     std::string result;
     switch(pattern) {
         case StipplePattern::CONTINUOUS:
-        case StipplePattern::FREEHAND:
-        case StipplePattern::ZIGZAG:
             return "";
 
         case StipplePattern::DASH:
@@ -754,7 +763,9 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
             result = ssprintf("%.3f_%.3f", scale * 2.0, scale * 0.5);
             break;
 
-        default: ssassert(false, "Unexpected stipple pattern");
+        case StipplePattern::FREEHAND:
+        case StipplePattern::ZIGZAG:
+            ssassert(false, "Freehand and zigzag export not implemented");
     }
     std::replace(result.begin(), result.end(), '_', delimiter);
     return result;

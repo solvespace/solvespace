@@ -346,7 +346,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
     int a, i;
     switch(type) {
         case Type::DRAWING_3D:
-            break;
+            return;
 
         case Type::DRAWING_WORKPLANE: {
             Quaternion q;
@@ -388,7 +388,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             wp.group = h;
             wp.h = h.entity(0);
             entity->Add(&wp);
-            break;
+            return;
         }
 
         case Type::EXTRUDE: {
@@ -428,7 +428,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // Remapped versions of that arbitrary point will be used to
             // provide points on the plane faces.
             MakeExtrusionTopBottomFaces(entity, pt);
-            break;
+            return;
         }
 
         case Type::LATHE: {
@@ -469,7 +469,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 ai++;
             }
-            break;
+            return;
         }
 
         case Type::TRANSLATE: {
@@ -497,7 +497,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         true, false);
                 }
             }
-            break;
+            return;
         }
         case Type::ROTATE: {
             // The center of rotation
@@ -529,7 +529,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         false, true);
                 }
             }
-            break;
+            return;
         }
         case Type::LINKED:
             // The translation vector
@@ -549,10 +549,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     h.param(3), h.param(4), h.param(5), h.param(6),
                     false, false);
             }
-            break;
-
-        default: ssassert(false, "Unexpected group type");
+            return;
     }
+    ssassert(false, "Unexpected group type");
 }
 
 bool Group::IsSolvedOkay() {

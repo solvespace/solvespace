@@ -373,6 +373,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
+                c.type = Type::SYMMETRIC;
             } else if(gs.lineSegments == 1 &&
                                 ((gs.workplanes == 1 && gs.n == 2) ||
                                  (gs.n == 1)))
@@ -382,6 +383,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[1-i];
                 c.ptA = line->point[0];
                 c.ptB = line->point[1];
+                c.type = Type::SYMMETRIC;
             } else if(SS.GW.LockedInWorkplane()
                         && gs.lineSegments == 2 && gs.n == 2)
             {
@@ -415,9 +417,7 @@ void Constraint::MenuConstrain(Command id) {
                           "(symmetric about workplane)\n");
                 return;
             }
-            if(c.type != Type::UNKNOWN) {
-                // Already done, symmetry about a line segment in a workplane
-            } else if(c.entityA.v == Entity::NO_ENTITY.v) {
+            if(c.entityA.v == Entity::NO_ENTITY.v) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
                 if(c.workplane.v == Entity::FREE_IN_3D.v) {
@@ -442,11 +442,7 @@ void Constraint::MenuConstrain(Command id) {
                         Entity::NO_ENTITY);
                     DeleteAllConstraintsFor(Type::VERTICAL, (gs.entity[0]),
                         Entity::NO_ENTITY);
-
                 }
-            } else {
-                // Symmetry with a symmetry plane specified explicitly.
-                c.type = Type::SYMMETRIC;
             }
             AddConstraint(&c);
             break;

@@ -127,7 +127,6 @@ void ssglStippledLine(Vector a, Vector b, double width,
         case StipplePattern::DOT:           stipplePattern = ".";   break;
         case StipplePattern::FREEHAND:      stipplePattern = "~";   break;
         case StipplePattern::ZIGZAG:        stipplePattern = "~__"; break;
-        default: ssassert(false, "Unexpected stipple pattern");
     }
     ssglStippledLine(a, b, width, stipplePattern, stippleScale, maybeFat);
 }

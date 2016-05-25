@@ -221,7 +221,7 @@ static bool KeepRegion(SSurface::CombineAs type, bool opA, SShell::Class shell, 
                 return (inShell && !inFace) || inSame;
             }
 
-        default: ssassert(false, "Unexpected shell type");
+        default: ssassert(false, "Unexpected combine type");
     }
 }
 static bool KeepEdge(SSurface::CombineAs type, bool opA,

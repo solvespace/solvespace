@@ -271,7 +271,9 @@ void GraphicsWindow::GroupSelection() {
                     (gs.arcs)++;
                     break;
 
-                case Entity::Type::CIRCLE:        (gs.circlesOrArcs)++; break;
+                case Entity::Type::CIRCLE:         (gs.circlesOrArcs)++; break;
+
+                default: break;
             }
         }
         if(s->constraint.v) {
@@ -680,21 +682,20 @@ nogrid:;
 
     // Draw the "pending" constraint, i.e. a constraint that would be
     // placed on a line that is almost horizontal or vertical
-    if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT) {
-        if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
-            Constraint c = {};
-            c.group = SS.GW.activeGroup;
-            c.workplane = SS.GW.ActiveWorkplane();
-            c.type = SS.GW.pending.suggestion;
-            c.ptA = Entity::NO_ENTITY;
-            c.ptB = Entity::NO_ENTITY;
-            c.entityA = SS.GW.pending.request.entity(0);
-            c.entityB = Entity::NO_ENTITY;
-            c.other = false;
-            c.other2 = false;
-            // Only draw.
-            c.Draw();
-        }
+    if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT &&
+            SS.GW.pending.hasSuggestion) {
+        Constraint c = {};
+        c.group = SS.GW.activeGroup;
+        c.workplane = SS.GW.ActiveWorkplane();
+        c.type = SS.GW.pending.suggestion;
+        c.ptA = Entity::NO_ENTITY;
+        c.ptB = Entity::NO_ENTITY;
+        c.entityA = SS.GW.pending.request.entity(0);
+        c.entityB = Entity::NO_ENTITY;
+        c.other = false;
+        c.other2 = false;
+        // Only draw.
+        c.Draw();
     }
 
     // Draw the traced path, if one exists

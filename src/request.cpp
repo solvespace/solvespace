@@ -13,20 +13,20 @@ const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
 const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
 const EntReqTable::TableEntry EntReqTable::Table[] = {
-//   request type               entity type       pts   xtra?   norml   dist    description
+// request type                   entity type                 pts   xtra?   norml   dist    description
 { Request::Type::WORKPLANE,       Entity::Type::WORKPLANE,      1,  false,  true,   false, "workplane"      },
-{ Request::Type::DATUM_POINT,     Entity::Type::DATUM_POINT,    1,  false,  false,  false, "datum-point"    },
+{ Request::Type::DATUM_POINT,     (Entity::Type)0,              1,  false,  false,  false, "datum-point"    },
 { Request::Type::LINE_SEGMENT,    Entity::Type::LINE_SEGMENT,   2,  false,  false,  false, "line-segment"   },
 { Request::Type::CUBIC,           Entity::Type::CUBIC,          4,  true,   false,  false, "cubic-bezier"   },
 { Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false, "periodic-cubic" },
 { Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true,  "circle"         },
 { Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false, "arc-of-circle"  },
 { Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       2,  false,  true,   false, "ttf-text"       },
-{ Request::Type::UNKNOWN,         Entity::Type::UNKNOWN,        0,  false,  false,  false, NULL             },
+{ (Request::Type)0,               (Entity::Type)0,              0,  false,  false,  false, NULL             },
 };
 
 const char *EntReqTable::DescriptionForRequest(Request::Type req) {
-    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
+    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
         if(req == Table[i].reqType) {
             return Table[i].description;
         }
@@ -50,7 +50,7 @@ void EntReqTable::CopyEntityInfo(const TableEntry *te, int extraPoints,
 bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
                      Entity::Type *ent, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
+    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
         const TableEntry *te = &(Table[i]);
         if(req == te->reqType) {
             CopyEntityInfo(te, extraPoints,
@@ -64,7 +64,7 @@ bool EntReqTable::GetRequestInfo(Request::Type req, int extraPoints,
 bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
                      Request::Type *req, int *pts, bool *hasNormal, bool *hasDistance)
 {
-    for(int i = 0; Table[i].reqType != Request::Type::UNKNOWN; i++) {
+    for(int i = 0; Table[i].reqType != (Request::Type)0; i++) {
         const TableEntry *te = &(Table[i]);
         if(ent == te->entType) {
             CopyEntityInfo(te, extraPoints,
@@ -76,8 +76,9 @@ bool EntReqTable::GetEntityInfo(Entity::Type ent, int extraPoints,
 }
 
 Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
-    Request::Type req = Request::Type::UNKNOWN;
-    GetEntityInfo(ent, 0, &req, NULL, NULL, NULL);
+    Request::Type req;
+    ssassert(GetEntityInfo(ent, 0, &req, NULL, NULL, NULL),
+             "No entity for request");
     return req;
 }
 
@@ -86,14 +87,13 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
                        IdList<Param,hParam> *param) const
 {
     int points = 0;
-    Entity::Type et = Entity::Type::UNKNOWN;
+    Entity::Type et;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
 
     Entity e = {};
-    EntReqTable::GetRequestInfo(type, extraPoints,
-                    &et, &points, &hasNormal, &hasDistance);
+    EntReqTable::GetRequestInfo(type, extraPoints, &et, &points, &hasNormal, &hasDistance);
 
     // Generate the entity that's specific to this request.
     e.type = et;
@@ -111,7 +111,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         Entity p = {};
         p.workplane = workplane;
         // points start from entity 1, except for datum point case
-        p.h = h.entity(i+((et != Entity::Type::DATUM_POINT) ? 1 : 0));
+        p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
         p.group = group;
         p.style = style;
 
@@ -166,7 +166,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         e.distance = d.h;
     }
 
-    if(et != Entity::Type::DATUM_POINT) entity->Add(&e);
+    if(et != (Entity::Type)0) entity->Add(&e);
 }
 
 std::string Request::DescriptionString() const {

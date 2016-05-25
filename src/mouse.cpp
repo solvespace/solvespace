@@ -276,15 +276,15 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             UpdateDraggedNum(&(c->disp.offset), x, y);
             orig.mouse = mp;
             InvalidateGraphics();
-            break;
+            return;
         }
 
         case Pending::DRAGGING_NEW_LINE_POINT:
             if(!ctrlDown) {
-                SS.GW.pending.suggestion =
-                    SS.GW.SuggestLineConstraint(SS.GW.pending.request);
+                SS.GW.pending.hasSuggestion =
+                    SS.GW.SuggestLineConstraint(SS.GW.pending.request, &SS.GW.pending.suggestion);
             } else {
-                SS.GW.pending.suggestion = Constraint::Type::UNKNOWN;
+                SS.GW.pending.hasSuggestion = false;
             }
         case Pending::DRAGGING_NEW_POINT:
             UpdateDraggedPoint(pending.point, x, y);
@@ -453,17 +453,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         case Pending::DRAGGING_MARQUEE:
             orig.mouse = mp;
             InvalidateGraphics();
-            break;
+            return;
 
-        default: ssassert(false, "Unexpected pending operation");
+        case Pending::NONE:
+        case Pending::COMMAND:
+            ssassert(false, "Unexpected pending operation");
     }
 
-    if(pending.operation != Pending::NONE &&
-       pending.operation != Pending::DRAGGING_CONSTRAINT &&
-       pending.operation != Pending::DRAGGING_MARQUEE)
-    {
-        SS.GenerateAll();
-    }
+    SS.GenerateAll();
 }
 
 void GraphicsWindow::ClearPending() {
@@ -511,11 +508,9 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     if(context.active) return;
 
-    if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT) {
-        if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
-            Constraint::Constrain(SS.GW.pending.suggestion,
-                Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
-        }
+    if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT && pending.hasSuggestion) {
+        Constraint::Constrain(SS.GW.pending.suggestion,
+            Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
     }
 
     if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT ||
@@ -1134,7 +1129,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
         case Pending::DRAGGING_NEW_LINE_POINT: {
             // Constrain the line segment horizontal or vertical if close enough
-            if(SS.GW.pending.suggestion != Constraint::Type::UNKNOWN) {
+            if(SS.GW.pending.hasSuggestion) {
                 Constraint::Constrain(SS.GW.pending.suggestion,
                     Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
             }

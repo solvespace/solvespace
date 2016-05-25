@@ -104,7 +104,6 @@ void SBsp3::InsertHow(BspClass how, STriangle *tr, SMesh *instead) {
             more = m;
             break;
         }
-        default: ssassert(false, "Unexpected BSP insert type");
     }
     return;
 

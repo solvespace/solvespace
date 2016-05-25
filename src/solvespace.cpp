@@ -419,9 +419,8 @@ bool SolveSpaceUI::OkayToStartNewFile() {
 
         case DIALOG_CANCEL:
             return false;
-
-        default: ssassert(false, "Unexpected dialog choice");
     }
+    ssassert(false, "Unexpected dialog choice");
 }
 
 void SolveSpaceUI::UpdateWindowTitle() {

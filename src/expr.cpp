@@ -284,8 +284,13 @@ int Expr::Children() const {
         case Op::ACOS:
             return 1;
 
-        default: ssassert(false, "Unexpected operation");
+        case Op::PAREN:
+        case Op::BINARY_OP:
+        case Op::UNARY_OP:
+        case Op::ALL_RESOLVED:
+            break;
     }
+    ssassert(false, "Unexpected operation");
 }
 
 int Expr::Nodes() const {
@@ -353,8 +358,13 @@ double Expr::Eval() const {
         case Op::ACOS:          return acos(a->Eval());
         case Op::ASIN:          return asin(a->Eval());
 
-        default: ssassert(false, "Unexpected operation");
+        case Op::PAREN:
+        case Op::BINARY_OP:
+        case Op::UNARY_OP:
+        case Op::ALL_RESOLVED:
+            break;
     }
+    ssassert(false, "Unexpected operation");
 }
 
 Expr *Expr::PartialWrt(hParam p) const {
@@ -396,8 +406,13 @@ Expr *Expr::PartialWrt(hParam p) const {
             return (From(-1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
                         ->Times(a->PartialWrt(p));
 
-        default: ssassert(false, "Unexpected operation");
+        case Op::PAREN:
+        case Op::BINARY_OP:
+        case Op::UNARY_OP:
+        case Op::ALL_RESOLVED:
+            break;
     }
+    ssassert(false, "Unexpected operation");
 }
 
 uint64_t Expr::ParamsUsed() const {
@@ -487,7 +502,11 @@ Expr *Expr::FoldConstants() {
             }
             break;
 
-        default: ssassert(false, "Unexpected operation");
+        case Op::PAREN:
+        case Op::BINARY_OP:
+        case Op::UNARY_OP:
+        case Op::ALL_RESOLVED:
+            ssassert(false, "Unexpected operation");
     }
     return n;
 }
@@ -547,7 +566,6 @@ hParam Expr::ReferencedParams(ParamList *pl) const {
 //-----------------------------------------------------------------------------
 
 std::string Expr::Print() const {
-
     char c;
     switch(op) {
         case Op::PARAM:     return ssprintf("param(%08x)", parh.v);
@@ -571,8 +589,13 @@ p:
         case Op::ASIN:      return "(asin " + a->Print() + ")";
         case Op::ACOS:      return "(acos " + a->Print() + ")";
 
-        default: ssassert(false, "Unexpected operation");
+        case Op::PAREN:
+        case Op::BINARY_OP:
+        case Op::UNARY_OP:
+        case Op::ALL_RESOLVED:
+            break;
     }
+    ssassert(false, "Unexpected operation");
 }
 
 

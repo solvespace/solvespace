@@ -503,6 +503,8 @@ void TextWindow::ShowGroupSolveInfo() {
         case SolveResult::TOO_MANY_UNKNOWNS:
             Printf(true, "Too many unknowns in a single group!");
             return;
+
+        default: ssassert(false, "Unexpected solve result");
     }
 
     for(int i = 0; i < g->solved.remove.n; i++) {

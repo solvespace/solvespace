@@ -598,13 +598,14 @@ public:
 
         const char          *description;
 
-        Constraint::Type    suggestion;
+        bool                 hasSuggestion;
+        Constraint::Type     suggestion;
     } pending;
     void ClearPending();
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
-    ConstraintBase::Type SuggestLineConstraint(hRequest lineSegment);
+    bool SuggestLineConstraint(hRequest lineSegment, ConstraintBase::Type *type);
 
     Vector SnapToGrid(Vector p);
     bool ConstrainPointByHovered(hEntity pt);

@@ -198,8 +198,6 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             last  = i;
             break;
         }
-
-        default: ssassert(false, "Unexpected generation mode");
     }
 
     // If we're generating entities for display, first we need to find
@@ -458,6 +456,9 @@ void SolveSpaceUI::MarkDraggedParams() {
                     sys.dragged.Add(&(pt->param[0]));
                     sys.dragged.Add(&(pt->param[1]));
                     break;
+
+                default: // Only the entities above can be dragged.
+                    break;
             }
         }
     }
@@ -468,6 +469,9 @@ void SolveSpaceUI::MarkDraggedParams() {
             switch(dist->type) {
                 case Entity::Type::DISTANCE:
                     sys.dragged.Add(&(dist->param[0]));
+                    break;
+
+                default: // Only the entities above can be dragged.
                     break;
             }
         }
@@ -482,7 +486,9 @@ void SolveSpaceUI::MarkDraggedParams() {
                     sys.dragged.Add(&(norm->param[2]));
                     sys.dragged.Add(&(norm->param[3]));
                     break;
-                // other types are locked, so not draggable
+
+                default: // Only the entities above can be dragged.
+                    break;
             }
         }
     }

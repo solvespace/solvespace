@@ -446,8 +446,10 @@ bool Group::IsMeshGroup() {
         case Group::Type::ROTATE:
         case Group::Type::TRANSLATE:
             return true;
+
+        default:
+            return false;
     }
-    return false;
 }
 
 void Group::DrawDisplayItems(Group::Type t) {

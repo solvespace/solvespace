@@ -536,7 +536,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
 
             DoLineWithArrows(ref, ap, bp, false);
             DoLabel(ref, labelPos, gr, gu);
-            break;
+            return;
         }
 
         case Type::PROJ_PT_DISTANCE: {
@@ -556,7 +556,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
 
             DoLineWithArrows(ref, ap, bpp, false);
             DoLabel(ref, labelPos, gr, gu);
-            break;
+            return;
         }
 
         case Type::PT_FACE_DISTANCE:
@@ -583,7 +583,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             }
 
             DoLabel(ref, labelPos, gr, gu);
-            break;
+            return;
         }
 
         case Type::PT_LINE_DISTANCE: {
@@ -635,7 +635,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Vector c2 = (lA.ScaledBy(1-t)).Plus(lB.ScaledBy(t));
                 DoProjectedPoint(&c2);
             }
-            break;
+            return;
         }
 
         case Type::DIAMETER: {
@@ -657,7 +657,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector topLeft;
             DoLabel(ref, &topLeft, gr, gu);
             if(labelPos) *labelPos = topLeft;
-            break;
+            return;
         }
 
         case Type::POINTS_COINCIDENT: {
@@ -671,7 +671,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                     // constraint cannot be selected. But that's okay.
                     dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 3);
                 }
-                break;
+                return;
             }
 
             if(dogd.drawing) {
@@ -704,7 +704,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
 
                 }
             }
-            break;
+            return;
         }
 
         case Type::PT_ON_CIRCLE:
@@ -733,7 +733,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             LineDrawOrGetDistance(p.Plus (r).Minus(d), p.Minus(r).Minus(d));
             LineDrawOrGetDistance(p.Minus(r).Minus(d), p.Minus(r).Plus (d));
             LineDrawOrGetDistance(p.Minus(r).Plus (d), p.Plus (r).Plus (d));
-            break;
+            return;
         }
 
         case Type::WHERE_DRAGGED: {
@@ -753,7 +753,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 ur = ur.RotatedAbout(p, gn, PI/2);
                 uu = uu.RotatedAbout(p, gn, PI/2);
             }
-            break;
+            return;
         }
 
         case Type::SAME_ORIENTATION: {
@@ -769,7 +769,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 LineDrawOrGetDistance(p.Plus(u), p.Minus(u).Plus(n));
                 LineDrawOrGetDistance(p.Minus(u), p.Plus(u).Plus(n));
             }
-            break;
+            return;
         }
 
         case Type::EQUAL_ANGLE: {
@@ -800,7 +800,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 dc.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
             if(refps) refps[1] = ref;
 
-            break;
+            return;
         }
 
         case Type::ANGLE: {
@@ -820,7 +820,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             DoArcForAngle(a0, da, b0, db, disp.offset, &ref, /*trim=*/true);
             DoLabel(ref, labelPos, gr, gu);
             if(refps) refps[0] = refps[1] = ref;
-            break;
+            return;
         }
 
         case Type::PERPENDICULAR: {
@@ -859,7 +859,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 LineDrawOrGetDistance(m, m.Plus(u));
                 if(refps) refps[i] = m;
             }
-            break;
+            return;
         }
 
         case Type::CURVE_CURVE_TANGENT:
@@ -937,7 +937,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Point2d ref = SS.GW.ProjectPoint(textAt);
                 dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
             }
-            break;
+            return;
         }
 
         case Type::PARALLEL: {
@@ -952,7 +952,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 LineDrawOrGetDistance(p.Minus(u), p.Minus(u).Plus(n));
                 if(refps) refps[i] = p.Plus(n.ScaledBy(0.5));
             }
-            break;
+            return;
         }
 
         case Type::EQUAL_RADIUS: {
@@ -961,7 +961,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 DoEqualRadiusTicks(i == 0 ? entityA : entityB, &ref);
                 if(refps) refps[i] = ref;
             }
-            break;
+            return;
         }
 
         case Type::EQUAL_LINE_ARC_LEN: {
@@ -976,7 +976,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 refps[0] = refa;
                 refps[1] = refb;
             }
-            break;
+            return;
         }
 
         case Type::LENGTH_RATIO:
@@ -1001,7 +1001,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
                 DoLabel(ref, labelPos, gr, gu);
             }
-            break;
+            return;
         }
 
         case Type::EQ_LEN_PT_LINE_D: {
@@ -1031,7 +1031,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector refb;
             DoEqualLenTicks(pt, closest, gn, &refb);
             if(refps) refps[1] = refb;
-            break;
+            return;
         }
 
         case Type::EQ_PT_LN_DISTANCES: {
@@ -1055,7 +1055,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 DoEqualLenTicks(pt, closest, gn, &ref);
                 if(refps) refps[i] = ref;
             }
-            break;
+            return;
         }
 
         {
@@ -1099,7 +1099,7 @@ s:
                 LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn,  0.6)));
                 LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn, -0.6)));
             }
-            break;
+            return;
         }
 
         case Type::AT_MIDPOINT:
@@ -1173,7 +1173,7 @@ s:
                     }
                 }
             }
-            break;
+            return;
 
         case Type::COMMENT: {
             if(dogd.drawing && disp.style.v) {
@@ -1191,11 +1191,10 @@ s:
             }
             if(refps) refps[0] = refps[1] = disp.offset;
             DoLabel(disp.offset, labelPos, u, v);
-            break;
+            return;
         }
-
-        default: ssassert(false, "Unexpected constraint type");
     }
+    ssassert(false, "Unexpected constraint type");
 }
 
 void Constraint::Draw() {

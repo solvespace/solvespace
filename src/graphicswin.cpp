@@ -1063,7 +1063,7 @@ void GraphicsWindow::ToggleBool(bool *v) {
     SS.ScheduleShowTW();
 }
 
-Constraint::Type GraphicsWindow::SuggestLineConstraint(hRequest request) {
+bool GraphicsWindow::SuggestLineConstraint(hRequest request, Constraint::Type *type) {
     if(LockedInWorkplane()) {
         Entity *ptA = SK.GetEntity(request.entity(1)),
                *ptB = SK.GetEntity(request.entity(2));
@@ -1077,13 +1077,13 @@ Constraint::Type GraphicsWindow::SuggestLineConstraint(hRequest request) {
         double dv = av->Minus(bv)->Eval();
 
         const double TOLERANCE_RATIO = 0.02;
-        if(fabs(dv) > LENGTH_EPS && fabs(du / dv) < TOLERANCE_RATIO)
-            return Constraint::Type::VERTICAL;
-        else if(fabs(du) > LENGTH_EPS && fabs(dv / du) < TOLERANCE_RATIO)
-            return Constraint::Type::HORIZONTAL;
-        else
-            return Constraint::Type::UNKNOWN;
-    } else {
-        return Constraint::Type::UNKNOWN;
+        if(fabs(dv) > LENGTH_EPS && fabs(du / dv) < TOLERANCE_RATIO) {
+            *type = Constraint::Type::VERTICAL;
+            return true;
+        } else if(fabs(du) > LENGTH_EPS && fabs(dv / du) < TOLERANCE_RATIO) {
+            *type = Constraint::Type::HORIZONTAL;
+            return true;
+        }
     }
+    return false;
 }

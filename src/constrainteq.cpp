@@ -212,7 +212,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
     switch(type) {
         case Type::PT_PT_DISTANCE:
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
-            break;
+            return;
 
         case Type::PROJ_PT_DISTANCE: {
             ExprVector pA = SK.GetEntity(ptA)->PointGetExprs(),
@@ -223,18 +223,18 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             pp = pp.WithMagnitude(Expr::From(1.0));
 
             AddEq(l, (dp.Dot(pp))->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::PT_LINE_DISTANCE:
             AddEq(l,
                 PointLineDistance(workplane, ptA, entityA)->Minus(exA), 0);
-            break;
+            return;
 
         case Type::PT_PLANE_DISTANCE: {
             ExprVector pt = SK.GetEntity(ptA)->PointGetExprs();
             AddEq(l, (PointPlaneDistance(pt, entityA))->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::PT_FACE_DISTANCE: {
@@ -243,7 +243,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             ExprVector p0 = f->FaceGetPointExprs();
             ExprVector n = f->FaceGetNormalExprs();
             AddEq(l, (pt.Minus(p0)).Dot(n)->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::EQUAL_LENGTH_LINES: {
@@ -251,7 +251,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             EntityBase *b = SK.GetEntity(entityB);
             AddEq(l, Distance(workplane, a->point[0], a->point[1])->Minus(
                      Distance(workplane, b->point[0], b->point[1])), 0);
-            break;
+            return;
         }
 
         // These work on distance squared, since the pt-line distances are
@@ -261,13 +261,13 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             Expr *d1 = Distance(workplane, forLen->point[0], forLen->point[1]);
             Expr *d2 = PointLineDistance(workplane, ptA, entityB);
             AddEq(l, (d1->Square())->Minus(d2->Square()), 0);
-            break;
+            return;
         }
         case Type::EQ_PT_LN_DISTANCES: {
             Expr *d1 = PointLineDistance(workplane, ptA, entityA);
             Expr *d2 = PointLineDistance(workplane, ptB, entityB);
             AddEq(l, (d1->Square())->Minus(d2->Square()), 0);
-            break;
+            return;
         }
 
         case Type::LENGTH_RATIO: {
@@ -276,7 +276,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             Expr *la = Distance(workplane, a->point[0], a->point[1]);
             Expr *lb = Distance(workplane, b->point[0], b->point[1]);
             AddEq(l, (la->Div(lb))->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::LENGTH_DIFFERENCE: {
@@ -285,14 +285,14 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             Expr *la = Distance(workplane, a->point[0], a->point[1]);
             Expr *lb = Distance(workplane, b->point[0], b->point[1]);
             AddEq(l, (la->Minus(lb))->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::DIAMETER: {
             EntityBase *circle = SK.GetEntity(entityA);
             Expr *r = circle->CircleGetRadiusExpr();
             AddEq(l, (r->Times(Expr::From(2)))->Minus(exA), 0);
-            break;
+            return;
         }
 
         case Type::EQUAL_RADIUS: {
@@ -300,7 +300,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             EntityBase *c2 = SK.GetEntity(entityB);
             AddEq(l, (c1->CircleGetRadiusExpr())->Minus(
                       c2->CircleGetRadiusExpr()), 0);
-            break;
+            return;
         }
 
         case Type::EQUAL_LINE_ARC_LEN: {
@@ -343,7 +343,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
 
             // And write the equation; r*theta = L
             AddEq(l, (r->Times(theta))->Minus(ll), 0);
-            break;
+            return;
         }
 
         case Type::POINTS_COINCIDENT: {
@@ -363,14 +363,14 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 AddEq(l, au->Minus(bu), 0);
                 AddEq(l, av->Minus(bv), 1);
             }
-            break;
+            return;
         }
 
         case Type::PT_IN_PLANE:
             // This one works the same, whether projected or not.
             AddEq(l, PointPlaneDistance(
                         SK.GetEntity(ptA)->PointGetExprs(), entityA), 0);
-            break;
+            return;
 
         case Type::PT_ON_FACE: {
             // a plane, n dot (p - p0) = 0
@@ -379,7 +379,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             ExprVector p0 = f->FaceGetPointExprs();
             ExprVector n = f->FaceGetNormalExprs();
             AddEq(l, (p.Minus(p0)).Dot(n), 0);
-            break;
+            return;
         }
 
         case Type::PT_ON_LINE:
@@ -412,7 +412,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             } else {
                 AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
             }
-            break;
+            return;
 
         case Type::PT_ON_CIRCLE: {
             // This actually constrains the point to lie on the cylinder.
@@ -430,7 +430,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
 
             AddEq(l,
                 ((du->Square())->Plus(dv->Square()))->Minus(r->Square()), 0);
-            break;
+            return;
         }
 
         case Type::AT_MIDPOINT:
@@ -470,7 +470,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                     AddEq(l, PointPlaneDistance(m, entityB), 0);
                 }
             }
-            break;
+            return;
 
         case Type::SYMMETRIC:
             if(workplane.v == EntityBase::FREE_IN_3D.v) {
@@ -521,7 +521,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 plane->WorkplaneGetPlaneExprs(&n, &d);
                 AddEq(l, (n.Cross(u.Cross(v))).Dot(pa.Minus(pb)), 1);
             }
-            break;
+            return;
 
         case Type::SYMMETRIC_HORIZ:
         case Type::SYMMETRIC_VERT: {
@@ -539,7 +539,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 AddEq(l, au->Minus(bu), 0);
                 AddEq(l, av->Plus(bv), 1);
             }
-            break;
+            return;
         }
 
         case Type::SYMMETRIC_LINE: {
@@ -572,7 +572,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                           (dlu->Times(lav->Minus(pbv))));
             AddEq(l, dista->Plus(distb), 1);
 
-            break;
+            return;
         }
 
         case Type::HORIZONTAL:
@@ -594,7 +594,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             b->PointGetExprsInWorkplane(workplane, &bu, &bv);
 
             AddEq(l, (type == Type::HORIZONTAL) ? av->Minus(bv) : au->Minus(bu), 0);
-            break;
+            return;
         }
 
         case Type::SAME_ORIENTATION: {
@@ -621,7 +621,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             } else {
                 AddEq(l, d2, 2);
             }
-            break;
+            return;
         }
 
         case Type::PERPENDICULAR:
@@ -650,7 +650,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 // is equal to zero, perpendicular.
                 AddEq(l, c, 0);
             }
-            break;
+            return;
         }
 
         case Type::EQUAL_ANGLE: {
@@ -669,7 +669,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             Expr *ccd = DirectionCosine(workplane, ce, de);
 
             AddEq(l, cab->Minus(ccd), 0);
-            break;
+            return;
         }
 
         case Type::ARC_LINE_TANGENT: {
@@ -684,7 +684,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
 
             // The line is perpendicular to the radius
             AddEq(l, ld.Dot(ac.Minus(ap)), 0);
-            break;
+            return;
         }
 
         case Type::CUBIC_LINE_TANGENT: {
@@ -708,7 +708,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 ExprVector wn = w->Normal()->NormalExprsN();
                 AddEq(l, (a.Cross(b)).Dot(wn), 0);
             }
-            break;
+            return;
         }
 
         case Type::CURVE_CURVE_TANGENT: {
@@ -746,7 +746,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             } else {
                 AddEq(l, (dir[0]).Dot(dir[1]), 0);
             }
-            break;
+            return;
         }
 
         case Type::PARALLEL: {
@@ -765,7 +765,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 ExprVector wn = w->Normal()->NormalExprsN();
                 AddEq(l, (a.Cross(b)).Dot(wn), 0);
             }
-            break;
+            return;
         }
 
         case Type::WHERE_DRAGGED: {
@@ -783,13 +783,12 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                 AddEq(l, u->Minus(Expr::From(u->Eval())), 0);
                 AddEq(l, v->Minus(Expr::From(v->Eval())), 1);
             }
-            break;
+            return;
         }
 
         case Type::COMMENT:
-            break;
-
-        default: ssassert(false, "Unexpected constraint ID");
+            return;
     }
+    ssassert(false, "Unexpected constraint ID");
 }
 

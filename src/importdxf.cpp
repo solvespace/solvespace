@@ -493,14 +493,16 @@ public:
         processPoint(hr.entity(2));
 
         if(constrainHV) {
-            Constraint::Type cType = Constraint::Type::UNKNOWN;
+            bool hasConstraint = false;
+            Constraint::Type cType;
             if(fabs(p0.x - p1.x) < LENGTH_EPS) {
+                hasConstraint = true;
                 cType = Constraint::Type::VERTICAL;
-            }
-            else if(fabs(p0.y - p1.y) < LENGTH_EPS) {
+            } else if(fabs(p0.y - p1.y) < LENGTH_EPS) {
+                hasConstraint = true;
                 cType = Constraint::Type::HORIZONTAL;
             }
-            if(cType != Constraint::Type::UNKNOWN) {
+            if(hasConstraint) {
                 Constraint::Constrain(
                     cType,
                     Entity::NO_ENTITY,

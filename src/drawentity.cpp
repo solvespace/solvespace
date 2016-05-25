@@ -223,8 +223,17 @@ Vector Entity::GetReferencePos() {
             return b.Plus(a.Minus(b).ScaledBy(0.5));
         }
 
-        default: ssassert(false, "Unexpected entity type");
+        case Type::DISTANCE:
+        case Type::DISTANCE_N_COPY:
+        case Type::FACE_NORMAL_PT:
+        case Type::FACE_XPROD:
+        case Type::FACE_N_ROT_TRANS:
+        case Type::FACE_N_TRANS:
+        case Type::FACE_N_ROT_AA:
+        case Type::WORKPLANE:
+            break;
     }
+    ssassert(false, "Unexpected entity type");
 }
 
 bool Entity::IsStylable() const {
@@ -574,7 +583,7 @@ void Entity::DrawOrGetDistance() {
                 Point2d pp = SS.GW.ProjectPoint(v);
                 dogd.dmin = pp.DistanceTo(dogd.mp) - 6;
             }
-            break;
+            return;
         }
 
         case Type::NORMAL_N_COPY:
@@ -643,13 +652,13 @@ void Entity::DrawOrGetDistance() {
             }
             if(dogd.drawing)
                 ssglDepthRangeLockToFront(false);
-            break;
+            return;
         }
 
         case Type::DISTANCE:
         case Type::DISTANCE_N_COPY:
             // These are used only as data structures, nothing to display.
-            break;
+            return;
 
         case Type::WORKPLANE: {
             Vector p;
@@ -703,7 +712,7 @@ void Entity::DrawOrGetDistance() {
                 // the plane.
                 dogd.dmin += 3;
             }
-            break;
+            return;
         }
 
         case Type::LINE_SEGMENT:
@@ -711,9 +720,17 @@ void Entity::DrawOrGetDistance() {
         case Type::ARC_OF_CIRCLE:
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
-        case Type::TTF_TEXT:
-            // Nothing but the curve(s).
-            break;
+        case Type::TTF_TEXT: {
+            // Nothing but the curves; generate the rational polynomial curves for
+            // everything, then piecewise linearize them, and display those.
+            SEdgeList *sel = GetOrGenerateEdges();
+            dogd.data = -1;
+            for(int i = 0; i < sel->l.n; i++) {
+                SEdge *se = &(sel->l.elem[i]);
+                LineDrawOrGetDistance(se->a, se->b, true, se->auxB);
+            }
+            return;
+        }
 
         case Type::FACE_NORMAL_PT:
         case Type::FACE_XPROD:
@@ -721,18 +738,8 @@ void Entity::DrawOrGetDistance() {
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
             // Do nothing; these are drawn with the triangle mesh
-            break;
-
-        default: ssassert(false, "Unexpected entity type");
+            return;
     }
-
-    // And draw the curves; generate the rational polynomial curves for
-    // everything, then piecewise linearize them, and display those.
-    SEdgeList *sel = GetOrGenerateEdges();
-    dogd.data = -1;
-    for(int i = 0; i < sel->l.n; i++) {
-        SEdge *se = &(sel->l.elem[i]);
-        LineDrawOrGetDistance(se->a, se->b, true, se->auxB);
-    }
+    ssassert(false, "Unexpected entity type");
 }
 

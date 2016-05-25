@@ -228,8 +228,6 @@ default: dbp("bad constraint type %d", sc->type); return;
         case SolveResult::TOO_MANY_UNKNOWNS:
             ssys->result = SLVS_RESULT_TOO_MANY_UNKNOWNS;
             break;
-
-        default: ssassert(false, "Unexpected solver result");
     }
 
     // Write the new parameter values back to our caller.

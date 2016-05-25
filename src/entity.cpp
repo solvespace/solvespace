@@ -780,7 +780,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             AddEq(l, ra->Minus(rb), 0);
             break;
         }
-        default:;
-            // Most entities do not generate equations.
+        default: // Most entities do not generate equations.
+            break;
     }
 }

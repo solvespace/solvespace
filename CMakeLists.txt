@@ -51,6 +51,10 @@ if(MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
     # Same for the (C99) __func__ special variable; we use it only in C++ code.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
+
+    # We rely on these /we flags. They correspond to the GNU-style flags below as
+    # follows: /w4062=-Wswitch
+    set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
@@ -65,8 +69,8 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     if(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
         set(WARNING_FLAGS "${WARNING_FLAGS} -Wfloat-conversion")
     endif()
-    set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 ${WARNING_FLAGS}")
+    # We rely on these -Werror flags.
+    set(WARNING_FLAGS   "${WARNING_FLAGS} -Werror=switch")
 endif()
 
 if(MINGW)
@@ -96,6 +100,9 @@ if(SANITIZE)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
 endif()
+
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 
 # dependencies
 
