@@ -7,13 +7,13 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-static const char *SPACER = "";
-static struct {
-    const char  *iconName;
-    Command       menu;
-    const char  *tip;
-    Pixmap       icon;
-} Toolbar[] = {
+struct ToolIcon {
+    std::string name;
+    Command     command;
+    std::string tooltip;
+    Pixmap      pixmap;
+};
+static ToolIcon Toolbar[] = {
     { "line",            Command::LINE_SEGMENT,   "Sketch line segment",                              {} },
     { "rectangle",       Command::RECTANGLE,      "Sketch rectangle",                                 {} },
     { "circle",          Command::CIRCLE,         "Sketch circle",                                    {} },
@@ -24,7 +24,7 @@ static struct {
     { "point",           Command::DATUM_POINT,    "Sketch datum point",                               {} },
     { "construction",    Command::CONSTRUCTION,   "Toggle construction",                              {} },
     { "trim",            Command::SPLIT_CURVES,   "Split lines / curves where they intersect",        {} },
-    { SPACER, Command::NONE, 0, {} },
+    { "",                Command::NONE,           "",                                                 {} },
 
     { "length",          Command::DISTANCE_DIA,   "Constrain distance / diameter / length",           {} },
     { "angle",           Command::ANGLE,          "Constrain angle",                                  {} },
@@ -38,7 +38,7 @@ static struct {
     { "same-orientation",Command::ORIENTED_SAME,  "Constrain normals in same orientation",            {} },
     { "other-supp",      Command::OTHER_ANGLE,    "Other supplementary angle",                        {} },
     { "ref",             Command::REFERENCE,      "Toggle reference dimension",                       {} },
-    { SPACER, Command::NONE, 0, {} },
+    { "",                Command::NONE,           "",                                                 {} },
 
     { "extrude",         Command::GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
     { "lathe",           Command::GROUP_LATHE,    "New group rotating active sketch",                 {} },
@@ -47,11 +47,10 @@ static struct {
     { "sketch-in-plane", Command::GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
     { "sketch-in-3d",    Command::GROUP_3D,       "New group in 3d",                                  {} },
     { "assemble",        Command::GROUP_LINK,     "New group linking / assembling file",              {} },
-    { SPACER, Command::NONE, 0, {} },
+    { "",                Command::NONE,           "",                                                 {} },
 
     { "in3d",            Command::NEAREST_ISO,    "Nearest isometric view",                           {} },
     { "ontoworkplane",   Command::ONTO_WORKPLANE, "Align view to active workplane",                   {} },
-    { NULL, Command::NONE, 0, {} }
 };
 
 void GraphicsWindow::ToolbarDraw() {
@@ -141,8 +140,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     } toolTip = { false, NULL };
 
     bool leftpos = true;
-    for(i = 0; Toolbar[i].iconName; i++) {
-        if(Toolbar[i].iconName == SPACER) {
+    for(ToolIcon &icon : Toolbar) {
+        if(icon.name == "") { // spacer
             if(!leftpos) {
                 leftpos = true;
                 y -= 32;
@@ -164,39 +163,38 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             continue;
         }
 
-        if(Toolbar[i].icon.IsEmpty()) {
-            std::string name = ssprintf("icons/graphics-window/%s.png", Toolbar[i].iconName);
-            Toolbar[i].icon = LoadPNG(name);
+        if(icon.pixmap.IsEmpty()) {
+            icon.pixmap = LoadPNG("icons/graphics-window/" + icon.name + ".png");
         }
 
         if(paint) {
             glColor4d(0, 0, 0, 1.0);
-            Point2d o = { (double)(x - Toolbar[i].icon.width  / 2),
-                          (double)(y - Toolbar[i].icon.height / 2) };
-            ssglDrawPixmap(Toolbar[i].icon, o, /*flip=*/true);
+            Point2d o = { (double)(x - icon.pixmap.width  / 2),
+                          (double)(y - icon.pixmap.height / 2) };
+            ssglDrawPixmap(icon.pixmap, o, /*flip=*/true);
 
-            if(toolbarHovered == Toolbar[i].menu ||
+            if(toolbarHovered == icon.command ||
                (pending.operation == Pending::COMMAND &&
-                pending.command == Toolbar[i].menu)) {
+                pending.command == icon.command)) {
                 // Highlight the hovered or pending item.
                 glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;
                 ssglAxisAlignedQuad(x+boxhw, x-boxhw, y+boxhw, y-boxhw);
             }
 
-            if(toolbarTooltipped == Toolbar[i].menu) {
+            if(toolbarTooltipped == icon.command) {
                 // Display the tool tip for this item; postpone till later
                 // so that no one draws over us. Don't need position since
                 // that's just wherever the mouse is.
                 toolTip.show = true;
-                toolTip.str = Toolbar[i].tip;
+                toolTip.str = icon.tooltip.c_str();
             }
         } else {
             int boxhw = 16;
             if(mx < (x+boxhw) && mx > (x - boxhw) &&
                my < (y+boxhw) && my > (y - boxhw))
             {
-                if(menuHit) *menuHit = Toolbar[i].menu;
+                if(menuHit) *menuHit = icon.command;
             }
         }
 
