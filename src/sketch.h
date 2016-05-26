@@ -36,13 +36,14 @@ enum class PolyError : uint32_t {
 
 enum class StipplePattern : uint32_t {
     CONTINUOUS     = 0,
-    DASH           = 1,
-    LONG_DASH      = 2,
-    DASH_DOT       = 3,
-    DASH_DOT_DOT   = 4,
-    DOT            = 5,
-    FREEHAND       = 6,
-    ZIGZAG         = 7,
+    SHORT_DASH     = 1,
+    DASH           = 2,
+    LONG_DASH      = 3,
+    DASH_DOT       = 4,
+    DASH_DOT_DOT   = 5,
+    DOT            = 6,
+    FREEHAND       = 7,
+    ZIGZAG         = 8,
 
     LAST           = ZIGZAG
 };

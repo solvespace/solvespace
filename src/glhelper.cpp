@@ -120,6 +120,7 @@ void ssglStippledLine(Vector a, Vector b, double width,
     const char *stipplePattern;
     switch(stippleType) {
         case StipplePattern::CONTINUOUS:    ssglLine(a, b, width, maybeFat); return;
+        case StipplePattern::SHORT_DASH:    stipplePattern = "-  "; break;
         case StipplePattern::DASH:          stipplePattern = "- ";  break;
         case StipplePattern::LONG_DASH:     stipplePattern = "_ ";  break;
         case StipplePattern::DASH_DOT:      stipplePattern = "-.";  break;

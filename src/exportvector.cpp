@@ -200,6 +200,11 @@ public:
                 case StipplePattern::CONTINUOUS:
                     break;
 
+                case StipplePattern::SHORT_DASH:
+                    type.path.push_back(sw);
+                    type.path.push_back(-sw * 2.0);
+                    break;
+
                 case StipplePattern::DASH:
                     type.path.push_back(sw);
                     type.path.push_back(-sw);
@@ -715,6 +720,7 @@ bool DxfFileWriter::NeedToOutput(Constraint *c) {
 const char *DxfFileWriter::lineTypeName(StipplePattern stippleType) {
     switch(stippleType) {
         case StipplePattern::CONTINUOUS:   return "CONTINUOUS";
+        case StipplePattern::SHORT_DASH:   return "DASHED";
         case StipplePattern::DASH:         return "DASHED";
         case StipplePattern::LONG_DASH:    return "DASHEDX2";
         case StipplePattern::DASH_DOT:     return "DASHDOT";
@@ -744,6 +750,9 @@ static std::string MakeStipplePattern(StipplePattern pattern, double scale, char
         case StipplePattern::CONTINUOUS:
             return "";
 
+        case StipplePattern::SHORT_DASH:
+            result = ssprintf("%.3f_%.3f", scale, scale * 2.0);
+            break;
         case StipplePattern::DASH:
             result = ssprintf("%.3f_%.3f", scale, scale);
             break;

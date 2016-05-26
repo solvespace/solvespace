@@ -777,6 +777,7 @@ void TextWindow::ShowStyleInfo() {
     const size_t patternCount = (size_t)StipplePattern::LAST + 1;
     const char *patternsSource[patternCount] = {
         "___________",
+        "-  -  -  - ",
         "- - - - - -",
         "__ __ __ __",
         "-.-.-.-.-.-",
