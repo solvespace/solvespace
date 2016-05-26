@@ -83,12 +83,13 @@ void Style::CreateDefaultStyle(hStyle h) {
     SK.style.Add(&ns);
 }
 
-void Style::FillDefaultStyle(Style *s, const Default *d) {
+void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     if(d == NULL) d = &Defaults[0];
-    s->color         = CnfThawColor(d->color, CnfColor(d->cnfPrefix));
-    s->width         = CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    s->color         = (factory) ? d->color : CnfThawColor(d->color, CnfColor(d->cnfPrefix));
+    s->width         = (factory) ? d->width : CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     s->widthAs       = UnitsAs::PIXELS;
-    s->textHeight    = CnfThawFloat(DEFAULT_TEXT_HEIGHT, CnfTextHeight(d->cnfPrefix));
+    s->textHeight    = (factory) ? DEFAULT_TEXT_HEIGHT 
+                                 : CnfThawFloat(DEFAULT_TEXT_HEIGHT, CnfTextHeight(d->cnfPrefix));
     s->textHeightAs  = UnitsAs::PIXELS;
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
@@ -106,7 +107,7 @@ void Style::LoadFactoryDefaults() {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
         Style *s = Get(d->h);
-        FillDefaultStyle(s, d);
+        FillDefaultStyle(s, d, /*factory=*/true);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
     SS.bgImage.pixmap.Clear();
