@@ -221,49 +221,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     SK.param.MoveSelfInto(&prev);
     SK.entity.Clear();
 
-    int64_t inTime = GetMilliseconds();
-
-    bool displayedStatusMessage = false;
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-
-        int64_t now = GetMilliseconds();
-        // Display the status message if we've taken more than 400 ms, or
-        // if we've taken 200 ms but we're not even halfway done, or if
-        // we've already started displaying the status message.
-        if( (now - inTime > 400) ||
-           ((now - inTime > 200) && i < (SK.groupOrder.n / 2)) ||
-           displayedStatusMessage)
-        {
-            displayedStatusMessage = true;
-            std::string msg = ssprintf("generating group %d/%d", i, SK.groupOrder.n);
-
-            int w, h;
-            GetGraphicsWindowSize(&w, &h);
-            glDrawBuffer(GL_FRONT);
-            glViewport(0, 0, w, h);
-            glLoadIdentity();
-            glTranslated(-1, 1, 0);
-            glScaled(2.0/w, 2.0/h, 1.0);
-            glDisable(GL_DEPTH_TEST);
-
-            double left = 80, top = -20, width = 240, height = 24;
-            glColor3d(0.9, 0.8, 0.8);
-            ssglAxisAlignedQuad(left, left+width, top, top-height);
-            ssglLineWidth(1);
-            glColor3d(0.0, 0.0, 0.0);
-            ssglAxisAlignedLineLoop(left, left+width, top, top-height);
-
-            ssglInitializeBitmapFont();
-            glColor3d(0, 0, 0);
-            glPushMatrix();
-                glTranslated(left+8, top-20, 0);
-                glScaled(1, -1, 1);
-                ssglBitmapText(msg, Vector::From(0, 0, 0));
-            glPopMatrix();
-            glFlush();
-            glDrawBuffer(GL_BACK);
-        }
 
         // The group may depend on entities or other groups, to define its
         // workplane geometry or for its operands. Those must already exist
