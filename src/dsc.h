@@ -195,6 +195,11 @@ public:
         return prev + 1;
     }
 
+    T *begin() { return &elem[0]; }
+    T *end() { return &elem[n]; }
+    const T *begin() const { return &elem[0]; }
+    const T *end() const { return &elem[n]; }
+
     void ClearTags() {
         int i;
         for(i = 0; i < n; i++) {
@@ -350,6 +355,11 @@ public:
         if(prev - elem == (n - 1)) return NULL;
         return prev + 1;
     }
+
+    T *begin() { return &elem[0]; }
+    T *end() { return &elem[n]; }
+    const T *begin() const { return &elem[0]; }
+    const T *end() const { return &elem[n]; }
 
     void ClearTags() {
         int i;
