@@ -254,7 +254,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         }
 
         for(utf8_iterator it(buf); *it; ++it) {
-            for(int i = 0; i < ssglBitmapCharWidth(*it); i++) {
+            for(size_t i = 0; i < BitmapFont::Builtin()->GetWidth(*it); i++) {
                 if(c >= MAX_COLS) goto done;
                 text[r][c] = (i == 0) ? *it : ' ';
                 meta[r][c].fg = fg;
@@ -344,7 +344,8 @@ void TextWindow::TimerCallback()
     InvalidateText();
 }
 
-void TextWindow::DrawOrHitTestIcons(TextWindow::DrawOrHitHow how, double mx, double my)
+void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow how,
+                                    double mx, double my)
 {
     int width, height;
     GetTextWindowSize(&width, &height);
@@ -353,10 +354,9 @@ void TextWindow::DrawOrHitTestIcons(TextWindow::DrawOrHitHow how, double mx, dou
     y -= scrollPos*(LINE_HEIGHT/2);
 
     if(how == PAINT) {
-        double grey = 30.0/255;
-        double top = y - 28, bot = y + 4;
-        glColor4d(grey, grey, grey, 1.0);
-        ssglAxisAlignedQuad(0, width, top, bot);
+        int top = y - 28, bot = y + 4;
+        uiCanvas->DrawRect(0, width, top, bot,
+                         /*fillColor=*/{ 30, 30, 30, 255 }, /*outlineColor=*/{});
     }
 
     HideShowIcon *oldHovered = hoveredIcon;
@@ -369,38 +369,29 @@ void TextWindow::DrawOrHitTestIcons(TextWindow::DrawOrHitHow how, double mx, dou
         if(hsi->var == &SPACER) {
             // Draw a darker-grey spacer in between the groups of icons.
             if(how == PAINT) {
-                int l = x, r = l + 4,
-                    t = y, b = t - 24;
-                glColor4d(0.17, 0.17, 0.17, 1);
-                ssglAxisAlignedQuad(l, r, t, b);
+                uiCanvas->DrawRect(x, x + 4, y, y - 24,
+                                 /*fillColor=*/{ 45, 45, 45, 255 }, /*outlineColor=*/{});
             }
             x += 12;
             continue;
         }
 
-        if(hsi->icon.IsEmpty()) {
-            hsi->icon = LoadPNG(ssprintf("icons/text-window/%s.png", hsi->iconName));
+        if(hsi->icon == nullptr) {
+            hsi->icon = LoadPng(ssprintf("icons/text-window/%s.png", hsi->iconName));
         }
 
         if(how == PAINT) {
-            glColor4d(0, 0, 0, 1.0);
-            Point2d o = { (double)x, (double)(y - 24) };
-            ssglDrawPixmap(hsi->icon, o);
+            uiCanvas->DrawPixmap(hsi->icon, x, y - 24);
 
             if(hsi == hoveredIcon) {
-                glColor4d(1, 1, 0, 0.3);
-                ssglAxisAlignedQuad(x - 2, x + 26, y + 2, y - 26);
+                uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
+                                 /*fillColor=*/{ 255, 255, 0, 75 }, /*outlineColor=*/{});
             }
             if(!*(hsi->var)) {
-                glColor4d(1, 0, 0, 0.6);
-                glLineWidth(2);
+                RgbaColor color = { 255, 0, 0, 150 };
                 int s = 0, f = 24;
-                glBegin(GL_LINES);
-                    glVertex2d(x+s, y-s);
-                    glVertex2d(x+f, y-f);
-                    glVertex2d(x+s, y-f);
-                    glVertex2d(x+f, y-s);
-                glEnd();
+                uiCanvas->DrawLine(x+s, y-s, x+f, y-f, color, 2);
+                uiCanvas->DrawLine(x+s, y-f, x+f, y-s, color, 2);
             }
         } else {
             if(mx > x - 2 && mx < x + 26 &&
@@ -443,22 +434,17 @@ void TextWindow::DrawOrHitTestIcons(TextWindow::DrawOrHitHow how, double mx, dou
                     tooltippedIcon->tip);
             }
 
-            double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
+            int ox = (int)oldMousePos.x, oy = (int)oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
             int tw = (str.length() + 1) * (CHAR_WIDTH - 1);
-            ox = min(ox, (double) (width - 25) - tw);
-            oy = max(oy, 5.0);
+            ox = min(ox, (width - 25) - tw);
+            oy = max(oy, 5);
 
-            ssglInitializeBitmapFont();
-            glLineWidth(1);
-            glColor4d(1.0, 1.0, 0.6, 1.0);
-            ssglAxisAlignedQuad(ox, ox+tw, oy, oy+LINE_HEIGHT);
-            glColor4d(0.0, 0.0, 0.0, 1.0);
-            ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+LINE_HEIGHT);
-
-            glColor4d(0, 0, 0, 1);
-            ssglBitmapText(str, Vector::From(ox+5, oy-3+LINE_HEIGHT, 0));
+            uiCanvas->DrawRect(ox, ox+tw, oy, oy+LINE_HEIGHT,
+                             /*fillColor=*/{ 255, 255, 150, 255 },
+                             /*outlineColor=*/{ 0, 0, 0, 255 });
+            uiCanvas->DrawBitmapText(str, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 });
         } else {
             if(!hoveredIcon ||
                 (hoveredIcon != tooltippedIcon))
@@ -504,44 +490,36 @@ Vector TextWindow::HsvToRgb(Vector hsv) {
     return rgb;
 }
 
-uint8_t *TextWindow::HsvPattern2d() {
-    static uint8_t Texture[256*256*3];
-    static bool Init;
-
-    if(!Init) {
-        int i, j, p;
-        p = 0;
-        for(i = 0; i < 256; i++) {
-            for(j = 0; j < 256; j++) {
-                Vector hsv = Vector::From(6.0*i/255.0, 1.0*j/255.0, 1);
-                Vector rgb = HsvToRgb(hsv);
-                rgb = rgb.ScaledBy(255);
-                Texture[p++] = (uint8_t)rgb.x;
-                Texture[p++] = (uint8_t)rgb.y;
-                Texture[p++] = (uint8_t)rgb.z;
-            }
+std::shared_ptr<Pixmap> TextWindow::HsvPattern2d(int w, int h) {
+    std::shared_ptr<Pixmap> pixmap = Pixmap::Create(Pixmap::Format::RGB, w, h);
+    for(size_t j = 0; j < pixmap->height; j++) {
+        size_t p = pixmap->stride * j;
+        for(size_t i = 0; i < pixmap->width; i++) {
+            Vector hsv = Vector::From(6.0*i/(pixmap->width-1), 1.0*j/(pixmap->height-1), 1);
+            Vector rgb = HsvToRgb(hsv);
+            rgb = rgb.ScaledBy(255);
+            pixmap->data[p++] = (uint8_t)rgb.x;
+            pixmap->data[p++] = (uint8_t)rgb.y;
+            pixmap->data[p++] = (uint8_t)rgb.z;
         }
-        Init = true;
     }
-    return Texture;
+    return pixmap;
 }
 
-uint8_t *TextWindow::HsvPattern1d(double h, double s) {
-    static uint8_t Texture[256*4];
-
-    int i, p;
-    p = 0;
-    for(i = 0; i < 256; i++) {
-        Vector hsv = Vector::From(6*h, s, 1.0*(255 - i)/255.0);
-        Vector rgb = HsvToRgb(hsv);
-        rgb = rgb.ScaledBy(255);
-        Texture[p++] = (uint8_t)rgb.x;
-        Texture[p++] = (uint8_t)rgb.y;
-        Texture[p++] = (uint8_t)rgb.z;
-        // Needs a padding byte, to make things four-aligned
-        p++;
+std::shared_ptr<Pixmap> TextWindow::HsvPattern1d(double hue, double sat, int w, int h) {
+    std::shared_ptr<Pixmap> pixmap = Pixmap::Create(Pixmap::Format::RGB, w, h);
+    for(size_t i = 0; i < pixmap->height; i++) {
+        size_t p = i * pixmap->stride;
+        for(size_t j = 0; j < pixmap->width; j++) {
+            Vector hsv = Vector::From(6*hue, sat, 1.0*(pixmap->width - 1 - j)/pixmap->width);
+            Vector rgb = HsvToRgb(hsv);
+            rgb = rgb.ScaledBy(255);
+            pixmap->data[p++] = (uint8_t)rgb.x;
+            pixmap->data[p++] = (uint8_t)rgb.y;
+            pixmap->data[p++] = (uint8_t)rgb.z;
+        }
     }
-    return Texture;
+    return pixmap;
 }
 
 void TextWindow::ColorPickerDone() {
@@ -549,7 +527,7 @@ void TextWindow::ColorPickerDone() {
     EditControlDone(ssprintf("%.2f, %.2f, %.3f", rgb.redF(), rgb.greenF(), rgb.blueF()).c_str());
 }
 
-bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
+bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, bool leftDown,
                                           double x, double y)
 {
     bool mousePointerAsHand = false;
@@ -597,10 +575,12 @@ bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
 
     int bw = 6;
     if(how == PAINT) {
-        glColor4d(0.2, 0.2, 0.2, 1);
-        ssglAxisAlignedQuad(px, pxm+bw, py, pym+bw);
-        glColor4d(0.0, 0.0, 0.0, 1);
-        ssglAxisAlignedQuad(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2));
+        uiCanvas->DrawRect(px, pxm+bw, py, pym+bw,
+                           /*fillColor=*/{ 50, 50, 50, 255 },
+                           /*outlineColor=*/{});
+        uiCanvas->DrawRect(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2),
+                           /*fillColor=*/{ 0, 0, 0, 255 },
+                           /*outlineColor=*/{});
     } else {
         if(x < px || x > pxm+(bw/2) ||
            y < py || y > pym+(bw/2))
@@ -639,8 +619,9 @@ bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
             int sx = px + 5 + PITCH*(i + 8) + 4, sy = py + 5 + PITCH*j;
 
             if(how == PAINT) {
-                glColor4d(CO(rgb), 1);
-                ssglAxisAlignedQuad(sx, sx+SIZE, sy, sy+SIZE);
+                uiCanvas->DrawRect(sx, sx+SIZE, sy, sy+SIZE,
+                                   /*fillColor=*/RGBf(rgb.x, rgb.y, rgb.z),
+                                   /*outlineColor=*/{});
             } else if(how == CLICK) {
                 if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
                     editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
@@ -659,8 +640,9 @@ bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
     hxm = hx + PITCH*7 + SIZE;
     hym = hy + PITCH*2 + SIZE;
     if(how == PAINT) {
-        ssglColorRGB(editControl.colorPicker.rgb);
-        ssglAxisAlignedQuad(hx, hxm, hy, hym);
+        uiCanvas->DrawRect(hx, hxm, hy, hym,
+                           /*fillColor=*/editControl.colorPicker.rgb,
+                           /*outlineColor=*/{});
     } else if(how == CLICK) {
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
             ColorPickerDone();
@@ -677,41 +659,13 @@ bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
     hym = hy + PITCH*1 + SIZE;
     // The one-dimensional thing to pick the color's value
     if(how == PAINT) {
-        glBindTexture(GL_TEXTURE_2D, TEXTURE_COLOR_PICKER_1D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+        uiCanvas->DrawPixmap(HsvPattern1d(editControl.colorPicker.h,
+                                          editControl.colorPicker.s,
+                                          hxm-hx, hym-hy),
+                             hx, hy);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 256, 0,
-                     GL_RGB, GL_UNSIGNED_BYTE,
-                         HsvPattern1d(editControl.colorPicker.h,
-                                      editControl.colorPicker.s));
-
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-            glTexCoord2d(0, 0);
-            glVertex2d(hx, hy);
-
-            glTexCoord2d(1, 0);
-            glVertex2d(hx, hym);
-
-            glTexCoord2d(1, 1);
-            glVertex2d(hxm, hym);
-
-            glTexCoord2d(0, 1);
-            glVertex2d(hxm, hy);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-
-        double cx = hx+(hxm-hx)*(1 - editControl.colorPicker.v);
-        glColor4d(0, 0, 0, 1);
-        glLineWidth(1);
-        glBegin(GL_LINES);
-            glVertex2d(cx, hy);
-            glVertex2d(cx, hym);
-        glEnd();
+        int cx = hx+(int)((hxm-hx)*(1.0 - editControl.colorPicker.v));
+        uiCanvas->DrawLine(cx, hy, cx, hym, { 0, 0, 0, 255 });
     } else if(how == CLICK ||
           (how == HOVER && leftDown && editControl.colorPicker.picker1dActive))
     {
@@ -734,42 +688,12 @@ bool TextWindow::DrawOrHitTestColorPicker(DrawOrHitHow how, bool leftDown,
     hym = hy + PITCH*6 + SIZE;
     // Two-dimensional thing to pick a color by hue and saturation
     if(how == PAINT) {
-        glBindTexture(GL_TEXTURE_2D, TEXTURE_COLOR_PICKER_2D);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_CLAMP);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+        uiCanvas->DrawPixmap(HsvPattern2d(hxm-hx, hym-hy), hx, hy);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 256, 256, 0,
-                     GL_RGB, GL_UNSIGNED_BYTE, HsvPattern2d());
-
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_QUADS);
-            glTexCoord2d(0, 0);
-            glVertex2d(hx, hy);
-
-            glTexCoord2d(1, 0);
-            glVertex2d(hx, hym);
-
-            glTexCoord2d(1, 1);
-            glVertex2d(hxm, hym);
-
-            glTexCoord2d(0, 1);
-            glVertex2d(hxm, hy);
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
-
-        glColor4d(1, 1, 1, 1);
-        glLineWidth(1);
-        double cx = hx+(hxm-hx)*editControl.colorPicker.h,
-               cy = hy+(hym-hy)*editControl.colorPicker.s;
-        glBegin(GL_LINES);
-            glVertex2d(cx - 5, cy);
-            glVertex2d(cx + 4, cy);
-            glVertex2d(cx, cy - 5);
-            glVertex2d(cx, cy + 4);
-        glEnd();
+        int cx = hx+(int)((hxm-hx)*editControl.colorPicker.h),
+            cy = hy+(int)((hym-hy)*editControl.colorPicker.s);
+        uiCanvas->DrawLine(cx - 5, cy, cx + 4, cy, { 255, 255, 255, 255 });
+        uiCanvas->DrawLine(cx, cy - 5, cx, cy + 4, { 255, 255, 255, 255 });
     } else if(how == CLICK ||
           (how == HOVER && leftDown && editControl.colorPicker.picker2dActive))
     {
@@ -797,22 +721,23 @@ void TextWindow::Paint() {
     int width, height;
     GetTextWindowSize(&width, &height);
 
-    // We would like things pixel-exact, to avoid shimmering.
-    glViewport(0, 0, width, height);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glColor3d(1, 1, 1);
+    Camera camera = {};
+    camera.width  = width;
+    camera.height = height;
+    camera.LoadIdentity();
+    camera.offset.x = -(double)camera.width  / 2.0;
+    camera.offset.y = -(double)camera.height / 2.0;
 
-    glTranslated(-1, 1, 0);
-    glScaled(2.0/width, -2.0/height, 1);
-    // Make things round consistently, avoiding exact integer boundary
-    glTranslated(-0.1, -0.1, 0);
+    OpenGl1Renderer canvas = {};
+    canvas.camera = camera;
+    canvas.BeginFrame();
+    canvas.UpdateProjection();
 
-    halfRows = height / (LINE_HEIGHT/2);
+    UiCanvas uiCanvas = {};
+    uiCanvas.canvas = &canvas;
+    uiCanvas.flip = true;
+
+    halfRows = camera.height / (LINE_HEIGHT/2);
 
     int bottom = top[rows-1] + 2;
     scrollPos = min(scrollPos, bottom - halfRows);
@@ -821,21 +746,9 @@ void TextWindow::Paint() {
     // Let's set up the scroll bar first
     MoveTextScrollbarTo(scrollPos, top[rows - 1] + 1, halfRows);
 
-    // Create the bitmap font that we're going to use.
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
-
     // Now paint the window.
     int r, c, a;
     for(a = 0; a < 2; a++) {
-        if(a == 0) {
-            glBegin(GL_QUADS);
-        } else if(a == 1) {
-            glEnable(GL_TEXTURE_2D);
-            ssglInitializeBitmapFont();
-            glBegin(GL_QUADS);
-        }
-
         for(r = 0; r < rows; r++) {
             int ltop = top[r];
             if(ltop < (scrollPos-1)) continue;
@@ -847,31 +760,33 @@ void TextWindow::Paint() {
 
                 int fg = meta[r][c].fg;
                 int bg = meta[r][c].bg;
-                RgbaColor bgRgb = meta[r][c].bgRgb;
 
                 // On the first pass, all the background quads; on the next
                 // pass, all the foreground (i.e., font) quads.
                 if(a == 0) {
-                    int bh = LINE_HEIGHT, adj = -2;
+                    RgbaColor bgRgb = meta[r][c].bgRgb;
+                    int bh = LINE_HEIGHT, adj = 0;
                     if(bg == 'z') {
-                        glColor3f(bgRgb.redF(), bgRgb.greenF(), bgRgb.blueF());
                         bh = CHAR_HEIGHT;
                         adj += 2;
                     } else {
-                        glColor3fv(&(bgColorTable[bg*3]));
+                        bgRgb = RgbaColor::FromFloat(bgColorTable[bg*3+0],
+                                                     bgColorTable[bg*3+1],
+                                                     bgColorTable[bg*3+2]);
                     }
 
                     if(bg != 'd') {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
-                        y += adj;
-                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, /*lone=*/false);
-                        y -= adj;
+                        uiCanvas.DrawRect(x, x + CHAR_WIDTH, y + adj, y + adj + bh,
+                                          /*fillColor=*/bgRgb, /*outlineColor=*/{});
                     }
                 } else if(a == 1) {
-                    glColor3fv(&(fgColorTable[fg*3]));
+                    RgbaColor fgRgb = RgbaColor::FromFloat(fgColorTable[fg*3+0],
+                                                           fgColorTable[fg*3+1],
+                                                           fgColorTable[fg*3+2]);
                     if(text[r][c] != ' ') {
-                        ssglBitmapCharQuad(text[r][c], x, y + CHAR_HEIGHT);
+                        uiCanvas.DrawBitmapChar(text[r][c], x, y + CHAR_HEIGHT, fgRgb);
                     }
 
                     // If this is a link and it's hovered, then draw the
@@ -903,29 +818,20 @@ void TextWindow::Paint() {
                             cs++;
                         }
 
-                        glEnd();
-
                         // Always use the color of the rightmost character
                         // in the link, so that underline is consistent color
                         fg = meta[r][cf-1].fg;
-                        glColor3fv(&(fgColorTable[fg*3]));
-                        glDisable(GL_TEXTURE_2D);
-                        glLineWidth(1);
-                        glBegin(GL_LINES);
-                            int yp = y + CHAR_HEIGHT;
-                            glVertex2d(LEFT_MARGIN + cs*CHAR_WIDTH, yp);
-                            glVertex2d(LEFT_MARGIN + cf*CHAR_WIDTH, yp);
-                        glEnd();
-
-                        glEnable(GL_TEXTURE_2D);
-                        glBegin(GL_QUADS);
+                        fgRgb = RgbaColor::FromFloat(fgColorTable[fg*3+0],
+                                                     fgColorTable[fg*3+1],
+                                                     fgColorTable[fg*3+2]);
+                        int yp = y + CHAR_HEIGHT;
+                        uiCanvas.DrawLine(LEFT_MARGIN + cs*CHAR_WIDTH, yp,
+                                          LEFT_MARGIN + cf*CHAR_WIDTH, yp,
+                                          fgRgb);
                     }
                 }
             }
         }
-
-        glEnd();
-        glDisable(GL_TEXTURE_2D);
     }
 
     // The line to indicate the column of radio buttons that indicates the
@@ -938,24 +844,24 @@ void TextWindow::Paint() {
         int x = 29, y = 70 + LINE_HEIGHT;
         y -= scrollPos*(LINE_HEIGHT/2);
 
-        glLineWidth(1);
-        glColor3fv(&(fgColorTable['t'*3]));
-        glBegin(GL_LINES);
-            glVertex2d(x, y);
-            glVertex2d(x, y+40);
-        glEnd();
+        RgbaColor color = RgbaColor::FromFloat(fgColorTable['t'*3+0],
+                                               fgColorTable['t'*3+1],
+                                               fgColorTable['t'*3+2]);
+        uiCanvas.DrawLine(x, y, x, y+40, color);
     }
 
     // The header has some icons that are drawn separately from the text
-    DrawOrHitTestIcons(PAINT, 0, 0);
+    DrawOrHitTestIcons(&uiCanvas, PAINT, 0, 0);
 
     // And we may show a color picker for certain editable fields
-    DrawOrHitTestColorPicker(PAINT, false, 0, 0);
+    DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
+
+    canvas.EndFrame();
 }
 
 void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
     if(TextEditControlIsVisible() || GraphicsEditControlIsVisible()) {
-        if(DrawOrHitTestColorPicker(leftClick ? CLICK : HOVER, leftDown, x, y))
+        if(DrawOrHitTestColorPicker(NULL, leftClick ? CLICK : HOVER, leftDown, x, y))
         {
             return;
         }
@@ -969,7 +875,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
         return;
     }
 
-    DrawOrHitTestIcons(leftClick ? CLICK : HOVER, x, y);
+    DrawOrHitTestIcons(NULL, leftClick ? CLICK : HOVER, x, y);
 
     GraphicsWindow::Selection ps = SS.GW.hover;
     SS.GW.hover.Clear();

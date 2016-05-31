@@ -9,6 +9,9 @@
 //-----------------------------------------------------------------------------
 #include <time.h>
 #include <execinfo.h>
+#ifdef __APPLE__
+#   include <strings.h> // for strcasecmp
+#endif
 
 #include "solvespace.h"
 
@@ -49,6 +52,17 @@ void assert_failure(const char *file, unsigned line, const char *function,
 #endif
 
     abort();
+}
+
+bool PathEqual(const std::string &a, const std::string &b)
+{
+#if defined(__APPLE__)
+    // Case-sensitivity is actually per-volume on OS X,
+    // but it is tedious to implement and test for little benefit.
+    return !strcasecmp(a.c_str(), b.c_str());
+#else
+    return a == b;
+#endif
 }
 
 FILE *ssfopen(const std::string &filename, const char *mode)

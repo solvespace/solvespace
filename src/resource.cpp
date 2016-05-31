@@ -48,12 +48,12 @@ std::string LoadStringFromGzip(const std::string &name) {
     return result;
 }
 
-Pixmap LoadPNG(const std::string &name) {
+std::shared_ptr<Pixmap> LoadPng(const std::string &name) {
     size_t size;
     const void *data = LoadResource(name, &size);
 
-    Pixmap pixmap = Pixmap::FromPNG(static_cast<const uint8_t *>(data), size);
-    ssassert(!pixmap.IsEmpty(), "Cannot load pixmap");
+    std::shared_ptr<Pixmap> pixmap = Pixmap::FromPng(static_cast<const uint8_t *>(data), size);
+    ssassert(pixmap != nullptr, "Cannot load pixmap");
 
     return pixmap;
 }
@@ -62,44 +62,59 @@ Pixmap LoadPNG(const std::string &name) {
 // Pixmap manipulation
 //-----------------------------------------------------------------------------
 
-void Pixmap::Clear() {
-    *this = {};
+size_t Pixmap::GetBytesPerPixel() const {
+    switch(format) {
+        case Format::RGBA: return 4;
+        case Format::RGB:  return 3;
+        case Format::A:    return 1;
+    }
+    ssassert(false, "Unexpected pixmap format");
 }
 
 RgbaColor Pixmap::GetPixel(size_t x, size_t y) const {
     const uint8_t *pixel = &data[y * stride + x * GetBytesPerPixel()];
 
-    if(hasAlpha) {
-        return RgbaColor::From(pixel[0], pixel[1], pixel[2], pixel[3]);
-    } else {
-        return RgbaColor::From(pixel[0], pixel[1], pixel[2]);
+    switch(format) {
+        case Format::RGBA:
+            return RgbaColor::From(pixel[0], pixel[1], pixel[2], pixel[3]);
+
+        case Format::RGB:
+            return RgbaColor::From(pixel[0], pixel[1], pixel[2],      255);
+
+        case Format::A:
+            return RgbaColor::From(     255,      255,      255, pixel[0]);
     }
+    ssassert(false, "Unexpected resource format");
 }
 
-static Pixmap ReadPNGIntoPixmap(png_struct *png_ptr, png_info *info_ptr) {
+static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr) {
     png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB, NULL);
 
-    Pixmap pixmap = {};
-    pixmap.width    = png_get_image_width(png_ptr, info_ptr);
-    pixmap.height   = png_get_image_height(png_ptr, info_ptr);
-    pixmap.hasAlpha = (png_get_color_type(png_ptr, info_ptr) & PNG_COLOR_MASK_ALPHA) != 0;
-
-    size_t stride = pixmap.width * pixmap.GetBytesPerPixel();
-    if(stride % 4 != 0) stride += 4 - stride % 4;
-    pixmap.stride = stride;
-
-    pixmap.data = std::vector<uint8_t>(pixmap.stride * pixmap.height);
-    uint8_t **rows = png_get_rows(png_ptr, info_ptr);
-    for(size_t y = 0; y < pixmap.height; y++) {
-        memcpy(&pixmap.data[pixmap.stride * y], rows[y],
-               pixmap.width * pixmap.GetBytesPerPixel());
+    std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
+    pixmap->width    = png_get_image_width(png_ptr, info_ptr);
+    pixmap->height   = png_get_image_height(png_ptr, info_ptr);
+    if((png_get_color_type(png_ptr, info_ptr) & PNG_COLOR_MASK_ALPHA) != 0) {
+        pixmap->format = Pixmap::Format::RGBA;
+    } else {
+        pixmap->format = Pixmap::Format::RGB;
     }
 
+    size_t stride = pixmap->width * pixmap->GetBytesPerPixel();
+    if(stride % 4 != 0) stride += 4 - stride % 4;
+    pixmap->stride = stride;
+
+    pixmap->data = std::vector<uint8_t>(pixmap->stride * pixmap->height);
+    uint8_t **rows = png_get_rows(png_ptr, info_ptr);
+    for(size_t y = 0; y < pixmap->height; y++) {
+        memcpy(&pixmap->data[pixmap->stride * y], rows[y],
+               pixmap->width * pixmap->GetBytesPerPixel());
+    }
+
+    png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
     return pixmap;
 }
 
-Pixmap Pixmap::FromPNG(const uint8_t *data, size_t size) {
-    Pixmap pixmap = {};
+std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size) {
     struct Slice { const uint8_t *data; size_t size; };
     Slice dataSlice = { data, size };
     png_struct *png_ptr = NULL;
@@ -124,16 +139,14 @@ Pixmap Pixmap::FromPNG(const uint8_t *data, size_t size) {
             }
         });
 
-    pixmap = ReadPNGIntoPixmap(png_ptr, info_ptr);
+    return ReadPngIntoPixmap(png_ptr, info_ptr);
 
 exit:
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
-    return pixmap;
+    return nullptr;
 }
 
-Pixmap Pixmap::FromPNG(FILE *f) {
-    Pixmap pixmap = {};
-
+std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f) {
     png_struct *png_ptr = NULL;
     png_info *info_ptr = NULL;
 
@@ -151,10 +164,66 @@ Pixmap Pixmap::FromPNG(FILE *f) {
     png_init_io(png_ptr, f);
     png_set_sig_bytes(png_ptr, sizeof(header));
 
-    pixmap = ReadPNGIntoPixmap(png_ptr, info_ptr);
+    return ReadPngIntoPixmap(png_ptr, info_ptr);
 
 exit:
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+    return nullptr;
+}
+
+bool Pixmap::WritePng(FILE *f, bool flip) {
+    int colorType;
+    switch(format) {
+        case Format::RGBA: colorType = PNG_COLOR_TYPE_RGBA; break;
+        case Format::RGB:  colorType = PNG_COLOR_TYPE_RGB;  break;
+        case Format::A:    ssassert(false, "Unexpected pixmap format");
+    }
+
+    std::vector<uint8_t *> rows;
+    for(size_t y = 0; y < height; y++) {
+        if(flip) {
+            rows.push_back(&data[stride * y]);
+        } else {
+            rows.push_back(&data[stride * (height - y)]);
+        }
+    }
+
+    png_struct *png_ptr = NULL;
+    png_info *info_ptr = NULL;
+
+    png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    if(!png_ptr) goto exit;
+    info_ptr = png_create_info_struct(png_ptr);
+    if(!info_ptr) goto exit;
+
+    if(setjmp(png_jmpbuf(png_ptr))) goto exit;
+
+    png_init_io(png_ptr, f);
+    png_set_IHDR(png_ptr, info_ptr, width, height, 8,
+                 colorType, PNG_INTERLACE_NONE,
+                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_write_info(png_ptr, info_ptr);
+    png_write_image(png_ptr, &rows[0]);
+    png_write_end(png_ptr, info_ptr);
+
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    return true;
+
+exit:
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    return false;
+}
+
+std::shared_ptr<Pixmap> Pixmap::Create(Format format, size_t width, size_t height) {
+    std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
+    pixmap->format = format;
+    pixmap->width  = width;
+    pixmap->height = height;
+    // Align to fulfill OpenGL texture requirements.
+    size_t stride = pixmap->width * pixmap->GetBytesPerPixel();
+    if(stride % 4 != 0) stride += 4 - stride % 4;
+    pixmap->stride = stride;
+    pixmap->data   = std::vector<uint8_t>(pixmap->stride * pixmap->height);
     return pixmap;
 }
 
@@ -246,39 +315,41 @@ public:
 // Bitmap font manipulation
 //-----------------------------------------------------------------------------
 
-static const size_t CHARS_PER_ROW = BitmapFont::TEXTURE_DIM / 16;
-
-static uint8_t *BitmapFontTextureRow(uint8_t *texture, uint16_t position, size_t y) {
+static uint8_t *BitmapFontTextureRow(std::shared_ptr<Pixmap> texture,
+                                     uint16_t position, size_t y) {
     // position = 0;
-    size_t col = position % CHARS_PER_ROW,
-           row = position / CHARS_PER_ROW;
-    return &texture[BitmapFont::TEXTURE_DIM * (16 * row + y) + 16 * col];
+    size_t col = position % (texture->width / 16),
+           row = position / (texture->width / 16);
+    return &texture->data[texture->stride * (16 * row + y) + 16 * col];
 }
 
 BitmapFont BitmapFont::From(std::string &&unifontData) {
     BitmapFont font  = {};
     font.unifontData = std::move(unifontData);
-    font.texture     = std::vector<uint8_t>(TEXTURE_DIM * TEXTURE_DIM);
+    font.texture     = Pixmap::Create(Pixmap::Format::A, 1024, 1024);
+
     return font;
 }
 
-void BitmapFont::AddGlyph(char32_t codepoint, const Pixmap &pixmap) {
-    ssassert((pixmap.width == 8 || pixmap.width == 16) && pixmap.height == 16,
-             "Unexpected glyph dimensions");
+void BitmapFont::AddGlyph(char32_t codepoint, std::shared_ptr<const Pixmap> pixmap) {
+    ssassert((pixmap->width == 8 || pixmap->width == 16) && pixmap->height == 16,
+             "Unexpected pixmap dimensions");
+    ssassert(pixmap->format == Pixmap::Format::RGB,
+             "Unexpected pixmap format");
     ssassert(glyphs.find(codepoint) == glyphs.end(),
              "Glyph with this codepoint already exists");
     ssassert(nextPosition != 0xffff,
              "Too many glyphs for current texture size");
 
     BitmapFont::Glyph glyph = {};
-    glyph.advanceCells = pixmap.width / 8;
+    glyph.advanceCells = pixmap->width / 8;
     glyph.position     = nextPosition++;
     glyphs.emplace(codepoint, std::move(glyph));
 
-    for(size_t y = 0; y < pixmap.height; y++) {
-        uint8_t *row = BitmapFontTextureRow(&texture[0], glyph.position, y);
-        for(size_t x = 0; x < pixmap.width; x++) {
-            if(pixmap.GetPixel(x, y).ToPackedInt() != 0) {
+    for(size_t y = 0; y < pixmap->height; y++) {
+        uint8_t *row = BitmapFontTextureRow(texture, glyph.position, y);
+        for(size_t x = 0; x < pixmap->width; x++) {
+            if((pixmap->GetPixel(x, y).ToPackedInt() & 0xffffff) != 0) {
                 row[x] = 255;
             }
         }
@@ -346,7 +417,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
 
         // Fill in the texture (one texture byte per glyph bit).
         for(size_t y = 0; y < 16; y++) {
-            uint8_t *row = BitmapFontTextureRow(&texture[0], glyph.position, y);
+            uint8_t *row = BitmapFontTextureRow(texture, glyph.position, y);
             for(size_t x = 0; x < 16; x++) {
                 if(glyphBits[y] & (1 << (15 - x))) {
                     row[x] = 255;
@@ -370,11 +441,47 @@ bool BitmapFont::LocateGlyph(char32_t codepoint,
     const Glyph &glyph = GetGlyph(codepoint);
     *w  = glyph.advanceCells * 8;
     *h  = 16;
-    *s0 = (16.0 * (glyph.position % CHARS_PER_ROW)) / TEXTURE_DIM;
-    *s1 = *s0 + (double)(*w) / TEXTURE_DIM;
-    *t0 = (16.0 * (glyph.position / CHARS_PER_ROW)) / TEXTURE_DIM;
-    *t1 = *t0 + (double)(*h) / TEXTURE_DIM;
+    *s0 = (16.0 * (glyph.position % (texture->width / 16))) / texture->width;
+    *s1 = *s0 + (double)(*w) / texture->width;
+    *t0 = (16.0 * (glyph.position / (texture->width / 16))) / texture->height;
+    *t1 = *t0 + (double)(*h) / texture->height;
     return textureUpdated;
+}
+
+size_t BitmapFont::GetWidth(char32_t codepoint) {
+    if(codepoint >= 0xe000 && codepoint <= 0xefff) {
+        // These are special-cased because checkboxes predate support for 2 cell wide
+        // characters; and so all Printf() calls pad them with spaces.
+        return 1;
+    }
+
+    return GetGlyph(codepoint).advanceCells;
+}
+
+size_t BitmapFont::GetWidth(const std::string &str) {
+    size_t width = 0;
+    for(char32_t codepoint : ReadUTF8(str)) {
+        width += GetWidth(codepoint);
+    }
+    return width;
+}
+
+BitmapFont *BitmapFont::Builtin() {
+    static BitmapFont Font;
+    if(Font.IsEmpty()) {
+        Font = BitmapFont::From(LoadStringFromGzip("fonts/unifont.hex.gz"));
+        // Unifont doesn't have a glyph for U+0020.
+        Font.AddGlyph(0x0020, Pixmap::Create(Pixmap::Format::RGB, 8, 16));
+        Font.AddGlyph(0xE000, LoadPng("fonts/private/0-check-false.png"));
+        Font.AddGlyph(0xE001, LoadPng("fonts/private/1-check-true.png"));
+        Font.AddGlyph(0xE002, LoadPng("fonts/private/2-radio-false.png"));
+        Font.AddGlyph(0xE003, LoadPng("fonts/private/3-radio-true.png"));
+        Font.AddGlyph(0xE004, LoadPng("fonts/private/4-stipple-dot.png"));
+        Font.AddGlyph(0xE005, LoadPng("fonts/private/5-stipple-dash-long.png"));
+        Font.AddGlyph(0xE006, LoadPng("fonts/private/6-stipple-dash.png"));
+        Font.AddGlyph(0xE007, LoadPng("fonts/private/7-stipple-zigzag.png"));
+    }
+    return &Font;
 }
 
 //-----------------------------------------------------------------------------
@@ -476,6 +583,7 @@ VectorFont VectorFont::From(std::string &&lffData) {
     GetGlyphBBox(font.GetGlyph('h'), nullptr, nullptr, nullptr, &font.ascender);
     GetGlyphBBox(font.GetGlyph('p'), nullptr, nullptr, &font.descender, nullptr);
 
+    ssassert(!font.IsEmpty(), "Expected to load a font");
     return font;
 }
 
@@ -572,6 +680,117 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
     // Glyph doesn't exist; return replacement glyph instead.
     ssassert(codepoint != 0xfffd, "Cannot parse replacement glyph");
     return GetGlyph(0xfffd);
+}
+
+VectorFont *VectorFont::Builtin() {
+    static VectorFont Font;
+    if(Font.IsEmpty()) {
+        Font = VectorFont::From(LoadStringFromGzip("fonts/unicode.lff.gz"));
+    }
+    return &Font;
+}
+
+double VectorFont::GetCapHeight(double forCapHeight) const {
+    ssassert(!IsEmpty(), "Expected a loaded font");
+
+    return forCapHeight;
+}
+
+double VectorFont::GetHeight(double forCapHeight) const {
+    ssassert(!IsEmpty(), "Expected a loaded font");
+
+    return (ascender - descender) * (forCapHeight / capHeight);
+}
+
+double VectorFont::GetWidth(double forCapHeight, const std::string &str) {
+    ssassert(!IsEmpty(), "Expected a loaded font");
+
+    double width = 0;
+    for(char32_t codepoint : ReadUTF8(str)) {
+        width += GetGlyph(codepoint).advanceWidth;
+    }
+    width -= rightSideBearing;
+    return width * (forCapHeight / capHeight);
+}
+
+Vector VectorFont::GetExtents(double forCapHeight, const std::string &str) {
+    Vector ex = {};
+    ex.x = GetWidth(forCapHeight, str);
+    ex.y = GetHeight(forCapHeight);
+    return ex;
+}
+
+void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
+                       std::function<void(Vector, Vector)> traceEdge) {
+    ssassert(!IsEmpty(), "Expected a loaded font");
+
+    double scale = (forCapHeight / capHeight);
+    u = u.ScaledBy(scale);
+    v = v.ScaledBy(scale);
+
+    for(char32_t codepoint : ReadUTF8(str)) {
+        const Glyph &glyph = GetGlyph(codepoint);
+
+        for(const VectorFont::Contour &contour : glyph.contours) {
+            Vector prevp;
+            bool penUp = true;
+            for(const Point2d &pt : contour.points) {
+                Vector p = o.Plus(u.ScaledBy(pt.x))
+                            .Plus(v.ScaledBy(pt.y));
+                if(!penUp) traceEdge(prevp, p);
+                prevp = p;
+                penUp = false;
+            }
+        }
+
+        o = o.Plus(u.ScaledBy(glyph.advanceWidth));
+    }
+}
+
+void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
+                       std::function<void(Vector, Vector)> traceEdge, const Camera &camera) {
+    ssassert(!IsEmpty(), "Expected a loaded font");
+
+    // Perform grid-fitting only when the text is parallel to the view plane.
+    if(camera.hasPixels && !(u.WithMagnitude(1).Equals(camera.projRight) &&
+                             v.WithMagnitude(1).Equals(camera.projUp))) {
+        return Trace(forCapHeight, o, u, v, str, traceEdge);
+    }
+
+    double scale = forCapHeight / capHeight;
+    u = u.ScaledBy(scale);
+    v = v.ScaledBy(scale);
+
+    for(char32_t codepoint : ReadUTF8(str)) {
+        const Glyph &glyph = GetGlyph(codepoint);
+        double actualWidth = std::max(1.0, glyph.boundingWidth);
+
+        // Align (o+lsb), (o+lsb+u) and (o+lsb+v) to pixel grid.
+        Vector ao =  o.Plus(u.ScaledBy(glyph.leftSideBearing));
+        Vector au = ao.Plus(u.ScaledBy(actualWidth));
+        Vector av = ao.Plus(v.ScaledBy(capHeight));
+
+        ao = camera.AlignToPixelGrid(ao);
+        au = camera.AlignToPixelGrid(au);
+        av = camera.AlignToPixelGrid(av);
+
+        au = au.Minus(ao).ScaledBy(1.0 / actualWidth);
+        av = av.Minus(ao).ScaledBy(1.0 / capHeight);
+
+        for(const VectorFont::Contour &contour : glyph.contours) {
+            Vector prevp;
+            bool penUp = true;
+            for(const Point2d &pt : contour.points) {
+                Vector p = ao.Plus(au.ScaledBy(pt.x - glyph.leftSideBearing))
+                             .Plus(av.ScaledBy(pt.y));
+                if(!penUp) traceEdge(prevp, p);
+                prevp = p;
+                penUp = false;
+            }
+        }
+
+        o = o.Plus(u.ScaledBy(glyph.advanceWidth));
+    }
 }
 
 }

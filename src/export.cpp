@@ -10,7 +10,6 @@
 #ifndef WIN32
 #include <platform/gloffscreen.h>
 #endif
-#include <png.h>
 
 void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
@@ -110,6 +109,66 @@ void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     bl.Clear();
 }
 
+// This is an awful temporary hack to replace Constraint::GetEdges until we have proper
+// export through Canvas.
+class GetEdgesCanvas : public Canvas {
+public:
+    Camera     camera;
+    SEdgeList *edges;
+
+    const Camera &GetCamera() const override {
+        return camera;
+    }
+
+    void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override {
+        edges->AddEdge(a, b, Style::CONSTRAINT);
+    }
+    void DrawEdges(const SEdgeList &el, hStroke hcs) override {
+        for(const SEdge &e : el.l) {
+            edges->AddEdge(e.a, e.b, Style::CONSTRAINT);
+        }
+    }
+    void DrawVectorText(const std::string &text, double height,
+                        const Vector &o, const Vector &u, const Vector &v,
+                        hStroke hcs) override {
+        auto traceEdge = [&](Vector a, Vector b) { edges->AddEdge(a, b, Style::CONSTRAINT); };
+        VectorFont::Builtin()->Trace(height, o, u, v, text, traceEdge, camera);
+    }
+
+    void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
+                  hFill hcf) override {
+        // Do nothing
+    }
+
+    bool DrawBeziers(const SBezierList &bl, hStroke hcs) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawPoint(const Vector &o, double d, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawPolygon(const SPolygon &p, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {},
+                          hStroke hcsTriangles = {}) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+    void DrawPixmap(std::shared_ptr<const Pixmap> pm,
+                            const Vector &o, const Vector &u, const Vector &v,
+                            const Point2d &ta, const Point2d &tb, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+    void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override {
+        ssassert(false, "Not implemented");
+    }
+};
+
 void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe) {
     int i;
     SEdgeList edges = {};
@@ -159,11 +218,14 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
 
     if(SS.GW.showConstraints) {
         if(!out->OutputConstraints(&SK.constraint)) {
+            GetEdgesCanvas canvas = {};
+            canvas.camera = SS.GW.GetCamera();
+            canvas.edges  = &edges;
+
             // The output format cannot represent constraints directly,
             // so convert them to edges.
-            Constraint *c;
-            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-                c->GetEdges(&edges);
+            for(Constraint &c : SK.constraint) {
+                c.Draw(Constraint::DrawAs::DEFAULT, &canvas);
             }
         }
     }
@@ -1021,62 +1083,26 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
-    int w = (int)SS.GW.width, h = (int)SS.GW.height;
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.
     bool prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
 #ifndef WIN32
     std::unique_ptr<GLOffscreen> gloffscreen(new GLOffscreen);
-    gloffscreen->begin(w, h);
+    gloffscreen->begin((int)SS.GW.width, (int)SS.GW.height);
 #endif
     SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
 
+    // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
+    OpenGl1Renderer canvas = {};
+    canvas.camera = SS.GW.GetCamera();
+    std::shared_ptr<Pixmap> screenshot = canvas.ReadFrame();
+
     FILE *f = ssfopen(filename, "wb");
-    if(!f) goto err;
-
-    png_struct *png_ptr; png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING,
-        NULL, NULL, NULL);
-    if(!png_ptr) goto err;
-
-    png_info *info_ptr; info_ptr = png_create_info_struct(png_ptr);
-    if(!png_ptr) goto err;
-
-    if(setjmp(png_jmpbuf(png_ptr))) goto err;
-
-    png_init_io(png_ptr, f);
-
-    // glReadPixels wants to align things on 4-boundaries, and there's 3
-    // bytes per pixel. As long as the row width is divisible by 4, all
-    // works out.
-    w &= ~3; h &= ~3;
-
-    png_set_IHDR(png_ptr, info_ptr, w, h,
-        8, PNG_COLOR_TYPE_RGB, PNG_INTERLACE_NONE,
-        PNG_COMPRESSION_TYPE_DEFAULT,PNG_FILTER_TYPE_DEFAULT);
-
-    png_write_info(png_ptr, info_ptr);
-
-    // Get the pixel data from the framebuffer
-    uint8_t *pixels; pixels = (uint8_t *)AllocTemporary(3*w*h);
-    uint8_t **rowptrs; rowptrs = (uint8_t **)AllocTemporary(h*sizeof(uint8_t *));
-    glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-
-    int y;
-    for(y = 0; y < h; y++) {
-        // gl puts the origin at lower left, but png puts it top left
-        rowptrs[y] = pixels + ((h - 1) - y)*(3*w);
+    if(!f || !screenshot->WritePng(f, /*flip=*/FLIP_FRAMEBUFFER)) {
+        Error("Couldn't write to '%s'", filename.c_str());
     }
-    png_write_image(png_ptr, rowptrs);
-
-    png_write_end(png_ptr, info_ptr);
-    png_destroy_write_struct(&png_ptr, &info_ptr);
-    fclose(f);
-    return;
-
-err:
-    Error("Error writing PNG file '%s'", filename.c_str());
     if(f) fclose(f);
     return;
 }

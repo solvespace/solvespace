@@ -19,12 +19,6 @@
 
 using SolveSpace::dbp;
 
-#define GL_CHECK() \
-    do { \
-        int err = (int)glGetError(); \
-        if(err) dbp("%s:%d: glGetError() == 0x%X", __FILE__, __LINE__, err); \
-    } while (0)
-
 /* Settings */
 
 namespace SolveSpace {
@@ -116,6 +110,8 @@ void SolveSpace::ScheduleLater() {
 
 /* OpenGL view */
 
+const bool SolveSpace::FLIP_FRAMEBUFFER = false;
+
 @interface GLViewWithEditor : NSView
 - (void)drawGL;
 
@@ -200,9 +196,8 @@ CONVERT(Rect)
     offscreen->begin(width, height);
 
     [self drawGL];
-    GL_CHECK();
 
-    uint8_t *pixels = offscreen->end(![self isFlipped]);
+    uint8_t *pixels = offscreen->end();
     CGDataProviderRef provider = CGDataProviderCreateWithData(
         NULL, pixels, width * height * 4, NULL);
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();

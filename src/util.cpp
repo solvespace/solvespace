@@ -1019,6 +1019,23 @@ double Point2d::DistanceToLine(const Point2d &p0, const Point2d &dp, bool asSegm
     return DistanceTo(closest);
 }
 
+double Point2d::DistanceToLineSigned(const Point2d &p0, const Point2d &dp, bool asSegment) const {
+    double m = dp.x*dp.x + dp.y*dp.y;
+    if(m < LENGTH_EPS*LENGTH_EPS) return VERY_POSITIVE;
+
+    Point2d n = dp.Normal().WithMagnitude(1.0);
+    double dist = n.Dot(*this) - n.Dot(p0);
+    if(asSegment) {
+        // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
+        double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;
+        double sign = (dist > 0.0) ? 1.0 : -1.0;
+        if(t < 0.0) return DistanceTo(p0) * sign;
+        if(t > 1.0) return DistanceTo(p0.Plus(dp)) * sign;
+    }
+
+    return dist;
+}
+
 Point2d Point2d::Normal() const {
     return { y, -x };
 }

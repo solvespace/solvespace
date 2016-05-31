@@ -17,25 +17,16 @@
 #include <math.h>
 #include <limits.h>
 #include <algorithm>
+#include <functional>
 #include <memory>
 #include <string>
 #include <locale>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <set>
 #include <chrono>
-#ifdef WIN32
-#   include <windows.h> // required by GL headers
-#endif
-#ifdef __APPLE__
-#   include <strings.h> // for strcasecmp in file.cpp
-#   include <OpenGL/gl.h>
-#   include <OpenGL/glu.h>
-#else
-#   include <GL/gl.h>
-#   include <GL/glu.h>
-#endif
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -153,6 +144,9 @@ enum class ContextCommand : uint32_t;
 #define PATH_SEP "/"
 #endif
 
+extern const bool FLIP_FRAMEBUFFER;
+
+bool PathEqual(const std::string &a, const std::string &b);
 FILE *ssfopen(const std::string &filename, const char *mode);
 void ssremove(const std::string &filename);
 
@@ -304,6 +298,7 @@ class SSurface;
 #include "dsc.h"
 #include "polygon.h"
 #include "srf/surface.h"
+#include "render/render.h"
 
 class Entity;
 class hEntity;
@@ -345,56 +340,6 @@ public:
     utf8_iterator begin() const { return utf8_iterator(&str[0]); }
     utf8_iterator end()   const { return utf8_iterator(&str[str.length()]); }
 };
-
-void ssglLineWidth(GLfloat width);
-void ssglVertex3v(Vector u);
-void ssglAxisAlignedQuad(double l, double r, double t, double b, bool lone = true);
-void ssglAxisAlignedLineLoop(double l, double r, double t, double b);
-#ifdef WIN32
-#   define SSGL_CALLBACK __stdcall
-#else
-#   define SSGL_CALLBACK
-#endif
-extern "C" { typedef void SSGL_CALLBACK ssglCallbackFptr(); }
-void ssglTesselatePolygon(GLUtesselator *gt, SPolygon *p);
-void ssglFillPolygon(SPolygon *p);
-void ssglFillMesh(bool useSpecColor, RgbaColor color,
-    SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
-void ssglDebugPolygon(SPolygon *p);
-void ssglDrawEdges(SEdgeList *l, bool endpointsToo, hStyle hs);
-void ssglDrawOutlines(SOutlineList *l, Vector projDir, hStyle hs);
-void ssglDebugMesh(SMesh *m);
-void ssglMarkPolygonNormal(SPolygon *p);
-typedef void ssglLineFn(void *data, Vector a, Vector b);
-void ssglWriteText(const std::string &str, double h, Vector t, Vector u, Vector v,
-    ssglLineFn *fn, void *fndata);
-void ssglWriteTextRefCenter(const std::string &str, double h, Vector t, Vector u, Vector v,
-    ssglLineFn *fn, void *fndata);
-double ssglStrCapHeight(double h);
-double ssglStrFontSize(double h);
-double ssglStrWidth(const std::string &str, double h);
-void ssglLockColorTo(RgbaColor rgb);
-void ssglStippledLine(Vector a, Vector b, double width,
-                      StipplePattern stippleType, double stippleScale, bool maybeFat);
-void ssglStippledLine(Vector a, Vector b, double width,
-                      const char *stipplePattern, double stippleScale, bool maybeFat);
-void ssglFatLine(Vector a, Vector b, double width);
-void ssglUnlockColor();
-void ssglColorRGB(RgbaColor rgb);
-void ssglColorRGBa(RgbaColor rgb, double a);
-void ssglDepthRangeOffset(int units);
-void ssglDepthRangeLockToFront(bool yes);
-void ssglDrawPixmap(const Pixmap &pixmap, Vector a, Vector b, Vector c, Vector d);
-void ssglDrawPixmap(const Pixmap &pixmap, Point2d o, bool flip = false);
-void ssglInitializeBitmapFont();
-void ssglBitmapText(const std::string &str, Vector p);
-double ssglBitmapCharQuad(char32_t chr, double x, double y);
-int ssglBitmapCharWidth(char32_t chr);
-#define TEXTURE_BACKGROUND_IMG  10
-#define TEXTURE_DRAW_PIXELS     20
-#define TEXTURE_COLOR_PICKER_2D 30
-#define TEXTURE_COLOR_PICKER_1D 40
-#define TEXTURE_BITMAP_FONT     50
 
 
 #define arraylen(x) (sizeof((x))/sizeof((x)[0]))
@@ -878,7 +823,7 @@ public:
         Vector      ptB;
     } extraLine;
     struct {
-        Pixmap      pixmap;
+        std::shared_ptr<Pixmap> pixmap;
         double      scale; // pixels per mm
         Vector      origin;
     } bgImage;

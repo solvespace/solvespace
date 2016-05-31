@@ -10,10 +10,6 @@
 #ifndef __SURFACE_H
 #define __SURFACE_H
 
-#ifdef WIN32
-    #undef DIFFERENCE
-#endif
-
 // Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);

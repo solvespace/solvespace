@@ -8,11 +8,6 @@
 #ifndef __SKETCH_H
 #define __SKETCH_H
 
-#ifdef WIN32
-    // winuser.h confilct (DIFFERENCE)
-    #undef DIFFERENCE
-#endif
-
 class hGroup;
 class hRequest;
 class hEntity;
@@ -270,16 +265,17 @@ public:
     Group *PreviousGroup();
     Group *RunningMeshGroup();
     bool IsMeshGroup();
+
     void GenerateShellAndMesh();
     template<class T> void GenerateForStepAndRepeat(T *steps, T *outs);
     template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
     void GenerateDisplayItems();
-    void DrawDisplayItems(Group::Type t);
-    void Draw();
-    RgbaColor GetLoopSetFillColor(SBezierLoopSet *sbls,
-                                 bool *allSame, Vector *errorAt);
-    void FillLoopSetAsPolygon(SBezierLoopSet *sbls);
-    void DrawFilledPaths();
+
+    enum class DrawMeshAs { DEFAULT, HOVERED, SELECTED };
+    void DrawMesh(DrawMeshAs how, Canvas *canvas);
+    void Draw(Canvas *canvas);
+    void DrawPolyError(Canvas *canvas);
+    void DrawFilledPaths(Canvas *canvas);
 
     SPolygon GetPolygon();
 
@@ -482,8 +478,7 @@ public:
     // POD members with indeterminate value.
     Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
         actDistance(), actVisible(), style(), construction(),
-        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid(),
-        dogd() {};
+        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid() {};
 
     // A linked entity that was hidden in the source file ends up hidden
     // here too.
@@ -507,41 +502,25 @@ public:
     BBox        screenBBox;
     bool        screenBBoxValid;
 
-    // Routines to draw and hit-test the representation of the entity
-    // on-screen.
-    struct {
-        bool        drawing;
-        Point2d     mp;
-        double      dmin;
-        double      lineWidth;
-        double      stippleScale;
-        StipplePattern stippleType;
-        int         data;
-    } dogd; // state for drawing or getting distance (for hit testing)
-
-    void LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat=false, int userData = -1);
-    void DrawOrGetDistance();
-
     bool IsStylable() const;
     bool IsVisible() const;
-    bool PointIsFromReferences() const;
+
+    enum class DrawAs { DEFAULT, HIDDEN, HOVERED, SELECTED };
+    void Draw(DrawAs how, Canvas *canvas);
+    void GetReferencePoints(std::vector<Vector> *refs);
+    int GetPositionOfPoint(const Camera &camera, Point2d p);
 
     void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
     void GenerateBezierCurves(SBezierList *sbl) const;
     void GenerateEdges(SEdgeList *el);
 
-    static void DrawAll(bool drawAsHidden);
-    void Draw(bool drawAsHidden);
-    double GetDistance(Point2d mp);
-    Vector GetReferencePos();
+    SBezierList *GetOrGenerateBezierCurves();
+    SEdgeList *GetOrGenerateEdges();
+    BBox GetOrGenerateScreenBBox(bool *hasBBox);
 
     void CalculateNumerical(bool forExport);
 
     std::string DescriptionString() const;
-
-    SBezierList *GetOrGenerateBezierCurves();
-    SEdgeList *GetOrGenerateEdges();
-    BBox GetOrGenerateScreenBBox(bool *hasBBox);
 
     void Clear() {
         beziers.l.Clear();
@@ -668,7 +647,7 @@ public:
 class Constraint : public ConstraintBase {
 public:
     // See Entity::Entity().
-    Constraint() : ConstraintBase({}), disp(), dogd() {}
+    Constraint() : ConstraintBase({}), disp() {}
 
     // These define how the constraint is drawn on-screen.
     struct {
@@ -676,39 +655,41 @@ public:
         hStyle      style;
     } disp;
 
-    // State for drawing or getting distance (for hit testing).
-    struct {
-        bool        drawing;
-        Point2d     mp;
-        double      dmin;
-        SEdgeList   *sel;
-    } dogd;
-
-    double GetDistance(Point2d mp);
-    Vector GetLabelPos();
-    void GetReferencePos(Vector *refps);
-    void Draw();
-    void GetEdges(SEdgeList *sel);
+    bool IsVisible() const;
     bool IsStylable() const;
     hStyle GetStyle() const;
     bool HasLabel() const;
-
-    void LineDrawOrGetDistance(Vector a, Vector b);
-    bool IsVisible() const;
-    void DrawOrGetDistance(Vector *labelPos, Vector *refps);
     std::string Label() const;
-    bool DoLineExtend(Vector p0, Vector p1, Vector pt, double salient);
-    void DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
-                        Vector offset, Vector *ref, bool trim);
-    void DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da);
-    void DoLineWithArrows(Vector ref, Vector a, Vector b, bool onlyOneExt);
-    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend, Vector gr, Vector gu, double swidth, double sheight);
-    int DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend = true);
-    void DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu);
-    void StippledLine(Vector a, Vector b);
-    void DoProjectedPoint(Vector *p);
-    void DoEqualLenTicks(Vector a, Vector b, Vector gn, Vector *refp);
-    void DoEqualRadiusTicks(hEntity he, Vector *refp);
+
+    enum class DrawAs { DEFAULT, HOVERED, SELECTED };
+    void Draw(DrawAs how, Canvas *canvas);
+    Vector GetLabelPos(const Camera &camera);
+    void GetReferencePoints(const Camera &camera, std::vector<Vector> *refs);
+
+    void DoLayout(DrawAs how, Canvas *canvas,
+                  Vector *labelPos, std::vector<Vector> *refs);
+    bool DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
+                      Vector p0, Vector p1, Vector pt, double salient);
+    void DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
+                       Vector a0, Vector da, Vector b0, Vector db,
+                       Vector offset, Vector *ref, bool trim);
+    void DoArrow(Canvas *canvas, Canvas::hStroke hcs,
+                 Vector p, Vector dir, Vector n, double width, double angle, double da);
+    void DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
+                          Vector ref, Vector a, Vector b, bool onlyOneExt);
+    int  DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
+                                 Vector ref, Vector a, Vector b, bool extend,
+                                 Vector gr, Vector gu, double swidth, double sheight);
+    int  DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
+                                 Vector ref, Vector a, Vector b, bool extend = true);
+    void DoLabel(Canvas *canvas, Canvas::hStroke hcs,
+                 Vector ref, Vector *labelPos, Vector gr, Vector gu);
+    void DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs,
+                          Vector *p);
+    void DoEqualLenTicks(Canvas *canvas, Canvas::hStroke hcs,
+                         Vector a, Vector b, Vector gn, Vector *refp);
+    void DoEqualRadiusTicks(Canvas *canvas, Canvas::hStroke hcs,
+                            hEntity he, Vector *refp);
 
     std::string DescriptionString() const;
 
@@ -831,9 +812,9 @@ public:
     static Style *Get(hStyle hs);
     static RgbaColor Color(hStyle hs, bool forExport=false);
     static RgbaColor FillColor(hStyle hs, bool forExport=false);
-    static float Width(hStyle hs);
+    static double Width(hStyle hs);
     static RgbaColor Color(int hs, bool forExport=false);
-    static float Width(int hs);
+    static double Width(int hs);
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);
     static double DefaultTextHeight();

@@ -135,6 +135,7 @@ public:
     double Dot(Point2d p) const;
     double DistanceTo(const Point2d &p) const;
     double DistanceToLine(const Point2d &p0, const Point2d &dp, bool asSegment) const;
+    double DistanceToLineSigned(const Point2d &p0, const Point2d &dp, bool asSegment) const;
     double Angle() const;
     double AngleTo(const Point2d &p) const;
     double Magnitude() const;
@@ -459,12 +460,20 @@ public:
     float blueF()  const { return (float)blue  / 255.0f; }
     float alphaF() const { return (float)alpha / 255.0f; }
 
+    bool IsEmpty() const { return alpha == 0; }
+
     bool Equals(RgbaColor c) const {
         return
             c.red   == red   &&
             c.green == green &&
             c.blue  == blue  &&
             c.alpha == alpha;
+    }
+
+    RgbaColor WithAlpha(uint8_t newAlpha) const {
+        RgbaColor color = *this;
+        color.alpha = newAlpha;
+        return color;
     }
 
     uint32_t ToPackedIntBGRA() const {

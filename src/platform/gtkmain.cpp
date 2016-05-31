@@ -224,12 +224,7 @@ void ScheduleLater() {
 
 /* GL wrapper */
 
-#define GL_CHECK() \
-    do { \
-        int err = (int)glGetError(); \
-        if(err) dbp("%s:%d: glGetError() == 0x%X %s", \
-                    __FILE__, __LINE__, err, gluErrorString(err)); \
-    } while (0)
+const bool FLIP_FRAMEBUFFER = true;
 
 class GlWidget : public Gtk::DrawingArea {
 public:
@@ -327,8 +322,6 @@ protected:
                  "Cannot allocate offscreen rendering buffer");
 
         on_gl_draw();
-        glFlush();
-        GL_CHECK();
 
         Cairo::RefPtr<Cairo::ImageSurface> surface = Cairo::ImageSurface::create(
                 _offscreen->end(), Cairo::FORMAT_RGB24,
@@ -1631,10 +1624,11 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
-    SolveSpace::Pixmap icon = LoadPNG("freedesktop/solvespace-48x48.png");
-    Glib::RefPtr<Gdk::Pixbuf> icon_gdk =
-        Gdk::Pixbuf::create_from_data(&icon.data[0], Gdk::COLORSPACE_RGB,
-                                      icon.hasAlpha, 8, icon.width, icon.height, icon.stride);
+    auto icon = LoadPng("freedesktop/solvespace-48x48.png");
+    auto icon_gdk =
+        Gdk::Pixbuf::create_from_data(&icon->data[0], Gdk::COLORSPACE_RGB,
+                                      icon->format == SolveSpace::Pixmap::Format::RGBA, 8,
+                                      icon->width, icon->height, icon->stride);
 
     TW.reset(new TextWindowGtk);
     GW.reset(new GraphicsWindowGtk);

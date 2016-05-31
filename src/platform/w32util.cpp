@@ -8,6 +8,9 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+// Include after solvespace.h to avoid identifier clashes.
+#include <windows.h>
+
 namespace SolveSpace {
 static HANDLE PermHeap, TempHeap;
 
@@ -76,6 +79,16 @@ std::wstring Widen(const std::string &in)
     ssassert(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), &out[0], out.length()),
              "Invalid UTF-8");
     return out;
+}
+
+bool PathEqual(const std::string &a, const std::string &b)
+{
+    // Case-sensitivity is actually per-volume on Windows,
+    // but it is tedious to implement and test for little benefit.
+    std::wstring wa = Widen(a), wb = Widen(b);
+    return std::equal(wa.begin(), wa.end(), wb.begin(), /*wb.end(),*/
+                [](wchar_t wca, wchar_t wcb) { return towlower(wca) == towlower(wcb); });
+
 }
 
 FILE *ssfopen(const std::string &filename, const char *mode)

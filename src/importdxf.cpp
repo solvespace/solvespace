@@ -2,11 +2,6 @@
 #include "libdxfrw.h"
 #include "libdwgr.h"
 
-#ifdef WIN32
-// Conflicts with DRW::TEXT.
-#   undef TEXT
-#endif
-
 namespace SolveSpace {
 
 static std::string ToUpper(std::string str) {

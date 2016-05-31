@@ -583,8 +583,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             Request *r = SK.GetRequest(gs.entity[0].request());
             if(r->type == Request::Type::CUBIC || r->type == Request::Type::CUBIC_PERIODIC) {
                 Entity *e = SK.GetEntity(gs.entity[0]);
-                e->GetDistance(Point2d::From(x, y));
-                addAfterPoint = e->dogd.data;
+                addAfterPoint = e->GetPositionOfPoint(GetCamera(), Point2d::From(x, y));
                 ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
@@ -1253,7 +1252,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
             return;
         }
 
-        Vector p3 = c->GetLabelPos();
+        Vector p3 = c->GetLabelPos(GetCamera());
         Point2d p2 = ProjectPoint(p3);
 
         std::string editValue;
@@ -1300,7 +1299,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         hStyle hs = c->disp.style;
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
         ShowGraphicsEditControl((int)p2.x, (int)p2.y,
-                                (int)(ssglStrFontSize(Style::TextHeight(hs)) * scale),
+                                (int)(VectorFont::Builtin()->GetHeight(Style::TextHeight(hs))),
                                 editMinWidthChar, editValue);
     }
 }

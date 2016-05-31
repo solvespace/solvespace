@@ -24,12 +24,12 @@ public:
        the pixel format is ARGB32 with top row at index 0 if
        flip is true and bottom row at index 0 if flip is false.
        the returned array is valid until the next call to begin() */
-    uint8_t *end(bool flip = true);
+    uint8_t *end();
 
 private:
     unsigned int _framebuffer;
     unsigned int _color_renderbuffer, _depth_renderbuffer;
-    uint32_t *_pixels, *_pixels_inv;
+    uint8_t *_pixels;
     int _width, _height;
 };
 

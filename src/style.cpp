@@ -6,9 +6,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include <png.h>
-
-#define DEFAULT_TEXT_HEIGHT 11.5
 
 const Style::Default Style::Defaults[] = {
     { { ACTIVE_GRP },   "ActiveGrp",    RGBf(1.0, 1.0, 1.0), 1.5, 4 },
@@ -88,8 +85,8 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->color         = (factory) ? d->color : CnfThawColor(d->color, CnfColor(d->cnfPrefix));
     s->width         = (factory) ? d->width : CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     s->widthAs       = UnitsAs::PIXELS;
-    s->textHeight    = (factory) ? DEFAULT_TEXT_HEIGHT
-                                 : CnfThawFloat(DEFAULT_TEXT_HEIGHT, CnfTextHeight(d->cnfPrefix));
+    s->textHeight    = (factory) ? 11.5
+                                 : CnfThawFloat(11.5, CnfTextHeight(d->cnfPrefix));
     s->textHeightAs  = UnitsAs::PIXELS;
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
@@ -110,7 +107,7 @@ void Style::LoadFactoryDefaults() {
         FillDefaultStyle(s, d, /*factory=*/true);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
-    SS.bgImage.pixmap.Clear();
+    SS.bgImage.pixmap = nullptr;
 }
 
 void Style::FreezeDefaultStyles() {
@@ -200,7 +197,7 @@ RgbaColor Style::Color(int s, bool forExport) {
     hStyle hs = { (uint32_t)s };
     return Color(hs, forExport);
 }
-float Style::Width(int s) {
+double Style::Width(int s) {
     hStyle hs = { (uint32_t)s };
     return Width(hs);
 }
@@ -250,16 +247,13 @@ RgbaColor Style::FillColor(hStyle h, bool forExport) {
 //-----------------------------------------------------------------------------
 // Return the width associated with our style in pixels..
 //-----------------------------------------------------------------------------
-float Style::Width(hStyle h) {
-    double r = 1.0;
+double Style::Width(hStyle h) {
     Style *s = Get(h);
-    if(s->widthAs == UnitsAs::MM) {
-        r = s->width * SS.GW.scale;
-    } else if(s->widthAs == UnitsAs::PIXELS) {
-        r = s->width;
+    switch(s->widthAs) {
+        case UnitsAs::MM:     return s->width * SS.GW.scale;
+        case UnitsAs::PIXELS: return s->width;
     }
-    // This returns a float because ssglLineWidth expects a float, avoid casts.
-    return (float)r;
+    ssassert(false, "Unexpected units");
 }
 
 //-----------------------------------------------------------------------------
@@ -273,13 +267,13 @@ double Style::WidthMm(int hs) {
 //-----------------------------------------------------------------------------
 // Return the associated text height, in pixels.
 //-----------------------------------------------------------------------------
-double Style::TextHeight(hStyle hs) {
-    Style *s = Get(hs);
-    if(s->textHeightAs == UnitsAs::MM) {
-        return s->textHeight * SS.GW.scale;
-    } else /* s->textHeightAs == UNITS_AS_PIXELS */ {
-        return s->textHeight;
+double Style::TextHeight(hStyle h) {
+    Style *s = Get(h);
+    switch(s->textHeightAs) {
+        case UnitsAs::MM:     return s->textHeight * SS.GW.scale;
+        case UnitsAs::PIXELS: return s->textHeight;
     }
+    ssassert(false, "Unexpected units");
 }
 
 double Style::DefaultTextHeight() {
@@ -369,29 +363,20 @@ void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::BACKGROUND_COLOR;
 }
 
-static int RoundUpToPowerOfTwo(int v)
-{
-    int i;
-    for(i = 0; i < 31; i++) {
-        int vt = (1 << i);
-        if(vt >= v) {
-            return vt;
-        }
-    }
-    return 0;
-}
-
 void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
-    SS.bgImage.pixmap.Clear();
+    SS.bgImage.pixmap = nullptr;
 
     if(link == 'l') {
         std::string bgImageFile;
         if(GetOpenFile(&bgImageFile, "", PngFileFilter)) {
             FILE *f = ssfopen(bgImageFile, "rb");
             if(f) {
-                SS.bgImage.pixmap = Pixmap::FromPNG(f);
+                SS.bgImage.pixmap = Pixmap::ReadPng(f);
                 SS.bgImage.scale  = SS.GW.scale;
                 SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
+                fclose(f);
+            } else {
+                Error("Error reading PNG file '%s'", bgImageFile.c_str());
             }
         }
     }
@@ -432,9 +417,9 @@ void TextWindow::ShowListOfStyles() {
 
     Printf(false, "");
     Printf(false, "%Ft background bitmap image%E");
-    if(!SS.bgImage.pixmap.IsEmpty()) {
+    if(SS.bgImage.pixmap) {
         Printf(false, "%Ba   %Ftwidth:%E %dpx   %Ftheight:%E %dpx",
-            SS.bgImage.pixmap.width, SS.bgImage.pixmap.height);
+            SS.bgImage.pixmap->width, SS.bgImage.pixmap->height);
 
         Printf(false, "   %Ftscale:%E %# px/%s %Fl%Ll%f%D[change]%E",
             SS.bgImage.scale*SS.MmPerUnit(),

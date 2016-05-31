@@ -8,37 +8,6 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void Constraint::LineDrawOrGetDistance(Vector a, Vector b) {
-    if(dogd.drawing) {
-        hStyle hs = GetStyle();
-
-        if(dogd.sel) {
-            dogd.sel->AddEdge(a, b, hs.v);
-        } else {
-            if(Style::Width(hs) >= 3.0) {
-                ssglFatLine(a, b, Style::Width(hs) / SS.GW.scale);
-            } else {
-                glBegin(GL_LINE_STRIP);
-                    ssglVertex3v(a);
-                    ssglVertex3v(b);
-                glEnd();
-            }
-        }
-    } else {
-        Point2d ap = SS.GW.ProjectPoint(a);
-        Point2d bp = SS.GW.ProjectPoint(b);
-
-        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
-        dogd.dmin = min(dogd.dmin, d);
-    }
-}
-
-static void LineCallback(void *fndata, Vector a, Vector b)
-{
-    Constraint *c = (Constraint *)fndata;
-    c->LineDrawOrGetDistance(a, b);
-}
-
 std::string Constraint::Label() const {
     std::string result;
     if(type == Type::ANGLE) {
@@ -67,13 +36,14 @@ std::string Constraint::Label() const {
     return result;
 }
 
-void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
-    hStyle hs = GetStyle();
-    double th = Style::TextHeight(hs);
+void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
+                         Vector ref, Vector *labelPos, Vector gr, Vector gu) {
+    const Camera &camera = canvas->GetCamera();
 
     std::string s = Label();
-    double swidth  = ssglStrWidth(s, th),
-           sheight = ssglStrCapHeight(th);
+    double textHeight = Style::TextHeight(GetStyle()) / camera.scale;
+    double swidth  = VectorFont::Builtin()->GetWidth(textHeight, s),
+           sheight = VectorFont::Builtin()->GetCapHeight(textHeight);
 
     // By default, the reference is from the center; but the style could
     // specify otherwise if one is present, and it could also specify a
@@ -94,37 +64,22 @@ void Constraint::DoLabel(Vector ref, Vector *labelPos, Vector gr, Vector gu) {
         if(o & (uint32_t)Style::TextOrigin::TOP) ref = ref.Minus(gu.WithMagnitude(sheight/2));
     }
 
-    if(labelPos) {
-        // labelPos is from the top left corner (for the text box used to
-        // edit things), but ref is from the center.
-        *labelPos = ref.Minus(gr.WithMagnitude(swidth/2)).Minus(
-                              gu.WithMagnitude(sheight/2));
-    }
-
-
-    if(dogd.drawing) {
-        ssglWriteTextRefCenter(s, th, ref, gr, gu, LineCallback, (void *)this);
-    } else {
-        double l = swidth/2 - sheight/2;
-        l = max(l, 5/SS.GW.scale);
-        Point2d a = SS.GW.ProjectPoint(ref.Minus(gr.WithMagnitude(l)));
-        Point2d b = SS.GW.ProjectPoint(ref.Plus (gr.WithMagnitude(l)));
-        double d = dogd.mp.DistanceToLine(a, b.Minus(a), /*asSegment=*/true);
-
-        dogd.dmin = min(dogd.dmin, d - (th / 2));
-    }
+    Vector o = ref.Minus(gr.WithMagnitude(swidth/2)).Minus(
+                         gu.WithMagnitude(sheight/2));
+    canvas->DrawVectorText(s, textHeight, o, gr.WithMagnitude(1), gu.WithMagnitude(1), hcs);
+    if(labelPos) *labelPos = o;
 }
 
-void Constraint::StippledLine(Vector a, Vector b) {
-    glLineStipple(4, 0x5555);
-    glEnable(GL_LINE_STIPPLE);
-    LineDrawOrGetDistance(a, b);
-    glDisable(GL_LINE_STIPPLE);
-}
+void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *r) {
+    const Camera &camera = canvas->GetCamera();
 
-void Constraint::DoProjectedPoint(Vector *r) {
+    Canvas::Stroke strokeStippled = *canvas->strokes.FindById(hcs);
+    strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
+    strokeStippled.stippleScale   = 4.0 / camera.scale;
+    Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
+
     Vector p = r->ProjectInto(workplane);
-    StippledLine(p, *r);
+    canvas->DrawLine(p, *r, hcsStippled);
     *r = p;
 }
 
@@ -136,21 +91,20 @@ void Constraint::DoProjectedPoint(Vector *r) {
 // the line to almost meet the box, and return either positive or negative,
 // depending whether that extension was from A or from B.
 //-----------------------------------------------------------------------------
-int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend) {
-    hStyle hs = GetStyle();
-    double th = Style::TextHeight(hs);
-    Vector gu = SS.GW.projUp.WithMagnitude(1),
-           gr = SS.GW.projRight.WithMagnitude(1);
-
-    double pixels = 1.0 / SS.GW.scale;
-    std::string s = Label();
-    double swidth  = ssglStrWidth(s, th) + 4*pixels,
-           sheight = ssglStrCapHeight(th) + 8*pixels;
-
-    return DoLineTrimmedAgainstBox(ref, a, b, extend, gr, gu, swidth, sheight);
+int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
+                                        Vector ref, Vector a, Vector b, bool extend) {
+    const Camera &camera = canvas->GetCamera();
+    double th      = Style::TextHeight(GetStyle()) / camera.scale;
+    double pixels  = 1.0 / camera.scale;
+    double swidth  = VectorFont::Builtin()->GetWidth(th, Label()) + 4 * pixels,
+           sheight = VectorFont::Builtin()->GetCapHeight(th) + 8 * pixels;
+    Vector gu = camera.projUp.WithMagnitude(1),
+           gr = camera.projRight.WithMagnitude(1);
+    return DoLineTrimmedAgainstBox(canvas, hcs, ref, a, b, extend, gr, gu, swidth, sheight);
 }
 
-int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool extend,
+int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
+                                        Vector ref, Vector a, Vector b, bool extend,
                                         Vector gr, Vector gu, double swidth, double sheight) {
     struct {
         Vector n;
@@ -188,20 +142,20 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool ext
 
     // Both in range; so there's pieces of the line on both sides of the label box.
     if(tmin >= 0.0 && tmin <= 1.0 && tmax >= 0.0 && tmax <= 1.0) {
-        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
-        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+        canvas->DrawLine(a, a.Plus(dl.ScaledBy(tmin)), hcs);
+        canvas->DrawLine(a.Plus(dl.ScaledBy(tmax)), b, hcs);
         return 0;
     }
 
     // Only one intersection in range; so the box is right on top of the endpoint
     if(tmin >= 0.0 && tmin <= 1.0) {
-        LineDrawOrGetDistance(a, a.Plus(dl.ScaledBy(tmin)));
+        canvas->DrawLine(a, a.Plus(dl.ScaledBy(tmin)), hcs);
         return 0;
     }
 
     // Likewise.
     if(tmax >= 0.0 && tmax <= 1.0) {
-        LineDrawOrGetDistance(a.Plus(dl.ScaledBy(tmax)), b);
+        canvas->DrawLine(a.Plus(dl.ScaledBy(tmax)), b, hcs);
         return 0;
     }
 
@@ -211,13 +165,13 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool ext
     // and closer to b, positive means outside and closer to a.
     if(tmax < 0.0) {
         if(extend) a = a.Plus(dl.ScaledBy(tmax));
-        LineDrawOrGetDistance(a, b);
+        canvas->DrawLine(a, b, hcs);
         return 1;
     }
 
     if(tmin > 1.0) {
         if(extend) b = a.Plus(dl.ScaledBy(tmin));
-        LineDrawOrGetDistance(a, b);
+        canvas->DrawLine(a, b, hcs);
         return -1;
     }
 
@@ -225,11 +179,12 @@ int Constraint::DoLineTrimmedAgainstBox(Vector ref, Vector a, Vector b, bool ext
     return 0;
 }
 
-void Constraint::DoArrow(Vector p, Vector dir, Vector n, double width, double angle, double da) {
+void Constraint::DoArrow(Canvas *canvas, Canvas::hStroke hcs,
+                         Vector p, Vector dir, Vector n, double width, double angle, double da) {
     dir = dir.WithMagnitude(width / cos(angle));
     dir = dir.RotatedAbout(n, da);
-    LineDrawOrGetDistance(p, p.Plus(dir.RotatedAbout(n,  angle)));
-    LineDrawOrGetDistance(p, p.Plus(dir.RotatedAbout(n, -angle)));
+    canvas->DrawLine(p, p.Plus(dir.RotatedAbout(n,  angle)), hcs);
+    canvas->DrawLine(p, p.Plus(dir.RotatedAbout(n, -angle)), hcs);
 }
 
 //-----------------------------------------------------------------------------
@@ -239,10 +194,12 @@ void Constraint::DoArrow(Vector p, Vector dir, Vector n, double width, double an
 // to the line AB, until the line between the extensions crosses ref (the
 // center of the label).
 //-----------------------------------------------------------------------------
-void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
+void Constraint::DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
+                                  Vector ref, Vector a, Vector b,
                                   bool onlyOneExt)
 {
-    double pixels = 1.0 / SS.GW.scale;
+    const Camera &camera = canvas->GetCamera();
+    double pixels = 1.0 / camera.scale;
 
     Vector ab   = a.Minus(b);
     Vector ar   = a.Minus(ref);
@@ -258,15 +215,15 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
     // Extension lines extend 10 pixels beyond where the arrows get
     // drawn (which is at the same offset perpendicular from AB as the
     // label).
-    LineDrawOrGetDistance(a, ae.Plus(out.WithMagnitude(10*pixels)));
+    canvas->DrawLine(a, ae.Plus(out.WithMagnitude(10*pixels)), hcs);
     if(!onlyOneExt) {
-        LineDrawOrGetDistance(b, be.Plus(out.WithMagnitude(10*pixels)));
+        canvas->DrawLine(b, be.Plus(out.WithMagnitude(10*pixels)), hcs);
     } else {
         Vector prj = be;
-        DoProjectedPoint(&prj);
+        DoProjectedPoint(canvas, hcs, &prj);
     }
 
-    int within = DoLineTrimmedAgainstBox(ref, ae, be);
+    int within = DoLineTrimmedAgainstBox(canvas, hcs, ref, ae, be);
 
     // Arrow heads are 13 pixels long, with an 18 degree half-angle.
     double theta = 18*PI/180;
@@ -275,24 +232,29 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
     if(within != 0) {
         arrow = arrow.ScaledBy(-1);
         Vector seg = (be.Minus(ae)).WithMagnitude(18*pixels);
-        if(within < 0) LineDrawOrGetDistance(ae, ae.Minus(seg));
-        if(within > 0) LineDrawOrGetDistance(be, be.Plus(seg));
+        if(within < 0) canvas->DrawLine(ae, ae.Minus(seg), hcs);
+        if(within > 0) canvas->DrawLine(be, be.Plus(seg), hcs);
     }
 
-    DoArrow(ae, arrow, n, 13.0 * pixels, theta, 0.0);
-    DoArrow(be, arrow.Negated(), n, 13.0 * pixels, theta, 0.0);
+    DoArrow(canvas, hcs, ae, arrow, n, 13.0 * pixels, theta, 0.0);
+    DoArrow(canvas, hcs, be, arrow.Negated(), n, 13.0 * pixels, theta, 0.0);
 }
 
-void Constraint::DoEqualLenTicks(Vector a, Vector b, Vector gn, Vector *refp) {
+void Constraint::DoEqualLenTicks(Canvas *canvas, Canvas::hStroke hcs,
+                                 Vector a, Vector b, Vector gn, Vector *refp) {
+    const Camera &camera = canvas->GetCamera();
+
     Vector m = (a.ScaledBy(1.0/3)).Plus(b.ScaledBy(2.0/3));
     if(refp) *refp = m;
     Vector ab = a.Minus(b);
-    Vector n = (gn.Cross(ab)).WithMagnitude(10/SS.GW.scale);
+    Vector n = (gn.Cross(ab)).WithMagnitude(10/camera.scale);
 
-    LineDrawOrGetDistance(m.Minus(n), m.Plus(n));
+    canvas->DrawLine(m.Minus(n), m.Plus(n), hcs);
 }
 
-void Constraint::DoEqualRadiusTicks(hEntity he, Vector *refp) {
+void Constraint::DoEqualRadiusTicks(Canvas *canvas, Canvas::hStroke hcs,
+                                    hEntity he, Vector *refp) {
+    const Camera &camera = canvas->GetCamera();
     Entity *circ = SK.GetEntity(he);
 
     Vector center = SK.GetEntity(circ->point[0])->PointGetNum();
@@ -313,15 +275,18 @@ void Constraint::DoEqualRadiusTicks(hEntity he, Vector *refp) {
     d = d.ScaledBy(r);
     Vector p = center.Plus(d);
     if(refp) *refp = p;
-    Vector tick = d.WithMagnitude(10/SS.GW.scale);
-    LineDrawOrGetDistance(p.Plus(tick), p.Minus(tick));
+    Vector tick = d.WithMagnitude(10/camera.scale);
+    canvas->DrawLine(p.Plus(tick), p.Minus(tick), hcs);
 }
 
-void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
-                                   Vector offset, Vector *ref, bool trim)
+void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
+                               Vector a0, Vector da, Vector b0, Vector db,
+                               Vector offset, Vector *ref, bool trim)
 {
-    Vector gr = SS.GW.projRight.ScaledBy(1.0);
-    Vector gu = SS.GW.projUp.ScaledBy(1.0);
+    const Camera &camera = canvas->GetCamera();
+    double pixels = 1.0 / camera.scale;
+    Vector gr = camera.projRight.ScaledBy(1.0);
+    Vector gu = camera.projUp.ScaledBy(1.0);
 
     if(workplane.v != Entity::FREE_IN_3D.v) {
         a0 = a0.ProjectInto(workplane);
@@ -330,7 +295,6 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         db = db.ProjectVectorInto(workplane);
     }
 
-    double px = 1.0 / SS.GW.scale;
     Vector a1 = a0.Plus(da);
     Vector b1 = b0.Plus(db);
 
@@ -368,29 +332,27 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
         double rda = rm.Dot(da), rdna = rm.Dot(dna);
 
         // Introduce minimal arc radius in pixels
-        double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * px);
+        double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * pixels);
 
-        hStyle hs = disp.style;
-        if(hs.v == 0) hs.v = Style::CONSTRAINT;
-        double th = Style::TextHeight(hs);
-        double swidth  = ssglStrWidth(Label(), th) + 4.0 * px;
-        double sheight = ssglStrCapHeight(th) + 8.0 * px;
+        double th = Style::TextHeight(GetStyle()) / camera.scale;
+        double swidth   = VectorFont::Builtin()->GetWidth(th, Label()) + 4*pixels,
+               sheight  = VectorFont::Builtin()->GetCapHeight(th) + 8*pixels;
         double textR = sqrt(swidth * swidth + sheight * sheight) / 2.0;
-        *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * px + textR)));
+        *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * pixels + textR)));
 
         // Arrow points
         Vector apa = da. ScaledBy(r).Plus(pi);
         Vector apb = da. ScaledBy(r*cos(thetaf)).Plus(
                      dna.ScaledBy(r*sin(thetaf))).Plus(pi);
 
-        double arrowW = 13 * px;
+        double arrowW = 13 * pixels;
         double arrowA = 18.0 * PI / 180.0;
         bool arrowVisible = apb.Minus(apa).Magnitude() > 2.5 * arrowW;
         // Arrow reversing indicator
         bool arrowRev = false;
 
         // The minimal extension length in angular representation
-        double extAngle = 18 * px / r;
+        double extAngle = 18 * pixels / r;
 
         // Arc additional angle
         double addAngle = 0.0;
@@ -435,16 +397,17 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                        dna.ScaledBy(r*sin(theta))).Plus(pi);
             if(i > 0) {
                 if(trim) {
-                    DoLineTrimmedAgainstBox(*ref, prev, p, /*extend=*/false, gr, gu, swidth, sheight);
+                    DoLineTrimmedAgainstBox(canvas, hcs, *ref, prev, p,
+                                            /*extend=*/false, gr, gu, swidth, sheight);
                 } else {
-                    LineDrawOrGetDistance(prev, p);
+                    canvas->DrawLine(prev, p, hcs);
                 }
             }
             prev = p;
         }
 
-        DoLineExtend(a0, a1, apa, 5.0 * px);
-        DoLineExtend(b0, b1, apb, 5.0 * px);
+        DoLineExtend(canvas, hcs, a0, a1, apa, 5.0 * pixels);
+        DoLineExtend(canvas, hcs, b0, b1, apb, 5.0 * pixels);
 
         // Draw arrows only when we have enough space.
         if(arrowVisible) {
@@ -453,18 +416,21 @@ void Constraint::DoArcForAngle(Vector a0, Vector da, Vector b0, Vector db,
                 dna = dna.ScaledBy(-1.0);
                 angleCorr = -angleCorr;
             }
-            DoArrow(apa, dna, norm, arrowW, arrowA, angleCorr);
-            DoArrow(apb, dna, norm, arrowW, arrowA, thetaf + PI - angleCorr);
+            DoArrow(canvas, hcs, apa, dna, norm, arrowW, arrowA, angleCorr);
+            DoArrow(canvas, hcs, apb, dna, norm, arrowW, arrowA, thetaf + PI - angleCorr);
         }
     } else {
         // The lines are skew; no wonderful way to illustrate that.
+
         *ref = a0.Plus(b0);
         *ref = (*ref).ScaledBy(0.5).Plus(disp.offset);
         gu = gu.WithMagnitude(1);
+        double textHeight = Style::TextHeight(GetStyle()) / camera.scale;
         Vector trans =
-            (*ref).Plus(gu.ScaledBy(-1.5*ssglStrCapHeight(Style::DefaultTextHeight())));
-        ssglWriteTextRefCenter("angle between skew lines", Style::DefaultTextHeight(),
-            trans, gr.WithMagnitude(px), gu.WithMagnitude(px), LineCallback, (void *)this);
+            (*ref).Plus(gu.ScaledBy(-1.5*VectorFont::Builtin()->GetCapHeight(textHeight)));
+        canvas->DrawVectorText("angle between skew lines", textHeight,
+                               trans, gr.WithMagnitude(pixels), gu.WithMagnitude(pixels),
+                               hcs);
     }
 }
 
@@ -486,13 +452,14 @@ bool Constraint::IsVisible() const {
     return true;
 }
 
-bool Constraint::DoLineExtend(Vector p0, Vector p1, Vector pt, double salient) {
+bool Constraint::DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
+                              Vector p0, Vector p1, Vector pt, double salient) {
     Vector dir = p1.Minus(p0);
     double k = dir.Dot(pt.Minus(p0)) / dir.Dot(dir);
     Vector ptOnLine = p0.Plus(dir.ScaledBy(k));
 
     // Draw projection line.
-    LineDrawOrGetDistance(pt, ptOnLine);
+    canvas->DrawLine(pt, ptOnLine, hcs);
 
     // Calculate salient direction.
     Vector sd = dir.WithMagnitude(1.0).ScaledBy(salient);
@@ -511,18 +478,42 @@ bool Constraint::DoLineExtend(Vector p0, Vector p1, Vector pt, double salient) {
     }
 
     // Draw extension line.
-    LineDrawOrGetDistance(from, to);
+    canvas->DrawLine(from, to, hcs);
     return true;
 }
 
-void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
+void Constraint::DoLayout(DrawAs how, Canvas *canvas,
+                          Vector *labelPos, std::vector<Vector> *refs) {
     if(!IsVisible()) return;
 
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.
-    Vector gr = SS.GW.projRight.ScaledBy(1/SS.GW.scale);
-    Vector gu = SS.GW.projUp.ScaledBy(1/SS.GW.scale);
-    Vector gn = (gr.Cross(gu)).WithMagnitude(1/SS.GW.scale);
+    const Camera &camera = canvas->GetCamera();
+    Vector gr = camera.projRight.ScaledBy(1/camera.scale);
+    Vector gu = camera.projUp.ScaledBy(1/camera.scale);
+    Vector gn = (gr.Cross(gu)).WithMagnitude(1/camera.scale);
+
+    double textHeight = Style::TextHeight(GetStyle()) / camera.scale;
+
+    RgbaColor color = {};
+    switch(how) {
+        case DrawAs::DEFAULT:  color = Style::Color(GetStyle()); break;
+        case DrawAs::HOVERED:  color = Style::Color(Style::HOVERED);    break;
+        case DrawAs::SELECTED: color = Style::Color(Style::SELECTED);   break;
+    }
+
+    Canvas::Stroke stroke = {};
+    stroke.layer    = Canvas::Layer::FRONT;
+    stroke.color    = color;
+    stroke.width    = Style::Width(GetStyle());
+    stroke.zIndex   = 4;
+    Canvas::hStroke hcs = canvas->GetStroke(stroke);
+
+    Canvas::Fill fill = {};
+    fill.layer      = Canvas::Layer::FRONT;
+    fill.color      = color;
+    fill.zIndex     = stroke.zIndex;
+    Canvas::hFill hcf = canvas->GetFill(fill);
 
     switch(type) {
         case Type::PT_PT_DISTANCE: {
@@ -530,35 +521,40 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector bp = SK.GetEntity(ptB)->PointGetNum();
 
             if(workplane.v != Entity::FREE_IN_3D.v) {
-                DoProjectedPoint(&ap);
-                DoProjectedPoint(&bp);
+                DoProjectedPoint(canvas, hcs, &ap);
+                DoProjectedPoint(canvas, hcs, &bp);
             }
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
-            if(refps) refps[0] = refps[1] = ref;
+            if(refs) refs->push_back(ref);
 
-            DoLineWithArrows(ref, ap, bp, /*onlyOneExt=*/false);
-            DoLabel(ref, labelPos, gr, gu);
+            DoLineWithArrows(canvas, hcs, ref, ap, bp, /*onlyOneExt=*/false);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
             return;
         }
 
         case Type::PROJ_PT_DISTANCE: {
+            Canvas::Stroke strokeStippled = stroke;
+            strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
+            strokeStippled.stippleScale   = 4.0 / camera.scale;
+            Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
+
             Vector ap = SK.GetEntity(ptA)->PointGetNum(),
                    bp = SK.GetEntity(ptB)->PointGetNum(),
                    dp = (bp.Minus(ap)),
                    pp = SK.GetEntity(entityA)->VectorGetNum();
 
             Vector ref = ((ap.Plus(bp)).ScaledBy(0.5)).Plus(disp.offset);
-            if(refps) refps[0] = refps[1] = ref;
+            if(refs) refs->push_back(ref);
 
             pp = pp.WithMagnitude(1);
             double d = dp.Dot(pp);
             Vector bpp = ap.Plus(pp.ScaledBy(d));
-            StippledLine(ap, bpp);
-            StippledLine(bp, bpp);
+            canvas->DrawLine(ap, bpp, hcsStippled);
+            canvas->DrawLine(bp, bpp, hcsStippled);
 
-            DoLineWithArrows(ref, ap, bpp, /*onlyOneExt=*/false);
-            DoLabel(ref, labelPos, gr, gu);
+            DoLineWithArrows(canvas, hcs, ref, ap, bpp, /*onlyOneExt=*/false);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
             return;
         }
 
@@ -579,13 +575,13 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector closest = pt.Plus(n.WithMagnitude(d));
 
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
-            if(refps) refps[0] = refps[1] = ref;
+            if(refs) refs->push_back(ref);
 
             if(!pt.Equals(closest)) {
-                DoLineWithArrows(ref, pt, closest, /*onlyOneExt=*/true);
+                DoLineWithArrows(canvas, hcs, ref, pt, closest, /*onlyOneExt=*/true);
             }
 
-            DoLabel(ref, labelPos, gr, gu);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
             return;
         }
 
@@ -599,29 +595,29 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             if(workplane.v != Entity::FREE_IN_3D.v) {
                 lA = lA.ProjectInto(workplane);
                 lB = lB.ProjectInto(workplane);
-                DoProjectedPoint(&pt);
+                DoProjectedPoint(canvas, hcs, &pt);
             }
 
             // Find the closest point on the line
             Vector closest = pt.ClosestPointOnLine(lA, dl);
 
             Vector ref = ((closest.Plus(pt)).ScaledBy(0.5)).Plus(disp.offset);
-            if(refps) refps[0] = refps[1] = ref;
-            DoLabel(ref, labelPos, gr, gu);
+            if(refs) refs->push_back(ref);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
 
             if(!pt.Equals(closest)) {
-                DoLineWithArrows(ref, pt, closest, /*onlyOneExt=*/true);
+                DoLineWithArrows(canvas, hcs, ref, pt, closest, /*onlyOneExt=*/true);
 
                 // Extensions to line
-                double pixels = 1.0 / SS.GW.scale;
+                double pixels = 1.0 / camera.scale;
                 Vector refClosest = ref.ClosestPointOnLine(lA, dl);
                 double ddl = dl.Dot(dl);
                 if(fabs(ddl) > LENGTH_EPS * LENGTH_EPS) {
                     double t = refClosest.Minus(lA).Dot(dl) / ddl;
                     if(t < 0.0) {
-                        LineDrawOrGetDistance(refClosest.Minus(dl.WithMagnitude(10.0 * pixels)), lA);
+                        canvas->DrawLine(refClosest.Minus(dl.WithMagnitude(10.0 * pixels)), lA, hcs);
                     } else if(t > 1.0) {
-                        LineDrawOrGetDistance(refClosest.Plus(dl.WithMagnitude(10.0 * pixels)), lB);
+                        canvas->DrawLine(refClosest.Plus(dl.WithMagnitude(10.0 * pixels)), lB, hcs);
                     }
                 }
             }
@@ -636,7 +632,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Vector lB = SK.GetEntity(line->point[1])->PointGetNum();
 
                 Vector c2 = (lA.ScaledBy(1-t)).Plus(lB.ScaledBy(t));
-                DoProjectedPoint(&c2);
+                DoProjectedPoint(canvas, hcs, &c2);
             }
             return;
         }
@@ -651,38 +647,25 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector ref = center.Plus(disp.offset);
             // Force the label into the same plane as the circle.
             ref = ref.Minus(n.ScaledBy(n.Dot(ref) - n.Dot(center)));
-            if(refps) refps[0] = refps[1] = ref;
+            if(refs) refs->push_back(ref);
 
             Vector mark = ref.Minus(center);
             mark = mark.WithMagnitude(mark.Magnitude()-r);
-            DoLineTrimmedAgainstBox(ref, ref, ref.Minus(mark));
+            DoLineTrimmedAgainstBox(canvas, hcs, ref, ref, ref.Minus(mark));
 
             Vector topLeft;
-            DoLabel(ref, &topLeft, gr, gu);
+            DoLabel(canvas, hcs, ref, &topLeft, gr, gu);
             if(labelPos) *labelPos = topLeft;
             return;
         }
 
         case Type::POINTS_COINCIDENT: {
-            if(!dogd.drawing) {
-                for(int i = 0; i < 2; i++) {
-                    Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
-                    if(refps) refps[i] = p;
-                    Point2d pp = SS.GW.ProjectPoint(p);
-                    // The point is selected within a radius of 7, from the
-                    // same center; so if the point is visible, then this
-                    // constraint cannot be selected. But that's okay.
-                    dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 3);
-                }
-                return;
-            }
-
-            if(dogd.drawing) {
+            if(how == DrawAs::DEFAULT) {
                 // Let's adjust the color of this constraint to have the same
                 // rough luma as the point color, so that the constraint does not
                 // stand out in an ugly way.
                 RgbaColor cd = Style::Color(Style::DATUM),
-                         cc = Style::Color(Style::CONSTRAINT);
+                          cc = Style::Color(Style::CONSTRAINT);
                 // convert from 8-bit color to a vector
                 Vector vd = Vector::From(cd.redF(), cd.greenF(), cd.blueF()),
                        vc = Vector::From(cc.redF(), cc.greenF(), cc.blueF());
@@ -690,22 +673,23 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 // the datum color, maybe a bit dimmer
                 vc = vc.WithMagnitude(vd.Magnitude()*0.9);
                 // and set the color to that.
-                ssglColorRGB(RGBf(vc.x, vc.y, vc.z));
+                fill.color = RGBf(vc.x, vc.y, vc.z);
+                hcf = canvas->GetFill(fill);
+            }
 
-                for(int a = 0; a < 2; a++) {
-                    Vector r = SS.GW.projRight.ScaledBy((a+1)/SS.GW.scale);
-                    Vector d = SS.GW.projUp.ScaledBy((2-a)/SS.GW.scale);
-                    for(int i = 0; i < 2; i++) {
-                        Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
-                        glBegin(GL_QUADS);
-                            ssglVertex3v(p.Plus (r).Plus (d));
-                            ssglVertex3v(p.Plus (r).Minus(d));
-                            ssglVertex3v(p.Minus(r).Minus(d));
-                            ssglVertex3v(p.Minus(r).Plus (d));
-                        glEnd();
-                    }
-
+            for(int a = 0; a < 2; a++) {
+                Vector r = camera.projRight.ScaledBy((a+1)/camera.scale);
+                Vector d = camera.projUp.ScaledBy((2-a)/camera.scale);
+                for(int i = 0; i < 2; i++) {
+                    Vector p = SK.GetEntity(i == 0 ? ptA : ptB)-> PointGetNum();
+                    if(refs) refs->push_back(p);
+                    canvas->DrawQuad(p.Plus (r).Plus (d),
+                                     p.Plus (r).Minus(d),
+                                     p.Minus(r).Minus(d),
+                                     p.Minus(r).Plus (d),
+                                     hcf);
                 }
+
             }
             return;
         }
@@ -714,9 +698,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
         case Type::PT_ON_LINE:
         case Type::PT_ON_FACE:
         case Type::PT_IN_PLANE: {
-            double s = 8/SS.GW.scale;
+            double s = 8/camera.scale;
             Vector p = SK.GetEntity(ptA)->PointGetNum();
-            if(refps) refps[0] = refps[1] = p;
+            if(refs) refs->push_back(p);
             Vector r, d;
             if(type == Type::PT_ON_FACE) {
                 Vector n = SK.GetEntity(entityA)->FaceGetNormalNum();
@@ -732,26 +716,26 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 s *= (6.0/8); // draw these a little smaller
             }
             r = r.WithMagnitude(s); d = d.WithMagnitude(s);
-            LineDrawOrGetDistance(p.Plus (r).Plus (d), p.Plus (r).Minus(d));
-            LineDrawOrGetDistance(p.Plus (r).Minus(d), p.Minus(r).Minus(d));
-            LineDrawOrGetDistance(p.Minus(r).Minus(d), p.Minus(r).Plus (d));
-            LineDrawOrGetDistance(p.Minus(r).Plus (d), p.Plus (r).Plus (d));
+            canvas->DrawLine(p.Plus (r).Plus (d), p.Plus (r).Minus(d), hcs);
+            canvas->DrawLine(p.Plus (r).Minus(d), p.Minus(r).Minus(d), hcs);
+            canvas->DrawLine(p.Minus(r).Minus(d), p.Minus(r).Plus (d), hcs);
+            canvas->DrawLine(p.Minus(r).Plus (d), p.Plus (r).Plus (d), hcs);
             return;
         }
 
         case Type::WHERE_DRAGGED: {
             Vector p = SK.GetEntity(ptA)->PointGetNum();
-            if(refps) refps[0] = refps[1] = p;
-            Vector u = p.Plus(gu.WithMagnitude(8/SS.GW.scale)).Plus(
-                              gr.WithMagnitude(8/SS.GW.scale)),
-                   uu = u.Minus(gu.WithMagnitude(5/SS.GW.scale)),
-                   ur = u.Minus(gr.WithMagnitude(5/SS.GW.scale));
+            if(refs) refs->push_back(p);
+            Vector u = p.Plus(gu.WithMagnitude(8/camera.scale)).Plus(
+                              gr.WithMagnitude(8/camera.scale)),
+                   uu = u.Minus(gu.WithMagnitude(5/camera.scale)),
+                   ur = u.Minus(gr.WithMagnitude(5/camera.scale));
             // Draw four little crop marks, uniformly spaced (by ninety
             // degree rotations) around the point.
             int i;
             for(i = 0; i < 4; i++) {
-                LineDrawOrGetDistance(u, uu);
-                LineDrawOrGetDistance(u, ur);
+                canvas->DrawLine(u, uu, hcs);
+                canvas->DrawLine(u, ur, hcs);
                 u = u.RotatedAbout(p, gn, PI/2);
                 ur = ur.RotatedAbout(p, gn, PI/2);
                 uu = uu.RotatedAbout(p, gn, PI/2);
@@ -763,14 +747,14 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 Quaternion q = e->NormalGetNum();
-                Vector n = q.RotationN().WithMagnitude(25/SS.GW.scale);
-                Vector u = q.RotationU().WithMagnitude(6/SS.GW.scale);
+                Vector n = q.RotationN().WithMagnitude(25/camera.scale);
+                Vector u = q.RotationU().WithMagnitude(6/camera.scale);
                 Vector p = SK.GetEntity(e->point[0])->PointGetNum();
-                p = p.Plus(n.WithMagnitude(10/SS.GW.scale));
-                if(refps) refps[i] = p;
+                p = p.Plus(n.WithMagnitude(10/camera.scale));
+                if(refs) refs->push_back(p);
 
-                LineDrawOrGetDistance(p.Plus(u), p.Minus(u).Plus(n));
-                LineDrawOrGetDistance(p.Minus(u), p.Plus(u).Plus(n));
+                canvas->DrawLine(p.Plus(u), p.Minus(u).Plus(n), hcs);
+                canvas->DrawLine(p.Minus(u), p.Plus(u).Plus(n), hcs);
             }
             return;
         }
@@ -796,12 +780,12 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 da = da.ScaledBy(-1);
             }
 
-            DoArcForAngle(a0, da, b0, db,
-                da.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
-            if(refps) refps[0] = ref;
-            DoArcForAngle(c0, dc, d0, dd,
-                dc.WithMagnitude(40/SS.GW.scale), &ref, /*trim=*/false);
-            if(refps) refps[1] = ref;
+            DoArcForAngle(canvas, hcs, a0, da, b0, db,
+                da.WithMagnitude(40/camera.scale), &ref, /*trim=*/false);
+            if(refs) refs->push_back(ref);
+            DoArcForAngle(canvas, hcs, c0, dc, d0, dd,
+                dc.WithMagnitude(40/camera.scale), &ref, /*trim=*/false);
+            if(refs) refs->push_back(ref);
 
             return;
         }
@@ -820,9 +804,9 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             }
 
             Vector ref;
-            DoArcForAngle(a0, da, b0, db, disp.offset, &ref, /*trim=*/true);
-            DoLabel(ref, labelPos, gr, gu);
-            if(refps) refps[0] = refps[1] = ref;
+            DoArcForAngle(canvas, hcs, a0, da, b0, db, disp.offset, &ref, /*trim=*/true);
+            DoLabel(canvas, hcs, ref, labelPos, gr, gu);
+            if(refs) refs->push_back(ref);
             return;
         }
 
@@ -845,8 +829,8 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                     // Calculate orientation of perpendicular sign only
                     // once, so that it's the same both times it's drawn
                     u = e->VectorGetNum();
-                    u = u.WithMagnitude(16/SS.GW.scale);
-                    v = (rn.Cross(u)).WithMagnitude(16/SS.GW.scale);
+                    u = u.WithMagnitude(16/camera.scale);
+                    v = (rn.Cross(u)).WithMagnitude(16/camera.scale);
                     // a bit of bias to stop it from flickering between the
                     // two possibilities
                     if(fabs(u.Dot(ru)) < fabs(v.Dot(ru)) + LENGTH_EPS) {
@@ -857,10 +841,10 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
 
                 Vector p = e->VectorGetRefPoint();
                 Vector s = p.Plus(u).Plus(v);
-                LineDrawOrGetDistance(s, s.Plus(v));
+                canvas->DrawLine(s, s.Plus(v), hcs);
                 Vector m = s.Plus(v.ScaledBy(0.5));
-                LineDrawOrGetDistance(m, m.Plus(u));
-                if(refps) refps[i] = m;
+                canvas->DrawLine(m, m.Plus(u), hcs);
+                if(refs) refs->push_back(m);
             }
             return;
         }
@@ -877,7 +861,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Vector p =
                     SK.GetEntity(arc->point[other ? 2 : 1])->PointGetNum();
                 Vector r = p.Minus(c);
-                textAt = p.Plus(r.WithMagnitude(14/SS.GW.scale));
+                textAt = p.Plus(r.WithMagnitude(14/camera.scale));
                 u = norm->NormalU();
                 v = norm->NormalV();
             } else if(type == Type::CUBIC_LINE_TANGENT) {
@@ -898,7 +882,7 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                                    cubic->CubicGetStartNum();
                 Vector dir = SK.GetEntity(entityB)->VectorGetNum();
                 Vector out = n.Cross(dir);
-                textAt = p.Plus(out.WithMagnitude(14/SS.GW.scale));
+                textAt = p.Plus(out.WithMagnitude(14/camera.scale));
             } else {
                 Vector n, dir;
                 EntityBase *wn = SK.GetEntity(workplane)->Normal();
@@ -929,17 +913,12 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                     }
                 }
                 dir = n.Cross(dir);
-                textAt = textAt.Plus(dir.WithMagnitude(14/SS.GW.scale));
+                textAt = textAt.Plus(dir.WithMagnitude(14/camera.scale));
             }
 
-            if(dogd.drawing) {
-                ssglWriteTextRefCenter("T", Style::DefaultTextHeight(),
-                    textAt, u, v, LineCallback, (void *)this);
-            } else {
-                if(refps) refps[0] = refps[1] = textAt;
-                Point2d ref = SS.GW.ProjectPoint(textAt);
-                dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
-            }
+            Vector ex = VectorFont::Builtin()->GetExtents(textHeight, "T");
+            canvas->DrawVectorText("T", textHeight, textAt.Minus(ex.ScaledBy(0.5)), u, v, hcs);
+            if(refs) refs->push_back(textAt);
             return;
         }
 
@@ -947,13 +926,13 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             for(int i = 0; i < 2; i++) {
                 Entity *e = SK.GetEntity(i == 0 ? entityA : entityB);
                 Vector n = e->VectorGetNum();
-                n = n.WithMagnitude(25/SS.GW.scale);
-                Vector u = (gn.Cross(n)).WithMagnitude(4/SS.GW.scale);
+                n = n.WithMagnitude(25/camera.scale);
+                Vector u = (gn.Cross(n)).WithMagnitude(4/camera.scale);
                 Vector p = e->VectorGetRefPoint();
 
-                LineDrawOrGetDistance(p.Plus(u), p.Plus(u).Plus(n));
-                LineDrawOrGetDistance(p.Minus(u), p.Minus(u).Plus(n));
-                if(refps) refps[i] = p.Plus(n.ScaledBy(0.5));
+                canvas->DrawLine(p.Plus(u), p.Plus(u).Plus(n), hcs);
+                canvas->DrawLine(p.Minus(u), p.Minus(u).Plus(n), hcs);
+                if(refs) refs->push_back(p.Plus(n.ScaledBy(0.5)));
             }
             return;
         }
@@ -961,24 +940,22 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
         case Type::EQUAL_RADIUS: {
             for(int i = 0; i < 2; i++) {
                 Vector ref;
-                DoEqualRadiusTicks(i == 0 ? entityA : entityB, &ref);
-                if(refps) refps[i] = ref;
+                DoEqualRadiusTicks(canvas, hcs, i == 0 ? entityA : entityB, &ref);
+                if(refs) refs->push_back(ref);
             }
             return;
         }
 
         case Type::EQUAL_LINE_ARC_LEN: {
             Entity *line = SK.GetEntity(entityA);
-            Vector refa, refb;
-            DoEqualLenTicks(
+            Vector ref;
+            DoEqualLenTicks(canvas, hcs,
                 SK.GetEntity(line->point[0])->PointGetNum(),
                 SK.GetEntity(line->point[1])->PointGetNum(),
-                gn, &refa);
-            DoEqualRadiusTicks(entityB, &refb); // FIXME
-            if(refps) {
-                refps[0] = refa;
-                refps[1] = refb;
-            }
+                gn, &ref);
+            if(refs) refs->push_back(ref);
+            DoEqualRadiusTicks(canvas, hcs, entityB, &ref);
+            if(refs) refs->push_back(ref);
             return;
         }
 
@@ -992,17 +969,17 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 b = SK.GetEntity(e->point[1])->PointGetNum();
 
                 if(workplane.v != Entity::FREE_IN_3D.v) {
-                    DoProjectedPoint(&a);
-                    DoProjectedPoint(&b);
+                    DoProjectedPoint(canvas, hcs, &a);
+                    DoProjectedPoint(canvas, hcs, &b);
                 }
 
                 Vector ref;
-                DoEqualLenTicks(a, b, gn, &ref);
-                if(refps) refps[i] = ref;
+                DoEqualLenTicks(canvas, hcs, a, b, gn, &ref);
+                if(refs) refs->push_back(ref);
             }
             if((type == Type::LENGTH_RATIO) || (type == Type::LENGTH_DIFFERENCE)) {
                 Vector ref = ((a.Plus(b)).ScaledBy(0.5)).Plus(disp.offset);
-                DoLabel(ref, labelPos, gr, gu);
+                DoLabel(canvas, hcs, ref, labelPos, gr, gu);
             }
             return;
         }
@@ -1012,28 +989,28 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
             Vector a = SK.GetEntity(forLen->point[0])->PointGetNum(),
                    b = SK.GetEntity(forLen->point[1])->PointGetNum();
             if(workplane.v != Entity::FREE_IN_3D.v) {
-                DoProjectedPoint(&a);
-                DoProjectedPoint(&b);
+                DoProjectedPoint(canvas, hcs, &a);
+                DoProjectedPoint(canvas, hcs, &b);
             }
             Vector refa;
-            DoEqualLenTicks(a, b, gn, &refa);
-            if(refps) refps[0] = refa;
+            DoEqualLenTicks(canvas, hcs, a, b, gn, &refa);
+            if(refs) refs->push_back(refa);
 
             Entity *ln = SK.GetEntity(entityB);
             Vector la = SK.GetEntity(ln->point[0])->PointGetNum(),
                    lb = SK.GetEntity(ln->point[1])->PointGetNum();
             Vector pt = SK.GetEntity(ptA)->PointGetNum();
             if(workplane.v != Entity::FREE_IN_3D.v) {
-                DoProjectedPoint(&pt);
+                DoProjectedPoint(canvas, hcs, &pt);
                 la = la.ProjectInto(workplane);
                 lb = lb.ProjectInto(workplane);
             }
 
             Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
-            LineDrawOrGetDistance(pt, closest);
+            canvas->DrawLine(pt, closest, hcs);
             Vector refb;
-            DoEqualLenTicks(pt, closest, gn, &refb);
-            if(refps) refps[1] = refb;
+            DoEqualLenTicks(canvas, hcs, pt, closest, gn, &refb);
+            if(refs) refs->push_back(refb);
             return;
         }
 
@@ -1046,17 +1023,17 @@ void Constraint::DrawOrGetDistance(Vector *labelPos, Vector *refps) {
                 Vector pt = pte->PointGetNum();
 
                 if(workplane.v != Entity::FREE_IN_3D.v) {
-                    DoProjectedPoint(&pt);
+                    DoProjectedPoint(canvas, hcs, &pt);
                     la = la.ProjectInto(workplane);
                     lb = lb.ProjectInto(workplane);
                 }
 
                 Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
-                LineDrawOrGetDistance(pt, closest);
+                canvas->DrawLine(pt, closest, hcs);
 
                 Vector ref;
-                DoEqualLenTicks(pt, closest, gn, &ref);
-                if(refps) refps[i] = ref;
+                DoEqualLenTicks(canvas, hcs, pt, closest, gn, &ref);
+                if(refs) refs->push_back(ref);
             }
             return;
         }
@@ -1093,14 +1070,14 @@ s:
                 // they might not be in the same direction, even when the
                 // constraint is fully solved.
                 d = n.ScaledBy(d.Dot(n));
-                d = d.WithMagnitude(20/SS.GW.scale);
+                d = d.WithMagnitude(20/camera.scale);
                 Vector tip = tail.Plus(d);
-                if(refps) refps[i] = tip;
 
-                LineDrawOrGetDistance(tail, tip);
-                d = d.WithMagnitude(9/SS.GW.scale);
-                LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn,  0.6)));
-                LineDrawOrGetDistance(tip, tip.Minus(d.RotatedAbout(gn, -0.6)));
+                canvas->DrawLine(tail, tip, hcs);
+                d = d.WithMagnitude(9/camera.scale);
+                canvas->DrawLine(tip, tip.Minus(d.RotatedAbout(gn,  0.6)), hcs);
+                canvas->DrawLine(tip, tip.Minus(d.RotatedAbout(gn, -0.6)), hcs);
+                if(refs) refs->push_back(tip);
             }
             return;
         }
@@ -1123,23 +1100,22 @@ s:
                 Vector b = SK.GetEntity(e->point[1])->PointGetNum();
                 Vector m = (a.ScaledBy(0.5)).Plus(b.ScaledBy(0.5));
                 Vector offset = (a.Minus(b)).Cross(n);
-                offset = offset.WithMagnitude(13/SS.GW.scale);
+                offset = offset.WithMagnitude(textHeight);
                 // Draw midpoint constraint on other side of line, so that
                 // a line can be midpoint and horizontal at same time.
                 if(type == Type::AT_MIDPOINT) offset = offset.ScaledBy(-1);
 
-                if(dogd.drawing) {
-                    const char *s = (type == Type::HORIZONTAL)  ? "H" : (
-                                    (type == Type::VERTICAL)    ? "V" : (
-                                    (type == Type::AT_MIDPOINT) ? "M" : NULL));
-
-                    ssglWriteTextRefCenter(s, Style::DefaultTextHeight(),
-                        m.Plus(offset), r, u, LineCallback, (void *)this);
-                } else {
-                    if(refps) refps[0] = refps[1] = m.Plus(offset);
-                    Point2d ref = SS.GW.ProjectPoint(m.Plus(offset));
-                    dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-10);
+                std::string s;
+                switch(type) {
+                    case Type::HORIZONTAL:  s = "H"; break;
+                    case Type::VERTICAL:    s = "V"; break;
+                    case Type::AT_MIDPOINT: s = "M"; break;
+                    default: ssassert(false, "Unexpected constraint type");
                 }
+                Vector o  = m.Plus(offset).Plus(u.WithMagnitude(textHeight/5)),
+                       ex = VectorFont::Builtin()->GetExtents(textHeight, s);
+                canvas->DrawVectorText(s, textHeight, o.Minus(ex.ScaledBy(0.5)), r, u, hcs);
+                if(refs) refs->push_back(o);
             } else {
                 Vector a = SK.GetEntity(ptA)->PointGetNum();
                 Vector b = SK.GetEntity(ptB)->PointGetNum();
@@ -1157,32 +1133,22 @@ s:
                     if(oo.Dot(d) < 0) d = d.ScaledBy(-1);
 
                     Vector dp = cn.Cross(d);
-                    d = d.WithMagnitude(14/SS.GW.scale);
+                    d = d.WithMagnitude(14/camera.scale);
                     Vector c = o.Minus(d);
-                    LineDrawOrGetDistance(o, c);
-                    d = d.WithMagnitude(3/SS.GW.scale);
-                    dp = dp.WithMagnitude(2/SS.GW.scale);
-                    if(dogd.drawing) {
-                        glBegin(GL_QUADS);
-                            ssglVertex3v((c.Plus(d)).Plus(dp));
-                            ssglVertex3v((c.Minus(d)).Plus(dp));
-                            ssglVertex3v((c.Minus(d)).Minus(dp));
-                            ssglVertex3v((c.Plus(d)).Minus(dp));
-                        glEnd();
-                    } else {
-                        if(refps) refps[0] = refps[1] = c;
-                        Point2d ref = SS.GW.ProjectPoint(c);
-                        dogd.dmin = min(dogd.dmin, ref.DistanceTo(dogd.mp)-6);
-                    }
+                    canvas->DrawLine(o, c, hcs);
+                    d = d.WithMagnitude(3/camera.scale);
+                    dp = dp.WithMagnitude(2/camera.scale);
+                    canvas->DrawQuad((c.Plus(d)).Plus(dp),
+                                     (c.Minus(d)).Plus(dp),
+                                     (c.Minus(d)).Minus(dp),
+                                     (c.Plus(d)).Minus(dp),
+                                     hcf);
+                    if(refs) refs->push_back(c);
                 }
             }
             return;
 
         case Type::COMMENT: {
-            if(dogd.drawing && disp.style.v) {
-                ssglLineWidth(Style::Width(disp.style));
-                ssglColorRGB(Style::Color(disp.style));
-            }
             Vector u, v;
             if(workplane.v == Entity::FREE_IN_3D.v) {
                 u = gr;
@@ -1192,59 +1158,40 @@ s:
                 u = norm->NormalU();
                 v = norm->NormalV();
             }
-            if(refps) refps[0] = refps[1] = disp.offset;
-            DoLabel(disp.offset, labelPos, u, v);
+
+            if(disp.style.v != 0) {
+                stroke.width = Style::Width(disp.style);
+                if(how == DrawAs::DEFAULT) {
+                    stroke.color = Style::Color(disp.style);
+                }
+                hcs = canvas->GetStroke(stroke);
+            }
+            DoLabel(canvas, hcs, disp.offset, labelPos, u, v);
+            if(refs) refs->push_back(disp.offset);
             return;
         }
     }
     ssassert(false, "Unexpected constraint type");
 }
 
-void Constraint::Draw() {
-    dogd.drawing = true;
-    dogd.sel = NULL;
-    hStyle hs = GetStyle();
-
-    ssglLineWidth(Style::Width(hs));
-    ssglColorRGB(Style::Color(hs));
-
-    DrawOrGetDistance(NULL, NULL);
+void Constraint::Draw(DrawAs how, Canvas *canvas) {
+    DoLayout(how, canvas, NULL, NULL);
 }
 
-double Constraint::GetDistance(Point2d mp) {
-    dogd.drawing = false;
-    dogd.sel = NULL;
-    dogd.mp = mp;
-    dogd.dmin = 1e12;
-
-    DrawOrGetDistance(NULL, NULL);
-
-    return dogd.dmin;
-}
-
-Vector Constraint::GetLabelPos() {
-    dogd.drawing = false;
-    dogd.sel = NULL;
-    dogd.mp.x = 0; dogd.mp.y = 0;
-    dogd.dmin = 1e12;
+Vector Constraint::GetLabelPos(const Camera &camera) {
+    ObjectPicker canvas = {};
+    canvas.camera = camera;
 
     Vector p;
-    DrawOrGetDistance(&p, NULL);
+    DoLayout(DrawAs::DEFAULT, &canvas, &p, NULL);
     return p;
 }
 
-void Constraint::GetReferencePos(Vector *refps) {
-    dogd.drawing = false;
-    dogd.sel = NULL;
+void Constraint::GetReferencePoints(const Camera &camera, std::vector<Vector> *refs) {
+    ObjectPicker canvas = {};
+    canvas.camera = camera;
 
-    DrawOrGetDistance(NULL, refps);
-}
-
-void Constraint::GetEdges(SEdgeList *sel) {
-    dogd.drawing = true;
-    dogd.sel = sel;
-    DrawOrGetDistance(NULL, NULL);
-    dogd.sel = NULL;
+    DoLayout(DrawAs::DEFAULT, &canvas, NULL, refs);
 }
 
 bool Constraint::IsStylable() const {

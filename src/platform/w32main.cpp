@@ -6,13 +6,15 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include <time.h>
+
+#include "config.h"
+#include "solvespace.h"
+
+// Include after solvespace.h to avoid identifier clashes.
 #include <windows.h>
 #include <shellapi.h>
 #include <commctrl.h>
 #include <commdlg.h>
-
-#include "solvespace.h"
-#include "config.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <si.h>
@@ -725,6 +727,8 @@ void SolveSpace::ShowTextWindow(bool visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
+const bool SolveSpace::FLIP_FRAMEBUFFER = false;
+
 static void CreateGlContext(HWND hwnd, HGLRC *glrc)
 {
     HDC hdc = GetDC(hwnd);
@@ -1377,13 +1381,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);
-
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    SwapBuffers(GetDC(GraphicsWnd));
-    glClearColor(0, 0, 0, 1);
-    glClear(GL_COLOR_BUFFER_BIT);
-    SwapBuffers(GetDC(GraphicsWnd));
 
     // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
     InitHeaps();

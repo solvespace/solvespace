@@ -423,48 +423,6 @@ void SBsp3::GenerateInPaintOrder(SMesh *m) const {
     }
 }
 
-void SBsp3::DebugDraw() const {
-
-    if(pos) pos->DebugDraw();
-    Vector norm = tri.Normal();
-    glNormal3d(norm.x, norm.y, norm.z);
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_LIGHTING);
-    glBegin(GL_TRIANGLES);
-        ssglVertex3v(tri.a);
-        ssglVertex3v(tri.b);
-        ssglVertex3v(tri.c);
-    glEnd();
-
-    glDisable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    ssglDepthRangeOffset(2);
-    glBegin(GL_TRIANGLES);
-        ssglVertex3v(tri.a);
-        ssglVertex3v(tri.b);
-        ssglVertex3v(tri.c);
-    glEnd();
-
-    glDisable(GL_LIGHTING);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_POINT);
-    glPointSize(10);
-    ssglDepthRangeOffset(2);
-    glBegin(GL_TRIANGLES);
-        ssglVertex3v(tri.a);
-        ssglVertex3v(tri.b);
-        ssglVertex3v(tri.c);
-    glEnd();
-
-    ssglDepthRangeOffset(0);
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    if(more) more->DebugDraw();
-    if(neg) neg->DebugDraw();
-
-    if(edges) edges->DebugDraw(n, d);
-}
-
 /////////////////////////////////
 
 Vector SBsp2::IntersectionWith(Vector a, Vector b) const {
@@ -663,19 +621,3 @@ void SBsp2::InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3) {
 
     return;
 }
-
-void SBsp2::DebugDraw(Vector n, double d) const {
-    ssassert(fabs((edge.a).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
-    ssassert(fabs((edge.b).Dot(n) - d) < LENGTH_EPS, "Endpoint too close to BSP node plane");
-
-    ssglLineWidth(10);
-    glBegin(GL_LINES);
-        ssglVertex3v(edge.a);
-        ssglVertex3v(edge.b);
-    glEnd();
-    if(pos) pos->DebugDraw(n, d);
-    if(neg) neg->DebugDraw(n, d);
-    if(more) more->DebugDraw(n, d);
-    ssglLineWidth(1);
-}
-

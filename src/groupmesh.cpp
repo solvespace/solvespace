@@ -452,83 +452,137 @@ bool Group::IsMeshGroup() {
     }
 }
 
-void Group::DrawDisplayItems(Group::Type t) {
-    RgbaColor specColor;
-    bool useSpecColor;
-    if(t == Type::DRAWING_3D || t == Type::DRAWING_WORKPLANE) {
-        // force the color to something dim
-        specColor = Style::Color(Style::DIM_SOLID);
-        useSpecColor = true;
-    } else {
-        useSpecColor = false; // use the model color
-    }
-    // The back faces are drawn in red; should never seem them, since we
-    // draw closed shells, so that's a debugging aid.
-    GLfloat mpb[] = { 1.0f, 0.1f, 0.1f, 1.0f };
-    glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, mpb);
+void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
+    if(!(SS.GW.showShaded || SS.GW.showHdnLines)) return;
 
-    // When we fill the mesh, we need to know which triangles are selected
-    // or hovered, in order to draw them differently.
-    uint32_t mh = 0, ms1 = 0, ms2 = 0;
-    hEntity he = SS.GW.hover.entity;
-    if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
-        mh = he.v;
-    }
-    SS.GW.GroupSelection();
-    if(gs.faces > 0) ms1 = gs.face[0].v;
-    if(gs.faces > 1) ms2 = gs.face[1].v;
+    switch(how) {
+        case DrawMeshAs::DEFAULT: {
+            // Force the shade color to something dim to not distract from
+            // the sketch.
+            Canvas::Fill fillFront = {};
+            if(!SS.GW.showShaded) {
+                fillFront.layer  = Canvas::Layer::DEPTH_ONLY;
+            }
+            if(type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE) {
+                fillFront.color = Style::Color(Style::DIM_SOLID);
+            }
+            Canvas::hFill hcfFront = canvas->GetFill(fillFront);
 
-    if(SS.GW.showShaded || SS.GW.showHdnLines) {
-        if(SS.drawBackFaces && !displayMesh.isTransparent) {
-            // For debugging, draw the backs of the triangles in red, so that we
-            // notice when a shell is open
-            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
-        } else {
-            glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+            // The back faces are drawn in red; should never seem them, since we
+            // draw closed shells, so that's a debugging aid.
+            Canvas::hFill hcfBack = {};
+            if(SS.drawBackFaces && !displayMesh.isTransparent) {
+                Canvas::Fill fillBack = {};
+                fillBack.layer = fillFront.layer;
+                fillBack.color = RgbaColor::FromFloat(1.0f, 0.1f, 0.1f);
+                hcfBack = canvas->GetFill(fillBack);
+            }
+
+            // Draw mesh edges, for debugging.
+            Canvas::hStroke hcsTriangle = {};
+            if(SS.GW.showMesh) {
+                Canvas::Stroke strokeTriangle = {};
+                strokeTriangle.zIndex = 1;
+                strokeTriangle.color  = RgbaColor::FromFloat(0.0f, 1.0f, 0.0f);
+                strokeTriangle.width  = 1;
+                hcsTriangle = canvas->GetStroke(strokeTriangle);
+            }
+
+            // Draw the shaded solid into the depth buffer for hidden line removal,
+            // and if we're actually going to display it, to the color buffer too.
+            canvas->DrawMesh(displayMesh, hcfFront, hcfBack, hcsTriangle);
+            break;
         }
 
-        // Draw the shaded solid into the depth buffer for hidden line removal,
-        // and if we're actually going to display it, to the color buffer too.
-        glEnable(GL_LIGHTING);
-        if(!SS.GW.showShaded) glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-        ssglFillMesh(useSpecColor, specColor, &displayMesh, mh, ms1, ms2);
-        if(!SS.GW.showShaded) glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-        glDisable(GL_LIGHTING);
-    }
+        case DrawMeshAs::HOVERED: {
+            Canvas::Fill fill = {};
+            fill.color   = Style::Color(Style::HOVERED);
+            fill.pattern = Canvas::FillPattern::CHECKERED_A;
+            fill.zIndex  = 2;
+            Canvas::hFill hcf = canvas->GetFill(fill);
 
-    if(SS.GW.showEdges) {
-        Vector projDir = SS.GW.projRight.Cross(SS.GW.projUp);
-
-        glDepthMask(GL_FALSE);
-        if(SS.GW.showHdnLines) {
-            ssglDepthRangeOffset(0);
-            glDepthFunc(GL_GREATER);
-            ssglDrawEdges(&displayEdges, /*endpointsToo=*/false, { Style::HIDDEN_EDGE });
-            ssglDrawOutlines(&displayOutlines, projDir, { Style::HIDDEN_EDGE });
-            glDepthFunc(GL_LEQUAL);
+            std::vector<uint32_t> faces;
+            hEntity he = SS.GW.hover.entity;
+            if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
+                faces.push_back(he.v);
+            }
+            canvas->DrawFaces(displayMesh, faces, hcf);
+            break;
         }
-        ssglDepthRangeOffset(2);
-        ssglDrawEdges(&displayEdges, /*endpointsToo=*/false, { Style::SOLID_EDGE });
-        if(SS.GW.showOutlines) {
-            ssglDrawOutlines(&displayOutlines, projDir, { Style::OUTLINE });
-        } else {
-            ssglDrawOutlines(&displayOutlines, projDir, { Style::SOLID_EDGE });
-        }
-        glDepthMask(GL_TRUE);
-    }
 
-    if(SS.GW.showMesh) ssglDebugMesh(&displayMesh);
+        case DrawMeshAs::SELECTED: {
+            Canvas::Fill fill = {};
+            fill.color   = Style::Color(Style::SELECTED);
+            fill.pattern = Canvas::FillPattern::CHECKERED_B;
+            fill.zIndex  = 1;
+            Canvas::hFill hcf = canvas->GetFill(fill);
+
+            std::vector<uint32_t> faces;
+            SS.GW.GroupSelection();
+            if(gs.faces > 0) faces.push_back(gs.face[0].v);
+            if(gs.faces > 1) faces.push_back(gs.face[1].v);
+            canvas->DrawFaces(displayMesh, faces, hcf);
+            break;
+        }
+    }
 }
 
-void Group::Draw() {
+void Group::Draw(Canvas *canvas) {
     // Everything here gets drawn whether or not the group is hidden; we
     // can control this stuff independently, with show/hide solids, edges,
     // mesh, etc.
 
     GenerateDisplayItems();
-    DrawDisplayItems(type);
+    DrawMesh(DrawMeshAs::DEFAULT, canvas);
 
-    if(!SS.checkClosedContour) return;
+    if(SS.GW.showEdges) {
+        Canvas::Stroke strokeEdge = {};
+        strokeEdge.zIndex = 1;
+        strokeEdge.color  = Style::Color(Style::SOLID_EDGE);
+        strokeEdge.width  = Style::Width(Style::SOLID_EDGE);
+        Canvas::hStroke hcsEdge = canvas->GetStroke(strokeEdge);
+
+        canvas->DrawEdges(displayEdges, hcsEdge);
+
+        if(SS.GW.showHdnLines) {
+            Canvas::Stroke strokeHidden = strokeEdge;
+            strokeHidden.layer  = Canvas::Layer::OCCLUDED;
+            strokeHidden.width = Style::Width(Style::HIDDEN_EDGE);
+            strokeHidden.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });
+            strokeHidden.stippleScale   = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
+            Canvas::hStroke hcsHidden = canvas->GetStroke(strokeHidden);
+
+            canvas->DrawEdges(displayEdges, hcsHidden);
+            canvas->DrawOutlines(displayOutlines, hcsHidden);
+        }
+
+        if(SS.GW.showOutlines) {
+            Canvas::Stroke strokeOutline = strokeEdge;
+            strokeOutline.color  = Style::Color(Style::OUTLINE);
+            strokeOutline.width  = Style::Width(Style::OUTLINE);
+            Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
+
+            canvas->DrawOutlines(displayOutlines, hcsOutline);
+        } else {
+            canvas->DrawOutlines(displayOutlines, hcsEdge);
+        }
+    }
+}
+
+void Group::DrawPolyError(Canvas *canvas) {
+    const Camera &camera = canvas->GetCamera();
+
+    Canvas::Stroke strokeUnclosed = {};
+    strokeUnclosed.color = Style::Color(Style::DRAW_ERROR).WithAlpha(50);
+    strokeUnclosed.width = Style::Width(Style::DRAW_ERROR);
+    Canvas::hStroke hcsUnclosed = canvas->GetStroke(strokeUnclosed);
+
+    Canvas::Stroke strokeError = {};
+    strokeError.layer    = Canvas::Layer::FRONT;
+    strokeError.color    = Style::Color(Style::DRAW_ERROR);
+    Canvas::hStroke hcsError = canvas->GetStroke(strokeError);
+
+    double textHeight = Style::DefaultTextHeight() / camera.scale;
 
     // And finally show the polygons too, and any errors if it's not possible
     // to assemble the lines into closed polygons.
@@ -536,28 +590,16 @@ void Group::Draw() {
         // Report this error only in sketch-in-workplane groups; otherwise
         // it's just a nuisance.
         if(type == Type::DRAWING_WORKPLANE) {
-            glDisable(GL_DEPTH_TEST);
-            ssglColorRGBa(Style::Color(Style::DRAW_ERROR), 0.2);
-            ssglLineWidth (Style::Width(Style::DRAW_ERROR));
-            glBegin(GL_LINES);
-                ssglVertex3v(polyError.notClosedAt.a);
-                ssglVertex3v(polyError.notClosedAt.b);
-            glEnd();
-            ssglColorRGB(Style::Color(Style::DRAW_ERROR));
-            ssglWriteText("not closed contour, or not all same style!",
-                Style::DefaultTextHeight(),
-                polyError.notClosedAt.b, SS.GW.projRight, SS.GW.projUp,
-                NULL, NULL);
-            glEnable(GL_DEPTH_TEST);
+            canvas->DrawVectorText("not closed contour, or not all same style!", textHeight,
+                                   polyError.notClosedAt.b, camera.projRight, camera.projUp,
+                                   hcsError);
+            canvas->DrawLine(polyError.notClosedAt.a, polyError.notClosedAt.b, hcsUnclosed);
         }
     } else if(polyError.how == PolyError::NOT_COPLANAR ||
               polyError.how == PolyError::SELF_INTERSECTING ||
-              polyError.how == PolyError::ZERO_LEN_EDGE)
-    {
+              polyError.how == PolyError::ZERO_LEN_EDGE) {
         // These errors occur at points, not lines
         if(type == Type::DRAWING_WORKPLANE) {
-            glDisable(GL_DEPTH_TEST);
-            ssglColorRGB(Style::Color(Style::DRAW_ERROR));
             const char *msg;
             if(polyError.how == PolyError::NOT_COPLANAR) {
                 msg = "points not all coplanar!";
@@ -566,52 +608,41 @@ void Group::Draw() {
             } else {
                 msg = "zero-length edge!";
             }
-            ssglWriteText(msg, Style::DefaultTextHeight(),
-                polyError.errorPointAt, SS.GW.projRight, SS.GW.projUp,
-                NULL, NULL);
-            glEnable(GL_DEPTH_TEST);
+            canvas->DrawVectorText(msg, textHeight,
+                                   polyError.errorPointAt, camera.projRight, camera.projUp,
+                                   hcsError);
         }
     } else {
         // The contours will get filled in DrawFilledPaths.
     }
 }
 
-void Group::FillLoopSetAsPolygon(SBezierLoopSet *sbls) {
-    SPolygon sp = {};
-    sbls->MakePwlInto(&sp);
-    ssglDepthRangeOffset(1);
-    ssglFillPolygon(&sp);
-    ssglDepthRangeOffset(0);
-    sp.Clear();
-}
+void Group::DrawFilledPaths(Canvas *canvas) {
+    for(const SBezierLoopSet &sbls : bezierLoops.l) {
+        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
 
-void Group::DrawFilledPaths() {
-    SBezierLoopSet *sbls;
-    SBezierLoopSetSet *sblss = &bezierLoops;
-    for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-        if(sbls->l.n == 0 || sbls->l.elem[0].l.n == 0) continue;
         // In an assembled loop, all the styles should be the same; so doesn't
         // matter which one we grab.
-        SBezier *sb = &(sbls->l.elem[0].l.elem[0]);
-        hStyle hs = { (uint32_t)sb->auxA };
-        Style *s = Style::Get(hs);
+        SBezier *sb = &(sbls.l.elem[0].l.elem[0]);
+        Style *s = Style::Get({ (uint32_t)sb->auxA });
+
+        Canvas::Fill fill = {};
+        fill.zIndex = 1;
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
-            ssglColorRGBa(s->fillColor, 1);
-            FillLoopSetAsPolygon(sbls);
-        } else {
-            if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
-               polyError.how == PolyError::GOOD)
-            {
-                // If this is the active group, and we are supposed to check
-                // for closed contours, and we do indeed have a closed and
-                // non-intersecting contour, then fill it dimly.
-                ssglColorRGBa(Style::Color(Style::CONTOUR_FILL), 0.5);
-                ssglDepthRangeOffset(1);
-                FillLoopSetAsPolygon(sbls);
-                ssglDepthRangeOffset(0);
-            }
-        }
+            fill.color = s->color;
+        } else if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
+                    polyError.how == PolyError::GOOD) {
+            // If this is the active group, and we are supposed to check
+            // for closed contours, and we do indeed have a closed and
+            // non-intersecting contour, then fill it dimly.
+            fill.color = Style::Color(Style::CONTOUR_FILL).WithAlpha(127);
+        } else continue;
+        Canvas::hFill hcf = canvas->GetFill(fill);
+
+        SPolygon sp = {};
+        sbls.MakePwlInto(&sp);
+        canvas->DrawPolygon(sp, hcf);
     }
 }
 

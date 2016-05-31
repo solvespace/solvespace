@@ -30,40 +30,49 @@ void GraphicsWindow::Selection::Clear() {
     emphasized = false;
 }
 
-void GraphicsWindow::Selection::Draw() {
-    Vector refp[2];
-    refp[0] = refp[1] = Vector::From(0, 0, 0);
+void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
+    const Camera &camera = canvas->GetCamera();
+
+    std::vector<Vector> refs;
     if(entity.v) {
         Entity *e = SK.GetEntity(entity);
-        e->Draw(/*drawAsHidden=*/false);
+        e->Draw(isHovered ? Entity::DrawAs::HOVERED :
+                            Entity::DrawAs::SELECTED,
+                canvas);
         if(emphasized) {
-            refp[0] = refp[1] = e->GetReferencePos();
+            e->GetReferencePoints(&refs);
         }
     }
     if(constraint.v) {
         Constraint *c = SK.GetConstraint(constraint);
-        c->Draw();
-        if(emphasized) c->GetReferencePos(refp);
+        c->Draw(isHovered ? Constraint::DrawAs::HOVERED :
+                            Constraint::DrawAs::SELECTED,
+                canvas);
+        if(emphasized) {
+            c->GetReferencePoints(camera, &refs);
+        }
     }
     if(emphasized && (constraint.v || entity.v)) {
         // We want to emphasize this constraint or entity, by drawing a thick
         // line from the top left corner of the screen to the reference point(s)
         // of that entity or constraint.
-        double s = 0.501/SS.GW.scale;
-        Vector topLeft =       SS.GW.projRight.ScaledBy(-SS.GW.width*s);
-        topLeft = topLeft.Plus(SS.GW.projUp.ScaledBy(SS.GW.height*s));
-        topLeft = topLeft.Minus(SS.GW.offset);
+        Canvas::Stroke strokeEmphasis = {};
+        strokeEmphasis.layer  = Canvas::Layer::FRONT;
+        strokeEmphasis.color  = Style::Color(Style::HOVERED).WithAlpha(50);
+        strokeEmphasis.width  = 40;
+        Canvas::hStroke hcsEmphasis = canvas->GetStroke(strokeEmphasis);
 
-        ssglLineWidth(40);
-        RgbaColor rgb = Style::Color(Style::HOVERED);
-        glColor4d(rgb.redF(), rgb.greenF(), rgb.blueF(), 0.2);
-        for(int i = 0; i < (refp[0].Equals(refp[1]) ? 1 : 2); i++) {
-            glBegin(GL_LINES);
-                ssglVertex3v(topLeft);
-                ssglVertex3v(refp[i]);
-            glEnd();
+        Point2d topLeftScreen;
+        topLeftScreen.x = -(double)camera.width / 2;
+        topLeftScreen.y = (double)camera.height / 2;
+        Vector topLeft = camera.UnProjectPoint(topLeftScreen);
+
+        auto it = std::unique(refs.begin(), refs.end(),
+                              [](Vector a, Vector b) { return a.Equals(b); });
+        refs.erase(it, refs.end());
+        for(Vector p : refs) {
+            canvas->DrawLine(topLeft, p, hcsEmphasis);
         }
-        ssglLineWidth(1);
     }
 }
 
@@ -285,9 +294,31 @@ void GraphicsWindow::GroupSelection() {
     }
 }
 
+Camera GraphicsWindow::GetCamera() const {
+    Camera camera = {};
+    camera.width     = (int)width;
+    camera.height    = (int)height;
+    camera.offset    = offset;
+    camera.projUp    = projUp;
+    camera.projRight = projRight;
+    camera.scale     = scale;
+    camera.tangent   = SS.CameraTangent();
+    camera.hasPixels = true;
+    return camera;
+}
+
+Lighting GraphicsWindow::GetLighting() const {
+    Lighting lighting = {};
+    lighting.backgroundColor   = SS.backgroundColor;
+    lighting.ambientIntensity  = SS.ambientIntensity;
+    lighting.lightIntensity[0] = SS.lightIntensity[0];
+    lighting.lightIntensity[1] = SS.lightIntensity[1];
+    lighting.lightDirection[0] = SS.lightDir[0];
+    lighting.lightDirection[1] = SS.lightDir[1];
+    return lighting;
+}
+
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
-    int i;
-    double d, dmin = 1e12;
     Selection s = {};
 
     // Did the view projection change? If so, invalidate bounding boxes.
@@ -304,40 +335,45 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
     }
 
+    ObjectPicker canvas = {};
+    canvas.camera    = GetCamera();
+    canvas.selRadius = 10.0;
+    canvas.point     = mp;
+    canvas.maxZIndex = -1;
+
     // Always do the entities; we might be dragging something that should
     // be auto-constrained, and we need the hover for that.
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(Entity &e : SK.entity) {
+        if(!e.IsVisible()) continue;
+
         // Don't hover whatever's being dragged.
-        if(e->h.request().v == pending.point.request().v) {
+        if(e.h.request().v == pending.point.request().v) {
             // The one exception is when we're creating a new cubic; we
             // want to be able to hover the first point, because that's
             // how we turn it into a periodic spline.
-            if(!e->IsPoint()) continue;
-            if(!e->h.isFromRequest()) continue;
-            Request *r = SK.GetRequest(e->h.request());
+            if(!e.IsPoint()) continue;
+            if(!e.h.isFromRequest()) continue;
+            Request *r = SK.GetRequest(e.h.request());
             if(r->type != Request::Type::CUBIC) continue;
             if(r->extraPoints < 2) continue;
-            if(e->h.v != r->h.entity(1).v) continue;
+            if(e.h.v != r->h.entity(1).v) continue;
         }
 
-        d = e->GetDistance(mp);
-        if(d < SELECTION_RADIUS && d < dmin) {
+        if(canvas.Pick([&]{ e.Draw(Entity::DrawAs::DEFAULT, &canvas); })) {
             s = {};
-            s.entity = e->h;
-            dmin = d;
+            s.entity = e.h;
         }
     }
 
     // The constraints and faces happen only when nothing's in progress.
     if(pending.operation == Pending::NONE) {
         // Constraints
-        for(i = 0; i < SK.constraint.n; i++) {
-            d = SK.constraint.elem[i].GetDistance(mp);
-            if(d < SELECTION_RADIUS && d < dmin) {
+        for(Constraint &c : SK.constraint) {
+            if(!c.IsVisible()) continue;
+
+            if(canvas.Pick([&]{ c.Draw(Constraint::DrawAs::DEFAULT, &canvas); })) {
                 s = {};
-                s.constraint = SK.constraint.elem[i].h;
-                dmin = d;
+                s.constraint = c.h;
             }
         }
 
@@ -440,107 +476,128 @@ void GraphicsWindow::NormalizeProjectionVectors() {
     projRight = projRight.WithMagnitude(1);
 }
 
-Vector GraphicsWindow::VectorFromProjs(Vector rightUpForward) {
-    Vector n = projRight.Cross(projUp);
+void GraphicsWindow::DrawSnapGrid(Canvas *canvas) {
+    if(!LockedInWorkplane()) return;
 
-    Vector r = (projRight.ScaledBy(rightUpForward.x));
-    r =  r.Plus(projUp.ScaledBy(rightUpForward.y));
-    r =  r.Plus(n.ScaledBy(rightUpForward.z));
-    return r;
+    hEntity he = ActiveWorkplane();
+    EntityBase *wrkpl = SK.GetEntity(he),
+               *norm  = wrkpl->Normal();
+    Vector n = projUp.Cross(projRight);
+    Vector wu, wv, wn, wp;
+    wp = SK.GetEntity(wrkpl->point[0])->PointGetNum();
+    wu = norm->NormalU();
+    wv = norm->NormalV();
+    wn = norm->NormalN();
+
+    double g = SS.gridSpacing;
+
+    double umin = VERY_POSITIVE, umax = VERY_NEGATIVE,
+           vmin = VERY_POSITIVE, vmax = VERY_NEGATIVE;
+    int a;
+    for(a = 0; a < 4; a++) {
+        // Ideally, we would just do +/- half the width and height; but
+        // allow some extra slop for rounding.
+        Vector horiz = projRight.ScaledBy((0.6*width)/scale  + 2*g),
+               vert  = projUp.   ScaledBy((0.6*height)/scale + 2*g);
+        if(a == 2 || a == 3) horiz = horiz.ScaledBy(-1);
+        if(a == 1 || a == 3) vert  = vert. ScaledBy(-1);
+        Vector tp = horiz.Plus(vert).Minus(offset);
+
+        // Project the point into our grid plane, normal to the screen
+        // (not to the grid plane). If the plane is on edge then this is
+        // impossible so don't try to draw the grid.
+        bool parallel;
+        Vector tpp = Vector::AtIntersectionOfPlaneAndLine(
+                                        wn, wn.Dot(wp),
+                                        tp, tp.Plus(n),
+                                        &parallel);
+        if(parallel) return;
+
+        tpp = tpp.Minus(wp);
+        double uu = tpp.Dot(wu),
+               vv = tpp.Dot(wv);
+
+        umin = min(uu, umin);
+        umax = max(uu, umax);
+        vmin = min(vv, vmin);
+        vmax = max(vv, vmax);
+    }
+
+    int i, j, i0, i1, j0, j1;
+
+    i0 = (int)(umin / g);
+    i1 = (int)(umax / g);
+    j0 = (int)(vmin / g);
+    j1 = (int)(vmax / g);
+
+    if(i0 > i1 || i1 - i0 > 400) return;
+    if(j0 > j1 || j1 - j0 > 400) return;
+
+    Canvas::Stroke stroke = {};
+    stroke.layer  = Canvas::Layer::BACK;
+    stroke.color  = Style::Color(Style::DATUM).WithAlpha(75);
+    Canvas::hStroke hcs = canvas->GetStroke(stroke);
+
+    for(i = i0 + 1; i < i1; i++) {
+        canvas->DrawLine(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j0*g)),
+                         wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j1*g)),
+                         hcs);
+    }
+    for(j = j0 + 1; j < j1; j++) {
+        canvas->DrawLine(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)),
+                         wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)),
+                         hcs);
+    }
 }
 
-void GraphicsWindow::Paint() {
-    int i;
-    havePainted = true;
+void GraphicsWindow::DrawPersistent(Canvas *canvas) {
+    // Draw the active group; this does stuff like the mesh and edges.
+    SK.GetGroup(activeGroup)->Draw(canvas);
 
-    int w, h;
-    GetGraphicsWindowSize(&w, &h);
-    width = w; height = h;
-    glViewport(0, 0, w, h);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    glScaled(scale*2.0/w, scale*2.0/h, scale*1.0/30000);
-
-    double mat[16];
-    // Last thing before display is to apply the perspective
-    double clp = SS.CameraTangent()*scale;
-    MakeMatrix(mat, 1,              0,              0,              0,
-                    0,              1,              0,              0,
-                    0,              0,              1,              0,
-                    0,              0,              clp,            1);
-    glMultMatrixd(mat);
-    // Before that, we apply the rotation
-    Vector n = projUp.Cross(projRight);
-    MakeMatrix(mat, projRight.x,    projRight.y,    projRight.z,    0,
-                    projUp.x,       projUp.y,       projUp.z,       0,
-                    n.x,            n.y,            n.z,            0,
-                    0,              0,              0,              1);
-    glMultMatrixd(mat);
-    // And before that, the translation
-    MakeMatrix(mat, 1,              0,              0,              offset.x,
-                    0,              1,              0,              offset.y,
-                    0,              0,              1,              offset.z,
-                    0,              0,              0,              1);
-    glMultMatrixd(mat);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    glShadeModel(GL_SMOOTH);
-
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glEnable(GL_BLEND);
-    glEnable(GL_LINE_SMOOTH);
-    // don't enable GL_POLYGON_SMOOTH; that looks ugly on some graphics cards,
-    // drawn with leaks in the mesh
-    glEnable(GL_POLYGON_OFFSET_LINE);
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glEnable(GL_DEPTH_TEST);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_NORMALIZE);
-
-    // At the same depth, we want later lines drawn over earlier.
-    glDepthFunc(GL_LEQUAL);
-
-    if(SS.ActiveGroupsOkay()) {
-        glClearColor(SS.backgroundColor.redF(),
-                     SS.backgroundColor.greenF(),
-                     SS.backgroundColor.blueF(), 1.0f);
-    } else {
-        // Draw a different background whenever we're having solve problems.
-        RgbaColor rgb = Style::Color(Style::DRAW_ERROR);
-        glClearColor(0.4f*rgb.redF(), 0.4f*rgb.greenF(), 0.4f*rgb.blueF(), 1.0f);
-        // And show the text window, which has info to debug it
-        ForceTextWindowShown();
+    // Now draw the entities.
+    for(Entity &e : SK.entity) {
+        if(SS.GW.showHdnLines) {
+            e.Draw(Entity::DrawAs::HIDDEN, canvas);
+        }
+        e.Draw(Entity::DrawAs::DEFAULT, canvas);
     }
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClearDepth(1.0);
-    glClear(GL_DEPTH_BUFFER_BIT);
 
-    if(!SS.bgImage.pixmap.IsEmpty()) {
-        double mmw = SS.bgImage.pixmap.width  / SS.bgImage.scale,
-               mmh = SS.bgImage.pixmap.height / SS.bgImage.scale;
+    // Draw filled paths in all groups, when those filled paths were requested
+    // specially by assigning a style with a fill color, or when the filled
+    // paths are just being filled by default. This should go last, to make
+    // the transparency work.
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+        if(!(g->IsVisible())) continue;
+        g->DrawFilledPaths(canvas);
+    }
+}
 
+void GraphicsWindow::Draw(Canvas *canvas) {
+    const Camera &camera = canvas->GetCamera();
+
+    if(SS.bgImage.pixmap) {
+        double mmw = SS.bgImage.pixmap->width  / SS.bgImage.scale,
+               mmh = SS.bgImage.pixmap->height / SS.bgImage.scale;
+
+        Vector n = camera.projUp.Cross(camera.projRight);
         Vector origin = SS.bgImage.origin;
-        origin = origin.DotInToCsys(projRight, projUp, n);
+        origin = origin.DotInToCsys(camera.projRight, camera.projUp, n);
         // Place the depth of our origin at the point that corresponds to
         // w = 1, so that it's unaffected by perspective.
         origin.z = (offset.ScaledBy(-1)).Dot(n);
-        origin = origin.ScaleOutOfCsys(projRight, projUp, n);
+        origin = origin.ScaleOutOfCsys(camera.projRight, camera.projUp, n);
 
-        // Place the background at the very back of the Z order, though, by
-        // mucking with the depth range.
-        glDepthRange(1, 1);
-        ssglDrawPixmap(SS.bgImage.pixmap,
-                       origin,
-                       origin.Plus(projUp.ScaledBy(mmh)),
-                       origin.Plus(projRight.ScaledBy(mmw).Plus(
-                                   projUp.   ScaledBy(mmh))),
-                       origin.Plus(projRight.ScaledBy(mmw)));
+        // Place the background at the very back of the Z order.
+        Canvas::Fill fillBackground = {};
+        fillBackground.layer  = Canvas::Layer::BACK;
+        Canvas::hFill hcfBackground = canvas->GetFill(fillBackground);
+
+        canvas->DrawPixmap(SS.bgImage.pixmap,
+                          origin, projRight.ScaledBy(mmw), projUp.ScaledBy(mmh),
+                          { 0.0, 1.0 }, { 1.0, 0.0 },
+                          hcfBackground);
     }
-    ssglDepthRangeOffset(0);
 
     // Nasty case when we're reloading the linked files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
@@ -548,222 +605,74 @@ void GraphicsWindow::Paint() {
     // up, then we could trigger an oops trying to draw.
     if(!SS.allConsistent) return;
 
-    // Let's use two lights, at the user-specified locations
-    GLfloat f;
-    glEnable(GL_LIGHT0);
-    f = (GLfloat)SS.lightIntensity[0];
-    GLfloat li0[] = { f, f, f, 1.0f };
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, li0);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, li0);
+    if(showSnapGrid) DrawSnapGrid(canvas);
 
-    glEnable(GL_LIGHT1);
-    f = (GLfloat)SS.lightIntensity[1];
-    GLfloat li1[] = { f, f, f, 1.0f };
-    glLightfv(GL_LIGHT1, GL_DIFFUSE, li1);
-    glLightfv(GL_LIGHT1, GL_SPECULAR, li1);
+    // Draw all the things that don't change when we rotate.
+    DrawPersistent(canvas);
 
-    Vector ld;
-    ld = VectorFromProjs(SS.lightDir[0]);
-    GLfloat ld0[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
-    glLightfv(GL_LIGHT0, GL_POSITION, ld0);
-    ld = VectorFromProjs(SS.lightDir[1]);
-    GLfloat ld1[4] = { (GLfloat)ld.x, (GLfloat)ld.y, (GLfloat)ld.z, 0 };
-    glLightfv(GL_LIGHT1, GL_POSITION, ld1);
-
-    GLfloat ambient[4] = { (float)SS.ambientIntensity,
-                           (float)SS.ambientIntensity,
-                           (float)SS.ambientIntensity, 1 };
-    glLightModelfv(GL_LIGHT_MODEL_AMBIENT, ambient);
-
-    ssglUnlockColor();
-
-    if(showSnapGrid && LockedInWorkplane()) {
-        hEntity he = ActiveWorkplane();
-        EntityBase *wrkpl = SK.GetEntity(he),
-                   *norm  = wrkpl->Normal();
-        Vector wu, wv, wn, wp;
-        wp = SK.GetEntity(wrkpl->point[0])->PointGetNum();
-        wu = norm->NormalU();
-        wv = norm->NormalV();
-        wn = norm->NormalN();
-
-        double g = SS.gridSpacing;
-
-        double umin = VERY_POSITIVE, umax = VERY_NEGATIVE,
-               vmin = VERY_POSITIVE, vmax = VERY_NEGATIVE;
-        int a;
-        for(a = 0; a < 4; a++) {
-            // Ideally, we would just do +/- half the width and height; but
-            // allow some extra slop for rounding.
-            Vector horiz = projRight.ScaledBy((0.6*width)/scale  + 2*g),
-                   vert  = projUp.   ScaledBy((0.6*height)/scale + 2*g);
-            if(a == 2 || a == 3) horiz = horiz.ScaledBy(-1);
-            if(a == 1 || a == 3) vert  = vert. ScaledBy(-1);
-            Vector tp = horiz.Plus(vert).Minus(offset);
-
-            // Project the point into our grid plane, normal to the screen
-            // (not to the grid plane). If the plane is on edge then this is
-            // impossible so don't try to draw the grid.
-            bool parallel;
-            Vector tpp = Vector::AtIntersectionOfPlaneAndLine(
-                                            wn, wn.Dot(wp),
-                                            tp, tp.Plus(n),
-                                            &parallel);
-            if(parallel) goto nogrid;
-
-            tpp = tpp.Minus(wp);
-            double uu = tpp.Dot(wu),
-                   vv = tpp.Dot(wv);
-
-            umin = min(uu, umin);
-            umax = max(uu, umax);
-            vmin = min(vv, vmin);
-            vmax = max(vv, vmax);
-        }
-
-        int i, j, i0, i1, j0, j1;
-
-        i0 = (int)(umin / g);
-        i1 = (int)(umax / g);
-        j0 = (int)(vmin / g);
-        j1 = (int)(vmax / g);
-
-        if(i0 > i1 || i1 - i0 > 400) goto nogrid;
-        if(j0 > j1 || j1 - j0 > 400) goto nogrid;
-
-        ssglLineWidth(1);
-        ssglColorRGBa(Style::Color(Style::DATUM), 0.3);
-        glBegin(GL_LINES);
-        for(i = i0 + 1; i < i1; i++) {
-            ssglVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j0*g)));
-            ssglVertex3v(wp.Plus(wu.ScaledBy(i*g)).Plus(wv.ScaledBy(j1*g)));
-        }
-        for(j = j0 + 1; j < j1; j++) {
-            ssglVertex3v(wp.Plus(wu.ScaledBy(i0*g)).Plus(wv.ScaledBy(j*g)));
-            ssglVertex3v(wp.Plus(wu.ScaledBy(i1*g)).Plus(wv.ScaledBy(j*g)));
-        }
-        glEnd();
-
-        // Clear the depth buffer, so that the grid is at the very back of
-        // the Z order.
-        glClear(GL_DEPTH_BUFFER_BIT);
-nogrid:;
+    // Draw the polygon errors.
+    if(SS.checkClosedContour) {
+        SK.GetGroup(activeGroup)->DrawPolyError(canvas);
     }
 
-    // Draw the active group; this does stuff like the mesh and edges.
-    (SK.GetGroup(activeGroup))->Draw();
-
-    // Now draw the entities.
-    if(SS.GW.showHdnLines) {
-        ssglDepthRangeOffset(2);
-        glDepthFunc(GL_GREATER);
-        Entity::DrawAll(/*drawAsHidden=*/true);
-        glDepthFunc(GL_LEQUAL);
-    }
-    ssglDepthRangeOffset(0);
-    Entity::DrawAll(/*drawAsHidden=*/false);
-
-    // Draw filled paths in all groups, when those filled paths were requested
-    // specially by assigning a style with a fill color, or when the filled
-    // paths are just being filled by default. This should go last, to make
-    // the transparency work.
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-        if(!(g->IsVisible())) continue;
-        g->DrawFilledPaths();
-    }
-
-
-    glDisable(GL_DEPTH_TEST);
     // Draw the constraints
-    for(i = 0; i < SK.constraint.n; i++) {
-        SK.constraint.elem[i].Draw();
+    for(Constraint &c : SK.constraint) {
+        c.Draw(Constraint::DrawAs::DEFAULT, canvas);
     }
 
     // Draw the "pending" constraint, i.e. a constraint that would be
-    // placed on a line that is almost horizontal or vertical
+    // placed on a line that is almost horizontal or vertical.
     if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT &&
             SS.GW.pending.hasSuggestion) {
         Constraint c = {};
         c.group = SS.GW.activeGroup;
         c.workplane = SS.GW.ActiveWorkplane();
         c.type = SS.GW.pending.suggestion;
-        c.ptA = Entity::NO_ENTITY;
-        c.ptB = Entity::NO_ENTITY;
         c.entityA = SS.GW.pending.request.entity(0);
-        c.entityB = Entity::NO_ENTITY;
-        c.other = false;
-        c.other2 = false;
-        // Only draw.
-        c.Draw();
+        c.Draw(Constraint::DrawAs::DEFAULT, canvas);
     }
+
+    Canvas::Stroke strokeAnalyze = {};
+    strokeAnalyze.layer = Canvas::Layer::FRONT;
+    strokeAnalyze.color = Style::Color(Style::ANALYZE);
+    strokeAnalyze.width = Style::Width(Style::ANALYZE);
+    Canvas::hStroke hcsAnalyze = canvas->GetStroke(strokeAnalyze);
 
     // Draw the traced path, if one exists
-    ssglLineWidth(Style::Width(Style::ANALYZE));
-    ssglColorRGB(Style::Color(Style::ANALYZE));
-    SContour *sc = &(SS.traced.path);
-    glBegin(GL_LINE_STRIP);
-    for(i = 0; i < sc->l.n; i++) {
-        ssglVertex3v(sc->l.elem[i].p);
-    }
-    glEnd();
+    SEdgeList tracedEdges = {};
+    SS.traced.path.MakeEdgesInto(&tracedEdges);
+    canvas->DrawEdges(tracedEdges, hcsAnalyze);
+    tracedEdges.Clear();
+
+    Canvas::Stroke strokeError = {};
+    strokeError.layer = Canvas::Layer::FRONT;
+    strokeError.color = Style::Color(Style::DRAW_ERROR);
+    strokeError.width = 12;
+    Canvas::hStroke hcsError = canvas->GetStroke(strokeError);
 
     // And the naked edges, if the user did Analyze -> Show Naked Edges.
-    ssglDrawEdges(&(SS.nakedEdges), /*endpointsToo=*/true, { Style::DRAW_ERROR });
+    canvas->DrawEdges(SS.nakedEdges, hcsError);
 
     // Then redraw whatever the mouse is hovering over, highlighted.
-    glDisable(GL_DEPTH_TEST);
-    ssglLockColorTo(Style::Color(Style::HOVERED));
-    hover.Draw();
+    hover.Draw(/*isHovered=*/true, canvas);
+    SK.GetGroup(activeGroup)->DrawMesh(Group::DrawMeshAs::HOVERED, canvas);
 
     // And finally draw the selection, same mechanism.
-    ssglLockColorTo(Style::Color(Style::SELECTED));
     for(Selection *s = selection.First(); s; s = selection.NextAfter(s)) {
-        s->Draw();
+        s->Draw(/*isHovered=*/false, canvas);
     }
+    SK.GetGroup(activeGroup)->DrawMesh(Group::DrawMeshAs::SELECTED, canvas);
 
-    ssglUnlockColor();
-
-    // If a marquee selection is in progress, then draw the selection
-    // rectangle, as an outline and a transparent fill.
-    if(pending.operation == Pending::DRAGGING_MARQUEE) {
-        Point2d begin = ProjectPoint(orig.marqueePoint);
-        double xmin = min(orig.mouse.x, begin.x),
-               xmax = max(orig.mouse.x, begin.x),
-               ymin = min(orig.mouse.y, begin.y),
-               ymax = max(orig.mouse.y, begin.y);
-
-        Vector tl = UnProjectPoint(Point2d::From(xmin, ymin)),
-               tr = UnProjectPoint(Point2d::From(xmax, ymin)),
-               br = UnProjectPoint(Point2d::From(xmax, ymax)),
-               bl = UnProjectPoint(Point2d::From(xmin, ymax));
-
-        ssglLineWidth((GLfloat)1.3);
-        ssglColorRGB(Style::Color(Style::HOVERED));
-        glBegin(GL_LINE_LOOP);
-            ssglVertex3v(tl);
-            ssglVertex3v(tr);
-            ssglVertex3v(br);
-            ssglVertex3v(bl);
-        glEnd();
-        ssglColorRGBa(Style::Color(Style::HOVERED), 0.10);
-        glBegin(GL_QUADS);
-            ssglVertex3v(tl);
-            ssglVertex3v(tr);
-            ssglVertex3v(br);
-            ssglVertex3v(bl);
-        glEnd();
-    }
+    Canvas::Stroke strokeDatum = {};
+    strokeDatum.layer = Canvas::Layer::FRONT;
+    strokeDatum.color = Style::Color(Style::DATUM);
+    strokeDatum.width = 1;
+    Canvas::hStroke hcsDatum = canvas->GetStroke(strokeDatum);
 
     // An extra line, used to indicate the origin when rotating within the
     // plane of the monitor.
     if(SS.extraLine.draw) {
-        ssglLineWidth(1);
-        ssglLockColorTo(Style::Color(Style::DATUM));
-        glBegin(GL_LINES);
-            ssglVertex3v(SS.extraLine.ptA);
-            ssglVertex3v(SS.extraLine.ptB);
-        glEnd();
+        canvas->DrawLine(SS.extraLine.ptA, SS.extraLine.ptB, hcsDatum);
     }
 
     // A note to indicate the origin in the just-exported file.
@@ -774,38 +683,106 @@ nogrid:;
             u = SS.justExportedInfo.u,
             v = SS.justExportedInfo.v;
         } else {
-            p = SS.GW.offset.ScaledBy(-1);
-            u = SS.GW.projRight;
-            v = SS.GW.projUp;
+            p = camera.offset.ScaledBy(-1);
+            u = camera.projRight;
+            v = camera.projUp;
         }
-
-        ssglColorRGB(Style::Color(Style::DATUM));
-
-        ssglWriteText("previewing exported geometry; press Esc to return",
-            Style::DefaultTextHeight(),
-            p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)),
-            u, v, NULL, NULL);
+        canvas->DrawVectorText("previewing exported geometry; press Esc to return",
+                              Style::DefaultTextHeight() / camera.scale,
+                              p.Plus(u.ScaledBy(10/scale)).Plus(v.ScaledBy(10/scale)), u, v,
+                              hcsDatum);
 
         if(SS.justExportedInfo.showOrigin) {
-            ssglLineWidth(1.5);
-            glBegin(GL_LINES);
-                ssglVertex3v(p.Plus(u.WithMagnitude(-15/scale)));
-                ssglVertex3v(p.Plus(u.WithMagnitude(30/scale)));
-                ssglVertex3v(p.Plus(v.WithMagnitude(-15/scale)));
-                ssglVertex3v(p.Plus(v.WithMagnitude(30/scale)));
-            glEnd();
-
-            ssglWriteText("(x, y) = (0, 0) for file just exported",
-                Style::DefaultTextHeight(),
-                p.Plus(u.ScaledBy(40/scale)).Plus(
-                       v.ScaledBy(-(Style::DefaultTextHeight())/scale)),
-                u, v, NULL, NULL);
+            Vector um = p.Plus(u.WithMagnitude(-15/scale)),
+                   up = p.Plus(u.WithMagnitude(30/scale)),
+                   vm = p.Plus(v.WithMagnitude(-15/scale)),
+                   vp = p.Plus(v.WithMagnitude(30/scale));
+            canvas->DrawLine(um, up, hcsDatum);
+            canvas->DrawLine(vm, vp, hcsDatum);
+            canvas->DrawVectorText("(x, y) = (0, 0) for file just exported",
+                                  Style::DefaultTextHeight() / camera.scale,
+                                  p.Plus(u.ScaledBy(40/scale)).Plus(
+                                         v.ScaledBy(-(Style::DefaultTextHeight())/scale)), u, v,
+                                  hcsDatum);
         }
+    }
+}
+
+void GraphicsWindow::Paint() {
+    havePainted = true;
+
+    auto renderStartTime = std::chrono::high_resolution_clock::now();
+
+    int w, h;
+    GetGraphicsWindowSize(&w, &h);
+    width = w;
+    height = h;
+
+    Camera camera = GetCamera();
+
+    OpenGl1Renderer canvas = {};
+    canvas.camera   = camera;
+    canvas.lighting = GetLighting();
+
+    if(!SS.ActiveGroupsOkay()) {
+        // Draw a different background whenever we're having solve problems.
+        RgbaColor bgColor = Style::Color(Style::DRAW_ERROR);
+        bgColor = RgbaColor::FromFloat(0.4f*bgColor.redF(),
+                                       0.4f*bgColor.greenF(),
+                                       0.4f*bgColor.blueF());
+        canvas.lighting.backgroundColor = bgColor;
+        // And show the text window, which has info to debug it
+        ForceTextWindowShown();
+    }
+    canvas.BeginFrame();
+    canvas.UpdateProjection();
+
+    Draw(&canvas);
+
+    canvas.camera.LoadIdentity();
+    canvas.UpdateProjection();
+
+    UiCanvas uiCanvas = {};
+    uiCanvas.canvas = &canvas;
+
+    // If a marquee selection is in progress, then draw the selection
+    // rectangle, as an outline and a transparent fill.
+    if(pending.operation == Pending::DRAGGING_MARQUEE) {
+        Point2d begin = ProjectPoint(orig.marqueePoint);
+        uiCanvas.DrawRect((int)orig.mouse.x, (int)begin.x,
+                          (int)orig.mouse.y, (int)begin.y,
+                          /*fillColor=*/Style::Color(Style::HOVERED).WithAlpha(25),
+                          /*outlineColor=*/Style::Color(Style::HOVERED));
     }
 
     // And finally the toolbar.
     if(SS.showToolbar) {
-        ToolbarDraw();
+        canvas.camera.offset   = {};
+        canvas.camera.offset.x = -(double)canvas.camera.width  / 2.0;
+        canvas.camera.offset.y = -(double)canvas.camera.height / 2.0;
+        canvas.UpdateProjection();
+        ToolbarDraw(&uiCanvas);
     }
-}
 
+    // If we display UI elements, also display an fps counter.
+    if(SS.showToolbar) {
+        canvas.EndFrame();
+
+        auto renderEndTime = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
+
+        RgbaColor renderTimeColor;
+        if(1000 / renderTime.count() < 60) {
+            // We aim for a steady 60fps; draw the counter in red when we're slower.
+            renderTimeColor = { 255, 0, 0, 255 };
+        } else {
+            renderTimeColor = { 255, 255, 255, 255 };
+        }
+        uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
+                                         (long)renderTime.count(),
+                                         (long)(1000/renderTime.count())),
+                                5, 5, renderTimeColor);
+    }
+
+    canvas.EndFrame();
+}

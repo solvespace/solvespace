@@ -83,7 +83,6 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *src = &(SK.constraint.elem[i]);
         Constraint dest = *src;
-        dest.dogd = {};
         ut->constraint.Add(&dest);
     }
     for(i = 0; i < SK.param.n; i++) {

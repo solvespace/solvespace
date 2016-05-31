@@ -12,7 +12,7 @@
 #include "gloffscreen.h"
 #include "solvespace.h"
 
-GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL), _width(0), _height(0) {
+GLOffscreen::GLOffscreen() : _pixels(NULL), _width(0), _height(0) {
 #ifndef __APPLE__
     ssassert(glewInit() == GLEW_OK, "Unexpected GLEW failure");
 #endif
@@ -26,7 +26,6 @@ GLOffscreen::GLOffscreen() : _pixels(NULL), _pixels_inv(NULL), _width(0), _heigh
 
 GLOffscreen::~GLOffscreen() {
     delete[] _pixels;
-    delete[] _pixels_inv;
     glDeleteRenderbuffersEXT(1, &_depth_renderbuffer);
     glDeleteRenderbuffersEXT(1, &_color_renderbuffer);
     glDeleteFramebuffersEXT(1, &_framebuffer);
@@ -35,10 +34,7 @@ GLOffscreen::~GLOffscreen() {
 bool GLOffscreen::begin(int width, int height) {
     if(_width != width || _height != height) {
         delete[] _pixels;
-        delete[] _pixels_inv;
-
-        _pixels = new uint32_t[width * height * 4];
-        _pixels_inv = new uint32_t[width * height * 4];
+        _pixels = new uint8_t[width * height * 4];
 
         _width = width;
         _height = height;
@@ -63,22 +59,16 @@ bool GLOffscreen::begin(int width, int height) {
     return false;
 }
 
-uint8_t *GLOffscreen::end(bool flip) {
+uint8_t *GLOffscreen::end() {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     glReadPixels(0, 0, _width, _height,
-            GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels_inv);
+            GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, _pixels);
 #else
     glReadPixels(0, 0, _width, _height,
-            GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, _pixels_inv);
+            GL_BGRA, GL_UNSIGNED_INT_8_8_8_8, _pixels);
 #endif
-
-    if(flip) {
-        /* in OpenGL coordinates, bottom is zero Y */
-        for(int i = 0; i < _height; i++)
-            memcpy(&_pixels[_width * i], &_pixels_inv[_width * (_height - i - 1)], _width * 4);
-    }
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 
-    return (uint8_t*) (flip ? _pixels : _pixels_inv);
+    return _pixels;
 }

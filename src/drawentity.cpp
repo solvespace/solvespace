@@ -17,109 +17,6 @@ std::string Entity::DescriptionString() const {
     }
 }
 
-void Entity::LineDrawOrGetDistance(Vector a, Vector b, bool maybeFat, int data) {
-    if(dogd.drawing) {
-        // Draw lines from active group in front of those from previous
-        ssglDepthRangeOffset((group.v == SS.GW.activeGroup.v) ? 4 : 3);
-        // Narrow lines are drawn as lines, but fat lines must be drawn as
-        // filled polygons, to get the line join style right.
-        ssglStippledLine(a, b, dogd.lineWidth, dogd.stippleType, dogd.stippleScale, maybeFat);
-        ssglDepthRangeOffset(0);
-    } else {
-        Point2d ap = SS.GW.ProjectPoint(a);
-        Point2d bp = SS.GW.ProjectPoint(b);
-
-        double d = dogd.mp.DistanceToLine(ap, bp.Minus(ap), /*asSegment=*/true);
-        // A little bit easier to select in the active group
-        if(group.v == SS.GW.activeGroup.v) d -= 1;
-        if(d < dogd.dmin) {
-            dogd.dmin = d;
-            dogd.data = data;
-        }
-    }
-}
-
-void Entity::DrawAll(bool drawAsHidden) {
-    // This handles points as a special case, because I seem to be able
-    // to get a huge speedup that way, by consolidating stuff to gl.
-    int i;
-    if(SS.GW.showPoints) {
-        double s = 3.5/SS.GW.scale;
-        Vector r = SS.GW.projRight.ScaledBy(s);
-        Vector d = SS.GW.projUp.ScaledBy(s);
-        ssglColorRGB(Style::Color(Style::DATUM));
-        ssglDepthRangeOffset(6);
-        glBegin(GL_QUADS);
-        for(i = 0; i < SK.entity.n; i++) {
-            Entity *e = &(SK.entity.elem[i]);
-            if(!e->IsPoint()) continue;
-            if(!(SK.GetGroup(e->group)->IsVisible())) continue;
-            if(e->forceHidden) continue;
-
-            Vector v = e->PointGetNum();
-
-            // If we're analyzing the sketch to show the degrees of freedom,
-            // then we draw big colored squares over the points that are
-            // free to move.
-            bool free = false;
-            if(e->type == Type::POINT_IN_3D) {
-                Param *px = SK.GetParam(e->param[0]),
-                      *py = SK.GetParam(e->param[1]),
-                      *pz = SK.GetParam(e->param[2]);
-
-                free = (px->free) || (py->free) || (pz->free);
-            } else if(e->type == Type::POINT_IN_2D) {
-                Param *pu = SK.GetParam(e->param[0]),
-                      *pv = SK.GetParam(e->param[1]);
-
-                free = (pu->free) || (pv->free);
-            }
-            if(free) {
-                Vector re = r.ScaledBy(2.5), de = d.ScaledBy(2.5);
-
-                ssglColorRGB(Style::Color(Style::ANALYZE));
-                ssglVertex3v(v.Plus (re).Plus (de));
-                ssglVertex3v(v.Plus (re).Minus(de));
-                ssglVertex3v(v.Minus(re).Minus(de));
-                ssglVertex3v(v.Minus(re).Plus (de));
-                ssglColorRGB(Style::Color(Style::DATUM));
-            }
-
-            ssglVertex3v(v.Plus (r).Plus (d));
-            ssglVertex3v(v.Plus (r).Minus(d));
-            ssglVertex3v(v.Minus(r).Minus(d));
-            ssglVertex3v(v.Minus(r).Plus (d));
-        }
-        glEnd();
-        ssglDepthRangeOffset(0);
-    }
-
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
-        if(e->IsPoint()) {
-            continue; // already handled
-        }
-        e->Draw(drawAsHidden);
-    }
-}
-
-void Entity::Draw(bool drawAsHidden) {
-    hStyle hs = Style::ForEntity(h);
-    dogd.lineWidth = Style::Width(hs);
-    if(drawAsHidden) {
-        dogd.stippleType = Style::PatternType({ Style::HIDDEN_EDGE });
-        dogd.stippleScale = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
-    } else {
-        dogd.stippleType = Style::PatternType(hs);
-        dogd.stippleScale = Style::StippleScaleMm(hs);
-    }
-    ssglLineWidth((float)dogd.lineWidth);
-    ssglColorRGB(Style::Color(hs));
-
-    dogd.drawing = true;
-    DrawOrGetDistance();
-}
-
 void Entity::GenerateEdges(SEdgeList *el) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
@@ -185,17 +82,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     return screenBBox;
 }
 
-double Entity::GetDistance(Point2d mp) {
-    dogd.drawing = false;
-    dogd.mp = mp;
-    dogd.dmin = 1e12;
-
-    DrawOrGetDistance();
-
-    return dogd.dmin;
-}
-
-Vector Entity::GetReferencePos() {
+void Entity::GetReferencePoints(std::vector<Vector> *refs) {
     switch(type) {
         case Type::POINT_N_COPY:
         case Type::POINT_N_TRANS:
@@ -203,7 +90,8 @@ Vector Entity::GetReferencePos() {
         case Type::POINT_N_ROT_AA:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D:
-            return PointGetNum();
+            refs->push_back(PointGetNum());
+            break;
 
         case Type::NORMAL_N_COPY:
         case Type::NORMAL_N_ROT:
@@ -216,12 +104,14 @@ Vector Entity::GetReferencePos() {
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
-            return SK.GetEntity(point[0])->PointGetNum();
+            refs->push_back(SK.GetEntity(point[0])->PointGetNum());
+            break;
 
         case Type::LINE_SEGMENT: {
             Vector a = SK.GetEntity(point[0])->PointGetNum(),
                    b = SK.GetEntity(point[1])->PointGetNum();
-            return b.Plus(a.Minus(b).ScaledBy(0.5));
+            refs->push_back(b.Plus(a.Minus(b).ScaledBy(0.5)));
+            break;
         }
 
         case Type::DISTANCE:
@@ -233,7 +123,17 @@ Vector Entity::GetReferencePos() {
         case Type::FACE_N_ROT_AA:
             break;
     }
-    ssassert(false, "Unexpected entity type");
+}
+
+int Entity::GetPositionOfPoint(const Camera &camera, Point2d p) {
+    ObjectPicker canvas = {};
+    canvas.camera      = camera;
+    canvas.point       = p;
+    canvas.minDistance = 1e12;
+
+    Draw(DrawAs::DEFAULT, &canvas);
+
+    return canvas.position;
 }
 
 bool Entity::IsStylable() const {
@@ -252,8 +152,7 @@ bool Entity::IsVisible() const {
     }
     if(!(g->IsVisible())) return false;
 
-    // Don't check if points are hidden; this gets called only for
-    // selected or hovered points, and those should always be shown.
+    if(IsPoint() && !SS.GW.showPoints) return false;
     if(IsNormal() && !SS.GW.showNormals) return false;
 
     if(!SS.GW.showWorkplanes) {
@@ -294,10 +193,6 @@ void Entity::CalculateNumerical(bool forExport) {
         // Copied entities within a file are always visible
         actVisible = true;
     }
-}
-
-bool Entity::PointIsFromReferences() const {
-    return h.request().IsFromReferences();
 }
 
 //-----------------------------------------------------------------------------
@@ -544,17 +439,61 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
     }
 }
 
-void Entity::DrawOrGetDistance() {
-    // If we're about to perform hit testing on an entity, consider
-    // whether the pointer is inside its bounding box first.
-    if(!dogd.drawing && !IsNormal()) {
-        bool hasBBox;
-        BBox box = GetOrGenerateScreenBBox(&hasBBox);
-        if(hasBBox && !box.Contains(dogd.mp, SELECTION_RADIUS))
-            return;
+void Entity::Draw(DrawAs how, Canvas *canvas) {
+    if(!IsVisible()) return;
+
+    int zIndex;
+    if(how == DrawAs::HIDDEN) {
+        zIndex = 2;
+    } else if(group.v != SS.GW.activeGroup.v) {
+        zIndex = 3;
+    } else {
+        zIndex = 4;
     }
 
-    if(!IsVisible()) return;
+    hStyle hs;
+    if(IsPoint()) {
+        hs.v = Style::DATUM;
+    } else if(IsNormal() || type == Type::WORKPLANE) {
+        hs.v = Style::NORMALS;
+    } else {
+        hs = Style::ForEntity(h);
+    }
+
+    Canvas::Stroke stroke = {};
+    stroke.zIndex         = zIndex;
+    stroke.color          = Style::Color(hs);
+    stroke.width          = Style::Width(hs);
+    stroke.stipplePattern = Style::PatternType(hs);
+    stroke.stippleScale   = Style::StippleScaleMm(hs);
+    switch(how) {
+        case DrawAs::DEFAULT:
+            stroke.layer  = Canvas::Layer::NORMAL;
+            break;
+
+        case DrawAs::HIDDEN:
+            stroke.layer  = Canvas::Layer::OCCLUDED;
+            stroke.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });
+            stroke.stippleScale   = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
+            break;
+
+        case DrawAs::HOVERED:
+            stroke.layer  = Canvas::Layer::FRONT;
+            stroke.color  = Style::Color(Style::HOVERED);
+            break;
+
+        case DrawAs::SELECTED:
+            stroke.layer  = Canvas::Layer::FRONT;
+            stroke.color  = Style::Color(Style::SELECTED);
+            break;
+    }
+    Canvas::hStroke hcs = canvas->GetStroke(stroke);
+
+    Canvas::Fill fill = {};
+    fill.layer  = stroke.layer;
+    fill.zIndex = IsPoint() ? zIndex + 1 : 0;
+    fill.color  = stroke.color;
+    Canvas::hFill hcf = canvas->GetFill(fill);
 
     switch(type) {
         case Type::POINT_N_COPY:
@@ -563,26 +502,33 @@ void Entity::DrawOrGetDistance() {
         case Type::POINT_N_ROT_AA:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D: {
-            Vector v = PointGetNum();
+            if(how == DrawAs::HIDDEN) return;
 
-            if(dogd.drawing) {
-                double s = 3.5;
-                Vector r = SS.GW.projRight.ScaledBy(s/SS.GW.scale);
-                Vector d = SS.GW.projUp.ScaledBy(s/SS.GW.scale);
+            // If we're analyzing the sketch to show the degrees of freedom,
+            // then we draw big colored squares over the points that are
+            // free to move.
+            bool free = false;
+            if(type == Type::POINT_IN_3D) {
+                Param *px = SK.GetParam(param[0]),
+                      *py = SK.GetParam(param[1]),
+                      *pz = SK.GetParam(param[2]);
 
-                ssglColorRGB(Style::Color(Style::DATUM));
-                ssglDepthRangeOffset(6);
-                glBegin(GL_QUADS);
-                    ssglVertex3v(v.Plus (r).Plus (d));
-                    ssglVertex3v(v.Plus (r).Minus(d));
-                    ssglVertex3v(v.Minus(r).Minus(d));
-                    ssglVertex3v(v.Minus(r).Plus (d));
-                glEnd();
-                ssglDepthRangeOffset(0);
-            } else {
-                Point2d pp = SS.GW.ProjectPoint(v);
-                dogd.dmin = pp.DistanceTo(dogd.mp) - 6;
+                free = px->free || py->free || pz->free;
+            } else if(type == Type::POINT_IN_2D) {
+                Param *pu = SK.GetParam(param[0]),
+                      *pv = SK.GetParam(param[1]);
+
+                free = pu->free || pv->free;
             }
+            if(free) {
+                Canvas::Fill fillAnalyze = fill;
+                fillAnalyze.color = Style::Color(Style::ANALYZE);
+                Canvas::hFill hcfAnalyze = canvas->GetFill(fillAnalyze);
+
+                canvas->DrawPoint(PointGetNum(), 7.0, hcfAnalyze);
+            }
+
+            canvas->DrawPoint(PointGetNum(), 3.5, hcf);
             return;
         }
 
@@ -591,67 +537,59 @@ void Entity::DrawOrGetDistance() {
         case Type::NORMAL_N_ROT_AA:
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D: {
-            int i;
-            for(i = 0; i < 2; i++) {
-                if(i == 0 && !SS.GW.showNormals) {
-                    // When the normals are hidden, we will continue to show
-                    // the coordinate axes at the bottom left corner, but
-                    // not at the origin.
-                    continue;
+            const Camera &camera = canvas->GetCamera();
+
+            if(how == DrawAs::HIDDEN) return;
+
+            for(int i = 0; i < 2; i++) {
+                bool asReference = (i == 1);
+                if(asReference) {
+                    if(!h.request().IsFromReferences()) continue;
+                } else {
+                    if(!SK.GetGroup(group)->IsVisible() || !SS.GW.showNormals) continue;
                 }
 
-                hRequest hr = h.request();
-                // Always draw the x, y, and z axes in red, green, and blue;
-                // brighter for the ones at the bottom left of the screen,
-                // dimmer for the ones at the model origin.
-                int f = (i == 0 ? 100 : 255);
-                if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
-                    if(dogd.drawing)
-                        ssglColorRGB(RGBi(0, 0, f));
-                } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
-                    if(dogd.drawing)
-                        ssglColorRGB(RGBi(f, 0, 0));
-                } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
-                    if(dogd.drawing)
-                        ssglColorRGB(RGBi(0, f, 0));
-                } else {
-                    if(dogd.drawing)
-                        ssglColorRGB(Style::Color(Style::NORMALS));
-                    if(i > 0) break;
+                stroke.layer  = (asReference) ? Canvas::Layer::FRONT : Canvas::Layer::NORMAL;
+                if(how == DrawAs::DEFAULT) {
+                    // Always draw the x, y, and z axes in red, green, and blue;
+                    // brighter for the ones at the bottom left of the screen,
+                    // dimmer for the ones at the model origin.
+                    hRequest hr   = h.request();
+                    uint8_t  luma = (asReference) ? 255 : 100;
+                    if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                        stroke.color = RgbaColor::From(0, 0, luma);
+                    } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                        stroke.color = RgbaColor::From(luma, 0, 0);
+                    } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                        stroke.color = RgbaColor::From(0, luma, 0);
+                    }
                 }
+                hcs = canvas->GetStroke(stroke);
 
                 Quaternion q = NormalGetNum();
                 Vector tail;
-                if(i == 0) {
-                    tail = SK.GetEntity(point[0])->PointGetNum();
-                    if(dogd.drawing)
-                        ssglLineWidth(1);
-                } else {
+                if(asReference) {
                     // Draw an extra copy of the x, y, and z axes, that's
                     // always in the corner of the view and at the front.
                     // So those are always available, perhaps useful.
-                    double s = SS.GW.scale;
-                    double h = 60 - SS.GW.height/2;
-                    double w = 60 - SS.GW.width/2;
-                    tail = SS.GW.projRight.ScaledBy(w/s).Plus(
-                           SS.GW.projUp.   ScaledBy(h/s)).Minus(SS.GW.offset);
-                    if(dogd.drawing) {
-                        ssglDepthRangeLockToFront(true);
-                        ssglLineWidth(2);
-                    }
+                    stroke.width = 2;
+                    double s = camera.scale;
+                    double h = 60 - camera.height / 2.0;
+                    double w = 60 - camera.width  / 2.0;
+                    tail = camera.projRight.ScaledBy(w/s).Plus(
+                           camera.projUp.   ScaledBy(h/s)).Minus(camera.offset);
+                } else {
+                    tail = SK.GetEntity(point[0])->PointGetNum();
                 }
-
-                Vector v = (q.RotationN()).WithMagnitude(50/SS.GW.scale);
+                Vector v = (q.RotationN()).WithMagnitude(50.0 / camera.scale);
                 Vector tip = tail.Plus(v);
-                LineDrawOrGetDistance(tail, tip);
+                canvas->DrawLine(tail, tip, hcs);
 
-                v = v.WithMagnitude(12/SS.GW.scale);
+                v = v.WithMagnitude(12.0 / camera.scale);
                 Vector axis = q.RotationV();
-                LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis, 0.6)));
-                LineDrawOrGetDistance(tip,tip.Minus(v.RotatedAbout(axis,-0.6)));
+                canvas->DrawLine(tip, tip.Minus(v.RotatedAbout(axis,  0.6)), hcs);
+                canvas->DrawLine(tip, tip.Minus(v.RotatedAbout(axis, -0.6)), hcs);
             }
-            if(dogd.drawing)
-                ssglDepthRangeLockToFront(false);
             return;
         }
 
@@ -661,13 +599,14 @@ void Entity::DrawOrGetDistance() {
             return;
 
         case Type::WORKPLANE: {
-            Vector p;
-            p = SK.GetEntity(point[0])->PointGetNum();
+            const Camera &camera = canvas->GetCamera();
+
+            Vector p = SK.GetEntity(point[0])->PointGetNum();
 
             Vector u = Normal()->NormalU();
             Vector v = Normal()->NormalV();
 
-            double s = (min(SS.GW.width, SS.GW.height))*0.45/SS.GW.scale;
+            double s = (std::min(camera.width, camera.height)) * 0.45 / camera.scale;
 
             Vector us = u.ScaledBy(s);
             Vector vs = v.ScaledBy(s);
@@ -677,41 +616,28 @@ void Entity::DrawOrGetDistance() {
             Vector mm = p.Minus(us).Minus(vs), mm2 = mm;
             Vector mp = p.Minus(us).Plus (vs);
 
-            if(dogd.drawing) {
-                ssglLineWidth(1);
-                ssglColorRGB(Style::Color(Style::NORMALS));
-                glEnable(GL_LINE_STIPPLE);
-                glLineStipple(3, 0x1111);
-            }
+            Canvas::Stroke strokeBorder = stroke;
+            strokeBorder.zIndex        -= 3;
+            strokeBorder.stipplePattern = StipplePattern::SHORT_DASH;
+            strokeBorder.stippleScale   = 8.0 / camera.scale;
+            Canvas::hStroke hcsBorder = canvas->GetStroke(strokeBorder);
+
+            double textHeight = Style::TextHeight(hs) / camera.scale;
 
             if(!h.isFromRequest()) {
-                mm = mm.Plus(v.ScaledBy(70/SS.GW.scale));
-                mm2 = mm2.Plus(u.ScaledBy(70/SS.GW.scale));
-                LineDrawOrGetDistance(mm2, mm);
+                mm = mm.Plus(v.ScaledBy(textHeight * 4.7));
+                mm2 = mm2.Plus(u.ScaledBy(textHeight * 4.7));
+                canvas->DrawLine(mm2, mm, hcsBorder);
             }
-            LineDrawOrGetDistance(pp, pm);
-            LineDrawOrGetDistance(pm, mm2);
-            LineDrawOrGetDistance(mp, mm);
-            LineDrawOrGetDistance(pp, mp);
+            canvas->DrawLine(pp,  pm, hcsBorder);
+            canvas->DrawLine(mm2, pm, hcsBorder);
+            canvas->DrawLine(mm,  mp, hcsBorder);
+            canvas->DrawLine(pp,  mp, hcsBorder);
 
-            if(dogd.drawing)
-                glDisable(GL_LINE_STIPPLE);
-
-            std::string str = DescriptionString().substr(5);
-            double th = Style::DefaultTextHeight();
-            if(dogd.drawing) {
-                Vector o = mm2.Plus(u.ScaledBy(3/SS.GW.scale)).Plus(
-                                    v.ScaledBy(3/SS.GW.scale));
-                ssglWriteText(str, th, o, u, v, NULL, NULL);
-            } else {
-                Vector pos = mm2.Plus(u.ScaledBy(ssglStrWidth(str, th)/2)).Plus(
-                                      v.ScaledBy(ssglStrCapHeight(th)/2));
-                Point2d pp = SS.GW.ProjectPoint(pos);
-                dogd.dmin = min(dogd.dmin, pp.DistanceTo(dogd.mp) - 10);
-                // If a line lies in a plane, then select the line, not
-                // the plane.
-                dogd.dmin += 3;
-            }
+            Vector o = mm2.Plus(u.ScaledBy(3.0 / camera.scale)).Plus(
+                                v.ScaledBy(3.0 / camera.scale));
+            std::string shortDesc = DescriptionString().substr(5);
+            canvas->DrawVectorText(shortDesc, textHeight, o, u, v, hcs);
             return;
         }
 
@@ -721,13 +647,10 @@ void Entity::DrawOrGetDistance() {
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT: {
-            // Nothing but the curves; generate the rational polynomial curves for
-            // everything, then piecewise linearize them, and display those.
-            SEdgeList *sel = GetOrGenerateEdges();
-            dogd.data = -1;
-            for(int i = 0; i < sel->l.n; i++) {
-                SEdge *se = &(sel->l.elem[i]);
-                LineDrawOrGetDistance(se->a, se->b, /*maybeFat=*/true, se->auxB);
+            // Generate the rational polynomial curves, then piecewise linearize
+            // them, and display those.
+            if(!canvas->DrawBeziers(*GetOrGenerateBezierCurves(),  hcs)) {
+                canvas->DrawEdges(*GetOrGenerateEdges(), hcs);
             }
             return;
         }
@@ -742,4 +665,3 @@ void Entity::DrawOrGetDistance() {
     }
     ssassert(false, "Unexpected entity type");
 }
-

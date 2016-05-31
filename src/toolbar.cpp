@@ -11,7 +11,7 @@ struct ToolIcon {
     std::string name;
     Command     command;
     std::string tooltip;
-    Pixmap      pixmap;
+    std::shared_ptr<Pixmap> pixmap;
 };
 static ToolIcon Toolbar[] = {
     { "line",            Command::LINE_SEGMENT,   "Sketch line segment",                              {} },
@@ -53,8 +53,8 @@ static ToolIcon Toolbar[] = {
     { "ontoworkplane",   Command::ONTO_WORKPLANE, "Align view to active workplane",                   {} },
 };
 
-void GraphicsWindow::ToolbarDraw() {
-    ToolbarDrawOrHitTest(0, 0, /*paint=*/true, NULL);
+void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
+    ToolbarDrawOrHitTest(0, 0, canvas, NULL);
 }
 
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
@@ -62,7 +62,7 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     y += ((int)height/2);
 
     Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, /*paint=*/false, &nh);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &nh);
     if(!withinToolbar) nh = Command::NONE;
 
     if(nh != toolbarTooltipped) {
@@ -89,7 +89,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     y += ((int)height/2);
 
     Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, /*paint=*/false, &nh);
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &nh);
     // They might have clicked within the toolbar, but not on a button.
     if(withinToolbar && nh != Command::NONE) {
         for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
@@ -103,7 +103,7 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
 }
 
 bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
-                                          bool paint, Command *menuHit)
+                                          UiCanvas *canvas, Command *menuHit)
 {
     int i;
     int x = 17, y = (int)(height - 52);
@@ -115,23 +115,15 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     bool withinToolbar =
         (mx >= aleft && mx <= aright && my <= atop && my >= abot);
 
-    if(!paint && !withinToolbar) {
+    if(!canvas && !withinToolbar) {
         // This gets called every MouseMove event, so return quickly.
         return false;
     }
 
-    if(paint) {
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glTranslated(-1, -1, 0);
-        glScaled(2.0/width, 2.0/height, 0);
-        glDisable(GL_LIGHTING);
-
-        double c = 30.0/255;
-        glColor4d(c, c, c, 1.0);
-        ssglAxisAlignedQuad(aleft, aright, atop, abot);
+    if(canvas) {
+        canvas->DrawRect(aleft, aright, atop, abot,
+                        /*fillColor=*/{ 30, 30, 30, 255 },
+                        /*outlineColor=*/{});
     }
 
     struct {
@@ -149,37 +141,34 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             }
             y -= 16;
 
-            if(paint) {
+            if(canvas) {
                 // Draw a separator bar in a slightly different color.
                 int divw = 30, divh = 2;
-                glColor4d(0.17, 0.17, 0.17, 1);
-                x += 16;
-                y += 24;
-                ssglAxisAlignedQuad(x+divw, x-divw, y+divh, y-divh);
-                x -= 16;
-                y -= 24;
+                canvas->DrawRect(x+16+divw, x+16-divw, y+24+divh, y+24-divh,
+                                 /*fillColor=*/{ 45, 45, 45, 255 },
+                                 /*outlineColor=*/{});
             }
 
             continue;
         }
 
-        if(icon.pixmap.IsEmpty()) {
-            icon.pixmap = LoadPNG("icons/graphics-window/" + icon.name + ".png");
+        if(icon.pixmap == nullptr) {
+            icon.pixmap = LoadPng("icons/graphics-window/" + icon.name + ".png");
         }
 
-        if(paint) {
-            glColor4d(0, 0, 0, 1.0);
-            Point2d o = { (double)(x - icon.pixmap.width  / 2),
-                          (double)(y - icon.pixmap.height / 2) };
-            ssglDrawPixmap(icon.pixmap, o, /*flip=*/true);
+        if(canvas) {
+            canvas->DrawPixmap(icon.pixmap,
+                               x - icon.pixmap->width  / 2,
+                               y - icon.pixmap->height / 2);
 
             if(toolbarHovered == icon.command ||
                (pending.operation == Pending::COMMAND &&
                 pending.command == icon.command)) {
                 // Highlight the hovered or pending item.
-                glColor4d(1, 1, 0, 0.3);
                 int boxhw = 15;
-                ssglAxisAlignedQuad(x+boxhw, x-boxhw, y+boxhw, y-boxhw);
+                canvas->DrawRect(x+boxhw, x-boxhw, y+boxhw, y-boxhw,
+                                 /*fillColor=*/{ 255, 255, 0, 75 },
+                                 /*outlineColor=*/{});
             }
 
             if(toolbarTooltipped == icon.command) {
@@ -208,10 +197,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
         }
     }
 
-    if(paint) {
+    if(canvas) {
         // Do this last so that nothing can draw over it.
         if(toolTip.show) {
-            ssglInitializeBitmapFont();
             std::string str = toolTip.str;
 
             for(i = 0; SS.GW.menu[i].level >= 0; i++) {
@@ -224,24 +212,15 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw = str.length() * (SS.TW.CHAR_WIDTH - 1) + 10,
+            int tw = BitmapFont::Builtin()->GetWidth(str) * 8 + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
-            double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
-            glLineWidth(1);
-            glColor4d(1.0, 1.0, 0.6, 1.0);
-            ssglAxisAlignedQuad(ox, ox+tw, oy, oy+th);
-            glColor4d(0.0, 0.0, 0.0, 1.0);
-            ssglAxisAlignedLineLoop(ox, ox+tw, oy, oy+th);
-
-            glColor4d(0, 0, 0, 1);
-            glPushMatrix();
-                glTranslated(ox+5, oy+3, 0);
-                glScaled(1, -1, 1);
-                ssglBitmapText(str, Vector::From(0, 0, 0));
-            glPopMatrix();
+            int ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
+            canvas->DrawRect(ox, ox+tw, oy, oy+th,
+                             /*fillColor=*/{ 255, 255, 150, 255 },
+                             /*outlineColor=*/{ 0, 0, 0, 255 });
+            canvas->DrawBitmapText(str, ox+5, oy+4, { 0, 0, 0, 255 });
         }
-        ssglDepthRangeLockToFront(false);
     }
 
     return withinToolbar;

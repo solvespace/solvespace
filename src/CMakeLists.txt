@@ -137,6 +137,7 @@ set(solvespace_HEADERS
     sketch.h
     solvespace.h
     ui.h
+    render/render.h
     srf/surface.h)
 
 set(solvespace_SOURCES
@@ -156,7 +157,6 @@ set(solvespace_SOURCES
     expr.cpp
     file.cpp
     generate.cpp
-    glhelper.cpp
     graphicswin.cpp
     group.cpp
     groupmesh.cpp
@@ -177,6 +177,8 @@ set(solvespace_SOURCES
     undoredo.cpp
     util.cpp
     view.cpp
+    render/render.cpp
+    render/rendergl1.cpp
     srf/boolean.cpp
     srf/curve.cpp
     srf/merge.cpp

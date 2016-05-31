@@ -684,21 +684,6 @@ static std::string Join(const std::vector<std::string> &parts, const std::string
     return result;
 }
 
-static bool PlatformPathEqual(const std::string &a, const std::string &b)
-{
-    // Case-sensitivity is actually per-volume on both Windows and OS X,
-    // but it is extremely tedious to implement and test for little benefit.
-#if defined(WIN32)
-    std::wstring wa = Widen(a), wb = Widen(b);
-    return std::equal(wa.begin(), wa.end(), wb.begin(), /*wb.end(),*/
-                [](wchar_t wca, wchar_t wcb) { return towlower(wca) == towlower(wcb); });
-#elif defined(__APPLE__)
-    return !strcasecmp(a.c_str(), b.c_str());
-#else
-    return a == b;
-#endif
-}
-
 static std::string MakePathRelative(const std::string &base, const std::string &path)
 {
     std::vector<std::string> baseParts = Split(base, PATH_SEP),
@@ -708,7 +693,7 @@ static std::string MakePathRelative(const std::string &base, const std::string &
 
     size_t common;
     for(common = 0; common < baseParts.size() && common < pathParts.size(); common++) {
-        if(!PlatformPathEqual(baseParts[common], pathParts[common]))
+        if(!PathEqual(baseParts[common], pathParts[common]))
             break;
     }
 
