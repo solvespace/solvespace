@@ -384,7 +384,7 @@ public:
            in absolute sizes; modify_font does on GTK2. */
         Pango::FontDescription override_font_desc(font_desc);
         double dpi = get_screen()->get_resolution();
-        override_font_desc.set_size(font_height * 72.0 / dpi * Pango::SCALE);
+        override_font_desc.set_size(font_height * (int)(72.0 / dpi) * Pango::SCALE);
         _entry.override_font(override_font_desc);
 #else
         _entry.modify_font(font_desc);
@@ -472,11 +472,11 @@ private:
 
 /* Graphics window */
 
-int DeltaYOfScrollEvent(GdkEventScroll *event) {
+double DeltaYOfScrollEvent(GdkEventScroll *event) {
 #ifdef HAVE_GTK3
-    int delta_y = event->delta_y;
+    double delta_y = event->delta_y;
 #else
-    int delta_y = 0;
+    double delta_y = 0;
 #endif
     if(delta_y == 0) {
         switch(event->direction) {
@@ -575,7 +575,7 @@ protected:
         int x, y;
         ij_to_xy(event->x, event->y, x, y);
 
-        SS.GW.MouseScroll(x, y, -DeltaYOfScrollEvent(event));
+        SS.GW.MouseScroll(x, y, (int)-DeltaYOfScrollEvent(event));
 
         return true;
     }
@@ -1047,7 +1047,7 @@ static void RefreshRecentMenu(Command cmd, Command base) {
         placeholder->set_sensitive(false);
         menu->append(*placeholder);
     } else {
-        for(int i = 0; i < MAX_RECENT; i++) {
+        for(size_t i = 0; i < MAX_RECENT; i++) {
             if(std::string(RecentFile[i]).empty())
                 break;
 
