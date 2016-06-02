@@ -73,6 +73,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     set(WARNING_FLAGS   "${WARNING_FLAGS} -Werror=switch")
 endif()
 
+if(WIN32)
+    set(CMAKE_RC_FLAGS  "${CMAKE_RC_FLAGS} -l0")
+endif()
+
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
