@@ -1092,6 +1092,7 @@ bool TextEditControlIsVisible(void) {
 void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error) {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setAlertStyle:(error ? NSWarningAlertStyle : NSInformationalAlertStyle)];
+    [[alert addButtonWithTitle:@"OK"] setKeyEquivalent: @"\033"];
 
     /* do some additional formatting of the message these are
        heuristics, but they are made failsafe and lead to nice results. */
