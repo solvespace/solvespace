@@ -804,17 +804,20 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
                 g->linkFile = newPath;
         }
 
-        std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
-        std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
-        FILE *test = ssfopen(fromRel, "rb");
-        if(test) {
-            fclose(test);
-            // Okay, exists; update the absolute path.
-            g->linkFile = fromRel;
-        } else {
-            // It doesn't exist. Perhaps the file was moved but the tree wasn't, and we
-            // can use the absolute filename to get us back. The relative path will be
-            // updated below.
+        // In a newly created group we only have an absolute path.
+        if(!g->linkFileRel.empty()) {
+            std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
+            std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
+            FILE *test = ssfopen(fromRel, "rb");
+            if(test) {
+                fclose(test);
+                // Okay, exists; update the absolute path.
+                g->linkFile = fromRel;
+            } else {
+                // It doesn't exist. Perhaps the file was moved but the tree wasn't, and we
+                // can use the absolute filename to get us back. The relative path will be
+                // updated below.
+            }
         }
 
 try_load_file:
