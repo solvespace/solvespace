@@ -859,6 +859,8 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     <script>
     </script>
     <script>
+window.devicePixelRatio = window.devicePixelRatio || 1;
+
 SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset) {
         THREE.Camera.call(this);
 
@@ -1014,13 +1016,13 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
 
             switch (event.button) {
                 case 0:
-                    _rotateCur.set(event.screenX, event.screenY);
+                    _rotateCur.set(event.screenX/window.devicePixelRatio, event.screenY/window.devicePixelRatio);
                     _rotatePrev.copy(_rotateCur);
                     document.addEventListener('mousemove', mousemove, false);
                     document.addEventListener('mouseup', mouseup, false);
                     break;
                 case 2:
-                    _offsetCur.set(event.screenX, event.screenY);
+                    _offsetCur.set(event.screenX/window.devicePixelRatio, event.screenY/window.devicePixelRatio);
                     _offsetPrev.copy(_offsetCur);
                     document.addEventListener('mousemove', mousemove, false);
                     document.addEventListener('mouseup', mouseup, false);
@@ -1043,7 +1045,7 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
         function mousemove(event) {
             switch (event.button) {
                 case 0:
-                    _rotateCur.set(event.screenX, event.screenY);
+                    _rotateCur.set(event.screenX/window.devicePixelRatio, event.screenY/window.devicePixelRatio);
                     var diff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
                         .multiplyScalar(1 / object.zoomScale);
                     object.rotate(-0.3 * Math.PI / 180 * diff.x * object.zoomScale,
@@ -1053,7 +1055,7 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
                     break;
                 case 2:
                     _mouseMoved = true;
-                    _offsetCur.set(event.screenX, event.screenY);
+                    _offsetCur.set(event.screenX/window.devicePixelRatio, event.screenY/window.devicePixelRatio);
                     var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
                         .multiplyScalar(1 / object.zoomScale);
                     object.offsetProj(diff.x, -diff.y);
@@ -1197,6 +1199,9 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
             height = params.height;
         }
 
+        width *= window.devicePixelRatio;
+        height *= window.devicePixelRatio;
+
         domElement = init();
         render();
         return domElement;
@@ -1206,8 +1211,8 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
             scene = new THREE.Scene();
             edgeScene = new THREE.Scene();
 
-            camera = new SolvespaceCamera(width,
-                height, 5, new THREE.Vector3(0, 1, 0),
+            camera = new SolvespaceCamera(width/window.devicePixelRatio,
+                height/window.devicePixelRatio, 5, new THREE.Vector3(0, 1, 0),
                 new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0));
 
             mesh = createMesh(obj);
@@ -1232,6 +1237,7 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
             renderer = new THREE.WebGLRenderer({ antialias: true});
             renderer.setSize(width, height);
             renderer.autoClear = false;
+            renderer.domElement.style = "width:"+width/window.devicePixelRatio+"px;height:"+height/window.devicePixelRatio+"px;";
 
             controls = new SolvespaceControls(camera, renderer.domElement);
             controls.addEventListener("change", render);
