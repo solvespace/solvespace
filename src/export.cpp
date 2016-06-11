@@ -860,7 +860,12 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     <script>
 )";
     const char htmlend[] = R"(
-    document.body.appendChild(solvespace(solvespace_model_%s));
+    document.body.appendChild(solvespace(solvespace_model_%s, {
+        scale: %g,
+        offset: new THREE.Vector3(%g, %g, %g),
+        projUp: new THREE.Vector3(%g, %g, %g),
+        projRight: new THREE.Vector3(%g, %g, %g)
+    }));
     </script>
   </body>
 </html>
@@ -1001,7 +1006,12 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     fputs("  ]\n};\n", f);
 
     if(extension == "html")
-        fprintf(f, htmlend, baseFilename.c_str());
+        fprintf(f, htmlend,
+                baseFilename.c_str(),
+                SS.GW.scale,
+                CO(SS.GW.offset),
+                CO(SS.GW.projUp),
+                CO(SS.GW.projRight));
 
     spl.Clear();
 }

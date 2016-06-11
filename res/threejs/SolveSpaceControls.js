@@ -327,7 +327,7 @@ SolvespaceControls.prototype.constructor = SolvespaceControls;
 solvespace = function(obj, params) {
     var scene, edgeScene, camera, edgeCamera, renderer;
     var geometry, controls, material, mesh, edges;
-    var width, height;
+    var width, height, scale, offset, projRight, projUp;
     var directionalLightArray = [];
 
     if (typeof params === "undefined" || !("width" in params)) {
@@ -342,7 +342,32 @@ solvespace = function(obj, params) {
         height = params.height;
     }
 
+    if (typeof params === "undefined" || !("scale" in params)) {
+        scale = 5;
+    } else {
+        scale = params.scale;
+    }
+
+    if (typeof params === "undefined" || !("offset" in params)) {
+        offset = new THREE.Vector3(0, 0, 0);
+    } else {
+        offset = params.offset;
+    }
+
+    if (typeof params === "undefined" || !("projUp" in params)) {
+        projUp = new THREE.Vector3(0, 1, -1);
+    } else {
+        projUp = params.projUp;
+    }
+
+    if (typeof params === "undefined" || !("projRight" in params)) {
+        projRight = new THREE.Vector3(1, 0, -1);
+    } else {
+        projRight = params.projRight;
+    }
+
     domElement = init();
+    lightUpdate();
     render();
     return domElement;
 
@@ -351,9 +376,8 @@ solvespace = function(obj, params) {
         scene = new THREE.Scene();
         edgeScene = new THREE.Scene();
 
-        camera = new SolvespaceCamera(width,
-            height, 5, new THREE.Vector3(0, 1, 0),
-            new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0));
+        camera = new SolvespaceCamera(width, height, scale, projUp, projRight, offset);
+        camera.NormalizeProjectionVectors();
 
         mesh = createMesh(obj);
         scene.add(mesh);
