@@ -888,6 +888,9 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         if(ToolbarMouseDown((int)mx, (int)my)) return;
     }
 
+    // This will be clobbered by MouseMoved below.
+    bool hasConstraintSuggestion = SS.GW.pending.hasSuggestion;
+
     // Make sure the hover is up to date.
     MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false, 
         /*shiftDown=*/false, /*ctrlDown=*/false);
@@ -1130,7 +1133,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
         case Pending::DRAGGING_NEW_LINE_POINT: {
             // Constrain the line segment horizontal or vertical if close enough
-            if(SS.GW.pending.hasSuggestion) {
+            if(hasConstraintSuggestion) {
                 Constraint::Constrain(SS.GW.pending.suggestion,
                     Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
             }
