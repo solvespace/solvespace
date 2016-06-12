@@ -1028,6 +1028,7 @@ void InitTextWindow() {
     [TW setFrameAutosaveName:@"TextWindow"];
     [TW setFloatingPanel:YES];
     [TW setBecomesKeyOnlyIfNeeded:YES];
+    [TW setHidesOnDeactivate:NO];
     [GW addChildWindow:TW ordered:NSWindowAbove];
 
     NSScrollView *scrollView = [[NSScrollView alloc] init];
