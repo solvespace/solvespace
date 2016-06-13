@@ -212,8 +212,19 @@ if(WIN32 AND NOT MINGW)
 endif()
 
 if(SPACEWARE_FOUND)
-    target_link_libraries(solvespace
-        ${SPACEWARE_LIBRARIES})
+    if(APPLE)
+        target_link_libraries(solvespace
+            ${3DCONNEXIONCLIENT_LIBRARY})
+        add_custom_command(TARGET solvespace POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${3DCONNEXIONCLIENT_LIBRARY}/Versions/A/3DconnexionClient ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/3DconnexionClient
+            COMMAND install_name_tool -change 3DconnexionClient @executable_path/3DconnexionClient
+                $<TARGET_FILE:solvespace>
+            COMMENT "Bundling shared library 3DconnexionClient"
+            VERBATIM)
+    else()
+        target_link_libraries(solvespace
+            ${SPACEWARE_LIBRARIES})
+    endif()
 endif()
 
 if(APPLE)

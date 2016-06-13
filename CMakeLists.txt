@@ -179,6 +179,13 @@ elseif(APPLE)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
+    find_library(3DCONNEXIONCLIENT_LIBRARY 3DconnexionClient)
+    if(3DCONNEXIONCLIENT_LIBRARY)
+        message(STATUS "Using 3DconnexionClient: ${3DCONNEXIONCLIENT_LIBRARY}")
+        set(SPACEWARE_FOUND TRUE)
+    else()
+        message(STATUS "Can't find 3DconnexionClient Framework!")
+    endif()
 else() # Linux and compatible systems
     find_package(SpaceWare)
 

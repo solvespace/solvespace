@@ -17,6 +17,10 @@
 #include "gloffscreen.h"
 #include <config.h>
 
+#ifdef HAVE_SPACEWARE
+#import <3DconnexionClient/ConnexionClientAPI.h>
+#endif
+
 using SolveSpace::dbp;
 
 #define GL_CHECK() \
@@ -1218,6 +1222,32 @@ void SolveSpace::ExitNow(void) {
     [NSApp stop:nil];
 }
 
+#ifdef HAVE_SPACEWARE
+void connexionAdded(io_connect_t con) {}
+void connexionRemoved(io_connect_t con) {}
+
+void connexionMessage(io_connect_t con, natural_t type, void *arg) {
+    if (type != kConnexionMsgDeviceState) {
+        return;
+    }
+
+    ConnexionDeviceState *device = (ConnexionDeviceState *)arg;
+
+    printf("FooBar: %d %d %d %d %d %d\n", device->axis[0], device->axis[1], device->axis[2], device->axis[3], device->axis[4], device->axis[5]);
+
+    SolveSpace::SS.GW.SpaceNavigatorMoved(
+        (double)device->axis[0] * -1.0,
+        (double)device->axis[1] * -1.0,
+        (double)device->axis[2],
+        (double)device->axis[3] * -0.001,
+        (double)device->axis[4] * -0.001,
+        (double)device->axis[5] * 0.001,
+        0 /* TODO: shift held? */);
+    
+    //SolveSpace::SS.GW.Paint();
+}
+#endif
+
 int main(int argc, const char *argv[]) {
     [NSApplication sharedApplication];
     ApplicationDelegate *delegate = [[ApplicationDelegate alloc] init];
@@ -1228,10 +1258,24 @@ int main(int argc, const char *argv[]) {
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
     SolveSpace::InitMainMenu([NSApp mainMenu]);
 
+#ifdef HAVE_SPACEWARE
+    UInt32 connexionSignature = 'SoSp';
+    UInt8 *connexionName = (UInt8 *)"SolveSpace";
+
+    InstallConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
+    UInt16 connexionClient = RegisterConnexionClient(connexionSignature, connexionName, kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
+
+#endif
+
     SolveSpace::SS.Init();
 
     [GW makeKeyAndOrderFront:nil];
     [NSApp run];
+
+#ifdef HAVE_SPACEWARE
+    UnregisterConnexionClient(connexionClient);
+    CleanupConnexionHandlers();
+#endif
 
     SolveSpace::SK.Clear();
     SolveSpace::SS.Clear();
