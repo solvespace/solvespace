@@ -1,14 +1,25 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: solvespace
-Source: https://github.com/whitequark/solvespace
+Source: https://github.com/solvespace/solvespace
 
 Files: *
-Copyright: 2008-2013 Jonathan Westhues.
+Copyright: 2008-2013 Jonathan Westhues
+Copyright: 2015-2016 whitequark <whitequark@whitequark.org>
+Copyright: 2015-2016 Aleksey Egorov <anandamide@mail.ru>
 License: GPL-3.0+
 
 Files: debian/*
-Copyright: 2015 whitequark <whitequark@whitequark.org>
+Copyright: 2015-2016 whitequark <whitequark@whitequark.org>
 License: GPL-3.0+
+
+Files: extlib/si/*
+Copyright: 1998-2005 3Dconnexion
+License:
+ Permission to use, copy, modify, and distribute this software for all
+ purposes and without fees is hereby grated provided that this copyright
+ notice appears in all copies.  Permission to modify this software is granted
+ and 3Dconnexion will support such modifications only if said modifications are
+ approved by 3Dconnexion.
 
 License: GPL-3.0+
  This program is free software: you can redistribute it and/or modify
