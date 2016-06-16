@@ -1,0 +1,27 @@
+/* XPM */
+static char *solvespace_16x16[] = {
+/* columns rows colors chars-per-pixel */
+"16 16 5 1 ",
+"  c black",
+". c #1ED500",
+"X c #DE00D6",
+"o c #CBCBCB",
+"O c None",
+/* pixels */
+"OOO OOOOOOOOOOOO",
+"OOO OOOOOOOOOOOO",
+"OOO OOOOOOOOOOOO",
+"OOO OOOOOXOOOOOO",
+"OOO OOOOOXoOOOOO",
+"OOO OOOOOXoOOOOO",
+"OOO OOOOOXoOOOOO",
+"OOO OOOOOXoOOOOO",
+"OOO OOOOOXoOOOOO",
+"OOO OOXXXXXXXOOO",
+"OOO OOOoooooooOO",
+"OO...OOOOOOOOOOO",
+"  ...           ",
+"OO...OOOOOOOOOOO",
+"OOO OOOOOOOOOOOO",
+"OOO OOOOOOOOOOOO"
+};
