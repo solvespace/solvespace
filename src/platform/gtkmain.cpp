@@ -1505,6 +1505,7 @@ const void *LoadResource(const std::string &name, size_t *size) {
         path = (UNIX_DATADIR "/") + name;
         if(stat(path.c_str(), &st)) {
             ssassert(errno == ENOENT, "Unexpected stat() error");
+            ssassert(!resource_dir.empty(), "Expected local resource directory to be set");
             path = resource_dir + "/" + name;
             ssassert(!stat(path.c_str(), &st), "Cannot find resource");
         }
@@ -1585,10 +1586,13 @@ int main(int argc, char** argv) {
        ambiguous. */
     gtk_disable_setlocale();
 
-    resource_dir = argv[0]; // .../src/solvespace
-    resource_dir.erase(resource_dir.rfind('/'));
-    resource_dir.erase(resource_dir.rfind('/'));
-    resource_dir += "/res"; // .../res
+    /* Are we running from a build directory, as opposed to a global install? */
+    if(std::string(argv[0]).find('/') != std::string::npos) {
+        resource_dir = argv[0]; // .../src/solvespace
+        resource_dir.erase(resource_dir.rfind('/'));
+        resource_dir.erase(resource_dir.rfind('/'));
+        resource_dir += "/res"; // .../res
+    }
 
     Gtk::Main main(argc, argv);
 
