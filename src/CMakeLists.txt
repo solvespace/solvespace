@@ -95,6 +95,11 @@ elseif(APPLE)
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
 
+    if(SPACEWARE_FOUND)
+        set(platform_BUNDLED_LIBS ${platform_BUNDLED_LIBS}
+            ${SPACEWARE}/Versions/A/3DconnexionClient)
+    endif()
+
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
 elseif(HAVE_GTK)
@@ -214,13 +219,7 @@ endif()
 if(SPACEWARE_FOUND)
     if(APPLE)
         target_link_libraries(solvespace
-            ${3DCONNEXIONCLIENT_LIBRARY})
-        add_custom_command(TARGET solvespace POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${3DCONNEXIONCLIENT_LIBRARY}/Versions/A/3DconnexionClient ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/3DconnexionClient
-            COMMAND install_name_tool -change 3DconnexionClient @executable_path/3DconnexionClient
-                $<TARGET_FILE:solvespace>
-            COMMENT "Bundling shared library 3DconnexionClient"
-            VERBATIM)
+            ${SPACEWARE}/Versions/A/3DconnexionClient)
     else()
         target_link_libraries(solvespace
             ${SPACEWARE_LIBRARIES})
