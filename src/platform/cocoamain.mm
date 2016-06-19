@@ -1218,6 +1218,155 @@ void SolveSpace::ExitNow(void) {
     [NSApp stop:nil];
 }
 
+/*
+ * Normally we would just link to the 3DconnexionClient framework.
+ * We don't want to (are not allowed to) distribute the official
+ * framework, so we're trying to use the one installed on the users
+ * computer. There are some different versions of the framework,
+ * the official one and re-implementations using an open source driver
+ * for older devices (spacenav-plus). So weak-linking isn't an option,
+ * either. The only remaining way is using CFBundle to dynamically
+ * load the library at runtime, and also detect its availability.
+ *
+ * We're also defining everything needed from the 3DconnexionClientAPI,
+ * so we're not depending on the API headers.
+ */
+
+#pragma pack(push,2)
+
+enum {
+    kConnexionClientModeTakeOver = 1,
+    kConnexionClientModePlugin = 2
+};
+
+#define kConnexionMsgDeviceState '3dSR'
+#define kConnexionMaskButtons 0x00FF
+#define kConnexionMaskAxis 0x3F00
+
+typedef struct {
+    uint16_t version;
+    uint16_t client;
+    uint16_t command;
+    int16_t param;
+    int32_t value;
+    UInt64 time;
+    uint8_t report[8];
+    uint16_t buttons8;
+    int16_t axis[6];
+    uint16_t address;
+    uint32_t buttons;
+} ConnexionDeviceState, *ConnexionDeviceStatePtr;
+
+#pragma pack(pop)
+
+typedef void (*ConnexionAddedHandlerProc)(io_connect_t);
+typedef void (*ConnexionRemovedHandlerProc)(io_connect_t);
+typedef void (*ConnexionMessageHandlerProc)(io_connect_t, natural_t, void *);
+
+typedef OSErr (*InstallConnexionHandlersProc)(ConnexionMessageHandlerProc, ConnexionAddedHandlerProc, ConnexionRemovedHandlerProc);
+typedef void (*CleanupConnexionHandlersProc)(void);
+typedef UInt16 (*RegisterConnexionClientProc)(UInt32, UInt8 *, UInt16, UInt32);
+typedef void (*UnregisterConnexionClientProc)(UInt16);
+
+static BOOL connexionShiftIsDown = NO;
+static UInt16 connexionClient = 0;
+static UInt32 connexionSignature = 'SoSp';
+static UInt8 *connexionName = (UInt8 *)"SolveSpace";
+static CFBundleRef spaceBundle = NULL;
+static InstallConnexionHandlersProc installConnexionHandlers = NULL;
+static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;
+static RegisterConnexionClientProc registerConnexionClient = NULL;
+static UnregisterConnexionClientProc unregisterConnexionClient = NULL;
+
+static void connexionAdded(io_connect_t con) {}
+static void connexionRemoved(io_connect_t con) {}
+static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
+    if (type != kConnexionMsgDeviceState) {
+        return;
+    }
+
+    ConnexionDeviceState *device = (ConnexionDeviceState *)arg;
+
+    dispatch_async(dispatch_get_main_queue(), ^(void){
+        SolveSpace::SS.GW.SpaceNavigatorMoved(
+            (double)device->axis[0] * -0.25,
+            (double)device->axis[1] * -0.25,
+            (double)device->axis[2] * 0.25,
+            (double)device->axis[3] * -0.0005,
+            (double)device->axis[4] * -0.0005,
+            (double)device->axis[5] * -0.0005,
+            (connexionShiftIsDown == YES) ? 1 : 0
+        );
+    });
+}
+
+static void connexionInit() {
+    NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
+    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
+    spaceBundle = CFBundleCreate(kCFAllocatorDefault, (__bridge CFURLRef)bundleURL);
+
+    // Don't continue if no Spacemouse driver is installed on this machine
+    if (spaceBundle == NULL) {
+        return;
+    }
+
+    installConnexionHandlers = (InstallConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("InstallConnexionHandlers"));
+
+    cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("CleanupConnexionHandlers"));
+
+    registerConnexionClient = (RegisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("RegisterConnexionClient"));
+
+    unregisterConnexionClient = (UnregisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("UnregisterConnexionClient"));
+
+    // Only continue if all required symbols have been loaded
+    if ((installConnexionHandlers == NULL) || (cleanupConnexionHandlers == NULL)
+            || (registerConnexionClient == NULL) || (unregisterConnexionClient == NULL)) {
+        CFRelease(spaceBundle);
+        spaceBundle = NULL;
+        return;
+    }
+
+    installConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
+    connexionClient = registerConnexionClient(connexionSignature, connexionName,
+            kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
+
+    // Monitor modifier flags to detect Shift button state changes
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        if (event.modifierFlags & NSShiftKeyMask) {
+            connexionShiftIsDown = YES;
+        }
+        return event;
+    }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyUpMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        if (!(event.modifierFlags & NSShiftKeyMask)) {
+            connexionShiftIsDown = NO;
+        }
+        return event;
+    }];
+}
+
+static void connexionClose() {
+    if (spaceBundle == NULL) {
+        return;
+    }
+
+    unregisterConnexionClient(connexionClient);
+    cleanupConnexionHandlers();
+    
+    CFRelease(spaceBundle);
+}
+
 int main(int argc, const char *argv[]) {
     [NSApplication sharedApplication];
     ApplicationDelegate *delegate = [[ApplicationDelegate alloc] init];
@@ -1228,11 +1377,13 @@ int main(int argc, const char *argv[]) {
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
     SolveSpace::InitMainMenu([NSApp mainMenu]);
 
+    connexionInit();
     SolveSpace::SS.Init();
 
     [GW makeKeyAndOrderFront:nil];
     [NSApp run];
 
+    connexionClose();
     SolveSpace::SK.Clear();
     SolveSpace::SS.Clear();
 
