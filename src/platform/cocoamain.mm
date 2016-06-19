@@ -1306,6 +1306,9 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 - (OSErr) installConnexionHandlers:(ConnexionMessageHandlerProc)message
                              Added:(ConnexionAddedHandlerProc)added
                            Removed:(ConnexionRemovedHandlerProc)removed {
+    if (!cfBundle) {
+        return -1;
+    }
     if (!installConnexionHandlers) {
         installConnexionHandlers = (InstallConnexionHandlersProc)
                 CFBundleGetFunctionPointerForName(cfBundle,
@@ -1315,6 +1318,9 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 }
 
 - (void) cleanupConnexionHandlers {
+    if (!cfBundle) {
+        return;
+    }
     if (!cleanupConnexionHandlers) {
         cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
                 CFBundleGetFunctionPointerForName(cfBundle,
@@ -1325,6 +1331,9 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 
 - (UInt16) registerConnexionClient:(UInt32)signature Name:(UInt8 *)name
                               Mode:(UInt16)mode Mask:(UInt32)mask {
+    if (!cfBundle) {
+        return 0;
+    }
     if (!registerConnexionClient) {
         registerConnexionClient = (RegisterConnexionClientProc)
                 CFBundleGetFunctionPointerForName(cfBundle,
@@ -1334,6 +1343,9 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 }
 
 - (void) unregisterConnexionClient:(UInt16)client {
+    if (!cfBundle) {
+        return;
+    }
     if (!unregisterConnexionClient) {
         unregisterConnexionClient = (UnregisterConnexionClientProc)
                 CFBundleGetFunctionPointerForName(cfBundle,
