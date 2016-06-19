@@ -1278,34 +1278,6 @@ static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;
 static RegisterConnexionClientProc registerConnexionClient = NULL;
 static UnregisterConnexionClientProc unregisterConnexionClient = NULL;
 
-/*
- * Space Mouse events are generated form another Thread and
- * need to be sent to the main thread, so we have to use
- * [NSObject performSelectorOnMainThread]. Unfortunately,
- * we want to use this with a C++ and not an Objective-C object,
- * so we need an Objective-C wrapper object to use it.
- */
-@interface SpaceMouseObject : NSObject {
-    double data0, data1, data2;
-    double data3, data4, data5;
-}
-@property double data0, data1, data2;
-@property double data3, data4, data5;
-- (void)invoke;
-@end
-
-@implementation SpaceMouseObject
-@synthesize data0, data1, data2;
-@synthesize data3, data4, data5;
-- (void)invoke {
-    SolveSpace::SS.GW.SpaceNavigatorMoved(
-        data0, data1, data2,
-        data3, data4, data5,
-        (connexionShiftIsDown == YES) ? 1 : 0
-    );
-}
-@end
-
 static void connexionAdded(io_connect_t con) {}
 static void connexionRemoved(io_connect_t con) {}
 static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
@@ -1315,16 +1287,17 @@ static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
 
     ConnexionDeviceState *device = (ConnexionDeviceState *)arg;
 
-    SpaceMouseObject *space = [[SpaceMouseObject alloc] init];
-    space.data0 = (double)device->axis[0] * -0.25;
-    space.data1 = (double)device->axis[1] * -0.25;
-    space.data2 = (double)device->axis[2] * 0.25;
-    space.data3 = (double)device->axis[3] * -0.0005;
-    space.data4 = (double)device->axis[4] * -0.0005;
-    space.data5 = (double)device->axis[5] * -0.0005;
-    [space performSelectorOnMainThread:@selector(invoke)
-                            withObject:nil
-                         waitUntilDone:NO];
+    dispatch_async(dispatch_get_main_queue(), ^(void){
+        SolveSpace::SS.GW.SpaceNavigatorMoved(
+            (double)device->axis[0] * -0.25,
+            (double)device->axis[1] * -0.25,
+            (double)device->axis[2] * 0.25,
+            (double)device->axis[3] * -0.0005,
+            (double)device->axis[4] * -0.0005,
+            (double)device->axis[5] * -0.0005,
+            (connexionShiftIsDown == YES) ? 1 : 0
+        );
+    });
 }
 
 static void connexionInit() {
