@@ -1223,29 +1223,88 @@ void SolveSpace::ExitNow(void) {
 }
 
 #ifdef HAVE_SPACEWARE
-void connexionAdded(io_connect_t con) {}
-void connexionRemoved(io_connect_t con) {}
+static BOOL connexionShiftIsDown = NO;
+static UInt16 connexionClient = 0;
+static UInt32 connexionSignature = 'SoSp';
+static UInt8 *connexionName = (UInt8 *)"SolveSpace";
 
-void connexionMessage(io_connect_t con, natural_t type, void *arg) {
+/*
+ * Space Mouse events are generated form another Thread and
+ * need to be sent to the main thread, so we have to use
+ * [NSObject performSelectorOnMainThread] and need a
+ * wrapper SpaceMouseObject to use it.
+ */
+@interface SpaceMouseObject : NSObject {
+    double data0, data1, data2;
+    double data3, data4, data5;
+}
+@property double data0, data1, data2;
+@property double data3, data4, data5;
+- (void)invoke;
+@end
+
+@implementation SpaceMouseObject
+@synthesize data0, data1, data2;
+@synthesize data3, data4, data5;
+- (void)invoke {
+    SolveSpace::SS.GW.SpaceNavigatorMoved(
+        data0, data1, data2,
+        data3, data4, data5,
+        (connexionShiftIsDown == YES) ? 1 : 0
+    );
+}
+@end
+
+static void connexionAdded(io_connect_t con) {}
+static void connexionRemoved(io_connect_t con) {}
+static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
     if (type != kConnexionMsgDeviceState) {
         return;
     }
 
     ConnexionDeviceState *device = (ConnexionDeviceState *)arg;
 
-    printf("FooBar: %d %d %d %d %d %d\n", device->axis[0], device->axis[1], device->axis[2], device->axis[3], device->axis[4], device->axis[5]);
-
-    SolveSpace::SS.GW.SpaceNavigatorMoved(
-        (double)device->axis[0] * -1.0,
-        (double)device->axis[1] * -1.0,
-        (double)device->axis[2],
-        (double)device->axis[3] * -0.001,
-        (double)device->axis[4] * -0.001,
-        (double)device->axis[5] * 0.001,
-        0 /* TODO: shift held? */);
-    
-    //SolveSpace::SS.GW.Paint();
+    SpaceMouseObject *space = [[SpaceMouseObject alloc] init];
+    space.data0 = (double)device->axis[0] * -0.25;
+    space.data1 = (double)device->axis[1] * -0.25;
+    space.data2 = (double)device->axis[2] * 0.25;
+    space.data3 = (double)device->axis[3] * -0.0005;
+    space.data4 = (double)device->axis[4] * -0.0005;
+    space.data5 = (double)device->axis[5] * -0.0005;
+    [space performSelectorOnMainThread:@selector(invoke)
+                            withObject:nil
+                         waitUntilDone:NO];
 }
+
+static void connexionInit() {
+    InstallConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
+    connexionClient = RegisterConnexionClient(connexionSignature, connexionName,
+                                              kConnexionClientModeTakeOver,
+                                              kConnexionMaskButtons | kConnexionMaskAxis);
+
+    // Monitor modifier flags to detect Shift button state changes
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        if (event.modifierFlags & NSShiftKeyMask) {
+            connexionShiftIsDown = YES;
+        }
+        return event;
+    }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyUpMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        if (!(event.modifierFlags & NSShiftKeyMask)) {
+            connexionShiftIsDown = NO;
+        }
+        return event;
+    }];
+}
+
+static void connexionClose() {
+    UnregisterConnexionClient(connexionClient);
+    CleanupConnexionHandlers();
+}
+
 #endif
 
 int main(int argc, const char *argv[]) {
@@ -1259,12 +1318,7 @@ int main(int argc, const char *argv[]) {
     SolveSpace::InitMainMenu([NSApp mainMenu]);
 
 #ifdef HAVE_SPACEWARE
-    UInt32 connexionSignature = 'SoSp';
-    UInt8 *connexionName = (UInt8 *)"SolveSpace";
-
-    InstallConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
-    UInt16 connexionClient = RegisterConnexionClient(connexionSignature, connexionName, kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
-
+    connexionInit();
 #endif
 
     SolveSpace::SS.Init();
@@ -1273,8 +1327,7 @@ int main(int argc, const char *argv[]) {
     [NSApp run];
 
 #ifdef HAVE_SPACEWARE
-    UnregisterConnexionClient(connexionClient);
-    CleanupConnexionHandlers();
+    connexionClose();
 #endif
 
     SolveSpace::SK.Clear();
