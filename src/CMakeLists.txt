@@ -95,11 +95,6 @@ elseif(APPLE)
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
 
-    if(SPACEWARE_FOUND)
-        set(platform_BUNDLED_LIBS ${platform_BUNDLED_LIBS}
-            ${SPACEWARE}/Versions/A/3DconnexionClient)
-    endif()
-
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
 elseif(HAVE_GTK)
@@ -217,10 +212,7 @@ if(WIN32 AND NOT MINGW)
 endif()
 
 if(SPACEWARE_FOUND)
-    if(APPLE)
-        target_link_libraries(solvespace
-            ${SPACEWARE}/Versions/A/3DconnexionClient)
-    else()
+    if(NOT APPLE)
         target_link_libraries(solvespace
             ${SPACEWARE_LIBRARIES})
     endif()

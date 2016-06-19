@@ -17,10 +17,6 @@
 #include "gloffscreen.h"
 #include <config.h>
 
-#ifdef HAVE_SPACEWARE
-#import <3DconnexionClient/ConnexionClientAPI.h>
-#endif
-
 using SolveSpace::dbp;
 
 #define GL_CHECK() \
@@ -1223,16 +1219,142 @@ void SolveSpace::ExitNow(void) {
 }
 
 #ifdef HAVE_SPACEWARE
+/*
+ * Normally we would just link to the 3DconnexionClient framework.
+ * We don't want to (are not allowed to) distribute the official
+ * framework, so we're trying to use the one installed on the users
+ * computer. There are some different versions of the framework,
+ * the official one and re-implementations using an open source driver
+ * for older devices (spacenav-plus). So weak-linking isn't an option,
+ * either. The only remaining way is using CFBundle to dynamically
+ * load the library at runtime, and also detect its availability.
+ *
+ * We're also defining everything needed from the 3DconnexionClientAPI,
+ * so we're not depending on the API headers.
+ */
+
+#pragma pack(push,2)
+
+enum {
+    kConnexionClientModeTakeOver = 1,
+    kConnexionClientModePlugin = 2
+};
+
+#define kConnexionMsgDeviceState '3dSR'
+#define kConnexionMaskButtons 0x00FF
+#define kConnexionMaskAxis 0x3F00
+
+typedef struct {
+    uint16_t version;
+    uint16_t client;
+    uint16_t command;
+    int16_t param;
+    int32_t value;
+    UInt64 time;
+    uint8_t report[8];
+    uint16_t buttons8;
+    int16_t axis[6];
+    uint16_t address;
+    uint32_t buttons;
+} ConnexionDeviceState, *ConnexionDeviceStatePtr;
+
+#pragma pack(pop)
+
+typedef void (*ConnexionAddedHandlerProc)(io_connect_t);
+typedef void (*ConnexionRemovedHandlerProc)(io_connect_t);
+typedef void (*ConnexionMessageHandlerProc)(io_connect_t, natural_t, void *);
+
+typedef OSErr (*InstallConnexionHandlersProc)(ConnexionMessageHandlerProc, ConnexionAddedHandlerProc, ConnexionRemovedHandlerProc);
+typedef void (*CleanupConnexionHandlersProc)(void);
+typedef UInt16 (*RegisterConnexionClientProc)(UInt32, UInt8 *, UInt16, UInt32);
+typedef void (*UnregisterConnexionClientProc)(UInt16);
+
+@interface FrameworkWrapper : NSObject {
+    InstallConnexionHandlersProc installConnexionHandlers;
+    CleanupConnexionHandlersProc cleanupConnexionHandlers;
+    RegisterConnexionClientProc registerConnexionClient;
+    UnregisterConnexionClientProc unregisterConnexionClient;
+
+    CFBundleRef cfBundle;
+}
+
+- (OSErr) installConnexionHandlers:(ConnexionMessageHandlerProc)message
+                             Added:(ConnexionAddedHandlerProc)added
+                           Removed:(ConnexionRemovedHandlerProc)removed;
+
+- (void) cleanupConnexionHandlers;
+
+- (UInt16) registerConnexionClient:(UInt32)signature Name:(UInt8 *)name
+                              Mode:(UInt16)mode Mask:(UInt32)mask;
+
+- (void) unregisterConnexionClient:(UInt16)client;
+@end
+
+@implementation FrameworkWrapper
+- (id)init {
+    self = [super init];
+    NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
+    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
+    cfBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
+    return self;
+}
+
+- (void)dealloc {
+    CFRelease(cfBundle);
+}
+
+- (OSErr) installConnexionHandlers:(ConnexionMessageHandlerProc)message
+                             Added:(ConnexionAddedHandlerProc)added
+                           Removed:(ConnexionRemovedHandlerProc)removed {
+    if (!installConnexionHandlers) {
+        installConnexionHandlers = (InstallConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(cfBundle,
+                        CFSTR("InstallConnexionHandlers"));
+    }
+    return installConnexionHandlers(message, added, removed);
+}
+
+- (void) cleanupConnexionHandlers {
+    if (!cleanupConnexionHandlers) {
+        cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(cfBundle,
+                        CFSTR("CleanupConnexionHandlers"));
+    }
+    cleanupConnexionHandlers();
+}
+
+- (UInt16) registerConnexionClient:(UInt32)signature Name:(UInt8 *)name
+                              Mode:(UInt16)mode Mask:(UInt32)mask {
+    if (!registerConnexionClient) {
+        registerConnexionClient = (RegisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(cfBundle,
+                        CFSTR("RegisterConnexionClient"));
+    }
+    return registerConnexionClient(signature, name, mode, mask);
+}
+
+- (void) unregisterConnexionClient:(UInt16)client {
+    if (!unregisterConnexionClient) {
+        unregisterConnexionClient = (UnregisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(cfBundle,
+                        CFSTR("UnregisterConnexionClient"));
+    }
+    unregisterConnexionClient(client);
+}
+@end
+
 static BOOL connexionShiftIsDown = NO;
 static UInt16 connexionClient = 0;
 static UInt32 connexionSignature = 'SoSp';
 static UInt8 *connexionName = (UInt8 *)"SolveSpace";
+static FrameworkWrapper *framework = [[FrameworkWrapper alloc] init];
 
 /*
  * Space Mouse events are generated form another Thread and
  * need to be sent to the main thread, so we have to use
- * [NSObject performSelectorOnMainThread] and need a
- * wrapper SpaceMouseObject to use it.
+ * [NSObject performSelectorOnMainThread]. Unfortunately,
+ * we want to use this with a C++ and not an Objective-C object,
+ * so we need an Objective-C wrapper object to use it.
  */
 @interface SpaceMouseObject : NSObject {
     double data0, data1, data2;
@@ -1277,10 +1399,8 @@ static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
 }
 
 static void connexionInit() {
-    InstallConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
-    connexionClient = RegisterConnexionClient(connexionSignature, connexionName,
-                                              kConnexionClientModeTakeOver,
-                                              kConnexionMaskButtons | kConnexionMaskAxis);
+    [framework installConnexionHandlers:&connexionMessage Added:&connexionAdded Removed:&connexionRemoved];
+    connexionClient = [framework registerConnexionClient:connexionSignature Name:connexionName Mode:kConnexionClientModeTakeOver Mask:kConnexionMaskButtons | kConnexionMaskAxis];
 
     // Monitor modifier flags to detect Shift button state changes
     [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
@@ -1301,8 +1421,8 @@ static void connexionInit() {
 }
 
 static void connexionClose() {
-    UnregisterConnexionClient(connexionClient);
-    CleanupConnexionHandlers();
+    [framework unregisterConnexionClient:connexionClient];
+    [framework cleanupConnexionHandlers];
 }
 
 #endif
