@@ -1218,7 +1218,6 @@ void SolveSpace::ExitNow(void) {
     [NSApp stop:nil];
 }
 
-#ifdef HAVE_SPACEWARE
 /*
  * Normally we would just link to the 3DconnexionClient framework.
  * We don't want to (are not allowed to) distribute the official
@@ -1269,97 +1268,15 @@ typedef void (*CleanupConnexionHandlersProc)(void);
 typedef UInt16 (*RegisterConnexionClientProc)(UInt32, UInt8 *, UInt16, UInt32);
 typedef void (*UnregisterConnexionClientProc)(UInt16);
 
-@interface FrameworkWrapper : NSObject {
-    InstallConnexionHandlersProc installConnexionHandlers;
-    CleanupConnexionHandlersProc cleanupConnexionHandlers;
-    RegisterConnexionClientProc registerConnexionClient;
-    UnregisterConnexionClientProc unregisterConnexionClient;
-
-    CFBundleRef cfBundle;
-}
-
-- (OSErr) installConnexionHandlers:(ConnexionMessageHandlerProc)message
-                             Added:(ConnexionAddedHandlerProc)added
-                           Removed:(ConnexionRemovedHandlerProc)removed;
-
-- (void) cleanupConnexionHandlers;
-
-- (UInt16) registerConnexionClient:(UInt32)signature Name:(UInt8 *)name
-                              Mode:(UInt16)mode Mask:(UInt32)mask;
-
-- (void) unregisterConnexionClient:(UInt16)client;
-@end
-
-@implementation FrameworkWrapper
-- (id)init {
-    self = [super init];
-    NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
-    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
-    cfBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
-    return self;
-}
-
-- (void)dealloc {
-    CFRelease(cfBundle);
-}
-
-- (OSErr) installConnexionHandlers:(ConnexionMessageHandlerProc)message
-                             Added:(ConnexionAddedHandlerProc)added
-                           Removed:(ConnexionRemovedHandlerProc)removed {
-    if (!cfBundle) {
-        return -1;
-    }
-    if (!installConnexionHandlers) {
-        installConnexionHandlers = (InstallConnexionHandlersProc)
-                CFBundleGetFunctionPointerForName(cfBundle,
-                        CFSTR("InstallConnexionHandlers"));
-    }
-    return installConnexionHandlers(message, added, removed);
-}
-
-- (void) cleanupConnexionHandlers {
-    if (!cfBundle) {
-        return;
-    }
-    if (!cleanupConnexionHandlers) {
-        cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
-                CFBundleGetFunctionPointerForName(cfBundle,
-                        CFSTR("CleanupConnexionHandlers"));
-    }
-    cleanupConnexionHandlers();
-}
-
-- (UInt16) registerConnexionClient:(UInt32)signature Name:(UInt8 *)name
-                              Mode:(UInt16)mode Mask:(UInt32)mask {
-    if (!cfBundle) {
-        return 0;
-    }
-    if (!registerConnexionClient) {
-        registerConnexionClient = (RegisterConnexionClientProc)
-                CFBundleGetFunctionPointerForName(cfBundle,
-                        CFSTR("RegisterConnexionClient"));
-    }
-    return registerConnexionClient(signature, name, mode, mask);
-}
-
-- (void) unregisterConnexionClient:(UInt16)client {
-    if (!cfBundle) {
-        return;
-    }
-    if (!unregisterConnexionClient) {
-        unregisterConnexionClient = (UnregisterConnexionClientProc)
-                CFBundleGetFunctionPointerForName(cfBundle,
-                        CFSTR("UnregisterConnexionClient"));
-    }
-    unregisterConnexionClient(client);
-}
-@end
-
 static BOOL connexionShiftIsDown = NO;
 static UInt16 connexionClient = 0;
 static UInt32 connexionSignature = 'SoSp';
 static UInt8 *connexionName = (UInt8 *)"SolveSpace";
-static FrameworkWrapper *framework = [[FrameworkWrapper alloc] init];
+static CFBundleRef spaceBundle = NULL;
+static InstallConnexionHandlersProc installConnexionHandlers = NULL;
+static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;
+static RegisterConnexionClientProc registerConnexionClient = NULL;
+static UnregisterConnexionClientProc unregisterConnexionClient = NULL;
 
 /*
  * Space Mouse events are generated form another Thread and
@@ -1411,8 +1328,42 @@ static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
 }
 
 static void connexionInit() {
-    [framework installConnexionHandlers:&connexionMessage Added:&connexionAdded Removed:&connexionRemoved];
-    connexionClient = [framework registerConnexionClient:connexionSignature Name:connexionName Mode:kConnexionClientModeTakeOver Mask:kConnexionMaskButtons | kConnexionMaskAxis];
+    NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
+    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
+    spaceBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
+
+    // Don't continue if no Spacemouse driver is installed on this machine
+    if (spaceBundle == NULL) {
+        return;
+    }
+
+    installConnexionHandlers = (InstallConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("InstallConnexionHandlers"));
+
+    cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("CleanupConnexionHandlers"));
+
+    registerConnexionClient = (RegisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("RegisterConnexionClient"));
+
+    unregisterConnexionClient = (UnregisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("UnregisterConnexionClient"));
+
+    // Only continue if all required symbols have been loaded
+    if ((installConnexionHandlers == NULL) || (cleanupConnexionHandlers == NULL)
+            || (registerConnexionClient == NULL) || (unregisterConnexionClient == NULL)) {
+        CFRelease(spaceBundle);
+        spaceBundle = NULL;
+        return;
+    }
+
+    installConnexionHandlers(&connexionMessage, &connexionAdded, &connexionRemoved);
+    connexionClient = registerConnexionClient(connexionSignature, connexionName,
+            kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
 
     // Monitor modifier flags to detect Shift button state changes
     [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
@@ -1433,11 +1384,15 @@ static void connexionInit() {
 }
 
 static void connexionClose() {
-    [framework unregisterConnexionClient:connexionClient];
-    [framework cleanupConnexionHandlers];
-}
+    if (spaceBundle == NULL) {
+        return;
+    }
 
-#endif
+    unregisterConnexionClient(connexionClient);
+    cleanupConnexionHandlers();
+    
+    CFRelease(spaceBundle);
+}
 
 int main(int argc, const char *argv[]) {
     [NSApplication sharedApplication];
@@ -1449,19 +1404,13 @@ int main(int argc, const char *argv[]) {
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
     SolveSpace::InitMainMenu([NSApp mainMenu]);
 
-#ifdef HAVE_SPACEWARE
     connexionInit();
-#endif
-
     SolveSpace::SS.Init();
 
     [GW makeKeyAndOrderFront:nil];
     [NSApp run];
 
-#ifdef HAVE_SPACEWARE
     connexionClose();
-#endif
-
     SolveSpace::SK.Clear();
     SolveSpace::SS.Clear();
 

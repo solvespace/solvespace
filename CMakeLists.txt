@@ -179,7 +179,6 @@ elseif(APPLE)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
-    set(SPACEWARE_FOUND TRUE)
 else() # Linux and compatible systems
     find_package(SpaceWare)
 

@@ -212,10 +212,8 @@ if(WIN32 AND NOT MINGW)
 endif()
 
 if(SPACEWARE_FOUND)
-    if(NOT APPLE)
-        target_link_libraries(solvespace
-            ${SPACEWARE_LIBRARIES})
-    endif()
+    target_link_libraries(solvespace
+        ${SPACEWARE_LIBRARIES})
 endif()
 
 if(APPLE)
