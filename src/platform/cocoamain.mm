@@ -1330,7 +1330,7 @@ static void connexionMessage(io_connect_t con, natural_t type, void *arg) {
 static void connexionInit() {
     NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
     NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
-    spaceBundle = CFBundleCreate(kCFAllocatorDefault, (CFURLRef)bundleURL);
+    spaceBundle = CFBundleCreate(kCFAllocatorDefault, (__bridge CFURLRef)bundleURL);
 
     // Don't continue if no Spacemouse driver is installed on this machine
     if (spaceBundle == NULL) {
