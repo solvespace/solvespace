@@ -154,7 +154,7 @@ if(WIN32)
             "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
     endif()
 elseif(APPLE)
-    set(CMAKE_FIND_FRAMEWORKS LAST)
+    set(CMAKE_FIND_FRAMEWORK LAST)
 
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
