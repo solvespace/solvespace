@@ -614,7 +614,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
     }
 
-    if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
+    if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
         AddContextMenuItem("Paste", ContextCommand::PASTE);
         AddContextMenuItem("Paste Transformed...", ContextCommand::PASTE_XFRM);
     }
@@ -892,7 +892,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     bool hasConstraintSuggestion = SS.GW.pending.hasSuggestion;
 
     // Make sure the hover is up to date.
-    MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false, 
+    MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false,
         /*shiftDown=*/false, /*ctrlDown=*/false);
     orig.mouse.x = mx;
     orig.mouse.y = my;
