@@ -619,7 +619,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
     }
 
-    if(SS.clipboard.r.n > 0 && LockedInWorkplane()) {
+    if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
         AddContextMenuItem("Paste", CMNU_PASTE);
         AddContextMenuItem("Paste Transformed...", CMNU_PASTE_XFRM);
     }
