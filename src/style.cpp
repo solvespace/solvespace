@@ -746,16 +746,14 @@ void TextWindow::ShowStyleInfo() {
             (s->h.v < Style::FIRST_CUSTOM) ? 'w' : 'W');
     }
 
-    if(s->h.v >= Style::FIRST_CUSTOM) {
-        if(s->widthAs == Style::UnitsAs::PIXELS) {
-            Printf(false, "%Ba   %Ftstipple width%E %@ %D%f%Lp%Fl[change]%E",
-                s->stippleScale,
-                s->h.v, &ScreenChangeStyleMetric, 's');
-        } else {
-            Printf(false, "%Ba   %Ftstipple width%E %s %D%f%Lp%Fl[change]%E",
-                SS.MmToString(s->stippleScale).c_str(),
-                s->h.v, &ScreenChangeStyleMetric, 's');
-        }
+    if(s->widthAs == Style::UnitsAs::PIXELS) {
+        Printf(false, "%Ba   %Ftstipple width%E %@ %D%f%Lp%Fl[change]%E",
+            s->stippleScale,
+            s->h.v, &ScreenChangeStyleMetric, 's');
+    } else {
+        Printf(false, "%Ba   %Ftstipple width%E %s %D%f%Lp%Fl[change]%E",
+            SS.MmToString(s->stippleScale).c_str(),
+            s->h.v, &ScreenChangeStyleMetric, 's');
     }
 
     bool widthpx = (s->widthAs == Style::UnitsAs::PIXELS);
