@@ -1,6 +1,23 @@
 Changelog
 =========
 
+3.0
+---
+
+New export/import features:
+  * Three.js: allow configuring projection for exported model, and initially
+    use the current viewport projection.
+
+2.2
+---
+
+Other new features:
+  * OS X: support 3Dconnexion devices (SpaceMouse, SpaceNavigator, etc).
+
+Bug fixes:
+  * Three.js: correctly respond to controls when browser zoom is used.
+  * OS X: do not completely hide main window when defocused.
+
 2.1
 ---
 
