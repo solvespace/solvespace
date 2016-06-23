@@ -10,6 +10,7 @@ Other new features:
 Bug fixes:
   * Do not remove autosaves after successfully opening a file, preventing
     data loss in case of two abnormal terminations in a row.
+  * Do not crash when changing autosave interval.
   * Three.js: correctly respond to controls when browser zoom is used.
   * OS X: do not completely hide main window when defocused.
 
