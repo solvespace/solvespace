@@ -453,6 +453,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             } else {
                 Error("Bad format: specify interval in integral minutes");
             }
+            break;
         }
 
         default: return false;
