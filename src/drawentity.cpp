@@ -210,6 +210,7 @@ Vector Entity::GetReferencePos() {
         case Type::NORMAL_N_ROT_AA:
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
+        case Type::WORKPLANE:
         case Type::CIRCLE:
         case Type::ARC_OF_CIRCLE:
         case Type::CUBIC:
@@ -230,7 +231,6 @@ Vector Entity::GetReferencePos() {
         case Type::FACE_N_ROT_TRANS:
         case Type::FACE_N_TRANS:
         case Type::FACE_N_ROT_AA:
-        case Type::WORKPLANE:
             break;
     }
     ssassert(false, "Unexpected entity type");
