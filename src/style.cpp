@@ -24,7 +24,7 @@ const Style::Default Style::Defaults[] = {
     { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, 0 },
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
-    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 2.0, 1 },
+    { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1 },
     { { OUTLINE },      "Outline",      RGBf(0.8, 0.8, 0.8), 3.0, 5 },
     { { 0 },            NULL,           RGBf(0.0, 0.0, 0.0), 0.0, 0 }
 };
@@ -88,7 +88,7 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
     s->color         = (factory) ? d->color : CnfThawColor(d->color, CnfColor(d->cnfPrefix));
     s->width         = (factory) ? d->width : CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
     s->widthAs       = UnitsAs::PIXELS;
-    s->textHeight    = (factory) ? DEFAULT_TEXT_HEIGHT 
+    s->textHeight    = (factory) ? DEFAULT_TEXT_HEIGHT
                                  : CnfThawFloat(DEFAULT_TEXT_HEIGHT, CnfTextHeight(d->cnfPrefix));
     s->textHeightAs  = UnitsAs::PIXELS;
     s->textOrigin    = TextOrigin::NONE;
