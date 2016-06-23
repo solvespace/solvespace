@@ -134,7 +134,6 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
         saveFile = filename;
     bool success = fileLoaded && ReloadAllImported(/*canCancel=*/true);
     if(success) {
-        RemoveAutosave();
         AddToRecentList(filename);
     } else {
         saveFile = "";
@@ -219,9 +218,6 @@ void SolveSpaceUI::Exit() {
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles();
-
-    // Exiting cleanly.
-    RemoveAutosave();
 
     ExitNow();
 }
@@ -415,6 +411,7 @@ bool SolveSpaceUI::OkayToStartNewFile() {
             return GetFilenameAndSave(/*saveAs=*/false);
 
         case DIALOG_NO:
+            RemoveAutosave();
             return true;
 
         case DIALOG_CANCEL:
