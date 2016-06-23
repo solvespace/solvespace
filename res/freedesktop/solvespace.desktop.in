@@ -2,7 +2,7 @@
 Version=1.0
 Name=SolveSpace
 Comment=A parametric 2d/3d CAD
-Exec=/usr/bin/solvespace
+Exec=${CMAKE_INSTALL_FULL_BINDIR}/solvespace
 Icon=solvespace
 Type=Application
 Categories=Graphics
