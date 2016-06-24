@@ -1040,7 +1040,13 @@ void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
             if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
                 continue;
 
-            sol->AddEdge(a, b, tr->Normal(), info.tr->Normal());
+            Vector nl = tr->Normal().WithMagnitude(1.0);
+            Vector nr = info.tr->Normal().WithMagnitude(1.0);
+
+            // We don't add edges with the same left and right
+            // normals because they can't produce outlines.
+            if(nl.Equals(nr)) continue;
+            sol->AddEdge(a, b, nl, nr);
         }
     }
 }
