@@ -107,6 +107,14 @@ public:
     Vector4 Project4d() const;
 };
 
+struct VectorHash {
+    size_t operator()(const Vector &v) const;
+};
+
+struct VectorPred {
+    bool operator()(Vector a, Vector b) const;
+};
+
 class Vector4 {
 public:
     double w, x, y, z;

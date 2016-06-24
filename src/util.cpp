@@ -935,6 +935,25 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
     return Vector::From(detx/det, dety/det, detz/det);
 }
 
+size_t VectorHash::operator()(const Vector &v) const {
+    const size_t size = (size_t)pow(std::numeric_limits<size_t>::max(), 1.0 / 3.0) - 1;
+    const double eps = 4.0 * LENGTH_EPS;
+
+    double x = fabs(v.x) / eps;
+    double y = fabs(v.y) / eps;
+    double z = fabs(v.y) / eps;
+
+    size_t xs = size_t(fmod(x, (double)size));
+    size_t ys = size_t(fmod(y, (double)size));
+    size_t zs = size_t(fmod(z, (double)size));
+
+    return (zs * size + ys) * size + xs;
+}
+
+bool VectorPred::operator()(Vector a, Vector b) const {
+    return a.Equals(b, LENGTH_EPS);
+}
+
 Vector4 Vector4::From(double w, double x, double y, double z) {
     Vector4 ret;
     ret.w = w;

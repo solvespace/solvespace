@@ -143,6 +143,7 @@ set(solvespace_cad_SOURCES
     mesh.cpp
     modify.cpp
     mouse.cpp
+    polyline.cpp
     polygon.cpp
     resource.cpp
     request.cpp

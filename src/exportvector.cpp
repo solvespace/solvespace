@@ -6,134 +6,6 @@
 #include <libdxfrw.h>
 #include "solvespace.h"
 
-class PolylineBuilder {
-public:
-    struct Edge;
-
-    struct Vertex {
-        Vector              pos;
-        std::vector<Edge *> edges;
-
-        bool getNext(hStyle hs, Vertex **next) {
-            auto it = std::find_if(edges.begin(), edges.end(), [&](const Edge *e) {
-                return e->tag == 0 && e->style.v == hs.v;
-            });
-            if(it != edges.end()) {
-                (*it)->tag = 1;
-                *next = (*it)->getOtherVertex(this);
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        size_t countEdgesWithTagAndStyle(int tag, hStyle hs) const {
-            return std::count_if(edges.begin(), edges.end(), [&](const Edge *e) {
-                return e->tag == tag && e->style.v == hs.v;
-            });
-        }
-    };
-
-    struct Edge {
-        Vertex *a;
-        Vertex *b;
-        hStyle  style;
-        int     tag;
-
-        Vertex *getOtherVertex(Vertex *v) {
-            if(a == v) return b;
-            if(b == v) return a;
-            return NULL;
-        }
-
-        bool getStartAndNext(Vertex **start, Vertex **next, bool loop) {
-            size_t numA = a->countEdgesWithTagAndStyle(0, style);
-            size_t numB = b->countEdgesWithTagAndStyle(0, style);
-
-            if((numA == 1 && numB > 1) || (loop && numA > 1 && numB > 1)) {
-                *start = a;
-                *next = b;
-                return true;
-            }
-
-            if(numA > 1 && numB == 1) {
-                *start = b;
-                *next = a;
-                return true;
-            }
-
-            return false;
-        }
-    };
-
-    struct VectorHash {
-        size_t operator()(const Vector &v) const {
-            static const size_t size = std::numeric_limits<size_t>::max() / 2 - 1;
-            static const double eps = (4.0 * LENGTH_EPS);
-
-            double x = fabs(v.x) / eps;
-            double y = fabs(v.y) / eps;
-
-            size_t xs = size_t(fmod(x, double(size)));
-            size_t ys = size_t(fmod(y, double(size)));
-
-            return ys * size + xs;
-        }
-    };
-
-    struct VectorPred {
-        bool operator()(Vector a, Vector b) const {
-            return a.Equals(b, LENGTH_EPS);
-        }
-    };
-
-    std::unordered_map<Vector, Vertex *, VectorHash, VectorPred> vertices;
-    std::vector<Edge *> edges;
-
-    ~PolylineBuilder() {
-        clear();
-    }
-
-    void clear() {
-        for(Edge *e : edges) {
-            delete e;
-        }
-        edges.clear();
-
-        for(auto &v : vertices) {
-            delete v.second;
-        }
-        vertices.clear();
-    }
-
-    Vertex *addVertex(const Vector &pos) {
-        auto it = vertices.find(pos);
-        if(it != vertices.end()) {
-            return it->second;
-        }
-
-        Vertex *result = new Vertex;
-        result->pos = pos;
-        vertices.emplace(pos, result);
-
-        return result;
-    }
-
-    Edge *addEdge(const Vector &p0, const Vector &p1, int style) {
-        Vertex *v0 = addVertex(p0);
-        Vertex *v1 = addVertex(p1);
-        if(v0 == v1) return NULL;
-
-        Edge *edge = new Edge { v0, v1, hStyle { (uint32_t)style }, 0 };
-        edges.push_back(edge);
-
-        v0->edges.push_back(edge);
-        v1->edges.push_back(edge);
-
-        return edge;
-    }
-};
-
 //-----------------------------------------------------------------------------
 // Routines for DXF export
 //-----------------------------------------------------------------------------
@@ -245,43 +117,36 @@ public:
         for(DxfFileWriter::BezierPath &path : writer->paths) {
             for(SBezier *sb : path.beziers) {
                 if(sb->deg != 1) continue;
-                builder.addEdge(sb->ctrl[0], sb->ctrl[1], sb->auxA);
+                builder.AddEdge(sb->ctrl[0], sb->ctrl[1], (uint32_t)sb->auxA);
             }
         }
 
-        bool found;
-        bool loop = false;
-        do {
-            found = false;
-            for(PolylineBuilder::Edge *e : builder.edges) {
-                if(e->tag != 0) continue;
+        DRW_LWPolyline polyline;
 
-                PolylineBuilder::Vertex *start;
-                PolylineBuilder::Vertex *next;
-                if(!e->getStartAndNext(&start, &next, loop)) continue;
-                found = true;
-                e->tag = 1;
+        auto startFunc = [&](PolylineBuilder::Vertex *start,
+                             PolylineBuilder::Vertex *next,
+                             PolylineBuilder::Edge *e) {
+            hStyle hs = { e->kind };
+            polyline = {};
+            assignEntityDefaults(&polyline, hs);
+            polyline.vertlist.push_back(new DRW_Vertex2D(start->pos.x, start->pos.y, 0.0));
+            polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
+        };
 
-                DRW_LWPolyline polyline;
-                assignEntityDefaults(&polyline, e->style);
-                polyline.vertlist.push_back(new DRW_Vertex2D(start->pos.x, start->pos.y, 0.0));
-                polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
-                while(next->getNext(e->style, &next)) {
-                    polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
-                }
-                dxf->writeLWPolyline(&polyline);
-            }
+        auto nextFunc = [&](PolylineBuilder::Vertex *next, PolylineBuilder::Edge *e) {
+            polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
+        };
 
-            if(!found && !loop) {
-                loop  = true;
-                found = true;
-            }
-        } while(found);
+        auto endFunc = [&]() {
+            dxf->writeLWPolyline(&polyline);
+        };
 
-        for(PolylineBuilder::Edge *e : builder.edges) {
-            if(e->tag != 0) continue;
-            writeLine(e->a->pos, e->b->pos, e->style);
-        }
+        auto aloneFunc = [&](PolylineBuilder::Edge *e) {
+            hStyle hs = { e->kind };
+            writeLine(e->a->pos, e->b->pos, hs);
+        };
+
+        builder.Generate(startFunc, nextFunc, aloneFunc, endFunc);
     }
 
     void writeEntities() override {
