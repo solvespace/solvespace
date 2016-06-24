@@ -1052,7 +1052,7 @@ void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
 }
 
 bool SOutline::IsVisible(Vector projDir) const {
-    return (nl.Dot(projDir) > 0.0) != (nr.Dot(projDir) > 0.0);
+    return (nl.Dot(projDir) > LENGTH_EPS) == (nr.Dot(projDir) < LENGTH_EPS);
 }
 
 void SOutlineList::Clear() {
