@@ -167,8 +167,16 @@ class STriangle {
 public:
     int         tag;
     STriMeta    meta;
-    Vector      a, b, c;
-    Vector      an, bn, cn;
+
+    union {
+        struct { Vector a, b, c; };
+        Vector vertices[3];
+    };
+
+    union {
+        struct { Vector an, bn, cn; };
+        Vector normals[3];
+    };
 
     static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
     Vector Normal() const;
