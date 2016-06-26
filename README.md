@@ -29,7 +29,7 @@ You will need CMake, libpng, zlib, json-c, fontconfig, freetype, gtkmm 2.4,
 pangomm 1.4, OpenGL and OpenGL GLU.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install libpng12-dev libjson-c-dev libfreetype6-dev \
+    apt-get install libpng-dev libjson-c-dev libfreetype6-dev \
                     libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev \
                     libgl-dev libglu-dev libglew-dev cmake
 
