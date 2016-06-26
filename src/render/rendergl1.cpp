@@ -408,11 +408,32 @@ void OpenGl1Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
     }
 }
 
-void OpenGl1Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs) {
+void OpenGl1Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) {
     Vector projDir = camera.projRight.Cross(camera.projUp);
-    for(const SOutline *o = ol.l.First(); o; o = ol.l.NextAfter(o)) {
-        if(!o->IsVisible(projDir)) continue;
-        DoStippledLine(o->a, o->b, hcs);
+    switch(drawAs) {
+        case DrawOutlinesAs::EMPHASIZED_AND_CONTOUR:
+            for(const SOutline &o : ol.l) {
+                if(o.IsVisible(projDir) || o.tag != 0) {
+                    DoStippledLine(o.a, o.b, hcs);
+                }
+            }
+            break;
+
+        case DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR:
+            for(const SOutline &o : ol.l) {
+                if(!o.IsVisible(projDir) && o.tag != 0) {
+                    DoStippledLine(o.a, o.b, hcs);
+                }
+            }
+            break;
+
+        case DrawOutlinesAs::CONTOUR_ONLY:
+            for(const SOutline &o : ol.l) {
+                if(o.IsVisible(projDir)) {
+                    DoStippledLine(o.a, o.b, hcs);
+                }
+            }
+            break;
     }
 }
 

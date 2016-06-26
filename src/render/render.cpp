@@ -297,7 +297,7 @@ void ObjectPicker::DrawEdges(const SEdgeList &el, hStroke hcs) {
     }
 }
 
-void ObjectPicker::DrawOutlines(const SOutlineList &ol, hStroke hcs) {
+void ObjectPicker::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) {
     ssassert(false, "Not implemented");
 }
 

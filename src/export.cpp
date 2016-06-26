@@ -143,7 +143,7 @@ public:
     bool DrawBeziers(const SBezierList &bl, hStroke hcs) override {
         ssassert(false, "Not implemented");
     }
-    void DrawOutlines(const SOutlineList &ol, hStroke hcs) override {
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override {
         ssassert(false, "Not implemented");
     }
     void DrawPoint(const Vector &o, double d, hFill hcf) override {
@@ -209,11 +209,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
     if(SS.GW.showEdges) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
-        SEdgeList *selr = &(g->displayEdges);
-        SEdge *se;
-        for(se = selr->l.First(); se; se = selr->l.NextAfter(se)) {
-            edges.AddEdge(se->a, se->b, Style::SOLID_EDGE);
-        }
+        g->displayOutlines.ListTaggedInto(&edges, Style::SOLID_EDGE);
     }
 
     if(SS.GW.showConstraints) {
@@ -812,7 +808,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
         ExportMeshAsObjTo(f, m);
     } else if(FilenameHasExtension(filename, ".js") ||
               FilenameHasExtension(filename, ".html")) {
-        SEdgeList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayEdges);
+        SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
     } else {
         Error("Can't identify output file type from file extension of "
@@ -899,11 +895,10 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
 // Export the mesh as a JavaScript script, which is compatible with Three.js.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
-                                         SMesh *sm, SEdgeList *sel)
+                                         SMesh *sm, SOutlineList *sol)
 {
     SPointList spl = {};
     STriangle *tr;
-    SEdge *e;
     Vector bndl, bndh;
     const char htmlbegin[] = R"(
 <!DOCTYPE html>
@@ -1055,14 +1050,15 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     fputs("  ],\n"
           "  edges: [\n", f);
     // Output edges. Assume user's model colors do not obscure white edges.
-    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+    for(const SOutline &so : sol->l) {
+        if(so.tag == 0) continue;
         fprintf(f, "    [[%f, %f, %f], [%f, %f, %f]],\n",
-                e->a.x / SS.exportScale,
-                e->a.y / SS.exportScale,
-                e->a.z / SS.exportScale,
-                e->b.x / SS.exportScale,
-                e->b.y / SS.exportScale,
-                e->b.z / SS.exportScale);
+                so.a.x / SS.exportScale,
+                so.a.y / SS.exportScale,
+                so.a.z / SS.exportScale,
+                so.b.x / SS.exportScale,
+                so.b.y / SS.exportScale,
+                so.b.z / SS.exportScale);
     }
 
     fputs("  ]\n};\n", f);

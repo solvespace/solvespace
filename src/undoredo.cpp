@@ -63,7 +63,6 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
         dest.thisShell = {};
         dest.runningShell = {};
         dest.displayMesh = {};
-        dest.displayEdges = {};
         dest.displayOutlines = {};
 
         dest.remap = {};

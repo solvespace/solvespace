@@ -798,7 +798,7 @@ public:
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *f, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
-                               SMesh *sm, SEdgeList *sel);
+                               SMesh *sm, SOutlineList *sol);
     void ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe);
     void ExportSectionTo(const std::string &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,

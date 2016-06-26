@@ -269,7 +269,7 @@ public:
     void MakeFromAssemblyOf(SMesh *a, SMesh *b);
 
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
-    void MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, EdgeKind type);
+    void MakeOutlinesInto(SOutlineList *sol, EdgeKind type);
 
     bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);
@@ -300,7 +300,8 @@ public:
     List<SOutline> l;
 
     void Clear();
-    void AddEdge(Vector a, Vector b, Vector nl, Vector nr);
+    void AddEdge(Vector a, Vector b, Vector nl, Vector nr, int tag = 0);
+    void ListTaggedInto(SEdgeList *el, int auxA = 0, int auxB = 0);
 
     void MakeFromCopyOf(SOutlineList *ol);
 };
@@ -336,7 +337,7 @@ public:
     void FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter, EdgeOnInfo *info) const;
     void MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIsInter,
                               bool *inter, bool *leaky, int auxA = 0) const;
-    void MakeOutlinesInto(SOutlineList *sel) const;
+    void MakeOutlinesInto(SOutlineList *sel, EdgeKind tagKind) const;
 
     void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) const;
     void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) const;

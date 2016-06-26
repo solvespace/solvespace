@@ -91,10 +91,9 @@ void SMesh::MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d) {
     m.Clear();
 }
 
-void SMesh::MakeCertainEdgesAndOutlinesInto(SEdgeList *sel, SOutlineList *sol, EdgeKind type) {
+void SMesh::MakeOutlinesInto(SOutlineList *sol, EdgeKind edgeKind) {
     SKdNode *root = SKdNode::From(this);
-    root->MakeCertainEdgesInto(sel, type, /*coplanarIsInter=*/false, NULL, NULL);
-    root->MakeOutlinesInto(sol);
+    root->MakeOutlinesInto(sol, edgeKind);
 }
 
 //-----------------------------------------------------------------------------
@@ -1010,7 +1009,7 @@ void SKdNode::MakeCertainEdgesInto(SEdgeList *sel, EdgeKind how, bool coplanarIs
     }
 }
 
-void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
+void SKdNode::MakeOutlinesInto(SOutlineList *sol, EdgeKind edgeKind) const
 {
     std::vector<STriangle *> tris;
     ClearTags();
@@ -1030,13 +1029,37 @@ void SKdNode::MakeOutlinesInto(SOutlineList *sol) const
             if(CheckAndAddTrianglePair(&edgeTris, tr, info.tr))
                 continue;
 
+            int tag = 0;
+            switch(edgeKind) {
+                case EdgeKind::EMPHASIZED:
+                    if(tr->meta.face != info.tr->meta.face) {
+                        tag = 1;
+                    }
+                    break;
+
+                case EdgeKind::SHARP: {
+                        Vector na0 = tr->normals[j].WithMagnitude(1.0);
+                        Vector nb0 = tr->normals[(j + 1) % 3].WithMagnitude(1.0);
+                        Vector na1 = info.tr->normals[info.ai].WithMagnitude(1.0);
+                        Vector nb1 = info.tr->normals[info.bi].WithMagnitude(1.0);
+                        if(!((na0.Equals(na1) && nb0.Equals(nb1)) ||
+                             (na0.Equals(nb1) && nb0.Equals(na1)))) {
+                            tag = 1;
+                        }
+                    }
+                    break;
+
+                default:
+                    ssassert(false, "Unexpected edge kind");
+            }
+
             Vector nl = tr->Normal().WithMagnitude(1.0);
             Vector nr = info.tr->Normal().WithMagnitude(1.0);
 
             // We don't add edges with the same left and right
             // normals because they can't produce outlines.
-            if(nl.Equals(nr)) continue;
-            sol->AddEdge(a, b, nl, nr);
+            if(tag == 0 && nl.Equals(nr)) continue;
+            sol->AddEdge(a, b, nl, nr, tag);
         }
     }
 }
@@ -1052,13 +1075,21 @@ void SOutlineList::Clear() {
     l.Clear();
 }
 
-void SOutlineList::AddEdge(Vector a, Vector b, Vector nl, Vector nr) {
+void SOutlineList::AddEdge(Vector a, Vector b, Vector nl, Vector nr, int tag) {
     SOutline so = {};
     so.a   = a;
     so.b   = b;
     so.nl  = nl;
     so.nr  = nr;
+    so.tag = tag;
     l.Add(&so);
+}
+
+void SOutlineList::ListTaggedInto(SEdgeList *el, int auxA, int auxB) {
+    for(const SOutline &so : l) {
+        if(so.tag == 0) continue;
+        el->AddEdge(so.a, so.b, auxA, auxB);
+    }
 }
 
 void SOutlineList::MakeFromCopyOf(SOutlineList *sol) {

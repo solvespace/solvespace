@@ -377,14 +377,8 @@ void Group::GenerateDisplayItems() {
             displayMesh.Clear();
             displayMesh.MakeFromCopyOf(&(pg->displayMesh));
 
-            displayEdges.Clear();
             displayOutlines.Clear();
             if(SS.GW.showEdges) {
-                SEdge *se;
-                SEdgeList *src = &(pg->displayEdges);
-                for(se = src->l.First(); se; se = src->l.NextAfter(se)) {
-                    displayEdges.l.Add(se);
-                }
                 displayOutlines.MakeFromCopyOf(&pg->displayOutlines);
             }
         } else {
@@ -402,17 +396,14 @@ void Group::GenerateDisplayItems() {
                 displayMesh.AddTriangle(&trn);
             }
 
-            displayEdges.Clear();
             displayOutlines.Clear();
 
             if(SS.GW.showEdges) {
                 if(runningMesh.l.n > 0) {
                     // Triangle mesh only; no shell or emphasized edges.
-                    runningMesh.MakeCertainEdgesAndOutlinesInto(
-                        &displayEdges, &displayOutlines, EdgeKind::EMPHASIZED);
+                    runningMesh.MakeOutlinesInto(&displayOutlines, EdgeKind::EMPHASIZED);
                 } else {
-                    displayMesh.MakeCertainEdgesAndOutlinesInto(
-                        &displayEdges, &displayOutlines, EdgeKind::SHARP);
+                    displayMesh.MakeOutlinesInto(&displayOutlines, EdgeKind::SHARP);
                 }
             }
         }
@@ -536,13 +527,27 @@ void Group::Draw(Canvas *canvas) {
     DrawMesh(DrawMeshAs::DEFAULT, canvas);
 
     if(SS.GW.showEdges) {
+        if(SS.GW.showOutlines) {
+            Canvas::Stroke strokeOutline = {};
+            strokeOutline.zIndex = 1;
+            strokeOutline.color  = Style::Color(Style::OUTLINE);
+            strokeOutline.width  = Style::Width(Style::OUTLINE);
+            Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
+
+            canvas->DrawOutlines(displayOutlines, hcsOutline,
+                                 Canvas::DrawOutlinesAs::CONTOUR_ONLY);
+        }
+
         Canvas::Stroke strokeEdge = {};
         strokeEdge.zIndex = 1;
         strokeEdge.color  = Style::Color(Style::SOLID_EDGE);
         strokeEdge.width  = Style::Width(Style::SOLID_EDGE);
         Canvas::hStroke hcsEdge = canvas->GetStroke(strokeEdge);
 
-        canvas->DrawEdges(displayEdges, hcsEdge);
+        canvas->DrawOutlines(displayOutlines, hcsEdge,
+                             SS.GW.showOutlines
+                             ? Canvas::DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR
+                             : Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
 
         if(SS.GW.showHdnLines) {
             Canvas::Stroke strokeHidden = strokeEdge;
@@ -552,19 +557,8 @@ void Group::Draw(Canvas *canvas) {
             strokeHidden.stippleScale   = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
             Canvas::hStroke hcsHidden = canvas->GetStroke(strokeHidden);
 
-            canvas->DrawEdges(displayEdges, hcsHidden);
-            canvas->DrawOutlines(displayOutlines, hcsHidden);
-        }
-
-        if(SS.GW.showOutlines) {
-            Canvas::Stroke strokeOutline = strokeEdge;
-            strokeOutline.color  = Style::Color(Style::OUTLINE);
-            strokeOutline.width  = Style::Width(Style::OUTLINE);
-            Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
-
-            canvas->DrawOutlines(displayOutlines, hcsOutline);
-        } else {
-            canvas->DrawOutlines(displayOutlines, hcsEdge);
+            canvas->DrawOutlines(displayOutlines, hcsHidden,
+                                 Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
         }
     }
 }

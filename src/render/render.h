@@ -70,6 +70,17 @@ public:
         FRONT,      // Always drawn above all other geometry
     };
 
+    // The outlines are the collection of all edges that may be drawn.
+    // Outlines can be classified as emphasized or not; emphasized outlines indicate an abrupt
+    // change in the surface curvature. These are indicated by the SOutline tag.
+    // Outlines can also be classified as contour or not; contour outlines indicate the boundary
+    // of the filled mesh. Whether an outline is a part of contour or not depends on point of view.
+    enum class DrawOutlinesAs {
+        EMPHASIZED_AND_CONTOUR,     // Both emphasized and contour outlines
+        EMPHASIZED_WITHOUT_CONTOUR, // Emphasized outlines except those also belonging to contour
+        CONTOUR_ONLY                // Contour outlines only
+    };
+
     class Stroke {
     public:
         hStroke         h;
@@ -113,7 +124,7 @@ public:
     virtual void DrawLine(const Vector &a, const Vector &b, hStroke hcs) = 0;
     virtual void DrawEdges(const SEdgeList &el, hStroke hcs) = 0;
     virtual bool DrawBeziers(const SBezierList &bl, hStroke hcs) = 0;
-    virtual void DrawOutlines(const SOutlineList &ol, hStroke hcs) = 0;
+    virtual void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) = 0;
     virtual void DrawVectorText(const std::string &text, double height,
                                 const Vector &o, const Vector &u, const Vector &v,
                                 hStroke hcs) = 0;
@@ -169,7 +180,7 @@ public:
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
     void DrawEdges(const SEdgeList &el, hStroke hcs) override;
     bool DrawBeziers(const SBezierList &bl, hStroke hcs) override { return false; }
-    void DrawOutlines(const SOutlineList &ol, hStroke hcs) override;
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override;
     void DrawVectorText(const std::string &text, double height,
                         const Vector &o, const Vector &u, const Vector &v,
                         hStroke hcs) override;
@@ -216,7 +227,7 @@ public:
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
     void DrawEdges(const SEdgeList &el, hStroke hcs) override;
     bool DrawBeziers(const SBezierList &bl, hStroke hcs) override { return false; }
-    void DrawOutlines(const SOutlineList &ol, hStroke hcs) override;
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override;
     void DrawVectorText(const std::string &text, double height,
                         const Vector &o, const Vector &u, const Vector &v,
                         hStroke hcs) override;
