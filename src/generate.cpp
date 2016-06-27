@@ -203,7 +203,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     // If we're generating entities for display, first we need to find
     // the bounding box to turn relative chord tolerance to absolute.
     if(!SS.exportMode && !genForBBox) {
-        GenerateAll(type, /*andFindFree=*/false, /*genForBBox=*/true);
+        GenerateAll(type, andFindFree, /*genForBBox=*/true);
         BBox box = SK.CalculateEntityBBox(/*includeInvisibles=*/true);
         Vector size = box.maxp.Minus(box.minp);
         double maxSize = std::max({ size.x, size.y, size.z });
@@ -250,7 +250,10 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             if(newp->known) continue;
 
             Param *prevp = prev.FindByIdNoOops(newp->h);
-            if(prevp) newp->val = prevp->val;
+            if(prevp) {
+                newp->val = prevp->val;
+                newp->free = prevp->free;
+            }
         }
 
         if(g->h.v == Group::HGROUP_REFERENCES.v) {
