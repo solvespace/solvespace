@@ -1618,6 +1618,17 @@ int main(int argc, char** argv) {
     TW->show_all();
     GW->show_all();
 
+#ifdef HAVE_SPACEWARE
+#ifdef HAVE_GTK3
+    // We don't care if it can't be opened; just continue without.
+    spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                   gdk_x11_window_get_xid(GW->get_window()->gobj()));
+#else
+    spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                   GDK_WINDOW_XWINDOW(GW->get_window()->gobj()));
+#endif
+#endif
+
     SS.Init();
 
     if(argc >= 2) {

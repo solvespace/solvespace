@@ -20,6 +20,7 @@ Bug fixes:
   * Do not crash when changing autosave interval.
   * Three.js: correctly respond to controls when browser zoom is used.
   * OS X: do not completely hide main window when defocused.
+  * GTK: unbreak 3Dconnexion support.
 
 2.1
 ---
