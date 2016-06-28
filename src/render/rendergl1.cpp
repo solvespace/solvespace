@@ -164,6 +164,70 @@ static void ssglFillPattern(Canvas::FillPattern pattern) {
 }
 
 //-----------------------------------------------------------------------------
+// OpenGL 1 / compatibility profile based renderer
+//-----------------------------------------------------------------------------
+
+class OpenGl1Renderer : public ViewportCanvas {
+public:
+    Camera      camera;
+    Lighting    lighting;
+    // Cached OpenGL state.
+    struct {
+        bool        drawing;
+        GLenum      mode;
+        hStroke     hcs;
+        Stroke     *stroke;
+        hFill       hcf;
+        Fill       *fill;
+        std::weak_ptr<const Pixmap> texture;
+    } current;
+
+    OpenGl1Renderer() : camera(), lighting(), current() {}
+
+    const Camera &GetCamera() const override { return camera; }
+
+    void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
+    void DrawEdges(const SEdgeList &el, hStroke hcs) override;
+    bool DrawBeziers(const SBezierList &bl, hStroke hcs) override { return false; }
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override;
+    void DrawVectorText(const std::string &text, double height,
+                        const Vector &o, const Vector &u, const Vector &v,
+                        hStroke hcs) override;
+
+    void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
+                  hFill hcf) override;
+    void DrawPoint(const Vector &o, hStroke hcs) override;
+    void DrawPolygon(const SPolygon &p, hFill hcf) override;
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
+    void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
+    void DrawPixmap(std::shared_ptr<const Pixmap> pm,
+                    const Vector &o, const Vector &u, const Vector &v,
+                    const Point2d &ta, const Point2d &tb, hFill hcf) override;
+    void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override;
+
+    void SelectPrimitive(unsigned mode);
+    void UnSelectPrimitive();
+    Stroke *SelectStroke(hStroke hcs);
+    Fill *SelectFill(hFill hcf);
+    void SelectTexture(std::shared_ptr<const Pixmap> pm);
+    void DoFatLineEndcap(const Vector &p, const Vector &u, const Vector &v);
+    void DoFatLine(const Vector &a, const Vector &b, double width);
+    void DoLine(const Vector &a, const Vector &b, hStroke hcs);
+    void DoPoint(Vector p, double radius);
+    void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs, double phase = 0.0);
+
+    void UpdateProjection(bool flip = FLIP_FRAMEBUFFER);
+    void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) override;
+    void SetLighting(const Lighting &lighting) override;
+
+    void BeginFrame() override;
+    void EndFrame() override;
+    std::shared_ptr<Pixmap> ReadFrame() override;
+
+    void GetIdent(const char **vendor, const char **renderer, const char **version) override;
+};
+
+//-----------------------------------------------------------------------------
 // A simple OpenGL state tracker to group consecutive draw calls.
 //-----------------------------------------------------------------------------
 
@@ -764,6 +828,19 @@ void OpenGl1Renderer::GetIdent(const char **vendor, const char **renderer, const
     *vendor   = (const char *)glGetString(GL_VENDOR);
     *renderer = (const char *)glGetString(GL_RENDERER);
     *version  = (const char *)glGetString(GL_VERSION);
+}
+
+void OpenGl1Renderer::SetCamera(const Camera &c, bool flip) {
+    camera = c;
+    UpdateProjection(flip);
+}
+
+void OpenGl1Renderer::SetLighting(const Lighting &l) {
+    lighting = l;
+}
+
+std::shared_ptr<ViewportCanvas> CreateRenderer() {
+    return std::shared_ptr<ViewportCanvas>(new OpenGl1Renderer());
 }
 
 }

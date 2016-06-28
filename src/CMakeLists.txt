@@ -125,9 +125,11 @@ set(solvespace_cad_HEADERS
 set(solvespace_cad_SOURCES
     bsp.cpp
     clipboard.cpp
+    confscreen.cpp
     constraint.cpp
     constrainteq.cpp
     describescreen.cpp
+    draw.cpp
     drawconstraint.cpp
     drawentity.cpp
     entity.cpp
@@ -150,6 +152,7 @@ set(solvespace_cad_SOURCES
     style.cpp
     system.cpp
     textscreens.cpp
+    textwin.cpp
     toolbar.cpp
     ttf.cpp
     undoredo.cpp
@@ -167,11 +170,8 @@ set(solvespace_cad_SOURCES
     srf/triangulate.cpp)
 
 set(solvespace_cad_gl_SOURCES
-    confscreen.cpp
-    draw.cpp
     export.cpp
-    solvespace.cpp
-    textwin.cpp)
+    solvespace.cpp)
 
 add_library(solvespace_cad STATIC
     ${util_SOURCES}

@@ -194,11 +194,11 @@ public:
     }       meta[MAX_ROWS][MAX_COLS];
     int hoveredRow, hoveredCol;
 
-
     int top[MAX_ROWS]; // in half-line units, or -1 for unused
     int rows;
 
-    // The row of icons at the top of the text window, to hide/show things
+    std::shared_ptr<ViewportCanvas> canvas;
+
     void Draw(Canvas *canvas);
 
     // These are called by the platform-specific code.
@@ -499,6 +499,8 @@ public:
     void CopySelection();
     void PasteClipboard(Vector trans, double theta, double scale);
     static void MenuClipboard(Command id);
+
+    std::shared_ptr<ViewportCanvas> canvas;
 
     // The width and height (in pixels) of the window.
     double width, height;

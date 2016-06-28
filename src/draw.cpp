@@ -727,7 +727,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-#if !defined(HEADLESS)
+    if (!canvas) return;
+
     havePainted = true;
 
     auto renderStartTime = std::chrono::high_resolution_clock::now();
@@ -737,11 +738,8 @@ void GraphicsWindow::Paint() {
     width = w;
     height = h;
 
-    Camera camera = GetCamera();
-
-    OpenGl1Renderer canvas = {};
-    canvas.camera   = camera;
-    canvas.lighting = GetLighting();
+    Camera   camera   = GetCamera();
+    Lighting lighting = GetLighting();
 
     if(!SS.ActiveGroupsOkay()) {
         // Draw a different background whenever we're having solve problems.
@@ -749,20 +747,22 @@ void GraphicsWindow::Paint() {
         bgColor = RgbaColor::FromFloat(0.4f*bgColor.redF(),
                                        0.4f*bgColor.greenF(),
                                        0.4f*bgColor.blueF());
-        canvas.lighting.backgroundColor = bgColor;
+        lighting.backgroundColor = bgColor;
         // And show the text window, which has info to debug it
         ForceTextWindowShown();
     }
-    canvas.BeginFrame();
-    canvas.UpdateProjection();
 
-    Draw(&canvas);
+    canvas->BeginFrame();
+    canvas->SetCamera(camera);
+    canvas->SetLighting(lighting);
+    Draw(canvas.get());
+    canvas->EndFrame();
 
-    canvas.camera.LoadIdentity();
-    canvas.UpdateProjection();
+    camera.LoadIdentity();
+    canvas->SetCamera(camera);
 
     UiCanvas uiCanvas = {};
-    uiCanvas.canvas = &canvas;
+    uiCanvas.canvas = canvas;
 
     // If a marquee selection is in progress, then draw the selection
     // rectangle, as an outline and a transparent fill.
@@ -776,16 +776,16 @@ void GraphicsWindow::Paint() {
 
     // And finally the toolbar.
     if(SS.showToolbar) {
-        canvas.camera.offset   = {};
-        canvas.camera.offset.x = -(double)canvas.camera.width  / 2.0;
-        canvas.camera.offset.y = -(double)canvas.camera.height / 2.0;
-        canvas.UpdateProjection();
+        camera.offset   = {};
+        camera.offset.x = -(double)camera.width  / 2.0;
+        camera.offset.y = -(double)camera.height / 2.0;
+        canvas->SetCamera(camera);
         ToolbarDraw(&uiCanvas);
     }
 
     // If we display UI elements, also display an fps counter.
     if(SS.showToolbar) {
-        canvas.EndFrame();
+        canvas->EndFrame();
 
         auto renderEndTime = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
@@ -803,7 +803,6 @@ void GraphicsWindow::Paint() {
                                 5, 5, renderTimeColor);
     }
 
-    canvas.EndFrame();
-    canvas.Clear();
-#endif
+    canvas->EndFrame();
+    canvas->Clear();
 }

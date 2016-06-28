@@ -223,16 +223,24 @@ void TextWindow::MakeColorTable(const Color *in, float *out) {
 }
 
 void TextWindow::Init() {
+    canvas = CreateRenderer();
+
     ClearSuper();
 }
 
 void TextWindow::ClearSuper() {
     HideEditControl();
 
+    // Ugly hack, but not so ugly as the next line
+    std::shared_ptr<ViewportCanvas> oldCanvas = canvas;
+
     // Cannot use *this = {} here because TextWindow instances
     // are 2.4MB long; this causes stack overflows in prologue
     // when built with MSVC, even with optimizations.
     memset(this, 0, sizeof(*this));
+
+    // Return old canvas
+    canvas = oldCanvas;
 
     MakeColorTable(fgColors, fgColorTable);
     MakeColorTable(bgColors, bgColorTable);
@@ -843,7 +851,8 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
 }
 
 void TextWindow::Paint() {
-#if !defined(HEADLESS)
+    if (!canvas) return;
+
     int width, height;
     GetTextWindowSize(&width, &height);
 
@@ -854,13 +863,11 @@ void TextWindow::Paint() {
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
 
-    OpenGl1Renderer canvas = {};
-    canvas.camera = camera;
-    canvas.BeginFrame();
-    canvas.UpdateProjection();
+    canvas->BeginFrame();
+    canvas->SetCamera(camera);
 
     UiCanvas uiCanvas = {};
-    uiCanvas.canvas = &canvas;
+    uiCanvas.canvas = canvas;
     uiCanvas.flip = true;
 
     halfRows = camera.height / (LINE_HEIGHT/2);
@@ -983,9 +990,8 @@ void TextWindow::Paint() {
     // And we may show a color picker for certain editable fields
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
-    canvas.EndFrame();
-    canvas.Clear();
-#endif
+    canvas->EndFrame();
+    canvas->Clear();
 }
 
 void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {

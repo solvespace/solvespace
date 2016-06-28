@@ -164,13 +164,24 @@ public:
     virtual void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) = 0;
 };
 
+// An interface for view-dependent visualization
+class ViewportCanvas : public Canvas {
+public:
+    virtual void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) = 0;
+    virtual void SetLighting(const Lighting &lighting) = 0;
+
+    virtual void BeginFrame() = 0;
+    virtual void EndFrame() = 0;
+    virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
+
+    virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;
+};
+
 // A wrapper around Canvas that simplifies drawing UI in screen coordinates.
 class UiCanvas {
 public:
-    Canvas     *canvas;
-    bool        flip;
-
-    UiCanvas() : canvas(), flip() {};
+    std::shared_ptr<Canvas> canvas;
+    bool                    flip;
 
     void DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width = 1);
     void DrawRect(int l, int r, int t, int b, RgbaColor fillColor, RgbaColor outlineColor);
@@ -329,62 +340,6 @@ public:
     void Clear();
 };
 
-// A canvas that uses the core OpenGL profile, for desktop systems.
-class OpenGl1Renderer : public Canvas {
-public:
-    Camera      camera;
-    Lighting    lighting;
-    // Cached OpenGL state.
-    struct {
-        bool        drawing;
-        unsigned    mode; // GLenum, but we don't include GL.h globally
-        hStroke     hcs;
-        Stroke     *stroke;
-        hFill       hcf;
-        Fill       *fill;
-        std::weak_ptr<const Pixmap> texture;
-    } current;
-
-    OpenGl1Renderer() : camera(), lighting(), current() {}
-
-    const Camera &GetCamera() const override { return camera; }
-
-    void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
-    void DrawEdges(const SEdgeList &el, hStroke hcs) override;
-    bool DrawBeziers(const SBezierList &bl, hStroke hcs) override { return false; }
-    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override;
-    void DrawVectorText(const std::string &text, double height,
-                        const Vector &o, const Vector &u, const Vector &v,
-                        hStroke hcs) override;
-
-    void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
-                  hFill hcf) override;
-    void DrawPoint(const Vector &o, hStroke hcs) override;
-    void DrawPolygon(const SPolygon &p, hFill hcf) override;
-    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
-    void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
-    void DrawPixmap(std::shared_ptr<const Pixmap> pm,
-                    const Vector &o, const Vector &u, const Vector &v,
-                    const Point2d &ta, const Point2d &tb, hFill hcf) override;
-    void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override;
-
-    void SelectPrimitive(unsigned mode);
-    void UnSelectPrimitive();
-    Stroke *SelectStroke(hStroke hcs);
-    Fill *SelectFill(hFill hcf);
-    void SelectTexture(std::shared_ptr<const Pixmap> pm);
-    void DoFatLineEndcap(const Vector &p, const Vector &u, const Vector &v);
-    void DoFatLine(const Vector &a, const Vector &b, double width);
-    void DoLine(const Vector &a, const Vector &b, hStroke hcs);
-    void DoPoint(Vector p, double radius);
-    void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs, double phase = 0.0);
-
-    void UpdateProjection(bool flip = FLIP_FRAMEBUFFER);
-    void BeginFrame();
-    void EndFrame();
-    std::shared_ptr<Pixmap> ReadFrame();
-
-    static void GetIdent(const char **vendor, const char **renderer, const char **version);
-};
+std::shared_ptr<ViewportCanvas> CreateRenderer();
 
 #endif

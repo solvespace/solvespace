@@ -205,6 +205,8 @@ std::string SolveSpace::MakeAcceleratorLabel(int accel) {
 }
 
 void GraphicsWindow::Init() {
+    canvas = CreateRenderer();
+
     scale = 5;
     offset    = Vector::From(0, 0, 0);
     projRight = Vector::From(1, 0, 0);
