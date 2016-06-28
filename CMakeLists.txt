@@ -15,7 +15,12 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
 
 # project
 
+# NOTE TO PACKAGERS: The embedded git commit hash is critical for rapid bug triage when the builds
+# can come from a variety of sources. If you are mirroring the sources or otherwise build when
+# the .git directory is not present, please comment the following line:
 include(GetGitCommitHash)
+# and instead uncomment the following, adding the complete git hash of the checkout you are using:
+# set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
 
 project(solvespace)
 set(solvespace_VERSION_MAJOR 3)
