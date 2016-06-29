@@ -138,8 +138,11 @@ public:
 // Routines for DXF export
 //-----------------------------------------------------------------------------
 class DxfWriteInterface : public DRW_Interface {
+public:
     DxfFileWriter *writer;
-    dxfRW *dxf;
+    dxfRW         *dxf;
+
+    std::set<std::string> messages;
 
     static DRW_Coord toCoord(const Vector &v) {
         return DRW_Coord(v.x, v.y, v.z);
@@ -148,10 +151,6 @@ class DxfWriteInterface : public DRW_Interface {
     Vector xfrm(Vector v) {
         return writer->Transform(v);
     }
-
-public:
-    DxfWriteInterface(DxfFileWriter *w, dxfRW *dxfrw) :
-        writer(w), dxf(dxfrw) {}
 
     void writeTextstyles() override {
         DRW_Textstyle ts;
@@ -238,7 +237,8 @@ public:
 
                 case StipplePattern::FREEHAND:
                 case StipplePattern::ZIGZAG:
-                    ssassert(false, "Freehand and zigzag export not implemented");
+                    // Not implemented; exported as continuous.
+                    break;
             }
             dxf->writeLineType(&type);
         }
@@ -462,6 +462,12 @@ public:
         entity->lineType = DxfFileWriter::lineTypeName(s->stippleType);
         entity->ltypeScale = Style::StippleScaleMm(s->h);
         entity->setWidthMm(Style::WidthMm(hs.v));
+
+        if(s->stippleType == StipplePattern::FREEHAND) {
+            messages.insert("freehand lines were replaced with continuous lines");
+        } else if(s->stippleType == StipplePattern::ZIGZAG) {
+            messages.insert("zigzag lines were replaced with continuous lines");
+        }
     }
 
     void assignDimensionDefaults(DRW_Dimension *dimension, hStyle hs) {
@@ -696,10 +702,21 @@ void DxfFileWriter::Bezier(SBezier *sb) {
 
 void DxfFileWriter::FinishAndCloseFile() {
     dxfRW dxf(filename.c_str());
-    DxfWriteInterface interface(this, &dxf);
+    DxfWriteInterface interface = {};
+    interface.writer = this;
+    interface.dxf    = &dxf;
     dxf.write(&interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
     constraint = NULL;
+
+    if(!interface.messages.empty()) {
+        std::string text = "Some aspects of the drawing have no DXF equivalent and "
+                           "were not exported:\n";
+        for(const std::string &message : interface.messages) {
+            text += " * " + message + "\n";
+        }
+        Message(text.c_str());
+    }
 }
 
 bool DxfFileWriter::NeedToOutput(Constraint *c) {
@@ -726,11 +743,12 @@ const char *DxfFileWriter::lineTypeName(StipplePattern stippleType) {
         case StipplePattern::DASH_DOT:     return "DASHDOT";
         case StipplePattern::DASH_DOT_DOT: return "DIVIDE";
         case StipplePattern::DOT:          return "DOT";
-        case StipplePattern::FREEHAND:     return "CONTINUOUS";
-        case StipplePattern::ZIGZAG:       return "CONTINUOUS";
-    }
 
-    return "CONTINUOUS";
+        case StipplePattern::FREEHAND:
+        case StipplePattern::ZIGZAG:
+            /* no corresponding DXF line type */
+           return "CONTINUOUS";
+    }
 }
 
 //-----------------------------------------------------------------------------
