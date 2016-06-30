@@ -545,6 +545,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
         }
 
         it = glyphs.emplace(codepoint, std::move(glyph)).first;
+        textureUpdated = true;
         return (*it).second;
     }
 
@@ -553,10 +554,9 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
     return GetGlyph(0xfffd);
 }
 
-bool BitmapFont::LocateGlyph(char32_t codepoint,
+void BitmapFont::LocateGlyph(char32_t codepoint,
                              double *s0, double *t0, double *s1, double *t1,
                              size_t *w, size_t *h) {
-    bool textureUpdated = (glyphs.find(codepoint) == glyphs.end());
     const Glyph &glyph = GetGlyph(codepoint);
     *w  = glyph.advanceCells * 8;
     *h  = 16;
@@ -564,7 +564,6 @@ bool BitmapFont::LocateGlyph(char32_t codepoint,
     *s1 = *s0 + (double)(*w) / texture->width;
     *t0 = (16.0 * (glyph.position / (texture->width / 16))) / texture->height;
     *t1 = *t0 + (double)(*h) / texture->height;
-    return textureUpdated;
 }
 
 size_t BitmapFont::GetWidth(char32_t codepoint) {

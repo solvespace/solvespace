@@ -58,6 +58,7 @@ public:
     std::string                unifontData;
     std::map<char32_t, Glyph>  glyphs;
     std::shared_ptr<Pixmap>    texture;
+    bool                       textureUpdated;
     uint16_t                   nextPosition;
 
     static BitmapFont From(std::string &&unifontData);
@@ -65,7 +66,7 @@ public:
 
     bool IsEmpty() const { return unifontData.empty(); }
     const Glyph &GetGlyph(char32_t codepoint);
-    bool LocateGlyph(char32_t codepoint, double *s0, double *t0, double *s1, double *t1,
+    void LocateGlyph(char32_t codepoint, double *s0, double *t0, double *s1, double *t1,
                      size_t *advanceWidth, size_t *boundingHeight);
 
     void AddGlyph(char32_t codepoint, std::shared_ptr<const Pixmap> pixmap);

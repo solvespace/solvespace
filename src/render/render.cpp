@@ -286,9 +286,11 @@ void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color)
 
     double s0, t0, s1, t1;
     size_t w, h;
-    if(font->LocateGlyph(codepoint, &s0, &t0, &s1, &t1, &w, &h)) {
+    font->LocateGlyph(codepoint, &s0, &t0, &s1, &t1, &w, &h);
+    if(font->textureUpdated) {
         // LocateGlyph modified the texture, reload it.
         canvas->InvalidatePixmap(font->texture);
+        font->textureUpdated = false;
     }
 
     canvas->DrawPixmap(font->texture,
