@@ -76,6 +76,7 @@ public:
         DEPTH_ONLY, // Like NORMAL, but only affects future occlusion, not color
         BACK,       // Always drawn below all other geometry
         FRONT,      // Always drawn above all other geometry
+        LAST = FRONT
     };
 
     // The outlines are the collection of all edges that may be drawn.

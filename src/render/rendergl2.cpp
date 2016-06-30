@@ -118,6 +118,8 @@ public:
                     const Point2d &ta, const Point2d &tb, hFill hcf) override;
     void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override;
 
+    std::shared_ptr<BatchCanvas> CreateBatch() override;
+
     Stroke *SelectStroke(hStroke hcs);
     Fill *SelectFill(hFill hcf);
     void SelectMask(FillPattern pattern);
@@ -500,12 +502,7 @@ void OpenGl2Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
 }
 
 void OpenGl2Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
-    SelectFill(hcfFront);
-
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    meshRenderer.UseShaded(lighting);
-    meshRenderer.Draw(m);
-    glDisable(GL_POLYGON_OFFSET_FILL);
+    ssassert(false, "Not implemented");
 }
 
 void OpenGl2Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) {
@@ -685,6 +682,341 @@ void OpenGl2Renderer::SetCamera(const Camera &c, bool flip) {
 
 void OpenGl2Renderer::SetLighting(const Lighting &l) {
     lighting = l;
+}
+
+//-----------------------------------------------------------------------------
+// A batch canvas implemented using OpenGL 2 vertex buffer objects.
+//-----------------------------------------------------------------------------
+
+class DrawCall {
+public:
+    virtual Canvas::Layer GetLayer() const = 0;
+    virtual int GetZIndex() const = 0;
+
+    virtual void Draw(OpenGl2Renderer *renderer) = 0;
+    virtual void Remove(OpenGl2Renderer *renderer) = 0;
+};
+
+class EdgeDrawCall : public DrawCall {
+public:
+    // Key
+    Canvas::Stroke             *stroke;
+    // Data
+    EdgeRenderer::Handle        handle;
+
+    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
+    virtual int GetZIndex() const override { return stroke->zIndex; };
+
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SEdgeList &el,
+                                            Canvas::Stroke *stroke) {
+        EdgeDrawCall *dc = new EdgeDrawCall();
+        dc->stroke = stroke;
+        dc->handle = renderer->edgeRenderer.Add(el);
+        return std::shared_ptr<DrawCall>(dc);
+    }
+
+    void Draw(OpenGl2Renderer *renderer) override {
+        ssglDepthRange(stroke->layer, stroke->zIndex);
+        renderer->edgeRenderer.SetStroke(*stroke, 1.0 / renderer->camera.scale);
+        renderer->edgeRenderer.Draw(handle);
+    }
+
+    void Remove(OpenGl2Renderer *renderer) override {
+        renderer->edgeRenderer.Remove(handle);
+    }
+};
+
+class OutlineDrawCall : public DrawCall {
+public:
+    // Key
+    Canvas::Stroke             *stroke;
+    // Data
+    OutlineRenderer::Handle     handle;
+    Canvas::DrawOutlinesAs      drawAs;
+
+    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
+    virtual int GetZIndex() const override { return stroke->zIndex; };
+
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SOutlineList &ol,
+                                            Canvas::Stroke *stroke,
+                                            Canvas::DrawOutlinesAs drawAs) {
+        OutlineDrawCall *dc = new OutlineDrawCall();
+        dc->stroke = stroke;
+        dc->handle = renderer->outlineRenderer.Add(ol);
+        dc->drawAs = drawAs;
+        return std::shared_ptr<DrawCall>(dc);
+    }
+
+    void Draw(OpenGl2Renderer *renderer) override {
+        ssglDepthRange(stroke->layer, stroke->zIndex);
+        renderer->outlineRenderer.SetStroke(*stroke, 1.0 / renderer->camera.scale);
+        renderer->outlineRenderer.Draw(handle, drawAs);
+    }
+
+    void Remove(OpenGl2Renderer *renderer) override {
+        renderer->outlineRenderer.Remove(handle);
+    }
+};
+
+class PointDrawCall : public DrawCall {
+public:
+    // Key
+    Canvas::Stroke              *stroke;
+    // Data
+    IndexedMeshRenderer::Handle  handle;
+
+    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
+    virtual int GetZIndex() const override { return stroke->zIndex; };
+
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &im,
+                                            Canvas::Stroke *stroke) {
+        PointDrawCall *dc = new PointDrawCall();
+        dc->stroke = stroke;
+        dc->handle = renderer->imeshRenderer.Add(im);
+        return std::shared_ptr<DrawCall>(dc);
+    }
+
+    void Draw(OpenGl2Renderer *renderer) override {
+        ssglDepthRange(stroke->layer, stroke->zIndex);
+        renderer->imeshRenderer.UsePoint(*stroke, 1.0 / renderer->camera.scale);
+        renderer->imeshRenderer.Draw(handle);
+    }
+
+    void Remove(OpenGl2Renderer *renderer) override {
+        renderer->imeshRenderer.Remove(handle);
+    }
+};
+
+class MeshDrawCall : public DrawCall {
+public:
+    // Key
+    Canvas::Fill           *fillFront;
+    // Data
+    MeshRenderer::Handle    handle;
+    Canvas::Fill           *fillBack;
+    bool                    isShaded;
+
+    virtual Canvas::Layer GetLayer() const override { return fillFront->layer; };
+    virtual int GetZIndex() const override { return fillFront->zIndex; };
+
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SMesh &m,
+                                            Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,
+                                            bool isShaded = false) {
+        MeshDrawCall *dc = new MeshDrawCall();
+        dc->fillFront       = fillFront;
+        dc->handle          = renderer->meshRenderer.Add(m);
+        dc->fillBack        = fillBack;
+        dc->isShaded        = isShaded;
+        return std::shared_ptr<DrawCall>(dc);
+    }
+
+    void DrawFace(OpenGl2Renderer *renderer, GLenum cullFace, Canvas::Fill *fill) {
+        glCullFace(cullFace);
+        ssglDepthRange(fill->layer, fill->zIndex);
+        if(fill->pattern != Canvas::FillPattern::SOLID) {
+            renderer->SelectMask(fill->pattern);
+        } else if(fill->texture) {
+            renderer->SelectTexture(fill->texture);
+        } else {
+            renderer->SelectMask(Canvas::FillPattern::SOLID);
+        }
+        if(isShaded) {
+            renderer->meshRenderer.UseShaded(renderer->lighting);
+        } else {
+            renderer->meshRenderer.UseFilled(*fill);
+        }
+        renderer->meshRenderer.Draw(handle, /*useColors=*/fill->color.IsEmpty(), fill->color);
+    }
+
+    void Draw(OpenGl2Renderer *renderer) override {
+        glEnable(GL_POLYGON_OFFSET_FILL);
+        glEnable(GL_CULL_FACE);
+
+        if(fillBack)
+            DrawFace(renderer, GL_FRONT, fillBack);
+        DrawFace(renderer, GL_BACK, fillFront);
+
+        glDisable(GL_POLYGON_OFFSET_FILL);
+        glDisable(GL_CULL_FACE);
+    }
+
+    void Remove(OpenGl2Renderer *renderer) override {
+        renderer->meshRenderer.Remove(handle);
+    }
+};
+
+struct CompareDrawCall {
+    bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) {
+        const Canvas::Layer stackup[] = {
+            Canvas::Layer::BACK,
+            Canvas::Layer::NORMAL,
+            Canvas::Layer::DEPTH_ONLY,
+            Canvas::Layer::OCCLUDED,
+            Canvas::Layer::FRONT
+        };
+
+        int aLayerIndex =
+            std::find(std::begin(stackup), std::end(stackup), a->GetLayer()) - std::begin(stackup);
+        int bLayerIndex =
+            std::find(std::begin(stackup), std::end(stackup), b->GetLayer()) - std::begin(stackup);
+        if(aLayerIndex == bLayerIndex) {
+            return a->GetZIndex() < b->GetZIndex();
+        } else {
+            return aLayerIndex < bLayerIndex;
+        }
+    }
+};
+
+class OpenGl2RendererBatch : public BatchCanvas {
+public:
+    struct EdgeBuffer {
+        hStroke         h;
+        SEdgeList       edges;
+
+        void Clear() {
+            edges.Clear();
+        }
+    };
+
+    struct PointBuffer {
+        hStroke         h;
+        SIndexedMesh    points;
+
+        void Clear() {
+            points.Clear();
+        }
+    };
+
+    OpenGl2Renderer *renderer;
+
+    IdList<EdgeBuffer,  hStroke> edgeBuffer;
+    IdList<PointBuffer, hStroke> pointBuffer;
+
+    std::multiset<std::shared_ptr<DrawCall>, CompareDrawCall> drawCalls;
+
+    OpenGl2RendererBatch() : renderer(), edgeBuffer(), pointBuffer() {}
+
+    void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override {
+        EdgeBuffer *eb = edgeBuffer.FindByIdNoOops(hcs);
+        if(!eb) {
+            EdgeBuffer neb = {};
+            neb.h = hcs;
+            edgeBuffer.Add(&neb);
+            eb = edgeBuffer.FindById(hcs);
+        }
+
+        eb->edges.AddEdge(a, b);
+    }
+
+    void DrawEdges(const SEdgeList &el, hStroke hcs) override {
+        EdgeBuffer *eb = edgeBuffer.FindByIdNoOops(hcs);
+        if(!eb) {
+            EdgeBuffer neb = {};
+            neb.h = hcs;
+            edgeBuffer.Add(&neb);
+            eb = edgeBuffer.FindById(hcs);
+        }
+
+        for(const SEdge &e : el.l) {
+            eb->edges.AddEdge(e.a, e.b);
+        }
+    }
+
+    bool DrawBeziers(const SBezierList &bl, hStroke hcs) override {
+        return false;
+    }
+
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override {
+        drawCalls.emplace(OutlineDrawCall::Create(renderer, ol, strokes.FindById(hcs), drawAs));
+    }
+
+    void DrawVectorText(const std::string &text, double height,
+                        const Vector &o, const Vector &u, const Vector &v,
+                        hStroke hcs) override {
+        ssassert(false, "Not implemented");
+    }
+
+    void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
+                  hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+
+    void DrawPoint(const Vector &o, hStroke hcs) override {
+        PointBuffer *pb = pointBuffer.FindByIdNoOops(hcs);
+        if(!pb) {
+            PointBuffer npb = {};
+            npb.h = hcs;
+            pointBuffer.Add(&npb);
+            pb = pointBuffer.FindById(hcs);
+        }
+
+        pb->points.AddPoint(o);
+    }
+
+    void DrawPolygon(const SPolygon &p, hFill hcf) override {
+        SMesh m = {};
+        p.TriangulateInto(&m);
+        drawCalls.emplace(MeshDrawCall::Create(renderer, m, fills.FindById(hcf),
+                                               fills.FindById(hcf)));
+        m.Clear();
+    }
+
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {}) override {
+        drawCalls.emplace(MeshDrawCall::Create(renderer, m, fills.FindById(hcfFront),
+                                               fills.FindByIdNoOops(hcfBack),
+                                               /*lighting=*/true));
+    }
+
+    void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+
+    void DrawPixmap(std::shared_ptr<const Pixmap> pm,
+                    const Vector &o, const Vector &u, const Vector &v,
+                    const Point2d &ta, const Point2d &tb, hFill hcf) override {
+        ssassert(false, "Not implemented");
+    }
+
+    void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override {
+        ssassert(false, "Not implemented");
+    }
+
+    void Finalize() override {
+        for(const EdgeBuffer &eb : edgeBuffer) {
+            drawCalls.emplace(EdgeDrawCall::Create(renderer, eb.edges, strokes.FindById(eb.h)));
+        }
+        edgeBuffer.Clear();
+
+        for(const PointBuffer &pb : pointBuffer) {
+            drawCalls.emplace(PointDrawCall::Create(renderer, pb.points, strokes.FindById(pb.h)));
+        }
+        pointBuffer.Clear();
+    }
+
+    void Draw() override {
+        renderer->current = {};
+
+        for(std::shared_ptr<DrawCall> dc : drawCalls) {
+            dc->Draw(renderer);
+        }
+    }
+
+    void Clear() override {
+        for(std::shared_ptr<DrawCall> dc : drawCalls) {
+            dc->Remove(renderer);
+        }
+        drawCalls.clear();
+    }
+};
+
+//-----------------------------------------------------------------------------
+// Factory functions.
+//-----------------------------------------------------------------------------
+
+std::shared_ptr<BatchCanvas> OpenGl2Renderer::CreateBatch() {
+    OpenGl2RendererBatch *batch = new OpenGl2RendererBatch();
+    batch->renderer = this;
+    return std::shared_ptr<BatchCanvas>(batch);
 }
 
 std::shared_ptr<ViewportCanvas> CreateRenderer() {
