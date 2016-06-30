@@ -215,7 +215,7 @@ void UiCanvas::DrawRect(int l, int r, int t, int b,
 void UiCanvas::DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y) {
     Canvas::Fill fill = {};
     fill.layer  = Canvas::Layer::FRONT;
-    fill.color  = { 0, 0, 0, 255 };
+    fill.color  = { 255, 255, 255, 255 };
     Canvas::hFill hcf = canvas->GetFill(fill);
 
     canvas->DrawPixmap(pm,
