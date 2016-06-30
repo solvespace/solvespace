@@ -772,6 +772,7 @@ void GraphicsWindow::Paint() {
                           (int)orig.mouse.y, (int)begin.y,
                           /*fillColor=*/Style::Color(Style::HOVERED).WithAlpha(25),
                           /*outlineColor=*/Style::Color(Style::HOVERED));
+        canvas->EndFrame();
     }
 
     // And finally the toolbar.

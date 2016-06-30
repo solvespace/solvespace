@@ -554,8 +554,11 @@ void Group::Draw(Canvas *canvas) {
                              ? Canvas::DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR
                              : Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
 
-        if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
+        if(SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::INVISIBLE) {
             Canvas::Stroke strokeHidden = Style::Stroke(Style::HIDDEN_EDGE);
+            if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::VISIBLE) {
+                strokeHidden.stipplePattern = StipplePattern::CONTINUOUS;
+            }
             strokeHidden.layer  = Canvas::Layer::OCCLUDED;
             Canvas::hStroke hcsHidden = canvas->GetStroke(strokeHidden);
 

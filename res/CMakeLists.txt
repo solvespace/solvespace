@@ -196,6 +196,20 @@ add_resources(
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
     fonts/unicode.lff.gz
+    shaders/imesh.frag
+    shaders/imesh.vert
+    shaders/imesh_point.frag
+    shaders/imesh_point.vert
+    shaders/imesh_tex.frag
+    shaders/imesh_texa.frag
+    shaders/imesh_tex.vert
+    shaders/mesh.frag
+    shaders/mesh.vert
+    shaders/mesh_fill.frag
+    shaders/mesh_fill.vert
+    shaders/edge.frag
+    shaders/edge.vert
+    shaders/outline.vert
     threejs/three-r76.js.gz
     threejs/hammer-2.0.8.js.gz
     threejs/SolveSpaceControls.js)

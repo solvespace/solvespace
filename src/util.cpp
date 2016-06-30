@@ -155,6 +155,18 @@ void SolveSpace::MakeMatrix(double *mat,
     mat[15] = a44;
 }
 
+void SolveSpace::MultMatrix(double *mata, double *matb, double *matr) {
+    for(int i = 0; i < 4; i++) {
+        for(int j = 0; j < 4; j++) {
+            double s = 0.0;
+            for(int k = 0; k < 4; k++) {
+                s += mata[k * 4 + j] * matb[i * 4 + k];
+            }
+           matr[i * 4 + j] = s;
+        }
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Word-wrap the string for our message box appropriately, and then display
 // that string.

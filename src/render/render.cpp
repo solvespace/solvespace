@@ -186,7 +186,8 @@ bool Canvas::Fill::Equals(const Fill &other) const {
     return (layer  == other.layer &&
             zIndex == other.zIndex &&
             color.Equals(other.color) &&
-            pattern == other.pattern);
+            pattern == other.pattern &&
+            texture == other.texture);
 }
 
 void Canvas::Clear() {

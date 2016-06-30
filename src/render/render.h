@@ -82,9 +82,9 @@ public:
     // Outlines can also be classified as contour or not; contour outlines indicate the boundary
     // of the filled mesh. Whether an outline is a part of contour or not depends on point of view.
     enum class DrawOutlinesAs {
-        EMPHASIZED_AND_CONTOUR,     // Both emphasized and contour outlines
-        EMPHASIZED_WITHOUT_CONTOUR, // Emphasized outlines except those also belonging to contour
-        CONTOUR_ONLY                // Contour outlines only
+        EMPHASIZED_AND_CONTOUR      = 0, // Both emphasized and contour outlines
+        EMPHASIZED_WITHOUT_CONTOUR  = 1, // Emphasized outlines except those also belonging to contour
+        CONTOUR_ONLY                = 2  // Contour outlines only
     };
 
     // Stroke widths, etc, can be scale-invariant (in pixels) or scale-dependent (in millimeters).
@@ -126,6 +126,7 @@ public:
         int             zIndex;
         RgbaColor       color;
         FillPattern     pattern;
+        std::shared_ptr<const Pixmap> texture;
 
         void Clear() { *this = {}; }
         bool Equals(const Fill &other) const;

@@ -71,9 +71,18 @@ if(SPACEWARE_FOUND)
 endif()
 
 if(WIN32)
+    set(gl_SOURCES
+        render/rendergl1.cpp)
+else()
+    set(gl_SOURCES
+        render/gl2shader.cpp
+        render/rendergl2.cpp)
+endif()
+
+if(WIN32)
     set(platform_SOURCES
         platform/w32main.cpp
-        render/rendergl1.cpp)
+        ${gl_SOURCES})
 
     set(platform_LIBRARIES
         comctl32
@@ -85,7 +94,7 @@ elseif(APPLE)
     set(platform_SOURCES
         platform/cocoamain.mm
         render/rendergl.cpp
-        render/rendergl1.cpp)
+        ${gl_SOURCES})
 
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
@@ -97,7 +106,7 @@ elseif(HAVE_GTK)
     set(platform_SOURCES
         platform/gtkmain.cpp
         render/rendergl.cpp
-        render/rendergl1.cpp)
+        ${gl_SOURCES})
 
     set(platform_LIBRARIES
         ${SPACEWARE_LIBRARIES})
@@ -120,6 +129,7 @@ set(solvespace_cad_HEADERS
     solvespace.h
     ui.h
     render/render.h
+    render/gl2shader.h
     srf/surface.h)
 
 set(solvespace_cad_SOURCES
