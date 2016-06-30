@@ -87,6 +87,12 @@ public:
         CONTOUR_ONLY                // Contour outlines only
     };
 
+    // Stroke widths, etc, can be scale-invariant (in pixels) or scale-dependent (in millimeters).
+    enum class Unit {
+        MM,
+        PX
+    };
+
     class Stroke {
     public:
         hStroke         h;
@@ -95,11 +101,17 @@ public:
         int             zIndex;
         RgbaColor       color;
         double          width;
+        Unit            unit;
         StipplePattern  stipplePattern;
         double          stippleScale;
 
         void Clear() { *this = {}; }
         bool Equals(const Stroke &other) const;
+
+        double WidthMm(const Camera &camera) const;
+        double WidthPx(const Camera &camera) const;
+        double StippleScaleMm(const Camera &camera) const;
+        double StippleScalePx(const Camera &camera) const;
     };
 
     enum class FillPattern {

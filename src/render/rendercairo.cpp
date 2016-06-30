@@ -43,8 +43,9 @@ void CairoRenderer::SelectStroke(hStroke hcs) {
 
     RgbaColor color = stroke->color;
     std::vector<double> dashes =
-        StipplePatternDashes(stroke->stipplePattern, stroke->stippleScale * camera.scale);
-    cairo_set_line_width(context, stroke->width);
+        StipplePatternDashes(stroke->stipplePattern,
+                             stroke->StippleScalePx(camera));
+    cairo_set_line_width(context, stroke->WidthPx(camera));
     cairo_set_dash(context, dashes.data(), dashes.size(), 0);
     cairo_set_source_rgba(context, color.redF(), color.greenF(), color.blueF(),
                           color.alphaF());

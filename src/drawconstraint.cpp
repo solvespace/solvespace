@@ -79,11 +79,9 @@ void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
 }
 
 void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *r) {
-    const Camera &camera = canvas->GetCamera();
-
     Canvas::Stroke strokeStippled = *canvas->strokes.FindById(hcs);
     strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
-    strokeStippled.stippleScale   = 4.0 / camera.scale;
+    strokeStippled.stippleScale   = 4.0;
     Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
 
     Vector p = r->ProjectInto(workplane);
@@ -542,7 +540,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         case Type::PROJ_PT_DISTANCE: {
             Canvas::Stroke strokeStippled = stroke;
             strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
-            strokeStippled.stippleScale   = 4.0 / camera.scale;
+            strokeStippled.stippleScale   = 4.0;
             Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
 
             Vector ap = SK.GetEntity(ptA)->PointGetNum(),

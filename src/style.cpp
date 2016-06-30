@@ -291,6 +291,14 @@ Canvas::Stroke Style::Stroke(hStyle hs) {
     stroke.stipplePattern = style->stippleType;
     stroke.stippleScale = Style::StippleScaleMm(hs);
     stroke.width = Style::Width(hs.v);
+    switch(style->widthAs) {
+        case Style::UnitsAs::PIXELS:
+            stroke.unit = Canvas::Unit::PX;
+            break;
+        case Style::UnitsAs::MM:
+            stroke.unit = Canvas::Unit::MM;
+            break;
+    }
     return stroke;
 }
 

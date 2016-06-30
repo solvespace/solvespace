@@ -499,6 +499,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     pointStroke.zIndex = IsPoint() ? zIndex + 1 : 0;
     pointStroke.color  = stroke.color;
     pointStroke.width  = 7.0;
+    pointStroke.unit   = Canvas::Unit::PX;
     Canvas::hStroke hcsPoint = canvas->GetStroke(pointStroke);
 
     switch(type) {
@@ -555,7 +556,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     if(!SK.GetGroup(group)->IsVisible() || !SS.GW.showNormals) continue;
                 }
 
-                stroke.layer  = (asReference) ? Canvas::Layer::FRONT : Canvas::Layer::NORMAL;
+                stroke.layer = (asReference) ? Canvas::Layer::FRONT : Canvas::Layer::NORMAL;
                 if(how != DrawAs::HOVERED && how != DrawAs::SELECTED) {
                     // Always draw the x, y, and z axes in red, green, and blue;
                     // brighter for the ones at the bottom left of the screen,
@@ -627,7 +628,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             Canvas::Stroke strokeBorder = stroke;
             strokeBorder.zIndex        -= 3;
             strokeBorder.stipplePattern = StipplePattern::SHORT_DASH;
-            strokeBorder.stippleScale   = 8.0 / camera.scale;
+            strokeBorder.stippleScale   = 8.0;
             Canvas::hStroke hcsBorder = canvas->GetStroke(strokeBorder);
 
             double textHeight = Style::TextHeight(hs) / camera.scale;

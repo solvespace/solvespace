@@ -191,7 +191,7 @@ Canvas::Stroke *OpenGl1Renderer::SelectStroke(hStroke hcs) {
     UnSelectPrimitive();
     ssglColorRGBA(stroke->color);
     ssglDepthRange(stroke->layer, stroke->zIndex);
-    ssglLineWidth(stroke->width);
+    ssglLineWidth(stroke->WidthPx(camera));
     // Fat lines and points are quads affected by glPolygonStipple, so make sure
     // they are displayed correctly.
     ssglFillPattern(FillPattern::SOLID);
@@ -329,12 +329,12 @@ void OpenGl1Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
     if(a.Equals(b)) return;
 
     Stroke *stroke = SelectStroke(hcs);
-    if(stroke->width <= 3.0) {
+    if(stroke->WidthPx(camera) <= 3.0) {
         SelectPrimitive(GL_LINES);
         ssglVertex3v(a);
         ssglVertex3v(b);
     } else {
-        DoFatLine(a, b, stroke->width / camera.scale);
+        DoFatLine(a, b, stroke->WidthPx(camera) / camera.scale);
     }
 }
 
@@ -376,7 +376,7 @@ void OpenGl1Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
 
     const char *si = patternSeq;
     double end = len;
-    double ss = stroke->stippleScale / 2.0;
+    double ss = stroke->StippleScaleMm(camera) / 2.0;
     do {
         double start = end;
         switch(*si) {
@@ -400,7 +400,7 @@ void OpenGl1Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
             case '.':
                 end = max(end - 0.5 * ss, 0.0);
                 if(end == 0.0) break;
-                DoPoint(a.Plus(dir.ScaledBy(end)), stroke->width);
+                DoPoint(a.Plus(dir.ScaledBy(end)), stroke->WidthPx(camera));
                 end = max(end - 0.5 * ss, 0.0);
                 break;
 

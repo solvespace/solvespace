@@ -137,6 +137,50 @@ bool Canvas::Stroke::Equals(const Stroke &other) const {
             stippleScale == other.stippleScale);
 }
 
+double Canvas::Stroke::WidthMm(const Camera &camera) const {
+    switch(unit) {
+        case Canvas::Unit::MM:
+            return width;
+        case Canvas::Unit::PX:
+            return width / camera.scale;
+        default:
+            ssassert(false, "Unexpected unit");
+    }
+}
+
+double Canvas::Stroke::WidthPx(const Camera &camera) const {
+    switch(unit) {
+        case Canvas::Unit::MM:
+            return width * camera.scale;
+        case Canvas::Unit::PX:
+            return width;
+        default:
+            ssassert(false, "Unexpected unit");
+    }
+}
+
+double Canvas::Stroke::StippleScaleMm(const Camera &camera) const {
+    switch(unit) {
+        case Canvas::Unit::MM:
+            return stippleScale;
+        case Canvas::Unit::PX:
+            return stippleScale / camera.scale;
+        default:
+            ssassert(false, "Unexpected unit");
+    }
+}
+
+double Canvas::Stroke::StippleScalePx(const Camera &camera) const {
+    switch(unit) {
+        case Canvas::Unit::MM:
+            return stippleScale * camera.scale;
+        case Canvas::Unit::PX:
+            return stippleScale;
+        default:
+            ssassert(false, "Unexpected unit");
+    }
+}
+
 bool Canvas::Fill::Equals(const Fill &other) const {
     return (layer  == other.layer &&
             zIndex == other.zIndex &&
