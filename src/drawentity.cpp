@@ -464,13 +464,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     }
 
     Canvas::Stroke stroke = {};
-    stroke.zIndex         = zIndex;
-    stroke.color          = Style::Color(hs);
-    stroke.width          = Style::Width(hs);
-    stroke.stipplePattern = Style::PatternType(hs);
-    stroke.stippleScale   = Style::StippleScaleMm(hs);
     switch(how) {
         case DrawAs::DEFAULT:
+            stroke = Style::Stroke(hs);
             stroke.layer  = Canvas::Layer::NORMAL;
             break;
 
@@ -479,21 +475,23 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             break;
 
         case DrawAs::HIDDEN:
+            stroke = Style::Stroke(Style::HIDDEN_EDGE);
             stroke.layer  = Canvas::Layer::OCCLUDED;
-            stroke.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });
-            stroke.stippleScale   = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
             break;
 
         case DrawAs::HOVERED:
+            stroke = Style::Stroke(hs);
             stroke.layer  = Canvas::Layer::FRONT;
             stroke.color  = Style::Color(Style::HOVERED);
             break;
 
         case DrawAs::SELECTED:
+            stroke = Style::Stroke(hs);
             stroke.layer  = Canvas::Layer::FRONT;
             stroke.color  = Style::Color(Style::SELECTED);
             break;
     }
+    stroke.zIndex = zIndex;
     Canvas::hStroke hcs = canvas->GetStroke(stroke);
 
     Canvas::Stroke pointStroke = {};
@@ -529,8 +527,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 free = pu->free || pv->free;
             }
             if(free) {
-                Canvas::Stroke analyzeStroke = pointStroke;
-                analyzeStroke.color = Style::Color(Style::ANALYZE);
+                Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
                 analyzeStroke.width = 14.0;
                 Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
 

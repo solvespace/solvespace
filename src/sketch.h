@@ -813,13 +813,15 @@ public:
 
     static Style *Get(hStyle hs);
     static RgbaColor Color(hStyle hs, bool forExport=false);
+    static RgbaColor Color(int hs, bool forExport=false);
     static RgbaColor FillColor(hStyle hs, bool forExport=false);
     static double Width(hStyle hs);
-    static RgbaColor Color(int hs, bool forExport=false);
     static double Width(int hs);
     static double WidthMm(int hs);
     static double TextHeight(hStyle hs);
     static double DefaultTextHeight();
+    static Canvas::Stroke Stroke(hStyle hs);
+    static Canvas::Stroke Stroke(int hs);
     static bool Exportable(int hs);
     static hStyle ForEntity(hEntity he);
     static StipplePattern PatternType(hStyle hs);

@@ -529,10 +529,8 @@ void Group::Draw(Canvas *canvas) {
     DrawMesh(DrawMeshAs::DEFAULT, canvas);
 
     if(SS.GW.showEdges) {
-        Canvas::Stroke strokeEdge = {};
+        Canvas::Stroke strokeEdge = Style::Stroke(Style::SOLID_EDGE);
         strokeEdge.zIndex = 1;
-        strokeEdge.color  = Style::Color(Style::SOLID_EDGE);
-        strokeEdge.width  = Style::Width(Style::SOLID_EDGE);
         Canvas::hStroke hcsEdge = canvas->GetStroke(strokeEdge);
 
         canvas->DrawOutlines(displayOutlines, hcsEdge,
@@ -541,11 +539,8 @@ void Group::Draw(Canvas *canvas) {
                              : Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
 
         if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
-            Canvas::Stroke strokeHidden = strokeEdge;
+            Canvas::Stroke strokeHidden = Style::Stroke(Style::HIDDEN_EDGE);
             strokeHidden.layer  = Canvas::Layer::OCCLUDED;
-            strokeHidden.width = Style::Width(Style::HIDDEN_EDGE);
-            strokeHidden.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });
-            strokeHidden.stippleScale   = Style::StippleScaleMm({ Style::HIDDEN_EDGE });
             Canvas::hStroke hcsHidden = canvas->GetStroke(strokeHidden);
 
             canvas->DrawOutlines(displayOutlines, hcsHidden,
@@ -568,14 +563,13 @@ void Group::Draw(Canvas *canvas) {
 void Group::DrawPolyError(Canvas *canvas) {
     const Camera &camera = canvas->GetCamera();
 
-    Canvas::Stroke strokeUnclosed = {};
-    strokeUnclosed.color = Style::Color(Style::DRAW_ERROR).WithAlpha(50);
-    strokeUnclosed.width = Style::Width(Style::DRAW_ERROR);
+    Canvas::Stroke strokeUnclosed = Style::Stroke(Style::DRAW_ERROR);
+    strokeUnclosed.color = strokeUnclosed.color.WithAlpha(50);
     Canvas::hStroke hcsUnclosed = canvas->GetStroke(strokeUnclosed);
 
-    Canvas::Stroke strokeError = {};
-    strokeError.layer    = Canvas::Layer::FRONT;
-    strokeError.color    = Style::Color(Style::DRAW_ERROR);
+    Canvas::Stroke strokeError = Style::Stroke(Style::DRAW_ERROR);
+    strokeError.layer = Canvas::Layer::FRONT;
+    strokeError.width = 0.0f;
     Canvas::hStroke hcsError = canvas->GetStroke(strokeError);
 
     double textHeight = Style::DefaultTextHeight() / camera.scale;

@@ -650,10 +650,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         c.Draw(Constraint::DrawAs::DEFAULT, canvas);
     }
 
-    Canvas::Stroke strokeAnalyze = {};
+    Canvas::Stroke strokeAnalyze = Style::Stroke(Style::ANALYZE);
     strokeAnalyze.layer = Canvas::Layer::FRONT;
-    strokeAnalyze.color = Style::Color(Style::ANALYZE);
-    strokeAnalyze.width = Style::Width(Style::ANALYZE);
     Canvas::hStroke hcsAnalyze = canvas->GetStroke(strokeAnalyze);
 
     // Draw the traced path, if one exists
@@ -662,9 +660,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     canvas->DrawEdges(tracedEdges, hcsAnalyze);
     tracedEdges.Clear();
 
-    Canvas::Stroke strokeError = {};
+    Canvas::Stroke strokeError = Style::Stroke(Style::DRAW_ERROR);
     strokeError.layer = Canvas::Layer::FRONT;
-    strokeError.color = Style::Color(Style::DRAW_ERROR);
     strokeError.width = 12;
     Canvas::hStroke hcsError = canvas->GetStroke(strokeError);
 
@@ -681,9 +678,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     }
     SK.GetGroup(activeGroup)->DrawMesh(Group::DrawMeshAs::SELECTED, canvas);
 
-    Canvas::Stroke strokeDatum = {};
+    Canvas::Stroke strokeDatum = Style::Stroke(Style::DATUM);
     strokeDatum.layer = Canvas::Layer::FRONT;
-    strokeDatum.color = Style::Color(Style::DATUM);
     strokeDatum.width = 1;
     Canvas::hStroke hcsDatum = canvas->GetStroke(strokeDatum);
 

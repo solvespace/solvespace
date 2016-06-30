@@ -509,11 +509,9 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         case DrawAs::HOVERED:  color = Style::Color(Style::HOVERED);    break;
         case DrawAs::SELECTED: color = Style::Color(Style::SELECTED);   break;
     }
-
-    Canvas::Stroke stroke = {};
+    Canvas::Stroke stroke = Style::Stroke(GetStyle());
     stroke.layer    = Canvas::Layer::FRONT;
     stroke.color    = color;
-    stroke.width    = Style::Width(GetStyle());
     stroke.zIndex   = 4;
     Canvas::hStroke hcs = canvas->GetStroke(stroke);
 

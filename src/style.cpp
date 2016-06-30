@@ -282,6 +282,23 @@ double Style::DefaultTextHeight() {
 }
 
 //-----------------------------------------------------------------------------
+// Return the parameters of this style, as a canvas stroke.
+//-----------------------------------------------------------------------------
+Canvas::Stroke Style::Stroke(hStyle hs) {
+    Canvas::Stroke stroke = {};
+    Style *style = Style::Get(hs);
+    stroke.color = style->color;
+    stroke.stipplePattern = style->stippleType;
+    stroke.stippleScale = Style::StippleScaleMm(hs);
+    stroke.width = Style::Width(hs.v);
+    return stroke;
+}
+
+Canvas::Stroke Style::Stroke(int hsv) {
+    return Style::Stroke(hStyle{hsv});
+}
+
+//-----------------------------------------------------------------------------
 // Should lines and curves from this style appear in the output file? Only
 // if it's both shown and exportable.
 //-----------------------------------------------------------------------------
@@ -892,4 +909,3 @@ void TextWindow::ShowStyleInfo() {
 void TextWindow::ScreenAssignSelectionToStyle(int link, uint32_t v) {
     Style::AssignSelectionToStyle(v);
 }
-
