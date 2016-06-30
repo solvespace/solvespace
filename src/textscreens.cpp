@@ -61,6 +61,7 @@ void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         g->visible = state;
     }
+    SS.GW.persistentDirty = true;
 }
 void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
     SS.GW.activeGroup.v = v;

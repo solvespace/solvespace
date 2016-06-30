@@ -50,6 +50,8 @@ public:
     Vector      lightDirection[2];
 };
 
+class BatchCanvas;
+
 // An interface for populating a drawing area with geometry.
 class Canvas {
 public:
@@ -162,9 +164,11 @@ public:
                             const Vector &o, const Vector &u, const Vector &v,
                             const Point2d &ta, const Point2d &tb, hFill hcf) = 0;
     virtual void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) = 0;
+
+    virtual std::shared_ptr<BatchCanvas> CreateBatch();
 };
 
-// An interface for view-dependent visualization
+// An interface for view-dependent visualization.
 class ViewportCanvas : public Canvas {
 public:
     virtual void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) = 0;
@@ -175,6 +179,15 @@ public:
     virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
 
     virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;
+};
+
+// An interface for view-independent visualization.
+class BatchCanvas : public Canvas {
+public:
+    const Camera &GetCamera() const override;
+
+    virtual void Finalize() = 0;
+    virtual void Draw() = 0;
 };
 
 // A wrapper around Canvas that simplifies drawing UI in screen coordinates.

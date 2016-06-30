@@ -491,6 +491,7 @@ void TextWindow::ScreenChangeStylePatternType(int link, uint32_t v) {
     hStyle hs = { v };
     Style *s = Style::Get(hs);
     s->stippleType = (StipplePattern)(link - 1);
+    SS.GW.persistentDirty = true;
 }
 
 void TextWindow::ScreenChangeStyleMetric(int link, uint32_t v) {
@@ -639,6 +640,7 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
             s->textOrigin = (Style::TextOrigin)((uint32_t)s->textOrigin |  (uint32_t)Style::TextOrigin::TOP);
             break;
     }
+    SS.GW.persistentDirty = true;
     InvalidateGraphics();
 }
 
@@ -721,6 +723,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
         }
         default: return false;
     }
+    SS.GW.persistentDirty = true;
     return true;
 }
 

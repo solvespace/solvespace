@@ -211,6 +211,18 @@ Canvas::hFill Canvas::GetFill(const Fill &fill) {
     return fills.AddAndAssignId(&fillCopy);
 }
 
+std::shared_ptr<BatchCanvas> Canvas::CreateBatch() {
+    return std::shared_ptr<BatchCanvas>();
+}
+
+//-----------------------------------------------------------------------------
+// An interface for view-independent visualization
+//-----------------------------------------------------------------------------
+
+const Camera &BatchCanvas::GetCamera() const {
+    ssassert(false, "Geometry drawn on BatchCanvas must be independent from camera");
+}
+
 //-----------------------------------------------------------------------------
 // A wrapper around Canvas that simplifies drawing UI in screen coordinates
 //-----------------------------------------------------------------------------

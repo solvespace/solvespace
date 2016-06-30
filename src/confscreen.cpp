@@ -80,6 +80,7 @@ void TextWindow::ScreenChangeFixExportColors(int link, uint32_t v) {
 
 void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     SS.drawBackFaces = !SS.drawBackFaces;
+    SS.GW.persistentDirty = true;
     InvalidateGraphics();
 }
 

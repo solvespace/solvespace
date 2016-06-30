@@ -562,12 +562,9 @@ void GraphicsWindow::DrawSnapGrid(Canvas *canvas) {
     }
 }
 
-void GraphicsWindow::DrawPersistent(Canvas *canvas) {
-    // Draw the active group; this does stuff like the mesh and edges.
-    SK.GetGroup(activeGroup)->Draw(canvas);
-
-    // Now draw the entities.
+void GraphicsWindow::DrawEntities(Canvas *canvas, bool persistent) {
     for(Entity &e : SK.entity) {
+        if(persistent == (e.IsNormal() || e.IsWorkplane())) continue;
         switch(SS.GW.drawOccludedAs) {
             case DrawOccludedAs::VISIBLE:
                 e.Draw(Entity::DrawAs::OVERLAY, canvas);
@@ -581,6 +578,14 @@ void GraphicsWindow::DrawPersistent(Canvas *canvas) {
                 break;
         }
     }
+}
+
+void GraphicsWindow::DrawPersistent(Canvas *canvas) {
+    // Draw the active group; this does stuff like the mesh and edges.
+    SK.GetGroup(activeGroup)->Draw(canvas);
+
+    // Now draw the entities that don't change with viewport.
+    DrawEntities(canvas, /*persistent=*/true);
 
     // Draw filled paths in all groups, when those filled paths were requested
     // specially by assigning a style with a fill color, or when the filled
@@ -629,7 +634,22 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     if(showSnapGrid) DrawSnapGrid(canvas);
 
     // Draw all the things that don't change when we rotate.
-    DrawPersistent(canvas);
+    if(persistentCanvas != NULL) {
+        if(persistentDirty) {
+            persistentDirty = false;
+
+            persistentCanvas->Clear();
+            DrawPersistent(&*persistentCanvas);
+            persistentCanvas->Finalize();
+        }
+
+        persistentCanvas->Draw();
+    } else {
+        DrawPersistent(canvas);
+    }
+
+    // Draw the entities that do change with viewport.
+    DrawEntities(canvas, /*persistent=*/false);
 
     // Draw the polygon errors.
     if(SS.checkClosedContour) {

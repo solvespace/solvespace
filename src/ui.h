@@ -501,6 +501,8 @@ public:
     static void MenuClipboard(Command id);
 
     std::shared_ptr<ViewportCanvas> canvas;
+    std::shared_ptr<BatchCanvas>    persistentCanvas;
+    bool persistentDirty;
 
     // The width and height (in pixels) of the window.
     double width, height;
@@ -738,6 +740,7 @@ public:
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
+    void DrawEntities(Canvas *canvas, bool persistent);
     void DrawPersistent(Canvas *canvas);
     void Draw(Canvas *canvas);
 

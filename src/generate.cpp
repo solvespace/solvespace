@@ -352,6 +352,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
     FreeAllTemporary();
     allConsistent = true;
+    SS.GW.persistentDirty = true;
+
     endMillis = GetMilliseconds();
 
     if(endMillis - startMillis > 30) {
