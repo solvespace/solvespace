@@ -532,7 +532,12 @@ public:
             (int)((bgra)       & 0xff),
             (int)(255 - ((bgra >> 24) & 0xff)));
     }
+};
 
+struct RgbaColorCompare {
+    bool operator()(RgbaColor a, RgbaColor b) const {
+        return a.ToARGB32() < b.ToARGB32();
+    }
 };
 
 class BBox {

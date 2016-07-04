@@ -7,6 +7,8 @@ Changelog
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
     use the current viewport projection.
+  * Wavefront OBJ: a material file is exported alongside the model, containing
+    mesh color information.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows

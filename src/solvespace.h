@@ -815,7 +815,7 @@ public:
     void ExportAsPngTo(const std::string &filename);
     void ExportMeshTo(const std::string &filename);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
-    void ExportMeshAsObjTo(FILE *f, SMesh *sm);
+    void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
                                SMesh *sm, SOutlineList *sol);
     void ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe);

@@ -816,7 +816,18 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
     if(FilenameHasExtension(filename, ".stl")) {
         ExportMeshAsStlTo(f, m);
     } else if(FilenameHasExtension(filename, ".obj")) {
-        ExportMeshAsObjTo(f, m);
+        std::string mtlFilename = filename.substr(0, filename.length() - 4) + ".mtl";
+        FILE *fMtl = ssfopen(mtlFilename, "wb");
+        if(!fMtl) {
+            Error("Couldn't write to '%s'", filename.c_str());
+            return;
+        }
+
+        std::string mtlBasename = mtlFilename.substr(mtlFilename.rfind(PATH_SEP) + 1);
+        fprintf(f, "mtllib %s\n", mtlBasename.c_str());
+        ExportMeshAsObjTo(f, fMtl, m);
+
+        fclose(fMtl);
     } else if(FilenameHasExtension(filename, ".js") ||
               FilenameHasExtension(filename, ".html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
@@ -872,34 +883,51 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 // Export the mesh as Wavefront OBJ format. This requires us to reduce all the
 // identical vertices to the same identifier, so do that first.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportMeshAsObjTo(FILE *f, SMesh *sm) {
-    SPointList spl = {};
-    STriangle *tr;
-    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
-        spl.IncrementTagFor(tr->a);
-        spl.IncrementTagFor(tr->b);
-        spl.IncrementTagFor(tr->c);
+void SolveSpaceUI::ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm) {
+    std::map<RgbaColor, std::string, RgbaColorCompare> colors;
+    for(const STriangle &t : sm->l) {
+        RgbaColor color = t.meta.color;
+        if(colors.find(color) == colors.end()) {
+            std::string id = ssprintf("h%02x%02x%02x",
+                                      color.red,
+                                      color.green,
+                                      color.blue);
+            colors.emplace(color, id);
+        }
+        for(int i = 0; i < 3; i++) {
+            fprintf(fObj, "v %.10f %.10f %.10f\n",
+                    CO(t.vertices[i].ScaledBy(1 / SS.exportScale)));
+        }
     }
 
-    // Output all the vertices.
-    SPoint *sp;
-    for(sp = spl.l.First(); sp; sp = spl.l.NextAfter(sp)) {
-        fprintf(f, "v %.10f %.10f %.10f\r\n",
-                        sp->p.x / SS.exportScale,
-                        sp->p.y / SS.exportScale,
-                        sp->p.z / SS.exportScale);
+    for(auto &it : colors) {
+        fprintf(fMtl, "newmtl %s\n",
+                it.second.c_str());
+        fprintf(fMtl, "Kd %.3f %.3f %.3f\n",
+                it.first.redF(), it.first.greenF(), it.first.blueF());
     }
 
-    // And now all the triangular faces, in terms of those vertices. The
-    // file format counts from 1, not 0.
-    for(tr = sm->l.First(); tr; tr = sm->l.NextAfter(tr)) {
-        fprintf(f, "f %d %d %d\r\n",
-                        spl.IndexForPoint(tr->a) + 1,
-                        spl.IndexForPoint(tr->b) + 1,
-                        spl.IndexForPoint(tr->c) + 1);
+    for(const STriangle &t : sm->l) {
+        for(int i = 0; i < 3; i++) {
+            Vector n = t.normals[i].WithMagnitude(1.0);
+            fprintf(fObj, "vn %.10f %.10f %.10f\n",
+                    CO(n));
+        }
     }
 
-    spl.Clear();
+    RgbaColor currentColor = {};
+    for(int i = 0; i < sm->l.n; i++) {
+        const STriangle &t = sm->l.elem[i];
+        if(!currentColor.Equals(t.meta.color)) {
+            currentColor = t.meta.color;
+            fprintf(fObj, "usemtl %s\n", colors[currentColor].c_str());
+        }
+
+        fprintf(fObj, "f %d//%d %d//%d %d//%d\n",
+                i * 3 + 1, i * 3 + 1,
+                i * 3 + 2, i * 3 + 2,
+                i * 3 + 3, i * 3 + 3);
+    }
 }
 
 //-----------------------------------------------------------------------------
