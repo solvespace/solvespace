@@ -261,6 +261,9 @@ void Constraint::DoLineWithArrows(Vector ref, Vector a, Vector b,
     LineDrawOrGetDistance(a, ae.Plus(out.WithMagnitude(10*pixels)));
     if(!onlyOneExt) {
         LineDrawOrGetDistance(b, be.Plus(out.WithMagnitude(10*pixels)));
+    } else {
+        Vector prj = be;
+        DoProjectedPoint(&prj);
     }
 
     int within = DoLineTrimmedAgainstBox(ref, ae, be);
