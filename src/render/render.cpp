@@ -346,10 +346,10 @@ void ObjectPicker::DrawQuad(const Vector &a, const Vector &b, const Vector &c, c
     DoQuad(a, b, c, d, fill->zIndex);
 }
 
-void ObjectPicker::DrawPoint(const Vector &o, double s, hFill hcf) {
-    Fill *fill = fills.FindById(hcf);
-    double distance = point.DistanceTo(camera.ProjectPoint(o)) - s / 2;
-    DoCompare(distance, fill->zIndex);
+void ObjectPicker::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
+    Stroke *stroke = strokes.FindById(hcs);
+    double distance = point.DistanceTo(camera.ProjectPoint(o)) - stroke->width / 2;
+    DoCompare(distance, stroke->zIndex);
 }
 
 void ObjectPicker::DrawPolygon(const SPolygon &p, hFill hcf) {

@@ -501,9 +501,17 @@ void OpenGl1Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c
     ssglVertex3v(d);
 }
 
-void OpenGl1Renderer::DrawPoint(const Vector &o, double s, hFill hcf) {
-    Vector r = camera.projRight.ScaledBy(s/camera.scale);
-    Vector u = camera.projUp.ScaledBy(s/camera.scale);
+void OpenGl1Renderer::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
+    Stroke *stroke = SelectStroke(hcs);
+
+    Canvas::Fill fill = {};
+    fill.layer  = stroke->layer;
+    fill.zIndex = stroke->zIndex;
+    fill.color  = stroke->color;
+    hFill hcf = GetFill(fill);
+
+    Vector r = camera.projRight.ScaledBy(stroke->width/2.0/camera.scale);
+    Vector u = camera.projUp.ScaledBy(stroke->width/2.0/camera.scale);
     Vector a = o.Plus (r).Plus (u),
            b = o.Plus (r).Minus(u),
            c = o.Minus(r).Minus(u),

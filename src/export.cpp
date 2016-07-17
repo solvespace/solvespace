@@ -143,7 +143,7 @@ public:
     void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override {
         ssassert(false, "Not implemented");
     }
-    void DrawPoint(const Vector &o, double d, hFill hcf) override {
+    void DrawPoint(const Vector &o, hStroke hcs) override {
         ssassert(false, "Not implemented");
     }
     void DrawPolygon(const SPolygon &p, hFill hcf) override {

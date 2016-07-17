@@ -104,9 +104,17 @@ void SurfaceRenderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c
     mesh.AddTriangle(meta, ta, td, tc);
 }
 
-void SurfaceRenderer::DrawPoint(const Vector &o, double s, hFill hcf) {
-    Vector u = camera.projRight.ScaledBy(1 / camera.scale * s),
-           v = camera.projUp.ScaledBy(1 / camera.scale * s);
+void SurfaceRenderer::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
+    Stroke *stroke = strokes.FindById(hcs);
+
+    Fill fill = {};
+    fill.layer  = stroke->layer;
+    fill.zIndex = stroke->zIndex;
+    fill.color  = stroke->color;
+    hFill hcf = GetFill(fill);
+
+    Vector u = camera.projRight.ScaledBy(stroke->width/2.0/camera.scale),
+           v = camera.projUp.ScaledBy(stroke->width/2.0/camera.scale);
     DrawQuad(o.Minus(u).Minus(v), o.Minus(u).Plus(v),
              o.Plus(u).Plus(v),   o.Plus(u).Minus(v), hcf);
 }

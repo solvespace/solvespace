@@ -140,7 +140,7 @@ public:
 
     virtual void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                           hFill hcf) = 0;
-    virtual void DrawPoint(const Vector &o, double d, hFill hcf) = 0;
+    virtual void DrawPoint(const Vector &o, hStroke hcs) = 0;
     virtual void DrawPolygon(const SPolygon &p, hFill hcf) = 0;
     virtual void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {},
                           hStroke hcsTriangles = {}) = 0;
@@ -196,7 +196,7 @@ public:
 
     void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                   hFill hcf) override;
-    void DrawPoint(const Vector &o, double s, hFill hcf) override;
+    void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
     void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
@@ -244,7 +244,7 @@ public:
 
     void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                   hFill hcf) override;
-    void DrawPoint(const Vector &o, double s, hFill hcf) override;
+    void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
     void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
@@ -347,7 +347,7 @@ public:
 
     void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                   hFill hcf) override;
-    void DrawPoint(const Vector &o, double s, hFill hcf) override;
+    void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
     void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
