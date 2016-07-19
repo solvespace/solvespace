@@ -1589,9 +1589,8 @@ int main(int argc, char** argv) {
     /* Are we running from a build directory, as opposed to a global install? */
     if(std::string(argv[0]).find('/') != std::string::npos) {
         resource_dir = argv[0]; // .../src/solvespace
-        resource_dir.erase(resource_dir.rfind('/'));
-        resource_dir.erase(resource_dir.rfind('/'));
-        resource_dir += "/res"; // .../res
+        resource_dir.erase(resource_dir.rfind('/')+1);
+        resource_dir += "../res"; // .../res
     }
 
     Gtk::Main main(argc, argv);
