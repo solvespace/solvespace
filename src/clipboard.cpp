@@ -212,9 +212,24 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.reference = cc->reference;
         c.disp = cc->disp;
         c.comment = cc->comment;
+        switch(c.type) {
+            case Constraint::COMMENT:
+                c.disp.offset = c.disp.offset.Plus(trans);
+                break;
+
+            case Constraint::PT_PT_DISTANCE:
+            case Constraint::PT_LINE_DISTANCE:
+            case Constraint::PROJ_PT_DISTANCE:
+            case Constraint::DIAMETER:
+                c.valA *= fabs(scale);
+                break;
+
+            default:
+                break;
+        }
+
         hConstraint hc = Constraint::AddConstraint(&c, /*rememberForUndo=*/false);
         if(c.type == Constraint::COMMENT) {
-            SK.GetConstraint(hc)->disp.offset = SK.GetConstraint(hc)->disp.offset.Plus(trans);
             MakeSelected(hc);
         }
     }

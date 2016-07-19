@@ -15,6 +15,7 @@ Bug fixes:
   * Three.js: correctly respond to controls when browser zoom is used.
   * OS X: do not completely hide main window when defocused.
   * GTK: unbreak 3Dconnexion support.
+  * When pasting transformed entities, multiply constraint values by scale.
 
 2.1
 ---
