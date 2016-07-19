@@ -1536,11 +1536,13 @@ const void *LoadResource(const std::string &name, size_t *size) {
         struct stat st;
         std::string path;
 
-        path = (UNIX_DATADIR "/") + name;
-        if(stat(path.c_str(), &st)) {
-            ssassert(errno == ENOENT, "Unexpected stat() error");
-            ssassert(!resource_dir.empty(), "Expected local resource directory to be set");
+        if(resource_dir.empty()) {
+            path = (UNIX_DATADIR "/") + name;
+        } else {
             path = resource_dir + "/" + name;
+        }
+
+        if(stat(path.c_str(), &st)) {
             ssassert(!stat(path.c_str(), &st), "Cannot find resource");
         }
 
