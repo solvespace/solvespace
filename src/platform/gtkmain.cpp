@@ -1458,7 +1458,6 @@ bool TextEditControlIsVisible(void) {
 
 /* Miscellanea */
 
-
 void DoMessageBox(const char *message, int rows, int cols, bool error) {
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true,
                               error ? Gtk::MESSAGE_ERROR : Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK,
@@ -1493,7 +1492,42 @@ std::vector<std::string> GetFontFiles() {
     return fonts;
 }
 
+std::string ExpandPath(std::string path) {
+    char *expanded_c_path = realpath(path.c_str(), NULL);
+    if(expanded_c_path == NULL) {
+        fprintf(stderr, "realpath(%s): %s\n", path.c_str(), strerror(errno));
+        return "";
+    }
+    std::string expanded_path = expanded_c_path;
+    free(expanded_c_path);
+    return expanded_path;
+}
+
 static std::string resource_dir;
+void FindLocalResourceDir(const char *argv0) {
+    // Getting path to your own executable is a total portability disaster.
+    // Good job *nix OSes; you're basically all awful here.
+    std::string self_path;
+#if defined(__linux__)
+    self_path = "/proc/self/exe";
+#elif defined(__NetBSD__)
+    self_path = "/proc/curproc/exe"
+#elif defined(__OpenBSD__)
+    self_path = "/proc/curproc/file";
+#else
+    self_path = argv0;
+#endif
+
+    resource_dir = ExpandPath(self_path);
+    if(resource_dir.empty()) {
+        fprintf(stderr, "Cannot determine path to executable; using global resources.\n");
+        return;
+    }
+    resource_dir.erase(resource_dir.rfind('/'));
+    resource_dir += "/../res";
+    resource_dir = ExpandPath(resource_dir);
+}
+
 const void *LoadResource(const std::string &name, size_t *size) {
     static std::map<std::string, std::vector<uint8_t>> cache;
 
@@ -1586,13 +1620,8 @@ int main(int argc, char** argv) {
        ambiguous. */
     gtk_disable_setlocale();
 
-    /* Are we running from a build directory, as opposed to a global install? */
-    if(std::string(argv[0]).find('/') != std::string::npos) {
-        resource_dir = argv[0]; // .../src/solvespace
-        resource_dir.erase(resource_dir.rfind('/'));
-        resource_dir.erase(resource_dir.rfind('/'));
-        resource_dir += "/res"; // .../res
-    }
+    /* If we're running from the build directory, grab the local resources. */
+    FindLocalResourceDir(argv[0]);
 
     Gtk::Main main(argc, argv);
 
