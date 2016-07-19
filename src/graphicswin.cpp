@@ -910,7 +910,9 @@ void GraphicsWindow::MenuEdit(Command id) {
                     SS.MarkGroupDirty(ep->group);
                 } else if(s->constraint.v) {
                     Constraint *c = SK.GetConstraint(s->constraint);
-                    c->disp.offset = SS.GW.SnapToGrid(c->disp.offset);
+                    Vector refp[2];
+                    c->GetReferencePos(refp);
+                    c->disp.offset = c->disp.offset.Plus(SS.GW.SnapToGrid(refp[0]).Minus(refp[0]));
                 }
             }
             // Regenerate, with these points marked as dragged so that they
