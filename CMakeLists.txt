@@ -187,6 +187,7 @@ elseif(APPLE)
     find_package(Freetype REQUIRED)
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
 else() # Linux and compatible systems
+    find_package(Backtrace)
     find_package(SpaceWare)
 
     # Use freedesktop's pkg-config to locate everything.

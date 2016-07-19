@@ -31,6 +31,7 @@ void assert_failure(const char *file, unsigned line, const char *function,
     fprintf(stderr, "File %s, line %u, function %s:\n", file, line, function);
     fprintf(stderr, "Assertion '%s' failed: ((%s) == false).\n", message, condition);
 
+#ifndef LIBRARY
     static void *ptrs[1024] = {};
     size_t nptrs = backtrace(ptrs, sizeof(ptrs) / sizeof(ptrs[0]));
     char **syms = backtrace_symbols(ptrs, nptrs);
@@ -45,6 +46,7 @@ void assert_failure(const char *file, unsigned line, const char *function,
             fprintf(stderr, "%2zu: %p\n", i, ptrs[i]);
         }
     }
+#endif
 
     abort();
 }

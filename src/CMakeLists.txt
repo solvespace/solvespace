@@ -216,6 +216,11 @@ if(SPACEWARE_FOUND)
         ${SPACEWARE_LIBRARIES})
 endif()
 
+if(Backtrace_FOUND)
+    target_link_libraries(solvespace
+        ${Backtrace_LIBRARIES})
+endif()
+
 if(APPLE)
     foreach(lib ${platform_BUNDLED_LIBS})
         get_filename_component(name ${lib} NAME)
