@@ -70,17 +70,6 @@ std::string CnfThawString(const std::string &val, const std::string &key) {
 
 /* Timer */
 
-int64_t SolveSpace::GetMilliseconds(void) {
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-
-    host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &cclock);
-    clock_get_time(cclock, &mts);
-    mach_port_deallocate(mach_task_self(), cclock);
-
-    return mts.tv_sec * 1000 + mts.tv_nsec / 1000000;
-}
-
 @interface DeferredHandler : NSObject
 + (void) runLater:(id)dummy;
 + (void) runCallback;
@@ -1363,7 +1352,7 @@ static void connexionClose() {
 
     unregisterConnexionClient(connexionClient);
     cleanupConnexionHandlers();
-    
+
     CFRelease(spaceBundle);
 }
 

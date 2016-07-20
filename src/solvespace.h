@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <chrono>
 #ifdef WIN32
 #   include <windows.h> // required by GL headers
 #endif

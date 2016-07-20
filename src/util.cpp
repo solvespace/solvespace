@@ -61,6 +61,12 @@ bool SolveSpace::FilenameHasExtension(const std::string &str, const char *ext)
     return true;
 }
 
+int64_t SolveSpace::GetMilliseconds()
+{
+    auto timestamp = std::chrono::steady_clock::now().time_since_epoch();
+    return std::chrono::duration_cast<std::chrono::milliseconds>(timestamp).count();
+}
+
 void SolveSpace::MakeMatrix(double *mat,
                             double a11, double a12, double a13, double a14,
                             double a21, double a22, double a23, double a24,

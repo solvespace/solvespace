@@ -772,15 +772,6 @@ bool SolveSpace::FullScreenIsActive()
     return false;
 }
 
-int64_t SolveSpace::GetMilliseconds()
-{
-    LARGE_INTEGER t, f;
-    QueryPerformanceCounter(&t);
-    QueryPerformanceFrequency(&f);
-    LONGLONG d = t.QuadPart/(f.QuadPart/1000);
-    return (int64_t)d;
-}
-
 void SolveSpace::InvalidateText()
 {
     InvalidateRect(TextWnd, NULL, false);
