@@ -14,6 +14,12 @@ New sketch features:
     constraining the width of text.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
+  * When clicking on an entity that shares a place with other entities,
+    the entity from the current group is selected.
+  * When dragging an entity that shares a place with other entities,
+    the entity from a request is selected. For example, dragging a point on
+    a face of an extrusion coincident with the source sketch plane will
+    drag the point from the source sketch.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

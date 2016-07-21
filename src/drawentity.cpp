@@ -446,7 +446,9 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     if(!IsVisible()) return;
 
     int zIndex;
-    if(how == DrawAs::HIDDEN) {
+    if(IsPoint()) {
+        zIndex = 5;
+    } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
     } else if(group.v != SS.GW.activeGroup.v) {
         zIndex = 3;
@@ -494,7 +496,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
     Canvas::Stroke pointStroke = {};
     pointStroke.layer  = stroke.layer;
-    pointStroke.zIndex = IsPoint() ? zIndex + 1 : 0;
+    pointStroke.zIndex = stroke.zIndex;
     pointStroke.color  = stroke.color;
     pointStroke.width  = 7.0;
     pointStroke.unit   = Canvas::Unit::PX;

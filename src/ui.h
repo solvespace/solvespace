@@ -645,7 +645,7 @@ public:
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
 
-    // The current selection.
+    // A selected entity.
     class Selection {
     public:
         int         tag;
@@ -661,9 +661,22 @@ public:
         bool Equals(Selection *b);
         bool HasEndpoints();
     };
+
+    // A hovered entity, with its location relative to the cursor.
+    class Hover {
+    public:
+        int         zIndex;
+        double      distance;
+        Selection   selection;
+    };
+
+    List<Hover> hoverList;
     Selection hover;
     bool hoverWasSelectedOnMousedown;
     List<Selection> selection;
+
+    Selection ChooseFromHoverToSelect();
+    Selection ChooseFromHoverToDrag();
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection();
     void ClearNonexistentSelectionItems();

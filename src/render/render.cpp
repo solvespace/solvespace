@@ -439,6 +439,8 @@ void ObjectPicker::DrawPixmap(std::shared_ptr<const Pixmap> pm,
 
 bool ObjectPicker::Pick(std::function<void()> drawFn) {
     minDistance = VERY_POSITIVE;
+    maxZIndex = INT_MIN;
+
     drawFn();
     return minDistance < selRadius;
 }
