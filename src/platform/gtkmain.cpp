@@ -378,7 +378,7 @@ public:
            in absolute sizes; modify_font does on GTK2. */
         Pango::FontDescription override_font_desc(font_desc);
         double dpi = get_screen()->get_resolution();
-        override_font_desc.set_size(font_height * (int)(72.0 / dpi) * Pango::SCALE);
+        override_font_desc.set_size(font_height * 72.0 / dpi * Pango::SCALE);
         _entry.override_font(override_font_desc);
 #else
         _entry.modify_font(font_desc);
