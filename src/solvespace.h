@@ -293,6 +293,14 @@ void vl(); // debug function to validate heaps
 // End of platform-specific functions
 //================
 
+template<class T>
+struct CompareHandle {
+    bool operator()(T lhs, T rhs) const { return lhs.v < rhs.v; }
+};
+
+template<class Key, class T>
+using handle_map = std::map<Key, T, CompareHandle<Key>>;
+
 class Group;
 class SSurface;
 #include "dsc.h"

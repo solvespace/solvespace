@@ -50,7 +50,7 @@ public:
     List<SEdge>     l;
 
     void Clear();
-    void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0);
+    void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0, int tag=0);
     bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
     bool AssembleContour(Vector first, Vector last, SContour *dest,
                             SEdge *errorAt, bool keepDir) const;
@@ -226,7 +226,7 @@ public:
     SBsp2       *edges;
 
     static SBsp3 *Alloc();
-    static SBsp3 *FromMesh(SMesh *m);
+    static SBsp3 *FromMesh(const SMesh *m);
 
     Vector IntersectionWith(Vector a, Vector b) const;
 
@@ -342,8 +342,8 @@ public:
                               bool *inter, bool *leaky, int auxA = 0) const;
     void MakeOutlinesInto(SOutlineList *sel, EdgeKind tagKind) const;
 
-    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) const;
-    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) const;
+    void OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) const;
+    void SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) const;
 
     void SnapToMesh(SMesh *m);
     void SnapToVertex(Vector v, SMesh *extras);

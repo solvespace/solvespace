@@ -11,7 +11,7 @@
 SBsp2 *SBsp2::Alloc() { return (SBsp2 *)AllocTemporary(sizeof(SBsp2)); }
 SBsp3 *SBsp3::Alloc() { return (SBsp3 *)AllocTemporary(sizeof(SBsp3)); }
 
-SBsp3 *SBsp3::FromMesh(SMesh *m) {
+SBsp3 *SBsp3::FromMesh(const SMesh *m) {
     SBsp3 *bsp3 = NULL;
     int i;
 

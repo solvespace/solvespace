@@ -648,10 +648,10 @@ void SKdNode::SnapToMesh(SMesh *m) {
 
 //-----------------------------------------------------------------------------
 // For all the edges in sel, split them against the given triangle, and test
-// them for occlusion. Keep only the visible segments. sel is both our input
-// and our output.
+// them for occlusion. sel is both our input and our output. tag indicates
+// whether an edge is occluded.
 //-----------------------------------------------------------------------------
-void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool removeHidden) const {
+void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr) const {
     SEdgeList seln = {};
 
     Vector tn = tr->Normal().WithMagnitude(1);
@@ -661,7 +661,8 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool remo
     if(tn.z > LENGTH_EPS) {
         // If the edge crosses our triangle's plane, then split into above
         // and below parts. Note that we must preserve auxA, which contains
-        // the style associated with this line.
+        // the style associated with this line, as well as the tag, which
+        // contains the occlusion status.
         SEdge *se;
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
             double da = (se->a).Dot(tn) - td,
@@ -672,12 +673,12 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool remo
                 Vector m = Vector::AtIntersectionOfPlaneAndLine(
                                         tn, td,
                                         se->a, se->b, NULL);
-                seln.AddEdge(m, se->b, se->auxA);
+                seln.AddEdge(m, se->b, se->auxA, 0, se->tag);
                 se->b = m;
             }
         }
         for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
-            sel->AddEdge(se->a, se->b, se->auxA);
+            sel->AddEdge(se->a, se->b, se->auxA, 0, se->tag);
         }
         seln.Clear();
 
@@ -723,48 +724,49 @@ void SKdNode::SplitLinesAgainstTriangle(SEdgeList *sel, STriangle *tr, bool remo
                     double dab = (db - da);
                     Vector spl = ((se->a).ScaledBy( db/dab)).Plus(
                                   (se->b).ScaledBy(-da/dab));
-                    seln.AddEdge(spl, se->b, se->auxA);
+                    seln.AddEdge(spl, se->b, se->auxA, 0, se->tag);
                     se->b = spl;
                 }
             }
             for(se = seln.l.First(); se; se = seln.l.NextAfter(se)) {
                 // The split pieces are all behind the triangle, since only
                 // edges behind the triangle got split. So their auxB is 0.
-                sel->AddEdge(se->a, se->b, se->auxA, 0);
+                sel->AddEdge(se->a, se->b, se->auxA, 0, se->tag);
             }
             seln.Clear();
         }
 
         for(se = sel->l.First(); se; se = sel->l.NextAfter(se)) {
+            bool occluded;
             if(se->auxB) {
                 // Lies above or on the triangle plane, so triangle doesn't
                 // occlude it.
-                se->tag = 0;
+                occluded = false;
             } else {
                 // Test the segment to see if it lies outside the triangle
                 // (i.e., outside wrt at least one edge), and keep it only
                 // then.
                 Point2d pt = ((se->a).Plus(se->b).ScaledBy(0.5)).ProjectXy();
-                se->tag = 1;
+                occluded = true;
                 for(i = 0; i < 3; i++) {
                     // If the test point lies on the boundary of our triangle,
                     // then we still discard the edge.
-                    if(n[i].Dot(pt) - d[i] > LENGTH_EPS) se->tag = 0;
+                    if(n[i].Dot(pt) - d[i] > LENGTH_EPS) occluded = false;
                 }
             }
-            if(!removeHidden && se->tag == 1)
-                se->auxA = Style::HIDDEN_EDGE;
+
+            if(occluded) {
+                se->tag = 1;
+            }
         }
-        if(removeHidden)
-            sel->l.RemoveTagged();
     }
 }
 
 //-----------------------------------------------------------------------------
 // Given an edge orig, occlusion test it against our mesh. We output an edge
-// list in sel, containing the visible portions of that edge.
+// list in sel, where only invisible portions of the edge are tagged.
 //-----------------------------------------------------------------------------
-void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool removeHidden) const {
+void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt) const {
     if(gt && lt) {
         double ac = (orig.a).Element(which),
                bc = (orig.b).Element(which);
@@ -774,13 +776,13 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool remove
            bc < c + KDTREE_EPS ||
            which == 2)
         {
-            lt->OcclusionTestLine(orig, sel, cnt, removeHidden);
+            lt->OcclusionTestLine(orig, sel, cnt);
         }
         if(ac > c - KDTREE_EPS ||
            bc > c - KDTREE_EPS ||
            which == 2)
         {
-            gt->OcclusionTestLine(orig, sel, cnt, removeHidden);
+            gt->OcclusionTestLine(orig, sel, cnt);
         }
     } else {
         STriangleLl *ll;
@@ -789,7 +791,7 @@ void SKdNode::OcclusionTestLine(SEdge orig, SEdgeList *sel, int cnt, bool remove
 
             if(tr->tag == cnt) continue;
 
-            SplitLinesAgainstTriangle(sel, tr, removeHidden);
+            SplitLinesAgainstTriangle(sel, tr);
             tr->tag = cnt;
         }
     }

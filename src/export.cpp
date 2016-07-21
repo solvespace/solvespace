@@ -407,7 +407,17 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
             SEdgeList edges = {};
             // Split the original edge against the mesh
             edges.AddEdge(se->a, se->b, se->auxA);
-            root->OcclusionTestLine(*se, &edges, cnt, /*removeHidden=*/!SS.GW.showHdnLines);
+            root->OcclusionTestLine(*se, &edges, cnt);
+            if(SS.GW.showHdnLines) {
+                for(SEdge &se : edges.l) {
+                    if(se.tag == 1) {
+                        se.auxA = Style::HIDDEN_EDGE;
+                    }
+                }
+            } else {
+                edges.l.RemoveTagged();
+            }
+
             // the occlusion test splits unnecessarily; so fix those
             edges.MergeCollinearSegments(se->a, se->b);
             cnt++;

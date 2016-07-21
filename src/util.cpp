@@ -1085,3 +1085,39 @@ bool BBox::Contains(const Point2d &p, double r) const {
            p.x <= (maxp.x + r) &&
            p.y <= (maxp.y + r);
 }
+
+std::vector<double> SolveSpace::StipplePatternDashes(StipplePattern pattern, double scale) {
+    // Inkscape ignores all elements that are exactly zero instead of drawing
+    // them as dots.
+    double zero = 1e-6;
+
+    std::vector<double> result;
+    switch(pattern) {
+        case StipplePattern::CONTINUOUS:
+            break;
+        case StipplePattern::SHORT_DASH:
+            result = { scale, scale * 2.0 };
+            break;
+        case StipplePattern::DASH:
+            result = { scale, scale };
+            break;
+        case StipplePattern::DASH_DOT:
+            result = { scale, scale * 0.5, zero, scale * 0.5 };
+            break;
+        case StipplePattern::DASH_DOT_DOT:
+            result = { scale, scale * 0.5, zero, scale * 0.5, scale * 0.5, zero };
+            break;
+        case StipplePattern::DOT:
+            result = { zero, scale * 0.5 };
+            break;
+        case StipplePattern::LONG_DASH:
+            result = { scale * 2.0, scale * 0.5 };
+            break;
+
+        case StipplePattern::FREEHAND:
+        case StipplePattern::ZIGZAG:
+            ssassert(false, "Freehand and zigzag export not implemented");
+    }
+
+    return result;
+}

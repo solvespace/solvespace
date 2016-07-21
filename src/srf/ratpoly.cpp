@@ -322,6 +322,38 @@ void SBezier::MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double
     }
 }
 
+void SBezier::MakeNonrationalCubicInto(SBezierList *bl, double tolerance, int depth) const {
+    Vector t0 = TangentAt(0), t1 = TangentAt(1);
+    // The curve is correct, and the first derivatives are correct, at the
+    // endpoints.
+    SBezier bnr = SBezier::From(
+                        Start(),
+                        Start().Plus(t0.ScaledBy(1.0/3)),
+                        Finish().Minus(t1.ScaledBy(1.0/3)),
+                        Finish());
+
+    bool closeEnough = true;
+    int i;
+    for(i = 1; i <= 3; i++) {
+        double t = i/4.0;
+        Vector p0 = PointAt(t),
+               pn = bnr.PointAt(t);
+        double d = (p0.Minus(pn)).Magnitude();
+        if(d > tolerance) {
+            closeEnough = false;
+        }
+    }
+
+    if(closeEnough || depth > 3) {
+        bl->l.Add(this);
+    } else {
+        SBezier bef, aft;
+        SplitAt(0.5, &bef, &aft);
+        bef.MakeNonrationalCubicInto(bl, tolerance, depth+1);
+        aft.MakeNonrationalCubicInto(bl, tolerance, depth+1);
+    }
+}
+
 Vector SSurface::PointAt(Point2d puv) const {
     return PointAt(puv.x, puv.y);
 }

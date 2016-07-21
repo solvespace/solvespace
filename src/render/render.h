@@ -7,6 +7,10 @@
 #ifndef SOLVESPACE_RENDER_H
 #define SOLVESPACE_RENDER_H
 
+//-----------------------------------------------------------------------------
+// Interfaces and utilities common for all renderers.
+//-----------------------------------------------------------------------------
+
 enum class StipplePattern : uint32_t;
 
 // A mapping from 3d sketch coordinates to 2d screen coordinates, using
@@ -30,6 +34,8 @@ public:
     Vector UnProjectPoint3(Vector p) const;
     Vector VectorFromProjs(Vector rightUpForward) const;
     Vector AlignToPixelGrid(Vector v) const;
+
+    SBezier ProjectBezier(SBezier b) const;
 
     void LoadIdentity();
     void NormalizeProjectionVectors();
@@ -203,6 +209,70 @@ public:
 
     bool Pick(std::function<void()> drawFn);
 };
+
+// A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,
+// on the CPU.
+class SurfaceRenderer : public Canvas {
+public:
+    Camera      camera;
+    Lighting    lighting;
+    // Chord tolerance, for converting beziers to pwl.
+    double      chordTolerance;
+    // Render lists.
+    handle_map<hStroke, SEdgeList>   edges;
+    handle_map<hStroke, SBezierList> beziers;
+    SMesh       mesh;
+    // State.
+    BBox        bbox;
+
+    SurfaceRenderer() : camera(), lighting(), chordTolerance(), mesh(), bbox() {}
+    virtual void Clear();
+
+    // Canvas interface.
+    const Camera &GetCamera() const override { return camera; }
+
+    void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
+    void DrawEdges(const SEdgeList &el, hStroke hcs) override;
+    bool DrawBeziers(const SBezierList &bl, hStroke hcs) override;
+    void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) override;
+    void DrawVectorText(const std::string &text, double height,
+                        const Vector &o, const Vector &u, const Vector &v,
+                        hStroke hcs) override;
+
+    void DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
+                  hFill hcf) override;
+    void DrawPoint(const Vector &o, double s, hFill hcf) override;
+    void DrawPolygon(const SPolygon &p, hFill hcf) override;
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
+    void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
+
+    void DrawPixmap(std::shared_ptr<const Pixmap> pm,
+                    const Vector &o, const Vector &u, const Vector &v,
+                    const Point2d &ta, const Point2d &tb, hFill hcf) override;
+    void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override;
+
+    // Geometry manipulation.
+    void CalculateBBox();
+    void ConvertBeziersToEdges();
+    void CullOccludedStrokes();
+
+    // Renderer operations.
+    void OutputInPaintOrder();
+
+    virtual bool CanOutputCurves() const = 0;
+    virtual bool CanOutputTriangles() const = 0;
+
+    virtual void OutputStart() = 0;
+    virtual void OutputBezier(const SBezier &b, hStroke hcs) = 0;
+    virtual void OutputTriangle(const STriangle &tr) = 0;
+    virtual void OutputEnd() = 0;
+
+    void OutputBezierAsNonrationalCubic(const SBezier &b, hStroke hcs);
+};
+
+//-----------------------------------------------------------------------------
+// 3d renderers.
+//-----------------------------------------------------------------------------
 
 // An offscreen renderer based on OpenGL framebuffers.
 class GlOffscreen {

@@ -43,6 +43,8 @@ enum class StipplePattern : uint32_t {
     LAST           = ZIGZAG
 };
 
+std::vector<double> StipplePatternDashes(StipplePattern pattern, double scale);
+
 enum class Command : uint32_t;
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent

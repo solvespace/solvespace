@@ -78,6 +78,27 @@ Vector Camera::AlignToPixelGrid(Vector v) const {
     return UnProjectPoint3(v);
 }
 
+SBezier Camera::ProjectBezier(SBezier b) const {
+    Quaternion q = Quaternion::From(projRight, projUp);
+    q = q.Inverse();
+    // we want Q*(p - o) = Q*p - Q*o
+    b = b.TransformedBy(q.Rotate(offset).ScaledBy(scale), q, scale);
+    for(int i = 0; i <= b.deg; i++) {
+        Vector4 ct = Vector4::From(b.weight[i], b.ctrl[i]);
+        // so the desired curve, before perspective, is
+        //    (x/w, y/w, z/w)
+        // and after perspective is
+        //    ((x/w)/(1 - (z/w)*tangent, ...
+        //  = (x/(w - z*tangent), ...
+        // so we want to let w' = w - z*tangent
+        ct.w = ct.w - ct.z*tangent;
+
+        b.ctrl[i] = ct.PerspectiveProject();
+        b.weight[i] = ct.w;
+    }
+    return b;
+}
+
 void Camera::LoadIdentity() {
     offset    = { 0.0, 0.0, 0.0 };
     projRight = { 1.0, 0.0, 0.0 };

@@ -14,6 +14,7 @@
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
 
+class SBezierList;
 class SSurface;
 class SCurvePt;
 
@@ -95,6 +96,7 @@ public:
     void MakePwlInto(List<Vector> *l, double chordTol=0) const;
     void MakePwlWorker(List<Vector> *l, double ta, double tb, double chordTol) const;
     void MakePwlInitialWorker(List<Vector> *l, double ta, double tb, double chordTol) const;
+    void MakeNonrationalCubicInto(SBezierList *bl, double tolerance, int depth = 0) const;
 
     void AllIntersectionsWith(const SBezier *sbb, SPointList *spl) const;
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax) const;
