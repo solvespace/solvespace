@@ -416,13 +416,17 @@ public:
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
+#ifndef HAVE_GTK3
             _entry.add_modal_grab();
+#endif
         }
     }
 
     void stop_editing() {
+#ifndef HAVE_GTK3
         if(_entry.is_visible())
             _entry.remove_modal_grab();
+#endif
         _entry.hide();
     }
 
