@@ -196,7 +196,6 @@ else() # Linux and compatible systems
     pkg_check_modules(PNG REQUIRED libpng)
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
-    pkg_check_modules(GLEW REQUIRED glew)
     pkg_check_modules(FREETYPE REQUIRED freetype2)
 
     set(HAVE_GTK TRUE)

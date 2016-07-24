@@ -7,9 +7,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#ifndef WIN32
-#include <platform/gloffscreen.h>
-#endif
 
 void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
@@ -1084,10 +1081,11 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     bool prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
 #ifndef WIN32
-    std::unique_ptr<GLOffscreen> gloffscreen(new GLOffscreen);
-    gloffscreen->begin((int)SS.GW.width, (int)SS.GW.height);
+    GlOffscreen offscreen;
+    offscreen.Render((int)SS.GW.width, (int)SS.GW.height, [&] {
+        SS.GW.Paint();
+    });
 #endif
-    SS.GW.Paint();
     SS.showToolbar = prevShowToolbar;
 
     // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
@@ -1100,6 +1098,11 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
         Error("Couldn't write to '%s'", filename.c_str());
     }
     if(f) fclose(f);
+
+#ifndef WIN32
+    offscreen.Clear();
+#endif
+
     return;
 }
 

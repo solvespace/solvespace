@@ -14,7 +14,6 @@
 #include <map>
 
 #include "solvespace.h"
-#include "gloffscreen.h"
 #include <config.h>
 
 using SolveSpace::dbp;
@@ -126,7 +125,7 @@ const bool SolveSpace::FLIP_FRAMEBUFFER = false;
 
 @implementation GLViewWithEditor
 {
-    GLOffscreen *offscreen;
+    SolveSpace::GlOffscreen offscreen;
     NSOpenGLContext *glContext;
 @protected
     NSTextField *editor;
@@ -156,7 +155,7 @@ const bool SolveSpace::FLIP_FRAMEBUFFER = false;
 }
 
 - (void)dealloc {
-    delete offscreen;
+    offscreen.Clear();
 }
 
 #define CONVERT1(name, to_from) \
@@ -187,19 +186,13 @@ CONVERT(Rect)
 - (void)drawRect:(NSRect)aRect {
     [glContext makeCurrentContext];
 
-    if(!offscreen)
-        offscreen = new GLOffscreen;
-
     NSSize size   = [self convertSizeToBacking:[self bounds].size];
     int    width  = (int)size.width,
            height = (int)size.height;
-    offscreen->begin(width, height);
+    offscreen.Render(width, height, [&] { [self drawGL]; });
 
-    [self drawGL];
-
-    uint8_t *pixels = offscreen->end();
     CGDataProviderRef provider = CGDataProviderCreateWithData(
-        NULL, pixels, width * height * 4, NULL);
+        NULL, &offscreen.data[0], width * height * 4, NULL);
     CGColorSpaceRef colorspace = CGColorSpaceCreateDeviceRGB();
     CGImageRef image = CGImageCreate(width, height, 8, 32,
         width * 4, colorspace, kCGBitmapByteOrder32Little | kCGImageAlphaNoneSkipFirst,

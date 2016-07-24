@@ -204,6 +204,17 @@ public:
     bool Pick(std::function<void()> drawFn);
 };
 
+// An offscreen renderer based on OpenGL framebuffers.
+class GlOffscreen {
+public:
+    unsigned int          framebuffer;
+    unsigned int          colorRenderbuffer, depthRenderbuffer;
+    std::vector<uint8_t>  data;
+
+    bool Render(int width, int height, std::function<void()> renderFn);
+    void Clear();
+};
+
 // A canvas that uses the core OpenGL profile, for desktop systems.
 class OpenGl1Renderer : public Canvas {
 public:

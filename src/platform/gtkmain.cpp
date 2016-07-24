@@ -52,7 +52,6 @@
 
 #include "solvespace.h"
 #include "config.h"
-#include "gloffscreen.h"
 
 #ifdef HAVE_SPACEWARE
 #   include <spnav.h>
@@ -228,7 +227,7 @@ const bool FLIP_FRAMEBUFFER = true;
 
 class GlWidget : public Gtk::DrawingArea {
 public:
-    GlWidget() : _offscreen(NULL) {
+    GlWidget() {
         _xdisplay = gdk_x11_get_default_xdisplay();
 
         int glxmajor, glxminor;
@@ -297,7 +296,7 @@ public:
 
         XDestroyWindow(_xdisplay, _xwindow);
 
-        delete _offscreen;
+        _offscreen.Clear();
 
         glXDestroyContext(_xdisplay, _glcontext);
     }
@@ -314,18 +313,16 @@ protected:
         ssassert(glXMakeCurrent(_xdisplay, _xwindow, _glcontext),
                  "Cannot make OpenGL context current");
 
-        if(!_offscreen)
-            _offscreen = new GLOffscreen;
-
         Gdk::Rectangle allocation = get_allocation();
-        ssassert(_offscreen->begin(allocation.get_width(), allocation.get_height()),
-                 "Cannot allocate offscreen rendering buffer");
+        bool success = _offscreen.Render(
+            allocation.get_width(), allocation.get_height(),
+            sigc::mem_fun(this, &GlWidget::on_gl_draw));
+        ssassert(success, "Cannot allocate offscreen rendering buffer");
 
-        on_gl_draw();
-
-        Cairo::RefPtr<Cairo::ImageSurface> surface = Cairo::ImageSurface::create(
-                _offscreen->end(), Cairo::FORMAT_RGB24,
-                allocation.get_width(), allocation.get_height(), allocation.get_width() * 4);
+        Cairo::RefPtr<Cairo::ImageSurface> surface =
+            Cairo::ImageSurface::create(&_offscreen.data[0], Cairo::FORMAT_RGB24,
+                allocation.get_width(), allocation.get_height(),
+                allocation.get_width() * 4);
         cr->set_source(surface, 0, 0);
         cr->paint();
         surface->finish();
@@ -338,7 +335,7 @@ protected:
 private:
     Display *_xdisplay;
     GLXContext _glcontext;
-    GLOffscreen *_offscreen;
+    GlOffscreen _offscreen;
     ::Window _xwindow;
 };
 

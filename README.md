@@ -31,7 +31,7 @@ On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install libpng-dev libjson-c-dev libfreetype6-dev \
                     libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev \
-                    libgl-dev libglu-dev libglew-dev cmake
+                    libgl-dev libglu-dev cmake
 
 Before building, check out the necessary submodules:
 
