@@ -72,6 +72,7 @@ add_subdirectory(extlib/libdxfrw)
 
 if(WIN32)
     include(FindVendoredPackage)
+    include(AddVendoredSubdirectory)
 
     find_vendored_package(Freetype freetype
         WITH_ZLIB               OFF
@@ -92,6 +93,20 @@ if(WIN32)
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
+    message(STATUS "Using in-tree pixman")
+    add_vendored_subdirectory(extlib/pixman)
+    set(PIXMAN_FOUND            YES)
+    set(PIXMAN_LIBRARY          pixman)
+    set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+    list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+
+    message(STATUS "Using in-tree cairo")
+    add_vendored_subdirectory(extlib/cairo)
+    set(CAIRO_FOUND             YES)
+    set(CAIRO_LIBRARY           cairo)
+    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+    list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+
     if(NOT MINGW)
         message(STATUS "Using prebuilt SpaceWare")
         set(SPACEWARE_FOUND TRUE)
@@ -108,6 +123,8 @@ elseif(APPLE)
     find_package(Freetype REQUIRED)
 
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
+    find_library(CAIRO_LIBRARY cairo REQUIRED)
+    find_path(CAIRO_INCLUDE_DIRS cairo.h PATH_SUFFIXES cairo)
 else() # Linux and compatible systems
     find_package(Backtrace)
     find_package(SpaceWare)

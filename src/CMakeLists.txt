@@ -62,7 +62,8 @@ include_directories(
     ${OPENGL_INCLUDE_DIR}
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
-    ${FREETYPE_INCLUDE_DIRS})
+    ${FREETYPE_INCLUDE_DIRS}
+    ${CAIRO_INCLUDE_DIRS})
 
 if(SPACEWARE_FOUND)
     include_directories(
@@ -186,6 +187,7 @@ target_link_libraries(solvespace
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}
+    ${CAIRO_LIBRARY}
     ${platform_LIBRARIES})
 
 if(WIN32 AND NOT MINGW)

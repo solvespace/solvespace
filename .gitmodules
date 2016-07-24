@@ -11,3 +11,9 @@
 [submodule "extlib/libdxfrw"]
 	path = extlib/libdxfrw
 	url = https://github.com/solvespace/libdxfrw.git
+[submodule "extlib/pixman"]
+	path = extlib/pixman
+	url = https://github.com/solvespace/pixman
+[submodule "extlib/cairo"]
+	path = extlib/cairo
+	url = https://github.com/solvespace/cairo
