@@ -271,6 +271,33 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// 2d renderers.
+//-----------------------------------------------------------------------------
+
+class CairoRenderer : public SurfaceRenderer {
+public:
+    cairo_t     *context;
+    // Renderer state.
+    struct {
+        hStroke     hcs;
+    } current;
+
+    CairoRenderer() : context(), current() {}
+
+    void SelectStroke(hStroke hcs);
+    void MoveTo(Vector p);
+    void FinishPath();
+
+    bool CanOutputCurves() const override { return true; }
+    bool CanOutputTriangles() const override { return true; }
+
+    void OutputStart() override;
+    void OutputBezier(const SBezier &b, hStroke hcs) override;
+    void OutputTriangle(const STriangle &tr) override;
+    void OutputEnd() override;
+};
+
+//-----------------------------------------------------------------------------
 // 3d renderers.
 //-----------------------------------------------------------------------------
 

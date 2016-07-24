@@ -491,7 +491,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
     Canvas::Fill fill = {};
     fill.layer  = stroke.layer;
-    fill.zIndex = IsPoint() ? zIndex + 1 : 0;
+    fill.zIndex = IsPoint() ? 5 : 0;
     fill.color  = stroke.color;
     Canvas::hFill hcf = canvas->GetFill(fill);
 

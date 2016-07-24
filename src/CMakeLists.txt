@@ -160,6 +160,7 @@ set(solvespace_SOURCES
     render/render.cpp
     render/rendergl1.cpp
     render/render2d.cpp
+    render/rendercairo.cpp
     srf/boolean.cpp
     srf/curve.cpp
     srf/merge.cpp

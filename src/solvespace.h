@@ -35,6 +35,8 @@
 struct FT_LibraryRec_;
 struct FT_FaceRec_;
 
+typedef struct _cairo cairo_t;
+
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
 #ifdef __clang__
