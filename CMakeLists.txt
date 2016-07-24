@@ -121,56 +121,26 @@ message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
 if(WIN32)
-    # Configure Freetype first. If done later, it will notice that
-    # zlib is available, try to use it and promptly break on MSVC
-    # in a very obscure way. Given that the only use of zlib, bzip2
-    # and png support is in support for extremely obsolete Unix fonts,
-    # we don't care.
-    find_package(Freetype)
+    include(FindVendoredPackage)
 
-    if(NOT FREETYPE_FOUND)
-        message(STATUS "Using in-tree libfreetype")
+    find_vendored_package(Freetype freetype
+        WITH_ZLIB               OFF
+        WITH_BZip2              OFF
+        WITH_PNG                OFF
+        WITH_HarfBuzz           OFF
+        FREETYPE_LIBRARY        freetype
+        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
-        add_subdirectory(extlib/libfreetype EXCLUDE_FROM_ALL)
+    find_vendored_package(ZLIB zlib
+        ZLIB_LIBRARY            zlibstatic
+        ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+    list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
 
-        set(FREETYPE_LIBRARY
-            freetype)
-        set(FREETYPE_INCLUDE_DIRS
-            "${CMAKE_SOURCE_DIR}/extlib/libfreetype/include")
-        find_package(Freetype REQUIRED)
-    endif()
-
-    find_package(ZLIB)
-
-    if(NOT ZLIB_FOUND)
-        message(STATUS "Using in-tree zlib")
-        add_subdirectory(extlib/zlib EXCLUDE_FROM_ALL)
-
-        message(STATUS "Using in-tree libpng")
-        set(ZLIB_LIBRARY
-            zlibstatic)
-        set(ZLIB_INCLUDE_DIR
-            "${CMAKE_SOURCE_DIR}/extlib/zlib"
-            "${CMAKE_BINARY_DIR}/extlib/zlib")
-        find_package(ZLIB REQUIRED)
-    endif()
-
-    find_package(PNG)
-
-    if(NOT PNG_FOUND)
-        message(STATUS "Using in-tree libpng")
-
-        set(SKIP_INSTALL_ALL
-            ON)
-        add_subdirectory(extlib/libpng EXCLUDE_FROM_ALL)
-
-        set(PNG_LIBRARY
-            png16_static)
-        set(PNG_PNG_INCLUDE_DIR
-            "${CMAKE_SOURCE_DIR}/extlib/libpng"
-            "${CMAKE_BINARY_DIR}/extlib/libpng")
-        find_package(PNG REQUIRED)
-    endif()
+    find_vendored_package(PNG libpng
+        SKIP_INSTALL_ALL        ON
+        PNG_LIBRARY             png16_static
+        PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
+    list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
     if(NOT MINGW)
         message(STATUS "Using prebuilt SpaceWare")
@@ -183,20 +153,25 @@ if(WIN32)
 elseif(APPLE)
     set(CMAKE_FIND_FRAMEWORK LAST)
 
+    find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
+
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
 else() # Linux and compatible systems
     find_package(Backtrace)
     find_package(SpaceWare)
 
-    # Use freedesktop's pkg-config to locate everything.
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+    find_package(Freetype REQUIRED)
+
+    # Use freedesktop's pkg-config to locate everything else.
     find_package(PkgConfig REQUIRED)
-    pkg_check_modules(ZLIB REQUIRED zlib)
-    pkg_check_modules(PNG REQUIRED libpng)
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
     pkg_check_modules(FREETYPE REQUIRED freetype2)
+    pkg_check_modules(CAIRO REQUIRED cairo)
 
     set(HAVE_GTK TRUE)
     if(GUI STREQUAL "gtk3")

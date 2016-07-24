@@ -5,8 +5,8 @@
 [submodule "extlib/libpng"]
 	path = extlib/libpng
 	url = https://github.com/glennrp/libpng
-[submodule "extlib/libfreetype"]
-	path = extlib/libfreetype
+[submodule "extlib/freetype"]
+	path = extlib/freetype
 	url = http://git.sv.nongnu.org/r/freetype/freetype2.git
 [submodule "extlib/libdxfrw"]
 	path = extlib/libdxfrw

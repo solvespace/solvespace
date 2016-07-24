@@ -1,31 +1,12 @@
-# global
-
 include(GNUInstallDirs)
 
-include_directories(
-    ${OPENGL_INCLUDE_DIR}
-    ${PNG_INCLUDE_DIRS}
-    ${FREETYPE_INCLUDE_DIRS})
-
-link_directories(
-    ${PNG_LIBRARY_DIRS}
-    ${FREETYPE_LIBRARY_DIRS})
-
-add_definitions(
-    ${PNG_CFLAGS_OTHER})
+# configuration
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/built
     ${CMAKE_CURRENT_BINARY_DIR})
 
-if(SPACEWARE_FOUND)
-    include_directories(
-        ${SPACEWARE_INCLUDE_DIR})
-endif()
-
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
-set(HAVE_GTK ${GTKMM_FOUND})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
@@ -75,16 +56,28 @@ if(NOT WIN32)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-# platform dependencies
+# solvespace dependencies
+
+include_directories(
+    ${OPENGL_INCLUDE_DIR}
+    ${ZLIB_INCLUDE_DIR}
+    ${PNG_PNG_INCLUDE_DIR}
+    ${FREETYPE_INCLUDE_DIRS})
+
+if(SPACEWARE_FOUND)
+    include_directories(
+        ${SPACEWARE_INCLUDE_DIR})
+endif()
 
 if(WIN32)
     set(platform_SOURCES
         platform/w32main.cpp)
 
     set(platform_LIBRARIES
-        comctl32)
+        comctl32
+        ${SPACEWARE_LIBRARIES})
 elseif(APPLE)
-    add_definitions(
+    add_compile_options(
         -fobjc-arc)
 
     set(platform_SOURCES
@@ -98,29 +91,19 @@ elseif(APPLE)
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
 elseif(HAVE_GTK)
-    include_directories(
-        ${GTKMM_INCLUDE_DIRS}
-        ${JSONC_INCLUDE_DIRS}
-        ${FONTCONFIG_INCLUDE_DIRS})
-
-    link_directories(
-        ${GTKMM_LIBRARY_DIRS}
-        ${JSONC_LIBRARY_DIRS}
-        ${FONTCONFIG_LIBRARY_DIRS})
-
-    add_definitions(
-        ${GTKMM_CFLAGS_OTHER}
-        ${JSONC_CFLAGS_OTHER}
-        ${FONTCONFIG_CFLAGS_OTHER})
-
     set(platform_SOURCES
         platform/gtkmain.cpp
         render/rendergl.cpp)
 
     set(platform_LIBRARIES
-        ${GTKMM_LIBRARIES}
-        ${JSONC_LIBRARIES}
-        ${FONTCONFIG_LIBRARIES})
+        ${Backtrace_LIBRARIES}
+        ${SPACEWARE_LIBRARIES})
+
+    foreach(pkg_config_lib GTKMM JSONC FONTCONFIG)
+        include_directories(${${pkg_config_lib}_INCLUDE_DIRS})
+        link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
+        list(APPEND platform_LIBRARIES ${${pkg_config_lib}_LIBRARIES})
+    endforeach()
 endif()
 
 # solvespace executable
@@ -199,24 +182,14 @@ add_dependencies(solvespace
 target_link_libraries(solvespace
     dxfrw
     ${OPENGL_LIBRARIES}
-    ${PNG_LIBRARIES}
-    ${ZLIB_LIBRARIES}
-    ${FREETYPE_LIBRARIES}
+    ${ZLIB_LIBRARY}
+    ${PNG_LIBRARY}
+    ${FREETYPE_LIBRARY}
     ${platform_LIBRARIES})
 
 if(WIN32 AND NOT MINGW)
     set_target_properties(solvespace PROPERTIES
         LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO")
-endif()
-
-if(SPACEWARE_FOUND)
-    target_link_libraries(solvespace
-        ${SPACEWARE_LIBRARIES})
-endif()
-
-if(Backtrace_FOUND)
-    target_link_libraries(solvespace
-        ${Backtrace_LIBRARIES})
 endif()
 
 if(APPLE)
