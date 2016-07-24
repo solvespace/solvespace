@@ -31,37 +31,6 @@ if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()
 
-# compiler
-
-if(WIN32)
-    add_definitions(
-        -D_CRT_SECURE_NO_DEPRECATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -D_SCL_SECURE_NO_WARNINGS
-        -D_WIN32_WINNT=0x500
-        -D_WIN32_IE=_WIN32_WINNT
-        -DISOLATION_AWARE_ENABLED
-        -DWIN32
-        -DWIN32_LEAN_AND_MEAN
-        -DUNICODE
-        -D_UNICODE
-        -DNOMINMAX
-        -D_USE_MATH_DEFINES)
-endif()
-
-if(MSVC)
-    # Many versions of MSVC do not have the (C99) inline keyword, instead
-    # they have their own __inline; this breaks `static inline` functions.
-    # We do not want to care and so we fix this with a definition.
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
-    # Same for the (C99) __func__ special variable; we use it only in C++ code.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
-
-    # We rely on these /we flags. They correspond to the GNU-style flags below as
-    # follows: /w4062=-Wswitch
-    set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
-endif()
-
 if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
         # GCC 4.8/4.9 ship with broken but present <regex>. meh.
@@ -69,34 +38,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
     endif()
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-    set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
-        set(WARNING_FLAGS "${WARNING_FLAGS} -Wfloat-conversion")
-    endif()
-    # We rely on these -Werror flags.
-    set(WARNING_FLAGS   "${WARNING_FLAGS} -Werror=switch")
-endif()
-
-if(WIN32)
-    set(CMAKE_RC_FLAGS  "${CMAKE_RC_FLAGS} -l0")
-endif()
+# common compiler flags
 
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
 endif()
 
-if(APPLE)
+if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
@@ -109,9 +62,6 @@ if(SANITIZE)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
 endif()
-
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 
 # dependencies
 
@@ -184,6 +134,53 @@ else() # Linux and compatible systems
         message(FATAL_ERROR "GUI unrecognized: ${GUI}")
     endif()
 endif()
+
+# solvespace-only compiler flags
+
+if(WIN32)
+    add_definitions(
+        -D_CRT_SECURE_NO_DEPRECATE
+        -D_CRT_SECURE_NO_WARNINGS
+        -D_SCL_SECURE_NO_WARNINGS
+        -D_WIN32_WINNT=0x500
+        -D_WIN32_IE=_WIN32_WINNT
+        -DISOLATION_AWARE_ENABLED
+        -DWIN32
+        -DWIN32_LEAN_AND_MEAN
+        -DUNICODE
+        -D_UNICODE
+        -DNOMINMAX
+        -D_USE_MATH_DEFINES)
+endif()
+
+if(MSVC)
+    # Many versions of MSVC do not have the (C99) inline keyword, instead
+    # they have their own __inline; this breaks `static inline` functions.
+    # We do not want to care and so we fix this with a definition.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Dinline=__inline")
+    # Same for the (C99) __func__ special variable; we use it only in C++ code.
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
+
+    # We rely on these /we flags. They correspond to the GNU-style flags below as
+    # follows: /w4062=-Wswitch
+    set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
+endif()
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+    set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
+        set(WARNING_FLAGS "${WARNING_FLAGS} -Wfloat-conversion")
+    endif()
+    # We rely on these -Werror flags.
+    set(WARNING_FLAGS   "${WARNING_FLAGS} -Werror=switch")
+endif()
+
+if(WIN32)
+    set(CMAKE_RC_FLAGS  "${CMAKE_RC_FLAGS} -l0")
+endif()
+
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 
 # components
 
