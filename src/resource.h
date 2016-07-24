@@ -24,7 +24,7 @@ std::shared_ptr<Pixmap> LoadPng(const std::string &name);
 
 class Pixmap {
 public:
-    enum class Format { RGBA, RGB, A };
+    enum class Format { BGRA, RGBA, BGR, RGB, A };
 
     Format                     format;
     size_t                     width;
@@ -40,6 +40,8 @@ public:
 
     size_t GetBytesPerPixel() const;
     RgbaColor GetPixel(size_t x, size_t y) const;
+
+    void ConvertTo(Format newFormat);
 };
 
 class BitmapFont {

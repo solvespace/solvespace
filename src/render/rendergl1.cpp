@@ -216,6 +216,9 @@ void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;
         case Pixmap::Format::A:    format = GL_ALPHA; break;
+        case Pixmap::Format::BGRA:
+        case Pixmap::Format::BGR:
+            ssassert(false, "Unexpected pixmap format");
     }
     glTexImage2D(GL_TEXTURE_2D, 0, format, pm->width, pm->height, 0,
                  format, GL_UNSIGNED_BYTE, &pm->data[0]);

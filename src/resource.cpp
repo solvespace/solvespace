@@ -65,7 +65,9 @@ std::shared_ptr<Pixmap> LoadPng(const std::string &name) {
 size_t Pixmap::GetBytesPerPixel() const {
     switch(format) {
         case Format::RGBA: return 4;
+        case Format::BGRA: return 4;
         case Format::RGB:  return 3;
+        case Format::BGR:  return 3;
         case Format::A:    return 1;
     }
     ssassert(false, "Unexpected pixmap format");
@@ -81,10 +83,50 @@ RgbaColor Pixmap::GetPixel(size_t x, size_t y) const {
         case Format::RGB:
             return RgbaColor::From(pixel[0], pixel[1], pixel[2],      255);
 
+        case Format::BGRA:
+            return RgbaColor::From(pixel[2], pixel[1], pixel[0], pixel[3]);
+
+        case Format::BGR:
+            return RgbaColor::From(pixel[2], pixel[1], pixel[0],      255);
+
         case Format::A:
             return RgbaColor::From(     255,      255,      255, pixel[0]);
     }
     ssassert(false, "Unexpected resource format");
+}
+
+void Pixmap::ConvertTo(Format newFormat) {
+    switch(format) {
+        case Format::RGBA:
+            ssassert(newFormat == Format::BGRA, "Unexpected target format");
+            break;
+
+        case Format::BGRA:
+            ssassert(newFormat == Format::RGBA, "Unexpected target format");
+            break;
+
+        case Format::RGB:
+            ssassert(newFormat == Format::BGR, "Unexpected target format");
+            break;
+
+        case Format::BGR:
+            ssassert(newFormat == Format::RGB, "Unexpected target format");
+            break;
+
+        case Format::A:
+            ssassert(false, "Unexpected target format");
+    }
+
+    size_t bpp = GetBytesPerPixel();
+    for(size_t j = 0; j != height; j++) {
+        uint8_t *row = &data[j * stride];
+        for(size_t i = 0; i != width * bpp; i += bpp) {
+            // This handles both RGB<>BGR and RGBA<>BGRA.
+            std::swap(row[i], row[i + 2]);
+        }
+    }
+
+    format = newFormat;
 }
 
 static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr,
@@ -175,10 +217,13 @@ exit:
 
 bool Pixmap::WritePng(FILE *f, bool flip) {
     int colorType;
+    bool bgr;
     switch(format) {
-        case Format::RGBA: colorType = PNG_COLOR_TYPE_RGBA; break;
-        case Format::RGB:  colorType = PNG_COLOR_TYPE_RGB;  break;
-        case Format::A:    ssassert(false, "Unexpected pixmap format");
+        case Format::RGBA: colorType = PNG_COLOR_TYPE_RGBA; bgr = false; break;
+        case Format::BGRA: colorType = PNG_COLOR_TYPE_RGBA; bgr = true;  break;
+        case Format::RGB:  colorType = PNG_COLOR_TYPE_RGB;  bgr = false; break;
+        case Format::BGR:  colorType = PNG_COLOR_TYPE_RGB;  bgr = true;  break;
+        case Format::A:    colorType = PNG_COLOR_TYPE_GRAY; bgr = false; break;
     }
 
     std::vector<uint8_t *> rows;
@@ -204,6 +249,7 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
     png_set_IHDR(png_ptr, info_ptr, width, height, 8,
                  colorType, PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    if(bgr) png_set_bgr(png_ptr);
     png_write_info(png_ptr, info_ptr);
     png_write_image(png_ptr, &rows[0]);
     png_write_end(png_ptr, info_ptr);
