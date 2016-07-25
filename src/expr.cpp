@@ -616,24 +616,41 @@ static int OperandsP;
 static Expr *Operators[MAX_UNPARSED];
 static int OperatorsP;
 
+static jmp_buf exprjmp;
+
+static const char *errors[] = {
+    "operator stack full!",
+    "operator stack empty (get top)",
+    "operator stack empty (pop)",
+    "operand stack full",
+    "operand stack empty",
+    "no token to consume",
+    "end of expression unexpected",
+    "expected: )",
+    "expected expression",
+    "too long",
+    "unknown name",
+    "unexpected characters",
+};
+
 void Expr::PushOperator(Expr *e) {
-    if(OperatorsP >= MAX_UNPARSED) throw "operator stack full!";
+    if(OperatorsP >= MAX_UNPARSED) longjmp(exprjmp, 0);
     Operators[OperatorsP++] = e;
 }
 Expr *Expr::TopOperator() {
-    if(OperatorsP <= 0) throw "operator stack empty (get top)";
+    if(OperatorsP <= 0) longjmp(exprjmp, 1);
     return Operators[OperatorsP-1];
 }
 Expr *Expr::PopOperator() {
-    if(OperatorsP <= 0) throw "operator stack empty (pop)";
+    if(OperatorsP <= 0) longjmp(exprjmp, 2);
     return Operators[--OperatorsP];
 }
 void Expr::PushOperand(Expr *e) {
-    if(OperandsP >= MAX_UNPARSED) throw "operand stack full";
+    if(OperandsP >= MAX_UNPARSED) longjmp(exprjmp, 3);
     Operands[OperandsP++] = e;
 }
 Expr *Expr::PopOperand() {
-    if(OperandsP <= 0) throw "operand stack empty";
+    if(OperandsP <= 0) longjmp(exprjmp, 4);
     return Operands[--OperandsP];
 }
 Expr *Expr::Next() {
@@ -641,7 +658,7 @@ Expr *Expr::Next() {
     return Unparsed[UnparsedP];
 }
 void Expr::Consume() {
-    if(UnparsedP >= UnparsedCnt) throw "no token to consume";
+    if(UnparsedP >= UnparsedCnt) longjmp(exprjmp, 5);
     UnparsedP++;
 }
 
@@ -706,7 +723,7 @@ void Expr::Parse() {
 
     for(;;) {
         Expr *n = Next();
-        if(!n) throw "end of expression unexpected";
+        if(!n) longjmp(exprjmp, 6);
 
         if(n->op == Op::CONSTANT) {
             PushOperand(n);
@@ -715,7 +732,7 @@ void Expr::Parse() {
             Consume();
             Parse();
             n = Next();
-            if(n->op != Op::PAREN || n->c != ')') throw "expected: )";
+            if(n->op != Op::PAREN || n->c != ')') longjmp(exprjmp, 7);
             Consume();
         } else if(n->op == Op::UNARY_OP) {
             PushOperator(n);
@@ -730,7 +747,7 @@ void Expr::Parse() {
             Consume();
             continue;
         } else {
-            throw "expected expression";
+            longjmp(exprjmp, 8);
         }
 
         n = Next();
@@ -750,7 +767,7 @@ void Expr::Parse() {
 
 void Expr::Lex(const char *in) {
     while(*in) {
-        if(UnparsedCnt >= MAX_UNPARSED) throw "too long";
+        if(UnparsedCnt >= MAX_UNPARSED) longjmp(exprjmp, 9);
 
         char c = *in;
         if(isdigit(c) || c == '.') {
@@ -789,7 +806,7 @@ void Expr::Lex(const char *in) {
                 e->op = Op::CONSTANT;
                 e->v = PI;
             } else {
-                throw "unknown name";
+                longjmp(exprjmp, 10);
             }
             Unparsed[UnparsedCnt++] = e;
         } else if(strchr("+-*/()", c)) {
@@ -803,7 +820,7 @@ void Expr::Lex(const char *in) {
             in++;
         } else {
             // This is a lex error.
-            throw "unexpected characters";
+            longjmp(exprjmp, 11);
         }
     }
 }
@@ -815,12 +832,13 @@ Expr *Expr::From(const char *in, bool popUpError) {
     OperatorsP = 0;
 
     Expr *r;
-    try {
+    int erridx = setjmp(exprjmp);
+    if(!erridx) {
         Lex(in);
         Parse();
         r = PopOperand();
-    } catch (const char *e) {
-        dbp("exception: parse/lex error: %s", e);
+    } else {
+        dbp("exception: parse/lex error: %s", errors[erridx]);
         if(popUpError) {
             Error("Not a valid number or expression: '%s'", in);
         }
