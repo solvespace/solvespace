@@ -184,6 +184,9 @@ target_link_libraries(solvespace_cad
     ${FREETYPE_LIBRARY}
     ${Backtrace_LIBRARIES})
 
+target_compile_options(solvespace_cad
+    PRIVATE ${COVERAGE_FLAGS})
+
 # solvespace gui executable
 
 add_executable(solvespace WIN32 MACOSX_BUNDLE
@@ -197,7 +200,8 @@ add_dependencies(solvespace
 target_link_libraries(solvespace
     solvespace_cad
     ${OPENGL_LIBRARIES}
-    ${platform_LIBRARIES})
+    ${platform_LIBRARIES}
+    ${COVERAGE_LIBRARY})
 
 if(WIN32 AND NOT MINGW)
     set_target_properties(solvespace PROPERTIES
@@ -256,3 +260,6 @@ target_include_directories(solvespace_headless
 target_link_libraries(solvespace_headless
     solvespace_cad
     ${CAIRO_LIBRARIES})
+
+target_compile_options(solvespace_headless
+    PRIVATE ${COVERAGE_FLAGS})

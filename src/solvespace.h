@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <stdarg.h>
+#include <setjmp.h>
 #include <math.h>
 #include <setjmp.h>
 #include <limits.h>

@@ -27,7 +27,10 @@ set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
-set(ENABLE_TESTS ON CACHE BOOL "Whether the test suite will be built and run")
+set(ENABLE_TESTS    ON  CACHE BOOL
+    "Whether the test suite will be built and run")
+set(ENABLE_COVERAGE OFF CACHE BOOL
+    "Whether code coverage information will be collected")
 
 if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
@@ -56,7 +59,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 endif()
 
 if(SANITIZE)
-    if(NOT (CMAKE_C_COMPILER_ID STREQUAL "Clang" AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+    if(NOT (CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
         message(ERROR "Sanitizers are only available in Clang/Clang++")
     endif()
     set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
@@ -162,6 +165,14 @@ else() # Linux and compatible systems
     endif()
 endif()
 
+if(ENABLE_COVERAGE)
+    find_program(LCOV lcov)
+    find_program(GENHTML genhtml)
+    if(NOT LCOV OR NOT GENHTML)
+        message(FATAL_ERROR "lcov is required for producing coverage reports")
+    endif()
+endif()
+
 # solvespace-only compiler flags
 
 if(WIN32)
@@ -193,9 +204,9 @@ if(MSVC)
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
 endif()
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
-    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(WARNING_FLAGS "${WARNING_FLAGS} -Wfloat-conversion")
     endif()
     # We rely on these -Werror flags.
@@ -207,6 +218,22 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 
 if(WIN32)
     set(CMAKE_RC_FLAGS  "${CMAKE_RC_FLAGS} -l0")
+endif()
+
+if(ENABLE_COVERAGE)
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+            CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+        message(FATAL_ERROR "Code coverage is only available on GCC and Clang")
+    endif()
+
+    if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+        message(FATAL_ERROR "Code coverage produces reliable results only on Debug builds")
+    endif()
+
+    # With -fexceptions, every call becomes a branch. While technically accurate,
+    # this is not useful for us.
+    set(COVERAGE_FLAGS -fno-exceptions --coverage)
+    set(COVERAGE_LIBRARY --coverage)
 endif()
 
 # components
