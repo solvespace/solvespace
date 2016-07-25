@@ -9,10 +9,10 @@ This repository contains the source code of [SolveSpace][], a parametric
 Installation
 ------------
 
-### Mac OS X (>=10.6 64-bit), Debian (>=jessie) and Ubuntu (>=trusty)
+### Mac OS X (>=10.6 64-bit), Windows (>=XP 32-bit)
 
-Binary packages for Mac OS X and Debian derivatives are available
-via [GitHub releases][rel].
+Binary packages for Mac OS X and Windows are available via
+[GitHub releases][rel].
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
@@ -50,10 +50,10 @@ for use due to bugs in this toolkit.
 
 ### Building for Windows
 
-You will need CMake, a Windows cross-compiler, and Wine with binfmt support.
+You will need CMake and a Windows cross-compiler.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install cmake mingw-w64 wine-binfmt
+    apt-get install cmake mingw-w64
 
 Before building, check out the necessary submodules:
 
