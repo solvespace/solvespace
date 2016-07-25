@@ -186,7 +186,7 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
         if(flip) {
             rows.push_back(&data[stride * y]);
         } else {
-            rows.push_back(&data[stride * (height - y)]);
+            rows.push_back(&data[stride * (height - y - 1)]);
         }
     }
 
