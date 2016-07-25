@@ -581,6 +581,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 } else {
                     tail = SK.GetEntity(point[0])->PointGetNum();
                 }
+                tail = camera.AlignToPixelGrid(tail);
                 Vector v = (q.RotationN()).WithMagnitude(50.0 / camera.scale);
                 Vector tip = tail.Plus(v);
                 canvas->DrawLine(tail, tip, hcs);
@@ -602,6 +603,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             const Camera &camera = canvas->GetCamera();
 
             Vector p = SK.GetEntity(point[0])->PointGetNum();
+            p = camera.AlignToPixelGrid(p);
 
             Vector u = Normal()->NormalU();
             Vector v = Normal()->NormalV();
