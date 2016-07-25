@@ -1086,11 +1086,12 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
+#if !defined(HEADLESS)
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.
     bool prevShowToolbar = SS.showToolbar;
     SS.showToolbar = false;
-#ifndef WIN32
+#if !defined(WIN32)
     GlOffscreen offscreen;
     offscreen.Render((int)SS.GW.width, (int)SS.GW.height, [&] {
         SS.GW.Paint();
@@ -1109,10 +1110,11 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     }
     if(f) fclose(f);
 
-#ifndef WIN32
+#if !defined(WIN32)
     offscreen.Clear();
 #endif
 
     return;
+#endif
 }
 

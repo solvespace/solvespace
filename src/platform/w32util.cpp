@@ -97,6 +97,26 @@ bool PathEqual(const std::string &a, const std::string &b)
 
 }
 
+std::string PathSepPlatformToUnix(const std::string &filename)
+{
+    std::string result = filename;
+    for(size_t i = 0; i < result.length(); i++) {
+        if(result[i] == '\\')
+            result[i] = '/';
+    }
+    return result;
+}
+
+std::string PathSepUnixToPlatform(const std::string &filename)
+{
+    std::string result = filename;
+    for(size_t i = 0; i < result.length(); i++) {
+        if(result[i] == '/')
+            result[i] = '\\';
+    }
+    return result;
+}
+
 FILE *ssfopen(const std::string &filename, const char *mode)
 {
     // Prepend \\?\ UNC prefix unless already an UNC path.

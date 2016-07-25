@@ -13,8 +13,10 @@ Sketch SolveSpace::SK = {};
 std::string SolveSpace::RecentFile[MAX_RECENT] = {};
 
 void SolveSpaceUI::Init() {
+#if !defined(HEADLESS)
     // Check that the resource system works.
     dbp("%s", LoadString("banner.txt").data());
+#endif
 
     SS.tangentArcRadius = 10.0;
 

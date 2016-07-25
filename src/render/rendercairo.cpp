@@ -44,7 +44,11 @@ void CairoRenderer::SelectStroke(hStroke hcs) {
     cairo_set_dash(context, dashes.data(), dashes.size(), 0);
     cairo_set_source_rgba(context, color.redF(), color.greenF(), color.blueF(),
                           color.alphaF());
-    cairo_set_antialias(context, CAIRO_ANTIALIAS_BEST);
+    if(antialias) {
+        cairo_set_antialias(context, CAIRO_ANTIALIAS_GRAY);
+    } else {
+        cairo_set_antialias(context, CAIRO_ANTIALIAS_NONE);
+    }
 }
 
 void CairoRenderer::MoveTo(Vector p) {

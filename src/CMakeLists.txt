@@ -72,7 +72,8 @@ endif()
 
 if(WIN32)
     set(platform_SOURCES
-        platform/w32main.cpp)
+        platform/w32main.cpp
+        render/rendergl1.cpp)
 
     set(platform_LIBRARIES
         comctl32
@@ -83,7 +84,8 @@ elseif(APPLE)
 
     set(platform_SOURCES
         platform/cocoamain.mm
-        render/rendergl.cpp)
+        render/rendergl.cpp
+        render/rendergl1.cpp)
 
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
@@ -94,10 +96,10 @@ elseif(APPLE)
 elseif(HAVE_GTK)
     set(platform_SOURCES
         platform/gtkmain.cpp
-        render/rendergl.cpp)
+        render/rendergl.cpp
+        render/rendergl1.cpp)
 
     set(platform_LIBRARIES
-        ${Backtrace_LIBRARIES}
         ${SPACEWARE_LIBRARIES})
 
     foreach(pkg_config_lib GTKMM JSONC FONTCONFIG)
@@ -107,9 +109,9 @@ elseif(HAVE_GTK)
     endforeach()
 endif()
 
-# solvespace executable
+# solvespace library
 
-set(solvespace_HEADERS
+set(solvespace_cad_HEADERS
     config.h
     dsc.h
     expr.h
@@ -120,18 +122,15 @@ set(solvespace_HEADERS
     render/render.h
     srf/surface.h)
 
-set(solvespace_SOURCES
+set(solvespace_cad_SOURCES
     bsp.cpp
     clipboard.cpp
-    confscreen.cpp
     constraint.cpp
     constrainteq.cpp
     describescreen.cpp
-    draw.cpp
     drawconstraint.cpp
     drawentity.cpp
     entity.cpp
-    export.cpp
     exportstep.cpp
     exportvector.cpp
     expr.cpp
@@ -147,20 +146,16 @@ set(solvespace_SOURCES
     polygon.cpp
     resource.cpp
     request.cpp
-    solvespace.cpp
     style.cpp
     system.cpp
     textscreens.cpp
-    textwin.cpp
     toolbar.cpp
     ttf.cpp
     undoredo.cpp
     util.cpp
     view.cpp
     render/render.cpp
-    render/rendergl1.cpp
     render/render2d.cpp
-    render/rendercairo.cpp
     srf/boolean.cpp
     srf/curve.cpp
     srf/merge.cpp
@@ -170,25 +165,38 @@ set(solvespace_SOURCES
     srf/surfinter.cpp
     srf/triangulate.cpp)
 
-add_executable(solvespace WIN32 MACOSX_BUNDLE
-    ${libslvs_HEADERS}
-    ${libslvs_SOURCES}
+set(solvespace_cad_gl_SOURCES
+    confscreen.cpp
+    draw.cpp
+    export.cpp
+    solvespace.cpp
+    textwin.cpp)
+
+add_library(solvespace_cad STATIC
     ${util_SOURCES}
+    ${solvespace_cad_HEADERS}
+    ${solvespace_cad_SOURCES})
+
+target_link_libraries(solvespace_cad
+    dxfrw
+    ${ZLIB_LIBRARY}
+    ${PNG_LIBRARY}
+    ${FREETYPE_LIBRARY}
+    ${Backtrace_LIBRARIES})
+
+# solvespace gui executable
+
+add_executable(solvespace WIN32 MACOSX_BUNDLE
+    ${solvespace_cad_gl_SOURCES}
     ${platform_SOURCES}
-    ${solvespace_HEADERS}
-    ${solvespace_SOURCES}
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
 add_dependencies(solvespace
     resources)
 
 target_link_libraries(solvespace
-    dxfrw
+    solvespace_cad
     ${OPENGL_LIBRARIES}
-    ${ZLIB_LIBRARY}
-    ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY}
-    ${CAIRO_LIBRARY}
     ${platform_LIBRARIES})
 
 if(WIN32 AND NOT MINGW)
@@ -229,21 +237,22 @@ if(NOT WIN32)
         BUNDLE  DESTINATION .)
 endif()
 
-# valgrind
+# solvespace headless library
 
-add_custom_target(solvespace-valgrind
-    valgrind
-        --tool=memcheck
-        --verbose
-        --track-fds=yes
-        --log-file=vg.%p.out
-        --num-callers=50
-        --error-limit=no
-        --read-var-info=yes
-        --leak-check=full
-        --leak-resolution=high
-        --show-reachable=yes
-        --track-origins=yes
-        --malloc-fill=0xac
-        --free-fill=0xde
-        $<TARGET_FILE:solvespace>)
+set(headless_SOURCES
+    platform/headless.cpp
+    render/rendercairo.cpp)
+
+add_library(solvespace_headless STATIC EXCLUDE_FROM_ALL
+    ${solvespace_cad_gl_SOURCES}
+    ${headless_SOURCES})
+
+target_compile_definitions(solvespace_headless
+    PRIVATE -DHEADLESS)
+
+target_include_directories(solvespace_headless
+    INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(solvespace_headless
+    solvespace_cad
+    ${CAIRO_LIBRARIES})

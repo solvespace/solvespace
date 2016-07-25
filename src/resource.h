@@ -36,12 +36,16 @@ public:
     static std::shared_ptr<Pixmap> FromPng(const uint8_t *data, size_t size, bool flip = false);
 
     static std::shared_ptr<Pixmap> ReadPng(FILE *f, bool flip = false);
+    static std::shared_ptr<Pixmap> ReadPng(const std::string &filename, bool flip = false);
     bool WritePng(FILE *f, bool flip = false);
+    bool WritePng(const std::string &filename, bool flip = false);
 
     size_t GetBytesPerPixel() const;
     RgbaColor GetPixel(size_t x, size_t y) const;
+    bool Equals(const Pixmap &other) const;
 
     void ConvertTo(Format newFormat);
+    void SetPixel(size_t x, size_t y, RgbaColor color);
 };
 
 class BitmapFont {

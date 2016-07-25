@@ -302,12 +302,14 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.autosaveInterval, &ScreenChangeAutosaveInterval);
 
+#if !defined(HEADLESS)
     const char *gl_vendor, *gl_renderer, *gl_version;
     OpenGl1Renderer::GetIdent(&gl_vendor, &gl_renderer, &gl_version);
     Printf(false, "");
     Printf(false, " %Ftgl vendor   %E%s", gl_vendor);
     Printf(false, " %Ft   renderer %E%s", gl_renderer);
     Printf(false, " %Ft   version  %E%s", gl_version);
+#endif
 }
 
 bool TextWindow::EditControlDoneForConfiguration(const char *s) {

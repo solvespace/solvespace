@@ -65,6 +65,16 @@ bool PathEqual(const std::string &a, const std::string &b)
 #endif
 }
 
+std::string PathSepPlatformToUnix(const std::string &filename)
+{
+    return filename;
+}
+
+std::string PathSepUnixToPlatform(const std::string &filename)
+{
+    return filename;
+}
+
 FILE *ssfopen(const std::string &filename, const char *mode)
 {
     ssassert(filename.length() == strlen(filename.c_str()),

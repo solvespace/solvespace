@@ -95,6 +95,42 @@ RgbaColor Pixmap::GetPixel(size_t x, size_t y) const {
     ssassert(false, "Unexpected resource format");
 }
 
+void Pixmap::SetPixel(size_t x, size_t y, RgbaColor color) {
+    uint8_t *pixel = &data[y * stride + x * GetBytesPerPixel()];
+
+    switch(format) {
+        case Format::RGBA:
+            pixel[0] = color.red;
+            pixel[1] = color.green;
+            pixel[2] = color.blue;
+            pixel[3] = color.alpha;
+            break;
+
+        case Format::RGB:
+            pixel[0] = color.red;
+            pixel[1] = color.green;
+            pixel[2] = color.blue;
+            break;
+
+        case Format::BGRA:
+            pixel[0] = color.blue;
+            pixel[1] = color.green;
+            pixel[2] = color.red;
+            pixel[3] = color.alpha;
+            break;
+
+        case Format::BGR:
+            pixel[0] = color.blue;
+            pixel[1] = color.green;
+            pixel[2] = color.red;
+            break;
+
+        case Format::A:
+            pixel[0] = color.alpha;
+            break;
+    }
+}
+
 void Pixmap::ConvertTo(Format newFormat) {
     switch(format) {
         case Format::RGBA:
@@ -215,6 +251,14 @@ exit:
     return nullptr;
 }
 
+std::shared_ptr<Pixmap> Pixmap::ReadPng(const std::string &filename, bool flip) {
+    FILE *f = ssfopen(filename.c_str(), "rb");
+    if(!f) return NULL;
+    std::shared_ptr<Pixmap> pixmap = ReadPng(f, flip);
+    fclose(f);
+    return pixmap;
+}
+
 bool Pixmap::WritePng(FILE *f, bool flip) {
     int colorType;
     bool bgr;
@@ -260,6 +304,29 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
 exit:
     png_destroy_write_struct(&png_ptr, &info_ptr);
     return false;
+}
+
+bool Pixmap::WritePng(const std::string &filename, bool flip) {
+    FILE *f = ssfopen(filename.c_str(), "wb");
+    if(!f) return false;
+    bool success = WritePng(f, flip);
+    fclose(f);
+    return success;
+}
+
+bool Pixmap::Equals(const Pixmap &other) const {
+    if(format != other.format || width != other.width || height != other.height) {
+        return false;
+    }
+
+    size_t rowLength = width * GetBytesPerPixel();
+    for(size_t y = 0; y < height; y++) {
+        if(memcmp(&data[y * stride], &other.data[y * other.stride], rowLength)) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 std::shared_ptr<Pixmap> Pixmap::Create(Format format, size_t width, size_t height) {

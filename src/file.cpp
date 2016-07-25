@@ -734,34 +734,6 @@ static void PathSepNormalize(std::string &filename)
     }
 }
 
-static std::string PathSepPlatformToUNIX(const std::string &filename)
-{
-#if defined(WIN32)
-    std::string result = filename;
-    for(size_t i = 0; i < result.length(); i++) {
-        if(result[i] == '\\')
-            result[i] = '/';
-    }
-    return result;
-#else
-    return filename;
-#endif
-}
-
-static std::string PathSepUNIXToPlatform(const std::string &filename)
-{
-#if defined(WIN32)
-    std::string result = filename;
-    for(size_t i = 0; i < result.length(); i++) {
-        if(result[i] == '/')
-            result[i] = '\\';
-    }
-    return result;
-#else
-    return filename;
-#endif
-}
-
 bool SolveSpaceUI::ReloadAllImported(bool canCancel)
 {
     std::map<std::string, std::string> linkMap;
@@ -791,7 +763,7 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
 
         // In a newly created group we only have an absolute path.
         if(!g->linkFileRel.empty()) {
-            std::string rel = PathSepUNIXToPlatform(g->linkFileRel);
+            std::string rel = PathSepUnixToPlatform(g->linkFileRel);
             std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
             FILE *test = ssfopen(fromRel, "rb");
             if(test) {
@@ -812,7 +784,7 @@ try_load_file:
                 // Record the linked file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
                 std::string rel = MakePathRelative(SS.saveFile, g->linkFile);
-                g->linkFileRel = PathSepPlatformToUNIX(rel);
+                g->linkFileRel = PathSepPlatformToUnix(rel);
             } else {
                 // We're not yet saved, so can't make it absolute.
                 // This will only be used for display purposes, as SS.saveFile

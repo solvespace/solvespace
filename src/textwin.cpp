@@ -718,6 +718,7 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
 }
 
 void TextWindow::Paint() {
+#if !defined(HEADLESS)
     int width, height;
     GetTextWindowSize(&width, &height);
 
@@ -857,6 +858,7 @@ void TextWindow::Paint() {
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
     canvas.EndFrame();
+#endif
 }
 
 void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {

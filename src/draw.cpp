@@ -710,6 +710,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
+#if !defined(HEADLESS)
     havePainted = true;
 
     auto renderStartTime = std::chrono::high_resolution_clock::now();
@@ -786,4 +787,5 @@ void GraphicsWindow::Paint() {
     }
 
     canvas.EndFrame();
+#endif
 }

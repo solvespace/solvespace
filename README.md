@@ -26,12 +26,12 @@ Building on Linux
 ### Building for Linux
 
 You will need CMake, libpng, zlib, json-c, fontconfig, freetype, gtkmm 2.4,
-pangomm 1.4, OpenGL and OpenGL GLU.
+pangomm 1.4, OpenGL and OpenGL GLU. To build tests, you will need cairo.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install libpng-dev libjson-c-dev libfreetype6-dev \
                     libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev \
-                    libgl-dev libglu-dev cmake
+                    libcairo2-dev libgl-dev libglu-dev cmake
 
 Before building, check out the necessary submodules:
 
@@ -41,7 +41,7 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake ..
+    cmake .. -DENABLE_TESTS=OFF
     make
     sudo make install
 
@@ -63,15 +63,17 @@ After that, build 32-bit SolveSpace as following:
 
     mkdir build
     cd build
-    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw32.cmake ..
-    make solvespace
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw32.cmake \
+             -DENABLE_TESTS=OFF
+    make
 
 Or, build 64-bit SolveSpace as following:
 
     mkdir build
     cd build
-    cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake ..
-    make solvespace
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake \
+             -DENABLE_TESTS=OFF
+    make
 
 The application is built as `build/src/solvespace.exe`.
 
@@ -80,10 +82,11 @@ Space Navigator support will not be available.
 Building on Mac OS X
 --------------------
 
-You will need XCode tools, CMake, libpng and Freetype. Assuming you use
+You will need XCode tools, CMake, libpng and Freetype. To build tests, you
+will need cairo. Assuming you use
 [homebrew][], these can be installed with:
 
-    brew install cmake libpng freetype
+    brew install cmake libpng freetype cairo
 
 XCode has to be installed via AppStore; it requires a free Apple ID.
 
@@ -95,7 +98,7 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake ..
+    cmake .. -DENABLE_TESTS=OFF
     make
 
 The app bundle is built in `build/src/solvespace.app`.
@@ -123,7 +126,7 @@ Visual Studio install. Then, run the following in cmd or PowerShell:
     git submodule update --init
     mkdir build
     cd build
-    cmake .. -G "NMake Makefiles"
+    cmake .. -G "NMake Makefiles" -DENABLE_TESTS=OFF
     nmake
 
 ### MSVC build
@@ -137,7 +140,7 @@ in bash:
     git submodule update --init
     mkdir build
     cd build
-    cmake ..
+    cmake .. -DENABLE_TESTS=OFF
     make
 
 [cmakewin]: http://www.cmake.org/download/#latest

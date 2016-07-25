@@ -277,6 +277,8 @@ public:
 class CairoRenderer : public SurfaceRenderer {
 public:
     cairo_t     *context;
+    // Renderer configuration.
+    bool        antialias;
     // Renderer state.
     struct {
         hStroke     hcs;

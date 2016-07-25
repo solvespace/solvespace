@@ -27,6 +27,8 @@ set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
+set(ENABLE_TESTS ON CACHE BOOL "Whether the test suite will be built and run")
+
 if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()
@@ -93,19 +95,21 @@ if(WIN32)
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
-    message(STATUS "Using in-tree pixman")
-    add_vendored_subdirectory(extlib/pixman)
-    set(PIXMAN_FOUND            YES)
-    set(PIXMAN_LIBRARY          pixman)
-    set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
-    list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
+    if(ENABLE_TESTS)
+        message(STATUS "Using in-tree pixman")
+        add_vendored_subdirectory(extlib/pixman)
+        set(PIXMAN_FOUND            YES)
+        set(PIXMAN_LIBRARY          pixman)
+        set(PIXMAN_INCLUDE_DIRS     ${CMAKE_SOURCE_DIR}/extlib/pixman/pixman)
+        list(APPEND PIXMAN_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/pixman/pixman)
 
-    message(STATUS "Using in-tree cairo")
-    add_vendored_subdirectory(extlib/cairo)
-    set(CAIRO_FOUND             YES)
-    set(CAIRO_LIBRARY           cairo)
-    set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
-    list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+        message(STATUS "Using in-tree cairo")
+        add_vendored_subdirectory(extlib/cairo)
+        set(CAIRO_FOUND             YES)
+        set(CAIRO_LIBRARIES         cairo)
+        set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
+        list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+    endif()
 
     if(NOT MINGW)
         message(STATUS "Using prebuilt SpaceWare")
@@ -122,10 +126,15 @@ elseif(APPLE)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
 
+    if(ENABLE_TESTS)
+        find_library(CAIRO_LIBRARIES cairo REQUIRED)
+        find_path(CAIRO_INCLUDE_DIRS cairo.h PATH_SUFFIXES cairo)
+    endif()
+
     find_library(APPKIT_LIBRARY AppKit REQUIRED)
-    find_library(CAIRO_LIBRARY cairo REQUIRED)
-    find_path(CAIRO_INCLUDE_DIRS cairo.h PATH_SUFFIXES cairo)
 else() # Linux and compatible systems
+    find_package(PkgConfig REQUIRED)
+
     find_package(Backtrace)
     find_package(SpaceWare)
 
@@ -133,12 +142,13 @@ else() # Linux and compatible systems
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
 
-    # Use freedesktop's pkg-config to locate everything else.
-    find_package(PkgConfig REQUIRED)
+    if(ENABLE_TESTS)
+        pkg_check_modules(CAIRO REQUIRED cairo)
+    endif()
+
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
     pkg_check_modules(FREETYPE REQUIRED freetype2)
-    pkg_check_modules(CAIRO REQUIRED cairo)
 
     set(HAVE_GTK TRUE)
     if(GUI STREQUAL "gtk3")
@@ -192,15 +202,18 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang
     set(WARNING_FLAGS   "${WARNING_FLAGS} -Werror=switch")
 endif()
 
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
+
 if(WIN32)
     set(CMAKE_RC_FLAGS  "${CMAKE_RC_FLAGS} -l0")
 endif()
-
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${WARNING_FLAGS}")
 
 # components
 
 add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(exposed)
+if(ENABLE_TESTS)
+    add_subdirectory(test)
+endif()

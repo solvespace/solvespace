@@ -1,5 +1,7 @@
 /CMakeCache.txt
 /build*/
+/test/**/*.diff.*
+/test/**/*.curr.*
 *.trace # OpenGL apitrace files
 /debian/tmp/
 /debian/*.log
