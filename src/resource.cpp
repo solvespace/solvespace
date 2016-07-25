@@ -87,7 +87,8 @@ RgbaColor Pixmap::GetPixel(size_t x, size_t y) const {
     ssassert(false, "Unexpected resource format");
 }
 
-static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr) {
+static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *info_ptr,
+                                                 bool flip) {
     png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_GRAY_TO_RGB, NULL);
 
     std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
@@ -106,7 +107,8 @@ static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *
     pixmap->data = std::vector<uint8_t>(pixmap->stride * pixmap->height);
     uint8_t **rows = png_get_rows(png_ptr, info_ptr);
     for(size_t y = 0; y < pixmap->height; y++) {
-        memcpy(&pixmap->data[pixmap->stride * y], rows[y],
+        uint8_t *srcRow = flip ? rows[y] : rows[pixmap->height - y - 1];
+        memcpy(&pixmap->data[pixmap->stride * y], srcRow,
                pixmap->width * pixmap->GetBytesPerPixel());
     }
 
@@ -114,7 +116,7 @@ static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *
     return pixmap;
 }
 
-std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size) {
+std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size, bool flip) {
     struct Slice { const uint8_t *data; size_t size; };
     Slice dataSlice = { data, size };
     png_struct *png_ptr = NULL;
@@ -139,14 +141,14 @@ std::shared_ptr<Pixmap> Pixmap::FromPng(const uint8_t *data, size_t size) {
             }
         });
 
-    return ReadPngIntoPixmap(png_ptr, info_ptr);
+    return ReadPngIntoPixmap(png_ptr, info_ptr, flip);
 
 exit:
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
     return nullptr;
 }
 
-std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f) {
+std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f, bool flip) {
     png_struct *png_ptr = NULL;
     png_info *info_ptr = NULL;
 
@@ -164,7 +166,7 @@ std::shared_ptr<Pixmap> Pixmap::ReadPng(FILE *f) {
     png_init_io(png_ptr, f);
     png_set_sig_bytes(png_ptr, sizeof(header));
 
-    return ReadPngIntoPixmap(png_ptr, info_ptr);
+    return ReadPngIntoPixmap(png_ptr, info_ptr, flip);
 
 exit:
     png_destroy_read_struct(&png_ptr, &info_ptr, NULL);

@@ -33,9 +33,9 @@ public:
     std::vector<uint8_t>       data;
 
     static std::shared_ptr<Pixmap> Create(Format format, size_t width, size_t height);
-    static std::shared_ptr<Pixmap> FromPng(const uint8_t *data, size_t size);
+    static std::shared_ptr<Pixmap> FromPng(const uint8_t *data, size_t size, bool flip = false);
 
-    static std::shared_ptr<Pixmap> ReadPng(FILE *f);
+    static std::shared_ptr<Pixmap> ReadPng(FILE *f, bool flip = false);
     bool WritePng(FILE *f, bool flip = false);
 
     size_t GetBytesPerPixel() const;
