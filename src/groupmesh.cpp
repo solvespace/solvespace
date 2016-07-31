@@ -624,7 +624,7 @@ void Group::DrawFilledPaths(Canvas *canvas) {
         fill.zIndex = 1;
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
-            fill.color = s->color;
+            fill.color = s->fillColor;
         } else if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
                     polyError.how == PolyError::GOOD) {
             // If this is the active group, and we are supposed to check
