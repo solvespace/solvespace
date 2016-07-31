@@ -15,6 +15,7 @@
 namespace SolveSpace {
     // These are defined in headless.cpp, and aren't exposed in solvespace.h.
     extern std::string resourceDir;
+    extern std::vector<std::string> fontFiles;
     extern bool antialias;
     extern std::shared_ptr<Pixmap> framebuffer;
 }
@@ -94,8 +95,8 @@ static std::string Colorize(Color color, std::string input) {
     return input;
 }
 
-static std::vector<uint8_t> ReadFile(std::string path) {
-    std::vector<uint8_t> data;
+static std::string ReadFile(std::string path) {
+    std::string data;
     FILE *f = ssfopen(path.c_str(), "rb");
     if(f) {
         fseek(f, 0, SEEK_END);
@@ -103,6 +104,38 @@ static std::vector<uint8_t> ReadFile(std::string path) {
         fseek(f, 0, SEEK_SET);
         fread(&data[0], 1, data.size(), f);
         fclose(f);
+    }
+    return data;
+}
+
+// Normalizes a savefile. Different platforms have slightly different floating-point
+// behavior, so if we want to compare savefiles byte-by-byte, we need to do something
+// to get rid of irrelevant differences in LSB.
+static std::string PrepareSavefile(std::string data) {
+    // Round everything to 2**30 ~ 1e9
+    const double precision = pow(2, 30);
+
+    size_t newline = 0;
+    while(newline < std::string::npos) {
+        size_t nextNewline = data.find('\n', newline + 1);
+
+        size_t eqPos = data.find('=', newline + 1);
+        if(eqPos < nextNewline) {
+            std::string key   = data.substr(newline + 1, eqPos - newline - 1),
+                        value = data.substr(eqPos + 1, nextNewline - eqPos - 1);
+            for(int i = 0; SolveSpaceUI::SAVED[i].type != 0; i++) {
+                if(SolveSpaceUI::SAVED[i].desc != key) continue;
+                if(SolveSpaceUI::SAVED[i].fmt  != 'f') continue;
+                double f = strtod(value.c_str(), NULL);
+                f = round(f * precision) / precision;
+                std::string newValue = ssprintf("%.20f", f);
+                ssassert(value.size() == newValue.size(), "Expected no change in value length");
+                std::copy(newValue.begin(), newValue.end(),
+                          data.begin() + eqPos + 1);
+            }
+        }
+
+        newline = nextNewline;
     }
     return data;
 }
@@ -169,8 +202,8 @@ bool Test::Helper::CheckSave(const char *file, int line, const char *reference) 
                      ssprintf("saving file '%s'", refPath.c_str()));
         return false;
     } else {
-        std::vector<uint8_t> refData = ReadFile(refPath),
-                             outData = ReadFile(outPath);
+        std::string refData = PrepareSavefile(ReadFile(refPath)),
+                    outData = PrepareSavefile(ReadFile(outPath));
         if(!RecordCheck(refData == outData)) {
             PrintFailure(file, line, "savefile doesn't match reference");
             return false;
@@ -258,6 +291,8 @@ int main(int argc, char **argv) {
     resourceDir = HostRoot();
     resourceDir.erase(resourceDir.rfind(HOST_PATH_SEP) + 1);
     resourceDir += "res";
+
+    fontFiles.push_back(HostRoot() + HOST_PATH_SEP + "Gentium-R.ttf");
 
     // Different Cairo versions have different antialiasing algorithms.
     antialias = false;

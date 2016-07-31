@@ -11,3 +11,8 @@ TEST_CASE(migrate_from_v20) {
     CHECK_RENDER("normal.png");
     CHECK_SAVE("normal.slvs");
 }
+
+TEST_CASE(render_extended) {
+    CHECK_LOAD("extended.slvs");
+    CHECK_RENDER("extended.png");
+}

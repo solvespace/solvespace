@@ -233,8 +233,9 @@ void OpenWebsite(const char *url) {
 // Resources
 //-----------------------------------------------------------------------------
 
+std::vector<std::string> fontFiles;
 std::vector<std::string> GetFontFiles() {
-    return {};
+    return fontFiles;
 }
 
 std::string resourceDir;

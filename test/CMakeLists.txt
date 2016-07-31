@@ -7,7 +7,48 @@ include_directories(
 
 set(testsuite_SOURCES
     harness.cpp
-    request/line_segment/test.cpp)
+    constraint/points_coincident/test.cpp
+    constraint/pt_pt_distance/test.cpp
+    constraint/pt_plane_distance/test.cpp
+    constraint/pt_line_distance/test.cpp
+    constraint/pt_face_distance/test.cpp
+    constraint/proj_pt_distance/test.cpp
+    constraint/pt_in_plane/test.cpp
+    constraint/pt_on_line/test.cpp
+    constraint/pt_on_face/test.cpp
+    constraint/equal_length_lines/test.cpp
+    constraint/length_ratio/test.cpp
+    constraint/eq_len_pt_line_d/test.cpp
+    constraint/eq_pt_ln_distances/test.cpp
+    constraint/equal_angle/test.cpp
+    constraint/equal_line_arc_len/test.cpp
+    constraint/length_difference/test.cpp
+    constraint/symmetric/test.cpp
+    constraint/symmetric_horiz/test.cpp
+    constraint/symmetric_vert/test.cpp
+    constraint/symmetric_line/test.cpp
+    constraint/at_midpoint/test.cpp
+    constraint/horizontal/test.cpp
+    constraint/vertical/test.cpp
+    constraint/diameter/test.cpp
+    constraint/pt_on_circle/test.cpp
+    constraint/same_orientation/test.cpp
+    constraint/angle/test.cpp
+    constraint/parallel/test.cpp
+    constraint/perpendicular/test.cpp
+    constraint/arc_line_tangent/test.cpp
+    constraint/cubic_line_tangent/test.cpp
+    constraint/curve_curve_tangent/test.cpp
+    constraint/equal_radius/test.cpp
+    constraint/where_dragged/test.cpp
+    constraint/comment/test.cpp
+    request/arc_of_circle/test.cpp
+    request/circle/test.cpp
+    request/cubic/test.cpp
+    request/cubic_periodic/test.cpp
+    request/datum_point/test.cpp
+    request/line_segment/test.cpp
+    request/ttf_text/test.cpp)
 
 add_executable(solvespace_testsuite
     ${testsuite_SOURCES})

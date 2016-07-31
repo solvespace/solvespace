@@ -19,6 +19,10 @@ void CairoRenderer::OutputStart() {
 
     cairo_translate(context, camera.width / 2.0, camera.height / 2.0);
 
+    // Avoid pixel boundaries; when not using antialiasing, we would otherwise
+    // get numerically unstable output.
+    cairo_translate(context, 0.1, 0.1);
+
     cairo_set_line_join(context, CAIRO_LINE_JOIN_ROUND);
     cairo_set_line_cap(context, CAIRO_LINE_CAP_ROUND);
 }
