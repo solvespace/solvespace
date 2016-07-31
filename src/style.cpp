@@ -371,7 +371,7 @@ void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
         if(GetOpenFile(&bgImageFile, "", PngFileFilter)) {
             FILE *f = ssfopen(bgImageFile, "rb");
             if(f) {
-                SS.bgImage.pixmap = Pixmap::ReadPng(f, /*flip=*/true);
+                SS.bgImage.pixmap = Pixmap::ReadPng(f);
                 SS.bgImage.scale  = SS.GW.scale;
                 SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
                 fclose(f);

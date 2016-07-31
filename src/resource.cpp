@@ -149,7 +149,7 @@ static std::shared_ptr<Pixmap> ReadPngIntoPixmap(png_struct *png_ptr, png_info *
     pixmap->data = std::vector<uint8_t>(pixmap->stride * pixmap->height);
     uint8_t **rows = png_get_rows(png_ptr, info_ptr);
     for(size_t y = 0; y < pixmap->height; y++) {
-        uint8_t *srcRow = flip ? rows[y] : rows[pixmap->height - y - 1];
+        uint8_t *srcRow = flip ? rows[pixmap->height - y - 1] : rows[y];
         memcpy(&pixmap->data[pixmap->stride * y], srcRow,
                pixmap->width * pixmap->GetBytesPerPixel());
     }
@@ -229,9 +229,9 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
     std::vector<uint8_t *> rows;
     for(size_t y = 0; y < height; y++) {
         if(flip) {
-            rows.push_back(&data[stride * y]);
-        } else {
             rows.push_back(&data[stride * (height - y - 1)]);
+        } else {
+            rows.push_back(&data[stride * y]);
         }
     }
 
