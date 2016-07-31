@@ -590,7 +590,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 
         // Place the background at the very back of the Z order.
         Canvas::Fill fillBackground = {};
-        fillBackground.layer  = Canvas::Layer::BACK;
+        fillBackground.color = RGBi(0.0, 0.0, 0.0);
+        fillBackground.layer = Canvas::Layer::BACK;
         Canvas::hFill hcfBackground = canvas->GetFill(fillBackground);
 
         canvas->DrawPixmap(SS.bgImage.pixmap,
