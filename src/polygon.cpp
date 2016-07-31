@@ -47,6 +47,17 @@ void STriangle::FlipNormal() {
     swap(an, bn);
 }
 
+STriangle STriangle::Transform(Vector u, Vector v, Vector n) const {
+    STriangle tr = *this;
+    tr.a  = tr.a.ScaleOutOfCsys(u, v, n);
+    tr.an = tr.an.ScaleOutOfCsys(u, v, n);
+    tr.b  = tr.b.ScaleOutOfCsys(u, v, n);
+    tr.bn = tr.bn.ScaleOutOfCsys(u, v, n);
+    tr.c  = tr.c.ScaleOutOfCsys(u, v, n);
+    tr.cn = tr.cn.ScaleOutOfCsys(u, v, n);
+    return tr;
+}
+
 STriangle STriangle::From(STriMeta meta, Vector a, Vector b, Vector c) {
     STriangle tr = {};
     tr.meta = meta;
@@ -620,7 +631,7 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) const {
     }
 }
 
-Vector SPolygon::ComputeNormal() {
+Vector SPolygon::ComputeNormal() const {
     if(l.n < 1) return Vector::From(0, 0, 0);
     return (l.elem[0]).ComputeNormal();
 }
@@ -715,6 +726,17 @@ bool SPolygon::SelfIntersecting(Vector *intersectsAt) const {
 
     el.Clear();
     return ret;
+}
+
+void SPolygon::InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const {
+    for(const SContour &sc : l) {
+        SContour tsc = {};
+        tsc.timesEnclosed = sc.timesEnclosed;
+        for(const SPoint &sp : sc.l) {
+            tsc.AddPoint(sp.p.DotInToCsys(u, v, n));
+        }
+        sp->l.Add(&tsc);
+    }
 }
 
 //-----------------------------------------------------------------------------

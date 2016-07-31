@@ -502,4 +502,27 @@ void SPolygon::UvGridTriangulateInto(SMesh *mesh, SSurface *srf) {
     UvTriangulateInto(mesh, srf);
 }
 
+void SPolygon::TriangulateInto(SMesh *m) const {
+    Vector n = normal;
+    if(n.Equals(Vector::From(0.0, 0.0, 0.0))) {
+       n = ComputeNormal();
+    }
+    Vector u = n.Normal(0);
+    Vector v = n.Normal(1);
 
+    SPolygon p = {};
+    this->InverseTransformInto(&p, u, v, n);
+
+    SSurface srf = SSurface::FromPlane(Vector::From(0.0, 0.0, 0.0),
+                                       Vector::From(1.0, 0.0, 0.0),
+                                       Vector::From(0.0, 1.0, 0.0));
+    SMesh pm = {};
+    p.UvTriangulateInto(&pm, &srf);
+    for(STriangle st : pm.l) {
+        st = st.Transform(u, v, n);
+        m->AddTriangle(&st);
+    }
+
+    p.Clear();
+    pm.Clear();
+}

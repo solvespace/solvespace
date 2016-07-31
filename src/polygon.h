@@ -147,7 +147,7 @@ public:
     List<SContour>  l;
     Vector          normal;
 
-    Vector ComputeNormal();
+    Vector ComputeNormal() const;
     void AddEmptyContour();
     int WindingNumberForPoint(Vector p) const;
     double SignedArea() const;
@@ -161,6 +161,8 @@ public:
     void OffsetInto(SPolygon *dest, double r) const;
     void UvTriangulateInto(SMesh *m, SSurface *srf);
     void UvGridTriangulateInto(SMesh *m, SSurface *srf);
+    void TriangulateInto(SMesh *m) const;
+    void InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const;
 };
 
 class STriangle {
@@ -185,6 +187,7 @@ public:
     int WindingNumberForPoint(Vector p) const;
     bool ContainsPoint(Vector p) const;
     bool ContainsPointProjd(Vector n, Vector p) const;
+    STriangle Transform(Vector o, Vector u, Vector v) const;
 };
 
 class SBsp2 {
