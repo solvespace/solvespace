@@ -352,6 +352,8 @@ void SurfaceRenderer::OutputInPaintOrder() {
                 if(tr.meta.color.IsEmpty()) continue;
                 OutputTriangle(tr);
             }
+
+            mp.Clear();
         }
 
         for(auto eit : edges) {
@@ -382,6 +384,8 @@ void SurfaceRenderer::OutputInPaintOrder() {
 }
 
 void SurfaceRenderer::Clear() {
+    Canvas::Clear();
+
     for(auto &eit : edges) {
         SEdgeList &el = eit.second;
         el.l.Clear();

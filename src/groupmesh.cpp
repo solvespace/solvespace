@@ -637,6 +637,7 @@ void Group::DrawFilledPaths(Canvas *canvas) {
         SPolygon sp = {};
         sbls.MakePwlInto(&sp);
         canvas->DrawPolygon(sp, hcf);
+        sp.Clear();
     }
 }
 

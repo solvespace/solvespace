@@ -144,6 +144,11 @@ bool Canvas::Fill::Equals(const Fill &other) const {
             pattern == other.pattern);
 }
 
+void Canvas::Clear() {
+    strokes.Clear();
+    fills.Clear();
+}
+
 Canvas::hStroke Canvas::GetStroke(const Stroke &stroke) {
     for(const Stroke &s : strokes) {
         if(s.Equals(stroke)) return s.h;

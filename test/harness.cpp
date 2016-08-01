@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------------
 #include "harness.h"
 #include <regex>
+#include <cairo.h>
 #if defined(WIN32)
 #include <windows.h>
 #else
@@ -310,11 +311,15 @@ int main(int argc, char **argv) {
     if(failTally > 0) {
         fprintf(stderr, "Failure! %u checks failed\n",
                 (unsigned)failTally);
-        return 1;
     } else {
         fprintf(stderr, "Success! %u test cases (%u skipped), %u checks, %.3fs\n",
                 (unsigned)ranTally, (unsigned)skippedTally,
                 (unsigned)checkTally, testTime.count());
-        return 0;
     }
+
+    // At last, try to reset all caches we or our dependencies have, to make SNR
+    // of memory checking tools like valgrind higher.
+    cairo_debug_reset_static_data();
+
+    return (failTally > 0);
 }

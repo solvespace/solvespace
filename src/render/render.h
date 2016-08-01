@@ -98,6 +98,7 @@ public:
         StipplePattern  stipplePattern;
         double          stippleScale;
 
+        void Clear() { *this = {}; }
         bool Equals(const Stroke &other) const;
     };
 
@@ -114,13 +115,15 @@ public:
         RgbaColor       color;
         FillPattern     pattern;
 
+        void Clear() { *this = {}; }
         bool Equals(const Fill &other) const;
     };
 
     IdList<Stroke, hStroke> strokes;
     IdList<Fill,   hFill>   fills;
 
-    Canvas() : strokes(), fills() {};
+    Canvas() : strokes(), fills() {}
+    virtual void Clear();
 
     hStroke GetStroke(const Stroke &stroke);
     hFill GetFill(const Fill &fill);
@@ -226,7 +229,7 @@ public:
     BBox        bbox;
 
     SurfaceRenderer() : camera(), lighting(), chordTolerance(), mesh(), bbox() {}
-    virtual void Clear();
+    void Clear() override;
 
     // Canvas interface.
     const Camera &GetCamera() const override { return camera; }
