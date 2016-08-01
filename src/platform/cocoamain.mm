@@ -1045,6 +1045,15 @@ void GetTextWindowSize(int *w, int *h) {
     *h = (int)size.height;
 }
 
+double GetScreenDpi() {
+    NSScreen *screen = [NSScreen mainScreen];
+    NSDictionary *description = [screen deviceDescription];
+    NSSize displayPixelSize = [[description objectForKey:NSDeviceSize] sizeValue];
+    CGSize displayPhysicalSize = CGDisplayScreenSize(
+                [[description objectForKey:@"NSScreenNumber"] unsignedIntValue]);
+    return (displayPixelSize.width / displayPhysicalSize.width) * 25.4f;
+}
+
 void InvalidateText(void) {
     NSSize size = [TWView convertSizeToBacking:[TWView frame].size];
     size.height = (SS.TW.top[SS.TW.rows - 1] + 1) * TextWindow::LINE_HEIGHT / 2;

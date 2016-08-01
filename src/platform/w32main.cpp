@@ -266,6 +266,13 @@ void SolveSpace::GetTextWindowSize(int *w, int *h)
     GetWindowSize(TextWnd, w, h);
 }
 
+double SolveSpace::GetScreenDpi() {
+    HDC hdc = GetDC(NULL);
+    double dpi = GetDeviceCaps(hdc, LOGPIXELSX);
+    ReleaseDC(NULL, hdc);
+    return dpi;
+}
+
 void SolveSpace::OpenWebsite(const char *url) {
     ShellExecuteW(GraphicsWnd, L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
 }

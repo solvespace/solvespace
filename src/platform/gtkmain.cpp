@@ -1420,6 +1420,10 @@ void GetTextWindowSize(int *w, int *h) {
     *h = allocation.get_height();
 }
 
+double GetScreenDpi() {
+    return Gdk::Screen::get_default()->get_resolution();
+}
+
 void InvalidateText(void) {
     TW->get_widget().queue_draw();
 }

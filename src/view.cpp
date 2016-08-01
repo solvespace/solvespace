@@ -14,6 +14,8 @@ void TextWindow::ShowEditView() {
         SS.GW.scale * SS.MmPerUnit(),
         SS.UnitName(),
         &ScreenChangeViewScale);
+    Printf(false, "%Bd   %Fl%Ll%fset to full scale%E",
+        &ScreenChangeViewToFullScale);
     Printf(false, "");
 
     Printf(false, "%Bd %Ftorigin (maps to center of screen)%E");
@@ -40,6 +42,10 @@ void TextWindow::ShowEditView() {
 void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::VIEW_SCALE;
     SS.TW.ShowEditControl(3, ssprintf("%.3f", SS.GW.scale * SS.MmPerUnit()));
+}
+
+void TextWindow::ScreenChangeViewToFullScale(int link, uint32_t v) {
+    SS.GW.scale = GetScreenDpi() / 25.4;
 }
 
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {

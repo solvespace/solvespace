@@ -96,6 +96,9 @@ void ScheduleLater() {
 void GetGraphicsWindowSize(int *w, int *h) {
     *w = *h = 600;
 }
+double GetScreenDpi() {
+    return 72;
+}
 
 void InvalidateGraphics() {
 }

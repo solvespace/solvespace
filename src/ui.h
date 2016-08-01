@@ -457,6 +457,7 @@ public:
     static void ScreenChangeBackgroundImageScale(int link, uint32_t v);
     static void ScreenChangePasteTransformed(int link, uint32_t v);
     static void ScreenChangeViewScale(int link, uint32_t v);
+    static void ScreenChangeViewToFullScale(int link, uint32_t v);
     static void ScreenChangeViewOrigin(int link, uint32_t v);
     static void ScreenChangeViewProjection(int link, uint32_t v);
 

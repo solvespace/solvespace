@@ -11,6 +11,8 @@ New export/import features:
 Other new features:
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
+  * New link to match the on-screen size of the sketch with its actual size,
+    "view → set to full scale".
 
 2.2
 ---
