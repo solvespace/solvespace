@@ -102,6 +102,7 @@ enum class Command : uint32_t {
     // Analyze
     VOLUME,
     AREA,
+    PERIMETER,
     INTERFERENCE,
     NAKED_EDGES,
     SHOW_DOF,

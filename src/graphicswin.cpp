@@ -149,7 +149,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 
 { 0, "&Analyze",                    Command::NONE,             0,       TN, NULL  },
 { 1, "Measure &Volume",             Command::VOLUME,           C|S|'V', TN, mAna  },
-{ 1, "Measure &Area",               Command::AREA,             C|S|'A', TN, mAna  },
+{ 1, "Measure A&rea",               Command::AREA,             C|S|'A', TN, mAna  },
+{ 1, "Measure &Perimeter",          Command::PERIMETER,        C|S|'P', TN, mAna  },
 { 1, "Show &Interfering Parts",     Command::INTERFERENCE,     C|S|'I', TN, mAna  },
 { 1, "Show &Naked Edges",           Command::NAKED_EDGES,      C|S|'N', TN, mAna  },
 { 1, NULL,                          Command::NONE,             0,       TN, NULL  },

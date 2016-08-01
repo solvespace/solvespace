@@ -749,6 +749,30 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
         }
 
+        case Command::PERIMETER: {
+            if(gs.n > 0 && gs.n == gs.entities) {
+                double perimeter = 0.0;
+                for(int i = 0; i < gs.entities; i++) {
+                    Entity *e = SK.entity.FindById(gs.entity[i]);
+                    SEdgeList *el = e->GetOrGenerateEdges();
+                    for(const SEdge &e : el->l) {
+                        perimeter += e.b.Minus(e.a).Magnitude();
+                    }
+                }
+
+                double scale = SS.MmPerUnit();
+                Message("The total length of the selected entities is:\n\n"
+                        "    %.3f %s\n\n"
+                        "Curves have been approximated as piecewise linear.\n"
+                        "This introduces error, typically of around 1%%.",
+                    perimeter / scale,
+                    SS.UnitName());
+            } else {
+                Error("Bad selection for perimeter; select line segments, arcs, and curves.");
+            }
+            break;
+        }
+
         case Command::SHOW_DOF:
             // This works like a normal solve, except that it calculates
             // which variables are free/bound at the same time.

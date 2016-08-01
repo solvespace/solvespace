@@ -8,6 +8,10 @@ New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
     use the current viewport projection.
 
+Other new features:
+  * New command for measuring total length of selected entities,
+    "Analyze → Measure Perimeter".
+
 2.2
 ---
 
