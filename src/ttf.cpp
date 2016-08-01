@@ -211,14 +211,18 @@ static int CubicTo(const FT_Vector *c1, const FT_Vector *c2, const FT_Vector *p,
     return 0;
 }
 
-static const FT_Outline_Funcs outline_funcs = {
-    MoveTo, LineTo, ConicTo, CubicTo, 0, 0
-};
-
 void TtfFont::PlotString(const std::string &str,
                          SBezierList *sbl, Vector origin, Vector u, Vector v)
 {
     ssassert(fontFace != NULL, "Expected font face to be loaded");
+
+    FT_Outline_Funcs outlineFuncs;
+    outlineFuncs.move_to  = MoveTo;
+    outlineFuncs.line_to  = LineTo;
+    outlineFuncs.conic_to = ConicTo;
+    outlineFuncs.cubic_to = CubicTo;
+    outlineFuncs.shift    = 0;
+    outlineFuncs.delta    = 0;
 
     FT_Pos dx = 0;
     for(char32_t chr : ReadUTF8(str)) {
@@ -228,8 +232,17 @@ void TtfFont::PlotString(const std::string &str,
                 chr, ft_error_string(gid));
         }
 
-        FT_F26Dot6 scale = fontFace->units_per_EM;
-        if(int fterr = FT_Set_Char_Size(fontFace, scale, scale, 72, 72)) {
+        // We always ask Freetype to give us a unit size character.
+        // It uses fixed point; put the unit size somewhere in the middle of the dynamic
+        // range of its 26.6 fixed point type, and adjust the factors so that the unit
+        // matches cap height.
+        FT_Size_RequestRec sizeRequest;
+        sizeRequest.type           = FT_SIZE_REQUEST_TYPE_REAL_DIM;
+        sizeRequest.width          = 1 << 16;
+        sizeRequest.height         = 1 << 16;
+        sizeRequest.horiResolution = 128;
+        sizeRequest.vertResolution = 128;
+        if(int fterr = FT_Request_Size(fontFace, &sizeRequest)) {
             dbp("freetype: cannot set character size: %s",
                 ft_error_string(fterr));
             return;
@@ -274,9 +287,9 @@ void TtfFont::PlotString(const std::string &str,
         data.u       = u;
         data.v       = v;
         data.beziers = sbl;
-        data.factor  = 1.0f/(float)scale;
+        data.factor  = 1.0f/(float)(1 << 16);
         data.bx      = bx;
-        if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outline_funcs, &data)) {
+        if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outlineFuncs, &data)) {
             dbp("freetype: bezier decomposition failed (gid %d): %s",
                 gid, ft_error_string(fterr));
         }

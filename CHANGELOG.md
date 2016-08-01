@@ -23,6 +23,7 @@ Bug fixes:
   * OS X: do not completely hide main window when defocused.
   * GTK: unbreak 3Dconnexion support.
   * When pasting transformed entities, multiply constraint values by scale.
+  * Fix TTF font metrics (restore the behavior from version 2.0).
 
 2.1
 ---
