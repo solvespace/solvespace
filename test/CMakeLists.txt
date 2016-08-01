@@ -24,6 +24,7 @@ add_custom_target(solvespace-test ALL
 
 if(ENABLE_COVERAGE)
     set(LCOV_FLAGS   -q --rc lcov_branch_coverage=1 --rc lcov_excl_line=ssassert)
+    set(LCOV_FLAGS   ${LCOV_FLAGS} --gcov-tool ${GCOV})
     set(LCOV_COLLECT -c -b ${CMAKE_SOURCE_DIR}/src -d ${CMAKE_BINARY_DIR}/src --no-external)
 
     add_custom_command(

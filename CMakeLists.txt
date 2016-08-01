@@ -38,6 +38,10 @@ if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()
 
+if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
+    message(FATAL_ERROR "C and C++ compilers should be supplied by the same vendor")
+endif()
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
         # GCC 4.8/4.9 ship with broken but present <regex>. meh.
@@ -61,7 +65,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 endif()
 
 if(ENABLE_SANITIZE)
-    if(NOT (CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message(FATAL_ERROR "Sanitizers are only available when using Clang/Clang++")
     endif()
     set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
@@ -172,10 +176,22 @@ else() # Linux and compatible systems
 endif()
 
 if(ENABLE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
+        find_program(GCOV gcov)
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+        find_program(LLVM_COV llvm-cov)
+
+        if(LLVM_COV)
+            set(GCOV ${CMAKE_CURRENT_BINARY_DIR}/llvm-gcov.sh)
+            file(WRITE ${GCOV} "#!/bin/sh -e\n${LLVM_COV} gcov $*")
+            execute_process(COMMAND chmod +x ${GCOV})
+        endif()
+    endif()
+
     find_program(LCOV lcov)
     find_program(GENHTML genhtml)
-    if(NOT LCOV OR NOT GENHTML)
-        message(FATAL_ERROR "lcov is required for producing coverage reports")
+    if(NOT GCOV OR NOT LCOV OR NOT GENHTML)
+        message(FATAL_ERROR "gcov/llvm-cov and lcov are required for producing coverage reports")
     endif()
 endif()
 
