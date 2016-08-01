@@ -27,10 +27,12 @@ set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
-set(ENABLE_TESTS    ON  CACHE BOOL
+set(ENABLE_TESTS      ON  CACHE BOOL
     "Whether the test suite will be built and run")
-set(ENABLE_COVERAGE OFF CACHE BOOL
+set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")
+set(ENABLE_SANITIZERS OFF CACHE BOOL
+    "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 
 if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
@@ -58,12 +60,16 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(CMAKE_EXE_LINKER_FLAGS "-Wl,--as-needed ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
-if(SANITIZE)
+if(ENABLE_SANITIZE)
     if(NOT (CMAKE_C_COMPILER_ID MATCHES "Clang" AND CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
-        message(ERROR "Sanitizers are only available in Clang/Clang++")
+        message(FATAL_ERROR "Sanitizers are only available when using Clang/Clang++")
     endif()
     set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
     set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fsanitize=address,undefined,integer")
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize-recover=undefined,integer")
+    # We assume IEEE floats, which means DIV/0 is defined; but ubsan doesn't do so by default.
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize=float-divide-by-zero")
+
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
 endif()

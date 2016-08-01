@@ -21,8 +21,8 @@ std::string LoadString(const std::string &name) {
 }
 
 std::string LoadStringFromGzip(const std::string &name) {
-    size_t size;
-    const void *data = LoadResource(name, &size);
+    size_t deflatedSize;
+    const void *data = LoadResource(name, &deflatedSize);
 
     z_stream stream;
     stream.zalloc = Z_NULL;
@@ -33,11 +33,15 @@ std::string LoadStringFromGzip(const std::string &name) {
 
     // Extract length mod 2**32 from the gzip trailer.
     std::string result;
-    ssassert(size >= 4, "Resource too small to have gzip trailer");
-    result.resize(*(uint32_t *)((uintptr_t)data + size - 4));
+    ssassert(deflatedSize >= 4, "Resource too small to have gzip trailer");
+
+    // *(uint32_t *) may perform an unaligned access, so do a memcpy.
+    uint32_t inflatedSize;
+    memcpy(&inflatedSize, (uint32_t *)((uintptr_t)data + deflatedSize - 4), sizeof(uint32_t));
+    result.resize(inflatedSize);
 
     stream.next_in = (Bytef *)data;
-    stream.avail_in = size;
+    stream.avail_in = deflatedSize;
     stream.next_out = (Bytef *)&result[0];
     stream.avail_out = result.length();
     ssassert(inflate(&stream, Z_NO_FLUSH) == Z_STREAM_END, "Cannot inflate resource");
