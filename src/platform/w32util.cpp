@@ -25,12 +25,18 @@ void dbp(const char *str, ...)
     // The native version of OutputDebugString, unlike most others,
     // is OutputDebugStringA.
     OutputDebugStringA(buf);
+
+#ifndef NDEBUG
+    // Duplicate to stderr in debug builds, but not in release; this is slow.
+    fputs(buf, stderr);
+    fputc('\n', stderr);
+#endif
 }
 
 void assert_failure(const char *file, unsigned line, const char *function,
                     const char *condition, const char *message) {
-    dbp("File %s, line %u, function %s:\n", file, line, function);
-    dbp("Assertion '%s' failed: ((%s) == false).\n", message, condition);
+    dbp("File %s, line %u, function %s:", file, line, function);
+    dbp("Assertion '%s' failed: ((%s) == false).", message, condition);
 #ifdef NDEBUG
     _exit(1);
 #else
