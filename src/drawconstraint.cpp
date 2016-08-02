@@ -227,8 +227,8 @@ void Constraint::DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
     if(!onlyOneExt) {
         DoLine(canvas, hcs, b, be.Plus(out.WithMagnitude(10*pixels)));
     } else {
-        Vector prj = be;
-        DoProjectedPoint(canvas, hcs, &prj);
+        // Vector prj = be;
+        // DoProjectedPoint(canvas, hcs, &prj);
     }
 
     int within = DoLineTrimmedAgainstBox(canvas, hcs, ref, ae, be);

@@ -53,7 +53,7 @@ Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     }
 
     if(eq == 0) return e0;
-    if(eq == 1) return e1;
+    if(eq == 1) return e1; // BRANCH_ALWAYS_TAKEN
     ssassert(false, "Unexpected index of equation");
 }
 
@@ -729,7 +729,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
                     // an endpoint; so that's normal to the tangent, not
                     // parallel.
                     parallel = !parallel;
-                } else if(e->type == Entity::Type::CUBIC) {
+                } else if(e->type == Entity::Type::CUBIC) { // BRANCH_ALWAYS_TAKEN
                     if(oth) {
                         dir[i] = e->CubicGetFinishTangentExprs();
                     } else {

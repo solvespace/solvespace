@@ -135,6 +135,15 @@ static std::string PrepareSavefile(std::string data) {
             }
         }
 
+        size_t spPos = data.find(' ', newline + 1);
+        if(spPos < nextNewline) {
+            std::string cmd = data.substr(newline + 1, spPos - newline - 1);
+            if(cmd == "Surface" || cmd == "SCtrl" || cmd == "TrimBy"  || cmd == "AddSurface" ||
+                cmd == "Curve"  || cmd == "CCtrl" || cmd == "CurvePt" || cmd == "AddCurve") {
+                data.replace(newline + 1, nextNewline, nextNewline - newline - 1, ' ');
+            }
+        }
+
         newline = nextNewline;
     }
     return data;
