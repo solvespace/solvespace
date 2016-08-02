@@ -669,6 +669,7 @@ public:
 
     void DoLayout(DrawAs how, Canvas *canvas,
                   Vector *labelPos, std::vector<Vector> *refs);
+    void DoLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b);
     bool DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
                       Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,

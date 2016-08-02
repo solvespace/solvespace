@@ -36,6 +36,14 @@ std::string Constraint::Label() const {
     return result;
 }
 
+void Constraint::DoLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b) {
+    const Camera &camera = canvas->GetCamera();
+
+    a = camera.AlignToPixelGrid(a);
+    b = camera.AlignToPixelGrid(b);
+    canvas->DrawLine(a, b, hcs);
+}
+
 void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
                          Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     const Camera &camera = canvas->GetCamera();
@@ -79,7 +87,7 @@ void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *r
     Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
 
     Vector p = r->ProjectInto(workplane);
-    canvas->DrawLine(p, *r, hcsStippled);
+    DoLine(canvas, hcsStippled, p, *r);
     *r = p;
 }
 
@@ -142,20 +150,20 @@ int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
 
     // Both in range; so there's pieces of the line on both sides of the label box.
     if(tmin >= 0.0 && tmin <= 1.0 && tmax >= 0.0 && tmax <= 1.0) {
-        canvas->DrawLine(a, a.Plus(dl.ScaledBy(tmin)), hcs);
-        canvas->DrawLine(a.Plus(dl.ScaledBy(tmax)), b, hcs);
+        DoLine(canvas, hcs, a, a.Plus(dl.ScaledBy(tmin)));
+        DoLine(canvas, hcs, a.Plus(dl.ScaledBy(tmax)), b);
         return 0;
     }
 
     // Only one intersection in range; so the box is right on top of the endpoint
     if(tmin >= 0.0 && tmin <= 1.0) {
-        canvas->DrawLine(a, a.Plus(dl.ScaledBy(tmin)), hcs);
+        DoLine(canvas, hcs, a, a.Plus(dl.ScaledBy(tmin)));
         return 0;
     }
 
     // Likewise.
     if(tmax >= 0.0 && tmax <= 1.0) {
-        canvas->DrawLine(a.Plus(dl.ScaledBy(tmax)), b, hcs);
+        DoLine(canvas, hcs, a.Plus(dl.ScaledBy(tmax)), b);
         return 0;
     }
 
@@ -165,13 +173,13 @@ int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
     // and closer to b, positive means outside and closer to a.
     if(tmax < 0.0) {
         if(extend) a = a.Plus(dl.ScaledBy(tmax));
-        canvas->DrawLine(a, b, hcs);
+        DoLine(canvas, hcs, a, b);
         return 1;
     }
 
     if(tmin > 1.0) {
         if(extend) b = a.Plus(dl.ScaledBy(tmin));
-        canvas->DrawLine(a, b, hcs);
+        DoLine(canvas, hcs, a, b);
         return -1;
     }
 
@@ -183,8 +191,8 @@ void Constraint::DoArrow(Canvas *canvas, Canvas::hStroke hcs,
                          Vector p, Vector dir, Vector n, double width, double angle, double da) {
     dir = dir.WithMagnitude(width / cos(angle));
     dir = dir.RotatedAbout(n, da);
-    canvas->DrawLine(p, p.Plus(dir.RotatedAbout(n,  angle)), hcs);
-    canvas->DrawLine(p, p.Plus(dir.RotatedAbout(n, -angle)), hcs);
+    DoLine(canvas, hcs, p, p.Plus(dir.RotatedAbout(n,  angle)));
+    DoLine(canvas, hcs, p, p.Plus(dir.RotatedAbout(n, -angle)));
 }
 
 //-----------------------------------------------------------------------------
@@ -215,9 +223,9 @@ void Constraint::DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
     // Extension lines extend 10 pixels beyond where the arrows get
     // drawn (which is at the same offset perpendicular from AB as the
     // label).
-    canvas->DrawLine(a, ae.Plus(out.WithMagnitude(10*pixels)), hcs);
+    DoLine(canvas, hcs, a, ae.Plus(out.WithMagnitude(10*pixels)));
     if(!onlyOneExt) {
-        canvas->DrawLine(b, be.Plus(out.WithMagnitude(10*pixels)), hcs);
+        DoLine(canvas, hcs, b, be.Plus(out.WithMagnitude(10*pixels)));
     } else {
         Vector prj = be;
         DoProjectedPoint(canvas, hcs, &prj);
@@ -232,8 +240,8 @@ void Constraint::DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
     if(within != 0) {
         arrow = arrow.ScaledBy(-1);
         Vector seg = (be.Minus(ae)).WithMagnitude(18*pixels);
-        if(within < 0) canvas->DrawLine(ae, ae.Minus(seg), hcs);
-        if(within > 0) canvas->DrawLine(be, be.Plus(seg), hcs);
+        if(within < 0) DoLine(canvas, hcs, ae, ae.Minus(seg));
+        if(within > 0) DoLine(canvas, hcs, be, be.Plus(seg));
     }
 
     DoArrow(canvas, hcs, ae, arrow, n, 13.0 * pixels, theta, 0.0);
@@ -249,7 +257,7 @@ void Constraint::DoEqualLenTicks(Canvas *canvas, Canvas::hStroke hcs,
     Vector ab = a.Minus(b);
     Vector n = (gn.Cross(ab)).WithMagnitude(10/camera.scale);
 
-    canvas->DrawLine(m.Minus(n), m.Plus(n), hcs);
+    DoLine(canvas, hcs, m.Minus(n), m.Plus(n));
 }
 
 void Constraint::DoEqualRadiusTicks(Canvas *canvas, Canvas::hStroke hcs,
@@ -276,7 +284,7 @@ void Constraint::DoEqualRadiusTicks(Canvas *canvas, Canvas::hStroke hcs,
     Vector p = center.Plus(d);
     if(refp) *refp = p;
     Vector tick = d.WithMagnitude(10/camera.scale);
-    canvas->DrawLine(p.Plus(tick), p.Minus(tick), hcs);
+    DoLine(canvas, hcs, p.Plus(tick), p.Minus(tick));
 }
 
 void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
@@ -400,7 +408,7 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
                     DoLineTrimmedAgainstBox(canvas, hcs, *ref, prev, p,
                                             /*extend=*/false, gr, gu, swidth, sheight);
                 } else {
-                    canvas->DrawLine(prev, p, hcs);
+                    DoLine(canvas, hcs, prev, p);
                 }
             }
             prev = p;
@@ -459,7 +467,7 @@ bool Constraint::DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
     Vector ptOnLine = p0.Plus(dir.ScaledBy(k));
 
     // Draw projection line.
-    canvas->DrawLine(pt, ptOnLine, hcs);
+    DoLine(canvas, hcs, pt, ptOnLine);
 
     // Calculate salient direction.
     Vector sd = dir.WithMagnitude(1.0).ScaledBy(salient);
@@ -478,7 +486,7 @@ bool Constraint::DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
     }
 
     // Draw extension line.
-    canvas->DrawLine(from, to, hcs);
+    DoLine(canvas, hcs, from, to);
     return true;
 }
 
@@ -550,8 +558,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             pp = pp.WithMagnitude(1);
             double d = dp.Dot(pp);
             Vector bpp = ap.Plus(pp.ScaledBy(d));
-            canvas->DrawLine(ap, bpp, hcsStippled);
-            canvas->DrawLine(bp, bpp, hcsStippled);
+            DoLine(canvas, hcsStippled, ap, bpp);
+            DoLine(canvas, hcsStippled, bp, bpp);
 
             DoLineWithArrows(canvas, hcs, ref, ap, bpp, /*onlyOneExt=*/false);
             DoLabel(canvas, hcs, ref, labelPos, gr, gu);
@@ -615,9 +623,9 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 if(fabs(ddl) > LENGTH_EPS * LENGTH_EPS) {
                     double t = refClosest.Minus(lA).Dot(dl) / ddl;
                     if(t < 0.0) {
-                        canvas->DrawLine(refClosest.Minus(dl.WithMagnitude(10.0 * pixels)), lA, hcs);
+                        DoLine(canvas, hcs, refClosest.Minus(dl.WithMagnitude(10.0 * pixels)), lA);
                     } else if(t > 1.0) {
-                        canvas->DrawLine(refClosest.Plus(dl.WithMagnitude(10.0 * pixels)), lB, hcs);
+                        DoLine(canvas, hcs, refClosest.Plus(dl.WithMagnitude(10.0 * pixels)), lB);
                     }
                 }
             }
@@ -716,10 +724,10 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 s *= (6.0/8); // draw these a little smaller
             }
             r = r.WithMagnitude(s); d = d.WithMagnitude(s);
-            canvas->DrawLine(p.Plus (r).Plus (d), p.Plus (r).Minus(d), hcs);
-            canvas->DrawLine(p.Plus (r).Minus(d), p.Minus(r).Minus(d), hcs);
-            canvas->DrawLine(p.Minus(r).Minus(d), p.Minus(r).Plus (d), hcs);
-            canvas->DrawLine(p.Minus(r).Plus (d), p.Plus (r).Plus (d), hcs);
+            DoLine(canvas, hcs, p.Plus (r).Plus (d), p.Plus (r).Minus(d));
+            DoLine(canvas, hcs, p.Plus (r).Minus(d), p.Minus(r).Minus(d));
+            DoLine(canvas, hcs, p.Minus(r).Minus(d), p.Minus(r).Plus (d));
+            DoLine(canvas, hcs, p.Minus(r).Plus (d), p.Plus (r).Plus (d));
             return;
         }
 
@@ -734,8 +742,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             // degree rotations) around the point.
             int i;
             for(i = 0; i < 4; i++) {
-                canvas->DrawLine(u, uu, hcs);
-                canvas->DrawLine(u, ur, hcs);
+                DoLine(canvas, hcs, u, uu);
+                DoLine(canvas, hcs, u, ur);
                 u = u.RotatedAbout(p, gn, PI/2);
                 ur = ur.RotatedAbout(p, gn, PI/2);
                 uu = uu.RotatedAbout(p, gn, PI/2);
@@ -753,8 +761,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 p = p.Plus(n.WithMagnitude(10/camera.scale));
                 if(refs) refs->push_back(p);
 
-                canvas->DrawLine(p.Plus(u), p.Minus(u).Plus(n), hcs);
-                canvas->DrawLine(p.Minus(u), p.Plus(u).Plus(n), hcs);
+                DoLine(canvas, hcs, p.Plus(u), p.Minus(u).Plus(n));
+                DoLine(canvas, hcs, p.Minus(u), p.Plus(u).Plus(n));
             }
             return;
         }
@@ -841,9 +849,9 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
 
                 Vector p = e->VectorGetRefPoint();
                 Vector s = p.Plus(u).Plus(v);
-                canvas->DrawLine(s, s.Plus(v), hcs);
+                DoLine(canvas, hcs, s, s.Plus(v));
                 Vector m = s.Plus(v.ScaledBy(0.5));
-                canvas->DrawLine(m, m.Plus(u), hcs);
+                DoLine(canvas, hcs, m, m.Plus(u));
                 if(refs) refs->push_back(m);
             }
             return;
@@ -930,8 +938,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 Vector u = (gn.Cross(n)).WithMagnitude(4/camera.scale);
                 Vector p = e->VectorGetRefPoint();
 
-                canvas->DrawLine(p.Plus(u), p.Plus(u).Plus(n), hcs);
-                canvas->DrawLine(p.Minus(u), p.Minus(u).Plus(n), hcs);
+                DoLine(canvas, hcs, p.Plus(u), p.Plus(u).Plus(n));
+                DoLine(canvas, hcs, p.Minus(u), p.Minus(u).Plus(n));
                 if(refs) refs->push_back(p.Plus(n.ScaledBy(0.5)));
             }
             return;
@@ -1007,7 +1015,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             }
 
             Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
-            canvas->DrawLine(pt, closest, hcs);
+            DoLine(canvas, hcs, pt, closest);
             Vector refb;
             DoEqualLenTicks(canvas, hcs, pt, closest, gn, &refb);
             if(refs) refs->push_back(refb);
@@ -1029,7 +1037,7 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                 }
 
                 Vector closest = pt.ClosestPointOnLine(la, lb.Minus(la));
-                canvas->DrawLine(pt, closest, hcs);
+                DoLine(canvas, hcs, pt, closest);
 
                 Vector ref;
                 DoEqualLenTicks(canvas, hcs, pt, closest, gn, &ref);
@@ -1073,10 +1081,10 @@ s:
                 d = d.WithMagnitude(20/camera.scale);
                 Vector tip = tail.Plus(d);
 
-                canvas->DrawLine(tail, tip, hcs);
+                DoLine(canvas, hcs, tail, tip);
                 d = d.WithMagnitude(9/camera.scale);
-                canvas->DrawLine(tip, tip.Minus(d.RotatedAbout(gn,  0.6)), hcs);
-                canvas->DrawLine(tip, tip.Minus(d.RotatedAbout(gn, -0.6)), hcs);
+                DoLine(canvas, hcs, tip, tip.Minus(d.RotatedAbout(gn,  0.6)));
+                DoLine(canvas, hcs, tip, tip.Minus(d.RotatedAbout(gn, -0.6)));
                 if(refs) refs->push_back(tip);
             }
             return;
@@ -1135,7 +1143,7 @@ s:
                     Vector dp = cn.Cross(d);
                     d = d.WithMagnitude(14/camera.scale);
                     Vector c = o.Minus(d);
-                    canvas->DrawLine(o, c, hcs);
+                    DoLine(canvas, hcs, o, c);
                     d = d.WithMagnitude(3/camera.scale);
                     dp = dp.WithMagnitude(2/camera.scale);
                     canvas->DrawQuad((c.Plus(d)).Plus(dp),
