@@ -2,8 +2,12 @@
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${CAIRO_INCLUDE_DIRS})
+    ${CMAKE_CURRENT_BINARY_DIR})
+
+foreach(pkg_config_lib CAIRO)
+    include_directories(${${pkg_config_lib}_INCLUDE_DIRS})
+    link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
+endforeach()
 
 set(testsuite_SOURCES
     harness.cpp
