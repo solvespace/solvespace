@@ -220,6 +220,8 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
             for(Constraint &c : SK.constraint) {
                 c.Draw(Constraint::DrawAs::DEFAULT, &canvas);
             }
+
+            canvas.Clear();
         }
     }
 

@@ -389,6 +389,8 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
     }
 
+    canvas.Clear();
+
     if(!s.Equals(&hover)) {
         hover = s;
         PaintGraphics();
@@ -787,5 +789,6 @@ void GraphicsWindow::Paint() {
     }
 
     canvas.EndFrame();
+    canvas.Clear();
 #endif
 }

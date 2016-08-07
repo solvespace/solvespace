@@ -1187,19 +1187,21 @@ void Constraint::Draw(DrawAs how, Canvas *canvas) {
 }
 
 Vector Constraint::GetLabelPos(const Camera &camera) {
+    Vector p;
+
     ObjectPicker canvas = {};
     canvas.camera = camera;
-
-    Vector p;
     DoLayout(DrawAs::DEFAULT, &canvas, &p, NULL);
+    canvas.Clear();
+
     return p;
 }
 
 void Constraint::GetReferencePoints(const Camera &camera, std::vector<Vector> *refs) {
     ObjectPicker canvas = {};
     canvas.camera = camera;
-
     DoLayout(DrawAs::DEFAULT, &canvas, NULL, refs);
+    canvas.Clear();
 }
 
 bool Constraint::IsStylable() const {

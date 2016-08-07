@@ -126,14 +126,17 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
 }
 
 int Entity::GetPositionOfPoint(const Camera &camera, Point2d p) {
+    int position;
+
     ObjectPicker canvas = {};
     canvas.camera      = camera;
     canvas.point       = p;
     canvas.minDistance = 1e12;
-
     Draw(DrawAs::DEFAULT, &canvas);
+    position = canvas.position;
+    canvas.Clear();
 
-    return canvas.position;
+    return position;
 }
 
 bool Entity::IsStylable() const {

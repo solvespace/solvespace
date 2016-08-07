@@ -858,6 +858,7 @@ void TextWindow::Paint() {
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
     canvas.EndFrame();
+    canvas.Clear();
 #endif
 }
 
