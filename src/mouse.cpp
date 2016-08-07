@@ -902,8 +902,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     v = v.Plus(projRight.ScaledBy(mx/scale));
     v = v.Plus(projUp.ScaledBy(my/scale));
 
-
-    hRequest hr;
+    hRequest hr = {};
+    hConstraint hc = {};
     switch(pending.operation) {
         case Pending::COMMAND:
             switch(pending.command) {
@@ -960,6 +960,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
                     pending.description = "click to place other corner of rectangle";
+                    hr = lns[0];
                     break;
                 }
                 case Command::CIRCLE:
@@ -1062,7 +1063,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     c.type        = Constraint::Type::COMMENT;
                     c.disp.offset = v;
                     c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
-                    Constraint::AddConstraint(&c);
+                    hc = Constraint::AddConstraint(&c);
                     break;
                 }
                 default: ssassert(false, "Unexpected pending menu id");
@@ -1188,6 +1189,18 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 MakeSelected(&hover);
             }
             break;
+    }
+
+    // Activate group with newly created request/constraint
+    Group *g = NULL;
+    if(hr.v != 0) {
+        g = SK.GetGroup(SK.GetRequest(hr)->group);
+    }
+    if(hc.v != 0) {
+        g = SK.GetGroup(SK.GetConstraint(hc)->group);
+    }
+    if(g != NULL) {
+        g->visible = true;
     }
 
     SS.ScheduleShowTW();
