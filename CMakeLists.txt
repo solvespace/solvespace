@@ -69,10 +69,11 @@ if(ENABLE_SANITIZERS)
         message(FATAL_ERROR "Sanitizers are only available when using Clang/Clang++")
     endif()
     set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fsanitize=address,undefined,integer")
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize-recover=undefined,integer")
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fsanitize=address,integer")
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize-recover=integer")
     # We assume IEEE floats, which means DIV/0 is defined; but ubsan doesn't do so by default.
     set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize=float-divide-by-zero")
+    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize=unsigned-integer-overflow")
 
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
