@@ -108,16 +108,16 @@ The app bundle is built in `build/src/solvespace.app`.
 Building on Windows
 -------------------
 
-You will need [cmake][cmakewin] and Visual C++.
+You will need [git][gitwin],  [cmake][cmakewin] and Visual C++.
 
-### GUI build
+### Building with Visual Studio IDE
 
 Check out the git submodules. Create a directory `build` in
 the source tree and point cmake-gui to the source tree and that directory.
 Press "Configure" and "Generate", then open `build\solvespace.sln` with
 Visual C++ and build it.
 
-### Command-line build
+### Building with Visual Studio in a command prompt
 
 First, ensure that git and cl (the Visual C++ compiler driver) are in your
 `%PATH%`; the latter is usually done by invoking `vcvarsall.bat` from your
@@ -129,7 +129,7 @@ Visual Studio install. Then, run the following in cmd or PowerShell:
     cmake .. -G "NMake Makefiles" -DENABLE_TESTS=OFF
     nmake
 
-### MSVC build
+### Building with MinGW
 
 It is also possible to build SolveSpace using [MinGW][mingw], though
 Space Navigator support will be disabled.
@@ -143,6 +143,7 @@ in bash:
     cmake .. -DENABLE_TESTS=OFF
     make
 
+[gitwin]: https://git-scm.com/download/win
 [cmakewin]: http://www.cmake.org/download/#latest
 [mingw]: http://www.mingw.org/
 
