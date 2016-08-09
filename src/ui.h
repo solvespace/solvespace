@@ -504,6 +504,9 @@ public:
     // allowing a paint in between. The extra solves are wasted if they're
     // not displayed.
     bool    havePainted;
+    // Similarly, don't draw edges and outlines, since that's too slow
+    // for real-time dragging.
+    bool    isDegraded;
 
     // Some state for the context menu.
     struct {

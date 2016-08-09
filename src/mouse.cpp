@@ -463,6 +463,15 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
        pending.operation != DRAGGING_MARQUEE)
     {
         SS.GenerateAll();
+
+        // Activate degraded mode, and regenerate display items without edges.
+        if(activeGroup.v != 0) {
+            bool showEdges = SS.GW.showEdges;
+            SS.GW.showEdges = false;
+            SK.GetGroup(activeGroup)->GenerateDisplayItems();
+            SS.GW.showEdges = showEdges;
+            isDegraded = true;
+        }
     }
 }
 
@@ -470,6 +479,12 @@ void GraphicsWindow::ClearPending(void) {
     pending.points.Clear();
     pending = {};
     SS.ScheduleShowTW();
+
+    // If degraded mode was enabled, we need to regenerate again to get edges back.
+    if(isDegraded) {
+        isDegraded = false;
+        SK.GetGroup(activeGroup)->displayDirty = true;
+    }
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
