@@ -535,9 +535,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         SS.ScheduleShowTW();
     }
     GroupSelection();
-
+	
     bool itemsSelected = (gs.n > 0 || gs.constraints > 0);
     int addAfterPoint = -1;
+
+
 
     if(itemsSelected) {
         if(gs.stylables > 0) {
@@ -569,7 +571,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         if(gs.constraintLabels > 0 || gs.points > 0) {
             AddContextMenuItem("Snap to Grid", ContextCommand::SNAP_TO_GRID);
         }
-
+		if (gs.entities == 1 && gs.entity[0].isFromRequest()) {
+		AddContextMenuItem("Toggle Construction", ContextCommand::CONSTRUCTION);
+		AddContextMenuItem("Dimension", ContextCommand::DISTANCE_DIA);
+		}
+		
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.point[0].request());
@@ -589,9 +595,13 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
                 AddContextMenuItem("Add Spline Point", ContextCommand::ADD_SPLINE_PT);
             }
+
         }
 
         if(gs.points == 1) {
+			
+			AddContextMenuItem("Fillet", ContextCommand::TANGENT_ARC);
+			AddContextMenuItem("Center View At Point", ContextCommand::CENTER_VIEW);
             Entity *p = SK.GetEntity(gs.point[0]);
             Constraint *c;
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
@@ -623,12 +633,25 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
         AddContextMenuItem("Unselect All", ContextCommand::UNSELECT_ALL);
     }
+	else
+	{
+		AddContextMenuItem("Zoom to Fit", ContextCommand::ZOOM_TO_FIT);
+		AddContextMenuItem("Select All", ContextCommand::SELECT_ALL);
+		
+	}
+
+
+
+
+
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
         AddContextMenuItem("Unselect Hovered", ContextCommand::UNSELECT_HOVERED);
     }
+
+
 
     ContextCommand ret = ShowContextMenu();
     switch(ret) {
@@ -640,6 +663,15 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         case ContextCommand::UNSELECT_ALL:
             MenuEdit(Command::UNSELECT_ALL);
             break;
+		case ContextCommand::SELECT_ALL:
+			MenuEdit(Command::SELECT_ALL);
+			break;
+		case ContextCommand::ZOOM_TO_FIT:
+			MenuView(Command::ZOOM_TO_FIT);
+			break;
+		case ContextCommand::CENTER_VIEW:
+			MenuView(Command::CENTER_VIEW);
+			break;
 
         case ContextCommand::UNSELECT_HOVERED:
             if(!hover.IsEmpty()) {
@@ -679,6 +711,16 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             Constraint::MenuConstrain(Command::OTHER_ANGLE);
             break;
 
+		case ContextCommand::TANGENT_ARC:
+			MenuRequest(Command::TANGENT_ARC);
+			break;
+
+		case ContextCommand::DISTANCE_DIA:
+			Constraint::MenuConstrain(Command::DISTANCE_DIA);
+			break;
+
+			
+
         case ContextCommand::DEL_COINCIDENT: {
             SS.UndoRemember();
             if(!gs.point[0].v) break;
@@ -697,6 +739,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             ClearSelection();
             break;
         }
+		case ContextCommand::CONSTRUCTION:
+			MenuRequest(Command::CONSTRUCTION);
+
+			break;
+
 
         case ContextCommand::SNAP_TO_GRID:
             MenuEdit(Command::SNAP_TO_GRID);

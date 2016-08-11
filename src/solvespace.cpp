@@ -464,6 +464,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::SAVE:
             SS.GetFilenameAndSave(/*saveAs=*/false);
+
+			SS.ExportAsPngTo(SS.saveFile + ".png");
+			SS.ExportMeshTo(SS.saveFile + ".html");
+			SS.ExportMeshTo(SS.saveFile + ".stl");
             break;
 
         case Command::SAVE_AS:
