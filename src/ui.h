@@ -17,6 +17,7 @@ enum class Command : uint32_t {
     OPEN_RECENT,
     SAVE,
     SAVE_AS,
+    SAVE_WITH_EXPORTS,
     EXPORT_PNG,
     EXPORT_MESH,
     EXPORT_SURFACES,

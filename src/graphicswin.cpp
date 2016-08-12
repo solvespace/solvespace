@@ -33,6 +33,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, "Open &Recent",                Command::OPEN_RECENT,      0,       TN, mFile },
 { 1, "&Save",                       Command::SAVE,             C|'S',   TN, mFile },
 { 1, "Save &As...",                 Command::SAVE_AS,          0,       TN, mFile },
+{ 1, "Save &And &Export",           Command::SAVE_WITH_EXPORTS,0,       TN, mFile },
 { 1,  NULL,                         Command::NONE,             0,       TN, NULL  },
 { 1, "Export &Image...",            Command::EXPORT_PNG,       0,       TN, mFile },
 { 1, "Export 2d &View...",          Command::EXPORT_VIEW,      0,       TN, mFile },
