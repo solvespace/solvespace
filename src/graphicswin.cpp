@@ -507,7 +507,6 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::ONTO_WORKPLANE:
             if(SS.GW.LockedInWorkplane()) {
                 SS.GW.AnimateOntoWorkplane();
-                SS.GW.ClearSuper();
                 SS.ScheduleShowTW();
                 break;
             }  // if not in 2d mode fall through and use ORTHO logic

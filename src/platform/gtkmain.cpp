@@ -227,7 +227,7 @@ const bool FLIP_FRAMEBUFFER = true;
 
 class GlWidget : public Gtk::DrawingArea {
 public:
-    GlWidget() {
+    GlWidget() : _offscreen() {
         _xdisplay = gdk_x11_get_default_xdisplay();
 
         int glxmajor, glxminor;
