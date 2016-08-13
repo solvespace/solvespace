@@ -605,7 +605,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         if(gs.points == 1) {
             
-            AddContextMenuItem("Fillet", ContextCommand::TANGENT_ARC);
+            AddContextMenuItem("Tangent &Arc at Point", ContextCommand::TANGENT_ARC);
             AddContextMenuItem("Center View At Point", ContextCommand::CENTER_VIEW);
             Entity *p = SK.GetEntity(gs.point[0]);
             Constraint *c;
