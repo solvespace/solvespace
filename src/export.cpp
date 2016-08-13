@@ -220,6 +220,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
             for(Constraint &c : SK.constraint) {
                 c.Draw(Constraint::DrawAs::DEFAULT, &canvas);
             }
+            canvas.Clear();
         }
     }
 
@@ -1100,15 +1101,15 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
     OpenGl1Renderer canvas = {};
     canvas.camera = SS.GW.GetCamera();
-	SS.showToolbar = false;
-	SS.GW.Paint();
+    SS.showToolbar = false;
+    SS.GW.Paint();
     std::shared_ptr<Pixmap> screenshot = canvas.ReadFrame();
-	
-	SS.showToolbar = prevShowToolbar;
+    
+    SS.showToolbar = prevShowToolbar;
 
 
     FILE *f = ssfopen(filename, "wb");
-	if (!f || !screenshot->WritePng(f, /*flip=*/!FLIP_FRAMEBUFFER)) {
+    if (!f || !screenshot->WritePng(f, /*flip=*/!FLIP_FRAMEBUFFER)) {
         Error("Couldn't write to '%s'", filename.c_str());
     }
     if(f) fclose(f);
