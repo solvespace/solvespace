@@ -167,21 +167,16 @@ public:
         layer.name = "text";
         dxf->writeLayer(&layer);
 
-        for(int i = 0; i < SK.style.n; i++) {
-            Style *s = &SK.style.elem[i];
+        std::set<uint32_t> usedStyles;
 
-            // check for using
-            bool used = false;
-            for(DxfFileWriter::BezierPath &path : writer->paths) {
-                for(SBezier *sb : path.beziers) {
-                    if((uint32_t)sb->auxA != s->h.v) continue;
-                    used = true;
-                    break;
-                }
-                if(used) break;
+        for(DxfFileWriter::BezierPath &path : writer->paths) {
+            for(SBezier *sb : path.beziers) {
+                usedStyles.insert((uint32_t)sb->auxA);
             }
-            if(!used) continue;
+        }
 
+        for(uint32_t v : usedStyles) {
+            Style *s = Style::Get(hStyle{v});
             layer.name = s->DescriptionString();
             dxf->writeLayer(&layer);
         }
