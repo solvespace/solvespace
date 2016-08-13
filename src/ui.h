@@ -629,14 +629,13 @@ public:
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection(void);
     void ClearNonexistentSelectionItems(void);
-    enum { MAX_SELECTED = 32 };
     struct {
-        hEntity     point[MAX_SELECTED];
-        hEntity     entity[MAX_SELECTED];
-        hEntity     anyNormal[MAX_SELECTED];
-        hEntity     vector[MAX_SELECTED];
-        hEntity     face[MAX_SELECTED];
-        hConstraint constraint[MAX_SELECTED];
+        std::vector<hEntity>     point;
+        std::vector<hEntity>     entity;
+        std::vector<hEntity>     anyNormal;
+        std::vector<hEntity>     vector;
+        std::vector<hEntity>     face;
+        std::vector<hConstraint> constraint;
         int         points;
         int         entities;
         int         workplanes;

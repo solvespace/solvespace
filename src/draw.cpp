@@ -249,7 +249,7 @@ void GraphicsWindow::SelectByMarquee(void) {
 void GraphicsWindow::GroupSelection(void) {
     gs = {};
     int i;
-    for(i = 0; i < selection.n && i < MAX_SELECTED; i++) {
+    for(i = 0; i < selection.n; i++) {
         Selection *s = &(selection.elem[i]);
         if(s->entity.v) {
             (gs.n)++;
@@ -260,27 +260,33 @@ void GraphicsWindow::GroupSelection(void) {
 
             // A list of points, and a list of all entities that aren't points.
             if(e->IsPoint()) {
-                gs.point[(gs.points)++] = s->entity;
+                gs.points++;
+                gs.point.push_back(s->entity);
             } else {
-                gs.entity[(gs.entities)++] = s->entity;
+                gs.entities++;
+                gs.entity.push_back(s->entity);
             }
 
             // And an auxiliary list of normals, including normals from
             // workplanes.
             if(e->IsNormal()) {
-                gs.anyNormal[(gs.anyNormals)++] = s->entity;
+                gs.anyNormals++;
+                gs.anyNormal.push_back(s->entity);
             } else if(e->IsWorkplane()) {
-                gs.anyNormal[(gs.anyNormals)++] = e->Normal()->h;
+                gs.anyNormals++;
+                gs.anyNormal.push_back(e->Normal()->h);
             }
 
             // And of vectors (i.e., stuff with a direction to constrain)
             if(e->HasVector()) {
-                gs.vector[(gs.vectors)++] = s->entity;
+                gs.vectors++;
+                gs.vector.push_back(s->entity);
             }
 
             // Faces (which are special, associated/drawn with triangles)
             if(e->IsFace()) {
-                gs.face[(gs.faces)++] = s->entity;
+                gs.faces++;
+                gs.face.push_back(s->entity);
             }
 
             if(e->HasEndpoints()) {
@@ -303,7 +309,8 @@ void GraphicsWindow::GroupSelection(void) {
             }
         }
         if(s->constraint.v) {
-            gs.constraint[(gs.constraints)++] = s->constraint;
+            gs.constraints++;
+            gs.constraint.push_back(s->constraint);
             Constraint *c = SK.GetConstraint(s->constraint);
             if(c->IsStylable()) gs.stylables++;
             if(c->HasLabel()) gs.constraintLabels++;
