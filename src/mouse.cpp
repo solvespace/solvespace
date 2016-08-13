@@ -580,8 +580,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         if (gs.entities == 1 && gs.entity[0].isFromRequest()) {
             AddContextMenuItem("Toggle Construction", ContextCommand::CONSTRUCTION);
         }
-        
-
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.point[0].request());
             int index = r->IndexOfPoint(gs.point[0]);
@@ -602,7 +600,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             }
 
         }
-
         if(gs.points == 1) {
             
             AddContextMenuItem("Tangent &Arc at Point", ContextCommand::TANGENT_ARC);
@@ -644,19 +641,12 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         AddContextMenuItem("Select All", ContextCommand::SELECT_ALL);
         
     }
-
-
-
-
-
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
         AddContextMenuItem("Unselect Hovered", ContextCommand::UNSELECT_HOVERED);
     }
-
-
 
     ContextCommand ret = ShowContextMenu();
     switch(ret) {
@@ -723,9 +713,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         case ContextCommand::DISTANCE_DIA:
             Constraint::MenuConstrain(Command::DISTANCE_DIA);
             break;
-
-            
-
         case ContextCommand::DEL_COINCIDENT: {
             SS.UndoRemember();
             if(!gs.point[0].v) break;
