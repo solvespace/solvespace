@@ -474,6 +474,10 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             stroke.layer  = Canvas::Layer::NORMAL;
             break;
 
+        case DrawAs::OVERLAY:
+            stroke.layer  = Canvas::Layer::FRONT;
+            break;
+
         case DrawAs::HIDDEN:
             stroke.layer  = Canvas::Layer::OCCLUDED;
             stroke.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });

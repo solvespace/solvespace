@@ -14,6 +14,9 @@ Other new features:
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.
+  * The "Show/hide hidden lines" button is now a tri-state button that allows
+    showing all lines (on top of shaded mesh), stippling occluded lines
+    or not drawing them at all.
 
 2.2
 ---

@@ -506,7 +506,7 @@ public:
     bool IsStylable() const;
     bool IsVisible() const;
 
-    enum class DrawAs { DEFAULT, HIDDEN, HOVERED, SELECTED };
+    enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
     void Draw(DrawAs how, Canvas *canvas);
     void GetReferencePoints(std::vector<Vector> *refs);
     int GetPositionOfPoint(const Camera &camera, Point2d p);

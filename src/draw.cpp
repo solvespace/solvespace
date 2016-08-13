@@ -565,10 +565,18 @@ void GraphicsWindow::DrawPersistent(Canvas *canvas) {
 
     // Now draw the entities.
     for(Entity &e : SK.entity) {
-        if(SS.GW.showHdnLines) {
-            e.Draw(Entity::DrawAs::HIDDEN, canvas);
+        switch(SS.GW.drawOccludedAs) {
+            case DrawOccludedAs::VISIBLE:
+                e.Draw(Entity::DrawAs::OVERLAY, canvas);
+                break;
+
+            case DrawOccludedAs::STIPPLED:
+                e.Draw(Entity::DrawAs::HIDDEN, canvas);
+                /* fallthrough */
+            case DrawOccludedAs::INVISIBLE:
+                e.Draw(Entity::DrawAs::DEFAULT, canvas);
+                break;
         }
-        e.Draw(Entity::DrawAs::DEFAULT, canvas);
     }
 
     // Draw filled paths in all groups, when those filled paths were requested

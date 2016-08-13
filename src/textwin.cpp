@@ -5,6 +5,190 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+namespace SolveSpace {
+
+class Button {
+public:
+    virtual std::string Tooltip() = 0;
+    virtual void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) = 0;
+    virtual int AdvanceWidth() = 0;
+    virtual void Click() = 0;
+};
+
+class SpacerButton : public Button {
+public:
+    std::string Tooltip() override { return ""; }
+
+    void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
+        // Draw a darker-grey spacer in between the groups of icons.
+        uiCanvas->DrawRect(x, x + 4, y, y - 24,
+                           /*fillColor=*/{ 45, 45, 45, 255 },
+                           /*outlineColor=*/{});
+    }
+
+    int AdvanceWidth() override { return 12; }
+
+    void Click() override {}
+};
+
+class ShowHideButton : public Button {
+public:
+    bool        *variable;
+    std::string tooltip;
+    std::string iconName;
+    std::shared_ptr<Pixmap> icon;
+
+    ShowHideButton(bool *variable, std::string iconName, std::string tooltip)
+            : variable(variable), tooltip(tooltip), iconName(iconName) {}
+
+    std::string Tooltip() override {
+        return ((*variable) ? "Hide " : "Show ") + tooltip;
+    }
+
+    void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
+        if(icon == NULL) {
+            icon = LoadPng("icons/text-window/" + iconName + ".png");
+        }
+
+        uiCanvas->DrawPixmap(icon, x, y - 24);
+        if(asHovered) {
+            uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
+                               /*fillColor=*/{ 255, 255, 0, 75 },
+                               /*outlineColor=*/{});
+        }
+        if(!*(variable)) {
+            int s = 0, f = 24;
+            RgbaColor color = { 255, 0, 0, 150 };
+            uiCanvas->DrawLine(x+s, y-s, x+f, y-f, color, 2);
+            uiCanvas->DrawLine(x+s, y-f, x+f, y-s, color, 2);
+        }
+    }
+
+    int AdvanceWidth() override { return 32; }
+
+    void Click() override { SS.GW.ToggleBool(variable); }
+};
+
+class FacesButton : public ShowHideButton {
+public:
+    FacesButton()
+        : ShowHideButton(&(SS.GW.showFaces), "faces", "") {}
+
+    std::string Tooltip() override {
+        if(*variable) {
+            return "Don't make faces selectable with mouse";
+        } else {
+            return "Make faces selectable with mouse";
+        }
+    }
+};
+
+class OccludedLinesButton : public Button {
+public:
+    std::shared_ptr<Pixmap> visibleIcon;
+    std::shared_ptr<Pixmap> stippledIcon;
+    std::shared_ptr<Pixmap> invisibleIcon;
+
+    std::string Tooltip() override {
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
+                return "Stipple occluded lines";
+
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:
+                return "Draw occluded lines";
+
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:
+                return "Don't draw occluded lines";
+
+            default: ssassert(false, "Unexpected mode");
+        }
+    }
+
+    void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
+        if(visibleIcon == NULL) {
+            visibleIcon = LoadPng("icons/text-window/occluded-visible.png");
+        }
+        if(stippledIcon == NULL) {
+            stippledIcon = LoadPng("icons/text-window/occluded-stippled.png");
+        }
+        if(invisibleIcon == NULL) {
+            invisibleIcon = LoadPng("icons/text-window/occluded-invisible.png");
+        }
+
+        std::shared_ptr<Pixmap> icon;
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE: icon = invisibleIcon; break;
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:  icon = stippledIcon;  break;
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:   icon = visibleIcon;   break;
+        }
+
+        uiCanvas->DrawPixmap(icon, x, y - 24);
+        if(asHovered) {
+            uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
+                               /*fillColor=*/{ 255, 255, 0, 75 },
+                               /*outlineColor=*/{});
+        }
+    }
+
+    int AdvanceWidth() override { return 32; }
+
+    void Click() override {
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::STIPPLED;
+                break;
+
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::VISIBLE;
+                break;
+
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::INVISIBLE;
+                break;
+        }
+
+        SS.GenerateAll();
+        InvalidateGraphics();
+        SS.ScheduleShowTW();
+    }
+};
+
+static SpacerButton   spacerButton;
+
+static ShowHideButton workplanesButton =
+    { &(SS.GW.showWorkplanes),  "workplane",     "workplanes from inactive groups" };
+static ShowHideButton normalsButton =
+    { &(SS.GW.showNormals),     "normal",        "normals"                         };
+static ShowHideButton pointsButton =
+    { &(SS.GW.showPoints),      "point",         "points"                          };
+static ShowHideButton constraintsButton =
+    { &(SS.GW.showConstraints), "constraint",    "constraints and dimensions"      };
+static FacesButton facesButton;
+static ShowHideButton shadedButton =
+    { &(SS.GW.showShaded),      "shaded",        "shaded view of solid model"      };
+static ShowHideButton edgesButton =
+    { &(SS.GW.showEdges),       "edges",         "edges of solid model"            };
+static ShowHideButton outlinesButton =
+    { &(SS.GW.showOutlines),    "outlines",      "outline of solid model"          };
+static ShowHideButton meshButton =
+    { &(SS.GW.showMesh),        "mesh",          "triangle mesh of solid model"    };
+static OccludedLinesButton occludedLinesButton;
+
+static Button *buttons[] = {
+    &workplanesButton,
+    &normalsButton,
+    &pointsButton,
+    &constraintsButton,
+    &facesButton,
+    &spacerButton,
+    &shadedButton,
+    &edgesButton,
+    &outlinesButton,
+    &meshButton,
+    &spacerButton,
+    &occludedLinesButton,
+};
+
 const TextWindow::Color TextWindow::fgColors[] = {
     { 'd', RGBi(255, 255, 255) },
     { 'l', RGBi(100, 100, 255) },
@@ -25,23 +209,6 @@ const TextWindow::Color TextWindow::bgColors[] = {
     { 'a', RGBi( 25,  25,  25) },
     { 'r', RGBi(255, 255, 255) },
     { 0,   RGBi(  0,   0,   0) }
-};
-
-bool TextWindow::SPACER = false;
-TextWindow::HideShowIcon TextWindow::hideShowIcons[] = {
-    { &(SS.GW.showWorkplanes),  "workplane",     "workplanes from inactive groups", {} },
-    { &(SS.GW.showNormals),     "normal",        "normals",                         {} },
-    { &(SS.GW.showPoints),      "point",         "points",                          {} },
-    { &(SS.GW.showConstraints), "constraint",    "constraints and dimensions",      {} },
-    { &(SS.GW.showFaces),       "faces",         "XXX - special cased",             {} },
-    { &SPACER, 0, 0, {} },
-    { &(SS.GW.showShaded),      "shaded",        "shaded view of solid model",      {} },
-    { &(SS.GW.showEdges),       "edges",         "edges of solid model",            {} },
-    { &(SS.GW.showOutlines),    "outlines",      "outline of solid model",          {} },
-    { &(SS.GW.showMesh),        "mesh",          "triangle mesh of solid model",    {} },
-    { &SPACER, 0, 0, {} },
-    { &(SS.GW.showHdnLines),    "hidden-lines",  "hidden lines",                    {} },
-    { 0, 0, 0, {} }
 };
 
 void TextWindow::MakeColorTable(const Color *in, float *out) {
@@ -340,7 +507,7 @@ void TextWindow::Show() {
 
 void TextWindow::TimerCallback()
 {
-    tooltippedIcon = hoveredIcon;
+    tooltippedButton = hoveredButton;
     InvalidateText();
 }
 
@@ -356,100 +523,58 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
     if(how == PAINT) {
         int top = y - 28, bot = y + 4;
         uiCanvas->DrawRect(0, width, top, bot,
-                         /*fillColor=*/{ 30, 30, 30, 255 }, /*outlineColor=*/{});
+                           /*fillColor=*/{ 30, 30, 30, 255 }, /*outlineColor=*/{});
     }
 
-    HideShowIcon *oldHovered = hoveredIcon;
+    Button *oldHovered = hoveredButton;
     if(how != PAINT) {
-        hoveredIcon = NULL;
+        hoveredButton = NULL;
     }
 
-    HideShowIcon *hsi;
-    for(hsi = &(hideShowIcons[0]); hsi->var; hsi++) {
-        if(hsi->var == &SPACER) {
-            // Draw a darker-grey spacer in between the groups of icons.
-            if(how == PAINT) {
-                uiCanvas->DrawRect(x, x + 4, y, y - 24,
-                                 /*fillColor=*/{ 45, 45, 45, 255 }, /*outlineColor=*/{});
-            }
-            x += 12;
-            continue;
-        }
-
-        if(hsi->icon == nullptr) {
-            hsi->icon = LoadPng(ssprintf("icons/text-window/%s.png", hsi->iconName));
-        }
-
+    for(Button *button : buttons) {
         if(how == PAINT) {
-            uiCanvas->DrawPixmap(hsi->icon, x, y - 24);
-
-            if(hsi == hoveredIcon) {
-                uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
-                                 /*fillColor=*/{ 255, 255, 0, 75 }, /*outlineColor=*/{});
+            button->Draw(uiCanvas, x, y, (button == hoveredButton));
+        } else if(mx > x - 2 && mx < x + 26 &&
+                  my < y + 2 && my > y - 26) {
+            // The mouse is hovered over this icon, so do the tooltip
+            // stuff.
+            if(button != tooltippedButton) {
+                oldMousePos = Point2d::From(mx, my);
             }
-            if(!*(hsi->var)) {
-                RgbaColor color = { 255, 0, 0, 150 };
-                int s = 0, f = 24;
-                uiCanvas->DrawLine(x+s, y-s, x+f, y-f, color, 2);
-                uiCanvas->DrawLine(x+s, y-f, x+f, y-s, color, 2);
+            if(button != oldHovered || how == CLICK) {
+                SetTimerFor(1000);
             }
-        } else {
-            if(mx > x - 2 && mx < x + 26 &&
-               my < y + 2 && my > y - 26)
-            {
-                // The mouse is hovered over this icon, so do the tooltip
-                // stuff.
-                if(hsi != tooltippedIcon) {
-                    oldMousePos = Point2d::From(mx, my);
-                }
-                if(hsi != oldHovered || how == CLICK) {
-                    SetTimerFor(1000);
-                }
-                hoveredIcon = hsi;
-                if(how == CLICK) {
-                    SS.GW.ToggleBool(hsi->var);
-                }
+            hoveredButton = button;
+            if(how == CLICK) {
+                button->Click();
             }
         }
 
-        x += 32;
+        x += button->AdvanceWidth();
     }
 
-    if(how != PAINT && hoveredIcon != oldHovered) {
+    if(how != PAINT && hoveredButton != oldHovered) {
         InvalidateText();
     }
 
-    if(tooltippedIcon) {
+    if(tooltippedButton && !tooltippedButton->Tooltip().empty()) {
         if(how == PAINT) {
-            std::string str;
-
-            if(tooltippedIcon->var == &(SS.GW.showFaces)) {
-                if(SS.GW.showFaces) {
-                    str = "Don't make faces selectable with mouse";
-                } else {
-                    str = "Make faces selectable with mouse";
-                }
-            } else {
-                str = ssprintf("%s %s", *(tooltippedIcon->var) ? "Hide" : "Show",
-                    tooltippedIcon->tip);
-            }
+            std::string tooltip = tooltippedButton->Tooltip();
 
             int ox = (int)oldMousePos.x, oy = (int)oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (str.length() + 1) * (CHAR_WIDTH - 1);
+            int tw = (tooltip.length() + 1) * (CHAR_WIDTH - 1);
             ox = min(ox, (width - 25) - tw);
             oy = max(oy, 5);
 
             uiCanvas->DrawRect(ox, ox+tw, oy, oy+LINE_HEIGHT,
-                             /*fillColor=*/{ 255, 255, 150, 255 },
-                             /*outlineColor=*/{ 0, 0, 0, 255 });
-            uiCanvas->DrawBitmapText(str, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 });
+                               /*fillColor=*/{ 255, 255, 150, 255 },
+                               /*outlineColor=*/{ 0, 0, 0, 255 });
+            uiCanvas->DrawBitmapText(tooltip, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 });
         } else {
-            if(!hoveredIcon ||
-                (hoveredIcon != tooltippedIcon))
-            {
-                tooltippedIcon = NULL;
+            if(!hoveredButton || (hoveredButton != tooltippedButton)) {
+                tooltippedButton = NULL;
                 InvalidateGraphics();
             }
             // And if we're hovered, then we've set a timer that will cause
@@ -936,8 +1061,8 @@ done:
 }
 
 void TextWindow::MouseLeave() {
-    tooltippedIcon = NULL;
-    hoveredIcon = NULL;
+    tooltippedButton = NULL;
+    hoveredButton = NULL;
     hoveredRow = 0;
     hoveredCol = 0;
     InvalidateText();
@@ -958,3 +1083,4 @@ void TextWindow::ScrollbarEvent(int newPos) {
     }
 }
 
+}
