@@ -1095,8 +1095,9 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
 #if !defined(WIN32)
     GlOffscreen offscreen;
     offscreen.Render((int)SS.GW.width, (int)SS.GW.height, [&] {
-        SS.GW.Paint();
     });
+#else
+    SS.GW.Paint();
 #endif
     // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
     OpenGl1Renderer canvas = {};
