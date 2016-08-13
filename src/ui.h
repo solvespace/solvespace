@@ -142,6 +142,8 @@ enum class ContextCommand : uint32_t {
     FIRST_STYLE      = 0x40000000
 };
 
+class Button;
+
 class TextWindow {
 public:
     enum {
@@ -194,15 +196,6 @@ public:
     int rows;
 
     // The row of icons at the top of the text window, to hide/show things
-    typedef struct {
-        bool       *var;
-        const char *iconName;
-        const char *tip;
-        std::shared_ptr<Pixmap> icon;
-    } HideShowIcon;
-    static HideShowIcon hideShowIcons[];
-    static bool SPACER;
-
     void Draw(Canvas *canvas);
 
     // These are called by the platform-specific code.
@@ -221,7 +214,7 @@ public:
                             double mx, double my);
     void TimerCallback();
     Point2d oldMousePos;
-    HideShowIcon *hoveredIcon, *tooltippedIcon;
+    Button *hoveredButton, *tooltippedButton;
 
     Vector HsvToRgb(Vector hsv);
     std::shared_ptr<Pixmap> HsvPattern2d(int w, int h);
