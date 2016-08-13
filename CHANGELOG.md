@@ -33,6 +33,7 @@ Bug fixes:
   * Fix TTF font metrics (restore the behavior from version 2.0).
   * Forcibly show the current group once we start a drawing operation.
   * DXF export: always declare layers before using them.
+  * Do not truncate operations on selections to first 32 selected entities.
 
 2.1
 ---
