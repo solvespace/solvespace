@@ -178,7 +178,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
     GenerateAll(Generate::ALL);
 
     SMesh *sm = NULL;
-    if(SS.GW.showShaded || SS.GW.showHdnLines) {
+    if(SS.GW.showShaded || SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
@@ -220,6 +220,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
             for(Constraint &c : SK.constraint) {
                 c.Draw(Constraint::DrawAs::DEFAULT, &canvas);
             }
+
             canvas.Clear();
         }
     }
@@ -409,13 +410,13 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
             // Split the original edge against the mesh
             edges.AddEdge(se->a, se->b, se->auxA);
             root->OcclusionTestLine(*se, &edges, cnt);
-            if(SS.GW.showHdnLines) {
+            if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
                 for(SEdge &se : edges.l) {
                     if(se.tag == 1) {
                         se.auxA = Style::HIDDEN_EDGE;
                     }
                 }
-            } else {
+            } else if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::INVISIBLE) {
                 edges.l.RemoveTagged();
             }
 
@@ -1088,6 +1089,11 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
 #if !defined(HEADLESS)
+    // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
+    OpenGl1Renderer canvas = {};
+    canvas.camera = SS.GW.GetCamera();
+    std::shared_ptr<Pixmap> screenshot;
+
     // No guarantee that the back buffer contains anything valid right now,
     // so repaint the scene. And hide the toolbar too.
     bool prevShowToolbar = SS.showToolbar;
@@ -1095,22 +1101,23 @@ void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
 #if !defined(WIN32)
     GlOffscreen offscreen;
     offscreen.Render((int)SS.GW.width, (int)SS.GW.height, [&] {
+        SS.GW.Paint();
+        screenshot = canvas.ReadFrame();
     });
 #else
     SS.GW.Paint();
+    screenshot = canvas.ReadFrame();
 #endif
-    // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
-    OpenGl1Renderer canvas = {};
-    canvas.camera = SS.GW.GetCamera();
-    SS.showToolbar = false;
-    SS.GW.Paint();
-    std::shared_ptr<Pixmap> screenshot = canvas.ReadFrame();
-    
     SS.showToolbar = prevShowToolbar;
 
+#if defined(WIN32) || defined(HAVE_GTK)
+    bool flip = true;
+#else
+    bool flip = false;
+#endif
 
     FILE *f = ssfopen(filename, "wb");
-    if (!f || !screenshot->WritePng(f, /*flip=*/!FLIP_FRAMEBUFFER)) {
+    if(!f || !screenshot->WritePng(f, flip)) {
         Error("Couldn't write to '%s'", filename.c_str());
     }
     if(f) fclose(f);
