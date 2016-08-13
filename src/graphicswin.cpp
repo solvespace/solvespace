@@ -223,11 +223,11 @@ void GraphicsWindow::Init() {
     showNormals = true;
     showPoints = true;
     showConstraints = true;
-    showHdnLines = false;
     showShaded = true;
     showEdges = true;
     showMesh = false;
     showOutlines = false;
+    drawOccludedAs = DrawOccludedAs::INVISIBLE;
 
     showTextWindow = true;
     ShowTextWindow(showTextWindow);

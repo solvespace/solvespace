@@ -83,6 +83,76 @@ public:
     }
 };
 
+class OccludedLinesButton : public Button {
+public:
+    std::shared_ptr<Pixmap> visibleIcon;
+    std::shared_ptr<Pixmap> stippledIcon;
+    std::shared_ptr<Pixmap> invisibleIcon;
+
+    std::string Tooltip() override {
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
+                return "Stipple occluded lines";
+
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:
+                return "Draw occluded lines";
+
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:
+                return "Don't draw occluded lines";
+
+            default: ssassert(false, "Unexpected mode");
+        }
+    }
+
+    void Draw(UiCanvas *uiCanvas, int x, int y, bool asHovered) override {
+        if(visibleIcon == NULL) {
+            visibleIcon = LoadPng("icons/text-window/occluded-visible.png");
+        }
+        if(stippledIcon == NULL) {
+            stippledIcon = LoadPng("icons/text-window/occluded-stippled.png");
+        }
+        if(invisibleIcon == NULL) {
+            invisibleIcon = LoadPng("icons/text-window/occluded-invisible.png");
+        }
+
+        std::shared_ptr<Pixmap> icon;
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE: icon = invisibleIcon; break;
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:  icon = stippledIcon;  break;
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:   icon = visibleIcon;   break;
+        }
+
+        uiCanvas->DrawPixmap(icon, x, y - 24);
+        if(asHovered) {
+            uiCanvas->DrawRect(x - 2, x + 26, y + 2, y - 26,
+                               /*fillColor=*/{ 255, 255, 0, 75 },
+                               /*outlineColor=*/{});
+        }
+    }
+
+    int AdvanceWidth() override { return 32; }
+
+    void Click() override {
+        switch(SS.GW.drawOccludedAs) {
+            case GraphicsWindow::DrawOccludedAs::INVISIBLE:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::STIPPLED;
+                break;
+
+            case GraphicsWindow::DrawOccludedAs::STIPPLED:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::VISIBLE;
+                break;
+
+            case GraphicsWindow::DrawOccludedAs::VISIBLE:
+                SS.GW.drawOccludedAs = GraphicsWindow::DrawOccludedAs::INVISIBLE;
+                break;
+        }
+
+        SS.GenerateAll();
+        InvalidateGraphics();
+        SS.ScheduleShowTW();
+    }
+};
+
 static SpacerButton   spacerButton;
 
 static ShowHideButton workplanesButton =
@@ -102,8 +172,7 @@ static ShowHideButton outlinesButton =
     { &(SS.GW.showOutlines),    "outlines",      "outline of solid model"          };
 static ShowHideButton meshButton =
     { &(SS.GW.showMesh),        "mesh",          "triangle mesh of solid model"    };
-static ShowHideButton hdnLinesButton =
-    { &(SS.GW.showHdnLines),    "hidden-lines",  "hidden lines"                    };
+static OccludedLinesButton occludedLinesButton;
 
 static Button *buttons[] = {
     &workplanesButton,
@@ -117,7 +186,7 @@ static Button *buttons[] = {
     &outlinesButton,
     &meshButton,
     &spacerButton,
-    &hdnLinesButton,
+    &occludedLinesButton,
 };
 
 const TextWindow::Color TextWindow::fgColors[] = {

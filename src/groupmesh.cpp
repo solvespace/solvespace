@@ -444,7 +444,8 @@ bool Group::IsMeshGroup() {
 }
 
 void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
-    if(!(SS.GW.showShaded || SS.GW.showHdnLines)) return;
+    if(!(SS.GW.showShaded ||
+         SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE)) return;
 
     switch(how) {
         case DrawMeshAs::DEFAULT: {
@@ -452,7 +453,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
             // the sketch.
             Canvas::Fill fillFront = {};
             if(!SS.GW.showShaded) {
-                fillFront.layer  = Canvas::Layer::DEPTH_ONLY;
+                fillFront.layer = Canvas::Layer::DEPTH_ONLY;
             }
             if(type == Type::DRAWING_3D || type == Type::DRAWING_WORKPLANE) {
                 fillFront.color = Style::Color(Style::DIM_SOLID);
@@ -549,7 +550,7 @@ void Group::Draw(Canvas *canvas) {
                              ? Canvas::DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR
                              : Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
 
-        if(SS.GW.showHdnLines) {
+        if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
             Canvas::Stroke strokeHidden = strokeEdge;
             strokeHidden.layer  = Canvas::Layer::OCCLUDED;
             strokeHidden.width = Style::Width(Style::HIDDEN_EDGE);

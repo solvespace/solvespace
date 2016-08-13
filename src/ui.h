@@ -719,8 +719,10 @@ public:
     bool    showOutlines;
     bool    showFaces;
     bool    showMesh;
-    bool    showHdnLines;
     void ToggleBool(bool *v);
+
+    enum class DrawOccludedAs { INVISIBLE, STIPPLED, VISIBLE };
+    DrawOccludedAs drawOccludedAs;
 
     bool    showSnapGrid;
     void DrawSnapGrid(Canvas *canvas);

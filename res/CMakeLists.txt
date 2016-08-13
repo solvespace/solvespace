@@ -177,7 +177,9 @@ add_resources(
     icons/text-window/constraint.png
     icons/text-window/edges.png
     icons/text-window/faces.png
-    icons/text-window/hidden-lines.png
+    icons/text-window/occluded-visible.png
+    icons/text-window/occluded-stippled.png
+    icons/text-window/occluded-invisible.png
     icons/text-window/mesh.png
     icons/text-window/normal.png
     icons/text-window/outlines.png

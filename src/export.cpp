@@ -178,7 +178,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
     GenerateAll(Generate::ALL);
 
     SMesh *sm = NULL;
-    if(SS.GW.showShaded || SS.GW.showHdnLines) {
+    if(SS.GW.showShaded || SS.GW.drawOccludedAs != GraphicsWindow::DrawOccludedAs::VISIBLE) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
         sm = &(g->displayMesh);
@@ -410,13 +410,13 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
             // Split the original edge against the mesh
             edges.AddEdge(se->a, se->b, se->auxA);
             root->OcclusionTestLine(*se, &edges, cnt);
-            if(SS.GW.showHdnLines) {
+            if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::STIPPLED) {
                 for(SEdge &se : edges.l) {
                     if(se.tag == 1) {
                         se.auxA = Style::HIDDEN_EDGE;
                     }
                 }
-            } else {
+            } else if(SS.GW.drawOccludedAs == GraphicsWindow::DrawOccludedAs::INVISIBLE) {
                 edges.l.RemoveTagged();
             }
 
