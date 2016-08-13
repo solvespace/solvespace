@@ -437,7 +437,7 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
         Vector trans =
             (*ref).Plus(gu.ScaledBy(-1.5*VectorFont::Builtin()->GetCapHeight(textHeight)));
         canvas->DrawVectorText("angle between skew lines", textHeight,
-                               trans, gr.WithMagnitude(pixels), gu.WithMagnitude(pixels),
+                               trans, gr.WithMagnitude(1), gu.WithMagnitude(1),
                                hcs);
     }
 }
@@ -925,7 +925,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             }
 
             Vector ex = VectorFont::Builtin()->GetExtents(textHeight, "T");
-            canvas->DrawVectorText("T", textHeight, textAt.Minus(ex.ScaledBy(0.5)), u, v, hcs);
+            canvas->DrawVectorText("T", textHeight, textAt.Minus(ex.ScaledBy(0.5)),
+                                   u.WithMagnitude(1), v.WithMagnitude(1), hcs);
             if(refs) refs->push_back(textAt);
             return;
         }
@@ -1122,7 +1123,8 @@ s:
                 }
                 Vector o  = m.Plus(offset).Plus(u.WithMagnitude(textHeight/5)),
                        ex = VectorFont::Builtin()->GetExtents(textHeight, s);
-                canvas->DrawVectorText(s, textHeight, o.Minus(ex.ScaledBy(0.5)), r, u, hcs);
+                canvas->DrawVectorText(s, textHeight, o.Minus(ex.ScaledBy(0.5)),
+                                       r.WithMagnitude(1), u.WithMagnitude(1), hcs);
                 if(refs) refs->push_back(o);
             } else {
                 Vector a = SK.GetEntity(ptA)->PointGetNum();

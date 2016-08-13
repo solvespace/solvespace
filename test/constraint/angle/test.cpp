@@ -47,3 +47,8 @@ TEST_CASE(reference_free_in_3d_migrate_from_v20) {
     CHECK_RENDER("reference_free_in_3d.png");
     CHECK_SAVE("reference_free_in_3d.slvs");
 }
+
+TEST_CASE(skew_render) {
+    CHECK_LOAD("skew.slvs");
+    CHECK_RENDER("skew.png");
+}
