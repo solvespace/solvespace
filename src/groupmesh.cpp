@@ -378,7 +378,7 @@ void Group::GenerateDisplayItems() {
             displayMesh.MakeFromCopyOf(&(pg->displayMesh));
 
             displayOutlines.Clear();
-            if(SS.GW.showEdges) {
+            if(SS.GW.showEdges || SS.GW.showOutlines) {
                 displayOutlines.MakeFromCopyOf(&pg->displayOutlines);
             }
         } else {
@@ -398,7 +398,7 @@ void Group::GenerateDisplayItems() {
 
             displayOutlines.Clear();
 
-            if(SS.GW.showEdges) {
+            if(SS.GW.showEdges || SS.GW.showOutlines) {
                 if(runningMesh.l.n > 0) {
                     // Triangle mesh only; no shell or emphasized edges.
                     runningMesh.MakeOutlinesInto(&displayOutlines, EdgeKind::EMPHASIZED);
@@ -528,17 +528,6 @@ void Group::Draw(Canvas *canvas) {
     DrawMesh(DrawMeshAs::DEFAULT, canvas);
 
     if(SS.GW.showEdges) {
-        if(SS.GW.showOutlines) {
-            Canvas::Stroke strokeOutline = {};
-            strokeOutline.zIndex = 1;
-            strokeOutline.color  = Style::Color(Style::OUTLINE);
-            strokeOutline.width  = Style::Width(Style::OUTLINE);
-            Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
-
-            canvas->DrawOutlines(displayOutlines, hcsOutline,
-                                 Canvas::DrawOutlinesAs::CONTOUR_ONLY);
-        }
-
         Canvas::Stroke strokeEdge = {};
         strokeEdge.zIndex = 1;
         strokeEdge.color  = Style::Color(Style::SOLID_EDGE);
@@ -561,6 +550,17 @@ void Group::Draw(Canvas *canvas) {
             canvas->DrawOutlines(displayOutlines, hcsHidden,
                                  Canvas::DrawOutlinesAs::EMPHASIZED_AND_CONTOUR);
         }
+    }
+
+    if(SS.GW.showOutlines) {
+        Canvas::Stroke strokeOutline = {};
+        strokeOutline.zIndex = 1;
+        strokeOutline.color  = Style::Color(Style::OUTLINE);
+        strokeOutline.width  = Style::Width(Style::OUTLINE);
+        Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
+
+        canvas->DrawOutlines(displayOutlines, hcsOutline,
+                             Canvas::DrawOutlinesAs::CONTOUR_ONLY);
     }
 }
 
