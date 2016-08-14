@@ -463,36 +463,34 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     if(!rankOk) {
         if(!g->allowRedundant) {
             if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad);
-            return System::REDUNDANT_OKAY;
         }
-    }
+    } else {
+        // This is not the full Jacobian, but any substitutions or single-eq
+        // solves removed one equation and one unknown, therefore no effect
+        // on the number of DOF.
+        if(dof) *dof = mat.n - mat.m;
 
-    // This is not the full Jacobian, but any substitutions or single-eq
-    // solves removed one equation and one unknown, therefore no effect
-    // on the number of DOF.
-    if(dof) *dof = mat.n - mat.m;
+        // If requested, find all the free (unbound) variables. This might be
+        // more than the number of degrees of freedom. Don't always do this,
+        // because the display would get annoying and it's slow.
+        for(i = 0; i < param.n; i++) {
+            Param *p = &(param.elem[i]);
+            p->free = false;
 
-    // If requested, find all the free (unbound) variables. This might be
-    // more than the number of degrees of freedom. Don't always do this,
-    // because the display would get annoying and it's slow.
-    for(i = 0; i < param.n; i++) {
-        Param *p = &(param.elem[i]);
-        p->free = false;
-
-        if(andFindFree) {
-            if(p->tag == 0) {
-                p->tag = VAR_DOF_TEST;
-                WriteJacobian(0);
-                EvalJacobian();
-                int rank = CalculateRank();
-                if(rank == mat.m) {
-                    p->free = true;
+            if(andFindFree) {
+                if(p->tag == 0) {
+                    p->tag = VAR_DOF_TEST;
+                    WriteJacobian(0);
+                    EvalJacobian();
+                    int rank = CalculateRank();
+                    if(rank == mat.m) {
+                        p->free = true;
+                    }
+                    p->tag = 0;
                 }
-                p->tag = 0;
             }
         }
     }
-
     // System solved correctly, so write the new values back in to the
     // main parameter table.
     for(i = 0; i < param.n; i++) {
