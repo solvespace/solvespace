@@ -22,11 +22,12 @@ void GlOffscreen::Clear() {
 bool GlOffscreen::Render(int width, int height, std::function<void()> renderFn) {
     data.resize(width * height * 4);
 
-    if(framebuffer == 0) {
+    if(framebuffer == 0)
         glGenFramebuffersEXT(1, &framebuffer);
+    if(colorRenderbuffer == 0)
         glGenRenderbuffersEXT(1, &colorRenderbuffer);
+    if(depthRenderbuffer == 0)
         glGenRenderbuffersEXT(1, &depthRenderbuffer);
-    }
 
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebuffer);
 
