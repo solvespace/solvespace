@@ -1076,7 +1076,9 @@ void GraphicsWindow::ToggleBool(bool *v) {
 
     // We might need to regenerate the mesh and edge list, since the edges
     // wouldn't have been generated if they were previously hidden.
-    if(showEdges) (SK.GetGroup(activeGroup))->displayDirty = true;
+    if(showEdges || showOutlines) {
+        SK.GetGroup(activeGroup)->displayDirty = true;
+    }
 
     SS.GenerateAll();
     InvalidateGraphics();

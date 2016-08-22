@@ -273,10 +273,20 @@ void TextWindow::DescribeSelection() {
         Printf(false, "%FtLINE SEGMENT AND POINT%E");
         Printf(true,  "   ln thru " PT_AS_STR, COSTR(lp0));
         Printf(false, "           " PT_AS_STR, COSTR(lp1));
-        Vector pp = SK.GetEntity(gs.point[0])->PointGetNum();
+        Entity *p  = SK.GetEntity(gs.point[0]);
+        Vector pp = p->PointGetNum();
         Printf(true,  "     point " PT_AS_STR, COSTR(pp));
         Printf(true,  " pt-ln distance = %Fi%s%E",
             SS.MmToString(pp.DistanceToLine(lp0, lp1.Minus(lp0))).c_str());
+        hEntity wrkpl = SS.GW.ActiveWorkplane();
+        if(wrkpl.v != Entity::FREE_IN_3D.v &&
+                !(p->workplane.v == wrkpl.v && ln->workplane.v == wrkpl.v)) {
+            Vector ppw  = pp.ProjectInto(wrkpl);
+            Vector lp0w = lp0.ProjectInto(wrkpl);
+            Vector lp1w = lp1.ProjectInto(wrkpl);
+            Printf(false, "    or distance = %Fi%s%E (in workplane)",
+                SS.MmToString(ppw.DistanceToLine(lp0w, lp1w.Minus(lp0w))).c_str());
+        }
     } else if(gs.n == 2 && gs.vectors == 2) {
         Printf(false, "%FtTWO VECTORS");
 

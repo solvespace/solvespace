@@ -8,15 +8,18 @@ New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
     use the current viewport projection.
 
+New rendering features:
+  * The "Show/hide hidden lines" button is now a tri-state button that allows
+    showing all lines (on top of shaded mesh), stippling occluded lines
+    or not drawing them at all.
+  * The "Show/hide outlines" button is now independent from "Show/hide edges".
+
 Other new features:
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.
-  * The "Show/hide hidden lines" button is now a tri-state button that allows
-    showing all lines (on top of shaded mesh), stippling occluded lines
-    or not drawing them at all.
 
 2.2
 ---

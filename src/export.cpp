@@ -203,10 +203,12 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exp
         }
     }
 
-    if(SS.GW.showEdges) {
+    if(SS.GW.showEdges || SS.GW.showOutlines) {
         Group *g = SK.GetGroup(SS.GW.activeGroup);
         g->GenerateDisplayItems();
-        g->displayOutlines.ListTaggedInto(&edges, Style::SOLID_EDGE);
+        if(SS.GW.showEdges) {
+            g->displayOutlines.ListTaggedInto(&edges, Style::SOLID_EDGE);
+        }
     }
 
     if(SS.GW.showConstraints) {
@@ -388,7 +390,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
         // Generate the edges where a curved surface turns from front-facing
         // to back-facing.
-        if(SS.GW.showEdges) {
+        if(SS.GW.showEdges || SS.GW.showOutlines) {
             root->MakeCertainEdgesInto(sel, EdgeKind::TURNING,
                                        /*coplanarIsInter=*/false, NULL, NULL,
                                        GW.showOutlines ? Style::OUTLINE : Style::SOLID_EDGE);
