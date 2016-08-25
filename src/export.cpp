@@ -628,13 +628,13 @@ VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
     } else if(FilenameHasExtension(filename, ".step")||FilenameHasExtension(filename, ".stp")) {
         static Step2dFileWriter Step2dWriter;
         ret = &Step2dWriter;
-    } else if(FilenameHasExtension(filename, ".txt")) {
+    } else if(FilenameHasExtension(filename, ".txt")||FilenameHasExtension(filename, ".ngc")) {
         static GCodeFileWriter GCodeWriter;
         ret = &GCodeWriter;
     } else {
         Error("Can't identify output file type from file extension of "
         "filename '%s'; try "
-        ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, "
+        ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, .ngc, "
         ".eps, or .ps.",
             filename.c_str());
         return NULL;
