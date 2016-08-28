@@ -370,7 +370,8 @@ void Constraint::MenuConstrain(Command id) {
                                 ((gs.workplanes == 1 && gs.n == 3) ||
                                  (gs.n == 2)))
             {
-                c.entityA = gs.entity[0];
+                if(gs.entities > 0)
+                    c.entityA = gs.entity[0];
                 c.ptA = gs.point[0];
                 c.ptB = gs.point[1];
                 c.type = Type::SYMMETRIC;
