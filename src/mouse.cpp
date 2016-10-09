@@ -1379,6 +1379,13 @@ bool GraphicsWindow::KeyDown(int c) {
         // Treat backspace identically to escape.
         MenuEdit(Command::UNSELECT_ALL);
         return true;
+    } else if(c == '=') {
+        // Treat = as +. This is specific to US (and US-compatible) keyboard layouts,
+        // but makes zooming from keyboard much more usable on these.
+        // Ideally we'd have a platform-independent way of binding to a particular
+        // physical key regardless of shift status...
+        MenuView(Command::ZOOM_IN);
+        return true;
     }
 
     return false;
