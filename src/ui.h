@@ -139,6 +139,7 @@ enum class ContextCommand : uint32_t {
     SNAP_TO_GRID,
     REMOVE_SPLINE_PT,
     ADD_SPLINE_PT,
+    CONSTRUCTION,
     FIRST_STYLE      = 0x40000000
 };
 

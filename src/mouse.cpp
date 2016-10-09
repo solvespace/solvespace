@@ -570,7 +570,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             AddContextMenuItem("Snap to Grid", ContextCommand::SNAP_TO_GRID);
         }
 
-
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.point[0].request());
             int index = r->IndexOfPoint(gs.point[0]);
@@ -589,6 +588,9 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
                 AddContextMenuItem("Add Spline Point", ContextCommand::ADD_SPLINE_PT);
             }
+        }
+        if(gs.entities == gs.n) {
+            AddContextMenuItem("Toggle Construction", ContextCommand::CONSTRUCTION);
         }
 
         if(gs.points == 1) {
@@ -700,6 +702,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case ContextCommand::SNAP_TO_GRID:
             MenuEdit(Command::SNAP_TO_GRID);
+            break;
+
+        case ContextCommand::CONSTRUCTION:
+            MenuRequest(Command::CONSTRUCTION);
             break;
 
         case ContextCommand::REMOVE_SPLINE_PT: {
