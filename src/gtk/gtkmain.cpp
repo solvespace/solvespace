@@ -1086,6 +1086,7 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
         for(const char *const *ssPattern = ssFilter->patterns; *ssPattern; ssPattern++) {
             std::string pattern = "*." + std::string(*ssPattern);
             filter->add_pattern(pattern);
+            filter->add_pattern(Glib::ustring(pattern).uppercase());
             if(active == "")
                 active = pattern.substr(2);
             if("*." + active == pattern)
