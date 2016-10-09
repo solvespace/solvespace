@@ -117,7 +117,7 @@ std::string PathSepUnixToPlatform(const std::string &filename)
     return result;
 }
 
-FILE *ssfopen(const std::string &filename, const char *mode)
+static std::string MakeUNCFilename(const std::string &filename)
 {
     // Prepend \\?\ UNC prefix unless already an UNC path.
     // We never try to fopen paths that are not absolute or
@@ -126,10 +126,22 @@ FILE *ssfopen(const std::string &filename, const char *mode)
     std::string uncFilename = filename;
     if(uncFilename.substr(0, 2) != "\\\\")
         uncFilename = "\\\\?\\" + uncFilename;
+    return uncFilename;
+}
 
+FILE *ssfopen(const std::string &filename, const char *mode)
+{
     ssassert(filename.length() == strlen(filename.c_str()),
              "Unexpected null byte in middle of a path");
-    return _wfopen(Widen(uncFilename).c_str(), Widen(mode).c_str());
+    return _wfopen(Widen(MakeUNCFilename(filename)).c_str(), Widen(mode).c_str());
+}
+
+std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode)
+{
+    std::string uncFilename = MakeUNCFilename(filename);
+    ssassert(filename.length() == strlen(filename.c_str()),
+             "Unexpected null byte in middle of a path");
+    return std::fstream(Widen(MakeUNCFilename(filename)).c_str(), mode);
 }
 
 void ssremove(const std::string &filename)

@@ -696,11 +696,19 @@ void DxfFileWriter::Bezier(SBezier *sb) {
 }
 
 void DxfFileWriter::FinishAndCloseFile() {
-    dxfRW dxf(filename.c_str());
+    dxfRW dxf;
+
     DxfWriteInterface interface = {};
     interface.writer = this;
     interface.dxf    = &dxf;
-    dxf.write(&interface, DRW::AC1021, /*bin=*/false);
+
+    std::fstream stream = ssfstream(filename, std::ios_base::out);
+    if(!stream.good()) {
+        Error("Couldn't write to '%s'", filename.c_str());
+        return;
+    }
+
+    dxf.write(stream, &interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
     constraint = NULL;
 

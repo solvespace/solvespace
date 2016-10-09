@@ -29,6 +29,7 @@
 #include <map>
 #include <set>
 #include <chrono>
+#include <fstream>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -154,6 +155,7 @@ bool PathEqual(const std::string &a, const std::string &b);
 std::string PathSepPlatformToUnix(const std::string &filename);
 std::string PathSepUnixToPlatform(const std::string &filename);
 FILE *ssfopen(const std::string &filename, const char *mode);
+std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode);
 void ssremove(const std::string &filename);
 
 const size_t MAX_RECENT = 8;
