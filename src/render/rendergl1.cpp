@@ -201,6 +201,31 @@ Canvas::Fill *OpenGl1Renderer::SelectFill(hFill hcf) {
     return fill;
 }
 
+static int RoundUpToPowerOfTwo(int v)
+{
+    for(int i = 0; i < 31; i++) {
+        int vt = (1 << i);
+        if(vt >= v) {
+            return vt;
+        }
+    }
+    return 0;
+}
+
+static bool NeedsGl1V1Workaround()
+{
+    static bool didGlVersionCheck, needsGl1V1Workaround;
+    if(!didGlVersionCheck) {
+        didGlVersionCheck = true;
+        if(!strcmp((const char*) glGetString(GL_VERSION), "1.1.0")) {
+            // The default Windows GL renderer really does implement GL 1.1,
+            // and cannot handle non-power-of-2 textures, which is legal.
+            needsGl1V1Workaround = true;
+        }
+    }
+    return needsGl1V1Workaround;
+}
+
 void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     if(current.texture.lock() == pm) return;
 
@@ -220,8 +245,19 @@ void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
         case Pixmap::Format::BGR:
             ssassert(false, "Unexpected pixmap format");
     }
-    glTexImage2D(GL_TEXTURE_2D, 0, format, pm->width, pm->height, 0,
-                 format, GL_UNSIGNED_BYTE, &pm->data[0]);
+
+    if(!NeedsGl1V1Workaround()) {
+        glTexImage2D(GL_TEXTURE_2D, 0, format, pm->width, pm->height, 0,
+                     format, GL_UNSIGNED_BYTE, &pm->data[0]);
+    } else {
+        GLsizei width = RoundUpToPowerOfTwo(pm->width);
+        GLsizei height = RoundUpToPowerOfTwo(pm->height);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
+                     format, GL_UNSIGNED_BYTE, 0);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, pm->width, pm->height,
+                        format, GL_UNSIGNED_BYTE, &pm->data[0]);
+    }
+
     glEnable(GL_TEXTURE_2D);
 
     current.texture = pm;
@@ -603,17 +639,24 @@ void OpenGl1Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &fac
 void OpenGl1Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                                  const Vector &o, const Vector &u, const Vector &v,
                                  const Point2d &ta, const Point2d &tb, hFill hcf) {
+    double xfactor = 1.0,
+           yfactor = 1.0;
+    if(NeedsGl1V1Workaround()) {
+        xfactor = (double)pm->width / RoundUpToPowerOfTwo(pm->width);
+        yfactor = (double)pm->height / RoundUpToPowerOfTwo(pm->height);
+    }
+
     UnSelectPrimitive();
     SelectFill(hcf);
     SelectTexture(pm);
     SelectPrimitive(GL_QUADS);
-    glTexCoord2d(ta.x, ta.y);
+    glTexCoord2d(ta.x * xfactor, ta.y * yfactor);
     ssglVertex3v(o);
-    glTexCoord2d(ta.x, tb.y);
+    glTexCoord2d(ta.x * xfactor, tb.y * yfactor);
     ssglVertex3v(o.Plus(v));
-    glTexCoord2d(tb.x, tb.y);
+    glTexCoord2d(tb.x * xfactor, tb.y * yfactor);
     ssglVertex3v(o.Plus(u).Plus(v));
-    glTexCoord2d(tb.x, ta.y);
+    glTexCoord2d(tb.x * xfactor, ta.y * yfactor);
     ssglVertex3v(o.Plus(u));
 }
 
