@@ -613,6 +613,8 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             AddContextMenuItem("Cut",  ContextCommand::CUT_SEL);
             AddContextMenuItem("Copy", ContextCommand::COPY_SEL);
         }
+    } else {
+        AddContextMenuItem("Select All", ContextCommand::SELECT_ALL);
     }
 
     if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
@@ -706,6 +708,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case ContextCommand::CONSTRUCTION:
             MenuRequest(Command::CONSTRUCTION);
+            break;
+
+        case ContextCommand::SELECT_ALL:
+            MenuEdit(Command::SELECT_ALL);
             break;
 
         case ContextCommand::REMOVE_SPLINE_PT: {

@@ -140,6 +140,7 @@ enum class ContextCommand : uint32_t {
     REMOVE_SPLINE_PT,
     ADD_SPLINE_PT,
     CONSTRUCTION,
+    SELECT_ALL,
     FIRST_STYLE      = 0x40000000
 };
 
