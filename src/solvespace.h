@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <map>
 #include <set>
+#include <sstream>
 #ifdef WIN32
 #   include <windows.h> // required by GL headers
 #endif
@@ -135,6 +136,7 @@ class RgbaColor;
 #endif
 
 FILE *ssfopen(const std::string &filename, const char *mode);
+std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode);
 void ssremove(const std::string &filename);
 
 #define MAX_RECENT 8
@@ -374,6 +376,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 std::string MakeAcceleratorLabel(int accel);
 bool FilenameHasExtension(const std::string &str, const char *ext);
+bool ReadFile(const std::string &filename, std::string *data);
+bool WriteFile(const std::string &filename, const std::string &data);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
 void CnfFreezeBool(bool v, const std::string &name);

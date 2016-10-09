@@ -384,7 +384,7 @@ public:
                         Vector dna = norm.Cross(da).WithMagnitude(1.0);
 
                         double thetaf = acos(da.DirectionCosineWith(db));
-                        
+
                         // Calculate median
                         Vector m = da.WithMagnitude(1.0).ScaledBy(cos(thetaf/2)).Plus(
                                    dna.ScaledBy(sin(thetaf/2)));
@@ -684,12 +684,19 @@ void DxfFileWriter::Bezier(SBezier *sb) {
     paths.back().beziers.push_back(sb);
 }
 
-void DxfFileWriter::FinishAndCloseFile(void) {
-    dxfRW dxf(filename.c_str());
+void DxfFileWriter::FinishAndCloseFile() {
+    dxfRW dxf;
+
     DxfWriteInterface interface(this, &dxf);
-    dxf.write(&interface, DRW::AC1021, false);
+    std::stringstream stream;
+    dxf.write(stream, &interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
     constraint = NULL;
+
+    if(!WriteFile(filename, stream.str())) {
+        Error("Couldn't write to '%s'", filename.c_str());
+        return;
+    }
 }
 
 bool DxfFileWriter::NeedToOutput(Constraint *c) {

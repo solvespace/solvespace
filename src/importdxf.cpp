@@ -902,13 +902,21 @@ public:
 };
 
 void ImportDxf(const std::string &filename) {
-    SS.UndoRemember();
-    dxfRW dxf(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
-    if(!dxf.read(&interface, false)) {
-        Error("Corrupted DXF file!");
+
+    std::string data;
+    if(!ReadFile(filename, &data)) {
+        Error("Couldn't read from '%s'", filename.c_str());
+        return;
     }
+
+    SS.UndoRemember();
+    std::stringstream stream(data);
+    if(!dxfRW().read(stream, &interface, /*ext=*/false)) {
+        Error("Corrupted DXF file.");
+    }
+
     if(interface.unknownEntities > 0) {
         Message(ssprintf("%u DXF entities of unknown type were ignored.",
                          interface.unknownEntities).c_str());
@@ -916,13 +924,21 @@ void ImportDxf(const std::string &filename) {
 }
 
 void ImportDwg(const std::string &filename) {
-    SS.UndoRemember();
-    dwgR dwg(filename.c_str());
     DxfReadInterface interface;
     interface.clearBlockTransform();
-    if(!dwg.read(&interface, false)) {
-        Error("Corrupted DWG file!");
+
+    std::string data;
+    if(!ReadFile(filename, &data)) {
+        Error("Couldn't read from '%s'", filename.c_str());
+        return;
     }
+
+    SS.UndoRemember();
+    std::stringstream stream(data);
+    if(!dwgR().read(stream, &interface, /*ext=*/false)) {
+        Error("Corrupted DWG file.");
+    }
+
     if(interface.unknownEntities > 0) {
         Message(ssprintf("%u DWG entities of unknown type were ignored.",
                          interface.unknownEntities).c_str());

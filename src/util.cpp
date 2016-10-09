@@ -61,6 +61,33 @@ bool SolveSpace::FilenameHasExtension(const std::string &str, const char *ext)
     return true;
 }
 
+bool SolveSpace::ReadFile(const std::string &filename, std::string *data)
+{
+    FILE *f = ssfopen(filename.c_str(), "rb");
+    if(f == NULL)
+        return false;
+
+    fseek(f, 0, SEEK_END);
+    data->resize(ftell(f));
+    fseek(f, 0, SEEK_SET);
+    fread(&(*data)[0], 1, data->size(), f);
+    fclose(f);
+
+    return true;
+}
+
+bool SolveSpace::WriteFile(const std::string &filename, const std::string &data)
+{
+    FILE *f = ssfopen(filename.c_str(), "wb");
+    if(f == NULL)
+        return false;
+
+    fwrite(&data[0], 1, data.size(), f);
+    fclose(f);
+
+    return true;
+}
+
 void SolveSpace::MakeMatrix(double *mat,
                             double a11, double a12, double a13, double a14,
                             double a21, double a22, double a23, double a24,
