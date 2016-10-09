@@ -21,6 +21,39 @@
 namespace SolveSpace {
 
 //-----------------------------------------------------------------------------
+// Checks for buggy OpenGL renderers
+//-----------------------------------------------------------------------------
+
+// Intel GPUs with Mesa on *nix render thin lines poorly.
+static bool HasIntelThinLineQuirk()
+{
+    static bool quirkChecked, quirkEnabled;
+    if(!quirkChecked) {
+        const char *ident = (const char*)glGetString(GL_VENDOR);
+        if(ident != NULL) {
+            quirkChecked = true;
+            quirkEnabled = !strcmp(ident, "Intel Open Source Technology Center");
+        }
+    }
+    return quirkEnabled;
+}
+
+// The default Windows GL renderer really does implement GL 1.1,
+// and cannot handle non-power-of-2 textures, which is legal.
+static bool HasGl1V1Quirk()
+{
+    static bool quirkChecked, quirkEnabled;
+    if(!quirkChecked) {
+        const char *ident = (const char*)glGetString(GL_VERSION);
+        if(ident != NULL) {
+            quirkChecked = true;
+            quirkEnabled = !strcmp(ident, "1.1.0");
+        }
+    }
+    return quirkEnabled;
+}
+
+//-----------------------------------------------------------------------------
 // Thin wrappers around OpenGL functions to fix bugs, adapt them to our
 // data structures, etc.
 //-----------------------------------------------------------------------------
@@ -34,18 +67,7 @@ static inline void ssglVertex3v(Vector v) {
 }
 
 void ssglLineWidth(double width) {
-    // Intel GPUs with Mesa on *nix render thin lines poorly.
-    static bool workaroundChecked, workaroundEnabled;
-    if(!workaroundChecked) {
-        // ssglLineWidth can be called before GL is initialized
-        if(glGetString(GL_VENDOR)) {
-            workaroundChecked = true;
-            if(!strcmp((char*)glGetString(GL_VENDOR), "Intel Open Source Technology Center"))
-                workaroundEnabled = true;
-        }
-    }
-
-    if(workaroundEnabled && width < 1.6)
+    if(HasIntelThinLineQuirk() && width < 1.6)
         width = 1.6;
 
     glLineWidth((GLfloat)width);
@@ -212,20 +234,6 @@ static int RoundUpToPowerOfTwo(int v)
     return 0;
 }
 
-static bool NeedsGl1V1Workaround()
-{
-    static bool didGlVersionCheck, needsGl1V1Workaround;
-    if(!didGlVersionCheck) {
-        didGlVersionCheck = true;
-        if(!strcmp((const char*) glGetString(GL_VERSION), "1.1.0")) {
-            // The default Windows GL renderer really does implement GL 1.1,
-            // and cannot handle non-power-of-2 textures, which is legal.
-            needsGl1V1Workaround = true;
-        }
-    }
-    return needsGl1V1Workaround;
-}
-
 void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     if(current.texture.lock() == pm) return;
 
@@ -246,7 +254,7 @@ void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
             ssassert(false, "Unexpected pixmap format");
     }
 
-    if(!NeedsGl1V1Workaround()) {
+    if(!HasGl1V1Quirk()) {
         glTexImage2D(GL_TEXTURE_2D, 0, format, pm->width, pm->height, 0,
                      format, GL_UNSIGNED_BYTE, &pm->data[0]);
     } else {
@@ -641,7 +649,7 @@ void OpenGl1Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                                  const Point2d &ta, const Point2d &tb, hFill hcf) {
     double xfactor = 1.0,
            yfactor = 1.0;
-    if(NeedsGl1V1Workaround()) {
+    if(HasGl1V1Quirk()) {
         xfactor = (double)pm->width / RoundUpToPowerOfTwo(pm->width);
         yfactor = (double)pm->height / RoundUpToPowerOfTwo(pm->height);
     }
