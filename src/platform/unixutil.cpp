@@ -82,13 +82,6 @@ FILE *ssfopen(const std::string &filename, const char *mode)
     return fopen(filename.c_str(), mode);
 }
 
-std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode)
-{
-    ssassert(filename.length() == strlen(filename.c_str()),
-             "Unexpected null byte in middle of a path");
-    return std::fstream(filename, mode);
-}
-
 void ssremove(const std::string &filename)
 {
     ssassert(filename.length() == strlen(filename.c_str()),

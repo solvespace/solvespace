@@ -903,13 +903,14 @@ void ImportDxf(const std::string &filename) {
     DxfReadInterface interface;
     interface.clearBlockTransform();
 
-    std::fstream stream = ssfstream(filename, std::ios_base::in);
-    if(!stream.good()) {
+    std::string data;
+    if(!ReadFile(filename, &data)) {
         Error("Couldn't read from '%s'", filename.c_str());
         return;
     }
 
     SS.UndoRemember();
+    std::stringstream stream(data);
     if(!dxfRW().read(stream, &interface, /*ext=*/false)) {
         Error("Corrupted DXF file.");
     }
@@ -924,13 +925,14 @@ void ImportDwg(const std::string &filename) {
     DxfReadInterface interface;
     interface.clearBlockTransform();
 
-    std::fstream stream = ssfstream(filename, std::ios_base::in);
-    if(!stream.good()) {
+    std::string data;
+    if(!ReadFile(filename, &data)) {
         Error("Couldn't read from '%s'", filename.c_str());
         return;
     }
 
     SS.UndoRemember();
+    std::stringstream stream(data);
     if(!dwgR().read(stream, &interface, /*ext=*/false)) {
         Error("Corrupted DWG file.");
     }

@@ -29,7 +29,7 @@
 #include <map>
 #include <set>
 #include <chrono>
-#include <fstream>
+#include <sstream>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -367,6 +367,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 std::string MakeAcceleratorLabel(int accel);
 bool FilenameHasExtension(const std::string &str, const char *ext);
+bool ReadFile(const std::string &filename, std::string *data);
+bool WriteFile(const std::string &filename, const std::string &data);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
 void CnfFreezeBool(bool v, const std::string &name);

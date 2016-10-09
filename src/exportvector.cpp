@@ -702,15 +702,15 @@ void DxfFileWriter::FinishAndCloseFile() {
     interface.writer = this;
     interface.dxf    = &dxf;
 
-    std::fstream stream = ssfstream(filename, std::ios_base::out);
-    if(!stream.good()) {
-        Error("Couldn't write to '%s'", filename.c_str());
-        return;
-    }
-
+    std::stringstream stream;
     dxf.write(stream, &interface, DRW::AC1021, /*bin=*/false);
     paths.clear();
     constraint = NULL;
+
+    if(!WriteFile(filename, stream.str())) {
+        Error("Couldn't write to '%s'", filename.c_str());
+        return;
+    }
 
     if(!interface.messages.empty()) {
         std::string text = "Some aspects of the drawing have no DXF equivalent and "

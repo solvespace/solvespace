@@ -95,19 +95,6 @@ static std::string Colorize(Color color, std::string input) {
     return input;
 }
 
-static std::string ReadFile(std::string path) {
-    std::string data;
-    FILE *f = ssfopen(path.c_str(), "rb");
-    if(f) {
-        fseek(f, 0, SEEK_END);
-        data.resize(ftell(f));
-        fseek(f, 0, SEEK_SET);
-        fread(&data[0], 1, data.size(), f);
-        fclose(f);
-    }
-    return data;
-}
-
 // Normalizes a savefile. Different platforms have slightly different floating-point
 // behavior, so if we want to compare savefiles byte-by-byte, we need to do something
 // to get rid of irrelevant differences in LSB.
@@ -211,9 +198,10 @@ bool Test::Helper::CheckSave(const char *file, int line, const char *reference) 
                      ssprintf("saving file '%s'", refPath.c_str()));
         return false;
     } else {
-        std::string refData = PrepareSavefile(ReadFile(refPath)),
-                    outData = PrepareSavefile(ReadFile(outPath));
-        if(!RecordCheck(refData == outData)) {
+        std::string refData, outData;
+        ReadFile(refPath, &refData);
+        ReadFile(outPath, &outData);
+        if(!RecordCheck(PrepareSavefile(refData) == PrepareSavefile(outData))) {
             PrintFailure(file, line, "savefile doesn't match reference");
             return false;
         }
