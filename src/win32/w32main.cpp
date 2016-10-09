@@ -56,6 +56,7 @@ SiHdl SpaceNavigator = SI_NO_HANDLE;
 
 HWND MessageWnd, OkButton;
 bool MessageDone;
+int MessageWidth, MessageHeight;
 const char *MessageString;
 
 static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
@@ -76,21 +77,13 @@ static LRESULT CALLBACK MessageProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_PAINT: {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            int row = 0, col = 0, i;
             SelectObject(hdc, FixedFont);
             SetTextColor(hdc, 0x000000);
             SetBkMode(hdc, TRANSPARENT);
-            for(i = 0; MessageString[i]; i++) {
-                if(MessageString[i] == '\n') {
-                    col = 0;
-                    row++;
-                } else {
-                    TextOutW(hdc, col*SS.TW.CHAR_WIDTH + 10,
-                                  row*SS.TW.LINE_HEIGHT + 10,
-                                  Widen(&(MessageString[i])).c_str(), 1);
-                    col++;
-                }
-            }
+            RECT rc;
+            SetRect(&rc, 10, 10, MessageWidth, MessageHeight);
+            std::wstring text = Widen(MessageString);
+            DrawText(hdc, text.c_str(), text.length(), &rc, DT_LEFT | DT_WORDBREAK);
             EndPaint(hwnd, &ps);
             break;
         }
@@ -147,6 +140,8 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     const char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
     int width  = cols*SS.TW.CHAR_WIDTH + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
+    MessageWidth = width;
+    MessageHeight = height;
     MessageWnd = CreateWindowClient(0, L"MessageWnd", Widen(title).c_str(),
         WS_OVERLAPPED | WS_SYSMENU,
         r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
