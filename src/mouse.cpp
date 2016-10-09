@@ -634,6 +634,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         AddContextMenuItem("Unselect Hovered", ContextCommand::UNSELECT_HOVERED);
     }
 
+    if(itemsSelected) {
+        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
+        AddContextMenuItem("Zoom to Fit", ContextCommand::ZOOM_TO_FIT);
+    }
+
     ContextCommand ret = ShowContextMenu();
     switch(ret) {
         case ContextCommand::CANCELLED:
@@ -708,6 +713,10 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
         case ContextCommand::CONSTRUCTION:
             MenuRequest(Command::CONSTRUCTION);
+            break;
+
+        case ContextCommand::ZOOM_TO_FIT:
+            MenuView(Command::ZOOM_TO_FIT);
             break;
 
         case ContextCommand::SELECT_ALL:
