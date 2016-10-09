@@ -203,8 +203,10 @@ void Group::GenerateShellAndMesh(void) {
         // not our own previous group.
         srcg = SK.GetGroup(opA);
 
-        GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
-        GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
+        if(!srcg->suppress) {
+            GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell);
+            GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh);
+        }
     } else if(type == EXTRUDE && haveSrc) {
         Group *src = SK.GetGroup(opA);
         Vector translate = Vector::From(h.param(0), h.param(1), h.param(2));
