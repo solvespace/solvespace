@@ -271,8 +271,10 @@ int Test::Case::Register(Test::Case testCase) {
 }
 
 int main(int argc, char **argv) {
-#if defined(WIN32)
+#if defined(_MSC_VER)
     _set_abort_behavior(0, _WRITE_ABORT_MSG);
+#endif
+#if defined(WIN32)
     InitHeaps();
 #endif
 
