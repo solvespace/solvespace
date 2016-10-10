@@ -342,8 +342,9 @@ if(APPLE)
     set(fixups)
     foreach(lib ${platform_BUNDLED_LIBS})
         get_filename_component(name ${lib} NAME)
-        execute_process(COMMAND otool -XD ${lib}
+        execute_process(COMMAND otool -D ${lib}
             OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
         add_custom_command(TARGET solvespace POST_BUILD
             COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
                     $<TARGET_FILE:solvespace>
