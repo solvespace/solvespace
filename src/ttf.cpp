@@ -88,7 +88,9 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
         [&](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(!str.empty() && tf != &l.elem[l.n]) {
-        tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+        if(tf->fontFace == NULL) {
+            tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+        }
         tf->PlotString(str, sbl, origin, u, v);
     } else {
         // No text or no font; so draw a big X for an error marker.
@@ -135,6 +137,7 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.c_str(), ft_error_string(fterr));
         FT_Done_Face(fontFace);
+        fontFace = NULL;
         return false;
     }
 
