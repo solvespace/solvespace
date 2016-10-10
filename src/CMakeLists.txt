@@ -213,8 +213,9 @@ if(APPLE)
         get_filename_component(name ${lib} NAME)
         set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/${name})
 
-        execute_process(COMMAND otool -XD ${lib}
+        execute_process(COMMAND otool -D ${lib}
             OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
         add_custom_command(TARGET solvespace POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${target}
             COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
