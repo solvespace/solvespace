@@ -2,5 +2,7 @@
 
 if echo $TRAVIS_TAG | grep ^v; then BUILD_TYPE=RelWithDebInfo; else BUILD_TYPE=Debug; fi
 
-export BUILD_TYPE
-dpkg-buildpackage -b -us -uc
+mkdir build
+cd build
+cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+make VERBOSE=1
