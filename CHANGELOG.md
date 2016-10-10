@@ -20,12 +20,16 @@ Other new features:
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.
+  * When selecting a point and a line, projected distance to to current
+    workplane is displayed.
+  * The "=" key is bound to "Zoom In", like "+" key.
 
 2.2
 ---
 
 Other new features:
   * OS X: support 3Dconnexion devices (SpaceMouse, SpaceNavigator, etc).
+  * GTK: files with uppercase extensions can be opened.
 
 Bug fixes:
   * Do not remove autosaves after successfully opening a file, preventing
@@ -41,6 +45,10 @@ Bug fixes:
   * DXF export: always declare layers before using them.
   * Do not truncate operations on selections to first 32 selected entities.
   * Translate and rotate groups inherit the "suppress solid model" setting.
+  * DXF: files with paths containing non-ASCII or spaces can be exported
+    or imported.
+  * Significantly improved performance when dragging an entity.
+  * Various crashes and minor glitches.
 
 2.1
 ---
