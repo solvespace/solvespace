@@ -557,7 +557,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 }
 
                 stroke.layer  = (asReference) ? Canvas::Layer::FRONT : Canvas::Layer::NORMAL;
-                if(how == DrawAs::DEFAULT) {
+                if(how != DrawAs::HOVERED && how != DrawAs::SELECTED) {
                     // Always draw the x, y, and z axes in red, green, and blue;
                     // brighter for the ones at the bottom left of the screen,
                     // dimmer for the ones at the model origin.
