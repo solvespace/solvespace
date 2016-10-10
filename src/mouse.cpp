@@ -866,7 +866,7 @@ hRequest GraphicsWindow::AddRequest(Request::Type type, bool rememberForUndo) {
     // place this request's entities where the mouse is can do so. But
     // we mustn't try to solve until reasonable values have been supplied
     // for these new parameters, or else we'll get a numerical blowup.
-    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+    r.Generate(&SK.entity, &SK.param);
     SS.MarkGroupDirty(r.group);
     return r.h;
 }
