@@ -1023,7 +1023,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
             break;
         }
     }
-    if(r >= rows) {
+    if(r >= rows || c >= MAX_COLS) {
         SetMousePointerToHand(false);
         goto done;
     }
