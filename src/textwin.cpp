@@ -448,11 +448,11 @@ done:
     va_end(vl);
 }
 
-#define gs (SS.GW.gs)
 void TextWindow::Show() {
     if(SS.GW.pending.operation == GraphicsWindow::Pending::NONE) SS.GW.ClearPending();
 
     SS.GW.GroupSelection();
+    auto const &gs = SS.GW.gs;
 
     // Make sure these tests agree with test used to draw indicator line on
     // main list of groups screen.
@@ -963,6 +963,7 @@ void TextWindow::Paint() {
     // The line to indicate the column of radio buttons that indicates the
     // active group.
     SS.GW.GroupSelection();
+    auto const &gs = SS.GW.gs;
     // Make sure this test agrees with test to determine which screen is drawn
     if(!SS.GW.pending.description && gs.n == 0 && gs.constraints == 0 &&
         shown.screen == Screen::LIST_OF_GROUPS)
@@ -1023,34 +1024,31 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
             break;
         }
     }
-    if(r >= rows || c >= MAX_COLS) {
+    if(r < rows && c < MAX_COLS) {
         SetMousePointerToHand(false);
-        goto done;
-    }
 
-    hoveredRow = r;
-    hoveredCol = c;
+        hoveredRow = r;
+        hoveredCol = c;
 
-#define META (meta[r][c])
-    if(leftClick) {
-        if(META.link && META.f) {
-            (META.f)(META.link, META.data);
-            Show();
-            InvalidateGraphics();
-        }
-    } else {
-        if(META.link) {
-            SetMousePointerToHand(true);
-            if(META.h) {
-                (META.h)(META.link, META.data);
+        const auto &item = meta[r][c];
+        if(leftClick) {
+            if(item.link && item.f) {
+                (item.f)(item.link, item.data);
+                Show();
+                InvalidateGraphics();
             }
         } else {
-            SetMousePointerToHand(false);
+            if(item.link) {
+                SetMousePointerToHand(true);
+                if(item.h) {
+                    (item.h)(item.link, item.data);
+                }
+            } else {
+                SetMousePointerToHand(false);
+            }
         }
     }
-#undef META
 
-done:
     if((!ps.Equals(&(SS.GW.hover))) ||
         prevHoveredRow != hoveredRow ||
         prevHoveredCol != hoveredCol)

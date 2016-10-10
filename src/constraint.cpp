@@ -121,7 +121,7 @@ void Constraint::MenuConstrain(Command id) {
     c.workplane = SS.GW.ActiveWorkplane();
 
     SS.GW.GroupSelection();
-#define gs (SS.GW.gs)
+    auto const &gs = SS.GW.gs;
 
     switch(id) {
         case Command::DISTANCE_DIA:

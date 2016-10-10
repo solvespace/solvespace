@@ -7,8 +7,6 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-#define gs (SS.GW.gs)
-
 void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,
                           bool *allNonZeroLen)
@@ -513,6 +511,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
 
             std::vector<uint32_t> faces;
             SS.GW.GroupSelection();
+            auto const &gs = SS.GW.gs;
             if(gs.faces > 0) faces.push_back(gs.face[0].v);
             if(gs.faces > 1) faces.push_back(gs.face[1].v);
             canvas->DrawFaces(displayMesh, faces, hcf);

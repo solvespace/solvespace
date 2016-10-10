@@ -13,8 +13,6 @@ const hParam   Param::NO_PARAM = { 0 };
 
 const hGroup Group::HGROUP_REFERENCES = { 1 };
 
-#define gs (SS.GW.gs)
-
 //-----------------------------------------------------------------------------
 // The group structure includes pointers to other dynamically-allocated
 // memory. This clears and frees them all.
@@ -83,6 +81,7 @@ void Group::MenuGroup(Command id) {
     }
 
     SS.GW.GroupSelection();
+    auto const &gs = SS.GW.gs;
 
     switch(id) {
         case Command::GROUP_3D:

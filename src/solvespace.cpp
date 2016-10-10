@@ -570,7 +570,7 @@ void SolveSpaceUI::MenuFile(Command id) {
 
 void SolveSpaceUI::MenuAnalyze(Command id) {
     SS.GW.GroupSelection();
-#define gs (SS.GW.gs)
+    auto const &gs = SS.GW.gs;
 
     switch(id) {
         case Command::STEP_DIM:

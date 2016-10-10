@@ -19,13 +19,13 @@ void TextWindow::ScreenEditTtfText(int link, uint32_t v) {
     SS.TW.edit.request = hr;
 }
 
-#define gs (SS.GW.gs)
 void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     int i = (int)v;
     if(i < 0) return;
     if(i >= SS.fonts.l.n) return;
 
     SS.GW.GroupSelection();
+    auto const &gs = SS.GW.gs;
     if(gs.entities != 1 || gs.n != 1) return;
 
     Entity *e = SK.entity.FindByIdNoOops(gs.entity[0]);
@@ -57,6 +57,7 @@ void TextWindow::DescribeSelection() {
     int i;
     Printf(false, "");
 
+    auto const &gs = SS.GW.gs;
     if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
         e = SK.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
 
