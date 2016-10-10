@@ -428,8 +428,11 @@ void SolveSpaceUI::UpdateWindowTitle() {
 
 static std::string Extension(const std::string &filename) {
     int dot = filename.rfind('.');
-    if(dot >= 0)
-        return filename.substr(dot + 1, filename.length());
+    if(dot >= 0) {
+        std::string ext = filename.substr(dot + 1, filename.length());
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        return ext;
+    }
     return "";
 }
 
