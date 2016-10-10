@@ -6,6 +6,7 @@ Changelog
 
 Other new features:
   * OS X: support 3Dconnexion devices (SpaceMouse, SpaceNavigator, etc).
+  * GTK: files with uppercase extensions can be opened.
 
 Bug fixes:
   * Do not remove autosaves after successfully opening a file, preventing
@@ -21,6 +22,10 @@ Bug fixes:
   * DXF export: always declare layers before using them.
   * Do not truncate operations on selections to first 32 selected entities.
   * Translate and rotate groups inherit the "suppress solid model" setting.
+  * DXF: files with paths containing non-ASCII or spaces can be exported
+    or imported.
+  * Significantly improved performance when dragging an entity.
+  * Various crashes and minor glitches.
 
 2.1
 ---
