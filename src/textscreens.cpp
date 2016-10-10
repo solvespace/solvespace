@@ -469,6 +469,7 @@ void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
     g->allowRedundant = true;
+    SS.MarkGroupDirty(g->h);
     SS.GenerateAll();
 
     SS.TW.shown.screen = Screen::GROUP_INFO;
