@@ -54,10 +54,7 @@
 #include "config.h"
 
 #ifdef HAVE_SPACEWARE
-#   include <spnav.h>
-#   ifndef SI_APP_FIT_BUTTON
-#       define SI_APP_FIT_BUTTON 31
-#   endif
+#include <spnav.h>
 #endif
 
 namespace SolveSpace {
@@ -1576,7 +1573,7 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
             break;
 
         case SPNAV_EVENT_BUTTON:
-            if(!sev.button.press && sev.button.bnum == SI_APP_FIT_BUTTON) {
+            if(!sev.button.press && sev.button.bnum == 0) {
                 SS.GW.SpaceNavigatorButtonUp();
             }
             break;
