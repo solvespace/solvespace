@@ -130,6 +130,22 @@ Param.h.v.=00040014
 Param.val=-5.00000000000000000000
 AddParam
 
+Param.h.v.=00040016
+Param.val=23.92131768269594616072
+AddParam
+
+Param.h.v.=00040017
+Param.val=-5.00000000000000000000
+AddParam
+
+Param.h.v.=00040019
+Param.val=23.92131768269594616072
+AddParam
+
+Param.h.v.=0004001a
+Param.val=5.00000000000000000000
+AddParam
+
 Request.h.v=00000001
 Request.type=100
 Request.group.v=00000001
@@ -155,6 +171,7 @@ Request.group.v=00000002
 Request.construction=0
 Request.str=Text
 Request.font=Gentium-R.ttf
+Request.aspectRatio=2.89213176826959461607
 AddRequest
 
 Entity.h.v=00010000
@@ -236,6 +253,8 @@ Entity.str=Text
 Entity.font=Gentium-R.ttf
 Entity.point[0].v=00040001
 Entity.point[1].v=00040002
+Entity.point[2].v=00040003
+Entity.point[3].v=00040004
 Entity.normal.v=00040020
 Entity.workplane.v=80020000
 Entity.actVisible=1
@@ -256,6 +275,24 @@ Entity.construction=0
 Entity.workplane.v=80020000
 Entity.actPoint.x=-5.00000000000000000000
 Entity.actPoint.y=-5.00000000000000000000
+Entity.actVisible=1
+AddEntity
+
+Entity.h.v=00040003
+Entity.type=2001
+Entity.construction=0
+Entity.workplane.v=80020000
+Entity.actPoint.x=23.92131768269594616072
+Entity.actPoint.y=-5.00000000000000000000
+Entity.actVisible=1
+AddEntity
+
+Entity.h.v=00040004
+Entity.type=2001
+Entity.construction=0
+Entity.workplane.v=80020000
+Entity.actPoint.x=23.92131768269594616072
+Entity.actPoint.y=5.00000000000000000000
 Entity.actVisible=1
 AddEntity
 

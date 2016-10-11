@@ -367,6 +367,23 @@ ExprQuaternion EntityBase::NormalGetExprs() const {
     return q;
 }
 
+void EntityBase::PointForceParamTo(Vector p) {
+    switch(type) {
+        case Type::POINT_IN_3D:
+            SK.GetParam(param[0])->val = p.x;
+            SK.GetParam(param[1])->val = p.y;
+            SK.GetParam(param[2])->val = p.z;
+            break;
+
+        case Type::POINT_IN_2D:
+            SK.GetParam(param[0])->val = p.x;
+            SK.GetParam(param[1])->val = p.y;
+            break;
+
+        default: ssassert(false, "Unexpected entity type");
+    }
+}
+
 void EntityBase::PointForceTo(Vector p) {
     switch(type) {
         case Type::POINT_IN_3D:
@@ -548,6 +565,13 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
         *u = ev.Dot(wu);
         *v = ev.Dot(wv);
     }
+}
+
+ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
+    ExprVector r;
+    PointGetExprsInWorkplane(wrkpl, &r.x, &r.y);
+    r.z = Expr::From(0.0);
+    return r;
 }
 
 void EntityBase::PointForceQuaternionTo(Quaternion q) {
@@ -738,6 +762,23 @@ Vector EntityBase::EndpointFinish() const {
     } else ssassert(false, "Unexpected entity type");
 }
 
+void EntityBase::TtfTextGetPointsExprs(ExprVector *eb, ExprVector *ec) const {
+    EntityBase *a = SK.GetEntity(point[0]);
+    EntityBase *o = SK.GetEntity(point[1]);
+
+    // Write equations for each point in the current workplane.
+    // This reduces the complexity of resulting equations.
+    ExprVector ea = a->PointGetExprsInWorkplane(workplane);
+    ExprVector eo = o->PointGetExprsInWorkplane(workplane);
+
+    // Take perpendicular vector and scale it by aspect ratio.
+    ExprVector eu = ea.Minus(eo);
+    ExprVector ev = ExprVector::From(eu.y, eu.x->Negate(), eu.z).ScaledBy(Expr::From(aspectRatio));
+
+    *eb = eo.Plus(ev);
+    *ec = eo.Plus(eu).Plus(ev);
+}
+
 void EntityBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const {
     Equation eq;
     eq.e = expr;
@@ -752,6 +793,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
             break;
         }
+
         case Type::ARC_OF_CIRCLE: {
             // If this is a copied entity, with its point already fixed
             // with respect to each other, then we don't want to generate
@@ -780,6 +822,25 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             AddEq(l, ra->Minus(rb), 0);
             break;
         }
+
+        case Type::TTF_TEXT: {
+            EntityBase *b = SK.GetEntity(point[2]);
+            EntityBase *c = SK.GetEntity(point[3]);
+            ExprVector eb = b->PointGetExprsInWorkplane(workplane);
+            ExprVector ec = c->PointGetExprsInWorkplane(workplane);
+
+            ExprVector ebp, ecp;
+            TtfTextGetPointsExprs(&ebp, &ecp);
+
+            ExprVector beq = eb.Minus(ebp);
+            AddEq(l, beq.x, 0);
+            AddEq(l, beq.y, 1);
+            ExprVector ceq = ec.Minus(ecp);
+            AddEq(l, ceq.x, 2);
+            AddEq(l, ceq.y, 3);
+            break;
+        }
+
         default: // Most entities do not generate equations.
             break;
     }

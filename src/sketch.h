@@ -316,11 +316,13 @@ public:
     hStyle      style;
 
     bool        construction;
+
     std::string str;
     std::string font;
+    double      aspectRatio;
 
     static hParam AddParam(ParamList *param, hParam hp);
-    void Generate(EntityList *entity, ParamList *param) const;
+    void Generate(EntityList *entity, ParamList *param);
 
     std::string DescriptionString() const;
     int IndexOfPoint(hEntity he) const;
@@ -391,6 +393,7 @@ public:
 
     std::string str;
     std::string font;
+    double      aspectRatio;
 
     // For entities that are derived by a transformation, the number of
     // times to apply the transformation.
@@ -434,7 +437,9 @@ public:
     Vector PointGetNum() const;
     ExprVector PointGetExprs() const;
     void PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) const;
+    ExprVector PointGetExprsInWorkplane(hEntity wrkpl) const;
     void PointForceTo(Vector v);
+    void PointForceParamTo(Vector v);
     // These apply only the POINT_N_ROT_TRANS, which has an assoc rotation
     Quaternion PointGetQuaternion() const;
     void PointForceQuaternionTo(Quaternion q);
@@ -462,6 +467,8 @@ public:
     bool HasEndpoints() const;
     Vector EndpointStart() const;
     Vector EndpointFinish() const;
+
+    void TtfTextGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void GenerateEquations(IdList<Equation,hEquation> *l) const;
@@ -859,7 +866,7 @@ inline hRequest hEntity::request() const
 inline hGroup hEntity::group() const
     { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
 inline hEquation hEntity::equation(int i) const
-    { hEquation r; r.v = v | 0x40000000; return r; }
+    { hEquation r; r.v = v | 0x40000000 | (uint32_t)i; return r; }
 
 inline hRequest hParam::request() const
     { hRequest r; r.v = (v >> 16); return r; }

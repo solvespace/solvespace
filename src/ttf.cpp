@@ -79,18 +79,28 @@ void TtfFontList::LoadAll() {
     loaded = true;
 }
 
-void TtfFontList::PlotString(const std::string &font, const std::string &str,
-                             SBezierList *sbl, Vector origin, Vector u, Vector v)
+TtfFont *TtfFontList::LoadFont(const std::string &font)
 {
     LoadAll();
 
-    TtfFont *tf = std::find_if(&l.elem[0], &l.elem[l.n],
+    TtfFont *tf = std::find_if(l.begin(), l.end(),
         [&](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
-    if(!str.empty() && tf != &l.elem[l.n]) {
+    if(tf != l.end()) {
         if(tf->fontFace == NULL) {
             tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
         }
+        return tf;
+    } else {
+        return NULL;
+    }
+}
+
+void TtfFontList::PlotString(const std::string &font, const std::string &str,
+                             SBezierList *sbl, Vector origin, Vector u, Vector v)
+{
+    TtfFont *tf = LoadFont(font);
+    if(!str.empty() && tf != NULL) {
         tf->PlotString(str, sbl, origin, u, v);
     } else {
         // No text or no font; so draw a big X for an error marker.
@@ -100,6 +110,16 @@ void TtfFontList::PlotString(const std::string &font, const std::string &str,
         sb = SBezier::From(origin.Plus(v), origin.Plus(u));
         sbl->l.Add(&sb);
     }
+}
+
+double TtfFontList::AspectRatio(const std::string &font, const std::string &str)
+{
+    TtfFont *tf = LoadFont(font);
+    if(tf != NULL) {
+        return tf->AspectRatio(str);
+    }
+
+    return 0.0;
 }
 
 //-----------------------------------------------------------------------------
@@ -327,4 +347,28 @@ void TtfFont::PlotString(const std::string &str,
         // width, plus the user-requested extra advance.
         dx += fontFace->glyph->advance.x;
     }
+}
+
+double TtfFont::AspectRatio(const std::string &str) {
+    ssassert(fontFace != NULL, "Expected font face to be loaded");
+
+    // We always request a unit size character, so the aspect ratio is the same as advance length.
+    double dx = 0;
+    for(char32_t chr : ReadUTF8(str)) {
+        uint32_t gid = FT_Get_Char_Index(fontFace, chr);
+        if (gid == 0) {
+            dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
+                chr, ft_error_string(gid));
+        }
+
+        if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
+            dbp("freetype: cannot load glyph (GID 0x%04x): %s",
+                gid, ft_error_string(fterr));
+            break;
+        }
+
+        dx += (double)fontFace->glyph->advance.x / capHeight;
+    }
+
+    return dx;
 }

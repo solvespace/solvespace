@@ -808,6 +808,7 @@ public:
     bool SaveToFile(const std::string &filename);
     bool LoadAutosaveFor(const std::string &filename);
     bool LoadFromFile(const std::string &filename);
+    void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const std::string &filename, EntityList *le,
                               SMesh *m, SShell *sh);
     bool ReloadAllImported(bool canCancel=false);

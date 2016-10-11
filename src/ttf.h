@@ -21,6 +21,7 @@ public:
 
     void PlotString(const std::string &str,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
+    double AspectRatio(const std::string &str);
 };
 
 class TtfFontList {
@@ -33,9 +34,11 @@ public:
     ~TtfFontList();
 
     void LoadAll();
+    TtfFont *LoadFont(const std::string &font);
 
     void PlotString(const std::string &font, const std::string &str,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
+    double AspectRatio(const std::string &font, const std::string &str);
 };
 
 #endif

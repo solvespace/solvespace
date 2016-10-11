@@ -29,7 +29,7 @@ static const EntReqMapping EntReqMap[] = {
 { Request::Type::CUBIC_PERIODIC,  Entity::Type::CUBIC_PERIODIC, 3,  true,   false,  false },
 { Request::Type::CIRCLE,          Entity::Type::CIRCLE,         1,  false,  true,   true  },
 { Request::Type::ARC_OF_CIRCLE,   Entity::Type::ARC_OF_CIRCLE,  3,  false,  true,   false },
-{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       2,  false,  true,   false },
+{ Request::Type::TTF_TEXT,        Entity::Type::TTF_TEXT,       4,  false,  true,   false },
 };
 
 static void CopyEntityInfo(const EntReqMapping *te, int extraPoints,
@@ -78,13 +78,33 @@ Request::Type EntReqTable::GetRequestForEntity(Entity::Type ent) {
 }
 
 void Request::Generate(IdList<Entity,hEntity> *entity,
-                       IdList<Param,hParam> *param) const
+                       IdList<Param,hParam> *param)
 {
     int points = 0;
     Entity::Type et;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
+
+    // Request-specific generation.
+    switch(type) {
+        case Type::TTF_TEXT: {
+            double actualAspectRatio = SS.fonts.AspectRatio(font, str);
+            if(EXACT(actualAspectRatio != 0.0)) {
+                // We could load the font, so use the actual value.
+                aspectRatio = actualAspectRatio;
+            }
+            if(EXACT(aspectRatio == 0.0)) {
+                // We couldn't load the font and we don't have anything saved,
+                // so just use 1:1, which is valid for the missing font symbol anyhow.
+                aspectRatio = 1.0;
+            }
+            break;
+        }
+
+        default: // most requests don't do anything else
+            break;
+    }
 
     Entity e = {};
     EntReqTable::GetRequestInfo(type, extraPoints, &et, &points, &hasNormal, &hasDistance);
@@ -98,6 +118,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
     e.construction = construction;
     e.str = str;
     e.font = font;
+    e.aspectRatio = aspectRatio;
     e.h = h.entity(0);
 
     // And generate entities for the points

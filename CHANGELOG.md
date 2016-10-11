@@ -9,6 +9,8 @@ New sketch features:
     boolean operation, to increase performance.
   * Translate and rotate groups can create n-dimensional arrays using
     the "difference" and "assembly" boolean operations.
+  * TTF text request has two additional points on the right side, which allow
+    constraining the width of text.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
 

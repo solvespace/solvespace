@@ -131,6 +131,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'r',  "Request.style",            'x',    &(SS.sv.r.style)              },
     { 'r',  "Request.str",              'S',    &(SS.sv.r.str)                },
     { 'r',  "Request.font",             'S',    &(SS.sv.r.font)               },
+    { 'r',  "Request.aspectRatio",      'f',    &(SS.sv.r.aspectRatio)        },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
     { 'e',  "Entity.type",              'd',    &(SS.sv.e.type)               },
@@ -512,7 +513,55 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
         }
     }
 
+    UpgradeLegacyData();
+
     return true;
+}
+
+void SolveSpaceUI::UpgradeLegacyData() {
+    for(Request &r : SK.request) {
+        switch(r.type) {
+            // TTF text requests saved in versions prior to 3.0 only have two
+            // reference points (origin and origin plus v); version 3.0 adds two
+            // more points, and if we don't do anything, then they will appear
+            // at workplane origin, and the solver will mess up the sketch if
+            // it is not fully constrained.
+            case Request::Type::TTF_TEXT: {
+                IdList<Entity,hEntity> entity = {};
+                IdList<Param,hParam>   param = {};
+                r.Generate(&entity, &param);
+
+                // If we didn't load all of the entities and params that this
+                // request would generate, then add them now, so that we can
+                // force them to their appropriate positions.
+                for(Param &p : param) {
+                    if(SK.param.FindByIdNoOops(p.h) != NULL) continue;
+                    SK.param.Add(&p);
+                }
+                bool allPointsExist = true;
+                for(Entity &e : entity) {
+                    if(SK.entity.FindByIdNoOops(e.h) != NULL) continue;
+                    SK.entity.Add(&e);
+                    allPointsExist = false;
+                }
+
+                if(!allPointsExist) {
+                    Entity *text = entity.FindById(r.h.entity(0));
+                    Entity *b = entity.FindById(text->point[2]);
+                    Entity *c = entity.FindById(text->point[3]);
+                    ExprVector bex, cex;
+                    text->TtfTextGetPointsExprs(&bex, &cex);
+                    b->PointForceParamTo(bex.Eval());
+                    c->PointForceParamTo(cex.Eval());
+                }
+                entity.Clear();
+                param.Clear();
+            }
+
+            default:
+                break;
+        }
+    }
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList *le,
