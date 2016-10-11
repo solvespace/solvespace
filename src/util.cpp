@@ -16,12 +16,13 @@ std::string SolveSpace::ssprintf(const char *fmt, ...)
     va_end(va);
 
     std::string result;
-    result.resize(size);
+    result.resize(size + 1);
 
     va_start(va, fmt);
     vsnprintf(&result[0], size + 1, fmt, va);
     va_end(va);
 
+    result.resize(size);
     return result;
 }
 
