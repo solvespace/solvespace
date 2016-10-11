@@ -54,6 +54,7 @@ set(testsuite_SOURCES
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
     group/translate_asy/test.cpp
+    group/translate_nd/test.cpp
 )
 
 add_executable(solvespace_testsuite

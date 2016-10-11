@@ -7,6 +7,8 @@ Changelog
 New sketch features:
   * Extrude, lathe, translate and rotate groups can now use the "assembly"
     boolean operation, to increase performance.
+  * Translate and rotate groups can create n-dimensional arrays using
+    the "difference" and "assembly" boolean operations.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

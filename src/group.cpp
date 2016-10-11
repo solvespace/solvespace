@@ -471,6 +471,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case Type::TRANSLATE: {
+            // inherit meshCombine from source group
+            Group *srcg = SK.GetGroup(opA);
+            meshCombine = srcg->meshCombine;
             // The translation vector
             AddParam(param, h.param(0), gp.x);
             AddParam(param, h.param(1), gp.y);
@@ -498,6 +501,9 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             return;
         }
         case Type::ROTATE: {
+            // inherit meshCombine from source group
+            Group *srcg = SK.GetGroup(opA);
+            meshCombine = srcg->meshCombine;
             // The center of rotation
             AddParam(param, h.param(0), gc.x);
             AddParam(param, h.param(1), gc.y);
