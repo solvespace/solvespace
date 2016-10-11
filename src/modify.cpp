@@ -283,7 +283,7 @@ void GraphicsWindow::MakeTangentArc() {
     }
     if(c != 2) {
         Error("To create a tangent arc, select a point where two "
-              "non-construction lines or cicles in this group and "
+              "non-construction lines or circles in this group and "
               "workplane join.");
         return;
     }
