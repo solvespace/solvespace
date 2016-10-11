@@ -569,7 +569,7 @@ void Group::DrawPolyError(Canvas *canvas) {
 
     Canvas::Stroke strokeError = Style::Stroke(Style::DRAW_ERROR);
     strokeError.layer = Canvas::Layer::FRONT;
-    strokeError.width = 0.0f;
+    strokeError.width = 1.0f;
     Canvas::hStroke hcsError = canvas->GetStroke(strokeError);
 
     double textHeight = Style::DefaultTextHeight() / camera.scale;

@@ -314,6 +314,7 @@ int main(int argc, char **argv) {
         }
 
         SS.Init();
+        SS.checkClosedContour = false;
 
         Test::Helper helper = {};
         testCase.fn(&helper);
