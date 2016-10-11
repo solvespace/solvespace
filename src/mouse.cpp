@@ -954,7 +954,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                 case Command::RECTANGLE: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw rectangle in 3d; select a workplane first.");
+                        Error("Can't draw rectangle in 3d; first, activate a workplane "
+                              "with Sketch -> In Workplane.");
                         ClearSuper();
                         break;
                     }
@@ -1005,7 +1006,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                 case Command::ARC: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw arc in 3d; select a workplane first.");
+                        Error("Can't draw arc in 3d; first, activate a workplane "
+                              "with Sketch -> In Workplane.");
                         ClearPending();
                         break;
                     }
@@ -1058,7 +1060,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                 case Command::TTF_TEXT: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw text in 3d; select a workplane first.");
+                        Error("Can't draw text in 3d; first, activate a workplane "
+                              "with Sketch -> In Workplane.");
                         ClearSuper();
                         break;
                     }

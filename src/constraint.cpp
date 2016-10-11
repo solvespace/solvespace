@@ -422,7 +422,7 @@ void Constraint::MenuConstrain(Command id) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
                 if(c.workplane.v == Entity::FREE_IN_3D.v) {
-                    Error("Must be locked in to workplane when constraining "
+                    Error("A workplane must be active when constraining "
                           "symmetric without an explicit symmetry plane.");
                     return;
                 }
@@ -452,7 +452,8 @@ void Constraint::MenuConstrain(Command id) {
         case Command::HORIZONTAL: {
             hEntity ha, hb;
             if(c.workplane.v == Entity::FREE_IN_3D.v) {
-                Error("Select workplane before constraining horiz/vert.");
+                Error("Activate a workplane (with Sketch -> In Workplane) before "
+                      "applying a horizontal or vertical constraint.");
                 return;
             }
             if(gs.lineSegments == 1 && gs.n == 1) {

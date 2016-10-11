@@ -902,8 +902,9 @@ void GraphicsWindow::MenuEdit(Command id) {
 
         case Command::SNAP_TO_GRID: {
             if(!SS.GW.LockedInWorkplane()) {
-                Error("No workplane is active. Select a workplane to define "
-                      "the plane for the snap grid.");
+                Error("No workplane is active. Activate a workplane "
+                      "(with Sketch -> In Workplane) to define the plane "
+                      "for the snap grid.");
                 break;
             }
             SS.GW.GroupSelection();

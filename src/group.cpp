@@ -133,7 +133,7 @@ void Group::MenuGroup(Command id) {
 
         case Command::GROUP_EXTRUDE:
             if(!SS.GW.LockedInWorkplane()) {
-                Error("Select a workplane (Sketch -> In Workplane) before "
+                Error("Activate a workplane (Sketch -> In Workplane) before "
                       "extruding. The sketch will be extruded normal to the "
                       "workplane.");
                 return;
