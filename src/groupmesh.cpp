@@ -401,12 +401,18 @@ void Group::GenerateDisplayItems() {
             displayOutlines.Clear();
 
             if(SS.GW.showEdges || SS.GW.showOutlines) {
+                SOutlineList rawOutlines = {};
                 if(runningMesh.l.n > 0) {
                     // Triangle mesh only; no shell or emphasized edges.
-                    runningMesh.MakeOutlinesInto(&displayOutlines, EdgeKind::EMPHASIZED);
+                    runningMesh.MakeOutlinesInto(&rawOutlines, EdgeKind::EMPHASIZED);
                 } else {
-                    displayMesh.MakeOutlinesInto(&displayOutlines, EdgeKind::SHARP);
+                    displayMesh.MakeOutlinesInto(&rawOutlines, EdgeKind::SHARP);
                 }
+
+                PolylineBuilder builder;
+                builder.MakeFromOutlines(rawOutlines);
+                builder.GenerateOutlines(&displayOutlines);
+                rawOutlines.Clear();
             }
         }
 

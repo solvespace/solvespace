@@ -396,6 +396,11 @@ public:
         std::function<void(Vertex *next, Edge *edge)> nextFunc,
         std::function<void(Edge *)> aloneFunc,
         std::function<void()> endFunc = [](){});
+
+    void MakeFromEdges(const SEdgeList &sel);
+    void MakeFromOutlines(const SOutlineList &sol);
+    void GenerateEdges(SEdgeList *sel);
+    void GenerateOutlines(SOutlineList *sol);
 };
 
 #endif
