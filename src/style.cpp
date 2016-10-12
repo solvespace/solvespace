@@ -303,7 +303,8 @@ Canvas::Stroke Style::Stroke(hStyle hs) {
 }
 
 Canvas::Stroke Style::Stroke(int hsv) {
-    return Style::Stroke(hStyle{hsv});
+    hStyle hs = { (uint32_t) hsv };
+    return Style::Stroke(hs);
 }
 
 //-----------------------------------------------------------------------------

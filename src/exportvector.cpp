@@ -750,8 +750,10 @@ const char *DxfFileWriter::lineTypeName(StipplePattern stippleType) {
         case StipplePattern::FREEHAND:
         case StipplePattern::ZIGZAG:
             /* no corresponding DXF line type */
-           return "CONTINUOUS";
+           break;
     }
+
+    return "CONTINUOUS";
 }
 
 //-----------------------------------------------------------------------------
