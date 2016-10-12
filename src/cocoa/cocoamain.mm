@@ -1033,6 +1033,7 @@ void InitTextWindow() {
     [TW setContentView:scrollView];
     [scrollView setBackgroundColor:[NSColor blackColor]];
     [scrollView setHasVerticalScroller:YES];
+    [scrollView setScrollerKnobStyle:NSScrollerKnobStyleLight];
     [[scrollView contentView] setCopiesOnScroll:YES];
 
     TWView = [[TextWindowView alloc] init];
