@@ -353,8 +353,6 @@ CONVERT(Rect)
     if(NSString *nsChr = [event charactersIgnoringModifiers])
         chr = [nsChr characterAtIndex:0];
 
-    if(chr == NSDeleteCharacter) /* map delete back to backspace */
-        chr = '\b';
     if(chr >= NSF1FunctionKey && chr <= NSF12FunctionKey)
         chr = SolveSpace::GraphicsWindow::FUNCTION_KEY_BASE + (chr - NSF1FunctionKey);
 
@@ -632,12 +630,15 @@ void InitMainMenu(NSMenu *mainMenu) {
             label = [[NSString stringWithUTF8String:entry->label]
                 stringByReplacingOccurrencesOfString:@"&" withString:@""];
 
-            unichar accel_char = entry->accel &
+            unichar accelChar = entry->accel &
                 ~(GraphicsWindow::SHIFT_MASK | GraphicsWindow::CTRL_MASK);
-            if(accel_char > GraphicsWindow::FUNCTION_KEY_BASE &&
-                    accel_char <= GraphicsWindow::FUNCTION_KEY_BASE + 12)
-                accel_char = NSF1FunctionKey + (accel_char - GraphicsWindow::FUNCTION_KEY_BASE - 1);
-            NSString *accel = [NSString stringWithCharacters:&accel_char length:1];
+            if(accelChar > GraphicsWindow::FUNCTION_KEY_BASE &&
+                    accelChar <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
+                accelChar = NSF1FunctionKey + (accelChar - GraphicsWindow::FUNCTION_KEY_BASE - 1);
+            } else if(accelChar == GraphicsWindow::DELETE_KEY) {
+                accelChar = NSBackspaceCharacter;
+            }
+            NSString *accel = [NSString stringWithCharacters:&accelChar length:1];
 
             menuItem = [levels[entry->level] addItemWithTitle:label
                 action:NULL keyEquivalent:[accel lowercaseString]];
