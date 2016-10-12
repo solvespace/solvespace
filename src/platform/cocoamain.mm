@@ -1010,12 +1010,6 @@ void InitTextWindow() {
     [TW setFrameAutosaveName:@"TextWindow"];
     [TW setFloatingPanel:YES];
     [TW setBecomesKeyOnlyIfNeeded:YES];
-    [GW addChildWindow:TW ordered:NSWindowAbove];
-
-    // Without this, graphics window is also hidden when the text window is shown
-    // (and is its child window). We replicate the standard behavior manually, in
-    // the application delegate;
-    [TW setHidesOnDeactivate:NO];
 
     NSScrollView *scrollView = [[NSScrollView alloc] init];
     [TW setContentView:scrollView];
@@ -1034,9 +1028,9 @@ void InitTextWindow() {
 
 void ShowTextWindow(bool visible) {
     if(visible)
-        [GW addChildWindow:TW ordered:NSWindowAbove];
+        [TW orderFront:nil];
     else
-        [TW orderOut:GW];
+        [TW close];
 }
 
 void GetTextWindowSize(int *w, int *h) {
@@ -1156,8 +1150,6 @@ const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
 - (BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication *)theApplication;
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
 - (void)applicationWillTerminate:(NSNotification *)aNotification;
-- (void)applicationWillBecomeActive:(NSNotification *)aNotification;
-- (void)applicationWillResignActive:(NSNotification *)aNotification;
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename;
 - (IBAction)preferences:(id)sender;
 @end
@@ -1176,18 +1168,6 @@ const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
     SolveSpace::SS.Exit();
-}
-
-- (void)applicationWillBecomeActive:(NSNotification *)aNotification {
-    if(SolveSpace::SS.GW.showTextWindow) {
-        [GW addChildWindow:TW ordered:NSWindowAbove];
-    }
-}
-
-- (void)applicationWillResignActive:(NSNotification *)aNotification {
-    [TW setAnimationBehavior:NSWindowAnimationBehaviorNone];
-    [TW orderOut:nil];
-    [TW setAnimationBehavior:NSWindowAnimationBehaviorDefault];
 }
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename {
