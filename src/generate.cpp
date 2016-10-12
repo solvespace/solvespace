@@ -144,6 +144,9 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
     int first, last, i, j;
 
+    uint64_t startMillis = GetMilliseconds(),
+             endMillis;
+
     SK.groupOrder.Clear();
     for(int i = 0; i < SK.group.n; i++)
         SK.groupOrder.Add(&SK.group.elem[i].h);
@@ -349,6 +352,23 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
     FreeAllTemporary();
     allConsistent = true;
+    endMillis = GetMilliseconds();
+
+    if(endMillis - startMillis > 30) {
+        const char *typeStr;
+        switch(type) {
+            case Generate::DIRTY:           typeStr = "DIRTY";        break;
+            case Generate::ALL:             typeStr = "ALL";          break;
+            case Generate::REGEN:           typeStr = "REGEN";        break;
+            case Generate::UNTIL_ACTIVE:    typeStr = "UNTIL_ACTIVE"; break;
+        }
+        if(endMillis)
+        dbp("Generate::%s%s took %lld ms",
+            typeStr,
+            (genForBBox ? " (for bounding box)" : ""),
+            GetMilliseconds() - startMillis);
+    }
+
     return;
 
 pruned:
