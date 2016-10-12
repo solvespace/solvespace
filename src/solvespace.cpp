@@ -317,7 +317,7 @@ void SolveSpaceUI::AfterNewFile() {
     SS.GW.projRight = Vector::From(1, 0, 0);
     SS.GW.projUp    = Vector::From(0, 1, 0);
 
-    GenerateAll(Generate::REGEN);
+    GenerateAll(Generate::ALL);
 
     TW.Init();
     GW.Init();
@@ -329,15 +329,6 @@ void SolveSpaceUI::AfterNewFile() {
     GW.width = w;
     GW.height = h;
 
-    // The triangles haven't been generated yet, but zoom to fit the entities
-    // roughly in the window, since that sets the mesh tolerance. Consider
-    // invisible entities, so we still get something reasonable if the only
-    // thing visible is the not-yet-generated surfaces.
-    GW.ZoomToFit(/*includingInvisibles=*/true);
-
-    GenerateAll(Generate::ALL);
-    SS.ScheduleShowTW();
-    // Then zoom to fit again, to fit the triangles
     GW.ZoomToFit(/*includingInvisibles=*/false);
 
     // Create all the default styles; they'll get created on the fly anyways,
