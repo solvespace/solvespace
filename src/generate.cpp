@@ -308,7 +308,7 @@ void SolveSpaceUI::GenerateAll(GenerateType type, bool andFindFree, bool genForB
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
                 if(genForBBox) {
-                    SolveGroup(g->h, andFindFree);
+                    SolveGroupAndReport(g->h, andFindFree);
                 } else {
                     g->GenerateLoops();
                     g->GenerateShellAndMesh();
@@ -491,6 +491,23 @@ void SolveSpaceUI::MarkDraggedParams(void) {
     }
 }
 
+void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
+    SolveGroup(hg, andFindFree);
+
+    Group *g = SK.GetGroup(hg);
+    if(g->solved.how == System::REDUNDANT_OKAY) {
+        // Solve again, in case we lost a degree of freedom because of a numeric error.
+        SolveGroup(hg, andFindFree);
+    }
+
+    bool isOkay = g->solved.how == System::SOLVED_OKAY ||
+                  (g->allowRedundant && g->solved.how == System::REDUNDANT_OKAY);
+
+    if(!isOkay || (isOkay && !g->IsSolvedOkay())) {
+        TextWindow::ReportHowGroupSolved(g->h);
+    }
+}
+
 void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     int i;
     // Clear out the system to be solved.
@@ -518,12 +535,6 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     g->solved.remove.Clear();
     int how = sys.Solve(g, &(g->solved.dof),
                            &(g->solved.remove), true, andFindFree);
-    bool isOkay = how == System::SOLVED_OKAY ||
-                  (g->allowRedundant && how == System::REDUNDANT_OKAY);
-    if(!isOkay || (isOkay && !g->IsSolvedOkay()))
-    {
-        TextWindow::ReportHowGroupSolved(g->h);
-    }
     g->solved.how = how;
     FreeAllTemporary();
 }
