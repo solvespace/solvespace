@@ -377,7 +377,7 @@ public:
     void DoFatLine(const Vector &a, const Vector &b, double width);
     void DoLine(const Vector &a, const Vector &b, hStroke hcs);
     void DoPoint(Vector p, double radius);
-    void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs);
+    void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs, double phase = 0.0);
 
     void UpdateProjection(bool flip = FLIP_FRAMEBUFFER);
     void BeginFrame();

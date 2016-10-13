@@ -43,7 +43,8 @@ enum class StipplePattern : uint32_t {
     LAST           = ZIGZAG
 };
 
-std::vector<double> StipplePatternDashes(StipplePattern pattern, double scale);
+const std::vector<double> &StipplePatternDashes(StipplePattern pattern);
+double StipplePatternLength(StipplePattern pattern);
 
 enum class Command : uint32_t;
 

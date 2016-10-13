@@ -1133,38 +1133,48 @@ bool BBox::Contains(const Point2d &p, double r) const {
            p.y <= (maxp.y + r);
 }
 
-std::vector<double> SolveSpace::StipplePatternDashes(StipplePattern pattern, double scale) {
-    // Inkscape ignores all elements that are exactly zero instead of drawing
-    // them as dots.
-    double zero = 1e-6;
-
-    std::vector<double> result;
-    switch(pattern) {
-        case StipplePattern::CONTINUOUS:
-            break;
-        case StipplePattern::SHORT_DASH:
-            result = { scale, scale * 2.0 };
-            break;
-        case StipplePattern::DASH:
-            result = { scale, scale };
-            break;
-        case StipplePattern::DASH_DOT:
-            result = { scale, scale * 0.5, zero, scale * 0.5 };
-            break;
-        case StipplePattern::DASH_DOT_DOT:
-            result = { scale, scale * 0.5, zero, scale * 0.5, scale * 0.5, zero };
-            break;
-        case StipplePattern::DOT:
-            result = { zero, scale * 0.5 };
-            break;
-        case StipplePattern::LONG_DASH:
-            result = { scale * 2.0, scale * 0.5 };
-            break;
-
-        case StipplePattern::FREEHAND:
-        case StipplePattern::ZIGZAG:
-            ssassert(false, "Freehand and zigzag export not implemented");
+const std::vector<double>& SolveSpace::StipplePatternDashes(StipplePattern pattern) {
+    static bool initialized;
+    static std::vector<double> dashes[(size_t)StipplePattern::LAST + 1];
+    if(!initialized) {
+        // Inkscape ignores all elements that are exactly zero instead of drawing
+        // them as dots, so set those to 1e-6.
+        dashes[(size_t)StipplePattern::CONTINUOUS] =
+            {};
+        dashes[(size_t)StipplePattern::SHORT_DASH] =
+            { 1.0, 2.0 };
+        dashes[(size_t)StipplePattern::DASH] =
+            { 1.0, 1.0 };
+        dashes[(size_t)StipplePattern::DASH_DOT] =
+            { 1.0, 0.5, 1e-6, 0.5 };
+        dashes[(size_t)StipplePattern::DASH_DOT_DOT] =
+            { 1.0, 0.5, 1e-6, 0.5, 0.5, 1e-6 };
+        dashes[(size_t)StipplePattern::DOT] =
+            { 1e-6, 0.5 };
+        dashes[(size_t)StipplePattern::LONG_DASH] =
+            { 2.0, 0.5 };
+        dashes[(size_t)StipplePattern::FREEHAND] =
+            { 1.0, 2.0 };
+        dashes[(size_t)StipplePattern::ZIGZAG] =
+            { 1.0, 2.0 };
     }
 
-    return result;
+    return dashes[(size_t)pattern];
+}
+
+double SolveSpace::StipplePatternLength(StipplePattern pattern) {
+    static bool initialized;
+    static double lengths[(size_t)StipplePattern::LAST + 1];
+    if(!initialized) {
+        for(size_t i = 0; i < (size_t)StipplePattern::LAST; i++) {
+            const std::vector<double> &dashes = StipplePatternDashes((StipplePattern)i);
+            double length = 0.0;
+            for(double dash : dashes) {
+                length += dash;
+            }
+            lengths[i] = length;
+        }
+    }
+
+    return lengths[(size_t)pattern];
 }

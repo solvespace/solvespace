@@ -354,91 +354,51 @@ void OpenGl1Renderer::DoPoint(Vector p, double d) {
     }
 }
 
-void OpenGl1Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke hcs) {
+void OpenGl1Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke hcs, double phase) {
     Stroke *stroke = SelectStroke(hcs);
 
-    const char *patternSeq;
-    switch(stroke->stipplePattern) {
-        case StipplePattern::CONTINUOUS:    DoLine(a, b, hcs);  return;
-        case StipplePattern::SHORT_DASH:    patternSeq = "-  "; break;
-        case StipplePattern::DASH:          patternSeq = "- ";  break;
-        case StipplePattern::LONG_DASH:     patternSeq = "_ ";  break;
-        case StipplePattern::DASH_DOT:      patternSeq = "-.";  break;
-        case StipplePattern::DASH_DOT_DOT:  patternSeq = "-.."; break;
-        case StipplePattern::DOT:           patternSeq = ".";   break;
-        case StipplePattern::FREEHAND:      patternSeq = "~";   break;
-        case StipplePattern::ZIGZAG:        patternSeq = "~__"; break;
+    if(stroke->stipplePattern == StipplePattern::CONTINUOUS) {
+        DoLine(a, b, hcs);
+        return;
+    }
+
+    double scale = stroke->StippleScaleMm(camera);
+    const std::vector<double> &dashes = StipplePatternDashes(stroke->stipplePattern);
+    double length = StipplePatternLength(stroke->stipplePattern) * scale;
+
+    phase -= floor(phase / length) * length;
+
+    double curPhase = 0.0;
+    size_t curDash;
+    for(curDash = 0; curDash < dashes.size(); curDash++) {
+        curPhase += dashes[curDash] * scale;
+        if(phase < curPhase) break;
     }
 
     Vector dir = b.Minus(a);
     double len = dir.Magnitude();
     dir = dir.WithMagnitude(1.0);
 
-    const char *si = patternSeq;
-    double end = len;
-    double ss = stroke->StippleScaleMm(camera) / 2.0;
-    do {
-        double start = end;
-        switch(*si) {
-            case ' ':
-                end -= 1.0 * ss;
-                break;
+    double cur = 0.0;
+    Vector curPos = a;
+    double width = stroke->WidthMm(camera);
 
-            case '-':
-                start = max(start - 0.5 * ss, 0.0);
-                end = max(start - 2.0 * ss, 0.0);
-                if(start == end) break;
-                DoLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), hcs);
-                end = max(end - 0.5 * ss, 0.0);
-                break;
-
-            case '_':
-                end = max(end - 4.0 * ss, 0.0);
-                DoLine(a.Plus(dir.ScaledBy(start)), a.Plus(dir.ScaledBy(end)), hcs);
-                break;
-
-            case '.':
-                end = max(end - 0.5 * ss, 0.0);
-                if(end == 0.0) break;
-                DoPoint(a.Plus(dir.ScaledBy(end)), stroke->WidthPx(camera));
-                end = max(end - 0.5 * ss, 0.0);
-                break;
-
-            case '~': {
-                Vector ab  = b.Minus(a);
-                Vector gn = (camera.projRight).Cross(camera.projUp);
-                Vector abn = (ab.Cross(gn)).WithMagnitude(1);
-                abn = abn.Minus(gn.ScaledBy(gn.Dot(abn)));
-                double pws = 2.0 * stroke->width / camera.scale;
-
-                end = max(end - 0.5 * ss, 0.0);
-                Vector aa = a.Plus(dir.ScaledBy(start));
-                Vector bb = a.Plus(dir.ScaledBy(end))
-                             .Plus(abn.ScaledBy(pws * (start - end) / (0.5 * ss)));
-                DoLine(aa, bb, hcs);
-                if(end == 0.0) break;
-
-                start = end;
-                end = max(end - 1.0 * ss, 0.0);
-                aa = a.Plus(dir.ScaledBy(end))
-                      .Plus(abn.ScaledBy(pws))
-                      .Minus(abn.ScaledBy(2.0 * pws * (start - end) / ss));
-                DoLine(bb, aa, hcs);
-                if(end == 0.0) break;
-
-                start = end;
-                end = max(end - 0.5 * ss, 0.0);
-                bb = a.Plus(dir.ScaledBy(end))
-                      .Minus(abn.ScaledBy(pws))
-                      .Plus(abn.ScaledBy(pws * (start - end) / (0.5 * ss)));
-                DoLine(aa, bb, hcs);
-                break;
+    double curDashLen = (curPhase - phase) / scale;
+    while(cur < len) {
+        double next = std::min(len, cur + curDashLen * scale);
+        Vector nextPos = curPos.Plus(dir.ScaledBy(next - cur));
+        if(curDash % 2 == 0) {
+            if(curDashLen <= LENGTH_EPS) {
+                DoPoint(curPos, width);
+            } else {
+                DoLine(curPos, nextPos, hcs);
             }
-
-            default: ssassert(false, "Unexpected stipple pattern element");
         }
-        if(*(++si) == 0) si = patternSeq;
-    } while(end > 0.0);
+        cur = next;
+        curPos = nextPos;
+        curDash++;
+        curDashLen = dashes[curDash % dashes.size()];
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -450,35 +410,41 @@ void OpenGl1Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {
 }
 
 void OpenGl1Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
+    double phase = 0.0;
     for(const SEdge *e = el.l.First(); e; e = el.l.NextAfter(e)) {
-        DoStippledLine(e->a, e->b, hcs);
+        DoStippledLine(e->a, e->b, hcs, phase);
+        phase += e->a.Minus(e->b).Magnitude();
     }
 }
 
 void OpenGl1Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs drawAs) {
     Vector projDir = camera.projRight.Cross(camera.projUp);
+    double phase = 0.0;
     switch(drawAs) {
         case DrawOutlinesAs::EMPHASIZED_AND_CONTOUR:
             for(const SOutline &o : ol.l) {
                 if(o.IsVisible(projDir) || o.tag != 0) {
-                    DoStippledLine(o.a, o.b, hcs);
+                    DoStippledLine(o.a, o.b, hcs, phase);
                 }
+                phase += o.a.Minus(o.b).Magnitude();
             }
             break;
 
         case DrawOutlinesAs::EMPHASIZED_WITHOUT_CONTOUR:
             for(const SOutline &o : ol.l) {
                 if(!o.IsVisible(projDir) && o.tag != 0) {
-                    DoStippledLine(o.a, o.b, hcs);
+                    DoStippledLine(o.a, o.b, hcs, phase);
                 }
+                phase += o.a.Minus(o.b).Magnitude();
             }
             break;
 
         case DrawOutlinesAs::CONTOUR_ONLY:
             for(const SOutline &o : ol.l) {
                 if(o.IsVisible(projDir)) {
-                    DoStippledLine(o.a, o.b, hcs);
+                    DoStippledLine(o.a, o.b, hcs, phase);
                 }
+                phase += o.a.Minus(o.b).Magnitude();
             }
             break;
     }
