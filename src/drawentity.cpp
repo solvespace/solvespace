@@ -463,32 +463,30 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         hs = Style::ForEntity(h);
     }
 
-    Canvas::Stroke stroke = {};
+    Canvas::Stroke stroke = Style::Stroke(hs);
     switch(how) {
         case DrawAs::DEFAULT:
-            stroke = Style::Stroke(hs);
-            stroke.layer  = Canvas::Layer::NORMAL;
+            stroke.layer = Canvas::Layer::NORMAL;
             break;
 
         case DrawAs::OVERLAY:
-            stroke.layer  = Canvas::Layer::FRONT;
+            stroke.layer = Canvas::Layer::FRONT;
             break;
 
         case DrawAs::HIDDEN:
-            stroke = Style::Stroke(Style::HIDDEN_EDGE);
-            stroke.layer  = Canvas::Layer::OCCLUDED;
+            stroke.layer = Canvas::Layer::OCCLUDED;
+            stroke.stipplePattern = Style::PatternType({ Style::HIDDEN_EDGE });
+            stroke.stippleScale   = Style::Get({ Style::HIDDEN_EDGE })->stippleScale;
             break;
 
         case DrawAs::HOVERED:
-            stroke = Style::Stroke(hs);
-            stroke.layer  = Canvas::Layer::FRONT;
-            stroke.color  = Style::Color(Style::HOVERED);
+            stroke.layer = Canvas::Layer::FRONT;
+            stroke.color = Style::Color(Style::HOVERED);
             break;
 
         case DrawAs::SELECTED:
-            stroke = Style::Stroke(hs);
-            stroke.layer  = Canvas::Layer::FRONT;
-            stroke.color  = Style::Color(Style::SELECTED);
+            stroke.layer = Canvas::Layer::FRONT;
+            stroke.color = Style::Color(Style::SELECTED);
             break;
     }
     stroke.zIndex = zIndex;

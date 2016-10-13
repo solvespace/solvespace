@@ -479,6 +479,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
                 strokeTriangle.zIndex = 1;
                 strokeTriangle.color  = RgbaColor::FromFloat(0.0f, 1.0f, 0.0f);
                 strokeTriangle.width  = 1;
+                strokeTriangle.unit = Canvas::Unit::PX;
                 hcsTriangle = canvas->GetStroke(strokeTriangle);
             }
 
@@ -551,10 +552,8 @@ void Group::Draw(Canvas *canvas) {
     }
 
     if(SS.GW.showOutlines) {
-        Canvas::Stroke strokeOutline = {};
+        Canvas::Stroke strokeOutline = Style::Stroke(Style::OUTLINE);
         strokeOutline.zIndex = 1;
-        strokeOutline.color  = Style::Color(Style::OUTLINE);
-        strokeOutline.width  = Style::Width(Style::OUTLINE);
         Canvas::hStroke hcsOutline = canvas->GetStroke(strokeOutline);
 
         canvas->DrawOutlines(displayOutlines, hcsOutline,

@@ -60,6 +60,7 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
         strokeEmphasis.layer  = Canvas::Layer::FRONT;
         strokeEmphasis.color  = Style::Color(Style::HOVERED).WithAlpha(50);
         strokeEmphasis.width  = 40;
+        strokeEmphasis.unit   = Canvas::Unit::PX;
         Canvas::hStroke hcsEmphasis = canvas->GetStroke(strokeEmphasis);
 
         Point2d topLeftScreen;
@@ -545,6 +546,8 @@ void GraphicsWindow::DrawSnapGrid(Canvas *canvas) {
     Canvas::Stroke stroke = {};
     stroke.layer  = Canvas::Layer::BACK;
     stroke.color  = Style::Color(Style::DATUM).WithAlpha(75);
+    stroke.unit   = Canvas::Unit::PX;
+    stroke.width  = 1.0f;
     Canvas::hStroke hcs = canvas->GetStroke(stroke);
 
     for(i = i0 + 1; i < i1; i++) {
@@ -679,6 +682,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     SK.GetGroup(activeGroup)->DrawMesh(Group::DrawMeshAs::SELECTED, canvas);
 
     Canvas::Stroke strokeDatum = Style::Stroke(Style::DATUM);
+    strokeDatum.unit  = Canvas::Unit::PX;
     strokeDatum.layer = Canvas::Layer::FRONT;
     strokeDatum.width = 1;
     Canvas::hStroke hcsDatum = canvas->GetStroke(strokeDatum);

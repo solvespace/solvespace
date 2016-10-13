@@ -133,6 +133,7 @@ bool Canvas::Stroke::Equals(const Stroke &other) const {
             zIndex == other.zIndex &&
             color.Equals(other.color) &&
             width == other.width &&
+            unit == other.unit &&
             stipplePattern == other.stipplePattern &&
             stippleScale == other.stippleScale);
 }
@@ -221,6 +222,7 @@ void UiCanvas::DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int wid
     stroke.layer  = Canvas::Layer::FRONT;
     stroke.width  = (double)width;
     stroke.color  = color;
+    stroke.unit   = Canvas::Unit::PX;
     Canvas::hStroke hcs = canvas->GetStroke(stroke);
 
     canvas->DrawLine(va, vb, hcs);
@@ -247,6 +249,7 @@ void UiCanvas::DrawRect(int l, int r, int t, int b,
         stroke.layer  = Canvas::Layer::FRONT;
         stroke.width  = 1.0;
         stroke.color  = outlineColor;
+        stroke.unit   = Canvas::Unit::PX;
         Canvas::hStroke hcs = canvas->GetStroke(stroke);
 
         canvas->DrawLine(va, vb, hcs);
