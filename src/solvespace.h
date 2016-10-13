@@ -891,6 +891,7 @@ public:
     void GenerateAll(Generate type = Generate::DIRTY, bool andFindFree = false,
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
+    void SolveGroupAndReport(hGroup hg, bool andFindFree);
     void MarkDraggedParams();
     void ForceReferences();
 
