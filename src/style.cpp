@@ -290,7 +290,7 @@ Canvas::Stroke Style::Stroke(hStyle hs) {
     stroke.color = style->color;
     stroke.stipplePattern = style->stippleType;
     stroke.stippleScale = style->stippleScale;
-    stroke.width = Style::Width(hs.v);
+    stroke.width = style->width;
     switch(style->widthAs) {
         case Style::UnitsAs::PIXELS:
             stroke.unit = Canvas::Unit::PX;
