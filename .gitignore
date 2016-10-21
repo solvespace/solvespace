@@ -2,7 +2,7 @@
 /build*/
 /test/**/*.diff.*
 /test/**/*.curr.*
-*.trace # OpenGL apitrace files
+*.trace
 /debian/tmp/
 /debian/*.log
 /debian/*.substvars

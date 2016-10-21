@@ -324,6 +324,8 @@ protected:
         cr->paint();
         surface->finish();
 
+        glXSwapBuffers(_xdisplay, _xwindow);
+
         return true;
     }
 
