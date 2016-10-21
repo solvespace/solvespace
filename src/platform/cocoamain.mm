@@ -792,6 +792,9 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
     if(defExtension != "") {
         extensionIndex = [extensions indexOfObject:
             [NSString stringWithUTF8String:defExtension.c_str()]];
+        if(extensionIndex == -1) {
+            extensionIndex = 0;
+        }
     }
 
     [button selectItemAtIndex:extensionIndex];
