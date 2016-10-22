@@ -20,3 +20,9 @@ deploy:
       repo: solvespace/solvespace
       tags: true
       condition: "$TRAVIS_OS_NAME == osx"
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net#solvespace"
+    use_notice: true
+    skip_join: true
