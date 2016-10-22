@@ -141,6 +141,7 @@ public:
     double      scale;
 
     bool        clean;
+    bool        dofCheckOk;
     hEntity     activeWorkplane;
     double      valA;
     double      valB;

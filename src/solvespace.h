@@ -444,7 +444,7 @@ public:
     void EvalJacobian();
 
     void WriteEquationsExceptFor(hConstraint hc, Group *g);
-    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad);
+    void FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck);
     void SolveBySubstitution();
 
     bool IsDragged(hParam p);
@@ -452,7 +452,7 @@ public:
     bool NewtonSolve(int tag);
 
     SolveResult Solve(Group *g, int *dof, List<hConstraint> *bad,
-                bool andFindBad, bool andFindFree);
+                      bool andFindBad, bool andFindFree, bool forceDofCheck = false);
 
     void Clear();
 };

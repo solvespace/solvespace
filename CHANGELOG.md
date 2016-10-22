@@ -44,6 +44,8 @@ Bugs fixed:
     causes the line length to collapse.
   * Curve-line constraints (in 3d), parallel constraints (in 3d), and
     same orientation constraints are more robust.
+  * Adding some constraints (vertical, midpoint, etc) twice will now error out
+    immediately, instead of later and in a confusing way.
 
 2.3
 ---

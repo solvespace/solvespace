@@ -359,7 +359,7 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
     g->GenerateEquations(&eq);
 }
 
-void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
+void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck) {
     int a, i;
 
     for(a = 0; a < 2; a++) {
@@ -382,7 +382,9 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
 
             // It's a major speedup to solve the easy ones by substitution here,
             // and that doesn't break anything.
-            SolveBySubstitution();
+            if(!forceDofCheck) {
+                SolveBySubstitution();
+            }
 
             WriteJacobian(0);
             EvalJacobian();
@@ -397,7 +399,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
 }
 
 SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
-                  bool andFindBad, bool andFindFree)
+                          bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
@@ -418,7 +420,9 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     param.ClearTags();
     eq.ClearTags();
 
-    SolveBySubstitution();
+    if(!forceDofCheck) {
+        SolveBySubstitution();
+    }
 
     // Before solving the big system, see if we can find any equations that
     // are soluble alone. This can be a huge speedup. We don't know whether
@@ -465,7 +469,7 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     rankOk = TestRank();
     if(!rankOk) {
         if(!g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad);
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
         }
     } else {
         // This is not the full Jacobian, but any substitutions or single-eq
