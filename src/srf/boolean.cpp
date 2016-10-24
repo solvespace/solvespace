@@ -664,6 +664,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
 
     // First, copy over all the curves. Note which shell (a or b) each curve
     // came from, but assign it a new ID.
+    curve.ReserveMore(a->curve.n + b->curve.n);
     SCurve *c, cn;
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;
@@ -677,6 +678,7 @@ void SShell::MakeFromAssemblyOf(SShell *a, SShell *b) {
     }
 
     // Likewise copy over all the surfaces.
+    surface.ReserveMore(a->surface.n + b->surface.n);
     SSurface *s, sn;
     for(i = 0; i < 2; i++) {
         ab = (i == 0) ? a : b;

@@ -217,7 +217,10 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     // Don't lose our numerical guesses when we regenerate.
     IdList<Param,hParam> prev = {};
     SK.param.MoveSelfInto(&prev);
+    SK.param.ReserveMore(prev.n);
+    int oldEntityCount = SK.entity.n;
     SK.entity.Clear();
+    SK.entity.ReserveMore(oldEntityCount);
 
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);

@@ -741,6 +741,7 @@ SCurve SCurve::FromTransformationOf(SCurve *a, Vector t,
     ret.surfB = a->surfB;
 
     SCurvePt *p;
+    ret.pts.ReserveMore(a->pts.n);
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
         SCurvePt pp = *p;
         if(needScale) {
