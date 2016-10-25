@@ -11,9 +11,9 @@
 #define __SLVS_H
 
 #ifdef EXPORT_DLL
-#define DLL __declspec( dllexport ) 
+#define DLL __declspec( dllexport )
 #else
-#define DLL __declspec( dllimport ) 
+#define DLL __declspec( dllimport )
 #endif
 
 #ifdef __cplusplus
@@ -118,7 +118,7 @@ typedef struct {
     Slvs_hEntity        entityB;
     Slvs_hEntity        entityC;
     Slvs_hEntity        entityD;
-    
+
     int                 other;
     int                 other2;
 } Slvs_Constraint;
@@ -158,10 +158,10 @@ typedef struct {
     int                 calculateFaileds;
 
     //// OUTPUT VARIABLES
-    // 
+    //
     // If the solver fails, then it can report which constraints are causing
     // the problem. The caller should allocate the array failed[], and pass
-    // its size in faileds. 
+    // its size in faileds.
     //
     // The solver will set faileds equal to the number of problematic
     // constraints, and write their Slvs_hConstraints into failed[]. To

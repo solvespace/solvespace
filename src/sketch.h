@@ -272,7 +272,7 @@ public:
     bool        construction;
     NameStr     str;
     NameStr     font;
-    
+
     static hParam AddParam(ParamList *param, hParam hp);
     void Generate(EntityList *entity, ParamList *param);
 
@@ -659,7 +659,7 @@ class Style {
 public:
     int         tag;
     hStyle      h;
-  
+
     // If an entity has no style, then it will be colored according to
     // whether the group that it's in is active or not, whether it's
     // construction or not, and so on.

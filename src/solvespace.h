@@ -328,7 +328,7 @@ public:
         bool        onCurve;
         bool        lastInContour;
         SWORD       x;
-        SWORD       y;       
+        SWORD       y;
     } FontPoint;
 
     typedef struct {
@@ -380,7 +380,7 @@ public:
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
     char *FontFileBaseName(void);
-   
+
     void Flush(void);
     void Handle(int *dx, int x, int y, bool onCurve);
     void PlotCharacter(int *dx, int c, double spacing);

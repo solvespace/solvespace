@@ -389,7 +389,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
                 // the line segment, and choose the longer of these.
                 ExprVector eap = ea.Minus(ep);
                 ExprVector ebp = eb.Minus(ep);
-                ExprVector elp = 
+                ExprVector elp =
                     (ebp.Magnitude()->Eval() > eap.Magnitude()->Eval()) ?
                         ebp : eap;
 
@@ -413,7 +413,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             EntityBase *normal = SK.GetEntity(circle->normal);
             ExprVector u = normal->NormalExprsU(),
                        v = normal->NormalExprsV();
-            
+
             Expr *du = (center.Minus(pt)).Dot(u),
                  *dv = (center.Minus(pt)).Dot(v);
 
@@ -443,7 +443,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
                 EntityBase *ln = SK.GetEntity(entityA);
                 EntityBase *a = SK.GetEntity(ln->point[0]);
                 EntityBase *b = SK.GetEntity(ln->point[1]);
-                
+
                 Expr *au, *av, *bu, *bv;
                 a->PointGetExprsInWorkplane(workplane, &au, &av);
                 b->PointGetExprsInWorkplane(workplane, &bu, &bv);
@@ -601,7 +601,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             ExprVector bu = b->NormalExprsU(),
                        bv = b->NormalExprsV(),
                        bn = b->NormalExprsN();
-            
+
             AddEq(l, VectorsParallel(0, an, bn), 0);
             AddEq(l, VectorsParallel(1, an, bn), 1);
             Expr *d1 = au.Dot(bv);
@@ -662,7 +662,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
             EntityBase *line = SK.GetEntity(entityB);
 
             ExprVector ac = SK.GetEntity(arc->point[0])->PointGetExprs();
-            ExprVector ap = 
+            ExprVector ap =
                 SK.GetEntity(arc->point[other ? 2 : 1])->PointGetExprs();
 
             ExprVector ld = line->VectorGetExprs();
@@ -675,7 +675,7 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) {
         case CUBIC_LINE_TANGENT: {
             EntityBase *cubic = SK.GetEntity(entityA);
             EntityBase *line  = SK.GetEntity(entityB);
-            
+
             ExprVector a;
             if(other) {
                 a = cubic->CubicGetFinishTangentExprs();

@@ -17,7 +17,7 @@ Imports System.Runtime.InteropServices
 Module VbDemo
 
     ' Call our example functions, which set up some kind of sketch, solve
-    ' it, and then print the result. 
+    ' it, and then print the result.
     Sub Main()
         Console.WriteLine("EXAMPLE IN 3d (by objects):")
         Example3dWithObjects()
@@ -42,13 +42,13 @@ Module VbDemo
     ' classes allow us to represent entities (e.g., lines and points)
     ' as .net objects. So we create an Slvs object, which will contain
     ' the entire sketch, with all the entities and constraints.
-    ' 
+    '
     ' We then create entity objects (for example, points and lines)
     ' associated with that sketch, indicating the initial positions of
     ' those entities and any hierarchical relationships among them (e.g.,
     ' defining a line entity in terms of endpoint entities). We also add
     ' constraints associated with those entities.
-    ' 
+    '
     ' Finally, we solve, and print the new positions of the entities. If the
     ' solution succeeded, then the entities will satisfy the constraints. If
     ' not, then the solver will suggest problematic constraints that, if
@@ -598,7 +598,7 @@ Module VbDemo
             Return Result
         End Function
 
-        ' After a call to Solve(), this returns the number of unconstrained 
+        ' After a call to Solve(), this returns the number of unconstrained
         ' degrees of freedom for the sketch.
         Public Function GetDof() As Integer
             Return Dof

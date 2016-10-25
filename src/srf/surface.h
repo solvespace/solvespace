@@ -197,7 +197,7 @@ public:
     hSSurface       surfA;
     hSSurface       surfB;
 
-    static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q, 
+    static SCurve FromTransformationOf(SCurve *a, Vector t, Quaternion q,
                                         double scale);
     SCurve MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                                 SSurface *srfA, SSurface *srfB);
@@ -275,13 +275,13 @@ public:
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                   Vector *pt, Vector *enin, Vector *enout,
                                   Vector *surfn,
-                                  DWORD auxA, 
+                                  DWORD auxA,
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,
                                     SShell *into, int type);
     void TrimFromEdgeList(SEdgeList *el, bool asUv);
-    void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB, 
+    void IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
                           SShell *into);
     void AddExactIntersectionCurve(SBezier *sb, SSurface *srfB,
                           SShell *agnstA, SShell *agnstB, SShell *into);
@@ -388,7 +388,7 @@ public:
     int ClassifyRegion(Vector edge_n, Vector inter_surf_n, Vector edge_surf_n);
     bool ClassifyEdge(int *indir, int *outdir,
                       Vector ea, Vector eb,
-                      Vector p, 
+                      Vector p,
                       Vector edge_n_in, Vector edge_n_out, Vector surf_n);
 
     void MakeFromCopyOf(SShell *a);

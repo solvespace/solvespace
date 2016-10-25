@@ -77,7 +77,7 @@ TYPES OF ENTITIES
 SLVS_E_POINT_IN_3D
 
     A point in 3d. Defined by three parameters:
-        
+
         param[0]    the point's x coordinate
         param[1]                y
         param[1]                z
@@ -122,7 +122,7 @@ SLVS_E_NORMAL_IN_3D
 
     defines a 3x3 rotation matrix. So U, V, and N all have unit length,
     and are orthogonal so that
-    
+
         U cross V = N
         V cross N = U
         N cross U = V
@@ -181,7 +181,7 @@ SLVS_E_WORKPLANE
 
 
 SLVS_E_LINE_SEGMENT
-    
+
     A line segment between two endpoints
 
         point[0]
@@ -211,7 +211,7 @@ SLVS_E_CIRCLE
         normal
 
     The circle is centered at
-        
+
         point[0]
 
     The circle's radius is
@@ -356,7 +356,7 @@ SLVS_C_SYMMETRIC_LINE**
 SLVS_C_AT_MIDPOINT*
 
     The point ptA lies at the midpoint of the line entityA.
-    
+
 SLVS_C_HORIZONTAL
 SLVS_C_VERTICAL**
 

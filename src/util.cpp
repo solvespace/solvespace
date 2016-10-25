@@ -99,7 +99,7 @@ bool StringEndsIn(char *str, char *ending)
     int i, ls = strlen(str), le = strlen(ending);
 
     if(ls < le) return false;
-        
+
     for(i = 0; i < le; i++) {
         if(tolower(ending[le-i-1]) != tolower(str[ls-i-1])) {
             return false;
@@ -601,7 +601,7 @@ Vector Vector::ScaleOutOfCsys(Vector u, Vector v, Vector n) {
     return r;
 }
 
-Vector Vector::InPerspective(Vector u, Vector v, Vector n, 
+Vector Vector::InPerspective(Vector u, Vector v, Vector n,
                              Vector origin, double cameraTan)
 {
     Vector r = this->Minus(origin);
@@ -742,7 +742,7 @@ Vector Vector::ClosestOrtho(void) {
     }
 }
 
-Vector Vector::ClampWithin(double minv, double maxv) {  
+Vector Vector::ClampWithin(double minv, double maxv) {
     Vector ret = *this;
 
     if(ret.x < minv) ret.x = minv;
@@ -820,11 +820,11 @@ bool Vector::BoundingBoxIntersectsLine(Vector amax, Vector amin,
 Vector Vector::AtIntersectionOfPlanes(Vector n1, double d1,
                                       Vector n2, double d2)
 {
-    double det = (n1.Dot(n1))*(n2.Dot(n2)) - 
+    double det = (n1.Dot(n1))*(n2.Dot(n2)) -
                  (n1.Dot(n2))*(n1.Dot(n2));
     double c1 = (d1*n2.Dot(n2) - d2*n1.Dot(n2))/det;
     double c2 = (d2*n1.Dot(n1) - d1*n1.Dot(n2))/det;
-    
+
     return (n1.ScaledBy(c1)).Plus(n2.ScaledBy(c2));
 }
 
@@ -846,7 +846,7 @@ void Vector::ClosestPointBetweenLines(Vector a0, Vector da,
     // So dot this equation against dna and dnb to get two equations
     // to solve for da and db
     *tb =  ((a0.Minus(b0)).Dot(dna))/(db.Dot(dna));
-    *ta = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));   
+    *ta = -((a0.Minus(b0)).Dot(dnb))/(da.Dot(dnb));
 }
 
 Vector Vector::AtIntersectionOfLines(Vector a0, Vector a1,
@@ -1039,7 +1039,7 @@ double Point2d::Dot(Point2d p) {
 double Point2d::DistanceToLine(Point2d p0, Point2d dp, bool segment) {
     double m = dp.x*dp.x + dp.y*dp.y;
     if(m < LENGTH_EPS*LENGTH_EPS) return VERY_POSITIVE;
-   
+
     // Let our line be p = p0 + t*dp, for a scalar t from 0 to 1
     double t = (dp.x*(x - p0.x) + dp.y*(y - p0.y))/m;
 

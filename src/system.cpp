@@ -289,7 +289,7 @@ bool System::NewtonSolve(int tag) {
 
         if(!SolveLeastSquares()) break;
 
-        // Take the Newton step; 
+        // Take the Newton step;
         //      J(x_n) (x_{n+1} - x_n) = 0 - F(x_n)
         for(i = 0; i < mat.n; i++) {
             Param *p = param.FindById(mat.param[i]);
@@ -393,7 +393,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad) {
     }
 }
 
-int System::Solve(Group *g, int *dof, List<hConstraint> *bad, 
+int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
                   bool andFindBad, bool andFindFree)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
@@ -412,7 +412,7 @@ int System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     // All params and equations are assigned to group zero.
     param.ClearTags();
     eq.ClearTags();
-    
+
     SolveBySubstitution();
 
     // Before solving the big system, see if we can find any equations that
@@ -522,7 +522,7 @@ didnt_converge:
             }
         }
     }
-    
+
     return System::DIDNT_CONVERGE;
 }
 

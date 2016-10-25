@@ -346,7 +346,7 @@ Expr *Expr::PartialWrt(hParam p) {
             db = b->PartialWrt(p);
             return (a->Times(db))->Plus(b->Times(da));
 
-        case DIV:           
+        case DIV:
             da = a->PartialWrt(p);
             db = b->PartialWrt(p);
             return ((da->Times(b))->Minus(a->Times(db)))->Div(b->Square());
@@ -673,7 +673,7 @@ void Expr::Parse(void) {
     for(;;) {
         Expr *n = Next();
         if(!n) throw "end of expression unexpected";
-        
+
         if(n->op == CONSTANT) {
             PushOperand(n);
             Consume();
