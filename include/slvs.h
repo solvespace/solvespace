@@ -182,9 +182,10 @@ typedef struct {
 
     // The solver indicates whether the solution succeeded.
 #define SLVS_RESULT_OKAY                0
-#define SLVS_RESULT_INCONSISTENT        1
-#define SLVS_RESULT_DIDNT_CONVERGE      2
-#define SLVS_RESULT_TOO_MANY_UNKNOWNS   3
+#define SLVS_RESULT_REDUNDANT_OKAY      1
+#define SLVS_RESULT_REDUNDANT_DIDNT_CONVERGE 2
+#define SLVS_RESULT_DIDNT_CONVERGE      3
+#define SLVS_RESULT_TOO_MANY_UNKNOWNS   4
     int                 result;
 } Slvs_System;
 
