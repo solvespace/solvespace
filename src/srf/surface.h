@@ -56,12 +56,12 @@ class SShell;
 
 class hSSurface {
 public:
-    DWORD v;
+    uint32_t v;
 };
 
 class hSCurve {
 public:
-    DWORD v;
+    uint32_t v;
 };
 
 // Stuff for rational polynomial curves, of degree one to three. These are
@@ -222,7 +222,7 @@ public:
     Vector      start;
     Vector      finish;
 
-    static STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool bkwds);
+    static STrimBy EntireCurve(SShell *shell, hSCurve hsc, bool bkwds);
 };
 
 // An intersection point between a line and a surface
@@ -247,7 +247,7 @@ public:
     hSSurface       newH;
 
     int             color;
-    DWORD           face;
+    uint32_t           face;
 
     int             degm, degn;
     Vector          ctrl[4][4];
@@ -275,7 +275,7 @@ public:
     void EdgeNormalsWithinSurface(Point2d auv, Point2d buv,
                                   Vector *pt, Vector *enin, Vector *enout,
                                   Vector *surfn,
-                                  DWORD auxA,
+                                  uint32_t auxA,
                                   SShell *shell, SShell *sha, SShell *shb);
     void FindChainAvoiding(SEdgeList *src, SEdgeList *dest, SPointList *avoid);
     SSurface MakeCopyTrimAgainst(SShell *parent, SShell *a, SShell *b,

@@ -11,7 +11,7 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "solvespace.h"
+#include "../solvespace.h"
 
 static HANDLE PermHeap, TempHeap;
 

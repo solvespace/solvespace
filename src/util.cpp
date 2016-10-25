@@ -6,10 +6,10 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void MakePathRelative(char *basep, char *pathp)
+void MakePathRelative(const char *basep, char *pathp)
 {
     int i;
-    char *p;
+    const char *p;
     char base[MAX_PATH], path[MAX_PATH], out[MAX_PATH];
 
     // Convert everything to lowercase
@@ -65,7 +65,7 @@ void MakePathRelative(char *basep, char *pathp)
     strcpy(pathp, out);
 }
 
-void MakePathAbsolute(char *basep, char *pathp) {
+void MakePathAbsolute(const char *basep, char *pathp) {
     char out[MAX_PATH];
     strcpy(out, basep);
 
@@ -83,9 +83,9 @@ void MakePathAbsolute(char *basep, char *pathp) {
     strcpy(pathp, out);
 }
 
-bool StringAllPrintable(char *str)
+bool StringAllPrintable(const char *str)
 {
-    char *t;
+    const char *t;
     for(t = str; *t; t++) {
         if(!(isalnum(*t) || *t == '-' || *t == '_')) {
             return false;
@@ -94,7 +94,7 @@ bool StringAllPrintable(char *str)
     return true;
 }
 
-bool StringEndsIn(char *str, char *ending)
+bool StringEndsIn(const char *str, const char *ending)
 {
     int i, ls = strlen(str), le = strlen(ending);
 
@@ -135,7 +135,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 // Word-wrap the string for our message box appropriately, and then display
 // that string.
 //-----------------------------------------------------------------------------
-static void DoStringForMessageBox(char *str, va_list f, bool error)
+static void DoStringForMessageBox(const char *str, va_list f, bool error)
 {
     char inBuf[1024*50];
     vsprintf(inBuf, str, f);
@@ -190,14 +190,14 @@ static void DoStringForMessageBox(char *str, va_list f, bool error)
     // And then display the text with our actual longest line length.
     DoMessageBox(outBuf, rows, cols, error);
 }
-void Error(char *str, ...)
+void Error(const char *str, ...)
 {
     va_list f;
     va_start(f, str);
     DoStringForMessageBox(str, f, true);
     va_end(f);
 }
-void Message(char *str, ...)
+void Message(const char *str, ...)
 {
     va_list f;
     va_start(f, str);

@@ -10,20 +10,26 @@
 #ifndef __SLVS_H
 #define __SLVS_H
 
-#ifdef EXPORT_DLL
+#include <stdint.h>
+
+#if defined(WIN32)
+#ifdef slvs_EXPORTS
 #define DLL __declspec( dllexport )
 #else
 #define DLL __declspec( dllimport )
+#endif
+#else
+#define DLL
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef DWORD Slvs_hParam;
-typedef DWORD Slvs_hEntity;
-typedef DWORD Slvs_hConstraint;
-typedef DWORD Slvs_hGroup;
+typedef uint32_t Slvs_hParam;
+typedef uint32_t Slvs_hEntity;
+typedef uint32_t Slvs_hConstraint;
+typedef uint32_t Slvs_hGroup;
 
 // To obtain the 3d (not projected into a workplane) of a constraint or
 // an entity, specify this instead of the workplane.

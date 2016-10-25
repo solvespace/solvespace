@@ -5,7 +5,6 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include <windows.h>
 #include <stdio.h>
 
 #include "slvs.h"

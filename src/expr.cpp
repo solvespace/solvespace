@@ -372,10 +372,10 @@ Expr *Expr::PartialWrt(hParam p) {
     }
 }
 
-QWORD Expr::ParamsUsed(void) {
-    QWORD r = 0;
-    if(op == PARAM)     r |= ((QWORD)1 << (x.parh.v % 61));
-    if(op == PARAM_PTR) r |= ((QWORD)1 << (x.parp->h.v % 61));
+uint64_t Expr::ParamsUsed(void) {
+    uint64_t r = 0;
+    if(op == PARAM)     r |= ((uint64_t)1 << (x.parh.v % 61));
+    if(op == PARAM_PTR) r |= ((uint64_t)1 << (x.parp->h.v % 61));
 
     int c = Children();
     if(c >= 1)          r |= a->ParamsUsed();
@@ -519,12 +519,12 @@ hParam Expr::ReferencedParams(ParamList *pl) {
 //-----------------------------------------------------------------------------
 
 static char StringBuffer[4096];
-void Expr::App(char *s, ...) {
+void Expr::App(const char *s, ...) {
     va_list f;
     va_start(f, s);
     vsprintf(StringBuffer+strlen(StringBuffer), s, f);
 }
-char *Expr::Print(void) {
+const char *Expr::Print(void) {
     if(!this) return "0";
 
     StringBuffer[0] = '\0';

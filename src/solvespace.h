@@ -51,19 +51,13 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 
 #define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
 
-typedef unsigned __int64 QWORD;
-typedef signed __int64 SQWORD;
-typedef signed long SDWORD;
-typedef signed short SWORD;
-
+#include <stdint.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#include <windows.h> // required for GL stuff
-#include <gl/gl.h>
-#include <gl/glu.h>
 
 inline double Random(double vmax) {
     return (vmax*rand()) / RAND_MAX;
@@ -76,6 +70,15 @@ class ExprQuaternion;
 
 //================
 // From the platform-specific code.
+#if !defined(WIN32)
+#include <limits.h>
+#define MAX_PATH PATH_MAX
+
+#include <algorithm>
+using std::min;
+using std::max;
+#endif
+
 #define MAX_RECENT 8
 #define RECENT_OPEN     (0xf000)
 #define RECENT_IMPORT   (0xf100)
@@ -116,22 +119,22 @@ int SaveFileYesNoCancel(void);
 // Comma-separated value, like a spreadsheet would use
 #define CSV_PATTERN "CSV File (*.csv)\0*.csv\0All Files (*)\0*\0\0"
 #define CSV_EXT "csv"
-BOOL GetSaveFile(char *file, char *defExtension, char *selPattern);
-BOOL GetOpenFile(char *file, char *defExtension, char *selPattern);
+bool GetSaveFile(char *file, char *defExtension, char *selPattern);
+bool GetOpenFile(char *file, char *defExtension, char *selPattern);
 void GetAbsoluteFilename(char *file);
 void LoadAllFontFiles(void);
 
 void OpenWebsite(char *url);
 
-void CheckMenuById(int id, BOOL checked);
-void EnableMenuById(int id, BOOL checked);
+void CheckMenuById(int id, bool checked);
+void EnableMenuById(int id, bool checked);
 
 void ShowGraphicsEditControl(int x, int y, char *s);
 void HideGraphicsEditControl(void);
-BOOL GraphicsEditControlIsVisible(void);
+bool GraphicsEditControlIsVisible(void);
 void ShowTextEditControl(int x, int y, char *s);
 void HideTextEditControl(void);
-BOOL TextEditControlIsVisible(void);
+bool TextEditControlIsVisible(void);
 void MoveTextScrollbarTo(int pos, int maxPos, int page);
 
 #define CONTEXT_SUBMENU     (-1)
@@ -140,31 +143,31 @@ void AddContextMenuItem(char *legend, int id);
 void CreateContextSubmenu(void);
 int ShowContextMenu(void);
 
-void ShowTextWindow(BOOL visible);
+void ShowTextWindow(bool visible);
 void InvalidateText(void);
 void InvalidateGraphics(void);
 void PaintGraphics(void);
 void GetGraphicsWindowSize(int *w, int *h);
 void GetTextWindowSize(int *w, int *h);
-SDWORD GetMilliseconds(void);
-SQWORD GetUnixTime(void);
+int32_t GetMilliseconds(void);
+int64_t GetUnixTime(void);
 
-void dbp(char *str, ...);
+void dbp(const char *str, ...);
 #define DBPTRI(tri) \
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
 void SetWindowTitle(char *str);
 void SetMousePointerToHand(bool yes);
-void DoMessageBox(char *str, int rows, int cols, BOOL error);
+void DoMessageBox(char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
 void ExitNow(void);
 
 void CnfFreezeString(char *str, char *name);
-void CnfFreezeDWORD(DWORD v, char *name);
+void CnfFreezeuint32_t(uint32_t v, char *name);
 void CnfFreezeFloat(float v, char *name);
 void CnfThawString(char *str, int maxLen, char *name);
-DWORD CnfThawDWORD(DWORD v, char *name);
+uint32_t CnfThawuint32_t(uint32_t v, char *name);
 float CnfThawFloat(float v, char *name);
 
 void *AllocTemporary(int n);
@@ -202,11 +205,16 @@ void glxVertex3v(Vector u);
 void glxAxisAlignedQuad(double l, double r, double t, double b);
 void glxAxisAlignedLineLoop(double l, double r, double t, double b);
 #define DEFAULT_TEXT_HEIGHT (11.5)
+#if defined(WIN32)
 #define GLX_CALLBACK __stdcall
+#else
+#define GLX_CALLBACK
+#endif
 typedef void GLX_CALLBACK glxCallbackFptr(void);
+struct GLUtesselator;
 void glxTesselatePolygon(GLUtesselator *gt, SPolygon *p);
 void glxFillPolygon(SPolygon *p);
-void glxFillMesh(int color, SMesh *m, DWORD h, DWORD s1, DWORD s2);
+void glxFillMesh(int color, SMesh *m, uint32_t h, uint32_t s1, uint32_t s2);
 void glxDebugPolygon(SPolygon *p);
 void glxDrawEdges(SEdgeList *l, bool endpointsToo);
 void glxDebugMesh(SMesh *m);
@@ -218,14 +226,14 @@ void glxWriteTextRefCenter(char *str, double h, Vector t, Vector u, Vector v,
     glxLineFn *fn, void *fndata);
 double glxStrWidth(char *str, double h);
 double glxStrHeight(double h);
-void glxLockColorTo(DWORD rgb);
+void glxLockColorTo(uint32_t rgb);
 void glxFatLine(Vector a, Vector b, double width);
 void glxUnlockColor(void);
-void glxColorRGB(DWORD rgb);
-void glxColorRGBa(DWORD rgb, double a);
+void glxColorRGB(uint32_t rgb);
+void glxColorRGBa(uint32_t rgb, double a);
 void glxDepthRangeOffset(int units);
 void glxDepthRangeLockToFront(bool yes);
-void glxDrawPixelsWithTexture(BYTE *data, int w, int h);
+void glxDrawPixelsWithTexture(uint8_t *data, int w, int h);
 void glxCreateBitmapFont(void);
 void glxBitmapText(char *str, Vector p);
 void glxBitmapCharQuad(char c, double x, double y);
@@ -242,12 +250,12 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a21, double a22, double a23, double a24,
                              double a31, double a32, double a33, double a34,
                              double a41, double a42, double a43, double a44);
-void MakePathRelative(char *base, char *path);
-void MakePathAbsolute(char *base, char *path);
-bool StringAllPrintable(char *str);
-bool StringEndsIn(char *str, char *ending);
-void Message(char *str, ...);
-void Error(char *str, ...);
+void MakePathRelative(const char *base, char *path);
+void MakePathAbsolute(const char *base, char *path);
+bool StringAllPrintable(const char *str);
+bool StringEndsIn(const char *str, const char *ending);
+void Message(const char *str, ...);
+void Error(const char *str, ...);
 
 class System {
 public:
@@ -327,8 +335,8 @@ public:
     typedef struct {
         bool        onCurve;
         bool        lastInContour;
-        SWORD       x;
-        SWORD       y;
+        int16_t       x;
+        int16_t       y;
     } FontPoint;
 
     typedef struct {
@@ -373,9 +381,9 @@ public:
     Vector      origin, u, v;
 
     int Getc(void);
-    int GetBYTE(void);
-    int GetWORD(void);
-    int GetDWORD(void);
+    int Getuint8_t(void);
+    int Getuint16_t(void);
+    int Getuint32_t(void);
 
     void LoadGlyph(int index);
     bool LoadFontFromFile(bool nameOnly);
@@ -433,10 +441,10 @@ public:
     void BezierAsPwl(SBezier *sb);
     void BezierAsNonrationalCubic(SBezier *sb, int depth=0);
 
-    virtual void StartPath( DWORD strokeRgb, double lineWidth,
-                            bool filled, DWORD fillRgb) = 0;
-    virtual void FinishPath(DWORD strokeRgb, double lineWidth,
-                            bool filled, DWORD fillRgb) = 0;
+    virtual void StartPath( uint32_t strokeRgb, double lineWidth,
+                            bool filled, uint32_t fillRgb) = 0;
+    virtual void FinishPath(uint32_t strokeRgb, double lineWidth,
+                            bool filled, uint32_t fillRgb) = 0;
     virtual void Bezier(SBezier *sb) = 0;
     virtual void Triangle(STriangle *tr) = 0;
     virtual void StartFile(void) = 0;
@@ -445,10 +453,10 @@ public:
 };
 class DxfFileWriter : public VectorFileWriter {
 public:
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -460,10 +468,10 @@ public:
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -472,15 +480,15 @@ public:
 };
 class PdfFileWriter : public VectorFileWriter {
 public:
-    DWORD xref[10];
-    DWORD bodyStart;
+    uint32_t xref[10];
+    uint32_t bodyStart;
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -492,10 +500,10 @@ public:
     Vector prevPt;
     void MaybeMoveTo(Vector s, Vector f);
 
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -505,10 +513,10 @@ public:
 class HpglFileWriter : public VectorFileWriter {
 public:
     static double MmToHpglUnits(double mm);
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -517,10 +525,10 @@ public:
 };
 class Step2dFileWriter : public VectorFileWriter {
     StepFileWriter sfw;
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -530,10 +538,10 @@ class Step2dFileWriter : public VectorFileWriter {
 class GCodeFileWriter : public VectorFileWriter {
 public:
     SEdgeList sel;
-    void StartPath( DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
-    void FinishPath(DWORD strokeRgb, double lineWidth,
-                    bool filled, DWORD fillRgb);
+    void StartPath( uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
+    void FinishPath(uint32_t strokeRgb, double lineWidth,
+                    bool filled, uint32_t fillRgb);
     void Triangle(STriangle *tr);
     void Bezier(SBezier *sb);
     void StartFile(void);
@@ -618,7 +626,7 @@ public:
     int     drawBackFaces;
     int     checkClosedContour;
     int     showToolbar;
-    DWORD   backgroundColor;
+    uint32_t   backgroundColor;
     int     exportShadedTriangles;
     int     exportPwlCurves;
     int     exportCanvasSizeAuto;
@@ -736,7 +744,7 @@ public:
         Vector      ptB;
     } extraLine;
     struct {
-        BYTE        *fromFile;
+        uint8_t        *fromFile;
         int         w, h;
         int         rw, rh;
         double      scale; // pixels per mm

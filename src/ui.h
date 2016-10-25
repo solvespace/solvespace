@@ -47,14 +47,14 @@ public:
     int scrollPos;      // The scrollbar position, in half-row units
     int halfRows;       // The height of our window, in half-row units
 
-    BYTE    text[MAX_ROWS][MAX_COLS];
-    typedef void LinkFunction(int link, DWORD v);
+    uint8_t    text[MAX_ROWS][MAX_COLS];
+    typedef void LinkFunction(int link, uint32_t v);
     static const int NOT_A_LINK = 0;
     struct {
         char            fg;
         int             bg;
         int             link;
-        DWORD           data;
+        uint32_t           data;
         LinkFunction   *f;
         LinkFunction   *h;
     }       meta[MAX_ROWS][MAX_COLS];
@@ -67,7 +67,7 @@ public:
     // The row of icons at the top of the text window, to hide/show things
     typedef struct {
         bool    *var;
-        BYTE    *icon;
+        uint8_t    *icon;
         char    *tip;
     } HideShowIcon;
     static HideShowIcon hideShowIcons[];
@@ -89,8 +89,8 @@ public:
     HideShowIcon *hoveredIcon, *tooltippedIcon;
 
     Vector HsvToRgb(Vector hsv);
-    BYTE *HsvPattern2d(void);
-    BYTE *HsvPattern1d(double h, double s);
+    uint8_t *HsvPattern2d(void);
+    uint8_t *HsvPattern1d(double h, double s);
     void ColorPickerDone(void);
     bool DrawOrHitTestColorPicker(int how, bool leftDown, double x, double y);
 
@@ -196,7 +196,7 @@ public:
         int     col;
 
         struct {
-            DWORD   rgb;
+            uint32_t   rgb;
             double  h, s, v;
             bool    show;
             bool    picker1dActive;
@@ -206,7 +206,7 @@ public:
 
     void HideEditControl(void);
     void ShowEditControl(int halfRow, int col, char *s);
-    void ShowEditControlWithColorPicker(int halfRow, int col, DWORD rgb);
+    void ShowEditControlWithColorPicker(int halfRow, int col, uint32_t rgb);
 
     void ClearSuper(void);
 
@@ -230,82 +230,82 @@ public:
 
     // All of these are callbacks from the GUI code; first from when
     // we're describing an entity
-    static void ScreenEditTtfText(int link, DWORD v);
-    static void ScreenSetTtfFont(int link, DWORD v);
-    static void ScreenUnselectAll(int link, DWORD v);
+    static void ScreenEditTtfText(int link, uint32_t v);
+    static void ScreenSetTtfFont(int link, uint32_t v);
+    static void ScreenUnselectAll(int link, uint32_t v);
 
     // and the rest from the stuff in textscreens.cpp
-    static void ScreenSelectGroup(int link, DWORD v);
-    static void ScreenActivateGroup(int link, DWORD v);
-    static void ScreenToggleGroupShown(int link, DWORD v);
-    static void ScreenHowGroupSolved(int link, DWORD v);
-    static void ScreenShowGroupsSpecial(int link, DWORD v);
-    static void ScreenDeleteGroup(int link, DWORD v);
+    static void ScreenSelectGroup(int link, uint32_t v);
+    static void ScreenActivateGroup(int link, uint32_t v);
+    static void ScreenToggleGroupShown(int link, uint32_t v);
+    static void ScreenHowGroupSolved(int link, uint32_t v);
+    static void ScreenShowGroupsSpecial(int link, uint32_t v);
+    static void ScreenDeleteGroup(int link, uint32_t v);
 
-    static void ScreenHoverConstraint(int link, DWORD v);
-    static void ScreenHoverRequest(int link, DWORD v);
-    static void ScreenSelectRequest(int link, DWORD v);
-    static void ScreenSelectConstraint(int link, DWORD v);
+    static void ScreenHoverConstraint(int link, uint32_t v);
+    static void ScreenHoverRequest(int link, uint32_t v);
+    static void ScreenSelectRequest(int link, uint32_t v);
+    static void ScreenSelectConstraint(int link, uint32_t v);
 
-    static void ScreenChangeGroupOption(int link, DWORD v);
-    static void ScreenColor(int link, DWORD v);
+    static void ScreenChangeGroupOption(int link, uint32_t v);
+    static void ScreenColor(int link, uint32_t v);
 
-    static void ScreenShowListOfStyles(int link, DWORD v);
-    static void ScreenShowStyleInfo(int link, DWORD v);
-    static void ScreenDeleteStyle(int link, DWORD v);
-    static void ScreenChangeStyleYesNo(int link, DWORD v);
-    static void ScreenCreateCustomStyle(int link, DWORD v);
-    static void ScreenLoadFactoryDefaultStyles(int link, DWORD v);
-    static void ScreenAssignSelectionToStyle(int link, DWORD v);
-    static void ScreenBackgroundImage(int link, DWORD v);
+    static void ScreenShowListOfStyles(int link, uint32_t v);
+    static void ScreenShowStyleInfo(int link, uint32_t v);
+    static void ScreenDeleteStyle(int link, uint32_t v);
+    static void ScreenChangeStyleYesNo(int link, uint32_t v);
+    static void ScreenCreateCustomStyle(int link, uint32_t v);
+    static void ScreenLoadFactoryDefaultStyles(int link, uint32_t v);
+    static void ScreenAssignSelectionToStyle(int link, uint32_t v);
+    static void ScreenBackgroundImage(int link, uint32_t v);
 
-    static void ScreenShowConfiguration(int link, DWORD v);
-    static void ScreenShowEditView(int link, DWORD v);
-    static void ScreenGoToWebsite(int link, DWORD v);
+    static void ScreenShowConfiguration(int link, uint32_t v);
+    static void ScreenShowEditView(int link, uint32_t v);
+    static void ScreenGoToWebsite(int link, uint32_t v);
 
-    static void ScreenChangeFixExportColors(int link, DWORD v);
-    static void ScreenChangeBackFaces(int link, DWORD v);
-    static void ScreenChangeCheckClosedContour(int link, DWORD v);
-    static void ScreenChangePwlCurves(int link, DWORD v);
-    static void ScreenChangeCanvasSizeAuto(int link, DWORD v);
-    static void ScreenChangeCanvasSize(int link, DWORD v);
-    static void ScreenChangeShadedTriangles(int link, DWORD v);
+    static void ScreenChangeFixExportColors(int link, uint32_t v);
+    static void ScreenChangeBackFaces(int link, uint32_t v);
+    static void ScreenChangeCheckClosedContour(int link, uint32_t v);
+    static void ScreenChangePwlCurves(int link, uint32_t v);
+    static void ScreenChangeCanvasSizeAuto(int link, uint32_t v);
+    static void ScreenChangeCanvasSize(int link, uint32_t v);
+    static void ScreenChangeShadedTriangles(int link, uint32_t v);
 
-    static void ScreenStepDimSteps(int link, DWORD v);
-    static void ScreenStepDimFinish(int link, DWORD v);
-    static void ScreenStepDimGo(int link, DWORD v);
+    static void ScreenStepDimSteps(int link, uint32_t v);
+    static void ScreenStepDimFinish(int link, uint32_t v);
+    static void ScreenStepDimGo(int link, uint32_t v);
 
-    static void ScreenChangeTangentArc(int link, DWORD v);
+    static void ScreenChangeTangentArc(int link, uint32_t v);
 
-    static void ScreenPasteTransformed(int link, DWORD v);
+    static void ScreenPasteTransformed(int link, uint32_t v);
 
-    static void ScreenHome(int link, DWORD v);
+    static void ScreenHome(int link, uint32_t v);
 
     // These ones do stuff with the edit control
-    static void ScreenChangeExprA(int link, DWORD v);
-    static void ScreenChangeGroupName(int link, DWORD v);
-    static void ScreenChangeGroupScale(int link, DWORD v);
-    static void ScreenChangeLightDirection(int link, DWORD v);
-    static void ScreenChangeLightIntensity(int link, DWORD v);
-    static void ScreenChangeColor(int link, DWORD v);
-    static void ScreenChangeChordTolerance(int link, DWORD v);
-    static void ScreenChangeMaxSegments(int link, DWORD v);
-    static void ScreenChangeCameraTangent(int link, DWORD v);
-    static void ScreenChangeGridSpacing(int link, DWORD v);
-    static void ScreenChangeDigitsAfterDecimal(int link, DWORD v);
-    static void ScreenChangeExportScale(int link, DWORD v);
-    static void ScreenChangeExportOffset(int link, DWORD v);
-    static void ScreenChangeGCodeParameter(int link, DWORD v);
-    static void ScreenChangeStyleName(int link, DWORD v);
-    static void ScreenChangeStyleWidthOrTextHeight(int link, DWORD v);
-    static void ScreenChangeStyleTextAngle(int link, DWORD v);
-    static void ScreenChangeStyleColor(int link, DWORD v);
-    static void ScreenChangeBackgroundColor(int link, DWORD v);
-    static void ScreenChangeBackgroundImageScale(int link, DWORD v);
-    static void ScreenChangePasteTransformed(int link, DWORD v);
-    static void ScreenChangeViewScale(int link, DWORD v);
-    static void ScreenChangeViewOrigin(int link, DWORD v);
-    static void ScreenChangeViewProjection(int link, DWORD v);
+    static void ScreenChangeExprA(int link, uint32_t v);
+    static void ScreenChangeGroupName(int link, uint32_t v);
+    static void ScreenChangeGroupScale(int link, uint32_t v);
+    static void ScreenChangeLightDirection(int link, uint32_t v);
+    static void ScreenChangeLightIntensity(int link, uint32_t v);
+    static void ScreenChangeColor(int link, uint32_t v);
+    static void ScreenChangeChordTolerance(int link, uint32_t v);
+    static void ScreenChangeMaxSegments(int link, uint32_t v);
+    static void ScreenChangeCameraTangent(int link, uint32_t v);
+    static void ScreenChangeGridSpacing(int link, uint32_t v);
+    static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
+    static void ScreenChangeExportScale(int link, uint32_t v);
+    static void ScreenChangeExportOffset(int link, uint32_t v);
+    static void ScreenChangeGCodeParameter(int link, uint32_t v);
+    static void ScreenChangeStyleName(int link, uint32_t v);
+    static void ScreenChangeStyleWidthOrTextHeight(int link, uint32_t v);
+    static void ScreenChangeStyleTextAngle(int link, uint32_t v);
+    static void ScreenChangeStyleColor(int link, uint32_t v);
+    static void ScreenChangeBackgroundColor(int link, uint32_t v);
+    static void ScreenChangeBackgroundImageScale(int link, uint32_t v);
+    static void ScreenChangePasteTransformed(int link, uint32_t v);
+    static void ScreenChangeViewScale(int link, uint32_t v);
+    static void ScreenChangeViewOrigin(int link, uint32_t v);
+    static void ScreenChangeViewProjection(int link, uint32_t v);
 
     bool EditControlDoneForStyles(char *s);
     bool EditControlDoneForConfiguration(char *s);
@@ -620,7 +620,7 @@ public:
     static const int CMNU_SNAP_TO_GRID     = 0x140;
     static const int CMNU_FIRST_STYLE      = 0x40000000;
     void ContextMenuListStyles(void);
-    SDWORD contextMenuCancelTime;
+    int32_t contextMenuCancelTime;
 
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, bool paint, int *menu);
@@ -667,7 +667,7 @@ public:
     bool KeyDown(int c);
     void EditControlDone(char *s);
 
-    SDWORD lastSpaceNavigatorTime;
+    int32_t lastSpaceNavigatorTime;
     hGroup lastSpaceNavigatorGroup;
     void SpaceNavigatorMoved(double tx, double ty, double tz,
                              double rx, double ry, double rz, bool shiftDown);

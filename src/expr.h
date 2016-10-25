@@ -12,7 +12,7 @@ class Expr;
 
 class Expr {
 public:
-    DWORD marker;
+    uint32_t marker;
 
     // A parameter, by the hParam handle
     static const int PARAM          =  0;
@@ -83,7 +83,7 @@ public:
 
     Expr *PartialWrt(hParam p);
     double Eval(void);
-    QWORD ParamsUsed(void);
+    uint64_t ParamsUsed(void);
     bool DependsOn(hParam p);
     static bool Tol(double a, double b);
     Expr *FoldConstants(void);
@@ -94,8 +94,8 @@ public:
 
     void ParamsToPointers(void);
 
-    void App(char *str, ...);
-    char *Print(void);
+    void App(const char *str, ...);
+    const char *Print(void);
     void PrintW(void); // worker
 
     // number of child nodes: 0 (e.g. constant), 1 (sqrt), or 2 (+)
