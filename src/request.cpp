@@ -108,6 +108,11 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
         p.group = group;
         p.style = style;
+        if(type == Request::Type::ARC_OF_CIRCLE && i == 0) {
+            // mark arc center point as construction, since it shouldn't be included
+            // in bounding box calculation
+            p.construction = true;
+        }
 
         if(workplane.v == Entity::FREE_IN_3D.v) {
             p.type = Entity::Type::POINT_IN_3D;

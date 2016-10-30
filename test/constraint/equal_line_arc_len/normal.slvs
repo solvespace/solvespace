@@ -115,31 +115,31 @@ Param.val=-0.50000000000000000000
 AddParam
 
 Param.h.v.=00040010
-Param.val=-4.99993226121819220000
+Param.val=-4.99993226121819223096
 AddParam
 
 Param.h.v.=00040011
-Param.val=10.00006773878180900000
+Param.val=10.00006773878180865722
 AddParam
 
 Param.h.v.=00040013
-Param.val=-9.99975209012342430000
+Param.val=-9.99975209012342425297
 AddParam
 
 Param.h.v.=00040014
-Param.val=9.99968435134161740000
+Param.val=9.99968435134161737210
 AddParam
 
 Param.h.v.=00040016
-Param.val=-5.00031564865838440000
+Param.val=-5.00031564865838440426
 AddParam
 
 Param.h.v.=00040017
-Param.val=5.00024790987657660000
+Param.val=5.00024790987657663521
 AddParam
 
 Param.h.v.=00050010
-Param.val=4.99990506249655910000
+Param.val=4.99990506249655908277
 AddParam
 
 Param.h.v.=00050011
@@ -147,7 +147,7 @@ Param.val=5.00000000000000000000
 AddParam
 
 Param.h.v.=00050013
-Param.val=12.85283693258537800000
+Param.val=12.85283693258537773829
 AddParam
 
 Param.h.v.=00050014
@@ -271,10 +271,10 @@ AddEntity
 
 Entity.h.v=00040001
 Entity.type=2001
-Entity.construction=0
+Entity.construction=1
 Entity.workplane.v=80020000
-Entity.actPoint.x=-4.99993226121819220000
-Entity.actPoint.y=10.00006773878180900000
+Entity.actPoint.x=-4.99993226121819223096
+Entity.actPoint.y=10.00006773878180865722
 Entity.actVisible=1
 AddEntity
 
@@ -282,8 +282,8 @@ Entity.h.v=00040002
 Entity.type=2001
 Entity.construction=0
 Entity.workplane.v=80020000
-Entity.actPoint.x=-9.99975209012342430000
-Entity.actPoint.y=9.99968435134161740000
+Entity.actPoint.x=-9.99975209012342425297
+Entity.actPoint.y=9.99968435134161737210
 Entity.actVisible=1
 AddEntity
 
@@ -291,8 +291,8 @@ Entity.h.v=00040003
 Entity.type=2001
 Entity.construction=0
 Entity.workplane.v=80020000
-Entity.actPoint.x=-5.00031564865838440000
-Entity.actPoint.y=5.00024790987657660000
+Entity.actPoint.x=-5.00031564865838440426
+Entity.actPoint.y=5.00024790987657663521
 Entity.actVisible=1
 AddEntity
 
@@ -318,7 +318,7 @@ Entity.h.v=00050001
 Entity.type=2001
 Entity.construction=0
 Entity.workplane.v=80020000
-Entity.actPoint.x=4.99990506249655910000
+Entity.actPoint.x=4.99990506249655908277
 Entity.actPoint.y=5.00000000000000000000
 Entity.actVisible=1
 AddEntity
@@ -327,7 +327,7 @@ Entity.h.v=00050002
 Entity.type=2001
 Entity.construction=0
 Entity.workplane.v=80020000
-Entity.actPoint.x=12.85283693258537800000
+Entity.actPoint.x=12.85283693258537773829
 Entity.actPoint.y=5.00000000000000000000
 Entity.actVisible=1
 AddEntity

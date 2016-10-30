@@ -314,7 +314,7 @@ AddEntity
 
 Entity.h.v=00040001
 Entity.type=2001
-Entity.construction=0
+Entity.construction=1
 Entity.workplane.v=80020000
 Entity.actPoint.x=-5.00000000000000000000
 Entity.actPoint.y=10.00000000000000000000
@@ -405,7 +405,7 @@ AddEntity
 
 Entity.h.v=00060001
 Entity.type=2001
-Entity.construction=0
+Entity.construction=1
 Entity.workplane.v=80020000
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=-5.00000000000000000000

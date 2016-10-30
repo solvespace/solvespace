@@ -859,34 +859,49 @@ void Sketch::Clear() {
 BBox Sketch::CalculateEntityBBox(bool includingInvisible) {
     BBox box = {};
     bool first = true;
-    for(int i = 0; i < entity.n; i++) {
-        Entity *e = (Entity *)&entity.elem[i];
-        if(!(e->IsVisible() || includingInvisible)) continue;
 
-        Vector point;
-        double r = 0.0;
-        if(e->IsPoint()) {
-            point = e->PointGetNum();
-        } else {
-            switch(e->type) {
-                case Entity::Type::ARC_OF_CIRCLE:
-                case Entity::Type::CIRCLE:
-                    r = e->CircleGetRadiusNum();
-                    point = GetEntity(e->point[0])->PointGetNum();
-                    break;
-                default: continue;
-            }
-        }
-
+    auto includePoint = [&](const Vector &point) {
         if(first) {
             box.minp = point;
             box.maxp = point;
-            box.Include(point, r);
             first = false;
         } else {
-            box.Include(point, r);
+            box.Include(point);
+        }
+    };
+
+    for(const Entity &e : entity) {
+        if(e.construction) continue;
+        if(!(includingInvisible || e.IsVisible())) continue;
+
+        if(e.IsPoint()) {
+            includePoint(e.PointGetNum());
+            continue;
+        }
+
+        switch(e.type) {
+            // Circles and arcs are special cases. We calculate their bounds
+            // based on Bezier curve bounds. This is not exact for arcs,
+            // but the implementation is rather simple.
+            case Entity::Type::CIRCLE:
+            case Entity::Type::ARC_OF_CIRCLE: {
+                SBezierList sbl = {};
+                e.GenerateBezierCurves(&sbl);
+
+                for(const SBezier &sb : sbl.l) {
+                    for(int j = 0; j <= sb.deg; j++) {
+                        includePoint(sb.ctrl[j]);
+                    }
+                }
+                sbl.Clear();
+                continue;
+            }
+
+            default:
+                continue;
         }
     }
+
     return box;
 }
 
