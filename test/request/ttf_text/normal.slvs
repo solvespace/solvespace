@@ -167,7 +167,7 @@ AddEntity
 
 Entity.h.v=00010001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -189,7 +189,7 @@ AddEntity
 
 Entity.h.v=00020001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -214,7 +214,7 @@ AddEntity
 
 Entity.h.v=00030001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -286,7 +286,7 @@ AddEntity
 
 Entity.h.v=80020002
 Entity.type=2012
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 

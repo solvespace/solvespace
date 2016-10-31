@@ -125,11 +125,11 @@ Param.h.v.=00040012
 AddParam
 
 Param.h.v.=00040020
-Param.val=0.70710678118654757000
+Param.val=0.70710678118654757274
 AddParam
 
 Param.h.v.=00040021
-Param.val=-0.70710678118654746000
+Param.val=-0.70710678118654746172
 AddParam
 
 Param.h.v.=00040022
@@ -176,7 +176,7 @@ AddEntity
 
 Entity.h.v=00010001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -198,7 +198,7 @@ AddEntity
 
 Entity.h.v=00020001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -223,7 +223,7 @@ AddEntity
 
 Entity.h.v=00030001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -258,8 +258,8 @@ Entity.h.v=00040020
 Entity.type=3000
 Entity.construction=0
 Entity.point[0].v=00040001
-Entity.actNormal.w=0.70710678118654757000
-Entity.actNormal.vx=-0.70710678118654746000
+Entity.actNormal.w=0.70710678118654757274
+Entity.actNormal.vx=-0.70710678118654746172
 Entity.actVisible=1
 AddEntity
 
@@ -288,7 +288,7 @@ AddEntity
 
 Entity.h.v=80020002
 Entity.type=2012
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 

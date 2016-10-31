@@ -476,7 +476,7 @@ AddEntity
 
 Entity.h.v=00010001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -498,7 +498,7 @@ AddEntity
 
 Entity.h.v=00020001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -523,7 +523,7 @@ AddEntity
 
 Entity.h.v=00030001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -664,7 +664,7 @@ AddEntity
 
 Entity.h.v=80020002
 Entity.type=2012
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -978,7 +978,7 @@ AddEntity
 
 Entity.h.v=80030028
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -992,14 +992,14 @@ AddEntity
 
 Entity.h.v=8003002a
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.z=10.00000000000000000000
 Entity.actVisible=1
 AddEntity
 
 Entity.h.v=8003002b
 Entity.type=11000
-Entity.construction=0
+Entity.construction=1
 Entity.point[0].v=8003002a
 Entity.point[1].v=80030028
 Entity.actVisible=1
@@ -1332,7 +1332,7 @@ AddEntity
 
 Entity.h.v=80040026
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -1346,14 +1346,14 @@ AddEntity
 
 Entity.h.v=80040028
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.z=10.00000000000000000000
 Entity.actVisible=1
 AddEntity
 
 Entity.h.v=80040029
 Entity.type=11000
-Entity.construction=0
+Entity.construction=1
 Entity.point[0].v=80040028
 Entity.point[1].v=80040026
 Entity.actVisible=1
@@ -1686,7 +1686,7 @@ AddEntity
 
 Entity.h.v=8004007c
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=5.00000000000000000000
 Entity.actPoint.z=-5.00000000000000000000
@@ -1703,7 +1703,7 @@ AddEntity
 
 Entity.h.v=8004007e
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.x=10.00000000000000000000
 Entity.actPoint.y=5.00000000000000000000
 Entity.actPoint.z=5.00000000000000000000
@@ -1712,7 +1712,7 @@ AddEntity
 
 Entity.h.v=8004007f
 Entity.type=11000
-Entity.construction=0
+Entity.construction=1
 Entity.point[0].v=8004007e
 Entity.point[1].v=8004007c
 Entity.actVisible=1

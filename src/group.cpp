@@ -375,6 +375,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             Entity point = {};
             point.type = Entity::Type::POINT_N_COPY;
             point.numPoint = SK.GetEntity(predef.origin)->PointGetNum();
+            point.construction = true;
             point.group = h;
             point.h = h.entity(2);
             entity->Add(&point);

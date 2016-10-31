@@ -227,7 +227,7 @@ AddEntity
 
 Entity.h.v=00010001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -249,7 +249,7 @@ AddEntity
 
 Entity.h.v=00020001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -274,7 +274,7 @@ AddEntity
 
 Entity.h.v=00030001
 Entity.type=2000
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -349,7 +349,7 @@ AddEntity
 
 Entity.h.v=80020002
 Entity.type=2012
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -432,7 +432,7 @@ AddEntity
 
 Entity.h.v=8003000d
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actVisible=1
 AddEntity
 
@@ -446,14 +446,14 @@ AddEntity
 
 Entity.h.v=8003000f
 Entity.type=2010
-Entity.construction=0
+Entity.construction=1
 Entity.actPoint.z=-10.00000000000000000000
 Entity.actVisible=1
 AddEntity
 
 Entity.h.v=80030010
 Entity.type=11000
-Entity.construction=0
+Entity.construction=1
 Entity.point[0].v=8003000f
 Entity.point[1].v=8003000d
 Entity.actVisible=1
