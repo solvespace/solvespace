@@ -239,6 +239,12 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
             r->Generate(&(SK.entity), &(SK.param));
         }
+        for(j = 0; j < SK.constraint.n; j++) {
+            Constraint *c = &SK.constraint.elem[j];
+            if(c->group.v != g->h.v) continue;
+
+            c->Generate(&(SK.param));
+        }
         g->Generate(&(SK.entity), &(SK.param));
 
         // The requests and constraints depend on stuff in this or the
@@ -508,6 +514,12 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
         if(r->group.v != hg.v) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
+    }
+    for(i = 0; i < SK.constraint.n; i++) {
+        Constraint *c = &SK.constraint.elem[i];
+        if(c->group.v != hg.v) continue;
+
+        c->Generate(&(sys.param));
     }
     // And for the group itself
     Group *g = SK.GetGroup(hg);

@@ -556,12 +556,49 @@ void SolveSpaceUI::UpgradeLegacyData() {
                 }
                 entity.Clear();
                 param.Clear();
+                break;
             }
 
             default:
                 break;
         }
     }
+
+    IdList<Param,hParam> oldParam = {};
+    SK.param.DeepCopyInto(&oldParam);
+    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+    for(Constraint &c : SK.constraint) {
+        switch(c.type) {
+            case Constraint::Type::PT_ON_LINE: {
+                IdList<Param,hParam> param = {};
+                c.Generate(&param);
+                bool allParamsExist = true;
+                for(Param &p : param) {
+                    if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
+                    allParamsExist = false;
+                }
+                param.Clear();
+
+                if(!allParamsExist) {
+                    EntityBase *eln = SK.GetEntity(c.entityA);
+                    EntityBase *ea = SK.GetEntity(eln->point[0]);
+                    EntityBase *eb = SK.GetEntity(eln->point[1]);
+                    EntityBase *ep = SK.GetEntity(c.ptA);
+
+                    ExprVector exp = ep->PointGetExprsInWorkplane(c.workplane);
+                    ExprVector exa = ea->PointGetExprsInWorkplane(c.workplane);
+                    ExprVector exb = eb->PointGetExprsInWorkplane(c.workplane);
+                    ExprVector exba = exb.Minus(exa);
+                    Param *p = SK.GetParam(c.h.param(0));
+                    p->val = exba.Dot(exp.Minus(exa))->Eval() / exba.Dot(exba)->Eval();
+                }
+                break;
+            }
+            default:
+                break;
+        }
+    }
+    oldParam.Clear();
 }
 
 bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList *le,

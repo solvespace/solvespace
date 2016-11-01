@@ -182,7 +182,7 @@ void ConstraintBase::ModifyToSatisfy() {
         // that means no extra work.
         IdList<Equation,hEquation> l = {};
         // Generate the equations even if this is a reference dimension
-        GenerateReal(&l);
+        GenerateEquations(&l, /*forReference=*/true);
         ssassert(l.n == 1, "Expected constraint to generate a single equation");
 
         // These equations are written in the form f(...) - d = 0, where
@@ -201,14 +201,25 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index)
     l->Add(&eq);
 }
 
-void ConstraintBase::Generate(IdList<Equation,hEquation> *l) const {
-    if(!reference) {
-        GenerateReal(l);
+void ConstraintBase::Generate(IdList<Param,hParam> *l) const {
+    switch(type) {
+        case Type::PT_ON_LINE: {
+            Param p = {};
+            p.h = h.param(0);
+            l->Add(&p);
+            break;
+        }
+
+        default:
+            break;
     }
 }
-void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
-    Expr *exA = Expr::From(valA);
 
+void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
+                                       bool forReference) const {
+    if(reference && !forReference) return;
+
+    Expr *exA = Expr::From(valA);
     switch(type) {
         case Type::PT_PT_DISTANCE:
             AddEq(l, Distance(workplane, ptA, ptB)->Minus(exA), 0);
@@ -382,37 +393,24 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
             return;
         }
 
-        case Type::PT_ON_LINE:
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
-                EntityBase *ln = SK.GetEntity(entityA);
-                EntityBase *a = SK.GetEntity(ln->point[0]);
-                EntityBase *b = SK.GetEntity(ln->point[1]);
-                EntityBase *p = SK.GetEntity(ptA);
+        case Type::PT_ON_LINE: {
+            EntityBase *ln = SK.GetEntity(entityA);
+            EntityBase *a = SK.GetEntity(ln->point[0]);
+            EntityBase *b = SK.GetEntity(ln->point[1]);
+            EntityBase *p = SK.GetEntity(ptA);
 
-                ExprVector ep = p->PointGetExprs();
-                ExprVector ea = a->PointGetExprs();
-                ExprVector eb = b->PointGetExprs();
-                ExprVector eab = ea.Minus(eb);
+            ExprVector ep = p->PointGetExprsInWorkplane(workplane);
+            ExprVector ea = a->PointGetExprsInWorkplane(workplane);
+            ExprVector eb = b->PointGetExprsInWorkplane(workplane);
 
-                // Construct a vector from the point to either endpoint of
-                // the line segment, and choose the longer of these.
-                ExprVector eap = ea.Minus(ep);
-                ExprVector ebp = eb.Minus(ep);
-                ExprVector elp =
-                    (ebp.Magnitude()->Eval() > eap.Magnitude()->Eval()) ?
-                        ebp : eap;
+            ExprVector ptOnLine = ea.Plus(eb.Minus(ea).ScaledBy(Expr::From(h.param(0))));
+            ExprVector eq = ptOnLine.Minus(ep);
 
-                if(p->group.v == group.v) {
-                    AddEq(l, VectorsParallel(0, eab, elp), 0);
-                    AddEq(l, VectorsParallel(1, eab, elp), 1);
-                } else {
-                    AddEq(l, VectorsParallel(0, elp, eab), 0);
-                    AddEq(l, VectorsParallel(1, elp, eab), 1);
-                }
-            } else {
-                AddEq(l, PointLineDistance(workplane, ptA, entityA), 0);
-            }
+            AddEq(l, eq.x, 0);
+            AddEq(l, eq.y, 1);
+            if(workplane.v == EntityBase::FREE_IN_3D.v) AddEq(l, eq.z, 2);
             return;
+        }
 
         case Type::PT_ON_CIRCLE: {
             // This actually constrains the point to lie on the cylinder.

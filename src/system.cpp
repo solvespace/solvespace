@@ -346,7 +346,7 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
             continue;
         }
 
-        c->Generate(&eq);
+        c->GenerateEquations(&eq);
     }
     // And the equations from entities
     for(i = 0; i < SK.entity.n; i++) {

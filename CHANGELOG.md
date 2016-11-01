@@ -38,6 +38,10 @@ Other new features:
     workplane is displayed.
   * The "=" key is bound to "Zoom In", like "+" key.
 
+Bugs fixed:
+  * A point in 3d constrained to any line whose length is free no longer
+    causes the line length to collapse.
+
 2.3
 ---
 
