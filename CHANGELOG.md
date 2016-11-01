@@ -41,6 +41,7 @@ Other new features:
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer
     causes the line length to collapse.
+  * Lines in 3d constrained parallel are solved in a more robust way.
 
 2.3
 ---

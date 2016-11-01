@@ -594,6 +594,29 @@ void SolveSpaceUI::UpgradeLegacyData() {
                 }
                 break;
             }
+
+            case Constraint::Type::PARALLEL: {
+                IdList<Param,hParam> param = {};
+                c.Generate(&param);
+                bool allParamsExist = true;
+                for(Param &p : param) {
+                    if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
+                    allParamsExist = false;
+                }
+                param.Clear();
+
+                if(!allParamsExist) {
+                    EntityBase *ea = SK.GetEntity(c.entityA),
+                               *eb = SK.GetEntity(c.entityB);
+                    ExprVector a = ea->VectorGetExprsInWorkplane(c.workplane);
+                    ExprVector b = eb->VectorGetExprsInWorkplane(c.workplane);
+
+                    Param *param = SK.GetParam(c.h.param(0));
+                    param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
+                }
+                break;
+            }
+
             default:
                 break;
         }

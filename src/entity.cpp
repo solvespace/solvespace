@@ -25,21 +25,40 @@ bool EntityBase::HasVector() const {
     }
 }
 
-ExprVector EntityBase::VectorGetExprs() const {
+ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
     switch(type) {
         case Type::LINE_SEGMENT:
-            return (SK.GetEntity(point[0])->PointGetExprs()).Minus(
-                    SK.GetEntity(point[1])->PointGetExprs());
+            return (SK.GetEntity(point[0])->PointGetExprsInWorkplane(wrkpl)).Minus(
+                    SK.GetEntity(point[1])->PointGetExprsInWorkplane(wrkpl));
 
         case Type::NORMAL_IN_3D:
         case Type::NORMAL_IN_2D:
         case Type::NORMAL_N_COPY:
         case Type::NORMAL_N_ROT:
-        case Type::NORMAL_N_ROT_AA:
-            return NormalExprsN();
+        case Type::NORMAL_N_ROT_AA: {
+            ExprVector ev = NormalExprsN();
+            if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+                return ev;
+            }
+            // Get the offset and basis vectors for this weird exotic csys.
+            EntityBase *w = SK.GetEntity(wrkpl);
+            ExprVector wu = w->Normal()->NormalExprsU();
+            ExprVector wv = w->Normal()->NormalExprsV();
 
+            // Get our coordinates in three-space, and project them into that
+            // coordinate system.
+            ExprVector result;
+            result.x = ev.Dot(wu);
+            result.y = ev.Dot(wv);
+            result.z = Expr::From(0.0);
+            return result;
+        }
         default: ssassert(false, "Unexpected entity type");
     }
+}
+
+ExprVector EntityBase::VectorGetExprs() const {
+    return VectorGetExprsInWorkplane(EntityBase::FREE_IN_3D);
 }
 
 Vector EntityBase::VectorGetNum() const {

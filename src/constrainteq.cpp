@@ -57,6 +57,10 @@ Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
     ssassert(false, "Unexpected index of equation");
 }
 
+ExprVector ConstraintBase::VectorsParallel3d(ExprVector a, ExprVector b, hParam p) {
+    return a.Minus(b.ScaledBy(Expr::From(p)));
+}
+
 Expr *ConstraintBase::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln)
 {
     EntityBase *ln = SK.GetEntity(hln);
@@ -201,8 +205,21 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index)
     l->Add(&eq);
 }
 
+void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
+                           int baseIndex) const {
+    AddEq(l, v.x, baseIndex);
+    AddEq(l, v.y, baseIndex + 1);
+    if(workplane.v == EntityBase::FREE_IN_3D.v) {
+        AddEq(l, v.z, baseIndex + 2);
+    }
+}
+
 void ConstraintBase::Generate(IdList<Param,hParam> *l) const {
     switch(type) {
+        case Type::PARALLEL:
+            // Only introduce a new parameter when operating in 3d
+            if(workplane.v != EntityBase::FREE_IN_3D.v) break;
+            // fallthrough
         case Type::PT_ON_LINE: {
             Param p = {};
             p.h = h.param(0);
@@ -406,9 +423,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             ExprVector ptOnLine = ea.Plus(eb.Minus(ea).ScaledBy(Expr::From(h.param(0))));
             ExprVector eq = ptOnLine.Minus(ep);
 
-            AddEq(l, eq.x, 0);
-            AddEq(l, eq.y, 1);
-            if(workplane.v == EntityBase::FREE_IN_3D.v) AddEq(l, eq.z, 2);
+            AddEq(l, eq);
             return;
         }
 
@@ -755,20 +770,24 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::PARALLEL: {
             EntityBase *ea = SK.GetEntity(entityA), *eb = SK.GetEntity(entityB);
-            if(eb->group.v != group.v) {
-                swap(ea, eb);
-            }
-            ExprVector a = ea->VectorGetExprs();
-            ExprVector b = eb->VectorGetExprs();
+            ExprVector a = ea->VectorGetExprsInWorkplane(workplane);
+            ExprVector b = eb->VectorGetExprsInWorkplane(workplane);
 
             if(workplane.v == EntityBase::FREE_IN_3D.v) {
-                AddEq(l, VectorsParallel(0, a, b), 0);
-                AddEq(l, VectorsParallel(1, a, b), 1);
+                ExprVector eq = VectorsParallel3d(a, b, h.param(0));
+                AddEq(l, eq);
             } else {
-                EntityBase *w = SK.GetEntity(workplane);
-                ExprVector wn = w->Normal()->NormalExprsN();
-                AddEq(l, (a.Cross(b)).Dot(wn), 0);
+                // We use expressions written in workplane csys, so we can assume the workplane
+                // normal is (0, 0, 1). We can write the equation as:
+                //   Expr *eq = a.Cross(b).Dot(ExprVector::From(0.0, 0.0, 1.0));
+                // but this will just result in elimination of x and y terms after dot product.
+                // We can only use the z expression:
+                //   Expr *eq = a.Cross(b).z;
+                // but it's more efficient to write it in the terms of pseudo-scalar product:
+                Expr *eq = (a.x->Times(b.y))->Minus(a.y->Times(b.x));
+                AddEq(l, eq, 0);
             }
+
             return;
         }
 
