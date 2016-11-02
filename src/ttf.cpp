@@ -147,6 +147,25 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
     if(nameOnly) {
         FT_Done_Face(fontFace);
         fontFace = NULL;
+        return true;
+    }
+
+    // We always ask Freetype to give us a unit size character.
+    // It uses fixed point; put the unit size somewhere in the middle of the dynamic
+    // range of its 26.6 fixed point type, and adjust the factors so that the unit
+    // matches cap height.
+    FT_Size_RequestRec sizeRequest;
+    sizeRequest.type           = FT_SIZE_REQUEST_TYPE_REAL_DIM;
+    sizeRequest.width          = 1 << 16;
+    sizeRequest.height         = 1 << 16;
+    sizeRequest.horiResolution = 128;
+    sizeRequest.vertResolution = 128;
+    if(int fterr = FT_Request_Size(fontFace, &sizeRequest)) {
+        dbp("freetype: cannot set character size: %s",
+            ft_error_string(fterr));
+        FT_Done_Face(fontFace);
+        fontFace = NULL;
+        return false;
     }
 
     return true;
@@ -233,22 +252,6 @@ void TtfFont::PlotString(const std::string &str,
         if (gid == 0) {
             dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
                 chr, ft_error_string(gid));
-        }
-
-        // We always ask Freetype to give us a unit size character.
-        // It uses fixed point; put the unit size somewhere in the middle of the dynamic
-        // range of its 26.6 fixed point type, and adjust the factors so that the unit
-        // matches cap height.
-        FT_Size_RequestRec sizeRequest;
-        sizeRequest.type           = FT_SIZE_REQUEST_TYPE_REAL_DIM;
-        sizeRequest.width          = 1 << 16;
-        sizeRequest.height         = 1 << 16;
-        sizeRequest.horiResolution = 128;
-        sizeRequest.vertResolution = 128;
-        if(int fterr = FT_Request_Size(fontFace, &sizeRequest)) {
-            dbp("freetype: cannot set character size: %s",
-                ft_error_string(fterr));
-            return;
         }
 
         /*
