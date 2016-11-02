@@ -247,11 +247,12 @@ void TtfFont::PlotString(const std::string &str,
     outlineFuncs.delta    = 0;
 
     FT_Pos dx = 0;
-    for(char32_t chr : ReadUTF8(str)) {
-        uint32_t gid = FT_Get_Char_Index(fontFace, chr);
+    for(char32_t cid : ReadUTF8(str)) {
+        uint32_t gid = FT_Get_Char_Index(fontFace, cid);
         if (gid == 0) {
             dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
-                chr, ft_error_string(gid));
+                cid, ft_error_string(gid));
+            gid = cid;
         }
 
         /*
