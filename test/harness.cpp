@@ -102,17 +102,22 @@ static std::string PrepareSavefile(std::string data) {
     // Round everything to 2**30 ~ 1e9
     const double precision = pow(2, 30);
 
-    size_t newline = 0;
-    while(newline < std::string::npos) {
-        size_t nextNewline = data.find('\n', newline + 1);
+    size_t lineBegin = 0;
+    while(lineBegin < data.length()) {
+        size_t nextLineBegin = data.find('\n', lineBegin);
+        if(nextLineBegin == std::string::npos) {
+            nextLineBegin = data.length();
+        } else {
+            nextLineBegin++;
+        }
 
-        size_t eqPos = data.find('=', newline + 1);
-        if(eqPos < nextNewline) {
-            std::string key   = data.substr(newline + 1, eqPos - newline - 1),
-                        value = data.substr(eqPos + 1, nextNewline - eqPos - 1);
+        size_t eqPos = data.find('=', lineBegin);
+        if(eqPos < nextLineBegin) {
+            std::string key   = data.substr(lineBegin, eqPos - lineBegin),
+                        value = data.substr(eqPos + 1, nextLineBegin - eqPos - 2);
             for(int i = 0; SolveSpaceUI::SAVED[i].type != 0; i++) {
-                if(SolveSpaceUI::SAVED[i].desc != key) continue;
                 if(SolveSpaceUI::SAVED[i].fmt  != 'f') continue;
+                if(SolveSpaceUI::SAVED[i].desc != key) continue;
                 double f = strtod(value.c_str(), NULL);
                 f = round(f * precision) / precision;
                 std::string newValue = ssprintf("%.20f", f);
@@ -122,16 +127,19 @@ static std::string PrepareSavefile(std::string data) {
             }
         }
 
-        size_t spPos = data.find(' ', newline + 1);
-        if(spPos < nextNewline) {
-            std::string cmd = data.substr(newline + 1, spPos - newline - 1);
-            if(cmd == "Surface" || cmd == "SCtrl" || cmd == "TrimBy"  || cmd == "AddSurface" ||
-                cmd == "Curve"  || cmd == "CCtrl" || cmd == "CurvePt" || cmd == "AddCurve") {
-                data.replace(newline + 1, nextNewline, nextNewline - newline - 1, ' ');
+        size_t spPos = data.find(' ', lineBegin);
+        if(spPos < nextLineBegin) {
+            std::string cmd = data.substr(lineBegin, spPos - lineBegin);
+            if(!cmd.empty()) {
+                if(cmd == "Surface" || cmd == "SCtrl" || cmd == "TrimBy" ||
+                   cmd == "Curve"   || cmd == "CCtrl" || cmd == "CurvePt") {
+                    data.erase(lineBegin, nextLineBegin - lineBegin);
+                    nextLineBegin = lineBegin;
+                }
             }
         }
 
-        newline = nextNewline;
+        lineBegin = nextLineBegin;
     }
     return data;
 }
