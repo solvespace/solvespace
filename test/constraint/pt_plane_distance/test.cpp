@@ -8,13 +8,11 @@ TEST_CASE(normal_roundtrip) {
 
 TEST_CASE(normal_migrate_from_v20) {
     CHECK_LOAD("normal_v20.slvs");
-    CHECK_RENDER("normal.png");
     CHECK_SAVE("normal.slvs");
 }
 
 TEST_CASE(normal_migrate_from_v22) {
     CHECK_LOAD("normal_v22.slvs");
-    CHECK_RENDER("normal.png");
     CHECK_SAVE("normal.slvs");
 }
 
@@ -26,12 +24,10 @@ TEST_CASE(reference_roundtrip) {
 
 TEST_CASE(reference_migrate_from_v20) {
     CHECK_LOAD("reference_v20.slvs");
-    CHECK_RENDER("reference.png");
     CHECK_SAVE("reference.slvs");
 }
 
 TEST_CASE(reference_migrate_from_v22) {
     CHECK_LOAD("reference_v22.slvs");
-    CHECK_RENDER("reference.png");
     CHECK_SAVE("reference.slvs");
 }
