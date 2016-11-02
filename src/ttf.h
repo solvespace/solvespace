@@ -14,6 +14,7 @@ public:
     std::string     fontFile;
     std::string     name;
     FT_FaceRec_    *fontFace;
+    double          capHeight;
 
     std::string FontFileBaseName() const;
     bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);

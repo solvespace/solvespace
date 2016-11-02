@@ -168,6 +168,28 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         return false;
     }
 
+    char chr = 'A';
+    uint32_t gid = FT_Get_Char_Index(fontFace, 'A');
+    if (gid == 0) {
+        dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
+            chr, ft_error_string(gid));
+        gid = chr;
+    }
+
+    if(gid) {
+        if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
+            dbp("freetype: cannot load glyph for GID 0x%04x: %s",
+                gid, ft_error_string(fterr));
+            FT_Done_Face(fontFace);
+            fontFace = NULL;
+            return false;
+        }
+
+        FT_BBox bbox;
+        FT_Outline_Get_CBox(&fontFace->glyph->outline, &bbox);
+        capHeight = (double)bbox.yMax;
+    }
+
     return true;
 }
 
@@ -264,7 +286,7 @@ void TtfFont::PlotString(const std::string &str,
          *    ones, antialiasing mitigates this considerably though.
          */
         if(int fterr = FT_Load_Glyph(fontFace, gid, FT_LOAD_NO_BITMAP | FT_LOAD_NO_HINTING)) {
-            dbp("freetype: cannot load glyph (gid %d): %s",
+            dbp("freetype: cannot load glyph for GID 0x%04x: %s",
                 gid, ft_error_string(fterr));
             return;
         }
@@ -294,7 +316,7 @@ void TtfFont::PlotString(const std::string &str,
         data.u       = u;
         data.v       = v;
         data.beziers = sbl;
-        data.factor  = 1.0f/(float)(1 << 16);
+        data.factor  = 1.0 / capHeight;
         data.bx      = bx;
         if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outlineFuncs, &data)) {
             dbp("freetype: bezier decomposition failed (gid %d): %s",
