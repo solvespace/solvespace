@@ -1024,7 +1024,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
             break;
         }
     }
-    if(r < rows && c < MAX_COLS) {
+    if(r >= 0 && c >= 0 && r < rows && c < MAX_COLS) {
         SetMousePointerToHand(false);
 
         hoveredRow = r;
