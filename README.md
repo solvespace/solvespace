@@ -98,12 +98,25 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake .. -DENABLE_TESTS=OFF
+    cmake .. -DENABLE_TESTS=OFF -DCMAKE_BUILD_TYPE=Debug
     make
 
 The app bundle is built in `build/src/solvespace.app`.
 
 [homebrew]: http://brew.sh/
+
+### Debugging in Mac OS X
+
+Start the debug build of solvespace in lldb:
+
+    lldb build/src/solvespace.app/Contents/MacOS/solvespace
+    (lldb) run
+    
+    (reporoduce issue, to invoke exception - or place a breakpoint)
+    
+    (lldb) bt all
+    (lldb) frame select [n]
+    (lldb) frame variable
 
 Building on Windows
 -------------------
