@@ -7,6 +7,7 @@ Changelog
 Bug fixes:
   * Do not crash when applying a symmetry constraint to two points.
   * Fix TTF font metrics again (properly this time).
+  * Various minor crashes.
 
 2.2
 ---
