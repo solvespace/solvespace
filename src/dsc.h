@@ -392,6 +392,7 @@ public:
         for(src = 0; src < n; src++) {
             if(elem[src].tag) {
                 // this item should be deleted
+                elem[src].Clear();
             } else {
                 if(src != dest) {
                     elem[dest] = elem[src];
