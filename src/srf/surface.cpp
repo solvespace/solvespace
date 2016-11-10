@@ -131,12 +131,14 @@ SSurface SSurface::FromPlane(Vector pt, Vector u, Vector v) {
     return ret;
 }
 
-SSurface SSurface::FromTransformationOf(SSurface *a,
-                                        Vector t, Quaternion q, double scale,
+SSurface SSurface::FromTransformationOf(SSurface *a, Vector t, Quaternion q, double scale,
                                         bool includingTrims)
 {
-    SSurface ret = {};
+    bool needRotate    = !EXACT(q.vx == 0.0 && q.vy == 0.0 && q.vz == 0.0 && q.w == 1.0);
+    bool needTranslate = !EXACT(t.x  == 0.0 && t.y  == 0.0 && t.z  == 0.0);
+    bool needScale     = !EXACT(scale == 1.0);
 
+    SSurface ret = {};
     ret.h = a->h;
     ret.color = a->color;
     ret.face = a->face;
@@ -146,10 +148,17 @@ SSurface SSurface::FromTransformationOf(SSurface *a,
     int i, j;
     for(i = 0; i <= 3; i++) {
         for(j = 0; j <= 3; j++) {
-            ret.ctrl[i][j] = a->ctrl[i][j];
-            ret.ctrl[i][j] = (ret.ctrl[i][j]).ScaledBy(scale);
-            ret.ctrl[i][j] = (q.Rotate(ret.ctrl[i][j])).Plus(t);
-
+            Vector ctrl = a->ctrl[i][j];
+            if(needScale) {
+                ctrl = ctrl.ScaledBy(scale);
+            }
+            if(needRotate) {
+                ctrl = q.Rotate(ctrl);
+            }
+            if(needTranslate) {
+                ctrl = ctrl.Plus(t);
+            }
+            ret.ctrl[i][j] = ctrl;
             ret.weight[i][j] = a->weight[i][j];
         }
     }
@@ -158,10 +167,18 @@ SSurface SSurface::FromTransformationOf(SSurface *a,
         STrimBy *stb;
         for(stb = a->trim.First(); stb; stb = a->trim.NextAfter(stb)) {
             STrimBy n = *stb;
-            n.start  = n.start.ScaledBy(scale);
-            n.finish = n.finish.ScaledBy(scale);
-            n.start  = (q.Rotate(n.start)) .Plus(t);
-            n.finish = (q.Rotate(n.finish)).Plus(t);
+            if(needScale) {
+                n.start  = n.start.ScaledBy(scale);
+                n.finish = n.finish.ScaledBy(scale);
+            }
+            if(needRotate) {
+                n.start  = q.Rotate(n.start);
+                n.finish = q.Rotate(n.finish);
+            }
+            if(needTranslate) {
+                n.start  = n.start.Plus(t);
+                n.finish = n.finish.Plus(t);
+            }
             ret.trim.Add(&n);
         }
     }

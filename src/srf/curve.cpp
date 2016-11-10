@@ -729,8 +729,11 @@ void SBezierLoopSetSet::Clear() {
 SCurve SCurve::FromTransformationOf(SCurve *a, Vector t,
                                     Quaternion q, double scale)
 {
-    SCurve ret = {};
+    bool needRotate    = !EXACT(q.vx == 0.0 && q.vy == 0.0 && q.vz == 0.0 && q.w == 1.0);
+    bool needTranslate = !EXACT(t.x  == 0.0 && t.y  == 0.0 && t.z  == 0.0);
+    bool needScale     = !EXACT(scale == 1.0);
 
+    SCurve ret = {};
     ret.h = a->h;
     ret.isExact = a->isExact;
     ret.exact = (a->exact).TransformedBy(t, q, scale);
@@ -740,8 +743,15 @@ SCurve SCurve::FromTransformationOf(SCurve *a, Vector t,
     SCurvePt *p;
     for(p = a->pts.First(); p; p = a->pts.NextAfter(p)) {
         SCurvePt pp = *p;
-        pp.p = (pp.p).ScaledBy(scale);
-        pp.p = (q.Rotate(pp.p)).Plus(t);
+        if(needScale) {
+            pp.p = (pp.p).ScaledBy(scale);
+        }
+        if(needRotate) {
+            pp.p = q.Rotate(pp.p);
+        }
+        if(needTranslate) {
+            pp.p = pp.p.Plus(t);
+        }
         ret.pts.Add(&pp);
     }
     return ret;
