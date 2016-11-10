@@ -59,9 +59,9 @@ bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     int beforep = -1, afterp = -1;
     int i;
     for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-        if(g->h.v == before.v) beforep = i;
-        if(g->h.v == after.v)  afterp  = i;
+        hGroup hg = SK.groupOrder.elem[i];
+        if(hg.v == before.v) beforep = i;
+        if(hg.v == after.v)  afterp  = i;
     }
     if(beforep < 0 || afterp < 0) return false;
     if(beforep >= afterp) return false;
