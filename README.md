@@ -9,9 +9,9 @@ This repository contains the source code of [SolveSpace][], a parametric
 Installation
 ------------
 
-### Mac OS X (>=10.6 64-bit), Windows (>=XP 32-bit)
+### macOS (>=10.6 64-bit), Windows (>=XP 32-bit)
 
-Binary packages for Mac OS X and Windows are available via
+Binary packages for macOS and Windows are available via
 [GitHub releases][rel].
 
 [rel]: https://github.com/solvespace/solvespace/releases
@@ -44,6 +44,8 @@ After that, build SolveSpace as following:
     cmake .. -DENABLE_TESTS=OFF
     make
     sudo make install
+
+The application is built as `build/src/solvespace`.
 
 A fully functional port to GTK3 is available, but not recommended
 for use due to bugs in this toolkit.
@@ -79,8 +81,8 @@ The application is built as `build/src/solvespace.exe`.
 
 Space Navigator support will not be available.
 
-Building on Mac OS X
---------------------
+Building on macOS
+-----------------
 
 You will need XCode tools, CMake, libpng and Freetype. To build tests, you
 will need cairo. Assuming you use
@@ -101,7 +103,8 @@ After that, build SolveSpace as following:
     cmake .. -DENABLE_TESTS=OFF
     make
 
-The app bundle is built in `build/src/solvespace.app`.
+The application is built in `build/src/solvespace.app`, and
+the executable file is `build/src/solvespace.app/Contents/MacOS/solvespace`.
 
 [homebrew]: http://brew.sh/
 
@@ -146,6 +149,88 @@ in bash:
 [gitwin]: https://git-scm.com/download/win
 [cmakewin]: http://www.cmake.org/download/#latest
 [mingw]: http://www.mingw.org/
+
+Debugging a crash
+-----------------
+
+SolveSpace releases are throughly tested but sometimes they contain crash
+bugs anyway. The reason for such crashes can be determined only if the executable
+was built with debug information.
+
+### Debugging a released version
+
+The Linux distributions usually include separate debug information packages.
+On a Debian derivative (e.g. Ubuntu), these can be installed with:
+
+    apt-get install solvespace-dbg
+
+The macOS releases include the debug information, and no further action
+is needed.
+
+The Windows releases include the debug information on the GitHub
+[release downloads page](https://github.com/solvespace/solvespace/releases).
+
+### Debugging a custom build
+
+If you are building SolveSpace yourself on a Unix-like platform,
+configure or re-configure SolveSpace to produce a debug build, and
+then re-build it:
+
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Debug [other cmake args...]
+    make
+
+If you are building SolveSpace yourself using the Visual Studio IDE,
+select Debug from the Solution Configurations list box on the toolbar,
+and build the solution.
+
+### Debugging with gdb
+
+gdb is a debugger that is mostly used on Linux. First, run SolveSpace
+under debugging:
+
+    gdb [path to solvespace executable]
+    (gdb) run
+
+Then, reproduce the crash. After the crash, attach the output in
+the console, as well as output of the following gdb commands to
+a bug report:
+
+    (gdb) backtrace
+    (gdb) info locals
+
+If the crash is not easy to reproduce, please generate a core file,
+which you can use to resume the debugging session later, and provide
+any other information that is requested:
+
+    (gdb) generate-core-file
+
+This will generate a large file called like `core.1234` in the current
+directory; it can be later re-loaded using `gdb --core core.1234`.
+
+### Debugging with lldb
+
+lldb is a debugger that is mostly used on macOS. First, run SolveSpace
+under debugging:
+
+    lldb [path to solvespace executable]
+    (lldb) run
+
+Then, reproduce the crash. After the crash, attach the output in
+the console, as well as output of the following gdb commands to
+a bug report:
+
+    (lldb) backtrace all
+    (lldb) frame variable
+
+If the crash is not easy to reproduce, please generate a core file,
+which you can use to resume the debugging session later, and provide
+any other information that is requested:
+
+    (lldb) process save-core "core"
+
+This will generate a large file called `core` in the current
+directory; it can be later re-loaded using `lldb -c core`.
 
 License
 -------
