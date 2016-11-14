@@ -1119,7 +1119,10 @@ s:
                 }
                 Vector o  = m.Plus(offset).Plus(u.WithMagnitude(textHeight/5)),
                        ex = VectorFont::Builtin()->GetExtents(textHeight, s);
-                canvas->DrawVectorText(s, textHeight, o.Minus(ex.ScaledBy(0.5)),
+                Vector shift = r.WithMagnitude(ex.x).Plus(
+                               u.WithMagnitude(ex.y));
+                                
+                canvas->DrawVectorText(s, textHeight, o.Minus(shift.ScaledBy(0.5)),
                                        r.WithMagnitude(1), u.WithMagnitude(1), hcs);
                 if(refs) refs->push_back(o);
             } else {
