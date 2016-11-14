@@ -812,7 +812,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
         Error("Couldn't write to '%s'", filename.c_str());
         return;
     }
-
+    ShowNakedEdges(/*reportOnlyWhenNotOkay=*/true);
     if(FilenameHasExtension(filename, ".stl")) {
         ExportMeshAsStlTo(f, m);
     } else if(FilenameHasExtension(filename, ".obj")) {

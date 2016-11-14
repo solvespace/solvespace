@@ -881,6 +881,7 @@ public:
     bool PruneGroups(hGroup hg);
     bool PruneRequests(hGroup hg);
     bool PruneConstraints(hGroup hg);
+    static void ShowNakedEdges(bool reportOnlyWhenNotOkay);
 
     enum class Generate : uint32_t {
         DIRTY,

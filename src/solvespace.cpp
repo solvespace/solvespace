@@ -596,34 +596,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
 
         case Command::NAKED_EDGES: {
-            SS.nakedEdges.Clear();
-
-            Group *g = SK.GetGroup(SS.GW.activeGroup);
-            SMesh *m = &(g->displayMesh);
-            SKdNode *root = SKdNode::From(m);
-            bool inters, leaks;
-            root->MakeCertainEdgesInto(&(SS.nakedEdges),
-                EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
-
-            InvalidateGraphics();
-
-            const char *intersMsg = inters ?
-                "The mesh is self-intersecting (NOT okay, invalid)." :
-                "The mesh is not self-intersecting (okay, valid).";
-            const char *leaksMsg = leaks ?
-                "The mesh has naked edges (NOT okay, invalid)." :
-                "The mesh is watertight (okay, valid).";
-
-            std::string cntMsg = ssprintf("\n\nThe model contains %d triangles, from "
-                            "%d surfaces.", g->displayMesh.l.n, g->runningShell.surface.n);
-
-            if(SS.nakedEdges.l.n == 0) {
-                Message("%s\n\n%s\n\nZero problematic edges, good.%s",
-                    intersMsg, leaksMsg, cntMsg.c_str());
-            } else {
-                Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
-                    intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg.c_str());
-            }
+            ShowNakedEdges(/*reportOnlyWhenNotOkay=*/false);
             break;
         }
 
@@ -808,6 +781,40 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         }
 
         default: ssassert(false, "Unexpected menu ID");
+    }
+}
+
+void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
+    SS.nakedEdges.Clear();
+
+    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    SMesh *m = &(g->displayMesh);
+    SKdNode *root = SKdNode::From(m);
+    bool inters, leaks;
+    root->MakeCertainEdgesInto(&(SS.nakedEdges),
+        EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
+
+    if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.n == 0) {
+        return;
+    }
+    InvalidateGraphics();
+
+    const char *intersMsg = inters ?
+        "The mesh is self-intersecting (NOT okay, invalid)." :
+        "The mesh is not self-intersecting (okay, valid).";
+    const char *leaksMsg = leaks ?
+        "The mesh has naked edges (NOT okay, invalid)." :
+        "The mesh is watertight (okay, valid).";
+
+    std::string cntMsg = ssprintf("\n\nThe model contains %d triangles, from "
+                    "%d surfaces.", g->displayMesh.l.n, g->runningShell.surface.n);
+
+    if(SS.nakedEdges.l.n == 0) {
+        Message("%s\n\n%s\n\nZero problematic edges, good.%s",
+            intersMsg, leaksMsg, cntMsg.c_str());
+    } else {
+        Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
+            intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg.c_str());
     }
 }
 
