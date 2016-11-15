@@ -733,6 +733,9 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    glClearDepth(1.0);
+    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenGl1Renderer::BeginFrame() {

@@ -227,12 +227,13 @@ const Camera &BatchCanvas::GetCamera() const {
 // A wrapper around Canvas that simplifies drawing UI in screen coordinates
 //-----------------------------------------------------------------------------
 
-void UiCanvas::DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width) {
+void UiCanvas::DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width, int zIndex) {
     Vector va = { (double)x1 + 0.5, (double)Flip(y1) + 0.5, 0.0 },
            vb = { (double)x2 + 0.5, (double)Flip(y2) + 0.5, 0.0 };
 
     Canvas::Stroke stroke = {};
-    stroke.layer  = Canvas::Layer::FRONT;
+    stroke.layer  = Canvas::Layer::NORMAL;
+    stroke.zIndex = zIndex;
     stroke.width  = (double)width;
     stroke.color  = color;
     stroke.unit   = Canvas::Unit::PX;
@@ -241,8 +242,8 @@ void UiCanvas::DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int wid
     canvas->DrawLine(va, vb, hcs);
 }
 
-void UiCanvas::DrawRect(int l, int r, int t, int b,
-                        RgbaColor fillColor, RgbaColor outlineColor) {
+void UiCanvas::DrawRect(int l, int r, int t, int b, RgbaColor fillColor, RgbaColor outlineColor,
+                        int zIndex) {
     Vector va = { (double)l + 0.5, (double)Flip(b) + 0.5, 0.0 },
            vb = { (double)l + 0.5, (double)Flip(t) + 0.5, 0.0 },
            vc = { (double)r + 0.5, (double)Flip(t) + 0.5, 0.0 },
@@ -250,7 +251,8 @@ void UiCanvas::DrawRect(int l, int r, int t, int b,
 
     if(!fillColor.IsEmpty()) {
         Canvas::Fill fill = {};
-        fill.layer  = Canvas::Layer::FRONT;
+        fill.layer  = Canvas::Layer::NORMAL;
+        fill.zIndex = zIndex;
         fill.color  = fillColor;
         Canvas::hFill hcf = canvas->GetFill(fill);
 
@@ -259,7 +261,8 @@ void UiCanvas::DrawRect(int l, int r, int t, int b,
 
     if(!outlineColor.IsEmpty()) {
         Canvas::Stroke stroke = {};
-        stroke.layer  = Canvas::Layer::FRONT;
+        stroke.layer  = Canvas::Layer::NORMAL;
+        stroke.zIndex = zIndex;
         stroke.width  = 1.0;
         stroke.color  = outlineColor;
         stroke.unit   = Canvas::Unit::PX;
@@ -272,9 +275,10 @@ void UiCanvas::DrawRect(int l, int r, int t, int b,
     }
 }
 
-void UiCanvas::DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y) {
+void UiCanvas::DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y, int zIndex) {
     Canvas::Fill fill = {};
-    fill.layer  = Canvas::Layer::FRONT;
+    fill.layer  = Canvas::Layer::NORMAL;
+    fill.zIndex = zIndex;
     fill.color  = { 255, 255, 255, 255 };
     Canvas::hFill hcf = canvas->GetFill(fill);
 
@@ -287,11 +291,12 @@ void UiCanvas::DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y) {
                        hcf);
 }
 
-void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color) {
+void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color, int zIndex) {
     BitmapFont *font = BitmapFont::Builtin();
 
     Canvas::Fill fill = {};
-    fill.layer  = Canvas::Layer::FRONT;
+    fill.layer  = Canvas::Layer::NORMAL;
+    fill.zIndex = zIndex;
     fill.color  = color;
     Canvas::hFill hcf = canvas->GetFill(fill);
 
@@ -318,11 +323,11 @@ void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color)
                        hcf);
 }
 
-void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor color) {
+void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor color, int zIndex) {
     BitmapFont *font = BitmapFont::Builtin();
 
     for(char32_t codepoint : ReadUTF8(str)) {
-        DrawBitmapChar(codepoint, x, y, color);
+        DrawBitmapChar(codepoint, x, y, color, zIndex);
         x += font->GetWidth(codepoint) * 8;
     }
 }

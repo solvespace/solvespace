@@ -606,6 +606,9 @@ void OpenGl2Renderer::UpdateProjection(bool flip) {
     edgeRenderer.SetModelview(modelview);
     outlineRenderer.SetProjection(projection);
     outlineRenderer.SetModelview(modelview);
+
+    glClearDepth(1.0);
+    glClear(GL_DEPTH_BUFFER_BIT);
 }
 
 void OpenGl2Renderer::BeginFrame() {

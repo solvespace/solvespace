@@ -578,8 +578,10 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
 
             uiCanvas->DrawRect(ox, ox+tw, oy, oy+LINE_HEIGHT,
                                /*fillColor=*/{ 255, 255, 150, 255 },
-                               /*outlineColor=*/{ 0, 0, 0, 255 });
-            uiCanvas->DrawBitmapText(tooltip, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 });
+                               /*outlineColor=*/{ 0, 0, 0, 255 },
+                               /*zIndex=*/1);
+            uiCanvas->DrawBitmapText(tooltip, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 },
+                                     /*zIndex=*/1);
         } else {
             if(!hoveredButton || (hoveredButton != tooltippedButton)) {
                 tooltippedButton = NULL;
