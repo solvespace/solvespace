@@ -379,9 +379,13 @@ void Constraint::MenuConstrain(Command id) {
                                 ((gs.workplanes == 1 && gs.n == 2) ||
                                  (gs.n == 1)))
             {
-                int i = SK.GetEntity(gs.entity[0])->IsWorkplane() ? 1 : 0;
-                Entity *line = SK.GetEntity(gs.entity[i]);
-                c.entityA = gs.entity[1-i];
+                Entity *line;
+                if(SK.GetEntity(gs.entity[0])->IsWorkplane()) {
+                    line = SK.GetEntity(gs.entity[1]);
+                    c.entityA = gs.entity[0];
+                } else {
+                    line = SK.GetEntity(gs.entity[0]);
+                }
                 c.ptA = line->point[0];
                 c.ptB = line->point[1];
                 c.type = Type::SYMMETRIC;
