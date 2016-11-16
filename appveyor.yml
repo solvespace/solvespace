@@ -1,4 +1,4 @@
-version: 2.1.{build}
+version: 3.0.{build}
 clone_depth: 1
 before_build:
   - git submodule update --init
@@ -6,7 +6,7 @@ before_build:
   - cd build
   - set tag=x%APPVEYOR_REPO_TAG_NAME%
   - if %tag:~,2% == xv (set BUILD_TYPE=RelWithDebInfo) else (set BUILD_TYPE=Debug)
-  - cmake -G"Visual Studio 12" -T v120_xp ..
+  - cmake -G"Visual Studio 12" -T v120 ..
 build_script:
   - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - msbuild "test\solvespace_testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"

@@ -3,8 +3,6 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#version 120
-
 const int EMPHASIZED_AND_CONTOUR        = 0;
 const int EMPHASIZED_WITHOUT_CONTOUR    = 1;
 const int CONTOUR_ONLY                  = 2;

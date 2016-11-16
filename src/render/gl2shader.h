@@ -7,10 +7,16 @@
 #define SOLVESPACE_GL2UTILS_H
 
 #ifdef WIN32
-#   include <windows.h> // required by GL headers
-#endif
-#ifdef __APPLE__
+#   define GL_APICALL /*static linkage*/
+#   define GL_GLEXT_PROTOTYPES
+#   include <GLES2/gl2.h>
+#   include <GLES2/gl2ext.h>
+#elif __APPLE__
 #   include <OpenGL/gl.h>
+// glDepthRange is in GL1+ but not GLES2, glDepthRangef is in GL4.1+ and GLES2.
+// Consistency!
+#   define glClearDepthf glClearDepth
+#   define glDepthRangef glDepthRange
 #else
 #   define GL_GLEXT_PROTOTYPES
 #   include <GL/gl.h>

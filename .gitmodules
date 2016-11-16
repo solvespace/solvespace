@@ -17,3 +17,6 @@
 [submodule "extlib/cairo"]
 	path = extlib/cairo
 	url = https://github.com/solvespace/cairo
+[submodule "extlib/angle"]
+	path = extlib/angle
+	url = https://github.com/solvespace/angle

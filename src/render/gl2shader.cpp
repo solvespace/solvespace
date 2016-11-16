@@ -58,13 +58,40 @@ Vector4f Vector4f::From(const RgbaColor &c) {
 
 static GLuint CompileShader(const std::string &res, GLenum type) {
     size_t size;
-    const char *src = (const char *)LoadResource(res, &size);
+    const char *resData = (const char *)LoadResource(res, &size);
+
+    // Sigh, here we go... We want to deploy to four platforms: Linux, Windows, OS X, mobile+web.
+    // These platforms are basically disjunctive in the OpenGL versions and profiles that they
+    // support: mobile+web support GLES2, Windows can only be guaranteed to support GL1 without
+    // vendor's drivers installed but supports D3D9+ natively, Linux supports GL3.2+ and/or
+    // GLES2+ depending on whether we run on X11 or Wayland, and OS X supports either a legacy
+    // profile or a GL3.2 core profile or (on 10.9+) a GL4.1 core profile.
+    // The platforms barely have a common subset of features:
+    //  * Linux Mesa/NVidia accept basically everything thrown at it;
+    //  * mobile+web and Windows (D3D9 through ANGLE) are strictly GLES2/GLSL1.0;
+    //  * OS X legacy compatibility profile has GLSL1.2 only shaders, and GL3.2 core profile
+    //    that has GLSL1.0 shaders compatible with GLES2 makes mandatory the use of vertex array
+    //    objects, which cannot be used in GLES2 at all; similarly GL3.2 core has GL_RED but not
+    //    GL_ALPHA whereas GLES2 has GL_ALPHA but not GL_RED.
+    // While we're at it, let's remember that GLES2 has *only* glDepthRangef, GL3.2 has *only*
+    // glDepthRange, and GL4.1+ has both glDepthRangef and glDepthRange. Also, that GLSL1.0
+    // makes `precision highp float;` mandatory in fragment shaders, and GLSL1.2 removes
+    // the `precision` keyword entirely, because that's clearly how minor versions work.
+    // Christ, what a trash fire.
+
+    std::string src(resData, size);
+#ifdef __APPLE__
+    src = "#version 120\n" + src;
+#else
+    src = "#version 100\nprecision highp float;\n" + src;
+#endif
 
     GLuint shader = glCreateShader(type);
     ssassert(shader != 0, "glCreateShader failed");
 
-    GLint glSize = size;
-    glShaderSource(shader, 1, &src, &glSize);
+    const GLint   glSize[]   = { (int)src.length() };
+    const GLchar* glSource[] = { src.c_str() };
+    glShaderSource(shader, 1, glSource, glSize);
     glCompileShader(shader);
 
     GLint infoLen;

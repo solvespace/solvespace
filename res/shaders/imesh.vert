@@ -3,8 +3,6 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#version 120
-
 attribute vec3 pos;
 
 uniform mat4 modelview;

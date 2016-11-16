@@ -3,8 +3,6 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#version 120
-
 uniform vec3 lightDir0;
 uniform vec3 lightDir1;
 uniform float lightInt0;

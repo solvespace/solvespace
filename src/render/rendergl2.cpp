@@ -171,11 +171,11 @@ static void ssglDepthRange(Canvas::Layer layer, int zIndex) {
 
     switch(layer) {
         case Canvas::Layer::FRONT:
-            glDepthRange(0.0, 0.0);
+            glDepthRangef(0.0f, 0.0f);
             break;
 
         case Canvas::Layer::BACK:
-            glDepthRange(1.0, 1.0);
+            glDepthRangef(1.0f, 1.0f);
             break;
 
         case Canvas::Layer::NORMAL:
@@ -184,7 +184,7 @@ static void ssglDepthRange(Canvas::Layer layer, int zIndex) {
             // The size of this step depends on the resolution of the Z buffer; for
             // a 16-bit buffer, this should be fine.
             double offset = 1.0 / (65535 * 0.8) * zIndex;
-            glDepthRange(0.1 - offset, 1.0 - offset);
+            glDepthRangef((float)(0.1 - offset), (float)(1.0 - offset));
             break;
     }
 }
@@ -607,7 +607,7 @@ void OpenGl2Renderer::UpdateProjection(bool flip) {
     outlineRenderer.SetProjection(projection);
     outlineRenderer.SetModelview(modelview);
 
-    glClearDepth(1.0);
+    glClearDepthf(1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
@@ -626,7 +626,7 @@ void OpenGl2Renderer::NewFrame() {
     RgbaColor backgroundColor = lighting.backgroundColor;
     glClearColor(backgroundColor.redF(),  backgroundColor.greenF(),
                  backgroundColor.blueF(), backgroundColor.alphaF());
-    glClearDepth(1.0);
+    glClearDepthf(1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glPolygonOffset(2.0, 1.0);

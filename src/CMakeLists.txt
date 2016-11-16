@@ -70,13 +70,15 @@ if(SPACEWARE_FOUND)
         ${SPACEWARE_INCLUDE_DIR})
 endif()
 
-if(WIN32)
-    set(gl_SOURCES
-        render/rendergl1.cpp)
-else()
+if(OPENGL STREQUAL 2)
     set(gl_SOURCES
         render/gl2shader.cpp
         render/rendergl2.cpp)
+elseif(OPENGL STREQUAL 1)
+    set(gl_SOURCES
+        render/rendergl1.cpp)
+else()
+    message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
 endif()
 
 if(WIN32)

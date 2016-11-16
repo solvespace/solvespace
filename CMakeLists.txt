@@ -41,6 +41,8 @@ set(ENABLE_COVERAGE   OFF CACHE BOOL
 set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 
+set(OPENGL 2 CACHE STRING "OpenGL version to use (one of: 1 2)")
+
 if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()
@@ -61,6 +63,11 @@ endif()
 if(MINGW)
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -static-libgcc")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+
+    if(TRIPLE STREQUAL "i686-w64-mingw32")
+        set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -msse2")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
+    endif()
 endif()
 
 if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
@@ -88,8 +95,6 @@ endif()
 
 # dependencies
 
-find_package(OpenGL REQUIRED)
-
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
@@ -115,6 +120,20 @@ if(WIN32)
         PNG_LIBRARY             png16_static
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+
+    if(OPENGL STREQUAL "2")
+        message(STATUS "Using in-tree ANGLE")
+        set(ANGLE_STATIC            ON  CACHE INTERNAL "")
+        set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")
+        set(ANGLE_ENABLE_D3D11      ON  CACHE INTERNAL "")
+        set(ANGLE_ENABLE_OPENGL     OFF CACHE INTERNAL "")
+        set(ANGLE_ENABLE_ESSL       OFF CACHE INTERNAL "")
+        set(ANGLE_ENABLE_GLSL       OFF CACHE INTERNAL "")
+        set(ANGLE_ENABLE_HLSL       ON  CACHE INTERNAL "")
+        add_vendored_subdirectory(extlib/angle)
+        set(OPENGL_LIBRARIES        EGL GLESv2)
+        set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
+    endif()
 
     if(ENABLE_TESTS)
         message(STATUS "Using in-tree pixman")
@@ -146,6 +165,7 @@ elseif(APPLE)
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
+    find_package(OpenGL REQUIRED)
 
     if(ENABLE_TESTS)
         find_library(CAIRO_LIBRARIES cairo REQUIRED)
@@ -162,6 +182,7 @@ else() # Linux and compatible systems
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
+    find_package(OpenGL REQUIRED)
 
     if(ENABLE_TESTS)
         pkg_check_modules(CAIRO REQUIRED cairo)

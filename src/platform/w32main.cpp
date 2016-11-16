@@ -22,16 +22,23 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
+#define EGLAPI /*static linkage*/
+#include <EGL/egl.h>
+
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
-HGLRC TextGl;
+EGLDisplay TextGlDisplay;
+EGLSurface TextGlSurface;
+EGLContext TextGlContext;
 
 HWND GraphicsWnd;
-HGLRC GraphicsGl;
 HWND GraphicsEditControl;
+EGLDisplay GraphicsGlDisplay;
+EGLSurface GraphicsGlSurface;
+EGLContext GraphicsGlContext;
 static struct {
     int x, y;
 } LastMousePos;
@@ -426,16 +433,16 @@ void SolveSpace::SetMousePointerToHand(bool yes) {
     SetCursor(LoadCursor(NULL, yes ? IDC_HAND : IDC_ARROW));
 }
 
-static void PaintTextWnd(HDC hdc)
+static void PaintTextWnd()
 {
-    wglMakeCurrent(GetDC(TextWnd), TextGl);
+    eglMakeCurrent(TextGlDisplay, TextGlSurface, TextGlSurface, TextGlContext);
 
     SS.TW.Paint();
-    SwapBuffers(GetDC(TextWnd));
+    eglSwapBuffers(TextGlDisplay, TextGlSurface);
 
     // Leave the graphics window context active, except when we're painting
     // this text window.
-    wglMakeCurrent(GetDC(GraphicsWnd), GraphicsGl);
+    eglMakeCurrent(GraphicsGlDisplay, GraphicsGlSurface, GraphicsGlSurface, GraphicsGlContext);
 }
 
 void SolveSpace::MoveTextScrollbarTo(int pos, int maxPos, int page)
@@ -530,7 +537,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
         case WM_PAINT: {
             // Actually paint the text window, with gl.
-            PaintTextWnd(GetDC(TextWnd));
+            PaintTextWnd();
             // And then just make Windows happy.
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
@@ -731,37 +738,48 @@ void SolveSpace::ShowTextWindow(bool visible)
 
 const bool SolveSpace::FLIP_FRAMEBUFFER = false;
 
-static void CreateGlContext(HWND hwnd, HGLRC *glrc)
-{
-    HDC hdc = GetDC(hwnd);
+static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
+                            EGLContext *eglContext) {
+    ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
 
-    PIXELFORMATDESCRIPTOR pfd = {};
-    int pixelFormat;
+    *eglDisplay = eglGetDisplay(GetDC(hwnd));
+    ssassert(eglInitialize(*eglDisplay, NULL, NULL), "Cannot initialize EGL");
 
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
-                        PFD_DOUBLEBUFFER;
-    pfd.dwLayerMask = PFD_MAIN_PLANE;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 24;
-    pfd.cAccumBits = 0;
-    pfd.cStencilBits = 0;
+    EGLint configAttributes[] = {
+        EGL_COLOR_BUFFER_TYPE,  EGL_RGB_BUFFER,
+        EGL_RED_SIZE,           8,
+        EGL_GREEN_SIZE,         8,
+        EGL_BLUE_SIZE,          8,
+        EGL_DEPTH_SIZE,         24,
+        EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
+        EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
+        EGL_NONE
+    };
+    EGLint numConfigs;
+    EGLConfig windowConfig;
+    ssassert(eglChooseConfig(*eglDisplay, configAttributes, &windowConfig, 1, &numConfigs),
+             "Cannot choose EGL configuration");
 
-    pixelFormat = ChoosePixelFormat(hdc, &pfd);
-    ssassert(pixelFormat != 0, "Expected a valid pixel format to be chosen");
+    EGLint surfaceAttributes[] = {
+        EGL_NONE
+    };
+    *eglSurface = eglCreateWindowSurface(*eglDisplay, windowConfig, hwnd, surfaceAttributes);
+    ssassert(eglSurface != EGL_NO_SURFACE, "Cannot create EGL window surface");
 
-    ssassert(SetPixelFormat(hdc, pixelFormat, &pfd), "Cannot set pixel format");
+    EGLint contextAttributes[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 2,
+        EGL_NONE
+    };
+    *eglContext = eglCreateContext(*eglDisplay, windowConfig, NULL, contextAttributes);
+    ssassert(eglContext != EGL_NO_CONTEXT, "Cannot create EGL context");
 
-    *glrc = wglCreateContext(hdc);
-    wglMakeCurrent(hdc, *glrc);
+    eglMakeCurrent(*eglDisplay, *eglSurface, *eglSurface, *eglContext);
 }
 
 void SolveSpace::PaintGraphics()
 {
     SS.GW.Paint();
-    SwapBuffers(GetDC(GraphicsWnd));
+    eglSwapBuffers(GraphicsGlDisplay, GraphicsGlSurface);
 }
 void SolveSpace::InvalidateGraphics()
 {
@@ -1311,8 +1329,8 @@ static void CreateMainWindows()
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
 
     // Now that all our windows exist, set up gl contexts.
-    CreateGlContext(TextWnd, &TextGl);
-    CreateGlContext(GraphicsWnd, &GraphicsGl);
+    CreateGlContext(TextWnd, &TextGlDisplay, &TextGlSurface, &TextGlContext);
+    CreateGlContext(GraphicsWnd, &GraphicsGlDisplay, &GraphicsGlSurface, &GraphicsGlContext);
 
     RECT r, rc;
     GetWindowRect(TextWnd, &r);
@@ -1436,6 +1454,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     SS.Init();
     if(!filename.empty())
         SS.OpenFile(Narrow(filename));
+
+    // Repaint one more time, after we've set everything up.
+    PaintGraphics();
+    PaintTextWnd();
 
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.
