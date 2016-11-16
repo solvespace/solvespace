@@ -751,8 +751,6 @@ void GraphicsWindow::Paint() {
 
     havePainted = true;
 
-    auto renderStartTime = std::chrono::high_resolution_clock::now();
-
     int w, h;
     GetGraphicsWindowSize(&w, &h);
     width = w;
@@ -772,13 +770,20 @@ void GraphicsWindow::Paint() {
         ForceTextWindowShown();
     }
 
-    canvas->BeginFrame();
+    auto renderStartTime = std::chrono::high_resolution_clock::now();
+
+    canvas->NewFrame();
     canvas->SetCamera(camera);
     canvas->SetLighting(lighting);
     Draw(canvas.get());
-    canvas->EndFrame();
+    canvas->FlushFrame();
+
+    auto renderEndTime = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
 
     camera.LoadIdentity();
+    camera.offset.x = -(double)camera.width  / 2.0;
+    camera.offset.y = -(double)camera.height / 2.0;
     canvas->SetCamera(camera);
 
     UiCanvas uiCanvas = {};
@@ -788,29 +793,22 @@ void GraphicsWindow::Paint() {
     // rectangle, as an outline and a transparent fill.
     if(pending.operation == Pending::DRAGGING_MARQUEE) {
         Point2d begin = ProjectPoint(orig.marqueePoint);
-        uiCanvas.DrawRect((int)orig.mouse.x, (int)begin.x,
-                          (int)orig.mouse.y, (int)begin.y,
+        uiCanvas.DrawRect((int)orig.mouse.x + (int)camera.width / 2,
+                          (int)begin.x + (int)camera.width / 2,
+                          (int)orig.mouse.y + (int)camera.height / 2,
+                          (int)begin.y + (int)camera.height / 2,
                           /*fillColor=*/Style::Color(Style::HOVERED).WithAlpha(25),
                           /*outlineColor=*/Style::Color(Style::HOVERED));
-        canvas->EndFrame();
     }
 
     // And finally the toolbar.
     if(SS.showToolbar) {
-        camera.offset   = {};
-        camera.offset.x = -(double)camera.width  / 2.0;
-        camera.offset.y = -(double)camera.height / 2.0;
         canvas->SetCamera(camera);
         ToolbarDraw(&uiCanvas);
     }
 
     // If we display UI elements, also display an fps counter.
     if(SS.showToolbar) {
-        canvas->EndFrame();
-
-        auto renderEndTime = std::chrono::high_resolution_clock::now();
-        std::chrono::duration<double, std::milli> renderTime = renderEndTime - renderStartTime;
-
         RgbaColor renderTimeColor;
         if(1000 / renderTime.count() < 60) {
             // We aim for a steady 60fps; draw the counter in red when we're slower.
@@ -824,6 +822,6 @@ void GraphicsWindow::Paint() {
                                 5, 5, renderTimeColor);
     }
 
-    canvas->EndFrame();
+    canvas->FlushFrame();
     canvas->Clear();
 }

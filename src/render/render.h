@@ -175,8 +175,8 @@ public:
     virtual void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) = 0;
     virtual void SetLighting(const Lighting &lighting) = 0;
 
-    virtual void BeginFrame() = 0;
-    virtual void EndFrame() = 0;
+    virtual void NewFrame() = 0;
+    virtual void FlushFrame() = 0;
     virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
 
     virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;

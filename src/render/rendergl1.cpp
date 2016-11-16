@@ -220,8 +220,8 @@ public:
     void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) override;
     void SetLighting(const Lighting &lighting) override;
 
-    void BeginFrame() override;
-    void EndFrame() override;
+    void NewFrame() override;
+    void FlushFrame() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;
@@ -738,7 +738,7 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl1Renderer::BeginFrame() {
+void OpenGl1Renderer::NewFrame() {
     glEnable(GL_NORMALIZE);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -791,7 +791,7 @@ void OpenGl1Renderer::BeginFrame() {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl1Renderer::EndFrame() {
+void OpenGl1Renderer::FlushFrame() {
     UnSelectPrimitive();
     glFlush();
 

@@ -134,8 +134,8 @@ public:
     void SetCamera(const Camera &c, bool flip) override;
     void SetLighting(const Lighting &l) override;
 
-    void BeginFrame() override;
-    void EndFrame() override;
+    void NewFrame() override;
+    void FlushFrame() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;
@@ -611,7 +611,7 @@ void OpenGl2Renderer::UpdateProjection(bool flip) {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl2Renderer::BeginFrame() {
+void OpenGl2Renderer::NewFrame() {
     if(!initialized) {
         Init();
         initialized = true;
@@ -632,7 +632,7 @@ void OpenGl2Renderer::BeginFrame() {
     glPolygonOffset(2.0, 1.0);
 }
 
-void OpenGl2Renderer::EndFrame() {
+void OpenGl2Renderer::FlushFrame() {
     for(SMeshListItem &li : meshes) {
         Fill *fill = SelectFill(li.h);
 

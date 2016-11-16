@@ -865,7 +865,7 @@ void TextWindow::Paint() {
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
 
-    canvas->BeginFrame();
+    canvas->NewFrame();
     canvas->SetCamera(camera);
 
     UiCanvas uiCanvas = {};
@@ -992,7 +992,7 @@ void TextWindow::Paint() {
     // And we may show a color picker for certain editable fields
     DrawOrHitTestColorPicker(&uiCanvas, PAINT, false, 0, 0);
 
-    canvas->EndFrame();
+    canvas->FlushFrame();
     canvas->Clear();
 }
 
