@@ -25,6 +25,7 @@ void dbp(const char *str, ...)
     // The native version of OutputDebugString, unlike most others,
     // is OutputDebugStringA.
     OutputDebugStringA(buf);
+    OutputDebugStringA("\n");
 
 #ifndef NDEBUG
     // Duplicate to stderr in debug builds, but not in release; this is slow.
