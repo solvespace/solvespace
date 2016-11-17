@@ -834,7 +834,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
         ExportMeshAsThreeJsTo(f, filename, m, e);
     } else {
         Error("Can't identify output file type from file extension of "
-              "filename '%s'; try .stl, .obj, .js.", filename.c_str());
+              "filename '%s'; try .stl, .obj, .js, .html.", filename.c_str());
     }
 
     fclose(f);
