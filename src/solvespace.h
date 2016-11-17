@@ -367,6 +367,9 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 std::string MakeAcceleratorLabel(int accel);
 bool FilenameHasExtension(const std::string &str, const char *ext);
+std::string Extension(const std::string &filename);
+std::string Basename(std::string filename, bool stripExtension = false);
+std::string Dirname(std::string filename);
 bool ReadFile(const std::string &filename, std::string *data);
 bool WriteFile(const std::string &filename, const std::string &data);
 void Message(const char *str, ...);

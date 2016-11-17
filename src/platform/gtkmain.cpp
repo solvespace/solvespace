@@ -1113,14 +1113,6 @@ bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
     }
 }
 
-/* Glib::path_get_basename got /removed/ in 3.0?! Come on */
-static std::string Basename(std::string filename) {
-    int slash = filename.rfind('/');
-    if(slash >= 0)
-        return filename.substr(slash + 1, filename.length());
-    return "";
-}
-
 static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
 {
     /* Extract the pattern from the filter. GtkFileFilter doesn't provide
@@ -1150,7 +1142,7 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     }
 }
 
-bool GetSaveFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]) {
     Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
@@ -1158,10 +1150,16 @@ bool GetSaveFile(std::string *filename, const std::string &activeOrEmpty,
     chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
     chooser.add_button("_Save", Gtk::RESPONSE_OK);
 
-    std::string active = ConvertFilters(activeOrEmpty, filters, &chooser);
+    std::string activeExtension = ConvertFilters(defExtension, filters, &chooser);
 
-    chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
-    chooser.set_current_name(std::string("untitled.") + active);
+    if(filename->empty()) {
+        chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
+        chooser.set_current_name("untitled." + activeExtension);
+    } else {
+        chooser.set_current_folder(Dirname(*filename));
+        chooser.set_current_name(Basename(*filename, /*stripExtension=*/true) +
+                                 "." + activeExtension);
+    }
 
     /* Gtk's dialog doesn't change the extension when you change the filter,
        and makes it extremely hard to do so. Gtk is garbage. */

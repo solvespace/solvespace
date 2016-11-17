@@ -62,6 +62,42 @@ bool SolveSpace::FilenameHasExtension(const std::string &str, const char *ext)
     return true;
 }
 
+std::string SolveSpace::Extension(const std::string &filename) {
+    int dot = filename.rfind('.');
+    if(dot >= 0) {
+        std::string ext = filename.substr(dot + 1, filename.length());
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        return ext;
+    }
+
+    return "";
+}
+
+std::string SolveSpace::Basename(std::string filename, bool stripExtension) {
+    int slash = filename.rfind(PATH_SEP);
+    if(slash >= 0) {
+        filename = filename.substr(slash + 1, filename.length());
+    }
+
+    if(stripExtension) {
+        int dot = filename.rfind('.');
+        if(dot >= 0) {
+            filename = filename.substr(0, dot);
+        }
+    }
+
+    return filename;
+}
+
+std::string SolveSpace::Dirname(std::string filename) {
+    int slash = filename.rfind(PATH_SEP);
+    if(slash >= 0) {
+        return filename.substr(0, slash);
+    }
+
+    return "";
+}
+
 bool SolveSpace::ReadFile(const std::string &filename, std::string *data)
 {
     FILE *f = ssfopen(filename.c_str(), "rb");

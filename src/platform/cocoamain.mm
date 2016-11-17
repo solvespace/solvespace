@@ -769,7 +769,6 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
     [panel setAccessoryView:[controller view]];
 
     NSMutableArray *extensions = [[NSMutableArray alloc] init];
-    [controller setExtensions:extensions];
 
     NSPopUpButton *button = [controller button];
     [button removeAllItems];
@@ -787,6 +786,8 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
         [button addItemWithTitle:[NSString stringWithUTF8String:title.c_str()]];
         [extensions addObject:[NSString stringWithUTF8String:ssFilter->patterns[0]]];
     }
+    [panel setAllowedFileTypes:extensions];
+    [controller setExtensions:extensions];
 
     int extensionIndex = 0;
     if(defExtension != "") {
@@ -796,10 +797,19 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
             extensionIndex = 0;
         }
     }
-
     [button selectItemAtIndex:extensionIndex];
-    [panel setNameFieldStringValue:[@"untitled"
-        stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
+
+    if(file->empty()) {
+        [panel setNameFieldStringValue:[@"untitled"
+            stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
+    } else {
+        [panel setDirectoryURL:
+            [NSURL fileURLWithPath:[NSString stringWithUTF8String:Dirname(*file).c_str()]
+                   isDirectory:NO]];
+        [panel setNameFieldStringValue:
+            [[NSString stringWithUTF8String:Basename(*file, /*stripExtension=*/true).c_str()]
+                stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
+    }
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
         *file = [[NSFileManager defaultManager]

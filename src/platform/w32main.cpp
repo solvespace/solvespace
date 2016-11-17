@@ -996,16 +996,28 @@ static std::string ConvertFilters(const FileFilter ssFilters[]) {
 
 static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &defExtension,
                          const FileFilter filters[]) {
+    std::string activeExtension = defExtension;
+    if(activeExtension == "") {
+        activeExtension = filters[0].patterns[0];
+    }
+
+    std::wstring initialFilenameW;
+    if(filename->empty()) {
+        initialFilenameW = Widen("untitled");
+    } else {
+        initialFilenameW = Widen(Dirname(*filename) + PATH_SEP +
+                                 Basename(*filename, /*stripExtension=*/true));
+    }
+    std::wstring selPatternW = Widen(ConvertFilters(filters));
+    std::wstring defExtensionW = Widen(defExtension);
+
     // UNC paths may be as long as 32767 characters.
     // Unfortunately, the Get*FileName API does not provide any way to use it
     // except with a preallocated buffer of fixed size, so we use something
     // reasonably large.
     const int len = 32768;
     wchar_t filenameC[len] = {};
-    wcsncpy(filenameC, Widen(*filename).c_str(), len - 1);
-
-    std::wstring selPatternW = Widen(ConvertFilters(filters));
-    std::wstring defExtensionW = Widen(defExtension);
+    wcsncpy(filenameC, initialFilenameW.c_str(), len - 1);
 
     OPENFILENAME ofn = {};
     ofn.lStructSize = sizeof(ofn);
