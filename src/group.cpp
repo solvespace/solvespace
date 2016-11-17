@@ -121,17 +121,25 @@ void Group::MenuGroup(Command id) {
                 if(SS.GW.projRight.Dot(ut) < 0) g.predef.negateU = true;
                 if(SS.GW.projUp.   Dot(vt) < 0) g.predef.negateV = true;
             } else if(gs.workplanes == 1 && gs.n == 1) {
-                Group *wrkplg = SK.GetGroup(gs.entity[0].group());
-                g.subtype = wrkplg->subtype;
-                g.predef.origin = wrkplg->predef.origin;
-                if (wrkplg->subtype == Subtype::WORKPLANE_BY_LINE_SEGMENTS) {
-                    g.predef.entityB = wrkplg->predef.entityB;
-                    g.predef.entityC = wrkplg->predef.entityC;
-                    g.predef.swapUV = wrkplg->predef.swapUV;
-                    g.predef.negateU = wrkplg->predef.negateU;
-                    g.predef.negateV = wrkplg->predef.negateV;
+                if(gs.entity[0].request().IsFromReferences()) {
+                    Entity *wrkpl = SK.GetEntity(gs.entity[0]);
+                    Entity *normal = SK.GetEntity(wrkpl->normal);
+                    g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
+                    g.predef.origin = wrkpl->point[0];
+                    g.predef.q = normal->NormalGetNum();
                 } else {
-                    g.predef.q = wrkplg->predef.q;
+                    Group *wrkplg = SK.GetGroup(gs.entity[0].group());
+                    g.subtype = wrkplg->subtype;
+                    g.predef.origin = wrkplg->predef.origin;
+                    if(wrkplg->subtype == Subtype::WORKPLANE_BY_LINE_SEGMENTS) {
+                        g.predef.entityB = wrkplg->predef.entityB;
+                        g.predef.entityC = wrkplg->predef.entityC;
+                        g.predef.swapUV = wrkplg->predef.swapUV;
+                        g.predef.negateU = wrkplg->predef.negateU;
+                        g.predef.negateV = wrkplg->predef.negateV;
+                    } else if(wrkplg->subtype == Subtype::WORKPLANE_BY_POINT_ORTHO) {
+                        g.predef.q = wrkplg->predef.q;
+                    } else ssassert(false, "Unexpected workplane subtype");
                 }
             } else {
                 Error("Bad selection for new sketch in workplane. This "
