@@ -551,7 +551,10 @@ void SolveSpaceUI::MenuFile(int id) {
                 ImportDxf(importFile);
             } else if(Extension(importFile) == "dwg") {
                 ImportDwg(importFile);
-            } else oops();
+            } else {
+                Error("Can't identify file type from file extension of "
+                      "filename '%s'; try .dxf or .dwg.", importFile.c_str());
+            }
 
             SS.GenerateAll(SolveSpaceUI::GENERATE_UNTIL_ACTIVE);
             SS.ScheduleShowTW();
