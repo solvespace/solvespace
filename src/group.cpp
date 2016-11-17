@@ -136,10 +136,9 @@ void Group::MenuGroup(Command id) {
             } else {
                 Error("Bad selection for new sketch in workplane. This "
                       "group can be created with:\n\n"
-                      "    * a point (orthogonal to coordinate axes, "
-                             "through the point)\n"
-                      "    * a point and two line segments (parallel to the "
-                             "lines, through the point)\n"
+                      "    * a point (through the point, orthogonal to coordinate axes)\n"
+                      "    * a point and two line segments (through the point, "
+                             "parallel to the lines)\n"
                       "    * a workplane (copy of the workplane)\n");
                 return;
             }
