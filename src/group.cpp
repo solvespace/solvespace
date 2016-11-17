@@ -120,13 +120,27 @@ void Group::MenuGroup(Command id) {
                 }
                 if(SS.GW.projRight.Dot(ut) < 0) g.predef.negateU = true;
                 if(SS.GW.projUp.   Dot(vt) < 0) g.predef.negateV = true;
+            } else if(gs.workplanes == 1 && gs.n == 1) {
+                Group *wrkplg = SK.GetGroup(gs.entity[0].group());
+                g.subtype = wrkplg->subtype;
+                g.predef.origin = wrkplg->predef.origin;
+                if (wrkplg->subtype == Subtype::WORKPLANE_BY_LINE_SEGMENTS) {
+                    g.predef.entityB = wrkplg->predef.entityB;
+                    g.predef.entityC = wrkplg->predef.entityC;
+                    g.predef.swapUV = wrkplg->predef.swapUV;
+                    g.predef.negateU = wrkplg->predef.negateU;
+                    g.predef.negateV = wrkplg->predef.negateV;
+                } else {
+                    g.predef.q = wrkplg->predef.q;
+                }
             } else {
                 Error("Bad selection for new sketch in workplane. This "
                       "group can be created with:\n\n"
                       "    * a point (orthogonal to coordinate axes, "
                              "through the point)\n"
                       "    * a point and two line segments (parallel to the "
-                             "lines, through the point)\n");
+                             "lines, through the point)\n"
+                      "    * a workplane (copy of the workplane)\n");
                 return;
             }
             break;
