@@ -405,7 +405,7 @@ void ObjectPicker::DrawPolygon(const SPolygon &p, hFill hcf) {
     ssassert(false, "Not implemented");
 }
 
-void ObjectPicker::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) {
+void ObjectPicker::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
     ssassert(false, "Not implemented");
 }
 

@@ -198,7 +198,7 @@ public:
                   hFill hcf) override;
     void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
-    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
     void DrawPixmap(std::shared_ptr<const Pixmap> pm,
                     const Vector &o, const Vector &u, const Vector &v,
@@ -597,8 +597,7 @@ void OpenGl1Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
     gluDeleteTess(gt);
 }
 
-void OpenGl1Renderer::DrawMesh(const SMesh &m,
-                               hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) {
+void OpenGl1Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
     UnSelectPrimitive();
 
     Fill *frontFill = SelectFill(hcfFront);
@@ -646,24 +645,6 @@ void OpenGl1Renderer::DrawMesh(const SMesh &m,
     }
     glEnd();
     glDisable(GL_LIGHTING);
-
-    if(hcsTriangles.v != 0) {
-        Stroke *triangleStroke = SelectStroke(hcsTriangles);
-        ssassert(triangleStroke->width == 1 &&
-                 triangleStroke->stipplePattern == StipplePattern::CONTINUOUS &&
-                 triangleStroke->stippleScale == 0.0,
-                 "Triangle stroke must match predefined OpenGL parameters");
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glBegin(GL_TRIANGLES);
-        for(const STriangle &tr : m.l) {
-            ssglVertex3v(tr.a);
-            ssglVertex3v(tr.b);
-            ssglVertex3v(tr.c);
-        }
-        glEnd();
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    }
 }
 
 void OpenGl1Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) {

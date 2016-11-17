@@ -154,8 +154,7 @@ public:
                           hFill hcf) = 0;
     virtual void DrawPoint(const Vector &o, hStroke hcs) = 0;
     virtual void DrawPolygon(const SPolygon &p, hFill hcf) = 0;
-    virtual void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {},
-                          hStroke hcsTriangles = {}) = 0;
+    virtual void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {}) = 0;
     virtual void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) = 0;
 
     virtual void DrawPixmap(std::shared_ptr<const Pixmap> pm,
@@ -221,7 +220,7 @@ public:
                   hFill hcf) override;
     void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
-    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
 
     void DrawPixmap(std::shared_ptr<const Pixmap> pm,
@@ -269,7 +268,7 @@ public:
                   hFill hcf) override;
     void DrawPoint(const Vector &o, hStroke hcs) override;
     void DrawPolygon(const SPolygon &p, hFill hcf) override;
-    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) override;
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) override;
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override;
 
     void DrawPixmap(std::shared_ptr<const Pixmap> pm,

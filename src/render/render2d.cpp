@@ -122,12 +122,12 @@ void SurfaceRenderer::DrawPoint(const Vector &o, Canvas::hStroke hcs) {
 void SurfaceRenderer::DrawPolygon(const SPolygon &p, hFill hcf) {
     SMesh m = {};
     p.TriangulateInto(&m);
-    DrawMesh(m, hcf, {}, {});
+    DrawMesh(m, hcf, {});
     m.Clear();
 }
 
 void SurfaceRenderer::DrawMesh(const SMesh &m,
-                               hFill hcfFront, hFill hcfBack, hStroke hcsTriangles) {
+                               hFill hcfFront, hFill hcfBack) {
     Fill *fill = fills.FindById(hcfFront);
     ssassert(fill->layer == Layer::NORMAL ||
              fill->layer == Layer::DEPTH_ONLY, "Unexpected mesh layer");
@@ -159,17 +159,6 @@ void SurfaceRenderer::DrawMesh(const SMesh &m,
             tr.meta.color = {};
         }
         mesh.AddTriangle(&tr);
-    }
-
-    if(hcsTriangles.v != 0) {
-        for(const STriangle &tr : m.l) {
-            edges[hcsTriangles].AddEdge(ProjectPoint3RH(camera, tr.a),
-                                        ProjectPoint3RH(camera, tr.b));
-            edges[hcsTriangles].AddEdge(ProjectPoint3RH(camera, tr.b),
-                                        ProjectPoint3RH(camera, tr.c));
-            edges[hcsTriangles].AddEdge(ProjectPoint3RH(camera, tr.c),
-                                        ProjectPoint3RH(camera, tr.a));
-        }
     }
 }
 

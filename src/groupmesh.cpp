@@ -478,20 +478,27 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
                 hcfBack = canvas->GetFill(fillBack);
             }
 
+            // Draw the shaded solid into the depth buffer for hidden line removal,
+            // and if we're actually going to display it, to the color buffer too.
+            canvas->DrawMesh(displayMesh, hcfFront, hcfBack);
+
             // Draw mesh edges, for debugging.
-            Canvas::hStroke hcsTriangle = {};
             if(SS.GW.showMesh) {
                 Canvas::Stroke strokeTriangle = {};
                 strokeTriangle.zIndex = 1;
                 strokeTriangle.color  = RgbaColor::FromFloat(0.0f, 1.0f, 0.0f);
                 strokeTriangle.width  = 1;
-                strokeTriangle.unit = Canvas::Unit::PX;
-                hcsTriangle = canvas->GetStroke(strokeTriangle);
+                strokeTriangle.unit   = Canvas::Unit::PX;
+                Canvas::hStroke hcsTriangle = canvas->GetStroke(strokeTriangle);
+                SEdgeList edges = {};
+                for(const STriangle &t : displayMesh.l) {
+                    edges.AddEdge(t.a, t.b);
+                    edges.AddEdge(t.b, t.c);
+                    edges.AddEdge(t.c, t.a);
+                }
+                canvas->DrawEdges(edges, hcsTriangle);
+                edges.Clear();
             }
-
-            // Draw the shaded solid into the depth buffer for hidden line removal,
-            // and if we're actually going to display it, to the color buffer too.
-            canvas->DrawMesh(displayMesh, hcfFront, hcfBack, hcsTriangle);
             break;
         }
 

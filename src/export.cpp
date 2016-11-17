@@ -149,8 +149,7 @@ public:
     void DrawPolygon(const SPolygon &p, hFill hcf) override {
         ssassert(false, "Not implemented");
     }
-    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {},
-                          hStroke hcsTriangles = {}) override {
+    void DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack = {}) override {
         ssassert(false, "Not implemented");
     }
     void DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) override {
