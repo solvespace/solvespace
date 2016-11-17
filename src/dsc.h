@@ -270,13 +270,11 @@ public:
     int   elemsAllocated;
 
     uint32_t MaximumId() {
-        uint32_t id = 0;
-
-        int i;
-        for(i = 0; i < n; i++) {
-            id = max(id, elem[i].h.v);
+        if(n == 0) {
+            return 0;
+        } else {
+            return elem[n - 1].h.v;
         }
-        return id;
     }
 
     H AddAndAssignId(T *t) {
