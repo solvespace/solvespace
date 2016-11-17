@@ -81,7 +81,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
                        IdList<Param,hParam> *param)
 {
     int points = 0;
-    Entity::Type et;
+    Entity::Type et = (Entity::Type)0;
     bool hasNormal = false;
     bool hasDistance = false;
     int i;
@@ -190,7 +190,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 }
 
 std::string Request::DescriptionString() const {
-    const char *s;
+    const char *s = "";
     if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
     } else if(h.v == Request::HREQUEST_REFERENCE_YZ.v) {

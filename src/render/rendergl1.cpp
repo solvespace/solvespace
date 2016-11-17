@@ -308,7 +308,7 @@ void OpenGl1Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_CLAMP);
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-    GLenum format;
+    GLenum format = 0;
     switch(pm->format) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;

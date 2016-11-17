@@ -142,7 +142,7 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
-    int first, last, i, j;
+    int first = 0, last = 0, i, j;
 
     uint64_t startMillis = GetMilliseconds(),
              endMillis;
@@ -355,7 +355,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     endMillis = GetMilliseconds();
 
     if(endMillis - startMillis > 30) {
-        const char *typeStr;
+        const char *typeStr = "";
         switch(type) {
             case Generate::DIRTY:           typeStr = "DIRTY";        break;
             case Generate::ALL:             typeStr = "ALL";          break;

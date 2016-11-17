@@ -264,8 +264,8 @@ std::shared_ptr<Pixmap> Pixmap::ReadPng(const std::string &filename, bool flip) 
 }
 
 bool Pixmap::WritePng(FILE *f, bool flip) {
-    int colorType;
-    bool bgr;
+    int colorType = 0;
+    bool bgr = false;
     switch(format) {
         case Format::RGBA: colorType = PNG_COLOR_TYPE_RGBA; bgr = false; break;
         case Format::BGRA: colorType = PNG_COLOR_TYPE_RGBA; bgr = true;  break;

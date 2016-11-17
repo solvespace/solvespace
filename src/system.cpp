@@ -440,6 +440,9 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         p->tag = alone;
         WriteJacobian(alone);
         if(!NewtonSolve(alone)) {
+            // We don't do the rank test, so let's arbitrarily return
+            // the DIDNT_CONVERGE result here.
+            rankOk = true;
             // Failed to converge, bail out early
             goto didnt_converge;
         }
