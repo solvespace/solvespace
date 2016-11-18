@@ -476,6 +476,8 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
                 fillBack.layer = fillFront.layer;
                 fillBack.color = RgbaColor::FromFloat(1.0f, 0.1f, 0.1f);
                 hcfBack = canvas->GetFill(fillBack);
+            } else {
+                hcfBack = hcfFront;
             }
 
             // Draw the shaded solid into the depth buffer for hidden line removal,

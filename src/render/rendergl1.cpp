@@ -600,30 +600,40 @@ void OpenGl1Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
 void OpenGl1Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
     UnSelectPrimitive();
 
-    Fill *frontFill = SelectFill(hcfFront);
-    ssglMaterialRGBA(GL_FRONT, frontFill->color);
+    RgbaColor frontColor = {},
+              backColor  = {};
 
+    Fill *frontFill = SelectFill(hcfFront);
+    frontColor = frontFill->color;
+
+    ssglMaterialRGBA(GL_FRONT, frontFill->color);
     if(hcfBack.v != 0) {
         Fill *backFill = fills.FindById(hcfBack);
+        backColor = backFill->color;
         ssassert(frontFill->layer  == backFill->layer &&
                  frontFill->zIndex == backFill->zIndex,
                  "frontFill and backFill should belong to the same depth range");
         ssassert(frontFill->pattern == backFill->pattern,
                  "frontFill and backFill should have the same pattern");
-        ssglMaterialRGBA(GL_BACK, backFill->color);
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+        ssglMaterialRGBA(GL_BACK, backFill->color);
     } else {
         glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
     }
 
-    RgbaColor frontColor = {};
+    RgbaColor triangleColor = {};
     glEnable(GL_LIGHTING);
     glBegin(GL_TRIANGLES);
     for(const STriangle &tr : m.l) {
-        if(frontFill->color.IsEmpty()) {
-            if(frontColor.IsEmpty() || !frontColor.Equals(tr.meta.color)) {
-                frontColor = tr.meta.color;
-                ssglMaterialRGBA(GL_FRONT, frontColor);
+        if(frontColor.IsEmpty() || backColor.IsEmpty()) {
+            if(triangleColor.IsEmpty() || !triangleColor.Equals(tr.meta.color)) {
+                triangleColor = tr.meta.color;
+                if(frontColor.IsEmpty()) {
+                    ssglMaterialRGBA(GL_FRONT, triangleColor);
+                }
+                if(backColor.IsEmpty()) {
+                    ssglMaterialRGBA(GL_BACK, triangleColor);
+                }
             }
         }
 
@@ -714,6 +724,11 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
                     0,              0,              1,              0,
                     0,              0,              clp,            1);
     glMultMatrixd(mat);
+
+    // If we flip the framebuffer, then we also flip the handedness
+    // of the coordinate system, and so the face winding order.
+    glFrontFace(flip ? GL_CW : GL_CCW);
+
     // Before that, we apply the rotation
     Vector projRight = camera.projRight,
            projUp    = camera.projUp,
@@ -723,6 +738,7 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
                     n.x,            n.y,            n.z,            0,
                     0,              0,              0,              1);
     glMultMatrixd(mat);
+
     // And before that, the translation
     Vector offset = camera.offset;
     MakeMatrix(mat, 1,              0,              0,              offset.x,
