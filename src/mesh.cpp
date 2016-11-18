@@ -34,7 +34,8 @@ void SMesh::AddTriangle(STriMeta meta, Vector a, Vector b, Vector c) {
     AddTriangle(&t);
 }
 void SMesh::AddTriangle(const STriangle *st) {
-    if(st->meta.color.alpha != 255) isTransparent = true;
+    RgbaColor color = st->meta.color;
+    if(!color.IsEmpty() && color.alpha != 255) isTransparent = true;
     l.Add(st);
 }
 
