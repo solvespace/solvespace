@@ -1081,13 +1081,14 @@ void GraphicsWindow::ToggleBool(bool *v) {
     // so not meaningful to show them and hide the shaded.
     if(!showShaded) showFaces = false;
 
-    // We might need to regenerate the mesh and edge list, since the edges
-    // wouldn't have been generated if they were previously hidden.
-    if(showEdges || showOutlines) {
-        SK.GetGroup(activeGroup)->displayDirty = true;
+    // If the mesh or edges were previously hidden, they haven't been generated,
+    // and if we are going to show them, we need to generate them first.
+    Group *g = SK.GetGroup(SS.GW.activeGroup);
+    if(*v && (g->displayOutlines.l.n == 0 && (v == &showEdges || v == &showOutlines))) {
+        SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
     }
 
-    SS.GenerateAll();
+    SS.GW.persistentDirty = true;
     InvalidateGraphics();
     SS.ScheduleShowTW();
 }
