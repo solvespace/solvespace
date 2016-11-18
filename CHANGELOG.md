@@ -7,6 +7,7 @@ Changelog
 Bug fixes:
   * Do not crash when applying a symmetry constraint to two points.
   * Fix TTF font metrics again (properly this time).
+  * Fix the "draw back faces in red" option.
   * Various minor crashes.
 
 2.2
