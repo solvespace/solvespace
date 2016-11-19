@@ -287,7 +287,7 @@ CONVERT(Rect)
 }
 
 - (void)mouseMoved:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     NSUInteger flags = [event modifierFlags];
     NSUInteger buttons = [NSEvent pressedMouseButtons];
     SolveSpace::SS.GW.MouseMoved(point.x, point.y,
@@ -311,7 +311,7 @@ CONVERT(Rect)
 }
 
 - (void)mouseDown:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     if([event clickCount] == 1)
         SolveSpace::SS.GW.MouseLeftDown(point.x, point.y);
     else if([event clickCount] == 2)
@@ -319,7 +319,7 @@ CONVERT(Rect)
 }
 
 - (void)rightMouseDown:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     SolveSpace::SS.GW.MouseMiddleOrRightDown(point.x, point.y);
 }
 
@@ -328,18 +328,18 @@ CONVERT(Rect)
 }
 
 - (void)mouseUp:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     SolveSpace::SS.GW.MouseLeftUp(point.x, point.y);
 }
 
 - (void)rightMouseUp:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     self->_lastContextMenuEvent = event;
     SolveSpace::SS.GW.MouseRightUp(point.x, point.y);
 }
 
 - (void)scrollWheel:(NSEvent*)event {
-    NSPoint point = [self ij_to_xy:[self convertPoint:[event locationInWindow] fromView:nil]];
+    NSPoint point = [self xyFromEvent:event];
     SolveSpace::SS.GW.MouseScroll(point.x, point.y, (int)-[event deltaY]);
 }
 
@@ -369,16 +369,11 @@ CONVERT(Rect)
 }
 
 - (void)startEditing:(NSString*)text at:(NSPoint)xy withHeight:(double)fontHeight
-        withMinWidthInChars:(int)minWidthChars {
-    // Convert to ij (vs. xy) style coordinates
+        withMinWidthInChars:(int)minWidthChars usingMonospace:(BOOL)isMonospace {
     NSSize size = [self convertSizeToBacking:[self bounds].size];
-    NSPoint point = {
-        .x = xy.x + size.width / 2,
-        .y = xy.y - size.height / 2
-    };
+    NSPoint point = [self convertPointFromBacking:NSMakePoint(xy.x, size.height - xy.y)];
     [[self window] makeKeyWindow];
-    [super startEditing:text at:[self convertPointFromBacking:point]
-           withHeight:fontHeight usingMonospace:FALSE];
+    [super startEditing:text at:point withHeight:fontHeight usingMonospace:isMonospace];
     [self prepareEditorWithMinWidthInChars:minWidthChars];
 }
 
@@ -404,12 +399,11 @@ CONVERT(Rect)
     [self stopEditing];
 }
 
-- (NSPoint)ij_to_xy:(NSPoint)ij {
-    // Convert to xy (vs. ij) style coordinates,
-    // with (0, 0) at center
+- (NSPoint)xyFromEvent:event {
+    NSPoint point = [self convertPoint:[event locationInWindow] fromView:nil]
     NSSize size = [self bounds].size;
     return [self convertPointToBacking:(NSPoint){
-        .x = ij.x - size.width / 2, .y = ij.y - size.height / 2 }];
+        .x = point.x, .y = size.height - point.y }];
 }
 @end
 
@@ -492,11 +486,12 @@ bool FullScreenIsActive(void) {
 }
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &str) {
+                             const std::string &str, bool forDock) {
     [GWView startEditing:[NSString stringWithUTF8String:str.c_str()]
             at:(NSPoint){(CGFloat)x, (CGFloat)y}
-            withHeight:fontHeight
-            withMinWidthInChars:minWidthChars];
+            withHeight:(forDock ? 15 : fontHeight)
+            withMinWidthInChars:minWidthChars
+            usingMonospace:(forDock ? TRUE : FALSE)];
 }
 
 void HideGraphicsEditControl(void) {
@@ -1062,7 +1057,7 @@ double GetScreenDpi() {
     return (displayPixelSize.width / displayPhysicalSize.width) * 25.4f;
 }
 
-void InvalidateText(void) {
+void InvalidateText() {
     NSSize size = [TWView convertSizeToBacking:[TWView frame].size];
     size.height = (SS.TW.top[SS.TW.rows - 1] + 1) * TextWindow::LINE_HEIGHT / 2;
     [TWView setFrameSize:[TWView convertSizeFromBacking:size]];

@@ -244,7 +244,7 @@ void RadioMenuByCmd(Command id, bool selected);
 void EnableMenuByCmd(Command id, bool enabled);
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &str);
+                             const std::string &str, bool forDock);
 void HideGraphicsEditControl();
 bool GraphicsEditControlIsVisible();
 void ShowTextEditControl(int x, int y, const std::string &str);
@@ -374,8 +374,10 @@ std::string Basename(std::string filename, bool stripExtension = false);
 std::string Dirname(std::string filename);
 bool ReadFile(const std::string &filename, std::string *data);
 bool WriteFile(const std::string &filename, const std::string &data);
+
 void Message(const char *str, ...);
 void Error(const char *str, ...);
+
 void CnfFreezeBool(bool v, const std::string &name);
 void CnfFreezeColor(RgbaColor v, const std::string &name);
 bool CnfThawBool(bool v, const std::string &name);
@@ -749,6 +751,7 @@ public:
     Unit     viewUnits;
     int      afterDecimalMm;
     int      afterDecimalInch;
+
     int      autosaveInterval; // in minutes
 
     std::string MmToString(double v);

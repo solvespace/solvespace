@@ -298,6 +298,17 @@ public:
         glXDestroyContext(_xdisplay, _glcontext);
     }
 
+    void set_cursor_hand(bool is_hand) {
+        realize();
+
+        Gdk::CursorType type = is_hand ? Gdk::HAND1 : Gdk::ARROW;
+#ifdef HAVE_GTK3
+        get_window()->set_cursor(Gdk::Cursor::create(type));
+#else
+        get_window()->set_cursor(Gdk::Cursor(type));
+#endif
+    }
+
 protected:
     /* Draw on a GLX framebuffer object, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
@@ -353,6 +364,11 @@ public:
 
         _entry.signal_activate().
             connect(sigc::mem_fun(this, &EditorOverlay::on_activate));
+
+        _entry.signal_motion_notify_event().
+            connect(sigc::mem_fun(this, &EditorOverlay::on_editor_motion_notify_event));
+        _entry.signal_button_press_event().
+            connect(sigc::mem_fun(this, &EditorOverlay::on_editor_button_press_event));
     }
 
     void start_editing(int x, int y, int font_height, bool is_monospace, int minWidthChars,
@@ -451,6 +467,14 @@ protected:
         _signal_editing_done(_entry.get_text());
     }
 
+    bool on_editor_motion_notify_event(GdkEventMotion *event) {
+        return _underlay.event((GdkEvent*) event);
+    }
+
+    bool on_editor_button_press_event(GdkEventButton *event) {
+        return _underlay.event((GdkEvent*) event);
+    }
+
 private:
     Gtk::Widget &_underlay;
     Gtk::Entry _entry;
@@ -495,22 +519,12 @@ public:
     }
 
 protected:
-    bool on_configure_event(GdkEventConfigure *event) override {
-        _w = event->width;
-        _h = event->height;
-
-        return GlWidget::on_configure_event(event);;
-    }
-
     void on_gl_draw() override {
         SS.GW.Paint();
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        SS.GW.MouseMoved(x, y,
+        SS.GW.MouseMoved(event->x, event->y,
             event->state & GDK_BUTTON1_MASK,
             event->state & GDK_BUTTON2_MASK,
             event->state & GDK_BUTTON3_MASK,
@@ -521,20 +535,17 @@ protected:
     }
 
     bool on_button_press_event(GdkEventButton *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
         switch(event->button) {
             case 1:
             if(event->type == GDK_BUTTON_PRESS)
-                SS.GW.MouseLeftDown(x, y);
+                SS.GW.MouseLeftDown(event->x, event->y);
             else if(event->type == GDK_2BUTTON_PRESS)
-                SS.GW.MouseLeftDoubleClick(x, y);
+                SS.GW.MouseLeftDoubleClick(event->x, event->y);
             break;
 
             case 2:
             case 3:
-            SS.GW.MouseMiddleOrRightDown(x, y);
+            SS.GW.MouseMiddleOrRightDown(event->x, event->y);
             break;
         }
 
@@ -542,16 +553,13 @@ protected:
     }
 
     bool on_button_release_event(GdkEventButton *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
         switch(event->button) {
             case 1:
-            SS.GW.MouseLeftUp(x, y);
+            SS.GW.MouseLeftUp(event->x, event->y);
             break;
 
             case 3:
-            SS.GW.MouseRightUp(x, y);
+            SS.GW.MouseRightUp(event->x, event->y);
             break;
         }
 
@@ -559,10 +567,7 @@ protected:
     }
 
     bool on_scroll_event(GdkEventScroll *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        SS.GW.MouseScroll(x, y, (int)-DeltaYOfScrollEvent(event));
+        SS.GW.MouseScroll(event->x, event->y, (int)-DeltaYOfScrollEvent(event));
 
         return true;
     }
@@ -571,15 +576,6 @@ protected:
         SS.GW.MouseLeave();
 
         return true;
-    }
-
-private:
-    int _w, _h;
-    void ij_to_xy(double i, double j, int &x, int &y) {
-        // Convert to xy (vs. ij) style coordinates,
-        // with (0, 0) at center
-        x = (int)i - _w / 2;
-        y = _h / 2 - (int)j;
     }
 };
 
@@ -748,16 +744,9 @@ bool FullScreenIsActive(void) {
 }
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &val) {
-    Gdk::Rectangle rect = GW->get_widget().get_allocation();
-
-    // Convert to ij (vs. xy) style coordinates,
-    // and compensate for the input widget height due to inverse coord
-    int i, j;
-    i = x + rect.get_width() / 2;
-    j = -y + rect.get_height() / 2;
-
-    GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, minWidthChars, val);
+                             const std::string &val, bool forDock) {
+    GW->get_overlay().start_editing(x, y, fontHeight,
+        /*is_monospace=*/forDock, minWidthChars, val);
 }
 
 void HideGraphicsEditControl(void) {
@@ -1260,34 +1249,22 @@ public:
                    Gdk::LEAVE_NOTIFY_MASK);
     }
 
-    void set_cursor_hand(bool is_hand) {
-        Glib::RefPtr<Gdk::Window> gdkwin = get_window();
-        if(gdkwin) { // returns NULL if not realized
-            Gdk::CursorType type = is_hand ? Gdk::HAND1 : Gdk::ARROW;
-#ifdef HAVE_GTK3
-            gdkwin->set_cursor(Gdk::Cursor::create(type));
-#else
-            gdkwin->set_cursor(Gdk::Cursor(type));
-#endif
-        }
-    }
-
 protected:
     void on_gl_draw() override {
         SS.TW.Paint();
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
-        SS.TW.MouseEvent(/*leftClick*/ false,
-                         /*leftDown*/ event->state & GDK_BUTTON1_MASK,
+        SS.TW.MouseEvent(/*isClick=*/false,
+                         /*leftDown=*/event->state & GDK_BUTTON1_MASK,
                          event->x, event->y);
 
         return true;
     }
 
     bool on_button_press_event(GdkEventButton *event) override {
-        SS.TW.MouseEvent(/*leftClick*/ event->type == GDK_BUTTON_PRESS,
-                         /*leftDown*/ event->state & GDK_BUTTON1_MASK,
+        SS.TW.MouseEvent(/*isClick=*/event->type == GDK_BUTTON_PRESS,
+                         /*leftDown=*/event->state & GDK_BUTTON1_MASK,
                          event->x, event->y);
 
         return true;
@@ -1333,11 +1310,6 @@ public:
 
         _overlay.signal_editing_done().
             connect(sigc::mem_fun(this, &TextWindowGtk::on_editing_done));
-
-        _overlay.get_entry().signal_motion_notify_event().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_motion_notify_event));
-        _overlay.get_entry().signal_button_press_event().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_button_press_event));
     }
 
     Gtk::VScrollbar &get_scrollbar() {
@@ -1388,14 +1360,6 @@ protected:
         SS.TW.EditControlDone(value.c_str());
     }
 
-    bool on_editor_motion_notify_event(GdkEventMotion *event) {
-        return _widget.event((GdkEvent*) event);
-    }
-
-    bool on_editor_button_press_event(GdkEventButton *event) {
-        return _widget.event((GdkEvent*) event);
-    }
-
 private:
     Gtk::VScrollbar _scrollbar;
     TextWidget _widget;
@@ -1423,6 +1387,11 @@ double GetScreenDpi() {
 }
 
 void InvalidateText(void) {
+    if(SS.GW.dockTextWindow) {
+        InvalidateGraphics();
+        return;
+    }
+
     TW->get_widget().queue_draw();
 }
 
@@ -1431,7 +1400,11 @@ void MoveTextScrollbarTo(int pos, int maxPos, int page) {
 }
 
 void SetMousePointerToHand(bool is_hand) {
-    TW->get_widget().set_cursor_hand(is_hand);
+    if(SS.GW.dockTextWindow) {
+        GW->get_widget().set_cursor_hand(is_hand);
+    } else {
+        TW->get_widget().set_cursor_hand(is_hand);
+    }
 }
 
 void ShowTextEditControl(int x, int y, const std::string &val) {

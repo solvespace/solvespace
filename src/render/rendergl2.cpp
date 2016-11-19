@@ -134,7 +134,7 @@ public:
     void SetCamera(const Camera &c, bool flip) override;
     void SetLighting(const Lighting &l) override;
 
-    void NewFrame() override;
+    void NewFrame(int left, int top, int width, int height) override;
     void FlushFrame() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
@@ -542,8 +542,6 @@ void OpenGl2Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
 }
 
 void OpenGl2Renderer::UpdateProjection(bool flip) {
-    glViewport(0, 0, camera.width, camera.height);
-
     double mat1[16];
     double mat2[16];
 
@@ -611,11 +609,15 @@ void OpenGl2Renderer::UpdateProjection(bool flip) {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl2Renderer::NewFrame() {
+void OpenGl2Renderer::NewFrame(int left, int top, int width, int height) {
     if(!initialized) {
         Init();
         initialized = true;
     }
+
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(left, top, width, height);
+    glViewport(left, top, width, height);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);

@@ -102,6 +102,9 @@ void SolveSpaceUI::Init() {
     RefreshRecentMenus();
     // Autosave timer
     autosaveInterval = CnfThawInt(5, "AutosaveInterval");
+    // Single-window UI
+    GW.dockTextWindow = CnfThawBool(false, "DockTextWindow");
+    GW.textDockWidth = CnfThawInt(420, "TextDockWidth");
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
@@ -217,6 +220,9 @@ void SolveSpaceUI::Exit() {
     CnfFreezeBool(showToolbar, "ShowToolbar");
     // Autosave timer
     CnfFreezeInt(autosaveInterval, "AutosaveInterval");
+    // Single-window UI
+    CnfFreezeBool(GW.dockTextWindow, "DockTextWindow");
+    CnfFreezeInt(GW.textDockWidth, "TextDockWidth");
 
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles();

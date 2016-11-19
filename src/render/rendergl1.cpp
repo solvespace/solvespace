@@ -219,7 +219,7 @@ public:
     void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) override;
     void SetLighting(const Lighting &lighting) override;
 
-    void NewFrame() override;
+    void NewFrame(int left, int top, int width, int height) override;
     void FlushFrame() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
@@ -705,8 +705,6 @@ void OpenGl1Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
 void OpenGl1Renderer::UpdateProjection(bool flip) {
     UnSelectPrimitive();
 
-    glViewport(0, 0, camera.width, camera.height);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 
@@ -753,7 +751,11 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl1Renderer::NewFrame() {
+void OpenGl1Renderer::NewFrame(int left, int top, int width, int height) {
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(left, top, width, height);
+    glViewport(left, top, width, height);
+
     glEnable(GL_NORMALIZE);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

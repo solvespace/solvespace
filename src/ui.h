@@ -203,6 +203,7 @@ public:
 
     // These are called by the platform-specific code.
     void Paint();
+    void Paint(std::shared_ptr<ViewportCanvas> canvas, int left, int top, int width, int height);
     void MouseEvent(bool isClick, bool leftDown, double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave();
@@ -232,6 +233,7 @@ public:
     void ClearScreen();
 
     void Show();
+    void Invalidate();
 
     // State for the screen that we are showing in the text window.
     enum class Screen : uint32_t {
@@ -341,6 +343,8 @@ public:
             bool      picker1dActive;
             bool      picker2dActive;
         }       colorPicker;
+
+        bool    inDock;
     } editControl;
 
     void HideEditControl();
@@ -445,6 +449,7 @@ public:
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);
     static void ScreenChangeAutosaveInterval(int link, uint32_t v);
+    static void ScreenChangeTextPaneEnabled(int link, uint32_t v);
     static void ScreenChangeStyleName(int link, uint32_t v);
     static void ScreenChangeStyleMetric(int link, uint32_t v);
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
@@ -715,12 +720,16 @@ public:
     Command toolbarTooltipped;
     int toolbarMouseX, toolbarMouseY;
 
+    // Text window interaction
+    bool    showTextWindow;
+    bool    dockTextWindow;
+    double  textDockWidth;
+
     // This sets what gets displayed.
     bool    showWorkplanes;
     bool    showNormals;
     bool    showPoints;
     bool    showConstraints;
-    bool    showTextWindow;
     bool    showShaded;
     bool    showEdges;
     bool    showOutlines;
@@ -746,8 +755,9 @@ public:
 
     // These are called by the platform-specific code.
     void Paint();
+    bool ConvertMouseCoords(double *x, double *y);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
-                                bool rightDown, bool shiftDown, bool ctrlDown);
+                    bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);
     void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);

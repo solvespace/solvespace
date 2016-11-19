@@ -908,17 +908,12 @@ bool SolveSpace::TextEditControlIsVisible()
     return IsWindowVisible(TextEditControl) ? true : false;
 }
 void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                                         const std::string &str)
+                                         const std::string &str, bool forDock)
 {
     if(GraphicsEditControlIsVisible()) return;
 
-    RECT r;
-    GetClientRect(GraphicsWnd, &r);
-    x = x + (r.right - r.left)/2;
-    y = (r.bottom - r.top)/2 - y;
-
     ShowEditControl(GraphicsEditControl, x, y, fontHeight, minWidthChars,
-                    /*isMonospace=*/false, Widen(str));
+                    /*isMonospace=*/forDock, Widen(str));
 }
 void SolveSpace::HideGraphicsEditControl()
 {
@@ -970,12 +965,6 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             tme.dwFlags = TME_LEAVE;
             tme.hwndTrack = GraphicsWnd;
             TrackMouseEvent(&tme);
-
-            // Convert to xy (vs. ij) style coordinates, with (0, 0) at center
-            RECT r;
-            GetClientRect(GraphicsWnd, &r);
-            x = x - (r.right - r.left)/2;
-            y = (r.bottom - r.top)/2 - y;
 
             LastMousePos.x = x;
             LastMousePos.y = y;

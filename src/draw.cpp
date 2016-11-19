@@ -751,14 +751,7 @@ void GraphicsWindow::Paint() {
 
     havePainted = true;
 
-    int w, h;
-    GetGraphicsWindowSize(&w, &h);
-    width = w;
-    height = h;
-
-    Camera   camera   = GetCamera();
     Lighting lighting = GetLighting();
-
     if(!SS.ActiveGroupsOkay()) {
         // Draw a different background whenever we're having solve problems.
         RgbaColor bgColor = Style::Color(Style::DRAW_ERROR);
@@ -770,9 +763,22 @@ void GraphicsWindow::Paint() {
         ForceTextWindowShown();
     }
 
+    int windowWidth, windowHeight;
+    GetGraphicsWindowSize(&windowWidth, &windowHeight);
+    if(showTextWindow && dockTextWindow) {
+        width = windowWidth - textDockWidth;
+        height = windowHeight;
+
+        SS.TW.Paint(canvas, windowWidth - textDockWidth, 0, textDockWidth, windowHeight);
+    } else {
+        width = windowWidth;
+        height = windowHeight;
+    }
+    Camera camera = GetCamera();
+
     auto renderStartTime = std::chrono::high_resolution_clock::now();
 
-    canvas->NewFrame();
+    canvas->NewFrame(0, 0, width, height);
     canvas->SetCamera(camera);
     canvas->SetLighting(lighting);
     Draw(canvas.get());

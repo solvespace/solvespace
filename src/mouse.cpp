@@ -75,9 +75,27 @@ void GraphicsWindow::StartDraggingBySelection() {
     if(hover.entity.v) StartDraggingByEntity(hover.entity);
 }
 
+bool GraphicsWindow::ConvertMouseCoords(double *x, double *y) {
+    if(showTextWindow && dockTextWindow) {
+        if(*x > width) {
+            *x -= width;
+            return true;
+        }
+    }
+
+    // Convert to OpenGL coordinates.
+    *x = *x - width / 2;
+    *y = height / 2 - *y;
+    return false;
+}
+
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
-            bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
-{
+                                bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown) {
+    if(ConvertMouseCoords(&x, &y)) {
+        SS.TW.MouseEvent(/*isClick=*/(leftDown || middleDown || rightDown), leftDown, x, y);
+        return;
+    }
+
     if(GraphicsEditControlIsVisible()) return;
     if(context.active) return;
 
@@ -470,6 +488,11 @@ void GraphicsWindow::ClearPending() {
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
+    if(ConvertMouseCoords(&x, &y)) {
+        SS.TW.MouseEvent(/*isClick=*/true, /*leftDown=*/false, x, y);
+        return;
+    }
+
     if(GraphicsEditControlIsVisible()) return;
 
     orig.offset = offset;
@@ -498,6 +521,8 @@ void GraphicsWindow::ContextMenuListStyles() {
 }
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
+    if(ConvertMouseCoords(&x, &y)) return;
+
     SS.extraLine.draw = false;
     InvalidateGraphics();
 
@@ -893,7 +918,14 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
     return false;
 }
 
-void GraphicsWindow::MouseLeftDown(double mx, double my) {
+void GraphicsWindow::MouseLeftDown(double origMx, double origMy) {
+    double mx = origMx,
+           my = origMy;
+    if(ConvertMouseCoords(&mx, &my)) {
+        SS.TW.MouseEvent(/*isClick=*/true, /*leftDown=*/true, mx, my);
+        return;
+    }
+
     orig.mouseDown = true;
 
     if(GraphicsEditControlIsVisible()) {
@@ -912,7 +944,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     bool hasConstraintSuggestion = SS.GW.pending.hasSuggestion;
 
     // Make sure the hover is up to date.
-    MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false,
+    MouseMoved(origMx, origMy, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false,
         /*shiftDown=*/false, /*ctrlDown=*/false);
     orig.mouse.x = mx;
     orig.mouse.y = my;
@@ -1232,6 +1264,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 }
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
+    if(ConvertMouseCoords(&mx, &my)) return;
+
     orig.mouseDown = false;
     hoverWasSelectedOnMousedown = false;
 
@@ -1272,6 +1306,8 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
 }
 
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
+    if(ConvertMouseCoords(&mx, &my)) return;
+
     if(GraphicsEditControlIsVisible()) return;
     SS.TW.HideEditControl();
 
@@ -1335,13 +1371,19 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         }
         hStyle hs = c->disp.style;
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
-        ShowGraphicsEditControl((int)p2.x, (int)p2.y,
+        SS.TW.editControl.inDock = false;
+        ShowGraphicsEditControl((int)p2.x + width / 2, height / 2 - (int)p2.y,
                                 (int)(VectorFont::Builtin()->GetHeight(Style::TextHeight(hs))),
-                                editMinWidthChar, editValue);
+                                editMinWidthChar, editValue, /*forDock=*/false);
     }
 }
 
 void GraphicsWindow::EditControlDone(const char *s) {
+    if(SS.TW.editControl.inDock) {
+        SS.TW.EditControlDone(s);
+        return;
+    }
+
     HideGraphicsEditControl();
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 
@@ -1416,6 +1458,11 @@ bool GraphicsWindow::KeyDown(int c) {
 }
 
 void GraphicsWindow::MouseScroll(double x, double y, int delta) {
+    if(ConvertMouseCoords(&x, &y)) {
+        // FIXME SS.TW.MouseScroll(x, y, delta);
+        return;
+    }
+
     double offsetRight = offset.Dot(projRight);
     double offsetUp = offset.Dot(projUp);
 

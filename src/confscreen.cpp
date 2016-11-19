@@ -161,6 +161,11 @@ void TextWindow::ScreenChangeAutosaveInterval(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::AUTOSAVE_INTERVAL;
 }
 
+void TextWindow::ScreenChangeTextPaneEnabled(int link, uint32_t v) {
+    SS.GW.dockTextWindow = !SS.GW.dockTextWindow;
+    ShowTextWindow(SS.GW.showTextWindow && !SS.GW.dockTextWindow);
+}
+
 void TextWindow::ShowConfiguration() {
     int i;
     Printf(true, "%Ft user color (r, g, b)");
@@ -302,6 +307,11 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",
         SS.autosaveInterval, &ScreenChangeAutosaveInterval);
+
+    Printf(false, "");
+    Printf(false, "  %Fd%f%Ll%s  single window UI%E",
+        &ScreenChangeTextPaneEnabled,
+        SS.GW.dockTextWindow ? CHECK_TRUE : CHECK_FALSE);
 
     if(canvas) {
         const char *gl_vendor, *gl_renderer, *gl_version;

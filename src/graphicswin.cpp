@@ -235,7 +235,7 @@ void GraphicsWindow::Init() {
     drawOccludedAs = DrawOccludedAs::INVISIBLE;
 
     showTextWindow = true;
-    ShowTextWindow(showTextWindow);
+    ShowTextWindow(showTextWindow && !dockTextWindow);
 
     showSnapGrid = false;
     context.active = false;
@@ -687,7 +687,7 @@ void GraphicsWindow::EnsureValidActives() {
     RadioMenuByCmd(Command::UNITS_MM, SS.viewUnits == Unit::MM);
     RadioMenuByCmd(Command::UNITS_INCHES, SS.viewUnits == Unit::INCHES);
 
-    ShowTextWindow(SS.GW.showTextWindow);
+    ShowTextWindow(showTextWindow && !dockTextWindow);
     CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/SS.GW.showTextWindow);
 
 #if defined(__APPLE__)
@@ -722,7 +722,7 @@ void GraphicsWindow::ForceTextWindowShown() {
     if(!showTextWindow) {
         showTextWindow = true;
         CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/true);
-        ShowTextWindow(true);
+        ShowTextWindow(!dockTextWindow);
     }
 }
 
