@@ -133,6 +133,8 @@ if(WIN32)
         add_vendored_subdirectory(extlib/angle)
         set(OPENGL_LIBRARIES        EGL GLESv2)
         set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
+    else()
+        find_package(OpenGL REQUIRED)
     endif()
 
     if(ENABLE_TESTS)

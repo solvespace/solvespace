@@ -22,23 +22,33 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
+#if HAVE_OPENGL == 2
 #define EGLAPI /*static linkage*/
 #include <EGL/egl.h>
+#endif
 
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
+#if HAVE_OPENGL == 2
 EGLDisplay TextGlDisplay;
 EGLSurface TextGlSurface;
 EGLContext TextGlContext;
+#else
+HGLRC TextGl;
+#endif
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
+#if HAVE_OPENGL == 2
 EGLDisplay GraphicsGlDisplay;
 EGLSurface GraphicsGlSurface;
 EGLContext GraphicsGlContext;
+#else
+HGLRC GraphicsGl;
+#endif
 static struct {
     int x, y;
 } LastMousePos;
@@ -435,6 +445,7 @@ void SolveSpace::SetMousePointerToHand(bool yes) {
 
 static void PaintTextWnd()
 {
+#if HAVE_OPENGL == 2
     eglMakeCurrent(TextGlDisplay, TextGlSurface, TextGlSurface, TextGlContext);
 
     SS.TW.Paint();
@@ -443,6 +454,16 @@ static void PaintTextWnd()
     // Leave the graphics window context active, except when we're painting
     // this text window.
     eglMakeCurrent(GraphicsGlDisplay, GraphicsGlSurface, GraphicsGlSurface, GraphicsGlContext);
+#else
+    wglMakeCurrent(GetDC(TextWnd), TextGl);
+
+    SS.TW.Paint();
+    SwapBuffers(GetDC(TextWnd));
+
+    // Leave the graphics window context active, except when we're painting
+    // this text window.
+    wglMakeCurrent(GetDC(GraphicsWnd), GraphicsGl);
+#endif
 }
 
 void SolveSpace::MoveTextScrollbarTo(int pos, int maxPos, int page)
@@ -738,6 +759,7 @@ void SolveSpace::ShowTextWindow(bool visible)
 
 const bool SolveSpace::FLIP_FRAMEBUFFER = false;
 
+#if HAVE_OPENGL == 2
 static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
                             EGLContext *eglContext) {
     ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
@@ -775,11 +797,43 @@ static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSu
 
     eglMakeCurrent(*eglDisplay, *eglSurface, *eglSurface, *eglContext);
 }
+#else
+static void CreateGlContext(HWND hwnd, HGLRC *glrc)
+{
+    HDC hdc = GetDC(hwnd);
+
+    PIXELFORMATDESCRIPTOR pfd = {};
+    int pixelFormat;
+
+    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
+                        PFD_DOUBLEBUFFER;
+    pfd.dwLayerMask = PFD_MAIN_PLANE;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 32;
+    pfd.cDepthBits = 24;
+    pfd.cAccumBits = 0;
+    pfd.cStencilBits = 0;
+
+    pixelFormat = ChoosePixelFormat(hdc, &pfd);
+    ssassert(pixelFormat != 0, "Expected a valid pixel format to be chosen");
+
+    ssassert(SetPixelFormat(hdc, pixelFormat, &pfd), "Cannot set pixel format");
+
+    *glrc = wglCreateContext(hdc);
+    wglMakeCurrent(hdc, *glrc);
+}
+#endif
 
 void SolveSpace::PaintGraphics()
 {
     SS.GW.Paint();
+#if HAVE_OPENGL == 2
     eglSwapBuffers(GraphicsGlDisplay, GraphicsGlSurface);
+#else
+    SwapBuffers(GetDC(GraphicsWnd));
+#endif
 }
 void SolveSpace::InvalidateGraphics()
 {
@@ -1328,9 +1382,14 @@ static void CreateMainWindows()
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
 
+#if HAVE_OPENGL == 2
     // Now that all our windows exist, set up gl contexts.
     CreateGlContext(TextWnd, &TextGlDisplay, &TextGlSurface, &TextGlContext);
     CreateGlContext(GraphicsWnd, &GraphicsGlDisplay, &GraphicsGlSurface, &GraphicsGlContext);
+#else
+    CreateGlContext(TextWnd, &TextGl);
+    CreateGlContext(GraphicsWnd, &GraphicsGl);
+#endif
 
     RECT r, rc;
     GetWindowRect(TextWnd, &r);
