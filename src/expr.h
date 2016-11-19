@@ -4,11 +4,8 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-
 #ifndef __EXPR_H
 #define __EXPR_H
-
-class Expr;
 
 class Expr {
 public:
@@ -20,12 +17,16 @@ public:
         // if we know that the param table won't move around)
         PARAM_PTR      =  1,
 
+        // Operands
         CONSTANT       = 20,
+        VARIABLE       = 21,
 
+        // Binary ops
         PLUS           = 100,
         MINUS          = 101,
         TIMES          = 102,
         DIV            = 103,
+        // Unary ops
         NEGATE         = 104,
         SQRT           = 105,
         SQUARE         = 106,
@@ -33,16 +34,6 @@ public:
         COS            = 108,
         ASIN           = 109,
         ACOS           = 110,
-
-        // Special helpers for when we're parsing an expression from text.
-        // Initially, literals (like a constant number) appear in the same
-        // format as they will in the finished expression, but the operators
-        // are different until the parser fixes things up (and builds the
-        // tree from the flat list that the lexer outputs).
-        ALL_RESOLVED   = 1000,
-        PAREN          = 1001,
-        BINARY_OP      = 1002,
-        UNARY_OP       = 1003
     };
 
     Op      op;
@@ -52,9 +43,6 @@ public:
         hParam  parh;
         Param  *parp;
         Expr    *b;
-
-        // For use while parsing
-        char    c;
     };
 
     Expr() { }
@@ -106,25 +94,9 @@ public:
     // resolved to pointers to the actual value. This speeds things up
     // considerably.
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
-        IdList<Param,hParam> *thenTry) const;
+                                       IdList<Param,hParam> *thenTry) const;
 
     static Expr *From(const char *in, bool popUpError);
-    static void  Lex(const char *in);
-    static Expr *Next();
-    static void  Consume();
-
-    static void PushOperator(Expr *e);
-    static Expr *PopOperator();
-    static Expr *TopOperator();
-    static void PushOperand(Expr *e);
-    static Expr *PopOperand();
-
-    static void Reduce();
-    static void ReduceAndPush(Expr *e);
-    static int Precedence(Expr *e);
-
-    static int Precedence(int op);
-    static void Parse();
 };
 
 class ExprVector {
@@ -164,6 +136,4 @@ public:
 
     Expr *Magnitude() const;
 };
-
 #endif
-

@@ -267,6 +267,7 @@ int Expr::Children() const {
         case Op::PARAM:
         case Op::PARAM_PTR:
         case Op::CONSTANT:
+        case Op::VARIABLE:
             return 0;
 
         case Op::PLUS:
@@ -283,12 +284,6 @@ int Expr::Children() const {
         case Op::ASIN:
         case Op::ACOS:
             return 1;
-
-        case Op::PAREN:
-        case Op::BINARY_OP:
-        case Op::UNARY_OP:
-        case Op::ALL_RESOLVED:
-            break;
     }
     ssassert(false, "Unexpected operation");
 }
@@ -344,6 +339,7 @@ double Expr::Eval() const {
         case Op::PARAM_PTR:     return parp->val;
 
         case Op::CONSTANT:      return v;
+        case Op::VARIABLE:      ssassert(false, "Not supported yet");
 
         case Op::PLUS:          return a->Eval() + b->Eval();
         case Op::MINUS:         return a->Eval() - b->Eval();
@@ -357,12 +353,6 @@ double Expr::Eval() const {
         case Op::COS:           return cos(a->Eval());
         case Op::ACOS:          return acos(a->Eval());
         case Op::ASIN:          return asin(a->Eval());
-
-        case Op::PAREN:
-        case Op::BINARY_OP:
-        case Op::UNARY_OP:
-        case Op::ALL_RESOLVED:
-            break;
     }
     ssassert(false, "Unexpected operation");
 }
@@ -375,6 +365,7 @@ Expr *Expr::PartialWrt(hParam p) const {
         case Op::PARAM:     return From(p.v == parh.v ? 1 : 0);
 
         case Op::CONSTANT:  return From(0.0);
+        case Op::VARIABLE:  ssassert(false, "Not supported yet");
 
         case Op::PLUS:      return (a->PartialWrt(p))->Plus(b->PartialWrt(p));
         case Op::MINUS:     return (a->PartialWrt(p))->Minus(b->PartialWrt(p));
@@ -405,12 +396,6 @@ Expr *Expr::PartialWrt(hParam p) const {
         case Op::ACOS:
             return (From(-1)->Div((From(1)->Minus(a->Square()))->Sqrt()))
                         ->Times(a->PartialWrt(p));
-
-        case Op::PAREN:
-        case Op::BINARY_OP:
-        case Op::UNARY_OP:
-        case Op::ALL_RESOLVED:
-            break;
     }
     ssassert(false, "Unexpected operation");
 }
@@ -451,6 +436,7 @@ Expr *Expr::FoldConstants() {
         case Op::PARAM_PTR:
         case Op::PARAM:
         case Op::CONSTANT:
+        case Op::VARIABLE:
             break;
 
         case Op::MINUS:
@@ -501,12 +487,6 @@ Expr *Expr::FoldConstants() {
                 n->v = nv;
             }
             break;
-
-        case Op::PAREN:
-        case Op::BINARY_OP:
-        case Op::UNARY_OP:
-        case Op::ALL_RESOLVED:
-            ssassert(false, "Unexpected operation");
     }
     return n;
 }
@@ -572,6 +552,7 @@ std::string Expr::Print() const {
         case Op::PARAM_PTR: return ssprintf("param(p%08x)", parp->h.v);
 
         case Op::CONSTANT:  return ssprintf("%.3f", v);
+        case Op::VARIABLE:  return "(var)";
 
         case Op::PLUS:      c = '+'; goto p;
         case Op::MINUS:     c = '-'; goto p;
@@ -588,12 +569,6 @@ p:
         case Op::COS:       return "(cos " + a->Print() + ")";
         case Op::ASIN:      return "(asin " + a->Print() + ")";
         case Op::ACOS:      return "(acos " + a->Print() + ")";
-
-        case Op::PAREN:
-        case Op::BINARY_OP:
-        case Op::UNARY_OP:
-        case Op::ALL_RESOLVED:
-            break;
     }
     ssassert(false, "Unexpected operation");
 }
@@ -606,244 +581,316 @@ p:
 // to provide calculator type functionality wherever numbers are entered.
 //-----------------------------------------------------------------------------
 
-#define MAX_UNPARSED 1024
-static Expr *Unparsed[MAX_UNPARSED];
-static int UnparsedCnt, UnparsedP;
+class ExprParser {
+public:
+    enum class TokenType {
+        ERROR = 0,
 
-static Expr *Operands[MAX_UNPARSED];
-static int OperandsP;
+        PAREN_LEFT,
+        PAREN_RIGHT,
+        BINARY_OP,
+        UNARY_OP,
+        OPERAND,
 
-static Expr *Operators[MAX_UNPARSED];
-static int OperatorsP;
+        END,
+    };
 
-static jmp_buf exprjmp;
+    class Token {
+    public:
+        TokenType  type;
+        Expr      *expr;
 
-static const char *errors[] = {
-    "operator stack full!",
-    "operator stack empty (get top)",
-    "operator stack empty (pop)",
-    "operand stack full",
-    "operand stack empty",
-    "no token to consume",
-    "end of expression unexpected",
-    "expected: )",
-    "expected expression",
-    "too long",
-    "unknown name",
-    "unexpected characters",
+        static Token From(TokenType type = TokenType::ERROR, Expr *expr = NULL);
+        static Token From(TokenType type, Expr::Op op);
+        bool IsError() const { return type == TokenType::ERROR; }
+    };
+
+    const char        *input;
+    unsigned           inputPos;
+    std::vector<Token> stack;
+
+    char ReadChar();
+    char PeekChar();
+
+    double ReadNumber();
+    std::string ReadWord();
+    void SkipSpace();
+
+    Token PopOperator(std::string *error);
+    Token PopOperand(std::string *error);
+
+    int Precedence(Token token);
+    Token Lex(std::string *error);
+    bool Reduce(std::string *error);
+    bool Parse(std::string *error, size_t reduceUntil = 0);
+
+    static Expr *Parse(const char *input, std::string *error);
 };
 
-void Expr::PushOperator(Expr *e) {
-    if(OperatorsP >= MAX_UNPARSED) longjmp(exprjmp, 0);
-    Operators[OperatorsP++] = e;
-}
-Expr *Expr::TopOperator() {
-    if(OperatorsP <= 0) longjmp(exprjmp, 1);
-    return Operators[OperatorsP-1];
-}
-Expr *Expr::PopOperator() {
-    if(OperatorsP <= 0) longjmp(exprjmp, 2);
-    return Operators[--OperatorsP];
-}
-void Expr::PushOperand(Expr *e) {
-    if(OperandsP >= MAX_UNPARSED) longjmp(exprjmp, 3);
-    Operands[OperandsP++] = e;
-}
-Expr *Expr::PopOperand() {
-    if(OperandsP <= 0) longjmp(exprjmp, 4);
-    return Operands[--OperandsP];
-}
-Expr *Expr::Next() {
-    if(UnparsedP >= UnparsedCnt) return NULL;
-    return Unparsed[UnparsedP];
-}
-void Expr::Consume() {
-    if(UnparsedP >= UnparsedCnt) longjmp(exprjmp, 5);
-    UnparsedP++;
+ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
+    Token t;
+    t.type = type;
+    t.expr = expr;
+    return t;
 }
 
-int Expr::Precedence(Expr *e) {
-    if(e->op == Op::ALL_RESOLVED) return -1; // never want to reduce this marker
-    ssassert(e->op == Op::BINARY_OP || e->op == Op::UNARY_OP, "Unexpected operation");
+ExprParser::Token ExprParser::Token::From(TokenType type, Expr::Op op) {
+    Token t;
+    t.type = type;
+    t.expr = Expr::AllocExpr();
+    t.expr->op = op;
+    return t;
+}
 
-    switch(e->c) {
-        case 'q':
-        case 's':
-        case 'c':
-        case 'n':   return 30;
+char ExprParser::ReadChar() {
+    return input[inputPos++];
+}
 
-        case '*':
-        case '/':   return 20;
+char ExprParser::PeekChar() {
+    return input[inputPos];
+}
 
-        case '+':
-        case '-':   return 10;
+double ExprParser::ReadNumber() {
+    char *endptr;
+    double d = strtod(input + inputPos, &endptr);
+    unsigned len = endptr - (input + inputPos);
+    inputPos += len;
+    return d;
+}
 
-        default: ssassert(false, "Unexpected operator");
+std::string ExprParser::ReadWord() {
+    std::string s;
+
+    while(char c = PeekChar()) {
+        if(!isalnum(c)) break;
+        s.push_back(ReadChar());
+    }
+
+    return s;
+}
+
+void ExprParser::SkipSpace() {
+    while(char c = PeekChar()) {
+        if(!isspace(c)) break;
+        ReadChar();
     }
 }
 
-void Expr::Reduce() {
-    Expr *a, *b;
+ExprParser::Token ExprParser::Lex(std::string *error) {
+    SkipSpace();
 
-    Expr *op = PopOperator();
-    Expr *n;
-    Op o;
-    switch(op->c) {
-        case '+': o = Op::PLUS;  goto c;
-        case '-': o = Op::MINUS; goto c;
-        case '*': o = Op::TIMES; goto c;
-        case '/': o = Op::DIV;   goto c;
-c:
-            b = PopOperand();
-            a = PopOperand();
-            n = a->AnyOp(o, b);
-            break;
-
-        case 'n': n = PopOperand()->Negate(); break;
-        case 'q': n = PopOperand()->Sqrt(); break;
-        case 's': n = (PopOperand()->Times(Expr::From(PI/180)))->Sin(); break;
-        case 'c': n = (PopOperand()->Times(Expr::From(PI/180)))->Cos(); break;
-
-        default: ssassert(false, "Unexpected operator");
-    }
-    PushOperand(n);
-}
-
-void Expr::ReduceAndPush(Expr *n) {
-    while(Precedence(n) <= Precedence(TopOperator())) {
-        Reduce();
-    }
-    PushOperator(n);
-}
-
-void Expr::Parse() {
-    Expr *e = AllocExpr();
-    e->op = Op::ALL_RESOLVED;
-    PushOperator(e);
-
-    for(;;) {
-        Expr *n = Next();
-        if(!n) longjmp(exprjmp, 6);
-
-        if(n->op == Op::CONSTANT) {
-            PushOperand(n);
-            Consume();
-        } else if(n->op == Op::PAREN && n->c == '(') {
-            Consume();
-            Parse();
-            n = Next();
-            if(n->op != Op::PAREN || n->c != ')') longjmp(exprjmp, 7);
-            Consume();
-        } else if(n->op == Op::UNARY_OP) {
-            PushOperator(n);
-            Consume();
-            continue;
-        } else if(n->op == Op::BINARY_OP && n->c == '-') {
-            // The minus sign is special, because it might be binary or
-            // unary, depending on context.
-            n->op = Op::UNARY_OP;
-            n->c = 'n';
-            PushOperator(n);
-            Consume();
-            continue;
+    Token t = Token::From();
+    char c = PeekChar();
+    if(isupper(c)) {
+        t = Token::From(TokenType::OPERAND, Expr::Op::VARIABLE);
+    } else if(isalpha(c)) {
+        std::string s = ReadWord();
+        if(s == "sqrt") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::SQRT);
+        } else if(s == "square") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::SQUARE);
+        } else if(s == "sin") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::SIN);
+        } else if(s == "cos") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::COS);
+        } else if(s == "asin") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::ASIN);
+        } else if(s == "acos") {
+            t = Token::From(TokenType::UNARY_OP, Expr::Op::ACOS);
+        } else if(s == "pi") {
+            t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
+            t.expr->v = PI;
         } else {
-            longjmp(exprjmp, 8);
+            *error = "'" + s + "' is not a valid variable, function or constant";
         }
-
-        n = Next();
-        if(n && n->op == Op::BINARY_OP) {
-            ReduceAndPush(n);
-            Consume();
+    } else if(isdigit(c) || c == '.') {
+        double d = ReadNumber();
+        t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
+        t.expr->v = d;
+    } else if(ispunct(c)) {
+        ReadChar();
+        if(c == '+') {
+            t = Token::From(TokenType::BINARY_OP, Expr::Op::PLUS);
+        } else if(c == '-') {
+            t = Token::From(TokenType::BINARY_OP, Expr::Op::MINUS);
+        } else if(c == '*') {
+            t = Token::From(TokenType::BINARY_OP, Expr::Op::TIMES);
+        } else if(c == '/') {
+            t = Token::From(TokenType::BINARY_OP, Expr::Op::DIV);
+        } else if(c == '(') {
+            t = Token::From(TokenType::PAREN_LEFT);
+        } else if(c == ')') {
+            t = Token::From(TokenType::PAREN_RIGHT);
         } else {
-            break;
+            *error = "'" + std::string(1, c) + "' is not a valid operator";
         }
-    }
-
-    while(TopOperator()->op != Op::ALL_RESOLVED) {
-        Reduce();
-    }
-    PopOperator(); // discard the ALL_RESOLVED marker
-}
-
-void Expr::Lex(const char *in) {
-    while(*in) {
-        if(UnparsedCnt >= MAX_UNPARSED) longjmp(exprjmp, 9);
-
-        char c = *in;
-        if(isdigit(c) || c == '.') {
-            // A number literal
-            char number[70];
-            int len = 0;
-            while((isdigit(*in) || *in == '.') && len < 30) {
-                number[len++] = *in;
-                in++;
-            }
-            number[len++] = '\0';
-            Expr *e = AllocExpr();
-            e->op = Op::CONSTANT;
-            e->v = atof(number);
-            Unparsed[UnparsedCnt++] = e;
-        } else if(isalpha(c) || c == '_') {
-            char name[70];
-            int len = 0;
-            while(isforname(*in) && len < 30) {
-                name[len++] = *in;
-                in++;
-            }
-            name[len++] = '\0';
-
-            Expr *e = AllocExpr();
-            if(strcmp(name, "sqrt")==0) {
-                e->op = Op::UNARY_OP;
-                e->c = 'q';
-            } else if(strcmp(name, "cos")==0) {
-                e->op = Op::UNARY_OP;
-                e->c = 'c';
-            } else if(strcmp(name, "sin")==0) {
-                e->op = Op::UNARY_OP;
-                e->c = 's';
-            } else if(strcmp(name, "pi")==0) {
-                e->op = Op::CONSTANT;
-                e->v = PI;
-            } else {
-                longjmp(exprjmp, 10);
-            }
-            Unparsed[UnparsedCnt++] = e;
-        } else if(strchr("+-*/()", c)) {
-            Expr *e = AllocExpr();
-            e->op = (c == '(' || c == ')') ? Op::PAREN : Op::BINARY_OP;
-            e->c = c;
-            Unparsed[UnparsedCnt++] = e;
-            in++;
-        } else if(isspace(c)) {
-            // Ignore whitespace
-            in++;
-        } else {
-            // This is a lex error.
-            longjmp(exprjmp, 11);
-        }
-    }
-}
-
-Expr *Expr::From(const char *in, bool popUpError) {
-    UnparsedCnt = 0;
-    UnparsedP = 0;
-    OperandsP = 0;
-    OperatorsP = 0;
-
-    Expr *r;
-    int erridx = setjmp(exprjmp);
-    if(!erridx) {
-        Lex(in);
-        Parse();
-        r = PopOperand();
+    } else if(c == '\0') {
+        t = Token::From(TokenType::END);
     } else {
-        dbp("exception: parse/lex error: %s", errors[erridx]);
-        if(popUpError) {
-            Error("Not a valid number or expression: '%s'", in);
-        }
-        return NULL;
+        *error = "Unexpected character '" + std::string(1, c) + "'";
     }
-    return r;
+
+    return t;
 }
 
+ExprParser::Token ExprParser::PopOperand(std::string *error) {
+    Token t = Token::From();
+    if(stack.empty() || stack.back().type != TokenType::OPERAND) {
+        *error = "Expected an operand";
+    } else {
+        t = stack.back();
+        stack.pop_back();
+    }
+    return t;
+}
+
+ExprParser::Token ExprParser::PopOperator(std::string *error) {
+    Token t = Token::From();
+    if(stack.empty() || (stack.back().type != TokenType::UNARY_OP &&
+                         stack.back().type != TokenType::BINARY_OP)) {
+        *error = "Expected an operator";
+    } else {
+        t = stack.back();
+        stack.pop_back();
+    }
+    return t;
+}
+
+int ExprParser::Precedence(Token t) {
+    ssassert(t.type == TokenType::BINARY_OP ||
+             t.type == TokenType::UNARY_OP ||
+             t.type == TokenType::OPERAND,
+             "Unexpected token type");
+
+    if(t.type == TokenType::UNARY_OP) {
+        return 30;
+    } else if(t.expr->op == Expr::Op::TIMES ||
+              t.expr->op == Expr::Op::DIV) {
+        return 20;
+    } else if(t.expr->op == Expr::Op::PLUS ||
+              t.expr->op == Expr::Op::MINUS) {
+        return 10;
+    } else if(t.type == TokenType::OPERAND) {
+        return 0;
+    } else ssassert(false, "Unexpected operator");
+}
+
+bool ExprParser::Reduce(std::string *error) {
+    Token a = PopOperand(error);
+    if(a.IsError()) return false;
+
+    Token op = PopOperator(error);
+    if(op.IsError()) return false;
+
+    Token r = Token::From(TokenType::OPERAND);
+    switch(op.type) {
+        case TokenType::BINARY_OP: {
+            Token b = PopOperand(error);
+            if(b.IsError()) return false;
+            r.expr = a.expr->AnyOp(op.expr->op, b.expr);
+            break;
+        }
+
+        case TokenType::UNARY_OP: {
+            Expr *e = a.expr;
+            switch(op.expr->op) {
+                case Expr::Op::NEGATE: e = e->Negate(); break;
+                case Expr::Op::SQRT:   e = e->Sqrt(); break;
+                case Expr::Op::SIN:    e = e->Times(Expr::From(PI/180))->Sin(); break;
+                case Expr::Op::COS:    e = e->Times(Expr::From(PI/180))->Cos(); break;
+                case Expr::Op::ASIN:   e = e->ASin()->Times(Expr::From(180/PI)); break;
+                case Expr::Op::ACOS:   e = e->ACos()->Times(Expr::From(180/PI)); break;
+                default: ssassert(false, "Unexpected unary operator");
+            }
+            r.expr = e;
+            break;
+        }
+
+        default: ssassert(false, "Unexpected operator");
+    }
+    stack.push_back(r);
+
+    return true;
+}
+
+bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
+    while(true) {
+        Token t = Lex(error);
+        switch(t.type) {
+            case TokenType::ERROR:
+                return false;
+
+            case TokenType::END:
+            case TokenType::PAREN_RIGHT:
+                while(stack.size() > 1 + reduceUntil) {
+                    if(!Reduce(error)) return false;
+                }
+
+                if(t.type == TokenType::PAREN_RIGHT) {
+                    stack.push_back(t);
+                }
+                return true;
+
+            case TokenType::PAREN_LEFT: {
+                // sub-expression
+                if(!Parse(error, /*reduceUntil=*/stack.size())) return false;
+
+                if(stack.back().type != TokenType::PAREN_RIGHT) {
+                    *error = "Expected ')'";
+                    return false;
+                }
+                stack.pop_back();
+                break;
+            }
+
+            case TokenType::BINARY_OP:
+                if((stack.size() > reduceUntil && stack.back().type != TokenType::OPERAND) ||
+                   stack.size() == reduceUntil) {
+                    if(t.expr->op == Expr::Op::MINUS) {
+                        t.type = TokenType::UNARY_OP;
+                        t.expr->op = Expr::Op::NEGATE;
+                        stack.push_back(t);
+                        break;
+                    }
+                }
+
+                while(stack.size() > 1 + reduceUntil &&
+                      Precedence(t) <= Precedence(stack[stack.size() - 2])) {
+                    if(!Reduce(error)) return false;
+                }
+
+                stack.push_back(t);
+                break;
+
+            case TokenType::UNARY_OP:
+            case TokenType::OPERAND:
+                stack.push_back(t);
+                break;
+        }
+    }
+
+    return true;
+}
+
+Expr *ExprParser::Parse(const char *input, std::string *error) {
+    ExprParser parser;
+    parser.input    = input;
+    parser.inputPos = 0;
+    if(!parser.Parse(error)) return NULL;
+
+    Token r = parser.PopOperand(error);
+    if(r.IsError()) return NULL;
+    return r.expr;
+}
+
+Expr *Expr::From(const char *input, bool popUpError) {
+    std::string error;
+    Expr *e = ExprParser::Parse(input, &error);
+    if(!e) {
+        dbp("Parse/lex error: %s", error.c_str());
+        if(popUpError) {
+            Error("Not a valid number or expression: '%s'.\n%s.", input, error.c_str());
+        }
+    }
+    return e;
+}
