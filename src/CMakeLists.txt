@@ -104,7 +104,7 @@ elseif(APPLE)
 
     set(platform_LIBRARIES
         ${APPKIT_LIBRARY})
-elseif(HAVE_GTK)
+elseif(HAVE_GTK2 OR HAVE_GTK3)
     set(platform_SOURCES
         platform/gtkmain.cpp
         render/rendergl.cpp

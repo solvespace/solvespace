@@ -192,7 +192,6 @@ else() # Linux and compatible systems
     pkg_check_modules(JSONC REQUIRED json-c)
     pkg_check_modules(FREETYPE REQUIRED freetype2)
 
-    set(HAVE_GTK TRUE)
     if(GUI STREQUAL "gtk3")
         set(HAVE_GTK3 TRUE)
         pkg_check_modules(GTKMM REQUIRED gtkmm-3.0 pangomm-1.4 x11)

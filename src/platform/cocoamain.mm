@@ -14,7 +14,6 @@
 #include <map>
 
 #include "solvespace.h"
-#include <config.h>
 
 using SolveSpace::dbp;
 

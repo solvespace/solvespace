@@ -5,18 +5,13 @@
  *
  * Copyright 2008-2013 Jonathan Westhues.
  *---------------------------------------------------------------------------*/
-#ifdef HAVE_CONFIG_H
-#   include <config.h>
-#endif
 #ifdef WIN32
 #   include <windows.h>
 #endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef HAVE_STDINT_H
-#   include <stdint.h>
-#endif
+#include <stdint.h>
 
 #include <slvs.h>
 

@@ -3,7 +3,6 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "config.h"
 #include "solvespace.h"
 
 #ifdef WIN32

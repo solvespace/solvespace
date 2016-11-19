@@ -5,7 +5,6 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "config.h"
 
 #define mView (&GraphicsWindow::MenuView)
 #define mEdit (&GraphicsWindow::MenuEdit)
@@ -85,7 +84,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                         Command::NONE,             0,       TN, NULL  },
 { 1, "Dimensions in &Inches",       Command::UNITS_INCHES,     0,       TR, mView },
 { 1, "Dimensions in &Millimeters",  Command::UNITS_MM,         0,       TR, mView },
-#if defined(HAVE_GTK) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__)
 { 1,  NULL,                         Command::NONE,             0,       TN, NULL  },
 { 1, "&Full Screen",                Command::FULL_SCREEN,      C|F(11), TC, mView },
 #endif
@@ -697,7 +696,7 @@ void GraphicsWindow::EnsureValidActives() {
     CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
     CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
     CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
-#if defined(HAVE_GTK) || defined(__APPLE__)
+#if defined(__unix__) || defined(__APPLE__)
     CheckMenuByCmd(Command::FULL_SCREEN, /*checked=*/FullScreenIsActive());
 #endif
 
