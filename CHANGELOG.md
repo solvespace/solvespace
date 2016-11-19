@@ -20,6 +20,7 @@ New export/import features:
     use the current viewport projection.
   * Wavefront OBJ: a material file is exported alongside the model, containing
     mesh color information.
+  * DXF/DWG: 3D DXF files are imported as construction entities, in 3d.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows

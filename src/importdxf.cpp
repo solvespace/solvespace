@@ -9,10 +9,11 @@ static std::string ToUpper(std::string str) {
     return str;
 }
 
-class DxfReadInterface : public DRW_Interface {
+class DxfImport : public DRW_Interface {
 public:
     Vector blockX;
     Vector blockY;
+    Vector blockZ;
     Vector blockT;
 
     void invertXTransform() {
@@ -43,6 +44,7 @@ public:
     void clearBlockTransform() {
         blockX = Vector::From(1.0, 0.0, 0.0);
         blockY = Vector::From(0.0, 1.0, 0.0);
+        blockZ = Vector::From(0.0, 0.0, 1.0);
         blockT = Vector::From(0.0, 0.0, 0.0);
     }
 
@@ -50,6 +52,7 @@ public:
         Vector r = blockT;
         r = r.Plus(blockX.ScaledBy(v.x));
         r = r.Plus(blockY.ScaledBy(v.y));
+        r = r.Plus(blockZ.ScaledBy(v.z));
         return r;
     }
 
@@ -65,7 +68,7 @@ public:
     }
 
     Vector toVector(const DRW_Coord &c, bool transform = true) {
-        Vector result = Vector::From(c.x, c.y, 0.0);
+        Vector result = Vector::From(c.x, c.y, c.z);
         if(transform) return blockTransform(result);
         return result;
     }
@@ -76,7 +79,7 @@ public:
     }
 
     Vector toVector(const DRW_Vertex &c) {
-        Vector result = Vector::From(c.basePoint.x, c.basePoint.y, 0.0);
+        Vector result = Vector::From(c.basePoint.x, c.basePoint.y, c.basePoint.z);
         return blockTransform(result);
     }
 
@@ -134,6 +137,7 @@ public:
         DRW_Block data;
     };
 
+    bool asConstruction = false;
     unsigned unknownEntities = 0;
     std::map<std::string, hStyle> styles;
     std::map<std::string, Block> blocks;
@@ -418,8 +422,9 @@ public:
         return hs;
     }
 
-    void setStyle(hRequest hr, hStyle hs) {
+    void configureRequest(hRequest hr, hStyle hs) {
         Request *r = SK.GetRequest(hr);
+        r->construction = asConstruction;
         r->style = hs;
     }
 
@@ -479,7 +484,7 @@ public:
         return he;
     }
 
-    hEntity createLine(Vector p0, Vector p1, uint32_t style, bool constrainHV = false) {
+    hEntity createLine(Vector p0, Vector p1, hStyle style, bool constrainHV = false) {
         if(p0.Equals(p1)) return Entity::NO_ENTITY;
         hRequest hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(p0);
@@ -487,7 +492,7 @@ public:
         processPoint(hr.entity(1));
         processPoint(hr.entity(2));
 
-        if(constrainHV) {
+        if(constrainHV && SS.GW.LockedInWorkplane()) {
             bool hasConstraint = false;
             Constraint::Type cType;
             if(fabs(p0.x - p1.x) < LENGTH_EPS) {
@@ -507,22 +512,17 @@ public:
             }
         }
 
-        if(style != 0) {
-            Request *r = SK.GetRequest(hr);
-            r->style = hStyle{ style };
-        }
+        configureRequest(hr, style);
         return hr.entity(0);
     }
 
-    hEntity createCircle(const Vector &c, double r, uint32_t style) {
+    hEntity createCircle(const Vector &c, double r, hStyle style) {
         hRequest hr = SS.GW.AddRequest(Request::Type::CIRCLE, /*rememberForUndo=*/false);
         SK.GetEntity(hr.entity(1))->PointForceTo(c);
         processPoint(hr.entity(1));
         SK.GetEntity(hr.entity(64))->DistanceForceTo(r);
-        if(style != 0) {
-            Request *r = SK.GetRequest(hr);
-            r->style = hStyle{ style };
-        }
+
+        configureRequest(hr, style);
         return hr.entity(0);
     }
 
@@ -552,7 +552,8 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Line>(data)) return;
 
-        createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data).v, /*constrainHV=*/true);
+        createLine(toVector(data.basePoint), toVector(data.secPoint), styleFor(&data),
+                   /*constrainHV=*/true);
     }
 
     void addArc(const DRW_Arc &data) override {
@@ -563,7 +564,7 @@ public:
         double r = data.radious;
         double sa = data.staangle;
         double ea = data.endangle;
-        Vector c = Vector::From(data.basePoint.x, data.basePoint.y, 0.0);
+        Vector c = Vector::From(data.basePoint.x, data.basePoint.y, data.basePoint.z);
         Vector rvs = Vector::From(r * cos(sa), r * sin(sa), data.basePoint.z).Plus(c);
         Vector rve = Vector::From(r * cos(ea), r * sin(ea), data.basePoint.z).Plus(c);
 
@@ -582,14 +583,14 @@ public:
         processPoint(hr.entity(1));
         processPoint(hr.entity(2));
         processPoint(hr.entity(3));
-        setStyle(hr, styleFor(&data));
+        configureRequest(hr, styleFor(&data));
     }
 
     void addCircle(const DRW_Circle &data) override {
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Circle>(data)) return;
 
-        createCircle(toVector(data.basePoint), data.radious, styleFor(&data).v);
+        createCircle(toVector(data.basePoint), data.radious, styleFor(&data));
     }
 
     void addLWPolyline(const DRW_LWPolyline &data)  override {
@@ -620,10 +621,10 @@ public:
             hStyle hs = styleFor(&data);
 
             if(EXACT(data.vertlist[i]->bulge == 0.0)) {
-                createLine(blockTransform(p0), blockTransform(p1), hs.v, /*constrainHV=*/true);
+                createLine(blockTransform(p0), blockTransform(p1), hs, /*constrainHV=*/true);
             } else {
                 hRequest hr = createBulge(p0, p1, c0.bulge);
-                setStyle(hr, hs);
+                configureRequest(hr, hs);
             }
         }
     }
@@ -652,15 +653,15 @@ public:
                 bulge = -bulge;
             }
 
-            Vector p0 = Vector::From(c0.x, c0.y, 0.0);
-            Vector p1 = Vector::From(c1.x, c1.y, 0.0);
+            Vector p0 = Vector::From(c0.x, c0.y, c0.z);
+            Vector p1 = Vector::From(c1.x, c1.y, c1.z);
             hStyle hs = styleFor(&data);
 
             if(EXACT(bulge == 0.0)) {
-                createLine(blockTransform(p0), blockTransform(p1), hs.v, /*constrainHV=*/true);
+                createLine(blockTransform(p0), blockTransform(p1), hs, /*constrainHV=*/true);
             } else {
                 hRequest hr = createBulge(p0, p1, bulge);
-                setStyle(hr, hs);
+                configureRequest(hr, hs);
             }
         }
     }
@@ -675,7 +676,7 @@ public:
             SK.GetEntity(hr.entity(i + 1))->PointForceTo(toVector(*data->controllist[i]));
             processPoint(hr.entity(i + 1));
         }
-        setStyle(hr, styleFor(data));
+        configureRequest(hr, styleFor(data));
     }
 
     void addInsert(const DRW_Insert &data) override {
@@ -695,7 +696,8 @@ public:
         insertInsert = &data;
 
         if(data.extPoint.z == -1.0) invertXTransform();
-        multBlockTransform(data.basePoint.x, data.basePoint.y, data.xscale, data.yscale, data.angle);
+        multBlockTransform(data.basePoint.x, data.basePoint.y, data.xscale, data.yscale,
+                           data.angle);
         for(auto &e : block->entities) {
             addEntity(&*e);
         }
@@ -785,7 +787,7 @@ public:
             Constraint::Type::PT_LINE_DISTANCE,
             createOrGetPoint(p0),
             Entity::NO_ENTITY,
-            createLine(p1, p3, invisibleStyle().v)
+            createLine(p1, p3, invisibleStyle())
         );
 
         Constraint *c = SK.GetConstraint(hc);
@@ -810,8 +812,8 @@ public:
             Constraint::Type::ANGLE,
             Entity::NO_ENTITY,
             Entity::NO_ENTITY,
-            createLine(l0p0, l0p1, invisibleStyle().v),
-            createLine(l1p1, l1p0, invisibleStyle().v),
+            createLine(l0p0, l0p1, invisibleStyle()),
+            createLine(l1p1, l1p0, invisibleStyle()),
             /*other=*/false,
             /*other2=*/false
         );
@@ -833,8 +835,9 @@ public:
         }
     }
 
-    hConstraint createDiametric(Vector cp, double r, Vector tp, double actual, bool asRadius = false) {
-        hEntity he = createCircle(cp, r, invisibleStyle().v);
+    hConstraint createDiametric(Vector cp, double r, Vector tp, double actual,
+                                bool asRadius = false) {
+        hEntity he = createCircle(cp, r, invisibleStyle());
 
         hConstraint hc = Constraint::Constrain(
             Constraint::Type::DIAMETER,
@@ -899,9 +902,175 @@ public:
     }
 };
 
-void ImportDxf(const std::string &filename) {
-    DxfReadInterface interface;
-    interface.clearBlockTransform();
+class DxfCheck3D : public DRW_Interface {
+public:
+    bool is3d;
+
+    void addEntity(DRW_Entity *e) {
+        switch(e->eType) {
+            case DRW::POINT:
+                addPoint(*static_cast<DRW_Point *>(e));
+                break;
+            case DRW::LINE:
+                addLine(*static_cast<DRW_Line *>(e));
+                break;
+            case DRW::ARC:
+                addArc(*static_cast<DRW_Arc *>(e));
+                break;
+            case DRW::CIRCLE:
+                addCircle(*static_cast<DRW_Circle *>(e));
+                break;
+            case DRW::POLYLINE:
+                addPolyline(*static_cast<DRW_Polyline *>(e));
+                break;
+            case DRW::LWPOLYLINE:
+                addLWPolyline(*static_cast<DRW_LWPolyline *>(e));
+                break;
+            case DRW::SPLINE:
+                addSpline(static_cast<DRW_Spline *>(e));
+                break;
+            case DRW::INSERT:
+                addInsert(*static_cast<DRW_Insert *>(e));
+                break;
+            case DRW::TEXT:
+                addText(*static_cast<DRW_Text *>(e));
+                break;
+            case DRW::MTEXT:
+                addMText(*static_cast<DRW_MText *>(e));
+                break;
+            case DRW::DIMALIGNED:
+                addDimAlign(static_cast<DRW_DimAligned *>(e));
+                break;
+            case DRW::DIMLINEAR:
+                addDimLinear(static_cast<DRW_DimLinear *>(e));
+                break;
+            case DRW::DIMRADIAL:
+                addDimRadial(static_cast<DRW_DimRadial *>(e));
+                break;
+            case DRW::DIMDIAMETRIC:
+                addDimDiametric(static_cast<DRW_DimDiametric *>(e));
+                break;
+            case DRW::DIMANGULAR:
+                addDimAngular(static_cast<DRW_DimAngular *>(e));
+                break;
+            default:
+                break;
+        }
+    }
+
+    void addPoint(const DRW_Point &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+    }
+
+    void addLine(const DRW_Line &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+        checkCoord(data.secPoint);
+    }
+
+    void addArc(const DRW_Arc &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+    }
+
+    void addCircle(const DRW_Circle &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+    }
+
+    void addPolyline(const DRW_Polyline &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        for(size_t i = 0; i < data.vertlist.size(); i++) {
+            checkCoord(data.vertlist[i]->basePoint);
+        }
+    }
+
+    void addSpline(const DRW_Spline *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        if(data->degree != 3) return;
+        for(int i = 0; i < 4; i++) {
+            checkCoord(*data->controllist[i]);
+        }
+    }
+
+    void addInsert(const DRW_Insert &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+    }
+
+    void addMText(const DRW_MText &data) override {
+        if(data.space != DRW::ModelSpace) return;
+
+        DRW_MText text = data;
+        text.secPoint = text.basePoint;
+        addText(text);
+    }
+
+    void addText(const DRW_Text &data) override {
+        if(data.space != DRW::ModelSpace) return;
+        checkCoord(data.basePoint);
+        checkCoord(data.secPoint);
+    }
+
+    void addDimAlign(const DRW_DimAligned *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        checkCoord(data->getDef1Point());
+        checkCoord(data->getDef2Point());
+        checkCoord(data->getTextPoint());
+    }
+
+    void addDimLinear(const DRW_DimLinear *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        checkCoord(data->getDef1Point());
+        checkCoord(data->getDef2Point());
+        checkCoord(data->getTextPoint());
+    }
+
+    void addDimAngular(const DRW_DimAngular *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        checkCoord(data->getFirstLine1());
+        checkCoord(data->getFirstLine2());
+        checkCoord(data->getSecondLine1());
+        checkCoord(data->getSecondLine2());
+        checkCoord(data->getTextPoint());
+    }
+
+    void addDimRadial(const DRW_DimRadial *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        checkCoord(data->getCenterPoint());
+        checkCoord(data->getDiameterPoint());
+        checkCoord(data->getTextPoint());
+    }
+
+    void addDimDiametric(const DRW_DimDiametric *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        checkCoord(data->getDiameter1Point());
+        checkCoord(data->getDiameter2Point());
+        checkCoord(data->getTextPoint());
+    }
+
+    void addDimAngular3P(const DRW_DimAngular3p *data) override {
+        if(data->space != DRW::ModelSpace) return;
+        DRW_DimAngular dim = *static_cast<const DRW_Dimension *>(data);
+
+        dim.setFirstLine1(data->getVertexPoint());
+        dim.setFirstLine2(data->getFirstLine());
+        dim.setSecondLine1(data->getVertexPoint());
+        dim.setSecondLine2(data->getSecondLine());
+        addDimAngular(&dim);
+    }
+
+    void checkCoord(const DRW_Coord &coord) {
+        if(fabs(coord.z) > LENGTH_EPS) {
+            is3d = true;
+        }
+    }
+};
+
+static void ImportDwgDxf(const std::string &filename,
+                         std::function<bool(const std::string &data, DRW_Interface *intf)> read) {
+    std::string fileType = ToUpper(Extension(filename));
 
     std::string data;
     if(!ReadFile(filename, &data)) {
@@ -909,38 +1078,47 @@ void ImportDxf(const std::string &filename) {
         return;
     }
 
-    SS.UndoRemember();
-    std::stringstream stream(data);
-    if(!dxfRW().read(stream, &interface, /*ext=*/false)) {
-        Error("Corrupted DXF file.");
+    bool asConstruction = true;
+    if(SS.GW.LockedInWorkplane()) {
+        DxfCheck3D checker = {};
+        read(data, &checker);
+        if(checker.is3d) {
+            Message("This %s file contains entities with non-zero Z coordinate; "
+                    "the entire file will be imported as construction entities in 3d.",
+                    fileType.c_str());
+            SS.GW.SetWorkplaneFreeIn3d();
+            SS.GW.EnsureValidActives();
+        } else {
+            asConstruction = false;
+        }
     }
 
-    if(interface.unknownEntities > 0) {
-        Message(ssprintf("%u DXF entities of unknown type were ignored.",
-                         interface.unknownEntities).c_str());
+    SS.UndoRemember();
+
+    DxfImport importer = {};
+    importer.asConstruction = asConstruction;
+    importer.clearBlockTransform();
+    if(!read(data, &importer)) {
+        Error("Corrupted %s file.", fileType.c_str());
+    }
+    if(importer.unknownEntities > 0) {
+        Message("%u %s entities of unknown type were ignored.",
+                importer.unknownEntities, fileType.c_str());
     }
 }
 
+void ImportDxf(const std::string &filename) {
+    ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
+        std::stringstream stream(data);
+        return dxfRW().read(stream, intf, /*ext=*/false);
+    });
+}
+
 void ImportDwg(const std::string &filename) {
-    DxfReadInterface interface;
-    interface.clearBlockTransform();
-
-    std::string data;
-    if(!ReadFile(filename, &data)) {
-        Error("Couldn't read from '%s'", filename.c_str());
-        return;
-    }
-
-    SS.UndoRemember();
-    std::stringstream stream(data);
-    if(!dwgR().read(stream, &interface, /*ext=*/false)) {
-        Error("Corrupted DWG file.");
-    }
-
-    if(interface.unknownEntities > 0) {
-        Message(ssprintf("%u DWG entities of unknown type were ignored.",
-                         interface.unknownEntities).c_str());
-    }
+    ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
+        std::stringstream stream(data);
+        return dwgR().read(stream, intf, /*ext=*/false);
+    });
 }
 
 }

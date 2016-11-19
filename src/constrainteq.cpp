@@ -525,6 +525,9 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
 
         case Type::SYMMETRIC_HORIZ:
         case Type::SYMMETRIC_VERT: {
+            ssassert(workplane.v != Entity::FREE_IN_3D.v,
+                     "Unexpected horizontal/vertical symmetric constraint in 3d");
+
             EntityBase *a = SK.GetEntity(ptA);
             EntityBase *b = SK.GetEntity(ptB);
 
@@ -577,6 +580,9 @@ void ConstraintBase::GenerateReal(IdList<Equation,hEquation> *l) const {
 
         case Type::HORIZONTAL:
         case Type::VERTICAL: {
+            ssassert(workplane.v != Entity::FREE_IN_3D.v,
+                     "Unexpected horizontal/vertical constraint in 3d");
+
             hEntity ha, hb;
             if(entityA.v) {
                 EntityBase *e = SK.GetEntity(entityA);
