@@ -852,8 +852,8 @@ struct CompareDrawCall {
     bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) {
         const Canvas::Layer stackup[] = {
             Canvas::Layer::BACK,
-            Canvas::Layer::NORMAL,
             Canvas::Layer::DEPTH_ONLY,
+            Canvas::Layer::NORMAL,
             Canvas::Layer::OCCLUDED,
             Canvas::Layer::FRONT
         };
