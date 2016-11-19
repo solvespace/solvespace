@@ -188,6 +188,8 @@ public:
     bool ContainsPoint(Vector p) const;
     bool ContainsPointProjd(Vector n, Vector p) const;
     STriangle Transform(Vector o, Vector u, Vector v) const;
+    bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
+                  double *t, Vector *inters) const;
 };
 
 class SBsp2 {

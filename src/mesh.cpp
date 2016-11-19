@@ -327,32 +327,23 @@ bool SMesh::IsEmpty() const {
 }
 
 uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
-    Vector p0 = Vector::From(mp.x, mp.y, 0);
-    Vector gn = Vector::From(0, 0, 1);
+    Vector rayPoint = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 0.0));
+    Vector rayDir = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 1.0)).Minus(rayPoint);
 
-    double maxT = -1e12;
     uint32_t face = 0;
+    double faceT = VERY_NEGATIVE;
+    for(int i = 0; i < l.n; i++) {
+        const STriangle &tr = l.elem[i];
+        if(tr.meta.face == 0) continue;
 
-    int i;
-    for(i = 0; i < l.n; i++) {
-        STriangle tr = l.elem[i];
-        tr.a = SS.GW.ProjectPoint3(tr.a);
-        tr.b = SS.GW.ProjectPoint3(tr.b);
-        tr.c = SS.GW.ProjectPoint3(tr.c);
-
-        Vector n = tr.Normal();
-
-        if(n.Dot(gn) < LENGTH_EPS) continue; // back-facing or on edge
-
-        if(tr.ContainsPointProjd(gn, p0)) {
-            // Let our line have the form r(t) = p0 + gn*t
-            double t = -(n.Dot((tr.a).Minus(p0)))/(n.Dot(gn));
-            if(t > maxT) {
-                maxT = t;
-                face = tr.meta.face;
-            }
+        double t;
+        if(!tr.Raytrace(rayPoint, rayDir, &t, NULL)) continue;
+        if(t > faceT) {
+            face  = tr.meta.face;
+            faceT = t;
         }
     }
+
     return face;
 }
 
