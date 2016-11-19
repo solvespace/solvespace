@@ -56,7 +56,7 @@ Vector Camera::UnProjectPoint3(Vector p) const {
     Vector orig = offset.ScaledBy(-1);
     orig = orig.Plus(projRight.ScaledBy(p.x)).Plus(
                      projUp.   ScaledBy(p.y).Plus(
-                     projRight.Cross(projUp). ScaledBy(p.z)));
+                     projUp.Cross(projRight). ScaledBy(p.z)));
     return orig;
 }
 
