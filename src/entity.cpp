@@ -568,6 +568,10 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
 }
 
 ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
+    if(wrkpl.v == Entity::FREE_IN_3D.v) {
+        return PointGetExprs();
+    }
+
     ExprVector r;
     PointGetExprsInWorkplane(wrkpl, &r.x, &r.y);
     r.z = Expr::From(0.0);
@@ -824,6 +828,7 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
         }
 
         case Type::TTF_TEXT: {
+            if(SK.GetEntity(point[0])->type != Type::POINT_IN_2D) break;
             EntityBase *b = SK.GetEntity(point[2]);
             EntityBase *c = SK.GetEntity(point[3]);
             ExprVector eb = b->PointGetExprsInWorkplane(workplane);
