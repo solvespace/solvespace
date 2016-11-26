@@ -259,14 +259,17 @@ public:
                 found = true;
                 e->tag = 1;
 
-                DRW_LWPolyline polyline;
+                DRW_Polyline polyline;
                 assignEntityDefaults(&polyline, e->style);
-                polyline.vertlist.push_back(new DRW_Vertex2D(start->pos.x, start->pos.y, 0.0));
-                polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
+                polyline.vertlist.push_back(
+                    new DRW_Vertex(start->pos.x, start->pos.y, start->pos.z, 0.0));
+                polyline.vertlist.push_back(
+                    new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
                 while(next->getNext(e->style, &next)) {
-                    polyline.vertlist.push_back(new DRW_Vertex2D(next->pos.x, next->pos.y, 0.0));
+                    polyline.vertlist.push_back(
+                        new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
                 }
-                dxf->writeLWPolyline(&polyline);
+                dxf->writePolyline(&polyline);
             }
 
             if(!found && !loop) {
@@ -479,16 +482,14 @@ public:
         List<Vector> lv = {};
         sb->MakePwlInto(&lv, SS.ExportChordTolMm());
         hStyle hs = { (uint32_t)sb->auxA };
-        DRW_LWPolyline polyline;
+        DRW_Polyline polyline;
         assignEntityDefaults(&polyline, hs);
         for(int i = 0; i < lv.n; i++) {
             Vector *v = &lv.elem[i];
-            DRW_Vertex2D *vertex = new DRW_Vertex2D();
-            vertex->x = v->x;
-            vertex->y = v->y;
+            DRW_Vertex *vertex = new DRW_Vertex(v->x, v->y, v->z, 0.0);
             polyline.vertlist.push_back(vertex);
         }
-        dxf->writeLWPolyline(&polyline);
+        dxf->writePolyline(&polyline);
         lv.Clear();
     }
 
@@ -527,7 +528,8 @@ public:
         spline.ncontrol = sb->deg + 1;
         makeKnotsFor(&spline);
         for(int i = 0; i <= sb->deg; i++) {
-            spline.controllist.push_back(new DRW_Coord(sb->ctrl[i].x, sb->ctrl[i].y, 0.0));
+            spline.controllist.push_back(
+                new DRW_Coord(sb->ctrl[i].x, sb->ctrl[i].y, sb->ctrl[i].z));
             if(isRational) spline.weightlist.push_back(sb->weight[i]);
         }
         dxf->writeSpline(&spline);
