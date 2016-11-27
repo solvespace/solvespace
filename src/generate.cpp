@@ -489,14 +489,8 @@ void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
     SolveGroup(hg, andFindFree);
 
     Group *g = SK.GetGroup(hg);
-    if(g->solved.how == SolveResult::REDUNDANT_OKAY) {
-        // Solve again, in case we lost a degree of freedom because of a numeric error.
-        SolveGroup(hg, andFindFree);
-    }
-
     bool isOkay = g->solved.how == SolveResult::OKAY ||
                   (g->allowRedundant && g->solved.how == SolveResult::REDUNDANT_OKAY);
-
     if(!isOkay || (isOkay && !g->IsSolvedOkay())) {
         TextWindow::ReportHowGroupSolved(g->h);
     }
