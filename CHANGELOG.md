@@ -41,8 +41,8 @@ Other new features:
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer
     causes the line length to collapse.
-  * Curve-line constraints (in 3d) and parallel constraints (in 3d)
-    are more robust.
+  * Curve-line constraints (in 3d), parallel constraints (in 3d), and
+    same orientation constraints are more robust.
 
 2.3
 ---

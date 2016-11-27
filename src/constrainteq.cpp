@@ -28,35 +28,6 @@ bool ConstraintBase::HasLabel() const {
     }
 }
 
-Expr *ConstraintBase::VectorsParallel(int eq, ExprVector a, ExprVector b) {
-    ExprVector r = a.Cross(b);
-    // Hairy ball theorem screws me here. There's no clean solution that I
-    // know, so let's pivot on the initial numerical guess. Our caller
-    // has ensured that if one of our input vectors is already known (e.g.
-    // it's from a previous group), then that one's in a; so that one's
-    // not going to move, and we should pivot on that one.
-    double mx = fabs((a.x)->Eval());
-    double my = fabs((a.y)->Eval());
-    double mz = fabs((a.z)->Eval());
-    // The basis vector in which the vectors have the LEAST energy is the
-    // one that we should look at most (e.g. if both vectors lie in the xy
-    // plane, then the z component of the cross product is most important).
-    // So find the strongest component of a and b, and that's the component
-    // of the cross product to ignore.
-    Expr *e0, *e1;
-    if(mx > my && mx > mz) {
-        e0 = r.y; e1 = r.z;
-    } else if(my > mz) {
-        e0 = r.z; e1 = r.x;
-    } else {
-        e0 = r.x; e1 = r.y;
-    }
-
-    if(eq == 0) return e0;
-    if(eq == 1) return e1; // BRANCH_ALWAYS_TAKEN
-    ssassert(false, "Unexpected index of equation");
-}
-
 ExprVector ConstraintBase::VectorsParallel3d(ExprVector a, ExprVector b, hParam p) {
     return a.Minus(b.ScaledBy(Expr::From(p)));
 }
@@ -221,6 +192,7 @@ void ConstraintBase::Generate(IdList<Param,hParam> *l) const {
             // Add new parameter only when we operate in 3d space
             if(workplane.v != EntityBase::FREE_IN_3D.v) break;
             // fallthrough
+        case Type::SAME_ORIENTATION:
         case Type::PT_ON_LINE: {
             Param p = {};
             p.h = h.param(0);
@@ -620,9 +592,6 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
         case Type::SAME_ORIENTATION: {
             EntityBase *a = SK.GetEntity(entityA);
             EntityBase *b = SK.GetEntity(entityB);
-            if(b->group.v != group.v) {
-                swap(a, b);
-            }
 
             ExprVector au = a->NormalExprsU(),
                        an = a->NormalExprsN();
@@ -630,16 +599,16 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                        bv = b->NormalExprsV(),
                        bn = b->NormalExprsN();
 
-            AddEq(l, VectorsParallel(0, an, bn), 0);
-            AddEq(l, VectorsParallel(1, an, bn), 1);
+            ExprVector eq = VectorsParallel3d(an, bn, h.param(0));
+            AddEq(l, eq);
             Expr *d1 = au.Dot(bv);
             Expr *d2 = au.Dot(bu);
             // Allow either orientation for the coordinate system, depending
             // on how it was drawn.
             if(fabs(d1->Eval()) < fabs(d2->Eval())) {
-                AddEq(l, d1, 2);
+                AddEq(l, d1, 3);
             } else {
-                AddEq(l, d2, 2);
+                AddEq(l, d2, 3);
             }
             return;
         }

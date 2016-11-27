@@ -652,7 +652,6 @@ public:
     static Expr *Distance(hEntity workplane, hEntity pa, hEntity pb);
     static Expr *PointLineDistance(hEntity workplane, hEntity pt, hEntity ln);
     static Expr *PointPlaneDistance(ExprVector p, hEntity plane);
-    static Expr *VectorsParallel(int eq, ExprVector a, ExprVector b);
     static ExprVector VectorsParallel3d(ExprVector a, ExprVector b, hParam p);
     static ExprVector PointInThreeSpace(hEntity workplane, Expr *u, Expr *v);
 

@@ -623,6 +623,20 @@ void SolveSpaceUI::UpgradeLegacyData() {
                 break;
             }
 
+            case Constraint::Type::SAME_ORIENTATION: {
+                if(AllParamsExistFor(c)) continue;
+
+                EntityBase *an = SK.GetEntity(c.entityA);
+                EntityBase *bn = SK.GetEntity(c.entityB);
+
+                ExprVector a = an->NormalExprsN();
+                ExprVector b = bn->NormalExprsN();
+
+                Param *param = SK.GetParam(c.h.param(0));
+                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
+                break;
+            }
+
             case Constraint::Type::PARALLEL: {
                 if(AllParamsExistFor(c)) continue;
 
