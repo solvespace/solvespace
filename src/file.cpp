@@ -564,56 +564,75 @@ void SolveSpaceUI::UpgradeLegacyData() {
         }
     }
 
+    // Constraints saved in versions prior to 3.0 never had any params;
+    // version 3.0 introduced params to constraints to avoid the hairy ball problem,
+    // so force them where they belong.
     IdList<Param,hParam> oldParam = {};
     SK.param.DeepCopyInto(&oldParam);
     SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+
+    auto AllParamsExistFor = [&](const Constraint &c) {
+        IdList<Param,hParam> param = {};
+        c.Generate(&param);
+        bool allParamsExist = true;
+        for(Param &p : param) {
+            if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
+            allParamsExist = false;
+            break;
+        }
+        param.Clear();
+        return allParamsExist;
+    };
+
     for(Constraint &c : SK.constraint) {
         switch(c.type) {
             case Constraint::Type::PT_ON_LINE: {
-                IdList<Param,hParam> param = {};
-                c.Generate(&param);
-                bool allParamsExist = true;
-                for(Param &p : param) {
-                    if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
-                    allParamsExist = false;
-                }
-                param.Clear();
+                if(AllParamsExistFor(c)) continue;
 
-                if(!allParamsExist) {
-                    EntityBase *eln = SK.GetEntity(c.entityA);
-                    EntityBase *ea = SK.GetEntity(eln->point[0]);
-                    EntityBase *eb = SK.GetEntity(eln->point[1]);
-                    EntityBase *ep = SK.GetEntity(c.ptA);
+                EntityBase *eln = SK.GetEntity(c.entityA);
+                EntityBase *ea = SK.GetEntity(eln->point[0]);
+                EntityBase *eb = SK.GetEntity(eln->point[1]);
+                EntityBase *ep = SK.GetEntity(c.ptA);
 
-                    ExprVector exp = ep->PointGetExprsInWorkplane(c.workplane);
-                    ExprVector exa = ea->PointGetExprsInWorkplane(c.workplane);
-                    ExprVector exb = eb->PointGetExprsInWorkplane(c.workplane);
-                    ExprVector exba = exb.Minus(exa);
-                    Param *p = SK.GetParam(c.h.param(0));
-                    p->val = exba.Dot(exp.Minus(exa))->Eval() / exba.Dot(exba)->Eval();
+                ExprVector exp = ep->PointGetExprsInWorkplane(c.workplane);
+                ExprVector exa = ea->PointGetExprsInWorkplane(c.workplane);
+                ExprVector exb = eb->PointGetExprsInWorkplane(c.workplane);
+                ExprVector exba = exb.Minus(exa);
+                Param *p = SK.GetParam(c.h.param(0));
+                p->val = exba.Dot(exp.Minus(exa))->Eval() / exba.Dot(exba)->Eval();
+                break;
+            }
+
+            case Constraint::Type::CUBIC_LINE_TANGENT: {
+                if(AllParamsExistFor(c)) continue;
+
+                EntityBase *cubic = SK.GetEntity(c.entityA);
+                EntityBase *line  = SK.GetEntity(c.entityB);
+
+                ExprVector a;
+                if(c.other) {
+                    a = cubic->CubicGetFinishTangentExprs();
+                } else {
+                    a = cubic->CubicGetStartTangentExprs();
                 }
+
+                ExprVector b = line->VectorGetExprs();
+
+                Param *param = SK.GetParam(c.h.param(0));
+                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
                 break;
             }
 
             case Constraint::Type::PARALLEL: {
-                IdList<Param,hParam> param = {};
-                c.Generate(&param);
-                bool allParamsExist = true;
-                for(Param &p : param) {
-                    if(oldParam.FindByIdNoOops(p.h) != NULL) continue;
-                    allParamsExist = false;
-                }
-                param.Clear();
+                if(AllParamsExistFor(c)) continue;
 
-                if(!allParamsExist) {
-                    EntityBase *ea = SK.GetEntity(c.entityA),
-                               *eb = SK.GetEntity(c.entityB);
-                    ExprVector a = ea->VectorGetExprsInWorkplane(c.workplane);
-                    ExprVector b = eb->VectorGetExprsInWorkplane(c.workplane);
+                EntityBase *ea = SK.GetEntity(c.entityA),
+                           *eb = SK.GetEntity(c.entityB);
+                ExprVector a = ea->VectorGetExprsInWorkplane(c.workplane);
+                ExprVector b = eb->VectorGetExprsInWorkplane(c.workplane);
 
-                    Param *param = SK.GetParam(c.h.param(0));
-                    param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
-                }
+                Param *param = SK.GetParam(c.h.param(0));
+                param->val = a.Dot(b)->Eval() / b.Dot(b)->Eval();
                 break;
             }
 

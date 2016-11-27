@@ -217,7 +217,8 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
 void ConstraintBase::Generate(IdList<Param,hParam> *l) const {
     switch(type) {
         case Type::PARALLEL:
-            // Only introduce a new parameter when operating in 3d
+        case Type::CUBIC_LINE_TANGENT:
+            // Add new parameter only when we operate in 3d space
             if(workplane.v != EntityBase::FREE_IN_3D.v) break;
             // fallthrough
         case Type::PT_ON_LINE: {
@@ -720,8 +721,8 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             ExprVector b = line->VectorGetExprs();
 
             if(workplane.v == EntityBase::FREE_IN_3D.v) {
-                AddEq(l, VectorsParallel(0, a, b), 0);
-                AddEq(l, VectorsParallel(1, a, b), 1);
+                ExprVector eq = VectorsParallel3d(a, b, h.param(0));
+                AddEq(l, eq);
             } else {
                 EntityBase *w = SK.GetEntity(workplane);
                 ExprVector wn = w->Normal()->NormalExprsN();
