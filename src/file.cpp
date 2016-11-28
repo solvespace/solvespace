@@ -426,7 +426,7 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
     }
 }
 
-bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
+bool SolveSpaceUI::LoadFromFile(const std::string &filename, bool canCancel) {
     allConsistent = false;
     fileLoadError = false;
 
@@ -512,7 +512,9 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename) {
             NewFile();
         }
     }
-
+    if(!ReloadAllImported(filename, canCancel)) {
+        return false;
+    }
     UpgradeLegacyData();
 
     return true;
@@ -876,8 +878,9 @@ static void PathSepNormalize(std::string &filename)
     }
 }
 
-bool SolveSpaceUI::ReloadAllImported(bool canCancel)
+bool SolveSpaceUI::ReloadAllImported(const std::string &filename, bool canCancel)
 {
+    std::string saveFile = filename.empty() ? SS.saveFile : filename;
     std::map<std::string, std::string> linkMap;
     allConsistent = false;
 
@@ -906,7 +909,7 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
         // In a newly created group we only have an absolute path.
         if(!g->linkFileRel.empty()) {
             std::string rel = PathSepUnixToPlatform(g->linkFileRel);
-            std::string fromRel = MakePathAbsolute(SS.saveFile, rel);
+            std::string fromRel = MakePathAbsolute(saveFile, rel);
             FILE *test = ssfopen(fromRel, "rb");
             if(test) {
                 fclose(test);
@@ -922,14 +925,14 @@ bool SolveSpaceUI::ReloadAllImported(bool canCancel)
 try_load_file:
         if(LoadEntitiesFromFile(g->linkFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
         {
-            if(!SS.saveFile.empty()) {
+            if(!saveFile.empty()) {
                 // Record the linked file's name relative to our filename;
                 // if the entire tree moves, then everything will still work
-                std::string rel = MakePathRelative(SS.saveFile, g->linkFile);
+                std::string rel = MakePathRelative(saveFile, g->linkFile);
                 g->linkFileRel = PathSepPlatformToUnix(rel);
             } else {
                 // We're not yet saved, so can't make it absolute.
-                // This will only be used for display purposes, as SS.saveFile
+                // This will only be used for display purposes, as saveFile
                 // is always nonempty when we are actually writing anything.
                 g->linkFileRel = g->linkFile;
             }

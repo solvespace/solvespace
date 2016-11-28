@@ -185,8 +185,7 @@ bool Test::Helper::CheckLoad(const char *file, int line, const char *fixture) {
     bool fixtureExists = (f != NULL);
     if(f) fclose(f);
 
-    bool result = fixtureExists &&
-        SS.LoadFromFile(fixturePath) && SS.ReloadAllImported(/*canCancel=*/false);
+    bool result = fixtureExists && SS.LoadFromFile(fixturePath);
     if(!RecordCheck(result)) {
         PrintFailure(file, line,
                      ssprintf("loading file '%s'", fixturePath.c_str()));

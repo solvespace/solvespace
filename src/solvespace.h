@@ -812,11 +812,11 @@ public:
     void NewFile();
     bool SaveToFile(const std::string &filename);
     bool LoadAutosaveFor(const std::string &filename);
-    bool LoadFromFile(const std::string &filename);
+    bool LoadFromFile(const std::string &filename, bool canCancel = false);
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const std::string &filename, EntityList *le,
                               SMesh *m, SShell *sh);
-    bool ReloadAllImported(bool canCancel=false);
+    bool ReloadAllImported(const std::string &filename = "", bool canCancel = false);
     // And the various export options
     void ExportAsPngTo(const std::string &filename);
     void ExportMeshTo(const std::string &filename);

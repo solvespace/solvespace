@@ -123,7 +123,7 @@ bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
 
     if(LoadAutosaveYesNo() == DIALOG_YES) {
         unsaved = true;
-        return LoadFromFile(autosaveFile);
+        return LoadFromFile(autosaveFile, /*canCancel=*/true);
     }
 
     return false;
@@ -131,11 +131,9 @@ bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
 
 bool SolveSpaceUI::OpenFile(const std::string &filename) {
     bool autosaveLoaded = LoadAutosaveFor(filename);
-    bool fileLoaded = autosaveLoaded || LoadFromFile(filename);
-    if(fileLoaded)
+    bool fileLoaded = autosaveLoaded || LoadFromFile(filename, /*canCancel=*/true);
+    if(fileLoaded) {
         saveFile = filename;
-    bool success = fileLoaded && ReloadAllImported(/*canCancel=*/true);
-    if(success) {
         AddToRecentList(filename);
     } else {
         saveFile = "";
@@ -143,7 +141,7 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
     }
     AfterNewFile();
     unsaved = autosaveLoaded;
-    return success;
+    return fileLoaded;
 }
 
 void SolveSpaceUI::Exit() {

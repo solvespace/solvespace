@@ -62,8 +62,6 @@ int main(int argc, char **argv) {
             [&] {
                 if(!SS.LoadFromFile(filename))
                     return false;
-                if(!SS.ReloadAllImported(/*canCancel=*/false))
-                    return false;
                 SS.AfterNewFile();
                 return true;
             },
