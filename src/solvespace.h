@@ -294,7 +294,7 @@ void FreeTemporary(void *p);
 void FreeAllTemporary();
 void *MemAlloc(size_t n);
 void MemFree(void *p);
-void InitHeaps();
+void InitPlatform();
 void vl(); // debug function to validate heaps
 
 #include "resource.h"

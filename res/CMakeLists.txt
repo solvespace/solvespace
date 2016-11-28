@@ -30,18 +30,23 @@ if(WIN32)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${source}")
     endfunction()
 elseif(APPLE)
-    set(app_resource_dir ${CMAKE_BINARY_DIR}/src/solvespace.app/Contents/Resources)
+    set(app_resource_dir ${CMAKE_BINARY_DIR}/bin/solvespace.app/Contents/Resources)
+    set(cli_resource_dir ${CMAKE_BINARY_DIR}/res)
 
     function(add_resource name)
         set(source ${CMAKE_CURRENT_SOURCE_DIR}/${name})
-        set(target ${app_resource_dir}/${name})
-        set(resource_list "${resource_list};${target}" PARENT_SCOPE)
+        set(target_app ${app_resource_dir}/${name})
+        set(target_cli ${cli_resource_dir}/${name})
+        set(resource_list "${resource_list};${target_app};${target_cli}" PARENT_SCOPE)
 
-        get_filename_component(target_dir ${target} DIRECTORY)
+        get_filename_component(target_app_dir ${target_app} DIRECTORY)
+        get_filename_component(target_cli_dir ${target_cli} DIRECTORY)
         add_custom_command(
-            OUTPUT ${target}
-            COMMAND ${CMAKE_COMMAND} -E make_directory ${target_dir}
-            COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target}
+            OUTPUT ${target_app} ${target_cli}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${target_app_dir}
+            COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target_app}
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${target_cli_dir}
+            COMMAND ${CMAKE_COMMAND} -E copy ${source} ${target_cli}
             COMMENT "Copying resource ${name}"
             DEPENDS ${source}
             VERBATIM)

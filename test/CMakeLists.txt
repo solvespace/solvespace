@@ -58,11 +58,15 @@ set(testsuite_SOURCES
 )
 
 add_executable(solvespace_testsuite
-    ${testsuite_SOURCES})
+    ${testsuite_SOURCES}
+    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
 target_link_libraries(solvespace_testsuite
     solvespace_headless
     ${COVERAGE_LIBRARY})
+
+add_dependencies(solvespace_testsuite
+    resources)
 
 add_custom_target(solvespace-test ALL
     COMMAND $<TARGET_FILE:solvespace_testsuite>

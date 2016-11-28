@@ -1482,73 +1482,6 @@ std::vector<std::string> GetFontFiles() {
     return fonts;
 }
 
-std::string ExpandPath(std::string path) {
-    char *expanded_c_path = realpath(path.c_str(), NULL);
-    if(expanded_c_path == NULL) {
-        fprintf(stderr, "realpath(%s): %s\n", path.c_str(), strerror(errno));
-        return "";
-    }
-    std::string expanded_path = expanded_c_path;
-    free(expanded_c_path);
-    return expanded_path;
-}
-
-static std::string resource_dir;
-void FindLocalResourceDir(const char *argv0) {
-    // Getting path to your own executable is a total portability disaster.
-    // Good job *nix OSes; you're basically all awful here.
-    std::string self_path;
-#if defined(__linux__)
-    self_path = "/proc/self/exe";
-#elif defined(__NetBSD__)
-    self_path = "/proc/curproc/exe"
-#elif defined(__OpenBSD__)
-    self_path = "/proc/curproc/file";
-#else
-    self_path = argv0;
-#endif
-
-    resource_dir = ExpandPath(self_path);
-    if(resource_dir.empty()) {
-        fprintf(stderr, "Cannot determine path to executable; using global resources.\n");
-        return;
-    }
-    resource_dir.erase(resource_dir.rfind('/'));
-    resource_dir += "/../res";
-    resource_dir = ExpandPath(resource_dir);
-}
-
-const void *LoadResource(const std::string &name, size_t *size) {
-    static std::map<std::string, std::vector<uint8_t>> cache;
-
-    auto it = cache.find(name);
-    if(it == cache.end()) {
-        struct stat st;
-        std::string path;
-
-        if(resource_dir.empty()) {
-            path = (UNIX_DATADIR "/") + name;
-        } else {
-            path = resource_dir + "/" + name;
-        }
-
-        if(stat(path.c_str(), &st)) {
-            ssassert(!stat(path.c_str(), &st), "Cannot find resource");
-        }
-
-        std::vector<uint8_t> data(st.st_size);
-        FILE *f = ssfopen(path.c_str(), "rb");
-        ssassert(f != NULL, "Cannot open resource");
-        fread(&data[0], 1, st.st_size, f);
-        fclose(f);
-
-        cache.emplace(name, std::move(data));
-        it = cache.find(name);
-    }
-
-    *size = (*it).second.size();
-    return &(*it).second[0];
-}
 
 /* Space Navigator support */
 
@@ -1611,9 +1544,6 @@ int main(int argc, char** argv) {
        fail to parse these. Also, many text window lines will become
        ambiguous. */
     gtk_disable_setlocale();
-
-    /* If we're running from the build directory, grab the local resources. */
-    FindLocalResourceDir(argv[0]);
 
     Gtk::Main main(argc, argv);
 

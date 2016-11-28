@@ -11,15 +11,11 @@ build_script:
   - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
   - msbuild "test\solvespace_testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 test_script:
-  - test\%BUILD_TYPE%\solvespace_testsuite.exe
+  - bin\%BUILD_TYPE%\solvespace_testsuite.exe
 artifacts:
-  - path: build\src\Debug\solvespace.exe
+  - path: build\bin\%BUILD_TYPE%\solvespace.exe
     name: solvespace.exe
-  - path: build\src\Debug\solvespace.pdb
-    name: solvespace.pdb
-  - path: build\src\RelWithDebInfo\solvespace.exe
-    name: solvespace.exe
-  - path: build\src\RelWithDebInfo\solvespace.pdb
+  - path: build\bin\%BUILD_TYPE%\solvespace.pdb
     name: solvespace.pdb
 deploy:
   # Releases to solvespace/solvespace

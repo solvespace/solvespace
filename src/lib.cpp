@@ -81,7 +81,7 @@ void Slvs_MakeQuaternion(double ux, double uy, double uz,
 void Slvs_Solve(Slvs_System *ssys, Slvs_hGroup shg)
 {
     if(!IsInit) {
-        InitHeaps();
+        InitPlatform();
         IsInit = 1;
     }
 

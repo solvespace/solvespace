@@ -45,7 +45,7 @@ After that, build SolveSpace as following:
     make
     sudo make install
 
-The application is built as `build/src/solvespace`.
+The application is built as `build/bin/solvespace`.
 
 A fully functional port to GTK3 is available, but not recommended
 for use due to bugs in this toolkit.
@@ -77,7 +77,7 @@ Or, build 64-bit SolveSpace as following:
              -DENABLE_TESTS=OFF
     make
 
-The application is built as `build/src/solvespace.exe`.
+The application is built as `build/bin/solvespace.exe`.
 
 Space Navigator support will not be available.
 
@@ -103,8 +103,8 @@ After that, build SolveSpace as following:
     cmake .. -DENABLE_TESTS=OFF
     make
 
-The application is built in `build/src/solvespace.app`, and
-the executable file is `build/src/solvespace.app/Contents/MacOS/solvespace`.
+The application is built in `build/bin/solvespace.app`, and
+the executable file is `build/bin/solvespace.app/Contents/MacOS/solvespace`.
 
 [homebrew]: http://brew.sh/
 

@@ -251,31 +251,6 @@ std::vector<std::string> GetFontFiles() {
     return fontFiles;
 }
 
-std::string resourceDir;
-const void *LoadResource(const std::string &name, size_t *size) {
-    static std::map<std::string, std::vector<uint8_t>> cache;
-
-    auto it = cache.find(name);
-    if(it == cache.end()) {
-        std::string path = resourceDir + "/" + name;
-        std::vector<uint8_t> data;
-
-        FILE *f = ssfopen(PathSepUnixToPlatform(path).c_str(), "rb");
-        ssassert(f != NULL, "Cannot open resource");
-        fseek(f, 0, SEEK_END);
-        data.resize(ftell(f));
-        fseek(f, 0, SEEK_SET);
-        fread(&data[0], 1, data.size(), f);
-        fclose(f);
-
-        cache.emplace(name, std::move(data));
-        it = cache.find(name);
-    }
-
-    *size = (*it).second.size();
-    return &(*it).second[0];
-}
-
 //-----------------------------------------------------------------------------
 // Application lifecycle
 //-----------------------------------------------------------------------------

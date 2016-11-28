@@ -47,6 +47,9 @@ if(NOT WIN32 AND NOT APPLE)
     set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
 endif()
 
+set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
+
 if(NOT CMAKE_C_COMPILER_ID STREQUAL CMAKE_CXX_COMPILER_ID)
     message(FATAL_ERROR "C and C++ compilers should be supplied by the same vendor")
 endif()

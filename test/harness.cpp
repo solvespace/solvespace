@@ -3,18 +3,19 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "harness.h"
 #include <regex>
 #include <cairo.h>
+
+#include "harness.h"
+
 #if defined(WIN32)
-#include <windows.h>
+#   include <windows.h>
 #else
-#include <unistd.h>
+#   include <unistd.h>
 #endif
 
 namespace SolveSpace {
     // These are defined in headless.cpp, and aren't exposed in solvespace.h.
-    extern std::string resourceDir;
     extern std::vector<std::string> fontFiles;
     extern bool antialias;
     extern std::shared_ptr<Pixmap> framebuffer;
@@ -291,12 +292,7 @@ int Test::Case::Register(Test::Case testCase) {
 }
 
 int main(int argc, char **argv) {
-#if defined(_MSC_VER)
-    _set_abort_behavior(0, _WRITE_ABORT_MSG);
-#endif
-#if defined(WIN32)
-    InitHeaps();
-#endif
+    InitPlatform();
 
     std::regex filter(".*");
     if(argc == 1) {
@@ -306,10 +302,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Usage: %s [test filter regex]\n", argv[0]);
         return 1;
     }
-
-    resourceDir = HostRoot();
-    resourceDir.erase(resourceDir.rfind(HOST_PATH_SEP) + 1);
-    resourceDir += "res";
 
     fontFiles.push_back(HostRoot() + HOST_PATH_SEP + "Gentium-R.ttf");
 

@@ -1397,16 +1397,6 @@ static void CreateMainWindows()
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
 }
 
-const void *SolveSpace::LoadResource(const std::string &name, size_t *size) {
-    HRSRC hres = FindResourceW(NULL, Widen(name).c_str(), RT_RCDATA);
-    ssassert(hres != NULL, "Cannot find resource");
-    HGLOBAL res = LoadResource(NULL, hres);
-    ssassert(res != NULL, "Cannot load resource");
-
-    *size = SizeofResource(NULL, hres);
-    return LockResource(res);
-}
-
 #ifdef HAVE_SPACEWARE
 //-----------------------------------------------------------------------------
 // Test if a message comes from the SpaceNavigator device. If yes, dispatch
@@ -1474,7 +1464,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ShowWindow(GraphicsWnd, SW_SHOW);
 
     // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
-    InitHeaps();
+    InitPlatform();
 
     // Pull out the Unicode command line.
     int argc;

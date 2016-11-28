@@ -20,6 +20,11 @@ else()
         platform/unixutil.cpp)
 endif()
 
+if(APPLE)
+    set(util_LIBRARIES
+        ${APPKIT_LIBRARY})
+endif()
+
 # libslvs
 
 set(libslvs_SOURCES
@@ -44,6 +49,9 @@ target_compile_definitions(slvs
 
 target_include_directories(slvs
     PUBLIC ${CMAKE_SOURCE_DIR}/include)
+
+target_link_libraries(slvs
+    ${util_LIBRARIES})
 
 set_target_properties(slvs PROPERTIES
     PUBLIC_HEADER ${CMAKE_SOURCE_DIR}/include/slvs.h
@@ -101,9 +109,6 @@ elseif(APPLE)
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
-
-    set(platform_LIBRARIES
-        ${APPKIT_LIBRARY})
 elseif(HAVE_GTK2 OR HAVE_GTK3)
     set(platform_SOURCES
         platform/gtkmain.cpp
@@ -192,6 +197,7 @@ add_library(solvespace_cad STATIC
 
 target_link_libraries(solvespace_cad
     dxfrw
+    ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
     ${FREETYPE_LIBRARY}

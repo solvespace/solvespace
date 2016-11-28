@@ -144,6 +144,16 @@ void ssremove(const std::string &filename)
     _wremove(Widen(filename).c_str());
 }
 
+const void *LoadResource(const std::string &name, size_t *size) {
+    HRSRC hres = FindResourceW(NULL, Widen(name).c_str(), RT_RCDATA);
+    ssassert(hres != NULL, "Cannot find resource");
+    HGLOBAL res = ::LoadResource(NULL, hres);
+    ssassert(res != NULL, "Cannot load resource");
+
+    *size = SizeofResource(NULL, hres);
+    return LockResource(res);
+}
+
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible
@@ -182,10 +192,17 @@ void vl() {
     ssassert(HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
 }
 
-void InitHeaps() {
+void InitPlatform() {
     // Create the heap used for long-lived stuff (that gets freed piecewise).
     PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
     // Create the heap that we use to store Exprs and other temp stuff.
     FreeAllTemporary();
+
+#if !defined(LIBRARY) && defined(_MSC_VER)
+    // Don't display the abort message; it is aggravating in CLI binaries
+    // and results in infinite WndProc recursion in GUI binaries.
+    _set_abort_behavior(0, _WRITE_ABORT_MSG);
+#endif
 }
+
 }
