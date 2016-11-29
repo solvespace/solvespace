@@ -127,7 +127,7 @@ endif()
 
 # solvespace library
 
-set(solvespace_cad_HEADERS
+set(solvespace_core_HEADERS
     config.h
     dsc.h
     expr.h
@@ -139,7 +139,7 @@ set(solvespace_cad_HEADERS
     render/gl2shader.h
     srf/surface.h)
 
-set(solvespace_cad_SOURCES
+set(solvespace_core_SOURCES
     bsp.cpp
     clipboard.cpp
     confscreen.cpp
@@ -186,16 +186,16 @@ set(solvespace_cad_SOURCES
     srf/surfinter.cpp
     srf/triangulate.cpp)
 
-set(solvespace_cad_gl_SOURCES
+set(solvespace_core_gl_SOURCES
     export.cpp
     solvespace.cpp)
 
-add_library(solvespace_cad STATIC
+add_library(solvespace-core STATIC
     ${util_SOURCES}
-    ${solvespace_cad_HEADERS}
-    ${solvespace_cad_SOURCES})
+    ${solvespace_core_HEADERS}
+    ${solvespace_core_SOURCES})
 
-target_link_libraries(solvespace_cad
+target_link_libraries(solvespace-core
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
@@ -203,13 +203,13 @@ target_link_libraries(solvespace_cad
     ${FREETYPE_LIBRARY}
     ${Backtrace_LIBRARIES})
 
-target_compile_options(solvespace_cad
+target_compile_options(solvespace-core
     PRIVATE ${COVERAGE_FLAGS})
 
-# solvespace gui executable
+# solvespace graphical executable
 
 add_executable(solvespace WIN32 MACOSX_BUNDLE
-    ${solvespace_cad_gl_SOURCES}
+    ${solvespace_core_gl_SOURCES}
     ${platform_SOURCES}
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
@@ -217,48 +217,14 @@ add_dependencies(solvespace
     resources)
 
 target_link_libraries(solvespace
-    solvespace_cad
+    solvespace-core
     ${OPENGL_LIBRARIES}
     ${platform_LIBRARIES}
     ${COVERAGE_LIBRARY})
 
-if(WIN32 AND NOT MINGW)
+if(MSVC)
     set_target_properties(solvespace PROPERTIES
         LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO")
-endif()
-
-if(APPLE)
-    foreach(lib ${platform_BUNDLED_LIBS})
-        get_filename_component(name ${lib} NAME)
-        set(target ${CMAKE_CURRENT_BINARY_DIR}/solvespace.app/Contents/MacOS/${name})
-
-        execute_process(COMMAND otool -D ${lib}
-            OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
-        add_custom_command(TARGET solvespace POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${target}
-            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
-                    $<TARGET_FILE:solvespace>
-            COMMENT "Bundling shared library ${lib}"
-            VERBATIM)
-    endforeach()
-
-    set(bundle solvespace)
-    add_custom_command(OUTPUT ${CMAKE_BINARY_DIR}/${bundle}.dmg
-        COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/${bundle}.dmg
-        COMMAND hdiutil create -srcfolder ${CMAKE_CURRENT_BINARY_DIR}/${bundle}.app
-                ${CMAKE_BINARY_DIR}/${bundle}.dmg
-        DEPENDS $<TARGET_FILE:${bundle}>
-        COMMENT "Building ${bundle}.dmg"
-        VERBATIM)
-    add_custom_target(${bundle}-dmg ALL
-        DEPENDS ${CMAKE_BINARY_DIR}/${bundle}.dmg)
-endif()
-
-if(NOT WIN32)
-    install(TARGETS solvespace
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        BUNDLE  DESTINATION .)
 endif()
 
 # solvespace headless library
@@ -267,19 +233,77 @@ set(headless_SOURCES
     platform/headless.cpp
     render/rendercairo.cpp)
 
-add_library(solvespace_headless STATIC EXCLUDE_FROM_ALL
-    ${solvespace_cad_gl_SOURCES}
+add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
+    ${solvespace_core_gl_SOURCES}
     ${headless_SOURCES})
 
-target_compile_definitions(solvespace_headless
+target_compile_definitions(solvespace-headless
     PRIVATE -DHEADLESS)
 
-target_include_directories(solvespace_headless
+target_include_directories(solvespace-headless
     INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(solvespace_headless
-    solvespace_cad
+target_link_libraries(solvespace-headless
+    solvespace-core
     ${CAIRO_LIBRARIES})
 
-target_compile_options(solvespace_headless
+target_compile_options(solvespace-headless
     PRIVATE ${COVERAGE_FLAGS})
+
+# solvespace command-line executable
+
+add_executable(solvespace-cli
+    platform/climain.cpp
+    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+
+target_link_libraries(solvespace-cli
+    solvespace-core
+    solvespace-headless)
+
+add_dependencies(solvespace-cli
+    resources)
+
+# solvespace unix package
+
+if(NOT (WIN32 OR APPLE))
+    install(TARGETS solvespace solvespace-cli
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
+# solvespace macOS package
+
+if(APPLE)
+    set(bundle     solvespace)
+    set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
+
+    add_custom_command(TARGET solvespace POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
+        COMMENT "Bundling executable solvespace-cli"
+        VERBATIM)
+
+    foreach(lib ${platform_BUNDLED_LIBS})
+        get_filename_component(name ${lib} NAME)
+
+        execute_process(COMMAND otool -D ${lib}
+            OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
+        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
+        add_custom_command(TARGET ${bundle} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${bundle_bin}/${name}
+            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
+                    $<TARGET_FILE:${bundle}>
+            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
+                    $<TARGET_FILE:solvespace-cli>
+            COMMENT "Bundling shared library ${lib}"
+            VERBATIM)
+    endforeach()
+
+    add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
+        COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
+        COMMAND hdiutil create -srcfolder ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app
+                ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
+        DEPENDS $<TARGET_FILE:${bundle}>
+        COMMENT "Building ${bundle}.dmg"
+        VERBATIM)
+    add_custom_target(${bundle}-dmg ALL
+        DEPENDS ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg)
+endif()

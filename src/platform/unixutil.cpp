@@ -96,10 +96,8 @@ void ssremove(const std::string &filename)
 
 static std::string ExpandPath(std::string path) {
     char *expanded_c_path = realpath(path.c_str(), NULL);
-    if(expanded_c_path == NULL) {
-        fprintf(stderr, "realpath(%s): %s\n", path.c_str(), strerror(errno));
-        return "";
-    }
+    if(expanded_c_path == NULL) return "";
+
     std::string expanded_path = expanded_c_path;
     free(expanded_c_path);
     return expanded_path;

@@ -182,7 +182,7 @@ const FileFilter SlvsFileFilter[] = {
 };
 // PNG format bitmap
 const FileFilter PngFileFilter[] = {
-    { "PNG",                        { "png" } },
+    { "PNG file",                   { "png" } },
     { NULL, {} }
 };
 // Triangle mesh

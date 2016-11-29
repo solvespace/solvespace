@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Our main() function for the headless (no OpenGL) test runner.
+// Our platform support functions for the headless (no OpenGL) test runner.
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------

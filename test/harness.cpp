@@ -228,7 +228,7 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
 
     std::shared_ptr<Pixmap> refPixmap = Pixmap::ReadPng(refPath.c_str(), /*flip=*/true);
     if(!RecordCheck(refPixmap && refPixmap->Equals(*framebuffer))) {
-        framebuffer->WritePng(outPath.c_str(), /*flip=*/true);
+        framebuffer->WritePng(outPath, /*flip=*/true);
 
         if(!refPixmap) {
             PrintFailure(file, line, "reference render not present");

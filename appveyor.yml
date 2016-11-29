@@ -9,28 +9,22 @@ before_build:
   - cmake -G"Visual Studio 12" -T v120 ..
 build_script:
   - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - msbuild "test\solvespace_testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "src\solvespace-cli.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "test\solvespace-testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 test_script:
-  - bin\%BUILD_TYPE%\solvespace_testsuite.exe
+  - bin\%BUILD_TYPE%\solvespace-testsuite.exe
 artifacts:
   - path: build\bin\%BUILD_TYPE%\solvespace.exe
     name: solvespace.exe
+  - path: build\bin\%BUILD_TYPE%\solvespace-cli.exe
+    name: solvespace-cli.exe
   - path: build\bin\%BUILD_TYPE%\solvespace.pdb
     name: solvespace.pdb
 deploy:
-  # Releases to solvespace/solvespace
   - provider: GitHub
     auth_token:
       secure: P9/pf2nM+jlWKe7pCjMp41HycBNP/+5AsmE/TETrDUoBOa/9WFHelqdVFrbRn9IC
     description: ""
-    artifact: solvespace.exe
-    on:
-      appveyor_repo_tag: true
-  # Releases to whitequark/solvespace (to be removed)
-  - provider: GitHub
-    auth_token:
-      secure: Flqxu1cz6PyxVT1wzTP4bSrQOY8wFrO7pJxYxvjEkLqIUU4dsDQrs2rac/A9deet
-    description: ""
-    artifact: solvespace.exe
+    artifact: solvespace.exe,solvespace-cli.exe,solvespace.pdb
     on:
       appveyor_repo_tag: true

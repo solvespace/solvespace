@@ -29,6 +29,7 @@ New rendering features:
   * The "Show/hide outlines" button is now independent from "Show/hide edges".
 
 Other new features:
+  * New command-line interface, for batch exporting and more.
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
   * New link to match the on-screen size of the sketch with its actual size,

@@ -5,12 +5,13 @@ foreach(pkg_config_lib CAIRO)
     link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
 endforeach()
 
-add_executable(solvespace_benchmark
+add_executable(solvespace-benchmark
     harness.cpp
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-target_link_libraries(solvespace_benchmark
-    solvespace_headless)
+target_link_libraries(solvespace-benchmark
+    solvespace-core
+    solvespace-headless)
 
-add_dependencies(solvespace_benchmark
+add_dependencies(solvespace-benchmark
     resources)

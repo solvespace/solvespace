@@ -57,19 +57,19 @@ set(testsuite_SOURCES
     group/translate_nd/test.cpp
 )
 
-add_executable(solvespace_testsuite
+add_executable(solvespace-testsuite
     ${testsuite_SOURCES}
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-target_link_libraries(solvespace_testsuite
-    solvespace_headless
+target_link_libraries(solvespace-testsuite
+    solvespace-headless
     ${COVERAGE_LIBRARY})
 
-add_dependencies(solvespace_testsuite
+add_dependencies(solvespace-testsuite
     resources)
 
-add_custom_target(solvespace-test ALL
-    COMMAND $<TARGET_FILE:solvespace_testsuite>
+add_custom_target(test_solvespace ALL
+    COMMAND $<TARGET_FILE:solvespace-testsuite>
     COMMENT "Testing SolveSpace"
     VERBATIM)
 
@@ -86,11 +86,11 @@ if(ENABLE_COVERAGE)
         OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/coverage_base.info
         COMMAND ${LCOV} ${LCOV_FLAGS} ${LCOV_COLLECT}
             -o ${CMAKE_BINARY_DIR}/coverage_base.info -i
-        DEPENDS solvespace_testsuite
+        DEPENDS solvespace-testsuite
         COMMENT "Importing baseline coverage data"
         VERBATIM)
 
-    add_custom_target(solvespace-coverage ALL
+    add_custom_target(coverage_solvespace ALL
         COMMAND ${LCOV} ${LCOV_FLAGS} ${LCOV_COLLECT}
             -o ${CMAKE_BINARY_DIR}/coverage_test.info
         COMMAND ${LCOV} ${LCOV_FLAGS}
@@ -104,7 +104,7 @@ if(ENABLE_COVERAGE)
             -o ${CMAKE_BINARY_DIR}/coverage/
             -t "SolveSpace testbench"
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/coverage_base.info
-        DEPENDS solvespace-test
+        DEPENDS test_solvespace
         COMMENT "Generating coverage report"
         VERBATIM)
 endif()
