@@ -42,8 +42,8 @@ static ToolIcon Toolbar[] = {
 
     { "extrude",         Command::GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
     { "lathe",           Command::GROUP_LATHE,    "New group rotating active sketch",                 {} },
-    { "step-rotate",     Command::GROUP_ROT,      "New group step and repeat rotating",               {} },
     { "step-translate",  Command::GROUP_TRANS,    "New group step and repeat translating",            {} },
+    { "step-rotate",     Command::GROUP_ROT,      "New group step and repeat rotating",               {} },
     { "sketch-in-plane", Command::GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
     { "sketch-in-3d",    Command::GROUP_3D,       "New group in 3d",                                  {} },
     { "assemble",        Command::GROUP_LINK,     "New group linking / assembling file",              {} },
