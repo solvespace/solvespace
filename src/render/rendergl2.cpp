@@ -769,17 +769,53 @@ public:
     virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
     virtual int GetZIndex() const override { return stroke.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &im,
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Stroke *stroke) {
         PointDrawCall *dc = new PointDrawCall();
         dc->stroke = *stroke;
-        dc->handle = renderer->imeshRenderer.Add(im);
+        dc->handle = renderer->imeshRenderer.Add(mesh);
         return std::shared_ptr<DrawCall>(dc);
     }
 
     void Draw(OpenGl2Renderer *renderer) override {
         ssglDepthRange(stroke.layer, stroke.zIndex);
         renderer->imeshRenderer.UsePoint(stroke, 1.0 / renderer->camera.scale);
+        renderer->imeshRenderer.Draw(handle);
+    }
+
+    void Remove(OpenGl2Renderer *renderer) override {
+        renderer->imeshRenderer.Remove(handle);
+    }
+};
+
+class PixmapDrawCall : public DrawCall {
+public:
+    // Key
+    Canvas::Fill                 fill;
+    // Data
+    IndexedMeshRenderer::Handle  handle;
+
+    virtual Canvas::Layer GetLayer() const override { return fill.layer; };
+    virtual int GetZIndex() const override { return fill.zIndex; };
+
+    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &mesh,
+                                            Canvas::Fill *fill) {
+        PixmapDrawCall *dc = new PixmapDrawCall();
+        dc->fill   = *fill;
+        dc->handle = renderer->imeshRenderer.Add(mesh);
+        return std::shared_ptr<DrawCall>(dc);
+    }
+
+    void Draw(OpenGl2Renderer *renderer) override {
+        ssglDepthRange(fill.layer, fill.zIndex);
+        if(fill.pattern != Canvas::FillPattern::SOLID) {
+            renderer->SelectMask(fill.pattern);
+        } else if(fill.texture) {
+            renderer->SelectTexture(fill.texture);
+        } else {
+            renderer->SelectMask(Canvas::FillPattern::SOLID);
+        }
+        renderer->imeshRenderer.UseFilled(fill);
         renderer->imeshRenderer.Draw(handle);
     }
 
@@ -813,22 +849,22 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void DrawFace(OpenGl2Renderer *renderer, GLenum cullFace, Canvas::Fill *fill) {
+    void DrawFace(OpenGl2Renderer *renderer, GLenum cullFace, const Canvas::Fill &fill) {
         glCullFace(cullFace);
-        ssglDepthRange(fill->layer, fill->zIndex);
-        if(fill->pattern != Canvas::FillPattern::SOLID) {
-            renderer->SelectMask(fill->pattern);
-        } else if(fill->texture) {
-            renderer->SelectTexture(fill->texture);
+        ssglDepthRange(fill.layer, fill.zIndex);
+        if(fill.pattern != Canvas::FillPattern::SOLID) {
+            renderer->SelectMask(fill.pattern);
+        } else if(fill.texture) {
+            renderer->SelectTexture(fill.texture);
         } else {
             renderer->SelectMask(Canvas::FillPattern::SOLID);
         }
         if(isShaded) {
             renderer->meshRenderer.UseShaded(renderer->lighting);
         } else {
-            renderer->meshRenderer.UseFilled(*fill);
+            renderer->meshRenderer.UseFilled(fill);
         }
-        renderer->meshRenderer.Draw(handle, /*useColors=*/fill->color.IsEmpty(), fill->color);
+        renderer->meshRenderer.Draw(handle, /*useColors=*/fill.color.IsEmpty(), fill.color);
     }
 
     void Draw(OpenGl2Renderer *renderer) override {
@@ -836,8 +872,8 @@ public:
         glEnable(GL_CULL_FACE);
 
         if(hasFillBack)
-            DrawFace(renderer, GL_FRONT, &fillBack);
-        DrawFace(renderer, GL_BACK, &fillFront);
+            DrawFace(renderer, GL_FRONT, fillBack);
+        DrawFace(renderer, GL_BACK, fillFront);
 
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDisable(GL_CULL_FACE);
@@ -977,7 +1013,14 @@ public:
     void DrawPixmap(std::shared_ptr<const Pixmap> pm,
                     const Vector &o, const Vector &u, const Vector &v,
                     const Point2d &ta, const Point2d &tb, hFill hcf) override {
-        ssassert(false, "Not implemented");
+        Fill fill = *fills.FindById(hcf);
+        fill.texture = pm;
+        hcf = GetFill(fill);
+
+        SIndexedMesh mesh = {};
+        mesh.AddPixmap(o, u, v, ta, tb);
+        drawCalls.emplace(PixmapDrawCall::Create(renderer, mesh, fills.FindByIdNoOops(hcf)));
+        mesh.Clear();
     }
 
     void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) override {

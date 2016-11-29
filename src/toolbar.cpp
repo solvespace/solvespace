@@ -24,6 +24,8 @@ static ToolIcon Toolbar[] = {
       N_("Sketch arc of a circle"),                           {} },
     { "text",            Command::TTF_TEXT,
       N_("Sketch curves from text in a TrueType font"),       {} },
+    { "image",           Command::IMAGE,
+      N_("Sketch image from a file"),                         {} },
     { "tangent-arc",     Command::TANGENT_ARC,
       N_("Create tangent arc at selected point"),             {} },
     { "bezier",          Command::CUBIC,

@@ -158,6 +158,7 @@ add_resources(
     icons/graphics-window/equal.png
     icons/graphics-window/extrude.png
     icons/graphics-window/horiz.png
+    icons/graphics-window/image.png
     icons/graphics-window/in3d.png
     icons/graphics-window/lathe.png
     icons/graphics-window/length.png

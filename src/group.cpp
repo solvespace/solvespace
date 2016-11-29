@@ -274,7 +274,7 @@ void Group::MenuGroup(Command id) {
     Group *gg = SK.GetGroup(g.h);
 
     if(gg->type == Type::LINKED) {
-        SS.ReloadAllImported(SS.saveFile);
+        SS.ReloadAllLinked(SS.saveFile);
     }
     gg->clean = false;
     SS.GW.activeGroup = gg->h;
@@ -801,6 +801,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     en.style = ep->style;
     en.str = ep->str;
     en.font = ep->font;
+    en.file = ep->file;
 
     switch(ep->type) {
         case Entity::Type::WORKPLANE:

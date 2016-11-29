@@ -54,6 +54,7 @@ set(testsuite_SOURCES
     request/cubic/test.cpp
     request/cubic_periodic/test.cpp
     request/datum_point/test.cpp
+    request/image/test.cpp
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
     group/link/test.cpp

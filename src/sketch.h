@@ -312,7 +312,8 @@ public:
         CUBIC_PERIODIC         = 301,
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
-        TTF_TEXT               = 600
+        TTF_TEXT               = 600,
+        IMAGE                  = 700
     };
 
     Request::Type type;
@@ -326,6 +327,7 @@ public:
 
     std::string str;
     std::string font;
+    Platform::Path file;
     double      aspectRatio;
 
     static hParam AddParam(ParamList *param, hParam hp);
@@ -375,7 +377,8 @@ public:
         CUBIC_PERIODIC         = 12001,
         CIRCLE                 = 13000,
         ARC_OF_CIRCLE          = 14000,
-        TTF_TEXT               = 15000
+        TTF_TEXT               = 15000,
+        IMAGE                  = 16000
     };
 
     Type        type;
@@ -400,6 +403,7 @@ public:
 
     std::string str;
     std::string font;
+    Platform::Path file;
     double      aspectRatio;
 
     // For entities that are derived by a transformation, the number of
@@ -476,7 +480,7 @@ public:
     Vector EndpointStart() const;
     Vector EndpointFinish() const;
 
-    void TtfTextGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
+    void RectGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void GenerateEquations(IdList<Equation,hEquation> *l) const;

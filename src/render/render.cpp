@@ -441,7 +441,7 @@ void ObjectPicker::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces,
 void ObjectPicker::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                               const Vector &o, const Vector &u, const Vector &v,
                               const Point2d &ta, const Point2d &tb, Canvas::hFill hcf) {
-    ssassert(false, "Not implemented");
+    DrawQuad(o, o.Plus(u), o.Plus(u).Plus(v), o.Plus(v), hcf);
 }
 
 bool ObjectPicker::Pick(std::function<void()> drawFn) {

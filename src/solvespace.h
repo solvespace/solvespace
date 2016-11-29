@@ -620,6 +620,11 @@ public:
     } UndoStack;
     UndoStack   undo;
     UndoStack   redo;
+
+    std::map<Platform::Path, std::shared_ptr<Pixmap>, Platform::PathLess> images;
+    bool ReloadLinkedImage(const Platform::Path &saveFile, Platform::Path *filename,
+                           bool canCancel);
+
     void UndoEnableMenus();
     void UndoRemember();
     void UndoUndo();
@@ -743,7 +748,7 @@ public:
     void UpgradeLegacyData();
     bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
-    bool ReloadAllImported(const Platform::Path &filename, bool canCancel = false);
+    bool ReloadAllLinked(const Platform::Path &filename, bool canCancel = false);
     // And the various export options
     void ExportAsPngTo(const Platform::Path &filename);
     void ExportMeshTo(const Platform::Path &filename);

@@ -76,7 +76,7 @@ File formats:
     export-wireframe:%s
     export-mesh:%s
     export-surfaces:%s
-)", FormatListFromFileFilter(PngFileFilter).c_str(),
+)", FormatListFromFileFilter(RasterFileFilter).c_str(),
     FormatListFromFileFilter(VectorFileFilter).c_str(),
     FormatListFromFileFilter(Vector3dFileFilter).c_str(),
     FormatListFromFileFilter(MeshFileFilter).c_str(),

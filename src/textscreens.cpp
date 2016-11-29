@@ -327,7 +327,7 @@ void TextWindow::ShowGroupInfo() {
         }
     } else if(g->type == Group::Type::LINKED) {
         Printf(true, " %Ftlink geometry from file%E");
-        Platform::Path relativePath =g->linkFile.RelativeTo(SS.saveFile.Parent());
+        Platform::Path relativePath = g->linkFile.RelativeTo(SS.saveFile.Parent());
         if(relativePath.IsEmpty()) {
             Printf(false, "%Ba   '%s'", g->linkFile.raw.c_str());
         } else {

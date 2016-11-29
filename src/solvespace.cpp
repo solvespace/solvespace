@@ -457,7 +457,7 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_PNG: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, "", PngFileFilter)) break;
+            if(!GetSaveFile(&exportFile, "", RasterFileFilter)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }

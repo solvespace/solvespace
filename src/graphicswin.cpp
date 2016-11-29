@@ -112,6 +112,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, N_("&Bezier Cubic Spline"),        Command::CUBIC,            'B',     TN, mReq  },
 { 1, NULL,                              Command::NONE,             0,       TN, NULL  },
 { 1, N_("&Text in TrueType Font"),      Command::TTF_TEXT,         'T',     TN, mReq  },
+{ 1, N_("&Image"),                      Command::IMAGE,            0,       TN, mReq  },
 { 1, NULL,                              Command::NONE,             0,       TN, NULL  },
 { 1, N_("To&ggle Construction"),        Command::CONSTRUCTION,     'G',     TN, mReq  },
 { 1, N_("Tangent &Arc at Point"),       Command::TANGENT_ARC,      S|'A',   TN, mReq  },
@@ -943,7 +944,8 @@ void GraphicsWindow::MenuEdit(Command id) {
             break;
 
         case Command::REGEN_ALL:
-            SS.ReloadAllImported(SS.saveFile);
+            SS.images.clear();
+            SS.ReloadAllLinked(SS.saveFile);
             SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
             SS.ScheduleShowTW();
             break;
@@ -1015,6 +1017,12 @@ void GraphicsWindow::MenuRequest(Command id) {
         case Command::WORKPLANE: s = _("click origin of workplane"); goto c;
         case Command::RECTANGLE: s = _("click one corner of rectangle"); goto c;
         case Command::TTF_TEXT: s = _("click top left of text"); goto c;
+        case Command::IMAGE:
+            if(!SS.ReloadLinkedImage(SS.saveFile, &SS.GW.pending.filename,
+                                     /*canCancel=*/true)) {
+                return;
+            }
+            s = _("click top left of image"); goto c;
 c:
             SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
             SS.GW.pending.command = id;

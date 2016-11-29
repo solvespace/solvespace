@@ -394,6 +394,9 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     for(Entity &e : SK.entity) {
         if(!e.IsVisible()) continue;
 
+        // If faces aren't selectable, image entities aren't either.
+        if(e.type == Entity::Type::IMAGE && !showFaces) continue;
+
         // Don't hover whatever's being dragged.
         if(IsFromPending(e.h.request())) {
             // The one exception is when we're creating a new cubic; we

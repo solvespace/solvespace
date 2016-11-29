@@ -33,6 +33,7 @@ void SolveSpaceUI::ClearExisting() {
 
     SK.entity.Clear();
     SK.param.Clear();
+    images.clear();
 }
 
 hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
@@ -131,6 +132,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'r',  "Request.style",            'x',    &(SS.sv.r.style)              },
     { 'r',  "Request.str",              'S',    &(SS.sv.r.str)                },
     { 'r',  "Request.font",             'S',    &(SS.sv.r.font)               },
+    { 'r',  "Request.file",             'P',    &(SS.sv.r.file)               },
     { 'r',  "Request.aspectRatio",      'f',    &(SS.sv.r.aspectRatio)        },
 
     { 'e',  "Entity.h.v",               'x',    &(SS.sv.e.h.v)                },
@@ -139,6 +141,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'e',  "Entity.style",             'x',    &(SS.sv.e.style)              },
     { 'e',  "Entity.str",               'S',    &(SS.sv.e.str)                },
     { 'e',  "Entity.font",              'S',    &(SS.sv.e.font)               },
+    { 'e',  "Entity.file",              'P',    &(SS.sv.e.file)               },
     { 'e',  "Entity.point[0].v",        'x',    &(SS.sv.e.point[0].v)         },
     { 'e',  "Entity.point[1].v",        'x',    &(SS.sv.e.point[1].v)         },
     { 'e',  "Entity.point[2].v",        'x',    &(SS.sv.e.point[2].v)         },
@@ -408,7 +411,10 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                 case 'x': sscanf(val, "%x", &u); p->x()= u; break;
 
                 case 'P': {
-                    p->P() = filename.Parent().Join(Platform::Path::FromPortable(val));
+                    Platform::Path path = Platform::Path::FromPortable(val);
+                    if(!path.IsEmpty()) {
+                        p->P() = filename.Parent().Join(path).Expand();
+                    }
                     break;
                 }
 
@@ -537,7 +543,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
             NewFile();
         }
     }
-    if(!ReloadAllImported(filename, canCancel)) {
+    if(!ReloadAllLinked(filename, canCancel)) {
         return false;
     }
     UpgradeLegacyData();
@@ -577,7 +583,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
                     Entity *b = entity.FindById(text->point[2]);
                     Entity *c = entity.FindById(text->point[3]);
                     ExprVector bex, cex;
-                    text->TtfTextGetPointsExprs(&bex, &cex);
+                    text->RectGetPointsExprs(&bex, &cex);
                     b->PointForceParamTo(bex.Eval());
                     c->PointForceParamTo(cex.Eval());
                 }
@@ -819,11 +825,11 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     return true;
 }
 
-bool SolveSpaceUI::ReloadAllImported(const Platform::Path &filename, bool canCancel)
-{
+bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCancel) {
     std::map<Platform::Path, Platform::Path, Platform::PathLess> linkMap;
 
     allConsistent = false;
+
     for(Group &g : SK.group) {
         if(g.type != Group::Type::LINKED) continue;
 
@@ -838,10 +844,16 @@ bool SolveSpaceUI::ReloadAllImported(const Platform::Path &filename, bool canCan
 
 try_again:
         if(LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
-            // We loaded the data, good.
+            // We loaded the data, good. Now import its dependencies as well.
+            for(Entity &e : g.impEntity) {
+                if(e.type != Entity::Type::IMAGE) continue;
+                if(!ReloadLinkedImage(g.linkFile, &e.file, canCancel)) {
+                    return false;
+                }
+            }
         } else if(linkMap.count(g.linkFile) == 0) {
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFileYesNoCancel(g.linkFile.RelativeTo(filename), canCancel)) {
+            switch(LocateImportedFileYesNoCancel(g.linkFile.RelativeTo(saveFile), canCancel)) {
             case DIALOG_YES: {
                 Platform::Path newLinkFile;
                 if(GetOpenFile(&newLinkFile, "", SlvsFileFilter)) {
@@ -867,6 +879,59 @@ try_again:
         }
     }
 
+    for(Request &r : SK.request) {
+        if(r.type != Request::Type::IMAGE) continue;
+
+        if(!ReloadLinkedImage(saveFile, &r.file, canCancel)) {
+            return false;
+        }
+    }
+
     return true;
 }
 
+bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
+                                     Platform::Path *filename, bool canCancel) {
+    std::shared_ptr<Pixmap> pixmap;
+    bool promptOpenFile = false;
+    if(filename->IsEmpty()) {
+        // We're prompting the user for a new image.
+        promptOpenFile = true;
+    } else {
+        auto image = SS.images.find(*filename);
+        if(image != SS.images.end()) return true;
+
+        pixmap = Pixmap::ReadPng(*filename);
+        if(pixmap == NULL) {
+            // The file was moved; prompt the user for its new location.
+            switch(LocateImportedFileYesNoCancel(filename->RelativeTo(saveFile), canCancel)) {
+                case DIALOG_YES:
+                    promptOpenFile = true;
+                    break;
+
+                case DIALOG_NO:
+                    // We don't know where the file is, record it as absent.
+                    break;
+
+                case DIALOG_CANCEL:
+                    return false;
+            }
+        }
+    }
+
+    if(promptOpenFile) {
+        if(GetOpenFile(filename, "", RasterFileFilter)) {
+            pixmap = Pixmap::ReadPng(*filename);
+            if(pixmap == NULL) {
+                Error("The image '%s' is corrupted.", filename->raw.c_str());
+            }
+            // We know where the file is now, good.
+        } else if(canCancel) {
+            return false;
+        }
+    }
+
+    // We loaded the data, good.
+    SS.images[*filename] = pixmap;
+    return true;
+}

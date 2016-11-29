@@ -70,7 +70,7 @@ const FileFilter SlvsFileFilter[] = {
     { NULL, {} }
 };
 // PNG format bitmap
-const FileFilter PngFileFilter[] = {
+const FileFilter RasterFileFilter[] = {
     { N_("PNG file"),                   { "png" } },
     { NULL, {} }
 };
@@ -173,6 +173,7 @@ enum class Command : uint32_t {
     RECTANGLE,
     CUBIC,
     TTF_TEXT,
+    IMAGE,
     SPLIT_CURVES,
     TANGENT_ARC,
     CONSTRUCTION,
@@ -712,6 +713,7 @@ public:
         hConstraint          constraint;
 
         const char          *description;
+        Platform::Path       filename;
 
         bool                 hasSuggestion;
         Constraint::Type     suggestion;

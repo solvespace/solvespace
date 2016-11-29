@@ -12,6 +12,7 @@ New sketch features:
   * A new sketch in workplane group can be created based on existing workplane.
   * TTF text request has two additional points on the right side, which allow
     constraining the width of text.
+  * Image requests can now be created, similar to TTF text requests.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
   * When adding a constraint which has a label and is redundant with another
