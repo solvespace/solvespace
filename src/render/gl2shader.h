@@ -25,6 +25,10 @@
 
 namespace SolveSpace {
 
+//-----------------------------------------------------------------------------
+// Floating-point data structures; the layout of these must match shaders
+//-----------------------------------------------------------------------------
+
 class Vector2f {
 public:
     float x, y;
@@ -45,13 +49,17 @@ public:
 
 class Vector4f {
 public:
-    float w, x, y, z;
+    float x, y, z, w;
 
     static Vector4f From(float x, float y, float z, float w);
     static Vector4f From(const Vector &v, float w);
     static Vector4f FromInt(uint32_t x, uint32_t y, uint32_t z, uint32_t w);
     static Vector4f From(const RgbaColor &c);
 };
+
+//-----------------------------------------------------------------------------
+// Wrappers for our shaders
+//-----------------------------------------------------------------------------
 
 class Shader {
 public:
