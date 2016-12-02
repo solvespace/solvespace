@@ -703,24 +703,24 @@ public:
 class EdgeDrawCall : public DrawCall {
 public:
     // Key
-    Canvas::Stroke             *stroke;
+    Canvas::Stroke              stroke;
     // Data
     EdgeRenderer::Handle        handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
-    virtual int GetZIndex() const override { return stroke->zIndex; };
+    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
+    virtual int GetZIndex() const override { return stroke.zIndex; };
 
     static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SEdgeList &el,
                                             Canvas::Stroke *stroke) {
         EdgeDrawCall *dc = new EdgeDrawCall();
-        dc->stroke = stroke;
+        dc->stroke = *stroke;
         dc->handle = renderer->edgeRenderer.Add(el);
         return std::shared_ptr<DrawCall>(dc);
     }
 
     void Draw(OpenGl2Renderer *renderer) override {
-        ssglDepthRange(stroke->layer, stroke->zIndex);
-        renderer->edgeRenderer.SetStroke(*stroke, 1.0 / renderer->camera.scale);
+        ssglDepthRange(stroke.layer, stroke.zIndex);
+        renderer->edgeRenderer.SetStroke(stroke, 1.0 / renderer->camera.scale);
         renderer->edgeRenderer.Draw(handle);
     }
 
@@ -732,27 +732,27 @@ public:
 class OutlineDrawCall : public DrawCall {
 public:
     // Key
-    Canvas::Stroke             *stroke;
+    Canvas::Stroke              stroke;
     // Data
     OutlineRenderer::Handle     handle;
     Canvas::DrawOutlinesAs      drawAs;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
-    virtual int GetZIndex() const override { return stroke->zIndex; };
+    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
+    virtual int GetZIndex() const override { return stroke.zIndex; };
 
     static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SOutlineList &ol,
                                             Canvas::Stroke *stroke,
                                             Canvas::DrawOutlinesAs drawAs) {
         OutlineDrawCall *dc = new OutlineDrawCall();
-        dc->stroke = stroke;
+        dc->stroke = *stroke;
         dc->handle = renderer->outlineRenderer.Add(ol);
         dc->drawAs = drawAs;
         return std::shared_ptr<DrawCall>(dc);
     }
 
     void Draw(OpenGl2Renderer *renderer) override {
-        ssglDepthRange(stroke->layer, stroke->zIndex);
-        renderer->outlineRenderer.SetStroke(*stroke, 1.0 / renderer->camera.scale);
+        ssglDepthRange(stroke.layer, stroke.zIndex);
+        renderer->outlineRenderer.SetStroke(stroke, 1.0 / renderer->camera.scale);
         renderer->outlineRenderer.Draw(handle, drawAs);
     }
 
@@ -764,24 +764,24 @@ public:
 class PointDrawCall : public DrawCall {
 public:
     // Key
-    Canvas::Stroke              *stroke;
+    Canvas::Stroke               stroke;
     // Data
     IndexedMeshRenderer::Handle  handle;
 
-    virtual Canvas::Layer GetLayer() const override { return stroke->layer; };
-    virtual int GetZIndex() const override { return stroke->zIndex; };
+    virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
+    virtual int GetZIndex() const override { return stroke.zIndex; };
 
     static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &im,
                                             Canvas::Stroke *stroke) {
         PointDrawCall *dc = new PointDrawCall();
-        dc->stroke = stroke;
+        dc->stroke = *stroke;
         dc->handle = renderer->imeshRenderer.Add(im);
         return std::shared_ptr<DrawCall>(dc);
     }
 
     void Draw(OpenGl2Renderer *renderer) override {
-        ssglDepthRange(stroke->layer, stroke->zIndex);
-        renderer->imeshRenderer.UsePoint(*stroke, 1.0 / renderer->camera.scale);
+        ssglDepthRange(stroke.layer, stroke.zIndex);
+        renderer->imeshRenderer.UsePoint(stroke, 1.0 / renderer->camera.scale);
         renderer->imeshRenderer.Draw(handle);
     }
 
@@ -793,23 +793,25 @@ public:
 class MeshDrawCall : public DrawCall {
 public:
     // Key
-    Canvas::Fill           *fillFront;
+    Canvas::Fill            fillFront;
     // Data
     MeshRenderer::Handle    handle;
-    Canvas::Fill           *fillBack;
+    Canvas::Fill            fillBack;
+    bool                    hasFillBack;
     bool                    isShaded;
 
-    virtual Canvas::Layer GetLayer() const override { return fillFront->layer; };
-    virtual int GetZIndex() const override { return fillFront->zIndex; };
+    virtual Canvas::Layer GetLayer() const override { return fillFront.layer; };
+    virtual int GetZIndex() const override { return fillFront.zIndex; };
 
     static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SMesh &m,
                                             Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,
                                             bool isShaded = false) {
         MeshDrawCall *dc = new MeshDrawCall();
-        dc->fillFront       = fillFront;
+        dc->fillFront       = *fillFront;
         dc->handle          = renderer->meshRenderer.Add(m);
-        dc->fillBack        = fillBack;
+        dc->fillBack        = *fillBack;
         dc->isShaded        = isShaded;
+        dc->hasFillBack     = (fillBack != NULL);
         return std::shared_ptr<DrawCall>(dc);
     }
 
@@ -835,9 +837,9 @@ public:
         glEnable(GL_POLYGON_OFFSET_FILL);
         glEnable(GL_CULL_FACE);
 
-        if(fillBack)
-            DrawFace(renderer, GL_FRONT, fillBack);
-        DrawFace(renderer, GL_BACK, fillFront);
+        if(hasFillBack)
+            DrawFace(renderer, GL_FRONT, &fillBack);
+        DrawFace(renderer, GL_BACK, &fillFront);
 
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDisable(GL_CULL_FACE);
