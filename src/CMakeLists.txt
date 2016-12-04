@@ -224,7 +224,7 @@ target_link_libraries(solvespace
 
 if(MSVC)
     set_target_properties(solvespace PROPERTIES
-        LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO")
+        LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
 endif()
 
 # solvespace headless library
@@ -262,6 +262,11 @@ target_link_libraries(solvespace-cli
 
 add_dependencies(solvespace-cli
     resources)
+
+if(MSVC)
+    set_target_properties(solvespace-cli PROPERTIES
+        LINK_FLAGS "/INCREMENTAL:NO /OPT:REF")
+endif()
 
 # solvespace unix package
 
