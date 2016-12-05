@@ -1161,7 +1161,7 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
 }
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename {
-    return SolveSpace::SS.OpenFile([filename UTF8String]);
+    return SolveSpace::SS.OpenFile(SolveSpace::PathFromCurrentDirectory([filename UTF8String]));
 }
 
 - (IBAction)preferences:(id)sender {

@@ -41,14 +41,14 @@ static bool RunBenchmark(std::function<void()> setupFn,
 }
 
 int main(int argc, char **argv) {
-    InitPlatform();
+    std::vector<std::string> args = InitPlatform(argc, argv);
 
     std::string mode, filename;
-    if(argc == 3) {
-        mode = argv[1];
-        filename = argv[2];
+    if(args.size() == 3) {
+        mode = args[1];
+        filename = args[2];
     } else {
-        fprintf(stderr, "Usage: %s [mode] [filename]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [mode] [filename]\n", args[0].c_str());
         fprintf(stderr, "Mode can be one of: load.\n");
         return 1;
     }

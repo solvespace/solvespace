@@ -10,6 +10,7 @@
 
 // Include after solvespace.h to avoid identifier clashes.
 #include <windows.h>
+#include <shellapi.h>
 
 namespace SolveSpace {
 static HANDLE PermHeap, TempHeap;
@@ -118,6 +119,19 @@ std::string PathSepUnixToPlatform(const std::string &filename)
     return result;
 }
 
+std::string PathFromCurrentDirectory(const std::string &relFilename)
+{
+    // On Windows, ssfopen needs an absolute UNC path proper, so get that.
+    std::wstring relFilenameW = Widen(relFilename);
+    std::wstring absFilenameW;
+    absFilenameW.resize(GetFullPathNameW(relFilenameW.c_str(), 0, NULL, NULL));
+    DWORD length = GetFullPathNameW(relFilenameW.c_str(), absFilenameW.length(),
+                                    &absFilenameW[0], NULL);
+    ssassert(length != 0, "Expected GetFullPathName to succeed");
+    absFilenameW.resize(length);
+    return Narrow(absFilenameW);
+}
+
 static std::string MakeUNCFilename(const std::string &filename)
 {
     // Prepend \\?\ UNC prefix unless already an UNC path.
@@ -192,7 +206,7 @@ void vl() {
     ssassert(HeapValidate(PermHeap, HEAP_NO_SERIALIZE, NULL), "Corrupted heap");
 }
 
-void InitPlatform() {
+std::vector<std::string> InitPlatform(int argc, char **argv) {
     // Create the heap used for long-lived stuff (that gets freed piecewise).
     PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
     // Create the heap that we use to store Exprs and other temp stuff.
@@ -203,6 +217,17 @@ void InitPlatform() {
     // and results in infinite WndProc recursion in GUI binaries.
     _set_abort_behavior(0, _WRITE_ABORT_MSG);
 #endif
+
+    // Extract the command-line arguments; the ones from main() are ignored,
+    // since they are in the OEM encoding.
+    int argcW;
+    LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argcW);
+    std::vector<std::string> args;
+    for(int i = 0; i < argcW; i++) {
+        args.push_back(Narrow(argvW[i]));
+    }
+    LocalFree(argvW);
+    return args;
 }
 
 }

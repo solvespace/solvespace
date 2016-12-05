@@ -154,6 +154,7 @@ extern const bool FLIP_FRAMEBUFFER;
 bool PathEqual(const std::string &a, const std::string &b);
 std::string PathSepPlatformToUnix(const std::string &filename);
 std::string PathSepUnixToPlatform(const std::string &filename);
+std::string PathFromCurrentDirectory(const std::string &relFilename);
 FILE *ssfopen(const std::string &filename, const char *mode);
 std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode);
 void ssremove(const std::string &filename);
@@ -289,12 +290,13 @@ std::string CnfThawString(const std::string &val, const std::string &name);
 uint32_t CnfThawInt(uint32_t val, const std::string &name);
 float CnfThawFloat(float val, const std::string &name);
 
+std::vector<std::string> InitPlatform(int argc, char **argv);
+
 void *AllocTemporary(size_t n);
 void FreeTemporary(void *p);
 void FreeAllTemporary();
 void *MemAlloc(size_t n);
 void MemFree(void *p);
-void InitPlatform();
 void vl(); // debug function to validate heaps
 
 #include "resource.h"

@@ -10,8 +10,8 @@ namespace SolveSpace {
     extern std::shared_ptr<Pixmap> framebuffer;
 }
 
-static void ShowUsage(const char *argv0) {
-    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", argv0);
+static void ShowUsage(const std::string &argv0) {
+    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", argv0.c_str());
 //-----------------------------------------------------------------------------> 80 col */
     fprintf(stderr, R"(
     When run, performs an action specified by <command> on every <filename>.
@@ -81,14 +81,14 @@ static void ShowUsage(const char *argv0) {
     FormatListFromFileFilter(SurfaceFileFilter).c_str());
 }
 
-static bool RunCommand(size_t argc, char **argv) {
-    if(argc < 2) return false;
+static bool RunCommand(const std::vector<std::string> args) {
+    if(args.size() < 2) return false;
 
     std::function<void(const std::string &)> runner;
 
     std::vector<std::string> inputFiles;
     auto ParseInputFile = [&](size_t &argn) {
-        std::string arg = argv[argn];
+        std::string arg = args[argn];
         if(arg[0] != '-') {
             inputFiles.push_back(arg);
             return true;
@@ -97,42 +97,42 @@ static bool RunCommand(size_t argc, char **argv) {
 
     std::string outputPattern;
     auto ParseOutputPattern = [&](size_t &argn) {
-        if(argn + 1 < argc && (!strcmp(argv[argn], "--output") ||
-                               !strcmp(argv[argn], "-o"))) {
+        if(argn + 1 < args.size() && (args[argn] == "--output" ||
+                                      args[argn] == "-o")) {
             argn++;
-            outputPattern = argv[argn];
+            outputPattern = args[argn];
             return true;
         } else return false;
     };
 
-    Vector projUp, projRight;
+    Vector projUp = {}, projRight = {};
     auto ParseViewDirection = [&](size_t &argn) {
-        if(argn + 1 < argc && (!strcmp(argv[argn], "--view") ||
-                               !strcmp(argv[argn], "-v"))) {
+        if(argn + 1 < args.size() && (args[argn] == "--view" ||
+                                      args[argn] == "-v")) {
             argn++;
-            if(!strcmp(argv[argn], "top")) {
+            if(args[argn] == "top") {
                 projRight = Vector::From(1, 0, 0);
                 projUp    = Vector::From(0, 1, 0);
-            } else if(!strcmp(argv[argn], "bottom")) {
+            } else if(args[argn] == "bottom") {
                 projRight = Vector::From(-1, 0, 0);
                 projUp    = Vector::From(0, 1, 0);
-            } else if(!strcmp(argv[argn], "left")) {
+            } else if(args[argn] == "left") {
                 projRight = Vector::From(0, 1, 0);
                 projUp    = Vector::From(0, 0, 1);
-            } else if(!strcmp(argv[argn], "right")) {
+            } else if(args[argn] == "right") {
                 projRight = Vector::From(0, -1, 0);
                 projUp    = Vector::From(0, 0, 1);
-            } else if(!strcmp(argv[argn], "front")) {
+            } else if(args[argn] == "front") {
                 projRight = Vector::From(-1, 0, 0);
                 projUp    = Vector::From(0, 0, 1);
-            } else if(!strcmp(argv[argn], "back")) {
+            } else if(args[argn] == "back") {
                 projRight = Vector::From(1, 0, 0);
                 projUp    = Vector::From(0, 0, 1);
-            } else if(!strcmp(argv[argn], "isometric")) {
+            } else if(args[argn] == "isometric") {
                 projRight = Vector::From(0.707,  0.000, -0.707);
                 projUp    = Vector::From(-0.408, 0.816, -0.408);
             } else {
-                fprintf(stderr, "Unrecognized view direction '%s'\n", argv[argn]);
+                fprintf(stderr, "Unrecognized view direction '%s'\n", args[argn].c_str());
             }
             return true;
         } else return false;
@@ -140,33 +140,33 @@ static bool RunCommand(size_t argc, char **argv) {
 
     double chordTol = 1.0;
     auto ParseChordTolerance = [&](size_t &argn) {
-        if(argn + 1 < argc && (!strcmp(argv[argn], "--chord-tol") ||
-                               !strcmp(argv[argn], "-t"))) {
+        if(argn + 1 < args.size() && (args[argn] == "--chord-ol" ||
+                                      args[argn] == "-t")) {
             argn++;
-            if(sscanf(argv[argn], "%lf", &chordTol) == 1) {
+            if(sscanf(args[argn].c_str(), "%lf", &chordTol) == 1) {
                 return true;
             } else return false;
         } else return false;
     };
 
-    if(!strcmp(argv[1], "thumbnail")) {
-        unsigned width, height;
+    if(args[1] == "thumbnail") {
+        unsigned width = 0, height = 0;
         auto ParseSize = [&](size_t &argn) {
-            if(argn + 1 < argc && !strcmp(argv[argn], "--size")) {
+            if(argn + 1 < args.size() && args[argn] == "--size") {
                 argn++;
-                if(sscanf(argv[argn], "%ux%u", &width, &height) == 2) {
+                if(sscanf(args[argn].c_str(), "%ux%u", &width, &height) == 2) {
                     return true;
                 } else return false;
             } else return false;
         };
 
-        for(size_t argn = 2; argn < argc; argn++) {
+        for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
                  ParseViewDirection(argn) ||
                  ParseChordTolerance(argn) ||
                  ParseSize(argn))) {
-                fprintf(stderr, "Unrecognized option '%s'.\n", argv[argn]);
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
         }
@@ -193,13 +193,13 @@ static bool RunCommand(size_t argc, char **argv) {
             PaintGraphics();
             framebuffer->WritePng(output, /*flip=*/true);
         };
-    } else if(!strcmp(argv[1], "export-view")) {
-        for(size_t argn = 2; argn < argc; argn++) {
+    } else if(args[1] == "export-view") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
                  ParseViewDirection(argn) ||
                  ParseChordTolerance(argn))) {
-                fprintf(stderr, "Unrecognized option '%s'.\n", argv[argn]);
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
         }
@@ -216,12 +216,12 @@ static bool RunCommand(size_t argc, char **argv) {
 
             SS.ExportViewOrWireframeTo(output, /*exportWireframe=*/false);
         };
-    } else if(!strcmp(argv[1], "export-wireframe")) {
-        for(size_t argn = 2; argn < argc; argn++) {
+    } else if(args[1] == "export-wireframe") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
                  ParseChordTolerance(argn))) {
-                fprintf(stderr, "Unrecognized option '%s'.\n", argv[argn]);
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
         }
@@ -231,12 +231,12 @@ static bool RunCommand(size_t argc, char **argv) {
 
             SS.ExportViewOrWireframeTo(output, /*exportWireframe=*/true);
         };
-    } else if(!strcmp(argv[1], "export-mesh")) {
-        for(size_t argn = 2; argn < argc; argn++) {
+    } else if(args[1] == "export-mesh") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn) ||
                  ParseChordTolerance(argn))) {
-                fprintf(stderr, "Unrecognized option '%s'.\n", argv[argn]);
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
         }
@@ -246,11 +246,11 @@ static bool RunCommand(size_t argc, char **argv) {
 
             SS.ExportMeshTo(output);
         };
-    } else if(!strcmp(argv[1], "export-surfaces")) {
-        for(size_t argn = 2; argn < argc; argn++) {
+    } else if(args[1] == "export-surfaces") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
             if(!(ParseInputFile(argn) ||
                  ParseOutputPattern(argn))) {
-                fprintf(stderr, "Unrecognized option '%s'.\n", argv[argn]);
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
         }
@@ -260,7 +260,7 @@ static bool RunCommand(size_t argc, char **argv) {
             sfw.ExportSurfacesTo(output);
         };
     } else {
-        fprintf(stderr, "Unrecognized command '%s'.\n", argv[1]);
+        fprintf(stderr, "Unrecognized command '%s'.\n", args[1].c_str());
         return false;
     }
 
@@ -279,19 +279,22 @@ static bool RunCommand(size_t argc, char **argv) {
     }
 
     for(const std::string &inputFile : inputFiles) {
+        std::string absInputFile = PathFromCurrentDirectory(inputFile);
+
         std::string outputFile = outputPattern;
         size_t replaceAt = outputFile.find('%');
         if(replaceAt != std::string::npos) {
             outputFile.replace(replaceAt, 1, Basename(inputFile, /*stripExtension=*/true));
         }
+        std::string absOutputFile = PathFromCurrentDirectory(outputFile);
 
         SS.Init();
-        if(!SS.LoadFromFile(inputFile)) {
+        if(!SS.LoadFromFile(absInputFile)) {
             fprintf(stderr, "Cannot load '%s'!\n", inputFile.c_str());
             return false;
         }
         SS.AfterNewFile();
-        runner(outputFile);
+        runner(absOutputFile);
         SK.Clear();
         SS.Clear();
 
@@ -302,14 +305,14 @@ static bool RunCommand(size_t argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-    InitPlatform();
+    std::vector<std::string> args = InitPlatform(argc, argv);
 
-    if(argc == 1) {
-        ShowUsage(argv[0]);
+    if(args.size() == 1) {
+        ShowUsage(args[0]);
         return 0;
     }
 
-    if(!RunCommand(argc, argv)) {
+    if(!RunCommand(args)) {
         return 1;
     } else {
         return 0;

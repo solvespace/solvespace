@@ -1463,27 +1463,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
     ShowWindow(GraphicsWnd, SW_SHOW);
 
-    // Create the heaps for all dynamic memory (AllocTemporary, MemAlloc)
-    InitPlatform();
-
-    // Pull out the Unicode command line.
-    int argc;
-    LPWSTR *argv = CommandLineToArgvW(GetCommandLineW(), &argc);
-
-    // A filename may have been specified on the command line; if so, then
-    // strip any quotation marks, and make it absolute.
-    std::wstring filenameRel, filename;
-    if(argc >= 2) {
-        filenameRel = argv[1];
-        if(filenameRel[0] == L'\"' && filenameRel[filenameRel.length() - 1] == L'\"') {
-            filenameRel.erase(0, 1);
-            filenameRel.erase(filenameRel.length() - 1, 1);
-        }
-
-        DWORD len = GetFullPathNameW(&filenameRel[0], 0, NULL, NULL);
-        filename.resize(len - 1);
-        GetFullPathNameW(&filenameRel[0], len, &filename[0], NULL);
-    }
+    std::vector<std::string> args = InitPlatform(0, NULL);
 
 #ifdef HAVE_SPACEWARE
     // Initialize the SpaceBall, if present. Test if the driver is running
@@ -1501,8 +1481,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
-    if(!filename.empty())
-        SS.OpenFile(Narrow(filename));
+
+    // A filename may have been specified on the command line; if so, then
+    // strip any quotation marks, and make it absolute.
+    if(args.size() >= 2) {
+        std::string filename = args[1];
+        if(filename[0] == '\"' && filename[filename.length() - 1] == '\"') {
+            filename.erase(0, 1);
+            filename.erase(filename.length() - 1, 1);
+        }
+        SS.OpenFile(PathFromCurrentDirectory(filename));
+    }
 
     // Repaint one more time, after we've set everything up.
     PaintGraphics();

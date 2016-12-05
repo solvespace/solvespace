@@ -80,6 +80,12 @@ std::string PathSepUnixToPlatform(const std::string &filename)
     return filename;
 }
 
+std::string PathFromCurrentDirectory(const std::string &relFilename)
+{
+    // On Unix we can just pass this to ssfopen directly.
+    return relFilename;
+}
+
 FILE *ssfopen(const std::string &filename, const char *mode)
 {
     ssassert(filename.length() == strlen(filename.c_str()),
@@ -251,8 +257,12 @@ void MemFree(void *p) {
     free(p);
 }
 
-void InitPlatform(void) {
-    /* nothing to do */
+std::vector<std::string> InitPlatform(int argc, char **argv) {
+    std::vector<std::string> args;
+    for(int i = 0; i < argc; i++) {
+        args.push_back(argv[i]);
+    }
+    return args;
 }
 
 };

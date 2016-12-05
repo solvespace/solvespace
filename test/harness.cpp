@@ -291,14 +291,14 @@ int Test::Case::Register(Test::Case testCase) {
 }
 
 int main(int argc, char **argv) {
-    InitPlatform();
+    std::vector<std::string> args = InitPlatform(argc, argv);
 
     std::regex filter(".*");
-    if(argc == 1) {
-    } else if(argc == 2) {
-        filter = argv[1];
+    if(args.size() == 1) {
+    } else if(args.size() == 2) {
+        filter = args[1];
     } else {
-        fprintf(stderr, "Usage: %s [test filter regex]\n", argv[0]);
+        fprintf(stderr, "Usage: %s [test filter regex]\n", args[0].c_str());
         return 1;
     }
 

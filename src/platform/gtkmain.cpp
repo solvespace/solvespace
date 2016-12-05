@@ -1590,7 +1590,7 @@ int main(int argc, char** argv) {
         }
 
         /* Make sure the argument is valid UTF-8. */
-        SS.OpenFile(Glib::ustring(argv[1]));
+        SS.OpenFile(PathFromCurrentDirectory(Glib::ustring(argv[1])));
     }
 
     main.run(*GW);
