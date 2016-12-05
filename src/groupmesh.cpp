@@ -416,6 +416,11 @@ void Group::GenerateDisplayItems() {
             }
         }
 
+        // If we render this mesh, we need to know whether it's transparent,
+        // and we'll want all transparent triangles last, to make the depth test
+        // work correctly.
+        displayMesh.PrecomputeTransparency();
+
         displayDirty = false;
     }
 }

@@ -34,8 +34,6 @@ void SMesh::AddTriangle(STriMeta meta, Vector a, Vector b, Vector c) {
     AddTriangle(&t);
 }
 void SMesh::AddTriangle(const STriangle *st) {
-    RgbaColor color = st->meta.color;
-    if(!color.IsEmpty() && color.alpha != 255) isTransparent = true;
     l.Add(st);
 }
 
@@ -1090,4 +1088,17 @@ void SOutlineList::MakeFromCopyOf(SOutlineList *sol) {
     for(SOutline *so = sol->l.First(); so; so = sol->l.NextAfter(so)) {
         l.Add(so);
     }
+}
+
+void SMesh::PrecomputeTransparency() {
+    std::sort(l.begin(), l.end(),
+              [&](const STriangle &sta, const STriangle &stb) {
+        RgbaColor colora = sta.meta.color,
+                  colorb = stb.meta.color;
+        bool opaquea = colora.IsEmpty() || colora.alpha == 255,
+             opaqueb = colorb.IsEmpty() || colorb.alpha == 255;
+
+        if(!opaquea || !opaqueb) isTransparent = true;
+        return (opaquea != opaqueb && opaquea == true);
+    });
 }

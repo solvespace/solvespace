@@ -276,6 +276,8 @@ public:
     void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
     void MakeOutlinesInto(SOutlineList *sol, EdgeKind type);
 
+    void PrecomputeTransparency();
+
     bool IsEmpty() const;
     void RemapFaces(Group *g, int remap);
 

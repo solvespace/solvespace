@@ -441,7 +441,6 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
         for(i = start; i < sm->l.n; i++) {
             STriangle *st = &(sm->l.elem[i]);
             st->meta = meta;
-            if(st->meta.color.alpha != 255) sm->isTransparent = true;
             st->an = NormalAt(st->a.x, st->a.y);
             st->bn = NormalAt(st->b.x, st->b.y);
             st->cn = NormalAt(st->c.x, st->c.y);
