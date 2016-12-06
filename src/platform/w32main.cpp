@@ -1485,12 +1485,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // A filename may have been specified on the command line; if so, then
     // strip any quotation marks, and make it absolute.
     if(args.size() >= 2) {
-        std::string filename = args[1];
-        if(filename[0] == '\"' && filename[filename.length() - 1] == '\"') {
-            filename.erase(0, 1);
-            filename.erase(filename.length() - 1, 1);
-        }
-        SS.OpenFile(PathFromCurrentDirectory(filename));
+        SS.OpenFile(PathFromCurrentDirectory(args[1]));
     }
 
     // Repaint one more time, after we've set everything up.
