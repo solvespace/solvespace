@@ -123,7 +123,7 @@ static const std::string &FindLocalResourceDir() {
     selfPath = "/proc/self/exe";
 #elif defined(__NetBSD__)
     selfPath = "/proc/curproc/exe"
-#elif defined(__OpenBSD__)
+#elif defined(__OpenBSD__) || defined(__FreeBSD__)
     selfPath = "/proc/curproc/file";
 #elif defined(__APPLE__)
     CFURLRef cfUrl =
