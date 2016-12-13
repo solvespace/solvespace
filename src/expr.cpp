@@ -787,7 +787,7 @@ bool ExprParser::Reduce(std::string *error) {
         case TokenType::BINARY_OP: {
             Token b = PopOperand(error);
             if(b.IsError()) return false;
-            r.expr = a.expr->AnyOp(op.expr->op, b.expr);
+            r.expr = b.expr->AnyOp(op.expr->op, a.expr);
             break;
         }
 
