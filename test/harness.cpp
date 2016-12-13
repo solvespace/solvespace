@@ -178,6 +178,18 @@ bool Test::Helper::CheckTrue(const char *file, int line, const char *expr, bool 
     }
 }
 
+bool Test::Helper::CheckEqualEpsilon(const char *file, int line, const char *valueExpr,
+                                     double value, double reference) {
+    bool result = fabs(value - reference) < LENGTH_EPS;
+    if(!RecordCheck(result)) {
+        std::string msg = ssprintf("(%s) = %.4g ≉ %.4g", valueExpr, value, reference);
+        PrintFailure(file, line, msg);
+        return false;
+    } else {
+        return true;
+    }
+}
+
 bool Test::Helper::CheckLoad(const char *file, int line, const char *fixture) {
     std::string fixturePath = GetAssetPath(file, fixture);
 

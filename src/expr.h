@@ -96,6 +96,7 @@ public:
     Expr *DeepCopyWithParamsAsPointers(IdList<Param,hParam> *firstTry,
                                        IdList<Param,hParam> *thenTry) const;
 
+    static Expr *Parse(const char *input, std::string *error);
     static Expr *From(const char *in, bool popUpError);
 };
 

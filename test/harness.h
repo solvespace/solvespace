@@ -22,6 +22,8 @@ public:
                              std::string mangle = "");
 
     bool CheckTrue(const char *file, int line, const char *expr, bool result);
+    bool CheckEqualEpsilon(const char *file, int line, const char *valueExpr,
+                           double value, double reference);
     bool CheckLoad(const char *file, int line, const char *fixture);
     bool CheckSave(const char *file, int line, const char *reference);
     bool CheckRender(const char *file, int line, const char *fixture);
@@ -51,6 +53,9 @@ using namespace SolveSpace;
 
 #define CHECK_TRUE(cond) \
     do { if(!helper->CheckTrue(__FILE__, __LINE__, #cond, cond)) return; } while(0)
+#define CHECK_EQ_EPS(value, reference) \
+    do { if(!helper->CheckEqualEpsilon(__FILE__, __LINE__, \
+                                       #value, value, reference)) return; } while(0)
 #define CHECK_LOAD(fixture) \
     do { if(!helper->CheckLoad(__FILE__, __LINE__, fixture)) return; } while(0)
 #define CHECK_SAVE(fixture) \

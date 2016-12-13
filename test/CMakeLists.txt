@@ -11,6 +11,7 @@ endforeach()
 
 set(testsuite_SOURCES
     harness.cpp
+    core/expr/test.cpp
     constraint/points_coincident/test.cpp
     constraint/pt_pt_distance/test.cpp
     constraint/pt_plane_distance/test.cpp

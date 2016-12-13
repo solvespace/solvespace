@@ -682,6 +682,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
     Token t = Token::From();
     char c = PeekChar();
     if(isupper(c)) {
+        std::string n = ReadWord();
         t = Token::From(TokenType::OPERAND, Expr::Op::VARIABLE);
     } else if(isalpha(c)) {
         std::string s = ReadWord();
@@ -796,6 +797,7 @@ bool ExprParser::Reduce(std::string *error) {
             switch(op.expr->op) {
                 case Expr::Op::NEGATE: e = e->Negate(); break;
                 case Expr::Op::SQRT:   e = e->Sqrt(); break;
+                case Expr::Op::SQUARE: e = e->Times(e); break;
                 case Expr::Op::SIN:    e = e->Times(Expr::From(PI/180))->Sin(); break;
                 case Expr::Op::COS:    e = e->Times(Expr::From(PI/180))->Cos(); break;
                 case Expr::Op::ASIN:   e = e->ASin()->Times(Expr::From(180/PI)); break;
@@ -881,6 +883,10 @@ Expr *ExprParser::Parse(const char *input, std::string *error) {
     Token r = parser.PopOperand(error);
     if(r.IsError()) return NULL;
     return r.expr;
+}
+
+Expr *Expr::Parse(const char *input, std::string *error) {
+    return ExprParser::Parse(input, error);
 }
 
 Expr *Expr::From(const char *input, bool popUpError) {
