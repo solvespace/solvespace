@@ -216,6 +216,8 @@ add_executable(solvespace WIN32 MACOSX_BUNDLE
 add_dependencies(solvespace
     resources)
 
+target_compile_features(solvespace PRIVATE cxx_noexcept)
+
 target_link_libraries(solvespace
     solvespace-core
     ${OPENGL_LIBRARIES}
