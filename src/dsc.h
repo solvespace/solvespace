@@ -83,6 +83,7 @@ public:
     Vector DotInToCsys(Vector u, Vector v, Vector n) const;
     Vector ScaleOutOfCsys(Vector u, Vector v, Vector n) const;
     double DistanceToLine(Vector p0, Vector dp) const;
+    double DistanceToPlane(Vector normal, Vector origin) const;
     bool OnLineSegment(Vector a, Vector b, double tol=LENGTH_EPS) const;
     Vector ClosestPointOnLine(Vector p0, Vector deltal) const;
     double Magnitude() const;

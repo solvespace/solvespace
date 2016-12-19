@@ -666,6 +666,10 @@ double Vector::DistanceToLine(Vector p0, Vector dp) const {
     return ((this->Minus(p0)).Cross(dp)).Magnitude() / m;
 }
 
+double Vector::DistanceToPlane(Vector normal, Vector origin) const {
+    return this->Dot(normal) - origin.Dot(normal);
+}
+
 bool Vector::OnLineSegment(Vector a, Vector b, double tol) const {
     if(this->Equals(a, tol) || this->Equals(b, tol)) return true;
 

@@ -44,6 +44,14 @@ void Constraint::DoLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b)
     canvas->DrawLine(a, b, hcs);
 }
 
+void Constraint::DoStippledLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b) {
+    Canvas::Stroke strokeStippled = *canvas->strokes.FindById(hcs);
+    strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
+    strokeStippled.stippleScale   = 4.0;
+    Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
+    DoLine(canvas, hcsStippled, a, b);
+}
+
 void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
                          Vector ref, Vector *labelPos, Vector gr, Vector gu) {
     const Camera &camera = canvas->GetCamera();
@@ -78,14 +86,17 @@ void Constraint::DoLabel(Canvas *canvas, Canvas::hStroke hcs,
     if(labelPos) *labelPos = o;
 }
 
-void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *r) {
-    Canvas::Stroke strokeStippled = *canvas->strokes.FindById(hcs);
-    strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
-    strokeStippled.stippleScale   = 4.0;
-    Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
+void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs,
+                                  Vector *r, Vector n, Vector o) {
+    double d = r->DistanceToPlane(n, o);
+    Vector p = r->Minus(n.ScaledBy(d));
+    DoStippledLine(canvas, hcs, p, *r);
+    *r = p;
+}
 
+void Constraint::DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *r) {
     Vector p = r->ProjectInto(workplane);
-    DoLine(canvas, hcsStippled, p, *r);
+    DoStippledLine(canvas, hcs, p, *r);
     *r = p;
 }
 
@@ -224,9 +235,6 @@ void Constraint::DoLineWithArrows(Canvas *canvas, Canvas::hStroke hcs,
     DoLine(canvas, hcs, a, ae.Plus(out.WithMagnitude(10*pixels)));
     if(!onlyOneExt) {
         DoLine(canvas, hcs, b, be.Plus(out.WithMagnitude(10*pixels)));
-    } else {
-        // Vector prj = be;
-        // DoProjectedPoint(canvas, hcs, &prj);
     }
 
     int within = DoLineTrimmedAgainstBox(canvas, hcs, ref, ae, be);
@@ -538,11 +546,6 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
         }
 
         case Type::PROJ_PT_DISTANCE: {
-            Canvas::Stroke strokeStippled = stroke;
-            strokeStippled.stipplePattern = StipplePattern::SHORT_DASH;
-            strokeStippled.stippleScale   = 4.0;
-            Canvas::hStroke hcsStippled = canvas->GetStroke(strokeStippled);
-
             Vector ap = SK.GetEntity(ptA)->PointGetNum(),
                    bp = SK.GetEntity(ptB)->PointGetNum(),
                    dp = (bp.Minus(ap)),
@@ -554,8 +557,8 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
             pp = pp.WithMagnitude(1);
             double d = dp.Dot(pp);
             Vector bpp = ap.Plus(pp.ScaledBy(d));
-            DoLine(canvas, hcsStippled, ap, bpp);
-            DoLine(canvas, hcsStippled, bp, bpp);
+            DoStippledLine(canvas, hcs, ap, bpp);
+            DoStippledLine(canvas, hcs, bp, bpp);
 
             DoLineWithArrows(canvas, hcs, ref, ap, bpp, /*onlyOneExt=*/false);
             DoLabel(canvas, hcs, ref, labelPos, gr, gu);
@@ -611,6 +614,18 @@ void Constraint::DoLayout(DrawAs how, Canvas *canvas,
 
             if(!pt.Equals(closest)) {
                 DoLineWithArrows(canvas, hcs, ref, pt, closest, /*onlyOneExt=*/true);
+
+                // Draw projected point
+                Vector a    = pt;
+                Vector b    = closest;
+                Vector ab   = a.Minus(b);
+                Vector ar   = a.Minus(ref);
+                Vector n    = ab.Cross(ar);
+                Vector out  = ab.Cross(n).WithMagnitude(1);
+                out = out.ScaledBy(-out.Dot(ar));
+                Vector be   = b.Plus(out);
+                Vector np   = lA.Minus(pt).Cross(lB.Minus(pt)).WithMagnitude(1.0);
+                DoProjectedPoint(canvas, hcs, &be, np, pt);
 
                 // Extensions to line
                 double pixels = 1.0 / camera.scale;

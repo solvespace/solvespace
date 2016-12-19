@@ -683,6 +683,7 @@ public:
     void DoLayout(DrawAs how, Canvas *canvas,
                   Vector *labelPos, std::vector<Vector> *refs);
     void DoLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b);
+    void DoStippledLine(Canvas *canvas, Canvas::hStroke hcs, Vector a, Vector b);
     bool DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
                       Vector p0, Vector p1, Vector pt, double salient);
     void DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
@@ -699,8 +700,9 @@ public:
                                  Vector ref, Vector a, Vector b, bool extend = true);
     void DoLabel(Canvas *canvas, Canvas::hStroke hcs,
                  Vector ref, Vector *labelPos, Vector gr, Vector gu);
-    void DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs,
-                          Vector *p);
+    void DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *p);
+    void DoProjectedPoint(Canvas *canvas, Canvas::hStroke hcs, Vector *p, Vector n, Vector o);
+
     void DoEqualLenTicks(Canvas *canvas, Canvas::hStroke hcs,
                          Vector a, Vector b, Vector gn, Vector *refp);
     void DoEqualRadiusTicks(Canvas *canvas, Canvas::hStroke hcs,
