@@ -100,7 +100,6 @@ public:
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
     void DrawEdges(const SEdgeList &el, hStroke hcs) override;
-    void DrawEdgesInternal(const SEdgeList &el, hStroke hcs);
     bool DrawBeziers(const SBezierList &bl, hStroke hcs) override { return false; }
     void DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) override;
     void DrawVectorText(const std::string &text, double height,
@@ -436,23 +435,6 @@ void OpenGl2Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
     }
 }
 
-void OpenGl2Renderer::DrawEdgesInternal(const SEdgeList &el, hStroke hcs) {
-    if(el.l.n == 0) return;
-
-    Stroke *stroke = SelectStroke(hcs);
-    if(stroke->stipplePattern == StipplePattern::ZIGZAG ||
-       stroke->stipplePattern == StipplePattern::FREEHAND)
-    {
-        for(const SEdge *e = el.l.First(); e; e = el.l.NextAfter(e)) {
-            DoStippledLine(e->a, e->b, hcs);
-        }
-        return;
-    }
-
-    edgeRenderer.SetStroke(*stroke, 1.0 / camera.scale);
-    edgeRenderer.Draw(el);
-}
-
 void OpenGl2Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) {
     if(ol.l.n == 0) return;
 
@@ -468,11 +450,16 @@ void OpenGl2Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutl
 void OpenGl2Renderer::DrawVectorText(const std::string &text, double height,
                                      const Vector &o, const Vector &u, const Vector &v,
                                      hStroke hcs) {
-    SEdgeList el = {};
-    auto traceEdge = [&](Vector a, Vector b) { el.AddEdge(a, b); };
+    SEdgeListItem *eli = lines.FindByIdNoOops(hcs);
+    if(eli == NULL) {
+        SEdgeListItem item = {};
+        item.h = hcs;
+        lines.Add(&item);
+        eli = lines.FindByIdNoOops(hcs);
+    }
+    SEdgeList &lines = eli->lines;
+    auto traceEdge = [&](Vector a, Vector b) { lines.AddEdge(a, b); };
     VectorFont::Builtin()->Trace(height, o, u, v, text, traceEdge, camera);
-    DrawEdgesInternal(el, hcs);
-    el.Clear();
 }
 
 void OpenGl2Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
@@ -643,7 +630,10 @@ void OpenGl2Renderer::FlushFrame() {
     meshes.Clear();
 
     for(SEdgeListItem &eli : lines) {
-        DrawEdgesInternal(eli.lines, eli.h);
+        Stroke *stroke = SelectStroke(eli.h);
+
+        edgeRenderer.SetStroke(*stroke, 1.0 / camera.scale);
+        edgeRenderer.Draw(eli.lines);
         eli.lines.Clear();
     }
     lines.Clear();
