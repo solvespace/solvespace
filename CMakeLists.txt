@@ -26,7 +26,7 @@ include(GetGitCommitHash)
 
 project(solvespace)
 set(solvespace_VERSION_MAJOR 2)
-set(solvespace_VERSION_MINOR 2)
+set(solvespace_VERSION_MINOR 3)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
 if(NOT WIN32 AND NOT APPLE)
