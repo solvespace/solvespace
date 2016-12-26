@@ -235,8 +235,6 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             MakeSelected(hc);
         }
     }
-
-    SS.ScheduleGenerateAll();
 }
 
 void GraphicsWindow::MenuClipboard(Command id) {

@@ -901,7 +901,6 @@ void GraphicsWindow::MenuEdit(Command id) {
 
             // and regenerate as necessary.
             SS.MarkGroupDirty(hg);
-            SS.GenerateAll();
             break;
         }
 
@@ -941,7 +940,6 @@ void GraphicsWindow::MenuEdit(Command id) {
             }
             // Regenerate, with these points marked as dragged so that they
             // get placed as close as possible to our snap grid.
-            SS.GenerateAll();
             SS.GW.ClearPending();
 
             SS.GW.ClearSelection();
@@ -1053,7 +1051,6 @@ c:
                 SS.MarkGroupDirty(r->group);
             }
             SS.GW.ClearSelection();
-            SS.GenerateAll();
             break;
         }
 

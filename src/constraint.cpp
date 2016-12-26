@@ -86,7 +86,6 @@ hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
 
     SS.MarkGroupDirty(c->group);
     SK.GetGroup(c->group)->dofCheckOk = false;
-    SS.ScheduleGenerateAll();
     return c->h;
 }
 
@@ -540,7 +539,6 @@ void Constraint::MenuConstrain(Command id) {
                     SS.UndoRemember();
                     c->other = !(c->other);
                     SS.MarkGroupDirty(c->group);
-                    SS.ScheduleGenerateAll();
                     break;
                 }
             }
@@ -552,8 +550,7 @@ void Constraint::MenuConstrain(Command id) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && c->type != Type::COMMENT) {
                     (c->reference) = !(c->reference);
-                    SK.GetGroup(c->group)->clean = false;
-                    SS.GenerateAll();
+                    SS.MarkGroupDirty(c->group, /*onlyThis=*/true);
                     break;
                 }
             }

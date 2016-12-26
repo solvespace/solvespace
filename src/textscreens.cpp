@@ -218,7 +218,6 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
     }
 
     SS.MarkGroupDirty(g->h);
-    SS.GenerateAll();
     SS.GW.ClearSuper();
 }
 
@@ -468,7 +467,7 @@ void TextWindow::ScreenAllowRedundant(int link, uint32_t v) {
 
     Group *g = SK.GetGroup(SS.TW.shown.group);
     g->allowRedundant = true;
-    SS.GenerateAll();
+    SS.MarkGroupDirty(SS.TW.shown.group);
 
     SS.TW.shown.screen = Screen::GROUP_INFO;
     SS.TW.Show();
@@ -683,7 +682,6 @@ void TextWindow::EditControlDone(const char *s) {
                 }
 
                 SS.MarkGroupDirty(g->h);
-                SS.ScheduleGenerateAll();
             }
             break;
         }
@@ -708,7 +706,6 @@ void TextWindow::EditControlDone(const char *s) {
                     Group *g = SK.GetGroup(edit.group);
                     g->scale = ev;
                     SS.MarkGroupDirty(g->h);
-                    SS.ScheduleGenerateAll();
                 }
             }
             break;
@@ -723,7 +720,6 @@ void TextWindow::EditControlDone(const char *s) {
                 g->color = RGBf(rgb.x, rgb.y, rgb.z);
 
                 SS.MarkGroupDirty(g->h);
-                SS.ScheduleGenerateAll();
                 SS.GW.ClearSuper();
             } else {
                 Error("Bad format: specify color as r, g, b");
@@ -740,7 +736,6 @@ void TextWindow::EditControlDone(const char *s) {
                     Group *g = SK.GetGroup(edit.group);
                     g->color.alpha = (int)(255.1f * alpha);
                     SS.MarkGroupDirty(g->h);
-                    SS.ScheduleGenerateAll();
                     SS.GW.ClearSuper();
                 }
             }
@@ -752,7 +747,6 @@ void TextWindow::EditControlDone(const char *s) {
             if(r) {
                 r->str = s;
                 SS.MarkGroupDirty(r->group);
-                SS.ScheduleGenerateAll();
             }
             break;
         }

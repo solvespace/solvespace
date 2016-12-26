@@ -154,6 +154,7 @@ void Style::AssignSelectionToStyle(uint32_t v) {
         if(!c->IsStylable()) continue;
 
         c->disp.style.v = v;
+        SS.MarkGroupDirty(c->group);
     }
 
     if(showError) {
@@ -163,7 +164,6 @@ void Style::AssignSelectionToStyle(uint32_t v) {
 
     SS.GW.ClearSelection();
     InvalidateGraphics();
-    SS.ScheduleGenerateAll();
 
     // And show that style's info screen in the text window.
     SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);

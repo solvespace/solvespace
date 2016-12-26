@@ -459,8 +459,6 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         case Pending::COMMAND:
             ssassert(false, "Unexpected pending operation");
     }
-
-    SS.GenerateAll();
 }
 
 void GraphicsWindow::ClearPending() {
@@ -748,7 +746,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             }
             r->extraPoints--;
             SS.MarkGroupDirtyByEntity(gs.point[0]);
-            SS.ScheduleGenerateAll();
             ClearSelection();
             break;
         }
@@ -775,7 +772,6 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 Entity *p = SK.GetEntity(e->point[addAfterPoint + 1]);
                 p->PointForceTo(v);
                 SS.MarkGroupDirtyByEntity(gs.entity[0]);
-                SS.ScheduleGenerateAll();
                 ClearSelection();
             } else {
                 Error("Cannot add spline point: maximum number of points reached.");
@@ -1126,7 +1122,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 r->extraPoints -= 2;
                 // And we're done.
                 SS.MarkGroupDirty(r->group);
-                SS.ScheduleGenerateAll();
                 ClearPending();
                 break;
             }
@@ -1394,7 +1389,6 @@ void GraphicsWindow::EditControlDone(const char *s) {
                 break;
         }
         SS.MarkGroupDirty(c->group);
-        SS.GenerateAll();
     }
 }
 
@@ -1500,7 +1494,6 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
         lastSpaceNavigatorTime = now;
         lastSpaceNavigatorGroup = g->h;
         SS.MarkGroupDirty(g->h);
-        SS.ScheduleGenerateAll();
     } else {
         // Apply the transformation to the view of the everything. The
         // x and y components are translation; but z component is scale,

@@ -734,7 +734,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::SHOW_DOF:
             // This works like a normal solve, except that it calculates
             // which variables are free/bound at the same time.
-            SS.GenerateAll(SolveSpaceUI::Generate::ALL, true);
+            SS.GenerateAll(SolveSpaceUI::Generate::ALL, /*andFindFree=*/true);
             break;
 
         case Command::TRACE_PT:

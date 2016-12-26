@@ -13,7 +13,7 @@ void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
     MarkGroupDirty(e->group);
 }
 
-void SolveSpaceUI::MarkGroupDirty(hGroup hg) {
+void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
     int i;
     bool go = false;
     for(i = 0; i < SK.groupOrder.n; i++) {
@@ -23,9 +23,11 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg) {
         }
         if(go) {
             g->clean = false;
+            if(onlyThis) break;
         }
     }
     unsaved = true;
+    ScheduleGenerateAll();
 }
 
 bool SolveSpaceUI::PruneOrphans() {

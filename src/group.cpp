@@ -350,7 +350,6 @@ void Group::Activate() {
         SS.GW.showFaces = false;
     }
     SS.MarkGroupDirty(h); // for good measure; shouldn't be needed
-    SS.ScheduleGenerateAll();
     SS.ScheduleShowTW();
 }
 

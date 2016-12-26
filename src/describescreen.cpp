@@ -37,7 +37,6 @@ void TextWindow::ScreenSetTtfFont(int link, uint32_t v) {
     SS.UndoRemember();
     r->font = SS.fonts.l.elem[i].FontFileBaseName();
     SS.MarkGroupDirty(r->group);
-    SS.ScheduleGenerateAll();
     SS.ScheduleShowTW();
 }
 

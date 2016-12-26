@@ -870,7 +870,7 @@ public:
     };
     Clipboard clipboard;
 
-    void MarkGroupDirty(hGroup hg);
+    void MarkGroupDirty(hGroup hg, bool onlyThis = false);
     void MarkGroupDirtyByEntity(hEntity he);
 
     // Consistency checking on the sketch: stuff with missing dependencies
