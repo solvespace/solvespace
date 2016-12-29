@@ -129,8 +129,14 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         if(!(shiftDown || ctrlDown)) {
             double s = 0.3*(PI/180)*scale; // degrees per pixel
-            projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
-            projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
+            if(SS.checkTurntableNav) {
+                projRight = orig.projRight.RotatedAbout(Vector::From(0, 1, 0), -s*dx);
+                projUp = orig.projUp.RotatedAbout(Vector::From(orig.projRight.x, orig.projRight.y, 0), s*dy); // lock the Z to vertical
+			} else {
+                projRight = orig.projRight.RotatedAbout(orig.projUp, -s*dx);
+                projUp = orig.projUp.RotatedAbout(orig.projRight, s*dy);
+
+			}
 
             NormalizeProjectionVectors();
         } else if(ctrlDown) {

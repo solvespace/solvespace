@@ -70,6 +70,8 @@ void SolveSpaceUI::Init() {
     drawBackFaces = CnfThawBool(true, "DrawBackFaces");
     // Check that contours are closed and not self-intersecting
     checkClosedContour = CnfThawBool(true, "CheckClosedContour");
+    // Use turntable mouse navigation
+    checkTurntableNav = CnfThawBool(false, "CheckTurntableNav");
     // Export shaded triangles in a 2d view
     exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
@@ -188,6 +190,8 @@ void SolveSpaceUI::Exit() {
     CnfFreezeBool(drawBackFaces, "DrawBackFaces");
     // Check that contours are closed and not self-intersecting
     CnfFreezeBool(checkClosedContour, "CheckClosedContour");
+    // Use turntable mouse navigation
+    CnfFreezeBool(checkTurntableNav, "CheckTurntableNav");
     // Export shaded triangles in a 2d view
     CnfFreezeBool(exportShadedTriangles, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
