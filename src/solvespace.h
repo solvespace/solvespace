@@ -324,7 +324,7 @@ class StepFileWriter {
 public:
     void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
-	void WriteProductHeader();
+    void WriteProductHeader();
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
     void ExportSurface(SSurface *ss, SBezierList *sbl);
@@ -590,6 +590,7 @@ public:
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
+    bool     turntableNav;
     bool     automaticLineConstraints;
     bool     showToolbar;
     Platform::Path screenshotFile;

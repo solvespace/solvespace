@@ -83,6 +83,15 @@ void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     SS.GW.Invalidate(/*clearPersistent=*/true);
 }
 
+void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
+    SS.turntableNav = !SS.turntableNav;
+    if(SS.turntableNav) {
+        // If turntable nav is being turned on, align view so Z is vertical
+        SS.GW.AnimateOnto(Quaternion::From(Vector::From(-1, 0, 0), Vector::From(0, 0, 1)),
+                          SS.GW.offset);
+    }
+}
+
 void TextWindow::ScreenChangeShowContourAreas(int link, uint32_t v) {
     SS.showContourAreas = !SS.showContourAreas;
     SS.GW.Invalidate();
@@ -306,13 +315,14 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ll%s  enable automatic line constraints%E",
-        &ScreenChangeAutomaticLineConstraints,
-        SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  show areas of closed contours%E",
         &ScreenChangeShowContourAreas,
         SS.showContourAreas ? CHECK_TRUE : CHECK_FALSE);
-
+    Printf(false, "  %Fd%f%Ll%s  enable automatic line constraints%E",
+        &ScreenChangeAutomaticLineConstraints,
+        SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E", &ScreenChangeTurntableNav,
+        SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",

@@ -427,6 +427,21 @@ void GraphicsWindow::AnimateOntoWorkplane() {
 
     Entity *w = SK.GetEntity(ActiveWorkplane());
     Quaternion quatf = w->Normal()->NormalGetNum();
+
+    // Get Z pointing vertical, if we're on turntable nav mode:
+    if(SS.turntableNav) {
+        Vector normalRight = quatf.RotationU();
+        Vector normalUp    = quatf.RotationV();
+        Vector normal      = normalRight.Cross(normalUp);
+        if(normalRight.z != 0) {
+            double theta = atan2(normalUp.z, normalRight.z);
+            theta -= atan2(1, 0);
+            normalRight = normalRight.RotatedAbout(normal, theta);
+            normalUp    = normalUp.RotatedAbout(normal, theta);
+            quatf       = Quaternion::From(normalRight, normalUp);
+        }
+    }
+
     Vector offsetf = (SK.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
 
     // If the view screen is open, then we need to refresh it.

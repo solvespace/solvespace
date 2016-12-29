@@ -46,7 +46,7 @@ New export/import features:
     exported. This format allows to easily hack on triangle mesh data created
     in SolveSpace, supports colour information and is more space efficient than
     most other formats.
-  * Export 2d section: custom styled entities that lie in the same 
+  * Export 2d section: custom styled entities that lie in the same
     plane as the exported section are included.
 
 New rendering features:
@@ -68,6 +68,7 @@ New measurement/analysis features:
 Other new features:
   * New command-line interface, for batch exporting and more.
   * The graphical interface now supports HiDPI screens on every OS.
+  * New option to lock Z axis to be always vertical, like in SketchUp.
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.

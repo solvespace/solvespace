@@ -68,6 +68,8 @@ void SolveSpaceUI::Init() {
     fixExportColors = settings->ThawBool("FixExportColors", true);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     drawBackFaces = settings->ThawBool("DrawBackFaces", true);
+    // Use turntable mouse navigation
+    turntableNav = settings->ThawBool("TurntableNav", false);
     // Check that contours are closed and not self-intersecting
     checkClosedContour = settings->ThawBool("CheckClosedContour", true);
     // Enable automatic constrains for lines
@@ -243,6 +245,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("ShowContourAreas", showContourAreas);
     // Check that contours are closed and not self-intersecting
     settings->FreezeBool("CheckClosedContour", checkClosedContour);
+    // Use turntable mouse navigation
+    settings->FreezeBool("TurntableNav", turntableNav);
     // Enable automatic constrains for lines
     settings->FreezeBool("AutomaticLineConstraints", automaticLineConstraints);
     // Export shaded triangles in a 2d view
