@@ -84,11 +84,11 @@ void TextWindow::ScreenChangeBackFaces(int link, uint32_t v) {
     InvalidateGraphics();
 }
 
-void TextWindow::ScreenChangeCheckTurntableNav(int link, uint32_t v) {
-    SS.checkTurntableNav = !SS.checkTurntableNav;
+void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
+    SS.turntableNav = !SS.turntableNav;
     
     // if turntable nav is being toggled to ON, align view so Z is vertical
-    if(SS.checkTurntableNav) {
+    if(SS.turntableNav) {
         SS.GW.AnimateOnto(
             Quaternion::From(
                 Vector::From(1,0,0),
@@ -315,8 +315,8 @@ void TextWindow::ShowConfiguration() {
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E",
-        &ScreenChangeCheckTurntableNav,
-        SS.checkTurntableNav ? CHECK_TRUE : CHECK_FALSE);
+        &ScreenChangeTurntableNav,
+        SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");

@@ -723,7 +723,7 @@ public:
     bool     fixExportColors;
     bool     drawBackFaces;
     bool     checkClosedContour;
-    bool     checkTurntableNav;
+    bool     turntableNav;
     bool     showToolbar;
     RgbaColor backgroundColor;
     bool     exportShadedTriangles;
