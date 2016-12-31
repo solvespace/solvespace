@@ -463,7 +463,7 @@ class StepFileWriter {
 public:
     void ExportSurfacesTo(const std::string &filename);
     void WriteHeader();
-	void WriteProductHeader();
+    void WriteProductHeader();
     int ExportCurve(SBezier *sb);
     int ExportCurveLoop(SBezierLoop *loop, bool inner);
     void ExportSurface(SSurface *ss, SBezierList *sbl);
@@ -805,7 +805,7 @@ public:
         Style        s;
     } sv;
     static void MenuFile(Command id);
-	bool Autosave();
+    bool Autosave();
     void RemoveAutosave();
     bool GetFilenameAndSave(bool saveAs);
     bool OkayToStartNewFile();
