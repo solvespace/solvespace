@@ -129,8 +129,8 @@ public:
     void DoPoint(Vector p, hStroke hs);
     void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs);
 
-    void UpdateProjection(bool flip = FLIP_FRAMEBUFFER);
-    void SetCamera(const Camera &c, bool flip) override;
+    void UpdateProjection();
+    void SetCamera(const Camera &c) override;
     void SetLighting(const Lighting &l) override;
 
     void NewFrame() override;
@@ -528,7 +528,7 @@ void OpenGl2Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
     mli->mesh.AddPixmap(o, u, v, ta, tb);
 }
 
-void OpenGl2Renderer::UpdateProjection(bool flip) {
+void OpenGl2Renderer::UpdateProjection() {
     glViewport(0, 0, camera.width, camera.height);
 
     double mat1[16];
@@ -547,17 +547,12 @@ void OpenGl2Renderer::UpdateProjection(bool flip) {
 
     // Last thing before display is to apply the perspective
     double clp = camera.tangent * camera.scale;
-    double fy = flip ? -1.0 : 1.0;
     MakeMatrix(mat2,
         1,   0,   0,   0,
-        0,  fy,   0,   0,
+        0,   1,   0,   0,
         0,   0,   1,   0,
         0,   0,   clp, 1
     );
-
-    // If we flip the framebuffer, then we also flip the handedness
-    // of the coordinate system, and so the face winding order.
-    glFrontFace(flip ? GL_CW : GL_CCW);
 
     double projection[16];
     MultMatrix(mat1, mat2, projection);
@@ -668,9 +663,9 @@ void OpenGl2Renderer::GetIdent(const char **vendor, const char **renderer, const
     *version  = (const char *)glGetString(GL_VERSION);
 }
 
-void OpenGl2Renderer::SetCamera(const Camera &c, bool flip) {
+void OpenGl2Renderer::SetCamera(const Camera &c) {
     camera = c;
-    UpdateProjection(flip);
+    UpdateProjection();
 }
 
 void OpenGl2Renderer::SetLighting(const Lighting &l) {

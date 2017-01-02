@@ -104,8 +104,6 @@ void SolveSpace::ScheduleLater() {
 
 /* OpenGL view */
 
-const bool SolveSpace::FLIP_FRAMEBUFFER = false;
-
 @interface GLViewWithEditor : NSView
 - (void)drawGL;
 

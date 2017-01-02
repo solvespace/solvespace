@@ -93,8 +93,6 @@ void ScheduleLater() {
 // Rendering
 //-----------------------------------------------------------------------------
 
-const bool FLIP_FRAMEBUFFER = false;
-
 std::shared_ptr<ViewportCanvas> CreateRenderer() {
     return NULL;
 }

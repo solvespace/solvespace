@@ -172,7 +172,7 @@ public:
 // An interface for view-dependent visualization.
 class ViewportCanvas : public Canvas {
 public:
-    virtual void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) = 0;
+    virtual void SetCamera(const Camera &camera) = 0;
     virtual void SetLighting(const Lighting &lighting) = 0;
 
     virtual void NewFrame() = 0;

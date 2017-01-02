@@ -757,8 +757,6 @@ void SolveSpace::ShowTextWindow(bool visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
-const bool SolveSpace::FLIP_FRAMEBUFFER = false;
-
 #if HAVE_OPENGL == 2
 static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
                             EGLContext *eglContext) {

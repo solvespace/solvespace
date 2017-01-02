@@ -865,8 +865,12 @@ void TextWindow::Paint() {
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
 
+    Lighting lighting = {};
+    lighting.backgroundColor = RGBi(0, 0, 0);
+
     canvas->NewFrame();
     canvas->SetCamera(camera);
+    canvas->SetLighting(lighting);
 
     UiCanvas uiCanvas = {};
     uiCanvas.canvas = canvas;

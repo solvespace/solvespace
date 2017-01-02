@@ -215,8 +215,8 @@ public:
     void DoPoint(Vector p, double radius);
     void DoStippledLine(const Vector &a, const Vector &b, hStroke hcs, double phase = 0.0);
 
-    void UpdateProjection(bool flip = FLIP_FRAMEBUFFER);
-    void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) override;
+    void UpdateProjection();
+    void SetCamera(const Camera &camera) override;
     void SetLighting(const Lighting &lighting) override;
 
     void NewFrame() override;
@@ -702,7 +702,7 @@ void OpenGl1Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
     }
 }
 
-void OpenGl1Renderer::UpdateProjection(bool flip) {
+void OpenGl1Renderer::UpdateProjection() {
     UnSelectPrimitive();
 
     glViewport(0, 0, camera.width, camera.height);
@@ -717,16 +717,11 @@ void OpenGl1Renderer::UpdateProjection(bool flip) {
     double mat[16];
     // Last thing before display is to apply the perspective
     double clp = camera.tangent * camera.scale;
-    double sy = flip ? -1.0 : 1.0;
     MakeMatrix(mat, 1,              0,              0,              0,
-                    0,             sy,              0,              0,
+                    0,              1,              0,              0,
                     0,              0,              1,              0,
                     0,              0,              clp,            1);
     glMultMatrixd(mat);
-
-    // If we flip the framebuffer, then we also flip the handedness
-    // of the coordinate system, and so the face winding order.
-    glFrontFace(flip ? GL_CW : GL_CCW);
 
     // Before that, we apply the rotation
     Vector projRight = camera.projRight,
@@ -829,9 +824,9 @@ void OpenGl1Renderer::GetIdent(const char **vendor, const char **renderer, const
     *version  = (const char *)glGetString(GL_VERSION);
 }
 
-void OpenGl1Renderer::SetCamera(const Camera &c, bool flip) {
+void OpenGl1Renderer::SetCamera(const Camera &c) {
     camera = c;
-    UpdateProjection(flip);
+    UpdateProjection();
 }
 
 void OpenGl1Renderer::SetLighting(const Lighting &l) {

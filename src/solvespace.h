@@ -149,8 +149,6 @@ enum class ContextCommand : uint32_t;
 #define PATH_SEP "/"
 #endif
 
-extern const bool FLIP_FRAMEBUFFER;
-
 bool PathEqual(const std::string &a, const std::string &b);
 std::string PathSepPlatformToUnix(const std::string &filename);
 std::string PathSepUnixToPlatform(const std::string &filename);

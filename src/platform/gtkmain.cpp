@@ -20,6 +20,7 @@
 #include <giomm/file.h>
 #include <gdkmm/cursor.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/glarea.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/eventbox.h>
@@ -33,7 +34,6 @@
 #include <gtkmm/radiobuttongroup.h>
 #include <gtkmm/menu.h>
 #include <gtkmm/menubar.h>
-#include <gtkmm/scrolledwindow.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/main.h>
@@ -213,121 +213,6 @@ void ScheduleLater() {
     Glib::signal_idle().connect(&LaterCallback);
 }
 
-/* GL wrapper */
-
-const bool FLIP_FRAMEBUFFER = true;
-
-class GlWidget : public Gtk::DrawingArea {
-public:
-    GlWidget() : _offscreen() {
-        _xdisplay = gdk_x11_get_default_xdisplay();
-
-        int glxmajor, glxminor;
-        ssassert(glXQueryVersion(_xdisplay, &glxmajor, &glxminor),
-                 "Expected OpenGL to be available");
-
-        ssassert(glxmajor > 1 || (glxmajor == 1 && glxminor >= 3),
-                 "Expected GLX >= 1.3");
-
-        static int fbconfig_attrs[] = {
-            GLX_RENDER_TYPE, GLX_RGBA_BIT,
-            GLX_RED_SIZE, 8,
-            GLX_GREEN_SIZE, 8,
-            GLX_BLUE_SIZE, 8,
-            GLX_DEPTH_SIZE, 24,
-            None
-        };
-        int fbconfig_num = 0;
-        GLXFBConfig *fbconfigs = glXChooseFBConfig(_xdisplay, DefaultScreen(_xdisplay),
-                fbconfig_attrs, &fbconfig_num);
-        ssassert(fbconfigs && fbconfig_num > 0,
-                 "Expected an available framebuffer configuration");
-
-        /* prefer FBConfigs with depth of 32;
-            * Mesa software rasterizer explodes with a BadMatch without this;
-            * without this, Intel on Mesa flickers horribly for some reason.
-           this does not seem to affect other rasterizers (ie NVidia).
-
-           see this Mesa bug:
-           http://lists.freedesktop.org/archives/mesa-dev/2015-January/074693.html */
-        GLXFBConfig fbconfig = fbconfigs[0];
-        for(int i = 0; i < fbconfig_num; i++) {
-            XVisualInfo *visual_info = glXGetVisualFromFBConfig(_xdisplay, fbconfigs[i]);
-            /* some GL visuals, notably on Chromium GL, do not have an associated
-               X visual; this is not an obstacle as we always render offscreen. */
-            if(!visual_info) continue;
-            int depth = visual_info->depth;
-            XFree(visual_info);
-
-            if(depth == 32) {
-                fbconfig = fbconfigs[i];
-                break;
-            }
-        }
-
-        _glcontext = glXCreateNewContext(_xdisplay,
-                fbconfig, GLX_RGBA_TYPE, 0, True);
-        ssassert(_glcontext != NULL, "Cannot create an OpenGL context");
-
-        XFree(fbconfigs);
-
-        /* create a dummy X window to create a rendering context against.
-           we could use a Pbuffer, but some implementations (Chromium GL)
-           don't support these. we could use an existing window, but
-           some implementations (Chromium GL... do you see a pattern?)
-           do really strange things, i.e. draw a black rectangle on
-           the very front of the desktop if you do this. */
-        _xwindow = XCreateSimpleWindow(_xdisplay,
-                XRootWindow(_xdisplay, gdk_x11_get_default_screen()),
-                /*x*/ 0, /*y*/ 0, /*width*/ 1, /*height*/ 1,
-                /*border_width*/ 0, /*border*/ 0, /*background*/ 0);
-    }
-
-    ~GlWidget() {
-        glXMakeCurrent(_xdisplay, None, NULL);
-
-        XDestroyWindow(_xdisplay, _xwindow);
-
-        _offscreen.Clear();
-
-        glXDestroyContext(_xdisplay, _glcontext);
-    }
-
-protected:
-    /* Draw on a GLX framebuffer object, then read pixels out and draw them on
-       the Cairo context. Slower, but you get to overlay nice widgets. */
-    bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) override {
-        ssassert(glXMakeCurrent(_xdisplay, _xwindow, _glcontext),
-                 "Cannot make OpenGL context current");
-
-        Gdk::Rectangle allocation = get_allocation();
-        bool success = _offscreen.Render(
-            allocation.get_width(), allocation.get_height(),
-            sigc::mem_fun(this, &GlWidget::on_gl_draw));
-        ssassert(success, "Cannot allocate offscreen rendering buffer");
-
-        Cairo::RefPtr<Cairo::ImageSurface> surface =
-            Cairo::ImageSurface::create(&_offscreen.data[0], Cairo::FORMAT_RGB24,
-                allocation.get_width(), allocation.get_height(),
-                allocation.get_width() * 4);
-        cr->set_source(surface, 0, 0);
-        cr->paint();
-        surface->finish();
-
-        glXSwapBuffers(_xdisplay, _xwindow);
-
-        return true;
-    }
-
-    virtual void on_gl_draw() = 0;
-
-private:
-    Display *_xdisplay;
-    GLXContext _glcontext;
-    GlOffscreen _offscreen;
-    ::Window _xwindow;
-};
-
 /* Editor overlay */
 
 class EditorOverlay : public Gtk::Fixed {
@@ -441,26 +326,27 @@ double DeltaYOfScrollEvent(GdkEventScroll *event) {
     return delta_y;
 }
 
-class GraphicsWidget : public GlWidget {
+class GraphicsWidget : public Gtk::GLArea {
 public:
     GraphicsWidget() {
         set_events(Gdk::POINTER_MOTION_MASK |
                    Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON_MOTION_MASK |
                    Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
-        set_double_buffered(true);
+        set_has_alpha(true);
+        set_has_depth_buffer(true);
+        set_use_es(true);
     }
 
 protected:
-    bool on_configure_event(GdkEventConfigure *event) override {
-        _w = event->width;
-        _h = event->height;
-
-        return GlWidget::on_configure_event(event);;
+    void on_resize(int width, int height) override {
+        _w = width;
+        _h = height;
     }
 
-    void on_gl_draw() override {
+    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.GW.Paint();
+        return true;
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
@@ -1196,11 +1082,14 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 /* Text window */
 
-class TextWidget : public GlWidget {
+class TextWidget : public Gtk::GLArea {
 public:
     TextWidget(Glib::RefPtr<Gtk::Adjustment> adjustment) : _adjustment(adjustment) {
         set_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
+        set_has_alpha(true);
+        set_has_depth_buffer(true);
+        set_use_es(true);
     }
 
     void set_cursor_hand(bool is_hand) {
@@ -1212,8 +1101,9 @@ public:
     }
 
 protected:
-    void on_gl_draw() override {
+    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.TW.Paint();
+        return true;
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
