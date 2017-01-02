@@ -184,7 +184,7 @@ else() # Linux and compatible systems
     pkg_check_modules(CAIRO REQUIRED cairo)
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
-    pkg_check_modules(GTKMM REQUIRED gtkmm-3.0 pangomm-1.4 x11)
+    pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.22 pangomm-1.4 x11)
 endif()
 
 if(ENABLE_COVERAGE)
