@@ -497,8 +497,10 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
             mid--;
         }
 
-        // Read the codepoint.
         ASCIIReader reader = { mid, unifontData.cend() };
+        if(reader.AtEnd()) break;
+
+        // Read the codepoint.
         char32_t foundCodepoint = reader.Read16HexBits();
         reader.ExpectChar(':');
 
@@ -724,8 +726,10 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
             mid--;
         }
 
-        // Read the codepoint.
         ASCIIReader reader = { mid, lffData.cend() };
+        if(reader.AtEnd()) break;
+
+        // Read the codepoint.
         reader.ExpectChar('[');
         char32_t foundCodepoint = reader.Read16HexBits();
         reader.ExpectChar(']');
