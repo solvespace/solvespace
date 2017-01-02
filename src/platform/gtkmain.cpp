@@ -512,6 +512,10 @@ protected:
             chr = '\b';
             break;
 
+            case GDK_KEY_KP_Decimal:
+            chr = '.';
+            break;
+
             default:
             if(event->keyval >= GDK_KEY_F1 && event->keyval <= GDK_KEY_F12) {
                 chr = GraphicsWindow::FUNCTION_KEY_BASE + (event->keyval - GDK_KEY_F1);

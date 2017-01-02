@@ -44,6 +44,7 @@ Other new features:
   * When selecting a point and a line, projected distance to to current
     workplane is displayed.
   * The "=" key is bound to "Zoom In", like "+" key.
+  * The numpad decimal separator key is bound to "." regardless of locale.
 
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer

@@ -689,6 +689,7 @@ static bool ProcessKeyDown(WPARAM wParam)
         case VK_OEM_6:          c = ']';            break;
         case VK_OEM_5:          c = '\\';           break;
         case VK_OEM_PERIOD:     c = '.';            break;
+        case VK_DECIMAL:        c = '.';            break;
         case VK_SPACE:          c = ' ';            break;
         case VK_DELETE:         c = 127;            break;
         case VK_TAB:            c = '\t';           break;
