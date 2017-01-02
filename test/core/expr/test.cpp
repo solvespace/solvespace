@@ -26,6 +26,8 @@ TEST_CASE(literal) {
   CHECK_TRUE(e->Eval() == 42);
   CHECK_PARSE(e, "42.5");
   CHECK_TRUE(e->Eval() == 42.5);
+  CHECK_PARSE(e, "1_000_000");
+  CHECK_TRUE(e->Eval() == 1000000);
 }
 
 TEST_CASE(unary_ops) {
@@ -95,6 +97,8 @@ TEST_CASE(errors) {
                   "Unexpected character");
   CHECK_PARSE_ERR("notavar",
                   "'notavar' is not a valid variable, function or constant");
+  CHECK_PARSE_ERR("1e2e3",
+                  "'1e2e3' is not a valid number");
   CHECK_PARSE_ERR("_",
                   "'_' is not a valid operator");
   CHECK_PARSE_ERR("2 2",

@@ -43,6 +43,7 @@ Other new features:
   * When zooming to fit, constraints are also considered.
   * When selecting a point and a line, projected distance to to current
     workplane is displayed.
+  * In expressions, numbers can contain the digit group separator, "_".
   * The "=" key is bound to "Zoom In", like "+" key.
   * The numpad decimal separator key is bound to "." regardless of locale.
 
