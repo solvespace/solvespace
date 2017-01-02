@@ -208,23 +208,25 @@ target_compile_options(solvespace-core
 
 # solvespace graphical executable
 
-add_executable(solvespace WIN32 MACOSX_BUNDLE
-    ${solvespace_core_gl_SOURCES}
-    ${platform_SOURCES}
-    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+if(ENABLE_GUI)
+    add_executable(solvespace WIN32 MACOSX_BUNDLE
+        ${solvespace_core_gl_SOURCES}
+        ${platform_SOURCES}
+        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-add_dependencies(solvespace
-    resources)
+    add_dependencies(solvespace
+        resources)
 
-target_link_libraries(solvespace
-    solvespace-core
-    ${OPENGL_LIBRARIES}
-    ${platform_LIBRARIES}
-    ${COVERAGE_LIBRARY})
+    target_link_libraries(solvespace
+        solvespace-core
+        ${OPENGL_LIBRARIES}
+        ${platform_LIBRARIES}
+        ${COVERAGE_LIBRARY})
 
-if(MSVC)
-    set_target_properties(solvespace PROPERTIES
-        LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    if(MSVC)
+        set_target_properties(solvespace PROPERTIES
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    endif()
 endif()
 
 # solvespace headless library
@@ -271,7 +273,11 @@ endif()
 # solvespace unix package
 
 if(NOT (WIN32 OR APPLE))
-    install(TARGETS solvespace solvespace-cli
+    if(ENABLE_GUI)
+        install(TARGETS solvespace
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+    install(TARGETS solvespace-cli
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 

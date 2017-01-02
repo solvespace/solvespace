@@ -25,12 +25,14 @@ Building on Linux
 
 ### Building for Linux
 
-You will need CMake, zlib, json-c, libpng, cairo, freetype, fontconfig, gtkmm 3.0, pangomm 1.4,
-OpenGL and OpenGL GLU, and optionally, the Space Navigator client library.
+You will need CMake, zlib, libpng, cairo, freetype. To build the GUI, you will need
+fontconfig, gtkmm 3.0, pangomm 1.4, OpenGL and OpenGL GLU, and optionally,
+the Space Navigator client library
+.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install cmake libjson-c-dev libpng-dev libcairo2-dev libfreetype6-dev \
-                    libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
+    apt-get install cmake zlib1-dev libpng-dev libcairo2-dev libfreetype6-dev
+    apt-get install libjson-c-dev libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
                     libgl-dev libglu-dev libspnav-dev
 
 Before building, check out the necessary submodules:
@@ -45,7 +47,9 @@ After that, build SolveSpace as following:
     make
     sudo make install
 
-The application is built as `build/bin/solvespace`.
+The graphical interface is built as `build/bin/solvespace`, and the command-line interface
+is built as `build/bin/solvespace-cli`. It is possible to build only the command-line interface
+by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
 
 ### Building for Windows
 
@@ -74,7 +78,8 @@ Or, build 64-bit SolveSpace as following:
              -DENABLE_TESTS=OFF
     make
 
-The application is built as `build/bin/solvespace.exe`.
+The graphical interface is built as `build/bin/solvespace.exe`, and the command-line interface
+is built as `build/bin/solvespace-cli.exe`.
 
 Space Navigator support will not be available.
 
@@ -100,15 +105,16 @@ After that, build SolveSpace as following:
     cmake .. -DENABLE_TESTS=OFF
     make
 
-The application is built in `build/bin/solvespace.app`, and
-the executable file is `build/bin/solvespace.app/Contents/MacOS/solvespace`.
+The application is built in `build/bin/solvespace.app`, the graphical interface executable
+is `build/bin/solvespace.app/Contents/MacOS/solvespace`, and the command-line interface executable
+is `build/bin/solvespace.app/Contents/MacOS/solvespace-cli`.
 
 [homebrew]: http://brew.sh/
 
 Building on Windows
 -------------------
 
-You will need [git][gitwin],  [cmake][cmakewin] and Visual C++.
+You will need [git][gitwin], [cmake][cmakewin] and Visual C++.
 
 ### Building with Visual Studio IDE
 
