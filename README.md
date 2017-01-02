@@ -25,12 +25,12 @@ Building on Linux
 
 ### Building for Linux
 
-You will need CMake, zlib, json-c, libpng, cairo, freetype, fontconfig, gtkmm 2.4, pangomm 1.4,
+You will need CMake, zlib, json-c, libpng, cairo, freetype, fontconfig, gtkmm 3.0, pangomm 1.4,
 OpenGL and OpenGL GLU, and optionally, the Space Navigator client library.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install cmake libjson-c-dev libpng-dev libcairo2-dev libfreetype6-dev \
-                    libfontconfig1-dev libgtkmm-2.4-dev libpangomm-1.4-dev \
+                    libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
                     libgl-dev libglu-dev libspnav-dev
 
 Before building, check out the necessary submodules:
@@ -46,9 +46,6 @@ After that, build SolveSpace as following:
     sudo make install
 
 The application is built as `build/bin/solvespace`.
-
-A fully functional port to GTK3 is available, but not recommended
-for use due to bugs in this toolkit.
 
 ### Building for Windows
 

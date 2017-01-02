@@ -9,9 +9,6 @@
 /* Do we have the si library on win32, or libspnav on *nix? */
 #cmakedefine HAVE_SPACEWARE
 
-#cmakedefine HAVE_GTK2
-#cmakedefine HAVE_GTK3
-
 #define HAVE_OPENGL @OPENGL@
 
 #endif

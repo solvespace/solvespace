@@ -43,10 +43,6 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
 
 set(OPENGL 2 CACHE STRING "OpenGL version to use (one of: 1 2)")
 
-if(NOT WIN32 AND NOT APPLE)
-    set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
-endif()
-
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
 
@@ -186,19 +182,9 @@ else() # Linux and compatible systems
     find_package(OpenGL REQUIRED)
 
     pkg_check_modules(CAIRO REQUIRED cairo)
-
     pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
     pkg_check_modules(JSONC REQUIRED json-c)
-
-    if(GUI STREQUAL "gtk3")
-        set(HAVE_GTK3 TRUE)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0 pangomm-1.4 x11)
-    elseif(GUI STREQUAL "gtk2")
-        set(HAVE_GTK2 TRUE)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-2.4 pangomm-1.4 x11)
-    else()
-        message(FATAL_ERROR "GUI unrecognized: ${GUI}")
-    endif()
+    pkg_check_modules(GTKMM REQUIRED gtkmm-3.0 pangomm-1.4 x11)
 endif()
 
 if(ENABLE_COVERAGE)

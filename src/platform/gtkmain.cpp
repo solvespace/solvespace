@@ -23,6 +23,7 @@
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/eventbox.h>
+#include <gtkmm/hvbox.h>
 #include <gtkmm/fixed.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/separatormenuitem.h>
@@ -36,12 +37,6 @@
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/main.h>
-
-#if HAVE_GTK3
-#include <gtkmm/hvbox.h>
-#else
-#include <gtkmm/box.h>
-#endif
 
 #include <cairomm/xlib_surface.h>
 #include <pangomm/fontdescription.h>
@@ -301,12 +296,7 @@ public:
 protected:
     /* Draw on a GLX framebuffer object, then read pixels out and draw them on
        the Cairo context. Slower, but you get to overlay nice widgets. */
-#ifdef HAVE_GTK3
     bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) override {
-#else
-    bool on_expose_event(GdkEventExpose *) override {
-        const Cairo::RefPtr<Cairo::Context> &cr = get_window()->create_cairo_context();
-#endif
         ssassert(glXMakeCurrent(_xdisplay, _xwindow, _glcontext),
                  "Cannot make OpenGL context current");
 
@@ -360,18 +350,7 @@ public:
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
-
-#ifdef HAVE_GTK3
-        /* For some reason override_font doesn't take screen DPI into
-           account on GTK3 when working with font descriptors specified
-           in absolute sizes; modify_font does on GTK2. */
-        Pango::FontDescription override_font_desc(font_desc);
-        double dpi = get_screen()->get_resolution();
-        override_font_desc.set_size(font_height * 72.0 / dpi * Pango::SCALE);
-        _entry.override_font(override_font_desc);
-#else
-        _entry.modify_font(font_desc);
-#endif
+        _entry.override_font(font_desc);
 
         /* y coordinate denotes baseline */
         Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
@@ -382,40 +361,22 @@ public:
         layout->set_text(val + " "); /* avoid scrolling */
         int width = layout->get_logical_extents().get_width();
 
-#ifdef HAVE_GTK3
         Gtk::Border border = _entry.get_style_context()->get_padding();
         move(_entry, x - border.get_left(), y - border.get_top());
         _entry.set_width_chars(minWidthChars);
         _entry.set_size_request(width / Pango::SCALE, -1);
-#else
-        /* We need _gtk_entry_effective_inner_border, but it's not
-           in the public API, so emulate its logic. */
-        Gtk::Border border = { 2, 2, 2, 2 }, *style_border;
-        gtk_widget_style_get(GTK_WIDGET(_entry.gobj()), "inner-border",
-                             &style_border, NULL);
-        if(style_border) border = *style_border;
-        move(_entry, x - border.left, y - border.top);
-        /* This is what set_width_chars does. */
-        int minWidth = minWidthChars * std::max(font_metrics.get_approximate_digit_width(),
-                                                font_metrics.get_approximate_char_width());
-        _entry.set_size_request(std::max(width, minWidth) / Pango::SCALE, -1);
-#endif
 
         _entry.set_text(val);
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
-#ifndef HAVE_GTK3
             _entry.add_modal_grab();
-#endif
         }
     }
 
     void stop_editing() {
-#ifndef HAVE_GTK3
         if(_entry.is_visible())
             _entry.remove_modal_grab();
-#endif
         _entry.hide();
     }
 
@@ -460,11 +421,7 @@ private:
 /* Graphics window */
 
 double DeltaYOfScrollEvent(GdkEventScroll *event) {
-#ifdef HAVE_GTK3
     double delta_y = event->delta_y;
-#else
-    double delta_y = 0;
-#endif
     if(delta_y == 0) {
         switch(event->direction) {
             case GDK_SCROLL_UP:
@@ -1056,11 +1013,7 @@ void RefreshRecentMenus(void) {
 static std::string ConvertFilters(std::string active, const FileFilter ssFilters[],
                                   Gtk::FileChooser *chooser) {
     for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
-#ifdef HAVE_GTK3
         Glib::RefPtr<Gtk::FileFilter> filter = Gtk::FileFilter::create();
-#else
-        Gtk::FileFilter *filter = new Gtk::FileFilter;
-#endif
         filter->set_name(ssFilter->name);
 
         bool is_active = false;
@@ -1080,15 +1033,9 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
         }
         filter->set_name(filter->get_name() + " (" + desc + ")");
 
-#ifdef HAVE_GTK3
         chooser->add_filter(filter);
         if(is_active)
             chooser->set_filter(filter);
-#else
-        chooser->add_filter(*filter);
-        if(is_active)
-            chooser->set_filter(*filter);
-#endif
     }
 
     return active;
@@ -1251,11 +1198,7 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 class TextWidget : public GlWidget {
 public:
-#ifdef HAVE_GTK3
     TextWidget(Glib::RefPtr<Gtk::Adjustment> adjustment) : _adjustment(adjustment) {
-#else
-    TextWidget(Gtk::Adjustment* adjustment) : _adjustment(adjustment) {
-#endif
         set_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
     }
@@ -1264,11 +1207,7 @@ public:
         Glib::RefPtr<Gdk::Window> gdkwin = get_window();
         if(gdkwin) { // returns NULL if not realized
             Gdk::CursorType type = is_hand ? Gdk::HAND1 : Gdk::ARROW;
-#ifdef HAVE_GTK3
             gdkwin->set_cursor(Gdk::Cursor::create(type));
-#else
-            gdkwin->set_cursor(Gdk::Cursor(type));
-#endif
         }
     }
 
@@ -1307,11 +1246,7 @@ protected:
     }
 
 private:
-#ifdef HAVE_GTK3
     Glib::RefPtr<Gtk::Adjustment> _adjustment;
-#else
-    Gtk::Adjustment *_adjustment;
-#endif
 };
 
 class TextWindowGtk : public Gtk::Window {
@@ -1571,14 +1506,9 @@ int main(int argc, char** argv) {
     GW->show_all();
 
 #ifdef HAVE_SPACEWARE
-#ifdef HAVE_GTK3
     // We don't care if it can't be opened; just continue without.
     spnav_x11_open(gdk_x11_get_default_xdisplay(),
                    gdk_x11_window_get_xid(GW->get_window()->gobj()));
-#else
-    spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                   GDK_WINDOW_XWINDOW(GW->get_window()->gobj()));
-#endif
 #endif
 
     SS.Init();

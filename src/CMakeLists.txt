@@ -109,7 +109,7 @@ elseif(APPLE)
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
-elseif(HAVE_GTK2 OR HAVE_GTK3)
+else()
     set(platform_SOURCES
         platform/gtkmain.cpp
         render/rendergl.cpp
