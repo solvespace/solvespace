@@ -9,7 +9,7 @@ This repository contains the source code of [SolveSpace][], a parametric
 Installation
 ------------
 
-### macOS (>=10.6 64-bit), Windows (>=XP 32-bit)
+### macOS (>=10.6 64-bit), Windows (>=Vista 32-bit)
 
 Binary packages for macOS and Windows are available via
 [GitHub releases][rel].
