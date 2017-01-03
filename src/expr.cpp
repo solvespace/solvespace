@@ -684,7 +684,7 @@ ExprParser::Token ExprParser::LexNumber(std::string *error) {
     double d = strtod(s.c_str(), &endptr);
 
     Token t = Token::From();
-    if(endptr == &*s.end()) {
+    if(endptr == s.c_str() + s.size()) {
         t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
         t.expr->v = d;
     } else {
