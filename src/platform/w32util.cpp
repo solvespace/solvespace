@@ -216,6 +216,11 @@ std::vector<std::string> InitPlatform(int argc, char **argv) {
     // Don't display the abort message; it is aggravating in CLI binaries
     // and results in infinite WndProc recursion in GUI binaries.
     _set_abort_behavior(0, _WRITE_ABORT_MSG);
+    int crtReportTypes[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
+    for(int crtReportType : crtReportTypes) {
+        _CrtSetReportMode(crtReportType, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+        _CrtSetReportFile(crtReportType, _CRTDBG_FILE_STDERR);
+    }
 #endif
 
     // Extract the command-line arguments; the ones from main() are ignored,
