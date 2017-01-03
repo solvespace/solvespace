@@ -118,7 +118,7 @@ if(WIN32)
 
     find_vendored_package(PNG libpng
         SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png16_static
+        PNG_LIBRARY             png_static
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
