@@ -153,7 +153,7 @@ if(WIN32)
             find_package(OpenGL REQUIRED)
         endif()
 
-        if(NOT MINGW)
+        if(MSVC AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
             message(STATUS "Using prebuilt SpaceWare")
             set(SPACEWARE_FOUND TRUE)
             set(SPACEWARE_INCLUDE_DIR
