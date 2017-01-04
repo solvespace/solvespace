@@ -206,6 +206,43 @@ target_link_libraries(solvespace-core
 target_compile_options(solvespace-core
     PRIVATE ${COVERAGE_FLAGS})
 
+# solvespace translations
+
+if(HAVE_GETTEXT)
+    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
+    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
+    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
+    set(inputs)
+    foreach(input ${solvespace_core_SOURCES})
+        list(APPEND inputs ${CMAKE_CURRENT_SOURCE_DIR}/${input})
+    endforeach()
+
+    add_custom_command(
+        OUTPUT  ${output_pot}
+        COMMAND ${XGETTEXT}
+                --keyword --keyword=N_ --width=100 --sort-by-file --force-po
+                --package-name=SolveSpace --package-version=3.0
+                "--copyright-holder=the PACKAGE authors"
+                --msgid-bugs-address=whitequark@whitequark.org
+                --from-code=utf-8 --output=${output_pot} ${inputs}
+        DEPENDS ${inputs}
+        COMMENT "Extracting translations"
+        VERBATIM)
+    add_custom_command(
+        OUTPUT  ${output_po}
+        COMMAND ${MSGINIT}
+                --locale=en_US --no-translator
+                --output=${templ_po} --input=${output_pot}
+        COMMAND ${MSGMERGE}
+                --force-po
+                --output=${output_po} ${output_po} ${templ_po}
+        DEPENDS ${output_pot}
+        COMMENT "Updating English translations"
+        VERBATIM)
+    add_custom_target(solvespace-translations ALL
+        DEPENDS ${output_pot} ${output_po})
+endif()
+
 # solvespace graphical executable
 
 if(ENABLE_GUI)

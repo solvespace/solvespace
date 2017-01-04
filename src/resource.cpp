@@ -362,12 +362,20 @@ public:
         return pos == end;
     }
 
-    size_t CountUntilEOL() const {
-        return std::find(pos, end, '\n') - pos;
+    bool SkipSpace() {
+        bool skipped = false;
+        while(!AtEnd()) {
+            char c = *pos;
+            if(!(c == ' ' || c == '\t' || c == '\n')) break;
+            skipped = true;
+            pos++;
+        }
+        return skipped;
     }
 
-    void SkipUntilEOL() {
-        pos = std::find(pos, end, '\n');
+    char PeekChar() {
+        ssassert(!AtEnd(), "Unexpected EOF");
+        return *pos;
     }
 
     char ReadChar() {
@@ -376,8 +384,9 @@ public:
     }
 
     bool TryChar(char c) {
-        ssassert(!AtEnd(), "Unexpected EOF");
-        if(*pos == c) {
+        if(AtEnd()) {
+            return false;
+        } else if(*pos == c) {
             pos++;
             return true;
         } else {
@@ -386,7 +395,45 @@ public:
     }
 
     void ExpectChar(char c) {
-        ssassert(ReadChar() == c, "Unexpected character");
+        if(!TryChar(c)) {
+            dbp("Expecting character '%c'", c);
+            ssassert(false, "Unexpected character");
+        }
+    }
+
+    bool TryString(const std::string &s) {
+        if((size_t)(end - pos) >= s.size() && std::string(pos, pos + s.size()) == s) {
+            pos += s.size();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void ExpectString(const std::string &s) {
+        if(!TryString(s)) {
+            dbp("Expecting string '%s'", s.c_str());
+            ssassert(false, "Unexpected string");
+        }
+    }
+
+    size_t CountUntilEol() const {
+        return std::find(pos, end, '\n') - pos;
+    }
+
+    void SkipUntilEol() {
+        pos = std::find(pos, end, '\n');
+    }
+
+    std::string ReadUntilEol() {
+        auto eol = std::find(pos, end, '\n');
+        std::string result(pos, eol);
+        if(eol != end) {
+            pos = eol + 1;
+        } else {
+            pos = end;
+        }
+        return result;
     }
 
     uint8_t Read4HexBits() {
@@ -412,21 +459,33 @@ public:
         return (h << 8) + l;
     }
 
-    double ReadDoubleString() {
+    long ReadIntegerDecimal(int base = 10) {
+        char *endptr;
+        long l = strtol(&*pos, &endptr, base);
+        ssassert(&*pos != endptr, "Cannot read an integer number");
+        pos += endptr - &*pos;
+        return l;
+    }
+
+    double ReadFloatDecimal() {
         char *endptr;
         double d = strtod(&*pos, &endptr);
-        ssassert(&*pos != endptr, "Cannot read a double-precision number");
+        ssassert(&*pos != endptr, "Cannot read a floating-point number");
         pos += endptr - &*pos;
         return d;
     }
 
     bool TryRegex(const std::regex &re, std::smatch *m) {
         if(std::regex_search(pos, end, *m, re, std::regex_constants::match_continuous)) {
-            pos = (*m)[0].second;
+            pos += m->length();
             return true;
         } else {
             return false;
         }
+    }
+
+    void ExpectRegex(const std::regex &re, std::smatch *m) {
+        ssassert(TryRegex(re, m), "Unmatched regex");
     }
 };
 
@@ -523,7 +582,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
 
         // Read glyph bits.
         unsigned short glyphBits[16];
-        int glyphLength = reader.CountUntilEOL();
+        int glyphLength = reader.CountUntilEol();
         if(glyphLength == 4 * 16) {
             glyph.advanceCells = 2;
             for(size_t i = 0; i < 16; i++) {
@@ -611,7 +670,7 @@ BitmapFont *BitmapFont::Builtin() {
 const static int ARC_POINTS = 8;
 static void MakePwlArc(VectorFont::Contour *contour, bool isReversed,
                        const Point2d &cp, double radius, double a1, double a2) {
-    if (radius < LENGTH_EPS) return;
+    if(radius < LENGTH_EPS) return;
 
     double aSign = 1.0;
     if(isReversed) {
@@ -647,7 +706,7 @@ static void MakePwlBulge(VectorFont::Contour *contour, const Point2d &v, double 
         angle -= M_PI_2;
     }
 
-    if (fabs(alpha) > M_PI) {
+    if(fabs(alpha) > M_PI) {
         h = -h;
     }
 
@@ -690,9 +749,9 @@ VectorFont VectorFont::From(std::string &&lffData) {
         std::string name  = m.str(1),
                     value = m.str(2);
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-        if (name == "letterspacing") {
+        if(name == "letterspacing") {
             font.rightSideBearing = std::stod(value);
-        } else if (name == "wordspacing") {
+        } else if(name == "wordspacing") {
             Glyph space = {};
             space.advanceWidth = std::stod(value);
             font.glyphs.emplace(' ', std::move(space));
@@ -733,7 +792,7 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
         reader.ExpectChar('[');
         char32_t foundCodepoint = reader.Read16HexBits();
         reader.ExpectChar(']');
-        reader.SkipUntilEOL();
+        reader.SkipUntilEol();
 
         if(foundCodepoint > codepoint) {
             last = mid - 1;
@@ -772,14 +831,14 @@ const VectorFont::Glyph &VectorFont::GetGlyph(char32_t codepoint) {
                 Contour contour;
                 do {
                     Point2d p;
-                    p.x = reader.ReadDoubleString();
+                    p.x = reader.ReadFloatDecimal();
                     reader.ExpectChar(',');
-                    p.y = reader.ReadDoubleString();
+                    p.y = reader.ReadFloatDecimal();
 
                     if(reader.TryChar(',')) {
                         // Point with a bulge.
                         reader.ExpectChar('A');
-                        double bulge = reader.ReadDoubleString();
+                        double bulge = reader.ReadFloatDecimal();
                         MakePwlBulge(&contour, p, bulge);
                     } else {
                         // Just a point.
@@ -913,6 +972,539 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
 
         o = o.Plus(u.ScaledBy(glyph.advanceWidth));
     }
+}
+
+//-----------------------------------------------------------------------------
+// Gettext plural expression evaluation
+//-----------------------------------------------------------------------------
+
+class PluralExpr {
+public:
+    class Token {
+    public:
+        enum class Type {
+            END,
+            VALUE,
+            BINARY_OP,
+            QUERY,
+            COLON,
+            PAREN_LEFT,
+            PAREN_RIGHT,
+        };
+
+        // Only valid for type == BINARY_OP.
+        enum class Op {
+            NONE,
+            // comparison
+            EQ,             // ==
+            NEQ,            // !=
+            LT,             // <
+            GT,             // >
+            LE,             // <=
+            GE,             // >=
+            // logical
+            AND,            // &&
+            OR,             // ||
+            // arithmetic
+            MOD,            // %
+        };
+
+        Type     type;
+        Op       op;
+        unsigned value;
+
+        int Precedence();
+    };
+
+    ASCIIReader        reader;
+    std::vector<Token> stack;
+    unsigned           value;
+
+    Token Lex();
+
+    Token PopToken();
+    void Reduce();
+    void Eval();
+
+    static unsigned Eval(const std::string &s, unsigned n);
+};
+
+int PluralExpr::Token::Precedence() {
+    switch(type) {
+        case Type::BINARY_OP:
+            switch(op) {
+                case Op::MOD:
+                    return 7;
+
+                case Op::LT:
+                case Op::GT:
+                case Op::LE:
+                case Op::GE:
+                    return 6;
+
+                case Op::EQ:
+                case Op::NEQ:
+                    return 5;
+
+                case Op::AND:
+                    return 4;
+
+                case Op::OR:
+                    return 3;
+
+                case Op::NONE:
+                    ssassert(false, "Unexpected operator");
+            }
+
+        case Type::QUERY:
+        case Type::COLON:
+            return 1;
+
+        case Type::VALUE:
+            return 0;
+
+        default:
+            ssassert(false, "Unexpected token op");
+    }
+}
+
+PluralExpr::Token PluralExpr::Lex() {
+    Token t = {};
+
+    reader.SkipSpace();
+
+    char c = reader.PeekChar();
+    if(c >= '0' && c <= '9') {
+        t.type  = Token::Type::VALUE;
+        t.value = reader.ReadIntegerDecimal();
+    } else if(reader.TryChar('n')) {
+        t.type  = Token::Type::VALUE;
+        t.value = value;
+    } else if(reader.TryChar('%')) {
+        t.type  = Token::Type::BINARY_OP;
+        t.op    = Token::Op::MOD;
+    } else if(reader.TryChar('<')) {
+        t.type  = Token::Type::BINARY_OP;
+        if(reader.TryChar('=')) {
+            t.op = Token::Op::LE;
+        } else {
+            t.op    = Token::Op::LT;
+        }
+    } else if(reader.TryChar('>')) {
+        t.type  = Token::Type::BINARY_OP;
+        if(reader.TryChar('=')) {
+            t.op = Token::Op::GE;
+        } else {
+            t.op    = Token::Op::GT;
+        }
+    } else if(reader.TryChar('!')) {
+        reader.ExpectChar('=');
+        t.type  = Token::Type::BINARY_OP;
+        t.op    = Token::Op::NEQ;
+    } else if(reader.TryChar('=')) {
+        reader.ExpectChar('=');
+        t.type  = Token::Type::BINARY_OP;
+        t.op    = Token::Op::EQ;
+    } else if(reader.TryChar('&')) {
+        reader.ExpectChar('&');
+        t.type  = Token::Type::BINARY_OP;
+        t.op    = Token::Op::AND;
+    } else if(reader.TryChar('|')) {
+        reader.ExpectChar('|');
+        t.type  = Token::Type::BINARY_OP;
+        t.op    = Token::Op::OR;
+    } else if(reader.TryChar('?')) {
+        t.type  = Token::Type::QUERY;
+    } else if(reader.TryChar(':')) {
+        t.type  = Token::Type::COLON;
+    } else if(reader.TryChar('(')) {
+        t.type  = Token::Type::PAREN_LEFT;
+    } else if(reader.TryChar(')')) {
+        t.type  = Token::Type::PAREN_RIGHT;
+    } else if(reader.AtEnd()) {
+        t.type  = Token::Type::END;
+    } else {
+        ssassert(false, "Unexpected character");
+    }
+
+    return t;
+}
+
+PluralExpr::Token PluralExpr::PopToken() {
+    ssassert(stack.size() > 0, "Expected a non-empty stack");
+    Token t = stack.back();
+    stack.pop_back();
+    return t;
+}
+
+void PluralExpr::Reduce() {
+    Token r;
+    r.type = Token::Type::VALUE;
+
+    Token a  = PopToken();
+    ssassert(a.type == Token::Type::VALUE, "Expected 1st operand to be a value");
+
+    Token op = PopToken();
+    switch(op.type) {
+        case Token::Type::BINARY_OP: {
+            Token b = PopToken();
+            ssassert(b.type == Token::Type::VALUE, "Expected 2nd operand to be a value");
+
+            switch(op.op) {
+                case Token::Op::EQ:
+                    r.value = (a.value == b.value ? 1 : 0);
+                    break;
+                case Token::Op::NEQ:
+                    r.value = (a.value != b.value ? 1 : 0);
+                    break;
+                case Token::Op::LT:
+                    r.value = (b.value <  a.value ? 1 : 0);
+                    break;
+                case Token::Op::GT:
+                    r.value = (b.value >  a.value ? 1 : 0);
+                    break;
+                case Token::Op::LE:
+                    r.value = (b.value <= a.value ? 1 : 0);
+                    break;
+                case Token::Op::GE:
+                    r.value = (b.value >= a.value ? 1 : 0);
+                    break;
+                case Token::Op::AND:
+                    r.value = a.value && b.value;
+                    break;
+                case Token::Op::OR:
+                    r.value = a.value || b.value;
+                    break;
+                case Token::Op::MOD:
+                    r.value = b.value %  a.value;
+                    break;
+                case Token::Op::NONE:
+                    ssassert(false, "Unexpected operator");
+            }
+            break;
+        }
+
+        case Token::Type::COLON: {
+            Token b = PopToken();
+            ssassert(PopToken().type == Token::Type::QUERY, "Expected ?");
+            Token c = PopToken();
+            r.value = c.value ? b.value : a.value;
+            break;
+        }
+
+        default:
+            ssassert(false, "Unexpected operator type");
+    }
+
+    stack.push_back(r);
+}
+
+void PluralExpr::Eval() {
+    while(true) {
+        Token t = Lex();
+        switch(t.type) {
+            case Token::Type::END:
+            case Token::Type::PAREN_RIGHT:
+                while(stack.size() > 1 &&
+                      stack.end()[-2].type != Token::Type::PAREN_LEFT) {
+                    Reduce();
+                }
+                if(t.type == Token::Type::PAREN_RIGHT) {
+                    ssassert(stack.size() > 1, "Expected (");
+                    stack.push_back(t);
+                }
+                return;
+
+            case Token::Type::PAREN_LEFT:
+                stack.push_back(t);
+                Eval();
+                if(stack.back().type != Token::Type::PAREN_RIGHT) {
+                    ssassert(false, "Expected )");
+                }
+                stack.pop_back();
+                stack.erase(stack.end() - 2);
+                break;
+
+            case Token::Type::VALUE:
+                stack.push_back(t);
+                break;
+
+            case Token::Type::BINARY_OP:
+            case Token::Type::QUERY:
+            case Token::Type::COLON:
+                while(stack.size() > 1 &&
+                      stack.end()[-2].type != Token::Type::PAREN_LEFT &&
+                      t.Precedence() < stack.end()[-2].Precedence()) {
+                    Reduce();
+                }
+                stack.push_back(t);
+                break;
+        }
+    }
+}
+
+unsigned PluralExpr::Eval(const std::string &s, unsigned n) {
+    PluralExpr expr = {};
+    expr.reader = ASCIIReader::From(s);
+    expr.value  = n;
+    expr.Eval();
+
+    Token t = expr.PopToken();
+    ssassert(t.type == Token::Type::VALUE, "Expected a value");
+    return t.value;
+}
+
+//-----------------------------------------------------------------------------
+// Gettext .po file parsing
+//-----------------------------------------------------------------------------
+
+class GettextParser {
+public:
+    ASCIIReader reader;
+
+    unsigned    pluralCount;
+    std::string pluralExpr;
+
+    std::map<std::string, std::vector<std::string>> messages;
+
+    void SkipSpace();
+    std::string ReadString();
+    void ParseHeader(const std::string &header);
+    void Parse();
+};
+
+void GettextParser::SkipSpace() {
+    while(!reader.AtEnd()) {
+        if(reader.TryChar('#')) {
+            reader.SkipUntilEol();
+        } else if(!reader.SkipSpace()) {
+            break;
+        }
+    }
+}
+
+std::string GettextParser::ReadString() {
+    SkipSpace();
+    reader.ExpectChar('"');
+
+    std::string result;
+    while(true) {
+        if(reader.AtEnd()) {
+            ssassert(false, "Unexpected EOF within a string");
+        } else if(reader.TryChar('\"')) {
+            SkipSpace();
+            if(!reader.TryChar('\"')) {
+                break;
+            }
+        } else if(reader.TryChar('\\')) {
+            if(reader.TryChar('\\')) {
+                result += '\\';
+            } else if(reader.TryChar('n')) {
+                result += '\n';
+            } else if(reader.TryChar('t')) {
+                result += '\t';
+            } else if(reader.TryChar('"')) {
+                result += '"';
+            } else {
+                ssassert(false, "Unexpected escape sequence");
+            }
+        } else {
+            result += reader.ReadChar();
+        }
+    }
+    return result;
+}
+
+void GettextParser::ParseHeader(const std::string &header) {
+    ASCIIReader reader = ASCIIReader::From(header);
+    while(!reader.AtEnd()) {
+        reader.SkipSpace();
+        if(reader.TryString("Plural-Forms:")) {
+            reader.SkipSpace();
+            reader.ExpectString("nplurals=");
+            reader.SkipSpace();
+            pluralCount = reader.ReadIntegerDecimal();
+            reader.SkipSpace();
+            reader.ExpectString(";");
+            reader.SkipSpace();
+            reader.ExpectString("plural=");
+            pluralExpr = reader.ReadUntilEol();
+        } else {
+            reader.SkipUntilEol();
+        }
+    }
+}
+
+void GettextParser::Parse() {
+    // Default to a single form, in case a header is missing.
+    pluralCount = 1;
+    pluralExpr  = "0";
+
+    SkipSpace();
+    while(!reader.AtEnd()) {
+        reader.ExpectString("msgid");
+        std::string msgid = ReadString();
+        if(reader.TryString("msgid_plural")) {
+            std::string _msgid_plural = ReadString();
+            // We don't need it.
+        }
+
+        std::vector<std::string> msgstrs;
+        while(reader.TryString("msgstr")) {
+            if(reader.TryChar('[')) {
+                unsigned index = reader.ReadIntegerDecimal();
+                reader.ExpectChar(']');
+                if(msgstrs.size() <= index) {
+                    msgstrs.resize(index + 1);
+                }
+                msgstrs[index] = ReadString();
+            } else {
+                msgstrs.emplace_back(ReadString());
+                break;
+            }
+        }
+
+        if(msgid == "") {
+            ssassert(msgstrs.size() == 1,
+                     "Expected exactly one header msgstr");
+            ParseHeader(msgstrs[0]);
+        } else {
+            ssassert(msgstrs.size() == 1 ||
+                     msgstrs.size() == pluralCount,
+                     "Expected msgstr count to match plural form count");
+            messages.emplace(msgid, msgstrs);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// Translation management
+//-----------------------------------------------------------------------------
+
+class Translation {
+public:
+    unsigned    pluralCount;
+    std::string pluralExpr;
+
+    std::map<std::string, std::vector<std::string>> messages;
+
+    static Translation From(const std::string &poData);
+
+    const std::string &Translate(const char *msgid);
+    const std::string &TranslatePlural(const char *msgid, unsigned n);
+};
+
+Translation Translation::From(const std::string &poData) {
+    GettextParser parser = {};
+    parser.reader = ASCIIReader::From(poData);
+    parser.Parse();
+
+    Translation trans = {};
+    trans.pluralCount = parser.pluralCount;
+    trans.pluralExpr  = parser.pluralExpr;
+    trans.messages    = parser.messages;
+    return trans;
+}
+
+const std::string &Translation::Translate(const char *msgid) {
+    auto it = messages.find(msgid);
+    if(it == messages.end()) {
+        dbp("Missing translation for '%s'", msgid);
+        messages[msgid].emplace_back(msgid);
+        it = messages.find(msgid);
+    }
+    if(it->second.size() != 1) {
+        dbp("Incorrect use of translated message '%s'", msgid);
+        ssassert(false, "Using a message with a plural form without a number");
+    }
+    return it->second[0];
+}
+
+const std::string &Translation::TranslatePlural(const char *msgid, unsigned n) {
+    auto it = messages.find(msgid);
+    if(it == messages.end()) {
+        dbp("Missing translation for '%s'", msgid);
+        for(unsigned i = 0; i < pluralCount; i++) {
+            messages[msgid].emplace_back(msgid);
+        }
+        it = messages.find(msgid);
+    }
+    unsigned pluralForm = PluralExpr::Eval(pluralExpr, n);
+    return it->second[pluralForm];
+}
+
+//-----------------------------------------------------------------------------
+// Locale management
+//-----------------------------------------------------------------------------
+
+static std::set<Locale, LocaleLess> locales;
+static std::map<Locale, Translation, LocaleLess> translations;
+static Translation dummyTranslation;
+static Translation *currentTranslation = &dummyTranslation;
+
+const std::set<Locale, LocaleLess> &Locales() {
+    if(!locales.empty()) return locales;
+
+    std::string localeList = LoadString("locales.txt");
+    ASCIIReader reader = ASCIIReader::From(localeList);
+    while(!reader.AtEnd()) {
+        reader.SkipSpace();
+        if(reader.TryChar('#')) {
+            reader.SkipUntilEol();
+            continue;
+        }
+
+        std::smatch m;
+        reader.ExpectRegex(std::regex("([a-z]{2})-([A-Z]{2}),([0-9]{4}),(.+?)\n"), &m);
+        Locale locale = {};
+        locale.language    = m.str(1);
+        locale.region      = m.str(2);
+        locale.lcid        = std::stoi(m.str(3), NULL, 16);
+        locale.displayName = m.str(4);
+        locales.emplace(locale);
+    }
+    return locales;
+}
+
+template<class Predicate>
+bool SetLocale(Predicate pred) {
+    auto it = std::find_if(Locales().begin(), Locales().end(), pred);
+    if(it != locales.end()) {
+        std::string filename = "locales/" + it->language + "_" + it->region + ".po";
+        translations[*it] = Translation::From(LoadString(filename));
+        currentTranslation = &translations[*it];
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool SetLocale(const std::string &name) {
+    return SetLocale([&](const Locale &locale) {
+        if(name == locale.language + "-" + locale.region) {
+            return true;
+        } else if(name == locale.language + "_" + locale.region) {
+            return true;
+        } else if(name == locale.language) {
+            return true;
+        } else {
+            return false;
+        }
+    });
+}
+
+bool SetLocale(uint16_t lcid) {
+    return SetLocale([&](const Locale &locale) {
+        return locale.lcid == lcid;
+    });
+}
+
+const std::string &Translate(const char *msgid) {
+    return currentTranslation->Translate(msgid);
+}
+
+const std::string &TranslatePlural(const char *msgid, unsigned n) {
+    return currentTranslation->TranslatePlural(msgid, n);
 }
 
 }

@@ -215,6 +215,16 @@ if(ENABLE_COVERAGE)
     endif()
 endif()
 
+find_program(XGETTEXT xgettext)
+find_program(MSGINIT  msginit)
+find_program(MSGMERGE msgmerge)
+if(XGETTEXT AND MSGINIT AND MSGMERGE)
+    set(HAVE_GETTEXT TRUE)
+else()
+    message(WARNING "Gettext not found, translations will not be updated")
+    set(HAVE_GETTEXT FALSE)
+endif()
+
 # solvespace-only compiler flags
 
 if(WIN32)

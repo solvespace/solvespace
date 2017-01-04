@@ -8,6 +8,34 @@
 #ifndef __UI_H
 #define __UI_H
 
+class Locale {
+public:
+    std::string language;
+    std::string region;
+    uint16_t    lcid;
+    std::string displayName;
+
+    std::string Culture() const {
+        return language + "-" + region;
+    }
+};
+
+struct LocaleLess {
+    bool operator()(const Locale &a, const Locale &b) {
+        return a.language < b.language ||
+            (a.language == b.language && a.region < b.region);
+    }
+};
+
+const std::set<Locale, LocaleLess> &Locales();
+bool SetLocale(const std::string &name);
+bool SetLocale(uint16_t lcid);
+
+const std::string &Translate(const char *msgid);
+const std::string &TranslatePlural(const char *msgid, unsigned n);
+
+inline const char *N_(const char *msgid) { return msgid; }
+
 // This table describes the top-level menus in the graphics winodw.
 enum class Command : uint32_t {
     NONE = 0,
