@@ -35,6 +35,7 @@ const std::string &Translate(const char *msgid);
 const std::string &TranslatePlural(const char *msgid, unsigned n);
 
 inline const char *N_(const char *msgid) { return msgid; }
+inline const char *_(const char *msgid) { return Translate(msgid).c_str(); }
 
 // This table describes the top-level menus in the graphics winodw.
 enum class Command : uint32_t {

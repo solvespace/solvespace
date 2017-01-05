@@ -220,7 +220,8 @@ if(HAVE_GETTEXT)
     add_custom_command(
         OUTPUT  ${output_pot}
         COMMAND ${XGETTEXT}
-                --keyword --keyword=N_ --width=100 --sort-by-file --force-po
+                --keyword --keyword=_ --keyword=N_
+                --force-po --width=100 --sort-by-file
                 --package-name=SolveSpace --package-version=3.0
                 "--copyright-holder=the PACKAGE authors"
                 --msgid-bugs-address=whitequark@whitequark.org

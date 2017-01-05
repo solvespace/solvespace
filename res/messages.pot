@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-01-05 12:25+0000\n"
+"POT-Creation-Date: 2017-01-05 12:33+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -423,6 +423,94 @@ msgstr ""
 
 #: /home/whitequark/Work/solvespace/src/graphicswin.cpp:166
 msgid "&About"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:495
+msgid "No Style"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:496
+msgid "Newly Created Custom Style..."
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:544
+msgid "Assign to Style"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:547
+msgid "Group Info"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:550
+msgid "Style Info"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:553
+msgid "Select Edge Chain"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:558
+msgid "Toggle Reference Dimension"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:564
+msgid "Other Supplementary Angle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:569
+msgid "Snap to Grid"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:577
+msgid "Remove Spline Point"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:588
+msgid "Add Spline Point"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:592
+msgid "Toggle Construction"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:606
+msgid "Delete Point-Coincident Constraint"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:612
+msgid "Cut"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:613
+msgid "Copy"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:616
+msgid "Select All"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:620
+msgid "Paste"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:621
+msgid "Paste Transformed..."
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:625
+msgid "Delete"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:627
+msgid "Unselect All"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:633
+msgid "Unselect Hovered"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:638
+msgid "Zoom to Fit"
 msgstr ""
 
 #: /home/whitequark/Work/solvespace/src/toolbar.cpp:18
