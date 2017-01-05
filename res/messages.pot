@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-01-05 10:37+0000\n"
+"POT-Creation-Date: 2017-01-05 12:25+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -423,4 +423,128 @@ msgstr ""
 
 #: /home/whitequark/Work/solvespace/src/graphicswin.cpp:166
 msgid "&About"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:18
+msgid "Sketch line segment"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:20
+msgid "Sketch rectangle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:22
+msgid "Sketch circle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:24
+msgid "Sketch arc of a circle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:26
+msgid "Sketch curves from text in a TrueType font"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:28
+msgid "Create tangent arc at selected point"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:30
+msgid "Sketch cubic Bezier spline"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:32
+msgid "Sketch datum point"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:34
+msgid "Toggle construction"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:36
+msgid "Split lines / curves where they intersect"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:40
+msgid "Constrain distance / diameter / length"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:42
+msgid "Constrain angle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:44
+msgid "Constrain to be horizontal"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:46
+msgid "Constrain to be vertical"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:48
+msgid "Constrain to be parallel or tangent"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:50
+msgid "Constrain to be perpendicular"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:52
+msgid "Constrain point on line / curve / plane / point"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:54
+msgid "Constrain symmetric"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:56
+msgid "Constrain equal length / radius / angle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:58
+msgid "Constrain normals in same orientation"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:60
+msgid "Other supplementary angle"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:62
+msgid "Toggle reference dimension"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:66
+msgid "New group extruding active sketch"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:68
+msgid "New group rotating active sketch"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:70
+msgid "New group step and repeat rotating"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:72
+msgid "New group step and repeat translating"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:74
+msgid "New group in new workplane (thru given entities)"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:76
+msgid "New group in 3d"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:78
+msgid "New group linking / assembling file"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:82
+msgid "Nearest isometric view"
+msgstr ""
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:84
+msgid "Align view to active workplane"
 msgstr ""

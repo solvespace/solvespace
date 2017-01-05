@@ -234,7 +234,7 @@ if(HAVE_GETTEXT)
                 --locale=en_US --no-translator
                 --output=${templ_po} --input=${output_pot}
         COMMAND ${MSGMERGE}
-                --force-po
+                --force-po --no-fuzzy-matching
                 --output=${output_po} ${output_po} ${templ_po}
         DEPENDS ${output_pot}
         COMMENT "Updating English translations"
