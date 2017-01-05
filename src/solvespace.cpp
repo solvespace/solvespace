@@ -102,6 +102,11 @@ void SolveSpaceUI::Init() {
     RefreshRecentMenus();
     // Autosave timer
     autosaveInterval = CnfThawInt(5, "AutosaveInterval");
+    // Locale
+    std::string locale = CnfThawString("", "Locale");
+    if(!locale.empty()) {
+        SetLocale(locale);
+    }
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
@@ -810,6 +815,20 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
 }
 
 void SolveSpaceUI::MenuHelp(Command id) {
+    if((uint32_t)id >= (uint32_t)Command::LOCALE &&
+       (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
+        size_t offset = (uint32_t)id - (uint32_t)Command::LOCALE;
+        size_t i = 0;
+        for(auto locale : Locales()) {
+            if(i++ == offset) {
+                CnfFreezeString(locale.Culture(), "Locale");
+                SetLocale(locale.Culture());
+                break;
+            }
+        }
+        return;
+    }
+
     switch(id) {
         case Command::WEBSITE:
             OpenWebsite("http://solvespace.com/helpmenu");

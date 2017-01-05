@@ -592,6 +592,12 @@ ContextCommand ShowContextMenu(void) {
         SolveSpace::Group::MenuGroup((SolveSpace::Command)cmd);
     }
 }
+
++ (void)handleLocale:(id)sender {
+    uint32_t offset = [sender tag];
+    SolveSpace::SolveSpaceUI::MenuHelp(
+        (SolveSpace::Command)((uint32_t)SolveSpace::Command::LOCALE + offset));
+}
 @end
 
 namespace SolveSpace {
@@ -601,6 +607,10 @@ void InitMainMenu(NSMenu *mainMenu) {
     NSMenuItem *menuItem = NULL;
     NSMenu *levels[5] = {mainMenu, 0};
     NSString *label;
+
+    while([mainMenu numberOfItems] != 1) {
+        [mainMenu removeItemAtIndex:1];
+    }
 
     const GraphicsWindow::MenuEntry *entry = &GraphicsWindow::menu[0];
     int current_level = 0;
@@ -619,9 +629,9 @@ void InitMainMenu(NSMenu *mainMenu) {
         current_level = entry->level;
 
         if(entry->label) {
+            label = [NSString stringWithUTF8String:Translate(entry->label).c_str()];
             /* OS X does not support mnemonics */
-            label = [[NSString stringWithUTF8String:entry->label]
-                stringByReplacingOccurrencesOfString:@"&" withString:@""];
+            label = [label stringByReplacingOccurrencesOfString:@"&" withString:@""];
 
             unichar accelChar = entry->accel &
                 ~(GraphicsWindow::SHIFT_MASK | GraphicsWindow::CTRL_MASK);
@@ -648,6 +658,22 @@ void InitMainMenu(NSMenu *mainMenu) {
             [menuItem setAction:@selector(handleStatic:)];
         } else {
             [levels[entry->level] addItem:[NSMenuItem separatorItem]];
+        }
+
+        if(entry->id == Command::LOCALE) {
+            NSMenu *localeMenu = [[NSMenu alloc] initWithTitle:label];
+            [menuItem setSubmenu:localeMenu];
+
+            size_t i = 0;
+            for(auto locale : Locales()) {
+                NSMenuItem *localeMenuItem =
+                    [localeMenu addItemWithTitle:
+                            [NSString stringWithUTF8String:locale.displayName.c_str()]
+                        action:NULL keyEquivalent:@""];
+                [localeMenuItem setTag:(NSInteger)i++];
+                [localeMenuItem setTarget:[MainMenuResponder class]];
+                [localeMenuItem setAction:@selector(handleLocale:)];
+            }
         }
 
         mainMenuItems[(uint32_t)entry->id] = menuItem;
@@ -1168,6 +1194,10 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
 }
 @end
 
+void SolveSpace::RefreshLocale() {
+    SolveSpace::InitMainMenu([NSApp mainMenu]);
+}
+
 void SolveSpace::ExitNow(void) {
     [NSApp stop:nil];
 }
@@ -1329,7 +1359,12 @@ int main(int argc, const char *argv[]) {
     SolveSpace::InitGraphicsWindow();
     SolveSpace::InitTextWindow();
     [[NSBundle mainBundle] loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
-    SolveSpace::InitMainMenu([NSApp mainMenu]);
+
+    NSArray *languages = [NSLocale preferredLanguages];
+    for(NSString *language in languages) {
+        dbp("%s", ([language UTF8String]));
+        if(SolveSpace::SetLocale([language UTF8String])) break;
+    }
 
     connexionInit();
     SolveSpace::SS.Init();

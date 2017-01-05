@@ -7,12 +7,420 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-01-05 10:32+0000\n"
+"POT-Creation-Date: 2017-01-05 10:37+0000\n"
 "PO-Revision-Date: 2017-01-05 10:30+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
 "Language: en_US\n"
 "MIME-Version: 1.0\n"
-"Content-Type: text/plain; charset=ASCII\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:29
+msgid "&File"
+msgstr "&File"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:30
+msgid "&New"
+msgstr "&New"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:31
+msgid "&Open..."
+msgstr "&Open..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:32
+msgid "Open &Recent"
+msgstr "Open &Recent"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:33
+msgid "&Save"
+msgstr "&Save"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:34
+msgid "Save &As..."
+msgstr "Save &As..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:36
+msgid "Export &Image..."
+msgstr "Export &Image..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:37
+msgid "Export 2d &View..."
+msgstr "Export 2d &View..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:38
+msgid "Export 2d &Section..."
+msgstr "Export 2d &Section..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:39
+msgid "Export 3d &Wireframe..."
+msgstr "Export 3d &Wireframe..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:40
+msgid "Export Triangle &Mesh..."
+msgstr "Export Triangle &Mesh..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:41
+msgid "Export &Surfaces..."
+msgstr "Export &Surfaces..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:42
+msgid "Im&port..."
+msgstr "Im&port..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:45
+msgid "E&xit"
+msgstr "E&xit"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:48
+msgid "&Edit"
+msgstr "&Edit"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:49
+msgid "&Undo"
+msgstr "&Undo"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:50
+msgid "&Redo"
+msgstr "&Redo"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:51
+msgid "Re&generate All"
+msgstr "Re&generate All"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:53
+msgid "Snap Selection to &Grid"
+msgstr "Snap Selection to &Grid"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:54
+msgid "Rotate Imported &90°"
+msgstr "Rotate Imported &90°"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:56
+msgid "Cu&t"
+msgstr "Cu&t"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:57
+msgid "&Copy"
+msgstr "&Copy"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:58
+msgid "&Paste"
+msgstr "&Paste"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:59
+msgid "Paste &Transformed..."
+msgstr "Paste &Transformed..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:60
+msgid "&Delete"
+msgstr "&Delete"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:62
+msgid "Select &Edge Chain"
+msgstr "Select &Edge Chain"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:63
+msgid "Select &All"
+msgstr "Select &All"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:64
+msgid "&Unselect All"
+msgstr "&Unselect All"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:66
+msgid "&View"
+msgstr "&View"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:67
+msgid "Zoom &In"
+msgstr "Zoom &In"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:68
+msgid "Zoom &Out"
+msgstr "Zoom &Out"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:69
+msgid "Zoom To &Fit"
+msgstr "Zoom To &Fit"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:71
+msgid "Align View to &Workplane"
+msgstr "Align View to &Workplane"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:72
+msgid "Nearest &Ortho View"
+msgstr "Nearest &Ortho View"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:73
+msgid "Nearest &Isometric View"
+msgstr "Nearest &Isometric View"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:74
+msgid "&Center View At Point"
+msgstr "&Center View At Point"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:76
+msgid "Show Snap &Grid"
+msgstr "Show Snap &Grid"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:77
+msgid "Use &Perspective Projection"
+msgstr "Use &Perspective Projection"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:80
+msgid "Show Menu &Bar"
+msgstr "Show Menu &Bar"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:82
+msgid "Show &Toolbar"
+msgstr "Show &Toolbar"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:83
+msgid "Show Property Bro&wser"
+msgstr "Show Property Bro&wser"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:85
+msgid "Dimensions in &Inches"
+msgstr "Dimensions in &Inches"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:86
+msgid "Dimensions in &Millimeters"
+msgstr "Dimensions in &Millimeters"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:89
+msgid "&Full Screen"
+msgstr "&Full Screen"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:92
+msgid "&New Group"
+msgstr "&New Group"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:93
+msgid "Sketch In &3d"
+msgstr "Sketch In &3d"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:94
+msgid "Sketch In New &Workplane"
+msgstr "Sketch In New &Workplane"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:96
+msgid "Step &Translating"
+msgstr "Step &Translating"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:97
+msgid "Step &Rotating"
+msgstr "Step &Rotating"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:99
+msgid "E&xtrude"
+msgstr "E&xtrude"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:100
+msgid "&Lathe"
+msgstr "&Lathe"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:102
+msgid "Link / Assemble..."
+msgstr "Link / Assemble..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:103
+msgid "Link Recent"
+msgstr "Link Recent"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:105
+msgid "&Sketch"
+msgstr "&Sketch"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:106
+msgid "In &Workplane"
+msgstr "In &Workplane"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:107
+msgid "Anywhere In &3d"
+msgstr "Anywhere In &3d"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:109
+msgid "Datum &Point"
+msgstr "Datum &Point"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:110
+msgid "&Workplane"
+msgstr "&Workplane"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:112
+msgid "Line &Segment"
+msgstr "Line &Segment"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:113
+msgid "C&onstruction Line Segment"
+msgstr "C&onstruction Line Segment"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:114
+msgid "&Rectangle"
+msgstr "&Rectangle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:115
+msgid "&Circle"
+msgstr "&Circle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:116
+msgid "&Arc of a Circle"
+msgstr "&Arc of a Circle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:117
+msgid "&Bezier Cubic Spline"
+msgstr "&Bezier Cubic Spline"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:119
+msgid "&Text in TrueType Font"
+msgstr "&Text in TrueType Font"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:121
+msgid "To&ggle Construction"
+msgstr "To&ggle Construction"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:122
+msgid "Tangent &Arc at Point"
+msgstr "Tangent &Arc at Point"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:123
+msgid "Split Curves at &Intersection"
+msgstr "Split Curves at &Intersection"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:125
+msgid "&Constrain"
+msgstr "&Constrain"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:126
+msgid "&Distance / Diameter"
+msgstr "&Distance / Diameter"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:127
+msgid "Re&ference Dimension"
+msgstr "Re&ference Dimension"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:128
+msgid "A&ngle"
+msgstr "A&ngle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:129
+msgid "Reference An&gle"
+msgstr "Reference An&gle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:130
+msgid "Other S&upplementary Angle"
+msgstr "Other S&upplementary Angle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:131
+msgid "Toggle R&eference Dim"
+msgstr "Toggle R&eference Dim"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:133
+msgid "&Horizontal"
+msgstr "&Horizontal"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:134
+msgid "&Vertical"
+msgstr "&Vertical"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:136
+msgid "&On Point / Curve / Plane"
+msgstr "&On Point / Curve / Plane"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:137
+msgid "E&qual Length / Radius / Angle"
+msgstr "E&qual Length / Radius / Angle"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:138
+msgid "Length Ra&tio"
+msgstr "Length Ra&tio"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:139
+msgid "Length Diff&erence"
+msgstr "Length Diff&erence"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:140
+msgid "At &Midpoint"
+msgstr "At &Midpoint"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:141
+msgid "S&ymmetric"
+msgstr "S&ymmetric"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:142
+msgid "Para&llel / Tangent"
+msgstr "Para&llel / Tangent"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:143
+msgid "&Perpendicular"
+msgstr "&Perpendicular"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:144
+msgid "Same Orient&ation"
+msgstr "Same Orient&ation"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:145
+msgid "Lock Point Where &Dragged"
+msgstr "Lock Point Where &Dragged"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:147
+msgid "Comment"
+msgstr "Comment"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:149
+msgid "&Analyze"
+msgstr "&Analyze"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:150
+msgid "Measure &Volume"
+msgstr "Measure &Volume"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:151
+msgid "Measure A&rea"
+msgstr "Measure A&rea"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:152
+msgid "Measure &Perimeter"
+msgstr "Measure &Perimeter"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:153
+msgid "Show &Interfering Parts"
+msgstr "Show &Interfering Parts"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:154
+msgid "Show &Naked Edges"
+msgstr "Show &Naked Edges"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:156
+msgid "Show Degrees of &Freedom"
+msgstr "Show Degrees of &Freedom"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:158
+msgid "&Trace Point"
+msgstr "&Trace Point"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:159
+msgid "&Stop Tracing..."
+msgstr "&Stop Tracing..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:160
+msgid "Step &Dimension..."
+msgstr "Step &Dimension..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:162
+msgid "&Help"
+msgstr "&Help"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:163
+msgid "&Website / Manual"
+msgstr "&Website / Manual"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:164
+msgid "&Language"
+msgstr "&Language"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:166
+msgid "&About"
+msgstr "&About"

@@ -16,6 +16,11 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
+#ifdef MenuHelp
+// This is defined to IsolationAwareMenuHelp on Windows 6.0 and later.
+#undef MenuHelp
+#endif
+
 #ifdef HAVE_SPACEWARE
 #   include <si.h>
 #   include <siapp.h>
@@ -1016,6 +1021,11 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     Group::MenuGroup(id);
                     break;
                 }
+                if((uint32_t)id >= (uint32_t)Command::LOCALE &&
+                   (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
+                    SolveSpaceUI::MenuHelp(id);
+                    break;
+                }
                 int i;
                 for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                     if(id == SS.GW.menu[i].id) {
@@ -1293,7 +1303,7 @@ HMENU CreateGraphicsWindowMenus()
         if(SS.GW.menu[i].label) {
             std::string accel = MakeAcceleratorLabel(SS.GW.menu[i].accel);
             const char *sep = accel.empty() ? "" : "\t";
-            label = ssprintf("%s%s%s", SS.GW.menu[i].label, sep, accel.c_str());
+            label = ssprintf("%s%s%s", Translate(SS.GW.menu[i].label).c_str(), sep, accel.c_str());
         }
 
         if(SS.GW.menu[i].level == 0) {
@@ -1311,6 +1321,15 @@ HMENU CreateGraphicsWindowMenus()
                 RecentImportMenu = CreateMenu();
                 AppendMenuW(m, MF_STRING | MF_POPUP,
                     (UINT_PTR)RecentImportMenu, Widen(label).c_str());
+            } else if(SS.GW.menu[i].id == Command::LOCALE) {
+                HMENU LocaleMenu = CreateMenu();
+                size_t i = 0;
+                for(auto locale : Locales()) {
+                    AppendMenuW(LocaleMenu, MF_STRING,
+                        (uint32_t)Command::LOCALE + i++, Widen(locale.displayName).c_str());
+                }
+                AppendMenuW(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)LocaleMenu, Widen(label).c_str());
             } else if(SS.GW.menu[i].label) {
                 AppendMenuW(m, MF_STRING, (uint32_t)SS.GW.menu[i].id, Widen(label).c_str());
             } else {
@@ -1343,12 +1362,11 @@ static void CreateMainWindows()
                             IMAGE_ICON, 16, 16, 0);
     ssassert(RegisterClassEx(&wc), "Cannot register window class");
 
-    HMENU top = CreateGraphicsWindowMenus();
     GraphicsWnd = CreateWindowExW(0, L"GraphicsWnd",
         L"SolveSpace (not yet saved)",
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
-        50, 50, 900, 600, NULL, top, Instance, NULL);
+        50, 50, 900, 600, NULL, NULL, Instance, NULL);
     ssassert(GraphicsWnd != NULL, "Cannot create window");
 
     GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
@@ -1394,6 +1412,14 @@ static void CreateMainWindows()
     GetWindowRect(TextWnd, &r);
     GetClientRect(TextWnd, &rc);
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
+}
+
+void SolveSpace::RefreshLocale() {
+    HMENU oldMenu = GetMenu(GraphicsWnd);
+    SetMenu(GraphicsWnd, CreateGraphicsWindowMenus());
+    if(oldMenu != NULL) {
+        DestroyMenu(oldMenu);
+    }
 }
 
 #ifdef HAVE_SPACEWARE
@@ -1477,6 +1503,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
     }
 #endif
+
+    // Use the user default locale.
+    SetLocale((uint16_t)GetUserDefaultLCID());
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();

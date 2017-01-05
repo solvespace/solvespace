@@ -1473,6 +1473,7 @@ bool SetLocale(Predicate pred) {
         std::string filename = "locales/" + it->language + "_" + it->region + ".po";
         translations[*it] = Translation::From(LoadString(filename));
         currentTranslation = &translations[*it];
+        RefreshLocale();
         return true;
     } else {
         return false;

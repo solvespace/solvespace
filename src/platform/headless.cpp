@@ -253,6 +253,9 @@ std::vector<std::string> GetFontFiles() {
 // Application lifecycle
 //-----------------------------------------------------------------------------
 
+void RefreshLocale() {
+}
+
 void ExitNow() {
     ssassert(false, "Not implemented");
 }

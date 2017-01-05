@@ -782,7 +782,7 @@ protected:
     }
 
 private:
-    const GraphicsWindow::MenuEntry &_entry;
+    const GraphicsWindow::MenuEntry _entry;
     bool _synthetic;
 };
 
@@ -808,24 +808,41 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
         current_level = entry->level;
 
         if(entry->label) {
+            GraphicsWindow::MenuEntry localizedEntry = *entry;
+            localizedEntry.label = Translate(entry->label).c_str();
+
             switch(entry->kind) {
                 case GraphicsWindow::MenuKind::NORMAL:
-                menu_item = new MainMenuItem<Gtk::MenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::MenuItem>(localizedEntry);
                 break;
 
                 case GraphicsWindow::MenuKind::CHECK:
-                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
                 break;
 
                 case GraphicsWindow::MenuKind::RADIO:
                 MainMenuItem<Gtk::CheckMenuItem> *radio_item =
-                        new MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                        new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
                 radio_item->set_draw_as_radio(true);
                 menu_item = radio_item;
                 break;
             }
         } else {
             menu_item = new Gtk::SeparatorMenuItem();
+        }
+
+        if(entry->id == Command::LOCALE) {
+            Gtk::Menu *menu = new Gtk::Menu;
+            menu_item->set_submenu(*menu);
+
+            size_t i = 0;
+            for(auto locale : Locales()) {
+                GraphicsWindow::MenuEntry localeEntry = {};
+                localeEntry.label = locale.displayName.c_str();
+                localeEntry.id    = (Command)((uint32_t)Command::LOCALE + i++);
+                localeEntry.fn    = entry->fn;
+                menu->append(*new MainMenuItem<Gtk::MenuItem>(localeEntry));
+            }
         }
 
         levels[entry->level]->append(*menu_item);
@@ -1347,7 +1364,17 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
 
 /* Application lifecycle */
 
-void ExitNow(void) {
+void RefreshLocale() {
+    for(auto menu : GW->get_menubar().get_children()) {
+        GW->get_menubar().remove(*menu);
+    }
+    InitMainMenu(&GW->get_menubar());
+    GW->get_menubar().show_all();
+    GW->get_menubar().accelerate(*GW);
+    GW->get_menubar().accelerate(*TW);
+}
+
+void ExitNow() {
     GW->hide();
     TW->hide();
 }
@@ -1390,14 +1417,17 @@ int main(int argc, char** argv) {
 
     TW.reset(new TextWindowGtk);
     GW.reset(new GraphicsWindowGtk);
-    InitMainMenu(&GW->get_menubar());
-    GW->get_menubar().accelerate(*TW);
     TW->set_transient_for(*GW);
     GW->set_icon(icon_gdk);
     TW->set_icon(icon_gdk);
 
     TW->show_all();
     GW->show_all();
+
+    const char* const* langNames = g_get_language_names();
+    while(*langNames) {
+        if(SetLocale(*langNames++)) break;
+    }
 
 #ifdef HAVE_SPACEWARE
     // We don't care if it can't be opened; just continue without.

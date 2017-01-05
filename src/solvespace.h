@@ -238,6 +238,8 @@ std::vector<std::string> GetFontFiles();
 
 void OpenWebsite(const char *url);
 
+void RefreshLocale();
+
 void CheckMenuByCmd(Command id, bool checked);
 void RadioMenuByCmd(Command id, bool selected);
 void EnableMenuByCmd(Command id, bool enabled);

@@ -21,7 +21,7 @@ public:
 };
 
 struct LocaleLess {
-    bool operator()(const Locale &a, const Locale &b) {
+    bool operator()(const Locale &a, const Locale &b) const {
         return a.language < b.language ||
             (a.language == b.language && a.region < b.region);
     }
@@ -143,6 +143,8 @@ enum class Command : uint32_t {
     // Recent
     RECENT_OPEN = 0xf000,
     RECENT_LINK = 0xf100,
+    // Locale
+    LOCALE = 0xf200,
 };
 
 enum class ContextCommand : uint32_t {
