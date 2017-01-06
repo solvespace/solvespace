@@ -194,6 +194,7 @@ add_resources(
     icons/text-window/workplane.png
     locales.txt
     locales/en_US.po
+    locales/ru_RU.po
     locales/uk_UA.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png

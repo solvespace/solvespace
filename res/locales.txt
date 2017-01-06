@@ -1,4 +1,5 @@
 # This file lists the ISO locale codes (ISO 639-1/ISO 3166-1), Windows LCIDs,
 # and human-readable names for every culture supported by SolveSpace.
 en-US,0409,English (US)
+ru-RU,0419,Русский
 uk-UA,0422,Українська
