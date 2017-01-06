@@ -1429,10 +1429,12 @@ int main(int argc, char** argv) {
         if(SetLocale(*langNames++)) break;
     }
 
-#ifdef HAVE_SPACEWARE
-    // We don't care if it can't be opened; just continue without.
-    spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                   gdk_x11_window_get_xid(GW->get_window()->gobj()));
+#if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
+    if(GDK_IS_X11_DISPLAY(Gdk::Display::get_default()->gobj())) {
+        // We don't care if it can't be opened; just continue without.
+        spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                       gdk_x11_window_get_xid(GW->get_window()->gobj()));
+    }
 #endif
 
     SS.Init();
