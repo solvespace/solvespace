@@ -212,21 +212,20 @@ if(HAVE_GETTEXT)
     set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
     set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
     set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
-    set(inputs)
-    foreach(input ${solvespace_core_SOURCES})
-        list(APPEND inputs ${CMAKE_CURRENT_SOURCE_DIR}/${input})
-    endforeach()
+    set(inputs     ${solvespace_core_SOURCES})
 
     add_custom_command(
         OUTPUT  ${output_pot}
         COMMAND ${XGETTEXT}
-                --keyword --keyword=_ --keyword=N_
+                --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
                 --force-po --width=100 --sort-by-file
-                --package-name=SolveSpace --package-version=3.0
+                --package-name=SolveSpace
+                --package-version=${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
                 "--copyright-holder=the PACKAGE authors"
                 --msgid-bugs-address=whitequark@whitequark.org
                 --from-code=utf-8 --output=${output_pot} ${inputs}
         DEPENDS ${inputs}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Extracting translations"
         VERBATIM)
     add_custom_command(
@@ -240,7 +239,7 @@ if(HAVE_GETTEXT)
         DEPENDS ${output_pot}
         COMMENT "Updating English translations"
         VERBATIM)
-    add_custom_target(solvespace-translations ALL
+    add_custom_target(solvespace-translations
         DEPENDS ${output_pot} ${output_po})
 endif()
 

@@ -1255,6 +1255,25 @@ unsigned PluralExpr::Eval(const std::string &s, unsigned n) {
 }
 
 //-----------------------------------------------------------------------------
+// Gettext message keys
+//-----------------------------------------------------------------------------
+
+class TranslationKey {
+public:
+    bool        hasContext;
+    std::string context;
+    std::string ident;
+};
+
+struct TranslationKeyLess {
+    bool operator()(const TranslationKey &a, const TranslationKey &b) const {
+        return a.hasContext < b.hasContext ||
+            (a.hasContext == b.hasContext && a.context < b.context) ||
+            (a.hasContext == b.hasContext && a.context == b.context && a.ident < b.ident);
+    }
+};
+
+//-----------------------------------------------------------------------------
 // Gettext .po file parsing
 //-----------------------------------------------------------------------------
 
@@ -1265,7 +1284,7 @@ public:
     unsigned    pluralCount;
     std::string pluralExpr;
 
-    std::map<std::string, std::vector<std::string>> messages;
+    std::map<TranslationKey, std::vector<std::string>, TranslationKeyLess> messages;
 
     void SkipSpace();
     std::string ReadString();
@@ -1342,11 +1361,18 @@ void GettextParser::Parse() {
 
     SkipSpace();
     while(!reader.AtEnd()) {
+        TranslationKey key = {};
+
+        if(reader.TryString("msgctxt")) {
+            key.hasContext = true;
+            key.context = ReadString();
+        }
+
         reader.ExpectString("msgid");
-        std::string msgid = ReadString();
+        key.ident = ReadString();
+
         if(reader.TryString("msgid_plural")) {
-            std::string _msgid_plural = ReadString();
-            // We don't need it.
+            ReadString(); // we don't need it
         }
 
         std::vector<std::string> msgstrs;
@@ -1364,7 +1390,7 @@ void GettextParser::Parse() {
             }
         }
 
-        if(msgid == "") {
+        if(key.ident == "") {
             ssassert(msgstrs.size() == 1,
                      "Expected exactly one header msgstr");
             ParseHeader(msgstrs[0]);
@@ -1372,7 +1398,7 @@ void GettextParser::Parse() {
             ssassert(msgstrs.size() == 1 ||
                      msgstrs.size() == pluralCount,
                      "Expected msgstr count to match plural form count");
-            messages.emplace(msgid, msgstrs);
+            messages.emplace(key, msgstrs);
         }
     }
 }
@@ -1386,12 +1412,12 @@ public:
     unsigned    pluralCount;
     std::string pluralExpr;
 
-    std::map<std::string, std::vector<std::string>> messages;
+    std::map<TranslationKey, std::vector<std::string>, TranslationKeyLess> messages;
 
     static Translation From(const std::string &poData);
 
-    const std::string &Translate(const char *msgid);
-    const std::string &TranslatePlural(const char *msgid, unsigned n);
+    const std::string &Translate(const TranslationKey &key);
+    const std::string &TranslatePlural(const TranslationKey &key, unsigned n);
 };
 
 Translation Translation::From(const std::string &poData) {
@@ -1406,28 +1432,28 @@ Translation Translation::From(const std::string &poData) {
     return trans;
 }
 
-const std::string &Translation::Translate(const char *msgid) {
-    auto it = messages.find(msgid);
+const std::string &Translation::Translate(const TranslationKey &key) {
+    auto it = messages.find(key);
     if(it == messages.end()) {
-        dbp("Missing translation for '%s'", msgid);
-        messages[msgid].emplace_back(msgid);
-        it = messages.find(msgid);
+        dbp("Missing translation for %s'%s'", key.context.c_str(), key.ident.c_str());
+        messages[key].emplace_back(key.ident);
+        it = messages.find(key);
     }
     if(it->second.size() != 1) {
-        dbp("Incorrect use of translated message '%s'", msgid);
+        dbp("Incorrect use of translated message %s'%s'", key.context.c_str(), key.ident.c_str());
         ssassert(false, "Using a message with a plural form without a number");
     }
     return it->second[0];
 }
 
-const std::string &Translation::TranslatePlural(const char *msgid, unsigned n) {
-    auto it = messages.find(msgid);
+const std::string &Translation::TranslatePlural(const TranslationKey &key, unsigned n) {
+    auto it = messages.find(key);
     if(it == messages.end()) {
-        dbp("Missing translation for '%s'", msgid);
+        dbp("Missing translation for %s'%s'", key.context.c_str(), key.ident.c_str());
         for(unsigned i = 0; i < pluralCount; i++) {
-            messages[msgid].emplace_back(msgid);
+            messages[key].emplace_back(key.ident);
         }
-        it = messages.find(msgid);
+        it = messages.find(key);
     }
     unsigned pluralForm = PluralExpr::Eval(pluralExpr, n);
     return it->second[pluralForm];
@@ -1501,11 +1527,31 @@ bool SetLocale(uint16_t lcid) {
 }
 
 const std::string &Translate(const char *msgid) {
-    return currentTranslation->Translate(msgid);
+    TranslationKey key = {};
+    key.ident      = msgid;
+    return currentTranslation->Translate(key);
+}
+
+const std::string &Translate(const char *msgctxt, const char *msgid) {
+    TranslationKey key = {};
+    key.hasContext = true;
+    key.context    = msgctxt;
+    key.ident      = msgid;
+    return currentTranslation->Translate(key);
 }
 
 const std::string &TranslatePlural(const char *msgid, unsigned n) {
-    return currentTranslation->TranslatePlural(msgid, n);
+    TranslationKey key = {};
+    key.ident      = msgid;
+    return currentTranslation->TranslatePlural(key, n);
+}
+
+const std::string &TranslatePlural(const char *msgctxt, const char *msgid, unsigned n) {
+    TranslationKey key = {};
+    key.hasContext = true;
+    key.context    = msgctxt;
+    key.ident      = msgid;
+    return currentTranslation->TranslatePlural(key, n);
 }
 
 }

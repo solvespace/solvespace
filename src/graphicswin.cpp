@@ -489,8 +489,7 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::SHOW_GRID:
             SS.GW.showSnapGrid = !SS.GW.showSnapGrid;
             if(SS.GW.showSnapGrid && !SS.GW.LockedInWorkplane()) {
-                Message("No workplane is active, so the grid will not "
-                        "appear.");
+                Message(_("No workplane is active, so the grid will not appear."));
             }
             SS.GW.EnsureValidActives();
             InvalidateGraphics();
@@ -499,11 +498,11 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::PERSPECTIVE_PROJ:
             SS.usePerspectiveProj = !SS.usePerspectiveProj;
             if(SS.cameraTangent < 1e-6) {
-                Error("The perspective factor is set to zero, so the view will "
-                      "always be a parallel projection.\n\n"
-                      "For a perspective projection, modify the perspective "
-                      "factor in the configuration screen. A value around 0.3 "
-                      "is typical.");
+                Error(_("The perspective factor is set to zero, so the view will "
+                        "always be a parallel projection.\n\n"
+                        "For a perspective projection, modify the perspective "
+                        "factor in the configuration screen. A value around 0.3 "
+                        "is typical."));
             }
             SS.GW.EnsureValidActives();
             InvalidateGraphics();
@@ -580,8 +579,8 @@ void GraphicsWindow::MenuView(Command id) {
                 SS.GW.AnimateOnto(quat0, pt.ScaledBy(-1));
                 SS.GW.ClearSelection();
             } else {
-                Error("Select a point; this point will become the center "
-                      "of the view on screen.");
+                Error(_("Select a point; this point will become the center "
+                        "of the view on screen."));
             }
             break;
 
@@ -862,8 +861,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                 }
             } while(didSomething);
             if(newlySelected == 0) {
-                Error("No additional entities share endpoints with the "
-                      "selected entities.");
+                Error(_("No additional entities share endpoints with the selected entities."));
             }
             InvalidateGraphics();
             SS.ScheduleShowTW();
@@ -883,9 +881,9 @@ void GraphicsWindow::MenuEdit(Command id) {
             hGroup hg = e ? e->group : SS.GW.activeGroup;
             Group *g = SK.GetGroup(hg);
             if(g->type != Group::Type::LINKED) {
-                Error("To use this command, select a point or other "
-                      "entity from an linked part, or make a link "
-                      "group the active group.");
+                Error(_("To use this command, select a point or other "
+                        "entity from an linked part, or make a link "
+                        "group the active group."));
                 break;
             }
 
@@ -907,16 +905,16 @@ void GraphicsWindow::MenuEdit(Command id) {
 
         case Command::SNAP_TO_GRID: {
             if(!SS.GW.LockedInWorkplane()) {
-                Error("No workplane is active. Activate a workplane "
-                      "(with Sketch -> In Workplane) to define the plane "
-                      "for the snap grid.");
+                Error(_("No workplane is active. Activate a workplane "
+                        "(with Sketch -> In Workplane) to define the plane "
+                        "for the snap grid."));
                 break;
             }
             SS.GW.GroupSelection();
             if(SS.GW.gs.points == 0 && SS.GW.gs.constraintLabels == 0) {
-                Error("Can't snap these items to grid; select points, "
-                      "text comments, or constraints with a label. "
-                      "To snap a line, select its endpoints.");
+                Error(_("Can't snap these items to grid; select points, "
+                        "text comments, or constraints with a label. "
+                        "To snap a line, select its endpoints."));
                 break;
             }
             SS.UndoRemember();
@@ -979,15 +977,15 @@ void GraphicsWindow::MenuRequest(Command id) {
             } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
                 // The group's default workplane
                 g->activeWorkplane = g->h.entity(0);
-                Message("No workplane selected. Activating default workplane "
-                        "for this group.");
+                Message(_("No workplane selected. Activating default workplane "
+                          "for this group."));
             }
 
             if(!SS.GW.LockedInWorkplane()) {
-                Error("No workplane is selected, and the active group does "
-                      "not have a default workplane. Try selecting a "
-                      "workplane, or activating a sketch-in-new-workplane "
-                      "group.");
+                Error(_("No workplane is selected, and the active group does "
+                        "not have a default workplane. Try selecting a "
+                        "workplane, or activating a sketch-in-new-workplane "
+                        "group."));
                 break;
             }
             // Align the view with the selected workplane
@@ -1008,9 +1006,9 @@ void GraphicsWindow::MenuRequest(Command id) {
             if(SS.GW.gs.n == 1 && SS.GW.gs.points == 1) {
                 SS.GW.MakeTangentArc();
             } else if(SS.GW.gs.n != 0) {
-                Error("Bad selection for tangent arc at point. Select a "
-                      "single point, or select nothing to set up arc "
-                      "parameters.");
+                Error(_("Bad selection for tangent arc at point. Select a "
+                        "single point, or select nothing to set up arc "
+                        "parameters."));
             } else {
                 SS.TW.GoToScreen(TextWindow::Screen::TANGENT_ARC);
                 SS.GW.ForceTextWindowShown();
@@ -1019,15 +1017,16 @@ void GraphicsWindow::MenuRequest(Command id) {
             }
             break;
 
-        case Command::ARC: s = "click point on arc (draws anti-clockwise)"; goto c;
-        case Command::DATUM_POINT: s = "click to place datum point"; goto c;
-        case Command::LINE_SEGMENT: s = "click first point of line segment"; goto c;
-        case Command::CONSTR_SEGMENT: s = "click first point of construction line segment"; goto c;
-        case Command::CUBIC: s = "click first point of cubic segment"; goto c;
-        case Command::CIRCLE: s = "click center of circle"; goto c;
-        case Command::WORKPLANE: s = "click origin of workplane"; goto c;
-        case Command::RECTANGLE: s = "click one corner of rectangle"; goto c;
-        case Command::TTF_TEXT: s = "click top left of text"; goto c;
+        case Command::ARC: s = _("click point on arc (draws anti-clockwise)"); goto c;
+        case Command::DATUM_POINT: s = _("click to place datum point"); goto c;
+        case Command::LINE_SEGMENT: s = _("click first point of line segment"); goto c;
+        case Command::CONSTR_SEGMENT:
+            s = _("click first point of construction line segment"); goto c;
+        case Command::CUBIC: s = _("click first point of cubic segment"); goto c;
+        case Command::CIRCLE: s = _("click center of circle"); goto c;
+        case Command::WORKPLANE: s = _("click origin of workplane"); goto c;
+        case Command::RECTANGLE: s = _("click one corner of rectangle"); goto c;
+        case Command::TTF_TEXT: s = _("click top left of text"); goto c;
 c:
             SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
             SS.GW.pending.command = id;
@@ -1040,8 +1039,8 @@ c:
             SS.UndoRemember();
             SS.GW.GroupSelection();
             if(SS.GW.gs.entities == 0) {
-                Error("No entities are selected. Select entities before "
-                      "trying to toggle their construction state.");
+                Error(_("No entities are selected. Select entities before "
+                        "trying to toggle their construction state."));
             }
             int i;
             for(i = 0; i < SS.GW.gs.entities; i++) {

@@ -775,7 +775,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 SS.MarkGroupDirtyByEntity(gs.entity[0]);
                 ClearSelection();
             } else {
-                Error("Cannot add spline point: maximum number of points reached.");
+                Error(_("Cannot add spline point: maximum number of points reached."));
             }
             break;
         }
@@ -945,14 +945,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
                     pending.request = hr;
                     pending.point = hr.entity(2);
-                    pending.description = "click next point of line, or press Esc";
+                    pending.description = _("click next point of line, or press Esc");
                     SK.GetEntity(pending.point)->PointForceTo(v);
                     break;
 
                 case Command::RECTANGLE: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw rectangle in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw rectangle in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearSuper();
                         break;
                     }
@@ -978,7 +978,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
-                    pending.description = "click to place other corner of rectangle";
+                    pending.description = _("click to place other corner of rectangle");
                     hr = lns[0];
                     break;
                 }
@@ -998,13 +998,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_RADIUS;
                     pending.circle = hr.entity(0);
-                    pending.description = "click to set radius";
+                    pending.description = _("click to set radius");
                     break;
 
                 case Command::ARC: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw arc in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw arc in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearPending();
                         break;
                     }
@@ -1021,7 +1021,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_ARC_POINT;
                     pending.point = hr.entity(3);
-                    pending.description = "click to place point";
+                    pending.description = _("click to place point");
                     break;
                 }
                 case Command::CUBIC:
@@ -1036,13 +1036,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_CUBIC_POINT;
                     pending.point = hr.entity(4);
-                    pending.description = "click next point of cubic, or press Esc";
+                    pending.description = _("click next point of cubic, or press Esc");
                     break;
 
                 case Command::WORKPLANE:
                     if(LockedInWorkplane()) {
-                        Error("Sketching in a workplane already; sketch in 3d before "
-                              "creating new workplane.");
+                        Error(_("Sketching in a workplane already; sketch in 3d before "
+                                "creating new workplane."));
                         ClearSuper();
                         break;
                     }
@@ -1057,8 +1057,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                 case Command::TTF_TEXT: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw text in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw text in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearSuper();
                         break;
                     }
@@ -1072,7 +1072,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = hr.entity(2);
-                    pending.description = "click to place bottom left of text";
+                    pending.description = _("click to place bottom left of text");
                     break;
                 }
 
@@ -1083,7 +1083,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     c.workplane   = SS.GW.ActiveWorkplane();
                     c.type        = Constraint::Type::COMMENT;
                     c.disp.offset = v;
-                    c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
+                    c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
@@ -1196,7 +1196,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
             pending.request = hr;
             pending.point = hr.entity(2);
-            pending.description = "click next point of line, or press Esc";
+            pending.description = _("click next point of line, or press Esc");
 
             break;
         }

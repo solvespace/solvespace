@@ -234,8 +234,7 @@ void GraphicsWindow::ParametricCurve::ConstrainPointIfCoincident(hEntity hpt) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::MakeTangentArc() {
     if(!LockedInWorkplane()) {
-        Error("Must be sketching in workplane to create tangent "
-              "arc.");
+        Error(_("Must be sketching in workplane to create tangent arc."));
         return;
     }
 
@@ -282,9 +281,9 @@ void GraphicsWindow::MakeTangentArc() {
         }
     }
     if(c != 2) {
-        Error("To create a tangent arc, select a point where two "
-              "non-construction lines or circles in this group and "
-              "workplane join.");
+        Error(_("To create a tangent arc, select a point where two "
+                "non-construction lines or circles in this group and "
+                "workplane join."));
         return;
     }
 
@@ -369,9 +368,9 @@ void GraphicsWindow::MakeTangentArc() {
         t[0] > 0.99 || t[1] > 0.99 ||
         isnan(t[0]) || isnan(t[1]))
     {
-        Error("Couldn't round this corner. Try a smaller radius, or try "
-              "creating the desired geometry by hand with tangency "
-              "constraints.");
+        Error(_("Couldn't round this corner. Try a smaller radius, or try "
+                "creating the desired geometry by hand with tangency "
+                "constraints."));
         return;
     }
 
@@ -573,7 +572,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     } else if(e->type == Entity::Type::CUBIC || e->type == Entity::Type::CUBIC_PERIODIC) {
         ret = SplitCubic(he, pinter);
     } else {
-        Error("Couldn't split this entity; lines, circles, or cubics only.");
+        Error(_("Couldn't split this entity; lines, circles, or cubics only."));
         return Entity::NO_ENTITY;
     }
 
@@ -599,7 +598,7 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
 
 void GraphicsWindow::SplitLinesOrCurves() {
     if(!LockedInWorkplane()) {
-        Error("Must be sketching in workplane to split.");
+        Error(_("Must be sketching in workplane to split."));
         return;
     }
 
@@ -609,8 +608,8 @@ void GraphicsWindow::SplitLinesOrCurves() {
                       gs.cubics +
                       gs.periodicCubics) == 2))
     {
-        Error("Select two entities that intersect each other (e.g. two lines "
-              "or two circles or a circle and a line).");
+        Error(_("Select two entities that intersect each other (e.g. two lines "
+                "or two circles or a circle and a line)."));
         return;
     }
 
@@ -653,7 +652,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
             Constraint::ConstrainCoincident(hia, hib);
         }
     } else {
-        Error("Can't split; no intersection found.");
+        Error(_("Can't split; no intersection found."));
     }
 
     // All done, clean up and regenerate.

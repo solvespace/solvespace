@@ -75,7 +75,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
                 if(v > LENGTH_EPS) {
                     SS.GW.scale = v;
                 } else {
-                    Error("Scale cannot be zero or negative.");
+                    Error(_("Scale cannot be zero or negative."));
                 }
             }
             break;
@@ -87,7 +87,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
                 pt = pt.ScaledBy(SS.MmPerUnit());
                 SS.GW.offset = pt.ScaledBy(-1);
             } else {
-                Error("Bad format: specify x, y, z");
+                Error(_("Bad format: specify x, y, z"));
             }
             break;
         }
@@ -96,7 +96,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
         case Edit::VIEW_PROJ_UP: {
             Vector pt;
             if(sscanf(s, "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) != 3) {
-                Error("Bad format: specify x, y, z");
+                Error(_("Bad format: specify x, y, z"));
                 break;
             }
             if(edit.meaning == Edit::VIEW_PROJ_RIGHT) {

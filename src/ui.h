@@ -32,10 +32,31 @@ bool SetLocale(const std::string &name);
 bool SetLocale(uint16_t lcid);
 
 const std::string &Translate(const char *msgid);
+const std::string &Translate(const char *msgctxt, const char *msgid);
 const std::string &TranslatePlural(const char *msgid, unsigned n);
+const std::string &TranslatePlural(const char *msgctxt, const char *msgid, unsigned n);
 
-inline const char *N_(const char *msgid) { return msgid; }
-inline const char *_(const char *msgid) { return Translate(msgid).c_str(); }
+inline const char *N_(const char *msgid) {
+    return msgid;
+}
+inline const char *CN_(const char *msgctxt, const char *msgid) {
+    return msgid;
+}
+#if defined(LIBRARY)
+inline const char *_(const char *msgid) {
+    return msgid;
+}
+inline const char *C_(const char *msgctxt, const char *msgid) {
+    return msgid;
+}
+#else
+inline const char *_(const char *msgid) {
+    return Translate(msgid).c_str();
+}
+inline const char *C_(const char *msgctxt, const char *msgid) {
+    return Translate(msgctxt, msgid).c_str();
+}
+#endif
 
 // This table describes the top-level menus in the graphics winodw.
 enum class Command : uint32_t {

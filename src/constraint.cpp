@@ -7,47 +7,47 @@
 #include "solvespace.h"
 
 std::string Constraint::DescriptionString() const {
-    const char *s;
+    std::string s;
     switch(type) {
-        case Type::POINTS_COINCIDENT:     s = "pts-coincident"; break;
-        case Type::PT_PT_DISTANCE:        s = "pt-pt-distance"; break;
-        case Type::PT_LINE_DISTANCE:      s = "pt-line-distance"; break;
-        case Type::PT_PLANE_DISTANCE:     s = "pt-plane-distance"; break;
-        case Type::PT_FACE_DISTANCE:      s = "pt-face-distance"; break;
-        case Type::PROJ_PT_DISTANCE:      s = "proj-pt-pt-distance"; break;
-        case Type::PT_IN_PLANE:           s = "pt-in-plane"; break;
-        case Type::PT_ON_LINE:            s = "pt-on-line"; break;
-        case Type::PT_ON_FACE:            s = "pt-on-face"; break;
-        case Type::EQUAL_LENGTH_LINES:    s = "eq-length"; break;
-        case Type::EQ_LEN_PT_LINE_D:      s = "eq-length-and-pt-ln-dist"; break;
-        case Type::EQ_PT_LN_DISTANCES:    s = "eq-pt-line-distances"; break;
-        case Type::LENGTH_RATIO:          s = "length-ratio"; break;
-        case Type::LENGTH_DIFFERENCE:     s = "length-difference"; break;
-        case Type::SYMMETRIC:             s = "symmetric"; break;
-        case Type::SYMMETRIC_HORIZ:       s = "symmetric-h"; break;
-        case Type::SYMMETRIC_VERT:        s = "symmetric-v"; break;
-        case Type::SYMMETRIC_LINE:        s = "symmetric-line"; break;
-        case Type::AT_MIDPOINT:           s = "at-midpoint"; break;
-        case Type::HORIZONTAL:            s = "horizontal"; break;
-        case Type::VERTICAL:              s = "vertical"; break;
-        case Type::DIAMETER:              s = "diameter"; break;
-        case Type::PT_ON_CIRCLE:          s = "pt-on-circle"; break;
-        case Type::SAME_ORIENTATION:      s = "same-orientation"; break;
-        case Type::ANGLE:                 s = "angle"; break;
-        case Type::PARALLEL:              s = "parallel"; break;
-        case Type::ARC_LINE_TANGENT:      s = "arc-line-tangent"; break;
-        case Type::CUBIC_LINE_TANGENT:    s = "cubic-line-tangent"; break;
-        case Type::CURVE_CURVE_TANGENT:   s = "curve-curve-tangent"; break;
-        case Type::PERPENDICULAR:         s = "perpendicular"; break;
-        case Type::EQUAL_RADIUS:          s = "eq-radius"; break;
-        case Type::EQUAL_ANGLE:           s = "eq-angle"; break;
-        case Type::EQUAL_LINE_ARC_LEN:    s = "eq-line-len-arc-len"; break;
-        case Type::WHERE_DRAGGED:         s = "lock-where-dragged"; break;
-        case Type::COMMENT:               s = "comment"; break;
-        default:                    s = "???"; break;
+        case Type::POINTS_COINCIDENT:   s = C_("constr-name", "pts-coincident"); break;
+        case Type::PT_PT_DISTANCE:      s = C_("constr-name", "pt-pt-distance"); break;
+        case Type::PT_LINE_DISTANCE:    s = C_("constr-name", "pt-line-distance"); break;
+        case Type::PT_PLANE_DISTANCE:   s = C_("constr-name", "pt-plane-distance"); break;
+        case Type::PT_FACE_DISTANCE:    s = C_("constr-name", "pt-face-distance"); break;
+        case Type::PROJ_PT_DISTANCE:    s = C_("constr-name", "proj-pt-pt-distance"); break;
+        case Type::PT_IN_PLANE:         s = C_("constr-name", "pt-in-plane"); break;
+        case Type::PT_ON_LINE:          s = C_("constr-name", "pt-on-line"); break;
+        case Type::PT_ON_FACE:          s = C_("constr-name", "pt-on-face"); break;
+        case Type::EQUAL_LENGTH_LINES:  s = C_("constr-name", "eq-length"); break;
+        case Type::EQ_LEN_PT_LINE_D:    s = C_("constr-name", "eq-length-and-pt-ln-dist"); break;
+        case Type::EQ_PT_LN_DISTANCES:  s = C_("constr-name", "eq-pt-line-distances"); break;
+        case Type::LENGTH_RATIO:        s = C_("constr-name", "length-ratio"); break;
+        case Type::LENGTH_DIFFERENCE:   s = C_("constr-name", "length-difference"); break;
+        case Type::SYMMETRIC:           s = C_("constr-name", "symmetric"); break;
+        case Type::SYMMETRIC_HORIZ:     s = C_("constr-name", "symmetric-h"); break;
+        case Type::SYMMETRIC_VERT:      s = C_("constr-name", "symmetric-v"); break;
+        case Type::SYMMETRIC_LINE:      s = C_("constr-name", "symmetric-line"); break;
+        case Type::AT_MIDPOINT:         s = C_("constr-name", "at-midpoint"); break;
+        case Type::HORIZONTAL:          s = C_("constr-name", "horizontal"); break;
+        case Type::VERTICAL:            s = C_("constr-name", "vertical"); break;
+        case Type::DIAMETER:            s = C_("constr-name", "diameter"); break;
+        case Type::PT_ON_CIRCLE:        s = C_("constr-name", "pt-on-circle"); break;
+        case Type::SAME_ORIENTATION:    s = C_("constr-name", "same-orientation"); break;
+        case Type::ANGLE:               s = C_("constr-name", "angle"); break;
+        case Type::PARALLEL:            s = C_("constr-name", "parallel"); break;
+        case Type::ARC_LINE_TANGENT:    s = C_("constr-name", "arc-line-tangent"); break;
+        case Type::CUBIC_LINE_TANGENT:  s = C_("constr-name", "cubic-line-tangent"); break;
+        case Type::CURVE_CURVE_TANGENT: s = C_("constr-name", "curve-curve-tangent"); break;
+        case Type::PERPENDICULAR:       s = C_("constr-name", "perpendicular"); break;
+        case Type::EQUAL_RADIUS:        s = C_("constr-name", "eq-radius"); break;
+        case Type::EQUAL_ANGLE:         s = C_("constr-name", "eq-angle"); break;
+        case Type::EQUAL_LINE_ARC_LEN:  s = C_("constr-name", "eq-line-len-arc-len"); break;
+        case Type::WHERE_DRAGGED:       s = C_("constr-name", "lock-where-dragged"); break;
+        case Type::COMMENT:             s = C_("constr-name", "comment"); break;
+        default:                        s = "???"; break;
     }
 
-    return ssprintf("c%03x-%s", h.v, s);
+    return ssprintf("c%03x-%s", h.v, s.c_str());
 }
 
 #ifndef LIBRARY
@@ -156,16 +156,15 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::DIAMETER;
                 c.entityA = gs.entity[0];
             } else {
-                Error(
-"Bad selection for distance / diameter constraint. This "
-"constraint can apply to:\n\n"
-"    * two points (distance between points)\n"
-"    * a line segment (length)\n"
-"    * two points and a line segment or normal (projected distance)\n"
-"    * a workplane and a point (minimum distance)\n"
-"    * a line segment and a point (minimum distance)\n"
-"    * a plane face and a point (minimum distance)\n"
-"    * a circle or an arc (diameter)\n");
+                Error(_("Bad selection for distance / diameter constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two points (distance between points)\n"
+                        "    * a line segment (length)\n"
+                        "    * two points and a line segment or normal (projected distance)\n"
+                        "    * a workplane and a point (minimum distance)\n"
+                        "    * a line segment and a point (minimum distance)\n"
+                        "    * a plane face and a point (minimum distance)\n"
+                        "    * a circle or an arc (diameter)\n"));
                 return;
             }
             if(c.type == Type::PT_PT_DISTANCE || c.type == Type::PROJ_PT_DISTANCE) {
@@ -210,13 +209,13 @@ void Constraint::MenuConstrain(Command id) {
                 c.ptA = gs.point[0];
                 c.entityA = gs.face[0];
             } else {
-                Error("Bad selection for on point / curve / plane constraint. "
-                      "This constraint can apply to:\n\n"
-                      "    * two points (points coincident)\n"
-                      "    * a point and a workplane (point in plane)\n"
-                      "    * a point and a line segment (point on line)\n"
-                      "    * a point and a circle or arc (point on curve)\n"
-                      "    * a point and a plane face (point on face)\n");
+                Error(_("Bad selection for on point / curve / plane constraint. "
+                        "This constraint can apply to:\n\n"
+                        "    * two points (points coincident)\n"
+                        "    * a point and a workplane (point in plane)\n"
+                        "    * a point and a line segment (point on line)\n"
+                        "    * a point and a circle or arc (point on curve)\n"
+                        "    * a point and a plane face (point on face)\n"));
                 return;
             }
             AddConstraint(&c);
@@ -272,22 +271,22 @@ void Constraint::MenuConstrain(Command id) {
                     c.entityB = gs.entity[1];
                 }
             } else {
-                Error("Bad selection for equal length / radius constraint. "
-                      "This constraint can apply to:\n\n"
-                      "    * two line segments (equal length)\n"
-                      "    * two line segments and two points "
-                              "(equal point-line distances)\n"
-                      "    * a line segment and two points "
-                              "(equal point-line distances)\n"
-                      "    * a line segment, and a point and line segment "
-                              "(point-line distance equals length)\n"
-                      "    * four line segments or normals "
-                              "(equal angle between A,B and C,D)\n"
-                      "    * three line segments or normals "
-                              "(equal angle between A,B and B,C)\n"
-                      "    * two circles or arcs (equal radius)\n"
-                      "    * a line segment and an arc "
-                              "(line segment length equals arc length)\n");
+                Error(_("Bad selection for equal length / radius constraint. "
+                        "This constraint can apply to:\n\n"
+                        "    * two line segments (equal length)\n"
+                        "    * two line segments and two points "
+                                "(equal point-line distances)\n"
+                        "    * a line segment and two points "
+                                "(equal point-line distances)\n"
+                        "    * a line segment, and a point and line segment "
+                                "(point-line distance equals length)\n"
+                        "    * four line segments or normals "
+                                "(equal angle between A,B and C,D)\n"
+                        "    * three line segments or normals "
+                                "(equal angle between A,B and B,C)\n"
+                        "    * two circles or arcs (equal radius)\n"
+                        "    * a line segment and an arc "
+                                "(line segment length equals arc length)\n"));
                 return;
             }
             if(c.type == Type::EQUAL_ANGLE) {
@@ -311,9 +310,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
             } else {
-                Error("Bad selection for length ratio constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two line segments\n");
+                Error(_("Bad selection for length ratio constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two line segments\n"));
                 return;
             }
 
@@ -328,9 +327,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[0];
                 c.entityB = gs.entity[1];
             } else {
-                Error("Bad selection for length difference constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two line segments\n");
+                Error(_("Bad selection for length difference constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two line segments\n"));
                 return;
             }
 
@@ -354,12 +353,12 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[i];
                 c.entityB = gs.entity[1-i];
             } else {
-                Error("Bad selection for at midpoint constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * a line segment and a point "
-                            "(point at midpoint)\n"
-                      "    * a line segment and a workplane "
-                            "(line's midpoint on plane)\n");
+                Error(_("Bad selection for at midpoint constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * a line segment and a point "
+                              "(point at midpoint)\n"
+                        "    * a line segment and a workplane "
+                              "(line's midpoint on plane)\n"));
                 return;
             }
             AddConstraint(&c);
@@ -412,22 +411,22 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.entity[0];
                 c.type = Type::SYMMETRIC_LINE;
             } else {
-                Error("Bad selection for symmetric constraint. This constraint "
-                      "can apply to:\n\n"
-                      "    * two points or a line segment "
-                          "(symmetric about workplane's coordinate axis)\n"
-                      "    * line segment, and two points or a line segment "
-                          "(symmetric about line segment)\n"
-                      "    * workplane, and two points or a line segment "
-                          "(symmetric about workplane)\n");
+                Error(_("Bad selection for symmetric constraint. This constraint "
+                        "can apply to:\n\n"
+                        "    * two points or a line segment "
+                            "(symmetric about workplane's coordinate axis)\n"
+                        "    * line segment, and two points or a line segment "
+                            "(symmetric about line segment)\n"
+                        "    * workplane, and two points or a line segment "
+                            "(symmetric about workplane)\n"));
                 return;
             }
             if(c.entityA.v == Entity::NO_ENTITY.v) {
                 // Horizontal / vertical symmetry, implicit symmetry plane
                 // normal to the workplane
                 if(c.workplane.v == Entity::FREE_IN_3D.v) {
-                    Error("A workplane must be active when constraining "
-                          "symmetric without an explicit symmetry plane.");
+                    Error(_("A workplane must be active when constraining "
+                            "symmetric without an explicit symmetry plane."));
                     return;
                 }
                 Vector pa = SK.GetEntity(c.ptA)->PointGetNum();
@@ -456,8 +455,8 @@ void Constraint::MenuConstrain(Command id) {
         case Command::HORIZONTAL: {
             hEntity ha, hb;
             if(c.workplane.v == Entity::FREE_IN_3D.v) {
-                Error("Activate a workplane (with Sketch -> In Workplane) before "
-                      "applying a horizontal or vertical constraint.");
+                Error(_("Activate a workplane (with Sketch -> In Workplane) before "
+                        "applying a horizontal or vertical constraint."));
                 return;
             }
             if(gs.lineSegments == 1 && gs.n == 1) {
@@ -469,10 +468,10 @@ void Constraint::MenuConstrain(Command id) {
                 ha = c.ptA = gs.point[0];
                 hb = c.ptB = gs.point[1];
             } else {
-                Error("Bad selection for horizontal / vertical constraint. "
-                      "This constraint can apply to:\n\n"
-                      "    * two points\n"
-                      "    * a line segment\n");
+                Error(_("Bad selection for horizontal / vertical constraint. "
+                        "This constraint can apply to:\n\n"
+                        "    * two points\n"
+                        "    * a line segment\n"));
                 return;
             }
             if(id == Command::HORIZONTAL) {
@@ -490,9 +489,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.anyNormal[0];
                 c.entityB = gs.anyNormal[1];
             } else {
-                Error("Bad selection for same orientation constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two normals\n");
+                Error(_("Bad selection for same orientation constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two normals\n"));
                 return;
             }
             SS.UndoRemember();
@@ -542,7 +541,7 @@ void Constraint::MenuConstrain(Command id) {
                     break;
                 }
             }
-            Error("Must select an angle constraint.");
+            Error(_("Must select an angle constraint."));
             return;
 
         case Command::REFERENCE:
@@ -554,7 +553,7 @@ void Constraint::MenuConstrain(Command id) {
                     break;
                 }
             }
-            Error("Must select a constraint with associated label.");
+            Error(_("Must select a constraint with associated label."));
             return;
 
         case Command::ANGLE:
@@ -565,11 +564,11 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityB = gs.vector[1];
                 c.valA = 0;
             } else {
-                Error("Bad selection for angle constraint. This constraint "
-                      "can apply to:\n\n"
-                      "    * two line segments\n"
-                      "    * a line segment and a normal\n"
-                      "    * two normals\n");
+                Error(_("Bad selection for angle constraint. This constraint "
+                        "can apply to:\n\n"
+                        "    * two line segments\n"
+                        "    * a line segment and a normal\n"
+                        "    * two normals\n"));
                 return;
             }
 
@@ -622,9 +621,9 @@ void Constraint::MenuConstrain(Command id) {
                 } else if(l0.Equals(a2) || l1.Equals(a2)) {
                     c.other = true;
                 } else {
-                    Error("The tangent arc and line segment must share an "
-                          "endpoint. Constrain them with Constrain -> "
-                          "On Point before constraining tangent.");
+                    Error(_("The tangent arc and line segment must share an "
+                            "endpoint. Constrain them with Constrain -> "
+                            "On Point before constraining tangent."));
                     return;
                 }
                 c.type = Type::ARC_LINE_TANGENT;
@@ -646,9 +645,9 @@ void Constraint::MenuConstrain(Command id) {
                 } else if(l0.Equals(af) || l1.Equals(af)) {
                     c.other = true;
                 } else {
-                    Error("The tangent cubic and line segment must share an "
-                          "endpoint. Constrain them with Constrain -> "
-                          "On Point before constraining tangent.");
+                    Error(_("The tangent cubic and line segment must share an "
+                            "endpoint. Constrain them with Constrain -> "
+                            "On Point before constraining tangent."));
                     return;
                 }
                 c.type = Type::CUBIC_LINE_TANGENT;
@@ -656,7 +655,7 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityB = line->h;
             } else if(gs.cubics + gs.arcs == 2 && gs.n == 2) {
                 if(!SS.GW.LockedInWorkplane()) {
-                    Error("Curve-curve tangency must apply in workplane.");
+                    Error(_("Curve-curve tangency must apply in workplane."));
                     return;
                 }
                 Entity *eA = SK.GetEntity(gs.entity[0]),
@@ -674,22 +673,22 @@ void Constraint::MenuConstrain(Command id) {
                 } else if(af.Equals(bf)) {
                     c.other = true; c.other2 = true;
                 } else {
-                    Error("The curves must share an endpoint. Constrain them "
-                          "with Constrain -> On Point before constraining "
-                          "tangent.");
+                    Error(_("The curves must share an endpoint. Constrain them "
+                            "with Constrain -> On Point before constraining "
+                            "tangent."));
                     return;
                 }
                 c.type = Type::CURVE_CURVE_TANGENT;
                 c.entityA = eA->h;
                 c.entityB = eB->h;
             } else {
-                Error("Bad selection for parallel / tangent constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two line segments (parallel)\n"
-                      "    * a line segment and a normal (parallel)\n"
-                      "    * two normals (parallel)\n"
-                      "    * two line segments, arcs, or beziers, that share "
-                            "an endpoint (tangent)\n");
+                Error(_("Bad selection for parallel / tangent constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two line segments (parallel)\n"
+                        "    * a line segment and a normal (parallel)\n"
+                        "    * two normals (parallel)\n"
+                        "    * two line segments, arcs, or beziers, that share "
+                              "an endpoint (tangent)\n"));
                 return;
             }
             AddConstraint(&c);
@@ -701,11 +700,11 @@ void Constraint::MenuConstrain(Command id) {
                 c.entityA = gs.vector[0];
                 c.entityB = gs.vector[1];
             } else {
-                Error("Bad selection for perpendicular constraint. This "
-                      "constraint can apply to:\n\n"
-                      "    * two line segments\n"
-                      "    * a line segment and a normal\n"
-                      "    * two normals\n");
+                Error(_("Bad selection for perpendicular constraint. This "
+                        "constraint can apply to:\n\n"
+                        "    * two line segments\n"
+                        "    * a line segment and a normal\n"
+                        "    * two normals\n"));
                 return;
             }
             AddConstraint(&c);
@@ -716,9 +715,9 @@ void Constraint::MenuConstrain(Command id) {
                 c.type = Type::WHERE_DRAGGED;
                 c.ptA = gs.point[0];
             } else {
-                Error("Bad selection for lock point where dragged constraint. "
-                      "This constraint can apply to:\n\n"
-                      "    * a point\n");
+                Error(_("Bad selection for lock point where dragged constraint. "
+                        "This constraint can apply to:\n\n"
+                        "    * a point\n"));
                 return;
             }
             AddConstraint(&c);
@@ -727,7 +726,7 @@ void Constraint::MenuConstrain(Command id) {
         case Command::COMMENT:
             SS.GW.pending.operation = GraphicsWindow::Pending::COMMAND;
             SS.GW.pending.command = Command::COMMENT;
-            SS.GW.pending.description = "click center of comment text";
+            SS.GW.pending.description = _("click center of comment text");
             SS.ScheduleShowTW();
             break;
 

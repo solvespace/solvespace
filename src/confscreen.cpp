@@ -325,7 +325,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             if(sscanf(s, "%lf, %lf, %lf", &x, &y, &z)==3) {
                 SS.lightDir[edit.i] = Vector::From(x, y, z);
             } else {
-                Error("Bad format: specify coordinates as x, y, z");
+                Error(_("Bad format: specify coordinates as x, y, z"));
             }
             InvalidateGraphics();
             break;
@@ -336,7 +336,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
                 rgb = rgb.ClampWithin(0, 1);
                 SS.modelColor[edit.i] = RGBf(rgb.x, rgb.y, rgb.z);
             } else {
-                Error("Bad format: specify color as r, g, b");
+                Error(_("Bad format: specify color as r, g, b"));
             }
             break;
         }
@@ -361,8 +361,8 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
         case Edit::CAMERA_TANGENT: {
             SS.cameraTangent = (min(2.0, max(0.0, atof(s))))/1000.0;
             if(!SS.usePerspectiveProj) {
-                Message("The perspective factor will have no effect until you "
-                        "enable View -> Use Perspective Projection.");
+                Message(_("The perspective factor will have no effect until you "
+                          "enable View -> Use Perspective Projection."));
             }
             InvalidateGraphics();
             break;
@@ -375,7 +375,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
         case Edit::DIGITS_AFTER_DECIMAL: {
             int v = atoi(s);
             if(v < 0 || v > 8) {
-                Error("Specify between 0 and 8 digits after the decimal.");
+                Error(_("Specify between 0 and 8 digits after the decimal."));
             } else {
                 SS.SetUnitDigitsAfterDecimal(v);
             }
@@ -387,7 +387,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             if(e) {
                 double ev = e->Eval();
                 if(fabs(ev) < 0.001 || isnan(ev)) {
-                    Error("Export scale must not be zero!");
+                    Error(_("Export scale must not be zero!"));
                 } else {
                     SS.exportScale = (float)ev;
                 }
@@ -399,7 +399,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             if(e) {
                 double ev = SS.ExprToMm(e);
                 if(isnan(ev) || ev < 0) {
-                    Error("Cutter radius offset must not be negative!");
+                    Error(_("Cutter radius offset must not be negative!"));
                 } else {
                     SS.exportOffset = (float)ev;
                 }
@@ -453,10 +453,10 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
                     SS.autosaveInterval = interval;
                     SetAutosaveTimerFor(interval);
                 } else {
-                    Error("Bad value: autosave interval should be positive");
+                    Error(_("Bad value: autosave interval should be positive"));
                 }
             } else {
-                Error("Bad format: specify interval in integral minutes");
+                Error(_("Bad format: specify interval in integral minutes"));
             }
             break;
         }

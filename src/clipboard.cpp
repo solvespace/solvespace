@@ -239,8 +239,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
 
 void GraphicsWindow::MenuClipboard(Command id) {
     if(id != Command::DELETE && !SS.GW.LockedInWorkplane()) {
-        Error("Cut, paste, and copy work only in a workplane.\n\n"
-              "Activate one with Sketch -> In Workplane.");
+        Error(_("Cut, paste, and copy work only in a workplane.\n\n"
+                "Activate one with Sketch -> In Workplane."));
         return;
     }
 
@@ -256,7 +256,7 @@ void GraphicsWindow::MenuClipboard(Command id) {
 
         case Command::PASTE_TRANSFORM: {
             if(SS.clipboard.r.n == 0) {
-                Error("Clipboard is empty; nothing to paste.");
+                Error(_("Clipboard is empty; nothing to paste."));
                 break;
             }
 
@@ -303,7 +303,7 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
             if(v > 0) {
                 shown.paste.times = v;
             } else {
-                Error("Number of copies to paste must be at least one.");
+                Error(_("Number of copies to paste must be at least one."));
             }
             break;
         }
@@ -319,7 +319,7 @@ bool TextWindow::EditControlDoneForPaste(const char *s) {
             if(fabs(v) > 1e-6) {
                 shown.paste.scale = v;
             } else {
-                Error("Scale cannot be zero.");
+                Error(_("Scale cannot be zero."));
             }
             break;
         }
@@ -357,7 +357,7 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
                 Entity *e = SK.GetEntity(SS.GW.gs.point[0]);
                 SS.TW.shown.paste.origin = e->PointGetNum();
             } else {
-                Error("Select one point to define origin of rotation.");
+                Error(_("Select one point to define origin of rotation."));
             }
             SS.GW.ClearSelection();
             break;
@@ -369,7 +369,7 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
                 SS.TW.shown.paste.trans =
                     (pb->PointGetNum()).Minus(pa->PointGetNum());
             } else {
-                Error("Select two points to define translation vector.");
+                Error(_("Select two points to define translation vector."));
             }
             SS.GW.ClearSelection();
             break;
@@ -379,16 +379,16 @@ void TextWindow::ScreenPasteTransformed(int link, uint32_t v) {
                SS.TW.shown.paste.trans.Magnitude() < LENGTH_EPS &&
                SS.TW.shown.paste.times != 1)
             {
-                Message("Transformation is identity. So all copies will be "
-                        "exactly on top of each other.");
+                Message(_("Transformation is identity. So all copies will be "
+                          "exactly on top of each other."));
             }
             if(SS.TW.shown.paste.times*SS.clipboard.r.n > 100) {
-                Error("Too many items to paste; split this into smaller "
-                      "pastes.");
+                Error(_("Too many items to paste; split this into smaller "
+                        "pastes."));
                 break;
             }
             if(!SS.GW.LockedInWorkplane()) {
-                Error("No workplane active.");
+                Error(_("No workplane active."));
                 break;
             }
             Entity *wrkpl  = SK.GetEntity(SS.GW.ActiveWorkplane());

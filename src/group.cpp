@@ -86,12 +86,12 @@ void Group::MenuGroup(Command id) {
     switch(id) {
         case Command::GROUP_3D:
             g.type = Type::DRAWING_3D;
-            g.name = "sketch-in-3d";
+            g.name = C_("group-name", "sketch-in-3d");
             break;
 
         case Command::GROUP_WRKPL:
             g.type = Type::DRAWING_WORKPLANE;
-            g.name = "sketch-in-plane";
+            g.name = C_("group-name", "sketch-in-plane");
             if(gs.points == 1 && gs.n == 1) {
                 g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;
 
@@ -142,28 +142,28 @@ void Group::MenuGroup(Command id) {
                     } else ssassert(false, "Unexpected workplane subtype");
                 }
             } else {
-                Error("Bad selection for new sketch in workplane. This "
-                      "group can be created with:\n\n"
-                      "    * a point (through the point, orthogonal to coordinate axes)\n"
-                      "    * a point and two line segments (through the point, "
-                             "parallel to the lines)\n"
-                      "    * a workplane (copy of the workplane)\n");
+                Error(_("Bad selection for new sketch in workplane. This "
+                        "group can be created with:\n\n"
+                        "    * a point (through the point, orthogonal to coordinate axes)\n"
+                        "    * a point and two line segments (through the point, "
+                               "parallel to the lines)\n"
+                        "    * a workplane (copy of the workplane)\n"));
                 return;
             }
             break;
 
         case Command::GROUP_EXTRUDE:
             if(!SS.GW.LockedInWorkplane()) {
-                Error("Activate a workplane (Sketch -> In Workplane) before "
-                      "extruding. The sketch will be extruded normal to the "
-                      "workplane.");
+                Error(_("Activate a workplane (Sketch -> In Workplane) before "
+                        "extruding. The sketch will be extruded normal to the "
+                        "workplane."));
                 return;
             }
             g.type = Type::EXTRUDE;
             g.opA = SS.GW.activeGroup;
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.subtype = Subtype::ONE_SIDED;
-            g.name = "extrude";
+            g.name = C_("group-name", "extrude");
             break;
 
         case Command::GROUP_LATHE:
@@ -175,17 +175,17 @@ void Group::MenuGroup(Command id) {
                 g.predef.entityB = gs.entity[0];
                 // since a line segment is a vector
             } else {
-                Error("Bad selection for new lathe group. This group can "
-                      "be created with:\n\n"
-                      "    * a point and a line segment or normal "
-                               "(revolved about an axis parallel to line / "
-                               "normal, through point)\n"
-                      "    * a line segment (revolved about line segment)\n");
+                Error(_("Bad selection for new lathe group. This group can "
+                        "be created with:\n\n"
+                        "    * a point and a line segment or normal "
+                                 "(revolved about an axis parallel to line / "
+                                 "normal, through point)\n"
+                        "    * a line segment (revolved about line segment)\n"));
                 return;
             }
             g.type = Type::LATHE;
             g.opA = SS.GW.activeGroup;
-            g.name = "lathe";
+            g.name = C_("group-name", "lathe");
             break;
 
         case Command::GROUP_ROT: {
@@ -198,20 +198,20 @@ void Group::MenuGroup(Command id) {
                 g.predef.origin = gs.point[0];
                 g.predef.entityB = gs.vector[0];
             } else {
-                Error("Bad selection for new rotation. This group can "
-                      "be created with:\n\n"
-                      "    * a point, while locked in workplane (rotate "
-                            "in plane, about that point)\n"
-                      "    * a point and a line or a normal (rotate about "
-                            "an axis through the point, and parallel to "
-                            "line / normal)\n");
+                Error(_("Bad selection for new rotation. This group can "
+                        "be created with:\n\n"
+                        "    * a point, while locked in workplane (rotate "
+                              "in plane, about that point)\n"
+                        "    * a point and a line or a normal (rotate about "
+                              "an axis through the point, and parallel to "
+                              "line / normal)\n"));
                 return;
             }
             g.type = Type::ROTATE;
             g.opA = SS.GW.activeGroup;
             g.valA = 3;
             g.subtype = Subtype::ONE_SIDED;
-            g.name = "rotate";
+            g.name = C_("group-name", "rotate");
             break;
         }
 
@@ -222,7 +222,7 @@ void Group::MenuGroup(Command id) {
             g.subtype = Subtype::ONE_SIDED;
             g.predef.entityB = SS.GW.ActiveWorkplane();
             g.activeWorkplane = SS.GW.ActiveWorkplane();
-            g.name = "translate";
+            g.name = C_("group-name", "translate");
             break;
 
         case Command::GROUP_LINK: {
@@ -254,7 +254,7 @@ void Group::MenuGroup(Command id) {
             if(groupName.length() > 0) {
                 g.name = groupName;
             } else {
-                g.name = "link";
+                g.name = C_("group-name", "link");
             }
 
             g.meshCombine = CombineAs::ASSEMBLE;
@@ -336,7 +336,7 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
 
 std::string Group::DescriptionString() {
     if(name.empty()) {
-        return ssprintf("g%03x-(unnamed)", h.v);
+        return ssprintf("g%03x-%s", h.v, _("(unnamed)"));
     } else {
         return ssprintf("g%03x-%s", h.v, name.c_str());
     }
