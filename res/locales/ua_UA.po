@@ -1,0 +1,638 @@
+# Ukrainian translations for SolveSpace package.
+# Copyright (C) 2017 the SolveSpace authors
+# This file is distributed under the same license as the SolveSpace package.
+# AppSoft4 <appsoft@ua.fm>, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: SolveSpace 3.0\n"
+"Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
+"POT-Creation-Date: 2017-01-05 12:33+0000\n"
+"PO-Revision-Date: 2017-01-05 10:30+0000\n"
+"Last-Translator: appsoft@ua.fm\n"
+"Language-Team: OpenOrienteeringUkraine\n"
+"Language: uk_UA\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:29
+msgid "&File"
+msgstr "&Файл"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:30
+msgid "&New"
+msgstr "&Новий"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:31
+msgid "&Open..."
+msgstr "&Відкрити..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:32
+msgid "Open &Recent"
+msgstr "Відкрити &Недавні"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:33
+msgid "&Save"
+msgstr "&Зберегти"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:34
+msgid "Save &As..."
+msgstr "Зберегти &Як..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:36
+msgid "Export &Image..."
+msgstr "Експортувати &Зображення..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:37
+msgid "Export 2d &View..."
+msgstr "Експортувати 2d &Вигляд..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:38
+msgid "Export 2d &Section..."
+msgstr "Експортувати 2d &Секцію..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:39
+msgid "Export 3d &Wireframe..."
+msgstr "Експортувати 3d &Скелет..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:40
+msgid "Export Triangle &Mesh..."
+msgstr "Експортувати Тригранний &Каркас..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:41
+msgid "Export &Surfaces..."
+msgstr "Експортувати &Поверхні..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:42
+msgid "Im&port..."
+msgstr "Ім&портувати..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:45
+msgid "E&xit"
+msgstr "В&ихід"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:48
+msgid "&Edit"
+msgstr "&Редагувати"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:49
+msgid "&Undo"
+msgstr "&Відмінити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:50
+msgid "&Redo"
+msgstr "&Повторити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:51
+msgid "Re&generate All"
+msgstr "Ре&генерувати Все"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:53
+msgid "Snap Selection to &Grid"
+msgstr "Прикріпити Виділене до &Сітки"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:54
+msgid "Rotate Imported &90°"
+msgstr "Обернути Імпортоване на &90°"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:56
+msgid "Cu&t"
+msgstr "Ви&різати"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:57
+msgid "&Copy"
+msgstr "&Копіювати"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:58
+msgid "&Paste"
+msgstr "&Вставити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:59
+msgid "Paste &Transformed..."
+msgstr "Вставити &Трансфмованим..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:60
+msgid "&Delete"
+msgstr "&Delete"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:62
+msgid "Select &Edge Chain"
+msgstr "Виділити Ланцуг &Ребер"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:63
+msgid "Select &All"
+msgstr "Виділити &Усе"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:64
+msgid "&Unselect All"
+msgstr "&Зняти Виділення з Усього"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:66
+msgid "&View"
+msgstr "&View"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:67
+msgid "Zoom &In"
+msgstr "На&близити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:68
+msgid "Zoom &Out"
+msgstr "Від&далити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:69
+msgid "Zoom To &Fit"
+msgstr "Умістити на &Екрані"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:71
+msgid "Align View to &Workplane"
+msgstr "Вирівняти Вигляд до Робочої &Площини"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:72
+msgid "Nearest &Ortho View"
+msgstr "Найближчий &Ортогональний Вигляд"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:73
+msgid "Nearest &Isometric View"
+msgstr "Найближчий &Ізометричний Вигляд"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:74
+msgid "&Center View At Point"
+msgstr "&Центрувати Вигляд На Точці"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:76
+msgid "Show Snap &Grid"
+msgstr "Показати &Сітку Прикріплення"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:77
+msgid "Use &Perspective Projection"
+msgstr "Використовувати &Перспективну Проекцію"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:80
+msgid "Show Menu &Bar"
+msgstr "Показати Панель &Меню"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:82
+msgid "Show &Toolbar"
+msgstr "Показати Панель &Інструментів"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:83
+msgid "Show Property Bro&wser"
+msgstr "Показати Вікно Власти&востей"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:85
+msgid "Dimensions in &Inches"
+msgstr "Розміри в &Дюймах"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:86
+msgid "Dimensions in &Millimeters"
+msgstr "Розміри в &Міліметрах"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:89
+msgid "&Full Screen"
+msgstr "&Повний Екран"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:92
+msgid "&New Group"
+msgstr "&Нова Група"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:93
+msgid "Sketch In &3d"
+msgstr "Креслення В &3d"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:94
+msgid "Sketch In New &Workplane"
+msgstr "Креслення В Новій Робочій &Площині"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:96
+msgid "Step &Translating"
+msgstr "Покрокове &Переміщення"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:97
+msgid "Step &Rotating"
+msgstr "Покрокове &Обертання"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:99
+msgid "E&xtrude"
+msgstr "Ви&давити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:100
+msgid "&Lathe"
+msgstr "&Виточити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:102
+msgid "Link / Assemble..."
+msgstr "Приєднати / Монтувати..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:103
+msgid "Link Recent"
+msgstr "Приєднати Недавні"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:105
+msgid "&Sketch"
+msgstr "&Креслення"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:106
+msgid "In &Workplane"
+msgstr "В Робочій &Площині"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:107
+msgid "Anywhere In &3d"
+msgstr "Будь-де В &3d"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:109
+msgid "Datum &Point"
+msgstr "Опорна &Точка"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:110
+msgid "&Workplane"
+msgstr "Робоча &Площина"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:112
+msgid "Line &Segment"
+msgstr "&Відрізок Прямої"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:113
+msgid "C&onstruction Line Segment"
+msgstr "Контсрук&ційний Відрізок Прямої"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:114
+msgid "&Rectangle"
+msgstr "&Прямокутник"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:115
+msgid "&Circle"
+msgstr "&Коло"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:116
+msgid "&Arc of a Circle"
+msgstr "&Дуга Кола"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:117
+msgid "&Bezier Cubic Spline"
+msgstr "Кубічний Сплайн &Без'є"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:119
+msgid "&Text in TrueType Font"
+msgstr "&Текст з TrueType Шрифтом"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:121
+msgid "To&ggle Construction"
+msgstr "Пере&мкнути Конструктивність"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:122
+msgid "Tangent &Arc at Point"
+msgstr "Дотична &Дуга на Точці"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:123
+msgid "Split Curves at &Intersection"
+msgstr "Розрізати Криві на &Перетині"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:125
+msgid "&Constrain"
+msgstr "&Обмежити"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:126
+msgid "&Distance / Diameter"
+msgstr "&Відстань / Діаметр"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:127
+msgid "Re&ference Dimension"
+msgstr "Від&носний Розмір"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:128
+msgid "A&ngle"
+msgstr "К&ут"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:129
+msgid "Reference An&gle"
+msgstr "Відносний К&ут"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:130
+msgid "Other S&upplementary Angle"
+msgstr "Інший Су&міжний Кут"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:131
+msgid "Toggle R&eference Dim"
+msgstr "Перемкнути Від&носність Розмірів"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:133
+msgid "&Horizontal"
+msgstr "&Горизонтально"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:134
+msgid "&Vertical"
+msgstr "&Вертикально"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:136
+msgid "&On Point / Curve / Plane"
+msgstr "&На точці / Кривій / Площині"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:137
+msgid "E&qual Length / Radius / Angle"
+msgstr "Рі&вні Довжина / Радіус / Кут"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:138
+msgid "Length Ra&tio"
+msgstr "Про&порція Довжин"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:139
+msgid "Length Diff&erence"
+msgstr "Рі&зниця Довжин"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:140
+msgid "At &Midpoint"
+msgstr "До &Середини"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:141
+msgid "S&ymmetric"
+msgstr "Си&метрично"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:142
+msgid "Para&llel / Tangent"
+msgstr "Пара&лельно / Дотична"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:143
+msgid "&Perpendicular"
+msgstr "&Препендикулярно"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:144
+msgid "Same Orient&ation"
+msgstr "Однакова Орієн&тація"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:145
+msgid "Lock Point Where &Dragged"
+msgstr "Фіксувати Точку Після &Переміщення"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:147
+msgid "Comment"
+msgstr "Коментар"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:149
+msgid "&Analyze"
+msgstr "&Аналізувати"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:150
+msgid "Measure &Volume"
+msgstr "Обрахувати &Об'єм"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:151
+msgid "Measure A&rea"
+msgstr "Обрахувати Пл&ощу"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:152
+msgid "Measure &Perimeter"
+msgstr "Обрахувати &Периметр"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:153
+msgid "Show &Interfering Parts"
+msgstr "Показати &Дотичні Частини"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:154
+msgid "Show &Naked Edges"
+msgstr "Показати &Приховані Ребра"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:156
+msgid "Show Degrees of &Freedom"
+msgstr "Показати Степені &Свободи"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:158
+msgid "&Trace Point"
+msgstr "&Трасувати Точку"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:159
+msgid "&Stop Tracing..."
+msgstr "&Зупити Трасування..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:160
+msgid "Step &Dimension..."
+msgstr "Прорахувати &Розмір..."
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:162
+msgid "&Help"
+msgstr "&Довідка"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:163
+msgid "&Website / Manual"
+msgstr "&Вебсайт / Посібник"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:164
+msgid "&Language"
+msgstr "&Мова"
+
+#: /home/whitequark/Work/solvespace/src/graphicswin.cpp:166
+msgid "&About"
+msgstr "&Про програму"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:495
+msgid "No Style"
+msgstr "Без Стилю"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:496
+msgid "Newly Created Custom Style..."
+msgstr "Створити Користувацький Стиль..."
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:544
+msgid "Assign to Style"
+msgstr "Встановити Стиль"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:547
+msgid "Group Info"
+msgstr "Параметри Групи"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:550
+msgid "Style Info"
+msgstr "Параметри Стилю"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:553
+msgid "Select Edge Chain"
+msgstr "Виділити Ланцюг Ребер"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:558
+msgid "Toggle Reference Dimension"
+msgstr "Перемкнути Відносність Розміру"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:564
+msgid "Other Supplementary Angle"
+msgstr "Інший Суміжний Кут"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:569
+msgid "Snap to Grid"
+msgstr "Прикріпити до Сітки"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:577
+msgid "Remove Spline Point"
+msgstr "Видалити Точку Сплайну"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:588
+msgid "Add Spline Point"
+msgstr "Додати Точку Сплайну"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:592
+msgid "Toggle Construction"
+msgstr "Пермкнути Конструктивність"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:606
+msgid "Delete Point-Coincident Constraint"
+msgstr "Роз'єднати З'єднання Точок"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:612
+msgid "Cut"
+msgstr "Вирізати"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:613
+msgid "Copy"
+msgstr "Копіювати"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:616
+msgid "Select All"
+msgstr "Виділити Усе"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:620
+msgid "Paste"
+msgstr "Вставити"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:621
+msgid "Paste Transformed..."
+msgstr "Вставити Трансформованим..."
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:625
+msgid "Delete"
+msgstr "Видалити"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:627
+msgid "Unselect All"
+msgstr "Зняти Виділення з Усього"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:633
+msgid "Unselect Hovered"
+msgstr "Зняти Виділення з Наведеного"
+
+#: /home/whitequark/Work/solvespace/src/mouse.cpp:638
+msgid "Zoom to Fit"
+msgstr "Умістити на Екрані"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:18
+msgid "Sketch line segment"
+msgstr "Накреслети відрізок прямої"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:20
+msgid "Sketch rectangle"
+msgstr "Накреслити прямокутник"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:22
+msgid "Sketch circle"
+msgstr "Накреслити коло"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:24
+msgid "Sketch arc of a circle"
+msgstr "Накреслити дугу кола"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:26
+msgid "Sketch curves from text in a TrueType font"
+msgstr "Накреслити криві з тексту на TrueType шрифті"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:28
+msgid "Create tangent arc at selected point"
+msgstr "Створити дотичну дугу у вибраній точці"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:30
+msgid "Sketch cubic Bezier spline"
+msgstr "Накреслити кубічний сплайн Без'є"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:32
+msgid "Sketch datum point"
+msgstr "Накреслити опорну точку"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:34
+msgid "Toggle construction"
+msgstr "Перемкнути конструктивність"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:36
+msgid "Split lines / curves where they intersect"
+msgstr "Розрізати лініх / криві в місцях перетину"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:40
+msgid "Constrain distance / diameter / length"
+msgstr "Визначити відстань / діаметр / довжину"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:42
+msgid "Constrain angle"
+msgstr "Визначити кут"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:44
+msgid "Constrain to be horizontal"
+msgstr "Встановити горизонтально"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:46
+msgid "Constrain to be vertical"
+msgstr "Встановити перпендикулярно"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:48
+msgid "Constrain to be parallel or tangent"
+msgstr "Встановити паралельно або дотично"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:50
+msgid "Constrain to be perpendicular"
+msgstr "Встановити перпендикулярно"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:52
+msgid "Constrain point on line / curve / plane / point"
+msgstr "Прив'язати точку до лінії / кривої / площини / точки"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:54
+msgid "Constrain symmetric"
+msgstr "Встановити симетрично"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:56
+msgid "Constrain equal length / radius / angle"
+msgstr "Встановити однаковими відстань / радіус / кут"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:58
+msgid "Constrain normals in same orientation"
+msgstr "Спрямувати нормалі в одному напрямку"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:60
+msgid "Other supplementary angle"
+msgstr "Інший суміжний кут"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:62
+msgid "Toggle reference dimension"
+msgstr "Перемкнути відносність розміру"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:66
+msgid "New group extruding active sketch"
+msgstr "Нова група екструдування активного креслення"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:68
+msgid "New group rotating active sketch"
+msgstr "Нова група обертання актиного креслення"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:70
+msgid "New group step and repeat rotating"
+msgstr "Нова група крокування і повторення обертання"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:72
+msgid "New group step and repeat translating"
+msgstr "Нова група крокування і повторення зміщення"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:74
+msgid "New group in new workplane (thru given entities)"
+msgstr "Нова група в новій площині (через обрані об'екти)"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:76
+msgid "New group in 3d"
+msgstr "Нова група в 3d"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:78
+msgid "New group linking / assembling file"
+msgstr "Нова група приєднання / монтування файлу"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:82
+msgid "Nearest isometric view"
+msgstr "Найближчий ізометричний вигляд"
+
+#: /home/whitequark/Work/solvespace/src/toolbar.cpp:84
+msgid "Align view to active workplane"
+msgstr "Вирівняти вигляд до активної робочої площини"
