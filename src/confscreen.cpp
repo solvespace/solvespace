@@ -91,8 +91,8 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     if(SS.turntableNav) {
         SS.GW.AnimateOnto(
             Quaternion::From(
-                Vector::From(1,0,0),
-                Vector::From(0,1,0)
+                Vector::From(-1,0,0),
+                Vector::From(0,0,1)
             ),
             SS.GW.offset
         );
