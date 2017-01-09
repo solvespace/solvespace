@@ -885,6 +885,8 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 
     Entity *e = SK.GetEntity(hover.entity);
     if(e->IsPoint()) {
+        Entity *point = SK.GetEntity(pt);
+        point->PointForceTo(e->PointGetNum());
         Constraint::ConstrainCoincident(e->h, pt);
         return true;
     }
@@ -988,7 +990,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                             Entity::NO_ENTITY, Entity::NO_ENTITY,
                             lns[i].entity(0));
                     }
-                    ConstrainPointByHovered(lns[2].entity(1));
+                    if(ConstrainPointByHovered(lns[2].entity(1))) {
+                        Vector pos = SK.GetEntity(lns[2].entity(1))->PointGetNum();
+                        for(i = 0; i < 4; i++) {
+                            SK.GetEntity(lns[i].entity(1))->PointForceTo(pos);
+                            SK.GetEntity(lns[i].entity(2))->PointForceTo(pos);
+                        }
+                    }
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
