@@ -463,8 +463,20 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
 void GraphicsWindow::ClearPending() {
     pending.points.Clear();
+    pending.requests.Clear();
     pending = {};
     SS.ScheduleShowTW();
+}
+
+bool GraphicsWindow::IsFromPending(hRequest r) {
+    for(auto &req : pending.requests) {
+        if(req.v == r.v) return true;
+    }
+    return false;
+}
+
+void GraphicsWindow::AddToPending(hRequest r) {
+    pending.requests.Add(&r);
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
@@ -936,6 +948,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 case Command::LINE_SEGMENT:
                 case Command::CONSTR_SEGMENT:
                     hr = AddRequest(Request::Type::LINE_SEGMENT);
+                    AddToPending(hr);
                     SK.GetRequest(hr)->construction = (pending.command == Command::CONSTR_SEGMENT);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     ConstrainPointByHovered(hr.entity(1));
@@ -961,6 +974,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     SS.UndoRemember();
                     for(i = 0; i < 4; i++) {
                         lns[i] = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+                        AddToPending(lns[i]);
                     }
                     for(i = 0; i < 4; i++) {
                         Constraint::ConstrainCoincident(
@@ -1009,6 +1023,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                         break;
                     }
                     hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
+                    AddToPending(hr);
                     // This fudge factor stops us from immediately failing to solve
                     // because of the arc's implicit (equal radius) tangent.
                     Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
@@ -1026,6 +1041,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 }
                 case Command::CUBIC:
                     hr = AddRequest(Request::Type::CUBIC);
+                    AddToPending(hr);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     SK.GetEntity(hr.entity(2))->PointForceTo(v);
                     SK.GetEntity(hr.entity(3))->PointForceTo(v);

@@ -336,6 +336,10 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {
+            hEntity he = hov.selection.entity;
+            if(he.isFromRequest() && IsFromPending(he.request())) {
+                continue;
+            }
             hg = SK.GetEntity(hov.selection.entity)->group;
         } else if(hov.selection.constraint.v != 0) {
             hg = SK.GetConstraint(hov.selection.constraint)->group;
