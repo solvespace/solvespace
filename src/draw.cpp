@@ -800,7 +800,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-    if (!canvas) return;
+    if(!canvas) return;
 
     havePainted = true;
 

@@ -645,22 +645,19 @@ size_t BitmapFont::GetWidth(const std::string &str) {
     return width;
 }
 
-BitmapFont *BitmapFont::Builtin() {
-    static BitmapFont Font;
-    if(Font.IsEmpty()) {
-        Font = BitmapFont::From(LoadStringFromGzip("fonts/unifont.hex.gz"));
-        // Unifont doesn't have a glyph for U+0020.
-        Font.AddGlyph(0x0020, Pixmap::Create(Pixmap::Format::RGB, 8, 16));
-        Font.AddGlyph(0xE000, LoadPng("fonts/private/0-check-false.png"));
-        Font.AddGlyph(0xE001, LoadPng("fonts/private/1-check-true.png"));
-        Font.AddGlyph(0xE002, LoadPng("fonts/private/2-radio-false.png"));
-        Font.AddGlyph(0xE003, LoadPng("fonts/private/3-radio-true.png"));
-        Font.AddGlyph(0xE004, LoadPng("fonts/private/4-stipple-dot.png"));
-        Font.AddGlyph(0xE005, LoadPng("fonts/private/5-stipple-dash-long.png"));
-        Font.AddGlyph(0xE006, LoadPng("fonts/private/6-stipple-dash.png"));
-        Font.AddGlyph(0xE007, LoadPng("fonts/private/7-stipple-zigzag.png"));
-    }
-    return &Font;
+BitmapFont BitmapFont::Create() {
+    BitmapFont Font = BitmapFont::From(LoadStringFromGzip("fonts/unifont.hex.gz"));
+    // Unifont doesn't have a glyph for U+0020.
+    Font.AddGlyph(0x0020, Pixmap::Create(Pixmap::Format::RGB, 8, 16));
+    Font.AddGlyph(0xE000, LoadPng("fonts/private/0-check-false.png"));
+    Font.AddGlyph(0xE001, LoadPng("fonts/private/1-check-true.png"));
+    Font.AddGlyph(0xE002, LoadPng("fonts/private/2-radio-false.png"));
+    Font.AddGlyph(0xE003, LoadPng("fonts/private/3-radio-true.png"));
+    Font.AddGlyph(0xE004, LoadPng("fonts/private/4-stipple-dot.png"));
+    Font.AddGlyph(0xE005, LoadPng("fonts/private/5-stipple-dash-long.png"));
+    Font.AddGlyph(0xE006, LoadPng("fonts/private/6-stipple-dash.png"));
+    Font.AddGlyph(0xE007, LoadPng("fonts/private/7-stipple-zigzag.png"));
+    return Font;
 }
 
 //-----------------------------------------------------------------------------

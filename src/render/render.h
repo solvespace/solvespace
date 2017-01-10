@@ -137,12 +137,14 @@ public:
 
     IdList<Stroke, hStroke> strokes;
     IdList<Fill,   hFill>   fills;
+    BitmapFont bitmapFont;
 
-    Canvas() : strokes(), fills() {}
+    Canvas() : strokes(), fills(), bitmapFont() {}
     virtual void Clear();
 
     hStroke GetStroke(const Stroke &stroke);
     hFill GetFill(const Fill &fill);
+    BitmapFont *GetBitmapFont();
 
     virtual const Camera &GetCamera() const = 0;
 

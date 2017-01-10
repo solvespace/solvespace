@@ -211,6 +211,13 @@ Canvas::hFill Canvas::GetFill(const Fill &fill) {
     return fills.AddAndAssignId(&fillCopy);
 }
 
+BitmapFont *Canvas::GetBitmapFont() {
+    if(bitmapFont.IsEmpty()) {
+        bitmapFont = BitmapFont::Create();
+    }
+    return &bitmapFont;
+}
+
 std::shared_ptr<BatchCanvas> Canvas::CreateBatch() {
     return std::shared_ptr<BatchCanvas>();
 }
@@ -292,7 +299,7 @@ void UiCanvas::DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y, int zI
 }
 
 void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color, int zIndex) {
-    BitmapFont *font = BitmapFont::Builtin();
+    BitmapFont *font = canvas->GetBitmapFont();
 
     Canvas::Fill fill = {};
     fill.layer  = Canvas::Layer::NORMAL;
@@ -324,7 +331,7 @@ void UiCanvas::DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color,
 }
 
 void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor color, int zIndex) {
-    BitmapFont *font = BitmapFont::Builtin();
+    BitmapFont *font = canvas->GetBitmapFont();
 
     for(char32_t codepoint : ReadUTF8(str)) {
         DrawBitmapChar(codepoint, x, y, color, zIndex);
