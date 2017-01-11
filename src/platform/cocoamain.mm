@@ -13,16 +13,22 @@
 
 using SolveSpace::dbp;
 
+/* Utility functions */
+
+static NSString* Wrap(const std::string &s) {
+    return [NSString stringWithUTF8String:s.c_str()];
+}
+
 /* Settings */
 
 namespace SolveSpace {
 void CnfFreezeInt(uint32_t val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setInteger:val forKey:[NSString stringWithUTF8String:key.c_str()]];
+        setInteger:val forKey:Wrap(key)];
 }
 
 uint32_t CnfThawInt(uint32_t val, const std::string &key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
+    NSString *nsKey = Wrap(key);
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
         return [[NSUserDefaults standardUserDefaults] integerForKey:nsKey];
     return val;
@@ -30,11 +36,11 @@ uint32_t CnfThawInt(uint32_t val, const std::string &key) {
 
 void CnfFreezeFloat(float val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setFloat:val forKey:[NSString stringWithUTF8String:key.c_str()]];
+        setFloat:val forKey:Wrap(key)];
 }
 
 float CnfThawFloat(float val, const std::string &key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
+    NSString *nsKey = Wrap(key);
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
         return [[NSUserDefaults standardUserDefaults] floatForKey:nsKey];
     return val;
@@ -42,12 +48,12 @@ float CnfThawFloat(float val, const std::string &key) {
 
 void CnfFreezeString(const std::string &val, const std::string &key) {
     [[NSUserDefaults standardUserDefaults]
-        setObject:[NSString stringWithUTF8String:val.c_str()]
-        forKey:[NSString stringWithUTF8String:key.c_str()]];
+        setObject:Wrap(val)
+        forKey:Wrap(key)];
 }
 
 std::string CnfThawString(const std::string &val, const std::string &key) {
-    NSString *nsKey = [NSString stringWithUTF8String:key.c_str()];
+    NSString *nsKey = Wrap(key);
     if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey]) {
         NSString *nsNewVal = [[NSUserDefaults standardUserDefaults] stringForKey:nsKey];
         return [nsNewVal UTF8String];
@@ -459,45 +465,45 @@ void GetGraphicsWindowSize(int *w, int *h) {
     *h = (int)size.height;
 }
 
-void InvalidateGraphics(void) {
+void InvalidateGraphics() {
     [GWView setNeedsDisplay:YES];
 }
 
-void PaintGraphics(void) {
+void PaintGraphics() {
     [GWView setNeedsDisplay:YES];
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, YES);
 }
 
 void SetCurrentFilename(const std::string &filename) {
     if(!filename.empty()) {
-        [GW setTitleWithRepresentedFilename:[NSString stringWithUTF8String:filename.c_str()]];
+        [GW setTitleWithRepresentedFilename:Wrap(filename)];
     } else {
-        [GW setTitle:@"(new sketch)"];
+        [GW setTitle:Wrap(C_("title", "(new sketch)"))];
         [GW setRepresentedFilename:@""];
     }
 }
 
-void ToggleFullScreen(void) {
+void ToggleFullScreen() {
     [GW toggleFullScreen:nil];
 }
 
-bool FullScreenIsActive(void) {
+bool FullScreenIsActive() {
     return [GWDelegate isFullscreen];
 }
 
 void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
                              const std::string &str) {
-    [GWView startEditing:[NSString stringWithUTF8String:str.c_str()]
+    [GWView startEditing:Wrap(str)
             at:(NSPoint){(CGFloat)x, (CGFloat)y}
             withHeight:fontHeight
             withMinWidthInChars:minWidthChars];
 }
 
-void HideGraphicsEditControl(void) {
+void HideGraphicsEditControl() {
     [GWView stopEditing];
 }
 
-bool GraphicsEditControlIsVisible(void) {
+bool GraphicsEditControlIsVisible() {
     return [GWView isEditing];
 }
 }
@@ -547,13 +553,13 @@ void AddContextMenuItem(const char *label, ContextCommand cmd) {
     }
 }
 
-void CreateContextSubmenu(void) {
+void CreateContextSubmenu() {
     ssassert(!contextSubmenu, "Unexpected nested submenu");
 
     contextSubmenu = [[NSMenu alloc] initWithTitle:@""];
 }
 
-ContextCommand ShowContextMenu(void) {
+ContextCommand ShowContextMenu() {
     if(!contextMenu)
         return ContextCommand::CANCELLED;
 
@@ -629,7 +635,7 @@ void InitMainMenu(NSMenu *mainMenu) {
         current_level = entry->level;
 
         if(entry->label) {
-            label = [NSString stringWithUTF8String:Translate(entry->label).c_str()];
+            label = Wrap(Translate(entry->label));
             /* OS X does not support mnemonics */
             label = [label stringByReplacingOccurrencesOfString:@"&" withString:@""];
 
@@ -668,7 +674,7 @@ void InitMainMenu(NSMenu *mainMenu) {
             for(auto locale : Locales()) {
                 NSMenuItem *localeMenuItem =
                     [localeMenu addItemWithTitle:
-                            [NSString stringWithUTF8String:locale.displayName.c_str()]
+                            Wrap(locale.displayName)
                         action:NULL keyEquivalent:@""];
                 [localeMenuItem setTag:(NSInteger)i++];
                 [localeMenuItem setTarget:[MainMenuResponder class]];
@@ -701,7 +707,7 @@ static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base)
 
     if(std::string(RecentFile[0]).empty()) {
         NSMenuItem *placeholder = [[NSMenuItem alloc]
-            initWithTitle:@"(no recent files)" action:nil keyEquivalent:@""];
+            initWithTitle:Wrap(_("(no recent files)")) action:nil keyEquivalent:@""];
         [placeholder setEnabled:NO];
         [menu addItem:placeholder];
     } else {
@@ -710,7 +716,7 @@ static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base)
                 break;
 
             NSMenuItem *item = [[NSMenuItem alloc]
-                initWithTitle:[[NSString stringWithUTF8String:RecentFile[i].c_str()]
+                initWithTitle:[Wrap(RecentFile[i])
                     stringByAbbreviatingWithTildeInPath]
                 action:nil keyEquivalent:@""];
             [item setTag:((uint32_t)base + i)];
@@ -721,16 +727,16 @@ static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base)
     }
 }
 
-void RefreshRecentMenus(void) {
+void RefreshRecentMenus() {
     RefreshRecentMenu(Command::OPEN_RECENT, Command::RECENT_OPEN);
     RefreshRecentMenu(Command::GROUP_RECENT, Command::RECENT_LINK);
 }
 
-void ToggleMenuBar(void) {
+void ToggleMenuBar() {
     [NSMenu setMenuBarVisible:![NSMenu menuBarVisible]];
 }
 
-bool MenuBarIsVisible(void) {
+bool MenuBarIsVisible() {
     return [NSMenu menuBarVisible];
 }
 }
@@ -801,8 +807,8 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
                 desc += *ssPattern;
             }
         }
-        std::string title = std::string(ssFilter->name) + " (" + desc + ")";
-        [button addItemWithTitle:[NSString stringWithUTF8String:title.c_str()]];
+        std::string title = Translate(ssFilter->name) + " (" + desc + ")";
+        [button addItemWithTitle:Wrap(title)];
         [extensions addObject:[NSString stringWithUTF8String:ssFilter->patterns[0]]];
     }
     [panel setAllowedFileTypes:extensions];
@@ -810,8 +816,7 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
 
     int extensionIndex = 0;
     if(defExtension != "") {
-        extensionIndex = [extensions indexOfObject:
-            [NSString stringWithUTF8String:defExtension.c_str()]];
+        extensionIndex = [extensions indexOfObject:Wrap(defExtension)];
         if(extensionIndex == -1) {
             extensionIndex = 0;
         }
@@ -819,14 +824,15 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
     [button selectItemAtIndex:extensionIndex];
 
     if(file->empty()) {
-        [panel setNameFieldStringValue:[@"untitled"
-            stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
+        [panel setNameFieldStringValue:
+            [Wrap(_("untitled"))
+                stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
     } else {
         [panel setDirectoryURL:
-            [NSURL fileURLWithPath:[NSString stringWithUTF8String:Dirname(*file).c_str()]
+            [NSURL fileURLWithPath:Wrap(Dirname(*file))
                    isDirectory:NO]];
         [panel setNameFieldStringValue:
-            [[NSString stringWithUTF8String:Basename(*file, /*stripExtension=*/true).c_str()]
+            [Wrap(Basename(*file, /*stripExtension=*/true))
                 stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
     }
 
@@ -839,22 +845,23 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
     }
 }
 
-SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel(void) {
+SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel() {
     NSAlert *alert = [[NSAlert alloc] init];
     if(!std::string(SolveSpace::SS.saveFile).empty()) {
         [alert setMessageText:
             [[@"Do you want to save the changes you made to the sketch “"
              stringByAppendingString:
-                [[NSString stringWithUTF8String:SolveSpace::SS.saveFile.c_str()]
+                [Wrap(SolveSpace::SS.saveFile)
                     stringByAbbreviatingWithTildeInPath]]
              stringByAppendingString:@"”?"]];
     } else {
-        [alert setMessageText:@"Do you want to save the changes you made to the new sketch?"];
+        [alert setMessageText:
+            Wrap(_("Do you want to save the changes you made to the new sketch?"))];
     }
-    [alert setInformativeText:@"Your changes will be lost if you don't save them."];
-    [alert addButtonWithTitle:@"Save"];
-    [alert addButtonWithTitle:@"Cancel"];
-    [alert addButtonWithTitle:@"Don't Save"];
+    [alert setInformativeText:Wrap(_("Your changes will be lost if you don't save them."))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Save"))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Cancel"))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Don't Save"))];
     switch([alert runModal]) {
         case NSAlertFirstButtonReturn:
         return DIALOG_YES;
@@ -866,14 +873,14 @@ SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel(void) {
     }
 }
 
-SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo(void) {
+SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo() {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:
-        @"An autosave file is availible for this project."];
+        Wrap(_("An autosave file is availible for this project."))];
     [alert setInformativeText:
-        @"Do you want to load the autosave file instead?"];
-    [alert addButtonWithTitle:@"Load"];
-    [alert addButtonWithTitle:@"Don't Load"];
+        Wrap(_("Do you want to load the autosave file instead?"))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Load"))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Don't Load"))];
     switch([alert runModal]) {
         case NSAlertFirstButtonReturn:
         return DIALOG_YES;
@@ -886,16 +893,16 @@ SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo(void) {
 SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
                             const std::string &filename, bool canCancel) {
     NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:[NSString stringWithUTF8String:
-        ("The linked file " + filename + " is not present.").c_str()]];
+    [alert setMessageText:
+        Wrap("The linked file “" + filename + "” is not present.")];
     [alert setInformativeText:
-        @"Do you want to locate it manually?\n"
-         "If you select \"No\", any geometry that depends on "
-         "the missing file will be removed."];
-    [alert addButtonWithTitle:@"Yes"];
+        Wrap(_("Do you want to locate it manually?\n"
+               "If you select “No”, any geometry that depends on "
+               "the missing file will be removed."))];
+    [alert addButtonWithTitle:Wrap(C_("button", "Yes"))];
     if(canCancel)
-        [alert addButtonWithTitle:@"Cancel"];
-    [alert addButtonWithTitle:@"No"];
+        [alert addButtonWithTitle:Wrap(C_("button", "Cancel"))];
+    [alert addButtonWithTitle:Wrap(C_("button", "No"))];
     switch([alert runModal]) {
         case NSAlertFirstButtonReturn:
         return DIALOG_YES;
@@ -1039,7 +1046,6 @@ void InitTextWindow() {
                       NSUtilityWindowMask)];
     [[TW standardWindowButton:NSWindowMiniaturizeButton] setHidden:YES];
     [[TW standardWindowButton:NSWindowZoomButton] setHidden:YES];
-    [TW setTitle:@"Property Browser"];
     [TW setFrameAutosaveName:@"TextWindow"];
     [TW setFloatingPanel:YES];
     [TW setBecomesKeyOnlyIfNeeded:YES];
@@ -1082,7 +1088,7 @@ double GetScreenDpi() {
     return (displayPixelSize.width / displayPhysicalSize.width) * 25.4f;
 }
 
-void InvalidateText(void) {
+void InvalidateText() {
     NSSize size = [TWView convertSizeToBacking:[TWView frame].size];
     size.height = (SS.TW.top[SS.TW.rows - 1] + 1) * TextWindow::LINE_HEIGHT / 2;
     [TWView setFrameSize:[TWView convertSizeFromBacking:size]];
@@ -1098,15 +1104,15 @@ void SetMousePointerToHand(bool is_hand) {
 }
 
 void ShowTextEditControl(int x, int y, const std::string &str) {
-    return [TWView startEditing:[NSString stringWithUTF8String:str.c_str()]
+    return [TWView startEditing:Wrap(str)
                    at:(NSPoint){(CGFloat)x, (CGFloat)y}];
 }
 
-void HideTextEditControl(void) {
+void HideTextEditControl() {
     return [TWView stopEditing];
 }
 
-bool TextEditControlIsVisible(void) {
+bool TextEditControlIsVisible() {
     return [TWView isEditing];
 }
 };
@@ -1116,10 +1122,10 @@ bool TextEditControlIsVisible(void) {
 void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error) {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setAlertStyle:(error ? NSWarningAlertStyle : NSInformationalAlertStyle)];
-    [alert addButtonWithTitle:@"OK"];
+    [alert addButtonWithTitle:Wrap(C_("button", "OK"))];
 
-    /* do some additional formatting of the message these are
-       heuristics, but they are made failsafe and lead to nice results. */
+    /* do some additional formatting of the message;
+       these are heuristics, but they are made failsafe and lead to nice results. */
     NSString *input = [NSString stringWithUTF8String:str];
     NSRange dot = [input rangeOfCharacterFromSet:
         [NSCharacterSet characterSetWithCharactersInString:@".:"]];
@@ -1195,10 +1201,14 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
 @end
 
 void SolveSpace::RefreshLocale() {
+    SS.UpdateWindowTitle();
     SolveSpace::InitMainMenu([NSApp mainMenu]);
+    RefreshRecentMenus();
+
+    [TW setTitle:Wrap(C_("title", "Property Browser"))];
 }
 
-void SolveSpace::ExitNow(void) {
+void SolveSpace::ExitNow() {
     [NSApp stop:nil];
 }
 

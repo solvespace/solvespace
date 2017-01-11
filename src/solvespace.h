@@ -169,66 +169,12 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 #define AUTOSAVE_SUFFIX "~"
 
-struct FileFilter {
-    const char *name;
-    const char *patterns[3];
-};
-
-// SolveSpace native file format
-const FileFilter SlvsFileFilter[] = {
-    { "SolveSpace models",          { "slvs" } },
-    { NULL, {} }
-};
-// PNG format bitmap
-const FileFilter PngFileFilter[] = {
-    { "PNG file",                   { "png" } },
-    { NULL, {} }
-};
-// Triangle mesh
-const FileFilter MeshFileFilter[] = {
-    { "STL mesh",                   { "stl" } },
-    { "Wavefront OBJ mesh",         { "obj" } },
-    { "Three.js-compatible mesh, with viewer",  { "html" } },
-    { "Three.js-compatible mesh, mesh only",    { "js" } },
-    { NULL, {} }
-};
-// NURBS surfaces
-const FileFilter SurfaceFileFilter[] = {
-    { "STEP file",                  { "step", "stp" } },
-    { NULL, {} }
-};
-// 2d vector (lines and curves) format
-const FileFilter VectorFileFilter[] = {
-    { "PDF file",                   { "pdf" } },
-    { "Encapsulated PostScript",    { "eps",  "ps" } },
-    { "Scalable Vector Graphics",   { "svg" } },
-    { "STEP file",                  { "step", "stp" } },
-    { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { "HPGL file",                  { "plt",  "hpgl" } },
-    { "G Code",                     { "ngc",  "txt" } },
-    { NULL, {} }
-};
-// 3d vector (wireframe lines and curves) format
-const FileFilter Vector3dFileFilter[] = {
-    { "STEP file",                  { "step", "stp" } },
-    { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { NULL, {} }
-};
-// All Importable formats
-const FileFilter ImportableFileFilter[] = {
-    { "AutoCAD DXF and DWG files",  { "dxf", "dwg" } },
-    { NULL, {} }
-};
-// Comma-separated value, like a spreadsheet would use
-const FileFilter CsvFileFilter[] = {
-    { "CSV",                        { "csv" } },
-    { NULL, {} }
-};
-
 enum class Unit : uint32_t {
     MM = 0,
     INCHES
 };
+
+struct FileFilter;
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]);

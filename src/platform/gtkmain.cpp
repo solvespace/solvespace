@@ -10,8 +10,6 @@
 #include <unistd.h>
 #include <time.h>
 
-#include <iostream>
-
 #include <json-c/json_object.h>
 #include <json-c/json_util.h>
 
@@ -53,6 +51,11 @@
 #endif
 
 namespace SolveSpace {
+/* Utility functions */
+std::string Title(const std::string &s) {
+    return "SolveSpace - " + s;
+}
+
 /* Settings */
 
 /* Why not just use GSettings? Two reasons. It doesn't allow to easily see
@@ -576,11 +579,7 @@ void PaintGraphics(void) {
 }
 
 void SetCurrentFilename(const std::string &filename) {
-    if(!filename.empty()) {
-        GW->set_title("SolveSpace - " + filename);
-    } else {
-        GW->set_title("SolveSpace - (not yet saved)");
-    }
+    GW->set_title(Title(filename.empty() ? C_("title", "(new sketch)") : filename.c_str()));
 }
 
 void ToggleFullScreen(void) {
@@ -893,13 +892,13 @@ static void RefreshRecentMenu(Command cmd, Command base) {
     Gtk::Menu *menu = new Gtk::Menu;
     recent->set_submenu(*menu);
 
-    if(std::string(RecentFile[0]).empty()) {
-        Gtk::MenuItem *placeholder = new Gtk::MenuItem("(no recent files)");
+    if(RecentFile[0].empty()) {
+        Gtk::MenuItem *placeholder = new Gtk::MenuItem(_("(no recent files)"));
         placeholder->set_sensitive(false);
         menu->append(*placeholder);
     } else {
         for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(std::string(RecentFile[i]).empty())
+            if(RecentFile[i].empty())
                 break;
 
             RecentMenuItem *item = new RecentMenuItem(RecentFile[i], (uint32_t)base + i);
@@ -921,7 +920,7 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
                                   Gtk::FileChooser *chooser) {
     for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
         Glib::RefPtr<Gtk::FileFilter> filter = Gtk::FileFilter::create();
-        filter->set_name(ssFilter->name);
+        filter->set_name(Translate(ssFilter->name));
 
         bool is_active = false;
         std::string desc = "";
@@ -950,10 +949,10 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
 
 bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Open File");
+    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Open File")));
     chooser.set_filename(*filename);
-    chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
-    chooser.add_button("_Open", Gtk::RESPONSE_OK);
+    chooser.add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
+    chooser.add_button(_("_Open"), Gtk::RESPONSE_OK);
     chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
 
     ConvertFilters(activeOrEmpty, filters, &chooser);
@@ -998,17 +997,17 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
+    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Save File")),
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);
-    chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
-    chooser.add_button("_Save", Gtk::RESPONSE_OK);
+    chooser.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
+    chooser.add_button(C_("button", "_Save"), Gtk::RESPONSE_OK);
 
     std::string activeExtension = ConvertFilters(defExtension, filters, &chooser);
 
     if(filename->empty()) {
         chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
-        chooser.set_current_name("untitled." + activeExtension);
+        chooser.set_current_name(std::string(_("untitled")) + "." + activeExtension);
     } else {
         chooser.set_current_folder(Dirname(*filename));
         chooser.set_current_name(Basename(*filename, /*stripExtension=*/true) +
@@ -1031,14 +1030,14 @@ bool GetSaveFile(std::string *filename, const std::string &defExtension,
 
 DialogChoice SaveFileYesNoCancel(void) {
     Glib::ustring message =
-        "The file has changed since it was last saved.\n"
-        "Do you want to save the changes?";
+        _("The file has changed since it was last saved.\n\n"
+          "Do you want to save the changes?");
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Modified File");
-    dialog.add_button("_Save", Gtk::RESPONSE_YES);
-    dialog.add_button("Do_n't Save", Gtk::RESPONSE_NO);
-    dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+    dialog.set_title(Title(C_("title", "Modified File")));
+    dialog.add_button(C_("button", "_Save"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "Do_n't Save"), Gtk::RESPONSE_NO);
+    dialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1055,13 +1054,13 @@ DialogChoice SaveFileYesNoCancel(void) {
 
 DialogChoice LoadAutosaveYesNo(void) {
     Glib::ustring message =
-        "An autosave file is availible for this project.\n"
-        "Do you want to load the autosave file instead?";
+        _("An autosave file is availible for this project.\n\n"
+          "Do you want to load the autosave file instead?");
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Autosave Available");
-    dialog.add_button("_Load autosave", Gtk::RESPONSE_YES);
-    dialog.add_button("Do_n't Load", Gtk::RESPONSE_NO);
+    dialog.set_title(Title(C_("title", "Autosave Available")));
+    dialog.add_button(C_("button", "_Load autosave"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "Do_n't Load"), Gtk::RESPONSE_NO);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1076,17 +1075,17 @@ DialogChoice LoadAutosaveYesNo(void) {
 DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
                                            bool canCancel) {
     Glib::ustring message =
-        "The linked file " + filename + " is not present.\n"
-        "Do you want to locate it manually?\n"
+        "The linked file " + filename + " is not present.\n\n"
+        "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Missing File");
-    dialog.add_button("_Yes", Gtk::RESPONSE_YES);
-    dialog.add_button("_No", Gtk::RESPONSE_NO);
+    dialog.set_title(Title(C_("title", "Missing File")));
+    dialog.add_button(C_("button", "_Yes"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "_No"), Gtk::RESPONSE_NO);
     if(canCancel)
-        dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+        dialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1167,7 +1166,6 @@ public:
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
         set_skip_pager_hint(true);
-        set_title("SolveSpace - Property Browser");
         set_default_size(420, 300);
 
         _box.pack_start(_overlay, true, true);
@@ -1298,7 +1296,8 @@ void DoMessageBox(const char *message, int rows, int cols, bool error) {
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true,
                               error ? Gtk::MESSAGE_ERROR : Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK,
                               /*is_modal*/ true);
-    dialog.set_title(error ? "SolveSpace - Error" : "SolveSpace - Message");
+    dialog.set_title(error ?
+        Title(C_("title", "Error")) : Title(C_("title", "Message")));
     dialog.run();
 }
 
@@ -1365,13 +1364,17 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
 /* Application lifecycle */
 
 void RefreshLocale() {
+    SS.UpdateWindowTitle();
     for(auto menu : GW->get_menubar().get_children()) {
         GW->get_menubar().remove(*menu);
     }
     InitMainMenu(&GW->get_menubar());
+    RefreshRecentMenus();
     GW->get_menubar().show_all();
     GW->get_menubar().accelerate(*GW);
     GW->get_menubar().accelerate(*TW);
+
+    TW->set_title(Title(C_("title", "Property Browser")));
 }
 
 void ExitNow() {
@@ -1390,7 +1393,7 @@ int main(int argc, char** argv) {
        We set it back to C after all.  */
     setlocale(LC_ALL, "");
     if(!Glib::get_charset()) {
-        std::cerr << "Sorry, only UTF-8 locales are supported." << std::endl;
+        dbp("Sorry, only UTF-8 locales are supported.");
         return 1;
     }
     setlocale(LC_ALL, "C");
@@ -1441,8 +1444,7 @@ int main(int argc, char** argv) {
 
     if(argc >= 2) {
         if(argc > 2) {
-            std::cerr << "Only the first file passed on command line will be opened."
-                      << std::endl;
+            dbp("Only the first file passed on command line will be opened.");
         }
 
         /* Make sure the argument is valid UTF-8. */

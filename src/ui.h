@@ -58,6 +58,63 @@ inline const char *C_(const char *msgctxt, const char *msgid) {
 }
 #endif
 
+// Filters for the file formats that we support.
+struct FileFilter {
+    const char *name;
+    const char *patterns[3];
+};
+
+// SolveSpace native file format
+const FileFilter SlvsFileFilter[] = {
+    { N_("SolveSpace models"),          { "slvs" } },
+    { NULL, {} }
+};
+// PNG format bitmap
+const FileFilter PngFileFilter[] = {
+    { N_("PNG file"),                   { "png" } },
+    { NULL, {} }
+};
+// Triangle mesh
+const FileFilter MeshFileFilter[] = {
+    { N_("STL mesh"),                   { "stl" } },
+    { N_("Wavefront OBJ mesh"),         { "obj" } },
+    { N_("Three.js-compatible mesh, with viewer"),  { "html" } },
+    { N_("Three.js-compatible mesh, mesh only"),    { "js" } },
+    { NULL, {} }
+};
+// NURBS surfaces
+const FileFilter SurfaceFileFilter[] = {
+    { N_("STEP file"),                  { "step", "stp" } },
+    { NULL, {} }
+};
+// 2d vector (lines and curves) format
+const FileFilter VectorFileFilter[] = {
+    { N_("PDF file"),                   { "pdf" } },
+    { N_("Encapsulated PostScript"),    { "eps",  "ps" } },
+    { N_("Scalable Vector Graphics"),   { "svg" } },
+    { N_("STEP file"),                  { "step", "stp" } },
+    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
+    { N_("HPGL file"),                  { "plt",  "hpgl" } },
+    { N_("G Code"),                     { "ngc",  "txt" } },
+    { NULL, {} }
+};
+// 3d vector (wireframe lines and curves) format
+const FileFilter Vector3dFileFilter[] = {
+    { N_("STEP file"),                  { "step", "stp" } },
+    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
+    { NULL, {} }
+};
+// All Importable formats
+const FileFilter ImportableFileFilter[] = {
+    { N_("AutoCAD DXF and DWG files"),  { "dxf", "dwg" } },
+    { NULL, {} }
+};
+// Comma-separated value, like a spreadsheet would use
+const FileFilter CsvFileFilter[] = {
+    { N_("Comma-separated values"),     { "csv" } },
+    { NULL, {} }
+};
+
 // This table describes the top-level menus in the graphics winodw.
 enum class Command : uint32_t {
     NONE = 0,

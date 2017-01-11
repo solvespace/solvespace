@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-01-07 06:44+0000\n"
+"POT-Creation-Date: 2017-01-11 03:01+0000\n"
 "PO-Revision-Date: 2017-01-05 10:30+0000\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -1398,6 +1398,191 @@ msgstr "click to place bottom left of text"
 msgid "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 msgstr "NEW COMMENT -- DOUBLE-CLICK TO EDIT"
 
+#: platform/cocoamain.mm:481 platform/gtkmain.cpp:582 platform/w32main.cpp:448
+#: platform/w32main.cpp:1373
+msgctxt "title"
+msgid "(new sketch)"
+msgstr "(new sketch)"
+
+#: platform/cocoamain.mm:710 platform/gtkmain.cpp:896 platform/w32main.cpp:1292
+msgid "(no recent files)"
+msgstr "(no recent files)"
+
+#: platform/cocoamain.mm:828 platform/gtkmain.cpp:1010
+msgid "untitled"
+msgstr "untitled"
+
+#: platform/cocoamain.mm:859
+msgid "Do you want to save the changes you made to the new sketch?"
+msgstr "Do you want to save the changes you made to the new sketch?"
+
+#: platform/cocoamain.mm:861
+msgid "Your changes will be lost if you don't save them."
+msgstr "Your changes will be lost if you don't save them."
+
+#: platform/cocoamain.mm:862
+msgctxt "button"
+msgid "Save"
+msgstr "Save"
+
+#: platform/cocoamain.mm:863 platform/cocoamain.mm:904
+msgctxt "button"
+msgid "Cancel"
+msgstr "Cancel"
+
+#: platform/cocoamain.mm:864
+msgctxt "button"
+msgid "Don't Save"
+msgstr "Don't Save"
+
+#: platform/cocoamain.mm:879
+msgid "An autosave file is availible for this project."
+msgstr "An autosave file is availible for this project."
+
+#: platform/cocoamain.mm:881
+msgid "Do you want to load the autosave file instead?"
+msgstr "Do you want to load the autosave file instead?"
+
+#: platform/cocoamain.mm:882
+msgctxt "button"
+msgid "Load"
+msgstr "Load"
+
+#: platform/cocoamain.mm:883
+msgctxt "button"
+msgid "Don't Load"
+msgstr "Don't Load"
+
+#: platform/cocoamain.mm:899
+msgid ""
+"Do you want to locate it manually?\n"
+"If you select “No”, any geometry that depends on the missing file will be "
+"removed."
+msgstr ""
+"Do you want to locate it manually?\n"
+"If you select “No”, any geometry that depends on the missing file will be "
+"removed."
+
+#: platform/cocoamain.mm:902
+msgctxt "button"
+msgid "Yes"
+msgstr "Yes"
+
+#: platform/cocoamain.mm:905
+msgctxt "button"
+msgid "No"
+msgstr "No"
+
+#: platform/cocoamain.mm:1125 platform/w32main.cpp:180
+msgctxt "button"
+msgid "OK"
+msgstr "OK"
+
+#: platform/cocoamain.mm:1208 platform/gtkmain.cpp:1377
+#: platform/w32main.cpp:1395 platform/w32main.cpp:1435
+msgctxt "title"
+msgid "Property Browser"
+msgstr "Property Browser"
+
+#: platform/gtkmain.cpp:952
+msgctxt "title"
+msgid "Open File"
+msgstr "Open File"
+
+#: platform/gtkmain.cpp:954
+msgid "_Cancel"
+msgstr "_Cancel"
+
+#: platform/gtkmain.cpp:955
+msgid "_Open"
+msgstr "_Open"
+
+#: platform/gtkmain.cpp:1000
+msgctxt "title"
+msgid "Save File"
+msgstr "Save File"
+
+#: platform/gtkmain.cpp:1003 platform/gtkmain.cpp:1040
+#: platform/gtkmain.cpp:1088
+msgctxt "button"
+msgid "_Cancel"
+msgstr "_Cancel"
+
+#: platform/gtkmain.cpp:1004 platform/gtkmain.cpp:1038
+msgctxt "button"
+msgid "_Save"
+msgstr "_Save"
+
+#: platform/gtkmain.cpp:1033 platform/w32main.cpp:1153
+msgid ""
+"The file has changed since it was last saved.\n"
+"\n"
+"Do you want to save the changes?"
+msgstr ""
+"The file has changed since it was last saved.\n"
+"\n"
+"Do you want to save the changes?"
+
+#: platform/gtkmain.cpp:1037 platform/w32main.cpp:1155
+msgctxt "title"
+msgid "Modified File"
+msgstr "Modified File"
+
+#: platform/gtkmain.cpp:1039
+msgctxt "button"
+msgid "Do_n't Save"
+msgstr "Do_n't Save"
+
+#: platform/gtkmain.cpp:1057 platform/w32main.cpp:1179
+msgid ""
+"An autosave file is availible for this project.\n"
+"\n"
+"Do you want to load the autosave file instead?"
+msgstr ""
+"An autosave file is availible for this project.\n"
+"\n"
+"Do you want to load the autosave file instead?"
+
+#: platform/gtkmain.cpp:1061 platform/w32main.cpp:1181
+msgctxt "title"
+msgid "Autosave Available"
+msgstr "Autosave Available"
+
+#: platform/gtkmain.cpp:1062
+msgctxt "button"
+msgid "_Load autosave"
+msgstr "_Load autosave"
+
+#: platform/gtkmain.cpp:1063
+msgctxt "button"
+msgid "Do_n't Load"
+msgstr "Do_n't Load"
+
+#: platform/gtkmain.cpp:1084 platform/w32main.cpp:1209
+msgctxt "title"
+msgid "Missing File"
+msgstr "Missing File"
+
+#: platform/gtkmain.cpp:1085
+msgctxt "button"
+msgid "_Yes"
+msgstr "_Yes"
+
+#: platform/gtkmain.cpp:1086
+msgctxt "button"
+msgid "_No"
+msgstr "_No"
+
+#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+msgctxt "title"
+msgid "Error"
+msgstr "Error"
+
+#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+msgctxt "title"
+msgid "Message"
+msgstr "Message"
+
 #: style.cpp:161
 msgid ""
 "Can't assign style to an entity that's derived from another entity; try "
@@ -1557,6 +1742,66 @@ msgstr "Nearest isometric view"
 #: toolbar.cpp:84
 msgid "Align view to active workplane"
 msgstr "Align view to active workplane"
+
+#: ui.h:69
+msgid "SolveSpace models"
+msgstr "SolveSpace models"
+
+#: ui.h:74
+msgid "PNG file"
+msgstr "PNG file"
+
+#: ui.h:79
+msgid "STL mesh"
+msgstr "STL mesh"
+
+#: ui.h:80
+msgid "Wavefront OBJ mesh"
+msgstr "Wavefront OBJ mesh"
+
+#: ui.h:81
+msgid "Three.js-compatible mesh, with viewer"
+msgstr "Three.js-compatible mesh, with viewer"
+
+#: ui.h:82
+msgid "Three.js-compatible mesh, mesh only"
+msgstr "Three.js-compatible mesh, mesh only"
+
+#: ui.h:87 ui.h:95 ui.h:103
+msgid "STEP file"
+msgstr "STEP file"
+
+#: ui.h:92
+msgid "PDF file"
+msgstr "PDF file"
+
+#: ui.h:93
+msgid "Encapsulated PostScript"
+msgstr "Encapsulated PostScript"
+
+#: ui.h:94
+msgid "Scalable Vector Graphics"
+msgstr "Scalable Vector Graphics"
+
+#: ui.h:96 ui.h:104
+msgid "DXF file (AutoCAD 2007)"
+msgstr "DXF file (AutoCAD 2007)"
+
+#: ui.h:97
+msgid "HPGL file"
+msgstr "HPGL file"
+
+#: ui.h:98
+msgid "G Code"
+msgstr "G Code"
+
+#: ui.h:109
+msgid "AutoCAD DXF and DWG files"
+msgstr "AutoCAD DXF and DWG files"
+
+#: ui.h:114
+msgid "Comma-separated values"
+msgstr "Comma-separated values"
 
 #: view.cpp:78
 msgid "Scale cannot be zero or negative."

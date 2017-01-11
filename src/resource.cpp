@@ -1088,14 +1088,14 @@ PluralExpr::Token PluralExpr::Lex() {
         if(reader.TryChar('=')) {
             t.op = Token::Op::LE;
         } else {
-            t.op    = Token::Op::LT;
+            t.op = Token::Op::LT;
         }
     } else if(reader.TryChar('>')) {
         t.type  = Token::Type::BINARY_OP;
         if(reader.TryChar('=')) {
             t.op = Token::Op::GE;
         } else {
-            t.op    = Token::Op::GT;
+            t.op = Token::Op::GT;
         }
     } else if(reader.TryChar('!')) {
         reader.ExpectChar('=');

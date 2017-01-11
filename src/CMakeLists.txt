@@ -125,10 +125,14 @@ else()
     endforeach()
 endif()
 
+set(every_platform_SOURCES
+    platform/w32main.cpp
+    platform/gtkmain.cpp
+    platform/cocoamain.mm)
+
 # solvespace library
 
 set(solvespace_core_HEADERS
-    config.h
     dsc.h
     expr.h
     polygon.h
@@ -212,11 +216,15 @@ if(HAVE_GETTEXT)
     set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
     set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
     set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
-    set(inputs     ${solvespace_core_SOURCES})
+    set(inputs
+        ${solvespace_core_SOURCES}
+        ${solvespace_core_HEADERS}
+        ${every_platform_SOURCES})
 
     add_custom_command(
         OUTPUT  ${output_pot}
         COMMAND ${XGETTEXT}
+                --language=C++
                 --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
                 --force-po --width=100 --sort-by-file
                 --package-name=SolveSpace
