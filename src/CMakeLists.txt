@@ -213,13 +213,15 @@ target_compile_options(solvespace-core
 # solvespace translations
 
 if(HAVE_GETTEXT)
-    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
-    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
-    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
     set(inputs
         ${solvespace_core_SOURCES}
         ${solvespace_core_HEADERS}
         ${every_platform_SOURCES})
+    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
+    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
+    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
+
+    file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
 
     add_custom_command(
         OUTPUT  ${output_pot}
@@ -236,6 +238,9 @@ if(HAVE_GETTEXT)
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Extracting translations"
         VERBATIM)
+
+    # en_US is a bit special; we pre-fill the msgstrs from msgids, instead of (as would normally
+    # happen) leaving them empty.
     add_custom_command(
         OUTPUT  ${output_po}
         COMMAND ${MSGINIT}
@@ -245,10 +250,27 @@ if(HAVE_GETTEXT)
                 --force-po --no-fuzzy-matching
                 --output=${output_po} ${output_po} ${templ_po}
         DEPENDS ${output_pot}
-        COMMENT "Updating English translations"
+        COMMENT "Updating en_US translations"
         VERBATIM)
+
+    foreach(locale_po ${locale_pos})
+        get_filename_component(locale_name ${locale_po} NAME_WE)
+        if(locale_name STREQUAL "en_US")
+            continue()
+        endif()
+
+        add_custom_command(
+            OUTPUT  ${locale_po}
+            COMMAND ${MSGMERGE}
+                    --update --no-fuzzy-matching
+                    ${locale_po} ${output_pot}
+            DEPENDS ${output_pot}
+            COMMENT "Updating ${locale_name} translations"
+            VERBATIM)
+    endforeach()
+
     add_custom_target(solvespace-translations
-        DEPENDS ${output_pot} ${output_po})
+        DEPENDS ${output_pot} ${output_po} ${locale_pos})
 endif()
 
 # solvespace graphical executable
