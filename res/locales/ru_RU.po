@@ -1,7 +1,7 @@
 # English translations for SolveSpace package.
 # Copyright (C) 2017 the SolveSpace authors
 # This file is distributed under the same license as the SolveSpace package.
-# Automatically generated, 2017.
+# Elvira Khabirova <lineprinter0@gmail.com>, 2017.
 #
 msgid ""
 msgstr ""
@@ -398,52 +398,52 @@ msgstr ""
 #: constraint.cpp:12
 msgctxt "constr-name"
 msgid "pts-coincident"
-msgstr ""
+msgstr "точки-совпадают"
 
 #: constraint.cpp:13
 msgctxt "constr-name"
 msgid "pt-pt-distance"
-msgstr ""
+msgstr "расстояние-точка-точка"
 
 #: constraint.cpp:14
 msgctxt "constr-name"
 msgid "pt-line-distance"
-msgstr ""
+msgstr "расстояние-точка-прямая"
 
 #: constraint.cpp:15
 msgctxt "constr-name"
 msgid "pt-plane-distance"
-msgstr ""
+msgstr "расстояние-точка-плоскость"
 
 #: constraint.cpp:16
 msgctxt "constr-name"
 msgid "pt-face-distance"
-msgstr ""
+msgstr "расстояние-точка-грань"
 
 #: constraint.cpp:17
 msgctxt "constr-name"
 msgid "proj-pt-pt-distance"
-msgstr ""
+msgstr "длина-проекции"
 
 #: constraint.cpp:18
 msgctxt "constr-name"
 msgid "pt-in-plane"
-msgstr ""
+msgstr "точка-в-плоскости"
 
 #: constraint.cpp:19
 msgctxt "constr-name"
 msgid "pt-on-line"
-msgstr ""
+msgstr "точка-на-прямой"
 
 #: constraint.cpp:20
 msgctxt "constr-name"
 msgid "pt-on-face"
-msgstr ""
+msgstr "точка-на-грани"
 
 #: constraint.cpp:21
 msgctxt "constr-name"
 msgid "eq-length"
-msgstr ""
+msgstr "равные-длины"
 
 #: constraint.cpp:22
 msgctxt "constr-name"
@@ -458,17 +458,17 @@ msgstr ""
 #: constraint.cpp:24
 msgctxt "constr-name"
 msgid "length-ratio"
-msgstr ""
+msgstr "отношение-длин"
 
 #: constraint.cpp:25
 msgctxt "constr-name"
 msgid "length-difference"
-msgstr ""
+msgstr "разница-длин"
 
 #: constraint.cpp:26
 msgctxt "constr-name"
 msgid "symmetric"
-msgstr ""
+msgstr "симметрия"
 
 #: constraint.cpp:27
 msgctxt "constr-name"
@@ -488,42 +488,42 @@ msgstr ""
 #: constraint.cpp:30
 msgctxt "constr-name"
 msgid "at-midpoint"
-msgstr ""
+msgstr "посередине"
 
 #: constraint.cpp:31
 msgctxt "constr-name"
 msgid "horizontal"
-msgstr ""
+msgstr "горизонтально"
 
 #: constraint.cpp:32
 msgctxt "constr-name"
 msgid "vertical"
-msgstr ""
+msgstr "вертикально"
 
 #: constraint.cpp:33
 msgctxt "constr-name"
 msgid "diameter"
-msgstr ""
+msgstr "диаметр"
 
 #: constraint.cpp:34
 msgctxt "constr-name"
 msgid "pt-on-circle"
-msgstr ""
+msgstr "точка-на-окружности"
 
 #: constraint.cpp:35
 msgctxt "constr-name"
 msgid "same-orientation"
-msgstr ""
+msgstr "сонаправленно"
 
 #: constraint.cpp:36
 msgctxt "constr-name"
 msgid "angle"
-msgstr ""
+msgstr "угол"
 
 #: constraint.cpp:37
 msgctxt "constr-name"
 msgid "parallel"
-msgstr ""
+msgstr "параллельно"
 
 #: constraint.cpp:38
 msgctxt "constr-name"
@@ -588,32 +588,34 @@ msgstr ""
 #: group.cpp:166
 msgctxt "group-name"
 msgid "extrude"
-msgstr ""
+msgstr "выдавливание"
 
 #: group.cpp:188
 msgctxt "group-name"
 msgid "lathe"
-msgstr ""
+msgstr "вращение"
 
 #: group.cpp:214
 msgctxt "group-name"
 msgid "rotate"
-msgstr ""
+msgstr "поворот"
 
 #: group.cpp:225
 msgctxt "group-name"
 msgid "translate"
-msgstr ""
+msgstr "перенос"
 
 #: group.cpp:257
 msgctxt "group-name"
 msgid "link"
-msgstr ""
+msgstr "привязано"
 
 #: exportvector.cpp:583
 msgid ""
 "Some aspects of the drawing have no DXF equivalent and were not exported:\n"
 msgstr ""
+"Некоторые детали чертежа не могут быть представлены в DXF файле и не были "
+"поэкспортированы:\n"
 
 #: exportvector.cpp:800
 msgid ""
@@ -627,8 +629,8 @@ msgid ""
 "Unrecognized data in file. This file may be corrupt, or from a newer version "
 "of the program."
 msgstr ""
-"Невозможно прочитать данные. Файл может быть поврежден или из более новой"
-"версии программы."
+"Невозможно прочитать данные. Файл может быть поврежден или сохранен в более "
+"новой версии программы."
 
 #: confscreen.cpp:364
 msgid ""
@@ -667,6 +669,9 @@ msgid ""
 "workplane. Try selecting a workplane, or activating a sketch-in-new-"
 "workplane group."
 msgstr ""
+"Не выбрано рабочей плоскости и у активной группы нет рабочей плоскости по "
+"умолчанию. Выберите рабочую плоскость или активируйте группу с рабочей "
+"плоскостью."
 
 #: clipboard.cpp:391
 msgid "No workplane active."
@@ -934,11 +939,11 @@ msgstr "Выбрать Цепь Ребер"
 
 #: mouse.cpp:558
 msgid "Toggle Reference Dimension"
-msgstr ""
+msgstr "Показать / Скрыть Справочный Размер"
 
 #: mouse.cpp:564
 msgid "Other Supplementary Angle"
-msgstr ""
+msgstr "Смежный Угол"
 
 #: mouse.cpp:569
 msgid "Snap to Grid"
@@ -946,11 +951,11 @@ msgstr "Прикрепить к Сетке"
 
 #: mouse.cpp:577
 msgid "Remove Spline Point"
-msgstr ""
+msgstr "Удалить Точку Сплайна"
 
 #: mouse.cpp:588
 msgid "Add Spline Point"
-msgstr ""
+msgstr "Добавить Точку Сплайна"
 
 #: mouse.cpp:592
 msgid "Toggle Construction"
@@ -1198,11 +1203,11 @@ msgstr "Выдавить"
 
 #: graphicswin.cpp:100
 msgid "&Lathe"
-msgstr "Выточить"
+msgstr "Вращать"
 
 #: graphicswin.cpp:102
 msgid "Link / Assemble..."
-msgstr "Связать / Собрать..."
+msgstr "Привязать / Собрать..."
 
 #: graphicswin.cpp:103
 msgid "Link Recent"
@@ -1278,7 +1283,7 @@ msgstr "Расстояние / Диаметр"
 
 #: graphicswin.cpp:127
 msgid "Re&ference Dimension"
-msgstr ""
+msgstr "Справочный Размер"
 
 #: graphicswin.cpp:128
 msgid "A&ngle"
@@ -1286,15 +1291,15 @@ msgstr "Угол"
 
 #: graphicswin.cpp:129
 msgid "Reference An&gle"
-msgstr ""
+msgstr "Справочный Угол"
 
 #: graphicswin.cpp:130
 msgid "Other S&upplementary Angle"
-msgstr ""
+msgstr "Смежный Угол"
 
 #: graphicswin.cpp:131
 msgid "Toggle R&eference Dim"
-msgstr ""
+msgstr "Справочный / Несправочный Размер"
 
 #: graphicswin.cpp:133
 msgid "&Horizontal"
@@ -1378,11 +1383,11 @@ msgstr "Показать Степени Свободы"
 
 #: graphicswin.cpp:158
 msgid "&Trace Point"
-msgstr ""
+msgstr "Начать Чертить След Точки"
 
 #: graphicswin.cpp:159
 msgid "&Stop Tracing..."
-msgstr ""
+msgstr "Завершить Чертить След Точки..."
 
 #: graphicswin.cpp:160
 msgid "Step &Dimension..."
@@ -1486,11 +1491,11 @@ msgstr "Установить нормали в одном направлении
 
 #: toolbar.cpp:60
 msgid "Other supplementary angle"
-msgstr ""
+msgstr "Смежный угол"
 
 #: toolbar.cpp:62
 msgid "Toggle reference dimension"
-msgstr ""
+msgstr "Справочный / несправочный размер"
 
 #: toolbar.cpp:66
 msgid "New group extruding active sketch"
@@ -1527,3 +1532,240 @@ msgstr "Ближайший изометрический вид"
 #: toolbar.cpp:84
 msgid "Align view to active workplane"
 msgstr "Выровнять вид по рабочей плоскости"
+
+#: platform/cocoamain.mm:481 platform/gtkmain.cpp:582 platform/w32main.cpp:448
+#: platform/w32main.cpp:1373
+msgctxt "title"
+msgid "(new sketch)"
+msgstr ""
+
+#: platform/cocoamain.mm:710 platform/gtkmain.cpp:896 platform/w32main.cpp:1292
+msgid "(no recent files)"
+msgstr ""
+
+#: platform/cocoamain.mm:828 platform/gtkmain.cpp:1010
+msgid "untitled"
+msgstr ""
+
+#: platform/cocoamain.mm:859
+msgid "Do you want to save the changes you made to the new sketch?"
+msgstr ""
+
+#: platform/cocoamain.mm:861
+msgid "Your changes will be lost if you don't save them."
+msgstr "Все несохраненные изменения будут утеряны."
+
+#: platform/cocoamain.mm:862
+msgctxt "button"
+msgid "Save"
+msgstr "Сохранить"
+
+#: platform/cocoamain.mm:863 platform/cocoamain.mm:904
+msgctxt "button"
+msgid "Cancel"
+msgstr ""
+
+#: platform/cocoamain.mm:864
+msgctxt "button"
+msgid "Don't Save"
+msgstr "Не сохранять"
+
+#: platform/cocoamain.mm:879
+msgid "An autosave file is availible for this project."
+msgstr ""
+
+#: platform/cocoamain.mm:881
+msgid "Do you want to load the autosave file instead?"
+msgstr ""
+
+#: platform/cocoamain.mm:882
+msgctxt "button"
+msgid "Load"
+msgstr ""
+
+#: platform/cocoamain.mm:883
+msgctxt "button"
+msgid "Don't Load"
+msgstr ""
+
+#: platform/cocoamain.mm:899
+msgid ""
+"Do you want to locate it manually?\n"
+"If you select “No”, any geometry that depends on the missing file will be removed."
+msgstr ""
+
+#: platform/cocoamain.mm:902
+msgctxt "button"
+msgid "Yes"
+msgstr "Да"
+
+#: platform/cocoamain.mm:905
+msgctxt "button"
+msgid "No"
+msgstr "Нет"
+
+#: platform/cocoamain.mm:1125 platform/w32main.cpp:180
+msgctxt "button"
+msgid "OK"
+msgstr ""
+
+#: platform/cocoamain.mm:1208 platform/gtkmain.cpp:1377 platform/w32main.cpp:1395
+#: platform/w32main.cpp:1435
+msgctxt "title"
+msgid "Property Browser"
+msgstr ""
+
+#: platform/gtkmain.cpp:952
+msgctxt "title"
+msgid "Open File"
+msgstr "Открыть Файл"
+
+#: platform/gtkmain.cpp:954
+msgid "_Cancel"
+msgstr ""
+
+#: platform/gtkmain.cpp:955
+msgid "_Open"
+msgstr ""
+
+#: platform/gtkmain.cpp:1000
+msgctxt "title"
+msgid "Save File"
+msgstr "Сохранить Файл"
+
+#: platform/gtkmain.cpp:1003 platform/gtkmain.cpp:1040 platform/gtkmain.cpp:1088
+msgctxt "button"
+msgid "_Cancel"
+msgstr ""
+
+#: platform/gtkmain.cpp:1004 platform/gtkmain.cpp:1038
+msgctxt "button"
+msgid "_Save"
+msgstr ""
+
+#: platform/gtkmain.cpp:1033 platform/w32main.cpp:1153
+msgid ""
+"The file has changed since it was last saved.\n"
+"\n"
+"Do you want to save the changes?"
+msgstr ""
+"С момента последнего сохранения файл был изменен.\n"
+"\n"
+"Сохранить новые изменения?"
+
+#: platform/gtkmain.cpp:1037 platform/w32main.cpp:1155
+msgctxt "title"
+msgid "Modified File"
+msgstr ""
+
+#: platform/gtkmain.cpp:1039
+msgctxt "button"
+msgid "Do_n't Save"
+msgstr ""
+
+#: platform/gtkmain.cpp:1057 platform/w32main.cpp:1179
+msgid ""
+"An autosave file is availible for this project.\n"
+"\n"
+"Do you want to load the autosave file instead?"
+msgstr ""
+
+#: platform/gtkmain.cpp:1061 platform/w32main.cpp:1181
+msgctxt "title"
+msgid "Autosave Available"
+msgstr ""
+
+#: platform/gtkmain.cpp:1062
+msgctxt "button"
+msgid "_Load autosave"
+msgstr ""
+
+#: platform/gtkmain.cpp:1063
+msgctxt "button"
+msgid "Do_n't Load"
+msgstr ""
+
+#: platform/gtkmain.cpp:1084 platform/w32main.cpp:1209
+msgctxt "title"
+msgid "Missing File"
+msgstr ""
+
+#: platform/gtkmain.cpp:1085
+msgctxt "button"
+msgid "_Yes"
+msgstr ""
+
+#: platform/gtkmain.cpp:1086
+msgctxt "button"
+msgid "_No"
+msgstr ""
+
+#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+msgctxt "title"
+msgid "Error"
+msgstr ""
+
+#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+msgctxt "title"
+msgid "Message"
+msgstr ""
+
+#: ui.h:69
+msgid "SolveSpace models"
+msgstr ""
+
+#: ui.h:74
+msgid "PNG file"
+msgstr ""
+
+#: ui.h:79
+msgid "STL mesh"
+msgstr ""
+
+#: ui.h:80
+msgid "Wavefront OBJ mesh"
+msgstr ""
+
+#: ui.h:81
+msgid "Three.js-compatible mesh, with viewer"
+msgstr ""
+
+#: ui.h:82
+msgid "Three.js-compatible mesh, mesh only"
+msgstr ""
+
+#: ui.h:87 ui.h:95 ui.h:103
+msgid "STEP file"
+msgstr ""
+
+#: ui.h:92
+msgid "PDF file"
+msgstr ""
+
+#: ui.h:93
+msgid "Encapsulated PostScript"
+msgstr ""
+
+#: ui.h:94
+msgid "Scalable Vector Graphics"
+msgstr ""
+
+#: ui.h:96 ui.h:104
+msgid "DXF file (AutoCAD 2007)"
+msgstr ""
+
+#: ui.h:97
+msgid "HPGL file"
+msgstr ""
+
+#: ui.h:98
+msgid "G Code"
+msgstr ""
+
+#: ui.h:109
+msgid "AutoCAD DXF and DWG files"
+msgstr ""
+
+#: ui.h:114
+msgid "Comma-separated values"
+msgstr ""
