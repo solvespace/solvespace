@@ -20,6 +20,8 @@ New sketch features:
     the entity from a request is selected. For example, dragging a point on
     a face of an extrusion coincident with the source sketch plane will
     drag the point from the source sketch.
+  * When dragging an arc or rectangle point, it will be automatically
+    constrained to other points with a click.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

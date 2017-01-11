@@ -1108,11 +1108,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case Pending::DRAGGING_RADIUS:
-        case Pending::DRAGGING_NEW_POINT:
-            // The MouseMoved event has already dragged it as desired.
             ClearPending();
             break;
 
+        case Pending::DRAGGING_NEW_POINT:
         case Pending::DRAGGING_NEW_ARC_POINT:
             ConstrainPointByHovered(pending.point);
             ClearPending();
