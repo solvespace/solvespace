@@ -397,8 +397,14 @@ public:
 
     bool NewtonSolve(int tag);
 
+    void MarkParamsFree(bool findFree);
+    int CalculateDof();
+
     SolveResult Solve(Group *g, int *dof, List<hConstraint> *bad,
                       bool andFindBad, bool andFindFree, bool forceDofCheck = false);
+
+    SolveResult SolveRank(Group *g, int *dof, List<hConstraint> *bad,
+                          bool andFindBad, bool andFindFree, bool forceDofCheck = false);
 
     void Clear();
 };
@@ -847,6 +853,8 @@ public:
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void SolveGroupAndReport(hGroup hg, bool andFindFree);
+    SolveResult TestRankForGroup(hGroup hg);
+    void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
     void ForceReferences();
 

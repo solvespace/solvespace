@@ -22,6 +22,8 @@ New sketch features:
     drag the point from the source sketch.
   * When dragging an arc or rectangle point, it will be automatically
     constrained to other points with a click.
+  * When adding a constraint which has a label and is redundant with another
+    constraint, the constraint is added as a reference, avoiding an error.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

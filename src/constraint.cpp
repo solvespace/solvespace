@@ -733,6 +733,14 @@ void Constraint::MenuConstrain(Command id) {
         default: ssassert(false, "Unexpected menu ID");
     }
 
+    if(SK.constraint.FindByIdNoOops(c.h)) {
+        Constraint *constraint = SK.GetConstraint(c.h);
+        if(SS.TestRankForGroup(c.group) == SolveResult::REDUNDANT_OKAY &&
+           constraint->HasLabel()) {
+            constraint->reference = true;
+        }
+    }
+
     SS.GW.ClearSelection();
     InvalidateGraphics();
 }
