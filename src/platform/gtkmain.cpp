@@ -424,8 +424,8 @@ private:
     void ij_to_xy(double i, double j, int &x, int &y) {
         // Convert to xy (vs. ij) style coordinates,
         // with (0, 0) at center
-        x = (int)i - _w / 2;
-        y = _h / 2 - (int)j;
+        x = (int)(i * get_scale_factor()) - _w / 2;
+        y = _h / 2 - (int)(j * get_scale_factor());
     }
 };
 
@@ -564,8 +564,8 @@ std::unique_ptr<GraphicsWindowGtk> GW;
 
 void GetGraphicsWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = GW->get_widget().get_allocation();
-    *w = allocation.get_width();
-    *h = allocation.get_height();
+    *w = allocation.get_width() * GW->get_scale_factor();
+    *h = allocation.get_height() * GW->get_scale_factor();
 }
 
 void InvalidateGraphics(void) {
@@ -1129,7 +1129,8 @@ protected:
     bool on_motion_notify_event(GdkEventMotion *event) override {
         SS.TW.MouseEvent(/*leftClick*/ false,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x, event->y);
+                         event->x * get_scale_factor(),
+                         event->y * get_scale_factor());
 
         return true;
     }
@@ -1137,7 +1138,8 @@ protected:
     bool on_button_press_event(GdkEventButton *event) override {
         SS.TW.MouseEvent(/*leftClick*/ event->type == GDK_BUTTON_PRESS,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x, event->y);
+                         event->x * get_scale_factor(),
+                         event->y * get_scale_factor());
 
         return true;
     }
@@ -1258,8 +1260,8 @@ void ShowTextWindow(bool visible) {
 
 void GetTextWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = TW->get_widget().get_allocation();
-    *w = allocation.get_width();
-    *h = allocation.get_height();
+    *w = allocation.get_width() * TW->get_scale_factor();
+    *h = allocation.get_height() * TW->get_scale_factor();
 }
 
 double GetScreenDpi() {

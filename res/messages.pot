@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-01-11 03:01+0000\n"
+"POT-Creation-Date: 2017-01-11 03:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1288,7 +1288,7 @@ msgctxt "button"
 msgid "OK"
 msgstr ""
 
-#: platform/cocoamain.mm:1208 platform/gtkmain.cpp:1377 platform/w32main.cpp:1395
+#: platform/cocoamain.mm:1208 platform/gtkmain.cpp:1379 platform/w32main.cpp:1395
 #: platform/w32main.cpp:1435
 msgctxt "title"
 msgid "Property Browser"
@@ -1376,12 +1376,12 @@ msgctxt "button"
 msgid "_No"
 msgstr ""
 
-#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+#: platform/gtkmain.cpp:1302 platform/w32main.cpp:176
 msgctxt "title"
 msgid "Error"
 msgstr ""
 
-#: platform/gtkmain.cpp:1300 platform/w32main.cpp:176
+#: platform/gtkmain.cpp:1302 platform/w32main.cpp:176
 msgctxt "title"
 msgid "Message"
 msgstr ""
