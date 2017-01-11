@@ -1435,9 +1435,13 @@ Translation Translation::From(const std::string &poData) {
 const std::string &Translation::Translate(const TranslationKey &key) {
     auto it = messages.find(key);
     if(it == messages.end()) {
-        dbp("Missing translation for %s'%s'", key.context.c_str(), key.ident.c_str());
+        dbp("Missing (absent) translation for %s'%s'", key.context.c_str(), key.ident.c_str());
         messages[key].emplace_back(key.ident);
         it = messages.find(key);
+    }
+    if(it->second[0].empty()) {
+        dbp("Missing (empty) translation for %s'%s'", key.context.c_str(), key.ident.c_str());
+        it->second[0] = key.ident;
     }
     if(it->second.size() != 1) {
         dbp("Incorrect use of translated message %s'%s'", key.context.c_str(), key.ident.c_str());
@@ -1447,15 +1451,21 @@ const std::string &Translation::Translate(const TranslationKey &key) {
 }
 
 const std::string &Translation::TranslatePlural(const TranslationKey &key, unsigned n) {
+    unsigned pluralForm = PluralExpr::Eval(pluralExpr, n);
+
     auto it = messages.find(key);
     if(it == messages.end()) {
-        dbp("Missing translation for %s'%s'", key.context.c_str(), key.ident.c_str());
+        dbp("Missing (absent) translation for %s'%s'", key.context.c_str(), key.ident.c_str());
         for(unsigned i = 0; i < pluralCount; i++) {
             messages[key].emplace_back(key.ident);
         }
         it = messages.find(key);
     }
-    unsigned pluralForm = PluralExpr::Eval(pluralExpr, n);
+    if(it->second[pluralForm].empty()) {
+        dbp("Missing (empty) translation for %s'%s'[%d]",
+            key.context.c_str(), key.ident.c_str(), pluralForm);
+        it->second[pluralForm] = key.ident;
+    }
     return it->second[pluralForm];
 }
 
