@@ -16,6 +16,11 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
+#ifdef MenuHelp
+// This is defined to IsolationAwareMenuHelp on Windows 6.0 and later.
+#undef MenuHelp
+#endif
+
 #ifdef HAVE_SPACEWARE
 #   include <si.h>
 #   include <siapp.h>
@@ -66,6 +71,13 @@ HFONT FixedFont;
 // The 6-DOF input device.
 SiHdl SpaceNavigator = SI_NO_HANDLE;
 #endif
+
+//-----------------------------------------------------------------------------
+// Utility routines
+//-----------------------------------------------------------------------------
+std::wstring Title(const std::string &s) {
+    return Widen("SolveSpace - " + s);
+}
 
 //-----------------------------------------------------------------------------
 // Routines to display message boxes on screen. Do our own, instead of using
@@ -156,16 +168,16 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     MessageString = str;
     RECT r;
     GetWindowRect(GraphicsWnd, &r);
-    const char *title = error ? "SolveSpace - Error" : "SolveSpace - Message";
     int width  = cols*SS.TW.CHAR_WIDTH + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWidth = width;
     MessageHeight = height;
-    MessageWnd = CreateWindowClient(0, L"MessageWnd", Widen(title).c_str(),
+    MessageWnd = CreateWindowClient(0, L"MessageWnd",
+        (error ? Title(C_("title", "Error")) : Title(C_("title", "Message"))).c_str(),
         WS_OVERLAPPED | WS_SYSMENU,
         r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
 
-    OkButton = CreateWindowExW(0, WC_BUTTON, L"OK",
+    OkButton = CreateWindowExW(0, WC_BUTTON, Widen(C_("button", "OK")).c_str(),
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
         (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
         70, 25, MessageWnd, NULL, Instance, NULL);
@@ -432,11 +444,8 @@ static void ThawWindowPos(HWND hwnd, const std::string &name)
 }
 
 void SolveSpace::SetCurrentFilename(const std::string &filename) {
-    if(!filename.empty()) {
-        SetWindowTextW(GraphicsWnd, Widen("SolveSpace - " + filename).c_str());
-    } else {
-        SetWindowTextW(GraphicsWnd, L"SolveSpace - (not yet saved)");
-    }
+    SetWindowTextW(GraphicsWnd,
+        Title(filename.empty() ? C_("title", "(new sketch)") : filename).c_str());
 }
 
 void SolveSpace::SetMousePointerToHand(bool yes) {
@@ -689,6 +698,7 @@ static bool ProcessKeyDown(WPARAM wParam)
         case VK_OEM_6:          c = ']';            break;
         case VK_OEM_5:          c = '\\';           break;
         case VK_OEM_PERIOD:     c = '.';            break;
+        case VK_DECIMAL:        c = '.';            break;
         case VK_SPACE:          c = ' ';            break;
         case VK_DELETE:         c = 127;            break;
         case VK_TAB:            c = '\t';           break;
@@ -756,8 +766,6 @@ void SolveSpace::ShowTextWindow(bool visible)
 {
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
-
-const bool SolveSpace::FLIP_FRAMEBUFFER = false;
 
 #if HAVE_OPENGL == 2
 static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
@@ -1017,6 +1025,11 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                     Group::MenuGroup(id);
                     break;
                 }
+                if((uint32_t)id >= (uint32_t)Command::LOCALE &&
+                   (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
+                    SolveSpaceUI::MenuHelp(id);
+                    break;
+                }
                 int i;
                 for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                     if(id == SS.GW.menu[i].id) {
@@ -1137,8 +1150,9 @@ DialogChoice SolveSpace::SaveFileYesNoCancel()
     EnableWindow(TextWnd, false);
 
     int r = MessageBoxW(GraphicsWnd,
-        L"The file has changed since it was last saved.\n\n"
-        L"Do you want to save the changes?", L"SolveSpace",
+        Widen(_("The file has changed since it was last saved.\n\n"
+                "Do you want to save the changes?")).c_str(),
+        Title(C_("title", "Modified File")).c_str(),
         MB_YESNOCANCEL | MB_ICONWARNING);
 
     EnableWindow(TextWnd, true);
@@ -1162,8 +1176,9 @@ DialogChoice SolveSpace::LoadAutosaveYesNo()
     EnableWindow(TextWnd, false);
 
     int r = MessageBoxW(GraphicsWnd,
-        L"An autosave file is availible for this project.\n\n"
-        L"Do you want to load the autosave file instead?", L"SolveSpace",
+        Widen(_("An autosave file is availible for this project.\n\n"
+                "Do you want to load the autosave file instead?")).c_str(),
+        Title(C_("title", "Autosave Available")).c_str(),
         MB_YESNO | MB_ICONWARNING);
 
     EnableWindow(TextWnd, true);
@@ -1190,7 +1205,8 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filena
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
 
-    int r = MessageBoxW(GraphicsWnd, Widen(message).c_str(), L"SolveSpace",
+    int r = MessageBoxW(GraphicsWnd, Widen(message).c_str(),
+        Title(C_("title", "Missing File")).c_str(),
         (canCancel ? MB_YESNOCANCEL : MB_YESNO) | MB_ICONWARNING);
 
     EnableWindow(TextWnd, true);
@@ -1273,7 +1289,7 @@ static void DoRecent(HMENU m, Command base)
             c++;
         }
     }
-    if(c == 0) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, L"(no recent files)");
+    if(c == 0) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, Widen(_("(no recent files)")).c_str());
 }
 void SolveSpace::RefreshRecentMenus()
 {
@@ -1294,7 +1310,7 @@ HMENU CreateGraphicsWindowMenus()
         if(SS.GW.menu[i].label) {
             std::string accel = MakeAcceleratorLabel(SS.GW.menu[i].accel);
             const char *sep = accel.empty() ? "" : "\t";
-            label = ssprintf("%s%s%s", SS.GW.menu[i].label, sep, accel.c_str());
+            label = ssprintf("%s%s%s", Translate(SS.GW.menu[i].label).c_str(), sep, accel.c_str());
         }
 
         if(SS.GW.menu[i].level == 0) {
@@ -1312,6 +1328,15 @@ HMENU CreateGraphicsWindowMenus()
                 RecentImportMenu = CreateMenu();
                 AppendMenuW(m, MF_STRING | MF_POPUP,
                     (UINT_PTR)RecentImportMenu, Widen(label).c_str());
+            } else if(SS.GW.menu[i].id == Command::LOCALE) {
+                HMENU LocaleMenu = CreateMenu();
+                size_t i = 0;
+                for(auto locale : Locales()) {
+                    AppendMenuW(LocaleMenu, MF_STRING,
+                        (uint32_t)Command::LOCALE + i++, Widen(locale.displayName).c_str());
+                }
+                AppendMenuW(m, MF_STRING | MF_POPUP,
+                    (UINT_PTR)LocaleMenu, Widen(label).c_str());
             } else if(SS.GW.menu[i].label) {
                 AppendMenuW(m, MF_STRING, (uint32_t)SS.GW.menu[i].id, Widen(label).c_str());
             } else {
@@ -1344,12 +1369,11 @@ static void CreateMainWindows()
                             IMAGE_ICON, 16, 16, 0);
     ssassert(RegisterClassEx(&wc), "Cannot register window class");
 
-    HMENU top = CreateGraphicsWindowMenus();
     GraphicsWnd = CreateWindowExW(0, L"GraphicsWnd",
-        L"SolveSpace (not yet saved)",
+        Title(C_("title", "(new sketch)")).c_str(),
         WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
         WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
-        50, 50, 900, 600, NULL, top, Instance, NULL);
+        50, 50, 900, 600, NULL, NULL, Instance, NULL);
     ssassert(GraphicsWnd != NULL, "Cannot create window");
 
     GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
@@ -1367,8 +1391,9 @@ static void CreateMainWindows()
 
     // We get the desired Alt+Tab behaviour by specifying that the text
     // window is a child of the graphics window.
-    TextWnd = CreateWindowExW(0,
-        L"TextWnd", L"SolveSpace - Property Browser", WS_THICKFRAME | WS_CLIPCHILDREN,
+    TextWnd = CreateWindowExW(0, L"TextWnd",
+        Title(C_("title", "Property Browser")).c_str(),
+        WS_THICKFRAME | WS_CLIPCHILDREN,
         650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
     ssassert(TextWnd != NULL, "Cannot create window");
 
@@ -1395,6 +1420,19 @@ static void CreateMainWindows()
     GetWindowRect(TextWnd, &r);
     GetClientRect(TextWnd, &rc);
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
+}
+
+void SolveSpace::RefreshLocale() {
+    SS.UpdateWindowTitle();
+
+    HMENU oldMenu = GetMenu(GraphicsWnd);
+    SetMenu(GraphicsWnd, CreateGraphicsWindowMenus());
+    if(oldMenu != NULL) {
+        DestroyMenu(oldMenu);
+    }
+    RefreshRecentMenus();
+
+    SetWindowTextW(TextWnd, Title(C_("title", "Property Browser")).c_str());
 }
 
 #ifdef HAVE_SPACEWARE
@@ -1478,6 +1516,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
     }
 #endif
+
+    // Use the user default locale.
+    SetLocale((uint16_t)GetUserDefaultLCID());
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();

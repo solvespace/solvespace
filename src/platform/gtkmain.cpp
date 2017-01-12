@@ -10,8 +10,6 @@
 #include <unistd.h>
 #include <time.h>
 
-#include <iostream>
-
 #include <json-c/json_object.h>
 #include <json-c/json_util.h>
 
@@ -20,9 +18,11 @@
 #include <giomm/file.h>
 #include <gdkmm/cursor.h>
 #include <gtkmm/drawingarea.h>
+#include <gtkmm/glarea.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/eventbox.h>
+#include <gtkmm/hvbox.h>
 #include <gtkmm/fixed.h>
 #include <gtkmm/adjustment.h>
 #include <gtkmm/separatormenuitem.h>
@@ -32,16 +32,9 @@
 #include <gtkmm/radiobuttongroup.h>
 #include <gtkmm/menu.h>
 #include <gtkmm/menubar.h>
-#include <gtkmm/scrolledwindow.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/main.h>
-
-#if HAVE_GTK3
-#include <gtkmm/hvbox.h>
-#else
-#include <gtkmm/box.h>
-#endif
 
 #include <cairomm/xlib_surface.h>
 #include <pangomm/fontdescription.h>
@@ -58,6 +51,11 @@
 #endif
 
 namespace SolveSpace {
+/* Utility functions */
+std::string Title(const std::string &s) {
+    return "SolveSpace - " + s;
+}
+
 /* Settings */
 
 /* Why not just use GSettings? Two reasons. It doesn't allow to easily see
@@ -218,126 +216,6 @@ void ScheduleLater() {
     Glib::signal_idle().connect(&LaterCallback);
 }
 
-/* GL wrapper */
-
-const bool FLIP_FRAMEBUFFER = true;
-
-class GlWidget : public Gtk::DrawingArea {
-public:
-    GlWidget() : _offscreen() {
-        _xdisplay = gdk_x11_get_default_xdisplay();
-
-        int glxmajor, glxminor;
-        ssassert(glXQueryVersion(_xdisplay, &glxmajor, &glxminor),
-                 "Expected OpenGL to be available");
-
-        ssassert(glxmajor > 1 || (glxmajor == 1 && glxminor >= 3),
-                 "Expected GLX >= 1.3");
-
-        static int fbconfig_attrs[] = {
-            GLX_RENDER_TYPE, GLX_RGBA_BIT,
-            GLX_RED_SIZE, 8,
-            GLX_GREEN_SIZE, 8,
-            GLX_BLUE_SIZE, 8,
-            GLX_DEPTH_SIZE, 24,
-            None
-        };
-        int fbconfig_num = 0;
-        GLXFBConfig *fbconfigs = glXChooseFBConfig(_xdisplay, DefaultScreen(_xdisplay),
-                fbconfig_attrs, &fbconfig_num);
-        ssassert(fbconfigs && fbconfig_num > 0,
-                 "Expected an available framebuffer configuration");
-
-        /* prefer FBConfigs with depth of 32;
-            * Mesa software rasterizer explodes with a BadMatch without this;
-            * without this, Intel on Mesa flickers horribly for some reason.
-           this does not seem to affect other rasterizers (ie NVidia).
-
-           see this Mesa bug:
-           http://lists.freedesktop.org/archives/mesa-dev/2015-January/074693.html */
-        GLXFBConfig fbconfig = fbconfigs[0];
-        for(int i = 0; i < fbconfig_num; i++) {
-            XVisualInfo *visual_info = glXGetVisualFromFBConfig(_xdisplay, fbconfigs[i]);
-            /* some GL visuals, notably on Chromium GL, do not have an associated
-               X visual; this is not an obstacle as we always render offscreen. */
-            if(!visual_info) continue;
-            int depth = visual_info->depth;
-            XFree(visual_info);
-
-            if(depth == 32) {
-                fbconfig = fbconfigs[i];
-                break;
-            }
-        }
-
-        _glcontext = glXCreateNewContext(_xdisplay,
-                fbconfig, GLX_RGBA_TYPE, 0, True);
-        ssassert(_glcontext != NULL, "Cannot create an OpenGL context");
-
-        XFree(fbconfigs);
-
-        /* create a dummy X window to create a rendering context against.
-           we could use a Pbuffer, but some implementations (Chromium GL)
-           don't support these. we could use an existing window, but
-           some implementations (Chromium GL... do you see a pattern?)
-           do really strange things, i.e. draw a black rectangle on
-           the very front of the desktop if you do this. */
-        _xwindow = XCreateSimpleWindow(_xdisplay,
-                XRootWindow(_xdisplay, gdk_x11_get_default_screen()),
-                /*x*/ 0, /*y*/ 0, /*width*/ 1, /*height*/ 1,
-                /*border_width*/ 0, /*border*/ 0, /*background*/ 0);
-    }
-
-    ~GlWidget() {
-        glXMakeCurrent(_xdisplay, None, NULL);
-
-        XDestroyWindow(_xdisplay, _xwindow);
-
-        _offscreen.Clear();
-
-        glXDestroyContext(_xdisplay, _glcontext);
-    }
-
-protected:
-    /* Draw on a GLX framebuffer object, then read pixels out and draw them on
-       the Cairo context. Slower, but you get to overlay nice widgets. */
-#ifdef HAVE_GTK3
-    bool on_draw(const Cairo::RefPtr<Cairo::Context> &cr) override {
-#else
-    bool on_expose_event(GdkEventExpose *) override {
-        const Cairo::RefPtr<Cairo::Context> &cr = get_window()->create_cairo_context();
-#endif
-        ssassert(glXMakeCurrent(_xdisplay, _xwindow, _glcontext),
-                 "Cannot make OpenGL context current");
-
-        Gdk::Rectangle allocation = get_allocation();
-        bool success = _offscreen.Render(
-            allocation.get_width(), allocation.get_height(),
-            sigc::mem_fun(this, &GlWidget::on_gl_draw));
-        ssassert(success, "Cannot allocate offscreen rendering buffer");
-
-        Cairo::RefPtr<Cairo::ImageSurface> surface =
-            Cairo::ImageSurface::create(&_offscreen.data[0], Cairo::FORMAT_RGB24,
-                allocation.get_width(), allocation.get_height(),
-                allocation.get_width() * 4);
-        cr->set_source(surface, 0, 0);
-        cr->paint();
-        surface->finish();
-
-        glXSwapBuffers(_xdisplay, _xwindow);
-
-        return true;
-    }
-
-    virtual void on_gl_draw() = 0;
-
-private:
-    Display *_xdisplay;
-    GLXContext _glcontext;
-    GlOffscreen _offscreen;
-    ::Window _xwindow;
-};
-
 /* Editor overlay */
 
 class EditorOverlay : public Gtk::Fixed {
@@ -360,18 +238,7 @@ public:
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
-
-#ifdef HAVE_GTK3
-        /* For some reason override_font doesn't take screen DPI into
-           account on GTK3 when working with font descriptors specified
-           in absolute sizes; modify_font does on GTK2. */
-        Pango::FontDescription override_font_desc(font_desc);
-        double dpi = get_screen()->get_resolution();
-        override_font_desc.set_size(font_height * 72.0 / dpi * Pango::SCALE);
-        _entry.override_font(override_font_desc);
-#else
-        _entry.modify_font(font_desc);
-#endif
+        _entry.override_font(font_desc);
 
         /* y coordinate denotes baseline */
         Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
@@ -382,40 +249,22 @@ public:
         layout->set_text(val + " "); /* avoid scrolling */
         int width = layout->get_logical_extents().get_width();
 
-#ifdef HAVE_GTK3
         Gtk::Border border = _entry.get_style_context()->get_padding();
         move(_entry, x - border.get_left(), y - border.get_top());
         _entry.set_width_chars(minWidthChars);
         _entry.set_size_request(width / Pango::SCALE, -1);
-#else
-        /* We need _gtk_entry_effective_inner_border, but it's not
-           in the public API, so emulate its logic. */
-        Gtk::Border border = { 2, 2, 2, 2 }, *style_border;
-        gtk_widget_style_get(GTK_WIDGET(_entry.gobj()), "inner-border",
-                             &style_border, NULL);
-        if(style_border) border = *style_border;
-        move(_entry, x - border.left, y - border.top);
-        /* This is what set_width_chars does. */
-        int minWidth = minWidthChars * std::max(font_metrics.get_approximate_digit_width(),
-                                                font_metrics.get_approximate_char_width());
-        _entry.set_size_request(std::max(width, minWidth) / Pango::SCALE, -1);
-#endif
 
         _entry.set_text(val);
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
-#ifndef HAVE_GTK3
             _entry.add_modal_grab();
-#endif
         }
     }
 
     void stop_editing() {
-#ifndef HAVE_GTK3
         if(_entry.is_visible())
             _entry.remove_modal_grab();
-#endif
         _entry.hide();
     }
 
@@ -460,11 +309,7 @@ private:
 /* Graphics window */
 
 double DeltaYOfScrollEvent(GdkEventScroll *event) {
-#ifdef HAVE_GTK3
     double delta_y = event->delta_y;
-#else
-    double delta_y = 0;
-#endif
     if(delta_y == 0) {
         switch(event->direction) {
             case GDK_SCROLL_UP:
@@ -484,26 +329,27 @@ double DeltaYOfScrollEvent(GdkEventScroll *event) {
     return delta_y;
 }
 
-class GraphicsWidget : public GlWidget {
+class GraphicsWidget : public Gtk::GLArea {
 public:
     GraphicsWidget() {
         set_events(Gdk::POINTER_MOTION_MASK |
                    Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON_MOTION_MASK |
                    Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
-        set_double_buffered(true);
+        set_has_alpha(true);
+        set_has_depth_buffer(true);
+        set_use_es(true);
     }
 
 protected:
-    bool on_configure_event(GdkEventConfigure *event) override {
-        _w = event->width;
-        _h = event->height;
-
-        return GlWidget::on_configure_event(event);;
+    void on_resize(int width, int height) override {
+        _w = width;
+        _h = height;
     }
 
-    void on_gl_draw() override {
+    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.GW.Paint();
+        return true;
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
@@ -578,8 +424,8 @@ private:
     void ij_to_xy(double i, double j, int &x, int &y) {
         // Convert to xy (vs. ij) style coordinates,
         // with (0, 0) at center
-        x = (int)i - _w / 2;
-        y = _h / 2 - (int)j;
+        x = (int)(i * get_scale_factor()) - _w / 2;
+        y = _h / 2 - (int)(j * get_scale_factor());
     }
 };
 
@@ -669,6 +515,10 @@ protected:
             chr = '\b';
             break;
 
+            case GDK_KEY_KP_Decimal:
+            chr = '.';
+            break;
+
             default:
             if(event->keyval >= GDK_KEY_F1 && event->keyval <= GDK_KEY_F12) {
                 chr = GraphicsWindow::FUNCTION_KEY_BASE + (event->keyval - GDK_KEY_F1);
@@ -714,8 +564,8 @@ std::unique_ptr<GraphicsWindowGtk> GW;
 
 void GetGraphicsWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = GW->get_widget().get_allocation();
-    *w = allocation.get_width();
-    *h = allocation.get_height();
+    *w = allocation.get_width() * GW->get_scale_factor();
+    *h = allocation.get_height() * GW->get_scale_factor();
 }
 
 void InvalidateGraphics(void) {
@@ -729,11 +579,7 @@ void PaintGraphics(void) {
 }
 
 void SetCurrentFilename(const std::string &filename) {
-    if(!filename.empty()) {
-        GW->set_title("SolveSpace - " + filename);
-    } else {
-        GW->set_title("SolveSpace - (not yet saved)");
-    }
+    GW->set_title(Title(filename.empty() ? C_("title", "(new sketch)") : filename.c_str()));
 }
 
 void ToggleFullScreen(void) {
@@ -935,7 +781,7 @@ protected:
     }
 
 private:
-    const GraphicsWindow::MenuEntry &_entry;
+    const GraphicsWindow::MenuEntry _entry;
     bool _synthetic;
 };
 
@@ -961,24 +807,41 @@ static void InitMainMenu(Gtk::MenuShell *menu_shell) {
         current_level = entry->level;
 
         if(entry->label) {
+            GraphicsWindow::MenuEntry localizedEntry = *entry;
+            localizedEntry.label = Translate(entry->label).c_str();
+
             switch(entry->kind) {
                 case GraphicsWindow::MenuKind::NORMAL:
-                menu_item = new MainMenuItem<Gtk::MenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::MenuItem>(localizedEntry);
                 break;
 
                 case GraphicsWindow::MenuKind::CHECK:
-                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
                 break;
 
                 case GraphicsWindow::MenuKind::RADIO:
                 MainMenuItem<Gtk::CheckMenuItem> *radio_item =
-                        new MainMenuItem<Gtk::CheckMenuItem>(*entry);
+                        new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
                 radio_item->set_draw_as_radio(true);
                 menu_item = radio_item;
                 break;
             }
         } else {
             menu_item = new Gtk::SeparatorMenuItem();
+        }
+
+        if(entry->id == Command::LOCALE) {
+            Gtk::Menu *menu = new Gtk::Menu;
+            menu_item->set_submenu(*menu);
+
+            size_t i = 0;
+            for(auto locale : Locales()) {
+                GraphicsWindow::MenuEntry localeEntry = {};
+                localeEntry.label = locale.displayName.c_str();
+                localeEntry.id    = (Command)((uint32_t)Command::LOCALE + i++);
+                localeEntry.fn    = entry->fn;
+                menu->append(*new MainMenuItem<Gtk::MenuItem>(localeEntry));
+            }
         }
 
         levels[entry->level]->append(*menu_item);
@@ -1029,13 +892,13 @@ static void RefreshRecentMenu(Command cmd, Command base) {
     Gtk::Menu *menu = new Gtk::Menu;
     recent->set_submenu(*menu);
 
-    if(std::string(RecentFile[0]).empty()) {
-        Gtk::MenuItem *placeholder = new Gtk::MenuItem("(no recent files)");
+    if(RecentFile[0].empty()) {
+        Gtk::MenuItem *placeholder = new Gtk::MenuItem(_("(no recent files)"));
         placeholder->set_sensitive(false);
         menu->append(*placeholder);
     } else {
         for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(std::string(RecentFile[i]).empty())
+            if(RecentFile[i].empty())
                 break;
 
             RecentMenuItem *item = new RecentMenuItem(RecentFile[i], (uint32_t)base + i);
@@ -1056,12 +919,8 @@ void RefreshRecentMenus(void) {
 static std::string ConvertFilters(std::string active, const FileFilter ssFilters[],
                                   Gtk::FileChooser *chooser) {
     for(const FileFilter *ssFilter = ssFilters; ssFilter->name; ssFilter++) {
-#ifdef HAVE_GTK3
         Glib::RefPtr<Gtk::FileFilter> filter = Gtk::FileFilter::create();
-#else
-        Gtk::FileFilter *filter = new Gtk::FileFilter;
-#endif
-        filter->set_name(ssFilter->name);
+        filter->set_name(Translate(ssFilter->name));
 
         bool is_active = false;
         std::string desc = "";
@@ -1080,15 +939,9 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
         }
         filter->set_name(filter->get_name() + " (" + desc + ")");
 
-#ifdef HAVE_GTK3
         chooser->add_filter(filter);
         if(is_active)
             chooser->set_filter(filter);
-#else
-        chooser->add_filter(*filter);
-        if(is_active)
-            chooser->set_filter(*filter);
-#endif
     }
 
     return active;
@@ -1096,10 +949,10 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
 
 bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Open File");
+    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Open File")));
     chooser.set_filename(*filename);
-    chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
-    chooser.add_button("_Open", Gtk::RESPONSE_OK);
+    chooser.add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
+    chooser.add_button(_("_Open"), Gtk::RESPONSE_OK);
     chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
 
     ConvertFilters(activeOrEmpty, filters, &chooser);
@@ -1144,17 +997,17 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, "SolveSpace - Save File",
+    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Save File")),
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);
-    chooser.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
-    chooser.add_button("_Save", Gtk::RESPONSE_OK);
+    chooser.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
+    chooser.add_button(C_("button", "_Save"), Gtk::RESPONSE_OK);
 
     std::string activeExtension = ConvertFilters(defExtension, filters, &chooser);
 
     if(filename->empty()) {
         chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
-        chooser.set_current_name("untitled." + activeExtension);
+        chooser.set_current_name(std::string(_("untitled")) + "." + activeExtension);
     } else {
         chooser.set_current_folder(Dirname(*filename));
         chooser.set_current_name(Basename(*filename, /*stripExtension=*/true) +
@@ -1177,14 +1030,14 @@ bool GetSaveFile(std::string *filename, const std::string &defExtension,
 
 DialogChoice SaveFileYesNoCancel(void) {
     Glib::ustring message =
-        "The file has changed since it was last saved.\n"
-        "Do you want to save the changes?";
+        _("The file has changed since it was last saved.\n\n"
+          "Do you want to save the changes?");
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Modified File");
-    dialog.add_button("_Save", Gtk::RESPONSE_YES);
-    dialog.add_button("Do_n't Save", Gtk::RESPONSE_NO);
-    dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+    dialog.set_title(Title(C_("title", "Modified File")));
+    dialog.add_button(C_("button", "_Save"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "Do_n't Save"), Gtk::RESPONSE_NO);
+    dialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1201,13 +1054,13 @@ DialogChoice SaveFileYesNoCancel(void) {
 
 DialogChoice LoadAutosaveYesNo(void) {
     Glib::ustring message =
-        "An autosave file is availible for this project.\n"
-        "Do you want to load the autosave file instead?";
+        _("An autosave file is availible for this project.\n\n"
+          "Do you want to load the autosave file instead?");
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Autosave Available");
-    dialog.add_button("_Load autosave", Gtk::RESPONSE_YES);
-    dialog.add_button("Do_n't Load", Gtk::RESPONSE_NO);
+    dialog.set_title(Title(C_("title", "Autosave Available")));
+    dialog.add_button(C_("button", "_Load autosave"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "Do_n't Load"), Gtk::RESPONSE_NO);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1222,17 +1075,17 @@ DialogChoice LoadAutosaveYesNo(void) {
 DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
                                            bool canCancel) {
     Glib::ustring message =
-        "The linked file " + filename + " is not present.\n"
-        "Do you want to locate it manually?\n"
+        "The linked file " + filename + " is not present.\n\n"
+        "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
-    dialog.set_title("SolveSpace - Missing File");
-    dialog.add_button("_Yes", Gtk::RESPONSE_YES);
-    dialog.add_button("_No", Gtk::RESPONSE_NO);
+    dialog.set_title(Title(C_("title", "Missing File")));
+    dialog.add_button(C_("button", "_Yes"), Gtk::RESPONSE_YES);
+    dialog.add_button(C_("button", "_No"), Gtk::RESPONSE_NO);
     if(canCancel)
-        dialog.add_button("_Cancel", Gtk::RESPONSE_CANCEL);
+        dialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
 
     switch(dialog.run()) {
         case Gtk::RESPONSE_YES:
@@ -1249,38 +1102,35 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 /* Text window */
 
-class TextWidget : public GlWidget {
+class TextWidget : public Gtk::GLArea {
 public:
-#ifdef HAVE_GTK3
     TextWidget(Glib::RefPtr<Gtk::Adjustment> adjustment) : _adjustment(adjustment) {
-#else
-    TextWidget(Gtk::Adjustment* adjustment) : _adjustment(adjustment) {
-#endif
         set_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
+        set_has_alpha(true);
+        set_has_depth_buffer(true);
+        set_use_es(true);
     }
 
     void set_cursor_hand(bool is_hand) {
         Glib::RefPtr<Gdk::Window> gdkwin = get_window();
         if(gdkwin) { // returns NULL if not realized
             Gdk::CursorType type = is_hand ? Gdk::HAND1 : Gdk::ARROW;
-#ifdef HAVE_GTK3
             gdkwin->set_cursor(Gdk::Cursor::create(type));
-#else
-            gdkwin->set_cursor(Gdk::Cursor(type));
-#endif
         }
     }
 
 protected:
-    void on_gl_draw() override {
+    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.TW.Paint();
+        return true;
     }
 
     bool on_motion_notify_event(GdkEventMotion *event) override {
         SS.TW.MouseEvent(/*leftClick*/ false,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x, event->y);
+                         event->x * get_scale_factor(),
+                         event->y * get_scale_factor());
 
         return true;
     }
@@ -1288,7 +1138,8 @@ protected:
     bool on_button_press_event(GdkEventButton *event) override {
         SS.TW.MouseEvent(/*leftClick*/ event->type == GDK_BUTTON_PRESS,
                          /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x, event->y);
+                         event->x * get_scale_factor(),
+                         event->y * get_scale_factor());
 
         return true;
     }
@@ -1307,11 +1158,7 @@ protected:
     }
 
 private:
-#ifdef HAVE_GTK3
     Glib::RefPtr<Gtk::Adjustment> _adjustment;
-#else
-    Gtk::Adjustment *_adjustment;
-#endif
 };
 
 class TextWindowGtk : public Gtk::Window {
@@ -1321,7 +1168,6 @@ public:
         set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
         set_skip_taskbar_hint(true);
         set_skip_pager_hint(true);
-        set_title("SolveSpace - Property Browser");
         set_default_size(420, 300);
 
         _box.pack_start(_overlay, true, true);
@@ -1414,8 +1260,8 @@ void ShowTextWindow(bool visible) {
 
 void GetTextWindowSize(int *w, int *h) {
     Gdk::Rectangle allocation = TW->get_widget().get_allocation();
-    *w = allocation.get_width();
-    *h = allocation.get_height();
+    *w = allocation.get_width() * TW->get_scale_factor();
+    *h = allocation.get_height() * TW->get_scale_factor();
 }
 
 double GetScreenDpi() {
@@ -1452,7 +1298,8 @@ void DoMessageBox(const char *message, int rows, int cols, bool error) {
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true,
                               error ? Gtk::MESSAGE_ERROR : Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK,
                               /*is_modal*/ true);
-    dialog.set_title(error ? "SolveSpace - Error" : "SolveSpace - Message");
+    dialog.set_title(error ?
+        Title(C_("title", "Error")) : Title(C_("title", "Message")));
     dialog.run();
 }
 
@@ -1518,7 +1365,21 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
 
 /* Application lifecycle */
 
-void ExitNow(void) {
+void RefreshLocale() {
+    SS.UpdateWindowTitle();
+    for(auto menu : GW->get_menubar().get_children()) {
+        GW->get_menubar().remove(*menu);
+    }
+    InitMainMenu(&GW->get_menubar());
+    RefreshRecentMenus();
+    GW->get_menubar().show_all();
+    GW->get_menubar().accelerate(*GW);
+    GW->get_menubar().accelerate(*TW);
+
+    TW->set_title(Title(C_("title", "Property Browser")));
+}
+
+void ExitNow() {
     GW->hide();
     TW->hide();
 }
@@ -1534,7 +1395,7 @@ int main(int argc, char** argv) {
        We set it back to C after all.  */
     setlocale(LC_ALL, "");
     if(!Glib::get_charset()) {
-        std::cerr << "Sorry, only UTF-8 locales are supported." << std::endl;
+        dbp("Sorry, only UTF-8 locales are supported.");
         return 1;
     }
     setlocale(LC_ALL, "C");
@@ -1561,8 +1422,6 @@ int main(int argc, char** argv) {
 
     TW.reset(new TextWindowGtk);
     GW.reset(new GraphicsWindowGtk);
-    InitMainMenu(&GW->get_menubar());
-    GW->get_menubar().accelerate(*TW);
     TW->set_transient_for(*GW);
     GW->set_icon(icon_gdk);
     TW->set_icon(icon_gdk);
@@ -1570,23 +1429,24 @@ int main(int argc, char** argv) {
     TW->show_all();
     GW->show_all();
 
-#ifdef HAVE_SPACEWARE
-#ifdef HAVE_GTK3
-    // We don't care if it can't be opened; just continue without.
-    spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                   gdk_x11_window_get_xid(GW->get_window()->gobj()));
-#else
-    spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                   GDK_WINDOW_XWINDOW(GW->get_window()->gobj()));
-#endif
+    const char* const* langNames = g_get_language_names();
+    while(*langNames) {
+        if(SetLocale(*langNames++)) break;
+    }
+
+#if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
+    if(GDK_IS_X11_DISPLAY(Gdk::Display::get_default()->gobj())) {
+        // We don't care if it can't be opened; just continue without.
+        spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                       gdk_x11_window_get_xid(GW->get_window()->gobj()));
+    }
 #endif
 
     SS.Init();
 
     if(argc >= 2) {
         if(argc > 2) {
-            std::cerr << "Only the first file passed on command line will be opened."
-                      << std::endl;
+            dbp("Only the first file passed on command line will be opened.");
         }
 
         /* Make sure the argument is valid UTF-8. */

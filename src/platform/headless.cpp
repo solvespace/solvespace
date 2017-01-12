@@ -93,8 +93,6 @@ void ScheduleLater() {
 // Rendering
 //-----------------------------------------------------------------------------
 
-const bool FLIP_FRAMEBUFFER = false;
-
 std::shared_ptr<ViewportCanvas> CreateRenderer() {
     return NULL;
 }
@@ -254,6 +252,9 @@ std::vector<std::string> GetFontFiles() {
 //-----------------------------------------------------------------------------
 // Application lifecycle
 //-----------------------------------------------------------------------------
+
+void RefreshLocale() {
+}
 
 void ExitNow() {
     ssassert(false, "Not implemented");

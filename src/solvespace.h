@@ -149,8 +149,6 @@ enum class ContextCommand : uint32_t;
 #define PATH_SEP "/"
 #endif
 
-extern const bool FLIP_FRAMEBUFFER;
-
 bool PathEqual(const std::string &a, const std::string &b);
 std::string PathSepPlatformToUnix(const std::string &filename);
 std::string PathSepUnixToPlatform(const std::string &filename);
@@ -171,66 +169,12 @@ DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
 
 #define AUTOSAVE_SUFFIX "~"
 
-struct FileFilter {
-    const char *name;
-    const char *patterns[3];
-};
-
-// SolveSpace native file format
-const FileFilter SlvsFileFilter[] = {
-    { "SolveSpace models",          { "slvs" } },
-    { NULL, {} }
-};
-// PNG format bitmap
-const FileFilter PngFileFilter[] = {
-    { "PNG file",                   { "png" } },
-    { NULL, {} }
-};
-// Triangle mesh
-const FileFilter MeshFileFilter[] = {
-    { "STL mesh",                   { "stl" } },
-    { "Wavefront OBJ mesh",         { "obj" } },
-    { "Three.js-compatible mesh, with viewer",  { "html" } },
-    { "Three.js-compatible mesh, mesh only",    { "js" } },
-    { NULL, {} }
-};
-// NURBS surfaces
-const FileFilter SurfaceFileFilter[] = {
-    { "STEP file",                  { "step", "stp" } },
-    { NULL, {} }
-};
-// 2d vector (lines and curves) format
-const FileFilter VectorFileFilter[] = {
-    { "PDF file",                   { "pdf" } },
-    { "Encapsulated PostScript",    { "eps",  "ps" } },
-    { "Scalable Vector Graphics",   { "svg" } },
-    { "STEP file",                  { "step", "stp" } },
-    { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { "HPGL file",                  { "plt",  "hpgl" } },
-    { "G Code",                     { "ngc",  "txt" } },
-    { NULL, {} }
-};
-// 3d vector (wireframe lines and curves) format
-const FileFilter Vector3dFileFilter[] = {
-    { "STEP file",                  { "step", "stp" } },
-    { "DXF file (AutoCAD 2007)",    { "dxf" } },
-    { NULL, {} }
-};
-// All Importable formats
-const FileFilter ImportableFileFilter[] = {
-    { "AutoCAD DXF and DWG files",  { "dxf", "dwg" } },
-    { NULL, {} }
-};
-// Comma-separated value, like a spreadsheet would use
-const FileFilter CsvFileFilter[] = {
-    { "CSV",                        { "csv" } },
-    { NULL, {} }
-};
-
 enum class Unit : uint32_t {
     MM = 0,
     INCHES
 };
+
+struct FileFilter;
 
 bool GetSaveFile(std::string *filename, const std::string &defExtension,
                  const FileFilter filters[]);
@@ -239,6 +183,8 @@ bool GetOpenFile(std::string *filename, const std::string &defExtension,
 std::vector<std::string> GetFontFiles();
 
 void OpenWebsite(const char *url);
+
+void RefreshLocale();
 
 void CheckMenuByCmd(Command id, bool checked);
 void RadioMenuByCmd(Command id, bool selected);
@@ -451,8 +397,14 @@ public:
 
     bool NewtonSolve(int tag);
 
+    void MarkParamsFree(bool findFree);
+    int CalculateDof();
+
     SolveResult Solve(Group *g, int *dof, List<hConstraint> *bad,
                       bool andFindBad, bool andFindFree, bool forceDofCheck = false);
+
+    SolveResult SolveRank(Group *g, int *dof, List<hConstraint> *bad,
+                          bool andFindBad, bool andFindFree, bool forceDofCheck = false);
 
     void Clear();
 };
@@ -902,6 +854,8 @@ public:
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void SolveGroupAndReport(hGroup hg, bool andFindFree);
+    SolveResult TestRankForGroup(hGroup hg);
+    void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
     void ForceReferences();
 

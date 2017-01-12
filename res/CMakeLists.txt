@@ -192,6 +192,9 @@ add_resources(
     icons/text-window/point.png
     icons/text-window/shaded.png
     icons/text-window/workplane.png
+    locales.txt
+    locales/en_US.po
+    locales/uk_UA.po
     fonts/unifont.hex.gz
     fonts/private/0-check-false.png
     fonts/private/1-check-true.png

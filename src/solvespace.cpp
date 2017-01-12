@@ -104,6 +104,11 @@ void SolveSpaceUI::Init() {
     RefreshRecentMenus();
     // Autosave timer
     autosaveInterval = CnfThawInt(5, "AutosaveInterval");
+    // Locale
+    std::string locale = CnfThawString("", "Locale");
+    if(!locale.empty()) {
+        SetLocale(locale);
+    }
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
@@ -475,10 +480,10 @@ void SolveSpaceUI::MenuFile(Command id) {
                 (FilenameHasExtension(exportFile, ".txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {
-                Message("Constraints are currently shown, and will be exported "
-                        "in the toolpath. This is probably not what you want; "
-                        "hide them by clicking the link at the top of the "
-                        "text window.");
+                Message(_("Constraints are currently shown, and will be exported "
+                          "in the toolpath. This is probably not what you want; "
+                          "hide them by clicking the link at the top of the "
+                          "text window."));
             }
 
             SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/false);
@@ -582,11 +587,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     SS.ScheduleShowTW();
                     SS.GW.ClearSelection();
                 } else {
-                    Error("Constraint must have a label, and must not be "
-                          "a reference dimension.");
+                    Error(_("Constraint must have a label, and must not be "
+                            "a reference dimension."));
                 }
             } else {
-                Error("Bad selection for step dimension; select a constraint.");
+                Error(_("Bad selection for step dimension; select a constraint."));
             }
             break;
 
@@ -610,7 +615,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 Error("%d edges interfere with other triangles, bad.",
                     SS.nakedEdges.l.n);
             } else {
-                Message("The assembly does not interfere, good.");
+                Message(_("The assembly does not interfere, good."));
             }
             break;
         }
@@ -687,9 +692,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::AREA: {
             Group *g = SK.GetGroup(SS.GW.activeGroup);
             if(g->polyError.how != PolyError::GOOD) {
-                Error("This group does not contain a correctly-formed "
-                      "2d closed area. It is open, not coplanar, or self-"
-                      "intersecting.");
+                Error(_("This group does not contain a correctly-formed "
+                        "2d closed area. It is open, not coplanar, or self-"
+                        "intersecting."));
                 break;
             }
             SEdgeList sel = {};
@@ -730,7 +735,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     perimeter / scale,
                     SS.UnitName());
             } else {
-                Error("Bad selection for perimeter; select line segments, arcs, and curves.");
+                Error(_("Bad selection for perimeter; select line segments, arcs, and curves."));
             }
             break;
         }
@@ -746,7 +751,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 SS.traced.point = gs.point[0];
                 SS.GW.ClearSelection();
             } else {
-                Error("Bad selection for trace; select a single point.");
+                Error(_("Bad selection for trace; select a single point."));
             }
             break;
 
@@ -814,6 +819,20 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
 }
 
 void SolveSpaceUI::MenuHelp(Command id) {
+    if((uint32_t)id >= (uint32_t)Command::LOCALE &&
+       (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
+        size_t offset = (uint32_t)id - (uint32_t)Command::LOCALE;
+        size_t i = 0;
+        for(auto locale : Locales()) {
+            if(i++ == offset) {
+                CnfFreezeString(locale.Culture(), "Locale");
+                SetLocale(locale.Culture());
+                break;
+            }
+        }
+        return;
+    }
+
     switch(id) {
         case Command::WEBSITE:
             OpenWebsite("http://solvespace.com/helpmenu");

@@ -40,7 +40,7 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
 
     // And an empty group, for the first stuff the user draws.
     g.visible = true;
-    g.name = "sketch-in-plane";
+    g.name = C_("group-name", "sketch-in-plane");
     g.type = Group::Type::DRAWING_WORKPLANE;
     g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
     g.order = 1;
@@ -58,7 +58,7 @@ void SolveSpaceUI::NewFile() {
     // Our initial group, that contains the references.
     Group g = {};
     g.visible = true;
-    g.name = "#references";
+    g.name = C_("group-name", "#references");
     g.type = Group::Type::DRAWING_3D;
     g.order = 0;
     g.h = Group::HGROUP_REFERENCES;
@@ -505,8 +505,8 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename, bool canCancel) {
     fclose(fh);
 
     if(fileLoadError) {
-        Error("Unrecognized data in file. This file may be corrupt, or "
-              "from a new version of the program.");
+        Error(_("Unrecognized data in file. This file may be corrupt, or "
+                "from a newer version of the program."));
         // At least leave the program in a non-crashing state.
         if(SK.group.n == 0) {
             NewFile();

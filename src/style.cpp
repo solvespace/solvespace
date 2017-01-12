@@ -158,8 +158,8 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     }
 
     if(showError) {
-        Error("Can't assign style to an entity that's derived from another "
-              "entity; try assigning a style to this entity's parent.");
+        Error(_("Can't assign style to an entity that's derived from another "
+                "entity; try assigning a style to this entity's parent."));
     }
 
     SS.GW.ClearSelection();
@@ -695,13 +695,13 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
                     SS.backgroundColor = RGBf(rgb.x, rgb.y, rgb.z);
                 }
             } else {
-                Error("Bad format: specify color as r, g, b");
+                Error(_("Bad format: specify color as r, g, b"));
             }
             break;
         }
         case Edit::STYLE_NAME:
             if(!*str) {
-                Error("Style name cannot be empty");
+                Error(_("Style name cannot be empty"));
             } else {
                 SS.UndoRemember();
                 s = Style::Get(edit.style);
@@ -714,7 +714,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             if(e) {
                 double ev = e->Eval();
                 if(ev < 0.001 || isnan(ev)) {
-                    Error("Scale must not be zero or negative!");
+                    Error(_("Scale must not be zero or negative!"));
                 } else {
                     SS.bgImage.scale = ev / SS.MmPerUnit();
                 }

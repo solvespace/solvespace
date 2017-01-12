@@ -8,6 +8,113 @@
 #ifndef __UI_H
 #define __UI_H
 
+class Locale {
+public:
+    std::string language;
+    std::string region;
+    uint16_t    lcid;
+    std::string displayName;
+
+    std::string Culture() const {
+        return language + "-" + region;
+    }
+};
+
+struct LocaleLess {
+    bool operator()(const Locale &a, const Locale &b) const {
+        return a.language < b.language ||
+            (a.language == b.language && a.region < b.region);
+    }
+};
+
+const std::set<Locale, LocaleLess> &Locales();
+bool SetLocale(const std::string &name);
+bool SetLocale(uint16_t lcid);
+
+const std::string &Translate(const char *msgid);
+const std::string &Translate(const char *msgctxt, const char *msgid);
+const std::string &TranslatePlural(const char *msgid, unsigned n);
+const std::string &TranslatePlural(const char *msgctxt, const char *msgid, unsigned n);
+
+inline const char *N_(const char *msgid) {
+    return msgid;
+}
+inline const char *CN_(const char *msgctxt, const char *msgid) {
+    return msgid;
+}
+#if defined(LIBRARY)
+inline const char *_(const char *msgid) {
+    return msgid;
+}
+inline const char *C_(const char *msgctxt, const char *msgid) {
+    return msgid;
+}
+#else
+inline const char *_(const char *msgid) {
+    return Translate(msgid).c_str();
+}
+inline const char *C_(const char *msgctxt, const char *msgid) {
+    return Translate(msgctxt, msgid).c_str();
+}
+#endif
+
+// Filters for the file formats that we support.
+struct FileFilter {
+    const char *name;
+    const char *patterns[3];
+};
+
+// SolveSpace native file format
+const FileFilter SlvsFileFilter[] = {
+    { N_("SolveSpace models"),          { "slvs" } },
+    { NULL, {} }
+};
+// PNG format bitmap
+const FileFilter PngFileFilter[] = {
+    { N_("PNG file"),                   { "png" } },
+    { NULL, {} }
+};
+// Triangle mesh
+const FileFilter MeshFileFilter[] = {
+    { N_("STL mesh"),                   { "stl" } },
+    { N_("Wavefront OBJ mesh"),         { "obj" } },
+    { N_("Three.js-compatible mesh, with viewer"),  { "html" } },
+    { N_("Three.js-compatible mesh, mesh only"),    { "js" } },
+    { NULL, {} }
+};
+// NURBS surfaces
+const FileFilter SurfaceFileFilter[] = {
+    { N_("STEP file"),                  { "step", "stp" } },
+    { NULL, {} }
+};
+// 2d vector (lines and curves) format
+const FileFilter VectorFileFilter[] = {
+    { N_("PDF file"),                   { "pdf" } },
+    { N_("Encapsulated PostScript"),    { "eps",  "ps" } },
+    { N_("Scalable Vector Graphics"),   { "svg" } },
+    { N_("STEP file"),                  { "step", "stp" } },
+    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
+    { N_("HPGL file"),                  { "plt",  "hpgl" } },
+    { N_("G Code"),                     { "ngc",  "txt" } },
+    { NULL, {} }
+};
+// 3d vector (wireframe lines and curves) format
+const FileFilter Vector3dFileFilter[] = {
+    { N_("STEP file"),                  { "step", "stp" } },
+    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
+    { NULL, {} }
+};
+// All Importable formats
+const FileFilter ImportableFileFilter[] = {
+    { N_("AutoCAD DXF and DWG files"),  { "dxf", "dwg" } },
+    { NULL, {} }
+};
+// Comma-separated value, like a spreadsheet would use
+const FileFilter CsvFileFilter[] = {
+    { N_("Comma-separated values"),     { "csv" } },
+    { NULL, {} }
+};
+
 // This table describes the top-level menus in the graphics winodw.
 enum class Command : uint32_t {
     NONE = 0,
@@ -115,6 +222,8 @@ enum class Command : uint32_t {
     // Recent
     RECENT_OPEN = 0xf000,
     RECENT_LINK = 0xf100,
+    // Locale
+    LOCALE = 0xf200,
 };
 
 enum class ContextCommand : uint32_t {
@@ -598,6 +707,7 @@ public:
         hRequest             request;
         hEntity              point;
         List<hEntity>        points;
+        List<hRequest>       requests;
         hEntity              circle;
         hEntity              normal;
         hConstraint          constraint;
@@ -608,6 +718,9 @@ public:
         Constraint::Type     suggestion;
     } pending;
     void ClearPending();
+    bool IsFromPending(hRequest r);
+    void AddToPending(hRequest r);
+
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
 
@@ -646,7 +759,7 @@ public:
     void FixConstraintsForRequestBeingDeleted(hRequest hr);
     void FixConstraintsForPointBeingDeleted(hEntity hpt);
 
-    // The current selection.
+    // A selected entity.
     class Selection {
     public:
         int         tag;
@@ -662,9 +775,22 @@ public:
         bool Equals(Selection *b);
         bool HasEndpoints();
     };
+
+    // A hovered entity, with its location relative to the cursor.
+    class Hover {
+    public:
+        int         zIndex;
+        double      distance;
+        Selection   selection;
+    };
+
+    List<Hover> hoverList;
     Selection hover;
     bool hoverWasSelectedOnMousedown;
     List<Selection> selection;
+
+    Selection ChooseFromHoverToSelect();
+    Selection ChooseFromHoverToDrag();
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection();
     void ClearNonexistentSelectionItems();

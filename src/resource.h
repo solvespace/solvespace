@@ -62,7 +62,7 @@ public:
     uint16_t                   nextPosition;
 
     static BitmapFont From(std::string &&unifontData);
-    static BitmapFont *Builtin();
+    static BitmapFont Create();
 
     bool IsEmpty() const { return unifontData.empty(); }
     const Glyph &GetGlyph(char32_t codepoint);

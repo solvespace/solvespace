@@ -326,8 +326,52 @@ Lighting GraphicsWindow::GetLighting() const {
     return lighting;
 }
 
+GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
+    Selection sel = {};
+    if(hoverList.n == 0) return sel;
+
+    Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
+    int bestOrder = -1;
+    int bestZIndex;
+    for(const Hover &hov : hoverList) {
+        hGroup hg = {};
+        if(hov.selection.entity.v != 0) {
+            hEntity he = hov.selection.entity;
+            if(he.isFromRequest() && IsFromPending(he.request())) {
+                continue;
+            }
+            hg = SK.GetEntity(hov.selection.entity)->group;
+        } else if(hov.selection.constraint.v != 0) {
+            hg = SK.GetConstraint(hov.selection.constraint)->group;
+        }
+
+        Group *g = SK.GetGroup(hg);
+        if(g->order > activeGroup->order) continue;
+        if(bestOrder != -1 && (bestOrder >= g->order || bestZIndex > hov.zIndex)) continue;
+        bestOrder  = g->order;
+        bestZIndex = hov.zIndex;
+        sel = hov.selection;
+    }
+    return sel;
+}
+
+GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
+    Selection sel = {};
+    for(const Hover &hov : hoverList) {
+        if(hov.selection.entity.v == 0) continue;
+        if(!hov.selection.entity.isFromRequest()) continue;
+        sel = hov.selection;
+        break;
+    }
+    if(!sel.IsEmpty()) {
+        return sel;
+    }
+    return ChooseFromHoverToSelect();
+}
+
 void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
-    Selection s = {};
+    hoverList = {};
+    Selection sel = {};
 
     // Did the view projection change? If so, invalidate bounding boxes.
     if(!offset.EqualsExactly(cached.offset) ||
@@ -368,8 +412,11 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         }
 
         if(canvas.Pick([&]{ e.Draw(Entity::DrawAs::DEFAULT, &canvas); })) {
-            s = {};
-            s.entity = e.h;
+            Hover hov = {};
+            hov.distance = canvas.minDistance;
+            hov.zIndex   = canvas.maxZIndex;
+            hov.selection.entity = e.h;
+            hoverList.Add(&hov);
         }
     }
 
@@ -377,31 +424,41 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     if(pending.operation == Pending::NONE) {
         // Constraints
         for(Constraint &c : SK.constraint) {
-            if(!c.IsVisible()) continue;
-
             if(canvas.Pick([&]{ c.Draw(Constraint::DrawAs::DEFAULT, &canvas); })) {
-                s = {};
-                s.constraint = c.h;
+                Hover hov = {};
+                hov.distance = canvas.minDistance;
+                hov.zIndex   = canvas.maxZIndex;
+                hov.selection.constraint = c.h;
+                hoverList.Add(&hov);
             }
         }
+    }
 
+    std::sort(hoverList.begin(), hoverList.end(),
+        [](const Hover &a, const Hover &b) {
+            if(a.zIndex == b.zIndex) return a.distance < b.distance;
+            return a.zIndex > b.zIndex;
+        });
+    sel = ChooseFromHoverToSelect();
+
+    if(pending.operation == Pending::NONE) {
         // Faces, from the triangle mesh; these are lowest priority
-        if(s.constraint.v == 0 && s.entity.v == 0 && showShaded && showFaces) {
+        if(sel.constraint.v == 0 && sel.entity.v == 0 && showShaded && showFaces) {
             Group *g = SK.GetGroup(activeGroup);
             SMesh *m = &(g->displayMesh);
 
             uint32_t v = m->FirstIntersectionWith(mp);
             if(v) {
-                s.entity.v = v;
+                sel.entity.v = v;
             }
         }
     }
 
     canvas.Clear();
 
-    if(!s.Equals(&hover)) {
-        hover = s;
-        PaintGraphics();
+    if(!sel.Equals(&hover)) {
+        hover = sel;
+        InvalidateGraphics();
     }
 }
 
@@ -747,7 +804,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-    if (!canvas) return;
+    if(!canvas) return;
 
     havePainted = true;
 

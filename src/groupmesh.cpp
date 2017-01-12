@@ -604,7 +604,8 @@ void Group::DrawPolyError(Canvas *canvas) {
         // Report this error only in sketch-in-workplane groups; otherwise
         // it's just a nuisance.
         if(type == Type::DRAWING_WORKPLANE) {
-            canvas->DrawVectorText("not closed contour, or not all same style!", textHeight,
+            canvas->DrawVectorText(_("not closed contour, or not all same style!"),
+                                   textHeight,
                                    polyError.notClosedAt.b, camera.projRight, camera.projUp,
                                    hcsError);
             canvas->DrawLine(polyError.notClosedAt.a, polyError.notClosedAt.b, hcsUnclosed);
@@ -616,11 +617,11 @@ void Group::DrawPolyError(Canvas *canvas) {
         if(type == Type::DRAWING_WORKPLANE) {
             const char *msg;
             if(polyError.how == PolyError::NOT_COPLANAR) {
-                msg = "points not all coplanar!";
+                msg = _("points not all coplanar!");
             } else if(polyError.how == PolyError::SELF_INTERSECTING) {
-                msg = "contour is self-intersecting!";
+                msg = _("contour is self-intersecting!");
             } else {
-                msg = "zero-length edge!";
+                msg = _("zero-length edge!");
             }
             canvas->DrawVectorText(msg, textHeight,
                                    polyError.errorPointAt, camera.projRight, camera.projUp,

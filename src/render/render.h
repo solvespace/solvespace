@@ -137,12 +137,14 @@ public:
 
     IdList<Stroke, hStroke> strokes;
     IdList<Fill,   hFill>   fills;
+    BitmapFont bitmapFont;
 
-    Canvas() : strokes(), fills() {}
+    Canvas() : strokes(), fills(), bitmapFont() {}
     virtual void Clear();
 
     hStroke GetStroke(const Stroke &stroke);
     hFill GetFill(const Fill &fill);
+    BitmapFont *GetBitmapFont();
 
     virtual const Camera &GetCamera() const = 0;
 
@@ -172,7 +174,7 @@ public:
 // An interface for view-dependent visualization.
 class ViewportCanvas : public Canvas {
 public:
-    virtual void SetCamera(const Camera &camera, bool filp = FLIP_FRAMEBUFFER) = 0;
+    virtual void SetCamera(const Camera &camera) = 0;
     virtual void SetLighting(const Lighting &lighting) = 0;
 
     virtual void NewFrame() = 0;

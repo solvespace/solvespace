@@ -57,15 +57,8 @@ bool SolveSpaceUI::PruneOrphans() {
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     if(before.v == 0) return true;
     if(after.v  == 0) return true;
-
-    int beforep = -1, afterp = -1;
-    int i;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        hGroup hg = SK.groupOrder.elem[i];
-        if(hg.v == before.v) beforep = i;
-        if(hg.v == after.v)  afterp  = i;
-    }
-    if(beforep < 0 || afterp < 0) return false;
+    int beforep = SK.GetGroup(before)->order;
+    int afterp = SK.GetGroup(after)->order;
     if(beforep >= afterp) return false;
     return true;
 }
@@ -498,7 +491,7 @@ void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
     }
 }
 
-void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
+void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     int i;
     // Clear out the system to be solved.
     sys.entity.Clear();
@@ -528,6 +521,11 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     }
 
     MarkDraggedParams();
+}
+
+void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
+    WriteEqSystemForGroup(hg);
+    Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
     SolveResult how = sys.Solve(g, &(g->solved.dof),
                                    &(g->solved.remove),
@@ -539,6 +537,15 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     }
     g->solved.how = how;
     FreeAllTemporary();
+}
+
+SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg) {
+    WriteEqSystemForGroup(hg);
+    Group *g = SK.GetGroup(hg);
+    SolveResult result = sys.SolveRank(g, NULL, NULL, false, false,
+                                       /*forceDofCheck=*/!g->dofCheckOk);
+    FreeAllTemporary();
+    return result;
 }
 
 bool SolveSpaceUI::ActiveGroupsOkay() {

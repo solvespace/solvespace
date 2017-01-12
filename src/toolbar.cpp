@@ -10,47 +10,78 @@
 struct ToolIcon {
     std::string name;
     Command     command;
-    std::string tooltip;
+    const char *tooltip;
     std::shared_ptr<Pixmap> pixmap;
 };
 static ToolIcon Toolbar[] = {
-    { "line",            Command::LINE_SEGMENT,   "Sketch line segment",                              {} },
-    { "rectangle",       Command::RECTANGLE,      "Sketch rectangle",                                 {} },
-    { "circle",          Command::CIRCLE,         "Sketch circle",                                    {} },
-    { "arc",             Command::ARC,            "Sketch arc of a circle",                           {} },
-    { "text",            Command::TTF_TEXT,       "Sketch curves from text in a TrueType font",       {} },
-    { "tangent-arc",     Command::TANGENT_ARC,    "Create tangent arc at selected point",             {} },
-    { "bezier",          Command::CUBIC,          "Sketch cubic Bezier spline",                       {} },
-    { "point",           Command::DATUM_POINT,    "Sketch datum point",                               {} },
-    { "construction",    Command::CONSTRUCTION,   "Toggle construction",                              {} },
-    { "trim",            Command::SPLIT_CURVES,   "Split lines / curves where they intersect",        {} },
-    { "",                Command::NONE,           "",                                                 {} },
+    { "line",            Command::LINE_SEGMENT,
+      N_("Sketch line segment"),                              {} },
+    { "rectangle",       Command::RECTANGLE,
+      N_("Sketch rectangle"),                                 {} },
+    { "circle",          Command::CIRCLE,
+      N_("Sketch circle"),                                    {} },
+    { "arc",             Command::ARC,
+      N_("Sketch arc of a circle"),                           {} },
+    { "text",            Command::TTF_TEXT,
+      N_("Sketch curves from text in a TrueType font"),       {} },
+    { "tangent-arc",     Command::TANGENT_ARC,
+      N_("Create tangent arc at selected point"),             {} },
+    { "bezier",          Command::CUBIC,
+      N_("Sketch cubic Bezier spline"),                       {} },
+    { "point",           Command::DATUM_POINT,
+      N_("Sketch datum point"),                               {} },
+    { "construction",    Command::CONSTRUCTION,
+      N_("Toggle construction"),                              {} },
+    { "trim",            Command::SPLIT_CURVES,
+      N_("Split lines / curves where they intersect"),        {} },
+    { "",                Command::NONE, "",                   {} },
 
-    { "length",          Command::DISTANCE_DIA,   "Constrain distance / diameter / length",           {} },
-    { "angle",           Command::ANGLE,          "Constrain angle",                                  {} },
-    { "horiz",           Command::HORIZONTAL,     "Constrain to be horizontal",                       {} },
-    { "vert",            Command::VERTICAL,       "Constrain to be vertical",                         {} },
-    { "parallel",        Command::PARALLEL,       "Constrain to be parallel or tangent",              {} },
-    { "perpendicular",   Command::PERPENDICULAR,  "Constrain to be perpendicular",                    {} },
-    { "pointonx",        Command::ON_ENTITY,      "Constrain point on line / curve / plane / point",  {} },
-    { "symmetric",       Command::SYMMETRIC,      "Constrain symmetric",                              {} },
-    { "equal",           Command::EQUAL,          "Constrain equal length / radius / angle",          {} },
-    { "same-orientation",Command::ORIENTED_SAME,  "Constrain normals in same orientation",            {} },
-    { "other-supp",      Command::OTHER_ANGLE,    "Other supplementary angle",                        {} },
-    { "ref",             Command::REFERENCE,      "Toggle reference dimension",                       {} },
-    { "",                Command::NONE,           "",                                                 {} },
+    { "length",          Command::DISTANCE_DIA,
+      N_("Constrain distance / diameter / length"),           {} },
+    { "angle",           Command::ANGLE,
+      N_("Constrain angle"),                                  {} },
+    { "horiz",           Command::HORIZONTAL,
+      N_("Constrain to be horizontal"),                       {} },
+    { "vert",            Command::VERTICAL,
+      N_("Constrain to be vertical"),                         {} },
+    { "parallel",        Command::PARALLEL,
+      N_("Constrain to be parallel or tangent"),              {} },
+    { "perpendicular",   Command::PERPENDICULAR,
+      N_("Constrain to be perpendicular"),                    {} },
+    { "pointonx",        Command::ON_ENTITY,
+      N_("Constrain point on line / curve / plane / point"),  {} },
+    { "symmetric",       Command::SYMMETRIC,
+      N_("Constrain symmetric"),                              {} },
+    { "equal",           Command::EQUAL,
+      N_("Constrain equal length / radius / angle"),          {} },
+    { "same-orientation",Command::ORIENTED_SAME,
+      N_("Constrain normals in same orientation"),            {} },
+    { "other-supp",      Command::OTHER_ANGLE,
+      N_("Other supplementary angle"),                        {} },
+    { "ref",             Command::REFERENCE,
+      N_("Toggle reference dimension"),                       {} },
+    { "",                Command::NONE, "",                   {} },
 
-    { "extrude",         Command::GROUP_EXTRUDE,  "New group extruding active sketch",                {} },
-    { "lathe",           Command::GROUP_LATHE,    "New group rotating active sketch",                 {} },
-    { "step-rotate",     Command::GROUP_ROT,      "New group step and repeat rotating",               {} },
-    { "step-translate",  Command::GROUP_TRANS,    "New group step and repeat translating",            {} },
-    { "sketch-in-plane", Command::GROUP_WRKPL,    "New group in new workplane (thru given entities)", {} },
-    { "sketch-in-3d",    Command::GROUP_3D,       "New group in 3d",                                  {} },
-    { "assemble",        Command::GROUP_LINK,     "New group linking / assembling file",              {} },
-    { "",                Command::NONE,           "",                                                 {} },
+    { "extrude",         Command::GROUP_EXTRUDE,
+      N_("New group extruding active sketch"),                {} },
+    { "lathe",           Command::GROUP_LATHE,
+      N_("New group rotating active sketch"),                 {} },
+    { "step-rotate",     Command::GROUP_ROT,
+      N_("New group step and repeat rotating"),               {} },
+    { "step-translate",  Command::GROUP_TRANS,
+      N_("New group step and repeat translating"),            {} },
+    { "sketch-in-plane", Command::GROUP_WRKPL,
+      N_("New group in new workplane (thru given entities)"), {} },
+    { "sketch-in-3d",    Command::GROUP_3D,
+      N_("New group in 3d"),                                  {} },
+    { "assemble",        Command::GROUP_LINK,
+      N_("New group linking / assembling file"),              {} },
+    { "",                Command::NONE, "",                   {} },
 
-    { "in3d",            Command::NEAREST_ISO,    "Nearest isometric view",                           {} },
-    { "ontoworkplane",   Command::ONTO_WORKPLANE, "Align view to active workplane",                   {} },
+    { "in3d",            Command::NEAREST_ISO,
+      N_("Nearest isometric view"),                           {} },
+    { "ontoworkplane",   Command::ONTO_WORKPLANE,
+      N_("Align view to active workplane"),                   {} },
 };
 
 void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
@@ -126,10 +157,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                         /*outlineColor=*/{});
     }
 
-    struct {
-        bool show;
-        const char *str;
-    } toolTip = { false, NULL };
+    bool showTooltip;
+    std::string tooltip;
 
     bool leftpos = true;
     for(ToolIcon &icon : Toolbar) {
@@ -175,8 +204,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 // Display the tool tip for this item; postpone till later
                 // so that no one draws over us. Don't need position since
                 // that's just wherever the mouse is.
-                toolTip.show = true;
-                toolTip.str = icon.tooltip.c_str();
+                showTooltip = true;
+                tooltip     = Translate(icon.tooltip);
             }
         } else {
             int boxhw = 16;
@@ -199,27 +228,25 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
     if(canvas) {
         // Do this last so that nothing can draw over it.
-        if(toolTip.show) {
-            std::string str = toolTip.str;
-
+        if(showTooltip) {
             for(i = 0; SS.GW.menu[i].level >= 0; i++) {
                 if(toolbarTooltipped == SS.GW.menu[i].id) {
                     std::string accel = MakeAcceleratorLabel(SS.GW.menu[i].accel);
                     if(!accel.empty()) {
-                        str += ssprintf(" (%s)", accel.c_str());
+                        tooltip += ssprintf(" (%s)", accel.c_str());
                     }
                     break;
                 }
             }
 
-            int tw = BitmapFont::Builtin()->GetWidth(str) * 8 + 10,
+            int tw = canvas->canvas->GetBitmapFont()->GetWidth(tooltip) * 8 + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
             int ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
             canvas->DrawRect(ox, ox+tw, oy, oy+th,
                              /*fillColor=*/{ 255, 255, 150, 255 },
                              /*outlineColor=*/{ 0, 0, 0, 255 });
-            canvas->DrawBitmapText(str, ox+5, oy+4, { 0, 0, 0, 255 });
+            canvas->DrawBitmapText(tooltip, ox+5, oy+4, { 0, 0, 0, 255 });
         }
     }
 

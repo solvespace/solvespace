@@ -475,28 +475,8 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         // This is not the full Jacobian, but any substitutions or single-eq
         // solves removed one equation and one unknown, therefore no effect
         // on the number of DOF.
-        if(dof) *dof = mat.n - mat.m;
-
-        // If requested, find all the free (unbound) variables. This might be
-        // more than the number of degrees of freedom. Don't always do this,
-        // because the display would get annoying and it's slow.
-        for(i = 0; i < param.n; i++) {
-            Param *p = &(param.elem[i]);
-            p->free = false;
-
-            if(andFindFree) {
-                if(p->tag == 0) {
-                    p->tag = VAR_DOF_TEST;
-                    WriteJacobian(0);
-                    EvalJacobian();
-                    int rank = CalculateRank();
-                    if(rank == mat.m) {
-                        p->free = true;
-                    }
-                    p->tag = 0;
-                }
-            }
-        }
+        if(dof) *dof = CalculateDof();
+        MarkParamsFree(andFindFree);
     }
     // System solved correctly, so write the new values back in to the
     // main parameter table.
@@ -537,9 +517,71 @@ didnt_converge:
     return rankOk ? SolveResult::DIDNT_CONVERGE : SolveResult::REDUNDANT_DIDNT_CONVERGE;
 }
 
+SolveResult System::SolveRank(Group *g, int *dof, List<hConstraint> *bad,
+                              bool andFindBad, bool andFindFree, bool forceDofCheck)
+{
+    WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
+
+    // All params and equations are assigned to group zero.
+    param.ClearTags();
+    eq.ClearTags();
+
+    if(!forceDofCheck) {
+        SolveBySubstitution();
+    }
+
+    // Now write the Jacobian, and do a rank test; that
+    // tells us if the system is inconsistently constrained.
+    if(!WriteJacobian(0)) {
+        return SolveResult::TOO_MANY_UNKNOWNS;
+    }
+
+    bool rankOk = TestRank();
+    if(!rankOk) {
+        if(!g->allowRedundant) {
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
+        }
+    } else {
+        // This is not the full Jacobian, but any substitutions or single-eq
+        // solves removed one equation and one unknown, therefore no effect
+        // on the number of DOF.
+        if(dof) *dof = CalculateDof();
+        MarkParamsFree(andFindFree);
+    }
+    return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
+}
+
 void System::Clear() {
     entity.Clear();
     param.Clear();
     eq.Clear();
     dragged.Clear();
 }
+
+void System::MarkParamsFree(bool find) {
+    // If requested, find all the free (unbound) variables. This might be
+    // more than the number of degrees of freedom. Don't always do this,
+    // because the display would get annoying and it's slow.
+    for(int i = 0; i < param.n; i++) {
+        Param *p = &(param.elem[i]);
+        p->free = false;
+
+        if(find) {
+            if(p->tag == 0) {
+                p->tag = VAR_DOF_TEST;
+                WriteJacobian(0);
+                EvalJacobian();
+                int rank = CalculateRank();
+                if(rank == mat.m) {
+                    p->free = true;
+                }
+                p->tag = 0;
+            }
+        }
+    }
+}
+
+int System::CalculateDof() {
+    return mat.n - mat.m;
+}
+

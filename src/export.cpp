@@ -15,8 +15,8 @@ void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     g->GenerateDisplayItems();
     if(g->displayMesh.IsEmpty()) {
-        Error("No solid model present; draw one with extrudes and revolves, "
-              "or use Export 2d View to export bare lines and curves.");
+        Error(_("No solid model present; draw one with extrudes and revolves, "
+                "or use Export 2d View to export bare lines and curves."));
         return;
     }
 
@@ -57,12 +57,12 @@ void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
         u = ut.WithMagnitude(1);
         v = (n.Cross(u)).WithMagnitude(1);
     } else {
-        Error("Bad selection for export section. Please select:\n\n"
-              "    * nothing, with an active workplane "
-                        "(workplane is section plane)\n"
-              "    * a face (section plane through face)\n"
-              "    * a point and two line segments "
-                        "(plane through point and parallel to lines)\n");
+        Error(_("Bad selection for export section. Please select:\n\n"
+                "    * nothing, with an active workplane "
+                          "(workplane is section plane)\n"
+                "    * a face (section plane through face)\n"
+                "    * a point and two line segments "
+                          "(plane through point and parallel to lines)\n"));
         return;
     }
     SS.GW.ClearSelection();
@@ -802,7 +802,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
 
     SMesh *m = &(SK.GetGroup(SS.GW.activeGroup)->displayMesh);
     if(m->IsEmpty()) {
-        Error("Active group mesh is empty; nothing to export.");
+        Error(_("Active group mesh is empty; nothing to export."));
         return;
     }
 

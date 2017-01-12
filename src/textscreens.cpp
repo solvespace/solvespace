@@ -654,11 +654,11 @@ void TextWindow::EditControlDone(const char *s) {
 
                 double ev = e->Eval();
                 if((int)ev < 1) {
-                    Error("Can't repeat fewer than 1 time.");
+                    Error(_("Can't repeat fewer than 1 time."));
                     break;
                 }
                 if((int)ev > 999) {
-                    Error("Can't repeat more than 999 times.");
+                    Error(_("Can't repeat more than 999 times."));
                     break;
                 }
 
@@ -687,7 +687,7 @@ void TextWindow::EditControlDone(const char *s) {
         }
         case Edit::GROUP_NAME: {
             if(!*s) {
-                Error("Group name cannot be empty");
+                Error(_("Group name cannot be empty"));
             } else {
                 SS.UndoRemember();
 
@@ -701,7 +701,7 @@ void TextWindow::EditControlDone(const char *s) {
             if(e) {
                 double ev = e->Eval();
                 if(fabs(ev) < 1e-6) {
-                    Error("Scale cannot be zero.");
+                    Error(_("Scale cannot be zero."));
                 } else {
                     Group *g = SK.GetGroup(edit.group);
                     g->scale = ev;
@@ -722,7 +722,7 @@ void TextWindow::EditControlDone(const char *s) {
                 SS.MarkGroupDirty(g->h);
                 SS.GW.ClearSuper();
             } else {
-                Error("Bad format: specify color as r, g, b");
+                Error(_("Bad format: specify color as r, g, b"));
             }
             break;
         }
@@ -731,7 +731,7 @@ void TextWindow::EditControlDone(const char *s) {
             if(e) {
                 double alpha = e->Eval();
                 if(alpha < 0 || alpha > 1) {
-                    Error("Opacity must be between zero and one.");
+                    Error(_("Opacity must be between zero and one."));
                 } else {
                     Group *g = SK.GetGroup(edit.group);
                     g->color.alpha = (int)(255.1f * alpha);
@@ -770,7 +770,7 @@ void TextWindow::EditControlDone(const char *s) {
             Expr *e = Expr::From(s, /*popUpError=*/true);
             if(!e) break;
             if(e->Eval() < LENGTH_EPS) {
-                Error("Radius cannot be zero or negative.");
+                Error(_("Radius cannot be zero or negative."));
                 break;
             }
             SS.tangentArcRadius = SS.ExprToMm(e);

@@ -34,6 +34,8 @@ set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
+set(ENABLE_GUI        ON CACHE BOOL
+    "Whether the graphical interface is enabled (command line interface always is)")
 set(ENABLE_TESTS      ON  CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
@@ -42,10 +44,6 @@ set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 
 set(OPENGL 2 CACHE STRING "OpenGL version to use (one of: 1 2)")
-
-if(NOT WIN32 AND NOT APPLE)
-    set(GUI gtk2 CACHE STRING "GUI toolkit to use (one of: gtk2 gtk3)")
-endif()
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
@@ -120,25 +118,9 @@ if(WIN32)
 
     find_vendored_package(PNG libpng
         SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png16_static
+        PNG_LIBRARY             png_static
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
-
-    if(OPENGL STREQUAL "2")
-        message(STATUS "Using in-tree ANGLE")
-        set(ANGLE_STATIC            ON  CACHE INTERNAL "")
-        set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")
-        set(ANGLE_ENABLE_D3D11      ON  CACHE INTERNAL "")
-        set(ANGLE_ENABLE_OPENGL     OFF CACHE INTERNAL "")
-        set(ANGLE_ENABLE_ESSL       OFF CACHE INTERNAL "")
-        set(ANGLE_ENABLE_GLSL       OFF CACHE INTERNAL "")
-        set(ANGLE_ENABLE_HLSL       ON  CACHE INTERNAL "")
-        add_vendored_subdirectory(extlib/angle)
-        set(OPENGL_LIBRARIES        EGL GLESv2)
-        set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
-    else()
-        find_package(OpenGL REQUIRED)
-    endif()
 
     message(STATUS "Using in-tree pixman")
     add_vendored_subdirectory(extlib/pixman)
@@ -154,13 +136,31 @@ if(WIN32)
     set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
     list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
 
-    if(NOT MINGW)
-        message(STATUS "Using prebuilt SpaceWare")
-        set(SPACEWARE_FOUND TRUE)
-        set(SPACEWARE_INCLUDE_DIR
-            "${CMAKE_SOURCE_DIR}/extlib/si")
-        set(SPACEWARE_LIBRARIES
-            "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+    if(ENABLE_GUI)
+        if(OPENGL STREQUAL "2")
+            message(STATUS "Using in-tree ANGLE")
+            set(ANGLE_STATIC            ON  CACHE INTERNAL "")
+            set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")
+            set(ANGLE_ENABLE_D3D11      ON  CACHE INTERNAL "")
+            set(ANGLE_ENABLE_OPENGL     OFF CACHE INTERNAL "")
+            set(ANGLE_ENABLE_ESSL       OFF CACHE INTERNAL "")
+            set(ANGLE_ENABLE_GLSL       OFF CACHE INTERNAL "")
+            set(ANGLE_ENABLE_HLSL       ON  CACHE INTERNAL "")
+            add_vendored_subdirectory(extlib/angle)
+            set(OPENGL_LIBRARIES        EGL GLESv2)
+            set(OPENGL_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/angle/include)
+        else()
+            find_package(OpenGL REQUIRED)
+        endif()
+
+        if(MSVC AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
+            message(STATUS "Using prebuilt SpaceWare")
+            set(SPACEWARE_FOUND TRUE)
+            set(SPACEWARE_INCLUDE_DIR
+                "${CMAKE_SOURCE_DIR}/extlib/si")
+            set(SPACEWARE_LIBRARIES
+                "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
+        endif()
     endif()
 elseif(APPLE)
     set(CMAKE_FIND_FRAMEWORK LAST)
@@ -168,12 +168,14 @@ elseif(APPLE)
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
-    find_package(OpenGL REQUIRED)
 
     find_library(CAIRO_LIBRARIES cairo REQUIRED)
     find_path(CAIRO_INCLUDE_DIRS cairo.h PATH_SUFFIXES cairo)
 
-    find_library(APPKIT_LIBRARY AppKit REQUIRED)
+    if(ENABLE_GUI)
+        find_package(OpenGL REQUIRED)
+        find_library(APPKIT_LIBRARY AppKit REQUIRED)
+    endif()
 else() # Linux and compatible systems
     find_package(PkgConfig REQUIRED)
 
@@ -183,21 +185,13 @@ else() # Linux and compatible systems
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
-    find_package(OpenGL REQUIRED)
-
     pkg_check_modules(CAIRO REQUIRED cairo)
 
-    pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
-    pkg_check_modules(JSONC REQUIRED json-c)
-
-    if(GUI STREQUAL "gtk3")
-        set(HAVE_GTK3 TRUE)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0 pangomm-1.4 x11)
-    elseif(GUI STREQUAL "gtk2")
-        set(HAVE_GTK2 TRUE)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-2.4 pangomm-1.4 x11)
-    else()
-        message(FATAL_ERROR "GUI unrecognized: ${GUI}")
+    if(ENABLE_GUI)
+        find_package(OpenGL REQUIRED)
+        pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
+        pkg_check_modules(JSONC REQUIRED json-c)
+        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.22 pangomm-1.4 x11)
     endif()
 endif()
 
@@ -219,6 +213,16 @@ if(ENABLE_COVERAGE)
     if(NOT GCOV OR NOT LCOV OR NOT GENHTML)
         message(FATAL_ERROR "gcov/llvm-cov and lcov are required for producing coverage reports")
     endif()
+endif()
+
+find_program(XGETTEXT xgettext)
+find_program(MSGINIT  msginit)
+find_program(MSGMERGE msgmerge)
+if(XGETTEXT AND MSGINIT AND MSGMERGE)
+    set(HAVE_GETTEXT TRUE)
+else()
+    message(WARNING "Gettext not found, translations will not be updated")
+    set(HAVE_GETTEXT FALSE)
 endif()
 
 # solvespace-only compiler flags

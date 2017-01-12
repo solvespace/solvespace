@@ -292,6 +292,8 @@ void TextWindow::ClearScreen() {
 }
 
 void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
+    if(!canvas) return;
+
     va_list vl;
     va_start(vl, fmt);
 
@@ -429,7 +431,7 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
         }
 
         for(utf8_iterator it(buf); *it; ++it) {
-            for(size_t i = 0; i < BitmapFont::Builtin()->GetWidth(*it); i++) {
+            for(size_t i = 0; i < canvas->GetBitmapFont()->GetWidth(*it); i++) {
                 if(c >= MAX_COLS) goto done;
                 text[r][c] = (i == 0) ? *it : ' ';
                 meta[r][c].fg = fg;
@@ -865,8 +867,12 @@ void TextWindow::Paint() {
     camera.offset.x = -(double)camera.width  / 2.0;
     camera.offset.y = -(double)camera.height / 2.0;
 
+    Lighting lighting = {};
+    lighting.backgroundColor = RGBi(0, 0, 0);
+
     canvas->NewFrame();
     canvas->SetCamera(camera);
+    canvas->SetLighting(lighting);
 
     UiCanvas uiCanvas = {};
     uiCanvas.canvas = canvas;

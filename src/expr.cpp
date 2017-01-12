@@ -612,7 +612,6 @@ public:
     char ReadChar();
     char PeekChar();
 
-    double ReadNumber();
     std::string ReadWord();
     void SkipSpace();
 
@@ -620,6 +619,7 @@ public:
     Token PopOperand(std::string *error);
 
     int Precedence(Token token);
+    Token LexNumber(std::string *error);
     Token Lex(std::string *error);
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
@@ -650,14 +650,6 @@ char ExprParser::PeekChar() {
     return input[inputPos];
 }
 
-double ExprParser::ReadNumber() {
-    char *endptr;
-    double d = strtod(input + inputPos, &endptr);
-    unsigned len = endptr - (input + inputPos);
-    inputPos += len;
-    return d;
-}
-
 std::string ExprParser::ReadWord() {
     std::string s;
 
@@ -674,6 +666,31 @@ void ExprParser::SkipSpace() {
         if(!isspace(c)) break;
         ReadChar();
     }
+}
+
+ExprParser::Token ExprParser::LexNumber(std::string *error) {
+    std::string s;
+
+    while(char c = PeekChar()) {
+        if(!((c >= '0' && c <= '9') || c == 'e' || c == 'E' || c == '.' || c == '_')) break;
+        if(c == '_') {
+            ReadChar();
+            continue;
+        }
+        s.push_back(ReadChar());
+    }
+
+    char *endptr;
+    double d = strtod(s.c_str(), &endptr);
+
+    Token t = Token::From();
+    if(endptr == s.c_str() + s.size()) {
+        t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
+        t.expr->v = d;
+    } else {
+        *error = "'" + s + "' is not a valid number";
+    }
+    return t;
 }
 
 ExprParser::Token ExprParser::Lex(std::string *error) {
@@ -705,9 +722,7 @@ ExprParser::Token ExprParser::Lex(std::string *error) {
             *error = "'" + s + "' is not a valid variable, function or constant";
         }
     } else if(isdigit(c) || c == '.') {
-        double d = ReadNumber();
-        t = Token::From(TokenType::OPERAND, Expr::Op::CONSTANT);
-        t.expr->v = d;
+        return LexNumber(error);
     } else if(ispunct(c)) {
         ReadChar();
         if(c == '+') {

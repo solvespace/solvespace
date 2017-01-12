@@ -109,7 +109,7 @@ elseif(APPLE)
     set(platform_BUNDLED_LIBS
         ${PNG_LIBRARIES}
         ${FREETYPE_LIBRARIES})
-elseif(HAVE_GTK2 OR HAVE_GTK3)
+else()
     set(platform_SOURCES
         platform/gtkmain.cpp
         render/rendergl.cpp
@@ -125,10 +125,14 @@ elseif(HAVE_GTK2 OR HAVE_GTK3)
     endforeach()
 endif()
 
+set(every_platform_SOURCES
+    platform/w32main.cpp
+    platform/gtkmain.cpp
+    platform/cocoamain.mm)
+
 # solvespace library
 
 set(solvespace_core_HEADERS
-    config.h
     dsc.h
     expr.h
     polygon.h
@@ -206,25 +210,90 @@ target_link_libraries(solvespace-core
 target_compile_options(solvespace-core
     PRIVATE ${COVERAGE_FLAGS})
 
+# solvespace translations
+
+if(HAVE_GETTEXT)
+    set(inputs
+        ${solvespace_core_SOURCES}
+        ${solvespace_core_HEADERS}
+        ${every_platform_SOURCES})
+    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
+    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
+    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
+
+    file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
+
+    add_custom_command(
+        OUTPUT  ${output_pot}
+        COMMAND ${XGETTEXT}
+                --language=C++
+                --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
+                --force-po --width=100 --sort-by-file
+                --package-name=SolveSpace
+                --package-version=${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
+                "--copyright-holder=the PACKAGE authors"
+                --msgid-bugs-address=whitequark@whitequark.org
+                --from-code=utf-8 --output=${output_pot} ${inputs}
+        DEPENDS ${inputs}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Extracting translations"
+        VERBATIM)
+
+    # en_US is a bit special; we pre-fill the msgstrs from msgids, instead of (as would normally
+    # happen) leaving them empty.
+    add_custom_command(
+        OUTPUT  ${output_po}
+        COMMAND ${MSGINIT}
+                --locale=en_US --no-translator
+                --output=${templ_po} --input=${output_pot}
+        COMMAND ${MSGMERGE}
+                --force-po --no-fuzzy-matching
+                --output=${output_po} ${output_po} ${templ_po}
+        DEPENDS ${output_pot}
+        COMMENT "Updating en_US translations"
+        VERBATIM)
+
+    foreach(locale_po ${locale_pos})
+        get_filename_component(locale_name ${locale_po} NAME_WE)
+        if(locale_name STREQUAL "en_US")
+            continue()
+        endif()
+
+        add_custom_command(
+            OUTPUT  ${locale_po}
+            COMMAND ${MSGMERGE}
+                    --update --no-fuzzy-matching
+                    ${locale_po} ${output_pot}
+            DEPENDS ${output_pot}
+            COMMENT "Updating ${locale_name} translations"
+            VERBATIM)
+    endforeach()
+
+    add_custom_target(solvespace-translations
+        DEPENDS ${output_pot} ${output_po} ${locale_pos})
+endif()
+
 # solvespace graphical executable
 
-add_executable(solvespace WIN32 MACOSX_BUNDLE
-    ${solvespace_core_gl_SOURCES}
-    ${platform_SOURCES}
-    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+if(ENABLE_GUI)
+    add_executable(solvespace WIN32 MACOSX_BUNDLE
+        ${solvespace_core_gl_SOURCES}
+        ${platform_SOURCES}
+        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-add_dependencies(solvespace
-    resources)
+    add_dependencies(solvespace
+        resources)
 
-target_link_libraries(solvespace
-    solvespace-core
-    ${OPENGL_LIBRARIES}
-    ${platform_LIBRARIES}
-    ${COVERAGE_LIBRARY})
+    target_link_libraries(solvespace
+        solvespace-core
+        ${OPENGL_LIBRARIES}
+        ${platform_LIBRARIES}
+        ${COVERAGE_LIBRARY})
 
-if(MSVC)
-    set_target_properties(solvespace PROPERTIES
-        LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    if(MSVC)
+        set_target_properties(solvespace PROPERTIES
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+    endif()
 endif()
 
 # solvespace headless library
@@ -271,7 +340,11 @@ endif()
 # solvespace unix package
 
 if(NOT (WIN32 OR APPLE))
-    install(TARGETS solvespace solvespace-cli
+    if(ENABLE_GUI)
+        install(TARGETS solvespace
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+    install(TARGETS solvespace-cli
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 

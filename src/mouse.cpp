@@ -72,7 +72,7 @@ void GraphicsWindow::StartDraggingBySelection() {
     // The user might select a point, and then click it again to start
     // dragging; but the point just got unselected by that click. So drag
     // the hovered item too, and they'll always have it.
-    if(hover.entity.v) StartDraggingByEntity(hover.entity);
+    if(hover.entity.v) StartDraggingByEntity(ChooseFromHoverToDrag().entity);
 }
 
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
@@ -471,8 +471,20 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
 void GraphicsWindow::ClearPending() {
     pending.points.Clear();
+    pending.requests.Clear();
     pending = {};
     SS.ScheduleShowTW();
+}
+
+bool GraphicsWindow::IsFromPending(hRequest r) {
+    for(auto &req : pending.requests) {
+        if(req.v == r.v) return true;
+    }
+    return false;
+}
+
+void GraphicsWindow::AddToPending(hRequest r) {
+    pending.requests.Add(&r);
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
@@ -493,14 +505,15 @@ void GraphicsWindow::ContextMenuListStyles() {
     for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
         if(s->h.v < Style::FIRST_CUSTOM) continue;
 
-        AddContextMenuItem(s->DescriptionString().c_str(), (ContextCommand)((uint32_t)ContextCommand::FIRST_STYLE + s->h.v));
+        AddContextMenuItem(s->DescriptionString().c_str(),
+                           (ContextCommand)((uint32_t)ContextCommand::FIRST_STYLE + s->h.v));
         empty = false;
     }
 
     if(!empty) AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
 
-    AddContextMenuItem("No Style", ContextCommand::NO_STYLE);
-    AddContextMenuItem("Newly Created Custom Style...", ContextCommand::NEW_CUSTOM_STYLE);
+    AddContextMenuItem(_("No Style"), ContextCommand::NO_STYLE);
+    AddContextMenuItem(_("Newly Created Custom Style..."), ContextCommand::NEW_CUSTOM_STYLE);
 }
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
@@ -548,32 +561,32 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(itemsSelected) {
         if(gs.stylables > 0) {
             ContextMenuListStyles();
-            AddContextMenuItem("Assign to Style", ContextCommand::SUBMENU);
+            AddContextMenuItem(_("Assign to Style"), ContextCommand::SUBMENU);
         }
         if(gs.n + gs.constraints == 1) {
-            AddContextMenuItem("Group Info", ContextCommand::GROUP_INFO);
+            AddContextMenuItem(_("Group Info"), ContextCommand::GROUP_INFO);
         }
         if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-            AddContextMenuItem("Style Info", ContextCommand::STYLE_INFO);
+            AddContextMenuItem(_("Style Info"), ContextCommand::STYLE_INFO);
         }
         if(gs.withEndpoints > 0) {
-            AddContextMenuItem("Select Edge Chain", ContextCommand::SELECT_CHAIN);
+            AddContextMenuItem(_("Select Edge Chain"), ContextCommand::SELECT_CHAIN);
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
-                AddContextMenuItem("Toggle Reference Dimension",
+                AddContextMenuItem(_("Toggle Reference Dimension"),
                     ContextCommand::REFERENCE_DIM);
             }
             if(c->type == Constraint::Type::ANGLE ||
                c->type == Constraint::Type::EQUAL_ANGLE)
             {
-                AddContextMenuItem("Other Supplementary Angle",
+                AddContextMenuItem(_("Other Supplementary Angle"),
                     ContextCommand::OTHER_ANGLE);
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
-            AddContextMenuItem("Snap to Grid", ContextCommand::SNAP_TO_GRID);
+            AddContextMenuItem(_("Snap to Grid"), ContextCommand::SNAP_TO_GRID);
         }
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
@@ -581,7 +594,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             int index = r->IndexOfPoint(gs.point[0]);
             if((r->type == Request::Type::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
                     r->type == Request::Type::CUBIC_PERIODIC) {
-                AddContextMenuItem("Remove Spline Point", ContextCommand::REMOVE_SPLINE_PT);
+                AddContextMenuItem(_("Remove Spline Point"), ContextCommand::REMOVE_SPLINE_PT);
             }
         }
         if(gs.entities == 1 && gs.entity[0].isFromRequest()) {
@@ -592,11 +605,11 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
-                AddContextMenuItem("Add Spline Point", ContextCommand::ADD_SPLINE_PT);
+                AddContextMenuItem(_("Add Spline Point"), ContextCommand::ADD_SPLINE_PT);
             }
         }
         if(gs.entities == gs.n) {
-            AddContextMenuItem("Toggle Construction", ContextCommand::CONSTRUCTION);
+            AddContextMenuItem(_("Toggle Construction"), ContextCommand::CONSTRUCTION);
         }
 
         if(gs.points == 1) {
@@ -610,39 +623,39 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 }
             }
             if(c) {
-                AddContextMenuItem("Delete Point-Coincident Constraint",
+                AddContextMenuItem(_("Delete Point-Coincident Constraint"),
                                    ContextCommand::DEL_COINCIDENT);
             }
         }
         AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
         if(LockedInWorkplane()) {
-            AddContextMenuItem("Cut",  ContextCommand::CUT_SEL);
-            AddContextMenuItem("Copy", ContextCommand::COPY_SEL);
+            AddContextMenuItem(_("Cut"),  ContextCommand::CUT_SEL);
+            AddContextMenuItem(_("Copy"), ContextCommand::COPY_SEL);
         }
     } else {
-        AddContextMenuItem("Select All", ContextCommand::SELECT_ALL);
+        AddContextMenuItem(_("Select All"), ContextCommand::SELECT_ALL);
     }
 
     if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
-        AddContextMenuItem("Paste", ContextCommand::PASTE);
-        AddContextMenuItem("Paste Transformed...", ContextCommand::PASTE_XFRM);
+        AddContextMenuItem(_("Paste"), ContextCommand::PASTE);
+        AddContextMenuItem(_("Paste Transformed..."), ContextCommand::PASTE_XFRM);
     }
 
     if(itemsSelected) {
-        AddContextMenuItem("Delete", ContextCommand::DELETE_SEL);
+        AddContextMenuItem(_("Delete"), ContextCommand::DELETE_SEL);
         AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
-        AddContextMenuItem("Unselect All", ContextCommand::UNSELECT_ALL);
+        AddContextMenuItem(_("Unselect All"), ContextCommand::UNSELECT_ALL);
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
-        AddContextMenuItem("Unselect Hovered", ContextCommand::UNSELECT_HOVERED);
+        AddContextMenuItem(_("Unselect Hovered"), ContextCommand::UNSELECT_HOVERED);
     }
 
     if(itemsSelected) {
         AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
-        AddContextMenuItem("Zoom to Fit", ContextCommand::ZOOM_TO_FIT);
+        AddContextMenuItem(_("Zoom to Fit"), ContextCommand::ZOOM_TO_FIT);
     }
 
     ContextCommand ret = ShowContextMenu();
@@ -782,7 +795,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 SS.MarkGroupDirtyByEntity(gs.entity[0]);
                 ClearSelection();
             } else {
-                Error("Cannot add spline point: maximum number of points reached.");
+                Error(_("Cannot add spline point: maximum number of points reached."));
             }
             break;
         }
@@ -880,6 +893,8 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt) {
 
     Entity *e = SK.GetEntity(hover.entity);
     if(e->IsPoint()) {
+        Entity *point = SK.GetEntity(pt);
+        point->PointForceTo(e->PointGetNum());
         Constraint::ConstrainCoincident(e->h, pt);
         return true;
     }
@@ -943,6 +958,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 case Command::LINE_SEGMENT:
                 case Command::CONSTR_SEGMENT:
                     hr = AddRequest(Request::Type::LINE_SEGMENT);
+                    AddToPending(hr);
                     SK.GetRequest(hr)->construction = (pending.command == Command::CONSTR_SEGMENT);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     ConstrainPointByHovered(hr.entity(1));
@@ -952,14 +968,14 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
                     pending.request = hr;
                     pending.point = hr.entity(2);
-                    pending.description = "click next point of line, or press Esc";
+                    pending.description = _("click next point of line, or press Esc");
                     SK.GetEntity(pending.point)->PointForceTo(v);
                     break;
 
                 case Command::RECTANGLE: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw rectangle in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw rectangle in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearSuper();
                         break;
                     }
@@ -968,6 +984,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     SS.UndoRemember();
                     for(i = 0; i < 4; i++) {
                         lns[i] = AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false);
+                        AddToPending(lns[i]);
                     }
                     for(i = 0; i < 4; i++) {
                         Constraint::ConstrainCoincident(
@@ -981,11 +998,17 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                             Entity::NO_ENTITY, Entity::NO_ENTITY,
                             lns[i].entity(0));
                     }
-                    ConstrainPointByHovered(lns[2].entity(1));
+                    if(ConstrainPointByHovered(lns[2].entity(1))) {
+                        Vector pos = SK.GetEntity(lns[2].entity(1))->PointGetNum();
+                        for(i = 0; i < 4; i++) {
+                            SK.GetEntity(lns[i].entity(1))->PointForceTo(pos);
+                            SK.GetEntity(lns[i].entity(2))->PointForceTo(pos);
+                        }
+                    }
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = lns[1].entity(2);
-                    pending.description = "click to place other corner of rectangle";
+                    pending.description = _("click to place other corner of rectangle");
                     hr = lns[0];
                     break;
                 }
@@ -1005,17 +1028,18 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_RADIUS;
                     pending.circle = hr.entity(0);
-                    pending.description = "click to set radius";
+                    pending.description = _("click to set radius");
                     break;
 
                 case Command::ARC: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw arc in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw arc in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearPending();
                         break;
                     }
                     hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
+                    AddToPending(hr);
                     // This fudge factor stops us from immediately failing to solve
                     // because of the arc's implicit (equal radius) tangent.
                     Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
@@ -1028,11 +1052,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_ARC_POINT;
                     pending.point = hr.entity(3);
-                    pending.description = "click to place point";
+                    pending.description = _("click to place point");
                     break;
                 }
                 case Command::CUBIC:
                     hr = AddRequest(Request::Type::CUBIC);
+                    AddToPending(hr);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     SK.GetEntity(hr.entity(2))->PointForceTo(v);
                     SK.GetEntity(hr.entity(3))->PointForceTo(v);
@@ -1043,13 +1068,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_CUBIC_POINT;
                     pending.point = hr.entity(4);
-                    pending.description = "click next point of cubic, or press Esc";
+                    pending.description = _("click next point of cubic, or press Esc");
                     break;
 
                 case Command::WORKPLANE:
                     if(LockedInWorkplane()) {
-                        Error("Sketching in a workplane already; sketch in 3d before "
-                              "creating new workplane.");
+                        Error(_("Sketching in a workplane already; sketch in 3d before "
+                                "creating new workplane."));
                         ClearSuper();
                         break;
                     }
@@ -1064,8 +1089,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                 case Command::TTF_TEXT: {
                     if(!SS.GW.LockedInWorkplane()) {
-                        Error("Can't draw text in 3d; first, activate a workplane "
-                              "with Sketch -> In Workplane.");
+                        Error(_("Can't draw text in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
                         ClearSuper();
                         break;
                     }
@@ -1079,7 +1104,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = hr.entity(2);
-                    pending.description = "click to place bottom left of text";
+                    pending.description = _("click to place bottom left of text");
                     break;
                 }
 
@@ -1090,7 +1115,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     c.workplane   = SS.GW.ActiveWorkplane();
                     c.type        = Constraint::Type::COMMENT;
                     c.disp.offset = v;
-                    c.comment = "NEW COMMENT -- DOUBLE-CLICK TO EDIT";
+                    c.comment     = _("NEW COMMENT -- DOUBLE-CLICK TO EDIT");
                     hc = Constraint::AddConstraint(&c);
                     break;
                 }
@@ -1099,11 +1124,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             break;
 
         case Pending::DRAGGING_RADIUS:
-        case Pending::DRAGGING_NEW_POINT:
-            // The MouseMoved event has already dragged it as desired.
             ClearPending();
             break;
 
+        case Pending::DRAGGING_NEW_POINT:
         case Pending::DRAGGING_NEW_ARC_POINT:
             ConstrainPointByHovered(pending.point);
             ClearPending();
@@ -1203,7 +1227,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
             pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
             pending.request = hr;
             pending.point = hr.entity(2);
-            pending.description = "click next point of line, or press Esc";
+            pending.description = _("click next point of line, or press Esc");
 
             break;
         }

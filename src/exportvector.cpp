@@ -327,9 +327,9 @@ public:
         entity->setWidthMm(Style::WidthMm(hs.v));
 
         if(s->stippleType == StipplePattern::FREEHAND) {
-            messages.insert("freehand lines were replaced with continuous lines");
+            messages.insert(_("freehand lines were replaced with continuous lines"));
         } else if(s->stippleType == StipplePattern::ZIGZAG) {
-            messages.insert("zigzag lines were replaced with continuous lines");
+            messages.insert(_("zigzag lines were replaced with continuous lines"));
         }
     }
 
@@ -580,8 +580,8 @@ void DxfFileWriter::FinishAndCloseFile() {
     }
 
     if(!interface.messages.empty()) {
-        std::string text = "Some aspects of the drawing have no DXF equivalent and "
-                           "were not exported:\n";
+        std::string text = _("Some aspects of the drawing have no DXF equivalent and "
+                             "were not exported:\n");
         for(const std::string &message : interface.messages) {
             text += " * " + message + "\n";
         }
@@ -797,8 +797,8 @@ void PdfFileWriter::StartFile() {
     if((ptMax.x - ptMin.x) > 200*25.4 ||
        (ptMax.y - ptMin.y) > 200*25.4)
     {
-        Message("PDF page size exceeds 200 by 200 inches; many viewers may "
-                "reject this file.");
+        Message(_("PDF page size exceeds 200 by 200 inches; many viewers may "
+                  "reject this file."));
     }
 
     fprintf(f,
