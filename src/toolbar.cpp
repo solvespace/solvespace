@@ -157,7 +157,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                         /*outlineColor=*/{});
     }
 
-    bool showTooltip;
+    bool showTooltip = false;
     std::string tooltip;
 
     bool leftpos = true;
