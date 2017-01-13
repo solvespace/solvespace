@@ -338,7 +338,6 @@ public:
                    Gdk::LEAVE_NOTIFY_MASK);
         set_has_alpha(true);
         set_has_depth_buffer(true);
-        set_use_es(true);
     }
 
 protected:
@@ -1109,7 +1108,6 @@ public:
                    Gdk::LEAVE_NOTIFY_MASK);
         set_has_alpha(true);
         set_has_depth_buffer(true);
-        set_use_es(true);
     }
 
     void set_cursor_hand(bool is_hand) {

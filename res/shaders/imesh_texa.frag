@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// SolveSpace Indexed Mesh rendering shader
+// Indexed Mesh rendering shader
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
