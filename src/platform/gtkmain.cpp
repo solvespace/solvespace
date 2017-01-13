@@ -1433,6 +1433,9 @@ int main(int argc, char** argv) {
     while(*langNames) {
         if(SetLocale(*langNames++)) break;
     }
+    if(!*langNames) {
+        SetLocale("en_US");
+    }
 
 #if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
     if(GDK_IS_X11_DISPLAY(Gdk::Display::get_default()->gobj())) {
