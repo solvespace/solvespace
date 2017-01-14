@@ -26,9 +26,8 @@ Building on Linux
 ### Building for Linux
 
 You will need CMake, zlib, libpng, cairo, freetype. To build the GUI, you will need
-fontconfig, gtkmm 3.0, pangomm 1.4, OpenGL and OpenGL GLU, and optionally,
-the Space Navigator client library
-.
+fontconfig, gtkmm 3.0 (version 3.16 or later), pangomm 1.4, OpenGL and OpenGL GLU, and
+optionally, the Space Navigator client library.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
     apt-get install cmake zlib1-dev libpng-dev libcairo2-dev libfreetype6-dev

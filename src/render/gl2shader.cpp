@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// OpenGL 2 shader interface.
+// OpenGL ES 2.0 and OpenGL 3.0 shader interface.
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
@@ -67,12 +67,17 @@ static GLuint CompileShader(const std::string &res, GLenum type) {
     // GLES2+ depending on whether we run on X11 or Wayland, and OS X supports either a legacy
     // profile or a GL3.2 core profile or (on 10.9+) a GL4.1 core profile.
     // The platforms barely have a common subset of features:
-    //  * Linux Mesa/NVidia accept basically everything thrown at it;
     //  * mobile+web and Windows (D3D9 through ANGLE) are strictly GLES2/GLSL1.0;
     //  * OS X legacy compatibility profile has GLSL1.2 only shaders, and GL3.2 core profile
     //    that has GLSL1.0 shaders compatible with GLES2 makes mandatory the use of vertex array
     //    objects, which cannot be used in GLES2 at all; similarly GL3.2 core has GL_RED but not
     //    GL_ALPHA whereas GLES2 has GL_ALPHA but not GL_RED.
+    //  * GTK does not work on anything prior to GL3.0/GLES2.0; it does not permit explicitly
+    //    asking for a compatibility profile, i.e. you can only ask for 3.2+; and it does not
+    //    permit asking for a GLES profile prior to GTK 3.22, which will get into Ubuntu
+    //    no earlier than late 2017. This is despite the fact that if only GTK defaulted
+    //    to the compatibility profile, everything would have just worked as Mesa is
+    //    very permissive.
     // While we're at it, let's remember that GLES2 has *only* glDepthRangef, GL3.2 has *only*
     // glDepthRange, and GL4.1+ has both glDepthRangef and glDepthRange. Also, that GLSL1.0
     // makes `precision highp float;` mandatory in fragment shaders, and GLSL1.2 removes
@@ -80,10 +85,10 @@ static GLuint CompileShader(const std::string &res, GLenum type) {
     // Christ, what a trash fire.
 
     std::string src(resData, size);
-#ifdef __APPLE__
-    src = "#version 120\n" + src;
-#else
+#if defined(HAVE_GLES)
     src = "#version 100\nprecision highp float;\n" + src;
+#else
+    src = "#version 120\n" + src;
 #endif
 
     GLuint shader = glCreateShader(type);
@@ -924,7 +929,12 @@ void IndexedMeshRenderer::Init() {
         }
     );
     texaShader.Init(
-        "shaders/imesh_tex.vert", "shaders/imesh_texa.frag",
+        "shaders/imesh_tex.vert",
+#if defined(HAVE_GLES)
+        "shaders/imesh_texa.frag",
+#else
+        "shaders/imesh_texr.frag",
+#endif
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_TEX, "tex" }

@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// OpenGL 2 based rendering interface.
+// OpenGL ES 2.0 and OpenGL 3.0 based rendering interface.
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
@@ -271,7 +271,11 @@ void OpenGl2Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
     switch(pm->format) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;
+#if defined(HAVE_GLES)
         case Pixmap::Format::A:    format = GL_ALPHA; break;
+#else
+        case Pixmap::Format::A:    format = GL_RED;   break;
+#endif
         case Pixmap::Format::BGRA:
         case Pixmap::Format::BGR:
             ssassert(false, "Unexpected pixmap format");
@@ -423,6 +427,12 @@ void OpenGl2Renderer::Init() {
     outlineRenderer.Init(&atlas);
     meshRenderer.Init();
     imeshRenderer.Init();
+
+#if !defined(HAVE_GLES) && !defined(__APPLE__)
+    GLuint array;
+    glGenVertexArrays(1, &array);
+    glBindVertexArray(array);
+#endif
 }
 
 void OpenGl2Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {

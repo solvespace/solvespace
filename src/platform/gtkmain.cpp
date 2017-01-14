@@ -338,10 +338,15 @@ public:
                    Gdk::LEAVE_NOTIFY_MASK);
         set_has_alpha(true);
         set_has_depth_buffer(true);
-        set_use_es(true);
     }
 
 protected:
+    // Work around a bug fixed in GTKMM 3.22:
+    // https://mail.gnome.org/archives/gtkmm-list/2016-April/msg00020.html
+    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
+        return get_window()->create_gl_context();
+    }
+
     void on_resize(int width, int height) override {
         _w = width;
         _h = height;
@@ -1109,7 +1114,6 @@ public:
                    Gdk::LEAVE_NOTIFY_MASK);
         set_has_alpha(true);
         set_has_depth_buffer(true);
-        set_use_es(true);
     }
 
     void set_cursor_hand(bool is_hand) {
@@ -1121,6 +1125,11 @@ public:
     }
 
 protected:
+    // See GraphicsWidget::on_create_context.
+    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
+        return get_window()->create_gl_context();
+    }
+
     bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.TW.Paint();
         return true;
@@ -1432,6 +1441,9 @@ int main(int argc, char** argv) {
     const char* const* langNames = g_get_language_names();
     while(*langNames) {
         if(SetLocale(*langNames++)) break;
+    }
+    if(!*langNames) {
+        SetLocale("en_US");
     }
 
 #if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)

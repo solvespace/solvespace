@@ -1375,6 +1375,9 @@ int main(int argc, const char *argv[]) {
         dbp("%s", ([language UTF8String]));
         if(SolveSpace::SetLocale([language UTF8String])) break;
     }
+    if([languages count] == 0) {
+        SolveSpace::SetLocale("en_US");
+    }
 
     connexionInit();
     SolveSpace::SS.Init();

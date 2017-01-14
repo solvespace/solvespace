@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// OpenGL 2 shader interface.
+// OpenGL ES 2.0 and OpenGL 3.0 shader interface.
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
@@ -11,16 +11,20 @@
 #   define GL_GLEXT_PROTOTYPES
 #   include <GLES2/gl2.h>
 #   include <GLES2/gl2ext.h>
+#   define HAVE_GLES
 #elif __APPLE__
 #   include <OpenGL/gl.h>
-// glDepthRange is in GL1+ but not GLES2, glDepthRangef is in GL4.1+ and GLES2.
-// Consistency!
-#   define glClearDepthf glClearDepth
-#   define glDepthRangef glDepthRange
 #else
 #   define GL_GLEXT_PROTOTYPES
 #   include <GL/gl.h>
 #   include <GL/glext.h>
+#endif
+
+#if !defined(HAVE_GLES)
+// glDepthRange is in GL1+ but not GLES2, glDepthRangef is in GL4.1+ and GLES2.
+// Consistency!
+#   define glClearDepthf glClearDepth
+#   define glDepthRangef glDepthRange
 #endif
 
 namespace SolveSpace {

@@ -162,9 +162,9 @@ public:
     int  n;
     int  elemsAllocated;
 
-    void AllocForOneMore() {
-        if(n >= elemsAllocated) {
-            elemsAllocated = (elemsAllocated + 32)*2;
+    void ReserveMore(int howMuch) {
+        if(n + howMuch > elemsAllocated) {
+            elemsAllocated = n + howMuch;
             T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
             for(int i = 0; i < n; i++) {
                 new(&newElem[i]) T(std::move(elem[i]));
@@ -172,6 +172,12 @@ public:
             }
             MemFree(elem);
             elem = newElem;
+        }
+    }
+
+    void AllocForOneMore() {
+        if(n >= elemsAllocated) {
+            ReserveMore((elemsAllocated + 32)*2 - n);
         }
     }
 
@@ -285,9 +291,9 @@ public:
         return t->h;
     }
 
-    void Add(T *t) {
-        if(n >= elemsAllocated) {
-            elemsAllocated = (elemsAllocated + 32)*2;
+    void ReserveMore(int howMuch) {
+        if(n + howMuch > elemsAllocated) {
+            elemsAllocated = n + howMuch;
             T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
             for(int i = 0; i < n; i++) {
                 new(&newElem[i]) T(std::move(elem[i]));
@@ -296,7 +302,13 @@ public:
             MemFree(elem);
             elem = newElem;
         }
+    }
 
+    void Add(T *t) {
+        if(n >= elemsAllocated) {
+            ReserveMore((elemsAllocated + 32)*2 - n);
+        }
+    
         int first = 0, last = n;
         // We know that we must insert within the closed interval [first,last]
         while(first != last) {

@@ -47,6 +47,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
 
     UndoState *ut = &(uk->d[uk->write]);
     *ut = {};
+    ut->group.ReserveMore(SK.group.n);
     for(i = 0; i < SK.group.n; i++) {
         Group *src = &(SK.group.elem[i]);
         Group dest = *src;
@@ -76,17 +77,21 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     for(i = 0; i < SK.groupOrder.n; i++) {
         ut->groupOrder.Add(&(SK.groupOrder.elem[i]));
     }
+    ut->request.ReserveMore(SK.request.n);
     for(i = 0; i < SK.request.n; i++) {
         ut->request.Add(&(SK.request.elem[i]));
     }
+    ut->constraint.ReserveMore(SK.constraint.n);
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *src = &(SK.constraint.elem[i]);
         Constraint dest = *src;
         ut->constraint.Add(&dest);
     }
+    ut->param.ReserveMore(SK.param.n);
     for(i = 0; i < SK.param.n; i++) {
         ut->param.Add(&(SK.param.elem[i]));
     }
+    ut->style.ReserveMore(SK.style.n);
     for(i = 0; i < SK.style.n; i++) {
         ut->style.Add(&(SK.style.elem[i]));
     }

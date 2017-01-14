@@ -238,3 +238,13 @@ any other information that is requested:
 
 This will generate a large file called `core` in the current
 directory; it can be later re-loaded using `lldb -c core`.
+
+### Debugging GUI-related bugs on Linux
+
+There are several environment variables available that make crashes
+earlier and errors more informative. Before running SolveSpace, run
+the following commands in your shell:
+
+    export G_DEBUG=fatal_warnings
+    export LIBGL_DEBUG=1
+    export MESA_DEBUG=1
