@@ -341,6 +341,12 @@ public:
     }
 
 protected:
+    // Work around a bug fixed in GTKMM 3.22:
+    // https://mail.gnome.org/archives/gtkmm-list/2016-April/msg00020.html
+    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
+        return get_window()->create_gl_context();
+    }
+
     void on_resize(int width, int height) override {
         _w = width;
         _h = height;
@@ -1119,6 +1125,11 @@ public:
     }
 
 protected:
+    // See GraphicsWidget::on_create_context.
+    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
+        return get_window()->create_gl_context();
+    }
+
     bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
         SS.TW.Paint();
         return true;
