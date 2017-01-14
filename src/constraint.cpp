@@ -83,6 +83,7 @@ hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
     SK.constraint.AddAndAssignId(c);
+    c->Generate(&SK.param);
 
     SS.MarkGroupDirty(c->group);
     SK.GetGroup(c->group)->dofCheckOk = false;
