@@ -17,7 +17,15 @@ namespace SolveSpace {
 std::string LoadString(const std::string &name) {
     size_t size;
     const void *data = LoadResource(name, &size);
-    return std::string(static_cast<const char *>(data), size);
+    std::string result(static_cast<const char *>(data), size);
+
+    // When editing resources under Windows, Windows newlines may sneak in.
+    // Any files with them won't be merged, but ignoring them during development
+    // helps external contributors.
+    result.erase(std::remove(result.begin(), result.end(), '\r'),
+                 result.end());
+
+    return result;
 }
 
 std::string LoadStringFromGzip(const std::string &name) {
