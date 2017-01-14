@@ -829,9 +829,9 @@ void GraphicsWindow::Paint() {
 
     auto renderStartTime = std::chrono::high_resolution_clock::now();
 
-    canvas->NewFrame();
-    canvas->SetCamera(camera);
     canvas->SetLighting(lighting);
+    canvas->SetCamera(camera);
+    canvas->NewFrame();
     Draw(canvas.get());
     canvas->FlushFrame();
 

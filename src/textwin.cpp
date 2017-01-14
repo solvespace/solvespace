@@ -870,9 +870,9 @@ void TextWindow::Paint() {
     Lighting lighting = {};
     lighting.backgroundColor = RGBi(0, 0, 0);
 
-    canvas->NewFrame();
-    canvas->SetCamera(camera);
     canvas->SetLighting(lighting);
+    canvas->SetCamera(camera);
+    canvas->NewFrame();
 
     UiCanvas uiCanvas = {};
     uiCanvas.canvas = canvas;

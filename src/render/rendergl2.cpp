@@ -433,6 +433,7 @@ void OpenGl2Renderer::Init() {
     glGenVertexArrays(1, &array);
     glBindVertexArray(array);
 #endif
+    UpdateProjection();
 }
 
 void OpenGl2Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {
@@ -675,7 +676,9 @@ void OpenGl2Renderer::GetIdent(const char **vendor, const char **renderer, const
 
 void OpenGl2Renderer::SetCamera(const Camera &c) {
     camera = c;
-    UpdateProjection();
+    if(initialized) {
+        UpdateProjection();
+    }
 }
 
 void OpenGl2Renderer::SetLighting(const Lighting &l) {
