@@ -129,10 +129,10 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         if(!(shiftDown || ctrlDown)) {
             double s = 0.3*(PI/180)*scale; // degrees per pixel
-            if(SS.turntableNav) {
+            if(SS.turntableNav) { // lock the Z to vertical
                 projRight = orig.projRight.RotatedAbout(Vector::From(0, 0, 1), -s*dx);
-                projUp = orig.projUp.RotatedAbout( // lock the Z to vertical
-                    Vector::From(orig.projRight.x, 0, orig.projRight.y),
+                projUp = orig.projUp.RotatedAbout(
+                    Vector::From(orig.projRight.x, orig.projRight.y, orig.projRight.y),
                     s*dy
                 );
             } else {
