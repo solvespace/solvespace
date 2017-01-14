@@ -1517,8 +1517,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     }
 #endif
 
-    // Use the user default locale.
-    SetLocale((uint16_t)GetUserDefaultLCID());
+    // Use the user default locale, then fall back to English.
+    if(!SetLocale((uint16_t)GetUserDefaultLCID())) {
+        SetLocale("en_US");
+    }
 
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
