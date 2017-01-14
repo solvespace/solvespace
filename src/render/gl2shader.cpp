@@ -84,12 +84,21 @@ static GLuint CompileShader(const std::string &res, GLenum type) {
     // the `precision` keyword entirely, because that's clearly how minor versions work.
     // Christ, what a trash fire.
 
-    std::string src(resData, size);
+    const char *prelude;
 #if defined(HAVE_GLES)
-    src = "#version 100\nprecision highp float;\n" + src;
+    prelude = R"(
+#version 100
+#define TEX_ALPHA a
+precision highp float;
+)";
 #else
-    src = "#version 120\n" + src;
+    prelude = R"(
+#version 120
+#define TEX_ALPHA r
+)";
 #endif
+    std::string src(resData, size);
+    src = prelude + src;
 
     GLuint shader = glCreateShader(type);
     ssassert(shader != 0, "glCreateShader failed");

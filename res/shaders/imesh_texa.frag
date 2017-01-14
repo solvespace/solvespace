@@ -9,5 +9,5 @@ uniform sampler2D texture;
 varying vec2 fragTex;
 
 void main() {
-    gl_FragColor = vec4(color.rgb, color.a * texture2D(texture, fragTex).a);
+    gl_FragColor = vec4(color.rgb, color.a * texture2D(texture, fragTex).TEX_ALPHA);
 }

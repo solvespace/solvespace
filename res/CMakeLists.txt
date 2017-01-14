@@ -211,7 +211,6 @@ add_resources(
     shaders/imesh_point.vert
     shaders/imesh_tex.frag
     shaders/imesh_texa.frag
-    shaders/imesh_texr.frag
     shaders/imesh_tex.vert
     shaders/mesh.frag
     shaders/mesh.vert
