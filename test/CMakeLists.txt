@@ -70,7 +70,7 @@ target_link_libraries(solvespace-testsuite
 add_dependencies(solvespace-testsuite
     resources)
 
-add_custom_target(test_solvespace ALL
+add_custom_target(test_solvespace
     COMMAND $<TARGET_FILE:solvespace-testsuite>
     COMMENT "Testing SolveSpace"
     VERBATIM)
