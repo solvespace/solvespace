@@ -57,15 +57,10 @@ bool SolveSpaceUI::PruneOrphans() {
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     if(before.v == 0) return true;
     if(after.v  == 0) return true;
-
-    int beforep = -1, afterp = -1;
-    int i;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        hGroup hg = SK.groupOrder.elem[i];
-        if(hg.v == before.v) beforep = i;
-        if(hg.v == after.v)  afterp  = i;
-    }
-    if(beforep < 0 || afterp < 0) return false;
+    if(!GroupExists(before)) return false;
+    if(!GroupExists(after)) return false;
+    int beforep = SK.GetGroup(before)->order;
+    int afterp = SK.GetGroup(after)->order;
     if(beforep >= afterp) return false;
     return true;
 }
