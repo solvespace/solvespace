@@ -44,8 +44,7 @@ void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
 
 bool Group::IsVisible() {
     if(!visible) return false;
-    Group *active = SK.GetGroup(SS.GW.activeGroup);
-    if(order > active->order) return false;
+    if(SS.GroupsInOrder(SS.GW.activeGroup, h)) return false;
     return true;
 }
 
