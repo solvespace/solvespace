@@ -938,12 +938,7 @@ void IndexedMeshRenderer::Init() {
         }
     );
     texaShader.Init(
-        "shaders/imesh_tex.vert",
-#if defined(HAVE_GLES)
-        "shaders/imesh_texa.frag",
-#else
-        "shaders/imesh_texr.frag",
-#endif
+        "shaders/imesh_tex.vert", "shaders/imesh_texa.frag",
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_TEX, "tex" }
