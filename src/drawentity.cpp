@@ -443,7 +443,8 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 }
 
 void Entity::Draw(DrawAs how, Canvas *canvas) {
-    if(!IsVisible()) return;
+    if(!(how == DrawAs::HOVERED || how == DrawAs::SELECTED) &&
+       !IsVisible()) return;
 
     int zIndex;
     if(IsPoint()) {
