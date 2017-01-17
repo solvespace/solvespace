@@ -23,6 +23,8 @@ New constraint features:
     constrained to other points with a click.
   * When selecting a constraint, the requests it constraints can be selected
     in the text window.
+  * When selecting an entity, the constraints applied to it can be selected
+    in the text window.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

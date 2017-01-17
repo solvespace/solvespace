@@ -51,14 +51,12 @@ void TextWindow::ScreenConstraintShowAsRadius(int link, uint32_t v) {
 }
 
 void TextWindow::DescribeSelection() {
-    Entity *e;
-    Vector p;
-    int i;
     Printf(false, "");
 
     auto const &gs = SS.GW.gs;
     if(gs.n == 1 && (gs.points == 1 || gs.entities == 1)) {
-        e = SK.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
+        Entity *e = SK.GetEntity(gs.points == 1 ? gs.point[0] : gs.entity[0]);
+        Vector p;
 
 #define COSTR(p) \
     SS.MmToString((p).x).c_str(), \
@@ -126,7 +124,7 @@ void TextWindow::DescribeSelection() {
                     Printf(false, "%FtCUBIC BEZIER CURVE%E");
                     pts = 4;
                 }
-                for(i = 0; i < pts; i++) {
+                for(int i = 0; i < pts; i++) {
                     p = SK.GetEntity(e->point[i])->PointGetNum();
                     Printf((i==0), "   p%d = " PT_AS_STR, i, COSTR(p));
                 }
@@ -220,6 +218,33 @@ void TextWindow::DescribeSelection() {
         }
         if(e->construction) {
             Printf(false, "%FtCONSTRUCTION");
+        }
+
+        std::vector<hConstraint> lhc = {};
+        for(const Constraint &c : SK.constraint) {
+            if(!(c.ptA.v == e->h.v ||
+                 c.ptB.v == e->h.v ||
+                 c.entityA.v == e->h.v ||
+                 c.entityB.v == e->h.v ||
+                 c.entityC.v == e->h.v ||
+                 c.entityD.v == e->h.v)) continue;
+            lhc.push_back(c.h);
+        }
+
+        if(!lhc.empty()) {
+            Printf(true, "%FtCONSTRAINED BY:%E");
+
+            int a = 0;
+            for(hConstraint hc : lhc) {
+                Constraint *c = SK.GetConstraint(hc);
+                std::string s = c->DescriptionString();
+                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
+                    (a & 1) ? 'd' : 'a',
+                    c->h.v, (&TextWindow::ScreenSelectConstraint),
+                    (&TextWindow::ScreenHoverConstraint), s.c_str(),
+                    c->reference ? "(ref)" : "");
+                a++;
+            }
         }
     } else if(gs.n == 2 && gs.points == 2) {
         Printf(false, "%FtTWO POINTS");
@@ -357,7 +382,7 @@ void TextWindow::DescribeSelection() {
         lhe.erase(it, lhe.end());
 
         if(!lhe.empty()) {
-            Printf(true, "%FtCONSTRAINED REQUESTS:%E");
+            Printf(true, "%FtCONSTRAINS:%E");
 
             int a = 0;
             for(hEntity he : lhe) {
@@ -389,13 +414,13 @@ void TextWindow::DescribeSelection() {
     // If any of the selected entities have an assigned style, then offer
     // the option to remove that style.
     bool styleAssigned = false;
-    for(i = 0; i < gs.entities; i++) {
+    for(int i = 0; i < gs.entities; i++) {
         Entity *e = SK.GetEntity(gs.entity[i]);
         if(e->style.v != 0) {
             styleAssigned = true;
         }
     }
-    for(i = 0; i < gs.constraints; i++) {
+    for(int i = 0; i < gs.constraints; i++) {
         Constraint *c = SK.GetConstraint(gs.constraint[i]);
         if(c->type == Constraint::Type::COMMENT && c->disp.style.v != 0) {
             styleAssigned = true;
