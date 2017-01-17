@@ -57,6 +57,8 @@ bool SolveSpaceUI::PruneOrphans() {
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
     if(before.v == 0) return true;
     if(after.v  == 0) return true;
+    if(!GroupExists(before)) return false;
+    if(!GroupExists(after)) return false;
     int beforep = SK.GetGroup(before)->order;
     int afterp = SK.GetGroup(after)->order;
     if(beforep >= afterp) return false;

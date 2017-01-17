@@ -152,11 +152,6 @@ void TextWindow::ScreenHoverConstraint(int link, uint32_t v) {
     if(!SS.GW.showConstraints) return;
 
     hConstraint hc = { v };
-    Constraint *c = SK.GetConstraint(hc);
-    if(c->group.v != SS.GW.activeGroup.v) {
-        // Only constraints in the active group are visible
-        return;
-    }
     SS.GW.hover.Clear();
     SS.GW.hover.constraint = hc;
     SS.GW.hover.emphasized = true;

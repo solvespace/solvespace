@@ -14,16 +14,17 @@ New sketch features:
     constraining the width of text.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
-  * When clicking on an entity that shares a place with other entities,
-    the entity from the current group is selected.
-  * When dragging an entity that shares a place with other entities,
-    the entity from a request is selected. For example, dragging a point on
-    a face of an extrusion coincident with the source sketch plane will
-    drag the point from the source sketch.
-  * When dragging an arc or rectangle point, it will be automatically
-    constrained to other points with a click.
   * When adding a constraint which has a label and is redundant with another
     constraint, the constraint is added as a reference, avoiding an error.
+  * Datum points can be copied and pasted.
+
+New constraint features:
+  * When dragging an arc or rectangle point, it will be automatically
+    constrained to other points with a click.
+  * When selecting a constraint, the requests it constraints can be selected
+    in the text window.
+  * When selecting an entity, the constraints applied to it can be selected
+    in the text window.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
@@ -47,6 +48,12 @@ Other new features:
   * When zooming to fit, constraints are also considered.
   * When selecting a point and a line, projected distance to to current
     workplane is displayed.
+  * When clicking on an entity that shares a place with other entities,
+    the entity from the current group is selected.
+  * When dragging an entity that shares a place with other entities,
+    the entity from a request is selected. For example, dragging a point on
+    a face of an extrusion coincident with the source sketch plane will
+    drag the point from the source sketch.
   * In expressions, numbers can contain the digit group separator, "_".
   * The "=" key is bound to "Zoom In", like "+" key.
   * The numpad decimal separator key is bound to "." regardless of locale.

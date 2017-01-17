@@ -258,13 +258,14 @@ public:
         if(!_entry.is_visible()) {
             _entry.show();
             _entry.grab_focus();
-            _entry.add_modal_grab();
+            add_modal_grab();
         }
     }
 
     void stop_editing() {
-        if(_entry.is_visible())
-            _entry.remove_modal_grab();
+        if(_entry.is_visible()) {
+            remove_modal_grab();
+        }
         _entry.hide();
     }
 
@@ -282,12 +283,25 @@ public:
 
 protected:
     bool on_key_press_event(GdkEventKey *event) override {
-        if(event->keyval == GDK_KEY_Escape) {
-            stop_editing();
+        if(is_editing()) {
+            if(event->keyval == GDK_KEY_Escape) {
+                stop_editing();
+            } else {
+                _entry.event((GdkEvent *)event);
+            }
             return true;
+        } else {
+            return false;
         }
+    }
 
-        return false;
+    bool on_key_release_event(GdkEventKey *event) override {
+        if(is_editing()) {
+            _entry.event((GdkEvent *)event);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     void on_size_allocate(Gtk::Allocation& allocation) override {
@@ -462,10 +476,6 @@ public:
 
     bool is_fullscreen() const {
         return _is_fullscreen;
-    }
-
-    bool emulate_key_press(GdkEventKey *event) {
-        return on_key_press_event(event);
     }
 
 protected:
@@ -1218,14 +1228,6 @@ protected:
         CnfFreezeWindowPos(this, "TextWindow");
 
         Gtk::Window::on_hide();
-    }
-
-    bool on_key_press_event(GdkEventKey *event) override {
-        if(GW->emulate_key_press(event)) {
-            return true;
-        }
-
-        return Gtk::Window::on_key_press_event(event);
     }
 
     bool on_delete_event(GdkEventAny *) override {

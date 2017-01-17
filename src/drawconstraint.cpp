@@ -498,7 +498,8 @@ bool Constraint::DoLineExtend(Canvas *canvas, Canvas::hStroke hcs,
 
 void Constraint::DoLayout(DrawAs how, Canvas *canvas,
                           Vector *labelPos, std::vector<Vector> *refs) {
-    if(!IsVisible()) return;
+    if(!(how == DrawAs::HOVERED || how == DrawAs::SELECTED) &&
+       !IsVisible()) return;
 
     // Unit vectors that describe our current view of the scene. One pixel
     // long, not one actual unit.
@@ -1136,7 +1137,7 @@ s:
                        ex = VectorFont::Builtin()->GetExtents(textHeight, s);
                 Vector shift = r.WithMagnitude(ex.x).Plus(
                                u.WithMagnitude(ex.y));
-                                
+
                 canvas->DrawVectorText(s, textHeight, o.Minus(shift.ScaledBy(0.5)),
                                        r.WithMagnitude(1), u.WithMagnitude(1), hcs);
                 if(refs) refs->push_back(o);

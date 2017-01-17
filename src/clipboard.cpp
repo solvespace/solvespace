@@ -90,7 +90,11 @@ void GraphicsWindow::CopySelection() {
         if(!EntReqTable::GetEntityInfo(e->type, e->extraPoints,
                 &req, &pts, NULL, &hasDistance))
         {
-            continue;
+            if(!e->h.isFromRequest()) continue;
+            Request *r = SK.GetRequest(e->h.request());
+            if(r->type != Request::Type::DATUM_POINT) continue;
+            EntReqTable::GetEntityInfo((Entity::Type)0, e->extraPoints,
+                &req, &pts, NULL, &hasDistance);
         }
         if(req == Request::Type::WORKPLANE) continue;
 
@@ -102,7 +106,12 @@ void GraphicsWindow::CopySelection() {
         cr.font         = e->font;
         cr.construction = e->construction;
         {for(int i = 0; i < pts; i++) {
-            Vector pt = SK.GetEntity(e->point[i])->PointGetNum();
+            Vector pt;
+            if(req == Request::Type::DATUM_POINT) {
+                pt = e->PointGetNum();
+            } else {
+                pt = SK.GetEntity(e->point[i])->PointGetNum();
+            }
             pt = pt.Minus(p);
             pt = pt.DotInToCsys(u, v, n);
             cr.point[i] = pt;
@@ -182,7 +191,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             pt = pt.Plus(p);
             pt = pt.RotatedAbout(n, theta);
             pt = pt.Plus(trans);
-            SK.GetEntity(hr.entity(i+1))->PointForceTo(pt);
+            int j = (r->type == Request::Type::DATUM_POINT) ? i : i + 1;
+            SK.GetEntity(hr.entity(j))->PointForceTo(pt);
         }
         if(hasDistance) {
             SK.GetEntity(hr.entity(64))->DistanceForceTo(
@@ -192,7 +202,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         cr->newReq = hr;
         MakeSelected(hr.entity(0));
         for(i = 0; i < pts; i++) {
-            MakeSelected(hr.entity(i+1));
+            int j = (r->type == Request::Type::DATUM_POINT) ? i : i + 1;
+            MakeSelected(hr.entity(j));
         }
     }
 
