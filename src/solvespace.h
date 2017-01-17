@@ -810,6 +810,11 @@ public:
         bool        draw, showOrigin;
         Vector      pt, u, v;
     } justExportedInfo;
+    struct {
+        bool   draw;
+        bool   dirty;
+        Vector position;
+    } centerOfMass;
 
     class Clipboard {
     public:
@@ -857,6 +862,7 @@ public:
     void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
     void ForceReferences();
+    void UpdateCenterOfMass();
 
     bool ActiveGroupsOkay();
 

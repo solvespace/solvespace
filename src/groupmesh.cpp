@@ -421,6 +421,10 @@ void Group::GenerateDisplayItems() {
         // work correctly.
         displayMesh.PrecomputeTransparency();
 
+        // Recalculate mass center if needed
+        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h.v == SS.GW.activeGroup.v) {
+            SS.UpdateCenterOfMass();
+        }
         displayDirty = false;
     }
 }

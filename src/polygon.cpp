@@ -83,6 +83,10 @@ bool STriangle::Raytrace(const Vector &rayPoint, const Vector &rayDir,
     return true;
 }
 
+double STriangle::SignedVolume() const {
+    return a.Dot(b.Cross(c)) / 6.0;
+}
+
 void STriangle::FlipNormal() {
     swap(a, b);
     swap(an, bn);

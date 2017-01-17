@@ -39,15 +39,19 @@ New rendering features:
     or not drawing them at all.
   * The "Show/hide outlines" button is now independent from "Show/hide edges".
 
-Other new features:
-  * New command-line interface, for batch exporting and more.
+New measurement/analysis features:
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
+  * New command for measuring center of mass, with live updates as the sketch
+    changes, "Analyze → Center of Mass".
+  * When selecting a point and a line, projected distance to to current
+    workplane is displayed.
+
+Other new features:
+  * New command-line interface, for batch exporting and more.
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.
-  * When selecting a point and a line, projected distance to to current
-    workplane is displayed.
   * When clicking on an entity that shares a place with other entities,
     the entity from the current group is selected.
   * When dragging an entity that shares a place with other entities,

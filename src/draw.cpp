@@ -770,6 +770,33 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         canvas->DrawLine(SS.extraLine.ptA, SS.extraLine.ptB, hcsDatum);
     }
 
+    if(SS.centerOfMass.draw && !SS.centerOfMass.dirty) {
+        Vector p = SS.centerOfMass.position;
+        Vector u = camera.projRight;
+        Vector v = camera.projUp;
+
+        const double size = 10.0;
+        const int subdiv = 16;
+        double h = Style::DefaultTextHeight() / camera.scale;
+        canvas->DrawVectorText(ssprintf("%.3f, %.3f, %.3f", p.x, p.y, p.z), h,
+                               p.Plus(u.ScaledBy((size + 5.0)/scale)).Minus(v.ScaledBy(h / 2.0)),
+                               u, v,hcsDatum);
+        u = u.WithMagnitude(size / scale);
+        v = v.WithMagnitude(size / scale);
+
+        canvas->DrawLine(p.Minus(u), p.Plus(u), hcsDatum);
+        canvas->DrawLine(p.Minus(v), p.Plus(v), hcsDatum);
+        Vector prev;
+        for(int i = 0; i <= subdiv; i++) {
+            double a = (double)i / subdiv * 2.0 * PI;
+            Vector point = p.Plus(u.ScaledBy(cos(a))).Plus(v.ScaledBy(sin(a)));
+            if(i > 0) {
+                canvas->DrawLine(point, prev, hcsDatum);
+            }
+            prev = point;
+        }
+    }
+
     // A note to indicate the origin in the just-exported file.
     if(SS.justExportedInfo.draw) {
         Vector p, u, v;

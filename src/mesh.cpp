@@ -345,6 +345,18 @@ uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     return face;
 }
 
+Vector SMesh::GetCenterOfMass() const {
+    Vector center = {};
+    double vol = 0.0;
+    for(int i = 0; i < l.n; i++) {
+        STriangle &tr = l.elem[i];
+        double tvol = tr.SignedVolume();
+        center = center.Plus(tr.a.Plus(tr.b.Plus(tr.c)).ScaledBy(tvol / 4.0));
+        vol += tvol;
+    }
+    return center.ScaledBy(1.0 / vol);
+}
+
 STriangleLl *STriangleLl::Alloc()
     { return (STriangleLl *)AllocTemporary(sizeof(STriangleLl)); }
 SKdNode *SKdNode::Alloc()
