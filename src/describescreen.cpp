@@ -341,6 +341,35 @@ void TextWindow::DescribeSelection() {
             Printf(false, "%FtSELECTED:%E %s",
             c->DescriptionString().c_str());
         }
+
+        std::vector<hEntity> lhe = {};
+        lhe.push_back(c->ptA);
+        lhe.push_back(c->ptB);
+        lhe.push_back(c->entityA);
+        lhe.push_back(c->entityB);
+        lhe.push_back(c->entityC);
+        lhe.push_back(c->entityD);
+
+        auto it = std::remove_if(lhe.begin(), lhe.end(),
+            [](hEntity he) {
+                return he.v == Entity::NO_ENTITY.v || !he.isFromRequest();
+            });
+        lhe.erase(it, lhe.end());
+
+        if(!lhe.empty()) {
+            Printf(true, "%FtCONSTRAINED REQUESTS:%E");
+
+            int a = 0;
+            for(hEntity he : lhe) {
+                Request *r = SK.GetRequest(he.request());
+                std::string s = r->DescriptionString();
+                Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
+                    (a & 1) ? 'd' : 'a',
+                    r->h.v, (&TextWindow::ScreenSelectRequest),
+                    &(TextWindow::ScreenHoverRequest), s.c_str());
+                a++;
+            }
+        }
     } else {
         int n = SS.GW.selection.n;
         Printf(false, "%FtSELECTED:%E %d item%s", n, n == 1 ? "" : "s");

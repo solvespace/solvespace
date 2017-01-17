@@ -21,6 +21,8 @@ New sketch features:
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
     constrained to other points with a click.
+  * When selecting a constraint, the requests it constraints can be selected
+    in the text window.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially
