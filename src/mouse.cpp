@@ -178,17 +178,18 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         // start dragging something.
         if(leftDown && dm > 3) {
             Entity *e = NULL;
-            if(hover.entity.v) e = SK.GetEntity(hover.entity);
+            hEntity dragEntity = ChooseFromHoverToDrag().entity;
+            if(dragEntity.v) e = SK.GetEntity(dragEntity);
             if(e && e->type != Entity::Type::WORKPLANE) {
-                Entity *e = SK.GetEntity(hover.entity);
+                Entity *e = SK.GetEntity(dragEntity);
                 if(e->type == Entity::Type::CIRCLE && selection.n <= 1) {
                     // Drag the radius.
                     ClearSelection();
-                    pending.circle = hover.entity;
+                    pending.circle = dragEntity;
                     pending.operation = Pending::DRAGGING_RADIUS;
                 } else if(e->IsNormal()) {
                     ClearSelection();
-                    pending.normal = hover.entity;
+                    pending.normal = dragEntity;
                     pending.operation = Pending::DRAGGING_NORMAL;
                 } else {
                     if(!hoverWasSelectedOnMousedown) {
