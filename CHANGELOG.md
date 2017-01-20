@@ -69,6 +69,8 @@ Bugs fixed:
     same orientation constraints are more robust.
   * Adding some constraints (vertical, midpoint, etc) twice will now error out
     immediately, instead of later and in a confusing way.
+  * Points highlighted with "Analyze → Show Degrees of Freedom" are drawn
+    on top of all other geometry.
 
 2.3
 ---
