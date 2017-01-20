@@ -72,7 +72,12 @@ void GraphicsWindow::StartDraggingBySelection() {
     // The user might select a point, and then click it again to start
     // dragging; but the point just got unselected by that click. So drag
     // the hovered item too, and they'll always have it.
-    if(hover.entity.v) StartDraggingByEntity(ChooseFromHoverToDrag().entity);
+    if(hover.entity.v) {
+        hEntity dragEntity = ChooseFromHoverToDrag().entity;
+        if(dragEntity.v != Entity::NO_ENTITY.v) {
+            StartDraggingByEntity(dragEntity);
+        }
+    }
 }
 
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
