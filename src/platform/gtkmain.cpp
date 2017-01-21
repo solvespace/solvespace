@@ -350,7 +350,6 @@ public:
                    Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON_MOTION_MASK |
                    Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
-        set_has_alpha(true);
         set_has_depth_buffer(true);
     }
 
@@ -1122,7 +1121,6 @@ public:
     TextWidget(Glib::RefPtr<Gtk::Adjustment> adjustment) : _adjustment(adjustment) {
         set_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK |
                    Gdk::LEAVE_NOTIFY_MASK);
-        set_has_alpha(true);
         set_has_depth_buffer(true);
     }
 
