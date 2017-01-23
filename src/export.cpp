@@ -1119,6 +1119,5 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
     screenshotFile = filename;
     // The rest of the work is done in the next redraw.
-    SS.GW.Paint();
+    InvalidateGraphics();
 }
-
