@@ -676,6 +676,7 @@ public:
     bool     drawBackFaces;
     bool     checkClosedContour;
     bool     showToolbar;
+    std::string screenshotFile;
     RgbaColor backgroundColor;
     bool     exportShadedTriangles;
     bool     exportPwlCurves;

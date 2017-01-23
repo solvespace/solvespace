@@ -154,6 +154,7 @@ set(solvespace_core_SOURCES
     drawconstraint.cpp
     drawentity.cpp
     entity.cpp
+    export.cpp
     exportstep.cpp
     exportvector.cpp
     expr.cpp
@@ -191,7 +192,6 @@ set(solvespace_core_SOURCES
     srf/triangulate.cpp)
 
 set(solvespace_core_gl_SOURCES
-    export.cpp
     solvespace.cpp)
 
 add_library(solvespace-core STATIC
