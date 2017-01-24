@@ -46,6 +46,9 @@ static void ShowUsage(const std::string &argv0) {
         being triangulated first.
     export-surfaces --output <pattern>
         Exports exact surfaces of solids in the sketch, if any.
+    dump --output <pattern>
+        Load and immediately write again, updating any copies of parts directly
+        referenced by assemblies.
 )");
 
     auto FormatListFromFileFilter = [](const FileFilter *filter) {
@@ -258,6 +261,18 @@ static bool RunCommand(const std::vector<std::string> args) {
         runner = [&](const std::string &output) {
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(output);
+        };
+    } else if(args[1] == "dump") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
+            if(!(ParseInputFile(argn) ||
+                 ParseOutputPattern(argn))) {
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
+                return false;
+            }
+        }
+
+        runner = [&](const std::string &output) {
+	    SS.SaveToFile(output);
         };
     } else {
         fprintf(stderr, "Unrecognized command '%s'.\n", args[1].c_str());
