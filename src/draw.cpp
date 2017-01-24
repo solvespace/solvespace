@@ -770,6 +770,33 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         canvas->DrawLine(SS.extraLine.ptA, SS.extraLine.ptB, hcsDatum);
     }
 
+    if(SS.centerOfMass.draw && !SS.centerOfMass.dirty) {
+        Vector p = SS.centerOfMass.position;
+        Vector u = camera.projRight;
+        Vector v = camera.projUp;
+
+        const double size = 10.0;
+        const int subdiv = 16;
+        double h = Style::DefaultTextHeight() / camera.scale;
+        canvas->DrawVectorText(ssprintf("%.3f, %.3f, %.3f", p.x, p.y, p.z), h,
+                               p.Plus(u.ScaledBy((size + 5.0)/scale)).Minus(v.ScaledBy(h / 2.0)),
+                               u, v,hcsDatum);
+        u = u.WithMagnitude(size / scale);
+        v = v.WithMagnitude(size / scale);
+
+        canvas->DrawLine(p.Minus(u), p.Plus(u), hcsDatum);
+        canvas->DrawLine(p.Minus(v), p.Plus(v), hcsDatum);
+        Vector prev;
+        for(int i = 0; i <= subdiv; i++) {
+            double a = (double)i / subdiv * 2.0 * PI;
+            Vector point = p.Plus(u.ScaledBy(cos(a))).Plus(v.ScaledBy(sin(a)));
+            if(i > 0) {
+                canvas->DrawLine(point, prev, hcsDatum);
+            }
+            prev = point;
+        }
+    }
+
     // A note to indicate the origin in the just-exported file.
     if(SS.justExportedInfo.draw) {
         Vector p, u, v;
@@ -858,26 +885,34 @@ void GraphicsWindow::Paint() {
                           /*outlineColor=*/Style::Color(Style::HOVERED));
     }
 
+    // If we've had a screenshot requested, take it now, before the UI is overlaid.
+    if(!SS.screenshotFile.empty()) {
+        FILE *f = ssfopen(SS.screenshotFile, "wb");
+        if(!f || !canvas->ReadFrame()->WritePng(f, /*flip=*/true)) {
+            Error("Couldn't write to '%s'", SS.screenshotFile.c_str());
+        }
+        if(f) fclose(f);
+        SS.screenshotFile.clear();
+    }
+
     // And finally the toolbar.
     if(SS.showToolbar) {
         canvas->SetCamera(camera);
         ToolbarDraw(&uiCanvas);
     }
 
-    // If we display UI elements, also display an fps counter.
-    if(SS.showToolbar) {
-        RgbaColor renderTimeColor;
-        if(1000 / renderTime.count() < 60) {
-            // We aim for a steady 60fps; draw the counter in red when we're slower.
-            renderTimeColor = { 255, 0, 0, 255 };
-        } else {
-            renderTimeColor = { 255, 255, 255, 255 };
-        }
-        uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
-                                         (long)renderTime.count(),
-                                         (long)(1000/renderTime.count())),
-                                5, 5, renderTimeColor);
+    // Also display an fps counter.
+    RgbaColor renderTimeColor;
+    if(1000 / renderTime.count() < 60) {
+        // We aim for a steady 60fps; draw the counter in red when we're slower.
+        renderTimeColor = { 255, 0, 0, 255 };
+    } else {
+        renderTimeColor = { 255, 255, 255, 255 };
     }
+    uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
+                                     (long)renderTime.count(),
+                                     (long)(1000/renderTime.count())),
+                            5, 5, renderTimeColor);
 
     canvas->FlushFrame();
     canvas->Clear();

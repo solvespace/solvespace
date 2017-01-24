@@ -315,6 +315,7 @@ void SolveSpaceUI::AfterNewFile() {
 
     // Quit export mode
     justExportedInfo.draw = false;
+    centerOfMass.draw = false;
     exportMode = false;
 
     // GenerateAll() expects the view to be valid, because it uses that to
@@ -617,6 +618,13 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             } else {
                 Message(_("The assembly does not interfere, good."));
             }
+            break;
+        }
+
+        case Command::CENTER_OF_MASS: {
+            SS.UpdateCenterOfMass();
+            SS.centerOfMass.draw = true;
+            InvalidateGraphics();
             break;
         }
 

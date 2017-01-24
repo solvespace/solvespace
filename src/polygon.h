@@ -190,6 +190,7 @@ public:
     STriangle Transform(Vector o, Vector u, Vector v) const;
     bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
                   double *t, Vector *inters) const;
+    double SignedVolume() const;
 };
 
 class SBsp2 {
@@ -282,6 +283,8 @@ public:
     void RemapFaces(Group *g, int remap);
 
     uint32_t FirstIntersectionWith(Point2d mp) const;
+
+    Vector GetCenterOfMass() const;
 };
 
 // A linked list of triangles

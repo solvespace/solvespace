@@ -1117,39 +1117,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
-#if !defined(HEADLESS)
-    // No guarantee that the back buffer contains anything valid right now,
-    // so repaint the scene. And hide the toolbar too.
-    bool prevShowToolbar = SS.showToolbar;
-    SS.showToolbar = false;
-
-    // Somewhat hacky way to invoke glReadPixels without dragging in all OpenGL headers.
-    std::shared_ptr<ViewportCanvas> canvas = CreateRenderer();
-    canvas->SetCamera(SS.GW.GetCamera());
-    std::shared_ptr<Pixmap> screenshot;
-#if !defined(WIN32)
-    GlOffscreen offscreen;
-    offscreen.Render((int)SS.GW.width, (int)SS.GW.height, [&] {
-        SS.GW.Paint();
-        screenshot = canvas->ReadFrame();
-    });
-#else
-    SS.GW.Paint();
-    screenshot = canvas->ReadFrame();
-#endif
-    SS.showToolbar = prevShowToolbar;
-
-    FILE *f = ssfopen(filename, "wb");
-    if(!f || !screenshot->WritePng(f, /*flip=*/true)) {
-        Error("Couldn't write to '%s'", filename.c_str());
-    }
-    if(f) fclose(f);
-
-#if !defined(WIN32)
-    offscreen.Clear();
-#endif
-
-    return;
-#endif
+    screenshotFile = filename;
+    // The rest of the work is done in the next redraw.
+    InvalidateGraphics();
 }
-

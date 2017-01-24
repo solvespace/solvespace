@@ -677,6 +677,7 @@ public:
     bool     checkClosedContour;
     bool     turntableNav;
     bool     showToolbar;
+    std::string screenshotFile;
     RgbaColor backgroundColor;
     bool     exportShadedTriangles;
     bool     exportPwlCurves;
@@ -811,6 +812,11 @@ public:
         bool        draw, showOrigin;
         Vector      pt, u, v;
     } justExportedInfo;
+    struct {
+        bool   draw;
+        bool   dirty;
+        Vector position;
+    } centerOfMass;
 
     class Clipboard {
     public:
@@ -858,6 +864,7 @@ public:
     void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
     void ForceReferences();
+    void UpdateCenterOfMass();
 
     bool ActiveGroupsOkay();
 

@@ -495,14 +495,6 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
     stroke.zIndex = zIndex;
     Canvas::hStroke hcs = canvas->GetStroke(stroke);
 
-    Canvas::Stroke pointStroke = {};
-    pointStroke.layer  = stroke.layer;
-    pointStroke.zIndex = stroke.zIndex;
-    pointStroke.color  = stroke.color;
-    pointStroke.width  = 7.0;
-    pointStroke.unit   = Canvas::Unit::PX;
-    Canvas::hStroke hcsPoint = canvas->GetStroke(pointStroke);
-
     switch(type) {
         case Type::POINT_N_COPY:
         case Type::POINT_N_TRANS:
@@ -528,9 +520,19 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
 
                 free = pu->free || pv->free;
             }
+
+            Canvas::Stroke pointStroke = {};
+            pointStroke.layer  = (free) ? Canvas::Layer::FRONT : stroke.layer;
+            pointStroke.zIndex = stroke.zIndex;
+            pointStroke.color  = stroke.color;
+            pointStroke.width  = 7.0;
+            pointStroke.unit   = Canvas::Unit::PX;
+            Canvas::hStroke hcsPoint = canvas->GetStroke(pointStroke);
+
             if(free) {
                 Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
                 analyzeStroke.width = 14.0;
+                analyzeStroke.layer = Canvas::Layer::FRONT;
                 Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
 
                 canvas->DrawPoint(PointGetNum(), hcsAnalyze);

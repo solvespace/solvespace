@@ -213,6 +213,7 @@ enum class Command : uint32_t {
     INTERFERENCE,
     NAKED_EDGES,
     SHOW_DOF,
+    CENTER_OF_MASS,
     TRACE_PT,
     STOP_TRACING,
     STEP_DIM,

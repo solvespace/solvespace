@@ -152,6 +152,7 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, N_("Measure &Perimeter"),          Command::PERIMETER,        C|S|'P', TN, mAna  },
 { 1, N_("Show &Interfering Parts"),     Command::INTERFERENCE,     C|S|'I', TN, mAna  },
 { 1, N_("Show &Naked Edges"),           Command::NAKED_EDGES,      C|S|'N', TN, mAna  },
+{ 1, N_("Show &Center of Mass"),        Command::CENTER_OF_MASS,      C|S|'C', TN, mAna  },
 { 1, NULL,                              Command::NONE,             0,       TN, NULL  },
 { 1, N_("Show Degrees of &Freedom"),    Command::SHOW_DOF,         C|S|'F', TN, mAna  },
 { 1, NULL,                              Command::NONE,             0,       TN, NULL  },
@@ -793,6 +794,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.TW.HideEditControl();
             SS.nakedEdges.Clear();
             SS.justExportedInfo.draw = false;
+            SS.centerOfMass.draw = false;
             // This clears the marks drawn to indicate which points are
             // still free to drag.
             Param *p;
