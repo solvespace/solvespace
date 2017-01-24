@@ -338,7 +338,15 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
         if(hov.selection.entity.v != 0) {
             hEntity he = hov.selection.entity;
             if(he.isFromRequest() && IsFromPending(he.request())) {
-                continue;
+                //hover on first point of pending cubic for making periodic
+                if(he.request().entity(1).v != he.v) {
+                    continue;
+                } else {
+                    Request* r = SK.GetRequest(he.request());
+                    if(r->type != Request::Type::CUBIC || r->extraPoints < 2) {
+                        continue;
+                    }
+                }
             }
             hg = SK.GetEntity(hov.selection.entity)->group;
         } else if(hov.selection.constraint.v != 0) {
