@@ -46,6 +46,8 @@ static void ShowUsage(const std::string &cmd) {
         being triangulated first.
     export-surfaces --output <pattern>
         Exports exact surfaces of solids in the sketch, if any.
+    regenerate
+        Reloads all imported files, regenerates the sketch, and saves it.
 )");
 
     auto FormatListFromFileFilter = [](const FileFilter *filter) {
@@ -265,6 +267,20 @@ static bool RunCommand(const std::vector<std::string> args) {
         runner = [&](const std::string &output) {
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(output);
+        };
+    } else if(args[1] == "regenerate") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
+            if(!(ParseInputFile(argn))) {
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
+                return false;
+            }
+        }
+
+        outputPattern = "%.slvs";
+
+        runner = [&](const std::string &output) {
+            SS.ReloadAllImported();
+            SS.SaveToFile(output);
         };
     } else {
         fprintf(stderr, "Unrecognized command '%s'.\n", args[1].c_str());
