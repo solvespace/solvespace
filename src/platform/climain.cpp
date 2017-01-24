@@ -10,8 +10,8 @@ namespace SolveSpace {
     extern std::shared_ptr<Pixmap> framebuffer;
 }
 
-static void ShowUsage(const std::string &argv0) {
-    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", argv0.c_str());
+static void ShowUsage(const std::string &cmd) {
+    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());
 //-----------------------------------------------------------------------------> 80 col */
     fprintf(stderr, R"(
     When run, performs an action specified by <command> on every <filename>.
@@ -83,6 +83,13 @@ static void ShowUsage(const std::string &argv0) {
 
 static bool RunCommand(const std::vector<std::string> args) {
     if(args.size() < 2) return false;
+
+    for(const std::string &arg : args) {
+        if(arg == "--help" || arg == "-h") {
+            ShowUsage(args[0]);
+            return true;
+        }
+    }
 
     std::function<void(const std::string &)> runner;
 
