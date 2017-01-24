@@ -336,10 +336,6 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {
-            hEntity he = hov.selection.entity;
-            if(he.isFromRequest() && IsFromPending(he.request())) {
-                continue;
-            }
             hg = SK.GetEntity(hov.selection.entity)->group;
         } else if(hov.selection.constraint.v != 0) {
             hg = SK.GetConstraint(hov.selection.constraint)->group;
@@ -399,7 +395,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
         if(!e.IsVisible()) continue;
 
         // Don't hover whatever's being dragged.
-        if(e.h.request().v == pending.point.request().v) {
+        if(IsFromPending(e.h.request())) {
             // The one exception is when we're creating a new cubic; we
             // want to be able to hover the first point, because that's
             // how we turn it into a periodic spline.

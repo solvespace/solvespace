@@ -720,6 +720,7 @@ public:
     void ClearPending();
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
+    void ReplacePending(hRequest before, hRequest after);
 
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;

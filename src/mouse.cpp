@@ -485,6 +485,14 @@ void GraphicsWindow::AddToPending(hRequest r) {
     pending.requests.Add(&r);
 }
 
+void GraphicsWindow::ReplacePending(hRequest before, hRequest after) {
+    for(auto &req : pending.requests) {
+        if(req.v == before.v) {
+            req.v = after.v;
+        }
+    }
+}
+
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     if(GraphicsEditControlIsVisible()) return;
 
@@ -956,12 +964,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 case Command::LINE_SEGMENT:
                 case Command::CONSTR_SEGMENT:
                     hr = AddRequest(Request::Type::LINE_SEGMENT);
-                    AddToPending(hr);
                     SK.GetRequest(hr)->construction = (pending.command == Command::CONSTR_SEGMENT);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     ConstrainPointByHovered(hr.entity(1));
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_LINE_POINT;
                     pending.request = hr;
@@ -1037,7 +1045,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                         break;
                     }
                     hr = AddRequest(Request::Type::ARC_OF_CIRCLE);
-                    AddToPending(hr);
                     // This fudge factor stops us from immediately failing to solve
                     // because of the arc's implicit (equal radius) tangent.
                     Vector adj = SS.GW.projRight.WithMagnitude(2/SS.GW.scale);
@@ -1047,6 +1054,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     ConstrainPointByHovered(hr.entity(2));
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_ARC_POINT;
                     pending.point = hr.entity(3);
@@ -1055,7 +1063,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 }
                 case Command::CUBIC:
                     hr = AddRequest(Request::Type::CUBIC);
-                    AddToPending(hr);
                     SK.GetEntity(hr.entity(1))->PointForceTo(v);
                     SK.GetEntity(hr.entity(2))->PointForceTo(v);
                     SK.GetEntity(hr.entity(3))->PointForceTo(v);
@@ -1063,6 +1070,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     ConstrainPointByHovered(hr.entity(1));
 
                     ClearSuper();
+                    AddToPending(hr);
 
                     pending.operation = Pending::DRAGGING_NEW_CUBIC_POINT;
                     pending.point = hr.entity(4);
@@ -1093,6 +1101,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                         break;
                     }
                     hr = AddRequest(Request::Type::TTF_TEXT);
+                    AddToPending(hr);
                     Request *r = SK.GetRequest(hr);
                     r->str = "Abc";
                     r->font = "arial.ttf";
@@ -1211,6 +1220,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
 
             // Create a new line segment, so that we continue drawing.
             hRequest hr = AddRequest(Request::Type::LINE_SEGMENT);
+            ReplacePending(pending.request, hr);
             SK.GetRequest(hr)->construction = SK.GetRequest(pending.request)->construction;
             SK.GetEntity(hr.entity(1))->PointForceTo(v);
             // Displace the second point of the new line segment slightly,
