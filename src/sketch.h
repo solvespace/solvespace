@@ -627,6 +627,7 @@ public:
 
     // These are the parameters for the constraint.
     double      valA;
+    hParam      valP;
     hEntity     ptA;
     hEntity     ptB;
     hEntity     entityA;
@@ -641,7 +642,7 @@ public:
 
     bool HasLabel() const;
 
-    void Generate(IdList<Param, hParam> *param) const;
+    void Generate(IdList<Param, hParam> *param);
 
     void GenerateEquations(IdList<Equation,hEquation> *entity,
                            bool forReference = false) const;

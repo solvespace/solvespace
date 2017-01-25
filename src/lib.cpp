@@ -132,7 +132,7 @@ default: dbp("bad entity type %d", se->type); return;
 
         SK.entity.Add(&e);
     }
-
+    IdList<Param, hParam> params = {};
     for(i = 0; i < ssys->constraints; i++) {
         Slvs_Constraint *sc = &(ssys->constraint[i]);
         ConstraintBase c = {};
@@ -191,6 +191,17 @@ default: dbp("bad constraint type %d", sc->type); return;
         c.entityD.v     = sc->entityD;
         c.other         = (sc->other) ? true : false;
         c.other2        = (sc->other2) ? true : false;
+
+        c.Generate(&params);
+        if(params.n > 0) {
+            for(Param &p : params) {
+                p.h = SK.param.AddAndAssignId(&p);
+                c.valP = p.h;
+                SYS.param.Add(&p);
+            }
+            params.Clear();
+            c.ModifyToSatisfy();
+        }
 
         SK.constraint.Add(&c);
     }
