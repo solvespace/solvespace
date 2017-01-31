@@ -309,7 +309,9 @@ static bool RunCommand(const std::vector<std::string> args) {
         if(replaceAt != std::string::npos) {
             std::string outputSubst;
             outputSubst  = Dirname(inputFile);
-            outputSubst += PATH_SEP;
+            if(!outputSubst.empty()) {
+                outputSubst += PATH_SEP;
+            }
             outputSubst += Basename(inputFile, /*stripExtension=*/true);
             outputFile.replace(replaceAt, 1, outputSubst);
         }
