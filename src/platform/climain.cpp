@@ -279,7 +279,6 @@ static bool RunCommand(const std::vector<std::string> args) {
         outputPattern = "%.slvs";
 
         runner = [&](const std::string &output) {
-            SS.ReloadAllImported();
             SS.SaveToFile(output);
         };
     } else {
