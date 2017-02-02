@@ -728,7 +728,8 @@ public:
     bool SuggestLineConstraint(hRequest lineSegment, ConstraintBase::Type *type);
 
     Vector SnapToGrid(Vector p);
-    bool ConstrainPointByHovered(hEntity pt);
+    Vector SnapToEntityByScreenPoint(Point2d pp, hEntity he);
+    bool ConstrainPointByHovered(hEntity pt, const Point2d *projected = NULL);
     void DeleteTaggedRequests();
     hRequest AddRequest(Request::Type type, bool rememberForUndo);
     hRequest AddRequest(Request::Type type);

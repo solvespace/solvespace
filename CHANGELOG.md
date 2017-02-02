@@ -67,8 +67,10 @@ Bugs fixed:
     causes the line length to collapse.
   * Curve-line constraints (in 3d), parallel constraints (in 3d), and
     same orientation constraints are more robust.
-  * Adding some constraints (vertical, midpoint, etc) twice will now error out
+  * Adding some constraints (vertical, midpoint, etc) twice errors out
     immediately, instead of later and in a confusing way.
+  * Constraining a newly placed point to a hovered entity does not cause
+    spurious changes in the sketch.
   * Points highlighted with "Analyze → Show Degrees of Freedom" are drawn
     on top of all other geometry.
 
