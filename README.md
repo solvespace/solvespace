@@ -42,7 +42,7 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake .. -DENABLE_TESTS=OFF
+    cmake .. -DCMAKE_BUILD_TYPE=Release
     make
     sudo make install
 
@@ -66,7 +66,7 @@ After that, build 32-bit SolveSpace as following:
     mkdir build
     cd build
     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw32.cmake \
-             -DENABLE_TESTS=OFF
+             -DCMAKE_BUILD_TYPE=Release
     make
 
 Or, build 64-bit SolveSpace as following:
@@ -74,7 +74,7 @@ Or, build 64-bit SolveSpace as following:
     mkdir build
     cd build
     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchain-mingw64.cmake \
-             -DENABLE_TESTS=OFF
+             -DCMAKE_BUILD_TYPE=Release
     make
 
 The graphical interface is built as `build/bin/solvespace.exe`, and the command-line interface
@@ -101,7 +101,7 @@ After that, build SolveSpace as following:
 
     mkdir build
     cd build
-    cmake .. -DENABLE_TESTS=OFF
+    cmake .. -DCMAKE_BUILD_TYPE=Release
     make
 
 The application is built in `build/bin/solvespace.app`, the graphical interface executable
@@ -131,7 +131,7 @@ Visual Studio install. Then, run the following in cmd or PowerShell:
     git submodule update --init
     mkdir build
     cd build
-    cmake .. -G "NMake Makefiles" -DENABLE_TESTS=OFF
+    cmake .. -G "NMake Makefiles" -DCMAKE_BUILD_TYPE=Release
     nmake
 
 ### Building with MinGW
@@ -145,7 +145,7 @@ in bash:
     git submodule update --init
     mkdir build
     cd build
-    cmake .. -DENABLE_TESTS=OFF
+    cmake .. -DCMAKE_BUILD_TYPE=Release
     make
 
 [gitwin]: https://git-scm.com/download/win
