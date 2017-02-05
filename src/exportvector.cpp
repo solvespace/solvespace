@@ -261,11 +261,17 @@ public:
 
                 DRW_Polyline polyline;
                 assignEntityDefaults(&polyline, e->style);
+                if(!(EXACT(start->pos.z == 0.0) && EXACT(next->pos.z == 0.0))) {
+                    polyline.flags |= 8 /* 3d polyline */;
+                }
                 polyline.vertlist.push_back(
                     new DRW_Vertex(start->pos.x, start->pos.y, start->pos.z, 0.0));
                 polyline.vertlist.push_back(
                     new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
                 while(next->getNext(e->style, &next)) {
+                    if(!EXACT(next->pos.z == 0.0)) {
+                        polyline.flags |= 8 /* 3d polyline */;
+                    }
                     polyline.vertlist.push_back(
                         new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
                 }
