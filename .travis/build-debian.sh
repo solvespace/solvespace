@@ -10,3 +10,4 @@ cmake .. -DCMAKE_C_COMPILER=clang-3.9 -DCMAKE_CXX_COMPILER=clang++-3.9 \
   -DENABLE_GUI=OFF \
   -DENABLE_SANITIZERS=ON
 make VERBOSE=1
+make test_solvespace
