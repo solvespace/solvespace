@@ -142,7 +142,6 @@ enum class Command : uint32_t {
     NEAREST_ORTHO,
     NEAREST_ISO,
     CENTER_VIEW,
-    SHOW_MENU_BAR,
     SHOW_TOOLBAR,
     SHOW_TEXT_WND,
     UNITS_INCHES,

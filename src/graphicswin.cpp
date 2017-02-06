@@ -76,9 +76,6 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     TC, mView },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',    TC, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-#if defined(__APPLE__)
-{ 1, N_("Show Menu &Bar"),              Command::SHOW_MENU_BAR,    C|F(12), TC, mView },
-#endif
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       TC, mView },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    TC, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
@@ -585,12 +582,6 @@ void GraphicsWindow::MenuView(Command id) {
             }
             break;
 
-        case Command::SHOW_MENU_BAR:
-            ToggleMenuBar();
-            SS.GW.EnsureValidActives();
-            InvalidateGraphics();
-            break;
-
         case Command::SHOW_TOOLBAR:
             SS.showToolbar = !SS.showToolbar;
             SS.GW.EnsureValidActives();
@@ -691,9 +682,6 @@ void GraphicsWindow::EnsureValidActives() {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/SS.GW.showTextWindow);
 
-#if defined(__APPLE__)
-    CheckMenuByCmd(Command::SHOW_MENU_BAR, /*checked=*/MenuBarIsVisible());
-#endif
     CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
     CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
     CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
