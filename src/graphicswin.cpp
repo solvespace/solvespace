@@ -81,10 +81,8 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       TR, mView },
 { 1, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       TR, mView },
-#if defined(__unix__) || defined(__APPLE__)
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F(11), TC, mView },
-#endif
 
 { 0, N_("&New Group"),                  Command::NONE,             0,       TN, NULL  },
 { 1, N_("Sketch In &3d"),               Command::GROUP_3D,         S|'3',   TN, mGrp  },
@@ -685,9 +683,7 @@ void GraphicsWindow::EnsureValidActives() {
     CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
     CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
     CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
-#if defined(__unix__) || defined(__APPLE__)
     CheckMenuByCmd(Command::FULL_SCREEN, /*checked=*/FullScreenIsActive());
-#endif
 
     if(change) SS.ScheduleShowTW();
 }

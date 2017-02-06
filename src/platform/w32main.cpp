@@ -850,12 +850,34 @@ void SolveSpace::InvalidateGraphics()
 
 void SolveSpace::ToggleFullScreen()
 {
-    // Implement me
+    static WINDOWPLACEMENT wp;
+    wp.length = sizeof(wp);
+
+    DWORD dwStyle = GetWindowLong(GraphicsWnd, GWL_STYLE);
+    if(dwStyle & WS_OVERLAPPEDWINDOW) {
+        MONITORINFO mi;
+        mi.cbSize = sizeof(mi);
+
+        if(GetWindowPlacement(GraphicsWnd, &wp) &&
+                GetMonitorInfo(MonitorFromWindow(GraphicsWnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(GraphicsWnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(GraphicsWnd, HWND_TOP,
+                         mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        }
+    } else {
+        SetWindowLong(GraphicsWnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(GraphicsWnd, &wp);
+        SetWindowPos(GraphicsWnd, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+    }
 }
 bool SolveSpace::FullScreenIsActive()
 {
-    // Implement me
-    return false;
+    return GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW;
 }
 
 void SolveSpace::InvalidateText()

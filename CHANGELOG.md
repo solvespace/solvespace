@@ -61,6 +61,7 @@ Other new features:
   * In expressions, numbers can contain the digit group separator, "_".
   * The "=" key is bound to "Zoom In", like "+" key.
   * The numpad decimal separator key is bound to "." regardless of locale.
+  * On Windows, full-screen mode is implemented.
 
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer
