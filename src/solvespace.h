@@ -203,8 +203,6 @@ void AddContextMenuItem(const char *legend, ContextCommand id);
 void CreateContextSubmenu();
 ContextCommand ShowContextMenu();
 
-void ToggleMenuBar();
-bool MenuBarIsVisible();
 void ShowTextWindow(bool visible);
 void InvalidateText();
 void InvalidateGraphics();

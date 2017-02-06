@@ -628,15 +628,6 @@ bool GraphicsEditControlIsVisible(void) {
     return GW->get_overlay().is_editing();
 }
 
-/* TODO: removing menubar breaks accelerators. */
-void ToggleMenuBar(void) {
-    GW->get_menubar().set_visible(!GW->get_menubar().is_visible());
-}
-
-bool MenuBarIsVisible(void) {
-    return GW->get_menubar().is_visible();
-}
-
 /* Context menus */
 
 class ContextMenuItem : public Gtk::MenuItem {

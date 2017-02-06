@@ -163,11 +163,6 @@ void HideGraphicsEditControl() {
 bool GraphicsEditControlIsVisible() {
     return false;
 }
-void ToggleMenuBar() {
-}
-bool MenuBarIsVisible() {
-    return false;
-}
 void AddContextMenuItem(const char *label, ContextCommand cmd) {
     ssassert(false, "Not implemented");
 }

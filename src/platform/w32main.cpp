@@ -752,16 +752,6 @@ static bool ProcessKeyDown(WPARAM wParam)
     return false;
 }
 
-void SolveSpace::ToggleMenuBar()
-{
-    // Implement me
-}
-bool SolveSpace::MenuBarIsVisible()
-{
-    // Implement me
-    return true;
-}
-
 void SolveSpace::ShowTextWindow(bool visible)
 {
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
