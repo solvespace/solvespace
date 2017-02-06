@@ -1,6 +1,3 @@
-#define VOS_NT_WINDOWS32    0x00040004L
-#define VFT_APP             0x00000001L
-
 1 VERSIONINFO
 FILEVERSION     ${solvespace_VERSION_MAJOR},${solvespace_VERSION_MINOR},0,0
 PRODUCTVERSION  ${solvespace_VERSION_MAJOR},${solvespace_VERSION_MINOR},0,0
