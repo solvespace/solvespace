@@ -213,7 +213,7 @@ static bool LaterCallback() {
 }
 
 void ScheduleLater() {
-    Glib::signal_idle().connect(&LaterCallback);
+    Glib::signal_timeout().connect(&LaterCallback, 0);
 }
 
 /* Editor overlay */
