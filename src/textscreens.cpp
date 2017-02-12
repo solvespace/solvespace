@@ -110,6 +110,17 @@ void TextWindow::ShowListOfGroups() {
 	bool no_dof = !g->solved.dof;
 	char dof[3] = { 'D', g->solved.dof > 9 ? '+' :
 	    (char) ('0' + g->solved.dof), 0 };
+	char status_color = 's';	// all is well
+
+	if (!ok) {
+		status_color = 'x';	// "serious" error
+	} else if (!no_dof) {
+		status_color = 'm';	// dangling DOF
+	} else if (g->polyError.how != PolyError::GOOD &&
+	    g->type == Group::Type::DRAWING_WORKPLANE) {
+		// logic above follows Group::DrawPolyError
+		status_color = 'm';	// minor issue
+	}
         Printf(false, "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
@@ -126,7 +137,7 @@ void TextWindow::ShowListOfGroups() {
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occured while solving
-            ok ? no_dof ? 's' : 'm' : 'x', g->h.v,
+	        status_color, g->h.v,
 		(&TextWindow::ScreenHowGroupSolved),
                 ok ? no_dof ? "ok" : dof : "",
                 ok ? "" : "NO",
