@@ -106,6 +106,8 @@ void TextWindow::ShowListOfGroups() {
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
+        bool warn = g->type == Group::Type::DRAWING_WORKPLANE &&
+                    g->polyError.how != PolyError::GOOD;
         int dof = g->solved.dof;
         char sdof[16] = "ok ";
         if(ok && dof > 0) {
@@ -132,11 +134,12 @@ void TextWindow::ShowListOfGroups() {
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occurred while solving
-            ok ? (dof > 0 ? 'i' : 's') : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? sdof : "",
+                ok ? (warn ? 'm' : (dof > 0 ? 'i' : 's')) : 'x',
+                g->h.v, (&TextWindow::ScreenHowGroupSolved),
+                ok ? (warn ? "err" : sdof) : "",
                 ok ? "" : "ERR",
             // Link to a screen that gives more details on the group
-            g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
+                g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
         if(active) afterActive = true;
     }
