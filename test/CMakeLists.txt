@@ -1,5 +1,3 @@
-# test suite
-
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
@@ -8,6 +6,8 @@ foreach(pkg_config_lib CAIRO)
     include_directories(${${pkg_config_lib}_INCLUDE_DIRS})
     link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
 endforeach()
+
+# test suite
 
 set(testsuite_SOURCES
     harness.cpp
@@ -110,3 +110,20 @@ if(ENABLE_COVERAGE)
         COMMENT "Generating coverage report"
         VERBATIM)
 endif()
+
+# debug runner
+
+set(debugtool_SOURCES
+    debugtool.cpp
+)
+
+add_executable(solvespace-debugtool
+    ${debugtool_SOURCES}
+    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+
+target_link_libraries(solvespace-debugtool
+    solvespace-core
+    solvespace-headless)
+
+add_dependencies(solvespace-debugtool
+    resources)
