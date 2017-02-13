@@ -611,7 +611,9 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                        bn = b->NormalExprsN();
 
             ExprVector eq = VectorsParallel3d(an, bn, valP);
-            AddEq(l, eq);
+            AddEq(l, eq.x, 0);
+            AddEq(l, eq.y, 1);
+            AddEq(l, eq.z, 2);
             Expr *d1 = au.Dot(bv);
             Expr *d2 = au.Dot(bu);
             // Allow either orientation for the coordinate system, depending
