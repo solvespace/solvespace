@@ -438,11 +438,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    /*asTrans=*/true, /*asAxisAngle=*/false);
+                    CopyAs::N_TRANS);
                 CopyEntity(entity, SK.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    /*asTrans=*/true, /*asAxisAngle=*/false);
+                    CopyAs::N_TRANS);
                 MakeExtrusionLines(entity, he);
             }
             // Remapped versions of that arbitrary point will be used to
@@ -454,10 +454,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         case Type::LATHE: {
             Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
             Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
-
-            AddParam(param, h.param(0), axis_dir.x);
-            AddParam(param, h.param(1), axis_dir.y);
-            AddParam(param, h.param(2), axis_dir.z);
 
             // Remapped entity index.
             int ai = 1;
@@ -472,19 +468,19 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 // As soon as I call CopyEntity, e may become invalid! That
                 // adds entities, which may cause a realloc.
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
-                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    /*asTrans=*/true, /*asAxisAngle=*/false);
+                    CopyAs::NUMERIC);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
-                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    /*asTrans=*/true, /*asAxisAngle=*/false);
+                    CopyAs::NUMERIC);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
-                    h.param(0), h.param(1), h.param(2),
+                    NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    /*asTrans=*/true, /*asAxisAngle=*/false);
+                    CopyAs::NUMERIC);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 ai++;
@@ -517,7 +513,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                        /*asTrans=*/true, /*asAxisAngle=*/false);
+                        CopyAs::N_TRANS);
                 }
             }
             return;
@@ -552,7 +548,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         h.param(3), h.param(4), h.param(5), h.param(6),
-                        /*asTrans=*/false, /*asAxisAngle=*/true);
+                        CopyAs::N_ROT_AA);
                 }
             }
             return;
@@ -573,7 +569,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6),
-                    /*asTrans=*/false, /*asAxisAngle=*/false);
+                    CopyAs::N_ROT_TRANS);
             }
             return;
     }
@@ -804,7 +800,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                        Entity *ep, int timesApplied, int remap,
                        hParam dx, hParam dy, hParam dz,
                        hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                       bool asTrans, bool asAxisAngle)
+                       CopyAs as)
 {
     Entity en = {};
     en.type = ep->type;
@@ -828,13 +824,15 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::POINT_N_ROT_AA:
         case Entity::Type::POINT_IN_3D:
         case Entity::Type::POINT_IN_2D:
-            if(asTrans) {
+            if(as == CopyAs::N_TRANS) {
                 en.type = Entity::Type::POINT_N_TRANS;
                 en.param[0] = dx;
                 en.param[1] = dy;
                 en.param[2] = dz;
+            } else if(as == CopyAs::NUMERIC) {
+                en.type = Entity::Type::POINT_N_COPY;
             } else {
-                if(asAxisAngle) {
+                if(as == CopyAs::N_ROT_AA) {
                     en.type = Entity::Type::POINT_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::POINT_N_ROT_TRANS;
@@ -855,10 +853,10 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::NORMAL_N_ROT_AA:
         case Entity::Type::NORMAL_IN_3D:
         case Entity::Type::NORMAL_IN_2D:
-            if(asTrans) {
+            if(as == CopyAs::N_TRANS || as == CopyAs::NUMERIC) {
                 en.type = Entity::Type::NORMAL_N_COPY;
             } else {
-                if(asAxisAngle) {
+                if(as == CopyAs::N_ROT_AA) {
                     en.type = Entity::Type::NORMAL_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::NORMAL_N_ROT;
@@ -885,13 +883,15 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::FACE_N_ROT_TRANS:
         case Entity::Type::FACE_N_TRANS:
         case Entity::Type::FACE_N_ROT_AA:
-            if(asTrans) {
+            if(as == CopyAs::N_TRANS) {
                 en.type = Entity::Type::FACE_N_TRANS;
                 en.param[0] = dx;
                 en.param[1] = dy;
                 en.param[2] = dz;
+            } else if (as == CopyAs::NUMERIC) {
+                en.type = Entity::Type::FACE_NORMAL_PT;
             } else {
-                if(asAxisAngle) {
+                if(as == CopyAs::N_ROT_AA) {
                     en.type = Entity::Type::FACE_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::FACE_N_ROT_TRANS;

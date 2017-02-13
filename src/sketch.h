@@ -118,6 +118,13 @@ public:
     int         tag;
     hGroup      h;
 
+    enum class CopyAs {
+        NUMERIC,
+        N_TRANS,
+        N_ROT_AA,
+        N_ROT_TRANS,
+    };
+
     enum class Type : uint32_t {
         DRAWING_3D                    = 5000,
         DRAWING_WORKPLANE             = 5001,
@@ -251,7 +258,7 @@ public:
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
                     hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                    bool asTrans, bool asAxisAngle);
+                    CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
