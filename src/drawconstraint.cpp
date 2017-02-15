@@ -1187,6 +1187,7 @@ s:
             if(disp.style.v != 0) {
                 RgbaColor color = stroke.color;
                 stroke = Style::Stroke(disp.style);
+                stroke.layer = Canvas::Layer::FRONT;
                 if(how != DrawAs::DEFAULT) {
                     stroke.color = color;
                 }
