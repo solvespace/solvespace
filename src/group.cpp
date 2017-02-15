@@ -782,6 +782,12 @@ void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
     Group *src = SK.GetGroup(opA);
     Vector n = src->polyLoops.normal;
 
+    // When there is no loop normal (e.g. if the loop is broken), use normal of workplane
+    // as fallback, to avoid breaking constraints depending on the faces.
+    if(n.Equals(Vector::From(0.0, 0.0, 0.0)) && src->type == Group::Type::DRAWING_WORKPLANE) {
+        n = SK.GetEntity(src->h.entity(0))->Normal()->NormalN();
+    }
+
     Entity en = {};
     en.type = Entity::Type::FACE_NORMAL_PT;
     en.group = h;
