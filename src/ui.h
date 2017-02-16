@@ -142,7 +142,6 @@ enum class Command : uint32_t {
     NEAREST_ORTHO,
     NEAREST_ISO,
     CENTER_VIEW,
-    SHOW_MENU_BAR,
     SHOW_TOOLBAR,
     SHOW_TEXT_WND,
     UNITS_INCHES,
@@ -721,6 +720,7 @@ public:
     void ClearPending();
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
+    void ReplacePending(hRequest before, hRequest after);
 
     // The constraint that is being edited with the on-screen textbox.
     hConstraint constraintBeingEdited;
@@ -728,7 +728,8 @@ public:
     bool SuggestLineConstraint(hRequest lineSegment, ConstraintBase::Type *type);
 
     Vector SnapToGrid(Vector p);
-    bool ConstrainPointByHovered(hEntity pt);
+    Vector SnapToEntityByScreenPoint(Point2d pp, hEntity he);
+    bool ConstrainPointByHovered(hEntity pt, const Point2d *projected = NULL);
     void DeleteTaggedRequests();
     hRequest AddRequest(Request::Type type, bool rememberForUndo);
     hRequest AddRequest(Request::Type type);

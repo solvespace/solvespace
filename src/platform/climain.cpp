@@ -10,18 +10,18 @@ namespace SolveSpace {
     extern std::shared_ptr<Pixmap> framebuffer;
 }
 
-static void ShowUsage(const std::string &argv0) {
-    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", argv0.c_str());
+static void ShowUsage(const std::string &cmd) {
+    fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());
 //-----------------------------------------------------------------------------> 80 col */
     fprintf(stderr, R"(
     When run, performs an action specified by <command> on every <filename>.
 
     Common options:
     -o, --output <pattern>
-        For an input file <basename>.slvs, replaces the '%%' symbol in <pattern>
-        with <basename> and uses it as output file. For example, when using
-        --output %%-2d.png for input files a.slvs and b.slvs, output files
-        a-2d.png and b-2d.png will be written.
+        For an input file <name>.slvs, replaces the '%%' symbol in <pattern>
+        with <name> and uses it as output file. For example, when using
+        --output %%-2d.png for input files f/a.slvs and f/b.slvs, output files
+        f/a-2d.png and f/b-2d.png will be written.
     -v, --view <direction>
         Selects the camera direction. <direction> can be one of "top", "bottom",
         "left", "right", "front", "back", or "isometric".
@@ -46,6 +46,8 @@ static void ShowUsage(const std::string &argv0) {
         being triangulated first.
     export-surfaces --output <pattern>
         Exports exact surfaces of solids in the sketch, if any.
+    regenerate
+        Reloads all imported files, regenerates the sketch, and saves it.
 )");
 
     auto FormatListFromFileFilter = [](const FileFilter *filter) {
@@ -83,6 +85,13 @@ static void ShowUsage(const std::string &argv0) {
 
 static bool RunCommand(const std::vector<std::string> args) {
     if(args.size() < 2) return false;
+
+    for(const std::string &arg : args) {
+        if(arg == "--help" || arg == "-h") {
+            ShowUsage(args[0]);
+            return true;
+        }
+    }
 
     std::function<void(const std::string &)> runner;
 
@@ -259,6 +268,19 @@ static bool RunCommand(const std::vector<std::string> args) {
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(output);
         };
+    } else if(args[1] == "regenerate") {
+        for(size_t argn = 2; argn < args.size(); argn++) {
+            if(!(ParseInputFile(argn))) {
+                fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
+                return false;
+            }
+        }
+
+        outputPattern = "%.slvs";
+
+        runner = [&](const std::string &output) {
+            SS.SaveToFile(output);
+        };
     } else {
         fprintf(stderr, "Unrecognized command '%s'.\n", args[1].c_str());
         return false;
@@ -284,7 +306,13 @@ static bool RunCommand(const std::vector<std::string> args) {
         std::string outputFile = outputPattern;
         size_t replaceAt = outputFile.find('%');
         if(replaceAt != std::string::npos) {
-            outputFile.replace(replaceAt, 1, Basename(inputFile, /*stripExtension=*/true));
+            std::string outputSubst;
+            outputSubst  = Dirname(inputFile);
+            if(!outputSubst.empty()) {
+                outputSubst += PATH_SEP;
+            }
+            outputSubst += Basename(inputFile, /*stripExtension=*/true);
+            outputFile.replace(replaceAt, 1, outputSubst);
         }
         std::string absOutputFile = PathFromCurrentDirectory(outputFile);
 

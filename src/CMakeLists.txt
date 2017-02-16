@@ -217,14 +217,22 @@ if(HAVE_GETTEXT)
         ${solvespace_core_SOURCES}
         ${solvespace_core_HEADERS}
         ${every_platform_SOURCES})
-    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
-    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/messages.po)
-    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
 
+    set(templ_po   ${CMAKE_CURRENT_BINARY_DIR}/../res/messages.po)
+
+    set(output_pot ${CMAKE_CURRENT_SOURCE_DIR}/../res/messages.pot)
+    set(output_po  ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/en_US.po)
     file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
 
+    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+           gen_output_pot ${output_pot})
+    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+           gen_output_po ${output_po})
+    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+           gen_locale_pos "${locale_pos}")
+
     add_custom_command(
-        OUTPUT  ${output_pot}
+        OUTPUT  ${gen_output_pot}
         COMMAND ${XGETTEXT}
                 --language=C++
                 --keyword --keyword=_ --keyword=N_ --keyword=C_:2,1c --keyword=CN_:2,1c
@@ -233,44 +241,52 @@ if(HAVE_GETTEXT)
                 --package-version=${solvespace_VERSION_MAJOR}.${solvespace_VERSION_MINOR}
                 "--copyright-holder=the PACKAGE authors"
                 --msgid-bugs-address=whitequark@whitequark.org
-                --from-code=utf-8 --output=${output_pot} ${inputs}
+                --from-code=utf-8 --output=${gen_output_pot} ${inputs}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_pot} ${output_pot}
         DEPENDS ${inputs}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Extracting translations"
         VERBATIM)
 
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/../res/locales)
+
     # en_US is a bit special; we pre-fill the msgstrs from msgids, instead of (as would normally
     # happen) leaving them empty.
     add_custom_command(
-        OUTPUT  ${output_po}
+        OUTPUT  ${gen_output_po}
         COMMAND ${MSGINIT}
                 --locale=en_US --no-translator
-                --output=${templ_po} --input=${output_pot}
+                --output=${templ_po} --input=${gen_output_pot}
         COMMAND ${MSGMERGE}
                 --force-po --no-fuzzy-matching
-                --output=${output_po} ${output_po} ${templ_po}
-        DEPENDS ${output_pot}
+                --output=${gen_output_po} ${output_po} ${templ_po}
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_output_po} ${output_po}
+        DEPENDS ${gen_output_pot}
         COMMENT "Updating en_US translations"
         VERBATIM)
 
     foreach(locale_po ${locale_pos})
+        string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+               gen_locale_po ${locale_po})
+
         get_filename_component(locale_name ${locale_po} NAME_WE)
         if(locale_name STREQUAL "en_US")
             continue()
         endif()
 
         add_custom_command(
-            OUTPUT  ${locale_po}
+            OUTPUT  ${gen_locale_po}
             COMMAND ${MSGMERGE}
-                    --update --no-fuzzy-matching
-                    ${locale_po} ${output_pot}
-            DEPENDS ${output_pot}
+                    --no-fuzzy-matching
+                    --output=${gen_locale_po} ${locale_po} ${gen_output_pot}
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${gen_locale_po} ${locale_po}
+            DEPENDS ${gen_output_pot}
             COMMENT "Updating ${locale_name} translations"
             VERBATIM)
     endforeach()
 
     add_custom_target(solvespace-translations
-        DEPENDS ${output_pot} ${output_po} ${locale_pos})
+        DEPENDS ${gen_output_pot} ${gen_output_po} ${gen_locale_pos})
 endif()
 
 # solvespace graphical executable

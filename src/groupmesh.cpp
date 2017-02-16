@@ -346,6 +346,11 @@ void Group::GenerateShellAndMesh() {
         SMesh outm = {};
         GenerateForBoolean<SMesh>(&prevm, &thism, &outm, srcg->meshCombine);
 
+        // Remove degenerate triangles; if we don't, they'll get split in SnapToMesh
+        // in every generated group, resulting in polynomial increase in triangle count,
+        // and corresponding slowdown.
+        outm.RemoveDegenerateTriangles();
+
         // And make sure that the output mesh is vertex-to-vertex.
         SKdNode *root = SKdNode::From(&outm);
         root->SnapToMesh(&outm);

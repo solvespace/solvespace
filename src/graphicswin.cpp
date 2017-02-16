@@ -76,18 +76,13 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     TC, mView },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',    TC, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-#if defined(__APPLE__)
-{ 1, N_("Show Menu &Bar"),              Command::SHOW_MENU_BAR,    C|F(12), TC, mView },
-#endif
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       TC, mView },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    TC, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       TR, mView },
 { 1, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       TR, mView },
-#if defined(__unix__) || defined(__APPLE__)
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F(11), TC, mView },
-#endif
 
 { 0, N_("&New Group"),                  Command::NONE,             0,       TN, NULL  },
 { 1, N_("Sketch In &3d"),               Command::GROUP_3D,         S|'3',   TN, mGrp  },
@@ -600,12 +595,6 @@ void GraphicsWindow::MenuView(Command id) {
             }
             break;
 
-        case Command::SHOW_MENU_BAR:
-            ToggleMenuBar();
-            SS.GW.EnsureValidActives();
-            InvalidateGraphics();
-            break;
-
         case Command::SHOW_TOOLBAR:
             SS.showToolbar = !SS.showToolbar;
             SS.GW.EnsureValidActives();
@@ -706,15 +695,10 @@ void GraphicsWindow::EnsureValidActives() {
     ShowTextWindow(SS.GW.showTextWindow);
     CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/SS.GW.showTextWindow);
 
-#if defined(__APPLE__)
-    CheckMenuByCmd(Command::SHOW_MENU_BAR, /*checked=*/MenuBarIsVisible());
-#endif
     CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
     CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
     CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
-#if defined(__unix__) || defined(__APPLE__)
     CheckMenuByCmd(Command::FULL_SCREEN, /*checked=*/FullScreenIsActive());
-#endif
 
     if(change) SS.ScheduleShowTW();
 }

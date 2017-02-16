@@ -369,6 +369,7 @@ AddEntity
 Constraint.h.v=00000002
 Constraint.type=110
 Constraint.group.v=00000002
+Constraint.valP.v=40000002
 Constraint.entityA.v=00050020
 Constraint.entityB.v=00040020
 Constraint.other=0

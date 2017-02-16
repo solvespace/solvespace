@@ -129,6 +129,10 @@ public:
             hStyle hs = { e->kind };
             polyline = {};
             assignEntityDefaults(&polyline, hs);
+
+            if(!(EXACT(start->pos.z == 0.0) && EXACT(next->pos.z == 0.0))) {
+                polyline.flags |= 8 /* 3d polyline */;
+            }
             polyline.vertlist.push_back(
                 new DRW_Vertex(start->pos.x, start->pos.y, start->pos.z, 0.0));
             polyline.vertlist.push_back(
@@ -136,6 +140,9 @@ public:
         };
 
         auto nextFunc = [&](PolylineBuilder::Vertex *next, PolylineBuilder::Edge *e) {
+            if(!EXACT(next->pos.z == 0.0)) {
+                polyline.flags |= 8 /* 3d polyline */;
+            }
             polyline.vertlist.push_back(
                 new DRW_Vertex(next->pos.x, next->pos.y, next->pos.z, 0.0));
         };

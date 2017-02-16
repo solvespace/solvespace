@@ -171,6 +171,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'c',  "Constraint.group.v",       'x',    &(SS.sv.c.group.v)            },
     { 'c',  "Constraint.workplane.v",   'x',    &(SS.sv.c.workplane.v)        },
     { 'c',  "Constraint.valA",          'f',    &(SS.sv.c.valA)               },
+    { 'c',  "Constraint.valP.v",        'x',    &(SS.sv.c.valP.v)             },
     { 'c',  "Constraint.ptA.v",         'x',    &(SS.sv.c.ptA.v)              },
     { 'c',  "Constraint.ptB.v",         'x',    &(SS.sv.c.ptB.v)              },
     { 'c',  "Constraint.entityA.v",     'x',    &(SS.sv.c.entityA.v)          },
@@ -573,7 +574,7 @@ void SolveSpaceUI::UpgradeLegacyData() {
     SK.param.DeepCopyInto(&oldParam);
     SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
 
-    auto AllParamsExistFor = [&](const Constraint &c) {
+    auto AllParamsExistFor = [&](Constraint &c) {
         IdList<Param,hParam> param = {};
         c.Generate(&param);
         bool allParamsExist = true;

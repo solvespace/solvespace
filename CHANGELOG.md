@@ -61,14 +61,17 @@ Other new features:
   * In expressions, numbers can contain the digit group separator, "_".
   * The "=" key is bound to "Zoom In", like "+" key.
   * The numpad decimal separator key is bound to "." regardless of locale.
+  * On Windows, full-screen mode is implemented.
 
 Bugs fixed:
   * A point in 3d constrained to any line whose length is free no longer
     causes the line length to collapse.
   * Curve-line constraints (in 3d), parallel constraints (in 3d), and
     same orientation constraints are more robust.
-  * Adding some constraints (vertical, midpoint, etc) twice will now error out
+  * Adding some constraints (vertical, midpoint, etc) twice errors out
     immediately, instead of later and in a confusing way.
+  * Constraining a newly placed point to a hovered entity does not cause
+    spurious changes in the sketch.
   * Points highlighted with "Analyze → Show Degrees of Freedom" are drawn
     on top of all other geometry.
 

@@ -213,7 +213,7 @@ static bool LaterCallback() {
 }
 
 void ScheduleLater() {
-    Glib::signal_idle().connect(&LaterCallback);
+    Glib::signal_timeout().connect(&LaterCallback, 0);
 }
 
 /* Editor overlay */
@@ -626,15 +626,6 @@ void HideGraphicsEditControl(void) {
 
 bool GraphicsEditControlIsVisible(void) {
     return GW->get_overlay().is_editing();
-}
-
-/* TODO: removing menubar breaks accelerators. */
-void ToggleMenuBar(void) {
-    GW->get_menubar().set_visible(!GW->get_menubar().is_visible());
-}
-
-bool MenuBarIsVisible(void) {
-    return GW->get_menubar().is_visible();
 }
 
 /* Context menus */
