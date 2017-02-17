@@ -789,6 +789,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                 SS.exportMode = false;
                 SS.GenerateAll(SolveSpaceUI::Generate::ALL);
             }
+            SS.GW.persistentDirty = true;
             break;
 
         case Command::SELECT_ALL: {

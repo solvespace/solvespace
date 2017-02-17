@@ -12,4 +12,4 @@
 /debian/libslvs1/
 /debian/libslvs1-dev/
 /obj-*/
-*.slvs
+/*.slvs

@@ -18,7 +18,7 @@ const Style::Default Style::Defaults[] = {
     { { HOVERED },      "Hovered",      RGBf(1.0, 1.0, 0.0), 1.5, 0 },
     { { CONTOUR_FILL }, "ContourFill",  RGBf(0.0, 0.1, 0.1), 1.0, 0 },
     { { NORMALS },      "Normals",      RGBf(0.0, 0.4, 0.4), 1.0, 0 },
-    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 1.0, 0 },
+    { { ANALYZE },      "Analyze",      RGBf(0.0, 1.0, 1.0), 3.0, 0 },
     { { DRAW_ERROR },   "DrawError",    RGBf(1.0, 0.0, 0.0), 8.0, 0 },
     { { DIM_SOLID },    "DimSolid",     RGBf(0.1, 0.1, 0.1), 1.0, 0 },
     { { HIDDEN_EDGE },  "HiddenEdge",   RGBf(0.8, 0.8, 0.8), 1.0, 1 },
