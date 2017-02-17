@@ -107,4 +107,6 @@ TEST_CASE(errors) {
                   "Expected an operand");
   CHECK_PARSE_ERR("( 2 + 2",
                   "Expected ')'");
+  CHECK_PARSE_ERR("(",
+                  "Expected ')'");
 }
