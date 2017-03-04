@@ -235,6 +235,10 @@ public:
 
     void start_editing(int x, int y, int font_height, bool is_monospace, int minWidthChars,
                        const std::string &val) {
+        x /= get_scale_factor();
+        y /= get_scale_factor();
+        font_height /= get_scale_factor();
+
         Pango::FontDescription font_desc;
         font_desc.set_family(is_monospace ? "monospace" : "normal");
         font_desc.set_absolute_size(font_height * Pango::SCALE);
@@ -620,8 +624,8 @@ void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
     // Convert to ij (vs. xy) style coordinates,
     // and compensate for the input widget height due to inverse coord
     int i, j;
-    i = x + rect.get_width() / 2;
-    j = -y + rect.get_height() / 2;
+    i = x + rect.get_width() / 2 * GW->get_widget().get_scale_factor();
+    j = -y + rect.get_height() / 2 * GW->get_widget().get_scale_factor();
 
     GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, minWidthChars, val);
 }
