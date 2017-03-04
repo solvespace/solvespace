@@ -249,10 +249,16 @@ public:
         layout->set_text(val + " "); /* avoid scrolling */
         int width = layout->get_logical_extents().get_width();
 
-        Gtk::Border border = _entry.get_style_context()->get_padding();
-        move(_entry, x - border.get_left(), y - border.get_top());
+        Gtk::Border margin  = _entry.get_style_context()->get_margin();
+        Gtk::Border border  = _entry.get_style_context()->get_border();
+        Gtk::Border padding = _entry.get_style_context()->get_padding();
+        move(_entry,
+             x - margin.get_left() - border.get_left() - padding.get_left(),
+             y - margin.get_top()  - border.get_top()  - padding.get_top());
         _entry.set_width_chars(minWidthChars);
-        _entry.set_size_request(width / Pango::SCALE, -1);
+        _entry.set_size_request(
+            width / Pango::SCALE + padding.get_left() + padding.get_right(),
+            -1);
 
         _entry.set_text(val);
         if(!_entry.is_visible()) {
