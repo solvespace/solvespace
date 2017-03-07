@@ -601,6 +601,20 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 Vector axis = q.RotationV();
                 canvas->DrawLine(tip, tip.Minus(v.RotatedAbout(axis,  0.6)), hcs);
                 canvas->DrawLine(tip, tip.Minus(v.RotatedAbout(axis, -0.6)), hcs);
+
+                if(type == Type::NORMAL_IN_3D) {
+                    Param *nw = SK.GetParam(param[0]),
+                          *nx = SK.GetParam(param[1]),
+                          *ny = SK.GetParam(param[2]),
+                          *nz = SK.GetParam(param[3]);
+
+                    if(nw->free || nx->free || ny->free || nz->free) {
+                        Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
+                        analyzeStroke.layer = Canvas::Layer::FRONT;
+                        Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
+                        canvas->DrawLine(tail, tip, hcsAnalyze);
+                    }
+                }
             }
             return;
         }
@@ -664,6 +678,20 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
             // them, and display those.
             if(!canvas->DrawBeziers(*GetOrGenerateBezierCurves(),  hcs)) {
                 canvas->DrawEdges(*GetOrGenerateEdges(), hcs);
+            }
+            if(type == Type::CIRCLE) {
+                Entity *dist = SK.GetEntity(distance);
+                if(dist->type == Type::DISTANCE) {
+                    Param *p = SK.GetParam(dist->param[0]);
+                    if(p->free) {
+                        Canvas::Stroke analyzeStroke = Style::Stroke(Style::ANALYZE);
+                        analyzeStroke.layer = Canvas::Layer::FRONT;
+                        Canvas::hStroke hcsAnalyze = canvas->GetStroke(analyzeStroke);
+                        if(!canvas->DrawBeziers(*GetOrGenerateBezierCurves(), hcsAnalyze)) {
+                            canvas->DrawEdges(*GetOrGenerateEdges(), hcsAnalyze);
+                        }
+                    }
+                }
             }
             return;
         }

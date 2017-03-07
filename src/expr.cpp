@@ -852,7 +852,7 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
                 // sub-expression
                 if(!Parse(error, /*reduceUntil=*/stack.size())) return false;
 
-                if(stack.back().type != TokenType::PAREN_RIGHT) {
+                if(stack.empty() || stack.back().type != TokenType::PAREN_RIGHT) {
                     *error = "Expected ')'";
                     return false;
                 }

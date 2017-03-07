@@ -158,8 +158,8 @@ static bool RunCommand(const std::vector<std::string> args) {
         } else return false;
     };
 
+    unsigned width = 0, height = 0;
     if(args[1] == "thumbnail") {
-        unsigned width = 0, height = 0;
         auto ParseSize = [&](size_t &argn) {
             if(argn + 1 < args.size() && args[argn] == "--size") {
                 argn++;

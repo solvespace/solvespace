@@ -275,8 +275,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                 // and then regenerate the mesh based on the solved stuff.
                 if(genForBBox) {
                     SolveGroupAndReport(g->h, andFindFree);
-                } else {
                     g->GenerateLoops();
+                } else {
                     g->GenerateShellAndMesh();
                     g->clean = true;
                 }
