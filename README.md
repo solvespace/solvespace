@@ -30,7 +30,7 @@ fontconfig, gtkmm 3.0 (version 3.16 or later), pangomm 1.4, OpenGL and OpenGL GL
 optionally, the Space Navigator client library.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install cmake zlib1-dev libpng-dev libcairo2-dev libfreetype6-dev
+    apt-get install cmake zlib1g-dev libpng-dev libcairo2-dev libfreetype6-dev
     apt-get install libjson-c-dev libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
                     libgl-dev libglu-dev libspnav-dev
 
