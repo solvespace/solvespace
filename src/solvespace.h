@@ -121,8 +121,6 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 #define VERY_POSITIVE   (1e10)
 #define VERY_NEGATIVE   (-1e10)
 
-#define isforname(c) (isalnum(c) || (c) == '_' || (c) == '-' || (c) == '#')
-
 #if defined(WIN32)
 std::string Narrow(const wchar_t *s);
 std::wstring Widen(const char *s);
@@ -154,7 +152,6 @@ std::string PathSepPlatformToUnix(const std::string &filename);
 std::string PathSepUnixToPlatform(const std::string &filename);
 std::string PathFromCurrentDirectory(const std::string &relFilename);
 FILE *ssfopen(const std::string &filename, const char *mode);
-std::fstream ssfstream(const std::string &filename, std::ios_base::openmode mode);
 void ssremove(const std::string &filename);
 
 const size_t MAX_RECENT = 8;
