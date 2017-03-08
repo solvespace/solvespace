@@ -822,8 +822,7 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
             return;
         }
 
-        std::string mtlBasename = mtlFilename.substr(mtlFilename.rfind(PATH_SEP) + 1);
-        fprintf(f, "mtllib %s\n", mtlBasename.c_str());
+        fprintf(f, "mtllib %s\n", Basename(mtlFilename).c_str());
         ExportMeshAsObjTo(f, fMtl, m);
 
         fclose(fMtl);
@@ -987,24 +986,14 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     double largerBoundXY = max((bndh.x - bndl.x), (bndh.y - bndl.y));
     double largerBoundZ = max(largerBoundXY, (bndh.z - bndl.z + 1));
 
-    std::string extension = filename,
-                noExtFilename = filename;
-    size_t dot = noExtFilename.rfind('.');
-    extension.erase(0, dot + 1);
-    noExtFilename.erase(dot);
-
-    std::string baseFilename = noExtFilename;
-    size_t lastSlash = baseFilename.rfind(PATH_SEP);
-    ssassert(lastSlash != std::string::npos, "Expected at least one path separator");
-    baseFilename.erase(0, lastSlash + 1);
-
-    for(size_t i = 0; i < baseFilename.length(); i++) {
-        if(!isalpha(baseFilename[i]) &&
-           /* also permit UTF-8 */ !((unsigned char)baseFilename[i] >= 0x80))
-            baseFilename[i] = '_';
+    std::string basename = Basename(filename, /*stripExtension=*/true);
+    for(size_t i = 0; i < basename.length(); i++) {
+        if(!(isalnum(basename[i]) || ((unsigned)basename[i] >= 0x80))) {
+            basename[i] = '_';
+        }
     }
 
-    if(extension == "html") {
+    if(FilenameHasExtension(filename, "html")) {
         fprintf(f, htmlbegin,
                 LoadStringFromGzip("threejs/three-r76.js.gz").c_str(),
                 LoadStringFromGzip("threejs/hammer-2.0.8.js.gz").c_str(),
@@ -1015,7 +1004,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
                "  bounds: {\n"
                "    x: %f, y: %f, near: %f, far: %f, z: %f, edgeBias: %f\n"
                "  },\n",
-            baseFilename.c_str(),
+            basename.c_str(),
             largerBoundXY,
             largerBoundXY,
             1.0,
@@ -1029,8 +1018,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 
     // Directional.
     int lightCount;
-    for(lightCount = 0; lightCount < 2; lightCount++)
-    {
+    for(lightCount = 0; lightCount < 2; lightCount++) {
         fprintf(f, "      {\n"
                    "        intensity: %f, direction: [%f, %f, %f]\n"
                    "      },\n",
@@ -1101,13 +1089,14 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 
     fputs("  ]\n};\n", f);
 
-    if(extension == "html")
+    if(FilenameHasExtension(filename, "html")) {
         fprintf(f, htmlend,
-                baseFilename.c_str(),
+                basename.c_str(),
                 SS.GW.scale,
                 CO(SS.GW.offset),
                 CO(SS.GW.projUp),
                 CO(SS.GW.projRight));
+    }
 
     spl.Clear();
 }

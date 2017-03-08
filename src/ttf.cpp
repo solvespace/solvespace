@@ -127,11 +127,7 @@ double TtfFontList::AspectRatio(const std::string &font, const std::string &str)
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
 std::string TtfFont::FontFileBaseName() const {
-    std::string baseName = fontFile;
-    size_t pos = baseName.rfind(PATH_SEP);
-    if(pos != std::string::npos)
-        return baseName.erase(0, pos + 1);
-    return "";
+    return Basename(fontFile);
 }
 
 //-----------------------------------------------------------------------------

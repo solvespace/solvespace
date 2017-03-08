@@ -228,37 +228,20 @@ void Group::MenuGroup(Command id) {
 
         case Command::GROUP_LINK: {
             g.type = Type::LINKED;
+            g.meshCombine = CombineAs::ASSEMBLE;
             if(g.linkFile.empty()) {
                 if(!GetOpenFile(&g.linkFile, "", SlvsFileFilter)) return;
             }
 
             // Assign the default name of the group based on the name of
             // the linked file.
-            std::string groupName = g.linkFile;
-            size_t pos;
-
-            pos = groupName.rfind(PATH_SEP);
-            if(pos != std::string::npos)
-                groupName.erase(0, pos + 1);
-
-            pos = groupName.rfind('.');
-            if(pos != std::string::npos)
-                groupName.erase(pos);
-
-            for(size_t i = 0; i < groupName.length(); i++) {
-                if(!(isalnum(groupName[i]) || (unsigned)groupName[i] >= 0x80)) {
+            g.name = Basename(g.linkFile, /*stripExtension=*/true);
+            for(size_t i = 0; i < g.name.length(); i++) {
+                if(!(isalnum(g.name[i]) || (unsigned)g.name[i] >= 0x80)) {
                     // convert punctuation to dashes
-                    groupName[i] = '-';
+                    g.name[i] = '-';
                 }
             }
-
-            if(groupName.length() > 0) {
-                g.name = groupName;
-            } else {
-                g.name = C_("group-name", "link");
-            }
-
-            g.meshCombine = CombineAs::ASSEMBLE;
             break;
         }
 
