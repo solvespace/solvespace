@@ -5,8 +5,9 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-// Hack... we should rename the one in ui.h instead.
+// Hack... we should rename the ones in ui.h instead.
 #undef CHECK_TRUE
+#undef CHECK_FALSE
 
 namespace SolveSpace {
 namespace Test {
@@ -21,7 +22,10 @@ public:
     std::string GetAssetPath(std::string testFile, std::string assetName,
                              std::string mangle = "");
 
-    bool CheckTrue(const char *file, int line, const char *expr, bool result);
+    bool CheckBool(const char *file, int line, const char *expr,
+                   bool value, bool reference);
+    bool CheckEqualString(const char *file, int line, const char *valueExpr,
+                          const std::string &value, const std::string &reference);
     bool CheckEqualEpsilon(const char *file, int line, const char *valueExpr,
                            double value, double reference);
     bool CheckLoad(const char *file, int line, const char *fixture);
@@ -52,7 +56,12 @@ using namespace SolveSpace;
     static void Test_##name(Test::Helper *helper) // { ... }
 
 #define CHECK_TRUE(cond) \
-    do { if(!helper->CheckTrue(__FILE__, __LINE__, #cond, cond)) return; } while(0)
+    do { if(!helper->CheckBool(__FILE__, __LINE__, #cond, cond, true)) return; } while(0)
+#define CHECK_FALSE(cond) \
+    do { if(!helper->CheckBool(__FILE__, __LINE__, #cond, cond, false)) return; } while(0)
+#define CHECK_EQ_STR(value, reference) \
+    do { if(!helper->CheckEqualString(__FILE__, __LINE__, \
+                                      #value, value, reference)) return; } while(0)
 #define CHECK_EQ_EPS(value, reference) \
     do { if(!helper->CheckEqualEpsilon(__FILE__, __LINE__, \
                                        #value, value, reference)) return; } while(0)

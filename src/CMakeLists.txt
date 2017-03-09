@@ -33,10 +33,12 @@ set(libslvs_SOURCES
     expr.cpp
     constraint.cpp
     constrainteq.cpp
-    system.cpp)
+    system.cpp
+    platform/platform.cpp)
 
 set(libslvs_HEADERS
-    solvespace.h)
+    solvespace.h
+    platform/platform.h)
 
 add_library(slvs SHARED
     ${libslvs_SOURCES}
@@ -139,6 +141,7 @@ set(solvespace_core_HEADERS
     sketch.h
     solvespace.h
     ui.h
+    platform/platform.h
     render/render.h
     render/gl2shader.h
     srf/surface.h)
@@ -180,6 +183,7 @@ set(solvespace_core_SOURCES
     undoredo.cpp
     util.cpp
     view.cpp
+    platform/platform.cpp
     render/render.cpp
     render/render2d.cpp
     srf/boolean.cpp

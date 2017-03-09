@@ -141,6 +141,9 @@ enum class ContextCommand : uint32_t;
 
 //================
 // From the platform-specific code.
+
+#include "platform/platform.h"
+
 #if defined(WIN32)
 #define PATH_SEP "\\"
 #else

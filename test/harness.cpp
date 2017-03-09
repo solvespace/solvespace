@@ -174,10 +174,25 @@ std::string Test::Helper::GetAssetPath(std::string testFile, std::string assetNa
     return PathSepUnixToPlatform(HostRoot() + "/" + testFile + assetName);
 }
 
-bool Test::Helper::CheckTrue(const char *file, int line, const char *expr, bool result) {
-    if(!RecordCheck(result)) {
-        PrintFailure(file, line,
-                     ssprintf("(%s) == %s", expr, result ? "true" : "false"));
+bool Test::Helper::CheckBool(const char *file, int line, const char *expr, bool value,
+                             bool reference) {
+    if(!RecordCheck(value == reference)) {
+        std::string msg = ssprintf("(%s) = %s ≠ %s", expr,
+                                   value ? "true" : "false",
+                                   reference ? "true" : "false");
+        PrintFailure(file, line, msg);
+        return false;
+    } else {
+        return true;
+    }
+}
+
+bool Test::Helper::CheckEqualString(const char *file, int line, const char *valueExpr,
+                                    const std::string &value, const std::string &reference) {
+    if(!RecordCheck(value == reference)) {
+        std::string msg = ssprintf("(%s) = \"%s\" ≠ \"%s\"", valueExpr,
+                                   value.c_str(), reference.c_str());
+        PrintFailure(file, line, msg);
         return false;
     } else {
         return true;
@@ -188,7 +203,8 @@ bool Test::Helper::CheckEqualEpsilon(const char *file, int line, const char *val
                                      double value, double reference) {
     bool result = fabs(value - reference) < LENGTH_EPS;
     if(!RecordCheck(result)) {
-        std::string msg = ssprintf("(%s) = %.4g ≉ %.4g", valueExpr, value, reference);
+        std::string msg = ssprintf("(%s) = %.4g ≉ %.4g", valueExpr,
+                                   value, reference);
         PrintFailure(file, line, msg);
         return false;
     } else {
