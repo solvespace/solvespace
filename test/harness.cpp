@@ -116,6 +116,7 @@ static std::string PrepareSavefile(std::string data) {
         if(eqPos < nextLineBegin) {
             std::string key   = data.substr(lineBegin, eqPos - lineBegin),
                         value = data.substr(eqPos + 1, nextLineBegin - eqPos - 2);
+
             for(int i = 0; SolveSpaceUI::SAVED[i].type != 0; i++) {
                 if(SolveSpaceUI::SAVED[i].fmt  != 'f') continue;
                 if(SolveSpaceUI::SAVED[i].desc != key) continue;
@@ -125,6 +126,11 @@ static std::string PrepareSavefile(std::string data) {
                 ssassert(value.size() == newValue.size(), "Expected no change in value length");
                 std::copy(newValue.begin(), newValue.end(),
                           data.begin() + eqPos + 1);
+            }
+
+            if(key == "Group.impFile") {
+                data.erase(lineBegin, nextLineBegin - lineBegin);
+                nextLineBegin = lineBegin;
             }
         }
 

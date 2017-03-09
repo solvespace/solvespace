@@ -261,7 +261,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     // will be exported. We reload the linked files because that rewrites
     // the linkFileRel for our possibly-new filename.
     SS.ScheduleShowTW();
-    SS.ReloadAllImported();
+    SS.ReloadAllImported(filename);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
 
     fh = ssfopen(filename, "wb");
