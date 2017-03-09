@@ -16,7 +16,7 @@ static void ShowUsage(const std::string &cmd) {
     fprintf(stderr, R"(
     When run, performs an action specified by <command> on every <filename>.
 
-    Common options:
+Common options:
     -o, --output <pattern>
         For an input file <name>.slvs, replaces the '%%' symbol in <pattern>
         with <name> and uses it as output file. For example, when using
@@ -31,7 +31,7 @@ static void ShowUsage(const std::string &cmd) {
         For export commands, the unit is mm, and the default is 1.0 mm.
         For non-export commands, the unit is %%, and the default is 1.0 %%.
 
-    Commands:
+Commands:
     thumbnail --output <pattern> --size <size> --view <direction>
               [--chord-tol <tolerance>]
         Outputs a rendered view of the sketch, like the SolveSpace GUI would.
@@ -70,7 +70,7 @@ static void ShowUsage(const std::string &cmd) {
     };
 
     fprintf(stderr, R"(
-    File formats:
+File formats:
     thumbnail:%s
     export-view:%s
     export-wireframe:%s

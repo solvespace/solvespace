@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Usage: %s <command> <options>\n", args[0].c_str());
 //-----------------------------------------------------------------------------> 80 col */
         fprintf(stderr, R"(
-    Commands:
+Commands:
     expr [expr]
         Evaluate an expression.
 )");
