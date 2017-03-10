@@ -867,7 +867,7 @@ void SolveSpace::ToggleFullScreen()
 }
 bool SolveSpace::FullScreenIsActive()
 {
-    return GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW;
+    return (GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW) != 0;
 }
 
 void SolveSpace::InvalidateText()

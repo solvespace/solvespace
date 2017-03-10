@@ -12,7 +12,7 @@ void CairoRenderer::OutputStart() {
     cairo_save(context);
 
     RgbaColor bgColor = lighting.backgroundColor;
-    cairo_rectangle(context, 0.0, 0.0, camera.width, camera.height);
+    cairo_rectangle(context, 0.0, 0.0, (double)camera.width, (double)camera.height);
     cairo_set_source_rgba(context, bgColor.redF(), bgColor.greenF(), bgColor.blueF(),
                           bgColor.alphaF());
     cairo_fill(context);
@@ -47,7 +47,7 @@ void CairoRenderer::SelectStroke(hStroke hcs) {
         dash *= stroke->StippleScalePx(camera);
     }
     cairo_set_line_width(context, stroke->WidthPx(camera));
-    cairo_set_dash(context, dashes.data(), dashes.size(), 0);
+    cairo_set_dash(context, dashes.data(), (int)dashes.size(), 0);
     cairo_set_source_rgba(context, color.redF(), color.greenF(), color.blueF(),
                           color.alphaF());
     if(antialias) {

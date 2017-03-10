@@ -61,9 +61,10 @@ std::string Narrow(const std::wstring &in)
     if(in == L"") return "";
 
     std::string out;
-    out.resize(WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(), NULL, 0, NULL, NULL));
-    ssassert(WideCharToMultiByte(CP_UTF8, 0, &in[0], in.length(),
-                                 &out[0], out.length(), NULL, NULL),
+    out.resize(WideCharToMultiByte(CP_UTF8, 0, &in[0], (int)in.length(),
+                                   NULL, 0, NULL, NULL));
+    ssassert(WideCharToMultiByte(CP_UTF8, 0, &in[0], (int)in.length(),
+                                 &out[0], (int)out.length(), NULL, NULL),
              "Invalid UTF-16");
     return out;
 }
@@ -83,8 +84,9 @@ std::wstring Widen(const std::string &in)
     if(in == "") return L"";
 
     std::wstring out;
-    out.resize(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), NULL, 0));
-    ssassert(MultiByteToWideChar(CP_UTF8, 0, &in[0], in.length(), &out[0], out.length()),
+    out.resize(MultiByteToWideChar(CP_UTF8, 0, &in[0], (int)in.length(), NULL, 0));
+    ssassert(MultiByteToWideChar(CP_UTF8, 0, &in[0], (int)in.length(),
+                                 &out[0], (int)out.length()),
              "Invalid UTF-8");
     return out;
 }
@@ -125,7 +127,7 @@ std::string PathFromCurrentDirectory(const std::string &relFilename)
     std::wstring relFilenameW = Widen(relFilename);
     std::wstring absFilenameW;
     absFilenameW.resize(GetFullPathNameW(relFilenameW.c_str(), 0, NULL, NULL));
-    DWORD length = GetFullPathNameW(relFilenameW.c_str(), absFilenameW.length(),
+    DWORD length = GetFullPathNameW(relFilenameW.c_str(), (int)absFilenameW.length(),
                                     &absFilenameW[0], NULL);
     ssassert(length != 0, "Expected GetFullPathName to succeed");
     absFilenameW.resize(length);

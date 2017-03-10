@@ -335,7 +335,7 @@ void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor co
 
     for(char32_t codepoint : ReadUTF8(str)) {
         DrawBitmapChar(codepoint, x, y, color, zIndex);
-        x += font->GetWidth(codepoint) * 8;
+        x += (int)font->GetWidth(codepoint) * 8;
     }
 }
 

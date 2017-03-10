@@ -187,8 +187,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
         if(canvas) {
             canvas->DrawPixmap(icon.pixmap,
-                               x - icon.pixmap->width  / 2,
-                               y - icon.pixmap->height / 2);
+                               x - (int)icon.pixmap->width  / 2,
+                               y - (int)icon.pixmap->height / 2);
 
             if(toolbarHovered == icon.command ||
                (pending.operation == Pending::COMMAND &&
@@ -239,7 +239,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw = canvas->canvas->GetBitmapFont()->GetWidth(tooltip) * 8 + 10,
+            int tw = (int)canvas->canvas->GetBitmapFont()->GetWidth(tooltip) * 8 + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
             int ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;

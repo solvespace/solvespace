@@ -332,7 +332,7 @@ void TtfFont::PlotString(const std::string &str,
         data.u       = u;
         data.v       = v;
         data.beziers = sbl;
-        data.factor  = 1.0 / capHeight;
+        data.factor  = (float)(1.0 / capHeight);
         data.bx      = bx;
         if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outlineFuncs, &data)) {
             dbp("freetype: bezier decomposition failed (gid %d): %s",

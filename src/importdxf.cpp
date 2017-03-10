@@ -633,16 +633,16 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Polyline>(data)) return;
 
-        int vNum = data.vertlist.size();
+        size_t vNum = data.vertlist.size();
 
         // Check for closed polyline.
         if((data.flags & 1) != 1) vNum--;
 
         // Correct coordinate system for the case where z=-1, as described in
         // http://paulbourke.net/dataformats/dxf/dxf10.html.
-        bool needSwapX = data.extPoint.z == -1.0;
+        bool needSwapX = (data.extPoint.z == -1.0);
 
-        for(int i = 0; i < vNum; i++) {
+        for(size_t i = 0; i < vNum; i++) {
             DRW_Coord c0 = data.vertlist[i]->basePoint;
             DRW_Coord c1 = data.vertlist[(i + 1) % data.vertlist.size()]->basePoint;
 
