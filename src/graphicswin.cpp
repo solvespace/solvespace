@@ -183,6 +183,7 @@ std::string SolveSpace::MakeAcceleratorLabel(int accel) {
     if(accel & GraphicsWindow::SHIFT_MASK) {
         label += "Shift+";
     }
+    accel &= ~(GraphicsWindow::CTRL_MASK | GraphicsWindow::SHIFT_MASK);
     if(accel >= GraphicsWindow::FUNCTION_KEY_BASE + 1 &&
        accel <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
         label += ssprintf("F%d", accel - GraphicsWindow::FUNCTION_KEY_BASE);
