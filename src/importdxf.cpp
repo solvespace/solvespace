@@ -1068,13 +1068,13 @@ public:
     }
 };
 
-static void ImportDwgDxf(const std::string &filename,
+static void ImportDwgDxf(const Platform::Path &filename,
                          std::function<bool(const std::string &data, DRW_Interface *intf)> read) {
-    std::string fileType = ToUpper(Extension(filename));
+    std::string fileType = ToUpper(filename.Extension());
 
     std::string data;
     if(!ReadFile(filename, &data)) {
-        Error("Couldn't read from '%s'", filename.c_str());
+        Error("Couldn't read from '%s'", filename.raw.c_str());
         return;
     }
 
@@ -1107,14 +1107,14 @@ static void ImportDwgDxf(const std::string &filename,
     }
 }
 
-void ImportDxf(const std::string &filename) {
+void ImportDxf(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
         return dxfRW().read(stream, intf, /*ext=*/false);
     });
 }
 
-void ImportDwg(const std::string &filename) {
+void ImportDwg(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
         return dwgR().read(stream, intf, /*ext=*/false);

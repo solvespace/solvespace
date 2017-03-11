@@ -46,130 +46,6 @@ void assert_failure(const char *file, unsigned line, const char *function,
 #endif
 }
 
-std::string Narrow(const wchar_t *in)
-{
-    std::string out;
-    DWORD len = WideCharToMultiByte(CP_UTF8, 0, in, -1, NULL, 0, NULL, NULL);
-    out.resize(len - 1);
-    ssassert(WideCharToMultiByte(CP_UTF8, 0, in, -1, &out[0], len, NULL, NULL),
-             "Invalid UTF-16");
-    return out;
-}
-
-std::string Narrow(const std::wstring &in)
-{
-    if(in == L"") return "";
-
-    std::string out;
-    out.resize(WideCharToMultiByte(CP_UTF8, 0, &in[0], (int)in.length(),
-                                   NULL, 0, NULL, NULL));
-    ssassert(WideCharToMultiByte(CP_UTF8, 0, &in[0], (int)in.length(),
-                                 &out[0], (int)out.length(), NULL, NULL),
-             "Invalid UTF-16");
-    return out;
-}
-
-std::wstring Widen(const char *in)
-{
-    std::wstring out;
-    DWORD len = MultiByteToWideChar(CP_UTF8, 0, in, -1, NULL, 0);
-    out.resize(len - 1);
-    ssassert(MultiByteToWideChar(CP_UTF8, 0, in, -1, &out[0], len),
-             "Invalid UTF-8");
-    return out;
-}
-
-std::wstring Widen(const std::string &in)
-{
-    if(in == "") return L"";
-
-    std::wstring out;
-    out.resize(MultiByteToWideChar(CP_UTF8, 0, &in[0], (int)in.length(), NULL, 0));
-    ssassert(MultiByteToWideChar(CP_UTF8, 0, &in[0], (int)in.length(),
-                                 &out[0], (int)out.length()),
-             "Invalid UTF-8");
-    return out;
-}
-
-bool PathEqual(const std::string &a, const std::string &b)
-{
-    // Case-sensitivity is actually per-volume on Windows,
-    // but it is tedious to implement and test for little benefit.
-    std::wstring wa = Widen(a), wb = Widen(b);
-    return std::equal(wa.begin(), wa.end(), wb.begin(), /*wb.end(),*/
-                [](wchar_t wca, wchar_t wcb) { return towlower(wca) == towlower(wcb); });
-
-}
-
-std::string PathSepPlatformToUnix(const std::string &filename)
-{
-    std::string result = filename;
-    for(size_t i = 0; i < result.length(); i++) {
-        if(result[i] == '\\')
-            result[i] = '/';
-    }
-    return result;
-}
-
-std::string PathSepUnixToPlatform(const std::string &filename)
-{
-    std::string result = filename;
-    for(size_t i = 0; i < result.length(); i++) {
-        if(result[i] == '/')
-            result[i] = '\\';
-    }
-    return result;
-}
-
-std::string PathFromCurrentDirectory(const std::string &relFilename)
-{
-    // On Windows, ssfopen needs an absolute UNC path proper, so get that.
-    std::wstring relFilenameW = Widen(relFilename);
-    std::wstring absFilenameW;
-    absFilenameW.resize(GetFullPathNameW(relFilenameW.c_str(), 0, NULL, NULL));
-    DWORD length = GetFullPathNameW(relFilenameW.c_str(), (int)absFilenameW.length(),
-                                    &absFilenameW[0], NULL);
-    ssassert(length != 0, "Expected GetFullPathName to succeed");
-    absFilenameW.resize(length);
-    return Narrow(absFilenameW);
-}
-
-static std::string MakeUNCFilename(const std::string &filename)
-{
-    // Prepend \\?\ UNC prefix unless already an UNC path.
-    // We never try to fopen paths that are not absolute or
-    // contain separators inappropriate for the platform;
-    // thus, it is always safe to prepend this prefix.
-    std::string uncFilename = filename;
-    if(uncFilename.substr(0, 2) != "\\\\")
-        uncFilename = "\\\\?\\" + uncFilename;
-    return uncFilename;
-}
-
-FILE *ssfopen(const std::string &filename, const char *mode)
-{
-    ssassert(filename.length() == strlen(filename.c_str()),
-             "Unexpected null byte in middle of a path");
-    return _wfopen(Widen(MakeUNCFilename(filename)).c_str(), Widen(mode).c_str());
-}
-
-void ssremove(const std::string &filename)
-{
-    ssassert(filename.length() == strlen(filename.c_str()),
-             "Unexpected null byte in middle of a path");
-    _wremove(Widen(filename).c_str());
-}
-
-const void *LoadResource(const std::string &name, size_t *size) {
-    HRSRC hres = FindResourceW(NULL, Widen(name).c_str(), RT_RCDATA);
-    ssassert(hres != NULL, "Cannot find resource");
-    HGLOBAL res = ::LoadResource(NULL, hres);
-    ssassert(res != NULL, "Cannot load resource");
-
-    *size = SizeofResource(NULL, hres);
-    return LockResource(res);
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible
@@ -231,7 +107,7 @@ std::vector<std::string> InitPlatform(int argc, char **argv) {
     LPWSTR *argvW = CommandLineToArgvW(GetCommandLineW(), &argcW);
     std::vector<std::string> args;
     for(int i = 0; i < argcW; i++) {
-        args.push_back(Narrow(argvW[i]));
+        args.push_back(Platform::Narrow(argvW[i]));
     }
     LocalFree(argvW);
     return args;

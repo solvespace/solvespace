@@ -12,12 +12,6 @@ class Point2d;
 class Pixmap;
 class Vector;
 
-// Only the following function is platform-specific.
-// It returns a pointer to resource contents that is aligned to at least
-// sizeof(void*) and has a global lifetime, or NULL if a resource with
-// the specified name does not exist.
-const void *LoadResource(const std::string &name, size_t *size);
-
 std::string LoadString(const std::string &name);
 std::string LoadStringFromGzip(const std::string &name);
 std::shared_ptr<Pixmap> LoadPng(const std::string &name);
@@ -36,9 +30,9 @@ public:
     static std::shared_ptr<Pixmap> FromPng(const uint8_t *data, size_t size, bool flip = false);
 
     static std::shared_ptr<Pixmap> ReadPng(FILE *f, bool flip = false);
-    static std::shared_ptr<Pixmap> ReadPng(const std::string &filename, bool flip = false);
+    static std::shared_ptr<Pixmap> ReadPng(const Platform::Path &filename, bool flip = false);
     bool WritePng(FILE *f, bool flip = false);
-    bool WritePng(const std::string &filename, bool flip = false);
+    bool WritePng(const Platform::Path &filename, bool flip = false);
 
     size_t GetBytesPerPixel() const;
     RgbaColor GetPixel(size_t x, size_t y) const;

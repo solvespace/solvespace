@@ -138,7 +138,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     // sketch just changed a lot.
     SS.GW.ClearSuper();
     SS.TW.ClearSuper();
-    SS.ReloadAllImported();
+    SS.ReloadAllImported(SS.saveFile);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
     SS.ScheduleShowTW();
 

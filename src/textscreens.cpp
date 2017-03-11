@@ -327,7 +327,12 @@ void TextWindow::ShowGroupInfo() {
         }
     } else if(g->type == Group::Type::LINKED) {
         Printf(true, " %Ftlink geometry from file%E");
-        Printf(false, "%Ba   '%s'", g->linkFileRel.c_str());
+        Platform::Path relativePath =g->linkFile.RelativeTo(SS.saveFile.Parent());
+        if(relativePath.IsEmpty()) {
+            Printf(false, "%Ba   '%s'", g->linkFile.raw.c_str());
+        } else {
+            Printf(false, "%Ba   '%s'", relativePath.raw.c_str());
+        }
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);

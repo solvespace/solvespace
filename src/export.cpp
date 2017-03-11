@@ -8,7 +8,7 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-void SolveSpaceUI::ExportSectionTo(const std::string &filename) {
+void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     Vector gn = (SS.GW.projRight).Cross(SS.GW.projUp);
     gn = gn.WithMagnitude(1);
 
@@ -165,7 +165,7 @@ public:
     }
 };
 
-void SolveSpaceUI::ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe) {
+void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe) {
     int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
@@ -605,29 +605,29 @@ double VectorFileWriter::MmToPts(double mm) {
     return (mm/25.4)*72;
 }
 
-VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
+VectorFileWriter *VectorFileWriter::ForFile(const Platform::Path &filename) {
     VectorFileWriter *ret;
     bool needOpen = true;
-    if(FilenameHasExtension(filename, ".dxf")) {
+    if(filename.HasExtension("dxf")) {
         static DxfFileWriter DxfWriter;
         ret = &DxfWriter;
         needOpen = false;
-    } else if(FilenameHasExtension(filename, ".ps") || FilenameHasExtension(filename, ".eps")) {
+    } else if(filename.HasExtension("ps") || filename.HasExtension("eps")) {
         static EpsFileWriter EpsWriter;
         ret = &EpsWriter;
-    } else if(FilenameHasExtension(filename, ".pdf")) {
+    } else if(filename.HasExtension("pdf")) {
         static PdfFileWriter PdfWriter;
         ret = &PdfWriter;
-    } else if(FilenameHasExtension(filename, ".svg")) {
+    } else if(filename.HasExtension("svg")) {
         static SvgFileWriter SvgWriter;
         ret = &SvgWriter;
-    } else if(FilenameHasExtension(filename, ".plt")||FilenameHasExtension(filename, ".hpgl")) {
+    } else if(filename.HasExtension("plt") || filename.HasExtension("hpgl")) {
         static HpglFileWriter HpglWriter;
         ret = &HpglWriter;
-    } else if(FilenameHasExtension(filename, ".step")||FilenameHasExtension(filename, ".stp")) {
+    } else if(filename.HasExtension("step") || filename.HasExtension("stp")) {
         static Step2dFileWriter Step2dWriter;
         ret = &Step2dWriter;
-    } else if(FilenameHasExtension(filename, ".txt")||FilenameHasExtension(filename, ".ngc")) {
+    } else if(filename.HasExtension("txt") || filename.HasExtension("ngc")) {
         static GCodeFileWriter GCodeWriter;
         ret = &GCodeWriter;
     } else {
@@ -635,15 +635,15 @@ VectorFileWriter *VectorFileWriter::ForFile(const std::string &filename) {
         "filename '%s'; try "
         ".step, .stp, .dxf, .svg, .plt, .hpgl, .pdf, .txt, .ngc, "
         ".eps, or .ps.",
-            filename.c_str());
+            filename.raw.c_str());
         return NULL;
     }
     ret->filename = filename;
     if(!needOpen) return ret;
 
-    FILE *f = ssfopen(filename, "wb");
+    FILE *f = OpenFile(filename, "wb");
     if(!f) {
-        Error("Couldn't write to '%s'", filename.c_str());
+        Error("Couldn't write to '%s'", filename.raw.c_str());
         return NULL;
     }
     ret->f = f;
@@ -793,7 +793,7 @@ void VectorFileWriter::BezierAsNonrationalCubic(SBezier *sb, int depth) {
 //-----------------------------------------------------------------------------
 // Export a triangle mesh, in the requested format.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
+void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
     SS.exportMode = true;
     GenerateAll(Generate::ALL);
 
@@ -806,33 +806,33 @@ void SolveSpaceUI::ExportMeshTo(const std::string &filename) {
         return;
     }
 
-    FILE *f = ssfopen(filename, "wb");
+    FILE *f = OpenFile(filename, "wb");
     if(!f) {
-        Error("Couldn't write to '%s'", filename.c_str());
+        Error("Couldn't write to '%s'", filename.raw.c_str());
         return;
     }
     ShowNakedEdges(/*reportOnlyWhenNotOkay=*/true);
-    if(FilenameHasExtension(filename, ".stl")) {
+    if(filename.HasExtension("stl")) {
         ExportMeshAsStlTo(f, m);
-    } else if(FilenameHasExtension(filename, ".obj")) {
-        std::string mtlFilename = filename.substr(0, filename.length() - 4) + ".mtl";
-        FILE *fMtl = ssfopen(mtlFilename, "wb");
+    } else if(filename.HasExtension("obj")) {
+        Platform::Path mtlFilename = filename.WithExtension("mtl");
+        FILE *fMtl = OpenFile(mtlFilename, "wb");
         if(!fMtl) {
-            Error("Couldn't write to '%s'", filename.c_str());
+            Error("Couldn't write to '%s'", filename.raw.c_str());
             return;
         }
 
-        fprintf(f, "mtllib %s\n", Basename(mtlFilename).c_str());
+        fprintf(f, "mtllib %s\n", mtlFilename.FileName().c_str());
         ExportMeshAsObjTo(f, fMtl, m);
 
         fclose(fMtl);
-    } else if(FilenameHasExtension(filename, ".js") ||
-              FilenameHasExtension(filename, ".html")) {
+    } else if(filename.HasExtension("js") ||
+              filename.HasExtension("html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
     } else {
         Error("Can't identify output file type from file extension of "
-              "filename '%s'; try .stl, .obj, .js, .html.", filename.c_str());
+              "filename '%s'; try .stl, .obj, .js, .html.", filename.raw.c_str());
     }
 
     fclose(f);
@@ -931,7 +931,7 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm) {
 //-----------------------------------------------------------------------------
 // Export the mesh as a JavaScript script, which is compatible with Three.js.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
+void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                          SMesh *sm, SOutlineList *sol)
 {
     SPointList spl = {};
@@ -986,14 +986,14 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
     double largerBoundXY = max((bndh.x - bndl.x), (bndh.y - bndl.y));
     double largerBoundZ = max(largerBoundXY, (bndh.z - bndl.z + 1));
 
-    std::string basename = Basename(filename, /*stripExtension=*/true);
+    std::string basename = filename.FileStem();
     for(size_t i = 0; i < basename.length(); i++) {
         if(!(isalnum(basename[i]) || ((unsigned)basename[i] >= 0x80))) {
             basename[i] = '_';
         }
     }
 
-    if(FilenameHasExtension(filename, "html")) {
+    if(filename.HasExtension("html")) {
         fprintf(f, htmlbegin,
                 LoadStringFromGzip("threejs/three-r76.js.gz").c_str(),
                 LoadStringFromGzip("threejs/hammer-2.0.8.js.gz").c_str(),
@@ -1089,7 +1089,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 
     fputs("  ]\n};\n", f);
 
-    if(FilenameHasExtension(filename, "html")) {
+    if(filename.HasExtension("html")) {
         fprintf(f, htmlend,
                 basename.c_str(),
                 SS.GW.scale,
@@ -1105,7 +1105,7 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
 // Export a view of the model as an image; we just take a screenshot, by
 // rendering the view in the usual way and then copying the pixels.
 //-----------------------------------------------------------------------------
-void SolveSpaceUI::ExportAsPngTo(const std::string &filename) {
+void SolveSpaceUI::ExportAsPngTo(const Platform::Path &filename) {
     screenshotFile = filename;
     // The rest of the work is done in the next redraw.
     InvalidateGraphics();

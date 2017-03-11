@@ -121,13 +121,6 @@ inline double ffabs(double v) { return (v > 0) ? v : (-v); }
 #define VERY_POSITIVE   (1e10)
 #define VERY_NEGATIVE   (-1e10)
 
-#if defined(WIN32)
-std::string Narrow(const wchar_t *s);
-std::wstring Widen(const char *s);
-std::string Narrow(const std::wstring &s);
-std::wstring Widen(const std::string &s);
-#endif
-
 inline double Random(double vmax) {
     return (vmax*rand()) / RAND_MAX;
 }
@@ -144,30 +137,17 @@ enum class ContextCommand : uint32_t;
 
 #include "platform/platform.h"
 
-#if defined(WIN32)
-#define PATH_SEP "\\"
-#else
-#define PATH_SEP "/"
-#endif
-
-bool PathEqual(const std::string &a, const std::string &b);
-std::string PathSepPlatformToUnix(const std::string &filename);
-std::string PathSepUnixToPlatform(const std::string &filename);
-std::string PathFromCurrentDirectory(const std::string &relFilename);
-FILE *ssfopen(const std::string &filename, const char *mode);
-void ssremove(const std::string &filename);
-
 const size_t MAX_RECENT = 8;
-extern std::string RecentFile[MAX_RECENT];
+extern Platform::Path RecentFile[MAX_RECENT];
 void RefreshRecentMenus();
 
 enum DialogChoice { DIALOG_YES = 1, DIALOG_NO = -1, DIALOG_CANCEL = 0 };
 DialogChoice SaveFileYesNoCancel();
 DialogChoice LoadAutosaveYesNo();
-DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                            bool canCancel);
 
-#define AUTOSAVE_SUFFIX "~"
+#define AUTOSAVE_EXT "slvs~"
 
 enum class Unit : uint32_t {
     MM = 0,
@@ -176,11 +156,11 @@ enum class Unit : uint32_t {
 
 struct FileFilter;
 
-bool GetSaveFile(std::string *filename, const std::string &defExtension,
+bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                  const FileFilter filters[]);
-bool GetOpenFile(std::string *filename, const std::string &defExtension,
+bool GetOpenFile(Platform::Path *filename, const std::string &defExtension,
                  const FileFilter filters[]);
-std::vector<std::string> GetFontFiles();
+std::vector<Platform::Path> GetFontFiles();
 
 void OpenWebsite(const char *url);
 
@@ -219,7 +199,7 @@ void dbp(const char *str, ...);
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-void SetCurrentFilename(const std::string &filename);
+void SetCurrentFilename(const Platform::Path &filename);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
 void SetTimerFor(int milliseconds);
@@ -314,12 +294,6 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 void MultMatrix(double *mata, double *matb, double *matr);
 
 std::string MakeAcceleratorLabel(int accel);
-bool FilenameHasExtension(const std::string &str, const char *ext);
-std::string Extension(const std::string &filename);
-std::string Basename(std::string filename, bool stripExtension = false);
-std::string Dirname(std::string filename);
-bool ReadFile(const std::string &filename, std::string *data);
-bool WriteFile(const std::string &filename, const std::string &data);
 void Message(const char *str, ...);
 void Error(const char *str, ...);
 void CnfFreezeBool(bool v, const std::string &name);
@@ -411,7 +385,7 @@ public:
 
 class StepFileWriter {
 public:
-    void ExportSurfacesTo(const std::string &filename);
+    void ExportSurfacesTo(const Platform::Path &filename);
     void WriteHeader();
 	void WriteProductHeader();
     int ExportCurve(SBezier *sb);
@@ -433,12 +407,12 @@ protected:
 
 public:
     FILE *f;
-    std::string filename;
+    Platform::Path filename;
     Vector ptMin, ptMax;
 
     static double MmToPts(double mm);
 
-    static VectorFileWriter *ForFile(const std::string &filename);
+    static VectorFileWriter *ForFile(const Platform::Path &filename);
 
     void SetModelviewProjection(const Vector &u, const Vector &v, const Vector &n,
                                 const Vector &origin, double cameraTan, double scale);
@@ -674,7 +648,7 @@ public:
     bool     drawBackFaces;
     bool     checkClosedContour;
     bool     showToolbar;
-    std::string screenshotFile;
+    Platform::Path screenshotFile;
     RgbaColor backgroundColor;
     bool     exportShadedTriangles;
     bool     exportPwlCurves;
@@ -725,16 +699,16 @@ public:
 
     // The platform-dependent code calls this before entering the msg loop
     void Init();
-    bool OpenFile(const std::string &filename);
+    bool Load(const Platform::Path &filename);
     void Exit();
 
     // File load/save routines, including the additional files that get
     // loaded when we have link groups.
     FILE        *fh;
     void AfterNewFile();
-    static void RemoveFromRecentList(const std::string &filename);
-    static void AddToRecentList(const std::string &filename);
-    std::string saveFile;
+    static void RemoveFromRecentList(const Platform::Path &filename);
+    static void AddToRecentList(const Platform::Path &filename);
+    Platform::Path saveFile;
     bool        fileLoadError;
     bool        unsaved;
     typedef struct {
@@ -744,8 +718,8 @@ public:
         void       *ptr;
     } SaveTable;
     static const SaveTable SAVED[];
-    void SaveUsingTable(int type);
-    void LoadUsingTable(char *key, char *val);
+    void SaveUsingTable(const Platform::Path &filename, int type);
+    void LoadUsingTable(const Platform::Path &filename, char *key, char *val);
     struct {
         Group        g;
         Request      r;
@@ -763,22 +737,22 @@ public:
     void UpdateWindowTitle();
     void ClearExisting();
     void NewFile();
-    bool SaveToFile(const std::string &filename);
-    bool LoadAutosaveFor(const std::string &filename);
-    bool LoadFromFile(const std::string &filename, bool canCancel = false);
+    bool SaveToFile(const Platform::Path &filename);
+    bool LoadAutosaveFor(const Platform::Path &filename);
+    bool LoadFromFile(const Platform::Path &filename, bool canCancel = false);
     void UpgradeLegacyData();
-    bool LoadEntitiesFromFile(const std::string &filename, EntityList *le,
+    bool LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                               SMesh *m, SShell *sh);
-    bool ReloadAllImported(const std::string &filename = "", bool canCancel = false);
+    bool ReloadAllImported(const Platform::Path &filename, bool canCancel = false);
     // And the various export options
-    void ExportAsPngTo(const std::string &filename);
-    void ExportMeshTo(const std::string &filename);
+    void ExportAsPngTo(const Platform::Path &filename);
+    void ExportMeshTo(const Platform::Path &filename);
     void ExportMeshAsStlTo(FILE *f, SMesh *sm);
     void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
-    void ExportMeshAsThreeJsTo(FILE *f, const std::string &filename,
+    void ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                SMesh *sm, SOutlineList *sol);
-    void ExportViewOrWireframeTo(const std::string &filename, bool exportWireframe);
-    void ExportSectionTo(const std::string &filename);
+    void ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe);
+    void ExportSectionTo(const Platform::Path &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,
                                VectorFileWriter *out);
     void ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *sm,
@@ -903,8 +877,8 @@ public:
     }
 };
 
-void ImportDxf(const std::string &file);
-void ImportDwg(const std::string &file);
+void ImportDxf(const Platform::Path &file);
+void ImportDwg(const Platform::Path &file);
 
 extern SolveSpaceUI SS;
 extern Sketch SK;

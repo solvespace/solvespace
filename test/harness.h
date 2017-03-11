@@ -19,8 +19,8 @@ public:
 
     bool RecordCheck(bool success);
     void PrintFailure(const char *file, int line, std::string msg);
-    std::string GetAssetPath(std::string testFile, std::string assetName,
-                             std::string mangle = "");
+    Platform::Path GetAssetPath(std::string testFile, std::string assetName,
+                                std::string mangle = "");
 
     bool CheckBool(const char *file, int line, const char *expr,
                    bool value, bool reference);

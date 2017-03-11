@@ -393,16 +393,16 @@ void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
     SS.bgImage.pixmap = nullptr;
 
     if(link == 'l') {
-        std::string bgImageFile;
+        Platform::Path bgImageFile;
         if(GetOpenFile(&bgImageFile, "", PngFileFilter)) {
-            FILE *f = ssfopen(bgImageFile, "rb");
+            FILE *f = OpenFile(bgImageFile, "rb");
             if(f) {
                 SS.bgImage.pixmap = Pixmap::ReadPng(f);
                 SS.bgImage.scale  = SS.GW.scale;
                 SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
                 fclose(f);
             } else {
-                Error("Error reading PNG file '%s'", bgImageFile.c_str());
+                Error("Error reading PNG file '%s'", bgImageFile.raw.c_str());
             }
         }
     }

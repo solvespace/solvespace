@@ -16,7 +16,7 @@ namespace SolveSpace {
 
 std::string LoadString(const std::string &name) {
     size_t size;
-    const void *data = LoadResource(name, &size);
+    const void *data = Platform::LoadResource(name, &size);
     std::string result(static_cast<const char *>(data), size);
 
     // When editing resources under Windows, Windows newlines may sneak in.
@@ -30,7 +30,7 @@ std::string LoadString(const std::string &name) {
 
 std::string LoadStringFromGzip(const std::string &name) {
     size_t deflatedSize;
-    const void *data = LoadResource(name, &deflatedSize);
+    const void *data = Platform::LoadResource(name, &deflatedSize);
 
     z_stream stream;
     stream.zalloc = Z_NULL;
@@ -62,7 +62,7 @@ std::string LoadStringFromGzip(const std::string &name) {
 
 std::shared_ptr<Pixmap> LoadPng(const std::string &name) {
     size_t size;
-    const void *data = LoadResource(name, &size);
+    const void *data = Platform::LoadResource(name, &size);
 
     std::shared_ptr<Pixmap> pixmap = Pixmap::FromPng(static_cast<const uint8_t *>(data), size);
     ssassert(pixmap != nullptr, "Cannot load pixmap");
@@ -263,8 +263,8 @@ exit:
     return nullptr;
 }
 
-std::shared_ptr<Pixmap> Pixmap::ReadPng(const std::string &filename, bool flip) {
-    FILE *f = ssfopen(filename.c_str(), "rb");
+std::shared_ptr<Pixmap> Pixmap::ReadPng(const Platform::Path &filename, bool flip) {
+    FILE *f = OpenFile(filename, "rb");
     if(!f) return NULL;
     std::shared_ptr<Pixmap> pixmap = ReadPng(f, flip);
     fclose(f);
@@ -318,8 +318,8 @@ exit:
     return false;
 }
 
-bool Pixmap::WritePng(const std::string &filename, bool flip) {
-    FILE *f = ssfopen(filename.c_str(), "wb");
+bool Pixmap::WritePng(const Platform::Path &filename, bool flip) {
+    FILE *f = OpenFile(filename, "wb");
     if(!f) return false;
     bool success = WritePng(f, flip);
     fclose(f);

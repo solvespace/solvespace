@@ -229,13 +229,13 @@ void Group::MenuGroup(Command id) {
         case Command::GROUP_LINK: {
             g.type = Type::LINKED;
             g.meshCombine = CombineAs::ASSEMBLE;
-            if(g.linkFile.empty()) {
+            if(g.linkFile.IsEmpty()) {
                 if(!GetOpenFile(&g.linkFile, "", SlvsFileFilter)) return;
             }
 
             // Assign the default name of the group based on the name of
             // the linked file.
-            g.name = Basename(g.linkFile, /*stripExtension=*/true);
+            g.name = g.linkFile.FileStem();
             for(size_t i = 0; i < g.name.length(); i++) {
                 if(!(isalnum(g.name[i]) || (unsigned)g.name[i] >= 0x80)) {
                     // convert punctuation to dashes
@@ -274,7 +274,7 @@ void Group::MenuGroup(Command id) {
     Group *gg = SK.GetGroup(g.h);
 
     if(gg->type == Type::LINKED) {
-        SS.ReloadAllImported();
+        SS.ReloadAllImported(SS.saveFile);
     }
     gg->clean = false;
     SS.GW.activeGroup = gg->h;

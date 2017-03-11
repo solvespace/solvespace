@@ -602,8 +602,8 @@ void PaintGraphics(void) {
     Glib::MainContext::get_default()->iteration(false);
 }
 
-void SetCurrentFilename(const std::string &filename) {
-    GW->set_title(Title(filename.empty() ? C_("title", "(new sketch)") : filename.c_str()));
+void SetCurrentFilename(const Platform::Path &filename) {
+    GW->set_title(Title(filename.IsEmpty() ? C_("title", "(new sketch)") : filename.raw.c_str()));
 }
 
 void ToggleFullScreen(void) {
@@ -907,16 +907,16 @@ static void RefreshRecentMenu(Command cmd, Command base) {
     Gtk::Menu *menu = new Gtk::Menu;
     recent->set_submenu(*menu);
 
-    if(RecentFile[0].empty()) {
+    if(RecentFile[0].IsEmpty()) {
         Gtk::MenuItem *placeholder = new Gtk::MenuItem(_("(no recent files)"));
         placeholder->set_sensitive(false);
         menu->append(*placeholder);
     } else {
         for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(RecentFile[i].empty())
+            if(RecentFile[i].IsEmpty())
                 break;
 
-            RecentMenuItem *item = new RecentMenuItem(RecentFile[i], (uint32_t)base + i);
+            RecentMenuItem *item = new RecentMenuItem(RecentFile[i].raw, (uint32_t)base + i);
             menu->append(*item);
         }
     }
@@ -962,10 +962,10 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
     return active;
 }
 
-bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
     Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Open File")));
-    chooser.set_filename(*filename);
+    chooser.set_filename(filename->raw);
     chooser.add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
     chooser.add_button(_("_Open"), Gtk::RESPONSE_OK);
     chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
@@ -974,7 +974,7 @@ bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
         CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
-        *filename = chooser.get_filename();
+        *filename = Platform::Path::From(chooser.get_filename());
         return true;
     } else {
         return false;
@@ -1000,17 +1000,11 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
     if(extension.length() > 2 && extension.substr(0, 2) == "*.")
         extension = extension.substr(2, extension.length() - 2);
 
-    std::string basename = Basename(chooser->get_filename());
-    int dot = basename.rfind('.');
-    if(dot >= 0) {
-        basename.replace(dot + 1, basename.length() - dot - 1, extension);
-        chooser->set_current_name(basename);
-    } else {
-        chooser->set_current_name(basename + "." + extension);
-    }
+    Platform::Path path = Platform::Path::From(chooser->get_filename());
+    chooser->set_current_name(path.WithExtension(extension).FileName());
 }
 
-bool GetSaveFile(std::string *filename, const std::string &defExtension,
+bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                  const FileFilter filters[]) {
     Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Save File")),
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
@@ -1020,13 +1014,12 @@ bool GetSaveFile(std::string *filename, const std::string &defExtension,
 
     std::string activeExtension = ConvertFilters(defExtension, filters, &chooser);
 
-    if(filename->empty()) {
+    if(filename->IsEmpty()) {
         chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
         chooser.set_current_name(std::string(_("untitled")) + "." + activeExtension);
     } else {
-        chooser.set_current_folder(Dirname(*filename));
-        chooser.set_current_name(Basename(*filename, /*stripExtension=*/true) +
-                                 "." + activeExtension);
+        chooser.set_current_folder(filename->Parent().raw);
+        chooser.set_current_name(filename->WithExtension(activeExtension).FileName());
     }
 
     /* Gtk's dialog doesn't change the extension when you change the filter,
@@ -1036,7 +1029,7 @@ bool GetSaveFile(std::string *filename, const std::string &defExtension,
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
         CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
-        *filename = chooser.get_filename();
+        *filename = Platform::Path::From(chooser.get_filename());
         return true;
     } else {
         return false;
@@ -1087,10 +1080,10 @@ DialogChoice LoadAutosaveYesNo(void) {
     }
 }
 
-DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                            bool canCancel) {
     Glib::ustring message =
-        "The linked file " + filename + " is not present.\n\n"
+        "The linked file " + filename.raw + " is not present.\n\n"
         "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
@@ -1318,8 +1311,8 @@ void OpenWebsite(const char *url) {
 }
 
 /* fontconfig is already initialized by GTK */
-std::vector<std::string> GetFontFiles() {
-    std::vector<std::string> fonts;
+std::vector<Platform::Path> GetFontFiles() {
+    std::vector<Platform::Path> fonts;
 
     FcPattern   *pat = FcPatternCreate();
     FcObjectSet *os  = FcObjectSetBuild(FC_FILE, (char *)0);
@@ -1327,8 +1320,7 @@ std::vector<std::string> GetFontFiles() {
 
     for(int i = 0; i < fs->nfont; i++) {
         FcChar8 *filenameFC = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
-        std::string filename = (char*) filenameFC;
-        fonts.push_back(filename);
+        fonts.push_back(Platform::Path::From((const char *)filenameFC));
         FcStrFree(filenameFC);
     }
 
@@ -1463,7 +1455,8 @@ int main(int argc, char** argv) {
         }
 
         /* Make sure the argument is valid UTF-8. */
-        SS.OpenFile(PathFromCurrentDirectory(Glib::ustring(argv[1])));
+        Glib::ustring arg(argv[1]);
+        SS.Load(Platform::Path::From(arg).Expand(/*fromCurrentDirectory=*/true));
     }
 
     main.run(*GW);

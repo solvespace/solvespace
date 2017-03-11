@@ -116,8 +116,8 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
     { 'g',  "Group.allDimsReference",   'b',    &(SS.sv.g.allDimsReference)   },
     { 'g',  "Group.scale",              'f',    &(SS.sv.g.scale)              },
     { 'g',  "Group.remap",              'M',    &(SS.sv.g.remap)              },
-    { 'g',  "Group.impFile",            'S',    &(SS.sv.g.linkFile)           },
-    { 'g',  "Group.impFileRel",         'S',    &(SS.sv.g.linkFileRel)        },
+    { 'g',  "Group.impFile",            'i',    NULL                          },
+    { 'g',  "Group.impFileRel",         'P',    &(SS.sv.g.linkFile)           },
 
     { 'p',  "Param.h.v.",               'x',    &(SS.sv.p.h.v)                },
     { 'p',  "Param.val",                'f',    &(SS.sv.p.val)                },
@@ -209,6 +209,7 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 struct SAVEDptr {
     IdList<EntityMap,EntityId> &M() { return *((IdList<EntityMap,EntityId> *)this); }
     std::string                &S() { return *((std::string *)this); }
+    Platform::Path             &P() { return *((Platform::Path *)this); }
     bool      &b() { return *((bool *)this); }
     RgbaColor &c() { return *((RgbaColor *)this); }
     int       &d() { return *((int *)this); }
@@ -216,7 +217,7 @@ struct SAVEDptr {
     uint32_t  &x() { return *((uint32_t *)this); }
 };
 
-void SolveSpaceUI::SaveUsingTable(int type) {
+void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(SAVED[i].type != type) continue;
@@ -225,9 +226,11 @@ void SolveSpaceUI::SaveUsingTable(int type) {
         SAVEDptr *p = (SAVEDptr *)SAVED[i].ptr;
         // Any items that aren't specified are assumed to be zero
         if(fmt == 'S' && p->S().empty())          continue;
+        if(fmt == 'P' && p->P().IsEmpty())        continue;
         if(fmt == 'd' && p->d() == 0)             continue;
         if(fmt == 'f' && EXACT(p->f() == 0.0))    continue;
         if(fmt == 'x' && p->x() == 0)             continue;
+        if(fmt == 'i')                            continue;
 
         fprintf(fh, "%s=", SAVED[i].desc);
         switch(fmt) {
@@ -237,6 +240,15 @@ void SolveSpaceUI::SaveUsingTable(int type) {
             case 'd': fprintf(fh, "%d",    p->d());               break;
             case 'f': fprintf(fh, "%.20f", p->f());               break;
             case 'x': fprintf(fh, "%08x",  p->x());               break;
+
+            case 'P': {
+                if(!p->P().IsEmpty()) {
+                    Platform::Path relativePath = p->P().RelativeTo(filename.Parent());
+                    ssassert(!relativePath.IsEmpty(), "Cannot relativize path");
+                    fprintf(fh, "%s", relativePath.ToPortable().c_str());
+                }
+                break;
+            }
 
             case 'M': {
                 int j;
@@ -250,23 +262,32 @@ void SolveSpaceUI::SaveUsingTable(int type) {
                 break;
             }
 
+            case 'i': break;
+
             default: ssassert(false, "Unexpected value format");
         }
         fprintf(fh, "\n");
     }
 }
 
-bool SolveSpaceUI::SaveToFile(const std::string &filename) {
-    // Make sure all the entities are regenerated up to date, since they
-    // will be exported. We reload the linked files because that rewrites
-    // the linkFileRel for our possibly-new filename.
+bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
+    // Make sure all the entities are regenerated up to date, since they will be exported.
     SS.ScheduleShowTW();
-    SS.ReloadAllImported(filename);
     SS.GenerateAll(SolveSpaceUI::Generate::ALL);
 
-    fh = ssfopen(filename, "wb");
+    for(Group &g : SK.group) {
+        if(g.type != Group::Type::LINKED) continue;
+
+        if(g.linkFile.RelativeTo(filename).IsEmpty()) {
+            Error("This sketch links the sketch '%s'; it can only be saved "
+                  "on the same volume.", g.linkFile.raw.c_str());
+            return false;
+        }
+    }
+
+    fh = OpenFile(filename, "wb");
     if(!fh) {
-        Error("Couldn't write to file '%s'", filename.c_str());
+        Error("Couldn't write to file '%s'", filename.raw.c_str());
         return false;
     }
 
@@ -275,39 +296,39 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     int i, j;
     for(i = 0; i < SK.group.n; i++) {
         sv.g = SK.group.elem[i];
-        SaveUsingTable('g');
+        SaveUsingTable(filename, 'g');
         fprintf(fh, "AddGroup\n\n");
     }
 
     for(i = 0; i < SK.param.n; i++) {
         sv.p = SK.param.elem[i];
-        SaveUsingTable('p');
+        SaveUsingTable(filename, 'p');
         fprintf(fh, "AddParam\n\n");
     }
 
     for(i = 0; i < SK.request.n; i++) {
         sv.r = SK.request.elem[i];
-        SaveUsingTable('r');
+        SaveUsingTable(filename, 'r');
         fprintf(fh, "AddRequest\n\n");
     }
 
     for(i = 0; i < SK.entity.n; i++) {
         (SK.entity.elem[i]).CalculateNumerical(/*forExport=*/true);
         sv.e = SK.entity.elem[i];
-        SaveUsingTable('e');
+        SaveUsingTable(filename, 'e');
         fprintf(fh, "AddEntity\n\n");
     }
 
     for(i = 0; i < SK.constraint.n; i++) {
         sv.c = SK.constraint.elem[i];
-        SaveUsingTable('c');
+        SaveUsingTable(filename, 'c');
         fprintf(fh, "AddConstraint\n\n");
     }
 
     for(i = 0; i < SK.style.n; i++) {
         sv.s = SK.style.elem[i];
         if(sv.s.h.v >= Style::FIRST_CUSTOM) {
-            SaveUsingTable('s');
+            SaveUsingTable(filename, 's');
             fprintf(fh, "AddStyle\n\n");
         }
     }
@@ -373,7 +394,7 @@ bool SolveSpaceUI::SaveToFile(const std::string &filename) {
     return true;
 }
 
-void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
+void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, char *val) {
     int i;
     for(i = 0; SAVED[i].type != 0; i++) {
         if(strcmp(SAVED[i].desc, key)==0) {
@@ -386,13 +407,14 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                 case 'f': p->f() = atof(val);               break;
                 case 'x': sscanf(val, "%x", &u); p->x()= u; break;
 
+                case 'P': {
+                    p->P() = filename.Parent().Join(Platform::Path::FromPortable(val));
+                    break;
+                }
+
                 case 'c':
                     sscanf(val, "%x", &u);
                     p->c() = RgbaColor::FromPackedInt(u);
-                    break;
-
-                case 'P':
-                    p->S() = val;
                     break;
 
                 case 'M': {
@@ -417,6 +439,8 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
                     break;
                 }
 
+                case 'i': break;
+
                 default: ssassert(false, "Unexpected value format");
             }
             break;
@@ -427,13 +451,13 @@ void SolveSpaceUI::LoadUsingTable(char *key, char *val) {
     }
 }
 
-bool SolveSpaceUI::LoadFromFile(const std::string &filename, bool canCancel) {
+bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) {
     allConsistent = false;
     fileLoadError = false;
 
-    fh = ssfopen(filename, "rb");
+    fh = OpenFile(filename, "rb");
     if(!fh) {
-        Error("Couldn't read from file '%s'", filename.c_str());
+        Error("Couldn't read from file '%s'", filename.raw.c_str());
         return false;
     }
 
@@ -458,7 +482,7 @@ bool SolveSpaceUI::LoadFromFile(const std::string &filename, bool canCancel) {
         if(e) {
             *e = '\0';
             char *key = line, *val = e+1;
-            LoadUsingTable(key, val);
+            LoadUsingTable(filename, key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             // legacy files have a spurious dependency between linked groups
             // and their parent groups, remove
@@ -660,13 +684,13 @@ void SolveSpaceUI::UpgradeLegacyData() {
     oldParam.Clear();
 }
 
-bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList *le,
+bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityList *le,
                                         SMesh *m, SShell *sh)
 {
     SSurface srf = {};
     SCurve crv = {};
 
-    fh = ssfopen(filename, "rb");
+    fh = OpenFile(filename, "rb");
     if(!fh) return false;
 
     le->Clear();
@@ -687,7 +711,7 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
         if(e) {
             *e = '\0';
             char *key = line, *val = e+1;
-            LoadUsingTable(key, val);
+            LoadUsingTable(filename, key, val);
         } else if(strcmp(line, "AddGroup")==0) {
             // Don't leak memory; these get allocated whether we want them
             // or not.
@@ -795,173 +819,51 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const std::string &filename, EntityList 
     return true;
 }
 
-//-----------------------------------------------------------------------------
-// Handling of the relative-absolute path transformations for links
-//-----------------------------------------------------------------------------
-static std::vector<std::string> Split(const std::string &haystack, const std::string &needle)
+bool SolveSpaceUI::ReloadAllImported(const Platform::Path &filename, bool canCancel)
 {
-    std::vector<std::string> result;
+    std::map<Platform::Path, Platform::Path, Platform::PathLess> linkMap;
 
-    size_t oldpos = 0, pos = 0;
-    while(true) {
-        oldpos = pos;
-        pos = haystack.find(needle, pos);
-        if(pos == std::string::npos) break;
-        result.push_back(haystack.substr(oldpos, pos - oldpos));
-        pos += needle.length();
-    }
-
-    if(oldpos != haystack.length() - 1)
-        result.push_back(haystack.substr(oldpos));
-
-    return result;
-}
-
-static std::string Join(const std::vector<std::string> &parts, const std::string &separator)
-{
-    bool first = true;
-    std::string result;
-    for(auto &part : parts) {
-        if(!first) result += separator;
-        result += part;
-        first = false;
-    }
-    return result;
-}
-
-static std::string MakePathRelative(const std::string &base, const std::string &path)
-{
-    std::vector<std::string> baseParts = Split(base, PATH_SEP),
-                             pathParts = Split(path, PATH_SEP),
-                             resultParts;
-    baseParts.pop_back();
-
-    size_t common;
-    for(common = 0; common < baseParts.size() && common < pathParts.size(); common++) {
-        if(!PathEqual(baseParts[common], pathParts[common]))
-            break;
-    }
-
-    for(size_t i = common; i < baseParts.size(); i++)
-        resultParts.push_back("..");
-
-    resultParts.insert(resultParts.end(),
-                       pathParts.begin() + common, pathParts.end());
-
-    return Join(resultParts, PATH_SEP);
-}
-
-static std::string MakePathAbsolute(const std::string &base, const std::string &path)
-{
-    std::vector<std::string> resultParts = Split(base, PATH_SEP),
-                             pathParts = Split(path, PATH_SEP);
-    resultParts.pop_back();
-
-    for(auto &part : pathParts) {
-        if(part == ".") {
-            /* do nothing */
-        } else if(part == "..") {
-            ssassert(!resultParts.empty(), "Relative path pointing outside of root directory");
-            resultParts.pop_back();
-        } else {
-            resultParts.push_back(part);
-        }
-    }
-
-    return Join(resultParts, PATH_SEP);
-}
-
-static void PathSepNormalize(std::string &filename)
-{
-    for(size_t i = 0; i < filename.length(); i++) {
-        if(filename[i] == '\\')
-            filename[i] = '/';
-    }
-}
-
-bool SolveSpaceUI::ReloadAllImported(const std::string &filename, bool canCancel)
-{
-    std::string saveFile = filename.empty() ? SS.saveFile : filename;
-    std::map<std::string, std::string> linkMap;
     allConsistent = false;
+    for(Group &g : SK.group) {
+        if(g.type != Group::Type::LINKED) continue;
 
-    int i;
-    for(i = 0; i < SK.group.n; i++) {
-        Group *g = &(SK.group.elem[i]);
-        if(g->type != Group::Type::LINKED) continue;
+        g.impEntity.Clear();
+        g.impMesh.Clear();
+        g.impShell.Clear();
 
-        if(isalpha(g->linkFile[0]) && g->linkFile[1] == ':') {
-            // Make sure that g->linkFileRel always contains a relative path
-            // in an UNIX format, even after we load an old file which had
-            // the path in Windows format
-            PathSepNormalize(g->linkFileRel);
+        // If we prompted for this specific file before, don't ask again.
+        if(linkMap.count(g.linkFile)) {
+            g.linkFile = linkMap[g.linkFile];
         }
 
-        g->impEntity.Clear();
-        g->impMesh.Clear();
-        g->impShell.Clear();
-
-        if(linkMap.count(g->linkFile)) {
-            std::string newPath = linkMap[g->linkFile];
-            if(!newPath.empty())
-                g->linkFile = newPath;
-        }
-
-        // In a newly created group we only have an absolute path.
-        if(!g->linkFileRel.empty()) {
-            std::string rel = PathSepUnixToPlatform(g->linkFileRel);
-            std::string fromRel = MakePathAbsolute(saveFile, rel);
-            FILE *test = ssfopen(fromRel, "rb");
-            if(test) {
-                fclose(test);
-                // Okay, exists; update the absolute path.
-                g->linkFile = fromRel;
-            } else {
-                // It doesn't exist. Perhaps the file was moved but the tree wasn't, and we
-                // can use the absolute filename to get us back. The relative path will be
-                // updated below.
-            }
-        }
-
-try_load_file:
-        if(LoadEntitiesFromFile(g->linkFile, &(g->impEntity), &(g->impMesh), &(g->impShell)))
-        {
-            if(!saveFile.empty()) {
-                // Record the linked file's name relative to our filename;
-                // if the entire tree moves, then everything will still work
-                std::string rel = MakePathRelative(saveFile, g->linkFile);
-                g->linkFileRel = PathSepPlatformToUnix(rel);
-            } else {
-                // We're not yet saved, so can't make it absolute.
-                // This will only be used for display purposes, as saveFile
-                // is always nonempty when we are actually writing anything.
-                g->linkFileRel = g->linkFile;
-            }
-        } else if(!linkMap.count(g->linkFile)) {
-            switch(LocateImportedFileYesNoCancel(g->linkFileRel, canCancel)) {
+try_again:
+        if(LoadEntitiesFromFile(g.linkFile, &g.impEntity, &g.impMesh, &g.impShell)) {
+            // We loaded the data, good.
+        } else if(linkMap.count(g.linkFile) == 0) {
+            // The file was moved; prompt the user for its new location.
+            switch(LocateImportedFileYesNoCancel(g.linkFile.RelativeTo(filename), canCancel)) {
             case DIALOG_YES: {
-                std::string oldImpFile = g->linkFile;
-                if(!GetOpenFile(&g->linkFile, "", SlvsFileFilter)) {
-                    if(canCancel)
-                        return false;
-                    break;
+                Platform::Path newLinkFile;
+                if(GetOpenFile(&newLinkFile, "", SlvsFileFilter)) {
+                    linkMap[g.linkFile] = newLinkFile;
+                    g.linkFile = newLinkFile;
+                    goto try_again;
                 } else {
-                    linkMap[oldImpFile] = g->linkFile;
-                    goto try_load_file;
+                    if(canCancel) return false;
+                    break;
                 }
             }
 
             case DIALOG_NO:
-                linkMap[g->linkFile] = "";
-                /* Geometry will be pruned by GenerateAll(). */
+                linkMap[g.linkFile].Clear();
+                // Geometry will be pruned by GenerateAll().
                 break;
 
             case DIALOG_CANCEL:
                 return false;
             }
         } else {
-            // User was already asked to and refused to locate a missing
-            // linked file.
+            // User was already asked to and refused to locate a missing linked file.
         }
     }
 

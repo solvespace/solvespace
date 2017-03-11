@@ -32,6 +32,9 @@
 #include <EGL/egl.h>
 #endif
 
+using Platform::Narrow;
+using Platform::Widen;
+
 HINSTANCE Instance;
 
 HWND TextWnd;
@@ -443,9 +446,9 @@ static void ThawWindowPos(HWND hwnd, const std::string &name)
         ShowWindow(hwnd, SW_MAXIMIZE);
 }
 
-void SolveSpace::SetCurrentFilename(const std::string &filename) {
+void SolveSpace::SetCurrentFilename(const Platform::Path &filename) {
     SetWindowTextW(GraphicsWnd,
-        Title(filename.empty() ? C_("title", "(new sketch)") : filename).c_str());
+        Title(filename.IsEmpty() ? C_("title", "(new sketch)") : filename.raw).c_str());
 }
 
 void SolveSpace::SetMousePointerToHand(bool yes) {
@@ -1091,7 +1094,7 @@ static std::string ConvertFilters(const FileFilter ssFilters[]) {
     return filter;
 }
 
-static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &defExtension,
+static bool OpenSaveFile(bool isOpen, Platform::Path *filename, const std::string &defExtension,
                          const FileFilter filters[]) {
     std::string activeExtension = defExtension;
     if(activeExtension == "") {
@@ -1099,11 +1102,10 @@ static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &
     }
 
     std::wstring initialFilenameW;
-    if(filename->empty()) {
+    if(filename->IsEmpty()) {
         initialFilenameW = Widen("untitled");
     } else {
-        initialFilenameW = Widen(Dirname(*filename) + PATH_SEP +
-                                 Basename(*filename, /*stripExtension=*/true));
+        initialFilenameW = Widen(filename->Parent().Join(filename->FileStem()).raw);
     }
     std::wstring selPatternW = Widen(ConvertFilters(filters));
     std::wstring defExtensionW = Widen(defExtension);
@@ -1140,17 +1142,17 @@ static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    if(r) *filename = Narrow(filenameC);
+    if(r) *filename = Platform::Path::From(Narrow(filenameC));
     return r ? true : false;
 }
 
-bool SolveSpace::GetOpenFile(std::string *filename, const std::string &defExtension,
+bool SolveSpace::GetOpenFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
     return OpenSaveFile(/*isOpen=*/true, filename, defExtension, filters);
 }
 
-bool SolveSpace::GetSaveFile(std::string *filename, const std::string &defExtension,
+bool SolveSpace::GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
     return OpenSaveFile(/*isOpen=*/false, filename, defExtension, filters);
@@ -1206,13 +1208,13 @@ DialogChoice SolveSpace::LoadAutosaveYesNo()
     }
 }
 
-DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                                        bool canCancel) {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
     std::string message =
-        "The linked file " + filename + " is not present.\n\n"
+        "The linked file " + filename.raw + " is not present.\n\n"
         "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
@@ -1236,17 +1238,18 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filena
     }
 }
 
-std::vector<std::string> SolveSpace::GetFontFiles() {
-    std::vector<std::string> fonts;
+std::vector<Platform::Path> SolveSpace::GetFontFiles() {
+    std::vector<Platform::Path> fonts;
 
-    std::wstring fontsDir(MAX_PATH, '\0');
-    fontsDir.resize(GetWindowsDirectoryW(&fontsDir[0], fontsDir.length()));
-    fontsDir += L"\\fonts\\";
+    std::wstring fontsDirW(MAX_PATH, '\0');
+    fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
+    fontsDirW += L"\\fonts\\";
+    Platform::Path fontsDir = Platform::Path::From(Narrow(fontsDirW));
 
     WIN32_FIND_DATA wfd;
-    HANDLE h = FindFirstFileW((fontsDir + L"*").c_str(), &wfd);
+    HANDLE h = FindFirstFileW((fontsDirW + L"*").c_str(), &wfd);
     while(h != INVALID_HANDLE_VALUE) {
-        fonts.push_back(Narrow(fontsDir) + Narrow(wfd.cFileName));
+        fonts.push_back(fontsDir.Join(Narrow(wfd.cFileName)));
         if(!FindNextFileW(h, &wfd)) break;
     }
 
@@ -1296,8 +1299,8 @@ static void DoRecent(HMENU m, Command base)
         ;
     int c = 0;
     for(size_t i = 0; i < MAX_RECENT; i++) {
-        if(!RecentFile[i].empty()) {
-            AppendMenuW(m, MF_STRING, (uint32_t)base + i, Widen(RecentFile[i]).c_str());
+        if(!RecentFile[i].IsEmpty()) {
+            AppendMenuW(m, MF_STRING, (uint32_t)base + i, Widen(RecentFile[i].raw).c_str());
             c++;
         }
     }
@@ -1540,7 +1543,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // A filename may have been specified on the command line; if so, then
     // strip any quotation marks, and make it absolute.
     if(args.size() >= 2) {
-        SS.OpenFile(PathFromCurrentDirectory(args[1]));
+        SS.Load(Platform::Path::From(args[1]).Expand(/*fromCurrentDirectory=*/true));
     }
 
     // Repaint one more time, after we've set everything up.

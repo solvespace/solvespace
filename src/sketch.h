@@ -218,8 +218,7 @@ public:
     enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
-    std::string linkFile;
-    std::string linkFileRel;
+    Platform::Path linkFile;
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;

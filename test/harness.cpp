@@ -16,7 +16,7 @@
 
 namespace SolveSpace {
     // These are defined in headless.cpp, and aren't exposed in solvespace.h.
-    extern std::vector<std::string> fontFiles;
+    extern std::vector<Platform::Path> fontFiles;
     extern bool antialias;
     extern std::shared_ptr<Pixmap> framebuffer;
 }
@@ -24,7 +24,6 @@ namespace SolveSpace {
 // The paths in __FILE__ are from the build system, but defined(WIN32) returns
 // the value for the host system.
 #define BUILD_PATH_SEP (__FILE__[0]=='/' ? '/' : '\\')
-#define  HOST_PATH_SEP PATH_SEP
 
 static std::string BuildRoot() {
     static std::string rootDir;
@@ -35,40 +34,24 @@ static std::string BuildRoot() {
     return rootDir;
 }
 
-static std::string HostRoot() {
-    static std::string rootDir;
-    if(!rootDir.empty()) return rootDir;
+static Platform::Path HostRoot() {
+    static Platform::Path rootDir;
+    if(!rootDir.IsEmpty()) return rootDir;
 
     // No especially good way to do this, so let's assume somewhere up from
     // the current directory there's our repository, with CMakeLists.txt, and
     // pivot from there.
-#if defined(WIN32)
-    wchar_t currentDirW[MAX_PATH];
-    GetCurrentDirectoryW(MAX_PATH, currentDirW);
-    rootDir = Narrow(currentDirW);
-#else
-    rootDir = ".";
-#endif
+    rootDir = Platform::Path::CurrentDirectory();
 
     // We're never more than four levels deep.
     for(size_t i = 0; i < 4; i++) {
-        std::string listsPath = rootDir;
-        listsPath += HOST_PATH_SEP;
-        listsPath += "CMakeLists.txt";
-        FILE *f = ssfopen(listsPath, "r");
+        FILE *f = OpenFile(rootDir.Join("CMakeLists.txt"), "r");
         if(f) {
             fclose(f);
-            rootDir += HOST_PATH_SEP;
-            rootDir += "test";
+            rootDir = rootDir.Join("test");
             return rootDir;
         }
-
-        if(rootDir[0] == '.') {
-            rootDir += HOST_PATH_SEP;
-            rootDir += "..";
-        } else {
-            rootDir.erase(rootDir.rfind(HOST_PATH_SEP));
-        }
+        rootDir = rootDir.Parent();
     }
 
     ssassert(false, "Couldn't locate repository root");
@@ -164,14 +147,14 @@ void Test::Helper::PrintFailure(const char *file, int line, std::string msg) {
             BUILD_PATH_SEP, shortFile.c_str(), line, msg.c_str());
 }
 
-std::string Test::Helper::GetAssetPath(std::string testFile, std::string assetName,
-                                       std::string mangle) {
+Platform::Path Test::Helper::GetAssetPath(std::string testFile, std::string assetName,
+                                          std::string mangle) {
     if(!mangle.empty()) {
         assetName.insert(assetName.rfind('.'), "." + mangle);
     }
     testFile.erase(0, BuildRoot().size());
     testFile.erase(testFile.rfind(BUILD_PATH_SEP) + 1);
-    return PathSepUnixToPlatform(HostRoot() + "/" + testFile + assetName);
+    return HostRoot().Join(Platform::Path::FromPortable(testFile + assetName));
 }
 
 bool Test::Helper::CheckBool(const char *file, int line, const char *expr, bool value,
@@ -213,16 +196,16 @@ bool Test::Helper::CheckEqualEpsilon(const char *file, int line, const char *val
 }
 
 bool Test::Helper::CheckLoad(const char *file, int line, const char *fixture) {
-    std::string fixturePath = GetAssetPath(file, fixture);
+    Platform::Path fixturePath = GetAssetPath(file, fixture);
 
-    FILE *f = ssfopen(fixturePath.c_str(), "rb");
+    FILE *f = OpenFile(fixturePath, "rb");
     bool fixtureExists = (f != NULL);
     if(f) fclose(f);
 
     bool result = fixtureExists && SS.LoadFromFile(fixturePath);
     if(!RecordCheck(result)) {
         PrintFailure(file, line,
-                     ssprintf("loading file '%s'", fixturePath.c_str()));
+                     ssprintf("loading file '%s'", fixturePath.raw.c_str()));
         return false;
     } else {
         SS.AfterNewFile();
@@ -233,11 +216,11 @@ bool Test::Helper::CheckLoad(const char *file, int line, const char *fixture) {
 }
 
 bool Test::Helper::CheckSave(const char *file, int line, const char *reference) {
-    std::string refPath = GetAssetPath(file, reference),
-                outPath = GetAssetPath(file, reference, "out");
+    Platform::Path refPath = GetAssetPath(file, reference),
+                   outPath = GetAssetPath(file, reference, "out");
     if(!RecordCheck(SS.SaveToFile(outPath))) {
         PrintFailure(file, line,
-                     ssprintf("saving file '%s'", refPath.c_str()));
+                     ssprintf("saving file '%s'", refPath.raw.c_str()));
         return false;
     } else {
         std::string refData, outData;
@@ -248,7 +231,7 @@ bool Test::Helper::CheckSave(const char *file, int line, const char *reference) 
             return false;
         }
 
-        ssremove(outPath);
+        RemoveFile(outPath);
         return true;
     }
 }
@@ -256,11 +239,11 @@ bool Test::Helper::CheckSave(const char *file, int line, const char *reference) 
 bool Test::Helper::CheckRender(const char *file, int line, const char *reference) {
     PaintGraphics();
 
-    std::string refPath  = GetAssetPath(file, reference),
-                outPath  = GetAssetPath(file, reference, "out"),
-                diffPath = GetAssetPath(file, reference, "diff");
+    Platform::Path refPath  = GetAssetPath(file, reference),
+                   outPath  = GetAssetPath(file, reference, "out"),
+                   diffPath = GetAssetPath(file, reference, "diff");
 
-    std::shared_ptr<Pixmap> refPixmap = Pixmap::ReadPng(refPath.c_str(), /*flip=*/true);
+    std::shared_ptr<Pixmap> refPixmap = Pixmap::ReadPng(refPath, /*flip=*/true);
     if(!RecordCheck(refPixmap && refPixmap->Equals(*framebuffer))) {
         framebuffer->WritePng(outPath, /*flip=*/true);
 
@@ -287,7 +270,7 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
                 }
             }
 
-            diffPixmap->WritePng(diffPath.c_str(), /*flip=*/true);
+            diffPixmap->WritePng(diffPath, /*flip=*/true);
             std::string message =
                 ssprintf("render doesn't match reference; %d (%.2f%%) pixels differ",
                          diffPixelCount,
@@ -296,8 +279,8 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
         }
         return false;
     } else {
-        ssremove(outPath);
-        ssremove(diffPath);
+        RemoveFile(outPath);
+        RemoveFile(diffPath);
         return true;
     }
 }
@@ -336,7 +319,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fontFiles.push_back(HostRoot() + HOST_PATH_SEP + "Gentium-R.ttf");
+    fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
 
     // Different Cairo versions have different antialiasing algorithms.
     antialias = false;

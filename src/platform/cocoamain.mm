@@ -474,9 +474,9 @@ void PaintGraphics() {
     CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, YES);
 }
 
-void SetCurrentFilename(const std::string &filename) {
-    if(!filename.empty()) {
-        [GW setTitleWithRepresentedFilename:Wrap(filename)];
+void SetCurrentFilename(const Platform::Path &filename) {
+    if(!filename.IsEmpty()) {
+        [GW setTitleWithRepresentedFilename:Wrap(filename.raw)];
     } else {
         [GW setTitle:Wrap(C_("title", "(new sketch)"))];
         [GW setRepresentedFilename:@""];
@@ -705,18 +705,17 @@ static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base)
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
     [recent setSubmenu:menu];
 
-    if(std::string(RecentFile[0]).empty()) {
+    if(RecentFile[0].IsEmpty()) {
         NSMenuItem *placeholder = [[NSMenuItem alloc]
             initWithTitle:Wrap(_("(no recent files)")) action:nil keyEquivalent:@""];
         [placeholder setEnabled:NO];
         [menu addItem:placeholder];
     } else {
         for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(std::string(RecentFile[i]).empty())
-                break;
+            if(RecentFile[i].IsEmpty()) break;
 
             NSMenuItem *item = [[NSMenuItem alloc]
-                initWithTitle:[Wrap(RecentFile[i])
+                initWithTitle:[Wrap(RecentFile[i].raw)
                     stringByAbbreviatingWithTildeInPath]
                 action:nil keyEquivalent:@""];
             [item setTag:((uint32_t)base + i)];
@@ -743,7 +742,7 @@ bool MenuBarIsVisible() {
 
 /* Save/load */
 
-bool SolveSpace::GetOpenFile(std::string *file, const std::string &defExtension,
+bool SolveSpace::GetOpenFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter ssFilters[]) {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     NSMutableArray *filters = [[NSMutableArray alloc] init];
@@ -756,8 +755,9 @@ bool SolveSpace::GetOpenFile(std::string *file, const std::string &defExtension,
     [panel setAllowedFileTypes:filters];
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        *file = [[NSFileManager defaultManager]
-            fileSystemRepresentationWithPath:[[panel URL] path]];
+        *filename = Platform::Path::From(
+            [[NSFileManager defaultManager]
+                fileSystemRepresentationWithPath:[[panel URL] path]]);
         return true;
     } else {
         return false;
@@ -784,7 +784,7 @@ bool SolveSpace::GetOpenFile(std::string *file, const std::string &defExtension,
 }
 @end
 
-bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
+bool SolveSpace::GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter ssFilters[]) {
     NSSavePanel *panel = [NSSavePanel savePanel];
 
@@ -823,22 +823,23 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
     }
     [button selectItemAtIndex:extensionIndex];
 
-    if(file->empty()) {
+    if(filename->IsEmpty()) {
         [panel setNameFieldStringValue:
             [Wrap(_("untitled"))
                 stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
     } else {
         [panel setDirectoryURL:
-            [NSURL fileURLWithPath:Wrap(Dirname(*file))
+            [NSURL fileURLWithPath:Wrap(filename->Parent().raw)
                    isDirectory:NO]];
         [panel setNameFieldStringValue:
-            [Wrap(Basename(*file, /*stripExtension=*/true))
+            [Wrap(filename->FileStem())
                 stringByAppendingPathExtension:[extensions objectAtIndex:extensionIndex]]];
     }
 
     if([panel runModal] == NSFileHandlingPanelOKButton) {
-        *file = [[NSFileManager defaultManager]
-            fileSystemRepresentationWithPath:[[panel URL] path]];
+        *filename = Platform::Path::From(
+            [[NSFileManager defaultManager]
+                fileSystemRepresentationWithPath:[[panel URL] path]]);
         return true;
     } else {
         return false;
@@ -847,11 +848,11 @@ bool SolveSpace::GetSaveFile(std::string *file, const std::string &defExtension,
 
 SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel() {
     NSAlert *alert = [[NSAlert alloc] init];
-    if(!std::string(SolveSpace::SS.saveFile).empty()) {
+    if(!SolveSpace::SS.saveFile.IsEmpty()) {
         [alert setMessageText:
             [[@"Do you want to save the changes you made to the sketch “"
              stringByAppendingString:
-                [Wrap(SolveSpace::SS.saveFile)
+                [Wrap(SolveSpace::SS.saveFile.raw)
                     stringByAbbreviatingWithTildeInPath]]
              stringByAppendingString:@"”?"]];
     } else {
@@ -891,10 +892,10 @@ SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo() {
 }
 
 SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
-                            const std::string &filename, bool canCancel) {
+                            const Platform::Path &filename, bool canCancel) {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:
-        Wrap("The linked file “" + filename + "” is not present.")];
+        Wrap("The linked file “" + filename.raw + "” is not present.")];
     [alert setInformativeText:
         Wrap(_("Do you want to locate it manually?\n"
                "If you select “No”, any geometry that depends on "
@@ -1148,8 +1149,8 @@ void SolveSpace::OpenWebsite(const char *url) {
         [NSURL URLWithString:[NSString stringWithUTF8String:url]]];
 }
 
-std::vector<std::string> SolveSpace::GetFontFiles() {
-    std::vector<std::string> fonts;
+std::vector<SolveSpace::Platform::Path> SolveSpace::GetFontFiles() {
+    std::vector<SolveSpace::Platform::Path> fonts;
 
     NSArray *fontNames = [[NSFontManager sharedFontManager] availableFonts];
     for(NSString *fontName in fontNames) {
@@ -1157,8 +1158,9 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
             CTFontDescriptorCreateWithNameAndSize ((__bridge CFStringRef)fontName, 10.0);
         CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fontRef, kCTFontURLAttribute);
         NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
-        fonts.push_back([[NSFileManager defaultManager]
-            fileSystemRepresentationWithPath:fontPath]);
+        fonts.push_back(
+            Platform::Path::From([[NSFileManager defaultManager]
+                fileSystemRepresentationWithPath:fontPath]));
     }
 
     return fonts;
@@ -1191,7 +1193,8 @@ std::vector<std::string> SolveSpace::GetFontFiles() {
 }
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename {
-    return SolveSpace::SS.OpenFile(SolveSpace::PathFromCurrentDirectory([filename UTF8String]));
+    SolveSpace::Platform::Path path = SolveSpace::Platform::Path::From([filename UTF8String]);
+    return SolveSpace::SS.Load(path.Expand(/*fromCurrentDirectory=*/true));
 }
 
 - (IBAction)preferences:(id)sender {

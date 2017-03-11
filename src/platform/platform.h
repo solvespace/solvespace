@@ -1,5 +1,5 @@
 //-----------------------------------------------------------------------------
-// Common platform-dependent functionality.
+// Platform-dependent functionality.
 //
 // Copyright 2017 whitequark
 //-----------------------------------------------------------------------------
@@ -8,6 +8,14 @@
 #define SOLVESPACE_PLATFORM_H
 
 namespace Platform {
+
+// UTF-8 ⟷ UTF-16 conversion, for Windows.
+#if defined(WIN32)
+std::string Narrow(const wchar_t *s);
+std::wstring Widen(const char *s);
+std::string Narrow(const std::wstring &s);
+std::wstring Widen(const std::string &s);
+#endif
 
 // A filesystem path, respecting the conventions of the current platform.
 // Transformation functions return an empty path on error.
@@ -45,6 +53,15 @@ public:
 struct PathLess {
     bool operator()(const Path &a, const Path &b) const { return a.raw < b.raw; }
 };
+
+// File manipulation functions.
+FILE *OpenFile(const Platform::Path &filename, const char *mode);
+bool ReadFile(const Platform::Path &filename, std::string *data);
+bool WriteFile(const Platform::Path &filename, const std::string &data);
+void RemoveFile(const Platform::Path &filename);
+
+// Resource loading function.
+const void *LoadResource(const std::string &name, size_t *size);
 
 }
 

@@ -58,7 +58,7 @@ Vector4f Vector4f::From(const RgbaColor &c) {
 
 static GLuint CompileShader(const std::string &res, GLenum type) {
     size_t size;
-    const char *resData = (const char *)LoadResource(res, &size);
+    const char *resData = (const char *)Platform::LoadResource(res, &size);
 
     // Sigh, here we go... We want to deploy to four platforms: Linux, Windows, OS X, mobile+web.
     // These platforms are basically disjunctive in the OpenGL versions and profiles that they

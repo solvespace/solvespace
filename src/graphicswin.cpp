@@ -943,7 +943,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             break;
 
         case Command::REGEN_ALL:
-            SS.ReloadAllImported();
+            SS.ReloadAllImported(SS.saveFile);
             SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
             SS.ScheduleShowTW();
             break;

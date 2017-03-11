@@ -93,13 +93,13 @@ static bool RunCommand(const std::vector<std::string> args) {
         }
     }
 
-    std::function<void(const std::string &)> runner;
+    std::function<void(const Platform::Path &)> runner;
 
-    std::vector<std::string> inputFiles;
+    std::vector<Platform::Path> inputFiles;
     auto ParseInputFile = [&](size_t &argn) {
         std::string arg = args[argn];
         if(arg[0] != '-') {
-            inputFiles.push_back(arg);
+            inputFiles.push_back(Platform::Path::From(arg));
             return true;
         } else return false;
     };
@@ -190,7 +190,7 @@ static bool RunCommand(const std::vector<std::string> args) {
             return false;
         }
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             SS.GW.width     = width;
             SS.GW.height    = height;
             SS.GW.projRight = projRight;
@@ -218,7 +218,7 @@ static bool RunCommand(const std::vector<std::string> args) {
             return false;
         }
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             SS.GW.projRight   = projRight;
             SS.GW.projUp      = projUp;
             SS.exportChordTol = chordTol;
@@ -235,7 +235,7 @@ static bool RunCommand(const std::vector<std::string> args) {
             }
         }
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             SS.exportChordTol = chordTol;
 
             SS.ExportViewOrWireframeTo(output, /*exportWireframe=*/true);
@@ -250,7 +250,7 @@ static bool RunCommand(const std::vector<std::string> args) {
             }
         }
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             SS.exportChordTol = chordTol;
 
             SS.ExportMeshTo(output);
@@ -264,7 +264,7 @@ static bool RunCommand(const std::vector<std::string> args) {
             }
         }
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(output);
         };
@@ -278,7 +278,7 @@ static bool RunCommand(const std::vector<std::string> args) {
 
         outputPattern = "%.slvs";
 
-        runner = [&](const std::string &output) {
+        runner = [&](const Platform::Path &output) {
             SS.SaveToFile(output);
         };
     } else {
@@ -300,25 +300,21 @@ static bool RunCommand(const std::vector<std::string> args) {
         return false;
     }
 
-    for(const std::string &inputFile : inputFiles) {
-        std::string absInputFile = PathFromCurrentDirectory(inputFile);
+    for(const Platform::Path &inputFile : inputFiles) {
+        Platform::Path absInputFile = inputFile.Expand(/*fromCurrentDirectory=*/true);
 
-        std::string outputFile = outputPattern;
-        size_t replaceAt = outputFile.find('%');
+        Platform::Path outputFile = Platform::Path::From(outputPattern);
+        size_t replaceAt = outputFile.raw.find('%');
         if(replaceAt != std::string::npos) {
-            std::string outputSubst;
-            outputSubst  = Dirname(inputFile);
-            if(!outputSubst.empty()) {
-                outputSubst += PATH_SEP;
-            }
-            outputSubst += Basename(inputFile, /*stripExtension=*/true);
-            outputFile.replace(replaceAt, 1, outputSubst);
+            Platform::Path outputSubst = inputFile.Parent();
+            outputSubst = outputSubst.Join(inputFile.FileStem());
+            outputFile.raw.replace(replaceAt, 1, outputSubst.raw);
         }
-        std::string absOutputFile = PathFromCurrentDirectory(outputFile);
+        Platform::Path absOutputFile = outputFile.Expand(/*fromCurrentDirectory=*/true);
 
         SS.Init();
         if(!SS.LoadFromFile(absInputFile)) {
-            fprintf(stderr, "Cannot load '%s'!\n", inputFile.c_str());
+            fprintf(stderr, "Cannot load '%s'!\n", inputFile.raw.c_str());
             return false;
         }
         SS.AfterNewFile();
@@ -326,7 +322,7 @@ static bool RunCommand(const std::vector<std::string> args) {
         SK.Clear();
         SS.Clear();
 
-        fprintf(stderr, "Written '%s'.\n", outputFile.c_str());
+        fprintf(stderr, "Written '%s'.\n", outputFile.raw.c_str());
     }
 
     return true;

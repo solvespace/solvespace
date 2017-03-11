@@ -148,7 +148,7 @@ void PaintGraphics() {
     cairo_destroy(context);
 }
 
-void SetCurrentFilename(const std::string &filename) {
+void SetCurrentFilename(const Platform::Path &filename) {
 }
 void ToggleFullScreen() {
 }
@@ -210,11 +210,11 @@ bool TextEditControlIsVisible() {
 // Dialogs
 //-----------------------------------------------------------------------------
 
-bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
     ssassert(false, "Not implemented");
 }
-bool GetSaveFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetSaveFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
     ssassert(false, "Not implemented");
 }
@@ -224,7 +224,7 @@ DialogChoice SaveFileYesNoCancel() {
 DialogChoice LoadAutosaveYesNo() {
     ssassert(false, "Not implemented");
 }
-DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                            bool canCancel) {
     ssassert(false, "Not implemented");
 }
@@ -240,8 +240,8 @@ void OpenWebsite(const char *url) {
 // Resources
 //-----------------------------------------------------------------------------
 
-std::vector<std::string> fontFiles;
-std::vector<std::string> GetFontFiles() {
+std::vector<Platform::Path> fontFiles;
+std::vector<Platform::Path> GetFontFiles() {
     return fontFiles;
 }
 

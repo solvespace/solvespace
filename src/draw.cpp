@@ -882,13 +882,13 @@ void GraphicsWindow::Paint() {
     }
 
     // If we've had a screenshot requested, take it now, before the UI is overlaid.
-    if(!SS.screenshotFile.empty()) {
-        FILE *f = ssfopen(SS.screenshotFile, "wb");
+    if(!SS.screenshotFile.IsEmpty()) {
+        FILE *f = OpenFile(SS.screenshotFile, "wb");
         if(!f || !canvas->ReadFrame()->WritePng(f, /*flip=*/true)) {
-            Error("Couldn't write to '%s'", SS.screenshotFile.c_str());
+            Error("Couldn't write to '%s'", SS.screenshotFile.raw.c_str());
         }
         if(f) fclose(f);
-        SS.screenshotFile.clear();
+        SS.screenshotFile.Clear();
     }
 
     // And finally the toolbar.
