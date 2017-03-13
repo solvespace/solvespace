@@ -657,30 +657,6 @@ void GraphicsWindow::DrawPersistent(Canvas *canvas) {
 void GraphicsWindow::Draw(Canvas *canvas) {
     const Camera &camera = canvas->GetCamera();
 
-    if(SS.bgImage.pixmap) {
-        double mmw = SS.bgImage.pixmap->width  / SS.bgImage.scale,
-               mmh = SS.bgImage.pixmap->height / SS.bgImage.scale;
-
-        Vector n = camera.projUp.Cross(camera.projRight);
-        Vector origin = SS.bgImage.origin;
-        origin = origin.DotInToCsys(camera.projRight, camera.projUp, n);
-        // Place the depth of our origin at the point that corresponds to
-        // w = 1, so that it's unaffected by perspective.
-        origin.z = (offset.ScaledBy(-1)).Dot(n);
-        origin = origin.ScaleOutOfCsys(camera.projRight, camera.projUp, n);
-
-        // Place the background at the very back of the Z order.
-        Canvas::Fill fillBackground = {};
-        fillBackground.color = RgbaColor::From(255, 255, 255, 255);
-        fillBackground.layer = Canvas::Layer::BACK;
-        Canvas::hFill hcfBackground = canvas->GetFill(fillBackground);
-
-        canvas->DrawPixmap(SS.bgImage.pixmap,
-                          origin, projRight.ScaledBy(mmw), projUp.ScaledBy(mmh),
-                          { 0.0, 1.0 }, { 1.0, 0.0 },
-                          hcfBackground);
-    }
-
     // Nasty case when we're reloading the linked files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
     // we have to get called to paint ourselves. If the sketch is screwed

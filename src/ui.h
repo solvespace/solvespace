@@ -415,7 +415,6 @@ public:
         STYLE_FILL_COLOR      = 504,
         STYLE_NAME            = 505,
         BACKGROUND_COLOR      = 506,
-        BACKGROUND_IMG_SCALE  = 507,
         STYLE_STIPPLE_PERIOD  = 508,
         // For paste transforming
         PASTE_TIMES_REPEATED  = 600,
@@ -511,7 +510,6 @@ public:
     static void ScreenCreateCustomStyle(int link, uint32_t v);
     static void ScreenLoadFactoryDefaultStyles(int link, uint32_t v);
     static void ScreenAssignSelectionToStyle(int link, uint32_t v);
-    static void ScreenBackgroundImage(int link, uint32_t v);
 
     static void ScreenShowConfiguration(int link, uint32_t v);
     static void ScreenShowEditView(int link, uint32_t v);
@@ -560,7 +558,6 @@ public:
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
     static void ScreenChangeStyleColor(int link, uint32_t v);
     static void ScreenChangeBackgroundColor(int link, uint32_t v);
-    static void ScreenChangeBackgroundImageScale(int link, uint32_t v);
     static void ScreenChangePasteTransformed(int link, uint32_t v);
     static void ScreenChangeViewScale(int link, uint32_t v);
     static void ScreenChangeViewToFullScale(int link, uint32_t v);

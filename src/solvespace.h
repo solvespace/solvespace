@@ -780,11 +780,6 @@ public:
         Vector      ptB;
     } extraLine;
     struct {
-        std::shared_ptr<Pixmap> pixmap;
-        double      scale; // pixels per mm
-        Vector      origin;
-    } bgImage;
-    struct {
         bool        draw, showOrigin;
         Vector      pt, u, v;
     } justExportedInfo;

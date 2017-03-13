@@ -13,6 +13,7 @@ New sketch features:
   * TTF text request has two additional points on the right side, which allow
     constraining the width of text.
   * Image requests can now be created, similar to TTF text requests.
+    This replaces the "style → background image" feature.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
   * When adding a constraint which has a label and is redundant with another
