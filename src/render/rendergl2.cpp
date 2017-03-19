@@ -135,6 +135,7 @@ public:
 
     void NewFrame() override;
     void FlushFrame() override;
+    void Clear() override;
     std::shared_ptr<Pixmap> ReadFrame() override;
 
     void GetIdent(const char **vendor, const char **renderer, const char **version) override;
@@ -659,6 +660,11 @@ void OpenGl2Renderer::FlushFrame() {
     if(error != GL_NO_ERROR) {
         dbp("glGetError() == 0x%X", error);
     }
+}
+
+void OpenGl2Renderer::Clear() {
+    ViewportCanvas::Clear();
+    pixmapCache.CleanupUnused();
 }
 
 std::shared_ptr<Pixmap> OpenGl2Renderer::ReadFrame() {
