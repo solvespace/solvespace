@@ -17,6 +17,7 @@
 #include <glibmm/convert.h>
 #include <giomm/file.h>
 #include <gdkmm/cursor.h>
+#include <gtkmm/cssprovider.h>
 #include <gtkmm/drawingarea.h>
 #include <gtkmm/glarea.h>
 #include <gtkmm/scrollbar.h>
@@ -1409,6 +1410,18 @@ int main(int argc, char** argv) {
     gtk_disable_setlocale();
 
     Gtk::Main main(argc, argv);
+
+    // Add our application-specific styles, to override GTK defaults.
+    Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
+    style_provider->load_from_data(R"(
+    entry {
+        background: white;
+        color: black;
+    }
+    )");
+    Gtk::StyleContext::add_provider_for_screen(Gdk::Screen::get_default(),
+                                               style_provider,
+                                               600 /*Gtk::STYLE_PROVIDER_PRIORITY_APPLICATION*/);
 
 #ifdef HAVE_SPACEWARE
     gdk_window_add_filter(NULL, GdkSpnavFilter, NULL);
