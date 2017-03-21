@@ -395,8 +395,7 @@ void TextWindow::ShowGroupInfo() {
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
 
-    Group *pg; pg = g->PreviousGroup();
-    if(pg && pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
+    if(!g->IsForcedToMeshBySource()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
             g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);

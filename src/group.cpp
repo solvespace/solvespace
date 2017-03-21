@@ -318,6 +318,23 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     SK.GetParam(qz)->val = qg.vz;
 }
 
+bool Group::IsForcedToMeshBySource() const {
+    const Group *srcg = this;
+    if(type == Type::TRANSLATE || type == Type::ROTATE) {
+        // A step and repeat gets merged against the group's prevous group,
+        // not our own previous group.
+        srcg = SK.GetGroup(opA);
+        if(srcg->forceToMesh) return true;
+    }
+    Group *g = srcg->RunningMeshGroup();
+    if(g == NULL) return false;
+    return g->forceToMesh || g->IsForcedToMeshBySource();
+}
+
+bool Group::IsForcedToMesh() const {
+    return forceToMesh || IsForcedToMeshBySource();
+}
+
 std::string Group::DescriptionString() {
     if(name.empty()) {
         return ssprintf("g%03x-%s", h.v, _("(unnamed)"));

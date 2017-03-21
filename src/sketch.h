@@ -234,6 +234,8 @@ public:
     void Generate(EntityList *entity, ParamList *param);
     bool IsSolvedOkay();
     void TransformImportedBy(Vector t, Quaternion q);
+    bool IsForcedToMeshBySource() const;
+    bool IsForcedToMesh() const;
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
@@ -271,8 +273,8 @@ public:
     void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
     void GenerateLoops();
     // And the mesh stuff
-    Group *PreviousGroup();
-    Group *RunningMeshGroup();
+    Group *PreviousGroup() const;
+    Group *RunningMeshGroup() const;
     bool IsMeshGroup();
 
     void GenerateShellAndMesh();

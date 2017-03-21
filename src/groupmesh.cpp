@@ -204,8 +204,14 @@ void Group::GenerateShellAndMesh() {
         srcg = SK.GetGroup(opA);
 
         if(!srcg->suppress) {
-            GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell, srcg->meshCombine);
-            GenerateForStepAndRepeat<SMesh> (&(srcg->thisMesh),  &thisMesh, srcg->meshCombine);
+            if(!IsForcedToMesh()) {
+                GenerateForStepAndRepeat<SShell>(&(srcg->thisShell), &thisShell, srcg->meshCombine);
+            } else {
+                SMesh prevm = {};
+                prevm.MakeFromCopyOf(&srcg->thisMesh);
+                srcg->thisShell.TriangulateInto(&prevm);
+                GenerateForStepAndRepeat<SMesh> (&prevm, &thisMesh, srcg->meshCombine);
+            }
         }
     } else if(type == Type::EXTRUDE && haveSrc) {
         Group *src = SK.GetGroup(opA);
@@ -317,7 +323,7 @@ void Group::GenerateShellAndMesh() {
 
     Group *prevg = srcg->RunningMeshGroup();
 
-    if(prevg->runningMesh.IsEmpty() && thisMesh.IsEmpty() && !forceToMesh) {
+    if(!IsForcedToMesh()) {
         SShell *prevs = &(prevg->runningShell);
         GenerateForBoolean<SShell>(prevs, &thisShell, &runningShell,
             srcg->meshCombine);
@@ -434,7 +440,7 @@ void Group::GenerateDisplayItems() {
     }
 }
 
-Group *Group::PreviousGroup() {
+Group *Group::PreviousGroup() const {
     int i;
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
@@ -444,7 +450,7 @@ Group *Group::PreviousGroup() {
     return SK.GetGroup(SK.groupOrder.elem[i - 1]);
 }
 
-Group *Group::RunningMeshGroup() {
+Group *Group::RunningMeshGroup() const {
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
         return SK.GetGroup(opA)->RunningMeshGroup();
     } else {

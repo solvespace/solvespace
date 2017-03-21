@@ -79,6 +79,8 @@ Bugs fixed:
     spurious changes in the sketch.
   * Points highlighted with "Analyze → Show Degrees of Freedom" are drawn
     on top of all other geometry.
+  * A step rotate/translate group using a group forced to triangle mesh
+    as a source group also gets forced to triangle mesh.
 
 2.3
 ---
