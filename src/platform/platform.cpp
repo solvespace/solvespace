@@ -504,7 +504,7 @@ static Platform::Path ResourcePath(const std::string &name) {
 #    if defined(__linux__)
 static const char *selfSymlink = "/proc/self/exe";
 #    elif defined(__NetBSD__)
-static const char *selfSymlink = "/proc/curproc/exe"
+static const char *selfSymlink = "/proc/curproc/exe";
 #    elif defined(__OpenBSD__) || defined(__FreeBSD__)
 static const char *selfSymlink = "/proc/curproc/file";
 #    else
