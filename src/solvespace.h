@@ -651,6 +651,7 @@ public:
     float    exportOffset;
     bool     fixExportColors;
     bool     drawBackFaces;
+    bool     showContourAreas;
     bool     checkClosedContour;
     bool     showToolbar;
     Platform::Path screenshotFile;

@@ -287,6 +287,7 @@ public:
     void Draw(Canvas *canvas);
     void DrawPolyError(Canvas *canvas);
     void DrawFilledPaths(Canvas *canvas);
+    void DrawContourAreaLabels(Canvas *canvas);
 
     SPolygon GetPolygon();
 

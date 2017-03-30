@@ -49,6 +49,7 @@ New measurement/analysis features:
     "Analyze → Measure Perimeter".
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
+  * New option for displaying areas of closed contours.
   * When selecting a point and a line, projected distance to to current
     workplane is displayed.
 

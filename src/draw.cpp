@@ -693,6 +693,16 @@ void GraphicsWindow::Draw(Canvas *canvas) {
         c.Draw(Constraint::DrawAs::DEFAULT, canvas);
     }
 
+    // Draw areas
+    if(SS.showContourAreas) {
+        for(hGroup hg : SK.groupOrder) {
+            Group *g = SK.GetGroup(hg);
+            if(g->h.v != activeGroup.v) continue;
+            if(!(g->IsVisible())) continue;
+            g->DrawContourAreaLabels(canvas);
+        }
+    }
+
     // Draw the "pending" constraint, i.e. a constraint that would be
     // placed on a line that is almost horizontal or vertical.
     if(SS.GW.pending.operation == Pending::DRAGGING_NEW_LINE_POINT &&

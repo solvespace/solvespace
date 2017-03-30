@@ -151,6 +151,7 @@ public:
     List<SBezierLoop> l;
     Vector normal;
     Vector point;
+    double area;
 
     static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
                                double chordTol,
@@ -158,6 +159,7 @@ public:
                                SBezierList *openContours);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax) const;
+    double SignedArea();
     void MakePwlInto(SPolygon *sp) const;
     void Clear();
 };

@@ -70,6 +70,8 @@ void SolveSpaceUI::Init() {
     drawBackFaces = CnfThawBool(true, "DrawBackFaces");
     // Check that contours are closed and not self-intersecting
     checkClosedContour = CnfThawBool(true, "CheckClosedContour");
+    // Draw closed polygons areas
+    showContourAreas = CnfThawBool(false, "ShowContourAreas");
     // Export shaded triangles in a 2d view
     exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
@@ -191,6 +193,8 @@ void SolveSpaceUI::Exit() {
     CnfFreezeBool(fixExportColors, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeBool(drawBackFaces, "DrawBackFaces");
+    // Draw closed polygons areas
+    CnfFreezeBool(showContourAreas, "ShowContourAreas");
     // Check that contours are closed and not self-intersecting
     CnfFreezeBool(checkClosedContour, "CheckClosedContour");
     // Export shaded triangles in a 2d view

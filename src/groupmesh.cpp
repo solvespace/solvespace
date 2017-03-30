@@ -677,3 +677,38 @@ void Group::DrawFilledPaths(Canvas *canvas) {
     }
 }
 
+void Group::DrawContourAreaLabels(Canvas *canvas) {
+    const Camera &camera = canvas->GetCamera();
+    Vector gr = camera.projRight.ScaledBy(1 / camera.scale);
+    Vector gu = camera.projUp.ScaledBy(1 / camera.scale);
+
+    for(SBezierLoopSet &sbls : bezierLoops.l) {
+        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
+
+        Vector min = sbls.l.elem[0].l.elem[0].ctrl[0];
+        Vector max = min;
+        Vector zero = Vector::From(0.0, 0.0, 0.0);
+        sbls.GetBoundingProjd(Vector::From(1.0, 0.0, 0.0), zero, &min.x, &max.x);
+        sbls.GetBoundingProjd(Vector::From(0.0, 1.0, 0.0), zero, &min.y, &max.y);
+        sbls.GetBoundingProjd(Vector::From(0.0, 0.0, 1.0), zero, &min.z, &max.z);
+
+        Vector mid = min.Plus(max).ScaledBy(0.5);
+
+        hStyle hs = { Style::CONSTRAINT };
+        Canvas::Stroke stroke = Style::Stroke(hs);
+        stroke.layer = Canvas::Layer::FRONT;
+
+        double scale = SS.MmPerUnit();
+        std::string label = ssprintf("%.3f %s²",
+                                     fabs(sbls.SignedArea() / (scale * scale)),
+                                     SS.UnitName());
+
+        double fontHeight = Style::TextHeight(hs);
+        double textWidth  = VectorFont::Builtin()->GetWidth(fontHeight, label),
+               textHeight = VectorFont::Builtin()->GetCapHeight(fontHeight);
+        Vector pos = mid.Minus(gr.ScaledBy(textWidth / 2.0))
+                        .Minus(gu.ScaledBy(textHeight / 2.0));
+        canvas->DrawVectorText(label, fontHeight, pos, gr, gu, canvas->GetStroke(stroke));
+    }
+}
+
