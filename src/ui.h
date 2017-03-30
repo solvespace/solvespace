@@ -146,6 +146,7 @@ enum class Command : uint32_t {
     SHOW_TEXT_WND,
     UNITS_INCHES,
     UNITS_MM,
+    UNITS_METERS,
     FULL_SCREEN,
     // Edit
     UNDO,

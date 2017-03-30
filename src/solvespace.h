@@ -151,7 +151,8 @@ DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
 
 enum class Unit : uint32_t {
     MM = 0,
-    INCHES
+    INCHES,
+    METERS
 };
 
 struct FileFilter;

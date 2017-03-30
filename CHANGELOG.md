@@ -45,12 +45,13 @@ New rendering features:
   * The "Show/hide outlines" button is now independent from "Show/hide edges".
 
 New measurement/analysis features:
+  * New choice for base unit, meters.
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
   * New option for displaying areas of closed contours.
-  * When selecting a point and a line, projected distance to to current
+  * When selecting a point and a line, projected distance to current
     workplane is displayed.
 
 Other new features:
