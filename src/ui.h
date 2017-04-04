@@ -469,6 +469,7 @@ public:
     static void ScreenChangeGridSpacing(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimalDegree(int link, uint32_t v);
+    static void ScreenChangeUseSIPrefixes(int link, uint32_t v);
     static void ScreenChangeExportScale(int link, uint32_t v);
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);

@@ -621,9 +621,11 @@ public:
     int      afterDecimalMm;
     int      afterDecimalInch;
     int      afterDecimalDegree;
+    bool     useSIPrefixes;
     int      autosaveInterval; // in minutes
 
     std::string MmToString(double v);
+    std::string MmToStringSI(double v, int dim = 0);
     std::string DegreeToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(const std::string &s);

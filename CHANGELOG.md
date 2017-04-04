@@ -33,6 +33,8 @@ New constraint features:
     in the text window.
   * When selecting an entity, the constraints applied to it can be selected
     in the text window.
+  * Distance constraint labels can now be formatted to use SI prefixes.
+    Values are edited in the configured unit regardless of label format.
   * It is now possible to turn off automatic creation of horizontal/vertical
     constraints on line segments.
 

@@ -57,6 +57,7 @@ void SolveSpaceUI::Init() {
     afterDecimalMm = settings->ThawInt("AfterDecimalMm", 2);
     afterDecimalInch = settings->ThawInt("AfterDecimalInch", 3);
     afterDecimalDegree = settings->ThawInt("AfterDecimalDegree", 2);
+    useSIPrefixes = settings->ThawBool("UseSIPrefixes", false);
     // Camera tangent (determines perspective)
     cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3);
     // Grid spacing
@@ -231,6 +232,7 @@ void SolveSpaceUI::Exit() {
     settings->FreezeInt("AfterDecimalMm",   (uint32_t)afterDecimalMm);
     settings->FreezeInt("AfterDecimalInch", (uint32_t)afterDecimalInch);
     settings->FreezeInt("AfterDecimalDegree", (uint32_t)afterDecimalDegree);
+    settings->FreezeBool("UseSIPrefixes", useSIPrefixes);
     // Camera tangent (determines perspective)
     settings->FreezeFloat("CameraTangent", (float)cameraTangent);
     // Grid spacing
@@ -307,7 +309,7 @@ double SolveSpaceUI::MmPerUnit() {
 }
 const char *SolveSpaceUI::UnitName() {
     switch(viewUnits) {
-        case Unit::INCHES: return "inch";
+        case Unit::INCHES: return "in";
         case Unit::METERS: return "m";
         case Unit::MM: return "mm";
     }
@@ -315,12 +317,59 @@ const char *SolveSpaceUI::UnitName() {
 }
 
 std::string SolveSpaceUI::MmToString(double v) {
+    v /= MmPerUnit();
     switch(viewUnits) {
-        case Unit::INCHES: return ssprintf("%.*f", afterDecimalInch, v / 25.4);
-        case Unit::METERS: return ssprintf("%.*f", afterDecimalMm, v / 1000.0);
-        case Unit::MM: return ssprintf("%.*f", afterDecimalMm, v);
+        case Unit::INCHES:
+            return ssprintf("%.*f", afterDecimalInch, v);
+        case Unit::METERS:
+        case Unit::MM:
+            return ssprintf("%.*f", afterDecimalMm, v);
     }
     return "";
+}
+static const char *DimToString(int dim) {
+    switch(dim) {
+        case 3: return "³";
+        case 2: return "²";
+        case 1: return "";
+        default: ssassert(false, "Unexpected dimension");
+    }
+}
+static std::pair<int, std::string> SelectSIPrefixMm(int deg) {
+         if(deg >=  3) return {  3, "km" };
+    else if(deg >=  0) return {  0, "m"  };
+    else if(deg >= -2) return { -2, "cm" };
+    else if(deg >= -3) return { -3, "mm" };
+    else if(deg >= -6) return { -6, "µm" };
+    else               return { -9, "nm" };
+}
+static std::pair<int, std::string> SelectSIPrefixInch(int deg) {
+         if(deg >=  0) return {  0, "in"  };
+    else if(deg >= -3) return { -3, "mil" };
+    else               return { -6, "µin" };
+}
+std::string SolveSpaceUI::MmToStringSI(double v, int dim) {
+    bool compact = false;
+    if(dim == 0) {
+        if(!useSIPrefixes) return MmToString(v);
+        compact = true;
+        dim = 1;
+    }
+
+    v /= pow((viewUnits == Unit::INCHES) ? 25.4 : 1000, dim);
+    int vdeg = floor((log10(fabs(v))) / dim);
+    std::string unit;
+    if(fabs(v) > 0.0) {
+        int sdeg = 0;
+        std::tie(sdeg, unit) =
+            (viewUnits == Unit::INCHES)
+            ? SelectSIPrefixInch(vdeg)
+            : SelectSIPrefixMm(vdeg);
+        v /= pow(10.0, sdeg * dim);
+    }
+    int pdeg = ceil(log10(fabs(v) + 1e-10));
+    return ssprintf("%#.*g%s%s%s", pdeg + UnitDigitsAfterDecimal(), v,
+                    compact ? "" : " ", unit.c_str(), DimToString(dim));
 }
 std::string SolveSpaceUI::DegreeToString(double v) {
     if(fabs(v - floor(v)) > 1e-10) {
@@ -777,18 +826,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
 
                 vol += integral;
             }
-
-            std::string msg = ssprintf(_("The volume of the solid model is:\n\n"
-                                         "    %.3f %s^3"),
-                vol / pow(SS.MmPerUnit(), 3),
-                SS.UnitName());
-
-            if(SS.viewUnits == Unit::MM) {
-                msg += ssprintf("\n    %.2f mL", vol/(10*10*10));
-            }
-            msg += _("\n\nCurved surfaces have been approximated as triangles.\n"
-                     "This introduces error, typically of around 1%.");
-            Message("%s", msg.c_str());
+            Message(_("The volume of the solid model is:\n\n"
+                      "    %s\n\n"
+                      "Curved surfaces have been approximated as triangles.\n"
+                      "This introduces error, typically of around 1%%."),
+                SS.MmToStringSI(vol, /*dim=*/3).c_str());
             break;
         }
 
@@ -807,13 +849,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             sp.normal = sp.ComputeNormal();
             sp.FixContourDirections();
             double area = sp.SignedArea();
-            double scale = SS.MmPerUnit();
             Message(_("The area of the region sketched in this group is:\n\n"
-                      "    %.3f %s^2\n\n"
+                      "    %s\n\n"
                       "Curves have been approximated as piecewise linear.\n"
                       "This introduces error, typically of around 1%%."),
-                area / (scale*scale),
-                SS.UnitName());
+                SS.MmToStringSI(area, /*dim=*/2).c_str());
             sel.Clear();
             sp.Clear();
             break;
@@ -829,14 +869,11 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                         perimeter += e.b.Minus(e.a).Magnitude();
                     }
                 }
-
-                double scale = SS.MmPerUnit();
                 Message(_("The total length of the selected entities is:\n\n"
-                          "    %.3f %s\n\n"
+                          "    %s\n\n"
                           "Curves have been approximated as piecewise linear.\n"
                           "This introduces error, typically of around 1%%."),
-                    perimeter / scale,
-                    SS.UnitName());
+                    SS.MmToStringSI(perimeter, /*dim=*/1).c_str());
             } else {
                 Error(_("Bad selection for perimeter; select line segments, arcs, and curves."));
             }

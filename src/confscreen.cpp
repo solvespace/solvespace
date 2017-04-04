@@ -69,6 +69,11 @@ void TextWindow::ScreenChangeDigitsAfterDecimalDegree(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::DIGITS_AFTER_DECIMAL_DEGREE;
 }
 
+void TextWindow::ScreenChangeUseSIPrefixes(int link, uint32_t v) {
+    SS.useSIPrefixes = !SS.useSIPrefixes;
+    SS.GW.Invalidate();
+}
+
 void TextWindow::ScreenChangeExportScale(int link, uint32_t v) {
     SS.TW.ShowEditControl(5, ssprintf("%.3f", (double)SS.exportScale));
     SS.TW.edit.meaning = Edit::EXPORT_SCALE;
@@ -239,15 +244,20 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "%Ba   %s %Fl%Ll%f%D[change]%E",
         SS.MmToString(SS.gridSpacing).c_str(),
         &ScreenChangeGridSpacing, 0);
+
+    Printf(false, "");
     Printf(false, "%Ft digits after decimal point to show%E");
     Printf(false, "%Ba%Ft   distances: %Fd%d %Fl%Ll%f%D[change]%E (e.g. '%s')",
         SS.UnitDigitsAfterDecimal(),
         &ScreenChangeDigitsAfterDecimal, 0,
         SS.MmToString(SS.StringToMm("1.23456789")).c_str());
-    Printf(false, "%Ba%Ft   angles:    %Fd%d %Fl%Ll%f%D[change]%E (e.g. '%s')",
+    Printf(false, "%Bd%Ft   angles:    %Fd%d %Fl%Ll%f%D[change]%E (e.g. '%s')",
         SS.afterDecimalDegree,
         &ScreenChangeDigitsAfterDecimalDegree, 0,
         SS.DegreeToString(1.23456789).c_str());
+    Printf(false, "  %Fd%f%Ll%s  use SI prefixes for distances%E",
+        &ScreenChangeUseSIPrefixes,
+        SS.useSIPrefixes ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "%Ft export scale factor (1:1=mm, 1:25.4=inch)");
