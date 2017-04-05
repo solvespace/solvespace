@@ -378,7 +378,11 @@ void TextWindow::ShowGroupInfo() {
             Printf(false, "%Bd   %Ftopacity%E %@ %f%Lf%Fl[change]%E",
                 g->color.alphaF(),
                 &TextWindow::ScreenOpacity);
-        } else if(g->type == Group::Type::LINKED) {
+        }
+
+        if(g->type == Group::Type::EXTRUDE ||
+           g->type == Group::Type::LATHE ||
+           g->type == Group::Type::LINKED) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);

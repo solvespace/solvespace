@@ -5,8 +5,11 @@ Changelog
 ---
 
 New sketch features:
-  * Extrude, lathe, translate and rotate groups can now use the "assembly"
+  * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
+  * The solid model of extrude and lathe groups can be suppressed,
+    for splitting a single model in multiple parts to export,
+    or if only the generated entities are desired, without the mesh.
   * Translate and rotate groups can create n-dimensional arrays using
     the "difference" and "assembly" boolean operations.
   * A new sketch in workplane group can be created based on existing workplane.
