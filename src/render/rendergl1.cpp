@@ -465,7 +465,7 @@ void OpenGl1Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
 }
 
 //-----------------------------------------------------------------------------
-// A canvas implemented using OpenGL 2 immediate mode.
+// A canvas implemented using OpenGL 3 immediate mode.
 //-----------------------------------------------------------------------------
 
 void OpenGl1Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {

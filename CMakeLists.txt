@@ -43,7 +43,7 @@ set(ENABLE_COVERAGE   OFF CACHE BOOL
 set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
 
-set(OPENGL 2 CACHE STRING "OpenGL version to use (one of: 1 2)")
+set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH    ${CMAKE_BINARY_DIR}/bin)
@@ -137,7 +137,7 @@ if(WIN32)
     list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
 
     if(ENABLE_GUI)
-        if(OPENGL STREQUAL "2")
+        if(OPENGL STREQUAL "3")
             message(STATUS "Using in-tree ANGLE")
             set(ANGLE_STATIC            ON  CACHE INTERNAL "")
             set(ANGLE_ENABLE_D3D9       ON  CACHE INTERNAL "")

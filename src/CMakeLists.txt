@@ -80,10 +80,10 @@ if(SPACEWARE_FOUND)
         ${SPACEWARE_INCLUDE_DIR})
 endif()
 
-if(OPENGL STREQUAL 2)
+if(OPENGL STREQUAL 3)
     set(gl_SOURCES
-        render/gl2shader.cpp
-        render/rendergl2.cpp)
+        render/gl3shader.cpp
+        render/rendergl3.cpp)
 elseif(OPENGL STREQUAL 1)
     set(gl_SOURCES
         render/rendergl1.cpp)
@@ -143,7 +143,7 @@ set(solvespace_core_HEADERS
     ui.h
     platform/platform.h
     render/render.h
-    render/gl2shader.h
+    render/gl3shader.h
     srf/surface.h)
 
 set(solvespace_core_SOURCES

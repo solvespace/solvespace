@@ -4,7 +4,7 @@
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "gl2shader.h"
+#include "gl3shader.h"
 
 namespace SolveSpace {
 

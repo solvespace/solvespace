@@ -4,7 +4,7 @@
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
-#include "gl2shader.h"
+#include "gl3shader.h"
 
 namespace SolveSpace {
 
@@ -39,7 +39,7 @@ public:
     }
 };
 
-// A canvas that uses the core OpenGL 2 profile, for desktop systems.
+// A canvas that uses the core OpenGL 3 profile, for desktop systems.
 class OpenGl2Renderer : public ViewportCanvas {
 public:
     struct SEdgeListItem {
@@ -419,7 +419,7 @@ void OpenGl2Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
 }
 
 //-----------------------------------------------------------------------------
-// A canvas implemented using OpenGL 2 vertex buffer objects.
+// A canvas implemented using OpenGL 3 vertex buffer objects.
 //-----------------------------------------------------------------------------
 
 void OpenGl2Renderer::Init() {
@@ -692,7 +692,7 @@ void OpenGl2Renderer::SetLighting(const Lighting &l) {
 }
 
 //-----------------------------------------------------------------------------
-// A batch canvas implemented using OpenGL 2 vertex buffer objects.
+// A batch canvas implemented using OpenGL 3 vertex buffer objects.
 //-----------------------------------------------------------------------------
 
 class DrawCall {

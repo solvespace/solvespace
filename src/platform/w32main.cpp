@@ -27,7 +27,7 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 #define EGLAPI /*static linkage*/
 #include <EGL/egl.h>
 #endif
@@ -40,7 +40,7 @@ HINSTANCE Instance;
 HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 EGLDisplay TextGlDisplay;
 EGLSurface TextGlSurface;
 EGLContext TextGlContext;
@@ -50,7 +50,7 @@ HGLRC TextGl;
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 EGLDisplay GraphicsGlDisplay;
 EGLSurface GraphicsGlSurface;
 EGLContext GraphicsGlContext;
@@ -457,7 +457,7 @@ void SolveSpace::SetMousePointerToHand(bool yes) {
 
 static void PaintTextWnd()
 {
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     eglMakeCurrent(TextGlDisplay, TextGlSurface, TextGlSurface, TextGlContext);
 
     SS.TW.Paint();
@@ -760,7 +760,7 @@ void SolveSpace::ShowTextWindow(bool visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
                             EGLContext *eglContext) {
     ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
@@ -830,7 +830,7 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
 void SolveSpace::PaintGraphics()
 {
     SS.GW.Paint();
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     eglSwapBuffers(GraphicsGlDisplay, GraphicsGlSurface);
 #else
     SwapBuffers(GetDC(GraphicsWnd));
@@ -1422,7 +1422,7 @@ static void CreateMainWindows()
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     // Now that all our windows exist, set up gl contexts.
     CreateGlContext(TextWnd, &TextGlDisplay, &TextGlSurface, &TextGlContext);
     CreateGlContext(GraphicsWnd, &GraphicsGlDisplay, &GraphicsGlSurface, &GraphicsGlContext);
