@@ -276,7 +276,7 @@ public:
     float fgColorTable[256*3];
 
     enum {
-        CHAR_WIDTH     = 9,
+        CHAR_WIDTH_    = 9,
         CHAR_HEIGHT    = 16,
         LINE_HEIGHT    = 20,
         LEFT_MARGIN    = 6,

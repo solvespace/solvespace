@@ -171,7 +171,7 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     MessageString = str;
     RECT r;
     GetWindowRect(GraphicsWnd, &r);
-    int width  = cols*SS.TW.CHAR_WIDTH + 20,
+    int width  = cols*SS.TW.CHAR_WIDTH_ + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWidth = width;
     MessageHeight = height;
@@ -595,7 +595,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     r->top += extra;
                     break;
             }
-            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH) -
+            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH_) -
                                                 (r->right - r->left);
             if(tooNarrow >= 0) {
                 switch(wParam) {
@@ -1499,7 +1499,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InitCommonControls();
 
     // A monospaced font
-    FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
+    FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH_, 0, 0,
         FW_REGULAR, false,
         false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, L"Lucida Console");

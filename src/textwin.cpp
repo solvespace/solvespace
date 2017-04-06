@@ -259,7 +259,7 @@ void TextWindow::ShowEditControl(int col, const std::string &str, int halfRow) {
     editControl.halfRow = halfRow;
     editControl.col = col;
 
-    int x = LEFT_MARGIN + CHAR_WIDTH*col;
+    int x = LEFT_MARGIN + CHAR_WIDTH_*col;
     int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
     ShowTextEditControl(x, y + 18, str);
@@ -574,7 +574,7 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
             int ox = (int)oldMousePos.x, oy = (int)oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (tooltip.length() + 1) * (CHAR_WIDTH - 1);
+            int tw = (tooltip.length() + 1) * (CHAR_WIDTH_ - 1);
             ox = min(ox, (width - 25) - tw);
             oy = max(oy, 5);
 
@@ -697,7 +697,7 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
     int width, height;
     GetTextWindowSize(&width, &height);
 
-    int px = LEFT_MARGIN + CHAR_WIDTH*editControl.col;
+    int px = LEFT_MARGIN + CHAR_WIDTH_*editControl.col;
     int py = (editControl.halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
     py += LINE_HEIGHT + 5;
@@ -895,8 +895,8 @@ void TextWindow::Paint() {
             if(ltop < (scrollPos-1)) continue;
             if(ltop > scrollPos+halfRows) break;
 
-            for(c = 0; c < min((width/CHAR_WIDTH)+1, (int) MAX_COLS); c++) {
-                int x = LEFT_MARGIN + c*CHAR_WIDTH;
+            for(c = 0; c < min((width/CHAR_WIDTH_)+1, (int) MAX_COLS); c++) {
+                int x = LEFT_MARGIN + c*CHAR_WIDTH_;
                 int y = (ltop-scrollPos)*(LINE_HEIGHT/2) + 4;
 
                 int fg = meta[r][c].fg;
@@ -919,7 +919,7 @@ void TextWindow::Paint() {
                     if(bg != 'd') {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
-                        uiCanvas.DrawRect(x, x + CHAR_WIDTH, y + adj, y + adj + bh,
+                        uiCanvas.DrawRect(x, x + CHAR_WIDTH_, y + adj, y + adj + bh,
                                           /*fillColor=*/bgRgb, /*outlineColor=*/{});
                     }
                 } else if(a == 1) {
@@ -966,8 +966,8 @@ void TextWindow::Paint() {
                                                      fgColorTable[fg*3+1],
                                                      fgColorTable[fg*3+2]);
                         int yp = y + CHAR_HEIGHT;
-                        uiCanvas.DrawLine(LEFT_MARGIN + cs*CHAR_WIDTH, yp,
-                                          LEFT_MARGIN + cf*CHAR_WIDTH, yp,
+                        uiCanvas.DrawLine(LEFT_MARGIN + cs*CHAR_WIDTH_, yp,
+                                          LEFT_MARGIN + cf*CHAR_WIDTH_, yp,
                                           fgRgb);
                     }
                 }
@@ -1029,7 +1029,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
     hoveredCol = 0;
 
     // Find the corresponding character in the text buffer
-    int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH);
+    int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH_);
     int hh = (LINE_HEIGHT)/2;
     y += scrollPos*hh;
     int r;
