@@ -85,7 +85,7 @@ void TextWindow::ShowEditControl(int col, const std::string &str, int halfRow) {
     editControl.halfRow = halfRow;
     editControl.col = col;
 
-    int x = LEFT_MARGIN + CHAR_WIDTH*col;
+    int x = LEFT_MARGIN + CHAR_WIDTH_*col;
     int y = (halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
     ShowTextEditControl(x, y + 18, str);
@@ -447,7 +447,7 @@ void TextWindow::DrawOrHitTestIcons(int how, double mx, double my)
             double ox = oldMousePos.x, oy = oldMousePos.y - LINE_HEIGHT;
             ox += 3;
             oy -= 3;
-            int tw = (str.length() + 1)*(CHAR_WIDTH - 1);
+            int tw = (str.length() + 1)*(CHAR_WIDTH_ - 1);
             ox = min(ox, (double) (width - 25) - tw);
             oy = max(oy, 5.0);
 
@@ -583,7 +583,7 @@ bool TextWindow::DrawOrHitTestColorPicker(int how, bool leftDown,
     int width, height;
     GetTextWindowSize(&width, &height);
 
-    int px = LEFT_MARGIN + CHAR_WIDTH*editControl.col;
+    int px = LEFT_MARGIN + CHAR_WIDTH_*editControl.col;
     int py = (editControl.halfRow - SS.TW.scrollPos)*(LINE_HEIGHT/2);
 
     py += LINE_HEIGHT + 5;
@@ -842,8 +842,8 @@ void TextWindow::Paint(void) {
             if(ltop < (scrollPos-1)) continue;
             if(ltop > scrollPos+halfRows) break;
 
-            for(c = 0; c < min((width/CHAR_WIDTH)+1, (int) MAX_COLS); c++) {
-                int x = LEFT_MARGIN + c*CHAR_WIDTH;
+            for(c = 0; c < min((width/CHAR_WIDTH_)+1, (int) MAX_COLS); c++) {
+                int x = LEFT_MARGIN + c*CHAR_WIDTH_;
                 int y = (ltop-scrollPos)*(LINE_HEIGHT/2) + 4;
 
                 int fg = meta[r][c].fg;
@@ -866,7 +866,7 @@ void TextWindow::Paint(void) {
                         // Move the quad down a bit, so that the descenders
                         // still have the correct background.
                         y += adj;
-                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH, y, y + bh, false);
+                        ssglAxisAlignedQuad(x, x + CHAR_WIDTH_, y, y + bh, false);
                         y -= adj;
                     }
                 } else if(a == 1) {
@@ -912,8 +912,8 @@ void TextWindow::Paint(void) {
                         glLineWidth(1);
                         glBegin(GL_LINES);
                             int yp = y + CHAR_HEIGHT;
-                            glVertex2d(LEFT_MARGIN + cs*CHAR_WIDTH, yp);
-                            glVertex2d(LEFT_MARGIN + cf*CHAR_WIDTH, yp);
+                            glVertex2d(LEFT_MARGIN + cs*CHAR_WIDTH_, yp);
+                            glVertex2d(LEFT_MARGIN + cf*CHAR_WIDTH_, yp);
                         glEnd();
 
                         glEnable(GL_TEXTURE_2D);
@@ -979,7 +979,7 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
     hoveredCol = 0;
 
     // Find the corresponding character in the text buffer
-    int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH);
+    int c = (int)((x - LEFT_MARGIN) / CHAR_WIDTH_);
     int hh = (LINE_HEIGHT)/2;
     y += scrollPos*hh;
     int r;

@@ -218,7 +218,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw = str.length() * (SS.TW.CHAR_WIDTH - 1) + 10,
+            int tw = str.length() * (SS.TW.CHAR_WIDTH_ - 1) + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
             double ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;
