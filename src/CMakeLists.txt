@@ -229,11 +229,14 @@ if(HAVE_GETTEXT)
     file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
 
     string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_pot ${output_pot})
+           gen_output_pot ${output_pot}.gen)
     string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_po ${output_po})
-    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_locale_pos "${locale_pos}")
+           gen_output_po ${output_po}.gen)
+    foreach(locale_po ${locale_pos})
+        string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+               gen_locale_po ${locale_po}.gen)
+        list(APPEND gen_locale_pos ${gen_locale_po})
+    endforeach()
 
     add_custom_command(
         OUTPUT  ${gen_output_pot}
@@ -271,7 +274,7 @@ if(HAVE_GETTEXT)
 
     foreach(locale_po ${locale_pos})
         string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-               gen_locale_po ${locale_po})
+               gen_locale_po ${locale_po}.gen)
 
         get_filename_component(locale_name ${locale_po} NAME_WE)
         if(locale_name STREQUAL "en_US")
