@@ -912,6 +912,7 @@ public:
     hStyle      style;
     std::string str;
     std::string font;
+    Platform::Path file;
     bool        construction;
 
     Vector      point[MAX_POINTS_IN_ENTITY];

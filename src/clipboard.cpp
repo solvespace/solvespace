@@ -104,6 +104,7 @@ void GraphicsWindow::CopySelection() {
         cr.style        = e->style;
         cr.str          = e->str;
         cr.font         = e->font;
+        cr.file         = e->file;
         cr.construction = e->construction;
         {for(int i = 0; i < pts; i++) {
             Vector pt;
@@ -168,6 +169,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         r->style        = cr->style;
         r->str          = cr->str;
         r->font         = cr->font;
+        r->file         = cr->file;
         r->construction = cr->construction;
         // Need to regen to get the right number of points, if extraPoints
         // changed.
