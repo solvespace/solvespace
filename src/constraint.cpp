@@ -737,7 +737,8 @@ void Constraint::MenuConstrain(Command id) {
     if(SK.constraint.FindByIdNoOops(c.h)) {
         Constraint *constraint = SK.GetConstraint(c.h);
         if(SS.TestRankForGroup(c.group) == SolveResult::REDUNDANT_OKAY &&
-           constraint->HasLabel()) {
+                !SK.GetGroup(SS.GW.activeGroup)->allowRedundant &&
+                constraint->HasLabel()) {
             constraint->reference = true;
         }
     }
