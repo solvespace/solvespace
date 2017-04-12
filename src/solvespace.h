@@ -291,6 +291,9 @@ public:
                           bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
+    Param *GetLastParamSubstitution(Param *p);
+    void SubstituteParamsByLast(Expr *e);
+    void SortSubstitutionByDragged(Param *p);
 };
 
 #include "ttf.h"
