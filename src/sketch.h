@@ -622,7 +622,7 @@ public:
     bool        free;
 
     // Used only in the solver
-    hParam      substd;
+    Param       *substd;
 
     static const hParam NO_PARAM;
 
