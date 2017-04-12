@@ -85,6 +85,60 @@ bool System::IsDragged(hParam p) {
     return false;
 }
 
+Param *System::GetLastParamSubstitution(Param *p) {
+    Param *current = p;
+    while(current->substd != NULL) {
+        current = current->substd;
+        if(current == p) {
+            // Break the loop
+            current->substd = NULL;
+            break;
+        }
+    }
+    return current;
+}
+
+void System::SortSubstitutionByDragged(Param *p) {
+    std::vector<Param *> subsParams;
+    Param *by = NULL;
+    Param *current = p;
+    while(current != NULL) {
+        subsParams.push_back(current);
+        if(IsDragged(current->h)) {
+            by = current;
+        }
+        current = current->substd;
+    }
+    if(by == NULL) by = p;
+    for(Param *p : subsParams) {
+       if(p == by) continue;
+       p->substd = by;
+       p->tag = VAR_SUBSTITUTED;
+    }
+    by->substd = NULL;
+    by->tag = 0;
+}
+
+void System::SubstituteParamsByLast(Expr *e) {
+    ssassert(e->op != Expr::Op::PARAM_PTR, "Expected an expression that refer to params via handles");
+
+    if(e->op == Expr::Op::PARAM) {
+        Param *p = param.FindByIdNoOops(e->parh);
+        if(p != NULL) {
+            Param *s = GetLastParamSubstitution(p);
+            if(s != NULL) {
+                e->parh = s->h;
+            }
+        }
+    } else {
+        int c = e->Children();
+        if(c >= 1) {
+            SubstituteParamsByLast(e->a);
+            if(c >= 2) SubstituteParamsByLast(e->b);
+        }
+    }
+}
+
 void System::SolveBySubstitution() {
     for(auto &teq : eq) {
         Expr *tex = teq.e;
@@ -102,25 +156,47 @@ void System::SolveBySubstitution() {
                 continue;
             }
 
-            if(IsDragged(a)) {
-                // A is being dragged, so A should stay, and B should go
-                std::swap(a, b);
+            if(a.v == b.v) {
+                teq->tag = EQ_SUBSTITUTED;
+                continue;
             }
 
-            for(auto &req : eq) {
-                req.e->Substitute(a, b); // A becomes B, B unchanged
-            }
-            for(auto &rp : param) {
-                if(rp.substd == a) {
-                    rp.substd = b;
+            Param *pa = param.FindById(a);
+            Param *pb = param.FindById(b);
+
+            // Take the last substitution of parameter a
+            // This resulted in creation of substitution chains
+            Param *last = GetLastParamSubstitution(pa);
+            last->substd = pb;
+            last->tag = VAR_SUBSTITUTED;
+
+            if(pb->substd != NULL) {
+                // Break the loops
+                GetLastParamSubstitution(pb);
+                // if b loop was broken
+                if(pb->substd == NULL) {
+                    // Clear substitution
+                    pb->tag = 0;
                 }
             }
-            Param *ptr = param.FindById(a);
-            ptr->tag = VAR_SUBSTITUTED;
-            ptr->substd = b;
-
             teq.tag = EQ_SUBSTITUTED;
         }
+    }
+
+    //
+    for(Param &p : param) {
+        SortSubstitutionByDragged(&p);
+    }
+
+    // Substitute all the equations
+    for(auto &req : eq) {
+        SubstituteParamsByLast(req.e);
+    }
+
+    // Substitute all the parameters with last substitutions
+    for(auto &p : param) {
+        if(p.substd == NULL) continue;
+        p.substd = GetLastParamSubstitution(p.substd);
     }
 }
 
@@ -485,7 +561,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     for(auto &p : param) {
         double val;
         if(p.tag == VAR_SUBSTITUTED) {
-            val = param.FindById(p.substd)->val;
+            val = p.substd->val;
         } else {
             val = p.val;
         }
