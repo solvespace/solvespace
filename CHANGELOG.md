@@ -82,6 +82,7 @@ Bugs fixed:
     on top of all other geometry.
   * A step rotate/translate group using a group forced to triangle mesh
     as a source group also gets forced to triangle mesh.
+  * Paste Transformed with a negative scale does not invert arcs.
 
 2.3
 ---
