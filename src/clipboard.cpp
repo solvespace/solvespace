@@ -164,6 +164,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
     // For arcs, reflection involves swapping the endpoints, or otherwise
     // the arc gets inverted.
     auto mapPoint = [scale](hEntity he) {
+        if(he.v == 0) return he;
+
         if(scale < 0) {
             hRequest hr = he.request();
             Request *r = SK.GetRequest(hr);
