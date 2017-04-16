@@ -84,6 +84,13 @@ Bugs fixed:
     as a source group also gets forced to triangle mesh.
   * Paste Transformed with a negative scale does not invert arcs.
 
+2.x
+---
+
+Bug fixes:
+  * Do not crash when changing an unconstrained lathe group between
+    union and difference modes.
+
 2.3
 ---
 
