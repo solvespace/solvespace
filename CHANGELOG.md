@@ -1,6 +1,13 @@
 Changelog
 =========
 
+2.x
+---
+
+Bug fixes:
+  * Do not crash when changing an unconstrained lathe group between
+    union and difference modes.
+
 2.3
 ---
 
