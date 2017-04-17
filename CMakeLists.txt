@@ -103,24 +103,31 @@ if(WIN32)
     include(FindVendoredPackage)
     include(AddVendoredSubdirectory)
 
-    find_vendored_package(Freetype freetype
-        WITH_ZLIB               OFF
-        WITH_BZip2              OFF
-        WITH_PNG                OFF
-        WITH_HarfBuzz           OFF
-        FREETYPE_LIBRARY        freetype
-        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
-
-    find_vendored_package(ZLIB zlib
-        ZLIB_LIBRARY            zlibstatic
-        ZLIB_INCLUDE_DIR        ${CMAKE_SOURCE_DIR}/extlib/zlib)
+    message(STATUS "Using in-tree freetype")
+    add_vendored_subdirectory(extlib/freetype)
+    set(FREETYPE_FOUND       YES)
+    set(WITH_ZLIB            OFF CACHE INTERNAL "")
+    set(WITH_BZip2           OFF CACHE INTERNAL "")
+    set(WITH_PNG             OFF CACHE INTERNAL "")
+    set(WITH_HarfBuzz        OFF CACHE INTERNAL "")    
+    set(FREETYPE_LIBRARY     freetype)
+    set(FREETYPE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/extlib/freetype)
+    list(APPEND FREETYPE_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/freetype)
+    
+    message(STATUS "Using in-tree zlib")
+    add_vendored_subdirectory(extlib/zlib)
+    set(ZLIB_FOUND           YES)
+    set(ZLIB_LIBRARY         zlibstatic)
+    set(ZLIB_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/zlib)
     list(APPEND ZLIB_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/zlib)
-
-    find_vendored_package(PNG libpng
-        SKIP_INSTALL_ALL        ON
-        PNG_LIBRARY             png_static
-        PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
-    list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+ 
+    message(STATUS "Using in-tree libpng")
+    add_vendored_subdirectory(extlib/libpng)
+    set(PNG_FOUND            YES)
+    set(SKIP_INSTALL_ALL     ON CACHE INTERNAL "")
+    set(PNG_LIBRARY          png_static)
+    set(PNG_INCLUDE_DIR      ${CMAKE_SOURCE_DIR}/extlib/libpng)
+    list(APPEND PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
 
     message(STATUS "Using in-tree pixman")
     add_vendored_subdirectory(extlib/pixman)
@@ -252,6 +259,9 @@ if(MSVC)
     # Same for the (C99) __func__ special variable; we use it only in C++ code.
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /D__func__=__FUNCTION__")
 
+    # Increase stack size: Issue #92 - stack overflow when compiling win32
+    set(CMAKE_EXE_LINKER_FLAGS "/STACK:33554432 ${CMAKE_EXE_LINKER_FLAGS}")
+    
     # We rely on these /we flags. They correspond to the GNU-style flags below as
     # follows: /w4062=-Wswitch
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
