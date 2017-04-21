@@ -536,6 +536,17 @@ void SBezierLoopSet::GetBoundingProjd(Vector u, Vector orig,
     }
 }
 
+double SBezierLoopSet::SignedArea() {
+    if(EXACT(area == 0.0)) {
+        SPolygon sp = {};
+        MakePwlInto(&sp);
+        sp.normal = sp.ComputeNormal();
+        area = sp.SignedArea();
+        sp.Clear();
+    }
+    return area;
+}
+
 //-----------------------------------------------------------------------------
 // Convert all the Beziers into piecewise linear form, and assemble that into
 // a polygon, one contour per loop.

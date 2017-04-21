@@ -70,7 +70,7 @@ const FileFilter SlvsFileFilter[] = {
     { NULL, {} }
 };
 // PNG format bitmap
-const FileFilter PngFileFilter[] = {
+const FileFilter RasterFileFilter[] = {
     { N_("PNG file"),                   { "png" } },
     { NULL, {} }
 };
@@ -173,6 +173,7 @@ enum class Command : uint32_t {
     RECTANGLE,
     CUBIC,
     TTF_TEXT,
+    IMAGE,
     SPLIT_CURVES,
     TANGENT_ARC,
     CONSTRUCTION,
@@ -275,7 +276,7 @@ public:
     float fgColorTable[256*3];
 
     enum {
-        CHAR_WIDTH     = 9,
+        CHAR_WIDTH_    = 9,
         CHAR_HEIGHT    = 16,
         LINE_HEIGHT    = 20,
         LEFT_MARGIN    = 6,
@@ -414,7 +415,6 @@ public:
         STYLE_FILL_COLOR      = 504,
         STYLE_NAME            = 505,
         BACKGROUND_COLOR      = 506,
-        BACKGROUND_IMG_SCALE  = 507,
         STYLE_STIPPLE_PERIOD  = 508,
         // For paste transforming
         PASTE_TIMES_REPEATED  = 600,
@@ -510,7 +510,6 @@ public:
     static void ScreenCreateCustomStyle(int link, uint32_t v);
     static void ScreenLoadFactoryDefaultStyles(int link, uint32_t v);
     static void ScreenAssignSelectionToStyle(int link, uint32_t v);
-    static void ScreenBackgroundImage(int link, uint32_t v);
 
     static void ScreenShowConfiguration(int link, uint32_t v);
     static void ScreenShowEditView(int link, uint32_t v);
@@ -518,6 +517,7 @@ public:
 
     static void ScreenChangeFixExportColors(int link, uint32_t v);
     static void ScreenChangeBackFaces(int link, uint32_t v);
+    static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
     static void ScreenChangePwlCurves(int link, uint32_t v);
@@ -560,7 +560,6 @@ public:
     static void ScreenChangeStyleTextAngle(int link, uint32_t v);
     static void ScreenChangeStyleColor(int link, uint32_t v);
     static void ScreenChangeBackgroundColor(int link, uint32_t v);
-    static void ScreenChangeBackgroundImageScale(int link, uint32_t v);
     static void ScreenChangePasteTransformed(int link, uint32_t v);
     static void ScreenChangeViewScale(int link, uint32_t v);
     static void ScreenChangeViewToFullScale(int link, uint32_t v);
@@ -713,6 +712,7 @@ public:
         hConstraint          constraint;
 
         const char          *description;
+        Platform::Path       filename;
 
         bool                 hasSuggestion;
         Constraint::Type     suggestion;

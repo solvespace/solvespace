@@ -101,6 +101,11 @@ void TextWindow::ScreenChangeTurntableNav(int link, uint32_t v) {
     InvalidateGraphics(); // not sure if this is needed after the AnimateOnto, but hey
 }
 
+void TextWindow::ScreenChangeShowContourAreas(int link, uint32_t v) {
+    SS.showContourAreas = !SS.showContourAreas;
+    InvalidateGraphics();
+}
+
 void TextWindow::ScreenChangeCheckClosedContour(int link, uint32_t v) {
     SS.checkClosedContour = !SS.checkClosedContour;
     InvalidateGraphics();
@@ -317,7 +322,9 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  use turntable mouse navigation%E",
         &ScreenChangeTurntableNav,
         SS.turntableNav ? CHECK_TRUE : CHECK_FALSE);
-
+    Printf(false, "  %Fd%f%Ll%s  show areas of closed contours%E",
+        &ScreenChangeShowContourAreas,
+        SS.showContourAreas ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "");
     Printf(false, "%Ft autosave interval (in minutes)%E");
     Printf(false, "%Ba   %d %Fl%Ll%f[change]%E",

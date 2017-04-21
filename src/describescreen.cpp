@@ -195,6 +195,16 @@ void TextWindow::DescribeSelection() {
                 }
                 break;
             }
+            case Entity::Type::IMAGE: {
+                Printf(false, "%FtIMAGE%E");
+                Platform::Path relativePath = e->file.RelativeTo(SS.saveFile.Parent());
+                if(relativePath.IsEmpty()) {
+                    Printf(true, "  file = '%Fi%s%E'", e->file.raw.c_str());
+                } else {
+                    Printf(true, "  file = '%Fi%s%E'", relativePath.raw.c_str());
+                }
+                break;
+            }
 
             default:
                 Printf(true, "%Ft?? ENTITY%E");

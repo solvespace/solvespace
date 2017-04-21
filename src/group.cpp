@@ -228,37 +228,20 @@ void Group::MenuGroup(Command id) {
 
         case Command::GROUP_LINK: {
             g.type = Type::LINKED;
-            if(g.linkFile.empty()) {
+            g.meshCombine = CombineAs::ASSEMBLE;
+            if(g.linkFile.IsEmpty()) {
                 if(!GetOpenFile(&g.linkFile, "", SlvsFileFilter)) return;
             }
 
             // Assign the default name of the group based on the name of
             // the linked file.
-            std::string groupName = g.linkFile;
-            size_t pos;
-
-            pos = groupName.rfind(PATH_SEP);
-            if(pos != std::string::npos)
-                groupName.erase(0, pos + 1);
-
-            pos = groupName.rfind('.');
-            if(pos != std::string::npos)
-                groupName.erase(pos);
-
-            for(size_t i = 0; i < groupName.length(); i++) {
-                if(!(isalnum(groupName[i]) || (unsigned)groupName[i] >= 0x80)) {
+            g.name = g.linkFile.FileStem();
+            for(size_t i = 0; i < g.name.length(); i++) {
+                if(!(isalnum(g.name[i]) || (unsigned)g.name[i] >= 0x80)) {
                     // convert punctuation to dashes
-                    groupName[i] = '-';
+                    g.name[i] = '-';
                 }
             }
-
-            if(groupName.length() > 0) {
-                g.name = groupName;
-            } else {
-                g.name = C_("group-name", "link");
-            }
-
-            g.meshCombine = CombineAs::ASSEMBLE;
             break;
         }
 
@@ -291,7 +274,7 @@ void Group::MenuGroup(Command id) {
     Group *gg = SK.GetGroup(g.h);
 
     if(gg->type == Type::LINKED) {
-        SS.ReloadAllImported();
+        SS.ReloadAllLinked(SS.saveFile);
     }
     gg->clean = false;
     SS.GW.activeGroup = gg->h;
@@ -333,6 +316,23 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
     SK.GetParam(qx)->val = qg.vx;
     SK.GetParam(qy)->val = qg.vy;
     SK.GetParam(qz)->val = qg.vz;
+}
+
+bool Group::IsForcedToMeshBySource() const {
+    const Group *srcg = this;
+    if(type == Type::TRANSLATE || type == Type::ROTATE) {
+        // A step and repeat gets merged against the group's prevous group,
+        // not our own previous group.
+        srcg = SK.GetGroup(opA);
+        if(srcg->forceToMesh) return true;
+    }
+    Group *g = srcg->RunningMeshGroup();
+    if(g == NULL) return false;
+    return g->forceToMesh || g->IsForcedToMeshBySource();
+}
+
+bool Group::IsForcedToMesh() const {
+    return forceToMesh || IsForcedToMeshBySource();
 }
 
 std::string Group::DescriptionString() {
@@ -818,6 +818,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
     en.style = ep->style;
     en.str = ep->str;
     en.font = ep->font;
+    en.file = ep->file;
 
     switch(ep->type) {
         case Entity::Type::WORKPLANE:

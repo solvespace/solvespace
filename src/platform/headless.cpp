@@ -120,11 +120,12 @@ void PaintGraphics() {
     pixmap->format = Pixmap::Format::BGRA;
     pixmap->width  = camera.width;
     pixmap->height = camera.height;
-    pixmap->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, camera.width);
+    pixmap->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, (int)camera.width);
     pixmap->data   = std::vector<uint8_t>(pixmap->stride * pixmap->height);
     cairo_surface_t *surface =
         cairo_image_surface_create_for_data(&pixmap->data[0], CAIRO_FORMAT_RGB24,
-                                            pixmap->width, pixmap->height, pixmap->stride);
+                                            (int)pixmap->width, (int)pixmap->height,
+                                            (int)pixmap->stride);
     cairo_t *context = cairo_create(surface);
 
     CairoRenderer canvas;
@@ -147,7 +148,7 @@ void PaintGraphics() {
     cairo_destroy(context);
 }
 
-void SetCurrentFilename(const std::string &filename) {
+void SetCurrentFilename(const Platform::Path &filename) {
 }
 void ToggleFullScreen() {
 }
@@ -209,11 +210,11 @@ bool TextEditControlIsVisible() {
 // Dialogs
 //-----------------------------------------------------------------------------
 
-bool GetOpenFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
     ssassert(false, "Not implemented");
 }
-bool GetSaveFile(std::string *filename, const std::string &activeOrEmpty,
+bool GetSaveFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
     ssassert(false, "Not implemented");
 }
@@ -223,7 +224,7 @@ DialogChoice SaveFileYesNoCancel() {
 DialogChoice LoadAutosaveYesNo() {
     ssassert(false, "Not implemented");
 }
-DialogChoice LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                            bool canCancel) {
     ssassert(false, "Not implemented");
 }
@@ -239,8 +240,8 @@ void OpenWebsite(const char *url) {
 // Resources
 //-----------------------------------------------------------------------------
 
-std::vector<std::string> fontFiles;
-std::vector<std::string> GetFontFiles() {
+std::vector<Platform::Path> fontFiles;
+std::vector<Platform::Path> GetFontFiles() {
     return fontFiles;
 }
 

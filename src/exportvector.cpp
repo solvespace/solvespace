@@ -582,7 +582,7 @@ void DxfFileWriter::FinishAndCloseFile() {
     constraint = NULL;
 
     if(!WriteFile(filename, stream.str())) {
-        Error("Couldn't write to '%s'", filename.c_str());
+        Error("Couldn't write to '%s'", filename.raw.c_str());
         return;
     }
 

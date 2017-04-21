@@ -633,16 +633,16 @@ public:
         if(data.space != DRW::ModelSpace) return;
         if(addPendingBlockEntity<DRW_Polyline>(data)) return;
 
-        int vNum = data.vertlist.size();
+        size_t vNum = data.vertlist.size();
 
         // Check for closed polyline.
         if((data.flags & 1) != 1) vNum--;
 
         // Correct coordinate system for the case where z=-1, as described in
         // http://paulbourke.net/dataformats/dxf/dxf10.html.
-        bool needSwapX = data.extPoint.z == -1.0;
+        bool needSwapX = (data.extPoint.z == -1.0);
 
-        for(int i = 0; i < vNum; i++) {
+        for(size_t i = 0; i < vNum; i++) {
             DRW_Coord c0 = data.vertlist[i]->basePoint;
             DRW_Coord c1 = data.vertlist[(i + 1) % data.vertlist.size()]->basePoint;
 
@@ -1068,13 +1068,13 @@ public:
     }
 };
 
-static void ImportDwgDxf(const std::string &filename,
+static void ImportDwgDxf(const Platform::Path &filename,
                          std::function<bool(const std::string &data, DRW_Interface *intf)> read) {
-    std::string fileType = ToUpper(Extension(filename));
+    std::string fileType = ToUpper(filename.Extension());
 
     std::string data;
     if(!ReadFile(filename, &data)) {
-        Error("Couldn't read from '%s'", filename.c_str());
+        Error("Couldn't read from '%s'", filename.raw.c_str());
         return;
     }
 
@@ -1107,14 +1107,14 @@ static void ImportDwgDxf(const std::string &filename,
     }
 }
 
-void ImportDxf(const std::string &filename) {
+void ImportDxf(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
         return dxfRW().read(stream, intf, /*ext=*/false);
     });
 }
 
-void ImportDwg(const std::string &filename) {
+void ImportDwg(const Platform::Path &filename) {
     ImportDwgDxf(filename, [](const std::string &data, DRW_Interface *intf) {
         std::stringstream stream(data);
         return dwgR().read(stream, intf, /*ext=*/false);

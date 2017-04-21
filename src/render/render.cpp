@@ -335,7 +335,7 @@ void UiCanvas::DrawBitmapText(const std::string &str, int x, int y, RgbaColor co
 
     for(char32_t codepoint : ReadUTF8(str)) {
         DrawBitmapChar(codepoint, x, y, color, zIndex);
-        x += font->GetWidth(codepoint) * 8;
+        x += (int)font->GetWidth(codepoint) * 8;
     }
 }
 
@@ -441,7 +441,7 @@ void ObjectPicker::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces,
 void ObjectPicker::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                               const Vector &o, const Vector &u, const Vector &v,
                               const Point2d &ta, const Point2d &tb, Canvas::hFill hcf) {
-    ssassert(false, "Not implemented");
+    DrawQuad(o, o.Plus(u), o.Plus(u).Plus(v), o.Plus(v), hcf);
 }
 
 bool ObjectPicker::Pick(std::function<void()> drawFn) {

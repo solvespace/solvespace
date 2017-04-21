@@ -56,7 +56,7 @@ TtfFontList::~TtfFontList() {
 void TtfFontList::LoadAll() {
     if(loaded) return;
 
-    for(const std::string &font : GetFontFiles()) {
+    for(const Platform::Path &font : GetFontFiles()) {
         TtfFont tf = {};
         tf.fontFile = font;
         if(tf.LoadFromFile(fontLibrary))
@@ -127,11 +127,7 @@ double TtfFontList::AspectRatio(const std::string &font, const std::string &str)
 // entities that reference us will store it.
 //-----------------------------------------------------------------------------
 std::string TtfFont::FontFileBaseName() const {
-    std::string baseName = fontFile;
-    size_t pos = baseName.rfind(PATH_SEP);
-    if(pos != std::string::npos)
-        return baseName.erase(0, pos + 1);
-    return "";
+    return fontFile.FileName();
 }
 
 //-----------------------------------------------------------------------------
@@ -142,20 +138,20 @@ std::string TtfFont::FontFileBaseName() const {
 bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
     FT_Open_Args args = {};
     args.flags    = FT_OPEN_PATHNAME;
-    args.pathname = &fontFile[0]; // FT_String is char* for historical reasons
+    args.pathname = &fontFile.raw[0]; // FT_String is char* for historical reasons
 
-    // We don't use ssfopen() here to let freetype do its own memory management.
+    // We don't use OpenFile() here to let freetype do its own memory management.
     // This is OK because on Linux/OS X we just delegate to fopen and on Windows
     // we only look into C:\Windows\Fonts, which has a known short path.
     if(int fterr = FT_Open_Face(fontLibrary, &args, 0, &fontFace)) {
         dbp("freetype: loading font from file '%s' failed: %s",
-            fontFile.c_str(), ft_error_string(fterr));
+            fontFile.raw.c_str(), ft_error_string(fterr));
         return false;
     }
 
     if(int fterr = FT_Select_Charmap(fontFace, FT_ENCODING_UNICODE)) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
-            fontFile.c_str(), ft_error_string(fterr));
+            fontFile.raw.c_str(), ft_error_string(fterr));
         FT_Done_Face(fontFace);
         fontFace = NULL;
         return false;
@@ -336,7 +332,7 @@ void TtfFont::PlotString(const std::string &str,
         data.u       = u;
         data.v       = v;
         data.beziers = sbl;
-        data.factor  = 1.0 / capHeight;
+        data.factor  = (float)(1.0 / capHeight);
         data.bx      = bx;
         if(int fterr = FT_Outline_Decompose(&fontFace->glyph->outline, &outlineFuncs, &data)) {
             dbp("freetype: bezier decomposition failed (gid %d): %s",

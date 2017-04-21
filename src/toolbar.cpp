@@ -24,6 +24,8 @@ static ToolIcon Toolbar[] = {
       N_("Sketch arc of a circle"),                           {} },
     { "text",            Command::TTF_TEXT,
       N_("Sketch curves from text in a TrueType font"),       {} },
+    { "image",           Command::IMAGE,
+      N_("Sketch image from a file"),                         {} },
     { "tangent-arc",     Command::TANGENT_ARC,
       N_("Create tangent arc at selected point"),             {} },
     { "bezier",          Command::CUBIC,
@@ -140,7 +142,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
     int x = 17, y = (int)(height - 52);
 
     int fudge = 8;
-    int h = 32*16 + 3*16 + fudge;
+    int h = 34*16 + 3*16 + fudge;
     int aleft = 0, aright = 66, atop = y+16+fudge/2, abot = y+16-h;
 
     bool withinToolbar =
@@ -187,8 +189,8 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
         if(canvas) {
             canvas->DrawPixmap(icon.pixmap,
-                               x - icon.pixmap->width  / 2,
-                               y - icon.pixmap->height / 2);
+                               x - (int)icon.pixmap->width  / 2,
+                               y - (int)icon.pixmap->height / 2);
 
             if(toolbarHovered == icon.command ||
                (pending.operation == Pending::COMMAND &&
@@ -239,7 +241,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                 }
             }
 
-            int tw = canvas->canvas->GetBitmapFont()->GetWidth(tooltip) * 8 + 10,
+            int tw = (int)canvas->canvas->GetBitmapFont()->GetWidth(tooltip) * 8 + 10,
                 th = SS.TW.LINE_HEIGHT + 2;
 
             int ox = toolbarMouseX + 3, oy = toolbarMouseY + 3;

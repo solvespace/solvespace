@@ -5,13 +5,18 @@ Changelog
 ---
 
 New sketch features:
-  * Extrude, lathe, translate and rotate groups can now use the "assembly"
+  * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
+  * The solid model of extrude and lathe groups can be suppressed,
+    for splitting a single model in multiple parts to export,
+    or if only the generated entities are desired, without the mesh.
   * Translate and rotate groups can create n-dimensional arrays using
     the "difference" and "assembly" boolean operations.
   * A new sketch in workplane group can be created based on existing workplane.
   * TTF text request has two additional points on the right side, which allow
     constraining the width of text.
+  * Image requests can now be created, similar to TTF text requests.
+    This replaces the "style → background image" feature.
   * Irrelevant points (e.g. arc center point) are not counted when estimating
     the bounding box used to compute chord tolerance.
   * When adding a constraint which has a label and is redundant with another
@@ -44,6 +49,7 @@ New measurement/analysis features:
     "Analyze → Measure Perimeter".
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
+  * New option for displaying areas of closed contours.
   * When selecting a point and a line, projected distance to to current
     workplane is displayed.
 
@@ -74,6 +80,9 @@ Bugs fixed:
     spurious changes in the sketch.
   * Points highlighted with "Analyze → Show Degrees of Freedom" are drawn
     on top of all other geometry.
+  * A step rotate/translate group using a group forced to triangle mesh
+    as a source group also gets forced to triangle mesh.
+  * Paste Transformed with a negative scale does not invert arcs.
 
 2.3
 ---

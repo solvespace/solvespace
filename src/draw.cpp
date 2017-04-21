@@ -394,6 +394,9 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
     for(Entity &e : SK.entity) {
         if(!e.IsVisible()) continue;
 
+        // If faces aren't selectable, image entities aren't either.
+        if(e.type == Entity::Type::IMAGE && !showFaces) continue;
+
         // Don't hover whatever's being dragged.
         if(IsFromPending(e.h.request())) {
             // The one exception is when we're creating a new cubic; we
@@ -654,30 +657,6 @@ void GraphicsWindow::DrawPersistent(Canvas *canvas) {
 void GraphicsWindow::Draw(Canvas *canvas) {
     const Camera &camera = canvas->GetCamera();
 
-    if(SS.bgImage.pixmap) {
-        double mmw = SS.bgImage.pixmap->width  / SS.bgImage.scale,
-               mmh = SS.bgImage.pixmap->height / SS.bgImage.scale;
-
-        Vector n = camera.projUp.Cross(camera.projRight);
-        Vector origin = SS.bgImage.origin;
-        origin = origin.DotInToCsys(camera.projRight, camera.projUp, n);
-        // Place the depth of our origin at the point that corresponds to
-        // w = 1, so that it's unaffected by perspective.
-        origin.z = (offset.ScaledBy(-1)).Dot(n);
-        origin = origin.ScaleOutOfCsys(camera.projRight, camera.projUp, n);
-
-        // Place the background at the very back of the Z order.
-        Canvas::Fill fillBackground = {};
-        fillBackground.color = RgbaColor::From(255, 255, 255, 255);
-        fillBackground.layer = Canvas::Layer::BACK;
-        Canvas::hFill hcfBackground = canvas->GetFill(fillBackground);
-
-        canvas->DrawPixmap(SS.bgImage.pixmap,
-                          origin, projRight.ScaledBy(mmw), projUp.ScaledBy(mmh),
-                          { 0.0, 1.0 }, { 1.0, 0.0 },
-                          hcfBackground);
-    }
-
     // Nasty case when we're reloading the linked files; could be that
     // we get an error, so a dialog pops up, and a message loop starts, and
     // we have to get called to paint ourselves. If the sketch is screwed
@@ -712,6 +691,16 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     // Draw the constraints
     for(Constraint &c : SK.constraint) {
         c.Draw(Constraint::DrawAs::DEFAULT, canvas);
+    }
+
+    // Draw areas
+    if(SS.showContourAreas) {
+        for(hGroup hg : SK.groupOrder) {
+            Group *g = SK.GetGroup(hg);
+            if(g->h.v != activeGroup.v) continue;
+            if(!(g->IsVisible())) continue;
+            g->DrawContourAreaLabels(canvas);
+        }
     }
 
     // Draw the "pending" constraint, i.e. a constraint that would be
@@ -882,13 +871,13 @@ void GraphicsWindow::Paint() {
     }
 
     // If we've had a screenshot requested, take it now, before the UI is overlaid.
-    if(!SS.screenshotFile.empty()) {
-        FILE *f = ssfopen(SS.screenshotFile, "wb");
+    if(!SS.screenshotFile.IsEmpty()) {
+        FILE *f = OpenFile(SS.screenshotFile, "wb");
         if(!f || !canvas->ReadFrame()->WritePng(f, /*flip=*/true)) {
-            Error("Couldn't write to '%s'", SS.screenshotFile.c_str());
+            Error("Couldn't write to '%s'", SS.screenshotFile.raw.c_str());
         }
         if(f) fclose(f);
-        SS.screenshotFile.clear();
+        SS.screenshotFile.Clear();
     }
 
     // And finally the toolbar.

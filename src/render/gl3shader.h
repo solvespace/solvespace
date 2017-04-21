@@ -3,8 +3,8 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#ifndef SOLVESPACE_GL2UTILS_H
-#define SOLVESPACE_GL2UTILS_H
+#ifndef SOLVESPACE_GL3SHADER_H
+#define SOLVESPACE_GL3SHADER_H
 
 #ifdef WIN32
 #   define GL_APICALL /*static linkage*/

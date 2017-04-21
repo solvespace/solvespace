@@ -33,10 +33,12 @@ set(libslvs_SOURCES
     expr.cpp
     constraint.cpp
     constrainteq.cpp
-    system.cpp)
+    system.cpp
+    platform/platform.cpp)
 
 set(libslvs_HEADERS
-    solvespace.h)
+    solvespace.h
+    platform/platform.h)
 
 add_library(slvs SHARED
     ${libslvs_SOURCES}
@@ -78,10 +80,10 @@ if(SPACEWARE_FOUND)
         ${SPACEWARE_INCLUDE_DIR})
 endif()
 
-if(OPENGL STREQUAL 2)
+if(OPENGL STREQUAL 3)
     set(gl_SOURCES
-        render/gl2shader.cpp
-        render/rendergl2.cpp)
+        render/gl3shader.cpp
+        render/rendergl3.cpp)
 elseif(OPENGL STREQUAL 1)
     set(gl_SOURCES
         render/rendergl1.cpp)
@@ -139,8 +141,9 @@ set(solvespace_core_HEADERS
     sketch.h
     solvespace.h
     ui.h
+    platform/platform.h
     render/render.h
-    render/gl2shader.h
+    render/gl3shader.h
     srf/surface.h)
 
 set(solvespace_core_SOURCES
@@ -180,6 +183,7 @@ set(solvespace_core_SOURCES
     undoredo.cpp
     util.cpp
     view.cpp
+    platform/platform.cpp
     render/render.cpp
     render/render2d.cpp
     srf/boolean.cpp
@@ -225,11 +229,14 @@ if(HAVE_GETTEXT)
     file(GLOB locale_pos ${CMAKE_CURRENT_SOURCE_DIR}/../res/locales/*.po)
 
     string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_pot ${output_pot})
+           gen_output_pot ${output_pot}.gen)
     string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_output_po ${output_po})
-    string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-           gen_locale_pos "${locale_pos}")
+           gen_output_po ${output_po}.gen)
+    foreach(locale_po ${locale_pos})
+        string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
+               gen_locale_po ${locale_po}.gen)
+        list(APPEND gen_locale_pos ${gen_locale_po})
+    endforeach()
 
     add_custom_command(
         OUTPUT  ${gen_output_pot}
@@ -267,7 +274,7 @@ if(HAVE_GETTEXT)
 
     foreach(locale_po ${locale_pos})
         string(REPLACE ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}
-               gen_locale_po ${locale_po})
+               gen_locale_po ${locale_po}.gen)
 
         get_filename_component(locale_name ${locale_po} NAME_WE)
         if(locale_name STREQUAL "en_US")

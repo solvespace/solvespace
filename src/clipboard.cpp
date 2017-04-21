@@ -104,6 +104,7 @@ void GraphicsWindow::CopySelection() {
         cr.style        = e->style;
         cr.str          = e->str;
         cr.font         = e->font;
+        cr.file         = e->file;
         cr.construction = e->construction;
         {for(int i = 0; i < pts; i++) {
             Vector pt;
@@ -160,6 +161,25 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
            n = wrkpln->NormalN(),
            p = SK.GetEntity(wrkpl->point[0])->PointGetNum();
 
+    // For arcs, reflection involves swapping the endpoints, or otherwise
+    // the arc gets inverted.
+    auto mapPoint = [scale](hEntity he) {
+        if(he.v == 0) return he;
+
+        if(scale < 0) {
+            hRequest hr = he.request();
+            Request *r = SK.GetRequest(hr);
+            if(r->type == Request::Type::ARC_OF_CIRCLE) {
+                if(he.v == hr.entity(2).v) {
+                    return hr.entity(3);
+                } else if(he.v == hr.entity(3).v) {
+                    return hr.entity(2);
+                }
+            }
+        }
+        return he;
+    };
+
     ClipboardRequest *cr;
     for(cr = SS.clipboard.r.First(); cr; cr = SS.clipboard.r.NextAfter(cr)) {
         hRequest hr = AddRequest(cr->type, /*rememberForUndo=*/false);
@@ -168,6 +188,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         r->style        = cr->style;
         r->str          = cr->str;
         r->font         = cr->font;
+        r->file         = cr->file;
         r->construction = cr->construction;
         // Need to regen to get the right number of points, if extraPoints
         // changed.
@@ -192,7 +213,7 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
             pt = pt.RotatedAbout(n, theta);
             pt = pt.Plus(trans);
             int j = (r->type == Request::Type::DATUM_POINT) ? i : i + 1;
-            SK.GetEntity(hr.entity(j))->PointForceTo(pt);
+            SK.GetEntity(mapPoint(hr.entity(j)))->PointForceTo(pt);
         }
         if(hasDistance) {
             SK.GetEntity(hr.entity(64))->DistanceForceTo(
@@ -214,8 +235,8 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
         c.workplane = SS.GW.ActiveWorkplane();
         c.type = cc->type;
         c.valA = cc->valA;
-        c.ptA = SS.clipboard.NewEntityFor(cc->ptA);
-        c.ptB = SS.clipboard.NewEntityFor(cc->ptB);
+        c.ptA = SS.clipboard.NewEntityFor(mapPoint(cc->ptA));
+        c.ptB = SS.clipboard.NewEntityFor(mapPoint(cc->ptB));
         c.entityA = SS.clipboard.NewEntityFor(cc->entityA);
         c.entityB = SS.clipboard.NewEntityFor(cc->entityB);
         c.entityC = SS.clipboard.NewEntityFor(cc->entityC);

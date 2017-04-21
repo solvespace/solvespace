@@ -27,17 +27,20 @@
 #   undef uint32_t  // thanks but no thanks
 #endif
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 #define EGLAPI /*static linkage*/
 #include <EGL/egl.h>
 #endif
+
+using Platform::Narrow;
+using Platform::Widen;
 
 HINSTANCE Instance;
 
 HWND TextWnd;
 HWND TextWndScrollBar;
 HWND TextEditControl;
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 EGLDisplay TextGlDisplay;
 EGLSurface TextGlSurface;
 EGLContext TextGlContext;
@@ -47,7 +50,7 @@ HGLRC TextGl;
 
 HWND GraphicsWnd;
 HWND GraphicsEditControl;
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 EGLDisplay GraphicsGlDisplay;
 EGLSurface GraphicsGlSurface;
 EGLContext GraphicsGlContext;
@@ -168,7 +171,7 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     MessageString = str;
     RECT r;
     GetWindowRect(GraphicsWnd, &r);
-    int width  = cols*SS.TW.CHAR_WIDTH + 20,
+    int width  = cols*SS.TW.CHAR_WIDTH_ + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWidth = width;
     MessageHeight = height;
@@ -443,9 +446,9 @@ static void ThawWindowPos(HWND hwnd, const std::string &name)
         ShowWindow(hwnd, SW_MAXIMIZE);
 }
 
-void SolveSpace::SetCurrentFilename(const std::string &filename) {
+void SolveSpace::SetCurrentFilename(const Platform::Path &filename) {
     SetWindowTextW(GraphicsWnd,
-        Title(filename.empty() ? C_("title", "(new sketch)") : filename).c_str());
+        Title(filename.IsEmpty() ? C_("title", "(new sketch)") : filename.raw).c_str());
 }
 
 void SolveSpace::SetMousePointerToHand(bool yes) {
@@ -454,7 +457,7 @@ void SolveSpace::SetMousePointerToHand(bool yes) {
 
 static void PaintTextWnd()
 {
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     eglMakeCurrent(TextGlDisplay, TextGlSurface, TextGlSurface, TextGlContext);
 
     SS.TW.Paint();
@@ -592,7 +595,7 @@ LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     r->top += extra;
                     break;
             }
-            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH) -
+            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH_) -
                                                 (r->right - r->left);
             if(tooNarrow >= 0) {
                 switch(wParam) {
@@ -757,7 +760,7 @@ void SolveSpace::ShowTextWindow(bool visible)
     ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
 }
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
 static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
                             EGLContext *eglContext) {
     ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
@@ -827,7 +830,7 @@ static void CreateGlContext(HWND hwnd, HGLRC *glrc)
 void SolveSpace::PaintGraphics()
 {
     SS.GW.Paint();
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     eglSwapBuffers(GraphicsGlDisplay, GraphicsGlSurface);
 #else
     SwapBuffers(GetDC(GraphicsWnd));
@@ -867,7 +870,7 @@ void SolveSpace::ToggleFullScreen()
 }
 bool SolveSpace::FullScreenIsActive()
 {
-    return GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW;
+    return (GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW) != 0;
 }
 
 void SolveSpace::InvalidateText()
@@ -1091,7 +1094,7 @@ static std::string ConvertFilters(const FileFilter ssFilters[]) {
     return filter;
 }
 
-static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &defExtension,
+static bool OpenSaveFile(bool isOpen, Platform::Path *filename, const std::string &defExtension,
                          const FileFilter filters[]) {
     std::string activeExtension = defExtension;
     if(activeExtension == "") {
@@ -1099,11 +1102,10 @@ static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &
     }
 
     std::wstring initialFilenameW;
-    if(filename->empty()) {
+    if(filename->IsEmpty()) {
         initialFilenameW = Widen("untitled");
     } else {
-        initialFilenameW = Widen(Dirname(*filename) + PATH_SEP +
-                                 Basename(*filename, /*stripExtension=*/true));
+        initialFilenameW = Widen(filename->Parent().Join(filename->FileStem()).raw);
     }
     std::wstring selPatternW = Widen(ConvertFilters(filters));
     std::wstring defExtensionW = Widen(defExtension);
@@ -1140,17 +1142,17 @@ static bool OpenSaveFile(bool isOpen, std::string *filename, const std::string &
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
 
-    if(r) *filename = Narrow(filenameC);
+    if(r) *filename = Platform::Path::From(Narrow(filenameC));
     return r ? true : false;
 }
 
-bool SolveSpace::GetOpenFile(std::string *filename, const std::string &defExtension,
+bool SolveSpace::GetOpenFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
     return OpenSaveFile(/*isOpen=*/true, filename, defExtension, filters);
 }
 
-bool SolveSpace::GetSaveFile(std::string *filename, const std::string &defExtension,
+bool SolveSpace::GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                              const FileFilter filters[])
 {
     return OpenSaveFile(/*isOpen=*/false, filename, defExtension, filters);
@@ -1206,13 +1208,13 @@ DialogChoice SolveSpace::LoadAutosaveYesNo()
     }
 }
 
-DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filename,
+DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                                        bool canCancel) {
     EnableWindow(GraphicsWnd, false);
     EnableWindow(TextWnd, false);
 
     std::string message =
-        "The linked file " + filename + " is not present.\n\n"
+        "The linked file " + filename.raw + " is not present.\n\n"
         "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
@@ -1236,17 +1238,18 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const std::string &filena
     }
 }
 
-std::vector<std::string> SolveSpace::GetFontFiles() {
-    std::vector<std::string> fonts;
+std::vector<Platform::Path> SolveSpace::GetFontFiles() {
+    std::vector<Platform::Path> fonts;
 
-    std::wstring fontsDir(MAX_PATH, '\0');
-    fontsDir.resize(GetWindowsDirectoryW(&fontsDir[0], fontsDir.length()));
-    fontsDir += L"\\fonts\\";
+    std::wstring fontsDirW(MAX_PATH, '\0');
+    fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
+    fontsDirW += L"\\fonts\\";
+    Platform::Path fontsDir = Platform::Path::From(Narrow(fontsDirW));
 
     WIN32_FIND_DATA wfd;
-    HANDLE h = FindFirstFileW((fontsDir + L"*").c_str(), &wfd);
+    HANDLE h = FindFirstFileW((fontsDirW + L"*").c_str(), &wfd);
     while(h != INVALID_HANDLE_VALUE) {
-        fonts.push_back(Narrow(fontsDir) + Narrow(wfd.cFileName));
+        fonts.push_back(fontsDir.Join(Narrow(wfd.cFileName)));
         if(!FindNextFileW(h, &wfd)) break;
     }
 
@@ -1296,8 +1299,8 @@ static void DoRecent(HMENU m, Command base)
         ;
     int c = 0;
     for(size_t i = 0; i < MAX_RECENT; i++) {
-        if(!RecentFile[i].empty()) {
-            AppendMenuW(m, MF_STRING, (uint32_t)base + i, Widen(RecentFile[i]).c_str());
+        if(!RecentFile[i].IsEmpty()) {
+            AppendMenuW(m, MF_STRING, (uint32_t)base + i, Widen(RecentFile[i].raw).c_str());
             c++;
         }
     }
@@ -1419,7 +1422,7 @@ static void CreateMainWindows()
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
 
-#if HAVE_OPENGL == 2
+#if HAVE_OPENGL == 3
     // Now that all our windows exist, set up gl contexts.
     CreateGlContext(TextWnd, &TextGlDisplay, &TextGlSurface, &TextGlContext);
     CreateGlContext(GraphicsWnd, &GraphicsGlDisplay, &GraphicsGlSurface, &GraphicsGlContext);
@@ -1496,7 +1499,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     InitCommonControls();
 
     // A monospaced font
-    FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH, 0, 0,
+    FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH_, 0, 0,
         FW_REGULAR, false,
         false, false, ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
         DEFAULT_QUALITY, FF_DONTCARE, L"Lucida Console");
@@ -1540,7 +1543,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // A filename may have been specified on the command line; if so, then
     // strip any quotation marks, and make it absolute.
     if(args.size() >= 2) {
-        SS.OpenFile(PathFromCurrentDirectory(args[1]));
+        SS.Load(Platform::Path::From(args[1]).Expand(/*fromCurrentDirectory=*/true));
     }
 
     // Repaint one more time, after we've set everything up.

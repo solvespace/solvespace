@@ -11,7 +11,7 @@
 
 class TtfFont {
 public:
-    std::string     fontFile;
+    Platform::Path  fontFile;
     std::string     name;
     FT_FaceRec_    *fontFace;
     double          capHeight;

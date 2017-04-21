@@ -107,7 +107,6 @@ void Style::LoadFactoryDefaults() {
         FillDefaultStyle(s, d, /*factory=*/true);
     }
     SS.backgroundColor = RGBi(0, 0, 0);
-    SS.bgImage.pixmap = nullptr;
 }
 
 void Style::FreezeDefaultStyles() {
@@ -389,31 +388,6 @@ void TextWindow::ScreenChangeBackgroundColor(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::BACKGROUND_COLOR;
 }
 
-void TextWindow::ScreenBackgroundImage(int link, uint32_t v) {
-    SS.bgImage.pixmap = nullptr;
-
-    if(link == 'l') {
-        std::string bgImageFile;
-        if(GetOpenFile(&bgImageFile, "", PngFileFilter)) {
-            FILE *f = ssfopen(bgImageFile, "rb");
-            if(f) {
-                SS.bgImage.pixmap = Pixmap::ReadPng(f);
-                SS.bgImage.scale  = SS.GW.scale;
-                SS.bgImage.origin = SS.GW.offset.ScaledBy(-1);
-                fclose(f);
-            } else {
-                Error("Error reading PNG file '%s'", bgImageFile.c_str());
-            }
-        }
-    }
-    SS.ScheduleShowTW();
-}
-
-void TextWindow::ScreenChangeBackgroundImageScale(int link, uint32_t v) {
-    SS.TW.edit.meaning = Edit::BACKGROUND_IMG_SCALE;
-    SS.TW.ShowEditControl(10, ssprintf("%.3f", SS.bgImage.scale * SS.MmPerUnit()));
-}
-
 void TextWindow::ShowListOfStyles() {
     Printf(true, "%Ft color  style-name");
 
@@ -440,25 +414,6 @@ void TextWindow::ShowListOfStyles() {
     Printf(false, "%Ba   %@, %@, %@ %Fl%D%f%Ll[change]%E",
         rgb.redF(), rgb.greenF(), rgb.blueF(),
         top[rows-1] + 2, &ScreenChangeBackgroundColor);
-
-    Printf(false, "");
-    Printf(false, "%Ft background bitmap image%E");
-    if(SS.bgImage.pixmap) {
-        Printf(false, "%Ba   %Ftwidth:%E %dpx   %Ftheight:%E %dpx",
-            SS.bgImage.pixmap->width, SS.bgImage.pixmap->height);
-
-        Printf(false, "   %Ftscale:%E %# px/%s %Fl%Ll%f%D[change]%E",
-            SS.bgImage.scale*SS.MmPerUnit(),
-            SS.UnitName(),
-            &ScreenChangeBackgroundImageScale, top[rows-1] + 2);
-
-        Printf(false, "%Ba   %Fl%Lc%fclear background image%E",
-            &ScreenBackgroundImage);
-    } else {
-        Printf(false, "%Ba   none - %Fl%Ll%fload background image%E",
-            &ScreenBackgroundImage);
-        Printf(false, "   (bottom left will be center of view)");
-    }
 
     Printf(false, "");
     Printf(false, "  %Fl%Ll%fload factory defaults%E",
@@ -709,18 +664,6 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             }
             break;
 
-        case Edit::BACKGROUND_IMG_SCALE: {
-            Expr *e = Expr::From(str, true);
-            if(e) {
-                double ev = e->Eval();
-                if(ev < 0.001 || isnan(ev)) {
-                    Error(_("Scale must not be zero or negative!"));
-                } else {
-                    SS.bgImage.scale = ev / SS.MmPerUnit();
-                }
-            }
-            break;
-        }
         default: return false;
     }
     SS.GW.persistentDirty = true;

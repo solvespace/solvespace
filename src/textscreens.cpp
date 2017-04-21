@@ -327,7 +327,12 @@ void TextWindow::ShowGroupInfo() {
         }
     } else if(g->type == Group::Type::LINKED) {
         Printf(true, " %Ftlink geometry from file%E");
-        Printf(false, "%Ba   '%s'", g->linkFileRel.c_str());
+        Platform::Path relativePath = g->linkFile.RelativeTo(SS.saveFile.Parent());
+        if(relativePath.IsEmpty()) {
+            Printf(false, "%Ba   '%s'", g->linkFile.raw.c_str());
+        } else {
+            Printf(false, "%Ba   '%s'", relativePath.raw.c_str());
+        }
         Printf(false, "%Bd   %Ftscaled by%E %# %Fl%Ll%f%D[change]%E",
             g->scale,
             &TextWindow::ScreenChangeGroupScale, g->h.v);
@@ -373,7 +378,11 @@ void TextWindow::ShowGroupInfo() {
             Printf(false, "%Bd   %Ftopacity%E %@ %f%Lf%Fl[change]%E",
                 g->color.alphaF(),
                 &TextWindow::ScreenOpacity);
-        } else if(g->type == Group::Type::LINKED) {
+        }
+
+        if(g->type == Group::Type::EXTRUDE ||
+           g->type == Group::Type::LATHE ||
+           g->type == Group::Type::LINKED) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);
@@ -386,8 +395,7 @@ void TextWindow::ShowGroupInfo() {
         &TextWindow::ScreenChangeGroupOption,
         g->visible ? CHECK_TRUE : CHECK_FALSE);
 
-    Group *pg; pg = g->PreviousGroup();
-    if(pg && pg->runningMesh.IsEmpty() && g->thisMesh.IsEmpty()) {
+    if(!g->IsForcedToMeshBySource()) {
         Printf(false, " %f%Lf%Fd%s  force NURBS surfaces to triangle mesh",
             &TextWindow::ScreenChangeGroupOption,
             g->forceToMesh ? CHECK_TRUE : CHECK_FALSE);

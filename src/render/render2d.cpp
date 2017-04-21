@@ -318,9 +318,9 @@ void SurfaceRenderer::OutputInPaintOrder() {
         int   aZIndex = a.second,
               bZIndex = b.second;
 
-        int aLayerIndex =
+        size_t aLayerIndex =
             std::find(std::begin(stackup), std::end(stackup), aLayer) - std::begin(stackup);
-        int bLayerIndex =
+        size_t bLayerIndex =
             std::find(std::begin(stackup), std::end(stackup), bLayer) - std::begin(stackup);
         if(aLayerIndex == bLayerIndex) {
             return aZIndex < bZIndex;

@@ -10,7 +10,7 @@
 SolveSpaceUI SolveSpace::SS = {};
 Sketch SolveSpace::SK = {};
 
-std::string SolveSpace::RecentFile[MAX_RECENT] = {};
+Platform::Path SolveSpace::RecentFile[MAX_RECENT] = {};
 
 void SolveSpaceUI::Init() {
 #if !defined(HEADLESS)
@@ -72,6 +72,8 @@ void SolveSpaceUI::Init() {
     checkClosedContour = CnfThawBool(true, "CheckClosedContour");
     // Use turntable mouse navigation
     turntableNav = CnfThawBool(false, "TurntableNav");
+    // Draw closed polygons areas
+    showContourAreas = CnfThawBool(false, "ShowContourAreas");
     // Export shaded triangles in a 2d view
     exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
     // Export pwl curves (instead of exact) always
@@ -99,7 +101,7 @@ void SolveSpaceUI::Init() {
     showToolbar = CnfThawBool(true, "ShowToolbar");
     // Recent files menus
     for(size_t i = 0; i < MAX_RECENT; i++) {
-        RecentFile[i] = CnfThawString("", "RecentFile_" + std::to_string(i));
+        RecentFile[i] = Platform::Path::From(CnfThawString("", "RecentFile_" + std::to_string(i)));
     }
     RefreshRecentMenus();
     // Autosave timer
@@ -120,10 +122,10 @@ void SolveSpaceUI::Init() {
     AfterNewFile();
 }
 
-bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
-    std::string autosaveFile = filename + AUTOSAVE_SUFFIX;
+bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
+    Platform::Path autosaveFile = filename.WithExtension(AUTOSAVE_EXT);
 
-    FILE *f = ssfopen(autosaveFile, "rb");
+    FILE *f = OpenFile(autosaveFile, "rb");
     if(!f)
         return false;
     fclose(f);
@@ -136,14 +138,14 @@ bool SolveSpaceUI::LoadAutosaveFor(const std::string &filename) {
     return false;
 }
 
-bool SolveSpaceUI::OpenFile(const std::string &filename) {
+bool SolveSpaceUI::Load(const Platform::Path &filename) {
     bool autosaveLoaded = LoadAutosaveFor(filename);
     bool fileLoaded = autosaveLoaded || LoadFromFile(filename, /*canCancel=*/true);
     if(fileLoaded) {
         saveFile = filename;
         AddToRecentList(filename);
     } else {
-        saveFile = "";
+        saveFile.Clear();
         NewFile();
     }
     AfterNewFile();
@@ -154,7 +156,7 @@ bool SolveSpaceUI::OpenFile(const std::string &filename) {
 void SolveSpaceUI::Exit() {
     // Recent files
     for(size_t i = 0; i < MAX_RECENT; i++)
-        CnfFreezeString(RecentFile[i], "RecentFile_" + std::to_string(i));
+        CnfFreezeString(RecentFile[i].raw, "RecentFile_" + std::to_string(i));
     // Model colors
     for(size_t i = 0; i < MODEL_COLORS; i++)
         CnfFreezeColor(modelColor[i], "ModelColor_" + std::to_string(i));
@@ -193,6 +195,8 @@ void SolveSpaceUI::Exit() {
     CnfFreezeBool(fixExportColors, "FixExportColors");
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
     CnfFreezeBool(drawBackFaces, "DrawBackFaces");
+    // Draw closed polygons areas
+    CnfFreezeBool(showContourAreas, "ShowContourAreas");
     // Check that contours are closed and not self-intersecting
     CnfFreezeBool(checkClosedContour, "CheckClosedContour");
     // Use turntable mouse navigation
@@ -346,18 +350,18 @@ void SolveSpaceUI::AfterNewFile() {
     UpdateWindowTitle();
 }
 
-void SolveSpaceUI::RemoveFromRecentList(const std::string &filename) {
+void SolveSpaceUI::RemoveFromRecentList(const Platform::Path &filename) {
     int dest = 0;
     for(int src = 0; src < (int)MAX_RECENT; src++) {
-        if(filename != RecentFile[src]) {
+        if(!filename.Equals(RecentFile[src])) {
             if(src != dest) RecentFile[dest] = RecentFile[src];
             dest++;
         }
     }
-    while(dest < (int)MAX_RECENT) RecentFile[dest++].clear();
+    while(dest < (int)MAX_RECENT) RecentFile[dest++].Clear();
     RefreshRecentMenus();
 }
-void SolveSpaceUI::AddToRecentList(const std::string &filename) {
+void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
     RemoveFromRecentList(filename);
 
     for(int src = MAX_RECENT - 2; src >= 0; src--) {
@@ -368,22 +372,19 @@ void SolveSpaceUI::AddToRecentList(const std::string &filename) {
 }
 
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
-    std::string prevSaveFile = saveFile;
+    Platform::Path newSaveFile = saveFile;
 
-    if(saveAs || saveFile.empty()) {
-        if(!GetSaveFile(&saveFile, "", SlvsFileFilter)) return false;
-        // need to get new filename directly into saveFile, since that
-        // determines linkFileRel path
+    if(saveAs || saveFile.IsEmpty()) {
+        if(!GetSaveFile(&newSaveFile, "", SlvsFileFilter)) return false;
     }
 
-    if(SaveToFile(saveFile)) {
-        AddToRecentList(saveFile);
+    if(SaveToFile(newSaveFile)) {
+        AddToRecentList(newSaveFile);
         RemoveAutosave();
+        saveFile = newSaveFile;
         unsaved = false;
         return true;
     } else {
-        // don't store an invalid save filename
-        saveFile = prevSaveFile;
         return false;
     }
 }
@@ -392,16 +393,16 @@ bool SolveSpaceUI::Autosave()
 {
     SetAutosaveTimerFor(autosaveInterval);
 
-    if(!saveFile.empty() && unsaved)
-        return SaveToFile(saveFile + AUTOSAVE_SUFFIX);
+    if(!saveFile.IsEmpty() && unsaved)
+        return SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
 
     return false;
 }
 
 void SolveSpaceUI::RemoveAutosave()
 {
-    std::string autosaveFile = saveFile + AUTOSAVE_SUFFIX;
-    ssremove(autosaveFile);
+    Platform::Path autosaveFile = saveFile.WithExtension(AUTOSAVE_EXT);
+    RemoveFile(autosaveFile);
 }
 
 bool SolveSpaceUI::OkayToStartNewFile() {
@@ -430,8 +431,8 @@ void SolveSpaceUI::MenuFile(Command id) {
        (uint32_t)id < ((uint32_t)Command::RECENT_OPEN+MAX_RECENT)) {
         if(!SS.OkayToStartNewFile()) return;
 
-        std::string newFile = RecentFile[(uint32_t)id - (uint32_t)Command::RECENT_OPEN];
-        SS.OpenFile(newFile);
+        Platform::Path newFile = RecentFile[(uint32_t)id - (uint32_t)Command::RECENT_OPEN];
+        SS.Load(newFile);
         return;
     }
 
@@ -439,7 +440,7 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::NEW:
             if(!SS.OkayToStartNewFile()) break;
 
-            SS.saveFile = "";
+            SS.saveFile.Clear();
             SS.NewFile();
             SS.AfterNewFile();
             break;
@@ -447,9 +448,9 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::OPEN: {
             if(!SS.OkayToStartNewFile()) break;
 
-            std::string newFile;
+            Platform::Path newFile;
             if(GetOpenFile(&newFile, "", SlvsFileFilter)) {
-                SS.OpenFile(newFile);
+                SS.Load(newFile);
             }
             break;
         }
@@ -463,22 +464,22 @@ void SolveSpaceUI::MenuFile(Command id) {
             break;
 
         case Command::EXPORT_PNG: {
-            std::string exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, "", PngFileFilter)) break;
+            Platform::Path exportFile = SS.saveFile;
+            if(!GetSaveFile(&exportFile, "", RasterFileFilter)) break;
             SS.ExportAsPngTo(exportFile);
             break;
         }
 
         case Command::EXPORT_VIEW: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "ViewExportFormat"),
                             VectorFileFilter)) break;
-            CnfFreezeString(Extension(exportFile), "ViewExportFormat");
+            CnfFreezeString(exportFile.Extension(), "ViewExportFormat");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints &&
-                (FilenameHasExtension(exportFile, ".txt") ||
+                (exportFile.HasExtension("txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {
                 Message(_("Constraints are currently shown, and will be exported "
@@ -492,40 +493,40 @@ void SolveSpaceUI::MenuFile(Command id) {
         }
 
         case Command::EXPORT_WIREFRAME: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "WireframeExportFormat"),
                             Vector3dFileFilter)) break;
-            CnfFreezeString(Extension(exportFile), "WireframeExportFormat");
+            CnfFreezeString(exportFile.Extension(), "WireframeExportFormat");
 
             SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/true);
             break;
         }
 
         case Command::EXPORT_SECTION: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "SectionExportFormat"),
                             VectorFileFilter)) break;
-            CnfFreezeString(Extension(exportFile), "SectionExportFormat");
+            CnfFreezeString(exportFile.Extension(), "SectionExportFormat");
 
             SS.ExportSectionTo(exportFile);
             break;
         }
 
         case Command::EXPORT_MESH: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "MeshExportFormat"),
                             MeshFileFilter)) break;
-            CnfFreezeString(Extension(exportFile), "MeshExportFormat");
+            CnfFreezeString(exportFile.Extension(), "MeshExportFormat");
 
             SS.ExportMeshTo(exportFile);
             break;
         }
 
         case Command::EXPORT_SURFACES: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(!GetSaveFile(&exportFile, CnfThawString("", "SurfacesExportFormat"),
                             SurfaceFileFilter)) break;
-            CnfFreezeString(Extension(exportFile), "SurfacesExportFormat");
+            CnfFreezeString(exportFile.Extension(), "SurfacesExportFormat");
 
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
@@ -533,18 +534,18 @@ void SolveSpaceUI::MenuFile(Command id) {
         }
 
         case Command::IMPORT: {
-            std::string importFile;
+            Platform::Path importFile;
             if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
                             ImportableFileFilter)) break;
-            CnfFreezeString(Extension(importFile), "ImportFormat");
+            CnfFreezeString(importFile.Extension(), "ImportFormat");
 
-            if(Extension(importFile) == "dxf") {
+            if(importFile.HasExtension("dxf")) {
                 ImportDxf(importFile);
-            } else if(Extension(importFile) == "dwg") {
+            } else if(importFile.HasExtension("dwg")) {
                 ImportDwg(importFile);
             } else {
                 Error("Can't identify file type from file extension of "
-                      "filename '%s'; try .dxf or .dwg.", importFile.c_str());
+                      "filename '%s'; try .dxf or .dwg.", importFile.raw.c_str());
             }
 
             SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
@@ -764,9 +765,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
 
         case Command::STOP_TRACING: {
-            std::string exportFile = SS.saveFile;
+            Platform::Path exportFile = SS.saveFile;
             if(GetSaveFile(&exportFile, "", CsvFileFilter)) {
-                FILE *f = ssfopen(exportFile, "wb");
+                FILE *f = OpenFile(exportFile, "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);
@@ -778,7 +779,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     }
                     fclose(f);
                 } else {
-                    Error("Couldn't write to '%s'", exportFile.c_str());
+                    Error("Couldn't write to '%s'", exportFile.raw.c_str());
                 }
             }
             // Clear the trace, and stop tracing

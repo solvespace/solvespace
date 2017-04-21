@@ -51,7 +51,8 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
               e->type == Entity::Type::CUBIC ||
               e->type == Entity::Type::CUBIC_PERIODIC ||
               e->type == Entity::Type::CIRCLE ||
-              e->type == Entity::Type::TTF_TEXT)
+              e->type == Entity::Type::TTF_TEXT ||
+              e->type == Entity::Type::IMAGE)
     {
         int pts;
         EntReqTable::GetEntityInfo(e->type, e->extraPoints,
@@ -1151,6 +1152,27 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     pending.operation = Pending::DRAGGING_NEW_POINT;
                     pending.point = hr.entity(2);
                     pending.description = _("click to place bottom left of text");
+                    break;
+                }
+
+                case Command::IMAGE: {
+                    if(!SS.GW.LockedInWorkplane()) {
+                        Error(_("Can't draw image in 3d; first, activate a workplane "
+                                "with Sketch -> In Workplane."));
+                        ClearSuper();
+                        break;
+                    }
+                    hr = AddRequest(Request::Type::IMAGE);
+                    AddToPending(hr);
+                    Request *r = SK.GetRequest(hr);
+                    r->file = pending.filename;
+
+                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
+                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+
+                    pending.operation = Pending::DRAGGING_NEW_POINT;
+                    pending.point = hr.entity(2);
+                    pending.description = "click to place bottom left of image";
                     break;
                 }
 

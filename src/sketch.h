@@ -218,8 +218,7 @@ public:
     enum { REMAP_PRIME = 19477 };
     int remapCache[REMAP_PRIME];
 
-    std::string linkFile;
-    std::string linkFileRel;
+    Platform::Path linkFile;
     SMesh       impMesh;
     SShell      impShell;
     EntityList  impEntity;
@@ -235,6 +234,8 @@ public:
     void Generate(EntityList *entity, ParamList *param);
     bool IsSolvedOkay();
     void TransformImportedBy(Vector t, Quaternion q);
+    bool IsForcedToMeshBySource() const;
+    bool IsForcedToMesh() const;
     // When a request generates entities from entities, and the source
     // entities may have come from multiple requests, it's necessary to
     // remap the entity ID so that it's still unique. We do this with a
@@ -272,8 +273,8 @@ public:
     void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
     void GenerateLoops();
     // And the mesh stuff
-    Group *PreviousGroup();
-    Group *RunningMeshGroup();
+    Group *PreviousGroup() const;
+    Group *RunningMeshGroup() const;
     bool IsMeshGroup();
 
     void GenerateShellAndMesh();
@@ -286,6 +287,7 @@ public:
     void Draw(Canvas *canvas);
     void DrawPolyError(Canvas *canvas);
     void DrawFilledPaths(Canvas *canvas);
+    void DrawContourAreaLabels(Canvas *canvas);
 
     SPolygon GetPolygon();
 
@@ -313,7 +315,8 @@ public:
         CUBIC_PERIODIC         = 301,
         CIRCLE                 = 400,
         ARC_OF_CIRCLE          = 500,
-        TTF_TEXT               = 600
+        TTF_TEXT               = 600,
+        IMAGE                  = 700
     };
 
     Request::Type type;
@@ -327,6 +330,7 @@ public:
 
     std::string str;
     std::string font;
+    Platform::Path file;
     double      aspectRatio;
 
     static hParam AddParam(ParamList *param, hParam hp);
@@ -376,7 +380,8 @@ public:
         CUBIC_PERIODIC         = 12001,
         CIRCLE                 = 13000,
         ARC_OF_CIRCLE          = 14000,
-        TTF_TEXT               = 15000
+        TTF_TEXT               = 15000,
+        IMAGE                  = 16000
     };
 
     Type        type;
@@ -401,6 +406,7 @@ public:
 
     std::string str;
     std::string font;
+    Platform::Path file;
     double      aspectRatio;
 
     // For entities that are derived by a transformation, the number of
@@ -477,7 +483,7 @@ public:
     Vector EndpointStart() const;
     Vector EndpointFinish() const;
 
-    void TtfTextGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
+    void RectGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index) const;
     void GenerateEquations(IdList<Equation,hEquation> *l) const;
@@ -906,6 +912,7 @@ public:
     hStyle      style;
     std::string str;
     std::string font;
+    Platform::Path file;
     bool        construction;
 
     Vector      point[MAX_POINTS_IN_ENTITY];

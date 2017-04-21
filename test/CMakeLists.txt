@@ -11,8 +11,10 @@ endforeach()
 
 set(testsuite_SOURCES
     harness.cpp
+    analysis/contour_area/test.cpp
     core/expr/test.cpp
     core/locale/test.cpp
+    core/path/test.cpp
     constraint/points_coincident/test.cpp
     constraint/pt_pt_distance/test.cpp
     constraint/pt_plane_distance/test.cpp
@@ -53,8 +55,10 @@ set(testsuite_SOURCES
     request/cubic/test.cpp
     request/cubic_periodic/test.cpp
     request/datum_point/test.cpp
+    request/image/test.cpp
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
+    group/link/test.cpp
     group/translate_asy/test.cpp
     group/translate_nd/test.cpp
 )

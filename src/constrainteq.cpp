@@ -425,8 +425,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
             Expr *r = circle->CircleGetRadiusExpr();
 
-            AddEq(l,
-                ((du->Square())->Plus(dv->Square()))->Minus(r->Square()), 0);
+            AddEq(l, du->Square()->Plus(dv->Square())->Sqrt()->Minus(r), 0);
             return;
         }
 

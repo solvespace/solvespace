@@ -292,7 +292,7 @@ void StepFileWriter::WriteFooter() {
         );
 }
 
-void StepFileWriter::ExportSurfacesTo(const std::string &filename) {
+void StepFileWriter::ExportSurfacesTo(const Platform::Path &filename) {
     Group *g = SK.GetGroup(SS.GW.activeGroup);
     SShell *shell = &(g->runningShell);
 
@@ -305,9 +305,9 @@ void StepFileWriter::ExportSurfacesTo(const std::string &filename) {
         return;
     }
 
-    f = ssfopen(filename, "wb");
+    f = OpenFile(filename, "wb");
     if(!f) {
-        Error("Couldn't write to '%s'", filename.c_str());
+        Error("Couldn't write to '%s'", filename.raw.c_str());
         return;
     }
 

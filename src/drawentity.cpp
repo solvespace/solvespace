@@ -104,6 +104,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::CUBIC:
         case Type::CUBIC_PERIODIC:
         case Type::TTF_TEXT:
+        case Type::IMAGE:
             refs->push_back(SK.GetEntity(point[0])->PointGetNum());
             break;
 
@@ -694,6 +695,54 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                 }
             }
             return;
+        }
+        case Type::IMAGE: {
+            Canvas::Fill fill = {};
+            std::shared_ptr<Pixmap> pixmap;
+            switch(how) {
+                case DrawAs::HIDDEN: return;
+
+                case DrawAs::HOVERED: {
+                    fill.color   = Style::Color(Style::HOVERED).WithAlpha(180);
+                    fill.pattern = Canvas::FillPattern::CHECKERED_A;
+                    fill.zIndex  = 2;
+                    break;
+                }
+
+                case DrawAs::SELECTED: {
+                    fill.color   = Style::Color(Style::SELECTED).WithAlpha(180);
+                    fill.pattern = Canvas::FillPattern::CHECKERED_B;
+                    fill.zIndex  = 1;
+                    break;
+                }
+
+                default:
+                    fill.color   = RgbaColor::FromFloat(1.0f, 1.0f, 1.0f);
+                    pixmap       = SS.images[file];
+                    break;
+            }
+
+            Canvas::hFill hf = canvas->GetFill(fill);
+            Vector v[4] = {};
+            for(int i = 0; i < 4; i++) {
+                v[i] = SK.GetEntity(point[i])->PointGetNum();
+            }
+            Vector iu = v[3].Minus(v[0]);
+            Vector iv = v[1].Minus(v[0]);
+
+            if(how == DrawAs::DEFAULT && pixmap == NULL) {
+                Canvas::Stroke stroke = Style::Stroke(Style::DRAW_ERROR);
+                stroke.color = stroke.color.WithAlpha(50);
+                Canvas::hStroke hs = canvas->GetStroke(stroke);
+                canvas->DrawLine(v[0], v[2], hs);
+                canvas->DrawLine(v[1], v[3], hs);
+                for(int i = 0; i < 4; i++) {
+                    canvas->DrawLine(v[i], v[(i + 1) % 4], hs);
+                }
+            } else {
+                canvas->DrawPixmap(pixmap, v[0], iu, iv,
+                                   Point2d::From(0.0, 0.0), Point2d::From(1.0, 1.0), hf);
+            }
         }
 
         case Type::FACE_NORMAL_PT:

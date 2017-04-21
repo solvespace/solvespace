@@ -16,7 +16,7 @@ namespace SolveSpace {
 
 std::string LoadString(const std::string &name) {
     size_t size;
-    const void *data = LoadResource(name, &size);
+    const void *data = Platform::LoadResource(name, &size);
     std::string result(static_cast<const char *>(data), size);
 
     // When editing resources under Windows, Windows newlines may sneak in.
@@ -30,7 +30,7 @@ std::string LoadString(const std::string &name) {
 
 std::string LoadStringFromGzip(const std::string &name) {
     size_t deflatedSize;
-    const void *data = LoadResource(name, &deflatedSize);
+    const void *data = Platform::LoadResource(name, &deflatedSize);
 
     z_stream stream;
     stream.zalloc = Z_NULL;
@@ -49,9 +49,9 @@ std::string LoadStringFromGzip(const std::string &name) {
     result.resize(inflatedSize);
 
     stream.next_in = (Bytef *)data;
-    stream.avail_in = deflatedSize;
+    stream.avail_in = (uInt)deflatedSize;
     stream.next_out = (Bytef *)&result[0];
-    stream.avail_out = result.length();
+    stream.avail_out = (uInt)result.length();
     ssassert(inflate(&stream, Z_NO_FLUSH) == Z_STREAM_END, "Cannot inflate resource");
     ssassert(stream.avail_out == 0, "Inflated resource larger than what trailer indicates");
 
@@ -62,7 +62,7 @@ std::string LoadStringFromGzip(const std::string &name) {
 
 std::shared_ptr<Pixmap> LoadPng(const std::string &name) {
     size_t size;
-    const void *data = LoadResource(name, &size);
+    const void *data = Platform::LoadResource(name, &size);
 
     std::shared_ptr<Pixmap> pixmap = Pixmap::FromPng(static_cast<const uint8_t *>(data), size);
     ssassert(pixmap != nullptr, "Cannot load pixmap");
@@ -263,8 +263,8 @@ exit:
     return nullptr;
 }
 
-std::shared_ptr<Pixmap> Pixmap::ReadPng(const std::string &filename, bool flip) {
-    FILE *f = ssfopen(filename.c_str(), "rb");
+std::shared_ptr<Pixmap> Pixmap::ReadPng(const Platform::Path &filename, bool flip) {
+    FILE *f = OpenFile(filename, "rb");
     if(!f) return NULL;
     std::shared_ptr<Pixmap> pixmap = ReadPng(f, flip);
     fclose(f);
@@ -302,9 +302,9 @@ bool Pixmap::WritePng(FILE *f, bool flip) {
     if(setjmp(png_jmpbuf(png_ptr))) goto exit;
 
     png_init_io(png_ptr, f);
-    png_set_IHDR(png_ptr, info_ptr, width, height, 8,
-                 colorType, PNG_INTERLACE_NONE,
-                 PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+    png_set_IHDR(png_ptr, info_ptr,
+                 (png_uint_32)width, (png_uint_32)height, 8, colorType,
+                 PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
     if(bgr) png_set_bgr(png_ptr);
     png_write_info(png_ptr, info_ptr);
     png_write_image(png_ptr, &rows[0]);
@@ -318,8 +318,8 @@ exit:
     return false;
 }
 
-bool Pixmap::WritePng(const std::string &filename, bool flip) {
-    FILE *f = ssfopen(filename.c_str(), "wb");
+bool Pixmap::WritePng(const Platform::Path &filename, bool flip) {
+    FILE *f = OpenFile(filename, "wb");
     if(!f) return false;
     bool success = WritePng(f, flip);
     fclose(f);
@@ -528,7 +528,7 @@ void BitmapFont::AddGlyph(char32_t codepoint, std::shared_ptr<const Pixmap> pixm
              "Too many glyphs for current texture size");
 
     BitmapFont::Glyph glyph = {};
-    glyph.advanceCells = pixmap->width / 8;
+    glyph.advanceCells = (uint8_t)(pixmap->width / 8);
     glyph.position     = nextPosition++;
     glyphs.emplace(codepoint, std::move(glyph));
 
@@ -590,7 +590,7 @@ const BitmapFont::Glyph &BitmapFont::GetGlyph(char32_t codepoint) {
 
         // Read glyph bits.
         unsigned short glyphBits[16];
-        int glyphLength = reader.CountUntilEol();
+        size_t glyphLength = reader.CountUntilEol();
         if(glyphLength == 4 * 16) {
             glyph.advanceCells = 2;
             for(size_t i = 0; i < 16; i++) {
