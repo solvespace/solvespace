@@ -175,6 +175,7 @@ public:
     bool        suppress;
     bool        relaxConstraints;
     bool        allowRedundant;
+    bool        suppressDofCalculation;
     bool        allDimsReference;
     double      scale;
 
