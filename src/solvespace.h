@@ -261,7 +261,7 @@ public:
 
     static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
     int CalculateRank();
-    bool TestRank(int *rank = NULL);
+    bool TestRank(int *dof = NULL);
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);
     bool SolveLeastSquares();
@@ -279,7 +279,6 @@ public:
     bool NewtonSolve(int tag);
 
     void MarkParamsFree(bool findFree);
-    int CalculateDof();
 
     SolveResult Solve(Group *g, int *rank = NULL, int *dof = NULL,
                       List<hConstraint> *bad = NULL,
