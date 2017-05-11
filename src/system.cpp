@@ -242,10 +242,12 @@ int System::CalculateRank() {
     return rank;
 }
 
-bool System::TestRank(int *rank) {
+bool System::TestRank(int *dof) {
     EvalJacobian();
     int jacobianRank = CalculateRank();
-    if(rank) *rank = jacobianRank;
+    // We are calculating dof based on real rank, not mat.m.
+    // Using this approach we can calculate real dof even when redundant is allowed.
+    if(dof != NULL) *dof = mat.n - jacobianRank;
     return jacobianRank == mat.m;
 }
 
@@ -498,9 +500,9 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     param.ClearTags();
     eq.ClearTags();
 
-    // Solving by substitution eliminates duplicate e.g. H/V constraints, which can cause rank test
-    // to succeed even on overdefined systems, which will fail later.
-    if(!forceDofCheck) {
+    // Since we are allowing redundant, we
+    // don't want to catch result of dof checking without substitution
+    if(g->allowRedundant || !forceDofCheck) {
         SolveBySubstitution();
     }
 
@@ -538,22 +540,20 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
     if(!WriteJacobian(0)) {
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
-
-    rankOk = TestRank(rank);
+    // Clear dof value in order to have indication when dof is actually not calculated
+    if(dof != NULL) *dof = -1;
+    // We are allowing redundant, so we no need to catch unsolveable + redundant
+    rankOk = (!g->allowRedundant) ? TestRank(dof) : true;
 
     // And do the leftovers as one big system
     if(!NewtonSolve(0)) {
         goto didnt_converge;
     }
 
-    rankOk = TestRank(rank);
+    rankOk = TestRank(dof);
     if(!rankOk) {
         if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
     } else {
-        // This is not the full Jacobian, but any substitutions or single-eq
-        // solves removed one equation and one unknown, therefore no effect
-        // on the number of DOF.
-        if(dof) *dof = CalculateDof();
         MarkParamsFree(andFindFree);
     }
     // System solved correctly, so write the new values back in to the
@@ -610,9 +610,13 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
-    bool rankOk = TestRank(rank);
+    bool rankOk = TestRank(dof);
     if(!rankOk) {
-        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, /*forceDofCheck=*/true);
+        // When we are testing with redundant allowed, we don't want to have additional info
+        // about redundants since this test is working only for single redundant constraint
+        if(!g->allowRedundant) {
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
+        }
     } else {
         if(dof) *dof = CalculateDof();
         MarkParamsFree(andFindFree);
@@ -647,9 +651,5 @@ void System::MarkParamsFree(bool find) {
             }
         }
     }
-}
-
-int System::CalculateDof() {
-    return mat.n - mat.m;
 }
 
