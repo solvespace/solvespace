@@ -254,6 +254,8 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
 
         case 'e': g->allowRedundant = !(g->allowRedundant); break;
 
+        case 'D': g->suppressDofCalculation = !(g->suppressDofCalculation); break;
+
         case 'v': g->visible = !(g->visible); break;
 
         case 'd': g->allDimsReference = !(g->allDimsReference); break;
@@ -466,6 +468,10 @@ void TextWindow::ShowGroupInfo() {
     Printf(false, " %f%Le%Fd%s  allow redundant constraints",
         &TextWindow::ScreenChangeGroupOption,
         g->allowRedundant ? CHECK_TRUE : CHECK_FALSE);
+
+    Printf(false, " %f%LD%Fd%s  suppress dof calculation (improves solver performance)",
+        &TextWindow::ScreenChangeGroupOption,
+        g->suppressDofCalculation ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, " %f%Ld%Fd%s  treat all dimensions as reference",
         &TextWindow::ScreenChangeGroupOption,
