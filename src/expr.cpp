@@ -400,15 +400,21 @@ Expr *Expr::PartialWrt(hParam p) const {
     ssassert(false, "Unexpected operation");
 }
 
-uint64_t Expr::ParamsUsed() const {
-    uint64_t r = 0;
-    if(op == Op::PARAM)     r |= ((uint64_t)1 << (parh.v % 61));
-    if(op == Op::PARAM_PTR) r |= ((uint64_t)1 << (parp->h.v % 61));
+void Expr::ParamsUsedList(List<hParam> *list) const {
+    if(op == Op::PARAM || op == Op::PARAM_PTR) {
+        hParam param = (op == Op::PARAM) ? parh : parp->h;
+        for(hParam &p : *list) {
+            if(p.v == param.v) return;
+        }
+        list->Add(&param);
+        return;
+    }
 
     int c = Children();
-    if(c >= 1)          r |= a->ParamsUsed();
-    if(c >= 2)          r |= b->ParamsUsed();
-    return r;
+    if(c >= 1) {
+        a->ParamsUsedList(list);
+        if(c >= 2) b->ParamsUsedList(list);
+    }
 }
 
 bool Expr::DependsOn(hParam p) const {
