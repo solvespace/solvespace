@@ -33,9 +33,15 @@ bool System::WriteJacobian(int tag) {
     }
     mat.n = j;
 
-    int i = 0;
+    // Fill the param id to index map
+    std::map<uint32_t, int> paramToIndex;
+    for(int j = 0; j < mat.n; j++) {
+        paramToIndex[mat.param[j].v] = j;
+    }
 
-    for(auto &e : eq) {
+    i = 0;
+    Expr *zero = Expr::From(0.0);
+    for(a = 0; a < eq.n; a++) {
         if(i >= MAX_UNKNOWNS) return false;
 
         if(e.tag != tag)
@@ -45,21 +51,22 @@ bool System::WriteJacobian(int tag) {
         Expr *f   = e.e->DeepCopyWithParamsAsPointers(&param, &(SK.param));
         f = f->FoldConstants();
 
-        // Hash table (61 bits) to accelerate generation of zero partials.
-        uint64_t scoreboard = f->ParamsUsed();
         for(j = 0; j < mat.n; j++) {
-            Expr *pd;
-            if(scoreboard & ((uint64_t)1 << (mat.param[j].v % 61)) &&
-                f->DependsOn(mat.param[j]))
-            {
-                pd = f->PartialWrt(mat.param[j]);
-                pd = pd->FoldConstants();
-                pd = pd->DeepCopyWithParamsAsPointers(&param, &(SK.param));
-            } else {
-                pd = Expr::From(0.0);
-            }
-            mat.A.sym[i][j] = pd;
+            mat.A.sym[i][j] = zero;
         }
+
+        List<hParam> paramsUsed = {};
+        f->ParamsUsedList(&paramsUsed);
+
+        for(hParam &p : paramsUsed) {
+            auto j = paramToIndex.find(p.v);
+            if(j == paramToIndex.end()) continue;
+            Expr *pd = f->PartialWrt(p);
+            pd = pd->FoldConstants();
+            pd = pd->DeepCopyWithParamsAsPointers(&param, &(SK.param));
+            mat.A.sym[i][j->second] = pd;
+        }
+        paramsUsed.Clear();
         mat.B.sym[i] = f;
         i++;
     }
