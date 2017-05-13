@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
 "POT-Creation-Date: 2017-05-05 22:31+0200\n"
-"PO-Revision-Date: 2017-05-08 13:51+0200\n"
+"PO-Revision-Date: 2017-05-13 18:58+0200\n"
 "Language-Team: none\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -718,7 +718,7 @@ msgstr "Co&ller"
 
 #: graphicswin.cpp:59
 msgid "Paste &Transformed..."
-msgstr "Coller &transformer..."
+msgstr "Coller &Transformer..."
 
 #: graphicswin.cpp:60
 msgid "&Delete"
@@ -726,7 +726,7 @@ msgstr "&Effacer"
 
 #: graphicswin.cpp:62
 msgid "Select &Edge Chain"
-msgstr "Sélectionner une chaîne d'&arêtes"
+msgstr "Sélectionner une Chaîne d'&Arêtes"
 
 #: graphicswin.cpp:63
 msgid "Select &All"
@@ -734,7 +734,7 @@ msgstr "Sélectionner &Tout"
 
 #: graphicswin.cpp:64
 msgid "&Unselect All"
-msgstr "&Désélectionner tout "
+msgstr "&Désélectionner Tout "
 
 #: graphicswin.cpp:66
 msgid "&View"
@@ -742,51 +742,51 @@ msgstr "&Affichage"
 
 #: graphicswin.cpp:67
 msgid "Zoom &In"
-msgstr "Zoom &avant"
+msgstr "Zoom &Avant"
 
 #: graphicswin.cpp:68
 msgid "Zoom &Out"
-msgstr "Zoom a&rrière"
+msgstr "Zoom A&rrière"
 
 #: graphicswin.cpp:69
 msgid "Zoom To &Fit"
-msgstr "Zoom a&justé"
+msgstr "Zoom A&justé"
 
 #: graphicswin.cpp:71
 msgid "Align View to &Workplane"
-msgstr "Aligner la vue au &plan de travail"
+msgstr "Aligner la vue au &Plan de travail"
 
 #: graphicswin.cpp:72
 msgid "Nearest &Ortho View"
-msgstr "Vue &orthogonale la plus proche"
+msgstr "Vue &Orthogonale la plus proche"
 
 #: graphicswin.cpp:73
 msgid "Nearest &Isometric View"
-msgstr "Vue &isométrique la plus proche"
+msgstr "Vue &Isométrique la plus proche"
 
 #: graphicswin.cpp:74
 msgid "&Center View At Point"
-msgstr "&Centrer la vue sur le point"
+msgstr "&Centrer la Vue sur le Point"
 
 #: graphicswin.cpp:76
 msgid "Show Snap &Grid"
-msgstr "Afficher la &grille"
+msgstr "Afficher la &grille d'accrochage"
 
 #: graphicswin.cpp:77
 msgid "Use &Perspective Projection"
-msgstr "Utiliser la vue en &perspective"
+msgstr "Utiliser la vue en &Perspective"
 
 #: graphicswin.cpp:79
 msgid "Show &Toolbar"
-msgstr "Affichage &barre d'outils"
+msgstr "Affichage &Barre d'outils"
 
 #: graphicswin.cpp:80
 msgid "Show Property Bro&wser"
-msgstr "Affichage du &navigateur de propriété"
+msgstr "Affichage du &Navigateur de Propriété"
 
 #: graphicswin.cpp:82
 msgid "Dimensions in &Inches"
-msgstr "Dimensions en &pouces"
+msgstr "Dimensions en &Pouces"
 
 #: graphicswin.cpp:83
 msgid "Dimensions in &Millimeters"
@@ -794,11 +794,11 @@ msgstr "Dimensions en &Millimètres"
 
 #: graphicswin.cpp:85
 msgid "&Full Screen"
-msgstr "&Plein écran"
+msgstr "&Plein Ecran"
 
 #: graphicswin.cpp:87
 msgid "&New Group"
-msgstr "&Nouveau groupe"
+msgstr "&Nouveau Groupe"
 
 #: graphicswin.cpp:88
 msgid "Sketch In &3d"
@@ -806,15 +806,15 @@ msgstr "Dessin en &3d"
 
 #: graphicswin.cpp:89
 msgid "Sketch In New &Workplane"
-msgstr "Dessin dans un nouveau &plan de travail"
+msgstr "Dessin dans un nouveau &Plan de travail"
 
 #: graphicswin.cpp:91
 msgid "Step &Translating"
-msgstr "Espacement &linéaire"
+msgstr "Espacement &Linéaire"
 
 #: graphicswin.cpp:92
 msgid "Step &Rotating"
-msgstr "Espacement &circulaire"
+msgstr "Espacement &Circulaire"
 
 #: graphicswin.cpp:94
 msgid "E&xtrude"
@@ -830,7 +830,7 @@ msgstr "Lié / Assembler..."
 
 #: graphicswin.cpp:98
 msgid "Link Recent"
-msgstr "Lié récent"
+msgstr "Lié Récent"
 
 #: graphicswin.cpp:100
 msgid "&Sketch"
@@ -838,7 +838,7 @@ msgstr "&Dessin"
 
 #: graphicswin.cpp:101
 msgid "In &Workplane"
-msgstr "Dans le &plan de travail"
+msgstr "Dans le &Plan de travail"
 
 #: graphicswin.cpp:102
 msgid "Anywhere In &3d"
@@ -858,7 +858,7 @@ msgstr "Ligne - &Polyligne"
 
 #: graphicswin.cpp:108
 msgid "C&onstruction Line Segment"
-msgstr "Ligne de c&onstruction"
+msgstr "Ligne de C&onstruction"
 
 #: graphicswin.cpp:109
 msgid "&Rectangle"
@@ -870,15 +870,15 @@ msgstr "&Cercle"
 
 #: graphicswin.cpp:111
 msgid "&Arc of a Circle"
-msgstr "&Arc de cercle"
+msgstr "&Arc de Cercle"
 
 #: graphicswin.cpp:112
 msgid "&Bezier Cubic Spline"
-msgstr "Spline cubique de &Beziers "
+msgstr "Spline Cubique de &Beziers "
 
 #: graphicswin.cpp:114
 msgid "&Text in TrueType Font"
-msgstr "&Texte en police TrueType"
+msgstr "&Texte en Police TrueType"
 
 #: graphicswin.cpp:115
 msgid "&Image"
@@ -886,15 +886,15 @@ msgstr "&Image"
 
 #: graphicswin.cpp:117
 msgid "To&ggle Construction"
-msgstr "&Basculer en mode \"construction\""
+msgstr "&Basculer en mode \"Construction\""
 
 #: graphicswin.cpp:118
 msgid "Tangent &Arc at Point"
-msgstr "&Arc tangent au point"
+msgstr "&Arc Tangent au Point"
 
 #: graphicswin.cpp:119
 msgid "Split Curves at &Intersection"
-msgstr "Diviser les courbes à l'&intersection"
+msgstr "Diviser les Courbes à l'&Intersection"
 
 #: graphicswin.cpp:121
 msgid "&Constrain"
@@ -906,7 +906,7 @@ msgstr "&Distance / Diamètre"
 
 #: graphicswin.cpp:123
 msgid "Re&ference Dimension"
-msgstr "Dimension maîtresse / indicative"
+msgstr "Dimension Maîtresse / Indicative"
 
 #: graphicswin.cpp:124
 msgid "A&ngle"
@@ -914,15 +914,15 @@ msgstr "A&ngle"
 
 #: graphicswin.cpp:125
 msgid "Reference An&gle"
-msgstr "An&gle de référence"
+msgstr "An&gle Maître / Indicatif"
 
 #: graphicswin.cpp:126
 msgid "Other S&upplementary Angle"
-msgstr "Autre angle s&upplémentaire"
+msgstr "Autre angle S&upplémentaire"
 
 #: graphicswin.cpp:127
 msgid "Toggle R&eference Dim"
-msgstr "Basculer cote maîtresse / cote indicative"
+msgstr "Basculer cote Maîtresse / cote Indicative"
 
 #: graphicswin.cpp:129
 msgid "&Horizontal"
@@ -942,15 +942,15 @@ msgstr "&Egale Longueur / Rayon / Angle"
 
 #: graphicswin.cpp:134
 msgid "Length Ra&tio"
-msgstr "R&apport de longueur"
+msgstr "R&apport de Longueur"
 
 #: graphicswin.cpp:135
 msgid "Length Diff&erence"
-msgstr "D&ifférence de longueur"
+msgstr "D&ifférence de Longueur"
 
 #: graphicswin.cpp:136
 msgid "At &Midpoint"
-msgstr "Au &milieu"
+msgstr "Au &Milieu"
 
 #: graphicswin.cpp:137
 msgid "S&ymmetric"
@@ -970,7 +970,7 @@ msgstr "Même Orient&ation"
 
 #: graphicswin.cpp:141
 msgid "Lock Point Where &Dragged"
-msgstr "Accrocher le point à l'&emplacement"
+msgstr "Accrocher le point à l'&Emplacement"
 
 #: graphicswin.cpp:143
 msgid "Comment"
@@ -998,27 +998,27 @@ msgstr "Montrer les Pièces &Interférentes"
 
 #: graphicswin.cpp:150
 msgid "Show &Naked Edges"
-msgstr "Montrer les arêtes &nues"
+msgstr "Montrer les Arêtes &Nues"
 
 #: graphicswin.cpp:151
 msgid "Show &Center of Mass"
-msgstr "Montrer le &centre de gravité"
+msgstr "Montrer le &Centre de Gravité"
 
 #: graphicswin.cpp:153
 msgid "Show Degrees of &Freedom"
-msgstr "Montrer les degrés de &liberté"
+msgstr "Montrer les Degrés de &Liberté"
 
 #: graphicswin.cpp:155
 msgid "&Trace Point"
-msgstr "&Tracer point"
+msgstr "&Tracer Point"
 
 #: graphicswin.cpp:156
 msgid "&Stop Tracing..."
-msgstr "&Arrêt tracé..."
+msgstr "&Arrêt Tracé..."
 
 #: graphicswin.cpp:157
 msgid "Step &Dimension..."
-msgstr "Espacement &dimension..."
+msgstr "Espacement &Dimension..."
 
 #: graphicswin.cpp:159
 msgid "&Help"
@@ -1559,7 +1559,7 @@ msgstr "Navigateur de propriété"
 #: platform/gtkmain.cpp:968
 msgctxt "title"
 msgid "Open File"
-msgstr "Ouvrir fichier"
+msgstr "Ouvrir Fichier"
 
 #: platform/gtkmain.cpp:970
 msgid "_Cancel"
