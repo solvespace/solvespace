@@ -1110,12 +1110,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     r->str = "Abc";
                     r->font = "BitstreamVeraSans-Roman-builtin.ttf";
 
-                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
-                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+                    for(int i = 1; i <= 4; i++) {
+                        SK.GetEntity(hr.entity(i))->PointForceTo(v);
+                    }
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
-                    pending.point = hr.entity(2);
-                    pending.description = _("click to place bottom left of text");
+                    pending.point = hr.entity(3);
+                    pending.description = _("click to place bottom right of text");
                     break;
                 }
 
@@ -1131,12 +1132,13 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                     Request *r = SK.GetRequest(hr);
                     r->file = pending.filename;
 
-                    SK.GetEntity(hr.entity(1))->PointForceTo(v);
-                    SK.GetEntity(hr.entity(2))->PointForceTo(v);
+                    for(int i = 1; i <= 4; i++) {
+                        SK.GetEntity(hr.entity(i))->PointForceTo(v);
+                    }
 
                     pending.operation = Pending::DRAGGING_NEW_POINT;
-                    pending.point = hr.entity(2);
-                    pending.description = "click to place bottom left of image";
+                    pending.point = hr.entity(3);
+                    pending.description = "click to place bottom right of image";
                     break;
                 }
 
