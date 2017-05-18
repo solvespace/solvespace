@@ -50,6 +50,7 @@ set(testsuite_SOURCES
     constraint/equal_radius/test.cpp
     constraint/where_dragged/test.cpp
     constraint/comment/test.cpp
+    expr/test.cpp
     request/arc_of_circle/test.cpp
     request/circle/test.cpp
     request/cubic/test.cpp
