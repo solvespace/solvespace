@@ -191,6 +191,7 @@ public:
     bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
                   double *t, Vector *inters) const;
     double SignedVolume() const;
+    bool IsDegenerate() const;
 };
 
 class SBsp2 {

@@ -87,6 +87,12 @@ double STriangle::SignedVolume() const {
     return a.Dot(b.Cross(c)) / 6.0;
 }
 
+bool STriangle::IsDegenerate() const {
+    return a.OnLineSegment(b, c) ||
+           b.OnLineSegment(a, c) ||
+           c.OnLineSegment(a, b);
+}
+
 void STriangle::FlipNormal() {
     swap(a, b);
     swap(an, bn);
