@@ -86,12 +86,12 @@ Building on macOS
 -----------------
 
 You will need XCode tools, CMake, libpng and Freetype. To build tests, you
-will need cairo. Assuming you use
-[homebrew][], these can be installed with:
+will need cairo. Assuming you use [homebrew][], these can be installed with:
 
     brew install cmake libpng freetype cairo
 
-XCode has to be installed via AppStore; it requires a free Apple ID.
+XCode has to be installed via AppStore or [the Apple website][appledeveloper];
+it requires a free Apple ID.
 
 Before building, check out the necessary submodules:
 
@@ -108,7 +108,8 @@ The application is built in `build/bin/solvespace.app`, the graphical interface 
 is `build/bin/solvespace.app/Contents/MacOS/solvespace`, and the command-line interface executable
 is `build/bin/solvespace.app/Contents/MacOS/solvespace-cli`.
 
-[homebrew]: http://brew.sh/
+[homebrew]: https://brew.sh/
+[appledeveloper]: https://developer.apple.com/download/
 
 Building on Windows
 -------------------
