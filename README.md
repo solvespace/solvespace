@@ -104,6 +104,12 @@ After that, build SolveSpace as following:
     cmake .. -DCMAKE_BUILD_TYPE=Release
     make
 
+Alternatively, generate an XCode project, open it, and build the "Release" scheme:
+
+    mkdir build
+    cd build
+    cmake .. -G Xcode
+
 The application is built in `build/bin/solvespace.app`, the graphical interface executable
 is `build/bin/solvespace.app/Contents/MacOS/solvespace`, and the command-line interface executable
 is `build/bin/solvespace.app/Contents/MacOS/solvespace-cli`.

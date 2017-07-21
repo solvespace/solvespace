@@ -202,9 +202,16 @@ The Windows releases include the debug information on the GitHub
 
 ### Debugging a custom build
 
-If you are building SolveSpace yourself on a Unix-like platform,
+If you are building SolveSpace yourself on macOS, use the XCode
+CMake generator, then open the project in XCode as usual, select
+the Debug build scheme, and build the project:
+
+    cd build
+    cmake .. -G Xcode [other cmake args...]
+
+If you are building SolveSpace yourself on any Unix-like platform,
 configure or re-configure SolveSpace to produce a debug build, and
-then re-build it:
+then build it:
 
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=Debug [other cmake args...]
