@@ -1123,7 +1123,7 @@ const std::vector<double>& SolveSpace::StipplePatternDashes(StipplePattern patte
         dashes[(size_t)StipplePattern::DASH_DOT] =
             { 1.0, 0.5, 1e-6, 0.5 };
         dashes[(size_t)StipplePattern::DASH_DOT_DOT] =
-            { 1.0, 0.5, 1e-6, 0.5, 0.5, 1e-6 };
+            { 1.0, 0.5, 1e-6, 0.5, 1e-6, 0.5 };
         dashes[(size_t)StipplePattern::DOT] =
             { 1e-6, 0.5 };
         dashes[(size_t)StipplePattern::LONG_DASH] =
