@@ -204,7 +204,6 @@ SolvespaceControls = function(object, domElement) {
         object.offsetProj(diff.x, -diff.y);
         _changed = true;
         _offsetPrev.copy(_offsetCur)
-        break;
     }
 
     function mouseup(event) {
