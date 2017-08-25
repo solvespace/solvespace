@@ -158,14 +158,14 @@ SolvespaceControls = function(object, domElement) {
                 _rotateCur.set(event.screenX / window.devicePixelRatio,
                                event.screenY / window.devicePixelRatio);
                 _rotatePrev.copy(_rotateCur);
-                document.addEventListener('mousemove', mousemove, false);
+                document.addEventListener('mousemove', mousemove_rotate, false);
                 document.addEventListener('mouseup', mouseup, false);
                 break;
             case 2:
                 _offsetCur.set(event.screenX / window.devicePixelRatio,
                                event.screenY / window.devicePixelRatio);
                 _offsetPrev.copy(_offsetCur);
-                document.addEventListener('mousemove', mousemove, false);
+                document.addEventListener('mousemove', mousemove_pan, false);
                 document.addEventListener('mouseup', mouseup, false);
                 break;
             default:
@@ -183,31 +183,28 @@ SolvespaceControls = function(object, domElement) {
         _changed = true;
     }
 
-    function mousemove(event) {
-        switch (event.button) {
-            case 0:
-                _rotateCur.set(event.screenX / window.devicePixelRatio,
-                               event.screenY / window.devicePixelRatio);
-                var diff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
-                    .multiplyScalar(1 / object.zoomScale);
-                object.rotate(-0.3 * Math.PI / 180 * diff.x * object.zoomScale,
-                     -0.3 * Math.PI / 180 * diff.y * object.zoomScale);
-                _changed = true;
-                _rotatePrev.copy(_rotateCur);
-                break;
-            case 2:
-                _mouseMoved = true;
-                _offsetCur.set(event.screenX / window.devicePixelRatio,
-                               event.screenY / window.devicePixelRatio);
-                var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
-                    .multiplyScalar(1 / object.zoomScale);
-                object.offsetProj(diff.x, -diff.y);
-                _changed = true;
-                _offsetPrev.copy(_offsetCur)
-                break;
-        }
+    function mousemove_rotate(event) {
+        _rotateCur.set(event.screenX / window.devicePixelRatio,
+                       event.screenY / window.devicePixelRatio);
+        var diff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
+            .multiplyScalar(1 / object.zoomScale);
+        object.rotate(-0.3 * Math.PI / 180 * diff.x * object.zoomScale,
+             -0.3 * Math.PI / 180 * diff.y * object.zoomScale);
+        _changed = true;
+        _rotatePrev.copy(_rotateCur);
     }
 
+    function mousemove_pan(event) {
+        _mouseMoved = true;
+        _offsetCur.set(event.screenX / window.devicePixelRatio,
+                       event.screenY / window.devicePixelRatio);
+        var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
+            .multiplyScalar(1 / object.zoomScale);
+        object.offsetProj(diff.x, -diff.y);
+        _changed = true;
+        _offsetPrev.copy(_offsetCur)
+        break;
+    }
 
     function mouseup(event) {
         /* TODO: Opera mouse gestures will intercept this event, making it
@@ -217,8 +214,16 @@ SolvespaceControls = function(object, domElement) {
         event.preventDefault();
         event.stopPropagation();
 
-        document.removeEventListener('mousemove', mousemove);
-        document.removeEventListener('mouseup', mouseup);
+        switch (event.button) {
+            case 0:
+                document.removeEventListener('mousemove', mousemove_rotate);
+                document.removeEventListener('mouseup', mouseup);
+                break;
+            case 2:
+                document.removeEventListener('mousemove', mousemove_pan);
+                document.removeEventListener('mouseup', mouseup);
+                break;
+        }
 
         _this.dispatchEvent(endEvent);
     }
