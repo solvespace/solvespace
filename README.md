@@ -86,6 +86,21 @@ is built as `build/bin/solvespace-cli.exe`.
 
 Space Navigator support will not be available.
 
+If using Ubuntu 16.04 LTS (Xenial Xerus), the `mingw-w64` package provided by the distribution
+will not have headers new enough to build ANGLE successfully. However, the `mingw-w64` package
+from 17.10 (Artful Aardvark) is known to work. This can be installed by downloading
+the `mingw-w64` deb from [artful](https://packages.ubuntu.com/artful/all/mingw-w64/download) and
+running the following command: `sudo dpkg -i /path/to/mingw-w64_5.0.2-2_all.deb`.
+
+If one does not wish to install the entirity of `mingw-w64`, the following packages must
+be upgraded using instructions similar to the above:
+
+* `gcc-mingw-w64-base` 
+* `gcc-mingw-w64-{i686, x86-64}`
+* `g++-mingw-w64-{i686, x86-64}`
+* `mingw-w64-common`
+* `mingw-w64-{i686, x86-64}-dev`
+
 Building on macOS
 -----------------
 
