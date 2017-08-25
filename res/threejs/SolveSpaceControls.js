@@ -25,10 +25,11 @@ SolvespaceCamera.prototype.updateProjectionMatrix = function() {
     var n = new THREE.Vector3().crossVectors(this.up, this.right);
     var rotate = new THREE.Matrix4().makeBasis(this.right, this.up, n);
     rotate.transpose();
-    /* FIXME: At some point we ended up using row-major.
-       THREE.js wants column major. Scale/depth correct unaffected b/c diagonal
-       matrices remain the same when transposed. makeTranslation also makes
-       a column-major matrix. */
+    /* Transpose of rotation matrix == inverse. Rotating the camera by a
+       basis is equivalent to rotating an object by the inverse of the
+       basis. To mimic Solvespace's behavior, we pan relative to the camera.
+       So we need to be rotated to where the camera is pointing before panning.
+       See: https://en.wikipedia.org/wiki/Change_of_basis#Two_dimensions */
 
     /* TODO: If we want perspective, we need an additional matrix
        here which will modify w for perspective divide. */
