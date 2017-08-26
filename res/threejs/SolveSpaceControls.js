@@ -1,3 +1,6 @@
+/*global THREE Hammer SolvespaceCamera:true SolvespaceControls:true
+  solvespace:true */
+
 window.devicePixelRatio = window.devicePixelRatio || 1;
 
 SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset) {
@@ -7,7 +10,7 @@ SolvespaceCamera = function(renderWidth, renderHeight, scale, up, right, offset)
 
     this.renderWidth = renderWidth;
     this.renderHeight = renderHeight;
-    this.zoomScale = scale; /* Avoid namespace collision w/ THREE.Object.scale */
+    this.zoomScale = scale; // Avoid namespace collision w/ THREE.Object.scale
     this.up = up;
     this.right = right;
     this.offset = offset;
@@ -59,14 +62,14 @@ SolvespaceCamera.prototype.rotate = function(right, up) {
     this.up.applyAxisAngle(oldRight, up);
     this.right.applyAxisAngle(oldUp, right);
     this.NormalizeProjectionVectors();
-}
+};
 
 SolvespaceCamera.prototype.offsetProj = function(right, up) {
     var shift = new THREE.Vector3(right * this.right.x + up * this.up.x,
         right * this.right.y + up * this.up.y,
         right * this.right.z + up * this.up.z);
     this.offset.add(shift);
-}
+};
 
 /* Calculate the offset in terms of up and right projection vectors
 that will preserve the world coordinates of the current mouse position after
@@ -87,7 +90,7 @@ SolvespaceCamera.prototype.zoomTo = function(x, y, delta) {
         zoomFactor = (-delta * 0.002 + 1);
     }
     else if(delta > 0) {
-        zoomFactor = (delta * (-1.0/600.0) + 1)
+        zoomFactor = (delta * (-1.0/600.0) + 1);
     }
     else {
         return;
@@ -99,7 +102,7 @@ SolvespaceCamera.prototype.zoomTo = function(x, y, delta) {
 
     this.offset.addScaledVector(this.right, centerRightF - centerRightI);
     this.offset.addScaledVector(this.up, centerUpF - centerUpI);
-}
+};
 
 
 SolvespaceControls = function(object, domElement) {
@@ -124,15 +127,16 @@ SolvespaceControls = function(object, domElement) {
     var changeEvent = {
         type: 'change'
     };
+    /* eslint-disable no-unused-vars */
     var startEvent = {
         type: 'start'
     };
+    /* eslint-enable no-unused-vars */
     var endEvent = {
         type: 'end'
     };
 
     var _changed = false;
-    var _mouseMoved = false;
     //var _touchPoints = new Array();
     var _offsetPrev = new THREE.Vector2(0, 0);
     var _offsetCur = new THREE.Vector2(0, 0);
@@ -148,13 +152,12 @@ SolvespaceControls = function(object, domElement) {
         if (typeof this[event.type] == 'function') {
             this[event.type](event);
         }
-    }
+    };
 
     function mousedown(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        console.log(event.screenX, event.screenY);
         switch (event.button) {
             case 0:
                 _rotateCur.set(event.screenX,
@@ -186,7 +189,6 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function mousemove_rotate(event) {
-        console.log('mousemove_rotate');
         _rotateCur.set(event.screenX,
                        event.screenY);
         var diff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
@@ -198,15 +200,13 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function mousemove_pan(event) {
-        console.log('mousemove_pan');
-        _mouseMoved = true;
         _offsetCur.set(event.screenX / window.devicePixelRatio,
                        event.screenY / window.devicePixelRatio);
         var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
             .multiplyScalar(window.devicePixelRatio / object.zoomScale);
         object.offsetProj(diff.x, -diff.y);
         _changed = true;
-        _offsetPrev.copy(_offsetCur)
+        _offsetPrev.copy(_offsetCur);
     }
 
     function mouseup(event) {
@@ -234,9 +234,9 @@ SolvespaceControls = function(object, domElement) {
     function pan(event) {
         /* neWcur - prev does not necessarily equal (cur + diff) - prev.
         Floating point is not associative. */
-        touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
+        var touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
         _rotateCur.addVectors(_rotateOrig, touchDiff);
-        incDiff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
+        var incDiff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
             .multiplyScalar(1 / object.zoomScale);
         object.rotate(-0.3 * Math.PI / 180 * incDiff.x * object.zoomScale,
              -0.3 * Math.PI / 180 * incDiff.y * object.zoomScale);
@@ -244,10 +244,12 @@ SolvespaceControls = function(object, domElement) {
         _rotatePrev.copy(_rotateCur);
     }
 
+    /* eslint-disable no-unused-vars */
     function panstart(event) {
         /* TODO: Dynamically enable pan function? */
         _rotateOrig.copy(_rotateCur);
     }
+    /* eslint-enable no-unused-vars */
 
     function pinchstart(event) {
         _prevScale = event.scale;
@@ -273,29 +275,35 @@ SolvespaceControls = function(object, domElement) {
     }
 
     /* A tap will enable panning/disable rotate. */
+    /* eslint-disable no-unused-vars */
     function tap(event) {
         panAfterTap.set({enable : true});
         _this.touchControls.get('pan').set({enable : false});
     }
+    /* eslint-enable no-unused-vars */
 
     function panaftertap(event) {
-        touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
+        var touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
         _offsetCur.addVectors(_offsetOrig, touchDiff);
-        incDiff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
+        var incDiff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
             .multiplyScalar(1 / object.zoomScale);
         object.offsetProj(incDiff.x, -incDiff.y);
         _changed = true;
         _offsetPrev.copy(_offsetCur);
     }
 
+    /* eslint-disable no-unused-vars */
     function panaftertapstart(event) {
         _offsetOrig.copy(_offsetCur);
     }
+    /* eslint-enable no-unused-vars */
 
+    /* eslint-disable no-unused-vars */
     function panaftertapend(event) {
         panAfterTap.set({enable : false});
         _this.touchControls.get('pan').set({enable : true});
     }
+    /* eslint-enable no-unused-vars */
 
     function contextmenu(event) {
         event.preventDefault();
@@ -306,13 +314,13 @@ SolvespaceControls = function(object, domElement) {
             _this.dispatchEvent(changeEvent);
             _changed = false;
         }
-    }
+    };
 
     this.domElement.addEventListener('mousedown', mousedown, false);
     this.domElement.addEventListener('wheel', wheel, false);
     this.domElement.addEventListener('contextmenu', contextmenu, false);
 
-    /* Hammer.on wraps addEventListener */
+    // Hammer.on wraps addEventListener
     // Rotate
     this.touchControls.on('pan', pan);
     this.touchControls.on('panstart', panstart);
@@ -326,15 +334,14 @@ SolvespaceControls = function(object, domElement) {
     this.touchControls.on('panaftertapstart', panaftertapstart);
     this.touchControls.on('panaftertap', panaftertap);
     this.touchControls.on('panaftertapend', panaftertapend);
-}
+};
 
 SolvespaceControls.prototype = Object.create(THREE.EventDispatcher.prototype);
 SolvespaceControls.prototype.constructor = SolvespaceControls;
 
-
+/* eslint no-unused-vars: [2, { "vars": "local" }] */
 solvespace = function(obj, params) {
-    var scene, edgeScene, camera, edgeCamera, renderer;
-    var geometry, controls, material, mesh, edges;
+    var scene, edgeScene, camera, renderer, controls, mesh, edges;
     var width, height, scale, offset, projRight, projUp;
     var directionalLightArray = [];
 
@@ -374,7 +381,7 @@ solvespace = function(obj, params) {
         projRight = params.projRight;
     }
 
-    domElement = init();
+    var domElement = init();
     lightUpdate();
     render();
     return domElement;
@@ -402,7 +409,7 @@ solvespace = function(obj, params) {
             scene.add(directionalLight);
         }
 
-        var lightColor = new THREE.Color(obj.lights.a, obj.lights.a, obj.lights.a);
+        lightColor = new THREE.Color(obj.lights.a, obj.lights.a, obj.lights.a);
         var ambientLight = new THREE.AmbientLight(lightColor.getHex());
         scene.add(ambientLight);
 
@@ -441,10 +448,10 @@ solvespace = function(obj, params) {
     function lightUpdate() {
         var changeBasis = new THREE.Matrix4();
 
-        // The original light positions were in camera space.
-        // Project them into standard space using camera's basis
-        // vectors (up, target, and their cross product).
-        n = new THREE.Vector3().crossVectors(camera.up, camera.right);
+        /* The original light positions were in camera space.
+           Project them into standard space using camera's basis
+           vectors (up, target, and their cross product). */
+        var n = new THREE.Vector3().crossVectors(camera.up, camera.right);
         changeBasis.makeBasis(camera.right, camera.up, n);
 
         for (var i = 0; i < 2; i++) {
@@ -467,7 +474,7 @@ solvespace = function(obj, params) {
                 meshObj.points[i][1], meshObj.points[i][2]));
         }
 
-        for (var i = 0; i < meshObj.faces.length; i++) {
+        for (i = 0; i < meshObj.faces.length; i++) {
             var currOpacity = ((meshObj.colors[i] & 0xFF000000) >>> 24) / 255.0;
             if (opacitiesSeen[currOpacity] === undefined) {
                 opacitiesSeen[currOpacity] = materialIndex;
