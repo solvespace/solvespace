@@ -154,10 +154,11 @@ SolvespaceControls = function(object, domElement) {
         event.preventDefault();
         event.stopPropagation();
 
+        console.log(event.screenX, event.screenY);
         switch (event.button) {
             case 0:
-                _rotateCur.set(event.screenX / window.devicePixelRatio,
-                               event.screenY / window.devicePixelRatio);
+                _rotateCur.set(event.screenX,
+                               event.screenY);
                 _rotatePrev.copy(_rotateCur);
                 document.addEventListener('mousemove', mousemove_rotate, false);
                 document.addEventListener('mouseup', mouseup, false);
@@ -185,8 +186,9 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function mousemove_rotate(event) {
-        _rotateCur.set(event.screenX / window.devicePixelRatio,
-                       event.screenY / window.devicePixelRatio);
+        console.log('mousemove_rotate');
+        _rotateCur.set(event.screenX,
+                       event.screenY);
         var diff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
             .multiplyScalar(1 / object.zoomScale);
         object.rotate(-0.3 * Math.PI / 180 * diff.x * object.zoomScale,
@@ -196,11 +198,12 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function mousemove_pan(event) {
+        console.log('mousemove_pan');
         _mouseMoved = true;
         _offsetCur.set(event.screenX / window.devicePixelRatio,
                        event.screenY / window.devicePixelRatio);
         var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
-            .multiplyScalar(1 / object.zoomScale);
+            .multiplyScalar(window.devicePixelRatio / object.zoomScale);
         object.offsetProj(diff.x, -diff.y);
         _changed = true;
         _offsetPrev.copy(_offsetCur)
@@ -508,3 +511,4 @@ solvespace = function(obj, params) {
         return new THREE.LineSegments(geometry, material);
     }
 };
+
