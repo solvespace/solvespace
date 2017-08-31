@@ -357,10 +357,14 @@ void Group::GenerateShellAndMesh() {
         // and corresponding slowdown.
         outm.RemoveDegenerateTriangles();
 
-        // And make sure that the output mesh is vertex-to-vertex.
-        SKdNode *root = SKdNode::From(&outm);
-        root->SnapToMesh(&outm);
-        root->MakeMeshInto(&runningMesh);
+        if(srcg->meshCombine != CombineAs::ASSEMBLE) {
+            // And make sure that the output mesh is vertex-to-vertex.
+            SKdNode *root = SKdNode::From(&outm);
+            root->SnapToMesh(&outm);
+            root->MakeMeshInto(&runningMesh);
+        } else {
+            runningMesh.MakeFromCopyOf(&outm);
+        }
 
         outm.Clear();
         thism.Clear();
