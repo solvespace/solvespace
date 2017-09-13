@@ -189,25 +189,27 @@ static Button *buttons[] = {
     &occludedLinesButton,
 };
 
+/** Foreground color codes. */
 const TextWindow::Color TextWindow::fgColors[] = {
-    { 'd', RGBi(255, 255, 255) },
+    { 'd', RGBi(255, 255, 255) },  // Default   : white
     { 'l', RGBi(100, 100, 255) },
     { 't', RGBi(255, 200,   0) },
     { 'h', RGBi( 90,  90,  90) },
-    { 's', RGBi( 40, 255,  40) },
+    { 's', RGBi( 40, 255,  40) },  // Ok        : green
     { 'm', RGBi(200, 200,   0) },
-    { 'r', RGBi(  0,   0,   0) },
-    { 'x', RGBi(255,  20,  20) },
-    { 'i', RGBi(  0, 255, 255) },
+    { 'r', RGBi(  0,   0,   0) },  // Reverse   : black
+    { 'x', RGBi(255,  20,  20) },  // Error     : red
+    { 'i', RGBi(  0, 255, 255) },  // Info      : cyan
     { 'g', RGBi(160, 160, 160) },
     { 'b', RGBi(200, 200, 200) },
     { 0,   RGBi(  0,   0,   0) }
 };
+/** Background color codes. */
 const TextWindow::Color TextWindow::bgColors[] = {
-    { 'd', RGBi(  0,   0,   0) },
+    { 'd', RGBi(  0,   0,   0) },  // Default   : black
     { 't', RGBi( 34,  15,  15) },
-    { 'a', RGBi( 25,  25,  25) },
-    { 'r', RGBi(255, 255, 255) },
+    { 'a', RGBi( 25,  25,  25) },  // Alternate : dark gray
+    { 'r', RGBi(255, 255, 255) },  // Reverse   : white
     { 0,   RGBi(  0,   0,   0) }
 };
 

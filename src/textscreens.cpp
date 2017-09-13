@@ -97,7 +97,7 @@ void TextWindow::ShowListOfGroups() {
                *checkFalse = " " CHECK_FALSE " ";
 
     Printf(true, "%Ft active");
-    Printf(false, "%Ft    shown ok  group-name%E");
+    Printf(false, "%Ft    shown dof group-name%E");
     int i;
     bool afterActive = false;
     for(i = 0; i < SK.groupOrder.n; i++) {
@@ -106,11 +106,20 @@ void TextWindow::ShowListOfGroups() {
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
+        int dof = g->solved.dof;
+        char sdof[16] = "ok ";
+        if(ok && dof > 0) {
+            if(dof > 999) {
+              strcpy(sdof, "###");
+            } else {
+              sprintf(sdof, "%3d", dof);
+            }
+        }
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
-               "%Fp%D%f%s%Ll%s%E  "
+               "%Fp%D%f%s%Ll%s%E "
                "%Fl%Ll%D%f%s",
             // Alternate between light and dark backgrounds, for readability
                 (i & 1) ? 'd' : 'a',
@@ -123,9 +132,9 @@ void TextWindow::ShowListOfGroups() {
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occured while solving
-            ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? "ok" : "",
-                ok ? "" : "NO",
+            ok ? (dof > 0 ? 'i' : 's') : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
+                ok ? sdof : "",
+                ok ? "" : "ERR",
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
