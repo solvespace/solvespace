@@ -24,6 +24,7 @@ New sketch features:
   * Datum points can be copied and pasted.
   * "Split Curves at Intersection" can now split curves at point lying on curve,
     not just at intersection of two curves.
+  * Property browser now shows amount of degrees of freedom in group list.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
