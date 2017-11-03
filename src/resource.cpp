@@ -1496,7 +1496,7 @@ const std::set<Locale, LocaleLess> &Locales() {
         }
 
         std::smatch m;
-        reader.ExpectRegex(std::regex("([a-z]{2})-([A-Z]{2}),([0-9]{4}),(.+?)\n"), &m);
+        reader.ExpectRegex(std::regex("([a-z]{2})-([A-Z]{2}),([0-9A-F]{4}),(.+?)\n"), &m);
         Locale locale = {};
         locale.language    = m.str(1);
         locale.region      = m.str(2);

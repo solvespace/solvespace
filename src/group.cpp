@@ -122,7 +122,7 @@ void Group::MenuGroup(Command id) {
                 if(SS.GW.projRight.Dot(ut) < 0) g.predef.negateU = true;
                 if(SS.GW.projUp.   Dot(vt) < 0) g.predef.negateV = true;
             } else if(gs.workplanes == 1 && gs.n == 1) {
-                if(gs.entity[0].request().IsFromReferences()) {
+                if(gs.entity[0].isFromRequest()) {
                     Entity *wrkpl = SK.GetEntity(gs.entity[0]);
                     Entity *normal = SK.GetEntity(wrkpl->normal);
                     g.subtype = Subtype::WORKPLANE_BY_POINT_ORTHO;

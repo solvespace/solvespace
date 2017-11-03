@@ -189,7 +189,8 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
     if (gid == 0) {
         dbp("freetype: CID-to-GID mapping for CID 0x%04x failed: %s; using CID as GID",
             chr, ft_error_string(gid));
-        gid = chr;
+        dbp("Assuming cap height is the same as requested height (this is likely wrong).");
+        capHeight = (double)sizeRequest.height;
     }
 
     if(gid) {

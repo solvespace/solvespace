@@ -58,6 +58,7 @@ set(testsuite_SOURCES
     request/image/test.cpp
     request/line_segment/test.cpp
     request/ttf_text/test.cpp
+    request/workplane/test.cpp
     group/link/test.cpp
     group/translate_asy/test.cpp
     group/translate_nd/test.cpp

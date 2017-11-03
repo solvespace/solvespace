@@ -14,6 +14,29 @@ Bug reports are always welcome! When reporting a bug, please include the followi
 GitHub does not allow attaching `*.slvs` files, but it does allow attaching `*.zip` files,
 so any savefiles should first be archived.
 
+Contributing translations
+-------------------------
+
+To contribute a translation, not a lot is necessary—at a minimum, you need to be able
+to edit .po files with a tool such as [poedit](https://poedit.net/). Once you have
+such a tool installed, take `res/messages.pot` and start translating!
+
+However, if you want to see your translation in action, a little more work is necessary.
+First, you need to be able to build SolveSpace; see [README](README.md). After that:
+
+  * Copy `res/messages.pot` to `res/locales/xx_YY.po`, where `xx` is an ISO 639-1
+    country code, and `YY` is an ISO 3166-1 language code.
+  * Add a line `xx-YY,LCID,Name` to `res/locales.txt`, where `xx-YY` have the same
+    meaning as above, `LCID` is a Windows Language Code Identifier ([MS-LCID][]
+    has a complete list), and `Name` is the full name of your locale in your language.
+  * Add `locales/xx_YY.po` in `res/CMakeLists.txt`—search for `locales/en_US.po`
+    to see where it should be added.
+
+You're done! Recompile SolveSpace and you should be able to select your translation
+via Help → Language.
+
+[MS-LCID]: https://msdn.microsoft.com/en-us/library/cc233965.aspx
+
 Contributing code
 -----------------
 
@@ -179,9 +202,16 @@ The Windows releases include the debug information on the GitHub
 
 ### Debugging a custom build
 
-If you are building SolveSpace yourself on a Unix-like platform,
+If you are building SolveSpace yourself on macOS, use the XCode
+CMake generator, then open the project in XCode as usual, select
+the Debug build scheme, and build the project:
+
+    cd build
+    cmake .. -G Xcode [other cmake args...]
+
+If you are building SolveSpace yourself on any Unix-like platform,
 configure or re-configure SolveSpace to produce a debug build, and
-then re-build it:
+then build it:
 
     cd build
     cmake .. -DCMAKE_BUILD_TYPE=Debug [other cmake args...]

@@ -378,6 +378,7 @@ if(APPLE)
     set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
 
     add_custom_command(TARGET solvespace POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${bundle_bin}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
