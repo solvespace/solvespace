@@ -7,8 +7,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
             "    mkdir build && cd build && cmake ..")
 endif()
 
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
-cmake_policy(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.2.0 FATAL_ERROR)
+cmake_policy(VERSION 3.2.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
