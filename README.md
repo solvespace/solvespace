@@ -123,6 +123,33 @@ is `build/bin/solvespace.app/Contents/MacOS/solvespace-cli`.
 [homebrew]: https://brew.sh/
 [appledeveloper]: https://developer.apple.com/download/
 
+Building on OpenBSD
+-------------------
+
+You will need git, cmake, libexecinfo, libpng, gtk3mm and pangomm.
+These can be installed from the ports tree:
+
+    pkg_add -U git cmake libexecinfo png json-c gtk3mm pangomm
+
+Before building, check out the project and the necessary submodules:
+
+    git clone https://github.com/solvespace/solvespace
+    cd solvespace
+    git submodule update --init extlib/libdxfrw
+
+After that, build SolveSpace as following:
+
+    mkdir build
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+    make
+
+Unfortunately, on OpenBSD, the produced executables are not filesystem location independent
+and must be installed before use. By default, the graphical interface is installed to
+`/usr/local/bin/solvespace`, and the command-line interface is built as
+`/usr/local/bin/solvespace-cli`. It is possible to build only the command-line interface
+by passing the `-DENABLE_GUI=OFF` flag to the cmake invocation.
+
 Building on Windows
 -------------------
 
