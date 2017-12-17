@@ -36,8 +36,8 @@ std::string LoadStringFromGzip(const std::string &name) {
     stream.zalloc = Z_NULL;
     stream.zfree = Z_NULL;
     stream.opaque = Z_NULL;
-    ssassert(inflateInit2(&stream, /*decode gzip header*/16) == Z_OK,
-             "Cannot start inflation");
+    const int windowBits = /*maximum window*/ 15 + /*decode gzip header*/16;
+    ssassert(inflateInit2(&stream, windowBits) == Z_OK, "Cannot start inflation");
 
     // Extract length mod 2**32 from the gzip trailer.
     std::string result;
