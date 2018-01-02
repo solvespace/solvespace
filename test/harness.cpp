@@ -21,9 +21,12 @@ namespace Platform {
 }
 }
 
-// The paths in __FILE__ are from the build system, but defined(WIN32) returns
-// the value for the host system.
-#define BUILD_PATH_SEP (__FILE__[0]=='/' ? '/' : '\\')
+
+#ifdef TEST_BUILD_ON_WINDOWS
+static char BUILD_PATH_SEP = '\\';
+#else
+static char BUILD_PATH_SEP = '/';
+#endif
 
 static std::string BuildRoot() {
     static std::string rootDir;
