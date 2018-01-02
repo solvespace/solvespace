@@ -497,7 +497,7 @@ Vector Vector::Normal(int which) const {
 
     // Arbitrarily choose one vector that's normal to us, pivoting
     // appropriately.
-    double xa = fabs(x), ya = fabs(y), za = fabs(z);
+    double xa = std::abs(x), ya = std::abs(y), za = std::abs(z);
     if(this->Equals(Vector::From(0, 0, 1))) {
         // Make DXFs exported in the XY plane work nicely...
         n = Vector::From(1, 0, 0);
@@ -645,7 +645,7 @@ Vector Vector::WithMagnitude(double v) const {
     double m = Magnitude();
     if(EXACT(m == 0)) {
         // We can do a zero vector with zero magnitude, but not any other cases.
-        if(fabs(v) > 1e-100) {
+        if(std::abs(v) > 1e-100) {
             dbp("Vector::WithMagnitude(%g) of zero vector!", v);
         }
         return From(0, 0, 0);
@@ -693,7 +693,7 @@ Vector4 Vector::Project4d() const {
 }
 
 double Vector::DivPivoting(Vector delta) const {
-    double mx = fabs(delta.x), my = fabs(delta.y), mz = fabs(delta.z);
+    double mx = std::abs(delta.x), my = std::abs(delta.y), mz = std::abs(delta.z);
 
     if(mx > my && mx > mz) {
         return x/delta.x;
@@ -705,7 +705,7 @@ double Vector::DivPivoting(Vector delta) const {
 }
 
 Vector Vector::ClosestOrtho() const {
-    double mx = fabs(x), my = fabs(y), mz = fabs(z);
+    double mx = std::abs(x), my = std::abs(y), mz = std::abs(z);
 
     if(mx > my && mx > mz) {
         return From((x > 0) ? 1 : -1, 0, 0);
@@ -767,7 +767,7 @@ bool Vector::BoundingBoxIntersectsLine(Vector amax, Vector amin,
     int i, a;
     for(i = 0; i < 3; i++) {
         int j = WRAP(i+1, 3), k = WRAP(i+2, 3);
-        if(lp*fabs(dp.Element(i)) < LENGTH_EPS) continue; // parallel to plane
+        if(lp*std::abs(dp.Element(i)) < LENGTH_EPS) continue; // parallel to plane
 
         for(a = 0; a < 2; a++) {
             double d = (a == 0) ? amax.Element(i) : amin.Element(i);
@@ -854,7 +854,7 @@ Vector Vector::AtIntersectionOfPlaneAndLine(Vector n, double d,
 {
     Vector dp = p1.Minus(p0);
 
-    if(fabs(n.Dot(dp)) < LENGTH_EPS) {
+    if(std::abs(n.Dot(dp)) < LENGTH_EPS) {
         if(parallel) *parallel = true;
         return Vector::From(0, 0, 0);
     }
@@ -889,7 +889,7 @@ Vector Vector::AtIntersectionOfPlanes(Vector na, double da,
     double det  = det3(na.x, na.y, na.z,
                        nb.x, nb.y, nb.z,
                        nc.x, nc.y, nc.z);
-    if(fabs(det) < 1e-10) { // arbitrary tolerance, not so good
+    if(std::abs(det) < 1e-10) { // arbitrary tolerance, not so good
         *parallel = true;
         return Vector::From(0, 0, 0);
     }
@@ -914,9 +914,9 @@ size_t VectorHash::operator()(const Vector &v) const {
     const size_t size = (size_t)pow(std::numeric_limits<size_t>::max(), 1.0 / 3.0) - 1;
     const double eps = 4.0 * LENGTH_EPS;
 
-    double x = fabs(v.x) / eps;
-    double y = fabs(v.y) / eps;
-    double z = fabs(v.y) / eps;
+    double x = std::abs(v.x) / eps;
+    double y = std::abs(v.y) / eps;
+    double z = std::abs(v.y) / eps;
 
     size_t xs = size_t(fmod(x, (double)size));
     size_t ys = size_t(fmod(y, (double)size));
@@ -992,7 +992,7 @@ Point2d Point2d::ScaledBy(double s) const {
 }
 
 double Point2d::DivPivoting(Point2d delta) const {
-    if(fabs(delta.x) > fabs(delta.y)) {
+    if(std::abs(delta.x) > std::abs(delta.y)) {
         return x/delta.x;
     } else {
         return y/delta.y;
@@ -1098,7 +1098,7 @@ bool BBox::Overlaps(const BBox &b1) const {
     Vector t = b1.GetOrigin().Minus(GetOrigin());
     Vector e = b1.GetExtents().Plus(GetExtents());
 
-    return fabs(t.x) < e.x && fabs(t.y) < e.y && fabs(t.z) < e.z;
+    return std::abs(t.x) < e.x && std::abs(t.y) < e.y && std::abs(t.z) < e.z;
 }
 
 bool BBox::Contains(const Point2d &p, double r) const {
