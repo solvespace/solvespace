@@ -7,6 +7,10 @@ foreach(pkg_config_lib CAIRO)
     link_directories(${${pkg_config_lib}_LIBRARY_DIRS})
 endforeach()
 
+if(${CMAKE_HOST_SYSTEM_NAME} STREQUAL "Windows")
+    add_definitions(-DTEST_BUILD_ON_WINDOWS)
+endif()
+
 # test suite
 
 set(testsuite_SOURCES
