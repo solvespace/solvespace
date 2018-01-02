@@ -27,7 +27,8 @@ target_include_directories(slvs_deps INTERFACE SYSTEM
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS}
-    ${MIMALLOC_INCLUDE_DIR})
+    ${MIMALLOC_INCLUDE_DIR}
+    ${EIGEN3_INCLUDE_DIRS})
 target_link_libraries(slvs_deps INTERFACE
     dxfrw
     ${ZLIB_LIBRARY}
