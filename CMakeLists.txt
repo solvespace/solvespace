@@ -255,6 +255,9 @@ if(MSVC)
     # We rely on these /we flags. They correspond to the GNU-style flags below as
     # follows: /w4062=-Wswitch
     set(WARNING_FLAGS   "${WARNING_FLAGS} /we4062")
+
+    # Needed to avoid crash on start with VS2017, etc.
+    set(CMAKE_EXE_LINKER_FLAGS "/STACK:33554432 ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
