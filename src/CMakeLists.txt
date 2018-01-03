@@ -115,6 +115,7 @@ add_library(solvespace-core STATIC
     sketch.h
     solvespace.h
     ui.h
+    utileigen.h
     platform/platform.h
     render/render.h
     render/gl3shader.h
