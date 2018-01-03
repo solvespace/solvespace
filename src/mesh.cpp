@@ -580,16 +580,20 @@ void SKdNode::SnapToVertex(Vector v, SMesh *extras) {
             bool mightHit = true;
 
             for(k = 0; k < 3; k++) {
-                if((tr->a).Element(k) < v.Element(k) - KDTREE_EPS &&
-                   (tr->b).Element(k) < v.Element(k) - KDTREE_EPS &&
-                   (tr->c).Element(k) < v.Element(k) - KDTREE_EPS)
+                double trA = (tr->a).Element(k);
+                double trB = (tr->b).Element(k);
+                double trC = (tr->c).Element(k);
+                double vk = v.Element(k);
+                if(trA < vk - KDTREE_EPS &&
+                   trB < vk - KDTREE_EPS &&
+                   trC < vk - KDTREE_EPS)
                 {
                     mightHit = false;
                     break;
                 }
-                if((tr->a).Element(k) > v.Element(k) + KDTREE_EPS &&
-                   (tr->b).Element(k) > v.Element(k) + KDTREE_EPS &&
-                   (tr->c).Element(k) > v.Element(k) + KDTREE_EPS)
+                if(trA > vk + KDTREE_EPS &&
+                   trB > vk + KDTREE_EPS &&
+                   trC > vk + KDTREE_EPS)
                 {
                     mightHit = false;
                     break;
