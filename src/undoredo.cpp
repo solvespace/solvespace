@@ -97,7 +97,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
     }
     ut->activeGroup = SS.GW.activeGroup;
 
-    uk->write = WRAP(uk->write + 1, MAX_UNDO);
+    uk->write = WRAP(uk->write + 1, static_cast<int>(MAX_UNDO));
 }
 
 void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
@@ -105,7 +105,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
 
     ssassert(uk->cnt > 0, "Cannot pop from empty undo stack");
     (uk->cnt)--;
-    uk->write = WRAP(uk->write - 1, MAX_UNDO);
+    uk->write = WRAP(uk->write - 1, static_cast<int>(MAX_UNDO));
 
     UndoState *ut = &(uk->d[uk->write]);
 
@@ -149,7 +149,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
 
 void SolveSpaceUI::UndoClearStack(UndoStack *uk) {
     while(uk->cnt > 0) {
-        uk->write = WRAP(uk->write - 1, MAX_UNDO);
+        uk->write = WRAP(uk->write - 1, static_cast<int>(MAX_UNDO));
         (uk->cnt)--;
         UndoClearState(&(uk->d[uk->write]));
     }

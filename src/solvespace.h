@@ -92,10 +92,11 @@ __attribute__((__format__ (__printf__, 1, 2)))
 #endif
 std::string ssprintf(const char *fmt, ...);
 
-inline int WRAP(int v, int n) {
+template<typename T>
+inline T WRAP(T v, T n) {
     // Clamp it to the range [0, n)
     while(v >= n) v -= n;
-    while(v < 0) v += n;
+    while(v < T{0}) v += n;
     return v;
 }
 inline double WRAP_NOT_0(double v, double n) {
