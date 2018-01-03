@@ -752,7 +752,8 @@ void SPolygon::FixContourDirections() {
 }
 
 bool SPolygon::IsEmpty() const {
-    if(l.n == 0 || l.elem[0].l.n == 0) return true;
+    if(l.IsEmpty() || l[0].l.IsEmpty())
+        return true;
     return false;
 }
 

@@ -458,7 +458,8 @@ void OpenGl3Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
 }
 
 void OpenGl3Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) {
-    if(ol.l.n == 0) return;
+    if(ol.l.IsEmpty())
+        return;
 
     Stroke *stroke = SelectStroke(hcs);
     ssassert(stroke->stipplePattern != StipplePattern::ZIGZAG &&

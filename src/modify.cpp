@@ -682,7 +682,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
         sbla.AllIntersectionsWith(&sblb, &inters);
 
         // If there's multiple points, then take the one closest to the mouse pointer.
-        if(inters.l.n > 0) {
+        if(!inters.l.IsEmpty()) {
             double dmin = VERY_POSITIVE;
             SPoint *sp;
             for(sp = inters.l.First(); sp; sp = inters.l.NextAfter(sp)) {

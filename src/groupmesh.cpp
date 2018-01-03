@@ -466,7 +466,7 @@ void Group::GenerateDisplayItems() {
 
             if(SS.GW.showEdges || SS.GW.showOutlines) {
                 SOutlineList rawOutlines = {};
-                if(runningMesh.l.n > 0) {
+                if(!runningMesh.l.IsEmpty()) {
                     // Triangle mesh only; no shell or emphasized edges.
                     runningMesh.MakeOutlinesInto(&rawOutlines, EdgeKind::EMPHASIZED);
                 } else {
@@ -706,7 +706,8 @@ void Group::DrawPolyError(Canvas *canvas) {
 
 void Group::DrawFilledPaths(Canvas *canvas) {
     for(const SBezierLoopSet &sbls : bezierLoops.l) {
-        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
+        if(sbls.l.IsEmpty() || sbls.l[0].l.IsEmpty())
+            continue;
 
         // In an assembled loop, all the styles should be the same; so doesn't
         // matter which one we grab.
@@ -740,7 +741,8 @@ void Group::DrawContourAreaLabels(Canvas *canvas) {
     Vector gu = camera.projUp.ScaledBy(1 / camera.scale);
 
     for(SBezierLoopSet &sbls : bezierLoops.l) {
-        if(sbls.l.n == 0 || sbls.l.elem[0].l.n == 0) continue;
+        if(sbls.l.IsEmpty() || sbls.l[0].l.IsEmpty())
+            continue;
 
         Vector min = sbls.l.elem[0].l.elem[0].ctrl[0];
         Vector max = min;

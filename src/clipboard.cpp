@@ -287,7 +287,7 @@ void GraphicsWindow::MenuClipboard(Command id) {
         }
 
         case Command::PASTE_TRANSFORM: {
-            if(SS.clipboard.r.n == 0) {
+            if(SS.clipboard.r.IsEmpty()) {
                 Error(_("Clipboard is empty; nothing to paste."));
                 break;
             }

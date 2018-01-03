@@ -326,7 +326,8 @@ void SSurface::IntersectAgainst(SSurface *b, SShell *agnstA, SShell *agnstB,
 
                 srfB->AllPointsIntersecting(se->a, se->b, &lsi,
                     /*asSegment=*/true, /*trimmed=*/true, /*inclTangent=*/false);
-                if(lsi.n == 0) continue;
+                if(lsi.IsEmpty())
+                    continue;
 
                 // Find the other surface that this curve trims.
                 hSCurve hsc = { (uint32_t)se->auxA };
