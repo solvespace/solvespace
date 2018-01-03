@@ -6,6 +6,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "../solvespace.h"
+#include "../utileigen.h"
 
 // Converge it to better than LENGTH_EPS; we want two points, each
 // independently projected into uv and back, to end up equal with the
@@ -329,9 +330,9 @@ Vector SSurface::PointAt(double u, double v) const {
 }
 
 void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry) const {
-    Vector num   = Vector::From(0, 0, 0),
-           num_u = Vector::From(0, 0, 0),
-           num_v = Vector::From(0, 0, 0);
+    EiAlignedVector3 num = EiAlignedVector3::Zero();
+    EiAlignedVector3 num_u = EiAlignedVector3::Zero();
+    EiAlignedVector3 num_v = EiAlignedVector3::Zero();
     double den   = 0,
            den_u = 0,
            den_v = 0;
@@ -343,29 +344,26 @@ void SSurface::TangentsAt(double u, double v, Vector *tu, Vector *tv, bool retry
                    Bj  = Bernstein(j, degn, v),
                    Bip = BernsteinDerivative(i, degm, u),
                    Bjp = BernsteinDerivative(j, degn, v);
-
-            num = num.Plus(ctrl[i][j].ScaledBy(Bi*Bj*weight[i][j]));
+            EiAlignedVector3 ctrlij = map(ctrl[i][j]);
+            num += ctrlij * (Bi*Bj*weight[i][j]);
             den += weight[i][j]*Bi*Bj;
 
-            num_u = num_u.Plus(ctrl[i][j].ScaledBy(Bip*Bj*weight[i][j]));
+            num_u += ctrlij * (Bip*Bj*weight[i][j]);
             den_u += weight[i][j]*Bip*Bj;
 
-            num_v = num_v.Plus(ctrl[i][j].ScaledBy(Bi*Bjp*weight[i][j]));
+            num_v += ctrlij * (Bi*Bjp*weight[i][j]);
             den_v += weight[i][j]*Bi*Bjp;
         }
     }
     // quotient rule; f(t) = n(t)/d(t), so f' = (n'*d - n*d')/(d^2)
-    *tu = ((num_u.ScaledBy(den)).Minus(num.ScaledBy(den_u)));
-    *tu = tu->ScaledBy(1.0/(den*den));
+    map(*tu) = ((num_u * den) - (num * den_u)) / (den * den);
+    map(*tv) = ((num_v * den) - (num * den_v)) / (den * den);
 
-    *tv = ((num_v.ScaledBy(den)).Minus(num.ScaledBy(den_v)));
-    *tv = tv->ScaledBy(1.0/(den*den));
-    
-    // Tangent is zero at sungularities like the north pole. Move away a bit and retry. 
-    if(tv->Equals(Vector::From(0,0,0)) && retry)
-        TangentsAt(u+(0.5-u)*0.00001, v, tu, tv, false);
-    if(tu->Equals(Vector::From(0,0,0)) && retry)
-        TangentsAt(u, v+(0.5-v)*0.00001, tu, tv, false);
+    // Tangent is zero at singularities like the north pole. Move away a bit and retry.
+    if(retry && tv->Equals(Vector::From(0, 0, 0)))
+        TangentsAt(u + (0.5 - u) * 0.00001, v, tu, tv, false);
+    if(retry && tu->Equals(Vector::From(0, 0, 0)))
+        TangentsAt(u, v + (0.5 - v) * 0.00001, tu, tv, false);
 }
 
 Vector SSurface::NormalAt(Point2d puv) const {
