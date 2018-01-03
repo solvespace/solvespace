@@ -121,6 +121,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             break;
     }
 
+    EntityList entityAdditions;
     Entity e = {};
     EntReqTable::GetRequestInfo(type, extraPoints, &et, &points, &hasNormal, &hasDistance);
 
@@ -158,7 +159,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
             p.param[0] = AddParam(param, h.param(16 + 3*i + 0));
             p.param[1] = AddParam(param, h.param(16 + 3*i + 1));
         }
-        entity->Add(&p);
+        entityAdditions.Add(&p);
         e.point[i] = p.h;
     }
     if(hasNormal) {
@@ -183,7 +184,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         // The point determines where the normal gets displayed on-screen;
         // it's entirely cosmetic.
         n.point[0] = e.point[0];
-        entity->Add(&n);
+        entityAdditions.Add(&n);
         e.normal = n.h;
     }
     if(hasDistance) {
@@ -194,11 +195,13 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         d.style = style;
         d.type = Entity::Type::DISTANCE;
         d.param[0] = AddParam(param, h.param(64));
-        entity->Add(&d);
+        entityAdditions.Add(&d);
         e.distance = d.h;
     }
 
-    if(et != (Entity::Type)0) entity->Add(&e);
+    if(et != (Entity::Type)0) entityAdditions.Add(&e);
+
+    entityAdditions.MergeInto(entity);
 }
 
 std::string Request::DescriptionString() const {

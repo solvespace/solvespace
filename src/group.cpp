@@ -409,12 +409,14 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
     Vector gc = (SS.GW.offset).ScaledBy(-1);
     gn = gn.WithMagnitude(200/SS.GW.scale);
     gp = gp.WithMagnitude(200/SS.GW.scale);
-    int a, i;
+    int a;
     switch(type) {
         case Type::DRAWING_3D:
             return;
 
         case Type::DRAWING_WORKPLANE: {
+            EntityList additions = {};
+            additions.ReserveMore(3);
             Quaternion q;
             if(subtype == Subtype::WORKPLANE_BY_LINE_SEGMENTS) {
                 Vector u = SK.GetEntity(predef.entityB)->VectorGetNum();
@@ -438,7 +440,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             normal.point[0] = h.entity(2);
             normal.group = h;
             normal.h = h.entity(1);
-            entity->Add(&normal);
+            additions.Add(&normal);
 
             Entity point = {};
             point.type = Entity::Type::POINT_N_COPY;
@@ -446,7 +448,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             point.construction = true;
             point.group = h;
             point.h = h.entity(2);
-            entity->Add(&point);
+            additions.Add(&point);
 
             Entity wp = {};
             wp.type = Entity::Type::WORKPLANE;
@@ -454,7 +456,8 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             wp.point[0] = point.h;
             wp.group = h;
             wp.h = h.entity(0);
-            entity->Add(&wp);
+            additions.Add(&wp);
+            additions.MergeInto(entity);
             return;
         }
 
@@ -472,30 +475,28 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // Get some arbitrary point in the sketch, that will be used
             // as a reference when defining top and bottom faces.
             hEntity pt = { 0 };
-            // Not using range-for here because we're changing the size of entity in the loop.
-            for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->Get(i));
+            EntityList additions = {};
+            for(auto & ent : *entity) {
+                Entity *e = &ent;
                 if(e->group != opA) continue;
 
                 if(e->IsPoint()) pt = e->h;
 
                 e->CalculateNumerical(/*forExport=*/false);
-                hEntity he = e->h; e = NULL;
-                // As soon as I call CopyEntity, e may become invalid! That
-                // adds entities, which may cause a realloc.
-                CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
+                CopyEntity(&additions, e, ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
-                CopyEntity(entity, SK.GetEntity(he), af, REMAP_TOP,
+                CopyEntity(&additions, e, af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
-                MakeExtrusionLines(entity, he);
+                MakeExtrusionLines(&additions, e->h);
             }
             // Remapped versions of that arbitrary point will be used to
             // provide points on the plane faces.
-            MakeExtrusionTopBottomFaces(entity, pt);
+            MakeExtrusionTopBottomFaces(&additions, pt);
+            additions.MergeInto(entity);
             return;
         }
 
@@ -506,35 +507,34 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             // Remapped entity index.
             int ai = 1;
 
-            // Not using range-for here because we're changing the size of entity in the loop.
-            for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->Get(i));
+            EntityList additions = {};
+            for(auto & ent : *entity) {
+                Entity *e = &ent;
                 if(e->group != opA) continue;
 
                 e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h;
 
-                // As soon as I call CopyEntity, e may become invalid! That
-                // adds entities, which may cause a realloc.
-                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
+                CopyEntity(&additions, SK.GetEntity(predef.origin), 0, ai,
                     NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
-                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
+                CopyEntity(&additions, e, 0, REMAP_LATHE_START,
                     NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
-                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
+                CopyEntity(&additions, e, 0, REMAP_LATHE_END,
                     NO_PARAM, NO_PARAM, NO_PARAM,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
-                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
-                MakeLatheSurfacesSelectable(entity, he, axis_dir);
+                MakeLatheCircles(&additions, param, he, axis_pos, axis_dir, ai);
+                MakeLatheSurfacesSelectable(&additions, he, axis_dir);
                 ai++;
             }
+            additions.MergeInto(entity);
             return;
         }
 
@@ -555,7 +555,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
-            for(i = 0; i < entity->n; i++) {
+            for(int i = 0; i < entity->n; i++) {
                 Entity *e = &((*entity)[i]);
                 if(e->group != opA)
                     continue;
@@ -604,7 +604,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             int ai = 1;
 
-            for(i = 0; i < entity->n; i++) {
+            for(int i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->Get(i));
                 if(e->group.v != opA.v)
                     continue;
@@ -616,10 +616,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                 for(a = 0; a < 2; a++) {
                     e->CalculateNumerical(false);
-		    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
-                           (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
-                           h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
-                           h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
+                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                               (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
+                               h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
+                               h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
                 }
                 // For point entities on the axis, create a construction line
                 if(e->IsPoint()) {
@@ -637,7 +637,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         en.type = Entity::Type::LINE_SEGMENT;
                         entity->Add(&en);
                     }
-		}
+                }
                 ai++;
             }
             return;
@@ -657,14 +657,14 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 a0++; n++;
             }
 
+            EntityList additions = {};
             for(a = a0; a < n; a++) {
-                // Not using range-for here because we're changing the size of entity in the loop.
-                for(i = 0; i < entity->n; i++) {
-                    Entity *e = &(entity->Get(i));
+                for(auto & ent : *entity) {
+                    Entity *e = &ent;
                     if(e->group != opA) continue;
 
                     e->CalculateNumerical(/*forExport=*/false);
-                    CopyEntity(entity, e,
+                    CopyEntity(&additions, e,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
@@ -672,6 +672,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         CopyAs::N_TRANS);
                 }
             }
+            additions.MergeInto(entity);
             return;
         }
         case Type::ROTATE: {
@@ -693,14 +694,14 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 a0++; n++;
             }
 
+            EntityList additions = {};
             for(a = a0; a < n; a++) {
-                // Not using range-for here because we're changing the size of entity in the loop.
-                for(i = 0; i < entity->n; i++) {
-                    Entity *e = &(entity->Get(i));
+                for(auto & ent : *entity) {
+                    Entity *e = &ent;
                     if(e->group != opA) continue;
 
                     e->CalculateNumerical(/*forExport=*/false);
-                    CopyEntity(entity, e,
+                    CopyEntity(&additions, e,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
@@ -708,6 +709,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         CopyAs::N_ROT_AA);
                 }
             }
+            additions.MergeInto(entity);
             return;
         }
         case Type::LINKED:
@@ -721,14 +723,15 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), 0);
             AddParam(param, h.param(6), 0);
 
-            // Not using range-for here because we're changing the size of entity in the loop.
-            for(i = 0; i < impEntity.n; i++) {
-                Entity *ie = &(impEntity[i]);
-                CopyEntity(entity, ie, 0, 0,
+            EntityList additions = {};
+            for(auto & impEnt : impEntity) {
+                Entity *ie = &impEnt;
+                CopyEntity(&additions, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6), NO_PARAM,
                     CopyAs::N_ROT_TRANS);
             }
+            additions.MergeInto(entity);
             return;
     }
     ssassert(false, "Unexpected group type");

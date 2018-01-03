@@ -420,6 +420,27 @@ public:
         std::inplace_merge(begin(), end() - 1, end(), Compare());
     }
 
+    void MergeInto(IdList *dest) {
+        dest->ReserveMore(n);
+
+        const auto oldEnd = dest->elem + dest->n;
+        auto outIter      = oldEnd;
+
+        for(auto &elt : *this) {
+            // Copy-construct at the end of the list.
+            new(outIter) T(elt);
+            ++outIter;
+        }
+
+        /// @todo Look to see if we already have something with the same handle value.
+
+        dest->n = dest->n + n;
+        Clear();
+
+        // The items we just added are sorted, so merge
+        std::inplace_merge(dest->begin(), oldEnd, dest->end(), Compare());
+    }
+
     T *FindById(H h) {
         T *t = FindByIdNoOops(h);
         ssassert(t != NULL, "Cannot find handle");
