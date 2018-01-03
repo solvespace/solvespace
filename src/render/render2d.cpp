@@ -255,7 +255,8 @@ void SurfaceRenderer::ConvertBeziersToEdges() {
 
 void SurfaceRenderer::CullOccludedStrokes() {
     // Perform occlusion testing, if necessary.
-    if(mesh.l.n == 0) return;
+    if(mesh.l.IsEmpty())
+        return;
 
     // We can't perform hidden line removal on exact curves.
     ConvertBeziersToEdges();

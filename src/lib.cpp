@@ -182,7 +182,7 @@ default: dbp("bad constraint type %d", sc->type); return;
         c.other2        = (sc->other2) ? true : false;
 
         c.Generate(&params);
-        if(params.n > 0) {
+        if(!params.IsEmpty()) {
             for(Param &p : params) {
                 p.h = SK.param.AddAndAssignId(&p);
                 c.valP = p.h;

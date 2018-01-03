@@ -466,7 +466,7 @@ void Group::GenerateDisplayItems() {
 
             if(SS.GW.showEdges || SS.GW.showOutlines) {
                 SOutlineList rawOutlines = {};
-                if(runningMesh.l.n > 0) {
+                if(!runningMesh.l.IsEmpty()) {
                     // Triangle mesh only; no shell or emphasized edges.
                     runningMesh.MakeOutlinesInto(&rawOutlines, EdgeKind::EMPHASIZED);
                 } else {

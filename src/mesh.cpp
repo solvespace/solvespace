@@ -318,9 +318,7 @@ void SMesh::MakeFromTransformationOf(SMesh *a, Vector trans,
     }
 }
 
-bool SMesh::IsEmpty() const {
-    return (l.n == 0);
-}
+bool SMesh::IsEmpty() const { return (l.IsEmpty()); }
 
 uint32_t SMesh::FirstIntersectionWith(Point2d mp) const {
     Vector rayPoint = SS.GW.UnProjectPoint3(Vector::From(mp.x, mp.y, 0.0));

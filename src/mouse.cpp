@@ -755,7 +755,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                       [&]() { MenuEdit(Command::SELECT_ALL); });
     }
 
-    if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
+    if((!SS.clipboard.r.IsEmpty() || !SS.clipboard.c.IsEmpty()) && LockedInWorkplane()) {
         menu->AddItem(_("Paste"),
                       [&]() { MenuClipboard(Command::PASTE); });
         menu->AddItem(_("Paste Transformed..."),

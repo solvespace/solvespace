@@ -297,7 +297,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
     }
 
     // Copy color from the previous mesh-contributing group.
-    if(g.IsMeshGroup() && SK.groupOrder.n > 0) {
+    if(g.IsMeshGroup() && !SK.groupOrder.IsEmpty()) {
         Group *running = SK.GetRunningMeshGroupFor(SS.GW.activeGroup);
         if(running != NULL) {
             g.color = running->color;

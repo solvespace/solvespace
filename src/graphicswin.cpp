@@ -381,6 +381,8 @@ void GraphicsWindow::Init() {
     orig.projUp = projUp;
 
     // And with the last group active
+    ssassert(!SK.groupOrder.IsEmpty(),
+             "Group order can't be empty since we will activate the last group.");
     activeGroup = SK.groupOrder.elem[SK.groupOrder.n - 1];
     SK.GetGroup(activeGroup)->Activate();
 
@@ -1304,7 +1306,7 @@ void GraphicsWindow::ToggleBool(bool *v) {
     // If the mesh or edges were previously hidden, they haven't been generated,
     // and if we are going to show them, we need to generate them first.
     Group *g = SK.GetGroup(SS.GW.activeGroup);
-    if(*v && (g->displayOutlines.l.n == 0 && (v == &showEdges || v == &showOutlines))) {
+    if(*v && (g->displayOutlines.l.IsEmpty() && (v == &showEdges || v == &showOutlines))) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
     }
 

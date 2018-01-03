@@ -17,7 +17,8 @@ void SShell::MergeCoincidentSurfaces() {
         if(si->tag) continue;
         // Let someone else clean up the empty surfaces; we can certainly merge
         // them, but we don't know how to calculate a reasonable bounding box.
-        if(si->trim.n == 0) continue;
+        if(si->trim.IsEmpty())
+            continue;
         // And for now we handle only coincident planes, so no sense wasting
         // time on other surfaces.
         if(si->degm != 1 || si->degn != 1) continue;
