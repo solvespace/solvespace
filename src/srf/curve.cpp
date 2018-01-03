@@ -311,7 +311,7 @@ bool SBezierList::GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
     int i;
 
     // Get any point on any Bezier; or an arbitrary point if list is empty.
-    if(l.n > 0) {
+    if(!l.IsEmpty()) {
         pt = l.elem[0].Start();
     } else {
         pt = Vector::From(0, 0, 0);
@@ -402,7 +402,7 @@ SBezierLoop SBezierLoop::FromCurves(SBezierList *sbl,
 
     sbl->l.RemoveTagged();
 
-    while(sbl->l.n > 0 && !hanging.Equals(start)) {
+    while(!sbl->l.IsEmpty() && !hanging.Equals(start)) {
         int i;
         bool foundNext = false;
         for(i = 0; i < sbl->l.n; i++) {

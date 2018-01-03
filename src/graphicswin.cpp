@@ -1306,7 +1306,7 @@ void GraphicsWindow::ToggleBool(bool *v) {
     // If the mesh or edges were previously hidden, they haven't been generated,
     // and if we are going to show them, we need to generate them first.
     Group *g = SK.GetGroup(SS.GW.activeGroup);
-    if(*v && (g->displayOutlines.l.n == 0 && (v == &showEdges || v == &showOutlines))) {
+    if(*v && (g->displayOutlines.l.IsEmpty() && (v == &showEdges || v == &showOutlines))) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
     }
 

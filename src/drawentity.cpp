@@ -34,18 +34,18 @@ void Entity::GenerateEdges(SEdgeList *el) {
 }
 
 SBezierList *Entity::GetOrGenerateBezierCurves() {
-    if(beziers.l.n == 0)
+    if(beziers.l.IsEmpty())
         GenerateBezierCurves(&beziers);
     return &beziers;
 }
 
 SEdgeList *Entity::GetOrGenerateEdges() {
-    if(edges.l.n != 0) {
+    if(!edges.l.IsEmpty()) {
         if(EXACT(edgesChordTol == SS.ChordTolMm()))
             return &edges;
         edges.l.Clear();
     }
-    if(edges.l.n == 0)
+    if(edges.l.IsEmpty())
         GenerateEdges(&edges);
     edgesChordTol = SS.ChordTolMm();
     return &edges;
@@ -55,7 +55,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     SBezierList *sbl = GetOrGenerateBezierCurves();
 
     // We don't bother with bounding boxes for workplanes, etc.
-    *hasBBox = (IsPoint() || IsNormal() || sbl->l.n > 0);
+    *hasBBox = (IsPoint() || IsNormal() || !sbl->l.IsEmpty());
     if(!*hasBBox) return {};
 
     if(screenBBoxValid)
@@ -67,16 +67,14 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
     } else if(IsNormal()) {
         Vector proj = SK.GetEntity(point[0])->PointGetNum();
         screenBBox = BBox::From(proj, proj);
-    } else if(sbl->l.n > 0) {
+    } else if(!sbl->l.IsEmpty()) {
         Vector first = SS.GW.ProjectPoint3(sbl->l.elem[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
-        for(int i = 0; i < sbl->l.n; i++) {
-            SBezier *sb = &sbl->l.elem[i];
-            for(int i = 0; i <= sb->deg; i++) {
-                screenBBox.Include(SS.GW.ProjectPoint3(sb->ctrl[i]));
-            }
+        for(auto &sb : sbl->l) {
+            for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
         }
-    } else ssassert(false, "Expected entity to be a point or have beziers");
+    } else
+        ssassert(false, "Expected entity to be a point or have beziers");
 
     screenBBoxValid = true;
     return screenBBox;

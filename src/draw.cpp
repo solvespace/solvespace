@@ -329,7 +329,8 @@ Lighting GraphicsWindow::GetLighting() const {
 
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     Selection sel = {};
-    if(hoverList.n == 0) return sel;
+    if(hoverList.IsEmpty())
+        return sel;
 
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;

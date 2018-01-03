@@ -549,7 +549,7 @@ bool SolveSpaceUI::LoadFromFile(const Platform::Path &filename, bool canCancel) 
         Error(_("Unrecognized data in file. This file may be corrupt, or "
                 "from a newer version of the program."));
         // At least leave the program in a non-crashing state.
-        if(SK.group.n == 0) {
+        if(SK.group.IsEmpty()) {
             NewFile();
         }
     }

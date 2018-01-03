@@ -938,7 +938,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     root->MakeCertainEdgesInto(&(SS.nakedEdges),
         EdgeKind::NAKED_OR_SELF_INTER, /*coplanarIsInter=*/true, &inters, &leaks);
 
-    if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.n == 0) {
+    if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.IsEmpty()) {
         return;
     }
     SS.GW.Invalidate();
@@ -954,7 +954,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
         _("\n\nThe model contains %d triangles, from %d surfaces."),
         g->displayMesh.l.n, g->runningShell.surface.n);
 
-    if(SS.nakedEdges.l.n == 0) {
+    if(SS.nakedEdges.l.IsEmpty()) {
         Message(_("%s\n\n%s\n\nZero problematic edges, good.%s"),
             intersMsg, leaksMsg, cntMsg.c_str());
     } else {
