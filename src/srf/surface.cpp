@@ -829,6 +829,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
 }
 
 void SShell::MakeFromCopyOf(SShell *a) {
+    ssassert(this != a, "Can't make from copy of self.");
     MakeFromTransformationOf(a,
         Vector::From(0, 0, 0), Quaternion::IDENTITY, 1.0);
 }
