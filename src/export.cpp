@@ -96,9 +96,8 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     bl.CullIdenticalBeziers(/*both=*/true);
 
     // Collect lines and beziers with custom style & export.
-    int i;
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(auto &ent : SK.entity) {
+        Entity *e = &ent;
         if (!e->IsVisible()) continue;
         if (e->style.v < Style::FIRST_CUSTOM) continue;
         if (!Style::Exportable(e->style.v)) continue;
@@ -186,7 +185,6 @@ public:
 };
 
 void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe) {
-    int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
 
@@ -206,8 +204,8 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         sm = NULL;
     }
 
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(auto &entity : SK.entity) {
+        Entity *e = &entity;
         if(!e->IsVisible()) continue;
         if(e->construction) continue;
 
