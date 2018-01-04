@@ -186,7 +186,6 @@ public:
 };
 
 void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe) {
-    int i;
     SEdgeList edges = {};
     SBezierList beziers = {};
 
@@ -206,8 +205,8 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         sm = NULL;
     }
 
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
+    for(auto & entity : SK.entity) {
+        Entity * e = &entity;
         if(!e->IsVisible()) continue;
         if(e->construction) continue;
 

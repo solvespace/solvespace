@@ -437,15 +437,14 @@ list_items:
     Printf(false, "");
     Printf(false, "%Ft requests in group");
 
-    int i, a = 0;
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
+    int a = 0;
+    for(auto & r : SK.request) {
 
-        if(r->group.v == shown.group.v) {
-            std::string s = r->DescriptionString();
+        if(r.group.v == shown.group.v) {
+            std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
                 (a & 1) ? 'd' : 'a',
-                r->h.v, (&TextWindow::ScreenSelectRequest),
+                r.h.v, (&TextWindow::ScreenSelectRequest),
                 &(TextWindow::ScreenHoverRequest), s.c_str());
             a++;
         }
@@ -455,16 +454,15 @@ list_items:
     a = 0;
     Printf(false, "");
     Printf(false, "%Ft constraints in group (%d DOF)", g->solved.dof);
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
+    for(auto & c : SK.constraint) {
 
-        if(c->group.v == shown.group.v) {
-            std::string s = c->DescriptionString();
+        if(c.group.v == shown.group.v) {
+            std::string s = c.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
                 (a & 1) ? 'd' : 'a',
-                c->h.v, (&TextWindow::ScreenSelectConstraint),
+                c.h.v, (&TextWindow::ScreenSelectConstraint),
                 (&TextWindow::ScreenHoverConstraint), s.c_str(),
-                c->reference ? "(ref)" : "");
+                c.reference ? "(ref)" : "");
             a++;
         }
     }

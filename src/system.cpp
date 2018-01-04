@@ -20,28 +20,26 @@ const double System::RANK_MAG_TOLERANCE = 1e-4;
 const double System::CONVERGE_TOLERANCE = (LENGTH_EPS/(1e2));
 
 bool System::WriteJacobian(int tag) {
-    int a, i, j;
 
-    j = 0;
-    for(a = 0; a < param.n; a++) {
-        if(j >= MAX_UNKNOWNS) return false;
+    int j = 0;
+    for (auto & p : param) {
+        if (j >= MAX_UNKNOWNS) return false;
 
-        Param *p = &(param.elem[a]);
-        if(p->tag != tag) continue;
-        mat.param[j] = p->h;
+        if (p.tag != tag) continue;
+        mat.param[j] = p.h;
         j++;
     }
     mat.n = j;
 
-    i = 0;
-    for(a = 0; a < eq.n; a++) {
+    int i = 0;
+
+    for(auto & e : eq) {
         if(i >= MAX_UNKNOWNS) return false;
 
-        Equation *e = &(eq.elem[a]);
-        if(e->tag != tag) continue;
+        if(e.tag != tag) continue;
 
-        mat.eq[i] = e->h;
-        Expr *f = e->e->DeepCopyWithParamsAsPointers(&param, &(SK.param));
+        mat.eq[i] = e.h;
+        Expr *f = e.e->DeepCopyWithParamsAsPointers(&param, &(SK.param));
         f = f->FoldConstants();
 
         // Hash table (61 bits) to accelerate generation of zero partials.
@@ -85,10 +83,8 @@ bool System::IsDragged(hParam p) {
 }
 
 void System::SolveBySubstitution() {
-    int i;
-    for(i = 0; i < eq.n; i++) {
-        Equation *teq = &(eq.elem[i]);
-        Expr *tex = teq->e;
+    for(auto & teq : eq) {
+        Expr *tex = teq.e;
 
         if(tex->op    == Expr::Op::MINUS &&
            tex->a->op == Expr::Op::PARAM &&
@@ -108,22 +104,19 @@ void System::SolveBySubstitution() {
                 std::swap(a, b);
             }
 
-            int j;
-            for(j = 0; j < eq.n; j++) {
-                Equation *req = &(eq.elem[j]);
-                (req->e)->Substitute(a, b); // A becomes B, B unchanged
+            for(auto & req : eq) {
+                req.e->Substitute(a, b); // A becomes B, B unchanged
             }
-            for(j = 0; j < param.n; j++) {
-                Param *rp = &(param.elem[j]);
-                if(rp->substd.v == a.v) {
-                    rp->substd = b;
+            for(auto & rp : param) {
+                if(rp.substd.v == a.v) {
+                    rp.substd = b;
                 }
             }
             Param *ptr = param.FindById(a);
             ptr->tag = VAR_SUBSTITUTED;
             ptr->substd = b;
 
-            teq->tag = EQ_SUBSTITUTED;
+            teq.tag = EQ_SUBSTITUTED;
         }
     }
 }
@@ -322,10 +315,9 @@ bool System::NewtonSolve(int tag) {
 }
 
 void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
-    int i;
     // Generate all the equations from constraints in this group
-    for(i = 0; i < SK.constraint.n; i++) {
-        ConstraintBase *c = &(SK.constraint.elem[i]);
+    for(auto & con : SK.constraint) {
+        ConstraintBase *c = &con;
         if(c->group.v != g->h.v) continue;
         if(c->h.v == hc.v) continue;
 
@@ -347,8 +339,8 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
         c->GenerateEquations(&eq);
     }
     // And the equations from entities
-    for(i = 0; i < SK.entity.n; i++) {
-        EntityBase *e = &(SK.entity.elem[i]);
+    for(auto & ent : SK.entity) {
+        EntityBase *e = &ent;
         if(e->group.v != g->h.v) continue;
 
         e->GenerateEquations(&eq);
@@ -358,11 +350,11 @@ void System::WriteEquationsExceptFor(hConstraint hc, Group *g) {
 }
 
 void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bool forceDofCheck) {
-    int a, i;
+    int a;
 
     for(a = 0; a < 2; a++) {
-        for(i = 0; i < SK.constraint.n; i++) {
-            ConstraintBase *c = &(SK.constraint.elem[i]);
+        for(auto & con : SK.constraint) {
+            ConstraintBase *c = &con;
             if(c->group.v != g->h.v) continue;
             if((c->type == Constraint::Type::POINTS_COINCIDENT && a == 0) ||
                (c->type != Constraint::Type::POINTS_COINCIDENT && a == 1))
@@ -427,18 +419,17 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     // the system is consistent yet, but if it isn't then we'll catch that
     // later.
     int alone = 1;
-    for(i = 0; i < eq.n; i++) {
-        Equation *e = &(eq.elem[i]);
-        if(e->tag != 0) continue;
+    for(auto & e : eq) {
+        if(e.tag != 0) continue;
 
-        hParam hp = e->e->ReferencedParams(&param);
+        hParam hp = e.e->ReferencedParams(&param);
         if(hp.v == Expr::NO_PARAMS.v) continue;
         if(hp.v == Expr::MULTIPLE_PARAMS.v) continue;
 
         Param *p = param.FindById(hp);
         if(p->tag != 0) continue; // let rank test catch inconsistency
 
-        e->tag = alone;
+        e.tag = alone;
         p->tag = alone;
         WriteJacobian(alone);
         if(!NewtonSolve(alone)) {
@@ -478,23 +469,23 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     }
     // System solved correctly, so write the new values back in to the
     // main parameter table.
-    for(i = 0; i < param.n; i++) {
-        Param *p = &(param.elem[i]);
+    for(auto & p : param) {
         double val;
-        if(p->tag == VAR_SUBSTITUTED) {
-            val = param.FindById(p->substd)->val;
+        if(p.tag == VAR_SUBSTITUTED) {
+            val = param.FindById(p.substd)->val;
         } else {
-            val = p->val;
+            val = p.val;
         }
-        Param *pp = SK.GetParam(p->h);
+        Param *pp = SK.GetParam(p.h);
         pp->val = val;
         pp->known = true;
-        pp->free = p->free;
+        pp->free = p.free;
     }
     return rankOk ? SolveResult::OKAY : SolveResult::REDUNDANT_OKAY;
 
 didnt_converge:
     SK.constraint.ClearTags();
+    // Not using range-for here because index is used in additional ways
     for(i = 0; i < eq.n; i++) {
         if(ffabs(mat.B.num[i]) > CONVERGE_TOLERANCE || isnan(mat.B.num[i])) {
             // This constraint is unsatisfied.
@@ -560,20 +551,19 @@ void System::MarkParamsFree(bool find) {
     // If requested, find all the free (unbound) variables. This might be
     // more than the number of degrees of freedom. Don't always do this,
     // because the display would get annoying and it's slow.
-    for(int i = 0; i < param.n; i++) {
-        Param *p = &(param.elem[i]);
-        p->free = false;
+    for(auto & p : param) {
+        p.free = false;
 
         if(find) {
-            if(p->tag == 0) {
-                p->tag = VAR_DOF_TEST;
+            if(p.tag == 0) {
+                p.tag = VAR_DOF_TEST;
                 WriteJacobian(0);
                 EvalJacobian();
                 int rank = CalculateRank();
                 if(rank == mat.m) {
-                    p->free = true;
+                    p.free = true;
                 }
-                p->tag = 0;
+                p.tag = 0;
             }
         }
     }

@@ -12,11 +12,9 @@
 // Useful when splitting, tangent arcing, or removing bezier points.
 //-----------------------------------------------------------------------------
 void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
-    int i;
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->ptA.v == oldpt.v) c->ptA = newpt;
-        if(c->ptB.v == oldpt.v) c->ptB = newpt;
+    for(auto & c : SK.constraint) {
+        if(c.ptA.v == oldpt.v) c.ptA = newpt;
+        if(c.ptB.v == oldpt.v) c.ptB = newpt;
     }
 }
 
@@ -25,14 +23,13 @@ void GraphicsWindow::ReplacePointInConstraints(hEntity oldpt, hEntity newpt) {
 //-----------------------------------------------------------------------------
 void GraphicsWindow::RemoveConstraintsForPointBeingDeleted(hEntity hpt) {
     SK.constraint.ClearTags();
-    for(int i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->ptA.v == hpt.v || c->ptB.v == hpt.v) {
-            c->tag = 1;
+    for(auto & c : SK.constraint) {
+        if(c.ptA.v == hpt.v || c.ptB.v == hpt.v) {
+            c.tag = 1;
             (SS.deleted.constraints)++;
-            if(c->type != Constraint::Type::POINTS_COINCIDENT &&
-               c->type != Constraint::Type::HORIZONTAL &&
-               c->type != Constraint::Type::VERTICAL)
+            if(c.type != Constraint::Type::POINTS_COINCIDENT &&
+               c.type != Constraint::Type::HORIZONTAL &&
+               c.type != Constraint::Type::VERTICAL)
             {
                 (SS.deleted.nonTrivialConstraints)++;
             }
@@ -270,18 +267,17 @@ void GraphicsWindow::MakeTangentArc() {
     hRequest hreq[2];
     hEntity hent[2];
     bool pointf[2];
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(r->group.v != activeGroup.v) continue;
-        if(r->workplane.v != ActiveWorkplane().v) continue;
-        if(r->construction) continue;
-        if(r->type != Request::Type::LINE_SEGMENT &&
-           r->type != Request::Type::ARC_OF_CIRCLE)
+    for(auto & r : SK.request) {
+        if(r.group.v != activeGroup.v) continue;
+        if(r.workplane.v != ActiveWorkplane().v) continue;
+        if(r.construction) continue;
+        if(r.type != Request::Type::LINE_SEGMENT &&
+           r.type != Request::Type::ARC_OF_CIRCLE)
         {
             continue;
         }
 
-        Entity *e = SK.GetEntity(r->h.entity(0));
+        Entity *e = SK.GetEntity(r.h.entity(0));
         Vector ps = e->EndpointStart(),
                pf = e->EndpointFinish();
 
@@ -292,8 +288,8 @@ void GraphicsWindow::MakeTangentArc() {
                 // finish of this entity.
                 ent[c] = e;
                 hent[c] = e->h;
-                req[c] = r;
-                hreq[c] = r->h;
+                req[c] = &r;
+                hreq[c] = r.h;
                 pointf[c] = (pf.Equals(pshared));
             }
             c++;
@@ -603,15 +599,14 @@ hEntity GraphicsWindow::SplitEntity(hEntity he, Vector pinter) {
     // Finally, delete the request that generated the original entity.
     Request::Type reqType = EntReqTable::GetRequestForEntity(entityType);
     SK.request.ClearTags();
-    for(int i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(r->group.v != activeGroup.v) continue;
-        if(r->type != reqType) continue;
+    for(auto & r : SK.request) {
+        if(r.group.v != activeGroup.v) continue;
+        if(r.type != reqType) continue;
 
         // If the user wants to keep the old entities around, they can just
         // mark them construction first.
-        if(he.v == r->h.entity(0).v && !r->construction) {
-            r->tag = 1;
+        if(he.v == r.h.entity(0).v && !r.construction) {
+            r.tag = 1;
             break;
         }
     }

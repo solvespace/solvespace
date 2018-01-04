@@ -1027,8 +1027,8 @@ void SvgFileWriter::StartFile() {
     double sw = max(ptMax.x - ptMin.x, ptMax.y - ptMin.y) / 1000;
     fprintf(f, "stroke-width:%f;\r\n", sw);
     fprintf(f, "}\r\n");
-    for(int i = 0; i < SK.style.n; i++) {
-        Style *s = &SK.style.elem[i];
+    for(auto & style : SK.style) {
+        Style * s = &style;
         RgbaColor strokeRgb = Style::Color(s->h, /*forExport=*/true);
         StipplePattern pattern = Style::PatternType(s->h);
         double stippleScale = Style::StippleScaleMm(s->h);

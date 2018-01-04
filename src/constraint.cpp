@@ -59,8 +59,8 @@ std::string Constraint::DescriptionString() const {
 void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA)
 {
     SK.constraint.ClearTags();
-    for(int i = 0; i < SK.constraint.n; i++) {
-        ConstraintBase *ct = &(SK.constraint.elem[i]);
+    for(auto & constraint : SK.constraint) {
+        ConstraintBase *ct = &constraint;
         if(ct->type != type) continue;
 
         if(ct->entityA.v != entityA.v) continue;

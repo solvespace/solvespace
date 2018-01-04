@@ -254,10 +254,9 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
             }
 
             case 'M': {
-                int j;
                 fprintf(fh, "{\n");
-                for(j = 0; j < p->M().n; j++) {
-                    EntityMap *em = &(p->M().elem[j]);
+                for(auto & emap : p->M()) {
+                    EntityMap *em = &emap;
                     fprintf(fh, "    %d %08x %d\n",
                             em->h.v, em->input.v, em->copyNumber);
                 }
@@ -297,39 +296,39 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     fprintf(fh, "%s\n\n\n", VERSION_STRING);
 
     int i, j;
-    for(i = 0; i < SK.group.n; i++) {
-        sv.g = SK.group.elem[i];
+    for(auto & g : SK.group) {
+        sv.g = g;
         SaveUsingTable(filename, 'g');
         fprintf(fh, "AddGroup\n\n");
     }
 
-    for(i = 0; i < SK.param.n; i++) {
-        sv.p = SK.param.elem[i];
+    for(auto & p : SK.param) {
+        sv.p = p;
         SaveUsingTable(filename, 'p');
         fprintf(fh, "AddParam\n\n");
     }
 
-    for(i = 0; i < SK.request.n; i++) {
-        sv.r = SK.request.elem[i];
+    for(auto & r : SK.request) {
+        sv.r = r;
         SaveUsingTable(filename, 'r');
         fprintf(fh, "AddRequest\n\n");
     }
 
-    for(i = 0; i < SK.entity.n; i++) {
-        (SK.entity.elem[i]).CalculateNumerical(/*forExport=*/true);
-        sv.e = SK.entity.elem[i];
+    for(auto & e : SK.entity) {
+        e.CalculateNumerical(/*forExport=*/true);
+        sv.e = e;
         SaveUsingTable(filename, 'e');
         fprintf(fh, "AddEntity\n\n");
     }
 
-    for(i = 0; i < SK.constraint.n; i++) {
-        sv.c = SK.constraint.elem[i];
+    for(auto & c : SK.constraint) {
+        sv.c = c;
         SaveUsingTable(filename, 'c');
         fprintf(fh, "AddConstraint\n\n");
     }
 
-    for(i = 0; i < SK.style.n; i++) {
-        sv.s = SK.style.elem[i];
+    for(auto & s : SK.style) {
+        sv.s = s;
         if(sv.s.h.v >= Style::FIRST_CUSTOM) {
             SaveUsingTable(filename, 's');
             fprintf(fh, "AddStyle\n\n");
