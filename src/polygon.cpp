@@ -508,16 +508,16 @@ void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
     qsort(l.elem, l.n, sizeof(l.elem[0]), ByTAlongLine);
 
     l.ClearTags();
-    int i;
-    for(i = 1; i < l.n; i++) {
-        SEdge *prev = &(l.elem[i-1]),
-              *now  = &(l.elem[i]);
-
-        if((prev->b).Equals(now->a) && prev->auxA == now->auxA) {
-            // The previous segment joins up to us; so merge it into us.
-            prev->tag = 1;
-            now->a = prev->a;
+    SEdge *prev = nullptr;
+    for(auto &now : l) {
+        if(prev != nullptr) {
+            if((prev->b).Equals(now.a) && prev->auxA == now.auxA) {
+                // The previous segment joins up to us; so merge it into us.
+                prev->tag = 1;
+                now.a     = prev->a;
+            }
         }
+        prev = &now;
     }
     l.RemoveTagged();
 }

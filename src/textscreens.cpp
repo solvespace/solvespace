@@ -57,8 +57,9 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
     bool state = link == 's';
-    for(int i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+
         g->visible = state;
     }
     SS.GW.persistentDirty = true;
@@ -98,10 +99,11 @@ void TextWindow::ShowListOfGroups() {
 
     Printf(true, "%Ft active");
     Printf(false, "%Ft    shown dof group-name%E");
-    int i;
     bool afterActive = false;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    bool backgroundParity = false;
+    for(hGroup hg : SK.groupOrder) {
+        Group *g = SK.GetGroup(hg);
+
         std::string s = g->DescriptionString();
         bool active = (g->h == SS.GW.activeGroup);
         bool shown = g->visible;
@@ -121,30 +123,32 @@ void TextWindow::ShowListOfGroups() {
             }
         }
         bool ref = (g->h == Group::HGROUP_REFERENCES);
-        Printf(false, "%Bp%Fd "
+        Printf(false,
+               "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
                "%Fp%D%f%s%Ll%s%E "
                "%Fl%Ll%D%f%s",
-            // Alternate between light and dark backgrounds, for readability
-                (i & 1) ? 'd' : 'a',
-            // Link that activates the group
-                ref ? "   " : "",
-                g->h.v, (&TextWindow::ScreenActivateGroup),
-                ref ? "" : (active ? radioTrue : radioFalse),
-            // Link that hides or shows the group
-                afterActive ? " - " : "",
-                g->h.v, (&TextWindow::ScreenToggleGroupShown),
-                afterActive ? "" : (shown ? checkTrue : checkFalse),
-            // Link to the errors, if a problem occurred while solving
-                ok ? (warn ? 'm' : (dof > 0 ? 'i' : 's')) : 'x',
-                g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? (warn ? "err" : sdof) : "",
-                ok ? "" : "ERR",
-            // Link to a screen that gives more details on the group
-                g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
+               // Alternate between light and dark backgrounds, for readability
+               backgroundParity ? 'd' : 'a',
+               // Link that activates the group
+               ref ? "   " : "",
+               g->h.v, (&TextWindow::ScreenActivateGroup),
+               ref ? "" : (active ? radioTrue : radioFalse),
+               // Link that hides or shows the group
+               afterActive ? " - " : "",
+               g->h.v, (&TextWindow::ScreenToggleGroupShown),
+               afterActive ? "" : (shown ? checkTrue : checkFalse),
+               // Link to the errors, if a problem occurred while solving
+               ok ? (warn ? 'm' : (dof > 0 ? 'i' : 's')) : 'x',
+               g->h.v, (&TextWindow::ScreenHowGroupSolved),
+               ok ? (warn ? "err" : sdof) : "",
+               ok ? "" : "ERR",
+               // Link to a screen that gives more details on the group
+               g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
         if(active) afterActive = true;
+        backgroundParity = !backgroundParity;
     }
 
     Printf(true,  "  %Fl%Ls%fshow all%E / %Fl%Lh%fhide all%E",
@@ -445,16 +449,17 @@ list_items:
     Printf(false, "");
     Printf(false, "%Ft requests in group");
 
-    int i, a = 0;
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
+    int a = 0;
+    for(auto &r : SK.request) {
 
-        if(r->group == shown.group) {
-            std::string s = r->DescriptionString();
+        if(r.group == shown.group) {
+            std::string s = r.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E",
-                (a & 1) ? 'd' : 'a',
-                r->h.v, (&TextWindow::ScreenSelectRequest),
-                &(TextWindow::ScreenHoverRequest), s.c_str());
+                   (a & 1) ? 'd' : 'a',
+                   r.h.v,
+                   (&TextWindow::ScreenSelectRequest),
+                   &(TextWindow::ScreenHoverRequest),
+                   s.c_str());
             a++;
         }
     }
@@ -463,16 +468,17 @@ list_items:
     a = 0;
     Printf(false, "");
     Printf(false, "%Ft constraints in group (%d DOF)", g->solved.dof);
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
+    for(auto &c : SK.constraint) {
 
-        if(c->group == shown.group) {
-            std::string s = c->DescriptionString();
+        if(c.group == shown.group) {
+            std::string s = c.DescriptionString();
             Printf(false, "%Bp   %Fl%Ll%D%f%h%s%E %s",
-                (a & 1) ? 'd' : 'a',
-                c->h.v, (&TextWindow::ScreenSelectConstraint),
-                (&TextWindow::ScreenHoverConstraint), s.c_str(),
-                c->reference ? "(ref)" : "");
+                   (a & 1) ? 'd' : 'a',
+                   c.h.v,
+                   (&TextWindow::ScreenSelectConstraint),
+                   (&TextWindow::ScreenHoverConstraint),
+                   s.c_str(),
+                   c.reference ? "(ref)" : "");
             a++;
         }
     }

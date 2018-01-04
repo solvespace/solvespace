@@ -14,10 +14,9 @@ void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
 }
 
 void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
-    int i;
     bool go = false;
-    for(i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
+    for(auto const &gh : SK.groupOrder) {
+        Group *g = SK.GetGroup(gh);
         if(g->h == hg) {
             go = true;
         }
@@ -31,23 +30,20 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
 }
 
 bool SolveSpaceUI::PruneOrphans() {
-    int i;
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
-        if(GroupExists(r->group)) continue;
 
+    auto r = std::find_if(SK.request.begin(), SK.request.end(),
+                          [&](Request &r) { return !GroupExists(r.group); });
+    if(r != SK.request.end()) {
         (deleted.requests)++;
         SK.request.RemoveById(r->h);
         return true;
     }
 
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(GroupExists(c->group)) continue;
-
+    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(),
+                          [&](Constraint &c) { return !GroupExists(c.group); });
+    if(c != SK.constraint.end()) {
         (deleted.constraints)++;
         (deleted.nonTrivialConstraints)++;
-
         SK.constraint.RemoveById(c->h);
         return true;
     }
@@ -91,44 +87,38 @@ bool SolveSpaceUI::PruneGroups(hGroup hg) {
 }
 
 bool SolveSpaceUI::PruneRequests(hGroup hg) {
-    int i;
-    for(i = 0; i < SK.entity.n; i++) {
-        Entity *e = &(SK.entity.elem[i]);
-        if(e->group != hg) continue;
-
-        if(EntityExists(e->workplane)) continue;
-
-        ssassert(e->h.isFromRequest(), "Only explicitly created entities can be pruned");
-
+    auto e = std::find_if(SK.entity.begin(), SK.entity.end(),
+                          [&](Entity &e) { return e.group == hg && !EntityExists(e.workplane); });
+    if(e != SK.entity.end()) {
         (deleted.requests)++;
-        SK.request.RemoveById(e->h.request());
+        SK.entity.RemoveById(e->h);
         return true;
     }
     return false;
 }
 
 bool SolveSpaceUI::PruneConstraints(hGroup hg) {
-    int i;
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
-        if(c->group != hg) continue;
+    auto c = std::find_if(SK.constraint.begin(), SK.constraint.end(), [&](Constraint &c) {
+        if(c.group != hg)
+            return false;
 
-        if(EntityExists(c->workplane) &&
-           EntityExists(c->ptA) &&
-           EntityExists(c->ptB) &&
-           EntityExists(c->entityA) &&
-           EntityExists(c->entityB) &&
-           EntityExists(c->entityC) &&
-           EntityExists(c->entityD))
-        {
-            continue;
+        if(EntityExists(c.workplane) &&
+           EntityExists(c.ptA) &&
+           EntityExists(c.ptB) &&
+           EntityExists(c.entityA) &&
+           EntityExists(c.entityB) &&
+           EntityExists(c.entityC) &&
+           EntityExists(c.entityD)) {
+            return false;
         }
+        return true;
+    });
 
+    if(c != SK.constraint.end()) {
         (deleted.constraints)++;
         if(c->type != Constraint::Type::POINTS_COINCIDENT &&
            c->type != Constraint::Type::HORIZONTAL &&
-           c->type != Constraint::Type::VERTICAL)
-        {
+           c->type != Constraint::Type::VERTICAL) {
             (deleted.nonTrivialConstraints)++;
         }
 
@@ -139,14 +129,13 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
 }
 
 void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox) {
-    int first = 0, last = 0, i, j;
+    int first = 0, last = 0, i;
 
     uint64_t startMillis = GetMilliseconds(),
              endMillis;
 
     SK.groupOrder.Clear();
-    for(int i = 0; i < SK.group.n; i++)
-        SK.groupOrder.Add(&SK.group.elem[i].h);
+    for(auto &g : SK.group) { SK.groupOrder.Add(&g.h); }
     std::sort(SK.groupOrder.begin(), SK.groupOrder.end(),
         [](const hGroup &ha, const hGroup &hb) {
             return SK.GetGroup(ha)->order < SK.GetGroup(hb)->order;
@@ -233,14 +222,14 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
         if(PruneGroups(g->h))
             goto pruned;
 
-        for(j = 0; j < SK.request.n; j++) {
-            Request *r = &(SK.request.elem[j]);
+        for(auto &req : SK.request) {
+            Request *r = &req;
             if(r->group != g->h) continue;
 
             r->Generate(&(SK.entity), &(SK.param));
         }
-        for(j = 0; j < SK.constraint.n; j++) {
-            Constraint *c = &SK.constraint.elem[j];
+        for(auto &con : SK.constraint) {
+            Constraint *c = &con;
             if(c->group != g->h) continue;
 
             c->Generate(&(SK.param));
@@ -254,8 +243,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         // Use the previous values for params that we've seen before, as
         // initial guesses for the solver.
-        for(j = 0; j < SK.param.n; j++) {
-            Param *newp = &(SK.param.elem[j]);
+        for(auto &p : SK.param) {
+            Param *newp = &p;
             if(newp->known) continue;
 
             Param *prevp = prev.FindByIdNoOops(newp->h);
@@ -270,6 +259,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             g->solved.how = SolveResult::OKAY;
             g->clean = true;
         } else {
+            // this i is an index in groupOrder
             if(i >= first && i <= last) {
                 // The group falls inside the range, so really solve it,
                 // and then regenerate the mesh based on the solved stuff.
@@ -284,8 +274,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                 // The group falls outside the range, so just assume that
                 // it's good wherever we left it. The mesh is unchanged,
                 // and the parameters must be marked as known.
-                for(j = 0; j < SK.param.n; j++) {
-                    Param *newp = &(SK.param.elem[j]);
+                for(auto &p : SK.param) {
+                    Param *newp = &p;
 
                     Param *prevp = prev.FindByIdNoOops(newp->h);
                     if(prevp) newp->known = true;
@@ -295,8 +285,8 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     }
 
     // And update any reference dimensions with their new values
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &(SK.constraint.elem[i]);
+    for(auto &con : SK.constraint) {
+        Constraint *c = &con;
         if(c->reference) {
             c->ModifyToSatisfy();
         }
@@ -505,20 +495,19 @@ void SolveSpaceUI::SolveGroupAndReport(hGroup hg, bool andFindFree) {
 }
 
 void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
-    int i;
     // Clear out the system to be solved.
     sys.entity.Clear();
     sys.param.Clear();
     sys.eq.Clear();
     // And generate all the params for requests in this group
-    for(i = 0; i < SK.request.n; i++) {
-        Request *r = &(SK.request.elem[i]);
+    for(auto &req : SK.request) {
+        Request *r = &req;
         if(r->group != hg) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
     }
-    for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &SK.constraint.elem[i];
+    for(auto &con : SK.constraint) {
+        Constraint *c = &con;
         if(c->group != hg) continue;
 
         c->Generate(&(sys.param));
@@ -527,8 +516,8 @@ void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     Group *g = SK.GetGroup(hg);
     g->Generate(&(sys.entity), &(sys.param));
     // Set the initial guesses for all the params
-    for(i = 0; i < sys.param.n; i++) {
-        Param *p = &(sys.param.elem[i]);
+    for(auto &param : sys.param) {
+        Param *p = &param;
         p->known = false;
         p->val = SK.GetParam(p->h)->val;
     }

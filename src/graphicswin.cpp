@@ -381,7 +381,9 @@ void GraphicsWindow::Init() {
     orig.projUp = projUp;
 
     // And with the last group active
-    activeGroup = SK.groupOrder.elem[SK.groupOrder.n - 1];
+    ssassert(!SK.groupOrder.IsEmpty(),
+             "Group order can't be empty since we will activate the last group.");
+    activeGroup = SK.groupOrder[SK.groupOrder.n - 1];
     SK.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;
