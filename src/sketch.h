@@ -264,7 +264,7 @@ public:
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
     void GenerateEquations(IdList<Equation,hEquation> *l);
     bool IsVisible();
-    int GetNumConstraints();
+    size_t GetNumConstraints();
     Vector ExtrusionGetVector();
     void ExtrusionForceVectorTo(const Vector &v);
 

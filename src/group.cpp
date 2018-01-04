@@ -49,14 +49,8 @@ bool Group::IsVisible() {
     return true;
 }
 
-int Group::GetNumConstraints(void) {
-    int num = 0;
-    for(int i = 0; i < SK.constraint.n; i++) {
-        Constraint *c = &SK.constraint.elem[i];
-        if(c->group.v != h.v) continue;
-        num++;
-    }
-    return num;
+size_t Group::GetNumConstraints(void) {
+    return SK.constraint.CountIf([&](Constraint const & c) { return c.group.v == h.v; });
 }
 
 Vector Group::ExtrusionGetVector() {

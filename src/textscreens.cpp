@@ -698,16 +698,12 @@ void TextWindow::EditControlDone(std::string s) {
                 g->valA = ev;
 
                 if(g->type == Group::Type::ROTATE) {
-                    int i, c = 0;
-                    for(i = 0; i < SK.constraint.n; i++) {
-                        if(SK.constraint.elem[i].group.v == g->h.v) c++;
-                    }
                     // If the group does not contain any constraints, then
                     // set the numerical guess to space the copies uniformly
                     // over one rotation. Don't touch the guess if we're
                     // already constrained, because that would break
                     // convergence.
-                    if(c == 0) {
+                    if(g->GetNumConstraints() == 0) {
                         double copies = (g->skipFirst) ? (ev + 1) : ev;
                         SK.GetParam(g->h.param(3))->val = PI/(2*copies);
                     }
