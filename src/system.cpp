@@ -105,9 +105,7 @@ void System::SolveBySubstitution() {
 
             if(IsDragged(a)) {
                 // A is being dragged, so A should stay, and B should go
-                hParam t = a;
-                a = b;
-                b = t;
+                std::swap(a, b);
             }
 
             int j;
