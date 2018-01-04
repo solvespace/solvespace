@@ -289,8 +289,8 @@ void SMesh::MakeFromDifferenceOf(SMesh *a, SMesh *b) {
 }
 
 void SMesh::MakeFromCopyOf(SMesh *a) {
-    int i;
-    for(i = 0; i < a->l.n; i++) {
+    ssassert(this != a, "Can't make from copy of self");
+    for(int i = 0; i < a->l.n; i++) {
         AddTriangle(&(a->l.elem[i]));
     }
 }
