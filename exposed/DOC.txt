@@ -456,7 +456,7 @@ USING THE SOLVER
 ================
 
 The solver is provided as a DLL, and will be usable with most
-Windows-based developement tools. Examples are provided:
+Windows-based development tools. Examples are provided:
 
     in C/C++        - CDemo.c
 

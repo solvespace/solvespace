@@ -145,7 +145,7 @@ bool SEdge::EdgeCrosses(Vector ea, Vector eb, Vector *ppi, SPointList *spl) cons
     if(sqrt(fabs(d.Dot(dthis))) > (m - LENGTH_EPS)) {
         // The edges are parallel.
         if(fabs(a.DistanceToLine(ea, d)) > LENGTH_EPS) {
-            // and not coincident, so can't be interesecting
+            // and not coincident, so can't be intersecting
             return false;
         }
         // The edges are coincident. Make sure that neither endpoint lies

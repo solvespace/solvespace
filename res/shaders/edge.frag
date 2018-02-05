@@ -27,7 +27,7 @@ void main() {
     // perform antialising
     float k = smoothstep(1.0 - 2.0 * feather * pixel / (width + feather * pixel), 1.0, abs(dist));
 
-    // perfrom alpha-test
+    // perform alpha-test
     if(k == 1.0) discard;
 
     // write resulting color

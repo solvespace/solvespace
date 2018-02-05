@@ -877,7 +877,7 @@ SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel() {
 SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo() {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:
-        Wrap(_("An autosave file is availible for this project."))];
+        Wrap(_("An autosave file is available for this project."))];
     [alert setInformativeText:
         Wrap(_("Do you want to load the autosave file instead?"))];
     [alert addButtonWithTitle:Wrap(C_("button", "Load"))];

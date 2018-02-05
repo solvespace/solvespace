@@ -199,7 +199,7 @@ void Group::GenerateShellAndMesh() {
     }
 
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
-        // A step and repeat gets merged against the group's prevous group,
+        // A step and repeat gets merged against the group's previous group,
         // not our own previous group.
         srcg = SK.GetGroup(opA);
 

@@ -849,7 +849,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
             }
             // Record the triangle
             info->tr = tr;
-            // And record which vertexes a and b correspond to
+            // And record which vertices a and b correspond to
             info->ai = a.Equals(tr->a) ? 0 : (a.Equals(tr->b) ? 1 : 2);
             info->bi = b.Equals(tr->a) ? 0 : (b.Equals(tr->b) ? 1 : 2);
         } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
