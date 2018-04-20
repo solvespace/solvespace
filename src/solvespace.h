@@ -653,6 +653,7 @@ public:
     bool     drawBackFaces;
     bool     showContourAreas;
     bool     checkClosedContour;
+    bool     automaticLineConstraints;
     bool     showToolbar;
     Platform::Path screenshotFile;
     RgbaColor backgroundColor;
