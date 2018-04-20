@@ -70,6 +70,8 @@ void SolveSpaceUI::Init() {
     drawBackFaces = settings->ThawBool("DrawBackFaces", true);
     // Check that contours are closed and not self-intersecting
     checkClosedContour = settings->ThawBool("CheckClosedContour", true);
+    // Enable automatic constrains for lines
+    automaticLineConstraints = settings->ThawBool("AutomaticLineConstraints", true);
     // Draw closed polygons areas
     showContourAreas = settings->ThawBool("ShowContourAreas", false);
     // Export shaded triangles in a 2d view
@@ -241,6 +243,8 @@ void SolveSpaceUI::Exit() {
     settings->FreezeBool("ShowContourAreas", showContourAreas);
     // Check that contours are closed and not self-intersecting
     settings->FreezeBool("CheckClosedContour", checkClosedContour);
+    // Enable automatic constrains for lines
+    settings->FreezeBool("AutomaticLineConstraints", automaticLineConstraints);
     // Export shaded triangles in a 2d view
     settings->FreezeBool("ExportShadedTriangles", exportShadedTriangles);
     // Export pwl curves (instead of exact) always

@@ -1283,26 +1283,27 @@ void GraphicsWindow::ToggleBool(bool *v) {
 }
 
 bool GraphicsWindow::SuggestLineConstraint(hRequest request, Constraint::Type *type) {
-    if(LockedInWorkplane()) {
-        Entity *ptA = SK.GetEntity(request.entity(1)),
-               *ptB = SK.GetEntity(request.entity(2));
+    if(!(LockedInWorkplane() && SS.automaticLineConstraints))
+        return false;
 
-        Expr *au, *av, *bu, *bv;
+    Entity *ptA = SK.GetEntity(request.entity(1)),
+           *ptB = SK.GetEntity(request.entity(2));
 
-        ptA->PointGetExprsInWorkplane(ActiveWorkplane(), &au, &av);
-        ptB->PointGetExprsInWorkplane(ActiveWorkplane(), &bu, &bv);
+    Expr *au, *av, *bu, *bv;
 
-        double du = au->Minus(bu)->Eval();
-        double dv = av->Minus(bv)->Eval();
+    ptA->PointGetExprsInWorkplane(ActiveWorkplane(), &au, &av);
+    ptB->PointGetExprsInWorkplane(ActiveWorkplane(), &bu, &bv);
 
-        const double TOLERANCE_RATIO = 0.02;
-        if(fabs(dv) > LENGTH_EPS && fabs(du / dv) < TOLERANCE_RATIO) {
-            *type = Constraint::Type::VERTICAL;
-            return true;
-        } else if(fabs(du) > LENGTH_EPS && fabs(dv / du) < TOLERANCE_RATIO) {
-            *type = Constraint::Type::HORIZONTAL;
-            return true;
-        }
+    double du = au->Minus(bu)->Eval();
+    double dv = av->Minus(bv)->Eval();
+
+    const double TOLERANCE_RATIO = 0.02;
+    if(fabs(dv) > LENGTH_EPS && fabs(du / dv) < TOLERANCE_RATIO) {
+        *type = Constraint::Type::VERTICAL;
+        return true;
+    } else if(fabs(du) > LENGTH_EPS && fabs(dv / du) < TOLERANCE_RATIO) {
+        *type = Constraint::Type::HORIZONTAL;
+        return true;
     }
     return false;
 }

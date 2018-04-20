@@ -33,6 +33,8 @@ New constraint features:
     in the text window.
   * When selecting an entity, the constraints applied to it can be selected
     in the text window.
+  * It is now possible to turn off automatic creation of horizontal/vertical
+    constraints on line segments.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

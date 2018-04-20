@@ -93,6 +93,11 @@ void TextWindow::ScreenChangeCheckClosedContour(int link, uint32_t v) {
     SS.GW.Invalidate();
 }
 
+void TextWindow::ScreenChangeAutomaticLineConstraints(int link, uint32_t v) {
+    SS.automaticLineConstraints = !SS.automaticLineConstraints;
+    SS.GW.Invalidate();
+}
+
 void TextWindow::ScreenChangeShadedTriangles(int link, uint32_t v) {
     SS.exportShadedTriangles = !SS.exportShadedTriangles;
     SS.GW.Invalidate();
@@ -301,6 +306,9 @@ void TextWindow::ShowConfiguration() {
     Printf(false, "  %Fd%f%Ll%s  check sketch for closed contour%E",
         &ScreenChangeCheckClosedContour,
         SS.checkClosedContour ? CHECK_TRUE : CHECK_FALSE);
+    Printf(false, "  %Fd%f%Ll%s  enable automatic line constraints%E",
+        &ScreenChangeAutomaticLineConstraints,
+        SS.automaticLineConstraints ? CHECK_TRUE : CHECK_FALSE);
     Printf(false, "  %Fd%f%Ll%s  show areas of closed contours%E",
         &ScreenChangeShowContourAreas,
         SS.showContourAreas ? CHECK_TRUE : CHECK_FALSE);
