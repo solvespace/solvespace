@@ -307,7 +307,11 @@ static bool RunCommand(const std::vector<std::string> args) {
         size_t replaceAt = outputFile.raw.find('%');
         if(replaceAt != std::string::npos) {
             Platform::Path outputSubst = inputFile.Parent();
-            outputSubst = outputSubst.Join(inputFile.FileStem());
+            if(outputSubst.IsEmpty()) {
+                outputSubst = Platform::Path::From(inputFile.FileStem());
+            } else {
+                outputSubst = outputSubst.Join(inputFile.FileStem());
+            }
             outputFile.raw.replace(replaceAt, 1, outputSubst.raw);
         }
         Platform::Path absOutputFile = outputFile.Expand(/*fromCurrentDirectory=*/true);
