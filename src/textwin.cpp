@@ -445,7 +445,9 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             }
         }
 
-        fmt++;
+        utf8_iterator it(fmt);
+        it++;
+        fmt = it.ptr();
     }
     while(c < MAX_COLS) {
         meta[r][c].fg = fg;

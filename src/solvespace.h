@@ -275,6 +275,7 @@ public:
     utf8_iterator& operator++()    { **this; p=n; n=NULL; return *this; }
     utf8_iterator  operator++(int) { utf8_iterator t(*this); operator++(); return t; }
     char32_t       operator*();
+    const char*    ptr() const { return p; }
 };
 class ReadUTF8 {
     const std::string &str;
