@@ -110,17 +110,9 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &nh);
-    // They might have clicked within the toolbar, but not on a button.
-    if(withinToolbar && nh != Command::NONE) {
-        for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
-            if(nh == SS.GW.menu[i].id) {
-                (SS.GW.menu[i].fn)((Command)SS.GW.menu[i].id);
-                break;
-            }
-        }
-    }
+    Command hit;
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hit);
+    SS.GW.ActivateCommand(hit);
     return withinToolbar;
 }
 
@@ -203,6 +195,10 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             y -= 32;
             leftpos = true;
         }
+    }
+
+    if(!withinToolbar) {
+        if(menuHit) *menuHit = Command::NONE;
     }
 
     return withinToolbar;

@@ -193,6 +193,7 @@ set(solvespace_core_SOURCES
     util.cpp
     view.cpp
     platform/platform.cpp
+    platform/gui.cpp
     render/render.cpp
     render/render2d.cpp
     srf/boolean.cpp

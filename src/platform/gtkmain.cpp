@@ -272,7 +272,7 @@ protected:
             }
             return true;
         } else {
-            return false;
+            return Gtk::Fixed::on_key_press_event(event);
         }
     }
 
@@ -281,7 +281,7 @@ protected:
             _entry.event((GdkEvent *)event);
             return true;
         } else {
-            return false;
+            return Gtk::Fixed::on_key_release_event(event);
         }
     }
 
@@ -433,8 +433,7 @@ public:
     GraphicsWindowGtk() : _overlay(_widget), _is_fullscreen(false) {
         set_default_size(900, 600);
 
-        _box.pack_start(_menubar, false, true);
-        _box.pack_start(_overlay, true, true);
+        _box.pack_end(_overlay, true, true);
 
         add(_box);
 
@@ -450,7 +449,17 @@ public:
         return _overlay;
     }
 
-    Gtk::MenuBar &get_menubar() {
+    void set_menubar(Gtk::MenuBar *menubar) {
+        if(_menubar)
+            _box.remove(*_menubar);
+        _menubar = menubar;
+        if(_menubar) {
+            _menubar->show_all();
+            _box.pack_start(*_menubar, false, false);
+        }
+    }
+
+    Gtk::MenuBar *get_menubar() {
         return _menubar;
     }
 
@@ -489,57 +498,34 @@ protected:
         return Gtk::Window::on_window_state_event(event);
     }
 
-    bool on_key_press_event(GdkEventKey *event) override {
-        int chr;
+    bool on_key_press_event(GdkEventKey *gdk_event) override {
+        Platform::KeyboardEvent event = {};
+        event.type = Platform::KeyboardEvent::Type::PRESS;
 
-        switch(event->keyval) {
-            case GDK_KEY_Escape:
-            chr = GraphicsWindow::ESCAPE_KEY;
-            break;
-
-            case GDK_KEY_Delete:
-            chr = GraphicsWindow::DELETE_KEY;
-            break;
-
-            case GDK_KEY_Tab:
-            chr = '\t';
-            break;
-
-            case GDK_KEY_BackSpace:
-            case GDK_KEY_Back:
-            chr = '\b';
-            break;
-
-            case GDK_KEY_KP_Decimal:
-            chr = '.';
-            break;
-
-            default:
-            if(event->keyval >= GDK_KEY_F1 && event->keyval <= GDK_KEY_F12) {
-                chr = GraphicsWindow::FUNCTION_KEY_BASE + (event->keyval - GDK_KEY_F1);
-            } else {
-                chr = gdk_keyval_to_unicode(event->keyval);
-            }
+        if(gdk_event->state & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
+            return Gtk::Window::on_key_press_event(gdk_event);
         }
 
-        if(event->state & GDK_SHIFT_MASK){
-            chr |= GraphicsWindow::SHIFT_MASK;
-        }
-        if(event->state & GDK_CONTROL_MASK) {
-            chr |= GraphicsWindow::CTRL_MASK;
+        event.shiftDown   = (gdk_event->state & GDK_SHIFT_MASK)   != 0;
+        event.controlDown = (gdk_event->state & GDK_CONTROL_MASK) != 0;
+
+        char32_t chr = gdk_keyval_to_unicode(gdk_keyval_to_lower(gdk_event->keyval));
+        if(chr != 0) {
+            event.key = Platform::KeyboardEvent::Key::CHARACTER;
+            event.chr = chr;
+        } else if(gdk_event->keyval >= GDK_KEY_F1 &&
+                  gdk_event->keyval <= GDK_KEY_F12) {
+            event.key = Platform::KeyboardEvent::Key::FUNCTION;
+            event.num = gdk_event->keyval - GDK_KEY_F1 + 1;
+        } else {
+            return Gtk::Window::on_key_press_event(gdk_event);
         }
 
-        if(chr && SS.GW.KeyDown(chr)) {
+        if(SS.GW.KeyboardEvent(event)) {
             return true;
         }
 
-        if(chr == '\t') {
-            // Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=123994.
-            GraphicsWindow::MenuView(Command::SHOW_TEXT_WND);
-            return true;
-        }
-
-        return Gtk::Window::on_key_press_event(event);
+        return Gtk::Window::on_key_press_event(gdk_event);
     }
 
     void on_editing_done(Glib::ustring value) {
@@ -549,7 +535,7 @@ protected:
 private:
     GraphicsWidget _widget;
     EditorOverlay _overlay;
-    Gtk::MenuBar _menubar;
+    Gtk::MenuBar *_menubar;
     Gtk::VBox _box;
 
     bool _is_fullscreen;
@@ -607,297 +593,6 @@ void HideGraphicsEditControl(void) {
 
 bool GraphicsEditControlIsVisible(void) {
     return GW->get_overlay().is_editing();
-}
-
-/* Context menus */
-
-class ContextMenuItem : public Gtk::MenuItem {
-public:
-    static ContextCommand choice;
-
-    ContextMenuItem(const Glib::ustring &label, ContextCommand cmd, bool mnemonic=false) :
-            Gtk::MenuItem(label, mnemonic), _cmd(cmd) {
-    }
-
-protected:
-    void on_activate() override {
-        Gtk::MenuItem::on_activate();
-
-        if(has_submenu())
-            return;
-
-        choice = _cmd;
-    }
-
-    /* Workaround for https://bugzilla.gnome.org/show_bug.cgi?id=695488.
-       This is used in addition to on_activate() to catch mouse events.
-       Without on_activate(), it would be impossible to select a menu item
-       via keyboard.
-       This selects the item twice in some cases, but we are idempotent.
-     */
-    bool on_button_press_event(GdkEventButton *event) override {
-        if(event->button == 1 && event->type == GDK_BUTTON_PRESS) {
-            on_activate();
-            return true;
-        }
-
-        return Gtk::MenuItem::on_button_press_event(event);
-    }
-
-private:
-    ContextCommand _cmd;
-};
-
-ContextCommand ContextMenuItem::choice = ContextCommand::CANCELLED;
-
-static Gtk::Menu *context_menu = NULL, *context_submenu = NULL;
-
-void AddContextMenuItem(const char *label, ContextCommand cmd) {
-    Gtk::MenuItem *menu_item;
-    if(label)
-        menu_item = new ContextMenuItem(label, cmd);
-    else
-        menu_item = new Gtk::SeparatorMenuItem();
-
-    if(cmd == ContextCommand::SUBMENU) {
-        menu_item->set_submenu(*context_submenu);
-        context_submenu = NULL;
-    }
-
-    if(context_submenu) {
-        context_submenu->append(*menu_item);
-    } else {
-        if(!context_menu)
-            context_menu = new Gtk::Menu;
-
-        context_menu->append(*menu_item);
-    }
-}
-
-void CreateContextSubmenu(void) {
-    ssassert(!context_submenu, "Unexpected nested submenu");
-
-    context_submenu = new Gtk::Menu;
-}
-
-ContextCommand ShowContextMenu(void) {
-    if(!context_menu)
-        return ContextCommand::CANCELLED;
-
-    Glib::RefPtr<Glib::MainLoop> loop = Glib::MainLoop::create();
-    context_menu->signal_deactivate().
-        connect(sigc::mem_fun(loop.operator->(), &Glib::MainLoop::quit));
-
-    ContextMenuItem::choice = ContextCommand::CANCELLED;
-
-    context_menu->show_all();
-    context_menu->popup(3, GDK_CURRENT_TIME);
-
-    loop->run();
-
-    delete context_menu;
-    context_menu = NULL;
-
-    return ContextMenuItem::choice;
-}
-
-/* Main menu */
-
-template<class MenuItem> class MainMenuItem : public MenuItem {
-public:
-    MainMenuItem(const GraphicsWindow::MenuEntry &entry) :
-            MenuItem(), _entry(entry), _synthetic(false) {
-        Glib::ustring label(_entry.label);
-        for(size_t i = 0; i < label.length(); i++) {
-            if(label[i] == '&')
-                label.replace(i, 1, "_");
-        }
-
-        guint accel_key = 0;
-        Gdk::ModifierType accel_mods = Gdk::ModifierType();
-        switch(_entry.accel) {
-            case GraphicsWindow::DELETE_KEY:
-            accel_key = GDK_KEY_Delete;
-            break;
-
-            case GraphicsWindow::ESCAPE_KEY:
-            accel_key = GDK_KEY_Escape;
-            break;
-
-            case '\t':
-            accel_key = GDK_KEY_Tab;
-            break;
-
-            default:
-            accel_key = _entry.accel & ~(GraphicsWindow::SHIFT_MASK | GraphicsWindow::CTRL_MASK);
-            if(accel_key > GraphicsWindow::FUNCTION_KEY_BASE &&
-                    accel_key <= GraphicsWindow::FUNCTION_KEY_BASE + 12)
-                accel_key = GDK_KEY_F1 + (accel_key - GraphicsWindow::FUNCTION_KEY_BASE - 1);
-            else
-                accel_key = gdk_unicode_to_keyval(accel_key);
-
-            if(_entry.accel & GraphicsWindow::SHIFT_MASK)
-                accel_mods |= Gdk::SHIFT_MASK;
-            if(_entry.accel & GraphicsWindow::CTRL_MASK)
-                accel_mods |= Gdk::CONTROL_MASK;
-        }
-
-        MenuItem::set_label(label);
-        MenuItem::set_use_underline(true);
-        if(!(accel_key & 0x01000000))
-            MenuItem::set_accel_key(Gtk::AccelKey(accel_key, accel_mods));
-    }
-
-    void set_active(bool checked) {
-        if(MenuItem::get_active() == checked)
-            return;
-
-       _synthetic = true;
-        MenuItem::set_active(checked);
-    }
-
-protected:
-    void on_activate() override {
-        MenuItem::on_activate();
-
-        if(_synthetic)
-            _synthetic = false;
-        else if(!MenuItem::has_submenu() && _entry.fn)
-            _entry.fn(_entry.id);
-    }
-
-private:
-    const GraphicsWindow::MenuEntry _entry;
-    bool _synthetic;
-};
-
-static std::map<uint32_t, Gtk::MenuItem *> main_menu_items;
-
-static void InitMainMenu(Gtk::MenuShell *menu_shell) {
-    Gtk::MenuItem *menu_item = NULL;
-    Gtk::MenuShell *levels[5] = {menu_shell, 0};
-
-    const GraphicsWindow::MenuEntry *entry = &GraphicsWindow::menu[0];
-    int current_level = 0;
-    while(entry->level >= 0) {
-        if(entry->level > current_level) {
-            Gtk::Menu *menu = new Gtk::Menu;
-            menu_item->set_submenu(*menu);
-
-            ssassert((unsigned)entry->level < sizeof(levels) / sizeof(levels[0]),
-                     "Unexpected depth of menu nesting");
-
-            levels[entry->level] = menu;
-        }
-
-        current_level = entry->level;
-
-        if(entry->label) {
-            GraphicsWindow::MenuEntry localizedEntry = *entry;
-            localizedEntry.label = Translate(entry->label).c_str();
-
-            switch(entry->kind) {
-                case GraphicsWindow::MenuKind::NORMAL:
-                menu_item = new MainMenuItem<Gtk::MenuItem>(localizedEntry);
-                break;
-
-                case GraphicsWindow::MenuKind::CHECK:
-                menu_item = new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
-                break;
-
-                case GraphicsWindow::MenuKind::RADIO:
-                MainMenuItem<Gtk::CheckMenuItem> *radio_item =
-                        new MainMenuItem<Gtk::CheckMenuItem>(localizedEntry);
-                radio_item->set_draw_as_radio(true);
-                menu_item = radio_item;
-                break;
-            }
-        } else {
-            menu_item = new Gtk::SeparatorMenuItem();
-        }
-
-        if(entry->id == Command::LOCALE) {
-            Gtk::Menu *menu = new Gtk::Menu;
-            menu_item->set_submenu(*menu);
-
-            size_t i = 0;
-            for(auto locale : Locales()) {
-                GraphicsWindow::MenuEntry localeEntry = {};
-                localeEntry.label = locale.displayName.c_str();
-                localeEntry.id    = (Command)((uint32_t)Command::LOCALE + i++);
-                localeEntry.fn    = entry->fn;
-                menu->append(*new MainMenuItem<Gtk::MenuItem>(localeEntry));
-            }
-        }
-
-        levels[entry->level]->append(*menu_item);
-
-        main_menu_items[(uint32_t)entry->id] = menu_item;
-
-        ++entry;
-    }
-}
-
-void EnableMenuByCmd(Command cmd, bool enabled) {
-    main_menu_items[(uint32_t)cmd]->set_sensitive(enabled);
-}
-
-void CheckMenuByCmd(Command cmd, bool checked) {
-    ((MainMenuItem<Gtk::CheckMenuItem>*)main_menu_items[(uint32_t)cmd])->set_active(checked);
-}
-
-void RadioMenuByCmd(Command cmd, bool selected) {
-    SolveSpace::CheckMenuByCmd(cmd, selected);
-}
-
-class RecentMenuItem : public Gtk::MenuItem {
-public:
-    RecentMenuItem(const Glib::ustring& label, uint32_t cmd) :
-            MenuItem(label), _cmd(cmd) {
-    }
-
-protected:
-    void on_activate() override {
-        if(_cmd >= (uint32_t)Command::RECENT_OPEN &&
-           _cmd < ((uint32_t)Command::RECENT_OPEN + MAX_RECENT)) {
-            SolveSpaceUI::MenuFile((Command)_cmd);
-        } else if(_cmd >= (uint32_t)Command::RECENT_LINK &&
-                  _cmd < ((uint32_t)Command::RECENT_LINK + MAX_RECENT)) {
-            Group::MenuGroup((Command)_cmd);
-        }
-    }
-
-private:
-    uint32_t _cmd;
-};
-
-static void RefreshRecentMenu(Command cmd, Command base) {
-    Gtk::MenuItem *recent = static_cast<Gtk::MenuItem*>(main_menu_items[(uint32_t)cmd]);
-    recent->unset_submenu();
-
-    Gtk::Menu *menu = new Gtk::Menu;
-    recent->set_submenu(*menu);
-
-    if(RecentFile[0].IsEmpty()) {
-        Gtk::MenuItem *placeholder = new Gtk::MenuItem(_("(no recent files)"));
-        placeholder->set_sensitive(false);
-        menu->append(*placeholder);
-    } else {
-        for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(RecentFile[i].IsEmpty())
-                break;
-
-            RecentMenuItem *item = new RecentMenuItem(RecentFile[i].raw, (uint32_t)base + i);
-            menu->append(*item);
-        }
-    }
-
-    menu->show_all();
-}
-
-void RefreshRecentMenus(void) {
-    RefreshRecentMenu(Command::OPEN_RECENT, Command::RECENT_OPEN);
-    RefreshRecentMenu(Command::GROUP_RECENT, Command::RECENT_LINK);
 }
 
 /* Save/load */
@@ -1338,17 +1033,14 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
 
 /* Application lifecycle */
 
-void RefreshLocale() {
-    SS.UpdateWindowTitle();
-    for(auto menu : GW->get_menubar().get_children()) {
-        GW->get_menubar().remove(*menu);
-    }
-    InitMainMenu(&GW->get_menubar());
-    RefreshRecentMenus();
-    GW->get_menubar().show_all();
-    GW->get_menubar().accelerate(*GW);
-    GW->get_menubar().accelerate(*TW);
+void SetMainMenu(Platform::MenuBarRef menuBar) {
+    static Platform::MenuBarRef _menuBar;
+    GW->set_menubar((Gtk::MenuBar*)menuBar->NativePtr());
+    GW->get_menubar()->accelerate(*GW);
+    GW->get_menubar()->accelerate(*TW);
+    _menuBar = menuBar;
 
+    SS.UpdateWindowTitle();
     TW->set_title(Title(C_("title", "Property Browser")));
 }
 

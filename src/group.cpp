@@ -69,17 +69,16 @@ void Group::ExtrusionForceVectorTo(const Vector &v) {
     SK.GetParam(h.param(2))->val = v.z;
 }
 
-void Group::MenuGroup(Command id) {
+void Group::MenuGroup(Command id)  {
+    MenuGroup(id, Platform::Path());
+}
+
+void Group::MenuGroup(Command id, Platform::Path linkFile) {
     Group g = {};
     g.visible = true;
     g.color = RGBi(100, 100, 100);
     g.scale = 1;
-
-    if((uint32_t)id >= (uint32_t)Command::RECENT_LINK &&
-       (uint32_t)id < ((uint32_t)Command::RECENT_LINK + MAX_RECENT)) {
-        g.linkFile = RecentFile[(uint32_t)id-(uint32_t)Command::RECENT_LINK];
-        id = Command::GROUP_LINK;
-    }
+    g.linkFile = linkFile;
 
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;

@@ -219,41 +219,9 @@ enum class Command : uint32_t {
     STOP_TRACING,
     STEP_DIM,
     // Help
+    LOCALE,
     WEBSITE,
     ABOUT,
-    // Recent
-    RECENT_OPEN = 0xf000,
-    RECENT_LINK = 0xf100,
-    // Locale
-    LOCALE = 0xf200,
-};
-
-enum class ContextCommand : uint32_t {
-    CANCELLED,
-    SUBMENU,
-    SEPARATOR,
-    UNSELECT_ALL,
-    UNSELECT_HOVERED,
-    CUT_SEL,
-    COPY_SEL,
-    PASTE,
-    PASTE_XFRM,
-    DELETE_SEL,
-    SELECT_CHAIN,
-    NEW_CUSTOM_STYLE,
-    NO_STYLE,
-    GROUP_INFO,
-    STYLE_INFO,
-    REFERENCE_DIM,
-    OTHER_ANGLE,
-    DEL_COINCIDENT,
-    SNAP_TO_GRID,
-    REMOVE_SPLINE_PT,
-    ADD_SPLINE_PT,
-    CONSTRUCTION,
-    ZOOM_TO_FIT,
-    SELECT_ALL,
-    FIRST_STYLE      = 0x40000000
 };
 
 class Button;
@@ -575,30 +543,13 @@ class GraphicsWindow {
 public:
     void Init();
 
-    typedef void MenuHandler(Command id);
-    enum {
-        ESCAPE_KEY = 27,
-        DELETE_KEY = 127,
-        FUNCTION_KEY_BASE = 0xf0
-    };
-    enum {
-        SHIFT_MASK = 0x100,
-        CTRL_MASK  = 0x200
-    };
-    enum class MenuKind : uint32_t {
-        NORMAL = 0,
-        CHECK,
-        RADIO
-    };
-    typedef struct {
-        int          level;          // 0 == on menu bar, 1 == one level down
-        const char  *label;          // or NULL for a separator
-        Command      id;             // unique ID
-        int          accel;          // keyboard accelerator
-        MenuKind     kind;
-        MenuHandler  *fn;
-    } MenuEntry;
-    static const MenuEntry menu[];
+    Platform::MenuBarRef  mainMenu;
+    void PopulateMainMenu();
+    void PopulateRecentFiles();
+
+    Platform::KeyboardEvent AcceleratorForCommand(Command id);
+    void ActivateCommand(Command id);
+
     static void MenuView(Command id);
     static void MenuEdit(Command id);
     static void MenuRequest(Command id);
@@ -606,6 +557,25 @@ public:
     void CopySelection();
     void PasteClipboard(Vector trans, double theta, double scale);
     static void MenuClipboard(Command id);
+
+    Platform::MenuRef openRecentMenu;
+    Platform::MenuRef linkRecentMenu;
+
+    Platform::MenuItemRef showGridMenuItem;
+    Platform::MenuItemRef perspectiveProjMenuItem;
+    Platform::MenuItemRef showToolbarMenuItem;
+    Platform::MenuItemRef showTextWndMenuItem;
+    Platform::MenuItemRef fullScreenMenuItem;
+
+    Platform::MenuItemRef unitsMmMenuItem;
+    Platform::MenuItemRef unitsMetersMenuItem;
+    Platform::MenuItemRef unitsInchesMenuItem;
+
+    Platform::MenuItemRef inWorkplaneMenuItem;
+    Platform::MenuItemRef in3dMenuItem;
+
+    Platform::MenuItemRef undoMenuItem;
+    Platform::MenuItemRef redoMenuItem;
 
     std::shared_ptr<ViewportCanvas> canvas;
     std::shared_ptr<BatchCanvas>    persistentCanvas;
@@ -829,9 +799,6 @@ public:
     void SelectByMarquee();
     void ClearSuper();
 
-    void ContextMenuListStyles();
-    int64_t contextMenuCancelTime;
-
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, UiCanvas *canvas, Command *menuHit);
     void ToolbarDraw(UiCanvas *canvas);
@@ -879,7 +846,7 @@ public:
     void MouseRightUp(double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave();
-    bool KeyDown(int c);
+    bool KeyboardEvent(Platform::KeyboardEvent event);
     void EditControlDone(const char *s);
 
     int64_t lastSpaceNavigatorTime;

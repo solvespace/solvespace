@@ -23,6 +23,54 @@ TimerRef CreateTimer() {
     return std::unique_ptr<Timer>(new TimerImplDummy);
 }
 
+//-----------------------------------------------------------------------------
+// Menus
+//-----------------------------------------------------------------------------
+
+class MenuItemImplDummy : public MenuItem {
+public:
+    void SetAccelerator(KeyboardEvent accel) override {}
+    void SetIndicator(Indicator type) override {}
+    void SetActive(bool active) override {}
+    void SetEnabled(bool enabled) override {}
+};
+
+class MenuImplDummy : public Menu {
+public:
+    MenuItemRef AddItem(const std::string &label,
+                        std::function<void()> onTrigger = NULL) override {
+        return std::make_shared<MenuItemImplDummy>();
+    }
+    MenuRef AddSubMenu(const std::string &label) override {
+        return std::make_shared<MenuImplDummy>();
+    }
+
+    void AddSeparator() override {}
+    void PopUp() override {}
+    void Clear() override {}
+};
+
+MenuRef CreateMenu() {
+    return std::make_shared<MenuImplDummy>();
+}
+
+class MenuBarImplDummy : public MenuBar {
+public:
+    MenuRef AddSubMenu(const std::string &label) override {
+        return std::make_shared<MenuImplDummy>();
+    }
+    void Clear() override {}
+    void *NativePtr() override { return NULL; }
+};
+
+MenuBarRef GetOrCreateMainMenu(bool *unique) {
+    *unique = false;
+    return std::make_shared<MenuBarImplDummy>();
+}
+
+}
+
+void SetMainMenu(Platform::MenuBarRef menuBar) {
 }
 
 //-----------------------------------------------------------------------------
@@ -169,23 +217,6 @@ void HideGraphicsEditControl() {
 }
 bool GraphicsEditControlIsVisible() {
     return false;
-}
-void AddContextMenuItem(const char *label, ContextCommand cmd) {
-    ssassert(false, "Not implemented");
-}
-void CreateContextSubmenu() {
-    ssassert(false, "Not implemented");
-}
-ContextCommand ShowContextMenu() {
-    ssassert(false, "Not implemented");
-}
-void EnableMenuByCmd(Command cmd, bool enabled) {
-}
-void CheckMenuByCmd(Command cmd, bool checked) {
-}
-void RadioMenuByCmd(Command cmd, bool selected) {
-}
-void RefreshRecentMenus() {
 }
 
 //-----------------------------------------------------------------------------

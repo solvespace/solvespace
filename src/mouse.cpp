@@ -507,24 +507,6 @@ void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
     orig.startedMoving = false;
 }
 
-void GraphicsWindow::ContextMenuListStyles() {
-    CreateContextSubmenu();
-    Style *s;
-    bool empty = true;
-    for(s = SK.style.First(); s; s = SK.style.NextAfter(s)) {
-        if(s->h.v < Style::FIRST_CUSTOM) continue;
-
-        AddContextMenuItem(s->DescriptionString().c_str(),
-                           (ContextCommand)((uint32_t)ContextCommand::FIRST_STYLE + s->h.v));
-        empty = false;
-    }
-
-    if(!empty) AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
-
-    AddContextMenuItem(_("No Style"), ContextCommand::NO_STYLE);
-    AddContextMenuItem(_("Newly Created Custom Style..."), ContextCommand::NEW_CUSTOM_STYLE);
-}
-
 void GraphicsWindow::MouseRightUp(double x, double y) {
     SS.extraLine.draw = false;
     InvalidateGraphics();
@@ -556,6 +538,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     v = v.Plus(projRight.ScaledBy(x/scale));
     v = v.Plus(projUp.ScaledBy(y/scale));
 
+    Platform::MenuRef menu = Platform::CreateMenu();
     context.active = true;
 
     if(!hover.IsEmpty()) {
@@ -565,37 +548,91 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     GroupSelection();
 
     bool itemsSelected = (gs.n > 0 || gs.constraints > 0);
-    int addAfterPoint = -1;
-
     if(itemsSelected) {
         if(gs.stylables > 0) {
-            ContextMenuListStyles();
-            AddContextMenuItem(_("Assign to Style"), ContextCommand::SUBMENU);
+            Platform::MenuRef styleMenu = menu->AddSubMenu(_("Assign to Style"));
+
+            bool empty = true;
+            for(const Style &s : SK.style) {
+                if(s.h.v < Style::FIRST_CUSTOM) continue;
+
+                styleMenu->AddItem(s.DescriptionString(), [&]() {
+                    Style::AssignSelectionToStyle(s.h.v);
+                });
+                empty = false;
+            }
+
+            if(!empty) styleMenu->AddSeparator();
+
+            styleMenu->AddItem(_("No Style"), [&]() {
+                Style::AssignSelectionToStyle(0);
+            });
+            styleMenu->AddItem(_("Newly Created Custom Style..."), [&]() {
+                uint32_t vs = Style::CreateCustomStyle();
+                Style::AssignSelectionToStyle(vs);
+                ForceTextWindowShown();
+            });
         }
         if(gs.n + gs.constraints == 1) {
-            AddContextMenuItem(_("Group Info"), ContextCommand::GROUP_INFO);
+            menu->AddItem(_("Group Info"), [&]() {
+                hGroup hg;
+                if(gs.entities == 1) {
+                    hg = SK.GetEntity(gs.entity[0])->group;
+                } else if(gs.points == 1) {
+                    hg = SK.GetEntity(gs.point[0])->group;
+                } else if(gs.constraints == 1) {
+                    hg = SK.GetConstraint(gs.constraint[0])->group;
+                } else {
+                    return;
+                }
+                ClearSelection();
+
+                SS.TW.GoToScreen(TextWindow::Screen::GROUP_INFO);
+                SS.TW.shown.group = hg;
+                SS.ScheduleShowTW();
+                ForceTextWindowShown();
+            });
         }
         if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-            AddContextMenuItem(_("Style Info"), ContextCommand::STYLE_INFO);
+            menu->AddItem(_("Style Info"), [&]() {
+                hStyle hs;
+                if(gs.entities == 1) {
+                    hs = Style::ForEntity(gs.entity[0]);
+                } else if(gs.points == 1) {
+                    hs = Style::ForEntity(gs.point[0]);
+                } else if(gs.constraints == 1) {
+                    hs = SK.GetConstraint(gs.constraint[0])->GetStyle();
+                } else {
+                    return;
+                }
+                ClearSelection();
+
+                SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);
+                SS.TW.shown.style = hs;
+                SS.ScheduleShowTW();
+                ForceTextWindowShown();
+            });
         }
         if(gs.withEndpoints > 0) {
-            AddContextMenuItem(_("Select Edge Chain"), ContextCommand::SELECT_CHAIN);
+            menu->AddItem(_("Select Edge Chain"),
+                          [&]() { MenuEdit(Command::SELECT_CHAIN); });
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
-                AddContextMenuItem(_("Toggle Reference Dimension"),
-                    ContextCommand::REFERENCE_DIM);
+                menu->AddItem(_("Toggle Reference Dimension"),
+                              [&]() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
             if(c->type == Constraint::Type::ANGLE ||
                c->type == Constraint::Type::EQUAL_ANGLE)
             {
-                AddContextMenuItem(_("Other Supplementary Angle"),
-                    ContextCommand::OTHER_ANGLE);
+                menu->AddItem(_("Other Supplementary Angle"),
+                              [&]() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
-            AddContextMenuItem(_("Snap to Grid"), ContextCommand::SNAP_TO_GRID);
+            menu->AddItem(_("Snap to Grid"),
+                          [&]() { MenuEdit(Command::SNAP_TO_GRID); });
         }
 
         if(gs.points == 1 && gs.point[0].isFromRequest()) {
@@ -603,22 +640,72 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             int index = r->IndexOfPoint(gs.point[0]);
             if((r->type == Request::Type::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
                     r->type == Request::Type::CUBIC_PERIODIC) {
-                AddContextMenuItem(_("Remove Spline Point"), ContextCommand::REMOVE_SPLINE_PT);
+                menu->AddItem(_("Remove Spline Point"), [&]() {
+                    int index = r->IndexOfPoint(gs.point[0]);
+                    ssassert(r->extraPoints != 0,
+                             "Expected a bezier with interior control points");
+
+                    SS.UndoRemember();
+                    Entity *e = SK.GetEntity(r->h.entity(0));
+
+                    // First, fix point-coincident constraints involving this point.
+                    // Then, remove all other constraints, since they would otherwise
+                    // jump to an adjacent one and mess up the bezier after generation.
+                    FixConstraintsForPointBeingDeleted(e->point[index]);
+                    RemoveConstraintsForPointBeingDeleted(e->point[index]);
+
+                    for(int i = index; i < MAX_POINTS_IN_ENTITY - 1; i++) {
+                        if(e->point[i + 1].v == 0) break;
+                        Entity *p0 = SK.GetEntity(e->point[i]);
+                        Entity *p1 = SK.GetEntity(e->point[i + 1]);
+                        ReplacePointInConstraints(p1->h, p0->h);
+                        p0->PointForceTo(p1->PointGetNum());
+                    }
+                    r->extraPoints--;
+                    SS.MarkGroupDirtyByEntity(gs.point[0]);
+                    ClearSelection();
+                });
             }
         }
         if(gs.entities == 1 && gs.entity[0].isFromRequest()) {
             Request *r = SK.GetRequest(gs.entity[0].request());
             if(r->type == Request::Type::CUBIC || r->type == Request::Type::CUBIC_PERIODIC) {
                 Entity *e = SK.GetEntity(gs.entity[0]);
-                addAfterPoint = e->GetPositionOfPoint(GetCamera(), Point2d::From(x, y));
+                int addAfterPoint = e->GetPositionOfPoint(GetCamera(), Point2d::From(x, y));
                 ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
-                AddContextMenuItem(_("Add Spline Point"), ContextCommand::ADD_SPLINE_PT);
+                menu->AddItem(_("Add Spline Point"), [&]() {
+                    int pointCount = r->extraPoints +
+                                     ((r->type == Request::Type::CUBIC_PERIODIC) ? 3 : 4);
+                    if(pointCount >= MAX_POINTS_IN_ENTITY) {
+                        Error(_("Cannot add spline point: maximum number of points reached."));
+                        return;
+                    }
+
+                    SS.UndoRemember();
+                    r->extraPoints++;
+                    SS.MarkGroupDirtyByEntity(gs.entity[0]);
+                    SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
+
+                    Entity *e = SK.GetEntity(r->h.entity(0));
+                    for(int i = MAX_POINTS_IN_ENTITY; i > addAfterPoint + 1; i--) {
+                        Entity *p0 = SK.entity.FindByIdNoOops(e->point[i]);
+                        if(p0 == NULL) continue;
+                        Entity *p1 = SK.GetEntity(e->point[i - 1]);
+                        ReplacePointInConstraints(p1->h, p0->h);
+                        p0->PointForceTo(p1->PointGetNum());
+                    }
+                    Entity *p = SK.GetEntity(e->point[addAfterPoint + 1]);
+                    p->PointForceTo(v);
+                    SS.MarkGroupDirtyByEntity(gs.entity[0]);
+                    ClearSelection();
+                });
             }
         }
         if(gs.entities == gs.n) {
-            AddContextMenuItem(_("Toggle Construction"), ContextCommand::CONSTRUCTION);
+            menu->AddItem(_("Toggle Construction"),
+                          [&]() { MenuRequest(Command::CONSTRUCTION); });
         }
 
         if(gs.points == 1) {
@@ -632,239 +719,67 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 }
             }
             if(c) {
-                AddContextMenuItem(_("Delete Point-Coincident Constraint"),
-                                   ContextCommand::DEL_COINCIDENT);
+                menu->AddItem(_("Delete Point-Coincident Constraint"), [&]() {
+                    if(!p->IsPoint()) return;
+
+                    SS.UndoRemember();
+                    SK.constraint.ClearTags();
+                    Constraint *c;
+                    for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
+                        if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
+                        if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                            c->tag = 1;
+                        }
+                    }
+                    SK.constraint.RemoveTagged();
+                    ClearSelection();
+                });
             }
         }
-        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
+        menu->AddSeparator();
         if(LockedInWorkplane()) {
-            AddContextMenuItem(_("Cut"),  ContextCommand::CUT_SEL);
-            AddContextMenuItem(_("Copy"), ContextCommand::COPY_SEL);
+            menu->AddItem(_("Cut"),
+                          [&]() { MenuClipboard(Command::CUT); });
+            menu->AddItem(_("Copy"),
+                          [&]() { MenuClipboard(Command::COPY); });
         }
     } else {
-        AddContextMenuItem(_("Select All"), ContextCommand::SELECT_ALL);
+        menu->AddItem(_("Select All"),
+                      [&]() { MenuEdit(Command::SELECT_ALL); });
     }
 
     if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
-        AddContextMenuItem(_("Paste"), ContextCommand::PASTE);
-        AddContextMenuItem(_("Paste Transformed..."), ContextCommand::PASTE_XFRM);
+        menu->AddItem(_("Paste"),
+                      [&]() { MenuClipboard(Command::PASTE); });
+        menu->AddItem(_("Paste Transformed..."),
+                      [&]() { MenuClipboard(Command::PASTE_TRANSFORM); });
     }
 
     if(itemsSelected) {
-        AddContextMenuItem(_("Delete"), ContextCommand::DELETE_SEL);
-        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
-        AddContextMenuItem(_("Unselect All"), ContextCommand::UNSELECT_ALL);
+        menu->AddItem(_("Delete"),
+                      [&]() { MenuClipboard(Command::DELETE); });
+        menu->AddSeparator();
+        menu->AddItem(_("Unselect All"),
+                      [&]() { MenuEdit(Command::UNSELECT_ALL); });
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
-        AddContextMenuItem(_("Unselect Hovered"), ContextCommand::UNSELECT_HOVERED);
-    }
-
-    if(itemsSelected) {
-        AddContextMenuItem(NULL, ContextCommand::SEPARATOR);
-        AddContextMenuItem(_("Zoom to Fit"), ContextCommand::ZOOM_TO_FIT);
-    }
-
-    ContextCommand ret = ShowContextMenu();
-    switch(ret) {
-        case ContextCommand::CANCELLED:
-            // otherwise it was cancelled, so do nothing
-            contextMenuCancelTime = GetMilliseconds();
-            break;
-
-        case ContextCommand::UNSELECT_ALL:
-            MenuEdit(Command::UNSELECT_ALL);
-            break;
-
-        case ContextCommand::UNSELECT_HOVERED:
+        menu->AddItem(_("Unselect Hovered"), [&] {
             if(!hover.IsEmpty()) {
                 MakeUnselected(&hover, /*coincidentPointTrick=*/true);
             }
-            break;
-
-        case ContextCommand::SELECT_CHAIN:
-            MenuEdit(Command::SELECT_CHAIN);
-            break;
-
-        case ContextCommand::CUT_SEL:
-            MenuClipboard(Command::CUT);
-            break;
-
-        case ContextCommand::COPY_SEL:
-            MenuClipboard(Command::COPY);
-            break;
-
-        case ContextCommand::PASTE:
-            MenuClipboard(Command::PASTE);
-            break;
-
-        case ContextCommand::PASTE_XFRM:
-            MenuClipboard(Command::PASTE_TRANSFORM);
-            break;
-
-        case ContextCommand::DELETE_SEL:
-            MenuClipboard(Command::DELETE);
-            break;
-
-        case ContextCommand::REFERENCE_DIM:
-            Constraint::MenuConstrain(Command::REFERENCE);
-            break;
-
-        case ContextCommand::OTHER_ANGLE:
-            Constraint::MenuConstrain(Command::OTHER_ANGLE);
-            break;
-
-        case ContextCommand::DEL_COINCIDENT: {
-            SS.UndoRemember();
-            if(!gs.point[0].v) break;
-            Entity *p = SK.GetEntity(gs.point[0]);
-            if(!p->IsPoint()) break;
-
-            SK.constraint.ClearTags();
-            Constraint *c;
-            for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
-                if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
-                    c->tag = 1;
-                }
-            }
-            SK.constraint.RemoveTagged();
-            ClearSelection();
-            break;
-        }
-
-        case ContextCommand::SNAP_TO_GRID:
-            MenuEdit(Command::SNAP_TO_GRID);
-            break;
-
-        case ContextCommand::CONSTRUCTION:
-            MenuRequest(Command::CONSTRUCTION);
-            break;
-
-        case ContextCommand::ZOOM_TO_FIT:
-            MenuView(Command::ZOOM_TO_FIT);
-            break;
-
-        case ContextCommand::SELECT_ALL:
-            MenuEdit(Command::SELECT_ALL);
-            break;
-
-        case ContextCommand::REMOVE_SPLINE_PT: {
-            hRequest hr = gs.point[0].request();
-            Request *r = SK.GetRequest(hr);
-
-            int index = r->IndexOfPoint(gs.point[0]);
-            ssassert(r->extraPoints != 0, "Expected a bezier with interior control points");
-
-            SS.UndoRemember();
-            Entity *e = SK.GetEntity(r->h.entity(0));
-
-            // First, fix point-coincident constraints involving this point.
-            // Then, remove all other constraints, since they would otherwise
-            // jump to an adjacent one and mess up the bezier after generation.
-            FixConstraintsForPointBeingDeleted(e->point[index]);
-            RemoveConstraintsForPointBeingDeleted(e->point[index]);
-
-            for(int i = index; i < MAX_POINTS_IN_ENTITY - 1; i++) {
-                if(e->point[i + 1].v == 0) break;
-                Entity *p0 = SK.GetEntity(e->point[i]);
-                Entity *p1 = SK.GetEntity(e->point[i + 1]);
-                ReplacePointInConstraints(p1->h, p0->h);
-                p0->PointForceTo(p1->PointGetNum());
-            }
-            r->extraPoints--;
-            SS.MarkGroupDirtyByEntity(gs.point[0]);
-            ClearSelection();
-            break;
-        }
-
-        case ContextCommand::ADD_SPLINE_PT: {
-            hRequest hr = gs.entity[0].request();
-            Request *r = SK.GetRequest(hr);
-
-            int pointCount = r->extraPoints + ((r->type == Request::Type::CUBIC_PERIODIC) ? 3 : 4);
-            if(pointCount < MAX_POINTS_IN_ENTITY) {
-                SS.UndoRemember();
-                r->extraPoints++;
-                SS.MarkGroupDirtyByEntity(gs.entity[0]);
-                SS.GenerateAll(SolveSpaceUI::Generate::REGEN);
-
-                Entity *e = SK.GetEntity(r->h.entity(0));
-                for(int i = MAX_POINTS_IN_ENTITY; i > addAfterPoint + 1; i--) {
-                    Entity *p0 = SK.entity.FindByIdNoOops(e->point[i]);
-                    if(p0 == NULL) continue;
-                    Entity *p1 = SK.GetEntity(e->point[i - 1]);
-                    ReplacePointInConstraints(p1->h, p0->h);
-                    p0->PointForceTo(p1->PointGetNum());
-                }
-                Entity *p = SK.GetEntity(e->point[addAfterPoint + 1]);
-                p->PointForceTo(v);
-                SS.MarkGroupDirtyByEntity(gs.entity[0]);
-                ClearSelection();
-            } else {
-                Error(_("Cannot add spline point: maximum number of points reached."));
-            }
-            break;
-        }
-
-        case ContextCommand::GROUP_INFO: {
-            hGroup hg;
-            if(gs.entities == 1) {
-                hg = SK.GetEntity(gs.entity[0])->group;
-            } else if(gs.points == 1) {
-                hg = SK.GetEntity(gs.point[0])->group;
-            } else if(gs.constraints == 1) {
-                hg = SK.GetConstraint(gs.constraint[0])->group;
-            } else {
-                break;
-            }
-            ClearSelection();
-
-            SS.TW.GoToScreen(TextWindow::Screen::GROUP_INFO);
-            SS.TW.shown.group = hg;
-            SS.ScheduleShowTW();
-            ForceTextWindowShown();
-            break;
-        }
-
-        case ContextCommand::STYLE_INFO: {
-            hStyle hs;
-            if(gs.entities == 1) {
-                hs = Style::ForEntity(gs.entity[0]);
-            } else if(gs.points == 1) {
-                hs = Style::ForEntity(gs.point[0]);
-            } else if(gs.constraints == 1) {
-                hs = SK.GetConstraint(gs.constraint[0])->GetStyle();
-            } else {
-                break;
-            }
-            ClearSelection();
-
-            SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);
-            SS.TW.shown.style = hs;
-            SS.ScheduleShowTW();
-            ForceTextWindowShown();
-            break;
-        }
-
-        case ContextCommand::NEW_CUSTOM_STYLE: {
-            uint32_t v = Style::CreateCustomStyle();
-            Style::AssignSelectionToStyle(v);
-            ForceTextWindowShown();
-            break;
-        }
-
-        case ContextCommand::NO_STYLE:
-            Style::AssignSelectionToStyle(0);
-            break;
-
-        default:
-            ssassert(ret >= ContextCommand::FIRST_STYLE, "Expected a style to be chosen");
-            Style::AssignSelectionToStyle((uint32_t)ret - (uint32_t)ContextCommand::FIRST_STYLE);
-            break;
+        });
     }
+
+    if(itemsSelected) {
+        menu->AddSeparator();
+        menu->AddItem(_("Zoom to Fit"),
+                      [&]() { MenuView(Command::ZOOM_TO_FIT); });
+    }
+
+    menu->PopUp();
 
     context.active = false;
     SS.ScheduleShowTW();
@@ -1344,15 +1259,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
             break;
 
         case Pending::NONE:
-            // We need to clear the selection here, and not in the mouse down
-            // event, since a mouse down without anything hovered could also
-            // be the start of marquee selection. But don't do that on the
-            // left click to cancel a context menu. The time delay is an ugly
-            // hack.
-            if(hover.IsEmpty() &&
-                (contextMenuCancelTime == 0 ||
-                 (GetMilliseconds() - contextMenuCancelTime) > 200))
-            {
+            if(hover.IsEmpty()) {
                 ClearSelection();
             }
             break;
@@ -1486,23 +1393,6 @@ void GraphicsWindow::EditControlDone(const char *s) {
         }
         SS.MarkGroupDirty(c->group);
     }
-}
-
-bool GraphicsWindow::KeyDown(int c) {
-    if(c == '\b') {
-        // Treat backspace identically to escape.
-        MenuEdit(Command::UNSELECT_ALL);
-        return true;
-    } else if(c == '=') {
-        // Treat = as +. This is specific to US (and US-compatible) keyboard layouts,
-        // but makes zooming from keyboard much more usable on these.
-        // Ideally we'd have a platform-independent way of binding to a particular
-        // physical key regardless of shift status...
-        MenuView(Command::ZOOM_IN);
-        return true;
-    }
-
-    return false;
 }
 
 void GraphicsWindow::MouseScroll(double x, double y, int delta) {

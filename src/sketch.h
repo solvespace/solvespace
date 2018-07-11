@@ -292,6 +292,7 @@ public:
     SPolygon GetPolygon();
 
     static void MenuGroup(Command id);
+    static void MenuGroup(Command id, Platform::Path linkFile);
 };
 
 // A user request for some primitive or derived operation; for example a

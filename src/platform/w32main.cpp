@@ -61,11 +61,6 @@ static struct {
     int x, y;
 } LastMousePos;
 
-HMENU SubMenus[100];
-HMENU RecentOpenMenu, RecentImportMenu;
-
-HMENU ContextMenu, ContextSubmenu;
-
 int ClientIsSmallerBy;
 
 HFONT FixedFont;
@@ -212,42 +207,6 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     EnableWindow(GraphicsWnd, true);
     SetForegroundWindow(GraphicsWnd);
     DestroyWindow(MessageWnd);
-}
-
-void SolveSpace::AddContextMenuItem(const char *label, ContextCommand cmd)
-{
-    if(!ContextMenu) ContextMenu = CreatePopupMenu();
-
-    if(cmd == ContextCommand::SUBMENU) {
-        AppendMenuW(ContextMenu, MF_STRING | MF_POPUP,
-            (UINT_PTR)ContextSubmenu, Widen(label).c_str());
-        ContextSubmenu = NULL;
-    } else {
-        HMENU m = ContextSubmenu ? ContextSubmenu : ContextMenu;
-        if(cmd == ContextCommand::SEPARATOR) {
-            AppendMenuW(m, MF_SEPARATOR, 0, L"");
-        } else {
-            AppendMenuW(m, MF_STRING, (uint32_t)cmd, Widen(label).c_str());
-        }
-    }
-}
-
-void SolveSpace::CreateContextSubmenu()
-{
-    ContextSubmenu = CreatePopupMenu();
-}
-
-ContextCommand SolveSpace::ShowContextMenu()
-{
-    POINT p;
-    GetCursorPos(&p);
-    int r = TrackPopupMenu(ContextMenu,
-        TPM_RIGHTBUTTON | TPM_RETURNCMD | TPM_TOPALIGN,
-        p.x, p.y, 0, GraphicsWnd, NULL);
-
-    DestroyMenu(ContextMenu);
-    ContextMenu = NULL;
-    return (ContextCommand)r;
 }
 
 static void GetWindowSize(HWND hwnd, int *w, int *h)
@@ -665,68 +624,35 @@ static bool ProcessKeyDown(WPARAM wParam)
         }
     }
 
-    int c;
-    switch(wParam) {
-        case VK_OEM_PLUS:       c = '+';            break;
-        case VK_OEM_MINUS:      c = '-';            break;
-        case VK_ESCAPE:         c = 27;             break;
-        case VK_OEM_1:          c = ';';            break;
-        case VK_OEM_3:          c = '`';            break;
-        case VK_OEM_4:          c = '[';            break;
-        case VK_OEM_6:          c = ']';            break;
-        case VK_OEM_5:          c = '\\';           break;
-        case VK_OEM_PERIOD:     c = '.';            break;
-        case VK_DECIMAL:        c = '.';            break;
-        case VK_SPACE:          c = ' ';            break;
-        case VK_DELETE:         c = 127;            break;
-        case VK_TAB:            c = '\t';           break;
+    Platform::KeyboardEvent event = {};
+    event.type = Platform::KeyboardEvent::Type::PRESS;
 
-        case VK_BROWSER_BACK:
-        case VK_BACK:           c = '\b';           break;
+    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)
+        event.shiftDown = true;
+    if(GetAsyncKeyState(VK_CONTROL) & 0x8000)
+        event.controlDown = true;
 
-        case VK_F1:
-        case VK_F2:
-        case VK_F3:
-        case VK_F4:
-        case VK_F5:
-        case VK_F6:
-        case VK_F7:
-        case VK_F8:
-        case VK_F9:
-        case VK_F10:
-        case VK_F11:
-        case VK_F12:            c = ((int)wParam - VK_F1) + 0xf1; break;
-
-        // These overlap with some character codes that I'm using, so
-        // don't let them trigger by accident.
-        case VK_F16:
-        case VK_INSERT:
-        case VK_EXECUTE:
-        case VK_APPS:
-        case VK_LWIN:
-        case VK_RWIN:           return false;
-
-        default:
-            c = (int)wParam;
-            break;
-    }
-    if(GetAsyncKeyState(VK_SHIFT)   & 0x8000) c |= GraphicsWindow::SHIFT_MASK;
-    if(GetAsyncKeyState(VK_CONTROL) & 0x8000) c |= GraphicsWindow::CTRL_MASK;
-
-    switch(c) {
-        case GraphicsWindow::SHIFT_MASK | '.': c = '>'; break;
-    }
-
-    for(int i = 0; SS.GW.menu[i].level >= 0; i++) {
-        if(c == SS.GW.menu[i].accel) {
-            (SS.GW.menu[i].fn)((Command)SS.GW.menu[i].id);
-            break;
+    if(wParam >= VK_F1 && wParam <= VK_F12) {
+        event.key = Platform::KeyboardEvent::Key::FUNCTION;
+        event.num = wParam - VK_F1 + 1;
+    } else {
+        event.key = Platform::KeyboardEvent::Key::CHARACTER;
+        event.chr = tolower(MapVirtualKeyW(wParam, MAPVK_VK_TO_CHAR));
+        if(event.chr == 0) {
+            if(wParam == VK_DELETE) {
+                event.chr = '\x7f';
+            } else {
+                // Non-mappable key.
+                return false;
+            }
+        } else if(event.chr == '.' && event.shiftDown) {
+            event.chr = '>';
+            event.shiftDown = false;;
         }
     }
 
-    if(SS.GW.KeyDown(c)) return true;
+    if(SS.GW.KeyboardEvent(event)) return true;
 
-    // No accelerator; process the key as normal.
     return false;
 }
 
@@ -927,6 +853,13 @@ bool SolveSpace::GraphicsEditControlIsVisible()
     return IsWindowVisible(GraphicsEditControl) ? true : false;
 }
 
+namespace SolveSpace {
+namespace Platform {
+void TriggerMenu(int id);
+extern int64_t contextMenuCancelTime;
+}
+}
+
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
@@ -961,6 +894,12 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
         case WM_RBUTTONDOWN:
         case WM_RBUTTONUP:
         case WM_MBUTTONDOWN: {
+            if(GetMilliseconds() - Platform::contextMenuCancelTime < 100) {
+                // Ignore the mouse click that dismisses a context menu, to avoid
+                // (e.g.) clearing a selection.
+                return 1;
+            }
+
             int x = LOWORD(lParam);
             int y = HIWORD(lParam);
 
@@ -1004,33 +943,8 @@ LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
             MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
             break;
 
-        case WM_COMMAND: {
-            if(HIWORD(wParam) == 0) {
-                Command id = (Command)LOWORD(wParam);
-                if(((uint32_t)id >= (uint32_t)Command::RECENT_OPEN &&
-                    (uint32_t)id < ((uint32_t)Command::RECENT_OPEN + MAX_RECENT))) {
-                    SolveSpaceUI::MenuFile(id);
-                    break;
-                }
-                if(((uint32_t)id >= (uint32_t)Command::RECENT_LINK &&
-                    (uint32_t)id < ((uint32_t)Command::RECENT_LINK + MAX_RECENT))) {
-                    Group::MenuGroup(id);
-                    break;
-                }
-                if((uint32_t)id >= (uint32_t)Command::LOCALE &&
-                   (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
-                    SolveSpaceUI::MenuHelp(id);
-                    break;
-                }
-                int i;
-                for(i = 0; SS.GW.menu[i].level >= 0; i++) {
-                    if(id == SS.GW.menu[i].id) {
-                        (SS.GW.menu[i].fn)((Command)id);
-                        break;
-                    }
-                }
-                ssassert(SS.GW.menu[i].level >= 0, "Cannot find command in the menu");
-            }
+        case WM_MENUCOMMAND: {
+            SolveSpace::Platform::TriggerMenu(GetMenuItemID((HMENU)lParam, wParam));
             break;
         }
 
@@ -1233,114 +1147,6 @@ std::vector<Platform::Path> SolveSpace::GetFontFiles() {
     return fonts;
 }
 
-static void MenuByCmd(Command id, bool yes, bool check)
-{
-    int i;
-    int subMenu = -1;
-
-    for(i = 0; SS.GW.menu[i].level >= 0; i++) {
-        if(SS.GW.menu[i].level == 0) subMenu++;
-
-        if(SS.GW.menu[i].id == id) {
-            ssassert(subMenu >= 0 && subMenu < (int)arraylen(SubMenus),
-                     "Submenu out of range");
-
-            if(check) {
-                CheckMenuItem(SubMenus[subMenu], (uint32_t)id,
-                            yes ? MF_CHECKED : MF_UNCHECKED);
-            } else {
-                EnableMenuItem(SubMenus[subMenu], (uint32_t)id,
-                            yes ? MF_ENABLED : MF_GRAYED);
-            }
-            return;
-        }
-    }
-    ssassert(false, "Cannot find submenu");
-}
-void SolveSpace::CheckMenuByCmd(Command cmd, bool checked)
-{
-    MenuByCmd(cmd, checked, true);
-}
-void SolveSpace::RadioMenuByCmd(Command cmd, bool selected)
-{
-    // Windows does not natively support radio-button menu items
-    MenuByCmd(cmd, selected, true);
-}
-void SolveSpace::EnableMenuByCmd(Command cmd, bool enabled)
-{
-    MenuByCmd(cmd, enabled, false);
-}
-static void DoRecent(HMENU m, Command base)
-{
-    while(DeleteMenu(m, 0, MF_BYPOSITION))
-        ;
-    int c = 0;
-    for(size_t i = 0; i < MAX_RECENT; i++) {
-        if(!RecentFile[i].IsEmpty()) {
-            AppendMenuW(m, MF_STRING, (uint32_t)base + i, Widen(RecentFile[i].raw).c_str());
-            c++;
-        }
-    }
-    if(c == 0) AppendMenuW(m, MF_STRING | MF_GRAYED, 0, Widen(_("(no recent files)")).c_str());
-}
-void SolveSpace::RefreshRecentMenus()
-{
-    DoRecent(RecentOpenMenu,   Command::RECENT_OPEN);
-    DoRecent(RecentImportMenu, Command::RECENT_LINK);
-}
-
-HMENU CreateGraphicsWindowMenus()
-{
-    HMENU top = CreateMenu();
-    HMENU m = 0;
-
-    int i;
-    int subMenu = 0;
-
-    for(i = 0; SS.GW.menu[i].level >= 0; i++) {
-        std::string label;
-        if(SS.GW.menu[i].label) {
-            std::string accel = MakeAcceleratorLabel(SS.GW.menu[i].accel);
-            const char *sep = accel.empty() ? "" : "\t";
-            label = ssprintf("%s%s%s", Translate(SS.GW.menu[i].label).c_str(), sep, accel.c_str());
-        }
-
-        if(SS.GW.menu[i].level == 0) {
-            m = CreateMenu();
-            AppendMenuW(top, MF_STRING | MF_POPUP, (UINT_PTR)m, Widen(label).c_str());
-            ssassert(subMenu < (int)arraylen(SubMenus), "Too many submenus");
-            SubMenus[subMenu] = m;
-            subMenu++;
-        } else if(SS.GW.menu[i].level == 1) {
-            if(SS.GW.menu[i].id == Command::OPEN_RECENT) {
-                RecentOpenMenu = CreateMenu();
-                AppendMenuW(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentOpenMenu, Widen(label).c_str());
-            } else if(SS.GW.menu[i].id == Command::GROUP_RECENT) {
-                RecentImportMenu = CreateMenu();
-                AppendMenuW(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)RecentImportMenu, Widen(label).c_str());
-            } else if(SS.GW.menu[i].id == Command::LOCALE) {
-                HMENU LocaleMenu = CreateMenu();
-                size_t i = 0;
-                for(auto locale : Locales()) {
-                    AppendMenuW(LocaleMenu, MF_STRING,
-                        (uint32_t)Command::LOCALE + i++, Widen(locale.displayName).c_str());
-                }
-                AppendMenuW(m, MF_STRING | MF_POPUP,
-                    (UINT_PTR)LocaleMenu, Widen(label).c_str());
-            } else if(SS.GW.menu[i].label) {
-                AppendMenuW(m, MF_STRING, (uint32_t)SS.GW.menu[i].id, Widen(label).c_str());
-            } else {
-                AppendMenuW(m, MF_SEPARATOR, (uint32_t)SS.GW.menu[i].id, L"");
-            }
-        } else ssassert(false, "Submenus nested too deeply");
-    }
-    RefreshRecentMenus();
-
-    return top;
-}
-
 static void CreateMainWindows()
 {
     WNDCLASSEX wc = {};
@@ -1414,16 +1220,12 @@ static void CreateMainWindows()
     ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
 }
 
-void SolveSpace::RefreshLocale() {
+void SolveSpace::SetMainMenu(Platform::MenuBarRef menuBar) {
+    static Platform::MenuBarRef _menuBar;
+    SetMenu(GraphicsWnd, (HMENU)menuBar->NativePtr());
+    _menuBar = menuBar;
+
     SS.UpdateWindowTitle();
-
-    HMENU oldMenu = GetMenu(GraphicsWnd);
-    SetMenu(GraphicsWnd, CreateGraphicsWindowMenus());
-    if(oldMenu != NULL) {
-        DestroyMenu(oldMenu);
-    }
-    RefreshRecentMenus();
-
     SetWindowTextW(TextWnd, Title(C_("title", "Property Browser")).c_str());
 }
 

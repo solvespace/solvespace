@@ -6,6 +6,17 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+typedef void MenuHandler(Command id);
+using MenuKind = Platform::MenuItem::Indicator;
+struct MenuEntry {
+    int          level;          // 0 == on menu bar, 1 == one level down
+    const char  *label;          // or NULL for a separator
+    Command      cmd;            // command ID
+    int          accel;          // keyboard accelerator
+    MenuKind     kind;
+    MenuHandler *fn;
+};
+
 #define mView (&GraphicsWindow::MenuView)
 #define mEdit (&GraphicsWindow::MenuEdit)
 #define mClip (&GraphicsWindow::MenuClipboard)
@@ -15,195 +26,343 @@
 #define mGrp  (&Group::MenuGroup)
 #define mAna  (&SolveSpaceUI::MenuAnalyze)
 #define mHelp (&SolveSpaceUI::MenuHelp)
-#define DEL   DELETE_KEY
-#define ESC   ESCAPE_KEY
+#define SHIFT_MASK 0x100
+#define CTRL_MASK  0x200
+#define FN_MASK    0x400
+
 #define S     SHIFT_MASK
 #define C     CTRL_MASK
-#define F(k)  (FUNCTION_KEY_BASE+(k))
-#define TN    MenuKind::NORMAL
-#define TC    MenuKind::CHECK
-#define TR    MenuKind::RADIO
-const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
-//level
-//   label                              id                         accel    ty   fn
-{ 0, N_("&File"),                       Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&New"),                        Command::NEW,              C|'N',   TN, mFile },
-{ 1, N_("&Open..."),                    Command::OPEN,             C|'O',   TN, mFile },
-{ 1, N_("Open &Recent"),                Command::OPEN_RECENT,      0,       TN, mFile },
-{ 1, N_("&Save"),                       Command::SAVE,             C|'S',   TN, mFile },
-{ 1, N_("Save &As..."),                 Command::SAVE_AS,          0,       TN, mFile },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Export &Image..."),            Command::EXPORT_PNG,       0,       TN, mFile },
-{ 1, N_("Export 2d &View..."),          Command::EXPORT_VIEW,      0,       TN, mFile },
-{ 1, N_("Export 2d &Section..."),       Command::EXPORT_SECTION,   0,       TN, mFile },
-{ 1, N_("Export 3d &Wireframe..."),     Command::EXPORT_WIREFRAME, 0,       TN, mFile },
-{ 1, N_("Export Triangle &Mesh..."),    Command::EXPORT_MESH,      0,       TN, mFile },
-{ 1, N_("Export &Surfaces..."),         Command::EXPORT_SURFACES,  0,       TN, mFile },
-{ 1, N_("Im&port..."),                  Command::IMPORT,           0,       TN, mFile },
+#define F     FN_MASK
+#define KN    MenuKind::NONE
+#define KC    MenuKind::CHECK_MARK
+#define KR    MenuKind::RADIO_MARK
+const MenuEntry Menu[] = {
+//lv label                              cmd                        accel    kind
+{ 0, N_("&File"),                       Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&New"),                        Command::NEW,              C|'n',   KN, mFile  },
+{ 1, N_("&Open..."),                    Command::OPEN,             C|'o',   KN, mFile  },
+{ 1, N_("Open &Recent"),                Command::OPEN_RECENT,      0,       KN, mFile  },
+{ 1, N_("&Save"),                       Command::SAVE,             C|'s',   KN, mFile  },
+{ 1, N_("Save &As..."),                 Command::SAVE_AS,          0,       KN, mFile  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Export &Image..."),            Command::EXPORT_PNG,       0,       KN, mFile  },
+{ 1, N_("Export 2d &View..."),          Command::EXPORT_VIEW,      0,       KN, mFile  },
+{ 1, N_("Export 2d &Section..."),       Command::EXPORT_SECTION,   0,       KN, mFile  },
+{ 1, N_("Export 3d &Wireframe..."),     Command::EXPORT_WIREFRAME, 0,       KN, mFile  },
+{ 1, N_("Export Triangle &Mesh..."),    Command::EXPORT_MESH,      0,       KN, mFile  },
+{ 1, N_("Export &Surfaces..."),         Command::EXPORT_SURFACES,  0,       KN, mFile  },
+{ 1, N_("Im&port..."),                  Command::IMPORT,           0,       KN, mFile  },
 #ifndef __APPLE__
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("E&xit"),                       Command::EXIT,             C|'Q',   TN, mFile },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("E&xit"),                       Command::EXIT,             C|'q',   KN, mFile  },
 #endif
 
-{ 0, N_("&Edit"),                       Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Undo"),                       Command::UNDO,             C|'Z',   TN, mEdit },
-{ 1, N_("&Redo"),                       Command::REDO,             C|'Y',   TN, mEdit },
-{ 1, N_("Re&generate All"),             Command::REGEN_ALL,        ' ',     TN, mEdit },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Snap Selection to &Grid"),     Command::SNAP_TO_GRID,     '.',     TN, mEdit },
-{ 1, N_("Rotate Imported &90°"),        Command::ROTATE_90,        '9',     TN, mEdit },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Cu&t"),                        Command::CUT,              C|'X',   TN, mClip },
-{ 1, N_("&Copy"),                       Command::COPY,             C|'C',   TN, mClip },
-{ 1, N_("&Paste"),                      Command::PASTE,            C|'V',   TN, mClip },
-{ 1, N_("Paste &Transformed..."),       Command::PASTE_TRANSFORM,  C|'T',   TN, mClip },
-{ 1, N_("&Delete"),                     Command::DELETE,           DEL,     TN, mClip },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Select &Edge Chain"),          Command::SELECT_CHAIN,     C|'E',   TN, mEdit },
-{ 1, N_("Select &All"),                 Command::SELECT_ALL,       C|'A',   TN, mEdit },
-{ 1, N_("&Unselect All"),               Command::UNSELECT_ALL,     ESC,     TN, mEdit },
+{ 0, N_("&Edit"),                       Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Undo"),                       Command::UNDO,             C|'z',   KN, mEdit  },
+{ 1, N_("&Redo"),                       Command::REDO,             C|'y',   KN, mEdit  },
+{ 1, N_("Re&generate All"),             Command::REGEN_ALL,        ' ',     KN, mEdit  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Snap Selection to &Grid"),     Command::SNAP_TO_GRID,     '.',     KN, mEdit  },
+{ 1, N_("Rotate Imported &90°"),        Command::ROTATE_90,        '9',     KN, mEdit  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Cu&t"),                        Command::CUT,              C|'x',   KN, mClip  },
+{ 1, N_("&Copy"),                       Command::COPY,             C|'c',   KN, mClip  },
+{ 1, N_("&Paste"),                      Command::PASTE,            C|'v',   KN, mClip  },
+{ 1, N_("Paste &Transformed..."),       Command::PASTE_TRANSFORM,  C|'t',   KN, mClip  },
+{ 1, N_("&Delete"),                     Command::DELETE,           '\x7f',  KN, mClip  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Select &Edge Chain"),          Command::SELECT_CHAIN,     C|'e',   KN, mEdit  },
+{ 1, N_("Select &All"),                 Command::SELECT_ALL,       C|'a',   KN, mEdit  },
+{ 1, N_("&Unselect All"),               Command::UNSELECT_ALL,     '\x1b',  KN, mEdit  },
 
-{ 0, N_("&View"),                       Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Zoom &In"),                    Command::ZOOM_IN,          '+',     TN, mView },
-{ 1, N_("Zoom &Out"),                   Command::ZOOM_OUT,         '-',     TN, mView },
-{ 1, N_("Zoom To &Fit"),                Command::ZOOM_TO_FIT,      'F',     TN, mView },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Align View to &Workplane"),    Command::ONTO_WORKPLANE,   'W',     TN, mView },
-{ 1, N_("Nearest &Ortho View"),         Command::NEAREST_ORTHO,    F(2),    TN, mView },
-{ 1, N_("Nearest &Isometric View"),     Command::NEAREST_ISO,      F(3),    TN, mView },
-{ 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F(4),    TN, mView },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     TC, mView },
-{ 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',    TC, mView },
-{ 1, N_("Dimension &Units"),            Command::NONE,             0,       TN, NULL  },
-{ 2, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       TR, mView },
-{ 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       TR, mView },
-{ 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       TR, mView },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       TC, mView },
-{ 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    TC, mView },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F(11), TC, mView },
+{ 0, N_("&View"),                       Command::NONE,             0,       KN, mView  },
+{ 1, N_("Zoom &In"),                    Command::ZOOM_IN,          '+',     KN, mView  },
+{ 1, N_("Zoom &Out"),                   Command::ZOOM_OUT,         '-',     KN, mView  },
+{ 1, N_("Zoom To &Fit"),                Command::ZOOM_TO_FIT,      'f',     KN, mView  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Align View to &Workplane"),    Command::ONTO_WORKPLANE,   'w',     KN, mView  },
+{ 1, N_("Nearest &Ortho View"),         Command::NEAREST_ORTHO,    F|2,     KN, mView  },
+{ 1, N_("Nearest &Isometric View"),     Command::NEAREST_ISO,      F|3,     KN, mView  },
+{ 1, N_("&Center View At Point"),       Command::CENTER_VIEW,      F|4,     KN, mView  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     KC, mView  },
+{ 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',     KC, mView  },
+{ 1, N_("Dimension &Units"),            Command::NONE,             0,       KN, NULL  },
+{ 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       KR, mView },
+{ 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       KR, mView },
+{ 2, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       KR, mView },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       KC, mView  },
+{ 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    KC, mView  },
+{ 1,  NULL,                             Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F|11,  KC, mView  },
 
-{ 0, N_("&New Group"),                  Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Sketch In &3d"),               Command::GROUP_3D,         S|'3',   TN, mGrp  },
-{ 1, N_("Sketch In New &Workplane"),    Command::GROUP_WRKPL,      S|'W',   TN, mGrp  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Step &Translating"),           Command::GROUP_TRANS,      S|'T',   TN, mGrp  },
-{ 1, N_("Step &Rotating"),              Command::GROUP_ROT,        S|'R',   TN, mGrp  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("E&xtrude"),                    Command::GROUP_EXTRUDE,    S|'X',   TN, mGrp  },
-{ 1, N_("&Lathe"),                      Command::GROUP_LATHE,      S|'L',   TN, mGrp  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Link / Assemble..."),          Command::GROUP_LINK,       S|'I',   TN, mGrp  },
-{ 1, N_("Link Recent"),                 Command::GROUP_RECENT,     0,       TN, mGrp  },
+{ 0, N_("&New Group"),                  Command::NONE,             0,       KN, mGrp   },
+{ 1, N_("Sketch In &3d"),               Command::GROUP_3D,         S|'3',   KN, mGrp   },
+{ 1, N_("Sketch In New &Workplane"),    Command::GROUP_WRKPL,      S|'w',   KN, mGrp   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Step &Translating"),           Command::GROUP_TRANS,      S|'t',   KN, mGrp   },
+{ 1, N_("Step &Rotating"),              Command::GROUP_ROT,        S|'r',   KN, mGrp   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("E&xtrude"),                    Command::GROUP_EXTRUDE,    S|'x',   KN, mGrp   },
+{ 1, N_("&Lathe"),                      Command::GROUP_LATHE,      S|'l',   KN, mGrp   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Link / Assemble..."),          Command::GROUP_LINK,       S|'i',   KN, mGrp   },
+{ 1, N_("Link Recent"),                 Command::GROUP_RECENT,     0,       KN, mGrp   },
 
-{ 0, N_("&Sketch"),                     Command::NONE,             0,       TN, NULL  },
-{ 1, N_("In &Workplane"),               Command::SEL_WORKPLANE,    '2',     TR, mReq  },
-{ 1, N_("Anywhere In &3d"),             Command::FREE_IN_3D,       '3',     TR, mReq  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Datum &Point"),                Command::DATUM_POINT,      'P',     TN, mReq  },
-{ 1, N_("&Workplane"),                  Command::WORKPLANE,        0,       TN, mReq  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Line &Segment"),               Command::LINE_SEGMENT,     'S',     TN, mReq  },
-{ 1, N_("C&onstruction Line Segment"),  Command::CONSTR_SEGMENT,   S|'S',   TN, mReq  },
-{ 1, N_("&Rectangle"),                  Command::RECTANGLE,        'R',     TN, mReq  },
-{ 1, N_("&Circle"),                     Command::CIRCLE,           'C',     TN, mReq  },
-{ 1, N_("&Arc of a Circle"),            Command::ARC,              'A',     TN, mReq  },
-{ 1, N_("&Bezier Cubic Spline"),        Command::CUBIC,            'B',     TN, mReq  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Text in TrueType Font"),      Command::TTF_TEXT,         'T',     TN, mReq  },
-{ 1, N_("&Image"),                      Command::IMAGE,            0,       TN, mReq  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("To&ggle Construction"),        Command::CONSTRUCTION,     'G',     TN, mReq  },
-{ 1, N_("Tangent &Arc at Point"),       Command::TANGENT_ARC,      S|'A',   TN, mReq  },
-{ 1, N_("Split Curves at &Intersection"), Command::SPLIT_CURVES,   'I',     TN, mReq  },
+{ 0, N_("&Sketch"),                     Command::NONE,             0,       KN, mReq   },
+{ 1, N_("In &Workplane"),               Command::SEL_WORKPLANE,    '2',     KR, mReq   },
+{ 1, N_("Anywhere In &3d"),             Command::FREE_IN_3D,       '3',     KR, mReq   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Datum &Point"),                Command::DATUM_POINT,      'p',     KN, mReq   },
+{ 1, N_("&Workplane"),                  Command::WORKPLANE,        0,       KN, mReq   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Line &Segment"),               Command::LINE_SEGMENT,     's',     KN, mReq   },
+{ 1, N_("C&onstruction Line Segment"),  Command::CONSTR_SEGMENT,   S|'s',   KN, mReq   },
+{ 1, N_("&Rectangle"),                  Command::RECTANGLE,        'r',     KN, mReq   },
+{ 1, N_("&Circle"),                     Command::CIRCLE,           'c',     KN, mReq   },
+{ 1, N_("&Arc of a Circle"),            Command::ARC,              'a',     KN, mReq   },
+{ 1, N_("&Bezier Cubic Spline"),        Command::CUBIC,            'b',     KN, mReq   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Text in TrueType Font"),      Command::TTF_TEXT,         't',     KN, mReq   },
+{ 1, N_("&Image"),                      Command::IMAGE,            0,       KN, mReq   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("To&ggle Construction"),        Command::CONSTRUCTION,     'g',     KN, mReq   },
+{ 1, N_("Tangent &Arc at Point"),       Command::TANGENT_ARC,      S|'a',   KN, mReq   },
+{ 1, N_("Split Curves at &Intersection"), Command::SPLIT_CURVES,   'i',     KN, mReq   },
 
-{ 0, N_("&Constrain"),                  Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Distance / Diameter"),        Command::DISTANCE_DIA,     'D',     TN, mCon  },
-{ 1, N_("Re&ference Dimension"),        Command::REF_DISTANCE,     S|'D',   TN, mCon  },
-{ 1, N_("A&ngle"),                      Command::ANGLE,            'N',     TN, mCon  },
-{ 1, N_("Reference An&gle"),            Command::REF_ANGLE,        S|'N',   TN, mCon  },
-{ 1, N_("Other S&upplementary Angle"),  Command::OTHER_ANGLE,      'U',     TN, mCon  },
-{ 1, N_("Toggle R&eference Dim"),       Command::REFERENCE,        'E',     TN, mCon  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Horizontal"),                 Command::HORIZONTAL,       'H',     TN, mCon  },
-{ 1, N_("&Vertical"),                   Command::VERTICAL,         'V',     TN, mCon  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&On Point / Curve / Plane"),   Command::ON_ENTITY,        'O',     TN, mCon  },
-{ 1, N_("E&qual Length / Radius / Angle"), Command::EQUAL,         'Q',     TN, mCon  },
-{ 1, N_("Length Ra&tio"),               Command::RATIO,            'Z',     TN, mCon  },
-{ 1, N_("Length Diff&erence"),          Command::DIFFERENCE,       'J',     TN, mCon  },
-{ 1, N_("At &Midpoint"),                Command::AT_MIDPOINT,      'M',     TN, mCon  },
-{ 1, N_("S&ymmetric"),                  Command::SYMMETRIC,        'Y',     TN, mCon  },
-{ 1, N_("Para&llel / Tangent"),         Command::PARALLEL,         'L',     TN, mCon  },
-{ 1, N_("&Perpendicular"),              Command::PERPENDICULAR,    '[',     TN, mCon  },
-{ 1, N_("Same Orient&ation"),           Command::ORIENTED_SAME,    'X',     TN, mCon  },
-{ 1, N_("Lock Point Where &Dragged"),   Command::WHERE_DRAGGED,    ']',     TN, mCon  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Comment"),                     Command::COMMENT,          ';',     TN, mCon  },
+{ 0, N_("&Constrain"),                  Command::NONE,             0,       KN, mCon   },
+{ 1, N_("&Distance / Diameter"),        Command::DISTANCE_DIA,     'd',     KN, mCon   },
+{ 1, N_("Re&ference Dimension"),        Command::REF_DISTANCE,     S|'d',   KN, mCon   },
+{ 1, N_("A&ngle"),                      Command::ANGLE,            'n',     KN, mCon   },
+{ 1, N_("Reference An&gle"),            Command::REF_ANGLE,        S|'n',   KN, mCon   },
+{ 1, N_("Other S&upplementary Angle"),  Command::OTHER_ANGLE,      'u',     KN, mCon   },
+{ 1, N_("Toggle R&eference Dim"),       Command::REFERENCE,        'e',     KN, mCon   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Horizontal"),                 Command::HORIZONTAL,       'h',     KN, mCon   },
+{ 1, N_("&Vertical"),                   Command::VERTICAL,         'v',     KN, mCon   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&On Point / Curve / Plane"),   Command::ON_ENTITY,        'o',     KN, mCon   },
+{ 1, N_("E&qual Length / Radius / Angle"), Command::EQUAL,         'q',     KN, mCon   },
+{ 1, N_("Length Ra&tio"),               Command::RATIO,            'z',     KN, mCon   },
+{ 1, N_("Length Diff&erence"),          Command::DIFFERENCE,       'j',     KN, mCon   },
+{ 1, N_("At &Midpoint"),                Command::AT_MIDPOINT,      'm',     KN, mCon   },
+{ 1, N_("S&ymmetric"),                  Command::SYMMETRIC,        'y',     KN, mCon   },
+{ 1, N_("Para&llel / Tangent"),         Command::PARALLEL,         'l',     KN, mCon   },
+{ 1, N_("&Perpendicular"),              Command::PERPENDICULAR,    '[',     KN, mCon   },
+{ 1, N_("Same Orient&ation"),           Command::ORIENTED_SAME,    'x',     KN, mCon   },
+{ 1, N_("Lock Point Where &Dragged"),   Command::WHERE_DRAGGED,    ']',     KN, mCon   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Comment"),                     Command::COMMENT,          ';',     KN, mCon   },
 
-{ 0, N_("&Analyze"),                    Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Measure &Volume"),             Command::VOLUME,           C|S|'V', TN, mAna  },
-{ 1, N_("Measure A&rea"),               Command::AREA,             C|S|'A', TN, mAna  },
-{ 1, N_("Measure &Perimeter"),          Command::PERIMETER,        C|S|'P', TN, mAna  },
-{ 1, N_("Show &Interfering Parts"),     Command::INTERFERENCE,     C|S|'I', TN, mAna  },
-{ 1, N_("Show &Naked Edges"),           Command::NAKED_EDGES,      C|S|'N', TN, mAna  },
-{ 1, N_("Show &Center of Mass"),        Command::CENTER_OF_MASS,      C|S|'C', TN, mAna  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Show Degrees of &Freedom"),    Command::SHOW_DOF,         C|S|'F', TN, mAna  },
-{ 1, NULL,                              Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Trace Point"),                Command::TRACE_PT,         C|S|'T', TN, mAna  },
-{ 1, N_("&Stop Tracing..."),            Command::STOP_TRACING,     C|S|'S', TN, mAna  },
-{ 1, N_("Step &Dimension..."),          Command::STEP_DIM,         C|S|'D', TN, mAna  },
+{ 0, N_("&Analyze"),                    Command::NONE,             0,       KN, mAna   },
+{ 1, N_("Measure &Volume"),             Command::VOLUME,           C|S|'v', KN, mAna   },
+{ 1, N_("Measure A&rea"),               Command::AREA,             C|S|'a', KN, mAna   },
+{ 1, N_("Measure &Perimeter"),          Command::PERIMETER,        C|S|'p', KN, mAna   },
+{ 1, N_("Show &Interfering Parts"),     Command::INTERFERENCE,     C|S|'i', KN, mAna   },
+{ 1, N_("Show &Naked Edges"),           Command::NAKED_EDGES,      C|S|'n', KN, mAna   },
+{ 1, N_("Show &Center of Mass"),        Command::CENTER_OF_MASS,   C|S|'c', KN, mAna   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("Show Degrees of &Freedom"),    Command::SHOW_DOF,         C|S|'f', KN, mAna   },
+{ 1, NULL,                              Command::NONE,             0,       KN, NULL   },
+{ 1, N_("&Trace Point"),                Command::TRACE_PT,         C|S|'t', KN, mAna   },
+{ 1, N_("&Stop Tracing..."),            Command::STOP_TRACING,     C|S|'s', KN, mAna   },
+{ 1, N_("Step &Dimension..."),          Command::STEP_DIM,         C|S|'d', KN, mAna   },
 
-{ 0, N_("&Help"),                       Command::NONE,             0,       TN, NULL  },
-{ 1, N_("&Website / Manual"),           Command::WEBSITE,          0,       TN, mHelp },
-{ 1, N_("&Language"),                   Command::LOCALE,           0,       TN, mHelp },
+{ 0, N_("&Help"),                       Command::NONE,             0,       KN, mHelp  },
+{ 1, N_("&Language"),                   Command::LOCALE,           0,       KN, mHelp  },
+{ 1, N_("&Website / Manual"),           Command::WEBSITE,          0,       KN, mHelp  },
 #ifndef __APPLE__
-{ 1, N_("&About"),                      Command::ABOUT,            0,       TN, mHelp },
+{ 1, N_("&About"),                      Command::ABOUT,            0,       KN, mHelp  },
 #endif
-{ -1, 0,                                Command::NONE,             0,       TN, 0     }
+{ -1, 0,                                Command::NONE,             0,       KN, NULL   }
 };
-
-#undef DEL
-#undef ESC
 #undef S
 #undef C
 #undef F
-#undef TN
-#undef TC
-#undef TR
+#undef KN
+#undef KC
+#undef KR
 
-std::string SolveSpace::MakeAcceleratorLabel(int accel) {
-    if(!accel) return "";
+void GraphicsWindow::ActivateCommand(Command cmd) {
+    for(int i = 0; Menu[i].level >= 0; i++) {
+        if(cmd == Menu[i].cmd) {
+            (Menu[i].fn)((Command)Menu[i].cmd);
+            break;
+        }
+    }
+}
 
-    std::string label;
-    if(accel & GraphicsWindow::CTRL_MASK) {
-        label += "Ctrl+";
+Platform::KeyboardEvent GraphicsWindow::AcceleratorForCommand(Command cmd) {
+    int rawAccel = 0;
+    for(int i = 0; Menu[i].level >= 0; i++) {
+        if(cmd == Menu[i].cmd) {
+            rawAccel = Menu[i].accel;
+            break;
+        }
     }
-    if(accel & GraphicsWindow::SHIFT_MASK) {
-        label += "Shift+";
+
+    Platform::KeyboardEvent accel = {};
+    if(rawAccel & SHIFT_MASK) {
+        accel.shiftDown = true;
     }
-    accel &= ~(GraphicsWindow::CTRL_MASK | GraphicsWindow::SHIFT_MASK);
-    if(accel >= GraphicsWindow::FUNCTION_KEY_BASE + 1 &&
-       accel <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
-        label += ssprintf("F%d", accel - GraphicsWindow::FUNCTION_KEY_BASE);
-    } else if(accel == '\t') {
-        label += "Tab";
-    } else if(accel == ' ') {
-        label += "Space";
-    } else if(accel == GraphicsWindow::ESCAPE_KEY) {
-        label += "Esc";
-    } else if(accel == GraphicsWindow::DELETE_KEY) {
-        label += "Del";
+    if(rawAccel & CTRL_MASK) {
+        accel.controlDown = true;
+    }
+    if(rawAccel & FN_MASK) {
+        accel.key = Platform::KeyboardEvent::Key::FUNCTION;
+        accel.num = rawAccel & 0xff;
     } else {
-        label += (char)(accel & 0xff);
+        accel.key = Platform::KeyboardEvent::Key::CHARACTER;
+        accel.chr = (char)(rawAccel & 0xff);
     }
-    return label;
+
+    return accel;
+}
+
+bool GraphicsWindow::KeyboardEvent(Platform::KeyboardEvent event) {
+    using Platform::KeyboardEvent;
+
+    if(event.type == KeyboardEvent::Type::RELEASE)
+        return true;
+
+    if(event.key == KeyboardEvent::Key::CHARACTER) {
+        if(event.chr == '\b') {
+            // Treat backspace identically to escape.
+            MenuEdit(Command::UNSELECT_ALL);
+            return true;
+        } else if(event.chr == '=') {
+            // Treat = as +. This is specific to US (and US-compatible) keyboard layouts,
+            // but makes zooming from keyboard much more usable on these.
+            // Ideally we'd have a platform-independent way of binding to a particular
+            // physical key regardless of shift status...
+            MenuView(Command::ZOOM_IN);
+            return true;
+        }
+    }
+
+    // On some platforms, the OS does not handle some or all keyboard accelerators,
+    // so handle them here.
+    for(int i = 0; Menu[i].level >= 0; i++) {
+        if(AcceleratorForCommand(Menu[i].cmd).Equals(event)) {
+            ActivateCommand(Menu[i].cmd);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void GraphicsWindow::PopulateMainMenu() {
+    bool unique = false;
+    mainMenu = Platform::GetOrCreateMainMenu(&unique);
+    if(unique) mainMenu->Clear();
+
+    Platform::MenuRef currentSubMenu;
+    std::vector<Platform::MenuRef> subMenuStack;
+    for(int i = 0; Menu[i].level >= 0; i++) {
+        while(Menu[i].level > 0 && Menu[i].level <= (int)subMenuStack.size()) {
+            currentSubMenu = subMenuStack.back();
+            subMenuStack.pop_back();
+        }
+
+        if(Menu[i].label == NULL) {
+            currentSubMenu->AddSeparator();
+            continue;
+        }
+
+        std::string label = Translate(Menu[i].label);
+        if(Menu[i].level == 0) {
+            currentSubMenu = mainMenu->AddSubMenu(label);
+        } else if(Menu[i].cmd == Command::OPEN_RECENT) {
+            openRecentMenu = currentSubMenu->AddSubMenu(label);
+        } else if(Menu[i].cmd == Command::GROUP_RECENT) {
+            linkRecentMenu = currentSubMenu->AddSubMenu(label);
+        } else if(Menu[i].cmd == Command::LOCALE) {
+            Platform::MenuRef localeMenu = currentSubMenu->AddSubMenu(label);
+            for(const Locale &locale : Locales()) {
+                localeMenu->AddItem(locale.displayName, [&]() {
+                    SetLocale(locale.Culture());
+                    CnfFreezeString(locale.Culture(), "Locale");
+
+                    SS.UpdateWindowTitle();
+                    PopulateMainMenu();
+                });
+            }
+        } else if(Menu[i].fn == NULL) {
+            subMenuStack.push_back(currentSubMenu);
+            currentSubMenu = currentSubMenu->AddSubMenu(label);
+        } else {
+            Platform::MenuItemRef menuItem = currentSubMenu->AddItem(label);
+            menuItem->SetIndicator(Menu[i].kind);
+            if(Menu[i].accel != 0) {
+                menuItem->SetAccelerator(AcceleratorForCommand(Menu[i].cmd));
+            }
+            menuItem->onTrigger = std::bind(Menu[i].fn, Menu[i].cmd);
+
+            if(Menu[i].cmd == Command::SHOW_GRID) {
+                showGridMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::PERSPECTIVE_PROJ) {
+                perspectiveProjMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::SHOW_TOOLBAR) {
+                showToolbarMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::SHOW_TEXT_WND) {
+                showTextWndMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::FULL_SCREEN) {
+                fullScreenMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNITS_MM) {
+                unitsMmMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNITS_METERS) {
+                unitsMetersMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNITS_INCHES) {
+                unitsInchesMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::SEL_WORKPLANE) {
+                inWorkplaneMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::FREE_IN_3D) {
+                in3dMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::UNDO) {
+                undoMenuItem = menuItem;
+            } else if(Menu[i].cmd == Command::REDO) {
+                redoMenuItem = menuItem;
+            }
+        }
+    }
+
+    PopulateRecentFiles();
+    SS.UndoEnableMenus();
+
+    SetMainMenu(mainMenu);
+}
+
+static void PopulateMenuWithPathnames(Platform::MenuRef menu,
+                                      std::vector<Platform::Path> pathnames,
+                                      std::function<void(const Platform::Path &)> onTrigger) {
+    menu->Clear();
+    if(pathnames.empty()) {
+        Platform::MenuItemRef menuItem = menu->AddItem(_("(no recent files)"));
+        menuItem->SetEnabled(false);
+    } else {
+        for(Platform::Path pathname : pathnames) {
+            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw);
+            menuItem->onTrigger = [=]() { onTrigger(pathname); };
+        }
+    }
+}
+
+void GraphicsWindow::PopulateRecentFiles() {
+    PopulateMenuWithPathnames(openRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
+        if(!SS.OkayToStartNewFile()) return;
+        SS.Load(path);
+    });
+
+    PopulateMenuWithPathnames(linkRecentMenu, SS.recentFiles, [](const Platform::Path &path) {
+        Group::MenuGroup(Command::GROUP_LINK, path);
+    });
 }
 
 void GraphicsWindow::Init() {
+    PopulateMainMenu();
+
     canvas = CreateRenderer();
     if(canvas) {
         persistentCanvas = canvas->CreateBatch();
@@ -670,31 +829,31 @@ void GraphicsWindow::EnsureValidActives() {
 
     // And update the checked state for various menus
     bool locked = LockedInWorkplane();
-    RadioMenuByCmd(Command::FREE_IN_3D, !locked);
-    RadioMenuByCmd(Command::SEL_WORKPLANE, locked);
+    in3dMenuItem->SetActive(!locked);
+    inWorkplaneMenuItem->SetActive(locked);
 
     SS.UndoEnableMenus();
 
     switch(SS.viewUnits) {
         case Unit::MM:
-        case Unit::INCHES:
         case Unit::METERS:
+        case Unit::INCHES:
             break;
         default:
             SS.viewUnits = Unit::MM;
             break;
     }
-    RadioMenuByCmd(Command::UNITS_MM, SS.viewUnits == Unit::MM);
-    RadioMenuByCmd(Command::UNITS_METERS, SS.viewUnits == Unit::METERS);
-    RadioMenuByCmd(Command::UNITS_INCHES, SS.viewUnits == Unit::INCHES);
+    unitsMmMenuItem->SetActive(SS.viewUnits == Unit::MM);
+    unitsMetersMenuItem->SetActive(SS.viewUnits == Unit::METERS);
+    unitsInchesMenuItem->SetActive(SS.viewUnits == Unit::INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);
-    CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/SS.GW.showTextWindow);
+    showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
 
-    CheckMenuByCmd(Command::SHOW_TOOLBAR, /*checked=*/SS.showToolbar);
-    CheckMenuByCmd(Command::PERSPECTIVE_PROJ, /*checked=*/SS.usePerspectiveProj);
-    CheckMenuByCmd(Command::SHOW_GRID,/*checked=*/SS.GW.showSnapGrid);
-    CheckMenuByCmd(Command::FULL_SCREEN, /*checked=*/FullScreenIsActive());
+    showGridMenuItem->SetActive(SS.GW.showSnapGrid);
+    perspectiveProjMenuItem->SetActive(SS.usePerspectiveProj);
+    showToolbarMenuItem->SetActive(SS.showToolbar);
+    fullScreenMenuItem->SetActive(FullScreenIsActive());
 
     if(change) SS.ScheduleShowTW();
 }
@@ -717,7 +876,7 @@ bool GraphicsWindow::LockedInWorkplane() {
 void GraphicsWindow::ForceTextWindowShown() {
     if(!showTextWindow) {
         showTextWindow = true;
-        CheckMenuByCmd(Command::SHOW_TEXT_WND, /*checked=*/true);
+        showTextWndMenuItem->SetActive(true);
         ShowTextWindow(true);
     }
 }

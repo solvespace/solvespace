@@ -301,25 +301,38 @@ CONVERT(Rect)
     SolveSpace::SS.GW.MouseLeave();
 }
 
-- (void)keyDown:(NSEvent*)event {
-    int chr = 0;
-    if(NSString *nsChr = [event charactersIgnoringModifiers])
+- (void)keyDown:(NSEvent*)nsEvent {
+    using SolveSpace::Platform::KeyboardEvent;
+
+    KeyboardEvent event = {};
+    event.type = KeyboardEvent::Type::PRESS;
+
+    NSUInteger flags = [nsEvent modifierFlags];
+    if(flags & NSShiftKeyMask)
+        event.shiftDown = true;
+    if(flags & NSCommandKeyMask)
+        event.controlDown = true;
+    if(flags & ~(NSShiftKeyMask|NSCommandKeyMask)) {
+        [super keyDown:nsEvent];
+        return;
+    }
+
+    unichar chr = 0;
+    if(NSString *nsChr = [nsEvent charactersIgnoringModifiers])
         chr = [nsChr characterAtIndex:0];
 
-    if(chr >= NSF1FunctionKey && chr <= NSF12FunctionKey)
-        chr = SolveSpace::GraphicsWindow::FUNCTION_KEY_BASE + (chr - NSF1FunctionKey);
+    if(chr >= NSF1FunctionKey && chr <= NSF12FunctionKey) {
+        event.key = KeyboardEvent::Key::FUNCTION;
+        event.num = chr - NSF1FunctionKey + 1;
+    } else {
+        event.key = KeyboardEvent::Key::CHARACTER;
+        event.chr = chr;
+    }
 
-    NSUInteger flags = [event modifierFlags];
-    if(flags & NSShiftKeyMask)
-        chr |= SolveSpace::GraphicsWindow::SHIFT_MASK;
-    if(flags & NSCommandKeyMask)
-        chr |= SolveSpace::GraphicsWindow::CTRL_MASK;
+    if(SolveSpace::SS.GW.KeyboardEvent(event))
+        return;
 
-    // override builtin behavior: "focus on next cell", "close window"
-    if(chr == '\t' || chr == '\x1b')
-        [[NSApp mainMenu] performKeyEquivalent:event];
-    else if(!chr || !SolveSpace::SS.GW.KeyDown(chr))
-        [super keyDown:event];
+    [super keyDown:nsEvent];
 }
 
 - (void)startEditing:(NSString*)text at:(NSPoint)xy withHeight:(double)fontHeight
@@ -459,238 +472,6 @@ void HideGraphicsEditControl() {
 
 bool GraphicsEditControlIsVisible() {
     return [GWView isEditing];
-}
-}
-
-/* Context menus */
-
-static SolveSpace::ContextCommand contextMenuChoice;
-
-@interface ContextMenuResponder : NSObject
-+ (void)handleClick:(id)sender;
-@end
-
-@implementation ContextMenuResponder
-+ (void)handleClick:(id)sender {
-    contextMenuChoice = (SolveSpace::ContextCommand)[sender tag];
-}
-@end
-
-namespace SolveSpace {
-NSMenu *contextMenu, *contextSubmenu;
-
-void AddContextMenuItem(const char *label, ContextCommand cmd) {
-    NSMenuItem *menuItem;
-    if(label) {
-        menuItem = [[NSMenuItem alloc] initWithTitle:[NSString stringWithUTF8String:label]
-            action:@selector(handleClick:) keyEquivalent:@""];
-        [menuItem setTarget:[ContextMenuResponder class]];
-        [menuItem setTag:(NSInteger)cmd];
-    } else {
-        menuItem = [NSMenuItem separatorItem];
-    }
-
-    if(cmd == SolveSpace::ContextCommand::SUBMENU) {
-        [menuItem setSubmenu:contextSubmenu];
-        contextSubmenu = nil;
-    }
-
-    if(contextSubmenu) {
-        [contextSubmenu addItem:menuItem];
-    } else {
-        if(!contextMenu) {
-            contextMenu = [[NSMenu alloc]
-                initWithTitle:[NSString stringWithUTF8String:label]];
-        }
-
-        [contextMenu addItem:menuItem];
-    }
-}
-
-void CreateContextSubmenu() {
-    ssassert(!contextSubmenu, "Unexpected nested submenu");
-
-    contextSubmenu = [[NSMenu alloc] initWithTitle:@""];
-}
-
-ContextCommand ShowContextMenu() {
-    if(!contextMenu)
-        return ContextCommand::CANCELLED;
-
-    [NSMenu popUpContextMenu:contextMenu
-        withEvent:[GWView lastContextMenuEvent] forView:GWView];
-
-    contextMenu = nil;
-
-    return contextMenuChoice;
-}
-};
-
-/* Main menu */
-
-@interface MainMenuResponder : NSObject
-+ (void)handleStatic:(id)sender;
-+ (void)handleRecent:(id)sender;
-@end
-
-@implementation MainMenuResponder
-+ (void)handleStatic:(id)sender {
-    SolveSpace::GraphicsWindow::MenuEntry *entry =
-        (SolveSpace::GraphicsWindow::MenuEntry*)[sender tag];
-
-    if(entry->fn && ![(NSMenuItem*)sender hasSubmenu])
-        entry->fn(entry->id);
-}
-
-+ (void)handleRecent:(id)sender {
-    uint32_t cmd = [sender tag];
-    if(cmd >= (uint32_t)SolveSpace::Command::RECENT_OPEN &&
-       cmd < ((uint32_t)SolveSpace::Command::RECENT_OPEN + SolveSpace::MAX_RECENT)) {
-        SolveSpace::SolveSpaceUI::MenuFile((SolveSpace::Command)cmd);
-    } else if(cmd >= (uint32_t)SolveSpace::Command::RECENT_LINK &&
-              cmd < ((uint32_t)SolveSpace::Command::RECENT_LINK + SolveSpace::MAX_RECENT)) {
-        SolveSpace::Group::MenuGroup((SolveSpace::Command)cmd);
-    }
-}
-
-+ (void)handleLocale:(id)sender {
-    uint32_t offset = [sender tag];
-    SolveSpace::SolveSpaceUI::MenuHelp(
-        (SolveSpace::Command)((uint32_t)SolveSpace::Command::LOCALE + offset));
-}
-@end
-
-namespace SolveSpace {
-std::map<uint32_t, NSMenuItem*> mainMenuItems;
-
-void InitMainMenu(NSMenu *mainMenu) {
-    NSMenuItem *menuItem = NULL;
-    NSMenu *levels[5] = {mainMenu, 0};
-    NSString *label;
-
-    while([mainMenu numberOfItems] != 1) {
-        [mainMenu removeItemAtIndex:1];
-    }
-
-    const GraphicsWindow::MenuEntry *entry = &GraphicsWindow::menu[0];
-    int current_level = 0;
-    while(entry->level >= 0) {
-        if(entry->level > current_level) {
-            NSMenu *menu = [[NSMenu alloc] initWithTitle:label];
-            [menu setAutoenablesItems:NO];
-            [menuItem setSubmenu:menu];
-
-            ssassert((unsigned)entry->level < sizeof(levels) / sizeof(levels[0]),
-                     "Unexpected depth of menu nesting");
-
-            levels[entry->level] = menu;
-        }
-
-        current_level = entry->level;
-
-        if(entry->label) {
-            label = Wrap(Translate(entry->label));
-            /* OS X does not support mnemonics */
-            label = [label stringByReplacingOccurrencesOfString:@"&" withString:@""];
-
-            unichar accelChar = entry->accel &
-                ~(GraphicsWindow::SHIFT_MASK | GraphicsWindow::CTRL_MASK);
-            if(accelChar > GraphicsWindow::FUNCTION_KEY_BASE &&
-                    accelChar <= GraphicsWindow::FUNCTION_KEY_BASE + 12) {
-                accelChar = NSF1FunctionKey + (accelChar - GraphicsWindow::FUNCTION_KEY_BASE - 1);
-            } else if(accelChar == GraphicsWindow::DELETE_KEY) {
-                accelChar = NSBackspaceCharacter;
-            }
-            NSString *accel = [NSString stringWithCharacters:&accelChar length:1];
-
-            menuItem = [levels[entry->level] addItemWithTitle:label
-                action:NULL keyEquivalent:[accel lowercaseString]];
-
-            NSUInteger modifierMask = 0;
-            if(entry->accel & GraphicsWindow::SHIFT_MASK)
-                modifierMask |= NSShiftKeyMask;
-            else if(entry->accel & GraphicsWindow::CTRL_MASK)
-                modifierMask |= NSCommandKeyMask;
-            [menuItem setKeyEquivalentModifierMask:modifierMask];
-
-            [menuItem setTag:(NSInteger)entry];
-            [menuItem setTarget:[MainMenuResponder class]];
-            [menuItem setAction:@selector(handleStatic:)];
-        } else {
-            [levels[entry->level] addItem:[NSMenuItem separatorItem]];
-        }
-
-        if(entry->id == Command::LOCALE) {
-            NSMenu *localeMenu = [[NSMenu alloc] initWithTitle:label];
-            [menuItem setSubmenu:localeMenu];
-
-            size_t i = 0;
-            for(auto locale : Locales()) {
-                NSMenuItem *localeMenuItem =
-                    [localeMenu addItemWithTitle:
-                            Wrap(locale.displayName)
-                        action:NULL keyEquivalent:@""];
-                [localeMenuItem setTag:(NSInteger)i++];
-                [localeMenuItem setTarget:[MainMenuResponder class]];
-                [localeMenuItem setAction:@selector(handleLocale:)];
-            }
-        }
-
-        mainMenuItems[(uint32_t)entry->id] = menuItem;
-
-        ++entry;
-    }
-}
-
-void EnableMenuByCmd(SolveSpace::Command cmd, bool enabled) {
-    [mainMenuItems[(uint32_t)cmd] setEnabled:enabled];
-}
-
-void CheckMenuByCmd(SolveSpace::Command cmd, bool checked) {
-    [mainMenuItems[(uint32_t)cmd] setState:(checked ? NSOnState : NSOffState)];
-}
-
-void RadioMenuByCmd(SolveSpace::Command cmd, bool selected) {
-    CheckMenuByCmd(cmd, selected);
-}
-
-static void RefreshRecentMenu(SolveSpace::Command cmd, SolveSpace::Command base) {
-    NSMenuItem *recent = mainMenuItems[(uint32_t)cmd];
-    NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
-    [recent setSubmenu:menu];
-
-    if(RecentFile[0].IsEmpty()) {
-        NSMenuItem *placeholder = [[NSMenuItem alloc]
-            initWithTitle:Wrap(_("(no recent files)")) action:nil keyEquivalent:@""];
-        [placeholder setEnabled:NO];
-        [menu addItem:placeholder];
-    } else {
-        for(size_t i = 0; i < MAX_RECENT; i++) {
-            if(RecentFile[i].IsEmpty()) break;
-
-            NSMenuItem *item = [[NSMenuItem alloc]
-                initWithTitle:[Wrap(RecentFile[i].raw)
-                    stringByAbbreviatingWithTildeInPath]
-                action:nil keyEquivalent:@""];
-            [item setTag:((uint32_t)base + i)];
-            [item setAction:@selector(handleRecent:)];
-            [item setTarget:[MainMenuResponder class]];
-            [menu addItem:item];
-        }
-    }
-}
-
-void RefreshRecentMenus() {
-    RefreshRecentMenu(Command::OPEN_RECENT, Command::RECENT_OPEN);
-    RefreshRecentMenu(Command::GROUP_RECENT, Command::RECENT_LINK);
-}
-
-void ToggleMenuBar() {
-    [NSMenu setMenuBarVisible:![NSMenu menuBarVisible]];
-}
-
-bool MenuBarIsVisible() {
-    return [NSMenu menuBarVisible];
 }
 }
 
@@ -1157,11 +938,8 @@ std::vector<SolveSpace::Platform::Path> SolveSpace::GetFontFiles() {
 }
 @end
 
-void SolveSpace::RefreshLocale() {
+void SolveSpace::SetMainMenu(Platform::MenuBarRef menuBar) {
     SS.UpdateWindowTitle();
-    SolveSpace::InitMainMenu([NSApp mainMenu]);
-    RefreshRecentMenus();
-
     [TW setTitle:Wrap(C_("title", "Property Browser"))];
 }
 
