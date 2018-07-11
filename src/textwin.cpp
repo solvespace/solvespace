@@ -463,7 +463,9 @@ done:
 }
 
 void TextWindow::Show() {
-    if(SS.GW.pending.operation == GraphicsWindow::Pending::NONE) SS.GW.ClearPending();
+    if(SS.GW.pending.operation == GraphicsWindow::Pending::NONE) {
+        SS.GW.ClearPending(/*scheduleShowTW=*/false);
+    }
 
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
@@ -519,12 +521,6 @@ void TextWindow::Show() {
     InvalidateText();
 }
 
-void TextWindow::TimerCallback()
-{
-    tooltippedButton = hoveredButton;
-    InvalidateText();
-}
-
 void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow how,
                                     double mx, double my)
 {
@@ -550,13 +546,8 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
             button->Draw(uiCanvas, x, y, (button == hoveredButton));
         } else if(mx > x - 2 && mx < x + 26 &&
                   my < y + 2 && my > y - 26) {
-            // The mouse is hovered over this icon, so do the tooltip
-            // stuff.
-            if(button != tooltippedButton) {
-                oldMousePos = Point2d::From(mx, my);
-            }
-            if(button != oldHovered || how == CLICK) {
-                SetTimerFor(1000);
+            if(button != oldHovered) {
+                // FIXME(platorm/gui): implement native tooltips here
             }
             hoveredButton = button;
             if(how == CLICK) {
@@ -569,33 +560,6 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
 
     if(how != PAINT && hoveredButton != oldHovered) {
         InvalidateText();
-    }
-
-    if(tooltippedButton && !tooltippedButton->Tooltip().empty()) {
-        if(how == PAINT) {
-            std::string tooltip = tooltippedButton->Tooltip();
-
-            int ox = (int)oldMousePos.x, oy = (int)oldMousePos.y - LINE_HEIGHT;
-            ox += 3;
-            oy -= 3;
-            int tw = (tooltip.length() + 1) * (CHAR_WIDTH_ - 1);
-            ox = min(ox, (width - 25) - tw);
-            oy = max(oy, 5);
-
-            uiCanvas->DrawRect(ox, ox+tw, oy, oy+LINE_HEIGHT,
-                               /*fillColor=*/{ 255, 255, 150, 255 },
-                               /*outlineColor=*/{ 0, 0, 0, 255 },
-                               /*zIndex=*/1);
-            uiCanvas->DrawBitmapText(tooltip, ox+5, oy-3+LINE_HEIGHT, { 0, 0, 0, 255 },
-                                     /*zIndex=*/1);
-        } else {
-            if(!hoveredButton || (hoveredButton != tooltippedButton)) {
-                tooltippedButton = NULL;
-                InvalidateGraphics();
-            }
-            // And if we're hovered, then we've set a timer that will cause
-            // us to show the tool tip later.
-        }
     }
 }
 
@@ -1077,7 +1041,6 @@ void TextWindow::MouseEvent(bool leftClick, bool leftDown, double x, double y) {
 }
 
 void TextWindow::MouseLeave() {
-    tooltippedButton = NULL;
     hoveredButton = NULL;
     hoveredRow = 0;
     hoveredCol = 0;

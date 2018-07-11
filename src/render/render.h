@@ -8,7 +8,7 @@
 #define SOLVESPACE_RENDER_H
 
 //-----------------------------------------------------------------------------
-// Interfaces and utilities common for all renderers.
+// Interfaces common for all renderers
 //-----------------------------------------------------------------------------
 
 enum class StipplePattern : uint32_t;
@@ -313,7 +313,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// 2d renderers.
+// 2d renderers
 //-----------------------------------------------------------------------------
 
 class CairoRenderer : public SurfaceRenderer {
@@ -340,7 +340,7 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// 3d renderers.
+// 3d renderers
 //-----------------------------------------------------------------------------
 
 // An offscreen renderer based on OpenGL framebuffers.
@@ -354,6 +354,10 @@ public:
     bool Render(int width, int height, std::function<void()> renderFn);
     void Clear();
 };
+
+//-----------------------------------------------------------------------------
+// Factories
+//-----------------------------------------------------------------------------
 
 std::shared_ptr<ViewportCanvas> CreateRenderer();
 

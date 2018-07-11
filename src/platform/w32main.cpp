@@ -250,33 +250,6 @@ ContextCommand SolveSpace::ShowContextMenu()
     return (ContextCommand)r;
 }
 
-void CALLBACK TimerCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
-{
-    // The timer is periodic, so needs to be killed explicitly.
-    KillTimer(GraphicsWnd, 1);
-    SS.GW.TimerCallback();
-    SS.TW.TimerCallback();
-}
-void SolveSpace::SetTimerFor(int milliseconds)
-{
-    SetTimer(GraphicsWnd, 1, milliseconds, TimerCallback);
-}
-
-void SolveSpace::ScheduleLater()
-{
-}
-
-static void CALLBACK AutosaveCallback(HWND hwnd, UINT msg, UINT_PTR id, DWORD time)
-{
-    KillTimer(GraphicsWnd, 1);
-    SS.Autosave();
-}
-
-void SolveSpace::SetAutosaveTimerFor(int minutes)
-{
-    SetTimer(GraphicsWnd, 2, minutes * 60 * 1000, AutosaveCallback);
-}
-
 static void GetWindowSize(HWND hwnd, int *w, int *h)
 {
     RECT r;
@@ -1561,13 +1534,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     while((ret = GetMessage(&msg, NULL, 0, 0)) != 0) {
 #ifdef HAVE_SPACEWARE
         // Is it a message from the six degree of freedom input device?
-        if(ProcessSpaceNavigatorMsg(&msg)) goto done;
+        if(ProcessSpaceNavigatorMsg(&msg)) continue;
 #endif
 
         // A message from the keyboard, which should be processed as a keyboard
         // accelerator?
         if(msg.message == WM_KEYDOWN) {
-            if(ProcessKeyDown(msg.wParam)) goto done;
+            if(ProcessKeyDown(msg.wParam)) continue;
         }
         if(msg.message == WM_SYSKEYDOWN && msg.hwnd == TextWnd) {
             // If the user presses the Alt key when the text window has focus,
@@ -1578,8 +1551,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // None of the above; so just a normal message to process.
         TranslateMessage(&msg);
         DispatchMessage(&msg);
-done:
-        SS.DoLater();
     }
 
 #ifdef HAVE_SPACEWARE

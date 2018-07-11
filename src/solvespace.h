@@ -135,6 +135,7 @@ enum class ContextCommand : uint32_t;
 // From the platform-specific code.
 
 #include "platform/platform.h"
+#include "platform/gui.h"
 
 const size_t MAX_RECENT = 8;
 extern Platform::Path RecentFile[MAX_RECENT];
@@ -202,9 +203,6 @@ void dbp(const char *str, ...);
 void SetCurrentFilename(const Platform::Path &filename);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
-void SetTimerFor(int milliseconds);
-void SetAutosaveTimerFor(int minutes);
-void ScheduleLater();
 void ExitNow();
 
 void CnfFreezeInt(uint32_t val, const std::string &name);
@@ -736,7 +734,7 @@ public:
         Style        s;
     } sv;
     static void MenuFile(Command id);
-	bool Autosave();
+    void Autosave();
     void RemoveAutosave();
     bool GetFilenameAndSave(bool saveAs);
     bool OkayToStartNewFile();
@@ -853,14 +851,12 @@ public:
     // the sketch!
     bool allConsistent;
 
-    struct {
-        bool    scheduled;
-        bool    showTW;
-        bool    generateAll;
-    } later;
+    Platform::TimerRef timerShowTW;
+    Platform::TimerRef timerGenerateAll;
+    Platform::TimerRef timerAutosave;
     void ScheduleShowTW();
     void ScheduleGenerateAll();
-    void DoLater();
+    void ScheduleAutosave();
 
     static void MenuHelp(Command id);
 

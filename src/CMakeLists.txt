@@ -105,6 +105,7 @@ endif()
 if(WIN32)
     set(platform_SOURCES
         platform/w32main.cpp
+        platform/guiwin.cpp
         ${gl_SOURCES})
 
     set(platform_LIBRARIES
@@ -116,12 +117,13 @@ elseif(APPLE)
 
     set(platform_SOURCES
         platform/cocoamain.mm
+        platform/guimac.mm
         render/rendergl.cpp
         ${gl_SOURCES})
 else()
     set(platform_SOURCES
         platform/gtkmain.cpp
-        render/rendergl.cpp
+        platform/guigtk.cpp
         ${gl_SOURCES})
 
     set(platform_LIBRARIES
@@ -333,7 +335,7 @@ endif()
 # solvespace headless library
 
 set(headless_SOURCES
-    platform/headless.cpp
+    platform/guinone.cpp
     render/rendercairo.cpp)
 
 add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL

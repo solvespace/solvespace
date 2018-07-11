@@ -62,52 +62,6 @@ std::string CnfThawString(const std::string &val, const std::string &key) {
 }
 };
 
-/* Timer */
-
-@interface DeferredHandler : NSObject
-+ (void) runLater:(id)dummy;
-+ (void) runCallback;
-+ (void) doAutosave;
-@end
-
-@implementation DeferredHandler
-+ (void) runLater:(id)dummy {
-    SolveSpace::SS.DoLater();
-}
-+ (void) runCallback {
-    SolveSpace::SS.GW.TimerCallback();
-    SolveSpace::SS.TW.TimerCallback();
-}
-+ (void) doAutosave {
-    SolveSpace::SS.Autosave();
-}
-@end
-
-static void Schedule(SEL selector, double interval) {
-    NSMethodSignature *signature = [[DeferredHandler class]
-        methodSignatureForSelector:selector];
-    NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:signature];
-    [invocation setSelector:selector];
-    [invocation setTarget:[DeferredHandler class]];
-    [NSTimer scheduledTimerWithTimeInterval:interval
-        invocation:invocation repeats:NO];
-}
-
-void SolveSpace::SetTimerFor(int milliseconds) {
-    Schedule(@selector(runCallback), milliseconds / 1000.0);
-}
-
-void SolveSpace::SetAutosaveTimerFor(int minutes) {
-    Schedule(@selector(doAutosave), minutes * 60.0);
-}
-
-void SolveSpace::ScheduleLater() {
-    [[NSRunLoop currentRunLoop]
-        performSelector:@selector(runLater:)
-        target:[DeferredHandler class] argument:nil
-        order:0 modes:@[NSDefaultRunLoopMode]];
-}
-
 /* OpenGL view */
 
 @interface GLViewWithEditor : NSView

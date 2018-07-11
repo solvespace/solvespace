@@ -459,7 +459,7 @@ bool TextWindow::EditControlDoneForConfiguration(const char *s) {
             if(sscanf(s, "%d", &interval)==1) {
                 if(interval >= 1) {
                     SS.autosaveInterval = interval;
-                    SetAutosaveTimerFor(interval);
+                    SS.ScheduleAutosave();
                 } else {
                     Error(_("Bad value: autosave interval should be positive"));
                 }

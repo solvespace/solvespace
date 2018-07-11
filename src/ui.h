@@ -326,9 +326,7 @@ public:
     };
     void DrawOrHitTestIcons(UiCanvas *canvas, DrawOrHitHow how,
                             double mx, double my);
-    void TimerCallback();
-    Point2d oldMousePos;
-    Button *hoveredButton, *tooltippedButton;
+    Button *hoveredButton;
 
     Vector HsvToRgb(Vector hsv);
     std::shared_ptr<Pixmap> HsvPattern2d(int w, int h);
@@ -717,7 +715,7 @@ public:
         bool                 hasSuggestion;
         Constraint::Type     suggestion;
     } pending;
-    void ClearPending();
+    void ClearPending(bool scheduleShowTW = true);
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
     void ReplacePending(hRequest before, hRequest after);
@@ -839,10 +837,7 @@ public:
     void ToolbarDraw(UiCanvas *canvas);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
-    static void TimerCallback();
     Command toolbarHovered;
-    Command toolbarTooltipped;
-    int toolbarMouseX, toolbarMouseY;
 
     // This sets what gets displayed.
     bool    showWorkplanes;

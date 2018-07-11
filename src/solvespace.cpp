@@ -110,11 +110,21 @@ void SolveSpaceUI::Init() {
         SetLocale(locale);
     }
 
+    timerGenerateAll = Platform::CreateTimer();
+    timerGenerateAll->onTimeout = std::bind(&SolveSpaceUI::GenerateAll, &SS, Generate::DIRTY,
+                                            /*andFindFree=*/false, /*genForBBox=*/false);
+
+    timerShowTW = Platform::CreateTimer();
+    timerShowTW->onTimeout = std::bind(&TextWindow::Show, &TW);
+
+    timerAutosave = Platform::CreateTimer();
+    timerAutosave->onTimeout = std::bind(&SolveSpaceUI::Autosave, &SS);
+
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
     // them.
 
-    SetAutosaveTimerFor(autosaveInterval);
+    ScheduleAutosave();
 
     NewFile();
     AfterNewFile();
@@ -232,21 +242,15 @@ void SolveSpaceUI::Exit() {
 }
 
 void SolveSpaceUI::ScheduleGenerateAll() {
-    if(!later.scheduled) ScheduleLater();
-    later.scheduled = true;
-    later.generateAll = true;
+    timerGenerateAll->WindUp(0);
 }
 
 void SolveSpaceUI::ScheduleShowTW() {
-    if(!later.scheduled) ScheduleLater();
-    later.scheduled = true;
-    later.showTW = true;
+    timerShowTW->WindUp(0);
 }
 
-void SolveSpaceUI::DoLater() {
-    if(later.generateAll) GenerateAll();
-    if(later.showTW) TW.Show();
-    later = {};
+void SolveSpaceUI::ScheduleAutosave() {
+    timerAutosave->WindUp(autosaveInterval * 60 * 1000);
 }
 
 double SolveSpaceUI::MmPerUnit() {
@@ -389,14 +393,13 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     }
 }
 
-bool SolveSpaceUI::Autosave()
+void SolveSpaceUI::Autosave()
 {
-    SetAutosaveTimerFor(autosaveInterval);
+    ScheduleAutosave();
 
-    if(!saveFile.IsEmpty() && unsaved)
-        return SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
-
-    return false;
+    if(!saveFile.IsEmpty() && unsaved) {
+        SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
+    }
 }
 
 void SolveSpaceUI::RemoveAutosave()

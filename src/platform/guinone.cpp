@@ -8,6 +8,23 @@
 
 namespace SolveSpace {
 
+namespace Platform {
+
+//-----------------------------------------------------------------------------
+// Timers
+//-----------------------------------------------------------------------------
+
+class TimerImplDummy : public Timer {
+public:
+    void WindUp(unsigned milliseconds) override {}
+};
+
+TimerRef CreateTimer() {
+    return std::unique_ptr<Timer>(new TimerImplDummy);
+}
+
+}
+
 //-----------------------------------------------------------------------------
 // Settings
 //-----------------------------------------------------------------------------
@@ -76,17 +93,6 @@ std::string CnfThawString(const std::string &val, const std::string &key) {
         ret = setting.valueString;
     }
     return ret;
-}
-
-//-----------------------------------------------------------------------------
-// Timers
-//-----------------------------------------------------------------------------
-
-void SetTimerFor(int milliseconds) {
-}
-void SetAutosaveTimerFor(int minutes) {
-}
-void ScheduleLater() {
 }
 
 //-----------------------------------------------------------------------------

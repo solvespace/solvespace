@@ -468,11 +468,13 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
     }
 }
 
-void GraphicsWindow::ClearPending() {
+void GraphicsWindow::ClearPending(bool scheduleShowTW) {
     pending.points.Clear();
     pending.requests.Clear();
     pending = {};
-    SS.ScheduleShowTW();
+    if(scheduleShowTW) {
+        SS.ScheduleShowTW();
+    }
 }
 
 bool GraphicsWindow::IsFromPending(hRequest r) {
@@ -1536,7 +1538,6 @@ void GraphicsWindow::MouseLeave() {
     // currently a context menu shown.
     if(!context.active) {
         hover.Clear();
-        toolbarTooltipped = Command::NONE;
         toolbarHovered = Command::NONE;
         PaintGraphics();
     }

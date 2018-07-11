@@ -187,36 +187,6 @@ static void CnfThawWindowPos(Gtk::Window *win, const std::string &key) {
     win->resize(w, h);
 }
 
-/* Timers */
-
-static bool TimerCallback() {
-    SS.GW.TimerCallback();
-    SS.TW.TimerCallback();
-    return false;
-}
-
-void SetTimerFor(int milliseconds) {
-    Glib::signal_timeout().connect(&TimerCallback, milliseconds);
-}
-
-static bool AutosaveTimerCallback() {
-    SS.Autosave();
-    return false;
-}
-
-void SetAutosaveTimerFor(int minutes) {
-    Glib::signal_timeout().connect(&AutosaveTimerCallback, minutes * 60 * 1000);
-}
-
-static bool LaterCallback() {
-    SS.DoLater();
-    return false;
-}
-
-void ScheduleLater() {
-    Glib::signal_timeout().connect(&LaterCallback, 0);
-}
-
 /* Editor overlay */
 
 class EditorOverlay : public Gtk::Fixed {
