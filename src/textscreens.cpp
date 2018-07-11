@@ -107,6 +107,9 @@ void TextWindow::ShowListOfGroups() {
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
+	bool no_dof = !g->solved.dof;
+	char dof[3] = { 'D', g->solved.dof > 9 ? '+' :
+	    (char) ('0' + g->solved.dof), 0 };
         Printf(false, "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
@@ -123,8 +126,9 @@ void TextWindow::ShowListOfGroups() {
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occured while solving
-            ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? "ok" : "",
+            ok ? no_dof ? 's' : 'm' : 'x', g->h.v,
+		(&TextWindow::ScreenHowGroupSolved),
+                ok ? no_dof ? "ok" : dof : "",
                 ok ? "" : "NO",
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
