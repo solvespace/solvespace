@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
-    <mime-type type="model/slvs">
+    <mime-type type="application/x-solvespace">
         <comment xml:lang="en">SolveSpace model</comment>
         <generic-icon name="solvespace"/>
         <glob pattern="*.slvs"/>
