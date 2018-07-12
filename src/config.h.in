@@ -1,5 +1,5 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef SOLVESPACE_CONFIG_H
+#define SOLVESPACE_CONFIG_H
 
 #define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@~@solvespace_GIT_HASH@"
 

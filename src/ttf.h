@@ -6,8 +6,8 @@
 // Copyright 2016 whitequark, Peter Barfuss.
 //-----------------------------------------------------------------------------
 
-#ifndef __TTF_H
-#define __TTF_H
+#ifndef SOLVESPACE_TTF_H
+#define SOLVESPACE_TTF_H
 
 class TtfFont {
 public:

@@ -5,8 +5,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __UI_H
-#define __UI_H
+#ifndef SOLVESPACE_UI_H
+#define SOLVESPACE_UI_H
 
 class Locale {
 public:
