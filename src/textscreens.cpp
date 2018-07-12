@@ -122,7 +122,7 @@ void TextWindow::ShowListOfGroups() {
                 afterActive ? " - " : "",
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
-            // Link to the errors, if a problem occured while solving
+            // Link to the errors, if a problem occurred while solving
             ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
                 ok ? "ok" : "",
                 ok ? "" : "NO",
@@ -191,7 +191,7 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
             if(g->type == Group::Type::EXTRUDE) {
                 // When an extrude group is first created, it's positioned for a union
                 // extrusion. If no constraints were added, flip it when we switch between
-                // union and difference modes to avoid manual work doing the smae.
+                // union and difference modes to avoid manual work doing the same.
                 if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0 &&
                         ((Group::CombineAs)v == Group::CombineAs::DIFFERENCE ||
                         g->meshCombine == Group::CombineAs::DIFFERENCE)) {

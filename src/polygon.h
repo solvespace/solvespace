@@ -5,8 +5,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __POLYGON_H
-#define __POLYGON_H
+#ifndef SOLVESPACE_POLYGON_H
+#define SOLVESPACE_POLYGON_H
 
 class SPointList;
 class SPolygon;
@@ -191,6 +191,7 @@ public:
     bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
                   double *t, Vector *inters) const;
     double SignedVolume() const;
+    bool IsDegenerate() const;
 };
 
 class SBsp2 {

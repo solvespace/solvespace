@@ -75,12 +75,13 @@ const GraphicsWindow::MenuEntry GraphicsWindow::menu[] = {
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("Show Snap &Grid"),             Command::SHOW_GRID,        '>',     TC, mView },
 { 1, N_("Use &Perspective Projection"), Command::PERSPECTIVE_PROJ, '`',    TC, mView },
+{ 1, N_("Dimension &Units"),            Command::NONE,             0,       TN, NULL  },
+{ 2, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       TR, mView },
+{ 2, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       TR, mView },
+{ 2, N_("Dimensions in M&eters"),       Command::UNITS_METERS,     0,       TR, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("Show &Toolbar"),               Command::SHOW_TOOLBAR,     0,       TC, mView },
 { 1, N_("Show Property Bro&wser"),      Command::SHOW_TEXT_WND,    '\t',    TC, mView },
-{ 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
-{ 1, N_("Dimensions in &Inches"),       Command::UNITS_INCHES,     0,       TR, mView },
-{ 1, N_("Dimensions in &Millimeters"),  Command::UNITS_MM,         0,       TR, mView },
 { 1,  NULL,                             Command::NONE,             0,       TN, NULL  },
 { 1, N_("&Full Screen"),                Command::FULL_SCREEN,      C|F(11), TC, mView },
 
@@ -356,7 +357,7 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
                 HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
             }
         } else {
-            // We have to iterate children points, because we can select entites without points
+            // We have to iterate children points, because we can select entities without points
             for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
                 if(e->point[i].v == 0) break;
                 Vector p = SK.GetEntity(e->point[i])->PointGetNum();
@@ -620,6 +621,12 @@ void GraphicsWindow::MenuView(Command id) {
             SS.GW.EnsureValidActives();
             break;
 
+        case Command::UNITS_METERS:
+            SS.viewUnits = Unit::METERS;
+            SS.ScheduleShowTW();
+            SS.GW.EnsureValidActives();
+            break;
+
         case Command::FULL_SCREEN:
             ToggleFullScreen();
             SS.GW.EnsureValidActives();
@@ -686,12 +693,14 @@ void GraphicsWindow::EnsureValidActives() {
     switch(SS.viewUnits) {
         case Unit::MM:
         case Unit::INCHES:
+        case Unit::METERS:
             break;
         default:
             SS.viewUnits = Unit::MM;
             break;
     }
     RadioMenuByCmd(Command::UNITS_MM, SS.viewUnits == Unit::MM);
+    RadioMenuByCmd(Command::UNITS_METERS, SS.viewUnits == Unit::METERS);
     RadioMenuByCmd(Command::UNITS_INCHES, SS.viewUnits == Unit::INCHES);
 
     ShowTextWindow(SS.GW.showTextWindow);

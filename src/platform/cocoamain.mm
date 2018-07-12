@@ -877,7 +877,7 @@ SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel() {
 SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo() {
     NSAlert *alert = [[NSAlert alloc] init];
     [alert setMessageText:
-        Wrap(_("An autosave file is availible for this project."))];
+        Wrap(_("An autosave file is available for this project."))];
     [alert setInformativeText:
         Wrap(_("Do you want to load the autosave file instead?"))];
     [alert addButtonWithTitle:Wrap(C_("button", "Load"))];
@@ -1268,7 +1268,7 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 static BOOL connexionShiftIsDown = NO;
 static UInt16 connexionClient = 0;
 static UInt32 connexionSignature = 'SoSp';
-static UInt8 *connexionName = (UInt8 *)"SolveSpace";
+static UInt8 *connexionName = (UInt8 *)"\x10SolveSpace";
 static CFBundleRef spaceBundle = NULL;
 static InstallConnexionHandlersProc installConnexionHandlers = NULL;
 static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;

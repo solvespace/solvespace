@@ -4,8 +4,8 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#ifndef __DSC_H
-#define __DSC_H
+#ifndef SOLVESPACE_DSC_H
+#define SOLVESPACE_DSC_H
 
 #include "solvespace.h"
 
@@ -308,7 +308,7 @@ public:
         if(n >= elemsAllocated) {
             ReserveMore((elemsAllocated + 32)*2 - n);
         }
-    
+
         int first = 0, last = n;
         // We know that we must insert within the closed interval [first,last]
         while(first != last) {

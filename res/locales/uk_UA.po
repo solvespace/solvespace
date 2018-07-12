@@ -1314,7 +1314,7 @@ msgid "Don't Save"
 msgstr ""
 
 #: platform/cocoamain.mm:880
-msgid "An autosave file is availible for this project."
+msgid "An autosave file is available for this project."
 msgstr ""
 
 #: platform/cocoamain.mm:882
@@ -1407,7 +1407,7 @@ msgstr ""
 
 #: platform/gtkmain.cpp:1066 platform/w32main.cpp:1193
 msgid ""
-"An autosave file is availible for this project.\n"
+"An autosave file is available for this project.\n"
 "\n"
 "Do you want to load the autosave file instead?"
 msgstr ""

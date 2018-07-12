@@ -1,5 +1,5 @@
-#ifndef __CONFIG_H
-#define __CONFIG_H
+#ifndef SOLVESPACE_CONFIG_H
+#define SOLVESPACE_CONFIG_H
 
 #define PACKAGE_VERSION "@solvespace_VERSION_MAJOR@.@solvespace_VERSION_MINOR@~@solvespace_GIT_HASH@"
 
@@ -9,6 +9,11 @@
 /* Do we have the si library on win32, or libspnav on *nix? */
 #cmakedefine HAVE_SPACEWARE
 
+/* What OpenGL version do we use? */
 #define HAVE_OPENGL @OPENGL@
+
+/* Do we have backtrace() function, and if yes, in which library? */
+#cmakedefine HAVE_BACKTRACE
+#define BACKTRACE_HEADER @BACKTRACE_HEADER@
 
 #endif

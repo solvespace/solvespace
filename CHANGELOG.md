@@ -22,6 +22,8 @@ New sketch features:
   * When adding a constraint which has a label and is redundant with another
     constraint, the constraint is added as a reference, avoiding an error.
   * Datum points can be copied and pasted.
+  * "Split Curves at Intersection" can now split curves at point lying on curve,
+    not just at intersection of two curves.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
@@ -45,12 +47,13 @@ New rendering features:
   * The "Show/hide outlines" button is now independent from "Show/hide edges".
 
 New measurement/analysis features:
+  * New choice for base unit, meters.
   * New command for measuring total length of selected entities,
     "Analyze → Measure Perimeter".
   * New command for measuring center of mass, with live updates as the sketch
     changes, "Analyze → Center of Mass".
   * New option for displaying areas of closed contours.
-  * When selecting a point and a line, projected distance to to current
+  * When selecting a point and a line, projected distance to current
     workplane is displayed.
 
 Other new features:

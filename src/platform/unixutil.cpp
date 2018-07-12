@@ -7,8 +7,11 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // Copyright 2013 Daniel Richard G. <skunk@iSKUNK.ORG>
 //-----------------------------------------------------------------------------
-#include <execinfo.h>
+#include "config.h"
 #include "solvespace.h"
+#if defined(HAVE_BACKTRACE)
+#  include BACKTRACE_HEADER
+#endif
 
 namespace SolveSpace {
 
@@ -29,7 +32,7 @@ void assert_failure(const char *file, unsigned line, const char *function,
     fprintf(stderr, "File %s, line %u, function %s:\n", file, line, function);
     fprintf(stderr, "Assertion '%s' failed: ((%s) == false).\n", message, condition);
 
-#ifndef LIBRARY
+#if !defined(LIBRARY) && defined(HAVE_BACKTRACE)
     static void *ptrs[1024] = {};
     size_t nptrs = backtrace(ptrs, sizeof(ptrs) / sizeof(ptrs[0]));
     char **syms = backtrace_symbols(ptrs, nptrs);
@@ -44,6 +47,8 @@ void assert_failure(const char *file, unsigned line, const char *function,
             fprintf(stderr, "%2zu: %p\n", i, ptrs[i]);
         }
     }
+#else
+    fprintf(stderr, "Backtrace support not compiled in.\n");
 #endif
 
     abort();

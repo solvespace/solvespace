@@ -6,7 +6,13 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR})
 
+set(HAVE_BACKTRACE ${Backtrace_FOUND})
+if(HAVE_BACKTRACE)
+    set(BACKTRACE_HEADER <${Backtrace_HEADER}>)
+endif()
+
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
@@ -75,6 +81,11 @@ include_directories(
     ${FREETYPE_INCLUDE_DIRS}
     ${CAIRO_INCLUDE_DIRS})
 
+if(Backtrace_FOUND)
+    include_directories(
+        ${Backtrace_INCLUDE_DIRS})
+endif()
+
 if(SPACEWARE_FOUND)
     include_directories(
         ${SPACEWARE_INCLUDE_DIR})
@@ -107,10 +118,6 @@ elseif(APPLE)
         platform/cocoamain.mm
         render/rendergl.cpp
         ${gl_SOURCES})
-
-    set(platform_BUNDLED_LIBS
-        ${PNG_LIBRARIES}
-        ${FREETYPE_LIBRARIES})
 else()
     set(platform_SOURCES
         platform/gtkmain.cpp
@@ -208,8 +215,12 @@ target_link_libraries(solvespace-core
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY}
-    ${Backtrace_LIBRARIES})
+    ${FREETYPE_LIBRARY})
+
+if(Backtrace_FOUND)
+    target_link_libraries(solvespace-core
+        ${Backtrace_LIBRARY})
+endif()
 
 target_compile_options(solvespace-core
     PRIVATE ${COVERAGE_FLAGS})
@@ -382,22 +393,6 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
-
-    foreach(lib ${platform_BUNDLED_LIBS})
-        get_filename_component(name ${lib} NAME)
-
-        execute_process(COMMAND otool -D ${lib}
-            OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
-        add_custom_command(TARGET ${bundle} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${bundle_bin}/${name}
-            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
-                    $<TARGET_FILE:${bundle}>
-            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
-                    $<TARGET_FILE:solvespace-cli>
-            COMMENT "Bundling shared library ${lib}"
-            VERBATIM)
-    endforeach()
 
     add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
         COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg

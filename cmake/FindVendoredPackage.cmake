@@ -6,7 +6,7 @@
 #
 # The rest of the arguments are VARIABLE VALUE pairs. If the library is not found,
 # every VARIABLE will be set to VALUE and find_package will be rerun with the REQUIRED flag.
-# Regardless of where the library was found, only the specfied VARIABLEs that start with
+# Regardless of where the library was found, only the specified VARIABLEs that start with
 # ${PKG_NAME} will be set in the parent scope.
 #
 # All warnings in the in-tree package are disabled.
@@ -14,7 +14,9 @@
 include(DisableWarnings)
 
 function(find_vendored_package PKG_NAME PKG_PATH)
-    find_package(${PKG_NAME})
+    if(NOT FORCE_VENDORED_${PKG_NAME})
+        find_package(${PKG_NAME})
+    endif()
 
     set(cfg_name)
     foreach(item ${ARGN})

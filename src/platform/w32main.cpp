@@ -1190,7 +1190,7 @@ DialogChoice SolveSpace::LoadAutosaveYesNo()
     EnableWindow(TextWnd, false);
 
     int r = MessageBoxW(GraphicsWnd,
-        Widen(_("An autosave file is availible for this project.\n\n"
+        Widen(_("An autosave file is available for this project.\n\n"
                 "Do you want to load the autosave file instead?")).c_str(),
         Title(C_("title", "Autosave Available")).c_str(),
         MB_YESNO | MB_ICONWARNING);
@@ -1395,7 +1395,7 @@ static void CreateMainWindows()
         WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
         50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
 
-    // The text window, with a comand line and some textual information
+    // The text window, with a command line and some textual information
     // about the sketch.
     wc.style           &= ~CS_DBLCLKS;
     wc.lpfnWndProc      = (WNDPROC)TextWndProc;

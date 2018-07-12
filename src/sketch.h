@@ -5,8 +5,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __SKETCH_H
-#define __SKETCH_H
+#ifndef SOLVESPACE_SKETCH_H
+#define SOLVESPACE_SKETCH_H
 
 class hGroup;
 class hRequest;
