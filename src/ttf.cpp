@@ -63,6 +63,14 @@ void TtfFontList::LoadAll() {
             l.Add(&tf);
     }
 
+    // Add builtin font to font list
+    {
+        TtfFont tf = {};
+        tf.fontFile = { "fonts/BitstreamVeraSans-Roman-builtin.ttf" };
+        if(tf.LoadFromResource(fontLibrary))
+            l.Add(&tf);
+    }
+
     // Sort fonts according to their actual name, not filename.
     std::sort(&l.elem[0], &l.elem[l.n],
         [](const TtfFont &a, const TtfFont &b) { return a.name < b.name; });
@@ -131,9 +139,7 @@ std::string TtfFont::FontFileBaseName() const {
 }
 
 //-----------------------------------------------------------------------------
-// Load a TrueType font into memory. We care about the curves that define
-// the letter shapes, and about the mappings that determine which glyph goes
-// with which character.
+// Load a TrueType font into memory.
 //-----------------------------------------------------------------------------
 bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
     FT_Open_Args args = {};
@@ -149,6 +155,39 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         return false;
     }
 
+    return PostLoadProcess(nameOnly);
+}
+
+//-----------------------------------------------------------------------------
+// Load a TrueType from resource in memory. Implemented to load bundled fonts
+// through theresource system.
+//-----------------------------------------------------------------------------
+bool TtfFont::LoadFromResource(FT_Library fontLibrary) {
+    size_t _size;
+    const void *_buffer = Platform::LoadResource(fontFile.raw, &_size);
+
+    FT_Long size = static_cast<FT_Long>(_size);
+    const FT_Byte *buffer = reinterpret_cast<const FT_Byte*>(_buffer);
+
+    if(int fterr = FT_New_Memory_Face(fontLibrary, buffer, size, 0, &fontFace)) {
+            dbp("freetype: loading font '%s' from memory failed: %s",
+                fontFile.raw.c_str(), ft_error_string(fterr));
+            return false;
+    }
+
+    // Call with nameOnly = false as a quick hack to prevent the font from being
+    // lazily loaded as a file. This could also be implemented via a `bool
+    // is_resource` member in the TtfFont class. However, as long as there are only
+    // few bundled fonts, this works fine.
+    return PostLoadProcess(false);
+}
+
+//-----------------------------------------------------------------------------
+// Extract font information. We care about the curves that define the letter
+// shapes, and about the mappings that determine which glyph goes with which
+// character.
+//-----------------------------------------------------------------------------
+bool TtfFont::PostLoadProcess(bool nameOnly) {
     if(int fterr = FT_Select_Charmap(fontFace, FT_ENCODING_UNICODE)) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));
