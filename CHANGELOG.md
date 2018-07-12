@@ -69,6 +69,8 @@ Other new features:
     the entity from a request is selected. For example, dragging a point on
     a face of an extrusion coincident with the source sketch plane will
     drag the point from the source sketch.
+  * The default font for TTF text is now Bitstream Vera Sans, which is
+    included in the resources such that it is available on any OS.
   * In expressions, numbers can contain the digit group separator, "_".
   * The "=" key is bound to "Zoom In", like "+" key.
   * The numpad decimal separator key is bound to "." regardless of locale.

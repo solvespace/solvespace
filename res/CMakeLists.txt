@@ -212,6 +212,7 @@ add_resources(
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
     fonts/unicode.lff.gz
+    fonts/BitstreamVeraSans-Roman-builtin.ttf
     shaders/imesh.frag
     shaders/imesh.vert
     shaders/imesh_point.frag
