@@ -453,7 +453,7 @@ void EdgeRenderer::Init(const StippleAtlas *a) {
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_LOC, "loc" },
-            { ATTRIB_TAN, "tan" }
+            { ATTRIB_TAN, "tgt" }
         }
     );
 }
@@ -638,7 +638,7 @@ void OutlineRenderer::Init(const StippleAtlas *a) {
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_LOC, "loc" },
-            { ATTRIB_TAN, "tan" },
+            { ATTRIB_TAN, "tgt" },
             { ATTRIB_NOL, "nol" },
             { ATTRIB_NOR, "nor" }
         }

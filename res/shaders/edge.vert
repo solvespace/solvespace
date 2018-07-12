@@ -7,7 +7,7 @@ const float feather = 0.5;
 
 attribute vec3 pos;
 attribute vec3 loc;
-attribute vec3 tan;
+attribute vec3 tgt;
 
 uniform mat4 modelview;
 uniform mat4 projection;
@@ -21,7 +21,7 @@ void main() {
     vec3 dir = vec3(modelview[0].z, modelview[1].z, modelview[2].z);
 
     // calculate line contour extension basis for constant width and caps
-    vec3 norm = normalize(cross(tan, dir));
+    vec3 norm = normalize(cross(tgt, dir));
     norm = normalize(norm - dir * dot(dir, norm));
     vec3 perp = normalize(cross(dir, norm));
 
