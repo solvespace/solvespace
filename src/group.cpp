@@ -321,7 +321,7 @@ void Group::TransformImportedBy(Vector t, Quaternion q) {
 bool Group::IsForcedToMeshBySource() const {
     const Group *srcg = this;
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
-        // A step and repeat gets merged against the group's prevous group,
+        // A step and repeat gets merged against the group's previous group,
         // not our own previous group.
         srcg = SK.GetGroup(opA);
         if(srcg->forceToMesh) return true;

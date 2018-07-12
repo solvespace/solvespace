@@ -279,7 +279,7 @@ public:
 
                         ref = pi.Plus(bisect.WithMagnitude(c->disp.offset.Magnitude()));
 
-                        // Get lines agian to write exact line.
+                        // Get lines again to write exact line.
                         a0 = a->VectorGetStartPoint();
                         b0 = b->VectorGetStartPoint();
                         da = a->VectorGetNum();
@@ -439,7 +439,7 @@ public:
             // Rational bezier
             // We'd like to export rational beziers exactly, but the resulting DXF
             // files can only be read by AutoCAD; LibreCAD/QCad simply do not
-            // implement the feature. So, export as piecewise linear for compatiblity.
+            // implement the feature. So, export as piecewise linear for compatibility.
             writeBezierAsPwl(sb);
         } else {
             // Any other curve

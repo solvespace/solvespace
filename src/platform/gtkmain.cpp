@@ -1063,7 +1063,7 @@ DialogChoice SaveFileYesNoCancel(void) {
 
 DialogChoice LoadAutosaveYesNo(void) {
     Glib::ustring message =
-        _("An autosave file is availible for this project.\n\n"
+        _("An autosave file is available for this project.\n\n"
           "Do you want to load the autosave file instead?");
     Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);

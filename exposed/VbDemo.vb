@@ -606,7 +606,7 @@ Module VbDemo
         End Function
 
         ' After a failing call to Solve(), this returns the list of
-        ' constraints, identified by ther handle, that would fix the
+        ' constraints, identified by their handle, that would fix the
         ' system if they were deleted. This list will be populated only
         ' if calculateFaileds is True in the Solve() call.
         Public Function GetFaileds() As List(Of UInteger)

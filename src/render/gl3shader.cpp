@@ -9,7 +9,7 @@
 namespace SolveSpace {
 
 //-----------------------------------------------------------------------------
-// Floating point data sturctures
+// Floating point data structures
 //-----------------------------------------------------------------------------
 
 Vector2f Vector2f::From(float x, float y) {

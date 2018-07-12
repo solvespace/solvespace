@@ -341,7 +341,7 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
                 HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
             }
         } else {
-            // We have to iterate children points, because we can select entites without points
+            // We have to iterate children points, because we can select entities without points
             for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
                 if(e->point[i].v == 0) break;
                 Vector p = SK.GetEntity(e->point[i])->PointGetNum();
