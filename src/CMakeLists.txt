@@ -303,7 +303,7 @@ if(HAVE_GETTEXT)
             VERBATIM)
     endforeach()
 
-    add_custom_target(solvespace-translations
+    add_custom_target(translate_solvespace
         DEPENDS ${gen_output_pot} ${gen_output_po} ${gen_locale_pos})
 endif()
 
