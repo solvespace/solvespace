@@ -97,7 +97,7 @@ void TextWindow::ShowListOfGroups() {
                *checkFalse = " " CHECK_FALSE " ";
 
     Printf(true, "%Ft active");
-    Printf(false, "%Ft    shown ok  group-name%E");
+    Printf(false, "%Ft    shown ok DOF group-name%E");
     int i;
     bool afterActive = false;
     for(i = 0; i < SK.groupOrder.n; i++) {
@@ -107,10 +107,13 @@ void TextWindow::ShowListOfGroups() {
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
+	char dof[3];
+	sprintf(dof, "%2d", g->solved.dof > 99 ? 99 : g->solved.dof);
         Printf(false, "%Bp%Fd "
                "%Ft%s%Fb%D%f%Ll%s%E "
                "%Fb%s%D%f%Ll%s%E  "
-               "%Fp%D%f%s%Ll%s%E  "
+               "%Fp%D%f%s%Ll%s%E "
+	       "%Fp%s%E  "
                "%Fl%Ll%D%f%s",
             // Alternate between light and dark backgrounds, for readability
                 (i & 1) ? 'd' : 'a',
@@ -126,6 +129,8 @@ void TextWindow::ShowListOfGroups() {
             ok ? 's' : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
                 ok ? "ok" : "",
                 ok ? "" : "NO",
+	    // Show the number of DOF
+	    g->solved.dof ? 'm' : 's', dof,
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
 
