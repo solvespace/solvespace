@@ -204,7 +204,7 @@ if(ENABLE_GUI)
         find_package(OpenGL REQUIRED)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.16 pangomm-1.4 x11)
+        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
     endif()
 endif()
 
