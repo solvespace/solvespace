@@ -4,32 +4,31 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __SOLVESPACE_H
-#define __SOLVESPACE_H
+#ifndef SOLVESPACE_H
+#define SOLVESPACE_H
 
-#include <stdint.h>
-#include <stdlib.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdarg.h>
-#include <setjmp.h>
+#include <limits.h>
 #include <math.h>
 #include <setjmp.h>
-#include <limits.h>
+#include <stdarg.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <algorithm>
+#include <chrono>
 #include <functional>
-#include <memory>
-#include <string>
 #include <locale>
-#include <vector>
+#include <map>
+#include <memory>
+#include <set>
+#include <sstream>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
-#include <map>
-#include <set>
-#include <chrono>
-#include <sstream>
+#include <vector>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including

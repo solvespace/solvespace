@@ -22,6 +22,8 @@ New sketch features:
   * When adding a constraint which has a label and is redundant with another
     constraint, the constraint is added as a reference, avoiding an error.
   * Datum points can be copied and pasted.
+  * "Split Curves at Intersection" can now split curves at point lying on curve,
+    not just at intersection of two curves.
 
 New constraint features:
   * When dragging an arc or rectangle point, it will be automatically
