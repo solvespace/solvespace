@@ -1268,7 +1268,7 @@ typedef void (*UnregisterConnexionClientProc)(UInt16);
 static BOOL connexionShiftIsDown = NO;
 static UInt16 connexionClient = 0;
 static UInt32 connexionSignature = 'SoSp';
-static UInt8 *connexionName = (UInt8 *)"SolveSpace";
+static UInt8 *connexionName = (UInt8 *)"\x10SolveSpace";
 static CFBundleRef spaceBundle = NULL;
 static InstallConnexionHandlersProc installConnexionHandlers = NULL;
 static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;
