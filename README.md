@@ -6,6 +6,19 @@ This repository contains the source code of [SolveSpace][], a parametric
 
 [solvespace]: http://solvespace.com
 
+Community
+---------
+
+The official SolveSpace [website][sswebsite] has [tutorials][sstutorial],
+[reference manual][ssref] and a [forum][ssforum]; there is also an official
+IRC channel [#solvespace at irc.freenode.net][ssirc].
+
+[sswebsite]: http://solvespace.com/
+[ssref]: http://solvespace.com/ref.pl
+[sstutorial]: http://solvespace.com/tutorial.pl
+[ssforum]: http://solvespace.com/forum.pl
+[ssirc]: https://webchat.freenode.net/?channels=solvespace
+
 Installation
 ------------
 
