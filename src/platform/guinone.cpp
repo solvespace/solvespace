@@ -8,6 +8,14 @@
 
 namespace SolveSpace {
 
+//-----------------------------------------------------------------------------
+// Rendering
+//-----------------------------------------------------------------------------
+
+std::shared_ptr<ViewportCanvas> CreateRenderer() {
+    return std::make_shared<CairoPixmapRenderer>();
+}
+
 namespace Platform {
 
 //-----------------------------------------------------------------------------
@@ -27,50 +35,31 @@ TimerRef CreateTimer() {
 // Menus
 //-----------------------------------------------------------------------------
 
-class MenuItemImplDummy : public MenuItem {
-public:
-    void SetAccelerator(KeyboardEvent accel) override {}
-    void SetIndicator(Indicator type) override {}
-    void SetActive(bool active) override {}
-    void SetEnabled(bool enabled) override {}
-};
-
-class MenuImplDummy : public Menu {
-public:
-    MenuItemRef AddItem(const std::string &label,
-                        std::function<void()> onTrigger = NULL) override {
-        return std::make_shared<MenuItemImplDummy>();
-    }
-    MenuRef AddSubMenu(const std::string &label) override {
-        return std::make_shared<MenuImplDummy>();
-    }
-
-    void AddSeparator() override {}
-    void PopUp() override {}
-    void Clear() override {}
-};
-
 MenuRef CreateMenu() {
-    return std::make_shared<MenuImplDummy>();
+    return std::shared_ptr<Menu>();
 }
-
-class MenuBarImplDummy : public MenuBar {
-public:
-    MenuRef AddSubMenu(const std::string &label) override {
-        return std::make_shared<MenuImplDummy>();
-    }
-    void Clear() override {}
-    void *NativePtr() override { return NULL; }
-};
 
 MenuBarRef GetOrCreateMainMenu(bool *unique) {
     *unique = false;
-    return std::make_shared<MenuBarImplDummy>();
+    return std::shared_ptr<MenuBar>();
 }
 
+//-----------------------------------------------------------------------------
+// Windows
+//-----------------------------------------------------------------------------
+
+WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
+    return std::shared_ptr<Window>();
 }
 
-void SetMainMenu(Platform::MenuBarRef menuBar) {
+//-----------------------------------------------------------------------------
+// Application-wide APIs
+//-----------------------------------------------------------------------------
+
+void Exit() {
+    exit(0);
+}
+
 }
 
 //-----------------------------------------------------------------------------
@@ -144,106 +133,6 @@ std::string CnfThawString(const std::string &val, const std::string &key) {
 }
 
 //-----------------------------------------------------------------------------
-// Rendering
-//-----------------------------------------------------------------------------
-
-std::shared_ptr<ViewportCanvas> CreateRenderer() {
-    return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Graphics window
-//-----------------------------------------------------------------------------
-
-void GetGraphicsWindowSize(int *w, int *h) {
-    *w = *h = 600;
-}
-double GetScreenDpi() {
-    return 72;
-}
-
-void InvalidateGraphics() {
-}
-
-std::shared_ptr<Pixmap> framebuffer;
-bool antialias = true;
-void PaintGraphics() {
-    const Camera &camera = SS.GW.GetCamera();
-
-    std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
-    pixmap->format = Pixmap::Format::BGRA;
-    pixmap->width  = camera.width;
-    pixmap->height = camera.height;
-    pixmap->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, (int)camera.width);
-    pixmap->data   = std::vector<uint8_t>(pixmap->stride * pixmap->height);
-    cairo_surface_t *surface =
-        cairo_image_surface_create_for_data(&pixmap->data[0], CAIRO_FORMAT_RGB24,
-                                            (int)pixmap->width, (int)pixmap->height,
-                                            (int)pixmap->stride);
-    cairo_t *context = cairo_create(surface);
-
-    CairoRenderer canvas;
-    canvas.camera = camera;
-    canvas.lighting = SS.GW.GetLighting();
-    canvas.chordTolerance = SS.chordTol;
-    canvas.context = context;
-    canvas.antialias = antialias;
-
-    SS.GW.Draw(&canvas);
-    canvas.CullOccludedStrokes();
-    canvas.OutputInPaintOrder();
-
-    pixmap->ConvertTo(Pixmap::Format::RGBA);
-    framebuffer = pixmap;
-
-    canvas.Clear();
-
-    cairo_surface_destroy(surface);
-    cairo_destroy(context);
-}
-
-void SetCurrentFilename(const Platform::Path &filename) {
-}
-void ToggleFullScreen() {
-}
-bool FullScreenIsActive() {
-    return false;
-}
-void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &val) {
-    ssassert(false, "Not implemented");
-}
-void HideGraphicsEditControl() {
-}
-bool GraphicsEditControlIsVisible() {
-    return false;
-}
-
-//-----------------------------------------------------------------------------
-// Text window
-//-----------------------------------------------------------------------------
-
-void ShowTextWindow(bool visible) {
-}
-void GetTextWindowSize(int *w, int *h) {
-    *w = *h = 100;
-}
-void InvalidateText() {
-}
-void MoveTextScrollbarTo(int pos, int maxPos, int page) {
-}
-void SetMousePointerToHand(bool is_hand) {
-}
-void ShowTextEditControl(int x, int y, const std::string &val) {
-    ssassert(false, "Not implemented");
-}
-void HideTextEditControl() {
-}
-bool TextEditControlIsVisible() {
-    return false;
-}
-
-//-----------------------------------------------------------------------------
 // Dialogs
 //-----------------------------------------------------------------------------
 
@@ -280,17 +169,6 @@ void OpenWebsite(const char *url) {
 std::vector<Platform::Path> fontFiles;
 std::vector<Platform::Path> GetFontFiles() {
     return fontFiles;
-}
-
-//-----------------------------------------------------------------------------
-// Application lifecycle
-//-----------------------------------------------------------------------------
-
-void RefreshLocale() {
-}
-
-void ExitNow() {
-    ssassert(false, "Not implemented");
 }
 
 }

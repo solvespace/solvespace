@@ -541,7 +541,9 @@ void OpenGl2Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
 }
 
 void OpenGl2Renderer::UpdateProjection() {
-    glViewport(0, 0, camera.width, camera.height);
+    glViewport(0, 0,
+               (int)(camera.width  * camera.pixelRatio),
+               (int)(camera.height * camera.pixelRatio));
 
     double mat1[16];
     double mat2[16];
@@ -670,7 +672,8 @@ void OpenGl2Renderer::Clear() {
 std::shared_ptr<Pixmap> OpenGl2Renderer::ReadFrame() {
     std::shared_ptr<Pixmap> pixmap =
         Pixmap::Create(Pixmap::Format::RGB, (size_t)camera.width, (size_t)camera.height);
-    glReadPixels(0, 0, camera.width, camera.height, GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+    glReadPixels(0, 0, (int)camera.width, (int)camera.height,
+                 GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
     return pixmap;
 }
 

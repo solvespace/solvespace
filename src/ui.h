@@ -276,16 +276,15 @@ public:
     int top[MAX_ROWS]; // in half-line units, or -1 for unused
     int rows;
 
+    Platform::WindowRef window;
     std::shared_ptr<ViewportCanvas> canvas;
 
     void Draw(Canvas *canvas);
 
-    // These are called by the platform-specific code.
     void Paint();
     void MouseEvent(bool isClick, bool leftDown, double x, double y);
-    void MouseScroll(double x, double y, int delta);
     void MouseLeave();
-    void ScrollbarEvent(int newPos);
+    void ScrollbarEvent(double newPos);
 
     enum DrawOrHitHow : uint32_t {
         PAINT = 0,
@@ -532,18 +531,19 @@ public:
     static void ScreenChangeViewOrigin(int link, uint32_t v);
     static void ScreenChangeViewProjection(int link, uint32_t v);
 
-    bool EditControlDoneForStyles(const char *s);
-    bool EditControlDoneForConfiguration(const char *s);
-    bool EditControlDoneForPaste(const char *s);
-    bool EditControlDoneForView(const char *s);
-    void EditControlDone(const char *s);
+    bool EditControlDoneForStyles(const std::string &s);
+    bool EditControlDoneForConfiguration(const std::string &s);
+    bool EditControlDoneForPaste(const std::string &s);
+    bool EditControlDoneForView(const std::string &s);
+    void EditControlDone(std::string s);
 };
 
 class GraphicsWindow {
 public:
     void Init();
 
-    Platform::MenuBarRef  mainMenu;
+    Platform::WindowRef   window;
+
     void PopulateMainMenu();
     void PopulateRecentFiles();
 
@@ -581,8 +581,6 @@ public:
     std::shared_ptr<BatchCanvas>    persistentCanvas;
     bool persistentDirty;
 
-    // The width and height (in pixels) of the window.
-    double width, height;
     // These parameters define the map from 2d screen coordinates to the
     // coordinates of the 3d sketch points. We will use an axonometric
     // projection.
@@ -635,13 +633,17 @@ public:
     void AnimateOntoWorkplane();
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
-                                           double *wmin, bool usePerspective);
+                                 double *wmin, bool usePerspective,
+                                 const Camera &camera);
     void LoopOverPoints(const std::vector<Entity *> &entities,
                         const std::vector<Constraint *> &constraints,
                         const std::vector<hEntity> &faces,
                         Point2d *pmax, Point2d *pmin,
-                        double *wmin, bool usePerspective, bool includeMesh);
-    void ZoomToFit(bool includingInvisibles, bool useSelection = false);
+                        double *wmin, bool usePerspective, bool includeMesh,
+                        const Camera &camera);
+    void ZoomToFit(bool includingInvisibles = false, bool useSelection = false);
+    double ZoomToFit(const Camera &camera,
+                     bool includingInvisibles = false, bool useSelection = false);
 
     hGroup  activeGroup;
     void EnsureValidActives();
@@ -831,14 +833,15 @@ public:
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
+    void Invalidate(bool clearPersistent = false);
     void DrawEntities(Canvas *canvas, bool persistent);
     void DrawPersistent(Canvas *canvas);
     void Draw(Canvas *canvas);
-
-    // These are called by the platform-specific code.
     void Paint();
+
+    bool MouseEvent(Platform::MouseEvent event);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
-                                bool rightDown, bool shiftDown, bool ctrlDown);
+                    bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);
     void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
@@ -847,7 +850,7 @@ public:
     void MouseScroll(double x, double y, int delta);
     void MouseLeave();
     bool KeyboardEvent(Platform::KeyboardEvent event);
-    void EditControlDone(const char *s);
+    void EditControlDone(const std::string &s);
 
     int64_t lastSpaceNavigatorTime;
     hGroup lastSpaceNavigatorGroup;

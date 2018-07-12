@@ -354,6 +354,16 @@ std::shared_ptr<Pixmap> Pixmap::Create(Format format, size_t width, size_t heigh
     return pixmap;
 }
 
+std::shared_ptr<Pixmap> Pixmap::Copy() {
+    std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
+    pixmap->format = format;
+    pixmap->width  = width;
+    pixmap->height = height;
+    pixmap->stride = stride;
+    pixmap->data   = data;
+    return pixmap;
+}
+
 //-----------------------------------------------------------------------------
 // ASCII sequence parsing
 //-----------------------------------------------------------------------------
@@ -938,8 +948,8 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
     ssassert(!IsEmpty(), "Expected a loaded font");
 
     // Perform grid-fitting only when the text is parallel to the view plane.
-    if(camera.hasPixels && !(u.WithMagnitude(1).Equals(camera.projRight) &&
-                             v.WithMagnitude(1).Equals(camera.projUp))) {
+    if(camera.gridFit && !(u.WithMagnitude(1).Equals(camera.projRight) &&
+                           v.WithMagnitude(1).Equals(camera.projUp))) {
         return Trace(forCapHeight, o, u, v, str, traceEdge);
     }
 

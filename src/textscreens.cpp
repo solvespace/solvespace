@@ -577,10 +577,10 @@ void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
                 // Failed to solve, so quit
                 break;
             }
-            PaintGraphics();
+            SS.GW.window->Redraw();
         }
     }
-    InvalidateGraphics();
+    SS.GW.Invalidate();
     SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
 }
 void TextWindow::ShowStepDimension() {
@@ -657,13 +657,12 @@ void TextWindow::ShowTangentArc() {
 //-----------------------------------------------------------------------------
 // The edit control is visible, and the user just pressed enter.
 //-----------------------------------------------------------------------------
-void TextWindow::EditControlDone(const char *s) {
+void TextWindow::EditControlDone(std::string s) {
     edit.showAgain = false;
 
     switch(edit.meaning) {
-        case Edit::TIMES_REPEATED: {
-            Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) {
+        case Edit::TIMES_REPEATED:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
                 SS.UndoRemember();
 
                 double ev = e->Eval();
@@ -698,9 +697,9 @@ void TextWindow::EditControlDone(const char *s) {
                 SS.MarkGroupDirty(g->h);
             }
             break;
-        }
-        case Edit::GROUP_NAME: {
-            if(!*s) {
+
+        case Edit::GROUP_NAME:
+            if(s.empty()) {
                 Error(_("Group name cannot be empty"));
             } else {
                 SS.UndoRemember();
@@ -709,10 +708,9 @@ void TextWindow::EditControlDone(const char *s) {
                 g->name = s;
             }
             break;
-        }
-        case Edit::GROUP_SCALE: {
-            Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) {
+
+        case Edit::GROUP_SCALE:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
                 double ev = e->Eval();
                 if(fabs(ev) < 1e-6) {
                     Error(_("Scale cannot be zero."));
@@ -723,10 +721,10 @@ void TextWindow::EditControlDone(const char *s) {
                 }
             }
             break;
-        }
+
         case Edit::GROUP_COLOR: {
             Vector rgb;
-            if(sscanf(s, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
+            if(sscanf(s.c_str(), "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
                 rgb = rgb.ClampWithin(0, 1);
 
                 Group *g = SK.group.FindByIdNoOops(SS.TW.shown.group);
@@ -740,9 +738,8 @@ void TextWindow::EditControlDone(const char *s) {
             }
             break;
         }
-        case Edit::GROUP_OPACITY: {
-            Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(e) {
+        case Edit::GROUP_OPACITY:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
                 double alpha = e->Eval();
                 if(alpha < 0 || alpha > 1) {
                     Error(_("Opacity must be between zero and one."));
@@ -754,42 +751,38 @@ void TextWindow::EditControlDone(const char *s) {
                 }
             }
             break;
-        }
-        case Edit::TTF_TEXT: {
+
+        case Edit::TTF_TEXT:
             SS.UndoRemember();
-            Request *r = SK.request.FindByIdNoOops(edit.request);
-            if(r) {
+            if(Request *r = SK.request.FindByIdNoOops(edit.request)) {
                 r->str = s;
                 SS.MarkGroupDirty(r->group);
             }
             break;
-        }
-        case Edit::STEP_DIM_FINISH: {
-            Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(!e) {
-                break;
+
+        case Edit::STEP_DIM_FINISH:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+                if(shown.dimIsDistance) {
+                    shown.dimFinish = SS.ExprToMm(e);
+                } else {
+                    shown.dimFinish = e->Eval();
+                }
             }
-            if(shown.dimIsDistance) {
-                shown.dimFinish = SS.ExprToMm(e);
-            } else {
-                shown.dimFinish = e->Eval();
-            }
-            break;
-        }
-        case Edit::STEP_DIM_STEPS:
-            shown.dimSteps = min(300, max(1, atoi(s)));
             break;
 
-        case Edit::TANGENT_ARC_RADIUS: {
-            Expr *e = Expr::From(s, /*popUpError=*/true);
-            if(!e) break;
-            if(e->Eval() < LENGTH_EPS) {
-                Error(_("Radius cannot be zero or negative."));
-                break;
-            }
-            SS.tangentArcRadius = SS.ExprToMm(e);
+        case Edit::STEP_DIM_STEPS:
+            shown.dimSteps = min(300, max(1, atoi(s.c_str())));
             break;
-        }
+
+        case Edit::TANGENT_ARC_RADIUS:
+            if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
+                if(e->Eval() < LENGTH_EPS) {
+                    Error(_("Radius cannot be zero or negative."));
+                    break;
+                }
+                SS.tangentArcRadius = SS.ExprToMm(e);
+            }
+            break;
 
         default: {
             int cnt = 0;
@@ -801,7 +794,7 @@ void TextWindow::EditControlDone(const char *s) {
             break;
         }
     }
-    InvalidateGraphics();
+    SS.GW.Invalidate();
     SS.ScheduleShowTW();
 
     if(!edit.showAgain) {

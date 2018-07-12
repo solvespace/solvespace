@@ -744,7 +744,7 @@ void Constraint::MenuConstrain(Command id) {
     }
 
     SS.GW.ClearSelection();
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 }
 
 #endif /* ! LIBRARY */

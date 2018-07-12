@@ -705,7 +705,9 @@ void OpenGl1Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
 void OpenGl1Renderer::UpdateProjection() {
     UnSelectPrimitive();
 
-    glViewport(0, 0, camera.width, camera.height);
+    glViewport(0, 0,
+               camera.width  * camera.pixelRatio,
+               camera.height * camera.pixelRatio);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

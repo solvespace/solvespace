@@ -255,7 +255,7 @@ bool GraphicsWindow::KeyboardEvent(Platform::KeyboardEvent event) {
 
 void GraphicsWindow::PopulateMainMenu() {
     bool unique = false;
-    mainMenu = Platform::GetOrCreateMainMenu(&unique);
+    Platform::MenuBarRef mainMenu = Platform::GetOrCreateMainMenu(&unique);
     if(unique) mainMenu->Clear();
 
     Platform::MenuRef currentSubMenu;
@@ -285,8 +285,9 @@ void GraphicsWindow::PopulateMainMenu() {
                     SetLocale(locale.Culture());
                     CnfFreezeString(locale.Culture(), "Locale");
 
-                    SS.UpdateWindowTitle();
+                    SS.UpdateWindowTitles();
                     PopulateMainMenu();
+                    EnsureValidActives();
                 });
             }
         } else if(Menu[i].fn == NULL) {
@@ -331,7 +332,7 @@ void GraphicsWindow::PopulateMainMenu() {
     PopulateRecentFiles();
     SS.UndoEnableMenus();
 
-    SetMainMenu(mainMenu);
+    window->SetMenuBar(mainMenu);
 }
 
 static void PopulateMenuWithPathnames(Platform::MenuRef menu,
@@ -361,15 +362,7 @@ void GraphicsWindow::PopulateRecentFiles() {
 }
 
 void GraphicsWindow::Init() {
-    PopulateMainMenu();
-
-    canvas = CreateRenderer();
-    if(canvas) {
-        persistentCanvas = canvas->CreateBatch();
-        persistentDirty = true;
-    }
-
-    scale = 5;
+    scale     = 5;
     offset    = Vector::From(0, 0, 0);
     projRight = Vector::From(1, 0, 0);
     projUp    = Vector::From(0, 1, 0);
@@ -394,10 +387,29 @@ void GraphicsWindow::Init() {
     drawOccludedAs = DrawOccludedAs::INVISIBLE;
 
     showTextWindow = true;
-    ShowTextWindow(showTextWindow);
 
     showSnapGrid = false;
     context.active = false;
+
+    if(!window) {
+        window = Platform::CreateWindow();
+        if(window) {
+            canvas = CreateRenderer();
+            if(canvas) {
+                persistentCanvas = canvas->CreateBatch();
+                persistentDirty = true;
+            }
+
+            using namespace std::placeholders;
+            window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
+            window->onRender = std::bind(&GraphicsWindow::Paint, this);
+            window->onKeyboardEvent = std::bind(&GraphicsWindow::KeyboardEvent, this, _1);
+            window->onMouseEvent = std::bind(&GraphicsWindow::MouseEvent, this, _1);
+            window->onEditingDone = std::bind(&GraphicsWindow::EditControlDone, this, _1);
+            window->SetMinContentSize(720, 670);
+            PopulateMainMenu();
+        }
+    }
 
     // Do this last, so that all the menus get updated correctly.
     ClearSuper();
@@ -444,7 +456,7 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
 
         projRight = quat.RotationU();
         projUp    = quat.RotationV();
-        PaintGraphics();
+        window->Redraw();
 
         tn = GetMilliseconds();
         s = (tn - t0)/((double)dt);
@@ -453,16 +465,17 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     projRight = quatf.RotationU();
     projUp = quatf.RotationV();
     offset = offsetf;
-    InvalidateGraphics();
+    Invalidate();
     // If the view screen is open, then we need to refresh it.
     SS.ScheduleShowTW();
 }
 
 void GraphicsWindow::HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
-                                             double *wmin, bool usePerspective)
+                                             double *wmin, bool usePerspective,
+                                             const Camera &camera)
 {
     double w;
-    Vector pp = ProjectPoint4(p, &w);
+    Vector pp = camera.ProjectPoint4(p, &w);
     // If usePerspective is true, then we calculate a perspective projection of the point.
     // If not, then we do a parallel projection regardless of the current
     // scale factor.
@@ -480,11 +493,12 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
                                     const std::vector<Constraint *> &constraints,
                                     const std::vector<hEntity> &faces,
                                     Point2d *pmax, Point2d *pmin, double *wmin,
-                                    bool usePerspective, bool includeMesh) {
+                                    bool usePerspective, bool includeMesh,
+                                    const Camera &camera) {
 
     for(Entity *e : entities) {
         if(e->IsPoint()) {
-            HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, usePerspective);
+            HandlePointForZoomToFit(e->PointGetNum(), pmax, pmin, wmin, usePerspective, camera);
         } else if(e->type == Entity::Type::CIRCLE) {
             // Lots of entities can extend outside the bbox of their points,
             // but circles are particularly bad. We want to get things halfway
@@ -498,23 +512,23 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
                            (j == 1) ? (c.Plus(q.RotationU().ScaledBy(-r))) :
                            (j == 2) ? (c.Plus(q.RotationV().ScaledBy( r))) :
                                       (c.Plus(q.RotationV().ScaledBy(-r)));
-                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
+                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective, camera);
             }
         } else {
             // We have to iterate children points, because we can select entities without points
             for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
                 if(e->point[i].v == 0) break;
                 Vector p = SK.GetEntity(e->point[i])->PointGetNum();
-                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
+                HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective, camera);
             }
         }
     }
 
     for(Constraint *c : constraints) {
         std::vector<Vector> refs;
-        c->GetReferencePoints(GetCamera(), &refs);
+        c->GetReferencePoints(camera, &refs);
         for(Vector p : refs) {
-            HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective);
+            HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective, camera);
         }
     }
 
@@ -533,19 +547,25 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
             }
             if(!found) continue;
         }
-        HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, usePerspective);
-        HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, usePerspective);
-        HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, usePerspective);
+        HandlePointForZoomToFit(tr->a, pmax, pmin, wmin, usePerspective, camera);
+        HandlePointForZoomToFit(tr->b, pmax, pmin, wmin, usePerspective, camera);
+        HandlePointForZoomToFit(tr->c, pmax, pmin, wmin, usePerspective, camera);
     }
     if(!includeMesh) return;
     for(int i = 0; i < g->polyLoops.l.n; i++) {
         SContour *sc = &(g->polyLoops.l.elem[i]);
         for(int j = 0; j < sc->l.n; j++) {
-            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, usePerspective);
+            HandlePointForZoomToFit(sc->l.elem[j].p, pmax, pmin, wmin, usePerspective, camera);
         }
     }
 }
 void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
+    if(!window) return;
+
+    scale = ZoomToFit(GetCamera(), includingInvisibles, useSelection);
+}
+double GraphicsWindow::ZoomToFit(const Camera &camera,
+                                 bool includingInvisibles, bool useSelection) {
     std::vector<Entity *> entities;
     std::vector<Constraint *> constraints;
     std::vector<hEntity> faces;
@@ -588,7 +608,8 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
     Point2d pmax = { -1e12, -1e12 }, pmin = { 1e12, 1e12 };
     double wmin = 1;
     LoopOverPoints(entities, constraints, faces, &pmax, &pmin, &wmin,
-                   /*usePerspective=*/false, /*includeMesh=*/!selectionUsed);
+                   /*usePerspective=*/false, /*includeMesh=*/!selectionUsed,
+                   camera);
 
     double xm = (pmax.x + pmin.x)/2, ym = (pmax.y + pmin.y)/2;
     double dx = pmax.x - pmin.x, dy = pmax.y - pmin.y;
@@ -597,12 +618,13 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
                          projUp.   ScaledBy(-ym));
 
     // And based on this, we calculate the scale and offset
+    double scale;
     if(EXACT(dx == 0 && dy == 0)) {
         scale = 5;
     } else {
         double scalex = 1e12, scaley = 1e12;
-        if(EXACT(dx != 0)) scalex = 0.9*width /dx;
-        if(EXACT(dy != 0)) scaley = 0.9*height/dy;
+        if(EXACT(dx != 0)) scalex = 0.9*camera.width /dx;
+        if(EXACT(dy != 0)) scaley = 0.9*camera.height/dy;
         scale = min(scalex, scaley);
 
         scale = min(300.0, scale);
@@ -614,17 +636,20 @@ void GraphicsWindow::ZoomToFit(bool includingInvisibles, bool useSelection) {
     pmin.x =  1e12; pmin.y =  1e12;
     wmin = 1;
     LoopOverPoints(entities, constraints, faces, &pmax, &pmin, &wmin,
-                   /*usePerspective=*/true, /*includeMesh=*/!selectionUsed);
+                   /*usePerspective=*/true, /*includeMesh=*/!selectionUsed,
+                   camera);
 
     // Adjust the scale so that no points are behind the camera
     if(wmin < 0.1) {
-        double k = SS.CameraTangent();
+        double k = camera.tangent;
         // w = 1+k*scale*z
         double zmin = (wmin - 1)/(k*scale);
         // 0.1 = 1 + k*scale*zmin
         // (0.1 - 1)/(k*zmin) = scale
         scale = min(scale, (0.1 - 1)/(k*zmin));
     }
+
+    return scale;
 }
 
 void GraphicsWindow::MenuView(Command id) {
@@ -650,7 +675,7 @@ void GraphicsWindow::MenuView(Command id) {
                 Message(_("No workplane is active, so the grid will not appear."));
             }
             SS.GW.EnsureValidActives();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
 
         case Command::PERSPECTIVE_PROJ:
@@ -663,7 +688,7 @@ void GraphicsWindow::MenuView(Command id) {
                         "is typical."));
             }
             SS.GW.EnsureValidActives();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
 
         case Command::ONTO_WORKPLANE:
@@ -745,7 +770,7 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::SHOW_TOOLBAR:
             SS.showToolbar = !SS.showToolbar;
             SS.GW.EnsureValidActives();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
 
         case Command::SHOW_TEXT_WND:
@@ -772,13 +797,13 @@ void GraphicsWindow::MenuView(Command id) {
             break;
 
         case Command::FULL_SCREEN:
-            ToggleFullScreen();
+            SS.GW.window->SetFullScreen(!SS.GW.window->IsFullScreen());
             SS.GW.EnsureValidActives();
             break;
 
         default: ssassert(false, "Unexpected menu ID");
     }
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 }
 
 void GraphicsWindow::EnsureValidActives() {
@@ -827,6 +852,8 @@ void GraphicsWindow::EnsureValidActives() {
         }
     }
 
+    if(!window) return;
+
     // And update the checked state for various menus
     bool locked = LockedInWorkplane();
     in3dMenuItem->SetActive(!locked);
@@ -847,13 +874,13 @@ void GraphicsWindow::EnsureValidActives() {
     unitsMetersMenuItem->SetActive(SS.viewUnits == Unit::METERS);
     unitsInchesMenuItem->SetActive(SS.viewUnits == Unit::INCHES);
 
-    ShowTextWindow(SS.GW.showTextWindow);
+    if(SS.TW.window) SS.TW.window->SetVisible(SS.GW.showTextWindow);
     showTextWndMenuItem->SetActive(SS.GW.showTextWindow);
 
     showGridMenuItem->SetActive(SS.GW.showSnapGrid);
     perspectiveProjMenuItem->SetActive(SS.usePerspectiveProj);
     showToolbarMenuItem->SetActive(SS.showToolbar);
-    fullScreenMenuItem->SetActive(FullScreenIsActive());
+    fullScreenMenuItem->SetActive(SS.GW.window->IsFullScreen());
 
     if(change) SS.ScheduleShowTW();
 }
@@ -877,7 +904,7 @@ void GraphicsWindow::ForceTextWindowShown() {
     if(!showTextWindow) {
         showTextWindow = true;
         showTextWndMenuItem->SetActive(true);
-        ShowTextWindow(true);
+        SS.TW.window->SetVisible(true);
     }
 }
 
@@ -894,7 +921,7 @@ void GraphicsWindow::DeleteTaggedRequests() {
 
     // An edit might be in progress for the just-deleted item. So
     // now it's not.
-    HideGraphicsEditControl();
+    window->HideEditor();
     SS.TW.HideEditControl();
     // And clear out the selection, which could contain that item.
     ClearSuper();
@@ -934,8 +961,8 @@ void GraphicsWindow::MenuEdit(Command id) {
                SS.GW.gs.constraints     == 0 &&
                SS.GW.pending.operation  == Pending::NONE)
             {
-                if(!(TextEditControlIsVisible() ||
-                     GraphicsEditControlIsVisible()))
+                if(!(SS.TW.window->IsEditorVisible() ||
+                     SS.GW.window->IsEditorVisible()))
                 {
                     if(SS.TW.shown.screen == TextWindow::Screen::STYLE_INFO) {
                         SS.TW.GoToScreen(TextWindow::Screen::LIST_OF_STYLES);
@@ -971,7 +998,7 @@ void GraphicsWindow::MenuEdit(Command id) {
 
                 SS.GW.MakeSelected(e->h);
             }
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             SS.ScheduleShowTW();
             break;
         }
@@ -1020,7 +1047,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             if(newlySelected == 0) {
                 Error(_("No additional entities share endpoints with the selected entities."));
             }
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             SS.ScheduleShowTW();
             break;
         }
@@ -1099,7 +1126,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             SS.GW.ClearPending();
 
             SS.GW.ClearSelection();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
         }
 
@@ -1156,7 +1183,7 @@ void GraphicsWindow::MenuRequest(Command id) {
             SS.GW.SetWorkplaneFreeIn3d();
             SS.GW.EnsureValidActives();
             SS.ScheduleShowTW();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
 
         case Command::TANGENT_ARC:
@@ -1171,7 +1198,7 @@ void GraphicsWindow::MenuRequest(Command id) {
                 SS.TW.GoToScreen(TextWindow::Screen::TANGENT_ARC);
                 SS.GW.ForceTextWindowShown();
                 SS.ScheduleShowTW();
-                InvalidateGraphics(); // repaint toolbar
+                SS.GW.Invalidate(); // repaint toolbar
             }
             break;
 
@@ -1196,7 +1223,7 @@ c:
             SS.GW.pending.command = id;
             SS.GW.pending.description = s;
             SS.ScheduleShowTW();
-            InvalidateGraphics(); // repaint toolbar
+            SS.GW.Invalidate(); // repaint toolbar
             break;
 
         case Command::CONSTRUCTION: {
@@ -1227,7 +1254,7 @@ c:
 }
 
 void GraphicsWindow::ClearSuper() {
-    HideGraphicsEditControl();
+    if(window) window->HideEditor();
     ClearPending();
     ClearSelection();
     hover.Clear();
@@ -1248,8 +1275,7 @@ void GraphicsWindow::ToggleBool(bool *v) {
         SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
     }
 
-    SS.GW.persistentDirty = true;
-    InvalidateGraphics();
+    Invalidate(/*clearPersistent=*/true);
     SS.ScheduleShowTW();
 }
 

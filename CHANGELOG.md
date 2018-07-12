@@ -59,6 +59,7 @@ New measurement/analysis features:
 
 Other new features:
   * New command-line interface, for batch exporting and more.
+  * The graphical interface now supports HiDPI screens on every OS.
   * New link to match the on-screen size of the sketch with its actual size,
     "view → set to full scale".
   * When zooming to fit, constraints are also considered.

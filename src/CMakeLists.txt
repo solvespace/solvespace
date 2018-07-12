@@ -329,7 +329,7 @@ if(ENABLE_GUI)
 
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF /STACK:33554432")
     endif()
 endif()
 

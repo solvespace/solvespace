@@ -45,7 +45,7 @@ void TextWindow::ScreenChangeViewScale(int link, uint32_t v) {
 }
 
 void TextWindow::ScreenChangeViewToFullScale(int link, uint32_t v) {
-    SS.GW.scale = GetScreenDpi() / 25.4;
+    SS.GW.scale = SS.GW.window->GetPixelDensity() / 25.4;
 }
 
 void TextWindow::ScreenChangeViewOrigin(int link, uint32_t v) {
@@ -66,7 +66,7 @@ void TextWindow::ScreenChangeViewProjection(int link, uint32_t v) {
     SS.TW.ShowEditControl(10, edit_value);
 }
 
-bool TextWindow::EditControlDoneForView(const char *s) {
+bool TextWindow::EditControlDoneForView(const std::string &s) {
     switch(edit.meaning) {
         case Edit::VIEW_SCALE: {
             Expr *e = Expr::From(s, /*popUpError=*/true);
@@ -83,7 +83,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
 
         case Edit::VIEW_ORIGIN: {
             Vector pt;
-            if(sscanf(s, "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) == 3) {
+            if(sscanf(s.c_str(), "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) == 3) {
                 pt = pt.ScaledBy(SS.MmPerUnit());
                 SS.GW.offset = pt.ScaledBy(-1);
             } else {
@@ -95,7 +95,7 @@ bool TextWindow::EditControlDoneForView(const char *s) {
         case Edit::VIEW_PROJ_RIGHT:
         case Edit::VIEW_PROJ_UP: {
             Vector pt;
-            if(sscanf(s, "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) != 3) {
+            if(sscanf(s.c_str(), "%lf, %lf, %lf", &pt.x, &pt.y, &pt.z) != 3) {
                 Error(_("Bad format: specify x, y, z"));
                 break;
             }

@@ -325,7 +325,7 @@ void GraphicsWindow::MenuClipboard(Command id) {
     }
 }
 
-bool TextWindow::EditControlDoneForPaste(const char *s) {
+bool TextWindow::EditControlDoneForPaste(const std::string &s) {
     Expr *e;
     switch(edit.meaning) {
         case Edit::PASTE_TIMES_REPEATED: {

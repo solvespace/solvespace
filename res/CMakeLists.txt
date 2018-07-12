@@ -118,7 +118,7 @@ endfunction()
 # Second, register all resources.
 if(WIN32)
     add_resource(win32/icon.ico     4000 ICON)
-    add_resource(win32/manifest.xml 2    RT_MANIFEST)
+    add_resource(win32/manifest.xml 1    RT_MANIFEST)
 elseif(APPLE)
     add_iconset (cocoa/AppIcon.iconset)
     add_xib     (cocoa/MainMenu.xib)

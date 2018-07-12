@@ -38,6 +38,7 @@ struct FT_LibraryRec_;
 struct FT_FaceRec_;
 
 typedef struct _cairo cairo_t;
+typedef struct _cairo_surface cairo_surface_t;
 
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
@@ -164,37 +165,13 @@ std::vector<Platform::Path> GetFontFiles();
 
 void OpenWebsite(const char *url);
 
-void SetMainMenu(Platform::MenuBarRef menuBar);
-
-void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &str);
-void HideGraphicsEditControl();
-bool GraphicsEditControlIsVisible();
-void ShowTextEditControl(int x, int y, const std::string &str);
-void HideTextEditControl();
-bool TextEditControlIsVisible();
-void MoveTextScrollbarTo(int pos, int maxPos, int page);
-
-void ShowTextWindow(bool visible);
-void InvalidateText();
-void InvalidateGraphics();
-void PaintGraphics();
-void ToggleFullScreen();
-bool FullScreenIsActive();
-void GetGraphicsWindowSize(int *w, int *h);
-void GetTextWindowSize(int *w, int *h);
-double GetScreenDpi();
-int64_t GetMilliseconds();
-
 void dbp(const char *str, ...);
 #define DBPTRI(tri) \
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
 
-void SetCurrentFilename(const Platform::Path &filename);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
-void ExitNow();
 
 void CnfFreezeInt(uint32_t val, const std::string &name);
 void CnfFreezeFloat(float val, const std::string &name);
@@ -283,6 +260,7 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
                              double a41, double a42, double a43, double a44);
 void MultMatrix(double *mata, double *matb, double *matr);
 
+int64_t GetMilliseconds();
 void Message(const char *str, ...);
 void Error(const char *str, ...);
 void CnfFreezeBool(bool v, const std::string &name);
@@ -730,7 +708,7 @@ public:
     bool GetFilenameAndSave(bool saveAs);
     bool OkayToStartNewFile();
     hGroup CreateDefaultDrawingGroup();
-    void UpdateWindowTitle();
+    void UpdateWindowTitles();
     void ClearExisting();
     void NewFile();
     bool SaveToFile(const Platform::Path &filename);

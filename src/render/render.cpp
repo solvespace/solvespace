@@ -70,7 +70,7 @@ Vector Camera::VectorFromProjs(Vector rightUpForward) const {
 }
 
 Vector Camera::AlignToPixelGrid(Vector v) const {
-    if(!hasPixels) return v;
+    if(!gridFit) return v;
 
     v = ProjectPoint3(v);
     v.x = floor(v.x) + 0.5;

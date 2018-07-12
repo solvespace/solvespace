@@ -191,16 +191,32 @@ static bool RunCommand(const std::vector<std::string> args) {
         }
 
         runner = [&](const Platform::Path &output) {
-            SS.GW.width     = width;
-            SS.GW.height    = height;
-            SS.GW.projRight = projRight;
-            SS.GW.projUp    = projUp;
-            SS.chordTol     = chordTol;
+            Camera camera = {};
+            camera.pixelRatio = 1;
+            camera.gridFit    = true;
+            camera.width      = width;
+            camera.height     = height;
+            camera.projUp     = SS.GW.projUp;
+            camera.projRight  = SS.GW.projRight;
 
-            SS.GW.ZoomToFit(/*includingInvisibles=*/false);
+            SS.GW.projUp      = projUp;
+            SS.GW.projRight   = projRight;
+            SS.GW.scale       = SS.GW.ZoomToFit(camera);
+            camera.scale      = SS.GW.scale;
             SS.GenerateAll();
-            PaintGraphics();
-            framebuffer->WritePng(output, /*flip=*/true);
+
+            CairoPixmapRenderer *pixmapCanvas = (CairoPixmapRenderer *)SS.GW.canvas.get();
+            pixmapCanvas->antialias = true;
+            pixmapCanvas->SetLighting(SS.GW.GetLighting());
+            pixmapCanvas->SetCamera(camera);
+            pixmapCanvas->Init();
+
+            SS.GW.canvas->NewFrame();
+            SS.GW.Draw(SS.GW.canvas.get());
+            SS.GW.canvas->FlushFrame();
+            SS.GW.canvas->ReadFrame()->WritePng(output, /*flip=*/true);
+
+            pixmapCanvas->Clear();
         };
     } else if(args[1] == "export-view") {
         for(size_t argn = 2; argn < args.size(); argn++) {

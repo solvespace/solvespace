@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" xmlns:asmv3="urn:schemas-microsoft-com:asm.v3" manifestVersion="1.0">
 <assemblyIdentity
     version="1.0.0.0"
     processorArchitecture="*"
     name="JonathanWesthues.3dCAD.SolveSpace"
     type="win32"
 />
-<application xmlns="urn:schemas-microsoft-com:asm.v3">
-  <windowsSettings>
-    <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true</dpiAware>
-  </windowsSettings>
-</application>
 <description>Parametric 3d CAD tool.</description>
+<asmv3:application>
+    <asmv3:windowsSettings xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">
+        <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+        <dpiAware>true</dpiAware>
+    </asmv3:windowsSettings>
+</asmv3:application>
 <dependency>
     <dependentAssembly>
         <assemblyIdentity

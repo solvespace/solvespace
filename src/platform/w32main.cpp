@@ -16,52 +16,14 @@
 #include <commctrl.h>
 #include <commdlg.h>
 
-#ifdef MenuHelp
-// This is defined to IsolationAwareMenuHelp on Windows 6.0 and later.
-#undef MenuHelp
-#endif
-
 #ifdef HAVE_SPACEWARE
 #   include <si.h>
 #   include <siapp.h>
 #   undef uint32_t  // thanks but no thanks
 #endif
 
-#if HAVE_OPENGL == 3
-#define EGLAPI /*static linkage*/
-#include <EGL/egl.h>
-#endif
-
 using Platform::Narrow;
 using Platform::Widen;
-
-HINSTANCE Instance;
-
-HWND TextWnd;
-HWND TextWndScrollBar;
-HWND TextEditControl;
-#if HAVE_OPENGL == 3
-EGLDisplay TextGlDisplay;
-EGLSurface TextGlSurface;
-EGLContext TextGlContext;
-#else
-HGLRC TextGl;
-#endif
-
-HWND GraphicsWnd;
-HWND GraphicsEditControl;
-#if HAVE_OPENGL == 3
-EGLDisplay GraphicsGlDisplay;
-EGLSurface GraphicsGlSurface;
-EGLContext GraphicsGlContext;
-#else
-HGLRC GraphicsGl;
-#endif
-static struct {
-    int x, y;
-} LastMousePos;
-
-int ClientIsSmallerBy;
 
 HFONT FixedFont;
 
@@ -143,42 +105,42 @@ HWND CreateWindowClient(DWORD exStyle, const wchar_t *className, const wchar_t *
 
 void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
 {
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), FALSE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), FALSE);
 
     // Register the window class for our dialog.
     WNDCLASSEX wc = {};
     wc.cbSize           = sizeof(wc);
     wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC;
     wc.lpfnWndProc      = (WNDPROC)MessageProc;
-    wc.hInstance        = Instance;
+    wc.hInstance        = NULL;
     wc.hbrBackground    = (HBRUSH)COLOR_BTNSHADOW;
     wc.lpszClassName    = L"MessageWnd";
     wc.lpszMenuName     = NULL;
     wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+    wc.hIcon            = (HICON)LoadImage(NULL, MAKEINTRESOURCE(4000),
                             IMAGE_ICON, 32, 32, 0);
-    wc.hIconSm          = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
+    wc.hIconSm          = (HICON)LoadImage(NULL, MAKEINTRESOURCE(4000),
                             IMAGE_ICON, 16, 16, 0);
     RegisterClassEx(&wc);
 
     // Create the window.
     MessageString = str;
     RECT r;
-    GetWindowRect(GraphicsWnd, &r);
+    GetWindowRect((HWND)SS.GW.window->NativePtr(), &r);
     int width  = cols*SS.TW.CHAR_WIDTH_ + 20,
         height = rows*SS.TW.LINE_HEIGHT + 60;
     MessageWidth = width;
     MessageHeight = height;
     MessageWnd = CreateWindowClient(0, L"MessageWnd",
-        (error ? Title(C_("title", "Error")) : Title(C_("title", "Message"))).c_str(),
+        Title(error ? C_("title", "Error") : C_("title", "Message")).c_str(),
         WS_OVERLAPPED | WS_SYSMENU,
-        r.left + 100, r.top + 100, width, height, NULL, NULL, Instance, NULL);
+        r.left + 100, r.top + 100, width, height, NULL, NULL, NULL, NULL);
 
     OkButton = CreateWindowExW(0, WC_BUTTON, Widen(C_("button", "OK")).c_str(),
         WS_CHILD | WS_TABSTOP | WS_CLIPSIBLINGS | WS_VISIBLE | BS_DEFPUSHBUTTON,
         (width - 70)/2, rows*SS.TW.LINE_HEIGHT + 20,
-        70, 25, MessageWnd, NULL, Instance, NULL);
+        70, 25, MessageWnd, NULL, NULL, NULL);
     SendMessage(OkButton, WM_SETFONT, (WPARAM)FixedFont, true);
 
     ShowWindow(MessageWnd, true);
@@ -203,53 +165,22 @@ void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error)
     }
 
     MessageString = NULL;
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
     DestroyWindow(MessageWnd);
-}
 
-static void GetWindowSize(HWND hwnd, int *w, int *h)
-{
-    RECT r;
-    GetClientRect(hwnd, &r);
-    *w = r.right - r.left;
-    *h = r.bottom - r.top;
-}
-void SolveSpace::GetGraphicsWindowSize(int *w, int *h)
-{
-    GetWindowSize(GraphicsWnd, w, h);
-}
-void SolveSpace::GetTextWindowSize(int *w, int *h)
-{
-    GetWindowSize(TextWnd, w, h);
-}
-
-double SolveSpace::GetScreenDpi() {
-    HDC hdc = GetDC(NULL);
-    double dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-    ReleaseDC(NULL, hdc);
-    return dpi;
+    EnableWindow((HWND)SS.GW.window->NativePtr(), TRUE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), TRUE);
+    SetForegroundWindow((HWND)SS.GW.window->NativePtr());
 }
 
 void SolveSpace::OpenWebsite(const char *url) {
-    ShellExecuteW(GraphicsWnd, L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
-}
-
-void SolveSpace::ExitNow() {
-    PostQuitMessage(0);
+    ShellExecuteW((HWND)SS.GW.window->NativePtr(),
+                  L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 //-----------------------------------------------------------------------------
 // Helpers so that we can read/write registry keys from the platform-
 // independent code.
 //-----------------------------------------------------------------------------
-inline int CLAMP(int v, int a, int b) {
-    // Clamp it to the range [a, b]
-    if(v <= a) return a;
-    if(v >= b) return b;
-    return v;
-}
 
 static HKEY GetRegistryKey()
 {
@@ -291,17 +222,6 @@ void SolveSpace::CnfFreezeString(const std::string &str, const std::string &name
     RegSetValueExW(SolveSpace, &Widen(name)[0], 0,
                    REG_SZ, (const BYTE*) &strW[0], (strW.length() + 1) * 2);
     RegCloseKey(SolveSpace);
-}
-static void FreezeWindowPos(HWND hwnd, const std::string &name)
-{
-    RECT r;
-    GetWindowRect(hwnd, &r);
-    CnfFreezeInt(r.left,   name + "_left");
-    CnfFreezeInt(r.right,  name + "_right");
-    CnfFreezeInt(r.top,    name + "_top");
-    CnfFreezeInt(r.bottom, name + "_bottom");
-
-    CnfFreezeInt(IsZoomed(hwnd), name + "_maximized");
 }
 
 uint32_t SolveSpace::CnfThawInt(uint32_t val, const std::string &name)
@@ -351,613 +271,6 @@ std::string SolveSpace::CnfThawString(const std::string &val, const std::string 
 
     RegCloseKey(SolveSpace);
     return Narrow(newval);
-}
-static void ThawWindowPos(HWND hwnd, const std::string &name)
-{
-    RECT r;
-    GetWindowRect(hwnd, &r);
-    r.left   = CnfThawInt(r.left,   name + "_left");
-    r.right  = CnfThawInt(r.right,  name + "_right");
-    r.top    = CnfThawInt(r.top,    name + "_top");
-    r.bottom = CnfThawInt(r.bottom, name + "_bottom");
-
-    HMONITOR hMonitor = MonitorFromRect(&r, MONITOR_DEFAULTTONEAREST);;
-    MONITORINFO mi;
-    mi.cbSize = sizeof(mi);
-    GetMonitorInfo(hMonitor, &mi);
-
-    // If it somehow ended up off-screen, then put it back.
-    RECT dr = mi.rcMonitor;
-    r.left   = CLAMP(r.left,   dr.left, dr.right);
-    r.right  = CLAMP(r.right,  dr.left, dr.right);
-    r.top    = CLAMP(r.top,    dr.top,  dr.bottom);
-    r.bottom = CLAMP(r.bottom, dr.top,  dr.bottom);
-    MoveWindow(hwnd, r.left, r.top, r.right - r.left, r.bottom - r.top, TRUE);
-
-    if(CnfThawInt(FALSE, name + "_maximized"))
-        ShowWindow(hwnd, SW_MAXIMIZE);
-}
-
-void SolveSpace::SetCurrentFilename(const Platform::Path &filename) {
-    SetWindowTextW(GraphicsWnd,
-        Title(filename.IsEmpty() ? C_("title", "(new sketch)") : filename.raw).c_str());
-}
-
-void SolveSpace::SetMousePointerToHand(bool yes) {
-    SetCursor(LoadCursor(NULL, yes ? IDC_HAND : IDC_ARROW));
-}
-
-static void PaintTextWnd()
-{
-#if HAVE_OPENGL == 3
-    eglMakeCurrent(TextGlDisplay, TextGlSurface, TextGlSurface, TextGlContext);
-
-    SS.TW.Paint();
-    eglSwapBuffers(TextGlDisplay, TextGlSurface);
-
-    // Leave the graphics window context active, except when we're painting
-    // this text window.
-    eglMakeCurrent(GraphicsGlDisplay, GraphicsGlSurface, GraphicsGlSurface, GraphicsGlContext);
-#else
-    wglMakeCurrent(GetDC(TextWnd), TextGl);
-
-    SS.TW.Paint();
-    SwapBuffers(GetDC(TextWnd));
-
-    // Leave the graphics window context active, except when we're painting
-    // this text window.
-    wglMakeCurrent(GetDC(GraphicsWnd), GraphicsGl);
-#endif
-}
-
-void SolveSpace::MoveTextScrollbarTo(int pos, int maxPos, int page)
-{
-    SCROLLINFO si = {};
-    si.cbSize = sizeof(si);
-    si.fMask = SIF_DISABLENOSCROLL | SIF_ALL;
-    si.nMin = 0;
-    si.nMax = maxPos;
-    si.nPos = pos;
-    si.nPage = page;
-    SetScrollInfo(TextWndScrollBar, SB_CTL, &si, true);
-}
-
-void HandleTextWindowScrollBar(WPARAM wParam, LPARAM lParam)
-{
-    int maxPos, minPos, pos;
-    GetScrollRange(TextWndScrollBar, SB_CTL, &minPos, &maxPos);
-    pos = GetScrollPos(TextWndScrollBar, SB_CTL);
-
-    switch(LOWORD(wParam)) {
-        case SB_LINEUP:         pos--; break;
-        case SB_PAGEUP:         pos -= 4; break;
-
-        case SB_LINEDOWN:       pos++; break;
-        case SB_PAGEDOWN:       pos += 4; break;
-
-        case SB_TOP:            pos = 0; break;
-
-        case SB_BOTTOM:         pos = maxPos; break;
-
-        case SB_THUMBTRACK:
-        case SB_THUMBPOSITION:  pos = HIWORD(wParam); break;
-    }
-
-    SS.TW.ScrollbarEvent(pos);
-}
-
-static void MouseWheel(int thisDelta) {
-    static int DeltaAccum;
-    int delta = 0;
-    // Handle mouse deltas of less than 120 (like from an un-detented mouse
-    // wheel) correctly, even though no one ever uses those.
-    DeltaAccum += thisDelta;
-    while(DeltaAccum >= 120) {
-        DeltaAccum -= 120;
-        delta += 120;
-    }
-    while(DeltaAccum <= -120) {
-        DeltaAccum += 120;
-        delta -= 120;
-    }
-    if(delta == 0) return;
-
-    POINT pt;
-    GetCursorPos(&pt);
-    HWND hw = WindowFromPoint(pt);
-
-    // Make the mousewheel work according to which window the mouse is
-    // over, not according to which window is active.
-    bool inTextWindow;
-    if(hw == TextWnd) {
-        inTextWindow = true;
-    } else if(hw == GraphicsWnd) {
-        inTextWindow = false;
-    } else if(GetForegroundWindow() == TextWnd) {
-        inTextWindow = true;
-    } else {
-        inTextWindow = false;
-    }
-
-    if(inTextWindow) {
-        int i;
-        for(i = 0; i < abs(delta/40); i++) {
-            HandleTextWindowScrollBar(delta > 0 ? SB_LINEUP : SB_LINEDOWN, 0);
-        }
-    } else {
-        SS.GW.MouseScroll(LastMousePos.x, LastMousePos.y, delta);
-    }
-}
-
-LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-    if(Platform::handlingFatalError) return 1;
-
-    switch (msg) {
-        case WM_ERASEBKGND:
-            break;
-
-        case WM_CLOSE:
-        case WM_DESTROY:
-            SolveSpaceUI::MenuFile(Command::EXIT);
-            break;
-
-        case WM_PAINT: {
-            // Actually paint the text window, with gl.
-            PaintTextWnd();
-            // And then just make Windows happy.
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            EndPaint(hwnd, &ps);
-            break;
-        }
-
-        case WM_SIZING: {
-            RECT *r = (RECT *)lParam;
-            int hc = (r->bottom - r->top) - ClientIsSmallerBy;
-            int extra = hc % (SS.TW.LINE_HEIGHT/2);
-            switch(wParam) {
-                case WMSZ_BOTTOM:
-                case WMSZ_BOTTOMLEFT:
-                case WMSZ_BOTTOMRIGHT:
-                    r->bottom -= extra;
-                    break;
-
-                case WMSZ_TOP:
-                case WMSZ_TOPLEFT:
-                case WMSZ_TOPRIGHT:
-                    r->top += extra;
-                    break;
-            }
-            int tooNarrow = (SS.TW.MIN_COLS*SS.TW.CHAR_WIDTH_) -
-                                                (r->right - r->left);
-            if(tooNarrow >= 0) {
-                switch(wParam) {
-                    case WMSZ_RIGHT:
-                    case WMSZ_BOTTOMRIGHT:
-                    case WMSZ_TOPRIGHT:
-                        r->right += tooNarrow;
-                        break;
-
-                    case WMSZ_LEFT:
-                    case WMSZ_BOTTOMLEFT:
-                    case WMSZ_TOPLEFT:
-                        r->left -= tooNarrow;
-                        break;
-                }
-            }
-            break;
-        }
-
-        case WM_MOUSELEAVE:
-            SS.TW.MouseLeave();
-            break;
-
-        case WM_LBUTTONDOWN:
-        case WM_MOUSEMOVE: {
-            // We need this in order to get the WM_MOUSELEAVE
-            TRACKMOUSEEVENT tme = {};
-            tme.cbSize = sizeof(tme);
-            tme.dwFlags = TME_LEAVE;
-            tme.hwndTrack = TextWnd;
-            TrackMouseEvent(&tme);
-
-            // And process the actual message
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
-            SS.TW.MouseEvent(msg == WM_LBUTTONDOWN, wParam & MK_LBUTTON, x, y);
-            break;
-        }
-
-        case WM_SIZE: {
-            RECT r;
-            GetWindowRect(TextWndScrollBar, &r);
-            int sw = r.right - r.left;
-            GetClientRect(hwnd, &r);
-            MoveWindow(TextWndScrollBar, r.right - sw, r.top, sw,
-                (r.bottom - r.top), true);
-            // If the window is growing, then the scrollbar position may
-            // be moving, so it's as if we're dragging the scrollbar.
-            HandleTextWindowScrollBar((WPARAM)-1, -1);
-            InvalidateRect(TextWnd, NULL, false);
-            break;
-        }
-
-        case WM_MOUSEWHEEL:
-            MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
-            break;
-
-        case WM_VSCROLL:
-            HandleTextWindowScrollBar(wParam, lParam);
-            break;
-
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
-
-    return 1;
-}
-
-static std::string EditControlText(HWND hwnd)
-{
-    std::wstring result;
-    result.resize(GetWindowTextLength(hwnd));
-    GetWindowTextW(hwnd, &result[0], result.length() + 1);
-    return Narrow(result);
-}
-
-static bool ProcessKeyDown(WPARAM wParam)
-{
-    if(GraphicsEditControlIsVisible() && wParam != VK_ESCAPE) {
-        if(wParam == VK_RETURN) {
-            SS.GW.EditControlDone(EditControlText(GraphicsEditControl).c_str());
-            return true;
-        } else {
-            return false;
-        }
-    }
-    if(TextEditControlIsVisible() && wParam != VK_ESCAPE) {
-        if(wParam == VK_RETURN) {
-            SS.TW.EditControlDone(EditControlText(TextEditControl).c_str());
-        } else {
-            return false;
-        }
-    }
-
-    Platform::KeyboardEvent event = {};
-    event.type = Platform::KeyboardEvent::Type::PRESS;
-
-    if(GetAsyncKeyState(VK_SHIFT) & 0x8000)
-        event.shiftDown = true;
-    if(GetAsyncKeyState(VK_CONTROL) & 0x8000)
-        event.controlDown = true;
-
-    if(wParam >= VK_F1 && wParam <= VK_F12) {
-        event.key = Platform::KeyboardEvent::Key::FUNCTION;
-        event.num = wParam - VK_F1 + 1;
-    } else {
-        event.key = Platform::KeyboardEvent::Key::CHARACTER;
-        event.chr = tolower(MapVirtualKeyW(wParam, MAPVK_VK_TO_CHAR));
-        if(event.chr == 0) {
-            if(wParam == VK_DELETE) {
-                event.chr = '\x7f';
-            } else {
-                // Non-mappable key.
-                return false;
-            }
-        } else if(event.chr == '.' && event.shiftDown) {
-            event.chr = '>';
-            event.shiftDown = false;;
-        }
-    }
-
-    if(SS.GW.KeyboardEvent(event)) return true;
-
-    return false;
-}
-
-void SolveSpace::ShowTextWindow(bool visible)
-{
-    ShowWindow(TextWnd, visible ? SW_SHOWNOACTIVATE : SW_HIDE);
-}
-
-#if HAVE_OPENGL == 3
-static void CreateGlContext(HWND hwnd, EGLDisplay *eglDisplay, EGLSurface *eglSurface,
-                            EGLContext *eglContext) {
-    ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
-
-    *eglDisplay = eglGetDisplay(GetDC(hwnd));
-    ssassert(eglInitialize(*eglDisplay, NULL, NULL), "Cannot initialize EGL");
-
-    EGLint configAttributes[] = {
-        EGL_COLOR_BUFFER_TYPE,  EGL_RGB_BUFFER,
-        EGL_RED_SIZE,           8,
-        EGL_GREEN_SIZE,         8,
-        EGL_BLUE_SIZE,          8,
-        EGL_DEPTH_SIZE,         24,
-        EGL_RENDERABLE_TYPE,    EGL_OPENGL_ES2_BIT,
-        EGL_SURFACE_TYPE,       EGL_WINDOW_BIT,
-        EGL_NONE
-    };
-    EGLint numConfigs;
-    EGLConfig windowConfig;
-    ssassert(eglChooseConfig(*eglDisplay, configAttributes, &windowConfig, 1, &numConfigs),
-             "Cannot choose EGL configuration");
-
-    EGLint surfaceAttributes[] = {
-        EGL_NONE
-    };
-    *eglSurface = eglCreateWindowSurface(*eglDisplay, windowConfig, hwnd, surfaceAttributes);
-    ssassert(eglSurface != EGL_NO_SURFACE, "Cannot create EGL window surface");
-
-    EGLint contextAttributes[] = {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
-        EGL_NONE
-    };
-    *eglContext = eglCreateContext(*eglDisplay, windowConfig, NULL, contextAttributes);
-    ssassert(eglContext != EGL_NO_CONTEXT, "Cannot create EGL context");
-
-    eglMakeCurrent(*eglDisplay, *eglSurface, *eglSurface, *eglContext);
-}
-#else
-static void CreateGlContext(HWND hwnd, HGLRC *glrc)
-{
-    HDC hdc = GetDC(hwnd);
-
-    PIXELFORMATDESCRIPTOR pfd = {};
-    int pixelFormat;
-
-    pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
-                        PFD_DOUBLEBUFFER;
-    pfd.dwLayerMask = PFD_MAIN_PLANE;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.cColorBits = 32;
-    pfd.cDepthBits = 24;
-    pfd.cAccumBits = 0;
-    pfd.cStencilBits = 0;
-
-    pixelFormat = ChoosePixelFormat(hdc, &pfd);
-    ssassert(pixelFormat != 0, "Expected a valid pixel format to be chosen");
-
-    ssassert(SetPixelFormat(hdc, pixelFormat, &pfd), "Cannot set pixel format");
-
-    *glrc = wglCreateContext(hdc);
-    wglMakeCurrent(hdc, *glrc);
-}
-#endif
-
-void SolveSpace::PaintGraphics()
-{
-    SS.GW.Paint();
-#if HAVE_OPENGL == 3
-    eglSwapBuffers(GraphicsGlDisplay, GraphicsGlSurface);
-#else
-    SwapBuffers(GetDC(GraphicsWnd));
-#endif
-}
-void SolveSpace::InvalidateGraphics()
-{
-    InvalidateRect(GraphicsWnd, NULL, false);
-}
-
-void SolveSpace::ToggleFullScreen()
-{
-    static WINDOWPLACEMENT wp;
-    wp.length = sizeof(wp);
-
-    DWORD dwStyle = GetWindowLong(GraphicsWnd, GWL_STYLE);
-    if(dwStyle & WS_OVERLAPPEDWINDOW) {
-        MONITORINFO mi;
-        mi.cbSize = sizeof(mi);
-
-        if(GetWindowPlacement(GraphicsWnd, &wp) &&
-                GetMonitorInfo(MonitorFromWindow(GraphicsWnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
-            SetWindowLong(GraphicsWnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
-            SetWindowPos(GraphicsWnd, HWND_TOP,
-                         mi.rcMonitor.left, mi.rcMonitor.top,
-                         mi.rcMonitor.right - mi.rcMonitor.left,
-                         mi.rcMonitor.bottom - mi.rcMonitor.top,
-                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-        }
-    } else {
-        SetWindowLong(GraphicsWnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(GraphicsWnd, &wp);
-        SetWindowPos(GraphicsWnd, NULL, 0, 0, 0, 0,
-                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-    }
-}
-bool SolveSpace::FullScreenIsActive()
-{
-    return (GetWindowLong(GraphicsWnd, GWL_STYLE) & WS_OVERLAPPEDWINDOW) != 0;
-}
-
-void SolveSpace::InvalidateText()
-{
-    InvalidateRect(TextWnd, NULL, false);
-}
-
-static void ShowEditControl(HWND h, int x, int y, int fontHeight, int minWidthChars,
-                            bool isMonospace, const std::wstring &s) {
-    static HFONT hf;
-    if(hf) DeleteObject(hf);
-    hf = CreateFontW(-fontHeight, 0, 0, 0,
-        FW_REGULAR, false, false, false, ANSI_CHARSET,
-        OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
-        DEFAULT_QUALITY, FF_DONTCARE, isMonospace ? L"Lucida Console" : L"Arial");
-    if(hf) SendMessage(h, WM_SETFONT, (WPARAM)hf, false);
-    else   SendMessage(h, WM_SETFONT, (WPARAM)(HFONT)GetStockObject(SYSTEM_FONT), false);
-    SendMessage(h, EM_SETMARGINS, EC_LEFTMARGIN|EC_RIGHTMARGIN, 0);
-
-    HDC hdc = GetDC(h);
-    TEXTMETRICW tm;
-    SIZE ts;
-    SelectObject(hdc, hf);
-    GetTextMetrics(hdc, &tm);
-    GetTextExtentPoint32W(hdc, s.c_str(), s.length(), &ts);
-    ReleaseDC(h, hdc);
-
-    RECT rc;
-    rc.left   = x;
-    rc.top    = y - tm.tmAscent;
-    // Add one extra char width to avoid scrolling.
-    rc.right  = x + std::max(tm.tmAveCharWidth * minWidthChars,
-                             ts.cx + tm.tmAveCharWidth);
-    rc.bottom = y + tm.tmDescent;
-
-    AdjustWindowRectEx(&rc, 0, false, WS_EX_CLIENTEDGE);
-    MoveWindow(h, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, true);
-    ShowWindow(h, SW_SHOW);
-    if(!s.empty()) {
-        SendMessage(h, WM_SETTEXT, 0, (LPARAM)s.c_str());
-        SendMessage(h, EM_SETSEL, 0, s.length());
-        SetFocus(h);
-    }
-}
-void SolveSpace::ShowTextEditControl(int x, int y, const std::string &str)
-{
-    if(GraphicsEditControlIsVisible()) return;
-
-    ShowEditControl(TextEditControl, x, y, TextWindow::CHAR_HEIGHT, 30,
-                    /*isMonospace=*/true, Widen(str));
-}
-void SolveSpace::HideTextEditControl()
-{
-    ShowWindow(TextEditControl, SW_HIDE);
-}
-bool SolveSpace::TextEditControlIsVisible()
-{
-    return IsWindowVisible(TextEditControl) ? true : false;
-}
-void SolveSpace::ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                                         const std::string &str)
-{
-    if(GraphicsEditControlIsVisible()) return;
-
-    RECT r;
-    GetClientRect(GraphicsWnd, &r);
-    x = x + (r.right - r.left)/2;
-    y = (r.bottom - r.top)/2 - y;
-
-    ShowEditControl(GraphicsEditControl, x, y, fontHeight, minWidthChars,
-                    /*isMonospace=*/false, Widen(str));
-}
-void SolveSpace::HideGraphicsEditControl()
-{
-    ShowWindow(GraphicsEditControl, SW_HIDE);
-}
-bool SolveSpace::GraphicsEditControlIsVisible()
-{
-    return IsWindowVisible(GraphicsEditControl) ? true : false;
-}
-
-namespace SolveSpace {
-namespace Platform {
-void TriggerMenu(int id);
-extern int64_t contextMenuCancelTime;
-}
-}
-
-LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
-                                                            LPARAM lParam)
-{
-    if(Platform::handlingFatalError) return 1;
-
-    switch (msg) {
-        case WM_ERASEBKGND:
-            break;
-
-        case WM_SIZE:
-            InvalidateRect(GraphicsWnd, NULL, false);
-            break;
-
-        case WM_PAINT: {
-            // Actually paint the window, with gl.
-            PaintGraphics();
-            // And make Windows happy.
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
-            EndPaint(hwnd, &ps);
-            break;
-        }
-
-        case WM_MOUSELEAVE:
-            SS.GW.MouseLeave();
-            break;
-
-        case WM_MOUSEMOVE:
-        case WM_LBUTTONDOWN:
-        case WM_LBUTTONUP:
-        case WM_LBUTTONDBLCLK:
-        case WM_RBUTTONDOWN:
-        case WM_RBUTTONUP:
-        case WM_MBUTTONDOWN: {
-            if(GetMilliseconds() - Platform::contextMenuCancelTime < 100) {
-                // Ignore the mouse click that dismisses a context menu, to avoid
-                // (e.g.) clearing a selection.
-                return 1;
-            }
-
-            int x = LOWORD(lParam);
-            int y = HIWORD(lParam);
-
-            // We need this in order to get the WM_MOUSELEAVE
-            TRACKMOUSEEVENT tme = {};
-            tme.cbSize = sizeof(tme);
-            tme.dwFlags = TME_LEAVE;
-            tme.hwndTrack = GraphicsWnd;
-            TrackMouseEvent(&tme);
-
-            // Convert to xy (vs. ij) style coordinates, with (0, 0) at center
-            RECT r;
-            GetClientRect(GraphicsWnd, &r);
-            x = x - (r.right - r.left)/2;
-            y = (r.bottom - r.top)/2 - y;
-
-            LastMousePos.x = x;
-            LastMousePos.y = y;
-
-            if(msg == WM_LBUTTONDOWN) {
-                SS.GW.MouseLeftDown(x, y);
-            } else if(msg == WM_LBUTTONUP) {
-                SS.GW.MouseLeftUp(x, y);
-            } else if(msg == WM_LBUTTONDBLCLK) {
-                SS.GW.MouseLeftDoubleClick(x, y);
-            } else if(msg == WM_MBUTTONDOWN || msg == WM_RBUTTONDOWN) {
-                SS.GW.MouseMiddleOrRightDown(x, y);
-            } else if(msg == WM_RBUTTONUP) {
-                SS.GW.MouseRightUp(x, y);
-            } else if(msg == WM_MOUSEMOVE) {
-                SS.GW.MouseMoved(x, y,
-                    !!(wParam & MK_LBUTTON),
-                    !!(wParam & MK_MBUTTON),
-                    !!(wParam & MK_RBUTTON),
-                    !!(wParam & MK_SHIFT),
-                    !!(wParam & MK_CONTROL));
-            }
-            break;
-        }
-        case WM_MOUSEWHEEL:
-            MouseWheel(GET_WHEEL_DELTA_WPARAM(wParam));
-            break;
-
-        case WM_MENUCOMMAND: {
-            SolveSpace::Platform::TriggerMenu(GetMenuItemID((HMENU)lParam, wParam));
-            break;
-        }
-
-        case WM_CLOSE:
-        case WM_DESTROY:
-            SolveSpaceUI::MenuFile(Command::EXIT);
-            return 1;
-
-        default:
-            return DefWindowProc(hwnd, msg, wParam, lParam);
-    }
-
-    return 1;
 }
 
 //-----------------------------------------------------------------------------
@@ -1011,16 +324,16 @@ static bool OpenSaveFile(bool isOpen, Platform::Path *filename, const std::strin
 
     OPENFILENAME ofn = {};
     ofn.lStructSize = sizeof(ofn);
-    ofn.hInstance = Instance;
-    ofn.hwndOwner = GraphicsWnd;
+    ofn.hInstance = NULL;
+    ofn.hwndOwner = (HWND)SS.GW.window->NativePtr();
     ofn.lpstrFilter = selPatternW.c_str();
     ofn.lpstrDefExt = defExtensionW.c_str();
     ofn.lpstrFile = filenameC;
     ofn.nMaxFile = len;
     ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY;
 
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), FALSE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), FALSE);
 
     BOOL r;
     if(isOpen) {
@@ -1029,9 +342,9 @@ static bool OpenSaveFile(bool isOpen, Platform::Path *filename, const std::strin
         r = GetSaveFileNameW(&ofn);
     }
 
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), TRUE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), TRUE);
+    SetForegroundWindow((HWND)SS.GW.window->NativePtr());
 
     if(r) *filename = Platform::Path::From(Narrow(filenameC));
     return r ? true : false;
@@ -1051,18 +364,18 @@ bool SolveSpace::GetSaveFile(Platform::Path *filename, const std::string &defExt
 
 DialogChoice SolveSpace::SaveFileYesNoCancel()
 {
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), FALSE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), FALSE);
 
-    int r = MessageBoxW(GraphicsWnd,
+    int r = MessageBoxW((HWND)SS.GW.window->NativePtr(),
         Widen(_("The file has changed since it was last saved.\n\n"
                 "Do you want to save the changes?")).c_str(),
         Title(C_("title", "Modified File")).c_str(),
         MB_YESNOCANCEL | MB_ICONWARNING);
 
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), TRUE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), TRUE);
+    SetForegroundWindow((HWND)SS.GW.window->NativePtr());
 
     switch(r) {
         case IDYES:
@@ -1077,18 +390,18 @@ DialogChoice SolveSpace::SaveFileYesNoCancel()
 
 DialogChoice SolveSpace::LoadAutosaveYesNo()
 {
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), FALSE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), FALSE);
 
-    int r = MessageBoxW(GraphicsWnd,
+    int r = MessageBoxW((HWND)SS.GW.window->NativePtr(),
         Widen(_("An autosave file is available for this project.\n\n"
                 "Do you want to load the autosave file instead?")).c_str(),
         Title(C_("title", "Autosave Available")).c_str(),
         MB_YESNO | MB_ICONWARNING);
 
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), TRUE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), TRUE);
+    SetForegroundWindow((HWND)SS.GW.window->NativePtr());
 
     switch (r) {
         case IDYES:
@@ -1101,8 +414,8 @@ DialogChoice SolveSpace::LoadAutosaveYesNo()
 
 DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const Platform::Path &filename,
                                                        bool canCancel) {
-    EnableWindow(GraphicsWnd, false);
-    EnableWindow(TextWnd, false);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), FALSE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), FALSE);
 
     std::string message =
         "The linked file " + filename.raw + " is not present.\n\n"
@@ -1110,13 +423,14 @@ DialogChoice SolveSpace::LocateImportedFileYesNoCancel(const Platform::Path &fil
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
 
-    int r = MessageBoxW(GraphicsWnd, Widen(message).c_str(),
+    int r = MessageBoxW((HWND)SS.GW.window->NativePtr(),
+        Widen(message).c_str(),
         Title(C_("title", "Missing File")).c_str(),
         (canCancel ? MB_YESNOCANCEL : MB_YESNO) | MB_ICONWARNING);
 
-    EnableWindow(TextWnd, true);
-    EnableWindow(GraphicsWnd, true);
-    SetForegroundWindow(GraphicsWnd);
+    EnableWindow((HWND)SS.GW.window->NativePtr(), TRUE);
+    EnableWindow((HWND)SS.TW.window->NativePtr(), TRUE);
+    SetForegroundWindow((HWND)SS.GW.window->NativePtr());
 
     switch(r) {
         case IDYES:
@@ -1145,88 +459,6 @@ std::vector<Platform::Path> SolveSpace::GetFontFiles() {
     }
 
     return fonts;
-}
-
-static void CreateMainWindows()
-{
-    WNDCLASSEX wc = {};
-
-    wc.cbSize = sizeof(wc);
-
-    // The graphics window, where the sketch is drawn and shown.
-    wc.style            = CS_BYTEALIGNCLIENT | CS_BYTEALIGNWINDOW | CS_OWNDC |
-                          CS_DBLCLKS;
-    wc.lpfnWndProc      = (WNDPROC)GraphicsWndProc;
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
-    wc.lpszClassName    = L"GraphicsWnd";
-    wc.lpszMenuName     = NULL;
-    wc.hCursor          = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon            = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
-                            IMAGE_ICON, 32, 32, 0);
-    wc.hIconSm          = (HICON)LoadImage(Instance, MAKEINTRESOURCE(4000),
-                            IMAGE_ICON, 16, 16, 0);
-    ssassert(RegisterClassEx(&wc), "Cannot register window class");
-
-    GraphicsWnd = CreateWindowExW(0, L"GraphicsWnd",
-        Title(C_("title", "(new sketch)")).c_str(),
-        WS_OVERLAPPED | WS_THICKFRAME | WS_CLIPCHILDREN | WS_MAXIMIZEBOX |
-        WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_CLIPSIBLINGS,
-        50, 50, 900, 600, NULL, NULL, Instance, NULL);
-    ssassert(GraphicsWnd != NULL, "Cannot create window");
-
-    GraphicsEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
-        WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
-        50, 50, 100, 21, GraphicsWnd, NULL, Instance, NULL);
-
-    // The text window, with a command line and some textual information
-    // about the sketch.
-    wc.style           &= ~CS_DBLCLKS;
-    wc.lpfnWndProc      = (WNDPROC)TextWndProc;
-    wc.hbrBackground    = (HBRUSH)GetStockObject(BLACK_BRUSH);
-    wc.lpszClassName    = L"TextWnd";
-    wc.hCursor          = NULL;
-    ssassert(RegisterClassEx(&wc), "Cannot register window class");
-
-    // We get the desired Alt+Tab behaviour by specifying that the text
-    // window is a child of the graphics window.
-    TextWnd = CreateWindowExW(0, L"TextWnd",
-        Title(C_("title", "Property Browser")).c_str(),
-        WS_THICKFRAME | WS_CLIPCHILDREN,
-        650, 500, 420, 300, GraphicsWnd, (HMENU)NULL, Instance, NULL);
-    ssassert(TextWnd != NULL, "Cannot create window");
-
-    TextWndScrollBar = CreateWindowExW(0, WC_SCROLLBAR, L"", WS_CHILD |
-        SBS_VERT | SBS_LEFTALIGN | WS_VISIBLE | WS_CLIPSIBLINGS,
-        200, 100, 100, 100, TextWnd, NULL, Instance, NULL);
-    // Force the scrollbar to get resized to the window,
-    TextWndProc(TextWnd, WM_SIZE, 0, 0);
-
-    TextEditControl = CreateWindowExW(WS_EX_CLIENTEDGE, WC_EDIT, L"",
-        WS_CHILD | ES_AUTOHSCROLL | WS_TABSTOP | WS_CLIPSIBLINGS,
-        50, 50, 100, 21, TextWnd, NULL, Instance, NULL);
-
-#if HAVE_OPENGL == 3
-    // Now that all our windows exist, set up gl contexts.
-    CreateGlContext(TextWnd, &TextGlDisplay, &TextGlSurface, &TextGlContext);
-    CreateGlContext(GraphicsWnd, &GraphicsGlDisplay, &GraphicsGlSurface, &GraphicsGlContext);
-#else
-    CreateGlContext(TextWnd, &TextGl);
-    CreateGlContext(GraphicsWnd, &GraphicsGl);
-#endif
-
-    RECT r, rc;
-    GetWindowRect(TextWnd, &r);
-    GetClientRect(TextWnd, &rc);
-    ClientIsSmallerBy = (r.bottom - r.top) - (rc.bottom - rc.top);
-}
-
-void SolveSpace::SetMainMenu(Platform::MenuBarRef menuBar) {
-    static Platform::MenuBarRef _menuBar;
-    SetMenu(GraphicsWnd, (HMENU)menuBar->NativePtr());
-    _menuBar = menuBar;
-
-    SS.UpdateWindowTitle();
-    SetWindowTextW(TextWnd, Title(C_("title", "Property Browser")).c_str());
 }
 
 #ifdef HAVE_SPACEWARE
@@ -1273,9 +505,10 @@ static bool ProcessSpaceNavigatorMsg(MSG *msg) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     LPSTR lpCmdLine, INT nCmdShow)
 {
-    Instance = hInstance;
-
-    InitCommonControls();
+    INITCOMMONCONTROLSEX icc;
+    icc.dwSize = sizeof(icc);
+    icc.dwICC  = ICC_STANDARD_CLASSES|ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icc);
 
     // A monospaced font
     FixedFont = CreateFontW(SS.TW.CHAR_HEIGHT, SS.TW.CHAR_WIDTH_, 0, 0,
@@ -1284,16 +517,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         DEFAULT_QUALITY, FF_DONTCARE, L"Lucida Console");
     if(!FixedFont)
         FixedFont = (HFONT)GetStockObject(SYSTEM_FONT);
-
-    // Create the root windows: one for control, with text, and one for
-    // the graphics
-    CreateMainWindows();
-
-    ThawWindowPos(TextWnd, "TextWnd");
-    ThawWindowPos(GraphicsWnd, "GraphicsWnd");
-
-    ShowWindow(TextWnd, SW_SHOWNOACTIVATE);
-    ShowWindow(GraphicsWnd, SW_SHOW);
 
     std::vector<std::string> args = InitPlatform(0, NULL);
 
@@ -1304,9 +527,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     if(swdc != NULL) {
         SiOpenData sod;
         SiInitialize();
-        SiOpenWinInit(&sod, GraphicsWnd);
-        SpaceNavigator =
-            SiOpen("GraphicsWnd", SI_ANY_DEVICE, SI_NO_MASK, SI_EVENT, &sod);
+        SiOpenWinInit(&sod, (HWND)SS.GW.window->NativePtr());
+        SpaceNavigator = SiOpen("GraphicsWnd", SI_ANY_DEVICE, SI_NO_MASK, SI_EVENT, &sod);
         SiSetUiMode(SpaceNavigator, SI_UI_NO_CONTROLS);
     }
 #endif
@@ -1319,15 +541,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
     // Call in to the platform-independent code, and let them do their init
     SS.Init();
 
-    // A filename may have been specified on the command line; if so, then
-    // strip any quotation marks, and make it absolute.
+    // A filename may have been specified on the command line.
     if(args.size() >= 2) {
         SS.Load(Platform::Path::From(args[1]).Expand(/*fromCurrentDirectory=*/true));
     }
-
-    // Repaint one more time, after we've set everything up.
-    PaintGraphics();
-    PaintTextWnd();
 
     // And now it's the message loop. All calls in to the rest of the code
     // will be from the wndprocs.
@@ -1338,17 +555,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         // Is it a message from the six degree of freedom input device?
         if(ProcessSpaceNavigatorMsg(&msg)) continue;
 #endif
-
-        // A message from the keyboard, which should be processed as a keyboard
-        // accelerator?
-        if(msg.message == WM_KEYDOWN) {
-            if(ProcessKeyDown(msg.wParam)) continue;
-        }
-        if(msg.message == WM_SYSKEYDOWN && msg.hwnd == TextWnd) {
-            // If the user presses the Alt key when the text window has focus,
-            // then that should probably go to the graphics window instead.
-            SetForegroundWindow(GraphicsWnd);
-        }
 
         // None of the above; so just a normal message to process.
         TranslateMessage(&msg);
@@ -1361,10 +567,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
         SiTerminate();
     }
 #endif
-
-    // Write everything back to the registry
-    FreezeWindowPos(TextWnd, "TextWnd");
-    FreezeWindowPos(GraphicsWnd, "GraphicsWnd");
 
     // Free the memory we've used; anything that remains is a leak.
     SK.Clear();

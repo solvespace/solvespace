@@ -605,8 +605,7 @@ public:
         bool IsError() const { return type == TokenType::ERROR; }
     };
 
-    const char        *input;
-    unsigned           inputPos;
+    std::string::const_iterator it, end;
     std::vector<Token> stack;
 
     char ReadChar();
@@ -624,7 +623,7 @@ public:
     bool Reduce(std::string *error);
     bool Parse(std::string *error, size_t reduceUntil = 0);
 
-    static Expr *Parse(const char *input, std::string *error);
+    static Expr *Parse(const std::string &input, std::string *error);
 };
 
 ExprParser::Token ExprParser::Token::From(TokenType type, Expr *expr) {
@@ -643,11 +642,15 @@ ExprParser::Token ExprParser::Token::From(TokenType type, Expr::Op op) {
 }
 
 char ExprParser::ReadChar() {
-    return input[inputPos++];
+    return *it++;
 }
 
 char ExprParser::PeekChar() {
-    return input[inputPos];
+    if(it == end) {
+        return '\0';
+    } else {
+        return *it;
+    }
 }
 
 std::string ExprParser::ReadWord() {
@@ -889,10 +892,10 @@ bool ExprParser::Parse(std::string *error, size_t reduceUntil) {
     return true;
 }
 
-Expr *ExprParser::Parse(const char *input, std::string *error) {
+Expr *ExprParser::Parse(const std::string &input, std::string *error) {
     ExprParser parser;
-    parser.input    = input;
-    parser.inputPos = 0;
+    parser.it  = input.cbegin();
+    parser.end = input.cend();
     if(!parser.Parse(error)) return NULL;
 
     Token r = parser.PopOperand(error);
@@ -900,17 +903,18 @@ Expr *ExprParser::Parse(const char *input, std::string *error) {
     return r.expr;
 }
 
-Expr *Expr::Parse(const char *input, std::string *error) {
+Expr *Expr::Parse(const std::string &input, std::string *error) {
     return ExprParser::Parse(input, error);
 }
 
-Expr *Expr::From(const char *input, bool popUpError) {
+Expr *Expr::From(const std::string &input, bool popUpError) {
     std::string error;
     Expr *e = ExprParser::Parse(input, &error);
     if(!e) {
         dbp("Parse/lex error: %s", error.c_str());
         if(popUpError) {
-            Error("Not a valid number or expression: '%s'.\n%s.", input, error.c_str());
+            Error("Not a valid number or expression: '%s'.\n%s.",
+                  input.c_str(), error.c_str());
         }
     }
     return e;

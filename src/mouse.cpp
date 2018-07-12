@@ -84,7 +84,7 @@ void GraphicsWindow::StartDraggingBySelection() {
 void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             bool middleDown, bool rightDown, bool shiftDown, bool ctrlDown)
 {
-    if(GraphicsEditControlIsVisible()) return;
+    if(window->IsEditorVisible()) return;
     if(context.active) return;
 
     SS.extraLine.draw = false;
@@ -112,7 +112,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                      pending.operation == Pending::DRAGGING_MARQUEE))
     {
         ClearPending();
-        InvalidateGraphics();
+        Invalidate();
     }
 
     Point2d mp = Point2d::From(x, y);
@@ -168,7 +168,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 SS.ScheduleShowTW();
             }
         }
-        InvalidateGraphics();
+        Invalidate();
         havePainted = false;
         return;
     }
@@ -282,7 +282,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             Constraint *c = SK.constraint.FindById(pending.constraint);
             UpdateDraggedNum(&(c->disp.offset), x, y);
             orig.mouse = mp;
-            InvalidateGraphics();
+            Invalidate();
             return;
         }
 
@@ -298,7 +298,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
             SS.MarkGroupDirtyByEntity(pending.point);
             orig.mouse = mp;
-            InvalidateGraphics();
+            Invalidate();
             break;
 
         case Pending::DRAGGING_POINTS:
@@ -459,7 +459,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
 
         case Pending::DRAGGING_MARQUEE:
             orig.mouse = mp;
-            InvalidateGraphics();
+            Invalidate();
             return;
 
         case Pending::NONE:
@@ -497,7 +497,7 @@ void GraphicsWindow::ReplacePending(hRequest before, hRequest after) {
 }
 
 void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
-    if(GraphicsEditControlIsVisible()) return;
+    if(window->IsEditorVisible()) return;
 
     orig.offset = offset;
     orig.projUp = projUp;
@@ -509,7 +509,7 @@ void GraphicsWindow::MouseMiddleOrRightDown(double x, double y) {
 
 void GraphicsWindow::MouseRightUp(double x, double y) {
     SS.extraLine.draw = false;
-    InvalidateGraphics();
+    Invalidate();
 
     // Don't show a context menu if the user is right-clicking the toolbar,
     // or if they are finishing a pan.
@@ -866,13 +866,67 @@ bool GraphicsWindow::ConstrainPointByHovered(hEntity pt, const Point2d *projecte
     return false;
 }
 
+bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
+    using Platform::MouseEvent;
+
+    double width, height;
+    window->GetContentSize(&width, &height);
+
+    event.x = event.x - width / 2;
+    event.y = height / 2 - event.y;
+
+    switch(event.type) {
+        case MouseEvent::Type::MOTION:
+            this->MouseMoved(event.x, event.y,
+                             event.button == MouseEvent::Button::LEFT,
+                             event.button == MouseEvent::Button::MIDDLE,
+                             event.button == MouseEvent::Button::RIGHT,
+                             event.shiftDown,
+                             event.controlDown);
+            break;
+
+        case MouseEvent::Type::PRESS:
+            if(event.button == MouseEvent::Button::LEFT) {
+                this->MouseLeftDown(event.x, event.y);
+            } else if(event.button == MouseEvent::Button::MIDDLE ||
+                      event.button == MouseEvent::Button::RIGHT) {
+                this->MouseMiddleOrRightDown(event.x, event.y);
+            }
+            break;
+
+        case MouseEvent::Type::DBL_PRESS:
+            if(event.button == MouseEvent::Button::LEFT) {
+                this->MouseLeftDoubleClick(event.x, event.y);
+            }
+            break;
+
+        case MouseEvent::Type::RELEASE:
+            if(event.button == MouseEvent::Button::LEFT) {
+                this->MouseLeftUp(event.x, event.y);
+            } else if(event.button == MouseEvent::Button::RIGHT) {
+                this->MouseRightUp(event.x, event.y);
+            }
+            break;
+
+        case MouseEvent::Type::SCROLL_VERT:
+            this->MouseScroll(event.x, event.y, event.scrollDelta);
+            break;
+
+        case MouseEvent::Type::LEAVE:
+            this->MouseLeave();
+            break;
+    }
+
+    return true;
+}
+
 void GraphicsWindow::MouseLeftDown(double mx, double my) {
     orig.mouseDown = true;
 
-    if(GraphicsEditControlIsVisible()) {
+    if(window->IsEditorVisible()) {
         orig.mouse = Point2d::From(mx, my);
         orig.mouseOnButtonDown = orig.mouse;
-        HideGraphicsEditControl();
+        window->HideEditor();
         return;
     }
     SS.TW.HideEditControl();
@@ -1234,7 +1288,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     }
 
     SS.ScheduleShowTW();
-    InvalidateGraphics();
+    Invalidate();
 }
 
 void GraphicsWindow::MouseLeftUp(double mx, double my) {
@@ -1249,13 +1303,13 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
         case Pending::DRAGGING_NORMAL:
         case Pending::DRAGGING_RADIUS:
             ClearPending();
-            InvalidateGraphics();
+            Invalidate();
             break;
 
         case Pending::DRAGGING_MARQUEE:
             SelectByMarquee();
             ClearPending();
-            InvalidateGraphics();
+            Invalidate();
             break;
 
         case Pending::NONE:
@@ -1270,7 +1324,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
 }
 
 void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
-    if(GraphicsEditControlIsVisible()) return;
+    if(window->IsEditorVisible()) return;
     SS.TW.HideEditControl();
 
     if(hover.constraint.v) {
@@ -1291,17 +1345,17 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         Point2d p2 = ProjectPoint(p3);
 
         std::string editValue;
-        int editMinWidthChar;
+        std::string editPlaceholder;
         switch(c->type) {
             case Constraint::Type::COMMENT:
                 editValue = c->comment;
-                editMinWidthChar = 30;
+                editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                 break;
 
             case Constraint::Type::ANGLE:
             case Constraint::Type::LENGTH_RATIO:
                 editValue = ssprintf("%.3f", c->valA);
-                editMinWidthChar = 5;
+                editPlaceholder = "0.000";
                 break;
 
             default: {
@@ -1327,20 +1381,28 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                         if(fabs(std::stod(editValue) - v) < eps) break;
                     }
                 }
-                editMinWidthChar = 5;
+                editPlaceholder = "0.00000";
                 break;
             }
         }
+
+        double width, height;
+        window->GetContentSize(&width, &height);
         hStyle hs = c->disp.style;
         if(hs.v == 0) hs.v = Style::CONSTRAINT;
-        ShowGraphicsEditControl((int)p2.x, (int)p2.y,
-                                (int)(VectorFont::Builtin()->GetHeight(Style::TextHeight(hs))),
-                                editMinWidthChar, editValue);
+        double capHeight = Style::TextHeight(hs);
+        double fontHeight = VectorFont::Builtin()->GetHeight(capHeight);
+        double editMinWidth = VectorFont::Builtin()->GetWidth(capHeight, editPlaceholder);
+        window->ShowEditor(p2.x + width / 2, height / 2 - p2.y,
+                           fontHeight, editMinWidth,
+                           /*isMonospace=*/false, editValue);
     }
 }
 
-void GraphicsWindow::EditControlDone(const char *s) {
-    HideGraphicsEditControl();
+void GraphicsWindow::EditControlDone(const std::string &s) {
+    window->HideEditor();
+    window->Invalidate();
+
     Constraint *c = SK.GetConstraint(constraintBeingEdited);
 
     if(c->type == Constraint::Type::COMMENT) {
@@ -1349,8 +1411,7 @@ void GraphicsWindow::EditControlDone(const char *s) {
         return;
     }
 
-    Expr *e = Expr::From(s, true);
-    if(e) {
+    if(Expr *e = Expr::From(s, true)) {
         SS.UndoRemember();
 
         switch(c->type) {
@@ -1420,7 +1481,7 @@ void GraphicsWindow::MouseScroll(double x, double y, int delta) {
         }
     }
     havePainted = false;
-    InvalidateGraphics();
+    Invalidate();
 }
 
 void GraphicsWindow::MouseLeave() {
@@ -1429,7 +1490,7 @@ void GraphicsWindow::MouseLeave() {
     if(!context.active) {
         hover.Clear();
         toolbarHovered = Command::NONE;
-        PaintGraphics();
+        Invalidate();
     }
     SS.extraLine.draw = false;
 }
@@ -1496,11 +1557,11 @@ void GraphicsWindow::SpaceNavigatorMoved(double tx, double ty, double tz,
     }
 
     havePainted = false;
-    InvalidateGraphics();
+    Invalidate();
 }
 
 void GraphicsWindow::SpaceNavigatorButtonUp() {
     ZoomToFit(/*includingInvisibles=*/false, /*useSelection=*/true);
-    InvalidateGraphics();
+    Invalidate();
 }
 

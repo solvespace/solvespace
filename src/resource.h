@@ -40,6 +40,8 @@ public:
 
     void ConvertTo(Format newFormat);
     void SetPixel(size_t x, size_t y, RgbaColor color);
+
+    std::shared_ptr<Pixmap> Copy();
 };
 
 class BitmapFont {

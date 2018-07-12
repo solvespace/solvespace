@@ -162,439 +162,6 @@ std::string CnfThawString(const std::string &val, const std::string &key) {
     return val;
 }
 
-static void CnfFreezeWindowPos(Gtk::Window *win, const std::string &key) {
-    int x, y, w, h;
-    win->get_position(x, y);
-    win->get_size(w, h);
-
-    CnfFreezeInt(x, key + "_left");
-    CnfFreezeInt(y, key + "_top");
-    CnfFreezeInt(w, key + "_width");
-    CnfFreezeInt(h, key + "_height");
-}
-
-static void CnfThawWindowPos(Gtk::Window *win, const std::string &key) {
-    int x, y, w, h;
-    win->get_position(x, y);
-    win->get_size(w, h);
-
-    x = CnfThawInt(x, key + "_left");
-    y = CnfThawInt(y, key + "_top");
-    w = CnfThawInt(w, key + "_width");
-    h = CnfThawInt(h, key + "_height");
-
-    win->move(x, y);
-    win->resize(w, h);
-}
-
-/* Editor overlay */
-
-class EditorOverlay : public Gtk::Fixed {
-public:
-    EditorOverlay(Gtk::Widget &underlay) : _underlay(underlay) {
-        set_size_request(0, 0);
-
-        add(_underlay);
-
-        _entry.set_no_show_all(true);
-        _entry.set_has_frame(false);
-        add(_entry);
-
-        _entry.signal_activate().
-            connect(sigc::mem_fun(this, &EditorOverlay::on_activate));
-    }
-
-    void start_editing(int x, int y, int font_height, bool is_monospace, int minWidthChars,
-                       const std::string &val) {
-        x /= get_scale_factor();
-        y /= get_scale_factor();
-        font_height /= get_scale_factor();
-
-        Pango::FontDescription font_desc;
-        font_desc.set_family(is_monospace ? "monospace" : "normal");
-        font_desc.set_absolute_size(font_height * Pango::SCALE);
-        _entry.override_font(font_desc);
-
-        /* y coordinate denotes baseline */
-        Pango::FontMetrics font_metrics = get_pango_context()->get_metrics(font_desc);
-        y -= font_metrics.get_ascent() / Pango::SCALE;
-
-        Glib::RefPtr<Pango::Layout> layout = Pango::Layout::create(get_pango_context());
-        layout->set_font_description(font_desc);
-        layout->set_text(val + " "); /* avoid scrolling */
-        int width = layout->get_logical_extents().get_width();
-
-        Gtk::Border margin  = _entry.get_style_context()->get_margin();
-        Gtk::Border border  = _entry.get_style_context()->get_border();
-        Gtk::Border padding = _entry.get_style_context()->get_padding();
-        move(_entry,
-             x - margin.get_left() - border.get_left() - padding.get_left(),
-             y - margin.get_top()  - border.get_top()  - padding.get_top());
-        _entry.set_width_chars(minWidthChars);
-        _entry.set_size_request(
-            width / Pango::SCALE + padding.get_left() + padding.get_right(),
-            -1);
-
-        _entry.set_text(val);
-        if(!_entry.is_visible()) {
-            _entry.show();
-            _entry.grab_focus();
-            add_modal_grab();
-        }
-    }
-
-    void stop_editing() {
-        if(_entry.is_visible()) {
-            remove_modal_grab();
-        }
-        _entry.hide();
-    }
-
-    bool is_editing() const {
-        return _entry.is_visible();
-    }
-
-    sigc::signal<void, Glib::ustring> signal_editing_done() {
-        return _signal_editing_done;
-    }
-
-    Gtk::Entry &get_entry() {
-        return _entry;
-    }
-
-protected:
-    bool on_key_press_event(GdkEventKey *event) override {
-        if(is_editing()) {
-            if(event->keyval == GDK_KEY_Escape) {
-                stop_editing();
-            } else {
-                _entry.event((GdkEvent *)event);
-            }
-            return true;
-        } else {
-            return Gtk::Fixed::on_key_press_event(event);
-        }
-    }
-
-    bool on_key_release_event(GdkEventKey *event) override {
-        if(is_editing()) {
-            _entry.event((GdkEvent *)event);
-            return true;
-        } else {
-            return Gtk::Fixed::on_key_release_event(event);
-        }
-    }
-
-    void on_size_allocate(Gtk::Allocation& allocation) override {
-        Gtk::Fixed::on_size_allocate(allocation);
-
-        _underlay.size_allocate(allocation);
-    }
-
-    void on_activate() {
-        _signal_editing_done(_entry.get_text());
-    }
-
-private:
-    Gtk::Widget &_underlay;
-    Gtk::Entry _entry;
-    sigc::signal<void, Glib::ustring> _signal_editing_done;
-};
-
-/* Graphics window */
-
-double DeltaYOfScrollEvent(GdkEventScroll *event) {
-    double delta_y = event->delta_y;
-    if(delta_y == 0) {
-        switch(event->direction) {
-            case GDK_SCROLL_UP:
-            delta_y = -1;
-            break;
-
-            case GDK_SCROLL_DOWN:
-            delta_y = 1;
-            break;
-
-            default:
-            /* do nothing */
-            return false;
-        }
-    }
-
-    return delta_y;
-}
-
-class GraphicsWidget : public Gtk::GLArea {
-public:
-    GraphicsWidget() {
-        set_events(Gdk::POINTER_MOTION_MASK |
-                   Gdk::BUTTON_PRESS_MASK | Gdk::BUTTON_RELEASE_MASK | Gdk::BUTTON_MOTION_MASK |
-                   Gdk::SCROLL_MASK |
-                   Gdk::LEAVE_NOTIFY_MASK);
-        set_has_depth_buffer(true);
-    }
-
-protected:
-    // Work around a bug fixed in GTKMM 3.22:
-    // https://mail.gnome.org/archives/gtkmm-list/2016-April/msg00020.html
-    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
-        return get_window()->create_gl_context();
-    }
-
-    void on_resize(int width, int height) override {
-        _w = width;
-        _h = height;
-    }
-
-    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
-        SS.GW.Paint();
-        return true;
-    }
-
-    bool on_motion_notify_event(GdkEventMotion *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        SS.GW.MouseMoved(x, y,
-            event->state & GDK_BUTTON1_MASK,
-            event->state & GDK_BUTTON2_MASK,
-            event->state & GDK_BUTTON3_MASK,
-            event->state & GDK_SHIFT_MASK,
-            event->state & GDK_CONTROL_MASK);
-
-        return true;
-    }
-
-    bool on_button_press_event(GdkEventButton *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        switch(event->button) {
-            case 1:
-            if(event->type == GDK_BUTTON_PRESS)
-                SS.GW.MouseLeftDown(x, y);
-            else if(event->type == GDK_2BUTTON_PRESS)
-                SS.GW.MouseLeftDoubleClick(x, y);
-            break;
-
-            case 2:
-            case 3:
-            SS.GW.MouseMiddleOrRightDown(x, y);
-            break;
-        }
-
-        return true;
-    }
-
-    bool on_button_release_event(GdkEventButton *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        switch(event->button) {
-            case 1:
-            SS.GW.MouseLeftUp(x, y);
-            break;
-
-            case 3:
-            SS.GW.MouseRightUp(x, y);
-            break;
-        }
-
-        return true;
-    }
-
-    bool on_scroll_event(GdkEventScroll *event) override {
-        int x, y;
-        ij_to_xy(event->x, event->y, x, y);
-
-        SS.GW.MouseScroll(x, y, (int)-DeltaYOfScrollEvent(event));
-
-        return true;
-    }
-
-    bool on_leave_notify_event (GdkEventCrossing *) override {
-        SS.GW.MouseLeave();
-
-        return true;
-    }
-
-private:
-    int _w, _h;
-    void ij_to_xy(double i, double j, int &x, int &y) {
-        // Convert to xy (vs. ij) style coordinates,
-        // with (0, 0) at center
-        x = (int)(i * get_scale_factor()) - _w / 2;
-        y = _h / 2 - (int)(j * get_scale_factor());
-    }
-};
-
-class GraphicsWindowGtk : public Gtk::Window {
-public:
-    GraphicsWindowGtk() : _overlay(_widget), _is_fullscreen(false) {
-        set_default_size(900, 600);
-
-        _box.pack_end(_overlay, true, true);
-
-        add(_box);
-
-        _overlay.signal_editing_done().
-            connect(sigc::mem_fun(this, &GraphicsWindowGtk::on_editing_done));
-    }
-
-    GraphicsWidget &get_widget() {
-        return _widget;
-    }
-
-    EditorOverlay &get_overlay() {
-        return _overlay;
-    }
-
-    void set_menubar(Gtk::MenuBar *menubar) {
-        if(_menubar)
-            _box.remove(*_menubar);
-        _menubar = menubar;
-        if(_menubar) {
-            _menubar->show_all();
-            _box.pack_start(*_menubar, false, false);
-        }
-    }
-
-    Gtk::MenuBar *get_menubar() {
-        return _menubar;
-    }
-
-    bool is_fullscreen() const {
-        return _is_fullscreen;
-    }
-
-protected:
-    void on_show() override {
-        Gtk::Window::on_show();
-
-        CnfThawWindowPos(this, "GraphicsWindow");
-    }
-
-    void on_hide() override {
-        CnfFreezeWindowPos(this, "GraphicsWindow");
-
-        Gtk::Window::on_hide();
-    }
-
-    bool on_delete_event(GdkEventAny *) override {
-        if(!SS.OkayToStartNewFile()) return true;
-        SS.Exit();
-
-        return true;
-    }
-
-    bool on_window_state_event(GdkEventWindowState *event) override {
-        _is_fullscreen = event->new_window_state & GDK_WINDOW_STATE_FULLSCREEN;
-
-        /* The event arrives too late for the caller of ToggleFullScreen
-           to notice state change; and it's possible that the WM will
-           refuse our request, so we can't just toggle the saved state */
-        SS.GW.EnsureValidActives();
-
-        return Gtk::Window::on_window_state_event(event);
-    }
-
-    bool on_key_press_event(GdkEventKey *gdk_event) override {
-        Platform::KeyboardEvent event = {};
-        event.type = Platform::KeyboardEvent::Type::PRESS;
-
-        if(gdk_event->state & ~(GDK_SHIFT_MASK|GDK_CONTROL_MASK)) {
-            return Gtk::Window::on_key_press_event(gdk_event);
-        }
-
-        event.shiftDown   = (gdk_event->state & GDK_SHIFT_MASK)   != 0;
-        event.controlDown = (gdk_event->state & GDK_CONTROL_MASK) != 0;
-
-        char32_t chr = gdk_keyval_to_unicode(gdk_keyval_to_lower(gdk_event->keyval));
-        if(chr != 0) {
-            event.key = Platform::KeyboardEvent::Key::CHARACTER;
-            event.chr = chr;
-        } else if(gdk_event->keyval >= GDK_KEY_F1 &&
-                  gdk_event->keyval <= GDK_KEY_F12) {
-            event.key = Platform::KeyboardEvent::Key::FUNCTION;
-            event.num = gdk_event->keyval - GDK_KEY_F1 + 1;
-        } else {
-            return Gtk::Window::on_key_press_event(gdk_event);
-        }
-
-        if(SS.GW.KeyboardEvent(event)) {
-            return true;
-        }
-
-        return Gtk::Window::on_key_press_event(gdk_event);
-    }
-
-    void on_editing_done(Glib::ustring value) {
-        SS.GW.EditControlDone(value.c_str());
-    }
-
-private:
-    GraphicsWidget _widget;
-    EditorOverlay _overlay;
-    Gtk::MenuBar *_menubar;
-    Gtk::VBox _box;
-
-    bool _is_fullscreen;
-};
-
-std::unique_ptr<GraphicsWindowGtk> GW;
-
-void GetGraphicsWindowSize(int *w, int *h) {
-    Gdk::Rectangle allocation = GW->get_widget().get_allocation();
-    *w = allocation.get_width() * GW->get_scale_factor();
-    *h = allocation.get_height() * GW->get_scale_factor();
-}
-
-void InvalidateGraphics(void) {
-    GW->get_widget().queue_draw();
-}
-
-void PaintGraphics(void) {
-    GW->get_widget().queue_draw();
-    /* Process animation */
-    Glib::MainContext::get_default()->iteration(false);
-}
-
-void SetCurrentFilename(const Platform::Path &filename) {
-    GW->set_title(Title(filename.IsEmpty() ? C_("title", "(new sketch)") : filename.raw.c_str()));
-}
-
-void ToggleFullScreen(void) {
-    if(GW->is_fullscreen())
-        GW->unfullscreen();
-    else
-        GW->fullscreen();
-}
-
-bool FullScreenIsActive(void) {
-    return GW->is_fullscreen();
-}
-
-void ShowGraphicsEditControl(int x, int y, int fontHeight, int minWidthChars,
-                             const std::string &val) {
-    Gdk::Rectangle rect = GW->get_widget().get_allocation();
-
-    // Convert to ij (vs. xy) style coordinates,
-    // and compensate for the input widget height due to inverse coord
-    int i, j;
-    i = x + rect.get_width() / 2 * GW->get_widget().get_scale_factor();
-    j = -y + rect.get_height() / 2 * GW->get_widget().get_scale_factor();
-
-    GW->get_overlay().start_editing(i, j, fontHeight, /*is_monospace=*/false, minWidthChars, val);
-}
-
-void HideGraphicsEditControl(void) {
-    GW->get_overlay().stop_editing();
-}
-
-bool GraphicsEditControlIsVisible(void) {
-    return GW->get_overlay().is_editing();
-}
-
 /* Save/load */
 
 static std::string ConvertFilters(std::string active, const FileFilter ssFilters[],
@@ -630,7 +197,8 @@ static std::string ConvertFilters(std::string active, const FileFilter ssFilters
 
 bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Open File")));
+    Gtk::FileChooserDialog chooser(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                                   Title(C_("title", "Open File")));
     chooser.set_filename(filename->raw);
     chooser.add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
     chooser.add_button(_("_Open"), Gtk::RESPONSE_OK);
@@ -672,7 +240,8 @@ static void ChooserFilterChanged(Gtk::FileChooserDialog *chooser)
 
 bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
                  const FileFilter filters[]) {
-    Gtk::FileChooserDialog chooser(*GW, Title(C_("title", "Save File")),
+    Gtk::FileChooserDialog chooser(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                                   Title(C_("title", "Save File")),
                                    Gtk::FILE_CHOOSER_ACTION_SAVE);
     chooser.set_do_overwrite_confirmation(true);
     chooser.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
@@ -706,7 +275,8 @@ DialogChoice SaveFileYesNoCancel(void) {
     Glib::ustring message =
         _("The file has changed since it was last saved.\n\n"
           "Do you want to save the changes?");
-    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
+    Gtk::MessageDialog dialog(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                              message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
     dialog.set_title(Title(C_("title", "Modified File")));
     dialog.add_button(C_("button", "_Save"), Gtk::RESPONSE_YES);
@@ -730,7 +300,8 @@ DialogChoice LoadAutosaveYesNo(void) {
     Glib::ustring message =
         _("An autosave file is available for this project.\n\n"
           "Do you want to load the autosave file instead?");
-    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
+    Gtk::MessageDialog dialog(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                              message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
     dialog.set_title(Title(C_("title", "Autosave Available")));
     dialog.add_button(C_("button", "_Load autosave"), Gtk::RESPONSE_YES);
@@ -753,7 +324,8 @@ DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
         "Do you want to locate it manually?\n\n"
         "If you select \"No\", any geometry that depends on "
         "the missing file will be removed.";
-    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
+    Gtk::MessageDialog dialog(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                              message, /*use_markup*/ true, Gtk::MESSAGE_QUESTION,
                               Gtk::BUTTONS_NONE, /*is_modal*/ true);
     dialog.set_title(Title(C_("title", "Missing File")));
     dialog.add_button(C_("button", "_Yes"), Gtk::RESPONSE_YES);
@@ -774,197 +346,11 @@ DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
     }
 }
 
-/* Text window */
-
-class TextWidget : public Gtk::GLArea {
-public:
-    TextWidget(Glib::RefPtr<Gtk::Adjustment> adjustment) : _adjustment(adjustment) {
-        set_events(Gdk::POINTER_MOTION_MASK | Gdk::BUTTON_PRESS_MASK | Gdk::SCROLL_MASK |
-                   Gdk::LEAVE_NOTIFY_MASK);
-        set_has_depth_buffer(true);
-    }
-
-    void set_cursor_hand(bool is_hand) {
-        Glib::RefPtr<Gdk::Window> gdkwin = get_window();
-        if(gdkwin) { // returns NULL if not realized
-            Gdk::CursorType type = is_hand ? Gdk::HAND1 : Gdk::ARROW;
-            gdkwin->set_cursor(Gdk::Cursor::create(type));
-        }
-    }
-
-protected:
-    // See GraphicsWidget::on_create_context.
-    Glib::RefPtr<Gdk::GLContext> on_create_context() override {
-        return get_window()->create_gl_context();
-    }
-
-    bool on_render(const Glib::RefPtr<Gdk::GLContext> &context) override {
-        SS.TW.Paint();
-        return true;
-    }
-
-    bool on_motion_notify_event(GdkEventMotion *event) override {
-        SS.TW.MouseEvent(/*leftClick*/ false,
-                         /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x * get_scale_factor(),
-                         event->y * get_scale_factor());
-
-        return true;
-    }
-
-    bool on_button_press_event(GdkEventButton *event) override {
-        SS.TW.MouseEvent(/*leftClick*/ event->type == GDK_BUTTON_PRESS,
-                         /*leftDown*/ event->state & GDK_BUTTON1_MASK,
-                         event->x * get_scale_factor(),
-                         event->y * get_scale_factor());
-
-        return true;
-    }
-
-    bool on_scroll_event(GdkEventScroll *event) override {
-        _adjustment->set_value(_adjustment->get_value() +
-                DeltaYOfScrollEvent(event) * _adjustment->get_page_increment());
-
-        return true;
-    }
-
-    bool on_leave_notify_event (GdkEventCrossing *) override {
-        SS.TW.MouseLeave();
-
-        return true;
-    }
-
-private:
-    Glib::RefPtr<Gtk::Adjustment> _adjustment;
-};
-
-class TextWindowGtk : public Gtk::Window {
-public:
-    TextWindowGtk() : _scrollbar(), _widget(_scrollbar.get_adjustment()),
-                      _overlay(_widget), _box() {
-        set_type_hint(Gdk::WINDOW_TYPE_HINT_UTILITY);
-        set_skip_taskbar_hint(true);
-        set_skip_pager_hint(true);
-        set_default_size(420, 300);
-
-        _box.pack_start(_overlay, true, true);
-        _box.pack_start(_scrollbar, false, true);
-        add(_box);
-
-        _scrollbar.get_adjustment()->signal_value_changed().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_scrollbar_value_changed));
-
-        _overlay.signal_editing_done().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_editing_done));
-
-        _overlay.get_entry().signal_motion_notify_event().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_motion_notify_event));
-        _overlay.get_entry().signal_button_press_event().
-            connect(sigc::mem_fun(this, &TextWindowGtk::on_editor_button_press_event));
-    }
-
-    Gtk::VScrollbar &get_scrollbar() {
-        return _scrollbar;
-    }
-
-    TextWidget &get_widget() {
-        return _widget;
-    }
-
-    EditorOverlay &get_overlay() {
-        return _overlay;
-    }
-
-protected:
-    void on_show() override {
-        Gtk::Window::on_show();
-
-        CnfThawWindowPos(this, "TextWindow");
-    }
-
-    void on_hide() override {
-        CnfFreezeWindowPos(this, "TextWindow");
-
-        Gtk::Window::on_hide();
-    }
-
-    bool on_delete_event(GdkEventAny *) override {
-        /* trigger the action and ignore the request */
-        GraphicsWindow::MenuView(Command::SHOW_TEXT_WND);
-
-        return false;
-    }
-
-    void on_scrollbar_value_changed() {
-        SS.TW.ScrollbarEvent((int)_scrollbar.get_adjustment()->get_value());
-    }
-
-    void on_editing_done(Glib::ustring value) {
-        SS.TW.EditControlDone(value.c_str());
-    }
-
-    bool on_editor_motion_notify_event(GdkEventMotion *event) {
-        return _widget.event((GdkEvent*) event);
-    }
-
-    bool on_editor_button_press_event(GdkEventButton *event) {
-        return _widget.event((GdkEvent*) event);
-    }
-
-private:
-    Gtk::VScrollbar _scrollbar;
-    TextWidget _widget;
-    EditorOverlay _overlay;
-    Gtk::HBox _box;
-};
-
-std::unique_ptr<TextWindowGtk> TW;
-
-void ShowTextWindow(bool visible) {
-    if(visible)
-        TW->show();
-    else
-        TW->hide();
-}
-
-void GetTextWindowSize(int *w, int *h) {
-    Gdk::Rectangle allocation = TW->get_widget().get_allocation();
-    *w = allocation.get_width() * TW->get_scale_factor();
-    *h = allocation.get_height() * TW->get_scale_factor();
-}
-
-double GetScreenDpi() {
-    return Gdk::Screen::get_default()->get_resolution();
-}
-
-void InvalidateText(void) {
-    TW->get_widget().queue_draw();
-}
-
-void MoveTextScrollbarTo(int pos, int maxPos, int page) {
-    TW->get_scrollbar().get_adjustment()->configure(pos, 0, maxPos, 1, 10, page);
-}
-
-void SetMousePointerToHand(bool is_hand) {
-    TW->get_widget().set_cursor_hand(is_hand);
-}
-
-void ShowTextEditControl(int x, int y, const std::string &val) {
-    TW->get_overlay().start_editing(x, y, TextWindow::CHAR_HEIGHT, /*is_monospace=*/true, 30, val);
-}
-
-void HideTextEditControl(void) {
-    TW->get_overlay().stop_editing();
-}
-
-bool TextEditControlIsVisible(void) {
-    return TW->get_overlay().is_editing();
-}
-
 /* Miscellanea */
 
 void DoMessageBox(const char *message, int rows, int cols, bool error) {
-    Gtk::MessageDialog dialog(*GW, message, /*use_markup*/ true,
+    Gtk::MessageDialog dialog(*(Gtk::Window *)SS.GW.window->NativePtr(),
+                              message, /*use_markup*/ true,
                               error ? Gtk::MESSAGE_ERROR : Gtk::MESSAGE_INFO, Gtk::BUTTONS_OK,
                               /*is_modal*/ true);
     dialog.set_title(error ?
@@ -1031,23 +417,6 @@ static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) 
 }
 #endif
 
-/* Application lifecycle */
-
-void SetMainMenu(Platform::MenuBarRef menuBar) {
-    static Platform::MenuBarRef _menuBar;
-    GW->set_menubar((Gtk::MenuBar*)menuBar->NativePtr());
-    GW->get_menubar()->accelerate(*GW);
-    GW->get_menubar()->accelerate(*TW);
-    _menuBar = menuBar;
-
-    SS.UpdateWindowTitle();
-    TW->set_title(Title(C_("title", "Property Browser")));
-}
-
-void ExitNow() {
-    GW->hide();
-    TW->hide();
-}
 };
 
 int main(int argc, char** argv) {
@@ -1091,21 +460,6 @@ int main(int argc, char** argv) {
 
     CnfLoad();
 
-    auto icon = LoadPng("freedesktop/solvespace-48x48.png");
-    auto icon_gdk =
-        Gdk::Pixbuf::create_from_data(&icon->data[0], Gdk::COLORSPACE_RGB,
-                                      icon->format == SolveSpace::Pixmap::Format::RGBA, 8,
-                                      icon->width, icon->height, icon->stride);
-
-    TW.reset(new TextWindowGtk);
-    GW.reset(new GraphicsWindowGtk);
-    TW->set_transient_for(*GW);
-    GW->set_icon(icon_gdk);
-    TW->set_icon(icon_gdk);
-
-    TW->show_all();
-    GW->show_all();
-
     const char* const* langNames = g_get_language_names();
     while(*langNames) {
         if(SetLocale(*langNames++)) break;
@@ -1114,15 +468,16 @@ int main(int argc, char** argv) {
         SetLocale("en_US");
     }
 
+    SS.Init();
+
 #if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
     if(GDK_IS_X11_DISPLAY(Gdk::Display::get_default()->gobj())) {
         // We don't care if it can't be opened; just continue without.
         spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                       gdk_x11_window_get_xid(GW->get_window()->gobj()));
+                       gdk_x11_window_get_xid(((Gtk::Window *)SS.GW.window->NativePtr())
+                                              ->get_window()->gobj()));
     }
 #endif
-
-    SS.Init();
 
     if(argc >= 2) {
         if(argc > 2) {
@@ -1134,10 +489,7 @@ int main(int argc, char** argv) {
         SS.Load(Platform::Path::From(arg).Expand(/*fromCurrentDirectory=*/true));
     }
 
-    main.run(*GW);
-
-    TW.reset();
-    GW.reset();
+    main.run();
 
     SK.Clear();
     SS.Clear();

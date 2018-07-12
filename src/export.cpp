@@ -263,7 +263,7 @@ void SolveSpaceUI::ExportViewOrWireframeTo(const Platform::Path &filename, bool 
         }
 
         SS.justExportedInfo.draw = true;
-        InvalidateGraphics();
+        GW.Invalidate();
     }
 
     edges.Clear();
@@ -839,7 +839,7 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
 
     SS.justExportedInfo.showOrigin = false;
     SS.justExportedInfo.draw = true;
-    InvalidateGraphics();
+    GW.Invalidate();
 }
 
 //-----------------------------------------------------------------------------
@@ -1108,5 +1108,5 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
 void SolveSpaceUI::ExportAsPngTo(const Platform::Path &filename) {
     screenshotFile = filename;
     // The rest of the work is done in the next redraw.
-    InvalidateGraphics();
+    GW.Invalidate();
 }

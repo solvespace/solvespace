@@ -17,13 +17,15 @@ enum class StipplePattern : uint32_t;
 // an axonometric projection.
 class Camera {
 public:
-    size_t      width, height;
+    double      width;
+    double      height;
+    double      pixelRatio;
+    bool        gridFit;
     Vector      offset;
     Vector      projRight;
     Vector      projUp;
     double      scale;
     double      tangent;
-    bool        hasPixels;
 
     bool IsPerspective() const { return tangent != 0.0; }
 
@@ -255,7 +257,7 @@ public:
 
 // A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,
 // on the CPU.
-class SurfaceRenderer : public Canvas {
+class SurfaceRenderer : public ViewportCanvas {
 public:
     Camera      camera   = {};
     Lighting    lighting = {};
@@ -272,6 +274,10 @@ public:
 
     // Canvas interface.
     const Camera &GetCamera() const override { return camera; }
+
+    // ViewportCanvas interface.
+    void SetCamera(const Camera &camera) override { this->camera = camera; };
+    void SetLighting(const Lighting &lighting) override { this->lighting = lighting; }
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
     void DrawEdges(const SEdgeList &el, hStroke hcs) override;
@@ -326,6 +332,14 @@ public:
         hStroke     hcs;
     } current = {};
 
+    void Clear() override;
+
+    void NewFrame() override {}
+    void FlushFrame() override;
+    std::shared_ptr<Pixmap> ReadFrame() override;
+
+    void GetIdent(const char **vendor, const char **renderer, const char **version) override;
+
     void SelectStroke(hStroke hcs);
     void MoveTo(Vector p);
     void FinishPath();
@@ -337,6 +351,18 @@ public:
     void OutputBezier(const SBezier &b, hStroke hcs) override;
     void OutputTriangle(const STriangle &tr) override;
     void OutputEnd() override;
+};
+
+class CairoPixmapRenderer : public CairoRenderer {
+public:
+    std::shared_ptr<Pixmap>  pixmap;
+
+    cairo_surface_t         *surface = NULL;
+
+    void Init();
+    void Clear() override;
+
+    std::shared_ptr<Pixmap> ReadFrame() override;
 };
 
 //-----------------------------------------------------------------------------

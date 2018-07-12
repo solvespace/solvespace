@@ -127,6 +127,14 @@ void SolveSpaceUI::Init() {
 
     NewFile();
     AfterNewFile();
+
+    if(TW.window && GW.window) {
+        TW.window->ThawPosition("TextWindow");
+        TW.window->SetVisible(true);
+        GW.window->ThawPosition("GraphicsWindow");
+        GW.window->SetVisible(true);
+        GW.window->Focus();
+    }
 }
 
 bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
@@ -161,6 +169,9 @@ bool SolveSpaceUI::Load(const Platform::Path &filename) {
 }
 
 void SolveSpaceUI::Exit() {
+    GW.window->FreezePosition("GraphicsWindow");
+    TW.window->FreezePosition("TextWindow");
+
     // Recent files
     for(size_t i = 0; i < MAX_RECENT; i++) {
         std::string rawPath;
@@ -242,7 +253,7 @@ void SolveSpaceUI::Exit() {
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles();
 
-    ExitNow();
+    Platform::Exit();
 }
 
 void SolveSpaceUI::ScheduleGenerateAll() {
@@ -339,23 +350,18 @@ void SolveSpaceUI::AfterNewFile() {
 
     GenerateAll(Generate::ALL);
 
-    TW.Init();
     GW.Init();
+    TW.Init();
 
     unsaved = false;
 
-    int w, h;
-    GetGraphicsWindowSize(&w, &h);
-    GW.width = w;
-    GW.height = h;
-
-    GW.ZoomToFit(/*includingInvisibles=*/false);
+    GW.ZoomToFit();
 
     // Create all the default styles; they'll get created on the fly anyways,
     // but can't hurt to do it now.
     Style::CreateAllDefaultStyles();
 
-    UpdateWindowTitle();
+    UpdateWindowTitles();
 }
 
 void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
@@ -423,8 +429,18 @@ bool SolveSpaceUI::OkayToStartNewFile() {
     ssassert(false, "Unexpected dialog choice");
 }
 
-void SolveSpaceUI::UpdateWindowTitle() {
-    SetCurrentFilename(saveFile);
+void SolveSpaceUI::UpdateWindowTitles() {
+    if(!GW.window || !TW.window) return;
+
+    if(saveFile.IsEmpty()) {
+        GW.window->SetTitle(C_("title", "(new sketch)"));
+    } else {
+        if(!GW.window->SetTitleForFilename(saveFile)) {
+            GW.window->SetTitle(saveFile.raw);
+        }
+    }
+
+    TW.window->SetTitle(C_("title", "Property Browser"));
 }
 
 void SolveSpaceUI::MenuFile(Command id) {
@@ -553,7 +569,7 @@ void SolveSpaceUI::MenuFile(Command id) {
         default: ssassert(false, "Unexpected menu ID");
     }
 
-    SS.UpdateWindowTitle();
+    SS.UpdateWindowTitles();
 }
 
 void SolveSpaceUI::MenuAnalyze(Command id) {
@@ -603,7 +619,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
                 EdgeKind::SELF_INTER, /*coplanarIsInter=*/false, &inters, &leaks);
 
-            InvalidateGraphics();
+            SS.GW.Invalidate();
 
             if(inters) {
                 Error("%d edges interfere with other triangles, bad.",
@@ -617,7 +633,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::CENTER_OF_MASS: {
             SS.UpdateCenterOfMass();
             SS.centerOfMass.draw = true;
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
         }
 
@@ -777,7 +793,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             // Clear the trace, and stop tracing
             SS.traced.point = Entity::NO_ENTITY;
             SS.traced.path.l.Clear();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
         }
 
@@ -798,7 +814,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.n == 0) {
         return;
     }
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 
     const char *intersMsg = inters ?
         "The mesh is self-intersecting (NOT okay, invalid)." :
@@ -852,6 +868,22 @@ void SolveSpaceUI::Clear() {
         if(i < undo.cnt) undo.d[i].Clear();
         if(i < redo.cnt) redo.d[i].Clear();
     }
+    TW.window = NULL;
+    GW.openRecentMenu = NULL;
+    GW.linkRecentMenu = NULL;
+    GW.showGridMenuItem = NULL;
+    GW.perspectiveProjMenuItem = NULL;
+    GW.showToolbarMenuItem = NULL;
+    GW.showTextWndMenuItem = NULL;
+    GW.fullScreenMenuItem = NULL;
+    GW.unitsMmMenuItem = NULL;
+    GW.unitsMetersMenuItem = NULL;
+    GW.unitsInchesMenuItem = NULL;
+    GW.inWorkplaneMenuItem = NULL;
+    GW.in3dMenuItem = NULL;
+    GW.undoMenuItem = NULL;
+    GW.redoMenuItem = NULL;
+    GW.window = NULL;
 }
 
 void Sketch::Clear() {

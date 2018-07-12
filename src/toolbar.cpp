@@ -91,34 +91,61 @@ void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
 }
 
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
-    x += ((int)width/2);
-    y += ((int)height/2);
+    double width, height;
+    window->GetContentSize(&width, &height);
 
-    Command nh = Command::NONE;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &nh);
-    if(!withinToolbar) nh = Command::NONE;
-
-    if(nh != toolbarHovered) {
-        toolbarHovered = nh;
-        // FIXME(platorm/gui): implement native tooltips here
-        PaintGraphics();
-    }
-    return withinToolbar;
-}
-
-bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
     Command hit;
     bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hit);
-    SS.GW.ActivateCommand(hit);
+
+    if(hit != toolbarHovered) {
+        toolbarHovered = hit;
+        Invalidate();
+    }
+
+    if(toolbarHovered != Command::NONE) {
+        std::string tooltip;
+        for(ToolIcon &icon : Toolbar) {
+            if(toolbarHovered == icon.command) {
+                tooltip = Translate(icon.tooltip);
+            }
+        }
+
+        Platform::KeyboardEvent accel = SS.GW.AcceleratorForCommand(toolbarHovered);
+        std::string accelDesc = Platform::AcceleratorDescription(accel);
+        if(!accelDesc.empty()) {
+            tooltip += ssprintf(" (%s)", accelDesc.c_str());
+        }
+
+        window->SetTooltip(tooltip);
+    }
+
+    return withinToolbar;
+}
+
+bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
+    double width, height;
+    window->GetContentSize(&width, &height);
+
+    x += ((int)width/2);
+    y += ((int)height/2);
+
+    Command hit;
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hit);
+    if(hit != Command::NONE) {
+        SS.GW.ActivateCommand(hit);
+    }
     return withinToolbar;
 }
 
 bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                                           UiCanvas *canvas, Command *menuHit)
 {
+    double width, height;
+    window->GetContentSize(&width, &height);
+
     int x = 17, y = (int)(height - 52);
 
     int fudge = 8;
