@@ -89,10 +89,10 @@ Space Navigator support will not be available.
 Building on macOS
 -----------------
 
-You will need XCode tools, CMake, libpng and Freetype. To build tests, you
-will need cairo. Assuming you use [homebrew][], these can be installed with:
+You will need git, XCode tools and CMake. Git and CMake can be installed
+via [Homebrew][]:
 
-    brew install git cmake libpng freetype cairo
+    brew install git cmake
 
 XCode has to be installed via AppStore or [the Apple website][appledeveloper];
 it requires a free Apple ID.
@@ -101,7 +101,7 @@ Before building, check out the project and the necessary submodules:
 
     git clone https://github.com/solvespace/solvespace
     cd solvespace
-    git submodule update --init extlib/libdxfrw
+    git submodule update --init
 
 After that, build SolveSpace as following:
 
