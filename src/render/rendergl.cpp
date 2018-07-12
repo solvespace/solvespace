@@ -4,7 +4,7 @@
 // Copyright 2015-2016 whitequark
 //-----------------------------------------------------------------------------
 #ifdef __APPLE__
-#include <OpenGL/GL.h>
+#include <OpenGL/gl.h>
 #else
 #define GL_GLEXT_PROTOTYPES
 #include <GL/gl.h>
