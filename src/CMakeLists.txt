@@ -118,10 +118,6 @@ elseif(APPLE)
         platform/cocoamain.mm
         render/rendergl.cpp
         ${gl_SOURCES})
-
-    set(platform_BUNDLED_LIBS
-        ${PNG_LIBRARIES}
-        ${FREETYPE_LIBRARIES})
 else()
     set(platform_SOURCES
         platform/gtkmain.cpp
@@ -397,22 +393,6 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:solvespace-cli> ${bundle_bin}
         COMMENT "Bundling executable solvespace-cli"
         VERBATIM)
-
-    foreach(lib ${platform_BUNDLED_LIBS})
-        get_filename_component(name ${lib} NAME)
-
-        execute_process(COMMAND otool -D ${lib}
-            OUTPUT_VARIABLE canonical_lib OUTPUT_STRIP_TRAILING_WHITESPACE)
-        string(REGEX REPLACE "^.+:\n" "" canonical_lib ${canonical_lib})
-        add_custom_command(TARGET ${bundle} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy ${lib} ${bundle_bin}/${name}
-            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
-                    $<TARGET_FILE:${bundle}>
-            COMMAND install_name_tool -change ${canonical_lib} @executable_path/${name}
-                    $<TARGET_FILE:solvespace-cli>
-            COMMENT "Bundling shared library ${lib}"
-            VERBATIM)
-    endforeach()
 
     add_custom_command(OUTPUT ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
         COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg

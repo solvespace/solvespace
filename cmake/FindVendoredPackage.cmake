@@ -14,7 +14,9 @@
 include(DisableWarnings)
 
 function(find_vendored_package PKG_NAME PKG_PATH)
-    find_package(${PKG_NAME})
+    if(NOT FORCE_VENDORED_${PKG_NAME})
+        find_package(${PKG_NAME})
+    endif()
 
     set(cfg_name)
     foreach(item ${ARGN})
