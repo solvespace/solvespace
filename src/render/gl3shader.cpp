@@ -926,8 +926,7 @@ void IndexedMeshRenderer::Init() {
     colShader.Init(
         "shaders/imesh.vert", "shaders/imesh.frag",
         {
-            { ATTRIB_POS, "pos" },
-            { ATTRIB_TEX, "tex" }
+            { ATTRIB_POS, "pos" }
         }
     );
     texShader.Init(
