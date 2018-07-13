@@ -296,10 +296,10 @@ void TextWindow::ClearScreen() {
 void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
     if(!canvas) return;
 
+    if(rows >= MAX_ROWS) return;
+
     va_list vl;
     va_start(vl, fmt);
-
-    if(rows >= MAX_ROWS) return;
 
     int r, c;
     r = rows;
@@ -447,7 +447,9 @@ void TextWindow::Printf(bool halfLine, const char *fmt, ...) {
             }
         }
 
-        fmt++;
+        utf8_iterator it(fmt);
+        it++;
+        fmt = it.ptr();
     }
     while(c < MAX_COLS) {
         meta[r][c].fg = fg;

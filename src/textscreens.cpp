@@ -107,13 +107,15 @@ void TextWindow::ShowListOfGroups() {
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
         int dof = g->solved.dof;
-        char sdof[16] = "ok ";
+        std::string sdof;
         if(ok && dof > 0) {
             if(dof > 999) {
-              strcpy(sdof, "###");
+              sdof = "###";
             } else {
-              sprintf(sdof, "%3d", dof);
+              sdof = ssprintf("%3d", dof);
             }
+        } else {
+             sdof = "ok ";
         }
         bool ref = (g->h.v == Group::HGROUP_REFERENCES.v);
         Printf(false, "%Bp%Fd "
@@ -133,7 +135,7 @@ void TextWindow::ShowListOfGroups() {
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
             // Link to the errors, if a problem occured while solving
             ok ? (dof > 0 ? 'i' : 's') : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
-                ok ? sdof : "",
+                ok ? sdof.c_str() : "",
                 ok ? "" : "ERR",
             // Link to a screen that gives more details on the group
             g->h.v, (&TextWindow::ScreenSelectGroup), s.c_str());
@@ -200,7 +202,7 @@ void TextWindow::ScreenChangeGroupOption(int link, uint32_t v) {
             if(g->type == Group::Type::EXTRUDE) {
                 // When an extrude group is first created, it's positioned for a union
                 // extrusion. If no constraints were added, flip it when we switch between
-                // union and difference modes to avoid manual work doing the smae.
+                // union and difference modes to avoid manual work doing the same.
                 if(g->meshCombine != (Group::CombineAs)v && g->GetNumConstraints() == 0 &&
                         ((Group::CombineAs)v == Group::CombineAs::DIFFERENCE ||
                         g->meshCombine == Group::CombineAs::DIFFERENCE)) {

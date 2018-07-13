@@ -10,7 +10,8 @@ install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/install-macos.sh; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./.travis/build-debian.sh; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/build-macos.sh; fi
+  # the awk command is a workaround for https://github.com/travis-ci/travis-ci/issues/4704.
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ./.travis/build-macos.sh | awk '/.{0,32}/ {print $0}'; fi
 deploy:
   - provider: releases
     api_key:

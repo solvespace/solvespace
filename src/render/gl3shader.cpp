@@ -9,7 +9,7 @@
 namespace SolveSpace {
 
 //-----------------------------------------------------------------------------
-// Floating point data sturctures
+// Floating point data structures
 //-----------------------------------------------------------------------------
 
 Vector2f Vector2f::From(float x, float y) {
@@ -453,7 +453,7 @@ void EdgeRenderer::Init(const StippleAtlas *a) {
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_LOC, "loc" },
-            { ATTRIB_TAN, "tan" }
+            { ATTRIB_TAN, "tgt" }
         }
     );
 }
@@ -638,7 +638,7 @@ void OutlineRenderer::Init(const StippleAtlas *a) {
         {
             { ATTRIB_POS, "pos" },
             { ATTRIB_LOC, "loc" },
-            { ATTRIB_TAN, "tan" },
+            { ATTRIB_TAN, "tgt" },
             { ATTRIB_NOL, "nol" },
             { ATTRIB_NOR, "nor" }
         }
@@ -926,8 +926,7 @@ void IndexedMeshRenderer::Init() {
     colShader.Init(
         "shaders/imesh.vert", "shaders/imesh.frag",
         {
-            { ATTRIB_POS, "pos" },
-            { ATTRIB_TEX, "tex" }
+            { ATTRIB_POS, "pos" }
         }
     );
     texShader.Init(

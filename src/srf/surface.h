@@ -7,8 +7,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __SURFACE_H
-#define __SURFACE_H
+#ifndef SOLVESPACE_SURFACE_H
+#define SOLVESPACE_SURFACE_H
 
 // Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
 double Bernstein(int k, int deg, double t);

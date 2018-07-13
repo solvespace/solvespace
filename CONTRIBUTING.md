@@ -183,7 +183,7 @@ std::string SolveSpace::Dirname(std::string filename) {
 Debugging code
 --------------
 
-SolveSpace releases are throughly tested but sometimes they contain crash
+SolveSpace releases are thoroughly tested but sometimes they contain crash
 bugs anyway. The reason for such crashes can be determined only if the executable
 was built with debug information.
 

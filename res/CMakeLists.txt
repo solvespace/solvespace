@@ -132,6 +132,9 @@ else()
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop
         DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 
+    install(FILES freedesktop/solvespace-slvs.xml
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
+
     foreach(SIZE 16x16 24x24 32x32 48x48)
         install(FILES freedesktop/solvespace-${SIZE}.png
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
