@@ -165,7 +165,7 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         return false;
     }
 
-    return PostLoadProcess(nameOnly);
+    return ExtractTTFData(nameOnly);
 }
 
 //-----------------------------------------------------------------------------
@@ -187,15 +187,13 @@ bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
             return false;
     }
 
-    return PostLoadProcess(nameOnly);
+    return ExtractTTFData(nameOnly);
 }
 
 //-----------------------------------------------------------------------------
-// Extract font information. We care about the curves that define the letter
-// shapes, and about the mappings that determine which glyph goes with which
-// character.
+// Extract font information. We care about the font name and unit size.
 //-----------------------------------------------------------------------------
-bool TtfFont::PostLoadProcess(bool nameOnly) {
+bool TtfFont::ExtractTTFData(bool nameOnly) {
     if(int fterr = FT_Select_Charmap(fontFace, FT_ENCODING_UNICODE)) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));

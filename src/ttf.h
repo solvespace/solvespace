@@ -27,7 +27,7 @@ public:
     double AspectRatio(const std::string &str);
 
 private:
-  bool PostLoadProcess(bool nameOnly);
+  bool ExtractTTFData(bool nameOnly);
 };
 
 class TtfFontList {
