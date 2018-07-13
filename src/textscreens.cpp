@@ -133,7 +133,7 @@ void TextWindow::ShowListOfGroups() {
                 afterActive ? " - " : "",
                 g->h.v, (&TextWindow::ScreenToggleGroupShown),
                 afterActive ? "" : (shown ? checkTrue : checkFalse),
-            // Link to the errors, if a problem occured while solving
+            // Link to the errors, if a problem occurred while solving
             ok ? (dof > 0 ? 'i' : 's') : 'x', g->h.v, (&TextWindow::ScreenHowGroupSolved),
                 ok ? sdof.c_str() : "",
                 ok ? "" : "ERR",
