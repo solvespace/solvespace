@@ -26,8 +26,7 @@ public:
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
     double AspectRatio(const std::string &str);
 
-private:
-  bool ExtractTTFData(bool nameOnly);
+    bool ExtractTTFData(bool nameOnly);
 };
 
 class TtfFontList {
