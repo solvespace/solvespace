@@ -63,10 +63,10 @@ void TtfFontList::LoadAll() {
             l.Add(&tf);
     }
 
-    // Add builtin font to font list
+    // Add builtin font to end of font list so it is displayed first in the UI
     {
         TtfFont tf = {};
-        tf.fontFile = { "fonts/BitstreamVeraSans-Roman-builtin.ttf" };
+        tf.SetResourceID("fonts/BitstreamVeraSans-Roman-builtin.ttf");
         if(tf.LoadFromResource(fontLibrary))
             l.Add(&tf);
     }
@@ -92,11 +92,14 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
     LoadAll();
 
     TtfFont *tf = std::find_if(l.begin(), l.end(),
-        [&](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
+        [&font](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(tf != l.end()) {
         if(tf->fontFace == NULL) {
-            tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+            if(tf->fontFile.raw.compare(0, 6, "res://"))
+                tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+            else
+                tf->LoadFromResource(fontLibrary, /*nameOnly=*/false);
         }
         return tf;
     } else {
@@ -139,6 +142,13 @@ std::string TtfFont::FontFileBaseName() const {
 }
 
 //-----------------------------------------------------------------------------
+// Convenience method to set fontFile for resource-loaded fonts as res://<path>
+//-----------------------------------------------------------------------------
+void TtfFont::SetResourceID(const std::string &resource) {
+   fontFile = { "res://" + resource };
+}
+
+//-----------------------------------------------------------------------------
 // Load a TrueType font into memory.
 //-----------------------------------------------------------------------------
 bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
@@ -162,9 +172,11 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
 // Load a TrueType from resource in memory. Implemented to load bundled fonts
 // through theresource system.
 //-----------------------------------------------------------------------------
-bool TtfFont::LoadFromResource(FT_Library fontLibrary) {
+bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
     size_t _size;
-    const void *_buffer = Platform::LoadResource(fontFile.raw, &_size);
+    // substr to cut off 'res://' (length: 6)
+    const void *_buffer = Platform::LoadResource(fontFile.raw.substr(6, fontFile.raw.size()),
+                                                 &_size);
 
     FT_Long size = static_cast<FT_Long>(_size);
     const FT_Byte *buffer = reinterpret_cast<const FT_Byte*>(_buffer);
@@ -175,11 +187,7 @@ bool TtfFont::LoadFromResource(FT_Library fontLibrary) {
             return false;
     }
 
-    // Call with nameOnly = false as a quick hack to prevent the font from being
-    // lazily loaded as a file. This could also be implemented via a `bool
-    // is_resource` member in the TtfFont class. However, as long as there are only
-    // few bundled fonts, this works fine.
-    return PostLoadProcess(false);
+    return PostLoadProcess(nameOnly);
 }
 
 //-----------------------------------------------------------------------------
