@@ -199,7 +199,7 @@ void Group::GenerateShellAndMesh() {
     }
 
     if(type == Type::TRANSLATE || type == Type::ROTATE) {
-        // A step and repeat gets merged against the group's prevous group,
+        // A step and repeat gets merged against the group's previous group,
         // not our own previous group.
         srcg = SK.GetGroup(opA);
 
@@ -357,10 +357,14 @@ void Group::GenerateShellAndMesh() {
         // and corresponding slowdown.
         outm.RemoveDegenerateTriangles();
 
-        // And make sure that the output mesh is vertex-to-vertex.
-        SKdNode *root = SKdNode::From(&outm);
-        root->SnapToMesh(&outm);
-        root->MakeMeshInto(&runningMesh);
+        if(srcg->meshCombine != CombineAs::ASSEMBLE) {
+            // And make sure that the output mesh is vertex-to-vertex.
+            SKdNode *root = SKdNode::From(&outm);
+            root->SnapToMesh(&outm);
+            root->MakeMeshInto(&runningMesh);
+        } else {
+            runningMesh.MakeFromCopyOf(&outm);
+        }
 
         outm.Clear();
         thism.Clear();

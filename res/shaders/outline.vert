@@ -11,7 +11,7 @@ const float feather = 0.5;
 
 attribute vec3 pos;
 attribute vec4 loc;
-attribute vec3 tan;
+attribute vec3 tgt;
 attribute vec3 nol;
 attribute vec3 nor;
 
@@ -40,7 +40,7 @@ void main() {
                           (mode == EMPHASIZED_WITHOUT_CONTOUR && isTagged && !isOutline));
 
     // calculate line contour extension basis for constant width and caps
-    vec3 norm = normalize(cross(tan, dir));
+    vec3 norm = normalize(cross(tgt, dir));
     norm = normalize(norm - dir * dot(dir, norm));
     vec3 perp = normalize(cross(dir, norm));
 

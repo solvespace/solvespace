@@ -7,8 +7,8 @@ if(CMAKE_SOURCE_DIR STREQUAL CMAKE_BINARY_DIR)
             "    mkdir build && cd build && cmake ..")
 endif()
 
-cmake_minimum_required(VERSION 3.1.0 FATAL_ERROR)
-cmake_policy(VERSION 3.1.0)
+cmake_minimum_required(VERSION 3.2.0 FATAL_ERROR)
+cmake_policy(VERSION 3.2.0)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
     "${CMAKE_SOURCE_DIR}/cmake/")
 set(CMAKE_CXX_STANDARD 11)
@@ -80,36 +80,48 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
 endif()
 
 if(ENABLE_SANITIZERS)
-    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message(FATAL_ERROR "Sanitizers are only available when using Clang/Clang++")
+    list(APPEND SANITIZERS address alignment bounds)
+    list(APPEND SANITIZERS shift signed-integer-overflow integer-divide-by-zero)
+    list(APPEND SANITIZERS null bool enum)
+    list(APPEND SANITIZERS return)
+    string(REPLACE ";" "," SANITIZERS "${SANITIZERS}")
+    set(SANITIZE_FLAGS "-O1 -fsanitize=${SANITIZERS} -fno-sanitize-recover=address,undefined")
+
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+    elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        set(SANITIZE_FLAGS "${SANITIZE_FLAGS} -fuse-ld=gold")
+    else()
+        message(FATAL_ERROR "Sanitizers are only available when using GCC or Clang")
     endif()
-    set(SANITIZE_FLAGS  "-O1 -fno-omit-frame-pointer -fno-optimize-sibling-calls")
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fsanitize=address,integer")
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize-recover=integer")
-    # We assume IEEE floats, which means DIV/0 is defined; but ubsan doesn't do so by default.
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize=float-divide-by-zero")
-    set(SANITIZE_FLAGS  "${SANITIZE_FLAGS} -fno-sanitize=unsigned-integer-overflow")
 
     set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} ${SANITIZE_FLAGS}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SANITIZE_FLAGS}")
 endif()
 
-# dependencies
+# common dependencies
+
+if(APPLE)
+    set(CMAKE_FIND_FRAMEWORK LAST)
+endif()
 
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
-if(WIN32)
+if(WIN32 OR APPLE)
+    # On Win32 and macOS we use vendored packages, since there is little to no benefit
+    # to trying to find system versions. In particular, trying to link to libraries from
+    # Homebrew or macOS system libraries into the .app file is highly likely to result
+    # in incompatibilities after upgrades.
+
     include(FindVendoredPackage)
     include(AddVendoredSubdirectory)
 
-    find_vendored_package(Freetype freetype
-        WITH_ZLIB               OFF
-        WITH_BZip2              OFF
-        WITH_PNG                OFF
-        WITH_HarfBuzz           OFF
-        FREETYPE_LIBRARY        freetype
-        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
+    if(APPLE)
+        set(FORCE_VENDORED_ZLIB     ON)
+        set(FORCE_VENDORED_PNG      ON)
+        set(FORCE_VENDORED_Freetype ON)
+    endif()
 
     find_vendored_package(ZLIB zlib
         ZLIB_LIBRARY            zlibstatic
@@ -121,6 +133,14 @@ if(WIN32)
         PNG_LIBRARY             png_static
         PNG_PNG_INCLUDE_DIR     ${CMAKE_SOURCE_DIR}/extlib/libpng)
     list(APPEND PNG_PNG_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/libpng)
+
+    find_vendored_package(Freetype freetype
+        WITH_ZLIB               OFF
+        WITH_BZip2              OFF
+        WITH_PNG                OFF
+        WITH_HarfBuzz           OFF
+        FREETYPE_LIBRARY        freetype
+        FREETYPE_INCLUDE_DIRS   ${CMAKE_SOURCE_DIR}/extlib/freetype/include)
 
     message(STATUS "Using in-tree pixman")
     add_vendored_subdirectory(extlib/pixman)
@@ -135,8 +155,24 @@ if(WIN32)
     set(CAIRO_LIBRARIES         cairo)
     set(CAIRO_INCLUDE_DIRS      ${CMAKE_SOURCE_DIR}/extlib/cairo/src)
     list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
+else()
+    # On Linux and BSDs we're a good citizen and link to system libraries.
 
-    if(ENABLE_GUI)
+    find_package(PkgConfig REQUIRED)
+
+    find_package(Backtrace)
+    find_package(SpaceWare)
+
+    find_package(ZLIB REQUIRED)
+    find_package(PNG REQUIRED)
+    find_package(Freetype REQUIRED)
+    pkg_check_modules(CAIRO REQUIRED cairo)
+endif()
+
+# GUI dependencies
+
+if(ENABLE_GUI)
+    if(WIN32)
         if(OPENGL STREQUAL "3")
             message(STATUS "Using in-tree ANGLE")
             set(ANGLE_STATIC            ON  CACHE INTERNAL "")
@@ -161,39 +197,18 @@ if(WIN32)
             set(SPACEWARE_LIBRARIES
                 "${CMAKE_SOURCE_DIR}/extlib/si/siapp.lib")
         endif()
-    endif()
-elseif(APPLE)
-    set(CMAKE_FIND_FRAMEWORK LAST)
-
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-    find_package(Freetype REQUIRED)
-
-    find_library(CAIRO_LIBRARIES cairo REQUIRED)
-    find_path(CAIRO_INCLUDE_DIRS cairo.h PATH_SUFFIXES cairo)
-
-    if(ENABLE_GUI)
+    elseif(APPLE)
         find_package(OpenGL REQUIRED)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
-    endif()
-else() # Linux and compatible systems
-    find_package(PkgConfig REQUIRED)
-
-    find_package(Backtrace)
-    find_package(SpaceWare)
-
-    find_package(ZLIB REQUIRED)
-    find_package(PNG REQUIRED)
-    find_package(Freetype REQUIRED)
-    pkg_check_modules(CAIRO REQUIRED cairo)
-
-    if(ENABLE_GUI)
+    else()
         find_package(OpenGL REQUIRED)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
-        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.16 pangomm-1.4 x11)
+        pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)
     endif()
 endif()
+
+# code coverage
 
 if(ENABLE_COVERAGE)
     if(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
@@ -214,6 +229,8 @@ if(ENABLE_COVERAGE)
         message(FATAL_ERROR "gcov/llvm-cov and lcov are required for producing coverage reports")
     endif()
 endif()
+
+# translations
 
 find_program(XGETTEXT xgettext)
 find_program(MSGINIT  msginit)
@@ -289,7 +306,7 @@ if(ENABLE_COVERAGE)
     set(COVERAGE_LIBRARY --coverage)
 endif()
 
-# components
+# application components
 
 add_subdirectory(res)
 add_subdirectory(src)

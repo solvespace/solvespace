@@ -250,25 +250,29 @@ void SolveSpaceUI::DoLater() {
 }
 
 double SolveSpaceUI::MmPerUnit() {
-    if(viewUnits == Unit::INCHES) {
-        return 25.4;
-    } else {
-        return 1.0;
+    switch(viewUnits) {
+        case Unit::INCHES: return 25.4;
+        case Unit::METERS: return 1000.0;
+        case Unit::MM: return 1.0;
     }
+    return 1.0;
 }
 const char *SolveSpaceUI::UnitName() {
-    if(viewUnits == Unit::INCHES) {
-        return "inch";
-    } else {
-        return "mm";
+    switch(viewUnits) {
+        case Unit::INCHES: return "inch";
+        case Unit::METERS: return "m";
+        case Unit::MM: return "mm";
     }
+    return "";
 }
+
 std::string SolveSpaceUI::MmToString(double v) {
-    if(viewUnits == Unit::INCHES) {
-        return ssprintf("%.*f", afterDecimalInch, v/25.4);
-    } else {
-        return ssprintf("%.*f", afterDecimalMm, v);
+    switch(viewUnits) {
+        case Unit::INCHES: return ssprintf("%.*f", afterDecimalInch, v / 25.4);
+        case Unit::METERS: return ssprintf("%.*f", afterDecimalMm, v / 1000.0);
+        case Unit::MM: return ssprintf("%.*f", afterDecimalMm, v);
     }
+    return "";
 }
 double SolveSpaceUI::ExprToMm(Expr *e) {
     return (e->Eval()) * MmPerUnit();

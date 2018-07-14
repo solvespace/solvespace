@@ -601,6 +601,10 @@ void SKdNode::SnapToVertex(Vector v, SMesh *extras) {
             if(tr->b.Equals(v)) { tr->b = v; continue; }
             if(tr->c.Equals(v)) { tr->c = v; continue; }
 
+            if(tr->IsDegenerate()) {
+                continue;
+            }
+
             if(v.OnLineSegment(tr->a, tr->b)) {
                 STriangle nt = STriangle::From(tr->meta, tr->a, v, tr->c);
                 extras->AddTriangle(&nt);
@@ -632,6 +636,9 @@ void SKdNode::SnapToMesh(SMesh *m) {
     int i, j, k;
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l.elem[i]);
+        if(tr->IsDegenerate()) {
+            continue;
+        }
         for(j = 0; j < 3; j++) {
             Vector v = tr->vertices[j];
 
@@ -849,7 +856,7 @@ void SKdNode::FindEdgeOn(Vector a, Vector b, int cnt, bool coplanarIsInter,
             }
             // Record the triangle
             info->tr = tr;
-            // And record which vertexes a and b correspond to
+            // And record which vertices a and b correspond to
             info->ai = a.Equals(tr->a) ? 0 : (a.Equals(tr->b) ? 1 : 2);
             info->bi = b.Equals(tr->a) ? 0 : (b.Equals(tr->b) ? 1 : 2);
         } else if(((a.Equals(tr->a) && b.Equals(tr->b)) ||
@@ -1117,10 +1124,7 @@ void SMesh::PrecomputeTransparency() {
 
 void SMesh::RemoveDegenerateTriangles() {
     for(auto &tr : l) {
-        bool isDegenerate = tr.a.OnLineSegment(tr.b, tr.c) ||
-                            tr.b.OnLineSegment(tr.a, tr.c) ||
-                            tr.c.OnLineSegment(tr.a, tr.b);
-        tr.tag = (int)isDegenerate;
+        tr.tag = (int)tr.IsDegenerate();
     }
     l.RemoveTagged();
 }

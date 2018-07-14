@@ -5,8 +5,8 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 
-#ifndef __UI_H
-#define __UI_H
+#ifndef SOLVESPACE_UI_H
+#define SOLVESPACE_UI_H
 
 class Locale {
 public:
@@ -146,6 +146,7 @@ enum class Command : uint32_t {
     SHOW_TEXT_WND,
     UNITS_INCHES,
     UNITS_MM,
+    UNITS_METERS,
     FULL_SCREEN,
     // Edit
     UNDO,
