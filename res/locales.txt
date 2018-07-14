@@ -3,3 +3,4 @@
 en-US,0409,English (US)
 ru-RU,0419,Русский
 uk-UA,0422,Українська
+fr-FR,040C,Français
