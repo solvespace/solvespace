@@ -96,10 +96,10 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
 
     if(tf != l.end()) {
         if(tf->fontFace == NULL) {
-            if(tf->fontFile.raw.compare(0, 6, "res://"))
-                tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
-            else
+            if(tf->IsResource())
                 tf->LoadFromResource(fontLibrary, /*nameOnly=*/false);
+            else
+                tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
         }
         return tf;
     } else {
@@ -145,13 +145,19 @@ std::string TtfFont::FontFileBaseName() const {
 // Convenience method to set fontFile for resource-loaded fonts as res://<path>
 //-----------------------------------------------------------------------------
 void TtfFont::SetResourceID(const std::string &resource) {
-   fontFile = { "res://" + resource };
+    fontFile = { "res://" + resource };
+}
+
+bool TtfFont::IsResource() const {
+    return fontFile.raw.compare(0, 6, "res://") == 0;
 }
 
 //-----------------------------------------------------------------------------
 // Load a TrueType font into memory.
 //-----------------------------------------------------------------------------
 bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
+    ssassert(!IsResource(), "Cannot load a font provided by a resource as a file.");
+
     FT_Open_Args args = {};
     args.flags    = FT_OPEN_PATHNAME;
     args.pathname = &fontFile.raw[0]; // FT_String is char* for historical reasons
@@ -173,6 +179,9 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
 // through theresource system.
 //-----------------------------------------------------------------------------
 bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
+    ssassert(IsResource(), "Font to be loaded as resource is not provided by a resource "
+             "or does not have the 'res://' prefix.");
+  
     size_t _size;
     // substr to cut off 'res://' (length: 6)
     const void *_buffer = Platform::LoadResource(fontFile.raw.substr(6, fontFile.raw.size()),

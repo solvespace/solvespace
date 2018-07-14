@@ -17,6 +17,7 @@ public:
     double          capHeight;
 
     void SetResourceID(const std::string &resource);
+    bool IsResource() const;
 
     std::string FontFileBaseName() const;
     bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
