@@ -9,6 +9,13 @@
 
 namespace Platform {
 
+// Handling fatal errors.
+#if defined(__GNUC__)
+__attribute__((noreturn))
+#endif
+void FatalError(std::string message);
+extern bool handlingFatalError;
+
 // UTF-8 ⟷ UTF-16 conversion, for Windows.
 #if defined(WIN32)
 std::string Narrow(const wchar_t *s);

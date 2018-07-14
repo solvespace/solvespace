@@ -56,7 +56,7 @@ typedef struct _cairo cairo_t;
 #define ssassert(condition, message) \
     do { \
         if(__builtin_expect((condition), true) == false) { \
-            SolveSpace::assert_failure(__FILE__, __LINE__, __func__, #condition, message); \
+            SolveSpace::AssertFailure(__FILE__, __LINE__, __func__, #condition, message); \
             __builtin_unreachable(); \
         } \
     } while(0)
@@ -64,7 +64,7 @@ typedef struct _cairo cairo_t;
 #define ssassert(condition, message) \
     do { \
         if((condition) == false) { \
-            SolveSpace::assert_failure(__FILE__, __LINE__, __func__, #condition, message); \
+            SolveSpace::AssertFailure(__FILE__, __LINE__, __func__, #condition, message); \
             abort(); \
         } \
     } while(0)
@@ -83,8 +83,8 @@ using std::swap;
 #if defined(__GNUC__)
 __attribute__((noreturn))
 #endif
-void assert_failure(const char *file, unsigned line, const char *function,
-                    const char *condition, const char *message);
+void AssertFailure(const char *file, unsigned line, const char *function,
+                   const char *condition, const char *message);
 
 #if defined(__GNUC__)
 __attribute__((__format__ (__printf__, 1, 2)))

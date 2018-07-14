@@ -559,6 +559,8 @@ static void MouseWheel(int thisDelta) {
 
 LRESULT CALLBACK TextWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
+    if(Platform::handlingFatalError) return 1;
+
     switch (msg) {
         case WM_ERASEBKGND:
             break;
@@ -955,6 +957,8 @@ bool SolveSpace::GraphicsEditControlIsVisible()
 LRESULT CALLBACK GraphicsWndProc(HWND hwnd, UINT msg, WPARAM wParam,
                                                             LPARAM lParam)
 {
+    if(Platform::handlingFatalError) return 1;
+
     switch (msg) {
         case WM_ERASEBKGND:
             break;

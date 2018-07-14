@@ -27,10 +27,10 @@ void dbp(const char *str, ...)
     fputc('\n', stderr);
 }
 
-void assert_failure(const char *file, unsigned line, const char *function,
-                    const char *condition, const char *message) {
-    fprintf(stderr, "File %s, line %u, function %s:\n", file, line, function);
-    fprintf(stderr, "Assertion '%s' failed: ((%s) == false).\n", message, condition);
+namespace Platform {
+
+void FatalError(std::string message) {
+    fprintf(stderr, "%s", message.c_str());
 
 #if !defined(LIBRARY) && defined(HAVE_BACKTRACE)
     static void *ptrs[1024] = {};
@@ -52,6 +52,8 @@ void assert_failure(const char *file, unsigned line, const char *function,
 #endif
 
     abort();
+}
+
 }
 
 //-----------------------------------------------------------------------------

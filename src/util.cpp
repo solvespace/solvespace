@@ -6,6 +6,15 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+void SolveSpace::AssertFailure(const char *file, unsigned line, const char *function,
+                               const char *condition, const char *message) {
+    std::string formattedMsg;
+    formattedMsg += ssprintf("File %s, line %u, function %s:\n", file, line, function);
+    formattedMsg += ssprintf("Assertion failed: %s.\n", condition);
+    formattedMsg += ssprintf("Message: %s.\n", message);
+    SolveSpace::Platform::FatalError(formattedMsg);
+}
+
 std::string SolveSpace::ssprintf(const char *fmt, ...)
 {
     va_list va;
