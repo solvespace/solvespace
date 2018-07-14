@@ -198,6 +198,7 @@ add_resources(
     icons/text-window/workplane.png
     locales.txt
     locales/en_US.po
+    locales/fr_FR.po
     locales/uk_UA.po
     locales/ru_RU.po
     fonts/unifont.hex.gz
