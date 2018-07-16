@@ -19,6 +19,38 @@ std::shared_ptr<ViewportCanvas> CreateRenderer() {
 namespace Platform {
 
 //-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+class SettingsImplDummy : public Settings {
+public:
+    void FreezeInt(const std::string &key, uint32_t value) {}
+
+    uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) {
+        return defaultValue;
+    }
+
+    void FreezeFloat(const std::string &key, double value) {}
+
+    double ThawFloat(const std::string &key, double defaultValue = 0.0) {
+        return defaultValue;
+    }
+
+    void FreezeString(const std::string &key, const std::string &value) {}
+
+    std::string ThawString(const std::string &key,
+                           const std::string &defaultValue = "") {
+        return defaultValue;
+    }
+};
+
+SettingsRef GetSettings() {
+    static std::shared_ptr<SettingsImplDummy> settings =
+                std::make_shared<SettingsImplDummy>();
+    return settings;
+}
+
+//-----------------------------------------------------------------------------
 // Timers
 //-----------------------------------------------------------------------------
 
@@ -60,76 +92,6 @@ void Exit() {
     exit(0);
 }
 
-}
-
-//-----------------------------------------------------------------------------
-// Settings
-//-----------------------------------------------------------------------------
-
-class Setting {
-public:
-    enum class Type {
-        Undefined,
-        Int,
-        Float,
-        String
-    };
-
-    Type        type;
-    int         valueInt;
-    float       valueFloat;
-    std::string valueString;
-
-    void CheckType(Type expectedType) {
-        ssassert(type == Setting::Type::Undefined ||
-                 type == expectedType, "Wrong setting type");
-        type = expectedType;
-    }
-};
-
-std::map<std::string, Setting> settings;
-
-void CnfFreezeInt(uint32_t val, const std::string &key) {
-    Setting &setting = settings[key];
-    setting.CheckType(Setting::Type::Int);
-    setting.valueInt = val;
-}
-uint32_t CnfThawInt(uint32_t val, const std::string &key) {
-    if(settings.find(key) != settings.end()) {
-        Setting &setting = settings[key];
-        setting.CheckType(Setting::Type::Int);
-        val = setting.valueInt;
-    }
-    return val;
-}
-
-void CnfFreezeFloat(float val, const std::string &key) {
-    Setting &setting = settings[key];
-    setting.CheckType(Setting::Type::Float);
-    setting.valueFloat = val;
-}
-float CnfThawFloat(float val, const std::string &key) {
-    if(settings.find(key) != settings.end()) {
-        Setting &setting = settings[key];
-        setting.CheckType(Setting::Type::Float);
-        val = setting.valueFloat;
-    }
-    return val;
-}
-
-void CnfFreezeString(const std::string &val, const std::string &key) {
-    Setting &setting = settings[key];
-    setting.CheckType(Setting::Type::String);
-    setting.valueString = val;
-}
-std::string CnfThawString(const std::string &val, const std::string &key) {
-    std::string ret = val;
-    if(settings.find(key) != settings.end()) {
-        Setting &setting = settings[key];
-        setting.CheckType(Setting::Type::String);
-        ret = setting.valueString;
-    }
-    return ret;
 }
 
 //-----------------------------------------------------------------------------

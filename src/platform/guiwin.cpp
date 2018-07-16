@@ -103,6 +103,87 @@ static int Clamp(int x, int a, int b) {
 }
 
 //-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+class SettingsImplWin32 : public Settings {
+public:
+    HKEY hKey = NULL;
+
+    HKEY GetKey() {
+        if(hKey == NULL) {
+            sscheck(RegCreateKeyExW(HKEY_CURRENT_USER, L"Software\\SolveSpace", 0, NULL, 0,
+                                    KEY_ALL_ACCESS, NULL, &hKey, NULL));
+        }
+        return hKey;
+    }
+
+    ~SettingsImplWin32() {
+        if(hKey != NULL) {
+            sscheck(RegCloseKey(hKey));
+        }
+    }
+
+    void FreezeInt(const std::string &key, uint32_t value) {
+        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+                               REG_DWORD, (const BYTE *)&value, sizeof(value)));
+    }
+
+    uint32_t ThawInt(const std::string &key, uint32_t defaultValue) {
+        DWORD value;
+        DWORD type, length = sizeof(value);
+        LSTATUS result = RegQueryValueEx(GetKey(), &Widen(key)[0], 0,
+                                         &type, (BYTE *)&value, &length);
+        if(result == ERROR_SUCCESS && type == REG_DWORD) {
+            return value;
+        }
+        return defaultValue;
+    }
+
+    void FreezeFloat(const std::string &key, double value) {
+        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+                               REG_QWORD, (const BYTE *)&value, sizeof(value)));
+    }
+
+    double ThawFloat(const std::string &key, double defaultValue) {
+        double value;
+        DWORD type, length = sizeof(value);
+        LSTATUS result = RegQueryValueEx(GetKey(), &Widen(key)[0], 0,
+                                         &type, (BYTE *)&value, &length);
+        if(result == ERROR_SUCCESS && type == REG_QWORD) {
+            return value;
+        }
+        return defaultValue;
+    }
+
+    void FreezeString(const std::string &key, const std::string &value) {
+        ssassert(value.length() == strlen(value.c_str()),
+                 "illegal null byte in middle of a string setting");
+        std::wstring valueW = Widen(value);
+        sscheck(RegSetValueExW(GetKey(), &Widen(key)[0], 0,
+                               REG_SZ, (const BYTE *)&valueW[0], (valueW.length() + 1) * 2));
+    }
+
+    std::string ThawString(const std::string &key, const std::string &defaultValue) {
+        DWORD type, length = 0;
+        LSTATUS result = RegQueryValueEx(GetKey(), &Widen(key)[0], 0,
+                                         &type, NULL, &length);
+        if(result == ERROR_SUCCESS && type == REG_SZ) {
+            std::wstring valueW;
+            valueW.resize(length / 2 - 1);
+            sscheck(RegQueryValueEx(GetKey(), &Widen(key)[0], 0,
+                                    &type, (BYTE *)&valueW[0], &length));
+            return Narrow(valueW);
+        }
+        return defaultValue;
+    }
+};
+
+SettingsRef GetSettings() {
+    return std::make_shared<SettingsImplWin32>();
+}
+
+//-----------------------------------------------------------------------------
 // Timers
 //-----------------------------------------------------------------------------
 
@@ -960,28 +1041,28 @@ public:
         }
     }
 
-    void FreezePosition(const std::string &key) override {
+    void FreezePosition(SettingsRef settings, const std::string &key) override {
         sscheck(GetWindowPlacement(hWindow, &placement));
 
         BOOL isMaximized;
         sscheck(isMaximized = IsZoomed(hWindow));
 
         RECT rc = placement.rcNormalPosition;
-        CnfFreezeInt(rc.left,     key + "_left");
-        CnfFreezeInt(rc.right,    key + "_right");
-        CnfFreezeInt(rc.top,      key + "_top");
-        CnfFreezeInt(rc.bottom,   key + "_bottom");
-        CnfFreezeInt(isMaximized, key + "_maximized");
+        settings->FreezeInt(key + "_Left",       rc.left);
+        settings->FreezeInt(key + "_Right",      rc.right);
+        settings->FreezeInt(key + "_Top",        rc.top);
+        settings->FreezeInt(key + "_Bottom",     rc.bottom);
+        settings->FreezeBool(key + "_Maximized", isMaximized);
     }
 
-    void ThawPosition(const std::string &key) override {
+    void ThawPosition(SettingsRef settings, const std::string &key) override {
         sscheck(GetWindowPlacement(hWindow, &placement));
 
         RECT rc = placement.rcNormalPosition;
-        rc.left   = CnfThawInt(rc.left,   key + "_left");
-        rc.right  = CnfThawInt(rc.right,  key + "_right");
-        rc.top    = CnfThawInt(rc.top,    key + "_top");
-        rc.bottom = CnfThawInt(rc.bottom, key + "_bottom");
+        rc.left   = settings->ThawInt(key + "_Left",   rc.left);
+        rc.right  = settings->ThawInt(key + "_Right",  rc.right);
+        rc.top    = settings->ThawInt(key + "_Top",    rc.top);
+        rc.bottom = settings->ThawInt(key + "_Bottom", rc.bottom);
 
         MONITORINFO mi;
         mi.cbSize = sizeof(mi);
@@ -999,7 +1080,7 @@ public:
         sscheck(SendMessageW(hWindow, WM_SIZING, WMSZ_BOTTOMRIGHT, (LPARAM)&rc));
 
         placement.flags = 0;
-        if(CnfThawInt(false, key + "_maximized")) {
+        if(settings->ThawBool(key + "_Maximized", false)) {
             placement.showCmd = SW_SHOWMAXIMIZED;
         } else {
             placement.showCmd = SW_SHOW;

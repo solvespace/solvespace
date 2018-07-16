@@ -57,111 +57,6 @@ std::string Title(const std::string &s) {
     return "SolveSpace - " + s;
 }
 
-/* Settings */
-
-/* Why not just use GSettings? Two reasons. It doesn't allow to easily see
-   whether the setting had the default value, and it requires to install
-   a schema globally. */
-static json_object *settings = NULL;
-
-static std::string CnfPrepare() {
-    // Refer to http://standards.freedesktop.org/basedir-spec/latest/
-
-    std::string dir;
-    if(getenv("XDG_CONFIG_HOME")) {
-        dir = std::string(getenv("XDG_CONFIG_HOME")) + "/solvespace";
-    } else if(getenv("HOME")) {
-        dir = std::string(getenv("HOME")) + "/.config/solvespace";
-    } else {
-        dbp("neither XDG_CONFIG_HOME nor HOME are set");
-        return "";
-    }
-
-    struct stat st;
-    if(stat(dir.c_str(), &st)) {
-        if(errno == ENOENT) {
-            if(mkdir(dir.c_str(), 0777)) {
-                dbp("cannot mkdir %s: %s", dir.c_str(), strerror(errno));
-                return "";
-            }
-        } else {
-            dbp("cannot stat %s: %s", dir.c_str(), strerror(errno));
-            return "";
-        }
-    } else if(!S_ISDIR(st.st_mode)) {
-        dbp("%s is not a directory", dir.c_str());
-        return "";
-    }
-
-    return dir + "/settings.json";
-}
-
-static void CnfLoad() {
-    std::string path = CnfPrepare();
-    if(path.empty())
-        return;
-
-    if(settings)
-        json_object_put(settings); // deallocate
-
-    settings = json_object_from_file(path.c_str());
-    if(!settings) {
-        if(errno != ENOENT)
-            dbp("cannot load settings: %s", strerror(errno));
-
-        settings = json_object_new_object();
-    }
-}
-
-static void CnfSave() {
-    std::string path = CnfPrepare();
-    if(path.empty())
-        return;
-
-    /* json-c <0.12 has the first argument non-const here */
-    if(json_object_to_file_ext((char*) path.c_str(), settings, JSON_C_TO_STRING_PRETTY))
-        dbp("cannot save settings: %s", strerror(errno));
-}
-
-void CnfFreezeInt(uint32_t val, const std::string &key) {
-    struct json_object *jval = json_object_new_int(val);
-    json_object_object_add(settings, key.c_str(), jval);
-    CnfSave();
-}
-
-uint32_t CnfThawInt(uint32_t val, const std::string &key) {
-    struct json_object *jval;
-    if(json_object_object_get_ex(settings, key.c_str(), &jval))
-        return json_object_get_int(jval);
-    else return val;
-}
-
-void CnfFreezeFloat(float val, const std::string &key) {
-    struct json_object *jval = json_object_new_double(val);
-    json_object_object_add(settings, key.c_str(), jval);
-    CnfSave();
-}
-
-float CnfThawFloat(float val, const std::string &key) {
-    struct json_object *jval;
-    if(json_object_object_get_ex(settings, key.c_str(), &jval))
-        return json_object_get_double(jval);
-    else return val;
-}
-
-void CnfFreezeString(const std::string &val, const std::string &key) {
-    struct json_object *jval = json_object_new_string(val.c_str());
-    json_object_object_add(settings, key.c_str(), jval);
-    CnfSave();
-}
-
-std::string CnfThawString(const std::string &val, const std::string &key) {
-    struct json_object *jval;
-    if(json_object_object_get_ex(settings, key.c_str(), &jval))
-        return json_object_get_string(jval);
-    return val;
-}
-
 /* Save/load */
 
 static std::string ConvertFilters(std::string active, const FileFilter ssFilters[],
@@ -202,12 +97,12 @@ bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
     chooser.set_filename(filename->raw);
     chooser.add_button(_("_Cancel"), Gtk::RESPONSE_CANCEL);
     chooser.add_button(_("_Open"), Gtk::RESPONSE_OK);
-    chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
+    chooser.set_current_folder(Platform::GetSettings()->ThawString("FileChooserPath"));
 
     ConvertFilters(activeOrEmpty, filters, &chooser);
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
-        CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
+        Platform::GetSettings()->FreezeString("FileChooserPath", chooser.get_current_folder());
         *filename = Platform::Path::From(chooser.get_filename());
         return true;
     } else {
@@ -250,7 +145,7 @@ bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
     std::string activeExtension = ConvertFilters(defExtension, filters, &chooser);
 
     if(filename->IsEmpty()) {
-        chooser.set_current_folder(CnfThawString("", "FileChooserPath"));
+        chooser.set_current_folder(Platform::GetSettings()->ThawString("FileChooserPath"));
         chooser.set_current_name(std::string(_("untitled")) + "." + activeExtension);
     } else {
         chooser.set_current_folder(filename->Parent().raw);
@@ -263,7 +158,7 @@ bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
        connect(sigc::bind(sigc::ptr_fun(&ChooserFilterChanged), &chooser));
 
     if(chooser.run() == Gtk::RESPONSE_OK) {
-        CnfFreezeString(chooser.get_current_folder(), "FileChooserPath");
+        Platform::GetSettings()->FreezeString("FileChooserPath", chooser.get_current_folder());
         *filename = Platform::Path::From(chooser.get_filename());
         return true;
     } else {
@@ -457,8 +352,6 @@ int main(int argc, char** argv) {
 #ifdef HAVE_SPACEWARE
     gdk_window_add_filter(NULL, GdkSpnavFilter, NULL);
 #endif
-
-    CnfLoad();
 
     const char* const* langNames = g_get_language_names();
     while(*langNames) {

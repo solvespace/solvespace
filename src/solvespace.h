@@ -173,13 +173,6 @@ void dbp(const char *str, ...);
 void SetMousePointerToHand(bool yes);
 void DoMessageBox(const char *str, int rows, int cols, bool error);
 
-void CnfFreezeInt(uint32_t val, const std::string &name);
-void CnfFreezeFloat(float val, const std::string &name);
-void CnfFreezeString(const std::string &val, const std::string &name);
-std::string CnfThawString(const std::string &val, const std::string &name);
-uint32_t CnfThawInt(uint32_t val, const std::string &name);
-float CnfThawFloat(float val, const std::string &name);
-
 std::vector<std::string> InitPlatform(int argc, char **argv);
 
 void *AllocTemporary(size_t n);
@@ -263,10 +256,6 @@ void MultMatrix(double *mata, double *matb, double *matr);
 int64_t GetMilliseconds();
 void Message(const char *str, ...);
 void Error(const char *str, ...);
-void CnfFreezeBool(bool v, const std::string &name);
-void CnfFreezeColor(RgbaColor v, const std::string &name);
-bool CnfThawBool(bool v, const std::string &name);
-RgbaColor CnfThawColor(RgbaColor v, const std::string &name);
 
 class System {
 public:

@@ -81,12 +81,18 @@ void Style::CreateDefaultStyle(hStyle h) {
 }
 
 void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     if(d == NULL) d = &Defaults[0];
-    s->color         = (factory) ? d->color : CnfThawColor(d->color, CnfColor(d->cnfPrefix));
-    s->width         = (factory) ? d->width : CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    s->color         = (factory)
+                        ? d->color
+                        : settings->ThawColor(CnfColor(d->cnfPrefix), d->color);
+    s->width         = (factory)
+                        ? d->width
+                        : settings->ThawFloat(CnfWidth(d->cnfPrefix), (float)(d->width));
     s->widthAs       = UnitsAs::PIXELS;
     s->textHeight    = (factory) ? 11.5
-                                 : CnfThawFloat(11.5, CnfTextHeight(d->cnfPrefix));
+                                 : settings->ThawFloat(CnfTextHeight(d->cnfPrefix), 11.5);
     s->textHeightAs  = UnitsAs::PIXELS;
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
@@ -109,12 +115,12 @@ void Style::LoadFactoryDefaults() {
     SS.backgroundColor = RGBi(0, 0, 0);
 }
 
-void Style::FreezeDefaultStyles() {
+void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
-        CnfFreezeColor(Color(d->h), CnfColor(d->cnfPrefix));
-        CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
-        CnfFreezeFloat((float)TextHeight(d->h), CnfTextHeight(d->cnfPrefix));
+        settings->FreezeColor(CnfColor(d->cnfPrefix), Color(d->h));
+        settings->FreezeFloat(CnfWidth(d->cnfPrefix), (float)Width(d->h));
+        settings->FreezeFloat(CnfTextHeight(d->cnfPrefix), (float)TextHeight(d->h));
     }
 }
 

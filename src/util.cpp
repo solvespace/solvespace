@@ -173,18 +173,6 @@ void SolveSpace::Message(const char *str, ...)
     va_end(f);
 }
 
-void SolveSpace::CnfFreezeBool(bool v, const std::string &name)
-    { CnfFreezeInt(v ? 1 : 0, name); }
-
-void SolveSpace::CnfFreezeColor(RgbaColor v, const std::string &name)
-    { CnfFreezeInt(v.ToPackedInt(), name); }
-
-bool SolveSpace::CnfThawBool(bool v, const std::string &name)
-    { return CnfThawInt(v ? 1 : 0, name) != 0; }
-
-RgbaColor SolveSpace::CnfThawColor(RgbaColor v, const std::string &name)
-    { return RgbaColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
-
 //-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG
 // elements to the left of the diagonal element, and RIGHT_OF_DIAG elements to

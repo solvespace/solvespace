@@ -283,7 +283,7 @@ void GraphicsWindow::PopulateMainMenu() {
             for(const Locale &locale : Locales()) {
                 localeMenu->AddItem(locale.displayName, [&]() {
                     SetLocale(locale.Culture());
-                    CnfFreezeString(locale.Culture(), "Locale");
+                    Platform::GetSettings()->FreezeString("Locale", locale.Culture());
 
                     SS.UpdateWindowTitles();
                     PopulateMainMenu();

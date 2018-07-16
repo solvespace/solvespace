@@ -4,6 +4,11 @@
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include <errno.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <json-c/json_object.h>
+#include <json-c/json_util.h>
 #include <glibmm/main.h>
 #include <gtkmm/box.h>
 #include <gtkmm/checkmenuitem.h>
@@ -19,6 +24,128 @@
 
 namespace SolveSpace {
 namespace Platform {
+
+//-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+class SettingsImplGtk : public Settings {
+public:
+    // Why aren't we using GSettings? Two reasons. It doesn't allow to easily see whether
+    // the setting had the default value, and it requires to install a schema globally.
+    Path         _path;
+    json_object *_json = NULL;
+
+    static Path GetConfigPath() {
+        Path configHome;
+        if(getenv("XDG_CONFIG_HOME")) {
+            configHome = Path::From(getenv("XDG_CONFIG_HOME"));
+        } else if(getenv("HOME")) {
+            configHome = Path::From(getenv("HOME")).Join(".config");
+        } else {
+            dbp("neither XDG_CONFIG_HOME nor HOME are set");
+            return Path::From("");
+        }
+        if(!configHome.IsEmpty()) {
+            configHome = configHome.Join("solvespace");
+        }
+
+        const char *configHomeC = configHome.raw.c_str();
+        struct stat st;
+        if(stat(configHomeC, &st)) {
+            if(errno == ENOENT) {
+                if(mkdir(configHomeC, 0777)) {
+                    dbp("cannot mkdir %s: %s", configHomeC, strerror(errno));
+                    return Path::From("");
+                }
+            } else {
+                dbp("cannot stat %s: %s", configHomeC, strerror(errno));
+                return Path::From("");
+            }
+        } else if(!S_ISDIR(st.st_mode)) {
+            dbp("%s is not a directory", configHomeC);
+            return Path::From("");
+        }
+
+        return configHome.Join("settings.json");
+    }
+
+    SettingsImplGtk() {
+        _path = GetConfigPath();
+        if(_path.IsEmpty()) {
+            dbp("settings will not be saved");
+        } else {
+            _json = json_object_from_file(_path.raw.c_str());
+            if(!_json && errno != ENOENT) {
+                dbp("cannot load settings: %s", strerror(errno));
+            }
+        }
+
+        if(_json == NULL) {
+            _json = json_object_new_object();
+        }
+    }
+
+    ~SettingsImplGtk() {
+        if(!_path.IsEmpty()) {
+            // json-c <0.12 has the first argument non-const
+            if(json_object_to_file_ext((char *)_path.raw.c_str(), _json,
+                                       JSON_C_TO_STRING_PRETTY)) {
+                dbp("cannot save settings: %s", strerror(errno));
+            }
+        }
+
+        json_object_put(_json);
+    }
+
+    void FreezeInt(const std::string &key, uint32_t value) override {
+        struct json_object *jsonValue = json_object_new_int(value);
+        json_object_object_add(_json, key.c_str(), jsonValue);
+    }
+
+    uint32_t ThawInt(const std::string &key, uint32_t defaultValue) override {
+        struct json_object *jsonValue;
+        if(json_object_object_get_ex(_json, key.c_str(), &jsonValue)) {
+            return json_object_get_int(jsonValue);
+        }
+        return defaultValue;
+    }
+
+    void FreezeFloat(const std::string &key, double value) override {
+        struct json_object *jsonValue = json_object_new_double(value);
+        json_object_object_add(_json, key.c_str(), jsonValue);
+    }
+
+    double ThawFloat(const std::string &key, double defaultValue) override {
+        struct json_object *jsonValue;
+        if(json_object_object_get_ex(_json, key.c_str(), &jsonValue)) {
+            return json_object_get_double(jsonValue);
+        }
+        return defaultValue;
+    }
+
+    void FreezeString(const std::string &key, const std::string &value) override {
+        struct json_object *jsonValue = json_object_new_string(value.c_str());
+        json_object_object_add(_json, key.c_str(), jsonValue);
+    }
+
+    std::string ThawString(const std::string &key,
+                           const std::string &defaultValue = "") override {
+        struct json_object *jsonValue;
+        if(json_object_object_get_ex(_json, key.c_str(), &jsonValue)) {
+            return json_object_get_string(jsonValue);
+        }
+        return defaultValue;
+    }
+};
+
+SettingsRef GetSettings() {
+    static std::shared_ptr<SettingsImplGtk> settings;
+    if(!settings) {
+        settings = std::make_shared<SettingsImplGtk>();
+    }
+    return settings;
+}
 
 //-----------------------------------------------------------------------------
 // Timers
@@ -721,7 +848,7 @@ public:
         gtkWindow.get_gl_widget().set_size_request(width, height);
     }
 
-    void FreezePosition(const std::string &key) override {
+    void FreezePosition(SettingsRef settings, const std::string &key) override {
         if(!gtkWindow.is_visible()) return;
 
         int left, top, width, height;
@@ -729,27 +856,27 @@ public:
         gtkWindow.get_size(width, height);
         bool isMaximized = gtkWindow.is_maximized();
 
-        CnfFreezeInt(left,        key + "_left");
-        CnfFreezeInt(top,         key + "_top");
-        CnfFreezeInt(width,       key + "_width");
-        CnfFreezeInt(height,      key + "_height");
-        CnfFreezeInt(isMaximized, key + "_maximized");
+        settings->FreezeInt(key + "_Left",       left);
+        settings->FreezeInt(key + "_Top",        top);
+        settings->FreezeInt(key + "_Width",      width);
+        settings->FreezeInt(key + "_Height",     height);
+        settings->FreezeBool(key + "_Maximized", isMaximized);
     }
 
-    void ThawPosition(const std::string &key) override {
+    void ThawPosition(SettingsRef settings, const std::string &key) override {
         int left, top, width, height;
         gtkWindow.get_position(left, top);
         gtkWindow.get_size(width, height);
 
-        left   = CnfThawInt(left,   key + "_left");
-        top    = CnfThawInt(top,    key + "_top");
-        width  = CnfThawInt(width,  key + "_width");
-        height = CnfThawInt(height, key + "_height");
+        left   = settings->ThawInt(key + "_Left",   left);
+        top    = settings->ThawInt(key + "_Top",    top);
+        width  = settings->ThawInt(key + "_Width",  width);
+        height = settings->ThawInt(key + "_Height", height);
 
         gtkWindow.move(left, top);
         gtkWindow.resize(width, height);
 
-        if(CnfThawInt(false, key + "_maximized")) {
+        if(settings->ThawBool(key + "_Maximized", false)) {
             gtkWindow.maximize();
         }
     }

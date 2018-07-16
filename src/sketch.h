@@ -834,7 +834,7 @@ public:
     static void CreateAllDefaultStyles();
     static void CreateDefaultStyle(hStyle h);
     static void FillDefaultStyle(Style *s, const Default *d = NULL, bool factory = false);
-    static void FreezeDefaultStyles();
+    static void FreezeDefaultStyles(Platform::SettingsRef settings);
     static void LoadFactoryDefaults();
 
     static void AssignSelectionToStyle(uint32_t v);

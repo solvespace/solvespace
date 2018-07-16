@@ -8,6 +8,10 @@
 namespace SolveSpace {
 namespace Platform {
 
+//-----------------------------------------------------------------------------
+// Keyboard events
+//-----------------------------------------------------------------------------
+
 std::string AcceleratorDescription(const KeyboardEvent &accel) {
     std::string label;
     if(accel.controlDown) {
@@ -43,6 +47,26 @@ std::string AcceleratorDescription(const KeyboardEvent &accel) {
     }
 
     return label;
+}
+
+//-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+void Settings::FreezeBool(const std::string &key, bool value) {
+    FreezeInt(key, (int)value);
+}
+
+bool Settings::ThawBool(const std::string &key, bool defaultValue) {
+    return (bool)ThawInt(key, (int)defaultValue);
+}
+
+void Settings::FreezeColor(const std::string &key, RgbaColor value) {
+    FreezeInt(key, value.ToPackedInt());
+}
+
+RgbaColor Settings::ThawColor(const std::string &key, RgbaColor defaultValue) {
+    return RgbaColor::FromPackedInt(ThawInt(key, defaultValue.ToPackedInt()));
 }
 
 }

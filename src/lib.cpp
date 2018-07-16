@@ -17,17 +17,6 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }
 
-void SolveSpace::CnfFreezeInt(uint32_t, const std::string &)
-{
-    abort();
-}
-
-uint32_t SolveSpace::CnfThawInt(uint32_t, const std::string &)
-{
-    abort();
-    return 0;
-}
-
 void SolveSpace::DoMessageBox(const char *, int, int, bool)
 {
     abort();

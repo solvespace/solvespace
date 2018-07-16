@@ -53,6 +53,72 @@ namespace SolveSpace {
 namespace Platform {
 
 //-----------------------------------------------------------------------------
+// Settings
+//-----------------------------------------------------------------------------
+
+class SettingsImplCocoa : public Settings {
+public:
+    NSUserDefaults *userDefaults;
+
+    SettingsImplCocoa() {
+        userDefaults = [NSUserDefaults standardUserDefaults];
+    }
+
+    void FreezeInt(const std::string &key, uint32_t value) override {
+        [userDefaults setInteger:value forKey:Wrap(key)];
+    }
+
+    uint32_t ThawInt(const std::string &key, uint32_t defaultValue = 0) override {
+        NSString *nsKey = Wrap(key);
+        if([userDefaults objectForKey:nsKey]) {
+            return [userDefaults integerForKey:nsKey];
+        }
+        return defaultValue;
+    }
+
+    void FreezeBool(const std::string &key, bool value) override {
+        [userDefaults setBool:value forKey:Wrap(key)];
+    }
+
+    bool ThawBool(const std::string &key, bool defaultValue = false) override {
+        NSString *nsKey = Wrap(key);
+        if([userDefaults objectForKey:nsKey]) {
+            return [userDefaults boolForKey:nsKey];
+        }
+        return defaultValue;
+    }
+
+    void FreezeFloat(const std::string &key, double value) override {
+        [userDefaults setDouble:value forKey:Wrap(key)];
+    }
+
+    double ThawFloat(const std::string &key, double defaultValue = 0.0) override {
+        NSString *nsKey = Wrap(key);
+        if([userDefaults objectForKey:nsKey]) {
+            return [userDefaults doubleForKey:nsKey];
+        }
+        return defaultValue;
+    }
+
+    void FreezeString(const std::string &key, const std::string &value) override {
+        [userDefaults setObject:Wrap(value) forKey:Wrap(key)];
+    }
+
+    std::string ThawString(const std::string &key,
+                           const std::string &defaultValue = "") override {
+        NSObject *nsValue = [userDefaults objectForKey:Wrap(key)];
+        if(nsValue && [nsValue isKindOfClass:[NSString class]]) {
+            return [(NSString *)nsValue UTF8String];
+        }
+        return defaultValue;
+    }
+};
+
+SettingsRef GetSettings() {
+    return std::make_shared<SettingsImplCocoa>();
+}
+
+//-----------------------------------------------------------------------------
 // Timers
 //-----------------------------------------------------------------------------
 
@@ -805,11 +871,11 @@ public:
         [nsWindow setContentSize:nsMinSize];
     }
 
-    void FreezePosition(const std::string &key) override {
+    void FreezePosition(SettingsRef _settings, const std::string &key) override {
         [nsWindow saveFrameUsingName:Wrap(key)];
     }
 
-    void ThawPosition(const std::string &key) override {
+    void ThawPosition(SettingsRef _settings, const std::string &key) override {
         [nsWindow setFrameUsingName:Wrap(key)];
     }
 

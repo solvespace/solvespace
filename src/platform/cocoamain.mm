@@ -19,49 +19,6 @@ static NSString* Wrap(const std::string &s) {
     return [NSString stringWithUTF8String:s.c_str()];
 }
 
-/* Settings */
-
-namespace SolveSpace {
-void CnfFreezeInt(uint32_t val, const std::string &key) {
-    [[NSUserDefaults standardUserDefaults]
-        setInteger:val forKey:Wrap(key)];
-}
-
-uint32_t CnfThawInt(uint32_t val, const std::string &key) {
-    NSString *nsKey = Wrap(key);
-    if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
-        return [[NSUserDefaults standardUserDefaults] integerForKey:nsKey];
-    return val;
-}
-
-void CnfFreezeFloat(float val, const std::string &key) {
-    [[NSUserDefaults standardUserDefaults]
-        setFloat:val forKey:Wrap(key)];
-}
-
-float CnfThawFloat(float val, const std::string &key) {
-    NSString *nsKey = Wrap(key);
-    if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey])
-        return [[NSUserDefaults standardUserDefaults] floatForKey:nsKey];
-    return val;
-}
-
-void CnfFreezeString(const std::string &val, const std::string &key) {
-    [[NSUserDefaults standardUserDefaults]
-        setObject:Wrap(val)
-        forKey:Wrap(key)];
-}
-
-std::string CnfThawString(const std::string &val, const std::string &key) {
-    NSString *nsKey = Wrap(key);
-    if([[NSUserDefaults standardUserDefaults] objectForKey:nsKey]) {
-        NSString *nsNewVal = [[NSUserDefaults standardUserDefaults] stringForKey:nsKey];
-        return [nsNewVal UTF8String];
-    }
-    return val;
-}
-};
-
 /* Save/load */
 
 bool SolveSpace::GetOpenFile(Platform::Path *filename, const std::string &defExtension,

@@ -16,95 +16,97 @@ void SolveSpaceUI::Init() {
     dbp("%s", LoadString("banner.txt").data());
 #endif
 
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.
     // Default list of colors for the model material
-    modelColor[0] = CnfThawColor(RGBi(150, 150, 150), "ModelColor_0");
-    modelColor[1] = CnfThawColor(RGBi(100, 100, 100), "ModelColor_1");
-    modelColor[2] = CnfThawColor(RGBi( 30,  30,  30), "ModelColor_2");
-    modelColor[3] = CnfThawColor(RGBi(150,   0,   0), "ModelColor_3");
-    modelColor[4] = CnfThawColor(RGBi(  0, 100,   0), "ModelColor_4");
-    modelColor[5] = CnfThawColor(RGBi(  0,  80,  80), "ModelColor_5");
-    modelColor[6] = CnfThawColor(RGBi(  0,   0, 130), "ModelColor_6");
-    modelColor[7] = CnfThawColor(RGBi( 80,   0,  80), "ModelColor_7");
+    modelColor[0] = settings->ThawColor("ModelColor_0", RGBi(150, 150, 150));
+    modelColor[1] = settings->ThawColor("ModelColor_1", RGBi(100, 100, 100));
+    modelColor[2] = settings->ThawColor("ModelColor_2", RGBi( 30,  30,  30));
+    modelColor[3] = settings->ThawColor("ModelColor_3", RGBi(150,   0,   0));
+    modelColor[4] = settings->ThawColor("ModelColor_4", RGBi(  0, 100,   0));
+    modelColor[5] = settings->ThawColor("ModelColor_5", RGBi(  0,  80,  80));
+    modelColor[6] = settings->ThawColor("ModelColor_6", RGBi(  0,   0, 130));
+    modelColor[7] = settings->ThawColor("ModelColor_7", RGBi( 80,   0,  80));
     // Light intensities
-    lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
-    lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
+    lightIntensity[0] = settings->ThawFloat("LightIntensity_0", 1.0f);
+    lightIntensity[1] = settings->ThawFloat("LightIntensity_1", 0.5f);
     ambientIntensity = 0.3; // no setting for that yet
     // Light positions
-    lightDir[0].x = CnfThawFloat(-1.0f, "LightDir_0_Right"     );
-    lightDir[0].y = CnfThawFloat( 1.0f, "LightDir_0_Up"        );
-    lightDir[0].z = CnfThawFloat( 0.0f, "LightDir_0_Forward"   );
-    lightDir[1].x = CnfThawFloat( 1.0f, "LightDir_1_Right"     );
-    lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
-    lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
+    lightDir[0].x = settings->ThawFloat("LightDir_0_Right",   -1.0f);
+    lightDir[0].y = settings->ThawFloat("LightDir_0_Up",       1.0f);
+    lightDir[0].z = settings->ThawFloat("LightDir_0_Forward",  0.0f);
+    lightDir[1].x = settings->ThawFloat("LightDir_1_Right",    1.0f);
+    lightDir[1].y = settings->ThawFloat("LightDir_1_Up",       0.0f);
+    lightDir[1].z = settings->ThawFloat("LightDir_1_Forward",  0.0f);
 
     exportMode = false;
     // Chord tolerance
-    chordTol = CnfThawFloat(0.5f, "ChordTolerancePct");
+    chordTol = settings->ThawFloat("ChordTolerancePct", 0.5f);
     // Max pwl segments to generate
-    maxSegments = CnfThawInt(10, "MaxSegments");
+    maxSegments = settings->ThawInt("MaxSegments", 10);
     // Chord tolerance
-    exportChordTol = CnfThawFloat(0.1f, "ExportChordTolerance");
+    exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1f);
     // Max pwl segments to generate
-    exportMaxSegments = CnfThawInt(64, "ExportMaxSegments");
+    exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
     // View units
-    viewUnits = (Unit)CnfThawInt((uint32_t)Unit::MM, "ViewUnits");
+    viewUnits = (Unit)settings->ThawInt("ViewUnits", (uint32_t)Unit::MM);
     // Number of digits after the decimal point
-    afterDecimalMm = CnfThawInt(2, "AfterDecimalMm");
-    afterDecimalInch = CnfThawInt(3, "AfterDecimalInch");
+    afterDecimalMm = settings->ThawInt("AfterDecimalMm", 2);
+    afterDecimalInch = settings->ThawInt("AfterDecimalInch", 3);
     // Camera tangent (determines perspective)
-    cameraTangent = CnfThawFloat(0.3f/1e3f, "CameraTangent");
+    cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3f);
     // Grid spacing
-    gridSpacing = CnfThawFloat(5.0f, "GridSpacing");
+    gridSpacing = settings->ThawFloat("GridSpacing", 5.0f);
     // Export scale factor
-    exportScale = CnfThawFloat(1.0f, "ExportScale");
+    exportScale = settings->ThawFloat("ExportScale", 1.0f);
     // Export offset (cutter radius comp)
-    exportOffset = CnfThawFloat(0.0f, "ExportOffset");
+    exportOffset = settings->ThawFloat("ExportOffset", 0.0f);
     // Rewrite exported colors close to white into black (assuming white bg)
-    fixExportColors = CnfThawBool(true, "FixExportColors");
+    fixExportColors = settings->ThawBool("FixExportColors", true);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    drawBackFaces = CnfThawBool(true, "DrawBackFaces");
+    drawBackFaces = settings->ThawBool("DrawBackFaces", true);
     // Check that contours are closed and not self-intersecting
-    checkClosedContour = CnfThawBool(true, "CheckClosedContour");
+    checkClosedContour = settings->ThawBool("CheckClosedContour", true);
     // Draw closed polygons areas
-    showContourAreas = CnfThawBool(false, "ShowContourAreas");
+    showContourAreas = settings->ThawBool("ShowContourAreas", false);
     // Export shaded triangles in a 2d view
-    exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
+    exportShadedTriangles = settings->ThawBool("ExportShadedTriangles", true);
     // Export pwl curves (instead of exact) always
-    exportPwlCurves = CnfThawBool(false, "ExportPwlCurves");
+    exportPwlCurves = settings->ThawBool("ExportPwlCurves", false);
     // Background color on-screen
-    backgroundColor = CnfThawColor(RGBi(0, 0, 0), "BackgroundColor");
+    backgroundColor = settings->ThawColor("BackgroundColor", RGBi(0, 0, 0));
     // Whether export canvas size is fixed or derived from bbox
-    exportCanvasSizeAuto = CnfThawBool(true, "ExportCanvasSizeAuto");
+    exportCanvasSizeAuto = settings->ThawBool("ExportCanvasSizeAuto", true);
     // Margins for automatic canvas size
-    exportMargin.left   = CnfThawFloat(5.0f, "ExportMargin_Left");
-    exportMargin.right  = CnfThawFloat(5.0f, "ExportMargin_Right");
-    exportMargin.bottom = CnfThawFloat(5.0f, "ExportMargin_Bottom");
-    exportMargin.top    = CnfThawFloat(5.0f, "ExportMargin_Top");
+    exportMargin.left   = settings->ThawFloat("ExportMargin_Left",   5.0f);
+    exportMargin.right  = settings->ThawFloat("ExportMargin_Right",  5.0f);
+    exportMargin.bottom = settings->ThawFloat("ExportMargin_Bottom", 5.0f);
+    exportMargin.top    = settings->ThawFloat("ExportMargin_Top",    5.0f);
     // Dimensions for fixed canvas size
-    exportCanvas.width  = CnfThawFloat(100.0f, "ExportCanvas_Width");
-    exportCanvas.height = CnfThawFloat(100.0f, "ExportCanvas_Height");
-    exportCanvas.dx     = CnfThawFloat(  5.0f, "ExportCanvas_Dx");
-    exportCanvas.dy     = CnfThawFloat(  5.0f, "ExportCanvas_Dy");
+    exportCanvas.width  = settings->ThawFloat("ExportCanvas_Width",  100.0f);
+    exportCanvas.height = settings->ThawFloat("ExportCanvas_Height", 100.0f);
+    exportCanvas.dx     = settings->ThawFloat("ExportCanvas_Dx",     5.0f);
+    exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0f);
     // Extra parameters when exporting G code
-    gCode.depth         = CnfThawFloat(10.0f, "GCode_Depth");
-    gCode.passes        = CnfThawInt(1, "GCode_Passes");
-    gCode.feed          = CnfThawFloat(10.0f, "GCode_Feed");
-    gCode.plungeFeed    = CnfThawFloat(10.0f, "GCode_PlungeFeed");
+    gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0f);
+    gCode.passes        = settings->ThawInt("GCode_Passes", 1);
+    gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0f);
+    gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0f);
     // Show toolbar in the graphics window
-    showToolbar = CnfThawBool(true, "ShowToolbar");
+    showToolbar = settings->ThawBool("ShowToolbar", true);
     // Recent files menus
     for(size_t i = 0; i < MAX_RECENT; i++) {
-        std::string rawPath = CnfThawString("", "RecentFile_" + std::to_string(i));
+        std::string rawPath = settings->ThawString("RecentFile_" + std::to_string(i), "");
         if(rawPath.empty()) continue;
         recentFiles.push_back(Platform::Path::From(rawPath));
     }
     // Autosave timer
-    autosaveInterval = CnfThawInt(5, "AutosaveInterval");
+    autosaveInterval = settings->ThawInt("AutosaveInterval", 5);
     // Locale
-    std::string locale = CnfThawString("", "Locale");
+    std::string locale = settings->ThawString("Locale", "");
     if(!locale.empty()) {
         SetLocale(locale);
     }
@@ -129,9 +131,9 @@ void SolveSpaceUI::Init() {
     AfterNewFile();
 
     if(TW.window && GW.window) {
-        TW.window->ThawPosition("TextWindow");
+        TW.window->ThawPosition(settings, "TextWindow");
+        GW.window->ThawPosition(settings, "GraphicsWindow");
         TW.window->SetVisible(true);
-        GW.window->ThawPosition("GraphicsWindow");
         GW.window->SetVisible(true);
         GW.window->Focus();
     }
@@ -169,8 +171,10 @@ bool SolveSpaceUI::Load(const Platform::Path &filename) {
 }
 
 void SolveSpaceUI::Exit() {
-    GW.window->FreezePosition("GraphicsWindow");
-    TW.window->FreezePosition("TextWindow");
+    Platform::SettingsRef settings = Platform::GetSettings();
+
+    GW.window->FreezePosition(settings, "GraphicsWindow");
+    TW.window->FreezePosition(settings, "TextWindow");
 
     // Recent files
     for(size_t i = 0; i < MAX_RECENT; i++) {
@@ -178,80 +182,80 @@ void SolveSpaceUI::Exit() {
         if(recentFiles.size() > i) {
             rawPath = recentFiles[i].raw;
         }
-        CnfFreezeString(rawPath, "RecentFile_" + std::to_string(i));
+        settings->FreezeString("RecentFile_" + std::to_string(i), rawPath);
     }
     // Model colors
     for(size_t i = 0; i < MODEL_COLORS; i++)
-        CnfFreezeColor(modelColor[i], "ModelColor_" + std::to_string(i));
+        settings->FreezeColor("ModelColor_" + std::to_string(i), modelColor[i]);
     // Light intensities
-    CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
-    CnfFreezeFloat((float)lightIntensity[1], "LightIntensity_1");
+    settings->FreezeFloat("LightIntensity_0", (float)lightIntensity[0]);
+    settings->FreezeFloat("LightIntensity_1", (float)lightIntensity[1]);
     // Light directions
-    CnfFreezeFloat((float)lightDir[0].x, "LightDir_0_Right");
-    CnfFreezeFloat((float)lightDir[0].y, "LightDir_0_Up");
-    CnfFreezeFloat((float)lightDir[0].z, "LightDir_0_Forward");
-    CnfFreezeFloat((float)lightDir[1].x, "LightDir_1_Right");
-    CnfFreezeFloat((float)lightDir[1].y, "LightDir_1_Up");
-    CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
+    settings->FreezeFloat("LightDir_0_Right",   (float)lightDir[0].x);
+    settings->FreezeFloat("LightDir_0_Up",      (float)lightDir[0].y);
+    settings->FreezeFloat("LightDir_0_Forward", (float)lightDir[0].z);
+    settings->FreezeFloat("LightDir_1_Right",   (float)lightDir[1].x);
+    settings->FreezeFloat("LightDir_1_Up",      (float)lightDir[1].y);
+    settings->FreezeFloat("LightDir_1_Forward", (float)lightDir[1].z);
     // Chord tolerance
-    CnfFreezeFloat((float)chordTol, "ChordTolerancePct");
+    settings->FreezeFloat("ChordTolerancePct", (float)chordTol);
     // Max pwl segments to generate
-    CnfFreezeInt((uint32_t)maxSegments, "MaxSegments");
+    settings->FreezeInt("MaxSegments", (uint32_t)maxSegments);
     // Export Chord tolerance
-    CnfFreezeFloat((float)exportChordTol, "ExportChordTolerance");
+    settings->FreezeFloat("ExportChordTolerance", (float)exportChordTol);
     // Export Max pwl segments to generate
-    CnfFreezeInt((uint32_t)exportMaxSegments, "ExportMaxSegments");
+    settings->FreezeInt("ExportMaxSegments", (uint32_t)exportMaxSegments);
     // View units
-    CnfFreezeInt((uint32_t)viewUnits, "ViewUnits");
+    settings->FreezeInt("ViewUnits", (uint32_t)viewUnits);
     // Number of digits after the decimal point
-    CnfFreezeInt((uint32_t)afterDecimalMm, "AfterDecimalMm");
-    CnfFreezeInt((uint32_t)afterDecimalInch, "AfterDecimalInch");
+    settings->FreezeInt("AfterDecimalMm",   (uint32_t)afterDecimalMm);
+    settings->FreezeInt("AfterDecimalInch", (uint32_t)afterDecimalInch);
     // Camera tangent (determines perspective)
-    CnfFreezeFloat((float)cameraTangent, "CameraTangent");
+    settings->FreezeFloat("CameraTangent", (float)cameraTangent);
     // Grid spacing
-    CnfFreezeFloat(gridSpacing, "GridSpacing");
+    settings->FreezeFloat("GridSpacing", gridSpacing);
     // Export scale
-    CnfFreezeFloat(exportScale, "ExportScale");
+    settings->FreezeFloat("ExportScale", exportScale);
     // Export offset (cutter radius comp)
-    CnfFreezeFloat(exportOffset, "ExportOffset");
+    settings->FreezeFloat("ExportOffset", exportOffset);
     // Rewrite exported colors close to white into black (assuming white bg)
-    CnfFreezeBool(fixExportColors, "FixExportColors");
+    settings->FreezeBool("FixExportColors", fixExportColors);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    CnfFreezeBool(drawBackFaces, "DrawBackFaces");
+    settings->FreezeBool("DrawBackFaces", drawBackFaces);
     // Draw closed polygons areas
-    CnfFreezeBool(showContourAreas, "ShowContourAreas");
+    settings->FreezeBool("ShowContourAreas", showContourAreas);
     // Check that contours are closed and not self-intersecting
-    CnfFreezeBool(checkClosedContour, "CheckClosedContour");
+    settings->FreezeBool("CheckClosedContour", checkClosedContour);
     // Export shaded triangles in a 2d view
-    CnfFreezeBool(exportShadedTriangles, "ExportShadedTriangles");
+    settings->FreezeBool("ExportShadedTriangles", exportShadedTriangles);
     // Export pwl curves (instead of exact) always
-    CnfFreezeBool(exportPwlCurves, "ExportPwlCurves");
+    settings->FreezeBool("ExportPwlCurves", exportPwlCurves);
     // Background color on-screen
-    CnfFreezeColor(backgroundColor, "BackgroundColor");
+    settings->FreezeColor("BackgroundColor", backgroundColor);
     // Whether export canvas size is fixed or derived from bbox
-    CnfFreezeBool(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
+    settings->FreezeBool("ExportCanvasSizeAuto", exportCanvasSizeAuto);
     // Margins for automatic canvas size
-    CnfFreezeFloat(exportMargin.left,   "ExportMargin_Left");
-    CnfFreezeFloat(exportMargin.right,  "ExportMargin_Right");
-    CnfFreezeFloat(exportMargin.bottom, "ExportMargin_Bottom");
-    CnfFreezeFloat(exportMargin.top,    "ExportMargin_Top");
+    settings->FreezeFloat("ExportMargin_Left",   exportMargin.left);
+    settings->FreezeFloat("ExportMargin_Right",  exportMargin.right);
+    settings->FreezeFloat("ExportMargin_Bottom", exportMargin.bottom);
+    settings->FreezeFloat("ExportMargin_Top",    exportMargin.top);
     // Dimensions for fixed canvas size
-    CnfFreezeFloat(exportCanvas.width,  "ExportCanvas_Width");
-    CnfFreezeFloat(exportCanvas.height, "ExportCanvas_Height");
-    CnfFreezeFloat(exportCanvas.dx,     "ExportCanvas_Dx");
-    CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
+    settings->FreezeFloat("ExportCanvas_Width",  exportCanvas.width);
+    settings->FreezeFloat("ExportCanvas_Height", exportCanvas.height);
+    settings->FreezeFloat("ExportCanvas_Dx",     exportCanvas.dx);
+    settings->FreezeFloat("ExportCanvas_Dy",     exportCanvas.dy);
      // Extra parameters when exporting G code
-    CnfFreezeFloat(gCode.depth,         "GCode_Depth");
-    CnfFreezeInt(gCode.passes,          "GCode_Passes");
-    CnfFreezeFloat(gCode.feed,          "GCode_Feed");
-    CnfFreezeFloat(gCode.plungeFeed,    "GCode_PlungeFeed");
+    settings->FreezeFloat("GCode_Depth", gCode.depth);
+    settings->FreezeInt("GCode_Passes", gCode.passes);
+    settings->FreezeFloat("GCode_Feed", gCode.feed);
+    settings->FreezeFloat("GCode_PlungeFeed", gCode.plungeFeed);
     // Show toolbar in the graphics window
-    CnfFreezeBool(showToolbar, "ShowToolbar");
+    settings->FreezeBool("ShowToolbar", showToolbar);
     // Autosave timer
-    CnfFreezeInt(autosaveInterval, "AutosaveInterval");
+    settings->FreezeInt("AutosaveInterval", autosaveInterval);
 
     // And the default styles, colors and line widths and such.
-    Style::FreezeDefaultStyles();
+    Style::FreezeDefaultStyles(settings);
 
     Platform::Exit();
 }
@@ -444,6 +448,8 @@ void SolveSpaceUI::UpdateWindowTitles() {
 }
 
 void SolveSpaceUI::MenuFile(Command id) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     switch(id) {
         case Command::NEW:
             if(!SS.OkayToStartNewFile()) break;
@@ -480,9 +486,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_VIEW: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "ViewExportFormat"),
+            if(!GetSaveFile(&exportFile,
+                            Platform::GetSettings()->ThawString("ViewExportFormat"),
                             VectorFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "ViewExportFormat");
+            settings->FreezeString("ViewExportFormat", exportFile.Extension());
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
@@ -502,9 +509,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_WIREFRAME: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "WireframeExportFormat"),
+            if(!GetSaveFile(&exportFile,
+                            Platform::GetSettings()->ThawString("WireframeExportFormat"),
                             Vector3dFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "WireframeExportFormat");
+            settings->FreezeString("WireframeExportFormat", exportFile.Extension());
 
             SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/true);
             break;
@@ -512,9 +520,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_SECTION: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "SectionExportFormat"),
+            if(!GetSaveFile(&exportFile,
+                            Platform::GetSettings()->ThawString("SectionExportFormat"),
                             VectorFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "SectionExportFormat");
+            settings->FreezeString("SectionExportFormat", exportFile.Extension());
 
             SS.ExportSectionTo(exportFile);
             break;
@@ -522,9 +531,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_MESH: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "MeshExportFormat"),
+            if(!GetSaveFile(&exportFile,
+                            Platform::GetSettings()->ThawString("MeshExportFormat"),
                             MeshFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "MeshExportFormat");
+            settings->FreezeString("MeshExportFormat", exportFile.Extension());
 
             SS.ExportMeshTo(exportFile);
             break;
@@ -532,9 +542,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::EXPORT_SURFACES: {
             Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "SurfacesExportFormat"),
+            if(!GetSaveFile(&exportFile,
+                            Platform::GetSettings()->ThawString("SurfacesExportFormat"),
                             SurfaceFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "SurfacesExportFormat");
+            settings->FreezeString("SurfacesExportFormat", exportFile.Extension());
 
             StepFileWriter sfw = {};
             sfw.ExportSurfacesTo(exportFile);
@@ -543,9 +554,10 @@ void SolveSpaceUI::MenuFile(Command id) {
 
         case Command::IMPORT: {
             Platform::Path importFile;
-            if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
+            if(!GetOpenFile(&importFile,
+                            Platform::GetSettings()->ThawString("ImportFormat"),
                             ImportableFileFilter)) break;
-            CnfFreezeString(importFile.Extension(), "ImportFormat");
+            settings->FreezeString("ImportFormat", importFile.Extension());
 
             if(importFile.HasExtension("dxf")) {
                 ImportDxf(importFile);
