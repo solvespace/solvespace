@@ -135,11 +135,10 @@ public:
         bool Equals(const Fill &other) const;
     };
 
-    IdList<Stroke, hStroke> strokes;
-    IdList<Fill,   hFill>   fills;
-    BitmapFont bitmapFont;
+    IdList<Stroke, hStroke> strokes = {};
+    IdList<Fill,   hFill>   fills   = {};
+    BitmapFont bitmapFont = {};
 
-    Canvas() : strokes(), fills(), bitmapFont() {}
     virtual void Clear();
 
     hStroke GetStroke(const Stroke &stroke);
@@ -197,7 +196,7 @@ public:
 class UiCanvas {
 public:
     std::shared_ptr<Canvas> canvas;
-    bool                    flip;
+    bool                    flip = false;
 
     void DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width = 1,
                   int zIndex = 0);
@@ -216,17 +215,14 @@ public:
 // A canvas that performs picking against drawn geometry.
 class ObjectPicker : public Canvas {
 public:
-    Camera      camera;
+    Camera      camera      = {};
     // Configuration.
-    Point2d     point;
-    double      selRadius;
+    Point2d     point       = {};
+    double      selRadius   = 0.0;
     // Picking state.
-    double      minDistance;
-    int         maxZIndex;
-    uint32_t    position;
-
-    ObjectPicker() : camera(), point(), selRadius(),
-                     minDistance(), maxZIndex(), position() {}
+    double      minDistance = 0.0;
+    int         maxZIndex   = 0;
+    uint32_t    position    = 0;
 
     const Camera &GetCamera() const override { return camera; }
 
@@ -261,18 +257,17 @@ public:
 // on the CPU.
 class SurfaceRenderer : public Canvas {
 public:
-    Camera      camera;
-    Lighting    lighting;
+    Camera      camera   = {};
+    Lighting    lighting = {};
     // Chord tolerance, for converting beziers to pwl.
-    double      chordTolerance;
+    double      chordTolerance = 0.0;
     // Render lists.
     handle_map<hStroke, SEdgeList>   edges;
     handle_map<hStroke, SBezierList> beziers;
-    SMesh       mesh;
+    SMesh       mesh = {};
     // State.
-    BBox        bbox;
+    BBox        bbox = {};
 
-    SurfaceRenderer() : camera(), lighting(), chordTolerance(), mesh(), bbox() {}
     void Clear() override;
 
     // Canvas interface.
@@ -323,15 +318,13 @@ public:
 
 class CairoRenderer : public SurfaceRenderer {
 public:
-    cairo_t     *context;
+    cairo_t     *context  = NULL;
     // Renderer configuration.
-    bool        antialias;
+    bool        antialias = false;
     // Renderer state.
     struct {
         hStroke     hcs;
-    } current;
-
-    CairoRenderer() : context(), current() {}
+    } current = {};
 
     void SelectStroke(hStroke hcs);
     void MoveTo(Vector p);
@@ -353,8 +346,9 @@ public:
 // An offscreen renderer based on OpenGL framebuffers.
 class GlOffscreen {
 public:
-    unsigned int          framebuffer;
-    unsigned int          colorRenderbuffer, depthRenderbuffer;
+    unsigned int          framebuffer = 0;
+    unsigned int          colorRenderbuffer = 0;
+    unsigned int          depthRenderbuffer = 0;
     std::vector<uint8_t>  data;
 
     bool Render(int width, int height, std::function<void()> renderFn);
