@@ -13,6 +13,11 @@ static System SYS;
 
 static int IsInit = 0;
 
+void SolveSpace::Platform::FatalError(std::string message) {
+    fprintf(stderr, "%s", message.c_str());
+    abort();
+}
+
 void Group::GenerateEquations(IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }

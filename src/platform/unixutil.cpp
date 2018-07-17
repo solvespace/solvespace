@@ -27,35 +27,6 @@ void dbp(const char *str, ...)
     fputc('\n', stderr);
 }
 
-namespace Platform {
-
-void FatalError(std::string message) {
-    fprintf(stderr, "%s", message.c_str());
-
-#if !defined(LIBRARY) && defined(HAVE_BACKTRACE)
-    static void *ptrs[1024] = {};
-    size_t nptrs = backtrace(ptrs, sizeof(ptrs) / sizeof(ptrs[0]));
-    char **syms = backtrace_symbols(ptrs, nptrs);
-
-    fprintf(stderr, "Backtrace:\n");
-    if(syms != NULL) {
-        for(size_t i = 0; i < nptrs; i++) {
-            fprintf(stderr, "%2zu: %s\n", i, syms[i]);
-        }
-    } else {
-        for(size_t i = 0; i < nptrs; i++) {
-            fprintf(stderr, "%2zu: %p\n", i, ptrs[i]);
-        }
-    }
-#else
-    fprintf(stderr, "Backtrace support not compiled in.\n");
-#endif
-
-    abort();
-}
-
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since fragmentation is less of a concern, and it also makes it possible

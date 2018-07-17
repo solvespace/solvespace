@@ -76,6 +76,12 @@ std::string AcceleratorDescription(const KeyboardEvent &accel);
 // Interfaces
 //-----------------------------------------------------------------------------
 
+// Handling fatal errors.
+#if defined(__GNUC__)
+__attribute__((noreturn))
+#endif
+void FatalError(std::string message);
+
 // A native settings store.
 class Settings {
 public:

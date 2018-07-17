@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <shellapi.h>
 
 #ifndef WM_DPICHANGED
 #define WM_DPICHANGED       0x02E0
@@ -102,6 +103,34 @@ static int Clamp(int x, int a, int b) {
     return max(a, min(x, b));
 }
 
+//-----------------------------------------------------------------------------
+// Fatal errors
+//-----------------------------------------------------------------------------
+
+bool handlingFatalError = false;
+
+void FatalError(std::string message) {
+    // Indicate that we're handling a fatal error, to avoid re-entering application code
+    // and potentially crashing even harder.
+    handlingFatalError = true;
+
+    message += "\nGenerate debug report?";
+    switch(MessageBoxW(NULL, Platform::Widen(message).c_str(),
+                       L"Fatal error — SolveSpace",
+                       MB_ICONERROR|MB_TASKMODAL|MB_SETFOREGROUND|MB_TOPMOST|
+                       MB_OKCANCEL|MB_DEFBUTTON2)) {
+        case IDOK:
+            abort();
+
+        case IDCANCEL:
+        default: {
+            WCHAR appPath[MAX_PATH] = {};
+            GetModuleFileNameW(NULL, appPath, sizeof(appPath));
+            ShellExecuteW(NULL, L"open", appPath, NULL, NULL, SW_SHOW);
+            _exit(1);
+        }
+    }
+}
 //-----------------------------------------------------------------------------
 // Settings
 //-----------------------------------------------------------------------------

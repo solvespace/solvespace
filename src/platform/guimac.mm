@@ -53,6 +53,33 @@ namespace SolveSpace {
 namespace Platform {
 
 //-----------------------------------------------------------------------------
+// Fatal errors
+//-----------------------------------------------------------------------------
+
+// This gets put into the "Application Specific Information" field in crash
+// reporter dialog.
+typedef struct {
+  unsigned    version   __attribute__((aligned(8)));
+  const char *message   __attribute__((aligned(8)));
+  const char *signature __attribute__((aligned(8)));
+  const char *backtrace __attribute__((aligned(8)));
+  const char *message2  __attribute__((aligned(8)));
+  void       *reserved  __attribute__((aligned(8)));
+  void       *reserved2 __attribute__((aligned(8)));
+} crash_info_t;
+
+#define CRASH_VERSION    4
+
+crash_info_t crashAnnotation __attribute__((section("__DATA,__crash_info"))) = {
+    CRASH_VERSION, NULL, NULL, NULL, NULL, NULL, NULL
+};
+
+void FatalError(std::string message) {
+    crashAnnotation.message = message.c_str();
+    abort();
+}
+
+//-----------------------------------------------------------------------------
 // Settings
 //-----------------------------------------------------------------------------
 
