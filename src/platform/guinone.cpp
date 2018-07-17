@@ -114,11 +114,23 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 }
 
 //-----------------------------------------------------------------------------
-// Dialogs
+// Message dialogs
 //-----------------------------------------------------------------------------
 
 MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
     return std::shared_ptr<MessageDialog>();
+}
+
+//-----------------------------------------------------------------------------
+// File dialogs
+//-----------------------------------------------------------------------------
+
+FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
+    return std::shared_ptr<FileDialog>();
+}
+
+FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
+    return std::shared_ptr<FileDialog>();
 }
 
 //-----------------------------------------------------------------------------
@@ -135,14 +147,6 @@ void Exit() {
 // Dialogs
 //-----------------------------------------------------------------------------
 
-bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
-                 const FileFilter filters[]) {
-    ssassert(false, "Not implemented");
-}
-bool GetSaveFile(Platform::Path *filename, const std::string &activeOrEmpty,
-                 const FileFilter filters[]) {
-    ssassert(false, "Not implemented");
-}
 void OpenWebsite(const char *url) {
     ssassert(false, "Not implemented");
 }

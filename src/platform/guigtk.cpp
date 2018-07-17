@@ -13,15 +13,16 @@
 #include <gtkmm/box.h>
 #include <gtkmm/checkmenuitem.h>
 #include <gtkmm/entry.h>
+#include <gtkmm/filechooserdialog.h>
 #include <gtkmm/fixed.h>
 #include <gtkmm/glarea.h>
 #include <gtkmm/main.h>
 #include <gtkmm/menu.h>
 #include <gtkmm/menubar.h>
+#include <gtkmm/messagedialog.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separatormenuitem.h>
 #include <gtkmm/window.h>
-#include <gtkmm/messagedialog.h>
 
 namespace SolveSpace {
 namespace Platform {
@@ -1076,6 +1077,138 @@ public:
 MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
     return std::make_shared<MessageDialogImplGtk>(
                 std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow);
+}
+
+//-----------------------------------------------------------------------------
+// File dialogs
+//-----------------------------------------------------------------------------
+
+class FileDialogImplGtk : public FileDialog {
+public:
+    Gtk::FileChooserDialog      gtkDialog;
+    std::vector<std::string>    extensions;
+
+    FileDialogImplGtk(Gtk::FileChooserDialog &&dialog)
+        : gtkDialog(std::move(dialog))
+    {
+        gtkDialog.property_filter().signal_changed().
+            connect(sigc::mem_fun(this, &FileDialogImplGtk::FilterChanged));
+    }
+
+    void SetTitle(std::string title) override {
+        gtkDialog.set_title(PrepareTitle(title));
+    }
+
+    void SetCurrentName(std::string name) override {
+        gtkDialog.set_current_name(name);
+    }
+
+    Platform::Path GetFilename() override {
+        return Path::From(gtkDialog.get_filename());
+    }
+
+    void SetFilename(Platform::Path path) override {
+        gtkDialog.set_filename(path.raw);
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        Glib::RefPtr<Gtk::FileFilter> gtkFilter = Gtk::FileFilter::create();
+        Glib::ustring desc;
+        for(auto extension : extensions) {
+            Glib::ustring pattern = "*";
+            if(!extension.empty()) {
+                pattern = "*." + extension;
+                gtkFilter->add_pattern(pattern);
+                gtkFilter->add_pattern(Glib::ustring(pattern).uppercase());
+            }
+            if(!desc.empty()) {
+                desc += ", ";
+            }
+            desc += pattern;
+        }
+        gtkFilter->set_name(name + " (" + desc + ")");
+
+        this->extensions.push_back(extensions.front());
+        gtkDialog.add_filter(gtkFilter);
+    }
+
+    std::string GetExtension() {
+        auto filters = gtkDialog.list_filters();
+        size_t filterIndex =
+            std::find(filters.begin(), filters.end(), gtkDialog.get_filter()) -
+            filters.begin();
+        if(filterIndex < extensions.size()) {
+            return extensions[filterIndex];
+        } else {
+            return extensions.front();
+        }
+    }
+
+    void SetExtension(std::string extension) {
+        auto filters = gtkDialog.list_filters();
+        size_t extensionIndex =
+            std::find(extensions.begin(), extensions.end(), extension) -
+            extensions.begin();
+        if(extensionIndex < filters.size()) {
+            gtkDialog.set_filter(filters[extensionIndex]);
+        } else {
+            gtkDialog.set_filter(filters.front());
+        }
+    }
+
+    void FilterChanged() {
+        std::string extension = GetExtension();
+        if(extension == "") return;
+
+        Platform::Path path = GetFilename();
+        SetCurrentName(path.WithExtension(extension).FileName());
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        settings->FreezeString("Dialog_" + key + "_Folder",
+                               gtkDialog.get_current_folder());
+        settings->FreezeString("Dialog_" + key + "_Filter", GetExtension());
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        gtkDialog.set_current_folder(settings->ThawString("Dialog_" + key + "_Folder"));
+        SetExtension(settings->ThawString("Dialog_" + key + "_Filter"));
+    }
+
+    bool RunModal() override {
+        if(gtkDialog.get_action() == Gtk::FILE_CHOOSER_ACTION_SAVE &&
+                Path::From(gtkDialog.get_current_name()).FileStem().empty()) {
+            gtkDialog.set_current_name(std::string(_("untitled")) + "." + GetExtension());
+        }
+
+        if(gtkDialog.run() == Gtk::RESPONSE_OK) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
+
+FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
+    Gtk::Window &gtkParent = std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow;
+    Gtk::FileChooserDialog gtkDialog(gtkParent, C_("title", "Open File"),
+                                     Gtk::FILE_CHOOSER_ACTION_OPEN);
+    gtkDialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
+    gtkDialog.add_button(C_("button", "_Open"), Gtk::RESPONSE_OK);
+    gtkDialog.set_default_response(Gtk::RESPONSE_OK);
+    return std::make_shared<FileDialogImplGtk>(std::move(gtkDialog));
+
+}
+
+FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
+    Gtk::Window &gtkParent = std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow;
+    Gtk::FileChooserDialog gtkDialog(gtkParent, C_("title", "Save File"),
+                                     Gtk::FILE_CHOOSER_ACTION_SAVE);
+    gtkDialog.set_do_overwrite_confirmation(true);
+    gtkDialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
+    gtkDialog.add_button(C_("button", "_Save"), Gtk::RESPONSE_OK);
+    gtkDialog.set_default_response(Gtk::RESPONSE_OK);
+    return std::make_shared<FileDialogImplGtk>(std::move(gtkDialog));
 }
 
 //-----------------------------------------------------------------------------

@@ -142,18 +142,6 @@ extern Platform::Path RecentFile[MAX_RECENT];
 
 #define AUTOSAVE_EXT "slvs~"
 
-enum class Unit : uint32_t {
-    MM = 0,
-    INCHES,
-    METERS
-};
-
-struct FileFilter;
-
-bool GetSaveFile(Platform::Path *filename, const std::string &defExtension,
-                 const FileFilter filters[]);
-bool GetOpenFile(Platform::Path *filename, const std::string &defExtension,
-                 const FileFilter filters[]);
 std::vector<Platform::Path> GetFontFiles();
 
 void OpenWebsite(const char *url);
@@ -172,10 +160,16 @@ void *MemAlloc(size_t n);
 void MemFree(void *p);
 void vl(); // debug function to validate heaps
 
-#include "resource.h"
-
 // End of platform-specific functions
 //================
+
+#include "resource.h"
+
+enum class Unit : uint32_t {
+    MM = 0,
+    INCHES,
+    METERS
+};
 
 template<class T>
 struct CompareHandle {

@@ -69,5 +69,60 @@ RgbaColor Settings::ThawColor(const std::string &key, RgbaColor defaultValue) {
     return RgbaColor::FromPackedInt(ThawInt(key, defaultValue.ToPackedInt()));
 }
 
+//-----------------------------------------------------------------------------
+// File dialogs
+//-----------------------------------------------------------------------------
+
+void FileDialog::AddFilter(const FileFilter &filter) {
+    AddFilter(Translate("file-type", filter.name.c_str()), filter.extensions);
+}
+
+void FileDialog::AddFilters(const std::vector<FileFilter> &filters) {
+    for(auto filter : filters) AddFilter(filter);
+}
+
+std::vector<FileFilter> SolveSpaceModelFileFilters = {
+    { CN_("file-type", "SolveSpace models"), { "slvs" } },
+};
+
+std::vector<FileFilter> RasterFileFilters = {
+    { CN_("file-type", "PNG image"), { "png" } },
+};
+
+std::vector<FileFilter> MeshFileFilters = {
+    { CN_("file-type", "STL mesh"), { "stl" } },
+    { CN_("file-type", "Wavefront OBJ mesh"), { "obj" } },
+    { CN_("file-type", "Three.js-compatible mesh, with viewer"), { "html" } },
+    { CN_("file-type", "Three.js-compatible mesh, mesh only"), { "js" } },
+};
+
+std::vector<FileFilter> SurfaceFileFilters = {
+    { CN_("file-type", "STEP file"), { "step", "stp" } },
+};
+
+std::vector<FileFilter> VectorFileFilters = {
+    { CN_("file-type", "PDF file"), { "pdf" } },
+    { CN_("file-type", "Encapsulated PostScript"), { "eps",  "ps" } },
+    { CN_("file-type", "Scalable Vector Graphics"), { "svg" } },
+    { CN_("file-type", "STEP file"), { "step", "stp" } },
+    { CN_("file-type", "DXF file (AutoCAD 2007)"), { "dxf" } },
+    { CN_("file-type", "HPGL file"), { "plt",  "hpgl" } },
+    { CN_("file-type", "G Code"), { "ngc",  "txt" } },
+};
+
+std::vector<FileFilter> Vector3dFileFilters = {
+    { CN_("file-type", "STEP file"), { "step", "stp" } },
+    { CN_("file-type", "DXF file (AutoCAD 2007)"), { "dxf" } },
+};
+
+std::vector<FileFilter> ImportFileFilters = {
+    { CN_("file-type", "AutoCAD DXF and DWG files"), { "dxf", "dwg" } },
+};
+
+std::vector<FileFilter> CsvFileFilters = {
+    { CN_("file-type", "Comma-separated values"), { "csv" } },
+};
+
+
 }
 }

@@ -7,6 +7,7 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="NSViewController">
             <connections>
+                <outlet property="textField" destination="z9Z-cA-QIW" id="w4z-a4-Khs"/>
                 <outlet property="button" destination="nNy-fR-AhK" id="w3z-a4-Khs"/>
                 <outlet property="view" destination="c22-O7-iKe" id="w2z-a4-Khs"/>
             </connections>

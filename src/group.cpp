@@ -74,6 +74,8 @@ void Group::MenuGroup(Command id)  {
 }
 
 void Group::MenuGroup(Command id, Platform::Path linkFile) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     Group g = {};
     g.visible = true;
     g.color = RGBi(100, 100, 100);
@@ -229,7 +231,12 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.type = Type::LINKED;
             g.meshCombine = CombineAs::ASSEMBLE;
             if(g.linkFile.IsEmpty()) {
-                if(!GetOpenFile(&g.linkFile, "", SlvsFileFilter)) return;
+                Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+                dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                dialog->ThawChoices(settings, "LinkSketch");
+                if(!dialog->RunModal()) return;
+                dialog->FreezeChoices(settings, "LinkSketch");
+                g.linkFile = dialog->GetFilename();
             }
 
             // Assign the default name of the group based on the name of

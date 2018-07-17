@@ -395,10 +395,22 @@ void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
 }
 
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
+    Platform::SettingsRef settings = Platform::GetSettings();
     Platform::Path newSaveFile = saveFile;
 
     if(saveAs || saveFile.IsEmpty()) {
-        if(!GetSaveFile(&newSaveFile, "", SlvsFileFilter)) return false;
+        Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(GW.window);
+        dialog->AddFilter(C_("file-type", "SolveSpace models"), { "slvs" });
+        dialog->ThawChoices(settings, "Sketch");
+        if(!newSaveFile.IsEmpty()) {
+            dialog->SetFilename(newSaveFile);
+        }
+        if(dialog->RunModal()) {
+            dialog->FreezeChoices(settings, "Sketch");
+            newSaveFile = dialog->GetFilename();
+        } else {
+            return false;
+        }
     }
 
     if(SaveToFile(newSaveFile)) {
@@ -490,9 +502,12 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::OPEN: {
             if(!SS.OkayToStartNewFile()) break;
 
-            Platform::Path newFile;
-            if(GetOpenFile(&newFile, "", SlvsFileFilter)) {
-                SS.Load(newFile);
+            Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+            dialog->ThawChoices(settings, "Sketch");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "Sketch");
+                SS.Load(dialog->GetFilename());
             }
             break;
         }
@@ -505,24 +520,28 @@ void SolveSpaceUI::MenuFile(Command id) {
             SS.GetFilenameAndSave(/*saveAs=*/true);
             break;
 
-        case Command::EXPORT_PNG: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, "", RasterFileFilter)) break;
-            SS.ExportAsPngTo(exportFile);
+        case Command::EXPORT_IMAGE: {
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::RasterFileFilters);
+            dialog->ThawChoices(settings, "ExportImage");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "ExportImage");
+                SS.ExportAsPngTo(dialog->GetFilename());
+            }
             break;
         }
 
         case Command::EXPORT_VIEW: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile,
-                            Platform::GetSettings()->ThawString("ViewExportFormat"),
-                            VectorFileFilter)) break;
-            settings->FreezeString("ViewExportFormat", exportFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::VectorFileFilters);
+            dialog->ThawChoices(settings, "ExportView");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportView");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints &&
-                (exportFile.HasExtension("txt") ||
+                (dialog->GetFilename().HasExtension("txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {
                 Message(_("Constraints are currently shown, and will be exported "
@@ -531,62 +550,63 @@ void SolveSpaceUI::MenuFile(Command id) {
                           "text window."));
             }
 
-            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/false);
+            SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe=*/false);
             break;
         }
 
         case Command::EXPORT_WIREFRAME: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile,
-                            Platform::GetSettings()->ThawString("WireframeExportFormat"),
-                            Vector3dFileFilter)) break;
-            settings->FreezeString("WireframeExportFormat", exportFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::Vector3dFileFilters);
+            dialog->ThawChoices(settings, "ExportWireframe");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportWireframe");
 
-            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/true);
+            SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe*/true);
             break;
         }
 
         case Command::EXPORT_SECTION: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile,
-                            Platform::GetSettings()->ThawString("SectionExportFormat"),
-                            VectorFileFilter)) break;
-            settings->FreezeString("SectionExportFormat", exportFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::VectorFileFilters);
+            dialog->ThawChoices(settings, "ExportSection");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportSection");
 
-            SS.ExportSectionTo(exportFile);
+            SS.ExportSectionTo(dialog->GetFilename());
             break;
         }
 
         case Command::EXPORT_MESH: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile,
-                            Platform::GetSettings()->ThawString("MeshExportFormat"),
-                            MeshFileFilter)) break;
-            settings->FreezeString("MeshExportFormat", exportFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::MeshFileFilters);
+            dialog->ThawChoices(settings, "ExportMesh");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportMesh");
 
-            SS.ExportMeshTo(exportFile);
+            SS.ExportMeshTo(dialog->GetFilename());
             break;
         }
 
         case Command::EXPORT_SURFACES: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile,
-                            Platform::GetSettings()->ThawString("SurfacesExportFormat"),
-                            SurfaceFileFilter)) break;
-            settings->FreezeString("SurfacesExportFormat", exportFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::SurfaceFileFilters);
+            dialog->ThawChoices(settings, "ExportSurfaces");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportSurfaces");
 
             StepFileWriter sfw = {};
-            sfw.ExportSurfacesTo(exportFile);
+            sfw.ExportSurfacesTo(dialog->GetFilename());
             break;
         }
 
         case Command::IMPORT: {
-            Platform::Path importFile;
-            if(!GetOpenFile(&importFile,
-                            Platform::GetSettings()->ThawString("ImportFormat"),
-                            ImportableFileFilter)) break;
-            settings->FreezeString("ImportFormat", importFile.Extension());
+            Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::ImportFileFilters);
+            dialog->ThawChoices(settings, "Import");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "Import");
 
+            Platform::Path importFile = dialog->GetFilename();
             if(importFile.HasExtension("dxf")) {
                 ImportDxf(importFile);
             } else if(importFile.HasExtension("dwg")) {
@@ -613,6 +633,8 @@ void SolveSpaceUI::MenuFile(Command id) {
 }
 
 void SolveSpaceUI::MenuAnalyze(Command id) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
 
@@ -813,9 +835,13 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
 
         case Command::STOP_TRACING: {
-            Platform::Path exportFile = SS.saveFile;
-            if(GetSaveFile(&exportFile, "", CsvFileFilter)) {
-                FILE *f = OpenFile(exportFile, "wb");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::CsvFileFilters);
+            dialog->ThawChoices(settings, "Trace");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "Trace");
+
+                FILE *f = OpenFile(dialog->GetFilename(), "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);
@@ -827,7 +853,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     }
                     fclose(f);
                 } else {
-                    Error("Couldn't write to '%s'", exportFile.raw.c_str());
+                    Error("Couldn't write to '%s'", dialog->GetFilename().raw.c_str());
                 }
             }
             // Clear the trace, and stop tracing

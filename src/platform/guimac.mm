@@ -1064,6 +1064,180 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 }
 
 //-----------------------------------------------------------------------------
+// File dialogs
+//-----------------------------------------------------------------------------
+
+}
+}
+
+@interface SSSaveFormatAccessory : NSViewController
+@property NSSavePanel      *panel;
+@property NSMutableArray   *filters;
+
+@property(nonatomic) NSInteger               index;
+@property(nonatomic) IBOutlet NSTextField   *textField;
+@property(nonatomic) IBOutlet NSPopUpButton *button;
+@end
+
+@implementation SSSaveFormatAccessory
+@synthesize panel, filters, button;
+
+- (void)setIndex:(NSInteger)newIndex {
+    self->_index = newIndex;
+    NSMutableArray *filter = [filters objectAtIndex:newIndex];
+    NSString *extension = [filter objectAtIndex:0];
+    if(![extension isEqual:@"*"]) {
+        NSString *filename = panel.nameFieldStringValue;
+        NSString *basename = [[filename componentsSeparatedByString:@"."] objectAtIndex:0];
+        panel.nameFieldStringValue = [basename stringByAppendingPathExtension:extension];
+    }
+    [panel setAllowedFileTypes:filter];
+}
+@end
+
+namespace SolveSpace {
+namespace Platform {
+
+class FileDialogImplCocoa : public FileDialog {
+public:
+    NSSavePanel *nsPanel = nil;
+
+    void SetTitle(std::string title) override {
+        nsPanel.title = Wrap(title);
+    }
+
+    void SetCurrentName(std::string name) override {
+        nsPanel.nameFieldStringValue = Wrap(name);
+    }
+
+    Platform::Path GetFilename() override {
+        return Platform::Path::From(nsPanel.URL.fileSystemRepresentation);
+    }
+
+    void SetFilename(Platform::Path path) override {
+        nsPanel.directoryURL =
+            [NSURL fileURLWithPath:Wrap(path.Parent().raw) isDirectory:YES];
+        nsPanel.nameFieldStringValue = Wrap(path.FileStem());
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        settings->FreezeString("Dialog_" + key + "_Folder",
+                               [nsPanel.directoryURL.absoluteString UTF8String]);
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        nsPanel.directoryURL =
+            [NSURL URLWithString:Wrap(settings->ThawString("Dialog_" + key + "_Folder", ""))];
+    }
+
+    bool RunModal() override {
+        if([nsPanel runModal] == NSFileHandlingPanelOKButton) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
+
+class OpenFileDialogImplCocoa : public FileDialogImplCocoa {
+public:
+    NSMutableArray *nsFilter = [[NSMutableArray alloc] init];
+
+    OpenFileDialogImplCocoa() {
+        SetTitle(C_("title", "Open File"));
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        for(auto extension : extensions) {
+            [nsFilter addObject:Wrap(extension)];
+        }
+        [nsPanel setAllowedFileTypes:nsFilter];
+    }
+};
+
+class SaveFileDialogImplCocoa : public FileDialogImplCocoa {
+public:
+    NSMutableArray         *nsFilters   = [[NSMutableArray alloc] init];
+    SSSaveFormatAccessory  *ssAccessory = nil;
+
+    SaveFileDialogImplCocoa() {
+        SetTitle(C_("title", "Save File"));
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        NSMutableArray *nsFilter = [[NSMutableArray alloc] init];
+        for(auto extension : extensions) {
+            [nsFilter addObject:Wrap(extension)];
+        }
+        if(nsFilters.count == 0) {
+            [nsPanel setAllowedFileTypes:nsFilter];
+        }
+        [nsFilters addObject:nsFilter];
+
+        std::string desc;
+        for(auto extension : extensions) {
+            if(!desc.empty()) desc += ", ";
+            desc += extension;
+        }
+        std::string title = name + " (" + desc + ")";
+        if(nsFilters.count == 1) {
+            [ssAccessory.button removeAllItems];
+        }
+        [ssAccessory.button addItemWithTitle:Wrap(title)];
+        [ssAccessory.button synchronizeTitleAndSelectedItem];
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        FileDialogImplCocoa::FreezeChoices(settings, key);
+        settings->FreezeInt("Dialog_" + key + "_Filter", ssAccessory.index);
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        FileDialogImplCocoa::ThawChoices(settings, key);
+        ssAccessory.index = settings->ThawInt("Dialog_" + key + "_Filter", 0);
+    }
+
+    bool RunModal() override {
+        if(nsFilters.count == 1) {
+            nsPanel.accessoryView = nil;
+        }
+
+        if(nsPanel.nameFieldStringValue.length == 0) {
+            nsPanel.nameFieldStringValue = Wrap(_("untitled"));
+        }
+
+        return FileDialogImplCocoa::RunModal();
+    }
+};
+
+FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
+    NSOpenPanel *nsPanel = [NSOpenPanel openPanel];
+    nsPanel.canSelectHiddenExtension = YES;
+
+    std::shared_ptr<OpenFileDialogImplCocoa> dialog = std::make_shared<OpenFileDialogImplCocoa>();
+    dialog->nsPanel = nsPanel;
+
+    return dialog;
+}
+
+FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
+    NSSavePanel *nsPanel = [NSSavePanel savePanel];
+    nsPanel.canSelectHiddenExtension = YES;
+
+    SSSaveFormatAccessory *ssAccessory =
+        [[SSSaveFormatAccessory alloc] initWithNibName:@"SaveFormatAccessory" bundle:nil];
+    ssAccessory.panel = nsPanel;
+    nsPanel.accessoryView = [ssAccessory view];
+
+    std::shared_ptr<SaveFileDialogImplCocoa> dialog = std::make_shared<SaveFileDialogImplCocoa>();
+    dialog->nsPanel = nsPanel;
+    dialog->ssAccessory = ssAccessory;
+    ssAccessory.filters = dialog->nsFilters;
+
+    return dialog;
+}
+
+//-----------------------------------------------------------------------------
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 

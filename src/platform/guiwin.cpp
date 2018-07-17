@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <windowsx.h>
 #include <commctrl.h>
+#include <commdlg.h>
 #include <shellapi.h>
 
 #ifndef WM_DPICHANGED
@@ -1272,7 +1273,7 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 }
 
 //-----------------------------------------------------------------------------
-// Dialogs
+// Message dialogs
 //-----------------------------------------------------------------------------
 
 class MessageDialogImplWin32 : public MessageDialog {
@@ -1378,6 +1379,109 @@ public:
 MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
     std::shared_ptr<MessageDialogImplWin32> dialog = std::make_shared<MessageDialogImplWin32>();
     dialog->mbp.hwndOwner = std::static_pointer_cast<WindowImplWin32>(parentWindow)->hWindow;
+    return dialog;
+}
+
+//-----------------------------------------------------------------------------
+// File dialogs
+//-----------------------------------------------------------------------------
+
+class FileDialogImplWin32 : public FileDialog {
+public:
+    OPENFILENAMEW   ofn = {};
+    bool            isSaveDialog;
+    std::wstring    titleW;
+    std::wstring    filtersW;
+    std::wstring    defExtW;
+    std::wstring    initialDirW;
+    // UNC paths may be as long as 32767 characters.
+    // Unfortunately, the Get*FileName API does not provide any way to use it
+    // except with a preallocated buffer of fixed size, so we use something
+    // reasonably large.
+    wchar_t         filenameWC[32768] = {};
+
+    FileDialogImplWin32() {
+        ofn.lStructSize = sizeof(ofn);
+        ofn.lpstrFile   = filenameWC;
+        ofn.nMaxFile    = sizeof(filenameWC) / sizeof(wchar_t);
+        ofn.Flags       = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_HIDEREADONLY |
+                          OFN_OVERWRITEPROMPT;
+        if(isSaveDialog) {
+            SetTitle(C_("title", "Save File"));
+        } else {
+            SetTitle(C_("title", "Open File"));
+        }
+    }
+
+    void SetTitle(std::string title) override {
+        titleW = PrepareTitle(title);
+        ofn.lpstrTitle = titleW.c_str();
+    }
+
+    void SetCurrentName(std::string name) override {
+        SetFilename(GetFilename().Parent().Join(name));
+    }
+
+    Platform::Path GetFilename() override {
+        return Path::From(Narrow(filenameWC));
+    }
+
+    void SetFilename(Platform::Path path) override {
+        wcsncpy(filenameWC, Widen(path.raw).c_str(), sizeof(filenameWC) / sizeof(wchar_t) - 1);
+    }
+
+    void AddFilter(std::string name, std::vector<std::string> extensions) override {
+        std::string desc, patterns;
+        for(auto extension : extensions) {
+            std::string pattern = "*." + extension;
+            if(!desc.empty()) desc += ", ";
+            desc += pattern;
+            if(!patterns.empty()) patterns += ";";
+            patterns += pattern;
+        }
+        filtersW += Widen(name + " (" + desc + ")" + '\0' + patterns + '\0');
+        ofn.lpstrFilter = filtersW.c_str();
+        if(ofn.lpstrDefExt == NULL) {
+            defExtW = Widen(extensions.front());
+            ofn.lpstrDefExt = defExtW.c_str();
+        }
+    }
+
+    void FreezeChoices(SettingsRef settings, const std::string &key) override {
+        settings->FreezeString("Dialog_" + key + "_Folder", GetFilename().Parent().raw);
+        settings->FreezeInt("Dialog_" + key + "_Filter", ofn.nFilterIndex);
+    }
+
+    void ThawChoices(SettingsRef settings, const std::string &key) override {
+        initialDirW = Widen(settings->ThawString("Dialog_" + key + "_Folder", ""));
+        ofn.lpstrInitialDir = initialDirW.c_str();
+        ofn.nFilterIndex = settings->ThawInt("Dialog_" + key + "_Filter", 0);
+    }
+
+    bool RunModal() override {
+        if(GetFilename().IsEmpty()) {
+            SetFilename(Path::From(_("untitled")));
+        }
+
+        if(isSaveDialog) {
+            return GetSaveFileNameW(&ofn);
+        } else {
+            return GetOpenFileNameW(&ofn);
+        }
+    }
+};
+
+FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
+    std::shared_ptr<FileDialogImplWin32> dialog = std::make_shared<FileDialogImplWin32>();
+    dialog->ofn.hwndOwner = std::static_pointer_cast<WindowImplWin32>(parentWindow)->hWindow;
+    dialog->isSaveDialog = false;
+    return dialog;
+}
+
+FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
+    std::shared_ptr<FileDialogImplWin32> dialog = std::make_shared<FileDialogImplWin32>();
+    dialog->ofn.hwndOwner = std::static_pointer_cast<WindowImplWin32>(parentWindow)->hWindow;
+    dialog->isSaveDialog = true;
     return dialog;
 }
 

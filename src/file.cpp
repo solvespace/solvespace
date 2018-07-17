@@ -848,6 +848,8 @@ static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path
 }
 
 bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCancel) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     std::map<Platform::Path, Platform::Path, Platform::PathLess> linkMap;
 
     allConsistent = false;
@@ -877,10 +879,13 @@ try_again:
             // The file was moved; prompt the user for its new location.
             switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
                 case Platform::MessageDialog::Response::YES: {
-                    Platform::Path newLinkFile;
-                    if(GetOpenFile(&newLinkFile, "", SlvsFileFilter)) {
-                        linkMap[g.linkFile] = newLinkFile;
-                        g.linkFile = newLinkFile;
+                    Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+                    dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+                    dialog->ThawChoices(settings, "LinkSketch");
+                    if(dialog->RunModal()) {
+                        dialog->FreezeChoices(settings, "LinkSketch");
+                        linkMap[g.linkFile] = dialog->GetFilename();
+                        g.linkFile = dialog->GetFilename();
                         goto try_again;
                     } else {
                         if(canCancel) return false;
@@ -917,6 +922,8 @@ try_again:
 
 bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
                                      Platform::Path *filename, bool canCancel) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     std::shared_ptr<Pixmap> pixmap;
     bool promptOpenFile = false;
     if(filename->IsEmpty()) {
@@ -948,7 +955,12 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
     }
 
     if(promptOpenFile) {
-        if(GetOpenFile(filename, "", RasterFileFilter)) {
+        Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+        dialog->AddFilters(Platform::RasterFileFilters);
+        dialog->ThawChoices(settings, "LinkImage");
+        if(dialog->RunModal()) {
+            dialog->FreezeChoices(settings, "LinkImage");
+            *filename = dialog->GetFilename();
             pixmap = Pixmap::ReadPng(*filename);
             if(pixmap == NULL) {
                 Error("The image '%s' is corrupted.", filename->raw.c_str());
