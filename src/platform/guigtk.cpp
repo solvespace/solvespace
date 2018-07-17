@@ -120,6 +120,19 @@ public:
         return defaultValue;
     }
 
+    void FreezeBool(const std::string &key, bool value) override {
+        struct json_object *jsonValue = json_object_new_boolean(value);
+        json_object_object_add(_json, key.c_str(), jsonValue);
+    }
+
+    bool ThawBool(const std::string &key, bool defaultValue) override {
+        struct json_object *jsonValue;
+        if(json_object_object_get_ex(_json, key.c_str(), &jsonValue)) {
+            return json_object_get_boolean(jsonValue);
+        }
+        return defaultValue;
+    }
+
     void FreezeFloat(const std::string &key, double value) override {
         struct json_object *jsonValue = json_object_new_double(value);
         json_object_object_add(_json, key.c_str(), jsonValue);
