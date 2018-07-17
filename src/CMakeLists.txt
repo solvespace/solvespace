@@ -330,6 +330,9 @@ if(ENABLE_GUI)
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
             LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF /STACK:33554432")
+    elseif(APPLE)
+        set_target_properties(solvespace PROPERTIES
+            OUTPUT_NAME SolveSpace)
     endif()
 endif()
 
@@ -388,7 +391,7 @@ endif()
 # solvespace macOS package
 
 if(APPLE)
-    set(bundle     solvespace)
+    set(bundle     SolveSpace)
     set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
 
     add_custom_command(TARGET solvespace POST_BUILD
@@ -401,7 +404,7 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
         COMMAND hdiutil create -srcfolder ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app
                 ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        DEPENDS $<TARGET_FILE:${bundle}>
+        DEPENDS solvespace
         COMMENT "Building ${bundle}.dmg"
         VERBATIM)
     add_custom_target(${bundle}-dmg ALL

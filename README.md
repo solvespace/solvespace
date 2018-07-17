@@ -129,9 +129,9 @@ Alternatively, generate an XCode project, open it, and build the "Release" schem
     cd build
     cmake .. -G Xcode
 
-The application is built in `build/bin/solvespace.app`, the graphical interface executable
-is `build/bin/solvespace.app/Contents/MacOS/solvespace`, and the command-line interface executable
-is `build/bin/solvespace.app/Contents/MacOS/solvespace-cli`.
+The application is built in `build/bin/SolveSpace.app`, the graphical interface executable
+is `build/bin/SolveSpace.app/Contents/MacOS/SolveSpace`, and the command-line interface executable
+is `build/bin/SolveSpace.app/Contents/MacOS/solvespace-cli`.
 
 [homebrew]: https://brew.sh/
 [appledeveloper]: https://developer.apple.com/download/
