@@ -21,9 +21,23 @@
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separatormenuitem.h>
 #include <gtkmm/window.h>
+#include <gtkmm/messagedialog.h>
 
 namespace SolveSpace {
 namespace Platform {
+
+//-----------------------------------------------------------------------------
+// Utility functions
+//-----------------------------------------------------------------------------
+
+static std::string PrepareMnemonics(std::string label) {
+    std::replace(label.begin(), label.end(), '&', '_');
+    return label;
+}
+
+static std::string PrepareTitle(std::string title) {
+    return title + " — SolveSpace";
+}
 
 //-----------------------------------------------------------------------------
 // Fatal errors
@@ -251,11 +265,6 @@ protected:
 // Menus
 //-----------------------------------------------------------------------------
 
-static std::string PrepareMenuLabel(std::string label) {
-    std::replace(label.begin(), label.end(), '&', '_');
-    return label;
-}
-
 class MenuItemImplGtk : public MenuItem {
 public:
     GtkMenuItem gtkMenuItem;
@@ -329,7 +338,7 @@ public:
         auto menuItem = std::make_shared<MenuItemImplGtk>();
         menuItems.push_back(menuItem);
 
-        menuItem->gtkMenuItem.set_label(PrepareMenuLabel(label));
+        menuItem->gtkMenuItem.set_label(PrepareMnemonics(label));
         menuItem->gtkMenuItem.set_use_underline(true);
         menuItem->gtkMenuItem.show();
         menuItem->onTrigger = onTrigger;
@@ -345,7 +354,7 @@ public:
         auto subMenu = std::make_shared<MenuImplGtk>();
         subMenus.push_back(subMenu);
 
-        menuItem->gtkMenuItem.set_label(PrepareMenuLabel(label));
+        menuItem->gtkMenuItem.set_label(PrepareMnemonics(label));
         menuItem->gtkMenuItem.set_use_underline(true);
         menuItem->gtkMenuItem.set_submenu(subMenu->gtkMenu);
         menuItem->gtkMenuItem.show_all();
@@ -391,7 +400,7 @@ public:
         subMenus.push_back(subMenu);
 
         Gtk::MenuItem *gtkMenuItem = Gtk::manage(new Gtk::MenuItem);
-        gtkMenuItem->set_label(PrepareMenuLabel(label));
+        gtkMenuItem->set_label(PrepareMnemonics(label));
         gtkMenuItem->set_use_underline(true);
         gtkMenuItem->set_submenu(subMenu->gtkMenu);
         gtkMenuItem->show_all();
@@ -848,7 +857,7 @@ public:
     }
 
     void SetTitle(const std::string &title) override {
-        gtkWindow.set_title(title + " — SolveSpace");
+        gtkWindow.set_title(PrepareTitle(title));
     }
 
     void SetMenuBar(MenuBarRef newMenuBar) override {
@@ -980,6 +989,93 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
             std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow);
     }
     return window;
+}
+
+//-----------------------------------------------------------------------------
+// Message dialogs
+//-----------------------------------------------------------------------------
+
+class MessageDialogImplGtk : public MessageDialog {
+public:
+    Gtk::Image         gtkImage;
+    Gtk::MessageDialog gtkDialog;
+
+    MessageDialogImplGtk(Gtk::Window &parent)
+        : gtkDialog(parent, "", /*use_markup=*/false, Gtk::MESSAGE_INFO,
+                    Gtk::BUTTONS_NONE, /*modal=*/true)
+    {
+         SetTitle("Message");
+    }
+
+    void SetType(Type type) override {
+        switch(type) {
+            case Type::INFORMATION:
+                gtkImage.set_from_icon_name("dialog-information", Gtk::ICON_SIZE_DIALOG);
+                break;
+
+            case Type::QUESTION:
+                gtkImage.set_from_icon_name("dialog-question", Gtk::ICON_SIZE_DIALOG);
+                break;
+
+            case Type::WARNING:
+                gtkImage.set_from_icon_name("dialog-warning", Gtk::ICON_SIZE_DIALOG);
+                break;
+
+            case Type::ERROR:
+                gtkImage.set_from_icon_name("dialog-error", Gtk::ICON_SIZE_DIALOG);
+                break;
+        }
+        gtkDialog.set_image(gtkImage);
+    }
+
+    void SetTitle(std::string title) override {
+        gtkDialog.set_title(PrepareTitle(title));
+    }
+
+    void SetMessage(std::string message) override {
+        gtkDialog.set_message(message);
+    }
+
+    void SetDescription(std::string description) override {
+        gtkDialog.set_secondary_text(description);
+    }
+
+    void AddButton(std::string name, Response response, bool isDefault) override {
+        int responseId;
+        switch(response) {
+            case Response::NONE:   ssassert(false, "Invalid response");
+            case Response::OK:     responseId = Gtk::RESPONSE_OK;     break;
+            case Response::YES:    responseId = Gtk::RESPONSE_YES;    break;
+            case Response::NO:     responseId = Gtk::RESPONSE_NO;     break;
+            case Response::CANCEL: responseId = Gtk::RESPONSE_CANCEL; break;
+        }
+        gtkDialog.add_button(PrepareMnemonics(name), responseId);
+        if(isDefault) {
+            gtkDialog.set_default_response(responseId);
+        }
+    }
+
+    Response RunModal() override {
+        switch(gtkDialog.run()) {
+            case Gtk::RESPONSE_OK:     return Response::OK;     break;
+            case Gtk::RESPONSE_YES:    return Response::YES;    break;
+            case Gtk::RESPONSE_NO:     return Response::NO;     break;
+            case Gtk::RESPONSE_CANCEL: return Response::CANCEL; break;
+
+            case Gtk::RESPONSE_NONE:
+            case Gtk::RESPONSE_CLOSE:
+            case Gtk::RESPONSE_DELETE_EVENT:
+                return Response::NONE;
+                break;
+
+            default: ssassert(false, "Unexpected response");
+        }
+    }
+};
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
+    return std::make_shared<MessageDialogImplGtk>(
+                std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow);
 }
 
 //-----------------------------------------------------------------------------

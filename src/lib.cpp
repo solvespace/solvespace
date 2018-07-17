@@ -22,11 +22,6 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *) {
     // Nothing to do for now.
 }
 
-void SolveSpace::DoMessageBox(const char *, int, int, bool)
-{
-    abort();
-}
-
 extern "C" {
 
 void Slvs_QuaternionU(double qw, double qx, double qy, double qz,

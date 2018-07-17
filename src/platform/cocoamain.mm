@@ -5,11 +5,8 @@
 //
 // Copyright 2015 <whitequark@whitequark.org>
 //-----------------------------------------------------------------------------
-#include <mach/mach.h>
-#include <mach/clock.h>
-#import  <AppKit/AppKit.h>
-
 #include "solvespace.h"
+#import  <AppKit/AppKit.h>
 
 using SolveSpace::dbp;
 
@@ -125,102 +122,7 @@ bool SolveSpace::GetSaveFile(Platform::Path *filename, const std::string &defExt
     }
 }
 
-SolveSpace::DialogChoice SolveSpace::SaveFileYesNoCancel() {
-    NSAlert *alert = [[NSAlert alloc] init];
-    if(!SolveSpace::SS.saveFile.IsEmpty()) {
-        [alert setMessageText:
-            [[@"Do you want to save the changes you made to the sketch “"
-             stringByAppendingString:
-                [Wrap(SolveSpace::SS.saveFile.raw)
-                    stringByAbbreviatingWithTildeInPath]]
-             stringByAppendingString:@"”?"]];
-    } else {
-        [alert setMessageText:
-            Wrap(_("Do you want to save the changes you made to the new sketch?"))];
-    }
-    [alert setInformativeText:Wrap(_("Your changes will be lost if you don't save them."))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Save"))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Cancel"))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Don't Save"))];
-    switch([alert runModal]) {
-        case NSAlertFirstButtonReturn:
-        return DIALOG_YES;
-        case NSAlertSecondButtonReturn:
-        default:
-        return DIALOG_CANCEL;
-        case NSAlertThirdButtonReturn:
-        return DIALOG_NO;
-    }
-}
-
-SolveSpace::DialogChoice SolveSpace::LoadAutosaveYesNo() {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:
-        Wrap(_("An autosave file is available for this project."))];
-    [alert setInformativeText:
-        Wrap(_("Do you want to load the autosave file instead?"))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Load"))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Don't Load"))];
-    switch([alert runModal]) {
-        case NSAlertFirstButtonReturn:
-        return DIALOG_YES;
-        case NSAlertSecondButtonReturn:
-        default:
-        return DIALOG_NO;
-    }
-}
-
-SolveSpace::DialogChoice SolveSpace::LocateImportedFileYesNoCancel(
-                            const Platform::Path &filename, bool canCancel) {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setMessageText:
-        Wrap("The linked file “" + filename.raw + "” is not present.")];
-    [alert setInformativeText:
-        Wrap(_("Do you want to locate it manually?\n"
-               "If you select “No”, any geometry that depends on "
-               "the missing file will be removed."))];
-    [alert addButtonWithTitle:Wrap(C_("button", "Yes"))];
-    if(canCancel)
-        [alert addButtonWithTitle:Wrap(C_("button", "Cancel"))];
-    [alert addButtonWithTitle:Wrap(C_("button", "No"))];
-    switch([alert runModal]) {
-        case NSAlertFirstButtonReturn:
-        return DIALOG_YES;
-        case NSAlertSecondButtonReturn:
-        default:
-        if(canCancel)
-            return DIALOG_CANCEL;
-        /* fallthrough */
-        case NSAlertThirdButtonReturn:
-        return DIALOG_NO;
-    }
-}
-
 /* Miscellanea */
-
-void SolveSpace::DoMessageBox(const char *str, int rows, int cols, bool error) {
-    NSAlert *alert = [[NSAlert alloc] init];
-    [alert setAlertStyle:(error ? NSWarningAlertStyle : NSInformationalAlertStyle)];
-    [alert addButtonWithTitle:Wrap(C_("button", "OK"))];
-
-    /* do some additional formatting of the message;
-       these are heuristics, but they are made failsafe and lead to nice results. */
-    NSString *input = [NSString stringWithUTF8String:str];
-    NSRange dot = [input rangeOfCharacterFromSet:
-        [NSCharacterSet characterSetWithCharactersInString:@".:"]];
-    if(dot.location != NSNotFound) {
-        [alert setMessageText:[[input substringToIndex:dot.location + 1]
-            stringByReplacingOccurrencesOfString:@"\n" withString:@" "]];
-        [alert setInformativeText:
-            [[input substringFromIndex:dot.location + 1]
-                stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]]];
-    } else {
-        [alert setMessageText:[input
-            stringByReplacingOccurrencesOfString:@"\n" withString:@" "]];
-    }
-
-    [alert runModal];
-}
 
 void SolveSpace::OpenWebsite(const char *url) {
     [[NSWorkspace sharedWorkspace] openURL:

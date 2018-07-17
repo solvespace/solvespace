@@ -3,8 +3,8 @@
 //
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
-#import  <AppKit/AppKit.h>
 #include "solvespace.h"
+#import  <AppKit/AppKit.h>
 
 using namespace SolveSpace;
 
@@ -51,6 +51,16 @@ static NSString* Wrap(const std::string &s) {
 
 namespace SolveSpace {
 namespace Platform {
+
+//-----------------------------------------------------------------------------
+// Utility functions
+//-----------------------------------------------------------------------------
+
+static std::string PrepareMnemonics(std::string label) {
+    // OS X does not support mnemonics
+    label.erase(std::remove(label.begin(), label.end(), '&'), label.end());
+    return label;
+}
 
 //-----------------------------------------------------------------------------
 // Fatal errors
@@ -184,12 +194,6 @@ TimerRef CreateTimer() {
 // Menus
 //-----------------------------------------------------------------------------
 
-static std::string PrepareMenuLabel(std::string label) {
-    // OS X does not support mnemonics
-    label.erase(std::remove(label.begin(), label.end(), '&'), label.end());
-    return label;
-}
-
 class MenuItemImplCocoa : public MenuItem {
 public:
     SSFunction *ssFunction;
@@ -258,7 +262,7 @@ public:
         menuItems.push_back(menuItem);
 
         menuItem->onTrigger = onTrigger;
-        [menuItem->nsMenuItem setTitle:Wrap(PrepareMenuLabel(label))];
+        [menuItem->nsMenuItem setTitle:Wrap(PrepareMnemonics(label))];
         [nsMenu addItem:menuItem->nsMenuItem];
 
         return menuItem;
@@ -269,7 +273,7 @@ public:
         subMenus.push_back(subMenu);
 
         NSMenuItem *nsMenuItem =
-            [nsMenu addItemWithTitle:Wrap(PrepareMenuLabel(label)) action:nil keyEquivalent:@""];
+            [nsMenu addItemWithTitle:Wrap(PrepareMnemonics(label)) action:nil keyEquivalent:@""];
         [nsMenu setSubmenu:subMenu->nsMenu forItem:nsMenuItem];
 
         return subMenu;
@@ -309,7 +313,7 @@ public:
         subMenus.push_back(subMenu);
 
         NSMenuItem *nsMenuItem = [nsMenuBar addItemWithTitle:@"" action:nil keyEquivalent:@""];
-        [subMenu->nsMenu setTitle:Wrap(PrepareMenuLabel(label))];
+        [subMenu->nsMenu setTitle:Wrap(PrepareMnemonics(label))];
         [nsMenuBar setSubmenu:subMenu->nsMenu forItem:nsMenuItem];
 
         return subMenu;
@@ -994,6 +998,69 @@ public:
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplCocoa>(kind,
                 std::static_pointer_cast<WindowImplCocoa>(parentWindow));
+}
+
+//-----------------------------------------------------------------------------
+// Message dialogs
+//-----------------------------------------------------------------------------
+
+class MessageDialogImplCocoa : public MessageDialog {
+public:
+    NSAlert  *nsAlert  = [[NSAlert alloc] init];
+    NSWindow *nsWindow;
+
+    std::vector<Response> responses;
+
+    void SetType(Type type) override {
+        switch(type) {
+            case Type::INFORMATION:
+            case Type::QUESTION:
+                nsAlert.alertStyle = NSInformationalAlertStyle;
+                break;
+
+            case Type::WARNING:
+            case Type::ERROR:
+                nsAlert.alertStyle = NSWarningAlertStyle;
+                break;
+        }
+    }
+
+    void SetTitle(std::string title) override {
+        [nsAlert.window setTitle:Wrap(title)];
+    }
+
+    void SetMessage(std::string message) override {
+        nsAlert.messageText = Wrap(message);
+    }
+
+    void SetDescription(std::string description) override {
+        nsAlert.informativeText = Wrap(description);
+    }
+
+    void AddButton(std::string name, Response response, bool isDefault) override {
+        NSButton *nsButton = [nsAlert addButtonWithTitle:Wrap(PrepareMnemonics(name))];
+        if(!isDefault && [nsButton.keyEquivalent isEqualToString:@"\n"]) {
+            nsButton.keyEquivalent = @"";
+        } else if(response == Response::CANCEL) {
+            nsButton.keyEquivalent = @"\e";
+        }
+        responses.push_back(response);
+    }
+
+    Response RunModal() override {
+        // FIXME(platform/gui): figure out a way to run the alert as a sheet
+        NSModalResponse nsResponse = [nsAlert runModal];
+        ssassert(nsResponse >= NSAlertFirstButtonReturn &&
+                 nsResponse <= NSAlertFirstButtonReturn + (long)responses.size(),
+                 "Unexpected response");
+        return responses[nsResponse - NSAlertFirstButtonReturn];
+    }
+};
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
+    std::shared_ptr<MessageDialogImplCocoa> dialog = std::make_shared<MessageDialogImplCocoa>();
+    dialog->nsWindow = std::static_pointer_cast<WindowImplCocoa>(parentWindow)->nsWindow;
+    return dialog;
 }
 
 //-----------------------------------------------------------------------------

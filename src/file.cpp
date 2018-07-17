@@ -825,6 +825,28 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
     return true;
 }
 
+static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path &filename,
+                                                            bool canCancel) {
+    Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Missing File"));
+    dialog->SetMessage(ssprintf(C_("dialog", "The linked file “%s” is not present."),
+                                filename.raw.c_str()));
+    dialog->SetDescription(C_("dialog", "Do you want to locate it manually?\n\n"
+                                        "If you decline, any geometry that depends on "
+                                        "the missing file will be permanently removed."));
+    dialog->AddButton(C_("button", "&Yes"), MessageDialog::Response::YES,
+                      /*isDefault=*/true);
+    dialog->AddButton(C_("button", "&No"), MessageDialog::Response::NO);
+    if(canCancel) {
+        dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::CANCEL);
+    }
+
+    return dialog->RunModal();
+}
+
 bool SolveSpaceUI::ReloadAllLinked(const Platform::Path &saveFile, bool canCancel) {
     std::map<Platform::Path, Platform::Path, Platform::PathLess> linkMap;
 
@@ -853,26 +875,29 @@ try_again:
             }
         } else if(linkMap.count(g.linkFile) == 0) {
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFileYesNoCancel(g.linkFile.RelativeTo(saveFile), canCancel)) {
-            case DIALOG_YES: {
-                Platform::Path newLinkFile;
-                if(GetOpenFile(&newLinkFile, "", SlvsFileFilter)) {
-                    linkMap[g.linkFile] = newLinkFile;
-                    g.linkFile = newLinkFile;
-                    goto try_again;
-                } else {
-                    if(canCancel) return false;
-                    break;
+            switch(LocateImportedFile(g.linkFile.RelativeTo(saveFile), canCancel)) {
+                case Platform::MessageDialog::Response::YES: {
+                    Platform::Path newLinkFile;
+                    if(GetOpenFile(&newLinkFile, "", SlvsFileFilter)) {
+                        linkMap[g.linkFile] = newLinkFile;
+                        g.linkFile = newLinkFile;
+                        goto try_again;
+                    } else {
+                        if(canCancel) return false;
+                        break;
+                    }
                 }
-            }
 
-            case DIALOG_NO:
-                linkMap[g.linkFile].Clear();
-                // Geometry will be pruned by GenerateAll().
-                break;
+                case Platform::MessageDialog::Response::NO:
+                    linkMap[g.linkFile].Clear();
+                    // Geometry will be pruned by GenerateAll().
+                    break;
 
-            case DIALOG_CANCEL:
-                return false;
+                case Platform::MessageDialog::Response::CANCEL:
+                    return false;
+
+                default:
+                    ssassert(false, "Unexpected dialog response");
             }
         } else {
             // User was already asked to and refused to locate a missing linked file.
@@ -904,17 +929,20 @@ bool SolveSpaceUI::ReloadLinkedImage(const Platform::Path &saveFile,
         pixmap = Pixmap::ReadPng(*filename);
         if(pixmap == NULL) {
             // The file was moved; prompt the user for its new location.
-            switch(LocateImportedFileYesNoCancel(filename->RelativeTo(saveFile), canCancel)) {
-                case DIALOG_YES:
+            switch(LocateImportedFile(filename->RelativeTo(saveFile), canCancel)) {
+                case Platform::MessageDialog::Response::YES:
                     promptOpenFile = true;
                     break;
 
-                case DIALOG_NO:
+                case Platform::MessageDialog::Response::NO:
                     // We don't know where the file is, record it as absent.
                     break;
 
-                case DIALOG_CANCEL:
+                case Platform::MessageDialog::Response::CANCEL:
                     return false;
+
+                default:
+                    ssassert(false, "Unexpected dialog response");
             }
         }
     }

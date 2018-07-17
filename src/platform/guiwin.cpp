@@ -15,8 +15,9 @@
 #define WM_DPICHANGED       0x02E0
 #endif
 
-// We have our own CreateWindow.
+// These interfere with our identifiers.
 #undef CreateWindow
+#undef ERROR
 
 #if HAVE_OPENGL == 3
 #define EGLAPI /*static linkage*/
@@ -95,7 +96,7 @@ BOOL ssAdjustWindowRectExForDpi(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
 // Utility functions
 //-----------------------------------------------------------------------------
 
-std::wstring Title(const std::string &s) {
+static std::wstring PrepareTitle(const std::string &s) {
     return Widen("SolveSpace - " + s);
 }
 
@@ -1030,7 +1031,7 @@ public:
     }
 
     void SetTitle(const std::string &title) override {
-        sscheck(SetWindowTextW(hWindow, Title(title).c_str()));
+        sscheck(SetWindowTextW(hWindow, PrepareTitle(title).c_str()));
     }
 
     void SetMenuBar(MenuBarRef newMenuBar) override {
@@ -1268,6 +1269,116 @@ public:
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplWin32>(kind,
                 std::static_pointer_cast<WindowImplWin32>(parentWindow));
+}
+
+//-----------------------------------------------------------------------------
+// Dialogs
+//-----------------------------------------------------------------------------
+
+class MessageDialogImplWin32 : public MessageDialog {
+public:
+    MSGBOXPARAMSW       mbp = {};
+
+    int                 style;
+
+    std::wstring        titleW;
+    std::wstring        messageW;
+    std::wstring        descriptionW;
+    std::wstring        textW;
+
+    std::vector<int>    buttons;
+    int                 defaultButton;
+
+    MessageDialogImplWin32() {
+        mbp.cbSize = sizeof(mbp);
+        SetTitle("Message");
+    }
+
+    void SetType(Type type) override {
+        switch(type) {
+            case Type::INFORMATION:
+                style = MB_ICONINFORMATION;
+                break;
+
+            case Type::QUESTION:
+                style = MB_ICONQUESTION;
+                break;
+
+            case Type::WARNING:
+                style = MB_ICONWARNING;
+                break;
+
+            case Type::ERROR:
+                style = MB_ICONERROR;
+                break;
+        }
+    }
+
+    void SetTitle(std::string title) override {
+        titleW = PrepareTitle(title);
+        mbp.lpszCaption = titleW.c_str();
+    }
+
+    void SetMessage(std::string message) override {
+        messageW = Widen(message);
+        UpdateText();
+    }
+
+    void SetDescription(std::string description) override {
+        descriptionW = Widen(description);
+        UpdateText();
+    }
+
+    void UpdateText() {
+        textW = messageW + L"\n\n" + descriptionW;
+        mbp.lpszText = textW.c_str();
+    }
+
+    void AddButton(std::string _name, Response response, bool isDefault) override {
+        int button;
+        switch(response) {
+            case Response::NONE:   ssassert(false, "Invalid response");
+            case Response::OK:     button = IDOK;     break;
+            case Response::YES:    button = IDYES;    break;
+            case Response::NO:     button = IDNO;     break;
+            case Response::CANCEL: button = IDCANCEL; break;
+        }
+        buttons.push_back(button);
+        if(isDefault) {
+            defaultButton = button;
+        }
+    }
+
+    Response RunModal() override {
+        mbp.dwStyle = style;
+
+        std::sort(buttons.begin(), buttons.end());
+        if(buttons == std::vector<int>({ IDOK })) {
+            mbp.dwStyle |= MB_OK;
+        } else if(buttons == std::vector<int>({ IDOK, IDCANCEL })) {
+            mbp.dwStyle |= MB_OKCANCEL;
+        } else if(buttons == std::vector<int>({ IDYES, IDNO })) {
+            mbp.dwStyle |= MB_YESNO;
+        } else if(buttons == std::vector<int>({ IDCANCEL, IDYES, IDNO })) {
+            mbp.dwStyle |= MB_YESNOCANCEL;
+        } else {
+            ssassert(false, "Unexpected button set");
+        }
+
+        switch(MessageBoxIndirectW(&mbp)) {
+            case IDOK:     return Response::OK;     break;
+            case IDYES:    return Response::YES;    break;
+            case IDNO:     return Response::NO;     break;
+            case IDCANCEL: return Response::CANCEL; break;
+            default: ssassert(false, "Unexpected response");
+        }
+    }
+};
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
+    std::shared_ptr<MessageDialogImplWin32> dialog = std::make_shared<MessageDialogImplWin32>();
+    dialog->mbp.hwndOwner = std::static_pointer_cast<WindowImplWin32>(parentWindow)->hWindow;
+    return dialog;
 }
 
 //-----------------------------------------------------------------------------

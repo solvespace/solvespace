@@ -114,6 +114,14 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 }
 
 //-----------------------------------------------------------------------------
+// Dialogs
+//-----------------------------------------------------------------------------
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
+    return std::shared_ptr<MessageDialog>();
+}
+
+//-----------------------------------------------------------------------------
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
@@ -133,20 +141,6 @@ bool GetOpenFile(Platform::Path *filename, const std::string &activeOrEmpty,
 }
 bool GetSaveFile(Platform::Path *filename, const std::string &activeOrEmpty,
                  const FileFilter filters[]) {
-    ssassert(false, "Not implemented");
-}
-DialogChoice SaveFileYesNoCancel() {
-    ssassert(false, "Not implemented");
-}
-DialogChoice LoadAutosaveYesNo() {
-    ssassert(false, "Not implemented");
-}
-DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
-                                           bool canCancel) {
-    ssassert(false, "Not implemented");
-}
-void DoMessageBox(const char *message, int rows, int cols, bool error) {
-    dbp("%s box: %s", error ? "error" : "message", message);
     ssassert(false, "Not implemented");
 }
 void OpenWebsite(const char *url) {

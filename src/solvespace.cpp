@@ -147,7 +147,18 @@ bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
         return false;
     fclose(f);
 
-    if(LoadAutosaveYesNo() == DIALOG_YES) {
+    Platform::MessageDialogRef dialog = CreateMessageDialog(GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Autosave Available"));
+    dialog->SetMessage(C_("dialog", "An autosave file is available for this sketch."));
+    dialog->SetDescription(C_("dialog", "Do you want to load the autosave file instead?"));
+    dialog->AddButton(C_("button", "&Load autosave"), MessageDialog::Response::YES,
+                      /*isDefault=*/true);
+    dialog->AddButton(C_("button", "Do&n't Load"), MessageDialog::Response::NO);
+
+    if(dialog->RunModal() == MessageDialog::Response::YES) {
         unsaved = true;
         return LoadFromFile(autosaveFile, /*canCancel=*/true);
     }
@@ -419,18 +430,35 @@ void SolveSpaceUI::RemoveAutosave()
 bool SolveSpaceUI::OkayToStartNewFile() {
     if(!unsaved) return true;
 
-    switch(SaveFileYesNoCancel()) {
-        case DIALOG_YES:
+    Platform::MessageDialogRef dialog = CreateMessageDialog(GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Modified File"));
+    if(!SolveSpace::SS.saveFile.IsEmpty()) {
+        dialog->SetMessage(ssprintf(C_("dialog", "Do you want to save the changes you made to "
+                                                 "the sketch “%s”?"), saveFile.raw.c_str()));
+    } else {
+        dialog->SetMessage(C_("dialog", "Do you want to save the changes you made to "
+                                        "the new sketch?"));
+    }
+    dialog->SetDescription(C_("dialog", "Your changes will be lost if you don't save them."));
+    dialog->AddButton(C_("button", "&Save"), MessageDialog::Response::YES,
+                      /*isDefault=*/true);
+    dialog->AddButton(C_("button", "Do&n't Save"), MessageDialog::Response::NO);
+    dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::CANCEL);
+
+    switch(dialog->RunModal()) {
+        case MessageDialog::Response::YES:
             return GetFilenameAndSave(/*saveAs=*/false);
 
-        case DIALOG_NO:
+        case MessageDialog::Response::NO:
             RemoveAutosave();
             return true;
 
-        case DIALOG_CANCEL:
+        default:
             return false;
     }
-    ssassert(false, "Unexpected dialog choice");
 }
 
 void SolveSpaceUI::UpdateWindowTitles() {

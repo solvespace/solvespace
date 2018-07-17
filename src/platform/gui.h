@@ -250,6 +250,38 @@ typedef std::shared_ptr<Window> WindowRef;
 WindowRef CreateWindow(Window::Kind kind = Window::Kind::TOPLEVEL,
                        WindowRef parentWindow = NULL);
 
+// A native dialog that asks for one choice out of several.
+class MessageDialog {
+public:
+    enum class Type {
+        INFORMATION,
+        QUESTION,
+        WARNING,
+        ERROR
+    };
+
+    enum class Response {
+        NONE,
+        OK,
+        YES,
+        NO,
+        CANCEL
+    };
+
+    virtual void SetType(Type type) = 0;
+    virtual void SetTitle(std::string title) = 0;
+    virtual void SetMessage(std::string caption) = 0;
+    virtual void SetDescription(std::string text) = 0;
+
+    virtual void AddButton(std::string name, Response response, bool isDefault = false) = 0;
+
+    virtual Response RunModal() = 0;
+};
+
+typedef std::shared_ptr<MessageDialog> MessageDialogRef;
+
+MessageDialogRef CreateMessageDialog(WindowRef parentWindow);
+
 //-----------------------------------------------------------------------------
 // Application-wide APIs
 //-----------------------------------------------------------------------------

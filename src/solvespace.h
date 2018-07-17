@@ -139,13 +139,6 @@ enum class Command : uint32_t;
 
 const size_t MAX_RECENT = 8;
 extern Platform::Path RecentFile[MAX_RECENT];
-void RefreshRecentMenus();
-
-enum DialogChoice { DIALOG_YES = 1, DIALOG_NO = -1, DIALOG_CANCEL = 0 };
-DialogChoice SaveFileYesNoCancel();
-DialogChoice LoadAutosaveYesNo();
-DialogChoice LocateImportedFileYesNoCancel(const Platform::Path &filename,
-                                           bool canCancel);
 
 #define AUTOSAVE_EXT "slvs~"
 
@@ -169,9 +162,6 @@ void dbp(const char *str, ...);
 #define DBPTRI(tri) \
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
         CO((tri).a), CO((tri).b), CO((tri).c))
-
-void SetMousePointerToHand(bool yes);
-void DoMessageBox(const char *str, int rows, int cols, bool error);
 
 std::vector<std::string> InitPlatform(int argc, char **argv);
 
@@ -254,8 +244,8 @@ void MakeMatrix(double *mat, double a11, double a12, double a13, double a14,
 void MultMatrix(double *mata, double *matb, double *matr);
 
 int64_t GetMilliseconds();
-void Message(const char *str, ...);
-void Error(const char *str, ...);
+void Message(const char *fmt, ...);
+void Error(const char *fmt, ...);
 
 class System {
 public:
