@@ -586,9 +586,9 @@ public:
     double   exportChordTol;
     int      exportMaxSegments;
     double   cameraTangent;
-    float    gridSpacing;
-    float    exportScale;
-    float    exportOffset;
+    double   gridSpacing;
+    double   exportScale;
+    double   exportOffset;
     bool     fixExportColors;
     bool     drawBackFaces;
     bool     showContourAreas;
@@ -601,22 +601,22 @@ public:
     bool     exportCanvasSizeAuto;
     bool     exportMode;
     struct {
-        float   left;
-        float   right;
-        float   bottom;
-        float   top;
+        double  left;
+        double  right;
+        double  bottom;
+        double  top;
     }        exportMargin;
     struct {
-        float   width;
-        float   height;
-        float   dx;
-        float   dy;
+        double  width;
+        double  height;
+        double  dx;
+        double  dy;
     }        exportCanvas;
     struct {
-        float   depth;
+        double  depth;
         int     passes;
-        float   feed;
-        float   plungeFeed;
+        double  feed;
+        double  plungeFeed;
     }        gCode;
 
     Unit     viewUnits;

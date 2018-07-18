@@ -58,7 +58,7 @@ void Settings::FreezeBool(const std::string &key, bool value) {
 }
 
 bool Settings::ThawBool(const std::string &key, bool defaultValue) {
-    return (bool)ThawInt(key, (int)defaultValue);
+    return ThawInt(key, (int)defaultValue) != 0;
 }
 
 void Settings::FreezeColor(const std::string &key, RgbaColor value) {

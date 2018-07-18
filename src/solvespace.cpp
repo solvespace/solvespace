@@ -31,24 +31,24 @@ void SolveSpaceUI::Init() {
     modelColor[6] = settings->ThawColor("ModelColor_6", RGBi(  0,   0, 130));
     modelColor[7] = settings->ThawColor("ModelColor_7", RGBi( 80,   0,  80));
     // Light intensities
-    lightIntensity[0] = settings->ThawFloat("LightIntensity_0", 1.0f);
-    lightIntensity[1] = settings->ThawFloat("LightIntensity_1", 0.5f);
+    lightIntensity[0] = settings->ThawFloat("LightIntensity_0", 1.0);
+    lightIntensity[1] = settings->ThawFloat("LightIntensity_1", 0.5);
     ambientIntensity = 0.3; // no setting for that yet
     // Light positions
-    lightDir[0].x = settings->ThawFloat("LightDir_0_Right",   -1.0f);
-    lightDir[0].y = settings->ThawFloat("LightDir_0_Up",       1.0f);
-    lightDir[0].z = settings->ThawFloat("LightDir_0_Forward",  0.0f);
-    lightDir[1].x = settings->ThawFloat("LightDir_1_Right",    1.0f);
-    lightDir[1].y = settings->ThawFloat("LightDir_1_Up",       0.0f);
-    lightDir[1].z = settings->ThawFloat("LightDir_1_Forward",  0.0f);
+    lightDir[0].x = settings->ThawFloat("LightDir_0_Right",   -1.0);
+    lightDir[0].y = settings->ThawFloat("LightDir_0_Up",       1.0);
+    lightDir[0].z = settings->ThawFloat("LightDir_0_Forward",  0.0);
+    lightDir[1].x = settings->ThawFloat("LightDir_1_Right",    1.0);
+    lightDir[1].y = settings->ThawFloat("LightDir_1_Up",       0.0);
+    lightDir[1].z = settings->ThawFloat("LightDir_1_Forward",  0.0);
 
     exportMode = false;
     // Chord tolerance
-    chordTol = settings->ThawFloat("ChordTolerancePct", 0.5f);
+    chordTol = settings->ThawFloat("ChordTolerancePct", 0.5);
     // Max pwl segments to generate
     maxSegments = settings->ThawInt("MaxSegments", 10);
     // Chord tolerance
-    exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1f);
+    exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1);
     // Max pwl segments to generate
     exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
     // View units
@@ -57,13 +57,13 @@ void SolveSpaceUI::Init() {
     afterDecimalMm = settings->ThawInt("AfterDecimalMm", 2);
     afterDecimalInch = settings->ThawInt("AfterDecimalInch", 3);
     // Camera tangent (determines perspective)
-    cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3f);
+    cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3);
     // Grid spacing
-    gridSpacing = settings->ThawFloat("GridSpacing", 5.0f);
+    gridSpacing = settings->ThawFloat("GridSpacing", 5.0);
     // Export scale factor
-    exportScale = settings->ThawFloat("ExportScale", 1.0f);
+    exportScale = settings->ThawFloat("ExportScale", 1.0);
     // Export offset (cutter radius comp)
-    exportOffset = settings->ThawFloat("ExportOffset", 0.0f);
+    exportOffset = settings->ThawFloat("ExportOffset", 0.0);
     // Rewrite exported colors close to white into black (assuming white bg)
     fixExportColors = settings->ThawBool("FixExportColors", true);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
@@ -81,20 +81,20 @@ void SolveSpaceUI::Init() {
     // Whether export canvas size is fixed or derived from bbox
     exportCanvasSizeAuto = settings->ThawBool("ExportCanvasSizeAuto", true);
     // Margins for automatic canvas size
-    exportMargin.left   = settings->ThawFloat("ExportMargin_Left",   5.0f);
-    exportMargin.right  = settings->ThawFloat("ExportMargin_Right",  5.0f);
-    exportMargin.bottom = settings->ThawFloat("ExportMargin_Bottom", 5.0f);
-    exportMargin.top    = settings->ThawFloat("ExportMargin_Top",    5.0f);
+    exportMargin.left   = settings->ThawFloat("ExportMargin_Left",   5.0);
+    exportMargin.right  = settings->ThawFloat("ExportMargin_Right",  5.0);
+    exportMargin.bottom = settings->ThawFloat("ExportMargin_Bottom", 5.0);
+    exportMargin.top    = settings->ThawFloat("ExportMargin_Top",    5.0);
     // Dimensions for fixed canvas size
-    exportCanvas.width  = settings->ThawFloat("ExportCanvas_Width",  100.0f);
-    exportCanvas.height = settings->ThawFloat("ExportCanvas_Height", 100.0f);
-    exportCanvas.dx     = settings->ThawFloat("ExportCanvas_Dx",     5.0f);
-    exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0f);
+    exportCanvas.width  = settings->ThawFloat("ExportCanvas_Width",  100.0);
+    exportCanvas.height = settings->ThawFloat("ExportCanvas_Height", 100.0);
+    exportCanvas.dx     = settings->ThawFloat("ExportCanvas_Dx",     5.0);
+    exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0);
     // Extra parameters when exporting G code
-    gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0f);
+    gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0);
     gCode.passes        = settings->ThawInt("GCode_Passes", 1);
-    gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0f);
-    gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0f);
+    gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0);
+    gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0);
     // Show toolbar in the graphics window
     showToolbar = settings->ThawBool("ShowToolbar", true);
     // Recent files menus

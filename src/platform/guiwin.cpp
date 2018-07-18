@@ -1138,7 +1138,7 @@ public:
         settings->FreezeInt(key + "_Right",      rc.right);
         settings->FreezeInt(key + "_Top",        rc.top);
         settings->FreezeInt(key + "_Bottom",     rc.bottom);
-        settings->FreezeBool(key + "_Maximized", isMaximized);
+        settings->FreezeBool(key + "_Maximized", isMaximized == TRUE);
     }
 
     void ThawPosition(SettingsRef settings, const std::string &key) override {
@@ -1555,9 +1555,9 @@ public:
         }
 
         if(isSaveDialog) {
-            return GetSaveFileNameW(&ofn);
+            return GetSaveFileNameW(&ofn) == TRUE;
         } else {
-            return GetOpenFileNameW(&ofn);
+            return GetOpenFileNameW(&ofn) == TRUE;
         }
     }
 };

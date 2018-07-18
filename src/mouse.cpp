@@ -909,7 +909,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
             break;
 
         case MouseEvent::Type::SCROLL_VERT:
-            this->MouseScroll(event.x, event.y, event.scrollDelta);
+            this->MouseScroll(event.x, event.y, (int)event.scrollDelta);
             break;
 
         case MouseEvent::Type::LEAVE:
