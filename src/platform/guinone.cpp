@@ -85,7 +85,7 @@ SettingsRef GetSettings() {
 
 class TimerImplDummy : public Timer {
 public:
-    void WindUp(unsigned milliseconds) override {}
+    void RunAfter(unsigned milliseconds) override {}
 };
 
 TimerRef CreateTimer() {

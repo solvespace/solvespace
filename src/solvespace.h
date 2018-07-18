@@ -789,9 +789,9 @@ public:
     // the sketch!
     bool allConsistent;
 
-    Platform::TimerRef timerShowTW;
-    Platform::TimerRef timerGenerateAll;
-    Platform::TimerRef timerAutosave;
+    Platform::TimerRef showTWTimer;
+    Platform::TimerRef generateAllTimer;
+    Platform::TimerRef autosaveTimer;
     void ScheduleShowTW();
     void ScheduleGenerateAll();
     void ScheduleAutosave();

@@ -244,7 +244,7 @@ public:
         }
     }
 
-    void WindUp(unsigned milliseconds) override {
+    void RunAfter(unsigned milliseconds) override {
         // FIXME(platform/gui): use SetCoalescableTimer when it's available (8+)
         sscheck(SetTimer(WindowHandle(), (UINT_PTR)this,
                          milliseconds, &TimerImplWin32::TimerFunc));
@@ -1309,15 +1309,6 @@ public:
 
     void Invalidate() override {
         sscheck(InvalidateRect(hWindow, NULL, /*bErase=*/FALSE));
-    }
-
-    void Redraw() override {
-        Invalidate();
-        sscheck(UpdateWindow(hWindow));
-    }
-
-    void *NativePtr() override {
-        return hWindow;
     }
 };
 

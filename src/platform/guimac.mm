@@ -165,7 +165,7 @@ public:
 
     TimerImplCocoa() : timer(NULL) {}
 
-    void WindUp(unsigned milliseconds) override {
+    void RunAfter(unsigned milliseconds) override {
         SSFunction *callback = [[SSFunction alloc] initWithFunction:&this->onTimeout];
         NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
             [callback methodSignatureForSelector:@selector(run)]];
@@ -983,15 +983,6 @@ public:
 
     void Invalidate() override {
         ssView.needsDisplay = YES;
-    }
-
-    void Redraw() override {
-        Invalidate();
-        CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, YES);
-    }
-
-    void *NativePtr() override {
-        return (__bridge void *)ssView;
     }
 };
 

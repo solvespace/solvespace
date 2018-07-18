@@ -423,6 +423,9 @@ void GraphicsWindow::AnimateOntoWorkplane() {
     Quaternion quatf = w->Normal()->NormalGetNum();
     Vector offsetf = (SK.GetEntity(w->point[0])->PointGetNum()).ScaledBy(-1);
 
+    // If the view screen is open, then we need to refresh it.
+    SS.ScheduleShowTW();
+
     AnimateOnto(quatf, offsetf);
 }
 
@@ -441,34 +444,37 @@ void GraphicsWindow::AnimateOnto(Quaternion quatf, Vector offsetf) {
     double mo = (offset0.Minus(offsetf)).Magnitude()*scale;
 
     // Animate transition, unless it's a tiny move.
+    int64_t t0 = GetMilliseconds();
     int32_t dt = (mp < 0.01 && mo < 10) ? (-20) :
                      (int32_t)(100 + 1000*mp + 0.4*mo);
     // Don't ever animate for longer than 2000 ms; we can get absurdly
     // long translations (as measured in pixels) if the user zooms out, moves,
     // and then zooms in again.
     if(dt > 2000) dt = 2000;
-    int64_t tn, t0 = GetMilliseconds();
-    double s = 0;
     Quaternion dq = quatf.Times(quat0.Inverse());
-    do {
-        offset = (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
-        Quaternion quat = (dq.ToThe(s)).Times(quat0);
-        quat = quat.WithMagnitude(1);
 
-        projRight = quat.RotationU();
-        projUp    = quat.RotationV();
-        window->Redraw();
+    if(!animateTimer) {
+        animateTimer = Platform::CreateTimer();
+    }
+    animateTimer->onTimeout = [=] {
+        int64_t tn = GetMilliseconds();
+        if((tn - t0) < dt) {
+            animateTimer->RunAfterNextFrame();
 
-        tn = GetMilliseconds();
-        s = (tn - t0)/((double)dt);
-    } while((tn - t0) < dt);
+            double s = (tn - t0)/((double)dt);
+            offset = (offset0.ScaledBy(1 - s)).Plus(offsetf.ScaledBy(s));
+            Quaternion quat = (dq.ToThe(s)).Times(quat0).WithMagnitude(1);
 
-    projRight = quatf.RotationU();
-    projUp = quatf.RotationV();
-    offset = offsetf;
-    Invalidate();
-    // If the view screen is open, then we need to refresh it.
-    SS.ScheduleShowTW();
+            projRight = quat.RotationU();
+            projUp    = quat.RotationV();
+        } else {
+            projRight = quatf.RotationU();
+            projUp    = quatf.RotationV();
+            offset    = offsetf;
+        }
+        window->Invalidate();
+    };
+    animateTimer->RunAfterNextFrame();
 }
 
 void GraphicsWindow::HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
@@ -695,7 +701,6 @@ void GraphicsWindow::MenuView(Command id) {
         case Command::ONTO_WORKPLANE:
             if(SS.GW.LockedInWorkplane()) {
                 SS.GW.AnimateOntoWorkplane();
-                SS.ScheduleShowTW();
                 break;
             }  // if not in 2d mode fall through and use ORTHO logic
         case Command::NEAREST_ORTHO:
@@ -760,8 +765,8 @@ void GraphicsWindow::MenuView(Command id) {
                 // Offset is the selected point, quaternion is same as before
                 Vector pt = SK.GetEntity(SS.GW.gs.point[0])->PointGetNum();
                 quat0 = Quaternion::From(SS.GW.projRight, SS.GW.projUp);
-                SS.GW.AnimateOnto(quat0, pt.ScaledBy(-1));
                 SS.GW.ClearSelection();
+                SS.GW.AnimateOnto(quat0, pt.ScaledBy(-1));
             } else {
                 Error(_("Select a point; this point will become the center "
                         "of the view on screen."));
@@ -1175,9 +1180,8 @@ void GraphicsWindow::MenuRequest(Command id) {
                 break;
             }
             // Align the view with the selected workplane
-            SS.GW.AnimateOntoWorkplane();
             SS.GW.ClearSuper();
-            SS.ScheduleShowTW();
+            SS.GW.AnimateOntoWorkplane();
             break;
         }
         case Command::FREE_IN_3D:

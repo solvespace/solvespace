@@ -272,9 +272,6 @@ public:
         hStyle      style;
 
         hConstraint constraint;
-        bool        dimIsDistance;
-        double      dimFinish;
-        int         dimSteps;
 
         struct {
             int         times;
@@ -435,6 +432,15 @@ public:
 
     static void ScreenAllowRedundant(int link, uint32_t v);
 
+    struct {
+        bool    isDistance;
+        double  finish;
+        int     steps;
+
+        Platform::TimerRef timer;
+        int64_t time;
+        int     step;
+    } stepDim;
     static void ScreenStepDimSteps(int link, uint32_t v);
     static void ScreenStepDimFinish(int link, uint32_t v);
     static void ScreenStepDimGo(int link, uint32_t v);
@@ -572,8 +578,11 @@ public:
     Vector ProjectPoint4(Vector p, double *w);
     Vector UnProjectPoint(Point2d p);
     Vector UnProjectPoint3(Vector p);
+
+    Platform::TimerRef animateTimer;
     void AnimateOnto(Quaternion quatf, Vector offsetf);
     void AnimateOntoWorkplane();
+
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
                                  double *wmin, bool usePerspective,

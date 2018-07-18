@@ -550,38 +550,57 @@ void TextWindow::ShowGroupSolveInfo() {
 void TextWindow::ScreenStepDimFinish(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::STEP_DIM_FINISH;
     std::string edit_value;
-    if(SS.TW.shown.dimIsDistance) {
-        edit_value = SS.MmToString(SS.TW.shown.dimFinish);
+    if(SS.TW.stepDim.isDistance) {
+        edit_value = SS.MmToString(SS.TW.stepDim.finish);
     } else {
-        edit_value = ssprintf("%.3f", SS.TW.shown.dimFinish);
+        edit_value = ssprintf("%.3f", SS.TW.stepDim.finish);
     }
     SS.TW.ShowEditControl(12, edit_value);
 }
 void TextWindow::ScreenStepDimSteps(int link, uint32_t v) {
     SS.TW.edit.meaning = Edit::STEP_DIM_STEPS;
-    SS.TW.ShowEditControl(12, ssprintf("%d", SS.TW.shown.dimSteps));
+    SS.TW.ShowEditControl(12, ssprintf("%d", SS.TW.stepDim.steps));
 }
 void TextWindow::ScreenStepDimGo(int link, uint32_t v) {
     hConstraint hc = SS.TW.shown.constraint;
     Constraint *c = SK.constraint.FindByIdNoOops(hc);
     if(c) {
         SS.UndoRemember();
-        double start = c->valA, finish = SS.TW.shown.dimFinish;
-        int i, n = SS.TW.shown.dimSteps;
-        for(i = 1; i <= n; i++) {
-            c = SK.GetConstraint(hc);
-            c->valA = start + ((finish - start)*i)/n;
-            SS.MarkGroupDirty(c->group);
-            SS.GenerateAll();
-            if(!SS.ActiveGroupsOkay()) {
-                // Failed to solve, so quit
-                break;
-            }
-            SS.GW.window->Redraw();
+
+        double start = c->valA, finish = SS.TW.stepDim.finish;
+        SS.TW.stepDim.time = GetMilliseconds();
+        SS.TW.stepDim.step = 1;
+
+        if(!SS.TW.stepDim.timer) {
+            SS.TW.stepDim.timer = Platform::CreateTimer();
         }
+        SS.TW.stepDim.timer->onTimeout = [=] {
+            if(SS.TW.stepDim.step <= SS.TW.stepDim.steps) {
+                c->valA = start + ((finish - start)*SS.TW.stepDim.step)/SS.TW.stepDim.steps;
+                SS.MarkGroupDirty(c->group);
+                SS.GenerateAll();
+                if(!SS.ActiveGroupsOkay()) {
+                    // Failed to solve, so quit
+                    return;
+                }
+                SS.TW.stepDim.step++;
+
+                const int64_t STEP_MILLIS = 50;
+                int64_t time = GetMilliseconds();
+                if(time - SS.TW.stepDim.time < STEP_MILLIS) {
+                    SS.TW.stepDim.timer->RunAfterNextFrame();
+                } else {
+                    SS.TW.stepDim.timer->RunAfter(time - SS.TW.stepDim.time - STEP_MILLIS);
+                }
+                SS.TW.stepDim.time = time;
+            } else {
+                SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
+                SS.ScheduleShowTW();
+            }
+            SS.GW.Invalidate();
+        };
+        SS.TW.stepDim.timer->RunAfterNextFrame();
     }
-    SS.GW.Invalidate();
-    SS.TW.GoToScreen(Screen::LIST_OF_GROUPS);
 }
 void TextWindow::ShowStepDimension() {
     Constraint *c = SK.constraint.FindByIdNoOops(shown.constraint);
@@ -593,17 +612,17 @@ void TextWindow::ShowStepDimension() {
 
     Printf(true, "%FtSTEP DIMENSION%E %s", c->DescriptionString().c_str());
 
-    if(shown.dimIsDistance) {
+    if(stepDim.isDistance) {
         Printf(true,  "%Ba   %Ftstart%E    %s", SS.MmToString(c->valA).c_str());
         Printf(false, "%Bd   %Ftfinish%E   %s %Fl%Ll%f[change]%E",
-            SS.MmToString(shown.dimFinish).c_str(), &ScreenStepDimFinish);
+            SS.MmToString(stepDim.finish).c_str(), &ScreenStepDimFinish);
     } else {
         Printf(true,  "%Ba   %Ftstart%E    %@", c->valA);
         Printf(false, "%Bd   %Ftfinish%E   %@ %Fl%Ll%f[change]%E",
-            shown.dimFinish, &ScreenStepDimFinish);
+            stepDim.finish, &ScreenStepDimFinish);
     }
     Printf(false, "%Ba   %Ftsteps%E    %d %Fl%Ll%f%D[change]%E",
-        shown.dimSteps, &ScreenStepDimSteps);
+        stepDim.steps, &ScreenStepDimSteps);
 
     Printf(true, " %Fl%Ll%fstep dimension now%E", &ScreenStepDimGo);
 
@@ -762,16 +781,16 @@ void TextWindow::EditControlDone(std::string s) {
 
         case Edit::STEP_DIM_FINISH:
             if(Expr *e = Expr::From(s, /*popUpError=*/true)) {
-                if(shown.dimIsDistance) {
-                    shown.dimFinish = SS.ExprToMm(e);
+                if(stepDim.isDistance) {
+                    stepDim.finish = SS.ExprToMm(e);
                 } else {
-                    shown.dimFinish = e->Eval();
+                    stepDim.finish = e->Eval();
                 }
             }
             break;
 
         case Edit::STEP_DIM_STEPS:
-            shown.dimSteps = min(300, max(1, atoi(s.c_str())));
+            stepDim.steps = min(300, max(1, atoi(s.c_str())));
             break;
 
         case Edit::TANGENT_ARC_RADIUS:

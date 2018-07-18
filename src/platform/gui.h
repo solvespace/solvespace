@@ -135,7 +135,9 @@ public:
 
     virtual ~Timer() {}
 
-    virtual void WindUp(unsigned milliseconds) = 0;
+    virtual void RunAfter(unsigned milliseconds) = 0;
+    virtual void RunAfterNextFrame() { RunAfter(1); }
+    virtual void RunAfterProcessingEvents() { RunAfter(0); }
 };
 
 typedef std::unique_ptr<Timer> TimerRef;
@@ -261,9 +263,6 @@ public:
     virtual void SetScrollbarPosition(double pos) = 0;
 
     virtual void Invalidate() = 0;
-    virtual void Redraw() = 0;
-
-    virtual void *NativePtr() = 0;
 };
 
 typedef std::shared_ptr<Window> WindowRef;

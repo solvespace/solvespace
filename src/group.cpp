@@ -291,9 +291,8 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
         gg->activeWorkplane = gg->h.entity(0);
     }
     gg->Activate();
-    SS.GW.AnimateOntoWorkplane();
     TextWindow::ScreenSelectGroup(0, gg->h.v);
-    SS.ScheduleShowTW();
+    SS.GW.AnimateOntoWorkplane();
 }
 
 void Group::TransformImportedBy(Vector t, Quaternion q) {

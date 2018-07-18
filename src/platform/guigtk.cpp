@@ -202,7 +202,7 @@ class TimerImplGtk : public Timer {
 public:
     sigc::connection    _connection;
 
-    void WindUp(unsigned milliseconds) override {
+    void RunAfter(unsigned milliseconds) override {
         if(!_connection.empty()) {
             _connection.disconnect();
         }
@@ -981,15 +981,6 @@ public:
 
     void Invalidate() override {
         gtkWindow.get_gl_widget().queue_render();
-    }
-
-    void Redraw() override {
-        Invalidate();
-        Gtk::Main::iteration(/*blocking=*/false);
-    }
-
-    void *NativePtr() override {
-        return &gtkWindow;
     }
 };
 

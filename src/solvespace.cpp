@@ -111,15 +111,15 @@ void SolveSpaceUI::Init() {
         SetLocale(locale);
     }
 
-    timerGenerateAll = Platform::CreateTimer();
-    timerGenerateAll->onTimeout = std::bind(&SolveSpaceUI::GenerateAll, &SS, Generate::DIRTY,
+    generateAllTimer = Platform::CreateTimer();
+    generateAllTimer->onTimeout = std::bind(&SolveSpaceUI::GenerateAll, &SS, Generate::DIRTY,
                                             /*andFindFree=*/false, /*genForBBox=*/false);
 
-    timerShowTW = Platform::CreateTimer();
-    timerShowTW->onTimeout = std::bind(&TextWindow::Show, &TW);
+    showTWTimer = Platform::CreateTimer();
+    showTWTimer->onTimeout = std::bind(&TextWindow::Show, &TW);
 
-    timerAutosave = Platform::CreateTimer();
-    timerAutosave->onTimeout = std::bind(&SolveSpaceUI::Autosave, &SS);
+    autosaveTimer = Platform::CreateTimer();
+    autosaveTimer->onTimeout = std::bind(&SolveSpaceUI::Autosave, &SS);
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
@@ -275,15 +275,15 @@ void SolveSpaceUI::Exit() {
 }
 
 void SolveSpaceUI::ScheduleGenerateAll() {
-    timerGenerateAll->WindUp(0);
+    generateAllTimer->RunAfterProcessingEvents();
 }
 
 void SolveSpaceUI::ScheduleShowTW() {
-    timerShowTW->WindUp(0);
+    showTWTimer->RunAfterProcessingEvents();
 }
 
 void SolveSpaceUI::ScheduleAutosave() {
-    timerAutosave->WindUp(autosaveInterval * 60 * 1000);
+    autosaveTimer->RunAfter(autosaveInterval * 60 * 1000);
 }
 
 double SolveSpaceUI::MmPerUnit() {
@@ -646,9 +646,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && !c->reference) {
-                    SS.TW.shown.dimFinish = c->valA;
-                    SS.TW.shown.dimSteps = 10;
-                    SS.TW.shown.dimIsDistance =
+                    SS.TW.stepDim.finish = c->valA;
+                    SS.TW.stepDim.steps = 10;
+                    SS.TW.stepDim.isDistance =
                         (c->type != Constraint::Type::ANGLE) &&
                         (c->type != Constraint::Type::LENGTH_RATIO) &&
                         (c->type != Constraint::Type::LENGTH_DIFFERENCE);
