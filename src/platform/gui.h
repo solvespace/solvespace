@@ -359,7 +359,12 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow);
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
-void Exit();
+std::vector<Platform::Path> GetFontFiles();
+void OpenInBrowser(const std::string &url);
+
+void InitGui(int argc, char **argv);
+void RunGui();
+void ExitGui();
 
 }
 

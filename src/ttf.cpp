@@ -56,7 +56,7 @@ TtfFontList::~TtfFontList() {
 void TtfFontList::LoadAll() {
     if(loaded) return;
 
-    for(const Platform::Path &font : GetFontFiles()) {
+    for(const Platform::Path &font : Platform::GetFontFiles()) {
         TtfFont tf = {};
         tf.fontFile = font;
         if(tf.LoadFromFile(fontLibrary))

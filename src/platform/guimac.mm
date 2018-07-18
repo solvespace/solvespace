@@ -1405,7 +1405,82 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
-void Exit() {
+std::vector<Platform::Path> GetFontFiles() {
+    std::vector<SolveSpace::Platform::Path> fonts;
+
+    NSArray *fontNames = [[NSFontManager sharedFontManager] availableFonts];
+    for(NSString *fontName in fontNames) {
+        CTFontDescriptorRef fontRef =
+            CTFontDescriptorCreateWithNameAndSize ((__bridge CFStringRef)fontName, 10.0);
+        CFURLRef url = (CFURLRef)CTFontDescriptorCopyAttribute(fontRef, kCTFontURLAttribute);
+        NSString *fontPath = [NSString stringWithString:[(NSURL *)CFBridgingRelease(url) path]];
+        fonts.push_back(
+            Platform::Path::From([[NSFileManager defaultManager]
+                fileSystemRepresentationWithPath:fontPath]));
+    }
+
+    return fonts;
+}
+
+void OpenInBrowser(const std::string &url) {
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:Wrap(url)]];
+}
+
+}
+}
+
+@interface SSApplicationDelegate : NSObject<NSApplicationDelegate>
+- (IBAction)preferences:(id)sender;
+- (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename;
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+@end
+
+@implementation SSApplicationDelegate
+- (IBAction)preferences:(id)sender {
+    SolveSpace::SS.TW.GoToScreen(SolveSpace::TextWindow::Screen::CONFIGURATION);
+    SolveSpace::SS.ScheduleShowTW();
+}
+
+- (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename {
+    SolveSpace::Platform::Path path = SolveSpace::Platform::Path::From([filename UTF8String]);
+    return SolveSpace::SS.Load(path.Expand(/*fromCurrentDirectory=*/true));
+}
+
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
+    [[[NSApp mainWindow] delegate] windowShouldClose:nil];
+    return NSTerminateCancel;
+}
+
+- (void)applicationTerminatePrompt {
+    SolveSpace::SS.MenuFile(SolveSpace::Command::EXIT);
+}
+@end
+
+namespace SolveSpace {
+namespace Platform {
+
+static SSApplicationDelegate *ssDelegate;
+
+void InitGui(int argc, char **argv) {
+    ssDelegate = [[SSApplicationDelegate alloc] init];
+    NSApplication.sharedApplication.delegate = ssDelegate;
+
+    [NSBundle.mainBundle loadNibNamed:@"MainMenu" owner:nil topLevelObjects:nil];
+
+    NSArray *languages = NSLocale.preferredLanguages;
+    for(NSString *language in languages) {
+        if(SolveSpace::SetLocale([language UTF8String])) break;
+    }
+    if(languages.count == 0) {
+        SolveSpace::SetLocale("en_US");
+    }
+}
+
+void RunGui() {
+    [NSApp run];
+}
+
+void ExitGui() {
     [NSApp setDelegate:nil];
     [NSApp terminate:nil];
 }

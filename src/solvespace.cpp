@@ -271,7 +271,7 @@ void SolveSpaceUI::Exit() {
     // And the default styles, colors and line widths and such.
     Style::FreezeDefaultStyles(settings);
 
-    Platform::Exit();
+    Platform::ExitGui();
 }
 
 void SolveSpaceUI::ScheduleGenerateAll() {
@@ -907,7 +907,7 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
 void SolveSpaceUI::MenuHelp(Command id) {
     switch(id) {
         case Command::WEBSITE:
-            OpenWebsite("http://solvespace.com/helpmenu");
+            Platform::OpenInBrowser("http://solvespace.com/helpmenu");
             break;
 
         case Command::ABOUT:

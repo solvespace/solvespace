@@ -142,10 +142,6 @@ extern Platform::Path RecentFile[MAX_RECENT];
 
 #define AUTOSAVE_EXT "slvs~"
 
-std::vector<Platform::Path> GetFontFiles();
-
-void OpenWebsite(const char *url);
-
 void dbp(const char *str, ...);
 #define DBPTRI(tri) \
     dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \

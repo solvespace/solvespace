@@ -1580,7 +1580,49 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
-void Exit() {
+std::vector<Platform::Path> GetFontFiles() {
+    std::vector<Platform::Path> fonts;
+
+    std::wstring fontsDirW(MAX_PATH, '\0');
+    fontsDirW.resize(GetWindowsDirectoryW(&fontsDirW[0], fontsDirW.length()));
+    fontsDirW += L"\\fonts\\";
+    Platform::Path fontsDir = Platform::Path::From(Narrow(fontsDirW));
+
+    WIN32_FIND_DATAW wfd;
+    HANDLE h = FindFirstFileW((fontsDirW + L"*").c_str(), &wfd);
+    while(h != INVALID_HANDLE_VALUE) {
+        fonts.push_back(fontsDir.Join(Narrow(wfd.cFileName)));
+        if(!FindNextFileW(h, &wfd)) break;
+    }
+
+    return fonts;
+}
+
+void OpenInBrowser(const std::string &url) {
+    ShellExecuteW(NULL, L"open", Widen(url).c_str(), NULL, NULL, SW_SHOWNORMAL);
+}
+
+void InitGui(int argc, char **argv) {
+    INITCOMMONCONTROLSEX icc;
+    icc.dwSize = sizeof(icc);
+    icc.dwICC  = ICC_STANDARD_CLASSES|ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icc);
+
+    if(!SetLocale((uint16_t)GetUserDefaultLCID())) {
+        SetLocale("en_US");
+    }
+}
+
+void RunGui() {
+    MSG msg;
+    // The return value of the following functions doesn't indicate success or failure.
+    while(GetMessage(&msg, NULL, 0, 0)) {
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+    }
+}
+
+void ExitGui() {
     PostQuitMessage(0);
 }
 

@@ -8,9 +8,11 @@
 #include <unistd.h>
 #include <json-c/json_object.h>
 #include <json-c/json_util.h>
+#include <glibmm/convert.h>
 #include <glibmm/main.h>
 #include <gtkmm/box.h>
 #include <gtkmm/checkmenuitem.h>
+#include <gtkmm/cssprovider.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/filechooserdialog.h>
 #include <gtkmm/fixed.h>
@@ -281,7 +283,7 @@ public:
     MenuItemImplGtk() : gtkMenuItem(this) {}
 
     void SetAccelerator(KeyboardEvent accel) override {
-        guint accelKey;
+        guint accelKey = 0;
         if(accel.key == KeyboardEvent::Key::CHARACTER) {
             if(accel.chr == '\t') {
                 accelKey = GDK_KEY_Tab;
@@ -720,15 +722,14 @@ protected:
 class GtkWindow : public Gtk::Window {
     Platform::Window   *_receiver;
     Gtk::VBox           _vbox;
-    Gtk::MenuBar       *_menu_bar;
+    Gtk::MenuBar       *_menu_bar = NULL;
     Gtk::HBox           _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::VScrollbar     _scrollbar;
-    bool                _is_fullscreen;
+    bool                _is_fullscreen = false;
 
 public:
-    GtkWindow(Platform::Window *receiver) :
-            _receiver(receiver), _menu_bar(NULL), _editor_overlay(receiver) {
+    GtkWindow(Platform::Window *receiver) : _receiver(receiver), _editor_overlay(receiver) {
         _hbox.pack_start(_editor_overlay, /*expand=*/true, /*fill=*/true);
         _hbox.pack_end(_scrollbar, /*expand=*/false, /*fill=*/false);
         _vbox.pack_end(_hbox, /*expand=*/true, /*fill=*/true);
@@ -926,6 +927,7 @@ public:
         switch(cursor) {
             case Cursor::POINTER: gdkCursorType = Gdk::ARROW; break;
             case Cursor::HAND:    gdkCursorType = Gdk::HAND1; break;
+            default: ssassert(false, "Unexpected cursor");
         }
 
         auto gdkWindow = gtkWindow.get_gl_widget().get_window();
@@ -1122,9 +1124,9 @@ public:
     }
 
     void AddButton(std::string name, Response response, bool isDefault) override {
-        int responseId;
+        int responseId = 0;
         switch(response) {
-            case Response::NONE:   ssassert(false, "Invalid response");
+            case Response::NONE:   ssassert(false, "Unexpected response");
             case Response::OK:     responseId = Gtk::RESPONSE_OK;     break;
             case Response::YES:    responseId = Gtk::RESPONSE_YES;    break;
             case Response::NO:     responseId = Gtk::RESPONSE_NO;     break;
@@ -1295,8 +1297,78 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
-void Exit() {
-    Gtk::Main::quit();
+std::vector<Platform::Path> GetFontFiles() {
+    std::vector<Platform::Path> fonts;
+
+    // fontconfig is already initialized by GTK
+    FcPattern   *pat = FcPatternCreate();
+    FcObjectSet *os  = FcObjectSetBuild(FC_FILE, (char *)0);
+    FcFontSet   *fs  = FcFontList(0, pat, os);
+
+    for(int i = 0; i < fs->nfont; i++) {
+        FcChar8 *filenameFC = FcPatternFormat(fs->fonts[i], (const FcChar8*) "%{file}");
+        fonts.push_back(Platform::Path::From((const char *)filenameFC));
+        FcStrFree(filenameFC);
+    }
+
+    FcFontSetDestroy(fs);
+    FcObjectSetDestroy(os);
+    FcPatternDestroy(pat);
+
+    return fonts;
+}
+
+void OpenInBrowser(const std::string &url) {
+    gtk_show_uri(Gdk::Screen::get_default()->gobj(), url.c_str(), GDK_CURRENT_TIME, NULL);
+}
+
+Gtk::Main *gtkMain;
+
+void InitGui(int argc, char **argv) {
+    // It would in principle be possible to judiciously use Glib::filename_{from,to}_utf8,
+    // but it's not really worth the effort.
+    // The setlocale() call is necessary for Glib::get_charset() to detect the system
+    // character set; otherwise it thinks it is always ANSI_X3.4-1968.
+    // We set it back to C after all so that printf() and friends behave in a consistent way.
+    setlocale(LC_ALL, "");
+    if(!Glib::get_charset()) {
+        dbp("Sorry, only UTF-8 locales are supported.");
+        exit(1);
+    }
+    setlocale(LC_ALL, "C");
+
+    gtkMain = new Gtk::Main(argc, argv, /*set_locale=*/false);
+
+    // Add our application-specific styles, to override GTK defaults.
+    Glib::RefPtr<Gtk::CssProvider> style_provider = Gtk::CssProvider::create();
+    style_provider->load_from_data(R"(
+    entry {
+        background: white;
+        color: black;
+    }
+    )");
+    Gtk::StyleContext::add_provider_for_screen(
+        Gdk::Screen::get_default(), style_provider,
+        600 /*Gtk::STYLE_PROVIDER_PRIORITY_APPLICATION*/);
+
+    // Set locale from user preferences.
+    // This apparently only consults the LANGUAGE environment variable.
+    const char* const* langNames = g_get_language_names();
+    while(*langNames) {
+        if(SetLocale(*langNames++)) break;
+    }
+    if(!*langNames) {
+        SetLocale("en_US");
+    }
+}
+
+void RunGui() {
+    gtkMain->run();
+}
+
+void ExitGui() {
+    gtkMain->quit();
+    delete gtkMain;
 }
 
 }

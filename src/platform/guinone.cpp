@@ -139,27 +139,21 @@ FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
 // Application-wide APIs
 //-----------------------------------------------------------------------------
 
-void Exit() {
-    exit(0);
-}
-
-}
-
-//-----------------------------------------------------------------------------
-// Dialogs
-//-----------------------------------------------------------------------------
-
-void OpenWebsite(const char *url) {
-    ssassert(false, "Not implemented");
-}
-
-//-----------------------------------------------------------------------------
-// Resources
-//-----------------------------------------------------------------------------
-
 std::vector<Platform::Path> fontFiles;
 std::vector<Platform::Path> GetFontFiles() {
     return fontFiles;
+}
+
+void OpenInBrowser(const std::string &url) {}
+
+void InitGui(int argc, char **argv) {}
+
+void RunGui() {}
+
+void ExitGui() {
+    exit(0);
+}
+
 }
 
 }

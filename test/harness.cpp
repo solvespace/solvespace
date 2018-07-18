@@ -15,8 +15,10 @@
 #endif
 
 namespace SolveSpace {
+namespace Platform {
     // These are defined in headless.cpp, and aren't exposed in solvespace.h.
     extern std::vector<Platform::Path> fontFiles;
+}
 }
 
 // The paths in __FILE__ are from the build system, but defined(WIN32) returns
@@ -338,7 +340,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
+    Platform::fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
 
     // Wreck order dependencies between tests!
     std::random_shuffle(testCasesPtr->begin(), testCasesPtr->end());

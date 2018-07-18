@@ -439,7 +439,7 @@ bool WriteFile(const Platform::Path &filename, const std::string &data) {
 }
 
 //-----------------------------------------------------------------------------
-// Loading resources, on Windows.
+// Loading resources, on Windows
 //-----------------------------------------------------------------------------
 
 #if defined(WIN32)
@@ -457,7 +457,7 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Loading resources, on *nix.
+// Loading resources, on *nix
 //-----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
@@ -567,6 +567,10 @@ const void *LoadResource(const std::string &name, size_t *size) {
 }
 
 #endif
+
+//-----------------------------------------------------------------------------
+// Command-line argument handling
+//-----------------------------------------------------------------------------
 
 }
 }

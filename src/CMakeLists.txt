@@ -20,10 +20,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 if(WIN32)
     set(util_SOURCES
-        platform/w32util.cpp)
+        platform/utilwin.cpp)
 else()
     set(util_SOURCES
-        platform/unixutil.cpp)
+        platform/utilunix.cpp)
 endif()
 
 if(APPLE)
@@ -102,11 +102,13 @@ else()
     message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
 endif()
 
+set(platform_SOURCES
+    ${gl_SOURCES}
+    platform/entrygui.cpp)
+
 if(WIN32)
-    set(platform_SOURCES
-        platform/w32main.cpp
-        platform/guiwin.cpp
-        ${gl_SOURCES})
+    list(APPEND platform_SOURCES
+        platform/guiwin.cpp)
 
     set(platform_LIBRARIES
         comctl32
@@ -115,16 +117,12 @@ elseif(APPLE)
     add_compile_options(
         -fobjc-arc)
 
-    set(platform_SOURCES
-        platform/cocoamain.mm
-        platform/guimac.mm
+    list(APPEND platform_SOURCES
         render/rendergl.cpp
-        ${gl_SOURCES})
+        platform/guimac.mm)
 else()
-    set(platform_SOURCES
-        platform/gtkmain.cpp
-        platform/guigtk.cpp
-        ${gl_SOURCES})
+    list(APPEND platform_SOURCES
+        platform/guigtk.cpp)
 
     set(platform_LIBRARIES
         ${SPACEWARE_LIBRARIES})
@@ -137,9 +135,9 @@ else()
 endif()
 
 set(every_platform_SOURCES
-    platform/w32main.cpp
-    platform/gtkmain.cpp
-    platform/cocoamain.mm)
+    platform/guiwin.cpp
+    platform/guigtk.cpp
+    platform/guimac.mm)
 
 # solvespace library
 
@@ -362,7 +360,7 @@ target_compile_options(solvespace-headless
 # solvespace command-line executable
 
 add_executable(solvespace-cli
-    platform/climain.cpp
+    platform/entrycli.cpp
     $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
 target_link_libraries(solvespace-cli
