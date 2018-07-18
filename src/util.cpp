@@ -128,10 +128,13 @@ static void MessageBox(const char *fmt, va_list va, bool error)
             break;
         }
     }
-    std::string message = text.substr(0, separatorAt + 1);
+    std::string message = text;
     std::string description;
-    if(separatorAt != std::string::npos && separatorAt + 1 < text.size()) {
-        description = text.substr(separatorAt + 1);
+    if(separatorAt != std::string::npos) {
+        message = text.substr(0, separatorAt + 1);
+        if(separatorAt + 1 < text.size()) {
+            description = text.substr(separatorAt + 1);
+        }
     }
 
     std::string::iterator it = description.begin();
