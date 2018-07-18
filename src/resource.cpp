@@ -45,7 +45,7 @@ std::string LoadStringFromGzip(const std::string &name) {
 
     // *(uint32_t *) may perform an unaligned access, so do a memcpy.
     uint32_t inflatedSize;
-    memcpy(&inflatedSize, (uint32_t *)((uintptr_t)data + deflatedSize - 4), sizeof(uint32_t));
+    memcpy(&inflatedSize, (uint8_t *)((uintptr_t)data + deflatedSize - 4), sizeof(uint32_t));
     result.resize(inflatedSize);
 
     stream.next_in = (Bytef *)data;
