@@ -405,6 +405,7 @@ void GraphicsWindow::Init() {
             window->onRender = std::bind(&GraphicsWindow::Paint, this);
             window->onKeyboardEvent = std::bind(&GraphicsWindow::KeyboardEvent, this, _1);
             window->onMouseEvent = std::bind(&GraphicsWindow::MouseEvent, this, _1);
+            window->onSixDofEvent = std::bind(&GraphicsWindow::SixDofEvent, this, _1);
             window->onEditingDone = std::bind(&GraphicsWindow::EditControlDone, this, _1);
             window->SetMinContentSize(720, 670);
             PopulateMainMenu();

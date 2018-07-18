@@ -158,11 +158,8 @@ if(WIN32 OR APPLE)
 else()
     # On Linux and BSDs we're a good citizen and link to system libraries.
 
-    find_package(PkgConfig REQUIRED)
-
     find_package(Backtrace)
-    find_package(SpaceWare)
-
+    find_package(PkgConfig REQUIRED)
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
@@ -202,6 +199,7 @@ if(ENABLE_GUI)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
     else()
         find_package(OpenGL REQUIRED)
+        find_package(SpaceWare)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
         pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)

@@ -4,7 +4,7 @@
 #
 # SPACEWARE_INCLUDE_DIR - header location
 # SPACEWARE_LIBRARIES - library to link against
-# SPACEWARE_FOUND - true if pugixml was found.
+# SPACEWARE_FOUND - true if libspnav was found.
 
 if(UNIX)
 

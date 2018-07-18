@@ -113,6 +113,8 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::shared_ptr<Window>();
 }
 
+void Request3DConnexionEventsForWindow(WindowRef window) {}
+
 //-----------------------------------------------------------------------------
 // Message dialogs
 //-----------------------------------------------------------------------------

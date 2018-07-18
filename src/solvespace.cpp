@@ -136,6 +136,9 @@ void SolveSpaceUI::Init() {
         TW.window->SetVisible(true);
         GW.window->SetVisible(true);
         GW.window->Focus();
+
+        // Do this once the window is created.
+        Request3DConnexionEventsForWindow(GW.window);
     }
 }
 

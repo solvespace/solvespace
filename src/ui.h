@@ -795,11 +795,9 @@ public:
     bool KeyboardEvent(Platform::KeyboardEvent event);
     void EditControlDone(const std::string &s);
 
-    int64_t lastSpaceNavigatorTime;
-    hGroup lastSpaceNavigatorGroup;
-    void SpaceNavigatorMoved(double tx, double ty, double tz,
-                             double rx, double ry, double rz, bool shiftDown);
-    void SpaceNavigatorButtonUp();
+    int64_t last6DofTime;
+    hGroup last6DofGroup;
+    void SixDofEvent(Platform::SixDofEvent event);
 };
 
 

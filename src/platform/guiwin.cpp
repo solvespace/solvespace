@@ -12,8 +12,8 @@
 #include <commdlg.h>
 #include <shellapi.h>
 
-#ifndef WM_DPICHANGED
-#define WM_DPICHANGED       0x02E0
+#if !defined(WM_DPICHANGED)
+#   define WM_DPICHANGED 0x02E0
 #endif
 
 // These interfere with our identifiers.
@@ -21,8 +21,14 @@
 #undef ERROR
 
 #if HAVE_OPENGL == 3
-#define EGLAPI /*static linkage*/
-#include <EGL/egl.h>
+#   define EGLAPI /*static linkage*/
+#   include <EGL/egl.h>
+#endif
+
+#if defined(HAVE_SPACEWARE)
+#   include <si.h>
+#   include <siapp.h>
+#   undef uint32_t
 #endif
 
 namespace SolveSpace {
@@ -483,6 +489,11 @@ public:
     WINDOWPLACEMENT placement = {};
     int minWidth = 0, minHeight = 0;
 
+#if defined(HAVE_SPACEWARE)
+    SiOpenData sod = {};
+    SiHdl hSpaceWare = SI_NO_HANDLE;
+#endif
+
     std::shared_ptr<MenuBarImplWin32> menuBar;
     std::string tooltipText;
     bool scrollbarVisible = false;
@@ -616,6 +627,15 @@ public:
         sscheck(ReleaseDC(hWindow, hDc));
     }
 
+    ~WindowImplWin32() {
+        sscheck(DestroyWindow(hWindow));
+#if defined(HAVE_SPACEWARE)
+        if(hSpaceWare != SI_NO_HANDLE) {
+            SiClose(hSpaceWare);
+        }
+#endif
+    }
+
     static LRESULT CALLBACK WndProc(HWND h, UINT msg, WPARAM wParam, LPARAM lParam) {
         if(handlingFatalError) return TRUE;
 
@@ -627,6 +647,41 @@ public:
         if(window == NULL) {
             return DefWindowProc(h, msg, wParam, lParam);
         }
+
+#if defined(HAVE_SPACEWARE)
+        if(window->hSpaceWare != SI_NO_HANDLE) {
+            SiGetEventData sged;
+            SiGetEventWinInit(&sged, msg, wParam, lParam);
+
+            SiSpwEvent sse;
+            if(SiGetEvent(window->hSpaceWare, 0, &sged, &sse) == SI_IS_EVENT) {
+                SixDofEvent event = {};
+                event.shiftDown    = ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
+                event.controlDown  = ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0);
+                if(sse.type == SI_MOTION_EVENT) {
+                    // The Z axis translation and rotation are both
+                    // backwards in the default mapping.
+                    event.type         = SixDofEvent::Type::MOTION;
+                    event.translationX =  sse.u.spwData.mData[SI_TX]*1.0,
+                    event.translationY =  sse.u.spwData.mData[SI_TY]*1.0,
+                    event.translationZ = -sse.u.spwData.mData[SI_TZ]*1.0,
+                    event.rotationX    =  sse.u.spwData.mData[SI_RX]*0.001,
+                    event.rotationY    =  sse.u.spwData.mData[SI_RY]*0.001,
+                    event.rotationZ    = -sse.u.spwData.mData[SI_RZ]*0.001;
+                } else if(sse.type == SI_BUTTON_EVENT) {
+                    if(SiButtonPressed(&sse) == SI_APP_FIT_BUTTON) {
+                        event.type   = SixDofEvent::Type::PRESS;
+                        event.button = SixDofEvent::Button::FIT;
+                    }
+                    if(SiButtonReleased(&sse) == SI_APP_FIT_BUTTON) {
+                        event.type   = SixDofEvent::Type::RELEASE;
+                        event.button = SixDofEvent::Button::FIT;
+                    }
+                }
+                return 0;
+            }
+        }
+#endif
 
         switch (msg) {
             case WM_ERASEBKGND:
@@ -1271,6 +1326,42 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplWin32>(kind,
                 std::static_pointer_cast<WindowImplWin32>(parentWindow));
 }
+
+//-----------------------------------------------------------------------------
+// 3DConnexion support
+//-----------------------------------------------------------------------------
+
+#if defined(HAVE_SPACEWARE)
+static HWND hSpaceWareDriverClass;
+
+void Open3DConnexion() {
+    HWND hSpaceWareDriverClass = FindWindowW(L"SpaceWare Driver Class", NULL);
+    if(hSpaceWareDriverClass != NULL) {
+        SiInitialize();
+    }
+}
+
+void Close3DConnexion() {
+    if(hSpaceWareDriverClass != NULL) {
+        SiTerminate();
+    }
+}
+
+void Request3DConnexionEventsForWindow(WindowRef window) {
+    std::shared_ptr<WindowImplWin32> windowImpl =
+        std::static_pointer_cast<WindowImplWin32>(window);
+    if(hSpaceWareDriverClass != NULL) {
+        SiOpenWinInit(&windowImpl->sod, windowImpl->hWindow);
+        windowImpl->hSpaceWare = SiOpen("SolveSpace", SI_ANY_DEVICE, SI_NO_MASK, SI_EVENT,
+                                        &windowImpl->sod);
+        SiSetUiMode(windowImpl->hSpaceWare, SI_UI_NO_CONTROLS);
+    }
+}
+#else
+void Open3DConnexion() {}
+void Close3DConnexion() {}
+void Request3DConnexionEventsForWindow(WindowRef window) {}
+#endif
 
 //-----------------------------------------------------------------------------
 // Message dialogs

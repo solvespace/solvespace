@@ -1001,6 +1001,170 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
 }
 
 //-----------------------------------------------------------------------------
+// 3DConnexion support
+//-----------------------------------------------------------------------------
+
+// Normally we would just link to the 3DconnexionClient framework.
+//
+// We don't want to (are not allowed to) distribute the official framework, so we're trying
+// to use the one  installed on the users' computer. There are some different versions of
+// the framework, the official one and re-implementations using an open source driver for
+// older devices (spacenav-plus). So weak-linking isn't an option, either. The only remaining
+// way is using  CFBundle to dynamically load the library at runtime, and also detect its
+// availability.
+//
+// We're also defining everything needed from the 3DconnexionClientAPI, so we're not depending
+// on the API headers.
+
+#pragma pack(push,2)
+
+enum {
+    kConnexionClientModeTakeOver = 1,
+    kConnexionClientModePlugin = 2
+};
+
+#define kConnexionMsgDeviceState '3dSR'
+#define kConnexionMaskButtons 0x00FF
+#define kConnexionMaskAxis 0x3F00
+
+typedef struct {
+    uint16_t version;
+    uint16_t client;
+    uint16_t command;
+    int16_t param;
+    int32_t value;
+    UInt64 time;
+    uint8_t report[8];
+    uint16_t buttons8;
+    int16_t axis[6];
+    uint16_t address;
+    uint32_t buttons;
+} ConnexionDeviceState, *ConnexionDeviceStatePtr;
+
+#pragma pack(pop)
+
+typedef void (*ConnexionAddedHandlerProc)(io_connect_t);
+typedef void (*ConnexionRemovedHandlerProc)(io_connect_t);
+typedef void (*ConnexionMessageHandlerProc)(io_connect_t, natural_t, void *);
+
+typedef OSErr (*InstallConnexionHandlersProc)(ConnexionMessageHandlerProc, ConnexionAddedHandlerProc, ConnexionRemovedHandlerProc);
+typedef void (*CleanupConnexionHandlersProc)(void);
+typedef UInt16 (*RegisterConnexionClientProc)(UInt32, UInt8 *, UInt16, UInt32);
+typedef void (*UnregisterConnexionClientProc)(UInt16);
+
+static CFBundleRef spaceBundle = nil;
+static InstallConnexionHandlersProc installConnexionHandlers = NULL;
+static CleanupConnexionHandlersProc cleanupConnexionHandlers = NULL;
+static RegisterConnexionClientProc registerConnexionClient = NULL;
+static UnregisterConnexionClientProc unregisterConnexionClient = NULL;
+static UInt32 connexionSignature = 'SoSp';
+static UInt8 *connexionName = (UInt8 *)"\x10SolveSpace";
+static UInt16 connexionClient = 0;
+
+static std::vector<std::weak_ptr<Window>> connexionWindows;
+static bool connexionShiftIsDown = false;
+static bool connexionCommandIsDown = false;
+
+static void ConnexionAdded(io_connect_t con) {}
+static void ConnexionRemoved(io_connect_t con) {}
+static void ConnexionMessage(io_connect_t con, natural_t type, void *arg) {
+    if (type != kConnexionMsgDeviceState) {
+        return;
+    }
+
+    ConnexionDeviceState *device = (ConnexionDeviceState *)arg;
+
+    dispatch_async(dispatch_get_main_queue(), ^(void){
+        SixDofEvent event = {};
+        event.type         = SixDofEvent::Type::MOTION;
+        event.translationX = (double)device->axis[0] * -0.25;
+        event.translationY = (double)device->axis[1] * -0.25;
+        event.translationZ = (double)device->axis[2] *  0.25;
+        event.rotationX    = (double)device->axis[3] * -0.0005;
+        event.rotationY    = (double)device->axis[4] * -0.0005;
+        event.rotationZ    = (double)device->axis[5] * -0.0005;
+        event.shiftDown    = connexionShiftIsDown;
+        event.controlDown  = connexionCommandIsDown;
+
+        for(auto window : connexionWindows) {
+            if(auto windowStrong = window.lock()) {
+                if(windowStrong->onSixDofEvent) {
+                    windowStrong->onSixDofEvent(event);
+                }
+            }
+        }
+    });
+}
+
+void Open3DConnexion() {
+    NSString *bundlePath = @"/Library/Frameworks/3DconnexionClient.framework";
+    NSURL *bundleURL = [NSURL fileURLWithPath:bundlePath];
+    spaceBundle = CFBundleCreate(kCFAllocatorDefault, (__bridge CFURLRef)bundleURL);
+
+    // Don't continue if no driver is installed on this machine
+    if(spaceBundle == nil) {
+        return;
+    }
+
+    installConnexionHandlers = (InstallConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("InstallConnexionHandlers"));
+
+    cleanupConnexionHandlers = (CleanupConnexionHandlersProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("CleanupConnexionHandlers"));
+
+    registerConnexionClient = (RegisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("RegisterConnexionClient"));
+
+    unregisterConnexionClient = (UnregisterConnexionClientProc)
+                CFBundleGetFunctionPointerForName(spaceBundle,
+                        CFSTR("UnregisterConnexionClient"));
+
+    // Only continue if all required symbols have been loaded
+    if((installConnexionHandlers == NULL) || (cleanupConnexionHandlers == NULL)
+            || (registerConnexionClient == NULL) || (unregisterConnexionClient == NULL)) {
+        CFRelease(spaceBundle);
+        spaceBundle = nil;
+        return;
+    }
+
+    installConnexionHandlers(&ConnexionMessage, &ConnexionAdded, &ConnexionRemoved);
+    connexionClient = registerConnexionClient(connexionSignature, connexionName,
+            kConnexionClientModeTakeOver, kConnexionMaskButtons | kConnexionMaskAxis);
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyDownMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        connexionShiftIsDown = (event.modifierFlags & NSShiftKeyMask);
+        connexionCommandIsDown = (event.modifierFlags & NSCommandKeyMask);
+        return event;
+    }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:(NSKeyUpMask | NSFlagsChangedMask)
+                                          handler:^(NSEvent *event) {
+        connexionShiftIsDown = (event.modifierFlags & NSShiftKeyMask);
+        connexionCommandIsDown = (event.modifierFlags & NSCommandKeyMask);
+        return event;
+    }];
+}
+
+void Close3DConnexion() {
+    if(spaceBundle == nil) {
+        return;
+    }
+
+    unregisterConnexionClient(connexionClient);
+    cleanupConnexionHandlers();
+
+    CFRelease(spaceBundle);
+}
+
+void Request3DConnexionEventsForWindow(WindowRef window) {
+    connexionWindows.push_back(window);
+}
+
+//-----------------------------------------------------------------------------
 // Message dialogs
 //-----------------------------------------------------------------------------
 

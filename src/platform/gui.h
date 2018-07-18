@@ -43,6 +43,26 @@ public:
     };
 };
 
+// A 3-DOF input event.
+struct SixDofEvent {
+    enum class Type {
+        MOTION,
+        PRESS,
+        RELEASE,
+    };
+
+    enum class Button {
+        FIT,
+    };
+
+    Type   type;
+    bool   shiftDown;
+    bool   controlDown;
+    double translationX, translationY, translationZ; // for Type::MOTION
+    double rotationX,    rotationY,    rotationZ;    // for Type::MOTION
+    Button button;                                   // for Type::{PRESS,RELEASE}
+};
+
 // A keyboard input event.
 struct KeyboardEvent {
     enum class Type {
@@ -191,6 +211,7 @@ public:
     std::function<void()>               onClose;
     std::function<void(bool)>           onFullScreen;
     std::function<bool(MouseEvent)>     onMouseEvent;
+    std::function<void(SixDofEvent)>  onSixDofEvent;
     std::function<bool(KeyboardEvent)>  onKeyboardEvent;
     std::function<void(std::string)>    onEditingDone;
     std::function<void(double)>         onScrollbarAdjusted;
@@ -249,6 +270,11 @@ typedef std::shared_ptr<Window> WindowRef;
 
 WindowRef CreateWindow(Window::Kind kind = Window::Kind::TOPLEVEL,
                        WindowRef parentWindow = NULL);
+
+// 3DConnexion support.
+void Open3DConnexion();
+void Close3DConnexion();
+void Request3DConnexionEventsForWindow(WindowRef window);
 
 // A native dialog that asks for one choice out of several.
 class MessageDialog {

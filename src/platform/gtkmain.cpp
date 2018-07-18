@@ -47,10 +47,6 @@
 #include "solvespace.h"
 #include "config.h"
 
-#ifdef HAVE_SPACEWARE
-#include <spnav.h>
-#endif
-
 namespace SolveSpace {
 
 void OpenWebsite(const char *url) {
@@ -77,40 +73,6 @@ std::vector<Platform::Path> GetFontFiles() {
 
     return fonts;
 }
-
-
-/* Space Navigator support */
-
-#ifdef HAVE_SPACEWARE
-static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gxevent, GdkEvent *, gpointer) {
-    XEvent *xevent = (XEvent*) gxevent;
-
-    spnav_event sev;
-    if(!spnav_x11_event(xevent, &sev))
-        return GDK_FILTER_CONTINUE;
-
-    switch(sev.type) {
-        case SPNAV_EVENT_MOTION:
-            SS.GW.SpaceNavigatorMoved(
-                (double)sev.motion.x,
-                (double)sev.motion.y,
-                (double)sev.motion.z  * -1.0,
-                (double)sev.motion.rx *  0.001,
-                (double)sev.motion.ry *  0.001,
-                (double)sev.motion.rz * -0.001,
-                xevent->xmotion.state & ShiftMask);
-            break;
-
-        case SPNAV_EVENT_BUTTON:
-            if(!sev.button.press && sev.button.bnum == 0) {
-                SS.GW.SpaceNavigatorButtonUp();
-            }
-            break;
-    }
-
-    return GDK_FILTER_REMOVE;
-}
-#endif
 
 };
 
@@ -149,10 +111,6 @@ int main(int argc, char** argv) {
                                                style_provider,
                                                600 /*Gtk::STYLE_PROVIDER_PRIORITY_APPLICATION*/);
 
-#ifdef HAVE_SPACEWARE
-    gdk_window_add_filter(NULL, GdkSpnavFilter, NULL);
-#endif
-
     const char* const* langNames = g_get_language_names();
     while(*langNames) {
         if(SetLocale(*langNames++)) break;
@@ -162,15 +120,6 @@ int main(int argc, char** argv) {
     }
 
     SS.Init();
-
-#if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
-    if(GDK_IS_X11_DISPLAY(Gdk::Display::get_default()->gobj())) {
-        // We don't care if it can't be opened; just continue without.
-        spnav_x11_open(gdk_x11_get_default_xdisplay(),
-                       gdk_x11_window_get_xid(((Gtk::Window *)SS.GW.window->NativePtr())
-                                              ->get_window()->gobj()));
-    }
-#endif
 
     if(argc >= 2) {
         if(argc > 2) {

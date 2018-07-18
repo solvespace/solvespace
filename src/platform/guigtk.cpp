@@ -3,7 +3,6 @@
 //
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #include <errno.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -23,6 +22,15 @@
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separatormenuitem.h>
 #include <gtkmm/window.h>
+
+#include "config.h"
+
+#if defined(HAVE_SPACEWARE)
+#   include <spnav.h>
+#   include <gdk/gdkx.h>
+#endif
+
+#include "solvespace.h"
 
 namespace SolveSpace {
 namespace Platform {
@@ -991,6 +999,78 @@ WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     }
     return window;
 }
+
+//-----------------------------------------------------------------------------
+// 3DConnexion support
+//-----------------------------------------------------------------------------
+
+void Open3DConnexion() {}
+void Close3DConnexion() {}
+
+#if defined(HAVE_SPACEWARE) && defined(GDK_WINDOWING_X11)
+static GdkFilterReturn GdkSpnavFilter(GdkXEvent *gdkXEvent, GdkEvent *gdkEvent, gpointer data) {
+    XEvent *xEvent = (XEvent *)gdkXEvent;
+    WindowImplGtk *window = (WindowImplGtk *)data;
+
+    spnav_event spnavEvent;
+    if(!spnav_x11_event(xEvent, &spnavEvent)) {
+        return GDK_FILTER_CONTINUE;
+    }
+
+    switch(spnavEvent.type) {
+        case SPNAV_EVENT_MOTION: {
+            SixDofEvent event = {};
+            event.type = SixDofEvent::Type::MOTION;
+            event.translationX = (double)spnavEvent.motion.x;
+            event.translationY = (double)spnavEvent.motion.y;
+            event.translationZ = (double)spnavEvent.motion.z  * -1.0;
+            event.rotationX    = (double)spnavEvent.motion.rx *  0.001;
+            event.rotationY    = (double)spnavEvent.motion.ry *  0.001;
+            event.rotationZ    = (double)spnavEvent.motion.rz * -0.001;
+            event.shiftDown    = xEvent->xmotion.state & ShiftMask;
+            event.controlDown  = xEvent->xmotion.state & ControlMask;
+            if(window->onSixDofEvent) {
+                window->onSixDofEvent(event);
+            }
+            break;
+        }
+
+        case SPNAV_EVENT_BUTTON:
+            SixDofEvent event = {};
+            if(spnavEvent.button.press) {
+                event.type = SixDofEvent::Type::PRESS;
+            } else {
+                event.type = SixDofEvent::Type::RELEASE;
+            }
+            switch(spnavEvent.button.bnum) {
+                case 0:  event.button = SixDofEvent::Button::FIT; break;
+                default: return GDK_FILTER_REMOVE;
+            }
+            event.shiftDown   = xEvent->xmotion.state & ShiftMask;
+            event.controlDown = xEvent->xmotion.state & ControlMask;
+            if(window->onSixDofEvent) {
+                window->onSixDofEvent(event);
+            }
+            break;
+    }
+
+    return GDK_FILTER_REMOVE;
+}
+
+void Request3DConnexionEventsForWindow(WindowRef window) {
+    std::shared_ptr<WindowImplGtk> windowImpl =
+        std::static_pointer_cast<WindowImplGtk>(window);
+
+    Glib::RefPtr<Gdk::Window> gdkWindow = windowImpl->gtkWindow.get_window();
+    if(GDK_IS_X11_DISPLAY(gdkWindow->get_display()->gobj())) {
+        gdkWindow->add_filter(GdkSpnavFilter, windowImpl.get());
+        spnav_x11_open(gdk_x11_get_default_xdisplay(),
+                       gdk_x11_window_get_xid(gdkWindow->gobj()));
+    }
+}
+#else
+void Request3DConnexionEventsForWindow(WindowRef window) {}
+#endif
 
 //-----------------------------------------------------------------------------
 // Message dialogs
