@@ -433,6 +433,11 @@ void GraphicsWindow::Init() {
             // a canvas.
             window->SetMinContentSize(720, /*ToolbarDrawOrHitTest 636*/ 32 * 18 + 3 * 16 + 8 + 4);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
+            window->onContextLost = [&] {
+                canvas = NULL;
+                persistentCanvas = NULL;
+                persistentDirty = true;
+            };
             window->onRender = std::bind(&GraphicsWindow::Paint, this);
             window->onKeyboardEvent = std::bind(&GraphicsWindow::KeyboardEvent, this, _1);
             window->onMouseEvent = std::bind(&GraphicsWindow::MouseEvent, this, _1);
