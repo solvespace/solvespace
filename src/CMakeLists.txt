@@ -359,20 +359,22 @@ target_compile_options(solvespace-headless
 
 # solvespace command-line executable
 
-add_executable(solvespace-cli
-    platform/entrycli.cpp
-    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+if(ENABLE_CLI)
+    add_executable(solvespace-cli
+        platform/entrycli.cpp
+        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-target_link_libraries(solvespace-cli
-    solvespace-core
-    solvespace-headless)
+    target_link_libraries(solvespace-cli
+        solvespace-core
+        solvespace-headless)
 
-add_dependencies(solvespace-cli
-    resources)
+    add_dependencies(solvespace-cli
+        resources)
 
-if(MSVC)
-    set_target_properties(solvespace-cli PROPERTIES
-        LINK_FLAGS "/INCREMENTAL:NO /OPT:REF")
+    if(MSVC)
+        set_target_properties(solvespace-cli PROPERTIES
+            LINK_FLAGS "/INCREMENTAL:NO /OPT:REF")
+    endif()
 endif()
 
 # solvespace unix package
@@ -382,8 +384,10 @@ if(NOT (WIN32 OR APPLE))
         install(TARGETS solvespace
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
-    install(TARGETS solvespace-cli
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    if(ENABLE_CLI)
+        install(TARGETS solvespace-cli
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
 endif()
 
 # solvespace macOS package

@@ -35,7 +35,9 @@ set(solvespace_VERSION_MINOR 0)
 string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
 
 set(ENABLE_GUI        ON CACHE BOOL
-    "Whether the graphical interface is enabled (command line interface always is)")
+    "Whether the graphical interface is enabled")
+set(ENABLE_CLI        ON CACHE BOOL
+    "Whether the command line interface is enabled")
 set(ENABLE_TESTS      ON  CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
@@ -157,7 +159,6 @@ if(WIN32 OR APPLE)
     list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
 else()
     # On Linux and BSDs we're a good citizen and link to system libraries.
-
     find_package(Backtrace)
     find_package(PkgConfig REQUIRED)
     find_package(ZLIB REQUIRED)
