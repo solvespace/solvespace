@@ -200,18 +200,18 @@ static bool RunCommand(const std::vector<std::string> args) {
             camera.scale      = SS.GW.scale;
             SS.GenerateAll();
 
-            CairoPixmapRenderer *pixmapCanvas = (CairoPixmapRenderer *)SS.GW.canvas.get();
-            pixmapCanvas->antialias = true;
-            pixmapCanvas->SetLighting(SS.GW.GetLighting());
-            pixmapCanvas->SetCamera(camera);
-            pixmapCanvas->Init();
+            CairoPixmapRenderer pixmapCanvas;
+            pixmapCanvas.antialias = true;
+            pixmapCanvas.SetLighting(SS.GW.GetLighting());
+            pixmapCanvas.SetCamera(camera);
+            pixmapCanvas.Init();
 
-            SS.GW.canvas->NewFrame();
-            SS.GW.Draw(SS.GW.canvas.get());
-            SS.GW.canvas->FlushFrame();
-            SS.GW.canvas->ReadFrame()->WritePng(output, /*flip=*/true);
+            pixmapCanvas.NewFrame();
+            SS.GW.Draw(&pixmapCanvas);
+            pixmapCanvas.FlushFrame();
+            pixmapCanvas.ReadFrame()->WritePng(output, /*flip=*/true);
 
-            pixmapCanvas->Clear();
+            pixmapCanvas.Clear();
         };
     } else if(args[1] == "export-view") {
         for(size_t argn = 2; argn < args.size(); argn++) {
