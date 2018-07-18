@@ -89,7 +89,7 @@ public:
 };
 
 TimerRef CreateTimer() {
-    return std::unique_ptr<Timer>(new TimerImplDummy);
+    return std::make_shared<TimerImplDummy>();
 }
 
 //-----------------------------------------------------------------------------

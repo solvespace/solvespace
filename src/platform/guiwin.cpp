@@ -258,7 +258,7 @@ public:
 };
 
 TimerRef CreateTimer() {
-    return std::unique_ptr<TimerImplWin32>(new TimerImplWin32);
+    return std::make_shared<TimerImplWin32>();
 }
 
 //-----------------------------------------------------------------------------

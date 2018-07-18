@@ -140,7 +140,7 @@ public:
     virtual void RunAfterProcessingEvents() { RunAfter(0); }
 };
 
-typedef std::unique_ptr<Timer> TimerRef;
+typedef std::shared_ptr<Timer> TimerRef;
 
 TimerRef CreateTimer();
 

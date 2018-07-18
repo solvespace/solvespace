@@ -187,7 +187,7 @@ public:
 };
 
 TimerRef CreateTimer() {
-    return std::unique_ptr<TimerImplCocoa>(new TimerImplCocoa);
+    return std::make_shared<TimerImplCocoa>();
 }
 
 //-----------------------------------------------------------------------------

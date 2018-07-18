@@ -218,7 +218,7 @@ public:
 };
 
 TimerRef CreateTimer() {
-    return std::unique_ptr<TimerImplGtk>(new TimerImplGtk);
+    return std::make_shared<TimerImplGtk>();
 }
 
 //-----------------------------------------------------------------------------
