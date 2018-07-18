@@ -710,7 +710,6 @@ public:
             }
 
             case WM_CLOSE:
-            case WM_DESTROY:
                 if(window->onClose) {
                     window->onClose();
                 }
