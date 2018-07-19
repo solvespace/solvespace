@@ -615,8 +615,9 @@ void SolveSpaceUI::MenuFile(Command id) {
             } else if(importFile.HasExtension("dwg")) {
                 ImportDwg(importFile);
             } else {
-                Error("Can't identify file type from file extension of "
-                      "filename '%s'; try .dxf or .dwg.", importFile.raw.c_str());
+                Error(_("Can't identify file type from file extension of "
+                        "filename '%s'; try .dxf or .dwg."), importFile.raw.c_str());
+                break;
             }
 
             SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
@@ -758,15 +759,16 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 vol += integral;
             }
 
-            std::string msg = ssprintf("The volume of the solid model is:\n\n""    %.3f %s^3",
+            std::string msg = ssprintf(_("The volume of the solid model is:\n\n"
+                                         "    %.3f %s^3"),
                 vol / pow(SS.MmPerUnit(), 3),
                 SS.UnitName());
 
             if(SS.viewUnits == Unit::MM) {
                 msg += ssprintf("\n    %.2f mL", vol/(10*10*10));
             }
-            msg += "\n\nCurved surfaces have been approximated as triangles.\n"
-                   "This introduces error, typically of around 1%.";
+            msg += _("\n\nCurved surfaces have been approximated as triangles.\n"
+                     "This introduces error, typically of around 1%.");
             Message("%s", msg.c_str());
             break;
         }
@@ -787,10 +789,10 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             sp.FixContourDirections();
             double area = sp.SignedArea();
             double scale = SS.MmPerUnit();
-            Message("The area of the region sketched in this group is:\n\n"
-                    "    %.3f %s^2\n\n"
-                    "Curves have been approximated as piecewise linear.\n"
-                    "This introduces error, typically of around 1%%.",
+            Message(_("The area of the region sketched in this group is:\n\n"
+                      "    %.3f %s^2\n\n"
+                      "Curves have been approximated as piecewise linear.\n"
+                      "This introduces error, typically of around 1%%."),
                 area / (scale*scale),
                 SS.UnitName());
             sel.Clear();
@@ -810,10 +812,10 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 }
 
                 double scale = SS.MmPerUnit();
-                Message("The total length of the selected entities is:\n\n"
-                        "    %.3f %s\n\n"
-                        "Curves have been approximated as piecewise linear.\n"
-                        "This introduces error, typically of around 1%%.",
+                Message(_("The total length of the selected entities is:\n\n"
+                          "    %.3f %s\n\n"
+                          "Curves have been approximated as piecewise linear.\n"
+                          "This introduces error, typically of around 1%%."),
                     perimeter / scale,
                     SS.UnitName());
             } else {
@@ -856,7 +858,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     }
                     fclose(f);
                 } else {
-                    Error("Couldn't write to '%s'", dialog->GetFilename().raw.c_str());
+                    Error(_("Couldn't write to '%s'"), dialog->GetFilename().raw.c_str());
                 }
             }
             // Clear the trace, and stop tracing
@@ -886,20 +888,21 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     SS.GW.Invalidate();
 
     const char *intersMsg = inters ?
-        "The mesh is self-intersecting (NOT okay, invalid)." :
-        "The mesh is not self-intersecting (okay, valid).";
+        _("The mesh is self-intersecting (NOT okay, invalid).") :
+        _("The mesh is not self-intersecting (okay, valid).");
     const char *leaksMsg = leaks ?
-        "The mesh has naked edges (NOT okay, invalid)." :
-        "The mesh is watertight (okay, valid).";
+        _("The mesh has naked edges (NOT okay, invalid).") :
+        _("The mesh is watertight (okay, valid).");
 
-    std::string cntMsg = ssprintf("\n\nThe model contains %d triangles, from "
-                    "%d surfaces.", g->displayMesh.l.n, g->runningShell.surface.n);
+    std::string cntMsg = ssprintf(
+        _("\n\nThe model contains %d triangles, from %d surfaces."),
+        g->displayMesh.l.n, g->runningShell.surface.n);
 
     if(SS.nakedEdges.l.n == 0) {
-        Message("%s\n\n%s\n\nZero problematic edges, good.%s",
+        Message(_("%s\n\n%s\n\nZero problematic edges, good.%s"),
             intersMsg, leaksMsg, cntMsg.c_str());
     } else {
-        Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
+        Error(_("%s\n\n%s\n\n%d problematic edges, bad.%s"),
             intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg.c_str());
     }
 }
@@ -911,7 +914,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
             break;
 
         case Command::ABOUT:
-            Message(
+            Message(_(
 "This is SolveSpace version " PACKAGE_VERSION ".\n"
 "\n"
 "For more information, see http://solvespace.com/\n"
@@ -924,7 +927,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
 "© 2008-2016 Jonathan Westhues and other authors.\n"
-);
+));
             break;
 
         default: ssassert(false, "Unexpected menu ID");
