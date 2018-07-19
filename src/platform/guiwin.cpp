@@ -143,7 +143,7 @@ void FatalError(std::string message) {
 // Settings
 //-----------------------------------------------------------------------------
 
-class SettingsImplWin32 : public Settings {
+class SettingsImplWin32 final : public Settings {
 public:
     HKEY hKey = NULL;
 
@@ -224,7 +224,7 @@ SettingsRef GetSettings() {
 // Timers
 //-----------------------------------------------------------------------------
 
-class TimerImplWin32 : public Timer {
+class TimerImplWin32 final : public Timer {
 public:
     static HWND WindowHandle() {
         static HWND hTimerWnd;
@@ -267,7 +267,7 @@ TimerRef CreateTimer() {
 
 class MenuImplWin32;
 
-class MenuItemImplWin32 : public MenuItem {
+class MenuItemImplWin32 final : public MenuItem {
 public:
     std::shared_ptr<MenuImplWin32> menu;
 
@@ -340,7 +340,7 @@ public:
 
 int64_t contextMenuPopTime = 0;
 
-class MenuImplWin32 : public Menu {
+class MenuImplWin32 final : public Menu {
 public:
     HMENU hMenu;
 
@@ -426,7 +426,7 @@ MenuRef CreateMenu() {
     return menu;
 }
 
-class MenuBarImplWin32 : public MenuBar {
+class MenuBarImplWin32 final : public MenuBar {
 public:
     HMENU hMenuBar;
 
@@ -471,7 +471,7 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
 
 #define SCROLLBAR_UNIT 65536
 
-class WindowImplWin32 : public Window {
+class WindowImplWin32 final : public Window {
 public:
     HWND hWindow  = NULL;
     HWND hTooltip = NULL;
@@ -1357,7 +1357,7 @@ void Request3DConnexionEventsForWindow(WindowRef window) {}
 // Message dialogs
 //-----------------------------------------------------------------------------
 
-class MessageDialogImplWin32 : public MessageDialog {
+class MessageDialogImplWin32 final : public MessageDialog {
 public:
     MSGBOXPARAMSW       mbp = {};
 
@@ -1467,7 +1467,7 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-class FileDialogImplWin32 : public FileDialog {
+class FileDialogImplWin32 final : public FileDialog {
 public:
     OPENFILENAMEW   ofn = {};
     bool            isSaveDialog;

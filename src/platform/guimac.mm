@@ -93,7 +93,7 @@ void FatalError(std::string message) {
 // Settings
 //-----------------------------------------------------------------------------
 
-class SettingsImplCocoa : public Settings {
+class SettingsImplCocoa final : public Settings {
 public:
     NSUserDefaults *userDefaults;
 
@@ -159,7 +159,7 @@ SettingsRef GetSettings() {
 // Timers
 //-----------------------------------------------------------------------------
 
-class TimerImplCocoa : public Timer {
+class TimerImplCocoa final : public Timer {
 public:
     NSTimer *timer;
 
@@ -194,7 +194,7 @@ TimerRef CreateTimer() {
 // Menus
 //-----------------------------------------------------------------------------
 
-class MenuItemImplCocoa : public MenuItem {
+class MenuItemImplCocoa final : public MenuItem {
 public:
     SSFunction *ssFunction;
     NSMenuItem *nsMenuItem;
@@ -244,7 +244,7 @@ public:
     }
 };
 
-class MenuImplCocoa : public Menu {
+class MenuImplCocoa final : public Menu {
 public:
     NSMenu *nsMenu;
 
@@ -298,7 +298,7 @@ MenuRef CreateMenu() {
     return std::make_shared<MenuImplCocoa>();
 }
 
-class MenuBarImplCocoa : public MenuBar {
+class MenuBarImplCocoa final : public MenuBar {
 public:
     NSMenu *nsMenuBar;
 
@@ -756,7 +756,7 @@ namespace Platform {
 // Windows
 //-----------------------------------------------------------------------------
 
-class WindowImplCocoa : public Window {
+class WindowImplCocoa final : public Window {
 public:
     NSWindow         *nsWindow;
     SSWindowDelegate *ssWindowDelegate;
@@ -1159,7 +1159,7 @@ void Request3DConnexionEventsForWindow(WindowRef window) {
 // Message dialogs
 //-----------------------------------------------------------------------------
 
-class MessageDialogImplCocoa : public MessageDialog {
+class MessageDialogImplCocoa final : public MessageDialog {
 public:
     NSAlert  *nsAlert  = [[NSAlert alloc] init];
     NSWindow *nsWindow;
@@ -1294,7 +1294,7 @@ public:
     }
 };
 
-class OpenFileDialogImplCocoa : public FileDialogImplCocoa {
+class OpenFileDialogImplCocoa final : public FileDialogImplCocoa {
 public:
     NSMutableArray *nsFilter = [[NSMutableArray alloc] init];
 
@@ -1310,7 +1310,7 @@ public:
     }
 };
 
-class SaveFileDialogImplCocoa : public FileDialogImplCocoa {
+class SaveFileDialogImplCocoa final : public FileDialogImplCocoa {
 public:
     NSMutableArray         *nsFilters   = [[NSMutableArray alloc] init];
     SSSaveFormatAccessory  *ssAccessory = nil;

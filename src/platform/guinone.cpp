@@ -51,7 +51,7 @@ void FatalError(std::string message) {
 // Settings
 //-----------------------------------------------------------------------------
 
-class SettingsImplDummy : public Settings {
+class SettingsImplDummy final : public Settings {
 public:
     void FreezeInt(const std::string &key, uint32_t value) {}
 
@@ -83,7 +83,7 @@ SettingsRef GetSettings() {
 // Timers
 //-----------------------------------------------------------------------------
 
-class TimerImplDummy : public Timer {
+class TimerImplDummy final : public Timer {
 public:
     void RunAfter(unsigned milliseconds) override {}
 };

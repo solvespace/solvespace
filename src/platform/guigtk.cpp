@@ -63,7 +63,7 @@ void FatalError(std::string message) {
 // Settings
 //-----------------------------------------------------------------------------
 
-class SettingsImplGtk : public Settings {
+class SettingsImplGtk final : public Settings {
 public:
     // Why aren't we using GSettings? Two reasons. It doesn't allow to easily see whether
     // the setting had the default value, and it requires to install a schema globally.
@@ -198,7 +198,7 @@ SettingsRef GetSettings() {
 // Timers
 //-----------------------------------------------------------------------------
 
-class TimerImplGtk : public Timer {
+class TimerImplGtk final : public Timer {
 public:
     sigc::connection    _connection;
 
@@ -276,7 +276,7 @@ protected:
 // Menus
 //-----------------------------------------------------------------------------
 
-class MenuItemImplGtk : public MenuItem {
+class MenuItemImplGtk final : public MenuItem {
 public:
     GtkMenuItem gtkMenuItem;
 
@@ -338,7 +338,7 @@ public:
     }
 };
 
-class MenuImplGtk : public Menu {
+class MenuImplGtk final : public Menu {
 public:
     Gtk::Menu   gtkMenu;
     std::vector<std::shared_ptr<MenuItemImplGtk>>   menuItems;
@@ -401,7 +401,7 @@ MenuRef CreateMenu() {
     return std::make_shared<MenuImplGtk>();
 }
 
-class MenuBarImplGtk : public MenuBar {
+class MenuBarImplGtk final : public MenuBar {
 public:
     Gtk::MenuBar    gtkMenuBar;
     std::vector<std::shared_ptr<MenuImplGtk>>       subMenus;
@@ -805,7 +805,7 @@ protected:
 // Windows
 //-----------------------------------------------------------------------------
 
-class WindowImplGtk : public Window {
+class WindowImplGtk final : public Window {
 public:
     GtkWindow       gtkWindow;
     MenuBarRef      menuBar;
@@ -1069,7 +1069,7 @@ void Request3DConnexionEventsForWindow(WindowRef window) {}
 // Message dialogs
 //-----------------------------------------------------------------------------
 
-class MessageDialogImplGtk : public MessageDialog {
+class MessageDialogImplGtk final : public MessageDialog {
 public:
     Gtk::Image         gtkImage;
     Gtk::MessageDialog gtkDialog;
@@ -1156,7 +1156,7 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-class FileDialogImplGtk : public FileDialog {
+class FileDialogImplGtk final : public FileDialog {
 public:
     Gtk::FileChooserDialog      gtkDialog;
     std::vector<std::string>    extensions;

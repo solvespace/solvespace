@@ -166,7 +166,7 @@ static void ssglFillPattern(Canvas::FillPattern pattern) {
 // OpenGL 1 / compatibility profile based renderer
 //-----------------------------------------------------------------------------
 
-class OpenGl1Renderer : public ViewportCanvas {
+class OpenGl1Renderer final : public ViewportCanvas {
 public:
     Camera      camera;
     Lighting    lighting;

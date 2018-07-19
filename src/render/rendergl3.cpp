@@ -40,7 +40,7 @@ public:
 };
 
 // A canvas that uses the core OpenGL 3 profile, for desktop systems.
-class OpenGl2Renderer : public ViewportCanvas {
+class OpenGl2Renderer final : public ViewportCanvas {
 public:
     struct SEdgeListItem {
         hStroke         h;
@@ -716,7 +716,7 @@ public:
     virtual void Remove(OpenGl2Renderer *renderer) = 0;
 };
 
-class EdgeDrawCall : public DrawCall {
+class EdgeDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke              stroke;
@@ -745,7 +745,7 @@ public:
     }
 };
 
-class OutlineDrawCall : public DrawCall {
+class OutlineDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke              stroke;
@@ -777,7 +777,7 @@ public:
     }
 };
 
-class PointDrawCall : public DrawCall {
+class PointDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke               stroke;
@@ -806,7 +806,7 @@ public:
     }
 };
 
-class PixmapDrawCall : public DrawCall {
+class PixmapDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Fill                 fill;
@@ -842,7 +842,7 @@ public:
     }
 };
 
-class MeshDrawCall : public DrawCall {
+class MeshDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Fill            fillFront;
@@ -903,7 +903,7 @@ public:
 };
 
 struct CompareDrawCall {
-    bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) {
+    bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) const {
         const Canvas::Layer stackup[] = {
             Canvas::Layer::BACK,
             Canvas::Layer::DEPTH_ONLY,
@@ -924,7 +924,7 @@ struct CompareDrawCall {
     }
 };
 
-class OpenGl2RendererBatch : public BatchCanvas {
+class OpenGl2RendererBatch final : public BatchCanvas {
 public:
     struct EdgeBuffer {
         hStroke         h;
