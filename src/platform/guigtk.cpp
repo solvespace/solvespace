@@ -1069,7 +1069,12 @@ void Request3DConnexionEventsForWindow(WindowRef window) {}
 // Message dialogs
 //-----------------------------------------------------------------------------
 
-class MessageDialogImplGtk final : public MessageDialog {
+class MessageDialogImplGtk;
+
+static std::vector<std::shared_ptr<MessageDialogImplGtk>> shownMessageDialogs;
+
+class MessageDialogImplGtk final : public MessageDialog,
+                                   public std::enable_shared_from_this<MessageDialogImplGtk> {
 public:
     Gtk::Image         gtkImage;
     Gtk::MessageDialog gtkDialog;
@@ -1078,7 +1083,16 @@ public:
         : gtkDialog(parent, "", /*use_markup=*/false, Gtk::MESSAGE_INFO,
                     Gtk::BUTTONS_NONE, /*modal=*/true)
     {
-         SetTitle("Message");
+        SetTitle("Message");
+
+        gtkDialog.signal_response().connect([this](int gtkResponse) {
+            ProcessResponse(gtkResponse);
+        });
+        gtkDialog.signal_hide().connect([this] {
+            auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
+                                  shared_from_this());
+            shownMessageDialogs.erase(it);
+        });
     }
 
     void SetType(Type type) override {
@@ -1129,21 +1143,36 @@ public:
         }
     }
 
-    Response RunModal() override {
-        switch(gtkDialog.run()) {
-            case Gtk::RESPONSE_OK:     return Response::OK;     break;
-            case Gtk::RESPONSE_YES:    return Response::YES;    break;
-            case Gtk::RESPONSE_NO:     return Response::NO;     break;
-            case Gtk::RESPONSE_CANCEL: return Response::CANCEL; break;
+    Response ProcessResponse(int gtkResponse) {
+        Response response;
+        switch(gtkResponse) {
+            case Gtk::RESPONSE_OK:     response = Response::OK;     break;
+            case Gtk::RESPONSE_YES:    response = Response::YES;    break;
+            case Gtk::RESPONSE_NO:     response = Response::NO;     break;
+            case Gtk::RESPONSE_CANCEL: response = Response::CANCEL; break;
 
             case Gtk::RESPONSE_NONE:
             case Gtk::RESPONSE_CLOSE:
             case Gtk::RESPONSE_DELETE_EVENT:
-                return Response::NONE;
+                response = Response::NONE;
                 break;
 
             default: ssassert(false, "Unexpected response");
         }
+
+        if(onResponse) {
+            onResponse(response);
+        }
+        return response;
+    }
+
+    void ShowModal() override {
+        shownMessageDialogs.push_back(shared_from_this());
+        gtkDialog.show();
+    }
+
+    Response RunModal() override {
+        return ProcessResponse(gtkDialog.run());
     }
 };
 

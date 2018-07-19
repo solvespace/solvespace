@@ -161,6 +161,7 @@ bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
                       /*isDefault=*/true);
     dialog->AddButton(C_("button", "Do&n't Load"), MessageDialog::Response::NO);
 
+    // FIXME(async): asyncify this call
     if(dialog->RunModal() == MessageDialog::Response::YES) {
         unsaved = true;
         return LoadFromFile(autosaveFile, /*canCancel=*/true);
@@ -463,6 +464,7 @@ bool SolveSpaceUI::OkayToStartNewFile() {
     dialog->AddButton(C_("button", "Do&n't Save"), MessageDialog::Response::NO);
     dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::CANCEL);
 
+    // FIXME(async): asyncify this call
     switch(dialog->RunModal()) {
         case MessageDialog::Response::YES:
             return GetFilenameAndSave(/*saveAs=*/false);

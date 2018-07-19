@@ -100,10 +100,11 @@ void SolveSpace::MultMatrix(double *mata, double *matb, double *matr) {
 }
 
 //-----------------------------------------------------------------------------
-// Word-wrap the string for our message box appropriately, and then display
+// Format the string for our message box appropriately, and then display
 // that string.
 //-----------------------------------------------------------------------------
-static void MessageBox(const char *fmt, va_list va, bool error)
+static void MessageBox(const char *fmt, va_list va, bool error,
+                       std::function<void()> onDismiss = std::function<void()>())
 {
 #ifndef LIBRARY
     va_list va_size;
@@ -156,7 +157,13 @@ static void MessageBox(const char *fmt, va_list va, bool error)
     }
     dialog->AddButton(C_("button", "&OK"), MessageDialog::Response::OK,
                       /*isDefault=*/true);
-    dialog->RunModal();
+
+    dialog->onResponse = [=](MessageDialog::Response _response) {
+        if(onDismiss) {
+            onDismiss();
+        }
+    };
+    dialog->ShowModal();
 #endif
 }
 void SolveSpace::Error(const char *fmt, ...)
@@ -171,6 +178,13 @@ void SolveSpace::Message(const char *fmt, ...)
     va_list f;
     va_start(f, fmt);
     MessageBox(fmt, f, /*error=*/false);
+    va_end(f);
+}
+void SolveSpace::MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...)
+{
+    va_list f;
+    va_start(f, fmt);
+    MessageBox(fmt, f, /*error=*/false, onDismiss);
     va_end(f);
 }
 

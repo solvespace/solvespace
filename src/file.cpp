@@ -844,6 +844,7 @@ static Platform::MessageDialog::Response LocateImportedFile(const Platform::Path
         dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::CANCEL);
     }
 
+    // FIXME(async): asyncify this call
     return dialog->RunModal();
 }
 

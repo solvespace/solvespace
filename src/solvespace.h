@@ -235,6 +235,7 @@ void MultMatrix(double *mata, double *matb, double *matr);
 
 int64_t GetMilliseconds();
 void Message(const char *fmt, ...);
+void MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...);
 void Error(const char *fmt, ...);
 
 class System {

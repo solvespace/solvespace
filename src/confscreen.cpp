@@ -331,10 +331,10 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
             double x, y, z;
             if(sscanf(s.c_str(), "%lf, %lf, %lf", &x, &y, &z)==3) {
                 SS.lightDir[edit.i] = Vector::From(x, y, z);
+                SS.GW.Invalidate();
             } else {
                 Error(_("Bad format: specify coordinates as x, y, z"));
             }
-            SS.GW.Invalidate();
             break;
         }
         case Edit::COLOR: {
@@ -367,11 +367,11 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
         }
         case Edit::CAMERA_TANGENT: {
             SS.cameraTangent = (min(2.0, max(0.0, atof(s.c_str()))))/1000.0;
+            SS.GW.Invalidate();
             if(!SS.usePerspectiveProj) {
                 Message(_("The perspective factor will have no effect until you "
                           "enable View -> Use Perspective Projection."));
             }
-            SS.GW.Invalidate();
             break;
         }
         case Edit::GRID_SPACING: {
@@ -385,8 +385,8 @@ bool TextWindow::EditControlDoneForConfiguration(const std::string &s) {
                 Error(_("Specify between 0 and 8 digits after the decimal."));
             } else {
                 SS.SetUnitDigitsAfterDecimal(v);
+                SS.GW.Invalidate();
             }
-            SS.GW.Invalidate();
             break;
         }
         case Edit::EXPORT_SCALE: {

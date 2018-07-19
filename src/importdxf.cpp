@@ -1100,6 +1100,7 @@ static void ImportDwgDxf(const Platform::Path &filename,
     importer.clearBlockTransform();
     if(!read(data, &importer)) {
         Error("Corrupted %s file.", fileType.c_str());
+        return;
     }
     if(importer.unknownEntities > 0) {
         Message("%u %s entities of unknown type were ignored.",

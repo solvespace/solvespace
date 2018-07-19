@@ -678,15 +678,17 @@ void GraphicsWindow::MenuView(Command id) {
 
         case Command::SHOW_GRID:
             SS.GW.showSnapGrid = !SS.GW.showSnapGrid;
+            SS.GW.EnsureValidActives();
+            SS.GW.Invalidate();
             if(SS.GW.showSnapGrid && !SS.GW.LockedInWorkplane()) {
                 Message(_("No workplane is active, so the grid will not appear."));
             }
-            SS.GW.EnsureValidActives();
-            SS.GW.Invalidate();
             break;
 
         case Command::PERSPECTIVE_PROJ:
             SS.usePerspectiveProj = !SS.usePerspectiveProj;
+            SS.GW.EnsureValidActives();
+            SS.GW.Invalidate();
             if(SS.cameraTangent < 1e-6) {
                 Error(_("The perspective factor is set to zero, so the view will "
                         "always be a parallel projection.\n\n"
@@ -694,8 +696,6 @@ void GraphicsWindow::MenuView(Command id) {
                         "factor in the configuration screen. A value around 0.3 "
                         "is typical."));
             }
-            SS.GW.EnsureValidActives();
-            SS.GW.Invalidate();
             break;
 
         case Command::ONTO_WORKPLANE:
@@ -1050,11 +1050,11 @@ void GraphicsWindow::MenuEdit(Command id) {
                     }
                 }
             } while(didSomething);
+            SS.GW.Invalidate();
+            SS.ScheduleShowTW();
             if(newlySelected == 0) {
                 Error(_("No additional entities share endpoints with the selected entities."));
             }
-            SS.GW.Invalidate();
-            SS.ScheduleShowTW();
             break;
         }
 
@@ -1076,7 +1076,6 @@ void GraphicsWindow::MenuEdit(Command id) {
                         "group the active group."));
                 break;
             }
-
 
             SS.UndoRemember();
             // Rotate by ninety degrees about the coordinate axis closest
@@ -1168,20 +1167,18 @@ void GraphicsWindow::MenuRequest(Command id) {
             } else if(g->type == Group::Type::DRAWING_WORKPLANE) {
                 // The group's default workplane
                 g->activeWorkplane = g->h.entity(0);
-                Message(_("No workplane selected. Activating default workplane "
-                          "for this group."));
-            }
-
-            if(!SS.GW.LockedInWorkplane()) {
+                MessageAndRun([] {
+                    // Align the view with the selected workplane
+                    SS.GW.ClearSuper();
+                    SS.GW.AnimateOntoWorkplane();
+                }, _("No workplane selected. Activating default workplane "
+                     "for this group."));
+            } else {
                 Error(_("No workplane is selected, and the active group does "
                         "not have a default workplane. Try selecting a "
                         "workplane, or activating a sketch-in-new-workplane "
                         "group."));
-                break;
             }
-            // Align the view with the selected workplane
-            SS.GW.ClearSuper();
-            SS.GW.AnimateOntoWorkplane();
             break;
         }
         case Command::FREE_IN_3D:
@@ -1232,12 +1229,13 @@ c:
             break;
 
         case Command::CONSTRUCTION: {
-            SS.UndoRemember();
             SS.GW.GroupSelection();
             if(SS.GW.gs.entities == 0) {
                 Error(_("No entities are selected. Select entities before "
                         "trying to toggle their construction state."));
+                break;
             }
+            SS.UndoRemember();
             int i;
             for(i = 0; i < SS.GW.gs.entities; i++) {
                 hEntity he = SS.GW.gs.entity[i];

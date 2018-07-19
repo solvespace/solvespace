@@ -213,7 +213,7 @@ public:
     std::function<void()>               onClose;
     std::function<void(bool)>           onFullScreen;
     std::function<bool(MouseEvent)>     onMouseEvent;
-    std::function<void(SixDofEvent)>  onSixDofEvent;
+    std::function<void(SixDofEvent)>    onSixDofEvent;
     std::function<bool(KeyboardEvent)>  onKeyboardEvent;
     std::function<void(std::string)>    onEditingDone;
     std::function<void(double)>         onScrollbarAdjusted;
@@ -293,6 +293,8 @@ public:
         CANCEL
     };
 
+    std::function<void(Response)> onResponse;
+
     virtual ~MessageDialog() {}
 
     virtual void SetType(Type type) = 0;
@@ -303,6 +305,12 @@ public:
     virtual void AddButton(std::string name, Response response, bool isDefault = false) = 0;
 
     virtual Response RunModal() = 0;
+    virtual void ShowModal() {
+        Response response = RunModal();
+        if(onResponse) {
+            onResponse(response);
+        }
+    }
 };
 
 typedef std::shared_ptr<MessageDialog> MessageDialogRef;

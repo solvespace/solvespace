@@ -711,6 +711,7 @@ void GraphicsWindow::SplitLinesOrCurves() {
         }
     } else {
         Error(_("Can't split; no intersection found."));
+        return;
     }
 
     // All done, clean up and regenerate.
