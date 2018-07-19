@@ -293,10 +293,12 @@ public:
         CANCEL
     };
 
+    virtual ~MessageDialog() {}
+
     virtual void SetType(Type type) = 0;
     virtual void SetTitle(std::string title) = 0;
-    virtual void SetMessage(std::string caption) = 0;
-    virtual void SetDescription(std::string text) = 0;
+    virtual void SetMessage(std::string message) = 0;
+    virtual void SetDescription(std::string description) = 0;
 
     virtual void AddButton(std::string name, Response response, bool isDefault = false) = 0;
 
@@ -333,6 +335,8 @@ extern std::vector<FileFilter> CsvFileFilters;
 // A native dialog that asks to choose a file.
 class FileDialog {
 public:
+    virtual ~FileDialog() {}
+
     virtual void SetTitle(std::string title) = 0;
     virtual void SetCurrentName(std::string name) = 0;
 
