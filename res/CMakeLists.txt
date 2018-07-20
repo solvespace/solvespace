@@ -197,6 +197,7 @@ add_resources(
     icons/text-window/shaded.png
     icons/text-window/workplane.png
     locales.txt
+    locales/de_DE.po
     locales/en_US.po
     locales/fr_FR.po
     locales/uk_UA.po
