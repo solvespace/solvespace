@@ -638,7 +638,7 @@ public:
     // as special requests.
     double tangentArcRadius;
     bool tangentArcManual;
-    bool tangentArcDeleteOld;
+    bool tangentArcModify;
 
     // The platform-dependent code calls this before entering the msg loop
     void Init();
