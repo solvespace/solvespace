@@ -668,8 +668,8 @@ public:
         Vector TangentAt(double t);
         double LengthForAuto();
 
-        hRequest CreateRequestTrimmedTo(double t, bool extraConstraints,
-            hEntity orig, hEntity arc, bool arcFinish);
+        void CreateRequestTrimmedTo(double t, bool reuseOrig,
+            hEntity orig, hEntity arc, bool arcFinish, bool pointf);
         void ConstrainPointIfCoincident(hEntity hpt);
     };
     void MakeTangentArc();
@@ -718,6 +718,7 @@ public:
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection();
     void ClearNonexistentSelectionItems();
+    /// This structure is filled by a call to GroupSelection().
     struct {
         std::vector<hEntity>     point;
         std::vector<hEntity>     entity;
@@ -740,7 +741,7 @@ public:
         int         stylables;
         int         constraintLabels;
         int         withEndpoints;
-        int         n;
+        int         n;                 ///< Number of selected items
     } gs;
     void GroupSelection();
     bool IsSelected(Selection *s);

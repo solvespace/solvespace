@@ -88,6 +88,8 @@ Bugs fixed:
   * A step rotate/translate group using a group forced to triangle mesh
     as a source group also gets forced to triangle mesh.
   * Paste Transformed with a negative scale does not invert arcs.
+  * The tangent arc now modifies the original entities instead of deleting
+    them, such that their constraints are retained.
 
 2.x
 ---

@@ -643,7 +643,7 @@ void TextWindow::ScreenChangeTangentArc(int link, uint32_t v) {
         }
 
         case 'a': SS.tangentArcManual = !SS.tangentArcManual; break;
-        case 'd': SS.tangentArcDeleteOld = !SS.tangentArcDeleteOld; break;
+        case 'm': SS.tangentArcModify = !SS.tangentArcModify; break;
     }
 }
 void TextWindow::ShowTangentArc() {
@@ -662,9 +662,9 @@ void TextWindow::ShowTangentArc() {
     Printf(false, "  %Fd%f%La%s  choose radius automatically%E",
         &ScreenChangeTangentArc,
         !SS.tangentArcManual ? CHECK_TRUE : CHECK_FALSE);
-    Printf(false, "  %Fd%f%Ld%s  delete original entities afterward%E",
+    Printf(false, "  %Fd%f%Lm%s  modify original entities%E",
         &ScreenChangeTangentArc,
-        SS.tangentArcDeleteOld ? CHECK_TRUE : CHECK_FALSE);
+        SS.tangentArcModify ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(false, "");
     Printf(false, "To create a tangent arc at a point,");

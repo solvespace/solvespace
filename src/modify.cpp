@@ -161,19 +161,32 @@ Vector GraphicsWindow::ParametricCurve::TangentAt(double t) {
         return t;
     }
 }
-hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
-    bool extraConstraints, hEntity orig, hEntity arc, bool arcFinish)
+/** Changes or copies the given entity and connects it to the arc.
+ * \param t Where on this parametric curve does it connect to the arc.
+ * \param reuseOrig Should the original entity be modified
+ * \param orig The original entity.
+ * \param arc The arc that will be connected to.
+ * \param arcFinish Whether to connect to the end point of the arc.
+ * \param pointf When changing the original entity, whether the end point should be modified.
+ */
+void GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
+    bool reuseOrig, hEntity orig, hEntity arc, bool arcFinish, bool pointf)
 {
     hRequest hr;
     Entity *e;
     if(isLine) {
-        hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
-        e = SK.GetEntity(hr.entity(0));
-        SK.GetEntity(e->point[0])->PointForceTo(PointAt(t));
-        SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
-        ConstrainPointIfCoincident(e->point[0]);
-        ConstrainPointIfCoincident(e->point[1]);
-        if(extraConstraints) {
+        if (reuseOrig) {
+            e = SK.GetEntity(orig);
+            int i = pointf ? 1 : 0;
+            SK.GetEntity(e->point[i])->PointForceTo(PointAt(t));
+            ConstrainPointIfCoincident(e->point[i]);
+        } else {
+            hr = SS.GW.AddRequest(Request::Type::LINE_SEGMENT, /*rememberForUndo=*/false),
+            e = SK.GetEntity(hr.entity(0));
+            SK.GetEntity(e->point[0])->PointForceTo(PointAt(t));
+            SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+            ConstrainPointIfCoincident(e->point[0]);
+            ConstrainPointIfCoincident(e->point[1]);
             Constraint::Constrain(Constraint::Type::PT_ON_LINE,
                 hr.entity(1), Entity::NO_ENTITY, orig);
         }
@@ -181,26 +194,32 @@ hRequest GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
             arc, e->h, /*other=*/arcFinish, /*other2=*/false);
     } else {
-        hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
-        e = SK.GetEntity(hr.entity(0));
-        SK.GetEntity(e->point[0])->PointForceTo(p0);
-        if(dtheta > 0) {
-            SK.GetEntity(e->point[1])->PointForceTo(PointAt(t));
-            SK.GetEntity(e->point[2])->PointForceTo(PointAt(1));
+        if (reuseOrig) {
+            e = SK.GetEntity(orig);
+            int i = pointf ? 2 : 1;
+            SK.GetEntity(e->point[i])->PointForceTo(PointAt(t));
+            ConstrainPointIfCoincident(e->point[i]);
         } else {
-            SK.GetEntity(e->point[2])->PointForceTo(PointAt(t));
-            SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+            hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
+            e = SK.GetEntity(hr.entity(0));
+            SK.GetEntity(e->point[0])->PointForceTo(p0);
+            if(dtheta > 0) {
+                SK.GetEntity(e->point[1])->PointForceTo(PointAt(t));
+                SK.GetEntity(e->point[2])->PointForceTo(PointAt(1));
+            } else {
+                SK.GetEntity(e->point[2])->PointForceTo(PointAt(t));
+                SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+            }
+            ConstrainPointIfCoincident(e->point[0]);
+            ConstrainPointIfCoincident(e->point[1]);
+            ConstrainPointIfCoincident(e->point[2]);
         }
-        ConstrainPointIfCoincident(e->point[0]);
-        ConstrainPointIfCoincident(e->point[1]);
-        ConstrainPointIfCoincident(e->point[2]);
         // The tangency constraint alone is enough to fully constrain it,
         // so there's no need for more.
         Constraint::Constrain(Constraint::Type::CURVE_CURVE_TANGENT,
             Entity::NO_ENTITY, Entity::NO_ENTITY,
             arc, e->h, /*other=*/arcFinish, /*other2=*/(dtheta < 0));
     }
-    return hr;
 }
 
 //-----------------------------------------------------------------------------
@@ -388,6 +407,27 @@ void GraphicsWindow::MakeTangentArc() {
 
     SS.UndoRemember();
 
+    if (SS.tangentArcModify) {
+        // Delete the coincident constraint for the removed point.
+        SK.constraint.ClearTags();
+        for(i = 0; i < SK.constraint.n; i++) {
+            Constraint *cs = &(SK.constraint.elem[i]);
+            if(cs->group.v != activeGroup.v) continue;
+            if(cs->workplane.v != ActiveWorkplane().v) continue;
+            if(cs->type != Constraint::Type::POINTS_COINCIDENT) continue;
+            if (SK.GetEntity(cs->ptA)->PointGetNum().Equals(pshared)) {
+            cs->tag = 1;
+            }
+        }
+        SK.constraint.RemoveTagged();
+    } else {
+        // Make the original entities construction, or delete them
+        // entirely, according to user preference.
+        SK.GetRequest(hreq[0])->construction = true;
+        SK.GetRequest(hreq[1])->construction = true;
+    }
+
+    // Create and position the new tangent arc.
     hRequest harc = AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false);
     Entity *earc = SK.GetEntity(harc.entity(0));
     hEntity hearc = earc->h;
@@ -398,27 +438,11 @@ void GraphicsWindow::MakeTangentArc() {
 
     earc = NULL;
 
-    pc[0].CreateRequestTrimmedTo(t[0], !SS.tangentArcDeleteOld,
-                hent[0], hearc, /*arcFinish=*/(b == 1));
-    pc[1].CreateRequestTrimmedTo(t[1], !SS.tangentArcDeleteOld,
-                hent[1], hearc, /*arcFinish=*/(a == 1));
-
-    // Now either make the original entities construction, or delete them
-    // entirely, according to user preference.
-    Request *re;
-    SK.request.ClearTags();
-    for(re = SK.request.First(); re; re = SK.request.NextAfter(re)) {
-        if(re->h.v == hreq[0].v || re->h.v == hreq[1].v) {
-            if(SS.tangentArcDeleteOld) {
-                re->tag = 1;
-            } else {
-                re->construction = true;
-            }
-        }
-    }
-    if(SS.tangentArcDeleteOld) {
-        DeleteTaggedRequests();
-    }
+    // Modify or duplicate the original entities and connect them to the tangent arc.
+    pc[0].CreateRequestTrimmedTo(t[0], SS.tangentArcModify,
+                hent[0], hearc, /*arcFinish=*/(b == 1), pointf[0]);
+    pc[1].CreateRequestTrimmedTo(t[1], SS.tangentArcModify,
+                hent[1], hearc, /*arcFinish=*/(a == 1), pointf[1]);
 }
 
 hEntity GraphicsWindow::SplitLine(hEntity he, Vector pinter) {
