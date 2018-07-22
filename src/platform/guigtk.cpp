@@ -1084,15 +1084,6 @@ public:
                     Gtk::BUTTONS_NONE, /*modal=*/true)
     {
         SetTitle("Message");
-
-        gtkDialog.signal_response().connect([this](int gtkResponse) {
-            ProcessResponse(gtkResponse);
-        });
-        gtkDialog.signal_hide().connect([this] {
-            auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
-                                  shared_from_this());
-            shownMessageDialogs.erase(it);
-        });
     }
 
     void SetType(Type type) override {
@@ -1167,7 +1158,17 @@ public:
     }
 
     void ShowModal() override {
+        gtkDialog.signal_hide().connect([this] {
+            auto it = std::remove(shownMessageDialogs.begin(), shownMessageDialogs.end(),
+                                  shared_from_this());
+            shownMessageDialogs.erase(it);
+        });
         shownMessageDialogs.push_back(shared_from_this());
+
+        gtkDialog.signal_response().connect([this](int gtkResponse) {
+            gtkDialog.hide();
+            ProcessResponse(gtkResponse);
+        });
         gtkDialog.show();
     }
 
