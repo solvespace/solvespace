@@ -154,6 +154,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
     bool withinToolbar =
         (mx >= aleft && mx <= aright && my <= atop && my >= abot);
+    
+    // Initialize/clear menuHit.
+    if(menuHit) *menuHit = Command::NONE;
 
     if(!canvas && !withinToolbar) {
         // This gets called every MouseMove event, so return quickly.
@@ -222,10 +225,6 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
             y -= 32;
             leftpos = true;
         }
-    }
-
-    if(!withinToolbar) {
-        if(menuHit) *menuHit = Command::NONE;
     }
 
     return withinToolbar;
