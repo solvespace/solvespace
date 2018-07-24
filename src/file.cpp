@@ -732,7 +732,13 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
         } else if(strcmp(line, "AddConstraint")==0) {
 
         } else if(strcmp(line, "AddStyle")==0) {
-
+            // Linked file contains a style that we don't have yet,
+            // so import it.
+            if (SK.style.FindByIdNoOops(sv.s.h) == nullptr) {
+                SK.style.Add(&(sv.s));
+            }
+            sv.s = {};
+            Style::FillDefaultStyle(&sv.s);
         } else if(strcmp(line, VERSION_STRING)==0) {
 
         } else if(StrStartsWith(line, "Triangle ")) {
