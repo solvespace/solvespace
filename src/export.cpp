@@ -78,9 +78,8 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     g->runningMesh.MakeEdgesInPlaneInto(&el, n, d);
 
     // If there's a shell, then grab the edges and possibly Beziers.
-    g->runningShell.MakeSectionEdgesInto(n, d,
-       &el,
-       (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);
+    bool export_as_pwl = SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS;
+    g->runningShell.MakeSectionEdgesInto(n, d, &el, export_as_pwl ? NULL : &bl);
 
     // All of these are solid model edges, so use the appropriate style.
     SEdge *se;
@@ -92,8 +91,27 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
         sb->auxA = Style::SOLID_EDGE;
     }
 
-    el.CullExtraneousEdges();
-    bl.CullIdenticalBeziers();
+    el.CullExtraneousEdges(true);
+    bl.CullIdenticalBeziers(true);
+    
+    // Collect lines and beziers with custom style & export.
+    int i;
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
+        if (!e->IsVisible()) continue;
+        if (e->style.v < Style::FIRST_CUSTOM) continue;
+        if (!Style::Exportable(e->style.v)) continue;
+        if (!e->IsInPlane(n,d)) continue;
+        if (export_as_pwl) {
+            e->GenerateEdges(&el);
+        } else {
+            e->GenerateBezierCurves(&bl);
+        }
+    }
+
+    // Only remove half of the overlapping edges/beziers to support TTF Stick Fonts.
+    el.CullExtraneousEdges(false);
+    bl.CullIdenticalBeziers(false);
 
     // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);

@@ -125,7 +125,7 @@ public:
 
     void Clear();
     void ScaleSelfBy(double s);
-    void CullIdenticalBeziers();
+    void CullIdenticalBeziers(bool both=true);
     void AllIntersectionsWith(SBezierList *sblb, SPointList *spl) const;
     bool GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
                                         Vector *notCoplanarAt) const;

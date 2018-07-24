@@ -58,7 +58,7 @@ public:
         Vector *pi=NULL, SPointList *spl=NULL) const;
     bool ContainsEdgeFrom(const SEdgeList *sel) const;
     bool ContainsEdge(const SEdge *se) const;
-    void CullExtraneousEdges();
+    void CullExtraneousEdges(bool both=true);
     void MergeCollinearSegments(Vector a, Vector b);
 };
 

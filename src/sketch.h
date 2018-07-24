@@ -483,6 +483,7 @@ public:
     bool HasEndpoints() const;
     Vector EndpointStart() const;
     Vector EndpointFinish() const;
+    bool IsInPlane(Vector norm, double distance) const;
 
     void RectGetPointsExprs(ExprVector *eap, ExprVector *ebp) const;
 

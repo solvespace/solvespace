@@ -784,6 +784,47 @@ Vector EntityBase::EndpointFinish() const {
         return SK.GetEntity(point[2])->PointGetNum();
     } else ssassert(false, "Unexpected entity type");
 }
+static bool PointInPlane(hEntity h, Vector norm, double distance) {
+    Vector p = SK.GetEntity(h)->PointGetNum();
+    return (fabs(norm.Dot(p) - distance) < LENGTH_EPS);
+}
+bool EntityBase::IsInPlane(Vector norm, double distance) const {
+    switch(type) {
+        case Type::LINE_SEGMENT: {
+            return PointInPlane(point[0], norm, distance)
+                && PointInPlane(point[1], norm, distance);
+        }
+        case Type::CUBIC:
+        case Type::CUBIC_PERIODIC: {
+            bool periodic = type == Type::CUBIC_PERIODIC;
+            int n = periodic ? 3 + extraPoints : extraPoints;
+            int i;
+            for (i=0; i<n; i++) {
+                if (!PointInPlane(point[i], norm, distance)) return false;
+            }
+            return true;
+        }
+
+        case Type::CIRCLE:
+        case Type::ARC_OF_CIRCLE: {
+            // If it is an (arc of) a circle, check whether the normals 
+            // are parallel and the mid point is in the plane.
+            Vector n = Normal()->NormalN();
+            if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
+            return PointInPlane(point[0], norm, distance);
+        }
+
+        case Type::TTF_TEXT: {
+            Vector n = Normal()->NormalN();
+            if (!norm.Equals(n) && !norm.Equals(n.Negated())) return false;
+            return PointInPlane(point[0], norm, distance)
+                && PointInPlane(point[1], norm, distance);
+        }
+
+        default:
+            return false;
+    }
+}
 
 void EntityBase::RectGetPointsExprs(ExprVector *eb, ExprVector *ec) const {
     ssassert(type == Type::TTF_TEXT || type == Type::IMAGE,

@@ -232,8 +232,9 @@ void SBezierList::ScaleSelfBy(double s) {
 //-----------------------------------------------------------------------------
 // If our list contains multiple identical Beziers (in either forward or
 // reverse order), then cull them.
+// If both is false, only one of the beziers is removed.
 //-----------------------------------------------------------------------------
-void SBezierList::CullIdenticalBeziers() {
+void SBezierList::CullIdenticalBeziers(bool both) {
     int i, j;
 
     l.ClearTags();
@@ -247,7 +248,7 @@ void SBezierList::CullIdenticalBeziers() {
             if(bj->Equals(bi) ||
                bj->Equals(&bir))
             {
-                bi->tag = 1;
+                if (both) bi->tag = 1;
                 bj->tag = 1;
             }
         }
