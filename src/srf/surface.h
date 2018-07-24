@@ -156,7 +156,7 @@ public:
     static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
                                double chordTol,
                                bool *allClosed, SEdge *errorAt,
-                               SBezierList *openContours);
+                               SBezierLoopSet *openContours);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax) const;
     double SignedArea();
@@ -172,7 +172,7 @@ public:
                             double chordTol,
                             bool *allClosed, SEdge *notClosedAt,
                             bool *allCoplanar, Vector *notCoplanarAt,
-                            SBezierList *openContours);
+                            SBezierLoopSet *openContours);
     void AddOpenPath(SBezier *sb);
     void Clear();
 };

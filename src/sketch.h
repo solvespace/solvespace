@@ -185,7 +185,7 @@ public:
 
     SPolygon                polyLoops;
     SBezierLoopSetSet       bezierLoops;
-    SBezierList             bezierOpens;
+    SBezierLoopSet          bezierOpens;
 
     struct {
         PolyError       how;

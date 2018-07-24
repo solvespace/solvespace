@@ -591,7 +591,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // If possible, then we will assemble these output curves into loops. They
     // will then get exported as closed paths.
     SBezierLoopSetSet sblss = {};
-    SBezierList leftovers = {};
+    SBezierLoopSet leftovers = {};
     SSurface srf = SSurface::FromPlane(Vector::From(0, 0, 0),
                                        Vector::From(1, 0, 0),
                                        Vector::From(0, 1, 0));
@@ -604,14 +604,11 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                              &allClosed, &notClosedAt,
                              NULL, NULL,
                              &leftovers);
-    for(b = leftovers.l.First(); b; b = leftovers.l.NextAfter(b)) {
-        sblss.AddOpenPath(b);
-    }
+    sblss.l.Add(&leftovers);
 
     // Now write the lines and triangles to the output file
     out->OutputLinesAndMesh(&sblss, &sms);
 
-    leftovers.Clear();
     spxyz.Clear();
     sblss.Clear();
     smp.Clear();
