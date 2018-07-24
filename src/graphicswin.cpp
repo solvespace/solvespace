@@ -390,6 +390,7 @@ void GraphicsWindow::Init() {
 
     showSnapGrid = false;
     context.active = false;
+    toolbarHovered = Command::NONE;
 
     if(!window) {
         window = Platform::CreateWindow();
