@@ -200,19 +200,19 @@ void GraphicsWindow::ParametricCurve::CreateRequestTrimmedTo(double t,
             SK.GetEntity(e->point[i])->PointForceTo(PointAt(t));
             ConstrainPointIfCoincident(e->point[i]);
         } else {
-          hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
-          e = SK.GetEntity(hr.entity(0));
-          SK.GetEntity(e->point[0])->PointForceTo(p0);
-          if(dtheta > 0) {
-              SK.GetEntity(e->point[1])->PointForceTo(PointAt(t));
-              SK.GetEntity(e->point[2])->PointForceTo(PointAt(1));
-          } else {
-              SK.GetEntity(e->point[2])->PointForceTo(PointAt(t));
-              SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
-          }
-          ConstrainPointIfCoincident(e->point[0]);
-          ConstrainPointIfCoincident(e->point[1]);
-          ConstrainPointIfCoincident(e->point[2]);
+            hr = SS.GW.AddRequest(Request::Type::ARC_OF_CIRCLE, /*rememberForUndo=*/false),
+            e = SK.GetEntity(hr.entity(0));
+            SK.GetEntity(e->point[0])->PointForceTo(p0);
+            if(dtheta > 0) {
+                SK.GetEntity(e->point[1])->PointForceTo(PointAt(t));
+                SK.GetEntity(e->point[2])->PointForceTo(PointAt(1));
+            } else {
+                SK.GetEntity(e->point[2])->PointForceTo(PointAt(t));
+                SK.GetEntity(e->point[1])->PointForceTo(PointAt(1));
+            }
+            ConstrainPointIfCoincident(e->point[0]);
+            ConstrainPointIfCoincident(e->point[1]);
+            ConstrainPointIfCoincident(e->point[2]);
         }
         // The tangency constraint alone is enough to fully constrain it,
         // so there's no need for more.
@@ -408,23 +408,23 @@ void GraphicsWindow::MakeTangentArc() {
     SS.UndoRemember();
 
     if (SS.tangentArcModify) {
-      // Delete the coincident constraint for the removed point.
-      SK.constraint.ClearTags();
-      for(i = 0; i < SK.constraint.n; i++) {
-        Constraint *cs = &(SK.constraint.elem[i]);
-        if(cs->group.v != activeGroup.v) continue;
-        if(cs->workplane.v != ActiveWorkplane().v) continue;
-        if(cs->type != Constraint::Type::POINTS_COINCIDENT) continue;
-        if (SK.GetEntity(cs->ptA)->PointGetNum().Equals(pshared)) {
-          cs->tag = 1;
+        // Delete the coincident constraint for the removed point.
+        SK.constraint.ClearTags();
+        for(i = 0; i < SK.constraint.n; i++) {
+            Constraint *cs = &(SK.constraint.elem[i]);
+            if(cs->group.v != activeGroup.v) continue;
+            if(cs->workplane.v != ActiveWorkplane().v) continue;
+            if(cs->type != Constraint::Type::POINTS_COINCIDENT) continue;
+            if (SK.GetEntity(cs->ptA)->PointGetNum().Equals(pshared)) {
+            cs->tag = 1;
+            }
         }
-      }
-      SK.constraint.RemoveTagged();
+        SK.constraint.RemoveTagged();
     } else {
-      // Make the original entities construction, or delete them
-      // entirely, according to user preference.
-      SK.GetRequest(hreq[0])->construction = true;
-      SK.GetRequest(hreq[1])->construction = true;
+        // Make the original entities construction, or delete them
+        // entirely, according to user preference.
+        SK.GetRequest(hreq[0])->construction = true;
+        SK.GetRequest(hreq[1])->construction = true;
     }
 
     // Create and position the new tangent arc.
