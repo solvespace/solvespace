@@ -367,6 +367,8 @@ MenuBarRef GetOrCreateMainMenu(bool *unique) {
     NSTextField        *editor;
 }
 
+@synthesize acceptsFirstResponder;
+
 - (id)initWithFrame:(NSRect)frameRect {
     if(self = [super initWithFrame:frameRect]) {
         self.wantsLayer = YES;
@@ -894,7 +896,7 @@ public:
         *height = nsSize.height;
     }
 
-    void SetMinContentSize(double width, double height) {
+    void SetMinContentSize(double width, double height) override {
         NSSize nsMinSize;
         nsMinSize.width  = width;
         nsMinSize.height = height;
@@ -1438,7 +1440,7 @@ void OpenInBrowser(const std::string &url) {
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
-    [[[NSApp mainWindow] delegate] windowShouldClose:nil];
+    [[[NSApp mainWindow] delegate] windowShouldClose:[NSApp mainWindow]];
     return NSTerminateCancel;
 }
 
