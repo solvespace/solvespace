@@ -776,7 +776,7 @@ public:
     }
 
 protected:
-    bool on_delete_event(GdkEventAny* gdk_event) {
+    bool on_delete_event(GdkEventAny* gdk_event) override {
         if(_receiver->onClose) {
             _receiver->onClose();
             return true;
@@ -886,7 +886,7 @@ public:
     }
 
     void SetMinContentSize(double width, double height) override {
-        gtkWindow.get_gl_widget().set_size_request(width, height);
+        gtkWindow.get_gl_widget().set_size_request((int)width, (int)height);
     }
 
     void FreezePosition(SettingsRef settings, const std::string &key) override {
@@ -951,7 +951,7 @@ public:
     void ShowEditor(double x, double y, double fontHeight, double minWidth,
                     bool isMonospace, const std::string &text) override {
         gtkWindow.get_editor_overlay().start_editing(
-            x, y, fontHeight, minWidth, isMonospace, text);
+            (int)x, (int)y, (int)fontHeight, (int)minWidth, isMonospace, text);
     }
 
     void HideEditor() override {
