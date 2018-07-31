@@ -742,10 +742,12 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
     if(how == PAINT) {
         uiCanvas->DrawRect(px, pxm+bw, py, pym+bw,
                            /*fillColor=*/{ 50, 50, 50, 255 },
-                           /*outlineColor=*/{});
+                           /*outlineColor=*/{},
+                           /*zIndex=*/1);
         uiCanvas->DrawRect(px+(bw/2), pxm+(bw/2), py+(bw/2), pym+(bw/2),
                            /*fillColor=*/{ 0, 0, 0, 255 },
-                           /*outlineColor=*/{});
+                           /*outlineColor=*/{},
+                           /*zIndex=*/1);
     } else {
         if(x < px || x > pxm+(bw/2) ||
            y < py || y > pym+(bw/2))
@@ -786,7 +788,8 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
             if(how == PAINT) {
                 uiCanvas->DrawRect(sx, sx+SIZE, sy, sy+SIZE,
                                    /*fillColor=*/RGBf(rgb.x, rgb.y, rgb.z),
-                                   /*outlineColor=*/{});
+                                   /*outlineColor=*/{},
+                                   /*zIndex=*/2);
             } else if(how == CLICK) {
                 if(x >= sx && x <= sx+SIZE && y >= sy && y <= sy+SIZE) {
                     editControl.colorPicker.rgb = RGBf(rgb.x, rgb.y, rgb.z);
@@ -807,7 +810,8 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
     if(how == PAINT) {
         uiCanvas->DrawRect(hx, hxm, hy, hym,
                            /*fillColor=*/editControl.colorPicker.rgb,
-                           /*outlineColor=*/{});
+                           /*outlineColor=*/{},
+                           /*zIndex=*/2);
     } else if(how == CLICK) {
         if(x >= hx && x <= hxm && y >= hy && y <= hym) {
             ColorPickerDone();
@@ -827,10 +831,13 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
         uiCanvas->DrawPixmap(HsvPattern1d(editControl.colorPicker.h,
                                           editControl.colorPicker.s,
                                           hxm-hx, hym-hy),
-                             hx, hy);
+                             hx, hy, /*zIndex=*/2);
 
         int cx = hx+(int)((hxm-hx)*(1.0 - editControl.colorPicker.v));
-        uiCanvas->DrawLine(cx, hy, cx, hym, { 0, 0, 0, 255 });
+        uiCanvas->DrawLine(cx, hy, cx, hym,
+                           /*fillColor=*/{ 0, 0, 0, 255 },
+                           /*outlineColor=*/{},
+                           /*zIndex=*/3);
     } else if(how == CLICK ||
           (how == HOVER && leftDown && editControl.colorPicker.picker1dActive))
     {
@@ -853,12 +860,19 @@ bool TextWindow::DrawOrHitTestColorPicker(UiCanvas *uiCanvas, DrawOrHitHow how, 
     hym = hy + PITCH*6 + SIZE;
     // Two-dimensional thing to pick a color by hue and saturation
     if(how == PAINT) {
-        uiCanvas->DrawPixmap(HsvPattern2d(hxm-hx, hym-hy), hx, hy);
+        uiCanvas->DrawPixmap(HsvPattern2d(hxm-hx, hym-hy), hx, hy,
+                             /*zIndex=*/2);
 
         int cx = hx+(int)((hxm-hx)*editControl.colorPicker.h),
             cy = hy+(int)((hym-hy)*editControl.colorPicker.s);
-        uiCanvas->DrawLine(cx - 5, cy, cx + 4, cy, { 255, 255, 255, 255 });
-        uiCanvas->DrawLine(cx, cy - 5, cx, cy + 4, { 255, 255, 255, 255 });
+        uiCanvas->DrawLine(cx - 5, cy, cx + 5, cy,
+                           /*fillColor=*/{ 255, 255, 255, 255 },
+                           /*outlineColor=*/{},
+                           /*zIndex=*/3);
+        uiCanvas->DrawLine(cx, cy - 5, cx, cy + 5,
+                           /*fillColor=*/{ 255, 255, 255, 255 },
+                           /*outlineColor=*/{},
+                           /*zIndex=*/3);
     } else if(how == CLICK ||
           (how == HOVER && leftDown && editControl.colorPicker.picker2dActive))
     {
