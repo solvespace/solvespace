@@ -22,14 +22,24 @@ IRC channel [#solvespace at irc.freenode.net][ssirc].
 Installation
 ------------
 
-### macOS (>=10.6 64-bit), Windows (>=Vista 32-bit)
+### Via official binary packages
 
-Binary packages for macOS and Windows are available via
-[GitHub releases][rel].
+_Official_ release binary packages for macOS (>=10.6 64-bit) and Windows (>=Vista 32-bit) are
+available via [GitHub releases][rel]. These packages are automatically built by
+the SolveSpace maintainers for each stable release.
 
 [rel]: https://github.com/solvespace/solvespace/releases
 
-### Other systems
+### Via third-party binary packages
+
+_Third-party_ nightly binary packages for Debian and Ubuntu are available
+via [notesalexp.org][notesalexp]. These packages are automatically built from non-released
+source code. The SolveSpace maintainers do not control the contents of these packages
+and cannot guarantee their functionality.
+
+[notesalexp]: https://notesalexp.org/packages/en/source/solvespace/
+
+### Via source code
 
 See below.
 
