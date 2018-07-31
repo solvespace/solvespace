@@ -678,7 +678,7 @@ protected:
     bool on_key_press_event(GdkEventKey *gdk_event) override {
         if(is_editing()) {
             if(gdk_event->keyval == GDK_KEY_Escape) {
-                stop_editing();
+                return _gl_widget.event((GdkEvent *)gdk_event);
             } else {
                 _entry.event((GdkEvent *)gdk_event);
             }
