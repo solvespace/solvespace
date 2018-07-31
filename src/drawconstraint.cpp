@@ -113,7 +113,7 @@ int Constraint::DoLineTrimmedAgainstBox(Canvas *canvas, Canvas::hStroke hcs,
     const Camera &camera = canvas->GetCamera();
     double th      = Style::TextHeight(GetStyle()) / camera.scale;
     double pixels  = 1.0 / camera.scale;
-    double swidth  = VectorFont::Builtin()->GetWidth(th, Label()) + 4 * pixels,
+    double swidth  = VectorFont::Builtin()->GetWidth(th, Label()) + 8 * pixels,
            sheight = VectorFont::Builtin()->GetCapHeight(th) + 8 * pixels;
     Vector gu = camera.projUp.WithMagnitude(1),
            gr = camera.projRight.WithMagnitude(1);
