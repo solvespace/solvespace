@@ -894,7 +894,7 @@ public:
         *height = nsSize.height;
     }
 
-    void SetMinContentSize(double width, double height) {
+    void SetMinContentSize(double width, double height) override {
         NSSize nsMinSize;
         nsMinSize.width  = width;
         nsMinSize.height = height;
