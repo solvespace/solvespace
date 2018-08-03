@@ -1166,8 +1166,8 @@ public:
         shownMessageDialogs.push_back(shared_from_this());
 
         gtkDialog.signal_response().connect([this](int gtkResponse) {
-            gtkDialog.hide();
             ProcessResponse(gtkResponse);
+            gtkDialog.hide();
         });
         gtkDialog.show();
     }
