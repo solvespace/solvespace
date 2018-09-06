@@ -144,7 +144,7 @@ if __name__ == '__main__':
                 break
 
             elif response[0] == 'PING':
-                file.send('PONG {}\r\n'.format(reponse[1]).encode('utf_8'))
+                file.send('PONG {}\r\n'.format(response[1]).encode('utf_8'))
 
             elif response[1] == '433':
                 sock.send('NICK {}\r\n'.format(irc_nick).encode('utf_8'))
