@@ -425,7 +425,7 @@ void SSurface::ClosestPointTo(Vector p, Point2d *puv, bool mustConverge) {
 
 void SSurface::ClosestPointTo(Vector p, double *u, double *v, bool mustConverge) {
     // A few special cases first; when control points are coincident the
-    // derivative goes to zero at the conrol points, and would result in
+    // derivative goes to zero at the control points, and would result in
     // nonconvergence. We avoid that here, and also guarantee a consistent
     // (u, v) (of the infinitely many possible in one parameter).
     if(p.Equals(ctrl[0]   [0]   )) { *u = 0; *v = 0; return; }

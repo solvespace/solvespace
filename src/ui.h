@@ -58,7 +58,7 @@ inline const char *C_(const char *msgctxt, const char *msgid) {
 }
 #endif
 
-// This table describes the top-level menus in the graphics winodw.
+// This table describes the top-level menus in the graphics window.
 enum class Command : uint32_t {
     NONE = 0,
     // File
@@ -291,7 +291,7 @@ public:
         GROUP_SCALE           = 3,
         GROUP_COLOR           = 4,
         GROUP_OPACITY         = 5,
-        // For the configuraiton screen
+        // For the configuration screen
         LIGHT_DIRECTION       = 100,
         LIGHT_INTENSITY       = 101,
         COLOR                 = 102,
