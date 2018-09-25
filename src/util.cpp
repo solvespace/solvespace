@@ -5,6 +5,7 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "ss_util.h"
 
 void SolveSpace::AssertFailure(const char *file, unsigned line, const char *function,
                                const char *condition, const char *message) {

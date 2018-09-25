@@ -18,6 +18,8 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 # platform utilities
 
+add_subdirectory(util)
+
 if(WIN32)
     set(util_SOURCES
         platform/utilwin.cpp)
@@ -32,6 +34,7 @@ if(APPLE)
 endif()
 
 # libslvs
+#add_subdirectory(slvs)
 
 set(libslvs_SOURCES
     util.cpp
@@ -59,6 +62,7 @@ target_include_directories(slvs
     PUBLIC ${CMAKE_SOURCE_DIR}/include)
 
 target_link_libraries(slvs
+        util
     ${util_LIBRARIES})
 
 set_target_properties(slvs PROPERTIES
@@ -213,6 +217,7 @@ add_library(solvespace-core STATIC
 
 target_link_libraries(solvespace-core
     dxfrw
+        util
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
