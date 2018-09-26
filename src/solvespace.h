@@ -30,6 +30,9 @@
 #include <unordered_set>
 #include <vector>
 
+#include "ss_util.h"
+#include "platform.h"
+
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
 // freetype.h invokes indescribable horrors and we would like to avoid
@@ -52,40 +55,11 @@ typedef struct _cairo_surface cairo_surface_t;
 #   define EXACT(expr) (expr)
 #endif
 
-// Debugging functions
-#if defined(__GNUC__)
-#define ssassert(condition, message) \
-    do { \
-        if(__builtin_expect((condition), true) == false) { \
-            SolveSpace::AssertFailure(__FILE__, __LINE__, __func__, #condition, message); \
-            __builtin_unreachable(); \
-        } \
-    } while(0)
-#else
-#define ssassert(condition, message) \
-    do { \
-        if((condition) == false) { \
-            SolveSpace::AssertFailure(__FILE__, __LINE__, __func__, #condition, message); \
-            abort(); \
-        } \
-    } while(0)
-#endif
-
-#ifndef isnan
-#   define isnan(x) (((x) != (x)) || (x > 1e11) || (x < -1e11))
-#endif
-
 namespace SolveSpace {
 
 using std::min;
 using std::max;
 using std::swap;
-
-#if defined(__GNUC__)
-__attribute__((noreturn))
-#endif
-void AssertFailure(const char *file, unsigned line, const char *function,
-                   const char *condition, const char *message);
 
 #if defined(__GNUC__)
 __attribute__((__format__ (__printf__, 1, 2)))
@@ -134,7 +108,6 @@ enum class Command : uint32_t;
 //================
 // From the platform-specific code.
 
-#include "platform/platform.h"
 #include "platform/gui.h"
 
 const size_t MAX_RECENT = 8;

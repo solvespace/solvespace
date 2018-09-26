@@ -9,8 +9,7 @@
 #   include <CoreFoundation/CFURL.h>
 #   include <CoreFoundation/CFBundle.h>
 #endif
-#include "solvespace.h"
-#include "config.h"
+
 #if defined(WIN32)
 // Conversely, include Microsoft headers after solvespace.h to avoid clashes.
 #   include <windows.h>
@@ -19,8 +18,28 @@
 #   include <sys/stat.h>
 #endif
 
+#include <string.h>
+#include <stdio.h>
+#include <string>
+#include <vector>
+#include <algorithm>
+#include <map>
+#include "config.h"
+#include "platform.h"
+#include "ss_util.h"
+
 namespace SolveSpace {
 namespace Platform {
+
+//-----------------------------------------------------------------------------
+// Fatal errors
+//-----------------------------------------------------------------------------
+
+
+//void FatalError(std::string message) {
+//    fprintf(stderr, "%s", message.c_str());
+//    abort();
+//}
 
 //-----------------------------------------------------------------------------
 // UTF-8 ⟷ UTF-16 conversion, on Windows.

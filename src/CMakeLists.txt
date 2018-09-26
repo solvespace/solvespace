@@ -19,6 +19,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 # platform utilities
 
 add_subdirectory(util)
+add_subdirectory(pure_platform)
 
 if(WIN32)
     set(util_SOURCES
@@ -43,11 +44,11 @@ set(libslvs_SOURCES
     constraint.cpp
     constrainteq.cpp
     system.cpp
-    platform/platform.cpp)
+    )
 
 set(libslvs_HEADERS
     solvespace.h
-    platform/platform.h)
+    )
 
 add_library(slvs SHARED
     ${libslvs_SOURCES}
@@ -63,6 +64,7 @@ target_include_directories(slvs
 
 target_link_libraries(slvs
         util
+        pure_platform
     ${util_LIBRARIES})
 
 set_target_properties(slvs PROPERTIES
@@ -152,7 +154,6 @@ set(solvespace_core_HEADERS
     sketch.h
     solvespace.h
     ui.h
-    platform/platform.h
     render/render.h
     render/gl3shader.h
     srf/surface.h)
@@ -194,7 +195,6 @@ set(solvespace_core_SOURCES
     undoredo.cpp
     util.cpp
     view.cpp
-    platform/platform.cpp
     platform/gui.cpp
     render/render.cpp
     render/render2d.cpp
@@ -217,7 +217,8 @@ add_library(solvespace-core STATIC
 
 target_link_libraries(solvespace-core
     dxfrw
-        util
+    util
+    pure_platform
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
