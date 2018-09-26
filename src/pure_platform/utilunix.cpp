@@ -7,8 +7,12 @@
 // Copyright 2008-2013 Jonathan Westhues.
 // Copyright 2013 Daniel Richard G. <skunk@iSKUNK.ORG>
 //-----------------------------------------------------------------------------
+#include <stdarg.h>
+#include <stdlib.h>
+#include <string.h>
 #include "config.h"
-#include "solvespace.h"
+#include "platform.h"
+#include "ss_util.h"
 #if defined(HAVE_BACKTRACE)
 #  include BACKTRACE_HEADER
 #endif

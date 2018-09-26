@@ -6,7 +6,7 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "platform.h"
 
 // Include after solvespace.h to avoid identifier clashes.
 #include <windows.h>

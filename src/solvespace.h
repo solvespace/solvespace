@@ -32,6 +32,7 @@
 
 #include "ss_util.h"
 #include "platform.h"
+#include "list.h"
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -115,19 +116,6 @@ extern Platform::Path RecentFile[MAX_RECENT];
 
 #define AUTOSAVE_EXT "slvs~"
 
-void dbp(const char *str, ...);
-#define DBPTRI(tri) \
-    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
-        CO((tri).a), CO((tri).b), CO((tri).c))
-
-std::vector<std::string> InitPlatform(int argc, char **argv);
-
-void *AllocTemporary(size_t n);
-void FreeTemporary(void *p);
-void FreeAllTemporary();
-void *MemAlloc(size_t n);
-void MemFree(void *p);
-void vl(); // debug function to validate heaps
 
 // End of platform-specific functions
 //================

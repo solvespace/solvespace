@@ -8,9 +8,25 @@
 #define SOLVESPACE_PLATFORM_H
 
 #include <string>
+#include <vector>
 
 
 namespace SolveSpace {
+
+void dbp(const char *str, ...);
+#define DBPTRI(tri) \
+    dbp("tri: (%.3f %.3f %.3f) (%.3f %.3f %.3f) (%.3f %.3f %.3f)", \
+        CO((tri).a), CO((tri).b), CO((tri).c))
+
+std::vector<std::string> InitPlatform(int argc, char **argv);
+
+void *MemAlloc(size_t n);
+void MemFree(void *p);
+void *AllocTemporary(size_t n);
+void FreeTemporary(void *p);
+void FreeAllTemporary();
+void vl(); // debug function to validate heaps
+
 namespace Platform {
 
 //// Handling fatal errors.

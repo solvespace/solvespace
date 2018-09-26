@@ -16,23 +16,11 @@ set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
-# platform utilities
 
 add_subdirectory(util)
 add_subdirectory(pure_platform)
 
-if(WIN32)
-    set(util_SOURCES
-        platform/utilwin.cpp)
-else()
-    set(util_SOURCES
-        platform/utilunix.cpp)
-endif()
 
-if(APPLE)
-    set(util_LIBRARIES
-        ${APPKIT_LIBRARY})
-endif()
 
 # libslvs
 #add_subdirectory(slvs)
