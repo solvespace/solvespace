@@ -3,9 +3,14 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <algorithm>
+#include "render.h"
+#include "polygon.h"
 
 namespace SolveSpace {
+
+using std::min;
+using std::max;
 
 // FIXME: The export coordinate system has a different handedness than display
 // coordinate system; lighting and occlusion calculations are right-handed.
