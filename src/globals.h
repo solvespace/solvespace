@@ -9,6 +9,9 @@
 
 namespace SolveSpace{
 
+const size_t MAX_RECENT = 8;
+extern Platform::Path RecentFile[MAX_RECENT];
+
 extern SolveSpaceUI SS;
 extern Sketch SK;
 

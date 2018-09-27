@@ -3,10 +3,14 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <math.h>
+#include <algorithm>
 #include "gl3shader.h"
 
 namespace SolveSpace {
+
+using std::min;
+using std::max;
 
 //-----------------------------------------------------------------------------
 // Floating point data structures

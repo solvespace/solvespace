@@ -10,6 +10,7 @@
 #include "camera.h"
 #include "stipplepattern.h"
 #include "resource.h"
+#include "lighting.h"
 
 namespace SolveSpace {
 
@@ -132,6 +133,19 @@ public:
     virtual void InvalidatePixmap(std::shared_ptr<const Pixmap> pm) = 0;
 
     virtual std::shared_ptr<BatchCanvas> CreateBatch();
+};
+
+// An interface for view-dependent visualization.
+class ViewportCanvas : public Canvas {
+public:
+    virtual void SetCamera(const Camera &camera) = 0;
+    virtual void SetLighting(const Lighting &lighting) = 0;
+
+    virtual void NewFrame() = 0;
+    virtual void FlushFrame() = 0;
+    virtual std::shared_ptr<Pixmap> ReadFrame() = 0;
+
+    virtual void GetIdent(const char **vendor, const char **renderer, const char **version) = 0;
 };
 
 

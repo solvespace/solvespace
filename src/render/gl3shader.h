@@ -27,6 +27,11 @@
 #   define glDepthRangef glDepthRange
 #endif
 
+#include <vector>
+#include "dsc.h"
+#include "smesh.h"
+#include "canvas.h"
+
 namespace SolveSpace {
 
 //-----------------------------------------------------------------------------

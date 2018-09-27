@@ -2,8 +2,8 @@
 // Created by benjamin on 9/24/18.
 //
 
-#ifndef SOLVESPACE_UTIL_H
-#define SOLVESPACE_UTIL_H
+#ifndef SOLVESPACE_SS_UTIL_H
+#define SOLVESPACE_SS_UTIL_H
 
 // C includes
 #include <stdint.h>

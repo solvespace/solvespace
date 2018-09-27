@@ -6,6 +6,7 @@
 #define SOLVESPACE_STIPPLEPATTERN_H
 
 #include <stdint.h>
+#include <vector>
 
 namespace SolveSpace{
 
@@ -22,6 +23,9 @@ enum class StipplePattern : uint32_t {
 
     LAST           = ZIGZAG
 };
+
+const std::vector<double> &StipplePatternDashes(StipplePattern pattern);
+double StipplePatternLength(StipplePattern pattern);
 
 }
 
