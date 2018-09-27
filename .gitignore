@@ -13,4 +13,7 @@
 /debian/libslvs1-dev/
 /obj-*/
 /*.slvs
+
+# Intellij
 .idea/
+cmake-build-debug/

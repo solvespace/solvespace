@@ -26,15 +26,17 @@ add_subdirectory(pure_platform)
 #add_subdirectory(slvs)
 
 set(libslvs_SOURCES
-    util.cpp
-    entity.cpp
-    expr.cpp
     constraint.cpp
     constrainteq.cpp
+    entity.cpp
+    expr.cpp
+#    globals.cpp
     system.cpp
+    util.cpp
     )
 
 set(libslvs_HEADERS
+#    globals.h
     solvespace.h
     )
 

@@ -33,6 +33,7 @@
 #include "ss_util.h"
 #include "platform.h"
 #include "list.h"
+#include "globals.h"
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including
@@ -62,11 +63,6 @@ using std::min;
 using std::max;
 using std::swap;
 
-#if defined(__GNUC__)
-__attribute__((__format__ (__printf__, 1, 2)))
-#endif
-std::string ssprintf(const char *fmt, ...);
-
 inline int WRAP(int v, int n) {
     // Clamp it to the range [0, n)
     while(v >= n) v -= n;
@@ -88,13 +84,6 @@ inline double WRAP_SYMMETRIC(double v, double n) {
 
 // Why is this faster than the library function?
 inline double ffabs(double v) { return (v > 0) ? v : (-v); }
-
-#define CO(v) (v).x, (v).y, (v).z
-
-#define ANGLE_COS_EPS   (1e-6)
-#define LENGTH_EPS      (1e-6)
-#define VERY_POSITIVE   (1e10)
-#define VERY_NEGATIVE   (-1e10)
 
 inline double Random(double vmax) {
     return (vmax*rand()) / RAND_MAX;

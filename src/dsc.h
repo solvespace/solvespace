@@ -7,7 +7,9 @@
 #ifndef SOLVESPACE_DSC_H
 #define SOLVESPACE_DSC_H
 
-#include "solvespace.h"
+#include "ss_util.h"
+
+#define CO(v) (v).x, (v).y, (v).z
 
 class Vector;
 class Vector4;

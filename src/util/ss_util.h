@@ -39,6 +39,12 @@
 
 #define PI (3.1415926535897931)
 
+#define ANGLE_COS_EPS   (1e-6)
+#define LENGTH_EPS      (1e-6)
+#define VERY_POSITIVE   (1e10)
+#define VERY_NEGATIVE   (-1e10)
+
+
 namespace SolveSpace {
 
 // functions
