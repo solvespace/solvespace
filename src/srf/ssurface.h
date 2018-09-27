@@ -9,6 +9,7 @@
 #include "sedge.h"
 #include "sbspuv.h"
 #include "handle.h"
+#include "smesh.h"
 
 namespace SolveSpace{
 

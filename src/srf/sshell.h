@@ -8,10 +8,12 @@
 #include "sbezier.h"
 #include "ssurface.h"
 #include "scurve.h"
-#include "group.h"
 #include "smesh.h"
 
 namespace SolveSpace{
+
+// TODO fix circular dependency
+class Group;
 
 class SShell {
 public:

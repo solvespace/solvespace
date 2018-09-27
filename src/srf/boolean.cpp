@@ -4,7 +4,16 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <algorithm>
+#include "sshell.h"
+#include "globals.h"
+
+
+namespace SolveSpace {
+
+using std::min;
+using std::max;
+using std::swap;
 
 static int I;
 
@@ -959,3 +968,4 @@ double SBspUv::MinimumDistanceToEdge(Point2d p, SSurface *srf) const {
     return min(d, min(dn, dp));
 }
 
+}
