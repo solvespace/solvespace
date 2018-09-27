@@ -10,7 +10,7 @@
 #include <GL/gl.h>
 #endif
 
-#include "solvespace.h"
+#include "render.h"
 
 void GlOffscreen::Clear() {
     glDeleteRenderbuffersEXT(1, &depthRenderbuffer);

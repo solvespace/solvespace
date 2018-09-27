@@ -3,10 +3,17 @@
 //
 // Copyright 2016 Aleksey Egorov
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include <algorithm>
+#include <set>
 #include "gl3shader.h"
+#include "util.h"
+#include "spolygon.h"
 
 namespace SolveSpace {
+
+using std::min;
+using std::max;
 
 class TextureCache {
 public:
