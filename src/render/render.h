@@ -25,34 +25,6 @@ namespace SolveSpace {
 
 class BatchCanvas;
 
-// An interface for view-independent visualization.
-class BatchCanvas : public Canvas {
-public:
-    const Camera &GetCamera() const override;
-
-    virtual void Finalize() = 0;
-    virtual void Draw() = 0;
-};
-
-// A wrapper around Canvas that simplifies drawing UI in screen coordinates.
-class UiCanvas {
-public:
-    std::shared_ptr<Canvas> canvas;
-    bool                    flip = false;
-
-    void DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width = 1,
-                  int zIndex = 0);
-    void DrawRect(int l, int r, int t, int b, RgbaColor fillColor, RgbaColor outlineColor,
-                  int zIndex = 0);
-    void DrawPixmap(std::shared_ptr<const Pixmap> pm, int x, int y,
-                    int zIndex = 0);
-    void DrawBitmapChar(char32_t codepoint, int x, int y, RgbaColor color,
-                        int zIndex = 0);
-    void DrawBitmapText(const std::string &str, int x, int y, RgbaColor color,
-                        int zIndex = 0);
-
-    int Flip(int y) const { return flip ? (int)canvas->GetCamera().height - y : y; }
-};
 
 // A canvas that performs picking against drawn geometry.
 class ObjectPicker : public Canvas {

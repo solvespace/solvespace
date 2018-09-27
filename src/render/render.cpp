@@ -3,7 +3,11 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <math.h>
+#include <limits.h>
+#include <algorithm>
+#include "render.h"
+#include "util.h"
 
 namespace SolveSpace {
 

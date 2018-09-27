@@ -11,7 +11,7 @@
 #include <stdint.h>
 #include <string>
 #include <set>
-#include "render/render.h"
+#include "render/canvas.h"
 #include "platform/gui.h"
 #include "constraint.h"
 #include "request.h"
