@@ -23,21 +23,21 @@ add_subdirectory(pure_platform)
 
 
 # libslvs
-#add_subdirectory(slvs)
 
 set(libslvs_SOURCES
     constraint.cpp
     constrainteq.cpp
     entity.cpp
     expr.cpp
-#    globals.cpp
+    globals.cpp
     system.cpp
     util.cpp
     )
 
 set(libslvs_HEADERS
-#    globals.h
+    globals.h
     solvespace.h
+    solvespaceui.h
     )
 
 add_library(slvs SHARED

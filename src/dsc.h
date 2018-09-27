@@ -11,6 +11,7 @@
 
 #define CO(v) (v).x, (v).y, (v).z
 
+namespace SolveSpace {
 class Vector;
 class Vector4;
 class Point2d;
@@ -281,5 +282,6 @@ public:
     bool Overlaps(const BBox &b1) const;
     bool Contains(const Point2d &p, double r = 0.0) const;
 };
+}
 
 #endif

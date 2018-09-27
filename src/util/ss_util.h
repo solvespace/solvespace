@@ -59,6 +59,32 @@ __attribute__((__format__ (__printf__, 1, 2)))
 #endif
 std::string ssprintf(const char *fmt, ...);
 
+inline int WRAP(int v, int n) {
+    // Clamp it to the range [0, n)
+    while(v >= n) v -= n;
+    while(v < 0) v += n;
+    return v;
+}
+inline double WRAP_NOT_0(double v, double n) {
+    // Clamp it to the range (0, n]
+    while(v > n) v -= n;
+    while(v <= 0) v += n;
+    return v;
+}
+inline double WRAP_SYMMETRIC(double v, double n) {
+    // Clamp it to the range (-n/2, n/2]
+    while(v >   n/2) v -= n;
+    while(v <= -n/2) v += n;
+    return v;
+}
+
+// Why is this faster than the library function?
+inline double ffabs(double v) { return (v > 0) ? v : (-v); }
+
+inline double Random(double vmax) {
+    return (vmax*rand()) / RAND_MAX;
+}
+
 }
 
 #endif //SOLVESPACE_UTIL_H

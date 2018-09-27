@@ -6,6 +6,7 @@
 #define SOLVESPACE_LIST_H
 
 #include <memory>
+#include "platform.h"
 
 namespace SolveSpace {
 

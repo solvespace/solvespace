@@ -7,6 +7,14 @@
 #ifndef __RESOURCE_H
 #define __RESOURCE_H
 
+#include <string>
+#include <memory>
+#include <map>
+#include "platform.h"
+#include "dsc.h"
+
+namespace SolveSpace {
+
 class Camera;
 class Point2d;
 class Pixmap;
@@ -107,5 +115,7 @@ public:
     void Trace(double forCapHeight, Vector o, Vector u, Vector v, const std::string &str,
                std::function<void(Vector, Vector)> traceEdge, const Camera &camera);
 };
+
+}
 
 #endif

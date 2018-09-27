@@ -10,6 +10,13 @@
 #ifndef SOLVESPACE_SURFACE_H
 #define SOLVESPACE_SURFACE_H
 
+#include "dsc.h"
+#include "sedge.h"
+#include "smesh.h"
+#include "sketch.h"
+
+namespace SolveSpace {
+
 // Utility functions, Bernstein polynomials of order 1-3 and their derivatives.
 double Bernstein(int k, int deg, double t);
 double BernsteinDerivative(int k, int deg, double t);
@@ -424,6 +431,8 @@ public:
     void RemapFaces(Group *g, int remap);
     void Clear();
 };
+
+}
 
 #endif
 

@@ -7,6 +7,15 @@
 #ifndef SOLVESPACE_EXPR_H
 #define SOLVESPACE_EXPR_H
 
+#include <stdint.h>
+#include <memory>
+#include "platform.h"
+#include "handle.h"
+#include "param.h"
+#include "dsc.h"
+
+namespace SolveSpace {
+
 class Expr {
 public:
 
@@ -137,4 +146,7 @@ public:
 
     Expr *Magnitude() const;
 };
+
+}
+
 #endif

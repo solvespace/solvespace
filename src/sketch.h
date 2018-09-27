@@ -8,18 +8,19 @@
 #ifndef SOLVESPACE_SKETCH_H
 #define SOLVESPACE_SKETCH_H
 
-class hGroup;
-class hRequest;
-class hEntity;
-class hParam;
-class hStyle;
-class hConstraint;
-class hEquation;
+#include <ctype.h>
+#include <stdint.h>
+#include "dsc.h"
+#include "platform.h"
+#include "list.h"
+#include "smesh.h"
+#include "sedge.h"
+#include "group.h"
+#include "handle.h"
+#include "param.h"
+#include "entity.h"
 
-class Entity;
-class Param;
-class Equation;
-class Style;
+namespace SolveSpace {
 
 enum class PolyError : uint32_t {
     GOOD              = 0,
@@ -48,51 +49,6 @@ double StipplePatternLength(StipplePattern pattern);
 
 enum class Command : uint32_t;
 
-// All of the hWhatever handles are a 32-bit ID, that is used to represent
-// some data structure in the sketch.
-class hGroup {
-public:
-    // bits 15: 0   -- group index
-    uint32_t v;
-
-    inline hEntity entity(int i) const;
-    inline hParam param(int i) const;
-    inline hEquation equation(int i) const;
-};
-class hRequest {
-public:
-    // bits 15: 0   -- request index
-    uint32_t v;
-
-    inline hEntity entity(int i) const;
-    inline hParam param(int i) const;
-
-    inline bool IsFromReferences() const;
-};
-class hEntity {
-public:
-    // bits 15: 0   -- entity index
-    //      31:16   -- request index
-    uint32_t v;
-
-    inline bool isFromRequest() const;
-    inline hRequest request() const;
-    inline hGroup group() const;
-    inline hEquation equation(int i) const;
-};
-class hParam {
-public:
-    // bits 15: 0   -- param index
-    //      31:16   -- request index
-    uint32_t v;
-
-    inline hRequest request() const;
-};
-
-class hStyle {
-public:
-    uint32_t v;
-};
 
 class EntityId {
 public:
@@ -108,191 +64,6 @@ public:
     // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
 
     void Clear() {}
-};
-
-// A set of requests. Every request must have an associated group.
-class Group {
-public:
-    static const hGroup     HGROUP_REFERENCES;
-
-    int         tag;
-    hGroup      h;
-
-    enum class CopyAs {
-        NUMERIC,
-        N_TRANS,
-        N_ROT_AA,
-        N_ROT_TRANS,
-    };
-
-    enum class Type : uint32_t {
-        DRAWING_3D                    = 5000,
-        DRAWING_WORKPLANE             = 5001,
-        EXTRUDE                       = 5100,
-        LATHE                         = 5101,
-        ROTATE                        = 5200,
-        TRANSLATE                     = 5201,
-        LINKED                        = 5300
-    };
-    Group::Type type;
-
-    int order;
-
-    hGroup      opA;
-    hGroup      opB;
-    bool        visible;
-    bool        suppress;
-    bool        relaxConstraints;
-    bool        allowRedundant;
-    bool        allDimsReference;
-    double      scale;
-
-    bool        clean;
-    bool        dofCheckOk;
-    hEntity     activeWorkplane;
-    double      valA;
-    double      valB;
-    double      valC;
-    RgbaColor   color;
-
-    struct {
-        SolveResult         how;
-        int                 dof;
-        List<hConstraint>   remove;
-    } solved;
-
-    enum class Subtype : uint32_t {
-        // For drawings in 2d
-        WORKPLANE_BY_POINT_ORTHO   = 6000,
-        WORKPLANE_BY_LINE_SEGMENTS = 6001,
-        // For extrudes, translates, and rotates
-        ONE_SIDED                  = 7000,
-        TWO_SIDED                  = 7001
-    };
-    Group::Subtype subtype;
-
-    bool skipFirst; // for step and repeat ops
-
-    struct {
-        Quaternion  q;
-        hEntity     origin;
-        hEntity     entityB;
-        hEntity     entityC;
-        bool        swapUV;
-        bool        negateU;
-        bool        negateV;
-    } predef;
-
-    SPolygon                polyLoops;
-    SBezierLoopSetSet       bezierLoops;
-    SBezierList             bezierOpens;
-
-    struct {
-        PolyError       how;
-        SEdge           notClosedAt;
-        Vector          errorPointAt;
-    }               polyError;
-
-    bool            booleanFailed;
-
-    SShell          thisShell;
-    SShell          runningShell;
-
-    SMesh           thisMesh;
-    SMesh           runningMesh;
-
-    bool            displayDirty;
-    SMesh           displayMesh;
-    SOutlineList    displayOutlines;
-
-    enum class CombineAs : uint32_t {
-        UNION           = 0,
-        DIFFERENCE      = 1,
-        ASSEMBLE        = 2
-    };
-    CombineAs meshCombine;
-
-    bool forceToMesh;
-
-    IdList<EntityMap,EntityId> remap;
-    enum { REMAP_PRIME = 19477 };
-    int remapCache[REMAP_PRIME];
-
-    Platform::Path linkFile;
-    SMesh       impMesh;
-    SShell      impShell;
-    EntityList  impEntity;
-
-    std::string     name;
-
-
-    void Activate();
-    std::string DescriptionString();
-    void Clear();
-
-    static void AddParam(ParamList *param, hParam hp, double v);
-    void Generate(EntityList *entity, ParamList *param);
-    bool IsSolvedOkay();
-    void TransformImportedBy(Vector t, Quaternion q);
-    bool IsForcedToMeshBySource() const;
-    bool IsForcedToMesh() const;
-    // When a request generates entities from entities, and the source
-    // entities may have come from multiple requests, it's necessary to
-    // remap the entity ID so that it's still unique. We do this with a
-    // mapping list.
-    enum {
-        REMAP_LAST         = 1000,
-        REMAP_TOP          = 1001,
-        REMAP_BOTTOM       = 1002,
-        REMAP_PT_TO_LINE   = 1003,
-        REMAP_LINE_TO_FACE = 1004,
-        REMAP_LATHE_START  = 1006,
-        REMAP_LATHE_END    = 1007,
-        REMAP_PT_TO_ARC    = 1008,
-        REMAP_PT_TO_NORMAL = 1009,
-    };
-    hEntity Remap(hEntity in, int copyNumber);
-    void MakeExtrusionLines(EntityList *el, hEntity in);
-    void MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *param, hEntity in, Vector pt, Vector axis, int ai);
-    void MakeExtrusionTopBottomFaces(EntityList *el, hEntity pt);
-    void CopyEntity(EntityList *el,
-                    Entity *ep, int timesApplied, int remap,
-                    hParam dx, hParam dy, hParam dz,
-                    hParam qw, hParam qvx, hParam qvy, hParam qvz,
-                    CopyAs as);
-
-    void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
-    void GenerateEquations(IdList<Equation,hEquation> *l);
-    bool IsVisible();
-    int GetNumConstraints();
-    Vector ExtrusionGetVector();
-    void ExtrusionForceVectorTo(const Vector &v);
-
-    // Assembling the curves into loops, and into a piecewise linear polygon
-    // at the same time.
-    void AssembleLoops(bool *allClosed, bool *allCoplanar, bool *allNonZeroLen);
-    void GenerateLoops();
-    // And the mesh stuff
-    Group *PreviousGroup() const;
-    Group *RunningMeshGroup() const;
-    bool IsMeshGroup();
-
-    void GenerateShellAndMesh();
-    template<class T> void GenerateForStepAndRepeat(T *steps, T *outs, Group::CombineAs forWhat);
-    template<class T> void GenerateForBoolean(T *a, T *b, T *o, Group::CombineAs how);
-    void GenerateDisplayItems();
-
-    enum class DrawMeshAs { DEFAULT, HOVERED, SELECTED };
-    void DrawMesh(DrawMeshAs how, Canvas *canvas);
-    void Draw(Canvas *canvas);
-    void DrawPolyError(Canvas *canvas);
-    void DrawFilledPaths(Canvas *canvas);
-    void DrawContourAreaLabels(Canvas *canvas);
-
-    SPolygon GetPolygon();
-
-    static void MenuGroup(Command id);
-    static void MenuGroup(Command id, Platform::Path linkFile);
 };
 
 // A user request for some primitive or derived operation; for example a
@@ -492,67 +263,6 @@ public:
     void Clear() {}
 };
 
-class Entity : public EntityBase {
-public:
-    // Necessary for Entity e = {} to zero-initialize, since
-    // classes with base classes are not aggregates and
-    // the default constructor does not initialize members.
-    //
-    // Note EntityBase({}); without explicitly value-initializing
-    // the base class, MSVC2013 will default-initialize it, leaving
-    // POD members with indeterminate value.
-    Entity() : EntityBase({}), forceHidden(), actPoint(), actNormal(),
-        actDistance(), actVisible(), style(), construction(),
-        beziers(), edges(), edgesChordTol(), screenBBox(), screenBBoxValid() {};
-
-    // A linked entity that was hidden in the source file ends up hidden
-    // here too.
-    bool        forceHidden;
-
-    // All points/normals/distances have their numerical value; this is
-    // a convenience, to simplify the link/assembly code, so that the
-    // part is entirely described by the entities.
-    Vector      actPoint;
-    Quaternion  actNormal;
-    double      actDistance;
-    // and the shown state also gets saved here, for later import
-    bool        actVisible;
-
-    hStyle      style;
-    bool        construction;
-
-    SBezierList beziers;
-    SEdgeList   edges;
-    double      edgesChordTol;
-    BBox        screenBBox;
-    bool        screenBBoxValid;
-
-    bool IsStylable() const;
-    bool IsVisible() const;
-
-    enum class DrawAs { DEFAULT, OVERLAY, HIDDEN, HOVERED, SELECTED };
-    void Draw(DrawAs how, Canvas *canvas);
-    void GetReferencePoints(std::vector<Vector> *refs);
-    int GetPositionOfPoint(const Camera &camera, Point2d p);
-
-    void ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const;
-    void GenerateBezierCurves(SBezierList *sbl) const;
-    void GenerateEdges(SEdgeList *el);
-
-    SBezierList *GetOrGenerateBezierCurves();
-    SEdgeList *GetOrGenerateEdges();
-    BBox GetOrGenerateScreenBBox(bool *hasBBox);
-
-    void CalculateNumerical(bool forExport);
-
-    std::string DescriptionString() const;
-
-    void Clear() {
-        beziers.l.Clear();
-        edges.l.Clear();
-    }
-};
-
 class EntReqTable {
 public:
     static bool GetRequestInfo(Request::Type req, int extraPoints,
@@ -562,31 +272,6 @@ public:
     static Request::Type GetRequestForEntity(EntityBase::Type ent);
 };
 
-class Param {
-public:
-    int         tag;
-    hParam      h;
-
-    double      val;
-    bool        known;
-    bool        free;
-
-    // Used only in the solver
-    hParam      substd;
-
-    static const hParam NO_PARAM;
-
-    void Clear() {}
-};
-
-
-class hConstraint {
-public:
-    uint32_t v;
-
-    inline hEquation equation(int i) const;
-    inline hParam param(int i) const;
-};
 
 class ConstraintBase {
 public:
@@ -738,14 +423,6 @@ public:
                                     bool other, bool other2);
 };
 
-class hEquation {
-public:
-    uint32_t v;
-
-    inline bool isFromConstraint() const;
-    inline hConstraint constraint() const;
-};
-
 class Equation {
 public:
     int         tag;
@@ -755,7 +432,6 @@ public:
 
     void Clear() {}
 };
-
 
 class Style {
 public:
@@ -864,47 +540,6 @@ public:
 };
 
 
-inline hEntity hGroup::entity(int i) const
-    { hEntity r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
-inline hParam hGroup::param(int i) const
-    { hParam r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
-inline hEquation hGroup::equation(int i) const
-    { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
-
-inline bool hRequest::IsFromReferences() const {
-    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
-    return false;
-}
-inline hEntity hRequest::entity(int i) const
-    { hEntity r; r.v = (v << 16) | (uint32_t)i; return r; }
-inline hParam hRequest::param(int i) const
-    { hParam r; r.v = (v << 16) | (uint32_t)i; return r; }
-
-inline bool hEntity::isFromRequest() const
-    { if(v & 0x80000000) return false; else return true; }
-inline hRequest hEntity::request() const
-    { hRequest r; r.v = (v >> 16); return r; }
-inline hGroup hEntity::group() const
-    { hGroup r; r.v = (v >> 16) & 0x3fff; return r; }
-inline hEquation hEntity::equation(int i) const
-    { hEquation r; r.v = v | 0x40000000 | (uint32_t)i; return r; }
-
-inline hRequest hParam::request() const
-    { hRequest r; r.v = (v >> 16); return r; }
-
-
-inline hEquation hConstraint::equation(int i) const
-    { hEquation r; r.v = (v << 16) | (uint32_t)i; return r; }
-inline hParam hConstraint::param(int i) const
-    { hParam r; r.v = v | 0x40000000 | (uint32_t)i; return r; }
-
-inline bool hEquation::isFromConstraint() const
-    { if(v & 0xc0000000) return false; else return true; }
-inline hConstraint hEquation::constraint() const
-    { hConstraint r; r.v = (v >> 16); return r; }
-
 // The format for entities stored on the clipboard.
 class ClipboardRequest {
 public:
@@ -923,5 +558,7 @@ public:
     hEntity     oldPointEnt[MAX_POINTS_IN_ENTITY];
     hRequest    newReq;
 };
+
+}
 
 #endif

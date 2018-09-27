@@ -8,109 +8,17 @@
 #ifndef SOLVESPACE_POLYGON_H
 #define SOLVESPACE_POLYGON_H
 
-class SPointList;
-class SPolygon;
-class SContour;
-class SMesh;
-class SBsp3;
-class SOutlineList;
+#include <stdint.h>
+#include <unordered_map>
+#include "dsc.h"
+#include "list.h"
+#include "srf/surface.h"
+#include "sedge.h"
+#include "striangle.h"
+#include "smesh.h"
+#include "sbsp.h"
 
-enum class EarType : uint32_t {
-    UNKNOWN = 0,
-    NOT_EAR = 1,
-    EAR     = 2
-};
-
-enum class BspClass : uint32_t {
-    POS         = 100,
-    NEG         = 101,
-    COPLANAR    = 200
-};
-
-enum class EdgeKind : uint32_t {
-    NAKED_OR_SELF_INTER  = 100,
-    SELF_INTER           = 200,
-    TURNING              = 300,
-    EMPHASIZED           = 400,
-    SHARP                = 500,
-};
-
-class SEdge {
-public:
-    int    tag;
-    int    auxA, auxB;
-    Vector a, b;
-
-    static SEdge From(Vector a, Vector b);
-    bool EdgeCrosses(Vector a, Vector b, Vector *pi=NULL, SPointList *spl=NULL) const;
-};
-
-class SEdgeList {
-public:
-    List<SEdge>     l;
-
-    void Clear();
-    void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0, int tag=0);
-    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
-    bool AssembleContour(Vector first, Vector last, SContour *dest,
-                            SEdge *errorAt, bool keepDir) const;
-    int AnyEdgeCrossings(Vector a, Vector b,
-        Vector *pi=NULL, SPointList *spl=NULL) const;
-    bool ContainsEdgeFrom(const SEdgeList *sel) const;
-    bool ContainsEdge(const SEdge *se) const;
-    void CullExtraneousEdges();
-    void MergeCollinearSegments(Vector a, Vector b);
-};
-
-// A kd-tree element needs to go on a side of a node if it's when KDTREE_EPS
-// of the boundary. So increasing this number never breaks anything, but may
-// result in more duplicated elements. So it's conservative to be sloppy here.
-#define KDTREE_EPS (20*LENGTH_EPS)
-
-class SEdgeLl {
-public:
-    SEdge       *se;
-    SEdgeLl     *next;
-
-    static SEdgeLl *Alloc();
-};
-
-class SKdNodeEdges {
-public:
-    int which; // whether c is x, y, or z
-    double c;
-    SKdNodeEdges    *gt;
-    SKdNodeEdges    *lt;
-
-    SEdgeLl         *edges;
-
-    static SKdNodeEdges *From(SEdgeList *sel);
-    static SKdNodeEdges *From(SEdgeLl *sell);
-    static SKdNodeEdges *Alloc();
-    int AnyEdgeCrossings(Vector a, Vector b, int cnt,
-        Vector *pi=NULL, SPointList *spl=NULL) const;
-};
-
-class SPoint {
-public:
-    int     tag;
-
-    EarType ear;
-
-    Vector  p;
-    Vector  auxv;
-};
-
-class SPointList {
-public:
-    List<SPoint>    l;
-
-    void Clear();
-    bool ContainsPoint(Vector pt) const;
-    int IndexForPoint(Vector pt) const;
-    void IncrementTagFor(Vector pt);
-    void Add(Vector pt);
-};
+namespace SolveSpace {
 
 class SContour {
 public:
@@ -137,11 +45,6 @@ public:
     void UvTriangulateInto(SMesh *m, SSurface *srf);
 };
 
-typedef struct {
-    uint32_t face;
-    RgbaColor color;
-} STriMeta;
-
 class SPolygon {
 public:
     List<SContour>  l;
@@ -163,130 +66,6 @@ public:
     void UvGridTriangulateInto(SMesh *m, SSurface *srf);
     void TriangulateInto(SMesh *m) const;
     void InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const;
-};
-
-class STriangle {
-public:
-    int         tag;
-    STriMeta    meta;
-
-    union {
-        struct { Vector a, b, c; };
-        Vector vertices[3];
-    };
-
-    union {
-        struct { Vector an, bn, cn; };
-        Vector normals[3];
-    };
-
-    static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
-    Vector Normal() const;
-    void FlipNormal();
-    double MinAltitude() const;
-    int WindingNumberForPoint(Vector p) const;
-    bool ContainsPoint(Vector p) const;
-    bool ContainsPointProjd(Vector n, Vector p) const;
-    STriangle Transform(Vector o, Vector u, Vector v) const;
-    bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
-                  double *t, Vector *inters) const;
-    double SignedVolume() const;
-    bool IsDegenerate() const;
-};
-
-class SBsp2 {
-public:
-    Vector      np;     // normal to the plane
-
-    Vector      no;     // outer normal to the edge
-    double      d;
-    SEdge       edge;
-
-    SBsp2       *pos;
-    SBsp2       *neg;
-
-    SBsp2       *more;
-
-    void InsertTriangleHow(BspClass how, STriangle *tr, SMesh *m, SBsp3 *bsp3);
-    void InsertTriangle(STriangle *tr, SMesh *m, SBsp3 *bsp3);
-    Vector IntersectionWith(Vector a, Vector b) const;
-    void InsertEdge(SEdge *nedge, Vector nnp, Vector out);
-    static SBsp2 *InsertOrCreateEdge(SBsp2 *where, SEdge *nedge,
-                                     Vector nnp, Vector out);
-    static SBsp2 *Alloc();
-};
-
-class SBsp3 {
-public:
-    Vector      n;
-    double      d;
-
-    STriangle   tri;
-    SBsp3       *pos;
-    SBsp3       *neg;
-
-    SBsp3       *more;
-
-    SBsp2       *edges;
-
-    static SBsp3 *Alloc();
-    static SBsp3 *FromMesh(const SMesh *m);
-
-    Vector IntersectionWith(Vector a, Vector b) const;
-
-    void InsertHow(BspClass how, STriangle *str, SMesh *instead);
-    void Insert(STriangle *str, SMesh *instead);
-    static SBsp3 *InsertOrCreate(SBsp3 *where, STriangle *str, SMesh *instead);
-
-    void InsertConvexHow(BspClass how, STriMeta meta, Vector *vertex, size_t n,
-                                SMesh *instead);
-    SBsp3 *InsertConvex(STriMeta meta, Vector *vertex, size_t n, SMesh *instead);
-
-    void InsertInPlane(bool pos2, STriangle *tr, SMesh *m);
-
-    void GenerateInPaintOrder(SMesh *m) const;
-};
-
-class SMesh {
-public:
-    List<STriangle>     l;
-
-    bool    flipNormal;
-    bool    keepCoplanar;
-    bool    atLeastOneDiscarded;
-    bool    isTransparent;
-
-    void Clear();
-    void AddTriangle(const STriangle *st);
-    void AddTriangle(STriMeta meta, Vector a, Vector b, Vector c);
-    void AddTriangle(STriMeta meta, Vector n,
-                     Vector a, Vector b, Vector c);
-    void DoBounding(Vector v, Vector *vmax, Vector *vmin) const;
-    void GetBounding(Vector *vmax, Vector *vmin) const;
-
-    void Simplify(int start);
-
-    void AddAgainstBsp(SMesh *srcm, SBsp3 *bsp3);
-    void MakeFromUnionOf(SMesh *a, SMesh *b);
-    void MakeFromDifferenceOf(SMesh *a, SMesh *b);
-
-    void MakeFromCopyOf(SMesh *a);
-    void MakeFromTransformationOf(SMesh *a, Vector trans,
-                                  Quaternion q, double scale);
-    void MakeFromAssemblyOf(SMesh *a, SMesh *b);
-
-    void MakeEdgesInPlaneInto(SEdgeList *sel, Vector n, double d);
-    void MakeOutlinesInto(SOutlineList *sol, EdgeKind type);
-
-    void PrecomputeTransparency();
-    void RemoveDegenerateTriangles();
-
-    bool IsEmpty() const;
-    void RemapFaces(Group *g, int remap);
-
-    uint32_t FirstIntersectionWith(Point2d mp) const;
-
-    Vector GetCenterOfMass() const;
 };
 
 // A linked list of triangles
@@ -411,6 +190,8 @@ public:
     void GenerateEdges(SEdgeList *sel);
     void GenerateOutlines(SOutlineList *sol);
 };
+
+}
 
 #endif
 
