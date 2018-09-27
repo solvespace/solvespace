@@ -7,8 +7,12 @@
 
 #include "striangle.h"
 #include "sedge.h"
+#include "soutline.h"
 
 namespace SolveSpace {
+// todo fix this circular dependency
+class SBsp3;
+class Group;
 
 class SMesh {
 public:

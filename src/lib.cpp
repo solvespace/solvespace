@@ -8,7 +8,7 @@
 #define EXPORT_DLL
 #include <slvs.h>
 
-Sketch SolveSpace::SK = {};
+//Sketch SolveSpace::SK = {};
 static System SYS;
 
 static int IsInit = 0;

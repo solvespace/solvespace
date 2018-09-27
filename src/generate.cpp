@@ -395,9 +395,9 @@ void SolveSpaceUI::ForceReferences() {
         hRequest    hr;
         Quaternion  q;
     } Quat[] = {
-        { Request::HREQUEST_REFERENCE_XY, { 1,    0,    0,    0,   } },
-        { Request::HREQUEST_REFERENCE_YZ, { 0.5,  0.5,  0.5,  0.5, } },
-        { Request::HREQUEST_REFERENCE_ZX, { 0.5, -0.5, -0.5, -0.5, } },
+        { HREQUEST_REFERENCE_XY, { 1,    0,    0,    0,   } },
+        { HREQUEST_REFERENCE_YZ, { 0.5,  0.5,  0.5,  0.5, } },
+        { HREQUEST_REFERENCE_ZX, { 0.5, -0.5, -0.5, -0.5, } },
     };
     for(int i = 0; i < 3; i++) {
         hRequest hr = Quat[i].hr;

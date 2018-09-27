@@ -567,11 +567,11 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     // dimmer for the ones at the model origin.
                     hRequest hr   = h.request();
                     uint8_t  luma = (asReference) ? 255 : 100;
-                    if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                    if(hr.v == HREQUEST_REFERENCE_XY.v) {
                         stroke.color = RgbaColor::From(0, 0, luma);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                    } else if(hr.v == HREQUEST_REFERENCE_YZ.v) {
                         stroke.color = RgbaColor::From(luma, 0, 0);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                    } else if(hr.v == HREQUEST_REFERENCE_ZX.v) {
                         stroke.color = RgbaColor::From(0, luma, 0);
                     }
                 }

@@ -46,7 +46,7 @@ hGroup SolveSpaceUI::CreateDefaultDrawingGroup() {
     g.subtype = Group::Subtype::WORKPLANE_BY_POINT_ORTHO;
     g.order = 1;
     g.predef.q = Quaternion::From(1, 0, 0, 0);
-    hRequest hr = Request::HREQUEST_REFERENCE_XY;
+    hRequest hr = HREQUEST_REFERENCE_XY;
     g.predef.origin = hr.entity(1);
     SK.group.AddAndAssignId(&g);
     SK.GetGroup(g.h)->activeWorkplane = g.h.entity(0);
@@ -72,13 +72,13 @@ void SolveSpaceUI::NewFile() {
     r.group = Group::HGROUP_REFERENCES;
     r.workplane = Entity::FREE_IN_3D;
 
-    r.h = Request::HREQUEST_REFERENCE_XY;
+    r.h = HREQUEST_REFERENCE_XY;
     SK.request.Add(&r);
 
-    r.h = Request::HREQUEST_REFERENCE_YZ;
+    r.h = HREQUEST_REFERENCE_YZ;
     SK.request.Add(&r);
 
-    r.h = Request::HREQUEST_REFERENCE_ZX;
+    r.h = HREQUEST_REFERENCE_ZX;
     SK.request.Add(&r);
 
     CreateDefaultDrawingGroup();

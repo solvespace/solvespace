@@ -5,6 +5,8 @@
 #ifndef SOLVESPACE_EVENTS_H
 #define SOLVESPACE_EVENTS_H
 
+namespace SolveSpace {
+
 namespace Platform{
 
 // A mouse input event.
@@ -84,6 +86,7 @@ struct KeyboardEvent {
     }
 };
 
+}
 
 }
 

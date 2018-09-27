@@ -4,4 +4,4 @@
 
 #include "globals.h"
 
-Sketch SolveSpace::SK = {};
+SolveSpace::Sketch SolveSpace::SK = {};

@@ -8,6 +8,17 @@
 #ifndef SOLVESPACE_UI_H
 #define SOLVESPACE_UI_H
 
+#include <stdint.h>
+#include <string>
+#include <set>
+#include "render/render.h"
+#include "platform/gui.h"
+#include "constraint.h"
+#include "request.h"
+
+
+namespace SolveSpace {
+
 class Locale {
 public:
     std::string language;
@@ -809,5 +820,6 @@ public:
     void SixDofEvent(Platform::SixDofEvent event);
 };
 
+}
 
 #endif

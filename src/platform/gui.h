@@ -7,10 +7,17 @@
 #ifndef SOLVESPACE_GUI_H
 #define SOLVESPACE_GUI_H
 
+#include <memory>
 #include "platform.h"
 #include "events.h"
+#include "dsc.h"
+
+namespace SolveSpace {
 
 namespace Platform {
+
+// # TODO a lot of the stuff in here should be in platform.h, unless that's to
+// keep it from the shared library
 
 //-----------------------------------------------------------------------------
 // Events
@@ -302,6 +309,8 @@ void OpenInBrowser(const std::string &url);
 void InitGui(int argc, char **argv);
 void RunGui();
 void ExitGui();
+
+}
 
 }
 

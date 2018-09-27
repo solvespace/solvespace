@@ -6,7 +6,9 @@
 #define SOLVESPACE_SYSTEM_H
 
 #include "handle.h"
-
+#include "entity.h"
+#include "param.h"
+#include "solveresult.h"
 
 namespace SolveSpace {
 

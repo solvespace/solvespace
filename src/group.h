@@ -5,7 +5,26 @@
 #ifndef SOLVESPACE_GROUP_H
 #define SOLVESPACE_GROUP_H
 
+#include "handle.h"
+#include "param.h"
+#include "entity.h"
+#include "solveresult.h"
+#include "ui.h"
+#include "spolygon.h"
+#include "srf/sshell.h"
+
 namespace SolveSpace{
+// todo: get rid of this circular dependency
+enum class Command : uint32_t;
+
+
+enum class PolyError : uint32_t {
+    GOOD              = 0,
+    NOT_CLOSED        = 1,
+    NOT_COPLANAR      = 2,
+    SELF_INTERSECTING = 3,
+    ZERO_LEN_EDGE     = 4
+};
 
 // A set of requests. Every request must have an associated group.
 class Group {

@@ -5,9 +5,24 @@
 #ifndef SOLVESPACE_HANDLE_H
 #define SOLVESPACE_HANDLE_H
 
+#include <stdint.h>
+#include <map>
 
 
 namespace SolveSpace {
+
+template<class T>
+struct CompareHandle {
+    bool operator()(T lhs, T rhs) const { return lhs.v < rhs.v; }
+};
+
+template<class Key, class T>
+using handle_map = std::map<Key, T, CompareHandle<Key>>;
+
+class hEntity;
+class hParam;
+class hEquation;
+
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
@@ -71,6 +86,11 @@ public:
     inline hConstraint constraint() const;
 };
 
+class hSCurve {
+public:
+    uint32_t v;
+};
+
 inline hEntity hGroup::entity(int i) const
 { hEntity r; r.v = 0x80000000 | (v << 16) | (uint32_t)i; return r; }
 inline hParam hGroup::param(int i) const
@@ -78,10 +98,15 @@ inline hParam hGroup::param(int i) const
 inline hEquation hGroup::equation(int i) const
 { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
+// Some predefined requests, that are present in every sketch.
+static const hRequest   HREQUEST_REFERENCE_XY = { 1 };
+static const hRequest   HREQUEST_REFERENCE_YZ = { 2 };
+static const hRequest   HREQUEST_REFERENCE_ZX = { 3 };
+
 inline bool hRequest::IsFromReferences() const {
-    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    if(v == HREQUEST_REFERENCE_XY.v) return true;
+    if(v == HREQUEST_REFERENCE_YZ.v) return true;
+    if(v == HREQUEST_REFERENCE_ZX.v) return true;
     return false;
 }
 inline hEntity hRequest::entity(int i) const

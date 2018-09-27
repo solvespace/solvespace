@@ -17,56 +17,11 @@
 #include "striangle.h"
 #include "smesh.h"
 #include "sbsp.h"
+#include "soutline.h"
+#include "scontour.h"
+#include "spolygon.h"
 
 namespace SolveSpace {
-
-class SContour {
-public:
-    int             tag;
-    int             timesEnclosed;
-    Vector          xminPt;
-    List<SPoint>    l;
-
-    void AddPoint(Vector p);
-    void MakeEdgesInto(SEdgeList *el) const;
-    void Reverse();
-    Vector ComputeNormal() const;
-    double SignedAreaProjdToNormal(Vector n) const;
-    bool IsClockwiseProjdToNormal(Vector n) const;
-    bool ContainsPointProjdToNormal(Vector n, Vector p) const;
-    void OffsetInto(SContour *dest, double r) const;
-    void CopyInto(SContour *dest) const;
-    void FindPointWithMinX();
-    Vector AnyEdgeMidpoint() const;
-
-    bool IsEar(int bp, double scaledEps) const;
-    bool BridgeToContour(SContour *sc, SEdgeList *el, List<Vector> *vl);
-    void ClipEarInto(SMesh *m, int bp, double scaledEps);
-    void UvTriangulateInto(SMesh *m, SSurface *srf);
-};
-
-class SPolygon {
-public:
-    List<SContour>  l;
-    Vector          normal;
-
-    Vector ComputeNormal() const;
-    void AddEmptyContour();
-    int WindingNumberForPoint(Vector p) const;
-    double SignedArea() const;
-    bool ContainsPoint(Vector p) const;
-    void MakeEdgesInto(SEdgeList *el) const;
-    void FixContourDirections();
-    void Clear();
-    bool SelfIntersecting(Vector *intersectsAt) const;
-    bool IsEmpty() const;
-    Vector AnyPoint() const;
-    void OffsetInto(SPolygon *dest, double r) const;
-    void UvTriangulateInto(SMesh *m, SSurface *srf);
-    void UvGridTriangulateInto(SMesh *m, SSurface *srf);
-    void TriangulateInto(SMesh *m) const;
-    void InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const;
-};
 
 // A linked list of triangles
 class STriangleLl {
@@ -76,25 +31,6 @@ public:
     STriangleLl     *next;
 
     static STriangleLl *Alloc();
-};
-
-class SOutline {
-public:
-    int    tag;
-    Vector a, b, nl, nr;
-
-    bool IsVisible(Vector projDir) const;
-};
-
-class SOutlineList {
-public:
-    List<SOutline> l;
-
-    void Clear();
-    void AddEdge(Vector a, Vector b, Vector nl, Vector nr, int tag = 0);
-    void ListTaggedInto(SEdgeList *el, int auxA = 0, int auxB = 0);
-
-    void MakeFromCopyOf(SOutlineList *ol);
 };
 
 class SKdNode {

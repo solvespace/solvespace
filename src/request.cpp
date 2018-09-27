@@ -8,9 +8,6 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-const hRequest Request::HREQUEST_REFERENCE_XY = { 1 };
-const hRequest Request::HREQUEST_REFERENCE_YZ = { 2 };
-const hRequest Request::HREQUEST_REFERENCE_ZX = { 3 };
 
 struct EntReqMapping {
     Request::Type  reqType;
@@ -207,11 +204,11 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
 
 std::string Request::DescriptionString() const {
     const char *s = "";
-    if(h.v == Request::HREQUEST_REFERENCE_XY.v) {
+    if(h.v == HREQUEST_REFERENCE_XY.v) {
         s = "#XY";
-    } else if(h.v == Request::HREQUEST_REFERENCE_YZ.v) {
+    } else if(h.v == HREQUEST_REFERENCE_YZ.v) {
         s = "#YZ";
-    } else if(h.v == Request::HREQUEST_REFERENCE_ZX.v) {
+    } else if(h.v == HREQUEST_REFERENCE_ZX.v) {
         s = "#ZX";
     } else {
         switch(type) {

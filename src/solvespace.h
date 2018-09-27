@@ -42,16 +42,11 @@
 #include "srf/surface.h"
 #include "filewriters.h"
 #include "expr.h"
+#include "render/render.h"
+#include "platform/gui.h"
+#include "ui.h"
+#include "ttf.h"
 
-// We declare these in advance instead of simply using FT_Library
-// (defined as typedef FT_LibraryRec_* FT_Library) because including
-// freetype.h invokes indescribable horrors and we would like to avoid
-// doing that every time we include solvespace.h.
-struct FT_LibraryRec_;
-struct FT_FaceRec_;
-
-typedef struct _cairo cairo_t;
-typedef struct _cairo_surface cairo_surface_t;
 
 // The few floating-point equality comparisons in SolveSpace have been
 // carefully considered, so we disable the -Wfloat-equal warning for them
@@ -71,15 +66,10 @@ using std::min;
 using std::max;
 using std::swap;
 
-class Expr;
-class ExprVector;
-class ExprQuaternion;
-enum class Command : uint32_t;
 
 //================
 // From the platform-specific code.
 
-#include "platform/gui.h"
 
 const size_t MAX_RECENT = 8;
 extern Platform::Path RecentFile[MAX_RECENT];
@@ -92,31 +82,14 @@ extern Platform::Path RecentFile[MAX_RECENT];
 
 
 
-template<class T>
-struct CompareHandle {
-    bool operator()(T lhs, T rhs) const { return lhs.v < rhs.v; }
-};
-
-template<class Key, class T>
-using handle_map = std::map<Key, T, CompareHandle<Key>>;
-
-class Group;
-class SSurface;
-#include "render/render.h"
-
-class Entity;
-class Param;
-
-enum class SolveResult : uint32_t {
-    OKAY                     = 0,
-    DIDNT_CONVERGE           = 10,
-    REDUNDANT_OKAY           = 11,
-    REDUNDANT_DIDNT_CONVERGE = 12,
-    TOO_MANY_UNKNOWNS        = 20
-};
 
 
-#include "ui.h"
+
+
+
+
+const std::vector<double> &StipplePatternDashes(StipplePattern pattern);
+double StipplePatternLength(StipplePattern pattern);
 
 
 // Utility functions that are provided in the platform-independent code.
@@ -154,49 +127,9 @@ void Message(const char *fmt, ...);
 void MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...);
 void Error(const char *fmt, ...);
 
-#include "ttf.h"
-
-#ifdef LIBRARY
-#   define ENTITY EntityBase
-#   define CONSTRAINT ConstraintBase
-#else
-#   define ENTITY Entity
-#   define CONSTRAINT Constraint
-#endif
-class Sketch {
-public:
-    // These are user-editable, and define the sketch.
-    IdList<Group,hGroup>            group;
-    List<hGroup>                    groupOrder;
-    IdList<CONSTRAINT,hConstraint>  constraint;
-    IdList<Request,hRequest>        request;
-    IdList<Style,hStyle>            style;
-
-    // These are generated from the above.
-    IdList<ENTITY,hEntity>          entity;
-    IdList<Param,hParam>            param;
-
-    inline CONSTRAINT *GetConstraint(hConstraint h)
-        { return constraint.FindById(h); }
-    inline ENTITY  *GetEntity (hEntity  h) { return entity. FindById(h); }
-    inline Param   *GetParam  (hParam   h) { return param.  FindById(h); }
-    inline Request *GetRequest(hRequest h) { return request.FindById(h); }
-    inline Group   *GetGroup  (hGroup   h) { return group.  FindById(h); }
-    // Styles are handled a bit differently.
-
-    void Clear();
-
-    BBox CalculateEntityBBox(bool includingInvisible);
-    Group *GetRunningMeshGroupFor(hGroup h);
-};
-#undef ENTITY
-#undef CONSTRAINT
 
 void ImportDxf(const Platform::Path &file);
 void ImportDwg(const Platform::Path &file);
-
-extern SolveSpaceUI SS;
-extern Sketch SK;
 
 }
 
