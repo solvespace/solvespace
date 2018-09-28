@@ -1,6 +1,9 @@
-#include "solvespace.h"
+#include <sstream>
 #include "libdxfrw.h"
 #include "libdwgr.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 namespace SolveSpace {
 

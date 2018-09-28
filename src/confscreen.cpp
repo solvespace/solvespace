@@ -4,7 +4,12 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <math.h>
+#include <cmath>
+#include "ui.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 void TextWindow::ScreenChangeLightDirection(int link, uint32_t v) {
     SS.TW.ShowEditControl(8, ssprintf("%.2f, %.2f, %.2f", CO(SS.lightDir[v])));

@@ -5,7 +5,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <string.h>
+#include "entity.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 std::string Entity::DescriptionString() const {
     if(h.isFromRequest()) {

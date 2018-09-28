@@ -4,7 +4,10 @@
 //
 // Copyright 2016 M-Labs Ltd
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 bool PolylineBuilder::Vertex::GetNext(uint32_t kind, Vertex **next, Edge **nextEdge) {
     auto it = std::find_if(edges.begin(), edges.end(), [&](const Edge *e) {

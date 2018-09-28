@@ -4,11 +4,12 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #define EXPORT_DLL
 #include <slvs.h>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
-//Sketch SolveSpace::SK = {};
 static System SYS;
 
 static int IsInit = 0;

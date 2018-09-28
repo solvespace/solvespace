@@ -5,7 +5,12 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <string.h>
+#include <math.h>
+#include <cmath>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 //-----------------------------------------------------------------------------
 // Replace constraints on oldpt with the same constraints on newpt.

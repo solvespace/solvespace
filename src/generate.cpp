@@ -6,7 +6,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <string.h>
+#include <limits.h>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);

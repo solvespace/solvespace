@@ -4,7 +4,11 @@
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
 #include <libdxfrw.h>
-#include "solvespace.h"
+#include <sstream>
+#include "entity.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 //-----------------------------------------------------------------------------
 // Routines for DXF export

@@ -5,7 +5,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 void Group::AssembleLoops(bool *allClosed,
                           bool *allCoplanar,

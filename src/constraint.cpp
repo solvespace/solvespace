@@ -4,8 +4,12 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #include "ss_util.h"
+#include "constraint.h"
+#include "ui.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 std::string Constraint::DescriptionString() const {
     std::string s;

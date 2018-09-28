@@ -5,7 +5,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include "constraint.h"
+#include "entity.h"
+#include "globals.h"
+#include "namespace.h"
 
 const hConstraint ConstraintBase::NO_CONSTRAINT = { 0 };
 

@@ -4,7 +4,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <string.h>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 //-----------------------------------------------------------------------------
 // A navigation bar that always appears at the top of the window, with a

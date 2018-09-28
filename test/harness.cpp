@@ -5,6 +5,7 @@
 //-----------------------------------------------------------------------------
 #include <regex>
 #include <cairo.h>
+#include <chrono>
 
 #include "harness.h"
 

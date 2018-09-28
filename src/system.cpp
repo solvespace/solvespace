@@ -6,7 +6,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <cmath>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 // This tolerance is used to determine whether two (linearized) constraints
 // are linearly dependent. If this is too small, then we will attempt to

@@ -4,7 +4,9 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "ui.h"
+#include "globals.h"
+#include "namespace.h"
 
 void TextWindow::ScreenUnselectAll(int link, uint32_t v) {
     GraphicsWindow::MenuEdit(Command::UNSELECT_ALL);

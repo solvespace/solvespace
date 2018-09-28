@@ -4,7 +4,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <limits.h>
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 typedef void MenuHandler(Command id);
 using MenuKind = Platform::MenuItem::Indicator;

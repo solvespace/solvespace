@@ -39,7 +39,9 @@ extern "C" const char *ft_error_string(int err) {
 #undef FT_ERROR_START_LIST
 #undef FT_ERROR_END_LIST
 
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 //-----------------------------------------------------------------------------
 // Get the list of available font filenames, and load the name for each of

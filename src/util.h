@@ -70,8 +70,5 @@ void ImportDwg(const Platform::Path &file);
 
 }
 
-#ifndef __OBJC__
-using namespace SolveSpace;
-#endif
 
 #endif //SOLVESPACE_UTIL_H

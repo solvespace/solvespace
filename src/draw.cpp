@@ -5,7 +5,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include <chrono>
+#include "ui.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
     if(entity.v     != b->entity.v)     return false;

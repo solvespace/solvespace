@@ -4,8 +4,13 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include <chrono>
+#include <cstdarg>
 #include "ss_util.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 char32_t utf8_iterator::operator*()
 {

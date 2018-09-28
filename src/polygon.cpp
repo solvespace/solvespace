@@ -3,7 +3,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 Vector STriangle::Normal() const {
     Vector ab = b.Minus(a), bc = c.Minus(b);

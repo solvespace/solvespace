@@ -30,6 +30,8 @@ typedef unsigned __int32 uint32_t;
 #include <stdint.h>
 #endif
 
+#include <string.h>
+
 typedef uint32_t Slvs_hParam;
 typedef uint32_t Slvs_hEntity;
 typedef uint32_t Slvs_hConstraint;

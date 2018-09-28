@@ -6,8 +6,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 #include "ss_util.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 ExprVector ExprVector::From(Expr *x, Expr *y, Expr *z) {
     ExprVector r = { x, y, z};

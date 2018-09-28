@@ -7,6 +7,7 @@
 
 #include <memory>
 #include "platform.h"
+#include "ss_util.h"
 
 namespace SolveSpace {
 

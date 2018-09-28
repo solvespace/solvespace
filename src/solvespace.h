@@ -64,5 +64,6 @@ namespace SolveSpace {
 
 }
 
+#include "namespace.h"
 
 #endif

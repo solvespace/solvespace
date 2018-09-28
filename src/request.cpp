@@ -6,8 +6,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
 
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 struct EntReqMapping {
     Request::Type  reqType;

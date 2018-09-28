@@ -6,7 +6,10 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include "constraint.h"
+#include "globals.h"
+#include "namespace.h"
 
 std::string Constraint::Label() const {
     std::string result;
