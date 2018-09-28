@@ -4,7 +4,13 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+#include "sshell.h"
+#include "globals.h"
+
+namespace SolveSpace {
+
+using std::min;
+using std::max;
 
 void SShell::MergeCoincidentSurfaces() {
     surface.ClearTags();
@@ -84,7 +90,7 @@ void SShell::MergeCoincidentSurfaces() {
             v = (n.Cross(u)).WithMagnitude(1);
 
             double umax = VERY_NEGATIVE, umin = VERY_POSITIVE,
-                   vmax = VERY_NEGATIVE, vmin = VERY_POSITIVE;
+                    vmax = VERY_NEGATIVE, vmin = VERY_POSITIVE;
             SEdge *se;
             for(se = sel.l.First(); se; se = sel.l.NextAfter(se)) {
                 double ut = (se->a).Dot(u), vt = (se->a).Dot(v);
@@ -100,7 +106,7 @@ void SShell::MergeCoincidentSurfaces() {
             // in that case. So give a bit of extra room; in theory just
             // a chord tolerance, but more can't hurt.
             double muv = max((umax - umin), (vmax - vmin));
-            double tol = muv/50 + 3*SS.ChordTolMm();
+            double tol = muv / 50 + 3 * SS.ChordTolMm();
             umax += tol;
             vmax += tol;
             umin -= tol;
@@ -111,13 +117,13 @@ void SShell::MergeCoincidentSurfaces() {
             // pointed the same direction.
             double nt = (si->ctrl[0][0]).Dot(n);
             si->ctrl[0][0] =
-                Vector::From(umin, vmin, nt).ScaleOutOfCsys(u, v, n);
+                    Vector::From(umin, vmin, nt).ScaleOutOfCsys(u, v, n);
             si->ctrl[0][1] =
-                Vector::From(umin, vmax, nt).ScaleOutOfCsys(u, v, n);
+                    Vector::From(umin, vmax, nt).ScaleOutOfCsys(u, v, n);
             si->ctrl[1][1] =
-                Vector::From(umax, vmax, nt).ScaleOutOfCsys(u, v, n);
+                    Vector::From(umax, vmax, nt).ScaleOutOfCsys(u, v, n);
             si->ctrl[1][0] =
-                Vector::From(umax, vmin, nt).ScaleOutOfCsys(u, v, n);
+                    Vector::From(umax, vmin, nt).ScaleOutOfCsys(u, v, n);
         }
         sel.Clear();
     }
@@ -125,3 +131,4 @@ void SShell::MergeCoincidentSurfaces() {
     surface.RemoveTagged();
 }
 
+}
