@@ -5,7 +5,11 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+
+#include <algorithm>
+#include "surface.h"
+#include "util.h"
+#include "globals.h"
 
 // Converge it to better than LENGTH_EPS; we want two points, each
 // independently projected into uv and back, to end up equal with the
@@ -13,7 +17,9 @@
 // and convergence should be fast by now.
 #define RATPOLY_EPS (LENGTH_EPS/(1e2))
 
-double SolveSpace::Bernstein(int k, int deg, double t)
+namespace SolveSpace{
+
+double Bernstein(int k, int deg, double t)
 {
     if(k > deg || k < 0) return 0;
 
@@ -54,7 +60,7 @@ double SolveSpace::Bernstein(int k, int deg, double t)
     ssassert(false, "Unexpected degree of spline");
 }
 
-double SolveSpace::BernsteinDerivative(int k, int deg, double t)
+double BernsteinDerivative(int k, int deg, double t)
 {
     switch(deg) {
         case 0:
@@ -646,3 +652,4 @@ void SSurface::PointOnSurfaces(SSurface *s1, SSurface *s2, double *up, double *v
     dbp("didn't converge (three surfaces intersecting)");
 }
 
+}

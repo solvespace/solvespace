@@ -15,6 +15,7 @@ namespace SolveSpace{
 
 // todo: get rid of this circular dependency
 class SBezier;
+class SBezierList;
 class SCurve;
 class SShell;
 

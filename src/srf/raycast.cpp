@@ -7,7 +7,17 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include <math.h>
+#include <algorithm>
+#include "sshell.h"
+#include "globals.h"
+
+namespace SolveSpace{
+
+using std::min;
+using std::max;
+using std::swap;
 
 // Dot product tolerance for perpendicular; this is on the direction cosine,
 // so it's about 0.001 degrees.
@@ -611,3 +621,4 @@ bool SShell::ClassifyEdge(Class *indir, Class *outdir,
     return true;
 }
 
+}

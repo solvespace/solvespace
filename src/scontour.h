@@ -7,6 +7,7 @@
 
 #include "sedge.h"
 #include "smesh.h"
+#include "srf/ssurface.h"
 
 namespace SolveSpace{
 

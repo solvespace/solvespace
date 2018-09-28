@@ -6,7 +6,18 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+
+#include <algorithm>
+#include "spolygon.h"
+#include "ssurface.h"
+#include "scontour.h"
+#include "globals.h"
+
+namespace SolveSpace{
+
+using std::min;
+using std::max;
+using std::swap;
 
 void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
     if(l.n <= 0) return;
@@ -525,4 +536,6 @@ void SPolygon::TriangulateInto(SMesh *m) const {
 
     p.Clear();
     pm.Clear();
+}
+
 }

@@ -5,7 +5,16 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include <algorithm>
+#include "surface.h"
+#include "globals.h"
+
+namespace SolveSpace{
+
+using std::min;
+using std::max;
+using std::swap;
 
 extern int FLAG;
 
@@ -524,3 +533,4 @@ void SShell::MakeCoincidentEdgesInto(SSurface *proto, bool sameNormal,
     }
 }
 
+}

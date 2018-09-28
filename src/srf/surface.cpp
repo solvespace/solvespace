@@ -4,7 +4,17 @@
 //
 // Copyright 2008-2013 Jonathan Westhues.
 //-----------------------------------------------------------------------------
-#include "../solvespace.h"
+
+#include <algorithm>
+#include "surface.h"
+#include "globals.h"
+#include "util.h"
+
+namespace SolveSpace{
+
+using std::min;
+using std::max;
+using std::swap;
 
 SSurface SSurface::FromExtrusionOf(SBezier *sb, Vector t0, Vector t1) {
     SSurface ret = {};
@@ -894,3 +904,4 @@ void SShell::Clear() {
     curve.Clear();
 }
 
+}
