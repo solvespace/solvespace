@@ -4,6 +4,8 @@
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
 
+#include "render.h"
+
 #ifdef WIN32
 // Include after solvespace.h to avoid identifier clashes.
 #   include <windows.h> // required by GL headers
@@ -16,7 +18,6 @@
 #   include <GL/glu.h>
 #endif
 
-#include "render.h"
 
 namespace SolveSpace {
 

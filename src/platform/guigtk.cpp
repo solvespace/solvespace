@@ -32,7 +32,9 @@
 #   include <gdk/gdkx.h>
 #endif
 
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 namespace SolveSpace {
 namespace Platform {

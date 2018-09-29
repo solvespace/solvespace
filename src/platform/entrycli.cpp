@@ -3,7 +3,9 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 static void ShowUsage(const std::string &cmd) {
     fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());

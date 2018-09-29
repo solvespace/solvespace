@@ -3,7 +3,9 @@
 //
 // Copyright 2017 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 int main(int argc, char **argv) {
     std::vector<std::string> args = InitPlatform(argc, argv);

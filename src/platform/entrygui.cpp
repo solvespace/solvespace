@@ -3,7 +3,11 @@
 //
 // Copyright 2018 <whitequark@whitequark.org>
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
+
 #if defined(WIN32)
 #   include <windows.h>
 #endif

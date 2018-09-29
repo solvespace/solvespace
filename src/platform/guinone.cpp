@@ -3,7 +3,9 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 #include <cairo.h>
 
 namespace SolveSpace {

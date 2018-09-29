@@ -48,22 +48,6 @@
 #include "ttf.h"
 #include "util.h"
 
-
-namespace SolveSpace {
-
-
-
-//================
-// From the platform-specific code.
-
-
-
-
-// End of platform-specific functions
-//================
-
-}
-
 #include "namespace.h"
 
 #endif

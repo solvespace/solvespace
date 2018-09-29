@@ -10,14 +10,6 @@
 #   include <CoreFoundation/CFBundle.h>
 #endif
 
-#if defined(WIN32)
-// Conversely, include Microsoft headers after solvespace.h to avoid clashes.
-#   include <windows.h>
-#else
-#   include <unistd.h>
-#   include <sys/stat.h>
-#endif
-
 #include <string.h>
 #include <stdio.h>
 #include <string>
@@ -27,6 +19,14 @@
 #include "config.h"
 #include "platform.h"
 #include "ss_util.h"
+
+#if defined(WIN32)
+// Conversely, include Microsoft headers after solvespace.h to avoid clashes.
+#   include <windows.h>
+#else
+#   include <unistd.h>
+#   include <sys/stat.h>
+#endif
 
 namespace SolveSpace {
 namespace Platform {

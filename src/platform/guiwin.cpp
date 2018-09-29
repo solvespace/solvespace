@@ -4,7 +4,9 @@
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
 #include "config.h"
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 // Include after solvespace.h to avoid identifier clashes.
 #include <windows.h>
 #include <windowsx.h>

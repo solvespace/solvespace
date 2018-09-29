@@ -3,7 +3,9 @@
 //
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 #import  <AppKit/AppKit.h>
 
 using namespace SolveSpace;

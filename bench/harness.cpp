@@ -3,7 +3,9 @@
 //
 // Copyright 2016 whitequark
 //-----------------------------------------------------------------------------
-#include "solvespace.h"
+#include "globals.h"
+#include "util.h"
+#include "namespace.h"
 
 static bool RunBenchmark(std::function<void()> setupFn,
                          std::function<bool()> benchFn,
