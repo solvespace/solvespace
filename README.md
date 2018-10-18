@@ -1,6 +1,9 @@
 SolveSpace
 ==========
 
+[![Build Status](https://travis-ci.org/solvespace/solvespace.svg?branch=master)](https://travis-ci.org/solvespace/solvespace)
+
+
 This repository contains the source code of [SolveSpace][], a parametric
 2d/3d CAD.
 
