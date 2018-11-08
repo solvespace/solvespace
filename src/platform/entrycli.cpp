@@ -144,7 +144,7 @@ static bool RunCommand(const std::vector<std::string> args) {
 
     double chordTol = 1.0;
     auto ParseChordTolerance = [&](size_t &argn) {
-        if(argn + 1 < args.size() && (args[argn] == "--chord-ol" ||
+        if(argn + 1 < args.size() && (args[argn] == "--chord-tol" ||
                                       args[argn] == "-t")) {
             argn++;
             if(sscanf(args[argn].c_str(), "%lf", &chordTol) == 1) {
