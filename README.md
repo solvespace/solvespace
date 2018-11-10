@@ -53,9 +53,17 @@ To build the GUI, you will need fontconfig, gtkmm 3.0 (version 3.16 or later), p
 OpenGL and OpenGL GLU, and optionally, the Space Navigator client library.
 On a Debian derivative (e.g. Ubuntu) these can be installed with:
 
-    apt-get install git build-essential cmake zlib1g-dev libpng-dev libcairo2-dev libfreetype6-dev
-    apt-get install libjson-c-dev libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
-                    libgl-dev libglu-dev libspnav-dev
+    sudo apt install git build-essential cmake zlib1g-dev libpng-dev \
+                     libcairo2-dev libfreetype6-dev libjson-c-dev \
+                     libfontconfig1-dev libgtkmm-3.0-dev libpangomm-1.4-dev \
+                     libgl-dev libglu-dev libspnav-dev
+
+On a Redhat derivative (e.g. Fedora) the dependencies can be installed with:
+
+    sudo dnf install git gcc-c++ cmake zlib-devel libpng-devel \
+                     cairo-devel freetype-devel json-c-devel \
+                     fontconfig-devel gtkmm30-devel pangomm-devel \
+                     mesa-libGL-devel mesa-libGLU-devel libspnav-devel
 
 Before building, check out the project and the necessary submodules:
 
