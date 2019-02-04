@@ -634,6 +634,8 @@ void OpenGl3Renderer::NewFrame() {
     glClearDepthf(1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glFrontFace(GL_CW);
+
     glPolygonOffset(2.0, 1.0);
 }
 
@@ -890,8 +892,8 @@ public:
         glEnable(GL_CULL_FACE);
 
         if(hasFillBack)
-            DrawFace(renderer, GL_FRONT, fillBack);
-        DrawFace(renderer, GL_BACK, fillFront);
+            DrawFace(renderer, GL_BACK, fillBack);
+        DrawFace(renderer, GL_FRONT, fillFront);
 
         glDisable(GL_POLYGON_OFFSET_FILL);
         glDisable(GL_CULL_FACE);
