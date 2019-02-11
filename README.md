@@ -117,6 +117,9 @@ is built as `build/bin/solvespace-cli.exe`.
 
 Space Navigator support will not be available.
 
+If using Ubuntu to cross-compile, Ubuntu 17.10 or newer (or, alternatively, MinGW from the Ubuntu
+17.10 repositories) is required.
+
 Building on macOS
 -----------------
 
