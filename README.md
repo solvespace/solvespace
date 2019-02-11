@@ -239,4 +239,6 @@ and debug SolveSpace.
 License
 -------
 
-SolveSpace is distributed under the terms of the [GPL3 license](COPYING.txt).
+SolveSpace is distributed under the terms of the [GPL v3 license](COPYING.txt). It is possible
+to license SolveSpace for use in a commercial application; to do so,
+[contact](http://solvespace.com/contact.pl) the developers.

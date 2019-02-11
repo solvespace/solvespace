@@ -14,6 +14,12 @@ Bug reports are always welcome! When reporting a bug, please include the followi
 GitHub does not allow attaching `*.slvs` files, but it does allow attaching `*.zip` files,
 so any savefiles should first be archived.
 
+Signing the CLA
+---------------
+
+To contribute code, translations, artwork, or other resources to SolveSpace, it is necessary to
+sign a [Contributor License Agreement](https://cla-assistant.io/solvespace/solvespace).
+
 Contributing translations
 -------------------------
 
