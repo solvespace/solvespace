@@ -94,6 +94,8 @@ Bugs fixed:
   * Paste Transformed with a negative scale does not invert arcs.
   * The tangent arc now modifies the original entities instead of deleting
     them, such that their constraints are retained.
+  * When linking a sketch file, missing custom styles are now imported from 
+    the linked file.
 
 2.x
 ---
