@@ -79,7 +79,8 @@ include_directories(
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS})
+    ${CAIRO_INCLUDE_DIRS}
+    ${Q3D_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -211,12 +212,16 @@ add_library(solvespace-core STATIC
     ${solvespace_core_HEADERS}
     ${solvespace_core_SOURCES})
 
+add_dependencies(solvespace-core
+    q3d_header)
+
 target_link_libraries(solvespace-core
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY})
+    ${FREETYPE_LIBRARY}
+    flatbuffers)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core

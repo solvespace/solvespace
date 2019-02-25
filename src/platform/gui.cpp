@@ -94,6 +94,7 @@ std::vector<FileFilter> MeshFileFilters = {
     { CN_("file-type", "Wavefront OBJ mesh"), { "obj" } },
     { CN_("file-type", "Three.js-compatible mesh, with viewer"), { "html" } },
     { CN_("file-type", "Three.js-compatible mesh, mesh only"), { "js" } },
+    { CN_("file-type", "Q3D Object file"), { "q3do" } },
 };
 
 std::vector<FileFilter> SurfaceFileFilters = {

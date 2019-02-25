@@ -42,6 +42,10 @@ New export/import features:
   * Wavefront OBJ: a material file is exported alongside the model, containing
     mesh color information.
   * DXF/DWG: 3D DXF files are imported as construction entities, in 3d.
+  * Q3D: [Q3D](https://github.com/q3k/q3d/) triangle meshes can now be
+    exported. This format allows to easily hack on triangle mesh data created
+    in SolveSpace, supports colour information and is more space efficient than
+    most other formats.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows
