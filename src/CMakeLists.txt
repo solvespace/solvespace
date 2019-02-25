@@ -13,8 +13,6 @@ endif()
 
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 
-set(HAVE_Q3D ${ENABLE_Q3D})
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
@@ -81,7 +79,8 @@ include_directories(
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS})
+    ${CAIRO_INCLUDE_DIRS}
+    ${Q3D_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -213,29 +212,23 @@ add_library(solvespace-core STATIC
     ${solvespace_core_HEADERS}
     ${solvespace_core_SOURCES})
 
+add_dependencies(solvespace-core gen_q3d_header)
+
 target_link_libraries(solvespace-core
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY})
+    ${FREETYPE_LIBRARY}
+    flatbuffers)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core
         ${Backtrace_LIBRARY})
-    add_dependencies(solvespace-core gen_q3d_header)
-endif()
-
-if(ENABLE_Q3D)
-    target_link_libraries(solvespace-core
-        flatbuffers)
-    add_dependencies(solvespace-core gen_q3d_header)
-    include_directories(${Q3D_INCLUDE_DIR})
 endif()
 
 target_compile_options(solvespace-core
     PRIVATE ${COVERAGE_FLAGS})
-
 
 # solvespace translations
 

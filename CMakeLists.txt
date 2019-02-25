@@ -37,8 +37,6 @@ set(ENABLE_COVERAGE   OFF CACHE BOOL
     "Whether code coverage information will be collected")
 set(ENABLE_SANITIZERS OFF CACHE BOOL
     "Whether to enable Clang's AddressSanitizer and UndefinedBehaviorSanitizer")
-set(ENABLE_Q3D        ON CACHE BOOL
-    "Whether to enable Q3D file export")
 
 set(OPENGL 3 CACHE STRING "OpenGL version to use (one of: 1 3)")
 
@@ -300,28 +298,28 @@ if(ENABLE_COVERAGE)
     set(COVERAGE_LIBRARY --coverage)
 endif()
 
-if(ENABLE_Q3D)
-    set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
-    set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
-    set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
-    set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
-    add_subdirectory(extlib/flatbuffers
-                     ${CMAKE_CURRENT_BINARY_DIR}/extlib/flatbuffers
-                     EXCLUDE_FROM_ALL)
+# FlatBuffers
+set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
+set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
+set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
+set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
+add_subdirectory(extlib/flatbuffers
+                 ${CMAKE_CURRENT_BINARY_DIR}/extlib/flatbuffers
+                 EXCLUDE_FROM_ALL)
 
-    set(q3d_schema ${CMAKE_CURRENT_SOURCE_DIR}/extlib/q3d/object.fbs)
-    set(q3d_outdir ${CMAKE_CURRENT_BINARY_DIR}/extlib/q3d)
-    set(q3d_header ${q3d_outdir}/object_generated.h)
+# Buld Q3D header file from schema
+set(q3d_schema ${CMAKE_CURRENT_SOURCE_DIR}/extlib/q3d/object.fbs)
+set(q3d_outdir ${CMAKE_CURRENT_BINARY_DIR}/extlib/q3d)
+set(q3d_header ${q3d_outdir}/object_generated.h)
 
-    add_custom_command(
-        OUTPUT ${q3d_header}
-        COMMAND $<TARGET_FILE:flatc> --cpp --no-includes -o ${q3d_outdir}
-                ${q3d_schema}
-        DEPENDS flatc)
+add_custom_command(
+    OUTPUT ${q3d_header}
+    COMMAND $<TARGET_FILE:flatc> --cpp --no-includes -o ${q3d_outdir}
+            ${q3d_schema}
+    DEPENDS flatc)
 
-    add_custom_target(gen_q3d_header DEPENDS ${q3d_header})
-    set(Q3D_INCLUDE_DIR ${q3d_outdir})
-endif()
+add_custom_target(gen_q3d_header DEPENDS ${q3d_header})
+set(Q3D_INCLUDE_DIR ${q3d_outdir})
 
 # application components
 

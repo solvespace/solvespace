@@ -883,13 +883,6 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 //-----------------------------------------------------------------------------
 // Export the mesh as a Q3DO (https://github.com/q3k/q3d) file.
 //-----------------------------------------------------------------------------
-#ifndef HAVE_Q3D
-
-void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
-    Error("SolveSpace has been built without Q3D(O) support.");
-}
-
-#else // HAVE_Q3D
 
 #include "object_generated.h"
 void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
@@ -934,8 +927,6 @@ void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
     q3d::FinishObjectBuffer(builder, o);
     fwrite(builder.GetBufferPointer(), builder.GetSize(), 1, f);
 }
-
-#endif // HAVE_Q3D
 
 //-----------------------------------------------------------------------------
 // Export the mesh as Wavefront OBJ format. This requires us to reduce all the
