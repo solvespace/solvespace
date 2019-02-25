@@ -16,4 +16,7 @@
 #cmakedefine HAVE_BACKTRACE
 #define BACKTRACE_HEADER @BACKTRACE_HEADER@
 
+/* Do we have Q3D C++ stubs and the FlatBuffer library? */
+#cmakedefine HAVE_Q3D
+
 #endif

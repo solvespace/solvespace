@@ -4,6 +4,7 @@
 // Copyright 2018 whitequark
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
+#include "config.h"
 
 namespace SolveSpace {
 namespace Platform {
@@ -94,6 +95,9 @@ std::vector<FileFilter> MeshFileFilters = {
     { CN_("file-type", "Wavefront OBJ mesh"), { "obj" } },
     { CN_("file-type", "Three.js-compatible mesh, with viewer"), { "html" } },
     { CN_("file-type", "Three.js-compatible mesh, mesh only"), { "js" } },
+#ifdef HAVE_Q3D
+    { CN_("file-type", "Q3D Object file"), { "q3do" } },
+#endif
 };
 
 std::vector<FileFilter> SurfaceFileFilters = {

@@ -20,3 +20,9 @@
 [submodule "extlib/angle"]
 	path = extlib/angle
 	url = https://github.com/solvespace/angle
+[submodule "extlib/flatbuffers"]
+	path = extlib/flatbuffers
+	url = https://github.com/google/flatbuffers
+[submodule "extlib/q3d"]
+	path = extlib/q3d
+	url = https://github.com/q3k/q3d
