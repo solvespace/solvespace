@@ -79,8 +79,7 @@ include_directories(
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS}
-    ${Q3D_INCLUDE_DIR})
+    ${CAIRO_INCLUDE_DIRS})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -212,7 +211,11 @@ add_library(solvespace-core STATIC
     ${solvespace_core_HEADERS}
     ${solvespace_core_SOURCES})
 
-add_dependencies(solvespace-core gen_q3d_header)
+
+set(Q3D_HEADER_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
+add_subdirectory(${CMAKE_SOURCE_DIR}/extlib/q3d ${CMAKE_BINARY_DIR}/extlib/q3d)
+add_dependencies(solvespace-core q3d_header)
+include_directories(${Q3D_HEADER_DIR})
 
 target_link_libraries(solvespace-core
     dxfrw

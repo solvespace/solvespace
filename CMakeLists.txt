@@ -307,20 +307,6 @@ add_subdirectory(extlib/flatbuffers
                  ${CMAKE_CURRENT_BINARY_DIR}/extlib/flatbuffers
                  EXCLUDE_FROM_ALL)
 
-# Buld Q3D header file from schema
-set(q3d_schema ${CMAKE_CURRENT_SOURCE_DIR}/extlib/q3d/object.fbs)
-set(q3d_outdir ${CMAKE_CURRENT_BINARY_DIR}/extlib/q3d)
-set(q3d_header ${q3d_outdir}/object_generated.h)
-
-add_custom_command(
-    OUTPUT ${q3d_header}
-    COMMAND $<TARGET_FILE:flatc> --cpp --no-includes -o ${q3d_outdir}
-            ${q3d_schema}
-    DEPENDS flatc)
-
-add_custom_target(gen_q3d_header DEPENDS ${q3d_header})
-set(Q3D_INCLUDE_DIR ${q3d_outdir})
-
 # application components
 
 add_subdirectory(res)
