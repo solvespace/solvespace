@@ -159,14 +159,14 @@ template <class T>
 class List {
 public:
     T   *elem;
-    int  n;
-    int  elemsAllocated;
+    size_t  n;
+    size_t  elemsAllocated;
 
-    void ReserveMore(int howMuch) {
+    void ReserveMore(size_t howMuch) {
         if(n + howMuch > elemsAllocated) {
             elemsAllocated = n + howMuch;
             T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(elem[0]));
-            for(int i = 0; i < n; i++) {
+            for(size_t i = 0; i < n; ++i) {
                 new(&newElem[i]) T(std::move(elem[i]));
                 elem[i].~T();
             }

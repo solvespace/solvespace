@@ -29,6 +29,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <cstdint>
 
 // We declare these in advance instead of simply using FT_Library
 // (defined as typedef FT_LibraryRec_* FT_Library) because including

@@ -8,6 +8,7 @@
 #ifndef SOLVESPACE_POLYGON_H
 #define SOLVESPACE_POLYGON_H
 
+// Forward Declarations:
 class SPointList;
 class SPolygon;
 class SContour;
@@ -41,8 +42,9 @@ public:
     int    auxA, auxB;
     Vector a, b;
 
-    static SEdge From(Vector a, Vector b);
-    bool EdgeCrosses(Vector a, Vector b, Vector *pi=NULL, SPointList *spl=NULL) const;
+    static SEdge From(const Vector& a, const Vector& b);
+    bool EdgeCrosses(const Vector& ea, const Vector& eb, Vector *pi=NULL,
+                     SPointList *spl=NULL) const;
 };
 
 class SEdgeList {
@@ -50,16 +52,17 @@ public:
     List<SEdge>     l;
 
     void Clear();
-    void AddEdge(Vector a, Vector b, int auxA=0, int auxB=0, int tag=0);
-    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir=false) const;
-    bool AssembleContour(Vector first, Vector last, SContour *dest,
-                            SEdge *errorAt, bool keepDir) const;
-    int AnyEdgeCrossings(Vector a, Vector b,
+    void AddEdge(const Vector& a, const Vector& b, const int auxA = 0, const int auxB = 0,
+                 const int tag = 0);
+    bool AssemblePolygon(SPolygon *dest, SEdge *errorAt, const bool keepDir = false) const;
+    bool AssembleContour(const Vector& first, Vector last, const bool keepDir,
+                            SContour *dest, SEdge *errorAt) const;
+    size_t AnyEdgeCrossings(const Vector& a, const Vector& b,
         Vector *pi=NULL, SPointList *spl=NULL) const;
-    bool ContainsEdgeFrom(const SEdgeList *sel) const;
-    bool ContainsEdge(const SEdge *se) const;
+    bool ContainsEdgeFrom(const SEdgeList * const sel) const;
+    bool ContainsEdge(const SEdge * const se) const;
     void CullExtraneousEdges();
-    void MergeCollinearSegments(Vector a, Vector b);
+    void MergeCollinearSegments(const Vector& a, const Vector& b);
 };
 
 // A kd-tree element needs to go on a side of a node if it's when KDTREE_EPS
@@ -84,10 +87,10 @@ public:
 
     SEdgeLl         *edges;
 
-    static SKdNodeEdges *From(SEdgeList *sel);
-    static SKdNodeEdges *From(SEdgeLl *sell);
+    static SKdNodeEdges *From(SEdgeList * const sel);
+    static SKdNodeEdges *From(SEdgeLl * const sell);
     static SKdNodeEdges *Alloc();
-    int AnyEdgeCrossings(Vector a, Vector b, int cnt,
+    size_t AnyEdgeCrossings(const Vector& a, const Vector& b, const size_t cnt,
         Vector *pi=NULL, SPointList *spl=NULL) const;
 };
 
@@ -106,10 +109,10 @@ public:
     List<SPoint>    l;
 
     void Clear();
-    bool ContainsPoint(Vector pt) const;
-    int IndexForPoint(Vector pt) const;
-    void IncrementTagFor(Vector pt);
-    void Add(Vector pt);
+    bool ContainsPoint(const Vector& pt) const;
+    int IndexForPoint(const Vector& pt) const;
+    void IncrementTagFor(const Vector& pt);
+    void Add(const Vector& pt);
 };
 
 class SContour {
@@ -119,15 +122,15 @@ public:
     Vector          xminPt;
     List<SPoint>    l;
 
-    void AddPoint(Vector p);
-    void MakeEdgesInto(SEdgeList *el) const;
+    void AddPoint(const Vector& p);
+    void MakeEdgesInto(SEdgeList * const el) const;
     void Reverse();
     Vector ComputeNormal() const;
-    double SignedAreaProjdToNormal(Vector n) const;
-    bool IsClockwiseProjdToNormal(Vector n) const;
-    bool ContainsPointProjdToNormal(Vector n, Vector p) const;
-    void OffsetInto(SContour *dest, double r) const;
-    void CopyInto(SContour *dest) const;
+    double SignedAreaProjdToNormal(const Vector& n) const;
+    bool IsClockwiseProjdToNormal(const Vector& n) const;
+    bool ContainsPointProjdToNormal(const Vector& n, const Vector& p) const;
+    void OffsetInto(SContour *dest, const double r) const;
+    void CopyInto(SContour * const dest) const;
     void FindPointWithMinX();
     Vector AnyEdgeMidpoint() const;
 
@@ -149,20 +152,21 @@ public:
 
     Vector ComputeNormal() const;
     void AddEmptyContour();
-    int WindingNumberForPoint(Vector p) const;
+    size_t WindingNumberForPoint(const Vector& p) const;
     double SignedArea() const;
-    bool ContainsPoint(Vector p) const;
-    void MakeEdgesInto(SEdgeList *el) const;
+    bool ContainsPoint(const Vector& p) const;
+    void MakeEdgesInto(SEdgeList * const el) const;
     void FixContourDirections();
     void Clear();
     bool SelfIntersecting(Vector *intersectsAt) const;
     bool IsEmpty() const;
     Vector AnyPoint() const;
-    void OffsetInto(SPolygon *dest, double r) const;
+    void OffsetInto(SPolygon *dest, const double r) const;
     void UvTriangulateInto(SMesh *m, SSurface *srf);
     void UvGridTriangulateInto(SMesh *m, SSurface *srf);
     void TriangulateInto(SMesh *m) const;
-    void InverseTransformInto(SPolygon *sp, Vector u, Vector v, Vector n) const;
+    void InverseTransformInto(SPolygon *sp, const Vector& u, const Vector& v,
+                              const Vector& n) const;
 };
 
 class STriangle {
@@ -180,14 +184,14 @@ public:
         Vector normals[3];
     };
 
-    static STriangle From(STriMeta meta, Vector a, Vector b, Vector c);
+    static STriangle From(const STriMeta& meta, const Vector& a, const Vector& b, const Vector& c);
     Vector Normal() const;
     void FlipNormal();
     double MinAltitude() const;
     int WindingNumberForPoint(Vector p) const;
-    bool ContainsPoint(Vector p) const;
-    bool ContainsPointProjd(Vector n, Vector p) const;
-    STriangle Transform(Vector o, Vector u, Vector v) const;
+    bool ContainsPoint(const Vector& p) const;
+    bool ContainsPointProjd(const Vector& n, const Vector& p) const;
+    STriangle Transform(const Vector& u, const Vector& v, const Vector& n) const;
     bool Raytrace(const Vector &rayPoint, const Vector &rayDir,
                   double *t, Vector *inters) const;
     double SignedVolume() const;
