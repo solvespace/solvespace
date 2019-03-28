@@ -27,7 +27,3 @@ deploy:
     artifact: solvespace.exe,solvespace-cli.exe,solvespace.pdb
     on:
       appveyor_repo_tag: true
-on_success:
-  - 'python .appveyor/irc-notify.py #solvespace {repo_name}#{build_version} ({branch} - {short_commit} : {author}): {color_green}The build passed.,Change view : {commit_url},Build details : {build_url}'
-on_failure:
-  - 'python .appveyor/irc-notify.py #solvespace {repo_name}#{build_version} ({branch} - {short_commit} : {author}): {color_red}The build failed.,Change view : {commit_url},Build details : {build_url}'
