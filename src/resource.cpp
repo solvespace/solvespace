@@ -1068,8 +1068,9 @@ int PluralExpr::Token::Precedence() {
                     return 3;
 
                 case Op::NONE:
-                    ssassert(false, "Unexpected operator");
+                    ;
             }
+            ssassert(false, "Unexpected operator");
 
         case Type::QUERY:
         case Type::COLON:

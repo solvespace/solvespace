@@ -703,7 +703,8 @@ void GraphicsWindow::MenuView(Command id) {
             if(SS.GW.LockedInWorkplane()) {
                 SS.GW.AnimateOntoWorkplane();
                 break;
-            }  // if not in 2d mode fall through and use ORTHO logic
+            }  // if not in 2d mode use ORTHO logic
+            // fallthrough
         case Command::NEAREST_ORTHO:
         case Command::NEAREST_ISO: {
             static const Vector ortho[3] = {

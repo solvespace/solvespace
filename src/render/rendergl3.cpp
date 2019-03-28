@@ -277,7 +277,7 @@ void OpenGl3Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
-    GLenum format;
+    GLenum format = 0;
     switch(pm->format) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;
@@ -340,7 +340,7 @@ void OpenGl3Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
         return;
     }
 
-    const char *patternSeq;
+    const char *patternSeq = NULL;
     Stroke s = *stroke;
     s.stipplePattern = StipplePattern::CONTINUOUS;
     hcs = GetStroke(s);

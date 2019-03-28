@@ -332,7 +332,7 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
 
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;
-    int bestZIndex;
+    int bestZIndex = 0;
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {

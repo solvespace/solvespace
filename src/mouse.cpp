@@ -293,6 +293,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             } else {
                 SS.GW.pending.hasSuggestion = false;
             }
+            // fallthrough
         case Pending::DRAGGING_NEW_POINT:
             UpdateDraggedPoint(pending.point, x, y);
             HitTestMakeSelection(mp);
