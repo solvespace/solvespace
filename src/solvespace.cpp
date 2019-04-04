@@ -10,116 +10,140 @@
 SolveSpaceUI SolveSpace::SS = {};
 Sketch SolveSpace::SK = {};
 
-Platform::Path SolveSpace::RecentFile[MAX_RECENT] = {};
-
 void SolveSpaceUI::Init() {
 #if !defined(HEADLESS)
     // Check that the resource system works.
     dbp("%s", LoadString("banner.txt").data());
 #endif
 
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     SS.tangentArcRadius = 10.0;
 
     // Then, load the registry settings.
     // Default list of colors for the model material
-    modelColor[0] = CnfThawColor(RGBi(150, 150, 150), "ModelColor_0");
-    modelColor[1] = CnfThawColor(RGBi(100, 100, 100), "ModelColor_1");
-    modelColor[2] = CnfThawColor(RGBi( 30,  30,  30), "ModelColor_2");
-    modelColor[3] = CnfThawColor(RGBi(150,   0,   0), "ModelColor_3");
-    modelColor[4] = CnfThawColor(RGBi(  0, 100,   0), "ModelColor_4");
-    modelColor[5] = CnfThawColor(RGBi(  0,  80,  80), "ModelColor_5");
-    modelColor[6] = CnfThawColor(RGBi(  0,   0, 130), "ModelColor_6");
-    modelColor[7] = CnfThawColor(RGBi( 80,   0,  80), "ModelColor_7");
+    modelColor[0] = settings->ThawColor("ModelColor_0", RGBi(150, 150, 150));
+    modelColor[1] = settings->ThawColor("ModelColor_1", RGBi(100, 100, 100));
+    modelColor[2] = settings->ThawColor("ModelColor_2", RGBi( 30,  30,  30));
+    modelColor[3] = settings->ThawColor("ModelColor_3", RGBi(150,   0,   0));
+    modelColor[4] = settings->ThawColor("ModelColor_4", RGBi(  0, 100,   0));
+    modelColor[5] = settings->ThawColor("ModelColor_5", RGBi(  0,  80,  80));
+    modelColor[6] = settings->ThawColor("ModelColor_6", RGBi(  0,   0, 130));
+    modelColor[7] = settings->ThawColor("ModelColor_7", RGBi( 80,   0,  80));
     // Light intensities
-    lightIntensity[0] = CnfThawFloat(1.0f, "LightIntensity_0");
-    lightIntensity[1] = CnfThawFloat(0.5f, "LightIntensity_1");
+    lightIntensity[0] = settings->ThawFloat("LightIntensity_0", 1.0);
+    lightIntensity[1] = settings->ThawFloat("LightIntensity_1", 0.5);
     ambientIntensity = 0.3; // no setting for that yet
     // Light positions
-    lightDir[0].x = CnfThawFloat(-1.0f, "LightDir_0_Right"     );
-    lightDir[0].y = CnfThawFloat( 1.0f, "LightDir_0_Up"        );
-    lightDir[0].z = CnfThawFloat( 0.0f, "LightDir_0_Forward"   );
-    lightDir[1].x = CnfThawFloat( 1.0f, "LightDir_1_Right"     );
-    lightDir[1].y = CnfThawFloat( 0.0f, "LightDir_1_Up"        );
-    lightDir[1].z = CnfThawFloat( 0.0f, "LightDir_1_Forward"   );
+    lightDir[0].x = settings->ThawFloat("LightDir_0_Right",   -1.0);
+    lightDir[0].y = settings->ThawFloat("LightDir_0_Up",       1.0);
+    lightDir[0].z = settings->ThawFloat("LightDir_0_Forward",  0.0);
+    lightDir[1].x = settings->ThawFloat("LightDir_1_Right",    1.0);
+    lightDir[1].y = settings->ThawFloat("LightDir_1_Up",       0.0);
+    lightDir[1].z = settings->ThawFloat("LightDir_1_Forward",  0.0);
 
     exportMode = false;
     // Chord tolerance
-    chordTol = CnfThawFloat(0.5f, "ChordTolerancePct");
+    chordTol = settings->ThawFloat("ChordTolerancePct", 0.5);
     // Max pwl segments to generate
-    maxSegments = CnfThawInt(10, "MaxSegments");
+    maxSegments = settings->ThawInt("MaxSegments", 10);
     // Chord tolerance
-    exportChordTol = CnfThawFloat(0.1f, "ExportChordTolerance");
+    exportChordTol = settings->ThawFloat("ExportChordTolerance", 0.1);
     // Max pwl segments to generate
-    exportMaxSegments = CnfThawInt(64, "ExportMaxSegments");
+    exportMaxSegments = settings->ThawInt("ExportMaxSegments", 64);
     // View units
-    viewUnits = (Unit)CnfThawInt((uint32_t)Unit::MM, "ViewUnits");
+    viewUnits = (Unit)settings->ThawInt("ViewUnits", (uint32_t)Unit::MM);
     // Number of digits after the decimal point
-    afterDecimalMm = CnfThawInt(2, "AfterDecimalMm");
-    afterDecimalInch = CnfThawInt(3, "AfterDecimalInch");
+    afterDecimalMm = settings->ThawInt("AfterDecimalMm", 2);
+    afterDecimalInch = settings->ThawInt("AfterDecimalInch", 3);
     // Camera tangent (determines perspective)
-    cameraTangent = CnfThawFloat(0.3f/1e3f, "CameraTangent");
+    cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3);
     // Grid spacing
-    gridSpacing = CnfThawFloat(5.0f, "GridSpacing");
+    gridSpacing = settings->ThawFloat("GridSpacing", 5.0);
     // Export scale factor
-    exportScale = CnfThawFloat(1.0f, "ExportScale");
+    exportScale = settings->ThawFloat("ExportScale", 1.0);
     // Export offset (cutter radius comp)
-    exportOffset = CnfThawFloat(0.0f, "ExportOffset");
+    exportOffset = settings->ThawFloat("ExportOffset", 0.0);
     // Rewrite exported colors close to white into black (assuming white bg)
-    fixExportColors = CnfThawBool(true, "FixExportColors");
+    fixExportColors = settings->ThawBool("FixExportColors", true);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    drawBackFaces = CnfThawBool(true, "DrawBackFaces");
-    // Check that contours are closed and not self-intersecting
-    checkClosedContour = CnfThawBool(true, "CheckClosedContour");
+    drawBackFaces = settings->ThawBool("DrawBackFaces", true);
     // Use turntable mouse navigation
-    turntableNav = CnfThawBool(false, "TurntableNav");
+    turntableNav = settings->ThawBool("TurntableNav", false);
+    // Check that contours are closed and not self-intersecting
+    checkClosedContour = settings->ThawBool("CheckClosedContour", true);
+    // Enable automatic constrains for lines
+    automaticLineConstraints = settings->ThawBool("AutomaticLineConstraints", true);
     // Draw closed polygons areas
-    showContourAreas = CnfThawBool(false, "ShowContourAreas");
+    showContourAreas = settings->ThawBool("ShowContourAreas", false);
     // Export shaded triangles in a 2d view
-    exportShadedTriangles = CnfThawBool(true, "ExportShadedTriangles");
+    exportShadedTriangles = settings->ThawBool("ExportShadedTriangles", true);
     // Export pwl curves (instead of exact) always
-    exportPwlCurves = CnfThawBool(false, "ExportPwlCurves");
+    exportPwlCurves = settings->ThawBool("ExportPwlCurves", false);
     // Background color on-screen
-    backgroundColor = CnfThawColor(RGBi(0, 0, 0), "BackgroundColor");
+    backgroundColor = settings->ThawColor("BackgroundColor", RGBi(0, 0, 0));
     // Whether export canvas size is fixed or derived from bbox
-    exportCanvasSizeAuto = CnfThawBool(true, "ExportCanvasSizeAuto");
+    exportCanvasSizeAuto = settings->ThawBool("ExportCanvasSizeAuto", true);
     // Margins for automatic canvas size
-    exportMargin.left   = CnfThawFloat(5.0f, "ExportMargin_Left");
-    exportMargin.right  = CnfThawFloat(5.0f, "ExportMargin_Right");
-    exportMargin.bottom = CnfThawFloat(5.0f, "ExportMargin_Bottom");
-    exportMargin.top    = CnfThawFloat(5.0f, "ExportMargin_Top");
+    exportMargin.left   = settings->ThawFloat("ExportMargin_Left",   5.0);
+    exportMargin.right  = settings->ThawFloat("ExportMargin_Right",  5.0);
+    exportMargin.bottom = settings->ThawFloat("ExportMargin_Bottom", 5.0);
+    exportMargin.top    = settings->ThawFloat("ExportMargin_Top",    5.0);
     // Dimensions for fixed canvas size
-    exportCanvas.width  = CnfThawFloat(100.0f, "ExportCanvas_Width");
-    exportCanvas.height = CnfThawFloat(100.0f, "ExportCanvas_Height");
-    exportCanvas.dx     = CnfThawFloat(  5.0f, "ExportCanvas_Dx");
-    exportCanvas.dy     = CnfThawFloat(  5.0f, "ExportCanvas_Dy");
+    exportCanvas.width  = settings->ThawFloat("ExportCanvas_Width",  100.0);
+    exportCanvas.height = settings->ThawFloat("ExportCanvas_Height", 100.0);
+    exportCanvas.dx     = settings->ThawFloat("ExportCanvas_Dx",     5.0);
+    exportCanvas.dy     = settings->ThawFloat("ExportCanvas_Dy",     5.0);
     // Extra parameters when exporting G code
-    gCode.depth         = CnfThawFloat(10.0f, "GCode_Depth");
-    gCode.passes        = CnfThawInt(1, "GCode_Passes");
-    gCode.feed          = CnfThawFloat(10.0f, "GCode_Feed");
-    gCode.plungeFeed    = CnfThawFloat(10.0f, "GCode_PlungeFeed");
+    gCode.depth         = settings->ThawFloat("GCode_Depth", 10.0);
+    gCode.passes        = settings->ThawInt("GCode_Passes", 1);
+    gCode.feed          = settings->ThawFloat("GCode_Feed", 10.0);
+    gCode.plungeFeed    = settings->ThawFloat("GCode_PlungeFeed", 10.0);
     // Show toolbar in the graphics window
-    showToolbar = CnfThawBool(true, "ShowToolbar");
+    showToolbar = settings->ThawBool("ShowToolbar", true);
     // Recent files menus
     for(size_t i = 0; i < MAX_RECENT; i++) {
-        RecentFile[i] = Platform::Path::From(CnfThawString("", "RecentFile_" + std::to_string(i)));
+        std::string rawPath = settings->ThawString("RecentFile_" + std::to_string(i), "");
+        if(rawPath.empty()) continue;
+        recentFiles.push_back(Platform::Path::From(rawPath));
     }
-    RefreshRecentMenus();
     // Autosave timer
-    autosaveInterval = CnfThawInt(5, "AutosaveInterval");
+    autosaveInterval = settings->ThawInt("AutosaveInterval", 5);
     // Locale
-    std::string locale = CnfThawString("", "Locale");
+    std::string locale = settings->ThawString("Locale", "");
     if(!locale.empty()) {
         SetLocale(locale);
     }
+
+    generateAllTimer = Platform::CreateTimer();
+    generateAllTimer->onTimeout = std::bind(&SolveSpaceUI::GenerateAll, &SS, Generate::DIRTY,
+                                            /*andFindFree=*/false, /*genForBBox=*/false);
+
+    showTWTimer = Platform::CreateTimer();
+    showTWTimer->onTimeout = std::bind(&TextWindow::Show, &TW);
+
+    autosaveTimer = Platform::CreateTimer();
+    autosaveTimer->onTimeout = std::bind(&SolveSpaceUI::Autosave, &SS);
 
     // The default styles (colors, line widths, etc.) are also stored in the
     // configuration file, but we will automatically load those as we need
     // them.
 
-    SetAutosaveTimerFor(autosaveInterval);
+    ScheduleAutosave();
 
     NewFile();
     AfterNewFile();
+
+    if(TW.window && GW.window) {
+        TW.window->ThawPosition(settings, "TextWindow");
+        GW.window->ThawPosition(settings, "GraphicsWindow");
+        TW.window->SetVisible(true);
+        GW.window->SetVisible(true);
+        GW.window->Focus();
+
+        // Do this once the window is created.
+        Request3DConnexionEventsForWindow(GW.window);
+    }
 }
 
 bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
@@ -130,7 +154,19 @@ bool SolveSpaceUI::LoadAutosaveFor(const Platform::Path &filename) {
         return false;
     fclose(f);
 
-    if(LoadAutosaveYesNo() == DIALOG_YES) {
+    Platform::MessageDialogRef dialog = CreateMessageDialog(GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Autosave Available"));
+    dialog->SetMessage(C_("dialog", "An autosave file is available for this sketch."));
+    dialog->SetDescription(C_("dialog", "Do you want to load the autosave file instead?"));
+    dialog->AddButton(C_("button", "&Load autosave"), MessageDialog::Response::YES,
+                      /*isDefault=*/true);
+    dialog->AddButton(C_("button", "Do&n't Load"), MessageDialog::Response::NO);
+
+    // FIXME(async): asyncify this call
+    if(dialog->RunModal() == MessageDialog::Response::YES) {
         unsaved = true;
         return LoadFromFile(autosaveFile, /*canCancel=*/true);
     }
@@ -154,103 +190,109 @@ bool SolveSpaceUI::Load(const Platform::Path &filename) {
 }
 
 void SolveSpaceUI::Exit() {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
+    GW.window->FreezePosition(settings, "GraphicsWindow");
+    TW.window->FreezePosition(settings, "TextWindow");
+
     // Recent files
-    for(size_t i = 0; i < MAX_RECENT; i++)
-        CnfFreezeString(RecentFile[i].raw, "RecentFile_" + std::to_string(i));
+    for(size_t i = 0; i < MAX_RECENT; i++) {
+        std::string rawPath;
+        if(recentFiles.size() > i) {
+            rawPath = recentFiles[i].raw;
+        }
+        settings->FreezeString("RecentFile_" + std::to_string(i), rawPath);
+    }
     // Model colors
     for(size_t i = 0; i < MODEL_COLORS; i++)
-        CnfFreezeColor(modelColor[i], "ModelColor_" + std::to_string(i));
+        settings->FreezeColor("ModelColor_" + std::to_string(i), modelColor[i]);
     // Light intensities
-    CnfFreezeFloat((float)lightIntensity[0], "LightIntensity_0");
-    CnfFreezeFloat((float)lightIntensity[1], "LightIntensity_1");
+    settings->FreezeFloat("LightIntensity_0", (float)lightIntensity[0]);
+    settings->FreezeFloat("LightIntensity_1", (float)lightIntensity[1]);
     // Light directions
-    CnfFreezeFloat((float)lightDir[0].x, "LightDir_0_Right");
-    CnfFreezeFloat((float)lightDir[0].y, "LightDir_0_Up");
-    CnfFreezeFloat((float)lightDir[0].z, "LightDir_0_Forward");
-    CnfFreezeFloat((float)lightDir[1].x, "LightDir_1_Right");
-    CnfFreezeFloat((float)lightDir[1].y, "LightDir_1_Up");
-    CnfFreezeFloat((float)lightDir[1].z, "LightDir_1_Forward");
+    settings->FreezeFloat("LightDir_0_Right",   (float)lightDir[0].x);
+    settings->FreezeFloat("LightDir_0_Up",      (float)lightDir[0].y);
+    settings->FreezeFloat("LightDir_0_Forward", (float)lightDir[0].z);
+    settings->FreezeFloat("LightDir_1_Right",   (float)lightDir[1].x);
+    settings->FreezeFloat("LightDir_1_Up",      (float)lightDir[1].y);
+    settings->FreezeFloat("LightDir_1_Forward", (float)lightDir[1].z);
     // Chord tolerance
-    CnfFreezeFloat((float)chordTol, "ChordTolerancePct");
+    settings->FreezeFloat("ChordTolerancePct", (float)chordTol);
     // Max pwl segments to generate
-    CnfFreezeInt((uint32_t)maxSegments, "MaxSegments");
+    settings->FreezeInt("MaxSegments", (uint32_t)maxSegments);
     // Export Chord tolerance
-    CnfFreezeFloat((float)exportChordTol, "ExportChordTolerance");
+    settings->FreezeFloat("ExportChordTolerance", (float)exportChordTol);
     // Export Max pwl segments to generate
-    CnfFreezeInt((uint32_t)exportMaxSegments, "ExportMaxSegments");
+    settings->FreezeInt("ExportMaxSegments", (uint32_t)exportMaxSegments);
     // View units
-    CnfFreezeInt((uint32_t)viewUnits, "ViewUnits");
+    settings->FreezeInt("ViewUnits", (uint32_t)viewUnits);
     // Number of digits after the decimal point
-    CnfFreezeInt((uint32_t)afterDecimalMm, "AfterDecimalMm");
-    CnfFreezeInt((uint32_t)afterDecimalInch, "AfterDecimalInch");
+    settings->FreezeInt("AfterDecimalMm",   (uint32_t)afterDecimalMm);
+    settings->FreezeInt("AfterDecimalInch", (uint32_t)afterDecimalInch);
     // Camera tangent (determines perspective)
-    CnfFreezeFloat((float)cameraTangent, "CameraTangent");
+    settings->FreezeFloat("CameraTangent", (float)cameraTangent);
     // Grid spacing
-    CnfFreezeFloat(gridSpacing, "GridSpacing");
+    settings->FreezeFloat("GridSpacing", gridSpacing);
     // Export scale
-    CnfFreezeFloat(exportScale, "ExportScale");
+    settings->FreezeFloat("ExportScale", exportScale);
     // Export offset (cutter radius comp)
-    CnfFreezeFloat(exportOffset, "ExportOffset");
+    settings->FreezeFloat("ExportOffset", exportOffset);
     // Rewrite exported colors close to white into black (assuming white bg)
-    CnfFreezeBool(fixExportColors, "FixExportColors");
+    settings->FreezeBool("FixExportColors", fixExportColors);
     // Draw back faces of triangles (when mesh is leaky/self-intersecting)
-    CnfFreezeBool(drawBackFaces, "DrawBackFaces");
+    settings->FreezeBool("DrawBackFaces", drawBackFaces);
     // Draw closed polygons areas
-    CnfFreezeBool(showContourAreas, "ShowContourAreas");
+    settings->FreezeBool("ShowContourAreas", showContourAreas);
     // Check that contours are closed and not self-intersecting
-    CnfFreezeBool(checkClosedContour, "CheckClosedContour");
+    settings->FreezeBool("CheckClosedContour", checkClosedContour);
     // Use turntable mouse navigation
-    CnfFreezeBool(turntableNav, "TurntableNav");
+    settings->FreezeBool("TurntableNav", turntableNav);
+    // Enable automatic constrains for lines
+    settings->FreezeBool("AutomaticLineConstraints", automaticLineConstraints);
     // Export shaded triangles in a 2d view
-    CnfFreezeBool(exportShadedTriangles, "ExportShadedTriangles");
+    settings->FreezeBool("ExportShadedTriangles", exportShadedTriangles);
     // Export pwl curves (instead of exact) always
-    CnfFreezeBool(exportPwlCurves, "ExportPwlCurves");
+    settings->FreezeBool("ExportPwlCurves", exportPwlCurves);
     // Background color on-screen
-    CnfFreezeColor(backgroundColor, "BackgroundColor");
+    settings->FreezeColor("BackgroundColor", backgroundColor);
     // Whether export canvas size is fixed or derived from bbox
-    CnfFreezeBool(exportCanvasSizeAuto, "ExportCanvasSizeAuto");
+    settings->FreezeBool("ExportCanvasSizeAuto", exportCanvasSizeAuto);
     // Margins for automatic canvas size
-    CnfFreezeFloat(exportMargin.left,   "ExportMargin_Left");
-    CnfFreezeFloat(exportMargin.right,  "ExportMargin_Right");
-    CnfFreezeFloat(exportMargin.bottom, "ExportMargin_Bottom");
-    CnfFreezeFloat(exportMargin.top,    "ExportMargin_Top");
+    settings->FreezeFloat("ExportMargin_Left",   exportMargin.left);
+    settings->FreezeFloat("ExportMargin_Right",  exportMargin.right);
+    settings->FreezeFloat("ExportMargin_Bottom", exportMargin.bottom);
+    settings->FreezeFloat("ExportMargin_Top",    exportMargin.top);
     // Dimensions for fixed canvas size
-    CnfFreezeFloat(exportCanvas.width,  "ExportCanvas_Width");
-    CnfFreezeFloat(exportCanvas.height, "ExportCanvas_Height");
-    CnfFreezeFloat(exportCanvas.dx,     "ExportCanvas_Dx");
-    CnfFreezeFloat(exportCanvas.dy,     "ExportCanvas_Dy");
+    settings->FreezeFloat("ExportCanvas_Width",  exportCanvas.width);
+    settings->FreezeFloat("ExportCanvas_Height", exportCanvas.height);
+    settings->FreezeFloat("ExportCanvas_Dx",     exportCanvas.dx);
+    settings->FreezeFloat("ExportCanvas_Dy",     exportCanvas.dy);
      // Extra parameters when exporting G code
-    CnfFreezeFloat(gCode.depth,         "GCode_Depth");
-    CnfFreezeInt(gCode.passes,          "GCode_Passes");
-    CnfFreezeFloat(gCode.feed,          "GCode_Feed");
-    CnfFreezeFloat(gCode.plungeFeed,    "GCode_PlungeFeed");
+    settings->FreezeFloat("GCode_Depth", gCode.depth);
+    settings->FreezeInt("GCode_Passes", gCode.passes);
+    settings->FreezeFloat("GCode_Feed", gCode.feed);
+    settings->FreezeFloat("GCode_PlungeFeed", gCode.plungeFeed);
     // Show toolbar in the graphics window
-    CnfFreezeBool(showToolbar, "ShowToolbar");
+    settings->FreezeBool("ShowToolbar", showToolbar);
     // Autosave timer
-    CnfFreezeInt(autosaveInterval, "AutosaveInterval");
+    settings->FreezeInt("AutosaveInterval", autosaveInterval);
 
     // And the default styles, colors and line widths and such.
-    Style::FreezeDefaultStyles();
+    Style::FreezeDefaultStyles(settings);
 
-    ExitNow();
+    Platform::ExitGui();
 }
 
 void SolveSpaceUI::ScheduleGenerateAll() {
-    if(!later.scheduled) ScheduleLater();
-    later.scheduled = true;
-    later.generateAll = true;
+    generateAllTimer->RunAfterProcessingEvents();
 }
 
 void SolveSpaceUI::ScheduleShowTW() {
-    if(!later.scheduled) ScheduleLater();
-    later.scheduled = true;
-    later.showTW = true;
+    showTWTimer->RunAfterProcessingEvents();
 }
 
-void SolveSpaceUI::DoLater() {
-    if(later.generateAll) GenerateAll();
-    if(later.showTW) TW.Show();
-    later = {};
+void SolveSpaceUI::ScheduleAutosave() {
+    autosaveTimer->RunAfter(autosaveInterval * 60 * 1000);
 }
 
 double SolveSpaceUI::MmPerUnit() {
@@ -335,51 +377,52 @@ void SolveSpaceUI::AfterNewFile() {
 
     GenerateAll(Generate::ALL);
 
-    TW.Init();
     GW.Init();
+    TW.Init();
 
     unsaved = false;
 
-    int w, h;
-    GetGraphicsWindowSize(&w, &h);
-    GW.width = w;
-    GW.height = h;
-
-    GW.ZoomToFit(/*includingInvisibles=*/false);
+    GW.ZoomToFit();
 
     // Create all the default styles; they'll get created on the fly anyways,
     // but can't hurt to do it now.
     Style::CreateAllDefaultStyles();
 
-    UpdateWindowTitle();
+    UpdateWindowTitles();
 }
 
-void SolveSpaceUI::RemoveFromRecentList(const Platform::Path &filename) {
-    int dest = 0;
-    for(int src = 0; src < (int)MAX_RECENT; src++) {
-        if(!filename.Equals(RecentFile[src])) {
-            if(src != dest) RecentFile[dest] = RecentFile[src];
-            dest++;
-        }
-    }
-    while(dest < (int)MAX_RECENT) RecentFile[dest++].Clear();
-    RefreshRecentMenus();
-}
 void SolveSpaceUI::AddToRecentList(const Platform::Path &filename) {
-    RemoveFromRecentList(filename);
-
-    for(int src = MAX_RECENT - 2; src >= 0; src--) {
-        RecentFile[src+1] = RecentFile[src];
+    auto it = std::find_if(recentFiles.begin(), recentFiles.end(),
+                           [&](const Platform::Path &p) { return p.Equals(filename); });
+    if(it != recentFiles.end()) {
+        recentFiles.erase(it);
     }
-    RecentFile[0] = filename;
-    RefreshRecentMenus();
+
+    if(recentFiles.size() > MAX_RECENT) {
+        recentFiles.erase(recentFiles.begin() + MAX_RECENT);
+    }
+
+    recentFiles.insert(recentFiles.begin(), filename);
+    GW.PopulateRecentFiles();
 }
 
 bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
+    Platform::SettingsRef settings = Platform::GetSettings();
     Platform::Path newSaveFile = saveFile;
 
     if(saveAs || saveFile.IsEmpty()) {
-        if(!GetSaveFile(&newSaveFile, "", SlvsFileFilter)) return false;
+        Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(GW.window);
+        dialog->AddFilter(C_("file-type", "SolveSpace models"), { "slvs" });
+        dialog->ThawChoices(settings, "Sketch");
+        if(!newSaveFile.IsEmpty()) {
+            dialog->SetFilename(newSaveFile);
+        }
+        if(dialog->RunModal()) {
+            dialog->FreezeChoices(settings, "Sketch");
+            newSaveFile = dialog->GetFilename();
+        } else {
+            return false;
+        }
     }
 
     if(SaveToFile(newSaveFile)) {
@@ -393,14 +436,13 @@ bool SolveSpaceUI::GetFilenameAndSave(bool saveAs) {
     }
 }
 
-bool SolveSpaceUI::Autosave()
+void SolveSpaceUI::Autosave()
 {
-    SetAutosaveTimerFor(autosaveInterval);
+    ScheduleAutosave();
 
-    if(!saveFile.IsEmpty() && unsaved)
-        return SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
-
-    return false;
+    if(!saveFile.IsEmpty() && unsaved) {
+        SaveToFile(saveFile.WithExtension(AUTOSAVE_EXT));
+    }
 }
 
 void SolveSpaceUI::RemoveAutosave()
@@ -412,33 +454,54 @@ void SolveSpaceUI::RemoveAutosave()
 bool SolveSpaceUI::OkayToStartNewFile() {
     if(!unsaved) return true;
 
-    switch(SaveFileYesNoCancel()) {
-        case DIALOG_YES:
+    Platform::MessageDialogRef dialog = CreateMessageDialog(GW.window);
+
+    using Platform::MessageDialog;
+    dialog->SetType(MessageDialog::Type::QUESTION);
+    dialog->SetTitle(C_("title", "Modified File"));
+    if(!SolveSpace::SS.saveFile.IsEmpty()) {
+        dialog->SetMessage(ssprintf(C_("dialog", "Do you want to save the changes you made to "
+                                                 "the sketch “%s”?"), saveFile.raw.c_str()));
+    } else {
+        dialog->SetMessage(C_("dialog", "Do you want to save the changes you made to "
+                                        "the new sketch?"));
+    }
+    dialog->SetDescription(C_("dialog", "Your changes will be lost if you don't save them."));
+    dialog->AddButton(C_("button", "&Save"), MessageDialog::Response::YES,
+                      /*isDefault=*/true);
+    dialog->AddButton(C_("button", "Do&n't Save"), MessageDialog::Response::NO);
+    dialog->AddButton(C_("button", "&Cancel"), MessageDialog::Response::CANCEL);
+
+    // FIXME(async): asyncify this call
+    switch(dialog->RunModal()) {
+        case MessageDialog::Response::YES:
             return GetFilenameAndSave(/*saveAs=*/false);
 
-        case DIALOG_NO:
+        case MessageDialog::Response::NO:
             RemoveAutosave();
             return true;
 
-        case DIALOG_CANCEL:
+        default:
             return false;
     }
-    ssassert(false, "Unexpected dialog choice");
 }
 
-void SolveSpaceUI::UpdateWindowTitle() {
-    SetCurrentFilename(saveFile);
+void SolveSpaceUI::UpdateWindowTitles() {
+    if(!GW.window || !TW.window) return;
+
+    if(saveFile.IsEmpty()) {
+        GW.window->SetTitle(C_("title", "(new sketch)"));
+    } else {
+        if(!GW.window->SetTitleForFilename(saveFile)) {
+            GW.window->SetTitle(saveFile.raw);
+        }
+    }
+
+    TW.window->SetTitle(C_("title", "Property Browser"));
 }
 
 void SolveSpaceUI::MenuFile(Command id) {
-    if((uint32_t)id >= (uint32_t)Command::RECENT_OPEN &&
-       (uint32_t)id < ((uint32_t)Command::RECENT_OPEN+MAX_RECENT)) {
-        if(!SS.OkayToStartNewFile()) return;
-
-        Platform::Path newFile = RecentFile[(uint32_t)id - (uint32_t)Command::RECENT_OPEN];
-        SS.Load(newFile);
-        return;
-    }
+    Platform::SettingsRef settings = Platform::GetSettings();
 
     switch(id) {
         case Command::NEW:
@@ -452,9 +515,12 @@ void SolveSpaceUI::MenuFile(Command id) {
         case Command::OPEN: {
             if(!SS.OkayToStartNewFile()) break;
 
-            Platform::Path newFile;
-            if(GetOpenFile(&newFile, "", SlvsFileFilter)) {
-                SS.Load(newFile);
+            Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::SolveSpaceModelFileFilters);
+            dialog->ThawChoices(settings, "Sketch");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "Sketch");
+                SS.Load(dialog->GetFilename());
             }
             break;
         }
@@ -467,23 +533,28 @@ void SolveSpaceUI::MenuFile(Command id) {
             SS.GetFilenameAndSave(/*saveAs=*/true);
             break;
 
-        case Command::EXPORT_PNG: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, "", RasterFileFilter)) break;
-            SS.ExportAsPngTo(exportFile);
+        case Command::EXPORT_IMAGE: {
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::RasterFileFilters);
+            dialog->ThawChoices(settings, "ExportImage");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "ExportImage");
+                SS.ExportAsPngTo(dialog->GetFilename());
+            }
             break;
         }
 
         case Command::EXPORT_VIEW: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "ViewExportFormat"),
-                            VectorFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "ViewExportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::VectorFileFilters);
+            dialog->ThawChoices(settings, "ExportView");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportView");
 
             // If the user is exporting something where it would be
             // inappropriate to include the constraints, then warn.
             if(SS.GW.showConstraints &&
-                (exportFile.HasExtension("txt") ||
+                (dialog->GetFilename().HasExtension("txt") ||
                  fabs(SS.exportOffset) > LENGTH_EPS))
             {
                 Message(_("Constraints are currently shown, and will be exported "
@@ -492,64 +563,71 @@ void SolveSpaceUI::MenuFile(Command id) {
                           "text window."));
             }
 
-            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/false);
+            SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe=*/false);
             break;
         }
 
         case Command::EXPORT_WIREFRAME: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "WireframeExportFormat"),
-                            Vector3dFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "WireframeExportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::Vector3dFileFilters);
+            dialog->ThawChoices(settings, "ExportWireframe");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportWireframe");
 
-            SS.ExportViewOrWireframeTo(exportFile, /*exportWireframe*/true);
+            SS.ExportViewOrWireframeTo(dialog->GetFilename(), /*exportWireframe*/true);
             break;
         }
 
         case Command::EXPORT_SECTION: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "SectionExportFormat"),
-                            VectorFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "SectionExportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::VectorFileFilters);
+            dialog->ThawChoices(settings, "ExportSection");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportSection");
 
-            SS.ExportSectionTo(exportFile);
+            SS.ExportSectionTo(dialog->GetFilename());
             break;
         }
 
         case Command::EXPORT_MESH: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "MeshExportFormat"),
-                            MeshFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "MeshExportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::MeshFileFilters);
+            dialog->ThawChoices(settings, "ExportMesh");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportMesh");
 
-            SS.ExportMeshTo(exportFile);
+            SS.ExportMeshTo(dialog->GetFilename());
             break;
         }
 
         case Command::EXPORT_SURFACES: {
-            Platform::Path exportFile = SS.saveFile;
-            if(!GetSaveFile(&exportFile, CnfThawString("", "SurfacesExportFormat"),
-                            SurfaceFileFilter)) break;
-            CnfFreezeString(exportFile.Extension(), "SurfacesExportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::SurfaceFileFilters);
+            dialog->ThawChoices(settings, "ExportSurfaces");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "ExportSurfaces");
 
             StepFileWriter sfw = {};
-            sfw.ExportSurfacesTo(exportFile);
+            sfw.ExportSurfacesTo(dialog->GetFilename());
             break;
         }
 
         case Command::IMPORT: {
-            Platform::Path importFile;
-            if(!GetOpenFile(&importFile, CnfThawString("", "ImportFormat"),
-                            ImportableFileFilter)) break;
-            CnfFreezeString(importFile.Extension(), "ImportFormat");
+            Platform::FileDialogRef dialog = Platform::CreateOpenFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::ImportFileFilters);
+            dialog->ThawChoices(settings, "Import");
+            if(!dialog->RunModal()) break;
+            dialog->FreezeChoices(settings, "Import");
 
+            Platform::Path importFile = dialog->GetFilename();
             if(importFile.HasExtension("dxf")) {
                 ImportDxf(importFile);
             } else if(importFile.HasExtension("dwg")) {
                 ImportDwg(importFile);
             } else {
-                Error("Can't identify file type from file extension of "
-                      "filename '%s'; try .dxf or .dwg.", importFile.raw.c_str());
+                Error(_("Can't identify file type from file extension of "
+                        "filename '%s'; try .dxf or .dwg."), importFile.raw.c_str());
+                break;
             }
 
             SS.GenerateAll(SolveSpaceUI::Generate::UNTIL_ACTIVE);
@@ -565,10 +643,12 @@ void SolveSpaceUI::MenuFile(Command id) {
         default: ssassert(false, "Unexpected menu ID");
     }
 
-    SS.UpdateWindowTitle();
+    SS.UpdateWindowTitles();
 }
 
 void SolveSpaceUI::MenuAnalyze(Command id) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
 
@@ -577,9 +657,9 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             if(gs.constraints == 1 && gs.n == 0) {
                 Constraint *c = SK.GetConstraint(gs.constraint[0]);
                 if(c->HasLabel() && !c->reference) {
-                    SS.TW.shown.dimFinish = c->valA;
-                    SS.TW.shown.dimSteps = 10;
-                    SS.TW.shown.dimIsDistance =
+                    SS.TW.stepDim.finish = c->valA;
+                    SS.TW.stepDim.steps = 10;
+                    SS.TW.stepDim.isDistance =
                         (c->type != Constraint::Type::ANGLE) &&
                         (c->type != Constraint::Type::LENGTH_RATIO) &&
                         (c->type != Constraint::Type::LENGTH_DIFFERENCE);
@@ -615,7 +695,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             root->MakeCertainEdgesInto(&(SS.nakedEdges),
                 EdgeKind::SELF_INTER, /*coplanarIsInter=*/false, &inters, &leaks);
 
-            InvalidateGraphics();
+            SS.GW.Invalidate();
 
             if(inters) {
                 Error("%d edges interfere with other triangles, bad.",
@@ -629,7 +709,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
         case Command::CENTER_OF_MASS: {
             SS.UpdateCenterOfMass();
             SS.centerOfMass.draw = true;
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
         }
 
@@ -689,15 +769,16 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 vol += integral;
             }
 
-            std::string msg = ssprintf("The volume of the solid model is:\n\n""    %.3f %s^3",
+            std::string msg = ssprintf(_("The volume of the solid model is:\n\n"
+                                         "    %.3f %s^3"),
                 vol / pow(SS.MmPerUnit(), 3),
                 SS.UnitName());
 
             if(SS.viewUnits == Unit::MM) {
                 msg += ssprintf("\n    %.2f mL", vol/(10*10*10));
             }
-            msg += "\n\nCurved surfaces have been approximated as triangles.\n"
-                   "This introduces error, typically of around 1%.";
+            msg += _("\n\nCurved surfaces have been approximated as triangles.\n"
+                     "This introduces error, typically of around 1%.");
             Message("%s", msg.c_str());
             break;
         }
@@ -718,10 +799,10 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             sp.FixContourDirections();
             double area = sp.SignedArea();
             double scale = SS.MmPerUnit();
-            Message("The area of the region sketched in this group is:\n\n"
-                    "    %.3f %s^2\n\n"
-                    "Curves have been approximated as piecewise linear.\n"
-                    "This introduces error, typically of around 1%%.",
+            Message(_("The area of the region sketched in this group is:\n\n"
+                      "    %.3f %s^2\n\n"
+                      "Curves have been approximated as piecewise linear.\n"
+                      "This introduces error, typically of around 1%%."),
                 area / (scale*scale),
                 SS.UnitName());
             sel.Clear();
@@ -741,10 +822,10 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                 }
 
                 double scale = SS.MmPerUnit();
-                Message("The total length of the selected entities is:\n\n"
-                        "    %.3f %s\n\n"
-                        "Curves have been approximated as piecewise linear.\n"
-                        "This introduces error, typically of around 1%%.",
+                Message(_("The total length of the selected entities is:\n\n"
+                          "    %.3f %s\n\n"
+                          "Curves have been approximated as piecewise linear.\n"
+                          "This introduces error, typically of around 1%%."),
                     perimeter / scale,
                     SS.UnitName());
             } else {
@@ -769,9 +850,13 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             break;
 
         case Command::STOP_TRACING: {
-            Platform::Path exportFile = SS.saveFile;
-            if(GetSaveFile(&exportFile, "", CsvFileFilter)) {
-                FILE *f = OpenFile(exportFile, "wb");
+            Platform::FileDialogRef dialog = Platform::CreateSaveFileDialog(SS.GW.window);
+            dialog->AddFilters(Platform::CsvFileFilters);
+            dialog->ThawChoices(settings, "Trace");
+            if(dialog->RunModal()) {
+                dialog->FreezeChoices(settings, "Trace");
+
+                FILE *f = OpenFile(dialog->GetFilename(), "wb");
                 if(f) {
                     int i;
                     SContour *sc = &(SS.traced.path);
@@ -783,13 +868,13 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     }
                     fclose(f);
                 } else {
-                    Error("Couldn't write to '%s'", exportFile.raw.c_str());
+                    Error(_("Couldn't write to '%s'"), dialog->GetFilename().raw.c_str());
                 }
             }
             // Clear the trace, and stop tracing
             SS.traced.point = Entity::NO_ENTITY;
             SS.traced.path.l.Clear();
-            InvalidateGraphics();
+            SS.GW.Invalidate();
             break;
         }
 
@@ -810,49 +895,36 @@ void SolveSpaceUI::ShowNakedEdges(bool reportOnlyWhenNotOkay) {
     if(reportOnlyWhenNotOkay && !inters && !leaks && SS.nakedEdges.l.n == 0) {
         return;
     }
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 
     const char *intersMsg = inters ?
-        "The mesh is self-intersecting (NOT okay, invalid)." :
-        "The mesh is not self-intersecting (okay, valid).";
+        _("The mesh is self-intersecting (NOT okay, invalid).") :
+        _("The mesh is not self-intersecting (okay, valid).");
     const char *leaksMsg = leaks ?
-        "The mesh has naked edges (NOT okay, invalid)." :
-        "The mesh is watertight (okay, valid).";
+        _("The mesh has naked edges (NOT okay, invalid).") :
+        _("The mesh is watertight (okay, valid).");
 
-    std::string cntMsg = ssprintf("\n\nThe model contains %d triangles, from "
-                    "%d surfaces.", g->displayMesh.l.n, g->runningShell.surface.n);
+    std::string cntMsg = ssprintf(
+        _("\n\nThe model contains %d triangles, from %d surfaces."),
+        g->displayMesh.l.n, g->runningShell.surface.n);
 
     if(SS.nakedEdges.l.n == 0) {
-        Message("%s\n\n%s\n\nZero problematic edges, good.%s",
+        Message(_("%s\n\n%s\n\nZero problematic edges, good.%s"),
             intersMsg, leaksMsg, cntMsg.c_str());
     } else {
-        Error("%s\n\n%s\n\n%d problematic edges, bad.%s",
+        Error(_("%s\n\n%s\n\n%d problematic edges, bad.%s"),
             intersMsg, leaksMsg, SS.nakedEdges.l.n, cntMsg.c_str());
     }
 }
 
 void SolveSpaceUI::MenuHelp(Command id) {
-    if((uint32_t)id >= (uint32_t)Command::LOCALE &&
-       (uint32_t)id < ((uint32_t)Command::LOCALE + Locales().size())) {
-        size_t offset = (uint32_t)id - (uint32_t)Command::LOCALE;
-        size_t i = 0;
-        for(auto locale : Locales()) {
-            if(i++ == offset) {
-                CnfFreezeString(locale.Culture(), "Locale");
-                SetLocale(locale.Culture());
-                break;
-            }
-        }
-        return;
-    }
-
     switch(id) {
         case Command::WEBSITE:
-            OpenWebsite("http://solvespace.com/helpmenu");
+            Platform::OpenInBrowser("http://solvespace.com/helpmenu");
             break;
 
         case Command::ABOUT:
-            Message(
+            Message(_(
 "This is SolveSpace version " PACKAGE_VERSION ".\n"
 "\n"
 "For more information, see http://solvespace.com/\n"
@@ -865,7 +937,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
 "© 2008-2016 Jonathan Westhues and other authors.\n"
-);
+));
             break;
 
         default: ssassert(false, "Unexpected menu ID");
@@ -878,6 +950,22 @@ void SolveSpaceUI::Clear() {
         if(i < undo.cnt) undo.d[i].Clear();
         if(i < redo.cnt) redo.d[i].Clear();
     }
+    TW.window = NULL;
+    GW.openRecentMenu = NULL;
+    GW.linkRecentMenu = NULL;
+    GW.showGridMenuItem = NULL;
+    GW.perspectiveProjMenuItem = NULL;
+    GW.showToolbarMenuItem = NULL;
+    GW.showTextWndMenuItem = NULL;
+    GW.fullScreenMenuItem = NULL;
+    GW.unitsMmMenuItem = NULL;
+    GW.unitsMetersMenuItem = NULL;
+    GW.unitsInchesMenuItem = NULL;
+    GW.inWorkplaneMenuItem = NULL;
+    GW.in3dMenuItem = NULL;
+    GW.undoMenuItem = NULL;
+    GW.redoMenuItem = NULL;
+    GW.window = NULL;
 }
 
 void Sketch::Clear() {

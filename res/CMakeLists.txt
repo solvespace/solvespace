@@ -31,7 +31,7 @@ if(WIN32)
         set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${source}")
     endfunction()
 elseif(APPLE)
-    set(app_resource_dir ${CMAKE_BINARY_DIR}/bin/solvespace.app/Contents/Resources)
+    set(app_resource_dir ${CMAKE_BINARY_DIR}/bin/SolveSpace.app/Contents/Resources)
     set(cli_resource_dir ${CMAKE_BINARY_DIR}/res)
 
     function(add_resource name)
@@ -118,7 +118,7 @@ endfunction()
 # Second, register all resources.
 if(WIN32)
     add_resource(win32/icon.ico     4000 ICON)
-    add_resource(win32/manifest.xml 2    RT_MANIFEST)
+    add_resource(win32/manifest.xml 1    RT_MANIFEST)
 elseif(APPLE)
     add_iconset (cocoa/AppIcon.iconset)
     add_xib     (cocoa/MainMenu.xib)
@@ -197,7 +197,9 @@ add_resources(
     icons/text-window/shaded.png
     icons/text-window/workplane.png
     locales.txt
+    locales/de_DE.po
     locales/en_US.po
+    locales/fr_FR.po
     locales/uk_UA.po
     locales/ru_RU.po
     fonts/unifont.hex.gz
@@ -210,6 +212,7 @@ add_resources(
     fonts/private/6-stipple-dash.png
     fonts/private/7-stipple-zigzag.png
     fonts/unicode.lff.gz
+    fonts/BitstreamVeraSans-Roman-builtin.ttf
     shaders/imesh.frag
     shaders/imesh.vert
     shaders/imesh_point.frag

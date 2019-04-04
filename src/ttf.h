@@ -11,17 +11,23 @@
 
 class TtfFont {
 public:
-    Platform::Path  fontFile;
+    Platform::Path  fontFile; // or resource path/name as res://<path>
     std::string     name;
     FT_FaceRec_    *fontFace;
     double          capHeight;
 
+    void SetResourceID(const std::string &resource);
+    bool IsResource() const;
+
     std::string FontFileBaseName() const;
     bool LoadFromFile(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
+    bool LoadFromResource(FT_LibraryRec_ *fontLibrary, bool nameOnly = true);
 
     void PlotString(const std::string &str,
                     SBezierList *sbl, Vector origin, Vector u, Vector v);
     double AspectRatio(const std::string &str);
+
+    bool ExtractTTFData(bool nameOnly);
 };
 
 class TtfFontList {

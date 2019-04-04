@@ -313,7 +313,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     }
 
     prev.Clear();
-    InvalidateGraphics();
+    GW.Invalidate();
 
     // Remove nonexistent selection items, for same reason we waited till
     // the end to put up a dialog box.

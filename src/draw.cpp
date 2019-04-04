@@ -80,7 +80,7 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
 void GraphicsWindow::ClearSelection() {
     selection.Clear();
     SS.ScheduleShowTW();
-    InvalidateGraphics();
+    Invalidate();
 }
 
 void GraphicsWindow::ClearNonexistentSelectionItems() {
@@ -98,7 +98,7 @@ void GraphicsWindow::ClearNonexistentSelectionItems() {
         }
     }
     selection.RemoveTagged();
-    if(change) InvalidateGraphics();
+    if(change) Invalidate();
 }
 
 //-----------------------------------------------------------------------------
@@ -304,14 +304,14 @@ void GraphicsWindow::GroupSelection() {
 
 Camera GraphicsWindow::GetCamera() const {
     Camera camera = {};
-    camera.width     = (int)width;
-    camera.height    = (int)height;
-    camera.offset    = offset;
-    camera.projUp    = projUp;
-    camera.projRight = projRight;
-    camera.scale     = scale;
-    camera.tangent   = SS.CameraTangent();
-    camera.hasPixels = true;
+    window->GetContentSize(&camera.width, &camera.height);
+    camera.pixelRatio = window->GetDevicePixelRatio();
+    camera.gridFit    = (window->GetDevicePixelRatio() == 1);
+    camera.offset     = offset;
+    camera.projUp     = projUp;
+    camera.projRight  = projRight;
+    camera.scale      = scale;
+    camera.tangent    = SS.CameraTangent();
     return camera;
 }
 
@@ -332,7 +332,7 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
 
     Group *activeGroup = SK.GetGroup(SS.GW.activeGroup);
     int bestOrder = -1;
-    int bestZIndex;
+    int bestZIndex = 0;
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
         if(hov.selection.entity.v != 0) {
@@ -457,7 +457,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
 
     if(!sel.Equals(&hover)) {
         hover = sel;
-        InvalidateGraphics();
+        Invalidate();
     }
 }
 
@@ -544,6 +544,10 @@ void GraphicsWindow::NormalizeProjectionVectors() {
 
 void GraphicsWindow::DrawSnapGrid(Canvas *canvas) {
     if(!LockedInWorkplane()) return;
+
+    const Camera &camera = canvas->GetCamera();
+    double width  = camera.width,
+           height = camera.height;
 
     hEntity he = ActiveWorkplane();
     EntityBase *wrkpl = SK.GetEntity(he),
@@ -816,14 +820,10 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 }
 
 void GraphicsWindow::Paint() {
-    if(!canvas) return;
+    ssassert(window != NULL && canvas != NULL,
+             "Cannot paint without window and canvas");
 
     havePainted = true;
-
-    int w, h;
-    GetGraphicsWindowSize(&w, &h);
-    width = w;
-    height = h;
 
     Camera   camera   = GetCamera();
     Lighting lighting = GetLighting();
@@ -901,4 +901,13 @@ void GraphicsWindow::Paint() {
 
     canvas->FlushFrame();
     canvas->Clear();
+}
+
+void GraphicsWindow::Invalidate(bool clearPersistent) {
+    if(window) {
+        if(clearPersistent) {
+            persistentDirty = true;
+        }
+        window->Invalidate();
+    }
 }

@@ -15,10 +15,10 @@
 #endif
 
 namespace SolveSpace {
+namespace Platform {
     // These are defined in headless.cpp, and aren't exposed in solvespace.h.
     extern std::vector<Platform::Path> fontFiles;
-    extern bool antialias;
-    extern std::shared_ptr<Pixmap> framebuffer;
+}
 }
 
 // The paths in __FILE__ are from the build system, but defined(WIN32) returns
@@ -237,24 +237,45 @@ bool Test::Helper::CheckSave(const char *file, int line, const char *reference) 
 }
 
 bool Test::Helper::CheckRender(const char *file, int line, const char *reference) {
-    PaintGraphics();
+    // First, render to a framebuffer.
+    Camera camera = {};
+    camera.pixelRatio = 1;
+    camera.gridFit    = true;
+    camera.width      = 600;
+    camera.height     = 600;
+    camera.projUp     = SS.GW.projUp;
+    camera.projRight  = SS.GW.projRight;
+    camera.scale      = SS.GW.scale;
 
+    CairoPixmapRenderer pixmapCanvas;
+    pixmapCanvas.SetLighting(SS.GW.GetLighting());
+    pixmapCanvas.SetCamera(camera);
+    pixmapCanvas.Init();
+
+    pixmapCanvas.NewFrame();
+    SS.GW.Draw(&pixmapCanvas);
+    pixmapCanvas.FlushFrame();
+    std::shared_ptr<Pixmap> frame = pixmapCanvas.ReadFrame();
+
+    pixmapCanvas.Clear();
+
+    // Now, diff framebuffer against reference render.
     Platform::Path refPath  = GetAssetPath(file, reference),
                    outPath  = GetAssetPath(file, reference, "out"),
                    diffPath = GetAssetPath(file, reference, "diff");
 
     std::shared_ptr<Pixmap> refPixmap = Pixmap::ReadPng(refPath, /*flip=*/true);
-    if(!RecordCheck(refPixmap && refPixmap->Equals(*framebuffer))) {
-        framebuffer->WritePng(outPath, /*flip=*/true);
+    if(!RecordCheck(refPixmap && refPixmap->Equals(*frame))) {
+        frame->WritePng(outPath, /*flip=*/true);
 
         if(!refPixmap) {
             PrintFailure(file, line, "reference render not present");
             return false;
         }
 
-        ssassert(refPixmap->format == framebuffer->format, "Expected buffer formats to match");
-        if(refPixmap->width != framebuffer->width ||
-           refPixmap->height != framebuffer->height) {
+        ssassert(refPixmap->format == frame->format, "Expected buffer formats to match");
+        if(refPixmap->width != frame->width ||
+           refPixmap->height != frame->height) {
             PrintFailure(file, line, "render doesn't match reference; dimensions differ");
         } else {
             std::shared_ptr<Pixmap> diffPixmap =
@@ -263,7 +284,7 @@ bool Test::Helper::CheckRender(const char *file, int line, const char *reference
             int diffPixelCount = 0;
             for(size_t j = 0; j < refPixmap->height; j++) {
                 for(size_t i = 0; i < refPixmap->width; i++) {
-                    if(!refPixmap->GetPixel(i, j).Equals(framebuffer->GetPixel(i, j))) {
+                    if(!refPixmap->GetPixel(i, j).Equals(frame->GetPixel(i, j))) {
                         diffPixelCount++;
                         diffPixmap->SetPixel(i, j, RgbaColor::From(255, 0, 0, 255));
                     }
@@ -319,10 +340,7 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
-
-    // Different Cairo versions have different antialiasing algorithms.
-    antialias = false;
+    Platform::fontFiles.push_back(HostRoot().Join("Gentium-R.ttf"));
 
     // Wreck order dependencies between tests!
     std::random_shuffle(testCasesPtr->begin(), testCasesPtr->end());

@@ -58,64 +58,7 @@ inline const char *C_(const char *msgctxt, const char *msgid) {
 }
 #endif
 
-// Filters for the file formats that we support.
-struct FileFilter {
-    const char *name;
-    const char *patterns[3];
-};
-
-// SolveSpace native file format
-const FileFilter SlvsFileFilter[] = {
-    { N_("SolveSpace models"),          { "slvs" } },
-    { NULL, {} }
-};
-// PNG format bitmap
-const FileFilter RasterFileFilter[] = {
-    { N_("PNG file"),                   { "png" } },
-    { NULL, {} }
-};
-// Triangle mesh
-const FileFilter MeshFileFilter[] = {
-    { N_("STL mesh"),                   { "stl" } },
-    { N_("Wavefront OBJ mesh"),         { "obj" } },
-    { N_("Three.js-compatible mesh, with viewer"),  { "html" } },
-    { N_("Three.js-compatible mesh, mesh only"),    { "js" } },
-    { NULL, {} }
-};
-// NURBS surfaces
-const FileFilter SurfaceFileFilter[] = {
-    { N_("STEP file"),                  { "step", "stp" } },
-    { NULL, {} }
-};
-// 2d vector (lines and curves) format
-const FileFilter VectorFileFilter[] = {
-    { N_("PDF file"),                   { "pdf" } },
-    { N_("Encapsulated PostScript"),    { "eps",  "ps" } },
-    { N_("Scalable Vector Graphics"),   { "svg" } },
-    { N_("STEP file"),                  { "step", "stp" } },
-    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
-    { N_("HPGL file"),                  { "plt",  "hpgl" } },
-    { N_("G Code"),                     { "ngc",  "txt" } },
-    { NULL, {} }
-};
-// 3d vector (wireframe lines and curves) format
-const FileFilter Vector3dFileFilter[] = {
-    { N_("STEP file"),                  { "step", "stp" } },
-    { N_("DXF file (AutoCAD 2007)"),    { "dxf" } },
-    { NULL, {} }
-};
-// All Importable formats
-const FileFilter ImportableFileFilter[] = {
-    { N_("AutoCAD DXF and DWG files"),  { "dxf", "dwg" } },
-    { NULL, {} }
-};
-// Comma-separated value, like a spreadsheet would use
-const FileFilter CsvFileFilter[] = {
-    { N_("Comma-separated values"),     { "csv" } },
-    { NULL, {} }
-};
-
-// This table describes the top-level menus in the graphics winodw.
+// This table describes the top-level menus in the graphics window.
 enum class Command : uint32_t {
     NONE = 0,
     // File
@@ -124,7 +67,7 @@ enum class Command : uint32_t {
     OPEN_RECENT,
     SAVE,
     SAVE_AS,
-    EXPORT_PNG,
+    EXPORT_IMAGE,
     EXPORT_MESH,
     EXPORT_SURFACES,
     EXPORT_VIEW,
@@ -219,41 +162,9 @@ enum class Command : uint32_t {
     STOP_TRACING,
     STEP_DIM,
     // Help
+    LOCALE,
     WEBSITE,
     ABOUT,
-    // Recent
-    RECENT_OPEN = 0xf000,
-    RECENT_LINK = 0xf100,
-    // Locale
-    LOCALE = 0xf200,
-};
-
-enum class ContextCommand : uint32_t {
-    CANCELLED,
-    SUBMENU,
-    SEPARATOR,
-    UNSELECT_ALL,
-    UNSELECT_HOVERED,
-    CUT_SEL,
-    COPY_SEL,
-    PASTE,
-    PASTE_XFRM,
-    DELETE_SEL,
-    SELECT_CHAIN,
-    NEW_CUSTOM_STYLE,
-    NO_STYLE,
-    GROUP_INFO,
-    STYLE_INFO,
-    REFERENCE_DIM,
-    OTHER_ANGLE,
-    DEL_COINCIDENT,
-    SNAP_TO_GRID,
-    REMOVE_SPLINE_PT,
-    ADD_SPLINE_PT,
-    CONSTRUCTION,
-    ZOOM_TO_FIT,
-    SELECT_ALL,
-    FIRST_STYLE      = 0x40000000
 };
 
 class Button;
@@ -308,16 +219,15 @@ public:
     int top[MAX_ROWS]; // in half-line units, or -1 for unused
     int rows;
 
+    Platform::WindowRef window;
     std::shared_ptr<ViewportCanvas> canvas;
 
     void Draw(Canvas *canvas);
 
-    // These are called by the platform-specific code.
     void Paint();
     void MouseEvent(bool isClick, bool leftDown, double x, double y);
-    void MouseScroll(double x, double y, int delta);
     void MouseLeave();
-    void ScrollbarEvent(int newPos);
+    void ScrollbarEvent(double newPos);
 
     enum DrawOrHitHow : uint32_t {
         PAINT = 0,
@@ -326,9 +236,7 @@ public:
     };
     void DrawOrHitTestIcons(UiCanvas *canvas, DrawOrHitHow how,
                             double mx, double my);
-    void TimerCallback();
-    Point2d oldMousePos;
-    Button *hoveredButton, *tooltippedButton;
+    Button *hoveredButton;
 
     Vector HsvToRgb(Vector hsv);
     std::shared_ptr<Pixmap> HsvPattern2d(int w, int h);
@@ -364,9 +272,6 @@ public:
         hStyle      style;
 
         hConstraint constraint;
-        bool        dimIsDistance;
-        double      dimFinish;
-        int         dimSteps;
 
         struct {
             int         times;
@@ -386,7 +291,7 @@ public:
         GROUP_SCALE           = 3,
         GROUP_COLOR           = 4,
         GROUP_OPACITY         = 5,
-        // For the configuraiton screen
+        // For the configuration screen
         LIGHT_DIRECTION       = 100,
         LIGHT_INTENSITY       = 101,
         COLOR                 = 102,
@@ -521,6 +426,7 @@ public:
     static void ScreenChangeShowContourAreas(int link, uint32_t v);
     static void ScreenChangeCheckClosedContour(int link, uint32_t v);
     static void ScreenChangeTurntableNav(int link, uint32_t v);
+    static void ScreenChangeAutomaticLineConstraints(int link, uint32_t v);
     static void ScreenChangePwlCurves(int link, uint32_t v);
     static void ScreenChangeCanvasSizeAuto(int link, uint32_t v);
     static void ScreenChangeCanvasSize(int link, uint32_t v);
@@ -528,6 +434,15 @@ public:
 
     static void ScreenAllowRedundant(int link, uint32_t v);
 
+    struct {
+        bool    isDistance;
+        double  finish;
+        int     steps;
+
+        Platform::TimerRef timer;
+        int64_t time;
+        int     step;
+    } stepDim;
     static void ScreenStepDimSteps(int link, uint32_t v);
     static void ScreenStepDimFinish(int link, uint32_t v);
     static void ScreenStepDimGo(int link, uint32_t v);
@@ -567,41 +482,25 @@ public:
     static void ScreenChangeViewOrigin(int link, uint32_t v);
     static void ScreenChangeViewProjection(int link, uint32_t v);
 
-    bool EditControlDoneForStyles(const char *s);
-    bool EditControlDoneForConfiguration(const char *s);
-    bool EditControlDoneForPaste(const char *s);
-    bool EditControlDoneForView(const char *s);
-    void EditControlDone(const char *s);
+    bool EditControlDoneForStyles(const std::string &s);
+    bool EditControlDoneForConfiguration(const std::string &s);
+    bool EditControlDoneForPaste(const std::string &s);
+    bool EditControlDoneForView(const std::string &s);
+    void EditControlDone(std::string s);
 };
 
 class GraphicsWindow {
 public:
     void Init();
 
-    typedef void MenuHandler(Command id);
-    enum {
-        ESCAPE_KEY = 27,
-        DELETE_KEY = 127,
-        FUNCTION_KEY_BASE = 0xf0
-    };
-    enum {
-        SHIFT_MASK = 0x100,
-        CTRL_MASK  = 0x200
-    };
-    enum class MenuKind : uint32_t {
-        NORMAL = 0,
-        CHECK,
-        RADIO
-    };
-    typedef struct {
-        int          level;          // 0 == on menu bar, 1 == one level down
-        const char  *label;          // or NULL for a separator
-        Command      id;             // unique ID
-        int          accel;          // keyboard accelerator
-        MenuKind     kind;
-        MenuHandler  *fn;
-    } MenuEntry;
-    static const MenuEntry menu[];
+    Platform::WindowRef   window;
+
+    void PopulateMainMenu();
+    void PopulateRecentFiles();
+
+    Platform::KeyboardEvent AcceleratorForCommand(Command id);
+    void ActivateCommand(Command id);
+
     static void MenuView(Command id);
     static void MenuEdit(Command id);
     static void MenuRequest(Command id);
@@ -610,12 +509,29 @@ public:
     void PasteClipboard(Vector trans, double theta, double scale);
     static void MenuClipboard(Command id);
 
+    Platform::MenuRef openRecentMenu;
+    Platform::MenuRef linkRecentMenu;
+
+    Platform::MenuItemRef showGridMenuItem;
+    Platform::MenuItemRef perspectiveProjMenuItem;
+    Platform::MenuItemRef showToolbarMenuItem;
+    Platform::MenuItemRef showTextWndMenuItem;
+    Platform::MenuItemRef fullScreenMenuItem;
+
+    Platform::MenuItemRef unitsMmMenuItem;
+    Platform::MenuItemRef unitsMetersMenuItem;
+    Platform::MenuItemRef unitsInchesMenuItem;
+
+    Platform::MenuItemRef inWorkplaneMenuItem;
+    Platform::MenuItemRef in3dMenuItem;
+
+    Platform::MenuItemRef undoMenuItem;
+    Platform::MenuItemRef redoMenuItem;
+
     std::shared_ptr<ViewportCanvas> canvas;
     std::shared_ptr<BatchCanvas>    persistentCanvas;
     bool persistentDirty;
 
-    // The width and height (in pixels) of the window.
-    double width, height;
     // These parameters define the map from 2d screen coordinates to the
     // coordinates of the 3d sketch points. We will use an axonometric
     // projection.
@@ -664,17 +580,24 @@ public:
     Vector ProjectPoint4(Vector p, double *w);
     Vector UnProjectPoint(Point2d p);
     Vector UnProjectPoint3(Vector p);
+
+    Platform::TimerRef animateTimer;
     void AnimateOnto(Quaternion quatf, Vector offsetf);
     void AnimateOntoWorkplane();
+
     Vector VectorFromProjs(Vector rightUpForward);
     void HandlePointForZoomToFit(Vector p, Point2d *pmax, Point2d *pmin,
-                                           double *wmin, bool usePerspective);
+                                 double *wmin, bool usePerspective,
+                                 const Camera &camera);
     void LoopOverPoints(const std::vector<Entity *> &entities,
                         const std::vector<Constraint *> &constraints,
                         const std::vector<hEntity> &faces,
                         Point2d *pmax, Point2d *pmin,
-                        double *wmin, bool usePerspective, bool includeMesh);
-    void ZoomToFit(bool includingInvisibles, bool useSelection = false);
+                        double *wmin, bool usePerspective, bool includeMesh,
+                        const Camera &camera);
+    void ZoomToFit(bool includingInvisibles = false, bool useSelection = false);
+    double ZoomToFit(const Camera &camera,
+                     bool includingInvisibles = false, bool useSelection = false);
 
     hGroup  activeGroup;
     void EnsureValidActives();
@@ -718,7 +641,7 @@ public:
         bool                 hasSuggestion;
         Constraint::Type     suggestion;
     } pending;
-    void ClearPending();
+    void ClearPending(bool scheduleShowTW = true);
     bool IsFromPending(hRequest r);
     void AddToPending(hRequest r);
     void ReplacePending(hRequest before, hRequest after);
@@ -747,8 +670,8 @@ public:
         Vector TangentAt(double t);
         double LengthForAuto();
 
-        hRequest CreateRequestTrimmedTo(double t, bool extraConstraints,
-            hEntity orig, hEntity arc, bool arcFinish);
+        void CreateRequestTrimmedTo(double t, bool reuseOrig,
+            hEntity orig, hEntity arc, bool arcFinish, bool pointf);
         void ConstrainPointIfCoincident(hEntity hpt);
     };
     void MakeTangentArc();
@@ -797,6 +720,7 @@ public:
     void HitTestMakeSelection(Point2d mp);
     void ClearSelection();
     void ClearNonexistentSelectionItems();
+    /// This structure is filled by a call to GroupSelection().
     struct {
         std::vector<hEntity>     point;
         std::vector<hEntity>     entity;
@@ -819,7 +743,7 @@ public:
         int         stylables;
         int         constraintLabels;
         int         withEndpoints;
-        int         n;
+        int         n;                 ///< Number of selected items
     } gs;
     void GroupSelection();
     bool IsSelected(Selection *s);
@@ -832,18 +756,12 @@ public:
     void SelectByMarquee();
     void ClearSuper();
 
-    void ContextMenuListStyles();
-    int64_t contextMenuCancelTime;
-
     // The toolbar, in toolbar.cpp
     bool ToolbarDrawOrHitTest(int x, int y, UiCanvas *canvas, Command *menuHit);
     void ToolbarDraw(UiCanvas *canvas);
     bool ToolbarMouseMoved(int x, int y);
     bool ToolbarMouseDown(int x, int y);
-    static void TimerCallback();
     Command toolbarHovered;
-    Command toolbarTooltipped;
-    int toolbarMouseX, toolbarMouseY;
 
     // This sets what gets displayed.
     bool    showWorkplanes;
@@ -870,14 +788,15 @@ public:
     void UpdateDraggedNum(Vector *pos, double mx, double my);
     void UpdateDraggedPoint(hEntity hp, double mx, double my);
 
+    void Invalidate(bool clearPersistent = false);
     void DrawEntities(Canvas *canvas, bool persistent);
     void DrawPersistent(Canvas *canvas);
     void Draw(Canvas *canvas);
-
-    // These are called by the platform-specific code.
     void Paint();
+
+    bool MouseEvent(Platform::MouseEvent event);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
-                                bool rightDown, bool shiftDown, bool ctrlDown);
+                    bool rightDown, bool shiftDown, bool ctrlDown);
     void MouseLeftDown(double x, double y);
     void MouseLeftUp(double x, double y);
     void MouseLeftDoubleClick(double x, double y);
@@ -885,14 +804,12 @@ public:
     void MouseRightUp(double x, double y);
     void MouseScroll(double x, double y, int delta);
     void MouseLeave();
-    bool KeyDown(int c);
-    void EditControlDone(const char *s);
+    bool KeyboardEvent(Platform::KeyboardEvent event);
+    void EditControlDone(const std::string &s);
 
-    int64_t lastSpaceNavigatorTime;
-    hGroup lastSpaceNavigatorGroup;
-    void SpaceNavigatorMoved(double tx, double ty, double tz,
-                             double rx, double ry, double rz, bool shiftDown);
-    void SpaceNavigatorButtonUp();
+    int64_t last6DofTime;
+    hGroup last6DofGroup;
+    void SixDofEvent(Platform::SixDofEvent event);
 };
 
 

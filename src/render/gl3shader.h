@@ -67,7 +67,7 @@ public:
 
 class Shader {
 public:
-    GLuint program;
+    GLuint program = 0;
 
     void Init(const std::string &vertexRes,
               const std::string &fragmentRes,
@@ -104,7 +104,7 @@ public:
 
     Shader  lightShader;
     Shader  fillShader;
-    Shader *selectedShader;
+    Shader *selectedShader = NULL;
 
     void Init();
     void Clear();
@@ -152,8 +152,8 @@ public:
 
     Shader              shader;
 
-    const StippleAtlas  *atlas;
-    StipplePattern      pattern;
+    const StippleAtlas *atlas   = NULL;
+    StipplePattern      pattern = StipplePattern::CONTINUOUS;
 
     void Init(const StippleAtlas *atlas);
     void Clear();
@@ -192,8 +192,8 @@ public:
 
     Shader              shader;
 
-    const StippleAtlas  *atlas;
-    StipplePattern      pattern;
+    const StippleAtlas *atlas   = NULL;
+    StipplePattern      pattern = StipplePattern::CONTINUOUS;
 
     void Init(const StippleAtlas *atlas);
     void Clear();
@@ -242,7 +242,7 @@ public:
     Shader  colShader;
     Shader  pointShader;
 
-    Shader  *selectedShader;
+    Shader *selectedShader = NULL;
 
     void Init();
     void Clear();

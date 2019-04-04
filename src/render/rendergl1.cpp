@@ -166,7 +166,7 @@ static void ssglFillPattern(Canvas::FillPattern pattern) {
 // OpenGL 1 / compatibility profile based renderer
 //-----------------------------------------------------------------------------
 
-class OpenGl1Renderer : public ViewportCanvas {
+class OpenGl1Renderer final : public ViewportCanvas {
 public:
     Camera      camera;
     Lighting    lighting;
@@ -705,7 +705,9 @@ void OpenGl1Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
 void OpenGl1Renderer::UpdateProjection() {
     UnSelectPrimitive();
 
-    glViewport(0, 0, camera.width, camera.height);
+    glViewport(0, 0,
+               camera.width  * camera.pixelRatio,
+               camera.height * camera.pixelRatio);
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();

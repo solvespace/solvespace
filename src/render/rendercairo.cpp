@@ -8,6 +8,30 @@
 
 namespace SolveSpace {
 
+void CairoRenderer::Clear() {
+    SurfaceRenderer::Clear();
+
+    if(context != NULL) cairo_destroy(context);
+    context = NULL;
+}
+
+void CairoRenderer::GetIdent(const char **vendor, const char **renderer, const char **version) {
+    *vendor = "Cairo";
+    *renderer = "Cairo";
+    *version = cairo_version_string();
+}
+
+void CairoRenderer::FlushFrame() {
+    CullOccludedStrokes();
+    OutputInPaintOrder();
+
+    cairo_surface_flush(cairo_get_target(context));
+}
+
+std::shared_ptr<Pixmap> CairoRenderer::ReadFrame() {
+    ssassert(false, "generic Cairo renderer does not support pixmap readout");
+}
+
 void CairoRenderer::OutputStart() {
     cairo_save(context);
 
@@ -31,7 +55,6 @@ void CairoRenderer::OutputEnd() {
     FinishPath();
 
     cairo_restore(context);
-    cairo_surface_flush(cairo_get_target(context));
 }
 
 void CairoRenderer::SelectStroke(hStroke hcs) {
@@ -116,6 +139,35 @@ void CairoRenderer::OutputTriangle(const STriangle &tr) {
     cairo_line_to(context, tr.b.x, tr.b.y);
     cairo_line_to(context, tr.c.x, tr.c.y);
     cairo_fill(context);
+}
+
+void CairoPixmapRenderer::Init() {
+    Clear();
+
+    pixmap = std::make_shared<Pixmap>();
+    pixmap->format = Pixmap::Format::BGRA;
+    pixmap->width  = (size_t)camera.width;
+    pixmap->height = (size_t)camera.height;
+    pixmap->stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, (int)camera.width);
+    pixmap->data   = std::vector<uint8_t>(pixmap->stride * pixmap->height);
+    surface =
+        cairo_image_surface_create_for_data(&pixmap->data[0], CAIRO_FORMAT_RGB24,
+                                            pixmap->width, pixmap->height,
+                                            pixmap->stride);
+    context = cairo_create(surface);
+}
+
+void CairoPixmapRenderer::Clear() {
+    CairoRenderer::Clear();
+
+    if(surface != NULL) cairo_surface_destroy(surface);
+    surface = NULL;
+}
+
+std::shared_ptr<Pixmap> CairoPixmapRenderer::ReadFrame() {
+    std::shared_ptr<Pixmap> result = pixmap->Copy();
+    result->ConvertTo(Pixmap::Format::RGBA);
+    return result;
 }
 
 }

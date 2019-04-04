@@ -15,6 +15,7 @@ TEST_CASE(normal_inters) {
     CHECK_LOAD("normal.slvs");
 
     Group *g = SK.GetGroup(SS.GW.activeGroup);
+    g->GenerateDisplayItems();
     SMesh *m = &g->displayMesh;
 
     SEdgeList el = {};

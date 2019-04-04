@@ -419,11 +419,15 @@ bool ReadFile(const Platform::Path &filename, std::string *data) {
     FILE *f = OpenFile(filename, "rb");
     if(f == NULL) return false;
 
-    fseek(f, 0, SEEK_END);
+    if(fseek(f, 0, SEEK_END) != 0)
+        return false;
     data->resize(ftell(f));
-    fseek(f, 0, SEEK_SET);
-    fread(&(*data)[0], 1, data->size(), f);
-    fclose(f);
+    if(fseek(f, 0, SEEK_SET) != 0)
+        return false;
+    if(fread(&(*data)[0], 1, data->size(), f) != data->size())
+        return false;
+    if(fclose(f) != 0)
+        return false;
 
     return true;
 }
@@ -432,14 +436,16 @@ bool WriteFile(const Platform::Path &filename, const std::string &data) {
     FILE *f = OpenFile(filename, "wb");
     if(f == NULL) return false;
 
-    fwrite(&data[0], 1, data.size(), f);
-    fclose(f);
+    if(fwrite(&data[0], 1, data.size(), f) != data.size())
+        return false;
+    if(fclose(f) != 0)
+        return false;
 
     return true;
 }
 
 //-----------------------------------------------------------------------------
-// Loading resources, on Windows.
+// Loading resources, on Windows
 //-----------------------------------------------------------------------------
 
 #if defined(WIN32)
@@ -457,7 +463,7 @@ const void *LoadResource(const std::string &name, size_t *size) {
 #endif
 
 //-----------------------------------------------------------------------------
-// Loading resources, on *nix.
+// Loading resources, on *nix
 //-----------------------------------------------------------------------------
 
 #if defined(__APPLE__)
@@ -567,6 +573,10 @@ const void *LoadResource(const std::string &name, size_t *size) {
 }
 
 #endif
+
+//-----------------------------------------------------------------------------
+// Command-line argument handling
+//-----------------------------------------------------------------------------
 
 }
 }

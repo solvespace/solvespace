@@ -1,18 +1,17 @@
-version: 3.0.{build}
+version: '{build}'
 clone_depth: 1
 before_build:
   - git submodule update --init
-  - mkdir build
-  - cd build
   - set tag=x%APPVEYOR_REPO_TAG_NAME%
   - if %tag:~,2% == xv (set BUILD_TYPE=RelWithDebInfo) else (set BUILD_TYPE=Debug)
-  - cmake -G"Visual Studio 12" -T v120 ..
+  - mkdir build
+  - cmake -G"Visual Studio 12" -Tv120 -Bbuild -H.
 build_script:
-  - msbuild "src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - msbuild "src\solvespace-cli.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-  - msbuild "test\solvespace-testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "build\src\solvespace.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "build\src\solvespace-cli.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - msbuild "build\test\solvespace-testsuite.vcxproj" /verbosity:minimal /property:Configuration=%BUILD_TYPE% /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 test_script:
-  - bin\%BUILD_TYPE%\solvespace-testsuite.exe
+  - build\bin\%BUILD_TYPE%\solvespace-testsuite.exe
 artifacts:
   - path: build\bin\%BUILD_TYPE%\solvespace.exe
     name: solvespace.exe

@@ -297,7 +297,7 @@ void Entity::ComputeInterpolatingSpline(SBezierList *sbl, bool periodic) const {
                 // The wrapping would work, except when n = 1 and everything
                 // wraps to zero...
                 if(i > 0)     bm.A[i][i - 1] = eq.x;
-                              bm.A[i][i]     = eq.y;
+                /**/          bm.A[i][i]     = eq.y;
                 if(i < (n-1)) bm.A[i][i + 1] = eq.z;
             }
         }

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: SolveSpace 3.0\n"
 "Report-Msgid-Bugs-To: whitequark@whitequark.org\n"
-"POT-Creation-Date: 2017-04-21 23:11+0000\n"
+"POT-Creation-Date: 2018-07-12 22:40+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -628,271 +628,279 @@ msgstr ""
 msgid "Use &Perspective Projection"
 msgstr ""
 
+#: graphicswin.cpp:78
+msgid "Dimension &Units"
+msgstr ""
+
 #: graphicswin.cpp:79
-msgid "Show &Toolbar"
-msgstr ""
-
-#: graphicswin.cpp:80
-msgid "Show Property Bro&wser"
-msgstr ""
-
-#: graphicswin.cpp:82
 msgid "Dimensions in &Inches"
 msgstr ""
 
-#: graphicswin.cpp:83
+#: graphicswin.cpp:80
 msgid "Dimensions in &Millimeters"
 msgstr ""
 
-#: graphicswin.cpp:85
+#: graphicswin.cpp:81
+msgid "Dimensions in M&eters"
+msgstr ""
+
+#: graphicswin.cpp:83
+msgid "Show &Toolbar"
+msgstr ""
+
+#: graphicswin.cpp:84
+msgid "Show Property Bro&wser"
+msgstr ""
+
+#: graphicswin.cpp:86
 msgid "&Full Screen"
 msgstr ""
 
-#: graphicswin.cpp:87
+#: graphicswin.cpp:88
 msgid "&New Group"
 msgstr ""
 
-#: graphicswin.cpp:88
+#: graphicswin.cpp:89
 msgid "Sketch In &3d"
 msgstr ""
 
-#: graphicswin.cpp:89
+#: graphicswin.cpp:90
 msgid "Sketch In New &Workplane"
 msgstr ""
 
-#: graphicswin.cpp:91
+#: graphicswin.cpp:92
 msgid "Step &Translating"
 msgstr ""
 
-#: graphicswin.cpp:92
+#: graphicswin.cpp:93
 msgid "Step &Rotating"
 msgstr ""
 
-#: graphicswin.cpp:94
+#: graphicswin.cpp:95
 msgid "E&xtrude"
 msgstr ""
 
-#: graphicswin.cpp:95
+#: graphicswin.cpp:96
 msgid "&Lathe"
 msgstr ""
 
-#: graphicswin.cpp:97
+#: graphicswin.cpp:98
 msgid "Link / Assemble..."
 msgstr ""
 
-#: graphicswin.cpp:98
+#: graphicswin.cpp:99
 msgid "Link Recent"
 msgstr ""
 
-#: graphicswin.cpp:100
+#: graphicswin.cpp:101
 msgid "&Sketch"
 msgstr ""
 
-#: graphicswin.cpp:101
+#: graphicswin.cpp:102
 msgid "In &Workplane"
 msgstr ""
 
-#: graphicswin.cpp:102
+#: graphicswin.cpp:103
 msgid "Anywhere In &3d"
 msgstr ""
 
-#: graphicswin.cpp:104
+#: graphicswin.cpp:105
 msgid "Datum &Point"
 msgstr ""
 
-#: graphicswin.cpp:105
+#: graphicswin.cpp:106
 msgid "&Workplane"
 msgstr ""
 
-#: graphicswin.cpp:107
+#: graphicswin.cpp:108
 msgid "Line &Segment"
 msgstr ""
 
-#: graphicswin.cpp:108
+#: graphicswin.cpp:109
 msgid "C&onstruction Line Segment"
 msgstr ""
 
-#: graphicswin.cpp:109
+#: graphicswin.cpp:110
 msgid "&Rectangle"
 msgstr ""
 
-#: graphicswin.cpp:110
+#: graphicswin.cpp:111
 msgid "&Circle"
 msgstr ""
 
-#: graphicswin.cpp:111
+#: graphicswin.cpp:112
 msgid "&Arc of a Circle"
 msgstr ""
 
-#: graphicswin.cpp:112
+#: graphicswin.cpp:113
 msgid "&Bezier Cubic Spline"
 msgstr ""
 
-#: graphicswin.cpp:114
+#: graphicswin.cpp:115
 msgid "&Text in TrueType Font"
 msgstr ""
 
-#: graphicswin.cpp:115
+#: graphicswin.cpp:116
 msgid "&Image"
 msgstr ""
 
-#: graphicswin.cpp:117
+#: graphicswin.cpp:118
 msgid "To&ggle Construction"
 msgstr ""
 
-#: graphicswin.cpp:118
+#: graphicswin.cpp:119
 msgid "Tangent &Arc at Point"
 msgstr ""
 
-#: graphicswin.cpp:119
+#: graphicswin.cpp:120
 msgid "Split Curves at &Intersection"
 msgstr ""
 
-#: graphicswin.cpp:121
+#: graphicswin.cpp:122
 msgid "&Constrain"
 msgstr ""
 
-#: graphicswin.cpp:122
+#: graphicswin.cpp:123
 msgid "&Distance / Diameter"
 msgstr ""
 
-#: graphicswin.cpp:123
+#: graphicswin.cpp:124
 msgid "Re&ference Dimension"
 msgstr ""
 
-#: graphicswin.cpp:124
+#: graphicswin.cpp:125
 msgid "A&ngle"
 msgstr ""
 
-#: graphicswin.cpp:125
+#: graphicswin.cpp:126
 msgid "Reference An&gle"
 msgstr ""
 
-#: graphicswin.cpp:126
+#: graphicswin.cpp:127
 msgid "Other S&upplementary Angle"
 msgstr ""
 
-#: graphicswin.cpp:127
+#: graphicswin.cpp:128
 msgid "Toggle R&eference Dim"
 msgstr ""
 
-#: graphicswin.cpp:129
+#: graphicswin.cpp:130
 msgid "&Horizontal"
 msgstr ""
 
-#: graphicswin.cpp:130
+#: graphicswin.cpp:131
 msgid "&Vertical"
 msgstr ""
 
-#: graphicswin.cpp:132
+#: graphicswin.cpp:133
 msgid "&On Point / Curve / Plane"
 msgstr ""
 
-#: graphicswin.cpp:133
+#: graphicswin.cpp:134
 msgid "E&qual Length / Radius / Angle"
 msgstr ""
 
-#: graphicswin.cpp:134
+#: graphicswin.cpp:135
 msgid "Length Ra&tio"
 msgstr ""
 
-#: graphicswin.cpp:135
+#: graphicswin.cpp:136
 msgid "Length Diff&erence"
 msgstr ""
 
-#: graphicswin.cpp:136
+#: graphicswin.cpp:137
 msgid "At &Midpoint"
 msgstr ""
 
-#: graphicswin.cpp:137
+#: graphicswin.cpp:138
 msgid "S&ymmetric"
 msgstr ""
 
-#: graphicswin.cpp:138
+#: graphicswin.cpp:139
 msgid "Para&llel / Tangent"
 msgstr ""
 
-#: graphicswin.cpp:139
+#: graphicswin.cpp:140
 msgid "&Perpendicular"
 msgstr ""
 
-#: graphicswin.cpp:140
+#: graphicswin.cpp:141
 msgid "Same Orient&ation"
 msgstr ""
 
-#: graphicswin.cpp:141
+#: graphicswin.cpp:142
 msgid "Lock Point Where &Dragged"
 msgstr ""
 
-#: graphicswin.cpp:143
+#: graphicswin.cpp:144
 msgid "Comment"
 msgstr ""
 
-#: graphicswin.cpp:145
+#: graphicswin.cpp:146
 msgid "&Analyze"
 msgstr ""
 
-#: graphicswin.cpp:146
+#: graphicswin.cpp:147
 msgid "Measure &Volume"
 msgstr ""
 
-#: graphicswin.cpp:147
+#: graphicswin.cpp:148
 msgid "Measure A&rea"
 msgstr ""
 
-#: graphicswin.cpp:148
+#: graphicswin.cpp:149
 msgid "Measure &Perimeter"
 msgstr ""
 
-#: graphicswin.cpp:149
+#: graphicswin.cpp:150
 msgid "Show &Interfering Parts"
 msgstr ""
 
-#: graphicswin.cpp:150
+#: graphicswin.cpp:151
 msgid "Show &Naked Edges"
 msgstr ""
 
-#: graphicswin.cpp:151
+#: graphicswin.cpp:152
 msgid "Show &Center of Mass"
 msgstr ""
 
-#: graphicswin.cpp:153
+#: graphicswin.cpp:154
 msgid "Show Degrees of &Freedom"
 msgstr ""
 
-#: graphicswin.cpp:155
+#: graphicswin.cpp:156
 msgid "&Trace Point"
 msgstr ""
 
-#: graphicswin.cpp:156
+#: graphicswin.cpp:157
 msgid "&Stop Tracing..."
 msgstr ""
 
-#: graphicswin.cpp:157
+#: graphicswin.cpp:158
 msgid "Step &Dimension..."
 msgstr ""
 
-#: graphicswin.cpp:159
+#: graphicswin.cpp:160
 msgid "&Help"
 msgstr ""
 
-#: graphicswin.cpp:160
+#: graphicswin.cpp:161
 msgid "&Website / Manual"
 msgstr ""
 
-#: graphicswin.cpp:161
+#: graphicswin.cpp:162
 msgid "&Language"
 msgstr ""
 
-#: graphicswin.cpp:163
+#: graphicswin.cpp:164
 msgid "&About"
 msgstr ""
 
-#: graphicswin.cpp:490
+#: graphicswin.cpp:491
 msgid "No workplane is active, so the grid will not appear."
 msgstr ""
 
-#: graphicswin.cpp:499
+#: graphicswin.cpp:500
 msgid ""
 "The perspective factor is set to zero, so the view will always be a parallel projection.\n"
 "\n"
@@ -900,89 +908,89 @@ msgid ""
 "around 0.3 is typical."
 msgstr ""
 
-#: graphicswin.cpp:580
+#: graphicswin.cpp:581
 msgid "Select a point; this point will become the center of the view on screen."
 msgstr ""
 
-#: graphicswin.cpp:853
+#: graphicswin.cpp:862
 msgid "No additional entities share endpoints with the selected entities."
 msgstr ""
 
-#: graphicswin.cpp:873
+#: graphicswin.cpp:882
 msgid ""
 "To use this command, select a point or other entity from an linked part, or make a link group the "
 "active group."
 msgstr ""
 
-#: graphicswin.cpp:897
+#: graphicswin.cpp:906
 msgid ""
 "No workplane is active. Activate a workplane (with Sketch -> In Workplane) to define the plane "
 "for the snap grid."
 msgstr ""
 
-#: graphicswin.cpp:904
+#: graphicswin.cpp:913
 msgid ""
 "Can't snap these items to grid; select points, text comments, or constraints with a label. To "
 "snap a line, select its endpoints."
 msgstr ""
 
-#: graphicswin.cpp:970
+#: graphicswin.cpp:979
 msgid "No workplane selected. Activating default workplane for this group."
 msgstr ""
 
-#: graphicswin.cpp:975
+#: graphicswin.cpp:984
 msgid ""
 "No workplane is selected, and the active group does not have a default workplane. Try selecting a "
 "workplane, or activating a sketch-in-new-workplane group."
 msgstr ""
 
-#: graphicswin.cpp:999
+#: graphicswin.cpp:1008
 msgid ""
 "Bad selection for tangent arc at point. Select a single point, or select nothing to set up arc "
 "parameters."
 msgstr ""
 
-#: graphicswin.cpp:1010
+#: graphicswin.cpp:1019
 msgid "click point on arc (draws anti-clockwise)"
 msgstr ""
 
-#: graphicswin.cpp:1011
+#: graphicswin.cpp:1020
 msgid "click to place datum point"
 msgstr ""
 
-#: graphicswin.cpp:1012
+#: graphicswin.cpp:1021
 msgid "click first point of line segment"
 msgstr ""
 
-#: graphicswin.cpp:1014
+#: graphicswin.cpp:1023
 msgid "click first point of construction line segment"
 msgstr ""
 
-#: graphicswin.cpp:1015
+#: graphicswin.cpp:1024
 msgid "click first point of cubic segment"
 msgstr ""
 
-#: graphicswin.cpp:1016
+#: graphicswin.cpp:1025
 msgid "click center of circle"
 msgstr ""
 
-#: graphicswin.cpp:1017
+#: graphicswin.cpp:1026
 msgid "click origin of workplane"
 msgstr ""
 
-#: graphicswin.cpp:1018
+#: graphicswin.cpp:1027
 msgid "click one corner of rectangle"
 msgstr ""
 
-#: graphicswin.cpp:1019
+#: graphicswin.cpp:1028
 msgid "click top left of text"
 msgstr ""
 
-#: graphicswin.cpp:1025
+#: graphicswin.cpp:1034
 msgid "click top left of image"
 msgstr ""
 
-#: graphicswin.cpp:1038
+#: graphicswin.cpp:1047
 msgid "No entities are selected. Select entities before trying to toggle their construction state."
 msgstr ""
 
@@ -1048,19 +1056,19 @@ msgstr ""
 msgid "(unnamed)"
 msgstr ""
 
-#: groupmesh.cpp:622
+#: groupmesh.cpp:626
 msgid "not closed contour, or not all same style!"
 msgstr ""
 
-#: groupmesh.cpp:635
+#: groupmesh.cpp:639
 msgid "points not all coplanar!"
 msgstr ""
 
-#: groupmesh.cpp:637
+#: groupmesh.cpp:641
 msgid "contour is self-intersecting!"
 msgstr ""
 
-#: groupmesh.cpp:639
+#: groupmesh.cpp:643
 msgid "zero-length edge!"
 msgstr ""
 
@@ -1088,13 +1096,13 @@ msgstr ""
 msgid "Must be sketching in workplane to split."
 msgstr ""
 
-#: modify.cpp:611
+#: modify.cpp:608
 msgid ""
-"Select two entities that intersect each other (e.g. two lines or two circles or a circle and a "
-"line)."
+"Select two entities that intersect each other (e.g. two lines/circles/arcs or a line/circle/arc "
+"and a point)."
 msgstr ""
 
-#: modify.cpp:655
+#: modify.cpp:713
 msgid "Can't split; no intersection found."
 msgstr ""
 
@@ -1276,7 +1284,7 @@ msgid "Don't Save"
 msgstr ""
 
 #: platform/cocoamain.mm:880
-msgid "An autosave file is availible for this project."
+msgid "An autosave file is available for this project."
 msgstr ""
 
 #: platform/cocoamain.mm:882
@@ -1367,7 +1375,7 @@ msgstr ""
 
 #: platform/gtkmain.cpp:1066 platform/w32main.cpp:1193
 msgid ""
-"An autosave file is availible for this project.\n"
+"An autosave file is available for this project.\n"
 "\n"
 "Do you want to load the autosave file instead?"
 msgstr ""

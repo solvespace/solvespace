@@ -8,7 +8,7 @@
 #define SOLVESPACE_RENDER_H
 
 //-----------------------------------------------------------------------------
-// Interfaces and utilities common for all renderers.
+// Interfaces common for all renderers
 //-----------------------------------------------------------------------------
 
 enum class StipplePattern : uint32_t;
@@ -17,13 +17,15 @@ enum class StipplePattern : uint32_t;
 // an axonometric projection.
 class Camera {
 public:
-    size_t      width, height;
+    double      width;
+    double      height;
+    double      pixelRatio;
+    bool        gridFit;
     Vector      offset;
     Vector      projRight;
     Vector      projUp;
     double      scale;
     double      tangent;
-    bool        hasPixels;
 
     bool IsPerspective() const { return tangent != 0.0; }
 
@@ -135,11 +137,10 @@ public:
         bool Equals(const Fill &other) const;
     };
 
-    IdList<Stroke, hStroke> strokes;
-    IdList<Fill,   hFill>   fills;
-    BitmapFont bitmapFont;
+    IdList<Stroke, hStroke> strokes = {};
+    IdList<Fill,   hFill>   fills   = {};
+    BitmapFont bitmapFont = {};
 
-    Canvas() : strokes(), fills(), bitmapFont() {}
     virtual void Clear();
 
     hStroke GetStroke(const Stroke &stroke);
@@ -197,7 +198,7 @@ public:
 class UiCanvas {
 public:
     std::shared_ptr<Canvas> canvas;
-    bool                    flip;
+    bool                    flip = false;
 
     void DrawLine(int x1, int y1, int x2, int y2, RgbaColor color, int width = 1,
                   int zIndex = 0);
@@ -216,17 +217,14 @@ public:
 // A canvas that performs picking against drawn geometry.
 class ObjectPicker : public Canvas {
 public:
-    Camera      camera;
+    Camera      camera      = {};
     // Configuration.
-    Point2d     point;
-    double      selRadius;
+    Point2d     point       = {};
+    double      selRadius   = 0.0;
     // Picking state.
-    double      minDistance;
-    int         maxZIndex;
-    uint32_t    position;
-
-    ObjectPicker() : camera(), point(), selRadius(),
-                     minDistance(), maxZIndex(), position() {}
+    double      minDistance = 0.0;
+    int         maxZIndex   = 0;
+    uint32_t    position    = 0;
 
     const Camera &GetCamera() const override { return camera; }
 
@@ -259,24 +257,27 @@ public:
 
 // A canvas that renders onto a 2d surface, performing z-index sorting, occlusion testing, etc,
 // on the CPU.
-class SurfaceRenderer : public Canvas {
+class SurfaceRenderer : public ViewportCanvas {
 public:
-    Camera      camera;
-    Lighting    lighting;
+    Camera      camera   = {};
+    Lighting    lighting = {};
     // Chord tolerance, for converting beziers to pwl.
-    double      chordTolerance;
+    double      chordTolerance = 0.0;
     // Render lists.
     handle_map<hStroke, SEdgeList>   edges;
     handle_map<hStroke, SBezierList> beziers;
-    SMesh       mesh;
+    SMesh       mesh = {};
     // State.
-    BBox        bbox;
+    BBox        bbox = {};
 
-    SurfaceRenderer() : camera(), lighting(), chordTolerance(), mesh(), bbox() {}
     void Clear() override;
 
     // Canvas interface.
     const Camera &GetCamera() const override { return camera; }
+
+    // ViewportCanvas interface.
+    void SetCamera(const Camera &camera) override { this->camera = camera; };
+    void SetLighting(const Lighting &lighting) override { this->lighting = lighting; }
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override;
     void DrawEdges(const SEdgeList &el, hStroke hcs) override;
@@ -318,20 +319,26 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// 2d renderers.
+// 2d renderers
 //-----------------------------------------------------------------------------
 
 class CairoRenderer : public SurfaceRenderer {
 public:
-    cairo_t     *context;
+    cairo_t     *context  = NULL;
     // Renderer configuration.
-    bool        antialias;
+    bool        antialias = false;
     // Renderer state.
     struct {
         hStroke     hcs;
-    } current;
+    } current = {};
 
-    CairoRenderer() : context(), current() {}
+    void Clear() override;
+
+    void NewFrame() override {}
+    void FlushFrame() override;
+    std::shared_ptr<Pixmap> ReadFrame() override;
+
+    void GetIdent(const char **vendor, const char **renderer, const char **version) override;
 
     void SelectStroke(hStroke hcs);
     void MoveTo(Vector p);
@@ -346,20 +353,37 @@ public:
     void OutputEnd() override;
 };
 
+class CairoPixmapRenderer : public CairoRenderer {
+public:
+    std::shared_ptr<Pixmap>  pixmap;
+
+    cairo_surface_t         *surface = NULL;
+
+    void Init();
+    void Clear() override;
+
+    std::shared_ptr<Pixmap> ReadFrame() override;
+};
+
 //-----------------------------------------------------------------------------
-// 3d renderers.
+// 3d renderers
 //-----------------------------------------------------------------------------
 
 // An offscreen renderer based on OpenGL framebuffers.
 class GlOffscreen {
 public:
-    unsigned int          framebuffer;
-    unsigned int          colorRenderbuffer, depthRenderbuffer;
+    unsigned int          framebuffer = 0;
+    unsigned int          colorRenderbuffer = 0;
+    unsigned int          depthRenderbuffer = 0;
     std::vector<uint8_t>  data;
 
     bool Render(int width, int height, std::function<void()> renderFn);
     void Clear();
 };
+
+//-----------------------------------------------------------------------------
+// Factories
+//-----------------------------------------------------------------------------
 
 std::shared_ptr<ViewportCanvas> CreateRenderer();
 

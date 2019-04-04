@@ -6,6 +6,15 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
+void SolveSpace::AssertFailure(const char *file, unsigned line, const char *function,
+                               const char *condition, const char *message) {
+    std::string formattedMsg;
+    formattedMsg += ssprintf("File %s, line %u, function %s:\n", file, line, function);
+    formattedMsg += ssprintf("Assertion failed: %s.\n", condition);
+    formattedMsg += ssprintf("Message: %s.\n", message);
+    SolveSpace::Platform::FatalError(formattedMsg);
+}
+
 std::string SolveSpace::ssprintf(const char *fmt, ...)
 {
     va_list va;
@@ -91,90 +100,93 @@ void SolveSpace::MultMatrix(double *mata, double *matb, double *matr) {
 }
 
 //-----------------------------------------------------------------------------
-// Word-wrap the string for our message box appropriately, and then display
+// Format the string for our message box appropriately, and then display
 // that string.
 //-----------------------------------------------------------------------------
-static void DoStringForMessageBox(const char *str, va_list f, bool error)
+static void MessageBox(const char *fmt, va_list va, bool error,
+                       std::function<void()> onDismiss = std::function<void()>())
 {
-    char inBuf[1024*50];
-    vsprintf(inBuf, str, f);
+#ifndef LIBRARY
+    va_list va_size;
+    va_copy(va_size, va);
+    int size = vsnprintf(NULL, 0, fmt, va_size);
+    ssassert(size >= 0, "vsnprintf could not encode string");
+    va_end(va_size);
 
-    char outBuf[1024*50];
-    int i = 0, j = 0, len = 0, longestLen = 47;
-    int rows = 0, cols = 0;
+    std::string text;
+    text.resize(size);
 
-    // Count the width of the longest line that starts with spaces; those
-    // are list items, that should not be split in the middle.
-    bool listLine = false;
-    while(inBuf[i]) {
-        if(inBuf[i] == '\r') {
-            // ignore these
-        } else if(inBuf[i] == ' ' && len == 0) {
-            listLine = true;
-        } else if(inBuf[i] == '\n') {
-            if(listLine) longestLen = max(longestLen, len);
-            len = 0;
-        } else {
-            len++;
+    vsnprintf(&text[0], size + 1, fmt, va);
+
+    // Split message text using a heuristic for better presentation.
+    size_t separatorAt = 0;
+    while(separatorAt != std::string::npos) {
+        size_t dotAt = text.find('.', separatorAt + 1),
+               colonAt = text.find(':', separatorAt + 1);
+        separatorAt = min(dotAt, colonAt);
+        if(separatorAt == std::string::npos ||
+                (separatorAt + 1 < text.size() && isspace(text[separatorAt + 1]))) {
+            break;
         }
-        i++;
     }
-    if(listLine) longestLen = max(longestLen, len);
-
-    // Word wrap according to our target line length longestLen.
-    len = 0;
-    i = 0;
-    while(inBuf[i]) {
-        if(inBuf[i] == '\r') {
-            // ignore these
-        } else if(inBuf[i] == '\n') {
-            outBuf[j++] = '\n';
-            if(len == 0) rows++;
-            len = 0;
-        } else if(inBuf[i] == ' ' && len > longestLen) {
-            outBuf[j++] = '\n';
-            len = 0;
-        } else {
-            outBuf[j++] = inBuf[i];
-            // Count rows when we draw the first character; so an empty
-            // row doesn't end up counting.
-            if(len == 0) rows++;
-            len++;
+    std::string message = text;
+    std::string description;
+    if(separatorAt != std::string::npos) {
+        message = text.substr(0, separatorAt + 1);
+        if(separatorAt + 1 < text.size()) {
+            description = text.substr(separatorAt + 1);
         }
-        cols = max(cols, len);
-        i++;
     }
-    outBuf[j++] = '\0';
 
-    // And then display the text with our actual longest line length.
-    DoMessageBox(outBuf, rows, cols, error);
+    std::string::iterator it = description.begin();
+    while(isspace(*it)) it++;
+    description = description.substr(it - description.begin());
+
+    Platform::MessageDialogRef dialog = CreateMessageDialog(SS.GW.window);
+
+    using Platform::MessageDialog;
+    if(error) {
+        dialog->SetType(MessageDialog::Type::ERROR);
+    } else {
+        dialog->SetType(MessageDialog::Type::INFORMATION);
+    }
+    dialog->SetTitle(error ? C_("title", "Error") : C_("title", "Message"));
+    dialog->SetMessage(message);
+    if(!description.empty()) {
+        dialog->SetDescription(description);
+    }
+    dialog->AddButton(C_("button", "&OK"), MessageDialog::Response::OK,
+                      /*isDefault=*/true);
+
+    dialog->onResponse = [=](MessageDialog::Response _response) {
+        if(onDismiss) {
+            onDismiss();
+        }
+    };
+    dialog->ShowModal();
+#endif
 }
-void SolveSpace::Error(const char *str, ...)
+void SolveSpace::Error(const char *fmt, ...)
 {
     va_list f;
-    va_start(f, str);
-    DoStringForMessageBox(str, f, /*error=*/true);
+    va_start(f, fmt);
+    MessageBox(fmt, f, /*error=*/true);
     va_end(f);
 }
-void SolveSpace::Message(const char *str, ...)
+void SolveSpace::Message(const char *fmt, ...)
 {
     va_list f;
-    va_start(f, str);
-    DoStringForMessageBox(str, f, /*error=*/false);
+    va_start(f, fmt);
+    MessageBox(fmt, f, /*error=*/false);
     va_end(f);
 }
-
-void SolveSpace::CnfFreezeBool(bool v, const std::string &name)
-    { CnfFreezeInt(v ? 1 : 0, name); }
-
-void SolveSpace::CnfFreezeColor(RgbaColor v, const std::string &name)
-    { CnfFreezeInt(v.ToPackedInt(), name); }
-
-bool SolveSpace::CnfThawBool(bool v, const std::string &name)
-    { return CnfThawInt(v ? 1 : 0, name) != 0; }
-
-RgbaColor SolveSpace::CnfThawColor(RgbaColor v, const std::string &name)
-    { return RgbaColor::FromPackedInt(CnfThawInt(v.ToPackedInt(), name)); }
+void SolveSpace::MessageAndRun(std::function<void()> onDismiss, const char *fmt, ...)
+{
+    va_list f;
+    va_start(f, fmt);
+    MessageBox(fmt, f, /*error=*/false, onDismiss);
+    va_end(f);
+}
 
 //-----------------------------------------------------------------------------
 // Solve a mostly banded matrix. In a given row, there are LEFT_OF_DIAG

@@ -81,12 +81,18 @@ void Style::CreateDefaultStyle(hStyle h) {
 }
 
 void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
+    Platform::SettingsRef settings = Platform::GetSettings();
+
     if(d == NULL) d = &Defaults[0];
-    s->color         = (factory) ? d->color : CnfThawColor(d->color, CnfColor(d->cnfPrefix));
-    s->width         = (factory) ? d->width : CnfThawFloat((float)(d->width), CnfWidth(d->cnfPrefix));
+    s->color         = (factory)
+                        ? d->color
+                        : settings->ThawColor(CnfColor(d->cnfPrefix), d->color);
+    s->width         = (factory)
+                        ? d->width
+                        : settings->ThawFloat(CnfWidth(d->cnfPrefix), (float)(d->width));
     s->widthAs       = UnitsAs::PIXELS;
     s->textHeight    = (factory) ? 11.5
-                                 : CnfThawFloat(11.5, CnfTextHeight(d->cnfPrefix));
+                                 : settings->ThawFloat(CnfTextHeight(d->cnfPrefix), 11.5);
     s->textHeightAs  = UnitsAs::PIXELS;
     s->textOrigin    = TextOrigin::NONE;
     s->textAngle     = 0;
@@ -109,12 +115,12 @@ void Style::LoadFactoryDefaults() {
     SS.backgroundColor = RGBi(0, 0, 0);
 }
 
-void Style::FreezeDefaultStyles() {
+void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
-        CnfFreezeColor(Color(d->h), CnfColor(d->cnfPrefix));
-        CnfFreezeFloat((float)Width(d->h), CnfWidth(d->cnfPrefix));
-        CnfFreezeFloat((float)TextHeight(d->h), CnfTextHeight(d->cnfPrefix));
+        settings->FreezeColor(CnfColor(d->cnfPrefix), Color(d->h));
+        settings->FreezeFloat(CnfWidth(d->cnfPrefix), (float)Width(d->h));
+        settings->FreezeFloat(CnfTextHeight(d->cnfPrefix), (float)TextHeight(d->h));
     }
 }
 
@@ -162,7 +168,7 @@ void Style::AssignSelectionToStyle(uint32_t v) {
     }
 
     SS.GW.ClearSelection();
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 
     // And show that style's info screen in the text window.
     SS.TW.GoToScreen(TextWindow::Screen::STYLE_INFO);
@@ -439,7 +445,7 @@ void TextWindow::ScreenDeleteStyle(int link, uint32_t v) {
         // the style, so no need to do anything else.
     }
     SS.TW.GoToScreen(Screen::LIST_OF_STYLES);
-    InvalidateGraphics();
+    SS.GW.Invalidate();
 }
 
 void TextWindow::ScreenChangeStylePatternType(int link, uint32_t v) {
@@ -595,11 +601,10 @@ void TextWindow::ScreenChangeStyleYesNo(int link, uint32_t v) {
             s->textOrigin = (Style::TextOrigin)((uint32_t)s->textOrigin |  (uint32_t)Style::TextOrigin::TOP);
             break;
     }
-    SS.GW.persistentDirty = true;
-    InvalidateGraphics();
+    SS.GW.Invalidate(/*clearPersistent=*/true);
 }
 
-bool TextWindow::EditControlDoneForStyles(const char *str) {
+bool TextWindow::EditControlDoneForStyles(const std::string &str) {
     Style *s;
     switch(edit.meaning) {
         case Edit::STYLE_STIPPLE_PERIOD:
@@ -614,7 +619,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             if(units == Style::UnitsAs::MM) {
                 v = SS.StringToMm(str);
             } else {
-                v = atof(str);
+                v = atof(str.c_str());
             }
             v = max(0.0, v);
             if(edit.meaning == Edit::STYLE_TEXT_HEIGHT) {
@@ -629,14 +634,14 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
         case Edit::STYLE_TEXT_ANGLE:
             SS.UndoRemember();
             s = Style::Get(edit.style);
-            s->textAngle = WRAP_SYMMETRIC(atof(str), 360);
+            s->textAngle = WRAP_SYMMETRIC(atof(str.c_str()), 360);
             break;
 
         case Edit::BACKGROUND_COLOR:
         case Edit::STYLE_FILL_COLOR:
         case Edit::STYLE_COLOR: {
             Vector rgb;
-            if(sscanf(str, "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
+            if(sscanf(str.c_str(), "%lf, %lf, %lf", &rgb.x, &rgb.y, &rgb.z)==3) {
                 rgb = rgb.ClampWithin(0, 1);
                 if(edit.meaning == Edit::STYLE_COLOR) {
                     SS.UndoRemember();
@@ -655,7 +660,7 @@ bool TextWindow::EditControlDoneForStyles(const char *str) {
             break;
         }
         case Edit::STYLE_NAME:
-            if(!*str) {
+            if(str.empty()) {
                 Error(_("Style name cannot be empty"));
             } else {
                 SS.UndoRemember();

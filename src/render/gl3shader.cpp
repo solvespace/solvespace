@@ -272,6 +272,8 @@ void MeshRenderer::Remove(const MeshRenderer::Handle &handle) {
 
 void MeshRenderer::Draw(const MeshRenderer::Handle &handle,
                         bool useColors, RgbaColor overrideColor) {
+    if(handle.size == 0) return;
+
     selectedShader->Enable();
 
     glBindBuffer(GL_ARRAY_BUFFER, handle.vertexBuffer);
@@ -575,6 +577,8 @@ void EdgeRenderer::Remove(const EdgeRenderer::Handle &handle) {
 }
 
 void EdgeRenderer::Draw(const EdgeRenderer::Handle &handle) {
+    if(handle.size == 0) return;
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, atlas->GetTexture(pattern));
     shader.SetUniformTextureUnit("pattern", 1);
@@ -774,6 +778,8 @@ void OutlineRenderer::Remove(const OutlineRenderer::Handle &handle) {
 }
 
 void OutlineRenderer::Draw(const OutlineRenderer::Handle &handle, Canvas::DrawOutlinesAs mode) {
+    if(handle.size == 0) return;
+
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, atlas->GetTexture(pattern));
     shader.SetUniformTextureUnit("pattern", 1);
@@ -980,15 +986,17 @@ IndexedMeshRenderer::Handle IndexedMeshRenderer::Add(const SIndexedMesh &m, bool
     return handle;
 }
 
-void IndexedMeshRenderer::Remove(const IndexedMeshRenderer::Handle &m) {
-    glDeleteBuffers(1, &m.vertexBuffer);
-    glDeleteBuffers(1, &m.indexBuffer);
+void IndexedMeshRenderer::Remove(const IndexedMeshRenderer::Handle &handle) {
+    glDeleteBuffers(1, &handle.vertexBuffer);
+    glDeleteBuffers(1, &handle.indexBuffer);
 }
 
-void IndexedMeshRenderer::Draw(const IndexedMeshRenderer::Handle &m) {
+void IndexedMeshRenderer::Draw(const IndexedMeshRenderer::Handle &handle) {
+    if(handle.size == 0) return;
+
     selectedShader->Enable();
 
-    glBindBuffer(GL_ARRAY_BUFFER, m.vertexBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, handle.vertexBuffer);
     glEnableVertexAttribArray(ATTRIB_POS);
     glVertexAttribPointer(ATTRIB_POS, 3, GL_FLOAT, GL_FALSE, sizeof(SIndexedMesh::Vertex),
                           (void *)offsetof(SIndexedMesh::Vertex, pos));
@@ -998,8 +1006,8 @@ void IndexedMeshRenderer::Draw(const IndexedMeshRenderer::Handle &m) {
                               (void *)offsetof(SIndexedMesh::Vertex, tex));
     }
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.indexBuffer);
-    glDrawElements(GL_TRIANGLES, m.size, GL_UNSIGNED_INT, NULL);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle.indexBuffer);
+    glDrawElements(GL_TRIANGLES, handle.size, GL_UNSIGNED_INT, NULL);
 
     glDisableVertexAttribArray(ATTRIB_POS);
     if(NeedsTexture()) glDisableVertexAttribArray(ATTRIB_TEX);

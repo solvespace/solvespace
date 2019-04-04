@@ -7,7 +7,7 @@
 	url = https://github.com/glennrp/libpng
 [submodule "extlib/freetype"]
 	path = extlib/freetype
-	url = http://git.sv.nongnu.org/r/freetype/freetype2.git
+	url = https://git.savannah.nongnu.org/r/freetype/freetype2.git/
 [submodule "extlib/libdxfrw"]
 	path = extlib/libdxfrw
 	url = https://github.com/solvespace/libdxfrw.git
@@ -20,3 +20,9 @@
 [submodule "extlib/angle"]
 	path = extlib/angle
 	url = https://github.com/solvespace/angle
+[submodule "extlib/flatbuffers"]
+	path = extlib/flatbuffers
+	url = https://github.com/google/flatbuffers
+[submodule "extlib/q3d"]
+	path = extlib/q3d
+	url = https://github.com/q3k/q3d

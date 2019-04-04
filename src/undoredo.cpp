@@ -31,8 +31,8 @@ void SolveSpaceUI::UndoRedo() {
 }
 
 void SolveSpaceUI::UndoEnableMenus() {
-    EnableMenuByCmd(Command::UNDO, undo.cnt > 0);
-    EnableMenuByCmd(Command::REDO, redo.cnt > 0);
+    SS.GW.undoMenuItem->SetEnabled(undo.cnt > 0);
+    SS.GW.redoMenuItem->SetEnabled(redo.cnt > 0);
 }
 
 void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {

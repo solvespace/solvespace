@@ -56,10 +56,18 @@ TtfFontList::~TtfFontList() {
 void TtfFontList::LoadAll() {
     if(loaded) return;
 
-    for(const Platform::Path &font : GetFontFiles()) {
+    for(const Platform::Path &font : Platform::GetFontFiles()) {
         TtfFont tf = {};
         tf.fontFile = font;
         if(tf.LoadFromFile(fontLibrary))
+            l.Add(&tf);
+    }
+
+    // Add builtin font to end of font list so it is displayed first in the UI
+    {
+        TtfFont tf = {};
+        tf.SetResourceID("fonts/BitstreamVeraSans-Roman-builtin.ttf");
+        if(tf.LoadFromResource(fontLibrary))
             l.Add(&tf);
     }
 
@@ -84,11 +92,14 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
     LoadAll();
 
     TtfFont *tf = std::find_if(l.begin(), l.end(),
-        [&](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
+        [&font](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(tf != l.end()) {
         if(tf->fontFace == NULL) {
-            tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
+            if(tf->IsResource())
+                tf->LoadFromResource(fontLibrary, /*nameOnly=*/false);
+            else
+                tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
         }
         return tf;
     } else {
@@ -131,11 +142,22 @@ std::string TtfFont::FontFileBaseName() const {
 }
 
 //-----------------------------------------------------------------------------
-// Load a TrueType font into memory. We care about the curves that define
-// the letter shapes, and about the mappings that determine which glyph goes
-// with which character.
+// Convenience method to set fontFile for resource-loaded fonts as res://<path>
+//-----------------------------------------------------------------------------
+void TtfFont::SetResourceID(const std::string &resource) {
+    fontFile = { "res://" + resource };
+}
+
+bool TtfFont::IsResource() const {
+    return fontFile.raw.compare(0, 6, "res://") == 0;
+}
+
+//-----------------------------------------------------------------------------
+// Load a TrueType font into memory.
 //-----------------------------------------------------------------------------
 bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
+    ssassert(!IsResource(), "Cannot load a font provided by a resource as a file.");
+
     FT_Open_Args args = {};
     args.flags    = FT_OPEN_PATHNAME;
     args.pathname = &fontFile.raw[0]; // FT_String is char* for historical reasons
@@ -149,6 +171,38 @@ bool TtfFont::LoadFromFile(FT_Library fontLibrary, bool nameOnly) {
         return false;
     }
 
+    return ExtractTTFData(nameOnly);
+}
+
+//-----------------------------------------------------------------------------
+// Load a TrueType from resource in memory. Implemented to load bundled fonts
+// through theresource system.
+//-----------------------------------------------------------------------------
+bool TtfFont::LoadFromResource(FT_Library fontLibrary, bool nameOnly) {
+    ssassert(IsResource(), "Font to be loaded as resource is not provided by a resource "
+             "or does not have the 'res://' prefix.");
+
+    size_t _size;
+    // substr to cut off 'res://' (length: 6)
+    const void *_buffer = Platform::LoadResource(fontFile.raw.substr(6, fontFile.raw.size()),
+                                                 &_size);
+
+    FT_Long size = static_cast<FT_Long>(_size);
+    const FT_Byte *buffer = reinterpret_cast<const FT_Byte*>(_buffer);
+
+    if(int fterr = FT_New_Memory_Face(fontLibrary, buffer, size, 0, &fontFace)) {
+            dbp("freetype: loading font '%s' from memory failed: %s",
+                fontFile.raw.c_str(), ft_error_string(fterr));
+            return false;
+    }
+
+    return ExtractTTFData(nameOnly);
+}
+
+//-----------------------------------------------------------------------------
+// Extract font information. We care about the font name and unit size.
+//-----------------------------------------------------------------------------
+bool TtfFont::ExtractTTFData(bool nameOnly) {
     if(int fterr = FT_Select_Charmap(fontFace, FT_ENCODING_UNICODE)) {
         dbp("freetype: loading unicode CMap for file '%s' failed: %s",
             fontFile.raw.c_str(), ft_error_string(fterr));

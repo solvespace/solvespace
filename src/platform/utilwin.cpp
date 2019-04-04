@@ -35,17 +35,6 @@ void dbp(const char *str, ...)
 #endif
 }
 
-void assert_failure(const char *file, unsigned line, const char *function,
-                    const char *condition, const char *message) {
-    dbp("File %s, line %u, function %s:", file, line, function);
-    dbp("Assertion '%s' failed: ((%s) == false).", message, condition);
-#ifdef NDEBUG
-    _exit(1);
-#else
-    abort();
-#endif
-}
-
 //-----------------------------------------------------------------------------
 // A separate heap, on which we allocate expressions. Maybe a bit faster,
 // since no fragmentation issues whatsoever, and it also makes it possible
@@ -85,21 +74,20 @@ void vl() {
 }
 
 std::vector<std::string> InitPlatform(int argc, char **argv) {
-    // Create the heap used for long-lived stuff (that gets freed piecewise).
-    PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
-    // Create the heap that we use to store Exprs and other temp stuff.
-    FreeAllTemporary();
-
 #if !defined(LIBRARY) && defined(_MSC_VER)
-    // Don't display the abort message; it is aggravating in CLI binaries
-    // and results in infinite WndProc recursion in GUI binaries.
-    _set_abort_behavior(0, _WRITE_ABORT_MSG);
+    // We display our own message on abort; just call ReportFault.
+    _set_abort_behavior(_CALL_REPORTFAULT, _WRITE_ABORT_MSG|_CALL_REPORTFAULT);
     int crtReportTypes[] = {_CRT_WARN, _CRT_ERROR, _CRT_ASSERT};
     for(int crtReportType : crtReportTypes) {
         _CrtSetReportMode(crtReportType, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
         _CrtSetReportFile(crtReportType, _CRTDBG_FILE_STDERR);
     }
 #endif
+
+    // Create the heap used for long-lived stuff (that gets freed piecewise).
+    PermHeap = HeapCreate(HEAP_NO_SERIALIZE, 1024*1024*20, 0);
+    // Create the heap that we use to store Exprs and other temp stuff.
+    FreeAllTemporary();
 
     // Extract the command-line arguments; the ones from main() are ignored,
     // since they are in the OEM encoding.

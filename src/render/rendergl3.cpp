@@ -40,7 +40,7 @@ public:
 };
 
 // A canvas that uses the core OpenGL 3 profile, for desktop systems.
-class OpenGl2Renderer : public ViewportCanvas {
+class OpenGl3Renderer final : public ViewportCanvas {
 public:
     struct SEdgeListItem {
         hStroke         h;
@@ -88,7 +88,7 @@ public:
         std::weak_ptr<const Pixmap> texture;
     } current;
 
-    OpenGl2Renderer() :
+    OpenGl3Renderer() :
         lines(), meshes(), points(), pixmapCache(), masks(),
         initialized(), atlas(), meshRenderer(), imeshRenderer(),
         edgeRenderer(), outlineRenderer(), camera(), lighting(),
@@ -193,7 +193,7 @@ static void ssglDepthRange(Canvas::Layer layer, int zIndex) {
 // A simple OpenGL state tracker to group consecutive draw calls.
 //-----------------------------------------------------------------------------
 
-Canvas::Stroke *OpenGl2Renderer::SelectStroke(hStroke hcs) {
+Canvas::Stroke *OpenGl3Renderer::SelectStroke(hStroke hcs) {
     if(current.hcs.v == hcs.v) return current.stroke;
 
     Stroke *stroke = strokes.FindById(hcs);
@@ -207,7 +207,7 @@ Canvas::Stroke *OpenGl2Renderer::SelectStroke(hStroke hcs) {
     return stroke;
 }
 
-void OpenGl2Renderer::SelectMask(FillPattern pattern) {
+void OpenGl3Renderer::SelectMask(FillPattern pattern) {
     if(!masks[0]) {
         masks[0] = Pixmap::Create(Pixmap::Format::A, 32, 32);
         masks[1] = Pixmap::Create(Pixmap::Format::A, 32, 32);
@@ -239,7 +239,7 @@ void OpenGl2Renderer::SelectMask(FillPattern pattern) {
     }
 }
 
-Canvas::Fill *OpenGl2Renderer::SelectFill(hFill hcf) {
+Canvas::Fill *OpenGl3Renderer::SelectFill(hFill hcf) {
     if(current.hcf.v == hcf.v) return current.fill;
 
     Fill *fill = fills.FindById(hcf);
@@ -259,16 +259,25 @@ Canvas::Fill *OpenGl2Renderer::SelectFill(hFill hcf) {
     return fill;
 }
 
-void OpenGl2Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
+static bool IsPowerOfTwo(size_t n) {
+    return (n & (n - 1)) == 0;
+}
+
+void OpenGl3Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
     GLuint id;
     pixmapCache.Lookup(pm, &id);
     glBindTexture(GL_TEXTURE_2D, id);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S,     GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T,     GL_REPEAT);
+    if(IsPowerOfTwo(pm->width) && IsPowerOfTwo(pm->height)) {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    } else {
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
 
-    GLenum format;
+    GLenum format = 0;
     switch(pm->format) {
         case Pixmap::Format::RGBA: format = GL_RGBA;  break;
         case Pixmap::Format::RGB:  format = GL_RGB;   break;
@@ -285,7 +294,7 @@ void OpenGl2Renderer::InvalidatePixmap(std::shared_ptr<const Pixmap> pm) {
                  format, GL_UNSIGNED_BYTE, &pm->data[0]);
 }
 
-void OpenGl2Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
+void OpenGl3Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     if(current.texture.lock() == pm) return;
 
     GLuint id;
@@ -298,7 +307,7 @@ void OpenGl2Renderer::SelectTexture(std::shared_ptr<const Pixmap> pm) {
     current.texture = pm;
 }
 
-void OpenGl2Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
+void OpenGl3Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
     SEdgeListItem *eli = lines.FindByIdNoOops(hcs);
     if(eli == NULL) {
         SEdgeListItem item = {};
@@ -310,7 +319,7 @@ void OpenGl2Renderer::DoLine(const Vector &a, const Vector &b, hStroke hcs) {
     eli->lines.AddEdge(a, b);
 }
 
-void OpenGl2Renderer::DoPoint(Vector p, hStroke hs) {
+void OpenGl3Renderer::DoPoint(Vector p, hStroke hs) {
     SPointListItem *pli = points.FindByIdNoOops(hs);
     if(pli == NULL) {
         SPointListItem item = {};
@@ -322,7 +331,7 @@ void OpenGl2Renderer::DoPoint(Vector p, hStroke hs) {
     pli->points.AddPoint(p);
 }
 
-void OpenGl2Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke hcs) {
+void OpenGl3Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke hcs) {
     Stroke *stroke = strokes.FindById(hcs);
     if(stroke->stipplePattern != StipplePattern::FREEHAND &&
        stroke->stipplePattern != StipplePattern::ZIGZAG)
@@ -331,7 +340,7 @@ void OpenGl2Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
         return;
     }
 
-    const char *patternSeq;
+    const char *patternSeq = NULL;
     Stroke s = *stroke;
     s.stipplePattern = StipplePattern::CONTINUOUS;
     hcs = GetStroke(s);
@@ -422,7 +431,7 @@ void OpenGl2Renderer::DoStippledLine(const Vector &a, const Vector &b, hStroke h
 // A canvas implemented using OpenGL 3 vertex buffer objects.
 //-----------------------------------------------------------------------------
 
-void OpenGl2Renderer::Init() {
+void OpenGl3Renderer::Init() {
     atlas.Init();
     edgeRenderer.Init(&atlas);
     outlineRenderer.Init(&atlas);
@@ -437,17 +446,17 @@ void OpenGl2Renderer::Init() {
     UpdateProjection();
 }
 
-void OpenGl2Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {
+void OpenGl3Renderer::DrawLine(const Vector &a, const Vector &b, hStroke hcs) {
     DoStippledLine(a, b, hcs);
 }
 
-void OpenGl2Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
+void OpenGl3Renderer::DrawEdges(const SEdgeList &el, hStroke hcs) {
     for(const SEdge &e : el.l) {
         DoStippledLine(e.a, e.b, hcs);
     }
 }
 
-void OpenGl2Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) {
+void OpenGl3Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutlinesAs mode) {
     if(ol.l.n == 0) return;
 
     Stroke *stroke = SelectStroke(hcs);
@@ -459,7 +468,7 @@ void OpenGl2Renderer::DrawOutlines(const SOutlineList &ol, hStroke hcs, DrawOutl
     outlineRenderer.Draw(ol, mode);
 }
 
-void OpenGl2Renderer::DrawVectorText(const std::string &text, double height,
+void OpenGl3Renderer::DrawVectorText(const std::string &text, double height,
                                      const Vector &o, const Vector &u, const Vector &v,
                                      hStroke hcs) {
     SEdgeListItem *eli = lines.FindByIdNoOops(hcs);
@@ -474,7 +483,7 @@ void OpenGl2Renderer::DrawVectorText(const std::string &text, double height,
     VectorFont::Builtin()->Trace(height, o, u, v, text, traceEdge, camera);
 }
 
-void OpenGl2Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
+void OpenGl3Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c, const Vector &d,
                                hFill hcf) {
     SMeshListItem *li = meshes.FindByIdNoOops(hcf);
     if(li == NULL) {
@@ -486,11 +495,11 @@ void OpenGl2Renderer::DrawQuad(const Vector &a, const Vector &b, const Vector &c
     li->mesh.AddQuad(a, b, c, d);
 }
 
-void OpenGl2Renderer::DrawPoint(const Vector &o, hStroke hs) {
+void OpenGl3Renderer::DrawPoint(const Vector &o, hStroke hs) {
     DoPoint(o, hs);
 }
 
-void OpenGl2Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
+void OpenGl3Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
     Fill *fill = SelectFill(hcf);
 
     SMesh m = {};
@@ -500,11 +509,11 @@ void OpenGl2Renderer::DrawPolygon(const SPolygon &p, hFill hcf) {
     m.Clear();
 }
 
-void OpenGl2Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
+void OpenGl3Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
     ssassert(false, "Not implemented");
 }
 
-void OpenGl2Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) {
+void OpenGl3Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &faces, hFill hcf) {
     if(faces.empty()) return;
 
     Fill *fill = SelectFill(hcf);
@@ -522,7 +531,7 @@ void OpenGl2Renderer::DrawFaces(const SMesh &m, const std::vector<uint32_t> &fac
     facesMesh.Clear();
 }
 
-void OpenGl2Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
+void OpenGl3Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
                                  const Vector &o, const Vector &u, const Vector &v,
                                  const Point2d &ta, const Point2d &tb, hFill hcf) {
     Fill fill = *fills.FindById(hcf);
@@ -540,8 +549,10 @@ void OpenGl2Renderer::DrawPixmap(std::shared_ptr<const Pixmap> pm,
     mli->mesh.AddPixmap(o, u, v, ta, tb);
 }
 
-void OpenGl2Renderer::UpdateProjection() {
-    glViewport(0, 0, camera.width, camera.height);
+void OpenGl3Renderer::UpdateProjection() {
+    glViewport(0, 0,
+               (int)(camera.width  * camera.pixelRatio),
+               (int)(camera.height * camera.pixelRatio));
 
     double mat1[16];
     double mat2[16];
@@ -605,7 +616,7 @@ void OpenGl2Renderer::UpdateProjection() {
     glClear(GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGl2Renderer::NewFrame() {
+void OpenGl3Renderer::NewFrame() {
     if(!initialized) {
         Init();
         initialized = true;
@@ -623,10 +634,10 @@ void OpenGl2Renderer::NewFrame() {
     glClearDepthf(1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glPolygonOffset(2.0, 1.0);
+    glFrontFace(GL_CW);
 }
 
-void OpenGl2Renderer::FlushFrame() {
+void OpenGl3Renderer::FlushFrame() {
     for(SMeshListItem &li : meshes) {
         Fill *fill = SelectFill(li.h);
 
@@ -662,32 +673,33 @@ void OpenGl2Renderer::FlushFrame() {
     }
 }
 
-void OpenGl2Renderer::Clear() {
+void OpenGl3Renderer::Clear() {
     ViewportCanvas::Clear();
     pixmapCache.CleanupUnused();
 }
 
-std::shared_ptr<Pixmap> OpenGl2Renderer::ReadFrame() {
+std::shared_ptr<Pixmap> OpenGl3Renderer::ReadFrame() {
     std::shared_ptr<Pixmap> pixmap =
         Pixmap::Create(Pixmap::Format::RGB, (size_t)camera.width, (size_t)camera.height);
-    glReadPixels(0, 0, camera.width, camera.height, GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+    glReadPixels(0, 0, (int)camera.width, (int)camera.height,
+                 GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
     return pixmap;
 }
 
-void OpenGl2Renderer::GetIdent(const char **vendor, const char **renderer, const char **version) {
+void OpenGl3Renderer::GetIdent(const char **vendor, const char **renderer, const char **version) {
     *vendor   = (const char *)glGetString(GL_VENDOR);
     *renderer = (const char *)glGetString(GL_RENDERER);
     *version  = (const char *)glGetString(GL_VERSION);
 }
 
-void OpenGl2Renderer::SetCamera(const Camera &c) {
+void OpenGl3Renderer::SetCamera(const Camera &c) {
     camera = c;
     if(initialized) {
         UpdateProjection();
     }
 }
 
-void OpenGl2Renderer::SetLighting(const Lighting &l) {
+void OpenGl3Renderer::SetLighting(const Lighting &l) {
     lighting = l;
 }
 
@@ -700,11 +712,11 @@ public:
     virtual Canvas::Layer GetLayer() const = 0;
     virtual int GetZIndex() const = 0;
 
-    virtual void Draw(OpenGl2Renderer *renderer) = 0;
-    virtual void Remove(OpenGl2Renderer *renderer) = 0;
+    virtual void Draw(OpenGl3Renderer *renderer) = 0;
+    virtual void Remove(OpenGl3Renderer *renderer) = 0;
 };
 
-class EdgeDrawCall : public DrawCall {
+class EdgeDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke              stroke;
@@ -714,7 +726,7 @@ public:
     virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
     virtual int GetZIndex() const override { return stroke.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SEdgeList &el,
+    static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SEdgeList &el,
                                             Canvas::Stroke *stroke) {
         EdgeDrawCall *dc = new EdgeDrawCall();
         dc->stroke = *stroke;
@@ -722,18 +734,18 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void Draw(OpenGl2Renderer *renderer) override {
+    void Draw(OpenGl3Renderer *renderer) override {
         ssglDepthRange(stroke.layer, stroke.zIndex);
         renderer->edgeRenderer.SetStroke(stroke, 1.0 / renderer->camera.scale);
         renderer->edgeRenderer.Draw(handle);
     }
 
-    void Remove(OpenGl2Renderer *renderer) override {
+    void Remove(OpenGl3Renderer *renderer) override {
         renderer->edgeRenderer.Remove(handle);
     }
 };
 
-class OutlineDrawCall : public DrawCall {
+class OutlineDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke              stroke;
@@ -744,7 +756,7 @@ public:
     virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
     virtual int GetZIndex() const override { return stroke.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SOutlineList &ol,
+    static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SOutlineList &ol,
                                             Canvas::Stroke *stroke,
                                             Canvas::DrawOutlinesAs drawAs) {
         OutlineDrawCall *dc = new OutlineDrawCall();
@@ -754,18 +766,18 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void Draw(OpenGl2Renderer *renderer) override {
+    void Draw(OpenGl3Renderer *renderer) override {
         ssglDepthRange(stroke.layer, stroke.zIndex);
         renderer->outlineRenderer.SetStroke(stroke, 1.0 / renderer->camera.scale);
         renderer->outlineRenderer.Draw(handle, drawAs);
     }
 
-    void Remove(OpenGl2Renderer *renderer) override {
+    void Remove(OpenGl3Renderer *renderer) override {
         renderer->outlineRenderer.Remove(handle);
     }
 };
 
-class PointDrawCall : public DrawCall {
+class PointDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Stroke               stroke;
@@ -775,7 +787,7 @@ public:
     virtual Canvas::Layer GetLayer() const override { return stroke.layer; };
     virtual int GetZIndex() const override { return stroke.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &mesh,
+    static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Stroke *stroke) {
         PointDrawCall *dc = new PointDrawCall();
         dc->stroke = *stroke;
@@ -783,18 +795,18 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void Draw(OpenGl2Renderer *renderer) override {
+    void Draw(OpenGl3Renderer *renderer) override {
         ssglDepthRange(stroke.layer, stroke.zIndex);
         renderer->imeshRenderer.UsePoint(stroke, 1.0 / renderer->camera.scale);
         renderer->imeshRenderer.Draw(handle);
     }
 
-    void Remove(OpenGl2Renderer *renderer) override {
+    void Remove(OpenGl3Renderer *renderer) override {
         renderer->imeshRenderer.Remove(handle);
     }
 };
 
-class PixmapDrawCall : public DrawCall {
+class PixmapDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Fill                 fill;
@@ -804,7 +816,7 @@ public:
     virtual Canvas::Layer GetLayer() const override { return fill.layer; };
     virtual int GetZIndex() const override { return fill.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SIndexedMesh &mesh,
+    static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SIndexedMesh &mesh,
                                             Canvas::Fill *fill) {
         PixmapDrawCall *dc = new PixmapDrawCall();
         dc->fill   = *fill;
@@ -812,7 +824,7 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void Draw(OpenGl2Renderer *renderer) override {
+    void Draw(OpenGl3Renderer *renderer) override {
         ssglDepthRange(fill.layer, fill.zIndex);
         if(fill.pattern != Canvas::FillPattern::SOLID) {
             renderer->SelectMask(fill.pattern);
@@ -825,12 +837,12 @@ public:
         renderer->imeshRenderer.Draw(handle);
     }
 
-    void Remove(OpenGl2Renderer *renderer) override {
+    void Remove(OpenGl3Renderer *renderer) override {
         renderer->imeshRenderer.Remove(handle);
     }
 };
 
-class MeshDrawCall : public DrawCall {
+class MeshDrawCall final : public DrawCall {
 public:
     // Key
     Canvas::Fill            fillFront;
@@ -843,7 +855,7 @@ public:
     virtual Canvas::Layer GetLayer() const override { return fillFront.layer; };
     virtual int GetZIndex() const override { return fillFront.zIndex; };
 
-    static std::shared_ptr<DrawCall> Create(OpenGl2Renderer *renderer, const SMesh &m,
+    static std::shared_ptr<DrawCall> Create(OpenGl3Renderer *renderer, const SMesh &m,
                                             Canvas::Fill *fillFront, Canvas::Fill *fillBack = NULL,
                                             bool isShaded = false) {
         MeshDrawCall *dc = new MeshDrawCall();
@@ -855,7 +867,7 @@ public:
         return std::shared_ptr<DrawCall>(dc);
     }
 
-    void DrawFace(OpenGl2Renderer *renderer, GLenum cullFace, const Canvas::Fill &fill) {
+    void DrawFace(OpenGl3Renderer *renderer, GLenum cullFace, const Canvas::Fill &fill) {
         glCullFace(cullFace);
         ssglDepthRange(fill.layer, fill.zIndex);
         if(fill.pattern != Canvas::FillPattern::SOLID) {
@@ -873,25 +885,21 @@ public:
         renderer->meshRenderer.Draw(handle, /*useColors=*/fill.color.IsEmpty(), fill.color);
     }
 
-    void Draw(OpenGl2Renderer *renderer) override {
-        glEnable(GL_POLYGON_OFFSET_FILL);
+    void Draw(OpenGl3Renderer *renderer) override {
         glEnable(GL_CULL_FACE);
-
         if(hasFillBack)
-            DrawFace(renderer, GL_FRONT, fillBack);
-        DrawFace(renderer, GL_BACK, fillFront);
-
-        glDisable(GL_POLYGON_OFFSET_FILL);
+            DrawFace(renderer, GL_BACK, fillBack);
+        DrawFace(renderer, GL_FRONT, fillFront);
         glDisable(GL_CULL_FACE);
     }
 
-    void Remove(OpenGl2Renderer *renderer) override {
+    void Remove(OpenGl3Renderer *renderer) override {
         renderer->meshRenderer.Remove(handle);
     }
 };
 
 struct CompareDrawCall {
-    bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) {
+    bool operator()(const std::shared_ptr<DrawCall> &a, const std::shared_ptr<DrawCall> &b) const {
         const Canvas::Layer stackup[] = {
             Canvas::Layer::BACK,
             Canvas::Layer::DEPTH_ONLY,
@@ -912,7 +920,7 @@ struct CompareDrawCall {
     }
 };
 
-class OpenGl2RendererBatch : public BatchCanvas {
+class OpenGl3RendererBatch final : public BatchCanvas {
 public:
     struct EdgeBuffer {
         hStroke         h;
@@ -932,14 +940,14 @@ public:
         }
     };
 
-    OpenGl2Renderer *renderer;
+    OpenGl3Renderer *renderer;
 
     IdList<EdgeBuffer,  hStroke> edgeBuffer;
     IdList<PointBuffer, hStroke> pointBuffer;
 
     std::multiset<std::shared_ptr<DrawCall>, CompareDrawCall> drawCalls;
 
-    OpenGl2RendererBatch() : renderer(), edgeBuffer(), pointBuffer() {}
+    OpenGl3RendererBatch() : renderer(), edgeBuffer(), pointBuffer() {}
 
     void DrawLine(const Vector &a, const Vector &b, hStroke hcs) override {
         EdgeBuffer *eb = edgeBuffer.FindByIdNoOops(hcs);
@@ -1065,14 +1073,14 @@ public:
 // Factory functions.
 //-----------------------------------------------------------------------------
 
-std::shared_ptr<BatchCanvas> OpenGl2Renderer::CreateBatch() {
-    OpenGl2RendererBatch *batch = new OpenGl2RendererBatch();
+std::shared_ptr<BatchCanvas> OpenGl3Renderer::CreateBatch() {
+    OpenGl3RendererBatch *batch = new OpenGl3RendererBatch();
     batch->renderer = this;
     return std::shared_ptr<BatchCanvas>(batch);
 }
 
 std::shared_ptr<ViewportCanvas> CreateRenderer() {
-    return std::shared_ptr<ViewportCanvas>(new OpenGl2Renderer());
+    return std::shared_ptr<ViewportCanvas>(new OpenGl3Renderer());
 }
 
 }

@@ -45,7 +45,7 @@ std::string LoadStringFromGzip(const std::string &name) {
 
     // *(uint32_t *) may perform an unaligned access, so do a memcpy.
     uint32_t inflatedSize;
-    memcpy(&inflatedSize, (uint32_t *)((uintptr_t)data + deflatedSize - 4), sizeof(uint32_t));
+    memcpy(&inflatedSize, (uint8_t *)((uintptr_t)data + deflatedSize - 4), sizeof(uint32_t));
     result.resize(inflatedSize);
 
     stream.next_in = (Bytef *)data;
@@ -351,6 +351,16 @@ std::shared_ptr<Pixmap> Pixmap::Create(Format format, size_t width, size_t heigh
     if(stride % 4 != 0) stride += 4 - stride % 4;
     pixmap->stride = stride;
     pixmap->data   = std::vector<uint8_t>(pixmap->stride * pixmap->height);
+    return pixmap;
+}
+
+std::shared_ptr<Pixmap> Pixmap::Copy() {
+    std::shared_ptr<Pixmap> pixmap = std::make_shared<Pixmap>();
+    pixmap->format = format;
+    pixmap->width  = width;
+    pixmap->height = height;
+    pixmap->stride = stride;
+    pixmap->data   = data;
     return pixmap;
 }
 
@@ -938,8 +948,8 @@ void VectorFont::Trace(double forCapHeight, Vector o, Vector u, Vector v, const 
     ssassert(!IsEmpty(), "Expected a loaded font");
 
     // Perform grid-fitting only when the text is parallel to the view plane.
-    if(camera.hasPixels && !(u.WithMagnitude(1).Equals(camera.projRight) &&
-                             v.WithMagnitude(1).Equals(camera.projUp))) {
+    if(camera.gridFit && !(u.WithMagnitude(1).Equals(camera.projRight) &&
+                           v.WithMagnitude(1).Equals(camera.projUp))) {
         return Trace(forCapHeight, o, u, v, str, traceEdge);
     }
 
@@ -1058,8 +1068,9 @@ int PluralExpr::Token::Precedence() {
                     return 3;
 
                 case Op::NONE:
-                    ssassert(false, "Unexpected operator");
+                    ;
             }
+            ssassert(false, "Unexpected operator");
 
         case Type::QUERY:
         case Type::COLON:
@@ -1514,7 +1525,6 @@ bool SetLocale(Predicate pred) {
         std::string filename = "locales/" + it->language + "_" + it->region + ".po";
         translations[*it] = Translation::From(LoadString(filename));
         currentTranslation = &translations[*it];
-        RefreshLocale();
         return true;
     } else {
         return false;

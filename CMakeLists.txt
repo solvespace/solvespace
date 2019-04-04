@@ -22,20 +22,15 @@ set(CMAKE_USER_MAKE_RULES_OVERRIDE_CXX
 
 # project
 
-# NOTE TO PACKAGERS: The embedded git commit hash is critical for rapid bug triage when the builds
-# can come from a variety of sources. If you are mirroring the sources or otherwise build when
-# the .git directory is not present, please comment the following line:
-include(GetGitCommitHash)
-# and instead uncomment the following, adding the complete git hash of the checkout you are using:
-# set(GIT_COMMIT_HASH 0000000000000000000000000000000000000000)
-
 project(solvespace)
 set(solvespace_VERSION_MAJOR 3)
 set(solvespace_VERSION_MINOR 0)
-string(SUBSTRING "${GIT_COMMIT_HASH}" 0 8 solvespace_GIT_HASH)
+string(SUBSTRING "$Id$" 5 8 solvespace_GIT_HASH)
 
 set(ENABLE_GUI        ON CACHE BOOL
-    "Whether the graphical interface is enabled (command line interface always is)")
+    "Whether the graphical interface is enabled")
+set(ENABLE_CLI        ON CACHE BOOL
+    "Whether the command line interface is enabled")
 set(ENABLE_TESTS      ON  CACHE BOOL
     "Whether the test suite will be built and run")
 set(ENABLE_COVERAGE   OFF CACHE BOOL
@@ -108,6 +103,17 @@ endif()
 message(STATUS "Using in-tree libdxfrw")
 add_subdirectory(extlib/libdxfrw)
 
+message(STATUS "Using in-tree flatbuffers")
+set(FLATBUFFERS_BUILD_FLATLIB ON CACHE BOOL "")
+set(FLATBUFFERS_BUILD_FLATC ON CACHE BOOL "")
+set(FLATBUFFERS_BUILD_FLATHASH OFF CACHE BOOL "")
+set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "")
+add_subdirectory(extlib/flatbuffers EXCLUDE_FROM_ALL)
+
+message(STATUS "Using in-tree q3d")
+add_subdirectory(extlib/q3d)
+set(Q3D_INCLUDE_DIR ${CMAKE_BINARY_DIR}/extlib/q3d)
+
 if(WIN32 OR APPLE)
     # On Win32 and macOS we use vendored packages, since there is little to no benefit
     # to trying to find system versions. In particular, trying to link to libraries from
@@ -157,12 +163,8 @@ if(WIN32 OR APPLE)
     list(APPEND CAIRO_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/extlib/cairo/src)
 else()
     # On Linux and BSDs we're a good citizen and link to system libraries.
-
-    find_package(PkgConfig REQUIRED)
-
     find_package(Backtrace)
-    find_package(SpaceWare)
-
+    find_package(PkgConfig REQUIRED)
     find_package(ZLIB REQUIRED)
     find_package(PNG REQUIRED)
     find_package(Freetype REQUIRED)
@@ -202,6 +204,7 @@ if(ENABLE_GUI)
         find_library(APPKIT_LIBRARY AppKit REQUIRED)
     else()
         find_package(OpenGL REQUIRED)
+        find_package(SpaceWare)
         pkg_check_modules(FONTCONFIG REQUIRED fontconfig)
         pkg_check_modules(JSONC REQUIRED json-c)
         pkg_check_modules(GTKMM REQUIRED gtkmm-3.0>=3.18 pangomm-1.4 x11)

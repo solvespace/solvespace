@@ -5,11 +5,6 @@
 //-----------------------------------------------------------------------------
 #include "solvespace.h"
 
-namespace SolveSpace {
-    // These are defined in headless.cpp, and aren't exposed in solvespace.h.
-    extern std::shared_ptr<Pixmap> framebuffer;
-}
-
 static void ShowUsage(const std::string &cmd) {
     fprintf(stderr, "Usage: %s <command> <options> <filename> [filename...]", cmd.c_str());
 //-----------------------------------------------------------------------------> 80 col */
@@ -50,21 +45,21 @@ Commands:
         Reloads all imported files, regenerates the sketch, and saves it.
 )");
 
-    auto FormatListFromFileFilter = [](const FileFilter *filter) {
+    auto FormatListFromFileFilters = [](const std::vector<Platform::FileFilter> &filters) {
         std::string descr;
-        while(filter->name) {
+        for(auto filter : filters) {
             descr += "\n        ";
-            descr += filter->name;
+            descr += filter.name;
             descr += " (";
-            const char *const *patterns = filter->patterns;
-            while(*patterns) {
-                descr += *patterns;
-                if(*++patterns) {
+            bool first = true;
+            for(auto extension : filter.extensions) {
+                if(!first) {
                     descr += ", ";
                 }
+                descr += extension;
+                first = false;
             }
             descr += ")";
-            filter++;
         }
         return descr;
     };
@@ -76,11 +71,11 @@ File formats:
     export-wireframe:%s
     export-mesh:%s
     export-surfaces:%s
-)", FormatListFromFileFilter(RasterFileFilter).c_str(),
-    FormatListFromFileFilter(VectorFileFilter).c_str(),
-    FormatListFromFileFilter(Vector3dFileFilter).c_str(),
-    FormatListFromFileFilter(MeshFileFilter).c_str(),
-    FormatListFromFileFilter(SurfaceFileFilter).c_str());
+)", FormatListFromFileFilters(Platform::RasterFileFilters).c_str(),
+    FormatListFromFileFilters(Platform::VectorFileFilters).c_str(),
+    FormatListFromFileFilters(Platform::Vector3dFileFilters).c_str(),
+    FormatListFromFileFilters(Platform::MeshFileFilters).c_str(),
+    FormatListFromFileFilters(Platform::SurfaceFileFilters).c_str());
 }
 
 static bool RunCommand(const std::vector<std::string> args) {
@@ -149,7 +144,7 @@ static bool RunCommand(const std::vector<std::string> args) {
 
     double chordTol = 1.0;
     auto ParseChordTolerance = [&](size_t &argn) {
-        if(argn + 1 < args.size() && (args[argn] == "--chord-ol" ||
+        if(argn + 1 < args.size() && (args[argn] == "--chord-tol" ||
                                       args[argn] == "-t")) {
             argn++;
             if(sscanf(args[argn].c_str(), "%lf", &chordTol) == 1) {
@@ -191,16 +186,32 @@ static bool RunCommand(const std::vector<std::string> args) {
         }
 
         runner = [&](const Platform::Path &output) {
-            SS.GW.width     = width;
-            SS.GW.height    = height;
-            SS.GW.projRight = projRight;
-            SS.GW.projUp    = projUp;
-            SS.chordTol     = chordTol;
+            Camera camera = {};
+            camera.pixelRatio = 1;
+            camera.gridFit    = true;
+            camera.width      = width;
+            camera.height     = height;
+            camera.projUp     = SS.GW.projUp;
+            camera.projRight  = SS.GW.projRight;
 
-            SS.GW.ZoomToFit(/*includingInvisibles=*/false);
+            SS.GW.projUp      = projUp;
+            SS.GW.projRight   = projRight;
+            SS.GW.scale       = SS.GW.ZoomToFit(camera);
+            camera.scale      = SS.GW.scale;
             SS.GenerateAll();
-            PaintGraphics();
-            framebuffer->WritePng(output, /*flip=*/true);
+
+            CairoPixmapRenderer pixmapCanvas;
+            pixmapCanvas.antialias = true;
+            pixmapCanvas.SetLighting(SS.GW.GetLighting());
+            pixmapCanvas.SetCamera(camera);
+            pixmapCanvas.Init();
+
+            pixmapCanvas.NewFrame();
+            SS.GW.Draw(&pixmapCanvas);
+            pixmapCanvas.FlushFrame();
+            pixmapCanvas.ReadFrame()->WritePng(output, /*flip=*/true);
+
+            pixmapCanvas.Clear();
         };
     } else if(args[1] == "export-view") {
         for(size_t argn = 2; argn < args.size(); argn++) {

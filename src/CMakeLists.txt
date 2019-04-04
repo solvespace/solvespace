@@ -20,10 +20,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
 
 if(WIN32)
     set(util_SOURCES
-        platform/w32util.cpp)
+        platform/utilwin.cpp)
 else()
     set(util_SOURCES
-        platform/unixutil.cpp)
+        platform/utilunix.cpp)
 endif()
 
 if(APPLE)
@@ -79,7 +79,8 @@ include_directories(
     ${ZLIB_INCLUDE_DIR}
     ${PNG_PNG_INCLUDE_DIR}
     ${FREETYPE_INCLUDE_DIRS}
-    ${CAIRO_INCLUDE_DIRS})
+    ${CAIRO_INCLUDE_DIRS}
+    ${Q3D_INCLUDE_DIR})
 
 if(Backtrace_FOUND)
     include_directories(
@@ -102,10 +103,13 @@ else()
     message(FATAL_ERROR "Unsupported OpenGL version ${OPENGL}")
 endif()
 
+set(platform_SOURCES
+    ${gl_SOURCES}
+    platform/entrygui.cpp)
+
 if(WIN32)
-    set(platform_SOURCES
-        platform/w32main.cpp
-        ${gl_SOURCES})
+    list(APPEND platform_SOURCES
+        platform/guiwin.cpp)
 
     set(platform_LIBRARIES
         comctl32
@@ -114,15 +118,12 @@ elseif(APPLE)
     add_compile_options(
         -fobjc-arc)
 
-    set(platform_SOURCES
-        platform/cocoamain.mm
+    list(APPEND platform_SOURCES
         render/rendergl.cpp
-        ${gl_SOURCES})
+        platform/guimac.mm)
 else()
-    set(platform_SOURCES
-        platform/gtkmain.cpp
-        render/rendergl.cpp
-        ${gl_SOURCES})
+    list(APPEND platform_SOURCES
+        platform/guigtk.cpp)
 
     set(platform_LIBRARIES
         ${SPACEWARE_LIBRARIES})
@@ -135,9 +136,9 @@ else()
 endif()
 
 set(every_platform_SOURCES
-    platform/w32main.cpp
-    platform/gtkmain.cpp
-    platform/cocoamain.mm)
+    platform/guiwin.cpp
+    platform/guigtk.cpp
+    platform/guimac.mm)
 
 # solvespace library
 
@@ -191,6 +192,7 @@ set(solvespace_core_SOURCES
     util.cpp
     view.cpp
     platform/platform.cpp
+    platform/gui.cpp
     render/render.cpp
     render/render2d.cpp
     srf/boolean.cpp
@@ -210,12 +212,16 @@ add_library(solvespace-core STATIC
     ${solvespace_core_HEADERS}
     ${solvespace_core_SOURCES})
 
+add_dependencies(solvespace-core
+    q3d_header)
+
 target_link_libraries(solvespace-core
     dxfrw
     ${util_LIBRARIES}
     ${ZLIB_LIBRARY}
     ${PNG_LIBRARY}
-    ${FREETYPE_LIBRARY})
+    ${FREETYPE_LIBRARY}
+    flatbuffers)
 
 if(Backtrace_FOUND)
     target_link_libraries(solvespace-core
@@ -303,7 +309,7 @@ if(HAVE_GETTEXT)
             VERBATIM)
     endforeach()
 
-    add_custom_target(solvespace-translations
+    add_custom_target(translate_solvespace
         DEPENDS ${gen_output_pot} ${gen_output_po} ${gen_locale_pos})
 endif()
 
@@ -326,14 +332,17 @@ if(ENABLE_GUI)
 
     if(MSVC)
         set_target_properties(solvespace PROPERTIES
-            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF")
+            LINK_FLAGS "/MANIFEST:NO /SAFESEH:NO /INCREMENTAL:NO /OPT:REF /STACK:33554432")
+    elseif(APPLE)
+        set_target_properties(solvespace PROPERTIES
+            OUTPUT_NAME SolveSpace)
     endif()
 endif()
 
 # solvespace headless library
 
 set(headless_SOURCES
-    platform/headless.cpp
+    platform/guinone.cpp
     render/rendercairo.cpp)
 
 add_library(solvespace-headless STATIC EXCLUDE_FROM_ALL
@@ -355,20 +364,22 @@ target_compile_options(solvespace-headless
 
 # solvespace command-line executable
 
-add_executable(solvespace-cli
-    platform/climain.cpp
-    $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
+if(ENABLE_CLI)
+    add_executable(solvespace-cli
+        platform/entrycli.cpp
+        $<TARGET_PROPERTY:resources,EXTRA_SOURCES>)
 
-target_link_libraries(solvespace-cli
-    solvespace-core
-    solvespace-headless)
+    target_link_libraries(solvespace-cli
+        solvespace-core
+        solvespace-headless)
 
-add_dependencies(solvespace-cli
-    resources)
+    add_dependencies(solvespace-cli
+        resources)
 
-if(MSVC)
-    set_target_properties(solvespace-cli PROPERTIES
-        LINK_FLAGS "/INCREMENTAL:NO /OPT:REF")
+    if(MSVC)
+        set_target_properties(solvespace-cli PROPERTIES
+            LINK_FLAGS "/INCREMENTAL:NO /OPT:REF")
+    endif()
 endif()
 
 # solvespace unix package
@@ -378,14 +389,16 @@ if(NOT (WIN32 OR APPLE))
         install(TARGETS solvespace
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
     endif()
-    install(TARGETS solvespace-cli
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    if(ENABLE_CLI)
+        install(TARGETS solvespace-cli
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
 endif()
 
 # solvespace macOS package
 
 if(APPLE)
-    set(bundle     solvespace)
+    set(bundle     SolveSpace)
     set(bundle_bin ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app/Contents/MacOS)
 
     add_custom_command(TARGET solvespace POST_BUILD
@@ -398,7 +411,7 @@ if(APPLE)
         COMMAND ${CMAKE_COMMAND} -E remove ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
         COMMAND hdiutil create -srcfolder ${EXECUTABLE_OUTPUT_PATH}/${bundle}.app
                 ${EXECUTABLE_OUTPUT_PATH}/${bundle}.dmg
-        DEPENDS $<TARGET_FILE:${bundle}>
+        DEPENDS solvespace
         COMMENT "Building ${bundle}.dmg"
         VERBATIM)
     add_custom_target(${bundle}-dmg ALL

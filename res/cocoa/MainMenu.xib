@@ -7,7 +7,7 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-2" userLabel="File's Owner" customClass="NSApplication"/>
         <customObject id="-3" userLabel="Application"/>
-        <customObject id="-4" userLabel="Application Delegate" customClass="ApplicationDelegate"/>
+        <customObject id="-4" userLabel="Application Delegate" customClass="SSApplicationDelegate"/>
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
