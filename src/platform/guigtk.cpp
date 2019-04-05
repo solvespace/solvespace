@@ -358,6 +358,16 @@ public:
         return menuItem;
     }
 
+    MenuItemRef AddItemRaw(const std::string &label,
+                           std::function<void()> onTrigger = NULL) override {
+        auto menuItem = std::dynamic_pointer_cast<MenuItemImplGtk>(AddItem("", onTrigger));
+
+        menuItem->gtkMenuItem.set_label(label);
+        menuItem->gtkMenuItem.set_use_underline(false);
+
+        return menuItem;
+    }
+
     MenuRef AddSubMenu(const std::string &label) override {
         auto menuItem = std::make_shared<MenuItemImplGtk>();
         menuItems.push_back(menuItem);

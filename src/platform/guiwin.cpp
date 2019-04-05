@@ -103,6 +103,17 @@ BOOL ssAdjustWindowRectExForDpi(LPRECT lpRect, DWORD dwStyle, BOOL bMenu,
 // Utility functions
 //-----------------------------------------------------------------------------
 
+static std::string NegateMnemonics(std::string label) {
+    std::string search("&");
+    std::string replace("&&");
+    std::string::size_type p = 0;
+    while((p = label.find("&", p)) != std::string::npos) {
+        label.replace(p, search.size(), replace);
+        p += replace.size();
+    }
+    return label;
+}
+
 static std::wstring PrepareTitle(const std::string &s) {
     return Widen("SolveSpace - " + s);
 }
@@ -367,6 +378,19 @@ public:
         mii.cbSize     = sizeof(mii);
         mii.fMask      = MIIM_DATA;
         mii.dwItemData = (LONG_PTR)menuItem.get();
+        sscheck(SetMenuItemInfoW(hMenu, (UINT_PTR)menuItem.get(), FALSE, &mii));
+
+        return menuItem;
+    }
+
+    MenuItemRef AddItemRaw(const std::string &label,
+                           std::function<void()> onTrigger = NULL) override {
+        auto menuItem = std::dynamic_pointer_cast<MenuItemImplWin32>(AddItem("", onTrigger));
+
+	MENUITEMINFOW mii = {};
+        mii.cbSize     = sizeof(mii);
+        mii.fMask      = MIIM_STRING;
+        mii.dwTypeData = Widen(NegateMnemonics(label)).c_str();
         sscheck(SetMenuItemInfoW(hMenu, (UINT_PTR)menuItem.get(), FALSE, &mii));
 
         return menuItem;

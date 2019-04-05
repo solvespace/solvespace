@@ -268,6 +268,15 @@ public:
         return menuItem;
     }
 
+    MenuItemRef AddItemRaw(const std::string &label,
+                           std::function<void()> onTrigger = NULL) override {
+        auto menuItem = std::dynamic_pointer_cast<MenuItemImplCocoa>(AddItem("", onTrigger));
+
+        [menuItem->nsMenuItem setTitle:Wrap(label)];
+
+        return menuItem;
+    }
+
     MenuRef AddSubMenu(const std::string &label) override {
         auto subMenu = std::make_shared<MenuImplCocoa>();
         subMenus.push_back(subMenu);
