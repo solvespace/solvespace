@@ -281,7 +281,7 @@ void GraphicsWindow::PopulateMainMenu() {
         } else if(Menu[i].cmd == Command::LOCALE) {
             Platform::MenuRef localeMenu = currentSubMenu->AddSubMenu(label);
             for(const Locale &locale : Locales()) {
-                localeMenu->AddItem(locale.displayName, [&]() {
+                localeMenu->AddItem(locale.displayName, true, [&]() {
                     SetLocale(locale.Culture());
                     Platform::GetSettings()->FreezeString("Locale", locale.Culture());
 
@@ -344,7 +344,7 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
         menuItem->SetEnabled(false);
     } else {
         for(Platform::Path pathname : pathnames) {
-            Platform::MenuItemRef menuItem = menu->AddItemRaw(pathname.raw);
+            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw, false);
             menuItem->onTrigger = [=]() { onTrigger(pathname); };
         }
     }

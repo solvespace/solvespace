@@ -344,26 +344,16 @@ public:
     std::vector<std::shared_ptr<MenuItemImplGtk>>   menuItems;
     std::vector<std::shared_ptr<MenuImplGtk>>       subMenus;
 
-    MenuItemRef AddItem(const std::string &label,
+    MenuItemRef AddItem(const std::string &label, bool mnemonics,
                         std::function<void()> onTrigger = NULL) override {
         auto menuItem = std::make_shared<MenuItemImplGtk>();
         menuItems.push_back(menuItem);
 
-        menuItem->gtkMenuItem.set_label(PrepareMnemonics(label));
-        menuItem->gtkMenuItem.set_use_underline(true);
+        menuItem->gtkMenuItem.set_label(mnemonics ? PrepareMnemonics(label) : label);
+        menuItem->gtkMenuItem.set_use_underline(mnemonics);
         menuItem->gtkMenuItem.show();
         menuItem->onTrigger = onTrigger;
         gtkMenu.append(menuItem->gtkMenuItem);
-
-        return menuItem;
-    }
-
-    MenuItemRef AddItemRaw(const std::string &label,
-                           std::function<void()> onTrigger = NULL) override {
-        auto menuItem = std::dynamic_pointer_cast<MenuItemImplGtk>(AddItem("", onTrigger));
-
-        menuItem->gtkMenuItem.set_label(label);
-        menuItem->gtkMenuItem.set_use_underline(false);
 
         return menuItem;
     }

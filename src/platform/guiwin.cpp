@@ -363,14 +363,15 @@ public:
         sscheck(hMenu = CreatePopupMenu());
     }
 
-    MenuItemRef AddItem(const std::string &label,
+    MenuItemRef AddItem(const std::string &label, bool mnemonics,
                         std::function<void()> onTrigger = NULL) override {
         auto menuItem = std::make_shared<MenuItemImplWin32>();
         menuItem->menu = weakThis.lock();
         menuItem->onTrigger = onTrigger;
         menuItems.push_back(menuItem);
 
-        sscheck(AppendMenuW(hMenu, MF_STRING, (UINT_PTR)menuItem.get(), Widen(label).c_str()));
+        sscheck(AppendMenuW(hMenu, MF_STRING, (UINT_PTR)menuItem.get(),
+                            Widen(mnemonics ? label : NegateMnemonics(label)).c_str()));
 
         // uID is just an UINT, which isn't large enough to hold a pointer on 64-bit Windows,
         // so we use dwItemData, which is.
@@ -378,19 +379,6 @@ public:
         mii.cbSize     = sizeof(mii);
         mii.fMask      = MIIM_DATA;
         mii.dwItemData = (LONG_PTR)menuItem.get();
-        sscheck(SetMenuItemInfoW(hMenu, (UINT_PTR)menuItem.get(), FALSE, &mii));
-
-        return menuItem;
-    }
-
-    MenuItemRef AddItemRaw(const std::string &label,
-                           std::function<void()> onTrigger = NULL) override {
-        auto menuItem = std::dynamic_pointer_cast<MenuItemImplWin32>(AddItem("", onTrigger));
-
-	MENUITEMINFOW mii = {};
-        mii.cbSize     = sizeof(mii);
-        mii.fMask      = MIIM_STRING;
-        mii.dwTypeData = Widen(NegateMnemonics(label)).c_str();
         sscheck(SetMenuItemInfoW(hMenu, (UINT_PTR)menuItem.get(), FALSE, &mii));
 
         return menuItem;

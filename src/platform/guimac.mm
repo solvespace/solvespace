@@ -256,23 +256,14 @@ public:
         [nsMenu setAutoenablesItems:NO];
     }
 
-    MenuItemRef AddItem(const std::string &label,
+    MenuItemRef AddItem(const std::string &label, bool mnemonics,
                         std::function<void()> onTrigger = NULL) override {
         auto menuItem = std::make_shared<MenuItemImplCocoa>();
         menuItems.push_back(menuItem);
 
         menuItem->onTrigger = onTrigger;
-        [menuItem->nsMenuItem setTitle:Wrap(PrepareMnemonics(label))];
+        [menuItem->nsMenuItem setTitle:Wrap(mnemonics ? PrepareMnemonics(label) : label)];
         [nsMenu addItem:menuItem->nsMenuItem];
-
-        return menuItem;
-    }
-
-    MenuItemRef AddItemRaw(const std::string &label,
-                           std::function<void()> onTrigger = NULL) override {
-        auto menuItem = std::dynamic_pointer_cast<MenuItemImplCocoa>(AddItem("", onTrigger));
-
-        [menuItem->nsMenuItem setTitle:Wrap(label)];
 
         return menuItem;
     }
