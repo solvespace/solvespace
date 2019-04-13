@@ -557,7 +557,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             for(const Style &s : SK.style) {
                 if(s.h.v < Style::FIRST_CUSTOM) continue;
 
-                styleMenu->AddItem(s.DescriptionString(), true, [&]() {
+                styleMenu->AddItem(s.DescriptionString(), /*mnemonics=*/true, [&]() {
                     Style::AssignSelectionToStyle(s.h.v);
                 });
                 empty = false;
@@ -565,17 +565,17 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
             if(!empty) styleMenu->AddSeparator();
 
-            styleMenu->AddItem(_("No Style"), true, [&]() {
+            styleMenu->AddItem(_("No Style"), /*mnemonics=*/true, [&]() {
                 Style::AssignSelectionToStyle(0);
             });
-            styleMenu->AddItem(_("Newly Created Custom Style..."), true, [&]() {
+            styleMenu->AddItem(_("Newly Created Custom Style..."), /*mnemonics=*/true, [&]() {
                 uint32_t vs = Style::CreateCustomStyle();
                 Style::AssignSelectionToStyle(vs);
                 ForceTextWindowShown();
             });
         }
         if(gs.n + gs.constraints == 1) {
-            menu->AddItem(_("Group Info"), true, [&]() {
+            menu->AddItem(_("Group Info"), /*mnemonics=*/true, [&]() {
                 hGroup hg;
                 if(gs.entities == 1) {
                     hg = SK.GetEntity(gs.entity[0])->group;
@@ -595,7 +595,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             });
         }
         if(gs.n + gs.constraints == 1 && gs.stylables == 1) {
-            menu->AddItem(_("Style Info"), true, [&]() {
+            menu->AddItem(_("Style Info"), /*mnemonics=*/true, [&]() {
                 hStyle hs;
                 if(gs.entities == 1) {
                     hs = Style::ForEntity(gs.entity[0]);
@@ -615,24 +615,24 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             });
         }
         if(gs.withEndpoints > 0) {
-            menu->AddItem(_("Select Edge Chain"), true,
+            menu->AddItem(_("Select Edge Chain"), /*mnemonics=*/true,
                           [&]() { MenuEdit(Command::SELECT_CHAIN); });
         }
         if(gs.constraints == 1 && gs.n == 0) {
             Constraint *c = SK.GetConstraint(gs.constraint[0]);
             if(c->HasLabel() && c->type != Constraint::Type::COMMENT) {
-                menu->AddItem(_("Toggle Reference Dimension"), true,
+                menu->AddItem(_("Toggle Reference Dimension"), /*mnemonics=*/true,
                               [&]() { Constraint::MenuConstrain(Command::REFERENCE); });
             }
             if(c->type == Constraint::Type::ANGLE ||
                c->type == Constraint::Type::EQUAL_ANGLE)
             {
-                menu->AddItem(_("Other Supplementary Angle"), true,
+                menu->AddItem(_("Other Supplementary Angle"), /*mnemonics=*/true,
                               [&]() { Constraint::MenuConstrain(Command::OTHER_ANGLE); });
             }
         }
         if(gs.constraintLabels > 0 || gs.points > 0) {
-            menu->AddItem(_("Snap to Grid"), true,
+            menu->AddItem(_("Snap to Grid"), /*mnemonics=*/true,
                           [&]() { MenuEdit(Command::SNAP_TO_GRID); });
         }
 
@@ -641,7 +641,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             int index = r->IndexOfPoint(gs.point[0]);
             if((r->type == Request::Type::CUBIC && (index > 1 && index < r->extraPoints + 2)) ||
                     r->type == Request::Type::CUBIC_PERIODIC) {
-                menu->AddItem(_("Remove Spline Point"), true, [&]() {
+                menu->AddItem(_("Remove Spline Point"), /*mnemonics=*/true, [&]() {
                     int index = r->IndexOfPoint(gs.point[0]);
                     ssassert(r->extraPoints != 0,
                              "Expected a bezier with interior control points");
@@ -676,7 +676,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 ssassert(addAfterPoint != -1, "Expected a nearest bezier point to be located");
                 // Skip derivative point.
                 if(r->type == Request::Type::CUBIC) addAfterPoint++;
-                menu->AddItem(_("Add Spline Point"), true, [&]() {
+                menu->AddItem(_("Add Spline Point"), /*mnemonics=*/true, [&]() {
                     int pointCount = r->extraPoints +
                                      ((r->type == Request::Type::CUBIC_PERIODIC) ? 3 : 4);
                     if(pointCount >= MAX_POINTS_IN_ENTITY) {
@@ -705,7 +705,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             }
         }
         if(gs.entities == gs.n) {
-            menu->AddItem(_("Toggle Construction"), true,
+            menu->AddItem(_("Toggle Construction"), /*mnemonics=*/true,
                           [&]() { MenuRequest(Command::CONSTRUCTION); });
         }
 
@@ -720,7 +720,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                 }
             }
             if(c) {
-                menu->AddItem(_("Delete Point-Coincident Constraint"), true, [&]() {
+                menu->AddItem(_("Delete Point-Coincident Constraint"), /*mnemonics=*/true, [&]() {
                     if(!p->IsPoint()) return;
 
                     SS.UndoRemember();
@@ -739,35 +739,35 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
         }
         menu->AddSeparator();
         if(LockedInWorkplane()) {
-            menu->AddItem(_("Cut"), true,
+            menu->AddItem(_("Cut"), /*mnemonics=*/true,
                           [&]() { MenuClipboard(Command::CUT); });
-            menu->AddItem(_("Copy"), true,
+            menu->AddItem(_("Copy"), /*mnemonics=*/true,
                           [&]() { MenuClipboard(Command::COPY); });
         }
     } else {
-        menu->AddItem(_("Select All"), true,
+        menu->AddItem(_("Select All"), /*mnemonics=*/true,
                       [&]() { MenuEdit(Command::SELECT_ALL); });
     }
 
     if((SS.clipboard.r.n > 0 || SS.clipboard.c.n > 0) && LockedInWorkplane()) {
-        menu->AddItem(_("Paste"), true,
+        menu->AddItem(_("Paste"), /*mnemonics=*/true,
                       [&]() { MenuClipboard(Command::PASTE); });
-        menu->AddItem(_("Paste Transformed..."), true,
+        menu->AddItem(_("Paste Transformed..."), /*mnemonics=*/true,
                       [&]() { MenuClipboard(Command::PASTE_TRANSFORM); });
     }
 
     if(itemsSelected) {
-        menu->AddItem(_("Delete"), true,
+        menu->AddItem(_("Delete"), /*mnemonics=*/true,
                       [&]() { MenuClipboard(Command::DELETE); });
         menu->AddSeparator();
-        menu->AddItem(_("Unselect All"), true,
+        menu->AddItem(_("Unselect All"), /*mnemonics=*/true,
                       [&]() { MenuEdit(Command::UNSELECT_ALL); });
     }
     // If only one item is selected, then it must be the one that we just
     // selected from the hovered item; in which case unselect all and hovered
     // are equivalent.
     if(!hover.IsEmpty() && selection.n > 1) {
-        menu->AddItem(_("Unselect Hovered"), true, [&] {
+        menu->AddItem(_("Unselect Hovered"), /*mnemonics=*/true, [&] {
             if(!hover.IsEmpty()) {
                 MakeUnselected(&hover, /*coincidentPointTrick=*/true);
             }
@@ -776,7 +776,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
 
     if(itemsSelected) {
         menu->AddSeparator();
-        menu->AddItem(_("Zoom to Fit"), true,
+        menu->AddItem(_("Zoom to Fit"), /*mnemonics=*/true,
                       [&]() { MenuView(Command::ZOOM_TO_FIT); });
     }
 

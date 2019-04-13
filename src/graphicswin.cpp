@@ -281,7 +281,7 @@ void GraphicsWindow::PopulateMainMenu() {
         } else if(Menu[i].cmd == Command::LOCALE) {
             Platform::MenuRef localeMenu = currentSubMenu->AddSubMenu(label);
             for(const Locale &locale : Locales()) {
-                localeMenu->AddItem(locale.displayName, true, [&]() {
+                localeMenu->AddItem(locale.displayName, /*mnemonics=*/true, [&]() {
                     SetLocale(locale.Culture());
                     Platform::GetSettings()->FreezeString("Locale", locale.Culture());
 
@@ -294,7 +294,7 @@ void GraphicsWindow::PopulateMainMenu() {
             subMenuStack.push_back(currentSubMenu);
             currentSubMenu = currentSubMenu->AddSubMenu(label);
         } else {
-            Platform::MenuItemRef menuItem = currentSubMenu->AddItem(label);
+            Platform::MenuItemRef menuItem = currentSubMenu->AddItem(label, /*mnemonics=*/true);
             menuItem->SetIndicator(Menu[i].kind);
             if(Menu[i].accel != 0) {
                 menuItem->SetAccelerator(AcceleratorForCommand(Menu[i].cmd));
@@ -340,11 +340,11 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
                                       std::function<void(const Platform::Path &)> onTrigger) {
     menu->Clear();
     if(pathnames.empty()) {
-        Platform::MenuItemRef menuItem = menu->AddItem(_("(no recent files)"));
+        Platform::MenuItemRef menuItem = menu->AddItem(_("(no recent files)"), /*mnemonics=*/true);
         menuItem->SetEnabled(false);
     } else {
         for(Platform::Path pathname : pathnames) {
-            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw, false);
+            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw, /*mnemonics=*/false);
             menuItem->onTrigger = [=]() { onTrigger(pathname); };
         }
     }
