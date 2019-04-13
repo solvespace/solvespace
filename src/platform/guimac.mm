@@ -257,12 +257,13 @@ public:
     }
 
     MenuItemRef AddItem(const std::string &label,
-                        std::function<void()> onTrigger = NULL) override {
+                        std::function<void()> onTrigger = NULL,
+                        bool mnemonics = true) override {
         auto menuItem = std::make_shared<MenuItemImplCocoa>();
         menuItems.push_back(menuItem);
 
         menuItem->onTrigger = onTrigger;
-        [menuItem->nsMenuItem setTitle:Wrap(PrepareMnemonics(label))];
+        [menuItem->nsMenuItem setTitle:Wrap(mnemonics ? PrepareMnemonics(label) : label)];
         [nsMenu addItem:menuItem->nsMenuItem];
 
         return menuItem;

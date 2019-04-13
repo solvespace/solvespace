@@ -171,7 +171,8 @@ public:
     virtual ~Menu() {}
 
     virtual std::shared_ptr<MenuItem> AddItem(
-        const std::string &label, std::function<void()> onTrigger = std::function<void()>()) = 0;
+        const std::string &label, std::function<void()> onTrigger = std::function<void()>(),
+        bool mnemonics = true) = 0;
     virtual std::shared_ptr<Menu> AddSubMenu(const std::string &label) = 0;
     virtual void AddSeparator() = 0;
 

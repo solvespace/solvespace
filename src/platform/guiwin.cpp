@@ -107,6 +107,15 @@ static std::wstring PrepareTitle(const std::string &s) {
     return Widen("SolveSpace - " + s);
 }
 
+static std::string NegateMnemonics(const std::string &label) {
+    std::string newLabel;
+    for(char c : label) {
+        newLabel.push_back(c);
+        if(c == '&') newLabel.push_back(c);
+    }
+    return newLabel;
+}
+
 static int Clamp(int x, int a, int b) {
     return max(a, min(x, b));
 }
@@ -353,13 +362,15 @@ public:
     }
 
     MenuItemRef AddItem(const std::string &label,
-                        std::function<void()> onTrigger = NULL) override {
+                        std::function<void()> onTrigger = NULL,
+                        bool mnemonics = true) override {
         auto menuItem = std::make_shared<MenuItemImplWin32>();
         menuItem->menu = weakThis.lock();
         menuItem->onTrigger = onTrigger;
         menuItems.push_back(menuItem);
 
-        sscheck(AppendMenuW(hMenu, MF_STRING, (UINT_PTR)menuItem.get(), Widen(label).c_str()));
+        sscheck(AppendMenuW(hMenu, MF_STRING, (UINT_PTR)menuItem.get(),
+                            Widen(mnemonics ? label : NegateMnemonics(label)).c_str()));
 
         // uID is just an UINT, which isn't large enough to hold a pointer on 64-bit Windows,
         // so we use dwItemData, which is.

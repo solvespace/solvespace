@@ -344,8 +344,8 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
         menuItem->SetEnabled(false);
     } else {
         for(Platform::Path pathname : pathnames) {
-            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw);
-            menuItem->onTrigger = [=]() { onTrigger(pathname); };
+            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw,
+                [=]() { onTrigger(pathname); }, /*mnemonics=*/false);
         }
     }
 }
