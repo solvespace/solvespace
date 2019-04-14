@@ -607,8 +607,188 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
 
 
 typedef struct {
-    hSSurface   d[4];
+    hSSurface   d[100];
 } Revolved;
+
+// sketch must not contain the axis of revolution as a non-construction line for helix
+void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color, Group *group)
+{
+    SBezierLoop *sbl;
+// for testing - hard code the anlge of revolution, axial distance, and number of sections
+// angle and distance will need to be parameters in the future.
+    double angle = PI*1.4;
+    double dist = 0;
+    int sections = 5;
+    double wedge = angle / sections;
+
+    int i0 = surface.n, i;
+
+    // Normalize the axis direction so that the direction of revolution
+    // ends up parallel to the normal of the sketch, on the side of the
+    // axis where the sketch is.
+    Vector pto;
+    double md = VERY_NEGATIVE;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        SBezier *sb;
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            // Choose the point farthest from the axis; we'll get garbage
+            // if we choose a point that lies on the axis, for example.
+            // (And our surface will be self-intersecting if the sketch
+            // spans the axis, so don't worry about that.)
+            Vector p = sb->Start();
+            double d = p.DistanceToLine(pt, axis);
+            if(d > md) {
+                md = d;
+                pto = p;
+            }
+        }
+    }
+    Vector ptc = pto.ClosestPointOnLine(pt, axis),
+           up  = (pto.Minus(ptc)).WithMagnitude(1),
+           vp  = (sbls->normal).Cross(up);
+    if(vp.Dot(axis) < 0) {
+        axis = axis.ScaledBy(-1);
+    }
+
+    // Define a coordinate system to contain the original sketch, and get
+    // a bounding box in that csys
+    Vector n = sbls->normal.ScaledBy(-1);
+    Vector u = n.Normal(0), v = n.Normal(1);
+    Vector orig = sbls->point;
+    double umax = 1e-10, umin = 1e10;
+    sbls->GetBoundingProjd(u, orig, &umin, &umax);
+    double vmax = 1e-10, vmin = 1e10;
+    sbls->GetBoundingProjd(v, orig, &vmin, &vmax);
+    // and now fix things up so that all u and v lie between 0 and 1
+    orig = orig.Plus(u.ScaledBy(umin));
+    orig = orig.Plus(v.ScaledBy(vmin));
+    u = u.ScaledBy(umax - umin);
+    v = v.ScaledBy(vmax - vmin);
+
+    // So we can now generate the end caps of the extrusion within
+    // a translated and rotated (and maybe mirrored) version of that csys.
+    SSurface s0, s1;
+    s0 = SSurface::FromPlane(orig, u, v);
+    s0.color = color;
+    s1 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angle).Plus(axis.ScaledBy(dist)),
+                               u.ScaledBy(-1).RotatedAbout(axis, angle),
+                               v.RotatedAbout(axis, angle));
+    s1.color = color;
+    hSSurface hs0 = surface.AddAndAssignId(&s0),
+              hs1 = surface.AddAndAssignId(&s1);
+
+    // Now we actually build and trim the swept surfaces. One loop at a time.
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        int i, j;
+        SBezier *sb;
+        List<Revolved> hsl = {};
+
+        // This is where all the NURBS are created and Remapped to the generating curve
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            Revolved revs;
+            for(j = 0; j < sections; j++) {
+                if(sb->deg == 1 &&
+                    (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
+                    (sb->ctrl[1]).DistanceToLine(pt, axis) < LENGTH_EPS)
+                {
+                    // This is a line on the axis of revolution; it does
+                    // not contribute a surface.
+                    revs.d[j].v = 0;
+                } else {
+                    SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
+                                                             (wedge)*j,
+                                                             (wedge)*(j+1),
+                                                             j*dist/sections, (j+1)*dist/sections);
+                    ss.color = color;
+                    if(sb->entity != 0) {
+                        hEntity he;
+                        he.v = sb->entity;
+                        hEntity hface = group->Remap(he, Group::REMAP_LINE_TO_FACE);
+                        if(SK.entity.FindByIdNoOops(hface) != NULL) {
+                            ss.face = hface.v;
+                        }
+                    }
+                    revs.d[j] = surface.AddAndAssignId(&ss);
+                }
+            }
+            hsl.Add(&revs);
+        }
+        // Still the same loop. Need to create trim curves
+        for(i = 0; i < sbl->l.n; i++) {
+            Revolved revs  = hsl.elem[i],
+                     revsp = hsl.elem[WRAP(i-1, sbl->l.n)];
+
+            sb   = &(sbl->l.elem[i]);
+
+            // we generate one more curve than we did surfaces
+            for(j = 0; j <= sections; j++) {
+                SCurve sc;
+                Quaternion qs = Quaternion::From(axis, wedge * j);
+                // we want Q*(x - p) + p = Q*x + (p - Q*p)
+                Vector ts = pt.Minus(qs.Rotate(pt)).Plus(axis.ScaledBy(j*dist/sections));
+
+                // If this input curve generated a surface, then trim that
+                // surface with the rotated version of the input curve.
+                if(revs.d[j].v) {
+                    sc = {};
+                    sc.isExact = true;
+                    sc.exact = sb->TransformedBy(ts, qs, 1.0);
+                    (sc.exact).MakePwlInto(&(sc.pts));
+
+                    // the surfaces already exist so trim with this curve
+                    if (j < sections) {
+                      sc.surfA = revs.d[j];
+                    }
+                    else {
+                      sc.surfA = hs1; // end cap
+                    }
+
+                    if (j > 0) {
+                      sc.surfB = revs.d[j-1];
+                    }
+                    else {
+                      sc.surfB = hs0; // staring cap
+                    }
+                    hSCurve hcb = curve.AddAndAssignId(&sc);
+
+                    STrimBy stb;
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/true);
+                    (surface.FindById(sc.surfA))->trim.Add(&stb);
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/false);
+                    (surface.FindById(sc.surfB))->trim.Add(&stb);
+                }
+
+                // And if this input curve and the one after it both generated
+                // surfaces, then trim both of those by the appropriate
+                // curve based on the control points.
+                if( (j < sections) && revs.d[j].v && revsp.d[j].v) {
+                    SSurface *ss = surface.FindById(revs.d[j]);
+
+                    sc = {};
+                    sc.isExact = true;
+                    sc.exact = SBezier::From(ss->ctrl[0][0],
+                                             ss->ctrl[0][1],
+                                             ss->ctrl[0][2]);
+                    sc.exact.weight[1] = ss->weight[0][1];
+                    (sc.exact).MakePwlInto(&(sc.pts));
+                    sc.surfA = revs.d[j];
+                    sc.surfB = revsp.d[j];
+
+                    hSCurve hcc = curve.AddAndAssignId(&sc);
+
+                    STrimBy stb;
+                    stb = STrimBy::EntireCurve(this, hcc, /*backwards=*/false);
+                    (surface.FindById(sc.surfA))->trim.Add(&stb);
+                    stb = STrimBy::EntireCurve(this, hcc, /*backwards=*/true);
+                    (surface.FindById(sc.surfB))->trim.Add(&stb);
+                }
+            }
+        }
+
+        hsl.Clear();
+    }
+
+}
 
 void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color, Group *group)
 {
