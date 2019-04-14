@@ -282,8 +282,8 @@ public:
     Point2d         cached;
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
-    static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
-                                        double thetas, double thetaf);
+    static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis, double thetas,
+                                     double thetaf, double dists, double distf);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q,
                                          double scale,
@@ -376,9 +376,12 @@ public:
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              RgbaColor color);
+    bool CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                               RgbaColor color, Group *group);
-
+    void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color,
+                                     Group *group, double angles, double anglef);
+    void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);

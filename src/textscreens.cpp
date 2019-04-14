@@ -304,14 +304,15 @@ void TextWindow::ShowGroupInfo() {
     if(g->type == Group::Type::LATHE) {
         Printf(true, " %Ftlathe plane sketch");
     } else if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::ROTATE ||
-              g->type == Group::Type::TRANSLATE)
-    {
+              g->type == Group::Type::TRANSLATE || g->type == Group::Type::REVOLVE) {
         if(g->type == Group::Type::EXTRUDE) {
             s = "extrude plane sketch";
         } else if(g->type == Group::Type::TRANSLATE) {
             s = "translate original sketch";
         } else if(g->type == Group::Type::ROTATE) {
             s = "rotate original sketch";
+        } else if(g->type == Group::Type::REVOLVE) {
+            s = "revolve original sketch";
         }
         Printf(true, " %Ft%s%E", s);
 
@@ -362,10 +363,8 @@ void TextWindow::ShowGroupInfo() {
     }
     Printf(false, "");
 
-    if(g->type == Group::Type::EXTRUDE ||
-       g->type == Group::Type::LATHE ||
-       g->type == Group::Type::LINKED)
-    {
+    if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+       g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED) {
         bool un   = (g->meshCombine == Group::CombineAs::UNION);
         bool diff = (g->meshCombine == Group::CombineAs::DIFFERENCE);
         bool asy  = (g->meshCombine == Group::CombineAs::ASSEMBLE);
@@ -384,9 +383,8 @@ void TextWindow::ShowGroupInfo() {
             Group::CombineAs::ASSEMBLE,
             (asy ? RADIO_TRUE : RADIO_FALSE));
 
-        if(g->type == Group::Type::EXTRUDE ||
-           g->type == Group::Type::LATHE)
-        {
+        if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+           g->type == Group::Type::REVOLVE) {
             Printf(false,
                 "%Bd   %Ftcolor   %E%Bz  %Bd (%@, %@, %@) %f%D%Lf%Fl[change]%E",
                 &g->color,
@@ -397,9 +395,8 @@ void TextWindow::ShowGroupInfo() {
                 &TextWindow::ScreenOpacity);
         }
 
-        if(g->type == Group::Type::EXTRUDE ||
-           g->type == Group::Type::LATHE ||
-           g->type == Group::Type::LINKED) {
+        if(g->type == Group::Type::EXTRUDE || g->type == Group::Type::LATHE ||
+           g->type == Group::Type::REVOLVE || g->type == Group::Type::LINKED) {
             Printf(false, "   %Fd%f%LP%s  suppress this group's solid model",
                 &TextWindow::ScreenChangeGroupOption,
                 g->suppress ? CHECK_TRUE : CHECK_FALSE);

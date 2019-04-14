@@ -184,6 +184,30 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.name = C_("group-name", "lathe");
             break;
 
+        case Command::GROUP_REVOLVE:
+            if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
+                g.predef.origin  = gs.point[0];
+                g.predef.entityB = gs.vector[0];
+            } else if(gs.lineSegments == 1 && gs.n == 1) {
+                g.predef.origin  = SK.GetEntity(gs.entity[0])->point[0];
+                g.predef.entityB = gs.entity[0];
+                // since a line segment is a vector
+            } else {
+                Error(_("Bad selection for new revolve group. This group can "
+                        "be created with:\n\n"
+                        "    * a point and a line segment or normal "
+                                 "(revolved about an axis parallel to line / "
+                                 "normal, through point)\n"
+                        "    * a line segment (revolved about line segment)\n"));
+                return;
+            }
+            g.type    = Type::REVOLVE;
+            g.opA     = SS.GW.activeGroup;
+            g.valA    = 2;
+            g.subtype = Subtype::ONE_SIDED;
+            g.name    = C_("group-name", "revolve");
+            break;
+
         case Command::GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
@@ -344,7 +368,7 @@ std::string Group::DescriptionString() {
 
 void Group::Activate() {
     if(type == Type::EXTRUDE || type == Type::LINKED || type == Type::LATHE ||
-       type == Type::TRANSLATE || type == Type::ROTATE) {
+       type == Type::REVOLVE || type == Type::TRANSLATE || type == Type::ROTATE) {
         SS.GW.showFaces = true;
     } else {
         SS.GW.showFaces = false;
@@ -482,8 +506,58 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     CopyAs::NUMERIC);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheSurfacesSelectable(entity, he, axis_dir);
                 ai++;
             }
+            return;
+        }
+
+        case Type::REVOLVE: {
+            // this was borrowed from LATHE and ROTATE
+            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+
+            // The center of rotation
+            AddParam(param, h.param(0), axis_pos.x);
+            AddParam(param, h.param(1), axis_pos.y);
+            AddParam(param, h.param(2), axis_pos.z);
+            // The rotation quaternion
+            AddParam(param, h.param(3), 30 * PI / 180);
+            AddParam(param, h.param(4), axis_dir.x);
+            AddParam(param, h.param(5), axis_dir.y);
+            AddParam(param, h.param(6), axis_dir.z);
+
+            int n  = 2;
+            int ai = 1;
+
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v)
+                    continue;
+
+                e->CalculateNumerical(/*forExport=*/false);
+                hEntity he = e->h;
+
+                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
+                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
+
+                for(a = 0; a < 2; a++) {
+                    if(e->group.v != opA.v)
+                        continue;
+
+                    e->CalculateNumerical(false);
+                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : (n - 1)),
+                               (a == (n - 1)) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
+                               h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
+                               h.param(6), CopyAs::N_ROT_AA);
+                }
+                // Arcs are not generated for revolve groups, for now, because our current arc
+                // entity is not chiral, and dragging a revolve may break the arc by inverting it.
+                // MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheSurfacesSelectable(entity, he, axis_dir);
+                ai++;
+            }
+
             return;
         }
 
@@ -596,7 +670,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             Expr::From(h.param(5)),
             Expr::From(h.param(6)) };
         AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
-    } else if(type == Type::ROTATE) {
+    } else if(type == Type::ROTATE || type == Type::REVOLVE) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
@@ -729,7 +803,14 @@ void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *p
         el->Add(&n);
         en.normal = n.h;
         el->Add(&en);
-    } else if(ep->type == Entity::Type::LINE_SEGMENT) {
+    }
+}
+
+void Group::MakeLatheSurfacesSelectable(IdList<Entity, hEntity> *el, hEntity in, Vector axis) {
+    Entity *ep = SK.GetEntity(in);
+
+    Entity en = {};
+    if(ep->type == Entity::Type::LINE_SEGMENT) {
         // An axis-perpendicular line gets revolved to form a face.
         Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
         Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
