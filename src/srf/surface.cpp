@@ -63,18 +63,19 @@ bool SSurface::IsCylinder(Vector *axis, Vector *center, double *r,
     return true;
 }
 
+// Create a surface patch by revolving and possibly translating a curve.
+// Works for sections up to but not including 180 degrees.
 SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
-                                    double thetas, double thetaf)
-{
+                                    double thetas, double thetaf, double dists, double distf)
+{                                   // s is start, f is finish
     SSurface ret = {};
-
-
     ret.degm = sb->deg;
     ret.degn = 2;
 
     double dtheta = fabs(WRAP_SYMMETRIC(thetaf - thetas, 2*PI));
+    double w = cos(dtheta/2);
 
-    // We now wish to revolve the curve about the z axis
+    // Revolve the curve about the z axis
     int i;
     for(i = 0; i <= ret.degm; i++) {
         Vector p = sb->ctrl[i];
@@ -82,32 +83,25 @@ SSurface SSurface::FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
         Vector ps = p.RotatedAbout(pt, axis, thetas),
                pf = p.RotatedAbout(pt, axis, thetaf);
 
-        Vector ct;
+        // The middle control point should be at the intersection of the tangents at ps and pf.
+        // This is equivalent but works for 0 <= angle < 180 degrees.
+        Vector mid = ps.Plus(pf).ScaledBy(0.5);
+        Vector c = ps.ClosestPointOnLine(pt, axis);
+        Vector ct = mid.Minus(c).ScaledBy(1/(w*w)).Plus(c);
+
+        // not sure this is needed
         if(ps.Equals(pf)) {
-            // Degenerate case: a control point lies on the axis of revolution,
-            // so we get three coincident control points.
-            ct = ps;
-        } else {
-            // Normal case, the control point sweeps out a circle.
-            Vector c = ps.ClosestPointOnLine(pt, axis);
-
-            Vector rs = ps.Minus(c),
-                   rf = pf.Minus(c);
-
-            Vector ts = axis.Cross(rs),
-                   tf = axis.Cross(rf);
-
-            ct = Vector::AtIntersectionOfLines(ps, ps.Plus(ts),
-                                               pf, pf.Plus(tf),
-                                               NULL, NULL, NULL);
+           ps = c;
+           ct = c;
+           pf = c;
         }
-
-        ret.ctrl[i][0] = ps;
-        ret.ctrl[i][1] = ct;
-        ret.ctrl[i][2] = pf;
+        // moving along the axis can create hilical surfaces (or straight extrusion if thetas==thetaf)
+        ret.ctrl[i][0] = ps.Plus(axis.ScaledBy(dists));
+        ret.ctrl[i][1] = ct.Plus(axis.ScaledBy((dists+distf)/2));
+        ret.ctrl[i][2] = pf.Plus(axis.ScaledBy(distf));
 
         ret.weight[i][0] = sb->weight[i];
-        ret.weight[i][1] = sb->weight[i]*cos(dtheta/2);
+        ret.weight[i][1] = sb->weight[i]*w;
         ret.weight[i][2] = sb->weight[i];
     }
 
@@ -670,7 +664,8 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 } else {
                     SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
                                                              (PI/2)*j,
-                                                             (PI/2)*(j+1));
+                                                             (PI/2)*(j+1),
+                                                             0.0, 0.0);
                     ss.color = color;
                     if(sb->entity != 0) {
                         hEntity he;

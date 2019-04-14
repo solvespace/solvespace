@@ -283,7 +283,8 @@ public:
 
     static SSurface FromExtrusionOf(SBezier *spc, Vector t0, Vector t1);
     static SSurface FromRevolutionOf(SBezier *sb, Vector pt, Vector axis,
-                                        double thetas, double thetaf);
+                                        double thetas, double thetaf,
+                                        double dists, double distf);
     static SSurface FromPlane(Vector pt, Vector u, Vector v);
     static SSurface FromTransformationOf(SSurface *a, Vector t, Quaternion q,
                                          double scale,
