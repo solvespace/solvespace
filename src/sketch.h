@@ -136,6 +136,7 @@ public:
         DRAWING_WORKPLANE             = 5001,
         EXTRUDE                       = 5100,
         LATHE                         = 5101,
+        REVOLVE                       = 5102,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
         LINKED                        = 5300

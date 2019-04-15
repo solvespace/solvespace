@@ -126,6 +126,7 @@ enum class Command : uint32_t {
     GROUP_WRKPL,
     GROUP_EXTRUDE,
     GROUP_LATHE,
+    GROUP_REVOLVE,
     GROUP_ROT,
     GROUP_TRANS,
     GROUP_LINK,

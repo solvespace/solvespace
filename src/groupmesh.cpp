@@ -191,7 +191,7 @@ void Group::GenerateShellAndMesh() {
     // Don't attempt a lathe or extrusion unless the source section is good:
     // planar and not self-intersecting.
     bool haveSrc = true;
-    if(type == Type::EXTRUDE || type == Type::LATHE) {
+    if(type == Type::EXTRUDE || type == Type::LATHE || type == Type::REVOLVE) {
         Group *src = SK.GetGroup(opA);
         if(src->polyError.how != PolyError::GOOD) {
             haveSrc = false;
@@ -292,6 +292,18 @@ void Group::GenerateShellAndMesh() {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+        }
+    } else if(type == Type::REVOLVE && haveSrc) {
+        Group *src = SK.GetGroup(opA);
+
+        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
+               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        axis = axis.WithMagnitude(1);
+
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this);
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
@@ -466,6 +478,7 @@ bool Group::IsMeshGroup() {
     switch(type) {
         case Group::Type::EXTRUDE:
         case Group::Type::LATHE:
+        case Group::Type::REVOLVE:
         case Group::Type::ROTATE:
         case Group::Type::TRANSLATE:
             return true;

@@ -184,6 +184,28 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.name = C_("group-name", "lathe");
             break;
 
+        case Command::GROUP_REVOLVE:
+            if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
+                g.predef.origin = gs.point[0];
+                g.predef.entityB = gs.vector[0];
+            } else if(gs.lineSegments == 1 && gs.n == 1) {
+                g.predef.origin = SK.GetEntity(gs.entity[0])->point[0];
+                g.predef.entityB = gs.entity[0];
+                // since a line segment is a vector
+            } else {
+                Error(_("Bad selection for new revolve group. This group can "
+                        "be created with:\n\n"
+                        "    * a point and a line segment or normal "
+                                 "(revolved about an axis parallel to line / "
+                                 "normal, through point)\n"
+                        "    * a line segment (revolved about line segment)\n"));
+                return;
+            }
+            g.type = Type::REVOLVE;
+            g.opA = SS.GW.activeGroup;
+            g.name = C_("group-name", "revolve");
+            break;
+
         case Command::GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
@@ -344,7 +366,7 @@ std::string Group::DescriptionString() {
 
 void Group::Activate() {
     if(type == Type::EXTRUDE || type == Type::LINKED || type == Type::LATHE ||
-       type == Type::TRANSLATE || type == Type::ROTATE) {
+       type == Type::REVOLVE || type == Type::TRANSLATE || type == Type::ROTATE) {
         SS.GW.showFaces = true;
     } else {
         SS.GW.showFaces = false;
@@ -482,6 +504,43 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     CopyAs::NUMERIC);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                ai++;
+            }
+            return;
+        }
+
+        case Type::REVOLVE: {
+            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+
+            // Remapped entity index.
+            int ai = 1;
+
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v) continue;
+
+                e->CalculateNumerical(/*forExport=*/false);
+                hEntity he = e->h;
+
+                // As soon as I call CopyEntity, e may become invalid! That
+                // adds entities, which may cause a realloc.
+                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
+                    NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    CopyAs::NUMERIC);
+
+                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
+                    NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    CopyAs::NUMERIC);
+
+                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
+                    NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    CopyAs::NUMERIC);
+
+//                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 ai++;
             }
             return;
