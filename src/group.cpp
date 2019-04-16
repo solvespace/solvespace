@@ -203,6 +203,8 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             }
             g.type = Type::REVOLVE;
             g.opA = SS.GW.activeGroup;
+            g.valA = 2;
+            g.subtype = Subtype::ONE_SIDED;
             g.name = C_("group-name", "revolve");
             break;
 
@@ -510,17 +512,19 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
         }
 
         case Type::REVOLVE: {
+
+            // this was borrowed from LATHE, but entities from ROTATE are what we want
             Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
             Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
-
-            // Remapped entity index.
+/*
+            // Remapped entity index this was from
             int ai = 1;
 
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->elem[i]);
                 if(e->group.v != opA.v) continue;
 
-                e->CalculateNumerical(/*forExport=*/false);
+                e->CalculateNumerical(false); //forExport=false;
                 hEntity he = e->h;
 
                 // As soon as I call CopyEntity, e may become invalid! That
@@ -540,9 +544,41 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
-//                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 ai++;
             }
+*/
+
+            // inherit meshCombine from source group
+            Group *srcg = SK.GetGroup(opA);
+            meshCombine = srcg->meshCombine;
+            // The center of rotation
+            AddParam(param, h.param(0), axis_pos.x);
+            AddParam(param, h.param(1), axis_pos.y);
+            AddParam(param, h.param(2), axis_pos.z);
+            // The rotation quaternion
+            AddParam(param, h.param(3), 30*PI/180);
+            AddParam(param, h.param(4), axis_dir.x);
+            AddParam(param, h.param(5), axis_dir.y);
+            AddParam(param, h.param(6), axis_dir.z);
+
+            int n = 2;
+
+            for(a = 0; a < 2; a++) {
+                for(i = 0; i < entity->n; i++) {
+                    Entity *e = &(entity->elem[i]);
+                    if(e->group.v != opA.v) continue;
+
+                    e->CalculateNumerical(false);
+                    CopyEntity(entity, e,
+                        a*2, // - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
+                        (a == (n - 1)) ? REMAP_LAST : a,
+                        h.param(0), h.param(1), h.param(2),
+                        h.param(3), h.param(4), h.param(5), h.param(6),
+                        CopyAs::N_ROT_AA);
+                }
+            }
+
             return;
         }
 
@@ -655,7 +691,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             Expr::From(h.param(5)),
             Expr::From(h.param(6)) };
         AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
-    } else if(type == Type::ROTATE) {
+    } else if(type == Type::ROTATE || type == Type::REVOLVE) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
