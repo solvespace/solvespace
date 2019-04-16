@@ -91,8 +91,9 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
         sb->auxA = Style::SOLID_EDGE;
     }
 
-    el.CullExtraneousEdges(true);
-    bl.CullIdenticalBeziers(true);
+    // Remove all overlapping edges/beziers to merge the areas they describe.
+    el.CullExtraneousEdges(/*both=*/true);
+    bl.CullIdenticalBeziers(/*both=*/true);
     
     // Collect lines and beziers with custom style & export.
     int i;
@@ -110,8 +111,8 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     }
 
     // Only remove half of the overlapping edges/beziers to support TTF Stick Fonts.
-    el.CullExtraneousEdges(false);
-    bl.CullIdenticalBeziers(false);
+    el.CullExtraneousEdges(/*both=*/false);
+    bl.CullIdenticalBeziers(/*both=*/false);
 
     // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);

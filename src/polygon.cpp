@@ -327,9 +327,11 @@ bool SEdgeList::ContainsEdge(const SEdge *set) const {
 }
 
 //-----------------------------------------------------------------------------
-// Remove unnecessary edges: if two are anti-parallel then remove both, and if
-// two are parallel then remove one.
-// If both is false, only one edge is removed.
+// Remove unnecessary edges:
+// - if two are anti-parallel then
+//     if both=true, remove both
+//     else remove only one.
+// - if two are parallel then remove one.
 //-----------------------------------------------------------------------------
 void SEdgeList::CullExtraneousEdges(bool both) {
     l.ClearTags();
@@ -343,7 +345,8 @@ void SEdgeList::CullExtraneousEdges(bool both) {
                 set->tag = 1;
             }
             if((set->a).Equals(se->b) && (set->b).Equals(se->a)) {
-                // Two anti-parallel edges exist; so keep neither.
+                // Two anti-parallel edges exist; if both=true, keep neither,
+                // otherwise keep only one.
                 if (both) se->tag = 1;
                 set->tag = 1;
             }
