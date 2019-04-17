@@ -380,7 +380,7 @@ public:
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                               RgbaColor color, Group *group);
     void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt,
-                              Vector axis, RgbaColor color, Group *group);
+                              Vector axis, RgbaColor color, Group *group, double angle);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);

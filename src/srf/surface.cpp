@@ -611,14 +611,14 @@ typedef struct {
 } Revolved;
 
 // sketch must not contain the axis of revolution as a non-construction line for helix
-void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color, Group *group)
+void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
+                                         RgbaColor color, Group *group, double angle)
 {
     SBezierLoop *sbl;
 // for testing - hard code the anlge of revolution, axial distance, and number of sections
 // angle and distance will need to be parameters in the future.
-    double angle = PI*1.4;
     double dist = 0;
-    int sections = 5;
+    int sections = 3;
     double wedge = angle / sections;
 
     int i0 = surface.n, i;
