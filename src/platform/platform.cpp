@@ -541,6 +541,12 @@ static Platform::Path FindLocalResourceDir() {
         return resourceDir;
     }
 
+    resourceDir = selfPath.Parent().Parent().Join("share/solvespace");
+    if(stat(resourceDir.raw.c_str(), &st) != -1) {
+        // A resource directory exists at a relative path, good.
+        return resourceDir;
+    }
+
     // No executable-adjacent resource directory; use the one from compile-time prefix.
     return Path::From(UNIX_DATADIR);
 }
