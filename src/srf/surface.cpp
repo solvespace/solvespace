@@ -634,11 +634,13 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
             // if we choose a point that lies on the axis, for example.
             // (And our surface will be self-intersecting if the sketch
             // spans the axis, so don't worry about that.)
-            Vector p = sb->Start();
-            double d = p.DistanceToLine(pt, axis);
-            if(d > md) {
-                md = d;
-                pto = p;
+            for(i = 0; i <= sb->deg; i++) {
+                Vector p = sb->ctrl[i];
+                double d = p.DistanceToLine(pt, axis);
+                if(d > md) {
+                    md = d;
+                    pto = p;
+                }
             }
         }
     }
