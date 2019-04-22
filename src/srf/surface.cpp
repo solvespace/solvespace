@@ -615,13 +615,16 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                                          RgbaColor color, Group *group, double angle)
 {
     SBezierLoop *sbl;
-// for testing - hard code the anlge of revolution, axial distance, and number of sections
-// angle and distance will need to be parameters in the future.
+// for testing - hard code the axial distance, and number of sections.
+// distance will need to be parameters in the future.
     double dist = 0;
     int sections = 3;
     double wedge = angle / sections;
 
     int i0 = surface.n, i;
+
+/* this section of code was to compensate for inside-out surfaces (turning red)
+   by flipping the rotation axis. That doesn't work right. Needs a better solution.
 
     // Normalize the axis direction so that the direction of revolution
     // ends up parallel to the normal of the sketch, on the side of the
@@ -635,12 +638,14 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
             // if we choose a point that lies on the axis, for example.
             // (And our surface will be self-intersecting if the sketch
             // spans the axis, so don't worry about that.)
-            Vector p = sb->Start();
-            double d = p.DistanceToLine(pt, axis);
-            if(d > md) {
-                md = d;
-                pto = p;
-            }
+            for(i = 0; i <= sb->deg; i++) {
+              Vector p = sb->ctrl[i];
+              double d = p.DistanceToLine(pt, axis);
+              if(d > md) {
+                  md = d;
+                  pto = p;
+              }
+           }
         }
     }
     Vector ptc = pto.ClosestPointOnLine(pt, axis),
@@ -649,6 +654,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     if(vp.Dot(axis) < 0) {
         axis = axis.ScaledBy(-1);
     }
+*/
 
     // Define a coordinate system to contain the original sketch, and get
     // a bounding box in that csys
