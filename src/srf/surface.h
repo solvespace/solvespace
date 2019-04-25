@@ -377,6 +377,7 @@ public:
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              RgbaColor color);
+    bool CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                               RgbaColor color, Group *group);
     void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt,

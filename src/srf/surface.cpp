@@ -605,6 +605,35 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     }
 }
 
+bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis)
+    // Check that the direction of revolution ends up parallel to the normal of
+    // the sketch, on the side of the axis where the sketch is.
+{
+    SBezierLoop *sbl;
+    Vector pto;
+    double md = VERY_NEGATIVE;
+    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
+        SBezier *sb;
+        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
+            // Choose the point farthest from the axis; we'll get garbage
+            // if we choose a point that lies on the axis, for example.
+            // (And our surface will be self-intersecting if the sketch
+            // spans the axis, so don't worry about that.)
+            for(int i = 0; i <= sb->deg; i++) {
+              Vector p = sb->ctrl[i];
+              double d = p.DistanceToLine(pt, axis);
+              if(d > md) {
+                  md = d;
+                  pto = p;
+              }
+           }
+        }
+    }
+    Vector ptc = pto.ClosestPointOnLine(pt, axis),
+           up  = (pto.Minus(ptc)).WithMagnitude(1),
+           vp  = (sbls->normal).Cross(up);
+    return (vp.Dot(axis) < 0);
+}
 
 typedef struct {
     hSSurface   d[100];
@@ -621,40 +650,20 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     int sections = 3;
     double wedge = angle / sections;
 
+    double angles = 0;      // start angle
+    double dists = 0;       // start distance
+    double anglef = angle;  // finish angle
+    double distf = dist;    // finish distance
+
     int i0 = surface.n, i;
 
-/* this section of code was to compensate for inside-out surfaces (turning red)
-   by flipping the rotation axis. That doesn't work right. Needs a better solution.
-
-    // Normalize the axis direction so that the direction of revolution
-    // ends up parallel to the normal of the sketch, on the side of the
-    // axis where the sketch is.
-    Vector pto;
-    double md = VERY_NEGATIVE;
-    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
-        SBezier *sb;
-        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-            // Choose the point farthest from the axis; we'll get garbage
-            // if we choose a point that lies on the axis, for example.
-            // (And our surface will be self-intersecting if the sketch
-            // spans the axis, so don't worry about that.)
-            for(i = 0; i <= sb->deg; i++) {
-              Vector p = sb->ctrl[i];
-              double d = p.DistanceToLine(pt, axis);
-              if(d > md) {
-                  md = d;
-                  pto = p;
-              }
-           }
-        }
+    if(CheckNormalAxisRelationship(sbls, pt,axis) ^ (angle<0)) {
+      swap(angles, anglef);
+      swap(dists, distf);
+      dist = -dist;
+      wedge = -wedge;
+//        axis = axis.ScaledBy(-1);
     }
-    Vector ptc = pto.ClosestPointOnLine(pt, axis),
-           up  = (pto.Minus(ptc)).WithMagnitude(1),
-           vp  = (sbls->normal).Cross(up);
-    if(vp.Dot(axis) < 0) {
-        axis = axis.ScaledBy(-1);
-    }
-*/
 
     // Define a coordinate system to contain the original sketch, and get
     // a bounding box in that csys
@@ -674,11 +683,14 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // So we can now generate the end caps of the extrusion within
     // a translated and rotated (and maybe mirrored) version of that csys.
     SSurface s0, s1;
-    s0 = SSurface::FromPlane(orig, u, v);
+//    s0 = SSurface::FromPlane(orig, u, v);
+    s0 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
+                               u.RotatedAbout(axis, angles),
+                               v.RotatedAbout(axis, angles));
     s0.color = color;
-    s1 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angle).Plus(axis.ScaledBy(dist)),
-                               u.ScaledBy(-1).RotatedAbout(axis, angle),
-                               v.RotatedAbout(axis, angle));
+    s1 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, anglef).Plus(axis.ScaledBy(distf)),
+                               u.ScaledBy(-1).RotatedAbout(axis, anglef),
+                               v.RotatedAbout(axis, anglef));
     s1.color = color;
     hSSurface hs0 = surface.AddAndAssignId(&s0),
               hs1 = surface.AddAndAssignId(&s1);
@@ -702,9 +714,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     revs.d[j].v = 0;
                 } else {
                     SSurface ss = SSurface::FromRevolutionOf(sb, pt, axis,
-                                                             (wedge)*j,
-                                                             (wedge)*(j+1),
-                                                             j*dist/sections, (j+1)*dist/sections);
+                                                             angles+(wedge)*j,
+                                                             angles+(wedge)*(j+1),
+                                                             dists+j*dist/sections, dists+(j+1)*dist/sections);
                     ss.color = color;
                     if(sb->entity != 0) {
                         hEntity he;
@@ -729,9 +741,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
             // we generate one more curve than we did surfaces
             for(j = 0; j <= sections; j++) {
                 SCurve sc;
-                Quaternion qs = Quaternion::From(axis, wedge * j);
+                Quaternion qs = Quaternion::From(axis, angles+wedge * j);
                 // we want Q*(x - p) + p = Q*x + (p - Q*p)
-                Vector ts = pt.Minus(qs.Rotate(pt)).Plus(axis.ScaledBy(j*dist/sections));
+                Vector ts = pt.Minus(qs.Rotate(pt)).Plus(axis.ScaledBy(dists+j*dist/sections));
 
                 // If this input curve generated a surface, then trim that
                 // surface with the rotated version of the input curve.
@@ -802,32 +814,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
 
     int i0 = surface.n, i;
 
-    // Normalize the axis direction so that the direction of revolution
-    // ends up parallel to the normal of the sketch, on the side of the
-    // axis where the sketch is.
-    Vector pto;
-    double md = VERY_NEGATIVE;
-    for(sbl = sbls->l.First(); sbl; sbl = sbls->l.NextAfter(sbl)) {
-        SBezier *sb;
-        for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-            // Choose the point farthest from the axis; we'll get garbage
-            // if we choose a point that lies on the axis, for example.
-            // (And our surface will be self-intersecting if the sketch
-            // spans the axis, so don't worry about that.)
-            for(i = 0; i <= sb->deg; i++) {
-                Vector p = sb->ctrl[i];
-                double d = p.DistanceToLine(pt, axis);
-                if(d > md) {
-                    md = d;
-                    pto = p;
-                }
-            }
-        }
-    }
-    Vector ptc = pto.ClosestPointOnLine(pt, axis),
-           up  = (pto.Minus(ptc)).WithMagnitude(1),
-           vp  = (sbls->normal).Cross(up);
-    if(vp.Dot(axis) < 0) {
+    if(CheckNormalAxisRelationship(sbls, pt,axis)) {
         axis = axis.ScaledBy(-1);
     }
 
@@ -1077,4 +1064,6 @@ void SShell::Clear() {
     }
     curve.Clear();
 }
+
+
 
