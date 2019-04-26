@@ -643,6 +643,7 @@ typedef struct {
 void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                                          RgbaColor color, Group *group, double angle)
 {
+    int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
 // for testing - hard code the axial distance, and number of sections.
 // distance will need to be parameters in the future.
@@ -655,14 +656,11 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     double anglef = angle;  // finish angle
     double distf = dist;    // finish distance
 
-    int i0 = surface.n, i;
-
     if(CheckNormalAxisRelationship(sbls, pt,axis) ^ (angle<0)) {
       swap(angles, anglef);
       swap(dists, distf);
       dist = -dist;
       wedge = -wedge;
-//        axis = axis.ScaledBy(-1);
     }
 
     // Define a coordinate system to contain the original sketch, and get
@@ -683,7 +681,6 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
     // So we can now generate the end caps of the extrusion within
     // a translated and rotated (and maybe mirrored) version of that csys.
     SSurface s0, s1;
-//    s0 = SSurface::FromPlane(orig, u, v);
     s0 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, angles).Plus(axis.ScaledBy(dists)),
                                u.RotatedAbout(axis, angles),
                                v.RotatedAbout(axis, angles));
@@ -775,7 +772,22 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                     stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/false);
                     (surface.FindById(sc.surfB))->trim.Add(&stb);
                 }
+                else if (j == 0) { // curve was on the rotation axis and is shared by the end caps.
+                    sc = {};
+                    sc.isExact = true;
+                    sc.exact = sb->TransformedBy(ts, qs, 1.0);
+                    (sc.exact).MakePwlInto(&(sc.pts));
+                    sc.surfA = hs1; // end cap
+                    sc.surfB = hs0; // staring cap
+                    hSCurve hcb = curve.AddAndAssignId(&sc);
 
+                    STrimBy stb;
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/true);
+                    (surface.FindById(sc.surfA))->trim.Add(&stb);
+                    stb = STrimBy::EntireCurve(this, hcb, /*backwards=*/false);
+                    (surface.FindById(sc.surfB))->trim.Add(&stb);
+                }
+                
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
                 // curve based on the control points.
@@ -806,13 +818,15 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
         hsl.Clear();
     }
 
+    if (dist == 0) {
+      MakeFirstOrderRevolvedSurfaces(pt, axis, i0);
+    }
 }
 
 void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color, Group *group)
 {
+    int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
-
-    int i0 = surface.n, i;
 
     if(CheckNormalAxisRelationship(sbls, pt,axis)) {
         axis = axis.ScaledBy(-1);
@@ -915,6 +929,13 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
         hsl.Clear();
     }
 
+    MakeFirstOrderRevolvedSurfaces(pt, axis, i0);
+}
+
+void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0)
+{
+    int i;
+
     for(i = i0; i < surface.n; i++) {
         SSurface *srf = &(surface.elem[i]);
 
@@ -991,9 +1012,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 continue;
             }
         }
-
     }
-
 }
 
 void SShell::MakeFromCopyOf(SShell *a) {

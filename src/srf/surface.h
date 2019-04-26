@@ -382,6 +382,7 @@ public:
                               RgbaColor color, Group *group);
     void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt,
                               Vector axis, RgbaColor color, Group *group, double angle);
+    void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);
     void MakeFromBoolean(SShell *a, SShell *b, SSurface::CombineAs type);
