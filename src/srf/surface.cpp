@@ -685,7 +685,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                                u.RotatedAbout(axis, angles),
                                v.RotatedAbout(axis, angles));
     s0.color = color;
-    s1 = SSurface::FromPlane(orig.RotatedAbout(pt, axis, anglef).Plus(axis.ScaledBy(distf)),
+    s1 = SSurface::FromPlane(orig.Plus(u).RotatedAbout(pt, axis, anglef).Plus(axis.ScaledBy(distf)),
                                u.ScaledBy(-1).RotatedAbout(axis, anglef),
                                v.RotatedAbout(axis, anglef));
     s1.color = color;
