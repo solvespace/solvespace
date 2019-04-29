@@ -381,7 +381,8 @@ public:
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                               RgbaColor color, Group *group);
     void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt,
-                              Vector axis, RgbaColor color, Group *group, double angle);
+                              Vector axis, RgbaColor color, Group *group,
+                              double angles, double anglef);
     void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);

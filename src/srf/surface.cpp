@@ -641,7 +641,8 @@ typedef struct {
 
 // sketch must not contain the axis of revolution as a non-construction line for helix
 void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
-                                         RgbaColor color, Group *group, double angle)
+                                         RgbaColor color, Group *group,
+                                         double angles, double anglef)
 {
     int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
@@ -649,14 +650,12 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 // distance will need to be parameters in the future.
     double dist = 0;
     int sections = 3;
-    double wedge = angle / sections;
+    double wedge = (anglef - angles) / sections;
 
-    double angles = 0;      // start angle
     double dists = 0;       // start distance
-    double anglef = angle;  // finish angle
     double distf = dist;    // finish distance
 
-    if(CheckNormalAxisRelationship(sbls, pt,axis) ^ (angle<0)) {
+    if(CheckNormalAxisRelationship(sbls, pt,axis) ^ (wedge < 0)) {
       swap(angles, anglef);
       swap(dists, distf);
       dist = -dist;

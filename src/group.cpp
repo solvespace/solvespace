@@ -549,9 +549,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             }
 */
 
-            // inherit meshCombine from source group
-            Group *srcg = SK.GetGroup(opA);
-            meshCombine = srcg->meshCombine;
             // The center of rotation
             AddParam(param, h.param(0), axis_pos.x);
             AddParam(param, h.param(1), axis_pos.y);
@@ -571,7 +568,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
                     e->CalculateNumerical(false);
                     CopyEntity(entity, e,
-                        a*2, // - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
+                        a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
                         h.param(3), h.param(4), h.param(5), h.param(6),

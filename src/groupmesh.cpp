@@ -295,7 +295,12 @@ void Group::GenerateShellAndMesh() {
         }
     } else if(type == Type::REVOLVE && haveSrc) {
         Group *src = SK.GetGroup(opA);
-        double angle = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double angles = 0.0;
+        if (subtype != Subtype::ONE_SIDED) {
+          anglef *= 0.5;
+          angles = -anglef;
+        }
         Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
                axis = SK.GetEntity(predef.entityB)->VectorGetNum();
         axis = axis.WithMagnitude(1);
@@ -303,7 +308,8 @@ void Group::GenerateShellAndMesh() {
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this, angle);
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                                                  angles, anglef );
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
