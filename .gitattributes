@@ -8,5 +8,3 @@
 *.lib  binary
 *.png  binary
 *.slvs binary
-
-/CMakeLists.txt ident
