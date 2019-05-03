@@ -701,7 +701,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
         for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
             Revolved revs;
             for(j = 0; j < sections; j++) {
-                if(sb->deg == 1 &&
+                if( (dist == 0) && sb->deg == 1 &&
                     (sb->ctrl[0]).DistanceToLine(pt, axis) < LENGTH_EPS &&
                     (sb->ctrl[1]).DistanceToLine(pt, axis) < LENGTH_EPS)
                 {
