@@ -649,7 +649,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 // for testing - hard code the axial distance, and number of sections.
 // distance will need to be parameters in the future.
     double dist = 0;
-    int sections = 3;
+    int sections = 7;
     double wedge = (anglef - angles) / sections;
 
     double dists = 0;       // start distance
@@ -743,7 +743,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
                 // If this input curve generated a surface, then trim that
                 // surface with the rotated version of the input curve.
-                if(revs.d[j].v) {
+                if(revs.d[0].v) { // not d[j] because crash on j==sections
                     sc = {};
                     sc.isExact = true;
                     sc.exact = sb->TransformedBy(ts, qs, 1.0);
