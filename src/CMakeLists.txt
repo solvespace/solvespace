@@ -13,6 +13,14 @@ endif()
 
 set(HAVE_SPACEWARE ${SPACEWARE_FOUND})
 
+if(NOT WIN32 OR APPLE)
+    if(GTKMM_gtkmm-3.0_VERSION VERSION_LESS "3.24.0")
+        set(HAVE_GTK_FILECHOOSERNATIVE 0)
+    else()
+        set(HAVE_GTK_FILECHOOSERNATIVE 1)
+    endif()
+endif()
+
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 

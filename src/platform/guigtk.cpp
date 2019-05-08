@@ -15,6 +15,10 @@
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/filechooserdialog.h>
+#define HAVE_GTK_FILECHOOSERNATIVE
+#if defined(HAVE_GTK_FILECHOOSERNATIVE)
+#   include <gtkmm/filechoosernative.h>
+#endif
 #include <gtkmm/fixed.h>
 #include <gtkmm/glarea.h>
 #include <gtkmm/main.h>
@@ -1187,32 +1191,27 @@ MessageDialogRef CreateMessageDialog(WindowRef parentWindow) {
 // File dialogs
 //-----------------------------------------------------------------------------
 
-class FileDialogImplGtk final : public FileDialog {
+class FileDialogImplGtk : public FileDialog {
 public:
-    Gtk::FileChooserDialog      gtkDialog;
+    Gtk::FileChooser           *gtkChooser;
     std::vector<std::string>    extensions;
 
-    FileDialogImplGtk(Gtk::FileChooserDialog &&dialog)
-        : gtkDialog(std::move(dialog))
-    {
-        gtkDialog.property_filter().signal_changed().
+    void InitFileChooser(Gtk::FileChooser &chooser) {
+        gtkChooser = &chooser;
+        gtkChooser->property_filter().signal_changed().
             connect(sigc::mem_fun(this, &FileDialogImplGtk::FilterChanged));
     }
 
-    void SetTitle(std::string title) override {
-        gtkDialog.set_title(PrepareTitle(title));
-    }
-
     void SetCurrentName(std::string name) override {
-        gtkDialog.set_current_name(name);
+        gtkChooser->set_current_name(name);
     }
 
     Platform::Path GetFilename() override {
-        return Path::From(gtkDialog.get_filename());
+        return Path::From(gtkChooser->get_filename());
     }
 
     void SetFilename(Platform::Path path) override {
-        gtkDialog.set_filename(path.raw);
+        gtkChooser->set_filename(path.raw);
     }
 
     void AddFilter(std::string name, std::vector<std::string> extensions) override {
@@ -1233,13 +1232,13 @@ public:
         gtkFilter->set_name(name + " (" + desc + ")");
 
         this->extensions.push_back(extensions.front());
-        gtkDialog.add_filter(gtkFilter);
+        gtkChooser->add_filter(gtkFilter);
     }
 
     std::string GetExtension() {
-        auto filters = gtkDialog.list_filters();
+        auto filters = gtkChooser->list_filters();
         size_t filterIndex =
-            std::find(filters.begin(), filters.end(), gtkDialog.get_filter()) -
+            std::find(filters.begin(), filters.end(), gtkChooser->get_filter()) -
             filters.begin();
         if(filterIndex < extensions.size()) {
             return extensions[filterIndex];
@@ -1249,14 +1248,14 @@ public:
     }
 
     void SetExtension(std::string extension) {
-        auto filters = gtkDialog.list_filters();
+        auto filters = gtkChooser->list_filters();
         size_t extensionIndex =
             std::find(extensions.begin(), extensions.end(), extension) -
             extensions.begin();
         if(extensionIndex < filters.size()) {
-            gtkDialog.set_filter(filters[extensionIndex]);
+            gtkChooser->set_filter(filters[extensionIndex]);
         } else {
-            gtkDialog.set_filter(filters.front());
+            gtkChooser->set_filter(filters.front());
         }
     }
 
@@ -1270,21 +1269,46 @@ public:
 
     void FreezeChoices(SettingsRef settings, const std::string &key) override {
         settings->FreezeString("Dialog_" + key + "_Folder",
-                               gtkDialog.get_current_folder());
+                               gtkChooser->get_current_folder());
         settings->FreezeString("Dialog_" + key + "_Filter", GetExtension());
     }
 
     void ThawChoices(SettingsRef settings, const std::string &key) override {
-        gtkDialog.set_current_folder(settings->ThawString("Dialog_" + key + "_Folder"));
+        gtkChooser->set_current_folder(settings->ThawString("Dialog_" + key + "_Folder"));
         SetExtension(settings->ThawString("Dialog_" + key + "_Filter"));
     }
 
-    bool RunModal() override {
-        if(gtkDialog.get_action() == Gtk::FILE_CHOOSER_ACTION_SAVE &&
-                Path::From(gtkDialog.get_current_name()).FileStem().empty()) {
-            gtkDialog.set_current_name(std::string(_("untitled")) + "." + GetExtension());
+    void CheckForUntitledFile() {
+        if(gtkChooser->get_action() == Gtk::FILE_CHOOSER_ACTION_SAVE &&
+                Path::From(gtkChooser->get_current_name()).FileStem().empty()) {
+            gtkChooser->set_current_name(std::string(_("untitled")) + "." + GetExtension());
         }
+    }
+};
 
+class FileDialogGtkImplGtk final : public FileDialogImplGtk {
+public:
+    Gtk::FileChooserDialog      gtkDialog;
+
+    FileDialogGtkImplGtk(Gtk::Window &gtkParent, bool isSave)
+        : gtkDialog(gtkParent,
+                    isSave ? C_("title", "Save File")
+                           : C_("title", "Open File"),
+                    isSave ? Gtk::FILE_CHOOSER_ACTION_SAVE
+                           : Gtk::FILE_CHOOSER_ACTION_OPEN) {
+        gtkDialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
+        gtkDialog.add_button(isSave ? C_("button", "_Save")
+                                    : C_("button", "_Open"), Gtk::RESPONSE_OK);
+        gtkDialog.set_default_response(Gtk::RESPONSE_OK);
+        InitFileChooser(gtkDialog);
+    }
+
+    void SetTitle(std::string title) override {
+        gtkDialog.set_title(PrepareTitle(title));
+    }
+
+    bool RunModal() override {
+        CheckForUntitledFile();
         if(gtkDialog.run() == Gtk::RESPONSE_OK) {
             return true;
         } else {
@@ -1293,26 +1317,56 @@ public:
     }
 };
 
+#if defined(HAVE_GTK_FILECHOOSERNATIVE)
+
+class FileDialogNativeImplGtk final : public FileDialogImplGtk {
+public:
+    Glib::RefPtr<Gtk::FileChooserNative> gtkNative;
+
+    FileDialogNativeImplGtk(Gtk::Window &gtkParent, bool isSave) {
+        gtkNative = Gtk::FileChooserNative::create(
+            isSave ? C_("title", "Save File")
+                   : C_("title", "Open File"),
+            gtkParent,
+            isSave ? Gtk::FILE_CHOOSER_ACTION_SAVE
+                   : Gtk::FILE_CHOOSER_ACTION_OPEN,
+            isSave ? C_("button", "_Save")
+                   : C_("button", "_Open"),
+            C_("button", "_Cancel"));
+        // Seriously, GTK?!
+        InitFileChooser(*gtkNative.operator->());
+    }
+
+    void SetTitle(std::string title) override {
+        gtkNative->set_title(PrepareTitle(title));
+    }
+
+    bool RunModal() override {
+        CheckForUntitledFile();
+        if(gtkNative->run() == Gtk::RESPONSE_ACCEPT) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+};
+
+#endif
+
+#if defined(HAVE_GTK_FILECHOOSERNATIVE)
+#   define FILE_DIALOG_IMPL FileDialogNativeImplGtk
+#else
+#   define FILE_DIALOG_IMPL FileDialogGtkImplGtk
+#endif
+
 FileDialogRef CreateOpenFileDialog(WindowRef parentWindow) {
     Gtk::Window &gtkParent = std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow;
-    Gtk::FileChooserDialog gtkDialog(gtkParent, C_("title", "Open File"),
-                                     Gtk::FILE_CHOOSER_ACTION_OPEN);
-    gtkDialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
-    gtkDialog.add_button(C_("button", "_Open"), Gtk::RESPONSE_OK);
-    gtkDialog.set_default_response(Gtk::RESPONSE_OK);
-    return std::make_shared<FileDialogImplGtk>(std::move(gtkDialog));
-
+    return std::make_shared<FILE_DIALOG_IMPL>(gtkParent, /*isSave=*/false);
 }
 
 FileDialogRef CreateSaveFileDialog(WindowRef parentWindow) {
     Gtk::Window &gtkParent = std::static_pointer_cast<WindowImplGtk>(parentWindow)->gtkWindow;
-    Gtk::FileChooserDialog gtkDialog(gtkParent, C_("title", "Save File"),
-                                     Gtk::FILE_CHOOSER_ACTION_SAVE);
-    gtkDialog.set_do_overwrite_confirmation(true);
-    gtkDialog.add_button(C_("button", "_Cancel"), Gtk::RESPONSE_CANCEL);
-    gtkDialog.add_button(C_("button", "_Save"), Gtk::RESPONSE_OK);
-    gtkDialog.set_default_response(Gtk::RESPONSE_OK);
-    return std::make_shared<FileDialogImplGtk>(std::move(gtkDialog));
+    return std::make_shared<FILE_DIALOG_IMPL>(gtkParent, /*isSave=*/true);
 }
 
 //-----------------------------------------------------------------------------
