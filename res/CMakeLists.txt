@@ -126,28 +126,51 @@ elseif(APPLE)
 else()
     add_resource(freedesktop/solvespace-48x48.png)
 
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace.desktop.in
-        ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
+    if(FLATPAK)
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace-flatpak.desktop.in
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace-flatpak.desktop)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace-flatpak.desktop
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications
+            RENAME      com.solvespace.SolveSpace.desktop)
 
-    install(FILES freedesktop/solvespace-slvs.xml
-        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages)
+        install(FILES freedesktop/solvespace-flatpak-mime.xml
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
+            RENAME      com.solvespace.SolveSpace-slvs.xml)
 
-    foreach(SIZE 16x16 24x24 32x32 48x48)
-        install(FILES freedesktop/solvespace-${SIZE}.png
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
-            RENAME      solvespace.png)
-        install(FILES freedesktop/solvespace-${SIZE}.png
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
-            RENAME      application.x-solvespace.png)
-    endforeach()
+        foreach(SIZE 16x16 24x24 32x32 48x48)
+            install(FILES freedesktop/solvespace-${SIZE}.png
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
+                RENAME      com.solvespace.SolveSpace.png)
+            install(FILES freedesktop/solvespace-${SIZE}.png
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
+                RENAME      com.solvespace.SolveSpace.png)
+        endforeach()
+    else()
+        configure_file(
+            ${CMAKE_CURRENT_SOURCE_DIR}/freedesktop/solvespace.desktop.in
+            ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop)
+        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/freedesktop/solvespace.desktop
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/applications)
 
-    foreach(SIZE 16x16 24x24 32x32 48x48)
-        install(FILES freedesktop/solvespace-${SIZE}.xpm
-            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
-    endforeach()
+        install(FILES freedesktop/solvespace-mime.xml
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
+            RENAME      solvespace-slvs.xml)
+
+        foreach(SIZE 16x16 24x24 32x32 48x48)
+            install(FILES freedesktop/solvespace-${SIZE}.png
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
+                RENAME      solvespace.png)
+            install(FILES freedesktop/solvespace-${SIZE}.png
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/mimetypes
+                RENAME      application.x-solvespace.png)
+        endforeach()
+
+        foreach(SIZE 16x16 24x24 32x32 48x48)
+            install(FILES freedesktop/solvespace-${SIZE}.xpm
+                DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pixmaps)
+        endforeach()
+    endif()
 endif()
 
 add_resources(

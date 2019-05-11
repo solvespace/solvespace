@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=SolveSpace
+Comment=A parametric 2d/3d CAD
+Exec=${CMAKE_INSTALL_FULL_BINDIR}/solvespace
+MimeType=application/x-solvespace
+Icon=com.solvespace.SolveSpace
+Type=Application
+Categories=Graphics
+Keywords=parametric;cad;2d;3d;
