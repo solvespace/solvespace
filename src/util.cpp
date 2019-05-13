@@ -441,11 +441,12 @@ double Vector::Element(int i) const {
 
 bool Vector::Equals(Vector v, double tol) const {
     // Quick axis-aligned tests before going further
-    double dx = v.x - x; if(dx < -tol || dx > tol) return false;
-    double dy = v.y - y; if(dy < -tol || dy > tol) return false;
-    double dz = v.z - z; if(dz < -tol || dz > tol) return false;
+    const Vector dv = this->Minus(v);
+    if (fabs(dv.x) > tol) return false;
+    if (fabs(dv.y) > tol) return false;
+    if (fabs(dv.z) > tol) return false;
 
-    return (this->Minus(v)).MagSquared() < tol*tol;
+    return dv.MagSquared() < tol*tol;
 }
 
 bool Vector::EqualsExactly(Vector v) const {
