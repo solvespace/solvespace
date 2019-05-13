@@ -231,9 +231,10 @@ void SBezierList::ScaleSelfBy(double s) {
 
 //-----------------------------------------------------------------------------
 // If our list contains multiple identical Beziers (in either forward or
-// reverse order), then cull them.
+// reverse order), then cull them. If both is true, both beziers are removed.
+// Otherwise only one of them is removed.
 //-----------------------------------------------------------------------------
-void SBezierList::CullIdenticalBeziers() {
+void SBezierList::CullIdenticalBeziers(bool both) {
     int i, j;
 
     l.ClearTags();
@@ -247,7 +248,7 @@ void SBezierList::CullIdenticalBeziers() {
             if(bj->Equals(bi) ||
                bj->Equals(&bir))
             {
-                bi->tag = 1;
+                if (both) bi->tag = 1;
                 bj->tag = 1;
             }
         }
@@ -491,7 +492,7 @@ bool SBezierLoop::IsClosed() const {
 SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
                                     double chordTol,
                                     bool *allClosed, SEdge *errorAt,
-                                    SBezierList *openContours)
+                                    SBezierLoopSet *openContours)
 {
     SBezierLoopSet ret = {};
 
@@ -504,12 +505,10 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
             // Record open loops in a separate list, if requested.
             *allClosed = false;
             if(openContours) {
-                SBezier *sb;
-                for(sb = loop.l.First(); sb; sb = loop.l.NextAfter(sb)) {
-                    openContours->l.Add(sb);
-                }
+                openContours->l.Add(&loop);
+            } else {
+                loop.Clear();
             }
-            loop.Clear();
         } else {
             ret.l.Add(&loop);
             poly->AddEmptyContour();
@@ -576,7 +575,7 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
                                    double chordTol,
                                    bool *allClosed, SEdge *notClosedAt,
                                    bool *allCoplanar, Vector *notCoplanarAt,
-                                   SBezierList *openContours)
+                                   SBezierLoopSet *openContours)
 {
     SSurface srfPlane;
     if(!srfuv) {
@@ -589,7 +588,9 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
             if(openContours) {
                 SBezier *sb;
                 for(sb = sbl->l.First(); sb; sb = sbl->l.NextAfter(sb)) {
-                    openContours->l.Add(sb);
+                    SBezierLoop sbl={};
+                    sbl.l.Add(sb);
+                    openContours->l.Add(&sbl);
                 }
             }
             return;
@@ -705,12 +706,10 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
         if(loop->tag == USED_LOOP) continue;
 
         if(openContours) {
-            SBezier *sb;
-            for(sb = loop->l.First(); sb; sb = loop->l.NextAfter(sb)) {
-                openContours->l.Add(sb);
-            }
+            openContours->l.Add(loop);
+        } else {
+            loop->Clear();
         }
-        loop->Clear();
         // but don't free the used loops, since we shallow-copied them to
         // ourself
     }

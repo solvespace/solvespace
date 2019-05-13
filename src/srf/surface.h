@@ -125,7 +125,7 @@ public:
 
     void Clear();
     void ScaleSelfBy(double s);
-    void CullIdenticalBeziers();
+    void CullIdenticalBeziers(bool both=true);
     void AllIntersectionsWith(SBezierList *sblb, SPointList *spl) const;
     bool GetPlaneContainingBeziers(Vector *p, Vector *u, Vector *v,
                                         Vector *notCoplanarAt) const;
@@ -156,7 +156,7 @@ public:
     static SBezierLoopSet From(SBezierList *spcl, SPolygon *poly,
                                double chordTol,
                                bool *allClosed, SEdge *errorAt,
-                               SBezierList *openContours);
+                               SBezierLoopSet *openContours);
 
     void GetBoundingProjd(Vector u, Vector orig, double *umin, double *umax) const;
     double SignedArea();
@@ -172,7 +172,7 @@ public:
                             double chordTol,
                             bool *allClosed, SEdge *notClosedAt,
                             bool *allCoplanar, Vector *notCoplanarAt,
-                            SBezierList *openContours);
+                            SBezierLoopSet *openContours);
     void AddOpenPath(SBezier *sb);
     void Clear();
 };

@@ -78,9 +78,8 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     g->runningMesh.MakeEdgesInPlaneInto(&el, n, d);
 
     // If there's a shell, then grab the edges and possibly Beziers.
-    g->runningShell.MakeSectionEdgesInto(n, d,
-       &el,
-       (SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS) ? NULL : &bl);
+    bool export_as_pwl = SS.exportPwlCurves || fabs(SS.exportOffset) > LENGTH_EPS;
+    g->runningShell.MakeSectionEdgesInto(n, d, &el, export_as_pwl ? NULL : &bl);
 
     // All of these are solid model edges, so use the appropriate style.
     SEdge *se;
@@ -92,8 +91,28 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
         sb->auxA = Style::SOLID_EDGE;
     }
 
-    el.CullExtraneousEdges();
-    bl.CullIdenticalBeziers();
+    // Remove all overlapping edges/beziers to merge the areas they describe.
+    el.CullExtraneousEdges(/*both=*/true);
+    bl.CullIdenticalBeziers(/*both=*/true);
+    
+    // Collect lines and beziers with custom style & export.
+    int i;
+    for(i = 0; i < SK.entity.n; i++) {
+        Entity *e = &(SK.entity.elem[i]);
+        if (!e->IsVisible()) continue;
+        if (e->style.v < Style::FIRST_CUSTOM) continue;
+        if (!Style::Exportable(e->style.v)) continue;
+        if (!e->IsInPlane(n,d)) continue;
+        if (export_as_pwl) {
+            e->GenerateEdges(&el);
+        } else {
+            e->GenerateBezierCurves(&bl);
+        }
+    }
+
+    // Only remove half of the overlapping edges/beziers to support TTF Stick Fonts.
+    el.CullExtraneousEdges(/*both=*/false);
+    bl.CullIdenticalBeziers(/*both=*/false);
 
     // And write the edges.
     VectorFileWriter *out = VectorFileWriter::ForFile(filename);
@@ -573,7 +592,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // If possible, then we will assemble these output curves into loops. They
     // will then get exported as closed paths.
     SBezierLoopSetSet sblss = {};
-    SBezierList leftovers = {};
+    SBezierLoopSet leftovers = {};
     SSurface srf = SSurface::FromPlane(Vector::From(0, 0, 0),
                                        Vector::From(1, 0, 0),
                                        Vector::From(0, 1, 0));
@@ -586,14 +605,11 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
                              &allClosed, &notClosedAt,
                              NULL, NULL,
                              &leftovers);
-    for(b = leftovers.l.First(); b; b = leftovers.l.NextAfter(b)) {
-        sblss.AddOpenPath(b);
-    }
+    sblss.l.Add(&leftovers);
 
     // Now write the lines and triangles to the output file
     out->OutputLinesAndMesh(&sblss, &sms);
 
-    leftovers.Clear();
     spxyz.Clear();
     sblss.Clear();
     smp.Clear();

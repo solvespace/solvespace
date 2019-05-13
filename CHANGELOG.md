@@ -46,6 +46,8 @@ New export/import features:
     exported. This format allows to easily hack on triangle mesh data created
     in SolveSpace, supports colour information and is more space efficient than
     most other formats.
+  * Export 2d section: custom styled entities that lie in the same 
+    plane as the exported section are included.
 
 New rendering features:
   * The "Show/hide hidden lines" button is now a tri-state button that allows
