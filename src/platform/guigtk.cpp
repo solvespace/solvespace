@@ -15,7 +15,6 @@
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/filechooserdialog.h>
-#define HAVE_GTK_FILECHOOSERNATIVE
 #if defined(HAVE_GTK_FILECHOOSERNATIVE)
 #   include <gtkmm/filechoosernative.h>
 #endif
