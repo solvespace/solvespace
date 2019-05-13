@@ -58,14 +58,14 @@ SolvespaceCamera.prototype.rotate = function(right, up) {
     this.up.applyAxisAngle(oldRight, up);
     this.right.applyAxisAngle(oldUp, right);
     this.NormalizeProjectionVectors();
-}
+};
 
 SolvespaceCamera.prototype.offsetProj = function(right, up) {
     var shift = new THREE.Vector3(right * this.right.x + up * this.up.x,
         right * this.right.y + up * this.up.y,
         right * this.right.z + up * this.up.z);
     this.offset.add(shift);
-}
+};
 
 /* Calculate the offset in terms of up and right projection vectors
 that will preserve the world coordinates of the current mouse position after
@@ -86,7 +86,7 @@ SolvespaceCamera.prototype.zoomTo = function(x, y, delta) {
         zoomFactor = (-delta * 0.002 + 1);
     }
     else if(delta > 0) {
-        zoomFactor = (delta * (-1.0/600.0) + 1)
+        zoomFactor = (delta * (-1.0/600.0) + 1);
     }
     else {
         return;
@@ -98,8 +98,7 @@ SolvespaceCamera.prototype.zoomTo = function(x, y, delta) {
 
     this.offset.addScaledVector(this.right, centerRightF - centerRightI);
     this.offset.addScaledVector(this.up, centerUpF - centerUpI);
-}
-
+};
 
 SolvespaceControls = function(object, domElement) {
     var _this = this;
@@ -131,8 +130,6 @@ SolvespaceControls = function(object, domElement) {
     };
 
     var _changed = false;
-    var _mouseMoved = false;
-    //var _touchPoints = new Array();
     var _offsetPrev = new THREE.Vector2(0, 0);
     var _offsetCur = new THREE.Vector2(0, 0);
     var _rotatePrev = new THREE.Vector2(0, 0);
@@ -195,7 +192,6 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function mousemove_pan(event) {
-        _mouseMoved = true;
         _offsetCur.set(event.screenX / window.devicePixelRatio,
                        event.screenY / window.devicePixelRatio);
         var diff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
@@ -230,9 +226,9 @@ SolvespaceControls = function(object, domElement) {
     function pan(event) {
         /* neWcur - prev does not necessarily equal (cur + diff) - prev.
         Floating point is not associative. */
-        touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
+        var touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
         _rotateCur.addVectors(_rotateOrig, touchDiff);
-        incDiff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
+        var incDiff = new THREE.Vector2().subVectors(_rotateCur, _rotatePrev)
             .multiplyScalar(1 / object.zoomScale);
         object.rotate(-0.3 * Math.PI / 180 * incDiff.x * object.zoomScale,
              -0.3 * Math.PI / 180 * incDiff.y * object.zoomScale);
@@ -275,9 +271,9 @@ SolvespaceControls = function(object, domElement) {
     }
 
     function panaftertap(event) {
-        touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
+        var touchDiff = new THREE.Vector2(event.deltaX, event.deltaY);
         _offsetCur.addVectors(_offsetOrig, touchDiff);
-        incDiff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
+        var incDiff = new THREE.Vector2().subVectors(_offsetCur, _offsetPrev)
             .multiplyScalar(1 / object.zoomScale);
         object.offsetProj(incDiff.x, -incDiff.y);
         _changed = true;
@@ -302,7 +298,7 @@ SolvespaceControls = function(object, domElement) {
             _this.dispatchEvent(changeEvent);
             _changed = false;
         }
-    }
+    };
 
     this.domElement.addEventListener('mousedown', mousedown, false);
     this.domElement.addEventListener('wheel', wheel, false);
@@ -322,7 +318,7 @@ SolvespaceControls = function(object, domElement) {
     this.touchControls.on('panaftertapstart', panaftertapstart);
     this.touchControls.on('panaftertap', panaftertap);
     this.touchControls.on('panaftertapend', panaftertapend);
-}
+};
 
 SolvespaceControls.prototype = Object.create(THREE.EventDispatcher.prototype);
 SolvespaceControls.prototype.constructor = SolvespaceControls;
@@ -370,11 +366,10 @@ solvespace = function(obj, params) {
         projRight = params.projRight;
     }
 
-    domElement = init();
+    var domElement = init();
     lightUpdate();
     render();
     return domElement;
-
 
     function init() {
         scene = new THREE.Scene();
@@ -440,7 +435,7 @@ solvespace = function(obj, params) {
         // The original light positions were in camera space.
         // Project them into standard space using camera's basis
         // vectors (up, target, and their cross product).
-        n = new THREE.Vector3().crossVectors(camera.up, camera.right);
+        var n = new THREE.Vector3().crossVectors(camera.up, camera.right);
         changeBasis.makeBasis(camera.right, camera.up, n);
 
         for (var i = 0; i < 2; i++) {
