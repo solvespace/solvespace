@@ -639,6 +639,10 @@ public:
     }
 
     ~WindowImplWin32() {
+        // Make sure any of our child windows get destroyed before we call DestroyWindow, or their
+        // own destructors may fail.
+        // menuBar.reset();
+
         sscheck(DestroyWindow(hWindow));
 #if defined(HAVE_SPACEWARE)
         if(hSpaceWare != SI_NO_HANDLE) {
