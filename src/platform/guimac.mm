@@ -306,7 +306,8 @@ public:
     std::vector<std::shared_ptr<MenuImplCocoa>> subMenus;
 
     MenuBarImplCocoa() {
-        nsMenuBar = [NSApp mainMenu];
+        nsMenuBar = [[NSMenu alloc] initWithTitle:@"SolveSpace"];
+        [NSApp setMainMenu:nsMenuBar];
     }
 
     MenuRef AddSubMenu(const std::string &label) override {
@@ -321,7 +322,7 @@ public:
     }
 
     void Clear() override {
-        while([nsMenuBar numberOfItems] != 1) {
+        while([nsMenuBar numberOfItems] > 1) {
             [nsMenuBar removeItemAtIndex:1];
         }
         subMenus.clear();
