@@ -15,9 +15,6 @@
 #include <gtkmm/cssprovider.h>
 #include <gtkmm/entry.h>
 #include <gtkmm/filechooserdialog.h>
-#if defined(HAVE_GTK_FILECHOOSERNATIVE)
-#   include <gtkmm/filechoosernative.h>
-#endif
 #include <gtkmm/fixed.h>
 #include <gtkmm/glarea.h>
 #include <gtkmm/main.h>
@@ -29,6 +26,9 @@
 #include <gtkmm/window.h>
 
 #include "config.h"
+#if defined(HAVE_GTK_FILECHOOSERNATIVE)
+#   include <gtkmm/filechoosernative.h>
+#endif
 
 #if defined(HAVE_SPACEWARE)
 #   include <spnav.h>
