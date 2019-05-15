@@ -262,6 +262,8 @@ public:
     T *end() { return &elem[n]; }
     const T *begin() const { return &elem[0]; }
     const T *end() const { return &elem[n]; }
+    const T *cbegin() const { return &elem[0]; }
+    const T *cend() const { return &elem[n]; }
 
     void ClearTags() {
         int i;
@@ -423,10 +425,12 @@ public:
         return prev + 1;
     }
 
-    T *begin() { return &elem[0]; }
-    T *end() { return &elem[n]; }
-    const T *begin() const { return &elem[0]; }
-    const T *end() const { return &elem[n]; }
+    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
+    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
+    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *cbegin() const { return begin(); }
+    const T *cend() const { return end(); }
 
     template<typename F>
     size_t CountIf(F &&predicate) const {
