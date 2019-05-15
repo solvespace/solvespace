@@ -319,16 +319,14 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
 
     // Project into the export plane; so when we're done, z doesn't matter,
     // and x and y are what goes in the DXF.
-    SEdge *e;
-    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+    for(SEdge *e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         // project into the specified csys, and apply export scale
         (e->a) = e->a.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
         (e->b) = e->b.InPerspective(u, v, n, origin, cameraTan).ScaledBy(s);
     }
 
-    SBezier *b;
     if(sbl) {
-        for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+        for(SBezier *b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
             *b = b->InPerspective(u, v, n, origin, cameraTan);
             int i;
             for(i = 0; i <= b->deg; i++) {
@@ -576,12 +574,13 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // We kept the line segments and Beziers separate until now; but put them
     // all together, and also project everything into the xy plane, since not
     // all export targets ignore the z component of the points.
-    for(e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
+    ssassert(sbl != nullptr, "Adding line segments to beziers assumes bezier list is non-null.");
+    for(SEdge *e = sel->l.First(); e; e = sel->l.NextAfter(e)) {
         SBezier sb = SBezier::From(e->a, e->b);
         sb.auxA = e->auxA;
         sbl->l.Add(&sb);
     }
-    for(b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
+    for(SBezier *b = sbl->l.First(); b; b = sbl->l.NextAfter(b)) {
         for(int i = 0; i <= b->deg; i++) {
             b->ctrl[i].z = 0;
         }
