@@ -814,9 +814,12 @@ void OpenGl1Renderer::FlushFrame() {
 }
 
 std::shared_ptr<Pixmap> OpenGl1Renderer::ReadFrame() {
+    int width  = camera.width  * camera.pixelRatio;
+    int height = camera.height * camera.pixelRatio;
     std::shared_ptr<Pixmap> pixmap =
-        Pixmap::Create(Pixmap::Format::RGB, (size_t)camera.width, (size_t)camera.height);
-    glReadPixels(0, 0, camera.width, camera.height, GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+        Pixmap::Create(Pixmap::Format::RGB, (size_t)width, (size_t)height);
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+    ssassert(glGetError() == GL_NO_ERROR, "Unexpected glReadPixels error");
     return pixmap;
 }
 
