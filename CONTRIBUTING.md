@@ -186,6 +186,11 @@ std::string SolveSpace::Dirname(std::string filename) {
 }
 ```
 
+If you install [clang-format][], this style can be automatically applied by staging your changes
+with `git add -u`, running `git clang-format`, and staging any changes it made again.
+
+[clang-format]: https://clang.llvm.org/docs/ClangFormat.html
+
 Debugging code
 --------------
 
