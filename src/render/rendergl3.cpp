@@ -680,9 +680,10 @@ void OpenGl3Renderer::Clear() {
 
 std::shared_ptr<Pixmap> OpenGl3Renderer::ReadFrame() {
     std::shared_ptr<Pixmap> pixmap =
-        Pixmap::Create(Pixmap::Format::RGB, (size_t)camera.width, (size_t)camera.height);
+        Pixmap::Create(Pixmap::Format::RGBA, (size_t)camera.width, (size_t)camera.height);
     glReadPixels(0, 0, (int)camera.width, (int)camera.height,
-                 GL_RGB, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+                 GL_RGBA, GL_UNSIGNED_BYTE, &pixmap->data[0]);
+    ssassert(glGetError() == GL_NO_ERROR, "Unexpected glReadPixels error");
     return pixmap;
 }
 
