@@ -822,6 +822,7 @@ public:
                 event.shiftDown   = (wParam & MK_SHIFT) != 0;
                 event.controlDown = (wParam & MK_CONTROL) != 0;
 
+                bool consumed = false;
                 switch(msg) {
                     case WM_LBUTTONDOWN:
                         event.button = MouseEvent::Button::LEFT;
@@ -872,6 +873,7 @@ public:
                         sscheck(hWindowUnderMouse = WindowFromPoint(pt));
                         if(hWindowUnderMouse && hWindowUnderMouse != h) {
                             SendMessageW(hWindowUnderMouse, msg, wParam, lParam);
+                            consumed = true;
                             break;
                         }
 
@@ -903,7 +905,7 @@ public:
                     }
                 }
 
-                if(window->onMouseEvent) {
+                if(!consumed && window->onMouseEvent) {
                     window->onMouseEvent(event);
                 }
                 break;
