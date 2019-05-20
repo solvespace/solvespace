@@ -31,6 +31,12 @@
 #   undef uint32_t
 #endif
 
+#if defined(__GNUC__)
+// Disable bogus warning emitted by GCC on GetProcAddress, since there seems to be no way
+// of restructuring the code to easily disable it just at the call site.
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+
 namespace SolveSpace {
 namespace Platform {
 
