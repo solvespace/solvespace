@@ -583,8 +583,8 @@ protected:
             return false;
         }
 
-        if(SS.GW.KeyboardEvent(event)) {
-            return true;
+        if(_receiver->onKeyboardEvent) {
+            return _receiver->onKeyboardEvent(event);
         }
 
         return false;
