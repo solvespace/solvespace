@@ -1,0 +1,22 @@
+---
+# clang-analyzer-optin turned off because of structure-padding warnings hiding other warnings
+# Eventually should add modernize-loop-convert.
+# readability-braces-around-statements is what the CONTRIBUTING.md file states, but code doesn't really follow.
+Checks:          'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-optin-*,readability-braces-around-statements'
+WarningsAsErrors: ''
+HeaderFilterRegex: 'src/.*'
+AnalyzeTemporaryDtors: false
+FormatStyle:     file
+CheckOptions:    
+  - key:             modernize-loop-convert.MaxCopySize
+    value:           '16'
+  - key:             modernize-loop-convert.MinConfidence
+    value:           reasonable
+  - key:             modernize-loop-convert.NamingStyle
+    value:           CamelCase
+  # - key:             modernize-replace-auto-ptr.IncludeStyle
+  #   value:           llvm
+  # - key:             modernize-use-nullptr.NullMacros
+  #   value:           'NULL'
+...
+
