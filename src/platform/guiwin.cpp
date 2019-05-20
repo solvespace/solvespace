@@ -559,10 +559,6 @@ public:
                                           CW_USEDEFAULT, CW_USEDEFAULT,
                                           hParentWindow, NULL, NULL, NULL));
         sscheck(SetWindowLongPtr(hWindow, 0, (LONG_PTR)this));
-        if(hParentWindow != NULL) {
-            sscheck(SetWindowPos(hWindow, HWND_TOPMOST, 0, 0, 0, 0,
-                                 SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE));
-        }
 
         sscheck(hTooltip = CreateWindowExW(0, TOOLTIPS_CLASS, NULL,
                                            WS_POPUP|TTS_NOPREFIX|TTS_ALWAYSTIP,
