@@ -942,13 +942,6 @@ public:
 
                 if(window->onKeyboardEvent) {
                     window->onKeyboardEvent(event);
-                } else {
-                    HWND hParent;
-                    sscheck(hParent = GetParent(h));
-                    if(hParent != NULL) {
-                        sscheck(SetForegroundWindow(hParent));
-                        sscheck(SendMessageW(hParent, msg, wParam, lParam));
-                    }
                 }
                 break;
             }
