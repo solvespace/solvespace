@@ -40,7 +40,7 @@ function setLabelWithMnemonic(element, labelText) {
             var mnemonic = document.createElement('u');
             mnemonic.innerText = matches[2];
             label.appendChild(mnemonic);
-            addClass(element, 'mnemonic-' + matches[2].toLowerCase());
+            addClass(element, 'mnemonic-Key' + matches[2].toUpperCase());
         }
         if(matches[3]) {
             label.appendChild(document.createTextNode(matches[3]));
@@ -332,7 +332,7 @@ window.addEventListener('keydown', function(event) {
     if(event.altKey && event.key == 'Alt') {
         addClass(document.body, 'mnemonic');
     } else if(!isModal() && event.altKey && (withMnemonic =
-                document.querySelector('.menubar > .mnemonic-' + event.key))) {
+                document.querySelector('.menubar > .mnemonic-' + event.code))) {
         triggerMenuItem(withMnemonic);
         event.stopPropagation();
     } else {
