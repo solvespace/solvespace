@@ -1123,7 +1123,7 @@ public:
         gtkDialog.set_secondary_text(description);
     }
 
-    void AddButton(std::string name, Response response, bool isDefault) override {
+    void AddButton(std::string label, Response response, bool isDefault) override {
         int responseId = 0;
         switch(response) {
             case Response::NONE:   ssassert(false, "Unexpected response");
@@ -1132,7 +1132,7 @@ public:
             case Response::NO:     responseId = Gtk::RESPONSE_NO;     break;
             case Response::CANCEL: responseId = Gtk::RESPONSE_CANCEL; break;
         }
-        gtkDialog.add_button(PrepareMnemonics(name), responseId);
+        gtkDialog.add_button(PrepareMnemonics(label), responseId);
         if(isDefault) {
             gtkDialog.set_default_response(responseId);
         }

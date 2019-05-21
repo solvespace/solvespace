@@ -15,16 +15,15 @@
 
 namespace SolveSpace {
 
-void dbp(const char *str, ...)
+void dbp(const char *fmt, ...)
 {
-    va_list f;
-    static char buf[1024*50];
-    va_start(f, str);
-    vsnprintf(buf, sizeof(buf), str, f);
-    va_end(f);
+    va_list va;
+    va_start(va, fmt);
+    vfprintf(stdout, fmt, va);
+    fputc('\n', stdout);
+    va_end(va);
 
-    fputs(buf, stderr);
-    fputc('\n', stderr);
+    fflush(stdout);
 }
 
 //-----------------------------------------------------------------------------

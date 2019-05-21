@@ -6,13 +6,13 @@
 #ifndef SOLVESPACE_GL3SHADER_H
 #define SOLVESPACE_GL3SHADER_H
 
-#ifdef WIN32
+#if defined(WIN32)
 #   define GL_APICALL /*static linkage*/
 #   define GL_GLEXT_PROTOTYPES
 #   include <GLES2/gl2.h>
 #   include <GLES2/gl2ext.h>
 #   define HAVE_GLES
-#elif __APPLE__
+#elif defined(__APPLE__)
 #   include <OpenGL/gl.h>
 #else
 #   define GL_GLEXT_PROTOTYPES

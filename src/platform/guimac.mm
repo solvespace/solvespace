@@ -1195,8 +1195,8 @@ public:
         nsAlert.informativeText = Wrap(description);
     }
 
-    void AddButton(std::string name, Response response, bool isDefault) override {
-        NSButton *nsButton = [nsAlert addButtonWithTitle:Wrap(PrepareMnemonics(name))];
+    void AddButton(std::string label, Response response, bool isDefault) override {
+        NSButton *nsButton = [nsAlert addButtonWithTitle:Wrap(PrepareMnemonics(label))];
         if(!isDefault && [nsButton.keyEquivalent isEqualToString:@"\n"]) {
             nsButton.keyEquivalent = @"";
         } else if(response == Response::CANCEL) {

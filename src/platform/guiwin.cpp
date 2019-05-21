@@ -1428,7 +1428,7 @@ public:
         mbp.lpszText = textW.c_str();
     }
 
-    void AddButton(std::string _name, Response response, bool isDefault) override {
+    void AddButton(std::string _label, Response response, bool isDefault) override {
         int button;
         switch(response) {
             case Response::NONE:   ssassert(false, "Invalid response");

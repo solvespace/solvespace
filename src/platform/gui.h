@@ -85,8 +85,10 @@ struct KeyboardEvent {
     bool        controlDown;
 
     bool Equals(const KeyboardEvent &other) {
-        return type == other.type && key == other.key && num == other.num &&
-            shiftDown == other.shiftDown && controlDown == other.controlDown;
+        return type == other.type && key == other.key &&
+            shiftDown == other.shiftDown && controlDown == other.controlDown &&
+            ((key == Key::CHARACTER && chr == other.chr) ||
+             (key == Key::FUNCTION && num == other.num));
     }
 };
 
@@ -303,7 +305,7 @@ public:
     virtual void SetMessage(std::string message) = 0;
     virtual void SetDescription(std::string description) = 0;
 
-    virtual void AddButton(std::string name, Response response, bool isDefault = false) = 0;
+    virtual void AddButton(std::string label, Response response, bool isDefault = false) = 0;
 
     virtual Response RunModal() = 0;
     virtual void ShowModal() {
