@@ -888,7 +888,7 @@ void GraphicsWindow::Paint() {
 
     // Also display an fps counter.
     RgbaColor renderTimeColor;
-    if(1000 / renderTime.count() < 60) {
+    if(renderTime.count() > 16.67) {
         // We aim for a steady 60fps; draw the counter in red when we're slower.
         renderTimeColor = { 255, 0, 0, 255 };
     } else {
@@ -896,7 +896,7 @@ void GraphicsWindow::Paint() {
     }
     uiCanvas.DrawBitmapText(ssprintf("rendered in %ld ms (%ld 1/s)",
                                      (long)renderTime.count(),
-                                     (long)(1000/renderTime.count())),
+                                     (long)(1000 / std::max(0.1, renderTime.count()))),
                             5, 5, renderTimeColor);
 
     canvas->FlushFrame();
