@@ -349,8 +349,8 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
         double r = max(sqrt(rda*rda + rdna*rdna), 15.0 * pixels);
 
         double th = Style::TextHeight(GetStyle()) / camera.scale;
-        double swidth   = VectorFont::Builtin()->GetWidth(th, Label()) + 4*pixels,
-               sheight  = VectorFont::Builtin()->GetCapHeight(th) + 8*pixels;
+        double swidth   = VectorFont::Builtin()->GetWidth(th, Label()) + 8*pixels,
+               sheight  = VectorFont::Builtin()->GetCapHeight(th) + 6*pixels;
         double textR = sqrt(swidth * swidth + sheight * sheight) / 2.0;
         *ref = pi.Plus(rm.WithMagnitude(std::max(rm.Magnitude(), 15 * pixels + textR)));
 
@@ -412,7 +412,7 @@ void Constraint::DoArcForAngle(Canvas *canvas, Canvas::hStroke hcs,
             if(i > 0) {
                 if(trim) {
                     DoLineTrimmedAgainstBox(canvas, hcs, *ref, prev, p,
-                                            /*extend=*/false, gr, gu, swidth, sheight);
+                                            /*extend=*/false, gr, gu, swidth, sheight + 2*pixels);
                 } else {
                     DoLine(canvas, hcs, prev, p);
                 }
