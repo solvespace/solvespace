@@ -421,13 +421,19 @@ solvespace = function(obj, params) {
     }
 
     function resize() {
-        if(inheritedWidth)
+        scale = camera.zoomScale;
+        if(inheritedWidth) {
+            scale *= window.innerWidth / width;
             width = window.innerWidth;
-        if(inheritedHeight)
+        }
+        if(inheritedHeight) {
+            scale *= window.innerHeight / height;
             height = window.innerHeight;
+        }
 
         camera.renderWidth = width;
         camera.renderHeight = height;
+        camera.zoomScale = scale;
 
         renderer.setSize(width * window.devicePixelRatio, height * window.devicePixelRatio);
         renderer.domElement.style =
