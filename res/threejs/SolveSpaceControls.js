@@ -330,15 +330,18 @@ solvespace = function(obj, params) {
     var geometry, controls, material, mesh, edges;
     var width, height, scale, offset, projRight, projUp;
     var directionalLightArray = [];
+    var inheritedWidth = false, inheritedHeight = false;
 
     if (typeof params === "undefined" || !("width" in params)) {
         width = window.innerWidth;
+        inheritedWidth = true;
     } else {
         width = params.width;
     }
 
     if (typeof params === "undefined" || !("height" in params)) {
         height = window.innerHeight;
+        inheritedHeight = true;
     } else {
         height = params.height;
     }
@@ -409,8 +412,29 @@ solvespace = function(obj, params) {
         controls.addEventListener("change", render);
         controls.addEventListener("change", lightUpdate);
 
+        if(inheritedWidth || inheritedHeight) {
+            window.addEventListener("resize", resize);
+        }
+
         animate();
         return renderer.domElement;
+    }
+
+    function resize() {
+        if(inheritedWidth)
+            width = window.innerWidth;
+        if(inheritedHeight)
+            height = window.innerHeight;
+
+        camera.renderWidth = width;
+        camera.renderHeight = height;
+
+        renderer.setSize(width * window.devicePixelRatio, height * window.devicePixelRatio);
+        renderer.domElement.style =
+            "width:  " + width  + "px;" +
+            "height: " + height + "px;";
+
+        render();
     }
 
     function animate() {
