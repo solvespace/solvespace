@@ -40,7 +40,7 @@ function setLabelWithMnemonic(element, labelText) {
             var mnemonic = document.createElement('u');
             mnemonic.innerText = matches[2];
             label.appendChild(mnemonic);
-            addClass(element, 'memonic-' + matches[2].toLowerCase());
+            addClass(element, 'mnemonic-' + matches[2].toLowerCase());
         }
         if(matches[3]) {
             label.appendChild(document.createTextNode(matches[3]));
