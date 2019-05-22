@@ -205,9 +205,11 @@ public:
 template <class T>
 class List {
 public:
-    T   *elem;
-    int  n;
-    int  elemsAllocated;
+    T   *elem = nullptr;
+    int  n = 0;
+    int  elemsAllocated = 0;
+
+    bool IsEmpty() const { return n == 0; }
 
     void ReserveMore(int howMuch) {
         if(n + howMuch > elemsAllocated) {
@@ -242,33 +244,32 @@ public:
     }
 
     T *First() {
-        return (n == 0) ? NULL : &(elem[0]);
+        return IsEmpty() ? nullptr : &(elem[0]);
     }
     const T *First() const {
-        return (n == 0) ? NULL : &(elem[0]);
+        return IsEmpty() ? nullptr : &(elem[0]);
     }
     T *NextAfter(T *prev) {
-        if(!prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(IsEmpty() || !prev) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
     const T *NextAfter(const T *prev) const {
-        if(!prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(IsEmpty() || !prev) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
 
-    T *begin() { return &elem[0]; }
-    T *end() { return &elem[n]; }
-    const T *begin() const { return &elem[0]; }
-    const T *end() const { return &elem[n]; }
-    const T *cbegin() const { return &elem[0]; }
-    const T *cend() const { return &elem[n]; }
+    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
+    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
+    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
+    const T *cbegin() const { return begin(); }
+    const T *cend() const { return end(); }
 
     void ClearTags() {
-        int i;
-        for(i = 0; i < n; i++) {
-            elem[i].tag = 0;
+        for(auto & elt : *this) {
+            elt.tag = 0;
         }
     }
 
@@ -281,21 +282,20 @@ public:
     }
 
     void RemoveTagged() {
-        int src, dest;
-        dest = 0;
-        for(src = 0; src < n; src++) {
-            if(elem[src].tag) {
-                // this item should be deleted
-            } else {
-                if(src != dest) {
-                    elem[dest] = elem[src];
-                }
-                dest++;
+        auto newEnd = std::remove_if(this->begin(), this->end(), [](T &t) {
+            if(t.tag) {
+                return true;
+            }
+            return false;
+        });
+        auto oldEnd = this->end();
+        n = newEnd - begin();
+        if (newEnd != nullptr && oldEnd != nullptr) {
+            while(newEnd != oldEnd) {
+                newEnd->~T();
+                ++newEnd;
             }
         }
-        for(int i = dest; i < n; i++)
-            elem[i].~T();
-        n = dest;
         // and elemsAllocated is untouched, because we didn't resize
     }
 
