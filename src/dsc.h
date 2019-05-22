@@ -452,11 +452,9 @@ public:
     }
 
     void Tag(H h, int tag) {
-        int i;
-        for(i = 0; i < n; i++) {
-            if(elem[i].h.v == h.v) {
-                elem[i].tag = tag;
-            }
+        auto it = FindByIdNoOops(h);
+        if (it != nullptr) {
+            it->tag = tag;
         }
     }
 
