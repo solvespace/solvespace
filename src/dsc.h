@@ -399,16 +399,14 @@ public:
         if(n >= elemsAllocated) {
             ReserveMore((elemsAllocated + 32)*2 - n);
         }
-        auto newIndex = LowerBoundIndex(*t);
-        if (newIndex < n) {
-            H hm = elem[newIndex].h;
-            ssassert(hm.v != t->h.v, "Handle isn't unique");
-        }
-        int i = static_cast<int>(newIndex);
-        new(&elem[n]) T();
-        std::move_backward(elem + i, elem + n, elem + n + 1);
-        elem[i] = *t;
-        n++;
+        // Look to see if we already have something with the same handle value.
+        ssassert(FindByIdNoOops(t->h) == nullptr, "Handle isn't unique");
+
+        // Copy-construct at the end of the list.
+        new(&elem[n]) T(*t);
+        ++n;
+        // The item we just added is trivially sorted, so "merge"
+        std::inplace_merge(begin(), end() - 1, end(), Compare());
     }
 
     T *FindById(H h) {
