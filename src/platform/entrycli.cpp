@@ -41,8 +41,10 @@ Commands:
         being triangulated first.
     export-surfaces --output <pattern>
         Exports exact surfaces of solids in the sketch, if any.
-    regenerate
+    regenerate [--chord-tol <tolerance>]
         Reloads all imported files, regenerates the sketch, and saves it.
+        Note that, although this is not an export command, it uses absolute
+        chord tolerance, and can be used to prepare assemblies for export.
 )");
 
     auto FormatListFromFileFilters = [](const std::vector<Platform::FileFilter> &filters) {
@@ -281,7 +283,8 @@ static bool RunCommand(const std::vector<std::string> args) {
         };
     } else if(args[1] == "regenerate") {
         for(size_t argn = 2; argn < args.size(); argn++) {
-            if(!(ParseInputFile(argn))) {
+            if(!(ParseInputFile(argn) ||
+                 ParseChordTolerance(argn))) {
                 fprintf(stderr, "Unrecognized option '%s'.\n", args[argn].c_str());
                 return false;
             }
@@ -290,6 +293,9 @@ static bool RunCommand(const std::vector<std::string> args) {
         outputPattern = "%.slvs";
 
         runner = [&](const Platform::Path &output) {
+            SS.exportChordTol = chordTol;
+            SS.exportMode = true;
+
             SS.SaveToFile(output);
         };
     } else {
