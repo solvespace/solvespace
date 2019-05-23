@@ -106,8 +106,11 @@ void TextWindow::ShowListOfGroups() {
         bool active = (g->h.v == SS.GW.activeGroup.v);
         bool shown = g->visible;
         bool ok = g->IsSolvedOkay();
-        bool warn = g->type == Group::Type::DRAWING_WORKPLANE &&
-                    g->polyError.how != PolyError::GOOD;
+        bool warn = (g->type == Group::Type::DRAWING_WORKPLANE &&
+                     g->polyError.how != PolyError::GOOD) ||
+                    ((g->type == Group::Type::EXTRUDE ||
+                      g->type == Group::Type::LATHE) &&
+                     SK.GetGroup(g->opA)->polyError.how != PolyError::GOOD);
         int dof = g->solved.dof;
         char sdof[16] = "ok ";
         if(ok && dof > 0) {
