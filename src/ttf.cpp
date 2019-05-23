@@ -91,8 +91,8 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
 {
     LoadAll();
 
-    TtfFont *tf = std::find_if(l.begin(), l.end(),
-        [&font](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
+    auto tf = std::find_if(l.begin(), l.end(),
+                           [&font](const TtfFont &tf) { return tf.FontFileBaseName() == font; });
 
     if(tf != l.end()) {
         if(tf->fontFace == NULL) {
@@ -101,7 +101,7 @@ TtfFont *TtfFontList::LoadFont(const std::string &font)
             else
                 tf->LoadFromFile(fontLibrary, /*nameOnly=*/false);
         }
-        return tf;
+        return &(*tf);
     } else {
         return NULL;
     }

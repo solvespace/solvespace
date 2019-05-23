@@ -1196,7 +1196,7 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
 
 
     std::map<std::uint8_t, std::vector<STriangleSpan>> opacities;
-    STriangle *start          = sm->l.begin();
+    STriangle *start          = &(*sm->l.begin());
     std::uint8_t last_opacity = start->meta.color.alpha;
     for(auto & tr : sm->l) {
         if(tr.meta.color.alpha != last_opacity) {
@@ -1205,7 +1205,7 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
             last_opacity = start->meta.color.alpha;
         }
     }
-    opacities[last_opacity].push_back(STriangleSpan{start, sm->l.end()});
+    opacities[last_opacity].push_back(STriangleSpan{start, &(*sm->l.begin()) + sm->l.n});
 
     for(auto && op : opacities) {
         fprintf(f, "\n"

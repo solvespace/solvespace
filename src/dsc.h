@@ -204,55 +204,92 @@ public:
 // A simple list
 template<class T>
 class List {
-    T *elem            = nullptr;
-    int elemsAllocated = 0;
+    std::shared_ptr<std::vector<T>> vec;
+    int internalN = 0;
+    void UpdateSize() {
+        if(!vec) {
+            internalN = 0;
+        } else {
+            internalN = static_cast<int>(vec->size());
+        }
+    }
+    void AllocForOneMore() {
+        if(!vec) {
+            vec = std::make_shared<std::vector<T>>();
+        }
+        if(vec->capacity() == vec->size()) {
+            // Let the built-in growth policy deal with this.
+            vec->reserve(vec->size() + 1);
+        }
+    }
 
 public:
-    int  n = 0;
+    std::reference_wrapper<const int> n;
 
-    bool IsEmpty() const { return n == 0; }
+    List() : n(std::cref(internalN)) {}
+
+    // Makes a shallow copy that shares the underlying list!
+    List(List const &other) : vec(other.vec), internalN(other.internalN), n(std::cref(internalN)) {}
+
+    // Assigns a shallow copy that shares the underlying list!
+    List &operator=(List const &other) {
+        if(this == &other || vec == other.vec) {
+            // No self-assign
+            return *this;
+        }
+        vec = other.vec;
+        UpdateSize();
+        return *this;
+    }
+
+    List(List &&other)
+        : vec(std::move(other.vec)), internalN(other.internalN), n(std::cref(internalN)) {
+        other.vec.reset();
+        UpdateSize();
+        other.UpdateSize();
+    }
+
+    List &operator=(List &&other) {
+        if(this == &other || vec == other.vec) {
+            // No self-assign
+            return *this;
+        }
+        Clear();
+        vec = std::move(other.vec);
+        UpdateSize();
+        other.UpdateSize();
+        return *this;
+    }
+    bool IsEmpty() const { return !vec || vec->empty(); }
 
     void ReserveMore(int howMuch) {
-        if(n + howMuch > elemsAllocated) {
-            elemsAllocated = n + howMuch;
-            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(T));
-            for(int i = 0; i < n; i++) {
-                new(&newElem[i]) T(std::move(elem[i]));
-                elem[i].~T();
-            }
-            MemFree(elem);
-            elem = newElem;
+        if(!vec) {
+            vec = std::make_shared<std::vector<T>>();
         }
+        vec->reserve(n + howMuch);
     }
 
-    void AllocForOneMore() {
-        if(n >= elemsAllocated) {
-            ReserveMore((elemsAllocated + 32)*2 - n);
-        }
-    }
 
     void Add(const T *t) {
         AllocForOneMore();
-        new(&elem[n++]) T(*t);
+        vec->emplace_back(*t);
+        UpdateSize();
     }
 
     void AddToBeginning(const T *t) {
         AllocForOneMore();
-        new(&elem[n]) T();
-        std::move_backward(elem, elem + 1, elem + n + 1);
-        elem[0] = *t;
-        n++;
+        vec->push_back({});
+        UpdateSize();
+        std::move_backward(begin(), begin() + 1, end());
+        *First() = *t;
     }
 
-    T *First() {
-        return IsEmpty() ? nullptr : &(elem[0]);
-    }
-    const T *First() const {
-        return IsEmpty() ? nullptr : &(elem[0]);
-    }
+    T *First() { return IsEmpty() ? nullptr : &(Get(0)); }
+    const T *First() const { return IsEmpty() ? nullptr : &(Get(0)); }
     T *NextAfter(T *prev) {
         if(IsEmpty() || !prev) return NULL;
-        if(prev - First() == (n - 1)) return NULL;
+        if(prev - First() == (n - 1))
+            return NULL;
         return prev + 1;
     }
     const T *NextAfter(const T *prev) const {
@@ -261,17 +298,19 @@ public:
         return prev + 1;
     }
 
-    T &Get(size_t i) { return elem[i]; }
-    T const &Get(size_t i) const { return elem[i]; }
+    T &Get(size_t i) { return (*vec)[i]; }
+    T const &Get(size_t i) const { return (*vec)[i]; }
     T &operator[](size_t i) { return Get(i); }
     T const &operator[](size_t i) const { return Get(i); }
 
-    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
-    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
-    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
-    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
-    const T *cbegin() const { return begin(); }
-    const T *cend() const { return end(); }
+    using iterator       = typename std::vector<T>::iterator;
+    using const_iterator = typename std::vector<T>::const_iterator;
+    iterator begin() { return IsEmpty() ? iterator() : vec->begin(); }
+    iterator end() { return IsEmpty() ? iterator() : vec->end(); }
+    const_iterator begin() const { return IsEmpty() ? const_iterator() : vec->begin(); }
+    const_iterator end() const { return IsEmpty() ? const_iterator() : vec->end(); }
+    const_iterator cbegin() const { return begin(); }
+    const_iterator cend() const { return end(); }
 
     void ClearTags() {
         for(auto & elt : *this) {
@@ -280,44 +319,33 @@ public:
     }
 
     void Clear() {
-        for(int i = 0; i < n; i++)
-            elem[i].~T();
-        if(elem) MemFree(elem);
-        elem = NULL;
-        n = elemsAllocated = 0;
+        vec.reset();
+        UpdateSize();
     }
 
     void RemoveTagged() {
-        auto newEnd = std::remove_if(this->begin(), this->end(), [](T &t) {
-            if(t.tag) {
-                return true;
-            }
-            return false;
-        });
-        auto oldEnd = this->end();
-        n = newEnd - begin();
-        if (newEnd != nullptr && oldEnd != nullptr) {
-            while(newEnd != oldEnd) {
-                newEnd->~T();
-                ++newEnd;
-            }
+        if(IsEmpty()) {
+            return;
         }
-        // and elemsAllocated is untouched, because we didn't resize
+        auto newEnd = std::remove_if(begin(), end(), [](T &t) { return t.tag != 0; });
+        if(newEnd != end()) {
+            vec->erase(newEnd);
+        }
+        UpdateSize();
     }
 
     void RemoveLast(int cnt) {
         ssassert(n >= cnt, "Removing more elements than the list contains");
-        for(int i = n - cnt; i < n; i++)
-            elem[i].~T();
-        n -= cnt;
-        // and elemsAllocated is untouched, same as in RemoveTagged
+        if(IsEmpty()) {
+            return;
+        }
+        for(int i = 0; i < cnt; ++i) { vec->pop_back(); }
+        UpdateSize();
     }
 
     void Reverse() {
         int i;
-        for(i = 0; i < (n/2); i++) {
-            swap(elem[i], elem[(n-1)-i]);
-        }
+        for(i = 0; i < (n / 2); i++) { swap(Get(i), Get((n - 1) - i)); }
     }
 };
 
