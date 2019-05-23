@@ -88,11 +88,12 @@ public:
         std::weak_ptr<const Pixmap> texture;
     } current;
 
+    // List-initialize current to work around MSVC bug 746973.
     OpenGl3Renderer() :
         lines(), meshes(), points(), pixmapCache(), masks(),
         initialized(), atlas(), meshRenderer(), imeshRenderer(),
         edgeRenderer(), outlineRenderer(), camera(), lighting(),
-        current() {}
+        current({}) {}
 
     void Init();
 

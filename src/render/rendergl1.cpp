@@ -181,7 +181,8 @@ public:
         std::weak_ptr<const Pixmap> texture;
     } current;
 
-    OpenGl1Renderer() : camera(), lighting(), current() {}
+    // List-initialize current to work around MSVC bug 746973.
+    OpenGl1Renderer() : camera(), lighting(), current({}) {}
 
     const Camera &GetCamera() const override { return camera; }
 
