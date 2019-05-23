@@ -233,7 +233,7 @@ void GraphicsWindow::GroupSelection() {
     gs = {};
     int i;
     for(i = 0; i < selection.n; i++) {
-        Selection *s = &(selection.elem[i]);
+        Selection *s = &(selection[i]);
         if(s->entity.v) {
             (gs.n)++;
 

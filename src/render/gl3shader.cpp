@@ -244,7 +244,7 @@ MeshRenderer::Handle MeshRenderer::Add(const SMesh &m, bool dynamic) {
 
     MeshVertex *vertices = new MeshVertex[m.l.n * 3];
     for(int i = 0; i < m.l.n; i++) {
-        const STriangle &t = m.l.elem[i];
+        const STriangle &t = m.l[i];
         vertices[i * 3 + 0].pos = Vector3f::From(t.a);
         vertices[i * 3 + 1].pos = Vector3f::From(t.b);
         vertices[i * 3 + 2].pos = Vector3f::From(t.c);
@@ -485,8 +485,8 @@ EdgeRenderer::Handle EdgeRenderer::Add(const SEdgeList &edges, bool dynamic) {
     uint32_t curVertex = 0;
     uint32_t curIndex = 0;
     for(int i = 0; i < edges.l.n; i++) {
-        const SEdge &curr = edges.l.elem[i];
-        const SEdge &next = edges.l.elem[(i + 1) % edges.l.n];
+        const SEdge &curr = edges.l[i];
+        const SEdge &next = edges.l[(i + 1) % edges.l.n];
 
         // 3d positions
         Vector3f a = Vector3f::From(curr.a);
@@ -674,8 +674,8 @@ OutlineRenderer::Handle OutlineRenderer::Add(const SOutlineList &outlines, bool 
     uint32_t curIndex = 0;
 
     for(int i = 0; i < outlines.l.n; i++) {
-        const SOutline &curr = outlines.l.elem[i];
-        const SOutline &next = outlines.l.elem[(i + 1) % outlines.l.n];
+        const SOutline &curr = outlines.l[i];
+        const SOutline &next = outlines.l[(i + 1) % outlines.l.n];
 
         // 3d positions
         Vector3f a = Vector3f::From(curr.a);

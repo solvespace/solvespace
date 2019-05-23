@@ -231,7 +231,7 @@ void SBezier::MakePwlInto(SEdgeList *sel, double chordTol) const {
     MakePwlInto(&lv, chordTol);
     int i;
     for(i = 1; i < lv.n; i++) {
-        sel->AddEdge(lv.elem[i-1], lv.elem[i]);
+        sel->AddEdge(lv[i-1], lv[i]);
     }
     lv.Clear();
 }
@@ -242,7 +242,7 @@ void SBezier::MakePwlInto(List<SCurvePt> *l, double chordTol) const {
     for(i = 0; i < lv.n; i++) {
         SCurvePt scpt;
         scpt.tag    = 0;
-        scpt.p      = lv.elem[i];
+        scpt.p      = lv[i];
         scpt.vertex = (i == 0) || (i == (lv.n - 1));
         l->Add(&scpt);
     }
@@ -253,7 +253,7 @@ void SBezier::MakePwlInto(SContour *sc, double chordTol) const {
     MakePwlInto(&lv, chordTol);
     int i;
     for(i = 0; i < lv.n; i++) {
-        sc->AddPoint(lv.elem[i]);
+        sc->AddPoint(lv[i]);
     }
     lv.Clear();
 }

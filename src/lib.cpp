@@ -240,7 +240,7 @@ default: dbp("bad constraint type %d", sc->type); return;
     if(ssys->failed) {
         // Copy over any the list of problematic constraints.
         for(i = 0; i < ssys->faileds && i < bad.n; i++) {
-            ssys->failed[i] = bad.elem[i].v;
+            ssys->failed[i] = bad[i].v;
         }
         ssys->faileds = bad.n;
     }

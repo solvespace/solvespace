@@ -235,7 +235,7 @@ void SSurface::MakeTrimEdgesInto(SEdgeList *sel, MakeAs flags,
         increment = 1;
     }
     for(i = first; i != (last + increment); i += increment) {
-        Vector tpt, *pt = &(sc->pts.elem[i].p);
+        Vector tpt, *pt = &(sc->pts[i].p);
 
         if(flags == MakeAs::UV) {
             ClosestPointTo(*pt, &u, &v);
@@ -343,11 +343,11 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
 
             int sp, fp;
             for(sp = 0; sp < sc->pts.n; sp++) {
-                if(s.Equals(sc->pts.elem[sp].p)) break;
+                if(s.Equals(sc->pts[sp].p)) break;
             }
             if(sp >= sc->pts.n) return;
             for(fp = sp; fp < sc->pts.n; fp++) {
-                if(f.Equals(sc->pts.elem[fp].p)) break;
+                if(f.Equals(sc->pts[fp].p)) break;
             }
             if(fp >= sc->pts.n) return;
             // So now the curve we want goes from elem[sp] to elem[fp]
@@ -360,8 +360,8 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
                 for(;;) {
                     // So construct a cubic Bezier with the correct endpoints
                     // and tangents for the current span.
-                    Vector st = sc->pts.elem[sp].p,
-                           ft = sc->pts.elem[fpt].p,
+                    Vector st = sc->pts[sp].p,
+                           ft = sc->pts[fpt].p,
                            sf = ft.Minus(st);
                     double m = sf.Magnitude() / 3;
 
@@ -378,7 +378,7 @@ void SSurface::MakeSectionEdgesInto(SShell *shell, SEdgeList *sel, SBezierList *
                     int i;
                     bool tooFar = false;
                     for(i = sp + 1; i <= (fpt - 1); i++) {
-                        Vector p = sc->pts.elem[i].p;
+                        Vector p = sc->pts[i].p;
                         double t;
                         sb.ClosestPointTo(p, &t, /*mustConverge=*/false);
                         Vector pp = sb.PointAt(t);
@@ -435,7 +435,7 @@ void SSurface::TriangulateInto(SShell *shell, SMesh *sm) {
 
         STriMeta meta = { face, color };
         for(i = start; i < sm->l.n; i++) {
-            STriangle *st = &(sm->l.elem[i]);
+            STriangle *st = &(sm->l[i]);
             st->meta = meta;
             st->an = NormalAt(st->a.x, st->a.y);
             st->bn = NormalAt(st->b.x, st->b.y);
@@ -588,10 +588,10 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
 
         int i;
         for(i = 0; i < trimLines.n; i++) {
-            TrimLine *tl = &(trimLines.elem[i]);
+            TrimLine *tl = &(trimLines[i]);
             SSurface *ss = surface.FindById(tl->hs);
 
-            TrimLine *tlp = &(trimLines.elem[WRAP(i-1, trimLines.n)]);
+            TrimLine *tlp = &(trimLines[WRAP(i-1, trimLines.n)]);
 
             STrimBy stb;
             stb = STrimBy::EntireCurve(this, tl->hc, /*backwards=*/true);
@@ -726,9 +726,9 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
         }
         // Still the same loop. Need to create trim curves
         for(i = 0; i < sbl->l.n; i++) {
-            Revolved revs = hsl.elem[i], revsp = hsl.elem[WRAP(i - 1, sbl->l.n)];
+            Revolved revs = hsl[i], revsp = hsl[WRAP(i - 1, sbl->l.n)];
 
-            sb = &(sbl->l.elem[i]);
+            sb = &(sbl->l[i]);
 
             // we generate one more curve than we did surfaces
             for(j = 0; j <= sections; j++) {
@@ -858,10 +858,10 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
         }
 
         for(i = 0; i < sbl->l.n; i++) {
-            Revolved revs  = hsl.elem[i],
-                     revsp = hsl.elem[WRAP(i-1, sbl->l.n)];
+            Revolved revs  = hsl[i],
+                     revsp = hsl[WRAP(i-1, sbl->l.n)];
 
-            sb   = &(sbl->l.elem[i]);
+            sb   = &(sbl->l[i]);
 
             for(j = 0; j < 4; j++) {
                 SCurve sc;
@@ -925,7 +925,7 @@ void SShell::MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0) {
     int i;
 
     for(i = i0; i < surface.n; i++) {
-        SSurface *srf = &(surface.elem[i]);
+        SSurface *srf = &(surface[i]);
 
         // Revolution of a line; this is potentially a plane, which we can
         // rewrite to have degree (1, 1).

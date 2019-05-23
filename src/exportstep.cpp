@@ -121,7 +121,7 @@ int StepFileWriter::ExportCurveLoop(SBezierLoop *loop, bool inner) {
 
     List<int> listOfTrims = {};
 
-    SBezier *sb = &(loop->l.elem[loop->l.n - 1]);
+    SBezier *sb = &(loop->l[loop->l.n - 1]);
 
     // Generate "exactly closed" contours, with the same vertex id for the
     // finish of a previous edge and the start of the next one. So we need

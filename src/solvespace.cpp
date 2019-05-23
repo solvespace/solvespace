@@ -777,7 +777,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
             double vol = 0;
             int i;
             for(i = 0; i < m->l.n; i++) {
-                STriangle tr = m->l.elem[i];
+                STriangle tr = m->l[i];
 
                 // Translate to place vertex A at (x, y, 0)
                 Vector trans = Vector::From(tr.a.x, tr.a.y, 0);
@@ -907,7 +907,7 @@ void SolveSpaceUI::MenuAnalyze(Command id) {
                     int i;
                     SContour *sc = &(SS.traced.path);
                     for(i = 0; i < sc->l.n; i++) {
-                        Vector p = sc->l.elem[i].p;
+                        Vector p = sc->l[i].p;
                         double s = SS.exportScale;
                         fprintf(f, "%.10f, %.10f, %.10f\r\n",
                             p.x/s, p.y/s, p.z/s);

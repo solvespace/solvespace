@@ -474,7 +474,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             hEntity pt = { 0 };
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
+                Entity *e = &(entity->Get(i));
                 if(e->group != opA) continue;
 
                 if(e->IsPoint()) pt = e->h;
@@ -508,7 +508,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
+                Entity *e = &(entity->Get(i));
                 if(e->group != opA) continue;
 
                 e->CalculateNumerical(/*forExport=*/false);
@@ -556,7 +556,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             int ai = 1;
 
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
+                Entity *e = &((*entity)[i]);
                 if(e->group != opA)
                     continue;
 
@@ -605,7 +605,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             int ai = 1;
 
             for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
+                Entity *e = &(entity->Get(i));
                 if(e->group.v != opA.v)
                     continue;
 
@@ -660,7 +660,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             for(a = a0; a < n; a++) {
                 // Not using range-for here because we're changing the size of entity in the loop.
                 for(i = 0; i < entity->n; i++) {
-                    Entity *e = &(entity->elem[i]);
+                    Entity *e = &(entity->Get(i));
                     if(e->group != opA) continue;
 
                     e->CalculateNumerical(/*forExport=*/false);
@@ -696,7 +696,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             for(a = a0; a < n; a++) {
                 // Not using range-for here because we're changing the size of entity in the loop.
                 for(i = 0; i < entity->n; i++) {
-                    Entity *e = &(entity->elem[i]);
+                    Entity *e = &(entity->Get(i));
                     if(e->group != opA) continue;
 
                     e->CalculateNumerical(/*forExport=*/false);
@@ -723,7 +723,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             // Not using range-for here because we're changing the size of entity in the loop.
             for(i = 0; i < impEntity.n; i++) {
-                Entity *ie = &(impEntity.elem[i]);
+                Entity *ie = &(impEntity[i]);
                 CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
                     h.param(3), h.param(4), h.param(5), h.param(6), NO_PARAM,

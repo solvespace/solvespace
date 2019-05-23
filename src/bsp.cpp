@@ -20,7 +20,7 @@ SBsp3 *SBsp3::FromMesh(const SMesh *m) {
     while(n > 1) {
         int k = rand() % n;
         n--;
-        swap(mc.l.elem[k], mc.l.elem[n]);
+        swap(mc.l[k], mc.l[n]);
     }
 
     SBsp3 *bsp3 = NULL;

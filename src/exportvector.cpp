@@ -370,7 +370,7 @@ public:
         DRW_Polyline polyline;
         assignEntityDefaults(&polyline, hs);
         for(int i = 0; i < lv.n; i++) {
-            Vector *v = &lv.elem[i];
+            Vector *v = &lv[i];
             DRW_Vertex *vertex = new DRW_Vertex(v->x, v->y, v->z, 0.0);
             polyline.vertlist.push_back(vertex);
         }
