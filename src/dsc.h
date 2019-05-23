@@ -514,9 +514,9 @@ public:
 
     void MoveSelfInto(IdList<T,H> *l) {
         l->Clear();
-        *l = *this;
-        elemsAllocated = n = 0;
-        elem = NULL;
+        std::swap(l->elem, elem);
+        std::swap(l->elemsAllocated, elemsAllocated);
+        std::swap(l->n, n);
     }
 
     void DeepCopyInto(IdList<T,H> *l) {
