@@ -418,6 +418,8 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
     param.ClearTags();
     eq.ClearTags();
 
+    // Solving by substitution eliminates duplicate e.g. H/V constraints, which can cause rank test
+    // to succeed even on overdefined systems, which will fail later.
     if(!forceDofCheck) {
         SolveBySubstitution();
     }
