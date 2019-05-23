@@ -12,6 +12,24 @@
 #include <commdlg.h>
 #include <shellapi.h>
 
+// Macros to compile under XP
+#if !defined(LSTATUS)
+#   define LSTATUS LONG
+#endif
+
+#if !defined(MAPVK_VK_TO_CHAR)
+#   define MAPVK_VK_TO_CHAR 2
+#endif
+
+#if !defined(USER_DEFAULT_SCREEN_DPI)
+#   define USER_DEFAULT_SCREEN_DPI 96
+#endif
+
+#if !defined(TTM_POPUP)
+#   define TTM_POPUP (WM_USER + 34)
+#endif
+// End macros to compile under XP
+
 #if !defined(WM_DPICHANGED)
 #   define WM_DPICHANGED 0x02E0
 #endif
