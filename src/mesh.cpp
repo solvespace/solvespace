@@ -186,8 +186,7 @@ void SMesh::Simplify(int start) {
                     if(fabs(bDot) < LENGTH_EPS && fabs(dDot) < LENGTH_EPS) {
                         conv[WRAP((j+1), convc)] = c;
                         // and remove the vertex at j, which is a dup
-                        memmove(conv+j, conv+j+1,
-                                          (convc - j - 1)*sizeof(conv[0]));
+                        std::move(conv+j+1, conv+convc, conv+(convc-1));
                         convc--;
                     } else if(fabs(bDot) < LENGTH_EPS && dDot > 0) {
                         conv[j] = c;
@@ -195,8 +194,7 @@ void SMesh::Simplify(int start) {
                         conv[WRAP((j+1), convc)] = c;
                     } else if(bDot > 0 && dDot > 0) {
                         // conv[j] is unchanged, conv[j+1] goes to [j+2]
-                        memmove(conv+j+2, conv+j+1,
-                                            (convc - j - 1)*sizeof(conv[0]));
+                        std::move_backward(conv+j+1, conv+convc, conv+j+2);
                         conv[j+1] = c;
                         convc++;
                     } else {
