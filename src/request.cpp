@@ -145,12 +145,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         p.h = h.entity(i+((et != (Entity::Type)0) ? 1 : 0));
         p.group = group;
         p.style = style;
-        if(type == Request::Type::ARC_OF_CIRCLE && i == 0) {
-            // mark arc center point as construction, since it shouldn't be included
-            // in bounding box calculation
-            p.construction = true;
-        }
-
+        p.construction = e.construction;
         if(workplane.v == Entity::FREE_IN_3D.v) {
             p.type = Entity::Type::POINT_IN_3D;
             // params for x y z
@@ -172,6 +167,7 @@ void Request::Generate(IdList<Entity,hEntity> *entity,
         n.h = h.entity(32);
         n.group = group;
         n.style = style;
+        n.construction = e.construction;
         if(workplane.v == Entity::FREE_IN_3D.v) {
             n.type = Entity::Type::NORMAL_IN_3D;
             n.param[0] = AddParam(param, h.param(32+0));

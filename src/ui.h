@@ -768,6 +768,7 @@ public:
     bool    showWorkplanes;
     bool    showNormals;
     bool    showPoints;
+    bool    showConstruction;
     bool    showConstraints;
     bool    showTextWindow;
     bool    showShaded;

@@ -380,6 +380,7 @@ void GraphicsWindow::Init() {
     showWorkplanes = false;
     showNormals = true;
     showPoints = true;
+    showConstruction = true;
     showConstraints = true;
     showShaded = true;
     showEdges = true;

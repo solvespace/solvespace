@@ -156,28 +156,31 @@ public:
 static SpacerButton   spacerButton;
 
 static ShowHideButton workplanesButton =
-    { &(SS.GW.showWorkplanes),  "workplane",     "workplanes from inactive groups" };
+    { &(SS.GW.showWorkplanes),   "workplane",     "workplanes from inactive groups" };
 static ShowHideButton normalsButton =
-    { &(SS.GW.showNormals),     "normal",        "normals"                         };
+    { &(SS.GW.showNormals),      "normal",        "normals"                         };
 static ShowHideButton pointsButton =
-    { &(SS.GW.showPoints),      "point",         "points"                          };
+    { &(SS.GW.showPoints),       "point",         "points"                          };
+static ShowHideButton constructionButton =
+    { &(SS.GW.showConstruction), "construction",  "construction entities"           };
 static ShowHideButton constraintsButton =
-    { &(SS.GW.showConstraints), "constraint",    "constraints and dimensions"      };
+    { &(SS.GW.showConstraints),  "constraint",    "constraints and dimensions"      };
 static FacesButton facesButton;
 static ShowHideButton shadedButton =
-    { &(SS.GW.showShaded),      "shaded",        "shaded view of solid model"      };
+    { &(SS.GW.showShaded),       "shaded",        "shaded view of solid model"      };
 static ShowHideButton edgesButton =
-    { &(SS.GW.showEdges),       "edges",         "edges of solid model"            };
+    { &(SS.GW.showEdges),        "edges",         "edges of solid model"            };
 static ShowHideButton outlinesButton =
-    { &(SS.GW.showOutlines),    "outlines",      "outline of solid model"          };
+    { &(SS.GW.showOutlines),     "outlines",      "outline of solid model"          };
 static ShowHideButton meshButton =
-    { &(SS.GW.showMesh),        "mesh",          "triangle mesh of solid model"    };
+    { &(SS.GW.showMesh),         "mesh",          "triangle mesh of solid model"    };
 static OccludedLinesButton occludedLinesButton;
 
 static Button *buttons[] = {
     &workplanesButton,
     &normalsButton,
     &pointsButton,
+    &constructionButton,
     &constraintsButton,
     &facesButton,
     &spacerButton,

@@ -271,7 +271,7 @@ AddEntity
 
 Entity.h.v=00040001
 Entity.type=2001
-Entity.construction=1
+Entity.construction=0
 Entity.workplane.v=80020000
 Entity.actPoint.x=-4.99993226121819223096
 Entity.actPoint.y=10.00006773878180865722

@@ -158,6 +158,7 @@ bool Entity::IsVisible() const {
 
     if(IsPoint() && !SS.GW.showPoints) return false;
     if(IsNormal() && !SS.GW.showNormals) return false;
+    if(construction && !SS.GW.showConstruction) return false;
 
     if(!SS.GW.showWorkplanes) {
         if(IsWorkplane() && !h.isFromRequest()) {

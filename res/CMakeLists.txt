@@ -208,6 +208,7 @@ add_resources(
     icons/graphics-window/trim.png
     icons/graphics-window/vert.png
     icons/text-window/constraint.png
+    icons/text-window/construction.png
     icons/text-window/edges.png
     icons/text-window/faces.png
     icons/text-window/occluded-visible.png
