@@ -337,21 +337,64 @@ struct CompareId {
 // id.
 template <class T, class H>
 class IdList {
-    T *elem            = nullptr;
-    int elemsAllocated = 0;
+    std::shared_ptr<std::vector<T>> vec;
+    int internalN = 0;
+    void UpdateSize() {
+        if(!vec) {
+            internalN = 0;
+        } else {
+            internalN = static_cast<int>(vec->size());
+        }
+    }
+    void AllocForOneMore() {
+        if(!vec) {
+            vec = std::make_shared<std::vector<T>>();
+        }
+        if(vec->capacity() == vec->size()) {
+            // Let the built-in growth policy deal with this.
+            vec->reserve(vec->size() + 1);
+        }
+    }
+
 public:
-    int n = 0;
+    std::reference_wrapper<const int> n = std::cref(internalN);
 
     using Compare = CompareId<T, H>;
 
-    bool IsEmpty() const {
-        return n == 0;
+    bool IsEmpty() const { return !vec || vec->empty(); }
+
+    IdList() : n(std::cref(internalN)) {}
+
+    // Makes a shallow copy that shares the underlying list!
+    IdList(IdList const &other) : vec(other.vec), internalN(other.internalN), n(std::cref(internalN)) {}
+
+    // Assigns a shallow copy that shares the underlying list!
+    IdList &operator=(IdList const &other) {
+        if(this == &other || vec == other.vec) {
+            // No self-assign
+            return *this;
+        }
+        vec = other.vec;
+        UpdateSize();
+        return *this;
     }
 
-    void AllocForOneMore() {
-        if(n >= elemsAllocated) {
-            ReserveMore((elemsAllocated + 32)*2 - n);
+    IdList(IdList &&other) : vec(std::move(other.vec)), internalN(other.internalN), n(std::cref(internalN)) {
+        other.vec.reset();
+        UpdateSize();
+        other.UpdateSize();
+    }
+
+    IdList &operator=(IdList &&other) {
+        if(this == &other || vec == other.vec) {
+            // No self-assign
+            return *this;
         }
+        Clear();
+        vec = std::move(other.vec);
+        UpdateSize();
+        other.UpdateSize();
+        return *this;
     }
 
     uint32_t MaximumId() {
@@ -374,7 +417,7 @@ public:
             return nullptr;
         }
         auto it = std::lower_bound(begin(), end(), t, Compare());
-        return it;
+        return &(*it);
     }
 
     T * LowerBound(H const& h) {
@@ -382,63 +425,61 @@ public:
             return nullptr;
         }
         auto it = std::lower_bound(begin(), end(), h, Compare());
-        return it;
+        return &(*it);
     }
 
     int LowerBoundIndex(T const& t) {
         if(IsEmpty()) {
             return 0;
         }
-        auto it = LowerBound(t);
+        auto it = std::lower_bound(begin(), end(), t, Compare());
         auto idx = std::distance(begin(), it);
         auto i = static_cast<int>(idx);
         return i;
     }
+
     void ReserveMore(int howMuch) {
-        if(n + howMuch > elemsAllocated) {
-            elemsAllocated = n + howMuch;
-            T *newElem = (T *)MemAlloc((size_t)elemsAllocated*sizeof(T));
-            for(int i = 0; i < n; i++) {
-                new(&newElem[i]) T(std::move(elem[i]));
-                elem[i].~T();
-            }
-            MemFree(elem);
-            elem = newElem;
+        if(!vec) {
+            vec = std::make_shared<std::vector<T>>();
         }
+        vec->reserve(n + howMuch);
     }
 
     void Add(T *t) {
-        AllocForOneMore();
-
         // Look to see if we already have something with the same handle value.
         ssassert(FindByIdNoOops(t->h) == nullptr, "Handle isn't unique");
 
         // Copy-construct at the end of the list.
-        new(&elem[n]) T(*t);
-        ++n;
+        AllocForOneMore();
+        vec->emplace_back(*t);
+        UpdateSize();
+
         // The item we just added is trivially sorted, so "merge"
         std::inplace_merge(begin(), end() - 1, end(), Compare());
     }
 
     void MergeInto(IdList *dest) {
+        if (IsEmpty()) {
+            return;
+        }
+        const auto oldN = dest->n;
+
+        // Mainly ensures we have a vector allocated:
+        // the range insert would reserve as well.
         dest->ReserveMore(n);
 
-        const auto oldEnd = dest->elem + dest->n;
-        auto outIter      = oldEnd;
+        dest->vec->insert(dest->end(), begin(), end());
 
-        for(auto &elt : *this) {
-            // Copy-construct at the end of the list.
-            new(outIter) T(elt);
-            ++outIter;
-        }
+        // The items we just added are sorted, so merge
+        std::inplace_merge(dest->begin(), dest->begin() + oldN, dest->end(), Compare());
 
         /// @todo Look to see if we already have something with the same handle value.
 
-        dest->n = dest->n + n;
-        Clear();
+        dest->UpdateSize();
 
-        // The items we just added are sorted, so merge
-        std::inplace_merge(dest->begin(), oldEnd, dest->end(), Compare());
+        // Just drop, don't clear.
+        vec.reset();
+        UpdateSize();
     }
 
     T *FindById(H h) {
@@ -451,7 +492,7 @@ public:
         if(IsEmpty()) {
             return -1;
         }
-        auto it = LowerBound(h);
+        auto it = std::lower_bound(begin(), end(), h, Compare());
         auto idx = std::distance(begin(), it);
         if (idx < n) {
             return idx;
@@ -463,39 +504,37 @@ public:
         if(IsEmpty()) {
             return nullptr;
         }
-        auto it = LowerBound(h);
-        if (it == nullptr || it == end()) {
+        auto it = std::lower_bound(begin(), end(), h, Compare());
+        if (it == end()) {
             return nullptr;
         }
         if (it->h.v == h.v) {
-            return it;
+            return &(*it);
         }
         return nullptr;
     }
 
-    T *First() {
-        return (IsEmpty()) ? NULL : &(elem[0]);
-    }
-    T *Last() {
-        return (IsEmpty()) ? NULL : &(elem[n-1]);
-    }
+    T *First() { return (IsEmpty()) ? NULL : &(vec->front()); }
+    T *Last() { return (IsEmpty()) ? NULL : &(vec->back()); }
     T *NextAfter(T *prev) {
         if(IsEmpty() || !prev) return NULL;
         if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
 
-    T &Get(size_t i) { return elem[i]; }
-    T const &Get(size_t i) const { return elem[i]; }
+    T &Get(size_t i) { return (*vec)[i]; }
+    T const &Get(size_t i) const { return (*vec)[i]; }
     T &operator[](size_t i) { return Get(i); }
     T const &operator[](size_t i) const { return Get(i); }
 
-    T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
-    T *end() { return IsEmpty() ? nullptr : &elem[n]; }
-    const T *begin() const { return IsEmpty() ? nullptr : &elem[0]; }
-    const T *end() const { return IsEmpty() ? nullptr : &elem[n]; }
-    const T *cbegin() const { return begin(); }
-    const T *cend() const { return end(); }
+    using iterator       = typename std::vector<T>::iterator;
+    using const_iterator = typename std::vector<T>::const_iterator;
+    iterator begin() { return IsEmpty() ? iterator() : vec->begin(); }
+    iterator end() { return IsEmpty() ? iterator() : vec->end(); }
+    const_iterator begin() const { return IsEmpty() ? const_iterator() : vec->begin(); }
+    const_iterator end() const { return IsEmpty() ? const_iterator() : vec->end(); }
+    const_iterator cbegin() const { return begin(); }
+    const_iterator cend() const { return end(); }
 
     template<typename F>
     size_t CountIf(F &&predicate) const {
@@ -514,20 +553,20 @@ public:
     }
 
     void RemoveTagged() {
-        auto newEnd = std::remove_if(this->begin(), this->end(), [](T &t) {
+        if(IsEmpty()) {
+            return;
+        }
+        auto newEnd = std::remove_if(begin(), end(), [](T &t) {
             if(t.tag) {
                 t.Clear();
                 return true;
             }
             return false;
         });
-        if(newEnd != this->end()) {
-            while (newEnd != this->end()) {
-                newEnd->~T();
-                ++newEnd;
-            }
+        if(newEnd != end()) {
+            vec->erase(newEnd);
         }
-        n = newEnd - begin();
+        UpdateSize();
     }
 
     void RemoveById(H h) {
@@ -538,30 +577,28 @@ public:
 
     void MoveSelfInto(IdList<T,H> *l) {
         l->Clear();
-        std::swap(l->elem, elem);
-        std::swap(l->elemsAllocated, elemsAllocated);
-        std::swap(l->n, n);
+        l->vec = std::move(vec);
+        vec.reset();
+        l->UpdateSize();
+        UpdateSize();
     }
 
     void DeepCopyInto(IdList<T,H> *l) {
         l->Clear();
-        l->elem = (T *)MemAlloc(elemsAllocated * sizeof(elem[0]));
-        for(int i = 0; i < n; i++)
-            new(&l->elem[i]) T(elem[i]);
-        l->elemsAllocated = elemsAllocated;
-        l->n = n;
+        if(!IsEmpty()) {
+            l->vec = std::make_shared<std::vector<T>>(*vec);
+        }
+        l->UpdateSize();
     }
 
     void Clear() {
-        for(int i = 0; i < n; i++) {
-            elem[i].Clear();
-            elem[i].~T();
+        if(IsEmpty()) {
+            return;
         }
-        if(elem) MemFree(elem);
-        elem = NULL;
-        elemsAllocated = n = 0;
+        std::for_each(begin(), end(), [](T &elt) { elt.Clear(); });
+        vec.reset();
+        UpdateSize();
     }
-
 };
 
 class BandedMatrix {
