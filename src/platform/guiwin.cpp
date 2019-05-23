@@ -572,9 +572,8 @@ public:
 
         TOOLINFOW ti = {};
         ti.cbSize   = sizeof(ti);
-        ti.uFlags   = TTF_IDISHWND|TTF_SUBCLASS;
+        ti.uFlags   = TTF_SUBCLASS;
         ti.hwnd     = hWindow;
-        ti.uId      = (UINT_PTR)hWindow;
         ti.lpszText = (LPWSTR)L"";
         sscheck(SendMessageW(hTooltip, TTM_ADDTOOLW, 0, (LPARAM)&ti));
         sscheck(SendMessageW(hTooltip, TTM_ACTIVATE, FALSE, 0));
@@ -1222,27 +1221,31 @@ public:
         sscheck(::SetCursor(hCursor));
     }
 
-    void SetTooltip(const std::string &newText) override {
-        // The following SendMessage calls sometimes fail with ERROR_ACCESS_DENIED for
-        // no discernible reason, but only on wine.
-        if(newText.empty()) {
-            SendMessageW(hTooltip, TTM_ACTIVATE, FALSE, 0);
-            SendMessageW(hTooltip, TTM_POP, 0, 0);
-        } else if(newText != tooltipText) {
-            tooltipText = newText;
+    void SetTooltip(const std::string &newText, double x, double y,
+                    double width, double height) override {
+        if(newText == tooltipText) return;
+        tooltipText = newText;
+
+        if(!newText.empty()) {
+            int pixelRatio = GetDevicePixelRatio();
+            RECT toolRect;
+            toolRect.left   = (int)(x * pixelRatio);
+            toolRect.top    = (int)(y * pixelRatio);
+            toolRect.right  = toolRect.left + (int)(width  * pixelRatio);
+            toolRect.bottom = toolRect.top  + (int)(height * pixelRatio);
 
             std::wstring newTextW = Widen(newText);
             TOOLINFOW ti = {};
             ti.cbSize   = sizeof(ti);
-            ti.uFlags   = TTF_IDISHWND;
             ti.hwnd     = hWindow;
-            ti.uId      = (UINT_PTR)hWindow;
+            ti.rect     = toolRect;
             ti.lpszText = &newTextW[0];
-            SendMessageW(hTooltip, TTM_UPDATETIPTEXTW, 0, (LPARAM)&ti);
-
-            SendMessageW(hTooltip, TTM_ACTIVATE, TRUE, 0);
-            SendMessageW(hTooltip, TTM_POPUP, 0, 0);
+            sscheck(SendMessageW(hTooltip, TTM_UPDATETIPTEXTW, 0, (LPARAM)&ti));
+            sscheck(SendMessageW(hTooltip, TTM_NEWTOOLRECTW, 0, (LPARAM)&ti));
         }
+        // The following SendMessage call sometimes fails with ERROR_ACCESS_DENIED for
+        // no discernible reason, but only on wine.
+        SendMessageW(hTooltip, TTM_ACTIVATE, !newText.empty(), 0);
     }
 
     bool IsEditorVisible() override {

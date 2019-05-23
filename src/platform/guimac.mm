@@ -925,10 +925,10 @@ public:
         }
     }
 
-    void SetTooltip(const std::string &newText) override {
+    void SetTooltip(const std::string &newText, double x, double y, double w, double h) override {
         NSString *nsNewText = Wrap(newText);
-        if(![[ssView toolTip] isEqualToString:nsNewText]) {
-            [ssView setToolTip:nsNewText];
+        if(![nsToolTip isEqualToString:nsNewText]) {
+            nsToolTip = nsNewText;
 
             NSToolTipManager *nsToolTipManager = [NSToolTipManager sharedToolTipManager];
             if(newText.empty()) {

@@ -87,7 +87,7 @@ static ToolIcon Toolbar[] = {
 };
 
 void GraphicsWindow::ToolbarDraw(UiCanvas *canvas) {
-    ToolbarDrawOrHitTest(0, 0, canvas, NULL);
+    ToolbarDrawOrHitTest(0, 0, canvas, NULL, NULL, NULL);
 }
 
 bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
@@ -97,11 +97,12 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    Command hit;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hit);
+    Command hitCommand;
+    int hitX, hitY;
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hitCommand, &hitX, &hitY);
 
-    if(hit != toolbarHovered) {
-        toolbarHovered = hit;
+    if(hitCommand != toolbarHovered) {
+        toolbarHovered = hitCommand;
         Invalidate();
     }
 
@@ -119,7 +120,9 @@ bool GraphicsWindow::ToolbarMouseMoved(int x, int y) {
             tooltip += ssprintf(" (%s)", accelDesc.c_str());
         }
 
-        window->SetTooltip(tooltip);
+        window->SetTooltip(tooltip, hitX, hitY, 32, 32);
+    } else {
+        window->SetTooltip("", 0, 0, 0, 0);
     }
 
     return withinToolbar;
@@ -132,16 +135,16 @@ bool GraphicsWindow::ToolbarMouseDown(int x, int y) {
     x += ((int)width/2);
     y += ((int)height/2);
 
-    Command hit;
-    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hit);
-    if(hit != Command::NONE) {
-        SS.GW.ActivateCommand(hit);
+    Command hitCommand;
+    bool withinToolbar = ToolbarDrawOrHitTest(x, y, NULL, &hitCommand, NULL, NULL);
+    if(hitCommand != Command::NONE) {
+        SS.GW.ActivateCommand(hitCommand);
     }
     return withinToolbar;
 }
 
-bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
-                                          UiCanvas *canvas, Command *menuHit)
+bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
+                                          Command *hitCommand, int *hitX, int *hitY)
 {
     double width, height;
     window->GetContentSize(&width, &height);
@@ -154,9 +157,9 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
 
     bool withinToolbar =
         (mx >= aleft && mx <= aright && my <= atop && my >= abot);
-    
-    // Initialize/clear menuHit.
-    if(menuHit) *menuHit = Command::NONE;
+
+    // Initialize/clear hitCommand.
+    if(hitCommand) *hitCommand = Command::NONE;
 
     if(!canvas && !withinToolbar) {
         // This gets called every MouseMove event, so return quickly.
@@ -203,17 +206,19 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my,
                (pending.operation == Pending::COMMAND &&
                 pending.command == icon.command)) {
                 // Highlight the hovered or pending item.
-                int boxhw = 15;
+                const int boxhw = 15;
                 canvas->DrawRect(x+boxhw, x-boxhw, y+boxhw, y-boxhw,
                                  /*fillColor=*/{ 255, 255, 0, 75 },
                                  /*outlineColor=*/{});
             }
         } else {
-            int boxhw = 16;
+            const int boxhw = 16;
             if(mx < (x+boxhw) && mx > (x - boxhw) &&
                my < (y+boxhw) && my > (y - boxhw))
             {
-                if(menuHit) *menuHit = icon.command;
+                if(hitCommand) *hitCommand = icon.command;
+                if(hitX) *hitX = x - boxhw;
+                if(hitY) *hitY = height - (y + boxhw);
             }
         }
 

@@ -597,12 +597,15 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
         hoveredButton = NULL;
     }
 
+    double hoveredX, hoveredY;
     for(Button *button : buttons) {
         if(how == PAINT) {
             button->Draw(uiCanvas, x, y, (button == hoveredButton));
         } else if(mx > x - 2 && mx < x + 26 &&
                   my < y + 2 && my > y - 26) {
             hoveredButton = button;
+            hoveredX = x - 2;
+            hoveredY = y - 26;
             if(how == CLICK) {
                 button->Click();
             }
@@ -613,9 +616,9 @@ void TextWindow::DrawOrHitTestIcons(UiCanvas *uiCanvas, TextWindow::DrawOrHitHow
 
     if(how != PAINT && hoveredButton != oldHovered) {
         if(hoveredButton == NULL) {
-            window->SetTooltip("");
+            window->SetTooltip("", 0, 0, 0, 0);
         } else {
-            window->SetTooltip(hoveredButton->Tooltip());
+            window->SetTooltip(hoveredButton->Tooltip(), hoveredX, hoveredY, 28, 28);
         }
         window->Invalidate();
     }

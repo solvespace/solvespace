@@ -253,7 +253,8 @@ public:
     virtual void ThawPosition(SettingsRef settings, const std::string &key) = 0;
 
     virtual void SetCursor(Cursor cursor) = 0;
-    virtual void SetTooltip(const std::string &text) = 0;
+    virtual void SetTooltip(const std::string &text, double x, double y,
+                            double width, double height) = 0;
 
     virtual bool IsEditorVisible() = 0;
     virtual void ShowEditor(double x, double y, double fontHeight, double minWidth,

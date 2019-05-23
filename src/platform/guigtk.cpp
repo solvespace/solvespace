@@ -23,6 +23,7 @@
 #include <gtkmm/messagedialog.h>
 #include <gtkmm/scrollbar.h>
 #include <gtkmm/separatormenuitem.h>
+#include <gtkmm/tooltip.h>
 #include <gtkmm/window.h>
 
 #include "config.h"
@@ -730,7 +731,10 @@ class GtkWindow : public Gtk::Window {
     Gtk::HBox           _hbox;
     GtkEditorOverlay    _editor_overlay;
     Gtk::VScrollbar     _scrollbar;
+    bool                _is_under_cursor = false;
     bool                _is_fullscreen = false;
+    std::string         _tooltip_text;
+    Gdk::Rectangle      _tooltip_area;
 
 public:
     GtkWindow(Platform::Window *receiver) : _receiver(receiver), _editor_overlay(receiver) {
@@ -746,6 +750,10 @@ public:
 
         _scrollbar.get_adjustment()->signal_value_changed().
             connect(sigc::mem_fun(this, &GtkWindow::on_scrollbar_value_changed));
+
+        get_gl_widget().set_has_tooltip(true);
+        get_gl_widget().signal_query_tooltip().
+            connect(sigc::mem_fun(this, &GtkWindow::on_query_tooltip));
     }
 
     bool is_full_screen() const {
@@ -779,7 +787,34 @@ public:
         return _scrollbar;
     }
 
+    void set_tooltip(const std::string &text, const Gdk::Rectangle &rect) {
+        if(_tooltip_text != text) {
+            _tooltip_text = text;
+            _tooltip_area = rect;
+            get_gl_widget().trigger_tooltip_query();
+        }
+    }
+
 protected:
+    bool on_query_tooltip(int x, int y, bool keyboard_tooltip,
+                          const Glib::RefPtr<Gtk::Tooltip> &tooltip) {
+        tooltip->set_text(_tooltip_text);
+        tooltip->set_tip_area(_tooltip_area);
+        return !_tooltip_text.empty() && (keyboard_tooltip || _is_under_cursor);
+    }
+
+    bool on_enter_notify_event(GdkEventCrossing* gdk_event) override {
+        _is_under_cursor = true;
+
+        return true;
+    }
+
+    bool on_leave_notify_event(GdkEventCrossing* gdk_event) override {
+        _is_under_cursor = false;
+
+        return true;
+    }
+
     bool on_delete_event(GdkEventAny* gdk_event) override {
         if(_receiver->onClose) {
             _receiver->onClose();
@@ -795,7 +830,7 @@ protected:
             _receiver->onFullScreen(_is_fullscreen);
         }
 
-        return Gtk::Window::on_window_state_event(gdk_event);
+        return true;
     }
 
     void on_scrollbar_value_changed() {
@@ -940,12 +975,9 @@ public:
         }
     }
 
-    void SetTooltip(const std::string &text) override {
-        if(text.empty()) {
-            gtkWindow.get_gl_widget().set_has_tooltip(false);
-        } else {
-            gtkWindow.get_gl_widget().set_tooltip_text(text);
-        }
+    void SetTooltip(const std::string &text, double x, double y,
+                    double width, double height) override {
+        gtkWindow.set_tooltip(text, { (int)x, (int)y, (int)width, (int)height });
     }
 
     bool IsEditorVisible() override {
