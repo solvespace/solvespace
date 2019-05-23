@@ -397,13 +397,15 @@ void GraphicsWindow::Init() {
         window = Platform::CreateWindow();
         if(window) {
             using namespace std::placeholders;
+            // Do this first, so that if it causes an onRender event we don't try to paint without
+            // a canvas.
+            window->SetMinContentSize(720, 670);
             window->onClose = std::bind(&SolveSpaceUI::MenuFile, Command::EXIT);
             window->onRender = std::bind(&GraphicsWindow::Paint, this);
             window->onKeyboardEvent = std::bind(&GraphicsWindow::KeyboardEvent, this, _1);
             window->onMouseEvent = std::bind(&GraphicsWindow::MouseEvent, this, _1);
             window->onSixDofEvent = std::bind(&GraphicsWindow::SixDofEvent, this, _1);
             window->onEditingDone = std::bind(&GraphicsWindow::EditControlDone, this, _1);
-            window->SetMinContentSize(720, 670);
             PopulateMainMenu();
         }
     }
