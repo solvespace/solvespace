@@ -491,21 +491,15 @@ int SKdNodeEdges::AnyEdgeCrossings(Vector a, Vector b, int cnt,
 // We have an edge list that contains only collinear edges, maybe with more
 // splits than necessary. Merge any collinear segments that join.
 //-----------------------------------------------------------------------------
-static Vector LineStart, LineDirection;
-static int ByTAlongLine(const void *av, const void *bv)
-{
-    SEdge *a = (SEdge *)av,
-          *b = (SEdge *)bv;
-
-    double ta = (a->a.Minus(LineStart)).DivPivoting(LineDirection),
-           tb = (b->a.Minus(LineStart)).DivPivoting(LineDirection);
-
-    return (ta > tb) ? 1 : -1;
-}
 void SEdgeList::MergeCollinearSegments(Vector a, Vector b) {
-    LineStart = a;
-    LineDirection = b.Minus(a);
-    qsort(l.elem, l.n, sizeof(l.elem[0]), ByTAlongLine);
+    const Vector lineStart = a;
+    const Vector lineDirection = b.Minus(a);
+    std::sort(l.begin(), l.end(), [&](const SEdge &a, const SEdge &b) {
+        double ta = (a.a.Minus(lineStart)).DivPivoting(lineDirection);
+        double tb = (b.a.Minus(lineStart)).DivPivoting(lineDirection);
+
+        return (ta < tb);
+    });
 
     l.ClearTags();
     SEdge *prev = nullptr;
