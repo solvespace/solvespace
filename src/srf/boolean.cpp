@@ -24,17 +24,6 @@ void SShell::MakeFromDifferenceOf(SShell *a, SShell *b) {
 // the intersection of srfA and srfB.) Return a new pwl curve with everything
 // split.
 //-----------------------------------------------------------------------------
-static Vector LineStart, LineDirection;
-static int ByTAlongLine(const void *av, const void *bv)
-{
-    SInter *a = (SInter *)av,
-           *b = (SInter *)bv;
-
-    double ta = (a->p.Minus(LineStart)).DivPivoting(LineDirection),
-           tb = (b->p.Minus(LineStart)).DivPivoting(LineDirection);
-
-    return (ta > tb) ? 1 : -1;
-}
 SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
                                     SSurface *srfA, SSurface *srfB) const
 {
@@ -104,9 +93,14 @@ SCurve SCurve::MakeCopySplitAgainst(SShell *agnstA, SShell *agnstB,
             // And now sort them in order along the line. Note that we must
             // do that after refining, in case the refining would make two
             // points switch places.
-            LineStart = prev.p;
-            LineDirection = (p->p).Minus(prev.p);
-            qsort(il.elem, il.n, sizeof(il.elem[0]), ByTAlongLine);
+            const Vector lineStart     = prev.p;
+            const Vector lineDirection = (p->p).Minus(prev.p);
+            std::sort(il.begin(), il.end(), [&](const SInter &a, const SInter &b) {
+                double ta = (a.p.Minus(lineStart)).DivPivoting(lineDirection);
+                double tb = (b.p.Minus(lineStart)).DivPivoting(lineDirection);
+
+                return (ta < tb);
+            });
 
             // And now uses the intersections to generate our split pwl edge(s)
             Vector prev = Vector::From(VERY_POSITIVE, 0, 0);
@@ -775,19 +769,6 @@ SBspUv *SBspUv::Alloc() {
     return (SBspUv *)AllocTemporary(sizeof(SBspUv));
 }
 
-static int ByLength(const void *av, const void *bv)
-{
-    SEdge *a = (SEdge *)av,
-          *b = (SEdge *)bv;
-
-    double la = (a->a).Minus(a->b).Magnitude(),
-           lb = (b->a).Minus(b->b).Magnitude();
-
-    // Sort in descending order, longest first. This improves numerical
-    // stability for the normals.
-    return (la < lb) ? 1 : -1;
-}
-
 SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
     SEdgeList work = {};
 
@@ -795,8 +776,12 @@ SBspUv *SBspUv::From(SEdgeList *el, SSurface *srf) {
     for(se = el->l.First(); se; se = el->l.NextAfter(se)) {
         work.AddEdge(se->a, se->b, se->auxA, se->auxB);
     }
-    qsort(work.l.elem, work.l.n, sizeof(work.l.elem[0]), ByLength);
-
+    std::sort(work.l.begin(), work.l.end(), [](SEdge const &a, SEdge const &b) {
+        double la = (a.a).Minus(a.b).Magnitude(), lb = (b.a).Minus(b.b).Magnitude();
+        // Sort in descending order, longest first. This improves numerical
+        // stability for the normals.
+        return la > lb;
+    });
     SBspUv *bsp = NULL;
     for(se = work.l.First(); se; se = work.l.NextAfter(se)) {
         bsp = InsertOrCreateEdge(bsp, (se->a).ProjectXy(), (se->b).ProjectXy(), srf);
