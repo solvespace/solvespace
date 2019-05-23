@@ -22,7 +22,9 @@
 
 #if HAVE_OPENGL == 3
 #   define EGLAPI /*static linkage*/
+#   define EGL_EGLEXT_PROTOTYPES
 #   include <EGL/egl.h>
+#   include <EGL/eglext.h>
 #endif
 
 #if defined(HAVE_SPACEWARE)
@@ -498,9 +500,9 @@ public:
 #if HAVE_OPENGL == 1
     HGLRC hGlRc = NULL;
 #elif HAVE_OPENGL == 3
-    EGLDisplay eglDisplay = NULL;
-    EGLSurface eglSurface = NULL;
-    EGLContext eglContext = NULL;
+    static EGLDisplay eglDisplay;
+    EGLSurface eglSurface = EGL_NO_SURFACE;
+    EGLContext eglContext = EGL_NO_CONTEXT;
 #endif
 
     WINDOWPLACEMENT placement = {};
@@ -603,10 +605,32 @@ public:
 
         sscheck(hGlRc = wglCreateContext(hDc));
 #elif HAVE_OPENGL == 3
-        ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
+        if(eglDisplay == EGL_NO_DISPLAY) {
+            ssassert(eglBindAPI(EGL_OPENGL_ES_API), "Cannot bind EGL API");
 
-        eglDisplay = eglGetDisplay(hDc);
-        ssassert(eglInitialize(eglDisplay, NULL, NULL), "Cannot initialize EGL");
+            EGLBoolean initialized = EGL_FALSE;
+            for(auto &platformType : {
+                // Try platform types from least to most amount of software translation required.
+                std::make_pair("OpenGL ES",   EGL_PLATFORM_ANGLE_TYPE_OPENGLES_ANGLE),
+                std::make_pair("OpenGL",      EGL_PLATFORM_ANGLE_TYPE_OPENGL_ANGLE),
+                std::make_pair("Direct3D 11", EGL_PLATFORM_ANGLE_TYPE_D3D11_ANGLE),
+                std::make_pair("Direct3D 9",  EGL_PLATFORM_ANGLE_TYPE_D3D9_ANGLE),
+            }) {
+                dbp("Initializing ANGLE with %s backend", platformType.first);
+                EGLint displayAttributes[] = {
+                    EGL_PLATFORM_ANGLE_TYPE_ANGLE, platformType.second,
+                    EGL_NONE
+                };
+                eglDisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_ANGLE_ANGLE, hDc,
+                                                      displayAttributes);
+                if(eglDisplay != EGL_NO_DISPLAY) {
+                    initialized = eglInitialize(eglDisplay, NULL, NULL);
+                    if(initialized) break;
+                    eglTerminate(eglDisplay);
+                }
+            }
+            ssassert(initialized, "Cannot find a suitable EGL display");
+        }
 
         EGLint configAttributes[] = {
             EGL_COLOR_BUFFER_TYPE,  EGL_RGB_BUFFER,
@@ -1323,6 +1347,8 @@ public:
         sscheck(InvalidateRect(hWindow, NULL, /*bErase=*/FALSE));
     }
 };
+
+EGLDisplay WindowImplWin32::eglDisplay = EGL_NO_DISPLAY;
 
 WindowRef CreateWindow(Window::Kind kind, WindowRef parentWindow) {
     return std::make_shared<WindowImplWin32>(kind,

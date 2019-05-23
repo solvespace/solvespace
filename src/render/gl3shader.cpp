@@ -118,6 +118,13 @@ precision highp float;
 
     GLint compiled;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
+    if(!compiled) {
+        dbp("Failed to compile shader:\n"
+            "----8<----8<----8<----8<----8<----\n"
+            "%s\n"
+            "----8<----8<----8<----8<----8<----\n",
+            src.c_str());
+    }
     ssassert(compiled, "Cannot compile shader");
 
     return shader;
@@ -220,7 +227,7 @@ void MeshRenderer::Init() {
             { ATTRIB_POS, "pos" },
         }
     );
-    fillShader.SetUniformTextureUnit("texture", 0);
+    fillShader.SetUniformTextureUnit("texture_", 0);
 
     selectedShader = &lightShader;
 }
@@ -957,8 +964,8 @@ void IndexedMeshRenderer::Init() {
         }
     );
 
-    texShader.SetUniformTextureUnit("texture", 0);
-    texaShader.SetUniformTextureUnit("texture", 0);
+    texShader.SetUniformTextureUnit("texture_", 0);
+    texaShader.SetUniformTextureUnit("texture_", 0);
     selectedShader = &colShader;
 }
 
