@@ -621,9 +621,11 @@ public:
     Unit     viewUnits;
     int      afterDecimalMm;
     int      afterDecimalInch;
+    int      afterDecimalDegree;
     int      autosaveInterval; // in minutes
 
     std::string MmToString(double v);
+    std::string DegreeToString(double v);
     double ExprToMm(Expr *e);
     double StringToMm(const std::string &s);
     const char *UnitName();

@@ -1361,36 +1361,30 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
                 editPlaceholder = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
                 break;
 
-            case Constraint::Type::ANGLE:
-            case Constraint::Type::LENGTH_RATIO:
-                editValue = ssprintf("%.3f", c->valA);
-                editPlaceholder = "0.000";
-                break;
-
             default: {
-                double v = fabs(c->valA);
+                double value = fabs(c->valA);
 
                 // If displayed as radius, also edit as radius.
                 if(c->type == Constraint::Type::DIAMETER && c->other)
-                    v /= 2;
+                    value /= 2;
 
-                std::string def = SS.MmToString(v);
-                double eps = 1e-12;
-                if(fabs(SS.StringToMm(def) - v) < eps) {
-                    // Show value with default number of digits after decimal,
-                    // which is at least enough to represent it exactly.
-                    editValue = def;
+                // Try showing value with default number of digits after decimal first.
+                if(c->type == Constraint::Type::LENGTH_RATIO) {
+                    editValue = ssprintf("%.3f", value);
+                } else if(c->type == Constraint::Type::ANGLE) {
+                    editValue = SS.DegreeToString(value);
                 } else {
-                    // Show value with as many digits after decimal as
-                    // required to represent it exactly, up to 10.
-                    v /= SS.MmPerUnit();
-                    int i;
-                    for(i = 0; i <= 10; i++) {
-                        editValue = ssprintf("%.*f", i, v);
-                        if(fabs(std::stod(editValue) - v) < eps) break;
-                    }
+                    editValue = SS.MmToString(value);
+                    value /= SS.MmPerUnit();
                 }
-                editPlaceholder = "0.00000";
+                // If that's not enough to represent it exactly, show the value with as many
+                // digits after decimal as required, up to 10.
+                int digits = 0;
+                while(fabs(std::stod(editValue) - value) > 1e-10) {
+                    editValue = ssprintf("%.*f", digits, value);
+                    digits++;
+                }
+                editPlaceholder = "10.000000";
                 break;
             }
         }

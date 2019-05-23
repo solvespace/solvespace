@@ -56,6 +56,7 @@ void SolveSpaceUI::Init() {
     // Number of digits after the decimal point
     afterDecimalMm = settings->ThawInt("AfterDecimalMm", 2);
     afterDecimalInch = settings->ThawInt("AfterDecimalInch", 3);
+    afterDecimalDegree = settings->ThawInt("AfterDecimalDegree", 2);
     // Camera tangent (determines perspective)
     cameraTangent = settings->ThawFloat("CameraTangent", 0.3f/1e3);
     // Grid spacing
@@ -229,6 +230,7 @@ void SolveSpaceUI::Exit() {
     // Number of digits after the decimal point
     settings->FreezeInt("AfterDecimalMm",   (uint32_t)afterDecimalMm);
     settings->FreezeInt("AfterDecimalInch", (uint32_t)afterDecimalInch);
+    settings->FreezeInt("AfterDecimalDegree", (uint32_t)afterDecimalDegree);
     // Camera tangent (determines perspective)
     settings->FreezeFloat("CameraTangent", (float)cameraTangent);
     // Grid spacing
@@ -319,6 +321,13 @@ std::string SolveSpaceUI::MmToString(double v) {
         case Unit::MM: return ssprintf("%.*f", afterDecimalMm, v);
     }
     return "";
+}
+std::string SolveSpaceUI::DegreeToString(double v) {
+    if(fabs(v - floor(v)) > 1e-10) {
+        return ssprintf("%.*f", afterDecimalDegree, v);
+    } else {
+        return ssprintf("%.0f", v);
+    }
 }
 double SolveSpaceUI::ExprToMm(Expr *e) {
     return (e->Eval()) * MmPerUnit();

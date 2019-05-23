@@ -300,14 +300,15 @@ public:
         CAMERA_TANGENT        = 105,
         GRID_SPACING          = 106,
         DIGITS_AFTER_DECIMAL  = 107,
-        EXPORT_SCALE          = 108,
-        EXPORT_OFFSET         = 109,
-        CANVAS_SIZE           = 110,
-        G_CODE_DEPTH          = 120,
-        G_CODE_PASSES         = 121,
-        G_CODE_FEED           = 122,
-        G_CODE_PLUNGE_FEED    = 123,
-        AUTOSAVE_INTERVAL     = 124,
+        DIGITS_AFTER_DECIMAL_DEGREE = 108,
+        EXPORT_SCALE          = 109,
+        EXPORT_OFFSET         = 110,
+        CANVAS_SIZE           = 111,
+        G_CODE_DEPTH          = 112,
+        G_CODE_PASSES         = 113,
+        G_CODE_FEED           = 114,
+        G_CODE_PLUNGE_FEED    = 115,
+        AUTOSAVE_INTERVAL     = 116,
         // For TTF text
         TTF_TEXT              = 300,
         // For the step dimension screen
@@ -467,6 +468,7 @@ public:
     static void ScreenChangeCameraTangent(int link, uint32_t v);
     static void ScreenChangeGridSpacing(int link, uint32_t v);
     static void ScreenChangeDigitsAfterDecimal(int link, uint32_t v);
+    static void ScreenChangeDigitsAfterDecimalDegree(int link, uint32_t v);
     static void ScreenChangeExportScale(int link, uint32_t v);
     static void ScreenChangeExportOffset(int link, uint32_t v);
     static void ScreenChangeGCodeParameter(int link, uint32_t v);

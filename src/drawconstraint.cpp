@@ -11,11 +11,7 @@
 std::string Constraint::Label() const {
     std::string result;
     if(type == Type::ANGLE) {
-        if(valA == floor(valA)) {
-            result = ssprintf("%.0f°", valA);
-        } else {
-            result = ssprintf("%.2f°", valA);
-        }
+        result = SS.DegreeToString(valA) + "°";
     } else if(type == Type::LENGTH_RATIO) {
         result = ssprintf("%.3f:1", valA);
     } else if(type == Type::COMMENT) {
