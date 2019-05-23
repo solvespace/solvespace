@@ -921,7 +921,7 @@ void SolveSpaceUI::MenuHelp(Command id) {
 
         case Command::ABOUT:
             Message(_(
-"This is SolveSpace version " PACKAGE_VERSION ".\n"
+"This is SolveSpace version %s.\n"
 "\n"
 "For more information, see http://solvespace.com/\n"
 "\n"
@@ -932,8 +932,8 @@ void SolveSpaceUI::MenuHelp(Command id) {
 "There is NO WARRANTY, to the extent permitted by\n"
 "law. For details, visit http://gnu.org/licenses/\n"
 "\n"
-"© 2008-2016 Jonathan Westhues and other authors.\n"
-));
+"© 2008-%d Jonathan Westhues and other authors.\n"),
+PACKAGE_VERSION, 2019);
             break;
 
         default: ssassert(false, "Unexpected menu ID");
