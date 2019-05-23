@@ -460,7 +460,7 @@ public:
     }
     T *NextAfter(T *prev) {
         if(IsEmpty() || !prev) return NULL;
-        if(prev - elem == (n - 1)) return NULL;
+        if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
 
