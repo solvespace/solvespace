@@ -534,7 +534,7 @@ void TextWindow::ShowGroupSolveInfo() {
     }
 
     for(int i = 0; i < g->solved.remove.n; i++) {
-        hConstraint hc = g->solved.remove.elem[i];
+        hConstraint hc = g->solved.remove[i];
         Constraint *c = SK.constraint.FindByIdNoOops(hc);
         if(!c) continue;
 

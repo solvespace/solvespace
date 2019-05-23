@@ -293,16 +293,16 @@ void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest,
 {
     ssassert(!src->l.IsEmpty(), "Need at least one edge");
     // Start with an arbitrary edge.
-    dest->l.Add(&(src->l.elem[0]));
+    dest->l.Add(&(src->l[0]));
     src->l.ClearTags();
-    src->l.elem[0].tag = 1;
+    src->l[0].tag = 1;
 
     bool added;
     do {
         added = false;
         // The start and finish of the current edge chain
-        Vector s = dest->l.elem[0].a,
-               f = dest->l.elem[dest->l.n - 1].b;
+        Vector s = dest->l[0].a,
+               f = dest->l[dest->l.n - 1].b;
 
         // We can attach a new edge at the start or finish, as long as that
         // start or finish point isn't in the list of points to avoid.
@@ -445,8 +445,8 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
             int i;
             for(i = 1; i < sc->pts.n; i++) {
-                Vector a = sc->pts.elem[i-1].p,
-                       b = sc->pts.elem[i].p;
+                Vector a = sc->pts[i-1].p,
+                       b = sc->pts[i].p;
 
                 Point2d auv, buv;
                 ss->ClosestPointTo(a, &(auv.x), &(auv.y));
@@ -512,7 +512,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
 
         // Arbitrarily choose an edge within the chain to classify; they
         // should all be the same, though.
-        se = &(chain.l.elem[chain.l.n/2]);
+        se = &(chain.l[chain.l.n/2]);
 
         Point2d auv  = (se->a).ProjectXy(),
                 buv  = (se->b).ProjectXy();
@@ -545,7 +545,7 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         FindChainAvoiding(&inter, &chain, &choosing);
 
         // Any edge in the chain, same as above.
-        se = &(chain.l.elem[chain.l.n/2]);
+        se = &(chain.l[chain.l.n/2]);
 
         Point2d auv = (se->a).ProjectXy(),
                 buv = (se->b).ProjectXy();

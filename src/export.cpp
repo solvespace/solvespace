@@ -455,7 +455,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
     // segments with zero-length projections.
     sel->l.ClearTags();
     for(int i = 0; i < sel->l.n; ++i) {
-        SEdge *sei = &sel->l.elem[i];
+        SEdge *sei = &sel->l[i];
         hStyle hsi = { (uint32_t)sei->auxA };
         Style *si = Style::Get(hsi);
         if(sei->tag != 0) continue;
@@ -472,7 +472,7 @@ void SolveSpaceUI::ExportLinesAndMesh(SEdgeList *sel, SBezierList *sbl, SMesh *s
         }
 
         for(int j = i + 1; j < sel->l.n; ++j) {
-            SEdge *sej = &sel->l.elem[j];
+            SEdge *sej = &sel->l[j];
             if(sej->tag != 0) continue;
 
             Vector *pAj = &sej->a;
@@ -761,7 +761,7 @@ void VectorFileWriter::BezierAsPwl(SBezier *sb) {
     sb->MakePwlInto(&lv, SS.ExportChordTolMm());
     int i;
     for(i = 1; i < lv.n; i++) {
-        SBezier sb = SBezier::From(lv.elem[i-1], lv.elem[i]);
+        SBezier sb = SBezier::From(lv[i-1], lv[i]);
         Bezier(&sb);
     }
     lv.Clear();
@@ -875,7 +875,7 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
     double s = SS.exportScale;
     int i;
     for(i = 0; i < sm->l.n; i++) {
-        STriangle *tr = &(sm->l.elem[i]);
+        STriangle *tr = &(sm->l[i]);
         Vector n = tr->Normal().WithMagnitude(1);
         float w;
         w = (float)n.x;           fwrite(&w, 4, 1, f);
@@ -981,7 +981,7 @@ void SolveSpaceUI::ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm) {
 
     RgbaColor currentColor = {};
     for(int i = 0; i < sm->l.n; i++) {
-        const STriangle &t = sm->l.elem[i];
+        const STriangle &t = sm->l[i];
         if(!currentColor.Equals(t.meta.color)) {
             currentColor = t.meta.color;
             fprintf(fObj, "usemtl %s\n", colors[currentColor].c_str());

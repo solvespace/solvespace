@@ -243,7 +243,7 @@ void SurfaceRenderer::ConvertBeziersToEdges() {
                 List<Vector> lv = {};
                 b.MakePwlInto(&lv, chordTolerance);
                 for(int i = 1; i < lv.n; i++) {
-                    el.AddEdge(lv.elem[i-1], lv.elem[i]);
+                    el.AddEdge(lv[i-1], lv[i]);
                 }
                 lv.Clear();
             }

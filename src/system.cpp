@@ -404,11 +404,11 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
 /*
     dbp("%d equations", eq.n);
     for(i = 0; i < eq.n; i++) {
-        dbp("  %.3f = %s = 0", eq.elem[i].e->Eval(), eq.elem[i].e->Print());
+        dbp("  %.3f = %s = 0", eq[i].e->Eval(), eq[i].e->Print());
     }
     dbp("%d parameters", param.n);
     for(i = 0; i < param.n; i++) {
-        dbp("   param %08x at %.3f", param.elem[i].h.v, param.elem[i].val);
+        dbp("   param %08x at %.3f", param[i].h.v, param[i].val);
     } */
 
     // All params and equations are assigned to group zero.

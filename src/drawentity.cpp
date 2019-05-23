@@ -22,12 +22,12 @@ void Entity::GenerateEdges(SEdgeList *el) {
 
     int i, j;
     for(i = 0; i < sbl->l.n; i++) {
-        SBezier *sb = &(sbl->l.elem[i]);
+        SBezier *sb = &(sbl->l[i]);
 
         List<Vector> lv = {};
         sb->MakePwlInto(&lv);
         for(j = 1; j < lv.n; j++) {
-            el->AddEdge(lv.elem[j-1], lv.elem[j], style.v, i);
+            el->AddEdge(lv[j-1], lv[j], style.v, i);
         }
         lv.Clear();
     }
@@ -68,7 +68,7 @@ BBox Entity::GetOrGenerateScreenBBox(bool *hasBBox) {
         Vector proj = SK.GetEntity(point[0])->PointGetNum();
         screenBBox = BBox::From(proj, proj);
     } else if(!sbl->l.IsEmpty()) {
-        Vector first = SS.GW.ProjectPoint3(sbl->l.elem[0].ctrl[0]);
+        Vector first = SS.GW.ProjectPoint3(sbl->l[0].ctrl[0]);
         screenBBox = BBox::From(first, first);
         for(auto &sb : sbl->l) {
             for(int i = 0; i < sb.deg; ++i) { screenBBox.Include(SS.GW.ProjectPoint3(sb.ctrl[i])); }
@@ -439,7 +439,7 @@ void Entity::GenerateBezierCurves(SBezierList *sbl) const {
 
     // Record our style for all of the Beziers that we just created.
     for(; i < sbl->l.n; i++) {
-        sbl->l.elem[i].auxA = style.v;
+        sbl->l[i].auxA = style.v;
     }
 }
 

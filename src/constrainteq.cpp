@@ -172,7 +172,7 @@ void ConstraintBase::ModifyToSatisfy() {
 
         // These equations are written in the form f(...) - d = 0, where
         // d is the value of the valA.
-        valA += (l.elem[0].e)->Eval();
+        valA += (l[0].e)->Eval();
 
         l.Clear();
     }

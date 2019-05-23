@@ -202,12 +202,13 @@ public:
 };
 
 // A simple list
-template <class T>
+template<class T>
 class List {
+    T *elem            = nullptr;
+    int elemsAllocated = 0;
+
 public:
-    T   *elem = nullptr;
     int  n = 0;
-    int  elemsAllocated = 0;
 
     bool IsEmpty() const { return n == 0; }
 
@@ -259,6 +260,11 @@ public:
         if(prev - First() == (n - 1)) return NULL;
         return prev + 1;
     }
+
+    T &Get(size_t i) { return elem[i]; }
+    T const &Get(size_t i) const { return elem[i]; }
+    T &operator[](size_t i) { return Get(i); }
+    T const &operator[](size_t i) const { return Get(i); }
 
     T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
     T *end() { return IsEmpty() ? nullptr : &elem[n]; }
@@ -331,10 +337,10 @@ struct CompareId {
 // id.
 template <class T, class H>
 class IdList {
+    T *elem            = nullptr;
+    int elemsAllocated = 0;
 public:
-    T     *elem;
-    int   n;
-    int   elemsAllocated;
+    int n = 0;
 
     using Compare = CompareId<T, H>;
 
@@ -449,6 +455,11 @@ public:
         if(prev - elem == (n - 1)) return NULL;
         return prev + 1;
     }
+
+    T &Get(size_t i) { return elem[i]; }
+    T const &Get(size_t i) const { return elem[i]; }
+    T &operator[](size_t i) { return Get(i); }
+    T const &operator[](size_t i) const { return Get(i); }
 
     T *begin() { return IsEmpty() ? nullptr : &elem[0]; }
     T *end() { return IsEmpty() ? nullptr : &elem[n]; }

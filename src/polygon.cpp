@@ -227,7 +227,8 @@ bool SEdgeList::AssembleContour(Vector first, Vector last, SContour *dest,
 
     do {
         for(i = 0; i < l.n; i++) {
-            SEdge *se = &(l.elem[i]);
+            /// @todo fix const!
+            SEdge *se = const_cast<SEdge*>(&(l[i]));
             if(se->tag) continue;
 
             if(se->a.Equals(last)) {
@@ -267,10 +268,11 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
         Vector last  = Vector::From(0, 0, 0);
         int i;
         for(i = 0; i < l.n; i++) {
-            if(!l.elem[i].tag) {
-                first = l.elem[i].a;
-                last = l.elem[i].b;
-                l.elem[i].tag = 1;
+            if(!l[i].tag) {
+                first = l[i].a;
+                last = l[i].b;
+                /// @todo fix const!
+                const_cast<SEdge*>(&(l[i]))->tag = 1;
                 break;
             }
         }
@@ -281,7 +283,7 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
         // Create a new empty contour in our polygon, and finish assembling
         // into that contour.
         dest->AddEmptyContour();
-        if(!AssembleContour(first, last, &(dest->l.elem[dest->l.n-1]),
+        if(!AssembleContour(first, last, &(dest->l[dest->l.n-1]),
                 errorAt, keepDir))
         {
             allClosed = false;
@@ -337,9 +339,9 @@ void SEdgeList::CullExtraneousEdges(bool both) {
     l.ClearTags();
     int i, j;
     for(i = 0; i < l.n; i++) {
-        SEdge *se = &(l.elem[i]);
+        SEdge *se = &(l[i]);
         for(j = i+1; j < l.n; j++) {
-            SEdge *set = &(l.elem[j]);
+            SEdge *set = &(l[j]);
             if((set->a).Equals(se->a) && (set->b).Equals(se->b)) {
                 // Two parallel edges exist; so keep only the first one.
                 set->tag = 1;
@@ -527,7 +529,7 @@ bool SPointList::ContainsPoint(Vector pt) const {
 int SPointList::IndexForPoint(Vector pt) const {
     int i;
     for(i = 0; i < l.n; i++) {
-        SPoint *p = &(l.elem[i]);
+        const SPoint *p = &(l[i]);
         if(pt.Equals(p->p)) {
             return i;
         }
@@ -567,7 +569,7 @@ void SContour::AddPoint(Vector p) {
 void SContour::MakeEdgesInto(SEdgeList *el) const {
     int i;
     for(i = 0; i < (l.n - 1); i++) {
-        el->AddEdge(l.elem[i].p, l.elem[i+1].p);
+        el->AddEdge(l[i].p, l[i+1].p);
     }
 }
 
@@ -590,8 +592,8 @@ Vector SContour::ComputeNormal() const {
     Vector n = Vector::From(0, 0, 0);
 
     for(int i = 0; i < l.n - 2; i++) {
-        Vector u = (l.elem[i+1].p).Minus(l.elem[i+0].p).WithMagnitude(1);
-        Vector v = (l.elem[i+2].p).Minus(l.elem[i+1].p).WithMagnitude(1);
+        Vector u = (l[i+1].p).Minus(l[i+0].p).WithMagnitude(1);
+        Vector v = (l[i+2].p).Minus(l[i+1].p).WithMagnitude(1);
         Vector nt = u.Cross(v);
         if(nt.Magnitude() > n.Magnitude()) {
             n = nt;
@@ -602,7 +604,7 @@ Vector SContour::ComputeNormal() const {
 
 Vector SContour::AnyEdgeMidpoint() const {
     ssassert(l.n >= 2, "Need two points to find a midpoint");
-    return ((l.elem[0].p).Plus(l.elem[1].p)).ScaledBy(0.5);
+    return ((l[0].p).Plus(l[1].p)).ScaledBy(0.5);
 }
 
 bool SContour::IsClockwiseProjdToNormal(Vector n) const {
@@ -620,10 +622,10 @@ double SContour::SignedAreaProjdToNormal(Vector n) const {
 
     double area = 0;
     for(int i = 0; i < (l.n - 1); i++) {
-        double u0 = (l.elem[i  ].p).Dot(u);
-        double v0 = (l.elem[i  ].p).Dot(v);
-        double u1 = (l.elem[i+1].p).Dot(u);
-        double v1 = (l.elem[i+1].p).Dot(v);
+        double u0 = (l[i  ].p).Dot(u);
+        double v0 = (l[i  ].p).Dot(v);
+        double u1 = (l[i+1].p).Dot(u);
+        double v1 = (l[i+1].p).Dot(v);
 
         area += ((v0 + v1)/2)*(u1 - u0);
     }
@@ -639,11 +641,11 @@ bool SContour::ContainsPointProjdToNormal(Vector n, Vector p) const {
 
     bool inside = false;
     for(int i = 0; i < (l.n - 1); i++) {
-        double ua = (l.elem[i  ].p).Dot(u);
-        double va = (l.elem[i  ].p).Dot(v);
+        double ua = (l[i  ].p).Dot(u);
+        double va = (l[i  ].p).Dot(v);
         // The curve needs to be exactly closed; approximation is death.
-        double ub = (l.elem[(i+1)%(l.n-1)].p).Dot(u);
-        double vb = (l.elem[(i+1)%(l.n-1)].p).Dot(v);
+        double ub = (l[(i+1)%(l.n-1)].p).Dot(u);
+        double vb = (l[(i+1)%(l.n-1)].p).Dot(v);
 
         if ((((va <= vp) && (vp < vb)) ||
              ((vb <= vp) && (vp < va))) &&
@@ -664,7 +666,7 @@ void SContour::Reverse() {
 void SPolygon::Clear() {
     int i;
     for(i = 0; i < l.n; i++) {
-        (l.elem[i]).l.Clear();
+        (l[i]).l.Clear();
     }
     l.Clear();
 }
@@ -677,13 +679,13 @@ void SPolygon::AddEmptyContour() {
 void SPolygon::MakeEdgesInto(SEdgeList *el) const {
     int i;
     for(i = 0; i < l.n; i++) {
-        (l.elem[i]).MakeEdgesInto(el);
+        (l[i]).MakeEdgesInto(el);
     }
 }
 
 Vector SPolygon::ComputeNormal() const {
     if(l.n < 1) return Vector::From(0, 0, 0);
-    return (l.elem[0]).ComputeNormal();
+    return (l[0]).ComputeNormal();
 }
 
 double SPolygon::SignedArea() const {
@@ -704,7 +706,7 @@ int SPolygon::WindingNumberForPoint(Vector p) const {
     int winding = 0;
     int i;
     for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l.elem[i]);
+        const SContour *sc = &(l[i]);
         if(sc->ContainsPointProjdToNormal(normal, p)) {
             winding++;
         }
@@ -719,18 +721,18 @@ void SPolygon::FixContourDirections() {
     // Outside curve looks counterclockwise, projected against our normal.
     int i, j;
     for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l.elem[i]);
+        SContour *sc = &(l[i]);
         if(sc->l.n < 2) continue;
         // The contours may not intersect, but they may share vertices; so
         // testing a vertex for point-in-polygon may fail, but the midpoint
         // of an edge is okay.
-        Vector pt = (((sc->l.elem[0]).p).Plus(sc->l.elem[1].p)).ScaledBy(0.5);
+        Vector pt = (((sc->l[0]).p).Plus(sc->l[1].p)).ScaledBy(0.5);
 
         sc->timesEnclosed = 0;
         bool outer = true;
         for(j = 0; j < l.n; j++) {
             if(i == j) continue;
-            SContour *sct = &(l.elem[j]);
+            SContour *sct = &(l[j]);
             if(sct->ContainsPointProjdToNormal(normal, pt)) {
                 outer = !outer;
                 (sc->timesEnclosed)++;
@@ -753,7 +755,7 @@ bool SPolygon::IsEmpty() const {
 
 Vector SPolygon::AnyPoint() const {
     ssassert(!IsEmpty(), "Need at least one point");
-    return l.elem[0].l.elem[0].p;
+    return l[0].l[0].p;
 }
 
 bool SPolygon::SelfIntersecting(Vector *intersectsAt) const {
@@ -799,9 +801,9 @@ void SPolygon::OffsetInto(SPolygon *dest, double r) const {
     int i;
     dest->Clear();
     for(i = 0; i < l.n; i++) {
-        SContour *sc = &(l.elem[i]);
+        const SContour *sc = &(l[i]);
         dest->AddEmptyContour();
-        sc->OffsetInto(&(dest->l.elem[dest->l.n-1]), r);
+        sc->OffsetInto(&(dest->l[dest->l.n-1]), r);
     }
 }
 //-----------------------------------------------------------------------------
@@ -856,9 +858,9 @@ void SContour::OffsetInto(SContour *dest, double r) const {
         Vector dp, dn;
         double thetan, thetap;
 
-        a = l.elem[WRAP(i-1, (l.n-1))].p;
-        b = l.elem[WRAP(i,   (l.n-1))].p;
-        c = l.elem[WRAP(i+1, (l.n-1))].p;
+        a = l[WRAP(i-1, (l.n-1))].p;
+        b = l[WRAP(i,   (l.n-1))].p;
+        c = l[WRAP(i+1, (l.n-1))].p;
 
         dp = a.Minus(b);
         thetap = atan2(dp.y, dp.x);
