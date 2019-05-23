@@ -47,9 +47,6 @@ void *AllocTemporary(size_t n)
     ssassert(v != NULL, "Cannot allocate memory");
     return v;
 }
-void FreeTemporary(void *p) {
-    HeapFree(TempHeap, HEAP_NO_SERIALIZE, p);
-}
 void FreeAllTemporary()
 {
     if(TempHeap) HeapDestroy(TempHeap);

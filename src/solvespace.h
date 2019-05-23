@@ -150,7 +150,6 @@ void dbp(const char *str, ...);
 std::vector<std::string> InitPlatform(int argc, char **argv);
 
 void *AllocTemporary(size_t n);
-void FreeTemporary(void *p);
 void FreeAllTemporary();
 void *MemAlloc(size_t n);
 void MemFree(void *p);

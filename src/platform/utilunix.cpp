@@ -54,18 +54,6 @@ void *AllocTemporary(size_t n)
     return (void *)&h[1];
 }
 
-void FreeTemporary(void *p)
-{
-    AllocTempHeader *h = (AllocTempHeader *)p - 1;
-    if(h->prev) {
-        h->prev->next = h->next;
-    } else {
-        Head = h->next;
-    }
-    if(h->next) h->next->prev = h->prev;
-    free(h);
-}
-
 void FreeAllTemporary(void)
 {
     AllocTempHeader *h = Head;
