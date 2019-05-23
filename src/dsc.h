@@ -533,9 +533,9 @@ public:
             elem[i].Clear();
             elem[i].~T();
         }
-        elemsAllocated = n = 0;
         if(elem) MemFree(elem);
         elem = NULL;
+        elemsAllocated = n = 0;
     }
 
 };
