@@ -36,7 +36,7 @@ void SPolygon::UvTriangulateInto(SMesh *m, SSurface *srf) {
         SContour merged = {};
         top->tag = 1;
         top->CopyInto(&merged);
-        (merged.l.n)--;
+        merged.l.RemoveLast(1);
 
         // List all of the edges, for testing whether bridges work.
         SEdgeList el = {};
