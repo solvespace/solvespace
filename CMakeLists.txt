@@ -259,8 +259,8 @@ if(WIN32)
         -D_CRT_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
         -D_SCL_SECURE_NO_WARNINGS
-        -DWINVER=0x0601
-        -D_WIN32_WINNT=0x0601
+        -DWINVER=0x0501
+        -D_WIN32_WINNT=0x0501
         -D_WIN32_IE=_WIN32_WINNT
         -DISOLATION_AWARE_ENABLED
         -DWIN32
@@ -285,7 +285,7 @@ if(MSVC)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter")
+    set(WARNING_FLAGS   "-Wall -Wextra -Wno-unused-parameter -Wno-missing-field-initializers")
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         set(WARNING_FLAGS "${WARNING_FLAGS} -Wfloat-conversion")
     endif()
