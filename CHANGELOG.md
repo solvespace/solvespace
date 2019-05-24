@@ -37,6 +37,8 @@ New constraint features:
     Values are edited in the configured unit regardless of label format.
   * It is now possible to turn off automatic creation of horizontal/vertical
     constraints on line segments.
+  * Automatic creation of constraints no longer happens if the constraint
+    would have been redundant with other ones.
 
 New export/import features:
   * Three.js: allow configuring projection for exported model, and initially

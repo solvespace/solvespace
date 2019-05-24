@@ -526,7 +526,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
     if(context.active) return;
 
     if(pending.operation == Pending::DRAGGING_NEW_LINE_POINT && pending.hasSuggestion) {
-        Constraint::Constrain(SS.GW.pending.suggestion,
+        Constraint::TryConstrain(SS.GW.pending.suggestion,
             Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
     }
 
@@ -943,7 +943,8 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     }
 
     // This will be clobbered by MouseMoved below.
-    bool hasConstraintSuggestion = SS.GW.pending.hasSuggestion;
+    bool hasConstraintSuggestion = pending.hasSuggestion;
+    Constraint::Type constraintSuggestion = pending.suggestion;
 
     // Make sure the hover is up to date.
     MouseMoved(mx, my, /*leftDown=*/false, /*middleDown=*/false, /*rightDown=*/false,
@@ -1223,12 +1224,6 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         }
 
         case Pending::DRAGGING_NEW_LINE_POINT: {
-            // Constrain the line segment horizontal or vertical if close enough
-            if(hasConstraintSuggestion) {
-                Constraint::Constrain(SS.GW.pending.suggestion,
-                    Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
-            }
-
             if(hover.entity.v) {
                 Entity *e = SK.GetEntity(hover.entity);
                 if(e->IsPoint()) {
@@ -1246,7 +1241,15 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
                 }
             }
 
-            if(ConstrainPointByHovered(pending.point, &mouse)) {
+            bool doneDragging = ConstrainPointByHovered(pending.point, &mouse);
+
+            // Constrain the line segment horizontal or vertical if close enough
+            if(hasConstraintSuggestion) {
+                Constraint::TryConstrain(constraintSuggestion,
+                    Entity::NO_ENTITY, Entity::NO_ENTITY, pending.request.entity(0));
+            }
+
+            if(doneDragging) {
                 ClearPending();
                 break;
             }

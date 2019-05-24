@@ -75,10 +75,6 @@ void Constraint::DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA,
     SS.GW.hover.Clear();
 }
 
-hConstraint Constraint::AddConstraint(Constraint *c) {
-    return AddConstraint(c, /*rememberForUndo=*/true);
-}
-
 hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
     if(rememberForUndo) SS.UndoRemember();
 
@@ -91,8 +87,8 @@ hConstraint Constraint::AddConstraint(Constraint *c, bool rememberForUndo) {
 }
 
 hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity ptB,
-                                     hEntity entityA, hEntity entityB,
-                                     bool other, bool other2)
+                                  hEntity entityA, hEntity entityB,
+                                  bool other, bool other2)
 {
     Constraint c = {};
     c.group = SS.GW.activeGroup;
@@ -107,8 +103,17 @@ hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity pt
     return AddConstraint(&c, /*rememberForUndo=*/false);
 }
 
-hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA){
-    return Constrain(type, ptA, ptB, entityA, Entity::NO_ENTITY, /*other=*/false, /*other2=*/false);
+hConstraint Constraint::TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
+                                     hEntity entityA, hEntity entityB,
+                                     bool other, bool other2) {
+    SolveResult solvedBefore = SS.TestRankForGroup(SS.GW.activeGroup);
+    hConstraint hc = Constrain(type, ptA, ptB, entityA, entityB, other, other2);
+    SolveResult solvedAfter = SS.TestRankForGroup(SS.GW.activeGroup);
+    if(solvedBefore == SolveResult::OKAY && solvedAfter == SolveResult::REDUNDANT_OKAY) {
+        SK.constraint.RemoveById(hc);
+        hc = {};
+    }
+    return hc;
 }
 
 hConstraint Constraint::ConstrainCoincident(hEntity ptA, hEntity ptB) {

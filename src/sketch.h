@@ -727,16 +727,17 @@ public:
 
     std::string DescriptionString() const;
 
-    static hConstraint AddConstraint(Constraint *c, bool rememberForUndo);
-    static hConstraint AddConstraint(Constraint *c);
+    static hConstraint AddConstraint(Constraint *c, bool rememberForUndo = true);
     static void MenuConstrain(Command id);
     static void DeleteAllConstraintsFor(Constraint::Type type, hEntity entityA, hEntity ptA);
 
     static hConstraint ConstrainCoincident(hEntity ptA, hEntity ptB);
-    static hConstraint Constrain(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA);
-    static hConstraint Constrain(Constraint::Type type, hEntity ptA, hEntity ptB,
-                                    hEntity entityA, hEntity entityB,
-                                    bool other, bool other2);
+    static hConstraint Constrain(Constraint::Type type, hEntity ptA, hEntity ptB, hEntity entityA,
+                                 hEntity entityB = Entity::NO_ENTITY, bool other = false,
+                                 bool other2 = false);
+    static hConstraint TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
+                                    hEntity entityA, hEntity entityB = Entity::NO_ENTITY,
+                                    bool other = false, bool other2 = false);
 };
 
 class hEquation {
