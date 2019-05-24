@@ -163,7 +163,7 @@ const MenuEntry Menu[] = {
 { 1, N_("Show &Naked Edges"),           Command::NAKED_EDGES,      C|S|'n', KN, mAna   },
 { 1, N_("Show &Center of Mass"),        Command::CENTER_OF_MASS,   C|S|'c', KN, mAna   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
-{ 1, N_("Show Degrees of &Freedom"),    Command::SHOW_DOF,         C|S|'f', KN, mAna   },
+{ 1, N_("Show &Underconstrained Points"), Command::SHOW_DOF,       C|S|'f', KN, mAna   },
 { 1, NULL,                              Command::NONE,             0,       KN, NULL   },
 { 1, N_("&Trace Point"),                Command::TRACE_PT,         C|S|'t', KN, mAna   },
 { 1, N_("&Stop Tracing..."),            Command::STOP_TRACING,     C|S|'s', KN, mAna   },
