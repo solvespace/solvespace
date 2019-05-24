@@ -170,9 +170,11 @@ int System::CalculateRank() {
     return rank;
 }
 
-bool System::TestRank() {
+bool System::TestRank(int *rank) {
     EvalJacobian();
-    return CalculateRank() == mat.m;
+    int jacobianRank = CalculateRank();
+    if(rank) *rank = jacobianRank;
+    return jacobianRank == mat.m;
 }
 
 bool System::SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
@@ -396,7 +398,7 @@ void System::FindWhichToRemoveToFixJacobian(Group *g, List<hConstraint> *bad, bo
     }
 }
 
-SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
+SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
                           bool andFindBad, bool andFindFree, bool forceDofCheck)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
@@ -459,14 +461,14 @@ SolveResult System::Solve(Group *g, int *dof, List<hConstraint> *bad,
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
-    rankOk = TestRank();
+    rankOk = TestRank(rank);
 
     // And do the leftovers as one big system
     if(!NewtonSolve(0)) {
         goto didnt_converge;
     }
 
-    rankOk = TestRank();
+    rankOk = TestRank(rank);
     if(!rankOk) {
         if(!g->allowRedundant) {
             if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
@@ -517,7 +519,7 @@ didnt_converge:
     return rankOk ? SolveResult::DIDNT_CONVERGE : SolveResult::REDUNDANT_DIDNT_CONVERGE;
 }
 
-SolveResult System::SolveRank(Group *g, int *dof, List<hConstraint> *bad,
+SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *bad,
                               bool andFindBad, bool andFindFree)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
@@ -532,15 +534,12 @@ SolveResult System::SolveRank(Group *g, int *dof, List<hConstraint> *bad,
         return SolveResult::TOO_MANY_UNKNOWNS;
     }
 
-    bool rankOk = TestRank();
+    bool rankOk = TestRank(rank);
     if(!rankOk) {
         if(!g->allowRedundant) {
             if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, /*forceDofCheck=*/true);
         }
     } else {
-        // This is not the full Jacobian, but any substitutions or single-eq
-        // solves removed one equation and one unknown, therefore no effect
-        // on the number of DOF.
         if(dof) *dof = CalculateDof();
         MarkParamsFree(andFindFree);
     }

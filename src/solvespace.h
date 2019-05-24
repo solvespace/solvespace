@@ -289,7 +289,7 @@ public:
 
     static const double RANK_MAG_TOLERANCE, CONVERGE_TOLERANCE;
     int CalculateRank();
-    bool TestRank();
+    bool TestRank(int *rank = NULL);
     static bool SolveLinearSystem(double X[], double A[][MAX_UNKNOWNS],
                                   double B[], int N);
     bool SolveLeastSquares();
@@ -308,11 +308,14 @@ public:
     void MarkParamsFree(bool findFree);
     int CalculateDof();
 
-    SolveResult Solve(Group *g, int *dof, List<hConstraint> *bad,
-                      bool andFindBad, bool andFindFree, bool forceDofCheck = false);
+    SolveResult Solve(Group *g, int *rank = NULL, int *dof = NULL,
+                      List<hConstraint> *bad = NULL,
+                      bool andFindBad = false, bool andFindFree = false,
+                      bool forceDofCheck = false);
 
-    SolveResult SolveRank(Group *g, int *dof, List<hConstraint> *bad,
-                          bool andFindBad, bool andFindFree);
+    SolveResult SolveRank(Group *g, int *rank = NULL, int *dof = NULL,
+                          List<hConstraint> *bad = NULL,
+                          bool andFindBad = false, bool andFindFree = false);
 
     void Clear();
 };
@@ -776,7 +779,7 @@ public:
                      bool genForBBox = false);
     void SolveGroup(hGroup hg, bool andFindFree);
     void SolveGroupAndReport(hGroup hg, bool andFindFree);
-    SolveResult TestRankForGroup(hGroup hg);
+    SolveResult TestRankForGroup(hGroup hg, int *rank = NULL);
     void WriteEqSystemForGroup(hGroup hg);
     void MarkDraggedParams();
     void ForceReferences();

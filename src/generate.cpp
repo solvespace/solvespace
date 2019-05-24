@@ -539,7 +539,8 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     WriteEqSystemForGroup(hg);
     Group *g = SK.GetGroup(hg);
     g->solved.remove.Clear();
-    SolveResult how = sys.Solve(g, &(g->solved.dof),
+    SolveResult how = sys.Solve(g, NULL,
+                                   &(g->solved.dof),
                                    &(g->solved.remove),
                                    /*andFindBad=*/true,
                                    /*andFindFree=*/andFindFree,
@@ -551,12 +552,10 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     FreeAllTemporary();
 }
 
-SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg) {
+SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
     WriteEqSystemForGroup(hg);
     Group *g = SK.GetGroup(hg);
-    SolveResult result = sys.SolveRank(g, NULL, NULL,
-                                       /*andFindBad=*/false,
-                                       /*andFindFree=*/false);
+    SolveResult result = sys.SolveRank(g, rank);
     FreeAllTemporary();
     return result;
 }

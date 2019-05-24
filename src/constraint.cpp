@@ -106,10 +106,16 @@ hConstraint Constraint::Constrain(Constraint::Type type, hEntity ptA, hEntity pt
 hConstraint Constraint::TryConstrain(Constraint::Type type, hEntity ptA, hEntity ptB,
                                      hEntity entityA, hEntity entityB,
                                      bool other, bool other2) {
-    SolveResult solvedBefore = SS.TestRankForGroup(SS.GW.activeGroup);
+    int rankBefore, rankAfter;
+    SolveResult howBefore = SS.TestRankForGroup(SS.GW.activeGroup, &rankBefore);
     hConstraint hc = Constrain(type, ptA, ptB, entityA, entityB, other, other2);
-    SolveResult solvedAfter = SS.TestRankForGroup(SS.GW.activeGroup);
-    if(solvedBefore == SolveResult::OKAY && solvedAfter == SolveResult::REDUNDANT_OKAY) {
+    SolveResult howAfter = SS.TestRankForGroup(SS.GW.activeGroup, &rankAfter);
+    // There are two cases where the constraint is clearly redundant:
+    //   * If the group wasn't overconstrained and now it is;
+    //   * If the group was overconstrained, and adding the constraint doesn't change rank at all.
+    if((howBefore == SolveResult::OKAY && howAfter == SolveResult::REDUNDANT_OKAY) ||
+       (howBefore == SolveResult::REDUNDANT_OKAY && howAfter == SolveResult::REDUNDANT_OKAY &&
+            rankBefore == rankAfter)) {
         SK.constraint.RemoveById(hc);
         hc = {};
     }
