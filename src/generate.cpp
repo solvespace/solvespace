@@ -542,7 +542,7 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
     SolveResult how = sys.Solve(g, NULL,
                                    &(g->solved.dof),
                                    &(g->solved.remove),
-                                   /*andFindBad=*/true,
+                                   /*andFindBad=*/!g->allowRedundant,
                                    /*andFindFree=*/andFindFree,
                                    /*forceDofCheck=*/!g->dofCheckOk);
     if(how == SolveResult::OKAY) {

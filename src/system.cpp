@@ -470,9 +470,7 @@ SolveResult System::Solve(Group *g, int *rank, int *dof, List<hConstraint> *bad,
 
     rankOk = TestRank(rank);
     if(!rankOk) {
-        if(!g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
-        }
+        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
     } else {
         // This is not the full Jacobian, but any substitutions or single-eq
         // solves removed one equation and one unknown, therefore no effect
@@ -536,9 +534,7 @@ SolveResult System::SolveRank(Group *g, int *rank, int *dof, List<hConstraint> *
 
     bool rankOk = TestRank(rank);
     if(!rankOk) {
-        if(!g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, /*forceDofCheck=*/true);
-        }
+        if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, /*forceDofCheck=*/true);
     } else {
         if(dof) *dof = CalculateDof();
         MarkParamsFree(andFindFree);
