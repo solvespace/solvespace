@@ -345,8 +345,13 @@ static void PopulateMenuWithPathnames(Platform::MenuRef menu,
         menuItem->SetEnabled(false);
     } else {
         for(Platform::Path pathname : pathnames) {
-            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw,
-                [=]() { onTrigger(pathname); }, /*mnemonics=*/false);
+            Platform::MenuItemRef menuItem = menu->AddItem(pathname.raw, [=]() {
+                if(FileExists(pathname)) {
+                    onTrigger(pathname);
+                } else {
+                    Error(_("File '%s' does not exist."), pathname.raw.c_str());
+                }
+            }, /*mnemonics=*/false);
         }
     }
 }

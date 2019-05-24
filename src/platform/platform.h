@@ -55,6 +55,7 @@ struct PathLess {
 };
 
 // File manipulation functions.
+bool FileExists(const Platform::Path &filename);
 FILE *OpenFile(const Platform::Path &filename, const char *mode);
 bool ReadFile(const Platform::Path &filename, std::string *data);
 bool WriteFile(const Platform::Path &filename, const std::string &data);

@@ -138,7 +138,6 @@ enum class Command : uint32_t;
 #include "platform/gui.h"
 
 const size_t MAX_RECENT = 8;
-extern Platform::Path RecentFile[MAX_RECENT];
 
 #define AUTOSAVE_EXT "slvs~"
 

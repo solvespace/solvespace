@@ -405,6 +405,13 @@ FILE *OpenFile(const Platform::Path &filename, const char *mode) {
 #endif
 }
 
+bool FileExists(const Platform::Path &filename) {
+    FILE *f = OpenFile(filename, "rb");
+    if(f == NULL) return false;
+    fclose(f);
+    return true;
+}
+
 void RemoveFile(const Platform::Path &filename) {
     ssassert(filename.raw.length() == strlen(filename.raw.c_str()),
              "Unexpected null byte in middle of a path");
