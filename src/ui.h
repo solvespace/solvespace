@@ -802,8 +802,8 @@ public:
     bool MouseEvent(Platform::MouseEvent event);
     void MouseMoved(double x, double y, bool leftDown, bool middleDown,
                     bool rightDown, bool shiftDown, bool ctrlDown);
-    void MouseLeftDown(double x, double y);
-    void MouseLeftUp(double x, double y);
+    void MouseLeftDown(double x, double y, bool shiftDown, bool ctrlDown);
+    void MouseLeftUp(double x, double y, bool shiftDown, bool ctrlDown);
     void MouseLeftDoubleClick(double x, double y);
     void MouseMiddleOrRightDown(double x, double y);
     void MouseRightUp(double x, double y);

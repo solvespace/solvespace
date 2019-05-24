@@ -894,7 +894,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
 
         case MouseEvent::Type::PRESS:
             if(event.button == MouseEvent::Button::LEFT) {
-                this->MouseLeftDown(event.x, event.y);
+                this->MouseLeftDown(event.x, event.y, event.shiftDown, event.controlDown);
             } else if(event.button == MouseEvent::Button::MIDDLE ||
                       event.button == MouseEvent::Button::RIGHT) {
                 this->MouseMiddleOrRightDown(event.x, event.y);
@@ -909,7 +909,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
 
         case MouseEvent::Type::RELEASE:
             if(event.button == MouseEvent::Button::LEFT) {
-                this->MouseLeftUp(event.x, event.y);
+                this->MouseLeftUp(event.x, event.y, event.shiftDown, event.controlDown);
             } else if(event.button == MouseEvent::Button::RIGHT) {
                 this->MouseRightUp(event.x, event.y);
             }
@@ -927,7 +927,7 @@ bool GraphicsWindow::MouseEvent(Platform::MouseEvent event) {
     return true;
 }
 
-void GraphicsWindow::MouseLeftDown(double mx, double my) {
+void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ctrlDown) {
     orig.mouseDown = true;
 
     if(window->IsEditorVisible()) {
@@ -1281,8 +1281,12 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
         default:
             ClearPending();
             if(!hover.IsEmpty()) {
-                hoverWasSelectedOnMousedown = IsSelected(&hover);
-                MakeSelected(&hover);
+                if(!ctrlDown) {
+                    hoverWasSelectedOnMousedown = IsSelected(&hover);
+                    MakeSelected(&hover);
+                } else {
+                    MakeUnselected(&hover, /*coincidentPointTrick=*/true);
+                }
             }
             break;
     }
@@ -1303,7 +1307,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my) {
     Invalidate();
 }
 
-void GraphicsWindow::MouseLeftUp(double mx, double my) {
+void GraphicsWindow::MouseLeftUp(double mx, double my, bool shiftDown, bool ctrlDown) {
     orig.mouseDown = false;
     hoverWasSelectedOnMousedown = false;
 
@@ -1325,7 +1329,7 @@ void GraphicsWindow::MouseLeftUp(double mx, double my) {
             break;
 
         case Pending::NONE:
-            if(hover.IsEmpty()) {
+            if(hover.IsEmpty() && !ctrlDown) {
                 ClearSelection();
             }
             break;
