@@ -209,7 +209,7 @@ default: dbp("bad constraint type %d", sc->type); return;
 
     // Now we're finally ready to solve!
     bool andFindBad = ssys->calculateFaileds ? true : false;
-    SolveResult how = SYS.Solve(&g, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
+    SolveResult how = SYS.Solve(&g, NULL, &(ssys->dof), &bad, andFindBad, /*andFindFree=*/false);
 
     switch(how) {
         case SolveResult::OKAY:
