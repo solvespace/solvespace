@@ -554,8 +554,9 @@ void SolveSpaceUI::SolveGroup(hGroup hg, bool andFindFree) {
 SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg) {
     WriteEqSystemForGroup(hg);
     Group *g = SK.GetGroup(hg);
-    SolveResult result = sys.SolveRank(g, NULL, NULL, false, false,
-                                       /*forceDofCheck=*/!g->dofCheckOk);
+    SolveResult result = sys.SolveRank(g, NULL, NULL,
+                                       /*andFindBad=*/false,
+                                       /*andFindFree=*/false);
     FreeAllTemporary();
     return result;
 }

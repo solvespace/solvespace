@@ -518,17 +518,13 @@ didnt_converge:
 }
 
 SolveResult System::SolveRank(Group *g, int *dof, List<hConstraint> *bad,
-                              bool andFindBad, bool andFindFree, bool forceDofCheck)
+                              bool andFindBad, bool andFindFree)
 {
     WriteEquationsExceptFor(Constraint::NO_CONSTRAINT, g);
 
     // All params and equations are assigned to group zero.
     param.ClearTags();
     eq.ClearTags();
-
-    if(!forceDofCheck) {
-        SolveBySubstitution();
-    }
 
     // Now write the Jacobian, and do a rank test; that
     // tells us if the system is inconsistently constrained.
@@ -539,7 +535,7 @@ SolveResult System::SolveRank(Group *g, int *dof, List<hConstraint> *bad,
     bool rankOk = TestRank();
     if(!rankOk) {
         if(!g->allowRedundant) {
-            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, forceDofCheck);
+            if(andFindBad) FindWhichToRemoveToFixJacobian(g, bad, /*forceDofCheck=*/true);
         }
     } else {
         // This is not the full Jacobian, but any substitutions or single-eq

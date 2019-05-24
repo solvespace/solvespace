@@ -312,7 +312,7 @@ public:
                       bool andFindBad, bool andFindFree, bool forceDofCheck = false);
 
     SolveResult SolveRank(Group *g, int *dof, List<hConstraint> *bad,
-                          bool andFindBad, bool andFindFree, bool forceDofCheck = false);
+                          bool andFindBad, bool andFindFree);
 
     void Clear();
 };
