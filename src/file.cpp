@@ -210,9 +210,9 @@ const SolveSpaceUI::SaveTable SolveSpaceUI::SAVED[] = {
 };
 
 struct SAVEDptr {
-    IdList<EntityMap,EntityId> &M() { return *((IdList<EntityMap,EntityId> *)this); }
-    std::string                &S() { return *((std::string *)this); }
-    Platform::Path             &P() { return *((Platform::Path *)this); }
+    EntityMap      &M() { return *((EntityMap *)this); }
+    std::string    &S() { return *((std::string *)this); }
+    Platform::Path &P() { return *((Platform::Path *)this); }
     bool      &b() { return *((bool *)this); }
     RgbaColor &c() { return *((RgbaColor *)this); }
     int       &d() { return *((int *)this); }
@@ -254,12 +254,16 @@ void SolveSpaceUI::SaveUsingTable(const Platform::Path &filename, int type) {
             }
 
             case 'M': {
-                int j;
                 fprintf(fh, "{\n");
-                for(j = 0; j < p->M().n; j++) {
-                    EntityMap *em = &(p->M().elem[j]);
+                // Sort the mapping, since EntityMap is not deterministic.
+                std::vector<std::pair<EntityKey, EntityId>> sorted(p->M().begin(), p->M().end());
+                std::sort(sorted.begin(), sorted.end(),
+                    [](std::pair<EntityKey, EntityId> &a, std::pair<EntityKey, EntityId> &b) {
+                        return a.second.v < b.second.v;
+                    });
+                for(auto it : sorted) {
                     fprintf(fh, "    %d %08x %d\n",
-                            em->h.v, em->input.v, em->copyNumber);
+                            it.second.v, it.first.input.v, it.first.copyNumber);
                 }
                 fprintf(fh, "}");
                 break;
@@ -424,20 +428,17 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                     break;
 
                 case 'M': {
-                    // Don't clear this list! When the group gets added, it
-                    // makes a shallow copy, so that would result in us
-                    // freeing memory that we want to keep around. Just
-                    // zero it out so that new memory is allocated.
-                    p->M() = {};
+                    p->M().clear();
                     for(;;) {
-                        EntityMap em;
+                        EntityKey ek;
+                        EntityId ei;
                         char line2[1024];
                         if (fgets(line2, (int)sizeof(line2), fh) == NULL)
                             break;
-                        if(sscanf(line2, "%d %x %d", &(em.h.v), &(em.input.v),
-                                                     &(em.copyNumber)) == 3)
+                        if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
+                                                     &(ek.copyNumber)) == 3)
                         {
-                            p->M().Add(&em);
+                            p->M().insert({ ek, ei });
                         } else {
                             break;
                         }
@@ -719,9 +720,8 @@ bool SolveSpaceUI::LoadEntitiesFromFile(const Platform::Path &filename, EntityLi
             char *key = line, *val = e+1;
             LoadUsingTable(filename, key, val);
         } else if(strcmp(line, "AddGroup")==0) {
-            // Don't leak memory; these get allocated whether we want them
-            // or not.
-            sv.g.remap.Clear();
+            // These get allocated whether we want them or not.
+            sv.g.remap.clear();
         } else if(strcmp(line, "AddParam")==0) {
 
         } else if(strcmp(line, "AddEntity")==0) {

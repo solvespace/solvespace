@@ -66,8 +66,7 @@ void SolveSpaceUI::PushFromCurrentOnto(UndoStack *uk) {
         dest.displayMesh = {};
         dest.displayOutlines = {};
 
-        dest.remap = {};
-        src->remap.DeepCopyInto(&(dest.remap));
+        dest.remap = src->remap;
 
         dest.impMesh = {};
         dest.impShell = {};
@@ -161,7 +160,7 @@ void SolveSpaceUI::UndoClearState(UndoState *ut) {
     for(i = 0; i < ut->group.n; i++) {
         Group *g = &(ut->group.elem[i]);
 
-        g->remap.Clear();
+        g->remap.clear();
     }
     ut->group.Clear();
     ut->request.Clear();

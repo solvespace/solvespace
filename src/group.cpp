@@ -31,7 +31,7 @@ void Group::Clear() {
     impShell.Clear();
     impEntity.Clear();
     // remap is the only one that doesn't get recreated when we regen
-    remap.Clear();
+    remap.clear();
 }
 
 void Group::AddParam(IdList<Param,hParam> *param, hParam hp, double v) {
@@ -641,30 +641,12 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
 }
 
 hEntity Group::Remap(hEntity in, int copyNumber) {
-    // A hash table is used to accelerate the search
-    int hash = ((unsigned)(in.v*61 + copyNumber)) % REMAP_PRIME;
-    int i = remapCache[hash];
-    if(i >= 0 && i < remap.n) {
-        EntityMap *em = &(remap.elem[i]);
-        if(em->input.v == in.v && em->copyNumber == copyNumber) {
-            return h.entity(em->h.v);
-        }
+    auto it = remap.find({ in, copyNumber });
+    if(it == remap.end()) {
+        std::tie(it, std::ignore) =
+            remap.insert({ { in, copyNumber }, { (uint32_t)remap.size() } });
     }
-    // but if we don't find it in the hash table, then linear search
-    for(i = 0; i < remap.n; i++) {
-        EntityMap *em = &(remap.elem[i]);
-        if(em->input.v == in.v && em->copyNumber == copyNumber) {
-            // We already have a mapping for this entity.
-            remapCache[hash] = i;
-            return h.entity(em->h.v);
-        }
-    }
-    // And if we still don't find it, then create a new entry.
-    EntityMap em;
-    em.input = in;
-    em.copyNumber = copyNumber;
-    remap.AddAndAssignId(&em);
-    return h.entity(em.h.v);
+    return h.entity(it->second.v);
 }
 
 void Group::MakeExtrusionLines(IdList<Entity,hEntity> *el, hEntity in) {

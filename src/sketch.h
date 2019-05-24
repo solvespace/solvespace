@@ -94,21 +94,27 @@ public:
     uint32_t v;
 };
 
-class EntityId {
-public:
+struct EntityId {
     uint32_t v;     // entity ID, starting from 0
 };
-class EntityMap {
-public:
-    int         tag;
-
-    EntityId    h;
+struct EntityKey {
     hEntity     input;
     int         copyNumber;
     // (input, copyNumber) gets mapped to ((Request)xxx).entity(h.v)
-
-    void Clear() {}
 };
+struct EntityKeyHash {
+    size_t operator()(const EntityKey &k) const {
+        size_t h1 = std::hash<uint32_t>{}(k.input.v),
+               h2 = std::hash<uint32_t>{}(k.copyNumber);
+        return h1 ^ (h2 << 1);
+    }
+};
+struct EntityKeyEqual {
+    bool operator()(const EntityKey &a, const EntityKey &b) const {
+        return std::tie(a.input.v, a.copyNumber) == std::tie(b.input.v, b.copyNumber);
+    }
+};
+typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
 
 // A set of requests. Every request must have an associated group.
 class Group {
@@ -214,9 +220,7 @@ public:
 
     bool forceToMesh;
 
-    IdList<EntityMap,EntityId> remap;
-    enum { REMAP_PRIME = 19477 };
-    int remapCache[REMAP_PRIME];
+    EntityMap remap;
 
     Platform::Path linkFile;
     SMesh       impMesh;
