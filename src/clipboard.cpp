@@ -349,7 +349,7 @@ bool TextWindow::EditControlDoneForPaste(const std::string &s) {
             e = Expr::From(s, /*popUpError=*/true);
             double v = e->Eval();
             if(fabs(v) > 1e-6) {
-                shown.paste.scale = v;
+                shown.paste.scale = shown.paste.scale < 0 ? -v : v;
             } else {
                 Error(_("Scale cannot be zero."));
             }
@@ -375,8 +375,12 @@ void TextWindow::ScreenChangePasteTransformed(int link, uint32_t v) {
             break;
 
         case 's':
-            SS.TW.ShowEditControl(13, ssprintf("%.3f", SS.TW.shown.paste.scale));
+            SS.TW.ShowEditControl(13, ssprintf("%.3f", fabs(SS.TW.shown.paste.scale)));
             SS.TW.edit.meaning = Edit::PASTE_SCALE;
+            break;
+
+        case 'f':
+            SS.TW.shown.paste.scale *= -1;
             break;
     }
 }
@@ -466,8 +470,11 @@ void TextWindow::ShowPasteTransformed() {
             SS.MmToString(shown.paste.trans.z).c_str(),
         &ScreenPasteTransformed);
     Printf(false, "%Ba   %Ftscale%E     %@ %Fl%Ls%f[change]%E",
-        shown.paste.scale,
+        fabs(shown.paste.scale),
         &ScreenChangePasteTransformed);
+    Printf(false, "%Ba   %Ftmirror%E    %Fd%Lf%f%s  flip%E",
+        &ScreenChangePasteTransformed,
+        shown.paste.scale < 0 ? CHECK_TRUE : CHECK_FALSE);
 
     Printf(true, " %Fl%Lg%fpaste transformed now%E", &ScreenPasteTransformed);
 
