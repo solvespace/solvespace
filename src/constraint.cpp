@@ -745,6 +745,17 @@ void Constraint::MenuConstrain(Command id) {
         default: ssassert(false, "Unexpected menu ID");
     }
 
+    for(const Constraint &cc : SK.constraint) {
+        if(c.h.v != cc.h.v && c.Equals(cc)) {
+            // Oops, we already have this exact constraint. Remove the one we just added.
+            SK.constraint.RemoveById(c.h);
+            SS.GW.ClearSelection();
+            // And now select the old one, to give feedback.
+            SS.GW.MakeSelected(cc.h);
+            return;
+        }
+    }
+
     if(SK.constraint.FindByIdNoOops(c.h)) {
         Constraint *constraint = SK.GetConstraint(c.h);
         if(SS.TestRankForGroup(c.group) == SolveResult::REDUNDANT_OKAY &&
@@ -755,7 +766,6 @@ void Constraint::MenuConstrain(Command id) {
     }
 
     SS.GW.ClearSelection();
-    SS.GW.Invalidate();
 }
 
 #endif /* ! LIBRARY */

@@ -655,6 +655,15 @@ public:
     bool        reference;  // a ref dimension, that generates no eqs
     std::string comment;    // since comments are represented as constraints
 
+    bool Equals(const ConstraintBase &c) const {
+        return type == c.type && group.v == c.group.v && workplane.v == c.workplane.v &&
+            valA == c.valA && valP.v == c.valP.v && ptA.v == c.ptA.v && ptB.v == c.ptB.v &&
+            entityA.v == c.entityA.v && entityB.v == c.entityB.v &&
+            entityC.v == c.entityC.v && entityD.v == c.entityD.v &&
+            other == c.other && other2 == c.other2 && reference == c.reference &&
+            comment == c.comment;
+    }
+
     bool HasLabel() const;
 
     void Generate(IdList<Param, hParam> *param);

@@ -35,6 +35,8 @@ New constraint features:
     in the text window.
   * Distance constraint labels can now be formatted to use SI prefixes.
     Values are edited in the configured unit regardless of label format.
+  * When creating a constraint, if an exactly identical constraint already
+    exists, it is now selected instead of adding a redundant constraint.
   * It is now possible to turn off automatic creation of horizontal/vertical
     constraints on line segments.
   * Automatic creation of constraints no longer happens if the constraint
