@@ -14,8 +14,4 @@
 /obj-*/
 /*.slvs
 .vscode/
-
-# Visual Studio
-out/
-.vs/
-CMakeSettings.json
+.idea/
