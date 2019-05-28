@@ -464,18 +464,16 @@ public:
         }
         const auto oldN = dest->n;
 
-        // Mainly ensures we have a vector allocated:
-        // the range insert would reserve as well.
+        // Mainly ensures we have a vector allocated, but also limits re-allocations to 1.
         dest->ReserveMore(n);
+        for(auto &elt : *this) { dest->vec->push_back(elt); }
 
-        dest->vec->insert(dest->end(), begin(), end());
+        dest->UpdateSize();
 
         // The items we just added are sorted, so merge
         std::inplace_merge(dest->begin(), dest->begin() + oldN, dest->end(), Compare());
 
         /// @todo Look to see if we already have something with the same handle value.
-
-        dest->UpdateSize();
 
         // Just drop, don't clear.
         vec.reset();
