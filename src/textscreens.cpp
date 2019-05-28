@@ -57,11 +57,8 @@ void TextWindow::ScreenToggleGroupShown(int link, uint32_t v) {
 }
 void TextWindow::ScreenShowGroupsSpecial(int link, uint32_t v) {
     bool state = link == 's';
-    for(hGroup hg : SK.groupOrder) {
-        Group *g = SK.GetGroup(hg);
+    for(Group *g : SK.OrderedGroups()) { g->visible = state; }
 
-        g->visible = state;
-    }
     SS.GW.persistentDirty = true;
 }
 void TextWindow::ScreenActivateGroup(int link, uint32_t v) {
@@ -101,8 +98,7 @@ void TextWindow::ShowListOfGroups() {
     Printf(false, "%Ft    shown dof group-name%E");
     bool afterActive = false;
     bool backgroundParity = false;
-    for(hGroup hg : SK.groupOrder) {
-        Group *g = SK.GetGroup(hg);
+    for(Group *g : SK.OrderedGroups()) {
 
         std::string s = g->DescriptionString();
         bool active = (g->h == SS.GW.activeGroup);

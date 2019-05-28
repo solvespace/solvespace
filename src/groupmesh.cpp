@@ -495,8 +495,7 @@ void Group::GenerateDisplayItems() {
 
 Group *Group::PreviousGroup() const {
     Group *prev = nullptr;
-    for(auto const &gh : SK.groupOrder) {
-        Group *g = SK.GetGroup(gh);
+    for(Group *g : SK.OrderedGroups()) {
         if(g->h == h) {
             return prev;
         }

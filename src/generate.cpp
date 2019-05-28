@@ -15,8 +15,7 @@ void SolveSpaceUI::MarkGroupDirtyByEntity(hEntity he) {
 
 void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
     bool go = false;
-    for(auto const &gh : SK.groupOrder) {
-        Group *g = SK.GetGroup(gh);
+    for(Group *g : SK.OrderedGroups()) {
         if(g->h == hg) {
             go = true;
         }
@@ -551,8 +550,7 @@ SolveResult SolveSpaceUI::TestRankForGroup(hGroup hg, int *rank) {
 }
 
 bool SolveSpaceUI::ActiveGroupsOkay() {
-    for(int i = 0; i < SK.groupOrder.n; i++) {
-        Group *g = SK.GetGroup(SK.groupOrder[i]);
+    for(Group *g : SK.OrderedGroups()) {
         if(!g->IsSolvedOkay())
             return false;
         if(g->h == SS.GW.activeGroup)

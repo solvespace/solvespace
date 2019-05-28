@@ -97,10 +97,7 @@ void SolveSpaceUI::PopOntoCurrentFrom(UndoStack *uk) {
     UndoState *ut = &(uk->d[uk->write]);
 
     // Free everything in the main copy of the program before replacing it
-    for(hGroup hg : SK.groupOrder) {
-        Group *g = SK.GetGroup(hg);
-        g->Clear();
-    }
+    for(Group *g : SK.OrderedGroups()) { g->Clear(); }
     SK.group.Clear();
     SK.groupOrder.Clear();
     SK.request.Clear();

@@ -20,10 +20,7 @@ void SolveSpaceUI::ClearExisting() {
     UndoClearStack(&redo);
     UndoClearStack(&undo);
 
-    for(hGroup hg : SK.groupOrder) {
-        Group *g = SK.GetGroup(hg);
-        g->Clear();
-    }
+    for(Group *g : SK.OrderedGroups()) { g->Clear(); }
 
     SK.constraint.Clear();
     SK.request.Clear();

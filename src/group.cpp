@@ -308,8 +308,7 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
     SS.UndoRemember();
 
     bool afterActive = false;
-    for(hGroup hg : SK.groupOrder) {
-        Group *gi = SK.GetGroup(hg);
+    for(Group *gi : SK.OrderedGroups()) {
         if(afterActive)
             gi->order += 1;
         if(gi->h == SS.GW.activeGroup) {

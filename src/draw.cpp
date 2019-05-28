@@ -653,8 +653,7 @@ void GraphicsWindow::DrawPersistent(Canvas *canvas) {
     // specially by assigning a style with a fill color, or when the filled
     // paths are just being filled by default. This should go last, to make
     // the transparency work.
-    for(hGroup hg : SK.groupOrder) {
-        Group *g = SK.GetGroup(hg);
+    for(Group *g : SK.OrderedGroups()) {
         if(!(g->IsVisible())) continue;
         g->DrawFilledPaths(canvas);
     }
@@ -701,9 +700,8 @@ void GraphicsWindow::Draw(Canvas *canvas) {
 
     // Draw areas
     if(SS.showContourAreas) {
-        for(hGroup hg : SK.groupOrder) {
-            Group *g = SK.GetGroup(hg);
-            if(g->h != activeGroup) continue;
+        for(Group *g : SK.OrderedGroups()) {
+            if(g->h.v != activeGroup.v) continue;
             if(!(g->IsVisible())) continue;
             g->DrawContourAreaLabels(canvas);
         }

@@ -485,6 +485,48 @@ public:
     bool CanOutputMesh() const override { return false; }
 };
 
+class Sketch;
+
+class OrderedGroupsIterator {
+public:
+    OrderedGroupsIterator() = default;
+    OrderedGroupsIterator(Sketch &sketch, hGroup *currentGroup)
+        : sk(&sketch), current(currentGroup) {}
+
+    bool IsEnd() const { return current == nullptr; }
+
+    Group *operator*() const;
+
+    // Pre-increment operator
+    // Definition below that for Sketch
+    OrderedGroupsIterator &operator++();
+
+    bool operator==(OrderedGroupsIterator const &other) const {
+        if(IsEnd() && other.IsEnd()) {
+            return true;
+        }
+        return sk == other.sk && current == other.current;
+    }
+    bool operator!=(OrderedGroupsIterator const &other) const { return !((*this) == other); }
+
+private:
+    Sketch *sk      = nullptr;
+    hGroup *current = nullptr;
+};
+
+
+class OrderedGroupsProxy {
+public:
+    OrderedGroupsProxy(Sketch &sketch) : sk(sketch) {}
+
+    using iterator = OrderedGroupsIterator;
+    iterator begin() const;
+    iterator end() const { return {}; }
+
+private:
+    Sketch &sk;
+};
+
 #ifdef LIBRARY
 #   define ENTITY EntityBase
 #   define CONSTRAINT ConstraintBase
@@ -505,6 +547,9 @@ public:
     IdList<ENTITY,hEntity>          entity;
     IdList<Param,hParam>            param;
 
+    // Provides for iteration of groups in their order.
+    inline OrderedGroupsProxy OrderedGroups() { return {*this}; }
+
     inline CONSTRAINT *GetConstraint(hConstraint h)
         { return constraint.FindById(h); }
     inline ENTITY  *GetEntity (hEntity  h) { return entity. FindById(h); }
@@ -520,6 +565,20 @@ public:
 };
 #undef ENTITY
 #undef CONSTRAINT
+
+
+inline Group *OrderedGroupsIterator::operator*() const { return sk->GetGroup(*current); }
+
+inline OrderedGroupsIterator &OrderedGroupsIterator::operator++() {
+    current = sk->groupOrder.NextAfter(current);
+    return *this;
+}
+
+
+inline OrderedGroupsProxy::iterator OrderedGroupsProxy::begin() const {
+    return {sk, sk.groupOrder.First()};
+}
+
 
 class SolveSpaceUI {
 public:
