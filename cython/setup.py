@@ -10,7 +10,9 @@ __email__ = "pyslvs@gmail.com"
 import os
 import re
 import codecs
+from textwrap import dedent
 from setuptools import setup, Extension, find_packages
+from setuptools.command.build_ext import build_ext
 from platform import system
 from distutils import sysconfig
 
@@ -20,6 +22,11 @@ src_path = '../src/'
 platform_path = src_path + 'platform/'
 ver = sysconfig.get_config_var('VERSION')
 lib = sysconfig.get_config_var('BINDIR')
+
+
+def write(doc, *parts):
+    with codecs.open(os.path.join(here, *parts), 'w') as f:
+        f.write(doc)
 
 
 def read(*parts):
@@ -77,10 +84,24 @@ if system() == 'Windows':
     macros.append(('WIN32', None))
 
     # Platform sources
-    sources.append(platform_path + 'w32util.cpp')
+    sources.append(platform_path + 'utilwin.cpp')
     sources.append(platform_path + 'platform.cpp')
 else:
-    sources.append(platform_path + 'unixutil.cpp')
+    sources.append(platform_path + 'utilunix.cpp')
+
+
+class Build(build_ext):
+    def run(self):
+        # Generate "config.h", actually not used.
+        config_h = src_path + "config.h"
+        write(dedent(f"""\
+            #ifndef SOLVESPACE_CONFIG_H
+            #define SOLVESPACE_CONFIG_H
+            #endif
+        """), config_h)
+        super(Build, self).run()
+        os.remove(config_h)
+
 
 setup(
     name="python_solvespace",
@@ -92,13 +113,14 @@ setup(
     url="https://github.com/solvespace/solvespace",
     packages=find_packages(exclude=('tests',)),
     ext_modules=[Extension(
-        "slvs",
+        "python_solvespace.slvs",
         sources,
         language="c++",
         include_dirs=[include_path, src_path, platform_path],
         define_macros=macros,
         extra_compile_args=compile_args
     )],
+    cmdclass={'build_ext': Build},
     python_requires=">=3.6",
     setup_requires=[
         'setuptools',
