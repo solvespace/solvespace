@@ -27,7 +27,7 @@ python setup.py install --user  # User mode
 Run unit test:
 
 ```bash
-python tests/test_slvs.py
+python tests
 ```
 
 Uninstall the module:

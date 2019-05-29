@@ -10,7 +10,7 @@ __email__ = "pyslvs@gmail.com"
 import unittest
 from unittest import TestCase
 from math import radians
-from slvs import ResultFlag, SolverSystem, make_quaternion
+from python_solvespace import ResultFlag, SolverSystem, make_quaternion
 
 
 class CoreTest(TestCase):
