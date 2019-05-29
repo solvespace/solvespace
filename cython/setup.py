@@ -112,6 +112,7 @@ setup(
     long_description=read("README.md"),
     url="https://github.com/solvespace/solvespace",
     packages=find_packages(exclude=('tests',)),
+    package_data={'': ["*.pyi"]},
     ext_modules=[Extension(
         "python_solvespace.slvs",
         sources,
