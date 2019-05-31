@@ -380,6 +380,7 @@ void OpenInBrowser(const std::string &url);
 void InitGui(int argc, char **argv);
 void RunGui();
 void ExitGui();
+void ClearGui();
 
 }
 

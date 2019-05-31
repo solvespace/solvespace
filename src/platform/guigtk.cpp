@@ -1475,6 +1475,9 @@ void RunGui() {
 
 void ExitGui() {
     gtkMain->quit();
+}
+
+void ClearGui() {
     delete gtkMain;
 }
 

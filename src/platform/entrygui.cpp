@@ -29,8 +29,8 @@ int main(int argc, char** argv) {
 
     Platform::Close3DConnexion();
     SS.Clear();
-
     SK.Clear();
+    Platform::ClearGui();
 
     return 0;
 }

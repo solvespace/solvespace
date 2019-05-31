@@ -154,6 +154,8 @@ void ExitGui() {
     exit(0);
 }
 
+void ClearGui() {}
+
 }
 
 }

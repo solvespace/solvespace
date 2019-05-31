@@ -1677,5 +1677,7 @@ void ExitGui() {
     PostQuitMessage(0);
 }
 
+void ClearGui() {}
+
 }
 }
