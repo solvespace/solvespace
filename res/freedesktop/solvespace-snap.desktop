@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Name=SolveSpace
+Comment=A parametric 2d/3d CAD
+Exec=solvespace
+MimeType=application/x-solvespace
+Icon=${SNAP}/meta/icons/hicolor/scalable/apps/snap.solvespace.svg
+Type=Application
+Categories=Graphics
+Keywords=parametric;cad;2d;3d;
