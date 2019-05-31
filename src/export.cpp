@@ -94,7 +94,7 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
     // Remove all overlapping edges/beziers to merge the areas they describe.
     el.CullExtraneousEdges(/*both=*/true);
     bl.CullIdenticalBeziers(/*both=*/true);
-    
+
     // Collect lines and beziers with custom style & export.
     int i;
     for(i = 0; i < SK.entity.n; i++) {
@@ -900,7 +900,7 @@ void SolveSpaceUI::ExportMeshAsStlTo(FILE *f, SMesh *sm) {
 // Export the mesh as a Q3DO (https://github.com/q3k/q3d) file.
 //-----------------------------------------------------------------------------
 
-#include "object_generated.h"
+#include "q3d_object_generated.h"
 void SolveSpaceUI::ExportMeshAsQ3doTo(FILE *f, SMesh *sm) {
     flatbuffers::FlatBufferBuilder builder(1024);
     double s = SS.exportScale;
