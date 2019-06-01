@@ -532,20 +532,28 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
 
             for(i = 0; i < entity->n; i++) {
                 Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v) continue;
+
+                e->CalculateNumerical(/*forExport=*/false);
                 hEntity he = e->h;
+
+                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
+                    NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    CopyAs::NUMERIC);
+
                 for(a = 0; a < 2; a++) {
                     if(e->group.v != opA.v) continue;
 
                     e->CalculateNumerical(false);
                     CopyEntity(entity, e,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
-                        (a == (n - 1)) ? REMAP_LAST : a,
+                        (a == (n - 1)) ? REMAP_LATHE_END : REMAP_LATHE_START,
                         h.param(0), h.param(1), h.param(2),
                         h.param(3), h.param(4), h.param(5), h.param(6),
                         CopyAs::N_ROT_AA);
                 }
-// TODO: make arcs for Rotate groups
-//                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
                 ai++;
             }
