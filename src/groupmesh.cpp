@@ -308,8 +308,12 @@ void Group::GenerateShellAndMesh() {
         SBezierLoopSetSet *sblss = &(src->bezierLoops);
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
-            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+            if (fabs(anglef-angles) < 2*PI) {
+	            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
                                                   angles, anglef );
+            } else {
+	            thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
+            }
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
