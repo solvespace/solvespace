@@ -506,48 +506,16 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                     CopyAs::NUMERIC);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheSurfacesSelectable(entity, he, axis_dir);
                 ai++;
             }
             return;
         }
 
         case Type::REVOLVE: {
-
-            // this was borrowed from LATHE, but entities from ROTATE are what we want
+            // this was borrowed from LATHE and ROTATE
             Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
             Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
-/*
-            // Remapped entity index this was from
-            int ai = 1;
-
-            for(i = 0; i < entity->n; i++) {
-                Entity *e = &(entity->elem[i]);
-                if(e->group.v != opA.v) continue;
-
-                e->CalculateNumerical(false); //forExport=false;
-                hEntity he = e->h;
-
-                // As soon as I call CopyEntity, e may become invalid! That
-                // adds entities, which may cause a realloc.
-                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
-                    NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
-
-                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
-                    NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
-
-                CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
-                    NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
-                    CopyAs::NUMERIC);
-
-                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
-                ai++;
-            }
-*/
 
             // The center of rotation
             AddParam(param, h.param(0), axis_pos.x);
@@ -560,10 +528,12 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(6), axis_dir.z);
 
             int n = 2;
+            int ai = 1;
 
-            for(a = 0; a < 2; a++) {
-                for(i = 0; i < entity->n; i++) {
-                    Entity *e = &(entity->elem[i]);
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                hEntity he = e->h;
+                for(a = 0; a < 2; a++) {
                     if(e->group.v != opA.v) continue;
 
                     e->CalculateNumerical(false);
@@ -574,6 +544,10 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         h.param(3), h.param(4), h.param(5), h.param(6),
                         CopyAs::N_ROT_AA);
                 }
+// TODO: make arcs for Rotate groups
+//                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+                MakeLatheSurfacesSelectable(entity, he, axis_dir);
+                ai++;
             }
 
             return;
@@ -821,7 +795,14 @@ void Group::MakeLatheCircles(IdList<Entity,hEntity> *el, IdList<Param,hParam> *p
         el->Add(&n);
         en.normal = n.h;
         el->Add(&en);
-    } else if(ep->type == Entity::Type::LINE_SEGMENT) {
+    }
+}
+
+void Group::MakeLatheSurfacesSelectable(IdList<Entity,hEntity> *el, hEntity in, Vector axis) {
+    Entity *ep = SK.GetEntity(in);
+
+    Entity en = {};
+    if(ep->type == Entity::Type::LINE_SEGMENT) {
         // An axis-perpendicular line gets revolved to form a face.
         Vector a = SK.GetEntity(ep->point[0])->PointGetNum();
         Vector b = SK.GetEntity(ep->point[1])->PointGetNum();
