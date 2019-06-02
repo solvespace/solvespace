@@ -553,7 +553,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         h.param(3), h.param(4), h.param(5), h.param(6),
                         CopyAs::N_ROT_AA);
                 }
-                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
+//                MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
                 MakeLatheSurfacesSelectable(entity, he, axis_dir);
                 ai++;
             }
