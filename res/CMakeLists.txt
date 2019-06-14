@@ -138,6 +138,13 @@ else()
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      com.solvespace.SolveSpace-slvs.xml)
 
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
+            RENAME      com.solvespace.SolveSpace.svg)
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
+            RENAME      com.solvespace.SolveSpace.svg)
+
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png
                 DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/${SIZE}/apps
@@ -156,6 +163,13 @@ else()
         install(FILES freedesktop/solvespace-mime.xml
             DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/mime/packages
             RENAME      solvespace-slvs.xml)
+        
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/apps
+            RENAME      solvespace.svg)
+        install(FILES freedesktop/solvespace-scalable.svg
+            DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/icons/hicolor/scalable/mimetypes
+            RENAME      application.x-solvespace.svg)
 
         foreach(SIZE 16x16 24x24 32x32 48x48)
             install(FILES freedesktop/solvespace-${SIZE}.png
