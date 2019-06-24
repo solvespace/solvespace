@@ -718,7 +718,7 @@ hEntity Group::Remap(hEntity in, int copyNumber) {
     auto it = remap.find({ in, copyNumber });
     if(it == remap.end()) {
         std::tie(it, std::ignore) =
-            remap.insert({ { in, copyNumber }, { (uint32_t)remap.size() } });
+            remap.insert({ { in, copyNumber }, { (uint32_t)remap.size() + 1 } });
     }
     return h.entity(it->second.v);
 }
