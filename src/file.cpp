@@ -436,8 +436,17 @@ void SolveSpaceUI::LoadUsingTable(const Platform::Path &filename, char *key, cha
                         if (fgets(line2, (int)sizeof(line2), fh) == NULL)
                             break;
                         if(sscanf(line2, "%d %x %d", &(ei.v), &(ek.input.v),
-                                                     &(ek.copyNumber)) == 3)
-                        {
+                                                     &(ek.copyNumber)) == 3) {
+                            if(ei.v == Entity::NO_ENTITY.v) {
+                                // Commit bd84bc1a mistakenly introduced code that would remap
+                                // some entities to NO_ENTITY. This was fixed in commit bd84bc1a,
+                                // but files created meanwhile are corrupt, and can cause crashes.
+                                //
+                                // To fix this, we skip any such remaps when loading; they will be
+                                // recreated on the next regeneration. Any resulting orphans will
+                                // be pruned in the usual way, recovering to a well-defined state.
+                                continue;
+                            }
                             p->M().insert({ ek, ei });
                         } else {
                             break;
