@@ -5,7 +5,7 @@ Changelog
 ---
 
 New sketch features:
-  * New group, revolve.
+  * New groups, revolution and helical extrusion.
   * Extrude, lathe, translate and rotate groups can use the "assembly"
     boolean operation, to increase performance.
   * The solid model of extrude and lathe groups can be suppressed,

@@ -88,6 +88,7 @@ void Entity::GetReferencePoints(std::vector<Vector> *refs) {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D:
             refs->push_back(PointGetNum());
@@ -502,6 +503,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_IN_3D:
         case Type::POINT_IN_2D: {
             if(how == DrawAs::HIDDEN) return;

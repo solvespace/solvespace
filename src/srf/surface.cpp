@@ -606,8 +606,8 @@ void SShell::MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1, Rgb
     }
 }
 
-bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis)
-// Check that the direction of revolution ends up parallel to the normal of
+bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis, double da, double dx)
+// Check that the direction of revolution/extrusion ends up parallel to the normal of
 // the sketch, on the side of the axis where the sketch is.
 {
     SBezierLoop *sbl;
@@ -631,9 +631,10 @@ bool SShell::CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector
         }
     }
     Vector ptc = pto.ClosestPointOnLine(pt, axis),
-           up  = (pto.Minus(ptc)).WithMagnitude(1),
-           vp  = (sbls->normal).Cross(up);
-    return (vp.Dot(axis) < 0);
+           up = axis.Cross(pto.Minus(ptc)).ScaledBy(da),
+           vp = up.Plus(axis.ScaledBy(dx));
+   
+    return (vp.Dot(sbls->normal) > 0);
 }
 
 typedef struct {
@@ -643,22 +644,19 @@ typedef struct {
 // sketch must not contain the axis of revolution as a non-construction line for helix
 void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                                          RgbaColor color, Group *group, double angles,
-                                         double anglef) {
+                                         double anglef, double dists, double distf) {
     int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
     // for testing - hard code the axial distance, and number of sections.
     // distance will need to be parameters in the future.
-    double dist  = 0;
+    double dist  = distf - dists;
     int sections = fabs(anglef - angles) / (PI / 2) + 1;
     if(sections > 99) {
         sections = 99;
     }
     double wedge = (anglef - angles) / sections;
 
-    double dists = 0;    // start distance
-    double distf = dist; // finish distance
-
-    if(CheckNormalAxisRelationship(sbls, pt, axis) ^ (wedge < 0)) {
+    if(CheckNormalAxisRelationship(sbls, pt, axis, anglef-angles, distf-dists)) {
         swap(angles, anglef);
         swap(dists, distf);
         dist  = -dist;
@@ -821,7 +819,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
     int i0 = surface.n; // number of pre-existing surfaces
     SBezierLoop *sbl;
 
-    if(CheckNormalAxisRelationship(sbls, pt, axis)) {
+    if(CheckNormalAxisRelationship(sbls, pt, axis, 1.0, 0.0)) {
         axis = axis.ScaledBy(-1);
     }
 
