@@ -208,6 +208,30 @@ void Group::MenuGroup(Command id, Platform::Path linkFile) {
             g.name    = C_("group-name", "revolve");
             break;
 
+        case Command::GROUP_HELIX:
+            if(gs.points == 1 && gs.vectors == 1 && gs.n == 2) {
+                g.predef.origin  = gs.point[0];
+                g.predef.entityB = gs.vector[0];
+            } else if(gs.lineSegments == 1 && gs.n == 1) {
+                g.predef.origin  = SK.GetEntity(gs.entity[0])->point[0];
+                g.predef.entityB = gs.entity[0];
+                // since a line segment is a vector
+            } else {
+                Error(_("Bad selection for new helix group. This group can "
+                        "be created with:\n\n"
+                        "    * a point and a line segment or normal "
+                                 "(revolved about an axis parallel to line / "
+                                 "normal, through point)\n"
+                        "    * a line segment (revolved about line segment)\n"));
+                return;
+            }
+            g.type    = Type::HELIX;
+            g.opA     = SS.GW.activeGroup;
+            g.valA    = 2;
+            g.subtype = Subtype::ONE_SIDED;
+            g.name    = C_("group-name", "helix");
+            break;
+
         case Command::GROUP_ROT: {
             if(gs.points == 1 && gs.n == 1 && SS.GW.LockedInWorkplane()) {
                 g.predef.origin = gs.point[0];
@@ -368,7 +392,7 @@ std::string Group::DescriptionString() {
 
 void Group::Activate() {
     if(type == Type::EXTRUDE || type == Type::LINKED || type == Type::LATHE ||
-       type == Type::REVOLVE || type == Type::TRANSLATE || type == Type::ROTATE) {
+       type == Type::REVOLVE || type == Type::HELIX || type == Type::TRANSLATE || type == Type::ROTATE) {
         SS.GW.showFaces = true;
     } else {
         SS.GW.showFaces = false;
@@ -460,11 +484,11 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 // adds entities, which may cause a realloc.
                 CopyEntity(entity, SK.GetEntity(he), ai, REMAP_BOTTOM,
                     h.param(0), h.param(1), h.param(2),
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
                 CopyEntity(entity, SK.GetEntity(he), af, REMAP_TOP,
                     h.param(0), h.param(1), h.param(2),
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::N_TRANS);
                 MakeExtrusionLines(entity, he);
             }
@@ -492,17 +516,17 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 // adds entities, which may cause a realloc.
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai,
                     NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_START,
                     NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
                 CopyEntity(entity, SK.GetEntity(he), 0, REMAP_LATHE_END,
                     NO_PARAM, NO_PARAM, NO_PARAM,
-                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                    NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                     CopyAs::NUMERIC);
 
                 MakeLatheCircles(entity, param, he, axis_pos, axis_dir, ai);
@@ -527,7 +551,6 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
             AddParam(param, h.param(5), axis_dir.y);
             AddParam(param, h.param(6), axis_dir.z);
 
-            int n  = 2;
             int ai = 1;
 
             for(i = 0; i < entity->n; i++) {
@@ -539,17 +562,17 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 hEntity he = e->h;
 
                 CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
-                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
+                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
 
                 for(a = 0; a < 2; a++) {
                     if(e->group != opA)
                         continue;
 
                     e->CalculateNumerical(false);
-                    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : (n - 1)),
-                               (a == (n - 1)) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
-                               h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
-                               h.param(6), CopyAs::N_ROT_AA);
+		    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                           (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
+                           h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
+                           h.param(6), NO_PARAM, CopyAs::N_ROT_AA);
                 }
                 // Arcs are not generated for revolve groups, for now, because our current arc
                 // entity is not chiral, and dragging a revolve may break the arc by inverting it.
@@ -558,6 +581,63 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 ai++;
             }
 
+            return;
+        }
+
+        case Type::HELIX:   {
+            Vector axis_pos = SK.GetEntity(predef.origin)->PointGetNum();
+            Vector axis_dir = SK.GetEntity(predef.entityB)->VectorGetNum();
+
+            // The center of rotation
+            AddParam(param, h.param(0), axis_pos.x);
+            AddParam(param, h.param(1), axis_pos.y);
+            AddParam(param, h.param(2), axis_pos.z);
+            // The rotation quaternion
+            AddParam(param, h.param(3), 30 * PI / 180);
+            AddParam(param, h.param(4), axis_dir.x);
+            AddParam(param, h.param(5), axis_dir.y);
+            AddParam(param, h.param(6), axis_dir.z);
+            // distance to translate along the rotation axis
+            AddParam(param, h.param(7), 20);
+
+            int ai = 1;
+
+            for(i = 0; i < entity->n; i++) {
+                Entity *e = &(entity->elem[i]);
+                if(e->group.v != opA.v)
+                    continue;
+
+                e->CalculateNumerical(/*forExport=*/false);
+
+                CopyEntity(entity, SK.GetEntity(predef.origin), 0, ai, NO_PARAM, NO_PARAM,
+                           NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, CopyAs::NUMERIC);
+
+                for(a = 0; a < 2; a++) {
+                    e->CalculateNumerical(false);
+		    CopyEntity(entity, e, a * 2 - (subtype == Subtype::ONE_SIDED ? 0 : 1),
+                           (a == 1) ? REMAP_LATHE_END : REMAP_LATHE_START, h.param(0),
+                           h.param(1), h.param(2), h.param(3), h.param(4), h.param(5),
+                           h.param(6), h.param(7), CopyAs::N_ROT_AXIS_TRANS);
+                }
+                // For point entities on the axis, create a construction line
+                if(e->IsPoint()) {
+                    Vector check = e->PointGetNum().Minus(axis_pos).Cross(axis_dir);
+                    if (check.Dot(check) < LENGTH_EPS) {
+                        Entity *ep = SK.GetEntity(e->h);
+                        Entity en = {};
+                        // A point gets extruded to form a line segment
+                        en.point[0] = Remap(ep->h, REMAP_LATHE_START);
+                        en.point[1] = Remap(ep->h, REMAP_LATHE_END);
+                        en.group = h;
+                        en.construction = ep->construction;
+                        en.style = ep->style;
+                        en.h = Remap(ep->h, REMAP_PT_TO_LINE);
+                        en.type = Entity::Type::LINE_SEGMENT;
+                        entity->Add(&en);
+                    }
+		}
+                ai++;
+            }
             return;
         }
 
@@ -585,7 +665,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
-                        NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
+                        NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM, NO_PARAM,
                         CopyAs::N_TRANS);
                 }
             }
@@ -620,7 +700,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                         a*2 - (subtype == Subtype::ONE_SIDED ? 0 : (n-1)),
                         (a == (n - 1)) ? REMAP_LAST : a,
                         h.param(0), h.param(1), h.param(2),
-                        h.param(3), h.param(4), h.param(5), h.param(6),
+                        h.param(3), h.param(4), h.param(5), h.param(6), NO_PARAM,
                         CopyAs::N_ROT_AA);
                 }
             }
@@ -641,7 +721,7 @@ void Group::Generate(IdList<Entity,hEntity> *entity,
                 Entity *ie = &(impEntity.elem[i]);
                 CopyEntity(entity, ie, 0, 0,
                     h.param(0), h.param(1), h.param(2),
-                    h.param(3), h.param(4), h.param(5), h.param(6),
+                    h.param(3), h.param(4), h.param(5), h.param(6), NO_PARAM,
                     CopyAs::N_ROT_TRANS);
             }
             return;
@@ -670,7 +750,7 @@ void Group::GenerateEquations(IdList<Equation,hEquation> *l) {
             Expr::From(h.param(5)),
             Expr::From(h.param(6)) };
         AddEq(l, (q.Magnitude())->Minus(Expr::From(1)), 0);
-    } else if(type == Type::ROTATE || type == Type::REVOLVE) {
+    } else if(type == Type::ROTATE || type == Type::REVOLVE || type == Type::HELIX) {
         // The axis and center of rotation are specified numerically
 #define EC(x) (Expr::From(x))
 #define EP(x) (Expr::From(h.param(x)))
@@ -867,7 +947,7 @@ void Group::MakeExtrusionTopBottomFaces(IdList<Entity,hEntity> *el, hEntity pt)
 void Group::CopyEntity(IdList<Entity,hEntity> *el,
                        Entity *ep, int timesApplied, int remap,
                        hParam dx, hParam dy, hParam dz,
-                       hParam qw, hParam qvx, hParam qvy, hParam qvz,
+                       hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
                        CopyAs as)
 {
     Entity en = {};
@@ -891,6 +971,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::POINT_N_TRANS:
         case Entity::Type::POINT_N_ROT_TRANS:
         case Entity::Type::POINT_N_ROT_AA:
+        case Entity::Type::POINT_N_ROT_AXIS_TRANS:
         case Entity::Type::POINT_IN_3D:
         case Entity::Type::POINT_IN_2D:
             if(as == CopyAs::N_TRANS) {
@@ -903,6 +984,8 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             } else {
                 if(as == CopyAs::N_ROT_AA) {
                     en.type = Entity::Type::POINT_N_ROT_AA;
+                } else if (as == CopyAs::N_ROT_AXIS_TRANS) {
+                    en.type = Entity::Type::POINT_N_ROT_AXIS_TRANS;
                 } else {
                     en.type = Entity::Type::POINT_N_ROT_TRANS;
                 }
@@ -913,6 +996,9 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
                 en.param[4] = qvx;
                 en.param[5] = qvy;
                 en.param[6] = qvz;
+                if (as ==  CopyAs::N_ROT_AXIS_TRANS) {
+                    en.param[7] = dist;
+                }
             }
             en.numPoint = (ep->actPoint).ScaledBy(scale);
             break;
@@ -924,8 +1010,8 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
         case Entity::Type::NORMAL_IN_2D:
             if(as == CopyAs::N_TRANS || as == CopyAs::NUMERIC) {
                 en.type = Entity::Type::NORMAL_N_COPY;
-            } else {
-                if(as == CopyAs::N_ROT_AA) {
+            } else {  // N_ROT_AXIS_TRANS probably doesn't warrant a new entity Type
+                if(as == CopyAs::N_ROT_AA || as == CopyAs::N_ROT_AXIS_TRANS) {
                     en.type = Entity::Type::NORMAL_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::NORMAL_N_ROT;
@@ -960,7 +1046,7 @@ void Group::CopyEntity(IdList<Entity,hEntity> *el,
             } else if (as == CopyAs::NUMERIC) {
                 en.type = Entity::Type::FACE_NORMAL_PT;
             } else {
-                if(as == CopyAs::N_ROT_AA) {
+                if(as == CopyAs::N_ROT_AA || as == CopyAs::N_ROT_AXIS_TRANS) {
                     en.type = Entity::Type::FACE_N_ROT_AA;
                 } else {
                     en.type = Entity::Type::FACE_N_ROT_TRANS;

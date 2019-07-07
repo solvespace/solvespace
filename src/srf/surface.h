@@ -382,11 +382,11 @@ public:
 
     void MakeFromExtrusionOf(SBezierLoopSet *sbls, Vector t0, Vector t1,
                              RgbaColor color);
-    bool CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis);
+    bool CheckNormalAxisRelationship(SBezierLoopSet *sbls, Vector pt, Vector axis, double da, double dx);
     void MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis,
                               RgbaColor color, Group *group);
     void MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, RgbaColor color,
-                                     Group *group, double angles, double anglef);
+                                     Group *group, double angles, double anglef, double dists, double distf);
     void MakeFirstOrderRevolvedSurfaces(Vector pt, Vector axis, int i0);
     void MakeFromUnionOf(SShell *a, SShell *b);
     void MakeFromDifferenceOf(SShell *a, SShell *b);

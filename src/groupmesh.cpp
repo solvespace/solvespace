@@ -296,6 +296,7 @@ void Group::GenerateShellAndMesh() {
     } else if(type == Type::REVOLVE && haveSrc) {
         Group *src    = SK.GetGroup(opA);
         double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double dists = 0, distf = 0;
         double angles = 0.0;
         if(subtype != Subtype::ONE_SIDED) {
             anglef *= 0.5;
@@ -309,10 +310,33 @@ void Group::GenerateShellAndMesh() {
         SBezierLoopSet *sbls;
         for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
             if(fabs(anglef - angles) < 2 * PI) {
-                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this, angles, anglef);
+                thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                                                      angles, anglef, dists, distf);
             } else {
                 thisShell.MakeFromRevolutionOf(sbls, pt, axis, color, this);
             }
+        }
+    } else if(type == Type::HELIX && haveSrc) {
+        Group *src    = SK.GetGroup(opA);
+        double anglef = SK.GetParam(h.param(3))->val * 4; // why the 4 is needed?
+        double dists = 0, distf = 0;
+        double angles = 0.0;
+        distf = SK.GetParam(h.param(7))->val * 2; // dist is applied twice
+        if(subtype != Subtype::ONE_SIDED) {
+            anglef *= 0.5;
+            angles = -anglef;
+            distf *= 0.5;
+            dists = -distf;
+        }
+        Vector pt   = SK.GetEntity(predef.origin)->PointGetNum(),
+               axis = SK.GetEntity(predef.entityB)->VectorGetNum();
+        axis        = axis.WithMagnitude(1);
+
+        SBezierLoopSetSet *sblss = &(src->bezierLoops);
+        SBezierLoopSet *sbls;
+        for(sbls = sblss->l.First(); sbls; sbls = sblss->l.NextAfter(sbls)) {
+            thisShell.MakeFromHelicalRevolutionOf(sbls, pt, axis, color, this,
+                                                  angles, anglef, dists, distf);
         }
     } else if(type == Type::LINKED) {
         // The imported shell or mesh are copied over, with the appropriate
@@ -488,6 +512,7 @@ bool Group::IsMeshGroup() {
         case Group::Type::EXTRUDE:
         case Group::Type::LATHE:
         case Group::Type::REVOLVE:
+        case Group::Type::HELIX:
         case Group::Type::ROTATE:
         case Group::Type::TRANSLATE:
             return true;

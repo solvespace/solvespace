@@ -151,6 +151,7 @@ public:
         N_TRANS,
         N_ROT_AA,
         N_ROT_TRANS,
+        N_ROT_AXIS_TRANS,
     };
 
     enum class Type : uint32_t {
@@ -159,6 +160,7 @@ public:
         EXTRUDE                       = 5100,
         LATHE                         = 5101,
         REVOLVE                       = 5102,
+        HELIX                         = 5103,
         ROTATE                        = 5200,
         TRANSLATE                     = 5201,
         LINKED                        = 5300
@@ -286,7 +288,7 @@ public:
     void CopyEntity(EntityList *el,
                     Entity *ep, int timesApplied, int remap,
                     hParam dx, hParam dy, hParam dz,
-                    hParam qw, hParam qvx, hParam qvy, hParam qvz,
+                    hParam qw, hParam qvx, hParam qvy, hParam qvz, hParam dist,
                     CopyAs as);
 
     void AddEq(IdList<Equation,hEquation> *l, Expr *expr, int index);
@@ -387,6 +389,7 @@ public:
         POINT_N_ROT_TRANS      =  2011,
         POINT_N_COPY           =  2012,
         POINT_N_ROT_AA         =  2013,
+        POINT_N_ROT_AXIS_TRANS =  2014,
 
         NORMAL_IN_3D           =  3000,
         NORMAL_IN_2D           =  3001,
@@ -426,7 +429,7 @@ public:
     hEntity     distance;
     // The only types that have their own params are points, normals,
     // and directions.
-    hParam      param[7];
+    hParam      param[8];
 
     // Transformed points/normals/distances have their numerical base
     Vector      numPoint;

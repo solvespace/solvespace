@@ -245,6 +245,7 @@ bool EntityBase::IsPoint() const {
         case Type::POINT_N_TRANS:
         case Type::POINT_N_ROT_TRANS:
         case Type::POINT_N_ROT_AA:
+        case Type::POINT_N_ROT_AXIS_TRANS:
             return true;
 
         default:
@@ -439,6 +440,7 @@ void EntityBase::PointForceTo(Vector p) {
             break;
         }
 
+//        case Type::POINT_N_ROT_AXIS_TRANS:
         case Type::POINT_N_ROT_AA: {
             // Force only the angle; the axis and center of rotation stay
             Vector offset = Vector::From(param[0], param[1], param[2]);
@@ -454,7 +456,35 @@ void EntityBase::PointForceTo(Vector p) {
             // in order to avoid jumps when you cross from +pi to -pi
             while(dtheta < -PI) dtheta += 2*PI;
             while(dtheta > PI) dtheta -= 2*PI;
+            // this extra *2 explains the mystery *4
             SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            break;
+        }
+
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            if(timesApplied == 0) break;
+            // is the point on the rotation axis?
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector normal = Vector::From(param[4], param[5], param[6]).WithMagnitude(1.0);
+            Vector check = numPoint.Minus(offset).Cross(normal);
+            if (check.Dot(check) < LENGTH_EPS) { // if so, do extrusion style drag
+                Vector trans = (p.Minus(numPoint));
+                SK.GetParam(param[7])->val = trans.Dot(normal)/timesApplied;
+            } else { // otherwise do rotation style
+                Vector u = normal.Normal(0), v = normal.Normal(1);
+                Vector po = p.Minus(offset), numo = numPoint.Minus(offset);
+                double thetap = atan2(v.Dot(po), u.Dot(po));
+                double thetan = atan2(v.Dot(numo), u.Dot(numo));
+                double thetaf = (thetap - thetan);
+                double thetai = (SK.GetParam(param[3])->val)*timesApplied*2;
+                double dtheta = thetaf - thetai;
+                // Take the smallest possible change in the actual step angle,
+                // in order to avoid jumps when you cross from +pi to -pi
+                while(dtheta < -PI) dtheta += 2*PI;
+                while(dtheta > PI) dtheta -= 2*PI;
+                // this extra *2 explains the mystery *4
+                SK.GetParam(param[3])->val = (thetai + dtheta)/(timesApplied*2);
+            }
             break;
         }
 
@@ -506,6 +536,17 @@ Vector EntityBase::PointGetNum() const {
             break;
         }
 
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            Vector offset = Vector::From(param[0], param[1], param[2]);
+            Vector displace = Vector::From(param[4], param[5], param[6])
+               .WithMagnitude(SK.GetParam(param[7])->val).ScaledBy(timesApplied);
+            Quaternion q = PointGetQuaternion();
+            p = numPoint.Minus(offset);
+            p = q.Rotate(p);
+            p = p.Plus(offset).Plus(displace);
+            break;
+        }
+
         case Type::POINT_N_COPY:
             p = numPoint;
             break;
@@ -553,6 +594,18 @@ ExprVector EntityBase::PointGetExprs() const {
             orig = orig.Minus(trans);
             orig = q.Rotate(orig);
             r = orig.Plus(trans);
+            break;
+        }
+        case Type::POINT_N_ROT_AXIS_TRANS: {
+            ExprVector orig = ExprVector::From(numPoint);
+            ExprVector trans = ExprVector::From(param[0], param[1], param[2]);
+            ExprVector displace = ExprVector::From(param[4], param[5], param[6])
+               .WithMagnitude(Expr::From(1.0)).ScaledBy(Expr::From(timesApplied)).ScaledBy(Expr::From(param[7]));
+
+            ExprQuaternion q = GetAxisAngleQuaternionExprs(3);
+            orig = orig.Minus(trans);
+            orig = q.Rotate(orig);
+            r = orig.Plus(trans).Plus(displace);
             break;
         }
         case Type::POINT_N_COPY:
@@ -633,7 +686,7 @@ ExprQuaternion EntityBase::GetAxisAngleQuaternionExprs(int param0) const {
 Quaternion EntityBase::PointGetQuaternion() const {
     Quaternion q;
 
-    if(type == Type::POINT_N_ROT_AA) {
+    if(type == Type::POINT_N_ROT_AA || type == Type::POINT_N_ROT_AXIS_TRANS) {
         q = GetAxisAngleQuaternion(3);
     } else if(type == Type::POINT_N_ROT_TRANS) {
         q = Quaternion::From(param[3], param[4], param[5], param[6]);
