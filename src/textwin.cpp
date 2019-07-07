@@ -195,8 +195,8 @@ static Button *buttons[] = {
 /** Foreground color codes. */
 const TextWindow::Color TextWindow::fgColors[] = {
     { 'd', RGBi(255, 255, 255) },  // Default   : white
-    { 'l', RGBi(100, 100, 255) },
-    { 't', RGBi(255, 200,   0) },
+    { 'l', RGBi(100, 200, 255) },  // links     : blue
+    { 't', RGBi(255, 200, 100) },  // tree/text : yellow
     { 'h', RGBi( 90,  90,  90) },
     { 's', RGBi( 40, 255,  40) },  // Ok        : green
     { 'm', RGBi(200, 200,   0) },
