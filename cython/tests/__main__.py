@@ -107,9 +107,9 @@ class CoreTest(TestCase):
 
         result_flag = sys.solve()
         self.assertEqual(result_flag, ResultFlag.OKAY)
-        x, y = sys.params(p2.params)
-        self.assertAlmostEqual(-38, x, 4)
-        self.assertAlmostEqual(-7.8, y, 4)
+        x, y = sys.params(p8.params)
+        self.assertAlmostEqual(18.93036, x, 4)
+        self.assertAlmostEqual(13.63778, y, 4)
 
     def test_nut_cracker(self):
         """Nut cracker example."""
