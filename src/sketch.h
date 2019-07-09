@@ -133,7 +133,7 @@ struct EntityKeyHash {
 };
 struct EntityKeyEqual {
     bool operator()(const EntityKey &a, const EntityKey &b) const {
-        return std::tie(a.input.v, a.copyNumber) == std::tie(b.input.v, b.copyNumber);
+        return std::tie(a.input, a.copyNumber) == std::tie(b.input, b.copyNumber);
     }
 };
 typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
@@ -687,10 +687,10 @@ public:
     std::string comment;    // since comments are represented as constraints
 
     bool Equals(const ConstraintBase &c) const {
-        return type == c.type && group.v == c.group.v && workplane.v == c.workplane.v &&
-            valA == c.valA && valP.v == c.valP.v && ptA.v == c.ptA.v && ptB.v == c.ptB.v &&
-            entityA.v == c.entityA.v && entityB.v == c.entityB.v &&
-            entityC.v == c.entityC.v && entityD.v == c.entityD.v &&
+        return type == c.type && group == c.group && workplane == c.workplane &&
+            valA == c.valA && valP == c.valP && ptA == c.ptA && ptB == c.ptB &&
+            entityA == c.entityA && entityB == c.entityB &&
+            entityC == c.entityC && entityD == c.entityD &&
             other == c.other && other2 == c.other2 && reference == c.reference &&
             comment == c.comment;
     }
@@ -917,9 +917,9 @@ inline hEquation hGroup::equation(int i) const
     { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
 inline bool hRequest::IsFromReferences() const {
-    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    if(*this == Request::HREQUEST_REFERENCE_XY) return true;
+    if(*this == Request::HREQUEST_REFERENCE_YZ) return true;
+    if(*this == Request::HREQUEST_REFERENCE_ZX) return true;
     return false;
 }
 inline hEntity hRequest::entity(int i) const

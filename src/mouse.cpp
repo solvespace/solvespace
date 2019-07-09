@@ -24,7 +24,7 @@ void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
     // twice as far as the mouse pointer...
     List<hEntity> *lhe = &(pending.points);
     for(hEntity *hee = lhe->First(); hee; hee = lhe->NextAfter(hee)) {
-        if(hee->v == hp.v) {
+        if(*hee == hp) {
             // Exact same point.
             return;
         }
@@ -32,7 +32,7 @@ void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
         if(pe->type == p->type &&
            pe->type != Entity::Type::POINT_IN_2D &&
            pe->type != Entity::Type::POINT_IN_3D &&
-           pe->group.v == p->group.v)
+           pe->group == p->group)
         {
             // Transform-type point, from the same group. So it handles the
             // same unknowns.
@@ -75,7 +75,7 @@ void GraphicsWindow::StartDraggingBySelection() {
     // the hovered item too, and they'll always have it.
     if(hover.entity.v) {
         hEntity dragEntity = ChooseFromHoverToDrag().entity;
-        if(dragEntity.v != Entity::NO_ENTITY.v) {
+        if(dragEntity != Entity::NO_ENTITY) {
             StartDraggingByEntity(dragEntity);
         }
     }
@@ -383,7 +383,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
 
             hRequest hr = pending.point.request();
-            if(pending.point.v == hr.entity(4).v) {
+            if(pending.point == hr.entity(4)) {
                 // The very first segment; dragging final point drags both
                 // tangent points.
                 Vector p0 = SK.GetEntity(hr.entity(1))->PointGetNum(),
@@ -486,7 +486,7 @@ void GraphicsWindow::ClearPending(bool scheduleShowTW) {
 
 bool GraphicsWindow::IsFromPending(hRequest r) {
     for(auto &req : pending.requests) {
-        if(req.v == r.v) return true;
+        if(req == r) return true;
     }
     return false;
 }
@@ -497,8 +497,8 @@ void GraphicsWindow::AddToPending(hRequest r) {
 
 void GraphicsWindow::ReplacePending(hRequest before, hRequest after) {
     for(auto &req : pending.requests) {
-        if(req.v == before.v) {
-            req.v = after.v;
+        if(req == before) {
+            req = after;
         }
     }
 }
@@ -721,7 +721,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
             for(c = lc->First(); c; c = lc->NextAfter(c)) {
                 if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                if(c->ptA == p->h || c->ptB == p->h) {
                     break;
                 }
             }
@@ -734,7 +734,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     Constraint *c;
                     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
                         if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                        if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                        if(c->ptA == p->h || c->ptB == p->h) {
                             c->tag = 1;
                         }
                     }
@@ -1178,7 +1178,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
             hRequest hr = pending.point.request();
             Request *r = SK.GetRequest(hr);
 
-            if(hover.entity.v == hr.entity(1).v && r->extraPoints >= 2) {
+            if(hover.entity == hr.entity(1) && r->extraPoints >= 2) {
                 // They want the endpoints coincident, which means a periodic
                 // spline instead.
                 r->type = Request::Type::CUBIC_PERIODIC;
@@ -1543,7 +1543,7 @@ void GraphicsWindow::SixDofEvent(Platform::SixDofEvent event) {
         // point.
         int64_t now = GetMilliseconds();
         if(now - last6DofTime > 5000 ||
-           last6DofGroup.v != g->h.v)
+           last6DofGroup != g->h)
         {
             SS.UndoRemember();
         }
