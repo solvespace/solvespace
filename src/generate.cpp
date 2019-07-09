@@ -18,7 +18,7 @@ void SolveSpaceUI::MarkGroupDirty(hGroup hg, bool onlyThis) {
     bool go = false;
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-        if(g->h.v == hg.v) {
+        if(g->h == hg) {
             go = true;
         }
         if(go) {
@@ -55,8 +55,8 @@ bool SolveSpaceUI::PruneOrphans() {
 }
 
 bool SolveSpaceUI::GroupsInOrder(hGroup before, hGroup after) {
-    if(before.v == 0) return true;
-    if(after.v  == 0) return true;
+    if(!before) return true;
+    if(!after) return true;
     if(!GroupExists(before)) return false;
     if(!GroupExists(after)) return false;
     int beforep = SK.GetGroup(before)->order;
@@ -72,7 +72,7 @@ bool SolveSpaceUI::GroupExists(hGroup hg) {
 bool SolveSpaceUI::EntityExists(hEntity he) {
     // A nonexstient entity is acceptable, though, usually just means it
     // doesn't apply.
-    if(he.v == Entity::NO_ENTITY.v) return true;
+    if(he == Entity::NO_ENTITY) return true;
     return SK.entity.FindByIdNoOops(he) ? true : false;
 }
 
@@ -94,7 +94,7 @@ bool SolveSpaceUI::PruneRequests(hGroup hg) {
     int i;
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
-        if(e->group.v != hg.v) continue;
+        if(e->group != hg) continue;
 
         if(EntityExists(e->workplane)) continue;
 
@@ -111,7 +111,7 @@ bool SolveSpaceUI::PruneConstraints(hGroup hg) {
     int i;
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *c = &(SK.constraint.elem[i]);
-        if(c->group.v != hg.v) continue;
+        if(c->group != hg) continue;
 
         if(EntityExists(c->workplane) &&
            EntityExists(c->ptA) &&
@@ -164,7 +164,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
                 if((!g->clean) || !g->IsSolvedOkay()) {
                     first = min(first, i);
                 }
-                if(g->h.v == SS.GW.activeGroup.v) {
+                if(g->h == SS.GW.activeGroup) {
                     last = i;
                 }
             }
@@ -190,7 +190,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         case Generate::UNTIL_ACTIVE: {
             for(i = 0; i < SK.groupOrder.n; i++) {
-                if(SK.groupOrder.elem[i].v == SS.GW.activeGroup.v)
+                if(SK.groupOrder.elem[i] == SS.GW.activeGroup)
                     break;
             }
 
@@ -235,13 +235,13 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
 
         for(j = 0; j < SK.request.n; j++) {
             Request *r = &(SK.request.elem[j]);
-            if(r->group.v != g->h.v) continue;
+            if(r->group != g->h) continue;
 
             r->Generate(&(SK.entity), &(SK.param));
         }
         for(j = 0; j < SK.constraint.n; j++) {
             Constraint *c = &SK.constraint.elem[j];
-            if(c->group.v != g->h.v) continue;
+            if(c->group != g->h) continue;
 
             c->Generate(&(SK.param));
         }
@@ -265,7 +265,7 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
             }
         }
 
-        if(g->h.v == Group::HGROUP_REFERENCES.v) {
+        if(g->h == Group::HGROUP_REFERENCES) {
             ForceReferences();
             g->solved.how = SolveResult::OKAY;
             g->clean = true;
@@ -303,11 +303,11 @@ void SolveSpaceUI::GenerateAll(Generate type, bool andFindFree, bool genForBBox)
     }
 
     // Make sure the point that we're tracing exists.
-    if(traced.point.v && !SK.entity.FindByIdNoOops(traced.point)) {
+    if(traced.point && !SK.entity.FindByIdNoOops(traced.point)) {
         traced.point = Entity::NO_ENTITY;
     }
     // And if we're tracing a point, add its new value to the path
-    if(traced.point.v) {
+    if(traced.point) {
         Entity *pt = SK.GetEntity(traced.point);
         traced.path.AddPoint(pt->PointGetNum());
     }
@@ -435,7 +435,7 @@ void SolveSpaceUI::MarkDraggedParams() {
         } else {
             hp = SS.GW.pending.points.elem[i];
         }
-        if(!hp.v) continue;
+        if(!hp) continue;
 
         // The pending point could be one in a group that has not yet
         // been processed, in which case the lookup will fail; but
@@ -460,7 +460,7 @@ void SolveSpaceUI::MarkDraggedParams() {
             }
         }
     }
-    if(SS.GW.pending.circle.v) {
+    if(SS.GW.pending.circle) {
         Entity *circ = SK.entity.FindByIdNoOops(SS.GW.pending.circle);
         if(circ) {
             Entity *dist = SK.GetEntity(circ->distance);
@@ -474,7 +474,7 @@ void SolveSpaceUI::MarkDraggedParams() {
             }
         }
     }
-    if(SS.GW.pending.normal.v) {
+    if(SS.GW.pending.normal) {
         Entity *norm = SK.entity.FindByIdNoOops(SS.GW.pending.normal);
         if(norm) {
             switch(norm->type) {
@@ -512,13 +512,13 @@ void SolveSpaceUI::WriteEqSystemForGroup(hGroup hg) {
     // And generate all the params for requests in this group
     for(i = 0; i < SK.request.n; i++) {
         Request *r = &(SK.request.elem[i]);
-        if(r->group.v != hg.v) continue;
+        if(r->group != hg) continue;
 
         r->Generate(&(sys.entity), &(sys.param));
     }
     for(i = 0; i < SK.constraint.n; i++) {
         Constraint *c = &SK.constraint.elem[i];
-        if(c->group.v != hg.v) continue;
+        if(c->group != hg) continue;
 
         c->Generate(&(sys.param));
     }
@@ -565,7 +565,7 @@ bool SolveSpaceUI::ActiveGroupsOkay() {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
         if(!g->IsSolvedOkay())
             return false;
-        if(g->h.v == SS.GW.activeGroup.v)
+        if(g->h == SS.GW.activeGroup)
             break;
     }
     return true;

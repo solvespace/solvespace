@@ -12,16 +12,16 @@ void SolveSpaceUI::Clipboard::Clear() {
 }
 
 bool SolveSpaceUI::Clipboard::ContainsEntity(hEntity he) {
-    if(he.v == Entity::NO_ENTITY.v)
+    if(he == Entity::NO_ENTITY)
         return true;
 
     ClipboardRequest *cr;
     for(cr = r.First(); cr; cr = r.NextAfter(cr)) {
-        if(cr->oldEnt.v == he.v)
+        if(cr->oldEnt == he)
             return true;
 
         for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
-            if(cr->oldPointEnt[i].v == he.v)
+            if(cr->oldPointEnt[i] == he)
                 return true;
         }
     }
@@ -29,16 +29,16 @@ bool SolveSpaceUI::Clipboard::ContainsEntity(hEntity he) {
 }
 
 hEntity SolveSpaceUI::Clipboard::NewEntityFor(hEntity he) {
-    if(he.v == Entity::NO_ENTITY.v)
+    if(he == Entity::NO_ENTITY)
         return Entity::NO_ENTITY;
 
     ClipboardRequest *cr;
     for(cr = r.First(); cr; cr = r.NextAfter(cr)) {
-        if(cr->oldEnt.v == he.v)
+        if(cr->oldEnt == he)
             return cr->newReq.entity(0);
 
         for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
-            if(cr->oldPointEnt[i].v == he.v)
+            if(cr->oldPointEnt[i] == he)
                 return cr->newReq.entity(1+i);
         }
     }
@@ -52,13 +52,13 @@ void GraphicsWindow::DeleteSelection() {
     List<Selection> *ls = &(selection);
     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
         hRequest r = { 0 };
-        if(s->entity.v && s->entity.isFromRequest()) {
+        if(s->entity && s->entity.isFromRequest()) {
             r = s->entity.request();
         }
-        if(r.v && !r.IsFromReferences()) {
+        if(r && !r.IsFromReferences()) {
             SK.request.Tag(r, 1);
         }
-        if(s->constraint.v) {
+        if(s->constraint) {
             SK.constraint.Tag(s->constraint, 1);
         }
     }
@@ -81,7 +81,7 @@ void GraphicsWindow::CopySelection() {
 
     List<Selection> *ls = &(selection);
     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-        if(!s->entity.v) continue;
+        if(!s->entity) continue;
         // Work only on entities that have requests that will generate them.
         Entity *e = SK.GetEntity(s->entity);
         bool hasDistance;
@@ -130,7 +130,7 @@ void GraphicsWindow::CopySelection() {
     }
 
     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-        if(!s->constraint.v) continue;
+        if(!s->constraint) continue;
 
         Constraint *c = SK.GetConstraint(s->constraint);
         if(c->type == Constraint::Type::COMMENT) {
@@ -164,15 +164,15 @@ void GraphicsWindow::PasteClipboard(Vector trans, double theta, double scale) {
     // For arcs, reflection involves swapping the endpoints, or otherwise
     // the arc gets inverted.
     auto mapPoint = [scale](hEntity he) {
-        if(he.v == 0) return he;
+        if(!he) return he;
 
         if(scale < 0) {
             hRequest hr = he.request();
             Request *r = SK.GetRequest(hr);
             if(r->type == Request::Type::ARC_OF_CIRCLE) {
-                if(he.v == hr.entity(2).v) {
+                if(he == hr.entity(2)) {
                     return hr.entity(3);
-                } else if(he.v == hr.entity(3).v) {
+                } else if(he == hr.entity(3)) {
                     return hr.entity(2);
                 }
             }

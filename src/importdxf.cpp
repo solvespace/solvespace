@@ -455,8 +455,8 @@ public:
         Entity *e = SK.GetEntity(he);
         Vector pos = e->PointGetNum();
         hEntity p = findPoint(pos);
-        if(p.v == he.v) return;
-        if(p.v != Entity::NO_ENTITY.v) {
+        if(p == he) return;
+        if(p != Entity::NO_ENTITY) {
             if(constrain) {
                 Constraint::ConstrainCoincident(he, p);
             }
@@ -475,7 +475,7 @@ public:
 
     hEntity createOrGetPoint(const Vector &p) {
         hEntity he = findPoint(p);
-        if(he.v != Entity::NO_ENTITY.v) return he;
+        if(he != Entity::NO_ENTITY) return he;
 
         hRequest hr = SS.GW.AddRequest(Request::Type::DATUM_POINT, /*rememberForUndo=*/false);
         he = hr.entity(0);

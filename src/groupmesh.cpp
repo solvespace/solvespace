@@ -16,7 +16,7 @@ void Group::AssembleLoops(bool *allClosed,
     int i;
     for(i = 0; i < SK.entity.n; i++) {
         Entity *e = &(SK.entity.elem[i]);
-        if(e->group.v != h.v) continue;
+        if(e->group != h) continue;
         if(e->construction) continue;
         if(e->forceHidden) continue;
 
@@ -84,7 +84,7 @@ void SShell::RemapFaces(Group *g, int remap) {
     SSurface *ss;
     for(ss = surface.First(); ss; ss = surface.NextAfter(ss)){
         hEntity face = { ss->face };
-        if(face.v == Entity::NO_ENTITY.v) continue;
+        if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
         ss->face = face.v;
@@ -95,7 +95,7 @@ void SMesh::RemapFaces(Group *g, int remap) {
     STriangle *tr;
     for(tr = l.First(); tr; tr = l.NextAfter(tr)) {
         hEntity face = { tr->meta.face };
-        if(face.v == Entity::NO_ENTITY.v) continue;
+        if(face == Entity::NO_ENTITY) continue;
 
         face = g->Remap(face, remap);
         tr->meta.face = face.v;
@@ -261,7 +261,7 @@ void Group::GenerateShellAndMesh() {
 
                 Entity *e;
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group.v != opA.v) continue;
+                    if(e->group != opA) continue;
                     if(e->type != Entity::Type::LINE_SEGMENT) continue;
 
                     Vector a = SK.GetEntity(e->point[0])->PointGetNum(),
@@ -458,7 +458,7 @@ void Group::GenerateDisplayItems() {
         displayMesh.PrecomputeTransparency();
 
         // Recalculate mass center if needed
-        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h.v == SS.GW.activeGroup.v) {
+        if(SS.centerOfMass.draw && SS.centerOfMass.dirty && h == SS.GW.activeGroup) {
             SS.UpdateCenterOfMass();
         }
         displayDirty = false;
@@ -469,7 +469,7 @@ Group *Group::PreviousGroup() const {
     int i;
     for(i = 0; i < SK.groupOrder.n; i++) {
         Group *g = SK.GetGroup(SK.groupOrder.elem[i]);
-        if(g->h.v == h.v) break;
+        if(g->h == h) break;
     }
     if(i == 0 || i >= SK.groupOrder.n) return NULL;
     return SK.GetGroup(SK.groupOrder.elem[i - 1]);
@@ -559,7 +559,7 @@ void Group::DrawMesh(DrawMeshAs how, Canvas *canvas) {
 
             std::vector<uint32_t> faces;
             hEntity he = SS.GW.hover.entity;
-            if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
+            if(he && SK.GetEntity(he)->IsFace()) {
                 faces.push_back(he.v);
             }
             canvas->DrawFaces(displayMesh, faces, hcf);
@@ -687,7 +687,7 @@ void Group::DrawFilledPaths(Canvas *canvas) {
         if(s->filled) {
             // This is a filled loop, where the user specified a fill color.
             fill.color = s->fillColor;
-        } else if(h.v == SS.GW.activeGroup.v && SS.checkClosedContour &&
+        } else if(h == SS.GW.activeGroup && SS.checkClosedContour &&
                     polyError.how == PolyError::GOOD) {
             // If this is the active group, and we are supposed to check
             // for closed contours, and we do indeed have a closed and

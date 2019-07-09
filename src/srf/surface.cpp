@@ -742,7 +742,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
 
                 // If this input curve generated a surface, then trim that
                 // surface with the rotated version of the input curve.
-                if(revs.d[0].v) { // not d[j] because crash on j==sections
+                if(revs.d[0]) { // not d[j] because crash on j==sections
                     sc         = {};
                     sc.isExact = true;
                     sc.exact   = sb->TransformedBy(ts, qs, 1.0);
@@ -786,7 +786,7 @@ void SShell::MakeFromHelicalRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
                 // curve based on the control points.
-                if((j < sections) && revs.d[j].v && revsp.d[j].v) {
+                if((j < sections) && revs.d[j] && revsp.d[j]) {
                     SSurface *ss = surface.FindById(revs.d[j]);
 
                     sc         = {};
@@ -873,7 +873,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
 
                 // If this input curve generate a surface, then trim that
                 // surface with the rotated version of the input curve.
-                if(revs.d[j].v) {
+                if(revs.d[j]) {
                     sc = {};
                     sc.isExact = true;
                     sc.exact = sb->TransformedBy(ts, qs, 1.0);
@@ -893,7 +893,7 @@ void SShell::MakeFromRevolutionOf(SBezierLoopSet *sbls, Vector pt, Vector axis, 
                 // And if this input curve and the one after it both generated
                 // surfaces, then trim both of those by the appropriate
                 // circle.
-                if(revs.d[j].v && revsp.d[j].v) {
+                if(revs.d[j] && revsp.d[j]) {
                     SSurface *ss = surface.FindById(revs.d[j]);
 
                     sc = {};

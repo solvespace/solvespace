@@ -40,7 +40,7 @@ Expr *ConstraintBase::PointLineDistance(hEntity wrkpl, hEntity hpt, hEntity hln)
 
     EntityBase *p = SK.GetEntity(hpt);
 
-    if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+    if(wrkpl == EntityBase::FREE_IN_3D) {
         ExprVector ep = p->PointGetExprs();
 
         ExprVector ea = a->PointGetExprs();
@@ -82,7 +82,7 @@ Expr *ConstraintBase::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
     ssassert(pa->IsPoint() && pb->IsPoint(),
              "Expected two points to measure projected distance between");
 
-    if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+    if(wrkpl == EntityBase::FREE_IN_3D) {
         // This is true distance
         ExprVector ea, eb, eab;
         ea = pa->PointGetExprs();
@@ -111,7 +111,7 @@ Expr *ConstraintBase::Distance(hEntity wrkpl, hEntity hpa, hEntity hpb) {
 Expr *ConstraintBase::DirectionCosine(hEntity wrkpl,
                                       ExprVector ae, ExprVector be)
 {
-    if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+    if(wrkpl == EntityBase::FREE_IN_3D) {
         Expr *mags = (ae.Magnitude())->Times(be.Magnitude());
         return (ae.Dot(be))->Div(mags);
     } else {
@@ -146,7 +146,7 @@ void ConstraintBase::ModifyToSatisfy() {
         Vector a = SK.GetEntity(entityA)->VectorGetNum();
         Vector b = SK.GetEntity(entityB)->VectorGetNum();
         if(other) a = a.ScaledBy(-1);
-        if(workplane.v != EntityBase::FREE_IN_3D.v) {
+        if(workplane != EntityBase::FREE_IN_3D) {
             a = a.ProjectVectorInto(workplane);
             b = b.ProjectVectorInto(workplane);
         }
@@ -190,7 +190,7 @@ void ConstraintBase::AddEq(IdList<Equation,hEquation> *l, const ExprVector &v,
                            int baseIndex) const {
     AddEq(l, v.x, baseIndex);
     AddEq(l, v.y, baseIndex + 1);
-    if(workplane.v == EntityBase::FREE_IN_3D.v) {
+    if(workplane == EntityBase::FREE_IN_3D) {
         AddEq(l, v.z, baseIndex + 2);
     }
 }
@@ -200,7 +200,7 @@ void ConstraintBase::Generate(IdList<Param,hParam> *l) {
         case Type::PARALLEL:
         case Type::CUBIC_LINE_TANGENT:
             // Add new parameter only when we operate in 3d space
-            if(workplane.v != EntityBase::FREE_IN_3D.v) break;
+            if(workplane != EntityBase::FREE_IN_3D) break;
             // fallthrough
         case Type::SAME_ORIENTATION:
         case Type::PT_ON_LINE: {
@@ -361,7 +361,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
         case Type::POINTS_COINCIDENT: {
             EntityBase *a = SK.GetEntity(ptA);
             EntityBase *b = SK.GetEntity(ptB);
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 ExprVector pa = a->PointGetExprs();
                 ExprVector pb = b->PointGetExprs();
                 AddEq(l, pa.x->Minus(pb.x), 0);
@@ -430,13 +430,13 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
         }
 
         case Type::AT_MIDPOINT:
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 EntityBase *ln = SK.GetEntity(entityA);
                 ExprVector a = SK.GetEntity(ln->point[0])->PointGetExprs();
                 ExprVector b = SK.GetEntity(ln->point[1])->PointGetExprs();
                 ExprVector m = (a.Plus(b)).ScaledBy(Expr::From(0.5));
 
-                if(ptA.v) {
+                if(ptA) {
                     ExprVector p = SK.GetEntity(ptA)->PointGetExprs();
                     AddEq(l, (m.x)->Minus(p.x), 0);
                     AddEq(l, (m.y)->Minus(p.y), 1);
@@ -455,7 +455,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
                 Expr *mu = Expr::From(0.5)->Times(au->Plus(bu));
                 Expr *mv = Expr::From(0.5)->Times(av->Plus(bv));
 
-                if(ptA.v) {
+                if(ptA) {
                     EntityBase *p = SK.GetEntity(ptA);
                     Expr *pu, *pv;
                     p->PointGetExprsInWorkplane(workplane, &pu, &pv);
@@ -469,7 +469,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             return;
 
         case Type::SYMMETRIC:
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 EntityBase *plane = SK.GetEntity(entityA);
                 EntityBase *ea = SK.GetEntity(ptA);
                 EntityBase *eb = SK.GetEntity(ptB);
@@ -521,7 +521,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::SYMMETRIC_HORIZ:
         case Type::SYMMETRIC_VERT: {
-            ssassert(workplane.v != Entity::FREE_IN_3D.v,
+            ssassert(workplane != Entity::FREE_IN_3D,
                      "Unexpected horizontal/vertical symmetric constraint in 3d");
 
             EntityBase *a = SK.GetEntity(ptA);
@@ -576,11 +576,11 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::HORIZONTAL:
         case Type::VERTICAL: {
-            ssassert(workplane.v != Entity::FREE_IN_3D.v,
+            ssassert(workplane != Entity::FREE_IN_3D,
                      "Unexpected horizontal/vertical constraint in 3d");
 
             hEntity ha, hb;
-            if(entityA.v) {
+            if(entityA) {
                 EntityBase *e = SK.GetEntity(entityA);
                 ha = e->point[0];
                 hb = e->point[1];
@@ -701,7 +701,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
             ExprVector b = line->VectorGetExprs();
 
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 ExprVector eq = VectorsParallel3d(a, b, valP);
                 AddEq(l, eq);
             } else {
@@ -755,7 +755,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
             ExprVector a = ea->VectorGetExprsInWorkplane(workplane);
             ExprVector b = eb->VectorGetExprsInWorkplane(workplane);
 
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 ExprVector eq = VectorsParallel3d(a, b, valP);
                 AddEq(l, eq);
             } else {
@@ -775,7 +775,7 @@ void ConstraintBase::GenerateEquations(IdList<Equation,hEquation> *l,
 
         case Type::WHERE_DRAGGED: {
             EntityBase *ep = SK.GetEntity(ptA);
-            if(workplane.v == EntityBase::FREE_IN_3D.v) {
+            if(workplane == EntityBase::FREE_IN_3D) {
                 ExprVector ev = ep->PointGetExprs();
                 Vector v = ep->PointGetNum();
 

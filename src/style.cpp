@@ -50,7 +50,7 @@ std::string Style::CnfPrefixToName(const std::string &prefix) {
 
 void Style::CreateAllDefaultStyles() {
     const Default *d;
-    for(d = &(Defaults[0]); d->h.v; d++) {
+    for(d = &(Defaults[0]); d->h; d++) {
         (void)Get(d->h);
     }
 }
@@ -58,10 +58,10 @@ void Style::CreateAllDefaultStyles() {
 void Style::CreateDefaultStyle(hStyle h) {
     bool isDefaultStyle = true;
     const Default *d;
-    for(d = &(Defaults[0]); d->h.v; d++) {
-        if(d->h.v == h.v) break;
+    for(d = &(Defaults[0]); d->h; d++) {
+        if(d->h == h) break;
     }
-    if(!d->h.v) {
+    if(!d->h) {
         // Not a default style; so just create it the same as our default
         // active group entity style.
         d = &(Defaults[0]);
@@ -108,7 +108,7 @@ void Style::FillDefaultStyle(Style *s, const Default *d, bool factory) {
 
 void Style::LoadFactoryDefaults() {
     const Default *d;
-    for(d = &(Defaults[0]); d->h.v; d++) {
+    for(d = &(Defaults[0]); d->h; d++) {
         Style *s = Get(d->h);
         FillDefaultStyle(s, d, /*factory=*/true);
     }
@@ -117,7 +117,7 @@ void Style::LoadFactoryDefaults() {
 
 void Style::FreezeDefaultStyles(Platform::SettingsRef settings) {
     const Default *d;
-    for(d = &(Defaults[0]); d->h.v; d++) {
+    for(d = &(Defaults[0]); d->h; d++) {
         settings->FreezeColor(CnfColor(d->cnfPrefix), Color(d->h));
         settings->FreezeFloat(CnfWidth(d->cnfPrefix), (float)Width(d->h));
         settings->FreezeFloat(CnfTextHeight(d->cnfPrefix), (float)TextHeight(d->h));
@@ -181,7 +181,7 @@ void Style::AssignSelectionToStyle(uint32_t v) {
 // the style, according to our table of default styles.
 //-----------------------------------------------------------------------------
 Style *Style::Get(hStyle h) {
-    if(h.v == 0) h.v = ACTIVE_GRP;
+    if(!h) h.v = ACTIVE_GRP;
 
     Style *s = SK.style.FindByIdNoOops(h);
     if(s) {
@@ -331,13 +331,13 @@ hStyle Style::ForEntity(hEntity he) {
     Entity *e = SK.GetEntity(he);
     // If the entity has a special style, use that. If that style doesn't
     // exist yet, then it will get created automatically later.
-    if(e->style.v != 0) {
+    if(e->style) {
         return e->style;
     }
 
     // Otherwise, we use the default rules.
     hStyle hs;
-    if(e->group.v != SS.GW.activeGroup.v) {
+    if(e->group != SS.GW.activeGroup) {
         hs.v = INACTIVE_GRP;
     } else if(e->construction) {
         hs.v = CONSTRUCTION;

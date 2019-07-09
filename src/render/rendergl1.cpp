@@ -249,7 +249,7 @@ void OpenGl1Renderer::UnSelectPrimitive() {
 }
 
 Canvas::Stroke *OpenGl1Renderer::SelectStroke(hStroke hcs) {
-    if(current.hcs.v == hcs.v) return current.stroke;
+    if(current.hcs == hcs) return current.stroke;
 
     Stroke *stroke = strokes.FindById(hcs);
     UnSelectPrimitive();
@@ -270,7 +270,7 @@ Canvas::Stroke *OpenGl1Renderer::SelectStroke(hStroke hcs) {
 }
 
 Canvas::Fill *OpenGl1Renderer::SelectFill(hFill hcf) {
-    if(current.hcf.v == hcf.v) return current.fill;
+    if(current.hcf == hcf) return current.fill;
 
     Fill *fill = fills.FindById(hcf);
     UnSelectPrimitive();
@@ -607,7 +607,7 @@ void OpenGl1Renderer::DrawMesh(const SMesh &m, hFill hcfFront, hFill hcfBack) {
     frontColor = frontFill->color;
 
     ssglMaterialRGBA(GL_FRONT, frontFill->color);
-    if(hcfBack.v != 0) {
+    if(hcfBack) {
         Fill *backFill = fills.FindById(hcfBack);
         backColor = backFill->color;
         ssassert(frontFill->layer  == backFill->layer &&

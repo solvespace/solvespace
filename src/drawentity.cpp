@@ -150,7 +150,7 @@ bool Entity::IsStylable() const {
 bool Entity::IsVisible() const {
     Group *g = SK.GetGroup(group);
 
-    if(g->h.v == Group::HGROUP_REFERENCES.v && IsNormal()) {
+    if(g->h == Group::HGROUP_REFERENCES && IsNormal()) {
         // The reference normals are always shown
         return true;
     }
@@ -162,7 +162,7 @@ bool Entity::IsVisible() const {
 
     if(!SS.GW.showWorkplanes) {
         if(IsWorkplane() && !h.isFromRequest()) {
-            if(g->h.v != SS.GW.activeGroup.v) {
+            if(g->h != SS.GW.activeGroup) {
                 // The group-associated workplanes are hidden outside
                 // their group.
                 return false;
@@ -170,7 +170,7 @@ bool Entity::IsVisible() const {
         }
     }
 
-    if(style.v) {
+    if(style) {
         Style *s = Style::Get(style);
         if(!s->visible) return false;
     }
@@ -453,7 +453,7 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
         zIndex = 5;
     } else if(how == DrawAs::HIDDEN) {
         zIndex = 2;
-    } else if(group.v != SS.GW.activeGroup.v) {
+    } else if(group != SS.GW.activeGroup) {
         zIndex = 3;
     } else {
         zIndex = 4;
@@ -568,11 +568,11 @@ void Entity::Draw(DrawAs how, Canvas *canvas) {
                     // dimmer for the ones at the model origin.
                     hRequest hr   = h.request();
                     uint8_t  luma = (asReference) ? 255 : 100;
-                    if(hr.v == Request::HREQUEST_REFERENCE_XY.v) {
+                    if(hr == Request::HREQUEST_REFERENCE_XY) {
                         stroke.color = RgbaColor::From(0, 0, luma);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_YZ.v) {
+                    } else if(hr == Request::HREQUEST_REFERENCE_YZ) {
                         stroke.color = RgbaColor::From(luma, 0, 0);
-                    } else if(hr.v == Request::HREQUEST_REFERENCE_ZX.v) {
+                    } else if(hr == Request::HREQUEST_REFERENCE_ZX) {
                         stroke.color = RgbaColor::From(0, luma, 0);
                     }
                 }

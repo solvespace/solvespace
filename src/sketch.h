@@ -116,7 +116,7 @@ struct EntityKeyHash {
 };
 struct EntityKeyEqual {
     bool operator()(const EntityKey &a, const EntityKey &b) const {
-        return std::tie(a.input.v, a.copyNumber) == std::tie(b.input.v, b.copyNumber);
+        return std::tie(a.input, a.copyNumber) == std::tie(b.input, b.copyNumber);
     }
 };
 typedef std::unordered_map<EntityKey, EntityId, EntityKeyHash, EntityKeyEqual> EntityMap;
@@ -894,9 +894,9 @@ inline hEquation hGroup::equation(int i) const
     { hEquation r; r.v = (v << 16) | 0x80000000 | (uint32_t)i; return r; }
 
 inline bool hRequest::IsFromReferences() const {
-    if(v == Request::HREQUEST_REFERENCE_XY.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_YZ.v) return true;
-    if(v == Request::HREQUEST_REFERENCE_ZX.v) return true;
+    if(*this == Request::HREQUEST_REFERENCE_XY) return true;
+    if(*this == Request::HREQUEST_REFERENCE_YZ) return true;
+    if(*this == Request::HREQUEST_REFERENCE_ZX) return true;
     return false;
 }
 inline hEntity hRequest::entity(int i) const

@@ -24,7 +24,7 @@ void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
     // twice as far as the mouse pointer...
     List<hEntity> *lhe = &(pending.points);
     for(hEntity *hee = lhe->First(); hee; hee = lhe->NextAfter(hee)) {
-        if(hee->v == hp.v) {
+        if(*hee == hp) {
             // Exact same point.
             return;
         }
@@ -32,7 +32,7 @@ void GraphicsWindow::AddPointToDraggedList(hEntity hp) {
         if(pe->type == p->type &&
            pe->type != Entity::Type::POINT_IN_2D &&
            pe->type != Entity::Type::POINT_IN_3D &&
-           pe->group.v == p->group.v)
+           pe->group == p->group)
         {
             // Transform-type point, from the same group. So it handles the
             // same unknowns.
@@ -66,16 +66,16 @@ void GraphicsWindow::StartDraggingByEntity(hEntity he) {
 void GraphicsWindow::StartDraggingBySelection() {
     List<Selection> *ls = &(selection);
     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-        if(!s->entity.v) continue;
+        if(!s->entity) continue;
 
         StartDraggingByEntity(s->entity);
     }
     // The user might select a point, and then click it again to start
     // dragging; but the point just got unselected by that click. So drag
     // the hovered item too, and they'll always have it.
-    if(hover.entity.v) {
+    if(hover.entity) {
         hEntity dragEntity = ChooseFromHoverToDrag().entity;
-        if(dragEntity.v != Entity::NO_ENTITY.v) {
+        if(dragEntity != Entity::NO_ENTITY) {
             StartDraggingByEntity(dragEntity);
         }
     }
@@ -186,7 +186,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
         if(leftDown && dm > 3) {
             Entity *e = NULL;
             hEntity dragEntity = ChooseFromHoverToDrag().entity;
-            if(dragEntity.v) e = SK.GetEntity(dragEntity);
+            if(dragEntity) e = SK.GetEntity(dragEntity);
             if(e && e->type != Entity::Type::WORKPLANE) {
                 Entity *e = SK.GetEntity(dragEntity);
                 if(e->type == Entity::Type::CIRCLE && selection.n <= 1) {
@@ -217,7 +217,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                     hover.Clear();
                     pending.operation = Pending::DRAGGING_POINTS;
                 }
-            } else if(hover.constraint.v &&
+            } else if(hover.constraint &&
                             SK.GetConstraint(hover.constraint)->HasLabel())
             {
                 ClearSelection();
@@ -229,11 +229,11 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
                 // the drag changes anything.
                 SS.UndoRemember();
             } else {
-                if(!hover.constraint.v) {
+                if(!hover.constraint) {
                     // That's just marquee selection, which should not cause
                     // an undo remember.
                     if(dm > 10) {
-                        if(hover.entity.v) {
+                        if(hover.entity) {
                             // Avoid accidentally selecting workplanes when
                             // starting drags.
                             MakeUnselected(hover.entity, /*coincidentPointTrick=*/false);
@@ -383,7 +383,7 @@ void GraphicsWindow::MouseMoved(double x, double y, bool leftDown,
             HitTestMakeSelection(mp);
 
             hRequest hr = pending.point.request();
-            if(pending.point.v == hr.entity(4).v) {
+            if(pending.point == hr.entity(4)) {
                 // The very first segment; dragging final point drags both
                 // tangent points.
                 Vector p0 = SK.GetEntity(hr.entity(1))->PointGetNum(),
@@ -486,7 +486,7 @@ void GraphicsWindow::ClearPending(bool scheduleShowTW) {
 
 bool GraphicsWindow::IsFromPending(hRequest r) {
     for(auto &req : pending.requests) {
-        if(req.v == r.v) return true;
+        if(req == r) return true;
     }
     return false;
 }
@@ -497,8 +497,8 @@ void GraphicsWindow::AddToPending(hRequest r) {
 
 void GraphicsWindow::ReplacePending(hRequest before, hRequest after) {
     for(auto &req : pending.requests) {
-        if(req.v == before.v) {
-            req.v = after.v;
+        if(req == before) {
+            req = after;
         }
     }
 }
@@ -662,7 +662,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     RemoveConstraintsForPointBeingDeleted(e->point[index]);
 
                     for(int i = index; i < MAX_POINTS_IN_ENTITY - 1; i++) {
-                        if(e->point[i + 1].v == 0) break;
+                        if(!e->point[i + 1]) break;
                         Entity *p0 = SK.GetEntity(e->point[i]);
                         Entity *p1 = SK.GetEntity(e->point[i + 1]);
                         ReplacePointInConstraints(p1->h, p0->h);
@@ -721,7 +721,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
             IdList<Constraint,hConstraint> *lc = &(SK.constraint);
             for(c = lc->First(); c; c = lc->NextAfter(c)) {
                 if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                if(c->ptA == p->h || c->ptB == p->h) {
                     break;
                 }
             }
@@ -734,7 +734,7 @@ void GraphicsWindow::MouseRightUp(double x, double y) {
                     Constraint *c;
                     for(c = SK.constraint.First(); c; c = SK.constraint.NextAfter(c)) {
                         if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
-                        if(c->ptA.v == p->h.v || c->ptB.v == p->h.v) {
+                        if(c->ptA == p->h || c->ptB == p->h) {
                             c->tag = 1;
                         }
                     }
@@ -842,7 +842,7 @@ Vector GraphicsWindow::SnapToEntityByScreenPoint(Point2d pp, hEntity he) {
 }
 
 bool GraphicsWindow::ConstrainPointByHovered(hEntity pt, const Point2d *projected) {
-    if(!hover.entity.v) return false;
+    if(!hover.entity) return false;
 
     Entity *point = SK.GetEntity(pt);
     Entity *e = SK.GetEntity(hover.entity);
@@ -1178,7 +1178,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
             hRequest hr = pending.point.request();
             Request *r = SK.GetRequest(hr);
 
-            if(hover.entity.v == hr.entity(1).v && r->extraPoints >= 2) {
+            if(hover.entity == hr.entity(1) && r->extraPoints >= 2) {
                 // They want the endpoints coincident, which means a periodic
                 // spline instead.
                 r->type = Request::Type::CUBIC_PERIODIC;
@@ -1224,7 +1224,7 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
         }
 
         case Pending::DRAGGING_NEW_LINE_POINT: {
-            if(hover.entity.v) {
+            if(hover.entity) {
                 Entity *e = SK.GetEntity(hover.entity);
                 if(e->IsPoint()) {
                     hRequest hrl = pending.point.request();
@@ -1293,10 +1293,10 @@ void GraphicsWindow::MouseLeftDown(double mx, double my, bool shiftDown, bool ct
 
     // Activate group with newly created request/constraint
     Group *g = NULL;
-    if(hr.v != 0) {
+    if(hr) {
         g = SK.GetGroup(SK.GetRequest(hr)->group);
     }
-    if(hc.v != 0) {
+    if(hc) {
         g = SK.GetGroup(SK.GetConstraint(hc)->group);
     }
     if(g != NULL) {
@@ -1343,7 +1343,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
     if(window->IsEditorVisible()) return;
     SS.TW.HideEditControl();
 
-    if(hover.constraint.v) {
+    if(hover.constraint) {
         constraintBeingEdited = hover.constraint;
         ClearSuper();
 
@@ -1399,7 +1399,7 @@ void GraphicsWindow::MouseLeftDoubleClick(double mx, double my) {
         double width, height;
         window->GetContentSize(&width, &height);
         hStyle hs = c->disp.style;
-        if(hs.v == 0) hs.v = Style::CONSTRAINT;
+        if(!hs) hs.v = Style::CONSTRAINT;
         double capHeight = Style::TextHeight(hs);
         double fontHeight = VectorFont::Builtin()->GetHeight(capHeight);
         double editMinWidth = VectorFont::Builtin()->GetWidth(capHeight, editPlaceholder);
@@ -1543,7 +1543,7 @@ void GraphicsWindow::SixDofEvent(Platform::SixDofEvent event) {
         // point.
         int64_t now = GetMilliseconds();
         if(now - last6DofTime > 5000 ||
-           last6DofGroup.v != g->h.v)
+           last6DofGroup != g->h)
         {
             SS.UndoRemember();
         }

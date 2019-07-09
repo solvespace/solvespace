@@ -59,8 +59,8 @@ void SShell::MergeCoincidentSurfaces() {
                 // new srf
                 SCurve *sc;
                 for(sc = curve.First(); sc; sc = curve.NextAfter(sc)) {
-                    if(sc->surfA.v == sj->h.v) sc->surfA = si->h;
-                    if(sc->surfB.v == sj->h.v) sc->surfB = si->h;
+                    if(sc->surfA == sj->h) sc->surfA = si->h;
+                    if(sc->surfB == sj->h) sc->surfB = si->h;
                 }
             }
 

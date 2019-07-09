@@ -552,7 +552,7 @@ void GraphicsWindow::LoopOverPoints(const std::vector<Entity *> &entities,
         } else {
             // We have to iterate children points, because we can select entities without points
             for(int i = 0; i < MAX_POINTS_IN_ENTITY; i++) {
-                if(e->point[i].v == 0) break;
+                if(!e->point[i]) break;
                 Vector p = SK.GetEntity(e->point[i])->PointGetNum();
                 HandlePointForZoomToFit(p, pmax, pmin, wmin, usePerspective, camera);
             }
@@ -608,7 +608,7 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
     if(useSelection) {
         for(int i = 0; i < selection.n; i++) {
             Selection *s = &selection.elem[i];
-            if(s->entity.v != 0) {
+            if(s->entity) {
                 Entity *e = SK.entity.FindById(s->entity);
                 if(e->IsFace()) {
                     faces.push_back(e->h);
@@ -616,7 +616,7 @@ double GraphicsWindow::ZoomToFit(const Camera &camera,
                 }
                 entities.push_back(e);
             }
-            if(s->constraint.v != 0) {
+            if(s->constraint) {
                 Constraint *c = SK.constraint.FindById(s->constraint);
                 constraints.push_back(c);
             }
@@ -845,10 +845,10 @@ void GraphicsWindow::EnsureValidActives() {
     bool change = false;
     // The active group must exist, and not be the references.
     Group *g = SK.group.FindByIdNoOops(activeGroup);
-    if((!g) || (g->h.v == Group::HGROUP_REFERENCES.v)) {
+    if((!g) || (g->h == Group::HGROUP_REFERENCES)) {
         int i;
         for(i = 0; i < SK.groupOrder.n; i++) {
-            if(SK.groupOrder.elem[i].v != Group::HGROUP_REFERENCES.v) {
+            if(SK.groupOrder.elem[i] != Group::HGROUP_REFERENCES) {
                 break;
             }
         }
@@ -875,7 +875,7 @@ void GraphicsWindow::EnsureValidActives() {
         Entity *e = SK.entity.FindByIdNoOops(ActiveWorkplane());
         if(e) {
             hGroup hgw = e->group;
-            if(hgw.v != activeGroup.v && SS.GroupsInOrder(activeGroup, hgw)) {
+            if(hgw != activeGroup && SS.GroupsInOrder(activeGroup, hgw)) {
                 // The active workplane is in a group that comes after the
                 // active group; so any request or constraint will fail.
                 SetWorkplaneFreeIn3d();
@@ -932,7 +932,7 @@ hEntity GraphicsWindow::ActiveWorkplane() {
     }
 }
 bool GraphicsWindow::LockedInWorkplane() {
-    return (SS.GW.ActiveWorkplane().v != Entity::FREE_IN_3D.v);
+    return (SS.GW.ActiveWorkplane() != Entity::FREE_IN_3D);
 }
 
 void GraphicsWindow::ForceTextWindowShown() {
@@ -1027,7 +1027,7 @@ void GraphicsWindow::MenuEdit(Command id) {
         case Command::SELECT_ALL: {
             Entity *e;
             for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                if(e->group.v != SS.GW.activeGroup.v) continue;
+                if(e->group != SS.GW.activeGroup) continue;
                 if(e->IsFace() || e->IsDistance()) continue;
                 if(!e->IsVisible()) continue;
 
@@ -1045,7 +1045,7 @@ void GraphicsWindow::MenuEdit(Command id) {
             do {
                 didSomething = false;
                 for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-                    if(e->group.v != SS.GW.activeGroup.v) continue;
+                    if(e->group != SS.GW.activeGroup) continue;
                     if(!e->HasEndpoints()) continue;
                     if(!e->IsVisible()) continue;
 
@@ -1055,8 +1055,8 @@ void GraphicsWindow::MenuEdit(Command id) {
                     bool onChain = false, alreadySelected = false;
                     List<Selection> *ls = &(SS.GW.selection);
                     for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-                        if(!s->entity.v) continue;
-                        if(s->entity.v == e->h.v) {
+                        if(!s->entity) continue;
+                        if(s->entity == e->h) {
                             alreadySelected = true;
                             continue;
                         }
@@ -1139,7 +1139,7 @@ void GraphicsWindow::MenuEdit(Command id) {
 
             List<Selection> *ls = &(SS.GW.selection);
             for(Selection *s = ls->First(); s; s = ls->NextAfter(s)) {
-                if(s->entity.v) {
+                if(s->entity) {
                     hEntity hp = s->entity;
                     Entity *ep = SK.GetEntity(hp);
                     if(!ep->IsPoint()) continue;
@@ -1148,7 +1148,7 @@ void GraphicsWindow::MenuEdit(Command id) {
                     ep->PointForceTo(SS.GW.SnapToGrid(p));
                     SS.GW.pending.points.Add(&hp);
                     SS.MarkGroupDirty(ep->group);
-                } else if(s->constraint.v) {
+                } else if(s->constraint) {
                     Constraint *c = SK.GetConstraint(s->constraint);
                     std::vector<Vector> refs;
                     c->GetReferencePoints(SS.GW.GetCamera(), &refs);

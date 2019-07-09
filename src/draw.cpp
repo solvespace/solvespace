@@ -8,19 +8,19 @@
 #include "solvespace.h"
 
 bool GraphicsWindow::Selection::Equals(Selection *b) {
-    if(entity.v     != b->entity.v)     return false;
-    if(constraint.v != b->constraint.v) return false;
+    if(entity     != b->entity)     return false;
+    if(constraint != b->constraint) return false;
     return true;
 }
 
 bool GraphicsWindow::Selection::IsEmpty() {
-    if(entity.v)        return false;
-    if(constraint.v)    return false;
+    if(entity)        return false;
+    if(constraint)    return false;
     return true;
 }
 
 bool GraphicsWindow::Selection::HasEndpoints() {
-    if(!entity.v) return false;
+    if(!entity) return false;
     Entity *e = SK.GetEntity(entity);
     return e->HasEndpoints();
 }
@@ -34,7 +34,7 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
     const Camera &camera = canvas->GetCamera();
 
     std::vector<Vector> refs;
-    if(entity.v) {
+    if(entity) {
         Entity *e = SK.GetEntity(entity);
         e->Draw(isHovered ? Entity::DrawAs::HOVERED :
                             Entity::DrawAs::SELECTED,
@@ -43,7 +43,7 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
             e->GetReferencePoints(&refs);
         }
     }
-    if(constraint.v) {
+    if(constraint) {
         Constraint *c = SK.GetConstraint(constraint);
         c->Draw(isHovered ? Constraint::DrawAs::HOVERED :
                             Constraint::DrawAs::SELECTED,
@@ -52,7 +52,7 @@ void GraphicsWindow::Selection::Draw(bool isHovered, Canvas *canvas) {
             c->GetReferencePoints(camera, &refs);
         }
     }
-    if(emphasized && (constraint.v || entity.v)) {
+    if(emphasized && (constraint || entity)) {
         // We want to emphasize this constraint or entity, by drawing a thick
         // line from the top left corner of the screen to the reference point(s)
         // of that entity or constraint.
@@ -88,11 +88,11 @@ void GraphicsWindow::ClearNonexistentSelectionItems() {
     Selection *s;
     selection.ClearTags();
     for(s = selection.First(); s; s = selection.NextAfter(s)) {
-        if(s->constraint.v && !(SK.constraint.FindByIdNoOops(s->constraint))) {
+        if(s->constraint && !(SK.constraint.FindByIdNoOops(s->constraint))) {
             s->tag = 1;
             change = true;
         }
-        if(s->entity.v && !(SK.entity.FindByIdNoOops(s->entity))) {
+        if(s->entity && !(SK.entity.FindByIdNoOops(s->entity))) {
             s->tag = 1;
             change = true;
         }
@@ -145,13 +145,14 @@ void GraphicsWindow::MakeUnselected(Selection *stog, bool coincidentPointTrick){
     // If two points are coincident, then it's impossible to hover one of
     // them. But make sure to deselect both, to avoid mysterious seeming
     // inability to deselect if the bottom one did somehow get selected.
-    if(stog->entity.v && coincidentPointTrick) {
+    if(stog->entity && coincidentPointTrick) {
         Entity *e = SK.GetEntity(stog->entity);
         if(e->IsPoint()) {
             Vector ep = e->PointGetNum();
             for(s = selection.First(); s; s = selection.NextAfter(s)) {
-                if(!s->entity.v) continue;
-                if(s->entity.v == stog->entity.v) continue;
+                if(!s->entity) continue;
+                if(s->entity == stog->entity)
+                    continue;
                 Entity *se = SK.GetEntity(s->entity);
                 if(!se->IsPoint()) continue;
                 if(ep.Equals(se->PointGetNum())) {
@@ -182,7 +183,7 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
     if(stog->IsEmpty()) return;
     if(IsSelected(stog)) return;
 
-    if(stog->entity.v != 0 && SK.GetEntity(stog->entity)->IsFace()) {
+    if(stog->entity && SK.GetEntity(stog->entity)->IsFace()) {
         // In the interest of speed for the triangle drawing code,
         // only two faces may be selected at a time.
         int c = 0;
@@ -190,7 +191,7 @@ void GraphicsWindow::MakeSelected(Selection *stog) {
         selection.ClearTags();
         for(s = selection.First(); s; s = selection.NextAfter(s)) {
             hEntity he = s->entity;
-            if(he.v != 0 && SK.GetEntity(he)->IsFace()) {
+            if(he && SK.GetEntity(he)->IsFace()) {
                 c++;
                 if(c >= 2) s->tag = 1;
             }
@@ -211,7 +212,7 @@ void GraphicsWindow::SelectByMarquee() {
 
     Entity *e;
     for(e = SK.entity.First(); e; e = SK.entity.NextAfter(e)) {
-        if(e->group.v != SS.GW.activeGroup.v) continue;
+        if(e->group != SS.GW.activeGroup) continue;
         if(e->IsFace() || e->IsDistance()) continue;
         if(!e->IsVisible()) continue;
 
@@ -233,7 +234,7 @@ void GraphicsWindow::GroupSelection() {
     int i;
     for(i = 0; i < selection.n; i++) {
         Selection *s = &(selection.elem[i]);
-        if(s->entity.v) {
+        if(s->entity) {
             (gs.n)++;
 
             Entity *e = SK.entity.FindById(s->entity);
@@ -292,7 +293,7 @@ void GraphicsWindow::GroupSelection() {
                 default: break;
             }
         }
-        if(s->constraint.v) {
+        if(s->constraint) {
             gs.constraints++;
             gs.constraint.push_back(s->constraint);
             Constraint *c = SK.GetConstraint(s->constraint);
@@ -335,9 +336,9 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
     int bestZIndex = 0;
     for(const Hover &hov : hoverList) {
         hGroup hg = {};
-        if(hov.selection.entity.v != 0) {
+        if(hov.selection.entity) {
             hg = SK.GetEntity(hov.selection.entity)->group;
-        } else if(hov.selection.constraint.v != 0) {
+        } else if(hov.selection.constraint) {
             hg = SK.GetConstraint(hov.selection.constraint)->group;
         }
 
@@ -354,7 +355,7 @@ GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToSelect() {
 GraphicsWindow::Selection GraphicsWindow::ChooseFromHoverToDrag() {
     Selection sel = {};
     for(const Hover &hov : hoverList) {
-        if(hov.selection.entity.v == 0) continue;
+        if(!hov.selection.entity) continue;
         if(!hov.selection.entity.isFromRequest()) continue;
         sel = hov.selection;
         break;
@@ -407,7 +408,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
             Request *r = SK.GetRequest(e.h.request());
             if(r->type != Request::Type::CUBIC) continue;
             if(r->extraPoints < 2) continue;
-            if(e.h.v != r->h.entity(1).v) continue;
+            if(e.h != r->h.entity(1)) continue;
         }
 
         if(canvas.Pick([&]{ e.Draw(Entity::DrawAs::DEFAULT, &canvas); })) {
@@ -442,7 +443,7 @@ void GraphicsWindow::HitTestMakeSelection(Point2d mp) {
 
     if(pending.operation == Pending::NONE) {
         // Faces, from the triangle mesh; these are lowest priority
-        if(sel.constraint.v == 0 && sel.entity.v == 0 && showShaded && showFaces) {
+        if(!sel.constraint && !sel.entity && showShaded && showFaces) {
             Group *g = SK.GetGroup(activeGroup);
             SMesh *m = &(g->displayMesh);
 
@@ -701,7 +702,7 @@ void GraphicsWindow::Draw(Canvas *canvas) {
     if(SS.showContourAreas) {
         for(hGroup hg : SK.groupOrder) {
             Group *g = SK.GetGroup(hg);
-            if(g->h.v != activeGroup.v) continue;
+            if(g->h != activeGroup) continue;
             if(!(g->IsVisible())) continue;
             g->DrawContourAreaLabels(canvas);
         }

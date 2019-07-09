@@ -28,7 +28,7 @@ void SolveSpaceUI::ExportSectionTo(const Platform::Path &filename) {
 
     SS.GW.GroupSelection();
     auto const &gs = SS.GW.gs;
-    if((gs.n == 0 && g->activeWorkplane.v != Entity::FREE_IN_3D.v)) {
+    if((gs.n == 0 && g->activeWorkplane != Entity::FREE_IN_3D)) {
         Entity *wrkpl = SK.GetEntity(g->activeWorkplane);
         origin = wrkpl->WorkplaneGetOffset();
         n = wrkpl->Normal()->NormalN();
