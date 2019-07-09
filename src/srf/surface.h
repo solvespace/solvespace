@@ -58,14 +58,14 @@ public:
 
 class SShell;
 
-class hSSurface {
+class hSSurface : public HandleBase<hSSurface> {
 public:
-    uint32_t v;
+    using HandleBase::HandleBase;
 };
 
-class hSCurve {
+class hSCurve : public HandleBase<hSCurve> {
 public:
-    uint32_t v;
+    using HandleBase::HandleBase;
 };
 
 // Stuff for rational polynomial curves, of degree one to three. These are

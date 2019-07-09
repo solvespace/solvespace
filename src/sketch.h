@@ -50,53 +50,58 @@ enum class Command : uint32_t;
 
 // All of the hWhatever handles are a 32-bit ID, that is used to represent
 // some data structure in the sketch.
-class hGroup {
+class hGroup : public HandleBase<hGroup> {
 public:
     // bits 15: 0   -- group index
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline hEntity entity(int i) const;
     inline hParam param(int i) const;
     inline hEquation equation(int i) const;
 };
-class hRequest {
+
+class hRequest: public HandleBase<hRequest> {
 public:
     // bits 15: 0   -- request index
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline hEntity entity(int i) const;
     inline hParam param(int i) const;
 
     inline bool IsFromReferences() const;
 };
-class hEntity {
+
+class hEntity : public HandleBase<hEntity>{
 public:
     // bits 15: 0   -- entity index
     //      31:16   -- request index
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline bool isFromRequest() const;
     inline hRequest request() const;
     inline hGroup group() const;
     inline hEquation equation(int i) const;
 };
-class hParam {
+
+class hParam : public HandleBase<hParam>{
 public:
     // bits 15: 0   -- param index
     //      31:16   -- request index
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline hRequest request() const;
 };
 
-class hStyle {
+class hStyle : public HandleBase<hStyle>{
 public:
-    uint32_t v;
+    using HandleBase::HandleBase;
 };
 
-struct EntityId {
-    uint32_t v;     // entity ID, starting from 0
+struct EntityId : public HandleBase<EntityId> {
+    using HandleBase::HandleBase;
+         // entity ID, starting from 0
 };
+
 struct EntityKey {
     hEntity     input;
     int         copyNumber;
@@ -587,9 +592,9 @@ public:
 };
 
 
-class hConstraint {
+class hConstraint : public HandleBase<hConstraint>{
 public:
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline hEquation equation(int i) const;
     inline hParam param(int i) const;
@@ -662,10 +667,10 @@ public:
     std::string comment;    // since comments are represented as constraints
 
     bool Equals(const ConstraintBase &c) const {
-        return type == c.type && group.v == c.group.v && workplane.v == c.workplane.v &&
-            valA == c.valA && valP.v == c.valP.v && ptA.v == c.ptA.v && ptB.v == c.ptB.v &&
-            entityA.v == c.entityA.v && entityB.v == c.entityB.v &&
-            entityC.v == c.entityC.v && entityD.v == c.entityD.v &&
+        return type == c.type && group == c.group && workplane == c.workplane &&
+            valA == c.valA && valP == c.valP && ptA == c.ptA && ptB == c.ptB &&
+            entityA == c.entityA && entityB == c.entityB &&
+            entityC == c.entityC && entityD == c.entityD &&
             other == c.other && other2 == c.other2 && reference == c.reference &&
             comment == c.comment;
     }
@@ -755,9 +760,9 @@ public:
                                     bool other = false, bool other2 = false);
 };
 
-class hEquation {
+class hEquation : public HandleBase<hEquation> {
 public:
-    uint32_t v;
+    using HandleBase::HandleBase;
 
     inline bool isFromConstraint() const;
     inline hConstraint constraint() const;

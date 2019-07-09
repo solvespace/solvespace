@@ -59,14 +59,14 @@ class Canvas {
 public:
     // Stroke and fill styles are addressed with handles to be able to quickly
     // group geometry into indexed draw calls.
-    class hStroke {
+    class hStroke : public HandleBase<Canvas::hStroke> {
     public:
-        uint32_t v;
+        using HandleBase::HandleBase;
     };
 
-    class hFill {
+    class hFill : public HandleBase<Canvas::hFill> {
     public:
-        uint32_t v;
+        using HandleBase::HandleBase;
     };
 
     // The layer of a geometry describes how it occludes other geometry.
