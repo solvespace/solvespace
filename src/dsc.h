@@ -309,6 +309,12 @@ static inline bool operator!=(HandleBase<Derived> const &lhs, HandleBase<Derived
     return !(lhs == rhs);
 }
 
+// Less-than-compare any two instances of a handle type.
+template<typename Derived>
+static inline bool operator<(HandleBase<Derived> const &lhs, HandleBase<Derived> const &rhs) {
+    return lhs.v < rhs.v;
+}
+
 // A list, where each element has an integer identifier. The list is kept
 // sorted by that identifier, and items can be looked up in log n time by
 // id.
