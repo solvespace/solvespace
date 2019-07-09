@@ -8,7 +8,7 @@ python-solvespace
 
 Python library from solver of SolveSpace.
 
-Feature for CDemo and Python interface can see [here](https://github.com/KmolYuan/python-solvespace/blob/master/Cython/DOC.txt).
+Feature for CDemo and Python interface can see [here](https://github.com/solvespace/solvespace/blob/master/exposed/DOC.txt).
 
 Build and Test
 ===
