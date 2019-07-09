@@ -63,10 +63,16 @@ public:
     uint32_t v;
 };
 
+template<>
+struct IsHandleOracle<hSSurface> : std::true_type {};
+
 class hSCurve {
 public:
     uint32_t v;
 };
+
+template<>
+struct IsHandleOracle<hSCurve> : std::true_type {};
 
 // Stuff for rational polynomial curves, of degree one to three. These are
 // our inputs, and are also calculated for certain exact surface-surface

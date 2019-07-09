@@ -9,6 +9,34 @@
 
 #include "solvespace.h"
 
+#include <type_traits>
+
+/// Trait indicating which types are handle types and should get the associated operators.
+/// Specialize for each handle type and inherit from std::true_type.
+template<typename T>
+struct IsHandleOracle : std::false_type {};
+
+// Equality-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator==(T const &lhs, T const &rhs) {
+    return lhs.v == rhs.v;
+}
+
+// Inequality-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator!=(T const &lhs, T const &rhs) {
+    return !(lhs == rhs);
+}
+
+// Less-than-compare any two instances of a handle type.
+template<typename T>
+static inline typename std::enable_if<IsHandleOracle<T>::value, bool>::type
+operator<(T const &lhs, T const &rhs) {
+    return lhs.v < rhs.v;
+}
+
 class Vector;
 class Vector4;
 class Point2d;
@@ -284,6 +312,7 @@ public:
         }
     }
 };
+
 
 // A list, where each element has an integer identifier. The list is kept
 // sorted by that identifier, and items can be looked up in log n time by

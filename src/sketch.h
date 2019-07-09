@@ -59,6 +59,10 @@ public:
     inline hParam param(int i) const;
     inline hEquation equation(int i) const;
 };
+
+template<>
+struct IsHandleOracle<hGroup> : std::true_type {};
+
 class hRequest {
 public:
     // bits 15: 0   -- request index
@@ -69,6 +73,10 @@ public:
 
     inline bool IsFromReferences() const;
 };
+
+template<>
+struct IsHandleOracle<hRequest> : std::true_type {};
+
 class hEntity {
 public:
     // bits 15: 0   -- entity index
@@ -80,6 +88,10 @@ public:
     inline hGroup group() const;
     inline hEquation equation(int i) const;
 };
+
+template<>
+struct IsHandleOracle<hEntity> : std::true_type {};
+
 class hParam {
 public:
     // bits 15: 0   -- param index
@@ -89,14 +101,24 @@ public:
     inline hRequest request() const;
 };
 
+template<>
+struct IsHandleOracle<hParam> : std::true_type {};
+
 class hStyle {
 public:
     uint32_t v;
 };
 
+template<>
+struct IsHandleOracle<hStyle> : std::true_type {};
+
 struct EntityId {
     uint32_t v;     // entity ID, starting from 0
 };
+
+template<>
+struct IsHandleOracle<EntityId> : std::true_type {};
+
 struct EntityKey {
     hEntity     input;
     int         copyNumber;
@@ -595,6 +617,9 @@ public:
     inline hParam param(int i) const;
 };
 
+template<>
+struct IsHandleOracle<hConstraint> : std::true_type {};
+
 class ConstraintBase {
 public:
     int         tag;
@@ -762,6 +787,9 @@ public:
     inline bool isFromConstraint() const;
     inline hConstraint constraint() const;
 };
+
+template<>
+struct IsHandleOracle<hEquation> : std::true_type {};
 
 class Equation {
 public:
