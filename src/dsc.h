@@ -313,7 +313,6 @@ public:
     }
 };
 
-
 // A list, where each element has an integer identifier. The list is kept
 // sorted by that identifier, and items can be looked up in log n time by
 // id.

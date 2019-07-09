@@ -165,13 +165,8 @@ enum class Unit : uint32_t {
     METERS
 };
 
-template<class T>
-struct CompareHandle {
-    bool operator()(T lhs, T rhs) const { return lhs.v < rhs.v; }
-};
-
 template<class Key, class T>
-using handle_map = std::map<Key, T, CompareHandle<Key>>;
+using handle_map = std::map<Key, T>;
 
 class Group;
 class SSurface;
