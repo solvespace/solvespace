@@ -172,6 +172,13 @@ public:
     virtual std::shared_ptr<BatchCanvas> CreateBatch();
 };
 
+template<>
+struct IsHandleOracle<Canvas::hStroke> : std::true_type {};
+
+template<>
+struct IsHandleOracle<Canvas::hFill> : std::true_type {};
+
+
 // An interface for view-dependent visualization.
 class ViewportCanvas : public Canvas {
 public:
