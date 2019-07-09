@@ -444,9 +444,9 @@ SSurface SSurface::MakeCopyTrimAgainst(SShell *parent,
         for(sc = into->curve.First(); sc; sc = into->curve.NextAfter(sc)) {
             if(sc->source != SCurve::Source::INTERSECTION) continue;
             if(opA) {
-                if(sc->surfA.v != h.v || sc->surfB.v != ss->h.v) continue;
+                if(sc->surfA != h || sc->surfB != ss->h) continue;
             } else {
-                if(sc->surfB.v != h.v || sc->surfA.v != ss->h.v) continue;
+                if(sc->surfB != h || sc->surfA != ss->h) continue;
             }
 
             int i;

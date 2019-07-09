@@ -59,7 +59,7 @@ void Style::CreateDefaultStyle(hStyle h) {
     bool isDefaultStyle = true;
     const Default *d;
     for(d = &(Defaults[0]); d->h.v; d++) {
-        if(d->h.v == h.v) break;
+        if(d->h == h) break;
     }
     if(!d->h.v) {
         // Not a default style; so just create it the same as our default
@@ -337,7 +337,7 @@ hStyle Style::ForEntity(hEntity he) {
 
     // Otherwise, we use the default rules.
     hStyle hs;
-    if(e->group.v != SS.GW.activeGroup.v) {
+    if(e->group != SS.GW.activeGroup) {
         hs.v = INACTIVE_GRP;
     } else if(e->construction) {
         hs.v = CONSTRUCTION;

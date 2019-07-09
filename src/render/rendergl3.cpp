@@ -195,7 +195,7 @@ static void ssglDepthRange(Canvas::Layer layer, int zIndex) {
 //-----------------------------------------------------------------------------
 
 Canvas::Stroke *OpenGl3Renderer::SelectStroke(hStroke hcs) {
-    if(current.hcs.v == hcs.v) return current.stroke;
+    if(current.hcs == hcs) return current.stroke;
 
     Stroke *stroke = strokes.FindById(hcs);
     ssglDepthRange(stroke->layer, stroke->zIndex);
@@ -241,7 +241,7 @@ void OpenGl3Renderer::SelectMask(FillPattern pattern) {
 }
 
 Canvas::Fill *OpenGl3Renderer::SelectFill(hFill hcf) {
-    if(current.hcf.v == hcf.v) return current.fill;
+    if(current.hcf == hcf) return current.fill;
 
     Fill *fill = fills.FindById(hcf);
     ssglDepthRange(fill->layer, fill->zIndex);

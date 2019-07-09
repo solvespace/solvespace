@@ -37,7 +37,7 @@ ExprVector EntityBase::VectorGetExprsInWorkplane(hEntity wrkpl) const {
         case Type::NORMAL_N_ROT:
         case Type::NORMAL_N_ROT_AA: {
             ExprVector ev = NormalExprsN();
-            if(wrkpl.v == EntityBase::FREE_IN_3D.v) {
+            if(wrkpl == EntityBase::FREE_IN_3D) {
                 return ev;
             }
             // Get the offset and basis vectors for this weird exotic csys.
@@ -565,7 +565,7 @@ ExprVector EntityBase::PointGetExprs() const {
 }
 
 void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) const {
-    if(type == Type::POINT_IN_2D && workplane.v == wrkpl.v) {
+    if(type == Type::POINT_IN_2D && workplane == wrkpl) {
         // They want our coordinates in the form that we've written them,
         // very nice.
         *u = Expr::From(param[0]);
@@ -587,7 +587,7 @@ void EntityBase::PointGetExprsInWorkplane(hEntity wrkpl, Expr **u, Expr **v) con
 }
 
 ExprVector EntityBase::PointGetExprsInWorkplane(hEntity wrkpl) const {
-    if(wrkpl.v == Entity::FREE_IN_3D.v) {
+    if(wrkpl == Entity::FREE_IN_3D) {
         return PointGetExprs();
     }
 
@@ -873,11 +873,11 @@ void EntityBase::GenerateEquations(IdList<Equation,hEquation> *l) const {
             int i;
             for(i = 0; i < SK.constraint.n; i++) {
                 ConstraintBase *c = &(SK.constraint.elem[i]);
-                if(c->group.v != group.v) continue;
+                if(c->group != group) continue;
                 if(c->type != Constraint::Type::POINTS_COINCIDENT) continue;
 
-                if((c->ptA.v == point[1].v && c->ptB.v == point[2].v) ||
-                   (c->ptA.v == point[2].v && c->ptB.v == point[1].v))
+                if((c->ptA == point[1] && c->ptB == point[2]) ||
+                   (c->ptA == point[2] && c->ptB == point[1]))
                 {
                     break;
                 }
