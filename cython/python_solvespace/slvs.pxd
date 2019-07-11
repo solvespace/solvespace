@@ -268,6 +268,7 @@ cdef class SolverSystem:
     cdef void free(self)
     cpdef void set_group(self, size_t g)
     cpdef int group(self)
+    cpdef void set_params(self, Params p, object params)
     cpdef tuple params(self, Params p)
     cpdef int dof(self)
     cpdef object constraints(self)

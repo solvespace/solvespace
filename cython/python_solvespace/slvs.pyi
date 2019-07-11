@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Tuple, List, Counter
+from typing import Tuple, List, Sequence, Counter
 from enum import IntEnum, auto
 
 
@@ -162,6 +162,9 @@ class SolverSystem:
         ...
 
     def group(self) -> int:
+        ...
+
+    def set_params(self, p: Params, params: Sequence[float]):
         ...
 
     def params(self, p: Params) -> Tuple[float, ...]:

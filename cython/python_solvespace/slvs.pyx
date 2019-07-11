@@ -309,6 +309,19 @@ cdef class SolverSystem:
         """Return the current group by integer."""
         return <int>self.g
 
+    cpdef void set_params(self, Params p, object params):
+        """Set the parameters by Params object and sequence object."""
+        params = tuple(params)
+        cdef int i = p.param_list.size()
+        if i != len(params):
+            raise ValueError(f"number of parameters {len(params)} are not match {i}")
+
+        i = 0
+        cdef Slvs_hParam h
+        for h in p.param_list:
+            self.param_list[h].val = params[i]
+            i += 1
+
     cpdef tuple params(self, Params p):
         """Get the parameters by Params object."""
         cdef list param_list = []
