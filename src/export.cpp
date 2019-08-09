@@ -1217,53 +1217,35 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
     }
 
     // Output all the vertices.
-    bool first = true;
     for(auto sp : spl.l) {
-        if(!first) {
-            fputs(",\n", f);
-        }
-        first = false;
-
-        fprintf(f, "          %f %f %f",
+        fprintf(f, "          %f %f %f,\n",
                 sp.p.x / SS.exportScale,
                 sp.p.y / SS.exportScale,
                 sp.p.z / SS.exportScale);
     }
 
-    fputs(" ] }\n"
+    fputs("        ] }\n"
           "        coordIndex [\n", f);
     // And now all the triangular faces, in terms of those vertices.
-    first = true;
     for(const auto & tr : sm->l) {
-        if(!first) {
-            fputs(",\n", f);
-        }
-        first = false;
-
-        fprintf(f, "          %d, %d, %d, -1",
+        fprintf(f, "          %d, %d, %d, -1,\n",
                 spl.IndexForPoint(tr.a),
                 spl.IndexForPoint(tr.b),
                 spl.IndexForPoint(tr.c));
     }
 
-    fputs(" ]\n"
+    fputs("        ]\n"
           "        color Color { color [\n", f);
     // Output triangle colors.
     std::vector<int> triangle_colour_ids;
     std::vector<RgbaColor> colours_present;
-    first = true;
     for(const auto & tr : sm->l) {
         const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
                                              [&](const RgbaColor & c) {
                                                  return c.Equals(tr.meta.color);
                                              });
         if(colour_itr == colours_present.end()) {
-            if(!first) {
-                fputs(",\n", f);
-            }
-            first = false;
-
-            fprintf(f, "          %.10f %.10f %.10f",
+            fprintf(f, "          %.10f %.10f %.10f,\n",
                     tr.meta.color.redF(),
                     tr.meta.color.greenF(),
                     tr.meta.color.blueF());
@@ -1274,20 +1256,14 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
         }
     }
 
-    fputs(" ] }\n"
+    fputs("        ] }\n"
           "        colorIndex [\n", f);
 
-    first = true;
     for(auto colour_idx : triangle_colour_ids) {
-        if(!first) {
-            fputs(",\n", f);
-        }
-        first = false;
-
-        fprintf(f, "          %d, %d, %d, -1", colour_idx, colour_idx, colour_idx);
+        fprintf(f, "          %d, %d, %d, -1,\n", colour_idx, colour_idx, colour_idx);
     }
 
-    fputs(" ]\n"
+    fputs("        ]\n"
           "      }\n"
           "    }\n"
           "  ]\n"
