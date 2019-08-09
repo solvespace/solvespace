@@ -849,6 +849,8 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
               filename.HasExtension("html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
+    } else if(filename.HasExtension("wrl")) {
+        ExportMeshAsVrmlTo(f, filename, m);
     } else {
         Error("Can't identify output file type from file extension of "
               "filename '%s'; try .stl, .obj, .js, .html.", filename.raw.c_str());
@@ -1164,6 +1166,118 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
                 CO(SS.GW.projUp),
                 CO(SS.GW.projRight));
     }
+
+    spl.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// Export the mesh as a VRML text file / WRL.
+//-----------------------------------------------------------------------------
+void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
+    SPointList spl = {};
+
+    fprintf(f, "#VRML V2.0 utf8\n"
+               "#Exported from SolveSpace %s\n\n",
+            PACKAGE_VERSION);
+
+    std::string basename = filename.FileStem();
+    for(auto & c : basename) {
+        if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
+            c = '_';
+        }
+    }
+
+    // Material values below are magic copied from
+    // the "Buzzer_12x9.5RM7.6.wrl" model shipped with KiCad.
+    fprintf(f, "DEF %s Transform {\n"
+               "  children [\n"
+               "    Shape {\n"
+               "      appearance Appearance {\n"
+               "        material DEF %s_material Material {\n"
+               "          diffuseColor"
+                        " 0.17333333333333334 0.17333333333333334 0.17333333333333334\n"
+               "          emissiveColor 0.0 0.0 0.0\n"
+               "          specularColor 1.0 1.0 1.0\n"
+               "          ambientIntensity %f\n"
+               "          transparency 0.0\n"
+               "          shininess 1.0\n"
+               "        }\n"
+               "      }\n"
+               "      geometry IndexedFaceSet {\n"
+               "        colorPerVertex TRUE\n"
+               "        coord Coordinate { point [\n",
+            basename.c_str(),
+            basename.c_str(),
+            SS.ambientIntensity);
+
+    for(const auto & tr : sm->l) {
+        spl.IncrementTagFor(tr.a);
+        spl.IncrementTagFor(tr.b);
+        spl.IncrementTagFor(tr.c);
+    }
+
+    // Output all the vertices.
+    bool first = true;
+    for(auto sp : spl.l) {
+        if(!first) {
+            fputs(",\n", f);
+        }
+        first = false;
+
+        fprintf(f, "          %f %f %f",
+                sp.p.x / SS.exportScale,
+                sp.p.y / SS.exportScale,
+                sp.p.z / SS.exportScale);
+    }
+
+    fputs(" ] }\n"
+          "        coordIndex [\n", f);
+    // And now all the triangular faces, in terms of those vertices.
+    first = true;
+    for(const auto & tr : sm->l) {
+        if(!first) {
+            fputs(",\n", f);
+        }
+        first = false;
+
+        fprintf(f, "          %d, %d, %d, -1",
+                spl.IndexForPoint(tr.a),
+                spl.IndexForPoint(tr.b),
+                spl.IndexForPoint(tr.c));
+    }
+
+    fputs(" ]\n"
+          "        color Color { color [\n", f);
+    // Output triangle colors.
+    first = true;
+    for(const auto & tr : sm->l) {
+        if(!first) {
+            fputs(",\n", f);
+        }
+        first = false;
+
+        fprintf(f, "          %.10f %.10f %.10f",
+                tr.meta.color.redF(),
+                tr.meta.color.greenF(),
+                tr.meta.color.blueF());
+    }
+
+    fputs(" ] }\n"
+          "        colorIndex [\n", f);
+
+    for(int i = 0; i < sm->l.n; ++i) {
+        if(i != 0) {
+            fputs(",\n", f);
+        }
+
+        fprintf(f, "          %d, %d, %d, -1", i, i, i);
+    }
+
+    fputs(" ]\n"
+          "      }\n"
+          "    }\n"
+          "  ]\n"
+          "}\n", f);
 
     spl.Clear();
 }
