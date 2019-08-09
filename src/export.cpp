@@ -1249,28 +1249,42 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
     fputs(" ]\n"
           "        color Color { color [\n", f);
     // Output triangle colors.
+    std::vector<int> triangle_colour_ids;
+    std::vector<RgbaColor> colours_present;
     first = true;
     for(const auto & tr : sm->l) {
-        if(!first) {
-            fputs(",\n", f);
-        }
-        first = false;
+        const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
+                                             [&](const RgbaColor & c) {
+                                                 return c.Equals(tr.meta.color);
+                                             });
+        if(colour_itr == colours_present.end()) {
+            if(!first) {
+                fputs(",\n", f);
+            }
+            first = false;
 
-        fprintf(f, "          %.10f %.10f %.10f",
-                tr.meta.color.redF(),
-                tr.meta.color.greenF(),
-                tr.meta.color.blueF());
+            fprintf(f, "          %.10f %.10f %.10f",
+                    tr.meta.color.redF(),
+                    tr.meta.color.greenF(),
+                    tr.meta.color.blueF());
+            triangle_colour_ids.push_back(colours_present.size());
+            colours_present.insert(colours_present.end(), tr.meta.color);
+        } else {
+            triangle_colour_ids.push_back(colour_itr - colours_present.begin());
+        }
     }
 
     fputs(" ] }\n"
           "        colorIndex [\n", f);
 
-    for(int i = 0; i < sm->l.n; ++i) {
-        if(i != 0) {
+    first = true;
+    for(auto colour_idx : triangle_colour_ids) {
+        if(!first) {
             fputs(",\n", f);
         }
+        first = false;
 
-        fprintf(f, "          %d, %d, %d, -1", i, i, i);
+        fprintf(f, "          %d, %d, %d, -1", colour_idx, colour_idx, colour_idx);
     }
 
     fputs(" ]\n"
