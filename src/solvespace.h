@@ -698,6 +698,7 @@ public:
     void ExportMeshAsObjTo(FILE *fObj, FILE *fMtl, SMesh *sm);
     void ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename,
                                SMesh *sm, SOutlineList *sol);
+    void ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm);
     void ExportViewOrWireframeTo(const Platform::Path &filename, bool exportWireframe);
     void ExportSectionTo(const Platform::Path &filename);
     void ExportWireframeCurves(SEdgeList *sel, SBezierList *sbl,

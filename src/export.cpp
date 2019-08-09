@@ -849,6 +849,8 @@ void SolveSpaceUI::ExportMeshTo(const Platform::Path &filename) {
               filename.HasExtension("html")) {
         SOutlineList *e = &(SK.GetGroup(SS.GW.activeGroup)->displayOutlines);
         ExportMeshAsThreeJsTo(f, filename, m, e);
+    } else if(filename.HasExtension("wrl")) {
+        ExportMeshAsVrmlTo(f, filename, m);
     } else {
         Error("Can't identify output file type from file extension of "
               "filename '%s'; try .stl, .obj, .js, .html.", filename.raw.c_str());
@@ -1164,6 +1166,105 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
                 CO(SS.GW.projUp),
                 CO(SS.GW.projRight));
     }
+
+    spl.Clear();
+}
+
+//-----------------------------------------------------------------------------
+// Export the mesh as a VRML text file / WRL.
+//-----------------------------------------------------------------------------
+void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
+    std::string basename = filename.FileStem();
+    for(auto & c : basename) {
+        if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
+            c = '_';
+        }
+    }
+
+    fprintf(f, "#VRML V2.0 utf8\n"
+               "#Exported from SolveSpace %s\n"
+               "\n"
+               "DEF %s Transform {\n"
+               "  children [\n"
+               "    Shape {\n"
+               "      appearance Appearance {\n"
+               "        material DEF %s_material Material {\n"
+               "          diffuseColor %f %f %f\n"
+               "          ambientIntensity %f\n"
+               "          transparency 0.0\n"
+               "        }\n"
+               "      }\n"
+               "      geometry IndexedFaceSet {\n"
+               "        colorPerVertex TRUE\n"
+               "        coord Coordinate { point [\n",
+            PACKAGE_VERSION,
+            basename.c_str(),
+            basename.c_str(),
+            SS.ambientIntensity,
+            SS.ambientIntensity,
+            SS.ambientIntensity,
+            SS.ambientIntensity);
+
+    SPointList spl = {};
+
+    for(const auto & tr : sm->l) {
+        spl.IncrementTagFor(tr.a);
+        spl.IncrementTagFor(tr.b);
+        spl.IncrementTagFor(tr.c);
+    }
+
+    // Output all the vertices.
+    for(auto sp : spl.l) {
+        fprintf(f, "          %f %f %f,\n",
+                sp.p.x / SS.exportScale,
+                sp.p.y / SS.exportScale,
+                sp.p.z / SS.exportScale);
+    }
+
+    fputs("        ] }\n"
+          "        coordIndex [\n", f);
+    // And now all the triangular faces, in terms of those vertices.
+    for(const auto & tr : sm->l) {
+        fprintf(f, "          %d, %d, %d, -1,\n",
+                spl.IndexForPoint(tr.a),
+                spl.IndexForPoint(tr.b),
+                spl.IndexForPoint(tr.c));
+    }
+
+    fputs("        ]\n"
+          "        color Color { color [\n", f);
+    // Output triangle colors.
+    std::vector<int> triangle_colour_ids;
+    std::vector<RgbaColor> colours_present;
+    for(const auto & tr : sm->l) {
+        const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
+                                             [&](const RgbaColor & c) {
+                                                 return c.Equals(tr.meta.color);
+                                             });
+        if(colour_itr == colours_present.end()) {
+            fprintf(f, "          %.10f %.10f %.10f,\n",
+                    tr.meta.color.redF(),
+                    tr.meta.color.greenF(),
+                    tr.meta.color.blueF());
+            triangle_colour_ids.push_back(colours_present.size());
+            colours_present.insert(colours_present.end(), tr.meta.color);
+        } else {
+            triangle_colour_ids.push_back(colour_itr - colours_present.begin());
+        }
+    }
+
+    fputs("        ] }\n"
+          "        colorIndex [\n", f);
+
+    for(auto colour_idx : triangle_colour_ids) {
+        fprintf(f, "          %d, %d, %d, -1,\n", colour_idx, colour_idx, colour_idx);
+    }
+
+    fputs("        ]\n"
+          "      }\n"
+          "    }\n"
+          "  ]\n"
+          "}\n", f);
 
     spl.Clear();
 }
