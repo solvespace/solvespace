@@ -1175,10 +1175,10 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
     struct STriangleSpan {
-        const STriangle *first, *past_last;
+        STriangle *first, *past_last;
 
-        const STriangle *begin() const { return first; }
-        const STriangle *end() const { return past_last; }
+        STriangle *begin() const { return first; }
+        STriangle *end() const { return past_last; }
     };
 
 
@@ -1199,9 +1199,9 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
 
 
     std::map<std::uint8_t, std::vector<STriangleSpan>> opacities;
-    const STriangle *start    = sm->l.begin();
+    STriangle *start          = sm->l.begin();
     std::uint8_t last_opacity = start->meta.color.alpha;
-    for(const auto & tr : sm->l) {
+    for(auto & tr : sm->l) {
         if(tr.meta.color.alpha != last_opacity) {
             opacities[last_opacity].push_back(STriangleSpan{start, &tr});
             start = &tr;
