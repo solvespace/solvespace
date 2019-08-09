@@ -1174,6 +1174,14 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
 // Export the mesh as a VRML text file / WRL.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
+    struct STriangleSpan {
+        STriangle *first, *past_last;
+
+        STriangle *begin() const { return first; }
+        STriangle *end() const { return past_last; }
+    };
+
+
     std::string basename = filename.FileStem();
     for(auto & c : basename) {
         if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
@@ -1185,88 +1193,114 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
                "#Exported from SolveSpace %s\n"
                "\n"
                "DEF %s Transform {\n"
-               "  children [\n"
-               "    Shape {\n"
-               "      appearance Appearance {\n"
-               "        material DEF %s_material Material {\n"
-               "          diffuseColor %f %f %f\n"
-               "          ambientIntensity %f\n"
-               "          transparency 0.0\n"
-               "        }\n"
-               "      }\n"
-               "      geometry IndexedFaceSet {\n"
-               "        colorPerVertex TRUE\n"
-               "        coord Coordinate { point [\n",
+               "  children [",
             PACKAGE_VERSION,
-            basename.c_str(),
-            basename.c_str(),
-            SS.ambientIntensity,
-            SS.ambientIntensity,
-            SS.ambientIntensity,
-            SS.ambientIntensity);
+            basename.c_str());
 
-    SPointList spl = {};
 
-    for(const auto & tr : sm->l) {
-        spl.IncrementTagFor(tr.a);
-        spl.IncrementTagFor(tr.b);
-        spl.IncrementTagFor(tr.c);
-    }
-
-    // Output all the vertices.
-    for(auto sp : spl.l) {
-        fprintf(f, "          %f %f %f,\n",
-                sp.p.x / SS.exportScale,
-                sp.p.y / SS.exportScale,
-                sp.p.z / SS.exportScale);
-    }
-
-    fputs("        ] }\n"
-          "        coordIndex [\n", f);
-    // And now all the triangular faces, in terms of those vertices.
-    for(const auto & tr : sm->l) {
-        fprintf(f, "          %d, %d, %d, -1,\n",
-                spl.IndexForPoint(tr.a),
-                spl.IndexForPoint(tr.b),
-                spl.IndexForPoint(tr.c));
-    }
-
-    fputs("        ]\n"
-          "        color Color { color [\n", f);
-    // Output triangle colors.
-    std::vector<int> triangle_colour_ids;
-    std::vector<RgbaColor> colours_present;
-    for(const auto & tr : sm->l) {
-        const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
-                                             [&](const RgbaColor & c) {
-                                                 return c.Equals(tr.meta.color);
-                                             });
-        if(colour_itr == colours_present.end()) {
-            fprintf(f, "          %.10f %.10f %.10f,\n",
-                    tr.meta.color.redF(),
-                    tr.meta.color.greenF(),
-                    tr.meta.color.blueF());
-            triangle_colour_ids.push_back(colours_present.size());
-            colours_present.insert(colours_present.end(), tr.meta.color);
-        } else {
-            triangle_colour_ids.push_back(colour_itr - colours_present.begin());
+    std::map<std::uint8_t, std::vector<STriangleSpan>> opacities;
+    STriangle *start          = sm->l.begin();
+    std::uint8_t last_opacity = start->meta.color.alpha;
+    for(auto & tr : sm->l) {
+        if(tr.meta.color.alpha != last_opacity) {
+            opacities[last_opacity].push_back(STriangleSpan{start, &tr});
+            start = &tr;
+            last_opacity = start->meta.color.alpha;
         }
     }
+    opacities[last_opacity].push_back(STriangleSpan{start, sm->l.end()});
 
-    fputs("        ] }\n"
-          "        colorIndex [\n", f);
+    for(auto && op : opacities) {
+        fprintf(f, "\n"
+                   "    Shape {\n"
+                   "      appearance Appearance {\n"
+                   "        material DEF %s_material_%u Material {\n"
+                   "          diffuseColor %f %f %f\n"
+                   "          ambientIntensity %f\n"
+                   "          transparency %f\n"
+                   "        }\n"
+                   "      }\n"
+                   "      geometry IndexedFaceSet {\n"
+                   "        colorPerVertex TRUE\n"
+                   "        coord Coordinate { point [\n",
+                basename.c_str(),
+                (unsigned)op.first,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                SS.ambientIntensity,
+                1.f - ((float)op.first / 255.0f));
 
-    for(auto colour_idx : triangle_colour_ids) {
-        fprintf(f, "          %d, %d, %d, -1,\n", colour_idx, colour_idx, colour_idx);
+        SPointList spl = {};
+
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                spl.IncrementTagFor(tr.a);
+                spl.IncrementTagFor(tr.b);
+                spl.IncrementTagFor(tr.c);
+            }
+        }
+
+        // Output all the vertices.
+        for(auto sp : spl.l) {
+            fprintf(f, "          %f %f %f,\n",
+                    sp.p.x / SS.exportScale,
+                    sp.p.y / SS.exportScale,
+                    sp.p.z / SS.exportScale);
+        }
+
+        fputs("        ] }\n"
+              "        coordIndex [\n", f);
+        // And now all the triangular faces, in terms of those vertices.
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                fprintf(f, "          %d, %d, %d, -1,\n",
+                        spl.IndexForPoint(tr.a),
+                        spl.IndexForPoint(tr.b),
+                        spl.IndexForPoint(tr.c));
+            }
+        }
+
+        fputs("        ]\n"
+              "        color Color { color [\n", f);
+        // Output triangle colors.
+        std::vector<int> triangle_colour_ids;
+        std::vector<RgbaColor> colours_present;
+        for(const auto & sp : op.second) {
+            for(const auto & tr : sp) {
+                const auto colour_itr = std::find_if(colours_present.begin(), colours_present.end(),
+                                                     [&](const RgbaColor & c) {
+                                                         return c.Equals(tr.meta.color);
+                                                     });
+                if(colour_itr == colours_present.end()) {
+                    fprintf(f, "          %.10f %.10f %.10f,\n",
+                            tr.meta.color.redF(),
+                            tr.meta.color.greenF(),
+                            tr.meta.color.blueF());
+                    triangle_colour_ids.push_back(colours_present.size());
+                    colours_present.insert(colours_present.end(), tr.meta.color);
+                } else {
+                    triangle_colour_ids.push_back(colour_itr - colours_present.begin());
+                }
+            }
+        }
+
+        fputs("        ] }\n"
+              "        colorIndex [\n", f);
+
+        for(auto colour_idx : triangle_colour_ids) {
+            fprintf(f, "          %d, %d, %d, -1,\n", colour_idx, colour_idx, colour_idx);
+        }
+
+        fputs("        ]\n"
+              "      }\n"
+              "    }\n", f);
+
+        spl.Clear();
     }
 
-    fputs("        ]\n"
-          "      }\n"
-          "    }\n"
-          "  ]\n"
+    fputs("  ]\n"
           "}\n", f);
-
-    spl.Clear();
 }
 
 //-----------------------------------------------------------------------------
