@@ -1174,12 +1174,6 @@ void SolveSpaceUI::ExportMeshAsThreeJsTo(FILE *f, const Platform::Path &filename
 // Export the mesh as a VRML text file / WRL.
 //-----------------------------------------------------------------------------
 void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, SMesh *sm) {
-    SPointList spl = {};
-
-    fprintf(f, "#VRML V2.0 utf8\n"
-               "#Exported from SolveSpace %s\n\n",
-            PACKAGE_VERSION);
-
     std::string basename = filename.FileStem();
     for(auto & c : basename) {
         if(!(isalnum(c) || ((unsigned)c >= 0x80))) {
@@ -1187,28 +1181,31 @@ void SolveSpaceUI::ExportMeshAsVrmlTo(FILE *f, const Platform::Path &filename, S
         }
     }
 
-    // Material values below are magic copied from
-    // the "Buzzer_12x9.5RM7.6.wrl" model shipped with KiCad.
-    fprintf(f, "DEF %s Transform {\n"
+    fprintf(f, "#VRML V2.0 utf8\n"
+               "#Exported from SolveSpace %s\n"
+               "\n"
+               "DEF %s Transform {\n"
                "  children [\n"
                "    Shape {\n"
                "      appearance Appearance {\n"
                "        material DEF %s_material Material {\n"
-               "          diffuseColor"
-                        " 0.17333333333333334 0.17333333333333334 0.17333333333333334\n"
-               "          emissiveColor 0.0 0.0 0.0\n"
-               "          specularColor 1.0 1.0 1.0\n"
+               "          diffuseColor %f %f %f\n"
                "          ambientIntensity %f\n"
                "          transparency 0.0\n"
-               "          shininess 1.0\n"
                "        }\n"
                "      }\n"
                "      geometry IndexedFaceSet {\n"
                "        colorPerVertex TRUE\n"
                "        coord Coordinate { point [\n",
+            PACKAGE_VERSION,
             basename.c_str(),
             basename.c_str(),
+            SS.ambientIntensity,
+            SS.ambientIntensity,
+            SS.ambientIntensity,
             SS.ambientIntensity);
+
+    SPointList spl = {};
 
     for(const auto & tr : sm->l) {
         spl.IncrementTagFor(tr.a);
