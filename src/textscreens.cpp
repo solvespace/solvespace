@@ -752,7 +752,7 @@ void TextWindow::EditControlDone(std::string s) {
 
                 Group *g = SK.group.FindByIdNoOops(SS.TW.shown.group);
                 if(!g) break;
-                g->color = RGBf(rgb.x, rgb.y, rgb.z);
+                g->color = RgbaColor::FromFloat(rgb.x, rgb.y, rgb.z, g->color.alphaF());
 
                 SS.MarkGroupDirty(g->h);
                 SS.GW.ClearSuper();
