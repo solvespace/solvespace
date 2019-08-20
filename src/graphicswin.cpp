@@ -383,7 +383,7 @@ void GraphicsWindow::Init() {
     // And with the last group active
     ssassert(!SK.groupOrder.IsEmpty(),
              "Group order can't be empty since we will activate the last group.");
-    activeGroup = SK.groupOrder[SK.groupOrder.n - 1];
+    activeGroup = *SK.groupOrder.Last();
     SK.GetGroup(activeGroup)->Activate();
 
     showWorkplanes = false;

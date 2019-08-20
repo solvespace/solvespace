@@ -470,15 +470,15 @@ void SBezierLoop::MakePwlInto(SContour *sc, double chordTol) const {
         }
     }
     // Ensure that it's exactly closed, not just within a numerical tolerance.
-    if((sc->l[sc->l.n - 1].p).Equals(sc->l[0].p)) {
-        sc->l[sc->l.n - 1] = sc->l[0];
+    if((sc->l.Last()->p).Equals(sc->l.First()->p)) {
+        *sc->l.Last() = *sc->l.First();
     }
 }
 
 bool SBezierLoop::IsClosed() const {
     if(l.n < 1) return false;
-    Vector s = l[0].Start(),
-           f = l[l.n-1].Finish();
+    Vector s = l.First()->Start(),
+           f = l.Last()->Finish();
     return s.Equals(f);
 }
 
@@ -512,7 +512,7 @@ SBezierLoopSet SBezierLoopSet::From(SBezierList *sbl, SPolygon *poly,
         } else {
             ret.l.Add(&loop);
             poly->AddEmptyContour();
-            loop.MakePwlInto(&(poly->l[poly->l.n-1]), chordTol);
+            loop.MakePwlInto(poly->l.Last(), chordTol);
         }
     }
 
@@ -553,7 +553,7 @@ double SBezierLoopSet::SignedArea() {
 void SBezierLoopSet::MakePwlInto(SPolygon *sp) const {
     for(const SBezierLoop *sbl = l.First(); sbl; sbl = l.NextAfter(sbl)) {
         sp->AddEmptyContour();
-        sbl->MakePwlInto(&(sp->l[sp->l.n - 1]));
+        sbl->MakePwlInto(sp->l.Last());
     }
 }
 
@@ -618,7 +618,7 @@ void SBezierLoopSetSet::FindOuterFacesFrom(SBezierList *sbl, SPolygon *spxyz,
         for(pt = sc->l.First(); pt; pt = sc->l.NextAfter(pt)) {
             double u, v;
             srfuv->ClosestPointTo(pt->p, &u, &v);
-            spuv.l[spuv.l.n - 1].AddPoint(Vector::From(u, v, 0));
+            spuv.l.Last()->AddPoint(Vector::From(u, v, 0));
         }
     }
     spuv.normal = Vector::From(0, 0, 1); // must be, since it's in xy plane now
@@ -850,11 +850,11 @@ STrimBy STrimBy::EntireCurve(SShell *shell, hSCurve hsc, bool backwards) {
 
     if(backwards) {
         stb.finish = sc->pts[0].p;
-        stb.start = sc->pts[sc->pts.n - 1].p;
+        stb.start = sc->pts.Last()->p;
         stb.backwards = true;
     } else {
         stb.start = sc->pts[0].p;
-        stb.finish = sc->pts[sc->pts.n - 1].p;
+        stb.finish = sc->pts.Last()->p;
         stb.backwards = false;
     }
 

@@ -293,16 +293,16 @@ void SSurface::FindChainAvoiding(SEdgeList *src, SEdgeList *dest,
 {
     ssassert(!src->l.IsEmpty(), "Need at least one edge");
     // Start with an arbitrary edge.
-    dest->l.Add(&(src->l[0]));
+    dest->l.Add(src->l.First());
     src->l.ClearTags();
-    src->l[0].tag = 1;
+    src->l.First()->tag = 1;
 
     bool added;
     do {
         added = false;
         // The start and finish of the current edge chain
-        Vector s = dest->l[0].a,
-               f = dest->l[dest->l.n - 1].b;
+        Vector s = dest->l.First()->a,
+               f = dest->l.Last()->b;
 
         // We can attach a new edge at the start or finish, as long as that
         // start or finish point isn't in the list of points to avoid.

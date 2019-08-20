@@ -343,7 +343,7 @@ bool SolveSpaceUI::SaveToFile(const Platform::Path &filename) {
     // A group will have either a mesh or a shell, but not both; but the code
     // to print either of those just does nothing if the mesh/shell is empty.
 
-    Group *g = SK.GetGroup(SK.groupOrder[SK.groupOrder.n - 1]);
+    Group *g = SK.GetGroup(*SK.groupOrder.Last());
     SMesh *m = &g->runningMesh;
     for(i = 0; i < m->l.n; i++) {
         STriangle *tr = &(m->l[i]);

@@ -283,9 +283,7 @@ bool SEdgeList::AssemblePolygon(SPolygon *dest, SEdge *errorAt, bool keepDir) co
         // Create a new empty contour in our polygon, and finish assembling
         // into that contour.
         dest->AddEmptyContour();
-        if(!AssembleContour(first, last, &(dest->l[dest->l.n-1]),
-                errorAt, keepDir))
-        {
+        if(!AssembleContour(first, last, dest->l.Last(), errorAt, keepDir)) {
             allClosed = false;
         }
         // But continue assembling, even if some of the contours are open

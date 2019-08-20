@@ -250,6 +250,10 @@ public:
     const T *First() const {
         return IsEmpty() ? nullptr : &(elem[0]);
     }
+
+    T *Last() { return IsEmpty() ? nullptr : &(elem[n - 1]); }
+    const T *Last() const { return IsEmpty() ? nullptr : &(elem[n - 1]); }
+
     T *NextAfter(T *prev) {
         if(IsEmpty() || !prev) return NULL;
         if(prev - First() == (n - 1)) return NULL;
