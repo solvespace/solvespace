@@ -50,7 +50,8 @@ bool Group::IsVisible() {
 }
 
 size_t Group::GetNumConstraints() {
-    return SK.constraint.CountIf([&](Constraint const & c) { return c.group == h; });
+    return std::count_if(SK.constraint.begin(), SK.constraint.end(),
+                         [&](Constraint const &c) { return c.group == h; });
 }
 
 Vector Group::ExtrusionGetVector() {
