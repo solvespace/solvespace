@@ -72,13 +72,13 @@ void TtfFontList::LoadAll() {
     }
 
     // Sort fonts according to their actual name, not filename.
-    std::sort(&l[0], &l[l.n],
+    std::sort(l.begin(), l.end(),
         [](const TtfFont &a, const TtfFont &b) { return a.name < b.name; });
 
     // Filter out fonts with the same family and style name. This is not
     // strictly necessarily the exact same font, but it will almost always be.
-    TtfFont *it = std::unique(&l[0], &l[l.n],
-        [](const TtfFont &a, const TtfFont &b) { return a.name == b.name; });
+    TtfFont *it = std::unique(l.begin(), l.end(),
+                              [](const TtfFont &a, const TtfFont &b) { return a.name == b.name; });
     l.RemoveLast(&l[l.n] - it);
 
     //! @todo identify fonts by their name and not filename, which may change
