@@ -325,7 +325,7 @@ public:
 
     void assignEntityDefaults(DRW_Entity *entity, hStyle hs) {
         Style *s = Style::Get(hs);
-        RgbaColor color = s->Color(hs, /*forExport=*/true);
+        RgbaColor color = Style::Color(hs, /*forExport=*/true);
         entity->color24 = color.ToPackedIntBGRA();
         entity->color = findDxfColor(color);
         entity->layer = s->DescriptionString();

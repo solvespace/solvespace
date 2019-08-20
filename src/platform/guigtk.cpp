@@ -1471,11 +1471,11 @@ void InitGui(int argc, char **argv) {
 }
 
 void RunGui() {
-    gtkMain->run();
+    Gtk::Main::run();
 }
 
 void ExitGui() {
-    gtkMain->quit();
+    Gtk::Main::quit();
 }
 
 void ClearGui() {
