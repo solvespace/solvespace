@@ -295,7 +295,7 @@ Path Path::Expand(bool fromCurrentDirectory) const {
 
     if(expanded.IsEmpty()) {
         if(expandedComponents.empty()) {
-            expandedComponents.push_back(".");
+            expandedComponents.emplace_back(".");
         }
         expanded = From(Concat(expandedComponents, SEPARATOR));
     } else if(!expandedComponents.empty()) {
@@ -371,12 +371,12 @@ Path Path::RelativeTo(const Path &base) const {
 
     std::vector<std::string> resultComponents;
     for(size_t i = common; i < baseComponents.size(); i++) {
-        resultComponents.push_back("..");
+        resultComponents.emplace_back("..");
     }
     resultComponents.insert(resultComponents.end(),
                             components.begin() + common, components.end());
     if(resultComponents.empty()) {
-        resultComponents.push_back(".");
+        resultComponents.emplace_back(".");
     }
     return From(Concat(resultComponents, SEPARATOR));
 }
