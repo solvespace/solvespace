@@ -175,7 +175,7 @@ bool GraphicsWindow::ToolbarDrawOrHitTest(int mx, int my, UiCanvas *canvas,
 
     bool leftpos = true;
     for(ToolIcon &icon : Toolbar) {
-        if(icon.name == "") { // spacer
+        if(icon.name.empty()) { // spacer
             if(!leftpos) {
                 leftpos = true;
                 y -= 32;

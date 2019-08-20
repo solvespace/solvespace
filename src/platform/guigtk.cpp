@@ -1292,7 +1292,8 @@ public:
 
     void FilterChanged() {
         std::string extension = GetExtension();
-        if(extension == "") return;
+        if(extension.empty())
+            return;
 
         Platform::Path path = GetFilename();
         SetCurrentName(path.WithExtension(extension).FileName());

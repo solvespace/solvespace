@@ -681,7 +681,8 @@ void SPolygon::MakeEdgesInto(SEdgeList *el) const {
 }
 
 Vector SPolygon::ComputeNormal() const {
-    if(l.n < 1) return Vector::From(0, 0, 0);
+    if(l.IsEmpty())
+        return Vector::From(0, 0, 0);
     return (l[0]).ComputeNormal();
 }
 

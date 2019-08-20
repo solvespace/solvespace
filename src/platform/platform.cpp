@@ -203,7 +203,7 @@ static void FindPrefix(const std::string &raw, size_t *pos) {
         }
     }
 #else
-    if(raw.size() >= 1 && raw[0] == '/') {
+    if(!raw.empty() && raw[0] == '/') {
         *pos = 1;
     }
 #endif

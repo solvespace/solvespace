@@ -1147,7 +1147,7 @@ PluralExpr::Token PluralExpr::Lex() {
 }
 
 PluralExpr::Token PluralExpr::PopToken() {
-    ssassert(stack.size() > 0, "Expected a non-empty stack");
+    ssassert(!stack.empty(), "Expected a non-empty stack");
     Token t = stack.back();
     stack.pop_back();
     return t;
@@ -1406,7 +1406,7 @@ void GettextParser::Parse() {
             }
         }
 
-        if(key.ident == "") {
+        if(key.ident.empty()) {
             ssassert(msgstrs.size() == 1,
                      "Expected exactly one header msgstr");
             ParseHeader(msgstrs[0]);
